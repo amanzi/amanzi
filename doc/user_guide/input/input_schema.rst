@@ -286,6 +286,8 @@ The ``execution_control`` element has the following attributes.
 +------------------+----------------+----------------------------------+
 | method           | string         | ``bdf1``                         |
 +------------------+----------------+----------------------------------+
+| max_cycles       | integer        | max number of cycles to use      |
++------------------+----------------+----------------------------------+
 
 The ``execution_control`` element has the following attributes. 
 
@@ -300,7 +302,7 @@ The ``execution_control`` element has the following attributes.
 +------------------+----------------+-----------------------------------------------------+
 | end              | time           | time value(,unit) (stop time for this time period)  |
 +------------------+----------------+-----------------------------------------------------+
-| max_cycles       | integer        | max cycles to use for structured                    |
+| max_cycles       | integer        | max number of cycles to use                         |
 +------------------+----------------+-----------------------------------------------------+
 | init_dt          | time           | time value(,unit)                                   |
 +------------------+----------------+-----------------------------------------------------+
@@ -317,7 +319,7 @@ The ``execution_control`` element has the following attributes.
 
 Each ``execution_control`` is required to define a ``start`` time.  The final control period must define an ``end`` time.  It is assumed that the start time of the next control period is the end time of the previous period.  Therefore, it is not required that each ``execution_control`` element have an ``end`` time defined.
 
-The attribute ``max_cycles`` is only valid for transient and transient with static flow execution modes.
+Under the structure algorithm, the attribute ``max_cycles`` is only valid for transient and transient with static flow execution modes.
 
 The ``execution_control`` section also provides the elements ``comments`` and ``verbosity``.  Users may provide any text within the ``comment`` element to annotate this section.  ``verbosity`` takes the attribute level= ``extreme | high | medium | low | none``.  This triggers increasing levels of reporting from inside Amanzi.  `"extreme`" is recommended for developers and debugging.  For users wishing to monitor solver performance and convergence more closely or debug input files, `"high`" is recommended.
 

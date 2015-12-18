@@ -47,6 +47,8 @@ Execution_controls
 
 * Updated available options for the ``execution_control`` attribute ``method``.  Available option is: bdf1.
 
+* The attribute ``max_cycles`` is now valid for both structured and unstructured.
+
 Numerical_controls->unstr_transient_controls
 --------------------------------------------
 

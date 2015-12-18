@@ -276,7 +276,7 @@ The ``execution_control_defaults`` element specifies default values to be utiliz
 +------------------+----------------+----------------------------------+
 | method           | string         | ``bdf1``                         |
 +------------------+----------------+----------------------------------+
-| max_cycles [S]   | integer        | max cycles to use for structured |
+| max_cycles       | integer        | max number of cycles to use      |
 +------------------+----------------+----------------------------------+
 
 Execution_control
@@ -309,12 +309,12 @@ Individual time periods of the simulation are defined using ``execution_control`
 +------------------+----------------+----------------------------------------------------------+
 | method           | string         | ``bdf1``                                                 |
 +------------------+----------------+----------------------------------------------------------+
-| max_cycles [S]   | integer        | max cycles to use for structured                         |
+| max_cycles       | integer        | max number of cycles to use                              |
 +------------------+----------------+----------------------------------------------------------+
 
 Each ``execution_control`` element *requires* a start time.  If multiple ``execution_control`` elements are defined ``end`` times are not required for each element.  The ``start`` time of the next execution section is used as the ``end`` of the previous section.  However, at least one ``end`` time *must* defined within the ``execution_controls`` block.
 
-The attribute ``max_cycles`` is only valid for transient and transient with static flow execution modes under the structure algorithm.
+Under the structure algorithm, the attribute ``max_cycles`` is only valid for transient and transient with static flow execution modes.
 
 Both the ``restart`` and ``initialize`` options specify the name of the Amanzi checkpoint file previously created and to be used to start the current simulation.  TODO: DEFINE RESTART VS INITIALIZE HERE
 
