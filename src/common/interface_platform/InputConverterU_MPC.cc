@@ -75,48 +75,72 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   std::map<double, double> tp_dt0, tp_t1;
   std::map<double, int> tp_max_cycles;
 
-  children = node_list->item(0)->getChildNodes();
+  element = static_cast<DOMElement*>(node_list->item(0));
+  children = element->getElementsByTagName(mm.transcode("execution_control"));
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
     element = static_cast<DOMElement*>(inode);
 
-    tagname = mm.transcode(inode->getNodeName());
-    if (strcmp(tagname, "execution_control") == 0) {
-      t0 = GetAttributeValueD_(element, "start", TYPE_TIME);
-      t1 = GetAttributeValueD_(element, "end", TYPE_TIME);
-      dt0 = TimeStringToValue_(GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, dt0_d));
-      max_cycles = GetAttributeValueL_(element, "max_cycles", TYPE_NUMERICAL, false, -1);
-      std::string mode = GetAttributeValueS_(element, "mode", TYPE_NONE, false, mode_d);
+    t0 = GetAttributeValueD_(element, "start", TYPE_TIME);
+    t1 = GetAttributeValueD_(element, "end", TYPE_TIME, false, t0 - 10.0);
+    dt0 = TimeStringToValue_(GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, dt0_d));
+    max_cycles = GetAttributeValueL_(element, "max_cycles", TYPE_NUMERICAL, false, -1);
+    std::string mode = GetAttributeValueS_(element, "mode", TYPE_NONE, false, mode_d);
 
-      dt_cut_[mode] = TimeStringToValue_(GetAttributeValueS_(
-          element, "reduction_factor", TYPE_TIME, false, dt_cut_d));
-      dt_inc_[mode] = TimeStringToValue_(GetAttributeValueS_(
-          element, "increase_factor", TYPE_TIME, false, dt_inc_d));
+    dt_cut_[mode] = TimeStringToValue_(GetAttributeValueS_(
+        element, "reduction_factor", TYPE_TIME, false, dt_cut_d));
+    dt_inc_[mode] = TimeStringToValue_(GetAttributeValueS_(
+        element, "increase_factor", TYPE_TIME, false, dt_inc_d));
 
-      if (mode == "steady") {
-        t0_steady = t0;
-        t1_steady = t1;
-        dt0_steady = dt0;
-        max_cycles_steady = max_cycles;
-        flag_steady = true;
-      } else {
-        if (tp_mode.find(t0) != tp_mode.end()) {
-          msg << "Transient \"execution_controls\" cannot have the same start time.\n";
-          Exceptions::amanzi_throw(msg);
-        }  
+    if (mode == "steady") {
+      t0_steady = t0;
+      t1_steady = t1;
+      dt0_steady = dt0;
+      max_cycles_steady = max_cycles;
+      flag_steady = true;
+    } else {
+      if (tp_mode.find(t0) != tp_mode.end()) {
+        msg << "Transient \"execution_controls\" cannot have the same start time.\n";
+        Exceptions::amanzi_throw(msg);
+      }  
 
-        tp_mode[t0] = mode;
-        tp_t1[t0] = t1;
-        tp_dt0[t0] = dt0;
-        tp_max_cycles[t0] = max_cycles;
+      tp_mode[t0] = mode;
+      tp_t1[t0] = t1;
+      tp_dt0[t0] = dt0;
+      tp_max_cycles[t0] = max_cycles;
 
-        filename = GetAttributeValueS_(element, "restart", TYPE_NONE, false, "");
-      }
-
-      if (init_filename_.size() == 0)
-          init_filename_ = GetAttributeValueS_(element, "initialize", TYPE_NONE, false, "");
+      filename = GetAttributeValueS_(element, "restart", TYPE_NONE, false, "");
     }
+
+    if (init_filename_.size() == 0)
+        init_filename_ = GetAttributeValueS_(element, "initialize", TYPE_NONE, false, "");
+  }
+
+  // populate optional end-times 
+  flag = true;
+  std::map<double, double>::iterator it1, it2;
+  it1 = tp_t1.begin();
+  if (flag_steady && t1_steady < t0_steady) { 
+    if (it1 != tp_t1.end())
+      t1_steady = it1->first;
+    else
+      flag = false;
+  }
+
+  if (it1 != tp_t1.end()) {
+    it2 = it1;
+    it2++; 
+    for (; it2 != tp_t1.end(); it2++) {
+      it1->second = it2->first;
+      it1 = it2;
+    }
+    if (it1->second < it1->first) flag = false;
+  }
+
+  if (!flag) {
+    msg << "Execution_constrols have incorrect attribute \"end\".\n";
+    Exceptions::amanzi_throw(msg);
   }
 
   // old version 
@@ -316,8 +340,8 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
 
     tagname = mm.transcode(inode->getNodeName());
     if (strcmp(tagname, "execution_control") == 0) {
-      t0 = TimeStringToValue_(GetAttributeValueS_(element, "start"));
-      t1 = TimeStringToValue_(GetAttributeValueS_(element, "end"));
+      t0 = GetAttributeValueD_(element, "start", TYPE_TIME);
+      t1 = GetAttributeValueD_(element, "end", TYPE_TIME);
       dt0 = TimeStringToValue_(GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, dt0_d));
       std::string mode = GetAttributeValueS_(element, "mode", TYPE_NONE, false, mode_d);
 
