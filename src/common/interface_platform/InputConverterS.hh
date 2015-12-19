@@ -65,6 +65,7 @@ class InputConverterS : public InputConverter {
   std::map<std::string, std::string> labeled_times_, labeled_numbers_, labeled_area_mass_fluxes_;
   std::vector<double> lo_coords_, hi_coords_;
   std::string chemistry_engine_;
+  std::vector<std::string> solutes_;
 };
 
 }  // namespace AmanziInput

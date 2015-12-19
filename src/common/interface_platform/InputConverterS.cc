@@ -1348,7 +1348,23 @@ void InputConverterS::ParseProcessKernels_()
       AddToTable(table, MakePPPrefix("prob", "chemistry_model"), MakePPEntry("Alquimia"));
       if (chemistry_engine_ == "pflotran")
         AddToTable(table, MakePPPrefix("Chemistry", "Engine"), MakePPEntry("PFloTran"));
-      // FIXME: What else here?
+      else if (chemistry_engine_ == "crunchflow")
+        AddToTable(table, MakePPPrefix("Chemistry", "Engine"), MakePPEntry("CrunchFlow"));
+      
+      bool rnfound;
+      DOMElement* rxn_network = GetChildByName_(chemistry, "reaction_network", rnfound);
+      if (rnfound)
+      {
+        string engine_input = GetAttributeValueS_(rxn_network, "file");
+        AddToTable(table, MakePPPrefix("Chemistry", "Engine_Input_File"), MakePPEntry(engine_input));
+      }
+      else
+      {
+        Errors::Message msg;
+        msg << "\"reaction_network\" not present in Alquimia geochemistry entry."
+        msg << "Please correct and try again.\n";
+        Exceptions::amanzi_throw(msg);
+      }
     }
     else
     {
@@ -1389,13 +1405,23 @@ void InputConverterS::ParsePhases_()
       vector<DOMNode*> sols = GetChildren_(solutes, "solute", found);
       for (size_t i = 0; i < sols.size(); ++i)
       {
-        // FIXME: Really confused about what goes here.
+        MemoryManager mm;
+        string sol_name = TrimString_(mm.transcode(sols[i]->getTextContent()));
+
+        // Record the name for later.
+        solutes_.push_back(sol_name);
+
+        // Record the coefficient of diffusion.
+        DOMElement* solute = static_cast<DOMElement*>(sols[i]);
+        string diff_coeff = GetAttributeValueS_(solute, "coefficient_of_diffusion");
+        AddToTable(table, MakePPPrefix("tracer", sol_name, "molecularDiffusivity"), MakePPEntry(diff_coeff));
       }
     }
     else
     {
       // No information on solutes--we have a single component with the same 
       // name as the liquid phase.
+      solutes_.push_back(name);
       vector<string> components(1, name);
       AddToTable(table, MakePPPrefix("phase", name, "comps"), MakePPEntry(components));
 
@@ -1460,26 +1486,26 @@ void InputConverterS::ParseInitialConditions_()
                 for (size_t j = 0; j < nodes.size(); ++j) {
                   DOMElement* elt = static_cast<DOMElement*>(nodes[j]);
                   if (ic_type_labels[i]=="velocity") {
-		    vel.push_back(GetAttributeValueS_(elt, "x", true));
-		    vel.push_back(GetAttributeValueS_(elt, "y", true));
-		    if (dim_ > 2) {
-		      vel.push_back(GetAttributeValueS_(elt, "z", true));
-		    }
-		  } else {
-		    values.push_back(GetAttributeValueS_(elt, "value", true));
-		  }
+                    vel.push_back(GetAttributeValueS_(elt, "x", true));
+                    vel.push_back(GetAttributeValueS_(elt, "y", true));
+                    if (dim_ > 2) {
+                      vel.push_back(GetAttributeValueS_(elt, "z", true));
+                    }
+                  } else {
+                    values.push_back(GetAttributeValueS_(elt, "value", true));
+                  }
 
                   // Get extra info, if required
                   if (ic_type_labels[i]=="linear_pressure"
                       || ic_type_labels[i]=="linear_saturation") {
 
-		    gvalues = GetAttributeVector_(elt, "gradient", true);
-		    if (gvalues.size() != dim_)
-		      ThrowErrorIllformed_("initial_conditions->linear_pressure", "coordinate array", "gradient");
-		    
-		    rpoints = GetAttributeVector_(elt, "reference_coord", true);
-		    if (rpoints.size() != dim_)
-		      ThrowErrorIllformed_("initial_conditions->linear_pressure", "coordinate array", "reference_coord");
+                    gvalues = GetAttributeVector_(elt, "gradient", true);
+                    if (gvalues.size() != dim_)
+                      ThrowErrorIllformed_("initial_conditions->linear_pressure", "coordinate array", "gradient");
+
+                    rpoints = GetAttributeVector_(elt, "reference_coord", true);
+                    if (rpoints.size() != dim_)
+                      ThrowErrorIllformed_("initial_conditions->linear_pressure", "coordinate array", "reference_coord");
                   }
                 }
 
@@ -1513,11 +1539,32 @@ void InputConverterS::ParseInitialConditions_()
           Exceptions::amanzi_throw(msg);
         }
 
+        // Sniff out geochemical conditions, if any.
+        bool gcfound = false;
+        DOMElement* gc = GetChildByName_(ic, "geochemistry", gcfound);
+        if (gcfound)
+        {
+          bool cfound;
+          vector<DOMNode*> nodes = GetChildren_(gc, "constraint", cfound, true);
+          for (size_t c = 0; c < nodes.size(); ++c)
+          {
+            DOMElement* constraint = static_cast<DOMElement*>(nodes[c]);
+            string condition_name = GetAttributeValueS_(constraint, "name");
+            for (size_t i = 0; i < solutes_.size(); ++i)
+            {
+              AddToTable(table, MakePPPrefix("tracer", solutes_[i], ic_name, "geochemical_conditions"), MakePPEntry(condition_name));
+              AddToTable(table, MakePPPrefix("tracer", solutes_[i], ic_name, "type"), MakePPEntry("concentration"));
+            }
+          }
+        }
+
         // Assigned regions.
         bool rfound = false;
         vector<string> assigned_regions = GetChildVectorS_(ic, "assigned_regions", rfound, true);
         if (rfound) {
           AddToTable(table, MakePPPrefix("comp", "ics", ic_name, "regions"), MakePPEntry(assigned_regions));
+          for (size_t i = 0; i < solutes_.size(); ++i)
+            AddToTable(table, MakePPPrefix("tracer", solutes_[i], ic_name, "regions"), MakePPEntry(assigned_regions));
         } else {
           Errors::Message msg;
           msg << "\"assigned_regions\" not present in initial_condition \"" << ic_name << "\".\n";
@@ -1525,7 +1572,11 @@ void InputConverterS::ParseInitialConditions_()
           Exceptions::amanzi_throw(msg);
         }
       }
+
+      // List initial conditions where needed.
       AddToTable(table, MakePPPrefix("comp", "ic_labels"), MakePPEntry(ic_names));
+      for (size_t i = 0; i < solutes_.size(); ++i)
+        AddToTable(table, MakePPPrefix("tracer", solutes_[i], "tinits"), MakePPEntry(ic_names));
     }
   }
   ParmParse::appendTable(table);
@@ -1658,11 +1709,32 @@ void InputConverterS::ParseBoundaryConditions_()
           Exceptions::amanzi_throw(msg);
         }
 
+        // Sniff out geochemical conditions, if any.
+        bool gcfound = false;
+        DOMElement* gc = GetChildByName_(bc, "geochemistry", gcfound);
+        if (gcfound)
+        {
+          bool cfound;
+          vector<DOMNode*> nodes = GetChildren_(gc, "constraint", cfound, true);
+          for (size_t c = 0; c < nodes.size(); ++c)
+          {
+            DOMElement* constraint = static_cast<DOMElement*>(nodes[c]);
+            string condition_name = GetAttributeValueS_(constraint, "name");
+            for (size_t i = 0; i < solutes_.size(); ++i)
+            {
+              AddToTable(table, MakePPPrefix("tracer", solutes_[i], bc_name, "geochemical_conditions"), MakePPEntry(condition_name));
+              AddToTable(table, MakePPPrefix("tracer", solutes_[i], bc_name, "type"), MakePPEntry("concentration"));
+            }
+          }
+        }
+
         // Assigned regions.
         bool rfound = false;
         vector<string> assigned_regions = GetChildVectorS_(bc, "assigned_regions", rfound, true);
         if (rfound) {
           AddToTable(table, MakePPPrefix("comp", "bcs", bc_name, "regions"), MakePPEntry(assigned_regions));
+          for (size_t i = 0; i < solutes_.size(); ++i)
+            AddToTable(table, MakePPPrefix("tracer", solutes_[i], bc_name, "regions"), MakePPEntry(assigned_regions));
         } else {
           Errors::Message msg;
           msg << "\"assigned_regions\" not present in boundary_condition \"" << bc_name << "\".\n";
@@ -1670,7 +1742,11 @@ void InputConverterS::ParseBoundaryConditions_()
           Exceptions::amanzi_throw(msg);
         }
       }
+
+      // List boundary conditions where needed.
       AddToTable(table, MakePPPrefix("comp", "bc_labels"), MakePPEntry(bc_names));
+      for (size_t i = 0; i < solutes_.size(); ++i)
+        AddToTable(table, MakePPPrefix("tracer", solutes_[i], "tbcs"), MakePPEntry(bc_names));
     }
   }
   ParmParse::appendTable(table);
