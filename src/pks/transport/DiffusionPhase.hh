@@ -1,5 +1,5 @@
 /*
-  This is the transport component of the Amanzi code. 
+  Transport PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -7,7 +7,6 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-  Usage: 
 */
 
 #ifndef AMANZI_DIFFUSION_PHASE_HH_

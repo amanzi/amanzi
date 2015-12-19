@@ -1,14 +1,15 @@
 /*
-  This is the transport component of the Amanzi code. 
+  Transport PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  A collection of MDMs along with a mesh partition and supporting parameters.
+  A collection of MDMs along with a mesh partition and 
+  supporting parameters.
 */
 
 #ifndef AMANZI_TRANSPORT_MDM_PARTITION_HH_
