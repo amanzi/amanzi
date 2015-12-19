@@ -15,8 +15,7 @@
 
 #include "mpi.h"
 
-namespace Amanzi 
-{
+namespace Amanzi {
 
 // Forward declare the manager so that it can be a friend
 class TimerManager;

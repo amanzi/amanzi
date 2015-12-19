@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -29,7 +29,7 @@
 #include "independent_variable_field_evaluator_fromfunction.hh"
 #include "PK.hh"
 #include "primary_variable_field_evaluator.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "VerboseObject.hh"
 
 // Flow
@@ -75,7 +75,6 @@ class Flow_PK : public FnTimeIntegratorPK {
   int FindPosition(int f, AmanziMesh::Entity_ID_List faces);
 
   // -- io members
-  void ProcessStringSourceDistribution(const std::string name, int* method);
   void OutputTimeHistory(const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dt_history);
   void WriteGMVfile(Teuchos::RCP<State> S) const;
 
@@ -162,8 +161,7 @@ class Flow_PK : public FnTimeIntegratorPK {
   Teuchos::RCP<Epetra_Vector> shift_water_table_;
 
   // water balance
-  FlowDomainFunction* src_sink;
-  int src_sink_distribution; 
+  std::vector<FlowDomainFunction*> srcs;
   mutable double mass_bc, seepage_mass_, mass_initial;
 
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)

@@ -1,5 +1,5 @@
 /*
-  This is the state component of the Amanzi code. 
+  State
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -10,15 +10,20 @@
            Ethan Coon (ecoon@lanl.gov)
 */
 
-#include "UnitTest++.h"
+// TPLs
+#include "Epetra_MpiComm.h"
+#include "Epetra_Vector.h"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
-#include "State.hh"
+#include "UnitTest++.h"
+
+// Amanzi
 #include "MeshFactory.hh"
-#include "visualization.hh"
+
+// State
+#include "State.hh"
+#include "Visualization.hh"
 
 
 SUITE(VISUALIZATION) {
@@ -98,13 +103,10 @@ SUITE(VISUALIZATION) {
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, gm);
 
     Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("state");
-    
     Teuchos::Ptr<Amanzi::State> S0 = Teuchos::ptr(new Amanzi::State(state_list));
 
     S0->RegisterMesh("domain",Mesh);
-
     S0->RequireField("celldata")->SetMesh(Mesh)->SetGhosted(false)->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
-
     S0->Setup();
     S0->InitializeFields();
     
@@ -117,6 +119,5 @@ SUITE(VISUALIZATION) {
 
     WriteVis(V, S0);
   }
-
 }
 

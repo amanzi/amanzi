@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -66,7 +66,7 @@ void Richards_PK::Functional(double t_old, double t_new,
   op_matrix_diff_->ApplyBCs(true, true);
 
   Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
-  if (src_sink != NULL) AddSourceTerms(*rhs);
+  AddSourceTerms(*rhs);
 
   op_matrix_->ComputeNegativeResidual(*u_new->Data(), *f->Data());
 
@@ -141,7 +141,7 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
   // We assume the same DOFs for pressure and temperature. 
   // We assume that field temperature has already essential BCs.
   op_vapor_->Init();
-  op_vapor_diff_->Setup(kvapor_temp, Teuchos::null);
+  op_vapor_diff_->SetScalarCoefficient(kvapor_temp, Teuchos::null);
   op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op_vapor_diff_->ApplyBCs(false, false);
 
@@ -153,7 +153,7 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
   // Calculate vapor contribution due to capillary pressure.
   // We elliminate essential BCs to re-use the local Op for PC.
   op_vapor_->Init();
-  op_vapor_diff_->Setup(kvapor_pres, Teuchos::null);
+  op_vapor_diff_->SetScalarCoefficient(kvapor_pres, Teuchos::null);
   op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op_vapor_diff_->ApplyBCs(false, true);
 
@@ -333,6 +333,12 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
     CompositeVector& dwc_dp = *S_->GetFieldData("dwater_content_dpressure", "water_content");
 
     op_acc_->AddAccumulationTerm(*u->Data(), dwc_dp, dtp, "cell");
+ 
+    // estimate CNLS limiters
+    if (algebraic_water_content_balance_) {
+      const CompositeVector& wc = *S_->GetFieldData("water_content");
+      CalculateCNLSLimiter_(wc, dwc_dp, bdf1_dae->tol_solver());
+    }
   }
 
   // Add vapor diffusion. We assume that the corresponding local operator
@@ -371,6 +377,12 @@ double Richards_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   double error;
   error = ErrorNormSTOMP(*u->Data(), *du->Data());
 
+  // exact algebraic relation between saturation and Darcy flux
+  // requires to save the last increment.
+  if (algebraic_water_content_balance_) {
+    *cnls_limiter_->ViewComponent("dpre") = *du->Data()->ViewComponent("cell");
+  }
+ 
   return error;
 }
 

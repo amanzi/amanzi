@@ -9,8 +9,8 @@
  * 
  */
 
-#ifndef _BoxRegion_hh_
-#define _BoxRegion_hh_
+#ifndef AMANZI_BOX_REGION_HH_
+#define AMANZI_BOX_REGION_HH_
 
 #include "Region.hh"
 
@@ -27,10 +27,7 @@ public:
 
   /// Default constructor uses two corner points (order not important).
 
-  BoxRegion(const std::string name, const unsigned int id, const Point& p0, 
-            const Point& p1, const LifeCycleType lifecycle=PERMANENT,
-            const VerboseObject *verbobj=NULL);
-  BoxRegion(const char *name, const unsigned int id, const Point& p0, 
+  BoxRegion(const Set_Name& name, const Set_ID id, const Point& p0, 
             const Point& p1, const LifeCycleType lifecycle=PERMANENT,
             const VerboseObject *verbobj=NULL);
 
@@ -83,12 +80,6 @@ protected:
 
 };
 
-/// A smart pointer to BoxRegion instances
-//
-// typedef Teuchos::RCP<BoxRegion> BoxRegionPtr;
-
-// RVG: I am not able to correctly code a region factory using smart
-// pointers so I will revert to a simpler definition
 
 typedef BoxRegion *BoxRegionPtr;
 

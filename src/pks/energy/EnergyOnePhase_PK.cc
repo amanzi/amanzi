@@ -111,11 +111,11 @@ void EnergyOnePhase_PK::Initialize()
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
 
   Operators::OperatorDiffusionFactory opfactory;
-  op_matrix_diff_ = opfactory.Create(mesh_, op_bc_, oplist_matrix);
+  op_matrix_diff_ = opfactory.Create(oplist_matrix, mesh_, op_bc_);
   op_matrix_diff_->SetBCs(op_bc_, op_bc_);
   op_matrix_ = op_matrix_diff_->global_operator();
   op_matrix_->Init();
-  op_matrix_diff_->Setup(S_->GetFieldData(conductivity_key_), Teuchos::null);
+  op_matrix_diff_->SetScalarCoefficient(S_->GetFieldData(conductivity_key_), Teuchos::null);
 
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
   op_matrix_advection_ = Teuchos::rcp(new Operators::OperatorAdvection(oplist_adv, mesh_));
@@ -125,11 +125,11 @@ void EnergyOnePhase_PK::Initialize()
   op_advection_ = op_matrix_advection_->global_operator();
 
   // initialize coupled operators: diffusion + advection + accumulation
-  op_preconditioner_diff_ = opfactory.Create(mesh_, op_bc_, oplist_pc);
+  op_preconditioner_diff_ = opfactory.Create(oplist_pc, mesh_, op_bc_);
   op_preconditioner_diff_->SetBCs(op_bc_, op_bc_);
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
   op_preconditioner_->Init();
-  op_preconditioner_diff_->Setup(S_->GetFieldData(conductivity_key_), Teuchos::null);
+  op_preconditioner_diff_->SetScalarCoefficient(S_->GetFieldData(conductivity_key_), Teuchos::null);
 
   op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_));
   op_preconditioner_advection_ = Teuchos::rcp(new Operators::OperatorAdvection(oplist_adv, op_preconditioner_));

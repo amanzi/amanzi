@@ -1,5 +1,5 @@
 /*
-  This is the Transport component of Amanzi. 
+  Transport PK 
 
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -22,7 +22,7 @@
 
 #include "CommonDefs.hh"
 #include "Mesh.hh"
-#include "unique_mesh_function.hh"
+#include "UniqueMeshFunction.hh"
 
 namespace Amanzi {
 namespace Transport {

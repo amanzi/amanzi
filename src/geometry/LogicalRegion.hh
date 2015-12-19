@@ -35,16 +35,8 @@ public:
 
   /// Default constructor 
 
-  LogicalRegion(const std::string name, 
-                const unsigned int id, 
-                const std::string operation_str,
-                const std::vector<std::string> region_names,
-                const LifeCycleType lifecycle=PERMANENT,
-                const VerboseObject *verbobj=NULL);
-
-
-  LogicalRegion(const char *name, 
-                const unsigned int id, 
+  LogicalRegion(const Set_Name& name, 
+                const Set_ID id, 
                 const std::string operation_str,
                 const std::vector<std::string> region_names,
                 const LifeCycleType lifecycle=PERMANENT,

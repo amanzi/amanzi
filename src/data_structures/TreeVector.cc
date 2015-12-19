@@ -62,8 +62,7 @@ void TreeVector::InitMap_() {
 TreeVector& TreeVector::operator=(const TreeVector &other) {
   if (&other != this) {
     // Ensure the maps match.
-    bool same = map_->SameAs(*other.map_);
-    ASSERT(same);
+    ASSERT(map_->SubsetOf(*other.map_));
 
     if (other.data_ != Teuchos::null) {
       *data_ = *other.data_;
@@ -211,7 +210,7 @@ int TreeVector::Dot(const TreeVector& other, double* result) const {
   // viewed as one flat vector
   if (result == NULL) return 1;
   if (data_ == Teuchos::null && subvecs_.size() == 0) return 1;
-  if (!map_->SameAs(*other.map_)) return 1;
+  //  if (!map_->SameAs(*other.map_)) return 1;
 
   int ierr = 0;
   *result = 0.0;
@@ -231,7 +230,7 @@ int TreeVector::Dot(const TreeVector& other, double* result) const {
 
 // this <- scalarA*A + scalarThis*this
 TreeVector& TreeVector::Update(double scalarA, const TreeVector& A, double scalarThis) {
-  ASSERT(map_->SameAs(*A.map_));
+  //  ASSERT(map_->SubsetOf(*A.map_));
 
   if (data_ != Teuchos::null) {
     data_->Update(scalarA, *A.data_, scalarThis);
@@ -244,8 +243,8 @@ TreeVector& TreeVector::Update(double scalarA, const TreeVector& A, double scala
 
 TreeVector& TreeVector::Update(double scalarA, const TreeVector& A,
         double scalarB, const TreeVector& B, double scalarThis) {
-  ASSERT(map_->SameAs(*A.map_));
-  ASSERT(map_->SameAs(*B.map_));
+  //  ASSERT(map_->SubsetOf(*A.map_));
+  //  ASSERT(map_->SubsetOf(*B.map_));
 
   if (data_ != Teuchos::null) {
     data_->Update(scalarA, *A.data_, scalarB, *B.data_, scalarThis);
@@ -258,8 +257,8 @@ TreeVector& TreeVector::Update(double scalarA, const TreeVector& A,
 
 int TreeVector::Multiply(double scalarAB, const TreeVector& A, const TreeVector& B,
                          double scalarThis) {
-  ASSERT(map_->SameAs(*A.map_));
-  ASSERT(map_->SameAs(*B.map_));
+  //  ASSERT(map_->SubsetOf(*A.map_));
+  //  ASSERT(map_->SubsetOf(*B.map_));
 
   int ierr = 0;
   if (data_ != Teuchos::null) {
@@ -276,8 +275,8 @@ int TreeVector::Multiply(double scalarAB, const TreeVector& A, const TreeVector&
 
 int TreeVector::ReciprocalMultiply(double scalarAB, const TreeVector& A,
         const TreeVector& B, double scalarThis) {
-  ASSERT(map_->SameAs(*A.map_));
-  ASSERT(map_->SameAs(*B.map_));
+  //  ASSERT(map_->SubsetOf(*A.map_));
+  //  ASSERT(map_->SubsetOf(*B.map_));
 
   int ierr = 0;
   if (data_ != Teuchos::null) {
@@ -325,4 +324,18 @@ void TreeVector::SetData(const Teuchos::RCP<CompositeVector>& data) {
   }
 };
 
+
+int TreeVector::GlobalLength() const {
+  int total = 0;
+  if (data_ != Teuchos::null) {
+    total += data_->GlobalLength();
+  }
+  
+  for (std::vector< Teuchos::RCP<TreeVector> >::const_iterator subvec = subvecs_.begin();
+       subvec != subvecs_.end(); ++subvec) {
+    total += (*subvec)->GlobalLength();
+  }
+  return total;
+};
+  
 } // namespace

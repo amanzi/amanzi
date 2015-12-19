@@ -44,7 +44,6 @@ file(GLOB mesh_inc_files "*.hh")
 add_install_include_file(${mesh_inc_files})
 
 
-
 # Derived and support classes
 
 add_subdirectory(mesh_data)
@@ -72,6 +71,7 @@ endif(ENABLE_MSTK_Mesh)
 # Factory class
 
 add_subdirectory(mesh_factory)
+add_subdirectory(mesh_logical)
 
 
 

@@ -17,7 +17,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "exceptions.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "Point.hh"
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
@@ -30,7 +30,7 @@
 namespace Amanzi {
 namespace Operators {
 
-class OperatorDiffusionMFD : public OperatorDiffusion {
+class OperatorDiffusionMFD : public virtual OperatorDiffusion {
  public:
   OperatorDiffusionMFD(Teuchos::ParameterList& plist,
                        const Teuchos::RCP<Operator>& global_op) :
@@ -63,10 +63,9 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   }
 
   // main virtual members for populating an operator
-  using OperatorDiffusion::Setup;
-  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
-  virtual void Setup(const Teuchos::RCP<const CompositeVector>& k,
-                     const Teuchos::RCP<const CompositeVector>& dkdp);
+  virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
+  virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
+				    const Teuchos::RCP<const CompositeVector>& dkdp);
 
   // -- To calculate elemetal matrices, we can use input parameters flux 
   //    and u from the previous nonlinear iteration. Otherwise, use null-pointers.
@@ -78,7 +77,7 @@ class OperatorDiffusionMFD : public OperatorDiffusion {
   //    placeholder for new approximation methods.
   virtual void UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
                                               const Teuchos::Ptr<const CompositeVector>& u,
-                                              double scalar_limiter);
+                                              double scalar_limiter=1);
 
   // modify the operator
   // -- by incorporating boundary conditions. Variable 'primary' indicates

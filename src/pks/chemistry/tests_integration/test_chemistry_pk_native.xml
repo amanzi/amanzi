@@ -111,125 +111,23 @@
 
     <ParameterList name="initial conditions">
       <ParameterList name="free_ion_species">
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="5"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="4.36475999999999975e-16"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 2 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="3.16771999999999973e-08"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 3 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="9.99999999999999955e-07"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 4 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.86999999999999992e-04"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 5 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.84374000000000001e-20"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
+        <Parameter name="function" type="string" value="list was moved to State"/>
       </ParameterList>
 
       <ParameterList name="mineral_volume_fractions">
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="3"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="5.00000000000000028e-02"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 2 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="2.00000000000000011e-01"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 3 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="7.50000000000000000e-01"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
+        <Parameter name="function" type="string" value="list was moved to State"/>
+      </ParameterList>
+
+      <ParameterList name="mineral_volume_fractions">
+        <Parameter name="function" type="string" value="list was moved to State"/>
       </ParameterList>
 
       <ParameterList name="mineral_specific_surface_area">
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="3"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="2.00000000000000010e-04"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 2 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.00000000000000005e-04"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 3 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="2.99999999999999989e-01"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
+        <Parameter name="function" type="string" value="list was moved to State"/>
       </ParameterList>
 
       <ParameterList name="sorption_sites">
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="3"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="5.36000000000000018e-03"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 2 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="6.36000000000000020e-03"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 3 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="4.36000000000000016e-03"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
+        <Parameter name="function" type="string" value="list was moved to State"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -386,6 +284,128 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="free_ion_species">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="Number of DoFs" type="int" value="5"/>
+              <Parameter name="Function type" type="string" value="composite function"/>
+              <ParameterList name="DoF 1 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="4.36475999999999975e-16"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 2 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="3.16771999999999973e-08"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 3 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="9.99999999999999955e-07"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 4 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.86999999999999992e-04"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 5 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.84374000000000001e-20"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="mineral_volume_fractions">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="Number of DoFs" type="int" value="3"/>
+              <Parameter name="Function type" type="string" value="composite function"/>
+              <ParameterList name="DoF 1 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="5.00000000000000028e-02"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 2 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="2.00000000000000011e-01"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 3 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="7.50000000000000000e-01"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="mineral_specific_surface_area">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="Number of DoFs" type="int" value="3"/>
+              <Parameter name="Function type" type="string" value="composite function"/>
+              <ParameterList name="DoF 1 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="2.00000000000000010e-04"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 2 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.00000000000000005e-04"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 3 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="2.99999999999999989e-01"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="sorption_sites">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="Number of DoFs" type="int" value="3"/>
+              <Parameter name="Function type" type="string" value="composite function"/>
+              <ParameterList name="DoF 1 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="5.36000000000000018e-03"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 2 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="6.36000000000000020e-03"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 3 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="4.36000000000000016e-03"/>
+                </ParameterList>
               </ParameterList>
             </ParameterList>
           </ParameterList>

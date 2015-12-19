@@ -1,13 +1,15 @@
 /*
-  This is the mimetic discretization component of the Amanzi code. 
+  WhetStone, version 2.0
+  Release name: naka-to.
 
   Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Release name: ara-to.
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  The mimetic finite difference method.
 */
 
 #include <cmath>
@@ -18,7 +20,7 @@
 #include "errors.hh"
 
 #include "DenseMatrix.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "mfd3d_electromagnetics.hh"
 
 namespace Amanzi {
@@ -26,9 +28,10 @@ namespace WhetStone {
 
 /* ******************************************************************
 * Efficient implementation is possible in 2D. Hence, we fork the code.
+* Non-symmetric tensor is not yet used.
 ****************************************************************** */
 int MFD3D_Electromagnetics::L2consistency(int c, const Tensor& T,
-                                          DenseMatrix& N, DenseMatrix& Mc)
+                                          DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
   int ok, d = mesh_->space_dimension();
   if (d == 2) {
@@ -201,7 +204,7 @@ int MFD3D_Electromagnetics::L2consistency3D_(int c, const Tensor& T,
 * Efficient implementation is possible in 2D. Hence, we fork the code.
 ****************************************************************** */
 int MFD3D_Electromagnetics::L2consistencyInverse(
-    int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
+    int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
 {
   int ok, d = mesh_->space_dimension();
   if (d == 2) {
@@ -519,12 +522,11 @@ int MFD3D_Electromagnetics::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
   int nrows = M.NumRows();
 
   DenseMatrix N(nrows, d);
-  DenseMatrix Mc(nrows, nrows);
 
-  int ok = L2consistency(c, T, N, Mc);
+  int ok = L2consistency(c, T, N, M, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityScalar(c, N, Mc, M);
+  StabilityScalar(c, N, M);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -538,12 +540,11 @@ int MFD3D_Electromagnetics::MassMatrixOptimized(int c, const Tensor& T, DenseMat
   int nrows = M.NumRows();
 
   DenseMatrix N(nrows, d);
-  DenseMatrix Mc(nrows, nrows);
 
-  int ok = L2consistency(c, T, N, Mc);
+  int ok = L2consistency(c, T, N, M, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  ok = StabilityOptimized(T, N, Mc, M);
+  ok = StabilityOptimized(T, N, M);
   return ok;
 }
 
@@ -557,12 +558,11 @@ int MFD3D_Electromagnetics::MassMatrixInverse(int c, const Tensor& T, DenseMatri
   int nrows = W.NumRows();
 
   DenseMatrix R(nrows, d);
-  DenseMatrix Wc(nrows, nrows);
 
-  int ok = L2consistencyInverse(c, T, R, Wc);
+  int ok = L2consistencyInverse(c, T, R, W, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityScalar(c, R, Wc, W);
+  StabilityScalar(c, R, W);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -578,12 +578,11 @@ int MFD3D_Electromagnetics::MassMatrixInverseOptimized(
   int nrows = W.NumRows();
 
   DenseMatrix R(nrows, d);
-  DenseMatrix Wc(nrows, nrows);
 
-  int ok = L2consistencyInverse(c, T, R, Wc);
+  int ok = L2consistencyInverse(c, T, R, W, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  ok = StabilityOptimized(T, R, Wc, W);
+  ok = StabilityOptimized(T, R, W);
   return ok;
 }
 
@@ -598,12 +597,11 @@ int MFD3D_Electromagnetics::StiffnessMatrix(int c, const Tensor& T, DenseMatrix&
 
   int nd = d * (d + 1) / 2;
   DenseMatrix N(nedges, nd);
-  DenseMatrix Ac(nedges, nedges);
 
-  int ok = H1consistency(c, T, N, Ac);
+  int ok = H1consistency(c, T, N, A);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityScalar(c, N, Ac, A);
+  StabilityScalar(c, N, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -619,12 +617,11 @@ int MFD3D_Electromagnetics::StiffnessMatrixOptimized(
 
   int nd = d * (d + 1) / 2;
   DenseMatrix N(nedges, nd);
-  DenseMatrix Ac(nedges, nedges);
 
-  int ok = H1consistency(c, T, N, Ac);
+  int ok = H1consistency(c, T, N, A);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  ok = StabilityOptimized(T, N, Ac, A);
+  ok = StabilityOptimized(T, N, A);
   return ok;
 }
 

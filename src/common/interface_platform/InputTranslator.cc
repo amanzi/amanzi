@@ -1948,7 +1948,7 @@ Teuchos::ParameterList get_execution_controls(DOMDocument* xmlDoc, Teuchos::Para
                   }
                   else if (elemName == "preconditioning_strategy") {
                     textContent = XMLString::transcode(currentNode->getTextContent());
-                    std::string textValue(std::string(textContent));
+                    std::string textValue(textContent);
                     std::string op("linearized_operator");
                     if (strcmp(textContent,"diffusion_operator")==0) {
                       op = "Diffusion Operator";

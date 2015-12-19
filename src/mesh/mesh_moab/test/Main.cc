@@ -7,8 +7,10 @@ int main(int argc, char *argv[])
 
   MPI_Init(&argc,&argv);
 
-  int ok = UnitTest::RunAllTests ();
+  int status = UnitTest::RunAllTests ();
 
   MPI_Finalize();
+ 
+  return status;
 }
 

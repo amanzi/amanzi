@@ -123,7 +123,7 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
                                        .sublist("diffusion operator")
                                        .sublist("preconditioner");
   OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op1 = opfactory.Create(mesh, bc, oplist);
+  Teuchos::RCP<OperatorDiffusion> op1 = opfactory.Create(oplist, mesh, bc);
   op1->SetBCs(bc, bc);
 
   // populate the diffusion operator

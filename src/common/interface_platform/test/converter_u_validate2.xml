@@ -1,5 +1,11 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+  <ParameterList name="Units">
+    <Parameter name="length" type="string" value="m"/>
+    <Parameter name="time" type="string" value="s"/>
+    <Parameter name="mass" type="string" value="kg"/>
+    <Parameter name="concentration" type="string" value="molar"/>
+  </ParameterList>
   <ParameterList name="Mesh">
     <ParameterList name="Unstructured">
       <ParameterList name="Expert">
@@ -661,6 +667,8 @@
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="1.0e-20"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <Parameter name="controller training start" type="int" value="0"/>
+        <Parameter name="controller training end" type="int" value="3"/>
         <ParameterList name="VerboseObject">
           <Parameter name="Verbosity Level" type="string" value="high"/>
         </ParameterList>
@@ -672,17 +680,6 @@
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="1.0e-20"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="GMRES for Newton">
-      <Parameter name="iterative method" type="string" value="gmres"/>
-      <ParameterList name="gmres parameters">
-        <Parameter name="error tolerance" type="double" value="1.0e-07"/>
-        <Parameter name="maximum number of iterations" type="int" value="50"/>
-        <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, relative residual}"/>
         <ParameterList name="VerboseObject">
           <Parameter name="Verbosity Level" type="string" value="high"/>
         </ParameterList>

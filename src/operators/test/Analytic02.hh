@@ -1,14 +1,14 @@
 /*
-  This is the operators component of the Amanzi code.
+  Operators
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Linear solution plus constant tensorial coefficient.
+  Linear solution for problem with constant tensorial coefficient.
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_02_HH_
@@ -36,13 +36,6 @@ class Analytic02 : public AnalyticBase {
     return x + 2 * y;
   }
 
-  Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    Amanzi::AmanziGeometry::Point v(2);
-    v[0] = -5.0;
-    v[1] = -3.0;
-    return v;
-  }
- 
   Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     Amanzi::AmanziGeometry::Point v(2);
     v[0] = 1.0;

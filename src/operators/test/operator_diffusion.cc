@@ -26,7 +26,7 @@
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
 #include "LinearOperatorFactory.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 // Operators
 #include "Analytic01.hh"
@@ -470,7 +470,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   }
 
   // populate the diffusion operator
-  op->Setup(knc->values(), knc->derivatives());
+  op->SetScalarCoefficient(knc->values(), knc->derivatives());
   op->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // get and assmeble the global operator
@@ -744,10 +744,10 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
     if (fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-      bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;  // We assume exterior normal.
+      bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
     } else if(fabs(xf[1]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_MIXED;
-      bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;  // We assume exterior normal.
+      bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
 
       double tmp = ana.pressure_exact(xf, 0.0);
       bc_mixed[f] = 1.0;
@@ -936,7 +936,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
   OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(mesh, bc_v, op_list, rho, g);
+  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(op_list, mesh, bc_v, rho, g);
   op->AddBCs(bc_f, bc_f);
   
   // populate the diffusion operator
@@ -1065,7 +1065,8 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
       bc_mixed[f] = 1.0;
       bc_value[f] -= bc_mixed[f] * tmp;
     */
-    } else if(fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6) {
+    } else if(fabs(xf[0] - 1.0) < 1e-6 || 
+              fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value[f] = ana.pressure_exact(xf, 0.0);
     }

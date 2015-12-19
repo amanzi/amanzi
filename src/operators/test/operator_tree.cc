@@ -25,7 +25,7 @@
 #include "MeshFactory.hh"
 #include "LinearOperatorFactory.hh"
 #include "mfd3d_diffusion.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 // Operiators
 #include "Analytic00.hh"
@@ -276,25 +276,21 @@ void RunTest(std::string op_list_name) {
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
                                       .get<Teuchos::ParameterList>(op_list_name);
   Operators::OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op00 = opfactory.Create(mesh, bc, olist);
-  op00->SetBCs(bc, bc);
-  op00->Setup(k1, Teuchos::null);
+  Teuchos::RCP<OperatorDiffusion> op00 = opfactory.Create(olist, mesh, bc);
+  op00->SetScalarCoefficient(k1, Teuchos::null);
   op00->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  Teuchos::RCP<OperatorDiffusion> op11 = opfactory.Create(mesh, bc, olist);
-  op11->SetBCs(bc, bc);
-  op11->Setup(k1, Teuchos::null);
+  Teuchos::RCP<OperatorDiffusion> op11 = opfactory.Create(olist, mesh, bc);
+  op11->SetScalarCoefficient(k1, Teuchos::null);
   op11->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // populate the off-diagonal Laplace operators
-  Teuchos::RCP<OperatorDiffusion> op01 = opfactory.Create(mesh, bc, olist);
-  op01->SetBCs(bc, bc);
-  op01->Setup(k2, Teuchos::null);
+  Teuchos::RCP<OperatorDiffusion> op01 = opfactory.Create(olist, mesh, bc);
+  op01->SetScalarCoefficient(k2, Teuchos::null);
   op01->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  Teuchos::RCP<OperatorDiffusion> op10 = opfactory.Create(mesh, bc, olist);
-  op10->SetBCs(bc, bc);
-  op10->Setup(k2, Teuchos::null);
+  Teuchos::RCP<OperatorDiffusion> op10 = opfactory.Create(olist, mesh, bc);
+  op10->SetScalarCoefficient(k2, Teuchos::null);
   op10->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // update right-hand side (ZERO) and apply boundary conditions

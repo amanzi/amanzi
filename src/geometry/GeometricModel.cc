@@ -199,21 +199,10 @@ RegionPtr GeometricModel::Region_i(const int i) const
 
 RegionPtr GeometricModel::FindRegion(const int id) const
 {
-
-  // FIXME: Can't get this to compile
-  // std::vector<RegionPtr>::iterator r;
-  // for (r = Regions.begin(); r != Regions.end(); r++)
-  //   {
-  //     if (r->id() == id)
-  //       return *r;
-  //   }
-
-  for (int i = 0; i < Regions.size(); i++) 
-    {
-      RegionPtr r = Regions[i];
-      if (r->id() == id)
-        return r;
-    }
+  for (std::vector<RegionPtr>::const_iterator r = Regions.begin();
+       r != Regions.end(); ++r) {
+    if ((*r)->id() == id) return *r;
+  }
   return NULL;
 }
 
@@ -222,21 +211,10 @@ RegionPtr GeometricModel::FindRegion(const int id) const
 
 RegionPtr GeometricModel::FindRegion(const std::string name) const
 {
-
-  // FIXME: Can't get this to compile
-  //  std::vector<RegionPtr>::iterator r;
-  //  for (r = Regions.begin(); r != Regions.end(); r++)
-  //    {
-  //      if (r->name() == name)
-  //        return *r;
-  //    }
-
-  for (int i = 0; i < Regions.size(); i++)
-    {
-      RegionPtr r = Regions[i];
-      if (r->name() == name)
-        return r;
-    }
+  for (std::vector<RegionPtr>::const_iterator r = Regions.begin();
+       r != Regions.end(); ++r) {
+    if ((*r)->name() == name) return *r;
+  }
   return NULL;
 }
 

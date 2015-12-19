@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -121,7 +121,9 @@ Richards_PK::~Richards_PK()
   if (bc_head != NULL) delete bc_head;
   if (bc_seepage != NULL) delete bc_seepage;
 
-  if (src_sink != NULL) delete src_sink;
+  for (int i = 0; i < srcs.size(); i++) {
+    if (srcs[i] != NULL) delete srcs[i]; 
+  }
   if (vo_ != NULL) delete vo_;
 }
 
@@ -354,9 +356,6 @@ void Richards_PK::Initialize()
   // Initialize miscalleneous default parameters.
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;
 
-  src_sink = NULL;
-  src_sink_distribution = 0;
-
   // create verbosity object
   Teuchos::ParameterList vlist;
   vlist.sublist("VerboseObject") = rp_list_->sublist("VerboseObject");
@@ -443,15 +442,15 @@ void Richards_PK::Initialize()
   oplist_pc.set<std::string>("nonlinear coefficient", upw_method);
 
   Operators::OperatorDiffusionFactory opfactory;
-  op_matrix_diff_ = opfactory.Create(mesh_, op_bc_, oplist_matrix, rho_, gravity_);
+  op_matrix_diff_ = opfactory.Create(oplist_matrix, mesh_, op_bc_, rho_, gravity_);
   op_matrix_ = op_matrix_diff_->global_operator();
-  op_preconditioner_diff_ = opfactory.Create(mesh_, op_bc_, oplist_pc, rho_, gravity_);
+  op_preconditioner_diff_ = opfactory.Create(oplist_pc, mesh_, op_bc_, rho_, gravity_);
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
   op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_));
 
   if (vapor_diffusion_) {
     Teuchos::ParameterList oplist_vapor = tmp_list.sublist("vapor matrix");
-    op_vapor_diff_ = opfactory.Create(mesh_, op_bc_, oplist_vapor);
+    op_vapor_diff_ = opfactory.Create(oplist_vapor, mesh_, op_bc_);
     op_vapor_ = op_vapor_diff_->global_operator();
     op_preconditioner_->OpPushBack(op_vapor_diff_->local_matrices(),
                                    Operators::OPERATOR_PROPERTY_DATA_READ_ONLY);
@@ -521,6 +520,15 @@ void Richards_PK::Initialize()
   // repeat upwind initialization, mainly for old MPC
   InitializeUpwind_();
 
+  // initialize well modeling
+  for (int i = 0; i < srcs.size(); ++i) {
+    int type = srcs[i]->CollectActionsList();
+    if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+      PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
+    }
+    srcs[i]->Compute(t_old, t_new, Kxy); 
+  }
+
   // initialize matrix and preconditioner operators.
   // -- setup phase
   // -- molar density requires to rescale gravity later.
@@ -546,7 +554,7 @@ void Richards_PK::Initialize()
 
   if (vapor_diffusion_) {
     // op_vapor_diff_->SetBCs(op_bc_);
-    op_vapor_diff_->Setup(Teuchos::null, Teuchos::null);
+    op_vapor_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
   }
 
   // generic linear solver for all cases except for a few
@@ -570,11 +578,6 @@ void Richards_PK::Initialize()
     }
   }
   
-  // initialize well modeling
-  if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-    PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
-  }
-
   // Optional step: calculate hydrostatic solution consistent with BCs
   // and clip it as requested. We have to do it only once at the beginning
   // of time period.
@@ -672,6 +675,16 @@ void Richards_PK::Initialize()
 
       InitializeUpwind_();
     }
+  }
+
+  // miscalleneous
+  algebraic_water_content_balance_ = rp_list_->get<bool>("algebraic water content balance", false);
+  if (algebraic_water_content_balance_) {
+    CompositeVectorSpace cvs; 
+    cvs.SetMesh(mesh_)->SetGhosted(false)
+        ->AddComponent("cell", AmanziMesh::CELL, 1)
+        ->AddComponent("dpre", AmanziMesh::CELL, 1);
+    cnls_limiter_ = Teuchos::rcp(new CompositeVector(cvs));
   }
 
   // verbose output
@@ -802,7 +815,7 @@ void Richards_PK::InitializeStatistics_()
     *vo_->os() << std::endl 
         << vo_->color("green") << "Initalization of PK is complete, T=" << S_->time()
         << " dT=" << dt_ << vo_->reset() << std::endl;
-    *vo_->os()<< "EC:" << error_control_ << " Src:" << src_sink_distribution
+    *vo_->os()<< "EC:" << error_control_ 
               << " Upwind:" << relperm_->method() << op_matrix_diff_->little_k()
               << " PC:\"" << preconditioner_name_.c_str() << "\"" 
               << " TI:\"" << ti_method_name.c_str() << "\"" << std::endl
@@ -963,12 +976,8 @@ void Richards_PK::CommitStep(double t_old, double t_new)
 ****************************************************************** */
 void Richards_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u)
 {
-  if (src_sink != NULL) {
-    if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      src_sink->ComputeDistribute(t_old, t_new, Kxy->Values());
-    } else {
-      src_sink->ComputeDistribute(t_old, t_new);
-    }
+  for (int i = 0; i < srcs.size(); ++i) {
+    srcs[i]->Compute(t_old, t_new, Kxy); 
   }
 
   bc_pressure->Compute(t_new);

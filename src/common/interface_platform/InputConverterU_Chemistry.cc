@@ -50,26 +50,54 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   // chemical engine
   bool flag;
   node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
-  element = static_cast<DOMElement*>(node);
-  std::string engine = GetAttributeValueS_(element, "engine");
+  std::string engine = GetAttributeValueS_(static_cast<DOMElement*>(node), "engine");
 
   // process engine
   bool native(false);
-  if (strcmp(engine.c_str(), "amanzi") == 0) {
-    out_list.set<std::string>("chemistry model", "Amanzi");
-    std::string bgdfilename = CreateBGDFile(xmlfilename_);
-    bgdfilename = GetAttributeValueS_(element, "input_filename", false, bgdfilename);
+  if (engine ==  "amanzi") {
     native = true;
+    out_list.set<std::string>("chemistry model", "Amanzi");
+
+    std::string bgdfilename, format("simple");
+    node = GetUniqueElementByTagsString_("geochemistry, amanzi_chemistry, reaction_network", flag);
+    if (flag) {
+      element = static_cast<DOMElement*>(node);
+      bgdfilename = GetAttributeValueS_(element, "file");
+      format = GetAttributeValueS_(element, "format", TYPE_NONE, false, format);
+    } else {
+      bgdfilename = CreateBGDFile(xmlfilename_);
+    }
 
     Teuchos::ParameterList& bgd_list = out_list.sublist("Thermodynamic Database");
-    bgd_list.set<std::string>("Format", "simple");
     bgd_list.set<std::string>("File", bgdfilename);
+    bgd_list.set<std::string>("Format", format);
 
-  } else if (strcmp(engine.c_str(), "pflotran") == 0) {
-    out_list.set<std::string>("chemistry model", "Alquimia");
-    out_list.set<std::string>("Engine", "PFloTran");
-    std::string inpfilename = GetAttributeValueS_(element, "input_filename");
-    out_list.set<std::string>("Engine Input File", inpfilename);
+  } else {
+    bool valid_engine(true);
+    std::string file_location;
+
+    if (engine == "pflotran") {
+      out_list.set<std::string>("Engine", "PFloTran");
+      file_location = "geochemistry, pflotran_chemistry, reaction_network";
+    } else if (engine == "crunchflow") {
+      out_list.set<std::string>("Engine", "CrunchFlow");
+      file_location = "geochemistry, crunchflow_chemistry, reaction_network";
+    } else {
+      valid_engine = false;
+    }
+
+    // Pass along chemistry engine info.
+    if (valid_engine) {
+      out_list.set<std::string>("chemistry model", "Alquimia");
+
+      // Find the name of the engine-specific input file.
+      node = GetUniqueElementByTagsString_(file_location, flag);
+      if (flag) {
+        element = static_cast<DOMElement*>(node);
+        std::string inpfilename = GetAttributeValueS_(element, "file");
+        out_list.set<std::string>("Engine Input File", inpfilename);
+      }
+    }
   }
   
   // minerals
@@ -80,7 +108,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
     for (int i = 0; i < children->getLength(); ++i) {
       DOMNode* inode = children->item(i);
-      std::string name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
+      std::string name = TrimString_(mm.transcode(inode->getTextContent()));
       minerals.push_back(name);
     }
   }
@@ -105,8 +133,8 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       out_list.set<Teuchos::Array<std::string> >("Minerals", minerals);
 
       if (pk_model_["chemistry"] == "amanzi") {
-        Teuchos::ParameterList &volfrac = ic_list.sublist("mineral_volume_fractions");
-        Teuchos::ParameterList &surfarea = ic_list.sublist("mineral_specific_surface_area");
+        Teuchos::ParameterList& volfrac = ic_list.sublist("mineral_volume_fractions");
+        Teuchos::ParameterList& surfarea = ic_list.sublist("mineral_specific_surface_area");
 
         for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); it++) {
           Teuchos::ParameterList& aux1_list = volfrac.sublist("function").sublist(*it)
@@ -131,8 +159,8 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
             double mvf(0.0), msa(0.0);
             if (flag) {
               element = GetUniqueChildByAttribute_(node, "name", minerals[j], flag, true);
-              mvf = GetAttributeValueD_(element, "volume_fraction", false, 0.0);
-              msa = GetAttributeValueD_(element, "specific_surface_area", false, 0.0);
+              mvf = GetAttributeValueD_(element, "volume_fraction", TYPE_NUMERICAL, false, 0.0);
+              msa = GetAttributeValueD_(element, "specific_surface_area", TYPE_NUMERICAL, false, 0.0);
             }
             aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", mvf);
             aux2_list.sublist(ss.str()).sublist("function-constant").set<double>("value", msa);
@@ -171,7 +199,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
         for (int j = 0; j < nsolutes; ++j) {
           std::string solute_name = phases_["water"][j];
           element = GetUniqueChildByAttribute_(node, "name", solute_name, flag, false);
-          double val = (!flag) ? 0.0 : GetAttributeValueD_(element, "selectivity", false, 0.0);
+          double val = (!flag) ? 0.0 : GetAttributeValueD_(element, "selectivity", TYPE_NUMERICAL, false, 0.0);
 
           std::stringstream ss;
           ss << "DoF " << j + 1 << " Function";
@@ -217,13 +245,13 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
           std::stringstream ss;
           ss << "DoF " << j + 1 << " Function";
 
-          double val = (!flag) ? 0.0 : GetAttributeValueD_(element, "kd", false, 0.0);
+          double val = (!flag) ? 0.0 : GetAttributeValueD_(element, "kd", TYPE_NUMERICAL, false, 0.0);
           aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", val);
 
-          val = (!flag) ? 0.0 : GetAttributeValueD_(element, "b", false, 0.0);
+          val = (!flag) ? 0.0 : GetAttributeValueD_(element, "b", TYPE_NUMERICAL, false, 0.0);
           aux2_list.sublist(ss.str()).sublist("function-constant").set<double>("value", val);
 
-          val = (!flag) ? 0.0 : GetAttributeValueD_(element, "n", false, 0.0);
+          val = (!flag) ? 0.0 : GetAttributeValueD_(element, "n", TYPE_NUMERICAL, false, 0.0);
           aux3_list.sublist(ss.str()).sublist("function-constant").set<double>("value", val);
         }
       }

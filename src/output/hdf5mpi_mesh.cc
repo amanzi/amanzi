@@ -475,6 +475,35 @@ void HDF5_MPI::writeAttrReal(double value, const std::string attrname, std::stri
 }
 
 
+void HDF5_MPI::writeAttrReal(double* value, int ndim, const std::string attrname)
+{
+  std::string h5path = "/";
+
+  char *loc_attrname = new char[attrname.size()+1];
+  strcpy(loc_attrname,attrname.c_str());
+
+  char *loc_h5path = new char[h5path.size()+1];
+  strcpy(loc_h5path,h5path.c_str());
+
+  int ndims(1);
+  int *adims = new int[1];
+  adims[0] = ndim;
+
+  parallelIO_write_attr(loc_attrname,
+                        reinterpret_cast<void*>(value),
+                        PIO_DOUBLE,
+                        ndims,
+                        adims,
+                        data_file_,
+                        loc_h5path,
+                        &IOgroup_);
+
+  delete [] loc_h5path;
+  delete [] loc_attrname;
+  delete [] adims;
+}
+
+
 void HDF5_MPI::writeAttrInt(int value, const std::string attrname)
 {
   std::string h5path = "/";
@@ -493,6 +522,35 @@ void HDF5_MPI::writeAttrInt(int value, const std::string attrname)
                                &IOgroup_);
   delete [] loc_h5path;
   delete [] loc_attrname;
+}
+
+
+void HDF5_MPI::writeAttrInt(int* value, int ndim, const std::string attrname)
+{
+  std::string h5path = "/";
+
+  char *loc_attrname = new char[attrname.size()+1];
+  strcpy(loc_attrname,attrname.c_str());
+
+  char *loc_h5path = new char[h5path.size()+1];
+  strcpy(loc_h5path,h5path.c_str());
+
+  int ndims(1);
+  int *adims = new int[1];
+  adims[0] = ndim;
+
+  parallelIO_write_attr(loc_attrname,
+                        reinterpret_cast<void*>(value),
+                        PIO_INTEGER,
+                        ndims,
+                        adims,
+                        data_file_,
+                        loc_h5path,
+                        &IOgroup_);
+
+  delete [] loc_h5path;
+  delete [] loc_attrname;
+  delete [] adims;
 }
 
 
@@ -549,6 +607,38 @@ void HDF5_MPI::readAttrReal(double &value, const std::string attrname)
 }
   
 
+void HDF5_MPI::readAttrReal(double **value, int *ndim, const std::string attrname)
+{
+  std::string h5path = "/";
+
+  char *loc_attrname = new char[attrname.size()+1];
+  strcpy(loc_attrname,attrname.c_str());
+
+  char *loc_h5path = new char[h5path.size()+1];
+  strcpy(loc_h5path,h5path.c_str());
+
+  double *loc_value;
+  int *pdims;
+  int ndims;
+  
+  parallelIO_read_attr(loc_attrname,
+                       reinterpret_cast<void**>(&loc_value),
+                       PIO_DOUBLE,
+                       &ndims,
+                       &pdims,
+                       data_file_,
+                       loc_h5path,
+                       &IOgroup_);
+
+  *value = loc_value;
+  *ndim = pdims[0];  // works only for one-dimensional vectors.
+
+  free(pdims);
+  delete [] loc_h5path;
+  delete [] loc_attrname;
+}
+
+
 void HDF5_MPI::readAttrInt(int &value, const std::string attrname)
 {
   std::string h5path = "/";
@@ -576,26 +666,43 @@ void HDF5_MPI::readAttrInt(int &value, const std::string attrname)
 }
 
 
+void HDF5_MPI::readAttrInt(int **value, int *ndim, const std::string attrname)
+{
+  std::string h5path = "/";
+
+  char *loc_attrname = new char[attrname.size()+1];
+  strcpy(loc_attrname,attrname.c_str());
+
+  char *loc_h5path = new char[h5path.size()+1];
+  strcpy(loc_h5path,h5path.c_str());
+
+  int *loc_value, *pdims;
+  int ndims;
+  
+  parallelIO_read_attr(loc_attrname,
+                       reinterpret_cast<void**>(&loc_value),
+                       PIO_INTEGER,
+                       &ndims,
+                       &pdims,
+                       data_file_,
+                       loc_h5path,
+                       &IOgroup_);
+
+  *value = loc_value;
+  *ndim = pdims[0];  // works only for one-dimensional vectors.
+
+  free(pdims);
+  delete [] loc_h5path;
+  delete [] loc_attrname;
+}
+
+
 void HDF5_MPI::writeDataString(char **x, int num_entries, const std::string varname)
 {
-
   char *h5path = new char [varname.size()+1];
   strcpy(h5path,varname.c_str());
 
-  /*
-    char **strData;
-    strData = (char **)malloc(num_entries*sizeof(char*));
-    for (int i=0; i<num_entries; i++) {
-    strData[i] = (char *)malloc(MAX_STRING_LENGTH*sizeof(char));
-    }
-    for (int i=0; i<num_entries; i++) {
-    std::cout << "E>> WRITE>> recieved x["<<i<<"] = " << x[i] <<std::endl;
-    strcpy(strData[i], x[i].c_str());
-    //strData[i] = (char*)x[i].c_str();
-    }
-  */
-
-  parallelIO_write_str_array(x, num_entries, data_file_,  h5path,  &IOgroup_);
+  parallelIO_write_str_array(x, num_entries, data_file_, h5path, &IOgroup_);
 
   delete [] h5path;
 }
@@ -605,33 +712,23 @@ void HDF5_MPI::readDataString(char ***x, int *num_entries, const std::string var
   char *h5path = new char [varname.size()+1];
   strcpy(h5path,varname.c_str());
   int ndims, dims[2], tmpsize;
-  hid_t file;
 
-  file = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
-                              FILE_READONLY);
-  if (file < 0) {
-    Errors::Message message("HDF5_MPI::readDataString - error opening data file to write field data");
-    Exceptions::amanzi_throw(message);
+  bool exists = checkFieldData_(h5path);
+  if (exists) {
+    parallelIO_get_dataset_ndims(&ndims, data_file_, h5path, &IOgroup_);
+    parallelIO_get_dataset_dims(dims, data_file_, h5path, &IOgroup_);
+    parallelIO_get_dataset_size(&tmpsize, data_file_, h5path, &IOgroup_);
+
+    char **strData;
+    parallelIO_read_str_array(&strData, &tmpsize, data_file_, h5path, &IOgroup_);
+
+    *x = strData;
+    *num_entries = tmpsize;
+  } else {
+    *num_entries = 0;
   }
-
-  parallelIO_get_dataset_ndims(&ndims, file, h5path, &IOgroup_);
-  parallelIO_get_dataset_dims(dims, file, h5path, &IOgroup_);
-  parallelIO_get_dataset_size(&tmpsize, file, h5path, &IOgroup_);
-
-  char **strData;
-  strData = (char **)malloc(tmpsize*sizeof(char*));
-  for (int i=0; i<tmpsize; i++) {
-    strData[i] = (char *)malloc(MAX_STRING_LENGTH*sizeof(char));
-  }
-
-  //parallelIO_read_str_array(&strData, &tmpsize, file, h5path, &IOgroup_);
-
-  *x = strData;
-  *num_entries = tmpsize;
-  parallelIO_close_file(file, &IOgroup_);
 
   delete [] h5path;
-
 }
 
 void HDF5_MPI::writeDataReal(const Epetra_Vector &x, const std::string varname)
@@ -730,7 +827,7 @@ bool HDF5_MPI::readData(Epetra_Vector &x, const std::string varname)
 
 bool HDF5_MPI::checkFieldData_(std::string varname) {
 
- char *h5path = new char [varname.size()+1];
+  char *h5path = new char [varname.size()+1];
   strcpy(h5path,varname.c_str());
   bool exists=false;
 

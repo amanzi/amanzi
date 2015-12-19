@@ -1,5 +1,5 @@
 /*
-  This is the input component of the Amanzi code. 
+  Input Converter
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -15,6 +15,7 @@
 #include <string>
 
 //TPLs
+#include <boost/algorithm/string.hpp>
 #include <xercesc/dom/DOM.hpp>
 
 // Amanzi's
@@ -43,16 +44,20 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
 
   MemoryManager mm;
   DOMNode* node;
+  DOMElement* element;
 
   // set up default values for some expert parameters
   double atm_pres(ATMOSPHERIC_PRESSURE);
-  std::string rel_perm("upwind: amanzi");  
+  std::string rel_perm("upwind-amanzi"), rel_perm_out;
   std::string update_upwind("every timestep");
 
   // process expert parameters
   bool flag;
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, rel_perm_method", flag);
-  if (flag) rel_perm = mm.transcode(node->getNodeName());
+  if (flag) rel_perm = mm.transcode(node->getTextContent());
+ 
+  rel_perm_out = boost::replace_all_copy(rel_perm, "-", ": ");
+  replace(rel_perm_out.begin(), rel_perm_out.end(), '_', ' ');
 
   // create flow header
   if (pk_model_["flow"] == "darcy") {
@@ -64,13 +69,13 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   } else if (pk_model_["flow"] == "richards") {
     Teuchos::ParameterList& richards_list = out_list.sublist("Richards problem");
     Teuchos::ParameterList& upw_list = richards_list.sublist("upwind");
-    upw_list.set<std::string>("relative permeability", rel_perm);
+    upw_list.set<std::string>("relative permeability", rel_perm_out);
     upw_list.set<std::string>("upwind update", update_upwind);
 
     // "standard" is the most robust upwind method for variety of subsurface
     // scenarios. Note that "upwind: amanzi" requires "upwind method"="divk" 
     // to reproduce the same behavior on orthogonal meshes. 
-    if (strcmp(rel_perm.c_str(), "upwind: amanzi") == 0) {
+    if (strcmp(rel_perm_out.c_str(), "upwind: amanzi") == 0) {
       upw_list.set<std::string>("upwind method", "divk");
       upw_list.sublist("upwind divk parameters").set<double>("tolerance", 1e-12);
     } else {
@@ -108,23 +113,33 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
 
   std::string nonlinear_solver("nka");
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver", flag);
-  if (flag) nonlinear_solver = GetAttributeValueS_(static_cast<DOMElement*>(node), "name", false, "nka"); 
+  element = static_cast<DOMElement*>(node);
+  if (flag) nonlinear_solver = GetAttributeValueS_(element, "name", TYPE_NONE, false, "nka"); 
 
   bool modify_correction(false);
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
 
-  // Newton method requires to overwrite other parameters.
+  // Newton method requires to overwrite some parameters.
   if (nonlinear_solver == "newton") {
-    modify_correction = true;  // a hack
+    modify_correction = true;
+    out_list.sublist("Richards problem").sublist("upwind")
+        .set<std::string>("upwind update", "every nonlinear iteration");
+
     if (disc_method != "fv-default" ||
         rel_perm != "upwind-darcy_velocity" ||
-        update_upwind != "every nonlinear iteration" ||
         !modify_correction) {
       Errors::Message msg;
-      msg << "Nonlinear solver \"newton\" requires \"upwind-darcy_velocity\"\n";
-      msg << "\"modify_correction\"=true, and discretization method \"fv-default\".\n";
+      msg << "Nonlinear solver \"newton\" requires \"upwind-darcy_velocity\" (is \"" << rel_perm << "\")\n";
+      msg << "\"modify_correction\"=true (is " << modify_correction 
+          << "), discretization method \"fv-default\" (is \"" << disc_method << "\").\n";
       Exceptions::amanzi_throw(msg);
     }
+  }
+
+  // Newton-Picard method requires to overwrite some parameters.
+  if (nonlinear_solver == "newton-picard") {
+    out_list.sublist("Richards problem").sublist("upwind")
+        .set<std::string>("upwind update", "every nonlinear iteration");
   }
 
   flow_list->sublist("operators") = TranslateDiffusionOperator_(
@@ -211,7 +226,8 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_()
     std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
     // -- smoothing
-    double krel_smooth = GetAttributeValueD_(element_cp, "optional_krel_smoothing_interval", false, 0.0);
+    double krel_smooth = GetAttributeValueD_(
+        element_cp, "optional_krel_smoothing_interval", TYPE_NUMERICAL, false, 0.0);
     if (krel_smooth < 0.0) {
       Errors::Message msg;
       msg << "value of optional_krel_smoothing_interval must be non-negative.\n";
@@ -220,7 +236,7 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_()
 
     // -- ell
     double ell, ell_d = (rel_perm == "mualem") ? ELL_MUALEM : ELL_BURDINE;
-    ell = GetAttributeValueD_(element_rp, "value", false, ell_d);
+    ell = GetAttributeValueD_(element_rp, "value", TYPE_NUMERICAL, false, ell_d);
 
     std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'm', 'M');
     std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'b', 'B');
@@ -324,8 +340,9 @@ Teuchos::ParameterList InputConverterU::TranslatePOM_()
 
     // get optional complessibility
     node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
-    double phi = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
-    double compres = GetAttributeValueD_(static_cast<DOMElement*>(node), "compressibility", false, 0.0);
+    element = static_cast<DOMElement*>(node);
+    double phi = GetAttributeValueD_(element, "value");
+    double compres = GetAttributeValueD_(element, "compressibility", TYPE_NUMERICAL, false, 0.0);
 
     for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
       std::stringstream ss;
@@ -416,8 +433,9 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
 
     // -- porosity models
     node = GetUniqueElementByTagsString_(inode, "multiscale_structure, porosity", flag);
-    double phi = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
-    double compres = GetAttributeValueD_(static_cast<DOMElement*>(node), "compressibility", false, 0.0);
+    element = static_cast<DOMElement*>(node);
+    double phi = GetAttributeValueD_(element, "value");
+    double compres = GetAttributeValueD_(element, "compressibility", TYPE_NUMERICAL, false, 0.0);
 
     for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
       std::stringstream ss;
@@ -438,7 +456,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
     // capillary pressure models
     // -- ell
     double ell, ell_d = (rel_perm == "mualem") ? ELL_MUALEM : ELL_BURDINE;
-    ell = GetAttributeValueD_(element_rp, "value", false, ell_d);
+    ell = GetAttributeValueD_(element_rp, "value", TYPE_NUMERICAL, false, ell_d);
 
     std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'm', 'M');
     std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'b', 'B');
@@ -500,6 +518,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
   char *text, *tagname;
   DOMNodeList *node_list, *children;
   DOMNode *node;
+  DOMElement *element;
 
   node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
   if (!node_list) return out_list;
@@ -532,11 +551,12 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
 
     for (int j = 0; j < same_list.size(); ++j) {
       DOMNode* jnode = same_list[j];
-      double t0 = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "start");
+      element = static_cast<DOMElement*>(jnode);
+      double t0 = GetAttributeValueD_(element, "start");
 
-      tp_forms[t0] = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "function");
-      tp_values[t0] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "value", false, 0.0);
-      tp_fluxes[t0] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "inward_mass_flux", false, 0.0);
+      tp_forms[t0] = GetAttributeValueS_(element, "function");
+      tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, false, 0.0);
+      tp_fluxes[t0] = GetAttributeValueD_(element, "inward_mass_flux", TYPE_NUMERICAL, false, 0.0);
     }
 
     // create vectors of values and forms
@@ -606,7 +626,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
       bc.set<bool>("rainfall", false);
     } else if (bctype == "static head") {
       std::string tmp = GetAttributeValueS_(
-          static_cast<DOMElement*>(same_list[0]), "coordinate_system", false, "absolute");
+          static_cast<DOMElement*>(same_list[0]), "coordinate_system", TYPE_NONE, false, "absolute");
       bc.set<bool>("relative to top", (tmp == "relative to mesh top"));
     }
   }

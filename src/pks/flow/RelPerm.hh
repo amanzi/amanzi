@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -19,7 +19,7 @@
 
 #include "Mesh.hh"
 #include "secondary_variable_field_evaluator.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "WRM.hh"
 #include "WRMPartition.hh"
 

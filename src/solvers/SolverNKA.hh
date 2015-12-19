@@ -13,6 +13,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "VerboseObject.hh"
+#include "ResidualDebugger.hh"
 
 #include "Solver.hh"
 #include "SolverFnBase.hh"
@@ -46,6 +47,9 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
   // mutators
   void set_tolerance(double tol) { tol_ = tol; }
   void set_pc_lag(double pc_lag) { pc_lag_ = pc_lag; }
+  virtual void set_db(const Teuchos::RCP<ResidualDebugger>& db) {
+    db_ = db;
+  }
 
   // access
   double tolerance() { return tol_; }
@@ -66,6 +70,7 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
   Teuchos::RCP<NKA_Base<Vector, VectorSpace> > nka_;
 
   Teuchos::RCP<VerboseObject> vo_;
+  Teuchos::RCP<ResidualDebugger> db_;
 
   double nka_tol_;
   int nka_dim_;
@@ -174,6 +179,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
   double du_norm(0.0), previous_du_norm(0.0), du_tmp_norm_initial, r_norm_initial;
   int divergence_count(0);
   int prec_error;
+  int db_write_iter = 0;
 
   do {
     // Check for too many nonlinear iterations.
@@ -196,6 +202,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
     // Evaluate the nonlinear function.
     fun_calls_++;
     fn_->Residual(u, r);
+    db_->WriteVector<Vector>(db_write_iter++, *r, u.ptr(), du.ptr());
 
     // Make sure that residual does not cause numerical overflow.
     double r_norm;

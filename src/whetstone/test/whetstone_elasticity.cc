@@ -23,7 +23,7 @@
 #include "Point.hh"
 
 #include "mfd3d_elasticity.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 
 /* **************************************************************** */

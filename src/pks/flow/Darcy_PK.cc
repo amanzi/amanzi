@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code.
+  Flow PK
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -22,7 +22,7 @@
 #include "mfd3d_diffusion.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "PK_Utils.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 #include "Darcy_PK.hh"
 #include "FlowDefs.hh"
@@ -97,7 +97,9 @@ Darcy_PK::~Darcy_PK()
   if (bc_flux != NULL) delete bc_flux;
   if (bc_seepage != NULL) delete bc_seepage;
 
-  if (src_sink != NULL) delete src_sink;
+  for (int i = 0; i < srcs.size(); i++) {
+    if (srcs[i] != NULL) delete srcs[i]; 
+  }
   if (vo_ != NULL) delete vo_;
 }
 
@@ -223,9 +225,6 @@ void Darcy_PK::Initialize()
 
   // Initialize defaults
   bc_seepage = NULL; 
-  src_sink = NULL;
-  src_sink_distribution = 0;
-
   initialize_with_darcy_ = true;
   num_itrs_ = 0;
 
@@ -306,7 +305,7 @@ void Darcy_PK::Initialize()
                                             .sublist("diffusion operator")
                                             .sublist("matrix");
   Operators::OperatorDiffusionFactory opfactory;
-  op_diff_ = opfactory.Create(mesh_, op_bc_, oplist, rho_ * rho_ / mu, gravity_);
+  op_diff_ = opfactory.Create(oplist, mesh_, op_bc_, rho_ * rho_ / mu, gravity_);
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
   op_diff_->SetBCs(op_bc_, op_bc_);
   op_diff_->Setup(Kptr, Teuchos::null, Teuchos::null);
@@ -329,14 +328,13 @@ void Darcy_PK::Initialize()
   preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
   ASSERT(preconditioner_list_->isSublist(preconditioner_name_));
   
-  // initialize well modeling
-  if (src_sink != NULL) {
-    if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+  // initialize well models
+  for (int i =0; i < srcs.size(); i++) {
+    int type = srcs[i]->CollectActionsList();
+    if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
-      src_sink->ComputeDistribute(t_old, t_new, Kxy->Values()); 
-    } else {
-      src_sink->ComputeDistribute(t_old, t_new);
     }
+    srcs[i]->Compute(t_old, t_new, Kxy); 
   }
   
   // Optional step: calculate hydrostatic solution consistent with BCs.
@@ -358,7 +356,7 @@ void Darcy_PK::Initialize()
     *vo_->os() << std::endl 
         << vo_->color("green") << "Initalization of PK is complete." << vo_->reset() << std::endl;
     *vo_->os() << "TI:\"" << ti_method_name.c_str() << "\""
-               << " dt:" << dt_method_name << " Src:" << src_sink_distribution
+               << " dt:" << dt_method_name
                << " LS:\"" << solver_name_.c_str() << "\""
                << " PC:\"" << preconditioner_name_.c_str() << "\"" << std::endl
                << "matrix: " << op_->PrintDiagnostics() << std::endl;
@@ -426,12 +424,8 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   else
     bc_head->ComputeShift(t_new, shift_water_table_->Values());
 
-  if (src_sink != NULL) {
-    if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      src_sink->ComputeDistribute(t_old, t_new, Kxy->Values()); 
-    } else {
-      src_sink->ComputeDistribute(t_old, t_new);
-    }
+  for (int i = 0; i < srcs.size(); ++i) {
+    srcs[i]->Compute(t_old, t_new, Kxy); 
   }
 
   ComputeBCs(*solution);
@@ -455,7 +449,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   op_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 
   CompositeVector& rhs = *op_->rhs();
-  if (src_sink != NULL) AddSourceTerms(rhs);
+  AddSourceTerms(rhs);
 
   // create linear solver
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;

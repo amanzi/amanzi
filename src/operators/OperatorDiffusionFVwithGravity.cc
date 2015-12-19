@@ -32,53 +32,27 @@ void OperatorDiffusionFVwithGravity::InitDiffusion_(Teuchos::ParameterList& plis
 }
 
 
-/* ******************************************************************
-* Setup methods: scalar coefficients
-****************************************************************** */
-void OperatorDiffusionFVwithGravity::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
-{
-  K_ = K;
+void
+OperatorDiffusionFVwithGravity::SetDensity(const Teuchos::RCP<const CompositeVector>& rho) {
+  OperatorDiffusionWithGravity::SetDensity(rho);
+  transmissibility_initialized_ = false;
+}
+
+void
+OperatorDiffusionFVwithGravity::SetDensity(double rho) {
+  OperatorDiffusionWithGravity::SetDensity(rho);
+  transmissibility_initialized_ = false;
+}
+
   
-  if (!transmissibility_initialized_) {
-    ComputeTransmissibility_(&g_, gravity_term_);
-  }
-}
-
-
-/* ******************************************************************
-* Setup methods: krel and deriv -- must be called after calling a
-* setup with K absolute
-****************************************************************** */
-void OperatorDiffusionFVwithGravity::Setup(const Teuchos::RCP<const CompositeVector>& k,
-                                           const Teuchos::RCP<const CompositeVector>& dkdp)
-{
-  k_ = k;
-  dkdp_ = dkdp;
-
-  if (k_ != Teuchos::null) {
-    ASSERT(k_->HasComponent("face"));
-    // NOTE: it seems that Amanzi passes in a cell based kr which is then
-    // ignored, and assumed = 1.  This seems dangerous to me. --etc
-    // ASSERT(!k_->HasComponent("cell"));
-  }
-  if (dkdp_ != Teuchos::null) {
-    ASSERT(dkdp_->HasComponent("cell"));
-    ASSERT(dkdp_->HasComponent("face"));
-  }
-
-  // verify that mass matrices were initialized.
-  if (!transmissibility_initialized_) {
-    ComputeTransmissibility_(&g_, gravity_term_);
-  }
-}
-
-
 /* ******************************************************************
 * Populate face-based matrices.
 ****************************************************************** */
 void OperatorDiffusionFVwithGravity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                                                     const Teuchos::Ptr<const CompositeVector>& u)
 {
+  if (!transmissibility_initialized_) ComputeTransmissibility_(gravity_term_);
+
   OperatorDiffusionFV::UpdateMatrices(flux, u);
 
   // populating right-hand side
@@ -154,10 +128,8 @@ void OperatorDiffusionFVwithGravity::UpdateFlux(
 * (its nonlinear part) on face f.
 ****************************************************************** */
 void OperatorDiffusionFVwithGravity::ComputeJacobianLocal_(
-    int mcells, int f, int face_dir, int Krel_method,
-    int bc_model_f, double bc_value_f,
-    double *pres, double *dkdp_cell,
-    WhetStone::DenseMatrix& Jpp)
+    int mcells, int f, int face_dir, int bc_model_f, double bc_value_f,
+    double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
   const Teuchos::Ptr<Epetra_MultiVector> gravity_face =
@@ -168,7 +140,7 @@ void OperatorDiffusionFVwithGravity::ComputeJacobianLocal_(
 
   if (mcells == 2) {
     dpres = pres[0] - pres[1];  // + grn;
-    if (Krel_method == OPERATOR_LITTLE_K_UPWIND) {
+    if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
       double flux0to1;
       flux0to1 = trans_face[0][f] * dpres;
       if (gravity_face.get()) flux0to1 += face_dir * (*gravity_face)[0][f];
@@ -182,7 +154,7 @@ void OperatorDiffusionFVwithGravity::ComputeJacobianLocal_(
         dKrel_dp[0] = 0.5 * dkdp_cell[0];
         dKrel_dp[1] = 0.5 * dkdp_cell[1];
       }
-    } else if (Krel_method == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
+    } else if (little_k_ == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
       dKrel_dp[0] = 0.5 * dkdp_cell[0];
       dKrel_dp[1] = 0.5 * dkdp_cell[1];
     } else {
@@ -215,9 +187,11 @@ void OperatorDiffusionFVwithGravity::ComputeJacobianLocal_(
 
 /* ******************************************************************
 * Compute transmissibilities on faces 
+*
+* Requires K, g, rho
 ****************************************************************** */
 void OperatorDiffusionFVwithGravity::ComputeTransmissibility_(
-   AmanziGeometry::Point* g, Teuchos::RCP<CompositeVector> g_cv)
+   Teuchos::RCP<CompositeVector> g_cv)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
 
@@ -269,6 +243,12 @@ void OperatorDiffusionFVwithGravity::ComputeTransmissibility_(
   // some calculatons.
   transmissibility_->PutScalar(0.0);
 
+  const Epetra_MultiVector* rho_c = NULL;
+  if (!is_scalar_) {
+    rho_cv_->ScatterMasterToGhosted("cell");
+    rho_c = rho_cv_->ViewComponent("cell",true).get();
+  }
+  
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
@@ -283,21 +263,21 @@ void OperatorDiffusionFVwithGravity::ComputeTransmissibility_(
 
     trans_face[0][f] = 1.0 / beta_face[0][f];
 
-    if (g != NULL) {
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      double dir = copysign(1.0, normal * a_dist);
-      // double grav = (gravity * normal) / area;
-      double grav = ((*g) * a_dist) * rho_ * dir;
-      grav *= h_face[0][f];
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    double dir = copysign(1.0, normal * a_dist);
 
-      Epetra_MultiVector& gravity_face = *g_cv->ViewComponent("face", true);
-      gravity_face[0][f] = trans_face[0][f] * grav;
-    }
+    double rho = is_scalar_ ? rho_ :
+      (ncells == 1 ? (*rho_c)[0][cells[0]] : ((*rho_c)[0][cells[0]] + (*rho_c)[0][cells[1]]) / 2.);
+    double grav = (g_ * a_dist) * rho * dir;
+    grav *= h_face[0][f];
+
+    Epetra_MultiVector& gravity_face = *g_cv->ViewComponent("face", true);
+    gravity_face[0][f] = trans_face[0][f] * grav;
   }
 
 #ifdef HAVE_MPI
   transmissibility_->ScatterMasterToGhosted("face", true);
-  if (g != NULL) g_cv->ScatterMasterToGhosted("face", true);
+  g_cv->ScatterMasterToGhosted("face", true);
 #endif
 
   transmissibility_initialized_ = true;

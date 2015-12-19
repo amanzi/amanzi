@@ -29,7 +29,6 @@ namespace AmanziGeometry {
 // Factory for creating specific types of regions based on the shape
 // specification. We cannot use a constructor because the we have to 
 // create derived region classes based on the shape parameter
-
 RegionPtr RegionFactory(const std::string reg_name, const unsigned int reg_id,
                         const Teuchos::ParameterList& reg_spec,
                         const int space_dimension,

@@ -11,19 +11,20 @@
 
 #include <vector>
 
+// TPLs
 #include "Epetra_Vector.h"
 
+// Amanzi
 #include "errors.hh"
-#include "WhetStoneDefs.hh"
-#include "mfd3d_diffusion.hh"
-
-#include "PreconditionerFactory.hh"
-#include "MatrixFE.hh"
-#include "SuperMap.hh"
-
 #include "LinearOperator.hh"
 #include "LinearOperatorFactory.hh"
+#include "MatrixFE.hh"
+#include "mfd3d_diffusion.hh"
+#include "PreconditionerFactory.hh"
+#include "SuperMap.hh"
+#include "WhetStoneDefs.hh"
 
+// Operators
 #include "Op.hh"
 #include "Op_Cell_Node.hh"
 #include "Op_Cell_FaceCell.hh"
@@ -45,7 +46,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialization of the operator, scalar coefficient.
 ****************************************************************** */
-void OperatorDiffusionMFD::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
+void OperatorDiffusionMFD::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
 {
   K_ = K;
 
@@ -62,8 +63,8 @@ void OperatorDiffusionMFD::Setup(const Teuchos::RCP<std::vector<WhetStone::Tenso
 /* ******************************************************************
 * Initialization of the operator: nonlinear coefficient.
 ****************************************************************** */
-void OperatorDiffusionMFD::Setup(const Teuchos::RCP<const CompositeVector>& k,
-                                 const Teuchos::RCP<const CompositeVector>& dkdp)
+void OperatorDiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
+						const Teuchos::RCP<const CompositeVector>& dkdp)
 {
   k_ = k;
   dkdp_ = dkdp;
@@ -821,8 +822,11 @@ void OperatorDiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
 
 
 /* ******************************************************************
-* Modify operator by addition approximation of Newton corection.
-* We ignore the right-hand side for the moment.
+* Modify operator by adding upwind approximation of Newton corection.
+* A special care should be taken later to deal with the case 
+* where kf < 0, i.e. for energy when: div (qh) = div (h k grad p), 
+* where h is enthalpy and can be negative. I think that the current
+* treatment is inadequate.
 ****************************************************************** */
 void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
     const Teuchos::Ptr<const CompositeVector>& flux,
@@ -850,8 +854,7 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
 
-    // This change is to deal with the case where kf < 0, i.e. for energy when:
-    // div (qh) = div (h k grad p), where h is enthalpy and can be negative.
+    // We assume implicitly that dkdp >= 0 and use the upwind discretization.
     double v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] / kf[0][f] : 0.0;
     double vmod = std::abs(v) * dkdp_f[0][f];
 
@@ -877,7 +880,7 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
 
 
 /* ******************************************************************
-* This method is entirely unclear why it exists and should be documented.
+* Given pressures, reduce the problem to Lagrange multipliers.
 ****************************************************************** */
 void OperatorDiffusionMFD::ModifyMatrices(const CompositeVector& u)
 {
@@ -1009,7 +1012,11 @@ void OperatorDiffusionMFD::CreateMassMatrices_()
         } else if(method == WhetStone::DIFFUSION_SUPPORT_OPERATOR) {
           ok = mfd.MassMatrixInverseSO(c, Kc, Wff);
         } else if(method == WhetStone::DIFFUSION_POLYHEDRA_SCALED) {
-          ok = mfd.MassMatrixInverseScaled(c, Kc, Wff);
+          if (K_symmetric_) {
+            ok = mfd.MassMatrixInverseScaled(c, Kc, Wff);
+          } else {
+            ok = mfd.MassMatrixInverseNonSymmetric(c, Kc, Wff);
+          }
         }
       }
     }
@@ -1027,7 +1034,7 @@ void OperatorDiffusionMFD::CreateMassMatrices_()
 
 
 /* ******************************************************************
-* Scale elemental inverse mass matrices. Use case if saturated flow.
+* Scale elemental inverse mass matrices. Use case is saturated flow.
 ****************************************************************** */
 void OperatorDiffusionMFD::ScaleMassMatrices(double s)
 {
@@ -1045,6 +1052,7 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
   // Determine discretization
   std::string primary = plist.get<std::string>("discretization primary");
   std::string secondary = plist.get<std::string>("discretization secondary", primary);
+  K_symmetric_ = (plist.get<std::string>("diffusion tensor", "symmetric") == "symmetric");
 
   // Primary discretization methods
   if (primary == "mfd: monotone for hex") {
@@ -1082,7 +1090,14 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
 
   // Define stencil for the MFD diffusion method.
   std::vector<std::string> names;
-  names = plist.get<Teuchos::Array<std::string> > ("schema").toVector();
+  if (plist.isParameter("schema")) {
+    names = plist.get<Teuchos::Array<std::string> > ("schema").toVector();
+  } else {
+    names.resize(2);
+    names[0] = "face";
+    names[1] = "cell";
+    plist.set<Teuchos::Array<std::string> >("schema", names);
+  }
 
   int schema_dofs = 0;
   for (int i = 0; i < names.size(); i++) {
@@ -1145,8 +1160,8 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     if (schema_prec_dofs == OPERATOR_SCHEMA_DOFS_NODE) {
       global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist));
     } else if (schema_prec_dofs == OPERATOR_SCHEMA_DOFS_CELL) {
-      //      cvs->AddComponent("face", AmanziMesh::FACE, 1);
-      //      global_op_ = Teuchos::rcp(new Operator_FaceCellScc(cvs, plist));
+      // cvs->AddComponent("face", AmanziMesh::FACE, 1);
+      // global_op_ = Teuchos::rcp(new Operator_FaceCellScc(cvs, plist));
       global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist, schema_prec_dofs));
     } else if (schema_prec_dofs == OPERATOR_SCHEMA_DOFS_FACE) {
       cvs->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -1229,6 +1244,9 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
   std::string jacobian = plist.get<std::string>("newton correction", "none");
   if (jacobian == "true jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
+    Errors::Message msg("OperatorDiffusionMFD: \"true jacobian\" not supported -- maybe you mean \"approximate jacobian\"?");
+    Exceptions::amanzi_throw(msg);
+
   } else if (jacobian == "approximate jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
 
@@ -1309,12 +1327,12 @@ OperatorDiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
     CompositeVector u_f_copy(y);
     ierr = lin_solver->ApplyInverse(y, u_f_copy);
     *u.ViewComponent("face",false) = *u_f_copy.ViewComponent("face",false);
-    ASSERT(ierr >= 0);
+    //    ASSERT(ierr >= 0);
   } else {
     CompositeVector u_f_copy(y);
     ierr = consistent_face_op_->ApplyInverse(y, u);
     *u.ViewComponent("face",false) = *u_f_copy.ViewComponent("face",false);
-    ASSERT(ierr >= 0);
+    //    ASSERT(ierr >= 0);
   }
   
   return (ierr > 0) ? 0 : 1;

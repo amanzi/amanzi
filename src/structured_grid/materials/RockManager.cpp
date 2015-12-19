@@ -1137,6 +1137,8 @@ RockManager::GetProperty(Real               time,
     return false;
   }
 
+  BL_ASSERT(mf.nGrow()>=nGrow);
+
   bool ret = materialFiller->SetProperty(time,level,mf,pname,dComp,nGrow,0,ignore_mixed);
 
   // Fill any GSLib-bsaed quantities
@@ -1170,8 +1172,7 @@ RockManager::GetProperty(Real               time,
 
       // Copy filled property over default
       for (MFIter mfi(vals); mfi.isValid(); ++mfi) {
-	Box bx = valstmp[mfi].box() & vals[mfi].box();
-	vals[mfi].copy(valstmp[mfi],bx,0,bx,0,nComp);
+	vals[mfi].copy(valstmp[mfi]);
       }
       valstmp.clear(); // No longer needed
 
@@ -1179,14 +1180,18 @@ RockManager::GetProperty(Real               time,
       iMultiFab id(mf.boxArray(),1,nGrow);
       materialFiller->SetMaterialID(level,id,nGrow,ignore_mixed);
 
-      for (MFIter mfi(mf); mfi.isValid(); ++mfi) {
-        Box bx = Box(mfi.validbox()).grow(nGrow);
+      for (MFIter mfi(vals); mfi.isValid(); ++mfi) {
+	Box bx = BoxLib::grow(mfi.validbox(),nGrow);
         const FArrayBox& vfab = vals[mfi];
         const IArrayBox& idfab = id[mfi];
         FArrayBox& mfab = mf[mfi];
-        FORT_FILLPMAT (mfab.dataPtr(dComp), ARLIM(mfab.loVect()),  ARLIM(mfab.hiVect()),
-                       idfab.dataPtr(), ARLIM(idfab.loVect()), ARLIM(idfab.hiVect()),
-                       vfab.dataPtr(),  ARLIM(vfab.loVect()),  ARLIM(idfab.hiVect()),
+
+	BL_ASSERT(mfab.nComp() >= nComp+dComp);
+	BL_ASSERT(vfab.nComp() >= nComp);
+
+        FORT_FILLPMAT (mfab.dataPtr(dComp), ARLIM( mfab.loVect()), ARLIM( mfab.hiVect()),
+                       idfab.dataPtr(),     ARLIM(idfab.loVect()), ARLIM(idfab.hiVect()),
+                        vfab.dataPtr(),     ARLIM( vfab.loVect()), ARLIM( vfab.hiVect()),
                        &i, bx.loVect(), bx.hiVect(), &nComp);
 	do_touchup = true;
       }

@@ -1,15 +1,17 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-ATS
+/*
+  Mesh Functions
 
-License: see $AMANZI_DIR/COPYRIGHT
-Author (v1): Neil Carlson
-       (v2): Ethan Coon
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Function applied to a mesh component with at most one function application per
-entity.
+  Authors: (v1) Neil Carlson
+           (v2) Ethan Coon
 
-------------------------------------------------------------------------- */
+  Function applied to a mesh component with at most one function 
+  application per entity.
+*/
 
 #include "boundary_function.hh"
 
@@ -35,6 +37,7 @@ void BoundaryFunction::Define(std::string region,
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
 };
 
+
 // Evaluate values at time.
 void BoundaryFunction::Compute(double time) {
   // lazily generate space for the values
@@ -42,7 +45,7 @@ void BoundaryFunction::Compute(double time) {
     Finalize();
   }
 
-  if (specs_and_ids_.size() == 0) return;
+  if (unique_specs_.size() == 0) return;
 
   // create the input tuple
   int dim = mesh_->space_dimension();
@@ -51,38 +54,34 @@ void BoundaryFunction::Compute(double time) {
 
   // Loop over all FACE specs and evaluate the function at all IDs in the
   // list.
-  for (SpecAndIDsList::const_iterator
-         spec_and_ids=specs_and_ids_[AmanziMesh::FACE]->begin();
-       spec_and_ids!=specs_and_ids_[AmanziMesh::FACE]->end(); ++spec_and_ids) {
+  for (UniqueSpecList::const_iterator uspec = unique_specs_[AmanziMesh::FACE]->begin();
+       uspec != unique_specs_[AmanziMesh::FACE]->end(); ++uspec) {
     // Here we could specialize on the argument signature of the function:
     // time-independent functions need only be evaluated at each face on the
     // first call; space-independent functions need only be evaluated once per
     // call and the value used for all faces; etc. Right now we just assume
     // the most general case.
-    Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
-    for (SpecIDs::const_iterator id = ids->begin(); id!=ids->end(); ++id) {
+    Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
+    for (MeshIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
       AmanziGeometry::Point xc = mesh_->face_centroid(*id);
-      for (int i=0; i!=dim; ++i) args[i+1] = xc[i];
-      // Careful tracing of the typedefs is required here: spec_and_ids->first
+      for (int i = 0; i != dim; ++i) args[i+1] = xc[i];
+      // Careful tracing of the typedefs is required here: uspec->first
       //  is a RCP<Spec>, and the Spec's second is an RCP to the function.
-      value_[*id] = (*(*spec_and_ids)->first->second)(args)[0];
+      value_[*id] = (*(*uspec)->first->second)(args)[0];
     }
   }
-
 };
 
 
 void BoundaryFunction::Finalize() {
   finalized_ = true;
-  if (specs_and_ids_.size() == 0) { return; }
+  if (unique_specs_.size() == 0) { return; }
 
   // Create the map of values, for now just setting up memory.
-  for (SpecAndIDsList::const_iterator spec_and_ids =
-         specs_and_ids_[AmanziMesh::FACE]->begin();
-       spec_and_ids!=specs_and_ids_[AmanziMesh::FACE]->end();
-       ++spec_and_ids) {
-    Teuchos::RCP<SpecIDs> ids = (*spec_and_ids)->second;
-    for (SpecIDs::const_iterator id=ids->begin(); id!=ids->end(); ++id) {
+  for (UniqueSpecList::const_iterator uspec = unique_specs_[AmanziMesh::FACE]->begin();
+       uspec != unique_specs_[AmanziMesh::FACE]->end(); ++uspec) {
+    Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
+    for (MeshIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
       value_[*id];
     };
   }
@@ -90,5 +89,5 @@ void BoundaryFunction::Finalize() {
   //TODO: Verify that the faces in this_domain are all boundary faces.
 };
 
-} // namespace
-} // namespace
+} // namespace Functions
+} // namespace Amanzi

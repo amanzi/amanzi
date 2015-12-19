@@ -27,6 +27,7 @@ include_directories(${MSTK_INCLUDE_DIRS})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_LOGICAL_SOURCE_DIR})
 include_directories(${MSTK_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
@@ -72,10 +73,12 @@ set(operators_inc_files
     Operator_Edge.hh
     BoundaryFlux.hh
     OperatorDiffusion.hh
+    OperatorDiffusionWithGravity.hh
     OperatorDiffusionFactory.hh
     OperatorDiffusionMFD.hh
     OperatorDiffusionMFDwithGravity.hh
     OperatorDiffusionFV.hh
+    OperatorDiffusionNLFV.hh
     OperatorDiffusionFVwithGravity.hh
     OperatorAccumulation.hh
     OperatorAdvection.hh
@@ -103,6 +106,7 @@ add_amanzi_library(operators
                           OperatorDiffusionMFDwithGravity.cc
                           OperatorDiffusionFV.cc
                           OperatorDiffusionFVwithGravity.cc
+                          OperatorDiffusionNLFV.cc
                           OperatorDiffusionFactory.cc                   
                           OperatorAccumulation.cc
                           OperatorAdvection.cc  
@@ -119,13 +123,14 @@ if ( BUILD_TESTS )
 
     # Copy test directory files if an out of source build
     if (NOT (${OPERATORS_SOURCE_DIR} EQUAL ${OPERATORS_BINARY_DIR}) )
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${OPERATORS_SOURCE_DIR}/test ${OPERATORS_BINARY_DIR}/test) 
+        file(GLOB DataFiles "${OPERATORS_SOURCE_DIR}/test/*.xml"
+                            "${OPERATORS_SOURCE_DIR}/test/*.exo")
+        file(COPY ${DataFiles} DESTINATION ${OPERATORS_BINARY_DIR}/test/)
     endif()
 
-    set(amanzi_libs geometry atk mesh mesh_factory data_structures operators whetstone output atk)
+    set(amanzi_libs geometry atk mesh mesh_factory mesh_logical data_structures operators whetstone output atk)
 
-    # Test: matrices for diffusion
+    # Test: operators for various PDEs
     if ( ENABLE_INDIVIDUAL_TESTS_OPERATORS OR ENABLE_INDIVIDUAL_TESTS )
         add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
                         KIND unit
@@ -143,6 +148,10 @@ if ( BUILD_TESTS )
                         KIND unit
                         SOURCE test/Main.cc test/operator_marshak.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(operators_marshak_logical operators_marshak_logical
+                        KIND unit
+                        SOURCE test/Main.cc test/operator_marshak_logical.cc
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     else()
         add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
                         KIND unit
@@ -150,12 +159,15 @@ if ( BUILD_TESTS )
                                             test/operator_parabolic_surface.cc
                                             test/operator_nonlinear_surface.cc
                                             test/operator_marshak.cc
+                                            test/operator_marshak_logical.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()
 
     add_amanzi_test(operators_diffusion operators_diffusion
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion.cc
+                                        test/operator_diffusion_nonsymmetric.cc
+                                        test/operator_diffusion_nlfv.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_diffusion_3pe operators_diffusion NPROCS 3 KIND unit)
@@ -220,9 +232,9 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/operator_reconstruction.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(test_boundary_flux_solver test_boundary_flux_solver
+    add_amanzi_test(operators_boundary_flux_solver operators_boundary_flux_solver
                     KIND unit
-                    SOURCE test/Main.cc test/test_boundary_flux_solver.cc
+                    SOURCE test/Main.cc test/operator_boundary_flux_solver.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_reconstruction_2pe operators_reconstruction NPROCS 2 KIND unit)

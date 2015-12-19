@@ -1,5 +1,5 @@
 /*
-  This is the input component of the Amanzi code. 
+  Input Converter
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -44,6 +44,9 @@
 namespace Amanzi {
 namespace AmanziInput {
 
+/* ******************************************************************
+* Non-member function: returns parser.
+****************************************************************** */
 XercesDOMParser* CreateXMLParser()
 {
   XMLPlatformUtils::Initialize();
@@ -60,6 +63,9 @@ XercesDOMParser* CreateXMLParser()
   return parser;
 }
 
+/* ******************************************************************
+* Non-member function: returns xercesc document.
+****************************************************************** */
 xercesc::DOMDocument* OpenXMLInput(XercesDOMParser* parser,
                                    const std::string& xml_input)
 {
@@ -84,10 +90,14 @@ xercesc::DOMDocument* OpenXMLInput(XercesDOMParser* parser,
   return doc;
 }
 
+
+/* ******************************************************************
+* Various constructors.
+****************************************************************** */
 InputConverter::InputConverter(const std::string& input_filename):
-  xmlfilename_(input_filename),
-  doc_(NULL),
-  parser_(NULL)
+    xmlfilename_(input_filename),
+    doc_(NULL),
+    parser_(NULL)
 {
   parser_ = CreateXMLParser();
   doc_ = OpenXMLInput(parser_, input_filename);
@@ -96,17 +106,17 @@ InputConverter::InputConverter(const std::string& input_filename):
 
 InputConverter::InputConverter(const std::string& input_filename,
                                xercesc::DOMDocument* input_doc):
-  xmlfilename_(input_filename),
-  doc_(input_doc),
-  parser_(NULL)
+    xmlfilename_(input_filename),
+    doc_(input_doc),
+    parser_(NULL)
 {
   FilterNodes(doc_, "comments");
 }
 
 InputConverter::~InputConverter()
 {
-//  if (doc_ != NULL)
-//    delete doc_;
+  // if (doc_ != NULL)
+  //   delete doc_;
   if (parser_ != NULL)
     delete parser_;
 }
@@ -134,6 +144,59 @@ void InputConverter::FilterNodes(DOMNode* parent, const std::string& filter)
   }
 }
 
+
+/* ******************************************************************
+* Check the version number.
+****************************************************************** */
+void InputConverter::ParseVersion_()
+{
+  MemoryManager mm;
+  
+  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("amanzi_input"));
+  if (node_list->getLength() > 0) {
+    std::string version = GetAttributeValueS_(static_cast<DOMElement*>(node_list->item(0)), "version");
+    
+    int major, minor, micro;
+    
+    std::stringstream ss;
+    ss << version;
+    std::string ver;
+    
+    try {
+      getline(ss, ver, '.');
+      major = boost::lexical_cast<int>(ver);
+      
+      getline(ss, ver, '.');
+      minor = boost::lexical_cast<int>(ver);
+      
+      getline(ss,ver);
+      micro = boost::lexical_cast<int>(ver);
+    }
+    catch (...) {
+      Errors::Message msg("The version string in the input file '" + version + 
+                          "' has the wrong format, use I.J.K.");
+      Exceptions::amanzi_throw(msg);
+    }
+
+    if ((major != AMANZI_SPEC_VERSION_MAJOR) ||
+        (minor != AMANZI_SPEC_VERSION_MINOR) || 
+        (micro != AMANZI_SPEC_VERSION_MICRO)) {
+      std::stringstream ss;
+      ss << AMANZI_SPEC_VERSION_MAJOR << "." << AMANZI_SPEC_VERSION_MINOR << "." << AMANZI_SPEC_VERSION_MICRO;
+
+      Errors::Message msg;
+      msg << "The input version " << version << " is not supported. "
+          << "Supported versions: "<< ss.str() << ".\n";
+      Exceptions::amanzi_throw(msg);
+    }
+  } else {
+    // amanzi input description did not exist, error
+    Errors::Message msg("Amanzi input description does not exist <amanzi_input version=...>");
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+
 /* ******************************************************************
 * Populates protected std::map constants_.
 ****************************************************************** */
@@ -142,7 +205,9 @@ void InputConverter::ParseConstants_()
   MemoryManager mm;
 
   char *tagname, *text;
+  DOMNode* node;
   DOMNodeList *node_list, *children;
+  DOMElement* element;
 
   // process constants: we ignore type of generic constants.
   node_list = doc_->getElementsByTagName(mm.transcode("constants"));
@@ -152,46 +217,41 @@ void InputConverter::ParseConstants_()
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+    element = static_cast<DOMElement*>(inode);
     
-    std::string name, type, value;
+    std::string name, value, type(TYPE_NOT_CONSTANT);
     char* tagname = mm.transcode(inode->getNodeName());   
-    if (strcmp(tagname, "constant") == 0 ||
-        strcmp(tagname, "time_constant") == 0 ||
-        strcmp(tagname, "numerical_constant") == 0 ||
-        strcmp(tagname, "area_mass_flux_constant") == 0) {
-      DOMElement* element = static_cast<DOMElement*>(inode);
-      if (element->hasAttribute(mm.transcode("name"))) {
-        text = mm.transcode(element->getAttribute(mm.transcode("name")));
-        name = text;
-      } else {
-        ThrowErrorMissattr_("constants", "attribute", "name", "constant");
+    if (strcmp(tagname, "constant") == 0) {
+      type = GetAttributeValueS_(element, "type");
+    } else if (strcmp(tagname, "time_constant") == 0) {
+      type = TYPE_TIME;
+    } else if (strcmp(tagname, "numerical_constant") == 0) {
+      type = TYPE_NUMERICAL;
+    } else if (strcmp(tagname, "area_mass_flux_constant") == 0) {
+      type = TYPE_AREA_MASS_FLUX;
+    }
+
+    if (type != TYPE_NOT_CONSTANT) {
+      name = GetAttributeValueS_(element, "name");
+      value = GetAttributeValueS_(element, "value");
+
+      if (type == TYPE_TIME) {
+        constants_time_[name] = value;
+      } else if (type == TYPE_NUMERICAL) {
+        constants_numerical_[name] = value;
+      } else if (type == TYPE_AREA_MASS_FLUX) {
+        constants_area_mass_flux_[name] = value;
+      } else if (type == TYPE_NONE) {
+        constants_[name] = value;
       }
-
-      if (element->hasAttribute(mm.transcode("value"))) {
-        text = mm.transcode(element->getAttribute(mm.transcode("value")));
-        value = text;
-      } else {
-        ThrowErrorMissattr_("constants", "attribute", "value", "constant");
-      }
-
-      if (constants_.find(name) != constants_.end()) {
-        Errors::Message msg;
-        msg << "An error occurred during parsing node \"constants\"\n";
-        msg << "Name \"" << name << "\" is repeated.\n";
-        msg << "Please correct and try again \n";
-        Exceptions::amanzi_throw(msg);
-      } 
-
-      constants_[name] = value;
     }
   }
 }
 
 
-
 /* ******************************************************************
-* Return node described by the list of consequtive names tags 
-* separated by commas. It 
+* Returns node specified by the list of consequtive names tags 
+* separated by commas. Only the first tag may be not unique.
 ****************************************************************** */
 DOMNode* InputConverter::GetUniqueElementByTagsString_(
     const std::string& tags, bool& flag)
@@ -200,6 +260,7 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
 
   MemoryManager mm;
   DOMNode* node = NULL;
+  DOMNode* node_good;
 
   std::vector<std::string> tag_names = CharToStrings_(tags.c_str());
   if (tag_names.size() == 0) return node;
@@ -213,27 +274,41 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
 
   // get the first node
   DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode(tag_names[0].c_str()));
-  if (node_list->getLength() != 1) return node;
-  node = node_list->item(0);
+  int nnodes = node_list->getLength();
+  if (nnodes == 0) return node;
 
-  for (int n = 1; n < tag_names.size(); ++n) {
-    DOMNodeList* children = node->getChildNodes();
-    int ntag(0);
-    for (int i = 0; i < children->getLength(); i++) {
-      DOMNode* inode = children->item(i);
-      if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-        char* tagname = mm.transcode(inode->getNodeName());   
-        if (strcmp(tagname, tag_names[n].c_str()) == 0) {
-          node = inode;
-          ntag++;
+  int icnt(0);
+  for (int k = 0; k < nnodes; ++k) {
+    node = node_list->item(k);
+
+    bool found(true);
+    for (int n = 1; n < tag_names.size(); ++n) {
+      DOMNodeList* children = node->getChildNodes();
+      int ntag(0);
+      for (int i = 0; i < children->getLength(); i++) {
+        DOMNode* inode = children->item(i);
+        if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
+          char* tagname = mm.transcode(inode->getNodeName());   
+          if (strcmp(tagname, tag_names[n].c_str()) == 0) {
+            node = inode;
+            ntag++;
+          }
         }
       }
+      if (ntag != 1) {
+        found = false;
+        break;
+      }
     }
-    if (ntag != 1) return node;
+
+    if (found) {
+      icnt++;
+      node_good = node;
+    }
   }
 
-  flag = true;
-  return node;
+  flag = (icnt == 1);
+  return node_good;
 }
 
 
@@ -431,20 +506,32 @@ std::vector<DOMNode*> InputConverter::GetSameChildNodes_(
 
 
 /* ******************************************************************
-* Extract atribute of type double.
+* Extract attribute of type double.
 ****************************************************************** */
 double InputConverter::GetAttributeValueD_(
-    DOMElement* elem, const char* attr_name, bool exception, double default_val)
+    DOMElement* elem, const char* attr_name,
+    const std::string& type, bool exception, double default_val)
 {
   double val;
   MemoryManager mm;
 
+  std::string text, parsed, found_type;
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
-    char* text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
-    if (constants_.find(text) != constants_.end()) {  // check constants list
-      val = TimeStringToValue_(constants_[text]);
-    } else {
-      val = TimeCharToValue_(text);
+    text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+
+    // process constants
+    found_type = GetConstantType_(text, parsed);
+    val = TimeStringToValue_(parsed);
+
+    // no checks for two types
+    if (found_type == TYPE_NONE ||
+        found_type == TYPE_NOT_CONSTANT) found_type = type;
+
+    if (type != found_type) {
+      Errors::Message msg;
+      msg << "Usage of constant \"" << text << "\" of type=" << found_type 
+          << ". Expect type=" << type << ".\n";
+      Exceptions::amanzi_throw(msg);
     }
   } else if (!exception) {
     val = default_val;
@@ -461,17 +548,29 @@ double InputConverter::GetAttributeValueD_(
 * Extract atribute of type int.
 ****************************************************************** */
 int InputConverter::GetAttributeValueL_(
-    DOMElement* elem, const char* attr_name, bool exception, int default_val)
+    DOMElement* elem, const char* attr_name,
+    const std::string& type, bool exception, int default_val)
 {
   int val;
   MemoryManager mm;
 
+  std::string text, parsed, found_type;
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
-    char* text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
-    if (constants_.find(text) != constants_.end()) {  // check constants list
-      val = std::strtol(constants_[text].c_str(), NULL, 10);
-    } else {
-      val = std::strtol(text, NULL, 10);
+    text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+
+    // process constants 
+    found_type = GetConstantType_(text, parsed);
+    val = std::strtol(parsed.c_str(), NULL, 10);
+
+    // no checks for two types
+    if (found_type == TYPE_NONE ||
+        found_type == TYPE_NOT_CONSTANT) found_type = type;
+
+    if (type != found_type) {
+      Errors::Message msg;
+      msg << "Usage of constant \"" << text << "\" of type=" << found_type 
+          << ". Expect type=" << type << ".\n";
+      Exceptions::amanzi_throw(msg);
     }
   } else if (! exception) {
     val = default_val;
@@ -488,16 +587,30 @@ int InputConverter::GetAttributeValueL_(
 * Extract atribute of type std::string.
 ****************************************************************** */
 std::string InputConverter::GetAttributeValueS_(
-    DOMElement* elem, const char* attr_name, bool exception, std::string default_val)
+    DOMElement* elem, const char* attr_name,
+    const std::string& type, bool exception, std::string default_val)
 {
   std::string val;
   MemoryManager mm;
 
+  std::string text, found_type;
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
-    val = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
-    boost::algorithm::trim(val);
+    text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+    boost::algorithm::trim(text);
+
     // check the list of global constants
-    if (constants_.find(val) != constants_.end()) val = constants_[val];
+    found_type = GetConstantType_(text, val);
+
+    // no checks for two types
+    if (found_type == TYPE_NONE ||
+        found_type == TYPE_NOT_CONSTANT) found_type = type;
+
+    if (type != found_type) {
+      Errors::Message msg;
+      msg << "Usage of constant \"" << text << "\" of type=" << found_type 
+          << ". Expect type=" << type << ".\n";
+      Exceptions::amanzi_throw(msg);
+    }
   } else if (!exception) {
     val = default_val;
   } else {
@@ -644,7 +757,8 @@ std::string InputConverter::GetTextContentS_(
   std::string val;
 
   MemoryManager mm;
-  val = TrimString_(mm.transcode(node->getTextContent()));
+  std::string text = TrimString_(mm.transcode(node->getTextContent()));
+  GetConstantType_(text, val);
 
   std::vector<std::string> names = CharToStrings_(options);
   for (std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it) {
@@ -657,6 +771,35 @@ std::string InputConverter::GetTextContentS_(
   msg << "Available options: \"" << options << "\".\n";
   msg << "Please correct and try again.\n";
   Exceptions::amanzi_throw(msg);
+  return "";
+}
+
+
+/* ******************************************************************
+* Find positing in the array.
+****************************************************************** */
+std::string InputConverter::GetConstantType_(
+    const std::string& val, std::string& parsed_val)
+{
+  std::string type;
+  if (constants_time_.find(val) != constants_time_.end()) {
+    type = TYPE_TIME;
+    parsed_val = constants_time_[val];
+  } else if (constants_numerical_.find(val) != constants_numerical_.end()) {
+    type = TYPE_NUMERICAL;
+    parsed_val = constants_numerical_[val];
+  } else if (constants_area_mass_flux_.find(val) != constants_area_mass_flux_.end()) {
+    type = TYPE_AREA_MASS_FLUX;
+    parsed_val = constants_area_mass_flux_[val];
+  } else if (constants_.find(val) != constants_.end()) {
+    type = TYPE_NONE;
+    parsed_val = constants_[val];
+  } else {
+    type = TYPE_NOT_CONSTANT;
+    parsed_val = val;
+  }
+
+  return type;
 }
 
 

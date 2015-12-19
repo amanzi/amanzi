@@ -1,5 +1,5 @@
 /*
-  This is the Operator component of the Amanzi code.
+  Operators
 
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -8,6 +8,8 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
           Ethan Coon (ecoon@lanl.gov)
+
+  Pure interface for diffusion operators.
 */
 
 #ifndef AMANZI_OPERATOR_DIFFUSION_HH_
@@ -17,7 +19,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "exceptions.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "Point.hh"
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
@@ -26,30 +28,55 @@
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 
-
-/*
-  Pure interface for diffusion operators.
-*/ 
-
 namespace Amanzi {
 namespace Operators {
 
 class OperatorDiffusion {
  public:
   OperatorDiffusion(const Teuchos::RCP<Operator>& global_op) :
-      global_op_(global_op) {};
+      global_op_(global_op),
+      K_(Teuchos::null),
+      k_(Teuchos::null),
+      dkdp_(Teuchos::null),
+      ncells_owned(-1),
+      ncells_wghost(-1),
+      nfaces_owned(-1),
+      nfaces_wghost(-1),
+      nnodes_owned(-1),
+      nnodes_wghost(-1)
+  {};
 
   OperatorDiffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      mesh_(mesh) {};
+      mesh_(mesh),
+      K_(Teuchos::null),
+      k_(Teuchos::null),
+      dkdp_(Teuchos::null),
+      ncells_owned(-1),
+      ncells_wghost(-1),
+      nfaces_owned(-1),
+      nfaces_wghost(-1),
+      nnodes_owned(-1),
+      nnodes_wghost(-1)
+  {};
 
   OperatorDiffusion(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      mesh_(mesh) {};
+      mesh_(mesh),
+      K_(Teuchos::null),
+      k_(Teuchos::null),
+      dkdp_(Teuchos::null),
+      ncells_owned(-1),
+      ncells_wghost(-1),
+      nfaces_owned(-1),
+      nfaces_wghost(-1),
+      nnodes_owned(-1),
+      nnodes_wghost(-1)
+  {};
   
   // main virtual members
   // -- setup 
-  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) = 0;
-  virtual void Setup(const Teuchos::RCP<const CompositeVector>& k,
-                     const Teuchos::RCP<const CompositeVector>& dkdp) = 0;
+  virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) = 0;
+  virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
+				    const Teuchos::RCP<const CompositeVector>& dkdp) = 0;
 
   // -- creation of an operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
@@ -57,7 +84,7 @@ class OperatorDiffusion {
   virtual void UpdateMatricesNewtonCorrection(
           const Teuchos::Ptr<const CompositeVector>& flux,
           const Teuchos::Ptr<const CompositeVector>& u,
-          double scalar_limiter) {};
+          double scalar_limiter = 1.0) {};
 
   // -- after solving the problem: postrocessing
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux) = 0;
@@ -71,8 +98,8 @@ class OperatorDiffusion {
   virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
                      const Teuchos::RCP<const CompositeVector>& k,
                      const Teuchos::RCP<const CompositeVector>& dkdp) {
-    Setup(K);
-    Setup(k, dkdp);
+    SetTensorCoefficient(K);
+    SetScalarCoefficient(k, dkdp);
   }
 
   // boundary conditions (BC) require information on test and
@@ -137,6 +164,7 @@ class OperatorDiffusion {
   
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
+  bool K_symmetric_;
 
   // nonlinear coefficient and its representation
   Teuchos::RCP<const CompositeVector> k_, dkdp_;
@@ -156,9 +184,6 @@ class OperatorDiffusion {
   int nfaces_owned, nfaces_wghost;
   int nnodes_owned, nnodes_wghost;
 };
-
-
-
 
 }  // namespace Operators
 }  // namespace Amanzi

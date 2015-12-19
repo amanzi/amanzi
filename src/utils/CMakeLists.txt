@@ -30,12 +30,14 @@ add_amanzi_library(atk
                    SOURCE Timer.cc 
                           TimerManager.cc
                           TimeStepManager.cc
+                          Units.cc
                           XMLParameterListWriter.cc 
                           LeastSquare.cc 
                           VerboseObject.cc
 			  IOEvent.cc
                    HEADERS HDF5Reader.hh
                            Utils.hh
+                           Units.hh
                            Timer.hh
                            TimerManager.hh
                            TimeStepManager.hh
@@ -48,7 +50,9 @@ add_amanzi_library(atk
                            factory.hh
                            factory_with_state.hh
                            LeastSquare.hh
+                           ObservationData.hh
                    )
+
 if (BUILD_TESTS)
   
     # Add UnitTest include directoy
@@ -72,7 +76,6 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/test_verboseobject.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
-
 
 endif()
 

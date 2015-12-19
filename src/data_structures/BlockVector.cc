@@ -102,6 +102,16 @@ BlockVector& BlockVector::operator=(const BlockVector& other) {
 };
 
 
+// Returns the length of this blockvector
+int BlockVector::GlobalLength() const {
+  int gl = 0;
+  for (int i = 0; i != num_components_; ++i) {
+    gl += data_[i]->GlobalLength();
+  }
+  return gl;
+}
+
+
 // Check consistency of meta-data and allocate data.
 void BlockVector::CreateData() {
 #ifdef ENABLE_DBC

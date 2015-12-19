@@ -27,7 +27,7 @@
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 #include "mfd3d_diffusion.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 // Amanzi::Operators
 #include "Operator.hh"

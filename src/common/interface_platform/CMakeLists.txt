@@ -41,7 +41,6 @@ endif()
 # file(GLOB _hh_inc_files "*.hh")
 set(interface_inc_files
   Simulator.hh
-  ObservationData.hh
   InputConverter.hh
   InputConverterU.hh
   InputConverterU_Defs.hh

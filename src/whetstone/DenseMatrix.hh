@@ -34,6 +34,7 @@ class DenseMatrix {
   DenseMatrix(int mrow, int ncol);
   DenseMatrix(int mrow, int ncol, double* data, int data_access = WHETSTONE_DATA_ACCESS_COPY);
   DenseMatrix(const DenseMatrix& B);
+  DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2);
   ~DenseMatrix() { if (data_ != NULL && access_ == WHETSTONE_DATA_ACCESS_COPY) { delete[] data_; } }
   
   // primary members 
@@ -89,10 +90,10 @@ class DenseMatrix {
   int NumRows() const { return m_; }
   int NumCols() const { return n_; }
 
-  double* Values() { return data_; }
-  double* Value(int i, int j)  { return data_ + j * m_ + i; } 
-  const double* Values() const { return data_; }
-  const double* Value(int i, int j) const { return data_ + j * m_ + i; } 
+  inline double* Values() { return data_; }
+  inline double* Value(int i, int j)  { return data_ + j * m_ + i; } 
+  inline const double* Values() const { return data_; }
+  inline const double* Value(int i, int j) const { return data_ + j * m_ + i; } 
 
   // output 
   friend std::ostream& operator << (std::ostream& os, const DenseMatrix& A) {
@@ -113,9 +114,11 @@ class DenseMatrix {
     }
   }
 
-  // first level routines
+  // First level routines
+  // -- trace of a rectangular matrix
   double Trace();
 
+  // -- extrema in rows and columns
   void MaxRowValue(int irow, int* j, double* value) { 
     MaxRowValue(irow, 0, n_, j, value); 
   } 
@@ -132,15 +135,24 @@ class DenseMatrix {
     return a;
   }
 
-  // second level routines
+  // Second level routines
+  // -- inversion is applicable for square matrices only
   int Inverse();
   int NullSpace(DenseMatrix& D);
   double Det();  // limited capabilities
+
+  // -- orthonormalize matrix columns between n1 and n2-1.
+  //    Returns 0 is sucessful.
+  int OrthonormalizeColumns(int n1, int n2);
+
+  // -- permutations
+  void SwapColumns(int n1, int n2);
 
  private:
   int m_, n_, access_;
   double* data_;                       
 };
+
 
 inline bool operator==(const DenseMatrix& A, const DenseMatrix& B) {
   if (A.NumRows() != B.NumRows()) return false;
@@ -149,6 +161,7 @@ inline bool operator==(const DenseMatrix& A, const DenseMatrix& B) {
     if (A.Values()[i] != B.Values()[i]) return false;
   return true;
 }
+
 
 inline bool operator!=(const DenseMatrix& A, const DenseMatrix& B) {
   return !(A == B);

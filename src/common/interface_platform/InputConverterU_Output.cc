@@ -87,8 +87,8 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           for (int j = 0; j < multi_list.size(); j++) {
             DOMNode* jnode = multi_list[j];
             if (DOMNode::ELEMENT_NODE == jnode->getNodeType()) {
-              char* text = mm.transcode(jnode->getTextContent());
-              times.push_back(TimeCharToValue_(text));
+              text = mm.transcode(jnode->getTextContent());
+              times.push_back(TimeStringToValue_(TrimString_(text)));
             }
           }
           tm_parameter.set<Teuchos::Array<double> >("values", times);
@@ -292,7 +292,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           } else if (strcmp(obs_type, "volumetric_water_content") == 0) {
             obPL.set<std::string>("variable", "volumetric water content");
           } else if (strcmp(obs_type, "gravimetric_water_content") == 0) {
-            obPL.set<std::string>("variable", "Gravimetric water content");
+            obPL.set<std::string>("variable", "gravimetric water content");
           } else if (strcmp(obs_type, "x_aqueous_volumetric_flux") == 0) {
             obPL.set<std::string>("variable", "x-aqueous volumetric flux");
           } else if (strcmp(obs_type, "y_aqueous_volumetric_flux") == 0) {
@@ -314,10 +314,12 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           } else if (strcmp(obs_type, "aqueous_conc") == 0) {
             std::string solute_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "solute");
             std::stringstream name;
-            name << solute_name << " Aqueous concentration";
+            name << solute_name << " aqueous concentration";
             obPL.set<std::string>("variable", name.str());
           } else if (strcmp(obs_type, "drawdown") == 0) {
             obPL.set<std::string>("variable", "drawdown");
+          } else if (strcmp(obs_type, "water_table") == 0) {
+            obPL.set<std::string>("variable", "water table");
           } else if (strcmp(obs_type, "solute_volumetric_flow_rate") == 0) {
             std::string solute_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "solute");
             std::stringstream name;

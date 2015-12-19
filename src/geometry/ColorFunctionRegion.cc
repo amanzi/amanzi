@@ -25,8 +25,8 @@ namespace AmanziGeometry {
 // -------------------------------------------------------------
 // ColorFunctionRegion:: constructors / destructor
 // -------------------------------------------------------------
-ColorFunctionRegion::ColorFunctionRegion(const std::string name, 
-                                         const unsigned int id,
+ColorFunctionRegion::ColorFunctionRegion(const Set_Name& name, 
+                                         const Set_ID id,
                                          const std::string file,
                                          const int value,
                                          const Epetra_MpiComm *comm,
@@ -46,28 +46,6 @@ ColorFunctionRegion::ColorFunctionRegion(const std::string name,
     Exceptions::amanzi_throw(msg);
   }
 
-}
-
-ColorFunctionRegion::ColorFunctionRegion(const char *name, 
-                                         const unsigned int id,
-                                         const char *file,
-                                         const int value,
-                                         const Epetra_MpiComm *comm,
-                                         const LifeCycleType lifecycle,
-                                         const VerboseObject *verbobj)
-  : Region(name,id,3,lifecycle,verbobj),
-    file_(file), value_(value)
-{
-  // Region dimension is set arbitrarily as 3 since the set of
-  // entities in the mesh will determine the dimension
-
-  ColorFunctionFactory colfunc_factory;
-  try {
-    colorfunc_ = colfunc_factory.Create(file_,*comm);
-  }
-  catch (Errors::Message &msg) {
-    Exceptions::amanzi_throw(msg);
-  }
 }
 
 ColorFunctionRegion::ColorFunctionRegion(const ColorFunctionRegion& old)

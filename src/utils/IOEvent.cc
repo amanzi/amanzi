@@ -8,7 +8,6 @@ Author: Markus Berndt
 
 IO event -- base class for reading or writing data.  Mostly just manages when
 to do the I/O.
-
 ------------------------------------------------------------------------- */
 
 #include "TimeStepManager.hh"
@@ -25,6 +24,7 @@ IOEvent::IOEvent(Teuchos::ParameterList& plist) :
   ReadParameters_();
 };
 
+
 // -----------------------------------------------------------------------------
 // Constructor for a disabled Event.
 // -----------------------------------------------------------------------------
@@ -33,6 +33,7 @@ IOEvent::IOEvent(): disabled_(true) {}
 
 bool IOEvent::is_disabled() const { return disabled_; }
 void IOEvent::disable(bool disabled) { disabled_ = disabled; }
+
 
 // -----------------------------------------------------------------------------
 // Place vis times in the manager.
@@ -48,6 +49,7 @@ void IOEvent::RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& t
     }
   }
 }
+
 
 // -----------------------------------------------------------------------------
 // Does vis need to dump the state?
@@ -147,6 +149,5 @@ void IOEvent::ReadParameters_() {
     times_ = plist_.get<Teuchos::Array<double> >("times");
   }
 }
-
 
 } // namespace

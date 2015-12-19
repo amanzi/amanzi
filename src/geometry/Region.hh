@@ -9,50 +9,27 @@
  * 
  */
 
-#ifndef _Region_hh_
-#define _Region_hh_
+#ifndef AMANZI_REGION_HH_
+#define AMANZI_REGION_HH_
 
 #include <vector>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ParameterList.hpp>
 
-#include "Point.hh"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 #include "VerboseObject.hh"
+
+#include "GeometryDefs.hh"
+#include "Point.hh"
 
 namespace Amanzi {
 namespace AmanziGeometry {
 
 
-typedef enum {
-  BOX=0,
-  PLANE,
-  LABELEDSET,
-  LAYER,
-  SURFACE,
-  POINT,
-  COLORFUNCTION,  
-  LOGICAL,
-  POLYGON
-} RegionType;
-
-typedef enum {
-  PERMANENT=0,
-  TEMPORARY
-} LifeCycleType;
-
-typedef enum {
-  NOBOOLEAN=-1,
-  COMPLEMENT,
-  UNION,
-  INTERSECT,
-  SUBTRACT
-} BoolOpType;
-
 // -------------------------------------------------------------
 //  class Region
 // -------------------------------------------------------------
-/// An class that represent a geometric region
+// A class to represent a geometric region
 /**
  * A Region is just some arbitrary subset of space, that can be
  * specified in a myriad of ways.  At a minimum, there is a need to be
@@ -73,11 +50,8 @@ public:
   Region(void);
 
   /// Constructor with name and ID
-  Region(const std::string name, const unsigned int id, 
+  Region(const Set_Name& name, const Set_ID id,
          const unsigned int dim=3, const LifeCycleType lifecycle=PERMANENT,
-         const VerboseObject *verbobj=NULL);
-  Region(const char *name, const unsigned int id, const unsigned int dim=3, 
-         const LifeCycleType lifecycle=PERMANENT,
          const VerboseObject *verbobj=NULL);
 
   /// Copy constructor 
@@ -96,14 +70,14 @@ public:
 
   /// Name of the region
   inline
-  std::string name(void) const
+  std::string name() const
   {
     return name_;
   }
 
   /// Integer identifier of the region
   inline
-  unsigned int id(void) const
+  Set_ID id() const
   {
     return id_;
   }
@@ -140,51 +114,27 @@ public:
   virtual bool inside(const Point& p) const = 0;
 
 
-  /// Get the extents of the Region
-  /// void extents(Point *pmin, Point *pmax) const;
-
 private:
 
   // Object encoding output stream and verbosity of diagnostics
   const VerboseObject *verbosity_obj_;
 
   // Lifecycle (Temporary or Permanent)
-
   LifeCycleType lifecycle_;
   
   // Topological dimension of region (0, 1, 2, 3)
-
   unsigned int topo_dimension_;
 
   // Name of identifier
-
-  std::string name_;
+  Set_Name name_;
 
   // Integer identifier of region
-
-  unsigned int id_;
-
-  // lower/left/back corner or min xyz
-
-  // Point min_pnt;
-
-  // Upper/right/front corner or max xyz
- 
-  // Point max_pnt;
+  Set_ID id_;
 
 };
 
-// A smart pointer to Region instances
-//
-// typedef Teuchos::RCP<Region> RegionPtr;
-
-// RVG: I am not able to code a region factory correctly using the
-// smart pointers so I will revert to a simple definition of RegionPtr
-
-typedef Region *RegionPtr;
-
-// A thing to hold some Region
-
+// Useful typedefs
+typedef Region* RegionPtr;
 typedef std::vector< RegionPtr > RegionVector;
 
 } // namespace AmanziGeometry

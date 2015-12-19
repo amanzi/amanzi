@@ -5,8 +5,6 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   HYPRE Euclid parallel ILU preconditioner.
-
-  Usage:
 */
 
 #include "Teuchos_RCP.hpp"
@@ -24,7 +22,6 @@ namespace AmanziPreconditioners {
 int PreconditionerEuclid::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
 {
   returned_code_ = IfpHypre_->ApplyInverse(v, hv);
-  //return (returned_code_ == 0) ? 0 : 1;
   return returned_code_;
 }
 

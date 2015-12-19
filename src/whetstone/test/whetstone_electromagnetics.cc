@@ -25,7 +25,7 @@
 #include "Point.hh"
 
 #include "mfd3d_electromagnetics.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 
 /* **************************************************************** */

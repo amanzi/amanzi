@@ -32,7 +32,6 @@ include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
-include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -75,7 +74,7 @@ set(state_inc_files
   rank_evaluator_reg.hh
   StateDefs.hh
   State.hh
-  visualization.hh
+  Visualization.hh
   UnstructuredObservations.hh
   Debugger.hh)
 
@@ -83,7 +82,6 @@ set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 add_amanzi_library(state 
                    SOURCE State.cc
                           checkpoint.cc
-                          visualization.cc
                           Observable.cc
                           chemistry_data.cc
                           cell_volume_evaluator.cc
@@ -102,6 +100,7 @@ add_amanzi_library(state
                           independent_variable_field_evaluator_fromfile.cc
                           deforming_cell_volume_evaluator.cc
                           UnstructuredObservations.cc
+                          Visualization.cc
                           Debugger.cc
                    HEADERS ${state_inc_files}
                    LINK_LIBS atk functions output mesh ${state_tpl_libs})
@@ -139,8 +138,6 @@ if (BUILD_TESTS)
           copy_directory ${STATE_SOURCE_DIR}/test ${STATE_BINARY_DIR}/test) 
     endif()
     
-    # set(amanzi_libs geometry mesh state)
-    
     add_amanzi_test(state_restart state_restart
                     KIND int
                     SOURCE
@@ -161,6 +158,13 @@ if (BUILD_TESTS)
                     SOURCE
 	  	          test/Main.cc
 	 		  test/state_dag.cc
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(state_init state_init
+                    KIND int
+                    SOURCE
+	  	          test/Main.cc
+	 		  test/state_init.cc
                     LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
 endif()
 

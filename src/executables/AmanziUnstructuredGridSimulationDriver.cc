@@ -29,6 +29,7 @@
 #include "eos_registration.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+#include "mdm_transport_registration.hh"
 #include "multiscale_flow_registration.hh"
 #include "multiscale_transport_registration.hh"
 #include "mpc_pks_registration.hh"
@@ -74,7 +75,7 @@ AmanziUnstructuredGridSimulationDriver::~AmanziUnstructuredGridSimulationDriver(
 
 Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
-                                            Amanzi::ObservationData& output_observations)
+                                            Amanzi::ObservationData& observations_data)
 {
   using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -329,7 +330,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   analysis.OutputBCs();
 
   Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(*plist_));
-  Amanzi::CycleDriver cycle_driver(glist, mesh, comm, output_observations);
+  Amanzi::CycleDriver cycle_driver(glist, mesh, comm, observations_data);
 
   cycle_driver.Go();
 

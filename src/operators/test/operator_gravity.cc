@@ -24,7 +24,7 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 // Operators
 #include "HeatConduction.hh"
@@ -86,15 +86,14 @@ void RunTestGravity(std::string op_list_name) {
 
   // create fluid densities
   CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh);
-  cvs.SetGhosted(true);
-  cvs.SetComponent("cell", AmanziMesh::CELL, 1);
-  cvs.SetOwned(false);
-  cvs.AddComponent("face", AmanziMesh::FACE, 1);
+  cvs.SetMesh(mesh)
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("face", AmanziMesh::FACE, 1);
 
-  double rho(1.0);
+  double rho(2.0);
   Teuchos::RCP<CompositeVector> rho_cv = Teuchos::rcp(new CompositeVector(cvs));
-  rho_cv->PutScalar(1.0);
+  rho_cv->PutScalar(2.0);
 
   // we need flux and dummy solution to populate nonlinear coefficient
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));
@@ -121,13 +120,13 @@ void RunTestGravity(std::string op_list_name) {
 
   // create first diffusion operator using constant density
   Operators::OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op1 = opfactory.Create(mesh, bc, op_list, rho, g);
+  Teuchos::RCP<OperatorDiffusion> op1 = opfactory.Create(op_list, mesh, bc, rho, g);
 
   op1->Setup(K, knc->values(), knc->derivatives());
   op1->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // create and populate the second operator using vector density
-  Teuchos::RCP<OperatorDiffusion> op2 = opfactory.Create(mesh, bc, op_list, rho_cv, g);
+  Teuchos::RCP<OperatorDiffusion> op2 = opfactory.Create(op_list, mesh, bc, rho_cv, g);
 
   op2->Setup(K, knc->values(), knc->derivatives());
   op2->UpdateMatrices(flux.ptr(), Teuchos::null);

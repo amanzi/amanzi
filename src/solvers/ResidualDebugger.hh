@@ -19,32 +19,34 @@ process for use with vis tools.
 
 #include "VerboseObject.hh"
 #include "IOEvent.hh"
+#include "TreeVector.hh"
+#include "TreeVector_Utils.hh"
+#include "hdf5mpi_mesh.hh"
 
 namespace Amanzi {
-
-class HDF5_MPI;
-
 namespace AmanziSolvers {
 
-template<class Vector, class VectorSpace>
 class ResidualDebugger : public IOEvent {
 
  public:
   // Constructor
   ResidualDebugger(Teuchos::ParameterList& plist) :
       IOEvent(plist) {
-    filebasename_ = plist_.get<std::string>("file name base","amanzi_dbg");
+    filebasename_ = plist_.get<std::string>("file name base", "amanzi_dbg");
   }
-  
-  void StartIteration(double time, int cycle, int attempt,
-                      const VectorSpace& space);
 
+  template <class VectorSpace>
+  void StartIteration(double time, int cycle, int attempt,
+                      const VectorSpace& space) {}
+
+  template <class Vector>
   void
   WriteVector(int iter,
               const Vector& res,
               const Teuchos::Ptr<const Vector>& u=Teuchos::null,
-              const Teuchos::Ptr<const Vector>& du=Teuchos::null);
+              const Teuchos::Ptr<const Vector>& du=Teuchos::null) {}
 
+  
  protected:
   std::string filebasename_;
   bool on_;
@@ -53,28 +55,19 @@ class ResidualDebugger : public IOEvent {
 };
 
 
-//
-// Default doesn't work
-// -----------------------------------------------------------------------------
-template<class Vector, class VectorSpace>
-void
-ResidualDebugger<Vector,VectorSpace>::StartIteration(
-                                 double time, int cycle, int attempt,
-                                 const VectorSpace& space) {}
+template <>
+void ResidualDebugger::StartIteration<TreeVectorSpace>(double time, int cycle, int attempt,
+                                                       const TreeVectorSpace& space);
+template <>
+void ResidualDebugger::WriteVector<TreeVector>(int iter,
+              const TreeVector& res,
+              const Teuchos::Ptr<const TreeVector>& u,
+              const Teuchos::Ptr<const TreeVector>& du);
 
-
-//  
-// Write a vector individually.  Default does not work.
-// -----------------------------------------------------------------------------
-template<class Vector, class VectorSpace>
-void
-ResidualDebugger<Vector,VectorSpace>::WriteVector(int iter,
-			      const Vector& res,
-                              const Teuchos::Ptr<const Vector>& u,
-                              const Teuchos::Ptr<const Vector>& du) {}
   
 
 } // namespace AmanziSolver
 } // namespace Amanzi
+
 
 #endif

@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.1.1">
+<amanzi_input type="unstructured" version="2.2.1">
   <model_description name="1D Flow and Transport w/ calcite dissolution">
     <units>
       <length_unit>m</length_unit>
@@ -26,7 +26,7 @@
   <process_kernels>
     <flow model="saturated" state="on" />
     <transport state="on" />
-    <chemistry engine="amanzi" process_model="none" state="on"  input_filename="calcite.bgd"/>
+    <chemistry engine="amanzi" process_model="none" state="on" />
   </process_kernels>
 
   <phases>
@@ -44,7 +44,7 @@
     </liquid_phase>
     <solid_phase name="rock">
       <minerals>
-        <mineral name="Calcite"/>
+        <mineral>Calcite</mineral>
       </minerals>     
     </solid_phase>
   </phases>
@@ -192,9 +192,9 @@
   </boundary_conditions>
 
   <geochemistry>
-    <reaction_network file="1d-calcite-trim.in" format="simple"/>
-    <constraint name="initial" filename="1d-calcite-trim.in"/>
-    <constraint name="west" filename="1d-calcite-trim.in"/>
+    <amanzi_chemistry>
+      <reaction_network file="calcite.bgd" format="simple"/>
+    </amanzi_chemistry>
   </geochemistry>
 
   <output>

@@ -136,10 +136,59 @@ The name *Verbosity Level* is reserved by Trilinos.
    </ParameterList>
 
 
+Residual debugger
+-----------------
+
+Some components (currently just nonlinear solver, this may change)
+leverage a ResidualDebugger object for writing, to file, residuals,
+corrections, and internal iterates of a solve process for solver
+debugging/work.  Control of when these iterates are written is
+controlled by a few parameters.  This should be written sparingly --
+each attempt at a timestep and each cycle is its own file, and writes
+its own mesh file, so this should be considered i/o and runtime
+expensive.
+
+  * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, 
+    the second is the cycle period, and the third is the stop cycle or -1 in which case 
+    there is no stop cycle. All iterations shall be written at such cycles that 
+    satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
+
+  * `"cycles start period stop n`" [Array(int)] if multiple cycles start-period-stop parameters 
+    are needed, then use these parameters with n=0,1,2,..., and not the single 
+    `"cycles start period stop`" parameter.
+
+  * `"cycles`" [Array(int)] an array of discrete cycles that at which all iterations shall be written. 
+
+Note: *cycle* here means the current time integration step and *not* the global cycle.
+
+.. code-block:: xml
+
+   <ParameterList name="BDF1">  <!-- parent list -->
+     <ParameterList name="ResidualDebugger">
+       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
+       <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
+     </ParameterList>
+   </ParameterList>
+   
+
 Units
 -----
 
-Amanzi's internal default units are SI units.
+Amanzi's internal default units are SI units except for the concentration.
+
+* `"concentration`" [string] defines units for concentration. Available options
+  are `"molar`" (default) which is `"mol/L`" and `"mol/m^3`". 
+
+.. code-block:: xml
+
+   <ParameterList>  <!-- parent list -->
+     <ParameterList name="Units">
+       <Parameter name="length" type="string" value="m"/>
+       <Parameter name="time" type="string" value="s"/>
+       <Parameter name="mass" type="string" value="kg"/>
+       <Parameter name="concentration" type="string" value="molar"/>
+     </ParameterList>
+   </ParameterList>
 
 
 Cycle driver
@@ -307,6 +356,21 @@ The initialization sublist of *State* is named *initial conditions*.
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
+
+Primary and derived fields
+--------------------------
+
+* Primary fields (default units)
+
+  * pressure [Pa]
+  * total component concentration [:math:`mol/L`] or [:math:`mol/m^3`]
+  * temperature [K]
+
+* Derived fields
+
+  * saturation [-]
+  * hydraulic head [m]
 
 
 Field evaluators
@@ -629,9 +693,14 @@ Initialization from a file
 
 Some fields can be initialized from files. 
 For each field, an additional sublist has to be added to the
-named sublist of *State* list with the file name and the name of an attribute. 
+named sublist of *State* list with the file name and the name of attributes. 
 For a serial run, the file extension must be *.exo*. 
 For a parallel run, it must be *.par*.
+
+* `"attributes`" [Array(string)] defines names of attributes. The number of names
+  must be equal to the number of components in the field. The names can be repeated.
+  Scalar fields (e.g. porosity) require one name, tensorial fields (e.g. permeability)
+  require two or three names.
 
 .. code-block:: xml
 
@@ -639,7 +708,7 @@ For a parallel run, it must be *.par*.
      <ParameterList name="permeability">
        <ParameterList name="exodus file initialization">
          <Parameter name="file" type="string" value="mesh_with_data.exo"/>
-         <Parameter name="attribute" type="string" value="perm"/>
+         <Parameter name="attributes" type="Array(string)" value="{permx, permx, permz}"/>
        </ParameterList>
      </ParameterList>
    </ParameterList>
@@ -765,6 +834,15 @@ The name of the PKs in this list must match *PKNAMEs* in *Cycle Driver* list.
 Flow PK
 -------
 
+Mathematical models
+...................
+
+A few PDE models can be instantiated using the parameters described below.
+
+
+Fully saturated flow
+````````````````````
+
 The conceptual PDE model for the fully saturated flow is
 
 .. math::
@@ -777,12 +855,16 @@ The conceptual PDE model for the fully saturated flow is
   (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g}),
 
 where 
-:math:`\phi` is porosity,
+:math:`\phi` is porosity [-],
 :math:`s_s` and :math:`s_y` are specific storage and specific yield, respectively,
-:math:`\rho_l` is fluid density,
-:math:`Q` is source or sink term,
-:math:`\boldsymbol{q}_l` is the Darcy velocity,
-and :math:`\boldsymbol{g}` is gravity.
+:math:`\rho_l` is fluid density [:math:`kg / m^3`],
+:math:`Q` is source or sink term [:math:`kg / m^3 / s`],
+:math:`\boldsymbol{q}_l` is the Darcy velocity [:math:`m/s`],
+and :math:`\boldsymbol{g}` is gravity [:math:`m/s^2`].
+
+
+Partially saturated flow
+````````````````````````
 
 The conceptual PDE model for the partially saturated flow is
 
@@ -790,28 +872,84 @@ The conceptual PDE model for the partially saturated flow is
   \frac{\partial \theta}{\partial t} 
   =
   \boldsymbol{\nabla} \cdot (\eta_l \boldsymbol{q}_l) + Q,
+  \qquad
+  \boldsymbol{q}_l 
+  = -\frac{\boldsymbol{K} k_r}{\mu} 
+  (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g})
+
+where 
+:math:`\theta` is total water content [:math:`mol/m^3`],
+:math:`\eta_l` is molar density of liquid [:math:`mol/m^3`],
+:math:`\rho_l` is fluid density [:math:`kg/m^3`],
+:math:`Q` is source or sink term [:math:`mol/m^3/s`],
+:math:`\boldsymbol{q}_l` is the Darcy velocity [:math:`m/s`],
+:math:`k_r` is relative permeability [-],
+and :math:`\boldsymbol{g}` is gravity [:math:`m/s^2`].
+We define 
+
+.. math::
+  \theta = \phi \eta_l s_l
+
+where :math:`s_l` is liquid saturation [-],
+and :math:`\phi` is porosity [-].
+
+
+Partially saturated flow with water vapor
+`````````````````````````````````````````
+
+The conceptual PDE model for the partially saturated flow with water vapor 
+includes liquid phase (liquid water) and pgas phase (water vapor):
+
+.. math::
+  \frac{\partial \theta}{\partial t} 
+  =
+  \boldsymbol{\nabla} \cdot (\eta_l \boldsymbol{q}_l)
+  - \boldsymbol{\nabla} \cdot (\boldsymbol{K}_g \boldsymbol{\nabla} \big(\frac{p_v}{p_g}\big)) + Q,
   \quad
   \boldsymbol{q}_l 
   = -\frac{\boldsymbol{K} k_r}{\mu} 
   (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g})
 
 where 
-:math:`\theta` is total water content,
-:math:`\eta_l` is molar density of liquid,
-:math:`\rho_l` is fluid density,
-:math:`Q` is source or sink term,
-:math:`\boldsymbol{q}_l` is the Darcy velocity,
-:math:`k_r` is relative permeability,
-and :math:`\boldsymbol{g}` is gravity.
+:math:`\theta` is total water content [:math:`mol/m^3`],
+:math:`\eta_l` is molar density of liquid (water) [:math:`mol/m^3`],
+:math:`\rho_l` is fluid density [:math:`kg/m^3`],
+:math:`Q` is source or sink term [:math:`mol/m^3/s`],
+:math:`\boldsymbol{q}_l` is the Darcy velocity [:math:`m/s`],
+:math:`k_r` is relative permeability [-],
+:math:`\boldsymbol{g}` is gravity [:math:`m/s^2`],
+:math:`p_v` is the vapor pressure [Pa],
+:math:`p_g` is the gas pressure [Pa],
+and :math:`\boldsymbol{K}_g` is the effective diffusion coefficient of the water vapor.
 We define 
 
 .. math::
   \theta = \phi \eta_l s_l
 
-where :math:`s_l` is liquid saturation,
-and :math:`\phi` is porosity.
+where :math:`s_l` is liquid saturation [-],
+and :math:`\phi` is porosity [-].
+The effective diffusion coefficient of the water vapor is given by
 
-Based on these two models, the flow sublist includes exactly one sublist, either 
+.. math::
+  \boldsymbol{K}_g = \phi s_g \tau_g \eta_g \boldsymbol{D}_g
+
+where :math:`s_g` is vapor saturation [-],
+:math:`\tau_g` is the tortuosity of the gas phase [-],
+:math:`\eta_g` is the molar density of the vapor,
+and :math:`\boldsymbol{D}_g` is the diffusion coefficient of the gas phase.
+The gas pressure :math:`p_g` is set to the atmosperic pressure and the vapor pressure
+model assumes theremal equlibrium of liquid and gas phases:
+
+.. math::
+  p_v = P_{sat}(T) \exp\left(\frac{P_{cgl}}{\eta_l R T}\right)
+
+where
+:math:`R` is the ideal gas constant,
+:math:`P_{cgl}` is the liquid-gas capillary pressure [Pa],
+:math:`P_{sat}` is the saturated vapor pressure [Pa],
+amd :math:`T` is the temprearture [K].
+
+Based on these three models, the flow sublist includes exactly one sublist, either 
 *Darcy problem* or *Richards problem*.
 Structure of both sublists is quite similar.
 
@@ -824,8 +962,8 @@ Structure of both sublists is quite similar.
    </ParameterList>
 
 
-Physical models and assumptions
-...............................
+Model specifications and assumptions
+....................................
 
 This list is used to summarize physical models and assumptions, such as
 coupling with other PKs.
@@ -1043,10 +1181,10 @@ relative permeability, density and viscosity.
     `"other: harmonic average`", and `"other: arithmetic average`".
 
   * `"upwind update`" [string] defines frequency of recalculating Darcy flux inside
-    nonlinear solver. The available options are `"every time step`" and `"every nonlinear iteration`".
+    nonlinear solver. The available options are `"every timestep`" and `"every nonlinear iteration`".
     The first option freezes the Darcy flux for the whole time step. The second option
     updates it on each iteration of a nonlinear solver. The second option is recommended
-    for the New ton solver. It may impact significantly upwinding of the relative permeability 
+    for the Newton solver. It may impact significantly upwinding of the relative permeability 
     and convergence rate of this solver.
 
   * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
@@ -1115,7 +1253,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
           <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
           <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-          <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+          <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="newton correction" type="string" value="approximate jacobian"/>
         </ParameterList>
       </ParameterList>
@@ -1441,6 +1579,8 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
   * `"aa parameters`" [list] internal parameters for the nonlinear
     solver AA (Anderson acceleration).
 
+  * `"ResidualDebugger`" [list] a residual debugger specification.
+    
 .. code-block:: xml
 
    <ParameterList name="Richards problem">  <!-- parent list -->
@@ -1534,10 +1674,17 @@ The remaining *Flow* parameters are
   for calculating absolute permeability. The available options are `"cartesian`"
   and `"layer`".
 
-* `"clipping parameters`"[list] defines how solution increment calculated by a nonlinear 
+* `"clipping parameters`" [list] defines how solution increment calculated by a nonlinear 
   solver is modified e.g., clipped.
 
+  * `"maximum saturation change`" [double] Default is 0.25.
+
+  * `"pressure damping factor`" [double] Default is 0.5.
+
 * `"plot time history`" [bool] produces an ASCII file with the time history. Default is `"false`".
+
+* `"algebraic water content balance`" [bool] uses algebraic correction to enforce consistency of 
+  water content and Darcy fluxes. It leads to a monotone transport. Default is *false*.
 
 .. code-block:: xml
 
@@ -1548,6 +1695,7 @@ The remaining *Flow* parameters are
      </ParameterList>	
 
      <Parameter name="plot time history" type="bool" value="false"/>
+     <Parameter name="algebraic water content balance" type="bool" value="false"/>
    </ParameterList>	
 
 
@@ -1951,7 +2099,8 @@ Note that the source values are set up separately for each component.
     * `"spatial distribution method`" [string] identifies a method for distributing
       source Q over the specified regions. The available options are `"volume`",
       `"none`", and `"permeability`". For option `"none`" the source term Q is measured
-      in [mol/m^3/s]. For the other options, it is measured in [mol/s]. When the source function
+      in [mol/L/s] (if units for concetration is mol/L) or [mol/m^3/s] (othrwise). 
+      For the other options, it is measured in [mol/s]. When the source function
       is defined over a few regions, Q will be distributed independently over each region.
       Default value is `"none`".
 
@@ -2031,8 +2180,7 @@ The incomplete list is
  * [local] cell id and position with the smallest time step
  * [local] convergence of a linear solver for dispersion, PCG here
  * [local] number of subcycles, stable time step, and global time step (in seconds)
- * [local] species's name, concentration extrema, total amount of it in the 
-   reservoir, and amount escaped through the outflow boundary
+ * [local] species's name, concentration extrema, and total amount of it in the reservoir
  * [global] current simulation time (in years)
 
 .. code-block:: xml
@@ -2041,7 +2189,7 @@ The incomplete list is
   TransportPK      |    cell 0 has smallest dt, (-270, -270)
   TransportPK      |    dispersion solver (pcg) ||r||=8.33085e-39 itrs=2
   TransportPK      |    1 sub-cycles, dt_stable=2.81743e+06 [sec]  dt_MPC=2.81743e+06 [sec]
-  TransportPK      |    Tc-99: min/max=7.111e-21 0.001461 [mol/m^3], total/out=2.2957 1.4211e-14 [mol]
+  TransportPK      |    Tc-99: min=8.08339e-06 mol/L max=0.0952948 mol/L, total=9.07795 mol
   CycleDriver      |   New time(y) = 0.89279
 
 
@@ -2203,7 +2351,7 @@ A comment line starts with token `"#`".
 Data fields are separated by semicolumns.
 
 
-Primary Species
+Primary species
 ```````````````
 
 Each line in this section has four data fields: 
@@ -2263,7 +2411,7 @@ their meaning depends on the model; although the first one is always *kd*.
    Tc_99  ; linear     ;     988.218
 
 
-General Kinetics
+General kinetics
 ````````````````
 
 Each line in this section has five data fields.
@@ -2282,7 +2430,7 @@ The fourth and fifth columns contain rate constants.
    1.00 Tritium <->  ;   1.00 Tritium ;  1.78577E-09 ; ; 
 
 
-Aqueous Equilibrium Complexes
+Aqueous equilibrium complexes
 `````````````````````````````
 
 Each line in this section has five 
@@ -2437,7 +2585,7 @@ Minerals
 ````````
 
 Each line in this section has five fields for secondary species:
-Name = coeff reactant, log Keq, gram molecular weight [g/mole], molar volume [cm^3/mole],
+Name = coeff reactant, log Keq, gram molecular weight [g/mol], molar volume [cm^3/mol],
 and specific surface area [cm^2 mineral / cm^3 bulk].
 
 .. code-block:: txt
@@ -2465,7 +2613,7 @@ and specific surface area [cm^2 mineral / cm^3 bulk].
    Polyhalite = 2.0 H2O  1.0 Mg++ 2.0 Ca++    2.0 K+  4.0 SO4-2    ; -13.7440 ; 218.1   ; 100.9722 ; 1.0
 
 
-Mineral Kinetics
+Mineral kinetics
 ````````````````
 
 Each line in this section has four fields.
@@ -2492,7 +2640,7 @@ The second field is the rate name.
    (UO2)3(PO4)2.4H2O ; TST ; log10_rate_constant  -10.0 moles/m^2/sec
 
 
-Ion Exchange Sites
+Ion exchange sites
 ``````````````````
 
 Each line in this section has three fields: 
@@ -2505,7 +2653,7 @@ The location is the mineral where the exchanger is located, i.e. kaolinite.
    X- ; -1.0 ; Halite
 
 
-Ion Exchange Complexes
+Ion exchange complexes
 ``````````````````````
 
 Each line in this section has two fields.
@@ -2529,7 +2677,7 @@ The following assumptions are made:
    NaX    = 1.0 Na+   1.0 X- ;  0.0
 
 
-Surface Complex Sites
+Surface complex sites
 `````````````````````
 
 Each line in this section has two fields: species name and surface density.
@@ -2545,7 +2693,7 @@ Each line in this section has two fields: species name and surface density.
    >davis_OH ; 1.56199E-01
 
 
-Surface Complexes
+Surface complexes
 `````````````````
 
 Each line in this section has three fields
@@ -2577,7 +2725,7 @@ The second field is Keq. The third field is charge.
    >FeOHUO3      = 1.0 >FeOH  1.0 H2O  -2.0 H+  1.0 UO2++ ;  3.05 ;  0.0
 
 
-Radiactive Decay
+Radiactive decay
 ````````````````
 
 Each line in this section has two fields.
@@ -2970,13 +3118,16 @@ Diffusion operator
     has useful properties under some a priori conditions on the mesh and/or permeability tensor.
     The available options are `"mfd: optimized for sparsity`", `"mfd: optimized for monotonicity`",
     `"mfd: default`", `"mfd: support operator`", `"mfd: two-point flux approximation`",
-    and `"fv: default`". 
+    `"fv: default`", and `"nlfv: default`".
     The first option is recommended for general meshes.
     The second option is recommended for orthogonal meshes and diagonal absolute 
     permeability tensor. 
 
   * `"discretization secondary`" [string] specifies the most robust discretization method
     that is used when the primary selection fails to satisfy all a priori conditions.
+
+  * `"diffusion tensor`" [string] allows us to solve problems with symmetric and non-symmetric 
+    (but positive definite) tensors. Available options are *symmetric* (defualt) and *nonsymmetric*.
 
   * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
     coefficient, if any. Available options are `"upwind: face`", `"divk: cell-face`" (default),
@@ -3500,12 +3651,18 @@ Internal parameters for GMRES include
 * `"overflow tolerance`" [double] defines the maximum allowed jump in residual. The default
   value is 3.0e+50.
 
+* `"preconditioning strategy`" [string] defines either `"left`" or `"right`" preconditioner.
+  Default is `"left`".
+
 * `"controller training start`" [int] defines the iteration number when the stagnation controller 
   starts to collect data of the convergence history. Default is 0.
 
 * `"controller training end`" [int] defines the iteration number when the stagnation controller
   stops to collect data of the convergence history. The cotroller becomes active on the next
   iteration. Default is 3.
+
+* `"maximum size of deflation space`" [int] defines the size of deflation space. It should be 
+  smaller than the size of the Krylov space. Default is 0. This is experimental feature.
 
 .. code-block:: xml
 
@@ -3516,6 +3673,7 @@ Internal parameters for GMRES include
        <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
        <Parameter name="size of Krylov space" type="int" value="10"/>
        <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
+       <Parameter name="maximum size of deflation space" type="int" value="0"/>
 
        <ParameterList name="VerboseObject">
          <Parameter name="Verbosity Level" type="string" value="high"/>
@@ -3667,27 +3825,29 @@ Newton-Krylov acceleration (NKA)
 
 .. code-block:: xml
 
-   <Parameter name="solver type" type="string" value="nka"/>
-   <ParameterList name="nka parameters">
-     <Parameter name="nonlinear tolerance" type="double" value="1.0e-06"/>
-     <Parameter name="monitor" type="string" value="monitor update"/>
-     <Parameter name="limit iterations" type="int" value="20"/>
-     <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-     <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-     <Parameter name="diverged pc tolerance" type="double" value="1.0e+10"/>
-     <Parameter name="diverged residual tolerance" type="double" value="1.0e+10"/>
-     <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
-     <Parameter name="max error growth factor" type="double" value="1.0e+05"/>
-     <Parameter name="max divergent iterations" type="int" value="3"/>
-     <Parameter name="max nka vectors" type="int" value="10"/>
-     <Parameter name="nka vector tolerance" type="double" value="0.05"/>
-     <Parameter name="modify correction" type="bool" value="false"/>
-     <Parameter name="lag iterations" type="int" value="0"/>
+  <ParameterList name="BDF1">  <!-- typical parent list -->
+    <Parameter name="solver type" type="string" value="nka"/>
+    <ParameterList name="nka parameters">
+      <Parameter name="nonlinear tolerance" type="double" value="1.0e-06"/>
+      <Parameter name="monitor" type="string" value="monitor update"/>
+      <Parameter name="limit iterations" type="int" value="20"/>
+      <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="diverged pc tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="diverged residual tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+      <Parameter name="max error growth factor" type="double" value="1.0e+05"/>
+      <Parameter name="max divergent iterations" type="int" value="3"/>
+      <Parameter name="max nka vectors" type="int" value="10"/>
+      <Parameter name="nka vector tolerance" type="double" value="0.05"/>
+      <Parameter name="modify correction" type="bool" value="false"/>
+      <Parameter name="lag iterations" type="int" value="0"/>
 
-     <ParameterList name="VerboseObject">
-       <Parameter name="Verbosity Level" type="string" value="high"/>
-     </ParameterList>
-   </ParameterList>
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="high"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
 
 
 Anderson acceleration (AA)
@@ -3733,7 +3893,7 @@ Internal parameters for AA include
 
 .. code-block:: xml
 
-  <ParameterList name="AA">  <!-- parent list -->
+  <ParameterList name="BDF1">  <!-- typical parent list -->
     <ParameterList name="aa parameters">
       <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
       <Parameter name="limit iterations" type="int" value="30"/>
@@ -3789,6 +3949,44 @@ corresponds to a stable (e.g. upwind) discretization.
 
 .. code-block:: xml
 
+  <ParameterList name="BDF1">  <!-- typical parent list -->
+    <Parameter name="solver type" type="string" value="Newton"/>
+    <ParameterList name="Newton parameters">
+      <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+      <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+      <Parameter name="max divergent iterations" type="int" value="3"/>
+      <Parameter name="limit iterations" type="int" value="20"/>
+      <Parameter name="modify correction" type="bool" value="true"/>
+    </ParameterList>
+  </ParameterList>
+
+
+Inexact Newton
+..............
+
+The inexact Newton methods work for cases where the discrete Jacobian is either 
+*not* available, or not stable, or computationally expensive. The discrete
+Jacobian is replaced by a stable approximation of the continuum Jacobian.
+This solver has the same list of parameters as the Newton solver. 
+
+The difference between these solvers is in the preconditioner parameters.
+Here is the list of selected parameters for the Newton-Picard solver.
+
+.. code-block:: xml
+
+   <ParameterList name="operators">
+     <ParameterList name="diffusion operator">
+       <ParameterList name="preconditioner">
+         <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+         <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+         <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+         <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+         <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+       
    <Parameter name="solver type" type="string" value="Newton"/>
    <ParameterList name="Newton parameters">
      <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
@@ -3796,9 +3994,8 @@ corresponds to a stable (e.g. upwind) discretization.
      <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
      <Parameter name="max divergent iterations" type="int" value="3"/>
      <Parameter name="limit iterations" type="int" value="20"/>
-     <Parameter name="modify correction" type="bool" value="true"/>
+     <Parameter name="modify correction" type="bool" value="false"/>
    </ParameterList>
-
 
 Jacobian-free Newton-Krylov (JFNK)
 ..................................
@@ -4437,7 +4634,10 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * aqueous pressure [Pa]
       * hydraulic head [m] 
       * drawdown [m] 
-      * SOLUTE Aqueous concentration [mol/m^3]
+      * volumetric water content [-]
+      * gravimetric water content [-]
+      * water table [m]
+      * SOLUTE aqueous concentration [mol/m^3]
       * SOLUTE gaseous concentration [mol/m^3]
       * x-, y-, z- aqueous volumetric flux [m/s]
       * material id [-]
@@ -4447,6 +4647,8 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
     Observation *drawdown* is calculated with respect to the value registered at the first time
     it was requested.
+
+    The following observations are point-type obervations: "water table", "drawdown".
 
     * `"functional`" [string] the label of a function to apply to each of the variables
       in the variable list (Function options detailed below)

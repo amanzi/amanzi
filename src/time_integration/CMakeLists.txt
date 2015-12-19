@@ -23,7 +23,6 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
-include_directories(${FLOW_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
@@ -50,10 +49,13 @@ set(time_int_new_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARI
 list(REVERSE time_int_new_tpl_libs)
 list(REMOVE_DUPLICATES time_int_new_tpl_libs)
 list(REVERSE time_int_new_tpl_libs)
+
+set(time_integration_link_libs solvers data_structures output mesh geometry error_handling whetstone atk )
+
 add_amanzi_library(time_integration
                    SOURCE ${time_int_new_source_files}
 		           HEADERS ${time_int_new_inc_files}
-		           LINK_LIBS error_handling solvers atk ${time_int_new_tpl_libs})
+		           LINK_LIBS ${time_integration_link_libs} ${time_int_new_tpl_libs})
 
 
 if (BUILD_TESTS)
@@ -79,9 +81,9 @@ if (BUILD_TESTS)
 		          test/Main.cc
 			  test/test_solhist.cc
 		    LINK_LIBS
-		      time_integration
-			  error_handling
-			  ${UnitTest_LIBRARIES}
+		          time_integration
+			  ${time_integration_link_libs}
+			  ${UnitTest_LIBRARIES}	  
 			  ${time_integration_tpl_libs})
 
     add_amanzi_test(time_integration_nka test_nka_time_integration
@@ -90,10 +92,8 @@ if (BUILD_TESTS)
 		          test/Main.cc
 			  test/test_ode_nka.cc
 		    LINK_LIBS
-			time_integration
-                        whetstone
-			error_handling
-        		atk
+		          time_integration
+			  ${time_integration_link_libs}
 			  ${UnitTest_LIBRARIES}
 			  ${time_int_new_tpl_libs})
 
@@ -103,9 +103,8 @@ if (BUILD_TESTS)
 		          test/Main.cc
 			      test/test_Explicit_RK.cc
 		    LINK_LIBS
-              atk
-		      time_integration
-			  error_handling
+		          time_integration
+			  ${time_integration_link_libs}
 			  ${UnitTest_LIBRARIES}
 			  ${Teuchos_LIBRARIES}
 			  ${Epetra_LIBRARIES}

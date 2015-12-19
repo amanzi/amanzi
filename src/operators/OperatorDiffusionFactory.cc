@@ -1,5 +1,5 @@
 /*
-  This is the operators component of the Amanzi code.
+  Operators
 
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
@@ -19,6 +19,7 @@
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorDiffusionMFD.hh"
 #include "OperatorDiffusionFV.hh"
+#include "OperatorDiffusionNLFV.hh"
 #include "OperatorDiffusionMFDwithGravity.hh"
 #include "OperatorDiffusionFVwithGravity.hh"
 
@@ -26,53 +27,14 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Initialization of diffusion operator: method 1 with optional gravity
+* Initialization of diffusion operator with optional gravity.
+* This is the constructor used by Amanzi.
 ****************************************************************** */
 Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh, 
-    Teuchos::RCP<BCs> bc, 
     Teuchos::ParameterList& oplist,
-    double rho, const AmanziGeometry::Point& g)
-{
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::null;
-
-  std::string name = oplist.get<std::string>("discretization primary");
-  bool flag = oplist.get<bool>("gravity", false);
-
-  // FV methods
-  if (name == "fv: default" && !flag) {
-    SetCellSchema_(oplist);
-    op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
-    op->SetBCs(bc, bc);
-
-  } else if (name == "fv: default" && flag) {
-    SetCellSchema_(oplist);
-    op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh, rho, g));
-    op->SetBCs(bc, bc);
-
-  // MFD methods
-  } else if (!flag) {
-    SetCellFaceSchema_(oplist);
-    op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
-    op->SetBCs(bc, bc);
-
-  } else {
-    SetCellFaceSchema_(oplist);
-    op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, mesh, rho, g));
-    op->SetBCs(bc, bc);
-  }
-  return op;
-}
-
-
-/* ******************************************************************
-* Initialization of diffusion operator: method 2 with optional gravity
-****************************************************************** */
-Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh, 
-    Teuchos::RCP<BCs> bc, 
-    Teuchos::ParameterList& oplist,
-    Teuchos::RCP<const CompositeVector> rho,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, 
+    const Teuchos::RCP<BCs>& bc, 
+    double rho,
     const AmanziGeometry::Point& g)
 {
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::null;
@@ -82,23 +44,19 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
 
   // FV methods
   if (name == "fv: default" && !flag) {
-    SetCellSchema_(oplist);
     op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
     op->SetBCs(bc, bc);
 
   } else if (name == "fv: default" && flag) {
-    SetCellSchema_(oplist);
     op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh, rho, g));
     op->SetBCs(bc, bc);
 
   // MFD methods
   } else if (!flag) {
-    SetCellFaceSchema_(oplist);
     op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
     op->SetBCs(bc, bc);
 
   } else {
-    SetCellFaceSchema_(oplist);
     op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, mesh, rho, g));
     op->SetBCs(bc, bc);
   }
@@ -107,25 +65,73 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
 
 
 /* ******************************************************************
-* Initialization of diffusion operator: method 1 without gravity.
+* Initialization of diffusion operator with optional gravity.
+* This is the factory used by Amanzi, though it makes life difficult
+* for time-varying density.
 ****************************************************************** */
 Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-    Teuchos::RCP<BCs> bc,
-    Teuchos::ParameterList& oplist)
+    Teuchos::ParameterList& oplist,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, 
+    const Teuchos::RCP<BCs>& bc, 
+    const Teuchos::RCP<const CompositeVector>& rho,
+    const AmanziGeometry::Point& g)
+{
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::null;
+
+  std::string name = oplist.get<std::string>("discretization primary");
+  bool flag = oplist.get<bool>("gravity", false);
+
+  // FV methods
+  if (name == "fv: default" && !flag) {
+    op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
+    op->SetBCs(bc, bc);
+
+  } else if (name == "fv: default" && flag) {
+    Teuchos::RCP<OperatorDiffusionFVwithGravity> op_g =
+      Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh, g));
+    op_g->SetBCs(bc, bc);
+    op_g->SetDensity(rho);
+    op = op_g;
+
+  // MFD methods
+  } else if (!flag) {
+    op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
+    op->SetBCs(bc, bc);
+
+  } else {
+    Teuchos::RCP<OperatorDiffusionMFDwithGravity> op_g =
+      Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, mesh, g));
+    op_g->SetBCs(bc, bc);
+    op_g->SetDensity(rho);
+    op = op_g;
+  }
+  return op;
+}
+
+
+/* ******************************************************************
+* Initialization of straight diffusion operator: method 1.
+****************************************************************** */
+Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
+    Teuchos::ParameterList& oplist,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+    const Teuchos::RCP<BCs>& bc)
 {
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::null;
   std::string name = oplist.get<std::string>("discretization primary");
   
   // FV methods
   if (name == "fv: default") {
-    SetCellSchema_(oplist);
     op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
+    op->SetBCs(bc, bc);
+
+  // NLFV methods
+  } else if (name == "nlfv: default") {
+    op = Teuchos::rcp(new OperatorDiffusionNLFV(oplist, mesh)); 
     op->SetBCs(bc, bc);
 
   // MFD methods
   } else {
-    SetCellFaceSchema_(oplist);
     op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
     op->SetBCs(bc, bc);
   }
@@ -134,17 +140,16 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
   
 
 /* ******************************************************************
-* Initialization of diffusion operator: method 2 without gravity.
+* Initialization of straight diffusion operator: method 2.
 ****************************************************************** */
 Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     Teuchos::ParameterList& oplist,
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
   Teuchos::RCP<OperatorDiffusion> op = Teuchos::null;
   std::string name = oplist.get<std::string>("discretization primary");
   
   if (name == "fv: default") {
-    SetCellSchema_(oplist);
     op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
   } else {
     op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
@@ -154,7 +159,7 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
   
 
 /* ******************************************************************
-* Initialization of diffusion operator: method 3 without gravity.
+* Initialization of straight diffusion operator: method 3.
 ****************************************************************** */
 Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     Teuchos::ParameterList& oplist,
@@ -173,26 +178,95 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
 
 
 /* ******************************************************************
-* Add missing schemas to the operator parameter list.
+* Initialization of diffusion operator with gravity: method 1.
+*
+* With gravity, assumed vector, temporally varying density.
+* Used by ATS.
 ****************************************************************** */
-void OperatorDiffusionFactory::SetCellSchema_(Teuchos::ParameterList& oplist) 
+Teuchos::RCP<OperatorDiffusionWithGravity>
+OperatorDiffusionFactory::CreateWithGravity(
+    Teuchos::ParameterList& oplist,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+    const Teuchos::RCP<BCs>& bc)
 {
-  if (!oplist.isParameter("schema")) {
-    Teuchos::Array<std::string> schema(1);
-    schema[0] = "cell";
-    oplist.set("schema",  schema);
+  Teuchos::RCP<OperatorDiffusionWithGravity> op = Teuchos::null;
+  std::string name = oplist.get<std::string>("discretization primary");
+  
+  if (name == "fv: default") {
+    op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh));
+  } else {
+    op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, mesh));
   }
+  op->SetBCs(bc, bc);
+  return op;
 }
 
 
-void OperatorDiffusionFactory::SetCellFaceSchema_(Teuchos::ParameterList& oplist) 
+/* ******************************************************************
+* Initialization of diffusion operator with gravity: method 2.
+* With gravity, assumed vector, temporally varying density.
+* Used by ATS.
+****************************************************************** */
+Teuchos::RCP<OperatorDiffusionWithGravity>
+OperatorDiffusionFactory::CreateWithGravity(
+    Teuchos::ParameterList& oplist,
+    const Teuchos::RCP<Operator>& global_op,
+    const Teuchos::RCP<BCs>& bc)
 {
-  if (!oplist.isParameter("schema")) {
-    Teuchos::Array<std::string> schema(2);
-    schema[0] = "cell";
-    schema[1] = "face";
-    oplist.set("schema",  schema);
+  Teuchos::RCP<OperatorDiffusionWithGravity> op = Teuchos::null;
+  std::string name = oplist.get<std::string>("discretization primary");
+  
+  if (name == "fv: default") {
+    op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, global_op));
+  } else {
+    op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, global_op));
   }
+  op->SetBCs(bc, bc);
+  return op;
+}
+
+
+/* ******************************************************************
+* Initialization of diffusion operator with gravity: method 3.
+* With gravity, assumed vector, temporally varying density.
+* Used by ATS.
+****************************************************************** */
+Teuchos::RCP<OperatorDiffusionWithGravity>
+OperatorDiffusionFactory::CreateWithGravity(
+    Teuchos::ParameterList& oplist,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+{
+  Teuchos::RCP<OperatorDiffusionWithGravity> op = Teuchos::null;
+  std::string name = oplist.get<std::string>("discretization primary");
+  
+  if (name == "fv: default") {
+    op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh));
+  } else {
+    op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, mesh));
+  }
+  return op;
+}
+
+
+/* ******************************************************************
+* Initialization of diffusion operator with gravity: method 4.
+* With gravity, assumed vector, temporally varying density.
+* Used by ATS.
+****************************************************************** */
+Teuchos::RCP<OperatorDiffusionWithGravity>
+OperatorDiffusionFactory::CreateWithGravity(
+    Teuchos::ParameterList& oplist,
+    const Teuchos::RCP<Operator>& global_op)
+{
+  Teuchos::RCP<OperatorDiffusionWithGravity> op = Teuchos::null;
+  std::string name = oplist.get<std::string>("discretization primary");
+  
+  if (name == "fv: default") {
+    op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, global_op));
+  } else {
+    op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, global_op));
+  }
+  return op;
 }
 
 }  // namespace Operators
