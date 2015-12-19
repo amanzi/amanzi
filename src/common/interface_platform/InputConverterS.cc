@@ -209,8 +209,8 @@ void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
       string type = GetAttributeValueS_(property, "type");
       if (type == "uniform_isotropic")
       {
-        string alpha_l = GetAttributeValueS_(property, "alpha_l", true);
-        string alpha_t = GetAttributeValueS_(property, "alpha_t", true);
+        string alpha_l = GetAttributeValueS_(property, "alpha_l");
+        string alpha_t = GetAttributeValueS_(property, "alpha_t");
         AddToTable(table, MakePPPrefix("rock", material_name, property_name, "alpha_l"),
                    MakePPEntry(alpha_l));
         AddToTable(table, MakePPPrefix("rock", material_name, property_name, "alpha_t"),
@@ -218,9 +218,9 @@ void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
       }
       else if (type == "burnett_frind")
       {
-        string alpha_l = GetAttributeValueS_(property, "alpha_l", true);
-        string alpha_th = GetAttributeValueS_(property, "alpha_th", true);
-        string alpha_tv = GetAttributeValueS_(property, "alpha_tv", true);
+        string alpha_l = GetAttributeValueS_(property, "alpha_l");
+        string alpha_th = GetAttributeValueS_(property, "alpha_th");
+        string alpha_tv = GetAttributeValueS_(property, "alpha_tv");
         AddToTable(table, MakePPPrefix("rock", material_name, property_name, "alpha_l"),
                    MakePPEntry(alpha_l));
         AddToTable(table, MakePPPrefix("rock", material_name, property_name, "alpha_th"),
@@ -230,10 +230,10 @@ void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
       }
       else if (type == "lichtner_kelkar_robinson")
       {
-        string alpha_lh = GetAttributeValueS_(property, "alpha_lh", true);
-        string alpha_lv = GetAttributeValueS_(property, "alpha_lv", true);
-        string alpha_th = GetAttributeValueS_(property, "alpha_th", true);
-        string alpha_tv = GetAttributeValueS_(property, "alpha_tv", true);
+        string alpha_lh = GetAttributeValueS_(property, "alpha_lh");
+        string alpha_lv = GetAttributeValueS_(property, "alpha_lv");
+        string alpha_th = GetAttributeValueS_(property, "alpha_th");
+        string alpha_tv = GetAttributeValueS_(property, "alpha_tv");
         AddToTable(table, MakePPPrefix("rock", material_name, property_name, "alpha_lh"),
                    MakePPEntry(alpha_lh));
         AddToTable(table, MakePPPrefix("rock", material_name, property_name, "alpha_lv"),
@@ -245,7 +245,7 @@ void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
       }
       else if (type == "file")
       {
-        string filename = GetAttributeValueS_(property, "filename", true);
+        string filename = GetAttributeValueS_(property, "filename");
         AddToTable(table, MakePPPrefix("rock", material_name, property_name, "filename"),
                    MakePPEntry(filename));
       }
@@ -256,8 +256,8 @@ void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
     }
     else
     {
-      string value = GetAttributeValueS_(property, "value", false);
-      string type = GetAttributeValueS_(property, "type", false);
+      string value = GetAttributeValueS_(property, "value", TYPE_NUMERICAL, false);
+      string type = GetAttributeValueS_(property, "type", TYPE_NUMERICAL, false);
       if (!value.empty() && ((property_name != "porosity") || (type != "gslib")))
       {
         AddToTable(table, MakePPPrefix("rock", material_name, property_name, "vals"),
@@ -285,7 +285,7 @@ void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
             AddToTable(table, MakePPPrefix("rock", material_name, property_name, "type"),
                        MakePPEntry("gslib"));
 
-            string data_file = GetAttributeValueS_(property, "data_file", false);
+            string data_file = GetAttributeValueS_(property, "data_file", TYPE_NUMERICAL, false);
             if (!data_file.empty())
             {
               AddToTable(table, MakePPPrefix("rock", material_name, property_name, "data_file"),
@@ -505,39 +505,39 @@ void InputConverterS::ParseExecutionControls_()
         else
           AddToTable(table, MakePPPrefix("strt_time"), MakePPEntry(start));
 
-        string end = GetAttributeValueS_(control, "end", false);
+        string end = GetAttributeValueS_(control, "end", TYPE_NUMERICAL, false);
         iter = labeled_times_.find(end);
         if (iter != labeled_times_.end())
           AddToTable(table, MakePPPrefix("stop_time"), MakePPEntry(iter->second));
         else
           AddToTable(table, MakePPPrefix("stop_time"), MakePPEntry(end));
 
-        string mode = GetAttributeValueS_(control, "mode", false);
+        string mode = GetAttributeValueS_(control, "mode", TYPE_NUMERICAL, false);
         if (mode.empty() && !default_vals.empty())
           AddToTable(table, MakePPPrefix("execution_mode"), MakePPEntry(default_vals["mode"]));
         else
           AddToTable(table, MakePPPrefix("execution_mode"), MakePPEntry(mode));
 
-        string init_dt = GetAttributeValueS_(control, "init_dt", false);
+        string init_dt = GetAttributeValueS_(control, "init_dt", TYPE_NUMERICAL, false);
         if (init_dt.empty() && !default_vals.empty())
           AddToTable(table, MakePPPrefix("prob", "dt_init"), MakePPEntry(default_vals["init_dt"]));
         else
           AddToTable(table, MakePPPrefix("prob", "dt_init"), MakePPEntry(init_dt));
 
-        string max_dt = GetAttributeValueS_(control, "max_dt", false);
+        string max_dt = GetAttributeValueS_(control, "max_dt", TYPE_NUMERICAL, false);
         string max_dt_name = mode + string("_max_dt");
         if (max_dt.empty() && !default_vals.empty())
           AddToTable(table, MakePPPrefix("prob", max_dt_name), MakePPEntry(default_vals["max_dt"]));
         else
           AddToTable(table, MakePPPrefix("prob", max_dt_name), MakePPEntry(max_dt));
 
-        string reduction_factor = GetAttributeValueS_(control, "reduction_factor", false);
+        string reduction_factor = GetAttributeValueS_(control, "reduction_factor", TYPE_NUMERICAL, false);
         if (reduction_factor.empty() && !default_vals.empty())
           AddToTable(table, MakePPPrefix("prob", "dt_shrink_max"), MakePPEntry(default_vals["reduction_factor"]));
         else
           AddToTable(table, MakePPPrefix("prob", "dt_shrink_max"), MakePPEntry(reduction_factor));
 
-        string increase_factor = GetAttributeValueS_(control, "increase_factor", false);
+        string increase_factor = GetAttributeValueS_(control, "increase_factor", TYPE_NUMERICAL, false);
         if (increase_factor.empty() && !default_vals.empty())
           AddToTable(table, MakePPPrefix("prob", "dt_grow_max"), MakePPEntry(default_vals["increase_factor"]));
         else
@@ -545,22 +545,22 @@ void InputConverterS::ParseExecutionControls_()
 
 #if 0
 // FIXME: does "method" have a meaning in Amanzi-S?
-        string method = GetAttributeValueS_(control, "method", false);
+        string method = GetAttributeValueS_(control, "method", TYPE_NUMERICAL, false);
         if (method.empty() && !default_vals.empty())
           AddToTable(table, MakePPPrefix("execution_mode", "method"), MakePPEntry(default_vals["method"]));
         else
           AddToTable(table, MakePPPrefix("execution_mode", "method"), MakePPEntry(method));
 #endif
 
-        string restart = GetAttributeValueS_(control, "restart", false);
+        string restart = GetAttributeValueS_(control, "restart", TYPE_NUMERICAL, false);
         if (!restart.empty())
         AddToTable(table, MakePPPrefix("execution_mode", "restart"), MakePPEntry(restart));
 
-        string initialize = GetAttributeValueS_(control, "initialize", false);
+        string initialize = GetAttributeValueS_(control, "initialize", TYPE_NUMERICAL, false);
         if (!initialize.empty())
         AddToTable(table, MakePPPrefix("execution_mode", "initialize"), MakePPEntry(initialize));
 
-        string max_cycles = GetAttributeValueS_(control, "max_cycles", false);
+        string max_cycles = GetAttributeValueS_(control, "max_cycles", TYPE_NUMERICAL, false);
         if (!max_cycles.empty())
           AddToTable(table, MakePPPrefix("max_step"), MakePPEntry(max_cycles));
       }
@@ -680,14 +680,14 @@ void InputConverterS::ParseMesh_()
   {
     bool found;
     DOMElement* number_of_cells = GetChildByName_(generate, "number_of_cells", found, true);
-    nx_ = GetAttributeValueL_(number_of_cells, "nx", true);
-    ny_ = GetAttributeValueL_(number_of_cells, "ny", true);
+    nx_ = GetAttributeValueL_(number_of_cells, "nx");
+    ny_ = GetAttributeValueL_(number_of_cells, "ny");
     vector<int> n(dim_);
     n[0] = nx_;
     n[1] = ny_;
     if (dim_ == 3)
     {
-      nz_ = GetAttributeValueL_(number_of_cells, "nz", true);
+      nz_ = GetAttributeValueL_(number_of_cells, "nz");
       n[2] = nz_;
     }
     AddToTable(table, MakePPPrefix("amr", "n_cell"), MakePPEntry(n));
@@ -763,7 +763,7 @@ void InputConverterS::ParseRegions_()
     {
       bool found;
       DOMElement* box = static_cast<DOMElement*>(boxes[i]);
-      string region_name = GetAttributeValueS_(box, "name", true);
+      string region_name = GetAttributeValueS_(box, "name");
       region_names.push_back(region_name);
       vector<double> lo_coords = GetAttributeVector_(box, "low_coordinates", found);
       vector<double> hi_coords = GetAttributeVector_(box, "high_coordinates", found);
@@ -808,7 +808,7 @@ void InputConverterS::ParseRegions_()
     {
       bool found;
       DOMElement* point = static_cast<DOMElement*>(points[i]);
-      string region_name = GetAttributeValueS_(point, "name", true);
+      string region_name = GetAttributeValueS_(point, "name");
       region_names.push_back(region_name);
       vector<double> coords = GetAttributeVector_(point, "coordinate", found);
       AddToTable(table, MakePPPrefix("geometry", region_name, "coordinate"), MakePPEntry(coords));
@@ -822,7 +822,7 @@ void InputConverterS::ParseRegions_()
     {
       bool found;
       DOMElement* plane = static_cast<DOMElement*>(planes[i]);
-      string region_name = GetAttributeValueS_(plane, "name", true);
+      string region_name = GetAttributeValueS_(plane, "name");
       region_names.push_back(region_name);
       vector<double> location = GetAttributeVector_(plane, "location", found);
       vector<double> normal = GetAttributeVector_(plane, "normal", found);
@@ -840,8 +840,8 @@ void InputConverterS::ParseRegions_()
       AddToTable(table, MakePPPrefix("geometry", region_name, "purpose"), MakePPEntry(purpose));
 
       // Optional tolerance.
-      string tolerance = GetAttributeValueS_(plane, "tolerance", found);
-      if (found)
+      string tolerance = GetAttributeValueS_(plane, "tolerance", TYPE_NUMERICAL, false);
+      if (tolerance != "")
         AddToTable(table, MakePPPrefix("geometry", region_name, "tolerance"), MakePPEntry("all"));
 
     }
@@ -861,9 +861,9 @@ void InputConverterS::ParseRegions_()
       {
         bool found;
         DOMElement* polygon = static_cast<DOMElement*>(polygons[i]);
-        string region_name = GetAttributeValueS_(polygon, "name", true);
+        string region_name = GetAttributeValueS_(polygon, "name");
         region_names.push_back(region_name);
-        int num_points = GetAttributeValueL_(polygon, "num_points", true);
+        int num_points = GetAttributeValueL_(polygon, "num_points");
         vector<DOMNode*> points = GetChildren_(regions, "points", found);
         vector<double> v1, v2, v3;
         for (size_t j = 0; j < points.size(); ++j)
@@ -891,14 +891,14 @@ void InputConverterS::ParseRegions_()
       {
         bool found;
         DOMElement* ellipse = static_cast<DOMElement*>(ellipses[i]);
-        string region_name = GetAttributeValueS_(ellipse, "name", true);
+        string region_name = GetAttributeValueS_(ellipse, "name");
         region_names.push_back(region_name);
 
-        string center_string = GetAttributeValueS_(ellipse, "center", true);
+        string center_string = GetAttributeValueS_(ellipse, "center");
         vector<double> center = MakeCoordinates_(center_string);
         AddToTable(table, MakePPPrefix("geometry", region_name, "center"), MakePPEntry(center));
 
-        string radius_string = GetAttributeValueS_(ellipse, "radius", true);
+        string radius_string = GetAttributeValueS_(ellipse, "radius");
         vector<double> radius = MakeCoordinates_(radius_string);
         AddToTable(table, MakePPPrefix("geometry", region_name, "radius"), MakePPEntry(radius));
 
@@ -953,7 +953,7 @@ void InputConverterS::ParseGeochemistry_()
 
     // Reaction database.
     DOMElement* database = GetChildByName_(geochem, "database", found, true);
-    string db_file = GetAttributeValueS_(database, "name", true);
+    string db_file = GetAttributeValueS_(database, "name");
 
     // Radioactive decay.
     DOMElement* decay = GetChildByName_(geochem, "radioactive_decay", found, false);
@@ -964,10 +964,10 @@ void InputConverterS::ParseGeochemistry_()
       for (size_t i = 0; i < solutes.size(); ++i)
       {
         DOMElement* solute = static_cast<DOMElement*>(solutes[i]);
-        string name = GetAttributeValueS_(solute, "name", true);
+        string name = GetAttributeValueS_(solute, "name");
 
         // Rate constant.
-        string rate_constant = GetAttributeValueS_(solute, "rate_constant", true);
+        string rate_constant = GetAttributeValueS_(solute, "rate_constant");
         AddToTable(table, MakePPPrefix("tracer", name, "firstOrderDecayConstant"), 
                                        MakePPEntry(rate_constant));
       }
@@ -979,10 +979,10 @@ void InputConverterS::ParseGeochemistry_()
     for (size_t i = 0; i < all_constraints.size(); ++i)
     {
       DOMElement* constraint = static_cast<DOMElement*>(all_constraints[i]);
-      string name = GetAttributeValueS_(constraint, "name", true);
+      string name = GetAttributeValueS_(constraint, "name");
 
       // Is the constraints defined in an external file?
-      string filename = GetAttributeValueS_(constraint, "filename", false);
+      string filename = GetAttributeValueS_(constraint, "filename", TYPE_NUMERICAL, false);
       if (!filename.empty())
       {
       }
@@ -994,9 +994,9 @@ void InputConverterS::ParseGeochemistry_()
         for (size_t i = 0; i < primaries.size(); ++i)
         {
           DOMElement* primary = static_cast<DOMElement*>(primaries[i]);
-          string name = GetAttributeValueS_(primary, "name", true);
-          string initial_guess = GetAttributeValueS_(primary, "initial_guess", true);
-          string type = GetAttributeValueS_(primary, "type", true);
+          string name = GetAttributeValueS_(primary, "name");
+          string initial_guess = GetAttributeValueS_(primary, "initial_guess");
+          string type = GetAttributeValueS_(primary, "type");
         }
       }
     }
@@ -1009,10 +1009,10 @@ void InputConverterS::ParseGeochemistry_()
       for (size_t i = 0; i < minerals.size(); ++i)
       {
         DOMElement* mineral = static_cast<DOMElement*>(minerals[i]);
-        string name = GetAttributeValueS_(mineral, "name", true);
-        string rate_constant = GetAttributeValueS_(mineral, "rate_constant", true);
-        string rate_dependence = GetAttributeValueS_(mineral, "rate_dependence", false);
-        string alpha = GetAttributeValueS_(mineral, "alpha", false);
+        string name = GetAttributeValueS_(mineral, "name");
+        string rate_constant = GetAttributeValueS_(mineral, "rate_constant");
+        string rate_dependence = GetAttributeValueS_(mineral, "rate_dependence", TYPE_NUMERICAL, false);
+        string alpha = GetAttributeValueS_(mineral, "alpha", TYPE_NUMERICAL, false);
       }
     }
   }
@@ -1075,13 +1075,13 @@ void InputConverterS::ParseMaterials_()
       }
       else if (k_found)
       {
-        string x = GetAttributeValueS_(permeability, "x", false);
+        string x = GetAttributeValueS_(permeability, "x", TYPE_NUMERICAL, false);
         if (!x.empty())
         {
 	  AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "horizontal", "vals"),
 		     MakePPEntry(x));
 
-          string y = GetAttributeValueS_(permeability, "y", true);
+          string y = GetAttributeValueS_(permeability, "y");
 	  if (dim_ < 3) {
 	    AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "vertical", "vals"),
 		       MakePPEntry(y));
@@ -1091,20 +1091,20 @@ void InputConverterS::ParseMaterials_()
 	    AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "horizontal1", "vals"),
 		       MakePPEntry(y));
 
-	    string z = GetAttributeValueS_(permeability, "z", true);
+	    string z = GetAttributeValueS_(permeability, "z");
 	    AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "vertical", "vals"),
 		       MakePPEntry(z));
 	  }
         }
         else
         {
-          string type = GetAttributeValueS_(permeability, "type", true);
+          string type = GetAttributeValueS_(permeability, "type");
           AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "type"),
                      MakePPEntry(type));
           if (type == "file")
           {
-            string filename = GetAttributeValueS_(permeability, "filename", true);
-            string attribute = GetAttributeValueS_(permeability, "attribute", true);
+            string filename = GetAttributeValueS_(permeability, "filename");
+            string attribute = GetAttributeValueS_(permeability, "attribute");
             AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "filename"),
                        MakePPEntry(filename));
             AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "attribute"),
@@ -1112,9 +1112,9 @@ void InputConverterS::ParseMaterials_()
           }
           else if (type == "gslib")
           {
-            string parameter_file = GetAttributeValueS_(permeability, "parameter_file", true);
-            string value = GetAttributeValueS_(permeability, "value", true);
-            string data_file = GetAttributeValueS_(permeability, "data_file", true);
+            string parameter_file = GetAttributeValueS_(permeability, "parameter_file");
+            string value = GetAttributeValueS_(permeability, "value");
+            string data_file = GetAttributeValueS_(permeability, "data_file");
             AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "parameter_file"),
                        MakePPEntry(parameter_file));
             AddToTable(table, MakePPPrefix("rock", mat_name, "permeability", "value"),
@@ -1128,33 +1128,33 @@ void InputConverterS::ParseMaterials_()
       }
       else
       {
-        string x = GetAttributeValueS_(conductivity, "x", false);
+        string x = GetAttributeValueS_(conductivity, "x", TYPE_NUMERICAL, false);
         if (!x.empty())
         {
           AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "horizontal", "vals"),
                      MakePPEntry(x));
-          string y = GetAttributeValueS_(conductivity, "y", true);
+          string y = GetAttributeValueS_(conductivity, "y");
 	  if (dim_ < 3) {
 	    AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "vertical", "vals"),
 		       MakePPEntry(y));
 	  } else {
 	    AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "horizontal1", "vals"),
 		       MakePPEntry(y));
-	    string z = GetAttributeValueS_(conductivity, "z", true);
+	    string z = GetAttributeValueS_(conductivity, "z");
 	    AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "vertical", "vals"),
 		       MakePPEntry(z));
 	  }
         }
         else
         {
-          string type = GetAttributeValueS_(permeability, "type", true);
+          string type = GetAttributeValueS_(permeability, "type");
           AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "type"),
                      MakePPEntry(type));
           if (type == "gslib")
           {
-            string parameter_file = GetAttributeValueS_(conductivity, "parameter_file", true);
-            string value = GetAttributeValueS_(conductivity, "value", true);
-            string data_file = GetAttributeValueS_(conductivity, "data_file", true);
+            string parameter_file = GetAttributeValueS_(conductivity, "parameter_file");
+            string value = GetAttributeValueS_(conductivity, "value");
+            string data_file = GetAttributeValueS_(conductivity, "data_file");
             AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "parameter_file"),
                        MakePPEntry(parameter_file));
             AddToTable(table, MakePPPrefix("rock", mat_name, "hydraulic_conductivity", "value"),
@@ -1172,7 +1172,7 @@ void InputConverterS::ParseMaterials_()
       if (found)
       {
         bool found;
-        string model = GetAttributeValueS_(cap_pressure, "model", true);
+        string model = GetAttributeValueS_(cap_pressure, "model");
         if (model == "van_genuchten")
           AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "type"), MakePPEntry("VanGenuchten"));
         else if (model == "brooks_corey")
@@ -1183,13 +1183,13 @@ void InputConverterS::ParseMaterials_()
         if ((model == "van_genuchten") || (model == "brooks_corey"))
         {
           DOMElement* parameters = GetChildByName_(cap_pressure, "parameters", found, true);
-          string alpha = GetAttributeValueS_(parameters, "alpha", true);
-          string sr = GetAttributeValueS_(parameters, "sr", true);
-          string m = GetAttributeValueS_(parameters, "m", true);
+          string alpha = GetAttributeValueS_(parameters, "alpha");
+          string sr = GetAttributeValueS_(parameters, "sr");
+          string m = GetAttributeValueS_(parameters, "m");
           AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "alpha"), MakePPEntry(alpha));
           AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "Sr"), MakePPEntry(sr));
           AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "m"), MakePPEntry(m));
-          string optional_krel_smoothing_interval = GetAttributeValueS_(parameters, "optional_krel_smoothing_interval", false);
+          string optional_krel_smoothing_interval = GetAttributeValueS_(parameters, "optional_krel_smoothing_interval", TYPE_NUMERICAL, false);
           if (!optional_krel_smoothing_interval.empty())
           {
             AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "Kr_smoothing_max_pcap"),
@@ -1205,7 +1205,7 @@ void InputConverterS::ParseMaterials_()
       if (found)
       {
         bool found;
-        string model = GetAttributeValueS_(rel_perm, "model", true);
+        string model = GetAttributeValueS_(rel_perm, "model");
         if (model == "mualem")
           AddToTable(table, MakePPPrefix("rock", mat_name, "Kr_model"), MakePPEntry("Mualem"));
         else if (model == "burdine")
@@ -1253,7 +1253,7 @@ void InputConverterS::ParseMaterials_()
           if (found)
           {
             // Search for kd, b, or n.
-            string kd = GetAttributeValueS_(kd_model, "kd", false);
+            string kd = GetAttributeValueS_(kd_model, "kd", TYPE_NUMERICAL, false);
             if (!kd.empty())
             {
               AddToTable(table, MakePPPrefix("rock", mat_name, "sorption_isotherms", solute_name, "Kd"), 
@@ -1261,7 +1261,7 @@ void InputConverterS::ParseMaterials_()
             }
             else
             {
-              string b = GetAttributeValueS_(kd_model, "b", false);
+              string b = GetAttributeValueS_(kd_model, "b", TYPE_NUMERICAL, false);
               if (!b.empty())
               {
                 AddToTable(table, MakePPPrefix("rock", mat_name, "sorption_isotherms", solute_name, "Langmuir b"), 
@@ -1269,7 +1269,7 @@ void InputConverterS::ParseMaterials_()
               }
               else
               {
-                string n = GetAttributeValueS_(kd_model, "n", false);
+                string n = GetAttributeValueS_(kd_model, "n", TYPE_NUMERICAL, false);
                 if (!n.empty())
                 {
                   AddToTable(table, MakePPPrefix("rock", mat_name, "sorption_isotherms", solute_name, "Freundlich n"), 
@@ -1361,7 +1361,7 @@ void InputConverterS::ParseProcessKernels_()
       else
       {
         Errors::Message msg;
-        msg << "\"reaction_network\" not present in Alquimia geochemistry entry."
+        msg << "\"reaction_network\" not present in Alquimia geochemistry entry.\n";
         msg << "Please correct and try again.\n";
         Exceptions::amanzi_throw(msg);
       }
@@ -1486,13 +1486,13 @@ void InputConverterS::ParseInitialConditions_()
                 for (size_t j = 0; j < nodes.size(); ++j) {
                   DOMElement* elt = static_cast<DOMElement*>(nodes[j]);
                   if (ic_type_labels[i]=="velocity") {
-                    vel.push_back(GetAttributeValueS_(elt, "x", true));
-                    vel.push_back(GetAttributeValueS_(elt, "y", true));
+                    vel.push_back(GetAttributeValueS_(elt, "x"));
+                    vel.push_back(GetAttributeValueS_(elt, "y"));
                     if (dim_ > 2) {
-                      vel.push_back(GetAttributeValueS_(elt, "z", true));
+                      vel.push_back(GetAttributeValueS_(elt, "z"));
                     }
                   } else {
-                    values.push_back(GetAttributeValueS_(elt, "value", true));
+                    values.push_back(GetAttributeValueS_(elt, "value"));
                   }
 
                   // Get extra info, if required
@@ -1627,15 +1627,15 @@ void InputConverterS::ParseBoundaryConditions_()
                 for (size_t j = 0; j < nodes.size(); ++j) {
                   DOMElement* elt = static_cast<DOMElement*>(nodes[j]);
 
-                  functions.push_back(GetAttributeValueS_(elt, "function", true));
+                  functions.push_back(GetAttributeValueS_(elt, "function"));
 
                   if (bc_type_labels[i]!="linear_pressure"
                       && bc_type_labels[i]!="seepage_face"
                       && bc_type_labels[i]!="hydrostatic"
                       && bc_type_labels[i]!="linear_hydrostatic")
                   {
-                    values.push_back(GetAttributeValueS_(elt, "value", true));
-                    string this_start = GetAttributeValueS_(elt, "start", true);
+                    values.push_back(GetAttributeValueS_(elt, "value"));
+                    string this_start = GetAttributeValueS_(elt, "start");
                     map<string, string>::const_iterator iter = labeled_times_.find(this_start);
                     if (iter != labeled_times_.end())
                       starts.push_back(iter->second);
@@ -1646,26 +1646,26 @@ void InputConverterS::ParseBoundaryConditions_()
                   // Get extra info, if required
                   if (bc_type_labels[i]=="linear_pressure"
                       || bc_type_labels[i]=="linear_hydrostatic") {
-                    gvalues.push_back(GetAttributeValueS_(elt, "gradient_value", true));
-                    rpoints.push_back(GetAttributeValueS_(elt, "reference_point", true));
+                    gvalues.push_back(GetAttributeValueS_(elt, "gradient_value"));
+                    rpoints.push_back(GetAttributeValueS_(elt, "reference_point"));
                   }
 
                   if (bc_type_labels[i]=="linear_pressure") {
-                    rvalues.push_back(GetAttributeValueS_(elt, "reference_value", true));
+                    rvalues.push_back(GetAttributeValueS_(elt, "reference_value"));
                   }
 
                   if (bc_type_labels[i]=="linear_hydrostatic") {
-                    rwths.push_back(GetAttributeValueS_(elt, "reference_water_table_height", true));
-                    sms.push_back(GetAttributeValueS_(elt, "submodel", true));
+                    rwths.push_back(GetAttributeValueS_(elt, "reference_water_table_height"));
+                    sms.push_back(GetAttributeValueS_(elt, "submodel"));
                   }
 
                   if (bc_type_labels[i]=="hydrostatic") {
-                    csys.push_back(GetAttributeValueS_(elt, "coordinate_system", true));
-                    sms.push_back(GetAttributeValueS_(elt, "submodel", true));
+                    csys.push_back(GetAttributeValueS_(elt, "coordinate_system"));
+                    sms.push_back(GetAttributeValueS_(elt, "submodel"));
                   }
 
                   if (bc_type_labels[i]=="seepage_face") {
-                    imf.push_back(GetAttributeValueS_(elt, "inward_mass_flux", true));
+                    imf.push_back(GetAttributeValueS_(elt, "inward_mass_flux"));
                   }
                 }
 
