@@ -108,7 +108,7 @@ Definitions allows the user the define and name constants, times, and macros to 
 Constants
 ---------
 
-Here the user can define and name constants to be used in other sections of the input file.  Note that if a name is repeated the last read value will be retained and all others will be overwritten.  See `Named Times`_ for specifying time units other than seconds.
+Here the user can define and name constants to be used in other sections of the input file.  Note that if a name is repeated the last read value will be retained and all others will be overwritten.  
 
 .. code-block:: xml
 
@@ -117,7 +117,7 @@ Here the user can define and name constants to be used in other sections of the 
       Optional Elements: constant, time_constant, numerical_constant, area_mass_flux_constant 
   </constants>
 
-A ``constant`` has three attributes ``name``, ``type``, and ``value``.  The user can provide any name, but note it should not be repeated anywhere within the input to avoid confusion.  The available types include: `"none`", `"time`", `"numerical`", and `"area_mass_flux`".  Values assigned to constants of type `"time`" can include known units, otherwise seconds will be assumed as the default. See `Named Times`_ for specifying time units other than seconds.
+A ``constant`` has three attributes ``name``, ``type``, and ``value``.  The user can provide any name, but note it should not be repeated anywhere within the input to avoid confusion.  The available types include: `"none`", `"time`", `"numerical`", and `"area_mass_flux`".  Values assigned to constants of type `"time`" can include known units, otherwise seconds will be assumed as the default. 
 
 .. code-block:: xml
 

@@ -129,9 +129,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   }
 
   if (it1 != tp_t1.end()) {
-    it2 = it1;
-    it2++; 
-    for (; it2 != tp_t1.end(); it2++) {
+    for (++(it2 = it1); it2 != tp_t1.end(); it2++) {
       it1->second = it2->first;
       it1 = it2;
     }
