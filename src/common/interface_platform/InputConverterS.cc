@@ -1550,11 +1550,8 @@ void InputConverterS::ParseInitialConditions_()
           {
             DOMElement* constraint = static_cast<DOMElement*>(nodes[c]);
             string condition_name = GetAttributeValueS_(constraint, "name");
-            for (size_t i = 0; i < solutes_.size(); ++i)
-            {
-              AddToTable(table, MakePPPrefix("tracer", solutes_[i], ic_name, "geochemical_conditions"), MakePPEntry(condition_name));
-              AddToTable(table, MakePPPrefix("tracer", solutes_[i], ic_name, "type"), MakePPEntry("concentration"));
-            }
+            AddToTable(table, MakePPPrefix("tracer", solutes_[i], ic_name, "geochemical_condition"), MakePPEntry(condition_name));
+            AddToTable(table, MakePPPrefix("tracer", solutes_[i], ic_name, "type"), MakePPEntry("concentration"));
           }
         }
 
@@ -1720,11 +1717,8 @@ void InputConverterS::ParseBoundaryConditions_()
           {
             DOMElement* constraint = static_cast<DOMElement*>(nodes[c]);
             string condition_name = GetAttributeValueS_(constraint, "name");
-            for (size_t i = 0; i < solutes_.size(); ++i)
-            {
-              AddToTable(table, MakePPPrefix("tracer", solutes_[i], bc_name, "geochemical_conditions"), MakePPEntry(condition_name));
-              AddToTable(table, MakePPPrefix("tracer", solutes_[i], bc_name, "type"), MakePPEntry("concentration"));
-            }
+            AddToTable(table, MakePPPrefix("tracer", bc_name, "geochemical_condition"), MakePPEntry(condition_name));
+            AddToTable(table, MakePPPrefix("tracer", bc_name, "type"), MakePPEntry("concentration"));
           }
         }
 
