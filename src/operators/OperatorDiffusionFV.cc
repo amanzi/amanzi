@@ -90,13 +90,11 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
   } else if (jacobian == "approximate jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
-    msg << "OperatorDiffusionFV: \"approximate jacobian\" not supported -- maybe you mean \"true jacobian\"?";
+    msg << "OperatorDiffusionFV: \"approximate jacobian\" not supported, use \"true jacobian\".";
     Exceptions::amanzi_throw(msg);
   }
 
   if (newton_correction_ != OPERATOR_DIFFUSION_JACOBIAN_NONE) {
-    std::string name = "Diffusion: FACE_CELL Jacobian terms";
-
     if (plist.get<bool>("surface operator", false)) {
       std::string name = "Diffusion: FACE_CELL Surface Jacobian terms";
       jac_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));

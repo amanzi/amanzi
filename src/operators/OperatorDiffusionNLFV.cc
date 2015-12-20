@@ -68,6 +68,18 @@ void OperatorDiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
     Exceptions::amanzi_throw(msg);
   }
 
+  // Newton correction terms
+  newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
+  std::string jacobian = plist.get<std::string>("newton correction", "none");
+  if (jacobian == "approximate jacobian") {
+    newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
+
+    std::string name = "Diffusion: FACE_CELL Jacobian terms";
+    jac_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+
+    global_op_->OpPushBack(jac_op_);
+  }
+
   // mesh info
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -384,6 +396,60 @@ void OperatorDiffusionNLFV::UpdateMatrices(
     }
   
     local_op_->matrices[f] = Aface;
+  }
+}
+
+
+/* ******************************************************************
+* Modify operator by adding an upwind approximation of the Newton 
+* correction term.
+****************************************************************** */
+void OperatorDiffusionNLFV::UpdateMatricesNewtonCorrection(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u, double scalar_limiter)
+{
+  // ignore correction if no flux provided.
+  if (flux == Teuchos::null) return;
+
+  // Correction is zero for linear problems
+  if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
+
+  // only works on upwinded methods
+  if (little_k_ == OPERATOR_UPWIND_NONE) return;
+
+  const Epetra_MultiVector& kf = *k_->ViewComponent("face");
+  const Epetra_MultiVector& dkdp_f = *dkdp_->ViewComponent("face");
+  const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
+
+  // populate the local matrices
+  AmanziMesh::Entity_ID_List cells;
+  for (int f = 0; f < nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+    WhetStone::DenseMatrix Aface(ncells, ncells);
+    Aface.PutScalar(0.0);
+
+    // We assume implicitly that dkdp >= 0 and use the upwind discretization.
+    double v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] / kf[0][f] : 0.0;
+    double vmod = std::abs(v) * dkdp_f[0][f];
+
+    // prototype for future limiters
+    vmod *= scalar_limiter;
+
+    // interior face
+    int i, dir, c1, c2;
+    c1 = cells[0];
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
+    i = (v * dir >= 0.0) ? 0 : 1;
+
+    if (ncells == 2) {
+      Aface(i, i) = vmod;
+      Aface(1 - i, i) = -vmod;
+    } else if (i == 0) {
+      Aface(0, 0) = vmod;
+    }
+
+    jac_op_->matrices[f] = Aface;
   }
 }
 

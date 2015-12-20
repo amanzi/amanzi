@@ -74,6 +74,11 @@ class OperatorDiffusionNLFV : public virtual OperatorDiffusion {
   // -- create an operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                               const Teuchos::Ptr<const CompositeVector>& u);
+  virtual void UpdateMatricesNewtonCorrection(
+          const Teuchos::Ptr<const CompositeVector>& flux,
+          const Teuchos::Ptr<const CompositeVector>& u, double scalar_limiter);
+
+  // -- after solving the problem: postrocessing
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
 
   // -- modify an operator
@@ -100,6 +105,8 @@ class OperatorDiffusionNLFV : public virtual OperatorDiffusion {
   
  protected:
   int dim_;
+  int newton_correction_;
+
   bool stencil_initialized_;
   Teuchos::RCP<CompositeVector> stencil_data_;
   std::vector<Teuchos::RCP<Epetra_IntVector> > stencil_faces_;

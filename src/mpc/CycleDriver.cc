@@ -336,7 +336,7 @@ void CycleDriver::ReportMemory() {
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "======================================================================" << std::endl;
-    *vo_->os() << "Simulation made " << S_->cycle() << "cycles.\n";
+    *vo_->os() << "Simulation made " << S_->cycle() << " cycles.\n";
     *vo_->os() << "All meshes combined have " << global_ncells << " cells.\n";
     *vo_->os() << "Memory usage (high water mark):\n";
     *vo_->os() << std::fixed << std::setprecision(1);
