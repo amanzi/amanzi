@@ -74,7 +74,7 @@ class OperatorDiffusionNLFV : public virtual OperatorDiffusion {
   // -- create an operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                               const Teuchos::Ptr<const CompositeVector>& u);
-  virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux) {};
+  virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
 
   // -- modify an operator
   virtual void ApplyBCs(bool primary, bool eliminate);
@@ -85,13 +85,20 @@ class OperatorDiffusionNLFV : public virtual OperatorDiffusion {
   virtual double ComputeTransmissibility(int f) const { return 0.0; }
   virtual double ComputeGravityFlux(int f) const { return 0.0; }
 
- private:
+ protected:
+  // virtual functions for derived clases
+  // -- processing of control parameters 
   virtual void InitDiffusion_(Teuchos::ParameterList& plist);
+  // -- solution can be modified on boundary faces. This reflects specifics
+  //    of nonlinear FV schemes, see implementation in the derived classes.
+  virtual double MapBoundaryValue_(int f, double u) { return u; }
+
+ protected:
   void InitStencils_();
-  double OneSidedFluxCorrections_(const CompositeVector& u, CompositeVector& sideflux);
+  double OneSidedFluxCorrections_(int i0, const CompositeVector& u, CompositeVector& sideflux);
   int OrderCellsByGlobalId_(const AmanziMesh::Entity_ID_List& cells, int& c1, int& c2);
   
- private:
+ protected:
   int dim_;
   bool stencil_initialized_;
   Teuchos::RCP<CompositeVector> stencil_data_;

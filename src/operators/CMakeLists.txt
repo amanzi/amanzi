@@ -78,8 +78,9 @@ set(operators_inc_files
     OperatorDiffusionMFD.hh
     OperatorDiffusionMFDwithGravity.hh
     OperatorDiffusionFV.hh
-    OperatorDiffusionNLFV.hh
     OperatorDiffusionFVwithGravity.hh
+    OperatorDiffusionNLFV.hh
+    OperatorDiffusionNLFVwithGravity.hh
     OperatorAccumulation.hh
     OperatorAdvection.hh
     TreeOperator.hh
@@ -107,11 +108,13 @@ add_amanzi_library(operators
                           OperatorDiffusionFV.cc
                           OperatorDiffusionFVwithGravity.cc
                           OperatorDiffusionNLFV.cc
+                          OperatorDiffusionNLFVwithGravity.cc
                           OperatorDiffusionFactory.cc                   
                           OperatorAccumulation.cc
                           OperatorAdvection.cc  
                           TreeOperator.cc
-                          ReconstructionCell.cc  ReconstructionCell_Limiters.cc
+                          ReconstructionCell.cc
+                          ReconstructionCell_Limiters.cc
                    HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})
 

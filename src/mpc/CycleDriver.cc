@@ -167,7 +167,7 @@ void CycleDriver::Setup() {
   }
 
   // create the walkabout
-  if (glist_->isSublist("Walkabout Data")){
+  if (glist_->isSublist("Walkabout Data")) {
     Teuchos::ParameterList& walk_plist = glist_->sublist("Walkabout Data");
     walkabout_ = Teuchos::rcp(new Amanzi::Walkabout_observations(walk_plist, comm_));
   }
@@ -283,8 +283,6 @@ void CycleDriver::Initialize() {
   // pk_->CommitStep(t0_-get_dt(), get_dt());
   if (!restart_requested_) {
     pk_->CommitStep(S_->time(), S_->time());
-    // visualize();
-    // checkpoint(*S_->GetScalarData("dt", "coordinator"));
   }
 }
 
@@ -338,23 +336,23 @@ void CycleDriver::ReportMemory() {
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "======================================================================" << std::endl;
-    *vo_->os() << "All meshes combined have " << global_ncells << " cells." << std::endl;
-    *vo_->os() << "Memory usage (high water mark):" << std::endl;
+    *vo_->os() << "Simulation made " << S_->cycle() << "cycles.\n";
+    *vo_->os() << "All meshes combined have " << global_ncells << " cells.\n";
+    *vo_->os() << "Memory usage (high water mark):\n";
     *vo_->os() << std::fixed << std::setprecision(1);
     *vo_->os() << "  Maximum per core:   " << std::setw(7) << max_mem 
-          << " MBytes,  maximum per cell: " << std::setw(7) << max_percell*1024*1024 
-          << " Bytes" << std::endl;
+               << " MBytes,  maximum per cell: " << std::setw(7) << max_percell*1024*1024 
+               << " Bytes" << std::endl;
     *vo_->os() << "  Minumum per core:   " << std::setw(7) << min_mem 
-          << " MBytes,  minimum per cell: " << std::setw(7) << min_percell*1024*1024 
-         << " Bytes" << std::endl;
+               << " MBytes,  minimum per cell: " << std::setw(7) << min_percell*1024*1024 
+               << " Bytes" << std::endl;
     *vo_->os() << "  Total:              " << std::setw(7) << total_mem 
-          << " MBytes,  total per cell:   " << std::setw(7) << total_mem/global_ncells*1024*1024 
-          << " Bytes" << std::endl;
+               << " MBytes,  total per cell:   " << std::setw(7) << total_mem/global_ncells*1024*1024 
+               << " Bytes" << std::endl;
   }
 
-  
   double doubles_count(0.0);
-  for (State::field_iterator field=S_->field_begin(); field!=S_->field_end(); ++field) {
+  for (State::field_iterator field = S_->field_begin(); field != S_->field_end(); ++field) {
     doubles_count += static_cast<double>(field->second->GetLocalElementCount());
   }
   double global_doubles_count(0.0);
@@ -379,10 +377,10 @@ void CycleDriver::ReportMemory() {
 * Read control variables for all time periods. 
 ****************************************************************** */
 void CycleDriver::ReadParameterList_() {
-  max_dt_ = coordinator_list_->get<double>("max time step size", 1.0e99);
+  max_dt_ = coordinator_list_->get<double>("max time step size", 1.0e+99);
   min_dt_ = coordinator_list_->get<double>("min time step size", 1.0e-12);
-  cycle0_ = coordinator_list_->get<int>("start cycle",0);
-  cycle1_ = coordinator_list_->get<int>("end cycle",-1);
+  cycle0_ = coordinator_list_->get<int>("start cycle", 0);
+  cycle1_ = coordinator_list_->get<int>("end cycle", -1);
 
   Teuchos::ParameterList time_periods_list = coordinator_list_->sublist("time periods");
 
@@ -418,8 +416,10 @@ void CycleDriver::ReadParameterList_() {
     // make sure that the restart file actually exists, if not throw an error
     boost::filesystem::path restart_from_filename_path(restart_filename_);
     if (!boost::filesystem::exists(restart_from_filename_path)) {
-      Errors::Message message("CycleDriver::the specified restart file does not exist or is not a regular file.");
-      Exceptions::amanzi_throw(message);
+      Errors::Message msg;
+      msg << "CycleDriver: restart file \"" << restart_filename_ 
+          << "\" does not exist or is not a regular file.";
+      Exceptions::amanzi_throw(msg);
     }
 
     // if (restart_requested_) {
@@ -483,12 +483,12 @@ double CycleDriver::get_dt(bool after_failure) {
   for (it = reset_info_.begin(), it_max = reset_max_.begin(); it != reset_info_.end(); ++it, ++it_max) {
     if (S_->time() == it->first) {
       if (reset_max_.size() > 0) {
-              max_dt_ = it_max->second;
+        max_dt_ = it_max->second;
       }
 
-      if (dt < it->second){
-         pk_->set_dt(dt);
-      }else {
+      if (dt < it->second) {
+        pk_->set_dt(dt);
+      } else {
         dt = it->second;
         pk_->set_dt(dt);
         after_failure = true;
@@ -578,7 +578,7 @@ double CycleDriver::Advance(double dt) {
 
     if (it != reset_info_.end()) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-	*vo_->os() << vo_->color("blue") << " Reinitializing PKs due to BCs or sources/sinks" 
+        *vo_->os() << vo_->color("blue") << " Reinitializing PKs due to BCs or sources/sinks" 
                    << vo_->reset() << std::endl;
       }
       reinit = true;
@@ -624,7 +624,7 @@ double CycleDriver::Advance(double dt) {
     // Amanzi::timer_manager.start("I/O");
 
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      *vo_->os() << "New time(y) = "<< S_->time() / (60*60*24*365.25);
+      *vo_->os() << "New time = "<< S_->time() / (60*60*24*365.25) << " y";
       *vo_->os() << std::endl;
     }
   } else {
@@ -707,7 +707,7 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
 }
 
 
-void CycleDriver::WriteWalkabout(bool force){
+void CycleDriver::WriteWalkabout(bool force) {
   if (walkabout_ != Teuchos::null) {
     if (walkabout_->DumpRequested(S_->cycle(), S_->time()) || force) {
       if (!walkabout_->is_disabled())
@@ -754,11 +754,11 @@ Teuchos::RCP<State> CycleDriver::Go() {
     ReadCheckpointObservations(comm_, restart_filename_, observations_data_);
     for (int i = 0; i < num_time_periods_; i++) {
       if (restart_time - tp_end_[i] > -1e-10) 
-	time_period_id_++;
+        time_period_id_++;
     }    
     if (position == TIME_PERIOD_END) 
       if (time_period_id_>0) 
-	time_period_id_--;   
+        time_period_id_--;   
 
     Init_PK(time_period_id_); 
     Setup();
@@ -771,7 +771,6 @@ Teuchos::RCP<State> CycleDriver::Go() {
     
     // re-initialize the state object
     restart_dT = ReadCheckpoint(comm_, Teuchos::ptr(&*S_), restart_filename_);
-    //S_->WriteStatistics(vo_);
 
     cycle0_ = S_->cycle();
     for (std::vector<std::pair<double,double> >::iterator it = reset_info_.begin();
@@ -789,7 +788,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
       if (time_period_id_ < num_time_periods_ - 1) time_period_id_++;
       ResetDriver(time_period_id_); 
       restart_dT =  tp_dt_[time_period_id_];
-    }else{
+    } else {
       // Initialize the process kernels
       pk_->Initialize();
     }
@@ -814,7 +813,6 @@ Teuchos::RCP<State> CycleDriver::Go() {
   WriteCheckpoint(dt);
   S_->WriteStatistics(vo_);
 
-
   //Amanzi::timer_manager.stop("I/O");
  
   // iterate process kernels
@@ -830,8 +828,8 @@ Teuchos::RCP<State> CycleDriver::Go() {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
           Teuchos::OSTab tab = vo_->getOSTab();
           *vo_->os() << "\nCycle " << S_->cycle()
-                     << ": time(y) = " << S_->time() / (60*60*24*365.25)
-                     << ", dt(y) = " << dt / (60*60*24*365.25) << std::endl;
+                     << ": time = " << S_->time() / (60*60*24*365.25) << " y"
+                     << ", dt = " << dt / (60*60*24*365.25) << " y\n";
         }
         *S_->GetScalarData("dt", "coordinator") = dt;
         S_->set_initial_time(S_->time());
@@ -851,13 +849,12 @@ Teuchos::RCP<State> CycleDriver::Go() {
         dt = get_dt(false);
       }      
     }
-#if !DEBUG_MODE
   }
-
+#if !DEBUG_MODE
   catch (Exceptions::Amanzi_exception &e) {
     // write one more vis for help debugging
     S_->advance_cycle();
-    visualize(true); // force vis
+    Visualize(true);  // force vis
 
     // flush observations to make sure they are saved
     observations_->Flush();
@@ -869,11 +866,9 @@ Teuchos::RCP<State> CycleDriver::Go() {
     throw e;
   }
 #endif
-  }
   
   // finalizing simulation
   S_->WriteStatistics(vo_);
-  *vo_->os() << "\nCycle " << S_->cycle()<<"\n";
   ReportMemory();
   // Finalize();
 

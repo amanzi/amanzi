@@ -1,7 +1,7 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators 
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -403,11 +403,10 @@ void OperatorDiffusionMFD::UpdateMatricesNodal_()
 
 /* ******************************************************************
 * Calculate and assemble fluxes using the TPFA scheme.
+* This routine does not use little k.
 ****************************************************************** */
 void OperatorDiffusionMFD::UpdateMatricesTPFA_()
 {
-  // This does not seem to consider little k? --etc
-
   // populate transmissibilities
   WhetStone::MFD3D_Diffusion mfd(mesh_);
 
@@ -499,7 +498,7 @@ void OperatorDiffusionMFD::ApplyBCs(bool primary, bool eliminate)
                                   | OPERATOR_SCHEMA_DOFS_NODE)) {
       Teuchos::RCP<BCs> bc_f, bc_n;
       for (std::vector<Teuchos::RCP<BCs> >::iterator bc = bcs_trial_.begin();
-           bc != bcs_trial_.end(); ++bc) {
+          bc != bcs_trial_.end(); ++bc) {
         if ((*bc)->type() == OPERATOR_BC_TYPE_FACE) {
           bc_f = *bc;
         } else if ((*bc)->type() == OPERATOR_BC_TYPE_NODE) {
@@ -685,7 +684,7 @@ void OperatorDiffusionMFD::ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test,
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       rhs_cell[0][cells[0]] += bc_value[f] * Aface(0, 0);
     }
-    // neumann condition contributes to the RHS
+    // Neumann condition contributes to the RHS
     else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
       local_op_->matrices_shadow[f] = Aface;
       
@@ -917,8 +916,9 @@ void OperatorDiffusionMFD::ModifyMatrices(const CompositeVector& u)
 
 
 /* ******************************************************************
-* WARNING: Since diffusive flux is not continuous, we derive it only
-* once (using flag) and in exactly the same manner as other routines.
+* WARNING: Since diffusive flux may be discontinuous (e.g. for
+* Richards equation), we derive it only once (using flag) and in 
+* exactly the same manner as other routines.
 * **************************************************************** */
 void OperatorDiffusionMFD::UpdateFlux(const CompositeVector& u, CompositeVector& flux)
 {

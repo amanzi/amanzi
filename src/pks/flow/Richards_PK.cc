@@ -161,7 +161,7 @@ void Richards_PK::Setup()
   names.push_back("cell");
   locations.push_back(AmanziMesh::CELL);
   ndofs.push_back(1);
-  if (name != "fv: default") {
+  if (name != "fv: default" && name != "nlfv:default") {
     names.push_back("face");
     locations.push_back(AmanziMesh::FACE);
     ndofs.push_back(1);

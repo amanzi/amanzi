@@ -152,7 +152,18 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
     ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
     // compute flux error
-    double unorm(1.0), ul2_err(0.0), uinf_err(0.0);
+    CompositeVectorSpace cvs_tmp;
+    cvs_tmp.SetMesh(mesh)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("face", AmanziMesh::FACE, 1);
+    Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs_tmp));
+    Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
+
+    op->UpdateFlux(*solution, *flux);
+    double unorm, ul2_err, uinf_err;
+
+    ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
+
     if (MyPID == 0) {
       pl2_err /= pnorm; 
       ul2_err /= unorm;
@@ -160,7 +171,7 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
           pl2_err, pinf_err, ul2_err, uinf_err,
           solver->num_itrs(), solver->residual(), solver->returned_code());
 
-      CHECK(pl2_err < 0.1 / loop && ul2_err < 0.1);
+      CHECK(pl2_err < 0.1 / (loop + 1) && ul2_err < 0.4 / (loop + 1));
       CHECK(solver->num_itrs() < 15);
     }
   }

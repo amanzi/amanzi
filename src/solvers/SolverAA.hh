@@ -1,9 +1,14 @@
 /*
-  This is the Nonlinear Solver component of the Amanzi code.
+  Solvers
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Daniil Svyatskiy
 
   Interface for using Anderson acceleration as a solver.
-
-  Authors: Daniil Svyatskiy
 */
 
 #ifndef AMANZI_AA_SOLVER_

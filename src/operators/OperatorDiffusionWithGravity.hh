@@ -1,7 +1,7 @@
 /*
-  This is the Operator component of the Amanzi code.
+  Operators
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -18,29 +18,21 @@
 namespace Amanzi {
 namespace Operators {
 
-
 class OperatorDiffusionWithGravity : public virtual OperatorDiffusion {
-
-public:
+ public:
   OperatorDiffusionWithGravity(const Teuchos::RCP<Operator>& global_op) :
-    OperatorDiffusion(global_op),
-    is_scalar_(false)
-  {}
+      OperatorDiffusion(global_op),
+      is_scalar_(false) {};
 
   OperatorDiffusionWithGravity(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-    OperatorDiffusion(mesh),
-    is_scalar_(false)
-  {}
+      OperatorDiffusion(mesh),
+      is_scalar_(false) {};
 
   OperatorDiffusionWithGravity(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-    OperatorDiffusion(mesh),
-    is_scalar_(false)
-  {}
+      OperatorDiffusion(mesh),
+      is_scalar_(false) {};
 
-
-  virtual void SetGravity(const AmanziGeometry::Point& g) {
-    g_ = g;
-  }
+  virtual void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
   
   virtual void SetDensity(double rho) {
     is_scalar_ = true;
@@ -52,16 +44,14 @@ public:
     rho_cv_ = rho;
   }
 
-protected:
+ protected:
   bool is_scalar_;
-
   double rho_;
-
   Teuchos::RCP<const CompositeVector> rho_cv_;
   AmanziGeometry::Point g_;
 };
 
-} // namespace
-} // namespace
+}  // namespace Operators
+}  // namespace Amanzi
   
 #endif 

@@ -138,7 +138,7 @@ void Darcy_PK::Setup()
   names.push_back("cell");
   locations.push_back(AmanziMesh::CELL);
   ndofs.push_back(1);
-  if (name != "fv: default") {
+  if (name != "fv: default" && name != "nlfv: default") {
     names.push_back("face");
     locations.push_back(AmanziMesh::FACE);
     ndofs.push_back(1);
@@ -245,7 +245,6 @@ void Darcy_PK::Initialize()
   op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // Create solution and auxiliary data for time history.
-  // solution = Teuchos::rcp(new CompositeVector(*(S_->GetFieldData("pressure"))));
   solution = S_->GetFieldData("pressure", passwd_);
 
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);

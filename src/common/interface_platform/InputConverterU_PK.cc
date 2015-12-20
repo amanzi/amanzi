@@ -342,7 +342,7 @@ Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
   tmp_list.set<std::string>("discretization primary", methods[0]);
   tmp_list.set<std::string>("discretization secondary", methods[1]);
 
-  if (methods[0] != "fv: default") {
+  if (methods[0] != "fv: default" && methods[0] != "nlfv: default") {
     Teuchos::Array<std::string> stensil(2);
     stensil[0] = "face";
     stensil[1] = "cell";

@@ -105,14 +105,10 @@
 	    <Parameter name="clipping saturation value" type="double" value="0.6"/>
 	  </ParameterList>
 
-	  <ParameterList name="pressure-lambda constraints">
-	    <Parameter name="method" type="string" value="projection"/>
-	    <Parameter name="linear solver" type="string" value="AztecOO"/>
-	  </ParameterList>
-
 	  <Parameter name="time integration method" type="string" value="BDF1"/>
 	  <ParameterList name="BDF1">
-	    <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+	    <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
+            <!--Parameter name="extrapolate initial guess" type="bool" value="false"/-->
 
 	    <Parameter name="timestep controller type" type="string" value="standard"/>
 	    <ParameterList name="timestep controller standard parameters">
@@ -131,7 +127,6 @@
 	      <Parameter name="limit iterations" type="int" value="12"/>
 	      <Parameter name="max du growth factor" type="double" value="1e+5"/>
 	      <Parameter name="max divergent iterations" type="int" value="3"/>
-	      <Parameter name="max nka vectors" type="int" value="10"/>
 	      <ParameterList name="VerboseObject">
 		<Parameter name="Verbosity Level" type="string" value="high"/>
 	      </ParameterList>
