@@ -3183,7 +3183,7 @@ Diffusion operator
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
       <Parameter name="gravity" type="bool" value="true"/>
       <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
-      <Parameter name="upwind method" type="string" value="standard: cell"/>
+      <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
       <Parameter name="newton correction" type="string" value="true jacobian"/>
 
       <ParameterList name="consistent faces">

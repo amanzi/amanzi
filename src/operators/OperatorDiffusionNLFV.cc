@@ -298,6 +298,10 @@ void OperatorDiffusionNLFV::UpdateMatrices(
   // occupy (dim_ + 1) cells, we need parallel communications.
   OneSidedFluxCorrections_(1, *u, sideflux_cv);
 
+  // un-rolling little-k data
+  Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
+  if (k_ != Teuchos::null) k_face = k_->ViewComponent("face");
+
   // split each stencil between different local matrices
   int c1, c2, c3, c4, k1, k2;
   std::vector<int> dirs;
@@ -316,6 +320,10 @@ void OperatorDiffusionNLFV::UpdateMatrices(
       OrderCellsByGlobalId_(cells, c1, c2);
       k1 = (c1 == c) ? 0 : 1;
       k2 = k1 * dim_;      
+
+      // calculate little_k on the current face
+      double kf(1.0);
+      if (k_face.get()) kf = (*k_face)[0][f];
 
       // Calculate solution-dependent weigths using corrections to the
       // two-point flux. Note mu does not depend on one-sided flux. 
@@ -338,7 +346,7 @@ void OperatorDiffusionNLFV::UpdateMatrices(
       }
 
       tpfa = mu * w1 + (1.0 - mu) * w2;
-      matrix[k1][f] += tpfa;
+      matrix[k1][f] += kf * tpfa;
 
       // remaining terms of one-sided flux in cell c. Now we need
       // to select mu depending on the one-sided flux. 
@@ -358,19 +366,13 @@ void OperatorDiffusionNLFV::UpdateMatrices(
           }
 
           double tmp = ncells * weight[i + k2][f] * gamma * mu;
-          matrix[k1][f1] += tmp;
+          matrix[k1][f1] += kf * tmp;
         }
       }
     }
   }
 
   matrix_cv.GatherGhostedToMaster();
-
-  // un-rolling little-k data
-  Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
-  if (k_ != Teuchos::null) {
-    if (k_->HasComponent("face")) k_face = k_->ViewComponent("face");
-  }
 
   // populate local matrices
   for (int f = 0; f < nfaces_owned; ++f) {
@@ -391,10 +393,6 @@ void OperatorDiffusionNLFV::UpdateMatrices(
       Aface(0, 0) = matrix[0][f];
     }
 
-    if (little_k_ == OPERATOR_LITTLE_K_UPWIND && k_face.get()) {
-      Aface *= (*k_face)[0][f];
-    }
-  
     local_op_->matrices[f] = Aface;
   }
 }
@@ -491,7 +489,11 @@ double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
       OrderCellsByGlobalId_(cells, c1, c2);
       k1 = (c1 == c) ? 0 : 1;
       k2 = k1 * dim_;      
-    
+
+      // scalar (nonlinear) coefficient
+      double kf(1.0);    
+      if (k_face.get()) kf = (*k_face)[0][f];
+
       double sideflux(0.0), neumann_flux(0.0);
       for (int i = i0; i < dim_; ++i) {
         int f1 = (*stencil_faces_[i + k2])[f];
@@ -514,10 +516,7 @@ double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
         }
       }
 
-      if (little_k_ == OPERATOR_LITTLE_K_UPWIND && k_face.get()) {
-        sideflux *= (*k_face)[0][f];
-      }
-      flux[k1][f] = sideflux + neumann_flux; 
+      flux[k1][f] = kf * sideflux + neumann_flux; 
     }
   }
 
@@ -555,9 +554,8 @@ void OperatorDiffusionNLFV::ApplyBCs(bool primary, bool eliminate)
         local_op_->matrices_shadow[f] = Aface;
 
         double kf(1.0);
-        if (little_k_ == OPERATOR_LITTLE_K_UPWIND && k_face.get()) {
-          kf = (*k_face)[0][f];
-        }
+        if (k_face.get()) kf = (*k_face)[0][f];
+
         rhs_cell[0][c] -= (Aface(0, 0) / kf) * bc_value[f] * mesh_->face_area(f);
         Aface = 0.0;
       }
