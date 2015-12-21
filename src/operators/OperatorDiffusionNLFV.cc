@@ -207,6 +207,7 @@ void OperatorDiffusionNLFV::InitStencils_()
   stencil_data_->ScatterMasterToGhosted("gamma");
 
   // calculate coefficients in positive decompositions of conormals
+  int dir;
   std::vector<int> dirs;
   AmanziGeometry::Point conormal(dim_), v(dim_);
   std::vector<AmanziGeometry::Point> tau;
@@ -222,7 +223,8 @@ void OperatorDiffusionNLFV::InitStencils_()
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-        v = (*K_)[c] * mesh_->face_normal(f);
+        const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+        v = (*K_)[c] * normal;
       } else {
         for (int i = 0; i < dim_; ++i) v[i] = hap[i][f] - xc[i];
       }

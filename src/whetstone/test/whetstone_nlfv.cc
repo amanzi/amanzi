@@ -34,7 +34,7 @@
 TEST(NLFV_POSITIVE_DECOMPOSITION_2D) {
   using namespace Amanzi;
 
-  std::cout << "Test: positive decomposition of a vector" << std::endl;
+  std::cout << "Test: positive decomposition of a 2D vector" << std::endl;
  
   // create basis vectors
   std::vector<AmanziGeometry::Point> tau;
@@ -64,6 +64,54 @@ TEST(NLFV_POSITIVE_DECOMPOSITION_2D) {
 
     CHECK_CLOSE(conormal[0], v[0], 1e-12);
     CHECK_CLOSE(conormal[1], v[1], 1e-12);
+    CHECK(ierr == 0);
+  }
+}
+
+
+/* ****************************************************************
+* Test positive decomposition of a given vector in 3D.
+**************************************************************** */
+TEST(NLFV_POSITIVE_DECOMPOSITION_3D) {
+  using namespace Amanzi;
+
+  std::cout << "\nTest: positive decomposition of a 3D vector" << std::endl;
+ 
+  // create basis vectors
+  int n(0);
+  double h[3] = {0.9, 1.0, 1.2};
+  std::vector<AmanziGeometry::Point> tau;
+  for (int i = -1; i < 2; i += 2) {
+    for (int j = -1; j < 2; j += 2) {
+      for (int k = -1; k < 2; k += 2) {
+        AmanziGeometry::Point p(i * h[0], j * h[1], k * h[2]);
+        tau.push_back(p);
+        std::cout << "tau[" << n++ << "] = " << p << std::endl;
+      }
+    }
+  }
+
+  int ids[3];
+  double ws[3];
+  WhetStone::NLFV nlfv;
+  AmanziGeometry::Point conormal(3), v(3);
+  
+  for (int i = 0; i < 6; i++) {
+    conormal = tau[i];
+    conormal[0] += 0.1 / (i + 1);
+    conormal[1] += 0.2 / (i + 1);
+    conormal[2] += 0.3 / (i + 1);
+
+    int ierr = nlfv.PositiveDecomposition(i, tau, conormal, ws, ids);
+
+    std::cout << "cornormal = " << conormal
+              << "\nws: " << ws[0] << " " << ws[1] << " " << ws[2]
+              << "\nids: " << ids[0] << " " << ids[1] << " " << ids[2] << std::endl;
+    v = ws[0] * tau[ids[0]] + ws[1] * tau[ids[1]] + ws[2] * tau[ids[2]];
+
+    CHECK_CLOSE(conormal[0], v[0], 1e-12);
+    CHECK_CLOSE(conormal[1], v[1], 1e-12);
+    CHECK_CLOSE(conormal[2], v[2], 1e-12);
     CHECK(ierr == 0);
   }
 }
