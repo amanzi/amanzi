@@ -69,8 +69,9 @@ void OperatorDiffusionNLFVwithGravity::UpdateMatrices(
       }
     } else if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
       int c = cells[0];
+      double zf = (mesh_->face_centroid(f))[dim_ - 1];
       double zc = (mesh_->cell_centroid(c))[dim_ - 1];
-      rhs_cell[0][c] -= Aface(0, 0) * zc * rho_g;
+      rhs_cell[0][c] -= Aface(0, 0) * (zc - zf) * rho_g;
     }
   }
 }
