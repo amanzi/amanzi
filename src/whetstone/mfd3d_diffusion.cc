@@ -649,7 +649,8 @@ int MFD3D_Diffusion::MassMatrixInverseMMatrix(
 
   DenseMatrix R(nfaces, d);
 
-  int ok = L2consistencyInverse(c, K, R, W, true);
+  // use boolean flag to populate the whole matrix
+  int ok = L2consistencyInverse(c, K, R, W, false);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   // scaling of matrix W for numerical stability
