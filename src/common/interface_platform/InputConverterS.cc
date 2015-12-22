@@ -951,6 +951,25 @@ void InputConverterS::ParseGeochemistry_()
   {
     bool found;
 
+    if ((chemistry_engine_ != "amanzi") && (chemistry_engine_ != "none"))
+    {
+      // We're using Alquimia.
+      bool rnfound;
+      DOMElement* rxn_network = GetChildByName_(geochem, "reaction_network", rnfound);
+      if (rnfound)
+      {
+        string engine_input = GetAttributeValueS_(rxn_network, "file");
+        AddToTable(table, MakePPPrefix("Chemistry", "Engine_Input_File"), MakePPEntry(engine_input));
+      }
+      else
+      {
+        Errors::Message msg;
+        msg << "\"reaction_network\" not present in Alquimia geochemistry entry.\n";
+        msg << "Please correct and try again.\n";
+        Exceptions::amanzi_throw(msg);
+      }
+    }
+
     // Reaction database.
     DOMElement* database = GetChildByName_(geochem, "database", found, true);
     string db_file = GetAttributeValueS_(database, "name");
@@ -1350,21 +1369,6 @@ void InputConverterS::ParseProcessKernels_()
         AddToTable(table, MakePPPrefix("Chemistry", "Engine"), MakePPEntry("PFloTran"));
       else if (chemistry_engine_ == "crunchflow")
         AddToTable(table, MakePPPrefix("Chemistry", "Engine"), MakePPEntry("CrunchFlow"));
-      
-      bool rnfound;
-      DOMElement* rxn_network = GetChildByName_(chemistry, "reaction_network", rnfound);
-      if (rnfound)
-      {
-        string engine_input = GetAttributeValueS_(rxn_network, "file");
-        AddToTable(table, MakePPPrefix("Chemistry", "Engine_Input_File"), MakePPEntry(engine_input));
-      }
-      else
-      {
-        Errors::Message msg;
-        msg << "\"reaction_network\" not present in Alquimia geochemistry entry.\n";
-        msg << "Please correct and try again.\n";
-        Exceptions::amanzi_throw(msg);
-      }
     }
     else
     {
@@ -1373,7 +1377,7 @@ void InputConverterS::ParseProcessKernels_()
 
     // FIXME: This parameter isn't really supported yet, since it only has 
     // FIXME: one meaningful value.
-    string chemistry_model = GetAttributeValueS_(chemistry, "process_model");
+//    string chemistry_model = GetAttributeValueS_(chemistry, "process_model");
   }
 
   ParmParse::appendTable(table);
