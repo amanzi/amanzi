@@ -834,6 +834,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
         *S_->GetScalarData("dt", "coordinator") = dt;
         S_->set_initial_time(S_->time());
         S_->set_final_time(S_->time() + dt);
+        S_->set_intermediate_time(S_->time());
         S_->set_position(TIME_PERIOD_INSIDE);
 
         dt = Advance(dt);
@@ -841,7 +842,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
       }  // while not finished
       while ((S_->time() < tp_end_[time_period_id_]) && ((tp_max_cycle_[time_period_id_] == -1) 
-                                     || (S_->cycle() - start_cycle_num <= tp_max_cycle_[time_period_id_])));
+          || (S_->cycle() - start_cycle_num < tp_max_cycle_[time_period_id_])));
 
       time_period_id_++;
       if (time_period_id_ < num_time_periods_) {
