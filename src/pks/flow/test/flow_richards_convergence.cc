@@ -99,7 +99,7 @@ void RunTestConvergence(std::string input_xml) {
     div_err = CalculateDarcyDivergenceError(mesh, flux);
 
     if (n == 80) CHECK(pressure_err < 5.0e-2 && flux_err < 5.0e-2);
-    int num_nonlinear_steps = -1;
+    int num_nonlinear_steps = ti_specs.num_itrs;
     printf("n=%3d itrs=%4d  L2_pressure_err=%7.3e  l2_flux_err=%7.3e  L2_div_err=%7.3e\n",
         n, num_nonlinear_steps, pressure_err, flux_err, div_err);
 

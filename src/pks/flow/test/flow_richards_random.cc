@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK
 
   Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -38,12 +38,12 @@ using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Flow;
 
-TEST(FLOW_RICHARDS_CONVERGENCE) {
+void RunTestConvergence(std::string input_xml) {
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout <<"Convergence analysis on three random meshes" << std::endl;
+  if (MyPID == 0) std::cout <<"\nConvergence analysis on three random meshes" << std::endl;
 
-  std::string xmlFileName = "test/flow_richards_random.xml";
+  std::string xmlFileName = input_xml;
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // convergence estimate
@@ -125,4 +125,19 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
 
   delete comm;
 }
+
+
+/* *****************************************************************
+* Run with various discretization methods
+* **************************************************************** */
+/*
+TEST(FLOW_RICHARDS_CONVERGENCE_NLFV) {
+  RunTestConvergence("test/flow_richards_random_nlfv.xml");
+}
+*/
+
+TEST(FLOW_RICHARDS_CONVERGENCE_MFD) {
+  RunTestConvergence("test/flow_richards_random.xml");
+}
+
 

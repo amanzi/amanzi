@@ -72,9 +72,8 @@ double CalculateDarcyFluxError(Teuchos::RCP<const Mesh> mesh,
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
     error_l2 += std::pow(flux[0][f] - velocity_exact * normal, 2.0);
-    if (f==160)
-    std::cout << f << " " << flux[0][f] << " exact=" << velocity_exact * normal 
-              << " xf=" << mesh->face_centroid(f) << std::endl;
+    // std::cout << f << " " << flux[0][f] << " exact=" << velocity_exact * normal 
+    //           << " xf=" << mesh->face_centroid(f) << std::endl;
   }
   return sqrt(error_l2 / nfaces_owned);
 }

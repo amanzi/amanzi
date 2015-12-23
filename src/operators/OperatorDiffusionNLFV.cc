@@ -413,6 +413,9 @@ void OperatorDiffusionNLFV::UpdateMatricesNewtonCorrection(
   // Correction is zero for linear problems
   if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
 
+  // Correction is not required
+  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_NONE) return;
+
   // only works on upwinded methods
   if (little_k_ == OPERATOR_UPWIND_NONE) return;
 
