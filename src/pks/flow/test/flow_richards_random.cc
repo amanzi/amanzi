@@ -29,86 +29,14 @@
 
 // Flow
 #include "Richards_PK.hh"
+
+#include "Analytic01.hh"
 #include "Richards_SteadyState.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Flow;
-
-/* ******************************************************************
-* Calculate L2 error in pressure.                                                    
-****************************************************************** */
-double calculatePressureCellError(Teuchos::RCP<const Mesh> mesh, const Epetra_MultiVector& p)
-{
-  double k1 = 0.5, k2 = 2.0, g = 2.0, a = 5.0, cr = 1.02160895462971866;  // analytical data
-  double f1 = sqrt(1.0 - g * k1 / cr);
-  double f2 = sqrt(g * k2 / cr - 1.0);
-
-  double pexact, error_L2 = 0.0;
-  for (int c = 0; c < p.MyLength(); c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-    double volume = mesh->cell_volume(c);
-
-    double z = xc[1];
-    if (z < -a) {
-      pexact = f1 * tan(cr * (z + 2*a) * f1 / k1);
-    } else {
-      pexact = -f2 * tanh(cr * f2 * (z + a) / k2 - atanh(f1 / f2 * tan(cr * a * f1 / k1)));
-      // std::cout << z << " " << p[0][c] << " exact=" <<  pexact << std::endl;
-    }
-    error_L2 += std::pow(p[0][c] - pexact, 2.0) * volume;
-  }
-  return sqrt(error_L2);
-}
-
-
-/* ******************************************************************
-* Calculate l2 error (small l) in darcy flux.                                                    
-****************************************************************** */
-double calculateDarcyFluxError(Teuchos::RCP<const Mesh> mesh, const Epetra_MultiVector& flux)
-{
-  double cr = 1.02160895462971866;  // analytical data
-  AmanziGeometry::Point velocity_exact(0.0, -cr);
-
-  int nfaces = flux.MyLength();
-  double error_l2 = 0.0;
-  for (int f = 0; f < nfaces; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    // std::cout << f << " " << flux[0][f] << " exact=" << velocity_exact * normal << std::endl;
-    error_l2 += std::pow(flux[0][f] - velocity_exact * normal, 2.0);
-  }
-  return sqrt(error_l2 / nfaces);
-}
-
-
-/* ******************************************************************
-* Calculate L2 divergence error in darcy flux.                                                    
-****************************************************************** */
-double calculateDarcyDivergenceError(Teuchos::RCP<const Mesh> mesh, const Epetra_MultiVector& flux)
-{
-  double error_L2 = 0.0;
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-
-  for (int c = 0; c < ncells_owned; c++) {
-    AmanziMesh::Entity_ID_List faces;
-    std::vector<int> dirs;
-
-    mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    double div = 0.0;
-    for (int i = 0; i < nfaces; i++) {
-      int f = faces[i];
-      div += flux[0][f] * dirs[i];
-    }
-    error_L2 += div*div / mesh->cell_volume(c);
-    // std::cout << c << " div=" << div << " err=" << error_L2 << std::endl;
-  }
-  return sqrt(error_L2);
-}
-
 
 TEST(FLOW_RICHARDS_CONVERGENCE) {
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
@@ -177,9 +105,9 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
 
     double pressure_err, flux_err, div_err;  // error checks
-    pressure_err = calculatePressureCellError(mesh, p);
-    flux_err = calculateDarcyFluxError(mesh, flux);
-    div_err = calculateDarcyDivergenceError(mesh, flux);
+    pressure_err = CalculatePressureCellError(mesh, p);
+    flux_err = CalculateDarcyFluxError(mesh, flux);
+    div_err = CalculateDarcyDivergenceError(mesh, flux);
 
     int num_bdf1_steps = ti_specs.num_itrs;
     printf("mesh=%d bdf1_steps=%d  L2_pressure_err=%7.3e  l2_flux_err=%7.3e  L2_div_err=%7.3e\n",

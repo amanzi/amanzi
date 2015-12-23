@@ -56,16 +56,15 @@ void OperatorDiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
   local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
   global_op_->OpPushBack(local_op_);
 
-  // upwind options
+  // upwind options (not used yet)
   Errors::Message msg;
   std::string uwname = plist.get<std::string>("nonlinear coefficient", "upwind: face");
+  little_k_ = OPERATOR_LITTLE_K_UPWIND;
   if (uwname == "none") {
     little_k_ = OPERATOR_LITTLE_K_NONE;
-  } else if (uwname == "upwind: face") {
-    little_k_ = OPERATOR_LITTLE_K_UPWIND;
-  } else {
-    msg << "OperatorDiffusionNLFV: unknown or not supported upwind scheme specified.";
-    Exceptions::amanzi_throw(msg);
+  // } else {
+  //   msg << "OperatorDiffusionNLFV: unknown or not supported upwind scheme specified.";
+  //   Exceptions::amanzi_throw(msg);
   }
 
   // Newton correction terms
@@ -474,7 +473,7 @@ double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
   if (k_ != Teuchos::null) k_face = k_->ViewComponent("face");
 
-  int c1, c2, c3, k1, k2;
+  int c1, c2, c3, k1, k2, dir;
   double gamma, tmp;
   std::vector<int> dirs;
   AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
@@ -511,7 +510,8 @@ double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
           sideflux += tmp * (uc[0][c] - uc[0][c3]);
         } else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
           tmp = weight[i + k2][f];
-          sideflux += tmp * (uc[0][c] - MapBoundaryValue_(f, bc_value[f1]));
+          const AmanziGeometry::Point& normal = mesh_->face_normal(f1, false, c, &dir);
+          sideflux += tmp * (uc[0][c] - MapBoundaryValue_(f, bc_value[f1])) * dir;
         } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
           tmp = weight[i + k2][f];
           neumann_flux += tmp * bc_value[f1] * mesh_->face_area(f1);
