@@ -1085,10 +1085,14 @@ void InputConverterS::ParseRegions_()
 
     }
 
-    // region (?!)
+    // region - this appears to be valid only for AmanziU
     vector<DOMNode*> my_regions = GetChildren_(regions, "region", found);
-    for (size_t i = 0; i < my_regions.size(); ++i)
-    {
+    if (my_regions.size()>0) {
+      Errors::Message msg;
+      msg << "An error occurred during parsing regions\n";
+      msg << "AmanziS does not support the region-type regions\n";
+      msg << "Please correct and try again.\n" ;
+      Exceptions::amanzi_throw(msg);
     }
 
     // Regions only available in 2D
@@ -1103,11 +1107,16 @@ void InputConverterS::ParseRegions_()
         string region_name = GetAttributeValueS_(polygon, "name");
         region_names.push_back(region_name);
         int num_points = GetAttributeValueL_(polygon, "num_points");
-        vector<DOMNode*> points = GetChildren_(regions, "points", found);
+        vector<DOMNode*> points = GetChildren_(polygon, "point", found);
+
+	if (!found || points.size() != num_points) {
+	  std::cout << "points.size() != num_points " << points.size() << " " << num_points << std::endl;
+	  ThrowErrorIllformed_("regions", "point", "polygon");
+	}
         vector<double> v1, v2, v3;
         for (size_t j = 0; j < points.size(); ++j)
         {
-          DOMElement* point = static_cast<DOMElement*>(points[i]);
+          DOMElement* point = static_cast<DOMElement*>(points[j]);
           string coord_string = XMLString::transcode(point->getTextContent());
           vector<double> coords = MakeCoordinates_(coord_string);
           v1.push_back(coords[0]);
@@ -1124,6 +1133,7 @@ void InputConverterS::ParseRegions_()
         AddToTable(table, MakePPPrefix("geometry", region_name, "purpose"), MakePPEntry("all"));
       }
 
+
       // ellipse 
       vector<DOMNode*> ellipses = GetChildren_(regions, "ellipse", found);
       for (size_t i = 0; i < ellipses.size(); ++i)
@@ -1139,10 +1149,9 @@ void InputConverterS::ParseRegions_()
 
         string radius_string = GetAttributeValueS_(ellipse, "radius");
         vector<double> radius = MakeCoordinates_(radius_string);
+
         AddToTable(table, MakePPPrefix("geometry", region_name, "radius"), MakePPEntry(radius));
-
         AddToTable(table, MakePPPrefix("geometry", region_name, "type"), MakePPEntry("ellipse"));
-
         AddToTable(table, MakePPPrefix("geometry", region_name, "purpose"), MakePPEntry("all"));
       }
     }
@@ -1169,7 +1178,23 @@ void InputConverterS::ParseRegions_()
     vector<DOMNode*> logicals = GetChildren_(regions, "logical", found);
     for (size_t i = 0; i < logicals.size(); ++i)
     {
-      // FIXME: Not done yet. v2.x spec claims this isn't supported for structured, BTW.
+      bool found;
+      DOMElement* logical = static_cast<DOMElement*>(logicals[i]);
+      string region_name = GetAttributeValueS_(logical, "name");
+      string operation   = GetAttributeValueS_(logical, "operation");
+      string region_list = GetAttributeValueS_(logical, "region_list");
+      region_names.push_back(region_name);
+
+      AddToTable(table,   MakePPPrefix("geometry", region_name, "type"),      MakePPEntry("logical"));
+      AddToTable(table,   MakePPPrefix("geometry", region_name, "operation"), MakePPEntry(operation));
+      AddToTable(table,   MakePPPrefix("geometry", region_name, "purpose"),   MakePPEntry("all"));
+      if (operation == "complement") {
+	AddToTable(table, MakePPPrefix("geometry", region_name, "region"),    MakePPEntry(region_list));
+      }
+      else {
+	vector<string> tokens = BoxLib::Tokenize(region_list,",");
+	AddToTable(table, MakePPPrefix("geometry", region_name, "regions"),   MakePPEntry(tokens));
+      }
     }
   }
 

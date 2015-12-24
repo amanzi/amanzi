@@ -196,50 +196,17 @@
       <point> ( 13.75,  0.9) </point>
       <point> ( 13.775, 0.9) </point>
     </polygon>
-    <logical name="InletOutlet">
-      <operation>union</operation>
-      <region_list>Inlet, Outlet</region_list>
-    </logical>
-    <logical name="Wall">
-      <operation>union</operation>
-      <region_list>Wall Right, Wall Left, Wall Top, Wall Bottom</region_list>
-    </logical>
-    <logical name="FF">
-      <operation>union</operation>
-      <region_list>FF Right,FF Left,FF Right 1,FF Left 1</region_list>
-    </logical>
-    <logical name="Sand">
-      <operation>union</operation>
-      <region_list>Primary Sand Pad,Secondary Sand Pad</region_list>
-    </logical>
-    <logical name="Liners">
-      <operation>union</operation>
-      <region_list>Primary Liner, Primary Liner Floor, Secondary Liner</region_list>
-    </logical>
-    <logical name="Waste">
-      <operation>union</operation>
-      <region_list>Waste Floor, Waste Left, Waste Right</region_list>
-    </logical>
-    <logical name="Grout">
-      <operation>subtraction</operation>
-      <region_list>Tank Block, Wall, FF, Sand, Liners, Waste</region_list>
-    </logical>
-    <logical name="Tank">
-      <operation>union</operation>
-      <region_list>Wall, FF, Sand, Liners, Waste, Grout</region_list>
-    </logical>
-    <logical name="Soil">
-      <operation>complement</operation>
-      <region_list>Tank</region_list>
-    </logical>
-    <logical name="Sources">
-      <operation>union</operation>
-      <region_list>Waste Floor, Waste Left, Waste Right, Primary Sand Pad,Secondary Sand Pad</region_list>
-    </logical>
-    <logical name="NonSources">
-      <operation>complement</operation>
-      <region_list>Sources</region_list>
-    </logical>
+    <logical name="InletOutlet" operation="union" region_list="Inlet, Outlet" />
+    <logical name="Wall"    operation="union" region_list="Wall Right, Wall Left, Wall Top, Wall Bottom"/>
+    <logical name="FF"      operation="union" region_list="FF Right, FF Left, FF Right 1, FF Left 1" />
+    <logical name="Sand"    operation="union" region_list="Primary Sand Pad,Secondary Sand Pad" />
+    <logical name="Liners"  operation="union" region_list="Primary Liner, Primary Liner Floor, Secondary Liner" />
+    <logical name="Waste"   operation="union" region_list="Waste Floor, Waste Left, Waste Right" />
+    <logical name="Grout"   operation="subtraction" region_list="Tank Block, Wall, FF, Sand, Liners, Waste" />
+    <logical name="Tank"    operation="union" region_list="Wall, FF, Sand, Liners, Waste, Grout" />
+    <logical name="Soil"    operation="complement" region_list="Tank" />
+    <logical name="Sources" operation="union" region_list="Waste Floor, Waste Left, Waste Right, Primary Sand Pad,Secondary Sand Pad" />
+    <logical name="NonSources" operation="complement" region_list="Sources" />
   </regions>
 
   <numerical_controls>
