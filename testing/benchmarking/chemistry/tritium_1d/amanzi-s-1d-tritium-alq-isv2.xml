@@ -53,6 +53,16 @@
   </execution_controls>
 
   <numerical_controls>
+    <structured_controls>
+      <str_steady-state_controls>
+      </str_steady-state_controls>
+
+      <str_transient_controls>
+	<semi_analytic_J>false</semi_analytic_J>
+      </str_transient_controls>
+
+      <str_amr_controls amr_levels="1" blocking_factor="2" max_grid_size="32"/>
+    </structured_controls>
   </numerical_controls>
 
   <mesh framework="mstk">
@@ -65,17 +75,8 @@
   </mesh>
 
   <regions>
-    <region name ="All">
-      <box low_coordinates= "(0.0,0.0)"     high_coordinates="(100.0,1.0)"/>
-    </region>
-
-    <region name ="west">
-      <box low_coordinates= "(0.0,0.0)"     high_coordinates="(0.0,1.0)"/>
-    </region>
-
-    <region name ="east">
-      <box low_coordinates= "(100.0,0.0)"   high_coordinates="(100.0,1.0)"/>
-    </region>
+      <box name ="west" low_coordinates= "(0.0,0.0)"     high_coordinates="(0.0,1.0)"/>
+      <box name ="east" low_coordinates= "(100.0,0.0)"   high_coordinates="(100.0,1.0)"/>
   </regions>
 
   <geochemistry>

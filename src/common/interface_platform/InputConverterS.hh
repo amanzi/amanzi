@@ -34,9 +34,10 @@ class InputConverterS : public InputConverter {
   ~InputConverterS();
 
   // main members
-  void Translate();
+  void Translate(int rank_);
 
  private:
+  std::string CreateBGDFile(std::string& filename);
 
   void ParseUnits_();
   void ParseDefinitions_();
@@ -60,7 +61,7 @@ class InputConverterS : public InputConverter {
                           bool required);
 
   // Private data.
-  int dim_;
+  int dim_, rank_;
   int nx_, ny_, nz_;
   std::map<std::string, std::string> labeled_times_, labeled_numbers_, labeled_area_mass_fluxes_;
   std::vector<double> lo_coords_, hi_coords_;

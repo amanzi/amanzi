@@ -33,6 +33,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 if (ENABLE_Structured)
   add_definitions("-DENABLE_Structured")
+  include_directories(${SAMR_SOURCE_DIR}) 
 endif()
 
 #

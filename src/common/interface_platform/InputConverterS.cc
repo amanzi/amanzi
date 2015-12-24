@@ -12,7 +12,11 @@
 #ifdef ENABLE_Structured
 
 #include <boost/algorithm/string.hpp>  // For string trimming
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "BoxLib.H"
+#include "Utility.H"
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -193,6 +197,81 @@ void AddToTable(list<ParmParse::PP_entry>& table,
 
 } // end anonymous namespace
 
+/* ******************************************************************
+* Adds kd values to a bgd file (using the first material).
+* Returns the name of this file.  
+* FIXME: STOLEN from U code, shouldn't this be in common???
+****************************************************************** */
+std::string InputConverterS::CreateBGDFile(std::string& filename)
+{
+  DOMNode* node;
+  DOMElement* element;
+
+  std::ofstream bgd_file;
+  std::stringstream species;
+  std::stringstream isotherms;
+
+  bool flag;
+  node = GetUniqueElementByTagsString_("materials, material, sorption_isotherms", flag);
+  if (flag) {
+    std::string name;
+    std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
+    for (int i = 0; i < children.size(); ++i) {
+      DOMNode* inode = children[i];
+      element = static_cast<DOMElement*>(inode);
+      name = GetAttributeValueS_(element, "name");
+      species << name << " ;   0.00 ;   0.00 ;   1.00 \n";
+
+      DOMNode* knode = GetUniqueElementByTagsString_(inode, "kd_model", flag);
+      element = static_cast<DOMElement*>(knode);
+      if (flag) {
+        double kd = GetAttributeValueD_(element, "kd");
+        std::string model = GetAttributeValueS_(element, "model");
+        if (model == "langmuir") {
+          double b = GetAttributeValueD_(element, "b");
+          isotherms << name << " ; langmuir ; " << kd << " " << b << std::endl;
+        } else if (model == "freundlich") {
+          double n = GetAttributeValueD_(element, "n");
+          isotherms << name << " ; freundlich ; " << kd << " " << n << std::endl;
+        } else {
+          isotherms << name << " ; linear ; " << kd << std::endl;
+        }
+      }
+    }
+  }
+  
+  // build bgd filename
+  std::string bgdfilename(filename);
+  std::string new_extension(".bgd");
+  size_t pos = bgdfilename.find(".xml");
+  bgdfilename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)4);
+
+  // open output bgd file
+  if (rank_ == 0) {
+    struct stat buffer;
+    int status = stat(bgdfilename.c_str(), &buffer);
+    if (!status) {
+      std::cout << "File \"" << bgdfilename.c_str() 
+		<< "\" exists, skipping its creation." << std::endl;
+    } else {
+      bgd_file.open(bgdfilename.c_str());
+
+      // <Primary Species
+      bgd_file << "<Primary Species\n";
+      bgd_file << species.str();
+
+      //<Isotherms
+      bgd_file << "<Isotherms\n";
+      bgd_file << "# Note, these values will be overwritten by the xml file\n";
+      bgd_file << isotherms.str();
+
+      bgd_file.close();
+    }
+  }
+
+  return bgdfilename;
+}
+
 // Helper for parsing a mechanical property.
 void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node, 
                                          const string& material_name, 
@@ -285,7 +364,7 @@ void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
             AddToTable(table, MakePPPrefix("rock", material_name, property_name, "type"),
                        MakePPEntry("gslib"));
 
-            string data_file = GetAttributeValueS_(property, "data_file", TYPE_NUMERICAL, false);
+            string data_file = GetAttributeValueS_(property, "data_file", TYPE_NONE, false);
             if (!data_file.empty())
             {
               AddToTable(table, MakePPPrefix("rock", material_name, property_name, "data_file"),
@@ -383,13 +462,13 @@ void InputConverterS::ParseDefinitions_()
             ThrowErrorIllformed_("definitions->macros", "timestep_interval", "time_macro");
 
           // Shove this macro into our table.
-          AddToTable(table, MakePPPrefix("amr", "time_macros", macro_name, "type"),
+          AddToTable(table, MakePPPrefix("amr", "time_macro", macro_name, "type"),
                                          MakePPEntry("period"));
-          AddToTable(table, MakePPPrefix("amr", "time_macros", macro_name, "start"),
+          AddToTable(table, MakePPPrefix("amr", "time_macro", macro_name, "start"),
                                          MakePPEntry(start));
-          AddToTable(table, MakePPPrefix("amr", "time_macros", macro_name, "stop"),
+          AddToTable(table, MakePPPrefix("amr", "time_macro", macro_name, "stop"),
                                          MakePPEntry(stop));
-          AddToTable(table, MakePPPrefix("amr", "time_macros", macro_name, "period"),
+          AddToTable(table, MakePPPrefix("amr", "time_macro", macro_name, "period"),
                                          MakePPEntry(timestep_interval));
         }
         else
@@ -401,9 +480,9 @@ void InputConverterS::ParseDefinitions_()
           for (size_t j = 0; j < time_nodes.size(); ++j)
             times.push_back(XMLString::transcode(time_nodes[j]->getTextContent()));
 
-          AddToTable(table, MakePPPrefix("amr", "time_macros", macro_name, "type"),
+          AddToTable(table, MakePPPrefix("amr", "time_macro", macro_name, "type"),
                                          MakePPEntry("times"));
-          AddToTable(table, MakePPPrefix("amr", "time_macros", macro_name, "times"),
+          AddToTable(table, MakePPPrefix("amr", "time_macro", macro_name, "times"),
                                          MakePPEntry(times));
         }
       }
@@ -474,22 +553,20 @@ void InputConverterS::ParseExecutionControls_()
     bool found;
     DOMNode* defaults = GetUniqueElementByTagsString_("execution_controls, execution_control_defaults", found);
     map<string, string> default_vals;
-    if (found)
-    {
-      DOMElement* def = static_cast<DOMElement*>(defaults);
-      string init_dt = GetAttributeValueS_(def, "init_dt");
-      default_vals["init_dt"] = init_dt;
-      string max_dt = GetAttributeValueS_(def, "max_dt");
-      default_vals["max_dt"] = max_dt;
-      string reduction_factor = GetAttributeValueS_(def, "reduction_factor");
-      default_vals["reduction_factor"] = reduction_factor;
-      string increase_factor = GetAttributeValueS_(def, "increase_factor");
-      default_vals["increase_factor"] = increase_factor;
-      string mode = GetAttributeValueS_(def, "mode");
-      default_vals["mode"] = mode;
-      string method = GetAttributeValueS_(def, "method");
-      default_vals["method"] = method;
+    if (!found) {
+      ThrowErrorMisschild_("execution_controls", "execution_control_defaults");
     }
+
+    DOMElement* def = static_cast<DOMElement*>(defaults);
+
+    // According to the spec,the following are required inputs
+    default_vals["init_dt"]          = GetAttributeValueS_(def, "init_dt",          TYPE_NUMERICAL, true);
+    default_vals["max_dt"]           = GetAttributeValueS_(def, "max_dt",           TYPE_NUMERICAL, true);
+    default_vals["reduction_factor"] = GetAttributeValueS_(def, "reduction_factor", TYPE_NUMERICAL, true);
+    default_vals["increase_factor"]  = GetAttributeValueS_(def, "increase_factor",  TYPE_NUMERICAL, true);
+    default_vals["mode"]             = GetAttributeValueS_(def, "mode",             TYPE_NUMERICAL, true);
+    default_vals["method"]           = GetAttributeValueS_(def, "method",           TYPE_NUMERICAL, true);
+    default_vals["max_cycles"]       = GetAttributeValueS_(def, "max_cycles",       TYPE_NUMERICAL, true);
 
     vector<DOMNode*> controls = GetChildren_(controls_block, "execution_control", found);
     if (found)
@@ -497,6 +574,14 @@ void InputConverterS::ParseExecutionControls_()
       for (size_t i = 0; i < controls.size(); ++i)
       {
         DOMElement* control = static_cast<DOMElement*>(controls[i]);
+
+        string restart = GetAttributeValueS_(control, "restart", TYPE_NONE, false);
+        if (!restart.empty())
+	  AddToTable(table, MakePPPrefix("execution_mode", "restart"), MakePPEntry(restart));
+
+        string initialize = GetAttributeValueS_(control, "initialize", TYPE_NONE, false);
+        if (!initialize.empty())
+	  AddToTable(table, MakePPPrefix("execution_mode", "initialize"), MakePPEntry(initialize));
 
         string start = GetAttributeValueS_(control, "start");
         map<string, string>::const_iterator iter = labeled_times_.find(start);
@@ -512,17 +597,17 @@ void InputConverterS::ParseExecutionControls_()
         else
           AddToTable(table, MakePPPrefix("stop_time"), MakePPEntry(end));
 
-        string mode = GetAttributeValueS_(control, "mode", TYPE_NUMERICAL, false);
-        if (mode.empty() && !default_vals.empty())
-          AddToTable(table, MakePPPrefix("execution_mode"), MakePPEntry(default_vals["mode"]));
-        else
-          AddToTable(table, MakePPPrefix("execution_mode"), MakePPEntry(mode));
-
         string init_dt = GetAttributeValueS_(control, "init_dt", TYPE_NUMERICAL, false);
         if (init_dt.empty() && !default_vals.empty())
           AddToTable(table, MakePPPrefix("prob", "dt_init"), MakePPEntry(default_vals["init_dt"]));
         else
           AddToTable(table, MakePPPrefix("prob", "dt_init"), MakePPEntry(init_dt));
+
+        string mode = GetAttributeValueS_(control, "mode", TYPE_NUMERICAL, false);
+        if (mode.empty() && !default_vals.empty())
+          AddToTable(table, MakePPPrefix("execution_mode"), MakePPEntry(default_vals["mode"]));
+        else
+          AddToTable(table, MakePPPrefix("execution_mode"), MakePPEntry(mode));
 
         string max_dt = GetAttributeValueS_(control, "max_dt", TYPE_NUMERICAL, false);
         string max_dt_name = mode + string("_max_dt");
@@ -543,22 +628,11 @@ void InputConverterS::ParseExecutionControls_()
         else
           AddToTable(table, MakePPPrefix("prob", "dt_grow_max"), MakePPEntry(increase_factor));
 
-#if 0
-// FIXME: does "method" have a meaning in Amanzi-S?
         string method = GetAttributeValueS_(control, "method", TYPE_NUMERICAL, false);
         if (method.empty() && !default_vals.empty())
           AddToTable(table, MakePPPrefix("execution_mode", "method"), MakePPEntry(default_vals["method"]));
         else
           AddToTable(table, MakePPPrefix("execution_mode", "method"), MakePPEntry(method));
-#endif
-
-        string restart = GetAttributeValueS_(control, "restart", TYPE_NUMERICAL, false);
-        if (!restart.empty())
-        AddToTable(table, MakePPPrefix("execution_mode", "restart"), MakePPEntry(restart));
-
-        string initialize = GetAttributeValueS_(control, "initialize", TYPE_NUMERICAL, false);
-        if (!initialize.empty())
-        AddToTable(table, MakePPPrefix("execution_mode", "initialize"), MakePPEntry(initialize));
 
         string max_cycles = GetAttributeValueS_(control, "max_cycles", TYPE_NUMERICAL, false);
         if (!max_cycles.empty())
@@ -594,13 +668,13 @@ void InputConverterS::ParseExecutionControls_()
       prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1; io_v = 1; fab_v = 1;
     }
 
-    AddToTable(table, MakePPPrefix("prob", "v"), MakePPEntry(prob_v));
-    AddToTable(table, MakePPPrefix("mg", "v"), MakePPEntry(mg_v));
-    AddToTable(table, MakePPPrefix("cg", "v"), MakePPEntry(cg_v));
-    AddToTable(table, MakePPPrefix("amr", "v"), MakePPEntry(amr_v));
+    AddToTable(table, MakePPPrefix("prob",    "v"), MakePPEntry(prob_v));
+    AddToTable(table, MakePPPrefix("mg",      "v"), MakePPEntry(mg_v));
+    AddToTable(table, MakePPPrefix("cg",      "v"), MakePPEntry(cg_v));
+    AddToTable(table, MakePPPrefix("amr",     "v"), MakePPEntry(amr_v));
     AddToTable(table, MakePPPrefix("diffuse", "v"), MakePPEntry(diffuse_v));
-    AddToTable(table, MakePPPrefix("io", "v"), MakePPEntry(io_v));
-    AddToTable(table, MakePPPrefix("fab", "v"), MakePPEntry(fab_v));
+    AddToTable(table, MakePPPrefix("io",      "v"), MakePPEntry(io_v));
+    AddToTable(table, MakePPPrefix("fab",     "v"), MakePPEntry(fab_v));
   }
 
   ParmParse::appendTable(table);
@@ -622,38 +696,194 @@ void InputConverterS::ParseNumericalControls_()
   if (found)
   {
     bool found;
+    MemoryManager mm;
 
     string petsc_options_file = GetChildValueS_(structured_controls, "petsc_options_file", found);
-    if (found) {} // Don't know where this goes!
+    if (found) {
+        AddToTable(table, MakePPPrefix("Petsc_Options_File"), MakePPEntry(petsc_options_file));
+    }
 
     // Steady-state controls.
-    DOMElement* steady = GetChildByName_(structured_controls, "str_steady-state_controls", found);
-    if (found)
-    {
-      bool found;
+    map<string,string> ss_controls;
+    ss_controls["max_pseudo_time"]                    = "1.e14";
+    ss_controls["min_iterations"]                     = "10";
+    ss_controls["limit_iterations"]                   = "20";
+    ss_controls["min_iterations_2"]                   = "2";
+    ss_controls["time_step_increase_factor"]          = "1.6";
+    ss_controls["time_step_increase_factor_2"]        = "10";
+    ss_controls["max_consecutive_failures_1"]         = "3";
+    ss_controls["time_step_retry_factor_1"]           = "0.2";
+    ss_controls["max_consecutive_failures_2"]         = "4";
+    ss_controls["time_step_retry_factor_1"]           = "0.01";
+    ss_controls["time_step_retry_factor_f"]           = "0.001";
+    ss_controls["max_consecutive_success"]            = "0";
+    ss_controls["extra_time_step_increase"]           = "10";
+    ss_controls["abort_on_pseudo_timestep_failure"]   = "true";
+    ss_controls["limit_function_evals"]               = "1e8";
+    ss_controls["do_grid_sequence"]                   = "true";
+    ss_controls["grid_sequence_new_level_dt_factor"]  = "1";
 
-      string max_pseudo_time = GetChildValueS_(steady, "max_pseudo_time", found);
-      if (found)
-        AddToTable(table, MakePPPrefix("prob", "steady_max_pseudo_time"), MakePPEntry(max_pseudo_time));
-
+    DOMElement* ssc = GetChildByName_(structured_controls,"str_steady-state_controls", found);
+    if (found) {
+      DOMNodeList* children = ssc->getChildNodes();
+      for (int i=0; i<children->getLength(); ++i) {
+	DOMNode* inode = children->item(i);
+	if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+	char* cname = mm.transcode(inode->getNodeName());
+	for (map<string,string>::iterator it=ss_controls.begin(); it!=ss_controls.end(); ++it) {
+	  if (it->first == cname) {
+	    it->second = mm.transcode(inode->getTextContent());
+	  }
+	}
+      }
     }
 
     // Transient controls.
-    DOMElement* transient = GetChildByName_(structured_controls, "str_transient_controls", found);
-    if (found)
-    {
+    map<string,string> tr_controls;
+    tr_controls["max_ls_iterations"]            = "10";
+    tr_controls["ls_reduction_factor"]          = "0.1";
+    tr_controls["min_ls_factor"]                = "1.e-8";
+    tr_controls["ls_acceptance_factor"]         = "1.4";
+    tr_controls["monitor_line_search"]          = "0";
+    tr_controls["monitor_linear_solve"]         = "0";
+    tr_controls["use_fd_jac"]                   = "true";
+    tr_controls["perturbation_scale_for_J"]     = "1.e-8";
+    tr_controls["use_dense_Jacobian"]           = "false";
+    tr_controls["upwind_krel"]                  = "true";
+    tr_controls["pressure_maxorder"]            = "3";
+    tr_controls["scale_solution_before_solve"]  = "true";
+    tr_controls["semi_analytic_J"]              = "false";
+    tr_controls["cfl"]                          = "1";
+
+    DOMElement* stc = GetChildByName_(structured_controls,"str_transient_controls", found);
+    if (found) {
+      DOMNodeList* children = stc->getChildNodes();
+      for (int i=0; i<children->getLength(); ++i) {
+	DOMNode* inode = children->item(i);
+	if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+	char* cname = mm.transcode(inode->getNodeName());
+	for (map<string,string>::iterator it=tr_controls.begin(); it!=tr_controls.end(); ++it) {
+	  if (it->first == cname) {
+	    it->second = mm.transcode(inode->getTextContent());
+	  }
+	}
+      }
     }
 
-    // AMR controls.
-    int max_level = 0;
-    vector<string> user_derive_list;
-    DOMElement* amr = GetChildByName_(structured_controls, "str_amr_controls", found);
-    if (found)
-    {
-      DOMElement* refinement = GetChildByName_(amr, "refinement_indicators", found);
+    // AMR controls
+    map<string,string> amr_controls;
+    amr_controls["amr_levels"]                = "1";
+    amr_controls["refinement_ratio"]          = "2";
+    amr_controls["do_amr_subcycling"]         = "true";
+    amr_controls["regrid_interval"]           = "1";
+    amr_controls["blocking_factor"]           = "2";
+    amr_controls["number_error_buffer_cells"] = "1";
+    amr_controls["max_grid_size"]             = "1";
+
+    DOMElement* amrc = GetChildByName_(structured_controls,"str_amr_controls", found);
+    if (found) {
+      map<string,map<string,string> > rc_data; // rc_data[critName][parm] = val
+
+      DOMNodeList* children = amrc->getChildNodes();
+      for (int i=0; i<children->getLength(); ++i) {
+	DOMNode* inode = children->item(i);
+	if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+	char* cname = mm.transcode(inode->getNodeName());
+	if (strcmp(cname, "refinement_indicator") == 0) {
+	  DOMElement* ielt = static_cast<DOMElement*>(inode);
+	  string rc_name = GetAttributeValueS_(ielt, "name");
+	  DOMNodeList* rc_children = ielt->getChildNodes();
+
+	  rc_data[rc_name]["max_refinement_level"] = -1;
+	  for (int j=0; j<rc_children->getLength(); ++j) {
+	    DOMNode* jnode = rc_children->item(j);
+	    if (jnode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+	    char* rc_ename = mm.transcode(jnode->getNodeName());
+
+	    if ( strcmp(rc_ename, "regions") == 0
+		 || strcmp(rc_ename, "max_refinement_level") == 0
+		 || strcmp(rc_ename, "field_name") == 0)
+	    {
+	      rc_data[rc_name][rc_ename] = mm.transcode(jnode->getTextContent());
+	    }
+	    else if ( strcmp(rc_ename, "start_time") == 0
+		 || strcmp(rc_ename, "end_time") == 0)
+	    {
+	      string thisTime = mm.transcode(jnode->getTextContent());
+	      map<string, string>::const_iterator iter = labeled_times_.find(thisTime);
+	      if (iter != labeled_times_.end())
+		rc_data[rc_name][rc_ename] = iter->second;
+	      else
+		rc_data[rc_name][rc_ename] = thisTime;
+	    }
+	    else {
+	      if (strcmp(rc_ename, "value_greater") == 0
+		|| strcmp(rc_ename, "value_less") == 0
+		|| strcmp(rc_ename, "adjacent_difference_greater") == 0
+		  || strcmp(rc_ename, "inside_region") == 0)
+	      {
+		rc_data[rc_name][rc_ename] = mm.transcode(jnode->getTextContent());
+	      }
+	      else {
+		Errors::Message msg;
+		msg << "An error occurred during parsing\n";
+		msg << "numerical_controls->structured_controls->str_amr_controls\n";
+		msg << "Unknown option \"" << rc_ename << "\" \n";
+		msg << "Please correct and try again.\n" ;
+		Exceptions::amanzi_throw(msg);
+	      }
+	    }
+	  }
+	}
+	else {
+	  for (map<string,string>::iterator it=amr_controls.begin(); it!=amr_controls.end(); ++it) {
+	    if (it->first == cname) {
+	      it->second = mm.transcode(inode->getTextContent());
+	    }
+	  }
+	}
+      }
+
+      if (rc_data.size() > 0) {
+	vector<string> rc_names;;
+	for (map<string,map<string,string> >::const_iterator it=rc_data.begin(); it!=rc_data.end(); ++it) {
+	  rc_names.push_back(it->first);
+	  const map<string,string>& rc_map = it->second;
+	  for (map<string,string>::const_iterator it1=rc_map.begin(); it1!=rc_map.end(); ++it1) {
+	    AddToTable(table,
+		       MakePPPrefix("amr", (it->first).c_str(), (it1->first).c_str() ),
+		       MakePPEntry(it1->second));
+	  }
+	}
+	AddToTable(table, MakePPPrefix("amr", "refinement_indicators"), MakePPEntry(rc_names));
+      }
     }
-    AddToTable(table, MakePPPrefix("amr", "max_level"), MakePPEntry(max_level));
-    AddToTable(table, MakePPPrefix("amr", "user_derive_list"), MakePPEntry(user_derive_list));
+
+    // Figure out max_level
+    int max_level = atoi(amr_controls["amr_levels"].c_str()) - 1;
+    std::stringstream is;
+    is << max_level;
+    AddToTable(table, MakePPPrefix("amr", "max_level"), MakePPEntry(is.str()));
+
+    string strToAdd, valToAdd;
+    for (map<string,string>::iterator it=amr_controls.begin(); it!=amr_controls.end(); ++it) {
+      if (it->first != "amr_levels") {
+
+	if (it->first == "refinement_ratio"
+	    || it->first == "regrid_interval"
+	    || it->first == "blocking_factor"
+	    || it->first == "number_error_buffer_cells"
+	    || it->first == "max_grid_size")
+	{
+	  vector<string> tokens = BoxLib::Tokenize(it->second,", ");
+	  AddToTable(table, MakePPPrefix("amr", it->first), MakePPEntry(tokens));
+	}
+	else {
+	  AddToTable(table, MakePPPrefix("amr", it->first), MakePPEntry(it->second));
+	}
+      }
+    }
+
   }
 
   ParmParse::appendTable(table);
@@ -666,15 +896,17 @@ void InputConverterS::ParseMesh_()
 
   DOMElement* dimension = static_cast<DOMElement*>(GetUniqueElementByTagsString_("mesh, dimension", found));
   {
-    MemoryManager mm;
     string dim = XMLString::transcode(dimension->getTextContent());
-    if (dim == "2")
-      dim_ = 2;
-    else if (dim == "3")
-      dim_ = 3;
-    else
-      ThrowErrorIllformed_("mesh->generate", "integer (2 or 3)", "dimension");
+    dim_ = atoi(dim.c_str());
+    if (dim_ != BL_SPACEDIM) {
+      Errors::Message msg;
+      msg << "An error occurred during parsing mesh->dimension\n";
+      msg << "MUST BE \"" << BL_SPACEDIM << ", consistent with compilation flags.\"\n";
+      msg << "Please correct and try again.\n" ;
+      Exceptions::amanzi_throw(msg);
+    }
   }
+
   DOMElement* generate = static_cast<DOMElement*>(GetUniqueElementByTagsString_("mesh, generate", found));
   if (found)
   {
@@ -707,7 +939,7 @@ void InputConverterS::ParseMesh_()
     vector<int> is_periodic(dim_, 0);
     AddToTable(table, MakePPPrefix("geometry", "is_periodic"), MakePPEntry(is_periodic));
 
-    // Coordinate system is 0, which is probably "Cartesian."
+    // Coordinate system is 0, which is probably "Cartesian." -- MSD: Actually 0 == cartesian, so yes
     AddToTable(table, MakePPPrefix("geometry", "coord_sys"), MakePPEntry(0));
   }
   else
@@ -715,8 +947,6 @@ void InputConverterS::ParseMesh_()
 
   // This one comes for free.
   AddToTable(table, MakePPPrefix("Mesh", "Framework"), MakePPEntry("Structured"));
-
-  // FIXME: Anything else?
 
   ParmParse::appendTable(table);
 }
@@ -733,11 +963,21 @@ static void MakeBox(list<ParmParse::PP_entry>& table,
   AddToTable(table, MakePPPrefix("geometry", name, "purpose"),       MakePPEntry(purpose));
 }
   
+#include <PMAMR_Labels.H>
 void InputConverterS::ParseRegions_()
 {
   list<ParmParse::PP_entry> table;
   vector<string> region_names;
   
+  // Determine the geometry tolerance geometry_eps. dim_, {x,y,z}{min/max}_
+  // should all be available because they are computed in ParseMesh(), 
+  // which should precede this method.
+  double max_size = -FLT_MIN;
+  for (int d = 0; d < dim_; ++d)
+    max_size = max(max_size, hi_coords_[d] - lo_coords_[d]);
+  double geometry_eps = 1e-6 * max_size; // FIXME: This factor is fixed.
+  AddToTable(table, MakePPPrefix("geometry", "geometry_eps"), MakePPEntry(geometry_eps));
+
   // Create default regions
   string name;
   vector<double> lo(dim_), hi(dim_);
@@ -757,6 +997,7 @@ void InputConverterS::ParseRegions_()
   {
     bool found;
 
+    // FIXME: U supports an alternate form for region spec, for some mysterious reason.  Should we duplicate here?
     // box
     vector<DOMNode*> boxes = GetChildren_(regions, "box", found);
     for (size_t i = 0; i < boxes.size(); ++i)
@@ -770,28 +1011,29 @@ void InputConverterS::ParseRegions_()
       AddToTable(table, MakePPPrefix("geometry", region_name, "lo_coordinate"), MakePPEntry(lo_coords));
       AddToTable(table, MakePPPrefix("geometry", region_name, "hi_coordinate"), MakePPEntry(hi_coords));
 
-      // Determine the geometry tolerance geometry_eps. dim_, {x,y,z}{min/max}_
-      // should all be available because they are computed in ParseMesh(), 
-      // which should precede this method.
-      double max_size = -FLT_MIN;
-      for (int d = 0; d < dim_; ++d)
-        max_size = max(max_size, hi_coords_[d] - lo_coords_[d]);
-      double geometry_eps = 1e-6 * max_size; // FIXME: This factor is fixed.
-      AddToTable(table, MakePPPrefix("geometry", region_name, "geometry_eps"), 
-                                     MakePPEntry(geometry_eps));
-
       // Is this region a surface?
       string type = "box";
+      string purpose = "all";
       for (int d = 0; d < dim_; ++d)
       {
-        if (std::abs(hi_coords[d] - lo_coords[d]) < geometry_eps)
-          type = "surface";
+	for (int d=0; d<dim_; ++d) {
+	  if (std::abs(hi_coords[d] - lo_coords[d]) < geometry_eps) // This is a (ndim-1) dimensional region
+	  {
+	    type = "surface";
+	    
+	    // Is this on the domain boundary?
+	    if (lo_coords[d] == lo[d]) {
+	      purpose = PMAMR::RpurposeDEF[d];
+	    }
+	    else if (hi_coords[d] == hi[d]) {
+	      purpose = PMAMR::RpurposeDEF[d+3];
+	    }
+	  }
+	}
       }
       AddToTable(table, MakePPPrefix("geometry", region_name, "type"), 
                                      MakePPEntry(type));
 
-      // FIXME: As to the "purpose" of this region: Marc, help!
-      string purpose = "all";
       AddToTable(table, MakePPPrefix("geometry", region_name, "purpose"), 
                                      MakePPEntry(purpose));
     }
@@ -834,10 +1076,7 @@ void InputConverterS::ParseRegions_()
       AddToTable(table, MakePPPrefix("geometry", region_name, "lo_coordinate"), MakePPEntry(lo_coords));
       AddToTable(table, MakePPPrefix("geometry", region_name, "hi_coordinate"), MakePPEntry(hi_coords));
       AddToTable(table, MakePPPrefix("geometry", region_name, "type"), MakePPEntry("surface"));
-
-      // FIXME: purpose here also needs work.
-      string purpose;
-      AddToTable(table, MakePPPrefix("geometry", region_name, "purpose"), MakePPEntry(purpose));
+      AddToTable(table, MakePPPrefix("geometry", region_name, "purpose"), MakePPEntry("all"));
 
       // Optional tolerance.
       string tolerance = GetAttributeValueS_(plane, "tolerance", TYPE_NUMERICAL, false);
@@ -903,8 +1142,8 @@ void InputConverterS::ParseRegions_()
         AddToTable(table, MakePPPrefix("geometry", region_name, "radius"), MakePPEntry(radius));
 
         AddToTable(table, MakePPPrefix("geometry", region_name, "type"), MakePPEntry("ellipse"));
-        // FIXME: A sense of purpose, please.
-        AddToTable(table, MakePPPrefix("geometry", region_name, "purpose"), MakePPEntry("6"));
+
+        AddToTable(table, MakePPPrefix("geometry", region_name, "purpose"), MakePPEntry("all"));
       }
     }
 
@@ -945,6 +1184,67 @@ void InputConverterS::ParseGeochemistry_()
 {
   list<ParmParse::PP_entry> table;
   bool found;
+
+  char* text;
+  DOMNodeList *node_list, *children;
+  DOMNode* node;
+  DOMElement* element;
+
+  // chemical engine
+  bool flag;
+  node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
+  std::string engine = GetAttributeValueS_(static_cast<DOMElement*>(node), "engine");
+
+  // process engine
+  bool native(false);
+  if (engine ==  "amanzi") {
+    native = true;
+    AddToTable(table, MakePPPrefix("prob", "chemistry_model"), MakePPEntry("Amanzi"));
+
+    std::string bgdfilename, format("simple");
+    node = GetUniqueElementByTagsString_("geochemistry, amanzi_chemistry, reaction_network", flag);
+    if (flag) {
+      element = static_cast<DOMElement*>(node);
+      bgdfilename = GetAttributeValueS_(element, "file");
+      format = GetAttributeValueS_(element, "format", TYPE_NONE, false, format);
+    } else {
+      bgdfilename = CreateBGDFile(xmlfilename_);
+    }
+
+    AddToTable(table, MakePPPrefix("Chemistry", "Thermodynamic_Database_File"), MakePPEntry(bgdfilename));
+    AddToTable(table, MakePPPrefix("Chemistry", "Thermodynamic_Database_Format"), MakePPEntry(format));
+
+  } else {
+    bool valid_engine(true);
+    std::string file_location;
+
+    if (engine == "pflotran") {
+      AddToTable(table, MakePPPrefix("prob", "chemistry_model"), MakePPEntry("PFloTran"));
+      file_location = "geochemistry, pflotran_chemistry, reaction_network";
+    } else if (engine == "crunchflow") {
+      AddToTable(table, MakePPPrefix("prob", "chemistry_model"), MakePPEntry("CrunchFlow"));
+      file_location = "geochemistry, crunchflow_chemistry, reaction_network";
+    } else {
+      valid_engine = false;
+    }
+
+    // Pass along chemistry engine info.
+    if (valid_engine) {
+
+      // Find the name of the engine-specific input file.
+      node = GetUniqueElementByTagsString_(file_location, flag);
+      if (flag) {
+        element = static_cast<DOMElement*>(node);
+        std::string inpfilename = GetAttributeValueS_(element, "file");
+	AddToTable(table, MakePPPrefix("Chemistry", "Engine_Input_File"), MakePPEntry(inpfilename));
+      }
+    }
+  }
+
+#if 0
+
+  // FIXME: Lift material properties junk up into code above, as appropriate
+
 
   DOMNode* geochem = GetUniqueElementByTagsString_("geochemistry`", found);
   if (found)
@@ -1035,6 +1335,8 @@ void InputConverterS::ParseGeochemistry_()
       }
     }
   }
+#endif
+
 
   ParmParse::appendTable(table);
 }
@@ -1421,17 +1723,14 @@ void InputConverterS::ParsePhases_()
         AddToTable(table, MakePPPrefix("tracer", sol_name, "molecularDiffusivity"), MakePPEntry(diff_coeff));
       }
     }
-    else
-    {
-      // No information on solutes--we have a single component with the same 
-      // name as the liquid phase.
-      solutes_.push_back(name);
-      vector<string> components(1, name);
-      AddToTable(table, MakePPPrefix("phase", name, "comps"), MakePPEntry(components));
-
-      // Zero diffusivity by default.
+    // Assume we have a single component with the same 
+    // name as the liquid phase.
+    solutes_.push_back(name);
+    vector<string> components(1, name);
+    AddToTable(table, MakePPPrefix("phase", name, "comps"), MakePPEntry(components));
+    
+    // Zero diffusivity by default.
       AddToTable(table, MakePPPrefix("phase", name, "diffusivity"), MakePPEntry(0.0));
-    }
   }
 
   DOMElement* solid_phase = static_cast<DOMElement*>(GetUniqueElementByTagsString_("phases, solid_phase", found));
@@ -1661,8 +1960,11 @@ void InputConverterS::ParseBoundaryConditions_()
                   }
 
                   if (bc_type_labels[i]=="hydrostatic") {
-                    csys.push_back(GetAttributeValueS_(elt, "coordinate_system"));
-                    sms.push_back(GetAttributeValueS_(elt, "submodel"));
+		    csys.push_back(GetAttributeValueS_(elt, "coordinate_system", TYPE_NONE, false, "absolute"));
+		    string sms_ = GetAttributeValueS_(elt, "submodel", TYPE_NONE, false);
+		    if (!sms_.empty()) {
+		      sms.push_back(sms_);
+		    }
                   }
 
                   if (bc_type_labels[i]=="seepage_face") {
@@ -1821,8 +2123,9 @@ void InputConverterS::ParseMisc_()
   // FIXME: Not yet supported.
 }
 
-void InputConverterS::Translate() 
+void InputConverterS::Translate(int rank) 
 {
+  rank_ = rank;
   ParseUnits_();
   ParseDefinitions_();
   ParseExecutionControls_();

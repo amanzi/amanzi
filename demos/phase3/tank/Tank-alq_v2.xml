@@ -46,8 +46,15 @@
 
   <execution_controls>
     <verbosity level="medium"/>
-    <!-- <execution_control end="10" init_dt="10" start="0" mode="steady"/> -->
-    <execution_control end="1.5778463e8" init_dt="1000" start="0" max_cycles="20" mode="transient"/> 
+    <execution_control_defaults init_dt="1000"
+				max_dt="1.e7"
+				reduction_factor="0.7"
+				increase_factor="2"
+				mode="steady"
+				method="bdf1"
+				max_cycles="20"/> 
+    <execution_control end="1.5778463e8"
+		       start="0"/> 
   </execution_controls>
 
   <regions>
@@ -569,12 +576,12 @@
     <vis>
       <base_filename>run_data/plt</base_filename>
       <num_digits>5</num_digits>
-      <cycle_macro>Every 1</cycle_macro>
+      <cycle_macros>Every 1</cycle_macros>
     </vis>
     <checkpoint>
       <base_filename>run_data/chk</base_filename>
       <num_digits>5</num_digits>
-      <cycle_macro>Every 1</cycle_macro>
+      <cycle_macros>Every 1</cycle_macros>
     </checkpoint>
   </output>
 </amanzi_input>

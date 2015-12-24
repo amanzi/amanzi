@@ -117,7 +117,7 @@ AmanziStructuredGridSimulationDriver::AmanziStructuredGridSimulationDriver(const
 	ParmParse::Initialize(argc,argv,NULL);
 
   Amanzi::AmanziInput::InputConverterS converter(input_file, input);
-  converter.Translate();
+  converter.Translate(0); // Called before mpi setup, pass rank=0
 }
 
 AmanziStructuredGridSimulationDriver::~AmanziStructuredGridSimulationDriver()
@@ -128,13 +128,35 @@ Amanzi::Simulator::ReturnType
 AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_comm,
                                            Amanzi::ObservationData&      output_observations)
 {
-#ifdef BL_USE_PETSC
-    // We don't support petsc options files at the moment.
-    PetscInitializeNoArguments();
-#endif
-    // Did we do this already?
+    ParmParse pp;
     int argc=0;
     char** argv;
+
+    // FIXME: Make an option for this dump
+    std::ofstream dumpy("pp.dump");
+    pp.dumpTable(dumpy);
+
+#ifdef BL_USE_PETSC
+    std::string petsc_help = "Amanzi-S passthrough access to PETSc help option\n";
+    std::string petsc_file_str = "Petsc_Options_File";
+    std::string petsc_options_file;
+
+    if (pp.countval(petsc_file_str.c_str()) > 0) {
+      pp.get(petsc_file_str.c_str(),petsc_options_file);
+      bool petsc_file_exists = ConfirmFileExists(petsc_options_file);
+      if (petsc_file_exists) {
+       PetscInitialize(&argc,&argv,petsc_options_file.c_str(),petsc_help.c_str());
+      }
+      else
+      {
+       PetscInitializeNoArguments();
+      }
+    }
+    else {
+      PetscInitializeNoArguments();
+    }
+#endif
+
     BoxLib::Initialize(argc,argv,false,mpi_comm);
 
     BL_PROFILE_VAR("main()", pmain);
@@ -144,10 +166,6 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     int  max_step;
     Real strt_time;
     Real stop_time;
-
-    ParmParse pp;
-    std::ofstream dumpy("pp.dump");
-    pp.dumpTable(dumpy);
 
     max_step  = -1;    
     strt_time =  0.0;  

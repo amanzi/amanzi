@@ -200,7 +200,7 @@ class InputConverter {
   void ThrowErrorMissattr_(
       const std::string& section, const std::string& type, const std::string& missing, const std::string& name);
   void ThrowErrorMisschild_(
-      const std::string& section, const std::string& missing, const std::string& name);
+    const std::string& section, const std::string& missing, const std::string& name = std::string());
 
  protected:
   // various constants defined by the users

@@ -24,8 +24,6 @@ if (ENABLE_Physics)
   endif()
 endif()
 
-add_subdirectory(common/interface_platform)
-
 if (ENABLE_Unstructured)
   # Mesh
   add_subdirectory(mesh)
@@ -73,6 +71,8 @@ endif()
 if (ENABLE_Structured AND ENABLE_Physics)
   add_subdirectory(structured_grid)
 endif()
+
+add_subdirectory(common/interface_platform)
 
 # standalone driver (produces mesh-independent executable)
 if (ENABLE_Physics)

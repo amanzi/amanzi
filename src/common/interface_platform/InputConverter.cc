@@ -989,7 +989,11 @@ void InputConverter::ThrowErrorMisschild_(
 {
   Errors::Message msg;
   msg << "Amanzi::InputConverter: an error occurred during parsing node \"" << section << "\"\n";
-  msg << "  No child \"" << missing << "\" found for \"" << name << "\".\n";
+  msg << "  No child \"" << missing << "\" found";
+  if (!name.empty()) {
+    msg << " for \"" << name << "\"";
+  }
+  msg << ".\n";
   msg << "  Please correct and try again \n";
   Exceptions::amanzi_throw(msg);
 }
