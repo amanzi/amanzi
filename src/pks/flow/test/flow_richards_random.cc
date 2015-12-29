@@ -1,7 +1,7 @@
 /*
   Flow PK
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -61,10 +61,10 @@ void RunTestConvergence(std::string input_xml) {
 
     MeshFactory meshfactory(comm);
     meshfactory.preference(pref);
-    // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, -10.0, 1.0, 0.0, 5, 50, gm);
     Teuchos::RCP<const Mesh> mesh;
     if (n == 0) {
       mesh = meshfactory("test/random_mesh1.exo", gm);
+      // mesh = meshfactory(0.0, -10.0, 1.0, 0.0, 5, 50, gm);
     } else if (n == 1) {
       mesh = meshfactory("test/random_mesh2.exo", gm);
     } else if (n == 2) {
@@ -130,11 +130,9 @@ void RunTestConvergence(std::string input_xml) {
 /* *****************************************************************
 * Run with various discretization methods
 * **************************************************************** */
-/*
-TEST(FLOW_RICHARDS_CONVERGENCE_NLFV) {
-  RunTestConvergence("test/flow_richards_random_nlfv.xml");
-}
-*/
+// TEST(FLOW_RICHARDS_CONVERGENCE_NLFV) {
+//   RunTestConvergence("test/flow_richards_random_nlfv.xml");
+// }
 
 TEST(FLOW_RICHARDS_CONVERGENCE_MFD) {
   RunTestConvergence("test/flow_richards_random.xml");

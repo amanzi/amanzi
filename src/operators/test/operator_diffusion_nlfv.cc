@@ -28,6 +28,7 @@
 #include "Tensor.hh"
 
 // Operators
+#include "Analytic01.hh"
 #include "Analytic02.hh"
 
 #include "OperatorAccumulation.hh"
@@ -36,9 +37,10 @@
 #include "OperatorDiffusionNLFV.hh"
 
 /* *****************************************************************
-* Nonlinear finite volume scheme.Non-symmetric diffusion tensor.
+* Nonlinear finite volume scheme.
 ***************************************************************** */
-TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
+template<class Analytic>
+void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -46,7 +48,7 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, NLFV with DMP" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, NLFV with DMP, g=" << gravity << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
@@ -66,14 +68,13 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
   Teuchos::RCP<const Mesh> mesh = meshfactory("test/random10.exo");
 
   // modify diffusion coefficient
-  // -- since rho=mu=1.0, we do not need to scale the diffusion tensor
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
-  Analytic02 ana(mesh);
+  Analytic ana(mesh, gravity);
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -171,10 +172,22 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
           pl2_err, pinf_err, ul2_err, uinf_err,
           solver->num_itrs(), solver->residual(), solver->returned_code());
 
-      CHECK(pl2_err < 0.1 / (loop + 1) && ul2_err < 0.4 / (loop + 1));
+      if (testing) CHECK(pl2_err < 0.1 / (loop + 1) && ul2_err < 0.4 / (loop + 1));
       CHECK(solver->num_itrs() < 15);
     }
   }
 }
 
+
+TEST(OPERATOR_DIFFUSION_NLFV_DMP_02) {
+  RunTestDiffusionNLFV_DMP<Analytic02>(0.0, true);
+}
+
+TEST(OPERATOR_DIFFUSION_NLFV_wGravity) {
+  RunTestDiffusionNLFV_DMP<Analytic02>(2.3, true);
+}
+
+TEST(OPERATOR_DIFFUSION_NLFV_DMP_01) {
+  RunTestDiffusionNLFV_DMP<Analytic01>(0.0, false);
+}
 
