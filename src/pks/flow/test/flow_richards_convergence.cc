@@ -41,7 +41,7 @@ using namespace Amanzi::Flow;
 void RunTestConvergence(std::string input_xml) {
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout <<"\nSteady-state Richards: convergence analysis" << std::endl;
+  if (MyPID == 0) std::cout <<"\nSteady-state Richards: convergence analysis: " << input_xml << std::endl;
 
   std::string xmlFileName = input_xml;
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);

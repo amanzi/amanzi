@@ -299,8 +299,6 @@ void Richards_PK::Setup()
   }
   
   // -- saturation
-  double patm = rp_list_->get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
-
   Teuchos::RCP<Teuchos::ParameterList>
       wrm_list = Teuchos::sublist(rp_list_, "water retention models", true);
   wrm_ = CreateWRMPartition(mesh_, wrm_list);
@@ -311,7 +309,7 @@ void Richards_PK::Setup()
 
     Teuchos::ParameterList elist;
     // elist.sublist("VerboseObject").set<std::string>("Verbosity Level", "extreme");
-    Teuchos::RCP<WRMEvaluator> eval = Teuchos::rcp(new WRMEvaluator(elist, patm, wrm_));
+    Teuchos::RCP<WRMEvaluator> eval = Teuchos::rcp(new WRMEvaluator(elist, wrm_));
     S_->SetFieldEvaluator("saturation_liquid", eval);
   }
 
@@ -594,14 +592,14 @@ void Richards_PK::Initialize()
       bool clip(false);
       double clip_saturation = ini_list.get<double>("clipping saturation value", -1.0);
       if (clip_saturation > 0.0) {
-        double pmin = FLOW_PRESSURE_ATMOSPHERIC;
+        double pmin = atm_pressure_;
         Epetra_MultiVector& p = *solution->ViewComponent("cell");
         ClipHydrostaticPressure(pmin, clip_saturation, p);
         clip = true;
       }
 
       double clip_pressure = ini_list.get<double>("clipping pressure value", -1e+10);
-      if (clip_pressure > -5 * FLOW_PRESSURE_ATMOSPHERIC) {
+      if (clip_pressure > -5 * atm_pressure_) {
         Epetra_MultiVector& p = *solution->ViewComponent("cell");
         ClipHydrostaticPressure(clip_pressure, p);
         clip = true;

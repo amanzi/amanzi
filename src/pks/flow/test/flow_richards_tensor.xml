@@ -56,8 +56,6 @@
   <ParameterList name="PKs">
     <ParameterList name="Flow">
       <ParameterList name="Richards problem">
-	<Parameter name="atmospheric pressure" type="double" value="-1.e+10"/>
-
         <ParameterList name="upwind">
 	  <Parameter name="relative permeability" type="string" value="other: harmonic average"/>
 	  <Parameter name="upwind method" type="string" value="standard"/>
@@ -272,13 +270,14 @@
       <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="2.0"/>
       </ParameterList>
-
       <ParameterList name="fluid_viscosity">
         <Parameter name="value" type="double" value="0.3"/>
       </ParameterList>
-
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -1.e-9}"/>
+      </ParameterList>
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="-1.e+10"/>
       </ParameterList>
 
       <ParameterList name="permeability">

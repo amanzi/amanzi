@@ -36,6 +36,7 @@ class WRM_fake : public WRM {
   double dSdPc(double pc) const;  
   double capillaryPressure(double saturation) const;
   double residualSaturation() const { return 0.0; }
+  double dKdPc(double pc) const;
 
  private:
   double m, n, alpha;

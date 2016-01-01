@@ -88,6 +88,9 @@
       <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="9.982e+02"/>
       </ParameterList>
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="1.01325e+05"/>
+      </ParameterList>
       <ParameterList name="mass_density_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -175,9 +178,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="atmospheric_pressure">
-        <Parameter name="value" type="double" value="1.01325e+05"/>
-      </ParameterList>
     </ParameterList>
     <ParameterList name="mesh partitions">
       <ParameterList name="materials">
@@ -211,7 +211,6 @@
             <Parameter name="tolerance" type="double" value="9.99e-13"/>
           </ParameterList>
         </ParameterList>
-        <Parameter name="atmospheric pressure" type="double" value="1.01325e+05"/>
         <ParameterList name="water retention models">
           <ParameterList name="WRM for RegionMiddle">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>

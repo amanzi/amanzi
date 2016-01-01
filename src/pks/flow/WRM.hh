@@ -27,7 +27,7 @@ class WRM {
   virtual double dSdPc(double pc) const = 0;  // derivative of saturation w.r.t. to capillary pressure
   virtual double capillaryPressure(double s) const = 0;
   virtual double residualSaturation() const = 0;
-  virtual double dKdPc(double pc) const { return 0.0; }
+  virtual double dKdPc(double pc) const = 0;
 
   const std::string region() const { return region_; };
 

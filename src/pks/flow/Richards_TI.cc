@@ -464,9 +464,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   const Epetra_MultiVector& duc = *du->Data()->ViewComponent("cell");
 
   AmanziGeometry::Point face_centr, cell_cntr;
-  double max_sat_pert = 0.25;
-  double damping_factor = 0.5;
-  double reference_pressure = 101325.0;
+  double max_sat_pert(0.25), damping_factor(0.5);
   
   if (rp_list_->isSublist("clipping parameters")) {
     Teuchos::ParameterList& clip_list = rp_list_->sublist("clipping parameters");
@@ -488,12 +486,8 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
     double tmp = duc[0][c];
 
     if ((fabs(duc[0][c]) > du_pert_max) && (1 - sat > 1e-5)) {
-      if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "clip saturation: c=" << c 
-                   << " p=" << uc[0][c]
-                   << " dp: " << duc[0][c] << " -> " << du_pert_max << std::endl;
-      }
+      // std::cout << "clip saturation: c=" << c << " p=" << uc[0][c]
+      //           << " dp: " << duc[0][c] << " -> " << du_pert_max << std::endl;
 
       if (duc[0][c] >= 0.0) duc[0][c] = du_pert_max;
       else duc[0][c] = -du_pert_max;
@@ -507,9 +501,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
     double tmp = duc[0][c];
 
     if ((unew > atm_pressure_) && (uc[0][c] < atm_pressure_)) {
-      if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-        *vo_->os() << "pressure change: " << uc[0][c] << " -> " << unew << std::endl;
-      }
+      // std::cout << "pressure change: " << uc[0][c] << " -> " << unew << std::endl;
       duc[0][c] = tmp * damping_factor;
       npre_clipped++;
     }

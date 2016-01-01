@@ -58,8 +58,6 @@
   <ParameterList name="PKs">
     <ParameterList name="Flow">
       <ParameterList name="Richards problem">
-	<Parameter name="atmospheric pressure" type="double" value="10.0"/>
-
         <ParameterList name="upwind">
 	  <Parameter name="relative permeability" type="string" value="upwind: gravity"/>
 	  <Parameter name="upwind update" type="string" value="every nonlinear iteration"/>
@@ -210,9 +208,11 @@
       <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
-
       <ParameterList name="fluid_viscosity">
         <Parameter name="value" type="double" value="1.0"/>
+      </ParameterList>
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="10.0"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

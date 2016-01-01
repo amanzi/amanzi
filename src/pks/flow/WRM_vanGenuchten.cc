@@ -186,9 +186,9 @@ double WRM_vanGenuchten::dKdPc(double pc) const
 
   } else if (pc <= 0.0) {
     return 0.0;
-  }
-  else {
-    return 2*a_*pc + 3*b_*pc*pc; 
+
+  } else {
+    return 2 * a_ * pc + 3 * b_ * pc * pc; 
   }
 }
 

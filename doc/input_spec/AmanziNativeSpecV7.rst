@@ -1668,8 +1668,6 @@ Other parameters
 
 The remaining *Flow* parameters are
 
-* `"atmospheric pressure`" [double] defines the atmospheric pressure, [Pa].
-
 * `"absolute permeability coordinate system`" [string] defines coordinate system
   for calculating absolute permeability. The available options are `"cartesian`"
   and `"layer`".

@@ -41,7 +41,7 @@ using namespace Amanzi::Flow;
 void RunTestConvergence(std::string input_xml) {
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout <<"\nConvergence analysis on three random meshes" << std::endl;
+  if (MyPID == 0) std::cout <<"\nConvergence analysis on random meshes: " << input_xml << std::endl;
 
   std::string xmlFileName = input_xml;
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
@@ -63,8 +63,8 @@ void RunTestConvergence(std::string input_xml) {
     meshfactory.preference(pref);
     Teuchos::RCP<const Mesh> mesh;
     if (n == 0) {
-      mesh = meshfactory("test/random_mesh1.exo", gm);
-      // mesh = meshfactory(0.0, -10.0, 1.0, 0.0, 5, 50, gm);
+      // mesh = meshfactory("test/random_mesh1.exo", gm);
+      mesh = meshfactory(0.0, -10.0, 1.0, 0.0, 5, 50, gm);
     } else if (n == 1) {
       mesh = meshfactory("test/random_mesh2.exo", gm);
     } else if (n == 2) {
@@ -113,7 +113,7 @@ void RunTestConvergence(std::string input_xml) {
     printf("mesh=%d bdf1_steps=%d  L2_pressure_err=%7.3e  l2_flux_err=%7.3e  L2_div_err=%7.3e\n",
         n, num_bdf1_steps, pressure_err, flux_err, div_err);
 
-    CHECK(pressure_err < 2e-1 && flux_err < 2e-1 && div_err < 1e-7);
+    CHECK(pressure_err < 2.2e-1 && flux_err < 2e-1 && div_err < 1e-7);
 
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");
     GMV::start_data();
@@ -130,9 +130,13 @@ void RunTestConvergence(std::string input_xml) {
 /* *****************************************************************
 * Run with various discretization methods
 * **************************************************************** */
-// TEST(FLOW_RICHARDS_CONVERGENCE_NLFV) {
-//   RunTestConvergence("test/flow_richards_random_nlfv.xml");
-// }
+TEST(FLOW_RICHARDS_CONVERGENCE_NLFV) {
+  RunTestConvergence("test/flow_richards_random_nlfv.xml");
+}
+
+TEST(FLOW_RICHARDS_CONVERGENCE_FV) {
+  RunTestConvergence("test/flow_richards_random_fv.xml");
+}
 
 TEST(FLOW_RICHARDS_CONVERGENCE_MFD) {
   RunTestConvergence("test/flow_richards_random.xml");

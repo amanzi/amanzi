@@ -332,7 +332,6 @@
         <ParameterList name="VerboseObject">
           <Parameter name="Verbosity Level" type="string" value="high"/>
         </ParameterList>
-        <Parameter name="atmospheric pressure" type="double" value="1.01325e+05"/>
         <ParameterList name="water retention models">
           <ParameterList name="WRM for RegionMiddle">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
@@ -608,7 +607,6 @@
             <Parameter name="tolerance" type="double" value="1.0e-12"/>
           </ParameterList>
         </ParameterList>
-        <Parameter name="atmospheric pressure" type="double" value="1.01325e+05"/>
         <ParameterList name="water retention models">
           <ParameterList name="WRM for RegionMiddle">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>

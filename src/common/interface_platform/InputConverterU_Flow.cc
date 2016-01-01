@@ -62,7 +62,6 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   // create flow header
   if (pk_model_["flow"] == "darcy") {
     Teuchos::ParameterList& darcy_list = out_list.sublist("Darcy problem");
-    darcy_list.set<double>("atmospheric pressure", atm_pres);
 
     flow_list = &darcy_list;
     flow_single_phase_ = true;
@@ -82,7 +81,6 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
       upw_list.set<std::string>("upwind method", "standard");
       upw_list.sublist("upwind standard parameters").set<double>("tolerance", 1e-12);
     }
-    richards_list.set<double>("atmospheric pressure", atm_pres);
     flow_list = &richards_list;
 
     richards_list.sublist("water retention models") = TranslateWRM_();
