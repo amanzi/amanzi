@@ -33,8 +33,7 @@
 
 #include "OperatorAccumulation.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionFV.hh"
-#include "OperatorDiffusionNLFV.hh"
+#include "OperatorDiffusionNLFVwithGravity.hh"
 
 /* *****************************************************************
 * Nonlinear finite volume scheme.
@@ -64,7 +63,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 3, 3, NULL);
+  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2, NULL);
   Teuchos::RCP<const Mesh> mesh = meshfactory("test/random10.exo");
 
   // modify diffusion coefficient
@@ -97,12 +96,16 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
       double area = mesh->face_area(f);
       bc_model[f] = OPERATOR_BC_NEUMANN;
       bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
+      bc_model[f] = OPERATOR_BC_DIRICHLET;
+      bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionNLFV(op_list, mesh));
+  double rho(1.0);
+  AmanziGeometry::Point g(0.0, -gravity);
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionNLFVwithGravity(op_list, mesh, rho, g));
   Teuchos::RCP<Operator> global_op = op->global_operator();
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = global_op->DomainMap();

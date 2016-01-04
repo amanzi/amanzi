@@ -7,6 +7,11 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Base class for testing diffusion problems with gravity:
+    -div (K (grad(p) - g)) = f
+  where g is the gravity vector pointing downward of axis z 
+  or axis y in two dimensions.
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_BASE_HH_
@@ -20,17 +25,24 @@ class AnalyticBase {
   AnalyticBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
   ~AnalyticBase() {};
 
+  // analytic solution for diffusion problem with gravity
+  // -- diffusion tensor T
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  // -- analytic solution p
   virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  // -- gradient of continuous velocity grad(h), where h = p + g z
   virtual Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  // -- source term
   virtual double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
+  // derived quantity: Darcy velocity -K * grad(h)
   virtual Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
     Amanzi::WhetStone::Tensor K = Tensor(p, t);
     Amanzi::AmanziGeometry::Point g = gradient_exact(p, t);
     return -(K * g);
   }
 
+  // error calculation
   void ComputeCellError(Epetra_MultiVector& p, double t, double& pnorm, double& l2_err, double& inf_err) {
     pnorm = 0.0;
     l2_err = 0.0;

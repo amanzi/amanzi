@@ -32,7 +32,7 @@
 #include "Analytic02.hh"
 
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionMFD.hh"
+#include "OperatorDiffusionMFDwithGravity.hh"
 #include "OperatorDiffusionFV.hh"
 #include "UpwindSecondOrder.hh"
 #include "UpwindStandard.hh"
@@ -122,8 +122,10 @@ void RunTestDiffusionMixed(double gravity) {
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
+  double rho(1.0);
+  AmanziGeometry::Point g(0.0, -gravity);
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator mixed");
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(op_list, mesh, rho, g));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 

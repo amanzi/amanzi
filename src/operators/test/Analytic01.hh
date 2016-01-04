@@ -40,7 +40,7 @@ class Analytic01 : public AnalyticBase {
     double x = p[0];
     double y = p[1];
     double xy = x * y;
-    return x * xy * xy + x * sin(2 * M_PI * xy) * sin(2 * M_PI * y);
+    return x * xy * xy + x * sin(2 * M_PI * xy) * sin(2 * M_PI * y) - g_ * y;
   }
 
   Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 

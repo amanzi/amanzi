@@ -35,9 +35,9 @@ void OperatorDiffusionNLFVwithGravity::UpdateMatrices(
   const Epetra_MultiVector& u_c = *u->ViewComponent("cell");
 
   double rho_g = rho_ * norm(g_);
-  for (int c = 0; c < ncells_owned; ++c) {
+  for (int c = 0; c < ncells_wghost; ++c) {
     double zc = (mesh_->cell_centroid(c))[dim_ - 1];
-    hh_c[0][c] = u_c[0][c] / rho_g + zc;
+    hh_c[0][c] = u_c[0][c] + rho_g * zc;
   }
 
   OperatorDiffusionNLFV::UpdateMatrices(flux, hh.ptr());
@@ -74,6 +74,8 @@ void OperatorDiffusionNLFVwithGravity::UpdateMatrices(
       rhs_cell[0][c] -= Aface(0, 0) * (zc - zf) * rho_g;
     }
   }
+
+  global_op_->rhs()->GatherGhostedToMaster();
 }
 
 
@@ -88,22 +90,16 @@ void OperatorDiffusionNLFVwithGravity::UpdateFlux(
   // Map field u for the local system. For Richards's equation, this
   // is equivalent to calculating the hydraulic head.
   CompositeVector hh(u);
-  Epetra_MultiVector& hh_c = *hh.ViewComponent("cell");
+  Epetra_MultiVector& hh_c = *hh.ViewComponent("cell", true);
   const Epetra_MultiVector& u_c = *u.ViewComponent("cell");
 
   double rho_g = rho_ * norm(g_);
-  for (int c = 0; c < ncells_owned; ++c) {
+  for (int c = 0; c < ncells_wghost; ++c) {
     double zc = (mesh_->cell_centroid(c))[dim_ - 1];
-    hh_c[0][c] = u_c[0][c] / rho_g + zc;
+    hh_c[0][c] = u_c[0][c] + rho_g * zc;
   }
 
   OperatorDiffusionNLFV::UpdateFlux(hh, flux);
-
-  // map flux to the base system
-  Epetra_MultiVector& flux_data = *flux.ViewComponent("face");
-  for (int f = 0; f < nfaces_owned; ++f) {
-    if (bc_model[f] != OPERATOR_BC_NEUMANN) flux_data[0][f] *= rho_g; 
-  }
 }
 
 
@@ -114,7 +110,7 @@ double OperatorDiffusionNLFVwithGravity::MapBoundaryValue_(int f, double u)
 {
   double rho_g = rho_ * fabs(g_[dim_ - 1]); 
   double zf = (mesh_->face_centroid(f))[dim_ - 1];
-  return u / rho_g + zf; 
+  return u + rho_g * zf; 
 }
 
 }  // namespace Operators

@@ -45,7 +45,7 @@ class Analytic02 : public AnalyticBase {
   Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     Amanzi::AmanziGeometry::Point v(2);
     v[0] = 1.0;
-    v[1] = 2.0 - g_;
+    v[1] = 2.0;
     return v;
   }
 

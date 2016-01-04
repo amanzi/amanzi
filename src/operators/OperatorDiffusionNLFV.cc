@@ -514,7 +514,7 @@ double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
         } else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
           tmp = weight[i + k2][f];
           const AmanziGeometry::Point& normal = mesh_->face_normal(f1, false, c, &dir);
-          sideflux += tmp * (uc[0][c] - MapBoundaryValue_(f, bc_value[f1])) * dir;
+          sideflux += tmp * (uc[0][c] - MapBoundaryValue_(f1, bc_value[f1])) * dir;
         } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
           tmp = weight[i + k2][f];
           neumann_flux += tmp * bc_value[f1] * mesh_->face_area(f1);
