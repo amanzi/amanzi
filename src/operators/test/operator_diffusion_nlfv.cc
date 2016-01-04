@@ -187,10 +187,10 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP_02) {
 }
 
 TEST(OPERATOR_DIFFUSION_NLFV_wGravity) {
-  RunTestDiffusionNLFV_DMP<Analytic02>(2.3, true);
+  RunTestDiffusionNLFV_DMP<Analytic02>(2.7, true);
 }
 
 TEST(OPERATOR_DIFFUSION_NLFV_DMP_01) {
-  RunTestDiffusionNLFV_DMP<Analytic01>(0.0, false);
+  RunTestDiffusionNLFV_DMP<Analytic01>(2.7, false);
 }
 

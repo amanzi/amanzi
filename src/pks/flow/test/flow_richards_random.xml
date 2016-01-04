@@ -87,15 +87,16 @@
 	      <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
 	      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
 	      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-	      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+	      <Parameter name="preconditioner schema" type="Array(string)" value="{face,cell}"/>
 	      <Parameter name="gravity" type="bool" value="true"/>
 	    </ParameterList>
 	    <ParameterList name="preconditioner">
 	      <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
 	      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
 	      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-	      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+	      <Parameter name="preconditioner schema" type="Array(string)" value="{face,cell}"/>
 	      <Parameter name="gravity" type="bool" value="true"/>
+	      <Parameter name="newton correction" type="string" value="approximate jacobian"/>
 	    </ParameterList>
 	  </ParameterList>
 	</ParameterList>
@@ -156,16 +157,6 @@
 	</ParameterList>
 
 	<ParameterList name="boundary conditions">
-	  <ParameterList name="mass flux">
-	    <ParameterList name="BC 0">
-	      <Parameter name="regions" type="Array(string)" value="{Left side,Right side}"/>
-	      <ParameterList name="outward mass flux">
-		<ParameterList name="function-constant">
-		  <Parameter name="value" type="double" value="0.0"/>
-		</ParameterList>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
 	  <ParameterList name="pressure">
 	    <ParameterList name="BC 1">
 	      <Parameter name="regions" type="Array(string)" value="{Top side}"/>
@@ -248,8 +239,7 @@
     </ParameterList>
   </ParameterList>
 
-  <!--  STATE: this super input desk will be used to cut-off smaller 
-  input deks for other flow tests -->
+  <!--  STATE -->
   <ParameterList name="State">
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">

@@ -424,22 +424,24 @@ void OperatorDiffusionNLFV::UpdateMatricesNewtonCorrection(
   const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
 
   // populate the local matrices
+  double v, vmod;
   AmanziMesh::Entity_ID_List cells;
+
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
 
-    // We assume implicitly that dkdp >= 0 and use the upwind discretization.
-    double v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] / kf[0][f] : 0.0;
-    double vmod = std::abs(v) * dkdp_f[0][f];
+    // We use the upwind discretization of the generalized flux.
+    v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] * dkdp_f[0][f] / kf[0][f] : 0.0;
+    vmod = std::abs(v);
 
     // prototype for future limiters
     vmod *= scalar_limiter;
 
-    // interior face
-    int i, dir, c1, c2;
+    // We use the upwind discretization of the generalized flux.
+    int i, dir, c1;
     c1 = cells[0];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
     i = (v * dir >= 0.0) ? 0 : 1;

@@ -35,7 +35,7 @@ WRM_fake::WRM_fake(Teuchos::ParameterList& plist)
 double WRM_fake::k_relative(double pc) const
 {
   if (pc < 0.0)
-    return 1.0 / (1.0 + pow(alpha * pc, n));
+    return 1.0 / (1.0 + pc * pc);
   else
     return 1.0;
 }
@@ -55,9 +55,8 @@ double WRM_fake::saturation(double pc) const {
 double WRM_fake::dKdPc(double pc) const
 {
   if (pc < 0.0) {
-    // recall that n=2 and alpha=1.
-    double tmp = 1.0 + pow(alpha * pc, n);
-    return 2 * pc / (tmp * tmp);
+    double tmp = 1.0 + pc * pc;
+    return -2 * pc / (tmp * tmp);
   } else {
     return 0.0;
   }

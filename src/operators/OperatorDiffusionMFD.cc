@@ -134,7 +134,7 @@ void OperatorDiffusionMFD::UpdateMatricesNewtonCorrection(
     if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
       AddNewtonCorrectionCell_(flux, u, scalar_limiter);
     } else {
-      Errors::Message msg("OperatorDiffusion: Newton correction may only be applied to schemas that include CELL dofs.");
+      Errors::Message msg("OperatorDiffusionMFD: Newton correction may only be applied to schemas that include CELL dofs.");
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -846,6 +846,7 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
   const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
 
   // populate the local matrices
+  double v, vmod;
   AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -853,15 +854,15 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
 
-    // We assume implicitly that dkdp >= 0 and use the upwind discretization.
-    double v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] / kf[0][f] : 0.0;
-    double vmod = std::abs(v) * dkdp_f[0][f];
+    // We use the upwind discretization of the generalized flux.
+    v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] * dkdp_f[0][f] / kf[0][f] : 0.0;
+    vmod = std::abs(v);
 
     // prototype for future limiters (external or internal ?)
     vmod *= scalar_limiter;
 
-    // interior face
-    int i, dir, c1, c2;
+    // define the upwind cell, index i in this case
+    int i, dir, c1;
     c1 = cells[0];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
     i = (v * dir >= 0.0) ? 0 : 1;
