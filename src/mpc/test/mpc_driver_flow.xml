@@ -119,7 +119,7 @@
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{10., 20., 30.}"/>
       <Parameter name="initial time step" type="Array(double)" value="{0.1, 0.2, 0.3}"/>
-      <Parameter name="Maximal Time Step" type="Array(double)" value="{5., 25., 15.}"/>		 
+      <Parameter name="maximum time step" type="Array(double)" value="{5., 25., 15.}"/>		 
     </ParameterList>
   </ParameterList>
 
