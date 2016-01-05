@@ -74,16 +74,13 @@
             <density>exp</density> <!-- REQUIRED -->
             <dissolved_components> 
                 <solutes>
-		    <!-- Must include at least 1 -->
                     <solute coefficient_of_diffusion="exp" first_order_decay_constant="exp">solute_name_string</solute>
                 </solutes> 
                 <primaries>
-		    <!-- Must include at least 1 -->
                     <primary coefficient_of_diffusion="exp">primary_name_string</primary>
                     <!-- primary name must match the name in the engine database -->
                 </primaries> 
                 <secondaries>
-		    <!-- Must include at least 1 -->
                     <secondary>secondary_name_string</secondary>
                     <!-- secondary name must match the name in the engine database -->
                 </secondaries> 
@@ -91,16 +88,14 @@
         </liquid_phase>
 
         <solid_phase>
-            <minerals> <!-- REQUIRED -->
-		<!-- Must include at least 1 -->
+            <minerals>
                 <mineral rate_constant="exp">mineral_name_string</mineral>
                 <!-- mineral name must match the name in the engine database -->
             </minerals>
         </solid_phase>
 
         <gas_phase>
-            <gases> <!-- REQUIRED -->
-		<!-- Must include at least 1 -->
+            <gases>
                 <gas>gas_name_string</gas>
                 <!-- gas name must match the name in the engine database -->
             </gases>

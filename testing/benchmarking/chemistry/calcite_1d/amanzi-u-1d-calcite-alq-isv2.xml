@@ -37,18 +37,34 @@
       <viscosity>1.002e-3</viscosity>
       <density>998.2</density>
       <dissolved_components>
-        <solutes>
-          <solute>H+</solute>
-          <solute>HCO3-</solute>
-          <solute>Ca++</solute>
-        </solutes>
+	<!-- EIB: current implementation reads from *.in file, following is for future use where *.in file is written by converter -->
+        <primaries>
+          <primary>H+</primary>
+          <primary>HCO3-</primary>
+          <primary>Ca++</primary>
+        </primaries>
+        <secondaries>
+          <secondary>H+</secondary>
+          <secondary>OH-</secondary>
+          <secondary>CO3--</secondary>
+          <secondary>CO2(aq)</secondary>
+          <secondary>CaHCO3+</secondary>
+          <secondary>CaCO3(aq)</secondary>
+	</secondaries>
       </dissolved_components>
     </liquid_phase>
     <solid_phase>
+      <!-- EIB: current implementation reads from *.in file, following is for future use where *.in file is written by converter -->
       <minerals>
-        <mineral>Calcite</mineral>
+        <mineral rate_constant="1.0e-13">Calcite</mineral>
       </minerals>
     </solid_phase>
+    <gas_phase>
+      <!-- EIB: current implementation reads from *.in file, following is for future use where *.in file is written by converter -->
+      <gases>
+        <gas>CO2(g)</gas>
+      </gases>
+    </gas_phase>
   </phases>
 
   <execution_controls>
@@ -78,7 +94,7 @@
                     <convergence_tolerance>0.95</convergence_tolerance>
                     <initialize_with_darcy>true</initialize_with_darcy>
                 </pseudo_time_integrator>
-                          -->
+         -->
       </unstr_steady-state_controls>
 
       <unstr_transient_controls>
@@ -98,7 +114,7 @@
         <!--
         <method>gmres</method>
         <max_iterations>20</max_iterations>
-                          -->
+        -->
         <tolerance>1.0e-22</tolerance>
         <preconditioner>trilinos_ml</preconditioner>
       </unstr_linear_solver>
@@ -147,19 +163,6 @@
         <porosity value="0.25"/>
         <!--particle_density value="2720.0"/-->
       </mechanical_properties>
-      <!-- Begin proposed isotherm section using Amanzi native chemistry -->
-      <sorption_isotherms>
-        <solute name = "A">
-          <kd_model model = "linear" kd = "10.0"/>
-        </solute>
-        <solute name = "B">
-          <kd_model model = "langmuir" kd = "30.0" b = "0.1"/>
-        </solute>
-        <solute name = "C">
-          <kd_model model = "freundlich" kd = "1.5" n = "1.25"/>
-        </solute>
-      </sorption_isotherms>
-      <!-- End proposed isotherm section -->
       <permeability x="1.0e-12" y="1.0e-12" z="1.0e-12"/>
       <assigned_regions>All</assigned_regions>
     </material>
@@ -172,11 +175,6 @@
         <liquid_component name="water">
           <uniform_pressure value="201325.0"/>
         </liquid_component>
-        <solute_component>
-	  <uniform_conc name="A" value="1.e-20"/>
-	  <uniform_conc name="B" value="1.e-20"/>
-	  <uniform_conc name="C" value="1.e-20"/>
-        </solute_component>
         <geochemistry>
           <constraint name="initial"/>
         </geochemistry>
@@ -191,11 +189,6 @@
         <liquid_component name="water">
           <inward_mass_flux value="7.91317859e-6" start="0" function="constant"/>
         </liquid_component>
-        <solute_component name="solute">
-          <aqueous_conc name="A" start="0.0" value="1.e-03" function="constant"/>
-          <aqueous_conc name="B" start="0.0" value="1.e-03" function="constant"/>
-          <aqueous_conc name="C" start="0.0" value="1.e-03" function="constant"/>
-        </solute_component>
         <geochemistry>
           <constraint name="west" start = "0.0"/>
         </geochemistry>
@@ -232,8 +225,19 @@
       <reaction_network file="1d-calcite-trim.in" format="simple"/>
     </pflotran_chemistry>
     <constraints>
-      <constraint name="initial" filename="1d-tritium-trim.in"/>
-      <constraint name="west" filename="1d-tritium-trim.in"/>
+      <constraint name="initial" filename="1d-tritium-trim.in">
+	  <!-- EIB: current implementation reads from *.in file, following is for future use where *.in file is written by converter -->
+          <primary name="H+"    initial_guess="1.0e-8"   type="free_ion"/>
+          <primary name="HCO3-" initial_guess="1.0e-3"   type="gas" gas = "CO2(g)"/>
+          <primary name="Ca++"  initial_guess="5.0e-4"   type="mineral" mineral="Calcite"/>
+          <mineral name="Calcite"  volume_fraction="1.0e-5" surface_area="2.0e0"/>
+      </constraint>
+      <constraint name="west" filename="1d-tritium-trim.in">
+	  <!-- EIB: current implementation reads from *.in file, following is for future use where *.in file is written by converter -->
+          <primary name="H+"    initial_guess="5.0"    type="pH"/>
+          <primary name="HCO3-" initial_guess="1.0e-3" type="total"/>
+          <primary name="Ca++"  initial_guess="1.0e-6" type="charge"/>
+      </constraint>
     </constraints>
   </geochemistry>
 
