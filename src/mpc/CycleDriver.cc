@@ -390,6 +390,7 @@ void CycleDriver::ReadParameterList_() {
   tp_end_.resize(num_time_periods_);
   tp_dt_.resize(num_time_periods_);
   tp_max_cycle_.resize(num_time_periods_);
+  tp_max_dt_.resize(num_time_periods_);
 
   int i = 0;
   for (item = time_periods_list.begin(); item !=time_periods_list.end(); ++item) {
@@ -397,6 +398,7 @@ void CycleDriver::ReadParameterList_() {
     tp_start_[i] = time_periods_list.sublist(tp_name).get<double>("start period time");
     tp_end_[i] = time_periods_list.sublist(tp_name).get<double>("end period time");
     tp_dt_[i] = time_periods_list.sublist(tp_name).get<double>("initial time step", 1.0);
+    tp_max_dt_[i] = time_periods_list.sublist(tp_name).get<double>("maximum time step", 1.0e+99);
     tp_max_cycle_[i] = time_periods_list.sublist(tp_name).get<int>("maximum cycle number", -1);
    
     i++;
@@ -480,7 +482,7 @@ double CycleDriver::get_dt(bool after_failure) {
   std::vector<std::pair<double,double> >::iterator it;
   std::vector<std::pair<double,double> >::iterator it_max;
 
-  for (it = reset_info_.begin(), it_max = reset_max_.begin(); it != reset_info_.end(); ++it, ++it_max) {
+  for (it = reset_info_.begin(), it_max = reset_max_.begin(); it != reset_info_.end(); ++it, ++it_max) {    
     if (S_->time() == it->first) {
       if (reset_max_.size() > 0) {
         max_dt_ = it_max->second;
@@ -519,11 +521,12 @@ double CycleDriver::get_dt(bool after_failure) {
   // ask the step manager if this step is ok
   dt = tsm_->TimeStep(S_->time(), dt, after_failure);
 
+
   // cap the max step size
   if (dt > max_dt_) {
     dt = max_dt_;   
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Time step is larger than maximum allowed "<<dt<<"\n";
+    *vo_->os() << "Time step is larger than maximum allowed "<<dt<<" [sec]. dT = "<<dt<<" [sec].\n";
   }
 
   return dt;
@@ -743,6 +746,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
     Initialize();
 
     dt = tp_dt_[time_period_id_];
+    max_dt_ = tp_max_dt_[time_period_id_];
     dt = tsm_->TimeStep(S_->time(), dt);
     pk_->set_dt(dt);
 
@@ -788,6 +792,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
       if (time_period_id_ < num_time_periods_ - 1) time_period_id_++;
       ResetDriver(time_period_id_); 
       restart_dT =  tp_dt_[time_period_id_];
+      max_dt_ = tp_max_dt_[time_period_id_];
     } else {
       // Initialize the process kernels
       pk_->Initialize();
@@ -941,6 +946,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   S_->WriteStatistics(vo_);
 
   pk_->set_dt(tp_dt_[time_pr_id]);
+  max_dt_ = tp_max_dt_[time_pr_id];
 
   S_old_ = Teuchos::null;
 }
