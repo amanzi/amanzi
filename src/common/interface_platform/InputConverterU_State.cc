@@ -289,16 +289,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         std::vector<double> grad = GetAttributeVector_(static_cast<DOMElement*>(node), "gradient");
         std::vector<double> refc = GetAttributeVector_(static_cast<DOMElement*>(node), "reference_coord");
 
-        Teuchos::Array<double> grad_with_time(grad.size() + 1);
-        Teuchos::Array<double> refc_with_time(grad.size() + 1);
-
-        grad_with_time[0] = 0.0;
-        refc_with_time[0] = 0.0;
-
-        for (int j = 0; j != grad.size(); ++j) {
-          grad_with_time[j + 1] = grad[j];
-          refc_with_time[j + 1] = refc[j];
-        }
+        grad.insert(grad.begin(), 0.0);
+        refc.insert(refc.begin(), 0.0);
 
         Teuchos::ParameterList& pressure_ic = out_ic.sublist("pressure");
         pressure_ic.sublist("function").sublist(reg_str)
@@ -306,8 +298,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<std::string>("component", "cell")
             .sublist("function").sublist("function-linear")
             .set<double>("y0", p)
-            .set<Teuchos::Array<double> >("x0", refc_with_time)
-            .set<Teuchos::Array<double> >("gradient", grad_with_time);
+            .set<Teuchos::Array<double> >("x0", refc)
+            .set<Teuchos::Array<double> >("gradient", grad);
       }
 
       // -- uniform saturation
@@ -330,16 +322,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         std::vector<double> grad = GetAttributeVector_(static_cast<DOMElement*>(node), "gradient");
         std::vector<double> refc = GetAttributeVector_(static_cast<DOMElement*>(node), "reference_coord");
 
-        Teuchos::Array<double> grad_with_time(grad.size() + 1);
-        Teuchos::Array<double> refc_with_time(grad.size() + 1);
-
-        grad_with_time[0] = 0.0;
-        refc_with_time[0] = 0.0;
-
-        for (int j = 0; j != grad.size(); ++j) {
-          grad_with_time[j + 1] = grad[j];
-          refc_with_time[j + 1] = refc[j];
-        }
+        grad.insert(grad.begin(), 0.0);
+        refc.insert(refc.begin(), 0.0);
 
         Teuchos::ParameterList& saturation_ic = out_ic.sublist("saturation_liquid");
         saturation_ic.sublist("function").sublist(reg_str)
@@ -347,8 +331,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<std::string>("component", "cell")
             .sublist("function").sublist("function-linear")
             .set<double>("y0", s)
-            .set<Teuchos::Array<double> >("x0", refc_with_time)
-            .set<Teuchos::Array<double> >("gradient", grad_with_time);
+            .set<Teuchos::Array<double> >("x0", refc)
+            .set<Teuchos::Array<double> >("gradient", grad);
       }
 
       // -- darcy_flux

@@ -541,57 +541,74 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
     if (!flag) continue;
 
     // process a group of similar elements defined by the first element
-    std::string bctype;
-    std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
+    // -- get BC type 
+    std::string bctype_in;
+    std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype_in, flag, true);
 
-    std::map<double, double> tp_values, tp_fluxes;
-    std::map<double, std::string> tp_forms;
-
-    for (int j = 0; j < same_list.size(); ++j) {
-      DOMNode* jnode = same_list[j];
-      element = static_cast<DOMElement*>(jnode);
-      double t0 = GetAttributeValueD_(element, "start");
-
-      tp_forms[t0] = GetAttributeValueS_(element, "function");
-      tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, false, 0.0);
-      tp_fluxes[t0] = GetAttributeValueD_(element, "inward_mass_flux", TYPE_NUMERICAL, false, 0.0);
+    // -- identify global BC that do not require forms
+    bool global_bc(false);
+    if (bctype_in == "linear_pressure" || bctype_in == "linear_hydrostatic") {
+      global_bc = true;
     }
 
-    // create vectors of values and forms
+    // -- process global and local BC separately
+    double refv;
+    std::vector<double> grad, refc;
     std::vector<double> times, values, fluxes;
     std::vector<std::string> forms;
-    for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
-      times.push_back(it->first);
-      values.push_back(it->second);
-      fluxes.push_back(tp_fluxes[it->second]);
-      forms.push_back(tp_forms[it->first]);
+
+    if (global_bc) {
+      element = static_cast<DOMElement*>(same_list[0]);
+      refv = GetAttributeValueD_(element, "reference_value");
+      grad = GetAttributeVector_(element, "gradient_value");
+      refc = GetAttributeVector_(element, "reference_point");
+    } else {
+      std::map<double, double> tp_values, tp_fluxes;
+      std::map<double, std::string> tp_forms;
+
+      for (int j = 0; j < same_list.size(); ++j) {
+        element = static_cast<DOMElement*>(same_list[j]);
+        double t0 = GetAttributeValueD_(element, "start");
+
+        tp_forms[t0] = GetAttributeValueS_(element, "function");
+        tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, false, 0.0);
+        tp_fluxes[t0] = GetAttributeValueD_(element, "inward_mass_flux", TYPE_NUMERICAL, false, 0.0);
+      }
+
+      // create vectors of values and forms
+      for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
+        times.push_back(it->first);
+        values.push_back(it->second);
+        fluxes.push_back(tp_fluxes[it->second]);
+        forms.push_back(tp_forms[it->first]);
+      }
+      forms.pop_back();
     }
-    forms.pop_back();
 
     // create names, modify data
-    std::string bcname;
-    if (bctype == "inward_mass_flux") {
+    std::string bcname, bctype(bctype_in);
+    if (bctype_in == "inward_mass_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
       for (int k = 0; k < values.size(); k++) values[k] *= -1;
-    } else if (bctype == "outward_mass_flux") {
+    } else if (bctype_in == "outward_mass_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
-    } else if (bctype == "outward_volumetric_flux") {
+    } else if (bctype_in == "outward_volumetric_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
       for (int k = 0; k < values.size(); k++) values[k] *= rho_;
-    } else if (bctype == "inward_volumetric_flux") {
+    } else if (bctype_in == "inward_volumetric_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
       for (int k = 0; k < values.size(); k++) values[k] *= -rho_;
-    } else if (bctype == "uniform_pressure") {
+    } else if (bctype_in == "uniform_pressure" || bctype_in == "linear_pressure") {
       bctype = "pressure";
       bcname = "boundary pressure";
-    } else if (bctype == "hydrostatic") {
+    } else if (bctype_in == "hydrostatic" || bctype_in == "linear_hydrostatic") {
       bctype = "static head";
       bcname = "water table elevation";
-    } else if (bctype == "seepage_face") {
+    } else if (bctype_in == "seepage_face") {
       bctype = "seepage face";
       bcname = "outward mass flux";
       values = fluxes;
@@ -610,7 +627,15 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
         transport_diagnostics_.insert(transport_diagnostics_.end(), regions.begin(), regions.end());
 
     Teuchos::ParameterList& bcfn = bc.sublist(bcname);
-    if (times.size() == 1) {
+    if (global_bc) {
+      grad.insert(grad.begin(), 0.0);
+      refc.insert(refc.begin(), 0.0);
+
+      bcfn.sublist("function-linear")
+          .set<double>("y0", refv)
+          .set<Teuchos::Array<double> >("x0", refc)
+          .set<Teuchos::Array<double> >("gradient", grad);
+    } else if (times.size() == 1) {
       bcfn.sublist("function-constant").set<double>("value", values[0]);
     } else {
       bcfn.sublist("function-tabular")
