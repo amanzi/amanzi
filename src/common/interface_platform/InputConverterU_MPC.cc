@@ -571,15 +571,14 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
 
   std::vector<std::string> bc_names;
   bc_names.push_back("hydrostatic");
-  bc_names.push_back("linear_hydrostatic");
   bc_names.push_back("uniform_pressure");
-  bc_names.push_back("linear_pressure");
   bc_names.push_back("inward_mass_flux");
   bc_names.push_back("outward_mass_flux");
   bc_names.push_back("inward_volumetric_flux");
   bc_names.push_back("outward_volumetric_flux");
   bc_names.push_back("seepage_face");
   bc_names.push_back("aqueous_conc");
+  bc_names.push_back("uniform_conc");
   bc_names.push_back("constraint");
   bc_names.push_back("diffusion_dominated_release");
   bc_names.push_back("uniform_temperature");
