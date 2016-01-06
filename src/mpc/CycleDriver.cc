@@ -754,15 +754,18 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
     // Read restart file
     restart_time = ReadCheckpointInitialTime(comm_, restart_filename_);
+    std::cout<<"restart_time "<<restart_time<<"\n";
     position = ReadCheckpointPosition(comm_, restart_filename_);
     ReadCheckpointObservations(comm_, restart_filename_, observations_data_);
     for (int i = 0; i < num_time_periods_; i++) {
       if (restart_time - tp_end_[i] > -1e-10) 
         time_period_id_++;
-    }    
+    }  
+    std::cout<<time_period_id_<<"\n";
     if (position == TIME_PERIOD_END) 
       if (time_period_id_>0) 
         time_period_id_--;   
+    std::cout<<time_period_id_<<"\n";
 
     Init_PK(time_period_id_); 
     Setup();
@@ -789,10 +792,16 @@ Teuchos::RCP<State> CycleDriver::Go() {
     }
 
     if (position == TIME_PERIOD_END) {
-      if (time_period_id_ < num_time_periods_ - 1) time_period_id_++;
-      ResetDriver(time_period_id_); 
-      restart_dT =  tp_dt_[time_period_id_];
-      max_dt_ = tp_max_dt_[time_period_id_];
+      std::cout<<time_period_id_<<"\n";
+      if (time_period_id_ < num_time_periods_ - 1){
+        time_period_id_++;
+        ResetDriver(time_period_id_); 
+        restart_dT =  tp_dt_[time_period_id_];
+      }
+      else {
+        pk_->Initialize();
+      }     
+      std::cout<<S_->time()<<"\n";
     } else {
       // Initialize the process kernels
       pk_->Initialize();
@@ -829,7 +838,11 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
     while (time_period_id_ < num_time_periods_) {
       int start_cycle_num = S_->cycle();
-      do {
+      //      do 
+      while ((S_->time() < tp_end_[time_period_id_]) && 
+             ((tp_max_cycle_[time_period_id_] == -1) || 
+              (S_->cycle() - start_cycle_num < tp_max_cycle_[time_period_id_])))
+      {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
           Teuchos::OSTab tab = vo_->getOSTab();
           *vo_->os() << "\nCycle " << S_->cycle()
@@ -846,8 +859,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
         //dt = get_dt(fail);
 
       }  // while not finished
-      while ((S_->time() < tp_end_[time_period_id_]) && ((tp_max_cycle_[time_period_id_] == -1) 
-          || (S_->cycle() - start_cycle_num < tp_max_cycle_[time_period_id_])));
+
 
       time_period_id_++;
       if (time_period_id_ < num_time_periods_) {
