@@ -754,18 +754,18 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
     // Read restart file
     restart_time = ReadCheckpointInitialTime(comm_, restart_filename_);
-    std::cout<<"restart_time "<<restart_time<<"\n";
+
     position = ReadCheckpointPosition(comm_, restart_filename_);
     ReadCheckpointObservations(comm_, restart_filename_, observations_data_);
     for (int i = 0; i < num_time_periods_; i++) {
       if (restart_time - tp_end_[i] > -1e-10) 
         time_period_id_++;
     }  
-    std::cout<<time_period_id_<<"\n";
+
     if (position == TIME_PERIOD_END) 
       if (time_period_id_>0) 
         time_period_id_--;   
-    std::cout<<time_period_id_<<"\n";
+
 
     Init_PK(time_period_id_); 
     Setup();
@@ -792,7 +792,6 @@ Teuchos::RCP<State> CycleDriver::Go() {
     }
 
     if (position == TIME_PERIOD_END) {
-      std::cout<<time_period_id_<<"\n";
       if (time_period_id_ < num_time_periods_ - 1){
         time_period_id_++;
         ResetDriver(time_period_id_); 
@@ -801,7 +800,6 @@ Teuchos::RCP<State> CycleDriver::Go() {
       else {
         pk_->Initialize();
       }     
-      std::cout<<S_->time()<<"\n";
     } else {
       // Initialize the process kernels
       pk_->Initialize();
