@@ -7197,7 +7197,9 @@ PorousMedia::dirichletPressBC (FArrayBox& fab, const IArrayBox& matID, const FAr
             }
             face_bc.apply(prdat,dx,0,ncomps,t_eval);
           }
-          else if (face_bc.Type() == "hydraulic_head") {
+          else if (face_bc.Type() == "hydraulic_head"
+		   || face_bc.Type() == "hydrostatic")
+	  {
             for (int j=0; j<regions.size(); ++j) {
               regions[j]->setVal(mask,1,0,dx,0);
             }

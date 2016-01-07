@@ -29,8 +29,15 @@
     <chemistry engine="pflotran" process_model="alquimia" state="on"/>
   </process_kernels>
 
+  <geochemistry>
+    <pflotran_chemistry>
+      <reaction_network file="Tank_isotherms.in"/>
+      <database file="Tank_isotherms.dat"/>
+    </pflotran_chemistry>
+  </geochemistry>
+
   <phases>
-    <liquid_phase name="water">
+    <liquid_phase name="Water">
       <eos>false</eos>
       <viscosity>1.002E-03</viscosity>
       <density>998.2</density>
@@ -215,11 +222,6 @@
       <max_n_subcycle_transport>4</max_n_subcycle_transport>
       <petsc_options_file>DOTpetsc_hypre</petsc_options_file>
 
-      <str_chemistry_controls>
-	<read_chemistry_engine_inputfile>Tank_isotherms.in</read_chemistry_engine_inputfile>
-	<chem_max_time_step>15778463.0</chem_max_time_step>
-      </str_chemistry_controls>
-
       <str_steady-state_controls>
       </str_steady-state_controls>
 
@@ -228,12 +230,12 @@
       </str_transient_controls>
 
       <str_amr_controls>
-	<amr_levels>4</amr_levels>
+	<amr_levels>5</amr_levels>
 	<refinement_ratio>4, 4, 4</refinement_ratio>
 	<regrid_interval>2</regrid_interval>
-	<blocking_factor>2, 16, 16, 16</blocking_factor>
+	<blocking_factor>2, 16, 16, 16, 16</blocking_factor>
 	<number_error_buffer_cells>1, 1, 1, 1</number_error_buffer_cells>
-	<max_grid_size>32, 32, 32, 32</max_grid_size>
+	<max_grid_size>32, 32, 32, 32, 32</max_grid_size>
 
 	<refinement_indicator name="Tank ref">
 	  <regions>Tank</regions>
@@ -273,7 +275,7 @@
 	</refinement_indicator>
 
 	<refinement_indicator name="Tracer ref">
-	  <field_name>Tracer Aqueous Concentration</field_name>
+	  <field_name>Tracer Water Concentration</field_name>
 	  <regions>All</regions>
 	  <max_refinement_level>4</max_refinement_level>
 	  <value_greater>1.e-2</value_greater>
@@ -437,7 +439,7 @@
       	  <kd_model kd="1.e-6"/>
       	</solute>
       </sorption_isotherms>
-      <assigned_regions>Waste Left, Waste Right</assigned_regions>
+      <assigned_regions>Waste Left,Waste Right</assigned_regions>
     </material>
 
     <material name="Liner">
@@ -466,8 +468,8 @@
   <initial_conditions>
     <initial_condition name="Initial Condition NonSources">
       <assigned_regions>NonSources</assigned_regions>
-      <liquid_phase name="water">
-	<liquid_component name="water">
+      <liquid_phase name="Water">
+	<liquid_component name="Water">
 	  <uniform_pressure  value="101325"/>
 	</liquid_component>
 	<geochemistry function="uniform" constraint="initial_nonsources" />
@@ -476,8 +478,8 @@
 
     <initial_condition name="Initial Condition Waste Floor">
       <assigned_regions>Waste Floor</assigned_regions>
-      <liquid_phase name="water">
-	<liquid_component name="water">
+      <liquid_phase name="Water">
+	<liquid_component name="Water">
 	  <uniform_pressure  value="101325"/>
 	</liquid_component>
 	<geochemistry function="uniform" constraint="initial_waste_floor" />
@@ -485,9 +487,9 @@
     </initial_condition>
 
     <initial_condition name="Initial Condition Annulus Waste">
-      <assigned_regions>Waste Left, Waste Right</assigned_regions>
-      <liquid_phase name="water">
-	<liquid_component name="water">
+      <assigned_regions>Waste Left,Waste Right</assigned_regions>
+      <liquid_phase name="Water">
+	<liquid_component name="Water">
 	  <uniform_pressure  value="101325"/>
 	</liquid_component>
 	<geochemistry function="uniform" constraint="initial_annulus_waste" />
@@ -496,8 +498,8 @@
 
     <initial_condition name="Initial Condition Primary Sand Pad">
       <assigned_regions>Primary Sand Pad</assigned_regions>
-      <liquid_phase name="water">
-	<liquid_component name="water">
+      <liquid_phase name="Water">
+	<liquid_component name="Water">
 	  <uniform_pressure  value="101325"/>
 	</liquid_component>
 	<geochemistry function="uniform" constraint="initial_primary_sand_pad" />
@@ -506,8 +508,8 @@
 
     <initial_condition name="Initial Condition Secondary Sand Pad">
       <assigned_regions>Secondary Sand Pad</assigned_regions>
-      <liquid_phase name="water">
-	<liquid_component name="water">
+      <liquid_phase name="Water">
+	<liquid_component name="Water">
 	  <uniform_pressure  value="101325"/>
 	</liquid_component>
 	<geochemistry function="uniform" constraint="initial_secondary_sand_pad" />
@@ -520,8 +522,8 @@
   <boundary_conditions>
     <boundary_condition name="West BC">
       <assigned_regions>XLOBC</assigned_regions>
-      <liquid_phase name="water">
-	<liquid_component name="water">
+      <liquid_phase name="Water">
+	<liquid_component name="Water">
 	  <hydrostatic value="30.5" start="0" function="constant"/>
 	</liquid_component>
 	<geochemistry function="uniform" constraint="west" />
@@ -530,8 +532,8 @@
 
     <boundary_condition name="East BC">
       <assigned_regions>XHIBC</assigned_regions>
-      <liquid_phase name="water">
-	<liquid_component name="water">
+      <liquid_phase name="Water">
+	<liquid_component name="Water">
 	  <hydrostatic value="30.0" start="0" function="constant"/>
 	</liquid_component>
       </liquid_phase>

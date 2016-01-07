@@ -1066,26 +1066,26 @@ PorousMedia::variableSetUp ()
           ppr.getarr("regions",region_names,0,nreg);
       }
       Array<const Region*> regions = region_manager->RegionPtrArray(region_names);
-      if (ppr.countval("val_greater_than")) {
-          Real value; ppr.get("val_greater_than",value);
-          std::string field; ppr.get("field",field);
+      if (ppr.countval("value_greater")) {
+          Real value; ppr.get("value_greater",value);
+          std::string field; ppr.get("field_name",field);
           err_list.add(field.c_str(),0,ErrorRec::Special,
                        PM_Error_Value(FORT_VALGTERROR,value,min_time,max_time,max_level,regions));
       }
-      else if (ppr.countval("val_less_than")) {
-          Real value; ppr.get("val_less_than",value);
-          std::string field; ppr.get("field",field);
+      else if (ppr.countval("value_less")) {
+          Real value; ppr.get("value_less",value);
+          std::string field; ppr.get("field_name",field);
           err_list.add(field.c_str(),0,ErrorRec::Special,
                        PM_Error_Value(FORT_VALLTERROR,value,min_time,max_time,max_level,regions));
       }
-      else if (ppr.countval("diff_greater_than")) {
-          Real value; ppr.get("diff_greater_than",value);
-          std::string field; ppr.get("field",field);
+      else if (ppr.countval("adjacent_difference_greater")) {
+          Real value; ppr.get("adjacent_difference_greater",value);
+          std::string field; ppr.get("field_name",field);
           err_list.add(field.c_str(),1,ErrorRec::Special,
                        PM_Error_Value(FORT_DIFFGTERROR,value,min_time,max_time,max_level,regions));
       }
-      else if (ppr.countval("in_region")) {
-          Real value; ppr.get("in_region",value);
+      else if (ppr.countval("inside_region")) {
+	  //Real value; ppr.get("inside_region",value);
           err_list.add("PMAMR_DUMMY",1,ErrorRec::Special,
                        PM_Error_Value(min_time,max_time,max_level,regions));
       }
@@ -1586,7 +1586,8 @@ void  PorousMedia::read_comp()
               pressure_bc = Outflow;
               bc_array.set(ibc, new RegionData(bcname,bc_regions,bc_type,vals));
           }
-          else if (bc_type == "hydraulic_head")
+          else if (bc_type == "hydraulic_head"
+		   || bc_type == "hydrostatic")
           {              
             Array<Real> vals, times;
             Array<std::string> forms;
@@ -1734,7 +1735,6 @@ void  PorousMedia::read_comp()
           else
           {
 	    if (bc_type == "seepage_face"
-		||bc_type == "hydrostatic"
 		|| bc_type == "linear_hydrostatic") {
 	      BoxLib::Abort(std::string(bc_type+" not yet implemented").c_str());
 	    }
@@ -1821,7 +1821,13 @@ void  PorousMedia::read_tracer()
   if (region_manager == 0) {
     BoxLib::Abort("static Region manager must be set up prior to building Rock Manager");
   }
-  rock_manager = new RockManager(region_manager,&tNames);
+
+  BL_ASSERT(density.size()>0);
+  BL_ASSERT(muval.size()>0);
+  Real gravity_value_mks = gravity * BL_ONEATM;
+  Real liquid_density_mks = density[0];
+  Real liquid_viscosity_mks = muval[0];
+  rock_manager = new RockManager(region_manager,&tNames,liquid_density_mks,liquid_viscosity_mks,gravity_value_mks);
 
   if (do_tracer_diffusion) {
     tensor_tracer_diffusion = rock_manager->DoTensorDiffusion();

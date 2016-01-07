@@ -37,7 +37,7 @@ namespace {
 string ConvertTimeToSeconds(const string& time_string)
 {
   vector<string> tokens;
-  split(tokens, time_string, is_any_of(" "));
+  split(tokens, time_string, is_any_of(" ,;"));
   if (tokens.size() == 1)
     return tokens[0];
   else
@@ -566,7 +566,8 @@ void InputConverterS::ParseExecutionControls_()
     default_vals["increase_factor"]  = GetAttributeValueS_(def, "increase_factor",  TYPE_NUMERICAL, true);
     default_vals["mode"]             = GetAttributeValueS_(def, "mode",             TYPE_NUMERICAL, true);
     default_vals["method"]           = GetAttributeValueS_(def, "method",           TYPE_NUMERICAL, true);
-    default_vals["max_cycles"]       = GetAttributeValueS_(def, "max_cycles",       TYPE_NUMERICAL, true);
+    //default_vals["max_cycles"]       = GetAttributeValueS_(def, "max_cycles",       TYPE_NUMERICAL, true);
+    default_vals["max_cycles"] = "10000000";
 
     vector<DOMNode*> controls = GetChildren_(controls_block, "execution_control", found);
     if (found)
@@ -586,22 +587,22 @@ void InputConverterS::ParseExecutionControls_()
         string start = GetAttributeValueS_(control, "start");
         map<string, string>::const_iterator iter = labeled_times_.find(start);
         if (iter != labeled_times_.end())
-          AddToTable(table, MakePPPrefix("strt_time"), MakePPEntry(iter->second));
+          AddToTable(table, MakePPPrefix("strt_time"), MakePPEntry(ConvertTimeToSeconds(iter->second)));
         else
-          AddToTable(table, MakePPPrefix("strt_time"), MakePPEntry(start));
+          AddToTable(table, MakePPPrefix("strt_time"), MakePPEntry(ConvertTimeToSeconds(start)));
 
         string end = GetAttributeValueS_(control, "end", TYPE_NUMERICAL, false);
         iter = labeled_times_.find(end);
         if (iter != labeled_times_.end())
-          AddToTable(table, MakePPPrefix("stop_time"), MakePPEntry(iter->second));
+          AddToTable(table, MakePPPrefix("stop_time"), MakePPEntry(ConvertTimeToSeconds(iter->second)));
         else
-          AddToTable(table, MakePPPrefix("stop_time"), MakePPEntry(end));
+          AddToTable(table, MakePPPrefix("stop_time"), MakePPEntry(ConvertTimeToSeconds(end)));
 
         string init_dt = GetAttributeValueS_(control, "init_dt", TYPE_NUMERICAL, false);
         if (init_dt.empty() && !default_vals.empty())
-          AddToTable(table, MakePPPrefix("prob", "dt_init"), MakePPEntry(default_vals["init_dt"]));
+          AddToTable(table, MakePPPrefix("prob", "dt_init"), MakePPEntry(ConvertTimeToSeconds(default_vals["init_dt"])));
         else
-          AddToTable(table, MakePPPrefix("prob", "dt_init"), MakePPEntry(init_dt));
+          AddToTable(table, MakePPPrefix("prob", "dt_init"), MakePPEntry(ConvertTimeToSeconds(init_dt)));
 
         string mode = GetAttributeValueS_(control, "mode", TYPE_NUMERICAL, false);
         if (mode.empty() && !default_vals.empty())
@@ -610,11 +611,11 @@ void InputConverterS::ParseExecutionControls_()
           AddToTable(table, MakePPPrefix("execution_mode"), MakePPEntry(mode));
 
         string max_dt = GetAttributeValueS_(control, "max_dt", TYPE_NUMERICAL, false);
-        string max_dt_name = mode + string("_max_dt");
+        string max_dt_name = mode + string("max_dt");
         if (max_dt.empty() && !default_vals.empty())
-          AddToTable(table, MakePPPrefix("prob", max_dt_name), MakePPEntry(default_vals["max_dt"]));
+          AddToTable(table, MakePPPrefix("prob", max_dt_name), MakePPEntry(ConvertTimeToSeconds(default_vals["max_dt"])));
         else
-          AddToTable(table, MakePPPrefix("prob", max_dt_name), MakePPEntry(max_dt));
+          AddToTable(table, MakePPPrefix("prob", max_dt_name), MakePPEntry(ConvertTimeToSeconds(max_dt)));
 
         string reduction_factor = GetAttributeValueS_(control, "reduction_factor", TYPE_NUMERICAL, false);
         if (reduction_factor.empty() && !default_vals.empty())
@@ -685,6 +686,16 @@ void InputConverterS::ParseNumericalControls_()
   list<ParmParse::PP_entry> table;
   bool found;
 
+  // AMR controls - These must be specified to backend code, declare/add whether or not specified in xml
+  map<string,string> amr_controls;
+  amr_controls["amr_levels"]                = "1";
+  amr_controls["refinement_ratio"]          = "2";
+  amr_controls["do_amr_subcycling"]         = "true";
+  amr_controls["regrid_interval"]           = "1";
+  amr_controls["blocking_factor"]           = "2";
+  amr_controls["number_error_buffer_cells"] = "1";
+  amr_controls["max_grid_size"]             = "32";
+
   // Common controls -- currently empty.
   DOMNode* common_controls = GetUniqueElementByTagsString_("numerical_controls, common_controls", found);
   if (found)
@@ -703,10 +714,16 @@ void InputConverterS::ParseNumericalControls_()
         AddToTable(table, MakePPPrefix("Petsc_Options_File"), MakePPEntry(petsc_options_file));
     }
 
+    string max_n_subcycle_transport = GetChildValueS_(structured_controls, "max_n_subcycle_transport", found);
+    if (found) {
+        AddToTable(table, MakePPPrefix("prob", "max_n_subcycle_transport"), MakePPEntry(max_n_subcycle_transport));
+    }
+
     // Steady-state controls.
     map<string,string> ss_controls;
     ss_controls["max_pseudo_time"]                    = "1.e14";
     ss_controls["min_iterations"]                     = "10";
+    ss_controls["max_iterations"]                     = "15";
     ss_controls["limit_iterations"]                   = "20";
     ss_controls["min_iterations_2"]                   = "2";
     ss_controls["time_step_increase_factor"]          = "1.6";
@@ -770,19 +787,9 @@ void InputConverterS::ParseNumericalControls_()
       }
     }
 
-    // AMR controls
-    map<string,string> amr_controls;
-    amr_controls["amr_levels"]                = "1";
-    amr_controls["refinement_ratio"]          = "2";
-    amr_controls["do_amr_subcycling"]         = "true";
-    amr_controls["regrid_interval"]           = "1";
-    amr_controls["blocking_factor"]           = "2";
-    amr_controls["number_error_buffer_cells"] = "1";
-    amr_controls["max_grid_size"]             = "1";
-
     DOMElement* amrc = GetChildByName_(structured_controls,"str_amr_controls", found);
     if (found) {
-      map<string,map<string,string> > rc_data; // rc_data[critName][parm] = val
+      map<string,map<string,vector<string> > > rc_data; // rc_data[critName][parm] = val
 
       DOMNodeList* children = amrc->getChildNodes();
       for (int i=0; i<children->getLength(); ++i) {
@@ -794,17 +801,35 @@ void InputConverterS::ParseNumericalControls_()
 	  string rc_name = GetAttributeValueS_(ielt, "name");
 	  DOMNodeList* rc_children = ielt->getChildNodes();
 
-	  rc_data[rc_name]["max_refinement_level"] = -1;
+	  rc_data[rc_name]["max_refinement_level"].push_back("-1");
 	  for (int j=0; j<rc_children->getLength(); ++j) {
 	    DOMNode* jnode = rc_children->item(j);
 	    if (jnode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 	    char* rc_ename = mm.transcode(jnode->getNodeName());
 
-	    if ( strcmp(rc_ename, "regions") == 0
-		 || strcmp(rc_ename, "max_refinement_level") == 0
-		 || strcmp(rc_ename, "field_name") == 0)
+	    if (strcmp(rc_ename, "max_refinement_level") == 0)
 	    {
-	      rc_data[rc_name][rc_ename] = mm.transcode(jnode->getTextContent());
+	      rc_data[rc_name][rc_ename][0] = mm.transcode(jnode->getTextContent());
+	    }
+	    else if (strcmp(rc_ename, "field_name") == 0)
+	    {
+	      rc_data[rc_name][rc_ename].push_back(mm.transcode(jnode->getTextContent()));
+	    }
+	    else if (strcmp(rc_ename, "regions") == 0)
+	    {
+	      string region_list = mm.transcode(jnode->getTextContent());
+	      vector<string> tokens = BoxLib::Tokenize(region_list,",");
+	      if (tokens.size()<1) {
+		Errors::Message msg;
+		msg << "An error occurred during parsing\n";
+		msg << "numerical_controls->structured_controls->str_amr_controls\n";
+		msg << "Error in regions list \n";
+		msg << "Please correct and try again.\n" ;
+		Exceptions::amanzi_throw(msg);
+	      }
+	      for (int k=0; k<tokens.size(); ++k) {
+		rc_data[rc_name][rc_ename].push_back(tokens[k]);
+	      }
 	    }
 	    else if ( strcmp(rc_ename, "start_time") == 0
 		 || strcmp(rc_ename, "end_time") == 0)
@@ -812,9 +837,9 @@ void InputConverterS::ParseNumericalControls_()
 	      string thisTime = mm.transcode(jnode->getTextContent());
 	      map<string, string>::const_iterator iter = labeled_times_.find(thisTime);
 	      if (iter != labeled_times_.end())
-		rc_data[rc_name][rc_ename] = iter->second;
+		rc_data[rc_name][rc_ename].push_back(iter->second);
 	      else
-		rc_data[rc_name][rc_ename] = thisTime;
+		rc_data[rc_name][rc_ename].push_back(thisTime);
 	    }
 	    else {
 	      if (strcmp(rc_ename, "value_greater") == 0
@@ -822,7 +847,7 @@ void InputConverterS::ParseNumericalControls_()
 		|| strcmp(rc_ename, "adjacent_difference_greater") == 0
 		  || strcmp(rc_ename, "inside_region") == 0)
 	      {
-		rc_data[rc_name][rc_ename] = mm.transcode(jnode->getTextContent());
+		rc_data[rc_name][rc_ename].push_back(mm.transcode(jnode->getTextContent()));
 	      }
 	      else {
 		Errors::Message msg;
@@ -846,44 +871,43 @@ void InputConverterS::ParseNumericalControls_()
 
       if (rc_data.size() > 0) {
 	vector<string> rc_names;;
-	for (map<string,map<string,string> >::const_iterator it=rc_data.begin(); it!=rc_data.end(); ++it) {
+	for (map<string,map<string,vector<string> > >::const_iterator it=rc_data.begin(); it!=rc_data.end(); ++it) {
 	  rc_names.push_back(it->first);
-	  const map<string,string>& rc_map = it->second;
-	  for (map<string,string>::const_iterator it1=rc_map.begin(); it1!=rc_map.end(); ++it1) {
-	    AddToTable(table,
-		       MakePPPrefix("amr", (it->first).c_str(), (it1->first).c_str() ),
-		       MakePPEntry(it1->second));
-	  }
+	  const map<string,vector<string> >& rc_map = it->second;
+	  for (map<string,vector<string> >::const_iterator it1=rc_map.begin(); it1!=rc_map.end(); ++it1) {
+	      AddToTable(table,
+			 MakePPPrefix("amr", (it->first).c_str(), (it1->first).c_str() ),
+			 MakePPEntry(it1->second));
+	    }
 	}
 	AddToTable(table, MakePPPrefix("amr", "refinement_indicators"), MakePPEntry(rc_names));
       }
     }
+  }
 
-    // Figure out max_level
-    int max_level = atoi(amr_controls["amr_levels"].c_str()) - 1;
-    std::stringstream is;
-    is << max_level;
-    AddToTable(table, MakePPPrefix("amr", "max_level"), MakePPEntry(is.str()));
+  // Figure out max_level
+  int max_level = atoi(amr_controls["amr_levels"].c_str()) - 1;
+  std::stringstream is;
+  is << max_level;
+  AddToTable(table, MakePPPrefix("amr", "max_level"), MakePPEntry(is.str()));
 
-    string strToAdd, valToAdd;
-    for (map<string,string>::iterator it=amr_controls.begin(); it!=amr_controls.end(); ++it) {
-      if (it->first != "amr_levels") {
+  string strToAdd, valToAdd;
+  for (map<string,string>::iterator it=amr_controls.begin(); it!=amr_controls.end(); ++it) {
+    if (it->first != "amr_levels") {
 
-	if (it->first == "refinement_ratio"
-	    || it->first == "regrid_interval"
-	    || it->first == "blocking_factor"
-	    || it->first == "number_error_buffer_cells"
-	    || it->first == "max_grid_size")
-	{
-	  vector<string> tokens = BoxLib::Tokenize(it->second,", ");
-	  AddToTable(table, MakePPPrefix("amr", it->first), MakePPEntry(tokens));
-	}
-	else {
-	  AddToTable(table, MakePPPrefix("amr", it->first), MakePPEntry(it->second));
-	}
+      if (it->first == "refinement_ratio"
+	  || it->first == "regrid_interval"
+	  || it->first == "blocking_factor"
+	  || it->first == "number_error_buffer_cells"
+	  || it->first == "max_grid_size")
+      {
+	vector<string> tokens = BoxLib::Tokenize(it->second,", ");
+	AddToTable(table, MakePPPrefix("amr", it->first), MakePPEntry(tokens));
+      }
+      else {
+	AddToTable(table, MakePPPrefix("amr", it->first), MakePPEntry(it->second));
       }
     }
-
   }
 
   ParmParse::appendTable(table);
@@ -1218,150 +1242,72 @@ void InputConverterS::ParseGeochemistry_()
   // chemical engine
   bool flag;
   node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
-  std::string engine = GetAttributeValueS_(static_cast<DOMElement*>(node), "engine");
+  string state = GetAttributeValueS_(static_cast<DOMElement*>(node), "state");
+  if (!(state == "on" ^ state == "off")) {
+    Errors::Message msg;
+    msg << "process_kernal->chemistry->state must be \"on\" or \"off\".\n";
+    msg << "Please correct and try again.\n";
+    Exceptions::amanzi_throw(msg);
+  }
 
-  // process engine
-  bool native(false);
-  if (engine ==  "amanzi") {
-    native = true;
-    AddToTable(table, MakePPPrefix("prob", "chemistry_model"), MakePPEntry("Amanzi"));
+  string model("Amanzi");
 
-    std::string bgdfilename, format("simple");
-    node = GetUniqueElementByTagsString_("geochemistry, amanzi_chemistry, reaction_network", flag);
-    if (flag) {
-      element = static_cast<DOMElement*>(node);
-      bgdfilename = GetAttributeValueS_(element, "file");
-      format = GetAttributeValueS_(element, "format", TYPE_NONE, false, format);
-    } else {
-      bgdfilename = CreateBGDFile(xmlfilename_);
-    }
+  if (state == "on") {
+  
+    string engine = GetAttributeValueS_(static_cast<DOMElement*>(node), "engine");
 
-    AddToTable(table, MakePPPrefix("Chemistry", "Thermodynamic_Database_File"), MakePPEntry(bgdfilename));
-    AddToTable(table, MakePPPrefix("Chemistry", "Thermodynamic_Database_Format"), MakePPEntry(format));
+    // process engine
+    if (engine ==  "amanzi") {
 
-  } else {
-    bool valid_engine(true);
-    std::string file_location;
+      model = "Amanzi";
 
-    if (engine == "pflotran") {
-      AddToTable(table, MakePPPrefix("prob", "chemistry_model"), MakePPEntry("PFloTran"));
-      file_location = "geochemistry, pflotran_chemistry, reaction_network";
-    } else if (engine == "crunchflow") {
-      AddToTable(table, MakePPPrefix("prob", "chemistry_model"), MakePPEntry("CrunchFlow"));
-      file_location = "geochemistry, crunchflow_chemistry, reaction_network";
-    } else {
-      valid_engine = false;
-    }
-
-    // Pass along chemistry engine info.
-    if (valid_engine) {
-
-      // Find the name of the engine-specific input file.
-      node = GetUniqueElementByTagsString_(file_location, flag);
+      std::string bgdfilename, format("simple");
+      node = GetUniqueElementByTagsString_("geochemistry, amanzi_chemistry, reaction_network", flag);
       if (flag) {
-        element = static_cast<DOMElement*>(node);
-        std::string inpfilename = GetAttributeValueS_(element, "file");
-	AddToTable(table, MakePPPrefix("Chemistry", "Engine_Input_File"), MakePPEntry(inpfilename));
+	element = static_cast<DOMElement*>(node);
+	bgdfilename = GetAttributeValueS_(element, "file");
+	format = GetAttributeValueS_(element, "format", TYPE_NONE, false, format);
+      } else {
+	bgdfilename = CreateBGDFile(xmlfilename_);
+      }
+
+      AddToTable(table, MakePPPrefix("Chemistry", "Thermodynamic_Database_File"), MakePPEntry(bgdfilename));
+      AddToTable(table, MakePPPrefix("Chemistry", "Thermodynamic_Database_Format"), MakePPEntry(format));
+
+    } else {
+      bool valid_engine(true);
+      std::string file_location;
+
+      model = "Alquimia";
+
+      if (engine == "pflotran") {
+	AddToTable(table, MakePPPrefix("Chemistry", "Engine"), MakePPEntry("PFloTran"));
+	file_location = "geochemistry, pflotran_chemistry, reaction_network";
+      } else if (engine == "crunchflow") {
+	AddToTable(table, MakePPPrefix("Chemistry", "Engine"), MakePPEntry("CrunchFlow"));
+	file_location = "geochemistry, crunchflow_chemistry, reaction_network";
+      } else {
+	valid_engine = false;
+      }
+
+      // Pass along chemistry engine info.
+      if (valid_engine) {
+
+	// Find the name of the engine-specific input file.
+	node = GetUniqueElementByTagsString_(file_location, flag);
+	if (flag) {
+	  element = static_cast<DOMElement*>(node);
+	  std::string inpfilename = GetAttributeValueS_(element, "file");
+	  AddToTable(table, MakePPPrefix("Chemistry", "Engine_Input_File"), MakePPEntry(inpfilename));
+	}
       }
     }
   }
-
-#if 0
-
-  // FIXME: Lift material properties junk up into code above, as appropriate
-
-
-  DOMNode* geochem = GetUniqueElementByTagsString_("geochemistry`", found);
-  if (found)
-  {
-    bool found;
-
-    if ((chemistry_engine_ != "amanzi") && (chemistry_engine_ != "none"))
-    {
-      // We're using Alquimia.
-      bool rnfound;
-      DOMElement* rxn_network = GetChildByName_(geochem, "reaction_network", rnfound);
-      if (rnfound)
-      {
-        string engine_input = GetAttributeValueS_(rxn_network, "file");
-        AddToTable(table, MakePPPrefix("Chemistry", "Engine_Input_File"), MakePPEntry(engine_input));
-      }
-      else
-      {
-        Errors::Message msg;
-        msg << "\"reaction_network\" not present in Alquimia geochemistry entry.\n";
-        msg << "Please correct and try again.\n";
-        Exceptions::amanzi_throw(msg);
-      }
-    }
-
-    // Reaction database.
-    DOMElement* database = GetChildByName_(geochem, "database", found, true);
-    string db_file = GetAttributeValueS_(database, "name");
-
-    // Radioactive decay.
-    DOMElement* decay = GetChildByName_(geochem, "radioactive_decay", found, false);
-    if (found)
-    {
-      bool found;
-      vector<DOMNode*> solutes = GetChildren_(decay, "solute", found, true);
-      for (size_t i = 0; i < solutes.size(); ++i)
-      {
-        DOMElement* solute = static_cast<DOMElement*>(solutes[i]);
-        string name = GetAttributeValueS_(solute, "name");
-
-        // Rate constant.
-        string rate_constant = GetAttributeValueS_(solute, "rate_constant");
-        AddToTable(table, MakePPPrefix("tracer", name, "firstOrderDecayConstant"), 
-                                       MakePPEntry(rate_constant));
-      }
-    }
-
-    // Constraints.
-    DOMElement* constraints = GetChildByName_(geochem, "constraints", found, true);
-    vector<DOMNode*> all_constraints = GetChildren_(constraints, "constraint", found);
-    for (size_t i = 0; i < all_constraints.size(); ++i)
-    {
-      DOMElement* constraint = static_cast<DOMElement*>(all_constraints[i]);
-      string name = GetAttributeValueS_(constraint, "name");
-
-      // Is the constraints defined in an external file?
-      string filename = GetAttributeValueS_(constraint, "filename", TYPE_NUMERICAL, false);
-      if (!filename.empty())
-      {
-      }
-      else
-      {
-        // Data is given by XML stuff.
-        bool found;
-        vector<DOMNode*> primaries = GetChildren_(constraint, "primary", found, true);
-        for (size_t i = 0; i < primaries.size(); ++i)
-        {
-          DOMElement* primary = static_cast<DOMElement*>(primaries[i]);
-          string name = GetAttributeValueS_(primary, "name");
-          string initial_guess = GetAttributeValueS_(primary, "initial_guess");
-          string type = GetAttributeValueS_(primary, "type");
-        }
-      }
-    }
-
-    // Mineral kinetics.
-    DOMElement* kinetics = GetChildByName_(geochem, "mineral_kinetics", found, false);
-    if (found)
-    {
-      vector<DOMNode*> minerals = GetChildren_(kinetics, "mineral", found);
-      for (size_t i = 0; i < minerals.size(); ++i)
-      {
-        DOMElement* mineral = static_cast<DOMElement*>(minerals[i]);
-        string name = GetAttributeValueS_(mineral, "name");
-        string rate_constant = GetAttributeValueS_(mineral, "rate_constant");
-        string rate_dependence = GetAttributeValueS_(mineral, "rate_dependence", TYPE_NUMERICAL, false);
-        string alpha = GetAttributeValueS_(mineral, "alpha", TYPE_NUMERICAL, false);
-      }
-    }
+  else {
+    model = "Off";
   }
-#endif
 
+  AddToTable(table, MakePPPrefix("prob", "chemistry_model"), MakePPEntry(model));
 
   ParmParse::appendTable(table);
 }
@@ -1531,10 +1477,16 @@ void InputConverterS::ParseMaterials_()
           DOMElement* parameters = GetChildByName_(cap_pressure, "parameters", found, true);
           string alpha = GetAttributeValueS_(parameters, "alpha");
           string sr = GetAttributeValueS_(parameters, "sr");
-          string m = GetAttributeValueS_(parameters, "m");
           AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "alpha"), MakePPEntry(alpha));
           AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "Sr"), MakePPEntry(sr));
-          AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "m"), MakePPEntry(m));
+	  string m, lambda;
+	  if (model == "van_genuchten") {
+	    m = GetAttributeValueS_(parameters, "m");
+	    AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "m"), MakePPEntry(m));
+	  } else {
+	    lambda = GetAttributeValueS_(parameters, "lambda");
+	    AddToTable(table, MakePPPrefix("rock", mat_name, "cpl", "lambda"), MakePPEntry(lambda));
+	  }
           string optional_krel_smoothing_interval = GetAttributeValueS_(parameters, "optional_krel_smoothing_interval", TYPE_NUMERICAL, false);
           if (!optional_krel_smoothing_interval.empty())
           {
@@ -1717,6 +1669,8 @@ void InputConverterS::ParsePhases_()
   vector<string> phase_names;
   bool found;
   DOMElement* liquid_phase = static_cast<DOMElement*>(GetUniqueElementByTagsString_("phases, liquid_phase", found));
+  liquid_density_ = -1;
+  liquid_viscosity_ = -1;
   if (found)
   {
     string name = GetAttributeValueS_(liquid_phase, "name");
@@ -1724,7 +1678,9 @@ void InputConverterS::ParsePhases_()
     bool found;
     string viscosity = GetChildValueS_(liquid_phase, "viscosity", found, true);
     AddToTable(table, MakePPPrefix("phase", name, "viscosity"), MakePPEntry(viscosity));
+    liquid_viscosity_ = atof(viscosity.c_str());
     string density = GetChildValueS_(liquid_phase, "density", found, true);
+    liquid_density_ = atof(density.c_str());
     AddToTable(table, MakePPPrefix("phase", name, "density"), MakePPEntry(density));
     string eos = GetChildValueS_(liquid_phase, "eos", found, false);
     if (found)
@@ -1750,13 +1706,14 @@ void InputConverterS::ParsePhases_()
     }
     // Assume we have a single component with the same 
     // name as the liquid phase.
-    solutes_.push_back(name);
     vector<string> components(1, name);
     AddToTable(table, MakePPPrefix("phase", name, "comps"), MakePPEntry(components));
     
     // Zero diffusivity by default.
-      AddToTable(table, MakePPPrefix("phase", name, "diffusivity"), MakePPEntry(0.0));
+    AddToTable(table, MakePPPrefix("phase", name, "diffusivity"), MakePPEntry(0.0));
   }
+
+  AddToTable(table, MakePPPrefix("tracer", "tracers"), MakePPEntry(solutes_));
 
   DOMElement* solid_phase = static_cast<DOMElement*>(GetUniqueElementByTagsString_("phases, solid_phase", found));
   if (found)
@@ -1795,6 +1752,7 @@ void InputConverterS::ParseInitialConditions_()
         bool pfound = false;
         DOMElement* lp = GetChildByName_(ic, "liquid_phase", pfound);
         if (pfound) {
+	  bool sfound = false;
           bool cfound = false;
           DOMElement* lc = GetChildByName_(lp, "liquid_component", cfound);
           if (cfound) {
@@ -1859,40 +1817,77 @@ void InputConverterS::ParseInitialConditions_()
             msg << "Please correct and try again.\n";
             Exceptions::amanzi_throw(msg);
           }
+
+	  // solute ICs
+	  bool scfound = false;
+	  DOMElement* sc = GetChildByName_(lp, "solute_component", scfound);
+	  if (scfound)
+	  {
+	    sfound = true;
+
+	    vector<string> conc(solutes_.size());
+	    for (int s=0; s<solutes_.size(); ++s) {
+	      conc[s] = "0.0";
+	    }
+	    vector<DOMNode*> sols = GetChildren_(sc, "uniform_conc", found);
+	    if (sols.size() > 0) {
+	      for (size_t si=0; si<sols.size(); ++si)
+	      {
+		DOMElement* ss = static_cast<DOMElement*>(sols[si]);
+		string this_spec = GetAttributeValueS_(ss, "name");
+		string this_conc = GetAttributeValueS_(ss, "value");
+		bool found = false;
+		for (int s=0; s<solutes_.size() && !found; ++s) {
+		  if (this_spec == solutes_[s]) {
+		    conc[s] = this_conc;
+		    found = true;
+		  }
+		}
+		if (!found) {
+		  // Err
+		}
+	      }
+	      for (int s=0; s<solutes_.size(); ++s) {
+		AddToTable(table, MakePPPrefix("tracer", solutes_[s], ic_name, "val"), MakePPEntry(conc[s]));
+		AddToTable(table, MakePPPrefix("tracer", solutes_[s], ic_name, "type"), MakePPEntry("concentration"));
+	      }
+	    }
+	  }
+
+	  // Sniff out geochemical conditions, if any.
+	  bool gcfound = false;
+	  DOMElement* gc = GetChildByName_(lp, "geochemistry", gcfound);
+	  if (gcfound)
+	  {
+	    sfound = true;
+	    string condition_name = GetAttributeValueS_(gc, "constraint");
+	    for (int s = 0; s<solutes_.size(); ++s) {
+	      AddToTable(table, MakePPPrefix("tracer", solutes_[s], ic_name, "geochemical_condition"), MakePPEntry(condition_name));
+	      AddToTable(table, MakePPPrefix("tracer", solutes_[s], ic_name, "type"), MakePPEntry("concentration"));
+	    }
+	  }
+
+	  // Assigned regions.
+	  bool rfound = false;
+	  vector<string> assigned_regions = GetChildVectorS_(ic, "assigned_regions", rfound, true);
+	  if (rfound) {
+	    AddToTable(table, MakePPPrefix("comp", "ics", ic_name, "regions"), MakePPEntry(assigned_regions));
+	    if (sfound) {
+	      for (size_t i = 0; i < solutes_.size(); ++i) {
+		AddToTable(table, MakePPPrefix("tracer", solutes_[i], ic_name, "regions"), MakePPEntry(assigned_regions));
+	      }
+	    }
+	  } else {
+	    Errors::Message msg;
+	    msg << "\"assigned_regions\" not present in initial_condition \"" << ic_name << "\".\n";
+	    msg << "Please correct and try again.\n";
+	    Exceptions::amanzi_throw(msg);
+	  }
+
         }
         else {
           Errors::Message msg;
           msg << "\"liquid_phase\" not present in initial condition \"" << ic_name << "\".\n";
-          msg << "Please correct and try again.\n";
-          Exceptions::amanzi_throw(msg);
-        }
-
-        // Sniff out geochemical conditions, if any.
-        bool gcfound = false;
-        DOMElement* gc = GetChildByName_(ic, "geochemistry", gcfound);
-        if (gcfound)
-        {
-          bool cfound;
-          vector<DOMNode*> nodes = GetChildren_(gc, "constraint", cfound, true);
-          for (size_t c = 0; c < nodes.size(); ++c)
-          {
-            DOMElement* constraint = static_cast<DOMElement*>(nodes[c]);
-            string condition_name = GetAttributeValueS_(constraint, "name");
-            AddToTable(table, MakePPPrefix("tracer", solutes_[i], ic_name, "geochemical_condition"), MakePPEntry(condition_name));
-            AddToTable(table, MakePPPrefix("tracer", solutes_[i], ic_name, "type"), MakePPEntry("concentration"));
-          }
-        }
-
-        // Assigned regions.
-        bool rfound = false;
-        vector<string> assigned_regions = GetChildVectorS_(ic, "assigned_regions", rfound, true);
-        if (rfound) {
-          AddToTable(table, MakePPPrefix("comp", "ics", ic_name, "regions"), MakePPEntry(assigned_regions));
-          for (size_t i = 0; i < solutes_.size(); ++i)
-            AddToTable(table, MakePPPrefix("tracer", solutes_[i], ic_name, "regions"), MakePPEntry(assigned_regions));
-        } else {
-          Errors::Message msg;
-          msg << "\"assigned_regions\" not present in initial_condition \"" << ic_name << "\".\n";
           msg << "Please correct and try again.\n";
           Exceptions::amanzi_throw(msg);
         }
@@ -1919,6 +1914,7 @@ void InputConverterS::ParseBoundaryConditions_()
     if (bfound)
     {
       vector<string> bc_names;
+      vector<string> tbc_names;
       for (size_t i = 0; i < bcs.size(); ++i)
       {
         DOMElement* bc = static_cast<DOMElement*>(bcs[i]);
@@ -1929,6 +1925,7 @@ void InputConverterS::ParseBoundaryConditions_()
         bool pfound = false;
         DOMElement* lp = GetChildByName_(bc, "liquid_phase", pfound);
         if (pfound) {
+	  bool sfound = false;
           bool cfound = false;
           DOMElement* lc = GetChildByName_(lp, "liquid_component", cfound);
           if (cfound) {
@@ -1956,16 +1953,27 @@ void InputConverterS::ParseBoundaryConditions_()
 
                   if (bc_type_labels[i]!="linear_pressure"
                       && bc_type_labels[i]!="seepage_face"
-                      && bc_type_labels[i]!="hydrostatic"
                       && bc_type_labels[i]!="linear_hydrostatic")
                   {
-                    values.push_back(GetAttributeValueS_(elt, "value"));
-                    string this_start = GetAttributeValueS_(elt, "start");
-                    map<string, string>::const_iterator iter = labeled_times_.find(this_start);
-                    if (iter != labeled_times_.end())
-                      starts.push_back(iter->second);
-                    else
-                      starts.push_back(ConvertTimeToSeconds(this_start));
+		    string this_value = GetAttributeValueS_(elt, "value");
+		    if (bc_type_labels[i]=="inward_mass_flux"
+			|| bc_type_labels[i]=="outward_mass_flux") {
+		      map<string, string>::const_iterator iter = labeled_area_mass_fluxes_.find(this_value);
+		      if (iter != labeled_area_mass_fluxes_.end())
+			values.push_back(iter->second);
+		      else
+			values.push_back(this_value);
+		    }
+		    else {
+		      values.push_back(this_value);
+		    }
+
+		    string this_start = GetAttributeValueS_(elt, "start");
+		    map<string, string>::const_iterator iter = labeled_times_.find(this_start);
+		    if (iter != labeled_times_.end())
+		      starts.push_back(ConvertTimeToSeconds(iter->second));
+		    else
+		      starts.push_back(ConvertTimeToSeconds(this_start));
                   }
 
                   // Get extra info, if required
@@ -1993,7 +2001,10 @@ void InputConverterS::ParseBoundaryConditions_()
                   }
 
                   if (bc_type_labels[i]=="seepage_face") {
-                    imf.push_back(GetAttributeValueS_(elt, "inward_mass_flux"));
+		    Errors::Message msg;
+		    msg << "\"seepage_face\" boundary_condition not supported by structured\".\n";
+		    Exceptions::amanzi_throw(msg);
+                    //imf.push_back(GetAttributeValueS_(elt, "inward_mass_flux"));
                   }
                 }
 
@@ -2029,40 +2040,42 @@ void InputConverterS::ParseBoundaryConditions_()
             msg << "Please correct and try again.\n";
             Exceptions::amanzi_throw(msg);
           }
+
+	  // Sniff out geochemical conditions, if any.
+	  bool gcfound = false;
+	  DOMElement* gc = GetChildByName_(lp, "geochemistry", gcfound);
+	  if (gcfound)
+	  {
+	    sfound = true;
+	    string condition_name = GetAttributeValueS_(gc, "constraint");
+	    for (int s = 0; s<solutes_.size(); ++s) {
+	      AddToTable(table, MakePPPrefix("tracer", solutes_[s], bc_name, "geochemical_condition"), MakePPEntry(condition_name));
+	      AddToTable(table, MakePPPrefix("tracer", solutes_[s], bc_name, "type"), MakePPEntry("concentration"));
+	    }
+	  }
+
+	  // Assigned regions.
+	  bool rfound = false;
+	  vector<string> assigned_regions = GetChildVectorS_(bc, "assigned_regions", rfound, true);
+	  if (rfound) {
+	    AddToTable(table, MakePPPrefix("comp", "bcs", bc_name, "regions"), MakePPEntry(assigned_regions));
+	    if (sfound) {
+	      tbc_names.push_back(bc_name);
+	      for (size_t i = 0; i < solutes_.size(); ++i) {
+		AddToTable(table, MakePPPrefix("tracer", solutes_[i], bc_name, "regions"), MakePPEntry(assigned_regions));
+	      }
+	    }
+	  } else {
+	    Errors::Message msg;
+	    msg << "\"assigned_regions\" not present in boundary_condition \"" << bc_name << "\".\n";
+	    msg << "Please correct and try again.\n";
+	    Exceptions::amanzi_throw(msg);
+	  }
+
         }
         else {
           Errors::Message msg;
           msg << "\"liquid_phase\" not present in boundary_condition \"" << bc_name << "\".\n";
-          msg << "Please correct and try again.\n";
-          Exceptions::amanzi_throw(msg);
-        }
-
-        // Sniff out geochemical conditions, if any.
-        bool gcfound = false;
-        DOMElement* gc = GetChildByName_(bc, "geochemistry", gcfound);
-        if (gcfound)
-        {
-          bool cfound;
-          vector<DOMNode*> nodes = GetChildren_(gc, "constraint", cfound, true);
-          for (size_t c = 0; c < nodes.size(); ++c)
-          {
-            DOMElement* constraint = static_cast<DOMElement*>(nodes[c]);
-            string condition_name = GetAttributeValueS_(constraint, "name");
-            AddToTable(table, MakePPPrefix("tracer", bc_name, "geochemical_condition"), MakePPEntry(condition_name));
-            AddToTable(table, MakePPPrefix("tracer", bc_name, "type"), MakePPEntry("concentration"));
-          }
-        }
-
-        // Assigned regions.
-        bool rfound = false;
-        vector<string> assigned_regions = GetChildVectorS_(bc, "assigned_regions", rfound, true);
-        if (rfound) {
-          AddToTable(table, MakePPPrefix("comp", "bcs", bc_name, "regions"), MakePPEntry(assigned_regions));
-          for (size_t i = 0; i < solutes_.size(); ++i)
-            AddToTable(table, MakePPPrefix("tracer", solutes_[i], bc_name, "regions"), MakePPEntry(assigned_regions));
-        } else {
-          Errors::Message msg;
-          msg << "\"assigned_regions\" not present in boundary_condition \"" << bc_name << "\".\n";
           msg << "Please correct and try again.\n";
           Exceptions::amanzi_throw(msg);
         }
@@ -2071,7 +2084,7 @@ void InputConverterS::ParseBoundaryConditions_()
       // List boundary conditions where needed.
       AddToTable(table, MakePPPrefix("comp", "bc_labels"), MakePPEntry(bc_names));
       for (size_t i = 0; i < solutes_.size(); ++i)
-        AddToTable(table, MakePPPrefix("tracer", solutes_[i], "tbcs"), MakePPEntry(bc_names));
+        AddToTable(table, MakePPPrefix("tracer", solutes_[i], "tbcs"), MakePPEntry(tbc_names));
     }
   }
   ParmParse::appendTable(table);
