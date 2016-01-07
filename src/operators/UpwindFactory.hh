@@ -20,6 +20,7 @@
 
 #include "Upwind.hh"
 #include "UpwindDivK.hh"
+#include "UpwindFlux.hh"
 #include "UpwindSecondOrder.hh"
 #include "UpwindStandard.hh"
 
@@ -54,6 +55,11 @@ Teuchos::RCP<Upwind<Model> > UpwindFactory<Model>::Create(
   if (name == "standard") {
     Teuchos::ParameterList sublist = plist.sublist("upwind standard parameters");
     Teuchos::RCP<UpwindStandard<Model> > upwind = Teuchos::rcp(new UpwindStandard<Model>(mesh, model));
+    upwind->Init(sublist);
+    return upwind;
+  } else if (name == "flux") {
+    Teuchos::ParameterList sublist = plist.sublist("upwind flux parameters");
+    Teuchos::RCP<UpwindFlux<Model> > upwind = Teuchos::rcp(new UpwindFlux<Model>(mesh, model));
     upwind->Init(sublist);
     return upwind;
   } else if (name == "divk") {

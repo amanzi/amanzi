@@ -1,7 +1,7 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -14,15 +14,17 @@
 #include <iostream>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
 
+// Operators
 #include "OperatorDefs.hh"
 #include "UpwindStandard.hh"
 #include "UpwindDivK.hh"
@@ -150,6 +152,7 @@ TEST(UPWIND) {
 
     ModelUpwindFn func = &Model::Value;
     upwind1.Compute(flux, solution, bc_model, bc_value, field, upw_field1, func);
+std::cout << *upw_field1.ViewComponent("face", true) << std::endl;
 
     UpwindDivK<Model> upwind2(mesh, model);
     upwind2.Init(ulist);
