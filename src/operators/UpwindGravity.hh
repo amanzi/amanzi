@@ -7,33 +7,40 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Upwind a cell-centered field (e.g. rel perm) using a given 
+  constant velocity (e.g. gravity).
 */
 
-#ifndef AMANZI_UPWIND_STANDARD_HH_
-#define AMANZI_UPWIND_STANDARD_HH_
+#ifndef AMANZI_GRAVITY_HH_
+#define AMANZI_GRAVITY_HH_
 
 #include <string>
 #include <vector>
 
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+// Amanzi
 #include "CompositeVector.hh"
 #include "Mesh.hh"
 #include "mfd3d_diffusion.hh"
+#include "Point.hh"
 
+// Operators
 #include "Upwind.hh"
 
 namespace Amanzi {
 namespace Operators {
 
 template<class Model>
-class UpwindStandard : public Upwind<Model> {
+class UpwindGravity : public Upwind<Model> {
  public:
-  UpwindStandard(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                 Teuchos::RCP<const Model> model)
+  UpwindGravity(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+               Teuchos::RCP<const Model> model)
       : Upwind<Model>(mesh, model) {};
-  ~UpwindStandard() {};
+  ~UpwindGravity() {};
 
   // main methods
   void Init(Teuchos::ParameterList& plist);
@@ -50,6 +57,7 @@ class UpwindStandard : public Upwind<Model> {
  private:
   int method_, order_;
   double tolerance_;
+  AmanziGeometry::Point g_;
 };
 
 
@@ -57,20 +65,24 @@ class UpwindStandard : public Upwind<Model> {
 * Public init method. It is not yet used.
 ****************************************************************** */
 template<class Model>
-void UpwindStandard<Model>::Init(Teuchos::ParameterList& plist)
+void UpwindGravity<Model>::Init(Teuchos::ParameterList& plist)
 {
   method_ = Operators::OPERATOR_UPWIND_FLUX;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
 
   order_ = plist.get<int>("order", 1);
+
+  int dim = mesh_->space_dimension();
+  g_[dim - 1] = -1.0;
 }
 
 
 /* ******************************************************************
-* Flux-based upwind.
+* Upwind field using flux and place the result in field_upwind.
+* Upwinded field must be calculated on all faces of the owned cells.
 ****************************************************************** */
 template<class Model>
-void UpwindStandard<Model>::Compute(
+void UpwindGravity<Model>::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value,
     const CompositeVector& field, CompositeVector& field_upwind,
@@ -80,56 +92,51 @@ void UpwindStandard<Model>::Compute(
   ASSERT(field_upwind.HasComponent("face"));
 
   field.ScatterMasterToGhosted("cell");
-  flux.ScatterMasterToGhosted("face");
-
-  const Epetra_MultiVector& flx_face = *flux.ViewComponent("face", true);
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
+  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent("face", true);
   // const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
-  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent("face", true);
-  upw_face.PutScalar(0.0);
-
-  double flxmin, flxmax;
-  flx_face.MinValue(&flxmin);
-  flx_face.MaxValue(&flxmax);
-  double tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
-
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  std::vector<int> dirs;
-  AmanziMesh::Entity_ID_List faces;
+  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  AmanziMesh::Entity_ID_List cells;
   WhetStone::MFD3D_Diffusion mfd(mesh_);
 
-  for (int c = 0; c < ncells_wghost; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-    double kc(fld_cell[0][c]);
+  int c1, c2, dir;
+  double kc1, kc2;
+  for (int f = 0; f < nfaces_wghost; ++f) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
 
-    for (int n = 0; n < nfaces; n++) {
-      int f = faces[n];
-      bool flag = (flx_face[0][f] * dirs[n] <= -tol);  // upwind flag
-      
-      // Internal faces. We average field on almost vertical faces. 
-      if (bc_model[f] == OPERATOR_BC_NONE && fabs(flx_face[0][f]) <= tol) { 
-        double tmp(0.5);
-        int c2 = mfd.cell_get_face_adj_cell(c, f);
-        if (c2 >= 0) { 
-          double v1 = mesh_->cell_volume(c);
-          double v2 = mesh_->cell_volume(c2);
-          tmp = v2 / (v1 + v2);
-        }
-        upw_face[0][f] += kc * tmp; 
-      // Boundary faces. We upwind only on inflow dirichlet faces.
-      } else if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
-        upw_face[0][f] = ((*model_).*Value)(c, bc_value[f]);
-      } else if (bc_model[f] == OPERATOR_BC_NEUMANN && flag) {
-        // upw_face[0][f] = ((*model_).*Value)(c, sol_face[0][f]);
-        upw_face[0][f] = kc;
-      } else if (bc_model[f] == OPERATOR_BC_MIXED && flag) {
-        upw_face[0][f] = kc;
-      // Internal and boundary faces. 
-      } else if (!flag) {
-        upw_face[0][f] = kc;
+    c1 = cells[0];
+    kc1 = fld_cell[0][c1];
+
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
+    double flx_face = g_ * normal;
+    bool flag = (flx_face <= -tolerance_);  // upwind flag
+
+    if (ncells == 2) { 
+      c2 = cells[1];
+      kc2 = fld_cell[0][c2];
+
+      // We average field on almost vertical faces. 
+      if (fabs(flx_face) <= tolerance_) { 
+        double v1 = mesh_->cell_volume(c1);
+        double v2 = mesh_->cell_volume(c2);
+
+        double tmp = v2 / (v1 + v2);
+        upw_face[0][f] = kc1 * tmp + kc2 * (1.0 - tmp); 
+      } else {
+        upw_face[0][f] = (flag) ? kc2 : kc1; 
       }
+
+    // We upwind only on inflow dirichlet faces.
+    } else {
+      upw_face[0][f] = kc1;
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
+        upw_face[0][f] = ((*model_).*Value)(c1, bc_value[f]);
+      }
+    // if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+    //   upw_face[0][f] = ((*model_).*Value)(c, sol_face[0][f]);
+    // }
     }
   }
 }

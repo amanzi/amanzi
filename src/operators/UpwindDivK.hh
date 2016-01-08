@@ -46,7 +46,6 @@ class UpwindDivK : public Upwind<Model> {
                double (Model::*Value)(int, double) const);
 
  private:
-  using Upwind<Model>::vo_;
   using Upwind<Model>::mesh_;
   using Upwind<Model>::model_;
 
@@ -62,8 +61,6 @@ class UpwindDivK : public Upwind<Model> {
 template<class Model>
 void UpwindDivK<Model>::Init(Teuchos::ParameterList& plist)
 {
-  vo_ = Teuchos::rcp(new VerboseObject("UpwindDivK", plist));
-
   method_ = Operators::OPERATOR_UPWIND_FLUX;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
 
@@ -83,8 +80,6 @@ void UpwindDivK<Model>::Compute(
 {
   ASSERT(field.HasComponent("cell"));
   ASSERT(field_upwind.HasComponent("face"));
-
-  Teuchos::OSTab tab = vo_->getOSTab();
 
   field.ScatterMasterToGhosted("cell");
   flux.ScatterMasterToGhosted("face");

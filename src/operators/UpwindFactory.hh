@@ -21,6 +21,7 @@
 #include "Upwind.hh"
 #include "UpwindDivK.hh"
 #include "UpwindFlux.hh"
+#include "UpwindGravity.hh"
 #include "UpwindSecondOrder.hh"
 #include "UpwindStandard.hh"
 
@@ -52,23 +53,24 @@ Teuchos::RCP<Upwind<Model> > UpwindFactory<Model>::Create(
   }
 
   std::string name = plist.get<std::string>("upwind method");
+  Teuchos::ParameterList sublist = plist.sublist("upwind " + name + " standard parameters");
   if (name == "standard") {
-    Teuchos::ParameterList sublist = plist.sublist("upwind standard parameters");
-    Teuchos::RCP<UpwindStandard<Model> > upwind = Teuchos::rcp(new UpwindStandard<Model>(mesh, model));
-    upwind->Init(sublist);
-    return upwind;
-  } else if (name == "flux") {
-    Teuchos::ParameterList sublist = plist.sublist("upwind flux parameters");
     Teuchos::RCP<UpwindFlux<Model> > upwind = Teuchos::rcp(new UpwindFlux<Model>(mesh, model));
     upwind->Init(sublist);
     return upwind;
+  } else if (name == "flux") {
+    Teuchos::RCP<UpwindFlux<Model> > upwind = Teuchos::rcp(new UpwindFlux<Model>(mesh, model));
+    upwind->Init(sublist);
+    return upwind;
+  } else if (name == "gravity") {
+    Teuchos::RCP<UpwindGravity<Model> > upwind = Teuchos::rcp(new UpwindGravity<Model>(mesh, model));
+    upwind->Init(sublist);
+    return upwind;
   } else if (name == "divk") {
-    Teuchos::ParameterList sublist = plist.sublist("upwind divk parameters");
     Teuchos::RCP<UpwindDivK<Model> > upwind = Teuchos::rcp(new UpwindDivK<Model>(mesh, model));
     upwind->Init(sublist);
     return upwind;
   } else if (name == "second-order") {
-    Teuchos::ParameterList sublist = plist.sublist("upwind second-order parameters");
     Teuchos::RCP<UpwindSecondOrder<Model> > upwind = Teuchos::rcp(new UpwindSecondOrder<Model>(mesh, model));
     upwind->Init(sublist);
     return upwind;

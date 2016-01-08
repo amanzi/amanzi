@@ -27,7 +27,6 @@
 #include "CompositeVector.hh"
 #include "Mesh.hh"
 #include "mfd3d_diffusion.hh"
-#include "VerboseObject.hh"
 
 // Operators
 #include "Upwind.hh"
@@ -52,7 +51,6 @@ class UpwindFlux : public Upwind<Model> {
                double (Model::*Value)(int, double) const);
 
  private:
-  using Upwind<Model>::vo_;
   using Upwind<Model>::mesh_;
   using Upwind<Model>::model_;
 
@@ -68,8 +66,6 @@ class UpwindFlux : public Upwind<Model> {
 template<class Model>
 void UpwindFlux<Model>::Init(Teuchos::ParameterList& plist)
 {
-  vo_ = Teuchos::rcp(new VerboseObject("UpwindFlux", plist));
-
   method_ = Operators::OPERATOR_UPWIND_FLUX;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
 
@@ -90,8 +86,6 @@ void UpwindFlux<Model>::Compute(
 {
   ASSERT(field.HasComponent("cell"));
   ASSERT(field_upwind.HasComponent("face"));
-
-  Teuchos::OSTab tab = vo_->getOSTab();
 
   field.ScatterMasterToGhosted("cell");
   flux.ScatterMasterToGhosted("face");

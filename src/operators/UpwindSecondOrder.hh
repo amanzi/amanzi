@@ -15,15 +15,16 @@
 #include <string>
 #include <vector>
 
-#include "Epetra_IntVector.h"
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+// Amanzi
 #include "CompositeVector.hh"
 #include "Mesh.hh"
 #include "mfd3d_diffusion.hh"
-#include "VerboseObject.hh"
 
+// Operators
 #include "Upwind.hh"
 
 namespace Amanzi {
@@ -46,7 +47,6 @@ class UpwindSecondOrder : public Upwind<Model> {
                double (Model::*Value)(int, double) const);
 
  private:
-  using Upwind<Model>::vo_;
   using Upwind<Model>::mesh_;
   using Upwind<Model>::model_;
 
@@ -62,8 +62,6 @@ class UpwindSecondOrder : public Upwind<Model> {
 template<class Model>
 void UpwindSecondOrder<Model>::Init(Teuchos::ParameterList& plist)
 {
-  vo_ = Teuchos::rcp(new VerboseObject("UpwindSecondOrder", plist));
-
   method_ = Operators::OPERATOR_UPWIND_FLUX;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
 
@@ -84,8 +82,6 @@ void UpwindSecondOrder<Model>::Compute(
   ASSERT(field.HasComponent("cell"));
   ASSERT(field.HasComponent("grad"));
   ASSERT(field_upwind.HasComponent("face"));
-
-  Teuchos::OSTab tab = vo_->getOSTab();
 
   field.ScatterMasterToGhosted("cell");
   flux.ScatterMasterToGhosted("face");

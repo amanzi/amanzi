@@ -66,7 +66,6 @@ class Upwind {
                        double (Model::*Value)(int, double) const) = 0;
 
  protected:
-  Teuchos::RCP<VerboseObject> vo_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<const Model> model_;
 };
