@@ -34,7 +34,7 @@
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionMFD.hh"
 #include "UpwindSecondOrder.hh"
-#include "UpwindStandard.hh"
+#include "UpwindFlux.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -193,7 +193,7 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
 }
 
 TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
-  RunTestDiffusionDivK2D<UpwindStandard<HeatConduction> >("diffusion operator divk", "upwind");
+  RunTestDiffusionDivK2D<UpwindFlux<HeatConduction> >("diffusion operator divk", "upwind");
 }
 
 TEST(OPERATOR_DIFFUSION_DIVK_SECOND_ORDER) {
@@ -290,7 +290,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   // Create upwind model
   Teuchos::ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
-  UpwindStandard<HeatConduction> upwind(mesh, knc);
+  UpwindFlux<HeatConduction> upwind(mesh, knc);
   upwind.Init(ulist);
 
   knc->UpdateValues(*flux);  // argument is not used

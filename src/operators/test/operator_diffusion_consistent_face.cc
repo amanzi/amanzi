@@ -34,7 +34,6 @@
 
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionMFD.hh"
-#include "UpwindStandard.hh"
 
 int BoundaryFaceGetCell(const Amanzi::AmanziMesh::Mesh& mesh, int f)
 {

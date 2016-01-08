@@ -30,11 +30,9 @@
 
 // Operators
 #include "Analytic05.hh"
-
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionMFD.hh"
 #include "UpwindSecondOrder.hh"
-#include "UpwindStandard.hh"
 
 
 /* *****************************************************************

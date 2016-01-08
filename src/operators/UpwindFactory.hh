@@ -15,15 +15,17 @@
 #include <string>
 #include <vector>
 
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+// Operators
 #include "Upwind.hh"
+#include "UpwindArithmeticAverage.hh"
 #include "UpwindDivK.hh"
 #include "UpwindFlux.hh"
 #include "UpwindGravity.hh"
 #include "UpwindSecondOrder.hh"
-#include "UpwindStandard.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -54,11 +56,7 @@ Teuchos::RCP<Upwind<Model> > UpwindFactory<Model>::Create(
 
   std::string name = plist.get<std::string>("upwind method");
   Teuchos::ParameterList sublist = plist.sublist("upwind " + name + " standard parameters");
-  if (name == "standard") {
-    Teuchos::RCP<UpwindFlux<Model> > upwind = Teuchos::rcp(new UpwindFlux<Model>(mesh, model));
-    upwind->Init(sublist);
-    return upwind;
-  } else if (name == "flux") {
+  if (name == "standard" || name == "flux") {
     Teuchos::RCP<UpwindFlux<Model> > upwind = Teuchos::rcp(new UpwindFlux<Model>(mesh, model));
     upwind->Init(sublist);
     return upwind;
@@ -72,6 +70,10 @@ Teuchos::RCP<Upwind<Model> > UpwindFactory<Model>::Create(
     return upwind;
   } else if (name == "second-order") {
     Teuchos::RCP<UpwindSecondOrder<Model> > upwind = Teuchos::rcp(new UpwindSecondOrder<Model>(mesh, model));
+    upwind->Init(sublist);
+    return upwind;
+  } else if (name == "arithmetic average") {
+    Teuchos::RCP<UpwindArithmeticAverage<Model> > upwind = Teuchos::rcp(new UpwindArithmeticAverage<Model>(mesh, model));
     upwind->Init(sublist);
     return upwind;
   } else {

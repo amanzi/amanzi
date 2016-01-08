@@ -26,8 +26,8 @@
 
 // Operators
 #include "OperatorDefs.hh"
-#include "UpwindStandard.hh"
 #include "UpwindDivK.hh"
+#include "UpwindFlux.hh"
 
 namespace Amanzi{
 
@@ -147,12 +147,11 @@ TEST(UPWIND) {
 
     // Create two upwind models
     ParameterList& ulist = plist.sublist("upwind");
-    UpwindStandard<Model> upwind1(mesh, model);
+    UpwindFlux<Model> upwind1(mesh, model);
     upwind1.Init(ulist);
 
     ModelUpwindFn func = &Model::Value;
     upwind1.Compute(flux, solution, bc_model, bc_value, field, upw_field1, func);
-std::cout << *upw_field1.ViewComponent("face", true) << std::endl;
 
     UpwindDivK<Model> upwind2(mesh, model);
     upwind2.Init(ulist);

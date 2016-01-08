@@ -26,7 +26,6 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "Mesh.hh"
-#include "mfd3d_diffusion.hh"
 
 // Operators
 #include "Upwind.hh"
@@ -103,7 +102,6 @@ void UpwindFlux<Model>::Compute(
 
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   AmanziMesh::Entity_ID_List cells;
-  WhetStone::MFD3D_Diffusion mfd(mesh_);
 
   int c1, c2, dir;
   double kc1, kc2;

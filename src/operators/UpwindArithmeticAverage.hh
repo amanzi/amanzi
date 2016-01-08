@@ -8,12 +8,11 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Upwind a cell-centered field (e.g. rel perm) using a given 
-  constant velocity (e.g. gravity).
+  A face-based field is defined by volume averaging of cell-centered data.
 */
 
-#ifndef AMANZI_GRAVITY_HH_
-#define AMANZI_GRAVITY_HH_
+#ifndef AMANZI_ARITHMETIC_AVERAGE_HH_
+#define AMANZI_ARITHMETIC_AVERAGE_HH_
 
 #include <string>
 #include <vector>
@@ -34,12 +33,12 @@ namespace Amanzi {
 namespace Operators {
 
 template<class Model>
-class UpwindGravity : public Upwind<Model> {
+class UpwindArithmeticAverage : public Upwind<Model> {
  public:
-  UpwindGravity(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-               Teuchos::RCP<const Model> model)
+  UpwindArithmeticAverage(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                          Teuchos::RCP<const Model> model)
       : Upwind<Model>(mesh, model) {};
-  ~UpwindGravity() {};
+  ~UpwindArithmeticAverage() {};
 
   // main methods
   void Init(Teuchos::ParameterList& plist);
@@ -56,7 +55,6 @@ class UpwindGravity : public Upwind<Model> {
  private:
   int method_, order_;
   double tolerance_;
-  AmanziGeometry::Point g_;
 };
 
 
@@ -64,15 +62,11 @@ class UpwindGravity : public Upwind<Model> {
 * Public init method. It is not yet used.
 ****************************************************************** */
 template<class Model>
-void UpwindGravity<Model>::Init(Teuchos::ParameterList& plist)
+void UpwindArithmeticAverage<Model>::Init(Teuchos::ParameterList& plist)
 {
-  method_ = Operators::OPERATOR_UPWIND_GRAVITY;
+  method_ = OPERATOR_UPWIND_ARITHMETIC_AVERAGE;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
-
   order_ = plist.get<int>("order", 1);
-
-  int dim = mesh_->space_dimension();
-  g_[dim - 1] = -1.0;
 }
 
 
@@ -81,7 +75,7 @@ void UpwindGravity<Model>::Init(Teuchos::ParameterList& plist)
 * Upwinded field must be calculated on all faces of the owned cells.
 ****************************************************************** */
 template<class Model>
-void UpwindGravity<Model>::Compute(
+void UpwindArithmeticAverage<Model>::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value,
     const CompositeVector& field, CompositeVector& field_upwind,
@@ -91,9 +85,9 @@ void UpwindGravity<Model>::Compute(
   ASSERT(field_upwind.HasComponent("face"));
 
   field.ScatterMasterToGhosted("cell");
+
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
   Epetra_MultiVector& upw_face = *field_upwind.ViewComponent("face", true);
-  // const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   AmanziMesh::Entity_ID_List cells;
@@ -107,34 +101,18 @@ void UpwindGravity<Model>::Compute(
     c1 = cells[0];
     kc1 = fld_cell[0][c1];
 
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
-    double flx_face = g_ * normal;
-    bool flag = (flx_face <= -tolerance_);  // upwind flag
-
     if (ncells == 2) { 
       c2 = cells[1];
       kc2 = fld_cell[0][c2];
 
-      // We average field on almost vertical faces. 
-      if (fabs(flx_face) <= tolerance_) { 
-        double v1 = mesh_->cell_volume(c1);
-        double v2 = mesh_->cell_volume(c2);
+      double v1 = mesh_->cell_volume(c1);
+      double v2 = mesh_->cell_volume(c2);
 
-        double tmp = v2 / (v1 + v2);
-        upw_face[0][f] = kc1 * tmp + kc2 * (1.0 - tmp); 
-      } else {
-        upw_face[0][f] = (flag) ? kc2 : kc1; 
-      }
+      double tmp = v2 / (v1 + v2);
+      upw_face[0][f] = kc1 * tmp + kc2 * (1.0 - tmp); 
 
-    // We upwind only on inflow dirichlet faces.
     } else {
       upw_face[0][f] = kc1;
-      if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
-        upw_face[0][f] = ((*model_).*Value)(c1, bc_value[f]);
-      }
-    // if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-    //   upw_face[0][f] = ((*model_).*Value)(c, sol_face[0][f]);
-    // }
     }
   }
 }

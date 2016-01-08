@@ -32,8 +32,7 @@
 #include "OperatorDefs.hh"
 #include "OperatorDiffusion.hh"
 #include "OperatorDiffusionFactory.hh"
-#include "UpwindSecondOrder.hh"
-#include "UpwindStandard.hh"
+#include "UpwindFlux.hh"
 
 
 /* *****************************************************************
@@ -111,7 +110,7 @@ void RunTestGravity(std::string op_list_name) {
 
   // create upwind model
   Teuchos::ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
-  UpwindStandard<HeatConduction> upwind(mesh, knc);
+  UpwindFlux<HeatConduction> upwind(mesh, knc);
   upwind.Init(ulist);
 
   knc->UpdateValues(*flux);  // argument is not used

@@ -62,7 +62,7 @@ class UpwindSecondOrder : public Upwind<Model> {
 template<class Model>
 void UpwindSecondOrder<Model>::Init(Teuchos::ParameterList& plist)
 {
-  method_ = Operators::OPERATOR_UPWIND_FLUX;
+  method_ = Operators::OPERATOR_UPWIND_FLUX_SECOND_ORDER;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
 
   order_ = plist.get<int>("order", 2);

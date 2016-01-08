@@ -37,7 +37,7 @@
 #include "Operator.hh"
 #include "OperatorAccumulation.hh"
 #include "OperatorDiffusionFV.hh"
-#include "UpwindStandard.hh"
+#include "UpwindFlux.hh"
 
 #include "operator_marshak_testclass.hh"
 
@@ -136,7 +136,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
   // Create upwind model
   ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
-  UpwindStandard<HeatConduction> upwind(mesh, knc);
+  UpwindFlux<HeatConduction> upwind(mesh, knc);
   upwind.Init(ulist);
 
   // MAIN LOOP

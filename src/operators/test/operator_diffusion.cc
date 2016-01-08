@@ -35,7 +35,6 @@
 #include "OperatorDiffusionMFDwithGravity.hh"
 #include "OperatorDiffusionFV.hh"
 #include "UpwindSecondOrder.hh"
-#include "UpwindStandard.hh"
 
 
 int BoundaryFaceGetCell(const Amanzi::AmanziMesh::Mesh& mesh, int f)
