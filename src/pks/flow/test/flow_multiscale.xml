@@ -206,8 +206,7 @@
         <ParameterList name="upwind">
           <Parameter name="relative permeability" type="string" value="upwind: amanzi"/>
           <Parameter name="upwind update" type="string" value="every timestep"/>
-          <Parameter name="upwind method" type="string" value="divk"/>
-          <ParameterList name="upwind divk parameters">
+          <ParameterList name="upwind parameters">
             <Parameter name="tolerance" type="double" value="9.99e-13"/>
           </ParameterList>
         </ParameterList>

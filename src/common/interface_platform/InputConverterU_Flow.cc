@@ -70,17 +70,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
     Teuchos::ParameterList& upw_list = richards_list.sublist("upwind");
     upw_list.set<std::string>("relative permeability", rel_perm_out);
     upw_list.set<std::string>("upwind update", update_upwind);
-
-    // "standard" is the most robust upwind method for variety of subsurface
-    // scenarios. Note that "upwind: amanzi" requires "upwind method"="divk" 
-    // to reproduce the same behavior on orthogonal meshes. 
-    if (strcmp(rel_perm_out.c_str(), "upwind: amanzi") == 0) {
-      upw_list.set<std::string>("upwind method", "divk");
-      upw_list.sublist("upwind divk parameters").set<double>("tolerance", 1e-12);
-    } else {
-      upw_list.set<std::string>("upwind method", "standard");
-      upw_list.sublist("upwind standard parameters").set<double>("tolerance", 1e-12);
-    }
+    upw_list.sublist("upwind parameters").set<double>("tolerance", 1e-12);
     flow_list = &richards_list;
 
     richards_list.sublist("water retention models") = TranslateWRM_();

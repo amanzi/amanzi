@@ -87,9 +87,11 @@ set(operators_inc_files
     Reconstruction.hh
     ReconstructionCell.hh
     Upwind.hh
-    UpwindFactory.hh
-    UpwindStandard.hh
+    UpwindArithmeticAverage.hh
     UpwindDivK.hh
+    UpwindFactory.hh
+    UpwindFlux.hh
+    UpwindGravity.hh
     UpwindSecondOrder.hh
 )
 

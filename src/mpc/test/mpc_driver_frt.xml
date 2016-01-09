@@ -131,10 +131,6 @@
 	      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
 	      <Parameter name="gravity" type="bool" value="true"/>
 	    </ParameterList>
-	    <Parameter name="upwind method" type="string" value="mfd"/>
-	    <ParameterList name="upwind mfd parameter">
-	      <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
-	    </ParameterList>
 	  </ParameterList>
 	</ParameterList>
 	<ParameterList name="boundary conditions">

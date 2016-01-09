@@ -1177,7 +1177,7 @@ relative permeability, density and viscosity.
 
   * `"relative permeability`" [string] defines a method for calculating the *upwinded* 
     relative permeability. The available options are: `"upwind: gravity`", 
-    `"upwind: darcy velocity`" (default), `"upwind: amanzi``", 
+    `"upwind: darcy velocity`" (default), `"upwind: second-order`", `"upwind: amanzi`" (experimental), 
     `"other: harmonic average`", and `"other: arithmetic average`".
 
   * `"upwind update`" [string] defines frequency of recalculating Darcy flux inside
@@ -1187,10 +1187,7 @@ relative permeability, density and viscosity.
     for the Newton solver. It may impact significantly upwinding of the relative permeability 
     and convergence rate of this solver.
 
-  * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
-    Available options are `"standard`", `"divk`" (default), and `"second-order`" (experimental). 
-
-  * `"upwind NAME parameters`" [list] defines parameters for upwind method `"NAME`".
+  * `"upwind parameters`" [list] defines parameters for upwind method specified by `"relative permeability`".
 
     * `"tolerance`" [double] specifies relative tolerance for almost zero local flux. In such
       a case the flow is assumed to be parallel to a mesh face. Default value is 1e-12.
@@ -1203,11 +1200,10 @@ relative permeability, density and viscosity.
 
    <ParameterList name="Richards problem">  <!-- parent list -->
      <ParameterList name="upwind">
-       <Parameter name="relative permeability" type="string" value="upwind with Darcy flux"/>
+       <Parameter name="relative permeability" type="string" value="upwind: darcy velocity"/>
        <Parameter name="upwind update" type="string" value="every timestep"/>
 
-       <Parameter name="upwind method" type="string" value="standard"/>
-       <ParameterList name="upwind standard parameters">
+       <ParameterList name="upwind parameters">
           <Parameter name="tolerance" type="double" value="1e-12"/>
        </ParameterList>
      </ParameterList>  

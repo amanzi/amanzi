@@ -382,7 +382,6 @@ void Richards_PK::Initialize()
   krel_ = Teuchos::rcp(new CompositeVector(cvs));
   dKdP_ = Teuchos::rcp(new CompositeVector(cvs));
 
-  krel_upwind_method_ = FLOW_RELATIVE_PERM_NONE;
   krel_->PutScalarMasterAndGhosted(1.0);
   dKdP_->PutScalarMasterAndGhosted(0.0);
 
@@ -391,8 +390,8 @@ void Richards_PK::Initialize()
   upwind_ = upwind_factory.Create(mesh_, relperm_, *upw_list);
 
   std::string upw_upd = upw_list->get<std::string>("upwind update", "every timestep");
-  if (upw_upd == "every nonlinear iteration") update_upwind = FLOW_UPWIND_UPDATE_ITERATION;
-  else update_upwind = FLOW_UPWIND_UPDATE_TIMESTEP;  
+  if (upw_upd == "every nonlinear iteration") upwind_frequency_ = FLOW_UPWIND_UPDATE_ITERATION;
+  else upwind_frequency_ = FLOW_UPWIND_UPDATE_TIMESTEP;  
 
   // models and assumptions
   // -- coupling with other physical PKs
@@ -463,9 +462,8 @@ void Richards_PK::Initialize()
   pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap_owned));
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap_owned));
 
-  // Initialize two fields for upwind operators.
+  // Initialize flux copy for the upwind operator.
   darcy_flux_copy = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("darcy_flux", passwd_)));
-  InitializeUpwind_();
 
   // Other quantatities: injected water mass
   mass_bc = 0.0;
@@ -513,10 +511,6 @@ void Richards_PK::Initialize()
       bdf1_list.sublist("VerboseObject") = rp_list_->sublist("VerboseObject");
 
   bdf1_dae = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
-
-  // complete other steps
-  // repeat upwind initialization, mainly for old MPC
-  InitializeUpwind_();
 
   // initialize well modeling
   for (int i = 0; i < srcs.size(); ++i) {
@@ -670,8 +664,6 @@ void Richards_PK::Initialize()
       // normalize to Darcy flux, m/s
       Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face", true);
       for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
-
-      InitializeUpwind_();
     }
   }
 
@@ -783,25 +775,6 @@ void Richards_PK::InitializeFieldFromField_(
 
 
 /* ******************************************************************
-* Set defaults parameters. It could be called only once.
-****************************************************************** */
-void Richards_PK::InitializeUpwind_()
-{
-  // Create RCP pointer to upwind flux.
-  if (relperm_->method() == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX ||
-      relperm_->method() == FLOW_RELATIVE_PERM_AMANZI_MFD) {
-    darcy_flux_upwind = darcy_flux_copy;
-  } else if (relperm_->method() == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {
-    darcy_flux_upwind = Teuchos::rcp(new CompositeVector(*darcy_flux_copy));
-    relperm_->ComputeGravityFlux(K, gravity_, darcy_flux_upwind);
-  } else {
-    darcy_flux_upwind = Teuchos::rcp(new CompositeVector(*darcy_flux_copy));
-    darcy_flux_upwind->PutScalar(0.0);
-  }
-}
-
-
-/* ******************************************************************
 * Print the header for new time period.
 ****************************************************************** */
 void Richards_PK::InitializeStatistics_()
@@ -814,7 +787,7 @@ void Richards_PK::InitializeStatistics_()
         << vo_->color("green") << "Initalization of PK is complete, T=" << S_->time()
         << " dT=" << dt_ << vo_->reset() << std::endl;
     *vo_->os()<< "EC:" << error_control_ 
-              << " Upwind:" << relperm_->method() << op_matrix_diff_->little_k()
+              << " Upwind:" << op_matrix_diff_->little_k()
               << " PC:\"" << preconditioner_name_.c_str() << "\"" 
               << " TI:\"" << ti_method_name.c_str() << "\"" << std::endl
               << "matrix: " << op_matrix_->PrintDiagnostics() << std::endl

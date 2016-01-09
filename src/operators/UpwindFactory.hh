@@ -49,36 +49,36 @@ Teuchos::RCP<Upwind<Model> > UpwindFactory<Model>::Create(
     Teuchos::RCP<const AmanziMesh::Mesh> mesh,
     Teuchos::RCP<const Model> model, Teuchos::ParameterList& plist)
 {
-  if (!plist.isParameter("upwind method")) {
-    Errors::Message msg("UpwindFactory: parameter \"upwind method\" is missing");
+  if (!plist.isParameter("relative permeability")) {
+    Errors::Message msg("UpwindFactory: parameter \"relative permeability\" is missing");
     Exceptions::amanzi_throw(msg);
   }
+  std::string name = plist.get<std::string>("relative permeability");
 
-  std::string name = plist.get<std::string>("upwind method");
-  Teuchos::ParameterList sublist = plist.sublist("upwind " + name + " standard parameters");
-  if (name == "standard" || name == "flux") {
+  Teuchos::ParameterList sublist = plist.sublist("upwind parameters");
+  if (name == "upwind: darcy velocity") {
     Teuchos::RCP<UpwindFlux<Model> > upwind = Teuchos::rcp(new UpwindFlux<Model>(mesh, model));
     upwind->Init(sublist);
     return upwind;
-  } else if (name == "gravity") {
+  } else if (name == "upwind: gravity") {
     Teuchos::RCP<UpwindGravity<Model> > upwind = Teuchos::rcp(new UpwindGravity<Model>(mesh, model));
     upwind->Init(sublist);
     return upwind;
-  } else if (name == "divk") {
+  } else if (name == "upwind: amanzi") {
     Teuchos::RCP<UpwindDivK<Model> > upwind = Teuchos::rcp(new UpwindDivK<Model>(mesh, model));
     upwind->Init(sublist);
     return upwind;
-  } else if (name == "second-order") {
+  } else if (name == "upwind: second-order") {
     Teuchos::RCP<UpwindSecondOrder<Model> > upwind = Teuchos::rcp(new UpwindSecondOrder<Model>(mesh, model));
     upwind->Init(sublist);
     return upwind;
-  } else if (name == "arithmetic average") {
+  } else if (name == "other: arithmetic average") {
     Teuchos::RCP<UpwindArithmeticAverage<Model> > upwind = Teuchos::rcp(new UpwindArithmeticAverage<Model>(mesh, model));
     upwind->Init(sublist);
     return upwind;
   } else {
     std::stringstream msgstream;
-    msgstream << "UpwindFactory: upwind method \"" << name << "\" is not supported.";
+    msgstream << "UpwindFactory: method \"" << name << "\" is not supported.";
     Errors::Message msg(msgstream.str());
     Exceptions::amanzi_throw(msg);
   }

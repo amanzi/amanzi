@@ -37,14 +37,6 @@ const double FLOW_WRM_BROOKS_COREY_L = 0.5;
 const double FLOW_WRM_REGULARIZATION_INTERVAL = 0.0;
 const double FLOW_WRM_EXCEPTION = -1.0;  // will trigger exception
 
-const int FLOW_RELATIVE_PERM_NONE = 1; 
-const int FLOW_RELATIVE_PERM_HARMONIC_AVERAGE = 2; 
-const int FLOW_RELATIVE_PERM_UPWIND_GRAVITY = 3; 
-const int FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX = 4;
-const int FLOW_RELATIVE_PERM_ARITHMETIC_AVERAGE = 5;
-const int FLOW_RELATIVE_PERM_AMANZI_MFD = 7;
-const double FLOW_RELATIVE_PERM_TOLERANCE = 1e-12;  // [-]
-
 // time integration
 const int FLOW_TI_ERROR_CONTROL_PRESSURE = 1;  // binary mask for error control
 const int FLOW_TI_ERROR_CONTROL_SATURATION = 2;

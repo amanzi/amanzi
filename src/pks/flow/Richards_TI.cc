@@ -45,7 +45,7 @@ void Richards_PK::Functional(double t_old, double t_new,
 
   relperm_->Compute(u_new->Data(), krel_); 
   RelPermUpwindFn func1 = &RelPerm::Compute;
-  upwind_->Compute(*darcy_flux_upwind, *u_new->Data(), bc_model, bc_value, *krel_, *krel_, func1);
+  upwind_->Compute(*darcy_flux_copy, *u_new->Data(), bc_model, bc_value, *krel_, *krel_, func1);
   Operators::CellToFace_ScaleInverse(mu, krel_);
   krel_->ScaleMasterAndGhosted(molar_rho_);
 
@@ -54,7 +54,7 @@ void Richards_PK::Functional(double t_old, double t_new,
 
   relperm_->ComputeDerivative(u_new->Data(), dKdP_); 
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
-  upwind_->Compute(*darcy_flux_upwind, *u_new->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
+  upwind_->Compute(*darcy_flux_copy, *u_new->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
   Operators::CellToFace_ScaleInverse(mu, dKdP_);
   dKdP_->ScaleMasterAndGhosted(molar_rho_);
 
@@ -296,7 +296,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
 
   // update coefficients
-  if (update_upwind == FLOW_UPWIND_UPDATE_ITERATION) {
+  if (upwind_frequency_ == FLOW_UPWIND_UPDATE_ITERATION) {
     op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
     Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face");
     for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
@@ -305,7 +305,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
 
   relperm_->Compute(u->Data(), krel_);
   RelPermUpwindFn func1 = &RelPerm::Compute;
-  upwind_->Compute(*darcy_flux_upwind, *u->Data(), bc_model, bc_value, *krel_, *krel_, func1);
+  upwind_->Compute(*darcy_flux_copy, *u->Data(), bc_model, bc_value, *krel_, *krel_, func1);
   Operators::CellToFace_ScaleInverse(mu, krel_);
   krel_->ScaleMasterAndGhosted(molar_rho_);
 
@@ -314,7 +314,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
 
   relperm_->ComputeDerivative(u->Data(), dKdP_);
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
-  upwind_->Compute(*darcy_flux_upwind, *u->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
+  upwind_->Compute(*darcy_flux_copy, *u->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
   Operators::CellToFace_ScaleInverse(mu, dKdP_);
   dKdP_->ScaleMasterAndGhosted(molar_rho_);
 

@@ -68,13 +68,13 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 
     relperm_->Compute(solution, krel_);
     RelPermUpwindFn func1 = &RelPerm::Compute;
-    upwind_->Compute(*darcy_flux_upwind, *solution, bc_model, bc_value, *krel_, *krel_, func1);
+    upwind_->Compute(*darcy_flux_copy, *solution, bc_model, bc_value, *krel_, *krel_, func1);
     Operators::CellToFace_ScaleInverse(mu, krel_);
     krel_->ScaleMasterAndGhosted(molar_rho_);
 
     relperm_->ComputeDerivative(solution, dKdP_);
     RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
-    upwind_->Compute(*darcy_flux_upwind, *solution, bc_model, bc_value, *dKdP_, *dKdP_, func2);
+    upwind_->Compute(*darcy_flux_copy, *solution, bc_model, bc_value, *dKdP_, *dKdP_, func2);
     Operators::CellToFace_ScaleInverse(mu, dKdP_);
     dKdP_->ScaleMasterAndGhosted(molar_rho_);
 

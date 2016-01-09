@@ -71,8 +71,7 @@
       <ParameterList name="Richards problem">
         <ParameterList name="upwind">
           <Parameter name="relative permeability" type="string" value="upwind: gravity"/>
-	  <Parameter name="upwind method" type="string" value="standard"/>
-	  <ParameterList name="upwind standard parameters">
+	  <ParameterList name="upwind parameters">
             <Parameter name="tolerance" type="double" value="1e-12"/>
 	  </ParameterList>
         </ParameterList>

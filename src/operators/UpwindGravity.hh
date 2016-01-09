@@ -37,8 +37,9 @@ template<class Model>
 class UpwindGravity : public Upwind<Model> {
  public:
   UpwindGravity(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-               Teuchos::RCP<const Model> model)
-      : Upwind<Model>(mesh, model) {};
+               Teuchos::RCP<const Model> model) :
+      Upwind<Model>(mesh, model),
+      g_(mesh->space_dimension()) {};
   ~UpwindGravity() {};
 
   // main methods

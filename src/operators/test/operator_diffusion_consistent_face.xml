@@ -96,15 +96,15 @@
     </ParameterList>
 
     <ParameterList name="upwind">
-      <Parameter name="upwind method" type="string" value="divk"/>
-      <ParameterList name="upwind divk parameters">
+      <Parameter name="relative permeability" type="string" value="upwind: amanzi"/>
+      <ParameterList name="upwind parameters">
         <Parameter name="tolerance" type="double" value="1e-12"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="upwind second-order">
-      <Parameter name="upwind method" type="string" value="second-order"/>
-      <ParameterList name="upwind second-order parameters">
+      <Parameter name="relative permeability" type="string" value="upwind: second-order"/>
+      <ParameterList name="upwind parameters">
         <Parameter name="tolerance" type="double" value="1e-12"/>
       </ParameterList>
     </ParameterList>

@@ -301,8 +301,7 @@
       <ParameterList name="upwind">
         <Parameter name="relative permeability" type="string" value="upwind: darcy velocity"/>
         <Parameter name="upwind update" type="string" value="every timestep"/>
-        <Parameter name="upwind method" type="string" value="divk"/>
-          <ParameterList name="upwind divk parameters">
+          <ParameterList name="upwind parameters">
           <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
         </ParameterList>
       </ParameterList>
