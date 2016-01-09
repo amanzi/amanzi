@@ -101,10 +101,7 @@ RSAMRdata::~RSAMRdata()
 void
 RSAMRdata::SetIsSaturated()
 {
-  int pm_model = PorousMedia::Model();
-  is_saturated = (pm_model == PorousMedia::PM_STEADY_SATURATED)
-    || (pm_model == PorousMedia::PM_SATURATED);
-  is_steady = (pm_model == PorousMedia::PM_STEADY_SATURATED);
+  is_saturated = (PorousMedia::FlowModel() == PorousMedia::PM_FLOW_MODEL_SATURATED);
 }
 
 void
@@ -140,7 +137,7 @@ RSAMRdata::SetUpMemory(NLScontrol& nlsc)
     }
     porosity.set(lev,pm[lev].Porosity());
 
-    if (is_saturated && !is_steady) {
+    if (is_saturated) {
       specific_storage.set(lev,pm[lev].SpecificStorage());
     }
 
@@ -166,7 +163,7 @@ RSAMRdata::SetUpMemory(NLScontrol& nlsc)
   }
   Porosity = new MFTower(layout,porosity,nLevs);
 
-  if (is_saturated && !is_steady) {
+  if (is_saturated) {
     SpecificStorage = new MFTower(layout,specific_storage,nLevs);
   }
   else {

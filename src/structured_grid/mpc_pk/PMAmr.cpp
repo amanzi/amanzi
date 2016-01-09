@@ -33,6 +33,21 @@ namespace
   int  mffile_nstreams;
 }
 
+std::ostream& operator<<(std::ostream& os, const ExecControl& ec)
+{
+  os << " label:            " << ec.label << '\n';
+  os << " mode:             " << ec.mode  << '\n';
+  os << " method:           " << ec.method << '\n';
+  os << " max_cycles:       " << ec.max_cycles << '\n';
+  os << " start:            " << ec.start<< '\n';
+  os << " end:              " << ec.end << '\n';
+  os << " init_dt:          " << ec.init_dt << '\n';
+  os << " max_dt:           " << ec.max_dt << '\n';
+  os << " reduction_factor: " << ec.reduction_factor << '\n';
+  os << " increase_factor:  " << ec.increase_factor;
+  return os;
+}
+
 EventCoord PMAmr::event_coord;
 std::map<std::string,EventCoord::Event*> PMAmr::defined_events;
 bool PMAmr::do_output_time_in_years;
@@ -83,14 +98,6 @@ PMAmr::PMAmr()
     ppa.query("compute_new_dt_on_regrid",compute_new_dt_on_regrid);
     ppa.query("do_output_time_in_years",do_output_time_in_years);
     ppa.query("attempt_to_recover_failed_step",attempt_to_recover_failed_step);
-
-    ParmParse pp;
-    pp.query("max_step",max_step);
-    pp.query("stop_time",stop_time);
-
-    std::string event_name = "Stop_Time";
-    defined_events[event_name] = new EventCoord::TimeEvent(Array<Real>(1,stop_time));
-    RegisterEvent(event_name,defined_events[event_name]);
 
     layout.SetParent(this);
 
@@ -287,13 +294,13 @@ Real
 PMAmr::process_events(bool& write_plotfile_after_step,
                       bool& write_checkpoint_after_step,
                       Array<int>& observations_after_step,
-                      bool& begin_tpc,
+                      bool& begin_ecp,
                       EventCoord& event_coord,
                       Real time, Real dt, int iter, int diter)
 {
   write_plotfile_after_step = false;
   write_checkpoint_after_step = false;
-  begin_tpc = false;
+  begin_ecp = false;
 
   Real dt_new = dt;
   std::pair<Real,Array<std::string> > nextEvent = event_coord.NextEvent(time,dt,iter, diter);
@@ -332,10 +339,10 @@ PMAmr::process_events(bool& write_plotfile_after_step,
         }
       }
 
-      for (int k=0; k<tpc_labels.size(); ++k) {
-        if (eventList[j] == tpc_labels[k]) {
-          begin_tpc = true;
-        }
+      for (int k=0; k<ecs.size(); ++k) {
+	if (eventList[j] == ecs[k].label + "_start") {
+	  begin_ecp = true;
+	}
       }
     }
   }
@@ -346,13 +353,13 @@ void
 PMAmr::initial_events(bool& write_plotfile_now,
                       bool& write_checkpoint_now,
                       Array<int>& observations_now,
-                      bool& begin_tpc_now,
+                      bool& begin_ecp_now,
                       EventCoord& event_coord,
                       Real time, int iter)
 {
     write_plotfile_now = false;
     write_checkpoint_now = false;
-    begin_tpc_now = false;
+    begin_ecp_now = false;
 
     Array<std::string> eventList = event_coord.InitEvent(time,iter);
 
@@ -385,10 +392,10 @@ PMAmr::initial_events(bool& write_plotfile_now,
         }
       }
       
-      for (int k=0; k<tpc_labels.size(); ++k) {
-        if (eventList[j] == tpc_labels[k]) {
-          begin_tpc_now = true;
-        }
+      for (int k=0; k<ecs.size(); ++k) {
+	if (eventList[j] == ecs[k].label + "_start") {
+	  begin_ecp_now = true;
+	}
       }
     }
 }
@@ -408,10 +415,10 @@ PMAmr::init (Real t_start,
 
     initialInit(t_start, t_stop);
 
-    bool write_plot, write_check, begin_tpc;
+    bool write_plot, write_check, begin_ecp;
     Array<int> initial_observations;
 
-    initial_events(write_plot,write_check,initial_observations,begin_tpc,event_coord,
+    initial_events(write_plot,write_check,initial_observations,begin_ecp,event_coord,
 		   cumtime, level_steps[0]);
 
     if (write_plot) {
@@ -549,45 +556,6 @@ PMAmr::pm_timeStep (int  level,
         }
     }
     //
-    // Are we in a time period control section?  If so, fix time step
-    //
-    if (level == 0) {
-      int tpc_interval = -1;
-      for (int i=0; i<tpc_labels.size(); ++i) {
-        if (time >= tpc_start_times[i]) {
-          tpc_interval = i;
-        }
-      }
-      Real dt_tpc, dt_tpc_eps;
-      if (tpc_interval >= 0) {
-        if (tpc_initial_time_steps.size()>tpc_interval
-            && tpc_initial_time_steps[tpc_interval]>0) {
-
-          // Find dt to apply at start of tpc interval
-          dt_tpc = tpc_initial_time_steps[tpc_interval];
-          dt_tpc_eps = 1.e-6 * dt_tpc;
-          if (tpc_initial_time_step_multipliers.size()>tpc_interval
-              && tpc_initial_time_step_multipliers[tpc_interval] > 0) {
-            dt_tpc *= tpc_initial_time_step_multipliers[tpc_interval];
-          }
-
-          if ( std::abs(time - tpc_start_times[tpc_interval]) < dt_tpc_eps) {
-            dt_level[0] = std::min(dt_tpc, dt_level[0]);
-          }
-          else {
-            if (tpc_maximum_time_steps.size()>tpc_interval
-                && tpc_maximum_time_steps[tpc_interval] > 0) {
-              dt_level[0] = std::min(dt_level[0],tpc_maximum_time_steps[tpc_interval]);
-            }
-          }
-        }
-        for (int lev = level+1; lev<=finest_level; ++lev) {
-          dt_level[lev] = dt_level[lev-1] / n_cycle[lev];
-        }
-      }
-    }
-
-    //
     // Check to see if should write plotfile.
     // This routine is here so it is done after the restart regrid.
     //
@@ -617,6 +585,7 @@ PMAmr::pm_timeStep (int  level,
     }
 
     dt_min[level] = iteration == 1 ? dt_suggest : std::min(dt_min[level],dt_suggest);
+
     level_steps[level]++;
     level_count[level]++;
 
@@ -683,7 +652,7 @@ PMAmr::coarseTimeStep (Real _stop_time)
                               stop_time,
                               post_regrid_flag);
 
-    bool write_plot, write_check, begin_tpc;
+    bool write_plot, write_check, begin_ecp;
     Array<int> observations_to_process;
 
     // NOTE: This is a hack to help keep dt from jumping too much.  Normally, the event processing
@@ -695,15 +664,15 @@ PMAmr::coarseTimeStep (Real _stop_time)
     bool look_ahead_two_steps = true;
     Real dt2_red = -1;
     if (look_ahead_two_steps) {
-        dt2_red = process_events(write_plot,write_check,observations_to_process,begin_tpc,event_coord,
+        dt2_red = process_events(write_plot,write_check,observations_to_process,begin_ecp,event_coord,
                                  cumtime, 2*dt_level[0], level_steps[0] + 1, 1);
         observations_to_process.clear();
         write_check=false;
         write_plot=false;
-        begin_tpc=false;
+        begin_ecp=false;
     }
 
-    Real dt_red = process_events(write_plot,write_check,observations_to_process,begin_tpc,event_coord,
+    Real dt_red = process_events(write_plot,write_check,observations_to_process,begin_ecp,event_coord,
                                  cumtime, dt_level[0], level_steps[0], 1);
     
     // Note: if dt_red > 0, then dt_red == dt2_red
@@ -713,7 +682,7 @@ PMAmr::coarseTimeStep (Real _stop_time)
 
     if (dt_red > 0  &&  dt_red < dt_level[0]) {
         
-        if (begin_tpc) {
+        if (begin_ecp) {
             dt0_before_event_cut = -1; // "forget" current time step, we're headed into a Time Period Control interval
         }
         else if (dt0_before_event_cut < 0) {
@@ -730,6 +699,14 @@ PMAmr::coarseTimeStep (Real _stop_time)
        dt0_before_event_cut = -1;
     }
 
+    const ExecControl *ec = GetExecControl(cumtime);
+    if (cumtime == ec->start) {
+      if (ParallelDescriptor::IOProcessor()) {
+	std::cout << "Entering Exceution Control Period \""<< ec->label << "\" at time: " << cumtime << std::endl;
+	std::cout << *ec << std::endl;
+      }
+    }
+
     // Do time step
     pm_timeStep(0,cumtime,1,1);
 
@@ -737,6 +714,14 @@ PMAmr::coarseTimeStep (Real _stop_time)
 
     amr_level[0].postCoarseTimeStep(cumtime);
     
+    static int cnt = 0;
+    if (cumtime == ec->end) {
+      if (ParallelDescriptor::IOProcessor()) {
+	std::cout << "Exiting Exceution Control Period \"" << ec->label << "\" at time: " << cumtime << std::endl;
+      }
+      if (cnt++ == 1) BoxLib::Abort();
+    }
+
     if (verbose > 0)
     {
         const int IOProc   = ParallelDescriptor::IOProcessorNumber();
@@ -931,10 +916,10 @@ PMAmr::FinalizeInit (Real              strt_time,
     //
     // The following was added to avoid stepping over registered events
     //
-    bool write_plot, write_check, begin_tpc;
+    bool write_plot, write_check, begin_ecp;
     Array<int> observations_to_process;
     
-    Real dt_red = process_events(write_plot,write_check,observations_to_process,begin_tpc,event_coord,
+    Real dt_red = process_events(write_plot,write_check,observations_to_process,begin_ecp,event_coord,
                                  cumtime, dt_level[0], level_steps[0], 1);
     if (dt_red > 0  &&  dt_red < dt0) {
         dt_min[0]  = dt_level[0];
@@ -1374,16 +1359,16 @@ void PMAmr::InitializeControlEvents()
       tmacro_map[tmacroNames[i]] = i;
   }
 
-  ParmParse pp("observation");
+  ParmParse ppo("observation");
 
   // determine number of observation
-  int n_obs = pp.countval("observation");
+  int n_obs = ppo.countval("observation");
   std::map<std::string,EventCoord::Event*>::const_iterator eit;
 
   if (n_obs > 0) {
     observations.resize(n_obs,PArrayManage);
     Array<std::string> obs_names;
-    pp.getarr("observation",obs_names,0,n_obs);
+    ppo.getarr("observation",obs_names,0,n_obs);
 
     // Get time and cycle macros
 
@@ -1396,19 +1381,19 @@ void PMAmr::InitializeControlEvents()
       }
 
       const std::string prefix("observation." + obs_names[i]);
-      ParmParse ppr(prefix.c_str());
+      ParmParse ppor(prefix.c_str());
 
-      std::string obs_type; ppr.get("obs_type",obs_type);
-      std::string obs_field; ppr.get("field",obs_field);
+      std::string obs_type; ppor.get("obs_type",obs_type);
+      std::string obs_field; ppor.get("field",obs_field);
 
       Array<std::string> obs_time_macros, obs_cycle_macros;
-      int ntm = ppr.countval("time_macros");
+      int ntm = ppor.countval("time_macros");
       if (ntm>0) {
-	ppr.getarr("time_macros",obs_time_macros,0,ntm);
+	ppor.getarr("time_macros",obs_time_macros,0,ntm);
       }
-      int ncm = ppr.countval("cycle_macros");
+      int ncm = ppor.countval("cycle_macros");
       if (ncm>0) {
-	ppr.getarr("cycle_macros",obs_cycle_macros,0,ncm);
+	ppor.getarr("cycle_macros",obs_cycle_macros,0,ncm);
       }
 
       std::string event_label;
@@ -1443,12 +1428,12 @@ void PMAmr::InitializeControlEvents()
         BoxLib::Abort(m.c_str());
       }
 
-      std::string region_name; ppr.get("region",region_name);
+      std::string region_name; ppor.get("region",region_name);
       observations.set(i, new Observation(obs_names[i],obs_field,region_name,obs_type,event_label));
     }
 
     // filename for output
-    pp.query("output_file",observation_output_file);
+    ppo.query("output_file",observation_output_file);
   }
 
   ppa.queryarr("viz_cycle_macros",vis_cycle_macros,0,ppa.countval("viz_cycle_macros"));
@@ -1503,46 +1488,70 @@ void PMAmr::InitializeControlEvents()
   }
 
   //
-  // Get run options.
+  // Get execution control options
   //
-  ParmParse pb("prob");
-
-  int ntps = pb.countval("TPC_Start_Times");
-  if (ntps) {
-      tpc_start_times.resize(ntps);
-      pb.getarr("TPC_Start_Times",tpc_start_times,0,ntps);
-
-      int ndt = pb.countval("TPC_Initial_Time_Step");
-      BL_ASSERT(ndt==0 || ndt==ntps);
-      tpc_initial_time_steps.resize(ndt,-1);
-      if (ndt>0) {
-          pb.getarr("TPC_Initial_Time_Step",tpc_initial_time_steps,0,ndt);
-      }
-
-      int ndtm = pb.countval("TPC_Initial_Time_Step_Multiplier");
-      BL_ASSERT(ndtm==0 || ndtm==ntps);
-      tpc_initial_time_step_multipliers.resize(ndt,-1);
-      if (ndtm>0) {
-          pb.getarr("TPC_Initial_Time_Step_Multiplier",tpc_initial_time_step_multipliers,0,ndtm);
-      }
-
-      int ndtmax = pb.countval("TPC_Maximum_Time_Step");
-      BL_ASSERT(ndtmax==0 || ndtmax==ntps);
-      tpc_initial_time_steps.resize(ndtmax,-1);
-      if (ndtmax>0) {
-          pb.getarr("TPC_Maximum_Time_Step",tpc_maximum_time_steps,0,ndtmax);
-      }
+  ParmParse pp;
+  int necs = pp.countval("exec_controls");
+  if (necs) {
+    ecs.resize(necs);
+    Array<std::string> ec_names(necs);
+    pp.getarr("exec_controls",ec_names,0,necs);
+    for (int i=0; i<necs; ++i) {
+      std::string prefix = "exec_control." + ec_names[i];
+      ParmParse ppe(prefix);
+      ExecControl& ec = ecs[i];
+      ec.label = ec_names[i];
+      ppe.get("start",ec.start);
+      ppe.get("end",ec.end);
+      ppe.get("init_dt",ec.init_dt);
+      ppe.get("max_dt",ec.max_dt);
+      ppe.get("reduction_factor",ec.reduction_factor);
+      ppe.get("increase_factor",ec.increase_factor);
+      ppe.get("max_cycles",ec.max_cycles);
+      ppe.get("mode",ec.mode);
+      ppe.get("method",ec.method);
+    }
   }
 
-  tpc_labels.resize(ntps);
-  for (int i=0; i<ntps; ++i) {
-      int ndigits = (int) (std::log10(ntps) + .0001) + 1;
-      tpc_labels[i] = BoxLib::Concatenate("Time_Period_Begin_",i,ndigits);
-      defined_events[tpc_labels[i]] = new EventCoord::TimeEvent(Array<Real>(1,tpc_start_times[i]));
-      RegisterEvent(tpc_labels[i],defined_events[tpc_labels[i]]);
+  for (int i=0; i<necs; ++i) {
+    const ExecControl& ec = ecs[i];
+    std::string start_label = ec.label + "_start";
+    defined_events[start_label] = new EventCoord::TimeEvent(Array<Real>(1,ec.start));
+    if (ParallelDescriptor::IOProcessor()) {
+      std::cout << "Registering event: " << start_label << " " << ec.start << std::endl;
+    }
+    RegisterEvent(start_label,defined_events[start_label]);
   }
 
+  {
+    const ExecControl& ec = ecs[necs-1];
+    stop_time = ec.end;
+    std::string max_time_name = "Stop_Time";
+    if (ParallelDescriptor::IOProcessor()) {
+      std::cout << "Registering event: " << max_time_name << " " << stop_time << std::endl;
+    }
+    defined_events[max_time_name] = new EventCoord::TimeEvent(Array<Real>(1,ec.end));
+    RegisterEvent(max_time_name,defined_events[max_time_name]);
 
+    max_step = ec.max_cycles;
+    std::string max_cycles_name = "Max_Cycles";
+    if (ParallelDescriptor::IOProcessor()) {
+      std::cout << "Registering event: " << max_cycles_name << " " << max_step << std::endl;
+    }
+    defined_events[max_cycles_name] = new EventCoord::CycleEvent(Array<int>(1,max_step));
+    RegisterEvent(max_cycles_name,defined_events[max_cycles_name]);
+  }
+
+}
+
+const ExecControl*
+PMAmr::GetExecControl(Real time_value) const
+{
+  for (int i=0; i<ecs.size(); ++i) {
+    const ExecControl& ec = ecs[i];
+    if (time_value >= ec.start && time_value < ec.end) return &ec;
+  }
+  return 0;
 }
 
 void PMAmr::FlushObservations() {

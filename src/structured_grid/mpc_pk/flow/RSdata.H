@@ -99,7 +99,6 @@ struct RSdata
   const Array<Real>& GetGravity();
   const Array<Real>& GetViscosity() const {return viscosity;}
   bool IsSaturated() const {return is_saturated;}
-  bool IsSteady() const {return is_steady;}
   Real time, dt;
   int time_step;
   int start_level, end_level;
@@ -123,7 +122,6 @@ protected:
   Array<Real> density;
   Array<Real> viscosity;
   bool is_saturated;
-  bool is_steady;
 
   const RockManager* rock_manager;
 };

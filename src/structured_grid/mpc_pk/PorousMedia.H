@@ -379,7 +379,6 @@ public:
 
   void init_rock_properties (bool restart); // Initialize the rock properties
   void buildMetrics ();         // 1-D metric arrays for RZ
-  static void setup_list ();
   static void read_params ();   // Read input file
   static void read_geometry ();
   static void read_prob ();
@@ -428,7 +427,7 @@ public:
   void reinstate_component_saturations();
   void get_fillpatched_rhosat(Real t_eval, MultiFab& RhoSat, int nGrow);
 
-  void richard_init_to_steady();
+  Real richard_init_to_steady();
 
   bool advance_chemistry (Real time,
 			  Real dt,
@@ -734,27 +733,25 @@ public:
   static std::map<std::string, int> comp_list;
   static std::map<std::string, int> tracer_list;
 
-  /*
-    Flow model.  Options are
-    0: single-phase flow with no precipitate.
-    1: single-phase flow with precipitate
-    2: 2-phase 2-component flow
-    3: polymer flow (2-phase 3-component)
-    4: steady-saturated
-  */
-  enum MODEL_ID
+  enum FLOW_MODEL_ID
   {
-    PM_SINGLE_PHASE,
-    PM_SINGLE_PHASE_SOLID,
-    PM_TWO_PHASE,
-    PM_POLYMER,
-    PM_RICHARDS,
-    PM_STEADY_SATURATED,
-    PM_SATURATED, // FIXME: Merge this and STEADY_SATURATED into SINGLE_PHASE
-    PM_INVALID
+    PM_FLOW_MODEL_INVALID,
+    PM_FLOW_MODEL_SATURATED,
+    PM_FLOW_MODEL_RICHARDS,
+    PM_FLOW_MODEL_OFF
   };
-  static MODEL_ID model;
-  static int Model() {return (int)model;}
+  static FLOW_MODEL_ID flow_model;
+  static int FlowModel() {return (int)flow_model;}
+
+  enum FLOW_EVAL_ID
+  {
+    PM_FLOW_EVAL_INVALID,
+    PM_FLOW_EVAL_CONSTANT,
+    PM_FLOW_EVAL_SOLVE,
+    PM_FLOW_EVAL_OFF
+  };
+  static FLOW_EVAL_ID flow_eval;
+  static int FlowEval() {return (int)flow_eval;}
 
   PMAmr* PMParent();
   const PMAmr* PMParent() const;
@@ -787,7 +784,6 @@ public:
   void set_vel_from_bcs(Real      time,
 			MultiFab* vel);
 
-  Real GetUserInputInitDt();
   static int NGrowHYP() {return nGrowHYP;}
 
   void derive_Material_ID(Real      time,
@@ -1094,7 +1090,6 @@ protected:
   // Chemistry/solute/tracer parameters 
   //
   static bool do_tracer_chemistry; // Does the user want to react tracers
-  static bool shut_off_reactions; //Hack to do all chemistry-related work, but bypass actual reactions update
   static bool do_tracer_advection; // Does the user want to advect tracers
   static bool do_tracer_diffusion; // Does the user want to diffuse tracers
   static bool setup_tracer_transport; // Should the memory for tracers be allocated/initialized
@@ -1113,7 +1108,6 @@ protected:
   //
   static bool do_reflux;
   static ExecutionMode execution_mode;
-  static Real switch_time;
   static Real ic_chem_relax_dt;
   static bool solute_transport_limits_dt;
   static int nGrowHYP;

@@ -224,7 +224,6 @@ bool PorousMedia::solute_transport_limits_dt;
 //
 // Chemistry flag.
 //
-bool PorousMedia::shut_off_reactions;
 bool PorousMedia::do_tracer_chemistry;
 bool PorousMedia::react_tracers;
 bool PorousMedia::do_full_strang;
@@ -243,7 +242,8 @@ std::map<std::string, int> PorousMedia::phase_list;
 std::map<std::string, int> PorousMedia::comp_list;
 std::map<std::string, int> PorousMedia::tracer_list;
 Array<std::string> PorousMedia::user_derive_list;
-PorousMedia::MODEL_ID PorousMedia::model;
+PorousMedia::FLOW_MODEL_ID PorousMedia::flow_model;
+PorousMedia::FLOW_EVAL_ID PorousMedia::flow_eval;
 //
 // AMANZI flags.
 //
@@ -333,7 +333,6 @@ NLScontrol* PorousMedia::richard_solver_control;
 RSdata* PorousMedia::richard_solver_data;
 
 PorousMedia::ExecutionMode PorousMedia::execution_mode;
-Real PorousMedia::switch_time;
 
 namespace
 {
@@ -500,27 +499,6 @@ set_z_vel_bc (BCRec&       bc,
 typedef StateDescriptor::BndryFunc BndryFunc;
 typedef ErrorRec::ErrorFunc ErrorFunc;
 
-struct PMModel
-{
-  PMModel(PorousMedia::MODEL_ID id = PorousMedia::PM_INVALID) 
-    : model(id) {}
-  PorousMedia::MODEL_ID model;
-};
-static std::map<std::string,PMModel> available_models;
-
-void 
-PorousMedia::setup_list()
-{
-  // model list
-  available_models["single-phase"] = PMModel(PM_SINGLE_PHASE);
-  available_models["single-phase-solid"] = PMModel(PM_SINGLE_PHASE_SOLID);
-  available_models["two-phase"] = PMModel(PM_TWO_PHASE);
-  available_models["polymer"] = PMModel(PM_POLYMER);
-  available_models["richards"] = PMModel(PM_RICHARDS);
-  available_models["steady-saturated"] = PMModel(PM_STEADY_SATURATED);
-  available_models["saturated"] = PMModel(PM_SATURATED);
-}
-
 void
 PorousMedia::InitializeStaticVariables ()
 {
@@ -530,7 +508,8 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::num_state_type = -1;
   PorousMedia::do_source_term = false;
 
-  PorousMedia::model        = PorousMedia::PM_INVALID;
+  PorousMedia::flow_model   = PorousMedia::PM_FLOW_MODEL_INVALID;
+  PorousMedia::flow_eval    = PorousMedia::PM_FLOW_EVAL_INVALID;
   PorousMedia::nphases      = 0;
   PorousMedia::ncomps       = 0; 
   PorousMedia::ndiff        = 0;
@@ -582,7 +561,6 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::variable_scal_diff = true; 
 
   PorousMedia::do_tracer_chemistry = false;
-  PorousMedia::shut_off_reactions = false;
   PorousMedia::do_tracer_advection = false;
   PorousMedia::do_tracer_diffusion = false;
   PorousMedia::setup_tracer_transport = false;
@@ -600,7 +578,6 @@ PorousMedia::InitializeStaticVariables ()
 
   PorousMedia::do_reflux           = true;
   PorousMedia::execution_mode      = PorousMedia::INVALID;
-  PorousMedia::switch_time         = 0;
   PorousMedia::ic_chem_relax_dt    = -1; // < 0 implies not done
   PorousMedia::solute_transport_limits_dt = false;
   PorousMedia::do_constant_vel = false;
@@ -719,7 +696,6 @@ PorousMedia::variableSetUp ()
     phys_bc.setHi(dir,SlipWall);
   }
 
-  setup_list();
   std::string pp_dump_file = ""; 
   if (pproot.countval("dump_parmparse_table")) {
       pproot.get("dump_parmparse_table",pp_dump_file);
@@ -777,10 +753,11 @@ PorousMedia::variableSetUp ()
   if (ntracers > 0)
     NUM_SCALARS = NUM_SCALARS + ntracers;
 
-  if (model == PM_POLYMER)
-  {
-    NUM_SCALARS = NUM_SCALARS + 2;
-  }
+  // No longer supported
+  // if (flow_model == PM_FLOW_MODEL_POLYMER)
+  // {
+  //   NUM_SCALARS = NUM_SCALARS + 2;
+  // }
 
   // add velocity and correction velocity
   NUM_STATE = NUM_SCALARS + BL_SPACEDIM + BL_SPACEDIM ;
@@ -835,12 +812,13 @@ PorousMedia::variableSetUp ()
 			bc,BndryFunc(FORT_ADVFILL));
 #endif
 
-  if (model == PM_POLYMER) {
-    desc_lst.setComponent(State_Type,ncomps+2,"s",
-			  bc,BndryFunc(FORT_ONE_N_FILL));
-    desc_lst.setComponent(State_Type,ncomps+3,"c",
-			  bc,BndryFunc(FORT_ONE_N_FILL));
-  }
+  // FIXME: No longer supported
+  // if (flow_model == PM_FLOW_MODEL_POLYMER) {
+  //   desc_lst.setComponent(State_Type,ncomps+2,"s",
+  // 			  bc,BndryFunc(FORT_ONE_N_FILL));
+  //   desc_lst.setComponent(State_Type,ncomps+3,"c",
+  // 			  bc,BndryFunc(FORT_ONE_N_FILL));
+  // }
 
   if (chemistry_helper != 0) {
     const std::map<std::string,int>& aux_chem_variables_map = chemistry_helper->AuxChemVariablesMap();
@@ -957,7 +935,7 @@ PorousMedia::variableSetUp ()
     }
   }
   
-  if (model==PM_SATURATED) {
+  if (flow_model==PM_FLOW_MODEL_SATURATED) {
     intern_reqd_der.push_back("Specific_Storage");
     intern_reqd_der.push_back("Specific_Yield");
     intern_reqd_der.push_back("Particle_Density");
@@ -1104,44 +1082,40 @@ void PorousMedia::read_prob()
 {
   ParmParse pp;
 
-  std::string exec_mode_in_str; 
-  pp.get("execution_mode",exec_mode_in_str);
-  if (exec_mode_in_str == "transient") {
-    execution_mode = TRANSIENT;
-  } else if (exec_mode_in_str == "init_to_steady") {
-    execution_mode = INIT_TO_STEADY;
-  } else if (exec_mode_in_str == "steady") {
-    execution_mode = STEADY;
-  } else {
-    ParallelDescriptor::Barrier();
-    if (ParallelDescriptor::IOProcessor()) {
-      std::string str = "Unrecognized execution_mode: \"" + exec_mode_in_str + "\"";
-      BoxLib::Abort(str.c_str());
-    }
-  }
-  if (execution_mode==INIT_TO_STEADY) {
-    pp.get("switch_time",switch_time);
-  }
-
   pp.query("do_output_flow_time_in_years;",do_output_flow_time_in_years);
   pp.query("do_output_transport_time_in_years;",do_output_transport_time_in_years);
   pp.query("do_output_chemistry_time_in_years;",do_output_chemistry_time_in_years);
 
-  // determine the model based on model_name
   ParmParse pb("prob");
-  std::string model_name;
-  pb.query("model_name",model_name);
-  model = available_models[model_name].model;
-  if (model == PM_INVALID) {
-    BoxLib::Abort("Invalid model selected");
+  std::string flow_state_str;
+  pb.get("flow_state",flow_state_str);
+
+  if (flow_state_str == "on") {
+    std::string flow_model_str;
+    pb.get("flow_model",flow_model_str);
+    if (flow_model_str == "richards") {
+      flow_model = PM_FLOW_MODEL_RICHARDS;
+      flow_eval  = PM_FLOW_EVAL_SOLVE;
+    } else if (flow_model_str == "saturated") {
+      flow_model = PM_FLOW_MODEL_SATURATED;
+      flow_eval  = PM_FLOW_EVAL_SOLVE;
+    } else if (flow_model_str == "constant") {
+      flow_model = PM_FLOW_MODEL_SATURATED;
+      flow_eval  = PM_FLOW_EVAL_CONSTANT;
+    } else {
+      flow_model = PM_FLOW_MODEL_INVALID;
+      flow_eval  = PM_FLOW_EVAL_INVALID;
+    }
+  }
+  else {
+    flow_model = PM_FLOW_MODEL_OFF; // FIXME: Richards or saturated??
+    flow_eval  = PM_FLOW_EVAL_CONSTANT;
   }
 
-  if (model==PM_STEADY_SATURATED) {
-      solute_transport_limits_dt = true;
-      do_richard_init_to_steady = true;
+  if (flow_model==PM_FLOW_MODEL_SATURATED || flow_model==PM_FLOW_MODEL_OFF) {
+    solute_transport_limits_dt = true;
   }
 
-  pb.query("shut_off_reactions",shut_off_reactions);
   pb.query("do_tracer_advection",do_tracer_advection);
   pb.query("do_tracer_diffusion",do_tracer_diffusion);
   if (do_tracer_advection || do_tracer_diffusion) {
@@ -1149,10 +1123,9 @@ void PorousMedia::read_prob()
   }
 
   if (setup_tracer_transport && 
-      ( model==PM_STEADY_SATURATED
-	|| model == PM_SATURATED
-        || (execution_mode==INIT_TO_STEADY && switch_time<=0)
-        || (execution_mode!=INIT_TO_STEADY) ) ) {
+      ( flow_model==PM_FLOW_MODEL_SATURATED
+	|| flow_model == PM_FLOW_MODEL_RICHARDS) )
+  {
       advect_tracers = do_tracer_advection;
       diffuse_tracers = do_tracer_diffusion;
       react_tracers = do_tracer_chemistry;
@@ -1400,7 +1373,7 @@ void  PorousMedia::read_comp()
               if (num_phases != num_phases_reqd) {
                   std::cerr << icname << ": Insufficient number of phases specified" << std::endl;
                   std::cerr << " ngiven, nreqd: " << num_phases << ", " << num_phases_reqd << std::endl;
-                  std::cerr << " current model: " << model << std::endl;
+                  std::cerr << " current flow_model: " << flow_model << std::endl;
                   BoxLib::Abort();
               }
               
@@ -1463,11 +1436,11 @@ void  PorousMedia::read_comp()
           }
           else if (ic_type == "velocity")
           {
-	      if (model != PM_STEADY_SATURATED) {
-	          if (ParallelDescriptor::IOProcessor()) {
-		    std::cerr << "constant-velocity settings may only be used with steady-saturated flow" << std::endl;
-		    BoxLib::Abort();
-		  }
+	    if ((flow_eval != PM_FLOW_EVAL_CONSTANT) || (flow_model != PM_FLOW_MODEL_SATURATED)) {
+		if (ParallelDescriptor::IOProcessor()) {
+		  std::cerr << "constant-velocity settings may only be used with steady-saturated flow" << std::endl;
+		  BoxLib::Abort();
+		}
 	      }
               Array<Real> vals(BL_SPACEDIM);
 	      ppr.getarr("vel",vals,0,BL_SPACEDIM);
@@ -1578,7 +1551,7 @@ void  PorousMedia::read_comp()
               }
               
               is_inflow = false;
-              if (model == PM_STEADY_SATURATED || model == PM_SATURATED) {
+              if (flow_model == PM_FLOW_MODEL_SATURATED) {
                 component_bc = Outflow;
               } else {
                 component_bc = Inflow;
@@ -1614,8 +1587,8 @@ void  PorousMedia::read_comp()
             }
 
             is_inflow = false;
-            if (model == PM_STEADY_SATURATED
-		|| model == PM_SATURATED ) {
+            if (flow_model == PM_FLOW_MODEL_SATURATED)
+	    {
               component_bc = Outflow;
             } else {
               component_bc = Inflow;
@@ -1643,7 +1616,7 @@ void  PorousMedia::read_comp()
 	    }
 
             is_inflow = false;
-            if (model == PM_STEADY_SATURATED || model == PM_SATURATED) {
+            if (flow_model == PM_FLOW_MODEL_SATURATED) {
               component_bc = Outflow;
             } else {
               component_bc = Inflow;
@@ -2424,7 +2397,7 @@ void PorousMedia::read_params()
     std::cout << "Reading sources."<< std::endl;
   read_source();
   
-  int model_int = Model();
+  int model_int = FlowModel();
   FORT_INITPARAMS(&ncomps,&nphases,&model_int,density.dataPtr(),
 		  muval.dataPtr(),pType.dataPtr(),
 		  &gravity,&gravity_dir);

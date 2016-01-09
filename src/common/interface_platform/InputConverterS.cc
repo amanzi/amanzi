@@ -552,131 +552,126 @@ void InputConverterS::ParseExecutionControls_()
   {
     bool found;
     DOMNode* defaults = GetUniqueElementByTagsString_("execution_controls, execution_control_defaults", found);
-    map<string, string> default_vals;
     if (!found) {
       ThrowErrorMisschild_("execution_controls", "execution_control_defaults");
     }
 
     DOMElement* def = static_cast<DOMElement*>(defaults);
 
-    // According to the spec,the following are required inputs
+    map<string, string> default_vals;
+    default_vals["max_cycles"] = "10000000"; // Default for the defaults
+
+    // Reset defaults
     default_vals["init_dt"]          = GetAttributeValueS_(def, "init_dt",          TYPE_NUMERICAL, true);
     default_vals["max_dt"]           = GetAttributeValueS_(def, "max_dt",           TYPE_NUMERICAL, true);
     default_vals["reduction_factor"] = GetAttributeValueS_(def, "reduction_factor", TYPE_NUMERICAL, true);
     default_vals["increase_factor"]  = GetAttributeValueS_(def, "increase_factor",  TYPE_NUMERICAL, true);
     default_vals["mode"]             = GetAttributeValueS_(def, "mode",             TYPE_NUMERICAL, true);
     default_vals["method"]           = GetAttributeValueS_(def, "method",           TYPE_NUMERICAL, true);
-    //default_vals["max_cycles"]       = GetAttributeValueS_(def, "max_cycles",       TYPE_NUMERICAL, true);
-    default_vals["max_cycles"] = "10000000";
+    string this_max_cycles           = GetAttributeValueS_(def, "max_cycles",       TYPE_NUMERICAL, false);
+    if (!this_max_cycles.empty()) {
+      default_vals["max_cycles"] = this_max_cycles;
+    }
 
-    vector<DOMNode*> controls = GetChildren_(controls_block, "execution_control", found);
-    if (found)
-    {
-      for (size_t i = 0; i < controls.size(); ++i)
+    vector<DOMNode*> control_nodes = GetChildren_(controls_block, "execution_control", found);
+    if (!found) {
+      ThrowErrorMisschild_("execution_controls", "execution_control");
+    }
+    else {
+
+      const size_t controls_size = 11;
+      string control_names[controls_size] = {"restart","initialize","start","end","init_dt","mode",
+					     "max_dt","reduction_factor","increase_factor","method","max_cycles"};
+
+      size_t ncn= control_nodes.size();
+      vector<map<string, string> > exec_control(ncn);
+      for (size_t i = 0; i < ncn; ++i)
       {
-        DOMElement* control = static_cast<DOMElement*>(controls[i]);
-
-        string restart = GetAttributeValueS_(control, "restart", TYPE_NONE, false);
-        if (!restart.empty())
-	  AddToTable(table, MakePPPrefix("execution_mode", "restart"), MakePPEntry(restart));
-
-        string initialize = GetAttributeValueS_(control, "initialize", TYPE_NONE, false);
-        if (!initialize.empty())
-	  AddToTable(table, MakePPPrefix("execution_mode", "initialize"), MakePPEntry(initialize));
-
-        string start = GetAttributeValueS_(control, "start");
-        map<string, string>::const_iterator iter = labeled_times_.find(start);
-        if (iter != labeled_times_.end())
-          AddToTable(table, MakePPPrefix("strt_time"), MakePPEntry(ConvertTimeToSeconds(iter->second)));
-        else
-          AddToTable(table, MakePPPrefix("strt_time"), MakePPEntry(ConvertTimeToSeconds(start)));
-
-        string end = GetAttributeValueS_(control, "end", TYPE_NUMERICAL, false);
-        iter = labeled_times_.find(end);
-        if (iter != labeled_times_.end())
-          AddToTable(table, MakePPPrefix("stop_time"), MakePPEntry(ConvertTimeToSeconds(iter->second)));
-        else
-          AddToTable(table, MakePPPrefix("stop_time"), MakePPEntry(ConvertTimeToSeconds(end)));
-
-        string init_dt = GetAttributeValueS_(control, "init_dt", TYPE_NUMERICAL, false);
-        if (init_dt.empty() && !default_vals.empty())
-          AddToTable(table, MakePPPrefix("prob", "dt_init"), MakePPEntry(ConvertTimeToSeconds(default_vals["init_dt"])));
-        else
-          AddToTable(table, MakePPPrefix("prob", "dt_init"), MakePPEntry(ConvertTimeToSeconds(init_dt)));
-
-        string mode = GetAttributeValueS_(control, "mode", TYPE_NUMERICAL, false);
-        if (mode.empty() && !default_vals.empty())
-          AddToTable(table, MakePPPrefix("execution_mode"), MakePPEntry(default_vals["mode"]));
-        else
-          AddToTable(table, MakePPPrefix("execution_mode"), MakePPEntry(mode));
-
-        string max_dt = GetAttributeValueS_(control, "max_dt", TYPE_NUMERICAL, false);
-        string max_dt_name = mode + string("max_dt");
-        if (max_dt.empty() && !default_vals.empty())
-          AddToTable(table, MakePPPrefix("prob", max_dt_name), MakePPEntry(ConvertTimeToSeconds(default_vals["max_dt"])));
-        else
-          AddToTable(table, MakePPPrefix("prob", max_dt_name), MakePPEntry(ConvertTimeToSeconds(max_dt)));
-
-        string reduction_factor = GetAttributeValueS_(control, "reduction_factor", TYPE_NUMERICAL, false);
-        if (reduction_factor.empty() && !default_vals.empty())
-          AddToTable(table, MakePPPrefix("prob", "dt_shrink_max"), MakePPEntry(default_vals["reduction_factor"]));
-        else
-          AddToTable(table, MakePPPrefix("prob", "dt_shrink_max"), MakePPEntry(reduction_factor));
-
-        string increase_factor = GetAttributeValueS_(control, "increase_factor", TYPE_NUMERICAL, false);
-        if (increase_factor.empty() && !default_vals.empty())
-          AddToTable(table, MakePPPrefix("prob", "dt_grow_max"), MakePPEntry(default_vals["increase_factor"]));
-        else
-          AddToTable(table, MakePPPrefix("prob", "dt_grow_max"), MakePPEntry(increase_factor));
-
-        string method = GetAttributeValueS_(control, "method", TYPE_NUMERICAL, false);
-        if (method.empty() && !default_vals.empty())
-          AddToTable(table, MakePPPrefix("execution_mode", "method"), MakePPEntry(default_vals["method"]));
-        else
-          AddToTable(table, MakePPPrefix("execution_mode", "method"), MakePPEntry(method));
-
-        string max_cycles = GetAttributeValueS_(control, "max_cycles", TYPE_NUMERICAL, false);
-        if (!max_cycles.empty())
-          AddToTable(table, MakePPPrefix("max_step"), MakePPEntry(max_cycles));
+	exec_control[i] = default_vals;
+        DOMElement* control_elt = static_cast<DOMElement*>(control_nodes[i]);
+	for (size_t j=0; j<controls_size; ++j) {
+	  string str = GetAttributeValueS_(control_elt, control_names[j].c_str(), TYPE_NONE, false);
+	  if (!str.empty())  exec_control[i][control_names[j]] = str;
+	}
       }
+
+      for (int i=1; i<ncn; ++i) {
+	for (map<string,string>::const_iterator it=exec_control[i].begin(); it!=exec_control[i].end(); ++it) {
+	  if (it->first == "start") {
+	    exec_control[i-1]["end"] = it->second;
+	  }
+	}
+      }
+
+      // If control is a time quantity, look up if labeled time, and convert to seconds
+      for (int i=0; i<ncn; ++i) {
+	for (map<string,string>::iterator it=exec_control[i].begin(); it!=exec_control[i].end(); ++it) {
+	  if (it->first == "start"
+	      || it->first == "end"
+	      || it->first == "init_dt"
+	      || it->first == "max_dt")
+	  {
+	    map<string, string>::const_iterator iter = labeled_times_.find(it->second);
+	    if (iter != labeled_times_.end())
+	      it->second = ConvertTimeToSeconds(iter->second);
+	    else
+	      it->second = ConvertTimeToSeconds(it->second);
+	  }
+	}
+      }
+
+      AddToTable(table, MakePPPrefix("max_step"), MakePPEntry(exec_control[ncn-1]["max_cycles"]));
+      AddToTable(table, MakePPPrefix("stop_time"), MakePPEntry(exec_control[ncn-1]["end"]));
+      AddToTable(table, MakePPPrefix("strt_time"), MakePPEntry(exec_control[0]["start"]));
+
+      vector<string> ecnames(ncn);
+      int ndigits = (int) (std::log10(ncn-1) + .0001) + 1;
+      for (int i=0; i<exec_control.size(); ++i) {
+	ecnames[i] = BoxLib::Concatenate("exec_control_",i,ndigits);
+	for (map<string,string>::const_iterator it=exec_control[i].begin(); it!=exec_control[i].end(); ++it) {
+	  AddToTable(table, MakePPPrefix("exec_control",ecnames[i],it->first), MakePPEntry(it->second));
+	}
+      }
+      AddToTable(table, MakePPPrefix("exec_controls"), MakePPEntry(ecnames));
     }
   }
 
   // Verbosity level(s).
   DOMNode* verbosity = GetUniqueElementByTagsString_("execution_controls, verbosity", found);
+  string level = "medium";
   if (found)
   {
     DOMElement* verb = static_cast<DOMElement*>(verbosity);
-    string level = GetAttributeValueS_(verb, "level");
+    level = GetAttributeValueS_(verb, "level");
     transform(level.begin(), level.end(), level.begin(), ::tolower);
-
-    // Each level of verbosity corresponds to several verbosity parameters 
-    // for Amanzi-S.
-    int prob_v, mg_v, cg_v, amr_v, diffuse_v, io_v, fab_v;
-    if (level == "none") {
-      prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0; io_v = 0; fab_v = 0;
-    }
-    else if (level == "low") {
-      prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 0; io_v = 0; fab_v = 0;
-    }
-    else if (level == "medium") {
-      prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2;  diffuse_v = 0; io_v = 0; fab_v = 0;
-    }
-    else if (level == "high") {
-      prob_v = 2; mg_v = 0; cg_v = 0; amr_v = 3;  diffuse_v = 0; io_v = 0; fab_v = 0;
-    }
-    else if (level == "extreme") {
-      prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1; io_v = 1; fab_v = 1;
-    }
-
-    AddToTable(table, MakePPPrefix("prob",    "v"), MakePPEntry(prob_v));
-    AddToTable(table, MakePPPrefix("mg",      "v"), MakePPEntry(mg_v));
-    AddToTable(table, MakePPPrefix("cg",      "v"), MakePPEntry(cg_v));
-    AddToTable(table, MakePPPrefix("amr",     "v"), MakePPEntry(amr_v));
-    AddToTable(table, MakePPPrefix("diffuse", "v"), MakePPEntry(diffuse_v));
-    AddToTable(table, MakePPPrefix("io",      "v"), MakePPEntry(io_v));
-    AddToTable(table, MakePPPrefix("fab",     "v"), MakePPEntry(fab_v));
   }
+
+  // Each level of verbosity corresponds to several verbosity parameters 
+  // for Amanzi-S.
+  int prob_v, mg_v, cg_v, amr_v, diffuse_v, io_v, fab_v;
+  if (level == "none") {
+    prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0; io_v = 0; fab_v = 0;
+  }
+  else if (level == "low") {
+    prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 0; io_v = 0; fab_v = 0;
+  }
+  else if (level == "medium") {
+    prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 2;  diffuse_v = 0; io_v = 0; fab_v = 0;
+  }
+  else if (level == "high") {
+    prob_v = 2; mg_v = 0; cg_v = 0; amr_v = 3;  diffuse_v = 0; io_v = 0; fab_v = 0;
+  }
+  else if (level == "extreme") {
+    prob_v = 3; mg_v = 2; cg_v = 2; amr_v = 3;  diffuse_v = 1; io_v = 1; fab_v = 1;
+  }
+
+  AddToTable(table, MakePPPrefix("prob",    "v"), MakePPEntry(prob_v));
+  AddToTable(table, MakePPPrefix("mg",      "v"), MakePPEntry(mg_v));
+  AddToTable(table, MakePPPrefix("cg",      "v"), MakePPEntry(cg_v));
+  AddToTable(table, MakePPPrefix("amr",     "v"), MakePPEntry(amr_v));
+  AddToTable(table, MakePPPrefix("diffuse", "v"), MakePPEntry(diffuse_v));
+  AddToTable(table, MakePPPrefix("io",      "v"), MakePPEntry(io_v));
+  AddToTable(table, MakePPPrefix("fab",     "v"), MakePPEntry(fab_v));
 
   ParmParse::appendTable(table);
 }
@@ -1605,26 +1600,19 @@ void InputConverterS::ParseProcessKernels_()
 
   // Flow model.
   string flow_state = GetAttributeValueS_(flow, "state");
+  AddToTable(table, MakePPPrefix("prob", "flow_state"), MakePPEntry(flow_state));
   if (flow_state == "on")
   {
     string flow_model = GetAttributeValueS_(flow, "model");
-    AddToTable(table, MakePPPrefix("prob", "model_name"), MakePPEntry(flow_model));
+    AddToTable(table, MakePPPrefix("prob", "flow_model"), MakePPEntry(flow_model));
   }
-  else
-    AddToTable(table, MakePPPrefix("prob", "model_name"), MakePPEntry("steady-saturated"));
   AddToTable(table, MakePPPrefix("prob", "have_capillary"), MakePPEntry(0));
   AddToTable(table, MakePPPrefix("prob", "cfl"), MakePPEntry(-1));
 
   // Transport model.
   string transport_state = GetAttributeValueS_(transport, "state");
-  if (transport_state == "on")
-  {
-    AddToTable(table, MakePPPrefix("prob", "do_tracer_advection"), MakePPEntry(1));
-  }
-  else
-  {
-    AddToTable(table, MakePPPrefix("prob", "do_tracer_advection"), MakePPEntry(0));
-  }
+  AddToTable(table, MakePPPrefix("prob", "do_tracer_advection"), MakePPEntry((transport_state == "on")));
+
   // FIXME: This is a hack for now. We need to inspect the dispersivity tensor
   // FIXME: to determine whether to do tracer diffusion, but for now we assume
   // FIXME: that diffusion settings use advection settings.
@@ -2118,9 +2106,7 @@ void InputConverterS::ParseOutput_()
     bool found;
     string base_filename = GetChildValueS_(checkpoint, "base_filename", found, true);
     string num_digits = GetChildValueS_(checkpoint, "num_digits", found, true);
-    vector<string> cycle_macros = GetChildVectorS_(checkpoint, "cycle_macros", found, true);
-    for (size_t i = 0; i < cycle_macros.size(); ++i)
-      cycle_macros[i] = MangleString(cycle_macros[i]);
+    vector<string> cycle_macros = GetChildVectorS_(checkpoint, "cycle_macros", found, false);
 
     AddToTable(table, MakePPPrefix("amr", "check_file"), MakePPEntry(base_filename));
     AddToTable(table, MakePPPrefix("amr", "chk_file_digits"), MakePPEntry(num_digits));
