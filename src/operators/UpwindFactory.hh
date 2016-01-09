@@ -49,11 +49,11 @@ Teuchos::RCP<Upwind<Model> > UpwindFactory<Model>::Create(
     Teuchos::RCP<const AmanziMesh::Mesh> mesh,
     Teuchos::RCP<const Model> model, Teuchos::ParameterList& plist)
 {
-  if (!plist.isParameter("relative permeability")) {
-    Errors::Message msg("UpwindFactory: parameter \"relative permeability\" is missing");
+  if (!plist.isParameter("upwind method")) {
+    Errors::Message msg("UpwindFactory: parameter \"upwind method\" is missing");
     Exceptions::amanzi_throw(msg);
   }
-  std::string name = plist.get<std::string>("relative permeability");
+  std::string name = plist.get<std::string>("upwind method");
 
   Teuchos::ParameterList sublist = plist.sublist("upwind parameters");
   if (name == "upwind: darcy velocity") {

@@ -63,8 +63,7 @@ void UpwindDivK<Model>::Init(Teuchos::ParameterList& plist)
 {
   method_ = Operators::OPERATOR_UPWIND_DIVK;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
-
-  order_ = plist.get<int>("order", 1);
+  order_ = plist.get<int>("polynomial order", 1);
 }
 
 

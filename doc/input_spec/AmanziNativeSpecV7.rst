@@ -1166,21 +1166,21 @@ This list is optional.
    </ParameterList>
 
 
-Upwind 
-......
+Relative permeability
+.....................
 
 This section discusses interface treatment of cell-centered fields such as 
 relative permeability, density and viscosity.
 
-* `"upwind`" [list] collects information required for treatment of
+* `"relative permeability`" [list] collects information required for treatment of
   relative permeability, density and viscosity on mesh faces.
 
-  * `"relative permeability`" [string] defines a method for calculating the *upwinded* 
+  * `"upwind method`" [string] defines a method for calculating the *upwinded* 
     relative permeability. The available options are: `"upwind: gravity`", 
     `"upwind: darcy velocity`" (default), `"upwind: second-order`", `"upwind: amanzi`" (experimental), 
     `"other: harmonic average`", and `"other: arithmetic average`".
 
-  * `"upwind update`" [string] defines frequency of recalculating Darcy flux inside
+  * `"upwind frequency`" [string] defines frequency of recalculating Darcy flux inside
     nonlinear solver. The available options are `"every timestep`" and `"every nonlinear iteration`".
     The first option freezes the Darcy flux for the whole time step. The second option
     updates it on each iteration of a nonlinear solver. The second option is recommended
@@ -1192,19 +1192,25 @@ relative permeability, density and viscosity.
     * `"tolerance`" [double] specifies relative tolerance for almost zero local flux. In such
       a case the flow is assumed to be parallel to a mesh face. Default value is 1e-12.
 
-    * [WIP] `"reconstruction method`" [string] defines a reconstruction method for the second-order upwind.
+    * [WIP] `"method`" [string] specifies a reconstruction method. Available option is
+      `"cell-based`" (default).
 
-    * [WIP] `"limiting method`" [string] defines limiting method for the second-order upwind.
+    * `"polynomial order`" [int] defines the polynomial order of a reconstructed function. Default is 1.
+
+    * `"limiter`" [string] specifies limiting method for a high-order reconstruction. 
+      Available options are `"Barth-Jespersen`" (default), `"tensorial`", and `"Kuzmin`". 
 
 .. code-block:: xml
 
    <ParameterList name="Richards problem">  <!-- parent list -->
-     <ParameterList name="upwind">
-       <Parameter name="relative permeability" type="string" value="upwind: darcy velocity"/>
-       <Parameter name="upwind update" type="string" value="every timestep"/>
-
+     <ParameterList name="relative permeability">
+       <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
+       <Parameter name="upwind frequency" type="string" value="every timestep"/>
        <ParameterList name="upwind parameters">
           <Parameter name="tolerance" type="double" value="1e-12"/>
+          <Parameter name="method" type="string" value="cell-based"/>
+          <Parameter name="polynomial order" type="int" value="1"/>
+          <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
        </ParameterList>
      </ParameterList>  
    </ParameterList>  
@@ -3242,7 +3248,7 @@ and their extensions for various PKs.
 
   <ParameterList name="reconstruction">
     <Parameter name="method" type="string" value="cell-based"/>
-    <Parameter name="order" type="int" value="1"/>
+    <Parameter name="polynomial order" type="int" value="1"/>
     <Parameter name="limiter" type="string" value="tensorial"/>
     <Parameter name="limiter extension for transport" type="bool" value="false"/>
   </ParameterList>

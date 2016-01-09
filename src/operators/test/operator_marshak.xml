@@ -41,9 +41,11 @@
     </ParameterList>
     
     <ParameterList name="upwind">
-      <Parameter name="relative permeability" type="string" value="upwind: darcy velocity"/>
+      <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
       <ParameterList name="upwind parameters">
         <Parameter name="tolerance" type="double" value="1e-12"/>
+        <Parameter name="method" type="string" value="cell-based"/>
+        <Parameter name="polynomial order" type="int" value="1"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

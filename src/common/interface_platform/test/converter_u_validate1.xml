@@ -323,11 +323,14 @@
         <ParameterList name="physical models and assumptions">
           <Parameter name="water content model" type="string" value="constant density"/>
         </ParameterList>
-        <ParameterList name="upwind">
-          <Parameter name="relative permeability" type="string" value="upwind: amanzi"/>
-          <Parameter name="upwind update" type="string" value="every timestep"/>
+        <ParameterList name="relative permeability">
+          <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
+          <Parameter name="upwind frequency" type="string" value="every timestep"/>
           <ParameterList name="upwind parameters">
             <Parameter name="tolerance" type="double" value="1.0e-12"/>
+            <Parameter name="method" type="string" value="cell-based"/>
+            <Parameter name="polynomial order" type="int" value="1"/>
+            <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="VerboseObject">
@@ -600,11 +603,14 @@
         <ParameterList name="physical models and assumptions">
           <Parameter name="water content model" type="string" value="constant density"/>
         </ParameterList>
-        <ParameterList name="upwind">
-          <Parameter name="relative permeability" type="string" value="upwind: amanzi"/>
-          <Parameter name="upwind update" type="string" value="every timestep"/>
+        <ParameterList name="relative permeability">
+          <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
+          <Parameter name="upwind frequency" type="string" value="every timestep"/>
           <ParameterList name="upwind parameters">
             <Parameter name="tolerance" type="double" value="1.0e-12"/>
+            <Parameter name="method" type="string" value="cell-based"/>
+            <Parameter name="polynomial order" type="int" value="1"/>
+            <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="water retention models">
