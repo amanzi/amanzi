@@ -37,8 +37,8 @@ template<class Model>
 class UpwindFlux : public Upwind<Model> {
  public:
   UpwindFlux(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-             Teuchos::RCP<const Model> model)
-      : Upwind<Model>(mesh, model) {};
+             Teuchos::RCP<const Model> model) :
+      Upwind<Model>(mesh, model) {};
   ~UpwindFlux() {};
 
   // main methods
@@ -52,6 +52,7 @@ class UpwindFlux : public Upwind<Model> {
  private:
   using Upwind<Model>::mesh_;
   using Upwind<Model>::model_;
+  using Upwind<Model>::face_comp_;
 
  private:
   int method_, order_;
@@ -83,7 +84,7 @@ void UpwindFlux<Model>::Compute(
     double (Model::*Value)(int, double) const)
 {
   ASSERT(field.HasComponent("cell"));
-  ASSERT(field_upwind.HasComponent("face"));
+  ASSERT(field_upwind.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
   flux.ScatterMasterToGhosted("face");
@@ -92,7 +93,7 @@ void UpwindFlux<Model>::Compute(
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
   // const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
-  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent("face", true);
+  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent(face_comp_, true);
 
   double flxmin, flxmax, tol;
   flx_face.MinValue(&flxmin);

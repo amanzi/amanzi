@@ -59,6 +59,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   rel_perm_out = boost::replace_all_copy(rel_perm, "-", ": ");
   replace(rel_perm_out.begin(), rel_perm_out.end(), '_', ' ');
 
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, update_upwind_frequency", flag);
+  if (flag) update_upwind = mm.transcode(node->getTextContent());
+  replace(update_upwind.begin(), update_upwind.end(), '_', ' ');
+
   // create flow header
   if (pk_model_["flow"] == "darcy") {
     Teuchos::ParameterList& darcy_list = out_list.sublist("Darcy problem");
@@ -133,7 +137,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   }
 
   flow_list->sublist("operators") = TranslateDiffusionOperator_(
-      disc_method, pc_method, nonlinear_solver, "vapor matrix", true);
+      disc_method, pc_method, nonlinear_solver, rel_perm, "vapor matrix", true);
   
   // insert time integrator
   std::string err_options, unstr_controls;

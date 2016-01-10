@@ -24,6 +24,7 @@
 #include "UpwindArithmeticAverage.hh"
 #include "UpwindDivK.hh"
 #include "UpwindFlux.hh"
+#include "UpwindFluxAndGravity.hh"
 #include "UpwindGravity.hh"
 #include "UpwindSecondOrder.hh"
 
@@ -66,6 +67,10 @@ Teuchos::RCP<Upwind<Model> > UpwindFactory<Model>::Create(
     return upwind;
   } else if (name == "upwind: amanzi") {
     Teuchos::RCP<UpwindDivK<Model> > upwind = Teuchos::rcp(new UpwindDivK<Model>(mesh, model));
+    upwind->Init(sublist);
+    return upwind;
+  } else if (name == "upwind: amanzi new") {
+    Teuchos::RCP<UpwindFluxAndGravity<Model> > upwind = Teuchos::rcp(new UpwindFluxAndGravity<Model>(mesh, model));
     upwind->Init(sublist);
     return upwind;
   } else if (name == "upwind: second-order") {

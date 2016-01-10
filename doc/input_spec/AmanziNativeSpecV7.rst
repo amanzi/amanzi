@@ -1178,7 +1178,7 @@ relative permeability, density and viscosity.
   * `"upwind method`" [string] defines a method for calculating the *upwinded* 
     relative permeability. The available options are: `"upwind: gravity`", 
     `"upwind: darcy velocity`" (default), `"upwind: second-order`", `"upwind: amanzi`" (experimental), 
-    `"other: harmonic average`", and `"other: arithmetic average`".
+    `"upwind: amanzi new`" (experiemental), `"other: harmonic average`", and `"other: arithmetic average`".
 
   * `"upwind frequency`" [string] defines frequency of recalculating Darcy flux inside
     nonlinear solver. The available options are `"every timestep`" and `"every nonlinear iteration`".

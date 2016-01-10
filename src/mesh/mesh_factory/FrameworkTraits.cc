@@ -906,8 +906,8 @@ framework_generate(const Epetra_MpiComm *comm, const Framework& f,
                                              request_faces, request_edges);
     break;
   case MSTK:
-    if (comm->MyPID() == 0)
-      std::cout << "Using MSTK framework to generate mesh" << std::endl;
+    if (verbobj && verbobj->getVerbLevel() >= Teuchos::VERB_LOW)
+      *verbobj->os() << "Using MSTK framework to generate mesh" << std::endl;
     result = FrameworkTraits<MSTK>::generate(x0, y0, z0, x1, y1, z1, 
                                              nx, ny, nz, comm,
                                              gm, verbobj, 

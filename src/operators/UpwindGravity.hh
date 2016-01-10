@@ -53,6 +53,7 @@ class UpwindGravity : public Upwind<Model> {
  private:
   using Upwind<Model>::mesh_;
   using Upwind<Model>::model_;
+  using Upwind<Model>::face_comp_;
 
  private:
   int method_, order_;
@@ -88,11 +89,11 @@ void UpwindGravity<Model>::Compute(
     double (Model::*Value)(int, double) const)
 {
   ASSERT(field.HasComponent("cell"));
-  ASSERT(field_upwind.HasComponent("face"));
+  ASSERT(field_upwind.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
-  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent("face", true);
+  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent(face_comp_, true);
   // const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
