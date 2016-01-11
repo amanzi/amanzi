@@ -1,7 +1,7 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators 
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -11,19 +11,20 @@
 
 #include <vector>
 
+// TPLs
 #include "Epetra_Vector.h"
 
+// Amanzi
 #include "errors.hh"
-#include "WhetStoneDefs.hh"
-#include "mfd3d_diffusion.hh"
-
-#include "PreconditionerFactory.hh"
-#include "MatrixFE.hh"
-#include "SuperMap.hh"
-
 #include "LinearOperator.hh"
 #include "LinearOperatorFactory.hh"
+#include "MatrixFE.hh"
+#include "mfd3d_diffusion.hh"
+#include "PreconditionerFactory.hh"
+#include "SuperMap.hh"
+#include "WhetStoneDefs.hh"
 
+// Operators
 #include "Op.hh"
 #include "Op_Cell_Node.hh"
 #include "Op_Cell_FaceCell.hh"
@@ -45,7 +46,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialization of the operator, scalar coefficient.
 ****************************************************************** */
-void OperatorDiffusionMFD::Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
+void OperatorDiffusionMFD::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
 {
   K_ = K;
 
@@ -62,8 +63,8 @@ void OperatorDiffusionMFD::Setup(const Teuchos::RCP<std::vector<WhetStone::Tenso
 /* ******************************************************************
 * Initialization of the operator: nonlinear coefficient.
 ****************************************************************** */
-void OperatorDiffusionMFD::Setup(const Teuchos::RCP<const CompositeVector>& k,
-                                 const Teuchos::RCP<const CompositeVector>& dkdp)
+void OperatorDiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
+						const Teuchos::RCP<const CompositeVector>& dkdp)
 {
   k_ = k;
   dkdp_ = dkdp;
@@ -125,14 +126,15 @@ void OperatorDiffusionMFD::UpdateMatrices(
 ****************************************************************** */
 void OperatorDiffusionMFD::UpdateMatricesNewtonCorrection(
     const Teuchos::Ptr<const CompositeVector>& flux,
-    const Teuchos::Ptr<const CompositeVector>& u)
+    const Teuchos::Ptr<const CompositeVector>& u,
+    double scalar_limiter)
 {
   // add Newton-type corrections
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
     if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
-      AddNewtonCorrectionCell_(flux, u);
+      AddNewtonCorrectionCell_(flux, u, scalar_limiter);
     } else {
-      Errors::Message msg("OperatorDiffusion: Newton correction may only be applied to schemas that include CELL dofs.");
+      Errors::Message msg("OperatorDiffusionMFD: Newton correction may only be applied to schemas that include CELL dofs.");
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -304,7 +306,7 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
         double matsum = 0.0;
         for (int n = 0; n < nfaces; n++) {
           double rowsum = 0.0;
-          double cur_kf = (kf[n] < constraint_scaling_cutoff_) ? 1.0 : kf[n];
+          double cur_kf = (kf[n] < scaled_constraint_cutoff_) ? 1.0 : kf[n];
           for (int m = 0; m < nfaces; m++) {
             double tmp = Wff(n, m) * cur_kf;
             rowsum += tmp;
@@ -325,7 +327,6 @@ void OperatorDiffusionMFD::UpdateMatricesMixed_(
 
     // Amanzi's first upwind: the family of DIVK fmethods
     if (little_k_ & OPERATOR_LITTLE_K_DIVK_BASE) {
-      ASSERT(!scaled_constraint_);
       double matsum = 0.0; 
       for (int n = 0; n < nfaces; n++) {
         double rowsum = 0.0;
@@ -402,11 +403,10 @@ void OperatorDiffusionMFD::UpdateMatricesNodal_()
 
 /* ******************************************************************
 * Calculate and assemble fluxes using the TPFA scheme.
+* This routine does not use little k.
 ****************************************************************** */
 void OperatorDiffusionMFD::UpdateMatricesTPFA_()
 {
-  // This does not seem to consider little k? --etc
-
   // populate transmissibilities
   WhetStone::MFD3D_Diffusion mfd(mesh_);
 
@@ -498,7 +498,7 @@ void OperatorDiffusionMFD::ApplyBCs(bool primary, bool eliminate)
                                   | OPERATOR_SCHEMA_DOFS_NODE)) {
       Teuchos::RCP<BCs> bc_f, bc_n;
       for (std::vector<Teuchos::RCP<BCs> >::iterator bc = bcs_trial_.begin();
-           bc != bcs_trial_.end(); ++bc) {
+          bc != bcs_trial_.end(); ++bc) {
         if ((*bc)->type() == OPERATOR_BC_TYPE_FACE) {
           bc_f = *bc;
         } else if ((*bc)->type() == OPERATOR_BC_TYPE_NODE) {
@@ -531,10 +531,6 @@ void OperatorDiffusionMFD::ApplyBCs(bool primary, bool eliminate)
 void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
                                            bool primary, bool eliminate)
 {
-  if (scaled_constraint_)
-    ASSERT(little_k_ != OPERATOR_LITTLE_K_DIVK &&
-           little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN);
-
   // apply diffusion type BCs to FACE-CELL system
   AmanziMesh::Entity_ID_List faces;
 
@@ -622,10 +618,10 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
 
       } else if (bc_model_trial[f] == OPERATOR_BC_NEUMANN) {
         if (scaled_constraint_) {
-          if (std::abs(kf[n]) < 1e-12) {
+          if (std::abs(kf[n]) < scaled_constraint_fuzzy_) {
             ASSERT(value == 0.0);
             rhs_face[0][f] = 0.0;
-          } else if (kf[n] < constraint_scaling_cutoff_) {
+          } else if (kf[n] < scaled_constraint_cutoff_) {
             rhs_face[0][f] -= value * mesh_->face_area(f) / kf[n];
           } else {
             rhs_face[0][f] -= value * mesh_->face_area(f);
@@ -641,10 +637,10 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
         }
         double area = mesh_->face_area(f);
         if (scaled_constraint_) {
-          if (std::abs(kf[n]) < 1e-12) {
+          if (std::abs(kf[n]) < scaled_constraint_fuzzy_) {
             ASSERT((value == 0.0) && (bc_mixed[f] == 0.0));
             rhs_face[0][f] = 0.0;
-          } else if (kf[n] < constraint_scaling_cutoff_) {
+          } else if (kf[n] < scaled_constraint_cutoff_) {
             rhs_face[0][f] -= value * area / kf[n];
             Acell(n, n) += bc_mixed[f] * area / kf[n];
           } else {
@@ -688,7 +684,7 @@ void OperatorDiffusionMFD::ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test,
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       rhs_cell[0][cells[0]] += bc_value[f] * Aface(0, 0);
     }
-    // neumann condition contributes to the RHS
+    // Neumann condition contributes to the RHS
     else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
       local_op_->matrices_shadow[f] = Aface;
       
@@ -825,12 +821,16 @@ void OperatorDiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
 
 
 /* ******************************************************************
-* Modify operator by addition approximation of Newton corection.
-* We ignore the right-hand side for the moment.
+* Modify operator by adding upwind approximation of Newton corection.
+* A special care should be taken later to deal with the case 
+* where kf < 0, i.e. for energy when: div (qh) = div (h k grad p), 
+* where h is enthalpy and can be negative. I think that the current
+* treatment is inadequate.
 ****************************************************************** */
 void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
     const Teuchos::Ptr<const CompositeVector>& flux,
-    const Teuchos::Ptr<const CompositeVector>& u)
+    const Teuchos::Ptr<const CompositeVector>& u,
+    double scalar_limiter)
 {
   // hack: ignore correction if no flux provided.
   if (flux == Teuchos::null) return;
@@ -846,6 +846,7 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
   const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
 
   // populate the local matrices
+  double v, vmod;
   AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -853,26 +854,15 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
 
-    // This change is to deal with the case where kf < 0, i.e. for energy when:
-    // div (qh) = div (h k grad p), where h is enthalpy and can be negative.
-    //   double v = flux_f[0][f];
-    //   double vmod = kf[0][f] > 0.0 ? fabs(v) * dkdp_f[0][f] / kf[0][f] : 0.0;
-    double v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] / kf[0][f] : 0.0;
-    double vmod = std::abs(v) * dkdp_f[0][f];
+    // We use the upwind discretization of the generalized flux.
+    v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] * dkdp_f[0][f] / kf[0][f] : 0.0;
+    vmod = std::abs(v);
 
-    if (constant_rho_) {
-      vmod *= rho_;
-    } else {
-      int c1 = cells[0];
-      int c2 = cells[ncells - 1];
-      if (rho_cv_.get()) {
-        const Epetra_MultiVector& rho_cv = *rho_cv_->ViewComponent("cell", true); 
-        vmod *= (rho_cv[0][c1] + rho_cv[0][c2]) / 2;
-      }
-    }
+    // prototype for future limiters (external or internal ?)
+    vmod *= scalar_limiter;
 
-    // interior face
-    int i, dir, c1, c2;
+    // define the upwind cell, index i in this case
+    int i, dir, c1;
     c1 = cells[0];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
     i = (v * dir >= 0.0) ? 0 : 1;
@@ -890,7 +880,7 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
 
 
 /* ******************************************************************
-* This method is entirely unclear why it exists and should be documented.
+* Given pressures, reduce the problem to Lagrange multipliers.
 ****************************************************************** */
 void OperatorDiffusionMFD::ModifyMatrices(const CompositeVector& u)
 {
@@ -927,8 +917,9 @@ void OperatorDiffusionMFD::ModifyMatrices(const CompositeVector& u)
 
 
 /* ******************************************************************
-* WARNING: Since diffusive flux is not continuous, we derive it only
-* once (using flag) and in exactly the same manner as other routines.
+* WARNING: Since diffusive flux may be discontinuous (e.g. for
+* Richards equation), we derive it only once (using flag) and in 
+* exactly the same manner as other routines.
 * **************************************************************** */
 void OperatorDiffusionMFD::UpdateFlux(const CompositeVector& u, CompositeVector& flux)
 {
@@ -995,7 +986,11 @@ void OperatorDiffusionMFD::CreateMassMatrices_()
     if (K_.get()) Kc = (*K_)[c];
     WhetStone::DenseMatrix Wff(nfaces, nfaces);
 
-    if (surface_mesh) {
+    // For problems with degenerate coefficients we should skip WhetStone.
+    if (Kc.Trace() == 0.0) {
+      Wff.PutScalar(0.0);
+      ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK;
+    } else if (surface_mesh) {
       ok = mfd.MassMatrixInverseSurface(c, Kc, Wff);
     } else {
       int method = mfd_primary_;
@@ -1018,7 +1013,11 @@ void OperatorDiffusionMFD::CreateMassMatrices_()
         } else if(method == WhetStone::DIFFUSION_SUPPORT_OPERATOR) {
           ok = mfd.MassMatrixInverseSO(c, Kc, Wff);
         } else if(method == WhetStone::DIFFUSION_POLYHEDRA_SCALED) {
-          ok = mfd.MassMatrixInverseScaled(c, Kc, Wff);
+          if (K_symmetric_) {
+            ok = mfd.MassMatrixInverseScaled(c, Kc, Wff);
+          } else {
+            ok = mfd.MassMatrixInverseNonSymmetric(c, Kc, Wff);
+          }
         }
       }
     }
@@ -1036,7 +1035,7 @@ void OperatorDiffusionMFD::CreateMassMatrices_()
 
 
 /* ******************************************************************
-* Scale elemental inverse mass matrices. Use case if saturated flow.
+* Scale elemental inverse mass matrices. Use case is saturated flow.
 ****************************************************************** */
 void OperatorDiffusionMFD::ScaleMassMatrices(double s)
 {
@@ -1054,6 +1053,7 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
   // Determine discretization
   std::string primary = plist.get<std::string>("discretization primary");
   std::string secondary = plist.get<std::string>("discretization secondary", primary);
+  K_symmetric_ = (plist.get<std::string>("diffusion tensor", "symmetric") == "symmetric");
 
   // Primary discretization methods
   if (primary == "mfd: monotone for hex") {
@@ -1091,7 +1091,14 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
 
   // Define stencil for the MFD diffusion method.
   std::vector<std::string> names;
-  names = plist.get<Teuchos::Array<std::string> > ("schema").toVector();
+  if (plist.isParameter("schema")) {
+    names = plist.get<Teuchos::Array<std::string> > ("schema").toVector();
+  } else {
+    names.resize(2);
+    names[0] = "face";
+    names[1] = "cell";
+    plist.set<Teuchos::Array<std::string> >("schema", names);
+  }
 
   int schema_dofs = 0;
   for (int i = 0; i < names.size(); i++) {
@@ -1154,8 +1161,8 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     if (schema_prec_dofs == OPERATOR_SCHEMA_DOFS_NODE) {
       global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist));
     } else if (schema_prec_dofs == OPERATOR_SCHEMA_DOFS_CELL) {
-      //      cvs->AddComponent("face", AmanziMesh::FACE, 1);
-      //      global_op_ = Teuchos::rcp(new Operator_FaceCellScc(cvs, plist));
+      // cvs->AddComponent("face", AmanziMesh::FACE, 1);
+      // global_op_ = Teuchos::rcp(new Operator_FaceCellScc(cvs, plist));
       global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist, schema_prec_dofs));
     } else if (schema_prec_dofs == OPERATOR_SCHEMA_DOFS_FACE) {
       cvs->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -1203,7 +1210,8 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
   
   // scaled constraint -- enables zero value of k on a face
   scaled_constraint_ = plist.get<bool>("scaled constraint equation", false);
-  constraint_scaling_cutoff_ = plist.get<double>("constraint equation scaling cutoff", 1.0);
+  scaled_constraint_cutoff_ = plist.get<double>("constraint equation scaling cutoff", 1.0);
+  scaled_constraint_fuzzy_ = plist.get<double>("constraint equation fuzzy number", 1.0e-12);
 
   // little-k options
   ASSERT(!plist.isParameter("upwind method"));
@@ -1226,11 +1234,20 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     ASSERT(false);
   }
 
+  // verify input consistency
+  if (scaled_constraint_) {
+    ASSERT(little_k_ != OPERATOR_LITTLE_K_DIVK &&
+           little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN);
+  }
+
   // Do we need to calculate Newton correction terms?
   newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
   std::string jacobian = plist.get<std::string>("newton correction", "none");
   if (jacobian == "true jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
+    Errors::Message msg("OperatorDiffusionMFD: \"true jacobian\" not supported -- maybe you mean \"approximate jacobian\"?");
+    Exceptions::amanzi_throw(msg);
+
   } else if (jacobian == "approximate jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
 
@@ -1249,10 +1266,6 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
-
-  // default parameters for Newton correction
-  constant_rho_ = true;
-  rho_ = 1.0;
 
   mass_matrices_initialized_ = false;
   K_ = Teuchos::null;
@@ -1315,12 +1328,12 @@ OperatorDiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
     CompositeVector u_f_copy(y);
     ierr = lin_solver->ApplyInverse(y, u_f_copy);
     *u.ViewComponent("face",false) = *u_f_copy.ViewComponent("face",false);
-    ASSERT(ierr >= 0);
+    //    ASSERT(ierr >= 0);
   } else {
     CompositeVector u_f_copy(y);
     ierr = consistent_face_op_->ApplyInverse(y, u);
     *u.ViewComponent("face",false) = *u_f_copy.ViewComponent("face",false);
-    ASSERT(ierr >= 0);
+    //    ASSERT(ierr >= 0);
   }
   
   return (ierr > 0) ? 0 : 1;

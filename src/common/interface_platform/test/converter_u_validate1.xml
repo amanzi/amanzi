@@ -1,5 +1,11 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+  <ParameterList name="Units">
+    <Parameter name="length" type="string" value="m"/>
+    <Parameter name="time" type="string" value="s"/>
+    <Parameter name="mass" type="string" value="kg"/>
+    <Parameter name="concentration" type="string" value="molar"/>
+  </ParameterList>
   <ParameterList name="Visualization Data">
     <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
@@ -97,8 +103,9 @@
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="6.172666560e+10"/>
+        <Parameter name="initial time step" type="double" value="1.00000000000000000e+00"/>
+        <Parameter name="maximum time step" type="double" value="9.99999999999999967e+98"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.0e+03"/>
       </ParameterList>
       <ParameterList name="TP 1">
         <ParameterList name="PK Tree">
@@ -112,13 +119,15 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="start period time" type="double" value="6.172666560e+10"/>
-        <Parameter name="end period time" type="double" value="9.46728e+10"/>
+        <Parameter name="start period time" type="double" value="6.17266656000000000e+10"/>
+        <Parameter name="end period time" type="double" value="9.46728000000000000e+10"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.0e+01"/>
+        <Parameter name="initial time step" type="double" value="1.00000000000000000e+00"/>
+        <Parameter name="maximum time step" type="double" value="9.99999999999999967e+98"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{Tc-99}"/>
+    <Parameter name="number of liquid components" type="int" value="1"/>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{6.1729344e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
       <Parameter name="initial time step" type="Array(double)" value="{1.0e+01, 1.0e+01, 1.0e+01, 1.0}"/>
@@ -192,61 +201,9 @@
       </ParameterList>
       <ParameterList name="permeability">
         <Parameter name="write checkpoint" type="bool" value="false"/>
-        <ParameterList name="function">
-          <ParameterList name="RegionMiddle">
-            <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="2"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.9976e-12"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 2 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.9976e-13"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="RegionBottom">
-            <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="2"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="6.9365e-11"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 2 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="6.9365e-12"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="RegionTop">
-            <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="2"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="2.0706e-09"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="DoF 2 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="2.0706e-10"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
+        <ParameterList name="exodus file initialization">
+          <Parameter name="file" type="string" value="mesh_data.exo"/>
+          <Parameter name="attributes" type="Array(string)" value="{permx,permy}"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="pressure">
@@ -341,6 +298,8 @@
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="1.0e-16"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <Parameter name="controller training start" type="int" value="0"/>
+        <Parameter name="controller training end" type="int" value="3"/>
         <ParameterList name="VerboseObject">
           <Parameter name="Verbosity Level" type="string" value="high"/>
         </ParameterList>
@@ -357,17 +316,6 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="GMRES for Newton">
-      <Parameter name="iterative method" type="string" value="gmres"/>
-      <ParameterList name="gmres parameters">
-        <Parameter name="error tolerance" type="double" value="1.0e-07"/>
-        <Parameter name="maximum number of iterations" type="int" value="50"/>
-        <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, relative residual}"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="low"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
   </ParameterList>
   <ParameterList name="PKs">
     <ParameterList name="Flow Steady">
@@ -378,15 +326,13 @@
         <ParameterList name="upwind">
           <Parameter name="relative permeability" type="string" value="upwind: amanzi"/>
           <Parameter name="upwind update" type="string" value="every timestep"/>
-          <Parameter name="upwind method" type="string" value="divk"/>
-          <ParameterList name="upwind divk parameters">
+          <ParameterList name="upwind parameters">
             <Parameter name="tolerance" type="double" value="1.0e-12"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="VerboseObject">
           <Parameter name="Verbosity Level" type="string" value="high"/>
         </ParameterList>
-        <Parameter name="atmospheric pressure" type="double" value="1.01325e+05"/>
         <ParameterList name="water retention models">
           <ParameterList name="WRM for RegionMiddle">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
@@ -584,6 +530,24 @@
         <Parameter name="aqueous names" type="Array(string)" value="{}"/>
         <Parameter name="aqueous values" type="Array(double)" value="{}"/>
       </ParameterList>
+      <ParameterList name="operators">
+        <ParameterList name="diffusion operator">
+          <ParameterList name="matrix">
+            <Parameter name="discretization primary" type="string" value="mfd: monotone for hex"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+            <Parameter name="gravity" type="bool" value="false"/>
+          </ParameterList>
+          <ParameterList name="preconditioner">
+            <Parameter name="discretization primary" type="string" value="mfd: monotone for hex"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+            <Parameter name="gravity" type="bool" value="false"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="boundary conditions">
         <ParameterList name="concentration">
           <ParameterList name="Tc-99">
@@ -639,12 +603,10 @@
         <ParameterList name="upwind">
           <Parameter name="relative permeability" type="string" value="upwind: amanzi"/>
           <Parameter name="upwind update" type="string" value="every timestep"/>
-          <Parameter name="upwind method" type="string" value="divk"/>
-          <ParameterList name="upwind divk parameters">
+          <ParameterList name="upwind parameters">
             <Parameter name="tolerance" type="double" value="1.0e-12"/>
           </ParameterList>
         </ParameterList>
-        <Parameter name="atmospheric pressure" type="double" value="1.01325e+05"/>
         <ParameterList name="water retention models">
           <ParameterList name="WRM for RegionMiddle">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
@@ -822,5 +784,9 @@
     <ParameterList name="VerboseObject">
       <Parameter name="Verbosity Level" type="string" value="high"/>
     </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Miscalleneous">
+    <Parameter isDefault="true" isUsed="true" name="output precision" type="int" value="0"/>
   </ParameterList>
 </ParameterList>

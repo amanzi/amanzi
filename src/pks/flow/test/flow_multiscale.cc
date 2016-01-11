@@ -1,7 +1,7 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -105,5 +105,5 @@ TEST(FLOW_2D_MULTISCALE) {
 
   // check the pressure
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c = 0; c < 60; c++) CHECK(fabs(pm[0][c] - pf[0][c]) < 0.1);
+  for (int c = 0; c < 60; c++) CHECK(fabs(pm[0][c] - pf[0][c]) < 0.2);
 }

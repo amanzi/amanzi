@@ -35,14 +35,18 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 #
 # Library: mesh_functions
 #
-file(GLOB inc_files "*.hh")
 add_amanzi_library(mesh_functions
                    SOURCE composite_vector_function.cc
-				          composite_vector_function_factory.cc
-                          unique_mesh_function.cc
+                          composite_vector_function_factory.cc
+                          UniqueMeshFunction.cc
                           boundary_function.cc
                           MeshPartition.cc
-				   HEADERS ${inc_files}
+                   HEADERS boundary_function.hh
+                           composite_vector_function.hh
+                           composite_vector_function_factory.hh
+                           MeshPartition.hh
+                           mesh_function.hh
+                           UniqueMeshFunction.hh
                    LINK_LIBS error_handling functions mesh ${Teuchos_LIBRARIES})
 
 # Define all tests at the of the file. BUILD_TESTS gates test building.

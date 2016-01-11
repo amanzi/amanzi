@@ -1,5 +1,5 @@
 /*
-  This is the input component of the Amanzi code. 
+  Input Converter
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -43,6 +43,9 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   // checks that input XML is structurally sound
   VerifyXMLStructure_();
 
+  // checks that input XML has valid version
+  ParseVersion_();
+
   // parsing of miscalleneous lists
   ParseSolutes_();
   ParseConstants_();
@@ -51,6 +54,7 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   out_list.set<bool>("Native Unstructured Input", "true");
 
   out_list.sublist("Miscalleneous") = TranslateMisc_();  
+  out_list.sublist("Units") = TranslateUnits_();  
   out_list.sublist("Mesh") = TranslateMesh_();
   out_list.sublist("Domain").set<int>("Spatial Dimension", dim_);
   out_list.sublist("Regions") = TranslateRegions_();
@@ -71,10 +75,23 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   out_list.sublist("Analysis") = CreateAnalysis_();
   FilterEmptySublists_(out_list);
 
+  // post-processing (may go away)
+  MergeInitialConditionsLists_(out_list);
+
   // miscalleneous cross-list information
+  // -- initialization file name
   if (init_filename_.size() > 0) {
     out_list.sublist("State").set<std::string>("initialization filename", init_filename_);
   }
+
+  // -- additional transport diagnostics (FIXME)
+  if (transport_diagnostics_.size() > 0) {
+    out_list.sublist("PKs").sublist("Transport")
+        .set<Teuchos::Array<std::string> >("runtime diagnostics: regions", transport_diagnostics_);
+  }
+
+  // save the translate file
+  if (rank_ == 0) SaveXMLFile(out_list, xmlfilename_);
 
   return out_list;
 }
@@ -223,6 +240,44 @@ Teuchos::ParameterList InputConverterU::TranslateVerbosity_()
 
 
 /* ******************************************************************
+* Units
+****************************************************************** */
+Teuchos::ParameterList InputConverterU::TranslateUnits_()
+{
+  Teuchos::ParameterList out_list;
+
+  MemoryManager mm;  
+  DOMNode* node;
+
+  bool flag;
+  std::string length("m"), time("s"), mass("kg"), concentration("molar");
+
+  node = GetUniqueElementByTagsString_("model_description, units, length_unit", flag);
+  if (flag) length = TrimString_(mm.transcode(node->getTextContent()));
+
+  node = GetUniqueElementByTagsString_("model_description, units, time_unit", flag);
+  if (flag) time = TrimString_(mm.transcode(node->getTextContent()));
+
+  node = GetUniqueElementByTagsString_("model_description, units, mass_unit", flag);
+  if (flag) mass = TrimString_(mm.transcode(node->getTextContent()));
+
+  node = GetUniqueElementByTagsString_("model_description, units, conc_unit", flag);
+  if (flag) concentration = TrimString_(mm.transcode(node->getTextContent()));
+
+  out_list.set<std::string>("length", length);
+  out_list.set<std::string>("time", time);
+  out_list.set<std::string>("mass", mass);
+  out_list.set<std::string>("concentration", concentration);
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+    *vo_->os() << "Translating units: " << length << " " << time << " " 
+               << mass << " " << concentration << std::endl;
+
+  return out_list;
+}
+
+
+/* ******************************************************************
 * Miscalleneous commands
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateMisc_()
@@ -239,7 +294,7 @@ Teuchos::ParameterList InputConverterU::TranslateMisc_()
   node = GetUniqueElementByTagsString_("misc, echo_translated_input", flag);
   if (flag) {
     element = static_cast<DOMElement*>(node);
-    std::string filename = GetAttributeValueS_(element, "file_name", false, "native_v6.xml");
+    std::string filename = GetAttributeValueS_(element, "file_name", TYPE_NONE, false, "native_v7.xml");
 
     out_list.set<std::string>("file name", filename);
   }
@@ -261,6 +316,30 @@ Teuchos::ParameterList InputConverterU::CreateAnalysis_()
   out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
 
   return out_list;
+}
+
+
+/* ******************************************************************
+* Filters out empty sublists starting with node "parent".
+****************************************************************** */
+void InputConverterU::MergeInitialConditionsLists_(Teuchos::ParameterList& plist)
+{
+  if (plist.sublist("PKs").isSublist("Chemistry")) {
+    Teuchos::ParameterList& ics = plist.sublist("State")
+                                       .sublist("initial conditions");
+    Teuchos::ParameterList& icc = plist.sublist("PKs").sublist("Chemistry")
+                                       .sublist("initial conditions");
+
+    for (Teuchos::ParameterList::ConstIterator it = icc.begin(); it != icc.end(); ++it) {
+      if (icc.isSublist(it->first)) {
+        Teuchos::ParameterList& slist = icc.sublist(it->first);
+        if (slist.isSublist("function")) {
+          ics.sublist(it->first) = slist;
+          slist.set<std::string>("function", "list was moved to State");
+        }
+      }
+    }
+  }  
 }
 
 
@@ -290,7 +369,7 @@ void InputConverterU::SaveXMLFile(
     Teuchos::ParameterList& out_list, std::string& xmlfilename)
 {
   std::string filename(xmlfilename);
-  std::string new_extension("_native_v6.xml");
+  std::string new_extension("_native_v7.xml");
   size_t pos = filename.find(".xml");
   filename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)14);
 

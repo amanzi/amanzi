@@ -29,8 +29,8 @@ class TimerManager {
 public:
   friend std::ostream& operator <<(std::ostream&, TimerManager&);
  
-  TimerManager();
-  ~TimerManager();
+  TimerManager() {};
+  ~TimerManager() {};
 
   void    add(std::string name, Timer::Type type);
   size_t  size();

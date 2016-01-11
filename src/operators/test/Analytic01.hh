@@ -1,5 +1,5 @@
 /*
-  This is the operators component of the Amanzi code.
+  Operators
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -8,7 +8,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Complex solution plus full non-constant tensor.
+  Non-polynomial solution and a full non-constant tensor.
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_01_HH_
@@ -18,7 +18,12 @@
 
 class Analytic01 : public AnalyticBase {
  public:
-  Analytic01(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : AnalyticBase(mesh) {};
+  Analytic01(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
+      AnalyticBase(mesh),
+      g_(0.0) {};
+  Analytic01(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, double g) :
+      AnalyticBase(mesh),
+      g_(g) {};
   ~Analytic01() {};
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
@@ -35,34 +40,7 @@ class Analytic01 : public AnalyticBase {
     double x = p[0];
     double y = p[1];
     double xy = x * y;
-    return x * xy * xy + x * sin(2 * M_PI * xy) * sin(2 * M_PI * y);
-  }
-
-  Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    double x = p[0];
-    double y = p[1];
-
-    double t01, t02, t03, t12, t13, t04, t05, t06; 
-    double px, py;
-
-    t01 = x*x*y;
-    t02 = sin(2*M_PI*x*y);
-    t03 = sin(2*M_PI*y);
-
-    t12 = cos(2*M_PI*x*y);
-    t13 = cos(2*M_PI*y);
-
-    px = 3*y*t01 + t03*(t02 + 2*M_PI*y*x*t12);
-    py = 2*x*t01 + x*2*M_PI*(x*t12*t03 + t02*t13);
-
-    t04 = Kxx_(p, t);
-    t05 = Kxy_(p, t);
-    t06 = Kyy_(p, t);
-
-    Amanzi::AmanziGeometry::Point v(2);
-    v[0] = -(t04 * px + t05 * py);
-    v[1] = -(t05 * px + t06 * py);
-    return v;
+    return x * xy * xy + x * sin(2 * M_PI * xy) * sin(2 * M_PI * y) - g_ * y;
   }
 
   Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
@@ -140,6 +118,9 @@ class Analytic01 : public AnalyticBase {
     double y = p[1];
     return -x * y;
   }
+
+ private:
+  double g_;
 };
 
 #endif

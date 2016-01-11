@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy
 import model_linear_materials_parallel_1d
-from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
+from amanzi_xml.observations.ObservationXMLv2 import ObservationXMLv2 as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
 import prettytable 
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     import os
     import run_amanzi_standard
 
-    input_filename = "amanzi_linear_materials_parallel_1d.xml"
+    input_filename = "amanzi_linear_materials_parallel_1d-isv2.xml"
     try: 
         run_amanzi_standard.run_amanzi(input_filename, 2)
         obs_xml=loadInputXML(input_filename)
@@ -136,7 +136,7 @@ if __name__ == "__main__":
        
         cmap = plotTestObservations(obs_xml,obs_data,axes1)
         plotTestModel(input_filename,cmap,axes1,obs_xml,obs_data)
-        #plt.show()
+        # plt.show()
         MakeTable(obs_data,obs_xml,input_filename)
 
     finally:

@@ -1,8 +1,13 @@
 /*
-This is the Nonlinear Solver component of the Amanzi code. 
-License: BSD
-Authors: Ethan Coon (ecoon@lanl.gov)
-         Konstantin Lipnikov (lipnikov@lanl.gov)
+  Solvers
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Ethan Coon (ecoon@lanl.gov)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_SOLVER_DEFS_HH_
@@ -33,6 +38,7 @@ const int SOLVER_DIVERGING = -4;
 const int SOLVER_INADMISSIBLE_SOLUTION = -5;
 const int SOLVER_INTERNAL_EXCEPTION = -6;
 const int SOLVER_BAD_SEARCH_DIRECTION = -7;
+const int SOLVER_LINEAR_SOLVER_ERROR = -8;
 
 const double BACKTRACKING_GOOD_REDUCTION = 0.5;
 const int BACKTRACKING_USED = 1;

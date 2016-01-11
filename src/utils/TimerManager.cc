@@ -1,23 +1,9 @@
-// C includes
-
-// C++ includes
-
-// TPL includes
-
-// Our includes
 #include "TimerManager.hh"
 
 namespace Amanzi {
 
 // Instanciate global
 TimerManager timer_manager;
-
-
-TimerManager::TimerManager() {
-}
-
-TimerManager::~TimerManager() {
-}
 
 /**
  * \fn         add
@@ -150,9 +136,6 @@ void TimerManager::parSync(MPI_Comm comm) {
    (it->second)->parSync(comm);
 }
 
-
-
-
-} // end of namespace Amanzi
+} // namespace Amanzi
 
 

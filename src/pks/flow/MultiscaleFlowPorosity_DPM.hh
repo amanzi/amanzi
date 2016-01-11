@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -12,7 +12,7 @@
   Example: pressure = pressure in the fracture continuum;
            pressure_matrix = pressure in the matrix continuum.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #ifndef MULTISCALE_FLOW_POROSITY_DPM_HH_

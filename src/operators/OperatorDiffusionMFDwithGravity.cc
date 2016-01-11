@@ -1,7 +1,7 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators 
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -37,8 +37,8 @@ void OperatorDiffusionMFDwithGravity::UpdateMatrices(
 void OperatorDiffusionMFDwithGravity::AddGravityToRHS_()
 {
   // vector or scalar rho?
-  const Epetra_MultiVector* rho_c;
-  if (rho_cv_ != Teuchos::null) rho_c = &*rho_cv_->ViewComponent("cell", false);
+  const Epetra_MultiVector* rho_c = NULL;
+  if (!is_scalar_) rho_c = &*rho_cv_->ViewComponent("cell", false);
 
   if (global_op_->rhs()->HasComponent("face")) {
     int dim = mesh_->space_dimension();
@@ -71,7 +71,7 @@ void OperatorDiffusionMFDwithGravity::AddGravityToRHS_()
       double zc = (mesh_->cell_centroid(c))[dim - 1];
 
       // building blocks for the gravity term
-      double rho = (rho_cv_ == Teuchos::null) ? rho_ : (*rho_c)[0][c];
+      double rho = rho_c ? (*rho_c)[0][c] : rho_;
       WhetStone::DenseMatrix& Wff = Wff_cells_[c];
 
       // Update terms due to nonlinear coefficient
@@ -165,8 +165,8 @@ void OperatorDiffusionMFDwithGravity::UpdateFlux(
   OperatorDiffusionMFD::UpdateFlux(u, flux);
 
   // vector or scalar rho?
-  const Epetra_MultiVector* rho_c;
-  if (rho_cv_ != Teuchos::null) rho_c = &*rho_cv_->ViewComponent("cell", false);
+  const Epetra_MultiVector* rho_c = NULL;
+  if (!is_scalar_) rho_c = &*rho_cv_->ViewComponent("cell", false);
 
   // preparing little-k data
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
@@ -196,7 +196,7 @@ void OperatorDiffusionMFDwithGravity::UpdateFlux(
     double zc = mesh_->cell_centroid(c)[dim - 1];
 
     // building blocks for the gravity term
-    double rho = (rho_cv_ == Teuchos::null) ? rho_ : (*rho_c)[0][c];
+    double rho = rho_c ? (*rho_c)[0][c] : rho_;
     WhetStone::DenseMatrix& Wff = Wff_cells_[c];
 
     // Update terms due to nonlinear coefficient
@@ -315,7 +315,7 @@ double OperatorDiffusionMFDwithGravity::ComputeGravityFlux(int f) const
     gflux = g_ * normal;
   }
 
-  if (rho_cv_ == Teuchos::null) {
+  if (is_scalar_) {
     gflux *= rho_;
   } else {
     const Epetra_MultiVector& rho_c = *rho_cv_->ViewComponent("cell", true);

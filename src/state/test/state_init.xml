@@ -1,0 +1,60 @@
+<ParameterList name="Main">
+  <ParameterList name="Regions">
+    <ParameterList name="domain">
+      <ParameterList name="Region: Box">
+	<Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  
+  <ParameterList name="State">
+    <ParameterList name="field evaluators">
+      <ParameterList name="porosity">
+	<Parameter name="field evaluator type" type="string" value="independent variable"/>
+	<ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+		<Parameter name="value" type="double" value="0.25"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+	</ParameterList>      
+      </ParameterList>
+    </ParameterList>
+    
+    <ParameterList name="initial conditions">
+      <ParameterList name="porosity">
+	<ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+		<Parameter name="value" type="double" value="0.25"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+	</ParameterList>
+      </ParameterList>
+
+      <ParameterList name="field">
+        <ParameterList name="exodus file initialization">
+          <Parameter name="file" type="string" value="test/cube3x3x3.exo"/>
+          <Parameter name="attributes" type="Array(string)" value="{permx}"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="permeability">
+        <ParameterList name="exodus file initialization">
+          <Parameter name="file" type="string" value="test/cube3x3x3.exo"/>
+          <Parameter name="attributes" type="Array(string)" value="{permx, permy, permz}"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>  
+

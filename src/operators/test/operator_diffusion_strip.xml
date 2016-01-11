@@ -71,13 +71,11 @@
     </ParameterList>
 
     <ParameterList name="upwind">
-      <Parameter name="upwind method" type="string" value="standard"/>
-      <ParameterList name="upwind standard parameters">
+      <Parameter name="relative permeability" type="string" value="upwind: darcy velocity"/>
+      <ParameterList name="upwind parameters">
         <Parameter name="tolerance" type="double" value="1e-12"/>
       </ParameterList>
     </ParameterList>
-
   </ParameterList>
-
 </ParameterList>
 

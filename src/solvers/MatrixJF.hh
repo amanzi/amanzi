@@ -1,12 +1,12 @@
 /*
-  This is the solver component of the Amanzi code.
+  Solvers
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Author: Ethan Coon (ecoon@lanl.gov)
 
   This decorator class wraps a nonlinear SolverFnBase as a Matrix
   class that approximates the linear problem at a point by doing a

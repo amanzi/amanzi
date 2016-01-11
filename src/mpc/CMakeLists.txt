@@ -38,7 +38,6 @@ include_directories(${DUMMYPK_SOURCE_DIR})
 include_directories(${ENERGY_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
-include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
@@ -77,7 +76,7 @@ set(mpc_inc_files
 add_amanzi_library(mpc 
                    SOURCE CycleDriver.cc Unstructured_observations.cc Walkabout_observations.cc
                    HEADERS ${mpc_inc_files}
-                   LINK_LIBS time_integration solvers output state mesh dbg ${mpc_tpl_libs})
+                   LINK_LIBS time_integration solvers output mpc_tree state mesh dbg ${mpc_tpl_libs})
 
 if (BUILD_TESTS)
     include_directories(${MESH_FACTORY_SOURCE_DIR})
@@ -127,13 +126,11 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_driver_frt.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-
     # Test: mpc-new driver dummy
     add_amanzi_test(mpc_driver_dummy mpc_driver_dummy
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_dummy_pk.cc
-		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
 #    add_executable(test_vis test/Main.cc test/test_vis.cpp)
 #    target_link_libraries(test_vis state mpc stk_mesh ${UnitTest_LIBRARIES})

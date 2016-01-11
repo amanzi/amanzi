@@ -1,5 +1,5 @@
 /*
-  This is the opeartors component of the Amanzi code.  
+  Operators
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -8,6 +8,30 @@
 
   Authors: Daniil Svyatskiy (dasvyat@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  OperatorDiffusionFV implements the OperatorDiffusion interface using
+  finite volumes, i.e. the two point flux approximation.
+
+
+  NOTE on the mesh requirements.
+  ------------------------------
+  It needs a limited set of the mesh interface, and therefore can be
+  defined on things less "mesh-like" and more topological.  To
+  facilitate that, the needed mesh interface is:
+
+    - space_dimension()
+    - num_entities(CELL,FACE,NODE)
+    - face_get_cells()
+    - cell_get_faces_and_dirs()
+    - cell_map()
+    - face_area()
+    - face_normal()
+    - face_centroid()
+    - cell_centroid()
+   
+    NOTE: actually, cell-to-cell distance, face-to-cell distance, not
+    necessarily centroid locations are necessary, but this is not in
+    the current mesh interface.
 */
 
 #ifndef AMANZI_OPERATOR_DIFFUSION_FV_HH_
@@ -15,26 +39,27 @@
 
 #include <strings.h>
 
+// TPLs
 #include "Ifpack.h" 
-
 #include "Teuchos_RCP.hpp"
 
+// Amanzi
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
 #include "Preconditioner.hh"
 #include "OperatorDiffusion.hh"
-
 
 namespace Amanzi {
 namespace Operators {
 
 class BCs;
 
-class OperatorDiffusionFV : public OperatorDiffusion {
+class OperatorDiffusionFV : public virtual OperatorDiffusion {
  public:
   OperatorDiffusionFV(Teuchos::ParameterList& plist,
                       const Teuchos::RCP<Operator>& global_op) :
-      OperatorDiffusion(global_op)
+      OperatorDiffusion(global_op),
+      transmissibility_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV;
     InitDiffusion_(plist);
@@ -42,7 +67,8 @@ class OperatorDiffusionFV : public OperatorDiffusion {
 
   OperatorDiffusionFV(Teuchos::ParameterList& plist,
                       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      OperatorDiffusion(mesh)
+      OperatorDiffusion(mesh),
+      transmissibility_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV;
     InitDiffusion_(plist);
@@ -50,7 +76,8 @@ class OperatorDiffusionFV : public OperatorDiffusion {
 
   OperatorDiffusionFV(Teuchos::ParameterList& plist,
                       const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      OperatorDiffusion(mesh)
+      OperatorDiffusion(mesh),
+      transmissibility_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV;
     InitDiffusion_(plist);
@@ -58,23 +85,14 @@ class OperatorDiffusionFV : public OperatorDiffusion {
 
   // main virtual members
   // -- setup
-  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
-  virtual void Setup(const Teuchos::RCP<const CompositeVector>& k,
-                     const Teuchos::RCP<const CompositeVector>& dkdp);
   using OperatorDiffusion::Setup;
-
-  virtual void SetDensity(double rho) {
-    constant_rho_ = true;
-    rho_ = rho;
-  }
-  virtual void SetDensity(const Teuchos::RCP<const CompositeVector>& rho) {
-    constant_rho_ = false;
-    rho_cv_ = rho;
-  }
+  virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
+  virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
+                                    const Teuchos::RCP<const CompositeVector>& dkdp);
 
   // -- create an operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-          const Teuchos::Ptr<const CompositeVector>& u);
+                              const Teuchos::Ptr<const CompositeVector>& u);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
 
   // -- modify an operator
@@ -91,15 +109,13 @@ class OperatorDiffusionFV : public OperatorDiffusion {
   const CompositeVector& transmissibility() { return *transmissibility_; }
 
  protected:
-  void ComputeTransmissibility_(AmanziGeometry::Point* g, Teuchos::RCP<CompositeVector> g_cv);
+  void ComputeTransmissibility_();
 
   void AnalyticJacobian_(const CompositeVector& solution);
 
   virtual void ComputeJacobianLocal_(
-      int mcells, int f, int face_dir, int Krel_method,
-      int bc_model, double bc_value,
-      double *pres, double *dkdp_cell,
-      WhetStone::DenseMatrix& Jpp);
+      int mcells, int f, int face_dir, int bc_model, double bc_value,
+      double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp);
 
   virtual void InitDiffusion_(Teuchos::ParameterList& plist);
   

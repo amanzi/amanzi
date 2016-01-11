@@ -1,13 +1,15 @@
 /*
-  This is the mimetic discretization component of the Amanzi code. 
+  WhetStone, version 2.0
+  Release name: naka-to.
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Release name: ara-to.
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  The mimetic finite difference method.
 */
 
 #include <cmath>
@@ -16,7 +18,7 @@
 #include "Mesh.hh"
 
 #include "mfd3d_diffusion.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -100,12 +102,11 @@ int MFD3D_Diffusion::MassMatrixInverseSurface(
   int nfaces = W.NumRows();
 
   DenseMatrix R(nfaces, d - 1);
-  DenseMatrix Wc(nfaces, nfaces);
 
-  int ok = L2consistencyInverseSurface(cell, permeability, R, Wc);
+  int ok = L2consistencyInverseSurface(cell, permeability, R, W);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityScalar(cell, R, Wc, W);
+  StabilityScalar(cell, R, W);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 

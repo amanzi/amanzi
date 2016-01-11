@@ -1,12 +1,12 @@
 /*
-  This is the solver component of the Amanzi code.
+  Solvers
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Author: Ethan Coon (ecoon@lanl.gov)
 
   Interface to Newton solver.
 */
@@ -207,7 +207,8 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
     r->Norm2(&res_l2);
     r->NormInf(&res_inf);
 
-    int  prec_error = fn_->ApplyPreconditioner(r, du);
+    int pc_error = fn_->ApplyPreconditioner(r, du);
+    if (pc_error < 0) return SOLVER_LINEAR_SOLVER_ERROR;
 
     du->Norm2(&du_l2);
     du->NormInf(&du_inf);

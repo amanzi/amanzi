@@ -1,13 +1,13 @@
 /*
-  This is the operators component of the Amanzi code.
+  Operators
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-  Ethan Coon (ecoon@lanl.gov)
+           Ethan Coon (ecoon@lanl.gov)
 */
 
 #include <vector>
@@ -51,7 +51,8 @@ int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector
   int num_with_cells = 0;
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     if ((*it)->schema & OPERATOR_SCHEMA_DOFS_CELL) {
-      if ((*it)->schema == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL)) {
+      if (((*it)->schema == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
+	  && ((*it)->vals.size() == ncells_owned)) {
         // diagonal schema
         for (int c = 0; c != ncells_owned; ++c) {
           D_c[0][c] += (*it)->vals[c];
@@ -61,10 +62,12 @@ int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector
       }
     }
   }
-  if (num_with_cells == 0 || num_with_cells > 1) {
-    Errors::Message msg("Schur complement to Sff must have exactly one cell-based schema with off-diagonal entries or other, non-cell dofs.");
-    Exceptions::amanzi_throw(msg);
-  }
+
+  // This error is a false positive when doing coupled surface/subsurface runs. --etc
+  // if (num_with_cells == 0 || num_with_cells > 1) {
+  //   Errors::Message msg("Schur complement to Sff must have exactly one cell-based schema with off-diagonal entries or other, non-cell dofs.");
+  //   Exceptions::amanzi_throw(msg);
+  // }
 
   int ierr(0);
   Y.PutScalarGhosted(0.0);
@@ -150,7 +153,8 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
   int num_with_cells = 0;
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     if ((*it)->schema & OPERATOR_SCHEMA_DOFS_CELL) {
-      if ((*it)->schema == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL)) {
+      if (((*it)->schema == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
+	  && ((*it)->vals.size() == ncells_owned)) {
         // diagonal schema
         for (int c = 0; c != ncells_owned; ++c) {
           D_c[0][c] += (*it)->vals[c];
@@ -160,10 +164,12 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
       }
     }
   }
-  if (num_with_cells == 0 || num_with_cells > 1) {
-    Errors::Message msg("Schur complement to Sff must have exactly one cell-based schema with off-diagonal entries or other, non-cell dofs.");
-    Exceptions::amanzi_throw(msg);
-  }
+
+  // This error is a false positive when doing coupled surface/subsurface runs. --etc
+  // if (num_with_cells == 0 || num_with_cells > 1) {
+  //   Errors::Message msg("Schur complement to Sff must have exactly one cell-based schema with off-diagonal entries or other, non-cell dofs.");
+  //   Exceptions::amanzi_throw(msg);
+  // }
   
   // schur complement
   int i_schur = 0;
@@ -234,6 +240,12 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
 
       // Assemble this Schur Op into matrix
       schur_op->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
+    } else if (((*it)->schema ==
+		(OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
+	       && ((*it)->vals.size() == ncells_owned)) {
+      // pass, already part of cell inverse
+    } else {
+      (*it)->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
     }
   }
 }

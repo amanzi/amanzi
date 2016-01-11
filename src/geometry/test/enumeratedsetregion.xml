@@ -1,0 +1,14 @@
+<ParameterList name="Regions">
+  <ParameterList name="Top Section">
+    <ParameterList name="Region: Enumerated Set">
+      <Parameter name="Entity" type="string" value="FACE"/>
+      <Parameter name="Entity GIDs" type="Array(int)" value="{0,1,2}"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="Middle">
+    <ParameterList name="Region: Enumerated Set">
+      <Parameter name="Entity" type="string" value="CELL"/>
+      <Parameter name="Entity GIDs" type="Array(int)" value="{0,1,2}"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

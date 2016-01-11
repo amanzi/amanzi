@@ -1,12 +1,12 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Author: Ethan Coon (ecoon@lanl.gov)
 
   Relative permeability is a function of saturation: f(pc(sat)).
 */
@@ -26,10 +26,7 @@ RelPerm::RelPerm(Teuchos::ParameterList& plist,
                  const Teuchos::RCP<WRMPartition>& wrm) :
     mesh_(mesh),
     patm_(patm),
-    wrm_(wrm)
-{
-  Init_(plist);
-};
+    wrm_(wrm) {};
 
 
 /* ******************************************************************
@@ -88,62 +85,6 @@ void RelPerm::Compute_dSdP(const Epetra_MultiVector& p, Epetra_MultiVector& ds)
     // Negative sign indicates that dSdP = -dSdPc.
     double pc = patm_ - p[0][c];
     ds[0][c] = -wrm_->second[(*wrm_->first)[c]]->dSdPc(pc);
-  }
-}
-
-
-/* ******************************************************************
-* Calculates gravity flux (K * g) * n and normalizes the result.
-****************************************************************** */
-void RelPerm::ComputeGravityFlux(
-    const std::vector<WhetStone::Tensor>& K, const AmanziGeometry::Point& g,
-    Teuchos::RCP<CompositeVector> flux)
-{
-  Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
-  for (int c = 0; c < ncells_owned; c++) {
-    AmanziGeometry::Point Kg = K[c] * g;
-    Kg /= norm(Kg);
- 
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    for (int n = 0; n < nfaces; n++) {
-      int f = faces[n];
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      flx[0][f] = (Kg * normal) / mesh_->face_area(f);
-    }
-  }
-
-  flux->ScatterMasterToGhosted("face");
-} 
-
-
-/* ****************************************************************
-* Process string for the relative permeability
-**************************************************************** */
-void RelPerm::Init_(Teuchos::ParameterList& plist)
-{
-  std::string name = plist.get<std::string>("relative permeability");
-
-  if (name == "upwind: gravity") {
-    method_ = Flow::FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
-  } else if (name == "upwind: darcy velocity") {
-    method_ = Flow::FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
-  } else if (name == "upwind: amanzi") {
-    method_ = Flow::FLOW_RELATIVE_PERM_AMANZI_MFD;
-  } else if (name == "other: arithmetic average") {
-    method_ = Flow::FLOW_RELATIVE_PERM_ARITHMETIC_AVERAGE;
-  } else if (name == "other: harmonic average") {
-    method_ = Flow::FLOW_RELATIVE_PERM_HARMONIC_AVERAGE;
-  } else {
-    Errors::Message msg;
-    msg << "Flow PK: unknown relative permeability method has been specified.";
-    Exceptions::amanzi_throw(msg);
   }
 }
 

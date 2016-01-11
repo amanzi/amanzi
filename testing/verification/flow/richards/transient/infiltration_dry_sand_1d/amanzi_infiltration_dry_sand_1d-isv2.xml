@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<amanzi_input type="unstructured" version="2.2.1">
+    <echo_translated_input format="unstructured_native"/>
+    <model_description name="infiltration_dry_sand-unstr">
+        <comments>infiltration_dry_sand-unstr	Tue Sep 22 14:24:43 PDT 2015</comments>
+    </model_description>
+    <definitions>
+        <macros>
+            <time_macro name="Every_0.1_day">
+                <start>0 y</start>
+                <timestep_interval>8.64E3 y</timestep_interval>
+                <stop>8.64E4 s</stop>
+            </time_macro>
+        </macros>
+    </definitions>
+    <process_kernels>
+        <flow model="richards" state="on"/>
+        <transport state="off"/>
+        <chemistry engine="none" state="off"/>
+    </process_kernels>
+    <phases>
+        <liquid_phase name="water">
+            <viscosity>1.002e-3</viscosity>
+            <density>998.2</density>
+        </liquid_phase>
+    </phases>
+    <execution_controls>
+        <verbosity level="medium"/>
+        <execution_control_defaults increase_factor="1.2" init_dt="1 s" max_dt="100 y" method="bdf1" mode="transient" reduction_factor="0.8"/>
+        <execution_control end="8.64E4 s" increase_factor="1.25" init_dt="2.0E-3 s" max_dt="8.64E3 s" method="bdf1" mode="transient" reduction_factor="0.8" start="0 y"/>
+    </execution_controls>
+    <numerical_controls>
+        <common_controls/>
+        <unstructured_controls>
+            <unstr_transport_controls>
+                <algorithm>explicit first-order</algorithm>
+                <sub_cycling>on</sub_cycling>
+                <cfl>1</cfl>
+            </unstr_transport_controls>
+            <unstr_steady-state_controls>
+                <min_iterations>10</min_iterations>
+                <max_iterations>15</max_iterations>
+                <limit_iterations>20</limit_iterations>
+                <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
+                <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
+                <error_control_options>pressure</error_control_options>
+                <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
+                <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+                <max_divergent_iterations>3</max_divergent_iterations>
+                <initialize_with_darcy>true</initialize_with_darcy>
+                <restart_tolerance_relaxation_factor>1</restart_tolerance_relaxation_factor>
+                <preconditioner>hypre_amg</preconditioner>
+            </unstr_steady-state_controls>
+            <unstr_transient_controls>
+                <bdf1_integration_method>
+                    <min_iterations>10</min_iterations>
+                    <max_iterations>15</max_iterations>
+                    <limit_iterations>20</limit_iterations>
+                    <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
+                    <nonlinear_iteration_damping_factor>1.0</nonlinear_iteration_damping_factor>
+                    <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
+                    <max_divergent_iterations>3</max_divergent_iterations>
+                    <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+                    <restart_tolerance_relaxation_factor>1</restart_tolerance_relaxation_factor>
+                    <error_control_options>pressure,residual</error_control_options>
+                </bdf1_integration_method>
+                <preconditioner>hypre_amg</preconditioner>
+                <initialize_with_darcy>true</initialize_with_darcy>
+            </unstr_transient_controls>
+            <unstr_preconditioners>
+                <hypre_amg>
+                    <hypre_cycle_applications>5</hypre_cycle_applications>
+                    <hypre_smoother_sweeps>3</hypre_smoother_sweeps>
+                    <hypre_tolerance>0.0</hypre_tolerance>
+                    <hypre_strong_threshold>0.5</hypre_strong_threshold>
+                </hypre_amg>
+            </unstr_preconditioners>
+            <unstr_linear_solver>
+                <method>gmres</method>
+                <max_iterations>100</max_iterations>
+                <tolerance>1.0e-16</tolerance>
+                <preconditioner>hypre_amg</preconditioner>
+            </unstr_linear_solver>
+            <unstr_nonlinear_solver name="nka">
+                <modify_correction>false</modify_correction>
+                <update_upwind_frequency>every_timestep</update_upwind_frequency>
+            </unstr_nonlinear_solver>
+        </unstructured_controls>
+    </numerical_controls>
+    <mesh framework="mstk">
+        <dimension>3</dimension>
+        <generate>
+            <number_of_cells nx="1" ny="1" nz="400"/>
+            <box high_coordinates="(1.0, 1.0, 4.0)" low_coordinates="(0.0, 0.0, 0.0)"/>
+        </generate>
+    </mesh>
+    <regions>
+        <box high_coordinates="(1.0, 1.0, 4.0)" low_coordinates="(0.0, 0.0, 0.0)" name="Region_between_surface_0_and__1"/>
+        <box high_coordinates="(1.0, 1.0, 4.0)" low_coordinates="(0.0, 0.0, 0.0)" name="All"/>
+        <box high_coordinates="(1.0, 1.0, 4.0)" low_coordinates="(0.0, 0.0, 4.0)" name="+Z_Boundary"/>
+        <box high_coordinates="(1.0, 1.0, 0.0)" low_coordinates="(0.0, 0.0, 0.0)" name="-Z_Boundary"/>
+        <box high_coordinates="(1.0, 1.0, 4.0)" low_coordinates="(0.0, 1.0, 0.0)" name="+Y_Boundary"/>
+        <box high_coordinates="(1.0, 0.0, 4.0)" low_coordinates="(0.0, 0.0, 0.0)" name="-Y_Boundary"/>
+        <box high_coordinates="(1.0, 1.0, 4.0)" low_coordinates="(1.0, 0.0, 0.0)" name="+X_Boundary"/>
+        <box high_coordinates="(0.0, 1.0, 4.0)" low_coordinates="(0.0, 0.0, 0.0)" name="-X_Boundary"/>
+    </regions>
+    <materials>
+        <material name="sand">
+            <mechanical_properties>
+                <porosity value=".43"/>
+                <particle_density value="2560.0"/>
+            </mechanical_properties>
+            <permeability x="1.18472E-11" y="1.18472E-11" z="1.18472E-11"/>
+            <cap_pressure model="van_genuchten">
+                <parameters alpha="0.001532333" m="0.6666667" sr="0.104651"/>
+            </cap_pressure>
+            <rel_perm model="mualem"/>
+            <assigned_regions>All</assigned_regions>
+        </material>
+    </materials>
+    <initial_conditions>
+        <initial_condition name="All">
+            <assigned_regions>All</assigned_regions>
+            <liquid_phase name="water">
+                <liquid_component name="water">
+                    <uniform_pressure value="62169"/>
+                </liquid_component>
+            </liquid_phase>
+        </initial_condition>
+    </initial_conditions>
+    <boundary_conditions>
+        <boundary_condition name="BottomBC">
+            <assigned_regions>-Z_Boundary</assigned_regions>
+            <liquid_phase name="water">
+                <liquid_component name="water">
+                    <uniform_pressure function="constant" start="0 y" value="62169."/>
+                </liquid_component>
+            </liquid_phase>
+        </boundary_condition>
+        <boundary_condition name="TopBC">
+            <assigned_regions>+Z_Boundary</assigned_regions>
+            <liquid_phase name="water">
+                <liquid_component name="water">
+                    <inward_mass_flux function="constant" start="0 y" value="0.0115532"/>
+                </liquid_component>
+            </liquid_phase>
+        </boundary_condition>
+    </boundary_conditions>
+    <output>
+        <vis>
+            <base_filename>plot</base_filename>
+            <num_digits>5</num_digits>
+            <time_macros>Every_0.1_day</time_macros>
+        </vis>
+        <checkpoint>
+            <base_filename>checkpoint</base_filename>
+            <num_digits>5</num_digits>
+        </checkpoint>
+    </output>
+</amanzi_input>

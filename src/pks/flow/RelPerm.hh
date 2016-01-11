@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -19,7 +19,7 @@
 
 #include "Mesh.hh"
 #include "secondary_variable_field_evaluator.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "WRM.hh"
 #include "WRMPartition.hh"
 
@@ -32,10 +32,6 @@ class RelPerm {
           Teuchos::RCP<const AmanziMesh::Mesh> mesh,
           double patm,
           const Teuchos::RCP<WRMPartition>& wrm);
-
-  void ComputeGravityFlux(const std::vector<WhetStone::Tensor>& K,
-                          const AmanziGeometry::Point& g,
-                          Teuchos::RCP<CompositeVector> flux);
 
   // main members
   void Compute(Teuchos::RCP<const CompositeVector> p, Teuchos::RCP<CompositeVector> krel);
@@ -50,17 +46,10 @@ class RelPerm {
   // other
   void PlotWRMcurves();
 
-  // access
-  int method() { return method_; }
-
- private:
-  void Init_(Teuchos::ParameterList& plist);
-
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<WRMPartition> wrm_;
 
-  int method_;
   double patm_;
 };
 

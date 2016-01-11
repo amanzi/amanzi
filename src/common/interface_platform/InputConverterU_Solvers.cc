@@ -98,6 +98,8 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
     Teuchos::ParameterList& method_list = aztecoo_list.sublist(method);
     method_list.set<double>("error tolerance", tol);
     method_list.set<int>("maximum number of iterations", maxiter);
+    method_list.set<int>("controller training start", 0);  // two gmres extensions
+    method_list.set<int>("controller training end", 3);
     method_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
   }
 
@@ -113,17 +115,21 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
   }
 
   // add default "GMRES for Newton" solver
-  Teuchos::ParameterList& gmres_list = out_list.sublist("GMRES for Newton");
-  gmres_list.set<std::string>("iterative method", "gmres");
-  {
-    Teuchos::ParameterList& method_list = gmres_list.sublist("gmres parameters");
-    method_list.set<double>("error tolerance", 1e-7);
-    method_list.set<int>("maximum number of iterations", 50);
-    std::vector<std::string> criteria;
-    criteria.push_back("relative rhs");
-    criteria.push_back("relative residual");
-    method_list.set<Teuchos::Array<std::string> >("convergence criteria", criteria);
-    method_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
+  for (int i = 0; i < gmres_solvers_.size(); ++i) {
+    Teuchos::ParameterList& gmres_list = out_list.sublist(gmres_solvers_[i].first);
+    gmres_list.set<std::string>("iterative method", "gmres");
+    {
+      Teuchos::ParameterList& method_list = gmres_list.sublist("gmres parameters");
+      method_list.set<double>("error tolerance", gmres_solvers_[i].second * 1e-2);
+      method_list.set<int>("maximum number of iterations", 50);
+      std::vector<std::string> criteria;
+      criteria.push_back("relative rhs");
+      criteria.push_back("relative residual");
+      method_list.set<Teuchos::Array<std::string> >("convergence criteria", criteria);
+      method_list.set<int>("controller training start", 0);
+      method_list.set<int>("controller training end", 3);
+      method_list.sublist("VerboseObject").set<std::string>("Verbosity Level", "low");
+    }
   }
 
   return out_list;

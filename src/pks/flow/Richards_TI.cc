@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -45,7 +45,7 @@ void Richards_PK::Functional(double t_old, double t_new,
 
   relperm_->Compute(u_new->Data(), krel_); 
   RelPermUpwindFn func1 = &RelPerm::Compute;
-  upwind_->Compute(*darcy_flux_upwind, *u_new->Data(), bc_model, bc_value, *krel_, *krel_, func1);
+  upwind_->Compute(*darcy_flux_copy, *u_new->Data(), bc_model, bc_value, *krel_, *krel_, func1);
   Operators::CellToFace_ScaleInverse(mu, krel_);
   krel_->ScaleMasterAndGhosted(molar_rho_);
 
@@ -54,7 +54,7 @@ void Richards_PK::Functional(double t_old, double t_new,
 
   relperm_->ComputeDerivative(u_new->Data(), dKdP_); 
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
-  upwind_->Compute(*darcy_flux_upwind, *u_new->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
+  upwind_->Compute(*darcy_flux_copy, *u_new->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
   Operators::CellToFace_ScaleInverse(mu, dKdP_);
   dKdP_->ScaleMasterAndGhosted(molar_rho_);
 
@@ -66,7 +66,7 @@ void Richards_PK::Functional(double t_old, double t_new,
   op_matrix_diff_->ApplyBCs(true, true);
 
   Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
-  if (src_sink != NULL) AddSourceTerms(*rhs);
+  AddSourceTerms(*rhs);
 
   op_matrix_->ComputeNegativeResidual(*u_new->Data(), *f->Data());
 
@@ -96,6 +96,7 @@ void Richards_PK::Functional(double t_old, double t_new,
 
   // add water content in matrix
   if (multiscale_porosity_) {
+    pressure_matrix_eval_->SetFieldAsChanged(S_.ptr());
     Functional_AddMassTransferMatrix_(dtp, f->Data());
   }
 
@@ -140,7 +141,7 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
   // We assume the same DOFs for pressure and temperature. 
   // We assume that field temperature has already essential BCs.
   op_vapor_->Init();
-  op_vapor_diff_->Setup(kvapor_temp, Teuchos::null);
+  op_vapor_diff_->SetScalarCoefficient(kvapor_temp, Teuchos::null);
   op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op_vapor_diff_->ApplyBCs(false, false);
 
@@ -152,7 +153,7 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
   // Calculate vapor contribution due to capillary pressure.
   // We elliminate essential BCs to re-use the local Op for PC.
   op_vapor_->Init();
-  op_vapor_diff_->Setup(kvapor_pres, Teuchos::null);
+  op_vapor_diff_->SetScalarCoefficient(kvapor_pres, Teuchos::null);
   op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op_vapor_diff_->ApplyBCs(false, true);
 
@@ -227,7 +228,10 @@ void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Comp
 {
   const Epetra_MultiVector& pcf = *S_->GetFieldData("pressure")->ViewComponent("cell");
   const Epetra_MultiVector& pcm = *S_->GetFieldData("pressure_matrix")->ViewComponent("cell");
+
+  S_->GetFieldEvaluator("porosity_matrix")->HasFieldChanged(S_.ptr(), "flow");
   const Epetra_MultiVector& phi = *S_->GetFieldData("porosity_matrix")->ViewComponent("cell");
+
   const Epetra_MultiVector& wcm_prev = *S_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
   Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix", passwd_)->ViewComponent("cell");
 
@@ -260,6 +264,7 @@ void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Comp
 void Richards_PK::CalculateVWContentMatrix_()
 {
   const Epetra_MultiVector& pcm = *S_->GetFieldData("pressure_matrix")->ViewComponent("cell");
+  S_->GetFieldEvaluator("porosity_matrix")->HasFieldChanged(S_.ptr(), "flow");
   const Epetra_MultiVector& phi = *S_->GetFieldData("porosity_matrix")->ViewComponent("cell");
   Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix", passwd_)->ViewComponent("cell");
 
@@ -291,7 +296,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
 
   // update coefficients
-  if (update_upwind == FLOW_UPWIND_UPDATE_ITERATION) {
+  if (upwind_frequency_ == FLOW_UPWIND_UPDATE_ITERATION) {
     op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
     Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face");
     for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
@@ -300,7 +305,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
 
   relperm_->Compute(u->Data(), krel_);
   RelPermUpwindFn func1 = &RelPerm::Compute;
-  upwind_->Compute(*darcy_flux_upwind, *u->Data(), bc_model, bc_value, *krel_, *krel_, func1);
+  upwind_->Compute(*darcy_flux_copy, *u->Data(), bc_model, bc_value, *krel_, *krel_, func1);
   Operators::CellToFace_ScaleInverse(mu, krel_);
   krel_->ScaleMasterAndGhosted(molar_rho_);
 
@@ -309,7 +314,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
 
   relperm_->ComputeDerivative(u->Data(), dKdP_);
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
-  upwind_->Compute(*darcy_flux_upwind, *u->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
+  upwind_->Compute(*darcy_flux_copy, *u->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
   Operators::CellToFace_ScaleInverse(mu, dKdP_);
   dKdP_->ScaleMasterAndGhosted(molar_rho_);
 
@@ -319,7 +324,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   // create diffusion operators
   op_preconditioner_->Init();
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
-  op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr());
+  op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr(), molar_rho_);
   op_preconditioner_diff_->ApplyBCs(true, true);
 
   // add time derivative
@@ -328,6 +333,12 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
     CompositeVector& dwc_dp = *S_->GetFieldData("dwater_content_dpressure", "water_content");
 
     op_acc_->AddAccumulationTerm(*u->Data(), dwc_dp, dtp, "cell");
+ 
+    // estimate CNLS limiters
+    if (algebraic_water_content_balance_) {
+      const CompositeVector& wc = *S_->GetFieldData("water_content");
+      CalculateCNLSLimiter_(wc, dwc_dp, bdf1_dae->tol_solver());
+    }
   }
 
   // Add vapor diffusion. We assume that the corresponding local operator
@@ -366,6 +377,12 @@ double Richards_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   double error;
   error = ErrorNormSTOMP(*u->Data(), *du->Data());
 
+  // exact algebraic relation between saturation and Darcy flux
+  // requires to save the last increment.
+  if (algebraic_water_content_balance_) {
+    *cnls_limiter_->ViewComponent("dpre") = *du->Data()->ViewComponent("cell");
+  }
+ 
   return error;
 }
 
@@ -447,9 +464,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   const Epetra_MultiVector& duc = *du->Data()->ViewComponent("cell");
 
   AmanziGeometry::Point face_centr, cell_cntr;
-  double max_sat_pert = 0.25;
-  double damping_factor = 0.5;
-  double reference_pressure = 101325.0;
+  double max_sat_pert(0.25), damping_factor(0.5);
   
   if (rp_list_->isSublist("clipping parameters")) {
     Teuchos::ParameterList& clip_list = rp_list_->sublist("clipping parameters");
@@ -471,12 +486,8 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
     double tmp = duc[0][c];
 
     if ((fabs(duc[0][c]) > du_pert_max) && (1 - sat > 1e-5)) {
-      if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "clip saturation: c=" << c 
-                   << " p=" << uc[0][c]
-                   << " dp: " << duc[0][c] << " -> " << du_pert_max << std::endl;
-      }
+      // std::cout << "clip saturation: c=" << c << " p=" << uc[0][c]
+      //           << " dp: " << duc[0][c] << " -> " << du_pert_max << std::endl;
 
       if (duc[0][c] >= 0.0) duc[0][c] = du_pert_max;
       else duc[0][c] = -du_pert_max;
@@ -490,9 +501,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
     double tmp = duc[0][c];
 
     if ((unew > atm_pressure_) && (uc[0][c] < atm_pressure_)) {
-      if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-        *vo_->os() << "pressure change: " << uc[0][c] << " -> " << unew << std::endl;
-      }
+      // std::cout << "pressure change: " << uc[0][c] << " -> " << unew << std::endl;
       duc[0][c] = tmp * damping_factor;
       npre_clipped++;
     }

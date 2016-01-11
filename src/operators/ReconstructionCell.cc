@@ -1,7 +1,7 @@
 /*
-  This is the operator component of the Amanzi code. 
+  Operators
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -27,6 +27,7 @@ namespace Operators {
 
 /* ******************************************************************
 * Initialization of basic parameters.
+* NOTE: we assume that ghost values of field were already populated.
 ****************************************************************** */
 void ReconstructionCell::Init(
     Teuchos::RCP<const Epetra_MultiVector> field, Teuchos::ParameterList& plist)
@@ -53,7 +54,7 @@ void ReconstructionCell::Init(
   // process parameters for limiters
   bc_scaling_ = 0.0;
 
-  std::string name = plist.get<std::string>("limiter");
+  std::string name = plist.get<std::string>("limiter", "Barth-Jespersen");
   limiter_id_ = 0;
   if (name == "Barth-Jespersen") {
     limiter_id_ = OPERATOR_LIMITER_BARTH_JESPERSEN;
@@ -119,6 +120,60 @@ void ReconstructionCell::Compute()
   }
 
   gradient_->ScatterMasterToGhosted("cell");
+}
+
+
+/* ******************************************************************
+* Special implementation of Compute(). The gradient is computed only
+* in specied cells and internal structures are not modified.
+****************************************************************** */
+void ReconstructionCell::ComputeGradient(
+    const AmanziMesh::Entity_ID_List& ids,
+    std::vector<AmanziGeometry::Point>& gradient)
+{
+  AmanziMesh::Entity_ID_List cells;
+  AmanziGeometry::Point xcc(dim), grad(dim);
+
+  WhetStone::DenseMatrix matrix(dim, dim);
+  WhetStone::DenseVector rhs(dim);
+
+  gradient.clear();
+  for (AmanziMesh::Entity_ID_List::const_iterator it = ids.begin(); it != ids.end(); ++it) {
+    int c = *it;
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+
+    mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    matrix.clear();
+    rhs.clear();
+
+    for (int n = 0; n < ncells; n++) {
+      const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(cells[n]);
+      for (int i = 0; i < dim; i++) xcc[i] = xc2[i] - xc[i];
+
+      double value = (*field_)[0][cells[n]] - (*field_)[0][c];
+      PopulateLeastSquareSystem(xcc, value, matrix, rhs);
+    }
+
+    // improve robustness w.r.t degenerate matrices
+    double det = matrix.Det();
+    double norm = matrix.NormInf();
+
+    if (det < pow(norm, 1.0/dim)) {
+      norm *= OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION;
+      for (int i = 0; i < dim; i++) matrix(i, i) += norm;
+    }
+
+    int info, nrhs = 1;
+    WhetStone::DPOSV_F77("U", &dim, &nrhs, matrix.Values(), &dim, rhs.Values(), &dim, &info);
+    if (info) {  // reduce reconstruction order
+      for (int i = 0; i < dim; i++) rhs(i) = 0.0;
+    }
+
+    for (int i = 0; i < dim; i++) grad[i] = rhs(i);
+    gradient.push_back(grad);
+  }
 }
 
 

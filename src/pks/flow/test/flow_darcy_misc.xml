@@ -65,8 +65,6 @@
   <ParameterList name="PKs">
     <ParameterList name="Flow">
       <ParameterList name="Darcy problem">
-	<Parameter name="atmospheric pressure" type="double" value="1"/>
-
 	<ParameterList name="VerboseObject">
 	  <Parameter name="Verbosity Level" type="string" value="medium"/>
 	</ParameterList>
@@ -192,6 +190,10 @@
 
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -2.0}"/>
+      </ParameterList>
+
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
 
       <ParameterList name="pressure">

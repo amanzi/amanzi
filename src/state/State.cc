@@ -34,7 +34,9 @@ State::State() {};
 State::State(Teuchos::ParameterList& state_plist) :
     state_plist_(state_plist),
     time_(0.0),
-    cycle_(0) {};
+    cycle_(0),
+    position_in_tp_(TIME_PERIOD_START)
+{};
 
 // copy constructor:
 // Create a new State with different data but the same values.
@@ -46,6 +48,7 @@ State::State(const State& other, StateConstructMode mode) :
     meshes_(other.meshes_),
     field_factories_(other.field_factories_),
     time_(other.time_),
+    position_in_tp_(other.position_in_tp_),
     cycle_(other.cycle_) {
 
   if (mode == STATE_CONSTRUCT_MODE_COPY_DATA) {
@@ -403,11 +406,11 @@ void State::WriteDependencyGraph() const {
 void State::WriteStatistics(Teuchos::RCP<VerboseObject>& vo) const {
   if (vo->os_OK(Teuchos::VERB_HIGH)) {
     Teuchos::OSTab tab = vo->getOSTab();
-    *vo->os() << "\nField                     Min/Max/Avg" << std::endl;
+    *vo->os() << "\nField                          Min/Max/Avg" << std::endl;
 
     for (FieldMap::const_iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
       std::string name(f_it->first);
-      name.resize(25, '.');
+      name.resize(30, '.');
 
       double vmin, vmax, vavg;
       if (f_it->second->type() == COMPOSITE_VECTOR_FIELD) {
@@ -1034,8 +1037,12 @@ void WriteVis(const Teuchos::Ptr<Visualization>& vis,
 // Non-member function for checkpointing.
 void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk,
                      const Teuchos::Ptr<State>& S,
-                     double dt) {
+                     double dt,
+                     bool final,
+                     Amanzi::ObservationData* obs_data) {
   if ( !chk->is_disabled() ) {
+
+    chk->SetFinal(final);
     chk->CreateFile(S->cycle());
 
     for (State::field_iterator field=S->field_begin(); field!=S->field_end(); ++field) {
@@ -1043,6 +1050,7 @@ void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk,
     }
 
     chk->WriteAttributes(S->time(), dt, S->cycle(), S->position());
+    chk->WriteObservations(obs_data);
     
     chk->Finalize();
   }
@@ -1089,8 +1097,8 @@ double ReadCheckpoint(Epetra_MpiComm* comm,
   for (State::field_iterator field=S->field_begin(); field!=S->field_end(); ++field) {
     if (field->second->type() == COMPOSITE_VECTOR_FIELD &&
         field->second->io_checkpoint()) {
-      field->second->ReadCheckpoint(checkpoint);
-      field->second->set_initialized();
+      bool read_complete = field->second->ReadCheckpoint(checkpoint);
+      if (read_complete) field->second->set_initialized();
     }
   }
   
@@ -1100,7 +1108,7 @@ double ReadCheckpoint(Epetra_MpiComm* comm,
 
 // Non-member function for checkpointing.
 double ReadCheckpointInitialTime(Epetra_MpiComm* comm,
-        std::string filename) {
+                                 std::string filename) {
   Teuchos::Ptr<HDF5_MPI> checkpoint = Teuchos::ptr(new HDF5_MPI(*comm, filename));
 
   // load the attributes
@@ -1111,9 +1119,9 @@ double ReadCheckpointInitialTime(Epetra_MpiComm* comm,
   return time;
 };
 
-// Non-member function for checkpointing.
+// Non-member function for checkpointing position.
 int ReadCheckpointPosition(Epetra_MpiComm* comm,
-        std::string filename) {
+                           std::string filename) {
   Teuchos::Ptr<HDF5_MPI> checkpoint = Teuchos::ptr(new HDF5_MPI(*comm, filename));
 
   // load the attributes
@@ -1123,6 +1131,49 @@ int ReadCheckpointPosition(Epetra_MpiComm* comm,
   checkpoint->close_h5file();
   return pos;
 };
+
+// Non-member function for checkpointing observations.
+void ReadCheckpointObservations(Epetra_MpiComm* comm,
+                                std::string filename,
+                                Amanzi::ObservationData& obs_data) {
+  Teuchos::Ptr<HDF5_MPI> checkpoint = Teuchos::ptr(new HDF5_MPI(*comm, filename));
+  checkpoint->open_h5file();
+
+  // read observations
+  int nlabels, ndata;
+  int *nobs;
+  char **tmp_labels;
+  double *tmp_data;
+
+  checkpoint->readDataString(&tmp_labels, &nlabels, "obs_names");
+  if (nlabels > 0) { 
+    checkpoint->readAttrInt(&nobs, &nlabels, "obs_numbers");
+    checkpoint->readAttrReal(&tmp_data, &ndata, "obs_values");
+  }
+  checkpoint->close_h5file();
+
+  // populated observations
+  int m(0);
+  Amanzi::ObservationData::DataTriple data_triplet;
+
+  for (int i = 0; i < nlabels; ++i) {
+    std::vector<ObservationData::DataTriple>& od = obs_data[tmp_labels[i]];
+    for (int k = 0; k < nobs[i]; ++k) {
+      data_triplet.time = tmp_data[m++];
+      data_triplet.value = tmp_data[m++];
+      data_triplet.is_valid = true;
+      od.push_back(data_triplet);
+    }
+  }
+
+  // clean memory
+  for (int i = 0; i < nlabels; i++) free(tmp_labels[i]);
+  if (nlabels > 0) {
+    free(tmp_labels);
+    free(nobs);
+    free(tmp_data);
+  }
+}
 
 // Non-member function for deforming the mesh after reading a checkpoint file
 // that contains the vertex coordinate field (this is written by deformation pks)

@@ -24,17 +24,20 @@
 #include <vector>
 #include <string>
 
+#include "GeometryDefs.hh"
+
 namespace Amanzi {
 namespace AmanziMesh {
 
 // Necessary typedefs and enumerations
-      
-typedef int Entity_ID; 
-typedef int Set_ID;
-typedef std::string Set_Name;
-typedef std::vector<Entity_ID> Entity_ID_List;
-typedef std::vector<Set_ID> Set_ID_List;
+  using AmanziGeometry::Entity_ID;
+  using AmanziGeometry::Entity_ID_List;
+  using AmanziGeometry::Set_ID;
+  using AmanziGeometry::Set_ID_List;
+  using AmanziGeometry::Set_Name;
+  
 
+  
 // Mesh Type
 
 enum Mesh_type
@@ -49,7 +52,6 @@ enum Mesh_type
 // BOUNDARY_FACE is a special type of entity that is need so that process 
 // kernels can define composite vectors (see src/data_structures) on 
 // exterior boundary faces of the mesh only
-    
 enum Entity_kind 
 {
   NODE = 0,

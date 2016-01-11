@@ -23,12 +23,12 @@ namespace AmanziGeometry {
 // -------------------------------------------------------------
 // LabeledSetRegion:: constructors / destructor
 // -------------------------------------------------------------
-LabeledSetRegion::LabeledSetRegion(const std::string name, 
-				   const unsigned int id,
-				   const std::string entity_str,
-                                   const std::string file,
-                                   const std::string format,
-                                   const std::string label,
+LabeledSetRegion::LabeledSetRegion(const Set_Name& name, 
+				   const Set_ID id,
+				   const std::string& entity_str,
+                                   const std::string& file,
+                                   const std::string& format,
+                                   const std::string& label,
                                    const LifeCycleType lifecycle,
                                    const VerboseObject *verbobj)
   : Region(name,id,3,lifecycle,verbobj),entity_str_(entity_str),
@@ -37,20 +37,6 @@ LabeledSetRegion::LabeledSetRegion(const std::string name,
   // empty
   // Region dimension is set arbitrarily as 3 since the set of
   // entities in the mesh will determine the dimension
-}
-
-LabeledSetRegion::LabeledSetRegion(const char *name, 
-                                   const unsigned int id,
-				   const std::string entity_str,
-                                   const std::string file,
-                                   const std::string format,
-                                   const std::string label,
-                                   const LifeCycleType lifecycle,
-                                   const VerboseObject *verbobj)
-  : Region(name,id,3,lifecycle,verbobj),entity_str_(entity_str),
-    file_(file), format_(format), label_(label)
-{
-  // empty
 }
 
 LabeledSetRegion::LabeledSetRegion(const LabeledSetRegion& old)

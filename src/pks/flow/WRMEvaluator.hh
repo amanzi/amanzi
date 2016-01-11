@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -27,8 +27,7 @@ class WRMEvaluator : public SecondaryVariablesFieldEvaluator {
  public:
   // constructor format for all derived classes
   explicit
-  WRMEvaluator(Teuchos::ParameterList& plist,
-               double patm, Teuchos::RCP<WRMPartition> wrm);
+  WRMEvaluator(Teuchos::ParameterList& plist, Teuchos::RCP<WRMPartition> wrm);
   WRMEvaluator(const WRMEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
@@ -46,7 +45,6 @@ class WRMEvaluator : public SecondaryVariablesFieldEvaluator {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<WRMPartition> wrm_;
   Key pressure_key_;
-  double patm_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator, WRMEvaluator> factory_;

@@ -66,7 +66,7 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
   DOMElement* element;
 
   bool flag, read(false), generate(false);
-  std::string framework;
+  std::string framework, verify;
   Errors::Message msg;
   Teuchos::ParameterList mesh_list;
     
@@ -100,6 +100,7 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
       // A structured mesh is generated.
       if (strcmp(tagname, "generate") == 0) {
         generate = true;
+        mesh_rectangular_ = "true";
         node = GetUniqueElementByTagsString_(inode, "number_of_cells", flag);
         if (!flag) 
             ThrowErrorIllformed_("mesh", "number_of_cells", "generate");
@@ -108,9 +109,9 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
         std::vector<int> ncells; 
         int nx = GetAttributeValueL_(element, "nx");
         if (nx > 0) ncells.push_back(nx);
-        int ny = GetAttributeValueL_(element, "ny", false, 0);
+        int ny = GetAttributeValueL_(element, "ny", TYPE_NUMERICAL, false, 0);
         if (ny > 0) ncells.push_back(ny); 
-        int nz = GetAttributeValueL_(element, "nz", false, 0);
+        int nz = GetAttributeValueL_(element, "nz", TYPE_NUMERICAL, false, 0);
         if (nz > 0) ncells.push_back(nz); 
 
         if (ncells.size() != dim_) 
@@ -139,7 +140,7 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
 
       // Un unstructured mesh will be read from a file.
       else if (strcmp(tagname, "read") == 0) {
-        bool flag1, flag2;
+        bool flag1, flag2, flag3;
 
         node = GetUniqueElementByTagsString_(inode, "format", flag1);
         if (flag1) {
@@ -173,6 +174,10 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
             mesh_list.set<std::string>("File", filename);
           } 
         }
+        node = GetUniqueElementByTagsString_(inode, "verify", flag3);
+        if (flag3) {
+          verify = mm.transcode(node->getTextContent());
+        }
         read = flag1 && flag2;
       }
     }
@@ -192,6 +197,9 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
       msg << "Amanzi::InputConverter: an error occurred during parsing mesh.\n"
           << "  Unknown framework \"" << framework << "\".\n";
       Exceptions::amanzi_throw(msg); 
+    }
+    if (strcmp(verify.c_str(), "true") == 0) {
+      tmp_list.set<bool>("Verify Mesh", (strcmp(verify.c_str(), "true") == 0));
     }
   }
 

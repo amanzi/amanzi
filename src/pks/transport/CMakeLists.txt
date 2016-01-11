@@ -28,19 +28,19 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${CHEM_INCLUDES_DIR})
 include_directories(${CHEMPK_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
-include_directories(${DATA_STRUCTURES_SOURCE_DIR})
-include_directories(${STATE_SOURCE_DIR})
-include_directories(${GEOMETRY_SOURCE_DIR})
-include_directories(${WHETSTONE_SOURCE_DIR})
-include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
+include_directories(${SOLVERS_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
+include_directories(${WHETSTONE_SOURCE_DIR})
 
 #
 # Transport registrations
@@ -54,6 +54,38 @@ register_evaluator_with_factory(
 generate_evaluators_registration_header( 
   HEADERFILE pks_transport_registration.hh   
   LISTNAME   PKS_TRANSPORT_REGISTRATIONS
+  INSTALL    True
+  )
+
+# -- mechamical dispersion models registration
+register_evaluator_with_factory(
+  HEADERFILE MDMFactory_reg.hh
+  LISTNAME   MDM_TRANSPORT_REGISTRATIONS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE MDM_Isotropic_reg.hh
+  LISTNAME   MDM_TRANSPORT_REGISTRATIONS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE MDM_Bear_reg.hh
+  LISTNAME   MDM_TRANSPORT_REGISTRATIONS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE MDM_BurnettFrind_reg.hh
+  LISTNAME   MDM_TRANSPORT_REGISTRATIONS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE MDM_LichtnerKelkarRobinson_reg.hh
+  LISTNAME   MDM_TRANSPORT_REGISTRATIONS
+  )
+
+generate_evaluators_registration_header( 
+  HEADERFILE mdm_transport_registration.hh   
+  LISTNAME   MDM_TRANSPORT_REGISTRATIONS
   INSTALL    True
   )
 
@@ -80,6 +112,11 @@ generate_evaluators_registration_header(
 set(transport_inc_files
   DiffusionPhase.hh
   MaterialProperties.hh
+  MDM.hh
+  MDMFactory.hh
+  MDMPartition.hh
+  MDM_Isotropic.hh
+  MDM_Bear.hh
   MultiscaleTransportPorosity.hh
   MultiscaleTransportPorosityFactory.hh
   MultiscaleTransportPorosityPartition.hh
@@ -96,6 +133,8 @@ set(transport_inc_files
 set(transport_src_files Transport_PK.cc Transport_TI.cc 
                         Transport_VandV.cc Transport_Initialize.cc 
                         Transport_Dispersion.cc Transport_HenryLaw.cc
+                        MDM_Isotropic.cc MDM_Bear.cc MDM_BurnettFrind.cc MDM_LichtnerKelkarRobinson.cc
+                        MDMPartition.cc MDMFactory.cc
                         MultiscaleTransportPorosityFactory.cc MultiscaleTransportPorosity_DPM.cc
                         MultiscaleTransportPorosityPartition.cc
                         TransportBCFactory.cc TransportSourceFactory.cc
@@ -108,7 +147,7 @@ endif()
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
                    LINK_LIBS geometry mesh error_handling state data_structures 
-                             ${geochem_lib} chemistry_pk mpc_tree time_integration ${Epetra_LIBRARIES})
+                             ${geochem_lib} chemistry_pk time_integration ${Epetra_LIBRARIES})
 
 if ( BUILD_TESTS )
     # Add UnitTest includes

@@ -37,17 +37,9 @@ public:
 
   /// Default constructor 
 
-  ColorFunctionRegion(const std::string name, 
-                      const unsigned int id, 
+  ColorFunctionRegion(const Set_Name& name, 
+                      const Set_ID id, 
                       const std::string file,
-                      const int value,
-                      const Epetra_MpiComm *comm,
-                      const LifeCycleType lifecycle=PERMANENT,
-                      const VerboseObject *verbobj=NULL);
-
-  ColorFunctionRegion(const char *name, 
-                      const unsigned int id, 
-                      const char *file,
                       const int value,
                       const Epetra_MpiComm *comm,
                       const LifeCycleType lifecycle=PERMANENT,

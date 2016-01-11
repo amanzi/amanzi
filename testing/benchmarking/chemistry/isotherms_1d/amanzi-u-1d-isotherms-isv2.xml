@@ -1,4 +1,4 @@
-<amanzi_input version="2.1.1" type="unstructured">
+<amanzi_input version="2.2.1" type="unstructured">
   <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
 
   <model_description name="1D Flow and Transport w/Kd">
@@ -33,8 +33,8 @@
 
   <process_kernels>
     <flow state="on" model="saturated"/>
-    <transport state="on" algorithm="explicit second-order" sub_cycling = "on"/>
-    <chemistry state="on" engine="amanzi" process_model="implicit operator split"/>
+    <transport state="on" />
+    <chemistry state="on" engine="amanzi" />
   </process_kernels>
 
   <phases>
@@ -61,6 +61,18 @@
   </execution_controls>
 
   <numerical_controls>
+
+      <unstr_transport_controls>
+	  <algorithm>explicit second-order</algorithm>
+	  <sub_cycling>on</sub_cycling>
+      </unstr_transport_controls>
+
+      <unstr_chemistry_controls>
+	  <process_model>implicit operator split</process_model>
+        <chem_tolerance>1e-12</chem_tolerance>
+        <chem_max_newton_iterations>250</chem_max_newton_iterations>
+      </unstr_chemistry_controls>
+
     <unstructured_controls>
       <unstr_steady-state_controls>
         <min_iterations>10</min_iterations>
@@ -84,10 +96,7 @@
         <tolerance>1.0e-22</tolerance>
         <preconditioner name = "trilinos_ml" />
       </unstr_linear_solver>
-      <unstr_chemistry_controls>
-        <chem_tolerance>1e-12</chem_tolerance>
-        <chem_max_newton_iterations>250</chem_max_newton_iterations>
-      </unstr_chemistry_controls>
+
     </unstructured_controls>
   </numerical_controls>
 
@@ -145,9 +154,11 @@
         <liquid_component name="water">
           <uniform_pressure value="201325.0"/>
         </liquid_component>
-        <solute_component name= "A" value= "1.e-20" function="uniform"/>
-        <solute_component name= "B" value= "1.e-20" function="uniform"/>
-        <solute_component name= "C" value= "1.e-20" function="uniform"/>
+        <solute_component name="solute">
+          <uniform_conc name= "A" value= "1.e-20"/>
+          <uniform_conc name= "B" value= "1.e-20"/>
+          <uniform_conc name= "C" value= "1.e-20"/>
+        </solute_component>
       </liquid_phase>
     </initial_condition>
   </initial_conditions>

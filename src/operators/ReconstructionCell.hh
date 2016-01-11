@@ -1,7 +1,7 @@
 /*
-  This is the operator component of the Amanzi code. 
+  Operators
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -37,8 +37,15 @@ class ReconstructionCell : public Reconstruction {
   ~ReconstructionCell() {};
 
   // main members for base class
+  // -- save pointer to the already distributed field.
   void Init(Teuchos::RCP<const Epetra_MultiVector> field, Teuchos::ParameterList& plist);
+
+  // -- compute gradient and keep it internally.
   void Compute();
+
+  // -- compute gradient in specified cells and return it.
+  void ComputeGradient(const AmanziMesh::Entity_ID_List& ids,
+                       std::vector<AmanziGeometry::Point>& gradient);
 
   // internal and external limiters
   void InitLimiter(Teuchos::RCP<const Epetra_MultiVector> flux);

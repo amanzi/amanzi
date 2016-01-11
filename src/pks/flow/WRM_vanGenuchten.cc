@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -126,7 +126,7 @@ double WRM_vanGenuchten::k_relative(double pc) const
 /* ******************************************************************
 * Saturation formula (3.5)-(3.6).                                         
 ****************************************************************** */
-double WRM_vanGenuchten::saturation(double pc)  const
+double WRM_vanGenuchten::saturation(double pc) const
 {
   if (pc > 0.0) {
     return pow(1.0 + pow(alpha_*pc, n_), -m_) * (1.0 - sr_) + sr_;
@@ -186,9 +186,9 @@ double WRM_vanGenuchten::dKdPc(double pc) const
 
   } else if (pc <= 0.0) {
     return 0.0;
-  }
-  else {
-    return 2*a_*pc + 3*b_*pc*pc; 
+
+  } else {
+    return 2 * a_ * pc + 3 * b_ * pc * pc; 
   }
 }
 

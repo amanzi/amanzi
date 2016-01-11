@@ -1,5 +1,5 @@
 /*
-  This is the input component of the Amanzi code. 
+  Input Converter 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -125,19 +125,6 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         porosity_ev.set<std::string>("field evaluator type", "independent variable");
       }
 
-      // --- multiscale porosity if any
-      node = GetUniqueElementByTagsString_(inode, "multiscale_structure, porosity", flag);
-      if (flag) {
-        double porosity;
-        Teuchos::ParameterList& porosity_ev = out_ev.sublist("porosity_matrix");
-        porosity_ev.sublist("function").sublist(reg_str)
-            .set<Teuchos::Array<std::string> >("regions", regions)
-            .set<std::string>("component", "cell")
-            .sublist("function").sublist("function-constant")
-            .set<double>("value", porosity);
-        porosity_ev.set<std::string>("field evaluator type", "independent variable");
-      }
-
       // -- permeability.
       double perm_x, perm_y, perm_z;
       bool perm_init_from_file(false), conductivity(false);
@@ -149,10 +136,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         node = GetUniqueElementByTagsString_(inode, "hydraulic_conductivity", flag);
       }
 
-      // first we get either permeability value or the file name
+      // First we get either permeability value or the file name
       int file(0);
-      char* file_name;
-      char* attr_name;
+      std::string file_name;
+      std::vector<std::string> attr_names;
       double kx(-1.0), ky(-1.0), kz(-1.0);
 
       DOMNamedNodeMap* attr_tmp = node->getAttributes();
@@ -170,15 +157,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           } else if (strcmp(tagname, "z") == 0) {
             kz = std::strtod(text_content, NULL);
           } else if (strcmp(tagname, "type") == 0) {
-            file++;
+            if (strcmp(text_content, "file") == 0) file++;
           } else if (strcmp(tagname, "filename") == 0) {
             file++;
-            file_name = new char[std::strlen(text_content) + 1];
-            std::strcpy(file_name, text_content);
+            file_name = text_content;
           } else if (strcmp(tagname, "attribute") == 0) {
             file++;
-            attr_name = new char[std::strlen(text_content) + 1];
-            std::strcpy(attr_name, text_content);
+            attr_names.push_back(text_content);
           }
         }
       }
@@ -197,9 +182,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       if (file == 3) {
         permeability_ic.sublist("exodus file initialization")
             .set<std::string>("file", file_name)
-            .set<std::string>("attribute", attr_name);
-        delete file_name;
-        delete attr_name;
+            .set<Teuchos::Array<std::string> >("attributes", attr_names);
+        kx = ky = kz = 1.0;
       } else if (file == 0) {
         if (ky < 0) ky = kz;  // x-z system was defined
         Teuchos::ParameterList& aux_list = permeability_ic.sublist("function").sublist(reg_str)
@@ -212,6 +196,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         aux_list.sublist("DoF 2 Function").sublist("function-constant").set<double>("value", ky);
         if (dim_ == 3) {
           aux_list.sublist("DoF 3 Function").sublist("function-constant").set<double>("value", kz);
+        } else {
+          kz = 0.0;
         }
       } else {
         ThrowErrorIllformed_("materials", "permeability/hydraulic conductivity", "file/filename/attribute");
@@ -303,16 +289,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         std::vector<double> grad = GetAttributeVector_(static_cast<DOMElement*>(node), "gradient");
         std::vector<double> refc = GetAttributeVector_(static_cast<DOMElement*>(node), "reference_coord");
 
-        Teuchos::Array<double> grad_with_time(grad.size() + 1);
-        Teuchos::Array<double> refc_with_time(grad.size() + 1);
-
-        grad_with_time[0] = 0.0;
-        refc_with_time[0] = 0.0;
-
-        for (int j = 0; j != grad.size(); ++j) {
-          grad_with_time[j + 1] = grad[j];
-          refc_with_time[j + 1] = refc[j];
-        }
+        grad.insert(grad.begin(), 0.0);
+        refc.insert(refc.begin(), 0.0);
 
         Teuchos::ParameterList& pressure_ic = out_ic.sublist("pressure");
         pressure_ic.sublist("function").sublist(reg_str)
@@ -320,8 +298,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<std::string>("component", "cell")
             .sublist("function").sublist("function-linear")
             .set<double>("y0", p)
-            .set<Teuchos::Array<double> >("x0", refc_with_time)
-            .set<Teuchos::Array<double> >("gradient", grad_with_time);
+            .set<Teuchos::Array<double> >("x0", refc)
+            .set<Teuchos::Array<double> >("gradient", grad);
       }
 
       // -- uniform saturation
@@ -344,16 +322,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         std::vector<double> grad = GetAttributeVector_(static_cast<DOMElement*>(node), "gradient");
         std::vector<double> refc = GetAttributeVector_(static_cast<DOMElement*>(node), "reference_coord");
 
-        Teuchos::Array<double> grad_with_time(grad.size() + 1);
-        Teuchos::Array<double> refc_with_time(grad.size() + 1);
-
-        grad_with_time[0] = 0.0;
-        refc_with_time[0] = 0.0;
-
-        for (int j = 0; j != grad.size(); ++j) {
-          grad_with_time[j + 1] = grad[j];
-          refc_with_time[j + 1] = refc[j];
-        }
+        grad.insert(grad.begin(), 0.0);
+        refc.insert(refc.begin(), 0.0);
 
         Teuchos::ParameterList& saturation_ic = out_ic.sublist("saturation_liquid");
         saturation_ic.sublist("function").sublist(reg_str)
@@ -361,8 +331,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<std::string>("component", "cell")
             .sublist("function").sublist("function-linear")
             .set<double>("y0", s)
-            .set<Teuchos::Array<double> >("x0", refc_with_time)
-            .set<Teuchos::Array<double> >("gradient", grad_with_time);
+            .set<Teuchos::Array<double> >("x0", refc)
+            .set<Teuchos::Array<double> >("gradient", grad);
       }
 
       // -- darcy_flux
@@ -396,7 +366,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       int ncomp_g = phases_["air"].size();
       int ncomp_all = ncomp_l + ncomp_g;
 
-      node = GetUniqueElementByTagsString_(inode, "liquid_phase", flag);
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, solute_component", flag);
       if (flag && ncomp_all > 0) {
         std::vector<double> vals(ncomp_l, 0.0);
 
@@ -405,7 +375,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           DOMNode* jnode = children->item(j);
           tagname = mm.transcode(jnode->getNodeName());
 
-          if (strcmp(tagname, "solute_component") == 0) {
+          if (strcmp(tagname, "uniform_conc") == 0) {
             std::string text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
             int m = GetPosition_(phases_["water"], text);
             vals[m] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "value");
@@ -429,7 +399,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       }
 
       // -- total_component_concentration (gas phase)
-      node = GetUniqueElementByTagsString_(inode, "gas_phase", flag);
+      node = GetUniqueElementByTagsString_(inode, "gas_phase, solute_component", flag);
       if (flag) {
         std::vector<double> vals(ncomp_g, 0.0);
 
@@ -438,7 +408,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           DOMNode* jnode = children->item(j);
           tagname = mm.transcode(jnode->getNodeName());
 
-          if (strcmp(tagname, "solute_component") == 0) {
+          if (strcmp(tagname, "uniform_conc") == 0) {
             std::string text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
             int m = GetPosition_(phases_["air"], text);
             vals[m] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "value");
@@ -466,6 +436,15 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<std::string>("component", "cell")
             .sublist("function").sublist("function-constant")
             .set<double>("value", val);
+      }
+
+      // -- geochemical condition
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry, constraint", flag);
+      if (flag) {
+        std::string name = GetAttributeValueS_(static_cast<DOMElement*>(node), "name");
+
+        out_ic.sublist("geochemical conditions").sublist(name)
+            .set<Teuchos::Array<std::string> >("regions", regions);
       }
     }
   }

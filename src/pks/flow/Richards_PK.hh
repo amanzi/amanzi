@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -132,7 +132,7 @@ class Richards_PK : public Flow_PK {
   // -- miscaleneous methods
   void UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u);
   double ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du);
- 
+
   // -- access methods
   Teuchos::RCP<Operators::Operator> op_matrix() { return op_matrix_; }
   const Teuchos::RCP<CompositeVector> get_solution() { return solution; }
@@ -148,7 +148,6 @@ class Richards_PK : public Flow_PK {
  private:
   void InitializeFields_();
   void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
-  void InitializeUpwind_();
   void InitializeStatistics_();
 
   void Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f);
@@ -157,6 +156,11 @@ class Richards_PK : public Flow_PK {
 
   void Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<CompositeVector> f);
 
+  // The water content change in a cell equals exactly to the balance of Darcy fluxes.
+  // This balance leads to a monotone translport.
+  void CalculateCNLSLimiter_(const CompositeVector& wc, const CompositeVector& dwc_dp, double tol);
+  void ApplyCNLSLimiter_();
+ 
  private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> rp_list_;
@@ -169,7 +173,6 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<WRMPartition> wrm_;
 
   Teuchos::RCP<RelPerm> relperm_;
-  int krel_upwind_method_;
   Teuchos::RCP<CompositeVector> krel_;
   Teuchos::RCP<CompositeVector> dKdP_;
 
@@ -208,11 +211,14 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<CompositeVector> darcy_flux_copy;
 
   // upwind
-  int update_upwind;
-  Teuchos::RCP<CompositeVector> darcy_flux_upwind;
+  int upwind_frequency_;
 
   // evaluators
   Teuchos::RCP<RelPermEvaluator> rel_perm_eval_;
+
+  // consistent water content and Darcy fluxes
+  bool algebraic_water_content_balance_;
+  Teuchos::RCP<CompositeVector> cnls_limiter_;
 
  private:
   void operator=(const Richards_PK& RPK);

@@ -1,4 +1,3 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 Amanzi
 
@@ -7,7 +6,6 @@ Author: Markus Berndt
         Ethan Coon (ecoon@lanl.gov)
 
 Checkpointing for state.
-
 ------------------------------------------------------------------------- */
 
 
@@ -19,7 +17,8 @@ Checkpointing for state.
 #include "Epetra_Comm.h"
 
 #include "hdf5mpi_mesh.hh"
-#include "io_event.hh"
+#include "IOEvent.hh"
+#include "ObservationData.hh"
 
 namespace Amanzi {
 
@@ -35,6 +34,9 @@ class Checkpoint : public IOEvent {
   void WriteAttributes(double time, double dt, int cycle, int pos) const;
   void WriteAttributes(double time, double dt, int cycle) const;
   void WriteAttributes(double time, int cycle) const;
+  void WriteObservations(ObservationData* obs_data);
+  void SetFinal(bool fnl) { final_ = fnl; }
+  bool IsFinal() { return final_; }
   void Finalize();
 
   void set_filebasename(std::string base) { filebasename_ = base; }
@@ -45,7 +47,11 @@ class Checkpoint : public IOEvent {
   std::string filebasename_;
   int filenamedigits_;
   int restart_cycle_;
+  bool final_;
 
+  // the Epetra communicator
+  const Epetra_MpiComm *comm_;
+  
   Teuchos::RCP<Amanzi::HDF5_MPI> checkpoint_output_;
 };
 

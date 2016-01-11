@@ -1,4 +1,4 @@
-<amanzi_input version="2.1.0" type="unstructured">
+<amanzi_input version="2.2.1" type="unstructured">
 
   <model_description name="1D Flow and Transport">
     <author>Glenn Hammond</author>
@@ -27,7 +27,7 @@
 
   <process_kernels>
     <flow state="on" model="saturated"/>
-    <transport state="on" algorithm="explicit first-order" sub_cycling = "on"/>
+    <transport state="on" algorithm="explicit first-order" />
     <chemistry state="off"/>
   </process_kernels>
 
@@ -59,6 +59,13 @@
 
   <numerical_controls>
     <unstructured_controls>
+
+      <unstr_flow_controls/>
+      <unstr_transport_controls>
+	  <sub_cycling>on</sub_cycling>
+      </unstr_transport_controls>
+      <unstr_chemistry_controls/>
+
       <unstr_steady-state_controls>
         <min_iterations>10</min_iterations>
         <max_iterations>15</max_iterations>
@@ -140,7 +147,9 @@
         <liquid_component name="water">
           <uniform_pressure value="201325.0"/>
         </liquid_component>
-        <solute_component name= "tracer" value= "1.e-20" function="uniform"/>
+        <solute_component name="solute">
+          <uniform_conc name= "tracer" value= "1.e-20"/>
+        </solute_component>
       </liquid_phase>
     </initial_condition>
   </initial_conditions>

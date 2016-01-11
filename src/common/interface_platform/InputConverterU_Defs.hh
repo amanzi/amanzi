@@ -26,13 +26,13 @@
 
 // other default constats
 #define MAXIMUM_TIMESTEP                4.3234e+17
-#define MINIMUM_TIMESTEP                1.0e-20
+#define MINIMUM_TIMESTEP                1.0e-6
 #define RESTART_TIMESTEP                1.0
 
 #define VERBOSITY_DEFAULT               "Medium"
 
 // all linear solvers
-#define LINEAR_SOLVER_TOL               1.0e-16
+#define LINEAR_SOLVER_TOL               1.0e-15
 #define LINEAR_SOLVER_MAXITER           100
 #define LINEAR_SOLVER_METHOD            "gmres"
 #define LINEAR_SOLVER_PC                "Hypre AMG"
@@ -84,7 +84,7 @@
 #define PICARD_MAX_ITERATIONS           400
 #define PIC_PRECONDITIONER              "Hypre AMG"
 
-#define LIN_SOLVE_TOL                   1.0e-16
+#define LIN_SOLVE_TOL                   1.0e-15
 #define LIN_SOLVE_MAXITER               100
 // time integrator
 #define TI_SOLVER                       "AztecOO"

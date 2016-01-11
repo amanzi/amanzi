@@ -1,11 +1,14 @@
 /*
-  This is the Linear Solver component of the Amanzi code.
+  Solvers
 
-  License: BSD
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-  Conjugate gradient method.
-  Usage: Create("Hypre AMG", preconditioner_list);
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Base factory for preconditioners.
 */
 
 #ifndef AMANZI_PRECONDITIONER_FACTORY_HH_

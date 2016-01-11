@@ -96,7 +96,7 @@ if __name__ == "__main__":
     cbar.ax.set_ylabel('Calcite\n'+'volume\n'+'fraction [-]',fontsize=20,rotation=0)
     cbar.ax.yaxis.set_label_coords(-1.0, 1.15)
 
-    #plt.show()
-    #plt.savefig(local_path+"non_grid_aligned_2d.png",format="png")
+    # plt.show()
+    plt.savefig(local_path+"non_grid_aligned_2d.png",format="png")
 
     

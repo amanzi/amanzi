@@ -26,6 +26,7 @@
 #include "PointRegion.hh"
 #include "LogicalRegion.hh"
 #include "PolygonRegion.hh"
+#include "EnumeratedSetRegion.hh"
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -376,16 +377,8 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
       Teuchos::Array<std::string> region_names = 
         logical_params.get< Teuchos::Array<std::string> >("Regions");
 
-      // No idea how to directly convert Teuchos::Array to std::vector
-      // do it element by element
-
-      std::vector<std::string> region_names1;
-      int nelem = region_names.size();
-      for (int i = 0; i < nelem; i++)
-        region_names1.push_back(region_names[i]);      
-
       try {
-        RegionPtr regptr = new LogicalRegion(reg_name, reg_id, opstr, region_names1, lifecycle, verbobj);
+        RegionPtr regptr = new LogicalRegion(reg_name, reg_id, opstr, region_names.toVector(), lifecycle, verbobj);
         return regptr;
       }
       catch (Errors::Message mesg) {
@@ -397,6 +390,36 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         Exceptions::amanzi_throw(mesg);
       }
     }
+
+  else if (shape == "Region: Enumerated Set")
+    {
+      Teuchos::ParameterList enum_params = reg_params.sublist(shape);
+      std::string entity_str = enum_params.get<std::string>("Entity");
+
+      if (entity_str == "Cell" || entity_str == "cell" || entity_str == "CELL")
+        entity_str = "CELL";
+      else if (entity_str == "Face" || entity_str == "face" || entity_str == "FACE")
+        entity_str = "FACE";
+      else if (entity_str == "Node" || entity_str == "node" || entity_str == "NODE")
+        entity_str = "NODE";
+      
+      Teuchos::Array<int> entity_list = 
+        enum_params.get< Teuchos::Array<int> >("Entity GIDs");
+
+      try {
+        RegionPtr regptr = new EnumeratedSetRegion(reg_name, reg_id, entity_str, entity_list.toVector(), lifecycle);
+        return regptr;
+      }
+      catch (Errors::Message mesg) {
+        if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+          Teuchos::OSTab tab = verbobj->getOSTab();
+          *(verbobj->os()) << "Cannot create region of type EnumeratedSet" << std::endl;
+        }
+        mesg << "\n" << "Cannot create region of type EnumeratedSet";
+        Exceptions::amanzi_throw(mesg);
+      }
+    }
+
   else 
     {
       if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {

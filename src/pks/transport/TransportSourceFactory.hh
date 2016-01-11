@@ -1,7 +1,7 @@
 /*
-  This is the transport component of the Amanzi code. 
+  Transport PK
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -31,7 +31,7 @@ class TransportSourceFactory {
      : mesh_(mesh), plist_(plist) {};
   ~TransportSourceFactory() {};
   
-  void CreateSource(std::vector<TransportDomainFunction*>& srcs);
+  void Create(std::vector<TransportDomainFunction*>& srcs);
 
  private:
   void ProcessSourceSpec(Teuchos::ParameterList& list, 

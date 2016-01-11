@@ -1,13 +1,13 @@
-/* -------------------------------------------------------------------------
-This is the Transport component of Amanzi
+/*
+  Transport PK
 
-License: see $AMANZI_DIR/COPYRIGHT
-Author (v1): Neil Carlson
-       (v2): Ethan Coon
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Function applied to a mesh component with at most one function 
-application per entity.
-------------------------------------------------------------------------- */
+  Author: Jeffrey Johnson (jnjohnson@lbl.gov)
+*/
 
 #ifndef AMANZI_TRANSPORT_BOUNDARY_FUNCTION_ALQUIMIA_HH_
 #define AMANZI_TRANSPORT_BOUNDARY_FUNCTION_ALQUIMIA_HH_

@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------
-  Amanzi & ATS
+  State
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -36,8 +36,9 @@
 
 #include "StateDefs.hh"
 
-#include "visualization.hh"
+#include "Visualization.hh"
 #include "checkpoint.hh"
+#include "ObservationData.hh"
 
 #include "Field.hh"
 #include "Field_Scalar.hh"
@@ -335,17 +336,23 @@ void WriteVis(const Teuchos::Ptr<Visualization>& vis,
 // Checkpointing State.
 void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& ckp,
                      const Teuchos::Ptr<State>& S,
-                     double dt);
+                     double dt,
+                     bool final = false,
+                     Amanzi::ObservationData* obs_data = NULL);
 
 double ReadCheckpoint(Epetra_MpiComm* comm,
                       const Teuchos::Ptr<State>& S,
                       std::string filename);
 
 double ReadCheckpointInitialTime(Epetra_MpiComm* comm,
-                      std::string filename);
+                                 std::string filename);
 
 int ReadCheckpointPosition(Epetra_MpiComm* comm,
-                      std::string filename);
+                           std::string filename);
+
+void ReadCheckpointObservations(Epetra_MpiComm* comm,
+                                std::string filename,
+                                Amanzi::ObservationData& obs_data);
 
 void DeformCheckpointMesh(const Teuchos::Ptr<State>& S);
 

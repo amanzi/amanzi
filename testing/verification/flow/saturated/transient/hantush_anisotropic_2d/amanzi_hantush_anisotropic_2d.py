@@ -2,7 +2,7 @@ import sys
 import matplotlib.pyplot as plt
 import numpy
 import math
-from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
+from amanzi_xml.observations.ObservationXMLv2 import ObservationXMLv2 as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
 import prettytable
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     import os
     import run_amanzi_standard
 
-    input_filename =os.path.join("amanzi_hantush_anisotropic_2d.xml")
+    input_filename =os.path.join("amanzi_hantush_anisotropic_2d-isv2.xml")
 
     try: 
         run_amanzi_standard.run_amanzi(input_filename, 1, ["porflow4_6.exo"])

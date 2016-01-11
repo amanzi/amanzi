@@ -46,6 +46,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   char *text, *tagname;
   DOMNodeList *node_list, *children;
   DOMNode* node;
+  DOMElement* element;
 
   // process CFL number
   bool flag;
@@ -103,7 +104,6 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
     node_list = doc_->getElementsByTagName(mm.transcode("materials"));
 
     Teuchos::ParameterList& mat_list = out_list.sublist("material properties");
-    mat_list.set<std::string>("numerical method", "two-point flux approximation");
 
     children = node_list->item(0)->getChildNodes();
     for (int i = 0; i < children->getLength(); ++i) {
@@ -189,12 +189,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
     children = node->getChildNodes();
     for (int i = 0; i < children->getLength(); ++i) {
       DOMNode* inode = children->item(i);
+      element = static_cast<DOMElement*>(inode);  
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "solute") != 0) continue;
 
-      double val = GetAttributeValueD_(static_cast<DOMElement*>(inode), "coefficient_of_diffusion");
+      double val = GetAttributeValueD_(element, "coefficient_of_diffusion", TYPE_NUMERICAL, false);
       text = mm.transcode(inode->getTextContent());
 
       aqueous_names.push_back(TrimString_(text));
@@ -216,13 +217,14 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
     children = node->getChildNodes();
     for (int i = 0; i < children->getLength(); ++i) {
       DOMNode* inode = children->item(i);
+      element = static_cast<DOMElement*>(inode);  
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "solute") != 0) continue;
 
-      double val = GetAttributeValueD_(static_cast<DOMElement*>(inode), "coefficient_of_diffusion");
-      double kh = GetAttributeValueD_(static_cast<DOMElement*>(inode), "kh");
+      double val = GetAttributeValueD_(element, "coefficient_of_diffusion", TYPE_NUMERICAL, false);
+      double kh = GetAttributeValueD_(element, "kh");
       text = mm.transcode(inode->getTextContent());
 
       gaseous_names.push_back(TrimString_(text));
@@ -234,6 +236,19 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
     diff_list.set<Teuchos::Array<double> >("gaseous values", gaseous_values);
     diff_list.set<Teuchos::Array<double> >("air-water partitioning coefficient", henry_coef);
   }
+
+  // add dispersion/diffusion operator
+  node = GetUniqueElementByTagsString_(
+      "unstructured_controls, unstr_transport_controls, dispersion_discretization_method", flag);
+  std::string disc_methods;
+  if (flag)
+    disc_methods = mm.transcode(node->getTextContent());
+  else
+    disc_methods = (mesh_rectangular_) ? "mfd-monotone_for_hex" : "mfd-optimized_for_monotonicity";
+  disc_methods.append(", mfd-two_point_flux_approximation");
+
+  out_list.sublist("operators") = TranslateDiffusionOperator_(
+      disc_methods, "diffusion_operator", "", "", false);
 
   // multiscale model list
   out_list.sublist("multiscale models") = TranslateTransportMSM_();
@@ -360,7 +375,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
       TranslateTransportBCsGroup_(bcname, regions, solutes, out_list);
     }
 
-    // geochemistry BCs 
+    // geochemical BCs 
     node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry", flag);
     if (flag) {
       std::string bctype;
@@ -370,8 +385,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
       for (int j = 0; j < same_list.size(); ++j) {
         element = static_cast<DOMElement*>(same_list[j]);
         double t0 = GetAttributeValueD_(element, "start");
-        tp_forms[t0] = GetAttributeValueS_(element, "function");
         tp_values[t0] = GetAttributeValueS_(element, "name");
+        tp_forms[t0] = GetAttributeValueS_(element, "function", TYPE_NONE, false); // no form -> use geochemistry engine
       }
 
       // create vectors of values and forms
@@ -382,14 +397,23 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
         values.push_back(it->second);
         forms.push_back(tp_forms[it->first]);
       }
-     
+
+      if (times.size() == 1) {
+        times.push_back(times[0] + 1e+20);
+        values.push_back(values[0]);
+      } else {
+        forms.pop_back();
+      }
+
       // save in the XML files  
       Teuchos::ParameterList& tbc_list = out_list.sublist("geochemical conditions");
-      Teuchos::ParameterList& bc = tbc_list.sublist(bcname);
-      bc.set<Teuchos::Array<std::string> >("regions", regions);
-      bc.set<Teuchos::Array<double> >("times", times);
-      bc.set<Teuchos::Array<std::string> >("geochemical conditions", values);
-      bc.set<Teuchos::Array<std::string> >("time functions", forms);
+      for (int i = 0; i < phases_["water"].size(); ++i) {
+        Teuchos::ParameterList& bc = tbc_list.sublist(phases_["water"][i]).sublist(bcname);
+        bc.set<Teuchos::Array<std::string> >("regions", regions);
+        bc.set<Teuchos::Array<double> >("times", times);
+        bc.set<Teuchos::Array<std::string> >("geochemical conditions", values);
+        bc.set<Teuchos::Array<std::string> >("time functions", forms);
+      }
     }
   }
 
@@ -399,31 +423,41 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
 
 /* ******************************************************************
 * Create list of transport BCs for particular group of solutes.
+* Solutes may have only one element, see schema for details.
 ****************************************************************** */
 void InputConverterU::TranslateTransportBCsGroup_(
     std::string& bcname, std::vector<std::string>& regions,
     DOMNodeList* solutes, Teuchos::ParameterList& out_list)
 {
   DOMElement* element;
+  if (solutes->getLength() == 0) return;
+ 
+  DOMNode* node = solutes->item(0);
 
-  for (int n = 0; n < solutes->getLength(); ++n) {
-    DOMNode* node = solutes->item(n);
+  // get child nodes with the same tagname
+  bool flag;
+  std::string bctype, solute_name, tmp_name;
+  std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
 
-    // process a group of similar elements defined by the first element
-    bool flag;
-    std::string bctype, solute_name;
-
-    std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
+  while (same_list.size() > 0) {
+    // process a group of elements named after the 0-th element
     solute_name = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "name");
 
     std::map<double, double> tp_values;
     std::map<double, std::string> tp_forms;
 
-    for (int j = 0; j < same_list.size(); ++j) {
-      element = static_cast<DOMElement*>(same_list[j]);
-      double t0 = GetAttributeValueD_(element, "start");
-      tp_forms[t0] = GetAttributeValueS_(element, "function");
-      tp_values[t0] = GetAttributeValueD_(element, "value");
+    for (std::vector<DOMNode*>::iterator it = same_list.begin(); it != same_list.end(); ++it) {
+      element = static_cast<DOMElement*>(*it);
+      tmp_name = GetAttributeValueS_(element, "name");
+
+      if (tmp_name == solute_name) {
+        double t0 = GetAttributeValueD_(element, "start");
+        tp_forms[t0] = GetAttributeValueS_(element, "function");
+        tp_values[t0] = GetAttributeValueD_(element, "value");
+
+        same_list.erase(it);
+        it--;
+      } 
     }
 
     // create vectors of values and forms
@@ -542,7 +576,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
       weight = "volume";
     } else if (strcmp(text, "perm_weighted") == 0) {
       weight = "permeability";
-    } else if (strcmp(text, "aqueous_conc") == 0) {
+    } else if (strcmp(text, "uniform_conc") == 0) {
       weight = "none";
     } else if (strcmp(text, "flow_weighted_conc") == 0) {
       element = static_cast<DOMElement*>(phase_l);

@@ -40,9 +40,7 @@ TEST(CONVERTER_BASE) {
     std::stringstream xmlFileName;
     xmlFileName << "test/converter_u_test" << i << ".xml";
 
-    bool found;
-    Amanzi::AmanziInput::InputConverterU converter;
-    converter.Init(xmlFileName.str(), found);
+    Amanzi::AmanziInput::InputConverterU converter(xmlFileName.str());
     Teuchos::ParameterList new_xml;
     try {
       new_xml = converter.Translate(0, 1);
@@ -50,8 +48,10 @@ TEST(CONVERTER_BASE) {
       Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
       Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_xml);
 
+      std::stringstream ss;
+      ss << "test" << i << "_native_v7.xml";
       std::ofstream xmlfile;
-      xmlfile.open("native_v6.xml");
+      xmlfile.open(ss.str().c_str());
       xmlfile << XMLobj;
 
       std::cout << "Successful translation. Validating the result...\n\n";

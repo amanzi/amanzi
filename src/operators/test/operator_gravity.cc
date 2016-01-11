@@ -1,7 +1,7 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -24,7 +24,7 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 
 // Operators
 #include "HeatConduction.hh"
@@ -32,8 +32,7 @@
 #include "OperatorDefs.hh"
 #include "OperatorDiffusion.hh"
 #include "OperatorDiffusionFactory.hh"
-#include "UpwindSecondOrder.hh"
-#include "UpwindStandard.hh"
+#include "UpwindFlux.hh"
 
 
 /* *****************************************************************
@@ -84,19 +83,18 @@ void RunTestGravity(std::string op_list_name) {
   std::vector<double> bc_value(nfaces_wghost, 0.0), bc_mixed(nfaces_wghost, 0.0);
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
-  // create diffusion operator 
-  // -- set gravity and boundary conditions
-  Operators::OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op1 = opfactory.Create(mesh, bc, op_list, g, 0);
-
-  // -- we need flux and dummy solution to populate nonlinear coefficient
+  // create fluid densities
   CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh);
-  cvs.SetGhosted(true);
-  cvs.SetComponent("cell", AmanziMesh::CELL, 1);
-  cvs.SetOwned(false);
-  cvs.AddComponent("face", AmanziMesh::FACE, 1);
+  cvs.SetMesh(mesh)
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("face", AmanziMesh::FACE, 1);
 
+  double rho(2.0);
+  Teuchos::RCP<CompositeVector> rho_cv = Teuchos::rcp(new CompositeVector(cvs));
+  rho_cv->PutScalar(2.0);
+
+  // we need flux and dummy solution to populate nonlinear coefficient
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));
   Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
 
@@ -107,31 +105,29 @@ void RunTestGravity(std::string op_list_name) {
   }
   CompositeVector u(cvs);
   
-  // -- create nonlinear coefficient.
+  // create nonlinear coefficient.
   Teuchos::RCP<HeatConduction> knc = Teuchos::rcp(new HeatConduction(mesh));
 
-  // -- create upwind model
+  // create upwind model
   Teuchos::ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
-  UpwindStandard<HeatConduction> upwind(mesh, knc);
+  UpwindFlux<HeatConduction> upwind(mesh, knc);
   upwind.Init(ulist);
 
   knc->UpdateValues(*flux);  // argument is not used
   ModelUpwindFn func = &HeatConduction::Conduction;
   upwind.Compute(*flux, u, bc_model, bc_value, *knc->values(), *knc->values(), func);
 
-  // -- create fluid densities
-  double rho(1.0);
-  Teuchos::RCP<CompositeVector> rho_cv = Teuchos::rcp(new CompositeVector(cvs));
-  rho_cv->PutScalar(1.0);
+  // create first diffusion operator using constant density
+  Operators::OperatorDiffusionFactory opfactory;
+  Teuchos::RCP<OperatorDiffusion> op1 = opfactory.Create(op_list, mesh, bc, rho, g);
 
-  // -- populate the first operator using constant rho
-  op1->Setup(K, knc->values(), knc->derivatives(), rho);
+  op1->Setup(K, knc->values(), knc->derivatives());
   op1->UpdateMatrices(flux.ptr(), Teuchos::null);
 
-  // create and populate the second operator using vector rho
-  Teuchos::RCP<OperatorDiffusion> op2 = opfactory.Create(mesh, bc, op_list, g, 0);
+  // create and populate the second operator using vector density
+  Teuchos::RCP<OperatorDiffusion> op2 = opfactory.Create(op_list, mesh, bc, rho_cv, g);
 
-  op2->Setup(K, knc->values(), knc->derivatives(), rho_cv);
+  op2->Setup(K, knc->values(), knc->derivatives());
   op2->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // check norm of the right-hand sides

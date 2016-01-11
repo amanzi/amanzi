@@ -1,9 +1,14 @@
 /*
+  Solvers
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ethan Coon (ecoon@lanl.gov)
+
   Factory for nonlinear solvers.
-
-  License: BSD
-  Authors: Ethan Coon (ecoon@lanl.gov)
-
 */
 
 #ifndef AMANZI_SOLVER_FACTORY_HH_

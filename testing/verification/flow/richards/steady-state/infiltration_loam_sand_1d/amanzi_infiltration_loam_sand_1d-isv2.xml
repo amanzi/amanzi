@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.1.1">
+<amanzi_input type="unstructured" version="2.2.1">
     <model_description name="Richards-1D-infiltration_loam_sand" />
     <definitions>
       <macros>
@@ -142,7 +142,9 @@
           <liquid_component name="water">
             <uniform_pressure value="81747.0" />
           </liquid_component>
-          <solute_component function="uniform" name="Tc-99" value="0.0" />
+          <solute_component name="solute">
+            <uniform_conc name="Tc-99" value="0.0"/>
+          </solute_component>
         </liquid_phase>
       </initial_condition>
     </initial_conditions>

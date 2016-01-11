@@ -1,7 +1,7 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators 
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -46,7 +46,6 @@ class UpwindDivK : public Upwind<Model> {
                double (Model::*Value)(int, double) const);
 
  private:
-  using Upwind<Model>::vo_;
   using Upwind<Model>::mesh_;
   using Upwind<Model>::model_;
 
@@ -62,9 +61,7 @@ class UpwindDivK : public Upwind<Model> {
 template<class Model>
 void UpwindDivK<Model>::Init(Teuchos::ParameterList& plist)
 {
-  vo_ = Teuchos::rcp(new VerboseObject("UpwindDivK", plist));
-
-  method_ = Operators::OPERATOR_UPWIND_FLUX;
+  method_ = Operators::OPERATOR_UPWIND_DIVK;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
 
   order_ = plist.get<int>("order", 1);
@@ -83,8 +80,6 @@ void UpwindDivK<Model>::Compute(
 {
   ASSERT(field.HasComponent("cell"));
   ASSERT(field_upwind.HasComponent("face"));
-
-  Teuchos::OSTab tab = vo_->getOSTab();
 
   field.ScatterMasterToGhosted("cell");
   flux.ScatterMasterToGhosted("face");

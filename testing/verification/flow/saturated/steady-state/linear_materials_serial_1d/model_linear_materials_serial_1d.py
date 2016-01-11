@@ -85,24 +85,34 @@ def createFromXML(filename):
     #
     #  Domain Size
     #
-    params["x_0"] = search.getElementByTagPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain Low Coordinate").value[0]
-    params["z_0"] = search.getElementByTagPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain Low Coordinate").value[2]
-    params["x_1"] = search.getElementByTagPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain High Coordinate").value[0]
-    params["z_1"] = search.getElementByTagPath(xml, "/Main/Mesh/Unstructured/Generate Mesh/Uniform Structured/Domain High Coordinate").value[2] 
+    xyz = search.getElementByTags(xml, "/amanzi_input/mesh/generate/box").get("low_coordinates")
+    params["x_0"] = float(xyz.split(',')[0])
+    params["z_0"] = float(xyz.split(',')[2])
+    xyz = search.getElementByTags(xml, "/amanzi_input/mesh/generate/box").get("high_coordinates")
+    params["x_1"] = float(xyz.split(',')[0])
+    params["z_1"] = float(xyz.split(',')[2])
 
     #
     #  Material Properties
     #
-    params["k1"]  = search.getElementByTagPath(xml, "/Main/Material Properties/Left Material/Intrinsic Permeability: Uniform/Value").value
-    params["k2"]  = search.getElementByTagPath(xml, "/Main/Material Properties/Right Material/Intrinsic Permeability: Uniform/Value").value
-    params["mu"]  = search.getElementByTagPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Viscosity: Uniform/Viscosity").value
-    params["rho"] = search.getElementByTagPath(xml, "/Main/Phase Definitions/Aqueous/Phase Properties/Density: Uniform/Density").value
+    strK = search.getElementByTags(xml, "/amanzi_input/materials/material,Left half/permeability").get('x')
+    params["k1"] = float(strK)
+    strK = search.getElementByTags(xml, "/amanzi_input/materials/material,Right half/permeability").get('x')
+    params["k2"] = float(strK)
+    strMu = search.getElementByTags(xml, "/amanzi_input/phases/liquid_phase/viscosity").text
+    params["mu"] = float(strMu)
+    strRho = search.getElementByTags(xml, "/amanzi_input/phases/liquid_phase/density").text
+    params["rho"] = float(strRho)
 
     #
     #  Boundary Conditions
     #
-    params["h_0"] = search.getElementByTagPath(xml, "/Main/Boundary Conditions/LeftBC/BC: Hydrostatic/Water Table Height").value[0]
-    params["h_L"] = search.getElementByTagPath(xml, "/Main/Boundary Conditions/RightBC/BC: Hydrostatic/Water Table Height").value[0] 
+    strh0 = search.getElementByTags(xml, "/amanzi_input/boundary_conditions/boundary_condition,LeftBC/" +
+                                         "liquid_phase/liquid_component/hydrostatic").get("value")
+    params["h_0"] = float(strh0)
+    strhL = search.getElementByTags(xml, "/amanzi_input/boundary_conditions/boundary_condition,RightBC/" +
+                                         "liquid_phase/liquid_component/hydrostatic").get("value")
+    params["h_L"] = float(strhL)
 
     #
     #  Standard Gravity

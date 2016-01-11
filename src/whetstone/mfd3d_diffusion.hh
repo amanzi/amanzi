@@ -1,13 +1,12 @@
 /*
-  This is the mimetic discretization component of the Amanzi code. 
+  WhetStone, version 2.0
+  Release name: naka-to.
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Version: 2.0
-  Release name: naka-to.
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
@@ -30,7 +29,7 @@
 #include "Point.hh"
 
 #include "DenseMatrix.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "mfd3d.hh"
 
 
@@ -45,8 +44,8 @@ class MFD3D_Diffusion : public MFD3D {
   // basic mimetic discretization methods use permeability tensor K
   // the inner product in the spave of face-based functions is weighted by
   // inverse of K. 
-  int L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc);
-  int L2consistencyInverse(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);
+  int L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
+  int L2consistencyInverse(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
 
   int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
 
@@ -65,12 +64,17 @@ class MFD3D_Diffusion : public MFD3D {
   int MassMatrixInverseScaled(int c, const Tensor& K, DenseMatrix& W); 
   int MassMatrixInverseOptimizedScaled(int c, const Tensor& K, DenseMatrix& W);
 
-  // experimental methods (tensor is product k K)
+  // experimental methods
+  // -- tensor is product k K
   int L2consistencyInverseDivKScaled(int c, const Tensor& K,
                                      double kmean, const AmanziGeometry::Point& kgrad,
                                      DenseMatrix& R, DenseMatrix& Wc);
   int MassMatrixInverseDivKScaled(int c, const Tensor& K,
                                   double kmean, const AmanziGeometry::Point& kgrad, DenseMatrix& W);
+
+  // -- non-symmetric tensor K
+  int MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix& M);
+  int MassMatrixInverseNonSymmetric(int c, const Tensor& K, DenseMatrix& W);
 
   // surface methods
   int L2consistencyInverseSurface(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);
@@ -92,9 +96,10 @@ class MFD3D_Diffusion : public MFD3D {
   double Transmissibility(int f, int c, const Tensor& K);
 
  private:  
-  // stability methods (add matrix Ms in M = Mc + Ms)
-  int StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& Mc, DenseMatrix& M);
+  // stability methods (add stability matrix, M += Mstab)
+  int StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M);
   void RescaleMassMatrixInverse_(int c, DenseMatrix& W);
+  void StabilityScalarNonSymmetric_(int c, DenseMatrix& N, DenseMatrix& M);
 };
 
 }  // namespace WhetStone

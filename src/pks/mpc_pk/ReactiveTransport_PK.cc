@@ -135,11 +135,8 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
 };
 
 void ReactiveTransport_PK::CommitStep(double t_old, double t_new) {
-  
   chemistry_pk_->CommitStep(t_old, t_new);
-
 }
-
 
 }  // namespace Amanzi
 

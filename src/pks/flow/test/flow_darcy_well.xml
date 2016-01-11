@@ -6,8 +6,6 @@
   <ParameterList name="PKs">
     <ParameterList name="Flow">
       <ParameterList name="Darcy problem">
-	<Parameter name="atmospheric pressure" type="double" value="0.0"/>
-
 	<ParameterList name="VerboseObject">
 	  <Parameter name="Verbosity Level" type="string" value="high"/>
 	</ParameterList>
@@ -96,6 +94,11 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="initial conditions">
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="0.0"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

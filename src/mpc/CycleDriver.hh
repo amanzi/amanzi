@@ -44,7 +44,7 @@ class CycleDriver {
   CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
               Teuchos::RCP<AmanziMesh::Mesh>& mesh,
               Epetra_MpiComm* comm,
-              Amanzi::ObservationData& output_observations);
+              Amanzi::ObservationData& observations_data);
 
   // PK methods
   void Setup();
@@ -82,10 +82,10 @@ class CycleDriver {
   Teuchos::Ptr<TimeStepManager> tsm_;
 
   // misc setup information
-  Teuchos::RCP<Teuchos::ParameterList> parameter_list_;
+  Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> coordinator_list_;
 
-  std::vector<double> t_, tp_start_, tp_end_, tp_dt_, tp_max_cycle_;  
+  std::vector<double> t_, tp_start_, tp_end_, tp_dt_, tp_max_cycle_, tp_max_dt_;  
   double max_dt_, min_dt_;
   int cycle0_, cycle1_;
   int num_time_periods_;
@@ -95,7 +95,7 @@ class CycleDriver {
   Epetra_MpiComm* comm_;
 
   // observations
-  Amanzi::ObservationData&  output_observations_;
+  Amanzi::ObservationData& observations_data_;
   Teuchos::RCP<Amanzi::Unstructured_observations> observations_;
 
   // vis and checkpointing

@@ -22,30 +22,8 @@ namespace AmanziGeometry {
 // -------------------------------------------------------------
 // PlaneRegion:: constructors / destructor
 // -------------------------------------------------------------
-PlaneRegion::PlaneRegion(const std::string name, 
-			 const unsigned int id,
-			 const Point& p, const Point& normal,
-                         const double tolerance,
-                         const LifeCycleType lifecycle,
-                         const VerboseObject *verbobj)
-    : Region(name,id,p.dim()-1,lifecycle,verbobj), p_(p), n_(normal/norm(normal)),
-      tolerance_(tolerance)
-{
-
-  if (p_.dim() != n_.dim()) {
-    std::stringstream tempstr;
-    tempstr << "\nMismatch in point and normal dimensions of PlaneRegion " << Region::name() << "Perhaps the region is improperly defined?\n";
-    if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
-      Teuchos::OSTab tab = verbobj->getOSTab();
-      *(verbobj->os()) << tempstr;
-    }
-    Errors::Message mesg(tempstr.str());
-    Exceptions::amanzi_throw(mesg);
-  }
-
-}
-
-PlaneRegion::PlaneRegion(const char *name, const unsigned int id,
+PlaneRegion::PlaneRegion(const Set_Name& name, 
+			 const Set_ID id,
 			 const Point& p, const Point& normal,
                          const double tolerance,
                          const LifeCycleType lifecycle,

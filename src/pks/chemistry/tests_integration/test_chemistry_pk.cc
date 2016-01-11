@@ -13,7 +13,6 @@
 #include "Epetra_SerialComm.h"
 #include "XMLParameterListWriter.hh"
 
-#include "InputParserIS.hh"
 #include "MeshFactory.hh"
 #include "GenerationSpec.hh"
 #include "State.hh"
@@ -129,8 +128,8 @@ SUITE(GeochemistryTestsChemistryPK) {
     chemistry_state_->Setup();
 
     state_->Setup();
-    chemistry_state_->Initialize();
     state_->InitializeFields();
+    chemistry_state_->Initialize();
   }
 
   ChemistryPKTest::~ChemistryPKTest() {

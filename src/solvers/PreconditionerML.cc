@@ -1,11 +1,14 @@
 /*
-  This is the Linear Solver component of the Amanzi code.
+  Solvers
 
-  License: BSD
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-  Conjugate gradient method.
-  Usage:
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Trilinos' multigrid solver.
 */
 
 #include "Teuchos_RCP.hpp"
@@ -23,7 +26,6 @@ namespace AmanziPreconditioners {
 int PreconditionerML::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
 {
   returned_code_ = ML_->ApplyInverse(v, hv);
-  //return (returned_code_ == 0) ? 0 : 1;
   return returned_code_;
 }
 
