@@ -98,9 +98,8 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   // if this is a static mesh simulation, we only write the mesh once
   if (!dynamic_mesh_ && mesh_written_) return;
 
-
+  // open the mesh file
   mesh_file_ = parallelIO_open_file(h5Filename_.c_str(), &IOgroup_, FILE_READWRITE);
-
 
   // get num_nodes, num_cells
   const Epetra_Map &nmap = mesh_maps_->node_map(false);
@@ -114,11 +113,9 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 
   // get space dimension
   int space_dim = mesh_maps_->space_dimension();
-  //AmanziGeometry::Point xc;
-  //mesh_maps.node_get_coordinates(0, &xc);
-  //unsigned int space_dim = xc.dim();
 
-  // get coords
+  // Get and write node coordinate info
+  // -- get coords
   double *nodes = new double[nnodes_local*3];
   globaldims[0] = nnodes_global;
   globaldims[1] = 3;
@@ -138,18 +135,18 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
     }
   }
 
+  // -- write out coords
   std::stringstream hdf5_path;
   hdf5_path << iteration << "/Mesh/Nodes";
-
-  // write out coords
   // TODO(barker): add error handling: can't create/write
   parallelIO_write_dataset(nodes, PIO_DOUBLE, 2, globaldims, localdims, mesh_file_,
                            const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
 
+  // -- clean up
   delete [] nodes;
 
-  // write out node map
+  // -- write out node map
   ids = new int[nmap.NumMyElements()];
   for (int i=0; i<nnodes_local; i++) {
     ids[i] = nmap.GID(i);
@@ -162,10 +159,10 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   parallelIO_write_dataset(ids, PIO_INTEGER, 2, globaldims, localdims, mesh_file_,
                            const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
-
   delete [] ids;
 
-  // get connectivity
+  // Get and write connectivity information
+  // -- get connectivity
   // nodes are written to h5 out of order, need info to map id to order in output
   int nnodes(nnodes_local);
   std::vector<int> nnodesAll(viz_comm_.NumProc(),0);
@@ -193,7 +190,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   }
   nmap.RemoteIDList(nnodes_global, &gid[0], &pid[0], &lid[0]);
 
-  // determine size of connectivity vector
+  // -- determine size of connectivity vector
   // element conn vector: elem_typeID elem_conn1 ... elem_connN
   // conn vector length = size_conn + 1
   // if polygon: elem_typeID num_nodes elem_conn1 ... elem_connN
@@ -208,7 +205,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
     each_conn[i] = nodeids.size();
     local_conn += each_conn[i]+1;  // add 1 for elem_typeID
     type = mesh_maps_->cell_get_type(i);
-    if (getCellTypeID_(type) == 3) local_conn += 1; // add 1 if polygon
+    if (getCellTypeID_(type) == getCellTypeID_(AmanziMesh::POLYGON)) local_conn += 1; // add 1 for num_nodes
   }
   std::vector<int> local_connAll(viz_comm_.NumProc(),0);
   viz_comm_.GatherAll(&local_conn, &local_connAll[0], 1);
@@ -234,8 +231,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
     type = mesh_maps_->cell_get_type(i);
     cells[idx] = getCellTypeID_(type);
     idx++;
-    // TODO(barker): this shouldn't be a hardcoded value
-    if (type == 3) {
+    if (getCellTypeID_(type) == getCellTypeID_(AmanziMesh::POLYGON)) {
       cells[idx] = each_conn[i];
       idx++;
     }
