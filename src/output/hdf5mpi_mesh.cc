@@ -102,17 +102,17 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   mesh_file_ = parallelIO_open_file(h5Filename_.c_str(), &IOgroup_, FILE_READWRITE);
 
   // get num_nodes, num_cells
-  const Epetra_Map &nmap = mesh_maps_->node_map(false);
+  const Epetra_Map &nmap = mesh_maps_->vis_mesh().node_map(false);
   int nnodes_local = nmap.NumMyElements();
   int nnodes_global = nmap.NumGlobalElements();
-  const Epetra_Map &ngmap = mesh_maps_->node_map(true);
+  const Epetra_Map &ngmap = mesh_maps_->vis_mesh().node_map(true);
 
-  const Epetra_Map &cmap = mesh_maps_->cell_map(false);
+  const Epetra_Map &cmap = mesh_maps_->vis_mesh().cell_map(false);
   int ncells_local = cmap.NumMyElements();
   int ncells_global = cmap.NumGlobalElements();
 
   // get space dimension
-  int space_dim = mesh_maps_->space_dimension();
+  int space_dim = mesh_maps_->vis_mesh().space_dimension();
 
   // Get and write node coordinate info
   // -- get coords
@@ -124,7 +124,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 
   AmanziGeometry::Point xc(space_dim);
   for (int i = 0; i < nnodes_local; i++) {
-    mesh_maps_->node_get_coordinates(i, &xc);
+    mesh_maps_->vis_mesh().node_get_coordinates(i, &xc);
     // VisIt and ParaView require all mesh entities to be in 3D space
     nodes[i*3+0] = xc[0];
     nodes[i*3+1] = xc[1];
@@ -178,7 +178,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 
   if (nnodes_local > 0) {
     unsigned int cellid = 0;
-    mesh_maps_->cell_get_nodes(cellid,&nodeids);
+    mesh_maps_->vis_mesh().cell_get_nodes(cellid,&nodeids);
     conn_ = nodeids.size();
   }
 
@@ -193,19 +193,48 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   // -- determine size of connectivity vector
   // element conn vector: elem_typeID elem_conn1 ... elem_connN
   // conn vector length = size_conn + 1
-  // if polygon: elem_typeID num_nodes elem_conn1 ... elem_connN
+  // if polygon: (true, 2D polygon)
+  //   elem_typeID num_nodes elem_conn1 ... elem_connN
   //             conn vector length = size_conn + 1 + 1
+
+  // if polyhedra: XDMF does not yet support arbitrary polyhedra.
+  //   These are written as POLYGON type, but are drawn by VisIt and
+  //   Paraview as polygons, i.e. connect the dots, and look like junk
+  //   for 3D meshes.  Therefore we write them as POLYGONs, but repeat
+  //   nodes, drawing each face in order, to make a box of faces.
+  //   This will still potentially look bad in non-convex cells.
+  //     TODO(not me!): fix XDMF to write polyhedra.
+  //  elem_typeID num_nodes face1_n1 face1_n2 ... face1_nM face1_n1 face2_n1 ... faceN_nM faceN_n1
+  //   size = 2 + sum_faces(num_nodes_on_face+1)
+  //
   // TODO(barker): make a list of cell types found,
   //               if all the same then write out as a uniform mesh of that type
   int local_conn(0);
   AmanziMesh::Cell_type type;
   std::vector<int> each_conn(ncells_local);
   for (int i=0; i<ncells_local; i++) {
-    mesh_maps_->cell_get_nodes(i,&nodeids);
+    mesh_maps_->vis_mesh().cell_get_nodes(i,&nodeids);
     each_conn[i] = nodeids.size();
-    local_conn += each_conn[i]+1;  // add 1 for elem_typeID
-    type = mesh_maps_->cell_get_type(i);
-    if (getCellTypeID_(type) == getCellTypeID_(AmanziMesh::POLYGON)) local_conn += 1; // add 1 for num_nodes
+    type = mesh_maps_->vis_mesh().cell_get_type(i);
+
+    if (getCellTypeID_(type) == getCellTypeID_(AmanziMesh::POLYGON)) {
+      if (space_dim == 2) {
+	// 2D polygon, add 1 for num_nodes, 1 for elem_typeID
+	local_conn += each_conn[i]+1+1;
+      } else {
+	// 3D polyhedron, map out all faces
+	AmanziMesh::Entity_ID_List faces, nodes;
+	mesh_maps_->vis_mesh().cell_get_faces(i,&faces);
+	int nfaces = faces.size();
+	for (int j=0; j!=nfaces; ++j) {
+	  mesh_maps_->vis_mesh().face_get_nodes(faces[j], &nodes);
+	  local_conn += nodes.size()+1;
+	}
+	local_conn += 2;
+      }
+    } else {
+      local_conn += each_conn[i]+1;  // enumerated simplex, add 1 for elem_typeID
+    }
   }
   std::vector<int> local_connAll(viz_comm_.NumProc(),0);
   viz_comm_.GatherAll(&local_conn, &local_connAll[0], 1);
@@ -224,26 +253,65 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   // nodeIDs need to be mapped to output IDs
   int idx = 0;
   for (int i=0; i<ncells_local; i++) {
-    int conn_len(each_conn[i]);
-    AmanziMesh::Entity_ID_List xe(conn_len);
-    mesh_maps_->cell_get_nodes(i, &xe);
     // store cell type id
-    type = mesh_maps_->cell_get_type(i);
+    type = mesh_maps_->vis_mesh().cell_get_type(i);
     cells[idx] = getCellTypeID_(type);
     idx++;
+
+    // store count of nodes for polygons (overwritten if 3D polygon)
     if (getCellTypeID_(type) == getCellTypeID_(AmanziMesh::POLYGON)) {
       cells[idx] = each_conn[i];
       idx++;
     }
+
     // store mapped node ids for connectivity
-    for (int j = 0; j < conn_len; j++) {
-      if (nmap.MyLID(xe[j])) {
-        cells[idx+j] = xe[j] + startAll[viz_comm_.MyPID()];
-      } else {
-        cells[idx+j] = lid[xe[j]] + startAll[pid[xe[j]]];
+    if (getCellTypeID_(type) == getCellTypeID_(AmanziMesh::POLYGON)
+	&& (space_dim == 3)) {
+      // 3D polygon case
+      int total_count = 0;
+
+      AmanziMesh::Entity_ID_List faces;
+      mesh_maps_->vis_mesh().cell_get_faces(i,&faces);
+      int nfaces = faces.size();
+      for (int j=0; j!=nfaces; ++j) {
+	AmanziMesh::Entity_ID_List nodes;
+	mesh_maps_->vis_mesh().face_get_nodes(faces[j], &nodes);
+	total_count += nodes.size()+1;
+
+	int nnodes = nodes.size();
+	for (int k=0; k!=nnodes; ++k) {
+	  if (nmap.MyLID(nodes[k])) {
+	    cells[idx] = nodes[k] + startAll[viz_comm_.MyPID()];
+	  } else {
+	    cells[idx] = lid[nodes[k]] + startAll[pid[nodes[k]]];
+	  }
+	  idx++;
+	}
+	// repeat the first
+	if (nmap.MyLID(nodes[0])) {
+	  cells[idx] = nodes[0] + startAll[viz_comm_.MyPID()];
+	} else {
+	  cells[idx] = lid[nodes[0]] + startAll[pid[nodes[0]]];
+	}
+	idx++;
       }
+      // overwrite the correct count
+      cells[idx-total_count-1] = total_count;
+
+    } else {
+      int conn_len(each_conn[i]);
+      AmanziMesh::Entity_ID_List xe(conn_len);
+      mesh_maps_->vis_mesh().cell_get_nodes(i, &xe);
+
+      for (int j = 0; j < conn_len; j++) {
+	if (nmap.MyLID(xe[j])) {
+	  cells[idx+j] = xe[j] + startAll[viz_comm_.MyPID()];
+	} else {
+	  cells[idx+j] = lid[xe[j]] + startAll[pid[xe[j]]];
+	}
+      }
+      idx += conn_len;
     }
-    idx += conn_len;
   }
 
   hdf5_path.str("");
@@ -293,8 +361,8 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
     //TODO(barker): if implement type tracking, then update this as needed
 
     // must be fixed for the case where PID 0 has no cells...
-    if (mesh_maps_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED) > 0) {
-      ctype_ = mesh_maps_->cell_get_type(0);
+    if (mesh_maps_->vis_mesh().num_entities(AmanziMesh::CELL, AmanziMesh::OWNED) > 0) {
+      ctype_ = mesh_maps_->vis_mesh().cell_get_type(0);
     }
     cname_ = "Mixed"; //AmanziMesh::Data::type_to_name(ctype_);
     xmfFilename = base_filename_ + ".xmf";
