@@ -59,6 +59,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   rel_perm_out = boost::replace_all_copy(rel_perm, "-", ": ");
   replace(rel_perm_out.begin(), rel_perm_out.end(), '_', ' ');
 
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, update_upwind_frequency", flag);
+  if (flag) update_upwind = mm.transcode(node->getTextContent());
+  replace(update_upwind.begin(), update_upwind.end(), '_', ' ');
+
   // create flow header
   if (pk_model_["flow"] == "darcy") {
     Teuchos::ParameterList& darcy_list = out_list.sublist("Darcy problem");
@@ -67,10 +71,12 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
     flow_single_phase_ = true;
   } else if (pk_model_["flow"] == "richards") {
     Teuchos::ParameterList& richards_list = out_list.sublist("Richards problem");
-    Teuchos::ParameterList& upw_list = richards_list.sublist("upwind");
-    upw_list.set<std::string>("relative permeability", rel_perm_out);
-    upw_list.set<std::string>("upwind update", update_upwind);
-    upw_list.sublist("upwind parameters").set<double>("tolerance", 1e-12);
+    Teuchos::ParameterList& upw_list = richards_list.sublist("relative permeability");
+    upw_list.set<std::string>("upwind method", rel_perm_out);
+    upw_list.set<std::string>("upwind frequency", update_upwind);
+    upw_list.sublist("upwind parameters").set<double>("tolerance", 1e-12)
+        .set<std::string>("method", "cell-based").set<int>("polynomial order", 1)
+        .set<std::string>("limiter", "Barth-Jespersen");
     flow_list = &richards_list;
 
     richards_list.sublist("water retention models") = TranslateWRM_();
@@ -110,8 +116,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   // Newton method requires to overwrite some parameters.
   if (nonlinear_solver == "newton") {
     modify_correction = true;
-    out_list.sublist("Richards problem").sublist("upwind")
-        .set<std::string>("upwind update", "every nonlinear iteration");
+    out_list.sublist("Richards problem").sublist("relative permeability")
+        .set<std::string>("upwind frequency", "every nonlinear iteration");
 
     if (disc_method != "fv-default" ||
         rel_perm != "upwind-darcy_velocity" ||
@@ -126,12 +132,12 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
 
   // Newton-Picard method requires to overwrite some parameters.
   if (nonlinear_solver == "newton-picard") {
-    out_list.sublist("Richards problem").sublist("upwind")
-        .set<std::string>("upwind update", "every nonlinear iteration");
+    out_list.sublist("Richards problem").sublist("relative permeability")
+        .set<std::string>("upwind frequency", "every nonlinear iteration");
   }
 
   flow_list->sublist("operators") = TranslateDiffusionOperator_(
-      disc_method, pc_method, nonlinear_solver, "vapor matrix", true);
+      disc_method, pc_method, nonlinear_solver, rel_perm, "vapor matrix", true);
   
   // insert time integrator
   std::string err_options, unstr_controls;

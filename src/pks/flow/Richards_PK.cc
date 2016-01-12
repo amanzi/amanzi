@@ -370,28 +370,27 @@ void Richards_PK::Initialize()
   InitializeBCsSources_(*rp_list_);
   op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
-  // Create relative permeability
-  Teuchos::RCP<Teuchos::ParameterList> upw_list = Teuchos::sublist(rp_list_, "upwind", true);
+  // relative permeability
+  // -- create basic fields, factories and control variables
+  Teuchos::RCP<Teuchos::ParameterList> upw_list = Teuchos::sublist(rp_list_, "relative permeability", true);
   relperm_ = Teuchos::rcp(new RelPerm(*upw_list, mesh_, atm_pressure_, wrm_));
 
-  CompositeVectorSpace cvs; 
-  cvs.SetMesh(mesh_)->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("face", AmanziMesh::FACE, 1);
-
-  krel_ = Teuchos::rcp(new CompositeVector(cvs));
-  dKdP_ = Teuchos::rcp(new CompositeVector(cvs));
-
-  krel_->PutScalarMasterAndGhosted(1.0);
-  dKdP_->PutScalarMasterAndGhosted(0.0);
-
-  // parameter which defines when update direction of update
   Operators::UpwindFactory<RelPerm> upwind_factory;
   upwind_ = upwind_factory.Create(mesh_, relperm_, *upw_list);
 
-  std::string upw_upd = upw_list->get<std::string>("upwind update", "every timestep");
+  std::string upw_upd = upw_list->get<std::string>("upwind frequency", "every timestep");
   if (upw_upd == "every nonlinear iteration") upwind_frequency_ = FLOW_UPWIND_UPDATE_ITERATION;
   else upwind_frequency_ = FLOW_UPWIND_UPDATE_TIMESTEP;  
+
+  // relative permeability and related stractures
+  // -- create vectors using estimate of the space size
+  Teuchos::RCP<CompositeVectorSpace> upw_cvs = upwind_->Map();
+  krel_ = Teuchos::rcp(new CompositeVector(*upw_cvs));
+  dKdP_ = Teuchos::rcp(new CompositeVector(*upw_cvs));
+
+  // -- populate fields with default values
+  krel_->PutScalarMasterAndGhosted(1.0);
+  dKdP_->PutScalarMasterAndGhosted(0.0);
 
   // models and assumptions
   // -- coupling with other physical PKs
@@ -423,20 +422,20 @@ void Richards_PK::Initialize()
   Teuchos::ParameterList oplist_matrix = tmp_list.sublist("matrix");
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
 
-  std::string name = rp_list_->sublist("upwind").get<std::string>("relative permeability");
-  std::string upw_method("standard: cell");
+  std::string name = rp_list_->sublist("relative permeability").get<std::string>("upwind method");
+  std::string nonlinear_coef("standard: cell");
   if (name == "upwind: darcy velocity") {
-    upw_method = "upwind: face";
+    nonlinear_coef = "upwind: face";
   } else if (name == "upwind: gravity") {
-    upw_method = "upwind: face";
-  } else if (name == "upwind: amanzi") {
-    upw_method = "divk: cell-face";
-    // upw_method = "divk: face";
+    nonlinear_coef = "upwind: face";
+  } else if (name == "upwind: amanzi" || name == "upwind: amanzi new") {
+    nonlinear_coef = "divk: cell-face";
+    // nonlinear_coef = "divk: face";
   } else if (name == "other: arithmetic average") {
-    upw_method = "upwind: face";
+    nonlinear_coef = "upwind: face";
   }
-  oplist_matrix.set<std::string>("nonlinear coefficient", upw_method);
-  oplist_pc.set<std::string>("nonlinear coefficient", upw_method);
+  oplist_matrix.set<std::string>("nonlinear coefficient", nonlinear_coef);
+  oplist_pc.set<std::string>("nonlinear coefficient", nonlinear_coef);
 
   Operators::OperatorDiffusionFactory opfactory;
   op_matrix_diff_ = opfactory.Create(oplist_matrix, mesh_, op_bc_, rho_, gravity_);

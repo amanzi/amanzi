@@ -53,6 +53,7 @@ class UpwindGravity : public Upwind<Model> {
  private:
   using Upwind<Model>::mesh_;
   using Upwind<Model>::model_;
+  using Upwind<Model>::face_comp_;
 
  private:
   int method_, order_;
@@ -69,8 +70,7 @@ void UpwindGravity<Model>::Init(Teuchos::ParameterList& plist)
 {
   method_ = Operators::OPERATOR_UPWIND_GRAVITY;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
-
-  order_ = plist.get<int>("order", 1);
+  order_ = plist.get<int>("polynomial", 1);
 
   int dim = mesh_->space_dimension();
   g_[dim - 1] = -1.0;
@@ -89,11 +89,11 @@ void UpwindGravity<Model>::Compute(
     double (Model::*Value)(int, double) const)
 {
   ASSERT(field.HasComponent("cell"));
-  ASSERT(field_upwind.HasComponent("face"));
+  ASSERT(field_upwind.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
-  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent("face", true);
+  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent(face_comp_, true);
   // const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);

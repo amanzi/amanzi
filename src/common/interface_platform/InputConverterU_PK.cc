@@ -319,12 +319,13 @@ Teuchos::ParameterList InputConverterU::TranslateInitialization_(
 *   disc_methods     = {primary, secondary}
 *   pc_method        = "linerized_operator" | "diffusion_operator"
 *   nonlinear_solver = "" | "Newton"
+*   nonlinear_coef   = "upwind-amanzi_new" | any_other
 *   extentions       = "" | "vapor matrix" 
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
     const std::string& disc_methods, const std::string& pc_method,
-    const std::string& nonlinear_solver, const std::string& extensions,
-    bool gravity)
+    const std::string& nonlinear_solver, const std::string& nonlinear_coef,
+    const std::string& extensions, bool gravity)
 {
   Teuchos::ParameterList out_list;
   Teuchos::ParameterList tmp_list;
@@ -351,6 +352,8 @@ Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
     if (pc_method != "linearized_operator") stensil.remove(1);
     tmp_list.set<Teuchos::Array<std::string> >("preconditioner schema", stensil);
     tmp_list.set<bool>("gravity", gravity);
+    if (gravity && nonlinear_coef == "upwind-amanzi_new")
+        tmp_list.set<std::string>("gravity term discretization", "finite volume");
   } else {
     Teuchos::Array<std::string> stensil(1);
     stensil[0] = "cell";

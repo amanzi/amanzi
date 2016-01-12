@@ -1,4 +1,6 @@
 /*
+  Utils
+
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -19,6 +21,30 @@
 
 namespace Amanzi {
 
+/* ******************************************************************
+* Create parameter list with the given verbosity.
+****************************************************************** */
+VerboseObject::VerboseObject(std::string name, const std::string& verbosity) :
+    comm_(NULL)
+{
+  setDefaultVerbLevel(global_default_level);
+  set_name(name);
+
+  // Override from ParameterList.
+  Teuchos::ParameterList plist;
+  plist.sublist("VerboseObject").set("Verbosity Level", verbosity);
+
+  Teuchos::readVerboseObjectSublist(&plist, this);
+
+  // out, tab
+  out_ = getOStream();
+  out_->setShowLinePrefix(hide_line_prefix);
+}
+
+
+/* ******************************************************************
+* Read verbosity from a parameter list
+****************************************************************** */
 VerboseObject::VerboseObject(std::string name, Teuchos::ParameterList& plist) :
     comm_(NULL)
 {
@@ -28,7 +54,7 @@ VerboseObject::VerboseObject(std::string name, Teuchos::ParameterList& plist) :
   // Options from ParameterList
 
   // -- Set up the VerboseObject header.
-  std::string headername = plist.sublist("VerboseObject").get<std::string>("Name",name);
+  std::string headername = plist.sublist("VerboseObject").get<std::string>("Name", name);
   plist.sublist("VerboseObject").remove("Name");
   set_name(headername);
 

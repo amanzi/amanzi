@@ -48,6 +48,7 @@ class UpwindDivK : public Upwind<Model> {
  private:
   using Upwind<Model>::mesh_;
   using Upwind<Model>::model_;
+  using Upwind<Model>::face_comp_;
 
  private:
   int method_, order_;
@@ -63,8 +64,7 @@ void UpwindDivK<Model>::Init(Teuchos::ParameterList& plist)
 {
   method_ = Operators::OPERATOR_UPWIND_DIVK;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
-
-  order_ = plist.get<int>("order", 1);
+  order_ = plist.get<int>("polynomial order", 1);
 }
 
 
@@ -79,7 +79,7 @@ void UpwindDivK<Model>::Compute(
     double (Model::*Value)(int, double) const)
 {
   ASSERT(field.HasComponent("cell"));
-  ASSERT(field_upwind.HasComponent("face"));
+  ASSERT(field_upwind.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
   flux.ScatterMasterToGhosted("face");
@@ -88,7 +88,7 @@ void UpwindDivK<Model>::Compute(
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
   const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
-  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent("face", true);
+  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent(face_comp_, true);
   upw_face.PutScalar(0.0);
 
   double flxmin, flxmax;

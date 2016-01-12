@@ -248,7 +248,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   disc_methods.append(", mfd-two_point_flux_approximation");
 
   out_list.sublist("operators") = TranslateDiffusionOperator_(
-      disc_methods, "diffusion_operator", "", "", false);
+      disc_methods, "diffusion_operator", "", "", "", false);
 
   // multiscale model list
   out_list.sublist("multiscale models") = TranslateTransportMSM_();

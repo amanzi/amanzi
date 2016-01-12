@@ -442,7 +442,7 @@
             </ParameterList>
           </ParameterList>
           <ParameterList name="advection operator">
-            <Parameter name="discretization primary" type="string" value="upwind"/>
+            <Parameter name="discretization primary" type="string" value="relative permeability"/>
             <Parameter name="reconstruction order" type="int" value="0"/>
           </ParameterList>
         </ParameterList>
@@ -506,9 +506,9 @@
 
     <ParameterList name="Flow">
       <ParameterList name="Richards problem">
-        <ParameterList name="upwind">
-          <Parameter name="relative permeability" type="string" value="upwind: amanzi"/>
-          <Parameter name="upwind update" type="string" value="every timestep"/>
+        <ParameterList name="relative permeability">
+          <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
+          <Parameter name="upwind frequency" type="string" value="every timestep"/>
           <ParameterList name="upwind parameters">
             <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
           </ParameterList>

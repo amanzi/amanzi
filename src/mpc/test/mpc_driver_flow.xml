@@ -298,11 +298,11 @@
   <ParameterList name="PKs">
     <ParameterList name="Flow">
       <ParameterList name="Richards problem">
-      <ParameterList name="upwind">
-        <Parameter name="relative permeability" type="string" value="upwind: darcy velocity"/>
-        <Parameter name="upwind update" type="string" value="every timestep"/>
+      <ParameterList name="relative permeability">
+        <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
+        <Parameter name="upwind frequency" type="string" value="every timestep"/>
           <ParameterList name="upwind parameters">
-          <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
+          <Parameter name="tolerance" type="double" value="1e-12"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="VerboseObject">

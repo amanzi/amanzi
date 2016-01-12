@@ -24,6 +24,7 @@
 #include "UpwindArithmeticAverage.hh"
 #include "UpwindDivK.hh"
 #include "UpwindFlux.hh"
+#include "UpwindFluxAndGravity.hh"
 #include "UpwindGravity.hh"
 #include "UpwindSecondOrder.hh"
 
@@ -49,11 +50,11 @@ Teuchos::RCP<Upwind<Model> > UpwindFactory<Model>::Create(
     Teuchos::RCP<const AmanziMesh::Mesh> mesh,
     Teuchos::RCP<const Model> model, Teuchos::ParameterList& plist)
 {
-  if (!plist.isParameter("relative permeability")) {
-    Errors::Message msg("UpwindFactory: parameter \"relative permeability\" is missing");
+  if (!plist.isParameter("upwind method")) {
+    Errors::Message msg("UpwindFactory: parameter \"upwind method\" is missing");
     Exceptions::amanzi_throw(msg);
   }
-  std::string name = plist.get<std::string>("relative permeability");
+  std::string name = plist.get<std::string>("upwind method");
 
   Teuchos::ParameterList sublist = plist.sublist("upwind parameters");
   if (name == "upwind: darcy velocity") {
@@ -66,6 +67,10 @@ Teuchos::RCP<Upwind<Model> > UpwindFactory<Model>::Create(
     return upwind;
   } else if (name == "upwind: amanzi") {
     Teuchos::RCP<UpwindDivK<Model> > upwind = Teuchos::rcp(new UpwindDivK<Model>(mesh, model));
+    upwind->Init(sublist);
+    return upwind;
+  } else if (name == "upwind: amanzi new") {
+    Teuchos::RCP<UpwindFluxAndGravity<Model> > upwind = Teuchos::rcp(new UpwindFluxAndGravity<Model>(mesh, model));
     upwind->Init(sublist);
     return upwind;
   } else if (name == "upwind: second-order") {

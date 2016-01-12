@@ -20,6 +20,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "CompositeVector.hh"
+#include "CompositeVectorSpace.hh"
 #include "Mesh.hh"
 #include "VerboseObject.hh"
 
@@ -53,21 +54,42 @@ class Upwind {
  public:
   Upwind() {};
   Upwind(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-         Teuchos::RCP<const Model> model)
-      : mesh_(mesh), model_(model) {};
+         Teuchos::RCP<const Model> model) :
+      mesh_(mesh),
+      model_(model),
+      face_comp_("face") {};
   ~Upwind() {};
 
   // main methods
+  // -- initialization of control parameters
   virtual void Init(Teuchos::ParameterList& plist) = 0;
 
+  // -- upwind of a given cell-centered field on mesh faces
+  // -- not all input parameters are use by some algorithms
   virtual void Compute(const CompositeVector& flux, const CompositeVector& solution,
                        const std::vector<int>& bc_model, const std::vector<double>& bc_value,
                        const CompositeVector& field, CompositeVector& field_upwind,
                        double (Model::*Value)(int, double) const) = 0;
 
+  // -- returns combined map for the original and upwinded fields.
+  // -- Currently, composite vector cannot be extended on a fly. 
+  virtual Teuchos::RCP<CompositeVectorSpace> Map() {
+    Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
+    cvs->SetMesh(mesh_)->SetGhosted(true)
+       ->AddComponent("cell", AmanziMesh::CELL, 1)
+       ->AddComponent("face", AmanziMesh::FACE, 1);
+    return cvs;
+  }
+
+  // modifiers
+  void set_face_comp(const std::string& name) { face_comp_ = name; }
+
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<const Model> model_;
+
+  // component name where to write the upwinded field.
+  std::string face_comp_;
 };
 
 }  // namespace Operators
