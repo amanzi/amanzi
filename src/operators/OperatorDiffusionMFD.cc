@@ -1279,8 +1279,7 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
 * equations:
 *   x_f = Aff^-1 * (y_f - Afc * x_c)
 ****************************************************************** */
-int
-OperatorDiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
+int OperatorDiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 {
   if (consistent_face_op_ == Teuchos::null) {
     // create the op
@@ -1295,12 +1294,12 @@ OperatorDiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 
   // calculate the rhs, given by y_f - Afc * x_c
   CompositeVector& y = *consistent_face_op_->rhs();
-  Epetra_MultiVector& y_f = *y.ViewComponent("face",true);
-  y_f = *global_op_->rhs()->ViewComponent("face",true);
-  consistent_face_op_->rhs()->PutScalarGhosted(0.);
+  Epetra_MultiVector& y_f = *y.ViewComponent("face", true);
+  y_f = *global_op_->rhs()->ViewComponent("face", true);
+  consistent_face_op_->rhs()->PutScalarGhosted(0.0);
 
   // y_f - Afc * x_c
-  const Epetra_MultiVector& x_c = *u.ViewComponent("cell",false);
+  const Epetra_MultiVector& x_c = *u.ViewComponent("cell", false);
   AmanziMesh::Entity_ID_List faces;
   for (int c=0; c!=ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
@@ -1327,17 +1326,14 @@ OperatorDiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 
     CompositeVector u_f_copy(y);
     ierr = lin_solver->ApplyInverse(y, u_f_copy);
-    *u.ViewComponent("face",false) = *u_f_copy.ViewComponent("face",false);
-    //    ASSERT(ierr >= 0);
+    *u.ViewComponent("face", false) = *u_f_copy.ViewComponent("face", false);
   } else {
     CompositeVector u_f_copy(y);
     ierr = consistent_face_op_->ApplyInverse(y, u);
-    *u.ViewComponent("face",false) = *u_f_copy.ViewComponent("face",false);
-    //    ASSERT(ierr >= 0);
+    *u.ViewComponent("face", false) = *u_f_copy.ViewComponent("face", false);
   }
   
   return (ierr > 0) ? 0 : 1;
-  //return ierr;
 }
   
 

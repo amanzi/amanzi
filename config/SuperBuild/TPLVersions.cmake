@@ -112,7 +112,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 21)
+set (AMANZI_TPLS_VERSION_PATCH 22)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -154,11 +154,11 @@ set(CURL_MD5_SUM        7dda0cc2e4136f78d5801ac347be696b)
 #
 set(ZLIB_VERSION_MAJOR 1)
 set(ZLIB_VERSION_MINOR 2)
-set(ZLIB_VERSION_PATCH 6)
+set(ZLIB_VERSION_PATCH 8)
 set(ZLIB_VERSION ${ZLIB_VERSION_MAJOR}.${ZLIB_VERSION_MINOR}.${ZLIB_VERSION_PATCH})
 set(ZLIB_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(ZLIB_ARCHIVE_FILE   zlib-${ZLIB_VERSION}.tar.gz)
-set(ZLIB_MD5_SUM        618e944d7c7cd6521551e30b32322f4a) 
+set(ZLIB_MD5_SUM        1142191120b845f4ed8c8c17455420ac)
 
 #
 # TPL: METIS
@@ -220,23 +220,23 @@ set(BoostCmake_MD5_SUM        )
 # TPL: HDF5
 #
 set(HDF5_VERSION_MAJOR 1)
-set(HDF5_VERSION_MINOR 8)
-set(HDF5_VERSION_PATCH 8)
+set(HDF5_VERSION_MINOR 10)
+set(HDF5_VERSION_PATCH 0-alpha0)
 set(HDF5_VERSION ${HDF5_VERSION_MAJOR}.${HDF5_VERSION_MINOR}.${HDF5_VERSION_PATCH})
 set(HDF5_URL_STRING    "http://software.lanl.gov/ascem/tpls")
 set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.gz)
-set(HDF5_MD5_SUM        1196e668f5592bfb50d1de162eb16cff)      
+set(HDF5_MD5_SUM        5cffdd6508ec8d751532f072a5cafb0e)      
 
 #
 # TPL: NetCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
 set(NetCDF_VERSION_MINOR 3)
-set(NetCDF_VERSION_PATCH 2)
+set(NetCDF_VERSION_PATCH 3)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(NetCDF_ARCHIVE_FILE   netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        2fd2365e1fe9685368cd6ab0ada532a0)
+set(NetCDF_MD5_SUM        5fbd0e108a54bd82cb5702a73f56d2ae)
 
 #
 # TPL: NetCDF Fortran

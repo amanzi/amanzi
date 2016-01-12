@@ -1000,16 +1000,15 @@ double Richards_PK::DeriveBoundaryFaceValue(
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int c = cells[0];
 
-    double pc_shift = atm_pressure_;   
+    double pc_shift(atm_pressure_);   
     double trans_f = op_matrix_diff_->ComputeTransmissibility(f);
     double g_f = op_matrix_diff_->ComputeGravityFlux(f);
     double lmd = u_cell[0][c];
     int dir;
-    const AmanziGeometry::Point n = mesh_->face_normal(f, false, c, &dir);
-    double bnd_flux = dir*bc_value[f] / (molar_rho_ / mu_cell[0][c]);
+    mesh_->face_normal(f, false, c, &dir);
+    double bnd_flux = dir * bc_value[f] / (molar_rho_ / mu_cell[0][c]);
 
-    double max_val = atm_pressure_;
-    double min_val;
+    double max_val(atm_pressure_), min_val;
     if (bnd_flux <= 0.0) {
       min_val = u_cell[0][c];
     } else {
