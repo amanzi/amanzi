@@ -124,7 +124,7 @@
 
     <verbosity level="high" />
     <execution_control_defaults init_dt= "10"   max_dt="-1"  reduction_factor="0.8"  increase_factor="1.25" mode="transient" method="bdf1"/>
-    <execution_control  start="0.0,y"  end="1956.0,y"   init_dt= "100,y"  max_dt="500.0,y"  reduction_factor="0.8"  mode="steady"/>
+    <execution_control  start="0.0,y"  end="1956.0,y"   init_dt= "1,y"  max_dt="500.0,y"  reduction_factor="0.8"  mode="steady"/>
     <execution_control  start="B-17_release_begin"/>
     <execution_control  start="B-17_release_end" />
     <execution_control  start="B-18_release_begin" />
@@ -196,7 +196,7 @@
 	<porosity value="0.4082"/>
 	<particle_density value="2720.0"/>
       </mechanical_properties>
-      <permeability x="1.9976E-12" y="1.9976E-12" z="1.9976E-13"/>
+      <permeability x="1.9976E-12" y="1.9976E-13"/>
       <cap_pressure model="van_genuchten">
 	<parameters m="0.2294" alpha="1.9467E-04" sr="0.0"/>
       </cap_pressure>
@@ -211,7 +211,7 @@
 	<porosity value="0.2206" />
 	<particle_density value="2720.0"/>
       </mechanical_properties>
-      <permeability x="6.9365E-11" y="6.9365E-11" z="6.9365E-12"/>
+      <permeability x="6.9365E-11" y="6.9365E-12"/>
       <cap_pressure model="van_genuchten">
 	<parameters m="0.2136" alpha="2.0260E-03" sr="0.0"/>
       </cap_pressure>
@@ -226,7 +226,7 @@
 	<porosity value="0.234" />
 	<particle_density value="2720.0"/>
       </mechanical_properties>
-      <permeability x="2.0706E-09" y="2.0706E-09" z="2.0706E-09"/>
+      <permeability x="2.0706E-09" y="2.0706E-09"/>
       <cap_pressure model="van_genuchten">
 	<parameters m="0.3006" alpha="2.0674E-03" sr="0.0"/>
       </cap_pressure>
