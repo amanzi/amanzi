@@ -602,7 +602,7 @@ A vector or tensor field
 A variable tensor (or vector) field is defined similarly to a variable scalar field. 
 The difference lies in the definition of the function which is now a multi-value function.
 
-* `"Number of DoFs`" [int] is the number of components in the vector or tensor.
+* `"number of dofs`" [int] is the number of components in the vector or tensor.
 
 * `"Function type`" [string] defines the function type. The only available option 
   is `"composite function`".
@@ -629,8 +629,8 @@ checkpoints of vis files. Default values are *true*.
            <Parameter name="regions" type="Array(string)" value="{ALL DOMAIN}"/>
            <Parameter name="component" type="string" value="face"/>
            <ParameterList name="function">
-             <Parameter name="Number of DoFs" type="int" value="2"/>
-             <Parameter name="Function type" type="string" value="composite function"/>
+             <Parameter name="number of dofs" type="int" value="2"/>
+             <Parameter name="function type" type="string" value="composite function"/>
              <ParameterList name="DoF 1 Function">
                <ParameterList name="function-constant">
                  <Parameter name="value" type="double" value="0.002"/>
@@ -768,8 +768,8 @@ The complete example of a state initialization is below. Note that
             <Parameter name="regions" type="Array(string)" value="MATERIAL 1"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Function type" type="string" value="composite function"/>
-              <Parameter name="Number of DoFs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1e-12"/>
@@ -786,8 +786,8 @@ The complete example of a state initialization is below. Note that
             <Parameter name="regions" type="Array(string)" value="MATERIAL 2"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Function type" type="string" value="composite function"/>
-              <Parameter name="Number of DoFs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2e-13"/>
@@ -2328,8 +2328,8 @@ The following cell-based fields can be initialized here:
             <Parameter name="region" type="string" value="Entire Domain"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="1"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.0e-09"/>

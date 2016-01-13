@@ -400,8 +400,8 @@
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="component" type="string" value="face"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="2"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="-1.0"/>

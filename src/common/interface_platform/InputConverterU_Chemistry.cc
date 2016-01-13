@@ -141,15 +141,15 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
               .set<std::string>("region", *it)
               .set<std::string>("component", "cell")
               .sublist("function");
-          aux1_list.set<int>("Number of DoFs", minerals.size())
-              .set("Function type", "composite function");
+          aux1_list.set<int>("number of dofs", minerals.size())
+              .set("function type", "composite function");
 
           Teuchos::ParameterList& aux2_list = surfarea.sublist("function").sublist(*it)
               .set<std::string>("region", *it)
               .set<std::string>("component", "cell")
               .sublist("function");
-          aux2_list.set<int>("Number of DoFs", minerals.size())
-              .set("Function type", "composite function");
+          aux2_list.set<int>("number of dofs", minerals.size())
+              .set("function type", "composite function");
 
           for (int j = 0; j < minerals.size(); ++j) {
             std::stringstream ss;
@@ -194,7 +194,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
             .set<std::string>("region", *it)
             .set<std::string>("component", "cell")
             .sublist("function");
-        aux1_list.set<int>("Number of DoFs", nsolutes).set("Function type", "composite function");
+        aux1_list.set<int>("number of dofs", nsolutes).set("function type", "composite function");
 
         for (int j = 0; j < nsolutes; ++j) {
           std::string solute_name = phases_["water"][j];
@@ -220,19 +220,19 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
             .set<std::string>("region", *it)
             .set<std::string>("component", "cell")
             .sublist("function");
-        aux1_list.set<int>("Number of DoFs", nsolutes).set("Function type", "composite function");
+        aux1_list.set<int>("number of dofs", nsolutes).set("function type", "composite function");
 
         Teuchos::ParameterList& aux2_list = langmuir_b.sublist("function").sublist(*it)
             .set<std::string>("region", *it)
             .set<std::string>("component", "cell")
             .sublist("function");
-        aux2_list.set<int>("Number of DoFs", nsolutes).set("Function type", "composite function");
+        aux2_list.set<int>("number of dofs", nsolutes).set("function type", "composite function");
 
         Teuchos::ParameterList& aux3_list = langmuir_b.sublist("function").sublist(*it)
             .set<std::string>("region", *it)
             .set<std::string>("component", "cell")
             .sublist("function");
-        aux3_list.set<int>("Number of DoFs", nsolutes).set("Function type", "composite function");
+        aux3_list.set<int>("number of dofs", nsolutes).set("function type", "composite function");
 
         for (int j = 0; j < nsolutes; ++j) {
           std::string solute_name = phases_["water"][j];
@@ -282,7 +282,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
             .set<std::string>("region", *it)
             .set<std::string>("component", "cell")
             .sublist("function");
-        aux1_list.set<int>("Number of DoFs", nsolutes).set("Function type", "composite function");
+        aux1_list.set<int>("number of dofs", nsolutes).set("function type", "composite function");
 
         for (int j = 0; j < nsolutes; ++j) {
           std::string solute_name = phases_["water"][j];

@@ -177,8 +177,8 @@
             <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="2"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.9976e-12"/>
@@ -195,8 +195,8 @@
             <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="2"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="6.9365e-11"/>
@@ -213,8 +213,8 @@
             <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="2"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.0706e-09"/>
@@ -250,8 +250,8 @@
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="1"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.0e+00"/>

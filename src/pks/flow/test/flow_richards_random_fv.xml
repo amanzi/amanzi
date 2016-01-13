@@ -344,8 +344,8 @@
             <Parameter name="region" type="string" value="Material 1 Region"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Function type" type="string" value="composite function"/>
-              <Parameter name="Number of DoFs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.5"/>
@@ -362,8 +362,8 @@
             <Parameter name="region" type="string" value="Material 2 Region"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Function type" type="string" value="composite function"/>
-              <Parameter name="Number of DoFs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.0"/>

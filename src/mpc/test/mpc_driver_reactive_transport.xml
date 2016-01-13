@@ -243,8 +243,8 @@
             <Parameter name="regions" type="Array(string)" value="{Entire Domain}"/>
             <Parameter name="component" type="string" value="face"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="3"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="3"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.0"/>
@@ -292,8 +292,8 @@
             <Parameter name="regions" type="Array(string)" value="{Soil_1}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="3"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="3"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="9.99999999999999980e-13"/>
@@ -315,8 +315,8 @@
             <Parameter name="regions" type="Array(string)" value="{Soil_2}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="3"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="3"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="9.99999999999999980e-13"/>
@@ -355,8 +355,8 @@
             <Parameter name="region" type="string" value="Soil_1"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="1"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.00000000000000005e-04"/>
@@ -368,8 +368,8 @@
             <Parameter name="region" type="string" value="Soil_2"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="1"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.00000000000000010e-04"/>
@@ -385,8 +385,8 @@
             <Parameter name="region" type="string" value="Soil_1"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="1"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.00000e+00"/>
@@ -398,8 +398,8 @@
             <Parameter name="region" type="string" value="Soil_2"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="1"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.00000e+00"/>
@@ -415,8 +415,8 @@
             <Parameter name="region" type="string" value="Soil_1"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="1"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="7.50000e+02"/>
@@ -428,8 +428,8 @@
             <Parameter name="region" type="string" value="Soil_2"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="1"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.50000e+02"/>
@@ -445,8 +445,8 @@
             <Parameter name="region" type="string" value="Soil_1"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="1"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.00000e+00"/>
@@ -458,8 +458,8 @@
             <Parameter name="region" type="string" value="Soil_2"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="1"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.00000e+00"/>
@@ -475,8 +475,8 @@
             <Parameter name="region" type="string" value="Entire Domain"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="4"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="4"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                  <Parameter name="value" type="double" value="8.67463299999999965e-02"/>
@@ -503,8 +503,8 @@
             <Parameter name="region" type="string" value="Soil_1"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="4"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="4"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="8.67463299999999965e-02"/>
@@ -531,8 +531,8 @@
             <Parameter name="region" type="string" value="Soil_2"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="4"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="4"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="8.67463299999999965e-02"/>
@@ -563,8 +563,8 @@
             <Parameter name="regions" type="Array(string)" value="{Entire Domain, Soil_1, Soil_2}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="4"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="4"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="8.67463299999999965e-02"/>

@@ -190,8 +190,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<Teuchos::Array<std::string> >("regions", regions)
             .set<std::string>("component", "cell")
             .sublist("function");
-        aux_list.set<int>("Number of DoFs", dim_)
-            .set<std::string>("Function type", "composite function");
+        aux_list.set<int>("number of dofs", dim_)
+            .set<std::string>("function type", "composite function");
         aux_list.sublist("DoF 1 Function").sublist("function-constant").set<double>("value", kx);
         aux_list.sublist("DoF 2 Function").sublist("function-constant").set<double>("value", ky);
         if (dim_ == 3) {
@@ -350,8 +350,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<Teuchos::Array<std::string> >("regions", regions)
             .set<std::string>("component", "face")
             .sublist("function")
-            .set<int>("Number of DoFs", dim_)
-            .set<std::string>("Function type", "composite function");
+            .set<int>("number of dofs", dim_)
+            .set<std::string>("function type", "composite function");
 
         for (int k = 0; k != dim_; ++k) {
           std::stringstream dof_str;
@@ -387,8 +387,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<Teuchos::Array<std::string> >("regions", regions)
             .set<std::string>("component", "cell")
             .sublist("function")
-            .set<int>("Number of DoFs", ncomp_all)
-            .set<std::string>("Function type", "composite function");
+            .set<int>("number of dofs", ncomp_all)
+            .set<std::string>("function type", "composite function");
 
         for (int k = 0; k < ncomp_l; k++) {
           std::string name = phases_["water"][k];

@@ -259,8 +259,8 @@
             <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="2"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.94000000000000006e-13"/>
@@ -296,8 +296,8 @@
             <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="5"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="5"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="4.36475999999999975e-16"/>
@@ -334,8 +334,8 @@
             <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="3"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="3"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="5.00000000000000028e-02"/>
@@ -362,8 +362,8 @@
             <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="3"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="3"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.00000000000000010e-04"/>
@@ -390,8 +390,8 @@
             <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="3"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="3"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="5.36000000000000018e-03"/>
@@ -418,8 +418,8 @@
             <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="5"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="5"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="9.99999999999999979e-17"/>
