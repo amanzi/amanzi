@@ -1212,6 +1212,9 @@ PorousMedia::BuildNLScontrolData(NLScontrol&        nlsc,
   rs_data.semi_analytic_J = richard_semi_analytic_J;
   rs_data.variable_switch_saturation_threshold = richard_variable_switch_saturation_threshold;
 
+  nlsc.label = IDstring;
+  nlsc.verbosity = 5;
+
   nlsc.max_ls_iterations = richard_max_ls_iterations;
   nlsc.min_ls_factor = richard_min_ls_factor;
   nlsc.ls_acceptance_factor = richard_ls_acceptance_factor;
@@ -1267,14 +1270,12 @@ PorousMedia::richard_init_to_steady()
   Real dt_taken = 0;
   if (flow_eval==PM_FLOW_EVAL_SOLVE)
   {
+
+    bool do_write = verbose && ParallelDescriptor::IOProcessor();
+    
     std::string tag = "Steady Flow Solve";
-    if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-      std::cout << tag << std::endl;
-    }
     
     if (level == 0) {
-      int old_richard_solver_verbose = richard_solver_verbose;
-      richard_solver_verbose = richard_init_to_steady_verbose;
       initial_iter = 1;
 
       Real cur_time = state[State_Type].curTime();
@@ -1297,7 +1298,7 @@ PorousMedia::richard_init_to_steady()
       Real t_max = ec->end;
       Real dt_init = ec->init_dt;
       Real dt = dt_init;
-      int k_max = steady_max_time_steps;
+      int k_max = ec->max_cycles;
       Real t_eps = 1.e-8*dt_init;
 	
       MultiFab tmp(grids,1,1);
@@ -1333,7 +1334,7 @@ PorousMedia::richard_init_to_steady()
 
         attempting_pure_steady = false;
         int num_active_levels = grid_seq_fine + 1;
-        if (ParallelDescriptor::IOProcessor() && richard_init_to_steady_verbose) {
+        if (do_write) {
           std::cout << "Number of active levels: " << num_active_levels << std::endl;
         }
 
@@ -1342,7 +1343,7 @@ PorousMedia::richard_init_to_steady()
 	  tmp_record_file = BoxLib::Concatenate(steady_record_file+"_",num_active_levels,2);
 	}
 
-        if (ParallelDescriptor::IOProcessor() && richard_init_to_steady_verbose && !(tmp_record_file.empty())) {
+        if (do_write && !(tmp_record_file.empty())) {
           std::cout << "Recording solve details into: \"" << tmp_record_file << "\"" << std::endl;
         }
 
@@ -1406,9 +1407,8 @@ PorousMedia::richard_init_to_steady()
 	    MultiFab::Copy(tmp,get_new_data(Press_Type),nc,0,1,0);
 	    tmp.mult(-1.0);
 	    
-	    if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-	      std::cout << tag << "  t=" << t 
-			<< ", n=" << k << ", dt=" << dt << '\n';
+	    if (do_write) {
+	      printf("%s: step=%d, t=%14.12es, dt=%14.12e\n",tag.c_str(),k,t,dt);	      
 	    }
 
 	    nlsc.ResetCounters();
@@ -1428,13 +1428,13 @@ PorousMedia::richard_init_to_steady()
 
 	    attempting_pure_steady = dt_thresh_pure_steady>0 && dt>dt_thresh_pure_steady;
 	    Real dt_solve = attempting_pure_steady ? -1 : dt;
-	    if (attempting_pure_steady && ParallelDescriptor::IOProcessor())
+	    if (do_write && attempting_pure_steady)
 	      std::cout << "     **************** Attempting pure steady solve" << '\n';
 	    int retCode = rs->Solve(t, t+dt_solve, k, nlsc);
 
 	    if (retCode < 0 && attempting_pure_steady) {
 	      dt_thresh_pure_steady *= 10;
-	      if (attempting_pure_steady && ParallelDescriptor::IOProcessor())
+	      if (do_write && attempting_pure_steady)
 		std::cout << "     **************** Steady solve failed, resuming transient..." << '\n';
 	      attempting_pure_steady = false;
 	      retCode = rs->Solve(t, t+dt, k, nlsc);
@@ -1453,7 +1453,7 @@ PorousMedia::richard_init_to_steady()
 	      }
 	      else {
 		ret = NLSstatus::NLS_NONLINEAR_FAIL;
-		if (richard_solver_verbose>1 && ParallelDescriptor::IOProcessor())
+		if (do_write)
 		  std::cout << "     **************** Newton failed: " << GetPETScReason(retCode) << '\n';
 	      }
 	    }
@@ -1496,26 +1496,25 @@ PorousMedia::richard_init_to_steady()
 	    bool cont = nlsc.AdjustDt(dt,ret,dt_new);
 
 	    if (ret == NLSstatus::NLS_SUCCESS) {
+
+	      if (do_write) {
+		printf("%s: Step successful, Niters=%d\n",tag.c_str(),nlsc.NLIterationsTaken());
+	      }
+
+	      // Decide if solved, and advance iteration count and time
+	      solved = ( attempting_pure_steady ? true :
+			 ((abs_err <= steady_abs_update_tolerance) 
+			  || ((rel_err>0)  && (rel_err <= steady_rel_update_tolerance)) ) );
+
+	      if (do_write && solved) {
+		printf("%s: Steady solution found, skipping to end of this execution phase...\n",tag.c_str());
+	      }
+		
+	      t += solved ? t_max - t : dt;
 	      k++;
-	      if (attempting_pure_steady) {
-		solved = true;
-	      }
-	      else {
-		t += dt;
-		if (execution_mode==INIT_TO_STEADY) {
-		  solved = false; // Do not kick out early
-		}
-		else {
-		  solved = ((abs_err <= steady_abs_update_tolerance) 
-			    || ((rel_err>0)  && (rel_err <= steady_rel_update_tolerance)) );
-		}
-	      }
-	      if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor()) {
-		std::cout << tag << "   Step successful, Niters=" << nlsc.NLIterationsTaken() << std::endl;
-	      }
 	    }
 	    else {
-	      if (richard_init_to_steady_verbose>1 && ParallelDescriptor::IOProcessor()) {
+	      if (do_write) {
 		std::cout << tag << "   Step failed ";
 		if (ret==NLSstatus::NLS_NONLINEAR_FAIL) {
 		  std::cout << "(NL failure)";
@@ -1538,10 +1537,11 @@ PorousMedia::richard_init_to_steady()
 
 	  delete rs;
 
-	  if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-	    std::cout << tag << " Total psuedo-time advanced: " << t << " in " << k << " steps" << std::endl;
-	    std::cout << tag << "      Newton iters: " << total_num_Newton_iterations << std::endl;
-	    std::cout << tag << "      Rejected steps: " << total_rejected_Newton_steps << std::endl;
+	  if (do_write) {
+	    printf("%s: Total advanced: steps=%d, time=%14.12es\n",tag.c_str(),k,t);
+	    printf("%s: Max allowed: steps=%d, time=%14.12es\n",tag.c_str(),k_max,t_max);
+	    printf("%s: Total Newton iterations=%d\n",tag.c_str(),total_num_Newton_iterations);
+	    printf("%s: Total rejected Newton steps=%d\n",tag.c_str(),total_rejected_Newton_steps);
 	  }
 
 	  // Set data on next level by interpolating the pressure field and inverting out rho.sat
@@ -1565,8 +1565,8 @@ PorousMedia::richard_init_to_steady()
 	    ParallelDescriptor::Barrier();
 	  }
 	  
-	  if (richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
-	    if (solved || attempting_pure_steady) {
+	  if (verbose && ParallelDescriptor::IOProcessor()) {
+	    if (do_write && (solved || attempting_pure_steady)) {
 	      std::cout << tag << " Success!  Steady solution found" << std::endl;
 	      if (grid_seq_fine!=finest_level) {
 		std::cout << tag << " Adding another refinement level and re-solving..." << std::endl;
@@ -1589,7 +1589,7 @@ PorousMedia::richard_init_to_steady()
 
       // Average down solution, and set state times to reflect this solve in one step
       for (int lev = finest_level; lev >= 0; lev--) {
-        if (lev>0 && richard_init_to_steady_verbose && ParallelDescriptor::IOProcessor()) {
+        if (do_write && lev>0) {
           std::cout << tag << " Averaging down level " << lev << std::endl;
         }
         getLevel(lev).avgDown();
@@ -1600,19 +1600,18 @@ PorousMedia::richard_init_to_steady()
       prev_time = state[State_Type].prevTime();
       PArray<Observation>& observations = PMParent()->TheObservations();
       for (int i=0; i<observations.size(); ++i) {
-        observations[i].process(time_before_init, time_after_init, parent->levelSteps(0), verbose_observation_processing);
+        observations[i].process(time_before_init, time_after_init, parent->levelSteps(0),
+				verbose_observation_processing);
       }
-	
-      richard_solver_verbose = old_richard_solver_verbose;
-      initial_iter = 0;
-	    
+
       //
       // Re-instate timestep.
       //	
+      initial_iter = 0;
       parent->setDtLevel(dt_eff);
       dt_taken = dt_eff[0];
     }
-  }
+  } // if PM_FLOW_EVAL_SOLVE
   return dt_taken;
 }
 
@@ -1807,7 +1806,7 @@ PorousMedia::ml_step_driver(Real  time,
   BL_ASSERT(ec != 0);
 
   // Short-circuit time-stepping framework and do steady flow solve directly
-  if (ec->mode == "steady") {
+  if (0 && ec->mode == "steady") { // FIXME: Lift mesh sequencing logic into generic advance
     advect_tracers = react_tracers = false;
 
     dt_taken = richard_init_to_steady();
@@ -2068,7 +2067,7 @@ PorousMedia::multilevel_advance (Real  time,
   if (dt_suggest_flow>0) {
     if (do_write) {
       std::cout << "  FLOW suggests next dt = " << dt_suggest_flow
-                << " (=" << dt_suggest_flow/(365.25*3600*24) << " y)" << std::endl;
+                << "s (=" << dt_suggest_flow/(365.25*3600*24) << "y)" << std::endl;
     }
     dt_suggest = (dt_suggest > 0 ? std::min(dt_suggest,dt_suggest_flow) : dt_suggest_flow);
   }
@@ -2076,19 +2075,34 @@ PorousMedia::multilevel_advance (Real  time,
   if (dt_suggest_tc>0) {
     if (do_write) {
       std::cout << "  TRAN suggests next dt = " << dt_suggest_tc
-                << " (=" << dt_suggest_tc/(365.25*3600*24) << " y)" << std::endl;
+                << "s (=" << dt_suggest_tc/(365.25*3600*24) << "y)" << std::endl;
     }
     dt_suggest = (dt_suggest > 0 ? std::min(dt_suggest,dt_suggest_tc) : dt_suggest_tc);
   }
 
+  dt_new = dt_suggest;
+  if (do_write) {
+    std::cout << "  PK-rationalized next dt = " << dt_new
+	      << "s (=" << dt_new/(365.25*3600*24) << "y)" << std::endl;
+  }
+
   const ExecControl* ec = PMParent()->GetExecControl(time);
   BL_ASSERT(ec != 0);
+  Real dt_new_bounded = BoundedChange(dt,dt_suggest,ec->increase_factor,ec->reduction_factor,ec->max_dt,dt_cutoff);
+  if (time+dt < ec->end  &&  time+dt + dt_new_bounded >= ec->end) {
+    dt_new_bounded = ec->end - (time+dt);
+  }
 
-  dt_new = BoundedChange(dt,dt_suggest,ec->increase_factor,ec->reduction_factor,ec->max_dt,dt_cutoff);
+  if (dt_new_bounded != dt_new) {
+    dt_new = dt_new_bounded;
+    if (do_write) {
+      std::cout << "  Suggested dt outside ec bounds.  Suggest next dt = " << dt_new
+		<< "s (=" << dt_new/(365.25*3600*24) << "y)" << std::endl;
 
-  if (do_write) {
-    std::cout << "  Next dt = " << dt_new
-              << " (=" << dt_new/(365.25*3600*24) << " y)" << std::endl;
+      if (time+dt >= ec->end) {
+	std::cout << "  (However, the next step is beyond the current ec period)\n";
+      }
+    }
   }
 
   if (level == 0) {
@@ -2931,7 +2945,6 @@ PorousMedia::get_inflow_velocity(const Orientation& face,
         mask.resize(bndBox,1); mask.setVal(0);
         for (int i=0; i<face_bc_idxs.size(); ++i) {
           const RegionData& face_bc = bc_array[face_bc_idxs[i]];
-          
           if (face_bc.Type() == "volumetric_flux" || face_bc.Type() == "no_flow") {
             ret = true;
             Array<Real> inflow_tmp = face_bc(t_eval);
@@ -7413,6 +7426,26 @@ PorousMedia::derive_Aqueous_Pressure(Real      time,
 }
 
 void
+PorousMedia::derive_Capillary_Pressure(Real      time,
+				       MultiFab& mf,
+				       int       dcomp)
+{
+  Real t_new = state[Press_Type].curTime(); 
+  int ncomp = 1;
+  int ngrow = mf.nGrow();
+  if ( (flow_model == PM_FLOW_MODEL_RICHARDS)
+       || (flow_model == PM_FLOW_MODEL_SATURATED) )
+  {
+    AmrLevel::derive("pressure",time,mf,dcomp);
+    mf.plus(-atmospheric_pressure_atm,dcomp,ncomps,ngrow);
+    mf.mult(-BL_ONEATM,dcomp,ncomp,ngrow);
+  }
+  else {
+    BoxLib::Abort(std::string("PorousMedia:: Capillary_Pressure not yet implemented for " + flow_model).c_str());
+  }
+}
+
+void
 PorousMedia::derive_Hydraulic_Head(Real      time,
                                    MultiFab& mf,
                                    int       dcomp)
@@ -7429,7 +7462,7 @@ PorousMedia::derive_Hydraulic_Head(Real      time,
       BoxLib::Abort("PorousMedia::derive_Hydraulic_Head: cannot derive hydraulic head since gravity = 0");
     }
     AmrLevel::derive("pressure",time,mf,dcomp);
-    mf.plus(-atmospheric_pressure_atm,dcomp,ncomps,ngrow);
+    mf.plus(+atmospheric_pressure_atm,dcomp,ncomps,ngrow);
     Array<Real> rhog(ncomps);
     for (int i=0; i<ncomps; ++i) {
       rhog[i] = density[i] * gravity;
@@ -7670,6 +7703,9 @@ PorousMedia::derive (const std::string& name,
   }
   else if (name == pNames[0] + "_Pressure") {
     derive_Aqueous_Pressure(time,mf,dcomp);
+  }
+  else if (name == "Capillary_Pressure") {
+    derive_Capillary_Pressure(time,mf,dcomp);
   }
   else if (name == "Hydraulic_Head") {
     derive_Hydraulic_Head(time,mf,dcomp);

@@ -91,6 +91,10 @@ RichardSolver::RichardSolver(RSdata& _rs_data, NLScontrol& _nlsc)
   Layout& layout = GetLayout();
   mftfp = new MFTFillPatch(layout);
 
+  if (nlsc.verbosity > 4 && ParallelDescriptor::IOProcessor()) {
+    std::cout << nlsc << std::endl;
+  }
+
   PetscErrorCode ierr;
   int n = layout.NumberOfLocalNodeIds();
   int N = layout.NumberOfGlobalNodeIds();

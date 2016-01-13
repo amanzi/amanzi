@@ -53,6 +53,7 @@ string ConvertTimeToSeconds(const string& time_string)
     }
     value *= factor;
     stringstream s;
+    s.precision(15);
     s << value;
     return s.str();
   }
@@ -625,7 +626,7 @@ void InputConverterS::ParseExecutionControls_()
       AddToTable(table, MakePPPrefix("strt_time"), MakePPEntry(exec_control[0]["start"]));
 
       vector<string> ecnames(ncn);
-      int ndigits = (int) (std::log10(ncn-1) + .0001) + 1;
+      int ndigits = (int) (std::log10(std::max(size_t(1),ncn-1)) + .0001) + 1;
       for (int i=0; i<exec_control.size(); ++i) {
 	ecnames[i] = BoxLib::Concatenate("exec_control_",i,ndigits);
 	for (map<string,string>::const_iterator it=exec_control[i].begin(); it!=exec_control[i].end(); ++it) {
@@ -731,7 +732,7 @@ void InputConverterS::ParseNumericalControls_()
     ss_controls["max_consecutive_success"]            = "0";
     ss_controls["extra_time_step_increase"]           = "10";
     ss_controls["abort_on_pseudo_timestep_failure"]   = "true";
-    ss_controls["limit_function_evals"]               = "1e8";
+    ss_controls["limit_function_evals"]               = "100000000";
     ss_controls["do_grid_sequence"]                   = "true";
     ss_controls["grid_sequence_new_level_dt_factor"]  = "1";
 
@@ -747,6 +748,12 @@ void InputConverterS::ParseNumericalControls_()
 	    it->second = mm.transcode(inode->getTextContent());
 	  }
 	}
+      }
+    }
+    if (ss_controls.size() > 0) {
+      for (map<string,string>::const_iterator it=ss_controls.begin(); it!=ss_controls.end(); ++it) {
+	string s_parameter_name = "steady_" + it->first;
+	AddToTable(table,MakePPPrefix("prob", (s_parameter_name).c_str() ), MakePPEntry(it->second));
       }
     }
 
@@ -779,6 +786,13 @@ void InputConverterS::ParseNumericalControls_()
 	    it->second = mm.transcode(inode->getTextContent());
 	  }
 	}
+      }
+    }
+
+    if (tr_controls.size() > 0) {
+      for (map<string,string>::const_iterator it=tr_controls.begin(); it!=tr_controls.end(); ++it) {
+	string s_parameter_name = "richard_" + it->first;
+	AddToTable(table,MakePPPrefix("prob", (s_parameter_name).c_str() ), MakePPEntry(it->second));
       }
     }
 
@@ -964,9 +978,6 @@ void InputConverterS::ParseMesh_()
   else
     ThrowErrorMisschild_("mesh", "generate", "mesh");
 
-  // This one comes for free.
-  AddToTable(table, MakePPPrefix("Mesh", "Framework"), MakePPEntry("Structured"));
-
   ParmParse::appendTable(table);
 }
 
@@ -1000,7 +1011,6 @@ void InputConverterS::ParseRegions_()
   // Create default regions
   string name;
   vector<double> lo(dim_), hi(dim_);
-  name = "All";   lo=lo_coords_; hi=hi_coords_;              MakeBox(table, name, "all", lo, hi); region_names.push_back(name);
   name = "XLOBC"; lo=lo_coords_; hi=hi_coords_; hi[0]=lo[0]; MakeBox(table, name, "xlobc", lo, hi); region_names.push_back(name);
   name = "XHIBC"; lo=lo_coords_; hi=hi_coords_; lo[0]=hi[0]; MakeBox(table, name, "xhibc", lo, hi); region_names.push_back(name);
   name = "YLOBC"; lo=lo_coords_; hi=hi_coords_; hi[1]=lo[1]; MakeBox(table, name, "ylobc", lo, hi); region_names.push_back(name);
@@ -1009,6 +1019,8 @@ void InputConverterS::ParseRegions_()
     name = "ZLOBC"; lo=lo_coords_; hi=hi_coords_; hi[2]=lo[2]; MakeBox(table, name, "zlobc", lo, hi); region_names.push_back(name);
     name = "ZHIBC"; lo=lo_coords_; hi=hi_coords_; lo[2]=hi[2]; MakeBox(table, name, "zhibc", lo, hi); region_names.push_back(name);    
   }
+  // Leave lo,hi to define domain "All" below
+  name = "All";   lo=lo_coords_; hi=hi_coords_;              MakeBox(table, name, "all", lo, hi); region_names.push_back(name);
 
   bool found;
   DOMNode* regions = GetUniqueElementByTagsString_("regions", found);
@@ -1035,18 +1047,29 @@ void InputConverterS::ParseRegions_()
       string purpose = "all";
       for (int d = 0; d < dim_; ++d)
       {
-	for (int d=0; d<dim_; ++d) {
-	  if (std::abs(hi_coords[d] - lo_coords[d]) < geometry_eps) // This is a (ndim-1) dimensional region
-	  {
-	    type = "surface";
-	    
-	    // Is this on the domain boundary?
-	    if (lo_coords[d] == lo[d]) {
-	      purpose = PMAMR::RpurposeDEF[d];
+	// Has no extent in direction d
+	if (std::abs(hi_coords[d] - lo_coords[d]) < geometry_eps)
+	{
+	  bool is_plane = true;
+	  for (int d1=0; d1<dim_; ++d1) {
+	    if (d!=d1) {
+	      // Has finite extent perpendicular to d
+	      is_plane &= std::abs(hi_coords[d1] - lo_coords[d1]) > geometry_eps;
 	    }
-	    else if (hi_coords[d] == hi[d]) {
-	      purpose = PMAMR::RpurposeDEF[d+3];
-	    }
+	  }
+
+	  if (!is_plane) {
+	    BoxLib::Abort("No support for box regions with zero extent in more than one dimension");
+	  }
+	  
+	  type = "surface";
+
+	  // Is this on the domain boundary?
+	  if (lo_coords[d] == lo[d]) {
+	    purpose = PMAMR::RpurposeDEF[d];
+	  }
+	  else if (hi_coords[d] == hi[d]) {
+	    purpose = PMAMR::RpurposeDEF[d+3];
 	  }
 	}
       }
@@ -1526,8 +1549,6 @@ void InputConverterS::ParseMaterials_()
         }
 
       }
-      // FIXME: Is this correct?
-      AddToTable(table, MakePPPrefix("rock", mat_name, "kr_type"), MakePPEntry(0));
 
       // Sorption isotherms.
       DOMElement* sorption_isotherms = GetChildByName_(mat, "sorption_isotherms", found, false);
@@ -1606,7 +1627,6 @@ void InputConverterS::ParseProcessKernels_()
     string flow_model = GetAttributeValueS_(flow, "model");
     AddToTable(table, MakePPPrefix("prob", "flow_model"), MakePPEntry(flow_model));
   }
-  AddToTable(table, MakePPPrefix("prob", "have_capillary"), MakePPEntry(0));
   AddToTable(table, MakePPPrefix("prob", "cfl"), MakePPEntry(-1));
 
   // Transport model.
@@ -1670,9 +1690,10 @@ void InputConverterS::ParsePhases_()
     string density = GetChildValueS_(liquid_phase, "density", found, true);
     liquid_density_ = atof(density.c_str());
     AddToTable(table, MakePPPrefix("phase", name, "density"), MakePPEntry(density));
-    string eos = GetChildValueS_(liquid_phase, "eos", found, false);
-    if (found)
-      AddToTable(table, MakePPPrefix("phase", name, "eos"), MakePPEntry(eos)); // FIXME
+    // FIXME: Not supported by structured
+    //string eos = GetChildValueS_(liquid_phase, "eos", found, false);
+    //if (found)
+    //  AddToTable(table, MakePPPrefix("phase", name, "eos"), MakePPEntry(eos)); // FIXME
     DOMElement* dissolved_comps = GetChildByName_(liquid_phase, "dissolved_components", found);
     if (found)
     {

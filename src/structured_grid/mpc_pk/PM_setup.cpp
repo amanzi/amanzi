@@ -273,14 +273,10 @@ Real PorousMedia::be_cn_theta_trac;
 bool PorousMedia::do_output_flow_time_in_years;
 bool PorousMedia::do_output_chemistry_time_in_years;
 bool PorousMedia::do_output_transport_time_in_years;
-
-int  PorousMedia::richard_solver_verbose;
-
 //
 // Init to steady
 //
 bool PorousMedia::do_richard_init_to_steady;
-int  PorousMedia::richard_init_to_steady_verbose;
 int  PorousMedia::steady_min_iterations;
 int  PorousMedia::steady_min_iterations_2;
 int  PorousMedia::steady_max_iterations;
@@ -307,7 +303,7 @@ Real PorousMedia::steady_abs_tolerance;
 Real PorousMedia::steady_rel_tolerance;
 Real PorousMedia::steady_abs_update_tolerance;
 Real PorousMedia::steady_rel_update_tolerance;
-int  PorousMedia::steady_do_grid_sequence;
+bool PorousMedia::steady_do_grid_sequence;
 Array<Real> PorousMedia::steady_grid_sequence_new_level_dt_factor;
 std::string PorousMedia::steady_record_file;
 
@@ -318,9 +314,9 @@ Real PorousMedia::richard_ls_reduction_factor;
 int  PorousMedia::richard_monitor_linear_solve;
 int  PorousMedia::richard_monitor_line_search;
 Real PorousMedia::richard_perturbation_scale_for_J;
-int  PorousMedia::richard_use_fd_jac;
-int  PorousMedia::richard_use_dense_Jacobian;
-int  PorousMedia::richard_upwind_krel;
+bool PorousMedia::richard_use_fd_jac;
+bool PorousMedia::richard_use_dense_Jacobian;
+bool PorousMedia::richard_upwind_krel;
 int  PorousMedia::richard_pressure_maxorder;
 bool PorousMedia::richard_scale_solution_before_solve;
 bool PorousMedia::richard_semi_analytic_J;
@@ -594,10 +590,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::do_output_chemistry_time_in_years = false;
   PorousMedia::do_output_transport_time_in_years = false;
 
-  PorousMedia::richard_solver_verbose = 2;
-
   PorousMedia::do_richard_init_to_steady = false;
-  PorousMedia::richard_init_to_steady_verbose = 1;
   PorousMedia::steady_min_iterations = 10;
   PorousMedia::steady_min_iterations_2 = 2;
   PorousMedia::steady_max_iterations = 15;
@@ -624,7 +617,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_rel_tolerance = 1.e-20;
   PorousMedia::steady_abs_update_tolerance = 1.e-12;
   PorousMedia::steady_rel_update_tolerance = -1;
-  PorousMedia::steady_do_grid_sequence = 1;
+  PorousMedia::steady_do_grid_sequence = true;
   PorousMedia::steady_grid_sequence_new_level_dt_factor.resize(1,1);
   PorousMedia::steady_record_file.clear();
 
@@ -635,9 +628,9 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::richard_monitor_linear_solve = 0;
   PorousMedia::richard_monitor_line_search = 0;
   PorousMedia::richard_perturbation_scale_for_J = 1.e-8;
-  PorousMedia::richard_use_fd_jac = 1;
-  PorousMedia::richard_use_dense_Jacobian = 0;
-  PorousMedia::richard_upwind_krel = 1;
+  PorousMedia::richard_use_fd_jac = true;
+  PorousMedia::richard_use_dense_Jacobian = false;
+  PorousMedia::richard_upwind_krel = true;
   PorousMedia::richard_pressure_maxorder = 3;
   PorousMedia::richard_scale_solution_before_solve = true;
   PorousMedia::richard_semi_analytic_J = false;
@@ -907,6 +900,7 @@ PorousMedia::variableSetUp ()
     intern_reqd_der.push_back(cNames[i] + "_Saturation");
     intern_reqd_der.push_back("Volumetric_" + cNames[i] + "_Content");
   }
+  intern_reqd_der.push_back("Capillary_Pressure");
   for (int i=0; i<tNames.size(); ++i) {
     for (int j=0; j<pNames.size(); ++j) {
       for (int k=0; k<cNames.size(); ++k) {
@@ -1133,7 +1127,6 @@ void PorousMedia::read_prob()
     
   // Verbosity
   pb.query("v",verbose);
-  pb.query("richard_solver_verbose",richard_solver_verbose);
 
   // Get timestepping parameters.  Some will be used to default values for int-to-steady solver
   pb.get("cfl",cfl);
@@ -1152,7 +1145,6 @@ void PorousMedia::read_prob()
   pb.query("show_selected_runtimes",show_selected_runtimes);
   pb.query("abort_on_chem_fail",abort_on_chem_fail);
 
-  pb.query("richard_init_to_steady_verbose",richard_init_to_steady_verbose);
   pb.query("do_richard_init_to_steady",do_richard_init_to_steady);
   pb.query("steady_record_file",steady_record_file);
   pb.query("steady_min_iterations",steady_min_iterations);
@@ -1366,7 +1358,7 @@ void  PorousMedia::read_comp()
 	      
 	      // convert to atm
 	      for (int j=0; j<vals.size(); ++j) {
-		vals[j] = vals[j] / BL_ONEATM;
+                vals[j] = vals[j] / BL_ONEATM;
 	      }
       
               int num_phases = phases_set.size();
@@ -1690,6 +1682,9 @@ void  PorousMedia::read_comp()
                       vals[k] = -vals[k];
                   }
               }
+
+	      // Now that we have converted them all, set to generic flux name
+	      bc_type = "volumetric_flux";
 
               is_inflow = true;
               component_bc = Inflow;

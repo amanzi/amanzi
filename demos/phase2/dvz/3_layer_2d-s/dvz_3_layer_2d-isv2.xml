@@ -32,10 +32,6 @@
       <constant name="post_1956_recharge"       type="area_mass_flux" value="1.48666E-6"/>
       <constant name="future_recharge"          type="area_mass_flux" value="1.48666E-6"/>
 
-      <!--
-	  <numerical_constant name="zero" value="0.000"/>
-      -->
-
     </constants>
 
 
@@ -84,6 +80,12 @@
 	<stop>-1 </stop>
       </cycle_macro>
 
+      <cycle_macro name = "Every_timestep">
+	<start>0</start>
+	<timestep_interval>1</timestep_interval>
+	<stop>-1 </stop>
+      </cycle_macro>
+
     </macros>
 
   </definitions>
@@ -120,13 +122,13 @@
 
   <execution_controls>
 
-    <verbosity level="low" />
+    <verbosity level="high" />
     <execution_control_defaults init_dt= "10"   max_dt="-1"  reduction_factor="0.8"  increase_factor="1.25" mode="transient" method="bdf1"/>
     <execution_control  start="0.0,y"  end="1956.0,y"   init_dt= "100,y"  max_dt="500.0,y"  reduction_factor="0.8"  mode="steady"/>
-    <execution_control  start="B-17_release_begin" />
-    <execution_control  start="B-17_release_end" />
-    <execution_control  start="B-18_release_begin" />
-    <execution_control  start="B-18_release_end" end="3000.0;y"/>
+    <execution_control  start="B-17_release_begin" end="B-17_release_end"/>
+    <!-- <execution_control  start="B-17_release_end" /> -->
+    <!-- <execution_control  start="B-18_release_begin" /> -->
+    <!-- <execution_control  start="B-18_release_end" end="3000.0;y"/> -->
     
   </execution_controls>
 
@@ -143,18 +145,22 @@
 
       <str_steady-state_controls>
 	<comments></comments>
-	<limit_iterations>20</limit_iterations>
+	<limit_iterations>200</limit_iterations>
 	<time_step_retry_factor>0.8</time_step_retry_factor>
 	<time_step_retry_factor_1>0.5</time_step_retry_factor_1>
 	<max_consecutive_increase>3</max_consecutive_increase>
 	<min_iterations>10</min_iterations>
-	<time_step_increase_factor>1.4</time_step_increase_factor>
+	<max_iterations>15</max_iterations>
+	<time_step_increase_factor>1.8</time_step_increase_factor>
+	<time_step_reduction_factor>0.7</time_step_reduction_factor>
       </str_steady-state_controls>
 
       <str_transient_controls>
 	<comments>Proposed comments section.</comments>
-	<ls_acceptance_factor>5</ls_acceptance_factor>
+	<ls_acceptance_factor>200</ls_acceptance_factor>
+	<perturbation_scale_for_J>1.e-6</perturbation_scale_for_J>
 	<upwind_krel>true</upwind_krel>
+	<scale_solution_before_solve>true</scale_solution_before_solve>
 	<semi_analytic_J>true</semi_analytic_J>
       </str_transient_controls>
 
@@ -163,7 +169,6 @@
   
 
   <regions>
-    <box name="All"                           low_coordinates= "(0.0,0.0)"       high_coordinates="(216.0,107.52)"/>
     <box name="Between_Planes_0_and_1"        low_coordinates= "(0.0,0.0)"       high_coordinates="(216.0,39.9)"/>
     <box name="Between_Planes_1_and_2"        low_coordinates= "(0.0,39.9)"      high_coordinates="(216.0,80.22)"/>
     <box name="Between_Planes_2_and_3"        low_coordinates= "(0.0,80.22)"     high_coordinates="(216.0,107.52)"/>
@@ -172,7 +177,6 @@
     <box name="Recharge_Boundary_WestofCribs" low_coordinates= "(0.0,107.52)"    high_coordinates="(74.5,107.52)"/>
     <box name="Recharge_Boundary_btwnCribs"   low_coordinates= "(78.5,107.52)"   high_coordinates="(143.5,107.52)"/>
     <box name="Recharge_Boundary_EastofCribs" low_coordinates= "(147.5,107.52)"  high_coordinates="(216.0,107.52)"/>
-    <box name="Water Table"                   low_coordinates= "(0.0,0.0)"       high_coordinates="(216.0,0.0)"/>
   </regions>
 
 
@@ -216,15 +220,15 @@
       <assigned_regions>Between_Planes_0_and_1</assigned_regions>
     </material>
 
-    <material name ="material3">
+    <material name ="Facies_3">
       <comments>aterial corresponds to region facies3</comments>
       <mechanical_properties>
 	<porosity value="0.234" />
 	<particle_density value="2720.0"/>
       </mechanical_properties>
       <permeability x="2.0706E-09" y="2.0706E-09" z="2.0706E-09"/>
-      <cap_pressure model="brooks_corey">
-	<parameters lambda="0.3006" alpha="2.0674E-03" sr="0.0"/>
+      <cap_pressure model="van_genuchten">
+	<parameters m="0.3006" alpha="2.0674E-03" sr="0.0"/>
       </cap_pressure>
       <rel_perm model="mualem">
 	<optional_krel_smoothing_interval>0.0</optional_krel_smoothing_interval>
@@ -238,9 +242,9 @@
     <initial_condition name="Pressure and concentration for entire domain">
       <comments>Initial Conditions Comments</comments>
       <assigned_regions>All</assigned_regions>
-      <liquid_phase name = "water">
-	<liquid_component name = "water">
-	  <linear_pressure value = "101325" reference_coord ="(0.0,0.5)" gradient="(0.0,-9793.5192)"/>
+      <liquid_phase name = "Water">
+	<liquid_component name = "Water">
+	  <linear_pressure value = "101325" reference_coord ="(0.0,0.0)" gradient="(0.0,-9793.5192)"/>
 	</liquid_component>
 	<solute_component name="solute">
 	  <uniform_conc name="Tc-99" value="0"/>
@@ -254,8 +258,8 @@
     <boundary_condition name = "Recharge at top of the domain">
       <comments>Would be nice to have comments section for each boundary_condition but its not clear how it maps to UI</comments>
       <assigned_regions>Recharge_Boundary_WestofCribs,Recharge_Boundary_btwnCribs,Recharge_Boundary_EastofCribs</assigned_regions>
-      <liquid_phase name = "water">
-	<liquid_component name = "water">
+      <liquid_phase name = "Water">
+	<liquid_component name = "Water">
 	  <inward_mass_flux start="0.0"      function= "constant"  value="pre_1956_recharge"/>
 	  <inward_mass_flux start="1956.0,y" function= "constant"  value="post_1956_recharge"/>
 	  <inward_mass_flux start="2012.0,y" function= "constant"  value="future_recharge"/>
@@ -272,8 +276,8 @@
 
     <boundary_condition name = "B-17">
       <assigned_regions>Crib_216-B-17</assigned_regions>
-      <liquid_phase name = "water">
-	<liquid_component name = "water">
+      <liquid_phase name = "Water">
+	<liquid_component name = "Water">
 	  <inward_mass_flux start="0.0"                     function= "constant"    value="pre_1956_recharge"/>
 	  <inward_mass_flux start="B-17_release_begin"      function= "constant"    value="0.00254022"/>
 	  <inward_mass_flux start="B-17_release_end"        function= "constant"    value="post_1956_recharge"/>
@@ -292,8 +296,8 @@
 
     <boundary_condition name = "B-18">
       <assigned_regions>Crib_216-B-18</assigned_regions>
-      <liquid_phase name = "water">
-	<liquid_component name = "water">
+      <liquid_phase name = "Water">
+	<liquid_component name = "Water">
 	  <inward_mass_flux start="0.0"                function= "constant"    value="pre_1956_recharge"/>
 	  <inward_mass_flux start="1956.0,y"           function= "constant"    value="post_1956_recharge"/>
 	  <inward_mass_flux start="B-18_release_begin" function= "constant"    value="0.00330423"/>
@@ -314,8 +318,8 @@
 
     <boundary_condition name = "Bottom of Domain">
       <assigned_regions>YLOBC</assigned_regions>
-      <liquid_phase name = "water">
-	<liquid_component name = "water">
+      <liquid_phase name = "Water">
+	<liquid_component name = "Water">
 	  <uniform_pressure name = "1" start="0.0"        function= "constant" value="101325.0"/>
 	  <uniform_pressure name = "2" start="3000.0,y"  function= "constant" value="101325.0"/>
 	</liquid_component>
@@ -329,15 +333,16 @@
 
   <output>
     <vis>
-      <base_filename>plot</base_filename>
+      <base_filename>run_data/plt</base_filename>
       <num_digits>5</num_digits>
+      <cycle_macros>Every_timestep</cycle_macros>
       <!-- <time_macros>Macro 1</time_macros> -->
     </vis>
 
     <checkpoint>
-      <base_filename>chk</base_filename>
+      <base_filename>run_data/chk</base_filename>
       <num_digits>5</num_digits>
-      <!-- <cycle_macros>Every_1000_timesteps</cycle_macros> -->
+      <cycle_macros>Every_1000_timesteps</cycle_macros>
     </checkpoint>
 
   </output>

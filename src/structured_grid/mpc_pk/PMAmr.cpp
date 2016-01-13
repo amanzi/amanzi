@@ -13,9 +13,11 @@
 
 namespace
 {
-    const std::string CheckPointVersion("CheckPointVersion_1.0");
+  const std::string CheckPointVersion("CheckPointVersion_1.0");
 
-    bool initialized = false;
+  bool initialized = false;
+
+  Real seconds_per_year = 365.25 * 3600 * 24;
 }
 namespace
 {
@@ -35,16 +37,30 @@ namespace
 
 std::ostream& operator<<(std::ostream& os, const ExecControl& ec)
 {
+  os << "{\n";
   os << " label:            " << ec.label << '\n';
   os << " mode:             " << ec.mode  << '\n';
   os << " method:           " << ec.method << '\n';
   os << " max_cycles:       " << ec.max_cycles << '\n';
-  os << " start:            " << ec.start<< '\n';
-  os << " end:              " << ec.end << '\n';
-  os << " init_dt:          " << ec.init_dt << '\n';
-  os << " max_dt:           " << ec.max_dt << '\n';
+  os << " start:            " << ec.start << "s (=" << ec.start/(seconds_per_year) << "y)\n";
+  os << " end:              " << ec.end << "s (=" << ec.end/(seconds_per_year) << "y)\n";
+  os << " init_dt:          ";
+  if (ec.init_dt <= 0) {
+    os << "<not used>\n";
+  }
+  else {
+    os << ec.init_dt << "s (=" << ec.init_dt/(seconds_per_year) << "y)\n";
+  }
+  os << " max_dt:           ";
+  if (ec.max_dt <= 0) {
+    os << "<not used>\n";
+  }
+  else {    
+    os << ec.max_dt << "s (=" << ec.max_dt/(seconds_per_year) << "y)\n";
+  }
   os << " reduction_factor: " << ec.reduction_factor << '\n';
-  os << " increase_factor:  " << ec.increase_factor;
+  os << " increase_factor:  " << ec.increase_factor << '\n';
+  os << "}";
   return os;
 }
 
@@ -613,11 +629,11 @@ PMAmr::convert_time_units(Real t, const std::string& units)
   std::transform(units_in.begin(), units_in.end(), units_in.begin(), toupper);
 
   if (units_in == "Y") {
-    t_output = t/(3600*24*365.25);
-    units_str = "[y]";
+    t_output = t/seconds_per_year;
+    units_str = "y";
   } else if (units_in == "S") {
     t_output = t;
-    units_str = "[s]";
+    units_str = "s";
   }
   else {
     std::cout << "units_str: " << units_in << std::endl;
@@ -702,7 +718,8 @@ PMAmr::coarseTimeStep (Real _stop_time)
     const ExecControl *ec = GetExecControl(cumtime);
     if (cumtime == ec->start) {
       if (ParallelDescriptor::IOProcessor()) {
-	std::cout << "Entering Exceution Control Period \""<< ec->label << "\" at time: " << cumtime << std::endl;
+	std::cout << "Entering Exceution Control Period \""<< ec->label << "\" at time: "
+		  << cumtime << "s (=" << cumtime/seconds_per_year << "y)" << std::endl;
 	std::cout << *ec << std::endl;
       }
     }
@@ -717,9 +734,9 @@ PMAmr::coarseTimeStep (Real _stop_time)
     static int cnt = 0;
     if (cumtime == ec->end) {
       if (ParallelDescriptor::IOProcessor()) {
-	std::cout << "Exiting Exceution Control Period \"" << ec->label << "\" at time: " << cumtime << std::endl;
+	std::cout << "Exiting Exceution Control Period \"" << ec->label << "\" at time: "
+		  << cumtime << "s (=" << cumtime/seconds_per_year << "y)" << std::endl;
       }
-      if (cnt++ == 1) BoxLib::Abort();
     }
 
     if (verbose > 0)

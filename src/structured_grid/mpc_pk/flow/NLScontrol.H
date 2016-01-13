@@ -108,6 +108,9 @@ struct NLScontrol
   RSdata* rs_data;
 
   // Control parameters (see strategy above)
+  std::string label;            // An identifier for this set of parameters
+  int verbosity;                // Verbosity of this non-linear solver setup
+
   bool use_PETSc_snes;          // Use PETSc to solve the nonlinear problem
   bool use_fd_jac;              // Use matrix-free or finite-difference Jacobian
   bool use_dense_Jacobian;      // Use dense storage for Jacobian
@@ -152,4 +155,6 @@ private:
   int num_consecutive_success, num_consecutive_failures_1, num_consecutive_failures_2;
   int num_consecutive_increases;
 };
+
+std::ostream& operator<<(std::ostream& os, const NLScontrol& rhs);
 #endif

@@ -38,15 +38,16 @@ TEST(CONVERTER_S) {
   try {
     // Translate the input. This produces a singleton instance of ParmParse that is 
     // populated with data.
-    converter.Translate();
+    converter.Translate(rank);
 
     // Dump the guy to stdout.
-    ParmParse pp;
-    std::ofstream dumpy("converter_s_test_output.dump");
-    pp.dumpTable(dumpy);
+    if (rank == 0) {
+      ParmParse pp;
+      std::ofstream dumpy("converter_s_test_output.dump");
+      pp.dumpTable(dumpy);
 
-    std::cout << "Successful translation. Validating the result...\n\n";
-
+      std::cout << "Successful translation. Validating the result...\n\n";
+    }
   } catch (std::exception& e) {
     std::cout << e.what() << std::endl;
   }

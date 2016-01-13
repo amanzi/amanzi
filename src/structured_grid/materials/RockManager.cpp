@@ -798,7 +798,7 @@ RockManager::Initialize(const Array<std::string>* solute_names)
     // capillary pressure: include cpl_coef, residual_saturation, sigma
     const std::string cpl_prefix(prefix+".cpl");
     ParmParse pp_cpl(cpl_prefix.c_str());
-    std::string cpl_model = CP_model_None; pp_cpl.query("type",cpl_model); 
+    std::string cpl_model = CP_model_None; pp_cpl.query("type",cpl_model);
     std::map<std::string,int>::const_iterator it = CP_models.find(cpl_model);
     int rcplType = -1;
     int rKrType = -1;
@@ -891,7 +891,7 @@ RockManager::Initialize(const Array<std::string>* solute_names)
 	// Convert input alpa values to invAtm, if necessary	
 	if (Capillary_Pressure_alpha_in_invPa) {
 	  BL_ASSERT(!Capillary_Pressure_alpha_in_invAtm);
-	  alpha*1.01325e5;
+	  alpha *= 1.01325e5;
 	}
 
         // Finally, load array of Real numbers for this model
@@ -1430,6 +1430,11 @@ RockManager::InverseCapillaryPressure(const Real* capillaryPressure, int* matID,
         int idx = mat_pts[j][i];
         Real seff = (capillaryPressure[idx] <= 0  ? 1 : 
                      std::pow( std::pow(alpha*capillaryPressure[idx],n) + 1, -m));
+#if 0
+	if (capillaryPressure[idx] > 10.2) {
+	  std::cout << capillaryPressure[idx] << " " << seff << " " << alpha << std::endl;
+	}
+#endif
         seff = std::max(0.,std::min(1.,seff));
         saturation[idx] = seff*(1 - Sr) + Sr;
       }

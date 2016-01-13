@@ -814,6 +814,10 @@ public:
                                MultiFab& mf,
                                int       dcomp);
 
+  void derive_Capillary_Pressure(Real      time,
+				 MultiFab& mf,
+				 int       dcomp);
+
   void derive_Hydraulic_Head(Real      time,
                              MultiFab& mf,
                              int       dcomp);
@@ -1118,14 +1122,10 @@ protected:
   static bool do_output_chemistry_time_in_years;
   static bool do_output_transport_time_in_years;
 
-
-  static int  richard_solver_verbose;
-
   //
   // Init-to-steady parameters
   //
   static bool do_richard_init_to_steady;
-  static int  richard_init_to_steady_verbose;
   static int  steady_min_iterations;
   static int  steady_min_iterations_2;
   static int  steady_max_iterations;
@@ -1152,7 +1152,7 @@ protected:
   static Real steady_rel_tolerance;
   static Real steady_abs_update_tolerance;
   static Real steady_rel_update_tolerance;
-  static int  steady_do_grid_sequence;
+  static bool steady_do_grid_sequence;
   static Array<Real> steady_grid_sequence_new_level_dt_factor;
   static std::string steady_record_file;
 
@@ -1166,9 +1166,9 @@ protected:
   static int  richard_monitor_linear_solve;
   static int  richard_monitor_line_search;
   static Real richard_perturbation_scale_for_J;
-  static int  richard_use_fd_jac;
-  static int  richard_use_dense_Jacobian;
-  static int  richard_upwind_krel;
+  static bool richard_use_fd_jac;
+  static bool richard_use_dense_Jacobian;
+  static bool richard_upwind_krel;
   static int  richard_pressure_maxorder;
   static bool richard_scale_solution_before_solve;
   static bool richard_semi_analytic_J;
