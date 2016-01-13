@@ -1821,7 +1821,7 @@ void InputConverterS::ParseInitialConditions_()
           }
           else {
             Errors::Message msg;
-            msg << "\"liquid_component\" not present in \"liquid_phase\" boundary_condition \""
+            msg << "\"liquid_component\" not present in \"liquid_phase\" initial_condition \""
               << ic_name << "\".\n";
             msg << "Please correct and try again.\n";
             Exceptions::amanzi_throw(msg);
@@ -1839,6 +1839,7 @@ void InputConverterS::ParseInitialConditions_()
 	      conc[s] = "0.0";
 	    }
 	    vector<DOMNode*> sols = GetChildren_(sc, "uniform_conc", found);
+
 	    if (sols.size() > 0) {
 	      for (size_t si=0; si<sols.size(); ++si)
 	      {
@@ -1853,12 +1854,15 @@ void InputConverterS::ParseInitialConditions_()
 		  }
 		}
 		if (!found) {
-		  // Err
+		  Errors::Message msg;
+		  msg << "\"uniform_conc\" section names nonexisting solute in initial_condition \"" << ic_name << "\".\n";
+		  msg << "Please correct and try again.\n";
+		  Exceptions::amanzi_throw(msg);	  
 		}
 	      }
 	      for (int s=0; s<solutes_.size(); ++s) {
-		AddToTable(table, MakePPPrefix("tracer", solutes_[s], ic_name, "val"), MakePPEntry(conc[s]));
-		AddToTable(table, MakePPPrefix("tracer", solutes_[s], ic_name, "type"), MakePPEntry("concentration"));
+		AddToTable(table, MakePPPrefix("tracer", solutes_[s], "ic", ic_name, "val"), MakePPEntry(conc[s]));
+		AddToTable(table, MakePPPrefix("tracer", solutes_[s], "ic", ic_name, "type"), MakePPEntry("concentration"));
 	      }
 	    }
 	  }
@@ -1871,8 +1875,8 @@ void InputConverterS::ParseInitialConditions_()
 	    sfound = true;
 	    string condition_name = GetAttributeValueS_(gc, "constraint");
 	    for (int s = 0; s<solutes_.size(); ++s) {
-	      AddToTable(table, MakePPPrefix("tracer", solutes_[s], ic_name, "geochemical_condition"), MakePPEntry(condition_name));
-	      AddToTable(table, MakePPPrefix("tracer", solutes_[s], ic_name, "type"), MakePPEntry("concentration"));
+	      AddToTable(table, MakePPPrefix("tracer", solutes_[s], "ic", ic_name, "geochemical_condition"), MakePPEntry(condition_name));
+	      AddToTable(table, MakePPPrefix("tracer", solutes_[s], "ic", ic_name, "type"), MakePPEntry("concentration"));
 	    }
 	  }
 
@@ -1883,7 +1887,7 @@ void InputConverterS::ParseInitialConditions_()
 	    AddToTable(table, MakePPPrefix("comp", "ics", ic_name, "regions"), MakePPEntry(assigned_regions));
 	    if (sfound) {
 	      for (size_t i = 0; i < solutes_.size(); ++i) {
-		AddToTable(table, MakePPPrefix("tracer", solutes_[i], ic_name, "regions"), MakePPEntry(assigned_regions));
+		AddToTable(table, MakePPPrefix("tracer", solutes_[i], "ic", ic_name, "regions"), MakePPEntry(assigned_regions));
 	      }
 	    }
 	  } else {
@@ -2050,6 +2054,70 @@ void InputConverterS::ParseBoundaryConditions_()
             Exceptions::amanzi_throw(msg);
           }
 
+	  // solute BCs
+	  bool scfound = false;
+	  DOMElement* sc = GetChildByName_(lp, "solute_component", scfound);
+	  if (scfound)
+	  {
+	    sfound = true;
+
+	    vector<vector<string> > conc(solutes_.size());
+	    vector<vector<string> > ctime(solutes_.size());
+	    vector<vector<string> > cfunc(solutes_.size());
+	    vector<DOMNode*> sols = GetChildren_(sc, "aqueous_conc", found);
+
+	    if (sols.size() > 0)
+	    {
+	      for (size_t si=0; si<sols.size(); ++si)
+	      {
+		DOMElement* ss = static_cast<DOMElement*>(sols[si]);
+		string this_spec = GetAttributeValueS_(ss, "name");
+		string this_conc = GetAttributeValueS_(ss, "value");
+		string this_func = GetAttributeValueS_(ss, "function");
+		string this_time = GetAttributeValueS_(ss, "start");
+		bool found = false;
+		for (int s=0; s<solutes_.size() && !found; ++s) {
+		  if (this_spec == solutes_[s]) {
+
+		    map<string, string>::const_iterator iterV = labeled_numbers_.find(this_conc);
+		    if (iterV != labeled_numbers_.end())
+		      conc[s].push_back(iterV->second);
+		    else
+		      conc[s].push_back(this_conc);
+
+		    map<string, string>::const_iterator iterT = labeled_times_.find(this_time);
+		    if (iterT != labeled_times_.end())
+		      ctime[s].push_back(ConvertTimeToSeconds(iterT->second));
+		    else
+		      ctime[s].push_back(ConvertTimeToSeconds(this_time));
+
+		    cfunc[s].push_back(this_func);
+		    found = true;
+		  }
+		}
+		if (!found) {
+		  Errors::Message msg;
+		  msg << "\"aqueous_conc\" section names nonexisting solute in boundary_condition \"" << bc_name << "\".\n";
+		  msg << "Please correct and try again.\n";
+		  Exceptions::amanzi_throw(msg);	  
+		}
+	      }
+	      for (int s=0; s<solutes_.size(); ++s) {
+		if (conc[s].size() == 0) {
+		  conc[s].push_back("0.0");
+		}
+	      }
+	      for (int s=0; s<solutes_.size(); ++s) {
+		AddToTable(table, MakePPPrefix("tracer", solutes_[s], "bc", bc_name, "vals"), MakePPEntry(conc[s]));
+		AddToTable(table, MakePPPrefix("tracer", solutes_[s], "bc", bc_name, "type"), MakePPEntry("concentration"));
+		if (conc[s].size() > 1) {
+		  AddToTable(table, MakePPPrefix("tracer", solutes_[s], "bc", bc_name, "times"), MakePPEntry(ctime[s]));
+		  AddToTable(table, MakePPPrefix("tracer", solutes_[s], "bc", bc_name, "forms"), MakePPEntry(cfunc[s]));
+		}
+	      }
+	    }
+	  }
+
 	  // Sniff out geochemical conditions, if any.
 	  bool gcfound = false;
 	  DOMElement* gc = GetChildByName_(lp, "geochemistry", gcfound);
@@ -2058,8 +2126,8 @@ void InputConverterS::ParseBoundaryConditions_()
 	    sfound = true;
 	    string condition_name = GetAttributeValueS_(gc, "constraint");
 	    for (int s = 0; s<solutes_.size(); ++s) {
-	      AddToTable(table, MakePPPrefix("tracer", solutes_[s], bc_name, "geochemical_condition"), MakePPEntry(condition_name));
-	      AddToTable(table, MakePPPrefix("tracer", solutes_[s], bc_name, "type"), MakePPEntry("concentration"));
+	      AddToTable(table, MakePPPrefix("tracer", solutes_[s], "bc", bc_name, "geochemical_condition"), MakePPEntry(condition_name));
+	      AddToTable(table, MakePPPrefix("tracer", solutes_[s], "bc", bc_name, "type"), MakePPEntry("concentration"));
 	    }
 	  }
 
@@ -2071,7 +2139,7 @@ void InputConverterS::ParseBoundaryConditions_()
 	    if (sfound) {
 	      tbc_names.push_back(bc_name);
 	      for (size_t i = 0; i < solutes_.size(); ++i) {
-		AddToTable(table, MakePPPrefix("tracer", solutes_[i], bc_name, "regions"), MakePPEntry(assigned_regions));
+		AddToTable(table, MakePPPrefix("tracer", solutes_[i], "bc", bc_name, "regions"), MakePPEntry(assigned_regions));
 	      }
 	    }
 	  } else {

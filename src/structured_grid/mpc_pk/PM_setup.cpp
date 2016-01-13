@@ -1993,14 +1993,14 @@ void  PorousMedia::read_tracer()
           
       for (int n = 0; n<n_ic; n++)
       {
-        const std::string prefixIC(prefix + "." + tic_names[n]);
+        const std::string prefixIC(prefix + ".ic." + tic_names[n]);
         ParmParse ppri(prefixIC.c_str());
         int n_ic_region = ppri.countval("regions");
         Array<std::string> region_names;
         ppri.getarr("regions",region_names,0,n_ic_region);
         Array<const Region*> tic_regions = region_manager->RegionPtrArray(region_names);
         std::string tic_type; ppri.get("type",tic_type);
-              
+
         if (tic_type == "concentration")
         {
           if (ppri.countval("geochemical_condition")) {
@@ -2095,7 +2095,7 @@ void  PorousMedia::read_tracer()
         Array<int> orient_types(6,-1);
         for (int n = 0; n<n_tbc; n++)
         {
-          const std::string prefixTBC(prefix + "." + tbc_names[n]);
+          const std::string prefixTBC(prefix + ".bc." + tbc_names[n]);
           ParmParse ppri(prefixTBC.c_str());
                   
           int n_tbc_region = ppri.countval("regions");

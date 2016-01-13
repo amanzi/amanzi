@@ -20,7 +20,7 @@
 
     <constants>
 
-      <constant name="zero" type="none" value="0.000"/>
+      <constant name="zero" type="numerical" value="0.000"/>
 
       <constant name ="start"                   type="time" value="1956.0,y"/>
       <constant name ="B-17_release_begin"      type="time" value="1956.0,y"/>
@@ -125,10 +125,10 @@
     <verbosity level="high" />
     <execution_control_defaults init_dt= "10"   max_dt="-1"  reduction_factor="0.8"  increase_factor="1.25" mode="transient" method="bdf1"/>
     <execution_control  start="0.0,y"  end="1956.0,y"   init_dt= "100,y"  max_dt="500.0,y"  reduction_factor="0.8"  mode="steady"/>
-    <execution_control  start="B-17_release_begin" end="B-17_release_end"/>
-    <!-- <execution_control  start="B-17_release_end" /> -->
-    <!-- <execution_control  start="B-18_release_begin" /> -->
-    <!-- <execution_control  start="B-18_release_end" end="3000.0;y"/> -->
+    <execution_control  start="B-17_release_begin"/>
+    <execution_control  start="B-17_release_end" />
+    <execution_control  start="B-18_release_begin" />
+    <execution_control  start="B-18_release_end" end="3000.0;y"/>
     
   </execution_controls>
 
@@ -183,7 +183,7 @@
   <mesh>
     <dimension>2</dimension>
     <generate>
-      <number_of_cells nx="62" ny="38"/>
+      <number_of_cells nx="432" ny="256"/>
       <box high_coordinates="216.0,107.52" low_coordinates="0, 0"/>
     </generate>
   </mesh>
@@ -323,10 +323,6 @@
 	  <uniform_pressure name = "1" start="0.0"        function= "constant" value="101325.0"/>
 	  <uniform_pressure name = "2" start="3000.0,y"  function= "constant" value="101325.0"/>
 	</liquid_component>
-	<solute_component name = "solute">
-	  <aqueous_conc name = "Tc-99" start="0.0"        function= "constant"    value="0.0"/>
-	  <aqueous_conc name = "Tc-99" start="3000.0,y"  function= "constant"    value="0.0"/>
-	</solute_component>
       </liquid_phase>
     </boundary_condition>
   </boundary_conditions>
