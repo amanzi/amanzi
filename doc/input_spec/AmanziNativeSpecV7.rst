@@ -905,7 +905,7 @@ Partially saturated flow with water vapor
 `````````````````````````````````````````
 
 The conceptual PDE model for the partially saturated flow with water vapor 
-includes liquid phase (liquid water) and pgas phase (water vapor):
+includes liquid phase (liquid water) and gas phase (water vapor):
 
 .. math::
   \frac{\partial \theta}{\partial t} 
@@ -931,21 +931,22 @@ and :math:`\boldsymbol{K}_g` is the effective diffusion coefficient of the water
 We define 
 
 .. math::
-  \theta = \phi \eta_l s_l
+  \theta = \phi \eta_l s_l + \phi (1 - \eta_l) X_l
 
 where :math:`s_l` is liquid saturation [-],
-and :math:`\phi` is porosity [-].
+:math:`\phi` is porosity [-],
+and :math:`X_l` is molar fraction of water vapor.
 The effective diffusion coefficient of the water vapor is given by
 
 .. math::
   \boldsymbol{K}_g = \phi s_g \tau_g \eta_g \boldsymbol{D}_g
 
-where :math:`s_g` is vapor saturation [-],
+where :math:`s_g` is gas saturation [-],
 :math:`\tau_g` is the tortuosity of the gas phase [-],
-:math:`\eta_g` is the molar density of the vapor,
-and :math:`\boldsymbol{D}_g` is the diffusion coefficient of the gas phase.
+:math:`\eta_g` is the molar density of gas,
+and :math:`\boldsymbol{D}_g` is the diffusion coefficient of the gas phase [:math:`m^2/s`],
 The gas pressure :math:`p_g` is set to the atmosperic pressure and the vapor pressure
-model assumes theremal equlibrium of liquid and gas phases:
+model assumes thermal equlibrium of liquid and gas phases:
 
 .. math::
   p_v = P_{sat}(T) \exp\left(\frac{P_{cgl}}{\eta_l R T}\right)
@@ -954,9 +955,77 @@ where
 :math:`R` is the ideal gas constant,
 :math:`P_{cgl}` is the liquid-gas capillary pressure [Pa],
 :math:`P_{sat}` is the saturated vapor pressure [Pa],
-amd :math:`T` is the temprearture [K].
+and :math:`T` is the temperature [K].
+The diffusion coefficient is based of TOUGHT2 model
 
-Based on these three models, the flow sublist includes exactly one sublist, either 
+.. math::
+   D_g = D_0 \frac{P_{ref}}{p} \left(\frac{T}{273.15}\right)^a
+
+where
+:math:`D_0 = 2.14e-5`,
+:math:`P_{ref}` is atmospheric pressure,
+and :math:`a = 1.8`. 
+finally we need a model for the gas tortuosity. We use the Millington and Quirk model:
+
+.. math::
+   \tau_g = \phi^\beta s_g^\gamma
+
+where
+:math:`\beta = 1/3` and 
+:math:`\gamma = 7/3`.
+
+
+Isothermal partially saturated flow with dual porosity model
+````````````````````````````````````````````````````````````
+
+The conceptual model for the partially saturated flow with dual porosity model
+assumes that water flow is restricted to the fractures and the water in the matrix does not move.
+The rock matrix represents immobile pockets that can exchange, retain and store water
+but do not permit convective flow.
+This leads to dual-porosity type flow and transport models that partition the liquid
+phase into mobile and immobile regions.
+The Richards equation in the mobile region is augmented by the water exchange
+term :math:`\Sigma_w`:
+ 
+.. math::
+  \frac{\partial \theta_{lf}}{\partial t} 
+  = \boldsymbol{\nabla} \cdot (\eta_l \boldsymbol{q}_l) - \Sigma_w + Q_f,
+  \qquad
+  \boldsymbol{q}_l 
+  = -\frac{\boldsymbol{K} k_r}{\mu} 
+  (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g})
+
+where 
+:math:`\Sigma_w` is transfer rate for water from the matrix to the fracture, 
+and :math:`Q_f` is source or sink term [:math:`kg \cdot m^{-3} \cdot s^{-1}`].
+The equation for water balance in the matrix is
+
+.. math::
+  \frac{\partial \theta_{lm}}{\partial t} 
+  = Q_m + \Sigma_w,
+
+where 
+:math:`Q_m` is source or sink term [:math:`kg \cdot m^{-3} \cdot s^{-1}`].
+The volumetric volumetric water contents are defined as
+
+.. math::
+  \theta_f = \phi_f\, \eta_l\, s_{lf},\quad
+  \theta_m = \phi_m\, \eta_l\, s_{lm},
+
+where saturations :math:`s_{lf}` and :math:`s_{lm}` may use different capillary 
+pressure - saturation models.
+The rate of water exchange between the fracture and matrix regions is
+proportional to the difference in hydraulic heads:
+
+.. math::
+  \Sigma_w = \alpha_w (h_f - h_m),
+
+where :math:`\alpha_w` is the mass transfer coefficient.
+Since hydraulic heads are needed for both regions, this equation requires
+estimating retention curves for both regions and therefore is nonlinear.
+ 
+
+The flow sublist includes exactly one sublist, either 
 *Darcy problem* or *Richards problem*.
 Structure of both sublists is quite similar.
 
@@ -975,11 +1044,10 @@ Model specifications and assumptions
 This list is used to summarize physical models and assumptions, such as
 coupling with other PKs.
 This list is often generated or extended by a high-level MPC PK.
-
 In the code development, this list plays a two-fold role. 
 First, it provides necessary information for coupling different PKs such 
-as flags for adding a vapor diffusion to Richards' equations.
-Second, developers may use it instead of a factory of evaluators such as
+as flags for adding a vapor diffusion to Richards' equation.
+Second, the developers may use it instead of a factory of evaluators such as
 creation of primary and secondary evaluators for rock porosity models.
 Combination of both approaches may lead to a more efficient code.
 
@@ -1093,7 +1161,6 @@ Porosity models
 
 User defines porosity models in sublist *porosity models*. 
 It contains as many sublists, e.g. *SOIL_1*, *SOIL_2*, etc, as there are different soils. 
-
 The porosity models are associated with non-overlapping regions. Each of the sublists (e.g. *Soil 1*) 
 includes a few mandatory parameters: *region name*, *model name*, and parameters for the selected model.
 
