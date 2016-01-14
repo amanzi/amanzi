@@ -114,6 +114,8 @@
 #-pc_hypre_boomeramg_print_statistics
 -pc_hypre_boomeramg_relax_type_coarse symmetric-SOR/Jacobi 
 -pc_hypre_boomeramg_grid_sweeps_coarse 4 
+-pc_hypre_boomeramg_grid_sweeps_down 4
+-pc_hypre_boomeramg_grid_sweeps_up 4
 -pc_ml_Threshold 0.01
 -pc_ml_EnergyMinimization 2
 #-pc_ml_PrintLevel 1

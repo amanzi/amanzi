@@ -1849,12 +1849,16 @@ PorousMedia::ml_step_driver(Real  time,
   }
 
   Real dt_min = 1.e-20 * dt_try;
-  int max_dt_iters = 1; // Do not subcycle this process
+  int max_dt_iters = -1;
   Real dt_this_attempt = dt_try;
   int dt_iter = 0;
   bool step_ok = false;
-  bool continue_dt_iteration = !step_ok  &&  (dt_this_attempt >= dt_min) && (dt_iter < max_dt_iters);
-    
+  bool continue_dt_iteration = !step_ok  &&  (dt_this_attempt >= dt_min);
+  if (max_dt_iters > 0) {
+    continue_dt_iteration &= (dt_iter < max_dt_iters);
+  }
+
+  dt_taken = 0;
   while (continue_dt_iteration) {
 
     if (ntracers>0) {
@@ -1879,20 +1883,24 @@ PorousMedia::ml_step_driver(Real  time,
     step_ok = multilevel_advance(time,dt_this_attempt,amr_iteration,amr_ncycle,dt_suggest);
 
     if (step_ok) {
-      dt_taken = dt_this_attempt;
+      dt_taken += dt_this_attempt;
     } else {
       dt_this_attempt = dt_suggest;
     }
     dt_iter++;
 
-    continue_dt_iteration = !step_ok  &&  (dt_this_attempt >= dt_min) && (dt_iter < max_dt_iters);
-
-    if (!step_ok && !attempt_to_recover_failed_step) {
-      continue_dt_iteration = false;
+    continue_dt_iteration = (!step_ok)  &&  (dt_this_attempt >= dt_min);
+    if (max_dt_iters > 0) {
+      continue_dt_iteration &= (dt_iter < max_dt_iters);
     }
   }
 
-  return step_ok && dt_taken >= dt_min &&  dt_iter <= max_dt_iters;
+  bool return_value = step_ok;
+  if (max_dt_iters > 0) {
+    return_value &= (dt_iter < max_dt_iters);
+  }
+
+  return return_value;
 }
 
 static Real
@@ -2900,6 +2908,14 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
   step_ok = (ret == NLSstatus::NLS_SUCCESS);
 
   if (step_ok) {
+
+    const ExecControl* ec = PMParent()->GetExecControl(t_flow+dt_flow);
+    if (ec != 0) {
+      if (ec->max_dt > 0) {
+	dt_flow_new = std::min(ec->max_dt, dt_flow_new);
+      }
+    }
+
     for (int lev = finest_level; lev >= 0; lev--) {
       if (lev>0 && do_write) {
         std::cout << tag << " Averaging down level " << lev << std::endl;
@@ -2907,6 +2923,12 @@ PorousMedia::advance_multilevel_richards_flow (Real  t_flow,
       getLevel(lev).avgDown();
     }
   } else {
+    const ExecControl* ec = PMParent()->GetExecControl(t_flow);
+    BL_ASSERT(ec != 0);
+    if (ec->max_dt > 0) {
+      dt_flow_new = std::min(ec->max_dt, dt_flow_new);
+    }
+
     // Restore the state data structures
     for (int lev=0; lev<=finest_level; ++lev) {
       PorousMedia& pm = getLevel(lev);        

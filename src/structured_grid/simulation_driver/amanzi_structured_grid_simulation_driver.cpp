@@ -137,12 +137,13 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     pp.dumpTable(dumpy);
 
 #ifdef BL_USE_PETSC
+    ParmParse pb("prob");
     std::string petsc_help = "Amanzi-S passthrough access to PETSc help option\n";
-    std::string petsc_file_str = "Petsc_Options_File";
+    std::string petsc_file_str = "petsc_options_file";
     std::string petsc_options_file;
 
-    if (pp.countval(petsc_file_str.c_str()) > 0) {
-      pp.get(petsc_file_str.c_str(),petsc_options_file);
+    if (pb.countval(petsc_file_str.c_str()) > 0) {
+      pb.get(petsc_file_str.c_str(),petsc_options_file);
       bool petsc_file_exists = ConfirmFileExists(petsc_options_file);
       if (petsc_file_exists) {
        PetscInitialize(&argc,&argv,petsc_options_file.c_str(),petsc_help.c_str());

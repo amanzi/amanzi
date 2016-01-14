@@ -580,9 +580,9 @@ void InputConverterS::ParseExecutionControls_()
     }
     else {
 
-      const size_t controls_size = 11;
-      string control_names[controls_size] = {"restart","initialize","start","end","init_dt","mode",
-					     "max_dt","reduction_factor","increase_factor","method","max_cycles"};
+      const size_t controls_size = 9;
+      string control_names[controls_size] = {"start","end","init_dt","mode","max_dt","reduction_factor",
+					     "increase_factor","method","max_cycles"};
 
       size_t ncn= control_nodes.size();
       vector<map<string, string> > exec_control(ncn);
@@ -630,11 +630,21 @@ void InputConverterS::ParseExecutionControls_()
       for (int i=0; i<exec_control.size(); ++i) {
 	ecnames[i] = BoxLib::Concatenate("exec_control_",i,ndigits);
 	for (map<string,string>::const_iterator it=exec_control[i].begin(); it!=exec_control[i].end(); ++it) {
-	  AddToTable(table, MakePPPrefix("exec_control",ecnames[i],it->first), MakePPEntry(it->second));
+	  if (it->first != "restart") {
+	    AddToTable(table, MakePPPrefix("exec_control",ecnames[i],it->first), MakePPEntry(it->second));
+	  }
 	}
       }
       AddToTable(table, MakePPPrefix("exec_controls"), MakePPEntry(ecnames));
     }
+  }
+
+  // Restart
+  DOMNode* restart = GetUniqueElementByTagsString_("execution_controls, restart", found);
+  if (found)
+  {
+    string restart_file = GetAttributeValueS_(static_cast<DOMElement*>(restart), "file");
+    AddToTable(table, MakePPPrefix("amr", "restart"), MakePPEntry(restart_file));
   }
 
   // Verbosity level(s).
@@ -690,13 +700,16 @@ void InputConverterS::ParseNumericalControls_()
   amr_controls["regrid_interval"]           = "1";
   amr_controls["blocking_factor"]           = "2";
   amr_controls["number_error_buffer_cells"] = "1";
-  amr_controls["max_grid_size"]             = "32";
+  amr_controls["max_grid_size"]             = "64";
 
   // Common controls -- currently empty.
   DOMNode* common_controls = GetUniqueElementByTagsString_("numerical_controls, common_controls", found);
   if (found)
   {
   }
+
+#define CONTROLS_ARE_ATTRIBUTES // Otherwise, controls are children
+#undef CONTROLS_ARE_ATTRIBUTES
 
   // Structured controls.
   DOMNode* structured_controls = GetUniqueElementByTagsString_("numerical_controls, structured_controls", found);
@@ -705,97 +718,157 @@ void InputConverterS::ParseNumericalControls_()
     bool found;
     MemoryManager mm;
 
-    string petsc_options_file = GetChildValueS_(structured_controls, "petsc_options_file", found);
+    // Time step controls.
+    map<string,string> ts_controls;
+    ts_controls["max_pseudo_time"]                    = "1.e14";
+    ts_controls["min_iterations"]                     = "10";
+    ts_controls["max_iterations"]                     = "15";
+    ts_controls["limit_iterations"]                   = "20";
+    ts_controls["min_iterations_2"]                   = "2";
+    ts_controls["time_step_increase_factor"]          = "1.6";
+    ts_controls["time_step_increase_factor_2"]        = "10";
+    ts_controls["max_consecutive_failures_1"]         = "3";
+    ts_controls["time_step_retry_factor_1"]           = "0.2";
+    ts_controls["max_consecutive_failures_2"]         = "4";
+    ts_controls["time_step_retry_factor_1"]           = "0.01";
+    ts_controls["time_step_retry_factor_f"]           = "0.001";
+    ts_controls["max_consecutive_success"]            = "0";
+    ts_controls["extra_time_step_increase"]           = "10";
+    ts_controls["limit_function_evals"]               = "100000000";
+    ts_controls["do_grid_sequence"]                   = "true";
+    ts_controls["grid_sequence_new_level_dt_factor"]  = "1";
+#ifdef CONTROLS_ARE_ATTRIBUTES
+    vector<DOMNode*> tsc = GetChildren_(structured_controls, "str_time_step_controls", found);
     if (found) {
-        AddToTable(table, MakePPPrefix("Petsc_Options_File"), MakePPEntry(petsc_options_file));
+      for (size_t i = 0; i < tsc.size(); ++i)
+      {
+        DOMElement* control_elt = static_cast<DOMElement*>(tsc[i]);
+	for (map<string,string>::iterator it=ts_controls.begin(); it!=ts_controls.end(); ++it) {
+	  string str = GetAttributeValueS_(control_elt, it->first.c_str(), TYPE_NONE, false);
+	  if (!str.empty())  it->second = str;
+	}
+      }
     }
-
-    string max_n_subcycle_transport = GetChildValueS_(structured_controls, "max_n_subcycle_transport", found);
-    if (found) {
-        AddToTable(table, MakePPPrefix("prob", "max_n_subcycle_transport"), MakePPEntry(max_n_subcycle_transport));
-    }
-
-    // Steady-state controls.
-    map<string,string> ss_controls;
-    ss_controls["max_pseudo_time"]                    = "1.e14";
-    ss_controls["min_iterations"]                     = "10";
-    ss_controls["max_iterations"]                     = "15";
-    ss_controls["limit_iterations"]                   = "20";
-    ss_controls["min_iterations_2"]                   = "2";
-    ss_controls["time_step_increase_factor"]          = "1.6";
-    ss_controls["time_step_increase_factor_2"]        = "10";
-    ss_controls["max_consecutive_failures_1"]         = "3";
-    ss_controls["time_step_retry_factor_1"]           = "0.2";
-    ss_controls["max_consecutive_failures_2"]         = "4";
-    ss_controls["time_step_retry_factor_1"]           = "0.01";
-    ss_controls["time_step_retry_factor_f"]           = "0.001";
-    ss_controls["max_consecutive_success"]            = "0";
-    ss_controls["extra_time_step_increase"]           = "10";
-    ss_controls["abort_on_pseudo_timestep_failure"]   = "true";
-    ss_controls["limit_function_evals"]               = "100000000";
-    ss_controls["do_grid_sequence"]                   = "true";
-    ss_controls["grid_sequence_new_level_dt_factor"]  = "1";
-
-    DOMElement* ssc = GetChildByName_(structured_controls,"str_steady-state_controls", found);
+#else
+    DOMElement* ssc = GetChildByName_(structured_controls,"str_time_step_controls", found);
     if (found) {
       DOMNodeList* children = ssc->getChildNodes();
       for (int i=0; i<children->getLength(); ++i) {
 	DOMNode* inode = children->item(i);
 	if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 	char* cname = mm.transcode(inode->getNodeName());
-	for (map<string,string>::iterator it=ss_controls.begin(); it!=ss_controls.end(); ++it) {
+	for (map<string,string>::iterator it=ts_controls.begin(); it!=ts_controls.end(); ++it) {
 	  if (it->first == cname) {
 	    it->second = mm.transcode(inode->getTextContent());
 	  }
 	}
       }
     }
-    if (ss_controls.size() > 0) {
-      for (map<string,string>::const_iterator it=ss_controls.begin(); it!=ss_controls.end(); ++it) {
+#endif
+    if (ts_controls.size() > 0) {
+      for (map<string,string>::const_iterator it=ts_controls.begin(); it!=ts_controls.end(); ++it) {
 	string s_parameter_name = "steady_" + it->first;
 	AddToTable(table,MakePPPrefix("prob", (s_parameter_name).c_str() ), MakePPEntry(it->second));
       }
     }
 
-    // Transient controls.
-    map<string,string> tr_controls;
-    tr_controls["max_ls_iterations"]            = "10";
-    tr_controls["ls_reduction_factor"]          = "0.1";
-    tr_controls["min_ls_factor"]                = "1.e-8";
-    tr_controls["ls_acceptance_factor"]         = "1.4";
-    tr_controls["monitor_line_search"]          = "0";
-    tr_controls["monitor_linear_solve"]         = "0";
-    tr_controls["use_fd_jac"]                   = "true";
-    tr_controls["perturbation_scale_for_J"]     = "1.e-8";
-    tr_controls["use_dense_Jacobian"]           = "false";
-    tr_controls["upwind_krel"]                  = "true";
-    tr_controls["pressure_maxorder"]            = "3";
-    tr_controls["scale_solution_before_solve"]  = "true";
-    tr_controls["semi_analytic_J"]              = "false";
-    tr_controls["cfl"]                          = "1";
-
-    DOMElement* stc = GetChildByName_(structured_controls,"str_transient_controls", found);
+    // Flow controls.
+    map<string,string> flow_controls;
+    flow_controls["petsc_options_file"]           = "";
+    flow_controls["max_ls_iterations"]            = "10";
+    flow_controls["ls_reduction_factor"]          = "0.1";
+    flow_controls["min_ls_factor"]                = "1.e-8";
+    flow_controls["ls_acceptance_factor"]         = "1.4";
+    flow_controls["monitor_line_search"]          = "0";
+    flow_controls["monitor_linear_solve"]         = "0";
+    flow_controls["use_fd_jac"]                   = "true";
+    flow_controls["perturbation_scale_for_J"]     = "1.e-8";
+    flow_controls["use_dense_Jacobian"]           = "false";
+    flow_controls["upwind_krel"]                  = "true";
+    flow_controls["pressure_maxorder"]            = "3";
+    flow_controls["scale_solution_before_solve"]  = "true";
+    flow_controls["semi_analytic_J"]              = "false";
+#ifdef CONTROLS_ARE_ATTRIBUTES
+    vector<DOMNode*> flc = GetChildren_(structured_controls, "str_flow_controls", found);
+    if (found) {
+      for (size_t i = 0; i < flc.size(); ++i)
+      {
+        DOMElement* control_elt = static_cast<DOMElement*>(flc[i]);
+	for (map<string,string>::iterator it=flow_controls.begin(); it!=flow_controls.end(); ++it) {
+	  string str = GetAttributeValueS_(control_elt, it->first.c_str(), TYPE_NONE, false);
+	  if (!str.empty())  it->second = str;
+	}
+      }
+    }
+#else
+    DOMElement* stc = GetChildByName_(structured_controls,"str_flow_controls", found);
     if (found) {
       DOMNodeList* children = stc->getChildNodes();
       for (int i=0; i<children->getLength(); ++i) {
 	DOMNode* inode = children->item(i);
 	if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 	char* cname = mm.transcode(inode->getNodeName());
-	for (map<string,string>::iterator it=tr_controls.begin(); it!=tr_controls.end(); ++it) {
+	for (map<string,string>::iterator it=flow_controls.begin(); it!=flow_controls.end(); ++it) {
 	  if (it->first == cname) {
 	    it->second = mm.transcode(inode->getTextContent());
 	  }
 	}
       }
     }
+#endif
 
-    if (tr_controls.size() > 0) {
-      for (map<string,string>::const_iterator it=tr_controls.begin(); it!=tr_controls.end(); ++it) {
-	string s_parameter_name = "richard_" + it->first;
+    if (flow_controls.size() > 0) {
+      for (map<string,string>::const_iterator it=flow_controls.begin(); it!=flow_controls.end(); ++it) {
+	string s_parameter_name = (it->first=="petsc_options_file" ? "" : "richard_") + it->first;
 	AddToTable(table,MakePPPrefix("prob", (s_parameter_name).c_str() ), MakePPEntry(it->second));
       }
     }
 
+    // Transport controls.
+    map<string,string> transport_controls;
+    transport_controls["max_n_subcycle_transport"] = "20";
+    transport_controls["cfl"]                      = "1";
+#ifdef CONTROLS_ARE_ATTRIBUTES
+    vector<DOMNode*> trc = GetChildren_(structured_controls, "str_transport_controls", found);
+    if (found) {
+      for (size_t i = 0; i < trc.size(); ++i)
+      {
+        DOMElement* control_elt = static_cast<DOMElement*>(trc[i]);
+	for (map<string,string>::iterator it=transport_controls.begin(); it!=transport_controls.end(); ++it) {
+	  string str = GetAttributeValueS_(control_elt, it->first.c_str(), TYPE_NONE, false);
+	  if (!str.empty())  it->second = str;
+	}
+      }
+    }
+#else
+    DOMElement* trc = GetChildByName_(structured_controls,"str_transport_controls", found);
+    if (found) {
+      DOMNodeList* children = trc->getChildNodes();
+      for (int i=0; i<children->getLength(); ++i) {
+	DOMNode* inode = children->item(i);
+	if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+	char* cname = mm.transcode(inode->getNodeName());
+	for (map<string,string>::iterator it=transport_controls.begin(); it!=transport_controls.end(); ++it) {
+	  if (it->first == cname) {
+	    it->second = mm.transcode(inode->getTextContent());
+	  }
+	}
+      }
+    }
+#endif
+    if (transport_controls.size() > 0) {
+      for (map<string,string>::const_iterator it=transport_controls.begin(); it!=transport_controls.end(); ++it) {
+	string s_parameter_name = it->first;
+	if (s_parameter_name == "cfl") {
+	  AddToTable(table,MakePPPrefix("prob", (s_parameter_name).c_str() ), MakePPEntry(it->second));
+	}
+	else {
+	  AddToTable(table,MakePPPrefix((s_parameter_name).c_str() ), MakePPEntry(it->second));
+	}
+      }
+    }
+
+    // AMR controls
     DOMElement* amrc = GetChildByName_(structured_controls,"str_amr_controls", found);
     if (found) {
       map<string,map<string,vector<string> > > rc_data; // rc_data[critName][parm] = val
@@ -1627,7 +1700,6 @@ void InputConverterS::ParseProcessKernels_()
     string flow_model = GetAttributeValueS_(flow, "model");
     AddToTable(table, MakePPPrefix("prob", "flow_model"), MakePPEntry(flow_model));
   }
-  AddToTable(table, MakePPPrefix("prob", "cfl"), MakePPEntry(-1));
 
   // Transport model.
   string transport_state = GetAttributeValueS_(transport, "state");

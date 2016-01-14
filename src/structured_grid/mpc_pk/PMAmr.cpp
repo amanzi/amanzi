@@ -249,7 +249,7 @@ PMAmr::restartObservations (const std::string& chkname)
     int n;
     isa >> n; // Get the number of observations as the first entry in the Header file
 
-    BL_ASSERT(n = observations.size());              // Assume list of observations has not changed on restart
+    BL_ASSERT(n == observations.size() || n==0);      // Assume list of observations has not changed on restart
     for (int i=0; i<n; ++i) {
       const std::string new_event_label = observations[i].event_label;
       observations[i] = Observation(is);             // Replace observation created from input with ones from chkpoint
