@@ -809,6 +809,7 @@ void InputConverterS::ParseNumericalControls_()
     flow_controls["pressure_maxorder"]            = "3";
     flow_controls["scale_solution_before_solve"]  = "true";
     flow_controls["semi_analytic_J"]              = "false";
+    flow_controls["atmospheric_pressure"]         = "101325";
 #ifdef CONTROLS_ARE_ATTRIBUTES
     vector<DOMNode*> flc = GetChildren_(structured_controls, "str_flow_controls", found);
     if (found) {

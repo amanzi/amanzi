@@ -1207,7 +1207,7 @@ PorousMedia::BuildNLScontrolData(NLScontrol&        nlsc,
   BL_PROFILE("PorousMedia::BuildNLScontrolData()");
   // For the moment, ignore IDstring: all solver setups identical
 
-  rs_data.upwind_krel = richard_upwind_krel;
+  rs_data.rel_perm_method = richard_rel_perm_method;
   rs_data.pressure_maxorder = richard_pressure_maxorder;
   rs_data.semi_analytic_J = richard_semi_analytic_J;
   rs_data.variable_switch_saturation_threshold = richard_variable_switch_saturation_threshold;

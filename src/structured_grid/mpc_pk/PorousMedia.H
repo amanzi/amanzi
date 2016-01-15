@@ -1168,7 +1168,7 @@ protected:
   static Real richard_perturbation_scale_for_J;
   static bool richard_use_fd_jac;
   static bool richard_use_dense_Jacobian;
-  static bool richard_upwind_krel;
+  static string richard_rel_perm_method;
   static int  richard_pressure_maxorder;
   static bool richard_scale_solution_before_solve;
   static bool richard_semi_analytic_J;

@@ -127,7 +127,10 @@ RSAMRdata::SetUpMemory(NLScontrol& nlsc)
   PArray<MultiFab> pcap_params(nLevs,PArrayNoManage);
 
   if (is_saturated) {
-    upwind_krel = false;
+    if ( (rel_perm_method != "other-arithmetic_average")
+	 || (rel_perm_method != "other-harmonic_average") ) {
+      BoxLib::Abort("rel_perm_method must be either \"other-arithmetic_average\" or \"other-harmonic_average\"");
+    }
   }
 
   for (int lev=0; lev<nLevs; ++lev) {
@@ -190,7 +193,7 @@ RSAMRdata::SetUpMemory(NLScontrol& nlsc)
     utmp.clear();
   }
 
-  if (upwind_krel) {
+  if (rel_perm_method == "upwind-darcy_velocity") {
     KappaCCdir = 0;
     CoeffCC = 0;
 

@@ -1215,7 +1215,7 @@ RichardSolver::CenterToEdgeUpwind(PArray<MFTower>&       mfte,
 	int dir_bc_lo = bc.lo()[d]==EXT_DIR && vccbox.smallEnd()[d]==domain.smallEnd()[d];
 	int dir_bc_hi = bc.hi()[d]==EXT_DIR && vccbox.bigEnd()[d]==domain.bigEnd()[d];
 
-	int upwind_flag = (int)rs_data.upwind_krel;
+	int upwind_flag = (rs_data.rel_perm_method == "upwind-darcy_velocity");
 	FORT_RS_CTE_UPW(efab.dataPtr(), ARLIM(efab.loVect()), ARLIM(efab.hiVect()),
 			cfab.dataPtr(), ARLIM(cfab.loVect()), ARLIM(cfab.hiVect()),
 			sgnfab.dataPtr(),ARLIM(sgnfab.loVect()), ARLIM(sgnfab.hiVect()),
@@ -1405,7 +1405,14 @@ RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
   // Get  -(Grad(p) + rho.g)
   CCtoECgradAdd(darcy_vel,pressure,rhog);
 
-  if (rs_data.upwind_krel) {
+  if ( (rs_data.rel_perm_method == "upwind-darcy_velocity")
+       && (rs_data.rel_perm_method == "other-arithmetic_average")
+       && (rs_data.rel_perm_method == "other-harmonic_average") ) {
+    BoxLib::Abort("Invalid rel_perm_method");
+  }
+
+
+  if (rs_data.rel_perm_method == "upwind-darcy_velocity") {
     rs_data.calcLambda(lambda,rhoSat,t,0,0,1);
 
     // Get edge-centered lambda (= krel/mu) based on the sign of -(Grad(p) + rho.g)
@@ -1448,7 +1455,7 @@ RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
       MultiFab::Multiply(CoeffCC[lev],(*KappaCCdir)[lev],0,0,BL_SPACEDIM,1);
     }
 
-    int do_harmonic = 1;
+    int do_harmonic = (rs_data.rel_perm_method == "other-harmonic_average"); // If not harmonic, then arithmetic
     int nComp = -1; // Note signal to take multiple components of cc to single comp of ec
     MFTower::CCtoECavg(GetRichardCoefs(),CoeffCC,1.0,0,0,nComp,do_harmonic);
     
@@ -1602,7 +1609,8 @@ void RichardSolver::CreateJac(Mat& J,
   rs_data.calcInvPressure (GetRhoSatNp1(),pressure,t,0,0,1);
   rs_data.calcLambda(GetLambda(),GetRhoSatNp1(),t,0,0,1); 
 
-  int do_upwind = (int)rs_data.upwind_krel;
+  int do_upwind = rs_data.rel_perm_method == "upwind-darcy_velocity";
+
   for (int lev=0; lev<nLevs; ++lev) {
     const Box& domain = GeomArray()[lev].Domain();
     const Real* dx = GeomArray()[lev].CellSize();

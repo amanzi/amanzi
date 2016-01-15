@@ -316,7 +316,7 @@ int  PorousMedia::richard_monitor_line_search;
 Real PorousMedia::richard_perturbation_scale_for_J;
 bool PorousMedia::richard_use_fd_jac;
 bool PorousMedia::richard_use_dense_Jacobian;
-bool PorousMedia::richard_upwind_krel;
+std::string PorousMedia::richard_rel_perm_method;
 int  PorousMedia::richard_pressure_maxorder;
 bool PorousMedia::richard_scale_solution_before_solve;
 bool PorousMedia::richard_semi_analytic_J;
@@ -630,7 +630,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::richard_perturbation_scale_for_J = 1.e-8;
   PorousMedia::richard_use_fd_jac = true;
   PorousMedia::richard_use_dense_Jacobian = false;
-  PorousMedia::richard_upwind_krel = true;
+  PorousMedia::richard_rel_perm_method = "upwind-darcy_velocity";
   PorousMedia::richard_pressure_maxorder = 3;
   PorousMedia::richard_scale_solution_before_solve = true;
   PorousMedia::richard_semi_analytic_J = false;
@@ -1188,7 +1188,7 @@ void PorousMedia::read_prob()
   pb.query("richard_perturbation_scale_for_J",richard_perturbation_scale_for_J);
   pb.query("richard_use_fd_jac",richard_use_fd_jac);
   pb.query("richard_use_dense_Jacobian",richard_use_dense_Jacobian);
-  pb.query("richard_upwind_krel",richard_upwind_krel);
+  pb.query("richard_rel_perm_method",richard_rel_perm_method);
   pb.query("richard_pressure_maxorder",richard_pressure_maxorder);
   pb.query("richard_scale_solution_before_solve",richard_scale_solution_before_solve);
   pb.query("richard_semi_analytic_J",richard_semi_analytic_J);
@@ -1214,8 +1214,8 @@ void PorousMedia::read_prob()
       BoxLib::Abort("domain_thickness, if specified, must be > 0");
     }
   }
-  if (pb.countval("atmospheric_pressure_atm")) {
-    pp.get("atmospheric_pressure_atm",atmospheric_pressure_atm);
+  if (pb.countval("richard_atmospheric_pressure")) {
+    pb.get("richard_atmospheric_pressure",atmospheric_pressure_atm);
     atmospheric_pressure_atm *= 1 / BL_ONEATM;
   }
 

@@ -60,7 +60,7 @@ struct RSdata
 
   // Algorithm switches for Richard Solver
   bool semi_analytic_J;                      // Explicitly use dPc/ds relationship in computing the Jacobian
-  bool upwind_krel;                          // Upwind Krel based on sign of Darcy forcing
+  std::string rel_perm_method;               // Upwind Krel based on sign of Darcy forcing, or average (harm/arith)
   Real variable_switch_saturation_threshold; // Newton iterate s if this is less than s, otherwise p
 
   int  pressure_maxorder;                    // Polynomial order of boundary condition extrapolation
