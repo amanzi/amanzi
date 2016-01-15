@@ -132,9 +132,19 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     int argc=0;
     char** argv;
 
-    // FIXME: Make an option for this dump
-    std::ofstream dumpy("pp.dump");
-    pp.dumpTable(dumpy);
+    ParmParse pt("translated_input");
+
+    if (pt.countval("file_name") > 0) {
+      std::string file_name; pt.get("file_name",file_name);
+      std::string format = "structured_native"; pt.get("format",format);
+      if (format != "structured_native") {
+	BoxLib::Abort("Under Structured, \"structured_native\" is the only supported format for writing translated input");
+      }
+      else {
+	std::ofstream dumpy(file_name.c_str());
+	pp.dumpTable(dumpy);
+      }
+    }
 
 #ifdef BL_USE_PETSC
     ParmParse pb("prob");

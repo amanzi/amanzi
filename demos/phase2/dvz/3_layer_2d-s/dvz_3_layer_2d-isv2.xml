@@ -1,4 +1,6 @@
 <amanzi_input version="2.1.1" type="structured">
+  <echo_translated_input file_name="pp.dump" format="native"/>
+
   <model_description name="BC Cribs">
     <comments>Three homogeneous layers in 2D with two cribs discharging Tc-99</comments>
     <model_id>dvz_3_layer_2d</model_id>
@@ -168,7 +170,7 @@
   <mesh>
     <dimension>2</dimension>
     <generate>
-      <number_of_cells nx="216" ny="128"/>
+      <number_of_cells nx="432" ny="256"/>
       <box high_coordinates="216.0,107.52" low_coordinates="0, 0"/>
     </generate>
   </mesh>

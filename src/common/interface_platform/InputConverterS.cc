@@ -547,11 +547,32 @@ void InputConverterS::ParseExecutionControls_()
 {
   list<ParmParse::PP_entry> table;
   bool found;
+  DOMNode* echo_node = GetUniqueElementByTagsString_("echo_translated_input", found);
+  if (found) {
+    DOMElement* echo_elt = static_cast<DOMElement*>(echo_node);
+    string echo_file_name = GetAttributeValueS_(echo_elt, "file_name", TYPE_NONE, true);
+    string echo_file_format = GetAttributeValueS_(echo_elt, "format", TYPE_NONE, false);
+    if (echo_file_format.empty()) {
+      echo_file_format = "native";
+    }
+    if (echo_file_format != "native") {
+      Errors::Message msg;
+      msg << "An error occurred during parsing \"echo_translated_input\"\n";
+      msg << "\"native\" (the default) is currently the only supported value for \"format\"\n";
+      msg << "Please correct and try again.\n" ;
+      Exceptions::amanzi_throw(msg);
+    }
+    else {
+      echo_file_format = "structured_" + echo_file_format;
+    }
+
+    AddToTable(table, MakePPPrefix("translated_input", "file_name"), MakePPEntry(echo_file_name));
+    AddToTable(table, MakePPPrefix("translated_input", "format"), MakePPEntry(echo_file_format));
+  }
 
   DOMNode* controls_block = GetUniqueElementByTagsString_("execution_controls", found);
   if (found)
   {
-    bool found;
     DOMNode* defaults = GetUniqueElementByTagsString_("execution_controls, execution_control_defaults", found);
     if (!found) {
       ThrowErrorMisschild_("execution_controls", "execution_control_defaults");
