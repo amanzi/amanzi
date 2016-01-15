@@ -651,9 +651,7 @@ void InputConverterS::ParseExecutionControls_()
       for (int i=0; i<exec_control.size(); ++i) {
 	ecnames[i] = BoxLib::Concatenate("exec_control_",i,ndigits);
 	for (map<string,string>::const_iterator it=exec_control[i].begin(); it!=exec_control[i].end(); ++it) {
-	  if (it->first != "restart") {
-	    AddToTable(table, MakePPPrefix("exec_control",ecnames[i],it->first), MakePPEntry(it->second));
-	  }
+	  AddToTable(table, MakePPPrefix("exec_control",ecnames[i],it->first), MakePPEntry(it->second));
 	}
       }
       AddToTable(table, MakePPPrefix("exec_controls"), MakePPEntry(ecnames));
@@ -741,7 +739,6 @@ void InputConverterS::ParseNumericalControls_()
 
     // Time step controls.
     map<string,string> ts_controls;
-    ts_controls["max_pseudo_time"]                    = "1.e14";
     ts_controls["min_iterations"]                     = "10";
     ts_controls["max_iterations"]                     = "15";
     ts_controls["limit_iterations"]                   = "20";
@@ -751,11 +748,11 @@ void InputConverterS::ParseNumericalControls_()
     ts_controls["max_consecutive_failures_1"]         = "3";
     ts_controls["time_step_retry_factor_1"]           = "0.2";
     ts_controls["max_consecutive_failures_2"]         = "4";
-    ts_controls["time_step_retry_factor_1"]           = "0.01";
+    ts_controls["time_step_retry_factor_2"]           = "0.01";
     ts_controls["time_step_retry_factor_f"]           = "0.001";
     ts_controls["max_consecutive_success"]            = "0";
     ts_controls["extra_time_step_increase"]           = "10";
-    ts_controls["limit_function_evals"]               = "100000000";
+    ts_controls["limit_function_evals"]               = "1000000";
     ts_controls["do_grid_sequence"]                   = "true";
     ts_controls["grid_sequence_new_level_dt_factor"]  = "1";
 #ifdef CONTROLS_ARE_ATTRIBUTES
@@ -805,7 +802,7 @@ void InputConverterS::ParseNumericalControls_()
     flow_controls["use_fd_jac"]                   = "true";
     flow_controls["perturbation_scale_for_J"]     = "1.e-8";
     flow_controls["use_dense_Jacobian"]           = "false";
-    flow_controls["upwind_krel"]                  = "true";
+    flow_controls["rel_perm_method"]              = "upwind-darcy_velocity";
     flow_controls["pressure_maxorder"]            = "3";
     flow_controls["scale_solution_before_solve"]  = "true";
     flow_controls["semi_analytic_J"]              = "false";

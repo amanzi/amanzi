@@ -1290,11 +1290,6 @@ PorousMedia::richard_init_to_steady()
 
       int  finest_level = parent->finestLevel();
 
-      // FIXME: Remove these variables
-      //Real t_max = steady_max_psuedo_time;
-      //Real dt_init = steady_init_time_step;
-      //Real dt = dt_init;
-
       Real t_max = ec->end;
       Real dt_init = ec->init_dt;
       Real dt = dt_init;
@@ -1472,9 +1467,6 @@ PorousMedia::richard_init_to_steady()
 	      }
 	    }
 	    else {
-	      if (steady_abort_on_psuedo_timestep_failure) {
-		BoxLib::Abort("Aborting as instructed when timestep fails");
-	      }
 	      if (ret == NLSstatus::NLS_CATASTROPHIC_FAIL) {
 		BoxLib::Abort("Aborting ... catastrophic solver failure");
 	      }

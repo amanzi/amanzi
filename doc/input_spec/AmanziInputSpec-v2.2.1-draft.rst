@@ -108,7 +108,7 @@ Definitions allows the user the define and name constants, times, and macros to 
 Constants
 ---------
 
-Here the user can define and name constants to be used in other sections of the input file.  Note that if a name is repeated the last read value will be retained and all others will be overwritten.  See `Named Times`_ for specifying time units other than seconds.
+Here the user can define and name constants to be used in other sections of the input file.  Note that if a name is repeated the last read value will be retained and all others will be overwritten.
 
 .. code-block:: xml
 
@@ -117,7 +117,7 @@ Here the user can define and name constants to be used in other sections of the 
       Optional Elements: constant, time_constant, numerical_constant, area_mass_flux_constant 
   </constants>
 
-A ``constant`` has three attributes ``name``, ``type``, and ``value``.  The user can provide any name, but note it should not be repeated anywhere within the input to avoid confusion.  The available types include: `"none`", `"time`", `"numerical`", and `"area_mass_flux`".  Values assigned to constants of type `"time`" can include known units, otherwise seconds will be assumed as the default. See `Named Times`_ for specifying time units other than seconds.
+A ``constant`` has three attributes ``name``, ``type``, and ``value``.  The user can provide any name, but note it should not be repeated anywhere within the input to avoid confusion.  The available types include: `"none`", `"time`", `"numerical`", and `"area_mass_flux`".  Values assigned to constants of type `"time`" can include known units, otherwise seconds will be assumed as the default.
 
 .. code-block:: xml
 
@@ -240,7 +240,7 @@ The ``execution_controls`` section defines the general execution of the Amanzi s
   
   <execution_controls>
       Required Elements: execution_control_defaults, execution_control (1 or more)
-      Optional Elements: comments, verbosity
+      Optional Elements: comments, verbosity, restart | initialize
   </execution_controls>
 
 The ``execution_controls`` block is required.
@@ -255,6 +255,13 @@ The ``verbosity`` element specifies the level of output messages provided by Ama
   <verbosity level="none | low | medium | high | extreme" />
  
 A level of `"extreme`" is recommended for developers.  For users trying to debug input files or monitor solver performance and convergence `"high`" is recommended.
+
+Restart, Initialize
+-------------------
+
+The ``restart`` and ``initialize`` elements specify the name of an Amanzi checkpoint file used to initialize a run.  Only one of these two may be present.  ``restart`` indicates that the run is to be continued from where it left off.  ``initialize`` indicates that a completely new run is desired, but that the state fields in the named checkpoint file should be used to initialize the state, rather than the initial conditions block in the input.
+
+TODO: DEFINE RESTART VS INITIALIZE HERE
 
 Execution_control_defaults
 --------------------------
@@ -287,10 +294,6 @@ Individual time periods of the simulation are defined using ``execution_control`
 +------------------+----------------+----------------------------------------------------------+
 | Attribute Names  | Attribute Type | Attribute Values                                         |
 +==================+================+==========================================================+
-| restart          | string         | name of restart file (if restarting)                     |
-+------------------+----------------+----------------------------------------------------------+
-| initialize       | string         | name of checkpoint file (if initializing)                |
-+------------------+----------------+----------------------------------------------------------+
 | start            | time           | | time value(,unit) (start time for this time period)    |
 |                  |                | | (*required* for each ``execution_control`` element)    |
 +------------------+----------------+----------------------------------------------------------+
@@ -315,8 +318,6 @@ Individual time periods of the simulation are defined using ``execution_control`
 Each ``execution_control`` element *requires* a start time.  If multiple ``execution_control`` elements are defined ``end`` times are not required for each element.  The ``start`` time of the next execution section is used as the ``end`` of the previous section.  However, at least one ``end`` time *must* defined within the ``execution_controls`` block.
 
 Under the structure algorithm, the attribute ``max_cycles`` is only valid for transient and transient with static flow execution modes.
-
-Both the ``restart`` and ``initialize`` options specify the name of the Amanzi checkpoint file previously created and to be used to start the current simulation.  TODO: DEFINE RESTART VS INITIALIZE HERE
 
 Here is an overall example for the ``execution_control`` element.
 
@@ -709,92 +710,116 @@ The ``structured_controls`` sections specifies numerical control options for the
 
   <unstructured_controls>
       Required Elements: NONE
-      Optional Elements: comments, petsc_options_file, str_steady-state_controls, str_transient_controls, str_amr_controls, max_n_subcycle_transport
+      Optional Elements: comments, str_time_step_controls, str_flow_controls, str_transport_controls, str_amr_controls
   </unstructured_controls>
 
-The element ``petsc_options_file`` specifies the file containing PETSc solver options.  If not file is specified, Amanzi will look for the file `".petsc`".
+The subsections ``str_flow_controls`` and  ``str_transient_controls`` specify options specific to those process kernals.  The ``str_time_step_controls`` specify options for controlling the time step based on performance of the nonlinear solvers.  The subsection ``str_amr_controls`` specify options for AMR, including those for gridding and distribution granularity of data in parallel.
 
-The subsections ``str_steady-state_controls`` and  ``str_transient_controls`` specify options for those operational modes.  The subsection ``str_amr_controls`` specify options for AMR.
+Str_time_step_controls
+______________________
 
-``str_steady-state_controls`` has the following elements
+``str_time_step_controls`` has the following elements
 
 +-----------------------------------+---------------+------------------------------------------+
 | Element Names                     | Content Type  | Content Value                            |
 +===================================+===============+==========================================+
 | comments                          | string        |                                          |
 +-----------------------------------+---------------+------------------------------------------+
-| max_pseudo_time                   | exponential   |                                          |
+| min_iterations                    | integer       |  *default = 10*                          |
 +-----------------------------------+---------------+------------------------------------------+
-| min_iterations                    | integer       |                                          |
+| max_iterations                    | integer       |  *default = 15*                          |
 +-----------------------------------+---------------+------------------------------------------+
-| limit_iterations                  | integer       |                                          |
+| limit_iterations                  | integer       |  *default = 20*                          |
 +-----------------------------------+---------------+------------------------------------------+
-| min_iterations_2                  | integer       |                                          |
+| min_iterations_2                  | integer       |  *default = 2*                           |
 +-----------------------------------+---------------+------------------------------------------+
-| time_step_increase_factor         | exponential   |                                          |
+| time_step_increase_factor         | exponential   |  *default = 1.6*                         |
 +-----------------------------------+---------------+------------------------------------------+
-| time_step_increase_factor_2       | exponential   |                                          |
+| time_step_increase_factor_2       | exponential   |  *default = 10*                          |
 +-----------------------------------+---------------+------------------------------------------+
-| max_consecutive_failures_1        | integer       |                                          |
+| max_consecutive_failures_1        | integer       |  *default = 3*                           |
 +-----------------------------------+---------------+------------------------------------------+
-| time_step_retry_factor_1          | exponential   |                                          |
+| time_step_retry_factor_1          | exponential   |  *default = 0.2*                         |
 +-----------------------------------+---------------+------------------------------------------+
-| max_consecutive_failures_2        | integer       |                                          |
+| max_consecutive_failures_2        | integer       |  *default = 4*                           |
 +-----------------------------------+---------------+------------------------------------------+
-| time_step_retry_factor_2          | exponential   |                                          |
+| time_step_retry_factor_2          | exponential   |  *default = 0.01*                        |
 +-----------------------------------+---------------+------------------------------------------+
-| time_step_retry_factor_f          | exponential   |                                          |
+| time_step_retry_factor_f          | exponential   |  *default = 0.001*                       |
 +-----------------------------------+---------------+------------------------------------------+
-| max_num_consecutive_success       | integer       |                                          |
+| max_num_consecutive_success       | integer       |  *default = 0*                           |
 +-----------------------------------+---------------+------------------------------------------+
-| extra_time_step_increase_factor   | exponential   |                                          |
+| extra_time_step_increase_factor   | exponential   |  *default = 10*                          |
 +-----------------------------------+---------------+------------------------------------------+
-| abort_on_psuedo_timestep_failure  | boolean       | ``true, false``                          |
+| limit_function_evals              | integer       |  *default = 1000000*                     |
 +-----------------------------------+---------------+------------------------------------------+
-| limit_function_evals              | integer       |                                          |
+| do_grid_sequence                  | boolean       | ``true, false`` (*default = true*)       |
 +-----------------------------------+---------------+------------------------------------------+
-| do_grid_sequence                  | boolean       | ``true, false``                          |
-+-----------------------------------+---------------+------------------------------------------+
-| grid_sequence_new_level_dt_factor | element block |                                          |
+| grid_sequence_new_level_dt_factor | element block |  *see below*                             |
 +-----------------------------------+---------------+------------------------------------------+
 
 The element ``grid_sequence_new_level_dt_factor`` is an element block listing a series of dt_factors, one for each level.
 
-``str_transient_controls`` has the following elements
+Str_flow_controls
+_________________
+
+``str_flow_controls`` has the following elements
 
 +-----------------------------------+---------------+------------------------------------------+
 | Element Names                     | Content Type  | Content Value                            |
 +===================================+===============+==========================================+
 | comments                          | string        |                                          |
 +-----------------------------------+---------------+------------------------------------------+
-| max_ls_iterations                 | integer       |                                          |
+| petsc_options_file                | string        | *default = .petsc*                       |
 +-----------------------------------+---------------+------------------------------------------+
-| ls_reduction_factor               | exponential   |                                          |
+| max_ls_iterations                 | integer       | *default = 10*                           |
 +-----------------------------------+---------------+------------------------------------------+
-| min_ls_factor                     | exponential   |                                          |
+| ls_reduction_factor               | exponential   | *default = 0.1*                          |
 +-----------------------------------+---------------+------------------------------------------+
-| ls_acceptance_factor              | exponential   |                                          |
+| min_ls_factor                     | exponential   | *default = 1.e-8*                        |
 +-----------------------------------+---------------+------------------------------------------+
-| monitor_line_search               | integer       |                                          |
+| ls_acceptance_factor              | exponential   | *default = 1.4*                          |
 +-----------------------------------+---------------+------------------------------------------+
-| monitor_linear_solve              | integer       |                                          |
+| monitor_line_search               | integer       | *default = 0*                            |
 +-----------------------------------+---------------+------------------------------------------+
-| use_fd_jac                        | boolean       | ``true, false``                          |
+| monitor_linear_solve              | integer       | *default = 0*                            |
 +-----------------------------------+---------------+------------------------------------------+
-| perturbation_scale_for_J          | exponential   |                                          |
+| use_fd_jac                        | boolean       | ``true, false`` (*default = true*)       |
 +-----------------------------------+---------------+------------------------------------------+
-| use_dense_Jacobian                | boolean       | ``true, false``                          |
+| perturbation_scale_for_J          | exponential   | *default = 1.e-8*                        |
 +-----------------------------------+---------------+------------------------------------------+
-| upwind_krel                       | boolean       | ``true, false``                          |
+| use_dense_Jacobian                | boolean       | ``true, false`` (*default = false*)      |
 +-----------------------------------+---------------+------------------------------------------+
-| pressure_maxorder                 | integer       |                                          |
+| upwind_krel                       | string        | | ``upwind-darcy_velocity``,             |
+|                                   |               | | ``other-arithmetic_average``,          |
+|                                   |               | | ``other-harmonic_average``             |
 +-----------------------------------+---------------+------------------------------------------+
-| scale_solution_before_solve       | boolean       | ``true, false``                          |
+| pressure_maxorder                 | integer       | *default = 3*                            |
 +-----------------------------------+---------------+------------------------------------------+
-| semi_analytic_J                   | boolean       | ``true, false``                          |
+| scale_solution_before_solve       | boolean       | ``true, false`` (*default = true*)       |
 +-----------------------------------+---------------+------------------------------------------+
-| cfl                               | exponential   |                                          |
+| semi_analytic_J                   | boolean       | ``true, false`` (*default = false*)      |
 +-----------------------------------+---------------+------------------------------------------+
+| atmospheric_pressure              | exponential   | *default = 1011325 (Pa)*                 |
++-----------------------------------+---------------+------------------------------------------+
+
+Str_transport_controls
+______________________
+
+``str_transport_controls`` has the following elements
+
++-----------------------------------+---------------+------------------------------------------+
+| Element Names                     | Content Type  | Content Value                            |
++===================================+===============+==========================================+
+| comments                          | string        |                                          |
++-----------------------------------+---------------+------------------------------------------+
+| max_n_subcycle_transport          | integer       | *default = 20*                           |
++-----------------------------------+---------------+------------------------------------------+
+| cfl                               | exponential   | *default = 1*                            |
++-----------------------------------+---------------+------------------------------------------+
+
+Str_amr_controls
+________________
 
 ``str_amr_controls`` has the following elements
 
@@ -803,21 +828,21 @@ The element ``grid_sequence_new_level_dt_factor`` is an element block listing a 
 +===================================+==================+===============================================+
 | comments                          | string           |                                               |
 +-----------------------------------+------------------+-----------------------------------------------+
-| amr_levels                        | integer          | number of AMR levels                          |
+| amr_levels                        | integer          | *default = 1*                                 |
 +-----------------------------------+------------------+-----------------------------------------------+
-| refinement_ratio                  | list of integers | ratios between each AMR level                 |
+| refinement_ratio                  | list of integers | *default = 2*                                 |
 +-----------------------------------+------------------+-----------------------------------------------+
-| do_amr_cubcycling                 | boolean          | ``true, false``                               |
+| do_amr_subcycling                 | boolean          | ``true, false`` *(default = true)*            |
 +-----------------------------------+------------------+-----------------------------------------------+
-| regrid_interval                   | list of integers | interval to regrid for each AMR level         |
+| regrid_interval                   | list of integers | *default = 2*                                 |
 +-----------------------------------+------------------+-----------------------------------------------+
-| blocking_factor                   | list of integers | blocking factor for each AMR level            |
+| blocking_factor                   | list of integers | *default = 2*                                 |
 +-----------------------------------+------------------+-----------------------------------------------+
-| number_error_buffer_cells         | list of integers | number of cells to use between each AMR level |
+| number_error_buffer_cells         | list of integers | *default = 1*                                 |
 +-----------------------------------+------------------+-----------------------------------------------+
-| max_grid_size                     | list of integers | max grid size for each AMR level              |
+| max_grid_size                     | list of integers | *default = 64*                                |
 +-----------------------------------+------------------+-----------------------------------------------+
-| refinement_indicator              | element block    |                                               |
+| refinement_indicator              | element block    | *(see below)*                                 |
 +-----------------------------------+------------------+-----------------------------------------------+
 
 

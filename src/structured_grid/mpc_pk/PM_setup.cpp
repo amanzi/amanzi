@@ -289,15 +289,12 @@ Real PorousMedia::steady_time_step_retry_factor_2;
 Real PorousMedia::steady_time_step_retry_factor_f;
 int  PorousMedia::steady_max_consecutive_failures_1;
 int  PorousMedia::steady_max_consecutive_failures_2;
-Real PorousMedia::steady_init_time_step;
 int  PorousMedia::steady_max_time_steps;
 Real PorousMedia::steady_max_time_step_size;
-Real PorousMedia::steady_max_psuedo_time;
 int  PorousMedia::steady_max_num_consecutive_success;
 Real PorousMedia::steady_extra_time_step_increase_factor;
 int  PorousMedia::steady_max_num_consecutive_increases;
 Real PorousMedia::steady_consecutive_increase_reduction_factor;
-bool PorousMedia::steady_abort_on_psuedo_timestep_failure;
 int  PorousMedia::steady_limit_function_evals;
 Real PorousMedia::steady_abs_tolerance;
 Real PorousMedia::steady_rel_tolerance;
@@ -603,15 +600,12 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::steady_time_step_retry_factor_f = 0.001;
   PorousMedia::steady_max_consecutive_failures_1 = 3;
   PorousMedia::steady_max_consecutive_failures_2 = 4;
-  PorousMedia::steady_init_time_step = 1.e10;
   PorousMedia::steady_max_time_steps = 8000;
   PorousMedia::steady_max_time_step_size = 1.e20;
-  PorousMedia::steady_max_psuedo_time = 1.e14;
   PorousMedia::steady_max_num_consecutive_success = 0;
   PorousMedia::steady_extra_time_step_increase_factor = 10.;
   PorousMedia::steady_max_num_consecutive_increases = 3;
   PorousMedia::steady_consecutive_increase_reduction_factor = 0.4;
-  PorousMedia::steady_abort_on_psuedo_timestep_failure = false;
   PorousMedia::steady_limit_function_evals = 1e8;
   PorousMedia::steady_abs_tolerance = 1.e-10;
   PorousMedia::steady_rel_tolerance = 1.e-20;
@@ -1159,15 +1153,12 @@ void PorousMedia::read_prob()
   pb.query("steady_time_step_retry_factor_f",steady_time_step_retry_factor_f);
   pb.query("steady_max_consecutive_failures_1",steady_max_consecutive_failures_1);
   pb.query("steady_max_consecutive_failures_2",steady_max_consecutive_failures_2);
-  pb.query("steady_init_time_step",steady_init_time_step);
   pb.query("steady_max_time_steps",steady_max_time_steps);
   pb.query("steady_max_time_step_size",steady_max_time_step_size);
-  pb.query("steady_max_psuedo_time",steady_max_psuedo_time);
   pb.query("steady_max_num_consecutive_success",steady_max_num_consecutive_success);
   pb.query("steady_extra_time_step_increase_factor",steady_extra_time_step_increase_factor);
   pb.query("steady_max_num_consecutive_increases",steady_max_num_consecutive_increases);
   pb.query("steady_consecutive_increase_reduction_factor",steady_consecutive_increase_reduction_factor);
-  pb.query("steady_abort_on_psuedo_timestep_failure",steady_abort_on_psuedo_timestep_failure);
   pb.query("steady_limit_function_evals",steady_limit_function_evals);
   pb.query("steady_abs_tolerance",steady_abs_tolerance);
   pb.query("steady_rel_tolerance",steady_rel_tolerance);
@@ -1194,7 +1185,6 @@ void PorousMedia::read_prob()
   pb.query("richard_semi_analytic_J",richard_semi_analytic_J);
   pb.query("richard_centered_diff_J",richard_centered_diff_J);
   pb.query("richard_variable_switch_saturation_threshold",richard_variable_switch_saturation_threshold);
-  richard_dt_thresh_pure_steady = 0.99*steady_init_time_step;
   pb.query("richard_dt_thresh_pure_steady",richard_dt_thresh_pure_steady);
 
   // Gravity are specified as m/s^2 in the input file

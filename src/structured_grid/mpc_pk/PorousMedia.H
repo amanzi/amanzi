@@ -1138,15 +1138,12 @@ protected:
   static Real steady_time_step_retry_factor_f;
   static int  steady_max_consecutive_failures_1;
   static int  steady_max_consecutive_failures_2;
-  static Real steady_init_time_step;
   static int  steady_max_time_steps;
   static Real steady_max_time_step_size;
   static int  steady_max_num_consecutive_success;
   static Real steady_extra_time_step_increase_factor;
   static int  steady_max_num_consecutive_increases;
   static Real steady_consecutive_increase_reduction_factor;
-  static Real steady_max_psuedo_time;
-  static bool steady_abort_on_psuedo_timestep_failure;
   static int  steady_limit_function_evals;
   static Real steady_abs_tolerance;
   static Real steady_rel_tolerance;
