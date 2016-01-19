@@ -274,13 +274,14 @@ std::string InputConverterS::CreateBGDFile(std::string& filename)
 }
 
 // Helper for parsing a mechanical property.
-void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node, 
+bool InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node, 
                                          const string& material_name, 
                                          const string& property_name,
                                          list<ParmParse::PP_entry>& table,
                                          bool required)
 {
   bool found;
+  bool non_zero_diffusion = false;
   DOMElement* property = GetChildByName_(mech_prop_node, property_name, found, required);
   if (found)
   {
@@ -295,6 +296,9 @@ void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
                    MakePPEntry(alpha_l));
         AddToTable(table, MakePPPrefix("rock", material_name, property_name, "alpha_t"),
                    MakePPEntry(alpha_t));
+
+	non_zero_diffusion = (atof(alpha_l.c_str())!=0)
+	  || (atof(alpha_t.c_str())!=0);
       }
       else if (type == "burnett_frind")
       {
@@ -307,6 +311,9 @@ void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
                    MakePPEntry(alpha_th));
         AddToTable(table, MakePPPrefix("rock", material_name, property_name, "alpha_tv"),
                    MakePPEntry(alpha_tv));
+	non_zero_diffusion = (atof(alpha_l.c_str())!=0)
+	  || (atof(alpha_th.c_str())!=0)
+	  || (atof(alpha_tv.c_str()));
       }
       else if (type == "lichtner_kelkar_robinson")
       {
@@ -322,6 +329,10 @@ void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
                    MakePPEntry(alpha_th));
         AddToTable(table, MakePPPrefix("rock", material_name, property_name, "alpha_tv"),
                    MakePPEntry(alpha_tv));
+	non_zero_diffusion = (atof(alpha_lh.c_str())!=0)
+	  || (atof(alpha_lv.c_str())!=0)
+	  || (atof(alpha_th.c_str())!=0)
+	  || (atof(alpha_tv.c_str()));
       }
       else if (type == "file")
       {
@@ -376,6 +387,7 @@ void InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node,
       }
     }
   }
+  return non_zero_diffusion;
 }
 
 InputConverterS::InputConverterS(const string& input_filename):
@@ -706,7 +718,7 @@ void InputConverterS::ParseExecutionControls_()
   ParmParse::appendTable(table);
 }
 
-void InputConverterS::ParseNumericalControls_()
+void InputConverterS::ParseNumericalControls_(const string& flow_model)
 {
   list<ParmParse::PP_entry> table;
   bool found;
@@ -802,11 +814,21 @@ void InputConverterS::ParseNumericalControls_()
     flow_controls["use_fd_jac"]                   = "true";
     flow_controls["perturbation_scale_for_J"]     = "1.e-8";
     flow_controls["use_dense_Jacobian"]           = "false";
-    flow_controls["rel_perm_method"]              = "upwind-darcy_velocity";
     flow_controls["pressure_maxorder"]            = "3";
     flow_controls["scale_solution_before_solve"]  = "true";
     flow_controls["semi_analytic_J"]              = "false";
     flow_controls["atmospheric_pressure"]         = "101325";
+    flow_controls["gravity"]                      = "9.807";
+    flow_controls["gravity_dir"]                  = (dim_ == 2 ? "1" : "2");
+    flow_controls["domain_thickness"]             = "1";
+
+    if (flow_model == "saturated") {
+      flow_controls["rel_perm_method"]            = "other-harmonic_average";
+    }
+    else {
+      flow_controls["rel_perm_method"]            = "upwind-darcy_velocity";
+    }
+
 #ifdef CONTROLS_ARE_ATTRIBUTES
     vector<DOMNode*> flc = GetChildren_(structured_controls, "str_flow_controls", found);
     if (found) {
@@ -838,7 +860,16 @@ void InputConverterS::ParseNumericalControls_()
 
     if (flow_controls.size() > 0) {
       for (map<string,string>::const_iterator it=flow_controls.begin(); it!=flow_controls.end(); ++it) {
-	string s_parameter_name = (it->first=="petsc_options_file" ? "" : "richard_") + it->first;
+	string s_parameter_name;
+	if ( (it->first=="petsc_options_file")
+	     || (it->first=="gravity")
+	     || (it->first=="gravity_dir")
+	     || (it->first=="domain_thickness") )
+	{
+	  s_parameter_name = it->first;
+	} else {
+	  s_parameter_name = "richard_" + it->first;
+	}
 	AddToTable(table,MakePPPrefix("prob", (s_parameter_name).c_str() ), MakePPEntry(it->second));
       }
     }
@@ -1422,7 +1453,7 @@ void InputConverterS::ParseGeochemistry_()
   ParmParse::appendTable(table);
 }
 
-void InputConverterS::ParseMaterials_()
+void InputConverterS::ParseMaterials_(bool& do_tracer_diffusion)
 {
   list<ParmParse::PP_entry> table;
   bool found;
@@ -1448,7 +1479,9 @@ void InputConverterS::ParseMaterials_()
         ParseMechProperty_(mech_prop, mat_name, "particle_density", table, false); // FIXME: Should be true for required!
         ParseMechProperty_(mech_prop, mat_name, "specific_storage", table, false); 
         ParseMechProperty_(mech_prop, mat_name, "specific_yield", table, false); 
-        ParseMechProperty_(mech_prop, mat_name, "dispersion_tensor", table, false);
+        if (ParseMechProperty_(mech_prop, mat_name, "dispersion_tensor", table, false)) {
+	  do_tracer_diffusion = true;
+	}
         ParseMechProperty_(mech_prop, mat_name, "tortuosity", table, false); 
       }
 
@@ -1695,7 +1728,7 @@ void InputConverterS::ParseMaterials_()
   ParmParse::appendTable(table);
 }
 
-void InputConverterS::ParseProcessKernels_()
+  void InputConverterS::ParseProcessKernels_(string& flow_model, bool& do_tracer_diffusion)
 {
   list<ParmParse::PP_entry> table;
   bool found;
@@ -1714,9 +1747,10 @@ void InputConverterS::ParseProcessKernels_()
   // Flow model.
   string flow_state = GetAttributeValueS_(flow, "state");
   AddToTable(table, MakePPPrefix("prob", "flow_state"), MakePPEntry(flow_state));
+  flow_model = "unused";
   if (flow_state == "on")
   {
-    string flow_model = GetAttributeValueS_(flow, "model");
+    flow_model = GetAttributeValueS_(flow, "model");
     AddToTable(table, MakePPPrefix("prob", "flow_model"), MakePPEntry(flow_model));
   }
 
@@ -1724,10 +1758,7 @@ void InputConverterS::ParseProcessKernels_()
   string transport_state = GetAttributeValueS_(transport, "state");
   AddToTable(table, MakePPPrefix("prob", "do_tracer_advection"), MakePPEntry((transport_state == "on")));
 
-  // FIXME: This is a hack for now. We need to inspect the dispersivity tensor
-  // FIXME: to determine whether to do tracer diffusion, but for now we assume
-  // FIXME: that diffusion settings use advection settings.
-  AddToTable(table, MakePPPrefix("prob", "do_tracer_diffusion"), MakePPEntry((transport_state == "on")));
+  AddToTable(table, MakePPPrefix("prob", "do_tracer_diffusion"), MakePPEntry(do_tracer_diffusion));
   // FIXME: What else here?
 
   // Chemistry model.
@@ -1761,7 +1792,7 @@ void InputConverterS::ParseProcessKernels_()
   ParmParse::appendTable(table);
 }
 
-void InputConverterS::ParsePhases_()
+void InputConverterS::ParsePhases_(bool& do_tracer_diffusion)
 {
   list<ParmParse::PP_entry> table;
 
@@ -1801,7 +1832,12 @@ void InputConverterS::ParsePhases_()
         // Record the coefficient of diffusion.
         DOMElement* solute = static_cast<DOMElement*>(sols[i]);
         string diff_coeff = GetAttributeValueS_(solute, "coefficient_of_diffusion");
-        AddToTable(table, MakePPPrefix("tracer", sol_name, "molecularDiffusivity"), MakePPEntry(diff_coeff));
+	if (diff_coeff != "") {
+	  AddToTable(table, MakePPPrefix("tracer", sol_name, "molecularDiffusivity"), MakePPEntry(diff_coeff));
+	  if (atof(diff_coeff.c_str()) != 0) {
+	    do_tracer_diffusion = true;
+	  }
+	}
       }
     }
     // Assume we have a single component with the same 
@@ -2333,15 +2369,17 @@ void InputConverterS::Translate(int rank)
   ParseUnits_();
   ParseDefinitions_();
   ParseExecutionControls_();
-  ParseNumericalControls_();
   ParseMesh_();
   ParseRegions_();
-  ParseProcessKernels_();
   ParseGeochemistry_();
-  ParseMaterials_();
-  ParsePhases_();
+  bool do_tracer_diffusion = false;
+  ParseMaterials_(do_tracer_diffusion);
+  ParsePhases_(do_tracer_diffusion);
+  string flow_model;
+  ParseProcessKernels_(flow_model,do_tracer_diffusion);
   ParseInitialConditions_();
   ParseBoundaryConditions_();
+  ParseNumericalControls_(flow_model);
   ParseOutput_();
   ParseMisc_();
 }

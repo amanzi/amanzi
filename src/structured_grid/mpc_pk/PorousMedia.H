@@ -427,7 +427,7 @@ public:
   void reinstate_component_saturations();
   void get_fillpatched_rhosat(Real t_eval, MultiFab& RhoSat, int nGrow);
 
-  Real richard_init_to_steady();
+  Real solve_for_initial_flow_field();
 
   bool advance_chemistry (Real time,
 			  Real dt,
@@ -747,6 +747,7 @@ public:
   {
     PM_FLOW_EVAL_INVALID,
     PM_FLOW_EVAL_CONSTANT,
+    PM_FLOW_EVAL_COMPUTE,
     PM_FLOW_EVAL_SOLVE,
     PM_FLOW_EVAL_OFF
   };
@@ -1125,7 +1126,6 @@ protected:
   //
   // Init-to-steady parameters
   //
-  static bool do_richard_init_to_steady;
   static int  steady_min_iterations;
   static int  steady_min_iterations_2;
   static int  steady_max_iterations;

@@ -128,7 +128,7 @@ RSAMRdata::SetUpMemory(NLScontrol& nlsc)
 
   if (is_saturated) {
     if ( (rel_perm_method != "other-arithmetic_average")
-	 || (rel_perm_method != "other-harmonic_average") ) {
+	 && (rel_perm_method != "other-harmonic_average") ) {
       BoxLib::Abort("rel_perm_method must be either \"other-arithmetic_average\" or \"other-harmonic_average\"");
     }
   }

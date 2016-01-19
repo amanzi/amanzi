@@ -276,7 +276,6 @@ bool PorousMedia::do_output_transport_time_in_years;
 //
 // Init to steady
 //
-bool PorousMedia::do_richard_init_to_steady;
 int  PorousMedia::steady_min_iterations;
 int  PorousMedia::steady_min_iterations_2;
 int  PorousMedia::steady_max_iterations;
@@ -581,13 +580,12 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::max_dt_iters_flow = 20;
   PorousMedia::abort_on_chem_fail = true;
   PorousMedia::show_selected_runtimes = false;
-  PorousMedia::be_cn_theta_trac = 0.5;
+  PorousMedia::be_cn_theta_trac = 1.0;
   //PorousMedia::do_output_flow_time_in_years = true;
   PorousMedia::do_output_flow_time_in_years = false;
   PorousMedia::do_output_chemistry_time_in_years = false;
   PorousMedia::do_output_transport_time_in_years = false;
 
-  PorousMedia::do_richard_init_to_steady = false;
   PorousMedia::steady_min_iterations = 10;
   PorousMedia::steady_min_iterations_2 = 2;
   PorousMedia::steady_max_iterations = 15;
@@ -1139,7 +1137,6 @@ void PorousMedia::read_prob()
   pb.query("show_selected_runtimes",show_selected_runtimes);
   pb.query("abort_on_chem_fail",abort_on_chem_fail);
 
-  pb.query("do_richard_init_to_steady",do_richard_init_to_steady);
   pb.query("steady_record_file",steady_record_file);
   pb.query("steady_min_iterations",steady_min_iterations);
   pb.query("steady_min_iterations_2",steady_min_iterations_2);
@@ -1179,6 +1176,9 @@ void PorousMedia::read_prob()
   pb.query("richard_perturbation_scale_for_J",richard_perturbation_scale_for_J);
   pb.query("richard_use_fd_jac",richard_use_fd_jac);
   pb.query("richard_use_dense_Jacobian",richard_use_dense_Jacobian);
+  if (flow_model == PM_FLOW_MODEL_SATURATED) {
+    richard_rel_perm_method = "other-harmonic_average";
+  }
   pb.query("richard_rel_perm_method",richard_rel_perm_method);
   pb.query("richard_pressure_maxorder",richard_pressure_maxorder);
   pb.query("richard_scale_solution_before_solve",richard_scale_solution_before_solve);

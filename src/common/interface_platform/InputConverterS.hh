@@ -42,19 +42,19 @@ class InputConverterS : public InputConverter {
   void ParseUnits_();
   void ParseDefinitions_();
   void ParseExecutionControls_();
-  void ParseNumericalControls_();
+  void ParseNumericalControls_(const std::string& flow_model);
   void ParseMesh_();
   void ParseRegions_();
   void ParseGeochemistry_();
-  void ParseMaterials_();
-  void ParseProcessKernels_();
-  void ParsePhases_();
+  void ParseMaterials_(bool& do_tracer_diffusion);
+  void ParseProcessKernels_(std::string& flow_model, bool& do_tracer_diffusion);
+  void ParsePhases_(bool& do_tracer_diffusion);
   void ParseInitialConditions_();
   void ParseBoundaryConditions_();
   void ParseOutput_();
   void ParseMisc_();
 
-  void ParseMechProperty_(xercesc::DOMElement* mech_prop_node, 
+  bool ParseMechProperty_(xercesc::DOMElement* mech_prop_node, 
                           const std::string& material_name, 
                           const std::string& property_name,
                           std::list<ParmParse::PP_entry>& table,
