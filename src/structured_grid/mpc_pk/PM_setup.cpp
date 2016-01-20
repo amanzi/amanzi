@@ -244,6 +244,7 @@ std::map<std::string, int> PorousMedia::tracer_list;
 Array<std::string> PorousMedia::user_derive_list;
 PorousMedia::FLOW_MODEL_ID PorousMedia::flow_model;
 PorousMedia::FLOW_EVAL_ID PorousMedia::flow_eval;
+bool PorousMedia::flow_is_static;
 //
 // AMANZI flags.
 //
@@ -500,11 +501,12 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::num_state_type = -1;
   PorousMedia::do_source_term = false;
 
-  PorousMedia::flow_model   = PorousMedia::PM_FLOW_MODEL_INVALID;
-  PorousMedia::flow_eval    = PorousMedia::PM_FLOW_EVAL_INVALID;
-  PorousMedia::nphases      = 0;
-  PorousMedia::ncomps       = 0; 
-  PorousMedia::ndiff        = 0;
+  PorousMedia::flow_model     = PorousMedia::PM_FLOW_MODEL_INVALID;
+  PorousMedia::flow_eval      = PorousMedia::PM_FLOW_EVAL_INVALID;
+  PorousMedia::flow_is_static = true;
+  PorousMedia::nphases        = 0;
+  PorousMedia::ncomps         = 0; 
+  PorousMedia::ndiff          = 0;
 
   PorousMedia::ntracers = 0; 
   PorousMedia::uninitialized_data = 1.0e30;
@@ -1081,21 +1083,28 @@ void PorousMedia::read_prob()
     pb.get("flow_model",flow_model_str);
     if (flow_model_str == "richards") {
       flow_model = PM_FLOW_MODEL_RICHARDS;
-      flow_eval  = PM_FLOW_EVAL_SOLVE;
+      flow_eval  = PM_FLOW_EVAL_EVOLVE;
+      flow_is_static = false;
     } else if (flow_model_str == "saturated") {
       flow_model = PM_FLOW_MODEL_SATURATED;
-      flow_eval  = PM_FLOW_EVAL_SOLVE;
+      flow_eval  = PM_FLOW_EVAL_EVOLVE;
+      flow_is_static = false;
     } else if (flow_model_str == "constant") {
       flow_model = PM_FLOW_MODEL_SATURATED;
-      flow_eval  = PM_FLOW_EVAL_CONSTANT;
+
+      // FIXME: How to decide here?  overwrite later when we get proper info
+      flow_eval  = PM_FLOW_EVAL_SOLVE_GIVEN_PBC;
+      flow_is_static = true;
     } else {
       flow_model = PM_FLOW_MODEL_INVALID;
       flow_eval  = PM_FLOW_EVAL_INVALID;
+      flow_is_static = true;
     }
   }
   else {
     flow_model = PM_FLOW_MODEL_OFF; // FIXME: Richards or saturated??
     flow_eval  = PM_FLOW_EVAL_CONSTANT;
+    flow_is_static = true;
   }
 
   if (flow_model==PM_FLOW_MODEL_SATURATED || flow_model==PM_FLOW_MODEL_OFF) {
@@ -1275,31 +1284,31 @@ void  PorousMedia::read_comp()
   // Build flattened list of components
   ndiff = 0;
   for (int i = 0; i<nphases; i++) {
-      const std::string prefix("phase." + pNames[i]);
-      ParmParse ppr(prefix.c_str());
-      int p_nc = ppr.countval("comps");
-      BL_ASSERT(p_nc==1); // An assumption all over the place...
-      ncomps += p_nc;
-      Array<std::string> p_cNames; ppr.getarr("comps",p_cNames,0,p_nc);
-      for (int j=0; j<p_cNames.size(); ++j) {
-          cNames.push_back(p_cNames[j]);
-      }
-      Real p_rho; ppr.get("density",p_rho); density.push_back(p_rho);
-      // viscosity in units of kg/(m.s)
-      Real p_visc; ppr.get("viscosity",p_visc); muval.push_back(p_visc);
-      Real p_diff; ppr.get("diffusivity",p_diff); visc_coef.push_back(p_diff);
+    const std::string prefix("phase." + pNames[i]);
+    ParmParse ppr(prefix.c_str());
+    int p_nc = ppr.countval("comps");
+    BL_ASSERT(p_nc==1); // An assumption all over the place...
+    ncomps += p_nc;
+    Array<std::string> p_cNames; ppr.getarr("comps",p_cNames,0,p_nc);
+    for (int j=0; j<p_cNames.size(); ++j) {
+      cNames.push_back(p_cNames[j]);
+    }
+    Real p_rho; ppr.get("density",p_rho); density.push_back(p_rho);
+    // viscosity in units of kg/(m.s)
+    Real p_visc; ppr.get("viscosity",p_visc); muval.push_back(p_visc);
+    Real p_diff; ppr.get("diffusivity",p_diff); visc_coef.push_back(p_diff);
 
-      // Tracer diffusion handled during tracer read
-      if (visc_coef.back() > 0)
-      {
-	  is_diffusive[visc_coef.size()-1] = 1;
-      }
-      else {
-          variable_scal_diff = false;
-      }
-      ++ndiff;
+    // Tracer diffusion handled during tracer read
+    if (visc_coef.back() > 0)
+    {
+      is_diffusive[visc_coef.size()-1] = 1;
+    }
+    else {
+      variable_scal_diff = false;
+    }
+    ++ndiff;
 
-      pType.push_back(phase_list[pNames[i]]);
+    pType.push_back(phase_list[pNames[i]]);
   }
 
   ParmParse cp("comp");
@@ -1312,147 +1321,156 @@ void  PorousMedia::read_comp()
   int n_ics = cp.countval("ic_labels");
   if (n_ics > 0)
   {
-      Array<std::string> ic_names;
-      cp.getarr("ic_labels",ic_names,0,n_ics);
-      ic_array.resize(n_ics,PArrayManage);
-      do_constant_vel = false;
-      if (region_manager == 0) {
-        BoxLib::Abort("static Region manager must be set up prior to reading tracer ICs");
-      }
-      for (int i = 0; i<n_ics; i++)
-      {
-          const std::string& icname = ic_names[i];
-	  const std::string prefix("comp.ics." + icname);
-	  ParmParse ppr(prefix.c_str());
+    Array<std::string> ic_names;
+    cp.getarr("ic_labels",ic_names,0,n_ics);
+    ic_array.resize(n_ics,PArrayManage);
+    do_constant_vel = false;
+    if (region_manager == 0) {
+      BoxLib::Abort("static Region manager must be set up prior to reading tracer ICs");
+    }
+    for (int i = 0; i<n_ics; i++)
+    {
+      const std::string& icname = ic_names[i];
+      const std::string prefix("comp.ics." + icname);
+      ParmParse ppr(prefix.c_str());
           
-	  int n_ic_regions = ppr.countval("regions");
-          Array<std::string> region_names;
-	  ppr.getarr("regions",region_names,0,n_ic_regions);
-	  Array<const Region*> ic_regions = region_manager->RegionPtrArray(region_names);
+      int n_ic_regions = ppr.countval("regions");
+      Array<std::string> region_names;
+      ppr.getarr("regions",region_names,0,n_ic_regions);
+      Array<const Region*> ic_regions = region_manager->RegionPtrArray(region_names);
 
-          std::string ic_type; ppr.get("type",ic_type);
-	  BL_ASSERT(!do_constant_vel); // If this is ever set, it must be the only IC so we should never see this true here
-          if (ic_type == "uniform_pressure")
-          {
-              int nPhase = pNames.size();
-              Array<Real> vals(nPhase);
+      std::string ic_type; ppr.get("type",ic_type);
+      BL_ASSERT(!do_constant_vel); // If this is ever set, it must be the only IC so we should never see this true here
+      if (ic_type == "uniform_pressure")
+      {
+	int nPhase = pNames.size();
+	Array<Real> vals(nPhase);
               
-              int num_phases_reqd = nPhase;
-              std::map<std::string,bool> phases_set;
-              for (int j = 0; j<pNames.size(); j++)
-              {
-                  std::string val_name = "val";
-                  ppr.get(val_name.c_str(),vals[0]);
-                  phases_set[pNames[j]] = true;
-              }
-	      
-	      // convert to atm
-	      for (int j=0; j<vals.size(); ++j) {
-                vals[j] = vals[j] / BL_ONEATM;
-	      }
-      
-              int num_phases = phases_set.size();
-              if (num_phases != num_phases_reqd) {
-                  std::cerr << icname << ": Insufficient number of phases specified" << std::endl;
-                  std::cerr << " ngiven, nreqd: " << num_phases << ", " << num_phases_reqd << std::endl;
-                  std::cerr << " current flow_model: " << flow_model << std::endl;
-                  BoxLib::Abort();
-              }
-              
-              Array<Real> times(1,0);
-              Array<std::string> forms(0);
-              ic_array.set(i, new ArrayRegionData(icname,times,vals,forms,ic_regions,ic_type,1));
-          }
-          else if (ic_type == "linear_pressure")
-          {
-              int nPhase = pNames.size();
-              if (nPhase!=1) {
-                std::cerr << "Multiphase not currently surrported" << std::endl;
-                BoxLib::Abort();
-              }
+	int num_phases_reqd = nPhase;
+	std::map<std::string,bool> phases_set;
+	for (int j = 0; j<pNames.size(); j++)
+	{
+	  std::string val_name = "val";
+	  ppr.get(val_name.c_str(),vals[0]);
+	  phases_set[pNames[j]] = true;
+	}
 
-              Real press_val;
-              std::string val_name = "val";
-              ppr.get(val_name.c_str(),press_val);
-              press_val = press_val / BL_ONEATM;
+	// convert to atm
+	for (int j=0; j<vals.size(); ++j) {
+	  vals[j] = vals[j] / BL_ONEATM;
+	}
 
-              int ngrad = ppr.countval("grad");
-              if (ngrad<BL_SPACEDIM) {
-                std::cerr << "Insufficient number of components given for pressure gradient" << std::endl;
-                BoxLib::Abort();
-              }
-              Array<Real> pgrad(BL_SPACEDIM);
-              ppr.getarr("grad",pgrad,0,ngrad);
-	      for (int j=0; j<pgrad.size(); ++j) {
-                pgrad[j] = pgrad[j] / BL_ONEATM;
-	      }
+	int num_phases = phases_set.size();
+	if (num_phases != num_phases_reqd) {
+	  std::cerr << icname << ": Insufficient number of phases specified" << std::endl;
+	  std::cerr << " ngiven, nreqd: " << num_phases << ", " << num_phases_reqd << std::endl;
+	  std::cerr << " current flow_model: " << flow_model << std::endl;
+	  BoxLib::Abort();
+	}
 
-              int nref = ppr.countval("loc");
-              if (nref<BL_SPACEDIM) {
-		if (ParallelDescriptor::IOProcessor()) {
-		  std::cerr << "Insufficient number of components given for pressure reference location" << std::endl;
-		}
-                BoxLib::Abort();
-              }
-              Array<Real> pref(BL_SPACEDIM);
-              ppr.getarr("loc",pref,0,nref);
-
-              int ntmp = 2*BL_SPACEDIM+1;
-              Array<Real> tmp(ntmp);
-              tmp[0] = press_val;
-              for (int j=0; j<BL_SPACEDIM; ++j) {
-                tmp[1+j] = pgrad[j];
-                tmp[1+j+BL_SPACEDIM] = pref[j];
-              }
-              ic_array.set(i, new RegionData(icname,ic_regions,ic_type,tmp));
-          }
-          else if (ic_type == "uniform_saturation")
-          {
-              Array<Real> vals(ncomps);
-              for (int j = 0; j<cNames.size(); j++) {
-                  ppr.get(cNames[j].c_str(),vals[j]);
-                  vals[j] *= density[j];
-              }
-              std::string generic_type = "scalar";
-              ic_array.set(i, new RegionData(icname,ic_regions,generic_type,vals));
-          }
-          else if (ic_type == "velocity")
-          {
-	    if ((flow_eval != PM_FLOW_EVAL_CONSTANT) || (flow_model != PM_FLOW_MODEL_SATURATED)) {
-		if (ParallelDescriptor::IOProcessor()) {
-		  std::cerr << "constant-velocity settings may only be used with steady-saturated flow" << std::endl;
-		  BoxLib::Abort();
-		}
-	      }
-              Array<Real> vals(BL_SPACEDIM);
-	      ppr.getarr("vel",vals,0,BL_SPACEDIM);
-              std::string generic_type = "velocity";
-	      do_constant_vel = true;
-              ic_array.set(i, new RegionData(icname,ic_regions,generic_type,vals));
-          }
-          else if (ic_type == "hydrostatic")
-          {
-              Array<Real> water_table_height(1); ppr.get("water_table_height",water_table_height[0]);
-              Array<Real> times(1,0);
-              Array<std::string> forms;
-              ic_array.set(i, new ArrayRegionData(icname,times,water_table_height,
-                                                  forms,ic_regions,ic_type,1));
-          }
-          else if (ic_type == "zero_total_velocity")
-          {
-	      Array<Real> vals(4);
-              Array<Real> times(1,0);
-              Array<std::string> forms;
-	      ppr.get("aqueous_vol_flux",vals[0]);
-              ppr.get("water_table_height",vals[1]);
-              Real aqueous_ref_pres = 0; ppr.query("val",vals[2]);
-              Real aqueous_pres_grad = 0; ppr.query("grad",vals[3]);
-	      ic_array.set(i,new RegionData(icname,ic_regions,ic_type,vals));
-          }
-          else {
-	    BoxLib::Abort(std::string("Unsupported comp ic: \""+ic_type+"\"").c_str());
-          }
+	Array<Real> times(1,0);
+	Array<std::string> forms(0);
+	ic_array.set(i, new ArrayRegionData(icname,times,vals,forms,ic_regions,ic_type,1));
+	if (flow_is_static) flow_eval  = PM_FLOW_EVAL_COMPUTE_GIVEN_P;
       }
+      else if (ic_type == "linear_pressure")
+      {
+	int nPhase = pNames.size();
+	if (nPhase!=1) {
+	  std::cerr << "Multiphase not currently surrported" << std::endl;
+	  BoxLib::Abort();
+	}
+
+	Real press_val;
+	std::string val_name = "val";
+	ppr.get(val_name.c_str(),press_val);
+	press_val = press_val / BL_ONEATM;
+
+	int ngrad = ppr.countval("grad");
+	if (ngrad<BL_SPACEDIM) {
+	  std::cerr << "Insufficient number of components given for pressure gradient" << std::endl;
+	  BoxLib::Abort();
+	}
+	Array<Real> pgrad(BL_SPACEDIM);
+	ppr.getarr("grad",pgrad,0,ngrad);
+	for (int j=0; j<pgrad.size(); ++j) {
+	  pgrad[j] = pgrad[j] / BL_ONEATM;
+	}
+
+	int nref = ppr.countval("loc");
+	if (nref<BL_SPACEDIM) {
+	  if (ParallelDescriptor::IOProcessor()) {
+	    std::cerr << "Insufficient number of components given for pressure reference location" << std::endl;
+	  }
+	  BoxLib::Abort();
+	}
+	Array<Real> pref(BL_SPACEDIM);
+	ppr.getarr("loc",pref,0,nref);
+
+	int ntmp = 2*BL_SPACEDIM+1;
+	Array<Real> tmp(ntmp);
+	tmp[0] = press_val;
+	for (int j=0; j<BL_SPACEDIM; ++j) {
+	  tmp[1+j] = pgrad[j];
+	  tmp[1+j+BL_SPACEDIM] = pref[j];
+	}
+	ic_array.set(i, new RegionData(icname,ic_regions,ic_type,tmp));
+	if (flow_is_static) flow_eval  = PM_FLOW_EVAL_COMPUTE_GIVEN_P;
+      }
+      else if (ic_type == "uniform_saturation")
+      {
+	Array<Real> vals(ncomps);
+	for (int j = 0; j<cNames.size(); j++) {
+	  ppr.get(cNames[j].c_str(),vals[j]);
+	  vals[j] *= density[j];
+	}
+	std::string generic_type = "scalar";
+	ic_array.set(i, new RegionData(icname,ic_regions,generic_type,vals));
+      }
+      else if (ic_type == "velocity")
+      {
+	if ((flow_eval != PM_FLOW_EVAL_CONSTANT)
+	    || (flow_model != PM_FLOW_MODEL_SATURATED)
+	    || (flow_is_static != true)) {
+	  if (ParallelDescriptor::IOProcessor()) {
+	    std::cerr << "constant-velocity settings may only be used with steady-saturated flow" << std::endl;
+	    BoxLib::Abort();
+	  }
+	}
+	Array<Real> vals(BL_SPACEDIM);
+	ppr.getarr("vel",vals,0,BL_SPACEDIM);
+	std::string generic_type = "velocity";
+	do_constant_vel = true;
+
+	flow_eval  = PM_FLOW_EVAL_CONSTANT;
+
+	ic_array.set(i, new RegionData(icname,ic_regions,generic_type,vals));
+      }
+      else if (ic_type == "hydrostatic")
+      {
+	Array<Real> water_table_height(1); ppr.get("water_table_height",water_table_height[0]);
+	Array<Real> times(1,0);
+	Array<std::string> forms;
+	ic_array.set(i, new ArrayRegionData(icname,times,water_table_height,
+					    forms,ic_regions,ic_type,1));
+	if (flow_is_static) flow_eval  = PM_FLOW_EVAL_COMPUTE_GIVEN_P;
+      }
+      else if (ic_type == "zero_total_velocity")
+      {
+	Array<Real> vals(4);
+	Array<Real> times(1,0);
+	Array<std::string> forms;
+	ppr.get("aqueous_vol_flux",vals[0]);
+	ppr.get("water_table_height",vals[1]);
+	Real aqueous_ref_pres = 0; ppr.query("val",vals[2]);
+	Real aqueous_pres_grad = 0; ppr.query("grad",vals[3]);
+	ic_array.set(i,new RegionData(icname,ic_regions,ic_type,vals));
+	if (flow_is_static) flow_eval  = PM_FLOW_EVAL_COMPUTE_GIVEN_P;
+      }
+      else {
+	BoxLib::Abort(std::string("Unsupported comp ic: \""+ic_type+"\"").c_str());
+      }
+    }
   }
 
   // default to no flow first.
@@ -1470,291 +1488,306 @@ void  PorousMedia::read_comp()
   int n_bcs = cp.countval("bc_labels");
   if (n_bcs > 0)
   {
-      bc_array.resize(n_bcs,PArrayManage);
-      Array<std::string> bc_names;
-      cp.getarr("bc_labels",bc_names,0,n_bcs);
+    bc_array.resize(n_bcs,PArrayManage);
+    Array<std::string> bc_names;
+    cp.getarr("bc_labels",bc_names,0,n_bcs);
 
-      if (region_manager == 0) {
-        BoxLib::Abort("static Region manager must be set up prior to reading tracer BCs");
-      }
-      for (int i = 0; i<n_bcs; i++)
-      {
-          int ibc = i;
-          const std::string& bcname = bc_names[i];
-	  const std::string prefix("comp.bcs." + bcname);
-	  ParmParse ppr(prefix.c_str());
+    if (region_manager == 0) {
+      BoxLib::Abort("static Region manager must be set up prior to reading tracer BCs");
+    }
+    for (int i = 0; i<n_bcs; i++)
+    {
+      int ibc = i;
+      const std::string& bcname = bc_names[i];
+      const std::string prefix("comp.bcs." + bcname);
+      ParmParse ppr(prefix.c_str());
           
-	  int n_bc_regions = ppr.countval("regions");
-          Array<std::string> region_names;
-	  ppr.getarr("regions",region_names,0,n_bc_regions);
-	  Array<const Region*> bc_regions = region_manager->RegionPtrArray(region_names);
-          std::string bc_type; ppr.get("type",bc_type);
+      int n_bc_regions = ppr.countval("regions");
+      Array<std::string> region_names;
+      ppr.getarr("regions",region_names,0,n_bc_regions);
+      Array<const Region*> bc_regions = region_manager->RegionPtrArray(region_names);
+      std::string bc_type; ppr.get("type",bc_type);
 
-          bool is_inflow = false;
-          int component_bc = 1;
-	  int pressure_bc  = 1;
+      bool is_inflow = false;
+      int component_bc = 1;
+      int pressure_bc  = 1;
 
-          use_gauge_pressure[bcname] = false; // Default value
+      use_gauge_pressure[bcname] = false; // Default value
 
-	  /*
-	    Supported types
-	    string bc_type_labels[10] = {"inward_mass_flux",
-					 "outward_mass_flux",
-					 "inward_volumetric_flux",
-					 "outward_volumetric_flux",
-					 "uniform_pressure",
-					 "linear_pressure",
-					 "seepage_face",
-					 "hydrostatic",
-					 "linear_hydrostatic",
-					 "no_flow"};
-	  */
-          if (bc_type == "uniform_pressure")
-          {
-              int nPhase = pNames.size();
-              BL_ASSERT(nPhase==1); // FIXME
-              Array<Real> vals, times;
-              Array<std::string> forms;
+      /*
+	Supported types
+	string bc_type_labels[10] = {"inward_mass_flux",
+	"outward_mass_flux",
+	"inward_volumetric_flux",
+	"outward_volumetric_flux",
+	"uniform_pressure",
+	"linear_pressure",
+	"seepage_face",
+	"hydrostatic",
+	"linear_hydrostatic",
+	"no_flow"};
+      */
+      if (bc_type == "uniform_pressure")
+      {
+	int nPhase = pNames.size();
+	BL_ASSERT(nPhase==1); // FIXME
+	Array<Real> vals, times;
+	Array<std::string> forms;
               
-              std::string val_name = "vals";
-              int nv = ppr.countval(val_name.c_str());
-              if (nv) {
-                  ppr.getarr(val_name.c_str(),vals,0,nv);
-                  times.resize(nv,0);
-                  if (nv>1) {
-                      ppr.getarr("times",times,0,nv);
-                      ppr.getarr("forms",forms,0,nv-1);
-                  }
-              }
+	std::string val_name = "vals";
+	int nv = ppr.countval(val_name.c_str());
+	if (nv) {
+	  ppr.getarr(val_name.c_str(),vals,0,nv);
+	  times.resize(nv,0);
+	  if (nv>1) {
+	    ppr.getarr("times",times,0,nv);
+	    ppr.getarr("forms",forms,0,nv-1);
+	  }
+	}
               
-              // convert to atm
-              for (int j=0; j<vals.size(); ++j) {
-                vals[j] = vals[j] / BL_ONEATM;
-              }
+	// convert to atm
+	for (int j=0; j<vals.size(); ++j) {
+	  vals[j] = vals[j] / BL_ONEATM;
+	}
               
-              is_inflow = false;
-              if (flow_model == PM_FLOW_MODEL_SATURATED) {
-                component_bc = Outflow;
-              } else {
-                component_bc = Inflow;
-              }
-              pressure_bc = Outflow;
-              bc_array.set(ibc, new RegionData(bcname,bc_regions,bc_type,vals));
-          }
-          else if (bc_type == "hydraulic_head"
-		   || bc_type == "hydrostatic")
-          {              
-            Array<Real> vals, times;
-            Array<std::string> forms;
-            std::string val_name = "vals";
-            int nv = ppr.countval(val_name.c_str());
-            BL_ASSERT(nv>0);
-            ppr.getarr(val_name.c_str(),vals,0,nv);
+	is_inflow = false;
+	if (flow_model == PM_FLOW_MODEL_SATURATED) {
+	  component_bc = Outflow;
+	} else {
+	  component_bc = Inflow;
+	}
+	pressure_bc = Outflow;
+	bc_array.set(ibc, new RegionData(bcname,bc_regions,bc_type,vals));
+	// Override flow_eval mode from IC if pbc given
+	if (flow_is_static && (flow_eval!=PM_FLOW_EVAL_CONSTANT))
+	  flow_eval  = PM_FLOW_EVAL_SOLVE_GIVEN_PBC;
+      }
+      else if (bc_type == "hydraulic_head"
+	       || bc_type == "hydrostatic")
+      {              
+	Array<Real> vals, times;
+	Array<std::string> forms;
+	std::string val_name = "vals";
+	int nv = ppr.countval(val_name.c_str());
+	BL_ASSERT(nv>0);
+	ppr.getarr(val_name.c_str(),vals,0,nv);
 
-            times.resize(nv,0);
-            if (nv>1) {
-              ppr.getarr("times",times,0,nv);
-              ppr.getarr("forms",forms,0,nv-1);
-            }
+	times.resize(nv,0);
+	if (nv>1) {
+	  ppr.getarr("times",times,0,nv);
+	  ppr.getarr("forms",forms,0,nv-1);
+	}
 
-            if (pp.countval("normalization")>0) {
-              std::string norm_str; pp.get("normalization",norm_str);
-              if (norm_str == "Absolute") {
-                use_gauge_pressure[bcname] = false;
-              } else if (norm_str == "Relative") {
-                use_gauge_pressure[bcname] = true;
-              } else {
-                BoxLib::Abort("hydraulic_head BC normalization must be \"Absolute\" or \"Relative\"");
-              }
-            }
+	if (pp.countval("normalization")>0) {
+	  std::string norm_str; pp.get("normalization",norm_str);
+	  if (norm_str == "Absolute") {
+	    use_gauge_pressure[bcname] = false;
+	  } else if (norm_str == "Relative") {
+	    use_gauge_pressure[bcname] = true;
+	  } else {
+	    BoxLib::Abort("hydraulic_head BC normalization must be \"Absolute\" or \"Relative\"");
+	  }
+	}
 
-            is_inflow = false;
-            if (flow_model == PM_FLOW_MODEL_SATURATED)
-	    {
-              component_bc = Outflow;
-            } else {
-              component_bc = Inflow;
-            }
-            pressure_bc = Outflow;
+	is_inflow = false;
+	if (flow_model == PM_FLOW_MODEL_SATURATED)
+	{
+	  component_bc = Outflow;
+	} else {
+	  component_bc = Inflow;
+	}
+	pressure_bc = Outflow;
 
-	    bc_array.set(ibc,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,vals.size()));
-          }
-          else if (bc_type == "linear_pressure")
-          {
-	    Real val; ppr.get("val",val);
-            int ng = ppr.countval("grad");
-	    BL_ASSERT(ng>=BL_SPACEDIM);
-	    Array<Real> grad(BL_SPACEDIM); ppr.getarr("grad",grad,0,BL_SPACEDIM);
+	bc_array.set(ibc,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,vals.size()));
+	// Override flow_eval mode from IC if pbc given
+	if (flow_is_static && (flow_eval!=PM_FLOW_EVAL_CONSTANT))
+	  flow_eval  = PM_FLOW_EVAL_SOLVE_GIVEN_PBC;
+      }
+      else if (bc_type == "linear_pressure")
+      {
+	Real val; ppr.get("val",val);
+	int ng = ppr.countval("grad");
+	BL_ASSERT(ng>=BL_SPACEDIM);
+	Array<Real> grad(BL_SPACEDIM); ppr.getarr("grad",grad,0,BL_SPACEDIM);
 
-            int nl = ppr.countval("loc");
-	    BL_ASSERT(nl>=BL_SPACEDIM);
-	    Array<Real> loc(BL_SPACEDIM); ppr.getarr("loc",loc,0,BL_SPACEDIM);
+	int nl = ppr.countval("loc");
+	BL_ASSERT(nl>=BL_SPACEDIM);
+	Array<Real> loc(BL_SPACEDIM); ppr.getarr("loc",loc,0,BL_SPACEDIM);
 	    
-            Array<Real> vals(2*BL_SPACEDIM+1);
-	    vals[0] = val / BL_ONEATM;
-	    for (int d=0; d<BL_SPACEDIM; ++d) {
-	      vals[1+d] = grad[d] / BL_ONEATM;
-	      vals[1+d+BL_SPACEDIM] = loc[d];
-	    }
+	Array<Real> vals(2*BL_SPACEDIM+1);
+	vals[0] = val / BL_ONEATM;
+	for (int d=0; d<BL_SPACEDIM; ++d) {
+	  vals[1+d] = grad[d] / BL_ONEATM;
+	  vals[1+d+BL_SPACEDIM] = loc[d];
+	}
 
-            is_inflow = false;
-            if (flow_model == PM_FLOW_MODEL_SATURATED) {
-              component_bc = Outflow;
-            } else {
-              component_bc = Inflow;
-            }
-            pressure_bc = Outflow;
+	is_inflow = false;
+	if (flow_model == PM_FLOW_MODEL_SATURATED) {
+	  component_bc = Outflow;
+	} else {
+	  component_bc = Inflow;
+	}
+	pressure_bc = Outflow;
 
-	    Array<Array<Real> > values(vals.size(),Array<Real>(1,0));
-            for (int j=0; j<vals.size(); ++j) {
-              values[j][0] = vals[j];
-            }
-	    Array<Array<Real> > times(vals.size(),Array<Real>(1,0));
-	    Array<Array<std::string> > forms(vals.size(),Array<std::string>(0));
-	    bc_array.set(ibc,new ArrayRegionData(bcname,times,values,forms,bc_regions,bc_type));
-          }
-          else if (bc_type == "inward_volumetric_flux" 
-		   || bc_type == "outward_volumetric_flux"
-		   || bc_type == "inward_mass_flux"
-		   || bc_type == "outward_mass_flux" )
-          {
-              Array<Real> vals, times;
-              Array<std::string> forms;
+	Array<Array<Real> > values(vals.size(),Array<Real>(1,0));
+	for (int j=0; j<vals.size(); ++j) {
+	  values[j][0] = vals[j];
+	}
+	Array<Array<Real> > times(vals.size(),Array<Real>(1,0));
+	Array<Array<std::string> > forms(vals.size(),Array<std::string>(0));
+	bc_array.set(ibc,new ArrayRegionData(bcname,times,values,forms,bc_regions,bc_type));
+	// Override flow_eval mode from IC if pbc given
+	if (flow_is_static && (flow_eval!=PM_FLOW_EVAL_CONSTANT))
+	  flow_eval  = PM_FLOW_EVAL_SOLVE_GIVEN_PBC;
+      }
+      else if (bc_type == "inward_volumetric_flux" 
+	       || bc_type == "outward_volumetric_flux"
+	       || bc_type == "inward_mass_flux"
+	       || bc_type == "outward_mass_flux" )
+      {
+	Array<Real> vals, times;
+	Array<std::string> forms;
 
-              int nv = ppr.countval("vals");
-              if (nv) {
-                  ppr.getarr("vals",vals,0,nv);
-                  times.resize(nv,0);
-                  if (nv>1) {
-                      ppr.getarr("times",times,0,nv);
-                      ppr.getarr("forms",forms,0,nv-1);
-                  }
-              }
-              else {
-                  vals.resize(1,0);
-                  times.resize(1,0);
-                  forms.resize(0);
-              }
+	int nv = ppr.countval("vals");
+	if (nv) {
+	  ppr.getarr("vals",vals,0,nv);
+	  times.resize(nv,0);
+	  if (nv>1) {
+	    ppr.getarr("times",times,0,nv);
+	    ppr.getarr("forms",forms,0,nv-1);
+	  }
+	}
+	else {
+	  vals.resize(1,0);
+	  times.resize(1,0);
+	  forms.resize(0);
+	}
 
-	      // If mass flux, convert to volumetric flux.  Assume that we have already decided what the density is
-	      // Note: we should delay this conversion until bc applied if density is not constant
-	      if (bc_type == "inward_mass_flux"
-		  || bc_type == "outward_mass_flux" ) {
-		for (int k=0; k<vals.size(); ++k) {
-		  vals[k] *= 1/density[0]; // Note: this ASSUMES fluxes are of comp[0] mass
+	// If mass flux, convert to volumetric flux.  Assume that we have already decided what the density is
+	// Note: we should delay this conversion until bc applied if density is not constant
+	if (bc_type == "inward_mass_flux"
+	    || bc_type == "outward_mass_flux" ) {
+	  for (int k=0; k<vals.size(); ++k) {
+	    vals[k] *= 1/density[0]; // Note: this ASSUMES fluxes are of comp[0] mass
+	  }
+	}
+
+	// Work out sign of flux for this boundary
+	int is_hi = -1;
+	for (int j=0; j<bc_regions.size(); ++j)
+	{
+	  const std::string purpose = bc_regions[j]->purpose;
+	  for (int k=0; k<7; ++k) {
+	    if (purpose == PMAMR::RpurposeDEF[k]) {
+	      if (k == 6) {
+		BoxLib::Abort(std::string("BC \""+bcname+"\" must be applied on a face region").c_str());
+	      }
+	      bool this_is_hi = (k>3);
+	      if (is_hi < 0) {
+		is_hi = this_is_hi;
+	      }
+	      else {
+		if (this_is_hi != is_hi) {
+		  BoxLib::Abort("BC must apply to a single face only");
 		}
 	      }
-
-              // Work out sign of flux for this boundary
-              int is_hi = -1;
-              for (int j=0; j<bc_regions.size(); ++j)
-              {
-                  const std::string purpose = bc_regions[j]->purpose;
-                  for (int k=0; k<7; ++k) {
-                      if (purpose == PMAMR::RpurposeDEF[k]) {
-			  if (k == 6) {
-			    BoxLib::Abort(std::string("BC \""+bcname+"\" must be applied on a face region").c_str());
-			  }
-                          bool this_is_hi = (k>3);
-                          if (is_hi < 0) {
-                              is_hi = this_is_hi;
-                          }
-                          else {
-                              if (this_is_hi != is_hi) {
-                                  BoxLib::Abort("BC must apply to a single face only");
-                              }
-                          }
-                      }
-                  }
-              }
-              if (is_hi) {
-                  for (int k=0; k<vals.size(); ++k) {
-                      vals[k] = -vals[k];
-                  }
-              }
-
-	      // Now that we have converted them all, set to generic flux name
-	      bc_type = "volumetric_flux";
-
-              is_inflow = true;
-              component_bc = Inflow;
-              pressure_bc = Inflow;
-	      bc_array.set(ibc,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,1));
-          }
-          else if (bc_type == "no_flow")
-          {
-            Array<Real> vals(1,0), times(1,0);
-            Array<std::string> forms(0);
-            is_inflow = true;
-            component_bc = Inflow;
-            pressure_bc = Inflow;
-            bc_array.set(ibc,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,1));
-          }
-          else
-          {
-	    if (bc_type == "seepage_face"
-		|| bc_type == "linear_hydrostatic") {
-	      BoxLib::Abort(std::string(bc_type+" not yet implemented").c_str());
 	    }
-	    BoxLib::Abort(std::string(bc_type+" not a valid bc type").c_str());
-          }
+	  }
+	}
+	if (is_hi) {
+	  for (int k=0; k<vals.size(); ++k) {
+	    vals[k] = -vals[k];
+	  }
+	}
 
-          // Some clean up 
-          std::set<std::string> o_set;
+	// Now that we have converted them all, set to generic flux name
+	bc_type = "volumetric_flux";
 
-          for (int j=0; j<bc_regions.size(); ++j)
-          {
-              const std::string purpose = bc_regions[j]->purpose;
-              int dir = -1, is_hi;
-              for (int k=0; k<7; ++k) {
-                  if (purpose == PMAMR::RpurposeDEF[k]) {
-                      BL_ASSERT(k != 6);
-                      dir = k%3;
-                      is_hi = k>=3;
-                  }
-              }
-              if (dir<0 || dir > BL_SPACEDIM) {
-                  std::cout << "Bad region for boundary: \n" << bc_regions[j] << std::endl;
-                  BoxLib::Abort();
-              }
-
-              if (o_set.find(purpose) == o_set.end())
-              {
-                  o_set.insert(purpose);
-
-                  if (is_hi) {
-                      rinflow_bc_hi[dir] = (is_inflow ? 1 : 0);
-                      phys_bc.setHi(dir,component_bc);
-                      pres_bc.setHi(dir,pressure_bc);
-                  }
-                  else {
-                      rinflow_bc_lo[dir] = (is_inflow ? 1 : 0);
-                      phys_bc.setLo(dir,component_bc);
-                      pres_bc.setLo(dir,pressure_bc);
-                  }
-              }
-              else {
-
-                  bool is_consistent = true;
-                  if (is_hi) {
-
-                      is_consistent = ( (rinflow_bc_hi[dir] == is_inflow)
-                                        && (phys_bc.hi()[dir] == component_bc)
-                                        && (pres_bc.hi()[dir] == pressure_bc) );
-                  }
-                  else {
-
-                      is_consistent = ( (rinflow_bc_lo[dir] == is_inflow)
-                                        && (phys_bc.lo()[dir] == component_bc)
-                                        && (pres_bc.lo()[dir] == pressure_bc) );
-                  }
-
-                  if (!is_consistent) {
-                      BoxLib::Abort("Inconconsistent type for boundary ");
-                  }
-              }
-          }
+	is_inflow = true;
+	component_bc = Inflow;
+	pressure_bc = Inflow;
+	bc_array.set(ibc,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,1));
+	// Override flow_eval mode from IC if pbc given
+	if (flow_is_static && (flow_eval!=PM_FLOW_EVAL_CONSTANT))
+	  flow_eval  = PM_FLOW_EVAL_SOLVE_GIVEN_PBC;
       }
+      else if (bc_type == "no_flow")
+      {
+	Array<Real> vals(1,0), times(1,0);
+	Array<std::string> forms(0);
+	is_inflow = true;
+	component_bc = Inflow;
+	pressure_bc = Inflow;
+	bc_array.set(ibc,new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type,1));
+	// Override flow_eval mode from IC if pbc given
+	if (flow_is_static && (flow_eval!=PM_FLOW_EVAL_CONSTANT))
+	  flow_eval  = PM_FLOW_EVAL_SOLVE_GIVEN_PBC;
+      }
+      else
+      {
+	if (bc_type == "seepage_face"
+	    || bc_type == "linear_hydrostatic") {
+	  BoxLib::Abort(std::string(bc_type+" not yet implemented").c_str());
+	}
+	BoxLib::Abort(std::string(bc_type+" not a valid bc type").c_str());
+      }
+
+      // Some clean up 
+      std::set<std::string> o_set;
+
+      for (int j=0; j<bc_regions.size(); ++j)
+      {
+	const std::string purpose = bc_regions[j]->purpose;
+	int dir = -1, is_hi;
+	for (int k=0; k<7; ++k) {
+	  if (purpose == PMAMR::RpurposeDEF[k]) {
+	    BL_ASSERT(k != 6);
+	    dir = k%3;
+	    is_hi = k>=3;
+	  }
+	}
+	if (dir<0 || dir > BL_SPACEDIM) {
+	  std::cout << "Bad region for boundary: \n" << bc_regions[j] << std::endl;
+	  BoxLib::Abort();
+	}
+
+	if (o_set.find(purpose) == o_set.end())
+	{
+	  o_set.insert(purpose);
+
+	  if (is_hi) {
+	    rinflow_bc_hi[dir] = (is_inflow ? 1 : 0);
+	    phys_bc.setHi(dir,component_bc);
+	    pres_bc.setHi(dir,pressure_bc);
+	  }
+	  else {
+	    rinflow_bc_lo[dir] = (is_inflow ? 1 : 0);
+	    phys_bc.setLo(dir,component_bc);
+	    pres_bc.setLo(dir,pressure_bc);
+	  }
+	}
+	else {
+
+	  bool is_consistent = true;
+	  if (is_hi) {
+
+	    is_consistent = ( (rinflow_bc_hi[dir] == is_inflow)
+			      && (phys_bc.hi()[dir] == component_bc)
+			      && (pres_bc.hi()[dir] == pressure_bc) );
+	  }
+	  else {
+
+	    is_consistent = ( (rinflow_bc_lo[dir] == is_inflow)
+			      && (phys_bc.lo()[dir] == component_bc)
+			      && (pres_bc.lo()[dir] == pressure_bc) );
+	  }
+
+	  if (!is_consistent) {
+	    BoxLib::Abort("Inconconsistent type for boundary ");
+	  }
+	}
+      }
+    }
   }
 }
 

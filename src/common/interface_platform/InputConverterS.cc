@@ -822,7 +822,7 @@ void InputConverterS::ParseNumericalControls_(const string& flow_model)
     flow_controls["gravity_dir"]                  = (dim_ == 2 ? "1" : "2");
     flow_controls["domain_thickness"]             = "1";
 
-    if (flow_model == "saturated") {
+    if (flow_model == "saturated" || flow_model == "constant") {
       flow_controls["rel_perm_method"]            = "other-harmonic_average";
     }
     else {

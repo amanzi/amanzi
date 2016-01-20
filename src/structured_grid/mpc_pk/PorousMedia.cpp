@@ -900,20 +900,28 @@ PorousMedia::initData ()
     //
     // Initialized only based on solutions at the current level
     //
+    FArrayBox mask, tmp;
     for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
     {
       BL_ASSERT(grids[mfi.index()] == mfi.validbox());
         
       FArrayBox& sdat = S_new[mfi];
       FArrayBox& pdat = P_new[mfi];
-      DEF_LIMITS(sdat,s_ptr,s_lo,s_hi);
-      DEF_LIMITS(pdat,p_ptr,p_lo,p_hi);
+
       const Box& vbox = mfi.validbox();
       const int* lo = vbox.loVect();
       const int* hi = vbox.hiVect();
-        
+
+      mask.resize(vbox,1);
+      tmp.resize(vbox,1);
+
+      DEF_LIMITS(sdat,s_ptr,s_lo,s_hi);
+      DEF_LIMITS(tmp,p_ptr,p_lo,p_hi);
+
       for (int i=0; i<ic_array.size(); ++i)
       {
+	mask.setVal(0);
+
         const RegionData& ic = ic_array[i];
         const Array<const Region*>& ic_regions = ic.Regions();
         const std::string& type = ic.Type();
@@ -932,12 +940,14 @@ PorousMedia::initData ()
         else if (type == "uniform_pressure") 
         {
           Array<Real> vals = ic();
-          if (region_manager == 0) {
-            BoxLib::Abort("static Region manager must be set up prior to initializing pressure");
-          }
           for (int jt=0; jt<ic_regions.size(); ++jt) {
-            region_manager->RegionPtrArray()[jt]->setVal(P_new[mfi],vals,dx,0,0,ncomps);
+            ic_regions[jt]->setVal(mask,1,0,dx,0);
           }
+	  for (IntVect iv=vbox.smallEnd(); iv<=vbox.bigEnd(); vbox.next(iv)) {
+	    if (mask(iv,0) == 1) {
+	      pdat(iv,0) = vals[0];
+	    }
+	  }
         }
         else if (type == "linear_pressure")
         {
@@ -952,6 +962,15 @@ PorousMedia::initData ()
 
           FORT_LINEAR_PRESSURE(lo, hi, p_ptr, ARLIM(p_lo),ARLIM(p_hi), &ncomps,
                                dx, problo, probhi, ref_val, ref_loc, gradp);
+
+          for (int jt=0; jt<ic_regions.size(); ++jt) {
+            ic_regions[jt]->setVal(mask,1,0,dx,0);
+          }
+	  for (IntVect iv=vbox.smallEnd(); iv<=vbox.bigEnd(); vbox.next(iv)) {
+	    if (mask(iv,0) == 1) {
+	      pdat(iv,0) = tmp(iv,0);
+	    }
+	  }
         }
         else if (type == "zero_total_velocity")
         {	     
@@ -981,11 +1000,20 @@ PorousMedia::initData ()
             FArrayBox s(vbox,1); s.copy(sdat);
             IArrayBox m(vbox,1); m.copy((*materialID)[mfi]);
             rock_manager->CapillaryPressure(s.dataPtr(),m.dataPtr(),cur_time,pc.dataPtr(),vbox.numPts());
-            P_new[mfi].setVal(0);
-            P_new[mfi].copy(pc);
-            P_new[mfi].mult(-1.0);
-            P_new[mfi].plus(atmospheric_pressure_atm);
+            tmp.setVal(0);
+            tmp.copy(pc);
+            tmp.mult(-1.0);
+            tmp.plus(atmospheric_pressure_atm);
           }
+
+          for (int jt=0; jt<ic_regions.size(); ++jt) {
+            ic_regions[jt]->setVal(mask,1,0,dx,0);
+          }
+	  for (IntVect iv=vbox.smallEnd(); iv<=vbox.bigEnd(); vbox.next(iv)) {
+	    if (mask(iv,0) == 1) {
+	      pdat(iv,0) = tmp(iv,0);
+	    }
+	  }
         }
         else if (type == "velocity")
         {
@@ -1265,7 +1293,7 @@ PorousMedia::solve_for_initial_flow_field()
 {
   BL_PROFILE("Porousmedia::solve_for_initial_flow_field()");
 
-  BL_ASSERT(flow_eval==PM_FLOW_EVAL_SOLVE);
+  BL_ASSERT(flow_eval==PM_FLOW_EVAL_SOLVE_GIVEN_PBC);
   BL_ASSERT(level == 0);
 
   Real dt_taken = 0;
@@ -1920,7 +1948,13 @@ PorousMedia::multilevel_advance (Real  time,
       step_ok = richard_solver_control->AdjustDt(dt,ret,dt_suggest_flow);
     }
     else {
-      step_ok = advance_multilevel_richards_flow(time,dt,dt_suggest_flow);
+      if (flow_is_static) {
+	advance_flow_nochange(time,dt);
+	step_ok = true;
+	dt_suggest_flow = dt;
+      } else {
+	step_ok = advance_multilevel_richards_flow(time,dt,dt_suggest_flow);
+      }
     }
 
     if (!step_ok) {
@@ -1988,9 +2022,8 @@ PorousMedia::multilevel_advance (Real  time,
 
     dt_new = dt;
     step_ok = true;
-    const ExecControl* ec = PMParent()->GetExecControl(time);
-    BL_ASSERT(ec != 0);
-    if (ec->mode=="steady") {
+
+    if (flow_is_static) {
       advance_flow_nochange(time,dt);
       step_ok = true;
       dt_suggest_flow = dt;
@@ -4578,10 +4611,6 @@ PorousMedia::predictDT (MultiFab* u_macG, Real t_eval)
 
   ParallelDescriptor::ReduceRealMin(dt_eig);
 
-  if (ParallelDescriptor::IOProcessor() && verbose>0) {
-    std::cout << "  TRAN: Level: " << level << " CFL dt limit = " << dt_eig << '\n';
-  }
-
   if (verbose > 3) {
     const int IOProc   = ParallelDescriptor::IOProcessorNumber();
     ParallelDescriptor::ReduceRealMax(&eigmax[0], BL_SPACEDIM, IOProc);
@@ -5065,7 +5094,7 @@ void PorousMedia::post_restart()
       observations[i].process(prev_time, curr_time, parent->levelSteps(0),verbose_observation_processing);
     }
 
-    if (flow_eval == PM_FLOW_EVAL_SOLVE) {
+    if (flow_eval == PM_FLOW_EVAL_EVOLVE) {
       Layout& layout = PMParent()->GetLayout();
       PMAmr* pm_parent = PMParent();
       int new_nLevs = parent->finestLevel() + 1;
@@ -5100,7 +5129,7 @@ PorousMedia::post_regrid (int lbase,
   PMAmr* pm_parent = PMParent();
   int new_nLevs = new_finest - lbase + 1;
 
-  if ( (flow_eval==PM_FLOW_EVAL_SOLVE) && (level==lbase)) {
+  if ( (flow_eval==PM_FLOW_EVAL_EVOLVE) && (level==lbase)) {
 
     if (richard_solver != 0) {
       delete richard_solver;
@@ -5312,14 +5341,16 @@ PorousMedia::post_init_state ()
   }
 
   // Multilevel velocity initialization for Richards or for saturated
-  if (flow_eval == PM_FLOW_EVAL_COMPUTE
-      || flow_eval == PM_FLOW_EVAL_SOLVE
-      || flow_eval == PM_FLOW_EVAL_CONSTANT) {
+  if (flow_eval == PM_FLOW_EVAL_COMPUTE_GIVEN_P
+      || flow_eval == PM_FLOW_EVAL_SOLVE_GIVEN_PBC
+      || flow_eval == PM_FLOW_EVAL_CONSTANT
+      || flow_eval == PM_FLOW_EVAL_EVOLVE) {
 
     PMAmr* pmamr = PMParent();
     int  finest_level = parent->finestLevel();
 
-    if (flow_eval == PM_FLOW_EVAL_COMPUTE) {
+    if ((flow_eval == PM_FLOW_EVAL_COMPUTE_GIVEN_P)
+	|| (flow_eval == PM_FLOW_EVAL_EVOLVE) ) {
       // Compute initial velocity field based on given p field
       NLScontrol nlsc_init;
       RSAMRdata rs_data(0,pmamr->finestLevel(),pmamr->GetLayout(),pmamr,nlsc_init,rock_manager);
@@ -5328,7 +5359,7 @@ PorousMedia::post_init_state ()
       rs.ResetRhoSat();
       rs.ComputeDarcyVelocity(rs.GetPressureNp1(),pmamr->startTime());
     }
-    else if (flow_eval == PM_FLOW_EVAL_SOLVE) {
+    else if (flow_eval == PM_FLOW_EVAL_SOLVE_GIVEN_PBC) {
 
       advect_tracers = react_tracers = false;
       Real dt_taken = solve_for_initial_flow_field();

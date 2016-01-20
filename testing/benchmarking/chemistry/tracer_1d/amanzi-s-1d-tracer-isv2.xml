@@ -1,6 +1,4 @@
 <amanzi_input type="structured" version="2.1.1">
-  <echo_translated_input file_name="pp.dump" format="native"/>
-
   <model_description name="tracer_1d-str">
     <comments>tracer_1d-str	Tue Sep 22 14:47:58 PDT 2015</comments>
   </model_description>
@@ -56,8 +54,7 @@
       </str_time_step_controls>
 
       <str_flow_controls>
-      	<!-- <petsc_options_file>.petsc</petsc_options_file> -->
-      	<petsc_options_file>DOTpetsc_hypre</petsc_options_file>
+      	<!-- <petsc_options_file>DOTpetsc_hypre</petsc_options_file> -->
       	<gravity>0</gravity>
       </str_flow_controls>
 
@@ -101,12 +98,12 @@
     <initial_condition name="IC">
       <assigned_regions>All</assigned_regions>
       <liquid_phase name="Water">
-	<liquid_component name="Water">
-	  <uniform_pressure value="201325.0"/>
-	</liquid_component>
-	<solute_component name="solute">
-	  <uniform_conc name="tracer" value="1.e-20"/>
-	</solute_component>
+  	<liquid_component name="Water">
+  	  <uniform_pressure value="201325.0"/>
+  	</liquid_component>
+  	<solute_component name="solute">
+  	  <uniform_conc name="tracer" value="1.e-20"/>
+  	</solute_component>
       </liquid_phase>
     </initial_condition>
   </initial_conditions>
@@ -135,13 +132,13 @@
 
   <output>
     <vis>
-      <base_filename>run_data/plt</base_filename>
+      <base_filename>amanzi-output-str/plt</base_filename>
       <num_digits>5</num_digits>
       <!-- <time_macros>every_year</time_macros> -->
       <cycle_macros>every_step</cycle_macros>
     </vis>
     <checkpoint>
-      <base_filename>run_data/chk</base_filename>
+      <base_filename>amanzi-output-str/chk</base_filename>
       <num_digits>5</num_digits>
     </checkpoint>
   </output>

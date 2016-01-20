@@ -747,11 +747,13 @@ public:
   {
     PM_FLOW_EVAL_INVALID,
     PM_FLOW_EVAL_CONSTANT,
-    PM_FLOW_EVAL_COMPUTE,
-    PM_FLOW_EVAL_SOLVE,
+    PM_FLOW_EVAL_COMPUTE_GIVEN_P,
+    PM_FLOW_EVAL_SOLVE_GIVEN_PBC,
+    PM_FLOW_EVAL_EVOLVE,
     PM_FLOW_EVAL_OFF
   };
   static FLOW_EVAL_ID flow_eval;
+  static bool flow_is_static;
   static int FlowEval() {return (int)flow_eval;}
 
   PMAmr* PMParent();
