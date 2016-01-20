@@ -900,7 +900,7 @@ PorousMedia::initData ()
     //
     // Initialized only based on solutions at the current level
     //
-    FArrayBox mask, tmp;
+    FArrayBox mask, ptmp, stmp;
     for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
     {
       BL_ASSERT(grids[mfi.index()] == mfi.validbox());
@@ -913,10 +913,11 @@ PorousMedia::initData ()
       const int* hi = vbox.hiVect();
 
       mask.resize(vbox,1);
-      tmp.resize(vbox,1);
+      ptmp.resize(vbox,1);
+      stmp.resize(vbox,1);
 
-      DEF_LIMITS(sdat,s_ptr,s_lo,s_hi);
-      DEF_LIMITS(tmp,p_ptr,p_lo,p_hi);
+      DEF_LIMITS(stmp,s_ptr,s_lo,s_hi);
+      DEF_LIMITS(ptmp,p_ptr,p_lo,p_hi);
 
       for (int i=0; i<ic_array.size(); ++i)
       {
@@ -968,7 +969,7 @@ PorousMedia::initData ()
           }
 	  for (IntVect iv=vbox.smallEnd(); iv<=vbox.bigEnd(); vbox.next(iv)) {
 	    if (mask(iv,0) == 1) {
-	      pdat(iv,0) = tmp(iv,0);
+	      pdat(iv,0) = ptmp(iv,0);
 	    }
 	  }
         }
@@ -993,25 +994,31 @@ PorousMedia::initData ()
                            &rmID,&cur_time,&vals[0], &nc, &gravity,
                            vbox.loVect(),vbox.hiVect());
 		
+	  for (int jt=0; jt<ic_regions.size(); ++jt) {
+	    ic_regions[jt]->setVal(mask,1,0,dx,0);
+	  }
+	  for (IntVect iv=vbox.smallEnd(); iv<=vbox.bigEnd(); vbox.next(iv)) {
+	    if (mask(iv,0) == 1) {
+	      sdat(iv,0) = stmp(iv,0);
+	    }
+	  }
+
           // set pressure
           if (flow_model==PM_FLOW_MODEL_RICHARDS) {
             const int idx = mfi.index();
             FArrayBox pc(vbox,1);
-            FArrayBox s(vbox,1); s.copy(sdat);
+            FArrayBox s(vbox,1); s.copy(stmp);
             IArrayBox m(vbox,1); m.copy((*materialID)[mfi]);
             rock_manager->CapillaryPressure(s.dataPtr(),m.dataPtr(),cur_time,pc.dataPtr(),vbox.numPts());
-            tmp.setVal(0);
-            tmp.copy(pc);
-            tmp.mult(-1.0);
-            tmp.plus(atmospheric_pressure_atm);
-          }
+            ptmp.setVal(0);
+            ptmp.copy(pc);
+            ptmp.mult(-1.0);
+            ptmp.plus(atmospheric_pressure_atm);
 
-          for (int jt=0; jt<ic_regions.size(); ++jt) {
-            ic_regions[jt]->setVal(mask,1,0,dx,0);
-          }
-	  for (IntVect iv=vbox.smallEnd(); iv<=vbox.bigEnd(); vbox.next(iv)) {
-	    if (mask(iv,0) == 1) {
-	      pdat(iv,0) = tmp(iv,0);
+	    for (IntVect iv=vbox.smallEnd(); iv<=vbox.bigEnd(); vbox.next(iv)) {
+	      if (mask(iv,0) == 1) {
+		pdat(iv,0) = ptmp(iv,0);
+	      }
 	    }
 	  }
         }
