@@ -189,7 +189,7 @@
 
   <output>
     <vis>
-      <base_filename>tritium_pflotran</base_filename>
+      <base_filename>tritium</base_filename>
         <num_digits>5</num_digits>
         <time_macros>every_year</time_macros>
     </vis>
