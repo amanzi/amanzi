@@ -13,6 +13,6 @@ if [ ! -e "${patch_file}" ] ; then
   exit 10
 fi
 
-# cd ${hdf5_src_dir}
-# patch -p1 < ${patch_file}
-# exit $?
+cd ${hdf5_src_dir}
+patch -p1 < ${patch_file}
+exit $?
