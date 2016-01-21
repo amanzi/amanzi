@@ -42,23 +42,30 @@ EnergySurfaceIce::EnergySurfaceIce(const Teuchos::RCP<Teuchos::ParameterList>& p
     is_energy_source_term_(false),
     is_mass_source_term_(false),
     is_air_conductivity_(false) {
-  plist_->set("primary variable key", "surface-temperature");
-  plist_->set("domain name", "surface");
-  plist_->set("conserved quantity key", "surface-energy");
+  if(!plist_->isParameter("conserved quanity suffix"))
+    plist_->set("conserved quantity suffix", "energy");
+
+  //plist_->set("primary variable key", "surface-temperature");
+  //plist_->set("domain name", "surface");
+  plist_->set("conserved quantity key", getKey(domain_,"energy"));
 }
 
 
 void EnergySurfaceIce::setup(const Teuchos::Ptr<State>& S) {
   // set up the meshes
-  if (!S->HasMesh("surface")) {
+  if (S->HasMesh("surface_star") && domain_=="surface_star")
+    standalone_mode_ = false;
+
+  if (!S->HasMesh("surface") && standalone_mode_ == false) {
     Teuchos::RCP<const AmanziMesh::Mesh> domain = S->GetMesh();
     ASSERT(domain->space_dimension() == 2);
     standalone_mode_ = true;
     S->AliasMesh("domain", "surface");
-  } else {
+  } 
+  /*else {
     standalone_mode_ = false;
   }
-
+  */
   EnergyBase::setup(S);
 }
 
@@ -67,7 +74,7 @@ void EnergySurfaceIce::setup(const Teuchos::Ptr<State>& S) {
 // conductivity, and any sources.
 // -------------------------------------------------------------
 void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
-  standalone_mode_ = S->GetMesh() == S->GetMesh("surface");
+  standalone_mode_ = S->GetMesh() == S->GetMesh(domain_);
 
   // Get data and evaluators needed by the PK
   // -- energy, the conserved quantity
@@ -160,14 +167,14 @@ void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
   // require a model based on p,T.
   // This will be removed once boundary faces are implemented.
   Teuchos::RCP<FieldEvaluator> eos_fe =
-      S->GetFieldEvaluator("surface-molar_density_liquid");
+    S->GetFieldEvaluator(getKey(domain_,"molar_density_liquid"));
   Teuchos::RCP<Relations::EOSEvaluator> eos_eval =
     Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(eos_fe);
   ASSERT(eos_eval != Teuchos::null);
   eos_liquid_ = eos_eval->get_EOS();
 
   Teuchos::RCP<FieldEvaluator> iem_fe =
-      S->GetFieldEvaluator("surface-internal_energy_liquid");
+    S->GetFieldEvaluator(getKey(domain_,"internal_energy_liquid"));
   Teuchos::RCP<EnergyRelations::IEMEvaluator> iem_eval =
     Teuchos::rcp_dynamic_cast<EnergyRelations::IEMEvaluator>(iem_fe);
   ASSERT(iem_eval != Teuchos::null);
@@ -227,7 +234,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
   // -- two parts -- conduction and advection
   // -- advection source
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
-    S->GetFieldEvaluator("enthalpy")->HasFieldChanged(S.ptr(), name_);
+    S->GetFieldEvaluator(getKey(domain_,"enthalpy"))->HasFieldChanged(S.ptr(), name_);
     S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
 
     // -- advection source
@@ -236,7 +243,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     const Epetra_MultiVector& enth_surf =
         *S->GetFieldData(enthalpy_key_)->ViewComponent("cell",false);
     const Epetra_MultiVector& enth_subsurf =
-        *S->GetFieldData("enthalpy")->ViewComponent("cell",false);
+      *S->GetFieldData(getKey(domain_,"enthalpy"))->ViewComponent("cell",false);
 
     AmanziMesh::Entity_ID_List cells;
 
@@ -287,9 +294,9 @@ void EnergySurfaceIce::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double 
   // implemented correctly, as they are part of a PK (surface energy
   // balance!)
   if (is_source_term_ && 
-      S->HasFieldEvaluator("surface-conducted_energy_source") &&
-      !S->GetFieldEvaluator("surface-conducted_energy_source")->IsDependency(S, key_) &&
-      S->HasField("dsurface-conducted_energy_source_dsurface-temperature")) {
+      S->HasFieldEvaluator(getKey(domain_,"conducted_energy_source")) &&
+      !S->GetFieldEvaluator(getKey(domain_,"conducted_energy_source"))->IsDependency(S, key_) &&
+      S->HasField(getDerivKey(getKey(domain_,"conducted_energy_source"), getKey(domain_,"temperature")))) {
     // This checks if 1, there is a source, and, 2, there is a
     // conducted component to that source, and 4, someone, somewhere
     // (i.e. SEB PK) has defined a dsource_dT, but 3, the source
@@ -298,7 +305,7 @@ void EnergySurfaceIce::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double 
     std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
 
     const Epetra_MultiVector& dsource_dT =
-        *S->GetFieldData("dsurface-conducted_energy_source_dsurface-temperature")->ViewComponent("cell",false);
+      *S->GetFieldData(getDerivKey(getKey(domain_,"conducted_energy_source"), getKey(domain_,"temperature")))->ViewComponent("cell",false);
     const Epetra_MultiVector& cell_vol = *S->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
     unsigned int ncells = dsource_dT.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
@@ -307,7 +314,7 @@ void EnergySurfaceIce::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double 
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
       *vo_->os() << "Adding hacked source to PC:" << std::endl;
-      db_->WriteVector("de_src_dT", S->GetFieldData("dsurface-conducted_energy_source_dsurface-temperature").ptr(), false);
+      db_->WriteVector("de_src_dT", S->GetFieldData(getDerivKey(getKey(domain_,"conducted_energy_source"), getKey(domain_,"temperature"))).ptr(), false);
     }
 
   }

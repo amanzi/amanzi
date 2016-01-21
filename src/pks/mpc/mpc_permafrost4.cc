@@ -298,7 +298,7 @@ MPCPermafrost4::UpdatePreconditioner(double t,
   S_next_->GetFieldEvaluator("surface-energy")
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "surface-pressure");
   Teuchos::RCP<const CompositeVector> dEdp =
-      S_next_->GetFieldData("dsurface-energy_dsurface-pressure");
+    S_next_->GetFieldData(getDerivKey("surface-energy", "surface-pressure"));
   dE_dp_surf_->AddAccumulationTerm(*dEdp->ViewComponent("cell", false), h);
 
   // write for debugging
@@ -409,7 +409,7 @@ MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   // Copy consistent faces to surface
   if (modified) {
     S_next_->GetFieldEvaluator("surface-relative_permeability")->HasFieldChanged(S_next_.ptr(),name_);
-    Teuchos::RCP<const CompositeVector> h_prev = S_inter_->GetFieldData("ponded_depth");
+    Teuchos::RCP<const CompositeVector> h_prev = S_inter_->GetFieldData("surface-ponded_depth");
     MergeSubsurfaceAndSurfacePressure(*h_prev, u->SubVector(0)->Data().ptr(), u->SubVector(2)->Data().ptr());
     CopySubsurfaceToSurface(*u->SubVector(1)->Data(), u->SubVector(3)->Data().ptr());
   }
@@ -669,7 +669,7 @@ MPCPermafrost4::ModifyCorrection_FrozenSurface_(double h, Teuchos::RCP<const Tre
   S_next_->GetFieldEvaluator("surface-water_content")
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "surface-pressure");
   const Epetra_MultiVector& dWC_dp_surf_c =
-      *S_next_->GetFieldData("dsurface-water_content_dsurface-pressure")
+    *S_next_->GetFieldData(getDerivKey("surface-water_content", "surface-pressure"))
       ->ViewComponent("cell",false);
 
   int nmodified = 0;

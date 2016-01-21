@@ -93,6 +93,7 @@ void RelPermEvaluator::InitializeFromPlist_() {
 
 // Special purpose EnsureCompatibility required because of surface rel perm.
 void RelPermEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
+
   if (!is_surf_) {
     SecondaryVariableFieldEvaluator::EnsureCompatibility(S);
   } else {
@@ -134,6 +135,7 @@ void RelPermEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
       S->RequireField(surf_rel_perm_key_)
           ->SetMesh(S->GetMesh("surface"))
           ->AddComponent("cell",AmanziMesh::CELL,1);
+     
       S->RequireFieldEvaluator(surf_rel_perm_key_)->EnsureCompatibility(S);
       
     }

@@ -105,7 +105,7 @@ void OverlandPressureFlow::Functional( double t_old,
 #endif
 
   // accumulation term
-  AddAccumulation_(res.ptr());
+ AddAccumulation_(res.ptr());
 #if DEBUG_FLAG
   db_->WriteVector("res (acc)", res.ptr(), true);
 #endif

@@ -53,7 +53,7 @@ EnergyBase::EnergyBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
 
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance")) {
-    if (domain_ == "surface") {
+    if (domain_ == "surface" || domain_ == "surface_star") {
       // h * nl * u at 1C in MJ/mol
       plist_->set("absolute error tolerance", .01 * 55000. * 76.e-6);
     } else if ((domain_ == "domain") || (boost::starts_with(domain_, "column"))) {
