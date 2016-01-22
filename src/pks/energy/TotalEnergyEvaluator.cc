@@ -1,12 +1,12 @@
 /*
-  This is the energy component of the ATS and Amanzi codes. 
+  Energy
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Author: Ethan Coon (ecoon@lanl.gov)
 
   FieldEvaluator for the total internal energy. Wrapping this conserved
   quantity as a field evaluator makes it easier to take derivatives, 
@@ -25,7 +25,8 @@ namespace Energy {
 * Constructor from ParameterList
 ****************************************************************** */
 TotalEnergyEvaluator::TotalEnergyEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist) {
+    SecondaryVariableFieldEvaluator(plist)
+{
   my_key_ = plist_.get<std::string>("energy key", "energy");
   vapor_diffusion_ = plist_.get<bool>("vapor diffusion", true);
 
@@ -43,7 +44,7 @@ TotalEnergyEvaluator::TotalEnergyEvaluator(Teuchos::ParameterList& plist) :
 
   dependencies_.insert(std::string("internal_energy_rock"));
   dependencies_.insert(std::string("particle_density"));
-};
+}
 
 
 /* ******************************************************************
@@ -56,8 +57,7 @@ TotalEnergyEvaluator::TotalEnergyEvaluator(const TotalEnergyEvaluator& other) :
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> TotalEnergyEvaluator::Clone() const
-{
+Teuchos::RCP<FieldEvaluator> TotalEnergyEvaluator::Clone() const {
   return Teuchos::rcp(new TotalEnergyEvaluator(*this));
 }
 

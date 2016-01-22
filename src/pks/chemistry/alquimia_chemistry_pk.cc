@@ -155,7 +155,8 @@ void Alquimia_Chemistry_PK::InitializeChemistry(void)
     }
   }
 
-  chemistry_state_->SetAllFieldsInitialized();
+  // Fields should not be initialized without setting default values.
+  // chemistry_state_->SetAllFieldsInitialized();
 
   chem_initialized_ = true;
   num_iterations_ = 0;

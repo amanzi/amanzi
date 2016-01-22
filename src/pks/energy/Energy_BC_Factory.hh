@@ -1,5 +1,5 @@
 /*
-  This is the energy component of the Amanzi code.
+  Energy
  
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 

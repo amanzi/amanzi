@@ -127,12 +127,11 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     text = mm.transcode(node->getTextContent());
     std::vector<std::string> regions = CharToStrings_(text);
 
-    // mineral volume fraction and specific surface area are created for the 
-    // native chemistry only.
+    // mineral volume fraction and specific surface area.
     if (minerals.size() > 0) {
       out_list.set<Teuchos::Array<std::string> >("Minerals", minerals);
 
-      if (pk_model_["chemistry"] == "amanzi") {
+      // if (pk_model_["chemistry"] == "amanzi") {
         Teuchos::ParameterList& volfrac = ic_list.sublist("mineral_volume_fractions");
         Teuchos::ParameterList& surfarea = ic_list.sublist("mineral_specific_surface_area");
 
@@ -166,7 +165,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
             aux2_list.sublist(ss.str()).sublist("function-constant").set<double>("value", msa);
           }
         }
-      }
+      // }
     }
 
     // ion exchange
