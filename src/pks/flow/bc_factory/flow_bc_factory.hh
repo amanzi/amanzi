@@ -52,6 +52,9 @@ public:
     return CreateWithFunction("seepage face with infiltration", "outward mass flux");
   }
 
+  Teuchos::RCP<Functions::BoundaryFunction> CreateCriticalDepth() const {
+    return CreateWithoutFunction("critical depth");
+  }
 };
 
 }  // namespace
