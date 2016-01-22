@@ -93,6 +93,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   bc_zero_gradient_ = bc_factory.CreateZeroGradient();
   bc_flux_ = bc_factory.CreateMassFlux();
   bc_seepage_head_ = bc_factory.CreateWithFunction("seepage face head", "boundary head");
+  bc_critical_depth_ = bc_factory.CreateCriticalDepth();
 
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
@@ -282,6 +283,7 @@ void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
   bc_zero_gradient_->Compute(S->time());
   bc_flux_->Compute(S->time());
   bc_seepage_head_->Compute(S->time());
+  bc_critical_depth_->Compute(S->time());
 
   // Set extra fields as initialized -- these don't currently have evaluators.
   S->GetFieldData("upwind_overland_conductivity",name_)->PutScalar(1.0);
@@ -309,7 +311,7 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
 
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
-    *vo_->os() << "Commiting state." << std::endl;
+*vo_->os() << "Commiting state." << std::endl;
 
   PKPhysicalBDFBase::commit_state(dt, S);
 
@@ -317,6 +319,7 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
   bc_head_->Compute(S->time());
   bc_flux_->Compute(S->time());
   bc_seepage_head_->Compute(S->time());
+  bc_critical_depth_->Compute(S->time());
   UpdateBoundaryConditions_(S.ptr());
 
   // Update flux if rel perm or h + Z has changed.
@@ -526,6 +529,26 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
     }
   }
 
+  // Critical depth boundary condition
+  if (bc_critical_depth_->size() > 0) {
+    S->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S.ptr(), name_);
+    
+    const Epetra_MultiVector& h_c = *S->GetFieldData("ponded_depth")->ViewComponent("cell");
+    const Epetra_MultiVector& nliq_c = *S->GetFieldData("surface-molar_density_liquid")
+    ->ViewComponent("cell");
+    double gz = -(*S->GetConstantVectorData("gravity"))[2];
+    
+    for (Functions::BoundaryFunction::Iterator bc = bc_critical_depth_->begin();
+         bc != bc_critical_depth_->end(); ++bc) {
+      int f = bc->first;
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int c = cells[0];
+      
+      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+      bc_values_[f] = sqrt(gz)*std::pow(h_c[0][c], 1.5)*nliq_c[0][c];
+    }
+  }
+  
   // mark all remaining boundary conditions as zero flux conditions
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
