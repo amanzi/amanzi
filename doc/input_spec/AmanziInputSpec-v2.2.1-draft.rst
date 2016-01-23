@@ -708,10 +708,10 @@ The ``structured_controls`` sections specifies numerical control options for the
 
 .. code-block:: xml
 
-  <unstructured_controls>
+  <structured_controls>
       Required Elements: NONE
       Optional Elements: comments, str_time_step_controls, str_flow_controls, str_transport_controls, str_amr_controls
-  </unstructured_controls>
+  </structured_controls>
 
 The subsections ``str_flow_controls`` and  ``str_transient_controls`` specify options specific to those process kernals.  The ``str_time_step_controls`` specify options for controlling the time step based on performance of the nonlinear solvers.  The subsection ``str_amr_controls`` specify options for AMR, including those for gridding and distribution granularity of data in parallel.
 

@@ -1442,6 +1442,25 @@ void InputConverterS::ParseGeochemistry_()
 	  AddToTable(table, MakePPPrefix("Chemistry", "Engine_Input_File"), MakePPEntry(inpfilename));
 	}
       }
+
+      bool confound;
+      DOMNode* connode = GetUniqueElementByTagsString_("geochemistry, constraints", confound);
+      if (confound)
+      {
+	bool gccsfound = false;
+	vector<DOMNode*> gccs = GetChildren_(connode, "constraint", gccsfound);
+	if (gccsfound)
+	{
+	  for (size_t g = 0; g < gccs.size(); ++g)
+	  {
+	    DOMElement* constraint = static_cast<DOMElement*>(gccs[g]);
+	    string constraint_name = GetAttributeValueS_(constraint, "name");
+	    if (!constraint_name.empty()) {
+	      constraint_names_.push_back(constraint_name);
+	    }
+	  }
+	}
+      }
     }
   }
   else {
@@ -1761,33 +1780,7 @@ void InputConverterS::ParseMaterials_(bool& do_tracer_diffusion)
   AddToTable(table, MakePPPrefix("prob", "do_tracer_diffusion"), MakePPEntry(do_tracer_diffusion));
   // FIXME: What else here?
 
-  // Chemistry model.
-  string chemistry_state = GetAttributeValueS_(chemistry, "state");
-  if (chemistry_state == "on")
-  {
-    chemistry_engine_ = GetAttributeValueS_(chemistry, "engine");
-    if (chemistry_engine_ == "amanzi")
-    {
-      AddToTable(table, MakePPPrefix("prob", "chemistry_model"), MakePPEntry("Amanzi"));
-      // FIXME: What else here?
-    }
-    else if (chemistry_engine_ != "none") // Alquimia!
-    {
-      AddToTable(table, MakePPPrefix("prob", "chemistry_model"), MakePPEntry("Alquimia"));
-      if (chemistry_engine_ == "pflotran")
-        AddToTable(table, MakePPPrefix("Chemistry", "Engine"), MakePPEntry("PFloTran"));
-      else if (chemistry_engine_ == "crunchflow")
-        AddToTable(table, MakePPPrefix("Chemistry", "Engine"), MakePPEntry("CrunchFlow"));
-    }
-    else
-    {
-      AddToTable(table, MakePPPrefix("prob", "chemistry_model"), MakePPEntry("Off"));
-    }
-
-    // FIXME: This parameter isn't really supported yet, since it only has 
-    // FIXME: one meaningful value.
-//    string chemistry_model = GetAttributeValueS_(chemistry, "process_model");
-  }
+  // Chemistry model. -- processed by ParseGeochemistry
 
   ParmParse::appendTable(table);
 }
@@ -2000,10 +1993,36 @@ void InputConverterS::ParseInitialConditions_()
 	  if (gcfound)
 	  {
 	    sfound = true;
-	    string condition_name = GetAttributeValueS_(gc, "constraint");
-	    for (int s = 0; s<solutes_.size(); ++s) {
-	      AddToTable(table, MakePPPrefix("tracer", solutes_[s], "ic", ic_name, "geochemical_condition"), MakePPEntry(condition_name));
-	      AddToTable(table, MakePPPrefix("tracer", solutes_[s], "ic", ic_name, "type"), MakePPEntry("concentration"));
+
+	    bool gfound;
+	    DOMElement* geocon = GetChildByName_(gc, "constraint", gfound);
+	    if (gfound)
+	    {
+	      string constraint_name = GetAttributeValueS_(geocon, "name");
+	      if (!constraint_name.empty()) {
+		bool known_cond = false;
+		for (int c=0; c<constraint_names_.size() && !known_cond; ++c) {
+		  if (constraint_names_[c] == constraint_name) known_cond = true;
+		}
+		if (known_cond) {
+		  for (int s = 0; s<solutes_.size(); ++s) {
+		    AddToTable(table, MakePPPrefix("tracer", solutes_[s], "ic", ic_name, "geochemical_condition"), MakePPEntry(constraint_name));
+		    AddToTable(table, MakePPPrefix("tracer", solutes_[s], "ic", ic_name, "type"), MakePPEntry("concentration"));
+		  }
+		}
+		else {
+		  Errors::Message msg;
+		  msg << "Undeclared constraint name \""  << constraint_name << "\" in initial_condition \"" << ic_name << "\".\n";
+		  msg << "Please correct and try again.\n";
+		  Exceptions::amanzi_throw(msg);	  
+		}
+	      }
+	      else {
+		Errors::Message msg;
+		msg << "No \"name\" attibute specified for geochemical constraint in initial_condition \"" << ic_name << "\".\n";
+		msg << "Please correct and try again.\n";
+		Exceptions::amanzi_throw(msg);	  
+	      }
 	    }
 	  }
 
@@ -2251,10 +2270,107 @@ void InputConverterS::ParseBoundaryConditions_()
 	  if (gcfound)
 	  {
 	    sfound = true;
-	    string condition_name = GetAttributeValueS_(gc, "constraint");
-	    for (int s = 0; s<solutes_.size(); ++s) {
-	      AddToTable(table, MakePPPrefix("tracer", solutes_[s], "bc", bc_name, "geochemical_condition"), MakePPEntry(condition_name));
-	      AddToTable(table, MakePPPrefix("tracer", solutes_[s], "bc", bc_name, "type"), MakePPEntry("concentration"));
+
+	    bool gfound;
+
+	    vector<DOMNode*> geocons = GetChildren_(gc, "constraint", gfound);
+	    if (gfound)
+	    {
+	      vector<vector<string> > gicdata;
+	      for (int g=0; g<geocons.size(); ++g) {
+		DOMElement* geocon = static_cast<DOMElement*>(geocons[g]);
+		string constraint_name = GetAttributeValueS_(geocon, "name");
+		if (!constraint_name.empty()) {
+		  bool known_cond = false;
+		  for (int c=0; c<constraint_names_.size() && !known_cond; ++c) {
+		    if (constraint_names_[c] == constraint_name) known_cond = true;
+		  }
+		  if (known_cond) {
+		    vector<string> thisgic;
+		    thisgic.push_back(constraint_name);
+		    string condition_time = GetAttributeValueS_(geocon, "start");
+		    if (!condition_time.empty()) {
+		      thisgic.push_back(condition_time);
+		    }
+		    string condition_form = GetAttributeValueS_(geocon, "function");
+		    if (!condition_form.empty()) {
+		      if (condition_form != "constant") {
+			Errors::Message msg;
+			msg << "Unsupport non-constant constraint interval specified in boundary_condition \"" << bc_name << "\".\n";
+			msg << "Please correct and try again.\n";
+			Exceptions::amanzi_throw(msg);	  
+		      }
+		    }
+		    gicdata.push_back(thisgic);
+		  }
+		  else {
+		    Errors::Message msg;
+		    msg << "Undeclared constraint name \""  << constraint_name << "\" in boundary_condition \"" << bc_name << "\".\n";
+		    msg << "Please correct and try again.\n";
+		    Exceptions::amanzi_throw(msg);	  
+		  }
+		}
+		else {
+		  Errors::Message msg;
+		  msg << "No \"name\" attibute specified for geochemical constraint in boundary_condition \"" << bc_name << "\".\n";
+		  msg << "Please correct and try again.\n";
+		  Exceptions::amanzi_throw(msg);	  
+		}
+	      }
+
+	      // Translate any labeled times to real values
+	      for (int g=0; g<gicdata.size(); ++g) {
+		if (gicdata[g].size() > 1) {
+		  const string& this_time = gicdata[g][1];
+		  map<string, string>::const_iterator iterT = labeled_times_.find(this_time);
+		  if (iterT != labeled_times_.end())
+		    gicdata[g][1] = ConvertTimeToSeconds(iterT->second);
+		  else
+		    gicdata[g][1] = ConvertTimeToSeconds(this_time);
+		}
+	      }
+
+	      // Check that times provided if more than one constraint supplied
+	      if (gicdata.size() > 1) {
+		for (int g=0; g<gicdata.size(); ++g) {
+		  if (gicdata[g].size() < 2) {
+		    Errors::Message msg;
+		    msg << "When using multiple geochemical constraints on a boundary, the \"start\" attribule is required for boundary_condition \"" << bc_name << "\".\n";
+		    msg << "Please correct and try again.\n";
+		    Exceptions::amanzi_throw(msg);	  
+		  }
+		}
+	      }
+
+	      if (gicdata.size() > 1) {
+		  Errors::Message msg;
+		  msg << "Multiple time intervals not yet supported in AmanziS for geochemical constraint boundary_condition \"" << bc_name << "\".\n";
+		  msg << "Please correct and try again.\n";
+		  Exceptions::amanzi_throw(msg);	  
+	      }
+	      else {
+		for (int s = 0; s<solutes_.size(); ++s) {
+		  AddToTable(table, MakePPPrefix("tracer", solutes_[s], "bc", bc_name, "type"), MakePPEntry("concentration"));
+		}
+		if (gicdata.size() == 1) {
+		  for (int s = 0; s<solutes_.size(); ++s) {
+		    AddToTable(table, MakePPPrefix("tracer", solutes_[s], "bc", bc_name, "geochemical_conditions"), MakePPEntry(gicdata[0][0]));
+		  }
+		}
+		else {
+		  vector<string> gicnames, gictimes, gicforms;
+		  for (int g=0; g<gicdata.size(); ++g) {
+		    gicnames.push_back(gicdata[g][0]);
+		    gictimes.push_back(gicdata[g][1]);
+		    gicnames.push_back("constant");
+		  }
+		  for (int s = 0; s<solutes_.size(); ++s) {
+		    AddToTable(table, MakePPPrefix("tracer", solutes_[s], "bc", bc_name, "geochemical_conditions"), MakePPEntry(gicnames));
+		    AddToTable(table, MakePPPrefix("tracer", solutes_[s], "bc", bc_name, "times"), MakePPEntry(gictimes));
+		    AddToTable(table, MakePPPrefix("tracer", solutes_[s], "bc", bc_name, "forms"), MakePPEntry(gicforms));
+		  }
+		}
+	      }
 	    }
 	  }
 

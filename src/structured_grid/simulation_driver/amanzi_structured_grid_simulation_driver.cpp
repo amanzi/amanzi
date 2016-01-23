@@ -141,8 +141,11 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
 	BoxLib::Abort("Under Structured, \"structured_native\" is the only supported format for writing translated input");
       }
       else {
-	std::ofstream dumpy(file_name.c_str());
-	pp.dumpTable(dumpy);
+	EnsureFolderExists(file_name);
+	std::ofstream osf; osf.open(file_name.c_str());
+	osf << std::setprecision(15);
+	pp.dumpTable(osf);
+	osf.close();
       }
     }
 
