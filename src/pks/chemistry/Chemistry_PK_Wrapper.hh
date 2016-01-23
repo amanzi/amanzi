@@ -14,7 +14,7 @@
 #ifdef ALQUIMIA_ENABLED
 #include "Alquimia_PK.hh"
 #endif
-#include "Chemistry_PK_Base.hh"
+#include "Chemistry_PK.hh"
 #include "Chemistry_State.hh"
 #include "PK.hh"
 #include "PK_Factory.hh"
@@ -54,8 +54,8 @@ class Chemistry_PK_Wrapper : public PK {
   virtual void set_dt(double dt) { dt_ = dt; }
 
   // Advance from state S0 to state S1 at time S0.time + dt.
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) {
-    pk_->Advance(t_new - t_old, total_component_concentration);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) {
+    pk_->Advance(t_new - t_old, total_component_concentration_);
     return true;
   }
 
@@ -72,13 +72,12 @@ class Chemistry_PK_Wrapper : public PK {
 
   virtual std::string name() { return "chemistry"; }
 
-  Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration() { 
-    *total_component_concentration = *pk_->get_total_component_concentration();
-    return total_component_concentration; 
+  Teuchos::RCP<Epetra_MultiVector> total_component_concentration() { 
+    return total_component_concentration_; 
   }
 
   void set_total_component_concentration(Teuchos::RCP<Epetra_MultiVector> tcc) {
-    total_component_concentration = tcc;
+    total_component_concentration_ = tcc;
   }
 
   // access
@@ -89,7 +88,7 @@ class Chemistry_PK_Wrapper : public PK {
 
  protected:
   Teuchos::RCP<Teuchos::ParameterList> glist_;
-  Teuchos::RCP<Chemistry_PK_Base> pk_;
+  Teuchos::RCP<Chemistry_PK> pk_;
   Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<State> S_;
 
@@ -103,7 +102,7 @@ class Chemistry_PK_Wrapper : public PK {
   double dt_;
 
   // storage for the component concentration intermediate values
-  Teuchos::RCP<Epetra_MultiVector> total_component_concentration;
+  Teuchos::RCP<Epetra_MultiVector> total_component_concentration_;
 
  private:
   // factory registration

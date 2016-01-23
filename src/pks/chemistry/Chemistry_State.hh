@@ -42,35 +42,10 @@ class Chemistry_State {
 
   void Initialize();
 
-  // accessors
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_maps() const {
-    return S_->GetMesh();
-  }
-
   // access methods for state variables
   // const methods
   Teuchos::RCP<const Epetra_MultiVector> total_component_concentration() const {
     return S_->GetFieldData("total_component_concentration")->ViewComponent("cell", true);
-  }
-
-  Teuchos::RCP<const Epetra_Vector> porosity() const {
-    return Teuchos::rcpFromRef(*(*S_->GetFieldData("porosity")->ViewComponent("cell", ghosted_))(0));
-  }
-
-  Teuchos::RCP<const Epetra_Vector> water_saturation() const {
-    return Teuchos::rcpFromRef(*(*S_->GetFieldData("saturation_liquid")->ViewComponent("cell", ghosted_))(0));
-  }
-
-  Teuchos::RCP<const Epetra_Vector> water_density() const {
-    if (!water_density_initialized_) {
-      water_density_->PutScalar(*S_->GetScalarData("fluid_density"));
-      water_density_initialized_ = true;
-    }
-    return water_density_;
-  }
-
-  Teuchos::RCP<const Epetra_Vector> volume() const {
-    return Teuchos::rcpFromRef(*(*S_->GetFieldData("cell_volume")->ViewComponent("cell", ghosted_))(0));
   }
 
   int number_of_aqueous_components(void) const {
@@ -79,11 +54,6 @@ class Chemistry_State {
 
 
   // non-const accessors
-  Teuchos::RCP<Epetra_MultiVector> total_component_concentration() {
-    return S_->GetFieldData("total_component_concentration", name_)
-        ->ViewComponent("cell", true);
-  }
-
   Teuchos::RCP<Epetra_MultiVector> free_ion_species() {
     try {
       return S_->GetFieldData("free_ion_species", name_)
@@ -264,21 +234,10 @@ class Chemistry_State {
                         const AlquimiaAuxiliaryData& aux_data,
                         const AlquimiaAuxiliaryOutputData& aux_output,
                         Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
-
-  // Copies the data in the given Alquimia containers to the given cell within the 
-  // chemistry state. Modifies only uninitialize fields
-
-  void InitFromAlquimia(const int cell_id,
-                        const AlquimiaMaterialProperties& mat_props,
-                        const AlquimiaState& state,
-                        const AlquimiaAuxiliaryData& aux_data,
-                        const AlquimiaAuxiliaryOutputData& aux_output);
-
 #endif
 
   void InitFromBeakerStructure(const int cell_id,
                                Beaker::BeakerComponents beaker_components);
-
 
 
   void SetAllFieldsInitialized();
@@ -328,15 +287,11 @@ class Chemistry_State {
   std::vector<std::string> sorption_site_names_;
   std::map<std::string, int> sorption_site_name_id_map_;
 
-  mutable bool water_density_initialized_;
-  Teuchos::RCP<Epetra_Vector> water_density_;
-
   // Auxiliary data, maintained by Amanzi and updated
   int num_aux_data_;
   Teuchos::RCP<Epetra_MultiVector> aux_data_;
-
-
 };
+
 } // namespace
 } // namespace
 

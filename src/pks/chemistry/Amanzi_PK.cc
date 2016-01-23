@@ -6,37 +6,14 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Purpose: Trilinos based process kernel for chemistry
- 
-  Notes:
-    - all the actual geochemistry calculations live in the chemistry library. 
- 
-    - The process kernel stores the instance of the chemistry object
-      and drives the chemistry calculations on a cell by cell
-      basis. It handles the movement of data back and forth between
-      the amanzi memory and the chemistry library data structures.
-   
-    - chemistry_state will always hold the state at the begining of
-      the time step. should not (can not?) be changed by chemistry.
-   
-    - when Advance is called, total_component_concentration_star
-      holds the value of component concentrations after transport!
-   
-    - where do we write to when advance state is done? tcc is read
-      only, do we want to write over the values in tcc_star?
-  
-    - when CommitState is called, we get a new Chemistry_State
-      object which will hold the final info for the end of the time
-      step. We can use it if we want, to update our internal data.
-  
-    - The State and Chemistry_State objects have
-      total_component_concentrations in a multi vector. The data is
-      stored such that:
-  
-        double* foo = total_component_concetration[i]
- 
-      where foo refers to a vector of component concentrations for a
-      single component.
+  Authors:
+
+  Trilinos based process kernel for chemistry. Geochemistry
+  calculations live in the chemistry library. The PK stores the 
+  instance of the chemistry object and drives the chemistry 
+  calculations on a cell by cell basis. It handles the movement of
+  data back and forth between the State and the chemistry library 
+  data structures.
 */
  
 #include <string>
@@ -72,17 +49,21 @@ extern VerboseObject* chem_out;
 *
 ******************************************************************* */
 Amanzi_PK::Amanzi_PK(const Teuchos::ParameterList& param_list,
-                     Teuchos::RCP<Chemistry_State> chem_state)
-    : debug_(false),
-      display_free_columns_(false),
-      max_time_step_(9.9e9),
-      chemistry_state_(chem_state),
-      parameter_list_(param_list),
-      chem_(NULL),
-      current_time_(0.0),
-      saved_time_(0.0) {
-
-  // create verbosity object
+                     Teuchos::RCP<Chemistry_State> chem_state,
+                     Teuchos::RCP<State> S,
+                     Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+    S_(S),
+    mesh_(mesh),
+    passwd_("state"),
+    debug_(false),
+    display_free_columns_(false),
+    max_time_step_(9.9e9),
+    chemistry_state_(chem_state),
+    parameter_list_(param_list),
+    chem_(NULL),
+    current_time_(0.0),
+    saved_time_(0.0)
+{
   chem_out = new VerboseObject("ChemistryPK", const_cast<Teuchos::ParameterList&>(param_list)); 
 }
 
@@ -99,7 +80,11 @@ Amanzi_PK::~Amanzi_PK() {
 /* *******************************************************************
 *
 ******************************************************************* */
-void Amanzi_PK::InitializeChemistry(void) {
+void Amanzi_PK::InitializeChemistry()
+{
+  Teuchos::RCP<Epetra_MultiVector> tcc = 
+      S_->GetFieldData("total_component_concentration", passwd_)->ViewComponent("cell");
+
   if (debug()) {
     std::cout << "  Amanzi_PK::InitializeChemistry()" << std::endl;
   }
@@ -117,10 +102,7 @@ void Amanzi_PK::InitializeChemistry(void) {
 
   // copy the first cell data into the beaker storage for
   // initialization purposes
-  int cell = 0;
-  CopyCellStateToBeakerStructures(
-      cell, 
-      chemistry_state_->total_component_concentration());
+  CopyCellStateToBeakerStructures(0, tcc);
 
   // finish setting up & testing the chemistry object
   int ierr(0);
@@ -138,13 +120,10 @@ void Amanzi_PK::InitializeChemistry(void) {
     }
   } catch (ChemistryException& geochem_error) {
     ierr = 1;
-    // chem_->DisplayResults();
-    // std::cout << geochem_error.what() << std::endl;
-    // Exceptions::amanzi_throw(geochem_error);
   }
 
   int recv(0);
-  chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
+  mesh_->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) {
     ChemistryException geochem_error("Error in Amanzi_PK::InitializeChemistry 0");
     Exceptions::amanzi_throw(geochem_error);
@@ -156,26 +135,16 @@ void Amanzi_PK::InitializeChemistry(void) {
 
   SetupAuxiliaryOutput();
 
-  // now loop through all the cells and initialize
+  // solve for initial free-ion concentrations
   chem_out->Write(Teuchos::VERB_HIGH, "Initializing chemistry in all cells...\n");
-  int num_cells = chemistry_state_->mesh_maps()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ierr = 0;
-  for (cell = 0; cell < num_cells; ++cell) {
-    if (debug()) {
-      std::cout << "Initial speciation in cell " << cell << std::endl;
-    }
-
-    CopyCellStateToBeakerStructures(
-        cell,
-        chemistry_state_->total_component_concentration());
+  for (int c = 0; c < num_cells; ++c) {
+    CopyCellStateToBeakerStructures(c, tcc);
 
     try {
-      //chem_->DisplayTotalColumns(static_cast<double>(-cell), beaker_components_, display_free_columns_);
-      // solve for initial free-ion concentrations
       chem_->Speciate(&beaker_components_, beaker_parameters_);
-
-      CopyBeakerStructuresToCellState(cell);
-      // chemistry_state_->InitFromBeakerStructure(cell, beaker_components_);
+      CopyBeakerStructuresToCellState(c, tcc);
 
     } catch (ChemistryException& geochem_error) {
       ierr = 1;
@@ -184,14 +153,11 @@ void Amanzi_PK::InitializeChemistry(void) {
 
   recv = 0;
   // figure out if any of the processes threw an error, if so all processes will re-throw
-  chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
+  mesh_->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) {
     ChemistryException geochem_error("Error in Amanzi_PK::InitializeChemistry 1");
     Exceptions::amanzi_throw(geochem_error); 
   }  
-
-  // Fields should not be initialized without setting default values.
-  // chemistry_state_->SetAllFieldsInitialized();
 
   chem_out->Write(Teuchos::VERB_HIGH, "InitializeChemistry(): initialization was successful.\n");
 }
@@ -351,9 +317,7 @@ void Amanzi_PK::SetupAuxiliaryOutput(void) {
 
   // create the Epetra_MultiVector that will hold the data
   if (nvars > 0) {
-    aux_data_ =
-        Teuchos::rcp(new Epetra_MultiVector(
-            chemistry_state_->mesh_maps()->cell_map(false), nvars));
+    aux_data_ = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(false), nvars));
   } else {
     aux_data_ = Teuchos::null;
   }
@@ -413,17 +377,14 @@ void Amanzi_PK::SizeBeakerStructures(void) {
 
 
 /* *******************************************************************
-*
+* NOTE: want the aqueous totals value calculated from transport
+* (aqueous_components), not the value stored in state!
 ******************************************************************* */
 void Amanzi_PK::CopyCellStateToBeakerStructures(
-    const int cell_id,
-    Teuchos::RCP<const Epetra_MultiVector> aqueous_components) {
-  // NOTE: want the aqueous totals value calculated from transport
-  // (aqueous_components), not the value stored in state!
-
-  for (unsigned int c = 0; c < number_aqueous_components(); c++) {
-    double* cell_components = (*aqueous_components)[c];
-    beaker_components_.total.at(c) = cell_components[cell_id];
+    const int cell_id, Teuchos::RCP<Epetra_MultiVector> aqueous_components)
+{
+  for (unsigned int i = 0; i < number_aqueous_components(); i++) {
+    beaker_components_.total.at(i) = (*aqueous_components)[i][cell_id];
   }
 
   for (unsigned int c = 0; c < number_aqueous_components(); c++) {
@@ -517,22 +478,25 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
   }
 
   // copy data from state arrays into the beaker parameters
-  beaker_parameters_.water_density = (*chemistry_state_->water_density())[cell_id];
-  beaker_parameters_.porosity = (*chemistry_state_->porosity())[cell_id];
-  beaker_parameters_.saturation = (*chemistry_state_->water_saturation())[cell_id];
-  beaker_parameters_.volume = (*chemistry_state_->volume())[cell_id];
+  const Epetra_MultiVector& porosity = *S_->GetFieldData("porosity")->ViewComponent("cell");
+  const Epetra_MultiVector& water_saturation = *S_->GetFieldData("saturation_liquid")->ViewComponent("cell");
+  double water_density = *S_->GetScalarData("fluid_density");
+
+  beaker_parameters_.water_density = water_density;
+  beaker_parameters_.porosity = porosity[0][cell_id];
+  beaker_parameters_.saturation = water_saturation[0][cell_id];
+  beaker_parameters_.volume = mesh_->cell_volume(cell_id);
 }
 
 
 /* *******************************************************************
-*
+* Copy data from the beaker back into the state arrays.
 ******************************************************************* */
-void Amanzi_PK::CopyBeakerStructuresToCellState(const int cell_id) {
-  // copy data from the beaker back into the state arrays
-
-  for (unsigned int c = 0; c < number_aqueous_components(); c++) {
-    double* cell_components = (*chemistry_state_->total_component_concentration())[c];
-    cell_components[cell_id] = beaker_components_.total.at(c);
+void Amanzi_PK::CopyBeakerStructuresToCellState(
+    int cell_id, Teuchos::RCP<Epetra_MultiVector> total_component_concentration)
+{
+  for (unsigned int i = 0; i < number_aqueous_components(); ++i) {
+    (*total_component_concentration)[i][cell_id] = beaker_components_.total.at(i);
   }
 
   for (unsigned int c = 0; c < number_aqueous_components(); c++) {
@@ -624,90 +588,54 @@ void Amanzi_PK::CopyBeakerStructuresToCellState(const int cell_id) {
 
 
 /* ******************************************************************
-* MPC interface functions
-******************************************************************* */
-Teuchos::RCP<Epetra_MultiVector> Amanzi_PK::get_total_component_concentration(void) const {
-  return chemistry_state_->total_component_concentration();
-}
-
-
-/* ******************************************************************
-* The MPC will call this function to advance the state with this
-* particular process kernel
-*
-* This is how to get the total component concentration
-* CS->get_total_component_concentration()
-*
-* Please update the argument to this function called tcc_star
-* with the result of your chemistry computation which is the total
-* component concentration ^star
-*
-* See the Chemistry_State for the other available data in the
-* chemistry specific state
+* This function advances concentrations in the auxialiry vector 
+* total_component_concentration. This vector contains values advected
+* by the ransport PK.
 ******************************************************************* */
 void Amanzi_PK::Advance(
     const double& delta_time,
-    Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star) {
+    Teuchos::RCP<Epetra_MultiVector> total_component_concentration)
+{
   std::stringstream msg;
   msg << "advancing, time step [sec] = " << delta_time << std::endl;
   chem_out->Write(Teuchos::VERB_LOW, msg);
 
   current_time_ = saved_time_ + delta_time;
 
-  // shorter name for the state that came out of transport
-  Teuchos::RCP<const Epetra_MultiVector> tcc_star =
-      total_component_concentration_star;
+  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
-
-  // TODO(bandre): use size of the porosity vector as indicator of size for
-  // now... should get data from the mesh...?
-  int num_cells = chemistry_state_->mesh_maps()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
-  int max_iterations = 0;
-  int imax = -999;
-  int ave_iterations = 0;
-  int imin = -999;
-  int min_iterations = 10000000;
+  int max_iterations(0), min_iterations(10000000), ave_iterations(0);
+  int cmax(-1), cmin(-1);
 
   int ierr(0);
-  for (int cell = 0; cell < num_cells; cell++) {
-    // copy state data into the beaker data structures
-    CopyCellStateToBeakerStructures(cell, tcc_star);
+  for (int c = 0; c < num_cells; ++c) {
+    CopyCellStateToBeakerStructures(c, total_component_concentration);
     try {
       // create a backup copy of the components
       chem_->CopyComponents(beaker_components_, &beaker_components_copy_);
+
       // chemistry computations for this cell
       int num_iterations = chem_->ReactionStep(&beaker_components_,
                                                beaker_parameters_, delta_time);
-      //std::stringstream message;
-      //message << "--- " << cell << "\n";
-      //beaker_components_.Display(message.str().c_str());
       if (max_iterations < num_iterations) {
         max_iterations = num_iterations;
-        imax = cell;
+        cmax = c;
       }
       if (min_iterations > num_iterations) {
         min_iterations = num_iterations;
-        imin = cell;
+        cmin = c;
       }
       ave_iterations += num_iterations;
     } catch (ChemistryException& geochem_error) {
       ierr = 1;
     }
-    // update this cell's data in the arrays
-    if (ierr == 0) CopyBeakerStructuresToCellState(cell);
 
-    // TODO(bandre): was porosity etc changed? copy someplace
+    if (ierr == 0) CopyBeakerStructuresToCellState(c, total_component_concentration);
+    // TODO: was porosity etc changed? copy someplace
+  }
 
-#ifdef GLENN_DEBUG
-    if (cell % (num_cells / 10) == 0) {
-      std::cout << "  " << cell * 100 / num_cells
-                << "%" << std::endl;
-    }
-#endif
-  }  // for(cells)
   int recv(0);
-  chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
+  mesh_->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) {
     ChemistryException geochem_error("Error in Amanzi_PK::Advance");
     Exceptions::amanzi_throw(geochem_error); 
@@ -747,7 +675,7 @@ void Amanzi_PK::CommitState(Teuchos::RCP<Chemistry_State> chem_state,
 ******************************************************************* */
 Teuchos::RCP<Epetra_MultiVector> Amanzi_PK::get_extra_chemistry_output_data() {
   if (aux_data_ != Teuchos::null) {
-    int num_cells = chemistry_state_->mesh_maps()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
     for (int cell = 0; cell < num_cells; cell++) {
       // populate aux_data_ by copying from the appropriate internal storage

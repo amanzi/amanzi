@@ -1,17 +1,27 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef AMANZI_ALQUIMIA_CHEMISTRY_PK_HH_
-#define AMANZI_ALQUIMIA_CHEMISTRY_PK_HH_
+/*
+  Chemistry PK
 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+*/
+ 
+#ifndef AMANZI_CHEMISTRY_ALQUIMIA_PK_HH_
+#define AMANZI_CHEMISTRY_ALQUIMIA_PK_HH_
+
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-
-#include "Chemistry_PK_Base.hh"
-#include "ChemistryEngine.hh"
 #include "VerboseObject.hh"
+
+// Chemistry
+#include "Chemistry_PK.hh"
+#include "ChemistryEngine.hh"
 
 // forward declarations
 class Epetra_MultiVector;
@@ -22,24 +32,24 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 // Trilinos based chemistry process kernel for the unstructured mesh
-class Alquimia_PK: public Chemistry_PK_Base {
+class Alquimia_PK: public Chemistry_PK {
  public:
-
   // Constructor. Note that we must pass the "Main" parameter list
   // to this PK so that it has access to all information about the 
   // problem.
   Alquimia_PK(const Teuchos::ParameterList& param_list,
               Teuchos::RCP<Chemistry_State> chem_state,
-              Teuchos::RCP<ChemistryEngine> chem_engine);
+              Teuchos::RCP<ChemistryEngine> chem_engine,
+              Teuchos::RCP<State> S,
+              Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
   ~Alquimia_PK();
 
   void InitializeChemistry(void);
 
   void Advance(const double& delta_time,
-               Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star);
+               Teuchos::RCP<Epetra_MultiVector> total_component_concentration);
   void CommitState(Teuchos::RCP<Chemistry_State> chem_state, const double& time);
-  Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration(void) const;
 
   double time_step(void) const {
     return this->time_step_;
@@ -82,9 +92,11 @@ class Alquimia_PK: public Chemistry_PK_Base {
   Teuchos::RCP<Epetra_MultiVector> get_extra_chemistry_output_data();
 
  protected:
+  Teuchos::RCP<State> S_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  std::string passwd_;
 
  private:
-
   // Timestepping controls.
   double time_step_, max_time_step_, min_time_step_, prev_time_step_;
   std::string time_step_control_method_;
@@ -128,7 +140,7 @@ class Alquimia_PK: public Chemistry_PK_Base {
   void UpdateChemistryStateStorage(void);
   int InitializeSingleCell(int cell_index, const std::string& condition);
   int AdvanceSingleCell(double delta_time, 
-                        Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star,
+                        Teuchos::RCP<Epetra_MultiVector> total_component_concentration,
                         int cell_index);
 
   void ParseChemicalConditionRegions(const Teuchos::ParameterList& param_list,
@@ -147,16 +159,17 @@ class Alquimia_PK: public Chemistry_PK_Base {
                                  const AlquimiaMaterialProperties& mat_props,
                                  const AlquimiaState& state,
                                  const AlquimiaAuxiliaryData& aux_data,
-                                 const AlquimiaAuxiliaryOutputData& aux_output);
+                                 const AlquimiaAuxiliaryOutputData& aux_output,
+                                 Teuchos::RCP<Epetra_MultiVector> total_component_concentration);
 
   void InitAmanziStateFromAlquimia(const int cell_id,
                                    const AlquimiaMaterialProperties& mat_props,
                                    const AlquimiaState& state,
                                    const AlquimiaAuxiliaryData& aux_data,
                                    const AlquimiaAuxiliaryOutputData& aux_output);
-
 };
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_ALQUIMIA_CHEMISTRY_PK_HH_
+#endif
+

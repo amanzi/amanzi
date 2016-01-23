@@ -6,37 +6,12 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Purpose: Trilinos based process kernel for chemistry
- 
-  Notes:
-    - all the actual geochemistry calculations live in the chemistry library. 
-
-    - The process kernel stores the instance of the chemistry object
-      and drives the chemistry calculations on a cell by cell
-      basis. It handles the movement of data back and forth between
-      the amanzi memory and the chemistry library data structures.
- 
-    - chemistry_state will always hold the state at the begining of
-      the time step. should not (can not?) be changed by chemistry.
- 
-    - when Advance is called, total_component_concentration_star
-      holds the value of component concentrations after transport!
- 
-    - where do we write to when advance state is done? tcc is read
-      only, do we want to write over the values in tcc_star?
- 
-    - when CommitState is called, we get a new Chemistry_State
-      object which will hold the final info for the end of the time
-      step. We can use it if we want, to update our internal data.
- 
-    - The State and Chemistry_State objects have
-      total_component_concentrations in a multi vector. The data is
-      stored such that:
- 
-        double* foo = total_component_concetration[i]
- 
-      where foo refers to a vector of component concentrations for a
-      single component.
+  Trilinos based process kernel for chemistry. All geochemistry 
+  calculations live in the chemistry library. The PK stores the 
+  instance of the chemistry object and drives the chemistry 
+  calculations on a cell by cell basis. It handles the movement of 
+  data back and forth between the amanzi memory and the chemistry 
+  library data structures.
 */
 
 #include <set>
@@ -67,15 +42,20 @@ namespace AmanziChemistry {
 ******************************************************************* */
 Alquimia_PK::Alquimia_PK(const Teuchos::ParameterList& param_list,
                          Teuchos::RCP<Chemistry_State> chem_state,
-                         Teuchos::RCP<ChemistryEngine> chem_engine)
-    : max_time_step_(9.9e9),
-      chemistry_state_(chem_state),
-      main_param_list_(param_list),
-      chem_param_list_(),
-      chem_initialized_(false),
-      chem_engine_(chem_engine),
-      current_time_(0.0),
-      saved_time_(0.0) 
+                         Teuchos::RCP<ChemistryEngine> chem_engine,
+                         Teuchos::RCP<State> S,
+                         Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+    S_(S),
+    mesh_(mesh),
+    passwd_("state"),
+    max_time_step_(9.9e9),
+    chemistry_state_(chem_state),
+    main_param_list_(param_list),
+    chem_param_list_(),
+    chem_initialized_(false),
+    chem_engine_(chem_engine),
+    current_time_(0.0),
+    saved_time_(0.0) 
 {
   ASSERT(!chem_state.is_null());
 
@@ -100,10 +80,12 @@ Alquimia_PK::~Alquimia_PK()
 ******************************************************************* */
 int Alquimia_PK::InitializeSingleCell(int cell_index, const std::string& condition) 
 {
+  Teuchos::RCP<Epetra_MultiVector> tcc =
+      S_->GetFieldData("total_component_concentration", passwd_)->ViewComponent("cell");
+
   // Copy the state and material information from Amanzi's state within 
   // this cell to Alquimia.
-  CopyAmanziStateToAlquimia(cell_index, 
-                            chemistry_state_->total_component_concentration(), 
+  CopyAmanziStateToAlquimia(cell_index, tcc,
                             alq_mat_props_, alq_state_, alq_aux_data_);
 
   // Do the initialization.
@@ -111,8 +93,9 @@ int Alquimia_PK::InitializeSingleCell(int cell_index, const std::string& conditi
                                  alq_state_, alq_aux_data_, alq_aux_output_);
 
   // Move the information back into Amanzi's state.
-  // CopyAlquimiaStateToAmanzi(cell_index, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
-  InitAmanziStateFromAlquimia(cell_index, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
+  CopyAlquimiaStateToAmanzi(cell_index,
+                            alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_,
+                            tcc);
 
   return 0;
 }
@@ -134,16 +117,15 @@ void Alquimia_PK::InitializeChemistry(void)
 
   // Now loop through all the regions and initialize.
   int ierr = 0;
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = chemistry_state_->mesh_maps();
   for (std::map<std::string, std::string>::const_iterator cond_iter = chem_initial_conditions_.begin(); 
        cond_iter != chem_initial_conditions_.end(); ++cond_iter) {
     std::string region_name = cond_iter->first;
     std::string condition = cond_iter->second;
 
     // Get the cells that belong to this region.
-    unsigned int num_cells = mesh->get_set_size(region_name, AmanziMesh::CELL, AmanziMesh::OWNED);
+    unsigned int num_cells = mesh_->get_set_size(region_name, AmanziMesh::CELL, AmanziMesh::OWNED);
     AmanziMesh::Entity_ID_List cell_indices;
-    mesh->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::OWNED, &cell_indices);
+    mesh_->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::OWNED, &cell_indices);
   
     // Loop over the cells.
     for (unsigned int i = 0; i < num_cells; ++i) {
@@ -154,7 +136,7 @@ void Alquimia_PK::InitializeChemistry(void)
 
   // figure out if any of the processes threw an error, if so all processes will re-throw
   int recv = 0;
-  chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
+  mesh_->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) {
     msg << "Error in Alquimia_PK::InitializeChemistry 1";
     Exceptions::amanzi_throw(msg); 
@@ -203,12 +185,11 @@ void Alquimia_PK::ParseChemicalConditionRegions(const Teuchos::ParameterList& pa
     }
 
     Teuchos::Array<std::string> regions = cond_sublist.get<Teuchos::Array<std::string> >("regions");
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh = chemistry_state_->mesh_maps();
     for (size_t r = 0; r < regions.size(); ++r) {
       // We allow for cell-based and face-based regions to accommodate both 
       // initial and boundary conditions.
-      if (!mesh->valid_set_name(regions[r], AmanziMesh::CELL) &&
-          !mesh->valid_set_name(regions[r], AmanziMesh::FACE)) {
+      if (!mesh_->valid_set_name(regions[r], AmanziMesh::CELL) &&
+          !mesh_->valid_set_name(regions[r], AmanziMesh::FACE)) {
         msg << "Alquimia_PK::ParseChemicalConditionRegions(): \n";
         msg << "  Invalid region '" << regions[r] << "' given for geochemical condition '" << cond_name << "'.\n";
         Exceptions::amanzi_throw(msg);
@@ -235,8 +216,7 @@ void Alquimia_PK::XMLParameters(void)
   // the Auxiliary Data parameter list.
   chem_engine_->GetAuxiliaryOutputNames(aux_names_);
   if (!aux_names_.empty()) {
-    aux_output_ = Teuchos::rcp(new Epetra_MultiVector(
-         chemistry_state_->mesh_maps()->cell_map(false), aux_names_.size()));
+    aux_output_ = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(false), aux_names_.size()));
   }
   else {
     aux_output_ = Teuchos::null;
@@ -330,7 +310,8 @@ void Alquimia_PK::XMLParameters(void)
   max_time_step_ = chem_param_list_.get<double>("max time step (s)", 9.9e9);
   min_time_step_ = chem_param_list_.get<double>("min time step (s)", 9.9e9);
   prev_time_step_ = chem_param_list_.get<double>("initial time step (s)", std::min(min_time_step_, max_time_step_));
-  /*  if ((min_time_step_ == 9.9e9) && (prev_time_step_ < 9.9e9))
+  /*
+  if ((min_time_step_ == 9.9e9) && (prev_time_step_ < 9.9e9))
     min_time_step_ = prev_time_step_;
   else if ((min_time_step_ == 9.9e9) && (max_time_step_ < 9.9e9))
     min_time_step_ = max_time_step_;
@@ -340,17 +321,20 @@ void Alquimia_PK::XMLParameters(void)
     Exceptions::amanzi_throw(msg);
   }
   if ((min_time_step_ < max_time_step_) && (prev_time_step_ == max_time_step_))
-    prev_time_step_ = min_time_step_; */
+    prev_time_step_ = min_time_step_;
+  */
   if (prev_time_step_ > max_time_step_) {
     msg << "Alquimia_PK::XMLParameters(): \n";
     msg << "  Initial Time Step exceeds Max Time Step!\n";
     Exceptions::amanzi_throw(msg);
   }
-  /* if (prev_time_step_ < min_time_step_) {
+  /*
+   if (prev_time_step_ < min_time_step_) {
     msg << "Alquimia_PK::XMLParameters(): \n";
     msg << "  Initial Time Step is smaller than Min Time Step!\n";
     Exceptions::amanzi_throw(msg);
-    } */
+    }
+  */
 
   time_step_ = prev_time_step_;
   time_step_control_method_ = chem_param_list_.get<std::string>("time step control method", "fixed");
@@ -398,14 +382,16 @@ void Alquimia_PK::CopyAmanziStateToAlquimia(const int cell_id,
 /* *******************************************************************
 *
 ******************************************************************* */
-void Alquimia_PK::CopyAlquimiaStateToAmanzi(const int cell_id,
-                                            const AlquimiaMaterialProperties& mat_props,
-                                            const AlquimiaState& state,
-                                            const AlquimiaAuxiliaryData& aux_data,
-                                            const AlquimiaAuxiliaryOutputData& aux_output)
+void Alquimia_PK::CopyAlquimiaStateToAmanzi(
+    const int cell_id,
+    const AlquimiaMaterialProperties& mat_props,
+    const AlquimiaState& state,
+    const AlquimiaAuxiliaryData& aux_data,
+    const AlquimiaAuxiliaryOutputData& aux_output,
+    Teuchos::RCP<Epetra_MultiVector> total_component_concentration)
 {
   chemistry_state_->CopyFromAlquimia(cell_id, mat_props, state, aux_data, aux_output, 
-                                     chemistry_state_->total_component_concentration());
+                                     total_component_concentration);
 
   // Auxiliary output.
   if (aux_output_ != Teuchos::null) {
@@ -478,102 +464,6 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(const int cell_id,
       }
     }
   }
-}
-
-
-/* *******************************************************************
-*
-******************************************************************* */
-void Alquimia_PK::InitAmanziStateFromAlquimia(const int cell_id,
-                                              const AlquimiaMaterialProperties& mat_props,
-                                              const AlquimiaState& state,
-                                              const AlquimiaAuxiliaryData& aux_data,
-                                              const AlquimiaAuxiliaryOutputData& aux_output)
-{
-  //chemistry_state_->CopyFromAlquimia(cell_id, mat_props, state, aux_data, aux_output,
-  //                                   chemistry_state_->total_component_concentration());
-
-  chemistry_state_->InitFromAlquimia(cell_id, mat_props, state, aux_data, aux_output);                                    
-  // Auxiliary output.
-  if (aux_output_ != Teuchos::null) {
-    std::vector<std::string> mineralNames, primaryNames;
-    chem_engine_->GetMineralNames(mineralNames);
-    chem_engine_->GetPrimarySpeciesNames(primaryNames);
-    int numAqueousComplexes = chem_engine_->NumAqueousComplexes();
-    for (unsigned int i = 0; i < aux_names_.size(); i++) {
-      if (aux_names_.at(i) == "pH") {
-        double* cell_aux_output = (*aux_output_)[i];
-        cell_aux_output[cell_id] = aux_output.pH;
-      }
-      else if (aux_names_.at(i).find("mineral_saturation_index") != std::string::npos) {
-        for (int j = 0; j < mineralNames.size(); ++j) {
-          std::string full_name = std::string("mineral_saturation_index_") + mineralNames[j];
-          if (aux_names_.at(i) == full_name) {
-            double* cell_aux_output = (*aux_output_)[i];
-            cell_aux_output[cell_id] = aux_output.mineral_saturation_index.data[j];
-          }
-        }
-      }
-      else if (aux_names_.at(i).find("mineral_reaction_rate") != std::string::npos) {
-        for (int j = 0; j < mineralNames.size(); ++j) {
-          std::string full_name = std::string("mineral_reaction_rate_") + mineralNames[j];
-          if (aux_names_.at(i) == full_name) {
-            double* cell_aux_output = (*aux_output_)[i];
-            cell_aux_output[cell_id] = aux_output.mineral_reaction_rate.data[j];
-          }
-        }
-      }
-      else if (aux_names_.at(i) == "primary_free_ion_concentration") {
-        for (int j = 0; j < primaryNames.size(); ++j) {
-          std::string full_name = std::string("primary_free_ion_concentration_") + primaryNames[j];
-          if (aux_names_.at(i) == full_name) {
-            double* cell_aux_output = (*aux_output_)[i];
-            cell_aux_output[cell_id] = aux_output.primary_free_ion_concentration.data[j];
-          }
-        }
-      }
-      else if (aux_names_.at(i) == "primary_activity_coeff") {
-        for (int j = 0; j < primaryNames.size(); ++j) {
-          std::string full_name = std::string("primary_activity_coeff_") + primaryNames[j];
-          if (aux_names_.at(i) == full_name) {
-            double* cell_aux_output = (*aux_output_)[i];
-            cell_aux_output[cell_id] = aux_output.primary_activity_coeff.data[j];
-          }
-        }
-      }
-      else if (aux_names_.at(i) == "secondary_free_ion_concentration") {
-        for (int j = 0; j < numAqueousComplexes; ++j) {
-          char num_str[16];
-          snprintf(num_str, 15, "%d", j);
-          std::string full_name = std::string("secondary_free_ion_concentration_") + std::string(num_str);
-          if (aux_names_.at(i) == full_name) {
-            double* cell_aux_output = (*aux_output_)[i];
-            cell_aux_output[cell_id] = aux_output.secondary_free_ion_concentration.data[j];
-          }
-        }
-      }
-      else if (aux_names_.at(i) == "secondary_activity_coeff") {
-        for (int j = 0; j < numAqueousComplexes; ++j) {
-          char num_str[16];
-          snprintf(num_str, 15, "%d", j);
-          std::string full_name = std::string("secondary_activity_coeff_") + std::string(num_str);
-          if (aux_names_.at(i) == full_name) {
-            double* cell_aux_output = (*aux_output_)[i];
-            cell_aux_output[cell_id] = aux_output.secondary_activity_coeff.data[j];
-          }
-        }
-      }
-    }
-  }
-}
-
-
-/* *******************************************************************
-* MPC interface functions
-******************************************************************* */
-Teuchos::RCP<Epetra_MultiVector> Alquimia_PK::get_total_component_concentration(void) const 
-{
-  return chemistry_state_->total_component_concentration();
 }
 
 
@@ -582,14 +472,14 @@ Teuchos::RCP<Epetra_MultiVector> Alquimia_PK::get_total_component_concentration(
 * It returns the number of iterations taken to obtain the advanced solution, 
 * or -1 if an error occurred.
 ******************************************************************* */
-int Alquimia_PK::AdvanceSingleCell(double delta_time, 
-                                   Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star,
-                                   int cell_index)
+int Alquimia_PK::AdvanceSingleCell(
+    double delta_time, Teuchos::RCP<Epetra_MultiVector> total_component_concentration,
+    int cell_index)
 {
   // Copy the state and material information from Amanzi's state within 
   // this cell to Alquimia.
   CopyAmanziStateToAlquimia(cell_index, 
-                            total_component_concentration_star, 
+                            total_component_concentration, 
                             alq_mat_props_, alq_state_, alq_aux_data_);
 
   // Do the reaction.
@@ -600,7 +490,9 @@ int Alquimia_PK::AdvanceSingleCell(double delta_time,
     return -1;
 
   // Move the information back into Amanzi's state, updating the given total concentration vector.
-  CopyAlquimiaStateToAmanzi(cell_index, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
+  CopyAlquimiaStateToAmanzi(cell_index, 
+                            alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_,
+                            total_component_concentration);
 
   return num_iterations;
 }
@@ -621,7 +513,7 @@ int Alquimia_PK::AdvanceSingleCell(double delta_time,
 * chemistry specific state
 ******************************************************************* */
 void Alquimia_PK::Advance(const double& delta_time,
-                          Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star) 
+                          Teuchos::RCP<Epetra_MultiVector> total_component_concentration) 
 {
   Errors::Message msg;
 
@@ -635,24 +527,17 @@ void Alquimia_PK::Advance(const double& delta_time,
     prev_time_step_ = delta_time;
   }
 
-  // shorter name for the state that came out of transport
-  Teuchos::RCP<const Epetra_MultiVector> tcc_star = total_component_concentration_star;
-
   // Get the number of owned (non-ghost) cells for the mesh.
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = chemistry_state_->mesh_maps();
-  unsigned int num_cells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  unsigned int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   
-  int max_iterations = 0;
-  int imax = -999;
-  int ave_iterations = 0;
-  int imin = -999;
-  int min_iterations = 10000000;
+  int max_iterations (0), min_iterations(10000000), ave_iterations(0);
+  int imax(-1), imin(-1);
 
   // Now loop through all the cells and advance the chemistry.
   int ierr = 0;
   int convergence_failure = 0;
   for (int cell = 0; cell < num_cells; ++cell) {
-    int num_iterations = AdvanceSingleCell(delta_time, tcc_star, cell);
+    int num_iterations = AdvanceSingleCell(delta_time, total_component_concentration, cell);
     if (num_iterations >= 0) {
       if (max_iterations < num_iterations) {
         max_iterations = num_iterations;
@@ -677,7 +562,7 @@ void Alquimia_PK::Advance(const double& delta_time,
   send[0] = convergence_failure;
   send[1] = max_iterations;
   send[2] = imax;
-  chemistry_state_->mesh_maps()->get_comm()->MaxAll(send, recv, 3);
+  mesh_->get_comm()->MaxAll(send, recv, 3);
   if (recv[0] != 0) 
     num_successful_steps_ = 0;
   else
@@ -694,7 +579,8 @@ void Alquimia_PK::Advance(const double& delta_time,
   }
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Advanced after maximum of " << num_iterations_ << " Newton iterations in cell " << imax << "." << std::endl;
+    *vo_->os() << "Advanced after maximum of " << num_iterations_
+               << " Newton iterations in cell " << imax << "." << std::endl;
   }
 
   // now publish auxiliary data to state

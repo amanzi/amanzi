@@ -21,8 +21,9 @@
 #include "beaker.hh"
 #include "chemistry_exception.hh"
 #include "chemistry_verbosity.hh"
-#include "Chemistry_PK_Base.hh"
+#include "Chemistry_PK.hh"
 #include "Chemistry_State.hh"
+#include "Mesh.hh"
 
 // forward declarations
 class Epetra_MultiVector;
@@ -33,19 +34,20 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 // Trilinos based chemistry process kernel for the unstructured mesh
-class Amanzi_PK : public Chemistry_PK_Base {
+class Amanzi_PK : public Chemistry_PK {
  public:
   Amanzi_PK(const Teuchos::ParameterList& param_list,
-            Teuchos::RCP<Chemistry_State> chem_state);
+            Teuchos::RCP<Chemistry_State> chem_state,
+            Teuchos::RCP<State> S,
+            Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
   ~Amanzi_PK();
 
-  void InitializeChemistry(void);
+  void InitializeChemistry();
 
   void Advance(const double& delta_time,
-               Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star);
+               Teuchos::RCP<Epetra_MultiVector> total_component_concentration);
   void CommitState(Teuchos::RCP<Chemistry_State> chem_state, const double& time);
-  Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration(void) const;
 
   // modifiers
   void set_max_time_step(const double mts) { this->max_time_step_ = mts; }
@@ -99,6 +101,11 @@ class Amanzi_PK : public Chemistry_PK_Base {
   Teuchos::RCP<Epetra_MultiVector> get_extra_chemistry_output_data();
   void set_chemistry_output_names(std::vector<std::string>* names);
 
+ protected:
+  Teuchos::RCP<State> S_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  std::string passwd_;
+
  private:
   bool debug_;
   bool display_free_columns_;
@@ -122,15 +129,15 @@ class Amanzi_PK : public Chemistry_PK_Base {
 
   Teuchos::RCP<Epetra_MultiVector> aux_data_;
 
-  void UpdateChemistryStateStorage(void);
+  void UpdateChemistryStateStorage();
 
-  void XMLParameters(void);
-  void SetupAuxiliaryOutput(void);
-  void SizeBeakerStructures(void);
+  void XMLParameters();
+  void SetupAuxiliaryOutput();
+  void SizeBeakerStructures();
   void CopyCellStateToBeakerStructures(
-      const int cell_id,
-      Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
-  void CopyBeakerStructuresToCellState(const int cell_id);
+      int cell_id, Teuchos::RCP<Epetra_MultiVector> total_component_concentration);
+  void CopyBeakerStructuresToCellState(
+      int cell_id, Teuchos::RCP<Epetra_MultiVector> total_component_concentration);
 };
 
 }  // namespace AmanziChemistry

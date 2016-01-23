@@ -50,12 +50,13 @@ generate_evaluators_registration_header(
   INSTALL    True )
 
 
-set(chem_inc_files Alqumia_PK.hh
+set(chem_inc_files 
+                   Alqumia_PK.hh
                    Amanzi_PK.hh
+                   Chemistry_PK.hh
+                   Chemistry_PK_Wrapper.hh
                    Chemistry_PK_Wrapper_reg.hh
                    pks_chemistry_registration.hh
-                   Chemistry_PK_Base.hh
-                   Chemistry_PK_Wrapper.hh
                    Chemistry_State.hh
 )
 

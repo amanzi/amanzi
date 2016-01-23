@@ -53,12 +53,12 @@ SUITE(GeochemistryTestsChemistryPK) {
     ac::Amanzi_PK* cpk_;
     Teuchos::ParameterList chemistry_parameter_list_;
     Teuchos::RCP<ac::Chemistry_State> chemistry_state_;
+    Teuchos::RCP<Amanzi::State> state_;
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
 
    private:
     Epetra_SerialComm* comm_;
     ag::GeometricModelPtr gm_;
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
-    Teuchos::RCP<Amanzi::State> state_;
   };  // end class SpeciationTest
 
   ChemistryPKTest::ChemistryPKTest() {
@@ -150,7 +150,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     // just make sure that we can have all the pieces together to set
     // up a chemistry process kernel....
     try {
-      cpk_ = new ac::Amanzi_PK(chemistry_parameter_list_, chemistry_state_);
+      cpk_ = new ac::Amanzi_PK(chemistry_parameter_list_, chemistry_state_, state_, mesh_);
     } catch (ac::ChemistryException chem_error) {
       std::cout << chem_error.what() << std::endl;
     } catch (std::exception e) {
@@ -164,7 +164,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     // make sure that we can initialize the pk and internal chemistry
     // object correctly based on the xml input....
     try {
-      cpk_ = new ac::Amanzi_PK(chemistry_parameter_list_, chemistry_state_);
+      cpk_ = new ac::Amanzi_PK(chemistry_parameter_list_, chemistry_state_, state_, mesh_);
       cpk_->InitializeChemistry();
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
@@ -176,7 +176,7 @@ SUITE(GeochemistryTestsChemistryPK) {
 
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_get_chem_output_names) {
     try {
-      cpk_ = new ac::Amanzi_PK(chemistry_parameter_list_, chemistry_state_);
+      cpk_ = new ac::Amanzi_PK(chemistry_parameter_list_, chemistry_state_, state_, mesh_);
       cpk_->InitializeChemistry();
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;

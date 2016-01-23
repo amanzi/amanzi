@@ -86,10 +86,10 @@ printf("We have %d.\n", comp_names_.size());
   // construct
   if (chemistry_model_ == "Alquimia") {
 #ifdef ALQUIMIA_ENABLED
-    pk_ = Teuchos::rcp(new Alquimia_PK(*glist, CS, chem_engine_));
+    pk_ = Teuchos::rcp(new Alquimia_PK(*glist, CS, chem_engine_, S, S->GetMesh()));
 #endif
   } else if (chemistry_model_ == "Amanzi") {
-    pk_ = Teuchos::rcp(new Amanzi_PK(chemistry_plist, CS));
+    pk_ = Teuchos::rcp(new Amanzi_PK(chemistry_plist, CS, S, S->GetMesh()));
   }
 }
 

@@ -225,23 +225,19 @@ void Chemistry_State::VerifySorptionSites_(const std::string& region_name,
 
 
 void Chemistry_State::RequireData_() {
-  // Apparently Chemistry and Transport/Flow do not agree upon what water density is?
-  water_density_ = Teuchos::rcp(new Epetra_Vector(S_->GetMesh()->cell_map(false)));
-  water_density_initialized_ = false;
-
   // Require data from flow
   if (!S_->HasField("porosity")) {
     S_->RequireField("porosity", name_)->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
+
   if (!S_->HasField("saturation_liquid")) {
     S_->RequireField("saturation_liquid", name_)->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
   
-  S_->RequireScalar("fluid_density", name_);
-  if (!S_->HasFieldEvaluator("cell_volume")){
-    S_->RequireFieldEvaluator("cell_volume");
+  if (!S_->HasField("fluid_density")) {
+    S_->RequireScalar("fluid_density", name_);
   }
 
   // Require my data
@@ -545,8 +541,11 @@ void Chemistry_State::CopyToAlquimia(const int cell_id,
                                      AlquimiaState& state,
                                      AlquimiaAuxiliaryData& aux_data)
 {
-  state.water_density = (*this->water_density())[cell_id];
-  state.porosity = (*this->porosity())[cell_id];
+  const Epetra_MultiVector& porosity = *S_->GetFieldData("porosity")->ViewComponent("cell");
+  double water_density = *S_->GetScalarData("fluid_density");
+
+  state.water_density = water_density;
+  state.porosity = porosity[0][cell_id];
 
   for (unsigned int c = 0; c < number_of_aqueous_components(); c++) 
   {
@@ -618,8 +617,10 @@ void Chemistry_State::CopyToAlquimia(const int cell_id,
     }
   }
 
-  mat_props.volume = (*this->volume())[cell_id];
-  mat_props.saturation = (*this->water_saturation())[cell_id];
+  const Epetra_MultiVector& water_saturation = *S_->GetFieldData("saturation_liquid")->ViewComponent("cell");
+
+  mat_props.volume = mesh_->cell_volume(cell_id);
+  mat_props.saturation = water_saturation[0][cell_id];
 
   // sorption isotherms
   if (using_sorption_isotherms()) 
@@ -752,149 +753,6 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
 
       cell_data = (*this->isotherm_langmuir_b())[i];
       cell_data[cell_id] = mat_props.langmuir_b.data[i];
-    }
-  }
-}
-
-
-void Chemistry_State::InitFromAlquimia(const int cell_id,
-                                       const AlquimiaMaterialProperties& mat_props,
-                                       const AlquimiaState& state,
-                                       const AlquimiaAuxiliaryData& aux_data,
-                                       const AlquimiaAuxiliaryOutputData& aux_output)
-{
-  // If the chemistry has modified the porosity and/or density, it needs to 
-  // be updated here.
-  //(this->water_density())[cell_id] = state.water_density;
-  //(this->porosity())[cell_id] = state.porosity;
-
- 
-  for (unsigned int c = 0; c < number_of_aqueous_components(); c++) {
-
-    if (!S_->GetField("total_component_concentration")->initialized()){
-      double mobile = state.total_mobile.data[c];
-      double* cell_components = (*total_component_concentration())[c];
-      cell_components[cell_id] = mobile;
-    }
-
-    if (using_sorption()){
-      if (S_->HasField("total_sorbed")){
-        if (!S_->GetField("total_sorbed")->initialized()) {
-          double immobile = state.total_immobile.data[c];
-          double* cell_total_sorbed = (*this->total_sorbed())[c];
-          cell_total_sorbed[cell_id] = immobile;
-        }
-      }
-    }
-  }
-
-  
-  
-  // Free ion species.
-  for (unsigned int c = 0; c < number_of_aqueous_components(); c++) {
-    if (!S_->GetField("free_ion_species")->initialized()) {
-      double* cell_free_ion = (*this->free_ion_species())[c];
-      cell_free_ion[cell_id] = aux_output.primary_free_ion_concentration.data[c];
-    }
-  }
-
-  if (S_->HasField("mineral_volume_fractions")){
-    if (!S_->GetField("mineral_volume_fractions")->initialized()) {
-      // Mineral properties.
-      for (unsigned int m = 0; m < number_of_minerals(); m++){
-        double* cell_minerals = (*this->mineral_volume_fractions())[m];
-        cell_minerals[cell_id] = state.mineral_volume_fraction.data[m];
-        if (this->mineral_specific_surface_area() != Teuchos::null) {
-          if (!S_->GetField("mineral_specific_surface_area")->initialized()) {
-            cell_minerals = (*this->mineral_specific_surface_area())[m];
-            cell_minerals[cell_id] = state.mineral_specific_surface_area.data[m];
-          }
-        }
-      }
-    }
-  }
-
-  if (S_->HasField("ion_exchange_sites")){
-    if (!S_->GetField("ion_exchange_sites")->initialized()) {
-      // ion exchange
-      for (unsigned int i = 0; i < number_of_ion_exchange_sites(); i++) {
-        double* cell_ion_exchange_sites = (*this->ion_exchange_sites())[i];
-        cell_ion_exchange_sites[cell_id] = state.cation_exchange_capacity.data[i];
-      }
-    }
-  }
-
-  // surface complexation
-  if (number_of_sorption_sites() > 0){
-    if (!S_->GetField("sorption_sites")->initialized()) {    
-      for (unsigned int i = 0; i < number_of_sorption_sites(); i++){
-        double* cell_sorption_sites = (*this->sorption_sites())[i];
-        cell_sorption_sites[cell_id] = state.surface_site_density.data[i];
-      }
-    }
-  }
-
-  // Auxiliary data -- block copy.
-  int num_aux_ints = aux_data.aux_ints.size;
-  int num_aux_doubles = aux_data.aux_doubles.size;
-  if (num_aux_data_ == -1){
-    // Set things up and register a vector in the State.
-    assert(num_aux_ints >= 0);
-    assert(num_aux_doubles >= 0);
-    num_aux_data_ = num_aux_ints + num_aux_doubles;
-    if (!S_->HasField("alquimia_aux_data")){
-     
-      Teuchos::RCP<CompositeVectorSpace> fac = S_->RequireField("alquimia_aux_data", name_);
-      fac->SetMesh(mesh_);
-      fac->SetGhosted(false);
-      fac->SetComponent("cell", AmanziMesh::CELL, num_aux_data_);
-      Teuchos::RCP<CompositeVector> sac = Teuchos::rcp(new CompositeVector(*fac));
-
-      // Zero the field.
-      Teuchos::RCP<Field> F = S_->GetField("alquimia_aux_data", name_);
-      F->SetData(sac);
-      F->CreateData();
-      F->GetFieldData()->PutScalar(0.0);
-      F->set_initialized(false);
-        
-    }
-
-    aux_data_ = S_->GetField("alquimia_aux_data", name_)->GetFieldData()->ViewComponent("cell");
-  }
-  else {
-    assert(num_aux_data_ == num_aux_ints + num_aux_doubles);
-  }
-
-
-  if (!S_->GetField("alquimia_aux_data", name_)->initialized()){
-    for (int i = 0; i < num_aux_ints; i++){
-      double* cell_aux_ints = (*aux_data_)[i];
-      cell_aux_ints[cell_id] = (double)aux_data.aux_ints.data[i];
-    }
-
-    for (int i = 0; i < num_aux_doubles; i++){
-      double* cell_aux_doubles = (*aux_data_)[i + num_aux_ints];
-      cell_aux_doubles[cell_id] = aux_data.aux_doubles.data[i];
-    }
-  }
-
-  if (using_sorption_isotherms()) {
-    for (unsigned int i = 0; i < number_of_aqueous_components(); ++i){
-       double* cell_data;
-       if (!S_->GetField("isotherm_kd")->initialized() ){
-         cell_data = (*this->isotherm_kd())[i];
-         cell_data[cell_id] = mat_props.isotherm_kd.data[i];
-       }
-
-       if (!S_->GetField("isotherm_freundlich_n")->initialized() ){
-         cell_data = (*this->isotherm_freundlich_n())[i];
-         cell_data[cell_id] = mat_props.freundlich_n.data[i];
-       }
-
-       if (!S_->GetField("isotherm_langmuir_b")->initialized() ){
-         cell_data = (*this->isotherm_langmuir_b())[i];
-         cell_data[cell_id] = mat_props.langmuir_b.data[i];
-       }
     }
   }
 }
