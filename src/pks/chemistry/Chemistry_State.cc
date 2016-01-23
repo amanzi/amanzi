@@ -1,15 +1,13 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-   Amanzi Chemistry
+/*
+  Chemistry PK
 
-   License: see COPYRIGHT
-   Author: mostly from old State
+  License: see COPYRIGHT
+  Author: mostly from old State
 
-   Interface layer between Chemistry_PK and State, this is a harness for
-   accessing the new state-dev from the Chemistry PK.  It also manages the
-   mineralogy and names.
-
-   ------------------------------------------------------------------------- */
+  Interface layer between Chemistry_PK and State, this is a harness for
+  accessing the new state-dev from the Chemistry PK.  It also manages the
+  mineralogy and names.
+*/
 
 #include "Chemistry_State.hh"
 
@@ -75,31 +73,8 @@ void Chemistry_State::SetupMineralNames_() {
     // been set in the constructor
     number_of_minerals_ = mineral_names_.size();
   }
-}  // end SetupMineralNames()
+}
 
-#if 0
-void Chemistry_State::SetupSoluteNames_() {
-  // get the number of component concentrations from the
-  // parameter list
-  if (plist_.isParameter("number of component concentrations")) {
-    number_of_aqueous_components_ =
-        plist_.get<int>("number of component concentrations");
-  } else {
-    // if the parameter list does not contain this key, then assume we
-    // are being called from a state constructor w/o a valid parameter
-    // list (vis/restart) and the number_of_components variable was
-    // already set to a valid (non-zero?) value....
-  }
-
-  if (number_of_aqueous_components_ > 0) {
-    // read the component names if they are spelled out
-    Teuchos::Array<std::string> comp_names;
-    if (plist_.isParameter("Component Solutes")) {
-      comp_names = plist_.get<Teuchos::Array<std::string> >("Component Solutes");
-    }
-  }
-}  // end SetupSoluteNames_()
-#endif
 
 void Chemistry_State::SetupSorptionSiteNames_() {
   // could almost generalize the SetupMineralNames and
@@ -131,11 +106,10 @@ void Chemistry_State::SetupSorptionSiteNames_() {
     // assume we are called from the constructor w/o a valid parameter
     // list and the sorption names will be set later....?
   }
-}  // end SetupSorptionSiteNames()
+}
 
 
 void Chemistry_State::ParseMeshBlocks_() {
-
   // check if there is an initial condition for ion_exchange_sites
   if (plist_.sublist("initial conditions").isSublist("ion_exchange_sites")) {
     // there is currently only at most one site...
@@ -153,52 +127,11 @@ void Chemistry_State::ParseMeshBlocks_() {
     Teuchos::Array<std::string> ss_names_ = plist_.get<Teuchos::Array<std::string> >("Sorption Sites");
     number_of_sorption_sites_ = ss_names_.size();
   }
-
-
-  // const std::string block_key("Mesh block ");
-  // // loop through the state parameter list looking for mesh blocks
-  // for (Teuchos::ParameterList::ConstIterator item = plist_.begin();
-  //      item != plist_.end(); ++item) {
-
-  //   std::string item_name = plist_.name(item);
-  //   size_t found_block = item_name.find(block_key);
-  //   if (found_block != std::string::npos) {
-  //     std::string block_name = item_name.substr(found_block + block_key.length(),
-  //             item_name.length());
-  //     Teuchos::ParameterList mesh_block_data = plist_.sublist(plist_.name(item));
-  //     // block_name should match mesh_block_data.region...
-  //     std::string region_name = mesh_block_data.get<std::string>("Region");
-
-  //     //
-  //     // check for chemistry related data in the block:
-  //     //
-
-  //     if (mesh_block_data.isSublist("Mineralogy")) {
-  //       VerifyMineralogy_(region_name, mesh_block_data.sublist("Mineralogy"));
-  //     }
-
-  //     if (mesh_block_data.isSublist("Sorption Isotherms")) {
-  //       VerifySorptionIsotherms_(region_name,
-  //               mesh_block_data.sublist("Sorption Isotherms"));
-  //     }
-
-  //     if (mesh_block_data.isSublist("Surface Complexation Sites")) {
-  //       VerifySorptionSites_(region_name,
-  //                            mesh_block_data.sublist("Surface Complexation Sites"));
-  //     }
-
-  //     if (mesh_block_data.isParameter("Cation Exchange Capacity")) {
-  //       // limit to one ion exchange site for now....
-  //       using_sorption_ = true;
-  //       number_of_ion_exchange_sites_ = 1;
-  //     }
-  //   }  // end if(mesh_block)
-  // }  // end for(plist_)
 }
 
 
 void Chemistry_State::VerifyMineralogy_(const std::string& region_name,
-                             const Teuchos::ParameterList& minerals_list) {
+                                        const Teuchos::ParameterList& minerals_list) {
   // loop through each mineral, verify that the mineral name is known
   for (Teuchos::ParameterList::ConstIterator mineral_iter = minerals_list.begin();
        mineral_iter != minerals_list.end(); ++mineral_iter) {
@@ -216,7 +149,8 @@ void Chemistry_State::VerifyMineralogy_(const std::string& region_name,
     // with them here.
 
   }  // end for(minerals)
-}  // end VerifyMineralogy()
+} 
+
 
 void Chemistry_State::VerifySorptionIsotherms_(const std::string& region_name,
         const Teuchos::ParameterList& isotherms_list) {
@@ -265,7 +199,8 @@ void Chemistry_State::VerifySorptionIsotherms_(const std::string& region_name,
     // langmuir and freundlich parameters are optional, we'll assign
     // sane defaults.
   }  // end for(species)
-}  // end VerifySorptionIsotherms()
+}
+
 
 void Chemistry_State::VerifySorptionSites_(const std::string& region_name,
         const Teuchos::ParameterList& sorption_site_list) {
@@ -286,8 +221,7 @@ void Chemistry_State::VerifySorptionSites_(const std::string& region_name,
     // but we can default to zero, so don't do any further checking
 
   }  // end for(sorption_sites)
-}  // end VerifySorptionSites()
-
+}
 
 
 void Chemistry_State::RequireData_() {
@@ -485,6 +419,7 @@ void Chemistry_State::RequireAuxData_() {
   }
 }
 
+
 void Chemistry_State::InitializeField_(Teuchos::ParameterList& ic_plist,
     std::string fieldname, bool sane_default, double default_val) {
   // Initialize mineral volume fractions
@@ -498,6 +433,7 @@ void Chemistry_State::InitializeField_(Teuchos::ParameterList& ic_plist,
     }
   }
 }
+
 
 void Chemistry_State::Initialize() {
   // Most things are initialized through State, but State can only manage that
@@ -557,6 +493,7 @@ void Chemistry_State::Initialize() {
   }
 }
 
+
 // This can only be done AFTER the chemistry is initialized and fully set up?
 void Chemistry_State::AllocateAdditionalChemistryStorage(
     const Beaker::BeakerComponents& components) {
@@ -574,6 +511,7 @@ void Chemistry_State::AllocateAdditionalChemistryStorage(
     S_->GetField("secondary_activity_coeff",name_)->set_initialized();
   }
 }
+
 
 // This can only be done AFTER the chemistry is initialized and fully set up?
 // NOTE: This is the version of the above method that interacts with Alquimia.
@@ -593,7 +531,6 @@ void Chemistry_State::AllocateAdditionalChemistryStorage(int num_aqueous_compone
 }
 
 #ifdef ALQUIMIA_ENABLED
-
 void Chemistry_State::CopyToAlquimia(const int cell_id,
                                      AlquimiaMaterialProperties& mat_props,
                                      AlquimiaState& state,
@@ -700,6 +637,7 @@ void Chemistry_State::CopyToAlquimia(const int cell_id,
     }
   }
 }
+
 
 void Chemistry_State::CopyFromAlquimia(const int cell_id,
                                        const AlquimiaMaterialProperties& mat_props,
@@ -818,6 +756,7 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
   }
 }
 
+
 void Chemistry_State::InitFromAlquimia(const int cell_id,
                                        const AlquimiaMaterialProperties& mat_props,
                                        const AlquimiaState& state,
@@ -875,8 +814,6 @@ void Chemistry_State::InitFromAlquimia(const int cell_id,
     }
   }
 
-
-
   if (S_->HasField("ion_exchange_sites")){
     if (!S_->GetField("ion_exchange_sites")->initialized()) {
       // ion exchange
@@ -896,7 +833,6 @@ void Chemistry_State::InitFromAlquimia(const int cell_id,
       }
     }
   }
-
 
   // Auxiliary data -- block copy.
   int num_aux_ints = aux_data.aux_ints.size;
@@ -959,15 +895,11 @@ void Chemistry_State::InitFromAlquimia(const int cell_id,
          cell_data = (*this->isotherm_langmuir_b())[i];
          cell_data[cell_id] = mat_props.langmuir_b.data[i];
        }
-
     }
   }
-
 }
-
-
-
 #endif
+
 
 void Chemistry_State::InitFromBeakerStructure(const int cell_id,
                                               Beaker::BeakerComponents beaker_components){
@@ -1039,8 +971,6 @@ void Chemistry_State::InitFromBeakerStructure(const int cell_id,
   //
   // surface complexation
   //
-  
-
   for (unsigned int i = 0; i < number_of_sorption_sites(); i++) {
     if (!S_->GetField("sorption_sites")->initialized()) {
       double* cell_sorption_sites = (*sorption_sites())[i];
@@ -1049,8 +979,6 @@ void Chemistry_State::InitFromBeakerStructure(const int cell_id,
     }
   }
 
-
- 
   for (unsigned int i = 0; i < beaker_components.surface_complex_free_site_conc.size(); ++i) {
     if (!S_->GetField("surface_complex_free_site_conc")->initialized()) { 
      double* cells = (*surface_complex_free_site_conc())[i];
@@ -1061,7 +989,6 @@ void Chemistry_State::InitFromBeakerStructure(const int cell_id,
   //
   // ion exchange
   //
-
   for (unsigned int i = 0; i < number_of_ion_exchange_sites(); i++) {
     if (!S_->GetField("ion_exchange_sites")->initialized()) {
       double* cell_ion_exchange_sites = (*ion_exchange_sites())[i];
@@ -1069,7 +996,6 @@ void Chemistry_State::InitFromBeakerStructure(const int cell_id,
       // TODO(bandre): need to save ion exchange ref cation conc here!
     }
   }
-
 
   for (unsigned int i = 0; i < beaker_components.ion_exchange_ref_cation_conc.size(); ++i) {
     if (!S_->GetField("ion_exchange_ref_cation_conc")->initialized()) {
@@ -1099,10 +1025,10 @@ void Chemistry_State::InitFromBeakerStructure(const int cell_id,
       }
     }
   }
-
 }
 
-void Chemistry_State::SetAllFieldsInitialized(){
+
+void Chemistry_State::SetAllFieldsInitialized() {
   if (using_sorption_isotherms()) {
     S_->GetField("isotherm_langmuir_b", name_)->set_initialized();
     S_->GetField("isotherm_kd", name_)->set_initialized();
@@ -1139,9 +1065,7 @@ void Chemistry_State::SetAllFieldsInitialized(){
       S_->GetField("total_sorbed", name_)->set_initialized();
     }
   }
-
 }
 
-
-} // namespace AmanziChemistry
-} // namespace Amanzi
+}  // namespace AmanziChemistry
+}  // namespace Amanzi

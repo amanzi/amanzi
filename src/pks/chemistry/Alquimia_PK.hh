@@ -22,17 +22,17 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 // Trilinos based chemistry process kernel for the unstructured mesh
-class Alquimia_Chemistry_PK: public Chemistry_PK_Base {
+class Alquimia_PK: public Chemistry_PK_Base {
  public:
 
   // Constructor. Note that we must pass the "Main" parameter list
   // to this PK so that it has access to all information about the 
   // problem.
-  Alquimia_Chemistry_PK(const Teuchos::ParameterList& param_list,
-                        Teuchos::RCP<Chemistry_State> chem_state,
-                        Teuchos::RCP<ChemistryEngine> chem_engine);
+  Alquimia_PK(const Teuchos::ParameterList& param_list,
+              Teuchos::RCP<Chemistry_State> chem_state,
+              Teuchos::RCP<ChemistryEngine> chem_engine);
 
-  ~Alquimia_Chemistry_PK();
+  ~Alquimia_PK();
 
   void InitializeChemistry(void);
 

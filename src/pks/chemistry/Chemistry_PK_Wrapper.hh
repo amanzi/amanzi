@@ -12,7 +12,7 @@
 #include "Teuchos_RCP.hpp"
 
 #ifdef ALQUIMIA_ENABLED
-#include "alquimia_chemistry_pk.hh"
+#include "Alquimia_PK.hh"
 #endif
 #include "Chemistry_PK_Base.hh"
 #include "Chemistry_State.hh"

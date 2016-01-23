@@ -6,7 +6,7 @@
   BDFFnBase<CompositeVector>, to use TreeVectors.
 */
 
-#include "Chemistry_PK.hh"
+#include "Amanzi_PK.hh"
 #include "Chemistry_PK_Wrapper.hh"
 
 #include "boost/algorithm/string.hpp"
@@ -86,10 +86,10 @@ printf("We have %d.\n", comp_names_.size());
   // construct
   if (chemistry_model_ == "Alquimia") {
 #ifdef ALQUIMIA_ENABLED
-     pk_ = Teuchos::rcp(new Alquimia_Chemistry_PK(*glist, CS, chem_engine_));
+    pk_ = Teuchos::rcp(new Alquimia_PK(*glist, CS, chem_engine_));
 #endif
   } else if (chemistry_model_ == "Amanzi") {
-    pk_ = Teuchos::rcp(new Chemistry_PK(chemistry_plist, CS));
+    pk_ = Teuchos::rcp(new Amanzi_PK(chemistry_plist, CS));
   }
 }
 

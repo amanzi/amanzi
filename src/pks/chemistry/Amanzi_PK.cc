@@ -1,75 +1,78 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry PK
 
-#include "Chemistry_PK.hh"
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Purpose: Trilinos based process kernel for chemistry
+ 
+  Notes:
+    - all the actual geochemistry calculations live in the chemistry library. 
+ 
+    - The process kernel stores the instance of the chemistry object
+      and drives the chemistry calculations on a cell by cell
+      basis. It handles the movement of data back and forth between
+      the amanzi memory and the chemistry library data structures.
+   
+    - chemistry_state will always hold the state at the begining of
+      the time step. should not (can not?) be changed by chemistry.
+   
+    - when Advance is called, total_component_concentration_star
+      holds the value of component concentrations after transport!
+   
+    - where do we write to when advance state is done? tcc is read
+      only, do we want to write over the values in tcc_star?
+  
+    - when CommitState is called, we get a new Chemistry_State
+      object which will hold the final info for the end of the time
+      step. We can use it if we want, to update our internal data.
+  
+    - The State and Chemistry_State objects have
+      total_component_concentrations in a multi vector. The data is
+      stored such that:
+  
+        double* foo = total_component_concetration[i]
+ 
+      where foo refers to a vector of component concentrations for a
+      single component.
+*/
  
 #include <string>
 #include <algorithm>
 
+// TPLs
+#include "boost/mpi.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_SerialDenseVector.h"
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "simple_thermo_database.hh"
+// Amanzi
+#include "Mesh.hh"
 #include "beaker.hh"
 #include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
-
-#include "Mesh.hh"
-#include "VerboseObject.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+#include "simple_thermo_database.hh"
+#include "VerboseObject.hh"
 
-#include "boost/mpi.hpp"
+// Chemistry
+#include "Amanzi_PK.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
-/*******************************************************************************
- **
- **  Purpose: Trilinos based process kernel for chemistry
- **
- **  Notes:
- **
- **    - all the actual geochemistry calculations live in the chemistry library. 
- **
- **    - The process kernel stores the instance of the chemistry object
- **    and drives the chemistry calculations on a cell by cell
- **    basis. It handles the movement of data back and forth between
- **    the amanzi memory and the chemistry library data structures.
- **
- **    - chemistry_state will always hold the state at the begining of
- **    the time step. should not (can not?) be changed by chemistry.
- **
- **    - when Advance is called, total_component_concentration_star
- **    holds the value of component concentrations after transport!
- **
- **    - where do we write to when advance state is done? tcc is read
- **    only, do we want to write over the values in tcc_star?
- **
- **    - when CommitState is called, we get a new Chemistry_State
- **    object which will hold the final info for the end of the time
- **    step. We can use it if we want, to update our internal data.
- **
- **    - The State and Chemistry_State objects have
- **    total_component_concentrations in a multi vector. The data is
- **    stored such that:
- **
- **      double* foo = total_component_concetration[i]
- **
- **    where foo refers to a vector of component concentrations for a
- **    single component.
- **
- **
- ******************************************************************************/
-
-// global ChemistryOutput object in the Amanzi::AmanziChemisry is deprecated
-// extern ChemistryOutput* chem_out;
 extern VerboseObject* chem_out;
 
-Chemistry_PK::Chemistry_PK(const Teuchos::ParameterList& param_list,
-                           Teuchos::RCP<Chemistry_State> chem_state)
+/* ******************************************************************
+*
+******************************************************************* */
+Amanzi_PK::Amanzi_PK(const Teuchos::ParameterList& param_list,
+                     Teuchos::RCP<Chemistry_State> chem_state)
     : debug_(false),
       display_free_columns_(false),
       max_time_step_(9.9e9),
@@ -81,16 +84,24 @@ Chemistry_PK::Chemistry_PK(const Teuchos::ParameterList& param_list,
 
   // create verbosity object
   chem_out = new VerboseObject("ChemistryPK", const_cast<Teuchos::ParameterList&>(param_list)); 
-}  // end Chemistry_PK()
+}
 
-Chemistry_PK::~Chemistry_PK() {
+
+/* *******************************************************************
+*
+******************************************************************* */
+Amanzi_PK::~Amanzi_PK() {
   delete chem_;
   if (chem_out != NULL) delete chem_out;
-}  // end ~Chemistry_PK()
+}
 
-void Chemistry_PK::InitializeChemistry(void) {
+
+/* *******************************************************************
+*
+******************************************************************* */
+void Amanzi_PK::InitializeChemistry(void) {
   if (debug()) {
-    std::cout << "  Chemistry_PK::InitializeChemistry()" << std::endl;
+    std::cout << "  Amanzi_PK::InitializeChemistry()" << std::endl;
   }
 
   XMLParameters();
@@ -110,15 +121,6 @@ void Chemistry_PK::InitializeChemistry(void) {
   CopyCellStateToBeakerStructures(
       cell, 
       chemistry_state_->total_component_concentration());
-
-  // std::cout << "number_aqueous_components        = " << number_aqueous_components() << std::endl;
-  // std::cout << "number_free_ion                  = " << number_free_ion() << std::endl;
-  // std::cout << "number_total_sorbed              = " << number_total_sorbed() << std::endl;
-  // std::cout << "number_minerals                  = " << number_minerals() << std::endl;
-  // std::cout << "number_ion_exchange_sites        = " << number_ion_exchange_sites() << std::endl;
-  // std::cout << "number_sorption_sites            = " << number_sorption_sites() << std:: std::endl;
-  // std::cout << "using_sorption                   = " << using_sorption() << std::endl;
-  // std::cout << "using_sorption_isotherms         = " << using_sorption_isotherms() << std::endl;
 
   // finish setting up & testing the chemistry object
   int ierr(0);
@@ -144,7 +146,7 @@ void Chemistry_PK::InitializeChemistry(void) {
   int recv(0);
   chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) {
-    ChemistryException geochem_error("Error in Chemistry_PK::InitializeChemistry 0");
+    ChemistryException geochem_error("Error in Amanzi_PK::InitializeChemistry 0");
     Exceptions::amanzi_throw(geochem_error);
   }
 
@@ -178,19 +180,13 @@ void Chemistry_PK::InitializeChemistry(void) {
     } catch (ChemistryException& geochem_error) {
       ierr = 1;
     }
-
-#ifdef GLENN_DEBUG
-    if (cell % (num_cells / 10) == 0) {
-      std::cout << "  " << cell * 100 / num_cells
-                << "%" << std::endl;
-    }
-#endif
   }
+
   recv = 0;
   // figure out if any of the processes threw an error, if so all processes will re-throw
   chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) {
-    ChemistryException geochem_error("Error in Chemistry_PK::InitializeChemistry 1");
+    ChemistryException geochem_error("Error in Amanzi_PK::InitializeChemistry 1");
     Exceptions::amanzi_throw(geochem_error); 
   }  
 
@@ -198,14 +194,13 @@ void Chemistry_PK::InitializeChemistry(void) {
   // chemistry_state_->SetAllFieldsInitialized();
 
   chem_out->Write(Teuchos::VERB_HIGH, "InitializeChemistry(): initialization was successful.\n");
-}  // end InitializeChemistry()
+}
 
-/*******************************************************************************
- **
- **  initialization helper functions
- **
- ******************************************************************************/
-void Chemistry_PK::XMLParameters(void) {
+
+/* *******************************************************************
+* Initialization helper functions
+******************************************************************* */
+void Amanzi_PK::XMLParameters(void) {
   // extract parameters from the xml list and set in the parameters
   // structure
   if (parameter_list_.isParameter("Debug Process Kernel")) {
@@ -229,7 +224,7 @@ void Chemistry_PK::XMLParameters(void) {
         // invalid database format...
         std::ostringstream error_stream;
         error_stream << ChemistryException::kChemistryError;
-        error_stream << "Chemistry_PK::XMLParameters(): \n";
+        error_stream << "Amanzi_PK::XMLParameters(): \n";
         error_stream << "  In sublist 'Thermodynamic Database', the parameter 'Format' must be 'simple'.\n";
         Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));  
       }
@@ -237,7 +232,7 @@ void Chemistry_PK::XMLParameters(void) {
       // invalid database format...
       std::ostringstream error_stream;
       error_stream << ChemistryException::kChemistryError;
-      error_stream << "Chemistry_PK::XMLParameters(): \n";
+      error_stream << "Amanzi_PK::XMLParameters(): \n";
       error_stream << "  In sublist 'Thermodynamic Database', the parameter 'Format' must be specified.\n";
       Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
     }
@@ -248,14 +243,14 @@ void Chemistry_PK::XMLParameters(void) {
     } else {
       std::ostringstream error_stream;
       error_stream << ChemistryException::kChemistryError;
-      error_stream << "Chemistry_PK::XMLParameters(): \n";
+      error_stream << "Amanzi_PK::XMLParameters(): \n";
       error_stream << "  Input parameter 'File' in 'Thermodynamic Database' sublist must be specified.\n";
       Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));         
     }
   } else {
     std::ostringstream error_stream;
     error_stream << ChemistryException::kChemistryError;
-    error_stream << "Chemistry_PK::XMLParameters(): \n";
+    error_stream << "Amanzi_PK::XMLParameters(): \n";
     error_stream << "  'Thermodynamic Database' sublist must be specified.\n";
     Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));    
   }
@@ -274,7 +269,7 @@ void Chemistry_PK::XMLParameters(void) {
     } else {
       std::ostringstream error_stream;
       error_stream << ChemistryException::kChemistryError;
-      error_stream << "Chemistry_PK::XMLParameters(): \n";
+      error_stream << "Amanzi_PK::XMLParameters(): \n";
       error_stream << "  Input parameter 'Pitzer Database File' must be specified if 'activity model' is 'pitzer-hwm'.\n";
       Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
       
@@ -318,14 +313,16 @@ void Chemistry_PK::XMLParameters(void) {
   //
   // --------------------------------------------------------------------------
   set_max_time_step(parameter_list_.get<double>("max time step (s)", 9.9e9));
+}
 
-}  // end XMLParameters()
 
-
-void Chemistry_PK::SetupAuxiliaryOutput(void) {
+/* *******************************************************************
+*
+******************************************************************* */
+void Amanzi_PK::SetupAuxiliaryOutput(void) {
   // requires that Beaker::Setup() has already been called!
   if (debug()) {
-    std::cout << "  Chemistry_PK::SetupAuxiliaryOutput()" << std::endl;
+    std::cout << "  Amanzi_PK::SetupAuxiliaryOutput()" << std::endl;
   }
   // TODO(bandre): this indexing scheme will not be appropriate when
   // additional types of aux data are requested, e.g. mineral SI.....
@@ -360,10 +357,13 @@ void Chemistry_PK::SetupAuxiliaryOutput(void) {
   } else {
     aux_data_ = Teuchos::null;
   }
-}  // end SetupAuxiliaryOutput()
+}
 
 
-void Chemistry_PK::SizeBeakerStructures(void) {
+/* *******************************************************************
+*
+******************************************************************* */
+void Amanzi_PK::SizeBeakerStructures(void) {
   // initialize the beaker component data structure
 
   // NOTE: The beaker already has data for site density, sorption
@@ -409,10 +409,13 @@ void Chemistry_PK::SizeBeakerStructures(void) {
     beaker_components_.isotherm_freundlich_n.clear();
     beaker_components_.isotherm_langmuir_b.clear();
   }
-}  // end SizeBeakerStructures()
+}
 
 
-void Chemistry_PK::CopyCellStateToBeakerStructures(
+/* *******************************************************************
+*
+******************************************************************* */
+void Amanzi_PK::CopyCellStateToBeakerStructures(
     const int cell_id,
     Teuchos::RCP<const Epetra_MultiVector> aqueous_components) {
   // NOTE: want the aqueous totals value calculated from transport
@@ -518,11 +521,13 @@ void Chemistry_PK::CopyCellStateToBeakerStructures(
   beaker_parameters_.porosity = (*chemistry_state_->porosity())[cell_id];
   beaker_parameters_.saturation = (*chemistry_state_->water_saturation())[cell_id];
   beaker_parameters_.volume = (*chemistry_state_->volume())[cell_id];
+}
 
-}  // end CopyCellStateToBeakerStructures()
 
-
-void Chemistry_PK::CopyBeakerStructuresToCellState(const int cell_id) {
+/* *******************************************************************
+*
+******************************************************************* */
+void Amanzi_PK::CopyBeakerStructuresToCellState(const int cell_id) {
   // copy data from the beaker back into the state arrays
 
   for (unsigned int c = 0; c < number_aqueous_components(); c++) {
@@ -615,45 +620,32 @@ void Chemistry_PK::CopyBeakerStructuresToCellState(const int cell_id) {
 
   // TODO(bandre): if chemistry can modify the porosity or density,
   // then they should be updated here!
-
-}  // end CopyBeakerStructureToCellState()
-
+}
 
 
-
-
-/*******************************************************************************
- **
- **  MPC interface functions
- **
- ******************************************************************************/
-Teuchos::RCP<Epetra_MultiVector> Chemistry_PK::get_total_component_concentration(void) const {
+/* ******************************************************************
+* MPC interface functions
+******************************************************************* */
+Teuchos::RCP<Epetra_MultiVector> Amanzi_PK::get_total_component_concentration(void) const {
   return chemistry_state_->total_component_concentration();
-}  // end get_total_component_concentration()
+}
 
 
-/*******************************************************************************
- **
- ** Chemistry_PK::Advance()
- **
- ** Notes:
- **
- **   - the MPC will call this function to advance the state with this
- ** particular process kernel
- **
- **   - this is how to get the total component concentration
- ** CS->get_total_component_concentration()
- **
- **   - please update the argument to this function called tcc_star
- ** with the result of your chemistry computation which is the total
- ** component concentration ^star
- **
- **   - see the Chemistry_State for the other available data in the
- ** chemistry specific state
- **
- *******************************************************************************/
-
-void Chemistry_PK::Advance(
+/* ******************************************************************
+* The MPC will call this function to advance the state with this
+* particular process kernel
+*
+* This is how to get the total component concentration
+* CS->get_total_component_concentration()
+*
+* Please update the argument to this function called tcc_star
+* with the result of your chemistry computation which is the total
+* component concentration ^star
+*
+* See the Chemistry_State for the other available data in the
+* chemistry specific state
+******************************************************************* */
+void Amanzi_PK::Advance(
     const double& delta_time,
     Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star) {
   std::stringstream msg;
@@ -701,23 +693,6 @@ void Chemistry_PK::Advance(
       ave_iterations += num_iterations;
     } catch (ChemistryException& geochem_error) {
       ierr = 1;
-
-      // std::cout << "ERROR: Chemistry_PK::Advance() "
-      //           << "cell[" << cell << "]: " << std::endl;
-      // std::cout << geochem_error.what();
-      // std::vector<std::string> names;
-      // chem_->GetPrimaryNames(&names);
-      // beaker_components_copy_.DumpCfg(names);
-      // beaker_components_copy_.Display("--- input ");
-      // chem_->DisplayTotalColumnHeaders(display_free_columns_);
-      // std::cout << "\nFailed Solution" << std::endl;
-      // std::cout << "  Total Component Concentrations" << std::endl;
-      // chem_->DisplayTotalColumns(current_time_, beaker_components_, display_free_columns_);
-      // std::cout << "\nPrevious Solution" << std::endl;
-      // std::cout << "  Total Component Concentrations" << std::endl;
-      // chem_->DisplayTotalColumns(current_time_, beaker_components_copy_, display_free_columns_);
-      // std::cout << std::endl;
-      // Exceptions::amanzi_throw(geochem_error);
     }
     // update this cell's data in the arrays
     if (ierr == 0) CopyBeakerStructuresToCellState(cell);
@@ -734,39 +709,26 @@ void Chemistry_PK::Advance(
   int recv(0);
   chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) {
-    ChemistryException geochem_error("Error in Chemistry_PK::Advance");
+    ChemistryException geochem_error("Error in Amanzi_PK::Advance");
     Exceptions::amanzi_throw(geochem_error); 
   }  
   
-
-
-#ifdef GLENN_DEBUG
-  if (debug() == kDebugChemistryProcessKernel) {
-    std::stringstream message;
-    message << "  Chemistry_PK::Advance() : "
-            << "max iterations - " << max_iterations << " " << "  cell id: " << imax << std::endl;
-    message << "  Chemistry_PK::Advance() : "
-            << "min iterations - " << min_iterations << " " << "  cell id: " << imin << std::endl;
-    message << "  Chemistry_PK::Advance() : "
-            << "ave iterations - " << static_cast<float>(ave_iterations) / num_cells << std::endl;
-  }
-#endif
-
   if (debug() == kDebugChemistryProcessKernel) {
     // dumping the values of the final cell. not very helpful by itself,
     // but can be move up into the loops....
     chem_->DisplayTotalColumnHeaders(display_free_columns_);
     chem_->DisplayTotalColumns(current_time_, beaker_components_, true);
   }
-}  // end Advance()
+}
 
 
-// the MPC will call this function to signal to the
-// process kernel that it has accepted the
-// state update, thus, the PK should update
-// possible auxilary state variables here
-void Chemistry_PK::CommitState(Teuchos::RCP<Chemistry_State> chem_state,
-                                const double& time) {
+/* ******************************************************************
+* The MPC will call this function to signal to the process kernel 
+* that it has accepted the state update, thus, the PK should update
+* possible auxilary state variables here
+******************************************************************* */
+void Amanzi_PK::CommitState(Teuchos::RCP<Chemistry_State> chem_state,
+                            const double& time) {
   chem_out->Write(Teuchos::VERB_EXTREME, "Committing internal state.\n");
 
   saved_time_ = time;
@@ -777,11 +739,13 @@ void Chemistry_PK::CommitState(Teuchos::RCP<Chemistry_State> chem_state,
     chem_->DisplayTotalColumnHeaders(display_free_columns_);
     chem_->DisplayTotalColumns(saved_time_, beaker_components_, true);
   }
-}  // end CommitState()
+}
 
 
-
-Teuchos::RCP<Epetra_MultiVector> Chemistry_PK::get_extra_chemistry_output_data() {
+/* ******************************************************************
+*
+******************************************************************* */
+Teuchos::RCP<Epetra_MultiVector> Amanzi_PK::get_extra_chemistry_output_data() {
   if (aux_data_ != Teuchos::null) {
     int num_cells = chemistry_state_->mesh_maps()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
@@ -797,8 +761,8 @@ Teuchos::RCP<Epetra_MultiVector> Chemistry_PK::get_extra_chemistry_output_data()
         } else {
           // don't support anything else at this time....
         }
-      }  // for(aux_names)
-    }  // for(cells)
+      }
+    }
 
     // return the multi vector
   }
@@ -806,13 +770,16 @@ Teuchos::RCP<Epetra_MultiVector> Chemistry_PK::get_extra_chemistry_output_data()
 }
 
 
-void Chemistry_PK::set_chemistry_output_names(std::vector<std::string>* names) {
+/* ******************************************************************
+*
+******************************************************************* */
+void Amanzi_PK::set_chemistry_output_names(std::vector<std::string>* names) {
   names->clear();
   for (std::vector<std::string>::const_iterator name = aux_names_.begin();
        name != aux_names_.end(); name++) {
     names->push_back(*name);
   }
-}  // end set_chemistry_output_names()
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

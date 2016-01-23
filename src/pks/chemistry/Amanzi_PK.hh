@@ -1,17 +1,28 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef AMANZI_CHEMISTRY_PK_HH_
-#define AMANZI_CHEMISTRY_PK_HH_
+/*
+  Chemistry PK
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+*/
+ 
+#ifndef CHEMISTRY_AMANZI_PK_HH_
+#define CHEMISTRY_AMANZI_PK_HH_
 
 #include <string>
 #include <vector>
 
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+// Amanzi
 #include "beaker.hh"
-#include "Chemistry_PK_Base.hh"
 #include "chemistry_exception.hh"
 #include "chemistry_verbosity.hh"
+#include "Chemistry_PK_Base.hh"
+#include "Chemistry_State.hh"
 
 // forward declarations
 class Epetra_MultiVector;
@@ -22,12 +33,12 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 // Trilinos based chemistry process kernel for the unstructured mesh
-class Chemistry_PK: public Chemistry_PK_Base {
+class Amanzi_PK : public Chemistry_PK_Base {
  public:
-  Chemistry_PK(const Teuchos::ParameterList& param_list,
-               Teuchos::RCP<Chemistry_State> chem_state);
+  Amanzi_PK(const Teuchos::ParameterList& param_list,
+            Teuchos::RCP<Chemistry_State> chem_state);
 
-  ~Chemistry_PK();
+  ~Amanzi_PK();
 
   void InitializeChemistry(void);
 
@@ -36,9 +47,9 @@ class Chemistry_PK: public Chemistry_PK_Base {
   void CommitState(Teuchos::RCP<Chemistry_State> chem_state, const double& time);
   Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration(void) const;
 
-  void set_max_time_step(const double mts) {
-    this->max_time_step_ = mts;
-  }
+  // modifiers
+  void set_max_time_step(const double mts) { this->max_time_step_ = mts; }
+
   double time_step(void) const {
     return this->max_time_step_;
   }
@@ -124,4 +135,4 @@ class Chemistry_PK: public Chemistry_PK_Base {
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_PK_HH_
+#endif
