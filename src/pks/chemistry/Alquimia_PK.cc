@@ -104,7 +104,7 @@ int Alquimia_PK::InitializeSingleCell(int cell_index, const std::string& conditi
 /* *******************************************************************
 * 
 ******************************************************************* */
-void Alquimia_PK::InitializeChemistry(void) 
+void Alquimia_PK::InitializeChemistry() 
 {
   Errors::Message msg;
 
@@ -144,14 +144,11 @@ void Alquimia_PK::InitializeChemistry(void)
 
   // now publish auxiliary data to state
   if (aux_output_ != Teuchos::null) {
-    for (int i=0; i<aux_output_->NumVectors(); ++i) {
-      Teuchos::RCP<Epetra_MultiVector> aux_state_vec = chemistry_state_->aux_data(aux_names_[i]);
-      (*aux_state_vec)[0] = (*aux_output_)[i];
+    for (int i = 0; i < aux_output_->NumVectors(); ++i) {
+      Epetra_MultiVector& aux_state = *S_->GetFieldData(aux_names_[i], passwd_)->ViewComponent("cell");
+      aux_state[0] = (*aux_output_)[i];
     }
   }
-
-  // Fields should not be initialized without setting default values.
-  chemistry_state_->SetAllFieldsInitialized();
 
   chem_initialized_ = true;
   num_iterations_ = 0;
@@ -586,8 +583,8 @@ void Alquimia_PK::Advance(const double& delta_time,
   // now publish auxiliary data to state
   if (aux_output_ != Teuchos::null) {
     for (int i=0; i<aux_output_->NumVectors(); ++i) {
-      Teuchos::RCP<Epetra_MultiVector> aux_state_vec = chemistry_state_->aux_data(aux_names_[i]);
-      (*aux_state_vec)[0] = (*aux_output_)[i];
+      Epetra_MultiVector& aux_state = *S_->GetFieldData(aux_names_[i], passwd_)->ViewComponent("cell");
+      aux_state[0] = (*aux_output_)[i];
     }
   }
 }

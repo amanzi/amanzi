@@ -41,11 +41,9 @@ class TransportBoundaryFunction_Alquimia : public TransportBoundaryFunction {
   void Compute(double time);
 
   void Define(const std::vector<std::string> &regions);
-
   void Define(std::string region);
 
  private:
-  // The computational mesh.
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   // The geochemical conditions we are enforcing, and the times we are enforcing them at.
@@ -64,7 +62,6 @@ class TransportBoundaryFunction_Alquimia : public TransportBoundaryFunction {
 
   // A mapping of boundary face indices to interior cells.
   std::map<int, int> cell_for_face_;
-
 };
 
 }  // namespace Transport
