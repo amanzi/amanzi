@@ -10,6 +10,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_SerialComm.h"
 #include "XMLParameterListWriter.hh"
 
@@ -51,7 +52,7 @@ SUITE(GeochemistryTestsChemistryPK) {
 
    protected:
     ac::Amanzi_PK* cpk_;
-    Teuchos::ParameterList chemistry_parameter_list_;
+    Teuchos::RCP<Teuchos::ParameterList> glist_;
     Teuchos::RCP<ac::Chemistry_State> chemistry_state_;
     Teuchos::RCP<Amanzi::State> state_;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
@@ -67,37 +68,17 @@ SUITE(GeochemistryTestsChemistryPK) {
     
     // get the parameter list from the input file.
     std::string xml_input_filename("test_chemistry_pk_native.xml");
-    
-    Teuchos::ParameterXMLFileReader xmlreader(xml_input_filename);
-    Teuchos::ParameterList input_spec(xmlreader.getParameters());
-
-    // Chemistry uses the official input spec, not the unstructured
-    // native, but we need to translate for state.
-    Teuchos::ParameterList parameter_list;
-    // parameter_list = Amanzi::AmanziInput::translate(&input_spec, 1);
-    parameter_list = input_spec;
-
-
-    // Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
-    // Teuchos::XMLObject XMLobj = XMLWriter.toXML(parameter_list);
-    
-    // std::ofstream xmlfile;
-    // xmlfile.open("test_chemistry_pk_native.xml");
-    // xmlfile << XMLobj;
-
-      //std::cout << input_spec << std::endl;
-    //std::cout << parameter_list << std::endl;
+    glist_ = Teuchos::getParametersFromXmlFile(xml_input_filename);
 
     // create a test mesh
     comm_ = new Epetra_SerialComm();
     Teuchos::ParameterList mesh_parameter_list =
-      parameter_list.sublist("Mesh").sublist("Unstructured").sublist("Generate Mesh");
+      glist_->sublist("Mesh").sublist("Unstructured").sublist("Generate Mesh");
 
     am::GenerationSpec g(mesh_parameter_list);
     
-    Teuchos::ParameterList region_parameter_list = parameter_list.sublist("Regions");
-    gm_ = 
-        new ag::GeometricModel(3, region_parameter_list, (const Epetra_MpiComm *)comm_);
+    Teuchos::ParameterList region_parameter_list = glist_->sublist("Regions");
+    gm_ = new ag::GeometricModel(3, region_parameter_list, (const Epetra_MpiComm *)comm_);
   
     am::FrameworkPreference pref;
     pref.clear();
@@ -109,27 +90,21 @@ SUITE(GeochemistryTestsChemistryPK) {
     mesh_ = meshfactory(mesh_parameter_list, gm_);
 
     // get the state parameter list and create the state object
-    Teuchos::ParameterList state_parameter_list = parameter_list.sublist("state");
+    Teuchos::ParameterList state_parameter_list = glist_->sublist("state");
 
     state_ = Teuchos::rcp(new Amanzi::State(state_parameter_list));
     state_->RegisterDomainMesh(mesh_);
 
-    // create the chemistry parameter list
-    chemistry_parameter_list_ = parameter_list.sublist("Chemistry");
-
     // create the chemistry state object
+    Teuchos::ParameterList chemistry_parameter_list = glist_->sublist("PKs").sublist("Chemistry");
     std::vector<std::string> component_names;
     component_names.push_back("Al+++");
     component_names.push_back("H+");
     component_names.push_back("HP04--");
     component_names.push_back("SiO2(aq)");
     component_names.push_back("UO2++");
-    chemistry_state_ = Teuchos::rcp(new ac::Chemistry_State(chemistry_parameter_list_, component_names, state_));
+    chemistry_state_ = Teuchos::rcp(new ac::Chemistry_State(chemistry_parameter_list, component_names, state_));
     chemistry_state_->Setup();
-
-    state_->Setup();
-    state_->InitializeFields();
-    chemistry_state_->Initialize();
   }
 
   ChemistryPKTest::~ChemistryPKTest() {
@@ -150,7 +125,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     // just make sure that we can have all the pieces together to set
     // up a chemistry process kernel....
     try {
-      cpk_ = new ac::Amanzi_PK(chemistry_parameter_list_, chemistry_state_, state_, mesh_);
+      cpk_ = new ac::Amanzi_PK(glist_, chemistry_state_, state_, mesh_);
     } catch (ac::ChemistryException chem_error) {
       std::cout << chem_error.what() << std::endl;
     } catch (std::exception e) {
@@ -164,7 +139,11 @@ SUITE(GeochemistryTestsChemistryPK) {
     // make sure that we can initialize the pk and internal chemistry
     // object correctly based on the xml input....
     try {
-      cpk_ = new ac::Amanzi_PK(chemistry_parameter_list_, chemistry_state_, state_, mesh_);
+      cpk_ = new ac::Amanzi_PK(glist_, chemistry_state_, state_, mesh_);
+      cpk_->Setup();
+      state_->Setup();
+      state_->InitializeFields();
+      chemistry_state_->Initialize();
       cpk_->InitializeChemistry();
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
@@ -176,7 +155,11 @@ SUITE(GeochemistryTestsChemistryPK) {
 
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_get_chem_output_names) {
     try {
-      cpk_ = new ac::Amanzi_PK(chemistry_parameter_list_, chemistry_state_, state_, mesh_);
+      cpk_ = new ac::Amanzi_PK(glist_, chemistry_state_, state_, mesh_);
+      cpk_->Setup();
+      state_->Setup();
+      state_->InitializeFields();
+      chemistry_state_->Initialize();
       cpk_->InitializeChemistry();
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;

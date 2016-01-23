@@ -69,15 +69,14 @@ Chemistry_PK_Wrapper::Chemistry_PK_Wrapper(Teuchos::ParameterList& pk_tree,
     chem_engine_ = Teuchos::rcp(new AmanziChemistry::ChemistryEngine(chemEngineName, chemEngineInputFile));
 
     // Overwrite the component names with the species names from the engine.
-printf("Outfitting component names...\n");
+    printf("Outfitting component names...\n");
     chem_engine_->GetPrimarySpeciesNames(comp_names_);
-    for (int i = 0; i < chem_engine_->NumAqueousComplexes(); ++i)
-    {
+    for (int i = 0; i < chem_engine_->NumAqueousComplexes(); ++i) {
       char secondary[128];
       snprintf(secondary, 127, "secondary_%d", i);
       comp_names_.push_back(secondary);
     }
-printf("We have %d.\n", comp_names_.size());
+    printf("We have %d.\n", comp_names_.size());
   }
 #endif
 
@@ -86,10 +85,10 @@ printf("We have %d.\n", comp_names_.size());
   // construct
   if (chemistry_model_ == "Alquimia") {
 #ifdef ALQUIMIA_ENABLED
-    pk_ = Teuchos::rcp(new Alquimia_PK(*glist, CS, chem_engine_, S, S->GetMesh()));
+    pk_ = Teuchos::rcp(new Alquimia_PK(glist, CS, chem_engine_, S, S->GetMesh()));
 #endif
   } else if (chemistry_model_ == "Amanzi") {
-    pk_ = Teuchos::rcp(new Amanzi_PK(chemistry_plist, CS, S, S->GetMesh()));
+    pk_ = Teuchos::rcp(new Amanzi_PK(glist, CS, S, S->GetMesh()));
   }
 }
 

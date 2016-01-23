@@ -27,8 +27,7 @@ class Chemistry_State {
   void Initialize();
 
   // access methods for state variables
-  int number_of_aqueous_components() const { return number_of_aqueous_components_; }
-  int number_of_minerals(void) const { return number_of_minerals_; }
+  int number_of_aqueous_components(void) const { return number_of_aqueous_components_; }
   int number_of_ion_exchange_sites() const { return number_of_ion_exchange_sites_; }
   int number_of_sorption_sites() const { return number_of_sorption_sites_; }
   bool using_sorption() const { return using_sorption_; }

@@ -36,12 +36,15 @@ namespace AmanziChemistry {
 // Trilinos based chemistry process kernel for the unstructured mesh
 class Amanzi_PK : public Chemistry_PK {
  public:
-  Amanzi_PK(const Teuchos::ParameterList& param_list,
+  Amanzi_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
             Teuchos::RCP<Chemistry_State> chem_state,
             Teuchos::RCP<State> S,
             Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
   ~Amanzi_PK();
+
+  // members required by PK interface
+  virtual void Setup();
 
   void InitializeChemistry();
 
@@ -66,10 +69,6 @@ class Amanzi_PK : public Chemistry_PK {
 
   int number_total_sorbed(void) const {
     return chemistry_state_->number_of_aqueous_components();
-  }
-
-  int number_minerals(void) const {
-    return chemistry_state_->number_of_minerals();
   }
 
   int number_ion_exchange_sites(void) const {
@@ -101,20 +100,14 @@ class Amanzi_PK : public Chemistry_PK {
   Teuchos::RCP<Epetra_MultiVector> get_extra_chemistry_output_data();
   void set_chemistry_output_names(std::vector<std::string>* names);
 
- protected:
-  Teuchos::RCP<State> S_;
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  std::string passwd_;
-
  private:
+  Teuchos::RCP<Teuchos::ParameterList> cp_list_;
+
   bool debug_;
   bool display_free_columns_;
   double max_time_step_;
   // auxilary state for process kernel
   Teuchos::RCP<Chemistry_State> chemistry_state_;
-
-  // parameter list
-  Teuchos::ParameterList parameter_list_;
 
   Beaker* chem_;
   Beaker::BeakerParameters beaker_parameters_;

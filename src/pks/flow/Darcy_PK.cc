@@ -52,7 +52,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
   boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
   if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
 
-  
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_name, true);

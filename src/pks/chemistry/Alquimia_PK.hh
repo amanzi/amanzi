@@ -37,13 +37,16 @@ class Alquimia_PK: public Chemistry_PK {
   // Constructor. Note that we must pass the "Main" parameter list
   // to this PK so that it has access to all information about the 
   // problem.
-  Alquimia_PK(const Teuchos::ParameterList& param_list,
+  Alquimia_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
               Teuchos::RCP<Chemistry_State> chem_state,
               Teuchos::RCP<ChemistryEngine> chem_engine,
               Teuchos::RCP<State> S,
               Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
   ~Alquimia_PK();
+
+  // members required by PK interface
+  virtual void Setup();
 
   void InitializeChemistry(void);
 
@@ -67,10 +70,6 @@ class Alquimia_PK: public Chemistry_PK {
     return chemistry_state_->number_of_aqueous_components();
   }
 
-  int number_minerals(void) const {
-    return chemistry_state_->number_of_minerals();
-  }
-
   int number_ion_exchange_sites(void) const {
     return chemistry_state_->number_of_ion_exchange_sites();
   }
@@ -91,13 +90,10 @@ class Alquimia_PK: public Chemistry_PK {
   // output of auxillary cellwise data from chemistry
   Teuchos::RCP<Epetra_MultiVector> get_extra_chemistry_output_data();
 
- protected:
-  Teuchos::RCP<State> S_;
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  std::string passwd_;
-
  private:
-  // Timestepping controls.
+  Teuchos::RCP<Teuchos::ParameterList> glist_, cp_list_;
+
+  // Time stepping controls.
   double time_step_, max_time_step_, min_time_step_, prev_time_step_;
   std::string time_step_control_method_;
   int num_iterations_for_time_step_cut_, num_steps_before_time_step_increase_;
@@ -107,9 +103,6 @@ class Alquimia_PK: public Chemistry_PK {
 
   // auxilary state for process kernel
   Teuchos::RCP<Chemistry_State> chemistry_state_;
-
-  // parameter lists
-  Teuchos::ParameterList main_param_list_, chem_param_list_;
 
   bool chem_initialized_;
 

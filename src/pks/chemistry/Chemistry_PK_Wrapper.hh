@@ -30,6 +30,7 @@ class Chemistry_PK_Wrapper : public PK {
                        const Teuchos::RCP<TreeVector>& soln);
   // Setup
   virtual void Setup() {
+    pk_->Setup();
     CS->Setup();
 
 #ifdef ALQUIMIA_ENABLED

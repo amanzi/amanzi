@@ -92,12 +92,12 @@
     </ParameterList>
   </ParameterList>
 
+  <ParameterList name="PKs">
   <ParameterList name="Chemistry">
     <Parameter name="number of component concentrations" type="int" value="5"/>
     <Parameter name="Component Solutes" type="Array(string)" value="{Al+++, H+, HPO4-, SiO2(aq), UO2++}"/>
     <Parameter name="Minerals" type="Array(string)" value="{Kaolinite, Quartz, (UO2)3(PO4)2.4H2O}"/>
     <Parameter name="Sorption Sites" type="Array(string)" value="{>FeOH, >AlOH, >SiOH}"/>
-    <Parameter name="Minerals" type="Array(string)" value="{Kaolinite, Quartz, (UO2)3(PO4)2.4H2O}"/>
 
     <ParameterList name="Thermodynamic Database">
       <Parameter name="Format" type="string" value="simple"/>
@@ -118,10 +118,6 @@
         <Parameter name="function" type="string" value="list was moved to State"/>
       </ParameterList>
 
-      <ParameterList name="mineral_volume_fractions">
-        <Parameter name="function" type="string" value="list was moved to State"/>
-      </ParameterList>
-
       <ParameterList name="mineral_specific_surface_area">
         <Parameter name="function" type="string" value="list was moved to State"/>
       </ParameterList>
@@ -130,6 +126,7 @@
         <Parameter name="function" type="string" value="list was moved to State"/>
       </ParameterList>
     </ParameterList>
+  </ParameterList>
   </ParameterList>
 
   <ParameterList name="Flow">

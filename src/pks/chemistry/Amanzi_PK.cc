@@ -46,34 +46,49 @@ namespace AmanziChemistry {
 extern VerboseObject* chem_out;
 
 /* ******************************************************************
-*
+* Constructor
 ******************************************************************* */
-Amanzi_PK::Amanzi_PK(const Teuchos::ParameterList& param_list,
+Amanzi_PK::Amanzi_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
                      Teuchos::RCP<Chemistry_State> chem_state,
                      Teuchos::RCP<State> S,
                      Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-    S_(S),
-    mesh_(mesh),
-    passwd_("state"),
     debug_(false),
     display_free_columns_(false),
     max_time_step_(9.9e9),
     chemistry_state_(chem_state),
-    parameter_list_(param_list),
     chem_(NULL),
     current_time_(0.0),
     saved_time_(0.0)
 {
-  chem_out = new VerboseObject("ChemistryPK", const_cast<Teuchos::ParameterList&>(param_list)); 
+  S_ = S;
+  mesh_ = mesh;
+
+  // We need the chemistry list
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+  cp_list_ = Teuchos::sublist(pk_list, "Chemistry", true);
+
+  InitializeMinerals(cp_list_);
+
+  // verbosity object
+  chem_out = new VerboseObject("ChemistryPK", *cp_list_); 
 }
 
 
 /* *******************************************************************
-*
+* Destructor
 ******************************************************************* */
 Amanzi_PK::~Amanzi_PK() {
   delete chem_;
   if (chem_out != NULL) delete chem_out;
+}
+
+
+/* ******************************************************************
+* Register fields and evaluators with the State
+******************************************************************* */
+void Amanzi_PK::Setup()
+{
+  Chemistry_PK::Setup();
 }
 
 
@@ -166,20 +181,11 @@ void Amanzi_PK::InitializeChemistry()
 /* *******************************************************************
 * Initialization helper functions
 ******************************************************************* */
-void Amanzi_PK::XMLParameters(void) {
-  // extract parameters from the xml list and set in the parameters
-  // structure
-  if (parameter_list_.isParameter("Debug Process Kernel")) {
-    set_debug(true);
-  }
-
-  //--------------------------------------------------------------------------
-  //
+void Amanzi_PK::XMLParameters(void)
+{
   // thermo file name and format, then create the database!
-  //
-  //--------------------------------------------------------------------------
-  if (parameter_list_.isSublist("Thermodynamic Database")) {
-    Teuchos::ParameterList& tdb_list_ = parameter_list_.sublist("Thermodynamic Database");
+  if (cp_list_->isSublist("Thermodynamic Database")) {
+    Teuchos::ParameterList& tdb_list_ = cp_list_->sublist("Thermodynamic Database");
     // get format
     // currently we only support the simple format..
     if (tdb_list_.isParameter("Format")) {
@@ -225,13 +231,11 @@ void Amanzi_PK::XMLParameters(void) {
   // activity model
   //
   //---------------------------------------------------------------------------
-  beaker_parameters_.activity_model_name =
-      parameter_list_.get<std::string>("activity model", "unit");
+  beaker_parameters_.activity_model_name = cp_list_->get<std::string>("activity model", "unit");
   // Pitzer virial coefficients database
   if (beaker_parameters_.activity_model_name == "pitzer-hwm") {
-    if (parameter_list_.isParameter("Pitzer Database File")) {
-      beaker_parameters_.pitzer_database =
-          parameter_list_.get<std::string>("Pitzer Database File");
+    if (cp_list_->isParameter("Pitzer Database File")) {
+      beaker_parameters_.pitzer_database = cp_list_->get<std::string>("Pitzer Database File");
     } else {
       std::ostringstream error_stream;
       error_stream << ChemistryException::kChemistryError;
@@ -242,25 +246,14 @@ void Amanzi_PK::XMLParameters(void) {
     }
   }
 
-  // --------------------------------------------------------------------------
-  //
   // solver parameters
-  //
-  // --------------------------------------------------------------------------
-  beaker_parameters_.tolerance =
-      parameter_list_.get<double>("tolerance", 1.0e-12);
+  beaker_parameters_.tolerance = cp_list_->get<double>("tolerance", 1.0e-12);
+  beaker_parameters_.max_iterations = cp_list_->get<int>("maximum Newton iterations", 200);
 
-  beaker_parameters_.max_iterations =
-      static_cast<unsigned int>(parameter_list_.get<int>("maximum Newton iterations", 200));
-
-  // --------------------------------------------------------------------------
-  //
-  // Auxiliary Data
-  //
-  // --------------------------------------------------------------------------
+  // auxiliary data
   aux_names_.clear();
-  if (parameter_list_.isParameter("auxiliary data")) {
-    Teuchos::Array<std::string> names = parameter_list_.get<Teuchos::Array<std::string> >("auxiliary data");
+  if (cp_list_->isParameter("auxiliary data")) {
+    Teuchos::Array<std::string> names = cp_list_->get<Teuchos::Array<std::string> >("auxiliary data");
     for (Teuchos::Array<std::string>::const_iterator name = names.begin();
          name != names.end(); ++name) {
       if (*name == "pH") {
@@ -273,12 +266,9 @@ void Amanzi_PK::XMLParameters(void) {
       }
     }
   }
-  // --------------------------------------------------------------------------
-  //
+
   // misc other chemistry flags
-  //
-  // --------------------------------------------------------------------------
-  set_max_time_step(parameter_list_.get<double>("max time step (s)", 9.9e9));
+  set_max_time_step(cp_list_->get<double>("max time step (s)", 9.9e+9));
 }
 
 
@@ -338,7 +328,7 @@ void Amanzi_PK::SizeBeakerStructures(void) {
 
   beaker_components_.total.resize(number_aqueous_components(), 0.0);
   beaker_components_.free_ion.resize(number_aqueous_components(), 1.0e-9);
-  beaker_components_.mineral_volume_fraction.resize(number_minerals(), 0.0);
+  beaker_components_.mineral_volume_fraction.resize(number_minerals_, 0.0);
 
   if (using_sorption()) {
     beaker_components_.total_sorbed.resize(number_total_sorbed(), 0.0);
@@ -346,8 +336,8 @@ void Amanzi_PK::SizeBeakerStructures(void) {
     beaker_components_.total_sorbed.clear();
   }
 
-  if (number_minerals() > 0) {
-    beaker_components_.mineral_specific_surface_area.resize(number_minerals(), 0.0);
+  if (number_minerals_ > 0) {
+    beaker_components_.mineral_specific_surface_area.resize(number_minerals_, 0.0);
   } else {
     beaker_components_.mineral_specific_surface_area.clear();
   }
@@ -408,11 +398,11 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
   }
 
   // minerals
-  if (number_minerals() > 0) {
+  if (number_minerals_ > 0) {
     const Epetra_MultiVector& mineral_vf = *S_->GetFieldData("mineral_volume_fractions")->ViewComponent("cell");
     const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData("mineral_specific_surface_area")->ViewComponent("cell");
 
-    for (int i = 0; i < number_minerals(); ++i) {
+    for (int i = 0; i < number_minerals_; ++i) {
       beaker_components_.mineral_volume_fraction[i] = mineral_vf[i][cell_id];
       beaker_components_.mineral_specific_surface_area.at(i) = mineral_ssa[i][cell_id];
     }
@@ -517,11 +507,11 @@ void Amanzi_PK::CopyBeakerStructuresToCellState(
   }
 
   // minerals
-  if (number_minerals() > 0) {
+  if (number_minerals_ > 0) {
     const Epetra_MultiVector& mineral_vf = *S_->GetFieldData("mineral_volume_fractions")->ViewComponent("cell");
     const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData("mineral_specific_surface_area")->ViewComponent("cell");
 
-    for (int i = 0; i < number_minerals(); ++i) {
+    for (int i = 0; i < number_minerals_; ++i) {
       mineral_vf[i][cell_id] = beaker_components_.mineral_volume_fraction.at(i);
       mineral_ssa[i][cell_id] = beaker_components_.mineral_specific_surface_area.at(i);
     }

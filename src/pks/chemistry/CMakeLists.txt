@@ -62,7 +62,10 @@ set(chem_inc_files
 
 set(chem_src_files)
 if (ENABLE_Unstructured)
-  list(APPEND chem_src_files Chemistry_State.cc Amanzi_PK.cc Chemistry_PK_Wrapper.cc)
+  list(APPEND chem_src_files Chemistry_PK.cc 
+                             Chemistry_State.cc
+                             Amanzi_PK.cc
+                             Chemistry_PK_Wrapper.cc)
   if (ENABLE_ALQUIMIA)
     list(APPEND chem_src_files Alquimia_PK.cc)
   endif()

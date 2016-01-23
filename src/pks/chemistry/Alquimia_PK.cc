@@ -38,29 +38,32 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 /* *******************************************************************
-* 
+* Constructor 
 ******************************************************************* */
-Alquimia_PK::Alquimia_PK(const Teuchos::ParameterList& param_list,
+Alquimia_PK::Alquimia_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
                          Teuchos::RCP<Chemistry_State> chem_state,
                          Teuchos::RCP<ChemistryEngine> chem_engine,
                          Teuchos::RCP<State> S,
                          Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-    S_(S),
-    mesh_(mesh),
-    passwd_("state"),
+    glist_(glist),
     max_time_step_(9.9e9),
     chemistry_state_(chem_state),
-    main_param_list_(param_list),
-    chem_param_list_(),
     chem_initialized_(false),
     chem_engine_(chem_engine),
     current_time_(0.0),
     saved_time_(0.0) 
 {
-  ASSERT(!chem_state.is_null());
+  S_ = S;
+  mesh_ = mesh;
 
-  // We need the top-level parameter list.
-  chem_param_list_ = main_param_list_.sublist("PKs").sublist("Chemistry");
+  // We need the chemistry list
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+  cp_list_ = Teuchos::sublist(pk_list, "Chemistry", true);
+
+  InitializeMinerals(cp_list_);
+
+  // verbosity object
+  vo_ = Teuchos::rcp(new VerboseObject("Chemistry_PK", *cp_list_));
 }
 
 
@@ -71,6 +74,15 @@ Alquimia_PK::~Alquimia_PK()
 {
   if (chem_initialized_)
     chem_engine_->FreeState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
+}
+
+
+/* ******************************************************************
+* Register fields and evaluators with the State
+******************************************************************* */
+void Alquimia_PK::Setup()
+{
+  Chemistry_PK::Setup();
 }
 
 
@@ -204,11 +216,6 @@ void Alquimia_PK::XMLParameters(void)
 {
   Errors::Message msg;
 
-  vo_ = Teuchos::rcp(new VerboseObject("Chemistry_PK", chem_param_list_));
-
-  // NOTE that our parameter list should be the top-level parameter list "Main", 
-  // not the "Chemistry" one used by the native Amanzi Chemistry PK.
-
   // We retrieve the names of the auxiliary output data from the chemistry engine--we don't rely on 
   // the Auxiliary Data parameter list.
   chem_engine_->GetAuxiliaryOutputNames(aux_names_);
@@ -220,8 +227,8 @@ void Alquimia_PK::XMLParameters(void)
   }
 
   // Add any geochemical conditions we find in the Chemistry section of the file.
-  if (chem_param_list_.isParameter("geochemical conditions")) {
-    Teuchos::ParameterList conditions = chem_param_list_.sublist("geochemical conditions");
+  if (cp_list_->isParameter("geochemical conditions")) {
+    Teuchos::ParameterList conditions = cp_list_->sublist("geochemical conditions");
     for (Teuchos::ParameterList::ConstIterator iter = conditions.begin();
          iter != conditions.end(); ++iter) {
       // This parameter list contains sublists, each corresponding to a
@@ -283,13 +290,13 @@ void Alquimia_PK::XMLParameters(void)
 
   // Now associate regions with chemical conditions based on initial 
   // condition specifications in the file.
-  if (!main_param_list_.isSublist("State")) {
+  if (!glist_->isSublist("State")) {
     msg << "Alquimia_PK::XMLParameters(): \n";
     msg << "  No 'State' sublist was found!\n";
     Exceptions::amanzi_throw(msg);
   }
-  Teuchos::ParameterList state_list = main_param_list_.sublist("State");
-  Teuchos::ParameterList initial_conditions = state_list.sublist("initial conditions");
+  Teuchos::ParameterList& state_list = glist_->sublist("State");
+  Teuchos::ParameterList& initial_conditions = state_list.sublist("initial conditions");
   if (!initial_conditions.isSublist("geochemical conditions")) {
     msg << "Alquimia_PK::XMLParameters(): \n";
     msg << "  No 'geochemical conditions' list was found in 'State->initial conditions'!\n";
@@ -304,9 +311,9 @@ void Alquimia_PK::XMLParameters(void)
   }
 
   // Other settings.
-  max_time_step_ = chem_param_list_.get<double>("max time step (s)", 9.9e9);
-  min_time_step_ = chem_param_list_.get<double>("min time step (s)", 9.9e9);
-  prev_time_step_ = chem_param_list_.get<double>("initial time step (s)", std::min(min_time_step_, max_time_step_));
+  max_time_step_ = cp_list_->get<double>("max time step (s)", 9.9e9);
+  min_time_step_ = cp_list_->get<double>("min time step (s)", 9.9e9);
+  prev_time_step_ = cp_list_->get<double>("initial time step (s)", std::min(min_time_step_, max_time_step_));
   /*
   if ((min_time_step_ == 9.9e9) && (prev_time_step_ < 9.9e9))
     min_time_step_ = prev_time_step_;
@@ -334,27 +341,27 @@ void Alquimia_PK::XMLParameters(void)
   */
 
   time_step_ = prev_time_step_;
-  time_step_control_method_ = chem_param_list_.get<std::string>("time step control method", "fixed");
-  num_iterations_for_time_step_cut_ = chem_param_list_.get<int>("time step cut threshold", 8);
+  time_step_control_method_ = cp_list_->get<std::string>("time step control method", "fixed");
+  num_iterations_for_time_step_cut_ = cp_list_->get<int>("time step cut threshold", 8);
   if (num_iterations_for_time_step_cut_ <= 0)
   {
     msg << "Alquimia_PK::XMLParameters(): \n";
     msg << "  Invalid \"time step cut threshold\": " << num_iterations_for_time_step_cut_ << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
-  num_steps_before_time_step_increase_ = chem_param_list_.get<int>("time step increase threshold", 4);
+  num_steps_before_time_step_increase_ = cp_list_->get<int>("time step increase threshold", 4);
   if (num_steps_before_time_step_increase_ <= 0) {
     msg << "Alquimia_PK::XMLParameters(): \n";
     msg << "  Invalid \"time step increase threshold\": " << num_steps_before_time_step_increase_ << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
-  time_step_cut_factor_ = chem_param_list_.get<double>("time step cut factor", 2.0);
+  time_step_cut_factor_ = cp_list_->get<double>("time step cut factor", 2.0);
   if (time_step_cut_factor_ <= 1.0) {
     msg << "Alquimia_PK::XMLParameters(): \n";
     msg << "  Invalid \"time step cut factor\": " << time_step_cut_factor_ << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
-  time_step_increase_factor_ = chem_param_list_.get<double>("time step increase factor", 1.2);
+  time_step_increase_factor_ = cp_list_->get<double>("time step increase factor", 1.2);
   if (time_step_increase_factor_ <= 1.0) {
     msg << "Alquimia_PK::XMLParameters(): \n";
     msg << "  Invalid \"time step increase factor\": " << time_step_increase_factor_ << " (must be > 1).\n";

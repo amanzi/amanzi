@@ -31,9 +31,8 @@ Chemistry_State::Chemistry_State(Teuchos::ParameterList& plist,
   }
 
   ParseMeshBlocks_();
-  // RequireData_();
-  // RequireAuxData_();
 }
+
 
 void Chemistry_State::Setup() {
   RequireData_();  
@@ -293,34 +292,6 @@ void Chemistry_State::RequireData_() {
     }
   }
 
-  // CreateStorageMinerals()
-  if (number_of_minerals_ > 0) {
-    if (mineral_names_.size() > 0) {
-      // set the names for vis
-      ASSERT(mineral_names_.size() == number_of_minerals_);
-      std::vector<std::vector<std::string> > vf_names_cv(1);
-      std::vector<std::vector<std::string> > ssa_names_cv(1);
-      for (std::vector<std::string>::const_iterator mineral_name=mineral_names_.begin();
-           mineral_name!=mineral_names_.end(); ++mineral_name) {
-        vf_names_cv[0].push_back(*mineral_name + std::string(" vol frac"));
-        ssa_names_cv[0].push_back(*mineral_name + std::string(" spec surf area"));
-      }
-      S_->RequireField("mineral_volume_fractions", name_, vf_names_cv)
-          ->SetMesh(mesh_)->SetGhosted(false)
-          ->SetComponent("cell", AmanziMesh::CELL, number_of_minerals_);
-      S_->RequireField("mineral_specific_surface_area", name_, ssa_names_cv)
-          ->SetMesh(mesh_)->SetGhosted(false)
-          ->SetComponent("cell", AmanziMesh::CELL, number_of_minerals_);
-    } else {
-      S_->RequireField("mineral_volume_fractions", name_)
-          ->SetMesh(mesh_)->SetGhosted(false)
-          ->SetComponent("cell", AmanziMesh::CELL, number_of_minerals_);
-      S_->RequireField("mineral_specific_surface_area", name_)
-          ->SetMesh(mesh_)->SetGhosted(false)
-          ->SetComponent("cell", AmanziMesh::CELL, number_of_minerals_);
-    }
-  }
-
   // CreateStorageIonExchange()
   if (number_of_ion_exchange_sites_ > 0) {
     S_->RequireField("ion_exchange_sites", name_)
@@ -525,13 +496,13 @@ void Chemistry_State::CopyToAlquimia(const int cell_id,
   }
 
   // minerals
-  assert(state.mineral_volume_fraction.size == number_of_minerals());
-  assert(state.mineral_specific_surface_area.size == number_of_minerals());
+  assert(state.mineral_volume_fraction.size == number_of_minerals_);
+  assert(state.mineral_specific_surface_area.size == number_of_minerals_);
 
-  if (number_of_minerals() > 0) {
+  if (number_of_minerals_ > 0) {
     const Epetra_MultiVector& mineral_vf = *S_->GetFieldData("mineral_volume_fractions")->ViewComponent("cell");
     const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData("mineral_specific_surface_area")->ViewComponent("cell");
-    for (unsigned int i = 0; i < number_of_minerals(); ++i) {
+    for (unsigned int i = 0; i < number_of_minerals_; ++i) {
       state.mineral_volume_fraction.data[i] = mineral_vf[i][cell_id];
       state.mineral_specific_surface_area.data[i] = mineral_ssa[i][cell_id];
     }
@@ -620,11 +591,11 @@ void Chemistry_State::CopyFromAlquimia(const int cell_id,
   }
 
   // Mineral properties.
-  if (number_of_minerals() > 0) {
+  if (number_of_minerals_ > 0) {
     const Epetra_MultiVector& mineral_vf = *S_->GetFieldData("mineral_volume_fractions")->ViewComponent("cell");
     const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData("mineral_specific_surface_area")->ViewComponent("cell");
 
-    for (int i = 0; i < number_of_minerals(); ++i) {
+    for (int i = 0; i < number_of_minerals_; ++i) {
       mineral_vf[i][cell_id] = state.mineral_volume_fraction.data[i];
       mineral_ssa[i][cell_id] = state.mineral_specific_surface_area.data[i];
     }
