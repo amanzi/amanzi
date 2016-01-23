@@ -2091,7 +2091,7 @@ PorousMedia::multilevel_advance (Real  time,
   if (dt_new_bounded != dt_new) {
     dt_new = dt_new_bounded;
     if (do_write) {
-      std::cout << "  Suggested dt outside ec bounds.  Suggest next dt = " << dt_new
+      std::cout << "  Suggest next dt = " << dt_new
 		<< "s (=" << dt_new/(365.25*3600*24) << "y)" << std::endl;
 
       if (time+dt >= ec->end) {

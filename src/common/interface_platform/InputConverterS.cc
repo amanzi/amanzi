@@ -1824,7 +1824,7 @@ void InputConverterS::ParsePhases_(bool& do_tracer_diffusion)
 
         // Record the coefficient of diffusion.
         DOMElement* solute = static_cast<DOMElement*>(sols[i]);
-        string diff_coeff = GetAttributeValueS_(solute, "coefficient_of_diffusion");
+        string diff_coeff = GetAttributeValueS_(solute, "coefficient_of_diffusion", TYPE_NONE, false);
 	if (diff_coeff != "") {
 	  AddToTable(table, MakePPPrefix("tracer", sol_name, "molecularDiffusivity"), MakePPEntry(diff_coeff));
 	  if (atof(diff_coeff.c_str()) != 0) {
