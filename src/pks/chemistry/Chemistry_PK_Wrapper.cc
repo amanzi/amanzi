@@ -80,15 +80,13 @@ Chemistry_PK_Wrapper::Chemistry_PK_Wrapper(Teuchos::ParameterList& pk_tree,
   }
 #endif
 
-  CS = Teuchos::rcp(new AmanziChemistry::Chemistry_State(chemistry_plist, comp_names_, S));
-
   // construct
   if (chemistry_model_ == "Alquimia") {
 #ifdef ALQUIMIA_ENABLED
-    pk_ = Teuchos::rcp(new Alquimia_PK(glist, CS, chem_engine_, S, S->GetMesh()));
+    pk_ = Teuchos::rcp(new Alquimia_PK(glist, chem_engine_, S, S->GetMesh()));
 #endif
   } else if (chemistry_model_ == "Amanzi") {
-    pk_ = Teuchos::rcp(new Amanzi_PK(glist, CS, S, S->GetMesh()));
+    pk_ = Teuchos::rcp(new Amanzi_PK(glist, S, S->GetMesh()));
   }
 }
 

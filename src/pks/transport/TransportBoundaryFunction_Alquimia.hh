@@ -23,7 +23,7 @@
 #include "TransportBoundaryFunction.hh"
 
 #ifdef ALQUIMIA_ENABLED
-#include "Chemistry_State.hh"
+#include "Alquimia_PK.hh"
 #include "ChemistryEngine.hh"
 
 namespace Amanzi {
@@ -34,7 +34,7 @@ class TransportBoundaryFunction_Alquimia : public TransportBoundaryFunction {
   TransportBoundaryFunction_Alquimia(const std::vector<double>& times,
                                      const std::vector<std::string>& cond_names, 
                                      const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
-                                     Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
+                                     Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
                                      Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
   ~TransportBoundaryFunction_Alquimia();
   
@@ -51,7 +51,7 @@ class TransportBoundaryFunction_Alquimia : public TransportBoundaryFunction {
   std::vector<std::string> cond_names_;
 
   // Chemistry state and engine.
-  Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state_;
+  Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk_;
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
 
   // Containers for interacting with the chemistry engine.

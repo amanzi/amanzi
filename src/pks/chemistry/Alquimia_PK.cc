@@ -14,9 +14,9 @@
   library data structures.
 */
 
+#include <algorithm>
 #include <set>
 #include <string>
-#include <algorithm>
 
 // TPLs
 #include "boost/mpi.hpp"
@@ -37,21 +37,23 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
+// This should go away
+extern VerboseObject* chem_out;
+
 /* *******************************************************************
 * Constructor 
 ******************************************************************* */
 Alquimia_PK::Alquimia_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                         Teuchos::RCP<Chemistry_State> chem_state,
                          Teuchos::RCP<ChemistryEngine> chem_engine,
                          Teuchos::RCP<State> S,
                          Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
     glist_(glist),
     max_time_step_(9.9e9),
-    chemistry_state_(chem_state),
     chem_initialized_(false),
     chem_engine_(chem_engine),
     current_time_(0.0),
-    saved_time_(0.0) 
+    saved_time_(0.0), 
+    num_aux_data_(-1)
 {
   S_ = S;
   mesh_ = mesh;
@@ -60,10 +62,27 @@ Alquimia_PK::Alquimia_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   cp_list_ = Teuchos::sublist(pk_list, "Chemistry", true);
 
+  // We also need supporting lists
+  Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "State", true);
+
   InitializeMinerals(cp_list_);
+  InitializeSorptionSites(cp_list_, state_list);
+
+  // grab the component names
+  comp_names_.clear();
+  chem_engine_->GetPrimarySpeciesNames(comp_names_);
+  for (int i = 0; i < chem_engine_->NumAqueousComplexes(); ++i) {
+    std::stringstream ss;
+    ss << "secondary_" << i;
+    comp_names_.push_back(ss.str());
+  }
+  number_aqueous_components_ = comp_names_.size();
+  number_free_ion_ = number_aqueous_components_;
+  number_total_sorbed_ = number_aqueous_components_;
 
   // verbosity object
-  vo_ = Teuchos::rcp(new VerboseObject("Chemistry_PK", *cp_list_));
+  vo_ = Teuchos::rcp(new VerboseObject("Chem::Alquimia", *cp_list_));
+  chem_out = &*vo_;
 }
 
 
@@ -83,42 +102,55 @@ Alquimia_PK::~Alquimia_PK()
 void Alquimia_PK::Setup()
 {
   Chemistry_PK::Setup();
+
+  // Set up auxiliary chemistry data using the ChemistryEngine.
+  std::vector<std::string> aux_names;
+  chem_engine_->GetAuxiliaryOutputNames(aux_names);
+
+  for (size_t i = 0; i < aux_names.size(); ++i) {
+    std::vector<std::vector<std::string> > subname(1);
+    subname[0].push_back("0");
+    if (!S_->HasField(aux_names[i])) {
+      S_->RequireField(aux_names[i], passwd_, subname)
+        ->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    }
+  }
+
+  if (cp_list_->isParameter("auxiliary data")) {
+    Teuchos::Array<std::string> names = cp_list_->get<Teuchos::Array<std::string> >("auxiliary data");  
+    
+    for (Teuchos::Array<std::string>::const_iterator it = names.begin(); it != names.end(); ++it) {
+      std::vector<std::vector<std::string> > subname(1);
+      subname[0].push_back("0");
+      S_->RequireField(*it, passwd_, subname)
+        ->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    }
+  }
 }
 
 
 /* *******************************************************************
-* This helper performs initialization on a single cell within Amanzi's state.
-* It returns an error code that indicates success (0) or failure (1).
+* Initialization
 ******************************************************************* */
-int Alquimia_PK::InitializeSingleCell(int cell_index, const std::string& condition) 
-{
-  Teuchos::RCP<Epetra_MultiVector> tcc =
-      S_->GetFieldData("total_component_concentration", passwd_)->ViewComponent("cell");
+void Alquimia_PK::Initialize() 
+{ 
+  Chemistry_PK::Initialize();
 
-  // Copy the state and material information from Amanzi's state within 
-  // this cell to Alquimia.
-  CopyAmanziStateToAlquimia(cell_index, tcc,
-                            alq_mat_props_, alq_state_, alq_aux_data_);
+  // initialize auxiliary fields
+  std::vector<std::string> aux_names;
+  chem_engine_->GetAuxiliaryOutputNames(aux_names);
 
-  // Do the initialization.
-  chem_engine_->EnforceCondition(condition, current_time_, alq_mat_props_, 
-                                 alq_state_, alq_aux_data_, alq_aux_output_);
+  if (cp_list_->isParameter("auxiliary data"))  {
+    std::vector<std::string> names = cp_list_->get<Teuchos::Array<std::string> >("auxiliary data").toVector();  
+    aux_names.insert(aux_names.end(), names.begin(), names.end());
+  }
 
-  // Move the information back into Amanzi's state.
-  CopyAlquimiaStateToAmanzi(cell_index,
-                            alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_,
-                            tcc);
-
-  return 0;
-}
-
-
-/* *******************************************************************
-* 
-******************************************************************* */
-void Alquimia_PK::InitializeChemistry() 
-{
-  Errors::Message msg;
+  for (std::vector<std::string>::const_iterator it = aux_names.begin(); it != aux_names.end(); ++it) {
+    S_->GetFieldData(*it, passwd_)->PutScalar(0.0);
+    S_->GetField(*it, passwd_)->set_initialized();
+  }
 
   // Read XML parameters from our input file.
   XMLParameters();
@@ -150,6 +182,7 @@ void Alquimia_PK::InitializeChemistry()
   int recv = 0;
   mesh_->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) {
+    Errors::Message msg;
     msg << "Error in Alquimia_PK::InitializeChemistry 1";
     Exceptions::amanzi_throw(msg); 
   }
@@ -157,7 +190,7 @@ void Alquimia_PK::InitializeChemistry()
   // now publish auxiliary data to state
   if (aux_output_ != Teuchos::null) {
     for (int i = 0; i < aux_output_->NumVectors(); ++i) {
-      Epetra_MultiVector& aux_state = *S_->GetFieldData(aux_names_[i], passwd_)->ViewComponent("cell");
+      Epetra_MultiVector& aux_state = *S_->GetFieldData(aux_names_[i], passwd_)->ViewComponent("cell", true);
       aux_state[0] = (*aux_output_)[i];
     }
   }
@@ -165,6 +198,27 @@ void Alquimia_PK::InitializeChemistry()
   chem_initialized_ = true;
   num_iterations_ = 0;
   num_successful_steps_ = 0;
+}
+
+
+/* *******************************************************************
+* This helper performs initialization on a single cell within Amanzi's state.
+* It returns an error code that indicates success (0) or failure (1).
+******************************************************************* */
+int Alquimia_PK::InitializeSingleCell(int cell_index, const std::string& condition) 
+{
+  Teuchos::RCP<Epetra_MultiVector> tcc =
+      S_->GetFieldData("total_component_concentration", passwd_)->ViewComponent("cell", true);
+
+  CopyToAlquimia(cell_index, tcc, alq_mat_props_, alq_state_, alq_aux_data_);
+
+  chem_engine_->EnforceCondition(condition, current_time_, alq_mat_props_, 
+                                 alq_state_, alq_aux_data_, alq_aux_output_);
+
+  CopyAlquimiaStateToAmanzi(cell_index, alq_mat_props_, alq_state_, alq_aux_data_,
+                            alq_aux_output_, tcc);
+
+  return 0;
 }
 
 
@@ -373,13 +427,108 @@ void Alquimia_PK::XMLParameters(void)
 /* *******************************************************************
 *
 ******************************************************************* */
-void Alquimia_PK::CopyAmanziStateToAlquimia(const int cell_id,
-                                            Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
-                                            AlquimiaMaterialProperties& mat_props,
-                                            AlquimiaState& state,
-                                            AlquimiaAuxiliaryData& aux_data)
+void Alquimia_PK::CopyToAlquimia(const int cell_id,
+                                 AlquimiaMaterialProperties& mat_props,
+                                 AlquimiaState& state,
+                                 AlquimiaAuxiliaryData& aux_data)
 {
-  chemistry_state_->CopyToAlquimia(cell_id, aqueous_components, mat_props, state, aux_data);
+  Teuchos::RCP<const Epetra_MultiVector> tcc =
+      S_->GetFieldData("total_component_concentration")->ViewComponent("cell", true);
+  CopyToAlquimia(cell_id, tcc, mat_props, state, aux_data);
+}
+
+
+/* *******************************************************************
+*
+******************************************************************* */
+void Alquimia_PK::CopyToAlquimia(const int cell_id,
+                                 Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
+                                 AlquimiaMaterialProperties& mat_props,
+                                 AlquimiaState& state,
+                                 AlquimiaAuxiliaryData& aux_data)
+{
+  const Epetra_MultiVector& porosity = *S_->GetFieldData("porosity")->ViewComponent("cell", true);
+  double water_density = *S_->GetScalarData("fluid_density");
+
+  state.water_density = water_density;
+  state.porosity = porosity[0][cell_id];
+
+  for (int c = 0; c < number_aqueous_components_; c++) {
+    state.total_mobile.data[c] = (*aqueous_components)[c][cell_id];
+    if (using_sorption_) {
+      const Epetra_MultiVector& sorbed = *S_->GetFieldData("total_sorbed")->ViewComponent("cell", true);
+      state.total_immobile.data[c] = sorbed[c][cell_id];
+    } 
+  }
+
+  // minerals
+  assert(state.mineral_volume_fraction.size == number_minerals_);
+  assert(state.mineral_specific_surface_area.size == number_minerals_);
+
+  if (number_minerals_ > 0) {
+    const Epetra_MultiVector& mineral_vf = *S_->GetFieldData("mineral_volume_fractions")->ViewComponent("cell", true);
+    const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData("mineral_specific_surface_area")->ViewComponent("cell", true);
+    for (unsigned int i = 0; i < number_minerals_; ++i) {
+      state.mineral_volume_fraction.data[i] = mineral_vf[i][cell_id];
+      state.mineral_specific_surface_area.data[i] = mineral_ssa[i][cell_id];
+    }
+  }
+
+  // ion exchange
+  assert(state.cation_exchange_capacity.size == number_ion_exchange_sites());
+  if (number_ion_exchange_sites_ > 0) {
+    const Epetra_MultiVector& ion_exchange = *S_->GetFieldData("ion_exchange_sites")->ViewComponent("cell", true);
+    for (int i = 0; i < number_ion_exchange_sites_; i++) {
+      state.cation_exchange_capacity.data[i] = ion_exchange[i][cell_id];
+    }
+  }
+  
+  // surface complexation
+  if (number_sorption_sites_ > 0) {
+    const Epetra_MultiVector& sorption_sites = *S_->GetFieldData("sorption_sites")->ViewComponent("cell", true);
+
+    assert(number_sorption_sites_ == state.surface_site_density.size);
+    for (int i = 0; i < number_sorption_sites_; ++i) {
+      // FIXME: Need site density names, too?
+      state.surface_site_density.data[i] = sorption_sites[i][cell_id];
+      // TODO(bandre): need to save surface complexation free site conc here!
+    }
+  }
+
+  // Auxiliary data -- block copy.
+  if (S_->HasField("alquimia_aux_data"))
+    aux_data_ = S_->GetField("alquimia_aux_data", passwd_)->GetFieldData()->ViewComponent("cell", true);
+
+  if (num_aux_data_ != -1) {
+    int num_aux_ints = aux_data.aux_ints.size;
+    int num_aux_doubles = aux_data.aux_doubles.size;
+    for (int i = 0; i < num_aux_ints; i++) {
+      double* cell_aux_ints = (*aux_data_)[i];
+      aux_data.aux_ints.data[i] = (int)cell_aux_ints[cell_id];
+    }
+    for (int i = 0; i < num_aux_doubles; i++) {
+      double* cell_aux_doubles = (*aux_data_)[i + num_aux_ints];
+      aux_data.aux_doubles.data[i] = cell_aux_doubles[cell_id];
+    }
+  }
+
+  const Epetra_MultiVector& water_saturation = *S_->GetFieldData("saturation_liquid")->ViewComponent("cell", true);
+
+  mat_props.volume = mesh_->cell_volume(cell_id);
+  mat_props.saturation = water_saturation[0][cell_id];
+
+  // sorption isotherms
+  if (using_sorption_isotherms_) {
+    const Epetra_MultiVector& isotherm_kd = *S_->GetFieldData("isotherm_kd")->ViewComponent("cell", true);
+    const Epetra_MultiVector& isotherm_freundlich_n = *S_->GetFieldData("isotherm_freundlich_n")->ViewComponent("cell", true);
+    const Epetra_MultiVector& isotherm_langmuir_b = *S_->GetFieldData("isotherm_langmuir_b")->ViewComponent("cell", true);
+
+    for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
+      mat_props.isotherm_kd.data[i] = isotherm_kd[i][cell_id];
+      mat_props.freundlich_n.data[i] = isotherm_freundlich_n[i][cell_id];
+      mat_props.langmuir_b.data[i] = isotherm_langmuir_b[i][cell_id];
+    }
+  }
 }
 
 
@@ -394,8 +543,8 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
     const AlquimiaAuxiliaryOutputData& aux_output,
     Teuchos::RCP<Epetra_MultiVector> total_component_concentration)
 {
-  chemistry_state_->CopyFromAlquimia(cell_id, mat_props, state, aux_data, aux_output, 
-                                     total_component_concentration);
+  CopyFromAlquimia(cell_id, mat_props, state, aux_data, aux_output, 
+                   total_component_concentration);
 
   // Auxiliary output.
   if (aux_output_ != Teuchos::null) {
@@ -472,6 +621,114 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
 
 
 /* *******************************************************************
+x * 
+******************************************************************* */
+void Alquimia_PK::CopyFromAlquimia(const int cell_id,
+                                   const AlquimiaMaterialProperties& mat_props,
+                                   const AlquimiaState& state,
+                                   const AlquimiaAuxiliaryData& aux_data,
+                                   const AlquimiaAuxiliaryOutputData& aux_output,
+                                   Teuchos::RCP<const Epetra_MultiVector> aqueous_components)
+{
+  // If the chemistry has modified the porosity and/or density, it needs to 
+  // be updated here.
+  //(this->water_density())[cell_id] = state.water_density;
+  //(this->porosity())[cell_id] = state.porosity;
+  for (int c = 0; c < number_aqueous_components_; c++) {
+    (*aqueous_components)[c][cell_id] = state.total_mobile.data[c];
+    if (using_sorption_) {
+      const Epetra_MultiVector& sorbed = *S_->GetFieldData("total_sorbed")->ViewComponent("cell", true);
+      sorbed[c][cell_id] = state.total_immobile.data[c];
+    }
+  }
+
+  // Free ion species.
+  const Epetra_MultiVector& free_ion = *S_->GetFieldData("free_ion_species")->ViewComponent("cell", true);
+  for (int i = 0; i < number_aqueous_components_; ++i) {
+    free_ion[i][cell_id] = aux_output.primary_free_ion_concentration.data[i];
+  }
+
+  // Mineral properties.
+  if (number_minerals_ > 0) {
+    const Epetra_MultiVector& mineral_vf = *S_->GetFieldData("mineral_volume_fractions")->ViewComponent("cell", true);
+    const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData("mineral_specific_surface_area")->ViewComponent("cell", true);
+
+    for (int i = 0; i < number_minerals_; ++i) {
+      mineral_vf[i][cell_id] = state.mineral_volume_fraction.data[i];
+      mineral_ssa[i][cell_id] = state.mineral_specific_surface_area.data[i];
+    }
+  }
+
+  // ion exchange
+  if (number_ion_exchange_sites_ > 0) {
+    const Epetra_MultiVector& ion_exchange = *S_->GetFieldData("ion_exchange_sites")->ViewComponent("cell", true);
+    for (unsigned int i = 0; i < number_ion_exchange_sites_; i++) {
+      ion_exchange[i][cell_id] = state.cation_exchange_capacity.data[i];
+    }
+  }
+
+  // surface complexation
+  if (number_sorption_sites_ > 0) {
+    const Epetra_MultiVector& sorption_sites = *S_->GetFieldData("sorption_sites")->ViewComponent("cell", true);
+
+    for (unsigned int i = 0; i < number_sorption_sites_; i++) {
+      sorption_sites[i][cell_id] = state.surface_site_density.data[i];
+    }
+  }
+
+  // Auxiliary data -- block copy.
+  int num_aux_ints = aux_data.aux_ints.size;
+  int num_aux_doubles = aux_data.aux_doubles.size;
+  if (num_aux_data_ == -1) {
+    // Set things up and register a vector in the State.
+    assert(num_aux_ints >= 0);
+    assert(num_aux_doubles >= 0);
+    num_aux_data_ = num_aux_ints + num_aux_doubles;
+    if (!S_->HasField("alquimia_aux_data"))
+    {
+      Teuchos::RCP<CompositeVectorSpace> fac = S_->RequireField("alquimia_aux_data", passwd_);
+      fac->SetMesh(mesh_);
+      fac->SetGhosted(false);
+      fac->SetComponent("cell", AmanziMesh::CELL, num_aux_data_);
+      Teuchos::RCP<CompositeVector> sac = Teuchos::rcp(new CompositeVector(*fac));
+
+      // Zero the field.
+      Teuchos::RCP<Field> F = S_->GetField("alquimia_aux_data", passwd_);
+      F->SetData(sac);
+      F->CreateData();
+      F->GetFieldData()->PutScalar(0.0);
+      F->set_initialized();
+    }
+    aux_data_ = S_->GetField("alquimia_aux_data", passwd_)->GetFieldData()->ViewComponent("cell", true);
+  }
+  else {
+    assert(num_aux_data_ == num_aux_ints + num_aux_doubles);
+  }
+
+  for (int i = 0; i < num_aux_ints; i++) {
+    double* cell_aux_ints = (*aux_data_)[i];
+    cell_aux_ints[cell_id] = (double)aux_data.aux_ints.data[i];
+  }
+  for (int i = 0; i < num_aux_doubles; i++) {
+    double* cell_aux_doubles = (*aux_data_)[i + num_aux_ints];
+    cell_aux_doubles[cell_id] = aux_data.aux_doubles.data[i];
+  }
+
+  if (using_sorption_isotherms_) {
+    const Epetra_MultiVector& isotherm_kd = *S_->GetFieldData("isotherm_kd")->ViewComponent("cell", true);
+    const Epetra_MultiVector& isotherm_freundlich_n = *S_->GetFieldData("isotherm_freundlich_n")->ViewComponent("cell", true);
+    const Epetra_MultiVector& isotherm_langmuir_b = *S_->GetFieldData("isotherm_langmuir_b")->ViewComponent("cell", true);
+
+    for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
+      isotherm_kd[i][cell_id] = mat_props.isotherm_kd.data[i];
+      isotherm_freundlich_n[i][cell_id] = mat_props.freundlich_n.data[i];
+      isotherm_langmuir_b[i][cell_id] = mat_props.langmuir_b.data[i];
+    }
+  }
+}
+
+
+/* *******************************************************************
 * This helper advances the solution on a single cell within Amanzi's state.
 * It returns the number of iterations taken to obtain the advanced solution, 
 * or -1 if an error occurred.
@@ -482,9 +739,8 @@ int Alquimia_PK::AdvanceSingleCell(
 {
   // Copy the state and material information from Amanzi's state within 
   // this cell to Alquimia.
-  CopyAmanziStateToAlquimia(cell_index, 
-                            total_component_concentration, 
-                            alq_mat_props_, alq_state_, alq_aux_data_);
+  CopyToAlquimia(cell_index, total_component_concentration, 
+                 alq_mat_props_, alq_state_, alq_aux_data_);
 
   // Do the reaction.
   int num_iterations;
@@ -503,18 +759,9 @@ int Alquimia_PK::AdvanceSingleCell(
 
 
 /* *******************************************************************
-* - the MPC will call this function to advance the state with this
-* particular process kernel
-*
-* - this is how to get the total component concentration
-* CS->get_total_component_concentration()
-*
-* - please update the argument to this function called tcc_star
-* with the result of your chemistry computation which is the total
-* component concentration ^star
-*
-* - see the Chemistry_State for the other available data in the
-* chemistry specific state
+* The MPC will call this function to advance the state. Please update 
+* the argument to this function called tcc with the result of your 
+* chemistry computation.
 ******************************************************************* */
 void Alquimia_PK::Advance(const double& delta_time,
                           Teuchos::RCP<Epetra_MultiVector> total_component_concentration) 
@@ -590,7 +837,7 @@ void Alquimia_PK::Advance(const double& delta_time,
   // now publish auxiliary data to state
   if (aux_output_ != Teuchos::null) {
     for (int i=0; i<aux_output_->NumVectors(); ++i) {
-      Epetra_MultiVector& aux_state = *S_->GetFieldData(aux_names_[i], passwd_)->ViewComponent("cell");
+      Epetra_MultiVector& aux_state = *S_->GetFieldData(aux_names_[i], passwd_)->ViewComponent("cell", true);
       aux_state[0] = (*aux_output_)[i];
     }
   }
@@ -632,8 +879,7 @@ void Alquimia_PK::ComputeNextTimeStep()
 * it has accepted the state update, thus, the PK should update
 * possible auxilary state variables here
 ******************************************************************* */
-void Alquimia_PK::CommitState(Teuchos::RCP<Chemistry_State> chem_state,
-                              const double& time) 
+void Alquimia_PK::CommitState(const double& time) 
 {
   saved_time_ = time;
 }

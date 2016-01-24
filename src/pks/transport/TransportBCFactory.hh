@@ -22,7 +22,7 @@
 
 #ifdef ALQUIMIA_ENABLED
 #include "TransportBoundaryFunction_Alquimia.hh"
-#include "Chemistry_State.hh"
+#include "Alquimia_PK.hh"
 #include "ChemistryEngine.hh"
 #endif
 
@@ -34,20 +34,25 @@ class TransportBCFactory {
 #ifdef ALQUIMIA_ENABLED
   // Alquimia-enabled constructors.
   TransportBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                     const Teuchos::RCP<Teuchos::ParameterList>& list)
-      : mesh_(mesh), list_(list),
-        chem_state_(Teuchos::null), chem_engine_(Teuchos::null) {};
+                     const Teuchos::RCP<Teuchos::ParameterList>& list) :
+      mesh_(mesh),
+      list_(list),
+      chem_pk_(Teuchos::null),
+      chem_engine_(Teuchos::null) {};
 
   TransportBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                      const Teuchos::RCP<Teuchos::ParameterList>& list,
-                     const Teuchos::RCP<AmanziChemistry::Chemistry_State>& chem_state,
-                     const Teuchos::RCP<AmanziChemistry::ChemistryEngine>& chem_engine)
-      : mesh_(mesh), list_(list), 
-        chem_state_(chem_state), chem_engine_(chem_engine) {};
+                     const Teuchos::RCP<AmanziChemistry::Alquimia_PK>& chem_pk,
+                     const Teuchos::RCP<AmanziChemistry::ChemistryEngine>& chem_engine) :
+      mesh_(mesh),
+      list_(list), 
+      chem_pk_(chem_pk),
+      chem_engine_(chem_engine) {};
 #else
   TransportBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                     const Teuchos::RCP<Teuchos::ParameterList>& list)
-      : mesh_(mesh), list_(list) {};
+                     const Teuchos::RCP<Teuchos::ParameterList>& list) :
+      mesh_(mesh),
+      list_(list) {};
 #endif
 
   ~TransportBCFactory() {};
@@ -66,7 +71,7 @@ class TransportBCFactory {
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;
   const Teuchos::RCP<Teuchos::ParameterList>& list_;
 #ifdef ALQUIMIA_ENABLED
-  const Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state_;
+  const Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk_;
   const Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
 #endif
 };

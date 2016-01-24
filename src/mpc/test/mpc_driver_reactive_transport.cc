@@ -49,16 +49,12 @@ using namespace Amanzi::AmanziGeometry;
   Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 100, 1, 1, gm);
   ASSERT(!mesh.is_null());
 
-
-  
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
   Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(plist));
 
   Amanzi::CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
   cycle_driver.Go();
-
-
 }
 
 

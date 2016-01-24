@@ -168,7 +168,7 @@ void TransportBCFactory::ProcessGeochemicalConditionList(std::vector<TransportBo
 
         // Construct the Alquimia-savvy BC.
         TransportBoundaryFunction_Alquimia* bc = 
-          new TransportBoundaryFunction_Alquimia(times, cond_names, mesh_, chem_state_, chem_engine_);
+            new TransportBoundaryFunction_Alquimia(times, cond_names, mesh_, chem_pk_, chem_engine_);
 
         // Associate it with the given regions.
         bc->Define(regions);

@@ -15,7 +15,6 @@
 #include "Alquimia_PK.hh"
 #endif
 #include "Chemistry_PK.hh"
-#include "Chemistry_State.hh"
 #include "PK.hh"
 #include "PK_Factory.hh"
 
@@ -29,25 +28,12 @@ class Chemistry_PK_Wrapper : public PK {
                        const Teuchos::RCP<State>& S,
                        const Teuchos::RCP<TreeVector>& soln);
   // Setup
-  virtual void Setup() {
-    pk_->Setup();
-    CS->Setup();
-
-#ifdef ALQUIMIA_ENABLED
-    // Set up auxiliary chemistry data using the ChemistryEngine.
-    if (chemistry_model_ == "Alquimia") {
-      std::vector<std::string> auxNames;
-      chem_engine_->GetAuxiliaryOutputNames(auxNames);
-      CS->SetAuxDataNames(auxNames); 
-    }
-#endif
-  }
+  virtual void Setup() { pk_->Setup(); }
 
   // Initialize owned (dependent) variables.
   virtual void Initialize() {  
     dt_ = -1;
-    CS->Initialize();
-    pk_->InitializeChemistry();
+    pk_->Initialize();
   }
 
   // Choose a time step compatible with physics.
@@ -62,7 +48,7 @@ class Chemistry_PK_Wrapper : public PK {
 
   // Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new) {
-    pk_->CommitState(CS, t_new);
+    pk_->CommitState(t_new);
   }
 
   // Calculate any diagnostics prior to doing vis
@@ -83,7 +69,7 @@ class Chemistry_PK_Wrapper : public PK {
 
   // access
 #ifdef ALQUIMIA_ENABLED
-  Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state() { return CS; }
+  Teuchos::RCP<AmanziChemistry::Chemistry_PK> pk() { return pk_; }
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine() { return chem_engine_; }
 #endif
 
@@ -93,7 +79,6 @@ class Chemistry_PK_Wrapper : public PK {
   Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<State> S_;
 
-  Teuchos::RCP<AmanziChemistry::Chemistry_State> CS;
   std::vector<std::string> comp_names_;
   std::string chemistry_model_;
 #ifdef ALQUIMIA_ENABLED

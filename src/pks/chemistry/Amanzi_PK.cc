@@ -43,19 +43,18 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
+// This should go away
 extern VerboseObject* chem_out;
 
 /* ******************************************************************
 * Constructor
 ******************************************************************* */
 Amanzi_PK::Amanzi_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                     Teuchos::RCP<Chemistry_State> chem_state,
                      Teuchos::RCP<State> S,
                      Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
     debug_(false),
     display_free_columns_(false),
     max_time_step_(9.9e9),
-    chemistry_state_(chem_state),
     chem_(NULL),
     current_time_(0.0),
     saved_time_(0.0)
@@ -67,10 +66,28 @@ Amanzi_PK::Amanzi_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   cp_list_ = Teuchos::sublist(pk_list, "Chemistry", true);
 
+  // Collect high-level information about the problem
+  Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "State", true);
+
   InitializeMinerals(cp_list_);
+  InitializeSorptionSites(cp_list_, state_list);
+
+  // grab the component names
+  comp_names_.clear();
+  Teuchos::RCP<Teuchos::ParameterList> cd_list = Teuchos::sublist(glist, "Cycle Driver", true);
+  if (cd_list->isParameter("component names")) {
+    comp_names_ = cd_list->get<Teuchos::Array<std::string> >("component names").toVector();
+  } else{
+    Errors::Message msg("Amanzi_PK: Cycle Driver has no input parameter component names.");
+    Exceptions::amanzi_throw(msg);
+  }
+  number_aqueous_components_ = comp_names_.size();
+  number_free_ion_ = number_aqueous_components_;
+  number_total_sorbed_ = number_aqueous_components_;
 
   // verbosity object
-  chem_out = new VerboseObject("ChemistryPK", *cp_list_); 
+  vo_ = Teuchos::rcp(new VerboseObject("Chem::Amanzi", *cp_list_)); 
+  chem_out = &*vo_;
 }
 
 
@@ -79,7 +96,6 @@ Amanzi_PK::Amanzi_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 ******************************************************************* */
 Amanzi_PK::~Amanzi_PK() {
   delete chem_;
-  if (chem_out != NULL) delete chem_out;
 }
 
 
@@ -92,13 +108,36 @@ void Amanzi_PK::Setup()
 }
 
 
-/* *******************************************************************
-*
+/* ******************************************************************
+* Can this be done during Setup phase?
 ******************************************************************* */
-void Amanzi_PK::InitializeChemistry()
+void Amanzi_PK::AllocateAdditionalChemistryStorage_(
+    const Beaker::BeakerComponents& components)
 {
+  int n_secondary_comps = components.secondary_activity_coeff.size();
+  if (n_secondary_comps > 0) {
+    Teuchos::RCP<CompositeVectorSpace> fac = S_->RequireField("secondary_activity_coeff", passwd_);
+    fac->SetMesh(mesh_)->SetGhosted(false)
+       ->SetComponent("cell", AmanziMesh::CELL, n_secondary_comps);
+
+    Teuchos::RCP<CompositeVector> sac = Teuchos::rcp(new CompositeVector(*fac));
+    S_->GetField("secondary_activity_coeff", passwd_)->SetData(sac);
+    S_->GetField("secondary_activity_coeff", passwd_)->CreateData();
+    S_->GetFieldData("secondary_activity_coeff", passwd_)->PutScalar(1.0);
+    S_->GetField("secondary_activity_coeff", passwd_)->set_initialized();
+  }
+}
+
+
+/* *******************************************************************
+* Initialization
+******************************************************************* */
+void Amanzi_PK::Initialize()
+{
+  Chemistry_PK::Initialize();
+
   Teuchos::RCP<Epetra_MultiVector> tcc = 
-      S_->GetFieldData("total_component_concentration", passwd_)->ViewComponent("cell");
+      S_->GetFieldData("total_component_concentration", passwd_)->ViewComponent("cell", true);
 
   if (debug()) {
     std::cout << "  Amanzi_PK::InitializeChemistry()" << std::endl;
@@ -123,14 +162,14 @@ void Amanzi_PK::InitializeChemistry()
   int ierr(0);
   try {
     chem_->set_debug(false);
-    chem_out->Write(Teuchos::VERB_HIGH, "Initializing chemistry in cell 0...\n");
+    vo_->Write(Teuchos::VERB_HIGH, "Initializing chemistry in cell 0...\n");
     chem_->Setup(beaker_components_, beaker_parameters_);
     chem_->Display();
     // solve for initial free-ion concentrations
-    chem_out->Write(Teuchos::VERB_HIGH, "Initial speciation calculations in cell 0...\n");
+    vo_->Write(Teuchos::VERB_HIGH, "Initial speciation calculations in cell 0...\n");
     chem_->Speciate(&beaker_components_, beaker_parameters_);
     if (debug()) {
-      chem_out->Write(Teuchos::VERB_HIGH, "\nTest solution of initial conditions in cell 0:\n");
+      vo_->Write(Teuchos::VERB_HIGH, "\nTest solution of initial conditions in cell 0:\n");
       chem_->DisplayResults();
     }
   } catch (ChemistryException& geochem_error) {
@@ -146,12 +185,12 @@ void Amanzi_PK::InitializeChemistry()
 
   // TODO(bandre): at this point we should know about any additional
   // storage that chemistry needs...
-  chemistry_state_->AllocateAdditionalChemistryStorage(beaker_components_);
+  AllocateAdditionalChemistryStorage_(beaker_components_);
 
   SetupAuxiliaryOutput();
 
   // solve for initial free-ion concentrations
-  chem_out->Write(Teuchos::VERB_HIGH, "Initializing chemistry in all cells...\n");
+  vo_->Write(Teuchos::VERB_HIGH, "Initializing chemistry in all cells...\n");
   int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ierr = 0;
   for (int c = 0; c < num_cells; ++c) {
@@ -174,7 +213,7 @@ void Amanzi_PK::InitializeChemistry()
     Exceptions::amanzi_throw(geochem_error); 
   }  
 
-  chem_out->Write(Teuchos::VERB_HIGH, "InitializeChemistry(): initialization was successful.\n");
+  vo_->Write(Teuchos::VERB_HIGH, "InitializeChemistry(): initialization was successful.\n");
 }
 
 
@@ -262,7 +301,7 @@ void Amanzi_PK::XMLParameters(void)
         std::stringstream message;
         message << "XMLParameters(): unknown value in 'auxiliary data' list: " 
                 << *name << std::endl;
-        chem_out->WriteWarning(Teuchos::VERB_LOW, message);
+        vo_->WriteWarning(Teuchos::VERB_LOW, message);
       }
     }
   }
@@ -326,12 +365,12 @@ void Amanzi_PK::SizeBeakerStructures(void) {
   // own value. If we want to over ride the global chemistry value
   // with cell by cell data, then we resize the containers here.
 
-  beaker_components_.total.resize(number_aqueous_components(), 0.0);
-  beaker_components_.free_ion.resize(number_aqueous_components(), 1.0e-9);
+  beaker_components_.total.resize(number_aqueous_components_, 0.0);
+  beaker_components_.free_ion.resize(number_aqueous_components_, 1.0e-9);
   beaker_components_.mineral_volume_fraction.resize(number_minerals_, 0.0);
 
-  if (using_sorption()) {
-    beaker_components_.total_sorbed.resize(number_total_sorbed(), 0.0);
+  if (using_sorption_) {
+    beaker_components_.total_sorbed.resize(number_total_sorbed_, 0.0);
   } else {
     beaker_components_.total_sorbed.clear();
   }
@@ -342,22 +381,22 @@ void Amanzi_PK::SizeBeakerStructures(void) {
     beaker_components_.mineral_specific_surface_area.clear();
   }
 
-  if (number_ion_exchange_sites() > 0) {
-    beaker_components_.ion_exchange_sites.resize(number_ion_exchange_sites(), 0.0);
+  if (number_ion_exchange_sites_ > 0) {
+    beaker_components_.ion_exchange_sites.resize(number_ion_exchange_sites_, 0.0);
   } else {
     beaker_components_.ion_exchange_sites.clear();
   }
 
-  if (number_sorption_sites() > 0) {
-    beaker_components_.surface_site_density.resize(number_sorption_sites(), 0.0);
+  if (number_sorption_sites_ > 0) {
+    beaker_components_.surface_site_density.resize(number_sorption_sites_, 0.0);
   } else {
     beaker_components_.surface_site_density.clear();
   }
 
-  if (using_sorption_isotherms()) {
-    beaker_components_.isotherm_kd.resize(number_aqueous_components(), 0.0);
-    beaker_components_.isotherm_freundlich_n.resize(number_aqueous_components(), 0.0);
-    beaker_components_.isotherm_langmuir_b.resize(number_aqueous_components(), 0.0);
+  if (using_sorption_isotherms_) {
+    beaker_components_.isotherm_kd.resize(number_aqueous_components_, 0.0);
+    beaker_components_.isotherm_freundlich_n.resize(number_aqueous_components_, 0.0);
+    beaker_components_.isotherm_langmuir_b.resize(number_aqueous_components_, 0.0);
   } else {
     beaker_components_.isotherm_kd.clear();
     beaker_components_.isotherm_freundlich_n.clear();
@@ -373,25 +412,25 @@ void Amanzi_PK::SizeBeakerStructures(void) {
 void Amanzi_PK::CopyCellStateToBeakerStructures(
     const int cell_id, Teuchos::RCP<Epetra_MultiVector> aqueous_components)
 {
-  for (unsigned int i = 0; i < number_aqueous_components(); i++) {
+  for (unsigned int i = 0; i < number_aqueous_components_; i++) {
     beaker_components_.total.at(i) = (*aqueous_components)[i][cell_id];
   }
 
-  const Epetra_MultiVector& free_ion = *S_->GetFieldData("free_ion_species")->ViewComponent("cell");
-  for (int i = 0; i < number_aqueous_components(); ++i) {
+  const Epetra_MultiVector& free_ion = *S_->GetFieldData("free_ion_species")->ViewComponent("cell", true);
+  for (int i = 0; i < number_aqueous_components_; ++i) {
     beaker_components_.free_ion.at(i) = free_ion[i][cell_id];
   }
 
   // activity coefficients
   if (beaker_components_.primary_activity_coeff.size() > 0) {
-    const Epetra_MultiVector& activity = *S_->GetFieldData("primary_activity_coeff")->ViewComponent("cell");
+    const Epetra_MultiVector& activity = *S_->GetFieldData("primary_activity_coeff")->ViewComponent("cell", true);
     for (int i = 0; i < beaker_components_.primary_activity_coeff.size(); ++i) {
       beaker_components_.primary_activity_coeff.at(i) = activity[i][cell_id];
     }
   }
 
   if (beaker_components_.secondary_activity_coeff.size() > 0) {
-    const Epetra_MultiVector& activity = *S_->GetFieldData("secondary_activity_coeff")->ViewComponent("cell");
+    const Epetra_MultiVector& activity = *S_->GetFieldData("secondary_activity_coeff")->ViewComponent("cell", true);
     for (int i = 0; i < beaker_components_.secondary_activity_coeff.size(); ++i) {
       beaker_components_.secondary_activity_coeff.at(i) = activity[i][cell_id];
     }
@@ -399,8 +438,8 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
 
   // minerals
   if (number_minerals_ > 0) {
-    const Epetra_MultiVector& mineral_vf = *S_->GetFieldData("mineral_volume_fractions")->ViewComponent("cell");
-    const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData("mineral_specific_surface_area")->ViewComponent("cell");
+    const Epetra_MultiVector& mineral_vf = *S_->GetFieldData("mineral_volume_fractions")->ViewComponent("cell", true);
+    const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData("mineral_specific_surface_area")->ViewComponent("cell", true);
 
     for (int i = 0; i < number_minerals_; ++i) {
       beaker_components_.mineral_volume_fraction[i] = mineral_vf[i][cell_id];
@@ -409,35 +448,35 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
   }
 
   // general sorption storage
-  if (using_sorption()) {
-    const Epetra_MultiVector& sorbed = *S_->GetFieldData("total_sorbed")->ViewComponent("cell");
-    for (int i = 0; i < number_aqueous_components(); ++i) {
+  if (using_sorption_) {
+    const Epetra_MultiVector& sorbed = *S_->GetFieldData("total_sorbed")->ViewComponent("cell", true);
+    for (int i = 0; i < number_aqueous_components_; ++i) {
       beaker_components_.total_sorbed.at(i) = sorbed[i][cell_id];
     }
   }
 
   // ion exchange
   // TODO: only allow one ion exchange site at the moment!
-  if (number_ion_exchange_sites() > 0) {
-    const Epetra_MultiVector& ion_exchange = *S_->GetFieldData("ion_exchange_sites")->ViewComponent("cell");
-    for (unsigned int i = 0; i < number_ion_exchange_sites(); i++) {
+  if (number_ion_exchange_sites_ > 0) {
+    const Epetra_MultiVector& ion_exchange = *S_->GetFieldData("ion_exchange_sites")->ViewComponent("cell", true);
+    for (unsigned int i = 0; i < number_ion_exchange_sites_; i++) {
       beaker_components_.ion_exchange_sites[i] = ion_exchange[i][cell_id];
       // TODO(bandre): need to save ion exchange ref cation conc here!
     }
   }
   
   if (beaker_components_.ion_exchange_ref_cation_conc.size() > 0) {
-    const Epetra_MultiVector& ion_exchange = *S_->GetFieldData("ion_exchange_ref_cation_conc")->ViewComponent("cell");
+    const Epetra_MultiVector& ion_exchange = *S_->GetFieldData("ion_exchange_ref_cation_conc")->ViewComponent("cell", true);
     for (unsigned int i = 0; i < beaker_components_.ion_exchange_ref_cation_conc.size(); ++i) {
       beaker_components_.ion_exchange_ref_cation_conc.at(i) = ion_exchange[i][cell_id];
     }
   }
 
   // surface complexation
-  if (number_sorption_sites() > 0) {
-    const Epetra_MultiVector& sorption_sites = *S_->GetFieldData("sorption_sites")->ViewComponent("cell");
+  if (number_sorption_sites_ > 0) {
+    const Epetra_MultiVector& sorption_sites = *S_->GetFieldData("sorption_sites")->ViewComponent("cell", true);
 
-    for (int i = 0; i < number_sorption_sites(); ++i) {
+    for (int i = 0; i < number_sorption_sites_; ++i) {
       beaker_components_.surface_site_density[i] = sorption_sites[i][cell_id];
       // TODO(bandre): need to save surface complexation free site conc here!
     }
@@ -445,19 +484,19 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
 
   if (beaker_components_.surface_complex_free_site_conc.size() > 0) {
     const Epetra_MultiVector& surface_complex =
-        *S_->GetFieldData("surface_complex_free_site_conc")->ViewComponent("cell");
+        *S_->GetFieldData("surface_complex_free_site_conc")->ViewComponent("cell", true);
     for (int i = 0; i < beaker_components_.surface_complex_free_site_conc.size(); ++i) {
       beaker_components_.surface_complex_free_site_conc.at(i) = surface_complex[i][cell_id];
     }
   }
 
   // sorption isotherms
-  if (using_sorption_isotherms()) {
-    const Epetra_MultiVector& isotherm_kd = *S_->GetFieldData("isotherm_kd")->ViewComponent("cell");
-    const Epetra_MultiVector& isotherm_freundlich_n = *S_->GetFieldData("isotherm_freundlich_n")->ViewComponent("cell");
-    const Epetra_MultiVector& isotherm_langmuir_b = *S_->GetFieldData("isotherm_langmuir_b")->ViewComponent("cell");
+  if (using_sorption_isotherms_) {
+    const Epetra_MultiVector& isotherm_kd = *S_->GetFieldData("isotherm_kd")->ViewComponent("cell", true);
+    const Epetra_MultiVector& isotherm_freundlich_n = *S_->GetFieldData("isotherm_freundlich_n")->ViewComponent("cell", true);
+    const Epetra_MultiVector& isotherm_langmuir_b = *S_->GetFieldData("isotherm_langmuir_b")->ViewComponent("cell", true);
 
-    for (unsigned int i = 0; i < number_aqueous_components(); ++i) {
+    for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
       beaker_components_.isotherm_kd.at(i) = isotherm_kd[i][cell_id];
       beaker_components_.isotherm_freundlich_n.at(i) = isotherm_freundlich_n[i][cell_id];
       beaker_components_.isotherm_langmuir_b.at(i) = isotherm_langmuir_b[i][cell_id];
@@ -465,8 +504,8 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
   }
 
   // copy data from state arrays into the beaker parameters
-  const Epetra_MultiVector& porosity = *S_->GetFieldData("porosity")->ViewComponent("cell");
-  const Epetra_MultiVector& water_saturation = *S_->GetFieldData("saturation_liquid")->ViewComponent("cell");
+  const Epetra_MultiVector& porosity = *S_->GetFieldData("porosity")->ViewComponent("cell", true);
+  const Epetra_MultiVector& water_saturation = *S_->GetFieldData("saturation_liquid")->ViewComponent("cell", true);
   double water_density = *S_->GetScalarData("fluid_density");
 
   beaker_parameters_.water_density = water_density;
@@ -482,25 +521,25 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
 void Amanzi_PK::CopyBeakerStructuresToCellState(
     int cell_id, Teuchos::RCP<Epetra_MultiVector> total_component_concentration)
 {
-  for (unsigned int i = 0; i < number_aqueous_components(); ++i) {
+  for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
     (*total_component_concentration)[i][cell_id] = beaker_components_.total.at(i);
   }
 
-  const Epetra_MultiVector& free_ion = *S_->GetFieldData("free_ion_species")->ViewComponent("cell");
-  for (int i = 0; i < number_aqueous_components(); ++i) {
+  const Epetra_MultiVector& free_ion = *S_->GetFieldData("free_ion_species")->ViewComponent("cell", true);
+  for (int i = 0; i < number_aqueous_components_; ++i) {
     free_ion[i][cell_id] = beaker_components_.free_ion.at(i);
   }
 
   // activity coefficients
   if (beaker_components_.primary_activity_coeff.size() > 0) {
-    const Epetra_MultiVector& activity = *S_->GetFieldData("primary_activity_coeff")->ViewComponent("cell");
+    const Epetra_MultiVector& activity = *S_->GetFieldData("primary_activity_coeff")->ViewComponent("cell", true);
     for (int i = 0; i < beaker_components_.primary_activity_coeff.size(); ++i) {
       activity[i][cell_id] = beaker_components_.primary_activity_coeff.at(i);
     }
   }
 
   if (beaker_components_.secondary_activity_coeff.size() > 0) {
-    const Epetra_MultiVector& activity = *S_->GetFieldData("secondary_activity_coeff")->ViewComponent("cell");
+    const Epetra_MultiVector& activity = *S_->GetFieldData("secondary_activity_coeff")->ViewComponent("cell", true);
     for (int i = 0; i < beaker_components_.secondary_activity_coeff.size(); ++i) {
       activity[i][cell_id] =  beaker_components_.secondary_activity_coeff.at(i);
     }
@@ -508,8 +547,8 @@ void Amanzi_PK::CopyBeakerStructuresToCellState(
 
   // minerals
   if (number_minerals_ > 0) {
-    const Epetra_MultiVector& mineral_vf = *S_->GetFieldData("mineral_volume_fractions")->ViewComponent("cell");
-    const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData("mineral_specific_surface_area")->ViewComponent("cell");
+    const Epetra_MultiVector& mineral_vf = *S_->GetFieldData("mineral_volume_fractions")->ViewComponent("cell", true);
+    const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData("mineral_specific_surface_area")->ViewComponent("cell", true);
 
     for (int i = 0; i < number_minerals_; ++i) {
       mineral_vf[i][cell_id] = beaker_components_.mineral_volume_fraction.at(i);
@@ -518,55 +557,53 @@ void Amanzi_PK::CopyBeakerStructuresToCellState(
   }
 
   // sorption
-  if (using_sorption()) {
-    const Epetra_MultiVector& sorbed = *S_->GetFieldData("total_sorbed")->ViewComponent("cell");
-    for (int i = 0; i < number_aqueous_components(); ++i) {
+  if (using_sorption_) {
+    const Epetra_MultiVector& sorbed = *S_->GetFieldData("total_sorbed")->ViewComponent("cell", true);
+    for (int i = 0; i < number_aqueous_components_; ++i) {
       sorbed[i][cell_id] = beaker_components_.total_sorbed.at(i);
     }
   }
 
   // surface complexation
-  if (number_sorption_sites() > 0) {
-    const Epetra_MultiVector& sorption_sites = *S_->GetFieldData("sorption_sites")->ViewComponent("cell");
-    for (unsigned int i = 0; i < number_sorption_sites(); i++) {
+  if (number_sorption_sites_ > 0) {
+    const Epetra_MultiVector& sorption_sites = *S_->GetFieldData("sorption_sites")->ViewComponent("cell", true);
+    for (int i = 0; i < number_sorption_sites_; i++) {
       sorption_sites[i][cell_id] = beaker_components_.surface_site_density.at(i);
-      // TODO(bandre): need to save surface complexation free site conc here!
+      // TODO: need to save surface complexation free site conc here!
     }
   }
 
   if (beaker_components_.surface_complex_free_site_conc.size() > 0) {
     const Epetra_MultiVector& surface_complex =
-        *S_->GetFieldData("surface_complex_free_site_conc")->ViewComponent("cell");
+        *S_->GetFieldData("surface_complex_free_site_conc")->ViewComponent("cell", true);
     for (int i = 0; i < beaker_components_.surface_complex_free_site_conc.size(); ++i) {
       surface_complex[i][cell_id] = beaker_components_.surface_complex_free_site_conc.at(i);
     }
   }
 
   // ion exchange
-  if (number_ion_exchange_sites() > 0) {
-    const Epetra_MultiVector& ion_exchange = *S_->GetFieldData("ion_exchange_sites")->ViewComponent("cell");
-    for (int i = 0; i < number_ion_exchange_sites(); ++i) {
+  if (number_ion_exchange_sites_ > 0) {
+    const Epetra_MultiVector& ion_exchange = *S_->GetFieldData("ion_exchange_sites")->ViewComponent("cell", true);
+    for (int i = 0; i < number_ion_exchange_sites_; ++i) {
       ion_exchange[i][cell_id] = beaker_components_.ion_exchange_sites.at(i);
       // TODO(bandre): need to save ion exchange ref cation conc here!
     }
   }
 
   if (beaker_components_.ion_exchange_ref_cation_conc.size() > 0) {
-    const Epetra_MultiVector& ion_exchange = *S_->GetFieldData("ion_exchange_ref_cation_conc")->ViewComponent("cell");
+    const Epetra_MultiVector& ion_exchange = *S_->GetFieldData("ion_exchange_ref_cation_conc")->ViewComponent("cell", true);
     for (int i = 0; i < beaker_components_.ion_exchange_ref_cation_conc.size(); ++i) {
       ion_exchange[i][cell_id] = beaker_components_.ion_exchange_ref_cation_conc.at(i);
     }
   }
 
-  //
   // sorption isotherms
-  //
-  if (using_sorption_isotherms()) {
-    const Epetra_MultiVector& isotherm_kd = *S_->GetFieldData("isotherm_kd")->ViewComponent("cell");
-    const Epetra_MultiVector& isotherm_freundlich_n = *S_->GetFieldData("isotherm_freundlich_n")->ViewComponent("cell");
-    const Epetra_MultiVector& isotherm_langmuir_b = *S_->GetFieldData("isotherm_langmuir_b")->ViewComponent("cell");
+  if (using_sorption_isotherms_) {
+    const Epetra_MultiVector& isotherm_kd = *S_->GetFieldData("isotherm_kd")->ViewComponent("cell", true);
+    const Epetra_MultiVector& isotherm_freundlich_n = *S_->GetFieldData("isotherm_freundlich_n")->ViewComponent("cell", true);
+    const Epetra_MultiVector& isotherm_langmuir_b = *S_->GetFieldData("isotherm_langmuir_b")->ViewComponent("cell", true);
 
-    for (unsigned int i = 0; i < number_aqueous_components(); ++i) {
+    for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
       isotherm_kd[i][cell_id] = beaker_components_.isotherm_kd.at(i);
       isotherm_freundlich_n[i][cell_id] = beaker_components_.isotherm_freundlich_n.at(i);
       isotherm_langmuir_b[i][cell_id] = beaker_components_.isotherm_langmuir_b.at(i);
@@ -589,7 +626,7 @@ void Amanzi_PK::Advance(
 {
   std::stringstream msg;
   msg << "advancing, time step [sec] = " << delta_time << std::endl;
-  chem_out->Write(Teuchos::VERB_LOW, msg);
+  vo_->Write(Teuchos::VERB_LOW, msg);
 
   current_time_ = saved_time_ + delta_time;
 
@@ -646,9 +683,8 @@ void Amanzi_PK::Advance(
 * that it has accepted the state update, thus, the PK should update
 * possible auxilary state variables here
 ******************************************************************* */
-void Amanzi_PK::CommitState(Teuchos::RCP<Chemistry_State> chem_state,
-                            const double& time) {
-  chem_out->Write(Teuchos::VERB_EXTREME, "Committing internal state.\n");
+void Amanzi_PK::CommitState(const double& time) {
+  vo_->Write(Teuchos::VERB_EXTREME, "Committing internal state.\n");
 
   saved_time_ = time;
 
@@ -666,8 +702,8 @@ void Amanzi_PK::CommitState(Teuchos::RCP<Chemistry_State> chem_state,
 ******************************************************************* */
 Teuchos::RCP<Epetra_MultiVector> Amanzi_PK::get_extra_chemistry_output_data() {
   if (aux_data_ != Teuchos::null) {
-    const Epetra_MultiVector& free_ion = *S_->GetFieldData("free_ion_species")->ViewComponent("cell");
-    const Epetra_MultiVector& activity = *S_->GetFieldData("primary_activity_coeff")->ViewComponent("cell");
+    const Epetra_MultiVector& free_ion = *S_->GetFieldData("free_ion_species")->ViewComponent("cell", true);
+    const Epetra_MultiVector& activity = *S_->GetFieldData("primary_activity_coeff")->ViewComponent("cell", true);
     int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
     for (int cell = 0; cell < num_cells; cell++) {

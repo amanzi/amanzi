@@ -19,7 +19,6 @@
 #include "State.hh"
 
 #include "Amanzi_PK.hh"
-#include "Chemistry_State.hh"
 #include "species.hh"
 #include "chemistry_exception.hh"
 
@@ -53,7 +52,6 @@ SUITE(GeochemistryTestsChemistryPK) {
    protected:
     ac::Amanzi_PK* cpk_;
     Teuchos::RCP<Teuchos::ParameterList> glist_;
-    Teuchos::RCP<ac::Chemistry_State> chemistry_state_;
     Teuchos::RCP<Amanzi::State> state_;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
 
@@ -90,7 +88,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     mesh_ = meshfactory(mesh_parameter_list, gm_);
 
     // get the state parameter list and create the state object
-    Teuchos::ParameterList state_parameter_list = glist_->sublist("state");
+    Teuchos::ParameterList state_parameter_list = glist_->sublist("State");
 
     state_ = Teuchos::rcp(new Amanzi::State(state_parameter_list));
     state_->RegisterDomainMesh(mesh_);
@@ -103,8 +101,6 @@ SUITE(GeochemistryTestsChemistryPK) {
     component_names.push_back("HP04--");
     component_names.push_back("SiO2(aq)");
     component_names.push_back("UO2++");
-    chemistry_state_ = Teuchos::rcp(new ac::Chemistry_State(chemistry_parameter_list, component_names, state_));
-    chemistry_state_->Setup();
   }
 
   ChemistryPKTest::~ChemistryPKTest() {
@@ -125,7 +121,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     // just make sure that we can have all the pieces together to set
     // up a chemistry process kernel....
     try {
-      cpk_ = new ac::Amanzi_PK(glist_, chemistry_state_, state_, mesh_);
+      cpk_ = new ac::Amanzi_PK(glist_, state_, mesh_);
     } catch (ac::ChemistryException chem_error) {
       std::cout << chem_error.what() << std::endl;
     } catch (std::exception e) {
@@ -139,12 +135,11 @@ SUITE(GeochemistryTestsChemistryPK) {
     // make sure that we can initialize the pk and internal chemistry
     // object correctly based on the xml input....
     try {
-      cpk_ = new ac::Amanzi_PK(glist_, chemistry_state_, state_, mesh_);
+      cpk_ = new ac::Amanzi_PK(glist_, state_, mesh_);
       cpk_->Setup();
       state_->Setup();
       state_->InitializeFields();
-      chemistry_state_->Initialize();
-      cpk_->InitializeChemistry();
+      cpk_->Initialize();
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
       throw e;
@@ -155,12 +150,11 @@ SUITE(GeochemistryTestsChemistryPK) {
 
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_get_chem_output_names) {
     try {
-      cpk_ = new ac::Amanzi_PK(glist_, chemistry_state_, state_, mesh_);
+      cpk_ = new ac::Amanzi_PK(glist_, state_, mesh_);
       cpk_->Setup();
       state_->Setup();
       state_->InitializeFields();
-      chemistry_state_->Initialize();
-      cpk_->InitializeChemistry();
+      cpk_->Initialize();
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
       throw e;

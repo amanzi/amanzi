@@ -51,19 +51,17 @@ generate_evaluators_registration_header(
 
 
 set(chem_inc_files 
-                   Alqumia_PK.hh
+                   Alquimia_PK.hh
                    Amanzi_PK.hh
                    Chemistry_PK.hh
                    Chemistry_PK_Wrapper.hh
                    Chemistry_PK_Wrapper_reg.hh
                    pks_chemistry_registration.hh
-                   Chemistry_State.hh
 )
 
 set(chem_src_files)
 if (ENABLE_Unstructured)
   list(APPEND chem_src_files Chemistry_PK.cc 
-                             Chemistry_State.cc
                              Amanzi_PK.cc
                              Chemistry_PK_Wrapper.cc)
   if (ENABLE_ALQUIMIA)

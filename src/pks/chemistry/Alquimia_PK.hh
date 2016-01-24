@@ -15,18 +15,13 @@
 #include <vector>
 
 // TPLs
+#include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "VerboseObject.hh"
 
 // Chemistry
 #include "Chemistry_PK.hh"
 #include "ChemistryEngine.hh"
-
-// forward declarations
-class Epetra_MultiVector;
-class Epetra_Vector;
-class Epetra_SerialDenseVector;
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -38,7 +33,6 @@ class Alquimia_PK: public Chemistry_PK {
   // to this PK so that it has access to all information about the 
   // problem.
   Alquimia_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-              Teuchos::RCP<Chemistry_State> chem_state,
               Teuchos::RCP<ChemistryEngine> chem_engine,
               Teuchos::RCP<State> S,
               Teuchos::RCP<const AmanziMesh::Mesh> mesh);
@@ -47,48 +41,61 @@ class Alquimia_PK: public Chemistry_PK {
 
   // members required by PK interface
   virtual void Setup();
+  virtual void Initialize();
 
   void InitializeChemistry(void);
 
   void Advance(const double& delta_time,
                Teuchos::RCP<Epetra_MultiVector> total_component_concentration);
-  void CommitState(Teuchos::RCP<Chemistry_State> chem_state, const double& time);
+  void CommitState(const double& time);
 
-  double time_step(void) const {
-    return this->time_step_;
-  }
-
-  int number_aqueous_components(void) const {
-    return chemistry_state_->number_of_aqueous_components();
-  }
-
-  int number_free_ion(void) const {
-    return chemistry_state_->number_of_aqueous_components();
-  }
-
-  int number_total_sorbed(void) const {
-    return chemistry_state_->number_of_aqueous_components();
-  }
-
-  int number_ion_exchange_sites(void) const {
-    return chemistry_state_->number_of_ion_exchange_sites();
-  }
-
-  int number_sorption_sites(void) const {
-    return chemistry_state_->number_of_sorption_sites();
-  }
-
-  int using_sorption(void) const {
-    return chemistry_state_->using_sorption();
-  }
-
-  int using_sorption_isotherms(void) const {
-    return chemistry_state_->using_sorption_isotherms();
-  }
+  double time_step(void) const { return this->time_step_; }
 
   // Ben: the following routine provides the interface for
   // output of auxillary cellwise data from chemistry
   Teuchos::RCP<Epetra_MultiVector> get_extra_chemistry_output_data();
+
+  // Copies the chemistry state in the given cell to the given Alquimia containers.
+  void CopyToAlquimia(const int cell_id,
+                      AlquimiaMaterialProperties& mat_props,
+                      AlquimiaState& state,
+                      AlquimiaAuxiliaryData& aux_data);
+  
+ private:
+  // Copies the chemistry state in the given cell to the given Alquimia containers, 
+  // taking the aqueous components from the given multivector.
+  void CopyToAlquimia(const int cell_id,
+                      Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
+                      AlquimiaMaterialProperties& mat_props,
+                      AlquimiaState& state,
+                      AlquimiaAuxiliaryData& aux_data);
+
+  // Copies the data in the given Alquimia containers to the given cell within the 
+  // chemistry state. The aqueous component concentrations are placed into 
+  // the aqueous_components multivector.
+  void CopyFromAlquimia(const int cell_id,
+                        const AlquimiaMaterialProperties& mat_props,
+                        const AlquimiaState& state,
+                        const AlquimiaAuxiliaryData& aux_data,
+                        const AlquimiaAuxiliaryOutputData& aux_output,
+                        Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
+
+  void UpdateChemistryStateStorage(void);
+  int InitializeSingleCell(int cell_index, const std::string& condition);
+  int AdvanceSingleCell(double delta_time, 
+                        Teuchos::RCP<Epetra_MultiVector> total_component_concentration,
+                        int cell_index);
+
+  void ParseChemicalConditionRegions(const Teuchos::ParameterList& param_list,
+                                     std::map<std::string, std::string>& conditions);
+  void XMLParameters(void);
+
+  void CopyAlquimiaStateToAmanzi(const int cell_id,
+                                 const AlquimiaMaterialProperties& mat_props,
+                                 const AlquimiaState& state,
+                                 const AlquimiaAuxiliaryData& aux_data,
+                                 const AlquimiaAuxiliaryOutputData& aux_output,
+                                 Teuchos::RCP<Epetra_MultiVector> total_component_concentration);
 
  private:
   Teuchos::RCP<Teuchos::ParameterList> glist_, cp_list_;
@@ -100,9 +107,6 @@ class Alquimia_PK: public Chemistry_PK {
   double time_step_cut_factor_, time_step_increase_factor_;
   int num_iterations_, num_successful_steps_;
   void ComputeNextTimeStep();
-
-  // auxilary state for process kernel
-  Teuchos::RCP<Chemistry_State> chemistry_state_;
 
   bool chem_initialized_;
 
@@ -127,39 +131,8 @@ class Alquimia_PK: public Chemistry_PK {
   std::vector<std::string> aux_names_;
   Teuchos::RCP<Epetra_MultiVector> aux_output_;
 
-  // For printing diagnostic information.
-  Teuchos::RCP<VerboseObject> vo_;
-
-  void UpdateChemistryStateStorage(void);
-  int InitializeSingleCell(int cell_index, const std::string& condition);
-  int AdvanceSingleCell(double delta_time, 
-                        Teuchos::RCP<Epetra_MultiVector> total_component_concentration,
-                        int cell_index);
-
-  void ParseChemicalConditionRegions(const Teuchos::ParameterList& param_list,
-                                     std::map<std::string, std::string>& conditions);
-  void XMLParameters(void);
-
-  // These helpers copy data back and forth between a set of buffers and the chemistry state.
-  // given cell.
-  void CopyAmanziStateToAlquimia(const int cell_id,
-                                 Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
-                                 AlquimiaMaterialProperties& mat_props,
-                                 AlquimiaState& state,
-                                 AlquimiaAuxiliaryData& aux_data);
-
-  void CopyAlquimiaStateToAmanzi(const int cell_id,
-                                 const AlquimiaMaterialProperties& mat_props,
-                                 const AlquimiaState& state,
-                                 const AlquimiaAuxiliaryData& aux_data,
-                                 const AlquimiaAuxiliaryOutputData& aux_output,
-                                 Teuchos::RCP<Epetra_MultiVector> total_component_concentration);
-
-  void InitAmanziStateFromAlquimia(const int cell_id,
-                                   const AlquimiaMaterialProperties& mat_props,
-                                   const AlquimiaState& state,
-                                   const AlquimiaAuxiliaryData& aux_data,
-                                   const AlquimiaAuxiliaryOutputData& aux_output);
+  int num_aux_data_;
+  Teuchos::RCP<Epetra_MultiVector> aux_data_;
 };
 
 }  // namespace AmanziChemistry

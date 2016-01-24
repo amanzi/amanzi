@@ -30,12 +30,13 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
   tranport_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[1]);
   ASSERT(tranport_pk_ != Teuchos::null);
 
-  chemistry_pk_ = Teuchos::rcp_dynamic_cast<Amanzi::AmanziChemistry::Chemistry_PK_Wrapper>(sub_pks_[0]);
+  chemistry_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK_Wrapper>(sub_pks_[0]);
   ASSERT(chemistry_pk_ != Teuchos::null);
 
   // communicate chemistry engine to transport.
 #ifdef ALQUIMIA_ENABLED
-  tranport_pk_->SetupAlquimia(chemistry_pk_->chem_state(), chemistry_pk_->chem_engine());
+  tranport_pk_->SetupAlquimia(Teuchos::rcp_static_cast<AmanziChemistry::Alquimia_PK>(chemistry_pk_->pk()),
+                              chemistry_pk_->chem_engine());
 #endif
 
   // master_ = 1;  // Transport;
