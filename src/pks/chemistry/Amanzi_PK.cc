@@ -301,7 +301,7 @@ void Amanzi_PK::XMLParameters()
   }
 
   // misc other chemistry flags
-  set_max_time_step(cp_list_->get<double>("max time step (s)", 9.9e+9));
+  max_time_step_ = cp_list_->get<double>("max time step (s)", 9.9e+9);
 }
 
 
@@ -396,11 +396,11 @@ void Amanzi_PK::SizeBeakerStructures_()
 
 
 /* *******************************************************************
-* NOTE: want the aqueous totals value calculated from transport
+* We must use the aqueous totals value calculated from transport
 * (aqueous_components), not the value stored in state!
 ******************************************************************* */
 void Amanzi_PK::CopyCellStateToBeakerStructures(
-    const int cell_id, Teuchos::RCP<Epetra_MultiVector> aqueous_components)
+    int cell_id, Teuchos::RCP<Epetra_MultiVector> aqueous_components)
 {
   for (unsigned int i = 0; i < number_aqueous_components_; i++) {
     beaker_components_.total.at(i) = (*aqueous_components)[i][cell_id];
@@ -509,10 +509,10 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
 * Copy data from the beaker back into the state arrays.
 ******************************************************************* */
 void Amanzi_PK::CopyBeakerStructuresToCellState(
-    int cell_id, Teuchos::RCP<Epetra_MultiVector> total_component_concentration)
+    int cell_id, Teuchos::RCP<Epetra_MultiVector> aqueous_components)
 {
   for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
-    (*total_component_concentration)[i][cell_id] = beaker_components_.total.at(i);
+    (*aqueous_components)[i][cell_id] = beaker_components_.total.at(i);
   }
 
   const Epetra_MultiVector& free_ion = *S_->GetFieldData("free_ion_species")->ViewComponent("cell", true);
@@ -607,18 +607,16 @@ void Amanzi_PK::CopyBeakerStructuresToCellState(
 
 /* ******************************************************************
 * This function advances concentrations in the auxialiry vector 
-* total_component_concentration. This vector contains values advected
-* by the ransport PK.
+* aqueous_components_ (defined in the base class). This vector must 
+* be set up using routine set_aqueous_components(). Tipically, it 
+* contains values advected by the transport PK.
 ******************************************************************* */
-void Amanzi_PK::Advance(
-    const double& delta_time,
-    Teuchos::RCP<Epetra_MultiVector> total_component_concentration)
+bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
-  std::stringstream msg;
-  msg << "advancing, time step [sec] = " << delta_time << std::endl;
-  vo_->Write(Teuchos::VERB_LOW, msg);
+  bool failed(false);
 
-  current_time_ = saved_time_ + delta_time;
+  double dt = t_new - t_old;
+  current_time_ = saved_time_ + dt;
 
   int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
@@ -627,14 +625,14 @@ void Amanzi_PK::Advance(
 
   int ierr(0);
   for (int c = 0; c < num_cells; ++c) {
-    CopyCellStateToBeakerStructures(c, total_component_concentration);
+    CopyCellStateToBeakerStructures(c, aqueous_components_);
     try {
       // create a backup copy of the components
       chem_->CopyComponents(beaker_components_, &beaker_components_copy_);
 
       // chemistry computations for this cell
       int num_iterations = chem_->ReactionStep(&beaker_components_,
-                                               beaker_parameters_, delta_time);
+                                               beaker_parameters_, dt);
       if (max_iterations < num_iterations) {
         max_iterations = num_iterations;
         cmax = c;
@@ -648,7 +646,7 @@ void Amanzi_PK::Advance(
       ierr = 1;
     }
 
-    if (ierr == 0) CopyBeakerStructuresToCellState(c, total_component_concentration);
+    if (ierr == 0) CopyBeakerStructuresToCellState(c, aqueous_components_);
     // TODO: was porosity etc changed? copy someplace
   }
 
@@ -663,6 +661,8 @@ void Amanzi_PK::Advance(
   // but can be move up into the loops....
   // chem_->DisplayTotalColumnHeaders(true);
   // chem_->DisplayTotalColumns(current_time_, beaker_components_, true);
+
+  return failed;
 }
 
 
@@ -671,10 +671,10 @@ void Amanzi_PK::Advance(
 * that it has accepted the state update, thus, the PK should update
 * possible auxilary state variables here
 ******************************************************************* */
-void Amanzi_PK::CommitState(const double& time) {
+void Amanzi_PK::CommitStep(double t_old, double t_new) {
   vo_->Write(Teuchos::VERB_EXTREME, "Committing internal state.\n");
 
-  saved_time_ = time;
+  saved_time_ = t_new;
 
   // debug output
   // chem_->Speciate(&beaker_components_, beaker_parameters_);

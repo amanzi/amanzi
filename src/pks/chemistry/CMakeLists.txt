@@ -41,6 +41,14 @@ include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
 
 register_evaluator_with_factory(
+  HEADERFILE Amanzi_PK_reg.hh
+  LISTNAME   PKS_CHEMISTRY_REGISTRATIONS )
+
+register_evaluator_with_factory(
+  HEADERFILE Alquimia_PK_reg.hh
+  LISTNAME   PKS_CHEMISTRY_REGISTRATIONS )
+
+register_evaluator_with_factory(
   HEADERFILE Chemistry_PK_Wrapper_reg.hh
   LISTNAME   PKS_CHEMISTRY_REGISTRATIONS )
 
@@ -52,7 +60,9 @@ generate_evaluators_registration_header(
 
 set(chem_inc_files 
                    Alquimia_PK.hh
+                   Alquimia_PK_reg.hh
                    Amanzi_PK.hh
+                   Amanzi_PK_reg.hh
                    Chemistry_PK.hh
                    Chemistry_PK_Wrapper.hh
                    Chemistry_PK_Wrapper_reg.hh

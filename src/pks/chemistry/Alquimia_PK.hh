@@ -5,6 +5,8 @@
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
+
+  Trilinos based chemistry process kernel for the unstructured mesh.
 */
  
 #ifndef AMANZI_CHEMISTRY_ALQUIMIA_PK_HH_
@@ -19,16 +21,24 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-// Chemistry
-#include "Chemistry_PK.hh"
+// Amanzi
 #include "ChemistryEngine.hh"
+#include "PK_Factory.hh"
+
+// Chemistry PK
+#include "Chemistry_PK.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
-// Trilinos based chemistry process kernel for the unstructured mesh
+#ifdef ALQUIMIA_ENABLED
 class Alquimia_PK: public Chemistry_PK {
  public:
+  Alquimia_PK(Teuchos::ParameterList& pk_tree,
+              const Teuchos::RCP<Teuchos::ParameterList>& glist,
+              const Teuchos::RCP<State>& S,
+              const Teuchos::RCP<TreeVector>& soln) {};
+
   // We must pass the global parameter list to this PK so that it 
   // has access to all information about the problem.
   Alquimia_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -42,34 +52,32 @@ class Alquimia_PK: public Chemistry_PK {
   virtual void Setup();
   virtual void Initialize();
 
-  void Advance(const double& delta_time,
-               Teuchos::RCP<Epetra_MultiVector> total_component_concentration);
-  void CommitState(const double& time);
+  bool AdvanceStep(double t_old, double t_new, bool reinit = false);
+  void CommitStep(double t_old, double t_new);
 
-  double time_step() const { return this->time_step_; }
+  double get_dt() { return this->time_step_; }
 
   // Ben: the following routine provides the interface for
   // output of auxillary cellwise data from chemistry
   Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data();
 
   // Copies the chemistry state in the given cell to the given Alquimia containers.
-  void CopyToAlquimia(const int cell_id,
+  void CopyToAlquimia(int cell_id,
                       AlquimiaMaterialProperties& mat_props,
                       AlquimiaState& state,
                       AlquimiaAuxiliaryData& aux_data);
   
  private:
-  // Copies the chemistry state in the given cell to the given Alquimia containers, 
-  // taking the aqueous components from the given multivector.
-  void CopyToAlquimia(const int cell_id,
+  // Copy cell state to the given Alquimia containers taking 
+  // the aqueous components from the given multivector.
+  void CopyToAlquimia(int cell_id,
                       Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
                       AlquimiaMaterialProperties& mat_props,
                       AlquimiaState& state,
                       AlquimiaAuxiliaryData& aux_data);
 
-  // Copies the data in the given Alquimia containers to the given cell within the 
-  // chemistry state. The aqueous component concentrations are placed into 
-  // the aqueous_components multivector.
+  // Copy the data in the given Alquimia containers to the given cell state.
+  // The aqueous components are placed into the given multivector.
   void CopyFromAlquimia(const int cell_id,
                         const AlquimiaMaterialProperties& mat_props,
                         const AlquimiaState& state,
@@ -78,8 +86,7 @@ class Alquimia_PK: public Chemistry_PK {
                         Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
 
   int InitializeSingleCell(int cell_index, const std::string& condition);
-  int AdvanceSingleCell(double delta_time, 
-                        Teuchos::RCP<Epetra_MultiVector> total_component_concentration,
+  int AdvanceSingleCell(double dt, Teuchos::RCP<Epetra_MultiVector> aquesous_components,
                         int cell_index);
 
   void ParseChemicalConditionRegions(const Teuchos::ParameterList& param_list,
@@ -91,7 +98,7 @@ class Alquimia_PK: public Chemistry_PK {
                                  const AlquimiaState& state,
                                  const AlquimiaAuxiliaryData& aux_data,
                                  const AlquimiaAuxiliaryOutputData& aux_output,
-                                 Teuchos::RCP<Epetra_MultiVector> total_component_concentration);
+                                 Teuchos::RCP<Epetra_MultiVector> aquesous_components);
 
   void ComputeNextTimeStep();
 
@@ -130,7 +137,12 @@ class Alquimia_PK: public Chemistry_PK {
 
   int num_aux_data_;
   Teuchos::RCP<Epetra_MultiVector> aux_data_;
+
+ private:
+  // factory registration
+  static RegisteredPKFactory<Alquimia_PK> reg_;
 };
+#endif
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

@@ -14,6 +14,7 @@
 #ifdef ALQUIMIA_ENABLED
 #include "Alquimia_PK.hh"
 #endif
+
 #include "Chemistry_PK.hh"
 #include "PK.hh"
 #include "PK_Factory.hh"
@@ -37,18 +38,19 @@ class Chemistry_PK_Wrapper : public PK {
   }
 
   // Choose a time step compatible with physics.
-  virtual double get_dt() { return pk_->time_step(); }
+  virtual double get_dt() { return pk_->get_dt(); }
   virtual void set_dt(double dt) { dt_ = dt; }
 
   // Advance from state S0 to state S1 at time S0.time + dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) {
-    pk_->Advance(t_new - t_old, total_component_concentration_);
+    pk_->set_aqueous_components(total_component_concentration_);
+    pk_->AdvanceStep(t_old, t_new, false);
     return true;
   }
 
   // Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new) {
-    pk_->CommitState(t_new);
+    pk_->CommitStep(t_old, t_new);
   }
 
   // Calculate any diagnostics prior to doing vis

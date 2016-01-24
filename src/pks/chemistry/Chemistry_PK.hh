@@ -23,12 +23,13 @@
 
 // Amanzi
 #include "Mesh.hh"
+#include "PK.hh"
 #include "State.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
-class Chemistry_PK {
+class Chemistry_PK : public PK {
  public:
   Chemistry_PK();
   virtual ~Chemistry_PK() {};
@@ -37,17 +38,26 @@ class Chemistry_PK {
   virtual void Setup();
   virtual void Initialize();
 
-  virtual void Advance(const double& dt,
-                       Teuchos::RCP<Epetra_MultiVector> total_component_concentration) = 0;
-  virtual void CommitState(const double& dt) = 0;
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) = 0;
+  virtual void CommitStep(double t_old, double t_new) = 0;
 
   // -- returns the (maximum) time step allowed for this chemistry PK.
-  virtual double time_step() const = 0;
+  virtual double get_dt() = 0;
+
+  // -- temporary members
+  virtual void set_dt(double dt) {};
+  virtual void CalculateDiagnostics() {};
+  virtual std::string name() { return "chemistry"; }
 
   // -- output of auxillary cellwise data from chemistry
   virtual Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data() = 0;
 
-  // -- process various objects
+  // Basic capabilities
+  // -- get/set auxiliary tcc vector that now contains only aqueous components.
+  Teuchos::RCP<Epetra_MultiVector> aqueous_components() { return aqueous_components_; } 
+  void set_aqueous_components(Teuchos::RCP<Epetra_MultiVector> tcc) { aqueous_components_ = tcc; }
+
+  // -- process various objects before/during setup phase
   void InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist);
   void InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
                                Teuchos::RCP<Teuchos::ParameterList> state_list);
@@ -62,6 +72,7 @@ class Chemistry_PK {
 
   int number_aqueous_components_;
   std::vector<std::string> comp_names_;
+  Teuchos::RCP<Epetra_MultiVector> aqueous_components_;
 
   int number_minerals_;
   std::vector<std::string> mineral_names_;

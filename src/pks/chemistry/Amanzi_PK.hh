@@ -22,6 +22,7 @@
 #include "chemistry_exception.hh"
 #include "chemistry_verbosity.hh"
 #include "Chemistry_PK.hh"
+#include "PK_Factory.hh"
 #include "Mesh.hh"
 
 // forward declarations
@@ -35,6 +36,11 @@ namespace AmanziChemistry {
 // Trilinos based chemistry process kernel for the unstructured mesh
 class Amanzi_PK : public Chemistry_PK {
  public:
+  Amanzi_PK(Teuchos::ParameterList& pk_tree,
+            const Teuchos::RCP<Teuchos::ParameterList>& glist,
+            const Teuchos::RCP<State>& S,
+            const Teuchos::RCP<TreeVector>& soln) {};
+
   Amanzi_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
             Teuchos::RCP<State> S,
             Teuchos::RCP<const AmanziMesh::Mesh> mesh);
@@ -45,13 +51,11 @@ class Amanzi_PK : public Chemistry_PK {
   virtual void Setup();
   virtual void Initialize();
 
-  void Advance(const double& delta_time,
-               Teuchos::RCP<Epetra_MultiVector> total_component_concentration);
-  void CommitState(const double& time);
+  bool AdvanceStep(double t_old, double t_new, bool reinit = false);
+  void CommitStep(double t_old, double t_new);
 
   // modifiers
-  void set_max_time_step(const double mts) { this->max_time_step_ = mts; }
-  double time_step(void) const { return this->max_time_step_; }
+  double get_dt() { return this->max_time_step_; }
 
   // The following two routines provide the interface for
   // output of auxillary cellwise data from chemistry
@@ -66,9 +70,9 @@ class Amanzi_PK : public Chemistry_PK {
   void SizeBeakerStructures_();
 
   void CopyCellStateToBeakerStructures(
-      int cell_id, Teuchos::RCP<Epetra_MultiVector> total_component_concentration);
+      int cell_id, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
   void CopyBeakerStructuresToCellState(
-      int cell_id, Teuchos::RCP<Epetra_MultiVector> total_component_concentration);
+      int cell_id, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
 
  private:
   Teuchos::RCP<Teuchos::ParameterList> cp_list_;
@@ -85,6 +89,10 @@ class Amanzi_PK : public Chemistry_PK {
   std::vector<std::string> aux_names_;
   std::vector<int> aux_index_;
   Teuchos::RCP<Epetra_MultiVector> aux_data_;
+
+ private:
+  // factory registration
+  static RegisteredPKFactory<Amanzi_PK> reg_;
 };
 
 }  // namespace AmanziChemistry

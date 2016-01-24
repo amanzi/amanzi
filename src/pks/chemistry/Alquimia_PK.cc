@@ -37,6 +37,7 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
+#ifdef ALQUIMIA_ENABLED
 // This should go away
 extern VerboseObject* chem_out;
 
@@ -274,8 +275,7 @@ void Alquimia_PK::XMLParameters()
   chem_engine_->GetAuxiliaryOutputNames(aux_names_);
   if (!aux_names_.empty()) {
     aux_output_ = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(false), aux_names_.size()));
-  }
-  else {
+  } else {
     aux_output_ = Teuchos::null;
   }
 
@@ -330,8 +330,7 @@ void Alquimia_PK::XMLParameters()
           // It's a valid aqueous constraint, so we add it to the chemistry engine
           // under the current geochemical condition.
           chem_engine_->AddAqueousConstraint(cond_name, species_name, type, equilibrate_name);
-        }
-        else {
+        } else {
           // We have an invalid aqueous contraint.
           msg << "Invalid aqueous constraint type for " << species_name << ".\n";
           msg << "Valid types are total_aqueous, total_sorb, free, mineral, gas, pH, and charge.\n";
@@ -425,7 +424,7 @@ void Alquimia_PK::XMLParameters()
 /* *******************************************************************
 *
 ******************************************************************* */
-void Alquimia_PK::CopyToAlquimia(const int cell_id,
+void Alquimia_PK::CopyToAlquimia(int cell_id,
                                  AlquimiaMaterialProperties& mat_props,
                                  AlquimiaState& state,
                                  AlquimiaAuxiliaryData& aux_data)
@@ -439,7 +438,7 @@ void Alquimia_PK::CopyToAlquimia(const int cell_id,
 /* *******************************************************************
 *
 ******************************************************************* */
-void Alquimia_PK::CopyToAlquimia(const int cell_id,
+void Alquimia_PK::CopyToAlquimia(int cell_id,
                                  Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
                                  AlquimiaMaterialProperties& mat_props,
                                  AlquimiaState& state,
@@ -539,10 +538,10 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
     const AlquimiaState& state,
     const AlquimiaAuxiliaryData& aux_data,
     const AlquimiaAuxiliaryOutputData& aux_output,
-    Teuchos::RCP<Epetra_MultiVector> total_component_concentration)
+    Teuchos::RCP<Epetra_MultiVector> aquesous_components)
 {
   CopyFromAlquimia(cell_id, mat_props, state, aux_data, aux_output, 
-                   total_component_concentration);
+                   aquesous_components);
 
   // Auxiliary output.
   if (aux_output_ != Teuchos::null) {
@@ -699,8 +698,7 @@ void Alquimia_PK::CopyFromAlquimia(const int cell_id,
       F->set_initialized();
     }
     aux_data_ = S_->GetField("alquimia_aux_data", passwd_)->GetFieldData()->ViewComponent("cell", true);
-  }
-  else {
+  } else {
     assert(num_aux_data_ == num_aux_ints + num_aux_doubles);
   }
 
@@ -733,17 +731,17 @@ void Alquimia_PK::CopyFromAlquimia(const int cell_id,
 * or -1 if an error occurred.
 ******************************************************************* */
 int Alquimia_PK::AdvanceSingleCell(
-    double delta_time, Teuchos::RCP<Epetra_MultiVector> total_component_concentration,
+    double dt, Teuchos::RCP<Epetra_MultiVector> aqueous_components,
     int cell_index)
 {
   // Copy the state and material information from Amanzi's state within 
   // this cell to Alquimia.
-  CopyToAlquimia(cell_index, total_component_concentration, 
+  CopyToAlquimia(cell_index, aqueous_components, 
                  alq_mat_props_, alq_state_, alq_aux_data_);
 
   // Do the reaction.
   int num_iterations;
-  bool success = chem_engine_->Advance(delta_time, alq_mat_props_, alq_state_, 
+  bool success = chem_engine_->Advance(dt, alq_mat_props_, alq_state_, 
                                        alq_aux_data_, alq_aux_output_, num_iterations);
   if (not success) 
     return -1;
@@ -751,30 +749,30 @@ int Alquimia_PK::AdvanceSingleCell(
   // Move the information back into Amanzi's state, updating the given total concentration vector.
   CopyAlquimiaStateToAmanzi(cell_index, 
                             alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_,
-                            total_component_concentration);
+                            aqueous_components);
 
   return num_iterations;
 }
 
 
 /* *******************************************************************
-* The MPC will call this function to advance the state. Please update 
-* the argument to this function called tcc with the result of your 
-* chemistry computation.
+* This function advances concentrations in the auxialiry vector 
+* aqueous_components_ (defined in the base class). This vector must be
+* set up using routine set_aqueous_components(). Tipically, it
+* contains values advected by the transport PK.
 ******************************************************************* */
-void Alquimia_PK::Advance(const double& delta_time,
-                          Teuchos::RCP<Epetra_MultiVector> total_component_concentration) 
+bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
-  Errors::Message msg;
+  bool failed(false);
 
-  current_time_ = saved_time_ + delta_time;
+  double dt = t_new - t_old;
+  current_time_ = saved_time_ + dt;
 
   // If we are given a dt that is less than the one we wanted, we don't record it.
-  if (delta_time < time_step_) {
+  if (dt < time_step_) {
     prev_time_step_ = time_step_;
-  }
-  else {
-    prev_time_step_ = delta_time;
+  } else {
+    prev_time_step_ = dt;
   }
 
   // Get the number of owned (non-ghost) cells for the mesh.
@@ -787,7 +785,7 @@ void Alquimia_PK::Advance(const double& delta_time,
   int ierr = 0;
   int convergence_failure = 0;
   for (int cell = 0; cell < num_cells; ++cell) {
-    int num_iterations = AdvanceSingleCell(delta_time, total_component_concentration, cell);
+    int num_iterations = AdvanceSingleCell(dt, aqueous_components_, cell);
     if (num_iterations >= 0) {
       if (max_iterations < num_iterations) {
         max_iterations = num_iterations;
@@ -798,8 +796,7 @@ void Alquimia_PK::Advance(const double& delta_time,
         imin = cell;
       }
       ave_iterations += num_iterations;
-    } 
-    else {
+    } else {
       // Convergence failure. Compute the next time step size.
       convergence_failure = 1;
       break;
@@ -824,7 +821,8 @@ void Alquimia_PK::Advance(const double& delta_time,
   ComputeNextTimeStep();
 
   if (recv[0] != 0) {
-    msg << "Failure in Alquimia_PK::Advance";
+    Errors::Message msg;
+    msg << "Failure in Alquimia_PK::AdvanceStep";
     Exceptions::amanzi_throw(msg); 
   }
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
@@ -840,6 +838,8 @@ void Alquimia_PK::Advance(const double& delta_time,
       aux_state[0] = (*aux_output_)[i];
     }
   }
+
+  return failed;
 }
 
 
@@ -878,9 +878,9 @@ void Alquimia_PK::ComputeNextTimeStep()
 * it has accepted the state update, thus, the PK should update
 * possible auxilary state variables here
 ******************************************************************* */
-void Alquimia_PK::CommitState(const double& time) 
+void Alquimia_PK::CommitStep(double t_old, double t_new) 
 {
-  saved_time_ = time;
+  saved_time_ = t_new;
 }
 
 
@@ -893,6 +893,7 @@ Teuchos::RCP<Epetra_MultiVector> Alquimia_PK::extra_chemistry_output_data()
   // the geochemistry, so we simply return it here.
   return aux_output_;
 }
+#endif
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
