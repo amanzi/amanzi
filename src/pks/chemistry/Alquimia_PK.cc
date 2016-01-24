@@ -184,8 +184,7 @@ void Alquimia_PK::Initialize()
   int recv = 0;
   mesh_->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) {
-    Errors::Message msg;
-    msg << "Error in Alquimia_PK::InitializeChemistry 1";
+    Errors::Message msg("Error in Alquimia_PK::InitializeChemistry 1");
     Exceptions::amanzi_throw(msg); 
   }
 
@@ -321,7 +320,8 @@ void Alquimia_PK::XMLParameters()
           // check whether a mineral or gas name have been provided to equilibrate with
           if (type == "mineral" || type == "gas") {
             if (equilibrate_name == "") {
-              msg << "No mineral or gas species has been given to equilibrate with species '" << species_name << "'.\n";
+              msg << "No mineral or gas species has been given to equilibrate with species '" 
+                  << species_name << "'.\n";
               Exceptions::amanzi_throw(msg);
             }
           }  

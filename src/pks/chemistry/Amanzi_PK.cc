@@ -30,7 +30,6 @@
 // Amanzi
 #include "Mesh.hh"
 #include "beaker.hh"
-#include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
 #include "errors.hh"
 #include "exceptions.hh"
@@ -173,8 +172,8 @@ void Amanzi_PK::Initialize()
   int recv(0);
   mesh_->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) {
-    ChemistryException geochem_error("Error in Amanzi_PK::InitializeChemistry 0");
-    Exceptions::amanzi_throw(geochem_error);
+    Errors::Message msg("Error in Amanzi_PK::InitializeChemistry 0");
+    Exceptions::amanzi_throw(msg);
   }
 
   // TODO(bandre): at this point we should know about any additional
@@ -219,62 +218,61 @@ void Amanzi_PK::XMLParameters()
   // thermo file name and format, then create the database!
   if (cp_list_->isSublist("Thermodynamic Database")) {
     Teuchos::ParameterList& tdb_list_ = cp_list_->sublist("Thermodynamic Database");
-    // get format
-    // currently we only support the simple format..
+
+    // currently we only support the simple format.
     if (tdb_list_.isParameter("Format")) {
       std::string database_format = tdb_list_.get<std::string>("Format");
       if (database_format == "simple") {
         chem_ = new SimpleThermoDatabase();
       } else {
-        // invalid database format...
-        std::ostringstream error_stream;
-        error_stream << ChemistryException::kChemistryError;
-        error_stream << "Amanzi_PK::XMLParameters(): \n";
-        error_stream << "  In sublist 'Thermodynamic Database', the parameter 'Format' must be 'simple'.\n";
-        Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));  
+        // invalid database format
+        std::ostringstream msg;
+        msg << ChemistryException::kChemistryError;
+        msg << "Amanzi_PK::XMLParameters(): \n";
+        msg << "  In sublist 'Thermodynamic Database', the parameter 'Format' must be 'simple'.\n";
+        Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));  
       }
     } else {
-      // invalid database format...
-      std::ostringstream error_stream;
-      error_stream << ChemistryException::kChemistryError;
-      error_stream << "Amanzi_PK::XMLParameters(): \n";
-      error_stream << "  In sublist 'Thermodynamic Database', the parameter 'Format' must be specified.\n";
-      Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+      // invalid database format
+      std::ostringstream msg;
+      msg << ChemistryException::kChemistryError;
+      msg << "Amanzi_PK::XMLParameters(): \n";
+      msg << "  In sublist 'Thermodynamic Database', the parameter 'Format' must be specified.\n";
+      Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));
     }
+
     beaker_parameters_ = chem_->GetDefaultParameters();
+
     // get file name
     if (tdb_list_.isParameter("File")) {
       beaker_parameters_.thermo_database_file = tdb_list_.get<std::string>("File");
     } else {
-      std::ostringstream error_stream;
-      error_stream << ChemistryException::kChemistryError;
-      error_stream << "Amanzi_PK::XMLParameters(): \n";
-      error_stream << "  Input parameter 'File' in 'Thermodynamic Database' sublist must be specified.\n";
-      Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));         
+      std::ostringstream msg;
+      msg << ChemistryException::kChemistryError;
+      msg << "Amanzi_PK::XMLParameters(): \n";
+      msg << "  Input parameter 'File' in 'Thermodynamic Database' sublist must be specified.\n";
+      Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));         
     }
   } else {
-    std::ostringstream error_stream;
-    error_stream << ChemistryException::kChemistryError;
-    error_stream << "Amanzi_PK::XMLParameters(): \n";
-    error_stream << "  'Thermodynamic Database' sublist must be specified.\n";
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));    
+    std::ostringstream msg;
+    msg << ChemistryException::kChemistryError;
+    msg << "Amanzi_PK::XMLParameters(): \n";
+    msg << "  'Thermodynamic Database' sublist must be specified.\n";
+    Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));    
   }
-  //---------------------------------------------------------------------------
-  //
+
   // activity model
-  //
-  //---------------------------------------------------------------------------
   beaker_parameters_.activity_model_name = cp_list_->get<std::string>("activity model", "unit");
-  // Pitzer virial coefficients database
+  // -- Pitzer virial coefficients database
   if (beaker_parameters_.activity_model_name == "pitzer-hwm") {
     if (cp_list_->isParameter("Pitzer Database File")) {
       beaker_parameters_.pitzer_database = cp_list_->get<std::string>("Pitzer Database File");
     } else {
-      std::ostringstream error_stream;
-      error_stream << ChemistryException::kChemistryError;
-      error_stream << "Amanzi_PK::XMLParameters(): \n";
-      error_stream << "  Input parameter 'Pitzer Database File' must be specified if 'activity model' is 'pitzer-hwm'.\n";
-      Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+      std::ostringstream msg;
+      msg << ChemistryException::kChemistryError;
+      msg << "Amanzi_PK::XMLParameters(): \n";
+      msg << "  Input parameter 'Pitzer Database File' must be specified if 'activity model' is 'pitzer-hwm'.\n";
+      Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));
       
     }
   }
@@ -618,12 +616,10 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   double dt = t_new - t_old;
   current_time_ = saved_time_ + dt;
 
+  int num_itrs, max_itrs(0), min_itrs(10000000), avg_itrs(0);
+  int cmax(-1), cmin(-1), ierr(0);
+
   int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
-  int max_iterations(0), min_iterations(10000000), ave_iterations(0);
-  int cmax(-1), cmin(-1);
-
-  int ierr(0);
   for (int c = 0; c < num_cells; ++c) {
     CopyCellStateToBeakerStructures(c, aqueous_components_);
     try {
@@ -631,17 +627,17 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       chem_->CopyComponents(beaker_components_, &beaker_components_copy_);
 
       // chemistry computations for this cell
-      int num_iterations = chem_->ReactionStep(&beaker_components_,
-                                               beaker_parameters_, dt);
-      if (max_iterations < num_iterations) {
-        max_iterations = num_iterations;
+      num_itrs = chem_->ReactionStep(&beaker_components_, beaker_parameters_, dt);
+
+      if (max_itrs < num_itrs) {
+        max_itrs = num_itrs;
         cmax = c;
       }
-      if (min_iterations > num_iterations) {
-        min_iterations = num_iterations;
+      if (min_itrs > num_itrs) {
+        min_itrs = num_itrs;
         cmin = c;
       }
-      ave_iterations += num_iterations;
+      avg_itrs += num_itrs;
     } catch (ChemistryException& geochem_error) {
       ierr = 1;
     }
@@ -653,10 +649,15 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   int recv(0);
   mesh_->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) {
-    ChemistryException geochem_error("Error in Amanzi_PK::Advance");
-    Exceptions::amanzi_throw(geochem_error); 
+    Errors::Message msg("Error in Amanzi_PK::Advance");
+    Exceptions::amanzi_throw(msg); 
   }  
   
+  std::stringstream ss;
+  ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/" 
+     << avg_itrs / num_cells << std::endl;
+  vo_->Write(Teuchos::VERB_HIGH, ss.str());
+
   // dumping the values of the final cell. not very helpful by itself,
   // but can be move up into the loops....
   // chem_->DisplayTotalColumnHeaders(true);
@@ -671,9 +672,8 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 * that it has accepted the state update, thus, the PK should update
 * possible auxilary state variables here
 ******************************************************************* */
-void Amanzi_PK::CommitStep(double t_old, double t_new) {
-  vo_->Write(Teuchos::VERB_EXTREME, "Committing internal state.\n");
-
+void Amanzi_PK::CommitStep(double t_old, double t_new)
+{
   saved_time_ = t_new;
 
   // debug output
