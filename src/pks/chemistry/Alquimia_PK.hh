@@ -29,9 +29,8 @@ namespace AmanziChemistry {
 // Trilinos based chemistry process kernel for the unstructured mesh
 class Alquimia_PK: public Chemistry_PK {
  public:
-  // Constructor. Note that we must pass the "Main" parameter list
-  // to this PK so that it has access to all information about the 
-  // problem.
+  // We must pass the global parameter list to this PK so that it 
+  // has access to all information about the problem.
   Alquimia_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
               Teuchos::RCP<ChemistryEngine> chem_engine,
               Teuchos::RCP<State> S,
@@ -43,17 +42,15 @@ class Alquimia_PK: public Chemistry_PK {
   virtual void Setup();
   virtual void Initialize();
 
-  void InitializeChemistry(void);
-
   void Advance(const double& delta_time,
                Teuchos::RCP<Epetra_MultiVector> total_component_concentration);
   void CommitState(const double& time);
 
-  double time_step(void) const { return this->time_step_; }
+  double time_step() const { return this->time_step_; }
 
   // Ben: the following routine provides the interface for
   // output of auxillary cellwise data from chemistry
-  Teuchos::RCP<Epetra_MultiVector> get_extra_chemistry_output_data();
+  Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data();
 
   // Copies the chemistry state in the given cell to the given Alquimia containers.
   void CopyToAlquimia(const int cell_id,
@@ -80,7 +77,6 @@ class Alquimia_PK: public Chemistry_PK {
                         const AlquimiaAuxiliaryOutputData& aux_output,
                         Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
 
-  void UpdateChemistryStateStorage(void);
   int InitializeSingleCell(int cell_index, const std::string& condition);
   int AdvanceSingleCell(double delta_time, 
                         Teuchos::RCP<Epetra_MultiVector> total_component_concentration,
@@ -88,7 +84,7 @@ class Alquimia_PK: public Chemistry_PK {
 
   void ParseChemicalConditionRegions(const Teuchos::ParameterList& param_list,
                                      std::map<std::string, std::string>& conditions);
-  void XMLParameters(void);
+  void XMLParameters();
 
   void CopyAlquimiaStateToAmanzi(const int cell_id,
                                  const AlquimiaMaterialProperties& mat_props,
@@ -96,6 +92,8 @@ class Alquimia_PK: public Chemistry_PK {
                                  const AlquimiaAuxiliaryData& aux_data,
                                  const AlquimiaAuxiliaryOutputData& aux_output,
                                  Teuchos::RCP<Epetra_MultiVector> total_component_concentration);
+
+  void ComputeNextTimeStep();
 
  private:
   Teuchos::RCP<Teuchos::ParameterList> glist_, cp_list_;
@@ -105,15 +103,14 @@ class Alquimia_PK: public Chemistry_PK {
   std::string time_step_control_method_;
   int num_iterations_for_time_step_cut_, num_steps_before_time_step_increase_;
   double time_step_cut_factor_, time_step_increase_factor_;
+
   int num_iterations_, num_successful_steps_;
-  void ComputeNextTimeStep();
 
   bool chem_initialized_;
 
-  // Chemistry engine.
+  // Chemistry engine and Alquimia data structures.
   Teuchos::RCP<ChemistryEngine> chem_engine_;
 
-  // Alquimia data structures.
   AlquimiaState alq_state_;
   AlquimiaMaterialProperties alq_mat_props_;
   AlquimiaAuxiliaryData alq_aux_data_;

@@ -53,8 +53,7 @@ class Chemistry_PK_Wrapper : public PK {
 
   // Calculate any diagnostics prior to doing vis
   virtual void CalculateDiagnostics() {
-    // get the auxillary data
-    Teuchos::RCP<Epetra_MultiVector> aux = pk_->get_extra_chemistry_output_data();
+    Teuchos::RCP<Epetra_MultiVector> aux = pk_->extra_chemistry_output_data();
   }
 
   virtual std::string name() { return "chemistry"; }

@@ -45,7 +45,7 @@ class Chemistry_PK {
   virtual double time_step() const = 0;
 
   // -- output of auxillary cellwise data from chemistry
-  virtual Teuchos::RCP<Epetra_MultiVector> get_extra_chemistry_output_data() = 0;
+  virtual Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data() = 0;
 
   // -- process various objects
   void InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist);

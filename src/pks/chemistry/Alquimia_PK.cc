@@ -136,13 +136,14 @@ void Alquimia_PK::Setup()
 ******************************************************************* */
 void Alquimia_PK::Initialize() 
 { 
+  // initilaization using the base class
   Chemistry_PK::Initialize();
 
   // initialize auxiliary fields
   std::vector<std::string> aux_names;
   chem_engine_->GetAuxiliaryOutputNames(aux_names);
 
-  if (cp_list_->isParameter("auxiliary data"))  {
+  if (cp_list_->isParameter("auxiliary data")) {
     std::vector<std::string> names = cp_list_->get<Teuchos::Array<std::string> >("auxiliary data").toVector();  
     aux_names.insert(aux_names.end(), names.begin(), names.end());
   }
@@ -232,10 +233,8 @@ void Alquimia_PK::ParseChemicalConditionRegions(const Teuchos::ParameterList& pa
 
   // Go through the sublist containing the chemical conditions.
   for (Teuchos::ParameterList::ConstIterator iter = param_list.begin();
-       iter != param_list.end(); ++iter)
-  {
-    // This parameter list contains sublists, each corresponding to a
-    // condition. 
+       iter != param_list.end(); ++iter) {
+    // This parameter list contains sublists, each corresponding to a condition. 
     std::string cond_name = param_list.name(iter);
     assert(param_list.isSublist(cond_name));
     const Teuchos::ParameterList& cond_sublist = param_list.sublist(cond_name);
@@ -266,7 +265,7 @@ void Alquimia_PK::ParseChemicalConditionRegions(const Teuchos::ParameterList& pa
 /* *******************************************************************
 *
 ******************************************************************* */
-void Alquimia_PK::XMLParameters(void) 
+void Alquimia_PK::XMLParameters() 
 {
   Errors::Message msg;
 
@@ -397,8 +396,7 @@ void Alquimia_PK::XMLParameters(void)
   time_step_ = prev_time_step_;
   time_step_control_method_ = cp_list_->get<std::string>("time step control method", "fixed");
   num_iterations_for_time_step_cut_ = cp_list_->get<int>("time step cut threshold", 8);
-  if (num_iterations_for_time_step_cut_ <= 0)
-  {
+  if (num_iterations_for_time_step_cut_ <= 0) {
     msg << "Alquimia_PK::XMLParameters(): \n";
     msg << "  Invalid \"time step cut threshold\": " << num_iterations_for_time_step_cut_ << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
@@ -551,6 +549,7 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
     std::vector<std::string> mineralNames, primaryNames;
     chem_engine_->GetMineralNames(mineralNames);
     chem_engine_->GetPrimarySpeciesNames(primaryNames);
+
     int numAqueousComplexes = chem_engine_->NumAqueousComplexes();
     for (unsigned int i = 0; i < aux_names_.size(); i++) {
       if (aux_names_.at(i) == "pH") {
@@ -676,7 +675,8 @@ void Alquimia_PK::CopyFromAlquimia(const int cell_id,
     }
   }
 
-  // Auxiliary data -- block copy.
+  // Auxiliary data -- block copy. Correct way to implement this
+  // is to move it to Setup().
   int num_aux_ints = aux_data.aux_ints.size;
   int num_aux_doubles = aux_data.aux_doubles.size;
   if (num_aux_data_ == -1) {
@@ -684,8 +684,7 @@ void Alquimia_PK::CopyFromAlquimia(const int cell_id,
     assert(num_aux_ints >= 0);
     assert(num_aux_doubles >= 0);
     num_aux_data_ = num_aux_ints + num_aux_doubles;
-    if (!S_->HasField("alquimia_aux_data"))
-    {
+    if (!S_->HasField("alquimia_aux_data")) {
       Teuchos::RCP<CompositeVectorSpace> fac = S_->RequireField("alquimia_aux_data", passwd_);
       fac->SetMesh(mesh_);
       fac->SetGhosted(false);
@@ -888,7 +887,7 @@ void Alquimia_PK::CommitState(const double& time)
 /* *******************************************************************
 *
 ******************************************************************* */
-Teuchos::RCP<Epetra_MultiVector> Alquimia_PK::get_extra_chemistry_output_data() 
+Teuchos::RCP<Epetra_MultiVector> Alquimia_PK::extra_chemistry_output_data() 
 {
   // This vector is updated during the initialization and advance of 
   // the geochemistry, so we simply return it here.

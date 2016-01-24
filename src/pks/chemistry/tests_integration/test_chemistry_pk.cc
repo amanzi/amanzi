@@ -127,8 +127,6 @@ SUITE(GeochemistryTestsChemistryPK) {
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
     }
-    // debug flag should be set after the constructor is finished....
-    CHECK_EQUAL(false, cpk_->debug());
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_initialize) {

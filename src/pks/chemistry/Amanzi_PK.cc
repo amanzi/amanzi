@@ -52,8 +52,6 @@ extern VerboseObject* chem_out;
 Amanzi_PK::Amanzi_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
                      Teuchos::RCP<State> S,
                      Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-    debug_(false),
-    display_free_columns_(false),
     max_time_step_(9.9e9),
     chem_(NULL),
     current_time_(0.0),
@@ -134,14 +132,11 @@ void Amanzi_PK::AllocateAdditionalChemistryStorage_(
 ******************************************************************* */
 void Amanzi_PK::Initialize()
 {
+  // initialization using base class
   Chemistry_PK::Initialize();
 
   Teuchos::RCP<Epetra_MultiVector> tcc = 
       S_->GetFieldData("total_component_concentration", passwd_)->ViewComponent("cell", true);
-
-  if (debug()) {
-    std::cout << "  Amanzi_PK::InitializeChemistry()" << std::endl;
-  }
 
   XMLParameters();
 
@@ -152,7 +147,7 @@ void Amanzi_PK::Initialize()
   // state/chemistry_state object before we reach this point. We just
   // resize our local memory for migrating data here.
 
-  SizeBeakerStructures();
+  SizeBeakerStructures_();
 
   // copy the first cell data into the beaker storage for
   // initialization purposes
@@ -161,17 +156,16 @@ void Amanzi_PK::Initialize()
   // finish setting up & testing the chemistry object
   int ierr(0);
   try {
-    chem_->set_debug(false);
     vo_->Write(Teuchos::VERB_HIGH, "Initializing chemistry in cell 0...\n");
     chem_->Setup(beaker_components_, beaker_parameters_);
     chem_->Display();
+
     // solve for initial free-ion concentrations
     vo_->Write(Teuchos::VERB_HIGH, "Initial speciation calculations in cell 0...\n");
     chem_->Speciate(&beaker_components_, beaker_parameters_);
-    if (debug()) {
-      vo_->Write(Teuchos::VERB_HIGH, "\nTest solution of initial conditions in cell 0:\n");
-      chem_->DisplayResults();
-    }
+
+    vo_->Write(Teuchos::VERB_HIGH, "\nTest solution of initial conditions in cell 0:\n");
+    chem_->DisplayResults();
   } catch (ChemistryException& geochem_error) {
     ierr = 1;
   }
@@ -220,7 +214,7 @@ void Amanzi_PK::Initialize()
 /* *******************************************************************
 * Initialization helper functions
 ******************************************************************* */
-void Amanzi_PK::XMLParameters(void)
+void Amanzi_PK::XMLParameters()
 {
   // thermo file name and format, then create the database!
   if (cp_list_->isSublist("Thermodynamic Database")) {
@@ -312,14 +306,11 @@ void Amanzi_PK::XMLParameters(void)
 
 
 /* *******************************************************************
-*
+* Requires that Beaker::Setup() has already been called!
 ******************************************************************* */
-void Amanzi_PK::SetupAuxiliaryOutput(void) {
-  // requires that Beaker::Setup() has already been called!
-  if (debug()) {
-    std::cout << "  Amanzi_PK::SetupAuxiliaryOutput()" << std::endl;
-  }
-  // TODO(bandre): this indexing scheme will not be appropriate when
+void Amanzi_PK::SetupAuxiliaryOutput()
+{
+  // TODO: this indexing scheme will not be appropriate when
   // additional types of aux data are requested, e.g. mineral SI.....
   unsigned int nvars = aux_names_.size();
   std::string name;
@@ -354,11 +345,10 @@ void Amanzi_PK::SetupAuxiliaryOutput(void) {
 
 
 /* *******************************************************************
-*
+* Initialize the beaker component data structure
 ******************************************************************* */
-void Amanzi_PK::SizeBeakerStructures(void) {
-  // initialize the beaker component data structure
-
+void Amanzi_PK::SizeBeakerStructures_()
+{
   // NOTE: The beaker already has data for site density, sorption
   // isotherms, ssa. If we want to use that single global value, then
   // we leave these arrays empty as a flag to the beaker to use its
@@ -669,12 +659,10 @@ void Amanzi_PK::Advance(
     Exceptions::amanzi_throw(geochem_error); 
   }  
   
-  if (debug() == kDebugChemistryProcessKernel) {
-    // dumping the values of the final cell. not very helpful by itself,
-    // but can be move up into the loops....
-    chem_->DisplayTotalColumnHeaders(display_free_columns_);
-    chem_->DisplayTotalColumns(current_time_, beaker_components_, true);
-  }
+  // dumping the values of the final cell. not very helpful by itself,
+  // but can be move up into the loops....
+  // chem_->DisplayTotalColumnHeaders(true);
+  // chem_->DisplayTotalColumns(current_time_, beaker_components_, true);
 }
 
 
@@ -688,19 +676,18 @@ void Amanzi_PK::CommitState(const double& time) {
 
   saved_time_ = time;
 
-  if (debug() && false) {
-    chem_->Speciate(&beaker_components_, beaker_parameters_);
-    chem_->DisplayResults();
-    chem_->DisplayTotalColumnHeaders(display_free_columns_);
-    chem_->DisplayTotalColumns(saved_time_, beaker_components_, true);
-  }
+  // debug output
+  // chem_->Speciate(&beaker_components_, beaker_parameters_);
+  // chem_->DisplayResults();
+  // chem_->DisplayTotalColumnHeaders(bool display_free_columns);
+  // chem_->DisplayTotalColumns(saved_time_, beaker_components_, true);
 }
 
 
 /* ******************************************************************
 *
 ******************************************************************* */
-Teuchos::RCP<Epetra_MultiVector> Amanzi_PK::get_extra_chemistry_output_data() {
+Teuchos::RCP<Epetra_MultiVector> Amanzi_PK::extra_chemistry_output_data() {
   if (aux_data_ != Teuchos::null) {
     const Epetra_MultiVector& free_ion = *S_->GetFieldData("free_ion_species")->ViewComponent("cell", true);
     const Epetra_MultiVector& activity = *S_->GetFieldData("primary_activity_coeff")->ViewComponent("cell", true);
@@ -720,8 +707,6 @@ Teuchos::RCP<Epetra_MultiVector> Amanzi_PK::get_extra_chemistry_output_data() {
         }
       }
     }
-
-    // return the multi vector
   }
   return aux_data_;
 }

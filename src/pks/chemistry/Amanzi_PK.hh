@@ -51,48 +51,40 @@ class Amanzi_PK : public Chemistry_PK {
 
   // modifiers
   void set_max_time_step(const double mts) { this->max_time_step_ = mts; }
-  void set_debug(const bool value) { debug_ = value; }
-
   double time_step(void) const { return this->max_time_step_; }
-  bool debug() const { return debug_; }
 
-  // Ben: the following two routines provide the interface for
+  // The following two routines provide the interface for
   // output of auxillary cellwise data from chemistry
-  Teuchos::RCP<Epetra_MultiVector> get_extra_chemistry_output_data();
+  Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data();
   void set_chemistry_output_names(std::vector<std::string>* names);
 
  private:
   void AllocateAdditionalChemistryStorage_(const Beaker::BeakerComponents& components);
 
+  void XMLParameters();
+  void SetupAuxiliaryOutput();
+  void SizeBeakerStructures_();
+
+  void CopyCellStateToBeakerStructures(
+      int cell_id, Teuchos::RCP<Epetra_MultiVector> total_component_concentration);
+  void CopyBeakerStructuresToCellState(
+      int cell_id, Teuchos::RCP<Epetra_MultiVector> total_component_concentration);
+
  private:
   Teuchos::RCP<Teuchos::ParameterList> cp_list_;
-
-  bool debug_;
-  bool display_free_columns_;
-  double max_time_step_;
 
   Beaker* chem_;
   Beaker::BeakerParameters beaker_parameters_;
   Beaker::BeakerComponents beaker_components_;
   Beaker::BeakerComponents beaker_components_copy_;
 
+  double max_time_step_;
   double current_time_;
   double saved_time_;
 
   std::vector<std::string> aux_names_;
   std::vector<int> aux_index_;
-
   Teuchos::RCP<Epetra_MultiVector> aux_data_;
-
-  void UpdateChemistryStateStorage();
-
-  void XMLParameters();
-  void SetupAuxiliaryOutput();
-  void SizeBeakerStructures();
-  void CopyCellStateToBeakerStructures(
-      int cell_id, Teuchos::RCP<Epetra_MultiVector> total_component_concentration);
-  void CopyBeakerStructuresToCellState(
-      int cell_id, Teuchos::RCP<Epetra_MultiVector> total_component_concentration);
 };
 
 }  // namespace AmanziChemistry
