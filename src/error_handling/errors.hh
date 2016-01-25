@@ -7,8 +7,7 @@
 
 namespace Errors {
 
-class Message : public Exceptions::Amanzi_exception
-{
+class Message : public Exceptions::Amanzi_exception {
  public:
   explicit Message() : message_() {};
   explicit Message(const char* message) : message_(message) {};

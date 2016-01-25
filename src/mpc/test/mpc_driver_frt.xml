@@ -85,7 +85,7 @@
 		<Parameter name="PK type" type="string" value="transport"/>
 	      </ParameterList>
 	      <ParameterList name="Chemistry">
-		<Parameter name="PK type" type="string" value="chemistry"/>
+		<Parameter name="PK type" type="string" value="chemistry amanzi"/>
 	      </ParameterList>
 	    </ParameterList>
 	  </ParameterList>    

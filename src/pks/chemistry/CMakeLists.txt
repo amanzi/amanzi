@@ -48,10 +48,6 @@ register_evaluator_with_factory(
   HEADERFILE Alquimia_PK_reg.hh
   LISTNAME   PKS_CHEMISTRY_REGISTRATIONS )
 
-register_evaluator_with_factory(
-  HEADERFILE Chemistry_PK_Wrapper_reg.hh
-  LISTNAME   PKS_CHEMISTRY_REGISTRATIONS )
-
 generate_evaluators_registration_header( 
   HEADERFILE pks_chemistry_registration.hh   
   LISTNAME   PKS_CHEMISTRY_REGISTRATIONS
@@ -64,16 +60,12 @@ set(chem_inc_files
                    Amanzi_PK.hh
                    Amanzi_PK_reg.hh
                    Chemistry_PK.hh
-                   Chemistry_PK_Wrapper.hh
-                   Chemistry_PK_Wrapper_reg.hh
                    pks_chemistry_registration.hh
 )
 
 set(chem_src_files)
 if (ENABLE_Unstructured)
-  list(APPEND chem_src_files Chemistry_PK.cc 
-                             Amanzi_PK.cc
-                             Chemistry_PK_Wrapper.cc)
+  list(APPEND chem_src_files Chemistry_PK.cc Amanzi_PK.cc)
   if (ENABLE_ALQUIMIA)
     list(APPEND chem_src_files Alquimia_PK.cc)
   endif()

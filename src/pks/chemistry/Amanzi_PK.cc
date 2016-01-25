@@ -21,6 +21,7 @@
 
 // TPLs
 #include "boost/mpi.hpp"
+#include "boost/algorithm/string.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_SerialDenseVector.h"
@@ -33,6 +34,7 @@
 #include "chemistry_exception.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+#include "message.hh"
 #include "simple_thermo_database.hh"
 #include "VerboseObject.hh"
 
@@ -48,22 +50,29 @@ extern VerboseObject* chem_out;
 /* ******************************************************************
 * Constructor
 ******************************************************************* */
-Amanzi_PK::Amanzi_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                     Teuchos::RCP<State> S,
-                     Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
+                     const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                     const Teuchos::RCP<State>& S,
+                     const Teuchos::RCP<TreeVector>& soln) :
+    soln_(soln),
     max_time_step_(9.9e9),
     chem_(NULL),
     current_time_(0.0),
     saved_time_(0.0)
 {
   S_ = S;
-  mesh_ = mesh;
+  mesh_ = S_->GetMesh();
 
-  // We need the chemistry list
+  // extract pk name
+  std::string pk_name = pk_tree.name();
+  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name, "->"); 
+  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name, res.end() - pk_name.begin());
+
+  // create pointer to the chemistry parameter list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   cp_list_ = Teuchos::sublist(pk_list, "Chemistry", true);
 
-  // Collect high-level information about the problem
+  // collect high-level information about the problem
   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "State", true);
 
   InitializeMinerals(cp_list_);
@@ -612,6 +621,7 @@ void Amanzi_PK::CopyBeakerStructuresToCellState(
 bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   bool failed(false);
+  std::string internal_msg;
 
   double dt = t_new - t_old;
   current_time_ = saved_time_ + dt;
@@ -638,24 +648,38 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         cmin = c;
       }
       avg_itrs += num_itrs;
-    } catch (ChemistryException& geochem_error) {
+    } catch (ChemistryException& geochem_err) {
       ierr = 1;
+      internal_msg = geochem_err.kChemistryError;
+      break;
     }
 
     if (ierr == 0) CopyBeakerStructuresToCellState(c, aqueous_components_);
     // TODO: was porosity etc changed? copy someplace
   }
 
-  int recv(0);
-  mesh_->get_comm()->MaxAll(&ierr, &recv, 1);
-  if (recv != 0) {
-    Errors::Message msg("Error in Amanzi_PK::Advance");
+  int tmp_out[2], tmp_in[2] = {ierr, mesh_->GID(cmax, AmanziMesh::CELL)};
+  mesh_->get_comm()->MaxAll(tmp_in, tmp_out, 2);
+
+  if (tmp_out[0] != 0) {
+    // get at least one error message
+    int msg_out[51], msg_in[51], m(mesh_->get_comm()->MyPID());
+    internal_msg.resize(50);
+
+    Errors::encode_string(internal_msg, 50, m, msg_in);
+    mesh_->get_comm()->MaxAll(msg_in, msg_out, 51);
+    Errors::decode_string(msg_out, 50, internal_msg);
+
+    std::string err_msg = "failed: " + internal_msg + "\n";
+    vo_->Write(Teuchos::VERB_HIGH, err_msg);
+
+    Errors::Message msg(err_msg);
     Exceptions::amanzi_throw(msg); 
   }  
   
   std::stringstream ss;
   ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/" 
-     << avg_itrs / num_cells << std::endl;
+     << avg_itrs / num_cells << ", maximum in gid=" << tmp_out[1] << std::endl;
   vo_->Write(Teuchos::VERB_HIGH, ss.str());
 
   // dumping the values of the final cell. not very helpful by itself,

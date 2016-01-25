@@ -77,6 +77,12 @@
     <Parameter name="component names" type="Array(string)" value="{Al+++, H+, HPO4-, SiO2(aq), UO2++}"/>
   </ParameterList>
 
+  <ParameterList name="PK Tree">
+    <ParameterList name="Chemistry">
+      <Parameter name="PK type" type="string" value="chemistry amanzi"/>
+    </ParameterList>
+  </ParameterList>
+
   <ParameterList name="PKs">
   <ParameterList name="Chemistry">
     <Parameter name="number of component concentrations" type="int" value="5"/>

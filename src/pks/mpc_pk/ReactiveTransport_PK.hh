@@ -19,7 +19,7 @@
 
 #include "PK.hh"
 #include "Transport_PK.hh"
-#include "Chemistry_PK_Wrapper.hh"
+#include "Chemistry_PK.hh"
 #include "PK_Factory.hh"
 #include "MPCAdditive.hh"
 
@@ -53,7 +53,7 @@ class ReactiveTransport_PK : public MPCAdditive<PK> {
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration_stor;
 
   Teuchos::RCP<Transport::Transport_PK> tranport_pk_;
-  Teuchos::RCP<AmanziChemistry::Chemistry_PK_Wrapper> chemistry_pk_;
+  Teuchos::RCP<AmanziChemistry::Chemistry_PK> chemistry_pk_;
   // int master_, slave_;
 
   bool chem_step_succeeded;

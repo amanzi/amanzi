@@ -30,12 +30,12 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
   tranport_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[1]);
   ASSERT(tranport_pk_ != Teuchos::null);
 
-  chemistry_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK_Wrapper>(sub_pks_[0]);
+  chemistry_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(sub_pks_[0]);
   ASSERT(chemistry_pk_ != Teuchos::null);
 
   // communicate chemistry engine to transport.
 #ifdef ALQUIMIA_ENABLED
-  tranport_pk_->SetupAlquimia(Teuchos::rcp_static_cast<AmanziChemistry::Alquimia_PK>(chemistry_pk_->pk()),
+  tranport_pk_->SetupAlquimia(Teuchos::rcp_static_cast<AmanziChemistry::Alquimia_PK>(chemistry_pk_),
                               chemistry_pk_->chem_engine());
 #endif
 
@@ -111,13 +111,13 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
 
   // Second, we do a chemistry step.
   try {
-    chemistry_pk_->set_total_component_concentration(total_component_concentration_stor);
+    chemistry_pk_->set_aqueous_components(total_component_concentration_stor);
 
     pk_fail = chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
     chem_step_succeeded = true;
  
     *S_->GetFieldData("total_component_concentration", "state")
-       ->ViewComponent("cell", true) = *chemistry_pk_->total_component_concentration();
+       ->ViewComponent("cell", true) = *chemistry_pk_->aqueous_components();
   }
   catch (const Errors::Message& chem_error) {
     fail = true;

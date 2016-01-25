@@ -14,6 +14,7 @@
 #include <vector>
 
 // TPLs
+#include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
@@ -24,11 +25,7 @@
 #include "Chemistry_PK.hh"
 #include "PK_Factory.hh"
 #include "Mesh.hh"
-
-// forward declarations
-class Epetra_MultiVector;
-class Epetra_Vector;
-class Epetra_SerialDenseVector;
+#include "TreeVector.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -39,11 +36,7 @@ class Amanzi_PK : public Chemistry_PK {
   Amanzi_PK(Teuchos::ParameterList& pk_tree,
             const Teuchos::RCP<Teuchos::ParameterList>& glist,
             const Teuchos::RCP<State>& S,
-            const Teuchos::RCP<TreeVector>& soln) {};
-
-  Amanzi_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-            Teuchos::RCP<State> S,
-            Teuchos::RCP<const AmanziMesh::Mesh> mesh);
+            const Teuchos::RCP<TreeVector>& soln);
 
   ~Amanzi_PK();
 
@@ -51,11 +44,14 @@ class Amanzi_PK : public Chemistry_PK {
   virtual void Setup();
   virtual void Initialize();
 
-  bool AdvanceStep(double t_old, double t_new, bool reinit = false);
-  void CommitStep(double t_old, double t_new);
+  virtual void set_dt(double dt) {};
+  virtual double get_dt() { return this->max_time_step_; }
 
-  // modifiers
-  double get_dt() { return this->max_time_step_; }
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
+  virtual void CommitStep(double t_old, double t_new);
+  virtual void CalculateDiagnostics() { extra_chemistry_output_data(); }
+
+  virtual std::string name() { return "chemistry amanzi"; }
 
   // The following two routines provide the interface for
   // output of auxillary cellwise data from chemistry
@@ -73,6 +69,9 @@ class Amanzi_PK : public Chemistry_PK {
       int cell_id, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
   void CopyBeakerStructuresToCellState(
       int cell_id, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
+
+ protected:
+  Teuchos::RCP<TreeVector> soln_;
 
  private:
   Teuchos::RCP<Teuchos::ParameterList> cp_list_;

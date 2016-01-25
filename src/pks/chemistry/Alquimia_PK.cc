@@ -20,6 +20,7 @@
 
 // TPLs
 #include "boost/mpi.hpp"
+#include "boost/algorithm/string.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_SerialDenseVector.h"
@@ -44,30 +45,50 @@ extern VerboseObject* chem_out;
 /* *******************************************************************
 * Constructor 
 ******************************************************************* */
-Alquimia_PK::Alquimia_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                         Teuchos::RCP<ChemistryEngine> chem_engine,
-                         Teuchos::RCP<State> S,
-                         Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
+                         const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                         const Teuchos::RCP<State>& S,
+                         const Teuchos::RCP<TreeVector>& soln) :
     glist_(glist),
+    soln_(soln),
     max_time_step_(9.9e9),
     chem_initialized_(false),
-    chem_engine_(chem_engine),
     current_time_(0.0),
     saved_time_(0.0), 
     num_aux_data_(-1)
 {
   S_ = S;
-  mesh_ = mesh;
+  mesh_ = S_->GetMesh();
 
-  // We need the chemistry list
+  // extract pk name
+  std::string pk_name = pk_tree.name();
+  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name, "->"); 
+  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name, res.end() - pk_name.begin());
+
+  // create pointer to the chemistry parameter list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   cp_list_ = Teuchos::sublist(pk_list, "Chemistry", true);
 
-  // We also need supporting lists
+  // collect high-level information about the problem
   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "State", true);
 
   InitializeMinerals(cp_list_);
   InitializeSorptionSites(cp_list_, state_list);
+
+  // create chemistry engine. (should we do it later in Initialize()?)
+  if (!cp_list_->isParameter("Engine")) {
+    Errors::Message msg;
+    msg << "No 'Engine' parameter found in the parameter list for 'Chemistry'.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+  if (!cp_list_->isParameter("Engine Input File")) {
+    Errors::Message msg;
+    msg << "No 'Engine Input File' parameter found in the parameter list for 'Chemistry'.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+  std::string engine_name = cp_list_->get<std::string>("Engine");
+  std::string engine_inputfile = cp_list_->get<std::string>("Engine Input File");
+  chem_engine_ = Teuchos::rcp(new AmanziChemistry::ChemistryEngine(engine_name, engine_inputfile));
 
   // grab the component names
   comp_names_.clear();
@@ -778,24 +799,24 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // Get the number of owned (non-ghost) cells for the mesh.
   unsigned int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   
-  int max_iterations (0), min_iterations(10000000), ave_iterations(0);
+  int max_itrs (0), min_itrs(10000000), avg_itrs(0);
   int imax(-1), imin(-1);
 
   // Now loop through all the cells and advance the chemistry.
   int ierr = 0;
   int convergence_failure = 0;
   for (int cell = 0; cell < num_cells; ++cell) {
-    int num_iterations = AdvanceSingleCell(dt, aqueous_components_, cell);
-    if (num_iterations >= 0) {
-      if (max_iterations < num_iterations) {
-        max_iterations = num_iterations;
+    int num_itrs = AdvanceSingleCell(dt, aqueous_components_, cell);
+    if (num_itrs >= 0) {
+      if (max_itrs < num_itrs) {
+        max_itrs = num_itrs;
         imax = cell;
       }
-      if (min_iterations > num_iterations) {
-        min_iterations = num_iterations;
+      if (min_itrs > num_itrs) {
+        min_itrs = num_itrs;
         imin = cell;
       }
-      ave_iterations += num_iterations;
+      avg_itrs += num_itrs;
     } else {
       // Convergence failure. Compute the next time step size.
       convergence_failure = 1;
@@ -807,7 +828,7 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // of Newton iterations and its location.
   int send[3], recv[3];
   send[0] = convergence_failure;
-  send[1] = max_iterations;
+  send[1] = max_itrs;
   send[2] = imax;
   mesh_->get_comm()->MaxAll(send, recv, 3);
   if (recv[0] != 0) 

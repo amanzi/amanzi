@@ -51,6 +51,7 @@ SUITE(GeochemistryTestsChemistryPK) {
 
    protected:
     ac::Amanzi_PK* cpk_;
+    Teuchos::ParameterList pk_tree_;
     Teuchos::RCP<Teuchos::ParameterList> glist_;
     Teuchos::RCP<Amanzi::State> state_;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
@@ -101,6 +102,9 @@ SUITE(GeochemistryTestsChemistryPK) {
     component_names.push_back("HP04--");
     component_names.push_back("SiO2(aq)");
     component_names.push_back("UO2++");
+
+    // other input parameters in the constructor
+    pk_tree_ = glist_->sublist("PK Tree");
   }
 
   ChemistryPKTest::~ChemistryPKTest() {
@@ -121,7 +125,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     // just make sure that we can have all the pieces together to set
     // up a chemistry process kernel....
     try {
-      cpk_ = new ac::Amanzi_PK(glist_, state_, mesh_);
+      cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
     } catch (ac::ChemistryException chem_error) {
       std::cout << chem_error.what() << std::endl;
     } catch (std::exception e) {
@@ -133,7 +137,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     // make sure that we can initialize the pk and internal chemistry
     // object correctly based on the xml input....
     try {
-      cpk_ = new ac::Amanzi_PK(glist_, state_, mesh_);
+      cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
       cpk_->Setup();
       state_->Setup();
       state_->InitializeFields();
@@ -148,7 +152,7 @@ SUITE(GeochemistryTestsChemistryPK) {
 
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_get_chem_output_names) {
     try {
-      cpk_ = new ac::Amanzi_PK(glist_, state_, mesh_);
+      cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
       cpk_->Setup();
       state_->Setup();
       state_->InitializeFields();

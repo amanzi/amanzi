@@ -24,6 +24,7 @@
 // Amanzi
 #include "ChemistryEngine.hh"
 #include "PK_Factory.hh"
+#include "TreeVector.hh"
 
 // Chemistry PK
 #include "Chemistry_PK.hh"
@@ -37,14 +38,7 @@ class Alquimia_PK: public Chemistry_PK {
   Alquimia_PK(Teuchos::ParameterList& pk_tree,
               const Teuchos::RCP<Teuchos::ParameterList>& glist,
               const Teuchos::RCP<State>& S,
-              const Teuchos::RCP<TreeVector>& soln) {};
-
-  // We must pass the global parameter list to this PK so that it 
-  // has access to all information about the problem.
-  Alquimia_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-              Teuchos::RCP<ChemistryEngine> chem_engine,
-              Teuchos::RCP<State> S,
-              Teuchos::RCP<const AmanziMesh::Mesh> mesh);
+              const Teuchos::RCP<TreeVector>& soln);
 
   ~Alquimia_PK();
 
@@ -52,10 +46,14 @@ class Alquimia_PK: public Chemistry_PK {
   virtual void Setup();
   virtual void Initialize();
 
-  bool AdvanceStep(double t_old, double t_new, bool reinit = false);
-  void CommitStep(double t_old, double t_new);
+  virtual void set_dt(double dt) {};
+  virtual double get_dt() { return this->time_step_; }
 
-  double get_dt() { return this->time_step_; }
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
+  virtual void CommitStep(double t_old, double t_new);
+  virtual void CalculateDiagnostics() { extra_chemistry_output_data(); }
+
+  virtual std::string name() { return "chemistry alquimia"; }
 
   // Ben: the following routine provides the interface for
   // output of auxillary cellwise data from chemistry
@@ -102,6 +100,9 @@ class Alquimia_PK: public Chemistry_PK {
 
   void ComputeNextTimeStep();
 
+ protected:
+  Teuchos::RCP<TreeVector> soln_;
+
  private:
   Teuchos::RCP<Teuchos::ParameterList> glist_, cp_list_;
 
@@ -115,9 +116,7 @@ class Alquimia_PK: public Chemistry_PK {
 
   bool chem_initialized_;
 
-  // Chemistry engine and Alquimia data structures.
-  Teuchos::RCP<ChemistryEngine> chem_engine_;
-
+  // Alquimia data structures for interface with Amanzi.
   AlquimiaState alq_state_;
   AlquimiaMaterialProperties alq_mat_props_;
   AlquimiaAuxiliaryData alq_aux_data_;

@@ -22,6 +22,9 @@
 #include "VerboseObject.hh"
 
 // Amanzi
+#ifdef ALQUIMIA_ENABLED
+#include "ChemistryEngine.hh"
+#endif
 #include "Mesh.hh"
 #include "PK.hh"
 #include "State.hh"
@@ -34,21 +37,11 @@ class Chemistry_PK : public PK {
   Chemistry_PK();
   virtual ~Chemistry_PK() {};
 
-  // required members
+  // required members for PK interface
   virtual void Setup();
   virtual void Initialize();
 
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) = 0;
-  virtual void CommitStep(double t_old, double t_new) = 0;
-
-  // -- returns the (maximum) time step allowed for this chemistry PK.
-  virtual double get_dt() = 0;
-
-  // -- temporary members
-  virtual void set_dt(double dt) {};
-  virtual void CalculateDiagnostics() {};
-  virtual std::string name() { return "chemistry"; }
-
+  // Required members for chemistry interface
   // -- output of auxillary cellwise data from chemistry
   virtual Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data() = 0;
 
@@ -61,6 +54,11 @@ class Chemistry_PK : public PK {
   void InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist);
   void InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
                                Teuchos::RCP<Teuchos::ParameterList> state_list);
+
+  // -- access
+#ifdef ALQUIMIA_ENABLED
+  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine() { return chem_engine_; }
+#endif
 
  private:
   void InitializeField_(std::string fieldname, double default_val);
@@ -83,6 +81,11 @@ class Chemistry_PK : public PK {
 
   int number_free_ion_, number_ion_exchange_sites_;
 
+#ifdef ALQUIMIA_ENABLED
+  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
+#endif
+
+  // verbosity object thatis not shared with common chemistry
   Teuchos::RCP<VerboseObject> vo_;
 };
 

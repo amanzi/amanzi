@@ -209,6 +209,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   }
 
   // -- create PK tree for transient TP
+  std::string submodel;
   std::map<double, std::string>::iterator it = tp_mode.begin();
   while (it != tp_mode.end()) {
     switch (transient_model) {
@@ -247,11 +248,12 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
       }
     case 7:
       {
+        submodel = (pk_model_["chemistry"] == "amanzi") ? "chemistry amanzi" : "chemistry alquimia";
         Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("Flow and Reactive Transport");
         tmp_list.set<std::string>("PK type", "flow reactive transport");
         tmp_list.sublist("Reactive Transport").set<std::string>("PK type", "reactive transport");
         tmp_list.sublist("Reactive Transport").sublist("Transport").set<std::string>("PK type", "transport");
-        tmp_list.sublist("Reactive Transport").sublist("Chemistry").set<std::string>("PK type", "chemistry");
+        tmp_list.sublist("Reactive Transport").sublist("Chemistry").set<std::string>("PK type", submodel);
         tmp_list.sublist("Flow").set<std::string>("PK type", pk_model_["flow"]);
         break;
       }
