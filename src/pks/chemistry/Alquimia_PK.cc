@@ -493,7 +493,7 @@ void Alquimia_PK::CopyToAlquimia(int cell_id,
   }
 
   // ion exchange
-  assert(state.cation_exchange_capacity.size == number_ion_exchange_sites());
+  assert(state.cation_exchange_capacity.size == number_ion_exchange_sites_);
   if (number_ion_exchange_sites_ > 0) {
     const Epetra_MultiVector& ion_exchange = *S_->GetFieldData("ion_exchange_sites")->ViewComponent("cell", true);
     for (int i = 0; i < number_ion_exchange_sites_; i++) {
