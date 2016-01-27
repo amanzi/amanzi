@@ -903,7 +903,7 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components) co
   // some helpful error checking goes here...
   bool error = false;
   std::ostringstream error_stream;
-  error_stream << "Beaker::VerifyComponentSizes(): database input and component initial conditions do not match:\n";
+  error_stream << "Beaker::VerifyComponentSizes():\ndatabase input and component initial conditions do not match:\n";
 
   // if the size of the various initial conditions, components, and
   // database input don't match. Print a helpful message and exit

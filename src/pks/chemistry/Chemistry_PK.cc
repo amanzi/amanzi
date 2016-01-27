@@ -9,6 +9,10 @@
   Base class for chemical process kernels.
 */
  
+// Amanzi
+#include "message.hh"
+
+// Chemistry
 #include "Chemistry_PK.hh"
 
 namespace Amanzi {
@@ -267,6 +271,32 @@ void Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> 
     number_ion_exchange_sites_ = 1;
   }
 } 
+
+
+/* *******************************************************************
+* I/O or error messages
+******************************************************************* */
+void Chemistry_PK::ErrorAnalysis(int ierr, std::string& internal_msg)
+{
+  int tmp_out[2], tmp_in[2] = {ierr, internal_msg.size()};
+  mesh_->get_comm()->MaxAll(tmp_in, tmp_out, 2);
+
+  if (tmp_out[0] != 0) {
+    // get at least one error message
+    int n = tmp_out[1];
+    int msg_out[n + 1], msg_in[n + 1], m(mesh_->get_comm()->MyPID());
+    internal_msg.resize(n);
+
+    Errors::encode_string(internal_msg, n, m, msg_in);
+    mesh_->get_comm()->MaxAll(msg_in, msg_out, n + 1);
+    Errors::decode_string(msg_out, n, internal_msg);
+
+    vo_->Write(Teuchos::VERB_HIGH, internal_msg);
+
+    Errors::Message msg(internal_msg);
+    Exceptions::amanzi_throw(msg); 
+  }  
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

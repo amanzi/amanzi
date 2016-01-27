@@ -60,6 +60,9 @@ class Chemistry_PK : public PK {
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine() { return chem_engine_; }
 #endif
 
+  // -- output of error messages.
+  void ErrorAnalysis(int ierr, std::string& internal_msg);
+
  private:
   void InitializeField_(std::string fieldname, double default_val);
 

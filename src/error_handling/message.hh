@@ -6,9 +6,12 @@
 
 namespace Errors {
 
+#define CHAR_MAX_VALUE 127; 
+
 void encode_string(std::string& s, int n, int m, int* out) {
-  for (int i = 0; i < n; ++i) out[i] = m + 200 + (int)s[i];
-  out[n] = m + 200;
+  int mc = m * CHAR_MAX_VALUE;
+  for (int i = 0; i < n; ++i) out[i] = mc + (int)s[i];
+  out[n] = mc;
 }
 
 void decode_string(int* in, int n, std::string& s) {

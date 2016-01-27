@@ -34,7 +34,6 @@
 #include "chemistry_exception.hh"
 #include "errors.hh"
 #include "exceptions.hh"
-#include "message.hh"
 #include "simple_thermo_database.hh"
 #include "VerboseObject.hh"
 
@@ -163,6 +162,7 @@ void Amanzi_PK::Initialize()
 
   // finish setting up & testing the chemistry object
   int ierr(0);
+  std::string internal_msg;
   try {
     vo_->Write(Teuchos::VERB_HIGH, "Initializing chemistry in cell 0...\n");
     chem_->Setup(beaker_components_, beaker_parameters_);
@@ -174,16 +174,12 @@ void Amanzi_PK::Initialize()
 
     vo_->Write(Teuchos::VERB_HIGH, "\nTest solution of initial conditions in cell 0:\n");
     chem_->DisplayResults();
-  } catch (ChemistryException& geochem_error) {
+  } catch (ChemistryException& geochem_err) {
     ierr = 1;
+    internal_msg = geochem_err.message_;
   }
 
-  int recv(0);
-  mesh_->get_comm()->MaxAll(&ierr, &recv, 1);
-  if (recv != 0) {
-    Errors::Message msg("Error in Amanzi_PK::InitializeChemistry 0");
-    Exceptions::amanzi_throw(msg);
-  }
+  ErrorAnalysis(ierr, internal_msg);
 
   // TODO(bandre): at this point we should know about any additional
   // storage that chemistry needs...
@@ -202,18 +198,14 @@ void Amanzi_PK::Initialize()
       chem_->Speciate(&beaker_components_, beaker_parameters_);
       CopyBeakerStructuresToCellState(c, tcc);
 
-    } catch (ChemistryException& geochem_error) {
+    } catch (ChemistryException& geochem_err) {
       ierr = 1;
+      internal_msg = geochem_err.message_;
     }
   }
 
-  recv = 0;
   // figure out if any of the processes threw an error, if so all processes will re-throw
-  mesh_->get_comm()->MaxAll(&ierr, &recv, 1);
-  if (recv != 0) {
-    ChemistryException geochem_error("Error in Amanzi_PK::InitializeChemistry 1");
-    Exceptions::amanzi_throw(geochem_error); 
-  }  
+  ErrorAnalysis(ierr, internal_msg);
 
   vo_->Write(Teuchos::VERB_HIGH, "InitializeChemistry(): initialization was successful.\n");
 }
@@ -282,7 +274,6 @@ void Amanzi_PK::XMLParameters()
       msg << "Amanzi_PK::XMLParameters(): \n";
       msg << "  Input parameter 'Pitzer Database File' must be specified if 'activity model' is 'pitzer-hwm'.\n";
       Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));
-      
     }
   }
 
@@ -658,28 +649,11 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     // TODO: was porosity etc changed? copy someplace
   }
 
-  int tmp_out[2], tmp_in[2] = {ierr, mesh_->GID(cmax, AmanziMesh::CELL)};
-  mesh_->get_comm()->MaxAll(tmp_in, tmp_out, 2);
-
-  if (tmp_out[0] != 0) {
-    // get at least one error message
-    int msg_out[51], msg_in[51], m(mesh_->get_comm()->MyPID());
-    internal_msg.resize(50);
-
-    Errors::encode_string(internal_msg, 50, m, msg_in);
-    mesh_->get_comm()->MaxAll(msg_in, msg_out, 51);
-    Errors::decode_string(msg_out, 50, internal_msg);
-
-    std::string err_msg = "failed: " + internal_msg + "\n";
-    vo_->Write(Teuchos::VERB_HIGH, err_msg);
-
-    Errors::Message msg(err_msg);
-    Exceptions::amanzi_throw(msg); 
-  }  
+  ErrorAnalysis(ierr, internal_msg);
   
   std::stringstream ss;
   ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/" 
-     << avg_itrs / num_cells << ", maximum in gid=" << tmp_out[1] << std::endl;
+     << avg_itrs / num_cells << ", maximum in gid=" << mesh_->GID(cmax, AmanziMesh::CELL) << std::endl;
   vo_->Write(Teuchos::VERB_HIGH, ss.str());
 
   // dumping the values of the final cell. not very helpful by itself,
