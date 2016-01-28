@@ -44,9 +44,11 @@ register_evaluator_with_factory(
   HEADERFILE Amanzi_PK_reg.hh
   LISTNAME   PKS_CHEMISTRY_REGISTRATIONS )
 
+if (ENABLE_ALQUIMIA)
 register_evaluator_with_factory(
   HEADERFILE Alquimia_PK_reg.hh
   LISTNAME   PKS_CHEMISTRY_REGISTRATIONS )
+endif()
 
 generate_evaluators_registration_header( 
   HEADERFILE pks_chemistry_registration.hh   

@@ -14,9 +14,7 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-#ifdef ALQUIMIA_ENABLED
 RegisteredPKFactory<Alquimia_PK> Alquimia_PK::reg_("chemistry alquimia");
-#endif
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

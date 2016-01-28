@@ -2,6 +2,7 @@
 #include "stdlib.h"
 #include "math.h"
 
+// TPLs
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
@@ -9,14 +10,15 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "UnitTest++.h"
 
+// Amanzi
 #include "CycleDriver.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
 #include "mpc_pks_registration.hh"
-#include "pks_transport_registration.hh"
 #include "pks_chemistry_registration.hh"
+#include "pks_transport_registration.hh"
 #include "State.hh"
 
 

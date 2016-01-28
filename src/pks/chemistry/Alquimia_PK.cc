@@ -38,7 +38,6 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-#ifdef ALQUIMIA_ENABLED
 // This should go away
 extern VerboseObject* chem_out;
 
@@ -914,7 +913,6 @@ Teuchos::RCP<Epetra_MultiVector> Alquimia_PK::extra_chemistry_output_data()
   // the geochemistry, so we simply return it here.
   return aux_output_;
 }
-#endif
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
