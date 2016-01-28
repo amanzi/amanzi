@@ -239,8 +239,8 @@ void Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> 
                                            Teuchos::RCP<Teuchos::ParameterList> state_list)
 {
   sorption_site_names_.clear();
-  if (plist->isParameter("Sorption Sites")) {
-    sorption_site_names_ = plist->get<Teuchos::Array<std::string> >("Sorption Sites").toVector();
+  if (plist->isParameter("sorption sites")) {
+    sorption_site_names_ = plist->get<Teuchos::Array<std::string> >("sorption sites").toVector();
   } 
   
   number_sorption_sites_ = sorption_site_names_.size();

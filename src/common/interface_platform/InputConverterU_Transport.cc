@@ -386,7 +386,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
         element = static_cast<DOMElement*>(same_list[j]);
         double t0 = GetAttributeValueD_(element, "start");
         tp_values[t0] = GetAttributeValueS_(element, "name");
-        tp_forms[t0] = GetAttributeValueS_(element, "function", TYPE_NONE, false); // no form -> use geochemistry engine
+        tp_forms[t0] = GetAttributeValueS_(element, "function", TYPE_NONE, false, "constant");
+        // no form -> use geochemistry engine
       }
 
       // create vectors of values and forms

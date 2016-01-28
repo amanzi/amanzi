@@ -233,7 +233,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     }
 
     // surface complexation
-    node = GetUniqueElementByTagsString_(inode, "surface_complexation, site", flag);
+    node = GetUniqueElementByTagsString_(inode, "surface_complexation", flag);
     if (flag) {
       Teuchos::ParameterList& complexation = ic_list.sublist("surface_complexation");
 
