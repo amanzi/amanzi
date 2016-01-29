@@ -92,7 +92,7 @@
 
     <ParameterList name="Thermodynamic Database">
       <Parameter name="format" type="string" value="simple"/>
-      <Parameter name="file" type="string" value="test_chemistry_pk.bgd"/>
+      <Parameter name="file" type="string" value="test/chemistry_amanzi_pk.bgd"/>
     </ParameterList>
     <Parameter name="activity model" type="string" value="debye-huckel"/>
     <Parameter name="tolerance" type="double" value="1.50000000000000007e-12"/>

@@ -109,7 +109,10 @@ Amanzi_PK::~Amanzi_PK() {
 ******************************************************************* */
 void Amanzi_PK::Setup()
 {
+  // use common registration steps
   Chemistry_PK::Setup();
+
+  // no additional steps to be done.
 }
 
 

@@ -27,9 +27,9 @@ void TransportBCFactory::Create(std::vector<TransportBoundaryFunction*>& bcs) co
   Errors::Message msg;
 
   if (list_->isSublist("concentration")) {
-    ProcessTracerList(bcs);
+    ProcessTracerList_(bcs);
   } else if (list_->isSublist("geochemical conditions")) {
-    ProcessGeochemicalConditionList(bcs);
+    ProcessGeochemicalConditionList_(bcs);
   } else {
     msg << "Transport PK: BC sublist has not been recognized\n";
     Exceptions::amanzi_throw(msg);  
@@ -40,7 +40,7 @@ void TransportBCFactory::Create(std::vector<TransportBoundaryFunction*>& bcs) co
 /* ******************************************************************
 * Process Dirichet BC (concentration), step 1.
 * **************************************************************** */
-void TransportBCFactory::ProcessTracerList(std::vector<TransportBoundaryFunction*>& bcs) const
+void TransportBCFactory::ProcessTracerList_(std::vector<TransportBoundaryFunction*>& bcs) const
 {
   Errors::Message msg;
   Teuchos::ParameterList& clist = list_->get<Teuchos::ParameterList>("concentration");
@@ -56,7 +56,7 @@ void TransportBCFactory::ProcessTracerList(std::vector<TransportBoundaryFunction
           Teuchos::ParameterList& spec = bclist.sublist(specname);
           try {
             TransportBoundaryFunction_Tracer* bc = new TransportBoundaryFunction_Tracer(mesh_);
-            ProcessTracerSpec(spec, bc);
+            ProcessTracerSpec_(spec, bc);
             bc->tcc_names().push_back(name);
 
             TransportBoundaryFunction* bc_base = bc;
@@ -81,7 +81,7 @@ void TransportBCFactory::ProcessTracerList(std::vector<TransportBoundaryFunction
 /* ******************************************************************
 * Process Dirichet BC (concentration), step 3.
 ****************************************************************** */
-void TransportBCFactory::ProcessTracerSpec(
+void TransportBCFactory::ProcessTracerSpec_(
     Teuchos::ParameterList& spec, TransportBoundaryFunction_Tracer* bc) const
 {
   Errors::Message msg;
@@ -124,9 +124,9 @@ void TransportBCFactory::ProcessTracerSpec(
 /* ******************************************************************
 * Process Dirichet BC (concentration), step 1.
 ****************************************************************** */
-void TransportBCFactory::ProcessGeochemicalConditionList(std::vector<TransportBoundaryFunction*>& bcs) const
+void TransportBCFactory::ProcessGeochemicalConditionList_(
+    std::vector<TransportBoundaryFunction*>& bcs) const
 {
-#ifdef ALQUIMIA_ENABLED
   Errors::Message msg;
   if (!list_->isSublist("geochemical conditions")) {
     msg << "  No 'geochemical conditions' list was found in 'Transport->boundary conditions'!\n";
@@ -179,7 +179,6 @@ void TransportBCFactory::ProcessGeochemicalConditionList(std::vector<TransportBo
       }
     }
   }
-#endif
 }
 
 }  // namespace Transport

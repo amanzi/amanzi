@@ -14,16 +14,21 @@
 
 #include <vector>
 
+// TPLs
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh.hh"
-#include "TransportBoundaryFunction.hh"
-#include "TransportBoundaryFunction_Tracer.hh"
-
+// amanzi
 #ifdef ALQUIMIA_ENABLED
-#include "TransportBoundaryFunction_Alquimia.hh"
 #include "Alquimia_PK.hh"
 #include "ChemistryEngine.hh"
+#endif
+#include "Mesh.hh"
+
+// Transport
+#include "TransportBoundaryFunction.hh"
+#include "TransportBoundaryFunction_Tracer.hh"
+#ifdef ALQUIMIA_ENABLED
+#include "TransportBoundaryFunction_Alquimia.hh"
 #endif
 
 namespace Amanzi {
@@ -33,13 +38,6 @@ class TransportBCFactory {
  public:
 #ifdef ALQUIMIA_ENABLED
   // Alquimia-enabled constructors.
-  TransportBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                     const Teuchos::RCP<Teuchos::ParameterList>& list) :
-      mesh_(mesh),
-      list_(list),
-      chem_pk_(Teuchos::null),
-      chem_engine_(Teuchos::null) {};
-
   TransportBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                      const Teuchos::RCP<Teuchos::ParameterList>& list,
                      const Teuchos::RCP<AmanziChemistry::Alquimia_PK>& chem_pk,
@@ -59,13 +57,14 @@ class TransportBCFactory {
   
   void Create(std::vector<TransportBoundaryFunction*>& bcs) const;
 
+ private:
   // non-reactive components
-  void ProcessTracerList(std::vector<TransportBoundaryFunction*>& bcs) const;
-  void ProcessTracerSpec(
+  void ProcessTracerList_(std::vector<TransportBoundaryFunction*>& bcs) const;
+  void ProcessTracerSpec_(
       Teuchos::ParameterList& spec, TransportBoundaryFunction_Tracer* bc) const;
 
   // reactive components
-  void ProcessGeochemicalConditionList(std::vector<TransportBoundaryFunction*>& bcs) const;
+  void ProcessGeochemicalConditionList_(std::vector<TransportBoundaryFunction*>& bcs) const;
 
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;
