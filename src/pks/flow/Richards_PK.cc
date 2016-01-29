@@ -782,9 +782,6 @@ void Richards_PK::InitializeStatistics_()
     std::string ti_method_name = ti_list_->get<std::string>("time integration method");
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << std::endl 
-        << vo_->color("green") << "Initalization of PK is complete, T=" << S_->time()
-        << " dT=" << dt_ << vo_->reset() << std::endl;
     *vo_->os()<< "EC:" << error_control_ 
               << " Upwind:" << op_matrix_diff_->little_k()
               << " PC:\"" << preconditioner_name_.c_str() << "\"" 
@@ -803,6 +800,9 @@ void Richards_PK::InitializeStatistics_()
     *vo_->os() << "default (no-flow) BC assigned to " << missed_bc_faces_ << " faces" << std::endl << std::endl;
 
     VV_PrintHeadExtrema(*solution);
+
+    *vo_->os() << vo_->color("green") << "Initalization of PK is complete, T=" 
+               << S_->time() << " dT=" << dt_ << vo_->reset() << std::endl << std::endl;
   }
 }
 

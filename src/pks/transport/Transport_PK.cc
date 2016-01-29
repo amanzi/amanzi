@@ -344,11 +344,11 @@ void Transport_PK::Initialize()
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << std::endl 
-        << vo_->color("green") << "Initalization of PK is complete." << vo_->reset() << std::endl;
     *vo_->os() << "Number of components: " << tcc->size() << std::endl
                << "cfl=" << cfl_ << " spatial/temporal discretization: " 
                << spatial_disc_order << " " << temporal_disc_order << std::endl;
+    *vo_->os() << vo_->color("green") << "Initalization of PK is complete." 
+               << vo_->reset() << std::endl << std::endl;
   }
 }
 

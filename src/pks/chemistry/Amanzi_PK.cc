@@ -188,7 +188,6 @@ void Amanzi_PK::Initialize()
   SetupAuxiliaryOutput();
 
   // solve for initial free-ion concentrations
-  vo_->Write(Teuchos::VERB_HIGH, "Initializing chemistry in all cells...\n");
   int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ierr = 0;
   for (int c = 0; c < num_cells; ++c) {
@@ -207,7 +206,11 @@ void Amanzi_PK::Initialize()
   // figure out if any of the processes threw an error, if so all processes will re-throw
   ErrorAnalysis(ierr, internal_msg);
 
-  vo_->Write(Teuchos::VERB_HIGH, "InitializeChemistry(): initialization was successful.\n");
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << vo_->color("green") << "Initalization of PK was successful, T=" 
+        << S_->time() << vo_->reset() << std::endl << std::endl;
+  }
 }
 
 
@@ -221,8 +224,8 @@ void Amanzi_PK::XMLParameters()
     Teuchos::ParameterList& tdb_list_ = cp_list_->sublist("Thermodynamic Database");
 
     // currently we only support the simple format.
-    if (tdb_list_.isParameter("Format")) {
-      std::string database_format = tdb_list_.get<std::string>("Format");
+    if (tdb_list_.isParameter("format")) {
+      std::string database_format = tdb_list_.get<std::string>("format");
       if (database_format == "simple") {
         chem_ = new SimpleThermoDatabase();
       } else {
@@ -230,7 +233,7 @@ void Amanzi_PK::XMLParameters()
         std::ostringstream msg;
         msg << ChemistryException::kChemistryError;
         msg << "Amanzi_PK::XMLParameters(): \n";
-        msg << "  In sublist 'Thermodynamic Database', the parameter 'Format' must be 'simple'.\n";
+        msg << "  In sublist 'Thermodynamic Database', the parameter 'format' must be 'simple'.\n";
         Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));  
       }
     } else {
@@ -238,20 +241,20 @@ void Amanzi_PK::XMLParameters()
       std::ostringstream msg;
       msg << ChemistryException::kChemistryError;
       msg << "Amanzi_PK::XMLParameters(): \n";
-      msg << "  In sublist 'Thermodynamic Database', the parameter 'Format' must be specified.\n";
+      msg << "  In sublist 'Thermodynamic Database', the parameter 'format' must be specified.\n";
       Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));
     }
 
     beaker_parameters_ = chem_->GetDefaultParameters();
 
     // get file name
-    if (tdb_list_.isParameter("File")) {
-      beaker_parameters_.thermo_database_file = tdb_list_.get<std::string>("File");
+    if (tdb_list_.isParameter("file")) {
+      beaker_parameters_.thermo_database_file = tdb_list_.get<std::string>("file");
     } else {
       std::ostringstream msg;
       msg << ChemistryException::kChemistryError;
       msg << "Amanzi_PK::XMLParameters(): \n";
-      msg << "  Input parameter 'File' in 'Thermodynamic Database' sublist must be specified.\n";
+      msg << "  Input parameter 'file' in 'Thermodynamic Database' sublist must be specified.\n";
       Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));         
     }
   } else {
@@ -266,13 +269,13 @@ void Amanzi_PK::XMLParameters()
   beaker_parameters_.activity_model_name = cp_list_->get<std::string>("activity model", "unit");
   // -- Pitzer virial coefficients database
   if (beaker_parameters_.activity_model_name == "pitzer-hwm") {
-    if (cp_list_->isParameter("Pitzer Database File")) {
-      beaker_parameters_.pitzer_database = cp_list_->get<std::string>("Pitzer Database File");
+    if (cp_list_->isParameter("Pitzer database file")) {
+      beaker_parameters_.pitzer_database = cp_list_->get<std::string>("Pitzer database file");
     } else {
       std::ostringstream msg;
       msg << ChemistryException::kChemistryError;
-      msg << "Amanzi_PK::XMLParameters(): \n";
-      msg << "  Input parameter 'Pitzer Database File' must be specified if 'activity model' is 'pitzer-hwm'.\n";
+      msg << "Amanzi_PK::XMLParameters():\n";
+      msg << "  Input parameter 'Pitzer database file' must be specified if 'activity model' is 'pitzer-hwm'.\n";
       Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));
     }
   }

@@ -69,8 +69,8 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     }
 
     Teuchos::ParameterList& bgd_list = out_list.sublist("Thermodynamic Database");
-    bgd_list.set<std::string>("File", bgdfilename);
-    bgd_list.set<std::string>("Format", format);
+    bgd_list.set<std::string>("file", bgdfilename);
+    bgd_list.set<std::string>("format", format);
 
   } else {
     bool valid_engine(true);
@@ -114,6 +114,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   }
 
   // region specific initial conditions
+  std::vector<std::string> sorption_sites;
   Teuchos::ParameterList& ic_list = out_list.sublist("initial conditions");
 
   node_list = doc_->getElementsByTagName(mm.transcode("materials"));
@@ -129,7 +130,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
     // mineral volume fraction and specific surface area.
     if (minerals.size() > 0) {
-      out_list.set<Teuchos::Array<std::string> >("Minerals", minerals);
+      out_list.set<Teuchos::Array<std::string> >("minerals", minerals);
 
       // if (pk_model_["chemistry"] == "amanzi") {
       Teuchos::ParameterList& volfrac = ic_list.sublist("mineral_volume_fractions");
@@ -235,6 +236,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     // surface complexation
     node = GetUniqueElementByTagsString_(inode, "surface_complexation", flag);
     if (flag) {
+      sorption_sites.push_back("siteA");  // no translation rules so far
       Teuchos::ParameterList& complexation = ic_list.sublist("surface_complexation");
 
       double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "density");
@@ -325,6 +327,8 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   out_list.set<std::string>("time step control method", dt_method);
   if (aux_data.size() > 0)
       out_list.set<Teuchos::Array<std::string> >("auxiliary data", aux_data);
+  if (sorption_sites.size() > 0)
+      out_list.set<Teuchos::Array<std::string> >("sorption sites", sorption_sites);
 
   // miscalleneous
   out_list.set<int>("number of component concentrations", comp_names_all_.size());

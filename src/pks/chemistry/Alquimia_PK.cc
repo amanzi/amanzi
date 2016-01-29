@@ -204,7 +204,7 @@ void Alquimia_PK::Initialize()
   int recv = 0;
   mesh_->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) {
-    Errors::Message msg("Error in Alquimia_PK::InitializeChemistry 1");
+    Errors::Message msg("Error in Alquimia_PK::Initialize()");
     Exceptions::amanzi_throw(msg); 
   }
 
@@ -219,6 +219,13 @@ void Alquimia_PK::Initialize()
   chem_initialized_ = true;
   num_iterations_ = 0;
   num_successful_steps_ = 0;
+
+  // verbose message
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << vo_->color("green") << "Initalization of PK was successful, T="
+        << S_->time() << vo_->reset() << std::endl << std::endl;
+  }
 }
 
 
