@@ -136,7 +136,7 @@
       <permeability x="1.0e-12" y="1.0e-12" z="1.0e-12"/>
       <assigned_regions>All</assigned_regions>
 
-      <surface_complexation value="2.75" model="davis_OH" density="0.156199"/>
+      <surface_complexation_site name="davis_OH" density="0.156199"/>
     </material>
   </materials>
 

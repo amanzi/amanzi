@@ -98,19 +98,19 @@ void RelPerm::PlotWRMcurves()
   if (MyPID != 0) return;
 
   int ndata(1000);
-  for (int i = 0; i < wrm_->second.size(); ++i) {
+  for (int n = 0; n < wrm_->second.size(); ++n) {
     std::stringstream fname;
-    fname << "wrm_curves_" << i << ".txt";
+    fname << "wrm_curves_" << n << ".txt";
     std::ofstream ofile;
     ofile.open(fname.str().c_str());
 
-    double sr = wrm_->second[i]->residualSaturation();
+    double sr = wrm_->second[n]->residualSaturation();
     double ds = (1.0 - sr) / ndata;
 
     for (int i = 0; i < ndata; i++) {
       double sat = sr + ds * (i + 0.5);
-      double pc = wrm_->second[i]->capillaryPressure(sat);
-      double krel = wrm_->second[i]->k_relative(pc);
+      double pc = wrm_->second[n]->capillaryPressure(sat);
+      double krel = wrm_->second[n]->k_relative(pc);
       ofile << sat << " " << krel << " " << pc << std::endl;
     }
     ofile << std::endl;

@@ -1,14 +1,13 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-Amanzi
+/*
+  Utils
 
-License:
-Author: Markus Berndt
-        Ethan Coon (ecoon@lanl.gov)
+  License:
+  Authors: Markus Berndt
+           Ethan Coon (ecoon@lanl.gov)
 
-IO event -- base class for reading or writing data.  Mostly just manages when
-to do the I/O.
-------------------------------------------------------------------------- */
+  IO event -- base class for reading or writing data. It mostly manages when
+  to do the I/O.
+*/
 
 #ifndef AMANZI_STATE_IO_EVENT_HH_
 #define AMANZI_STATE_IO_EVENT_HH_
@@ -21,7 +20,6 @@ namespace Amanzi {
 class TimeStepManager;
 
 class IOEvent : public Teuchos::VerboseObject<IOEvent> {
-
  public:
   IOEvent(Teuchos::ParameterList& plist);
   IOEvent(); // created with this constructor this object will not create any output
@@ -50,6 +48,6 @@ class IOEvent : public Teuchos::VerboseObject<IOEvent> {
   bool disabled_;
 };
 
-} // namespace
+} // namespace Amanzi
 
 #endif

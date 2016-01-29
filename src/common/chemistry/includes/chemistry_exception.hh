@@ -5,6 +5,7 @@
 #include <string>
 
 #include "errors.hh"
+
 namespace Amanzi {
 namespace AmanziChemistry {
 
@@ -14,11 +15,11 @@ class ChemistryException : public Errors::Message {
   explicit ChemistryException(std::string error_message);
   virtual ~ChemistryException() throw();
 
+ public:
   static const std::string kChemistryError;
 
  protected:
   static const std::string kDefaultMessage;
- private:
 };
 
 
@@ -29,8 +30,6 @@ class ChemistryInvalidInput : public ChemistryException {
 
  protected:
   ChemistryInvalidInput();
-
- private:
 };
 
 
@@ -41,8 +40,6 @@ class ChemistryUnrecoverableError : public ChemistryException {
 
  protected:
   ChemistryUnrecoverableError();
-
- private:
 };
 
 
@@ -53,8 +50,6 @@ class ChemistryMaxIterationsReached : public ChemistryException {
 
  protected:
   ChemistryMaxIterationsReached();
-
- private:
 };
 
 
@@ -65,9 +60,8 @@ class ChemistryInvalidSolution : public ChemistryException {
 
  protected:
   ChemistryInvalidSolution();
-
- private:
 };
+
 
 class ChemistryMemorySizeError : public ChemistryException {
  public:
@@ -76,8 +70,6 @@ class ChemistryMemorySizeError : public ChemistryException {
 
  protected:
   ChemistryMemorySizeError();
-
- private:
 };
 
 }  // namespace AmanziChemistry

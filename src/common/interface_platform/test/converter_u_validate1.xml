@@ -227,8 +227,8 @@
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="1"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.0"/>
@@ -323,11 +323,14 @@
         <ParameterList name="physical models and assumptions">
           <Parameter name="water content model" type="string" value="constant density"/>
         </ParameterList>
-        <ParameterList name="upwind">
-          <Parameter name="relative permeability" type="string" value="upwind: amanzi"/>
-          <Parameter name="upwind update" type="string" value="every timestep"/>
+        <ParameterList name="relative permeability">
+          <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
+          <Parameter name="upwind frequency" type="string" value="every timestep"/>
           <ParameterList name="upwind parameters">
             <Parameter name="tolerance" type="double" value="1.0e-12"/>
+            <Parameter name="method" type="string" value="cell-based"/>
+            <Parameter name="polynomial order" type="int" value="1"/>
+            <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="VerboseObject">
@@ -399,7 +402,7 @@
               <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="gravity" type="bool" value="true"/>
+              <Parameter name="gravity" type="bool" value="false"/>
               <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
               <Parameter name="exclude primary terms" type="bool" value="false"/>
               <Parameter name="scaled constraint equation" type="bool" value="false"/>
@@ -600,11 +603,14 @@
         <ParameterList name="physical models and assumptions">
           <Parameter name="water content model" type="string" value="constant density"/>
         </ParameterList>
-        <ParameterList name="upwind">
-          <Parameter name="relative permeability" type="string" value="upwind: amanzi"/>
-          <Parameter name="upwind update" type="string" value="every timestep"/>
+        <ParameterList name="relative permeability">
+          <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
+          <Parameter name="upwind frequency" type="string" value="every timestep"/>
           <ParameterList name="upwind parameters">
             <Parameter name="tolerance" type="double" value="1.0e-12"/>
+            <Parameter name="method" type="string" value="cell-based"/>
+            <Parameter name="polynomial order" type="int" value="1"/>
+            <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="water retention models">
@@ -673,7 +679,7 @@
               <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="gravity" type="bool" value="true"/>
+              <Parameter name="gravity" type="bool" value="false"/>
               <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
               <Parameter name="exclude primary terms" type="bool" value="false"/>
               <Parameter name="scaled constraint equation" type="bool" value="false"/>

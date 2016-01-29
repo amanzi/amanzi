@@ -1,817 +1,302 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry PK
 
-#include "Chemistry_PK.hh"
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Base class for chemical process kernels.
+*/
  
-#include <string>
-#include <algorithm>
+// Amanzi
+#include "message.hh"
 
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_SerialDenseVector.h"
-#include "Teuchos_RCPDecl.hpp"
-#include "Teuchos_ParameterList.hpp"
-
-#include "simple_thermo_database.hh"
-#include "beaker.hh"
-#include "chemistry_verbosity.hh"
-#include "chemistry_exception.hh"
-
-#include "Mesh.hh"
-#include "VerboseObject.hh"
-#include "errors.hh"
-#include "exceptions.hh"
-
-#include "boost/mpi.hpp"
+// Chemistry
+#include "Chemistry_PK.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
-/*******************************************************************************
- **
- **  Purpose: Trilinos based process kernel for chemistry
- **
- **  Notes:
- **
- **    - all the actual geochemistry calculations live in the chemistry library. 
- **
- **    - The process kernel stores the instance of the chemistry object
- **    and drives the chemistry calculations on a cell by cell
- **    basis. It handles the movement of data back and forth between
- **    the amanzi memory and the chemistry library data structures.
- **
- **    - chemistry_state will always hold the state at the begining of
- **    the time step. should not (can not?) be changed by chemistry.
- **
- **    - when Advance is called, total_component_concentration_star
- **    holds the value of component concentrations after transport!
- **
- **    - where do we write to when advance state is done? tcc is read
- **    only, do we want to write over the values in tcc_star?
- **
- **    - when CommitState is called, we get a new Chemistry_State
- **    object which will hold the final info for the end of the time
- **    step. We can use it if we want, to update our internal data.
- **
- **    - The State and Chemistry_State objects have
- **    total_component_concentrations in a multi vector. The data is
- **    stored such that:
- **
- **      double* foo = total_component_concetration[i]
- **
- **    where foo refers to a vector of component concentrations for a
- **    single component.
- **
- **
- ******************************************************************************/
+/* ******************************************************************
+* Default constructor that initializes all pointers to NULL
+****************************************************************** */
+Chemistry_PK::Chemistry_PK() :
+    passwd_("state"),
+    number_minerals_(0),
+    number_ion_exchange_sites_(0),
+    number_sorption_sites_(0),
+    using_sorption_(false),
+    using_sorption_isotherms_(false) {};
 
-// global ChemistryOutput object in the Amanzi::AmanziChemisry is deprecated
-// extern ChemistryOutput* chem_out;
-extern VerboseObject* chem_out;
 
-Chemistry_PK::Chemistry_PK(const Teuchos::ParameterList& param_list,
-                           Teuchos::RCP<Chemistry_State> chem_state)
-    : debug_(false),
-      display_free_columns_(false),
-      max_time_step_(9.9e9),
-      chemistry_state_(chem_state),
-      parameter_list_(param_list),
-      chem_(NULL),
-      current_time_(0.0),
-      saved_time_(0.0) {
-
-  // create verbosity object
-  chem_out = new VerboseObject("ChemistryPK", const_cast<Teuchos::ParameterList&>(param_list)); 
-}  // end Chemistry_PK()
-
-Chemistry_PK::~Chemistry_PK() {
-  delete chem_;
-  if (chem_out != NULL) delete chem_out;
-}  // end ~Chemistry_PK()
-
-void Chemistry_PK::InitializeChemistry(void) {
-  if (debug()) {
-    std::cout << "  Chemistry_PK::InitializeChemistry()" << std::endl;
+/* ******************************************************************
+* Register fields and evaluators with the State
+******************************************************************* */
+void Chemistry_PK::Setup()
+{
+  // Require data from flow
+  if (!S_->HasField("porosity")) {
+    S_->RequireField("porosity", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  XMLParameters();
-
-  // TODO: some sort of check of the state object to see if mineral_ssa,
-  // CEC, site density, etc is present.
-
-  // initial conditions for minerals etc should be handled by the
-  // state/chemistry_state object before we reach this point. We just
-  // resize our local memory for migrating data here.
-
-  SizeBeakerStructures();
-
-  // copy the first cell data into the beaker storage for
-  // initialization purposes
-  int cell = 0;
-  CopyCellStateToBeakerStructures(
-      cell, 
-      chemistry_state_->total_component_concentration());
-
-  // std::cout << "number_aqueous_components        = " << number_aqueous_components() << std::endl;
-  // std::cout << "number_free_ion                  = " << number_free_ion() << std::endl;
-  // std::cout << "number_total_sorbed              = " << number_total_sorbed() << std::endl;
-  // std::cout << "number_minerals                  = " << number_minerals() << std::endl;
-  // std::cout << "number_ion_exchange_sites        = " << number_ion_exchange_sites() << std::endl;
-  // std::cout << "number_sorption_sites            = " << number_sorption_sites() << std:: std::endl;
-  // std::cout << "using_sorption                   = " << using_sorption() << std::endl;
-  // std::cout << "using_sorption_isotherms         = " << using_sorption_isotherms() << std::endl;
-
-  // finish setting up & testing the chemistry object
-  int ierr(0);
-  try {
-    chem_->set_debug(false);
-    chem_out->Write(Teuchos::VERB_HIGH, "Initializing chemistry in cell 0...\n");
-    chem_->Setup(beaker_components_, beaker_parameters_);
-    chem_->Display();
-    // solve for initial free-ion concentrations
-    chem_out->Write(Teuchos::VERB_HIGH, "Initial speciation calculations in cell 0...\n");
-    chem_->Speciate(&beaker_components_, beaker_parameters_);
-    if (debug()) {
-      chem_out->Write(Teuchos::VERB_HIGH, "\nTest solution of initial conditions in cell 0:\n");
-      chem_->DisplayResults();
-    }
-  } catch (ChemistryException& geochem_error) {
-    ierr = 1;
-    // chem_->DisplayResults();
-    // std::cout << geochem_error.what() << std::endl;
-    // Exceptions::amanzi_throw(geochem_error);
-  }
-
-  int recv(0);
-  chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
-  if (recv != 0) {
-    ChemistryException geochem_error("Error in Chemistry_PK::InitializeChemistry 0");
-    Exceptions::amanzi_throw(geochem_error);
-  }
-
-  // TODO(bandre): at this point we should know about any additional
-  // storage that chemistry needs...
-  chemistry_state_->AllocateAdditionalChemistryStorage(beaker_components_);
-
-  SetupAuxiliaryOutput();
-
-  // now loop through all the cells and initialize
-  chem_out->Write(Teuchos::VERB_HIGH, "Initializing chemistry in all cells...\n");
-  int num_cells = chemistry_state_->mesh_maps()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  ierr = 0;
-  for (cell = 0; cell < num_cells; ++cell) {
-    if (debug()) {
-      std::cout << "Initial speciation in cell " << cell << std::endl;
-    }
-
-    CopyCellStateToBeakerStructures(
-        cell,
-        chemistry_state_->total_component_concentration());
-
-    try {
-      //chem_->DisplayTotalColumns(static_cast<double>(-cell), beaker_components_, display_free_columns_);
-      // solve for initial free-ion concentrations
-      chem_->Speciate(&beaker_components_, beaker_parameters_);
-
-      CopyBeakerStructuresToCellState(cell);
-      // chemistry_state_->InitFromBeakerStructure(cell, beaker_components_);
-
-    } catch (ChemistryException& geochem_error) {
-      ierr = 1;
-    }
-
-#ifdef GLENN_DEBUG
-    if (cell % (num_cells / 10) == 0) {
-      std::cout << "  " << cell * 100 / num_cells
-                << "%" << std::endl;
-    }
-#endif
-  }
-  recv = 0;
-  // figure out if any of the processes threw an error, if so all processes will re-throw
-  chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
-  if (recv != 0) {
-    ChemistryException geochem_error("Error in Chemistry_PK::InitializeChemistry 1");
-    Exceptions::amanzi_throw(geochem_error); 
-  }  
-
-  chemistry_state_->SetAllFieldsInitialized();
-
-  chem_out->Write(Teuchos::VERB_HIGH, "InitializeChemistry(): initialization was successful.\n");
-}  // end InitializeChemistry()
-
-/*******************************************************************************
- **
- **  initialization helper functions
- **
- ******************************************************************************/
-void Chemistry_PK::XMLParameters(void) {
-  // extract parameters from the xml list and set in the parameters
-  // structure
-  if (parameter_list_.isParameter("Debug Process Kernel")) {
-    set_debug(true);
-  }
-
-  //--------------------------------------------------------------------------
-  //
-  // thermo file name and format, then create the database!
-  //
-  //--------------------------------------------------------------------------
-  if (parameter_list_.isSublist("Thermodynamic Database")) {
-    Teuchos::ParameterList& tdb_list_ = parameter_list_.sublist("Thermodynamic Database");
-    // get format
-    // currently we only support the simple format..
-    if (tdb_list_.isParameter("Format")) {
-      std::string database_format = tdb_list_.get<std::string>("Format");
-      if (database_format == "simple") {
-        chem_ = new SimpleThermoDatabase();
-      } else {
-        // invalid database format...
-        std::ostringstream error_stream;
-        error_stream << ChemistryException::kChemistryError;
-        error_stream << "Chemistry_PK::XMLParameters(): \n";
-        error_stream << "  In sublist 'Thermodynamic Database', the parameter 'Format' must be 'simple'.\n";
-        Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));  
-      }
-    } else {
-      // invalid database format...
-      std::ostringstream error_stream;
-      error_stream << ChemistryException::kChemistryError;
-      error_stream << "Chemistry_PK::XMLParameters(): \n";
-      error_stream << "  In sublist 'Thermodynamic Database', the parameter 'Format' must be specified.\n";
-      Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
-    }
-    beaker_parameters_ = chem_->GetDefaultParameters();
-    // get file name
-    if (tdb_list_.isParameter("File")) {
-      beaker_parameters_.thermo_database_file = tdb_list_.get<std::string>("File");
-    } else {
-      std::ostringstream error_stream;
-      error_stream << ChemistryException::kChemistryError;
-      error_stream << "Chemistry_PK::XMLParameters(): \n";
-      error_stream << "  Input parameter 'File' in 'Thermodynamic Database' sublist must be specified.\n";
-      Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));         
-    }
-  } else {
-    std::ostringstream error_stream;
-    error_stream << ChemistryException::kChemistryError;
-    error_stream << "Chemistry_PK::XMLParameters(): \n";
-    error_stream << "  'Thermodynamic Database' sublist must be specified.\n";
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));    
-  }
-  //---------------------------------------------------------------------------
-  //
-  // activity model
-  //
-  //---------------------------------------------------------------------------
-  beaker_parameters_.activity_model_name =
-      parameter_list_.get<std::string>("activity model", "unit");
-  // Pitzer virial coefficients database
-  if (beaker_parameters_.activity_model_name == "pitzer-hwm") {
-    if (parameter_list_.isParameter("Pitzer Database File")) {
-      beaker_parameters_.pitzer_database =
-          parameter_list_.get<std::string>("Pitzer Database File");
-    } else {
-      std::ostringstream error_stream;
-      error_stream << ChemistryException::kChemistryError;
-      error_stream << "Chemistry_PK::XMLParameters(): \n";
-      error_stream << "  Input parameter 'Pitzer Database File' must be specified if 'activity model' is 'pitzer-hwm'.\n";
-      Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
-      
-    }
-  }
-
-  // --------------------------------------------------------------------------
-  //
-  // solver parameters
-  //
-  // --------------------------------------------------------------------------
-  beaker_parameters_.tolerance =
-      parameter_list_.get<double>("tolerance", 1.0e-12);
-
-  beaker_parameters_.max_iterations =
-      static_cast<unsigned int>(parameter_list_.get<int>("maximum Newton iterations", 200));
-
-  // --------------------------------------------------------------------------
-  //
-  // Auxiliary Data
-  //
-  // --------------------------------------------------------------------------
-  aux_names_.clear();
-  if (parameter_list_.isParameter("auxiliary data")) {
-    Teuchos::Array<std::string> names = parameter_list_.get<Teuchos::Array<std::string> >("auxiliary data");
-    for (Teuchos::Array<std::string>::const_iterator name = names.begin();
-         name != names.end(); ++name) {
-      if (*name == "pH") {
-        aux_names_.push_back(*name);
-      } else {
-        std::stringstream message;
-        message << "XMLParameters(): unknown value in 'auxiliary data' list: " 
-                << *name << std::endl;
-        chem_out->WriteWarning(Teuchos::VERB_LOW, message);
-      }
-    }
-  }
-  // --------------------------------------------------------------------------
-  //
-  // misc other chemistry flags
-  //
-  // --------------------------------------------------------------------------
-  set_max_time_step(parameter_list_.get<double>("max time step (s)", 9.9e9));
-
-}  // end XMLParameters()
-
-
-void Chemistry_PK::SetupAuxiliaryOutput(void) {
-  // requires that Beaker::Setup() has already been called!
-  if (debug()) {
-    std::cout << "  Chemistry_PK::SetupAuxiliaryOutput()" << std::endl;
-  }
-  // TODO(bandre): this indexing scheme will not be appropriate when
-  // additional types of aux data are requested, e.g. mineral SI.....
-  unsigned int nvars = aux_names_.size();
-  std::string name;
-  aux_index_.clear();
-  for (unsigned int i = 0; i < nvars; i++) {
-    if (aux_names_.at(i) == "pH") {
-      name = "H+";
-    } else {
-      name = aux_names_.at(i);
-    }
-    int index = chem_->GetPrimaryIndex(name);
-    if (index == -1) {
-        // check to make sure it is not -1, an invalid name/index
-      std::stringstream message;
-      message << "ChemistryPK::SetupAuxiliaryOutput() : "
-              << "Output was requested for '" << aux_names_.at(i) 
-              << "' (" << name 
-              << ") but no chemistry varibles of this name were found.\n";
-      Exceptions::amanzi_throw(ChemistryInvalidInput(message.str()));
-    } else {
-      aux_index_.push_back(index);
-    }
-  }
-
-  // create the Epetra_MultiVector that will hold the data
-  if (nvars > 0) {
-    aux_data_ =
-        Teuchos::rcp(new Epetra_MultiVector(
-            chemistry_state_->mesh_maps()->cell_map(false), nvars));
-  } else {
-    aux_data_ = Teuchos::null;
-  }
-}  // end SetupAuxiliaryOutput()
-
-
-void Chemistry_PK::SizeBeakerStructures(void) {
-  // initialize the beaker component data structure
-
-  // NOTE: The beaker already has data for site density, sorption
-  // isotherms, ssa. If we want to use that single global value, then
-  // we leave these arrays empty as a flag to the beaker to use its
-  // own value. If we want to over ride the global chemistry value
-  // with cell by cell data, then we resize the containers here.
-
-  beaker_components_.total.resize(number_aqueous_components(), 0.0);
-  beaker_components_.free_ion.resize(number_aqueous_components(), 1.0e-9);
-  beaker_components_.mineral_volume_fraction.resize(number_minerals(), 0.0);
-
-  if (using_sorption()) {
-    beaker_components_.total_sorbed.resize(number_total_sorbed(), 0.0);
-  } else {
-    beaker_components_.total_sorbed.clear();
-  }
-
-  if (number_minerals() > 0) {
-    beaker_components_.mineral_specific_surface_area.resize(number_minerals(), 0.0);
-  } else {
-    beaker_components_.mineral_specific_surface_area.clear();
-  }
-
-  if (number_ion_exchange_sites() > 0) {
-    beaker_components_.ion_exchange_sites.resize(number_ion_exchange_sites(), 0.0);
-  } else {
-    beaker_components_.ion_exchange_sites.clear();
-  }
-
-  if (number_sorption_sites() > 0) {
-    beaker_components_.surface_site_density.resize(number_sorption_sites(), 0.0);
-  } else {
-    beaker_components_.surface_site_density.clear();
-  }
-
-  if (using_sorption_isotherms()) {
-    beaker_components_.isotherm_kd.resize(number_aqueous_components(), 0.0);
-    beaker_components_.isotherm_freundlich_n.resize(number_aqueous_components(), 0.0);
-    beaker_components_.isotherm_langmuir_b.resize(number_aqueous_components(), 0.0);
-  } else {
-    beaker_components_.isotherm_kd.clear();
-    beaker_components_.isotherm_freundlich_n.clear();
-    beaker_components_.isotherm_langmuir_b.clear();
-  }
-}  // end SizeBeakerStructures()
-
-
-void Chemistry_PK::CopyCellStateToBeakerStructures(
-    const int cell_id,
-    Teuchos::RCP<const Epetra_MultiVector> aqueous_components) {
-  // NOTE: want the aqueous totals value calculated from transport
-  // (aqueous_components), not the value stored in state!
-
-  for (unsigned int c = 0; c < number_aqueous_components(); c++) {
-    double* cell_components = (*aqueous_components)[c];
-    beaker_components_.total.at(c) = cell_components[cell_id];
-  }
-
-  for (unsigned int c = 0; c < number_aqueous_components(); c++) {
-    double* cell_free_ion = (*chemistry_state_->free_ion_species())[c];
-    beaker_components_.free_ion.at(c) = cell_free_ion[cell_id];
-  }
-
-  //
-  // activity coefficients
-  //
-  for (unsigned int i = 0; i < beaker_components_.primary_activity_coeff.size(); ++i) {
-    double* cells = (*chemistry_state_->primary_activity_coeff())[i];
-    beaker_components_.primary_activity_coeff.at(i) = cells[cell_id];
-  }
-
-  for (unsigned int i = 0; i < beaker_components_.secondary_activity_coeff.size(); ++i) {
-    double* cells = (*chemistry_state_->secondary_activity_coeff())[i];
-    beaker_components_.secondary_activity_coeff.at(i) = cells[cell_id];
-  }
-
-  //
-  // minerals
-  //
-  for (unsigned int m = 0; m < number_minerals(); m++) {
-    double* cell_minerals = (*chemistry_state_->mineral_volume_fractions())[m];
-    beaker_components_.mineral_volume_fraction[m] = cell_minerals[cell_id];
-    if (chemistry_state_->mineral_specific_surface_area() != Teuchos::null) {
-      double* cells_ssa = (*chemistry_state_->mineral_specific_surface_area())[m];
-      beaker_components_.mineral_specific_surface_area.at(m) = cells_ssa[cell_id];
-    }
-  }
-
-  //
-  // general sorption storage
-  //
-  if (using_sorption()) {
-    for (unsigned int c = 0; c < number_aqueous_components(); c++) {
-      double* cell_total_sorbed = (*chemistry_state_->total_sorbed())[c];
-      beaker_components_.total_sorbed.at(c) = cell_total_sorbed[cell_id];
-    }
-  }  // end if(using_sorption)
-
-  //
-  // ion exchange
-  //
-  if (number_ion_exchange_sites() > 0) {
-    // TODO: only allow one ion exchange site at the moment!
-    for (unsigned int i = 0; i < number_ion_exchange_sites(); i++) {
-      double* cell_ion_exchange_sites = (*chemistry_state_->ion_exchange_sites())[i];
-      beaker_components_.ion_exchange_sites[i] = cell_ion_exchange_sites[cell_id];
-      // TODO(bandre): need to save ion exchange ref cation conc here!
-    }
+  if (!S_->HasField("saturation_liquid")) {
+    S_->RequireField("saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
   
-  for (unsigned int i = 0; i < beaker_components_.ion_exchange_ref_cation_conc.size(); ++i) {
-    double* cells = (*chemistry_state_->ion_exchange_ref_cation_conc())[i];
-    beaker_components_.ion_exchange_ref_cation_conc.at(i) = cells[cell_id];
+  if (!S_->HasField("fluid_density")) {
+    S_->RequireScalar("fluid_density", passwd_);
   }
 
-  //
-  // surface complexation
-  //
-  if (number_sorption_sites() > 0) {
-    for (int s = 0; s < number_sorption_sites(); ++s) {
-      double* cell_sorption_sites = 
-          (*chemistry_state_->sorption_sites())[s];
-      beaker_components_.surface_site_density[s] = cell_sorption_sites[cell_id];
-      // TODO(bandre): need to save surface complexation free site conc here!
+  // require transport fields
+  std::vector<std::string>::const_iterator it;
+  if (!S_->HasField("total_component_concentration")) {    
+    // set the names for vis
+    std::vector<std::vector<std::string> > conc_names_cv(1);
+    for (it = comp_names_.begin(); it != comp_names_.end(); ++it) {
+      conc_names_cv[0].push_back(*it + std::string(" conc"));
+    }
+    S_->RequireField("total_component_concentration", passwd_, conc_names_cv)
+      ->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
+  }
+
+  // require minerals
+  if (number_minerals_ > 0) {
+    // -- set the names for vis
+    std::vector<std::vector<std::string> > vf_names_cv(1);
+    std::vector<std::vector<std::string> > ssa_names_cv(1);
+
+    for (it = mineral_names_.begin(); it != mineral_names_.end(); ++it) {
+      vf_names_cv[0].push_back(*it + std::string(" vol frac"));
+      ssa_names_cv[0].push_back(*it + std::string(" spec surf area"));
+    }
+
+    // -- register two fields
+    S_->RequireField("mineral_volume_fractions", passwd_, vf_names_cv)
+      ->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, number_minerals_);
+
+    S_->RequireField("mineral_specific_surface_area", passwd_, ssa_names_cv)
+      ->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, number_minerals_);
+  }
+
+  // require sorption sites
+  if (number_sorption_sites_ > 0) {
+    // -- set the names for vis
+    std::vector<std::vector<std::string> > ss_names_cv(1);
+    std::vector<std::vector<std::string> > scfsc_names_cv(1);
+    for (it = sorption_site_names_.begin(); it != sorption_site_names_.end(); ++it) {
+      ss_names_cv[0].push_back(*it + std::string(" sorption site"));
+      scfsc_names_cv[0].push_back(*it + std::string(" surface complex free site conc"));
+    }
+
+    // -- register two fields
+    S_->RequireField("sorption_sites", passwd_, ss_names_cv)
+      ->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, number_sorption_sites_);
+    S_->RequireField("surface_complex_free_site_conc", passwd_, scfsc_names_cv)
+      ->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, number_sorption_sites_);
+  }
+
+  if (using_sorption_) {
+    S_->RequireField("total_sorbed", passwd_)
+      ->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
+
+    if (using_sorption_isotherms_) {
+      S_->RequireField("isotherm_kd", passwd_)
+        ->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
+
+      S_->RequireField("isotherm_freundlich_n", passwd_)
+        ->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
+
+      S_->RequireField("isotherm_langmuir_b", passwd_)
+        ->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
     }
   }
 
-  for (unsigned int i = 0; i < beaker_components_.surface_complex_free_site_conc.size(); ++i) {
-    double* cells = (*chemistry_state_->surface_complex_free_site_conc())[i];
-    beaker_components_.surface_complex_free_site_conc.at(i) = cells[cell_id];
-  }
-
-  //
-  // sorption isotherms
-  //
-  if (using_sorption_isotherms()) {
-    for (unsigned int i = 0; i < number_aqueous_components(); ++i) {
-      double* cell_data = (*chemistry_state_->isotherm_kd())[i];
-      beaker_components_.isotherm_kd.at(i) = cell_data[cell_id];
-      
-      cell_data = (*chemistry_state_->isotherm_freundlich_n())[i];
-      beaker_components_.isotherm_freundlich_n.at(i) = cell_data[cell_id];
-      
-      cell_data = (*chemistry_state_->isotherm_langmuir_b())[i];
-      beaker_components_.isotherm_langmuir_b.at(i) = cell_data[cell_id];
+  // ion
+  if (number_aqueous_components_ > 0) {
+    std::vector<std::vector<std::string> > species_names_cv(1);
+    for (it = comp_names_.begin(); it != comp_names_.end(); ++it) {
+      species_names_cv[0].push_back(*it);
     }
+
+    S_->RequireField("free_ion_species", passwd_, species_names_cv)
+      ->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
+
+    S_->RequireField("primary_activity_coeff", passwd_, species_names_cv)
+      ->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
   }
 
-  // copy data from state arrays into the beaker parameters
-  beaker_parameters_.water_density = (*chemistry_state_->water_density())[cell_id];
-  beaker_parameters_.porosity = (*chemistry_state_->porosity())[cell_id];
-  beaker_parameters_.saturation = (*chemistry_state_->water_saturation())[cell_id];
-  beaker_parameters_.volume = (*chemistry_state_->volume())[cell_id];
+  if (number_ion_exchange_sites_ > 0) {
+    S_->RequireField("ion_exchange_sites", passwd_)
+      ->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, number_ion_exchange_sites_);
 
-}  // end CopyCellStateToBeakerStructures()
-
-
-void Chemistry_PK::CopyBeakerStructuresToCellState(const int cell_id) {
-  // copy data from the beaker back into the state arrays
-
-  for (unsigned int c = 0; c < number_aqueous_components(); c++) {
-    double* cell_components = (*chemistry_state_->total_component_concentration())[c];
-    cell_components[cell_id] = beaker_components_.total.at(c);
+    S_->RequireField("ion_exchange_ref_cation_conc", passwd_)
+      ->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, number_ion_exchange_sites_);
   }
-
-  for (unsigned int c = 0; c < number_aqueous_components(); c++) {
-    double* cell_free_ion = (*chemistry_state_->free_ion_species())[c];
-    cell_free_ion[cell_id] = beaker_components_.free_ion.at(c);
-  }
-
-  //
-  // activity coefficients
-  //
-  for (unsigned int i = 0; i < beaker_components_.primary_activity_coeff.size(); ++i) {
-      double* cells = (*chemistry_state_->primary_activity_coeff())[i];
-      cells[cell_id] = beaker_components_.primary_activity_coeff.at(i);
-  }
-  for (unsigned int i = 0; i < beaker_components_.secondary_activity_coeff.size(); ++i) {
-    double* cells = (*chemistry_state_->secondary_activity_coeff())[i];
-    cells[cell_id] =  beaker_components_.secondary_activity_coeff.at(i);
-  }
-
-  //
-  // minerals
-  //
-  for (unsigned int m = 0; m < number_minerals(); m++) {
-    double* cell_minerals = (*chemistry_state_->mineral_volume_fractions())[m];
-    cell_minerals[cell_id] = beaker_components_.mineral_volume_fraction.at(m);
-    if (chemistry_state_->mineral_specific_surface_area() != Teuchos::null) {
-      cell_minerals = (*chemistry_state_->mineral_specific_surface_area())[m];
-      cell_minerals[cell_id] = beaker_components_.mineral_specific_surface_area.at(m);
-    }
-  }
-
-  //
-  // sorption
-  //
-  if (using_sorption()) {
-    for (unsigned int c = 0; c < number_aqueous_components(); c++) {
-      double* cell_total_sorbed = (*chemistry_state_->total_sorbed())[c];
-      cell_total_sorbed[cell_id] = beaker_components_.total_sorbed.at(c);
-    }
-  }
-
-  //
-  // surface complexation
-  //
-  for (unsigned int i = 0; i < number_sorption_sites(); i++) {
-    double* cell_sorption_sites = (*chemistry_state_->sorption_sites())[i];
-    cell_sorption_sites[cell_id] = beaker_components_.surface_site_density.at(i);
-    // TODO(bandre): need to save surface complexation free site conc here!
-  }
-
-  for (unsigned int i = 0; i < beaker_components_.surface_complex_free_site_conc.size(); ++i) {
-    double* cells = (*chemistry_state_->surface_complex_free_site_conc())[i];
-    cells[cell_id] = beaker_components_.surface_complex_free_site_conc.at(i);
-  }
-
-  //
-  // ion exchange
-  //
-  for (unsigned int i = 0; i < number_ion_exchange_sites(); i++) {
-    double* cell_ion_exchange_sites = (*chemistry_state_->ion_exchange_sites())[i];
-    cell_ion_exchange_sites[cell_id] = beaker_components_.ion_exchange_sites.at(i);
-    // TODO(bandre): need to save ion exchange ref cation conc here!
-  }
-
-  for (unsigned int i = 0; i < beaker_components_.ion_exchange_ref_cation_conc.size(); ++i) {
-    double* cells = (*chemistry_state_->ion_exchange_ref_cation_conc())[i];
-    cells[cell_id] = beaker_components_.ion_exchange_ref_cation_conc.at(i);
-  }
-
-  //
-  // sorption isotherms
-  //
-  if (using_sorption_isotherms()) {
-    for (unsigned int i = 0; i < number_aqueous_components(); ++i) {
-      double* cell_data = (*chemistry_state_->isotherm_kd())[i];
-      cell_data[cell_id] = beaker_components_.isotherm_kd.at(i);
-
-      cell_data = (*chemistry_state_->isotherm_freundlich_n())[i];
-      cell_data[cell_id] = beaker_components_.isotherm_freundlich_n.at(i);
-
-      cell_data = (*chemistry_state_->isotherm_langmuir_b())[i];
-      cell_data[cell_id] = beaker_components_.isotherm_langmuir_b.at(i);
-    }
-  }
-
-  // TODO(bandre): if chemistry can modify the porosity or density,
-  // then they should be updated here!
-
-}  // end CopyBeakerStructureToCellState()
-
-
-
-
-
-/*******************************************************************************
- **
- **  MPC interface functions
- **
- ******************************************************************************/
-Teuchos::RCP<Epetra_MultiVector> Chemistry_PK::get_total_component_concentration(void) const {
-  return chemistry_state_->total_component_concentration();
-}  // end get_total_component_concentration()
-
-
-/*******************************************************************************
- **
- ** Chemistry_PK::Advance()
- **
- ** Notes:
- **
- **   - the MPC will call this function to advance the state with this
- ** particular process kernel
- **
- **   - this is how to get the total component concentration
- ** CS->get_total_component_concentration()
- **
- **   - please update the argument to this function called tcc_star
- ** with the result of your chemistry computation which is the total
- ** component concentration ^star
- **
- **   - see the Chemistry_State for the other available data in the
- ** chemistry specific state
- **
- *******************************************************************************/
-
-void Chemistry_PK::Advance(
-    const double& delta_time,
-    Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star) {
-  std::stringstream msg;
-  msg << "advancing, time step [sec] = " << delta_time << std::endl;
-  chem_out->Write(Teuchos::VERB_LOW, msg);
-
-  current_time_ = saved_time_ + delta_time;
-
-  // shorter name for the state that came out of transport
-  Teuchos::RCP<const Epetra_MultiVector> tcc_star =
-      total_component_concentration_star;
-
-
-  // TODO(bandre): use size of the porosity vector as indicator of size for
-  // now... should get data from the mesh...?
-  int num_cells = chemistry_state_->mesh_maps()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
-  int max_iterations = 0;
-  int imax = -999;
-  int ave_iterations = 0;
-  int imin = -999;
-  int min_iterations = 10000000;
-
-  int ierr(0);
-  for (int cell = 0; cell < num_cells; cell++) {
-    // copy state data into the beaker data structures
-    CopyCellStateToBeakerStructures(cell, tcc_star);
-    try {
-      // create a backup copy of the components
-      chem_->CopyComponents(beaker_components_, &beaker_components_copy_);
-      // chemistry computations for this cell
-      int num_iterations = chem_->ReactionStep(&beaker_components_,
-                                               beaker_parameters_, delta_time);
-      //std::stringstream message;
-      //message << "--- " << cell << "\n";
-      //beaker_components_.Display(message.str().c_str());
-      if (max_iterations < num_iterations) {
-        max_iterations = num_iterations;
-        imax = cell;
-      }
-      if (min_iterations > num_iterations) {
-        min_iterations = num_iterations;
-        imin = cell;
-      }
-      ave_iterations += num_iterations;
-    } catch (ChemistryException& geochem_error) {
-      ierr = 1;
-
-      // std::cout << "ERROR: Chemistry_PK::Advance() "
-      //           << "cell[" << cell << "]: " << std::endl;
-      // std::cout << geochem_error.what();
-      // std::vector<std::string> names;
-      // chem_->GetPrimaryNames(&names);
-      // beaker_components_copy_.DumpCfg(names);
-      // beaker_components_copy_.Display("--- input ");
-      // chem_->DisplayTotalColumnHeaders(display_free_columns_);
-      // std::cout << "\nFailed Solution" << std::endl;
-      // std::cout << "  Total Component Concentrations" << std::endl;
-      // chem_->DisplayTotalColumns(current_time_, beaker_components_, display_free_columns_);
-      // std::cout << "\nPrevious Solution" << std::endl;
-      // std::cout << "  Total Component Concentrations" << std::endl;
-      // chem_->DisplayTotalColumns(current_time_, beaker_components_copy_, display_free_columns_);
-      // std::cout << std::endl;
-      // Exceptions::amanzi_throw(geochem_error);
-    }
-    // update this cell's data in the arrays
-    if (ierr == 0) CopyBeakerStructuresToCellState(cell);
-
-    // TODO(bandre): was porosity etc changed? copy someplace
-
-#ifdef GLENN_DEBUG
-    if (cell % (num_cells / 10) == 0) {
-      std::cout << "  " << cell * 100 / num_cells
-                << "%" << std::endl;
-    }
-#endif
-  }  // for(cells)
-  int recv(0);
-  chemistry_state_->mesh_maps()->get_comm()->MaxAll(&ierr, &recv, 1);
-  if (recv != 0) {
-    ChemistryException geochem_error("Error in Chemistry_PK::Advance");
-    Exceptions::amanzi_throw(geochem_error); 
-  }  
-  
-
-
-#ifdef GLENN_DEBUG
-  if (debug() == kDebugChemistryProcessKernel) {
-    std::stringstream message;
-    message << "  Chemistry_PK::Advance() : "
-            << "max iterations - " << max_iterations << " " << "  cell id: " << imax << std::endl;
-    message << "  Chemistry_PK::Advance() : "
-            << "min iterations - " << min_iterations << " " << "  cell id: " << imin << std::endl;
-    message << "  Chemistry_PK::Advance() : "
-            << "ave iterations - " << static_cast<float>(ave_iterations) / num_cells << std::endl;
-  }
-#endif
-
-  if (debug() == kDebugChemistryProcessKernel) {
-    // dumping the values of the final cell. not very helpful by itself,
-    // but can be move up into the loops....
-    chem_->DisplayTotalColumnHeaders(display_free_columns_);
-    chem_->DisplayTotalColumns(current_time_, beaker_components_, true);
-  }
-}  // end Advance()
-
-
-// the MPC will call this function to signal to the
-// process kernel that it has accepted the
-// state update, thus, the PK should update
-// possible auxilary state variables here
-void Chemistry_PK::CommitState(Teuchos::RCP<Chemistry_State> chem_state,
-                                const double& time) {
-  chem_out->Write(Teuchos::VERB_EXTREME, "Committing internal state.\n");
-
-  saved_time_ = time;
-
-  if (debug() && false) {
-    chem_->Speciate(&beaker_components_, beaker_parameters_);
-    chem_->DisplayResults();
-    chem_->DisplayTotalColumnHeaders(display_free_columns_);
-    chem_->DisplayTotalColumns(saved_time_, beaker_components_, true);
-  }
-}  // end CommitState()
-
-
-
-Teuchos::RCP<Epetra_MultiVector> Chemistry_PK::get_extra_chemistry_output_data() {
-  if (aux_data_ != Teuchos::null) {
-    int num_cells = chemistry_state_->mesh_maps()->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    for (int cell = 0; cell < num_cells; cell++) {
-      // populate aux_data_ by copying from the appropriate internal storage
-      for (unsigned int i = 0; i < aux_names_.size(); i++) {
-        if (aux_names_.at(i) == "pH") {
-          double* cell_aux_data = (*aux_data_)[i];
-          double* cell_free_ion = (*chemistry_state_->free_ion_species())[aux_index_.at(i)];
-          double* activity_coeff = (*chemistry_state_->primary_activity_coeff())[aux_index_.at(i)];
-          double activity = cell_free_ion[cell] * activity_coeff[cell];
-          cell_aux_data[cell] = -std::log10(activity);
-        } else {
-          // don't support anything else at this time....
-        }
-      }  // for(aux_names)
-    }  // for(cells)
-
-    // return the multi vector
-  }
-  return aux_data_;
 }
 
 
-void Chemistry_PK::set_chemistry_output_names(std::vector<std::string>* names) {
-  names->clear();
-  for (std::vector<std::string>::const_iterator name = aux_names_.begin();
-       name != aux_names_.end(); name++) {
-    names->push_back(*name);
+/* ******************************************************************
+* Most things are initialized through State, but State can only manage that
+* if they are always initialized.  If sane defaults are available, or they
+* can be derived from other initialized quantities, they are initialized
+* here, where we can manage that logic.
+******************************************************************* */
+void Chemistry_PK::Initialize()
+{
+  // Aqueous species 
+  if (number_aqueous_components_ > 0) {
+    if (!S_->GetField("total_component_concentration", passwd_)->initialized()) {
+      InitializeField_("total_component_concentration", 0.0);
+    }
+    InitializeField_("free_ion_species", 0.0);
+    InitializeField_("primary_activity_coeff", 1.0);
+
+    // Sorption sites: all will have a site density, but we can default to zero
+    if (using_sorption_) {
+      InitializeField_("total_sorbed", 0.0);
+    }
+
+    // Sorption isotherms: Kd required, Langmuir and Freundlich optional
+    if (using_sorption_isotherms_) {
+      InitializeField_("isotherm_kd", -1.0);
+      InitializeField_("isotherm_freundlich_n", 1.0);
+      InitializeField_("isotherm_langmuir_b", 1.0);
+    }
   }
-}  // end set_chemistry_output_names()
+
+  // Minerals: vol frac and surface areas
+  if (number_minerals_ > 0) {
+    InitializeField_("mineral_volume_fractions", 0.0);
+    InitializeField_("mineral_specific_surface_area", 1.0);
+  }
+
+  // Ion exchange sites: default to 1
+  if (number_ion_exchange_sites_ > 0) {
+    InitializeField_("ion_exchange_sites", 1.0);
+    InitializeField_("ion_exchange_ref_cation_conc", 1.0);
+  }
+
+  if (number_sorption_sites_ > 0) {
+    InitializeField_("sorption_sites", 1.0);
+    InitializeField_("surface_complex_free_site_conc", 1.0);
+  }
+}
+
+
+/* ******************************************************************
+* Process names of materials 
+******************************************************************* */
+void Chemistry_PK::InitializeField_(std::string fieldname, double default_val)
+{
+  Teuchos::OSTab tab = vo_->getOSTab();
+
+  if (S_->HasField(fieldname)) {
+    if (!S_->GetField(fieldname)->initialized()) {
+      S_->GetFieldData(fieldname, passwd_)->PutScalar(default_val);
+      S_->GetField(fieldname, passwd_)->set_initialized();
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+         *vo_->os() << "initilized " << fieldname << " to value " << default_val << std::endl;  
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Process names of materials 
+******************************************************************* */
+void Chemistry_PK::InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist)
+{
+  mineral_names_.clear();
+  if (plist->isParameter("minerals")) {
+    mineral_names_ = plist->get<Teuchos::Array<std::string> >("minerals").toVector();
+  }
+
+  number_minerals_ = mineral_names_.size();
+}
+
+
+/* ******************************************************************
+* Process names of sorption sites
+* NOTE: Do we need to worry about sorption sites?
+******************************************************************* */
+void Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
+                                           Teuchos::RCP<Teuchos::ParameterList> state_list)
+{
+  sorption_site_names_.clear();
+  if (plist->isParameter("sorption sites")) {
+    sorption_site_names_ = plist->get<Teuchos::Array<std::string> >("sorption sites").toVector();
+  } 
+  
+  number_sorption_sites_ = sorption_site_names_.size();
+  using_sorption_ = (number_sorption_sites_ > 0);
+
+  // check if there is an initial condition for ion_exchange_sites
+  number_ion_exchange_sites_ = 0;
+  using_sorption_isotherms_ = false;
+
+  if (state_list->sublist("initial conditions").isSublist("ion_exchange_sites")) {
+    // there is currently only at most one site...
+    using_sorption_ = true;
+    number_ion_exchange_sites_ = 1;
+  }
+
+  if (state_list->sublist("initial conditions").isSublist("isotherm_kd")) {
+    using_sorption_ = true;
+    using_sorption_isotherms_ = true;
+  }
+
+  if (state_list->sublist("initial conditions").isSublist("sorption_sites")) {
+    using_sorption_ = true;
+  }
+
+  // in the old version, this was only in the Block sublist... may need work?
+  if (plist->isParameter("Cation Exchange Capacity")) {
+    using_sorption_ = true;
+    number_ion_exchange_sites_ = 1;
+  }
+} 
+
+
+/* *******************************************************************
+* I/O or error messages
+******************************************************************* */
+void Chemistry_PK::ErrorAnalysis(int ierr, std::string& internal_msg)
+{
+  int tmp_out[2], tmp_in[2] = {ierr, internal_msg.size()};
+  mesh_->get_comm()->MaxAll(tmp_in, tmp_out, 2);
+
+  if (tmp_out[0] != 0) {
+    // get at least one error message
+    int n = tmp_out[1];
+    int msg_out[n + 1], msg_in[n + 1], m(mesh_->get_comm()->MyPID());
+    internal_msg.resize(n);
+
+    Errors::encode_string(internal_msg, n, m, msg_in);
+    mesh_->get_comm()->MaxAll(msg_in, msg_out, n + 1);
+    Errors::decode_string(msg_out, n, internal_msg);
+
+    vo_->Write(Teuchos::VERB_HIGH, internal_msg);
+
+    Errors::Message msg(internal_msg);
+    Exceptions::amanzi_throw(msg); 
+  }  
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

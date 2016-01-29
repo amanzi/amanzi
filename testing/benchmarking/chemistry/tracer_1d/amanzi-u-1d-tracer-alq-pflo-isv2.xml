@@ -180,7 +180,7 @@
 
   <output>
     <vis>
-      <base_filename>traceri_pflotran</base_filename>
+      <base_filename>tracer</base_filename>
         <num_digits>5</num_digits>
         <time_macros>every_year</time_macros>
     </vis>

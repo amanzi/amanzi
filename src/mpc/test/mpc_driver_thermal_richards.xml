@@ -184,8 +184,8 @@
             <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="2"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.9976e-12"/>
@@ -202,8 +202,8 @@
             <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="2"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="6.9365e-11"/>
@@ -220,8 +220,8 @@
             <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="2"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.0706e-09"/>
@@ -257,8 +257,8 @@
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="1"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.0e+00"/>
@@ -442,7 +442,7 @@
             </ParameterList>
           </ParameterList>
           <ParameterList name="advection operator">
-            <Parameter name="discretization primary" type="string" value="upwind"/>
+            <Parameter name="discretization primary" type="string" value="relative permeability"/>
             <Parameter name="reconstruction order" type="int" value="0"/>
           </ParameterList>
         </ParameterList>
@@ -506,9 +506,9 @@
 
     <ParameterList name="Flow">
       <ParameterList name="Richards problem">
-        <ParameterList name="upwind">
-          <Parameter name="relative permeability" type="string" value="upwind: amanzi"/>
-          <Parameter name="upwind update" type="string" value="every timestep"/>
+        <ParameterList name="relative permeability">
+          <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
+          <Parameter name="upwind frequency" type="string" value="every timestep"/>
           <ParameterList name="upwind parameters">
             <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
           </ParameterList>

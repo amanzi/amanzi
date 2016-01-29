@@ -70,10 +70,12 @@ class Mesh
   {
   }
 
-  // destructor - must be virtual to downcast base class to derived class
-  // (I don't understand why but the stackoverflow prophets say so)
-
+  // virtual destructor
   virtual ~Mesh() {}
+
+  // reference for vis.  Usually this is *this, but not necessarily in derived meshes
+  virtual
+  const Mesh& vis_mesh() const { return *this; }
 
   inline
   const VerboseObject *verbosity_obj() const {

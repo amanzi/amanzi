@@ -10,6 +10,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_SerialComm.h"
 #include "XMLParameterListWriter.hh"
 
@@ -17,8 +18,7 @@
 #include "GenerationSpec.hh"
 #include "State.hh"
 
-#include "Chemistry_PK.hh"
-#include "Chemistry_State.hh"
+#include "Amanzi_PK.hh"
 #include "species.hh"
 #include "chemistry_exception.hh"
 
@@ -50,15 +50,15 @@ SUITE(GeochemistryTestsChemistryPK) {
     void RunTest(const std::string name, double* gamma);
 
    protected:
-    ac::Chemistry_PK* cpk_;
-    Teuchos::ParameterList chemistry_parameter_list_;
-    Teuchos::RCP<ac::Chemistry_State> chemistry_state_;
+    ac::Amanzi_PK* cpk_;
+    Teuchos::ParameterList pk_tree_;
+    Teuchos::RCP<Teuchos::ParameterList> glist_;
+    Teuchos::RCP<Amanzi::State> state_;
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
 
    private:
     Epetra_SerialComm* comm_;
     ag::GeometricModelPtr gm_;
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
-    Teuchos::RCP<Amanzi::State> state_;
   };  // end class SpeciationTest
 
   ChemistryPKTest::ChemistryPKTest() {
@@ -66,38 +66,18 @@ SUITE(GeochemistryTestsChemistryPK) {
     // mesh/state related code....
     
     // get the parameter list from the input file.
-    std::string xml_input_filename("test_chemistry_pk_native.xml");
-    
-    Teuchos::ParameterXMLFileReader xmlreader(xml_input_filename);
-    Teuchos::ParameterList input_spec(xmlreader.getParameters());
-
-    // Chemistry uses the official input spec, not the unstructured
-    // native, but we need to translate for state.
-    Teuchos::ParameterList parameter_list;
-    // parameter_list = Amanzi::AmanziInput::translate(&input_spec, 1);
-    parameter_list = input_spec;
-
-
-    // Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
-    // Teuchos::XMLObject XMLobj = XMLWriter.toXML(parameter_list);
-    
-    // std::ofstream xmlfile;
-    // xmlfile.open("test_chemistry_pk_native.xml");
-    // xmlfile << XMLobj;
-
-      //std::cout << input_spec << std::endl;
-    //std::cout << parameter_list << std::endl;
+    std::string xml_input_filename("test/chemistry_amanzi_pk.xml");
+    glist_ = Teuchos::getParametersFromXmlFile(xml_input_filename);
 
     // create a test mesh
     comm_ = new Epetra_SerialComm();
     Teuchos::ParameterList mesh_parameter_list =
-      parameter_list.sublist("Mesh").sublist("Unstructured").sublist("Generate Mesh");
+      glist_->sublist("Mesh").sublist("Unstructured").sublist("Generate Mesh");
 
     am::GenerationSpec g(mesh_parameter_list);
     
-    Teuchos::ParameterList region_parameter_list = parameter_list.sublist("Regions");
-    gm_ = 
-        new ag::GeometricModel(3, region_parameter_list, (const Epetra_MpiComm *)comm_);
+    Teuchos::ParameterList region_parameter_list = glist_->sublist("Regions");
+    gm_ = new ag::GeometricModel(3, region_parameter_list, (const Epetra_MpiComm *)comm_);
   
     am::FrameworkPreference pref;
     pref.clear();
@@ -109,27 +89,22 @@ SUITE(GeochemistryTestsChemistryPK) {
     mesh_ = meshfactory(mesh_parameter_list, gm_);
 
     // get the state parameter list and create the state object
-    Teuchos::ParameterList state_parameter_list = parameter_list.sublist("state");
+    Teuchos::ParameterList state_parameter_list = glist_->sublist("State");
 
     state_ = Teuchos::rcp(new Amanzi::State(state_parameter_list));
     state_->RegisterDomainMesh(mesh_);
 
-    // create the chemistry parameter list
-    chemistry_parameter_list_ = parameter_list.sublist("Chemistry");
-
     // create the chemistry state object
+    Teuchos::ParameterList chemistry_parameter_list = glist_->sublist("PKs").sublist("Chemistry");
     std::vector<std::string> component_names;
     component_names.push_back("Al+++");
     component_names.push_back("H+");
     component_names.push_back("HP04--");
     component_names.push_back("SiO2(aq)");
     component_names.push_back("UO2++");
-    chemistry_state_ = Teuchos::rcp(new ac::Chemistry_State(chemistry_parameter_list_, component_names, state_));
-    chemistry_state_->Setup();
 
-    state_->Setup();
-    state_->InitializeFields();
-    chemistry_state_->Initialize();
+    // other input parameters in the constructor
+    pk_tree_ = glist_->sublist("PK Tree");
   }
 
   ChemistryPKTest::~ChemistryPKTest() {
@@ -150,22 +125,23 @@ SUITE(GeochemistryTestsChemistryPK) {
     // just make sure that we can have all the pieces together to set
     // up a chemistry process kernel....
     try {
-      cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
+      cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
     } catch (ac::ChemistryException chem_error) {
       std::cout << chem_error.what() << std::endl;
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
     }
-    // debug flag should be set after the constructor is finished....
-    CHECK_EQUAL(false, cpk_->debug());
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_initialize) {
     // make sure that we can initialize the pk and internal chemistry
     // object correctly based on the xml input....
     try {
-      cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
-      cpk_->InitializeChemistry();
+      cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
+      cpk_->Setup();
+      state_->Setup();
+      state_->InitializeFields();
+      cpk_->Initialize();
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
       throw e;
@@ -176,8 +152,11 @@ SUITE(GeochemistryTestsChemistryPK) {
 
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_get_chem_output_names) {
     try {
-      cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
-      cpk_->InitializeChemistry();
+      cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
+      cpk_->Setup();
+      state_->Setup();
+      state_->InitializeFields();
+      cpk_->Initialize();
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
       throw e;

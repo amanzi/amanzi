@@ -196,7 +196,7 @@ if __name__ == "__main__":
 
 # Amanzi-Alquimia-PFloTran --->
     try:  
-        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
+        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-isv2.xml")
         path_to_amanzi = "amanzi-alquimia-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+"-trim.in",root+".dat"], path_to_amanzi)
 

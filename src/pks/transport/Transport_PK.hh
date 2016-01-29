@@ -33,7 +33,7 @@
 #include "FnExTimeIntegratorPK.hh"
 
 #ifdef ALQUIMIA_ENABLED
-#include "Chemistry_State.hh"
+#include "Alquimia_PK.hh"
 #include "ChemistryEngine.hh"
 #endif
 
@@ -93,7 +93,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   // coupling with chemistry
 #ifdef ALQUIMIA_ENABLED
-  void SetupAlquimia(Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
+  void SetupAlquimia(Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
                      Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
 #endif
 
@@ -210,7 +210,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi;
   
 #ifdef ALQUIMIA_ENABLED
-  Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state_;
+  Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk_;
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
 #endif
 

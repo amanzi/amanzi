@@ -62,7 +62,7 @@ VWContentEvaluator::VWContentEvaluator(const VWContentEvaluator& other) :
 
 Teuchos::RCP<FieldEvaluator> VWContentEvaluator::Clone() const {
   return Teuchos::rcp(new VWContentEvaluator(*this));
-};
+}
 
 
 /* ******************************************************************

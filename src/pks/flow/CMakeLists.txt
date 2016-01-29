@@ -177,7 +177,7 @@ set(flow_inc_files
 add_install_include_file(${flow_inc_files})
 
 if (BUILD_TESTS) 
-    # Add UnitTest include directoy
+    # Add UnitTest include directory
     include_directories(${UnitTest_INCLUDE_DIRS})
     include_directories(${MESH_FACTORY_SOURCE_DIR})
 
@@ -307,7 +307,3 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 
-option(ENABLE_FLOW_EXAMPLES "Build flow examples" OFF)
-if (ENABLE_FLOW_EXAMPLES)
-   add_subdirectory(examples)
-endif()

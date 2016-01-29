@@ -39,16 +39,31 @@ class UpwindSecondOrder : public Upwind<Model> {
   ~UpwindSecondOrder() {};
 
   // main methods
+  // -- initialization of control parameters
   void Init(Teuchos::ParameterList& plist);
 
+  // -- upwind of a given cell-centered field on mesh faces
+  // -- not all input parameters are use by some algorithms
   void Compute(const CompositeVector& flux, const CompositeVector& solution,
                const std::vector<int>& bc_model, const std::vector<double>& bc_value,
                const CompositeVector& field, CompositeVector& field_upwind,
                double (Model::*Value)(int, double) const);
 
+  // -- returns combined map for the original and upwinded fields.
+  // -- Currently, composite vector cannot be extended on a fly. 
+  Teuchos::RCP<CompositeVectorSpace> Map() {
+    Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
+    cvs->SetMesh(mesh_)->SetGhosted(true)
+       ->AddComponent("cell", AmanziMesh::CELL, 1)
+       ->AddComponent("face", AmanziMesh::FACE, 1)
+       ->AddComponent("grad", AmanziMesh::CELL, mesh_->space_dimension());
+    return cvs;
+  }
+
  private:
   using Upwind<Model>::mesh_;
   using Upwind<Model>::model_;
+  using Upwind<Model>::face_comp_;
 
  private:
   int method_, order_;
@@ -64,8 +79,7 @@ void UpwindSecondOrder<Model>::Init(Teuchos::ParameterList& plist)
 {
   method_ = Operators::OPERATOR_UPWIND_FLUX_SECOND_ORDER;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
-
-  order_ = plist.get<int>("order", 2);
+  order_ = plist.get<int>("polynomial order", 2);
 }
 
 
@@ -81,7 +95,7 @@ void UpwindSecondOrder<Model>::Compute(
 {
   ASSERT(field.HasComponent("cell"));
   ASSERT(field.HasComponent("grad"));
-  ASSERT(field_upwind.HasComponent("face"));
+  ASSERT(field_upwind.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
   flux.ScatterMasterToGhosted("face");
@@ -91,7 +105,7 @@ void UpwindSecondOrder<Model>::Compute(
   const Epetra_MultiVector& fld_grad = *field.ViewComponent("grad", true);
   const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
-  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent("face", true);
+  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent(face_comp_, true);
   upw_face.PutScalar(0.0);
 
   double flxmin, flxmax;

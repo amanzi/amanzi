@@ -51,6 +51,7 @@ class UpwindArithmeticAverage : public Upwind<Model> {
  private:
   using Upwind<Model>::mesh_;
   using Upwind<Model>::model_;
+  using Upwind<Model>::face_comp_;
 
  private:
   int method_, order_;
@@ -66,7 +67,7 @@ void UpwindArithmeticAverage<Model>::Init(Teuchos::ParameterList& plist)
 {
   method_ = OPERATOR_UPWIND_ARITHMETIC_AVERAGE;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
-  order_ = plist.get<int>("order", 1);
+  order_ = plist.get<int>("polynomial order", 1);
 }
 
 
@@ -82,12 +83,12 @@ void UpwindArithmeticAverage<Model>::Compute(
     double (Model::*Value)(int, double) const)
 {
   ASSERT(field.HasComponent("cell"));
-  ASSERT(field_upwind.HasComponent("face"));
+  ASSERT(field_upwind.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
 
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
-  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent("face", true);
+  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent(face_comp_, true);
 
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   AmanziMesh::Entity_ID_List cells;
