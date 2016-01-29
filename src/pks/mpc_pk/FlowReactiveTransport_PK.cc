@@ -23,6 +23,7 @@ FlowReactiveTransport_PK::FlowReactiveTransport_PK(
     const Teuchos::RCP<Teuchos::ParameterList>& global_list,
     const Teuchos::RCP<State>& S,
     const Teuchos::RCP<TreeVector>& soln) :
+    PKDefaultBase(pk_tree, global_list, S, soln),
     Amanzi::MPCSubcycled(pk_tree, global_list, S, soln) { 
 }
 

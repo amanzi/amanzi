@@ -30,6 +30,7 @@
 #include "Tensor.hh"
 #include "Units.hh"
 #include "VerboseObject.hh"
+#include "FnExTimeIntegratorPK.hh"
 
 #ifdef ALQUIMIA_ENABLED
 #include "Chemistry_State.hh"
@@ -57,7 +58,9 @@ namespace Transport {
 
 typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
-class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
+  //  class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
+  // class Transport_PK : public PK, public Explicit_TI::fnBase<TreeVector> {
+  class Transport_PK : public FnExTimeIntegratorPK<Epetra_Vector> {
  public:
   Transport_PK(Teuchos::ParameterList& pk_tree,
                const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -136,7 +139,8 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   void AdvanceSecondOrderUpwindRK2(double dT);
 
   // time integration members
-  void Functional(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
+    void Functional(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
+    //  void Functional(const double t, const Epetra_Vector& component, TreeVector& f_component);
 
   void IdentifyUpwindCells();
 

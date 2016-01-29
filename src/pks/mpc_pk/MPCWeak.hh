@@ -31,6 +31,7 @@ class MPCWeak : public MPC_PK<PK> {
           const Teuchos::RCP<Teuchos::ParameterList>& global_list,
           const Teuchos::RCP<State>& S,
           const Teuchos::RCP<TreeVector>& soln) :
+      PKDefaultBase(pk_tree, global_list, S, soln),
       MPC_PK<PK>(pk_tree, global_list, S, soln) {};
 
   // PK methods

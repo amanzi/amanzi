@@ -25,7 +25,8 @@ MPCSubcycled::MPCSubcycled(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln) :
-    MPC_PK<PK>(pk_tree, global_list, S, soln) {
+  PKDefaultBase(pk_tree, global_list, S, soln), 
+  MPC_PK<PK>(pk_tree, global_list, S, soln) {
 
   // Master PK is the PK whose time step size sets the size, the slave is subcycled.
   master_ = my_list_->get<int>("master PK index", 0);

@@ -28,6 +28,8 @@
 #include "FnTimeIntegratorPK.hh"
 #include "independent_variable_field_evaluator_fromfunction.hh"
 #include "PK.hh"
+#include "PK_default_base.hh"
+#include "PK_physical_bdf_base.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "Tensor.hh"
 #include "VerboseObject.hh"
@@ -43,9 +45,14 @@
 namespace Amanzi {
 namespace Flow {
 
-class Flow_PK : public FnTimeIntegratorPK {
+  //class Flow_PK : public FnTimeIntegratorPK {
+class Flow_PK : public PKPhysicalBDFBase {
  public:
-  Flow_PK();
+  Flow_PK(){};
+  Flow_PK(Teuchos::ParameterList& pk_tree,
+                 const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                 const Teuchos::RCP<State>& S,
+                 const Teuchos::RCP<TreeVector>& soln);
   virtual ~Flow_PK() {};
 
   // members required by PK interface

@@ -55,9 +55,9 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
                          const Teuchos::RCP<Teuchos::ParameterList>& glist,
                          const Teuchos::RCP<State>& S,
                          const Teuchos::RCP<TreeVector>& soln) :
-    Flow_PK(),
-    glist_(glist),
-    soln_(soln)
+  Flow_PK(pk_tree, glist, S, soln),
+  glist_(glist),
+  soln_(soln)
 {
   S_ = S;
 

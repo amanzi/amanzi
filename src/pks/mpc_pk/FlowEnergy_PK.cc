@@ -24,6 +24,7 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
                              const Teuchos::RCP<State>& S,
                              const Teuchos::RCP<TreeVector>& soln) :
     glist_(glist),
+    PKDefaultBase(pk_tree, glist, S, soln),
     Amanzi::MPCStrong<FnTimeIntegratorPK>(pk_tree, glist, S, soln)
 {
   Teuchos::ParameterList vlist;

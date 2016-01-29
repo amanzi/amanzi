@@ -36,12 +36,13 @@
 #include "TreeVector.hh"
 
 #include "PK.hh"
+#include "PK_default_base.hh"
 #include "PK_Factory.hh"
 
 namespace Amanzi {
 
 template <class PK_Base>
-class MPC_PK : virtual public PK {
+class MPC_PK : virtual public PKDefaultBase {
  public:
   MPC_PK(Teuchos::ParameterList& pk_tree,
          const Teuchos::RCP<Teuchos::ParameterList>& global_list,
@@ -93,10 +94,11 @@ MPC_PK<PK_Base>::MPC_PK(Teuchos::ParameterList& pk_tree,
                         const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                         const Teuchos::RCP<State>& S,
                         const Teuchos::RCP<TreeVector>& soln) :
-    pk_tree_(pk_tree),
-    global_list_(global_list),
-    S_(S),
-    solution_(soln)
+  PKDefaultBase(pk_tree, global_list, S, soln),
+  pk_tree_(pk_tree),
+  global_list_(global_list),
+  S_(S),
+  solution_(soln)
 {
   // name the PK
   name_ = pk_tree.name();

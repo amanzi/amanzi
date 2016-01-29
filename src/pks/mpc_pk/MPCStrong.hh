@@ -118,8 +118,9 @@ MPCStrong<PK_Base>::MPCStrong(Teuchos::ParameterList& pk_tree,
                               const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                               const Teuchos::RCP<State>& S,
                               const Teuchos::RCP<TreeVector>& soln) :
-    MPC_PK<PK_Base>(pk_tree, global_list, S, soln) {
-};
+  PKDefaultBase(pk_tree, global_list, S, soln),
+  MPC_PK<PK_Base>(pk_tree, global_list, S, soln),
+  FnTimeIntegratorPK(pk_tree, global_list, S, soln) {};
 
 
 // -----------------------------------------------------------------------------

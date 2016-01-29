@@ -29,13 +29,17 @@ namespace Flow {
 /* ******************************************************************
 * default constructor that initializes all pointers to NULL
 ****************************************************************** */
-Flow_PK::Flow_PK() :
-    bc_pressure(NULL),
-    bc_flux(NULL),
-    bc_head(NULL),
-    bc_seepage(NULL),
-    vo_(NULL),
-    passwd_("flow")
+Flow_PK::Flow_PK(Teuchos::ParameterList& pk_tree,
+                 const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                 const Teuchos::RCP<State>& S,
+                 const Teuchos::RCP<TreeVector>& soln) :
+  PKPhysicalBDFBase(pk_tree, glist, S, soln),
+  bc_pressure(NULL),
+  bc_flux(NULL),
+  bc_head(NULL),
+  bc_seepage(NULL),
+  vo_(NULL),
+  passwd_("flow")
 {
 }
 

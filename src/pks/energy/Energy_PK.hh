@@ -26,6 +26,7 @@
 #include "OperatorAdvection.hh"
 #include "OperatorDiffusion.hh"
 #include "PK.hh"
+#include "PK_physical_bdf_base.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "Tensor.hh"
 #include "TreeVector.hh"
@@ -37,7 +38,8 @@
 namespace Amanzi {
 namespace Energy {
 
-class Energy_PK : public FnTimeIntegratorPK {
+// class Energy_PK : public FnTimeIntegratorPK {
+class Energy_PK : public PKPhysicalBDFBase {
  public:
   Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist, Teuchos::RCP<State> S);
   virtual ~Energy_PK() {};

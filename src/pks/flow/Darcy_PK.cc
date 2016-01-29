@@ -41,8 +41,8 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
                    const Teuchos::RCP<Teuchos::ParameterList>& glist,
                    const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& soln) :
-    Flow_PK(),
-    soln_(soln)
+  Flow_PK(pk_tree, glist, S, soln),
+  soln_(soln)
 {
   S_ = S;
 
@@ -68,23 +68,23 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
 /* ******************************************************************
 * Old constructor for unit tests.
 ****************************************************************** */
-Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                   const std::string& pk_list_name,
-                   Teuchos::RCP<State> S) :
-    Flow_PK()
-{
-  S_ = S;
+// Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+//                    const std::string& pk_list_name,
+//                    Teuchos::RCP<State> S) :
+//     Flow_PK()
+// {
+//   S_ = S;
 
-  // We need the flow list
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_list_name, true);
-  dp_list_ = Teuchos::sublist(flow_list, "Darcy problem", true);
+//   // We need the flow list
+//   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+//   Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_list_name, true);
+//   dp_list_ = Teuchos::sublist(flow_list, "Darcy problem", true);
 
-  // We also need iscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners", true);
-  linear_operator_list_ = Teuchos::sublist(glist, "Solvers", true);
-  ti_list_ = Teuchos::sublist(dp_list_, "time integrator", true);
-}
+//   // We also need iscaleneous sublists
+//   preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners", true);
+//   linear_operator_list_ = Teuchos::sublist(glist, "Solvers", true);
+//   ti_list_ = Teuchos::sublist(dp_list_, "time integrator", true);
+// }
 
 
 /* ******************************************************************
