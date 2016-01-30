@@ -835,7 +835,7 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   int send[3], recv[3];
   send[0] = convergence_failure;
   send[1] = max_itrs;
-  send[2] = imax;
+  send[2] = mesh_->cell_map(false).GID(imax);
   mesh_->get_comm()->MaxAll(send, recv, 3);
   if (recv[0] != 0) 
     num_successful_steps_ = 0;
