@@ -48,8 +48,10 @@ TEST(CONVERTER_BASE) {
       Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
       Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_xml);
 
+      std::stringstream ss;
+      ss << "test" << i << "_native_v7.xml";
       std::ofstream xmlfile;
-      xmlfile.open("native_v7.xml");
+      xmlfile.open(ss.str().c_str());
       xmlfile << XMLobj;
 
       std::cout << "Successful translation. Validating the result...\n\n";

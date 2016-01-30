@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -35,42 +35,47 @@ WRM_fake::WRM_fake(Teuchos::ParameterList& plist)
 double WRM_fake::k_relative(double pc) const
 {
   if (pc < 0.0)
-    return 1.0 / (1.0 + pow(alpha*pc, n));
+    return 1.0 / (1.0 + pc * pc);
   else
     return 1.0;
 }
 
 
 /* ******************************************************************
-* Verify (lipnikov@lanl.gov)                                     
+* The analytic solution was designed for stationary PDE.
 ****************************************************************** */
-double WRM_fake::saturation(double pc) const
-{
-  if (pc < 0.0)
-    return 1.0; // 1.0 / (1.0 + pc * pc);
-  else
-    return 1.0;
+double WRM_fake::saturation(double pc) const {
+  return -pc;
 }
 
 
 /* ******************************************************************
-* Verify (lipnikov@lanl.gov).                                         
+* Derivative of rel_perm  w.r.t. capillary pressure.                                     
 ****************************************************************** */
-double WRM_fake::dSdPc(double pc) const
+double WRM_fake::dKdPc(double pc) const
 {
-  if (pc < 0.0)
-    return 0.0;  // pc / (1.0 + pc * pc);
-  else
+  if (pc < 0.0) {
+    double tmp = 1.0 + pc * pc;
+    return -2 * pc / (tmp * tmp);
+  } else {
     return 0.0;
+  }
+}
+
+
+/* ******************************************************************
+* The analytic solution was designed for stationary PDE.
+****************************************************************** */
+double WRM_fake::dSdPc(double pc) const {
+  return -1.0; 
 }
 
 
 /* ******************************************************************
 * Verify (lipnikov@lanl.gov).                                       
 ****************************************************************** */
-double WRM_fake::capillaryPressure(double sl) const
-{
-  return 0.0;
+double WRM_fake::capillaryPressure(double sl) const {
+  return -sl;
 }
 
 }  // namespace Flow

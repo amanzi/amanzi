@@ -1,7 +1,7 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators 
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -69,6 +69,20 @@ int CellToFace_ScaleInverse(Teuchos::RCP<const CompositeVector> f1,
     double tmp(0.0);
     for (int n = 0; n < ncells; ++n) tmp += f1c[0][cells[n]];
     f2f[0][f] /= (tmp / ncells); 
+  }
+
+  // hack
+  if (f2->HasComponent("grav")) {
+    Epetra_MultiVector& f2f = *f2->ViewComponent("grav", true);
+
+    for (int f = 0; f < nfaces_wghost; ++f) {
+      mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+      int ncells = cells.size();
+
+      double tmp(0.0);
+      for (int n = 0; n < ncells; ++n) tmp += f1c[0][cells[n]];
+      f2f[0][f] /= (tmp / ncells); 
+    }
   }
 
   return 0;

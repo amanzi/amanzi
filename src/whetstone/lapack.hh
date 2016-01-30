@@ -1,14 +1,15 @@
 /*
-  This is the LAPACK component of the Amanzi. 
- 
-  Copyright 2010-20XX held jointly by LANS/LANL, LBNL, and PNNL. 
+  WhetStone, version 2.0
+  Release name: naka-to.
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
  
-  Version: 2.0
-  Release name: naka-to.
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  LAPACK wrappers.
 */
 
 #ifndef  AMANZI_LAPACK_HH_
@@ -29,6 +30,7 @@ namespace WhetStone {
 #define DGESV_F77  F77_LAPACK_MANGLE(dgesv,DGESV)
 #define DGEEV_F77  F77_LAPACK_MANGLE(dgeev,DGEEV)
 #define DGELS_F77  F77_LAPACK_MANGLE(dgels,DGELS)
+#define DGEES_F77  F77_LAPACK_MANGLE(dgees,DGEES)
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,6 +67,11 @@ void PREFIX DGELS_F77(const char* trans,
                       int* m, int* n, int* nrhs, double* a, int* lda,
                       double* b, int* ldb, double* work, int* lwork, int* info);
  
+void PREFIX DGEES_F77(const char* jobvs, const char* sort, int* select(double, double),
+                      int* n, double* a, int* lda, int* sdim, 
+                      double* wr, double* wi, double* vs, int* ldvs,
+                      double* work, int* lwork, int* bwork, int* info);
+
 #ifdef __cplusplus
 }
 #endif

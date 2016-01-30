@@ -1,16 +1,17 @@
 /*
-  This is the mimetic discretization component of the Amanzi code. 
+  WhetStone, version 2.0
+  Release name: naka-to.
 
-  Tensors of rank 1 are numbers in all dimensions.
-  Tensors of rank 2 are square matrices in all dimensions.
-  Only symmetric tensors of rank 4 are are considered here.
-
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Tensors of rank 1 are numbers in all dimensions.
+  Tensors of rank 2 are square matrices in all dimensions.
+  Only symmetric tensors of rank 4 are are considered here.
 */
 
 #include <iostream>
@@ -22,7 +23,6 @@
 
 namespace Amanzi {
 namespace WhetStone {
-
 
 /* ******************************************************************
 * Constructor
@@ -451,6 +451,37 @@ std::ostream& operator<<(std::ostream& os, const Tensor& T)
     os << std::endl;
   }
   return os;
+}
+
+
+/* ******************************************************************
+* Convert tensor to a vector and reverse. Used for parallel 
+* distribution of tensors. We assume that size of v sufficient to 
+* contain tensor of rank 2.
+****************************************************************** */
+void TensorToVector(const Tensor& T, DenseVector& v) {
+  const double* data1 = T.data(); 
+  double* data2 = v.Values(); 
+  
+  if (T.rank() == 2) {
+    int mem = T.size() * T.size();
+    for (int i = 0; i < mem; ++i) data2[i] = data1[i]; 
+  } else if (T.rank() == 1) {
+    int d = T.dimension();
+    int mem = WHETSTONE_TENSOR_SIZE[d - 1][1];  // rank 2
+    v.PutScalar(0.0);
+    for (int i = 0; i < mem * mem; i += d + 1) data2[i] = data1[0]; 
+  }
+}
+
+void VectorToTensor(const DenseVector& v, Tensor& T) {
+  ASSERT(v.NumRows() == T.size() * T.size());
+
+  const double* data1 = v.Values(); 
+  double* data2 = T.data(); 
+  for (int i = 0; i < v.NumRows(); ++i) {
+    data2[i] = data1[i]; 
+  }
 }
 
 }  // namespace WhetStone

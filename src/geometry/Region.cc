@@ -35,17 +35,9 @@ Region::Region(const Region& old) :
 }
 
 
-Region::Region(const std::string name, const unsigned int id, 
+Region::Region(const Set_Name& name, const Set_ID id, 
                const unsigned int dim, const LifeCycleType lifecycle,
                const VerboseObject *verbobj) :
-  name_(name), id_(id), topo_dimension_(dim), lifecycle_(lifecycle),
-  verbosity_obj_(verbobj)
-{
-}
-  
-  
-Region::Region(const char *name, const unsigned int id, const unsigned int dim,
-               const LifeCycleType lifecycle, const VerboseObject *verbobj) :
   name_(name), id_(id), topo_dimension_(dim), lifecycle_(lifecycle),
   verbosity_obj_(verbobj)
 {

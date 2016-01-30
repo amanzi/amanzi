@@ -1,7 +1,7 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators 
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -49,6 +49,7 @@ void OperatorDiffusionMFDwithGravity::AddGravityToRHS_()
     if (k_ != Teuchos::null) {
       if (k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
       if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
+      if (k_->HasComponent("grav")) k_face = k_->ViewComponent("grav", true);
     }
 
     AmanziMesh::Entity_ID_List faces;
@@ -102,7 +103,6 @@ void OperatorDiffusionMFDwithGravity::AddGravityToRHS_()
 
       // add gravity term to the right-hand side vector.
       // -- use always for the finite volume method
-      // -- use for all other methods except for DIVK-family of methods
       if (fv_flag) { 
         if (K_.get()) Kc = (*K_)[c];
         AmanziGeometry::Point Kcg(Kc * g_);
@@ -174,6 +174,7 @@ void OperatorDiffusionMFDwithGravity::UpdateFlux(
   if (k_ != Teuchos::null) {
     if (k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
     if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
+    if (k_->HasComponent("grav")) k_face = k_->ViewComponent("grav", true);
   }
 
   int dim = mesh_->space_dimension();

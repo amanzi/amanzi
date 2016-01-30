@@ -36,6 +36,7 @@ void InputAnalysis::RegionAnalysis()
 
   if (alist.isParameter("used source regions")) {
     std::vector<std::string> regions = alist.get<Teuchos::Array<std::string> >("used source regions").toVector();
+    regions.erase(SelectUniqueEntries(regions.begin(), regions.end()), regions.end());
 
     for (int i = 0; i < regions.size(); i++) {
       AmanziMesh::Entity_ID_List block;
@@ -71,6 +72,7 @@ void InputAnalysis::RegionAnalysis()
 
   if (alist.isParameter("used boundary condition regions")) {
     std::vector<std::string> regions = alist.get<Teuchos::Array<std::string> >("used boundary condition regions").toVector();
+    regions.erase(SelectUniqueEntries(regions.begin(), regions.end()), regions.end());
 
     for (int i = 0; i < regions.size(); i++) {
       AmanziMesh::Entity_ID_List block;
@@ -391,6 +393,21 @@ void InputAnalysis::OutputBCs()
       }
     }
   }
+}
+
+
+/* ******************************************************************
+* Selects unique entries and places them in [first, last)
+****************************************************************** */
+template<class Iterator>
+Iterator InputAnalysis::SelectUniqueEntries(Iterator first, Iterator last)
+{
+  while (first != last) {
+    Iterator next(first);
+    last = std::remove(++next, last, *first);
+    first = next;
+  }
+  return last;
 }
 
 }  // namespace Amanzi

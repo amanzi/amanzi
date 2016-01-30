@@ -1,6 +1,7 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
   <Parameter name="grid_option" type="string" value="Unstructured"/>
+  <Parameter name="simulation time" type="double" value="0.6"/>
 
   <!--  REGIONS  -->
   <ParameterList name="Regions">
@@ -22,13 +23,12 @@
   <ParameterList name="PK operator">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
-    <ParameterList name="diffusion operator">
-      <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-      <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
-      <Parameter name="preconditioner schema" type="Array(string)" value="{cell,face}"/>
+    <ParameterList name="diffusion operator nlfv">
+      <Parameter name="discretization primary" type="string" value="nlfv: default"/>
+      <Parameter name="discretization secondary" type="string" value="nlfv: default"/>
+      <Parameter name="schema" type="Array(string)" value="{cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
       <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
-      <Parameter name="scaled constraint equation" type="bool" value="true"/>
     </ParameterList>
 
     <ParameterList name="diffusion operator Sff">
@@ -41,9 +41,11 @@
     </ParameterList>
     
     <ParameterList name="upwind">
-      <Parameter name="upwind method" type="string" value="standard"/>
-      <ParameterList name="upwind standard parameters">
+      <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
+      <ParameterList name="upwind parameters">
         <Parameter name="tolerance" type="double" value="1e-12"/>
+        <Parameter name="method" type="string" value="cell-based"/>
+        <Parameter name="polynomial order" type="int" value="1"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

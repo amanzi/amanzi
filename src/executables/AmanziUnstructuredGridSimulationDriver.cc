@@ -29,6 +29,7 @@
 #include "eos_registration.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+#include "mdm_transport_registration.hh"
 #include "multiscale_flow_registration.hh"
 #include "multiscale_transport_registration.hh"
 #include "mpc_pks_registration.hh"

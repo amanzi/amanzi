@@ -273,14 +273,15 @@ TEST(DARCY_FULL_TENSOR_2D) {
   MFD3D_Diffusion mfd(mesh);
 
   for (int cell = 0; cell < 2; cell++) { 
-    Tensor T(2, 2);  // tensor of rank 2
-    T(0, 0) = 1.0;
-    T(1, 1) = 2.0;
-    T(0, 1) = T(1, 0) = 1.0;
+    for (int method = 0; method < 8; method++) {
+      Tensor T(2, 2);  // tensor of rank 2
+      T(0, 0) = 1.0;
+      T(1, 1) = 2.0;
+      T(0, 1) = T(1, 0) = 1.0;
 
-    int ok, nfaces = mesh->cell_get_num_faces(cell);
-    DenseMatrix W(nfaces, nfaces);
-    for (int method = 0; method < 7; method++) {
+      int ok, nfaces = mesh->cell_get_num_faces(cell);
+      DenseMatrix W(nfaces, nfaces);
+
       if (method == 0) {
         mfd.MassMatrixInverse(cell, T, W);
       } else if (method == 1) {
@@ -300,6 +301,9 @@ TEST(DARCY_FULL_TENSOR_2D) {
         double kmean = 1.0;
         AmanziGeometry::Point kgrad(0.1, 0.2);
         mfd.MassMatrixInverseDivKScaled(cell, T, kmean, kgrad, W);
+      } else if (method == 7) {
+        T(0, 1) += 0.1;
+        mfd.MassMatrixInverseNonSymmetric(cell, T, W);
       }
 
       printf("Inverse of mass matrix for method=%d\n", method);
@@ -331,7 +335,7 @@ TEST(DARCY_FULL_TENSOR_2D) {
       CHECK_CLOSE(2 * volume, vxx, 1e-10);
       std::cout << vxx << std::endl;
 
-      // additional tests for triangle: interal with v2 = RT basis function
+      // additional tests for triangle: integral with v2 = RT basis function
       if (cell == 1) {
         if (method == 3 || method == 6) continue;
         vxx = 0.0;

@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -186,9 +186,9 @@ double WRM_vanGenuchten::dKdPc(double pc) const
 
   } else if (pc <= 0.0) {
     return 0.0;
-  }
-  else {
-    return 2*a_*pc + 3*b_*pc*pc; 
+
+  } else {
+    return 2 * a_ * pc + 3 * b_ * pc * pc; 
   }
 }
 

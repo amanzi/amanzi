@@ -1,13 +1,16 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
+/*
+  Solvers
 
-License: see $AMANZI_DIR/COPYRIGHT
-Author: Ethan Coon
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Debugging object for writing vectors to file within an iterative
-process for use with vis tools.
+  Author: Ethan Coon
 
-------------------------------------------------------------------------- */
+  Debugging object for writing vectors to file within an iterative
+  process for use with vis tools.
+*/
 
 #ifndef AMANZI_RESIDUAL_DEBUGGER_HH_
 #define AMANZI_RESIDUAL_DEBUGGER_HH_
@@ -32,7 +35,7 @@ class ResidualDebugger : public IOEvent {
   // Constructor
   ResidualDebugger(Teuchos::ParameterList& plist) :
       IOEvent(plist) {
-    filebasename_ = plist_.get<std::string>("file name base","amanzi_dbg");
+    filebasename_ = plist_.get<std::string>("file name base", "amanzi_dbg");
   }
 
   template <class VectorSpace>
@@ -57,7 +60,7 @@ class ResidualDebugger : public IOEvent {
 
 template <>
 void ResidualDebugger::StartIteration<TreeVectorSpace>(double time, int cycle, int attempt,
-                                       const TreeVectorSpace& space);
+                                                       const TreeVectorSpace& space);
 template <>
 void ResidualDebugger::WriteVector<TreeVector>(int iter,
               const TreeVector& res,

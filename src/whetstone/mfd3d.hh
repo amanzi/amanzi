@@ -1,14 +1,15 @@
 /*
-  This is the mimetic discretization component of the Amanzi code. 
+  WhetStone, version 2.0
+  Release name: naka-to.
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Version: 2.0
-  Release name: naka-to.
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  The mimetic finite difference method.
 */
 
 #ifndef AMANZI_MFD3D_HH_
@@ -48,7 +49,7 @@ class MFD3D {
                             DenseMatrix& N, DenseMatrix& Mc, bool symmetry) = 0;
 
   virtual int L2consistencyInverse(int cell, const Tensor& T,
-                                   DenseMatrix& R, DenseMatrix& Wc) = 0;
+                                   DenseMatrix& R, DenseMatrix& Wc, bool symmetry) = 0;
 
   virtual int H1consistency(int cell, const Tensor& T,
                             DenseMatrix& N, DenseMatrix& Mc) = 0;
@@ -73,16 +74,15 @@ class MFD3D {
   int cell_get_face_adj_cell(int cell, int face);
 
  protected:
-  // supporting stability methods (add matrix Ms in M = Mc + Ms)
+  // supporting stability methods (add matrix M += Mstab)
   // use R, Wc, W for the inverse matrix
-  void StabilityScalar(int c, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& M);
+  void StabilityScalar(int c, DenseMatrix& N, DenseMatrix& M);
 
-  int StabilityOptimized(const Tensor& T, DenseMatrix& N, 
-                         DenseMatrix& Mc, DenseMatrix& M);
+  int StabilityOptimized(const Tensor& T, DenseMatrix& N, DenseMatrix& M);
 
   int StabilityMonotoneHex(int c, const Tensor& T, DenseMatrix& Mc, DenseMatrix& M);
 
-  int StabilityMMatrix_(int c, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& M, 
+  int StabilityMMatrix_(int c, DenseMatrix& N, DenseMatrix& M, 
                         int objective = WHETSTONE_SIMPLEX_FUNCTIONAL_SUMALL);
 
   int SimplexFindFeasibleSolution_(DenseMatrix& T, int m1, int m2, int m3, int* izrow, int* iypos);

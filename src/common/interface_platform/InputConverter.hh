@@ -1,5 +1,5 @@
 /*
-  This is the input component of the Amanzi code. 
+  Input Converter
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -30,6 +30,18 @@
 
 namespace Amanzi {
 namespace AmanziInput {
+
+// Amanzi version
+#define AMANZI_SPEC_VERSION_MAJOR 2
+#define AMANZI_SPEC_VERSION_MINOR 2
+#define AMANZI_SPEC_VERSION_MICRO 1
+
+// constants
+const std::string TYPE_TIME = "time";
+const std::string TYPE_NUMERICAL = "numerical";
+const std::string TYPE_AREA_MASS_FLUX = "area_mass_flux";
+const std::string TYPE_NONE = "none";
+const std::string TYPE_NOT_CONSTANT = "not_constant";
 
 XERCES_CPP_NAMESPACE_USE
 
@@ -95,6 +107,7 @@ class InputConverter {
   virtual ~InputConverter();
 
   // parse various nodes
+  void ParseVersion_();
   void ParseConstants_();
   void FilterNodes(xercesc::DOMNode* parent, const std::string& filter);
 
@@ -119,11 +132,14 @@ class InputConverter {
   // -- extract and verify children
   // -- extract existing attribute value
   int GetAttributeValueL_(
-      xercesc::DOMElement* elem, const char* attr_name, bool exception = true, int val = 0);
+      xercesc::DOMElement* elem, const char* attr_name,
+      const std::string& type = TYPE_NUMERICAL, bool exception = true, int val = 0);
   double GetAttributeValueD_(
-      xercesc::DOMElement* elem, const char* attr_name, bool exception = true, double val = 0.0);
+      xercesc::DOMElement* elem, const char* attr_name,
+      const std::string& type = TYPE_NUMERICAL, bool exception = true, double val = 0.0);
   std::string GetAttributeValueS_(
-      xercesc::DOMElement* elem, const char* attr_name, bool exception = true, std::string val = "");
+      xercesc::DOMElement* elem, const char* attr_name,
+      const std::string& type = TYPE_NUMERICAL, bool exception = true, std::string val = "");
   std::vector<double> GetAttributeVector_(
       xercesc::DOMElement* elem, const char* attr_name);
  
@@ -143,6 +159,7 @@ class InputConverter {
   // -- times
   double TimeStringToValue_(const std::string& time_value);
   double TimeCharToValue_(const char* time_value);
+  std::string GetConstantType_(const std::string& val, std::string& parsed_val);
 
   // -- coordinates
   std::vector<double> MakeCoordinates_(const std::string& array);
@@ -168,7 +185,11 @@ class InputConverter {
 
  protected:
   // various constants defined by the users
-  std::map<std::string, std::string> constants_; 
+  // consistency check is performed for all but constants_
+  std::map<std::string, std::string> constants_time_;  
+  std::map<std::string, std::string> constants_numerical_; 
+  std::map<std::string, std::string> constants_area_mass_flux_; 
+  std::map<std::string, std::string> constants_;  // no check
 
   std::string xmlfilename_;
   xercesc::DOMDocument* doc_;

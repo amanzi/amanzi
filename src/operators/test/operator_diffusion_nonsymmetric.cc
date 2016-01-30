@@ -1,7 +1,7 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -30,13 +30,9 @@
 
 // Operators
 #include "Analytic05.hh"
-
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionMFD.hh"
-#include "OperatorDiffusionFV.hh"
-#include "OperatorDiffusionFactory.hh"
 #include "UpwindSecondOrder.hh"
-#include "UpwindStandard.hh"
 
 
 /* *****************************************************************
@@ -142,7 +138,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
   AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, global_op);
+     solver = factory.Create("AztecOO GMRES", lop_list, global_op);
 
   CompositeVector& rhs = *global_op->rhs();
   int ierr = solver->ApplyInverse(rhs, solution);
@@ -173,7 +169,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
         pl2_err, pinf_err, ul2_err, uinf_err, solver->num_itrs());
 
     CHECK(pl2_err < 0.03 && ul2_err < 0.1);
-    CHECK(solver->num_itrs() < 10);
+    CHECK(solver->num_itrs() < 15);
   }
 }
 

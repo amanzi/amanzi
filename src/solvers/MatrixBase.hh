@@ -1,10 +1,17 @@
 /*
-  Example of a Matrix base class used in our templates. The 
-  routines below are mandatory for any implementation of a 
-  Matrix class to be compatible with Amanzi.
+  Solvers
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Example of a Matrix base class used in our templates. The 
+  routines below are mandatory for any implementation of a 
+  Matrix class to be compatible with Amanzi.
 */
 
 template<class Vector, class VectorSpace>

@@ -1,8 +1,5 @@
-
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
-
-ATS
+ATS & Amanzi
 
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon (ecoon@lanl.gov)
@@ -538,7 +535,14 @@ CompositeVector::Random() {
   return mastervec_->Random();
 }
 
+
+// -----------------------------------------------------------------------------
+// Non-member functions.
+// -----------------------------------------------------------------------------
 void DeriveFaceValuesFromCellValues(CompositeVector&);
+
+void AddComponent(Teuchos::RCP<CompositeVector> cv,
+                  const std::string& name, AmanziMesh::Entity_kind kind, int dim);
 
 } // namespace
 

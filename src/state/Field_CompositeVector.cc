@@ -272,27 +272,28 @@ void Field_CompositeVector::WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk)
 void Field_CompositeVector::ReadCellsFromCheckpoint_(std::string filename) {
   Teuchos::RCP<Amanzi::HDF5_MPI> file_input =
       Teuchos::rcp(new Amanzi::HDF5_MPI(data_->Comm(), filename));
+  file_input->open_h5file();
   EnsureSubfieldNames_();
 
   int i = 0;
   for (CompositeVector::name_iterator compname=data_->begin();
        compname!=data_->end(); ++compname) {
-
     if (*compname == std::string("cell")) {
+
       // get the MultiVector that should be read
       Teuchos::RCP<Epetra_MultiVector> vec = data_->ViewComponent(*compname, false);
-
+      ASSERT(vec != Teuchos::null);
+      
       // construct name for the field in the checkpoint file
-      std::vector<std::string> chkp_names(subfield_names_[i]);
       for (unsigned int j = 0; j!=subfield_names_[i].size(); ++j) {
-        chkp_names[j] = fieldname_ + "." + *compname + "." + subfield_names_[i][j];
-      }
-      for (unsigned int j = 0; j!=subfield_names_[i].size(); ++j) {
-        file_input->readData(*(*vec)(j), chkp_names[j]);
+        std::string chkp_name = fieldname_ + "." + *compname + "." + subfield_names_[i][j];
+        file_input->readData(*(*vec)(j), chkp_name);
       }
     }
     ++i;
   }
+
+  file_input->close_h5file();
 }
 
 bool Field_CompositeVector::ReadCheckpoint_(std::string filename) {
@@ -479,16 +480,13 @@ void Field_CompositeVector::ReadVariableFromExodusII_(Teuchos::ParameterList& fi
   int nvectors = dat_f.NumVectors(); 
  
   std::string file_name = file_list.get<std::string>("file"); 
-  std::string attribute_name = file_list.get<std::string>("attribute"); 
+  std::vector<std::string> attributes = 
+      file_list.get<Teuchos::Array<std::string> >("attributes").toVector(); 
  
   // open ExodusII file 
   const Epetra_Comm& comm = data_->Comm(); 
  
   if (comm.NumProc() > 1) { 
-    //std::stringstream add_extension; 
-    //add_extension << "." << comm.NumProc() << "." << comm.MyPID(); 
-    //file_name.append(add_extension.str()); 
-    // EIB: need to account for leading zeros in format of file extension
     int ndigits = (int)floor(log10(comm.NumProc())) + 1;
     std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
     file_name = boost::str(boost::format(fmt) % file_name % comm.NumProc() % comm.MyPID());
@@ -545,38 +543,44 @@ void Field_CompositeVector::ReadVariableFromExodusII_(Teuchos::ParameterList& fi
     ierr = ex_get_var_names(exoid, "e", num_vars, var_names);
     if (ierr < 0) printf("Exodus file cannot read variable names.\n");
 
-    int var_index(-1);
+    int var_index(-1), ncells;
+    for (int k = 0; k < nvectors; ++k) {
+      for (int i = 0; i < num_vars; i++) {
+        std::string tmp(var_names[i]);
+        if (tmp == attributes[k]) var_index = i + 1;
+      }
+      if (var_index < 0) printf("Exodus file has no variable \"%s\".\n", attributes[k].c_str());
+      printf("Variable \"%s\" has index %d.\n", attributes[k].c_str(), var_index);
+
+      // read variable with the k-th attribute
+      int offset = 0; 
+      char elem_type[MAX_LINE_LENGTH + 1]; 
+      for (int i = 0; i < num_elem_blk; i++) { 
+        int num_elem_this_blk, num_attr, num_nodes_elem; 
+        ierr = ex_get_elem_block(exoid, ids[i], elem_type, &num_elem_this_blk, 
+                                 &num_nodes_elem, &num_attr); 
+ 
+        double* var_values = (double*) calloc(num_elem_this_blk, sizeof(double)); 
+        ierr = ex_get_elem_var(exoid, 1, var_index, ids[i], num_elem_this_blk, var_values); 
+ 
+        for (int n = 0; n < num_elem_this_blk; n++) { 
+          int c = n + offset; 
+          dat_f[k][c] = var_values[n]; 
+        } 
+        free(var_values); 
+        printf("MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm.MyPID(), ierr, ids[i], num_elem_this_blk); 
+ 
+        offset += num_elem_this_blk; 
+      } 
+      ncells = offset; 
+    }
+
     for (int i = 0; i < num_vars; i++) {
-      std::string tmp(var_names[i]);
-      if (tmp == attribute_name) var_index = i + 1;
       free(var_names[i]);
     }
-    if (var_index < 0) printf("Exodus file has no variable \"%s\".\n", attribute_name.c_str());
-    printf("Variable \"%s\" has index %d.\n", attribute_name.c_str(), var_index);
-
-    // read one variable 'attribute_name'
-    int offset = 0; 
-    char elem_type[MAX_LINE_LENGTH + 1]; 
-    for (int i = 0; i < num_elem_blk; i++) { 
-      int num_elem_this_blk, num_attr, num_nodes_elem; 
-      ierr = ex_get_elem_block(exoid, ids[i], elem_type, &num_elem_this_blk, 
-                               &num_nodes_elem, &num_attr); 
- 
-      double* var_values = (double*) calloc(num_elem_this_blk, sizeof(double)); 
-      ierr = ex_get_elem_var(exoid, 1, var_index, ids[i], num_elem_this_blk, var_values); 
- 
-      for (int n = 0; n < num_elem_this_blk; n++) { 
-        int c = n + offset; 
-        for (int k = 0; k < nvectors; k++) dat_f[k][c] = var_values[n]; 
-      } 
-      free(var_values); 
-      printf("MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm.MyPID(), ierr, ids[i], num_elem_this_blk); 
- 
-      offset += num_elem_this_blk; 
-    } 
  
     ierr = ex_close(exoid); 
-    printf("Closing file: %s ncells=%d error=%d\n", file_name.c_str(), offset, ierr); 
+    printf("Closing file: %s ncells=%d error=%d\n", file_name.c_str(), ncells, ierr); 
   }
 } 
 

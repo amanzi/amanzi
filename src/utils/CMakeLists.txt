@@ -30,12 +30,14 @@ add_amanzi_library(atk
                    SOURCE Timer.cc 
                           TimerManager.cc
                           TimeStepManager.cc
+                          Units.cc
                           XMLParameterListWriter.cc 
                           LeastSquare.cc 
                           VerboseObject.cc
 			  IOEvent.cc
                    HEADERS HDF5Reader.hh
                            Utils.hh
+                           Units.hh
                            Timer.hh
                            TimerManager.hh
                            TimeStepManager.hh

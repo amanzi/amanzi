@@ -46,6 +46,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   char *text, *tagname;
   DOMNodeList *node_list, *children;
   DOMNode* node;
+  DOMElement* element;
 
   // process CFL number
   bool flag;
@@ -103,7 +104,6 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
     node_list = doc_->getElementsByTagName(mm.transcode("materials"));
 
     Teuchos::ParameterList& mat_list = out_list.sublist("material properties");
-    mat_list.set<std::string>("numerical method", "two-point flux approximation");
 
     children = node_list->item(0)->getChildNodes();
     for (int i = 0; i < children->getLength(); ++i) {
@@ -189,12 +189,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
     children = node->getChildNodes();
     for (int i = 0; i < children->getLength(); ++i) {
       DOMNode* inode = children->item(i);
+      element = static_cast<DOMElement*>(inode);  
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "solute") != 0) continue;
 
-      double val = GetAttributeValueD_(static_cast<DOMElement*>(inode), "coefficient_of_diffusion", false);
+      double val = GetAttributeValueD_(element, "coefficient_of_diffusion", TYPE_NUMERICAL, false);
       text = mm.transcode(inode->getTextContent());
 
       aqueous_names.push_back(TrimString_(text));
@@ -216,13 +217,14 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
     children = node->getChildNodes();
     for (int i = 0; i < children->getLength(); ++i) {
       DOMNode* inode = children->item(i);
+      element = static_cast<DOMElement*>(inode);  
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "solute") != 0) continue;
 
-      double val = GetAttributeValueD_(static_cast<DOMElement*>(inode), "coefficient_of_diffusion", false);
-      double kh = GetAttributeValueD_(static_cast<DOMElement*>(inode), "kh");
+      double val = GetAttributeValueD_(element, "coefficient_of_diffusion", TYPE_NUMERICAL, false);
+      double kh = GetAttributeValueD_(element, "kh");
       text = mm.transcode(inode->getTextContent());
 
       gaseous_names.push_back(TrimString_(text));
@@ -246,7 +248,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   disc_methods.append(", mfd-two_point_flux_approximation");
 
   out_list.sublist("operators") = TranslateDiffusionOperator_(
-      disc_methods, "diffusion_operator", "", "", false);
+      disc_methods, "diffusion_operator", "", "", "", false);
 
   // multiscale model list
   out_list.sublist("multiscale models") = TranslateTransportMSM_();
@@ -384,7 +386,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
         element = static_cast<DOMElement*>(same_list[j]);
         double t0 = GetAttributeValueD_(element, "start");
         tp_values[t0] = GetAttributeValueS_(element, "name");
-        tp_forms[t0] = GetAttributeValueS_(element, "function", false); // no form -> use geochemistry engine
+        tp_forms[t0] = GetAttributeValueS_(element, "function", TYPE_NONE, false, "constant");
+        // no form -> use geochemistry engine
       }
 
       // create vectors of values and forms
@@ -438,7 +441,7 @@ void InputConverterU::TranslateTransportBCsGroup_(
   std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
 
   while (same_list.size() > 0) {
-    // process a group of elements named as the i0-th element
+    // process a group of elements named after the 0-th element
     solute_name = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "name");
 
     std::map<double, double> tp_values;
@@ -574,7 +577,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
       weight = "volume";
     } else if (strcmp(text, "perm_weighted") == 0) {
       weight = "permeability";
-    } else if (strcmp(text, "aqueous_conc") == 0) {
+    } else if (strcmp(text, "uniform_conc") == 0) {
       weight = "none";
     } else if (strcmp(text, "flow_weighted_conc") == 0) {
       element = static_cast<DOMElement*>(phase_l);

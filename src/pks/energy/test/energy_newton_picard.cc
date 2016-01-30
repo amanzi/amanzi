@@ -12,23 +12,25 @@
 #include <iostream>
 #include "UnitTest++.h"
 
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Epetra_MpiComm.h"
 
-#include "Energy_PK.hh"
+// Amanzi
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
-#include "SolverFactory.hh"
-#include "SolverFnBase.hh"
-#include "UpwindStandard.hh"
-
 #include "Operator.hh"
 #include "OperatorDiffusionMFD.hh"
 #include "OperatorAdvection.hh"
 #include "OperatorAccumulation.hh"
 #include "OperatorDiffusionFactory.hh"
+#include "SolverFactory.hh"
+#include "SolverFnBase.hh"
+#include "UpwindFlux.hh"
+
+#include "Energy_PK.hh"
 
 const double TemperatureSource = 1.0; 
 const double TemperatureFloor = 0.02; 
@@ -87,7 +89,7 @@ class HeatConduction : public AmanziSolvers::SolverFnBase<CompositeVector> {
 
   std::vector<WhetStone::Tensor> K;
   Teuchos::RCP<CompositeVector> k, dkdT;
-  Teuchos::RCP<Operators::UpwindStandard<HeatConduction> > upwind_;
+  Teuchos::RCP<Operators::UpwindFlux<HeatConduction> > upwind_;
 
   double dT;
   Teuchos::RCP<CompositeVector> phi_;
@@ -180,7 +182,7 @@ void HeatConduction::Init(
   // Create upwind model
   Teuchos::ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
   Teuchos::RCP<HeatConduction> problem = Teuchos::rcp(new HeatConduction());
-  upwind_ = Teuchos::rcp(new Operators::UpwindStandard<HeatConduction>(mesh_, problem));
+  upwind_ = Teuchos::rcp(new Operators::UpwindFlux<HeatConduction>(mesh_, problem));
   upwind_->Init(ulist);
 
   // Update conductivity values

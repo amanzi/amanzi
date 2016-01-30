@@ -1,5 +1,5 @@
 /*
-  This is the input component of the Amanzi code. 
+  Input Converter
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -43,6 +43,9 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   // checks that input XML is structurally sound
   VerifyXMLStructure_();
 
+  // checks that input XML has valid version
+  ParseVersion_();
+
   // parsing of miscalleneous lists
   ParseSolutes_();
   ParseConstants_();
@@ -51,6 +54,7 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   out_list.set<bool>("Native Unstructured Input", "true");
 
   out_list.sublist("Miscalleneous") = TranslateMisc_();  
+  out_list.sublist("Units") = TranslateUnits_();  
   out_list.sublist("Mesh") = TranslateMesh_();
   out_list.sublist("Domain").set<int>("Spatial Dimension", dim_);
   out_list.sublist("Regions") = TranslateRegions_();
@@ -125,17 +129,24 @@ void InputConverterU::ParseSolutes_()
 
   MemoryManager mm;
 
+  DOMNode* node;
   DOMNode* knode = doc_->getElementsByTagName(mm.transcode("phases"))->item(0);
 
-  // liquid phase
-  DOMNode* node = GetUniqueElementByTagsString_(knode, "liquid_phase, dissolved_components, solutes", flag);
+  // liquid phase (try solutes, then primaries)
+  std::string species("solute");
+  node = GetUniqueElementByTagsString_(knode, "liquid_phase, dissolved_components, solutes", flag);
+  if (!flag) {
+    node = GetUniqueElementByTagsString_(knode, "liquid_phase, dissolved_components, primaries", flag);
+    species = "primary";
+  }
+
   DOMNodeList* children = node->getChildNodes();
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     tagname = mm.transcode(inode->getNodeName());
     text_content = mm.transcode(inode->getTextContent());
 
-    if (strcmp(tagname, "solute") == 0) {
+    if (species == tagname) {
       phases_["water"].push_back(TrimString_(text_content));
     }
   }
@@ -157,6 +168,15 @@ void InputConverterU::ParseSolutes_()
     }
 
     comp_names_all_.insert(comp_names_all_.end(), phases_["air"].begin(), phases_["air"].end());
+  }
+
+  // output
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    int nsolutes = phases_["water"].size();
+    *vo_->os() << "Phase 'water' has " << nsolutes << " solutes\n";
+    for (int i = 0; i < nsolutes; ++i) {
+      *vo_->os() << " solute: " << phases_["water"][i] << std::endl;
+    }
   }
 }
 
@@ -236,6 +256,44 @@ Teuchos::ParameterList InputConverterU::TranslateVerbosity_()
 
 
 /* ******************************************************************
+* Units
+****************************************************************** */
+Teuchos::ParameterList InputConverterU::TranslateUnits_()
+{
+  Teuchos::ParameterList out_list;
+
+  MemoryManager mm;  
+  DOMNode* node;
+
+  bool flag;
+  std::string length("m"), time("s"), mass("kg"), concentration("molar");
+
+  node = GetUniqueElementByTagsString_("model_description, units, length_unit", flag);
+  if (flag) length = TrimString_(mm.transcode(node->getTextContent()));
+
+  node = GetUniqueElementByTagsString_("model_description, units, time_unit", flag);
+  if (flag) time = TrimString_(mm.transcode(node->getTextContent()));
+
+  node = GetUniqueElementByTagsString_("model_description, units, mass_unit", flag);
+  if (flag) mass = TrimString_(mm.transcode(node->getTextContent()));
+
+  node = GetUniqueElementByTagsString_("model_description, units, conc_unit", flag);
+  if (flag) concentration = TrimString_(mm.transcode(node->getTextContent()));
+
+  out_list.set<std::string>("length", length);
+  out_list.set<std::string>("time", time);
+  out_list.set<std::string>("mass", mass);
+  out_list.set<std::string>("concentration", concentration);
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+    *vo_->os() << "Translating units: " << length << " " << time << " " 
+               << mass << " " << concentration << std::endl;
+
+  return out_list;
+}
+
+
+/* ******************************************************************
 * Miscalleneous commands
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateMisc_()
@@ -252,7 +310,7 @@ Teuchos::ParameterList InputConverterU::TranslateMisc_()
   node = GetUniqueElementByTagsString_("misc, echo_translated_input", flag);
   if (flag) {
     element = static_cast<DOMElement*>(node);
-    std::string filename = GetAttributeValueS_(element, "file_name", false, "native_v6.xml");
+    std::string filename = GetAttributeValueS_(element, "file_name", TYPE_NONE, false, "native_v7.xml");
 
     out_list.set<std::string>("file name", filename);
   }

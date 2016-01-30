@@ -1,7 +1,7 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -32,8 +32,7 @@
 #include "OperatorDefs.hh"
 #include "OperatorDiffusion.hh"
 #include "OperatorDiffusionFactory.hh"
-#include "UpwindSecondOrder.hh"
-#include "UpwindStandard.hh"
+#include "UpwindFlux.hh"
 
 
 /* *****************************************************************
@@ -111,7 +110,7 @@ void RunTestGravity(std::string op_list_name) {
 
   // create upwind model
   Teuchos::ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
-  UpwindStandard<HeatConduction> upwind(mesh, knc);
+  UpwindFlux<HeatConduction> upwind(mesh, knc);
   upwind.Init(ulist);
 
   knc->UpdateValues(*flux);  // argument is not used

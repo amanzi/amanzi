@@ -1,0 +1,71 @@
+<ParameterList name="Main">
+
+  <ParameterList name="logical mesh Y">
+
+    <ParameterList name="segments">
+
+      <ParameterList name="coarse_root">
+	<Parameter name="first tip" type="Array(double)" value="{0.,0.,0.}"/>
+	<Parameter name="last tip" type="Array(double)" value="{0.,0.,-1.25}"/>
+	<Parameter name="first tip type" type="string" value="boundary"/>
+	<Parameter name="last tip type" type="string" value="junction"/>
+	<Parameter name="number of cells" type="int" value="3"/>
+	<Parameter name="cross sectional area [m^2]" type="double" value="1.e-4"/>
+      </ParameterList>
+
+      <ParameterList name="fine_root_1">
+	<Parameter name="first tip" type="Array(double)" value="{0.,0.,-1.25}"/>
+	<Parameter name="segment orientation" type="Array(double)" value="{1.,0.,-1.}"/>
+	<Parameter name="segment length [m]" type="double" value="1.7677669529663689"/>
+	<Parameter name="first tip type" type="string" value="branch"/>
+	<Parameter name="first tip branch segment" type="string" value="coarse_root"/>
+	<Parameter name="first tip branch segment tip" type="string" value="last"/>
+	<Parameter name="last tip type" type="string" value="boundary"/>
+	<Parameter name="number of cells" type="int" value="2"/>
+	<Parameter name="cross sectional area [m^2]" type="double" value="0.25e-4"/>
+      </ParameterList>
+
+      <ParameterList name="fine_root_2">
+	<Parameter name="first tip" type="Array(double)" value="{0.,0.,-1.25}"/>
+	<Parameter name="segment orientation" type="Array(double)" value="{-1.,0.,-1.}"/>
+	<Parameter name="segment length [m]" type="double" value="1.7677669529663689"/>
+	<Parameter name="first tip type" type="string" value="branch"/>
+	<Parameter name="first tip branch segment" type="string" value="coarse_root"/>
+	<Parameter name="first tip branch segment tip" type="string" value="last"/>
+	<Parameter name="last tip type" type="string" value="boundary"/>
+	<Parameter name="number of cells" type="int" value="2"/>
+	<Parameter name="cross sectional area [m^2]" type="double" value="0.25e-4"/>
+      </ParameterList>
+
+      <ParameterList name="fine_root_3">
+	<Parameter name="first tip" type="Array(double)" value="{0.,0.,-1.25}"/>
+	<Parameter name="segment orientation" type="Array(double)" value="{0.,1.,-1.}"/>
+	<Parameter name="segment length [m]" type="double" value="1.7677669529663689"/>
+	<Parameter name="first tip type" type="string" value="branch"/>
+	<Parameter name="first tip branch segment" type="string" value="coarse_root"/>
+	<Parameter name="first tip branch segment tip" type="string" value="last"/>
+	<Parameter name="last tip type" type="string" value="boundary"/>
+	<Parameter name="number of cells" type="int" value="2"/>
+	<Parameter name="cross sectional area [m^2]" type="double" value="0.25e-4"/>
+      </ParameterList>
+
+      <ParameterList name="fine_root_4">
+	<Parameter name="first tip" type="Array(double)" value="{0.,0.,-1.25}"/>
+	<Parameter name="segment orientation" type="Array(double)" value="{0.,-1.,-1.}"/>
+	<Parameter name="segment length [m]" type="double" value="1.7677669529663689"/>
+	<Parameter name="first tip type" type="string" value="branch"/>
+	<Parameter name="first tip branch segment" type="string" value="coarse_root"/>
+	<Parameter name="first tip branch segment tip" type="string" value="last"/>
+	<Parameter name="last tip type" type="string" value="boundary"/>
+	<Parameter name="number of cells" type="int" value="2"/>
+	<Parameter name="cross sectional area [m^2]" type="double" value="0.25e-4"/>
+      </ParameterList>
+
+    </ParameterList>
+
+    <ParameterList name="sets">
+      <Parameter name="fine_root" type="Array(string)" value="{fine_root_1,fine_root_2,fine_root_3,fine_root_4}"/>
+    </ParameterList>
+    
+  </ParameterList>
+</ParameterList>

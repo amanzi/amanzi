@@ -58,13 +58,10 @@
   <ParameterList name="PKs">
     <ParameterList name="Flow">
       <ParameterList name="Richards problem">
-	<Parameter name="atmospheric pressure" type="double" value="10.0"/>
-
-        <ParameterList name="upwind">
-	  <Parameter name="relative permeability" type="string" value="upwind: gravity"/>
-	  <Parameter name="upwind update" type="string" value="every nonlinear iteration"/>
-	  <Parameter name="upwind method" type="string" value="standard"/>
-	  <ParameterList name="upwind standard parameters">
+        <ParameterList name="relative permeability">
+	  <Parameter name="upwind method" type="string" value="upwind: gravity"/>
+	  <Parameter name="upwind frequency" type="string" value="every nonlinear iteration"/>
+	  <ParameterList name="upwind parameters">
             <Parameter name="tolerance" type="double" value="1e-12"/>
 	  </ParameterList>
         </ParameterList>
@@ -105,14 +102,10 @@
 	    <Parameter name="clipping saturation value" type="double" value="0.6"/>
 	  </ParameterList>
 
-	  <ParameterList name="pressure-lambda constraints">
-	    <Parameter name="method" type="string" value="projection"/>
-	    <Parameter name="linear solver" type="string" value="AztecOO"/>
-	  </ParameterList>
-
 	  <Parameter name="time integration method" type="string" value="BDF1"/>
 	  <ParameterList name="BDF1">
-	    <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+	    <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
+            <!--Parameter name="extrapolate initial guess" type="bool" value="false"/-->
 
 	    <Parameter name="timestep controller type" type="string" value="standard"/>
 	    <ParameterList name="timestep controller standard parameters">
@@ -131,7 +124,6 @@
 	      <Parameter name="limit iterations" type="int" value="12"/>
 	      <Parameter name="max du growth factor" type="double" value="1e+5"/>
 	      <Parameter name="max divergent iterations" type="int" value="3"/>
-	      <Parameter name="max nka vectors" type="int" value="10"/>
 	      <ParameterList name="VerboseObject">
 		<Parameter name="Verbosity Level" type="string" value="high"/>
 	      </ParameterList>
@@ -215,9 +207,11 @@
       <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="1.0"/>
       </ParameterList>
-
       <ParameterList name="fluid_viscosity">
         <Parameter name="value" type="double" value="1.0"/>
+      </ParameterList>
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="10.0"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

@@ -27,14 +27,7 @@ public:
 
   /// Default constructor uses two corner points (order not important).
 
-  PolygonRegion(const std::string name, const unsigned int id, 
-                const unsigned int npolypoints, 
-                const std::vector<Point>& polypoints, 
-                const double tolerance=1.0e-8,
-                const LifeCycleType lifecycle=PERMANENT,
-                const VerboseObject *verbobj=NULL);
-
-  PolygonRegion(const char *name, const unsigned int id, 
+  PolygonRegion(const Set_Name& name, const Set_ID id, 
                 const unsigned int npolypoints, 
                 const std::vector<Point>& polypoints, 
                 const double tolerance=1.0e-8,

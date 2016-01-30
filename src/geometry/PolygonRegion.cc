@@ -22,25 +22,13 @@ namespace AmanziGeometry {
 // -------------------------------------------------------------
 // Polygon:: constructors / destructor
 // -------------------------------------------------------------
-PolygonRegion::PolygonRegion(const std::string name, const unsigned int id,
+PolygonRegion::PolygonRegion(const Set_Name& name, const Set_ID id,
                              const unsigned int num_points, 
                              const std::vector<Point>& points,
                              const double tolerance,
                              const LifeCycleType lifecycle,
                              const VerboseObject *verbobj)
   : Region(name,id,points[0].dim()-1,lifecycle,verbobj), num_points_(num_points), 
-    points_(points),tolerance_(tolerance),normal_(points[0].dim()),elim_dir_(0)
-{
-  init();
-}
-
-PolygonRegion::PolygonRegion(const char *name, const unsigned int id,
-                             const unsigned int num_points,
-                             const std::vector<Point>& points,
-                             const double tolerance,
-                             const LifeCycleType lifecycle,
-                             const VerboseObject *verbobj)
-  : Region(name,id,points[0].dim()-1,lifecycle), num_points_(num_points), 
     points_(points),tolerance_(tolerance),normal_(points[0].dim()),elim_dir_(0)
 {
   init();

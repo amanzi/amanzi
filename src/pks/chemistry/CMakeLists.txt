@@ -34,16 +34,21 @@ include_directories(${STATE_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 
 
-
 # External (TPL) include directories
 # Although it does not call HDF5 directly 
 # it does need HDF5 for the Vis.hpp file 
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
 
-
-register_evaluator_with_factory( HEADERFILE Chemistry_PK_Wrapper_reg.hh
+register_evaluator_with_factory(
+  HEADERFILE Amanzi_PK_reg.hh
   LISTNAME   PKS_CHEMISTRY_REGISTRATIONS )
+
+if (ENABLE_ALQUIMIA)
+register_evaluator_with_factory(
+  HEADERFILE Alquimia_PK_reg.hh
+  LISTNAME   PKS_CHEMISTRY_REGISTRATIONS )
+endif()
 
 generate_evaluators_registration_header( 
   HEADERFILE pks_chemistry_registration.hh   
@@ -51,18 +56,23 @@ generate_evaluators_registration_header(
   INSTALL    True )
 
 
-file(GLOB chem_inc_files "*hh")
+set(chem_inc_files 
+                   Alquimia_PK.hh
+                   Alquimia_PK_reg.hh
+                   Amanzi_PK.hh
+                   Amanzi_PK_reg.hh
+                   Chemistry_PK.hh
+                   pks_chemistry_registration.hh
+)
+
 set(chem_src_files)
 if (ENABLE_Unstructured)
-  list(APPEND chem_src_files Chemistry_State.cc;Chemistry_PK.cc;Chemistry_PK_Wrapper.cc)
+  list(APPEND chem_src_files Chemistry_PK.cc Amanzi_PK.cc)
   if (ENABLE_ALQUIMIA)
-    list(APPEND chem_src_files alquimia_chemistry_pk.cc)
+    list(APPEND chem_src_files Alquimia_PK.cc)
   endif()
 endif()
-if (ENABLE_ALQUIMIA)
-  list(APPEND chem_src_files alquimia_chemistry_pk.cc)
-else()
-endif()
+
 add_amanzi_library(chemistry_pk
                    SOURCE ${chem_src_files}
                    HEADERS ${chem_inc_files}

@@ -1,7 +1,7 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators 
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -134,7 +134,7 @@ void OperatorDiffusionMFD::UpdateMatricesNewtonCorrection(
     if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
       AddNewtonCorrectionCell_(flux, u, scalar_limiter);
     } else {
-      Errors::Message msg("OperatorDiffusion: Newton correction may only be applied to schemas that include CELL dofs.");
+      Errors::Message msg("OperatorDiffusionMFD: Newton correction may only be applied to schemas that include CELL dofs.");
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -403,11 +403,10 @@ void OperatorDiffusionMFD::UpdateMatricesNodal_()
 
 /* ******************************************************************
 * Calculate and assemble fluxes using the TPFA scheme.
+* This routine does not use little k.
 ****************************************************************** */
 void OperatorDiffusionMFD::UpdateMatricesTPFA_()
 {
-  // This does not seem to consider little k? --etc
-
   // populate transmissibilities
   WhetStone::MFD3D_Diffusion mfd(mesh_);
 
@@ -499,7 +498,7 @@ void OperatorDiffusionMFD::ApplyBCs(bool primary, bool eliminate)
                                   | OPERATOR_SCHEMA_DOFS_NODE)) {
       Teuchos::RCP<BCs> bc_f, bc_n;
       for (std::vector<Teuchos::RCP<BCs> >::iterator bc = bcs_trial_.begin();
-           bc != bcs_trial_.end(); ++bc) {
+          bc != bcs_trial_.end(); ++bc) {
         if ((*bc)->type() == OPERATOR_BC_TYPE_FACE) {
           bc_f = *bc;
         } else if ((*bc)->type() == OPERATOR_BC_TYPE_NODE) {
@@ -685,7 +684,7 @@ void OperatorDiffusionMFD::ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test,
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       rhs_cell[0][cells[0]] += bc_value[f] * Aface(0, 0);
     }
-    // neumann condition contributes to the RHS
+    // Neumann condition contributes to the RHS
     else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
       local_op_->matrices_shadow[f] = Aface;
       
@@ -847,6 +846,7 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
   const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
 
   // populate the local matrices
+  double v, vmod;
   AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f < nfaces_owned; f++) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -854,15 +854,15 @@ void OperatorDiffusionMFD::AddNewtonCorrectionCell_(
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
 
-    // We assume implicitly that dkdp >= 0 and use the upwind discretization.
-    double v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] / kf[0][f] : 0.0;
-    double vmod = std::abs(v) * dkdp_f[0][f];
+    // We use the upwind discretization of the generalized flux.
+    v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] * dkdp_f[0][f] / kf[0][f] : 0.0;
+    vmod = std::abs(v);
 
     // prototype for future limiters (external or internal ?)
     vmod *= scalar_limiter;
 
-    // interior face
-    int i, dir, c1, c2;
+    // define the upwind cell, index i in this case
+    int i, dir, c1;
     c1 = cells[0];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
     i = (v * dir >= 0.0) ? 0 : 1;
@@ -917,8 +917,9 @@ void OperatorDiffusionMFD::ModifyMatrices(const CompositeVector& u)
 
 
 /* ******************************************************************
-* WARNING: Since diffusive flux is not continuous, we derive it only
-* once (using flag) and in exactly the same manner as other routines.
+* WARNING: Since diffusive flux may be discontinuous (e.g. for
+* Richards equation), we derive it only once (using flag) and in 
+* exactly the same manner as other routines.
 * **************************************************************** */
 void OperatorDiffusionMFD::UpdateFlux(const CompositeVector& u, CompositeVector& flux)
 {
@@ -1015,10 +1016,7 @@ void OperatorDiffusionMFD::CreateMassMatrices_()
           if (K_symmetric_) {
             ok = mfd.MassMatrixInverseScaled(c, Kc, Wff);
           } else {
-            WhetStone::Tensor Ktmp(Kc);
-            Ktmp.Inverse();
-            ok = mfd.MassMatrixNonSymmetric(c, Ktmp, Wff);
-            Wff.Inverse();
+            ok = mfd.MassMatrixInverseNonSymmetric(c, Kc, Wff);
           }
         }
       }
@@ -1037,7 +1035,7 @@ void OperatorDiffusionMFD::CreateMassMatrices_()
 
 
 /* ******************************************************************
-* Scale elemental inverse mass matrices. Use case if saturated flow.
+* Scale elemental inverse mass matrices. Use case is saturated flow.
 ****************************************************************** */
 void OperatorDiffusionMFD::ScaleMassMatrices(double s)
 {
@@ -1281,8 +1279,7 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
 * equations:
 *   x_f = Aff^-1 * (y_f - Afc * x_c)
 ****************************************************************** */
-int
-OperatorDiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
+int OperatorDiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 {
   if (consistent_face_op_ == Teuchos::null) {
     // create the op
@@ -1297,12 +1294,12 @@ OperatorDiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 
   // calculate the rhs, given by y_f - Afc * x_c
   CompositeVector& y = *consistent_face_op_->rhs();
-  Epetra_MultiVector& y_f = *y.ViewComponent("face",true);
-  y_f = *global_op_->rhs()->ViewComponent("face",true);
-  consistent_face_op_->rhs()->PutScalarGhosted(0.);
+  Epetra_MultiVector& y_f = *y.ViewComponent("face", true);
+  y_f = *global_op_->rhs()->ViewComponent("face", true);
+  consistent_face_op_->rhs()->PutScalarGhosted(0.0);
 
   // y_f - Afc * x_c
-  const Epetra_MultiVector& x_c = *u.ViewComponent("cell",false);
+  const Epetra_MultiVector& x_c = *u.ViewComponent("cell", false);
   AmanziMesh::Entity_ID_List faces;
   for (int c=0; c!=ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
@@ -1329,17 +1326,14 @@ OperatorDiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 
     CompositeVector u_f_copy(y);
     ierr = lin_solver->ApplyInverse(y, u_f_copy);
-    *u.ViewComponent("face",false) = *u_f_copy.ViewComponent("face",false);
-    ASSERT(ierr >= 0);
+    *u.ViewComponent("face", false) = *u_f_copy.ViewComponent("face", false);
   } else {
     CompositeVector u_f_copy(y);
     ierr = consistent_face_op_->ApplyInverse(y, u);
-    *u.ViewComponent("face",false) = *u_f_copy.ViewComponent("face",false);
-    ASSERT(ierr >= 0);
+    *u.ViewComponent("face", false) = *u_f_copy.ViewComponent("face", false);
   }
   
   return (ierr > 0) ? 0 : 1;
-  //return ierr;
 }
   
 

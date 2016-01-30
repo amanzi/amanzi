@@ -16,6 +16,7 @@ from matplotlib import pyplot as plt
 def GetXY_Amanzi(path,root,time,comp):
 
     # open amanzi concentration and mesh files
+
     dataname = os.path.join(path,root+"_data.h5")
     amanzi_file = h5py.File(dataname,'r')
     meshname = os.path.join(path,root+"_mesh.h5")
@@ -135,10 +136,10 @@ if __name__ == "__main__":
 # run+read Amanzi native chemistry simulation
     try:
         time = '71'
-        comp = 'total_component_concentration.cell.Tracer' # conc'
-
+        comp = 'total_component_concentration.cell.tracer' # conc'
+        
         # Amanzi native chemistry
-        input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
+        input_filename = os.path.join("amanzi-u-1d-"+root+"-isv2.xml")
         path_to_amanzi = "amanzi-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanzi)
 
@@ -151,7 +152,7 @@ if __name__ == "__main__":
 # run+read Amanzi-Alquimia-PFloTran simulation
     try:
         comp = 'total_component_concentration.cell.Tracer conc'
-        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-pflo.xml")
+        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-pflo-isv2.xml")
         path_to_amanzi = "amanzi-alquimia-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+".in",root+".dat"], path_to_amanzi)
         x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)

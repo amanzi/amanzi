@@ -1,7 +1,7 @@
 /*
-  This is the operators component of the Amanzi code.
+  Operators
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -19,16 +19,17 @@
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorDiffusionMFD.hh"
 #include "OperatorDiffusionFV.hh"
+#include "OperatorDiffusionNLFV.hh"
 #include "OperatorDiffusionMFDwithGravity.hh"
 #include "OperatorDiffusionFVwithGravity.hh"
+#include "OperatorDiffusionNLFVwithGravity.hh"
 
 namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Initialization of diffusion operator: method 1 with optional gravity
-*
-* This is the constructor used by Amanzi
+* Initialization of diffusion operator with optional gravity.
+* This is the constructor used by Amanzi.
 ****************************************************************** */
 Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     Teuchos::ParameterList& oplist,
@@ -51,6 +52,15 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh, rho, g));
     op->SetBCs(bc, bc);
 
+  // NLFV methods
+  } else if (name == "nlfv: default" && !flag) {
+    op = Teuchos::rcp(new OperatorDiffusionNLFV(oplist, mesh)); 
+    op->SetBCs(bc, bc);
+
+  } else if (name == "nlfv: default" && flag) {
+    op = Teuchos::rcp(new OperatorDiffusionNLFVwithGravity(oplist, mesh, rho, g)); 
+    op->SetBCs(bc, bc);
+
   // MFD methods
   } else if (!flag) {
     op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
@@ -65,8 +75,7 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
 
 
 /* ******************************************************************
-* Initialization of diffusion operator: method 2 with optional gravity
-*
+* Initialization of diffusion operator with optional gravity.
 * This is the factory used by Amanzi, though it makes life difficult
 * for time-varying density.
 ****************************************************************** */
@@ -89,7 +98,7 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
 
   } else if (name == "fv: default" && flag) {
     Teuchos::RCP<OperatorDiffusionFVwithGravity> op_g =
-      Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh, g));
+        Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh, g));
     op_g->SetBCs(bc, bc);
     op_g->SetDensity(rho);
     op = op_g;
@@ -101,7 +110,7 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
 
   } else {
     Teuchos::RCP<OperatorDiffusionMFDwithGravity> op_g =
-      Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, mesh, g));
+        Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, mesh, g));
     op_g->SetBCs(bc, bc);
     op_g->SetDensity(rho);
     op = op_g;
@@ -111,9 +120,7 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
 
 
 /* ******************************************************************
-* Initialization of diffusion operator: method 1 without gravity.
-*
-* No gravity included, straight diffusion operator.
+* Initialization of straight diffusion operator: method 1.
 ****************************************************************** */
 Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     Teuchos::ParameterList& oplist,
@@ -128,6 +135,11 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     op = Teuchos::rcp(new OperatorDiffusionFV(oplist, mesh));
     op->SetBCs(bc, bc);
 
+  // NLFV methods
+  } else if (name == "nlfv: default") {
+    op = Teuchos::rcp(new OperatorDiffusionNLFV(oplist, mesh)); 
+    op->SetBCs(bc, bc);
+
   // MFD methods
   } else {
     op = Teuchos::rcp(new OperatorDiffusionMFD(oplist, mesh));
@@ -138,9 +150,7 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
   
 
 /* ******************************************************************
-* Initialization of diffusion operator: method 2 without gravity.
-*
-* No gravity included, straight diffusion operator.
+* Initialization of straight diffusion operator: method 2.
 ****************************************************************** */
 Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     Teuchos::ParameterList& oplist,
@@ -159,9 +169,7 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
   
 
 /* ******************************************************************
-* Initialization of diffusion operator: method 3 without gravity.
-*
-* No gravity included, straight diffusion operator.
+* Initialization of straight diffusion operator: method 3.
 ****************************************************************** */
 Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
     Teuchos::ParameterList& oplist,
@@ -180,7 +188,7 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
 
 
 /* ******************************************************************
-* Initialization of diffusion operator with gravity: method 1
+* Initialization of diffusion operator with gravity: method 1.
 *
 * With gravity, assumed vector, temporally varying density.
 * Used by ATS.
@@ -203,9 +211,9 @@ OperatorDiffusionFactory::CreateWithGravity(
   return op;
 }
 
+
 /* ******************************************************************
-* Initialization of diffusion operator with gravity: method 2
-*
+* Initialization of diffusion operator with gravity: method 2.
 * With gravity, assumed vector, temporally varying density.
 * Used by ATS.
 ****************************************************************** */
@@ -229,8 +237,7 @@ OperatorDiffusionFactory::CreateWithGravity(
 
 
 /* ******************************************************************
-* Initialization of diffusion operator with gravity: method 1
-*
+* Initialization of diffusion operator with gravity: method 3.
 * With gravity, assumed vector, temporally varying density.
 * Used by ATS.
 ****************************************************************** */
@@ -250,9 +257,9 @@ OperatorDiffusionFactory::CreateWithGravity(
   return op;
 }
 
+
 /* ******************************************************************
-* Initialization of diffusion operator with gravity: method 2
-*
+* Initialization of diffusion operator with gravity: method 4.
 * With gravity, assumed vector, temporally varying density.
 * Used by ATS.
 ****************************************************************** */
@@ -271,7 +278,6 @@ OperatorDiffusionFactory::CreateWithGravity(
   }
   return op;
 }
-  
 
 }  // namespace Operators
 }  // namespace Amanzi

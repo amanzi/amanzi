@@ -1,7 +1,7 @@
 /*
-  This is the Transport component of Amanzi
+  Transport PK
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -23,13 +23,13 @@ TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(
     const std::vector<double>& times,
     const std::vector<std::string>& cond_names,
     const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
-    Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
+    Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
     Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine) :
     TransportBoundaryFunction(mesh),
     mesh_(mesh),
     times_(times),
     cond_names_(cond_names),
-    chem_state_(chem_state),
+    chem_pk_(chem_pk),
     chem_engine_(chem_engine)
 {
   // Check arguments.
@@ -123,7 +123,7 @@ void TransportBoundaryFunction_Alquimia::Compute(double time)
     int cell = cell_for_face_[faces_[n]];
 
     // Dump the contents of the chemistry state into our Alquimia containers.
-    chem_state_->CopyToAlquimia(cell, alq_mat_props_, alq_state_, alq_aux_data_);
+    chem_pk_->CopyToAlquimia(cell, alq_mat_props_, alq_state_, alq_aux_data_);
 
     // Enforce the condition.
     chem_engine_->EnforceCondition(cond_name, time, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);

@@ -1,7 +1,7 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -34,7 +34,6 @@
 
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionMFD.hh"
-#include "UpwindStandard.hh"
 
 int BoundaryFaceGetCell(const Amanzi::AmanziMesh::Mesh& mesh, int f)
 {
@@ -144,10 +143,10 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
   op->UpdateConsistentFaces(x);
 
-  // dump the schur complement
-  std::stringstream filename_s2;
-  filename_s2 << "consist_face_" << 0 << ".txt";
-  EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *op->consistent_face_operator()->A());
+  // // dump the schur complement
+  // std::stringstream filename_s2;
+  // filename_s2 << "consist_face_" << 0 << ".txt";
+  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *op->consistent_face_operator()->A());
 
   // ensure that (y - A * x) on faces is zero
   CompositeVector res(cvs);

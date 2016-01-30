@@ -66,6 +66,7 @@ generate_evaluators_registration_header(
   INSTALL    True
   )
 
+# -- water retention models registration
 #register_evaluator_with_factory(
 #  HEADERFILE WRMEvaluator_reg.hh
 #  LISTNAME   WRM_FLOW_REGISTRATIONS

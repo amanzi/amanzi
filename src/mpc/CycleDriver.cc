@@ -1,5 +1,5 @@
 /*
-  This is the MPC component of the Amanzi code. 
+  Multi-Process Coordinator
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -19,27 +19,31 @@
 #include <iostream>
 #include <unistd.h>
 #include <sys/resource.h>
-#include "errors.hh"
 
+// TPLs
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 
+#include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
 
+// Amanzi
 #include "checkpoint.hh"
-#include "CycleDriver.hh"
-#include "ObservationData.hh"
+#include "errors.hh"
 #include "PK.hh"
 #include "PK_Factory.hh"
-#include "TimeStepManager.hh"
+#include "ObservationData.hh"
 #include "TimerManager.hh"
+#include "TimeStepManager.hh"
 #include "TreeVector.hh"
-#include "Unstructured_observations.hh"
 #include "State.hh"
-#include "visualization.hh"
+#include "Visualization.hh"
+
+// MPC
+#include "CycleDriver.hh"
+#include "Unstructured_observations.hh"
 
 #define DEBUG_MODE 1
 
@@ -72,17 +76,17 @@ CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
                          Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                          Epetra_MpiComm* comm,
                          Amanzi::ObservationData& observations_data) :
-    parameter_list_(glist),
+    glist_(glist),
     mesh_(mesh),
     comm_(comm),
     observations_data_(observations_data),
     restart_requested_(false) {
 
-  if (parameter_list_->isSublist("State")) {
-    Teuchos::ParameterList state_plist = parameter_list_->sublist("State");
+  if (glist_->isSublist("State")) {
+    Teuchos::ParameterList state_plist = glist_->sublist("State");
     S_ = Teuchos::rcp(new Amanzi::State(state_plist));
     S_->RegisterMesh("domain", mesh_); 
-  }else{
+  } else{
     Errors::Message message("CycleDriver: xml_file does not contain 'State' sublist\n");
     Exceptions::amanzi_throw(message);
   }
@@ -90,7 +94,7 @@ CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
   // create and start the global timer
   CoordinatorInit_();
 
-  vo_ = Teuchos::rcp(new VerboseObject("CycleDriver", parameter_list_->sublist("Cycle Driver")));
+  vo_ = Teuchos::rcp(new VerboseObject("CycleDriver", glist_->sublist("Cycle Driver")));
 };
 
 
@@ -98,7 +102,7 @@ CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
 * High-level initialization.
 ****************************************************************** */
 void CycleDriver::CoordinatorInit_() {
-  coordinator_list_ = Teuchos::sublist(parameter_list_, "Cycle Driver");
+  coordinator_list_ = Teuchos::sublist(glist_, "Cycle Driver");
   ReadParameterList_();
 
   // create the global solution vector
@@ -130,7 +134,7 @@ void CycleDriver::Init_PK(int time_pr_id) {
     Exceptions::amanzi_throw(message);
   }
 
-  pk_ = pk_factory.CreatePK(pk_tree_list.sublist(pk_name), parameter_list_, S_, soln_);
+  pk_ = pk_factory.CreatePK(pk_tree_list.sublist(pk_name), glist_, S_, soln_);
 }
 
 
@@ -141,9 +145,11 @@ void CycleDriver::Setup() {
   // Set up the states, creating all data structures.
 
   // create the observations
-  if (parameter_list_->isSublist("Observation Data")) {
-    Teuchos::ParameterList observation_plist = parameter_list_->sublist("Observation Data");
-    observations_ = Teuchos::rcp(new Amanzi::Unstructured_observations(observation_plist, observations_data_, comm_));
+  if (glist_->isSublist("Observation Data")) {
+    Teuchos::RCP<Teuchos::ParameterList> obs_list = Teuchos::sublist(glist_, "Observation Data");
+    Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist_, "Units");
+    observations_ = Teuchos::rcp(new Amanzi::Unstructured_observations(obs_list, units_list, observations_data_, comm_));
+
     if (coordinator_list_->isParameter("component names")) {
       Teuchos::Array<std::string> comp_names = coordinator_list_->get<Teuchos::Array<std::string> >("component names");
       int num_liquid = coordinator_list_->get<int>("number of liquid components", comp_names.size());
@@ -152,8 +158,8 @@ void CycleDriver::Setup() {
   }
 
   // create the checkpointing
-  if (parameter_list_->isSublist("Checkpoint Data")) {
-    Teuchos::ParameterList& chkp_plist = parameter_list_->sublist("Checkpoint Data");
+  if (glist_->isSublist("Checkpoint Data")) {
+    Teuchos::ParameterList& chkp_plist = glist_->sublist("Checkpoint Data");
     checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
   }
   else{
@@ -161,8 +167,8 @@ void CycleDriver::Setup() {
   }
 
   // create the walkabout
-  if (parameter_list_->isSublist("Walkabout Data")){
-    Teuchos::ParameterList& walk_plist = parameter_list_->sublist("Walkabout Data");
+  if (glist_->isSublist("Walkabout Data")) {
+    Teuchos::ParameterList& walk_plist = glist_->sublist("Walkabout Data");
     walkabout_ = Teuchos::rcp(new Amanzi::Walkabout_observations(walk_plist, comm_));
   }
   else {
@@ -180,12 +186,12 @@ void CycleDriver::Setup() {
       // vis successful steps
       std::string plist_name = "Visualization Data "+mesh->first;
       // in the case of just a domain mesh, we want to allow no name.
-      if ((mesh->first == "domain") && !parameter_list_->isSublist(plist_name)) {
+      if ((mesh->first == "domain") && !glist_->isSublist(plist_name)) {
         plist_name = "Visualization Data";
       }
 
-      if (parameter_list_->isSublist(plist_name)) {
-        Teuchos::ParameterList& vis_plist = parameter_list_->sublist(plist_name);
+      if (glist_->isSublist(plist_name)) {
+        Teuchos::ParameterList& vis_plist = glist_->sublist(plist_name);
         Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist, comm_));
         vis->set_mesh(mesh->second.first);
         vis->CreateFiles();
@@ -195,12 +201,12 @@ void CycleDriver::Setup() {
       // vis unsuccessful steps
       std::string fail_plist_name = "Visualization Data "+mesh->first+" Failed Steps";
       // in the case of just a domain mesh, we want to allow no name.
-      if ((mesh->first == "domain") && !parameter_list_->isSublist(fail_plist_name)) {
+      if ((mesh->first == "domain") && !glist_->isSublist(fail_plist_name)) {
         fail_plist_name = "Visualization Data Failed Steps";
       }
 
-      if (parameter_list_->isSublist(fail_plist_name)) {
-        Teuchos::ParameterList& fail_vis_plist = parameter_list_->sublist(fail_plist_name);
+      if (glist_->isSublist(fail_plist_name)) {
+        Teuchos::ParameterList& fail_vis_plist = glist_->sublist(fail_plist_name);
         Teuchos::RCP<Visualization> fail_vis =
           Teuchos::rcp(new Visualization(fail_vis_plist, comm_));
         fail_vis->set_mesh(mesh->second.first);
@@ -216,7 +222,7 @@ void CycleDriver::Setup() {
   S_->Setup();
 
   // create the time step manager
-  tsm_ = Teuchos::ptr(new TimeStepManager(parameter_list_->sublist("Cycle Driver")));
+  tsm_ = Teuchos::ptr(new TimeStepManager(glist_->sublist("Cycle Driver")));
   //tsm_ = Teuchos::ptr(new TimeStepManager(vo_));
 
   // set up the TSM
@@ -277,8 +283,6 @@ void CycleDriver::Initialize() {
   // pk_->CommitStep(t0_-get_dt(), get_dt());
   if (!restart_requested_) {
     pk_->CommitStep(S_->time(), S_->time());
-    // visualize();
-    // checkpoint(*S_->GetScalarData("dt", "coordinator"));
   }
 }
 
@@ -295,21 +299,6 @@ void CycleDriver::Finalize() {
     Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), 0.0, true, &observations_data_);
   }
 }
-
-
-// double rss_usage() { // return ru_maxrss in MBytes
-// #if (defined(__unix__) || defined(__unix) || defined(unix) || defined(__APPLE__) || defined(__MACH__))
-//   struct rusage usage;
-//   getrusage(RUSAGE_SELF, &usage);
-// #if (defined(__APPLE__) || defined(__MACH__))
-//   return static_cast<double>(usage.ru_maxrss)/1024.0/1024.0;
-// #else
-//   return static_cast<double>(usage.ru_maxrss)/1024.0;
-// #endif
-// #else
-//   return 0.0;
-// #endif
-// }
 
 
 /* ******************************************************************
@@ -347,23 +336,23 @@ void CycleDriver::ReportMemory() {
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "======================================================================" << std::endl;
-    *vo_->os() << "All meshes combined have " << global_ncells << " cells." << std::endl;
-    *vo_->os() << "Memory usage (high water mark):" << std::endl;
+    *vo_->os() << "Simulation made " << S_->cycle() << " cycles.\n";
+    *vo_->os() << "All meshes combined have " << global_ncells << " cells.\n";
+    *vo_->os() << "Memory usage (high water mark):\n";
     *vo_->os() << std::fixed << std::setprecision(1);
     *vo_->os() << "  Maximum per core:   " << std::setw(7) << max_mem 
-          << " MBytes,  maximum per cell: " << std::setw(7) << max_percell*1024*1024 
-          << " Bytes" << std::endl;
+               << " MBytes,  maximum per cell: " << std::setw(7) << max_percell*1024*1024 
+               << " Bytes" << std::endl;
     *vo_->os() << "  Minumum per core:   " << std::setw(7) << min_mem 
-          << " MBytes,  minimum per cell: " << std::setw(7) << min_percell*1024*1024 
-         << " Bytes" << std::endl;
+               << " MBytes,  minimum per cell: " << std::setw(7) << min_percell*1024*1024 
+               << " Bytes" << std::endl;
     *vo_->os() << "  Total:              " << std::setw(7) << total_mem 
-          << " MBytes,  total per cell:   " << std::setw(7) << total_mem/global_ncells*1024*1024 
-          << " Bytes" << std::endl;
+               << " MBytes,  total per cell:   " << std::setw(7) << total_mem/global_ncells*1024*1024 
+               << " Bytes" << std::endl;
   }
 
-  
   double doubles_count(0.0);
-  for (State::field_iterator field=S_->field_begin(); field!=S_->field_end(); ++field) {
+  for (State::field_iterator field = S_->field_begin(); field != S_->field_end(); ++field) {
     doubles_count += static_cast<double>(field->second->GetLocalElementCount());
   }
   double global_doubles_count(0.0);
@@ -385,41 +374,13 @@ void CycleDriver::ReportMemory() {
 
 
 /* ******************************************************************
-* TBW.
+* Read control variables for all time periods. 
 ****************************************************************** */
 void CycleDriver::ReadParameterList_() {
-  // std::cout<<*coordinator_list_<<"\n";
-  // t0_ = coordinator_list_->get<double>("start time");
-  // t1_ = coordinator_list_->get<double>("end time");
-  // std::string t0_units = coordinator_list_->get<std::string>("start time units", "s");
-  // std::string t1_units = coordinator_list_->get<std::string>("end time units", "s");
-
-  // if (t0_units == "s") {
-  //   // internal units in s
-  // } else if (t0_units == "d") { // days
-  //   t0_ = t0_ * 24.0*3600.0;
-  // } else if (t0_units == "yr") { // years
-  //   t0_ = t0_ * 365.25*24.0*3600.0;
-  // } else {
-  //   Errors::Message message("CycleDriver: error, invalid start time units");
-  //   Exceptions::amanzi_throw(message);
-  // }
-
-  // if (t1_units == "s") {
-  //   // internal units in s
-  // } else if (t1_units == "d") { // days
-  //   t1_ = t1_ * 24.0*3600.0;
-  // } else if (t1_units == "yr") { // years
-  //   t1_ = t1_ * 365.25*24.0*3600.0;
-  // } else {
-  //   Errors::Message message("CycleDriver: error, invalid end time units");
-  //   Exceptions::amanzi_throw(message);
-  // }
-
-  max_dt_ = coordinator_list_->get<double>("max time step size", 1.0e99);
+  max_dt_ = coordinator_list_->get<double>("max time step size", 1.0e+99);
   min_dt_ = coordinator_list_->get<double>("min time step size", 1.0e-12);
-  cycle0_ = coordinator_list_->get<int>("start cycle",0);
-  cycle1_ = coordinator_list_->get<int>("end cycle",-1);
+  cycle0_ = coordinator_list_->get<int>("start cycle", 0);
+  cycle1_ = coordinator_list_->get<int>("end cycle", -1);
 
   Teuchos::ParameterList time_periods_list = coordinator_list_->sublist("time periods");
 
@@ -429,6 +390,7 @@ void CycleDriver::ReadParameterList_() {
   tp_end_.resize(num_time_periods_);
   tp_dt_.resize(num_time_periods_);
   tp_max_cycle_.resize(num_time_periods_);
+  tp_max_dt_.resize(num_time_periods_);
 
   int i = 0;
   for (item = time_periods_list.begin(); item !=time_periods_list.end(); ++item) {
@@ -436,41 +398,9 @@ void CycleDriver::ReadParameterList_() {
     tp_start_[i] = time_periods_list.sublist(tp_name).get<double>("start period time");
     tp_end_[i] = time_periods_list.sublist(tp_name).get<double>("end period time");
     tp_dt_[i] = time_periods_list.sublist(tp_name).get<double>("initial time step", 1.0);
+    tp_max_dt_[i] = time_periods_list.sublist(tp_name).get<double>("maximum time step", 1.0e+99);
     tp_max_cycle_[i] = time_periods_list.sublist(tp_name).get<int>("maximum cycle number", -1);
    
-    std::string t_units = time_periods_list.sublist(tp_name).get<std::string>("start time units", "s");
-    if (t_units == "s") {
-      // internal units in s
-    } else if (t_units == "d") {  // days
-      tp_start_[i] = tp_start_[i] * 24.0*3600.0;
-    } else if (t_units == "yr") {  // years
-      tp_start_[i] = tp_start_[i] * 365.25*24.0*3600.0;
-    } else {
-      Errors::Message message("CycleDriver: error, invalid start time units");
-      Exceptions::amanzi_throw(message);
-    }
-    t_units = time_periods_list.sublist(tp_name).get<std::string>("end time units", "s");
-    if (t_units == "s") {
-      // internal units in s
-    } else if (t_units == "d") {  // days
-      tp_end_[i] = tp_end_[i] * 24.0*3600.0;
-    } else if (t_units == "yr") {  // years
-      tp_end_[i] = tp_end_[i] * 365.25*24.0*3600.0;
-    } else {
-      Errors::Message message("CycleDriver: error, invalid end time units");
-      Exceptions::amanzi_throw(message);
-    }
-    t_units = time_periods_list.sublist(tp_name).get<std::string>("initial time step units", "s");
-    if (t_units == "s") {
-      // internal units in s
-    } else if (t_units == "d") {  // days
-      tp_dt_[i] = tp_dt_[i] * 24.0*3600.0;
-    } else if (t_units == "yr") {  // years
-      tp_dt_[i] = tp_dt_[i] * 365.25*24.0*3600.0;
-    } else {
-      Errors::Message message("CycleDriver: error, invalid initial time step time units");
-      Exceptions::amanzi_throw(message);
-    }
     i++;
   }
 
@@ -488,8 +418,10 @@ void CycleDriver::ReadParameterList_() {
     // make sure that the restart file actually exists, if not throw an error
     boost::filesystem::path restart_from_filename_path(restart_filename_);
     if (!boost::filesystem::exists(restart_from_filename_path)) {
-      Errors::Message message("CycleDriver::the specified restart file does not exist or is not a regular file.");
-      Exceptions::amanzi_throw(message);
+      Errors::Message msg;
+      msg << "CycleDriver: restart file \"" << restart_filename_ 
+          << "\" does not exist or is not a regular file.";
+      Exceptions::amanzi_throw(msg);
     }
 
     // if (restart_requested_) {
@@ -550,15 +482,15 @@ double CycleDriver::get_dt(bool after_failure) {
   std::vector<std::pair<double,double> >::iterator it;
   std::vector<std::pair<double,double> >::iterator it_max;
 
-  for (it = reset_info_.begin(), it_max = reset_max_.begin(); it != reset_info_.end(); ++it, ++it_max) {
+  for (it = reset_info_.begin(), it_max = reset_max_.begin(); it != reset_info_.end(); ++it, ++it_max) {    
     if (S_->time() == it->first) {
       if (reset_max_.size() > 0) {
-              max_dt_ = it_max->second;
+        max_dt_ = it_max->second;
       }
 
-      if (dt < it->second){
-         pk_->set_dt(dt);
-      }else {
+      if (dt < it->second) {
+        pk_->set_dt(dt);
+      } else {
         dt = it->second;
         pk_->set_dt(dt);
         after_failure = true;
@@ -589,11 +521,12 @@ double CycleDriver::get_dt(bool after_failure) {
   // ask the step manager if this step is ok
   dt = tsm_->TimeStep(S_->time(), dt, after_failure);
 
+
   // cap the max step size
   if (dt > max_dt_) {
     dt = max_dt_;   
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Time step is larger than maximum allowed "<<dt<<"\n";
+    *vo_->os() << "Time step is larger than maximum allowed "<<dt<<" [sec]. dT = "<<dt<<" [sec].\n";
   }
 
   return dt;
@@ -648,7 +581,7 @@ double CycleDriver::Advance(double dt) {
 
     if (it != reset_info_.end()) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-	*vo_->os() << vo_->color("blue") << " Reinitializing PKs due to BCs or sources/sinks" 
+        *vo_->os() << vo_->color("blue") << " Reinitializing PKs due to BCs or sources/sinks" 
                    << vo_->reset() << std::endl;
       }
       reinit = true;
@@ -694,7 +627,7 @@ double CycleDriver::Advance(double dt) {
     // Amanzi::timer_manager.start("I/O");
 
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      *vo_->os() << "New time(y) = "<< S_->time() / (60*60*24*365.25);
+      *vo_->os() << "New time = "<< S_->time() / (60*60*24*365.25) << " y";
       *vo_->os() << std::endl;
     }
   } else {
@@ -777,7 +710,7 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
 }
 
 
-void CycleDriver::WriteWalkabout(bool force){
+void CycleDriver::WriteWalkabout(bool force) {
   if (walkabout_ != Teuchos::null) {
     if (walkabout_->DumpRequested(S_->cycle(), S_->time()) || force) {
       if (!walkabout_->is_disabled())
@@ -813,6 +746,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
     Initialize();
 
     dt = tp_dt_[time_period_id_];
+    max_dt_ = tp_max_dt_[time_period_id_];
     dt = tsm_->TimeStep(S_->time(), dt);
     pk_->set_dt(dt);
 
@@ -820,15 +754,18 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
     // Read restart file
     restart_time = ReadCheckpointInitialTime(comm_, restart_filename_);
+
     position = ReadCheckpointPosition(comm_, restart_filename_);
     ReadCheckpointObservations(comm_, restart_filename_, observations_data_);
     for (int i = 0; i < num_time_periods_; i++) {
       if (restart_time - tp_end_[i] > -1e-10) 
-	time_period_id_++;
-    }    
+        time_period_id_++;
+    }  
+
     if (position == TIME_PERIOD_END) 
       if (time_period_id_>0) 
-	time_period_id_--;   
+        time_period_id_--;   
+
 
     Init_PK(time_period_id_); 
     Setup();
@@ -841,7 +778,6 @@ Teuchos::RCP<State> CycleDriver::Go() {
     
     // re-initialize the state object
     restart_dT = ReadCheckpoint(comm_, Teuchos::ptr(&*S_), restart_filename_);
-    //S_->WriteStatistics(vo_);
 
     cycle0_ = S_->cycle();
     for (std::vector<std::pair<double,double> >::iterator it = reset_info_.begin();
@@ -856,10 +792,15 @@ Teuchos::RCP<State> CycleDriver::Go() {
     }
 
     if (position == TIME_PERIOD_END) {
-      if (time_period_id_ < num_time_periods_ - 1) time_period_id_++;
-      ResetDriver(time_period_id_); 
-      restart_dT =  tp_dt_[time_period_id_];
-    }else{
+      if (time_period_id_ < num_time_periods_ - 1){
+        time_period_id_++;
+        ResetDriver(time_period_id_); 
+        restart_dT =  tp_dt_[time_period_id_];
+      }
+      else {
+        pk_->Initialize();
+      }     
+    } else {
       // Initialize the process kernels
       pk_->Initialize();
     }
@@ -884,7 +825,6 @@ Teuchos::RCP<State> CycleDriver::Go() {
   WriteCheckpoint(dt);
   S_->WriteStatistics(vo_);
 
-
   //Amanzi::timer_manager.stop("I/O");
  
   // iterate process kernels
@@ -896,24 +836,28 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
     while (time_period_id_ < num_time_periods_) {
       int start_cycle_num = S_->cycle();
-      do {
+      //      do 
+      while ((S_->time() < tp_end_[time_period_id_]) && 
+             ((tp_max_cycle_[time_period_id_] == -1) || 
+              (S_->cycle() - start_cycle_num < tp_max_cycle_[time_period_id_])))
+      {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
           Teuchos::OSTab tab = vo_->getOSTab();
           *vo_->os() << "\nCycle " << S_->cycle()
-                     << ": time(y) = " << S_->time() / (60*60*24*365.25)
-                     << ", dt(y) = " << dt / (60*60*24*365.25) << std::endl;
+                     << ": time = " << S_->time() / (60*60*24*365.25) << " y"
+                     << ", dt = " << dt / (60*60*24*365.25) << " y\n";
         }
         *S_->GetScalarData("dt", "coordinator") = dt;
         S_->set_initial_time(S_->time());
         S_->set_final_time(S_->time() + dt);
+        S_->set_intermediate_time(S_->time());
         S_->set_position(TIME_PERIOD_INSIDE);
 
         dt = Advance(dt);
         //dt = get_dt(fail);
 
       }  // while not finished
-      while ((S_->time() < tp_end_[time_period_id_]) && ((tp_max_cycle_[time_period_id_] == -1) 
-                                     || (S_->cycle() - start_cycle_num <= tp_max_cycle_[time_period_id_])));
+
 
       time_period_id_++;
       if (time_period_id_ < num_time_periods_) {
@@ -921,13 +865,12 @@ Teuchos::RCP<State> CycleDriver::Go() {
         dt = get_dt(false);
       }      
     }
-#if !DEBUG_MODE
   }
-
+#if !DEBUG_MODE
   catch (Exceptions::Amanzi_exception &e) {
     // write one more vis for help debugging
     S_->advance_cycle();
-    visualize(true); // force vis
+    Visualize(true);  // force vis
 
     // flush observations to make sure they are saved
     observations_->Flush();
@@ -939,11 +882,9 @@ Teuchos::RCP<State> CycleDriver::Go() {
     throw e;
   }
 #endif
-  }
   
   // finalizing simulation
   S_->WriteStatistics(vo_);
-  *vo_->os() << "\nCycle " << S_->cycle()<<"\n";
   ReportMemory();
   // Finalize();
 
@@ -965,7 +906,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   S_old_ = S_;
 
-  Teuchos::ParameterList state_plist = parameter_list_->sublist("State");
+  Teuchos::ParameterList state_plist = glist_->sublist("State");
   S_ = Teuchos::rcp(new Amanzi::State(state_plist));
 
   S_->RegisterMesh("domain", mesh);
@@ -973,14 +914,8 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   S_->set_time(tp_start_[time_pr_id]); 
   S_->set_position(TIME_PERIOD_START);
 
-  //delete the old global solution vector
-  // soln_ = Teuchos::null;
-  // pk_ = Teuchos::null;
-  
-  //if (pk_.get()) delete pk_.get(); 
+  // delete the old global solution vector
   pk_ = Teuchos::null;
-
-  //if (soln_.get()) delete soln_.get(); 
   soln_ = Teuchos::null;
 
   // create the global solution vector
@@ -1021,10 +956,9 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   S_->WriteStatistics(vo_);
 
   pk_->set_dt(tp_dt_[time_pr_id]);
+  max_dt_ = tp_max_dt_[time_pr_id];
 
   S_old_ = Teuchos::null;
-
-
 }
 
 }  // namespace Amanzi

@@ -59,62 +59,90 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   element = static_cast<DOMElement*>(node);
 
   int max_cycles, max_cycles_steady;
-  double t0, t1, dt0, t0_steady, t1_steady, dt0_steady;
+  double t0, t1, dt0, t0_steady, t1_steady, dt0_steady, dt_max, dt_max_steady;
   char *method, *tagname;
   bool flag_steady(false); 
-  std::string mode_d, method_d, dt0_d, dt_cut_d, dt_inc_d, filename;
+  std::string mode_d, method_d, dt0_d, dt_cut_d, dt_inc_d, filename, dt_max_d;
 
-  mode_d = GetAttributeValueS_(element, "mode", false, "");
-  method_d = GetAttributeValueS_(element, "method", false, "");
-  dt0_d = GetAttributeValueS_(element, "init_dt", false, "0.0");
-  dt_cut_d = GetAttributeValueS_(element, "reduction_factor", false, "0.8");
-  dt_inc_d = GetAttributeValueS_(element, "increase_factor", false, "1.2");
+  mode_d = GetAttributeValueS_(element, "mode", TYPE_NONE, false, "");
+  method_d = GetAttributeValueS_(element, "method", TYPE_NONE, false, "");
+  dt0_d = GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, "0.0");
+  dt_max_d = GetAttributeValueS_(element, "max_dt", TYPE_TIME, false, "1.0e+99");
+  dt_cut_d = GetAttributeValueS_(element, "reduction_factor", TYPE_TIME, false, "0.8");
+  dt_inc_d = GetAttributeValueS_(element, "increase_factor", TYPE_TIME, false, "1.2");
 
   // parse execution_control
   std::map<double, std::string> tp_mode;
-  std::map<double, double> tp_dt0, tp_t1;
+  std::map<double, double> tp_dt0, tp_t1, tp_dt_max;
   std::map<double, int> tp_max_cycles;
 
-  children = node_list->item(0)->getChildNodes();
+  element = static_cast<DOMElement*>(node_list->item(0));
+  children = element->getElementsByTagName(mm.transcode("execution_control"));
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
     element = static_cast<DOMElement*>(inode);
 
-    tagname = mm.transcode(inode->getNodeName());
-    if (strcmp(tagname, "execution_control") == 0) {
-      t0 = TimeStringToValue_(GetAttributeValueS_(element, "start"));
-      t1 = TimeStringToValue_(GetAttributeValueS_(element, "end"));
-      dt0 = TimeStringToValue_(GetAttributeValueS_(element, "init_dt", false, dt0_d));
-      max_cycles = GetAttributeValueD_(element, "max_cycles", false, -1);
-      std::string mode = GetAttributeValueS_(element, "mode", false, mode_d);
+    t0 = GetAttributeValueD_(element, "start", TYPE_TIME);
+    t1 = GetAttributeValueD_(element, "end", TYPE_TIME, false, t0 - 10.0);
+    dt0 = TimeStringToValue_(GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, dt0_d));
+    dt_max = TimeStringToValue_(GetAttributeValueS_(element, "max_dt", TYPE_TIME, false, dt_max_d));
+    max_cycles = GetAttributeValueL_(element, "max_cycles", TYPE_NUMERICAL, false, -1);
+    std::string mode = GetAttributeValueS_(element, "mode", TYPE_NONE, false, mode_d);
 
-      dt_cut_[mode] = TimeStringToValue_(GetAttributeValueS_(element, "reduction_factor", false, dt_cut_d));
-      dt_inc_[mode] = TimeStringToValue_(GetAttributeValueS_(element, "increase_factor", false, dt_inc_d));
+    dt_cut_[mode] = TimeStringToValue_(GetAttributeValueS_(
+        element, "reduction_factor", TYPE_TIME, false, dt_cut_d));
+    dt_inc_[mode] = TimeStringToValue_(GetAttributeValueS_(
+        element, "increase_factor", TYPE_TIME, false, dt_inc_d));
 
-      if (mode == "steady") {
-        t0_steady = t0;
-        t1_steady = t1;
-        dt0_steady = dt0;
-        max_cycles_steady = max_cycles;
-        flag_steady = true;
-      } else {
-        if (tp_mode.find(t0) != tp_mode.end()) {
-          msg << "Transient \"execution_controls\" cannot have the same start time.\n";
-          Exceptions::amanzi_throw(msg);
-        }  
+    if (mode == "steady") {
+      t0_steady = t0;
+      t1_steady = t1;
+      dt0_steady = dt0;
+      dt_max_steady = dt_max;
+      max_cycles_steady = max_cycles;
+      flag_steady = true;
+    } else {
+      if (tp_mode.find(t0) != tp_mode.end()) {
+        msg << "Transient \"execution_controls\" cannot have the same start time.\n";
+        Exceptions::amanzi_throw(msg);
+      }  
 
-        tp_mode[t0] = mode;
-        tp_t1[t0] = t1;
-        tp_dt0[t0] = dt0;
-        tp_max_cycles[t0] = max_cycles;
+      tp_mode[t0] = mode;
+      tp_t1[t0] = t1;
+      tp_dt0[t0] = dt0;
+      tp_dt_max[t0] = dt_max;
+      tp_max_cycles[t0] = max_cycles;
 
-        filename = GetAttributeValueS_(element, "restart", false, "");
-      }
-
-      if (init_filename_.size() == 0)
-          init_filename_ = GetAttributeValueS_(element, "initialize", false, "");
+      filename = GetAttributeValueS_(element, "restart", TYPE_NONE, false, "");
     }
+
+    if (init_filename_.size() == 0)
+        init_filename_ = GetAttributeValueS_(element, "initialize", TYPE_NONE, false, "");
+  }
+
+  // populate optional end-times 
+  flag = true;
+  std::map<double, double>::iterator it1, it2;
+  it1 = tp_t1.begin();
+  if (flag_steady && t1_steady < t0_steady) { 
+    if (it1 != tp_t1.end())
+      t1_steady = it1->first;
+    else
+      flag = false;
+  }
+
+  if (it1 != tp_t1.end()) {
+    for (++(it2 = it1); it2 != tp_t1.end(); it2++) {
+      it1->second = it2->first;
+      it1 = it2;
+    }
+    if (it1->second < it1->first) flag = false;
+  }
+
+  if (!flag) {
+    msg << "Execution_constrols have incorrect attribute \"end\".\n";
+    Exceptions::amanzi_throw(msg);
   }
 
   // old version 
@@ -142,7 +170,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
       if (flow_model_ != "constant") transient_model += 4 * pk_state[tagname];
 
     } else if (strcmp(tagname, "chemistry") == 0) {
-      std::string model = GetAttributeValueS_(element, "engine", false, "none");
+      std::string model = GetAttributeValueS_(element, "engine", TYPE_NONE, false, "none");
       pk_model_["chemistry"] = model;
       transient_model += pk_state[tagname];
 
@@ -174,12 +202,14 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     tmp_list.set<double>("start period time", t0_steady);
     tmp_list.set<double>("end period time", t1_steady);
     tmp_list.set<double>("initial time step", dt0_steady);
+    tmp_list.set<double>("maximum time step", dt_max_steady);
     tmp_list.set<int>("maximum cycle number", max_cycles_steady);
 
     tp_id++;
   }
 
   // -- create PK tree for transient TP
+  std::string submodel;
   std::map<double, std::string>::iterator it = tp_mode.begin();
   while (it != tp_mode.end()) {
     switch (transient_model) {
@@ -218,11 +248,12 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
       }
     case 7:
       {
+        submodel = (pk_model_["chemistry"] == "amanzi") ? "chemistry amanzi" : "chemistry alquimia";
         Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("Flow and Reactive Transport");
         tmp_list.set<std::string>("PK type", "flow reactive transport");
         tmp_list.sublist("Reactive Transport").set<std::string>("PK type", "reactive transport");
         tmp_list.sublist("Reactive Transport").sublist("Transport").set<std::string>("PK type", "transport");
-        tmp_list.sublist("Reactive Transport").sublist("Chemistry").set<std::string>("PK type", "chemistry");
+        tmp_list.sublist("Reactive Transport").sublist("Chemistry").set<std::string>("PK type", submodel);
         tmp_list.sublist("Flow").set<std::string>("PK type", pk_model_["flow"]);
         break;
       }
@@ -239,6 +270,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     tmp_list.set<double>("end period time", tp_t1[it->first]);
     tmp_list.set<int>("maximum cycle number", tp_max_cycles[it->first]);
     tmp_list.set<double>("initial time step", tp_dt0[it->first]);
+    tmp_list.set<double>("maximum time step", tp_dt_max[it->first]);
 
     tp_id++;
     it++;
@@ -283,16 +315,17 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
   node = GetUniqueElementByTagsString_(node_list->item(0), "execution_control_defaults", flag);
   element = static_cast<DOMElement*>(node);
 
-  double t0, t1, dt0;
+  double t0, t1, dt0, dt_max;
   char *method, *tagname;
   bool flag_steady(false); 
-  std::string method_d, dt0_d, mode_d, dt_cut_d, dt_inc_d, filename;
+  std::string method_d, dt0_d, dt_max_d, mode_d, dt_cut_d, dt_inc_d, filename;
 
-  method_d = GetAttributeValueS_(element, "method", false, "");
-  dt0_d = GetAttributeValueS_(element, "init_dt", false, "0.0");
-  mode_d = GetAttributeValueS_(element, "mode", false, "");
-  dt_cut_d = GetAttributeValueS_(element, "reduction_factor", false, "0.8");
-  dt_inc_d = GetAttributeValueS_(element, "increase_factor", false, "1.2");
+  method_d = GetAttributeValueS_(element, "method", TYPE_NONE, false, "");
+  dt0_d = GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, "0.0");
+  dt_max_d = GetAttributeValueS_(element, "max_dt", TYPE_TIME, false, "1.0e+99");
+  mode_d = GetAttributeValueS_(element, "mode", TYPE_NONE, false, "");
+  dt_cut_d = GetAttributeValueS_(element, "reduction_factor", TYPE_TIME, false, "0.8");
+  dt_inc_d = GetAttributeValueS_(element, "increase_factor", TYPE_TIME, false, "1.2");
 
   // Logic behind attribute "mode" in the new PK struncture is not clear yet, 
   // so that we set up some defaults.
@@ -305,6 +338,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
   // parse execution_control
   std::map<std::string, double> tp_t0, tp_t1, tp_dt0;
   std::map<std::string, int> tp_max_cycles;
+  std::map<std::string, double> tp_max_dt;
 
   children = node_list->item(0)->getChildNodes();
   for (int i = 0; i < children->getLength(); ++i) {
@@ -314,19 +348,23 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
 
     tagname = mm.transcode(inode->getNodeName());
     if (strcmp(tagname, "execution_control") == 0) {
-      t0 = TimeStringToValue_(GetAttributeValueS_(element, "start"));
-      t1 = TimeStringToValue_(GetAttributeValueS_(element, "end"));
-      dt0 = TimeStringToValue_(GetAttributeValueS_(element, "init_dt", false, dt0_d));
-      std::string mode = GetAttributeValueS_(element, "mode", false, mode_d);
+      t0 = GetAttributeValueD_(element, "start", TYPE_TIME);
+      t1 = GetAttributeValueD_(element, "end", TYPE_TIME);
+      dt0 = TimeStringToValue_(GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, dt0_d));
+      dt_max = TimeStringToValue_(GetAttributeValueS_(element, "max_dt", TYPE_TIME, false, dt_max_d));
+      std::string mode = GetAttributeValueS_(element, "mode", TYPE_NONE, false, mode_d);
 
       tp_t0[mode] = t0;
       tp_t1[mode] = t1;
       tp_dt0[mode] = dt0;
-      tp_max_cycles[mode] = GetAttributeValueD_(element, "max_cycles", false, -1);
-      dt_cut_[mode] = TimeStringToValue_(GetAttributeValueS_(element, "reduction_factor", false, dt_cut_d));
-      dt_inc_[mode] = TimeStringToValue_(GetAttributeValueS_(element, "increase_factor", false, dt_inc_d));
+      tp_max_dt[mode] = dt_max;
+      tp_max_cycles[mode] = GetAttributeValueL_(element, "max_cycles", TYPE_NUMERICAL, false, -1);
+      dt_cut_[mode] = TimeStringToValue_(GetAttributeValueS_(
+          element, "reduction_factor", TYPE_TIME, false, dt_cut_d));
+      dt_inc_[mode] = TimeStringToValue_(GetAttributeValueS_(
+          element, "increase_factor", TYPE_TIME, false, dt_inc_d));
 
-      filename = GetAttributeValueS_(element, "restart", false, "");
+      filename = GetAttributeValueS_(element, "restart", TYPE_NONE, false, "");
     }
   }
 
@@ -472,6 +510,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
     tmp_list.set<double>("end period time", tp_t1[mode]);
     tmp_list.set<int>("maximum cycle number", tp_max_cycles[mode]);
     tmp_list.set<double>("initial time step", tp_dt0[mode]);
+    tmp_list.set<double>("maximum time step", tp_max_dt[mode]);
 
     tp_id++;
   }
@@ -512,8 +551,9 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   double t, dt_init_d, dt_max_d;
   std::map<double, double> init_dt, max_dt;
 
-  dt_init_d = GetAttributeValueD_(static_cast<DOMElement*>(node), "init_dt", false, RESTART_TIMESTEP);
-  dt_max_d = GetAttributeValueD_(static_cast<DOMElement*>(node), "max_dt", false, MAXIMUM_TIMESTEP);
+  element = static_cast<DOMElement*>(node);
+  dt_init_d = GetAttributeValueD_(element, "init_dt", TYPE_TIME, false, RESTART_TIMESTEP);
+  dt_max_d = GetAttributeValueD_(element, "max_dt", TYPE_TIME, false, MAXIMUM_TIMESTEP);
 
   children = doc_->getElementsByTagName(mm.transcode("execution_control"));
   for (int i = 0; i < children->getLength(); ++i) {
@@ -521,9 +561,9 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
     element = static_cast<DOMElement*>(inode);
 
-    t = GetAttributeValueD_(element, "start");
-    double dt_init = GetAttributeValueD_(element, "init_dt", false, dt_init_d);
-    double dt_max = GetAttributeValueD_(element, "max_dt", false, dt_max_d);
+    t = GetAttributeValueD_(element, "start", TYPE_TIME);
+    double dt_init = GetAttributeValueD_(element, "init_dt", TYPE_TIME, false, dt_init_d);
+    double dt_max = GetAttributeValueD_(element, "max_dt", TYPE_TIME, false, dt_max_d);
     init_dt[t] = dt_init;
     max_dt[t] = dt_max;
   }
@@ -533,15 +573,14 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
 
   std::vector<std::string> bc_names;
   bc_names.push_back("hydrostatic");
-  bc_names.push_back("linear_hydrostatic");
   bc_names.push_back("uniform_pressure");
-  bc_names.push_back("linear_pressure");
   bc_names.push_back("inward_mass_flux");
   bc_names.push_back("outward_mass_flux");
   bc_names.push_back("inward_volumetric_flux");
   bc_names.push_back("outward_volumetric_flux");
   bc_names.push_back("seepage_face");
   bc_names.push_back("aqueous_conc");
+  bc_names.push_back("uniform_conc");
   bc_names.push_back("constraint");
   bc_names.push_back("diffusion_dominated_release");
   bc_names.push_back("uniform_temperature");
@@ -556,7 +595,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
         DOMNode* inode = children->item(i);
         if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-        t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start");
+        t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start", TYPE_TIME);
         // find position before t
         std::map<double, double>::iterator it = init_dt.upper_bound(t);
         if (it == init_dt.end()) it--;
@@ -586,7 +625,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
         DOMNode* inode = children->item(i);
         if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-        t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start");
+        t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start", TYPE_TIME);
         // find position before t
         std::map<double, double>::iterator it = init_dt.upper_bound(t);
         if (it == init_dt.end()) it--;

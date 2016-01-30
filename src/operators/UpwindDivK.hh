@@ -1,7 +1,7 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators 
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -46,9 +46,9 @@ class UpwindDivK : public Upwind<Model> {
                double (Model::*Value)(int, double) const);
 
  private:
-  using Upwind<Model>::vo_;
   using Upwind<Model>::mesh_;
   using Upwind<Model>::model_;
+  using Upwind<Model>::face_comp_;
 
  private:
   int method_, order_;
@@ -62,12 +62,9 @@ class UpwindDivK : public Upwind<Model> {
 template<class Model>
 void UpwindDivK<Model>::Init(Teuchos::ParameterList& plist)
 {
-  vo_ = Teuchos::rcp(new VerboseObject("UpwindDivK", plist));
-
-  method_ = Operators::OPERATOR_UPWIND_FLUX;
+  method_ = Operators::OPERATOR_UPWIND_DIVK;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
-
-  order_ = plist.get<int>("order", 1);
+  order_ = plist.get<int>("polynomial order", 1);
 }
 
 
@@ -82,9 +79,7 @@ void UpwindDivK<Model>::Compute(
     double (Model::*Value)(int, double) const)
 {
   ASSERT(field.HasComponent("cell"));
-  ASSERT(field_upwind.HasComponent("face"));
-
-  Teuchos::OSTab tab = vo_->getOSTab();
+  ASSERT(field_upwind.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
   flux.ScatterMasterToGhosted("face");
@@ -93,7 +88,7 @@ void UpwindDivK<Model>::Compute(
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
   const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
-  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent("face", true);
+  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent(face_comp_, true);
   upw_face.PutScalar(0.0);
 
   double flxmin, flxmax;

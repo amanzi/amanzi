@@ -1,7 +1,7 @@
 /*
-  This is the transport component of Amanzi. 
+  Transport PK 
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -28,14 +28,16 @@
 #include "ReconstructionCell.hh"
 #include "State.hh"
 #include "Tensor.hh"
+#include "Units.hh"
 #include "VerboseObject.hh"
 
 #ifdef ALQUIMIA_ENABLED
-#include "Chemistry_State.hh"
+#include "Alquimia_PK.hh"
 #include "ChemistryEngine.hh"
 #endif
 
 // Transport
+#include "MDMPartition.hh"
 #include "MultiscaleTransportPorosityPartition.hh"
 #include "TransportBoundaryFunction.hh"
 #include "TransportDomainFunction.hh"
@@ -88,7 +90,7 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
 
   // coupling with chemistry
 #ifdef ALQUIMIA_ENABLED
-  void SetupAlquimia(Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
+  void SetupAlquimia(Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
                      Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
 #endif
 
@@ -170,13 +172,11 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   // initialization methods
   void InitializeAll_();
   void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
-  void ProcessStringDispersionModel(const std::string name, int* model);
 
   // miscaleneous methods
   int FindComponentNumber(const std::string component_name);
 
  public:
-  Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> tp_list_;
   Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
   Teuchos::RCP<const Teuchos::ParameterList> linear_solver_list_;
@@ -206,7 +206,7 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi;
   
 #ifdef ALQUIMIA_ENABLED
-  Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state_;
+  Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk_;
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
 #endif
 
@@ -227,14 +227,16 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
 
+  // mechanical dispersion and molecual diffusion
+  Teuchos::RCP<MDMPartition> mdm_;
+  std::vector<WhetStone::Tensor> D_;
+
+  bool flag_dispersion_;
+  std::vector<int> axi_symmetry_;  // axi-symmetry direction of permeability tensor
+  std::string dispersion_preconditioner, dispersion_solver;
+
   std::vector<Teuchos::RCP<MaterialProperties> > mat_properties_;  // vector of materials
   std::vector<Teuchos::RCP<DiffusionPhase> > diffusion_phase_;   // vector of phases
-
-  std::vector<WhetStone::Tensor> D_;
-  int dispersion_models_;
-  std::vector<int> axi_symmetry_;  // axi-symmetry direction of permeability tensor
-  std::string dispersion_preconditioner;
-  std::string dispersion_solver;
 
   // Hosting temporarily Henry law 
   bool henry_law_;
@@ -258,6 +260,8 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   std::vector<std::string> component_names_;  // details of components
   int num_aqueous, num_gaseous;
 
+  // io
+  Utils::Units units_;
   VerboseObject* vo_;
 
   // Forbidden.

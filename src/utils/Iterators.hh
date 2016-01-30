@@ -51,8 +51,6 @@ struct const_iterator :
 			    Teuchos::RCP<const Contained_t> >(i) {}
 };
   
-    
-
 } // namespace Utils
 } // namespace Amanzi
 

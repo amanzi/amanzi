@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code.
+  Flow PK
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -52,7 +52,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
   boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
   if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
 
-  
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_name, true);
@@ -97,7 +96,9 @@ Darcy_PK::~Darcy_PK()
   if (bc_flux != NULL) delete bc_flux;
   if (bc_seepage != NULL) delete bc_seepage;
 
-  if (src_sink != NULL) delete src_sink;
+  for (int i = 0; i < srcs.size(); i++) {
+    if (srcs[i] != NULL) delete srcs[i]; 
+  }
   if (vo_ != NULL) delete vo_;
 }
 
@@ -136,7 +137,7 @@ void Darcy_PK::Setup()
   names.push_back("cell");
   locations.push_back(AmanziMesh::CELL);
   ndofs.push_back(1);
-  if (name != "fv: default") {
+  if (name != "fv: default" && name != "nlfv: default") {
     names.push_back("face");
     locations.push_back(AmanziMesh::FACE);
     ndofs.push_back(1);
@@ -223,9 +224,6 @@ void Darcy_PK::Initialize()
 
   // Initialize defaults
   bc_seepage = NULL; 
-  src_sink = NULL;
-  src_sink_distribution = 0;
-
   initialize_with_darcy_ = true;
   num_itrs_ = 0;
 
@@ -246,7 +244,6 @@ void Darcy_PK::Initialize()
   op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // Create solution and auxiliary data for time history.
-  // solution = Teuchos::rcp(new CompositeVector(*(S_->GetFieldData("pressure"))));
   solution = S_->GetFieldData("pressure", passwd_);
 
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
@@ -329,14 +326,13 @@ void Darcy_PK::Initialize()
   preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
   ASSERT(preconditioner_list_->isSublist(preconditioner_name_));
   
-  // initialize well modeling
-  if (src_sink != NULL) {
-    if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
+  // initialize well models
+  for (int i =0; i < srcs.size(); i++) {
+    int type = srcs[i]->CollectActionsList();
+    if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
       PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
-      src_sink->ComputeDistribute(t_old, t_new, Kxy->Values()); 
-    } else {
-      src_sink->ComputeDistribute(t_old, t_new);
     }
+    srcs[i]->Compute(t_old, t_new, Kxy); 
   }
   
   // Optional step: calculate hydrostatic solution consistent with BCs.
@@ -358,7 +354,7 @@ void Darcy_PK::Initialize()
     *vo_->os() << std::endl 
         << vo_->color("green") << "Initalization of PK is complete." << vo_->reset() << std::endl;
     *vo_->os() << "TI:\"" << ti_method_name.c_str() << "\""
-               << " dt:" << dt_method_name << " Src:" << src_sink_distribution
+               << " dt:" << dt_method_name
                << " LS:\"" << solver_name_.c_str() << "\""
                << " PC:\"" << preconditioner_name_.c_str() << "\"" << std::endl
                << "matrix: " << op_->PrintDiagnostics() << std::endl;
@@ -426,12 +422,8 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   else
     bc_head->ComputeShift(t_new, shift_water_table_->Values());
 
-  if (src_sink != NULL) {
-    if (src_sink_distribution & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      src_sink->ComputeDistribute(t_old, t_new, Kxy->Values()); 
-    } else {
-      src_sink->ComputeDistribute(t_old, t_new);
-    }
+  for (int i = 0; i < srcs.size(); ++i) {
+    srcs[i]->Compute(t_old, t_new, Kxy); 
   }
 
   ComputeBCs(*solution);
@@ -455,7 +447,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   op_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 
   CompositeVector& rhs = *op_->rhs();
-  if (src_sink != NULL) AddSourceTerms(rhs);
+  AddSourceTerms(rhs);
 
   // create linear solver
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;

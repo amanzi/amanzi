@@ -1,4 +1,4 @@
-<amanzi_input version="2.1.0" type="unstructured">
+<amanzi_input version="2.2.1" type="unstructured">
 
   <model_description name="1D Flow and Transport, tritium decay">
     <author>Sergi Molins</author>
@@ -28,7 +28,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" algorithm="explicit first-order" sub_cycling = "on"/>
-    <chemistry engine="pflotran" process_model="none" state="on" input_filename="1d-tritium-trim.in" />
+    <chemistry engine="amanzi" state="on" input_filename="1d-tritium-trim.in" />
   </process_kernels>
 
   <phases>
@@ -140,9 +140,9 @@
         <liquid_component name="water">
           <uniform_pressure value="201325.0"/>
         </liquid_component>
-        <geochemistry>
-          <constraint name="initial"/>
-        </geochemistry>
+	<solute_component>
+	    <uniform_conc name="Tritium" value="1.e-20" />
+	</solute_component>
       </liquid_phase>
     </initial_condition>
   </initial_conditions>
@@ -154,9 +154,9 @@
         <liquid_component name="water">
           <inward_mass_flux value="7.91317859e-6" start="0" function="constant"/>
         </liquid_component>
-        <geochemistry>
-          <constraint name="west" function="constant" start="0.0"/>
-        </geochemistry>
+	<solute_component>
+	    <aqueous_conc name="Tritium" value="1.e-3" start="0.0" function="constant" />
+	</solute_component>
       </liquid_phase>
     </boundary_condition>
     <boundary_condition name="east_bc">
@@ -170,9 +170,10 @@
   </boundary_conditions>
 
   <geochemistry>
-    <reaction_network file="1d-tritium-trim.in" format="simple"/>
-    <constraint name="initial" filename="1d-tritium-trim.in"/>
-    <constraint name="west" filename="1d-tritium-trim.in"/>
+      <verbosity>verbose</verbosity>
+    <amanzi_chemistry>
+      <reaction_network file="tritium.bgd" format="simple"/>
+    </amanzi_chemistry>
 <!-- option 2
 		<radioactive_decay>
 			<solute name="Tritium" rate_constant="1.78577e-09"/>

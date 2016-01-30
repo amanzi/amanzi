@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -62,7 +62,7 @@ VWContentEvaluator::VWContentEvaluator(const VWContentEvaluator& other) :
 
 Teuchos::RCP<FieldEvaluator> VWContentEvaluator::Clone() const {
   return Teuchos::rcp(new VWContentEvaluator(*this));
-};
+}
 
 
 /* ******************************************************************

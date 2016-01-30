@@ -23,6 +23,9 @@ namespace Amanzi
 namespace AmanziMesh
 {
 
+  // friended class that uses cache
+  class MeshEmbeddedLogical;
+  
   // Base mesh class for Amanzi 
   //
   // Use the associated mesh factory to create an instance of a
@@ -67,10 +70,12 @@ class Mesh
   {
   }
 
-  // destructor - must be virtual to downcast base class to derived class
-  // (I don't understand why but the stackoverflow prophets say so)
-
+  // virtual destructor
   virtual ~Mesh() {}
+
+  // reference for vis.  Usually this is *this, but not necessarily in derived meshes
+  virtual
+  const Mesh& vis_mesh() const { return *this; }
 
   inline
   const VerboseObject *verbosity_obj() const {
@@ -694,7 +699,9 @@ class Mesh
 
   const VerboseObject *verbosity_obj_;
 
+  virtual
   int compute_cell_geometric_quantities() const;
+  virtual
   int compute_face_geometric_quantities() const;
   int compute_edge_geometric_quantities() const;
 
@@ -743,8 +750,33 @@ class Mesh
                                             Entity_ID_List *edgeids,
                                             std::vector<int> *edge_dirs) const = 0;
 
+  // The following methods are declared const since they do not modify the
+  // mesh but just modify cached variables declared as mutable
+  virtual
+  int compute_cell_geometry(const Entity_ID cellid, 
+                            double *volume, 
+                            AmanziGeometry::Point *centroid) const;
+  virtual
+  int compute_face_geometry(const Entity_ID faceid, 
+                            double *area, 
+                            AmanziGeometry::Point *centroid, 
+                            AmanziGeometry::Point *normal0,
+                            AmanziGeometry::Point *normal1) const;
+  int compute_edge_geometry(const Entity_ID edgeid,
+			    double *length,
+			    AmanziGeometry::Point *edge_vector) const;
 
- private:
+  virtual
+  void cache_cell2face_info() const; 
+  virtual
+  void cache_face2cell_info() const;
+  void cache_cell2edge_info() const;
+  void cache_face2edge_info() const;
+
+  virtual
+  int build_columns() const;
+
+ protected:
 
   unsigned int celldim, spacedim;
 
@@ -778,30 +810,7 @@ class Mesh
 
   const Epetra_MpiComm *comm; // temporary until we get an amanzi communicator
 
-
-  // The following methods are declared const since they do not modify the
-  // mesh but just modify cached variables declared as mutable
-
-  int compute_cell_geometry(const Entity_ID cellid, 
-                            double *volume, 
-                            AmanziGeometry::Point *centroid) const;
-  int compute_face_geometry(const Entity_ID faceid, 
-                            double *area, 
-                            AmanziGeometry::Point *centroid, 
-                            AmanziGeometry::Point *normal0,
-                            AmanziGeometry::Point *normal1) const;
-  int compute_edge_geometry(const Entity_ID edgeid,
-			    double *length,
-			    AmanziGeometry::Point *edge_vector) const;
-
-
-  void cache_cell2face_info() const; 
-  void cache_face2cell_info() const;
-  void cache_cell2edge_info() const;
-  void cache_face2edge_info() const;
-
-  int build_columns() const;
-
+  friend class MeshEmbeddedLogical;
 }; // End class Mesh
 
 

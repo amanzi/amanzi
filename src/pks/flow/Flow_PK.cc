@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -34,7 +34,6 @@ Flow_PK::Flow_PK() :
     bc_flux(NULL),
     bc_head(NULL),
     bc_seepage(NULL),
-    src_sink(NULL),
     vo_(NULL),
     passwd_("flow")
 {
@@ -150,7 +149,7 @@ void Flow_PK::InitializeFields_()
       S_->GetField("atmospheric_pressure", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized atmospheric_pressure to default value 101325.0" << std::endl;  
+          *vo_->os() << "initilized atmospheric_pressure to default value " << FLOW_PRESSURE_ATMOSPHERIC << std::endl;  
     }
   }
 
@@ -251,7 +250,7 @@ void Flow_PK::UpdateLocalFields_()
 void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 {
   // Process main one-line options (not sublists)
-  atm_pressure_ = plist.get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
+  atm_pressure_ = *S_->GetScalarData("atmospheric_pressure");
   coordinate_system = plist.get<std::string>("absolute permeability coordinate system", "cartesian");
 
   // Create the BC objects.
@@ -275,13 +274,9 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 
   // Create the source object if any
   if (plist.isSublist("source terms")) {
-    std::string distribution_method_name = plist.get<std::string>("source and sink distribution method", "none");
-    ProcessStringSourceDistribution(distribution_method_name, &src_sink_distribution); 
-
     Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(plist.sublist("source terms", true));
-    FlowSourceFactory src_factory(mesh_, src_list);
-    src_sink = src_factory.createSource();
-    src_sink_distribution = src_sink->CollectActionsList();
+    FlowSourceFactory factory(mesh_, src_list);
+    factory.Create(srcs);
   }
 }
 
@@ -470,11 +465,12 @@ void Flow_PK::SetAbsolutePermeabilityTensor()
 void Flow_PK::AddSourceTerms(CompositeVector& rhs)
 {
   Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
-  FlowDomainFunction::Iterator src;
 
-  for (src = src_sink->begin(); src != src_sink->end(); ++src) {
-    int c = src->first;
-    rhs_cell[0][c] += mesh_->cell_volume(c) * src->second;
+  for (int i = 0; i < srcs.size(); ++i) {
+    for (FlowDomainFunction::Iterator it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
+      int c = it->first;
+      rhs_cell[0][c] += mesh_->cell_volume(c) * it->second;
+    }
   }
 }
 
@@ -618,20 +614,6 @@ void Flow_PK::WriteGMVfile(Teuchos::RCP<State> FS) const
   GMV::write_cell_data(*(S_->GetFieldData("pressure")->ViewComponent("cell")), 0, "pressure");
   GMV::write_cell_data(*(S_->GetFieldData("saturation_liquid")->ViewComponent("cell")), 0, "saturation");
   GMV::close_data_file();
-}
-
-
-/* ****************************************************************
-* Process string for the linear solver.
-**************************************************************** */
-void Flow_PK::ProcessStringSourceDistribution(const std::string name, int* method)
-{
-  if (name != "none") {
-    Errors::Message msg;
-    msg << "\nFlow_PK: \"source and sink distribution method\" is obsolete.\n"
-        << "         see desription of sublist \"source terms\" in the native spec.\n";
-    Exceptions::amanzi_throw(msg);
-  }
 }
 
 }  // namespace Flow

@@ -1,12 +1,12 @@
 /*
-  This is the Operator component of the Amanzi code.
+  Operators
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_OPERATOR_DIFFUSION_FACTORY_HH_
@@ -26,9 +26,8 @@ namespace Operators {
 class BCs;
 
 struct OperatorDiffusionFactory {
-
-  // diffusion operators with optional gravity
-  // decision is made based on data in the parameter list
+  // Diffusion operators with optional gravity.
+  // Decision is made based on data in the parameter list.
   Teuchos::RCP<OperatorDiffusion>
   Create(Teuchos::ParameterList& oplist,
 	 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
@@ -43,13 +42,12 @@ struct OperatorDiffusionFactory {
 	 const Teuchos::RCP<const CompositeVector>& rho,
 	 const AmanziGeometry::Point& g);
 
-  // diffusion operators without gravity
+  // Diffusion operators without gravity.
   Teuchos::RCP<OperatorDiffusion>
   Create(Teuchos::ParameterList& oplist,
 	 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 	 const Teuchos::RCP<BCs>& bc);
 
-  
   Teuchos::RCP<OperatorDiffusion>
   Create(Teuchos::ParameterList& oplist,
 	 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
@@ -58,13 +56,12 @@ struct OperatorDiffusionFactory {
   Create(Teuchos::ParameterList& oplist,
 	 const Teuchos::RCP<Operator>& global_op);
 
-
+  // Diffusion operators with gravity.
   Teuchos::RCP<OperatorDiffusionWithGravity>
   CreateWithGravity(Teuchos::ParameterList& oplist,
 		    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 		    const Teuchos::RCP<BCs>& bc);
 		    
-  
   Teuchos::RCP<OperatorDiffusionWithGravity>
   CreateWithGravity(Teuchos::ParameterList& oplist,
 		    const Teuchos::RCP<Operator>& global_op,
@@ -74,7 +71,6 @@ struct OperatorDiffusionFactory {
   CreateWithGravity(Teuchos::ParameterList& oplist,
 		    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 		    
-  
   Teuchos::RCP<OperatorDiffusionWithGravity>
   CreateWithGravity(Teuchos::ParameterList& oplist,
 		    const Teuchos::RCP<Operator>& global_op);

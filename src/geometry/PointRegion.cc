@@ -22,17 +22,10 @@ namespace AmanziGeometry {
 // -------------------------------------------------------------
 // PointRegion:: constructors / destructor
 // -------------------------------------------------------------
-PointRegion::PointRegion(const std::string name, 
-			 const unsigned int id,
+PointRegion::PointRegion(const Set_Name& name, 
+			 const Set_ID id,
 			 const Point& p,
                          const LifeCycleType lifecycle,
-                         const VerboseObject *verbobj)
-  : Region(name,id,0,lifecycle,verbobj), p_(p)
-{
-}
-
-PointRegion::PointRegion(const char *name, const unsigned int id,
-			 const Point& p, const LifeCycleType lifecycle,
                          const VerboseObject *verbobj)
   : Region(name,id,0,lifecycle,verbobj), p_(p)
 {

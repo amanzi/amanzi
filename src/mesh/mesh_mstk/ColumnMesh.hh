@@ -63,6 +63,8 @@ class ColumnMesh : public Mesh {
 
   ~ColumnMesh ();
   
+  // reference for vis.
+  const Mesh& vis_mesh() const { return extracted_; }
 
   // Get parallel type of entity - OWNED, GHOST, USED (See MeshDefs.hh)
   virtual

@@ -1,80 +1,84 @@
 /*
-  This is the mimetic discretization component of the Amanzi code. 
+  WhetStone, version 2.0
+  Release name: naka-to.
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Release name: aka-to.
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Nonlinear finite volume method.
 */
 
-
-#include "WhetStoneDefs.hh"
 #include "nlfv.hh"
-
+#include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* A harmonic point is a unique point on a plane seprating two 
-* materials where (a) continuity conditions are satisfied for 
-* continuous piecewise linear pressure functions and (b) pressure 
-* value is a convex combination of two neighboring cell-based 
-* pressures p_0 and p_1:
-*   p = w p_0 + (1-x) p_1. 
+* A harmonic averaging point (HAP) is a unique point on a plane 
+* (line in 2D) * seprating two materials where (a) continuity 
+* conditions are satisfied for continuous piecewise linear pressure
+* functions and (b) pressure value is a convex combination of two 
+* neighboring cell-based pressures p_c1 and p_c2:
+*
+*   p = w p_c1 + (1-w) p_c2. 
+*
+* Input: face f, two cells sharing this face, and two co-normal 
+*        vectors Tni = Ti * normal.
+* Output: HAP p and weight w.
 ****************************************************************** */
-void NLFV::HarmonicAveragingPoint(int face, std::vector<Tensor>& T,
-                                  AmanziGeometry::Point& p, double& weight)
+void NLFV::HarmonicAveragingPoint(
+    int f, int c1, int c2, 
+    const AmanziGeometry::Point& Tn1, const AmanziGeometry::Point& Tn2,
+    AmanziGeometry::Point& p, double& weight)
 {
   int d = mesh_->space_dimension();
 
-  Entity_ID_List cells;
-  mesh_->face_get_cells(face, (ParallelTypeCast)WhetStone::USED, &cells);
-  int ncells = cells.size();
+  const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
+  const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-  if (ncells == 1) {
-    p = mesh_->face_centroid(face);
-    weight = 0.5;
-  } else {
-    const AmanziGeometry::Point& fm = mesh_->face_centroid(face);
-    const AmanziGeometry::Point& normal = mesh_->face_normal(face);
+  const AmanziGeometry::Point& cm1 = mesh_->cell_centroid(c1);
+  const AmanziGeometry::Point& cm2 = mesh_->cell_centroid(c2);
 
-    const AmanziGeometry::Point& cm1 = mesh_->cell_centroid(cells[0]);
-    const AmanziGeometry::Point& cm2 = mesh_->cell_centroid(cells[1]);
+  double d1s = normal * (fm - cm1);
+  double d2s = normal * (fm - cm2);
 
-    AmanziGeometry::Point Tn1(d), Tn2(d);
-    Tn1 = T[cells[0]] * normal;
-    Tn2 = T[cells[1]] * normal;
+  double d1 = fabs(d1s);
+  double d2 = fabs(d2s);
+  
+  double t1 = fabs(normal * Tn1);
+  double t2 = fabs(normal * Tn2);
 
-    double d1 = fabs(normal * (fm - cm1));
-    double d2 = fabs(normal * (fm - cm2));
-    double t1 = fabs(normal * Tn1);
-    double t2 = fabs(normal * Tn2);
+  double det = t1 * d2 + t2 * d1;
+  weight = t1 * d2 / det;
 
-    double det = t1 * d2 + t2 * d1;
-    weight = t1 * d2 / det;
+  AmanziGeometry::Point y1(d), y2(d), v1(d), v2(d);
+  double area = mesh_->face_area(f);
+  double a2 = area * area;
 
-    AmanziGeometry::Point v1(d), v2(d);
-    double area = mesh_->face_area(face);
-    v1 = area * Tn1 - t1 * normal / area;
-    v2 = area * Tn2 - t2 * normal / area;
-    p = weight * cm1 + (1 - weight) * cm2 + (d1 * d2 / det) * (v2 - v1);
-  }
+  y1 = cm1 + (d1s / a2) * normal;
+  y2 = cm2 + (d2s / a2) * normal;
+
+  v1 = Tn1 - (t1 / a2) * normal;
+  v2 = Tn2 - (t2 / a2) * normal;
+  p = weight * y1 + (1 - weight) * y2 + (d1 * d2 / det) * (v2 - v1);
 }
 
 
 /* ******************************************************************
 * Decomposion: conormal = w1 * tau[i1] + w2 * tau[i2] + w3 * tau[i3],
-* where the weights ws = (w1, w2, w3) >= 0.
+* where the weights ws = (w1, w2, w3) are non-negative.
 ****************************************************************** */
 int NLFV::PositiveDecomposition(
     int id1, const std::vector<AmanziGeometry::Point>& tau,
     const AmanziGeometry::Point& conormal, double* ws, int* ids)
 {
-  int d = mesh_->space_dimension();
+  int ierr(1);
+  int d = conormal.dim();
   int ntau = tau.size();
 
   // default is the TPFA stencil 
@@ -94,14 +98,14 @@ int NLFV::PositiveDecomposition(
 
   // Find the other directions
   Tensor T(d, 2);
-  double det = 0.0;
+  double det(0.0);
 
   if (d == 2) {
     for (int i = 0; i < ntau; i++) {
       if (i == id1) continue;
 
-      T.SetRow(0, tau[id1]);
-      T.SetRow(1, tau[i]);
+      T.SetColumn(0, tau[id1]);
+      T.SetColumn(1, tau[i]);
 
       // We skip almost colinear pairs.
       c2 = norm(tau[i]);
@@ -120,6 +124,7 @@ int NLFV::PositiveDecomposition(
           ws[0] = p[0];
           ws[1] = fabs(p[1]);
           ids[1] = i; 
+          ierr = 0;
         }
       }
     }
@@ -131,9 +136,9 @@ int NLFV::PositiveDecomposition(
       for (int j = i + 1; j < ntau; j++) {
         if (j == id1) continue;
 
-        T.SetRow(0, tau[id1]);
-        T.SetRow(1, tau[i]);
-        T.SetRow(2, tau[j]);
+        T.SetColumn(0, tau[id1]);
+        T.SetColumn(1, tau[i]);
+        T.SetColumn(2, tau[j]);
 
         // We skip almost colinear pairs.
         double c3 = norm(tau[j]);
@@ -155,13 +160,14 @@ int NLFV::PositiveDecomposition(
             ws[2] = fabs(p[2]);
             ids[1] = i; 
             ids[2] = j; 
+            ierr = 0;
           }
         }
       }
     }
   }
 
-  return 0;
+  return ierr;
 }
 
 }  // namespace WhetStone

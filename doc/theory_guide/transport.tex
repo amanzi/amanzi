@@ -10,49 +10,207 @@
 % -------------------------------------------------------------------------
 
 \section{Transport Processes}    
-\label{sec:Transport}
+\label{sec:transport-processes}
 
 \subsection{Overview}
 
-\subsection{Process Model Equations for Transport} 
-\label{sec:general-transport}
+Transport is one of the most important process that needs to be accurately 
+captured in the Environmental Management modeling tool set.  
+In what follows, we use "Transport" to refer to the set of physical processes 
+that lead to movement of dissolved and solid contaminants in the subsurface, 
+treating the chemical and microbiological reactions that can affect the transport 
+rate through a retardation effect as a separate set of processes.  
+The principal transport processes to be considered are \emph{advection}, 
+\emph{mechanical dispersion}, and \emph{molecular diffusion}.  
+The equation for mass conservation of species $C$ can be written as
+$$
+  \frac{\partial ( \phi \sum_\alpha [s_{\alpha} C_{\alpha}] )}{\partial t } +
+  \bnabla \cdot \bJ_{\text{adv}} \eq \bnabla \cdot \bJ_{\text{disp}} + \bnabla \cdot \bJ_{\text{diff}} + Q,
+$$
+where $C_\alpha$ is concentration of phase $\alpha$, 
+$\bJ_{\text{adv}}$ is advective flux, $\bJ_{\text{disp}}$ is the dispersive flux, 
+$\bJ_{\text{diff}}$ is the diffusive flux (often grouped with the dispersive flux), and  
+$Q$ is the summation of various source terms which may include reactions.
 
-\paragraph{Assumptions and Applicability.}
+The principal assumptions associated with the transport process models derive 
+from the continuum treatment of the porous medium.  
+Pore scale processes, including the resolution of variations in transport rates 
+within individual pores or pore networks \citep{li2008scale,kang2006lattice,lichtner-kang-2007}, 
+are generally not resolved, although some capabilities for treating multi-scale 
+effects are discussed in Section~\ref{sec:transport-dual-porosity}.  
+In general, it is assumed that within any one Representative Elementary Volume (REV) 
+corresponding to a grid cell all transport rates are the same.  
+It will be possible, however, to define overlapping continua with distinct transport 
+rates, as in the case where the fracture network and rock matrix are represented as separate continua.
 
-\paragraph{Coupling Considerations.}
+Transport processes may be tightly coupled to both flow and reaction processes.  
+In the case of flow, one important coupling is associated with the transport of chemical 
+constituents that affect the density of the solution, which in turn affects flow rates through buoyancy.
+In the case of chemical reactions, the coupling effect is normally very strong for reactive constituents.  
+Chemical reactions may consume components present in the gaseous phase (e.g., CO$_2$ or O$_2$), thus 
+modifying the saturation of the phase itself.  
+Or reactions can strongly modify gradients, and thus transport rates, by either consuming 
+or producing various chemical species.
 
-\paragraph{Multiscale Considerations.}
+\begin{center}
+\begin{longtable}{cp{7cm}c}
+\caption{List of local variables.} \label{table:flow-list-of-variables} \\
 
-\subsection{Boundary Conditions, Sources and Sinks} 
-\label{sec:transport-boundary-conditions}
+\multicolumn{1}{c}{Symbol} & \multicolumn{1}{c}{Meaning} & \multicolumn{1}{c}{Units} \\
+\hline  \hline 
+\endfirsthead
 
-\subsection{Advective Transport}  
+\multicolumn{3}{c}{{\tablename} \thetable{} -- Continued} \\
+\multicolumn{1}{c}{Symbol} & \multicolumn{1}{c}{Meaning} & \multicolumn{1}{c}{Units} \\
+\hline  \hline 
+\endhead
+
+\hline \multicolumn{3}{c}{{Continued on next page}} \\ 
+\hline \hline 
+\endfoot
+
+\hline \hline
+\endlastfoot
+
+$p_l$      & liquid pressure      &  $\upa$ \\
+$\bq$      & Darcy velocity       &  $\um\ucdot\us^{-1}$  \\
+$s_l$      & liquid saturation    &  $-$ \\
+$\mu_l$    & liquid viscosity     &  $\upa\ucdot\us$ \\
+$\rho_l$   & liquid density       &  $\ukg\ucdot\um^{-3}$ \\
+$\phi$     & porosity             &  $-$  \\
+$\phi_f$   & porosity of fracture &  $-$  \\
+$\phi_m$   & porosity of matrix   &  $-$  \\
+$\eta_l$   & molar liquid density &  $\umol\ucdot\um^{-3}$ \\
+
+\end{longtable}
+\end{center}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Single-Phase Transport} 
+\label{sec:transport-single-phase}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Process Model Equations} 
+
+The transport in Amanzi neglects concentration of species in gaseous phase.
+The simplified equation is
+\begin{equation}  \label{eq:MassConservation}
+  \frac{\partial ( \phi s_l C )}{\partial t } +
+  \bnabla \cdot \bJ_{\text{adv}} \eq \bnabla \cdot \bJ_{\text{disp}} + \bnabla \cdot \bJ_{\text{diff}} + Q,
+\end{equation}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Assumptions and Applicability}
+
+We consider pure advection process and exclude the attenuation mechanisms and microbial 
+behaviors that are discussed elsewhere. 
+Note that there are situations where the advection could be modified by attributes of 
+the transported mass and the pore structure.  
+One is the potential for nonreactive anions to be repulsed by negatively charged 
+solid surfaces into the center of pore throats where the velocity is faster.  
+Another is the advection of inorganic and organic colloids, and microorganisms, 
+whose movement can be affected by the geometry of pore throats.  
+In addition to being subject to the same physicochemical phenomena as abiotic colloids, 
+microorganisms have biological processes that can affect advection (e.g., temporal 
+changes in surface properties due to changes in metabolic state; chemotaxis; predation).  
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Advective Transport}  
 \label{sec:transport-advection}
 
-\subsubsection{Overview} 
+Advection is the process where the bulk fluid motion transports mass and heat.  
+In the simplest conceptualization of advection, the mass of a component in a fluid 
+parcel simply moves with the velocity of the fluid parcel.  
+This assumes there are no other processes (e.g., diffusion, dispersion, reactions) 
+that can affect the component concentration in the fluid parcel.  
+Thus, advection can be a particulate or a dissolved species moving with the pore-water 
+whose velocity is governed by the flow processes (discussed elsewhere).  
+Continuum models have addressed these behaviors using bulk parameterizations 
+to characterize the pore-scale controls and controlling chemical gradients.
 
-\subsubsection{Process Model Equations}
+Numerical difficulties with the accuracy, robustness, and computation efficiency 
+of modeling the advection of moving steep concentration fronts, especially in 
+complex velocity fields, are well known.  
+In some cases, there are constraints on the Peclet and Courant numbers for the 
+useful application of a given technique.
+The advective flux, $\bJ_{\text{adv}}$, of a dissolved species is described 
+mathematically as
+\begin{equation} \label{eq:AdvectiveFlux} 
+  \bJ_{\text{adv}} = \phi s_l \bv_l C_{i},  
+\end{equation}
+where $\phi$ is the porosity, $s_l$ is liquid saturation, $\bv_l$ is the 
+average linear velocity of the liquid, and $C_i$ is the concentration of the $i$th species.
 
-\subsection{Dispersive Transport}   
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Dispersive Transport}   
 \label{sec:transport-dispersion}
-
-\subsubsection{Overview}
-
-\subsubsection{Process Model Equations}
 
 \paragraph{Isotropic Media.}
 \paragraph{Anisotropic Media.}
 
-\subsection{Diffusive Transport} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Diffusive Transport} 
 \label{sec:diffusive-transport}
-
-\subsubsection{Overview}
-
-\subsubsection{Process Model Equations}
 
 \paragraph{General Formulation for Molecular Diffusion.}
 
 \paragraph{Single Species Diffusion (Fick's Law).}
 
-\subsubsection{Data Needs}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Boundary Conditions, Sources and Sinks} 
+\label{sec:transport-boundary-conditions}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Single-Phase Transport with Dual Porosity Model} 
+\label{sec:transport-single-phase-dual-porosity}
+
+The multiscale nature of porous media and the transport processes associated is 
+arguably the most significant and largely unresolved challenge for simulation of 
+fate and transport in subsurface aquifers.  
+Transport actually operates at the pore scale where variations in flow velocity 
+and reaction rates can result in microscopic variability in transport rates.  
+Continuum treatments of transport in porous media cannot resolve such sub-grid 
+variations easily, although various upscaling techniques may be available for 
+capturing the smaller scale behavior.  
+In addition, multi-continuum or hybrid approaches may obviate the need for a formal 
+upscaling procedure, although there are significant computational difficulties and 
+expense associated with their implementation.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Process Model Equations} 
+
+The dual porosity formulation of the solute transport consists of two equations
+for the fracture and matrix regions. 
+In the fracture region, we have \citep{simunek-vangenuchten_2008}
+\begin{equation}  \label{eq:MassConservation}
+  \frac{\partial (\phi_f s_{lf} C_f)}{\partial t} 
+  + \bnabla \cdot \bJ_{\text{adv}} \eq \bnabla \cdot \bJ_{\text{disp}} 
+  + \bnabla \cdot \bJ_{\text{diff}} - \Sigma_s + Q_f,
+\end{equation}
+where $s_{lm}$ is liquid saturation in fracture, 
+$\Sigma_s$ is the solute exchange term,
+and $Q_f$ is source or sink term.
+In the matrix region, we have
+$$
+  \frac{\partial (\phi_m s_{lm} C_m)}{\partial t}
+  = \Sigma_s + Q_m,
+$$
+where $s_{lm}$ is liquid saturation in matrix, $Q_m$ is source or sink term.
+The solute exchange term is defined as
+$$
+  \Sigma_s = \alpha_s (C_f - C_m) + \Sigma_w C^*,
+$$
+where $C^*$ is equal to $C_f$ if $\Sigma_w > 0$ and $C_m$ is $\Sigma_w < 0$.
+The coefficient $\alpha_s$ is the first-order solute mass transfer coefficient [$\us^{-1}$].

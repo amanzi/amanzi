@@ -1,5 +1,5 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -24,7 +24,7 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Initialization completes initialization of the base class.
+* This completes initialization of the base class.
 ****************************************************************** */
 void OperatorDiffusionFVwithGravity::InitDiffusion_(Teuchos::ParameterList& plist)
 {
@@ -32,14 +32,18 @@ void OperatorDiffusionFVwithGravity::InitDiffusion_(Teuchos::ParameterList& plis
 }
 
 
-void
-OperatorDiffusionFVwithGravity::SetDensity(const Teuchos::RCP<const CompositeVector>& rho) {
+/* ******************************************************************
+* This completes initialization of the base class.
+****************************************************************** */
+void OperatorDiffusionFVwithGravity::SetDensity(
+    const Teuchos::RCP<const CompositeVector>& rho)
+{
   OperatorDiffusionWithGravity::SetDensity(rho);
   transmissibility_initialized_ = false;
 }
 
-void
-OperatorDiffusionFVwithGravity::SetDensity(double rho) {
+
+void OperatorDiffusionFVwithGravity::SetDensity(double rho) {
   OperatorDiffusionWithGravity::SetDensity(rho);
   transmissibility_initialized_ = false;
 }
@@ -48,8 +52,9 @@ OperatorDiffusionFVwithGravity::SetDensity(double rho) {
 /* ******************************************************************
 * Populate face-based matrices.
 ****************************************************************** */
-void OperatorDiffusionFVwithGravity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-                                                    const Teuchos::Ptr<const CompositeVector>& u)
+void OperatorDiffusionFVwithGravity::UpdateMatrices(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u)
 {
   if (!transmissibility_initialized_) ComputeTransmissibility_(gravity_term_);
 
@@ -86,7 +91,7 @@ void OperatorDiffusionFVwithGravity::UpdateMatrices(const Teuchos::Ptr<const Com
 
 /* ******************************************************************
 * Special implementation of boundary conditions.
-**********************************;******************************** */
+****************************************************************** */
 void OperatorDiffusionFVwithGravity::ApplyBCs(bool primary, bool eliminate)
 {
   OperatorDiffusionFV::ApplyBCs(primary, eliminate);
@@ -128,10 +133,8 @@ void OperatorDiffusionFVwithGravity::UpdateFlux(
 * (its nonlinear part) on face f.
 ****************************************************************** */
 void OperatorDiffusionFVwithGravity::ComputeJacobianLocal_(
-    int mcells, int f, int face_dir, int Krel_method,
-    int bc_model_f, double bc_value_f,
-    double *pres, double *dkdp_cell,
-    WhetStone::DenseMatrix& Jpp)
+    int mcells, int f, int face_dir, int bc_model_f, double bc_value_f,
+    double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
   const Teuchos::Ptr<Epetra_MultiVector> gravity_face =
@@ -142,7 +145,7 @@ void OperatorDiffusionFVwithGravity::ComputeJacobianLocal_(
 
   if (mcells == 2) {
     dpres = pres[0] - pres[1];  // + grn;
-    if (Krel_method == OPERATOR_LITTLE_K_UPWIND) {
+    if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
       double flux0to1;
       flux0to1 = trans_face[0][f] * dpres;
       if (gravity_face.get()) flux0to1 += face_dir * (*gravity_face)[0][f];
@@ -156,7 +159,7 @@ void OperatorDiffusionFVwithGravity::ComputeJacobianLocal_(
         dKrel_dp[0] = 0.5 * dkdp_cell[0];
         dKrel_dp[1] = 0.5 * dkdp_cell[1];
       }
-    } else if (Krel_method == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
+    } else if (little_k_ == OPERATOR_UPWIND_ARITHMETIC_AVERAGE) {
       dKrel_dp[0] = 0.5 * dkdp_cell[0];
       dKrel_dp[1] = 0.5 * dkdp_cell[1];
     } else {
@@ -188,9 +191,7 @@ void OperatorDiffusionFVwithGravity::ComputeJacobianLocal_(
 
 
 /* ******************************************************************
-* Compute transmissibilities on faces 
-*
-* Requires K, g, rho
+* Compute transmissibilities on faces. Requires K, g, rho.
 ****************************************************************** */
 void OperatorDiffusionFVwithGravity::ComputeTransmissibility_(
    Teuchos::RCP<CompositeVector> g_cv)

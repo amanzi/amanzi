@@ -9,7 +9,7 @@ Overview
 ========
 
 This is a continuously evolving specification format used by the code developers. 
-It is main purpose is to develop and test new capabilities without disruption of end-users.
+Its main purpose is to develop and test new capabilities without disruption of end-users.
 Parameters labeled by [WIP] (Work-In-Progress) are under development.
 Parameters labeled by [O] (Obsolete) are old capabilities and will be removed soon.
 
@@ -109,12 +109,12 @@ Additional conventions:
   These are usually labels or values of parameters 
   in the input file and must match (using XML matching rules) the specified or allowable values.
 
-* User-defined labels are marked with ALL_CAPS in this documents.
+* User-defined labels are marked with ALL_CAPS in this document.
   In practice, no rules are imposed on these names.
 
-* For developers: we are gradually migrating to low-case naming convention for most parameters
-  with exceptions of proper name (e.g. CO2, Linux), personal names (e.g. van Genuchten), and high-level
-  lists (e.g. Mesh). Abbreviations are capitalized only in the list names.
+* For developers: we are gradually migrating to low-case naming convention for all parameters
+  with exceptions of proper name (e.g. CO2, Linux), personal names (e.g. van Genuchten), 
+  list names (e.g. Mesh), and well-established abbreviations (e.g. PK).
 
 * Lists with too many parameters are described using multiple sections and multiple examples.
   For most examples we show name of the parent sublist.
@@ -124,7 +124,7 @@ Verbose output
 --------------
 
 Output of all components of Amanzi is controlled by a standard verbose 
-object sublist. This sublist can be inserted in almost any significant
+object list. This list can be inserted in almost any significant
 component of this spec to produce a verbose output, see the embedded examples.
 If this list is not specified, the default verbosity value is used.
 The name *Verbosity Level* is reserved by Trilinos.
@@ -136,11 +136,11 @@ The name *Verbosity Level* is reserved by Trilinos.
    </ParameterList>
 
 
-Residual Debugger
+Residual debugger
 -----------------
 
 Some components (currently just nonlinear solver, this may change)
-leverage a ResidualDebugger object for writing, to file, residuals,
+leverage a *ResidualDebugger* object for writing, to file, residuals,
 corrections, and internal iterates of a solve process for solver
 debugging/work.  Control of when these iterates are written is
 controlled by a few parameters.  This should be written sparingly --
@@ -151,34 +151,50 @@ expensive.
   * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, 
     the second is the cycle period, and the third is the stop cycle or -1 in which case 
     there is no stop cycle. All iterations shall be written at such cycles that 
-    satisfy cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
+    satisfy formula cycle = start + n*period, for n=0,1,2,... and cycle < stop if stop != -1.0.
 
   * `"cycles start period stop n`" [Array(int)] if multiple cycles start-period-stop parameters 
     are needed, then use these parameters with n=0,1,2,..., and not the single 
     `"cycles start period stop`" parameter.
 
-  * `"cycles`" [Array(int)] an array of discrete cycles that at which all iterations shall be written. 
+  * `"cycles`" [Array(int)] an array of single cycles at which all iterations shall be written. 
 
-
+Note: *cycle* here means the current time integration step and *not* the global cycle.
 
 .. code-block:: xml
 
-   <ParameterList name="ResidualDebugger">
-     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
-     <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
+   <ParameterList name="BDF1">  <!-- parent list -->
+     <ParameterList name="ResidualDebugger">
+       <Parameter name="cycles start period stop" type="Array(int)" value="{0,100,-1}"/>
+       <Parameter name="cycles" type="Array(int)" value="{999,1001}"/>
+     </ParameterList>
    </ParameterList>
    
 
 Units
 -----
 
-Amanzi's internal default units are SI units.
+Amanzi's internal default units are SI units except for the concentration.
+
+* `"concentration`" [string] defines units for concentration. Available options
+  are `"molar`" (default) which is `"mol/L`" and `"mol/m^3`". 
+
+.. code-block:: xml
+
+   <ParameterList>  <!-- parent list -->
+     <ParameterList name="Units">
+       <Parameter name="length" type="string" value="m"/>
+       <Parameter name="time" type="string" value="s"/>
+       <Parameter name="mass" type="string" value="kg"/>
+       <Parameter name="concentration" type="string" value="molar"/>
+     </ParameterList>
+   </ParameterList>
 
 
 Cycle driver
 ============
 
-New multi-processor cycle driver which provides more flexibility
+The new multi-processor cycle driver provides more flexibility
 to handle multiphysics process kernels (PKs) and multiple time periods.
 
 * `"component names`" [Array(string)] provides the list of species names.
@@ -187,7 +203,7 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
 * `"number of liquid components`" [int] is the number of liquid components. 
    
 * `"time periods`" [list] contains the list of time periods involved in the simulation.
-  the number of periods is not limited.
+  The number of time periods is not limited.
 
   * `"TP #`" [list] defines a particular time period. The numbering
     should be sequential starting with 0.
@@ -200,8 +216,9 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
         should exist in the list of PKs (see below).
 
       * `"PK type`" [string] specifies the type of PK supported by Amanzi. At the moment
-        available options are (`"darcy`", `"richards`", `"transport`", `"reactive
-        transport`", `"flow reactive transport`", and `"chemistry`").
+        available options are (`"darcy`", `"richards`", `"transport`", `"one-phase energy`", 
+        `"two-phase energy`", `"reactive transport`", `"flow reactive transport`", 
+        `"thermal richards`", and `"chemistry`").
  
       * `"start period time`" [double] is the start time of the current time period.
 
@@ -266,7 +283,7 @@ This list must *NOT* include start times for time periods *TP #*.
 
 * `"start times`" [Array(double)] is the list of particular times that we want to hit exactly.
 
-* `"initial time step`" [Array(double)] is the first time step after we hit a special
+* `"initial time step`" [Array(double)] is the size of the first time step after we hit a special
   time specified above.
 
 * `"maximum time step`" [Array(double)] allows the user to limit the time step between
@@ -278,7 +295,7 @@ This list must *NOT* include start times for time periods *TP #*.
      <ParameterList name="time period control">
        <Parameter name="start times" type="Array(double)" value="{3.16e+10, 6.32e+10}"/>
        <Parameter name="initial time step" type="Array(double)" value="{100.0, 100.0}"/>
-       <Parameter name="maximum time step" type="Array(double)" value="{3.16e+8, 4.0e+17}"/>
+       <Parameter name="maximum time step" type="Array(double)" value="{3.2e+8, 4e+17}"/>
      </ParameterList>
    </ParameterList>
 
@@ -288,13 +305,11 @@ Between approximately 1000 [y] and 2000 [y], we limit the maximum time step to 1
 Restart from checkpoint data file
 ---------------------------------
 
-A user may request a restart from a checkpoint data file by including sublist 
+A user may request to restart a simulation from a checkpoint data file by creating list 
 *restart*. In this scenario, the code will overwrite data initialized using the input XML file.
 The purpose of restart is to continue the simulation that has been terminated before for some reasons,
 e.g. because its allocation of time ran out.
-
 The value for the current time and current cycle is read from the checkpoint file.
-currently, the checkpoint file does not save the list of observations.
 
 * `"restart`" [list]
 
@@ -323,7 +338,7 @@ The initialization sublist of *State* is named *initial conditions*.
 
 * `"initialization filename`" [string] (optional) provides name of the existing checkpoint data 
   file. The initialization sequence is as follows. First, we try to initialize a
-  field using the provided check-point file. Second, regardless of the outcome of the
+  field using the provided checkpoint file. Second, regardless of the outcome of the
   previous step, we try to initialize the field using the sublist `"initial conditions`".
   By design, the second step allows us to overwrite only part for the field.
 
@@ -345,16 +360,17 @@ The initialization sublist of *State* is named *initial conditions*.
 Primary and derived fields
 --------------------------
 
-* Primary fields
+* Primary fields [default units]
 
   * pressure [Pa]
-  * total component concentration [:math:`mol/m^3`]
+  * total component concentration [:math:`mol/L`] or [:math:`mol/m^3`]
   * temperature [K]
 
 * Derived fields
 
   * saturation [-]
-  * hydraulic head [m]
+  * hydraulic_head [m]
+  * darcy_flux [m/s]
 
 
 Field evaluators
@@ -373,7 +389,7 @@ The evaluator has the following fields.
   of evaluators. The available option are `"independent variable`", `"primary variable`",
   and `"secondary variable`".
 
-* `"function`" [list] defines a piecewise function for calculating the independent variable.
+* `"function`" [list] defines a piecewise continuous function for calculating the independent variable.
   In may contain multiple sublists `"DOMAIN`" with identical structure.
   
   * `"DOMAIN`" [list]
@@ -387,7 +403,7 @@ The evaluator has the following fields.
       Available options are `"cell`", `"face`", and `"node`".
 
     * `"function`" [list] defines an analytic function for calculation. Its structure
-      is described in the separate section below.
+      is described in the Functions_ section below.
 
 .. code-block:: xml
 
@@ -523,7 +539,7 @@ Constant vector field
 A constant vector field is the global (with respect to the mesh) vector constant. 
 At the moment, the set of such vector constants includes *gravity*.
 The initialization requires to provide a named sublist with a single
-parameter *value*. In two dimensions, is looks like
+parameter *value*. In two dimensions, it looks like
 
 .. code-block:: xml
 
@@ -540,7 +556,7 @@ A scalar field
 A variable scalar field is defined by a few functions (labeled *MESH BLOCK #* in our
 example) with non-overlapping domains. 
 The required parameters for each function are *region*, *component*,
-and the function itself.
+and *function*.
 
 * `"regions`" [Array(string)] is list of mesh regions where the function
   should be applied, the domain of the function.
@@ -584,9 +600,9 @@ A vector or tensor field
 ........................
 
 A variable tensor (or vector) field is defined similarly to a variable scalar field. 
-The difference lies in the definition of the function which is now a multi-value function.
+The difference lies in the definition of the function which is now a multi-valued function.
 
-* `"Number of DoFs`" [int] is the number of components in the vector or tensor.
+* `"number of dofs`" [int] is the number of components in the vector or tensor.
 
 * `"Function type`" [string] defines the function type. The only available option 
   is `"composite function`".
@@ -613,8 +629,8 @@ checkpoints of vis files. Default values are *true*.
            <Parameter name="regions" type="Array(string)" value="{ALL DOMAIN}"/>
            <Parameter name="component" type="string" value="face"/>
            <ParameterList name="function">
-             <Parameter name="Number of DoFs" type="int" value="2"/>
-             <Parameter name="Function type" type="string" value="composite function"/>
+             <Parameter name="number of dofs" type="int" value="2"/>
+             <Parameter name="function type" type="string" value="composite function"/>
              <ParameterList name="DoF 1 Function">
                <ParameterList name="function-constant">
                  <Parameter name="value" type="double" value="0.002"/>
@@ -655,7 +671,7 @@ Mesh partitioning
 
 Amanzi's state has a number of tools to verify completeness of initial data.
 This is done using list *mesh partitions*. 
-Each sublist in there must have parameter *region list* specifying
+Each sublist there must have parameter *region list* specifying
 regions that define unique partition of the mesh.
 
 .. code-block:: xml
@@ -663,7 +679,7 @@ regions that define unique partition of the mesh.
    <ParameterList name="State">  <!-- parent list -->
      <ParameterList name="mesh partitions">
        <ParameterList name="MATERIALS">
-         <Parameter name="region list" type="Array(string)" value="{region1, region2, region3}"/>
+         <Parameter name="region list" type="Array(string)" value="{region1,region2,region3}"/>
        </ParameterList>
      </ParameterList>
    </ParameterList>
@@ -675,11 +691,16 @@ If so, all material fields, such as *porosity*, will be initialized properly.
 Initialization from a file
 --------------------------
 
-Some fields can be initialized from files. 
+Some fields can be initialized from Exodus II files. 
 For each field, an additional sublist has to be added to the
-named sublist of *State* list with the file name and the name of an attribute. 
+named sublist of *State* list with the file name and the name of attributes. 
 For a serial run, the file extension must be *.exo*. 
 For a parallel run, it must be *.par*.
+
+* `"attributes`" [Array(string)] defines names of attributes. The number of names
+  must be equal to the number of components in the field. The names can be repeated.
+  Scalar fields (e.g. porosity) require one name, tensorial fields (e.g. permeability)
+  require two or three names.
 
 .. code-block:: xml
 
@@ -687,7 +708,7 @@ For a parallel run, it must be *.par*.
      <ParameterList name="permeability">
        <ParameterList name="exodus file initialization">
          <Parameter name="file" type="string" value="mesh_with_data.exo"/>
-         <Parameter name="attribute" type="string" value="perm"/>
+         <Parameter name="attributes" type="Array(string)" value="{permx, permx, permz}"/>
        </ParameterList>
      </ParameterList>
    </ParameterList>
@@ -698,6 +719,9 @@ Example
 
 The complete example of a state initialization is below. Note that
 *MATERIAL 1* and *MATERIAL 2* must be labels of the existing regions.
+Here, we do not capitalize names of state fields such as *porosity*.
+The fields *porosity* and *pressure* are constant over the whole domain. 
+The field *permeability* is the piecewise constant diagonal tensor.
 
 .. code-block:: xml
 
@@ -747,8 +771,8 @@ The complete example of a state initialization is below. Note that
             <Parameter name="regions" type="Array(string)" value="MATERIAL 1"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Function type" type="string" value="composite function"/>
-              <Parameter name="Number of DoFs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1e-12"/>
@@ -765,8 +789,8 @@ The complete example of a state initialization is below. Note that
             <Parameter name="regions" type="Array(string)" value="MATERIAL 2"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Function type" type="string" value="composite function"/>
-              <Parameter name="Number of DoFs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2e-13"/>
@@ -802,8 +826,12 @@ The name of the PKs in this list must match *PKNAMEs* in *Cycle Driver* list.
       </ParameterList>
       <ParameterList name="FLOW">
         ...
+        ... multiple flow parameters, lists, and sublists
+        ...
       </ParameterList>
       <ParameterList name="TRANSPORT">
+        ...
+        ... multiple transport parameters, lists, and sublists
         ...
       </ParameterList>
     </ParameterList>
@@ -877,7 +905,7 @@ Partially saturated flow with water vapor
 `````````````````````````````````````````
 
 The conceptual PDE model for the partially saturated flow with water vapor 
-includes liquid phase (liquid water) and pgas phase (water vapor):
+includes liquid phase (liquid water) and gas phase (water vapor):
 
 .. math::
   \frac{\partial \theta}{\partial t} 
@@ -903,21 +931,22 @@ and :math:`\boldsymbol{K}_g` is the effective diffusion coefficient of the water
 We define 
 
 .. math::
-  \theta = \phi \eta_l s_l
+  \theta = \phi \eta_l s_l + \phi (1 - \eta_l) X_l
 
 where :math:`s_l` is liquid saturation [-],
-and :math:`\phi` is porosity [-].
+:math:`\phi` is porosity [-],
+and :math:`X_l` is molar fraction of water vapor.
 The effective diffusion coefficient of the water vapor is given by
 
 .. math::
   \boldsymbol{K}_g = \phi s_g \tau_g \eta_g \boldsymbol{D}_g
 
-where :math:`s_g` is vapor saturation [-],
+where :math:`s_g` is gas saturation [-],
 :math:`\tau_g` is the tortuosity of the gas phase [-],
-:math:`\eta_g` is the molar density of the vapor,
-and :math:`\boldsymbol{D}_g` is the diffusion coefficient of the gas phase.
+:math:`\eta_g` is the molar density of gas,
+and :math:`\boldsymbol{D}_g` is the diffusion coefficient of the gas phase [:math:`m^2/s`],
 The gas pressure :math:`p_g` is set to the atmosperic pressure and the vapor pressure
-model assumes theremal equlibrium of liquid and gas phases:
+model assumes thermal equlibrium of liquid and gas phases:
 
 .. math::
   p_v = P_{sat}(T) \exp\left(\frac{P_{cgl}}{\eta_l R T}\right)
@@ -926,9 +955,77 @@ where
 :math:`R` is the ideal gas constant,
 :math:`P_{cgl}` is the liquid-gas capillary pressure [Pa],
 :math:`P_{sat}` is the saturated vapor pressure [Pa],
-amd :math:`T` is the temprearture [K].
+and :math:`T` is the temperature [K].
+The diffusion coefficient is based of TOUGHT2 model
 
-Based on these three models, the flow sublist includes exactly one sublist, either 
+.. math::
+   D_g = D_0 \frac{P_{ref}}{p} \left(\frac{T}{273.15}\right)^a
+
+where
+:math:`D_0 = 2.14e-5`,
+:math:`P_{ref}` is atmospheric pressure,
+and :math:`a = 1.8`. 
+finally we need a model for the gas tortuosity. We use the Millington and Quirk model:
+
+.. math::
+   \tau_g = \phi^\beta s_g^\gamma
+
+where
+:math:`\beta = 1/3` and 
+:math:`\gamma = 7/3`.
+
+
+Isothermal partially saturated flow with dual porosity model
+````````````````````````````````````````````````````````````
+
+The conceptual model for the partially saturated flow with dual porosity model
+assumes that water flow is restricted to the fractures and the water in the matrix does not move.
+The rock matrix represents immobile pockets that can exchange, retain and store water
+but do not permit convective flow.
+This leads to dual-porosity type flow and transport models that partition the liquid
+phase into mobile and immobile regions.
+The Richards equation in the mobile region is augmented by the water exchange
+term :math:`\Sigma_w`:
+ 
+.. math::
+  \frac{\partial \theta_{lf}}{\partial t} 
+  = \boldsymbol{\nabla} \cdot (\eta_l \boldsymbol{q}_l) - \Sigma_w + Q_f,
+  \qquad
+  \boldsymbol{q}_l 
+  = -\frac{\boldsymbol{K} k_r}{\mu} 
+  (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g})
+
+where 
+:math:`\Sigma_w` is transfer rate for water from the matrix to the fracture, 
+and :math:`Q_f` is source or sink term [:math:`kg \cdot m^{-3} \cdot s^{-1}`].
+The equation for water balance in the matrix is
+
+.. math::
+  \frac{\partial \theta_{lm}}{\partial t} 
+  = Q_m + \Sigma_w,
+
+where 
+:math:`Q_m` is source or sink term [:math:`kg \cdot m^{-3} \cdot s^{-1}`].
+The volumetric volumetric water contents are defined as
+
+.. math::
+  \theta_f = \phi_f\, \eta_l\, s_{lf},\quad
+  \theta_m = \phi_m\, \eta_l\, s_{lm},
+
+where saturations :math:`s_{lf}` and :math:`s_{lm}` may use different capillary 
+pressure - saturation models.
+The rate of water exchange between the fracture and matrix regions is
+proportional to the difference in hydraulic heads:
+
+.. math::
+  \Sigma_w = \alpha_w (h_f - h_m),
+
+where :math:`\alpha_w` is the mass transfer coefficient.
+Since hydraulic heads are needed for both regions, this equation requires
+estimating retention curves for both regions and therefore is nonlinear.
+ 
+
+The flow sublist includes exactly one sublist, either 
 *Darcy problem* or *Richards problem*.
 Structure of both sublists is quite similar.
 
@@ -947,11 +1044,10 @@ Model specifications and assumptions
 This list is used to summarize physical models and assumptions, such as
 coupling with other PKs.
 This list is often generated or extended by a high-level MPC PK.
-
 In the code development, this list plays a two-fold role. 
 First, it provides necessary information for coupling different PKs such 
-as flags for adding a vapor diffusion to Richards' equations.
-Second, developers may use it instead of a factory of evaluators such as
+as flags for adding a vapor diffusion to Richards' equation.
+Second, the developers may use it instead of a factory of evaluators such as
 creation of primary and secondary evaluators for rock porosity models.
 Combination of both approaches may lead to a more efficient code.
 
@@ -1065,7 +1161,6 @@ Porosity models
 
 User defines porosity models in sublist *porosity models*. 
 It contains as many sublists, e.g. *SOIL_1*, *SOIL_2*, etc, as there are different soils. 
-
 The porosity models are associated with non-overlapping regions. Each of the sublists (e.g. *Soil 1*) 
 includes a few mandatory parameters: *region name*, *model name*, and parameters for the selected model.
 
@@ -1145,49 +1240,51 @@ This list is optional.
    </ParameterList>
 
 
-Upwind 
-......
+Relative permeability
+.....................
 
 This section discusses interface treatment of cell-centered fields such as 
 relative permeability, density and viscosity.
 
-* `"upwind`" [list] collects information required for treatment of
+* `"relative permeability`" [list] collects information required for treatment of
   relative permeability, density and viscosity on mesh faces.
 
-  * `"relative permeability`" [string] defines a method for calculating the *upwinded* 
+  * `"upwind method`" [string] defines a method for calculating the *upwinded* 
     relative permeability. The available options are: `"upwind: gravity`", 
-    `"upwind: darcy velocity`" (default), `"upwind: amanzi``", 
-    `"other: harmonic average`", and `"other: arithmetic average`".
+    `"upwind: darcy velocity`" (default), `"upwind: second-order`", `"upwind: amanzi`" (experimental), 
+    `"upwind: amanzi new`" (experiemental), `"other: harmonic average`", and `"other: arithmetic average`".
 
-  * `"upwind update`" [string] defines frequency of recalculating Darcy flux inside
+  * `"upwind frequency`" [string] defines frequency of recalculating Darcy flux inside
     nonlinear solver. The available options are `"every timestep`" and `"every nonlinear iteration`".
     The first option freezes the Darcy flux for the whole time step. The second option
     updates it on each iteration of a nonlinear solver. The second option is recommended
     for the Newton solver. It may impact significantly upwinding of the relative permeability 
     and convergence rate of this solver.
 
-  * `"upwind method`" [string] specifies a method for treating nonlinear diffusion coefficient.
-    Available options are `"standard`", `"divk`" (default), and `"second-order`" (experimental). 
-
-  * `"upwind NAME parameters`" [list] defines parameters for upwind method `"NAME`".
+  * `"upwind parameters`" [list] defines parameters for upwind method specified by `"relative permeability`".
 
     * `"tolerance`" [double] specifies relative tolerance for almost zero local flux. In such
       a case the flow is assumed to be parallel to a mesh face. Default value is 1e-12.
 
-    * [WIP] `"reconstruction method`" [string] defines a reconstruction method for the second-order upwind.
+    * [WIP] `"method`" [string] specifies a reconstruction method. Available option is
+      `"cell-based`" (default).
 
-    * [WIP] `"limiting method`" [string] defines limiting method for the second-order upwind.
+    * `"polynomial order`" [int] defines the polynomial order of a reconstructed function. Default is 1.
+
+    * `"limiter`" [string] specifies limiting method for a high-order reconstruction. 
+      Available options are `"Barth-Jespersen`" (default), `"tensorial`", and `"Kuzmin`". 
 
 .. code-block:: xml
 
    <ParameterList name="Richards problem">  <!-- parent list -->
-     <ParameterList name="upwind">
-       <Parameter name="relative permeability" type="string" value="upwind with Darcy flux"/>
-       <Parameter name="upwind update" type="string" value="every timestep"/>
-
-       <Parameter name="upwind method" type="string" value="standard"/>
-       <ParameterList name="upwind standard parameters">
+     <ParameterList name="relative permeability">
+       <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
+       <Parameter name="upwind frequency" type="string" value="every timestep"/>
+       <ParameterList name="upwind parameters">
           <Parameter name="tolerance" type="double" value="1e-12"/>
+          <Parameter name="method" type="string" value="cell-based"/>
+          <Parameter name="polynomial order" type="int" value="1"/>
+          <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
        </ParameterList>
      </ParameterList>  
    </ParameterList>  
@@ -1647,8 +1744,6 @@ Other parameters
 
 The remaining *Flow* parameters are
 
-* `"atmospheric pressure`" [double] defines the atmospheric pressure, [Pa].
-
 * `"absolute permeability coordinate system`" [string] defines coordinate system
   for calculating absolute permeability. The available options are `"cartesian`"
   and `"layer`".
@@ -2078,7 +2173,8 @@ Note that the source values are set up separately for each component.
     * `"spatial distribution method`" [string] identifies a method for distributing
       source Q over the specified regions. The available options are `"volume`",
       `"none`", and `"permeability`". For option `"none`" the source term Q is measured
-      in [mol/m^3/s]. For the other options, it is measured in [mol/s]. When the source function
+      in [mol/L/s] (if units for concetration is mol/L) or [mol/m^3/s] (othrwise). 
+      For the other options, it is measured in [mol/s]. When the source function
       is defined over a few regions, Q will be distributed independently over each region.
       Default value is `"none`".
 
@@ -2158,8 +2254,7 @@ The incomplete list is
  * [local] cell id and position with the smallest time step
  * [local] convergence of a linear solver for dispersion, PCG here
  * [local] number of subcycles, stable time step, and global time step (in seconds)
- * [local] species's name, concentration extrema, total amount of it in the 
-   reservoir, and amount escaped through the outflow boundary
+ * [local] species's name, concentration extrema, and total amount of it in the reservoir
  * [global] current simulation time (in years)
 
 .. code-block:: xml
@@ -2168,7 +2263,7 @@ The incomplete list is
   TransportPK      |    cell 0 has smallest dt, (-270, -270)
   TransportPK      |    dispersion solver (pcg) ||r||=8.33085e-39 itrs=2
   TransportPK      |    1 sub-cycles, dt_stable=2.81743e+06 [sec]  dt_MPC=2.81743e+06 [sec]
-  TransportPK      |    Tc-99: min/max=7.111e-21 0.001461 [mol/m^3], total/out=2.2957 1.4211e-14 [mol]
+  TransportPK      |    Tc-99: min=8.08339e-06 mol/L max=0.0952948 mol/L, total=9.07795 mol
   CycleDriver      |   New time(y) = 0.89279
 
 
@@ -2307,8 +2402,8 @@ The following cell-based fields can be initialized here:
             <Parameter name="region" type="string" value="Entire Domain"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="1"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.0e-09"/>
@@ -2564,7 +2659,7 @@ Minerals
 ````````
 
 Each line in this section has five fields for secondary species:
-Name = coeff reactant, log Keq, gram molecular weight [g/mole], molar volume [cm^3/mole],
+Name = coeff reactant, log Keq, gram molecular weight [g/mol], molar volume [cm^3/mol],
 and specific surface area [cm^2 mineral / cm^3 bulk].
 
 .. code-block:: txt
@@ -3097,7 +3192,7 @@ Diffusion operator
     has useful properties under some a priori conditions on the mesh and/or permeability tensor.
     The available options are `"mfd: optimized for sparsity`", `"mfd: optimized for monotonicity`",
     `"mfd: default`", `"mfd: support operator`", `"mfd: two-point flux approximation`",
-    and `"fv: default`". 
+    `"fv: default`", and `"nlfv: default`".
     The first option is recommended for general meshes.
     The second option is recommended for orthogonal meshes and diagonal absolute 
     permeability tensor. 
@@ -3134,6 +3229,7 @@ Diffusion operator
   * `"newton correction`" [string] specifies a model for non-physical terms 
     that must be added to the matrix. These terms represent Jacobian and are needed 
     for the preconditioner. Available options are `"true jacobian`" and `"approximate jacobian`".
+    The FV scheme accepts only the first options. The othre schemes accept only the second option.
 
   * `"scaled constraint equation`" [bool] rescales flux continuity equations on mesh faces.
     These equations are divided by the nonlinear coefficient. This option allows us to 
@@ -3161,7 +3257,7 @@ Diffusion operator
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
       <Parameter name="gravity" type="bool" value="true"/>
       <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
-      <Parameter name="upwind method" type="string" value="standard: cell"/>
+      <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
       <Parameter name="newton correction" type="string" value="true jacobian"/>
 
       <ParameterList name="consistent faces">
@@ -3226,11 +3322,13 @@ and their extensions for various PKs.
 
   <ParameterList name="reconstruction">
     <Parameter name="method" type="string" value="cell-based"/>
-    <Parameter name="order" type="int" value="1"/>
+    <Parameter name="polynomial order" type="int" value="1"/>
     <Parameter name="limiter" type="string" value="tensorial"/>
     <Parameter name="limiter extension for transport" type="bool" value="false"/>
   </ParameterList>
 
+
+.. _Functions:
 
 Functions
 ---------
@@ -3335,12 +3433,12 @@ that vary in time and the x dimension.
 .. code-block:: xml
 
   <ParameterList name="function-bilinear">
-    <Parameter name="file" type="string" value="pressure_face.h5" />
-    <Parameter name="row header" type="string" value="/time" />
-    <Parameter name="row coordinate" type="string" value="time" />
-    <Parameter name="column header" type="string" value="/x" />
-    <Parameter name="column coordinate" type="string" value="x" />
-    <Parameter name="value header" type="string" value="/pressures" />
+    <Parameter name="file" type="string" value="pressure_face.h5"/>
+    <Parameter name="row header" type="string" value="/time"/>
+    <Parameter name="row coordinate" type="string" value="time"/>
+    <Parameter name="column header" type="string" value="/x"/>
+    <Parameter name="column coordinate" type="string" value="x"/>
+    <Parameter name="value header" type="string" value="/pressures"/>
   </ParameterList>
   
 
@@ -3640,6 +3738,9 @@ Internal parameters for GMRES include
   stops to collect data of the convergence history. The cotroller becomes active on the next
   iteration. Default is 3.
 
+* `"maximum size of deflation space`" [int] defines the size of deflation space. It should be 
+  smaller than the size of the Krylov space. Default is 0. This is experimental feature.
+
 .. code-block:: xml
 
    <ParameterList name="GMRES with HYPRE AMG">  <!-- parent list -->
@@ -3649,6 +3750,7 @@ Internal parameters for GMRES include
        <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
        <Parameter name="size of Krylov space" type="int" value="10"/>
        <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
+       <Parameter name="maximum size of deflation space" type="int" value="0"/>
 
        <ParameterList name="VerboseObject">
          <Parameter name="Verbosity Level" type="string" value="high"/>
@@ -4270,8 +4372,8 @@ Example of *Unstructured* mesh generated internally:
          <ParameterList name="Generate Mesh"/>
            <ParameterList name="Uniform Structured"/>
              <Parameter name="Number of Cells" type="Array(int)" value="{100, 1, 100}"/>
-             <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0, 0.0}" />
-             <Parameter name="Domain High Corner" type="Array(double)" value="{103.2, 1.0, 103.2}" />
+             <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+             <Parameter name="Domain High Corner" type="Array(double)" value="{103.2, 1.0, 103.2}"/>
            </ParameterList>   
          </ParameterList>   
        </ParameterList>   
@@ -4623,7 +4725,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
     Observation *drawdown* is calculated with respect to the value registered at the first time
     it was requested.
 
-    The following observations are point-type obervations: "water table".
+    The following observations are point-type obervations: "water table", "drawdown".
 
     * `"functional`" [string] the label of a function to apply to each of the variables
       in the variable list (Function options detailed below)
@@ -4683,7 +4785,7 @@ All of them operate on the variables identified.
          <Parameter name="times" type="Array(double)" value="{100000.0, 200000.0}"/>
 
          <Parameter name="cycles" type="Array(int)" value="{100000, 200000, 400000, 500000}"/>
-         <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
+         <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
 
          <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
          <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
@@ -4738,8 +4840,8 @@ frequency, by numerical cycle number.
        <Parameter name="file name base" type="string" value="chkpoint"/>
        <Parameter name="file name digits" type="int" value="5"/>
 
-       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
-       <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
+       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
+       <Parameter name="cycles" type="Array(int)" value="{999, 1001}"/>
 
        <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
        <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
@@ -4807,8 +4909,8 @@ time step values or intervals corresponding to the cycle number; writes are cont
      <ParameterList name="Visualization Data">
        <Parameter name="file name base" type="string" value="chk"/>
   
-       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
-       <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
+       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
+       <Parameter name="cycles" type="Array(int)" value="{999, 1001}"/>
 
        <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
        <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
@@ -4867,8 +4969,8 @@ A user may request periodic dumps of Walkabout Data. Output controls for Walkabo
        <Parameter name="file name base" type="string" value="walkabout"/>
        <Parameter name="file name digits" type="int" value="5"/>
 
-       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
-       <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
+       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
+       <Parameter name="cycles" type="Array(int)" value="{999, 1001}"/>
 
        <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
        <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>

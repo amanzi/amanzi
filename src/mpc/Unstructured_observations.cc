@@ -18,7 +18,9 @@
 #include "PlaneRegion.hh"
 #include "PolygonRegion.hh"
 #include "ReconstructionCell.hh"
+#include "Units.hh"
 
+// MPC
 #include "Unstructured_observations.hh"
 
 namespace Amanzi {
@@ -26,22 +28,28 @@ namespace Amanzi {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-Unstructured_observations::Unstructured_observations(Teuchos::ParameterList& obs_list,
-                                                     Amanzi::ObservationData& observation_data,
-                                                     Epetra_MpiComm* comm)
-    : observation_data_(observation_data), obs_list_(obs_list)
+Unstructured_observations::Unstructured_observations(
+    Teuchos::RCP<Teuchos::ParameterList> obs_list,
+    Teuchos::RCP<Teuchos::ParameterList> units_list,
+    Amanzi::ObservationData& observation_data,
+    Epetra_MpiComm* comm)
+    : observation_data_(observation_data),
+      obs_list_(obs_list)
 {
   rank_ = comm->MyPID();
+
+  // initialize units
+  units_.Init(*units_list);
 
   Teuchos::ParameterList tmp_list;
   tmp_list.set<std::string>("Verbosity Level", "high");
   vo_ = new VerboseObject("Observations", tmp_list);
 
   // loop over the sublists and create an observation for each
-  for (Teuchos::ParameterList::ConstIterator i = obs_list_.begin(); i != obs_list_.end(); i++) {
+  for (Teuchos::ParameterList::ConstIterator i = obs_list_->begin(); i != obs_list_->end(); i++) {
 
-    if (obs_list_.isSublist(obs_list_.name(i))) {
-      Teuchos::ParameterList observable_plist = obs_list_.sublist(obs_list_.name(i));
+    if (obs_list_->isSublist(obs_list_->name(i))) {
+      Teuchos::ParameterList observable_plist = obs_list_->sublist(obs_list_->name(i));
 
       std::vector<double> times;
       std::vector<std::vector<double> > time_sps;
@@ -90,13 +98,11 @@ Unstructured_observations::Unstructured_observations(Teuchos::ParameterList& obs
 
       // loop over all variables listed and create an observable for each
       std::string var = observable_plist.get<std::string>("variable");
-      observations.insert(std::pair
-                          <std::string, Observable>(obs_list_.name(i),
-                                                    Observable(var,
-                                                               observable_plist.get<std::string>("region"),
-                                                               observable_plist.get<std::string>("functional"),
-                                                               observable_plist,
-                                                               comm)));
+      observations.insert(std::pair<std::string, Observable>(
+          obs_list_->name(i), 
+          Observable(var, observable_plist.get<std::string>("region"),
+                     observable_plist.get<std::string>("functional"),
+                     observable_plist, comm)));
     }
   }
 }
@@ -232,16 +238,22 @@ int Unstructured_observations::MakeObservations(State& S)
           for (int i = 0; i < mesh_block_size; i++) {
             int c = entity_ids[i];
             double factor = porosity[0][c] * ws[0][c] * S.GetMesh()->cell_volume(c);
+            factor *= units_.concentration_factor();
+
             value += tcc[tcc_index][c] * factor;
             volume += factor;
           }
+
         } else if (var == comp_names_[tcc_index] + " gaseous concentration") { 
           for (int i = 0; i < mesh_block_size; i++) {
             int c = entity_ids[i];
             double factor = porosity[0][c] * (1.0 - ws[0][c]) * S.GetMesh()->cell_volume(c);
+            factor *= units_.concentration_factor();
+
             value += tcc[tcc_index][c] * factor;
             volume += factor;
           }
+
         } else if (var == comp_names_[tcc_index] + " volumetric flow rate") {
           const Epetra_MultiVector& darcy_flux = *S.GetFieldData("darcy_flux")->ViewComponent("face");
           Amanzi::AmanziMesh::Entity_ID_List cells;
@@ -254,10 +266,12 @@ int Unstructured_observations::MakeObservations(State& S)
               int sign, c = cells[0];
               const AmanziGeometry::Point& face_normal = S.GetMesh()->face_normal(f, false, c, &sign);
               double area = S.GetMesh()->face_area(f);
+              double factor = units_.concentration_factor();
 
-              value += std::max(0.0, sign * darcy_flux[0][f]) * tcc[tcc_index][c];
-              volume += area;
+              value += std::max(0.0, sign * darcy_flux[0][f]) * tcc[tcc_index][c] * factor;
+              volume += area * factor;
             }
+
           } else if (obs_planar) {  // observation is on an interior planar set
             for (int i = 0; i != mesh_block_size; ++i) {
               int f = entity_ids[i];
@@ -269,10 +283,12 @@ int Unstructured_observations::MakeObservations(State& S)
 
               double area = S.GetMesh()->face_area(f);
               double sign = (reg_normal * face_normal) * csign / area;
+              double factor = units_.concentration_factor();
     
-              value += sign * darcy_flux[0][f] * tcc[tcc_index][c];
-              volume += area;
+              value += sign * darcy_flux[0][f] * tcc[tcc_index][c] * factor;
+              volume += area * factor;
             }
+
           } else {
             msg << "Observations of \"SOLUTE volumetric flow rate\""
                 << " is only possible for Polygon, Plane and Boundary side sets";
@@ -299,13 +315,17 @@ int Unstructured_observations::MakeObservations(State& S)
             value += porosity[0][c] * ws[0][c] * vol;
           }
         } else if (var == "gravimetric water content") {
-          double particle_density(1.0);  // does not exist in new state, yet... TODO
+          if (!S.HasField("particle_density")) {
+            msg << "Observation \""  << var << "\" requires field \"particle_density\".\n";
+            Exceptions::amanzi_throw(msg);
+          }
+          const Epetra_MultiVector& pd = *S.GetFieldData("particle_density")->ViewComponent("cell");    
   
           for (int i = 0; i < mesh_block_size; i++) {
             int c = entity_ids[i];
             double vol = S.GetMesh()->cell_volume(c);
             volume += vol;
-            value += porosity[0][c] * ws[0][c] * rho / (particle_density * (1.0 - porosity[0][c])) * vol;
+            value += porosity[0][c] * ws[0][c] * rho / (pd[0][c] * (1.0 - porosity[0][c])) * vol;
           }    
         } else if (var == "aqueous pressure") {
           for (int i = 0; i < mesh_block_size; i++) {
@@ -345,7 +365,7 @@ int Unstructured_observations::MakeObservations(State& S)
 
           // zero drawdown at time = t0 wil be written directly to the file.
           if (od.size() > 0) { 
-            value = od.begin()->value - value;
+            value = od.begin()->value * volume - value;
           }
         } else if (var == "aqueous mass flow rate" || 
                    var == "aqueous volumetric flow rate") {
@@ -549,9 +569,9 @@ void Unstructured_observations::RegisterWithTimeStepManager(const Teuchos::Ptr<T
 ****************************************************************** */
 void Unstructured_observations::FlushObservations()
 {
-  if (obs_list_.isParameter("observation output filename")) {
-    std::string obs_file = obs_list_.get<std::string>("observation output filename");
-    int precision = obs_list_.get<int>("precision", 16);
+  if (obs_list_->isParameter("observation output filename")) {
+    std::string obs_file = obs_list_->get<std::string>("observation output filename");
+    int precision = obs_list_->get<int>("precision", 16);
 
     if (rank_ == 0) {
       std::ofstream out;
@@ -563,11 +583,11 @@ void Unstructured_observations::FlushObservations()
       out << "Observation Name, Region, Functional, Variable, Time, Value\n";
       out << "===========================================================\n";
 
-      for (Teuchos::ParameterList::ConstIterator i = obs_list_.begin(); i != obs_list_.end(); ++i) {
-        std::string label = obs_list_.name(i);
-        const Teuchos::ParameterEntry& entry = obs_list_.getEntry(label);
+      for (Teuchos::ParameterList::ConstIterator i = obs_list_->begin(); i != obs_list_->end(); ++i) {
+        std::string label = obs_list_->name(i);
+        const Teuchos::ParameterEntry& entry = obs_list_->getEntry(label);
         if (entry.isList()) {
-          const Teuchos::ParameterList& ind_obs_list = obs_list_.sublist(label);
+          const Teuchos::ParameterList& ind_obs_list = obs_list_->sublist(label);
           std::vector<Amanzi::ObservationData::DataTriple>& od = observation_data_[label]; 
 
           for (int j = 0; j < od.size(); j++) {

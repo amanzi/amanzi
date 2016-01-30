@@ -1,17 +1,28 @@
-#ifndef AMANZI_TENSOR_HH_
-#define AMANZI_TENSOR_HH_
-
 /*
+  WhetStone, version 2.0
+  Release name: naka-to.
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
   Tensors of rank 1 are numbers in all dimensions.
-  Tensors of rank 2 are square matrices in all dimensions.
+  General tensors of rank 2 are square matrices in all dimensions. 
   Only symmetric tensors of rank 4 are considered here.
 */
+
+#ifndef AMANZI_TENSOR_HH_
+#define AMANZI_TENSOR_HH_
 
 #include <iostream>
 #include <cmath>
 
 #include "Point.hh"
 
+#include "DenseVector.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -73,6 +84,28 @@ class Tensor {
   int d_, rank_, size_;
   double* data_;
 };
+
+
+// non-member functions
+// -- comparison operators
+inline bool operator==(const Tensor& T1, const Tensor& T2) {
+  if (T1.rank() != T1.rank()) return false;
+  if (T1.size() != T2.size()) return false;
+
+  double* data1 = T1.data();
+  double* data2 = T2.data();
+  for (int i = 0; i != T1.size(); ++i)
+    if (data1[i] != data2[i]) return false;
+  return true;
+}
+
+inline bool operator!=(const Tensor& T1, const Tensor& T2) {
+  return !(T1 == T2);
+}
+
+// -- expanding tensor to a constant size vector and reverse.
+void TensorToVector(const Tensor& T, DenseVector& v);
+void VectorToTensor(const DenseVector& v, Tensor& T);
 
 }  // namespace WhetStone
 }  // namespace Amanzi

@@ -1,17 +1,16 @@
 /*
-  This is the transport component of the Amanzi code. 
+  Transport PK 
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_TRANSPORT_CONSTANTS_HH_
 #define AMANZI_TRANSPORT_CONSTANTS_HH_
-
 
 namespace Amanzi {
 namespace Transport {
@@ -44,12 +43,6 @@ const int TRANSPORT_QUAD_EDGES = 4;
 const int TRANSPORT_MAX_FACES = 14;  // Kelvin's tetrakaidecahedron
 const int TRANSPORT_MAX_NODES = 47;  // These polyhedron parameters must
 const int TRANSPORT_MAX_EDGES = 60;  // be calculated in Init().
-
-const int TRANSPORT_DISPERSIVITY_MODEL_NULL = 0;
-const int TRANSPORT_DISPERSIVITY_MODEL_SCALAR = 1;
-const int TRANSPORT_DISPERSIVITY_MODEL_BEAR = 2;
-const int TRANSPORT_DISPERSIVITY_MODEL_BURNETT_FRIND = 3;
-const int TRANSPORT_DISPERSIVITY_MODEL_LICHTNER_KELKAR_ROBINSON = 4;
 
 const int TRANSPORT_DISPERSION_METHOD_TPFA = 1;
 const int TRANSPORT_DISPERSION_METHOD_NLFV = 2;

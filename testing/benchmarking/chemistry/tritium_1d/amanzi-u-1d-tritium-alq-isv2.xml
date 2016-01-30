@@ -1,4 +1,4 @@
-<amanzi_input version="2.1.0" type="unstructured">
+<amanzi_input version="2.2.1" type="unstructured">
 
   <model_description name="1D Flow and Transport, tritium decay">
     <author>Sergi Molins</author>
@@ -28,7 +28,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" algorithm="explicit first-order" sub_cycling = "on"/>
-    <chemistry engine="pflotran" process_model="none" state="on" input_filename="1d-tritium-trim.in" />
+    <chemistry engine="pflotran" state="on"  />
   </process_kernels>
 
   <phases>
@@ -39,7 +39,6 @@
       <dissolved_components>
         <solutes>
           <solute coefficient_of_diffusion="1.0e-9">Tritium</solute>
-<!--          <solute coefficient_of_diffusion="1.0e-9">Daughter</solute> -->
         </solutes>
       </dissolved_components>
     </liquid_phase>
@@ -118,6 +117,24 @@
     </region>
   </regions>
 
+  <geochemistry>
+      <verbosity>silent</verbosity>
+      <pflotran_chemistry>
+	  <reaction_network file="1d-tritium-trim.in" format="simple" />
+	  <database file="tritium.dat" />
+      </pflotran_chemistry>
+      <constraints>
+	  <constraint name="initial" filename="1d-tritium-trim.in"/>
+	  <constraint name="west" filename="1d-tritium-trim.in"/>
+      </constraints>
+<!-- option 2
+		<radioactive_decay>
+			<solute name="Tritium" rate_constant="1.78577e-09"/>
+		</radioactive_decay>
+-->
+
+  </geochemistry>
+
   <materials>
     <material name="soil">
       <mechanical_properties>
@@ -169,17 +186,6 @@
       </liquid_phase>
     </boundary_condition>
   </boundary_conditions>
-
-  <geochemistry>
-    <reaction_network file="1d-tritium-trim.in" format="simple"/>
-    <constraint name="initial" filename="1d-tritium-crunch.in"/>
-    <constraint name="west" filename="1d-tritium-crunch.in"/>
-<!-- option 2
-		<radioactive_decay>
-			<solute name="Tritium" rate_constant="1.78577e-09"/>
-		</radioactive_decay>
--->
-  </geochemistry>
 
   <output>
     <vis>

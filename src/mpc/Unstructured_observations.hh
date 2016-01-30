@@ -3,14 +3,16 @@
 
 #include <map>
 
+// TPLs
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 
+// Amanzi
+#include "IOEvent.hh"
 #include "ObservationData.hh"
 #include "State.hh"
-#include "IOEvent.hh"
-
 #include "TimeStepManager.hh"
+#include "Units.hh"
 #include "VerboseObject.hh"
 
 
@@ -38,7 +40,8 @@ class Unstructured_observations {
   };
 
   // constructor and destructor
-  Unstructured_observations(Teuchos::ParameterList& obs_list,
+  Unstructured_observations(Teuchos::RCP<Teuchos::ParameterList> obs_list,
+                            Teuchos::RCP<Teuchos::ParameterList> units_list,
                             Amanzi::ObservationData& observation_data,
 			    Epetra_MpiComm* comm);
 
@@ -69,12 +72,14 @@ class Unstructured_observations {
   
  private:
   int rank_;
-  Teuchos::ParameterList obs_list_;
+  Teuchos::RCP<Teuchos::ParameterList> obs_list_;
   Amanzi::ObservationData& observation_data_;
   std::map<std::string, Observable> observations;
 
   std::vector<std::string> comp_names_;
   int num_liquid_;
+
+  Utils::Units units_;
 };
 
 }  // namespace Amanzi

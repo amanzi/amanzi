@@ -1,12 +1,12 @@
 /*
-  This is the input component of the Amanzi code. 
+  Input Converter
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_INPUT_CONVERTER_UNSTRUCTURED_HH_
@@ -63,6 +63,7 @@ class InputConverterU : public InputConverter {
 
   Teuchos::ParameterList TranslateVerbosity_();
   Teuchos::ParameterList TranslateMisc_();
+  Teuchos::ParameterList TranslateUnits_();
 
   Teuchos::ParameterList TranslateMesh_();
   Teuchos::ParameterList TranslateRegions_();
@@ -80,7 +81,8 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslatePKs_(const Teuchos::ParameterList& cd_list);
   Teuchos::ParameterList TranslateDiffusionOperator_(
       const std::string& disc_methods, const std::string& pc_method,
-      const std::string& nonlinear_solver, const std::string& extensions, bool gravity);
+      const std::string& nonlinear_solver, const std::string& nonlinear_coef,
+      const std::string& extensions, bool gravity);
   Teuchos::ParameterList TranslateTimeIntegrator_(
       const std::string& err_options, const std::string& nonlinear_solver,
       bool modify_correction, const std::string& unstr_controls,

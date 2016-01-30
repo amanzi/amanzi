@@ -15,7 +15,7 @@
 #include "Region.hh"
 
 namespace Amanzi {
-  namespace AmanziGeometry {
+namespace AmanziGeometry {
 
 // -------------------------------------------------------------
 //  class PointRegion
@@ -25,10 +25,7 @@ namespace Amanzi {
 class PointRegion : public Region {
 public:
 
-  PointRegion(const std::string name, const unsigned int id, const Point& p,
-              const LifeCycleType lifecycle=PERMANENT,
-              const VerboseObject *verbobj=NULL);
-  PointRegion(const char *name, const unsigned int id, const Point& p,
+  PointRegion(const Set_Name& name, const Set_ID id, const Point& p,
               const LifeCycleType lifecycle=PERMANENT,
               const VerboseObject *verbobj=NULL);
 

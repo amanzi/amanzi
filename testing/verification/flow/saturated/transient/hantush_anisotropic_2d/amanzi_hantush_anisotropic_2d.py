@@ -65,7 +65,7 @@ if __name__ == "__main__":
         axes1 = fig1.add_axes([.1,.1,.8,.8])
        
         plottest(axes1, obstimes, obsdata, ana_data)
-        plt.show()
+        # plt.show()
  
     finally:
         pass

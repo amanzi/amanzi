@@ -192,7 +192,9 @@
   </boundary_conditions>
 
   <geochemistry>
-    <reaction_network file="calcite.bgd" format="simple"/>
+    <amanzi_chemistry>
+      <reaction_network file="calcite.bgd" format="simple"/>
+    </amanzi_chemistry>
   </geochemistry>
 
   <output>

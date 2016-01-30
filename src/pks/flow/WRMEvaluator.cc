@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Flow PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -26,10 +26,8 @@ namespace Flow {
 * Two constructors.
 ****************************************************************** */
 WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist,
-                           double patm,
                            Teuchos::RCP<WRMPartition> wrm) :
     SecondaryVariablesFieldEvaluator(plist),
-    patm_(patm),
     wrm_(wrm)
 {
   InitializeFromPlist_();
@@ -39,7 +37,6 @@ WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist,
 WRMEvaluator::WRMEvaluator(const WRMEvaluator& other) :
     SecondaryVariablesFieldEvaluator(other),
     pressure_key_(other.pressure_key_),
-    patm_(other.patm_),
     wrm_(other.wrm_) {};
 
 
@@ -73,10 +70,11 @@ void WRMEvaluator::EvaluateField_(
 {
   Epetra_MultiVector& sat_c = *results[0]->ViewComponent("cell", false);
   const Epetra_MultiVector& pres_c = *S->GetFieldData(pressure_key_)->ViewComponent("cell", false);
+  const double patm = *S->GetScalarData("atmospheric_pressure");
 
   int ncells = sat_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
-    sat_c[0][c] = wrm_->second[(*wrm_->first)[c]]->saturation(patm_ - pres_c[0][c]);
+    sat_c[0][c] = wrm_->second[(*wrm_->first)[c]]->saturation(patm - pres_c[0][c]);
   }
 }
 
@@ -91,11 +89,12 @@ void WRMEvaluator::EvaluateFieldPartialDerivative_(
 {
   Epetra_MultiVector& sat_c = *results[0]->ViewComponent("cell", false);
   const Epetra_MultiVector& pres_c = *S->GetFieldData(pressure_key_)->ViewComponent("cell", false);
+  const double patm = *S->GetScalarData("atmospheric_pressure");
 
   int ncells = sat_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
     // Negative sign indicates that dSdP = -dSdPc.
-    sat_c[0][c] = -wrm_->second[(*wrm_->first)[c]]->dSdPc(patm_ - pres_c[0][c]);
+    sat_c[0][c] = -wrm_->second[(*wrm_->first)[c]]->dSdPc(patm - pres_c[0][c]);
   }
 }
 

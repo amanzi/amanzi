@@ -1,13 +1,15 @@
 /*
-  This is the Operator component of the Amanzi code.
+  Operators
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
           Ethan Coon (ecoon@lanl.gov)
+
+  Pure interface for diffusion operators.
 */
 
 #ifndef AMANZI_OPERATOR_DIFFUSION_HH_
@@ -25,11 +27,6 @@
 #include "BCs.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
-
-
-/*
-  Pure interface for diffusion operators.
-*/ 
 
 namespace Amanzi {
 namespace Operators {
@@ -87,7 +84,7 @@ class OperatorDiffusion {
   virtual void UpdateMatricesNewtonCorrection(
           const Teuchos::Ptr<const CompositeVector>& flux,
           const Teuchos::Ptr<const CompositeVector>& u,
-          double scalar_limiter=1) {};
+          double scalar_limiter = 1.0) {};
 
   // -- after solving the problem: postrocessing
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux) = 0;
@@ -187,9 +184,6 @@ class OperatorDiffusion {
   int nfaces_owned, nfaces_wghost;
   int nnodes_owned, nnodes_wghost;
 };
-
-
-
 
 }  // namespace Operators
 }  // namespace Amanzi

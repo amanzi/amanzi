@@ -1,19 +1,21 @@
 /*
-  This is the mimetic discretization component of the Amanzi code. 
+  WhetStone, version 2.0
+  Release name: naka-to.
 
-  Copyright 2010-20XX held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Version: 2.0
-  Release name: naka-to.
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Replacement of linear vectors. It may go away after code upgrade.
 */
 
 #ifndef AMANZI_DENSE_VECTOR_HH_
 #define AMANZI_DENSE_VECTOR_HH_
 
+#include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <iomanip>
@@ -53,8 +55,8 @@ class DenseVector {
   // primary members 
   void clear() { for (int i = 0; i < m_; i++) data_[i] = 0.0; } 
 
-  double& operator()(int i) { return data_[i]; }
-  const double& operator()(int i) const { return data_[i]; }
+  inline double& operator()(int i) { return data_[i]; }
+  inline const double& operator()(int i) const { return data_[i]; }
 
   DenseVector& operator=(const DenseVector& B) {
     if (this != &B) {
@@ -96,6 +98,19 @@ class DenseVector {
         os << std::setw(12) << std::setprecision(12) << A(i) << " ";
     os << "\n";
     return os;
+  }
+
+  // First level routines
+  void Norm2(double* result) {
+    *result = 0.0;
+    for (int i = 0; i < m_; i++) *result += data_[i] * data_[i];
+    *result = std::pow(*result, 0.5);
+  }
+
+  void SwapRows(int m1, int m2) {
+    double tmp = data_[m2];
+    data_[m2] = data_[m1];
+    data_[m1] = tmp;
   }
  
  private:

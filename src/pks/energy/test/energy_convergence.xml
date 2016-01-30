@@ -105,13 +105,6 @@
               <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="gravity" type="bool" value="false"/>
             </ParameterList>
-
-            <ParameterList name="upwind">
-              <Parameter name="upwind method" type="string" value="standard"/>
-              <ParameterList name="upwind standard parameters">
-              <Parameter name="tolerance" type="double" value="1e-12"/>
-              </ParameterList>
-            </ParameterList>
           </ParameterList>
         </ParameterList>
 
@@ -407,8 +400,8 @@
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="component" type="string" value="face"/>
             <ParameterList name="function">
-              <Parameter name="Number of DoFs" type="int" value="2"/>
-              <Parameter name="Function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="-1.0"/>

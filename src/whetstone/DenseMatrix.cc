@@ -1,13 +1,12 @@
 /*
-  This is the discretization component of the Amanzi code. 
+  WhetStone, version 2.0
+  Release name: naka-to.
 
-  Copyright 2010-20XX held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Version: 2.0
-  Release name: naka-to.
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
@@ -22,7 +21,7 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Constructor.
+* Constructor: memory is allocated.
 ****************************************************************** */
 DenseMatrix::DenseMatrix(int mrow, int ncol) 
 { 
@@ -32,8 +31,9 @@ DenseMatrix::DenseMatrix(int mrow, int ncol)
   access_ = WHETSTONE_DATA_ACCESS_COPY;
 }
 
+
 /* ******************************************************************
-* Constructor.
+* Constructor: empty matrix
 ****************************************************************** */
 DenseMatrix::DenseMatrix() 
 { 
@@ -42,6 +42,7 @@ DenseMatrix::DenseMatrix()
   data_ = NULL; 
   access_ = WHETSTONE_DATA_ACCESS_COPY;
 }
+
 
 /* ******************************************************************
 * No memory check is performed: invalid read is possible.
@@ -73,6 +74,34 @@ DenseMatrix::DenseMatrix(const DenseMatrix& B)
   data_ = new double[m_ * n_];
   const double* dataB = B.Values();
   for (int i = 0; i < m_ * n_; i++) data_[i] = dataB[i];
+}
+
+
+/* ******************************************************************
+* Copy constructor creates a new matrix from the submatrix of B in 
+* rows m1 to m2-1 and columns n1 to n2-1.
+****************************************************************** */
+DenseMatrix::DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2)
+{
+  m_ = m2 - m1;
+  n_ = n2 - n1;
+  access_ = WHETSTONE_DATA_ACCESS_COPY;
+
+  data_ = new double[m_ * n_];
+
+  int mB = B.NumRows();
+  int nB = B.NumCols();
+  const double* dataB = B.Values();
+
+  for (int j = n1; j < n2; ++j) {
+    const double* tmpB = dataB + j * mB + m1;
+    double* tmpA = data_ + (j - n1) * m_;
+    for (int i = 0; i < m_; ++i) {
+      *tmpA = *tmpB;
+      tmpA++;
+      tmpB++;
+    }
+  }
 }
 
 
@@ -286,6 +315,55 @@ double DenseMatrix::Det()
     a = data_[0];
   }
   return a;
+}
+
+
+/* ******************************************************************
+* Orthonormalize selected matrix columns.
+****************************************************************** */
+int DenseMatrix::OrthonormalizeColumns(int n1, int n2)
+{
+  double sum;
+
+  for (int i = n1; i < n2; ++i) {
+    double* tmp1 = data_ + i * m_;
+
+    for (int j = n1; j < i; ++j) {
+      double* tmp2 = data_ + j * m_;
+
+      sum = 0.0;
+      for (int k = 0; k < m_; ++k) sum += tmp1[k] * tmp2[k];
+      for (int k = 0; k < m_; ++k) tmp1[k] -= sum * tmp2[k];
+    }
+
+    sum = 0.0;
+    for (int k = 0; k < m_; ++k) sum += tmp1[k] * tmp1[k];
+    if (sum == 0.0) return -1;
+
+    sum = std::pow(1.0 / sum, 0.5);
+    for (int k = 0; k < m_; ++k) tmp1[k] *= sum;
+  }
+ 
+  return 0;
+}
+
+
+/* ******************************************************************
+* Permutation of matrix columns.
+****************************************************************** */
+void DenseMatrix::SwapColumns(int n1, int n2) 
+{
+  if (n1 != n2) {
+    double tmp;
+    double* row1 = data_ + n1 * m_;
+    double* row2 = data_ + n2 * m_;
+
+    for (int i = 0; i < m_; i++) {
+      tmp = row1[i];
+      row1[i] = row2[i];
+      row2[i] = tmp;
+    }
+  }
 }
 
 }  // namespace WhetStone
