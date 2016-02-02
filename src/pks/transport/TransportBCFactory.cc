@@ -127,6 +127,7 @@ void TransportBCFactory::ProcessTracerSpec_(
 void TransportBCFactory::ProcessGeochemicalConditionList_(
     std::vector<TransportBoundaryFunction*>& bcs) const
 {
+#ifdef ALQUIMIA_ENABLED
   Errors::Message msg;
   if (!list_->isSublist("geochemical conditions")) {
     msg << "  No 'geochemical conditions' list was found in 'Transport->boundary conditions'!\n";
@@ -179,6 +180,7 @@ void TransportBCFactory::ProcessGeochemicalConditionList_(
       }
     }
   }
+#endif
 }
 
 }  // namespace Transport
