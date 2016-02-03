@@ -104,11 +104,10 @@
       <Parameter name="PK type" type="string" value="chemistry pk"/>
       <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
       <ParameterList name="Thermodynamic Database">
-	<Parameter name="Format" type="string" value="simple"/>
-	<Parameter name="File" type="string" value="test/mpc_driver_reactive_transport.bgd"/>
+	<Parameter name="format" type="string" value="simple"/>
+	<Parameter name="file" type="string" value="test/mpc_driver_reactive_transport.bgd"/>
       </ParameterList>
       <Parameter name="activity model" type="string" value="unit"/>
-      <Parameter name="Verbosity" type="Array(string)" value="{verbose}"/>
       <Parameter name="maximum Newton iterations" type="int" value="50"/>
       <ParameterList name="initial conditions">
 	<ParameterList name="mineral_volume_fractions">
@@ -127,7 +126,7 @@
           <Parameter name="function" type="string" value="list was moved to State"/>
 	</ParameterList>
       </ParameterList>
-      <Parameter name="Minerals" type="Array(string)" value="{Halite}"/>
+      <Parameter name="minerals" type="Array(string)" value="{Halite}"/>
       <Parameter name="number of component concentrations" type="int" value="4"/>
       <ParameterList name="VerboseObject">
 	<Parameter name="Verbosity Level" type="string" value="high"/>

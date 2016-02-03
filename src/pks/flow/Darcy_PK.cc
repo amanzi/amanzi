@@ -351,8 +351,6 @@ void Darcy_PK::Initialize()
   // print initialization head for this time period
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << std::endl 
-        << vo_->color("green") << "Initalization of PK is complete." << vo_->reset() << std::endl;
     *vo_->os() << "TI:\"" << ti_method_name.c_str() << "\""
                << " dt:" << dt_method_name
                << " LS:\"" << solver_name_.c_str() << "\""
@@ -367,6 +365,9 @@ void Darcy_PK::Initialize()
     }
 
     VV_PrintHeadExtrema(*solution);
+
+    *vo_->os() << vo_->color("green") << "Initalization of PK is complete." 
+               << vo_->reset() << std::endl << std::endl;
   }
 }
 

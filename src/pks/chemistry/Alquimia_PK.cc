@@ -204,7 +204,7 @@ void Alquimia_PK::Initialize()
   int recv = 0;
   mesh_->get_comm()->MaxAll(&ierr, &recv, 1);
   if (recv != 0) {
-    Errors::Message msg("Error in Alquimia_PK::InitializeChemistry 1");
+    Errors::Message msg("Error in Alquimia_PK::Initialize()");
     Exceptions::amanzi_throw(msg); 
   }
 
@@ -219,6 +219,13 @@ void Alquimia_PK::Initialize()
   chem_initialized_ = true;
   num_iterations_ = 0;
   num_successful_steps_ = 0;
+
+  // verbose message
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << vo_->color("green") << "Initalization of PK was successful, T="
+        << S_->time() << vo_->reset() << std::endl << std::endl;
+  }
 }
 
 
@@ -828,7 +835,7 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   int send[3], recv[3];
   send[0] = convergence_failure;
   send[1] = max_itrs;
-  send[2] = imax;
+  send[2] = mesh_->cell_map(false).GID(imax);
   mesh_->get_comm()->MaxAll(send, recv, 3);
   if (recv[0] != 0) 
     num_successful_steps_ = 0;
