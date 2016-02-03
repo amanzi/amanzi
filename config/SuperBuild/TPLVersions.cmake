@@ -382,3 +382,16 @@ set(ALQUIMIA_VERSION_PATCH 1)
 set(ALQUIMIA_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(ALQUIMIA_ARCHIVE_FILE   alquimia-0.3.1.tar.gz)
 set(ALQUIMIA_MD5_SUM        6c513ef53709ccef413b7629a5d261ab)
+
+
+#
+# TPL: Silo
+#
+set(Silo_VERSION_MAJOR 4)
+set(Silo_VERSION_MINOR 10)
+set(Silo_VERSION_PATCH 2)
+set(Silo_VERSION  ${Silo_VERSION_MAJOR}.${Silo_VERSION_MINOR}.${Silo_VERSION_PATCH})
+set(Silo_URL_STRING "http://software.lanl.gov/ascem/tpls")
+set(Silo_ARCHIVE_FILE silo-4.10.2.tar.gz)
+set(Silo_MD5_SUM 9ceac777a2f2469ac8cef40f4fab49c8)
+
