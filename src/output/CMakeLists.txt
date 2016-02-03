@@ -26,17 +26,17 @@ include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${MSTK_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_C_INCLUDE_DIR})
 include_directories(${ASCEMIO_INCLUDE_DIR})
-if(ENABLE_STK_Mesh)
-    add_definitions("-DHAVE_STK_MESH")
-    include_directories(${STK_INCLUDE_DIRS})
-    include_directories(${STK_SOURCE_DIR})
-endif()
+
+if(ENABLE_Silo)
+  include_directories(${Silo_INCLUDE_DIRS})
+endif(ENABLE_Silo)    
 
 #
 # Library: output
@@ -53,7 +53,13 @@ list(APPEND output_tpl_list ${HDF5_LIBRARIES})
 
 file(GLOB hdf5mpi_source "hdf5mpi_mesh*.cc")
 list(APPEND output_source_files "${hdf5mpi_source}")
+list(APPEND output_source_files "OutputXDMF.cc")
 list(APPEND output_tpl_list ${ASCEMIO_LIBRARIES})
+
+if(ENABLE_Silo)
+  list(APPEND output_source_files "OutputSilo.cc")
+  list(APPEND output_tpl_list ${Silo_LIBRARIES})
+endif(ENABLE_Silo)
 
 file(GLOB output_inc_files "*.h*")
 
@@ -87,11 +93,18 @@ add_amanzi_executable(unscramble_restart
 #
 if (BUILD_TESTS)
 
-   include_directories(${MESH_FACTORY_SOURCE_DIR})
+    include_directories(${MESH_FACTORY_SOURCE_DIR})
 
     # Add UnitTest
     include_directories(${UnitTest_INCLUDE_DIRS})
 
+    # Copy test directory files if an out of source build
+    if (NOT (${OUTPUT_SOURCE_DIR} EQUAL ${OUTPUT_BINARY_DIR}))
+        execute_process(COMMAND ${CMAKE_COMMAND} -E
+          copy_directory ${OUTPUT_SOURCE_DIR}/test ${OUTPUT_BINARY_DIR}/test)
+    endif()
+
+    
     # Test: gmv_output
     add_amanzi_test(gmv_output test_gmv_output
                     SOURCE     test/Main.cc test/test_gmv.cc
@@ -105,12 +118,26 @@ if (BUILD_TESTS)
 		    KIND int)
 
     # Test: hdf5_mpi_output
-    if (ENABLE_STK_Mesh)
-        add_amanzi_test(hdf5mpi_output test_hdf5mpi_output
-                        SOURCE         test/Main.cc test/test_hdf5mpi.cc
-		        LINK_LIBS      output mesh_factory ${UnitTest_LIBRARIES}
-			NPROCS         2
-		        KIND           int)
-    endif()
+    add_amanzi_test(hdf5mpi_output test_hdf5mpi_output
+                    SOURCE         test/Main.cc test/test_hdf5mpi.cc
+		            LINK_LIBS      output mesh_factory mstk_mesh ${UnitTest_LIBRARIES}
+			        NPROCS         2
+		            KIND           int)
 
-endif()
+
+    # Test: uses the Output interface
+    add_amanzi_test(xdmf_output test_xdmf_output
+                    SOURCE         test/Main.cc test/test_xdmf.cc
+		            LINK_LIBS      output mesh_factory mstk_mesh ${UnitTest_LIBRARIES}
+		            KIND           int)
+
+
+    if(ENABLE_Silo)
+      # Test: uses the Output interface
+      add_amanzi_test(silo_output test_silo_output
+        SOURCE         test/Main.cc test/test_silo.cc
+		LINK_LIBS      output mesh_factory mstk_mesh ${UnitTest_LIBRARIES}
+		KIND           int)
+    endif(ENABLE_Silo)
+                  
+endif(BUILD_TESTS)

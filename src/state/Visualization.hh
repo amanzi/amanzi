@@ -24,13 +24,17 @@
 
 namespace Amanzi {
 
+class Output;
+
 class Visualization : public IOEvent {
  public:
   Visualization(Teuchos::ParameterList& plist, Epetra_MpiComm *comm);
   Visualization();
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
-  void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh> mesh) { mesh_ = mesh; }
+  void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh> mesh) {
+    mesh_ = mesh;
+  }
 
   // public interface for coordinator clients
   void CreateFiles();
@@ -38,22 +42,20 @@ class Visualization : public IOEvent {
   void FinalizeTimestep() const;
 
   // public interface for data clients
-  void WriteMesh(const double time, const int iteration) const;
   void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const;
-  void WriteVector(const Epetra_Vector& vec, const std::string name ) const;
+  void WriteVector(const Epetra_Vector& vec, const std::string& name ) const;
   void WriteRegions();
   void WritePartition();
 
  protected:
   void ReadParameters_();
 
-  std::string filebasename_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<Amanzi::HDF5_MPI> visualization_output_;
+  Teuchos::RCP<Output> visualization_output_;
 
   std::map<std::string, Teuchos::Array<std::string> > regions_;
-  bool dynamic_mesh_;
   bool write_partition_;
+  bool dynamic_mesh_;
 };
 
 } // Amanzi namespace

@@ -1,8 +1,8 @@
+#define MSTK_HAVE_MPI 1
+
 #include "UnitTest++.h"
 #include "../hdf5mpi_mesh.hh"
-#if HAVE_STK_MESH
-#include "Mesh_STK.hh"
-#endif
+#include "Mesh_MSTK.hh"
 TEST(HDF5_MPI) {
   
 #ifdef HAVE_MPI
@@ -19,7 +19,7 @@ TEST(HDF5_MPI) {
   //  Mesh(new Amanzi::AmanziMesh::Mesh_STK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1,
   //                                        1, comm));
   
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh_STK> Mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_STK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, comm));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MSTK> Mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, comm));
 
   unsigned int num_nodes = Mesh->num_entities(Amanzi::AmanziMesh::NODE, 
                                                 Amanzi::AmanziMesh::OWNED);
