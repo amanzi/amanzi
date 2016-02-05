@@ -88,7 +88,7 @@ class OutputSilo : public Output {
   void ReadThrowsError_() const;
   void CloseFile_();
   void WriteMesh_();
-  
+  std::string FixName_(const std::string& instring) const;
   
  protected:
 

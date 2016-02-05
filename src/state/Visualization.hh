@@ -15,10 +15,14 @@
 #ifndef AMANZI_STATE_VISUALIZATION_HH_
 #define AMANZI_STATE_VISUALIZATION_HH_
 
+#include <vector>
+#include <string>
+
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_Comm.h"
+#include "Epetra_MultiVector.h"
+
 #include "Mesh.hh"
-#include "hdf5mpi_mesh.hh"
 
 #include "IOEvent.hh"
 

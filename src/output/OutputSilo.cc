@@ -12,6 +12,7 @@
   Silo implementation of an Output object.
 ------------------------------------------------------------------------- */
 
+#include <locale>
 #include <iomanip>
 
 #include "errors.hh"
@@ -171,12 +172,12 @@ void
 OutputSilo::WriteVector(const Epetra_Vector& vec,
                         const std::string& name) const {
   if (vec.MyLength() == mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED)) {
-    int ierr = DBPutUcdvar1(fid_, name.c_str(), "mesh",
+    int ierr = DBPutUcdvar1(fid_, FixName_(name).c_str(), "mesh",
                             (void*)&vec[0], vec.MyLength(), NULL, 0,
                             DB_DOUBLE, DB_ZONECENT, NULL);
     ASSERT(!ierr);
   } else if (vec.MyLength() == mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED)) {
-    int ierr = DBPutUcdvar1(fid_, name.c_str(), "mesh",
+    int ierr = DBPutUcdvar1(fid_, FixName_(name).c_str(), "mesh",
                             (void*)&vec[0], vec.MyLength(), NULL, 0,
                             DB_DOUBLE, DB_NODECENT, NULL);
     ASSERT(!ierr);
@@ -227,6 +228,19 @@ OutputSilo::CloseFile_() {
   fid_ = NULL;
 }
 
+std::string
+OutputSilo::FixName_(const std::string& s) const {
+  int n = s.size(), wp = 0;
+  std::vector<char> result(n);
+  for (int i=0; i<n; ++i) {
+    if (!std::isalnum(s[i])) {
+      result[wp++] = '_';
+    } else {
+      result[wp++] = s[i];
+    }
+  }
+  return std::string(&result[0], &result[wp]);
+}
 
 void
 OutputSilo::ReadThrowsError_() const {

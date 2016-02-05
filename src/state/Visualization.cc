@@ -19,7 +19,11 @@
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+
 #include "OutputXDMF.hh"
+#if ENABLE_Silo
+#include "OutputSilo.hh"
+#endif
 
 #include "Visualization.hh"
 
@@ -137,7 +141,26 @@ void Visualization::WritePartition() {
 // -----------------------------------------------------------------------------
 void Visualization::CreateFiles() {
   ASSERT(mesh_ != Teuchos::null);
-  visualization_output_ = Teuchos::rcp(new OutputXDMF(plist_, mesh_, true, dynamic_mesh_));
+
+  std::string file_format = plist_.get<std::string>("file format", "XDMF");
+
+#ifdef ENABLE_Silo  
+  std::cout << "silo defined and val = " << ENABLE_Silo << std::endl;
+#else
+  std::cout << "silo not defined" << std::endl;
+#endif
+  
+  
+  if (file_format == "XDMF" || file_format == "xdmf") {
+    visualization_output_ = Teuchos::rcp(new OutputXDMF(plist_, mesh_, true, dynamic_mesh_));
+#if ENABLE_Silo    
+  } else if (file_format == "Silo" || file_format == "SILO" || file_format == "silo") {
+    visualization_output_ = Teuchos::rcp(new OutputSilo(plist_, mesh_, true, dynamic_mesh_));
+#endif
+  } else {
+    Errors::Message msg("Visualization: Unknown file format: \""+file_format+"\"");
+    Exceptions::amanzi_throw(msg);
+  }
 }
 
 

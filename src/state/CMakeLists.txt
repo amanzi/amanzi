@@ -35,6 +35,10 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIR})
+if(ENABLE_Silo)
+  include_directories(${Silo_INCLUDE_DIRS})
+  add_definitions(-DENABLE_Silo)
+endif(ENABLE_Silo)
 
 
 # This state library will move to a new location 

@@ -59,6 +59,7 @@ list(APPEND output_tpl_list ${ASCEMIO_LIBRARIES})
 if(ENABLE_Silo)
   list(APPEND output_source_files "OutputSilo.cc")
   list(APPEND output_tpl_list ${Silo_LIBRARIES})
+  add_definitions(-DENABLE_Silo)
 endif(ENABLE_Silo)
 
 file(GLOB output_inc_files "*.h*")
