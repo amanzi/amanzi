@@ -23,6 +23,9 @@ HDF5_MPI::HDF5_MPI(const Epetra_MpiComm &comm)
   IOconfig_.commIncoming = comm.Comm();
   parallelIO_IOgroup_init(&IOconfig_, &IOgroup_);
   mesh_maps_ = Teuchos::null;
+  NumNodes_ = 0;
+  NumElems_ = 0;
+  ConnLength_ = 0;
 }
 
 HDF5_MPI::HDF5_MPI(const Epetra_MpiComm &comm, std::string dataFilename)
@@ -39,6 +42,9 @@ HDF5_MPI::HDF5_MPI(const Epetra_MpiComm &comm, std::string dataFilename)
   IOconfig_.commIncoming = comm.Comm();
   parallelIO_IOgroup_init(&IOconfig_, &IOgroup_);
   mesh_maps_ = Teuchos::null;
+  NumNodes_ = 0;
+  NumElems_ = 0;
+  ConnLength_ = 0;
 }
 
 HDF5_MPI::~HDF5_MPI()
