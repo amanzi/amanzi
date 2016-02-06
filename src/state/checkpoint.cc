@@ -133,7 +133,7 @@ void Checkpoint::WriteObservations(ObservationData* obs_data)
     int *nobs; 
     char **tmp_labels;
 
-    nobs = (int*)malloc(nlabels * sizeof(int*));
+    nobs = (int*)malloc(nlabels * sizeof(int));
     tmp_labels = (char**)malloc(nlabels * sizeof(char*));
 
     for (int i = 0; i < nlabels; i++) {
