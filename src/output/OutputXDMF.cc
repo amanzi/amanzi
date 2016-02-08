@@ -33,13 +33,13 @@ OutputXDMF::OutputXDMF(Teuchos::ParameterList& plist,
 // open and close files
 void
 OutputXDMF::InitializeCycle(double time, int cycle) {
-  io_->createTimestep(time, cycle);
-  io_->open_h5file();
-  
   if (is_dynamic_ || (!mesh_written_)) {
     io_->writeMesh(time, cycle);
     mesh_written_ = true;
   }
+
+  io_->createTimestep(time, cycle);
+  io_->open_h5file();
 }
 
 
