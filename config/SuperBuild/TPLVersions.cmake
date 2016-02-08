@@ -63,6 +63,8 @@
 #   0.92.19      - update CCSE to version 1.3.2
 #   0.92.20      - update CCSE to version 1.3.4 (fix issue with fsnapshot)
 #   0.92.21      - update Alquimia to version 0.3.1 (CrunchFlow integration)
+#   0.92.22      - added optional Silo package
+#   0.92.23      - Patched ASCEM-IO to allocate space for sprintf() correctly.
 
 include(CMakeParseArguments)
 
@@ -112,7 +114,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 21)
+set (AMANZI_TPLS_VERSION_PATCH 23)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 

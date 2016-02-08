@@ -176,6 +176,9 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
       if (strcmp(tagname, "base_filename") == 0) {
         text = mm.transcode(jnode->getTextContent());
         visPL.set<std::string>("file name base", TrimString_(text));
+      } else if (strcmp(tagname, "file_format") == 0) {
+        text = mm.transcode(jnode->getTextContent());
+        visPL.set<std::string>("file format", TrimString_(text));
       } else if (strcmp(tagname, "cycle_macros") == 0 ||
                  strcmp(tagname, "cycle_macro") == 0) {
         text = mm.transcode(jnode->getTextContent());

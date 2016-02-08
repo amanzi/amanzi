@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+# Source and build locations
+ascemio_src_dir=@ASCEMIO_source_dir@
+
+OIFS=$IFS
+IFS=";"
+
+patch_files="@ASCEMIO_patch_file@"
+patch_files_array=(${patch_files})
+
+for ((i=0; i<${#patch_files_array[@]}; ++i)); do
+
+ patch_file=@SuperBuild_SOURCE_DIR@/templates/${patch_files_array[$i]}
+
+ if [ ! -e "${patch_file}" ] ; then
+  echo "Patch file ${patch_file} does not exist"
+  exit 10
+ fi
+
+ (cd ${ascemio_src_dir}; patch -p2 < ${patch_file})
+
+done
+IFS=$OIFS
+
+exit $?
