@@ -30,11 +30,11 @@ OutputSilo::OutputSilo(Teuchos::ParameterList& plist,
       fid_(NULL),
       count_(0)
 {
-  if (mesh_->get_comm()->NumProc() > 1) {
+  if (mesh_->vis_mesh().get_comm()->NumProc() > 1) {
     Errors::Message msg("OutputSilo does not yet support parallel runs.");
     Exceptions::amanzi_throw(msg);  
   }
-  if (mesh_->space_dimension() != 3 || mesh_->cell_dimension() != 3) {
+  if (mesh_->vis_mesh().space_dimension() != 3 || mesh_->vis_mesh().cell_dimension() != 3) {
     Errors::Message msg("OutputSilo is untested on non-3D meshes.");
     Exceptions::amanzi_throw(msg);  
   }
@@ -76,12 +76,12 @@ OutputSilo::InitializeCycle(double time, int cycle) {
   coordnames[2] = (char*)"z-coords";
 
   // -- nodal coordinates
-  int nnodes = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  int nnodes = mesh_->vis_mesh().num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
   std::vector<double> x(nnodes), y(nnodes), z(nnodes);
 
   AmanziGeometry::Point xyz;
   for (int i=0; i!=nnodes; ++i) {
-    mesh_->node_get_coordinates(i, &xyz);
+    mesh_->vis_mesh().node_get_coordinates(i, &xyz);
     x[i] = xyz[0];
     y[i] = xyz[1];
     z[i] = xyz.dim() > 2 ? xyz[2] : 0.0;
@@ -102,8 +102,8 @@ OutputSilo::InitializeCycle(double time, int cycle) {
   DBAddOption(optlist, DBOPT_DTIME, &time);
 
   // -- write the base mesh UCD object
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int ierr = DBPutUcdmesh(fid_, "mesh", mesh_->space_dimension(),
+  int ncells = mesh_->vis_mesh().num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ierr = DBPutUcdmesh(fid_, "mesh", mesh_->vis_mesh().space_dimension(),
                           (char const* const*)coordnames, coords,
                           nnodes, ncells, 0, 0, DB_DOUBLE, optlist);
   ASSERT(!ierr);
@@ -111,19 +111,19 @@ OutputSilo::InitializeCycle(double time, int cycle) {
   // -- Construct the silo face-node info.
   // We rely on the mesh having the faces nodes arranged counter-clockwise
   // around the face.  This should be satisfied by AmanziMesh.
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces = mesh_->vis_mesh().num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   std::vector<int> face_node_counts(nfaces);
   std::vector<char> ext_faces(nfaces, 0x0);
   std::vector<int> face_node_list;
 
   for (int f=0; f!=nfaces; ++f) {
     AmanziMesh::Entity_ID_List fnodes;
-    mesh_->face_get_nodes(f, &fnodes);
+    mesh_->vis_mesh().face_get_nodes(f, &fnodes);
     face_node_counts[f] = fnodes.size();
     face_node_list.insert(face_node_list.end(), fnodes.begin(), fnodes.end());
 
     AmanziMesh::Entity_ID_List fcells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &fcells);
+    mesh_->vis_mesh().face_get_cells(f, AmanziMesh::USED, &fcells);
     if (fcells.size() == 1) {
       ext_faces[f] = 0x1;
     }
@@ -136,7 +136,7 @@ OutputSilo::InitializeCycle(double time, int cycle) {
   for (int c=0; c!=ncells; ++c) {
     AmanziMesh::Entity_ID_List cfaces;
     std::vector<int> dirs;
-    mesh_->cell_get_faces_and_dirs(c, &cfaces, &dirs, false);
+    mesh_->vis_mesh().cell_get_faces_and_dirs(c, &cfaces, &dirs, false);
     for (int i=0; i!=cfaces.size(); ++i) {
       if (dirs[i] < 0) cfaces[i] = ~cfaces[i];
     }
@@ -171,12 +171,12 @@ OutputSilo::FinalizeCycle() {
 void
 OutputSilo::WriteVector(const Epetra_Vector& vec,
                         const std::string& name) const {
-  if (vec.MyLength() == mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED)) {
+  if (vec.MyLength() == mesh_->vis_mesh().num_entities(AmanziMesh::CELL, AmanziMesh::OWNED)) {
     int ierr = DBPutUcdvar1(fid_, FixName_(name).c_str(), "mesh",
                             (void*)&vec[0], vec.MyLength(), NULL, 0,
                             DB_DOUBLE, DB_ZONECENT, NULL);
     ASSERT(!ierr);
-  } else if (vec.MyLength() == mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED)) {
+  } else if (vec.MyLength() == mesh_->vis_mesh().num_entities(AmanziMesh::NODE, AmanziMesh::OWNED)) {
     int ierr = DBPutUcdvar1(fid_, FixName_(name).c_str(), "mesh",
                             (void*)&vec[0], vec.MyLength(), NULL, 0,
                             DB_DOUBLE, DB_NODECENT, NULL);
