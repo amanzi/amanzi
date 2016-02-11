@@ -92,7 +92,7 @@ if (BUILD_TESTS)
           copy_directory ${MPC_SOURCE_DIR}/test ${MPC_BINARY_DIR}/test) 
     endif()
 
-    set(amanzi_libs mpc pks flow transport chemistry_pk energy dummy pks eos 
+    set(amanzi_libs mpc pks mpc_tree flow transport chemistry_pk energy dummy pks eos 
                     state operators mesh_factory 
                     geometry whetstone mesh_functions functions)
     

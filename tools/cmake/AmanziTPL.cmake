@@ -338,6 +338,16 @@ if (ENABLE_MSTK_Mesh)
 endif() 
 
 
+##############################################################################
+# Silo
+##############################################################################
+option(ENABLE_Silo "Build Amanzi with Silo output options" OFF)
+if (ENABLE_Silo)
+  message(STATUS "ETC>> Silo_DIR=${Silo_DIR}")
+  find_package(Silo REQUIRED)
+endif() 
+
+
 
 
 

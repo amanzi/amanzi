@@ -96,6 +96,10 @@ set(MSTK_VERSION_MINOR @MSTK_VERSION_MINOR@ CACHE STRING "MSTK Minor version")
 set(MSTK_VERSION_PATCH @MSTK_VERSION_PATCH@ CACHE STRING "MSTK Patch version")
 set(MSTK_VERSION @MSTK_VERSION@ CACHE STRING "MSTK Version string")
 
+# Silo
+set(ENABLE_Silo @ENABLE_Silo@ CACHE BOOL "Build Silo output options")
+set(Silo_DIR @Silo_DIR@ CACHE PATH "Silo installation prefix")
+
 
 # MOAB
 set(MOAB_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "MOAB installation prefix")

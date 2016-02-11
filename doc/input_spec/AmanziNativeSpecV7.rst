@@ -4839,7 +4839,13 @@ time step values or intervals corresponding to the cycle number; writes are cont
   The file name can contain relative or absolute path to an *existing* directory only. 
 
   * `"file name base`" [string] ("amanzi_vis")
-  
+
+  * `"file format`" [string] ("XDMF") Amanzi supports two types of
+    visualization files.  XDMF is the default and preferred method, but does
+    not correctly handle general polyhedra.  Serial, 3D general polyhedral
+    support is supported by the "SILO" option.  This will eventually be
+    extended to parallel, 2/3D support, but this is not yet implemented.
+
   * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, 
     the second is the cycle period, and the third is the stop cycle or -1 in which case 
     there is no stop cycle. A visualization dump shall be written at such cycles that 

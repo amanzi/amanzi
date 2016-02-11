@@ -2,6 +2,7 @@
 #include "stdlib.h"
 #include "math.h"
 
+// TPLs
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
@@ -9,6 +10,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
 
+// Amanzi
 #include "CycleDriver.hh"
 #include "energy_tcm_registration.hh"
 #include "energy_iem_registration.hh"
