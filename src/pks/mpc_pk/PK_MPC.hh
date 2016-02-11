@@ -42,14 +42,14 @@
 namespace Amanzi {
 
 template <class PK_Base>
-class MPC_PK : virtual public PK_Default {
+class PK_MPC : virtual public PK_Default {
  public:
-  MPC_PK(Teuchos::ParameterList& pk_tree,
+  PK_MPC(Teuchos::ParameterList& pk_tree,
          const Teuchos::RCP<Teuchos::ParameterList>& global_list,
          const Teuchos::RCP<State>& S,
          const Teuchos::RCP<TreeVector>& soln);
 
-  ~MPC_PK() {};
+  ~PK_MPC() {};
 
   // PK methods
   // -- sets up sub-PKs
@@ -90,7 +90,7 @@ class MPC_PK : virtual public PK_Default {
 // Setup of PK hierarchy from PList
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-MPC_PK<PK_Base>::MPC_PK(Teuchos::ParameterList& pk_tree,
+PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
                         const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                         const Teuchos::RCP<State>& S,
                         const Teuchos::RCP<TreeVector>& soln) :
@@ -154,7 +154,7 @@ MPC_PK<PK_Base>::MPC_PK(Teuchos::ParameterList& pk_tree,
 // Setup of PK hierarchy from PList
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void MPC_PK<PK_Base>::Setup(const Teuchos::Ptr<State>& S) {
+void PK_MPC<PK_Base>::Setup(const Teuchos::Ptr<State>& S) {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     (*pk)->Setup(S);
   }
@@ -165,7 +165,7 @@ void MPC_PK<PK_Base>::Setup(const Teuchos::Ptr<State>& S) {
 // Loop over sub-PKs, calling their initialization methods
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void MPC_PK<PK_Base>::Initialize(const Teuchos::Ptr<State>& S) {
+void PK_MPC<PK_Base>::Initialize(const Teuchos::Ptr<State>& S) {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     (*pk)->Initialize(S);
   }
@@ -176,7 +176,7 @@ void MPC_PK<PK_Base>::Initialize(const Teuchos::Ptr<State>& S) {
 // loop over sub-PKs, calling their commit state method
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void MPC_PK<PK_Base>::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
+void PK_MPC<PK_Base>::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     (*pk)->CommitStep(t_old, t_new, S);
   }
@@ -187,7 +187,7 @@ void MPC_PK<PK_Base>::CommitStep(double t_old, double t_new, const Teuchos::RCP<
 // loop over sub-PKs, calling their CalculateDiagnostics method
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void MPC_PK<PK_Base>::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
+void PK_MPC<PK_Base>::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     (*pk)->CalculateDiagnostics(S);
   }

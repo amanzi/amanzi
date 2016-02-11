@@ -20,7 +20,7 @@
 
 // Amanzi
 #include "CompositeVector.hh"
-#include "FnTimeIntegratorPK.hh"
+#include "PK_BDF.hh"
 #include "Operator.hh"
 #include "OperatorAccumulation.hh"
 #include "OperatorAdvection.hh"
@@ -38,7 +38,6 @@
 namespace Amanzi {
 namespace Energy {
 
-// class Energy_PK : public FnTimeIntegratorPK {
 class Energy_PK : public PK_PhysicalBDF {
  public:
   Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist, Teuchos::RCP<State> S);

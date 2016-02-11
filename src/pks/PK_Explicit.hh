@@ -27,7 +27,7 @@ namespace Amanzi {
   class TreeVector;
 
   template <class Vector>
-  class FnExTimeIntegratorPK : virtual public PK_Default, public Explicit_TI::fnBase<Vector> {};
+  class PK_Explicit : virtual public PK_Default, public Explicit_TI::fnBase<Vector> {};
 
 }  // namespace Amanzi
 

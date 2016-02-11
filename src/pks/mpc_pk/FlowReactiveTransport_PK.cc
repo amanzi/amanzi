@@ -24,7 +24,7 @@ FlowReactiveTransport_PK::FlowReactiveTransport_PK(
     const Teuchos::RCP<State>& S,
     const Teuchos::RCP<TreeVector>& soln) :
     PK_Default(pk_tree, global_list, S, soln),
-    Amanzi::MPCSubcycled(pk_tree, global_list, S, soln) { 
+    Amanzi::PK_MPCSubcycled(pk_tree, global_list, S, soln) { 
 }
 
 
@@ -32,7 +32,7 @@ FlowReactiveTransport_PK::FlowReactiveTransport_PK(
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
 double FlowReactiveTransport_PK::get_dt() {
-  //double dt = Amanzi::MPCSubcycled::get_dt();
+  //double dt = Amanzi::PK_MPCSubcycled::get_dt();
   double dt = sub_pks_[master_]->get_dt();
   return dt;
 }

@@ -12,7 +12,7 @@
 */
 
 #include "FlowEnergy_PK.hh"
-#include "MPCStrong.hh"
+#include "PK_MPCStrong.hh"
 
 namespace Amanzi {
 
@@ -25,7 +25,7 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
                              const Teuchos::RCP<TreeVector>& soln) :
     glist_(glist),
     PK_Default(pk_tree, glist, S, soln),
-    Amanzi::MPCStrong<FnTimeIntegratorPK>(pk_tree, glist, S, soln)
+    Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
 {
   Teuchos::ParameterList vlist;
   vo_ = new VerboseObject("FlowEnergy_PK", vlist); 
@@ -159,7 +159,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   energy.set("vapor diffusion", true);
 
   // process other PKs.
-  MPCStrong<FnTimeIntegratorPK>::Setup(S);
+  PK_MPCStrong<PK_BDF>::Setup(S);
 }
 
 
@@ -195,7 +195,7 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   e_prev = e;
  
   // try a step
-  bool fail = MPCStrong<FnTimeIntegratorPK>::AdvanceStep(t_old, t_new, reinit);
+  bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
 
   if (fail) {
     // revover the original conserved quantaties

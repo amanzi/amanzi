@@ -11,29 +11,29 @@
   Class for subcycling a slave step within a master step.
   Assumes that intermediate_time() can be used (i.e. this is not nestable?)
 
-  See additional documentation in the base class src/pks/mpc_pk/MPC_PK.hh
+  See additional documentation in the base class src/pks/mpc_pk/PK_MPC.hh
 */
 
-#include "MPCSubcycled.hh"
+#include "PK_MPCSubcycled.hh"
 
 namespace Amanzi {
 
 // -----------------------------------------------------------------------------
 // Constructor
 // -----------------------------------------------------------------------------
-MPCSubcycled::MPCSubcycled(Teuchos::ParameterList& pk_tree,
+PK_MPCSubcycled::PK_MPCSubcycled(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln) :
   PK_Default(pk_tree, global_list, S, soln), 
-  MPC_PK<PK>(pk_tree, global_list, S, soln) {
+  PK_MPC<PK>(pk_tree, global_list, S, soln) {
 
   // Master PK is the PK whose time step size sets the size, the slave is subcycled.
   master_ = my_list_->get<int>("master PK index", 0);
   slave_ = master_ == 1 ? 0 : 1;
 
   if (sub_pks_.size() != 2 || master_ > 1) {
-    Errors::Message message("MPCSubcycled: only MPCs with two sub-PKs can currently be subcycled.");
+    Errors::Message message("PK_MPCSubcycled: only MPCs with two sub-PKs can currently be subcycled.");
     Exceptions::amanzi_throw(message);
   }
 
@@ -45,7 +45,7 @@ MPCSubcycled::MPCSubcycled(Teuchos::ParameterList& pk_tree,
 // -----------------------------------------------------------------------------
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
-double MPCSubcycled::get_dt() {
+double PK_MPCSubcycled::get_dt() {
   master_dt_ = sub_pks_[master_]->get_dt();
   slave_dt_ = sub_pks_[slave_]->get_dt();
   if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
@@ -57,7 +57,7 @@ double MPCSubcycled::get_dt() {
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
-bool MPCSubcycled::AdvanceStep(double t_old, double t_new, bool reinit) {
+bool PK_MPCSubcycled::AdvanceStep(double t_old, double t_new, bool reinit) {
   bool fail = false;
 
   // advance the master PK using the full step size

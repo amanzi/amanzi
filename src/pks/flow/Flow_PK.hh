@@ -25,7 +25,6 @@
 #include "BDFFnBase.hh"
 #include "checkpoint.hh"
 #include "CompositeVectorSpace.hh"
-#include "FnTimeIntegratorPK.hh"
 #include "independent_variable_field_evaluator_fromfunction.hh"
 #include "PK.hh"
 #include "PK_PhysicalBDF.hh"
@@ -44,7 +43,6 @@
 namespace Amanzi {
 namespace Flow {
 
-  //class Flow_PK : public FnTimeIntegratorPK {
 class Flow_PK : public PK_PhysicalBDF {
  public:
   Flow_PK();

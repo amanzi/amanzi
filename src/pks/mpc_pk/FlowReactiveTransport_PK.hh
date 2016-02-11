@@ -18,11 +18,11 @@
 
 #include "PK.hh"
 #include "PK_Factory.hh"
-#include "MPCSubcycled.hh"
+#include "PK_MPCSubcycled.hh"
 
 namespace Amanzi {
 
-class FlowReactiveTransport_PK : public MPCSubcycled {
+class FlowReactiveTransport_PK : public PK_MPCSubcycled {
  public:
   FlowReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& global_list,

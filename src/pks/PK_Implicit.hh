@@ -13,8 +13,8 @@
   weak and strongly coupled hierarchies.
 */
 
-#ifndef IMPLICIT_FN_PK_HH_
-#define IMPLICIT_FN_PK_HH_
+#ifndef PK_IMPLICIT_FN_HH_
+#define PK_IMPLICIT_FN_HH_
 
 #include "Teuchos_RCP.hpp"
 
@@ -23,7 +23,7 @@
 
 namespace Amanzi {
 
-class ImplictFnPK : public PK, public ImplicitFn {};
+class PK_Implicit : public PK, public ImplicitFn {};
 
 }  // namespace Amanzi
 

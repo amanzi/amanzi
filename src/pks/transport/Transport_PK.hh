@@ -30,7 +30,7 @@
 #include "Tensor.hh"
 #include "Units.hh"
 #include "VerboseObject.hh"
-#include "FnExTimeIntegratorPK.hh"
+#include "PK_Explicit.hh"
 
 #ifdef ALQUIMIA_ENABLED
 #include "Alquimia_PK.hh"
@@ -58,21 +58,21 @@ namespace Transport {
 
 typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
-  //  class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
+  // class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   // class Transport_PK : public PK, public Explicit_TI::fnBase<TreeVector> {
-  class Transport_PK : public FnExTimeIntegratorPK<Epetra_Vector> {
- public:
-  Transport_PK(Teuchos::ParameterList& pk_tree,
+  class Transport_PK : public PK_Explicit<Epetra_Vector> {
+  public:
+    Transport_PK(Teuchos::ParameterList& pk_tree,
                const Teuchos::RCP<Teuchos::ParameterList>& glist,
                const Teuchos::RCP<State>& S,
                const Teuchos::RCP<TreeVector>& soln);
 
-  Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-               Teuchos::RCP<State> S,
-               const std::string& pk_list_name,
-               std::vector<std::string>& component_names);
+    Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                 Teuchos::RCP<State> S,
+                 const std::string& pk_list_name,
+                 std::vector<std::string>& component_names);
 
-  ~Transport_PK();
+    ~Transport_PK();
 
   // members required by PK interface
   virtual void Setup(const Teuchos::Ptr<State>& S);
@@ -82,7 +82,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   virtual void set_dt(double dt) {};
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false); 
-    virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
 
   virtual std::string name() { return passwd_; }

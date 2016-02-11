@@ -26,20 +26,20 @@ namespace Amanzi {
 class TreeVector;
 
 
-class FnTimeIntegratorPK : virtual public PK_Default, public Amanzi::BDFFnBase<TreeVector> {
+class PK_BDF : virtual public PK_Default, public Amanzi::BDFFnBase<TreeVector> {
 
 public:
 
-  FnTimeIntegratorPK(){};
+  PK_BDF(){};
 
-  FnTimeIntegratorPK(Teuchos::ParameterList& pk_tree,
+  PK_BDF(Teuchos::ParameterList& pk_tree,
                      const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                      const Teuchos::RCP<State>& S,
                      const Teuchos::RCP<TreeVector>& soln) :
   PK_Default(pk_tree, global_list, S, soln){};
 
  // Virtual destructor
-  virtual ~FnTimeIntegratorPK() {};
+  virtual ~PK_BDF() {};
 
 };
 
