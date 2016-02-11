@@ -70,7 +70,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
   S->set_intermediate_time(0.0);
 
   Transport_PK TPK(plist, S, "Transport", component_names);
-  TPK.Setup();
+  TPK.Setup(S.ptr());
   TPK.CreateDefaultState(mesh, 1);
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -88,7 +88,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
   }
 
   /* initialize a transport process kernel */
-  TPK.Initialize();
+  TPK.Initialize(S.ptr());
 
   /* advance the transport state */
   double t_old(0.0), t_new(0.0), dt;
@@ -102,7 +102,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
     t_new = t_old + dt;
 
     TPK.AdvanceStep(t_old, t_new);
-    TPK.CommitStep(t_old, t_new);
+    TPK.CommitStep(t_old, t_new, S);
 
     t_old = t_new;
     iter++;

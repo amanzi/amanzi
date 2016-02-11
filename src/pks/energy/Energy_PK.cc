@@ -55,11 +55,11 @@ Energy_PK::Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 /* ******************************************************************
 * Construction of PK global variables.
 ****************************************************************** */
-void Energy_PK::Setup()
+void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   // require first-requested state variables
-  if (!S_->HasField("atmospheric_pressure")) {
-    S_->RequireScalar("atmospheric_pressure", passwd_);
+  if (!S->HasField("atmospheric_pressure")) {
+    S->RequireScalar("atmospheric_pressure", passwd_);
   }
 
   // require primary state variables
@@ -73,26 +73,26 @@ void Energy_PK::Setup()
  
   std::vector<int> ndofs(2, 1);
   
-  if (!S_->HasField("temperature")) {
-    S_->RequireField("temperature", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("temperature")) {
+    S->RequireField("temperature", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
 
     Teuchos::ParameterList elist;
     elist.set<std::string>("evaluator name", "temperature");
     temperature_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S_->SetFieldEvaluator("temperature", temperature_eval_);
+    S->SetFieldEvaluator("temperature", temperature_eval_);
   }
 
   // conserved quantity from the last time step.
-  if (!S_->HasField("prev_energy")) {
-    S_->RequireField("prev_energy", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("prev_energy")) {
+    S->RequireField("prev_energy", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->GetField("prev_energy", passwd_)->set_io_vis(false);
+    S->GetField("prev_energy", passwd_)->set_io_vis(false);
   }
 
   // Fields for energy as independent PK
-  if (!S_->HasField("darcy_flux")) {
-    S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("darcy_flux")) {
+    S->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
   }
 }
@@ -101,7 +101,7 @@ void Energy_PK::Setup()
 /* ******************************************************************
 * Basic initialization of energy classes.
 ****************************************************************** */
-void Energy_PK::Initialize()
+void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // Energy list has only one sublist
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist_, "PKs", true);

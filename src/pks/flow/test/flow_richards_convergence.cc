@@ -72,12 +72,12 @@ void RunTestConvergence(std::string input_xml) {
     /* create Richards process kernel */
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
     Richards_PK* RPK = new Richards_PK(plist, "Flow", S, soln);
-    RPK->Setup();
+    RPK->Setup(S.ptr());
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
 
-    RPK->Initialize();
+    RPK->Initialize(S.ptr());
     S->CheckAllFieldsInitialized();
 
     // solve the problem
@@ -88,7 +88,7 @@ void RunTestConvergence(std::string input_xml) {
     ti_specs.max_itrs = 1000;
 
     AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-    RPK->CommitStep(0.0, 1.0);  // dummy times
+    RPK->CommitStep(0.0, 1.0, S);  // dummy times
 
     double pressure_err, flux_err, div_err;  // error checks
     const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");

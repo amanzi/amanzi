@@ -71,11 +71,11 @@ TEST(CONSTRUCTOR) {
   S->set_intermediate_time(0.0);
 
   Transport_PK TPK(plist, S, "Transport", component_names);
-  TPK.Setup();
+  TPK.Setup(S.ptr());
   TPK.CreateDefaultState(mesh, 2);
 
   /* initialize a transport process kernel from a transport state */
-  TPK.Initialize();
+  TPK.Initialize(S.ptr());
 
   double cfl = TPK.cfl();
   CHECK(0 < cfl && cfl <= 1.0);

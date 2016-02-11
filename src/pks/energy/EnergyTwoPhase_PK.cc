@@ -50,10 +50,10 @@ EnergyTwoPhase_PK::EnergyTwoPhase_PK(
 * Create the physical evaluators for energy, enthalpy, thermal
 * conductivity, and any sources.
 ****************************************************************** */
-void EnergyTwoPhase_PK::Setup()
+void EnergyTwoPhase_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   // basic class setup
-  Energy_PK::Setup();
+  Energy_PK::Setup(S.ptr());
 
   // Get data and evaluators needed by the PK
   // -- energy, the conserved quantity
@@ -86,10 +86,10 @@ void EnergyTwoPhase_PK::Setup()
 /* ******************************************************************
 * Initialize the needed models to plug in enthalpy.
 ****************************************************************** */
-void EnergyTwoPhase_PK::Initialize()
+void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // times, initialization could be done on any non-zero interval.
-  double t_old = S_->time(); 
+  double t_old = S->time(); 
   dt_ = ti_list_->get<double>("initial time step", 1.0);
   double t_new = t_old + dt_;
 
@@ -99,10 +99,10 @@ void EnergyTwoPhase_PK::Initialize()
   vo_ = new VerboseObject("EnergyPK::2Phase", vlist); 
 
   // Call the base class initialize.
-  Energy_PK::Initialize();
+  Energy_PK::Initialize(S);
 
   // Create pointers to the primary flow field pressure.
-  solution = S_->GetFieldData("temperature", passwd_);
+  solution = S->GetFieldData("temperature", passwd_);
   soln_->SetData(solution); 
 
   // Create local evaluators. Initialize local fields.
@@ -110,13 +110,13 @@ void EnergyTwoPhase_PK::Initialize()
 
   // Create specific evaluators (not used yet)
   /*
-  Teuchos::RCP<FieldEvaluator> eos_fe = S_->GetFieldEvaluator("molar_density_liquid");
-  eos_fe->HasFieldChanged(S_.ptr(), "molar_density_liquid");
+  Teuchos::RCP<FieldEvaluator> eos_fe = S->GetFieldEvaluator("molar_density_liquid");
+  eos_fe->HasFieldChanged(S.ptr(), "molar_density_liquid");
   Teuchos::RCP<Relations::EOSEvaluator> eos_eval = Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(eos_fe);
   ASSERT(eos_eval != Teuchos::null);
   eos_liquid_ = eos_eval->get_EOS();
 
-  Teuchos::RCP<FieldEvaluator> iem_fe = S_->GetFieldEvaluator("internal_energy_liquid");
+  Teuchos::RCP<FieldEvaluator> iem_fe = S->GetFieldEvaluator("internal_energy_liquid");
   Teuchos::RCP<IEMEvaluator> iem_eval = Teuchos::rcp_dynamic_cast<IEMEvaluator>(iem_fe);
   ASSERT(iem_eval != Teuchos::null);
   iem_liquid_ = iem_eval->get_IEM();
@@ -132,12 +132,12 @@ void EnergyTwoPhase_PK::Initialize()
   op_matrix_diff_->SetBCs(op_bc_, op_bc_);
   op_matrix_ = op_matrix_diff_->global_operator();
   op_matrix_->Init();
-  op_matrix_diff_->SetScalarCoefficient(S_->GetFieldData(conductivity_key_), Teuchos::null);
+  op_matrix_diff_->SetScalarCoefficient(S->GetFieldData(conductivity_key_), Teuchos::null);
 
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
   op_matrix_advection_ = Teuchos::rcp(new Operators::OperatorAdvection(oplist_adv, mesh_));
 
-  const CompositeVector& flux = *S_->GetFieldData("darcy_flux");
+  const CompositeVector& flux = *S->GetFieldData("darcy_flux");
   op_matrix_advection_->Setup(flux);
   op_advection_ = op_matrix_advection_->global_operator();
 
@@ -146,7 +146,7 @@ void EnergyTwoPhase_PK::Initialize()
   op_preconditioner_diff_->SetBCs(op_bc_, op_bc_);
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
   op_preconditioner_->Init();
-  op_preconditioner_diff_->SetScalarCoefficient(S_->GetFieldData(conductivity_key_), Teuchos::null);
+  op_preconditioner_diff_->SetScalarCoefficient(S->GetFieldData(conductivity_key_), Teuchos::null);
 
   op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_));
   op_preconditioner_advection_ = Teuchos::rcp(new Operators::OperatorAdvection(oplist_adv, op_preconditioner_));
@@ -265,7 +265,7 @@ bool EnergyTwoPhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 /* ******************************************************************
 * TBW 
 ****************************************************************** */
-void EnergyTwoPhase_PK::CommitStep(double t_old, double t_new)
+  void EnergyTwoPhase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   dt_ = dt_next_;
 }

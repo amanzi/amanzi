@@ -32,7 +32,7 @@ class FlowEnergy_PK : public MPCStrong<FnTimeIntegratorPK> {
                 const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
-  virtual void Setup();
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // -- dt is the minimum of the sub pks
   // virtual double get_dt();

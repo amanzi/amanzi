@@ -138,10 +138,10 @@ SUITE(GeochemistryTestsChemistryPK) {
     // object correctly based on the xml input....
     try {
       cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
-      cpk_->Setup();
+      cpk_->Setup(state_.ptr());
       state_->Setup();
       state_->InitializeFields();
-      cpk_->Initialize();
+      cpk_->Initialize(state_.ptr());
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
       throw e;
@@ -153,10 +153,10 @@ SUITE(GeochemistryTestsChemistryPK) {
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_get_chem_output_names) {
     try {
       cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
-      cpk_->Setup();
+      cpk_->Setup(state_.ptr());
       state_->Setup();
       state_->InitializeFields();
-      cpk_->Initialize();
+      cpk_->Initialize(state_.ptr());
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
       throw e;

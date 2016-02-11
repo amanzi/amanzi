@@ -52,14 +52,14 @@ class MPCAdditive : virtual public PK {
 
   // PK methods
   // -- sets up sub-PKs
-  virtual void Setup();
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // -- calls all sub-PK initialize() methods
-  virtual void Initialize();
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   // -- loops over sub-PKs
-  virtual void CommitStep(double t_old, double t_new);
-  virtual void CalculateDiagnostics();
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
   virtual double get_dt();
   virtual void set_dt(double dt);
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
@@ -156,9 +156,9 @@ MPCAdditive<PK_Base>::MPCAdditive(Teuchos::ParameterList& pk_tree,
 // Setup of PK hierarchy from PList
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void MPCAdditive<PK_Base>::Setup() {
+void MPCAdditive<PK_Base>::Setup(const Teuchos::Ptr<State>& S) {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
-    (*pk)->Setup();
+    (*pk)->Setup(S);
   }
 }
 
@@ -167,9 +167,9 @@ void MPCAdditive<PK_Base>::Setup() {
 // Loop over sub-PKs, calling their initialization methods
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void MPCAdditive<PK_Base>::Initialize() {
+void MPCAdditive<PK_Base>::Initialize(const Teuchos::Ptr<State>& S) {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
-    (*pk)->Initialize();
+    (*pk)->Initialize(S);
   }
 }
 
@@ -178,9 +178,9 @@ void MPCAdditive<PK_Base>::Initialize() {
 // loop over sub-PKs, calling their commit state method
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void MPCAdditive<PK_Base>::CommitStep(double t_old, double t_new) {
+void MPCAdditive<PK_Base>::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
-    (*pk)->CommitStep(t_old, t_new);
+    (*pk)->CommitStep(t_old, t_new, S);
   }
 }
 
@@ -189,9 +189,9 @@ void MPCAdditive<PK_Base>::CommitStep(double t_old, double t_new) {
 // loop over sub-PKs, calling their CalculateDiagnostics method
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-void MPCAdditive<PK_Base>::CalculateDiagnostics() {
+void MPCAdditive<PK_Base>::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
-    (*pk)->CalculateDiagnostics();
+    (*pk)->CalculateDiagnostics(S);
   }
 }
 

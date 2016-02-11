@@ -68,7 +68,7 @@ TEST(FLOW_2D_DARCY_WELL) {
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "Flow", S));
-  DPK->Setup();
+  DPK->Setup(S.ptr());
   S->Setup();
   S->InitializeFields();
 
@@ -100,7 +100,7 @@ TEST(FLOW_2D_DARCY_WELL) {
   S->GetField("specific_storage", "flow")->set_initialized();
 
   // initialize the Darcy process kernel
-  DPK->Initialize();
+  DPK->Initialize(S.ptr());
 
   // transient solution
   double t_old(0.0), t_new, dt(0.5);
@@ -108,7 +108,7 @@ TEST(FLOW_2D_DARCY_WELL) {
     t_new = t_old + dt;
 
     DPK->AdvanceStep(t_old, t_new);
-    DPK->CommitStep(t_old, t_new);
+    DPK->CommitStep(t_old, t_new, S);
 
     t_old = t_new;
 

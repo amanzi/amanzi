@@ -19,6 +19,9 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "State.hh"
+#include "TreeVector.hh"
+
 namespace Amanzi {
 
 class State;
@@ -35,10 +38,11 @@ class PK {
   virtual ~PK() {};
 
   // Setup
-  virtual void Setup() = 0;
+  virtual void Setup(const Teuchos::Ptr<State>& S) = 0;
 
   // Initialize owned (dependent) variables.
-  virtual void Initialize() = 0;
+  //virtual void Initialize(const Teuchos::Ptr<State>& S) = 0;
+  virtual void Initialize(const Teuchos::Ptr<State>& S) = 0;
 
   // Choose a time step compatible with physics.
   virtual double get_dt() = 0;
@@ -54,13 +58,32 @@ class PK {
   // Update any needed secondary variables at time t_new from a sucessful step
   // from t_old. This is called after every successful AdvanceStep() call,
   // independent of coupling.
-  virtual void CommitStep(double t_old, double t_new) = 0;
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) = 0;
+  //virtual void CommitStep(double t_old, double t_new) = 0;
 
   // Calculate any diagnostics at S->time(), currently for visualization.
-  virtual void CalculateDiagnostics() = 0;
+  //virtual void CalculateDiagnostics() = 0;
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) = 0;
 
   // Return PK's name
   virtual std::string name() = 0;
+
+  /////////////////////////////////////////////////////////////////////
+
+ // -- set pointers to State, and point the solution vector to the data in S_next
+  virtual void set_states(const Teuchos::RCP<const State>& S,
+                          const Teuchos::RCP<State>& S_inter,
+                          const Teuchos::RCP<State>& S_next){};
+
+  // -- transfer operators
+  virtual void State_to_Solution(const Teuchos::RCP<State>& S,
+                                 TreeVector& soln) {};
+  virtual void Solution_to_State(TreeVector& soln,
+                                 const Teuchos::RCP<State>& S){};
+
+
+
+
 };
 
 }  // namespace Amanzi

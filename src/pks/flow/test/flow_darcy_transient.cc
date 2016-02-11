@@ -67,7 +67,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "Flow", S));
-  DPK->Setup();
+  DPK->Setup(S.ptr());
   std::cout << "Owner of " << S->GetField("permeability")->fieldname() 
             << " is " << S->GetField("permeability")->owner() << "\n";
 
@@ -122,7 +122,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   S->GetField("pressure", "flow")->set_initialized();
 
   // initialize the Darcy process kernel
-  DPK->Initialize();
+  DPK->Initialize(S.ptr());
   S->CheckAllFieldsInitialized();
 
   // transient solution
@@ -131,7 +131,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
     t_new = t_old + dt;
 
     DPK->AdvanceStep(t_old, t_new);
-    DPK->CommitStep(t_old, t_new);
+    DPK->CommitStep(t_old, t_new, S);
 
     t_old = t_new;
 
@@ -144,7 +144,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   }
 
   // Testing secondary fields
-  DPK->UpdateLocalFields_();
+  DPK->UpdateLocalFields_(S.ptr());
   const Epetra_MultiVector& darcy_velocity = *S->GetFieldData("darcy_velocity")->ViewComponent("cell");
   Point p5(darcy_velocity[0][5], darcy_velocity[1][5]);
 
@@ -197,7 +197,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "Flow", S));
-  DPK->Setup();
+  DPK->Setup(S.ptr());
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -240,7 +240,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   }
 
   /* initialize the Darcy process kernel */
-  DPK->Initialize();
+  DPK->Initialize(S.ptr());
   S->CheckAllFieldsInitialized();
 
   /* transient solution */
@@ -249,7 +249,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
     t_new = t_old + dt;
 
     DPK->AdvanceStep(t_old, t_new);
-    DPK->CommitStep(t_old, t_new);
+    DPK->CommitStep(t_old, t_new, S);
 
     if (MyPID == 0) {
       GMV::open_data_file(*mesh, (std::string)"flow.gmv");

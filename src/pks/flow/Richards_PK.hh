@@ -56,15 +56,15 @@ class Richards_PK : public Flow_PK {
   ~Richards_PK();
 
   // methods required for PK interface
-  virtual void Setup();
-  virtual void Initialize();
+  virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   virtual double get_dt() { return dt_; }
   virtual void set_dt(double dt) { dt_ = dt; dt_desirable_ = dt_; }
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
-  virtual void CommitStep(double t_old, double t_new);
-  virtual void CalculateDiagnostics();
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& Sx);
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
 
   virtual std::string name() { return passwd_; }
 

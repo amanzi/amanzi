@@ -25,10 +25,10 @@ class Dummy_PK : public FnTimeIntegratorPK {
                       const Teuchos::RCP<TreeVector>& soln);
 
   // Setup
-  virtual void Setup() {dummy_dt = 1000; step_count = 1;}
+  virtual void Setup(const Teuchos::Ptr<State>& S) {dummy_dt = 1000; step_count = 1;}
 
   // Initialize owned (dependent) variables.
-  virtual void Initialize() {}
+  virtual void Initialize(const Teuchos::Ptr<State>& S) {}
   
   // Choose a time step compatible with physics.
   virtual double get_dt() {
@@ -43,10 +43,10 @@ class Dummy_PK : public FnTimeIntegratorPK {
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
 
   // Commit any secondary (dependent) variables.
-  virtual void CommitStep(double t_old, double t_new) {}
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {}
 
   // Calculate any diagnostics prior to doing vis
-  virtual void CalculateDiagnostics() {};
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
 
   virtual std::string name() {
     //return pk_->name();

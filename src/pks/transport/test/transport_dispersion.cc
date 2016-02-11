@@ -84,7 +84,7 @@ TEST(DISPERSION) {
   S->set_final_time(0.0);
 
   Transport_PK TPK(plist, S, "Transport", component_names);
-  TPK.Setup();
+  TPK.Setup(S.ptr());
   TPK.CreateDefaultState(mesh, 1);
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -114,7 +114,7 @@ TEST(DISPERSION) {
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::hide_line_prefix = true;
-  TPK.Initialize();
+  TPK.Initialize(S.ptr());
 
   /* advance the state */
   double dt0;
@@ -130,7 +130,7 @@ TEST(DISPERSION) {
     // printf("\n");
 
     TPK.AdvanceStep(t_old, t_new);
-    TPK.CommitStep(t_old, t_new);
+    TPK.CommitStep(t_old, t_new, S);
 
     t_old = t_new;
     iter++;
@@ -188,7 +188,7 @@ TEST(DIFFUSION) {
   S->set_final_time(0.0);
 
   Transport_PK TPK(plist, S, "Transport", component_names);
-  TPK.Setup();
+  TPK.Setup(S.ptr());
   TPK.CreateDefaultState(mesh, 1);
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -212,7 +212,7 @@ TEST(DIFFUSION) {
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::hide_line_prefix = true;
-  TPK.Initialize();
+  TPK.Initialize(S.ptr());
 
   /* advance the state */
   double dt0;
@@ -228,7 +228,7 @@ TEST(DIFFUSION) {
     // printf("\n");
 
     TPK.AdvanceStep(t_old, t_new);
-    TPK.CommitStep(t_old, t_new);
+    TPK.CommitStep(t_old, t_new, S);
 
     t_old = t_new;
     iter++;
@@ -292,7 +292,7 @@ TEST(GAS_DIFFUSION) {
   S->set_final_time(0.0);
 
   Transport_PK TPK(plist, S, "Transport", component_names);
-  TPK.Setup();
+  TPK.Setup(S.ptr());
   TPK.CreateDefaultState(mesh, 1);
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -316,7 +316,7 @@ TEST(GAS_DIFFUSION) {
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::hide_line_prefix = true;
-  TPK.Initialize();
+  TPK.Initialize(S.ptr());
 
   /* advance the state */
   double dt0;
@@ -330,7 +330,7 @@ TEST(GAS_DIFFUSION) {
     t_new = t_old + dt;
 
     TPK.AdvanceStep(t_old, t_new);
-    TPK.CommitStep(t_old, t_new);
+    TPK.CommitStep(t_old, t_new, S);
 
     t_old = t_new;
     iter++;

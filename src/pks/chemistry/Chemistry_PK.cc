@@ -33,32 +33,32 @@ Chemistry_PK::Chemistry_PK() :
 /* ******************************************************************
 * Register fields and evaluators with the State
 ******************************************************************* */
-void Chemistry_PK::Setup()
+void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   // Require data from flow
-  if (!S_->HasField("porosity")) {
-    S_->RequireField("porosity", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+  if (!S->HasField("porosity")) {
+    S->RequireField("porosity", passwd_)->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  if (!S_->HasField("saturation_liquid")) {
-    S_->RequireField("saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+  if (!S->HasField("saturation_liquid")) {
+    S->RequireField("saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
   
-  if (!S_->HasField("fluid_density")) {
-    S_->RequireScalar("fluid_density", passwd_);
+  if (!S->HasField("fluid_density")) {
+    S->RequireScalar("fluid_density", passwd_);
   }
 
   // require transport fields
   std::vector<std::string>::const_iterator it;
-  if (!S_->HasField("total_component_concentration")) {    
+  if (!S->HasField("total_component_concentration")) {    
     // set the names for vis
     std::vector<std::vector<std::string> > conc_names_cv(1);
     for (it = comp_names_.begin(); it != comp_names_.end(); ++it) {
       conc_names_cv[0].push_back(*it + std::string(" conc"));
     }
-    S_->RequireField("total_component_concentration", passwd_, conc_names_cv)
+    S->RequireField("total_component_concentration", passwd_, conc_names_cv)
       ->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
   }
@@ -75,11 +75,11 @@ void Chemistry_PK::Setup()
     }
 
     // -- register two fields
-    S_->RequireField("mineral_volume_fractions", passwd_, vf_names_cv)
+    S->RequireField("mineral_volume_fractions", passwd_, vf_names_cv)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_minerals_);
 
-    S_->RequireField("mineral_specific_surface_area", passwd_, ssa_names_cv)
+    S->RequireField("mineral_specific_surface_area", passwd_, ssa_names_cv)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_minerals_);
   }
@@ -95,29 +95,29 @@ void Chemistry_PK::Setup()
     }
 
     // -- register two fields
-    S_->RequireField("sorption_sites", passwd_, ss_names_cv)
+    S->RequireField("sorption_sites", passwd_, ss_names_cv)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_sorption_sites_);
-    S_->RequireField("surface_complex_free_site_conc", passwd_, scfsc_names_cv)
+    S->RequireField("surface_complex_free_site_conc", passwd_, scfsc_names_cv)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_sorption_sites_);
   }
 
   if (using_sorption_) {
-    S_->RequireField("total_sorbed", passwd_)
+    S->RequireField("total_sorbed", passwd_)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
 
     if (using_sorption_isotherms_) {
-      S_->RequireField("isotherm_kd", passwd_)
+      S->RequireField("isotherm_kd", passwd_)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
 
-      S_->RequireField("isotherm_freundlich_n", passwd_)
+      S->RequireField("isotherm_freundlich_n", passwd_)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
 
-      S_->RequireField("isotherm_langmuir_b", passwd_)
+      S->RequireField("isotherm_langmuir_b", passwd_)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
     }
@@ -130,21 +130,21 @@ void Chemistry_PK::Setup()
       species_names_cv[0].push_back(*it);
     }
 
-    S_->RequireField("free_ion_species", passwd_, species_names_cv)
+    S->RequireField("free_ion_species", passwd_, species_names_cv)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
 
-    S_->RequireField("primary_activity_coeff", passwd_, species_names_cv)
+    S->RequireField("primary_activity_coeff", passwd_, species_names_cv)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
   }
 
   if (number_ion_exchange_sites_ > 0) {
-    S_->RequireField("ion_exchange_sites", passwd_)
+    S->RequireField("ion_exchange_sites", passwd_)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_ion_exchange_sites_);
 
-    S_->RequireField("ion_exchange_ref_cation_conc", passwd_)
+    S->RequireField("ion_exchange_ref_cation_conc", passwd_)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_ion_exchange_sites_);
   }
@@ -157,11 +157,11 @@ void Chemistry_PK::Setup()
 * can be derived from other initialized quantities, they are initialized
 * here, where we can manage that logic.
 ******************************************************************* */
-void Chemistry_PK::Initialize()
+void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // Aqueous species 
   if (number_aqueous_components_ > 0) {
-    if (!S_->GetField("total_component_concentration", passwd_)->initialized()) {
+    if (!S->GetField("total_component_concentration", passwd_)->initialized()) {
       InitializeField_("total_component_concentration", 0.0);
     }
     InitializeField_("free_ion_species", 0.0);

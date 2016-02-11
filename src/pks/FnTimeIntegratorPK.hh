@@ -19,14 +19,14 @@
 
 #include "BDFFnBase.hh"
 #include "PK.hh"
-#include "PK_default_base.hh"
+#include "PK_Default.hh"
 
 namespace Amanzi {
 
 class TreeVector;
 
 
-class FnTimeIntegratorPK : virtual public PKDefaultBase, public Amanzi::BDFFnBase<TreeVector> {
+class FnTimeIntegratorPK : virtual public PK_Default, public Amanzi::BDFFnBase<TreeVector> {
 
 public:
 
@@ -36,7 +36,7 @@ public:
                      const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                      const Teuchos::RCP<State>& S,
                      const Teuchos::RCP<TreeVector>& soln) :
-  PKDefaultBase(pk_tree, global_list, S, soln){};
+  PK_Default(pk_tree, global_list, S, soln){};
 
  // Virtual destructor
   virtual ~FnTimeIntegratorPK() {};

@@ -70,13 +70,13 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Richards_PK* RPK = new Richards_PK(plist, "Flow", S, soln);
 
-  RPK->Setup();
+  RPK->Setup(S.ptr());
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
   /* create Richards problem */
-  RPK->Initialize();
+  RPK->Initialize(S.ptr());
   S->CheckAllFieldsInitialized();
 
   /* calculate the constant Darcy mass velocity */
@@ -106,7 +106,7 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   ti_specs.max_itrs = 400;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  RPK->CommitStep(0.0, 1.0);  // dummy times for flow
+  RPK->CommitStep(0.0, 1.0, S);  // dummy times for flow
 
   /* check accuracy */
   const Epetra_MultiVector& pressure = *S->GetFieldData("pressure", passwd)->ViewComponent("cell");

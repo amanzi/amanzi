@@ -25,7 +25,7 @@ MPCSubcycled::MPCSubcycled(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln) :
-  PKDefaultBase(pk_tree, global_list, S, soln), 
+  PK_Default(pk_tree, global_list, S, soln), 
   MPC_PK<PK>(pk_tree, global_list, S, soln) {
 
   // Master PK is the PK whose time step size sets the size, the slave is subcycled.
@@ -68,7 +68,7 @@ bool MPCSubcycled::AdvanceStep(double t_old, double t_new, bool reinit) {
   if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
 
   // --etc: unclear if state should be commited?
-  sub_pks_[master_]->CommitStep(t_old, t_new);
+  sub_pks_[master_]->CommitStep(t_old, t_new, S_);
 
   // advance the slave, subcycling if needed
   S_->set_intermediate_time(t_old);
@@ -94,7 +94,7 @@ bool MPCSubcycled::AdvanceStep(double t_old, double t_new, bool reinit) {
     } else {
       // if success, commit the state and increment to next intermediate
       // -- etc: unclear if state should be commited or not?
-      sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next);
+      sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, S_);
       dt_done += dt_next;
     }
 
@@ -106,7 +106,7 @@ bool MPCSubcycled::AdvanceStep(double t_old, double t_new, bool reinit) {
   if (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) {
     // done, success
     // --etc: unclear if state should be commited or not?
-    CommitStep(t_old, t_new);
+    CommitStep(t_old, t_new, S_);
     return false;
   } else {
     return true;

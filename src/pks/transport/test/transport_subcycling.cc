@@ -72,7 +72,7 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
   S->set_intermediate_time(0.0);
 
   Transport_PK TPK(plist, S, "Transport", component_names);
-  TPK.Setup();
+  TPK.Setup(S.ptr());
   TPK.CreateDefaultState(mesh, 2);
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -90,7 +90,7 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
   }
 
   /* initialize a transport process kernel */
-  TPK.Initialize();
+  TPK.Initialize(S.ptr());
 
   /* advance the state */
   Teuchos::RCP<Epetra_MultiVector>
@@ -105,7 +105,7 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
     t_new = t_old + dt_MPC;
 
     TPK.AdvanceStep(t_old, t_new);
-    TPK.CommitStep(t_old, t_new);
+    TPK.CommitStep(t_old, t_new, S);
 
     t_old = t_new;
     iter++;

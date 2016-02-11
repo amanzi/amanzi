@@ -23,7 +23,7 @@ FlowReactiveTransport_PK::FlowReactiveTransport_PK(
     const Teuchos::RCP<Teuchos::ParameterList>& global_list,
     const Teuchos::RCP<State>& S,
     const Teuchos::RCP<TreeVector>& soln) :
-    PKDefaultBase(pk_tree, global_list, S, soln),
+    PK_Default(pk_tree, global_list, S, soln),
     Amanzi::MPCSubcycled(pk_tree, global_list, S, soln) { 
 }
 
@@ -50,8 +50,8 @@ void FlowReactiveTransport_PK::set_dt(double dt) {
 // -----------------------------------------------------------------------------
 // Make necessary operatios by the end of the time steps.
 // -----------------------------------------------------------------------------
-void FlowReactiveTransport_PK::CommitStep(double t_old, double t_new) {
-  sub_pks_[slave_]->CommitStep(t_old, t_new);
+void FlowReactiveTransport_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
+  sub_pks_[slave_]->CommitStep(t_old, t_new, S);
 }
 
 
@@ -67,7 +67,7 @@ bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool rein
 
   master_dt_ = t_new - t_old;
 
-  sub_pks_[master_]->CommitStep(t_old, t_new);
+  sub_pks_[master_]->CommitStep(t_old, t_new, S_);
 
   slave_dt_ = sub_pks_[slave_]->get_dt();
 
@@ -96,7 +96,7 @@ bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool rein
       // -- etc: unclear if state should be commited or not?
       // set the intermediate time
       S_->set_intermediate_time(t_old + dt_done + dt_next);
-      sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next);
+      sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, S_);
       dt_done += dt_next;
     }
 

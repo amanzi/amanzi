@@ -217,7 +217,7 @@ void CycleDriver::Setup() {
   }
 
 
-  pk_->Setup();
+  pk_->Setup(S_.ptr());
   S_->RequireScalar("dt", "coordinator");
   S_->Setup();
 
@@ -269,7 +269,7 @@ void CycleDriver::Initialize() {
   S_->InitializeEvaluators();
 
   // Initialize the process kernels
-  pk_->Initialize();
+  pk_->Initialize(S_.ptr());
 
   // Final checks.
   S_->CheckNotEvaluatedFieldsInitialized();
@@ -282,7 +282,7 @@ void CycleDriver::Initialize() {
   // commit the initial conditions.
   // pk_->CommitStep(t0_-get_dt(), get_dt());
   if (!restart_requested_) {
-    pk_->CommitStep(S_->time(), S_->time());
+    pk_->CommitStep(S_->time(), S_->time(), S_);
   }
 }
 
@@ -295,7 +295,7 @@ void CycleDriver::Initialize() {
 ****************************************************************** */
 void CycleDriver::Finalize() {
   if (!checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
-    pk_->CalculateDiagnostics();
+    pk_->CalculateDiagnostics(S_);
     Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), 0.0, true, &observations_data_);
   }
 }
@@ -591,7 +591,7 @@ double CycleDriver::Advance(double dt) {
   }
 
   if (!fail) {
-    pk_->CommitStep(S_->last_time(), S_->time());
+    pk_->CommitStep(S_->last_time(), S_->time(), S_);
     // advance the iteration count and timestep size
     if (advance) {
       S_->advance_cycle();
@@ -618,7 +618,7 @@ double CycleDriver::Advance(double dt) {
     // make vis, observations, and checkpoints in this order
     // Amanzi::timer_manager.start("I/O");
     if (advance) {
-      pk_->CalculateDiagnostics();
+      pk_->CalculateDiagnostics(S_);
       Visualize(force_vis);
       Observations(force_obser);
       WriteCheckpoint(dt_new, force_check);   // write Checkpoint with new dt
@@ -654,7 +654,6 @@ double CycleDriver::Advance(double dt) {
 void CycleDriver::Observations(bool force) {
   if (observations_ != Teuchos::null) {
     if (observations_->DumpRequested(S_->cycle(), S_->time()) || force) {
-      // pk_->CalculateDiagnostics();
       int n = observations_->MakeObservations(*S_);
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "Cycle " << S_->cycle() << ": writing observations... " << n << std::endl;
@@ -677,7 +676,7 @@ void CycleDriver::Visualize(bool force) {
     }
   }
 
-  if (dump || force) //pk_->CalculateDiagnostics();
+  //if (dump || force) //pk_->CalculateDiagnostics();
   
   for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
        vis!=visualization_.end(); ++vis) {
@@ -703,7 +702,6 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
 
     Amanzi::WriteCheckpoint(checkpoint_.ptr(), S_.ptr(), dt, final, &observations_data_);
     
-    // if (force) pk_->CalculateDiagnostics();
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "writing checkpoint file" << std::endl;
   }
@@ -798,11 +796,11 @@ Teuchos::RCP<State> CycleDriver::Go() {
         restart_dT =  tp_dt_[time_period_id_];
       }
       else {
-        pk_->Initialize();
+        pk_->Initialize(S_.ptr());
       }     
     } else {
       // Initialize the process kernels
-      pk_->Initialize();
+      pk_->Initialize(S_.ptr());
     }
 
     S_->set_initial_time(S_->time());
@@ -819,7 +817,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
   // visualization at IC
   //Amanzi::timer_manager.start("I/O");
-  pk_->CalculateDiagnostics();
+  pk_->CalculateDiagnostics(S_);
   Visualize();
   Observations();
   WriteCheckpoint(dt);
@@ -928,7 +926,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   //if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_);
 
   // Setup
-  pk_->Setup();
+  pk_->Setup(S_.ptr());
 
   S_->RequireScalar("dt", "coordinator");
   S_->Setup();
@@ -943,7 +941,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   S_->Initialize(S_old_);
 
   // Initialize the process kernels variables 
-  pk_->Initialize();
+  pk_->Initialize(S_.ptr());
 
   // Final checks
   S_->CheckNotEvaluatedFieldsInitialized();
@@ -951,7 +949,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   S_->GetMeshPartition("materials");
 
-  pk_->CalculateDiagnostics();
+  pk_->CalculateDiagnostics(S_);
   Observations();
   S_->WriteStatistics(vo_);
 

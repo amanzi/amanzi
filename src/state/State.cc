@@ -697,6 +697,7 @@ void State::Setup() {
   for (FieldFactoryMap::iterator fac_it=field_factories_.begin();
        fac_it!=field_factories_.end(); ++fac_it) {
     GetField_(fac_it->first)->SetData(Teuchos::rcp(new CompositeVector(*fac_it->second)));
+    std::cout<<GetField_(fac_it->first)->owner();
   }
 
   // -- Now create the data for all fields.
