@@ -3112,8 +3112,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
   if (region->type() == AmanziGeometry::LOGICAL) {
     Teuchos::RCP<const AmanziGeometry::RegionLogical> boolregion =
         Teuchos::rcp_static_cast<const AmanziGeometry::RegionLogical>(region);
-    const std::vector<const std::string>& region_names =
-        boolregion->component_regions();
+    const std::vector<std::string> region_names = boolregion->component_regions();
     int nreg = region_names.size();
     
     std::vector<MSet_ptr> msets;

@@ -27,9 +27,9 @@
 #include <Epetra_MpiComm.h>
 #include <memory>
 
-#include <GeometricModel.hh>
-#include <LabeledSetRegion.hh>
-#include <VerboseObject.hh>
+#include "GeometricModel.hh"
+#include "RegionLabeledSet.hh"
+#include "VerboseObject.hh"
 
 
 #include "Mesh.hh"
@@ -70,9 +70,8 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const double& xdelta = 1.0, 
            const double& ydelta = 1.0, 
            const double& zdelta = 1.0,
-           const AmanziGeometry::GeometricModelPtr& gm = 
-           (AmanziGeometry::GeometricModelPtr) NULL,
-           const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+           const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+           const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
            const bool request_faces = true,
            const bool request_edges = false);
   
@@ -80,10 +79,9 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   Mesh_STK(double x0, double y0, double z0,
            double x1, double y1, double z1,
            int nx, int ny, int nz, 
-           const Epetra_MpiComm *comm_,
-           const AmanziGeometry::GeometricModelPtr& gm = 
-           (AmanziGeometry::GeometricModelPtr) NULL,
-           const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+           const Epetra_MpiComm *comm,
+           const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+           const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
            const bool request_faces = true,
            const bool request_edges = false);
 
@@ -93,45 +91,40 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const double y1,
            const int nx, 
            const int ny, 
-           const Epetra_MpiComm *comm_unicator,
-           const AmanziGeometry::GeometricModelPtr &gm = 
-           (AmanziGeometry::GeometricModelPtr) NULL,
-           const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+           const Epetra_MpiComm *comm,
+           const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+           const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
            const bool request_faces = true,
            const bool request_edges = false);
   
   /// Construct a hexedral mesh from a parameter list (Mesh_simple alternative)
   Mesh_STK(Teuchos::ParameterList &parameter_list,
-           const Epetra_MpiComm *comm_,
-           const AmanziGeometry::GeometricModelPtr& gm = 
-           (AmanziGeometry::GeometricModelPtr) NULL,
-           const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+           const Epetra_MpiComm *comm,
+           const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+           const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
            const bool request_faces = true,
            const bool request_edges = false);
 
   /// Construct a hexedral mesh from specs (Mesh_simple alternative)
   Mesh_STK(const GenerationSpec& gspec,
-           const Epetra_MpiComm *comm_,
-           const AmanziGeometry::GeometricModelPtr& gm = 
-           (AmanziGeometry::GeometricModelPtr) NULL,
-           const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+           const Epetra_MpiComm *comm,
+           const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+           const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
            const bool request_faces = true,
            const bool request_edges = false);
 
   /// Construct a mesh from a Exodus II file or file set
   Mesh_STK(const Epetra_MpiComm *comm_, 
            const std::string& fname,
-           const AmanziGeometry::GeometricModelPtr& gm = 
-           (AmanziGeometry::GeometricModelPtr) NULL,
-           const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+           const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+           const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
            const bool request_faces = true,
            const bool request_edges = false);
 
   /// Construct a mesh from a Exodus II file or file set
-  Mesh_STK(const char *filename, const Epetra_MpiComm *comm_,
-           const AmanziGeometry::GeometricModelPtr& gm = 
-           (AmanziGeometry::GeometricModelPtr) NULL,
-           const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+  Mesh_STK(const char *filename, const Epetra_MpiComm *comm,
+           const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+           const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
            const bool request_faces = true,
            const bool request_edges = false);
 

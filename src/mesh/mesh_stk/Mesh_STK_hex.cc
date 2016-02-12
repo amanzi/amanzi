@@ -97,8 +97,8 @@ Mesh_STK::Mesh_STK(const Epetra_MpiComm *comm_,
                    const double& xdelta, 
                    const double& ydelta, 
                    const double& zdelta,
-                   const AmanziGeometry::GeometricModelPtr& gm,
-                   const VerboseObject *verbobj,
+                   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                   const Teuchos::RCP<const VerboseObject>& verbobj,
                    const bool request_faces,
                    const bool request_edges) 
 : mesh_(), 
@@ -115,16 +115,16 @@ Mesh_STK::Mesh_STK(const Epetra_MpiComm *comm_,
 Mesh_STK::Mesh_STK(const double x0, const double y0, const double z0,
                    const double x1, const double y1, const double z1,
                    const int nx, const int ny, const int nz, 
-                   const Epetra_MpiComm *comm_,
-                   const AmanziGeometry::GeometricModelPtr& gm,
-                   const VerboseObject *verbobj,
+                   const Epetra_MpiComm *comm,
+                   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                   const Teuchos::RCP<const VerboseObject>& verbobj,
                    const bool request_faces,
                    const bool request_edges)
   : mesh_(), 
     map_owned_(), map_used_(),
     Mesh(verbobj,request_faces,request_edges)  
 {
-  Mesh::set_comm(comm_);
+  Mesh::set_comm(comm);
   Mesh::set_geometric_model(gm);
   Mesh::set_mesh_type(RECTANGULAR);
   double xdelta((x1 - x0)/static_cast<double>(nx));
@@ -147,9 +147,9 @@ Mesh_STK::Mesh_STK (const double x0,
                     const double y1,
                     const int nx, 
                     const int ny, 
-                    const Epetra_MpiComm *comm_unicator,
-                    const AmanziGeometry::GeometricModelPtr &gm,
-                    const VerboseObject *verbobj,
+                    const Epetra_MpiComm *communicator,
+                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                    const Teuchos::RCP<const VerboseObject>& verbobj,
 		    const bool request_faces,
 		    const bool request_edges) 
   : mesh_(),
@@ -163,16 +163,16 @@ Mesh_STK::Mesh_STK (const double x0,
 
 
 Mesh_STK::Mesh_STK(Teuchos::ParameterList &parameter_list,
-                   const Epetra_MpiComm *comm_,
-                   const AmanziGeometry::GeometricModelPtr& gm,
-                   const VerboseObject *verbobj,
+                   const Epetra_MpiComm *comm,
+                   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                   const Teuchos::RCP<const VerboseObject>& verbobj,
                    const bool request_faces,
                    const bool request_edges)
   : mesh_(), 
     map_owned_(), map_used_(),
     Mesh(verbobj,request_faces,request_edges)
 {
-  Mesh::set_comm(comm_);
+  Mesh::set_comm(comm);
   Mesh::set_geometric_model(gm);
   Mesh::set_mesh_type(RECTANGULAR);
 
@@ -182,16 +182,16 @@ Mesh_STK::Mesh_STK(Teuchos::ParameterList &parameter_list,
 }
 
 Mesh_STK::Mesh_STK(const GenerationSpec& gspec,
-                   const Epetra_MpiComm *comm_,
-                   const AmanziGeometry::GeometricModelPtr& gm,
-                   const VerboseObject *verbobj,
+                   const Epetra_MpiComm *comm,
+                   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                   const Teuchos::RCP<const VerboseObject>& verbobj,
                    const bool request_faces,
                    const bool request_edges)
   : mesh_(), 
     map_owned_(), map_used_(),
     Mesh(verbobj,request_faces,request_edges)
 {
-  Mesh::set_comm(comm_);
+  Mesh::set_comm(comm);
   Mesh::set_geometric_model(gm);
   Mesh::set_mesh_type(RECTANGULAR);
   generate_(gspec);

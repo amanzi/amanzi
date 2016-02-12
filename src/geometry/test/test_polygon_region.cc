@@ -1,4 +1,3 @@
-
 //
 // Unit test to check if a polygon region can be constructed correctly
 // Author: Rao Garimella
@@ -68,15 +67,17 @@ TEST(POLYGON_REGION2)
   Teuchos::RCP<const Amanzi::AmanziGeometry::RegionPolygon> poly =
     Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionPolygon>(reg);
 
-  int np = poly->num_points();
+  int np = poly->PointsSize();
   CHECK_EQUAL(numpoints,np);
- 
-  std::vector<const Amanzi::AmanziGeometry::Point> points = poly->points();
-  int dim = points[0].dim();
 
-  for (int i = 0; i < np; i++)
+  int lcv=0;
+  int dim = 0;
+  for (Amanzi::AmanziGeometry::RegionPolygon::PointIterator p=poly->PointsBegin();
+       p!=poly->PointsEnd(); ++lcv,++p) {
+    dim = p->dim();
     for (int j = 0; j < dim; j++)
-      CHECK_EQUAL(points[i][j],in_xyz[dim*i+j]);
+      CHECK_EQUAL((*p)[j],in_xyz[dim*lcv+j]);
+  }
 
   // See if the derived parameters are sane
 
@@ -153,15 +154,17 @@ TEST(POLYGON_REGION3)
   Teuchos::RCP<const Amanzi::AmanziGeometry::RegionPolygon> poly =
     Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionPolygon>(reg);
 
-  int np = poly->num_points();
+  int np = poly->PointsSize();
   CHECK_EQUAL(numpoints,np);
  
-  std::vector<const Amanzi::AmanziGeometry::Point> points = poly->points();
-  int dim = points[0].dim();
-
-  for (int i = 0; i < np; i++)
+  int lcv=0;
+  int dim = 0;
+  for (Amanzi::AmanziGeometry::RegionPolygon::PointIterator p=poly->PointsBegin();
+       p!=poly->PointsEnd(); ++lcv,++p) {
+    dim = p->dim();
     for (int j = 0; j < dim; j++)
-      CHECK_EQUAL(points[i][j],in_xyz[dim*i+j]);
+      CHECK_EQUAL((*p)[j],in_xyz[dim*lcv+j]);
+  }
 
   Amanzi::AmanziGeometry::Point normal = poly->normal();
   CHECK_CLOSE(normal[0],0.0,1.0e-06);

@@ -36,7 +36,7 @@ struct Mesh_setup : public Test_mesh
 
     Factory_p factory;
     Mesh_p mesh;
-    Comm_p comm_unicator;
+    Comm_p communicator;
     int my_pid;
     
 
@@ -44,19 +44,19 @@ struct Mesh_setup : public Test_mesh
     {
         Amanzi::AmanziMesh::Data::Fields fields;
 
-        comm_unicator = Comm_p (new Epetra_MpiComm(parallel_machine));
-        my_pid = comm_unicator->MyPID ();
+        communicator = Comm_p (new Epetra_MpiComm(parallel_machine));
+        my_pid = communicator->MyPID ();
 
         const int bucket_size = 20;
         
-        factory = Factory_p(new Amanzi::AmanziMesh::STK::Mesh_STK_factory(comm_unicator.get(), bucket_size));
-        mesh    = Mesh_p (factory->build_mesh (*data, fields, NULL));
+        factory = Factory_p(new Amanzi::AmanziMesh::STK::Mesh_STK_factory(communicator.get(), bucket_size));
+        mesh    = Mesh_p (factory->build_mesh (*data, fields, Teuchos::null));
 
     }
 
     ~Mesh_setup ()
     {
-        comm_unicator->Barrier ();
+        communicator->Barrier ();
     }
 
 };

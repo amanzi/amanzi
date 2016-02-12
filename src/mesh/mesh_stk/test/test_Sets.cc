@@ -86,7 +86,7 @@ SUITE (STK_SETS)
 
     Epetra_MpiComm *comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
 
-    Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm_);
+    Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm));
 
     // Load a mesh consisting of 3x3x3 elements
 
@@ -101,9 +101,9 @@ SUITE (STK_SETS)
 
       // See if the geometric model has a region by this name
   
-      Amanzi::AmanziGeometry::RegionPtr reg = gm->FindRegion(reg_name);
+      Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg = gm->FindRegion(reg_name);
 
-      CHECK(reg != NULL);
+      CHECK(reg != Teuchos::null);
 
       // Do their names match ?
 
@@ -378,7 +378,7 @@ SUITE (STK_SETS)
 
     Epetra_MpiComm ecomm_(MPI_COMM_WORLD);
 
-    Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, &ecomm_);
+    Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, &ecomm));
 
     // Create a mesh consisting of 3x3x3 elements
 
@@ -392,9 +392,9 @@ SUITE (STK_SETS)
 
       // See if the geometric model has a region by this name
   
-      Amanzi::AmanziGeometry::RegionPtr reg = gm->FindRegion(reg_name);
+      Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg = gm->FindRegion(reg_name);
 
-      CHECK(reg != NULL);
+      CHECK(reg != Teuchos::null);
 
       // Do their names match ?
 

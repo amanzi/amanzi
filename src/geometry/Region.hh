@@ -140,7 +140,7 @@ class Region {
 
 
 
-typedef std::vector<Region> RegionVector;
+typedef std::vector<Teuchos::RCP<Region> > RegionVector;
 
 } // namespace AmanziGeometry
 } // namespace Amanzi

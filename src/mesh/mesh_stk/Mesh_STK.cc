@@ -765,13 +765,13 @@ Mesh_STK::get_set_entities (const Set_ID setid,
                             const Parallel_type ptype, 
                             Entity_ID_List *entids) const
 {  
-  AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
-  AmanziGeometry::RegionPtr rgn = gm->FindRegion(setid);
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
+  Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setid);
 
   std::cerr << "DEPRECATED METHOD!" << std::endl;
   std::cerr << "Call get_set_entities with setname instead of setid" << std::endl;
 
-  if (!rgn)
+  if (rgn == Teuchos::null)
     {
       std::cerr << "Mesh_STK::get_set_entities: No region with id" << setid << std::endl;
       std::cerr << "Cannot construct requested set" << std::endl;
@@ -815,12 +815,12 @@ Mesh_STK::get_set_entities (const std::string setname,
   int celldim = manifold_dimension();
   int space_dim_ = space_dimension();
 
-  AmanziGeometry::GeometricModelPtr gm = geometric_model();
-  AmanziGeometry::RegionPtr rgn = gm->FindRegion(setname);
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = geometric_model();
+  Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setname);
 
   // Did not find the region
   
-  if (rgn == NULL) 
+  if (rgn == Teuchos::null) 
     {
       std::cerr << "Geometric model has no region named " << setname << std::endl;
       std::cerr << "Cannot construct set by this name" << std::endl;
@@ -832,8 +832,8 @@ Mesh_STK::get_set_entities (const std::string setname,
 
       // Region is of type labeled set and a mesh set should have been
       // initialized from the input file
-  
-      AmanziGeometry::LabeledSetRegionPtr lsrgn = dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
+      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+          Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
       std::string label = lsrgn->label();
       std::string entity_type = lsrgn->entity_str();
       

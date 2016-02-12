@@ -68,31 +68,31 @@ Mesh_STK::read_exodus_(const std::string& fname)
 // -------------------------------------------------------------
 // Mesh_STK::Mesh_STK
 // -------------------------------------------------------------
-  Mesh_STK::Mesh_STK(const Epetra_MpiComm *comm_, 
+  Mesh_STK::Mesh_STK(const Epetra_MpiComm *comm, 
                      const std::string& fname,
-                     const AmanziGeometry::GeometricModelPtr& gm,
-                     const VerboseObject *verbosity_obj,
+                     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                     const Teuchos::RCP<const VerboseObject>& verbosity_obj,
 		     const bool request_faces,
 		     const bool request_edges)
     : mesh_(), 
       map_owned_(), map_used_(),
       Mesh(verbosity_obj,request_faces,request_edges)
   {
-    Mesh::set_comm(comm_);
+    Mesh::set_comm(comm);
     Mesh::set_geometric_model(gm);
     read_exodus_(fname);
   }
 
-  Mesh_STK::Mesh_STK(const char *fname, const Epetra_MpiComm *comm_,
-		     const AmanziGeometry::GeometricModelPtr& gm,
-                     const VerboseObject *verbosity_obj,
+  Mesh_STK::Mesh_STK(const char *fname, const Epetra_MpiComm *comm,
+                     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                     const Teuchos::RCP<const VerboseObject>& verbosity_obj,
 		     const bool request_faces,
 		     const bool request_edges)
     : mesh_(), 
       map_owned_(), map_used_(),
       Mesh(verbosity_obj,request_faces,request_edges)
   {
-    Mesh::set_comm(comm_);
+    Mesh::set_comm(comm);
     Mesh::set_geometric_model(gm);
     read_exodus_(fname);
   }
