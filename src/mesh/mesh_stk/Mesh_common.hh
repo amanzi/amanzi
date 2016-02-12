@@ -1,7 +1,7 @@
 // Emacs Mode Line: -*- Mode:c++;-*-
 // -------------------------------------------------------------
 /**
- * @file   Mesh_comm_on.hh
+ * @file   Mesh_common.hh
  * @author William A. Perkins
  * @date Wed Dec 29 11:11:11 2010
  * 
@@ -17,8 +17,8 @@
 
 // SCCS ID: $Id$ Battelle PNL
 
-#ifndef _Mesh_comm_on_hh_
-#define _Mesh_comm_on_hh_
+#ifndef _Mesh_common_hh_
+#define _Mesh_common_hh_
 
 #include <stk_mesh/base/BulkData.hpp>
 

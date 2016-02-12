@@ -82,7 +82,6 @@ Mesh_STK::generate_(const GenerationSpec& gspec)
                            nx, ny, nz,
                            p0.x(), p0.y(), p0.z(),
                            xdelta, ydelta, zdelta);
-
   generate_(g);
 }
 
@@ -107,6 +106,8 @@ Mesh_STK::Mesh_STK(const Epetra_MpiComm *comm_,
   
 {
   Mesh::set_comm(comm_);
+  Mesh::set_space_dimension(3);
+  Mesh::set_manifold_dimension(3);
   Mesh::set_geometric_model(gm);
   Mesh::set_mesh_type(RECTANGULAR);
   generate_(ni, nj, nk, xorigin, yorigin, zorigin, xdelta, ydelta, zdelta);
@@ -125,6 +126,8 @@ Mesh_STK::Mesh_STK(const double x0, const double y0, const double z0,
     Mesh(verbobj,request_faces,request_edges)  
 {
   Mesh::set_comm(comm);
+  Mesh::set_space_dimension(3);
+  Mesh::set_manifold_dimension(3);
   Mesh::set_geometric_model(gm);
   Mesh::set_mesh_type(RECTANGULAR);
   double xdelta((x1 - x0)/static_cast<double>(nx));
@@ -173,6 +176,8 @@ Mesh_STK::Mesh_STK(Teuchos::ParameterList &parameter_list,
     Mesh(verbobj,request_faces,request_edges)
 {
   Mesh::set_comm(comm);
+  Mesh::set_space_dimension(3);
+  Mesh::set_manifold_dimension(3);
   Mesh::set_geometric_model(gm);
   Mesh::set_mesh_type(RECTANGULAR);
 
@@ -192,6 +197,8 @@ Mesh_STK::Mesh_STK(const GenerationSpec& gspec,
     Mesh(verbobj,request_faces,request_edges)
 {
   Mesh::set_comm(comm);
+  Mesh::set_space_dimension(3);
+  Mesh::set_manifold_dimension(3);
   Mesh::set_geometric_model(gm);
   Mesh::set_mesh_type(RECTANGULAR);
   generate_(gspec);

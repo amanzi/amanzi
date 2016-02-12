@@ -79,6 +79,8 @@ Mesh_STK::read_exodus_(const std::string& fname)
       Mesh(verbosity_obj,request_faces,request_edges)
   {
     Mesh::set_comm(comm);
+    Mesh::set_space_dimension(3);
+    Mesh::set_manifold_dimension(3);
     Mesh::set_geometric_model(gm);
     read_exodus_(fname);
   }
@@ -93,6 +95,8 @@ Mesh_STK::read_exodus_(const std::string& fname)
       Mesh(verbosity_obj,request_faces,request_edges)
   {
     Mesh::set_comm(comm);
+    Mesh::set_space_dimension(3);
+    Mesh::set_manifold_dimension(3);
     Mesh::set_geometric_model(gm);
     read_exodus_(fname);
   }

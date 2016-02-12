@@ -55,7 +55,9 @@ Mesh_STK::Mesh_STK(STK::Mesh_STK_Impl_p mesh)
   : mesh_(mesh), 
     map_owned_(), map_used_()
 {
-  Mesh::set_comm(mesh->comm_unicator());
+  Mesh::set_comm(mesh->communicator());
+  Mesh::set_space_dimension(3);
+  Mesh::set_manifold_dimension(3);
   build_maps_();
 }
 
