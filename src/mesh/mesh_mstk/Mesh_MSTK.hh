@@ -649,7 +649,7 @@ private:
                           {MVERTEX, MEDGE,   MEDGE,   MFACE},    // 2d meshes
                           {MVERTEX, MEDGE,   MFACE,   MREGION}}; // 3d meshes
     
-    return kind2mtype[cell_dimension()][(int)kind];
+    return kind2mtype[manifold_dimension()][(int)kind];
   }
 
 

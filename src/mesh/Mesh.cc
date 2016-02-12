@@ -112,7 +112,7 @@ void Mesh::cache_cell2edge_info_() const {
   int ncells = num_entities(CELL,USED);
   cell_edge_ids_.resize(ncells);
   
-  if (spacedim_ == 2) {
+  if (space_dim_ == 2) {
     cell_2D_edge_dirs_.resize(ncells);
     for (int c = 0; c < ncells; c++)
       cell_2D_get_edges_and_dirs_internal_(c, &(cell_edge_ids_[c]), 
@@ -441,7 +441,7 @@ int Mesh::compute_cell_geometric_quantities_() const {
   cell_centroids_.resize(ncells);
   for (int i = 0; i < ncells; i++) {
     double volume;
-    AmanziGeometry::Point centroid(spacedim_);
+    AmanziGeometry::Point centroid(space_dim_);
 
     compute_cell_geometry_(i,&volume,&centroid);
 
@@ -459,7 +459,7 @@ int Mesh::compute_cell_geometric_quantities_() const {
 
 int Mesh::compute_face_geometric_quantities_() const {
 
-  if (space_dimension() == 3 && cell_dimension() == 2) {
+  if (space_dimension() == 3 && manifold_dimension() == 2) {
     // need cell centroids to compute normals 
 
     if (!cell_geometry_precomputed_)
@@ -475,8 +475,8 @@ int Mesh::compute_face_geometric_quantities_() const {
 
   for (int i = 0; i < nfaces; i++) {
     double area;
-    AmanziGeometry::Point centroid(spacedim_), normal0(spacedim_),
-        normal1(spacedim_);
+    AmanziGeometry::Point centroid(space_dim_), normal0(space_dim_),
+        normal1(space_dim_);
 
     // normal0 and normal1 are outward normals of the face with
     // respect to the cell0 and cell1 of the face. The natural normal
@@ -508,7 +508,7 @@ int Mesh::compute_edge_geometric_quantities_() const {
 
   for (int i = 0; i < nedges; i++) {
     double length;
-    AmanziGeometry::Point evector(spacedim_);
+    AmanziGeometry::Point evector(space_dim_);
 
     compute_edge_geometry_(i,&length,&evector);
 
@@ -528,7 +528,7 @@ int Mesh::compute_cell_geometry_(const Entity_ID cellid, double *volume,
 				AmanziGeometry::Point *centroid) const {
 
 
-  if (topodim_ == 3) {
+  if (manifold_dim_ == 3) {
 
     // 3D Elements with possibly curved faces
     // We have to build a description of the element topology
@@ -553,8 +553,8 @@ int Mesh::compute_cell_geometry_(const Entity_ID cellid, double *volume,
     if (nf == 2) { /* special case of column mesh - only top and bottom faces
                       are returned */
 
-      AmanziGeometry::Point fcentroid0(spacedim_), fcentroid1(spacedim_);
-      AmanziGeometry::Point normal(spacedim_);
+      AmanziGeometry::Point fcentroid0(space_dim_), fcentroid1(space_dim_);
+      AmanziGeometry::Point normal(space_dim_);
       double farea;
 
       /* compute volume on the assumption that the top and bottom faces form
@@ -599,13 +599,13 @@ int Mesh::compute_cell_geometry_(const Entity_ID cellid, double *volume,
 
     return 1;
   }
-  else if (topodim_ == 2) {
+  else if (manifold_dim_ == 2) {
 
     std::vector<AmanziGeometry::Point> ccoords;
 
     cell_get_coordinates(cellid,&ccoords);
 
-    AmanziGeometry::Point normal(spacedim_);
+    AmanziGeometry::Point normal(space_dim_);
 
     AmanziGeometry::polygon_get_area_centroid_normal(ccoords,volume,centroid,
 						     &normal);
@@ -627,7 +627,7 @@ int Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
   (*normal0).set(0.0L);
   (*normal1).set(0.0L);
 
-  if (topodim_ == 3) {
+  if (manifold_dim_ == 3) {
 
     // 3D Elements with possibly curved faces
     // We have to build a description of the element topology
@@ -668,9 +668,9 @@ int Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
 
     return 1;
   }
-  else if (topodim_ == 2) {
+  else if (manifold_dim_ == 2) {
 
-    if (spacedim_ == 2) {   // 2D mesh
+    if (space_dim_ == 2) {   // 2D mesh
 
       face_get_coordinates(faceid,&fcoords);
 
@@ -802,7 +802,7 @@ double Mesh::cell_volume (const Entity_ID cellid, const bool recompute) const {
   else {
     if (recompute) {
       double volume;
-      AmanziGeometry::Point centroid(spacedim_);
+      AmanziGeometry::Point centroid(space_dim_);
       compute_cell_geometry_(cellid, &volume, &centroid);
       return volume;
     }
@@ -824,8 +824,8 @@ double Mesh::face_area(const Entity_ID faceid, const bool recompute) const {
   else {
     if (recompute) {
       double area;
-      AmanziGeometry::Point centroid(spacedim_);
-      AmanziGeometry::Point normal0(spacedim_), normal1(spacedim_);
+      AmanziGeometry::Point centroid(space_dim_);
+      AmanziGeometry::Point normal0(space_dim_), normal1(space_dim_);
       compute_face_geometry_(faceid, &area, &centroid, &normal0, &normal1);
       return area;
     }
@@ -847,7 +847,7 @@ double Mesh::edge_length(const Entity_ID edgeid, const bool recompute) const {
   else {
     if (recompute) {
       double length;
-      AmanziGeometry::Point vector(spacedim_);
+      AmanziGeometry::Point vector(space_dim_);
       compute_edge_geometry_(edgeid, &length, &vector);
       return length;
     }
@@ -868,7 +868,7 @@ AmanziGeometry::Point Mesh::cell_centroid (const Entity_ID cellid,
   else {
     if (recompute) {
       double volume;
-      AmanziGeometry::Point centroid(spacedim_);
+      AmanziGeometry::Point centroid(space_dim_);
       compute_cell_geometry_(cellid, &volume, &centroid);
       return centroid;
     }
@@ -891,8 +891,8 @@ AmanziGeometry::Point Mesh::face_centroid (const Entity_ID faceid, const bool re
   else {
     if (recompute) {
       double area;
-      AmanziGeometry::Point centroid(spacedim_);
-      AmanziGeometry::Point normal0(spacedim_), normal1(spacedim_);
+      AmanziGeometry::Point centroid(space_dim_);
+      AmanziGeometry::Point normal0(space_dim_), normal1(space_dim_);
       compute_face_geometry_(faceid, &area, &centroid, &normal0, &normal1);
       return centroid;
     }
@@ -928,8 +928,8 @@ AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid,
 
   ASSERT(faces_requested_);
 
-  AmanziGeometry::Point normal0(spacedim_);
-  AmanziGeometry::Point normal1(spacedim_);
+  AmanziGeometry::Point normal0(space_dim_);
+  AmanziGeometry::Point normal1(space_dim_);
 
   if (!face_geometry_precomputed_) {
     compute_face_geometric_quantities_();
@@ -940,7 +940,7 @@ AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid,
   else {
     if (recompute) {
       double area;
-      AmanziGeometry::Point centroid(spacedim_);
+      AmanziGeometry::Point centroid(space_dim_);
       compute_face_geometry_(faceid, &area, &centroid, &normal0, &normal1);
     }
     else {
@@ -1007,7 +1007,7 @@ AmanziGeometry::Point Mesh::edge_vector (const Entity_ID edgeid,
 
   ASSERT(edges_requested_);
 
-  AmanziGeometry::Point evector(spacedim_);
+  AmanziGeometry::Point evector(space_dim_);
   AmanziGeometry::Point& evector_ref = evector; // to avoid extra copying
 
   if (!edge_geometry_precomputed_)
@@ -1089,7 +1089,7 @@ bool Mesh::valid_set_id(Set_ID id, Entity_kind kind) const
   for (int i = 0; i < ngr; i++) {
     Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(i);
 
-    unsigned int rdim = rgn->topological_dimension();
+    unsigned int rdim = rgn->manifold_dimension();
 
     if (rgn->id() == id) {
 
@@ -1102,12 +1102,12 @@ bool Mesh::valid_set_id(Set_ID id, Entity_kind kind) const
       // If we are looking for a cell set the region has to be
       // of the same topological dimension as the cells
 
-      if (kind == CELL && rdim == topodim_) return true;
+      if (kind == CELL && rdim == manifold_dim_) return true;
 
       // If we are looking for a side set, the region has to be
       // one topological dimension less than the cells
 
-      if (kind == FACE && rdim == topodim_-1) return true;
+      if (kind == FACE && rdim == manifold_dim_-1) return true;
 
       // If we are looking for a node set, the region can be of any
       // dimension upto the spatial dimension of the domain
@@ -1136,7 +1136,7 @@ bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
   for (int i = 0; i < ngr; i++) {
     Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(i);
 
-    unsigned int rdim = rgn->topological_dimension();
+    unsigned int rdim = rgn->manifold_dimension();
 
     if (rgn->name() == name) {
 
@@ -1164,12 +1164,12 @@ bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
       // If we are looking for a cell set the region has to be
       // of the same topological dimension as the cells or it
       // has to be a point region
-      if (kind == CELL && (rdim >= topodim_ || rdim == 1 || rdim == 0)) return true;
+      if (kind == CELL && (rdim >= manifold_dim_ || rdim == 1 || rdim == 0)) return true;
 
       // If we are looking for a side set, the region has to be
       // one topological dimension less than the cells
 
-      if (kind == FACE && rdim >= topodim_-1) return true;
+      if (kind == FACE && rdim >= manifold_dim_-1) return true;
 
       // If we are looking for a node set, the region can be of any
       // dimension upto the spatial dimension of the domain
@@ -1187,7 +1187,7 @@ bool Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid)
 {
   std::vector<AmanziGeometry::Point> ccoords;
 
-  if (topodim_ == 3) {
+  if (manifold_dim_ == 3) {
 
     // 3D Elements with possibly curved faces
     // We have to build a description of the element topology
@@ -1226,7 +1226,7 @@ bool Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid)
     return AmanziGeometry::point_in_polyhed(p,ccoords,nf,nfnodes,cfcoords);
 
   }
-  else if (topodim_ == 2) {
+  else if (manifold_dim_ == 2) {
 
     cell_get_coordinates(cellid,&ccoords);
 
@@ -1436,10 +1436,10 @@ int Mesh::build_columns_() const {
     AmanziGeometry::Point normal = face_normal(i,false,fcells[0]);
     normal /= norm(normal);
 
-    AmanziGeometry::Point negzvec(spacedim_);
-    if (spacedim_ == 2)
+    AmanziGeometry::Point negzvec(space_dim_);
+    if (space_dim_ == 2)
       negzvec.set(0.0,-1.0);
-    else if (spacedim_ == 3)
+    else if (space_dim_ == 3)
       negzvec.set(0.0,0.0,-1.0);
 
     double dp = negzvec*normal;
@@ -1464,7 +1464,7 @@ int Mesh::build_columns_() const {
     // Just to make sure we are not making a mistake, lets check that
     // the centroid of the cell is above the centroid of the face
 
-    AmanziGeometry::Point ccen(spacedim_),fcen(spacedim_);
+    AmanziGeometry::Point ccen(space_dim_),fcen(space_dim_);
     ccen = cell_centroid(fcells[0]);
     fcen = face_centroid(i);
 
@@ -1580,7 +1580,7 @@ int Mesh::build_columns_() const {
 	node_get_coordinates(topnodes[k], &kc);
 
 	double horiz_dist = 0.;
-	for (int m=0; m!=spacedim_-1; ++m) {
+	for (int m=0; m!=space_dim_-1; ++m) {
 	  horiz_dist += std::abs(botnode0c[m]-kc[m]);
 	}
 
@@ -1606,8 +1606,8 @@ int Mesh::build_columns_() const {
 
       // We have a matching botnode and topnode - now match up the rest
       // even or odd handedness?
-      double even_odd_product = face_normal(top_face)[spacedim_-1]
-	* face_normal(bot_face)[spacedim_-1];
+      double even_odd_product = face_normal(top_face)[space_dim_-1]
+	* face_normal(bot_face)[space_dim_-1];
       ASSERT(std::abs(even_odd_product) > 0);
       int even_odd = even_odd_product >= 0. ? 1 : -1;
       
@@ -1624,7 +1624,7 @@ int Mesh::build_columns_() const {
 	// node_get_coordinates(botnode, &bc);
 	// node_get_coordinates(topnode, &tc);
 	// double horiz_dist = 0.;
-	// for (int m=0; m!=spacedim_-1; ++m) {
+	// for (int m=0; m!=space_dim_-1; ++m) {
 	//   horiz_dist += std::abs(bc[m]-tc[m]);
 	// }
 	// ASSERT(horz_dist < 1.e-10);

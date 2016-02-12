@@ -334,7 +334,7 @@ public:
 
     int serial_run;
 
-    int spacedim_;
+    int space_dim_;
     int celldim; // Topological dimension of highest level entities
     int facedim; // Topological dimension of 2nd highest level entities
 

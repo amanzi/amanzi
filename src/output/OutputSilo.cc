@@ -34,7 +34,7 @@ OutputSilo::OutputSilo(Teuchos::ParameterList& plist,
     Errors::Message msg("OutputSilo does not yet support parallel runs.");
     Exceptions::amanzi_throw(msg);  
   }
-  if (mesh_->vis_mesh().space_dimension() != 3 || mesh_->vis_mesh().cell_dimension() != 3) {
+  if (mesh_->vis_mesh().space_dimension() != 3 || mesh_->vis_mesh().manifold_dimension() != 3) {
     Errors::Message msg("OutputSilo is untested on non-3D meshes.");
     Exceptions::amanzi_throw(msg);  
   }

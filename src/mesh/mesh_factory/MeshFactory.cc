@@ -359,7 +359,7 @@ MeshFactory::create(const Mesh *inmesh,
   ierr[0] = 0;
   aerr[0] = 0;
 
-  int dim = inmesh->cell_dimension();
+  int dim = inmesh->manifold_dimension();
 
   for (FrameworkPreference::const_iterator i = my_preference.begin(); 
        i != my_preference.end(); i++) {

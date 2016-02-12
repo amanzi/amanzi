@@ -94,7 +94,7 @@ namespace AmanziMesh
 
   // Dimension of space, mesh cells, faces etc
     
-  result = mbcore->get_dimension(spacedim_);
+  result = mbcore->get_dimension(space_dim_);
     
 
   // Highest topological dimension
@@ -251,7 +251,7 @@ void Mesh_MOAB::clear_internals_ ()
   sstag = 0;
   nstag = 0;
 
-  spacedim_ = 3;
+  space_dim_ = 3;
   celldim = -1;
   facedim = -1;
 
@@ -1200,7 +1200,7 @@ void Mesh_MOAB::node_get_coordinates (Entity_ID node_id, AmanziGeometry::Point *
     assert(result == MB_SUCCESS);
   }
 
-  ncoord->init(spacedim_);
+  ncoord->init(space_dim_);
   ncoord->set(coords);
 
 }
@@ -1225,7 +1225,7 @@ void Mesh_MOAB::node_set_coordinates(const AmanziMesh::Entity_ID nodeid,
 
   double coordarray[3] = {0.0,0.0,0.0};
 
-  for (int i = 0; i < spacedim_; i++)
+  for (int i = 0; i < space_dim_; i++)
     coordarray[i] = coords[i];
 
   int result = mbcore->set_coords(&v, 1, coordarray);
@@ -1260,7 +1260,7 @@ void Mesh_MOAB::cell_get_coordinates (Entity_ID cellid, std::vector<AmanziGeomet
 
   nn = cell_nodes.size();
 
-  coords = new double[spacedim_];
+  coords = new double[space_dim_];
   
   ccoords->resize(nn);
   std::vector<AmanziGeometry::Point>::iterator it = ccoords->begin();
@@ -1272,7 +1272,7 @@ void Mesh_MOAB::cell_get_coordinates (Entity_ID cellid, std::vector<AmanziGeomet
       assert(result == MB_SUCCESS);
     }
 
-    it->set(spacedim_,coords);
+    it->set(space_dim_,coords);
     ++it;
   }
 
@@ -1301,7 +1301,7 @@ void Mesh_MOAB::face_get_coordinates (Entity_ID faceid, std::vector<AmanziGeomet
 
     nn = face_nodes.size();
 
-    coords = new double[spacedim_];
+    coords = new double[space_dim_];
     
     fcoords->resize(nn);
     std::vector<AmanziGeometry::Point>::iterator it = fcoords->begin();
@@ -1314,7 +1314,7 @@ void Mesh_MOAB::face_get_coordinates (Entity_ID faceid, std::vector<AmanziGeomet
 	  assert(result == MB_SUCCESS);
 	}
 
-        it->set(spacedim_,coords);
+        it->set(space_dim_,coords);
         ++it;
       }
     }
@@ -1326,7 +1326,7 @@ void Mesh_MOAB::face_get_coordinates (Entity_ID faceid, std::vector<AmanziGeomet
 	  assert(result == MB_SUCCESS);
 	}
 
-        it->set(spacedim_,coords);
+        it->set(space_dim_,coords);
         ++it;
       }
     }
@@ -1338,8 +1338,8 @@ void Mesh_MOAB::face_get_coordinates (Entity_ID faceid, std::vector<AmanziGeomet
 MBTag Mesh_MOAB::build_set(const AmanziGeometry::RegionPtr region,
                            const Entity_kind kind) const {
 
-  int celldim = Mesh::cell_dimension();
-  int spacedim_ = Mesh::space_dimension();
+  int celldim = Mesh::manifold_dimension();
+  int space_dim_ = Mesh::space_dimension();
   AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
   int one = 1;
   MBTag tag;
@@ -1367,8 +1367,8 @@ MBTag Mesh_MOAB::build_set(const AmanziGeometry::RegionPtr region,
 
     }
     else if (region->type() == AmanziGeometry::POINT) {
-      AmanziGeometry::Point vpnt(spacedim_);
-      AmanziGeometry::Point rgnpnt(spacedim_);
+      AmanziGeometry::Point vpnt(space_dim_);
+      AmanziGeometry::Point rgnpnt(space_dim_);
 
       mbcore->tag_get_handle(internal_name.c_str(),1,MB_TYPE_INTEGER,tag,
                            MB_TAG_CREAT|MB_TAG_SPARSE);
@@ -1417,7 +1417,7 @@ MBTag Mesh_MOAB::build_set(const AmanziGeometry::RegionPtr region,
         int ncells = num_entities(CELL, USED);              
         for (int ic = 0; ic < ncells; ic++) {
 
-          std::vector<AmanziGeometry::Point> ccoords(spacedim_);
+          std::vector<AmanziGeometry::Point> ccoords(space_dim_);
 
           cell_get_coordinates(ic, &ccoords);
 
@@ -1473,7 +1473,7 @@ MBTag Mesh_MOAB::build_set(const AmanziGeometry::RegionPtr region,
       int nface = num_entities(FACE, USED);
               
       for (int iface = 0; iface < nface; iface++) {
-        std::vector<AmanziGeometry::Point> fcoords(spacedim_);
+        std::vector<AmanziGeometry::Point> fcoords(space_dim_);
             
         face_get_coordinates(iface, &fcoords);
             
@@ -1518,7 +1518,7 @@ MBTag Mesh_MOAB::build_set(const AmanziGeometry::RegionPtr region,
 
       for (int inode = 0; inode < nnode; inode++) {
 
-        AmanziGeometry::Point vpnt(spacedim_);
+        AmanziGeometry::Point vpnt(space_dim_);
         node_get_coordinates(inode, &vpnt);
                   
         if (region->inside(vpnt)) {
@@ -1729,8 +1729,8 @@ void Mesh_MOAB::get_set_entities (const std::string setname,
 
   int idx, i, lid, one=1;
   bool found(false);
-  int celldim = Mesh::cell_dimension();
-  int spacedim_ = Mesh::space_dimension();
+  int celldim = Mesh::manifold_dimension();
+  int space_dim_ = Mesh::space_dimension();
   const Epetra_Comm *epcomm_ = get_comm();
 
   assert(setents != NULL);

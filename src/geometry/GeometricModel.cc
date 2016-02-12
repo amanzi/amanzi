@@ -65,7 +65,7 @@ GeometricModel::AddRegion(const Teuchos::RCP<Region>& reg)
     Exceptions::amanzi_throw(mesg);
   }
 
-  if (dim_ < reg->topological_dimension()) {
+  if (dim_ < reg->manifold_dimension()) {
     Errors::Message mesg;
     mesg << "Dimension of geometric model less than that of region \""
          << reg->name() << "\" topological dimension";

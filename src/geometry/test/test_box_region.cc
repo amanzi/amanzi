@@ -51,7 +51,7 @@ TEST(BOX_REGION_2D)
   CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::BOX);
 
   // Make sure that the region dimension is 2
-  CHECK_EQUAL(reg->topological_dimension(),2);
+  CHECK_EQUAL(reg->manifold_dimension(),2);
   
   // See if the min-max of the region were correctly retrieved
   Amanzi::AmanziGeometry::Point pmin, pmax;
@@ -134,7 +134,7 @@ TEST(BOX_REGION_3D)
   CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::BOX);
 
   // Make sure that the region dimension is 3
-  CHECK_EQUAL(reg->topological_dimension(),3);
+  CHECK_EQUAL(reg->manifold_dimension(),3);
   
   // See if the min-max of the region were correctly retrieved
   Amanzi::AmanziGeometry::Point pmin, pmax;

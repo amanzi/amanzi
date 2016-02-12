@@ -42,10 +42,10 @@ RegionPolygon::RegionPolygon(const std::string& name,
 void RegionPolygon::Init_() {
   int num_points = points_.size();
   
-  if (num_points < topological_dimension()) {
+  if (num_points < manifold_dimension()) {
     Errors::Message mesg;
-    mesg << "Polygons of dimension " << (int) topological_dimension() << 
-      " need to be specified by at least " << (int) topological_dimension() << 
+    mesg << "Polygons of dimension " << (int) manifold_dimension() << 
+      " need to be specified by at least " << (int) manifold_dimension() << 
       " points";
     Exceptions::amanzi_throw(mesg);
   }

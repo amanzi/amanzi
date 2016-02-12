@@ -100,7 +100,7 @@ void Domain::Add_Geometric_Model(const Teuchos::RCP<GeometricModel>& gm)
 
 void Domain::Add_Free_Region(const Teuchos::RCP<Region>& regptr)
 {
-  if (spatial_dimension_ < regptr->topological_dimension()) {
+  if (spatial_dimension_ < regptr->manifold_dimension()) {
     std::cerr << "Spatial dimension of domain is less than that of the free region" << std::endl;
     throw std::exception();
   }

@@ -6,7 +6,7 @@ namespace GMV {
 static inline void write_mesh_to_file_(const AmanziMesh::Mesh &mesh_map, std::string filename)
 {
   int dim = mesh_map.space_dimension();
-  int dim_cell = mesh_map.cell_dimension();
+  int dim_cell = mesh_map.manifold_dimension();
   gmvwrite_openfile_ir_ascii((char*)filename.c_str(), 4, 8);
 
   // Write node info

@@ -32,7 +32,7 @@ ColumnMesh::ColumnMesh (const Mesh& inmesh,
   set_comm(extracted_.get_comm());
   set_geometric_model(extracted_.geometric_model());
   set_space_dimension(3);
-  set_cell_dimension(3);
+  set_manifold_dimension(3);
   
   // compute special geometric quantities for column entities (node
   // coordinates, face centroids, cell centroids, face areas)
@@ -83,10 +83,10 @@ void ColumnMesh::compute_special_node_coordinates_() {
   // Set up the new node coordinates This is done in two passes, which may be
   // unnecessary, but I'm not sure if face_centroid() would break if done in
   // one.
-  int spacedim_ = space_dimension(); // from parent mesh
+  int space_dim_ = space_dimension(); // from parent mesh
   int nfaces = column_faces__.size();
   int nnodes = nfaces*nfnodes_;
-  AmanziGeometry::Point p(spacedim_);
+  AmanziGeometry::Point p(space_dim_);
   std::vector<AmanziGeometry::Point> node_coordinates(nnodes, p);
   
   for (int j=0; j!=nfaces; ++j) {
@@ -101,14 +101,14 @@ void ColumnMesh::compute_special_node_coordinates_() {
     AmanziGeometry::Point fcen = extracted_.face_centroid(column_faces__[j]);
     
     for (int i=0; i!=nfnodes_; ++i) {
-      AmanziGeometry::Point coords(spacedim_);
+      AmanziGeometry::Point coords(space_dim_);
 
       // last coordinate is z-coordinate of face centroid
-      coords[spacedim_-1] = fcen[spacedim_-1];
+      coords[space_dim_-1] = fcen[space_dim_-1];
 
       // remain coordinates are coordinates of the corresponding node on
       // the bottom face
-      for (int d=0; d!=spacedim_-1; ++d) coords[d] = face_coordinates[i][d];
+      for (int d=0; d!=space_dim_-1; ++d) coords[d] = face_coordinates[i][d];
         
       node_coordinates[face_nodes[i]] = coords;
     }

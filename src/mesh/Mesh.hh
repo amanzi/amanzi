@@ -69,8 +69,8 @@ class Mesh
   Mesh(const Teuchos::RCP<const VerboseObject>& vo=Teuchos::null,
        const bool request_faces=true,
        const bool request_edges=false)
-      : spacedim_(-1),
-        topodim_(-1),
+      : space_dim_(-1),
+        manifold_dim_(-1),
         mesh_type_(GENERAL),
         cell_geometry_precomputed_(false),
         face_geometry_precomputed_(false),
@@ -103,18 +103,18 @@ class Mesh
 
   // Set/get the space dimension, geometric dimension
   void set_space_dimension(const unsigned int dim) {
-    spacedim_ = dim;
+    space_dim_ = dim;
   }
   unsigned int space_dimension() const {
-    return spacedim_;
+    return space_dim_;
   }
 
   // Set/get the topological dimension
-  void set_cell_dimension(const unsigned int dim) {
-    topodim_ = dim;   // 3 is solid mesh, 2 is surface mesh
+  void set_manifold_dimension(const unsigned int dim) {
+    manifold_dim_ = dim;   // 3 is solid mesh, 2 is surface mesh
   }
-  unsigned int cell_dimension() const {
-    return topodim_;
+  unsigned int manifold_dimension() const {
+    return manifold_dim_;
   }
 
   // Set/Get geometric model
@@ -746,7 +746,7 @@ class Mesh
 
   Teuchos::RCP<const VerboseObject> vo_;
 
-  unsigned int topodim_, spacedim_;
+  unsigned int manifold_dim_, space_dim_;
 
   // the cache
   // -- geometry

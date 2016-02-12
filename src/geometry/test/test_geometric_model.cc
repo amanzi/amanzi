@@ -102,7 +102,7 @@ TEST(GEOMETRIC_MODEL)
  
       // Make sure that the region dimension is equal to the topological
       // dimension of the box
-      CHECK_EQUAL(reg->topological_dimension(),in_min_xyz.size());
+      CHECK_EQUAL(reg->manifold_dimension(),in_min_xyz.size());
       
       // See if the min-max of the region were correctly retrieved
       Amanzi::AmanziGeometry::Point pmin, pmax;

@@ -42,11 +42,11 @@ class Region {
   virtual ~Region() {}
 
   // Dimension of the subdomain
-  unsigned int topological_dimension() const {
-    return topo_dimension_;
+  unsigned int manifold_dimension() const {
+    return manifold_dimension_;
   }
-  void set_topological_dimension(unsigned int dimension) {
-    topo_dimension_ = dimension;
+  void set_manifold_dimension(unsigned int dimension) {
+    manifold_dimension_ = dimension;
   }
 
   // Dimension of points in the subdomain
@@ -105,7 +105,7 @@ class Region {
       id_(id),
       geometric_(geometric),
       type_(type),
-      topo_dimension_(dim),
+      manifold_dimension_(dim),
       space_dimension_(geom_dim),
       lifecycle_(lifecycle) {}
     
@@ -116,7 +116,7 @@ class Region {
   LifeCycleType lifecycle_;
   
   // Topological dimension of region (0, 1, 2, 3)
-  unsigned int topo_dimension_;
+  unsigned int manifold_dimension_;
   unsigned int space_dimension_;
 
   // Name of identifier

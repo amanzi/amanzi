@@ -812,8 +812,8 @@ Mesh_STK::get_set_entities (const std::string setname,
 
   stk::mesh::Part *part;
 
-  int celldim = cell_dimension();
-  int spacedim_ = space_dimension();
+  int celldim = manifold_dimension();
+  int space_dim_ = space_dimension();
 
   AmanziGeometry::GeometricModelPtr gm = geometric_model();
   AmanziGeometry::RegionPtr rgn = gm->FindRegion(setname);

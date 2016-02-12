@@ -32,7 +32,7 @@ Mesh_simple::Mesh_simple (double x0, double y0, double z0,
   Mesh::set_comm(comm_unicator);
   Mesh::set_mesh_type(RECTANGULAR);
   Mesh::set_space_dimension(3);
-  Mesh::set_cell_dimension(3);
+  Mesh::set_manifold_dimension(3);
   if (gm != Teuchos::null) Mesh::set_geometric_model(gm);
  
   update();
@@ -159,10 +159,10 @@ Mesh_simple::generate_(const GenerationSpec& gspec)
 
   if (nz_ == 0) {
     Mesh::set_space_dimension(2);
-    Mesh::set_cell_dimension(2);
+    Mesh::set_manifold_dimension(2);
   } else {
     Mesh::set_space_dimension(3);
-    Mesh::set_cell_dimension(3);
+    Mesh::set_manifold_dimension(3);
   }
   
   //  std::copy(gspec.block_begin(), gspec.block_end(), 
@@ -919,7 +919,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
               throw std::exception();
             }
           
-          if (rgn->topological_dimension() != Mesh::cell_dimension()-1)
+          if (rgn->manifold_dimension() != Mesh::manifold_dimension()-1)
             {
               std::cerr << "Geometric model does not have a region named" << setname << "with the appropriate dimension" << std::endl;
               std::cerr << "Cannot construct set by this name" << std::endl;
@@ -1159,8 +1159,8 @@ void Mesh_simple::get_set_entities (const std::string setname,
               throw std::exception();
             }
           
-          if (rgn->topological_dimension() > 0 &&
-              rgn->topological_dimension() != Mesh::cell_dimension())
+          if (rgn->manifold_dimension() > 0 &&
+              rgn->manifold_dimension() != Mesh::manifold_dimension())
             {
               std::cerr << "Geometric model does not have a region named" << setname << "with the appropriate dimension" << std::endl;
               std::cerr << "Cannot construct set by this name" << std::endl;

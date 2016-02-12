@@ -102,7 +102,7 @@ TEST(MESH_GEOMETRY_PLANAR)
     int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::USED);
     int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED);
 
-    int spacedim_ = 2;
+    int space_dim_ = 2;
 
     for (int i = 0; i < ncells; i++) {
 
@@ -188,7 +188,7 @@ TEST(MESH_GEOMETRY_PLANAR)
             Amanzi::AmanziGeometry::Point normal1(normal);
             normal1 *= dir;
 
-            CHECK_ARRAY_EQUAL(&(normal1[0]),&(normal_wrt_cell[0]),spacedim_);
+            CHECK_ARRAY_EQUAL(&(normal1[0]),&(normal_wrt_cell[0]),space_dim_);
 
             
             Amanzi::AmanziGeometry::Point cellcentroid = mesh->cell_centroid(cellids[k]);
@@ -299,7 +299,7 @@ TEST(MESH_GEOMETRY_SURFACE)
     int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::USED);
     int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED);
 
-    int spacedim_ = 3;
+    int space_dim_ = 3;
 
     for (int i = 0; i < ncells; i++) {
 
@@ -545,7 +545,7 @@ TEST(MESH_GEOMETRY_SOLID)
     int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::USED);
     int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED);
 
-    int spacedim_ = 3;
+    int space_dim_ = 3;
 
     for (int i = 0; i < ncells; i++) {
 
@@ -633,7 +633,7 @@ TEST(MESH_GEOMETRY_SOLID)
             Amanzi::AmanziGeometry::Point normal1(normal);
             normal1 *= dir;
 
-            CHECK_ARRAY_EQUAL(&(normal1[0]),&(normal_wrt_cell[0]),spacedim_);
+            CHECK_ARRAY_EQUAL(&(normal1[0]),&(normal_wrt_cell[0]),space_dim_);
 
             
             Amanzi::AmanziGeometry::Point cellcentroid = mesh->cell_centroid(cellids[k]);

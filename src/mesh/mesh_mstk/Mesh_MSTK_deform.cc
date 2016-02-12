@@ -43,7 +43,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes__in,
   int idx, id;
   MVertex_ptr mv;
   const int ndim = space_dimension();
-  const int celldim = cell_dimension();
+  const int celldim = manifold_dimension();
   double eps = 1.0e-06;
   double damping_factor = 0.25;
   static const double macheps = 2.2e-16;

@@ -47,7 +47,7 @@ RegionBox::RegionBox(const std::string& name,
   for (int i=0; i!=p0.dim(); ++i)
     if (p0[i] == p1[i]) dim--;
   
-  if (dim < p0.dim()) set_topological_dimension(dim);
+  if (dim < p0.dim()) set_manifold_dimension(dim);
 }
 
 void
