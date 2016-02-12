@@ -59,7 +59,7 @@ class ColumnMesh : public Mesh {
       
   ColumnMesh(const Mesh& inmesh,
              const int column_id, 
-             const VerboseObject *verbosity_obj = (VerboseObject *) NULL);
+             const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null);
 
   ~ColumnMesh ();
   

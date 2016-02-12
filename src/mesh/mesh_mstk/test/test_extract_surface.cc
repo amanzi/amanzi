@@ -47,14 +47,11 @@ TEST(Extract_Surface_MSTK1)
 
 
   //  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
-
-
-  Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get());
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get()));
 
   // Generate a mesh consisting of 3x3x3 elements 
-
   Amanzi::AmanziMesh::Mesh_MSTK mesh(0,0,0,1,1,1,3,3,3,comm.get(),gm);
-
 
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top Surface"));
@@ -100,15 +97,6 @@ TEST(Extract_Surface_MSTK1)
   for (int k = 0; k < ncells_surf; k++)
     CHECK_EQUAL(1,found[k]);
   delete [] found;
-
-  // Once we can make RegionFactory work with reference counted pointers 
-  // we can get rid of this code
-
-  for (int i = 0; i < gm->Num_Regions(); i++)
-    delete (gm->Region_i(i));
-  delete gm;
-
-  
 }
 
 
@@ -140,12 +128,10 @@ TEST(Extract_Surface_MSTK2)
   
 
   //  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
-
-
-  Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get());
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get()));
 
   // Generate a mesh consisting of 3x3x3 elements 
-
   Amanzi::AmanziMesh::Mesh_MSTK mesh(0.0,0.0,0.0,1.0,1.0,1.0,4,4,4,comm.get(),gm);
 
 
@@ -209,15 +195,6 @@ TEST(Extract_Surface_MSTK2)
   for (int k = 0; k < ncells_surf; k++)
     CHECK_EQUAL(1,found[k]);
   delete [] found;
-
-  // Once we can make RegionFactory work with reference counted pointers 
-  // we can get rid of this code
-
-  for (int i = 0; i < gm->Num_Regions(); i++)
-    delete (gm->Region_i(i));
-  delete gm;
-
-  
 }
 
 
@@ -254,15 +231,10 @@ TEST(Extract_Surface_MSTK3)
   side_surface_def.set<std::string>("Format","Exodus II");
   side_surface_def.set<std::string>("Entity","Face");
 
-  
-
-  //  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
-
-
-  Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get());
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get()));
 
   // Read a mesh from the file
-
   Amanzi::AmanziMesh::Mesh_MSTK mesh(filename.c_str(),comm.get(),3,gm);
 
 
@@ -319,16 +291,6 @@ TEST(Extract_Surface_MSTK3)
   CHECK(setents.size() != 0);
 
   // What else can we check about the set entities ?
-
-
-  // Once we can make RegionFactory work with reference counted pointers 
-  // we can get rid of this code
-
-  for (int i = 0; i < gm->Num_Regions(); i++)
-    delete (gm->Region_i(i));
-  delete gm;
-
-  
 }
 
 
@@ -375,20 +337,14 @@ TEST(Extract_Surface_MSTK4)
   top_surface2D_def.set< Teuchos::Array<double> >("Location",loc2);
   top_surface2D_def.set< Teuchos::Array<double> >("Direction",dir2);
 
-  
-  
-
-  //  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
-
-  Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get());
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get()));
 
   // Generate a mesh consisting of 3x3x3 elements 
-
   Amanzi::AmanziMesh::Mesh_MSTK mesh(0.0,0.0,0.0,1.0,1.0,1.0,4,4,4,comm.get(),gm);
 
 
   // Perturb some nodes
-
   int nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
 
   for (int i = 0; i < nv; i++) {
@@ -474,12 +430,4 @@ TEST(Extract_Surface_MSTK4)
     CHECK_CLOSE(exp_centroid[k][1],centroid1[1],1.0e-10);
   } 
 
-  // Once we can make RegionFactory work with reference counted pointers 
-  // we can get rid of this code
-
-  for (int i = 0; i < gm->Num_Regions(); i++)
-    delete (gm->Region_i(i));
-  delete gm;
-
-  
 }

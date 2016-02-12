@@ -1,6 +1,6 @@
 #include "Epetra_IntVector.h"
 
-#include "EnumeratedSetRegion.hh"
+#include "RegionEnumerated.hh"
 #include "MeshEmbeddedLogical.hh"
 
 namespace Amanzi {
@@ -21,12 +21,12 @@ namespace AmanziMesh {
 //                              face_cell_list topology, magnitude
 //                              is area
 MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* incomm,
-		         Teuchos::RCP<Mesh> bg_mesh,
-			 Teuchos::RCP<Mesh> log_mesh,
-			 const std::vector<Entity_ID_List>& face_cell_ids_,
-			 const std::vector<std::vector<double> >& face_cell_lengths_,
-			 const std::vector<AmanziGeometry::Point>& face_area_normals_,
-                         const VerboseObject *verbosity_obj)
+        Teuchos::RCP<Mesh> bg_mesh,
+        Teuchos::RCP<Mesh> log_mesh,
+        const std::vector<Entity_ID_List>& face_cell_ids_,
+        const std::vector<std::vector<double> >& face_cell_lengths_,
+        const std::vector<AmanziGeometry::Point>& face_area_normals_,
+        const Teuchos::RCP<const VerboseObject>& verbosity_obj)
   : Mesh(verbosity_obj),
     bg_mesh_(bg_mesh),
     log_mesh_(log_mesh)
@@ -617,7 +617,8 @@ MeshEmbeddedLogical::get_set_entities (const Set_ID setid,
 			       const Entity_kind kind,
 			       const Parallel_type ptype,
 			       Entity_ID_List *entids) const {
-  AmanziGeometry::RegionPtr rgn = geometric_model_->FindRegion(setid);
+  Teuchos::RCP<const AmanziGeometry::Region> rgn =
+      geometric_model_->FindRegion(setid);
 
   if (rgn->name() == "All" || rgn->name() == "all" || rgn->name() == "ALL") {
     int nent = num_entities(kind, ptype);
@@ -630,7 +631,7 @@ MeshEmbeddedLogical::get_set_entities (const Set_ID setid,
 
   // ASSUMES that logical mesh is EnumeratedSets, bg mesh is all others.
   // This is bad.  --etc
-  if (rgn->type() == AmanziGeometry::ENUMERATEDSET) {
+  if (rgn->type() == AmanziGeometry::ENUMERATED) {
     log_mesh_->get_set_entities(setid, kind, ptype, entids);
   } else {
     bg_mesh_->get_set_entities(setid, kind, ptype, entids);

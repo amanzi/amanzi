@@ -38,34 +38,30 @@ public:
   Mesh_simple (double x0, double y0, double z0,
 	       double x1, double y1, double z1,
 	       int nx, int ny, int nz, const Epetra_MpiComm *communicator,
-	       const AmanziGeometry::GeometricModelPtr gm = 
-               (AmanziGeometry::GeometricModelPtr) NULL,
-               const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+               const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+               const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
 	       const bool request_faces = true,
 	       const bool request_edges = false);
   
   Mesh_simple (double x0, double y0,
 	       double x1, double y1,
 	       int nx, int ny, const Epetra_MpiComm *communicator,
-	       const AmanziGeometry::GeometricModelPtr &gm = 
-               (AmanziGeometry::GeometricModelPtr) NULL,
-               const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+	       const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+               const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
 	       const bool request_faces = true,
 	       const bool request_edges = false);
   
   Mesh_simple ( const GenerationSpec& gspec,
 		const Epetra_MpiComm *communicator,
-                const AmanziGeometry::GeometricModelPtr &gm = 
-                (AmanziGeometry::GeometricModelPtr) NULL,
-                const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+                const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+                const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
 		const bool request_faces = true,
 		const bool request_edges = false);
 
   Mesh_simple ( Teuchos::ParameterList &parameter_list,
 		const Epetra_MpiComm *communicator,
-		const AmanziGeometry::GeometricModelPtr &gm = 
-                (AmanziGeometry::GeometricModelPtr) NULL,
-                const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+                const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+                const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
 		const bool request_faces = true,
 		const bool request_edges = false);
   
@@ -385,10 +381,9 @@ private:
   mutable std::vector<std::vector<Entity_ID> > side_sets_;
   mutable std::vector<std::vector<Entity_ID> > element_blocks_;
   mutable std::vector<std::vector<Entity_ID> > node_sets_;
-  mutable std::vector<AmanziGeometry::RegionPtr> element_block_regions_;
-  mutable std::vector<AmanziGeometry::RegionPtr> side_set_regions_;
-  mutable std::vector<AmanziGeometry::RegionPtr> node_set_regions_;
-
+  mutable std::vector<Teuchos::RCP<const AmanziGeometry::Region> > element_block_regions_;
+  mutable std::vector<Teuchos::RCP<const AmanziGeometry::Region> > side_set_regions_;
+  mutable std::vector<Teuchos::RCP<const AmanziGeometry::Region> > node_set_regions_;
 
   // Get faces of a cell.
 

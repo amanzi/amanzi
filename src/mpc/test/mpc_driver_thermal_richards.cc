@@ -41,7 +41,8 @@ using namespace Amanzi::AmanziGeometry;
   
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, &comm));
 
   // create mesh
   FrameworkPreference pref;

@@ -55,7 +55,7 @@ class MeshLogical : public Mesh {
               const std::vector<std::vector<double> >& face_cell_lengths,
               const std::vector<AmanziGeometry::Point>& face_area_normals,
               const std::vector<AmanziGeometry::Point>* cell_centroids=NULL,
-              const VerboseObject *verbosity_obj=NULL);
+              const Teuchos::RCP<const VerboseObject>& verbosity_obj=Teuchos::null);
 
   // testing purposes
   bool operator==(const MeshLogical& other);

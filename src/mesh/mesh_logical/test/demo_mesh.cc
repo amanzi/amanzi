@@ -27,7 +27,7 @@ demoMeshLogicalSegmentRegularManual()
   const int nproc(comm.NumProc());
   const int me(comm.MyPID());
 
-  GeometricModelPtr gm = new GeometricModel(3);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
   
   // Create the mesh:
   std::vector<double> cell_volumes;
@@ -79,7 +79,7 @@ demoMeshLogicalSegmentRegular() {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
 
-  GeometricModelPtr gm = new GeometricModel(3);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
   MeshLogicalFactory fac(&comm, gm);
 
   Entity_ID_List cells, faces;
@@ -99,7 +99,7 @@ demoMeshLogicalSegmentIrregularManual() {
   const int nproc(comm.NumProc());
   const int me(comm.MyPID());
 
-  GeometricModelPtr gm = new GeometricModel(3);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
   
   // Create the mesh:
   std::vector<double> cell_volumes;
@@ -151,7 +151,7 @@ demoMeshLogicalYManual() {
   const int nproc(comm.NumProc());
   const int me(comm.MyPID());
 
-  GeometricModelPtr gm = new GeometricModel(3);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
 
   std::vector<double> cell_vols;
   std::vector<std::vector<Entity_ID> > face_cells;
@@ -301,17 +301,17 @@ demoMeshLogicalYManual() {
   // -- coarse roots
   Entity_ID_List coarse_cells;
   for (int lcv=0; lcv!=3; ++lcv) coarse_cells.push_back(lcv);
-  AmanziGeometry::EnumeratedSetRegionPtr coarse_rgn =
-    new AmanziGeometry::EnumeratedSetRegion("coarse_root", gm->Num_Regions(),
-			    "CELL", coarse_cells);
-  gm->Add_Region(coarse_rgn);
+  Teuchos::RCP<AmanziGeometry::RegionEnumerated> coarse_rgn =
+      Teuchos::rcp(new AmanziGeometry::RegionEnumerated("coarse_root",
+              gm->RegionSize(), "CELL", coarse_cells));
+  gm->AddRegion(coarse_rgn);
 
   Entity_ID_List fine_cells;
   for (int lcv=3; lcv!=11; ++lcv) fine_cells.push_back(lcv);
-  AmanziGeometry::EnumeratedSetRegionPtr fine_rgn =
-    new AmanziGeometry::EnumeratedSetRegion("fine_root", gm->Num_Regions(),
-			    "CELL", fine_cells);
-  gm->Add_Region(fine_rgn);
+  Teuchos::RCP<AmanziGeometry::RegionEnumerated> fine_rgn =
+      Teuchos::rcp(new AmanziGeometry::RegionEnumerated("fine_root",
+              gm->RegionSize(), "CELL", fine_cells));
+  gm->AddRegion(fine_rgn);
 
   m->set_geometric_model(gm);
   return m;
@@ -328,7 +328,7 @@ demoMeshLogicalY() {
   const int nproc(comm.NumProc());
   const int me(comm.MyPID());
 
-  GeometricModelPtr gm = new GeometricModel(3);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
 
   MeshLogicalFactory fac(&comm, gm);
 
@@ -418,7 +418,7 @@ demoMeshLogicalYFromXML() {
   const int nproc(comm.NumProc());
   const int me(comm.MyPID());
 
-  GeometricModelPtr gm = new GeometricModel(3);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
   MeshLogicalFactory fac(&comm, gm);
 
   // load the xml
@@ -468,7 +468,7 @@ demoMeshLogicalYEmbedded() {
   Teuchos::RCP<Mesh_MSTK> m_bg =
     Teuchos::rcp(new Mesh_MSTK(X0[0], X0[1],X0[2], X1[0], X1[1], X1[2],
 			       nx, ny, nz, &comm,
-			       m_log->geometric_model(), NULL, true, false));
+            m_log->geometric_model(), Teuchos::null, true, false));
 
 
   // make the new connections, 1 per logical cell

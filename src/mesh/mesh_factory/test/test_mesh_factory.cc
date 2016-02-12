@@ -455,7 +455,8 @@ SUITE (MeshFramework)
     top_surface_def.set< Teuchos::Array<double> >("Location",loc1);
     top_surface_def.set< Teuchos::Array<double> >("Direction",dir1);
 
-    Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3,reg_spec,&comm);
+    Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, &comm));
 
     std::string topsurfname("Top Surface");
     std::vector<std::string> setnames;

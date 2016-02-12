@@ -55,7 +55,8 @@ TEST(SETS) {
 
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
-  Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm);
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm));
 
   // Create a mesh consisting of 3x3x3 elements (4x4x4 nodes)
 
@@ -68,10 +69,10 @@ TEST(SETS) {
     Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
 
     // See if the geometric model has a region by this name
-  
-    Amanzi::AmanziGeometry::RegionPtr reg = gm->FindRegion(reg_name);
+    Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg =
+        gm->FindRegion(reg_name);
 
-    CHECK(reg != NULL);
+    CHECK(reg.get());
 
     // Do their names match ?
 

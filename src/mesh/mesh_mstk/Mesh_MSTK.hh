@@ -4,20 +4,17 @@
 #include <memory>
 #include <vector>
 #include <sstream>
-#include <Epetra_MpiComm.h>
 
-#include <MSTK.h>
+#include "Epetra_MpiComm.h"
+#include "MSTK.h"
 
-#include <Mesh.hh>
-#include <Point.hh>
-#include <GeometricModel.hh>
-#include <LabeledSetRegion.hh>
-#include <PointRegion.hh>
-#include <LogicalRegion.hh>
-#include <GenerationSpec.hh>
-#include <dbc.hh>
-#include <errors.hh>
-#include <VerboseObject.hh>
+#include "Mesh.hh"
+#include "Point.hh"
+#include "GeometricModel.hh"
+#include "GenerationSpec.hh"
+#include "dbc.hh"
+#include "errors.hh"
+#include "VerboseObject.hh"
 
 namespace Amanzi 
 {
@@ -50,18 +47,18 @@ public:
   // blocking the implicit conversion.
   
 
-  Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
-	     const AmanziGeometry::GeometricModelPtr& gm = 
-	     (AmanziGeometry::GeometricModelPtr) NULL,
-             const VerboseObject * verbosity_obj = (VerboseObject *) NULL,
+  Mesh_MSTK (const char *filename,
+             const Epetra_MpiComm *incomm,
+             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	     const bool request_faces = true,
 	     const bool request_edges = false);
 
   Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm, 
              int space_dimension,
-	     const AmanziGeometry::GeometricModelPtr& gm = 
-	     (AmanziGeometry::GeometricModelPtr) NULL,
-             const VerboseObject * verbosity_obj = (VerboseObject *) NULL,
+	     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = 
+             Teuchos::null,
+             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	     const bool request_faces = true,
 	     const bool request_edges = false);
 
@@ -73,9 +70,8 @@ public:
 	    const unsigned int nx, const unsigned int ny, 
             const unsigned int nz, 
             const Epetra_MpiComm *incomm,
-            const AmanziGeometry::GeometricModelPtr& gm = 
-            (AmanziGeometry::GeometricModelPtr) NULL,
-            const VerboseObject * verbosity_obj = (VerboseObject *) NULL,
+            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+            const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
 	    const bool request_edges = false);
 
@@ -85,18 +81,16 @@ public:
 	    const double x1, const double y1,
 	    const int nx, const int ny, 
 	    const Epetra_MpiComm *comm,
-	    const AmanziGeometry::GeometricModelPtr& gm = 
-	    (AmanziGeometry::GeometricModelPtr) NULL,
-             const VerboseObject * verbosity_obj = (VerboseObject *) NULL,
+            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+            const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
 	    const bool request_edges = false);
 
   // Construct a hexahedral mesh from specs 
   Mesh_MSTK(const GenerationSpec& gspec,
 	    const Epetra_MpiComm *comm,
-	    const AmanziGeometry::GeometricModelPtr& gm = 
-	    (AmanziGeometry::GeometricModelPtr) NULL,
-            const VerboseObject * verbosity_obj = (VerboseObject *) NULL,
+            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm =Teuchos::null,
+            const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
 	    const bool request_edges = false);
 
@@ -511,8 +505,7 @@ private:
   double *target_cell_volumes, *min_cell_volumes, *target_weights;
 
   // Teuchos Verbose Object to control how much diagnostic info is printed
-
-  VerboseObject* verbose_obj_;
+  Teuchos::RCP<const VerboseObject> verbose_obj_;
   
   // Private methods
   // ----------------------------
@@ -520,7 +513,7 @@ private:
   void clear_internals_();
 
   void pre_create_steps_(const int space_dimension, const Epetra_MpiComm *incomm, 
-                         const AmanziGeometry::GeometricModelPtr& gm);
+                         const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm);
   void post_create_steps_(const bool request_faces, const bool request_edges);
 
   void collapse_degen_edges();
@@ -553,9 +546,9 @@ private:
 
   void init_set_info();
   void inherit_labeled_sets(MAttrib_ptr copyatt);
-  std::string internal_name_of_set(const AmanziGeometry::RegionPtr region,
+  std::string internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
                                    const Entity_kind entity_kind) const;
-  std::string other_internal_name_of_set(const AmanziGeometry::RegionPtr r,
+  std::string other_internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>& r,
                                          const Entity_kind entity_kind) const;
 
   int  generate_regular_mesh(Mesh_ptr mesh, double x0, double y0, double z0,
@@ -572,7 +565,7 @@ private:
 			 const bool request_faces = true,
 			 const bool request_edges = false);
 
-  MSet_ptr build_set(const AmanziGeometry::RegionPtr region,
+  MSet_ptr build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
                      const Entity_kind kind) const;
 
 

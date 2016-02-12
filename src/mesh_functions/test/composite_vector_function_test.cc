@@ -29,7 +29,7 @@ struct another_reference_mesh
 {
   Epetra_MpiComm *comm;
   Teuchos::RCP<Mesh> mesh;
-  GeometricModel *gm;
+  Teuchos::RCP<GeometricModel> gm;
   std::string LEFT;
   std::string RIGHT;
   std::string FRONT;
@@ -75,7 +75,7 @@ struct another_reference_mesh
     regions.sublist("DOMAIN").sublist("Region: Box").
       set("Low Coordinate", corner_min).set("High Coordinate", corner_max);
 
-    gm = new GeometricModel(3,regions,comm);
+    gm = Teuchos::rcp(new GeometricModel(3,regions,comm));
     // Create the mesh
     MeshFactory mesh_fact(comm);
     mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2, gm);

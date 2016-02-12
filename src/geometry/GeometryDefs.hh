@@ -12,7 +12,10 @@ namespace Amanzi {
 namespace AmanziGeometry {  
 
 typedef int Entity_ID; 
+typedef std::vector<Entity_ID> Entity_ID_List;
+
 typedef int Set_ID;
+typedef std::vector<Set_ID> Set_ID_List;
 
 typedef enum {
   BOX,

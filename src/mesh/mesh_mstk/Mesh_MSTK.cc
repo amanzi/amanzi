@@ -2,6 +2,14 @@
 
 #include "dbc.hh"
 #include "errors.hh"
+
+#include "Point.hh"
+#include "GeometricModel.hh"
+
+#include "RegionLogical.hh"
+#include "RegionPoint.hh"
+#include "RegionLabeledSet.hh"
+
 #include "Mesh_MSTK.hh"
 
 using namespace std;
@@ -20,8 +28,8 @@ namespace AmanziMesh
 //--------------------------------------
 
 Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
-		      const AmanziGeometry::GeometricModelPtr& gm,
-                      const VerboseObject * verbobj,
+		      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                      const Teuchos::RCP<const VerboseObject>& verbobj,
 		      const bool request_faces,
 		      const bool request_edges) :
   Mesh(verbobj,request_faces,request_edges), 
@@ -39,7 +47,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
   int ok;
 
 #ifdef DEBUG
-  if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+  if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
       *(verbobj->os()) << "Testing Verbosity !!!! - Construct mesh from file" << std::endl;
   }
 #endif
@@ -155,8 +163,8 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
 
 Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm, 
 		      int space_dimension,
-		      const AmanziGeometry::GeometricModelPtr& gm,
-                      const VerboseObject * verbobj,
+		      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                      const Teuchos::RCP<const VerboseObject>& verbobj,
 		      const bool request_faces,
 		      const bool request_edges) :
   Mesh(verbobj,request_faces,request_edges), 
@@ -256,8 +264,8 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 		     const unsigned int nx, const unsigned int ny, 
 		     const unsigned int nz, 
 		     const Epetra_MpiComm *incomm,
-		     const AmanziGeometry::GeometricModelPtr& gm,
-                     const VerboseObject * verbobj,
+		     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                     const Teuchos::RCP<const VerboseObject>& verbobj,
 		     const bool request_faces,
 		     const bool request_edges) :
   Mesh(verbobj,request_faces,request_edges), 
@@ -348,8 +356,8 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 		     const double x1, const double y1,
 		     const int nx, const int ny, 
 		     const Epetra_MpiComm *incomm,
-		     const AmanziGeometry::GeometricModelPtr& gm,
-                     const VerboseObject *verbobj,
+		     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                     const Teuchos::RCP<const VerboseObject>&verbobj,
 		     const bool request_faces,
 		     const bool request_edges) :
   Mesh(verbobj,request_faces,request_edges), 
@@ -451,8 +459,8 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 
 Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
 		     const Epetra_MpiComm *incomm,
-		     const AmanziGeometry::GeometricModelPtr& gm,
-                     const VerboseObject *verbobj,
+		     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                     const Teuchos::RCP<const VerboseObject>&verbobj,
 		     const bool request_faces,
 		     const bool request_edges) :
   Mesh(verbobj,request_faces,request_edges), 
@@ -579,8 +587,8 @@ Mesh_MSTK::Mesh_MSTK (const Mesh *inmesh,
   for (int i = 0; i < setnames.size(); ++i) {
     MSet_ptr mset;
     
-    AmanziGeometry::GeometricModelPtr gm = inmesh->geometric_model();
-    AmanziGeometry::RegionPtr rgn = gm->FindRegion(setnames[i]);
+    Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = inmesh->geometric_model();
+    Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setnames[i]);
 
     // access the set in Amanzi so that the set gets created in 'inmesh'
     // if it already does not exist
@@ -632,8 +640,8 @@ Mesh_MSTK::Mesh_MSTK (const Mesh& inmesh,
   for (int i = 0; i < setnames.size(); ++i) {
     MSet_ptr mset;
     
-    AmanziGeometry::GeometricModelPtr gm = inmesh.geometric_model();
-    AmanziGeometry::RegionPtr rgn = gm->FindRegion(setnames[i]);
+    Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = inmesh.geometric_model();
+    Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setnames[i]);
 
 
     // access the set in Amanzi so that the set gets created in 'inmesh'
@@ -750,15 +758,15 @@ Mesh_MSTK::Mesh_MSTK (const Epetra_MpiComm *comm,
 // indicating which type of entity is in that set
 
 std::string 
-Mesh_MSTK::internal_name_of_set(const AmanziGeometry::RegionPtr r,
+Mesh_MSTK::internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>& r,
                                 const Entity_kind entity_kind) const {
 
   std::string internal_name;
   
   if (r->type() == AmanziGeometry::LABELEDSET) {
     
-    AmanziGeometry::LabeledSetRegionPtr lsrgn = 
-      dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (r);
+    Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+        Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(r);
     std::string label = lsrgn->label();
 
     if (entity_kind == CELL)
@@ -788,15 +796,15 @@ Mesh_MSTK::internal_name_of_set(const AmanziGeometry::RegionPtr r,
 // Labeled Set and entity kind Cell. For everything else return regular name 
 
 std::string 
-Mesh_MSTK::other_internal_name_of_set(const AmanziGeometry::RegionPtr r,
+Mesh_MSTK::other_internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>& r,
                                       const Entity_kind entity_kind) const {
 
   std::string internal_name;
   
   if (r->type() == AmanziGeometry::LABELEDSET && entity_kind == CELL) {
     
-    AmanziGeometry::LabeledSetRegionPtr lsrgn = 
-      dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (r);
+    Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+        Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(r);
     std::string label = lsrgn->label();
 
     internal_name = "elemset_" + label;
@@ -2806,12 +2814,12 @@ void Mesh_MSTK::node_set_coordinates(const AmanziMesh::Entity_ID nodeid,
 }
 
 
-MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
+MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
                               const Entity_kind kind) const {
 
   int celldim = Mesh::cell_dimension();
   int spacedim = Mesh::space_dimension();
-  AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
 
   // Modify region/set name by prefixing it with the type of entity requested
 
@@ -2841,7 +2849,7 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
       AmanziGeometry::Point vpnt(spacedim);
       AmanziGeometry::Point rgnpnt(spacedim);
 
-      rgnpnt = ((AmanziGeometry::PointRegionPtr)region)->point();
+      rgnpnt = Teuchos::rcp_static_cast<const AmanziGeometry::RegionPoint>(region)->point();
         
       int nnode = num_entities(NODE, USED);
       double mindist2 = 1.e+16;
@@ -2906,8 +2914,8 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
     else if (region->type() == AmanziGeometry::LABELEDSET) {
       // Just retrieve and return the set
 
-      AmanziGeometry::LabeledSetRegionPtr lsrgn = 
-        dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (region);
+      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+          Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(region);
       std::string label = lsrgn->label();
       std::string entity_type = lsrgn->entity_str();
 
@@ -2944,11 +2952,11 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
       std::stringstream tempstr;
       tempstr << "Requested CELLS on region " << region->name() << 
           " of type " << region->type() << 
-          " and dimension " << region->dimension() << ".\n" << 
+          " and dimension " << region->topological_dimension() << ".\n" << 
           "This request will result in an empty set";
     
-      const VerboseObject *verbobj = Mesh::verbosity_obj();
-      if (verbobj && verbobj->os_OK(Teuchos::VERB_HIGH)) {
+      Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
+      if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
         *(verbobj->os()) << tempstr;
       }
@@ -2961,7 +2969,7 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
     //
     // Commented out so that we can ask for a face set in a 3D box
     //
-    //          if (region->dimension() != celldim-1) 
+    //          if (region->topological_dimension() != celldim-1) 
     //            {
     //              std::cerr << "No region of dimension " << celldim-1 << " defined in geometric model" << std::endl;
     //              std::cerr << "Cannot construct cell set from region " << setname << std::endl;
@@ -3006,8 +3014,8 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
     else if (region->type() == AmanziGeometry::LABELEDSET) {
       // Just retrieve and return the set
 
-      AmanziGeometry::LabeledSetRegionPtr lsrgn = 
-        dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (region);
+      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+          Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(region);
       std::string label = lsrgn->label();
       std::string entity_type = lsrgn->entity_str();
 
@@ -3025,11 +3033,11 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
       std::stringstream tempstr;
       tempstr << "Requested FACES on region " << region->name() << 
           " of type " << region->type() << " and dimension " << 
-          region->dimension() << ".\n" << 
+          region->topological_dimension() << ".\n" << 
           "This request will result in an empty set";
     
-      const VerboseObject *verbobj = Mesh::verbosity_obj();
-      if (verbobj && verbobj->os_OK(Teuchos::VERB_HIGH)) {
+      Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
+      if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
         *(verbobj->os()) << tempstr;
       }
@@ -3065,8 +3073,8 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
     else if (region->type() == AmanziGeometry::LABELEDSET) {
       // Just retrieve and return the set
 
-      AmanziGeometry::LabeledSetRegionPtr lsrgn = 
-        dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (region);
+      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+          Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(region);
       std::string label = lsrgn->label();
       std::string entity_type = lsrgn->entity_str();
 
@@ -3084,11 +3092,11 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
       std::stringstream tempstr;
       tempstr << "Requested POINTS on region " << region->name() << 
           " of type " << region->type() << " and dimension " << 
-          region->dimension() << ".\n" << 
+          region->topological_dimension() << ".\n" << 
           "This request will result in an empty set";
     
-      const VerboseObject *verbobj = Mesh::verbosity_obj();
-      if (verbobj && verbobj->os_OK(Teuchos::VERB_HIGH)) {
+      Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
+      if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
         *(verbobj->os()) << tempstr;
       }
@@ -3102,19 +3110,21 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
 
 
   if (region->type() == AmanziGeometry::LOGICAL) {
-    AmanziGeometry::LogicalRegionPtr boolregion = (AmanziGeometry::LogicalRegionPtr) region;
-    std::vector<std::string> region_names = boolregion->component_regions();
+    Teuchos::RCP<const AmanziGeometry::RegionLogical> boolregion =
+        Teuchos::rcp_static_cast<const AmanziGeometry::RegionLogical>(region);
+    const std::vector<const std::string>& region_names =
+        boolregion->component_regions();
     int nreg = region_names.size();
     
     std::vector<MSet_ptr> msets;
-    std::vector<AmanziGeometry::RegionPtr> regions;
+    std::vector<Teuchos::RCP<const AmanziGeometry::Region> > regions;
     
     for (int r = 0; r < nreg; r++) {
-      AmanziGeometry::RegionPtr rgn1 = gm->FindRegion(region_names[r]);
+      Teuchos::RCP<const AmanziGeometry::Region> rgn1 = gm->FindRegion(region_names[r]);
       regions.push_back(rgn1);
 
       // Did not find the region
-      if (rgn1 == NULL) {
+      if (rgn1 == Teuchos::null) {
         std::stringstream mesg_stream;
         mesg_stream << "Geometric model has no region named " << 
           region_names[r];
@@ -3171,6 +3181,8 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
         while ((mv = MESH_Next_Vertex(mesh,&idx))) 
           if (!MEnt_IsMarked(mv,mkid))
             MSet_Add(mset,mv);
+        break;
+      default:
         break;
       }
       
@@ -3287,21 +3299,21 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
   int celldim = Mesh::cell_dimension();
   int spacedim = Mesh::space_dimension();
   const Epetra_Comm *epcomm = get_comm();
-  const VerboseObject *verbobj = verbosity_obj();
+  Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
 
   assert(setents != NULL);
   
   setents->clear();
 
-  AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
 
   // Is there an appropriate region by this name?
 
-  AmanziGeometry::RegionPtr rgn = gm->FindRegion(setname);
+  Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setname);
 
   // Did not find the region
   
-  if (rgn == NULL) {
+  if (rgn == Teuchos::null) {
     std::stringstream mesg_stream;
     mesg_stream << "Geometric model has no region named " << setname;
     Errors::Message mesg(mesg_stream.str());
@@ -3316,7 +3328,8 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
   
   if (rgn->type() == AmanziGeometry::LABELEDSET)
     {
-      AmanziGeometry::LabeledSetRegionPtr lsrgn = dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
+      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+          Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
       std::string label = lsrgn->label();
       std::string entity_type = lsrgn->entity_str();
 
@@ -3324,7 +3337,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
           (kind == FACE && entity_type != "FACE") ||
           (kind == NODE && entity_type != "NODE"))
         {
-          if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+          if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
             *(verbobj->os()) << "Found labeled set region named " << setname << " but it contains entities of type " << entity_type << ", not the requested type";
           }
         } 
@@ -3395,7 +3408,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
           idx = 0;
           while ((mset1 = MESH_Next_MSet(mesh,&idx))) 
             {
-              Mstd::string(mset1,setname1);
+              MSet_Name(mset1,setname1);
               
               if (MSet_EntDim(mset1) == entdim &&
                   strcmp(setname1,internal_name.c_str()) == 0)
@@ -3501,13 +3514,13 @@ void Mesh_MSTK::get_set_entities (const Set_ID setid,
 				  const Parallel_type ptype, 
 				  std::vector<Entity_ID> *setents) const 
 {
-  AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
-  AmanziGeometry::RegionPtr rgn = gm->FindRegion(setid);
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
+  Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setid);
 
   std::cerr << "DEPRECATED METHOD!" << std::endl;
   std::cerr << "Call get_set_entities with setname instead of setid" << std::endl;
 
-  if (!rgn)
+  if (rgn == Teuchos::null)
     {
       std::cerr << "No region with id" << setid << std::endl;
     }
@@ -3965,7 +3978,7 @@ void Mesh_MSTK::post_create_steps_(const bool request_faces,
   if (request_faces) init_faces();
   init_cells();
 
-  if (Mesh::geometric_model() != NULL)
+  if (Mesh::geometric_model() != Teuchos::null)
     init_set_info();
 
 }
@@ -4590,24 +4603,24 @@ void Mesh_MSTK::init_set_info() {
   MSet_ptr mset;
   char setname[256];
   
-  AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
 
-  if (gm == NULL) { 
+  if (gm == Teuchos::null) { 
     Errors::Message mesg("Need region definitions to initialize sets");
     amanzi_throw(mesg);
   }
     
 
-  unsigned int ngr = gm->Num_Regions();
+  unsigned int ngr = gm->RegionSize();
 
   for (int i = 0; i < ngr; ++i) {
-    AmanziGeometry::RegionPtr rgn = gm->Region_i(i);
+    Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(i);
 
     MType entdim;
     if (rgn->type() == AmanziGeometry::LABELEDSET) {
 
-      AmanziGeometry::LabeledSetRegionPtr lsrgn =
-        dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
+      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+          Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
 
       std::string internal_name;
       std::string label = lsrgn->label();
@@ -5492,7 +5505,7 @@ int Mesh_MSTK::generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
 
 void Mesh_MSTK::pre_create_steps_(const int space_dimension, 
                                   const Epetra_MpiComm *comm, 
-                                  const AmanziGeometry::GeometricModelPtr& gm) 
+                                  const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm) 
 {
   clear_internals_();
 
@@ -5533,9 +5546,9 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt) {
   MSet_ptr mset;
   char setname[256];
   
-  AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
 
-  if (gm == NULL) { 
+  if (gm == Teuchos::null) { 
     std::cerr << "Need region definitions to initialize sets" << std::endl;
     return;
   }
@@ -5551,17 +5564,17 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt) {
     amanzi_throw(mesg);
   }
     
-  unsigned int ngr = gm->Num_Regions();
+  unsigned int ngr = gm->RegionSize();
 
   for (int i = 0; i < ngr; ++i) {
-    AmanziGeometry::RegionPtr rgn = gm->Region_i(i);
+    Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(i);
 
     if (rgn->type() == AmanziGeometry::LABELEDSET) {
 
       // Get the set from the parent mesh
 
-      AmanziGeometry::LabeledSetRegionPtr lsrgn =
-        dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
+      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+          Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
 
       std::string internal_name;
       std::string label = lsrgn->label();

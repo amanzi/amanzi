@@ -54,13 +54,13 @@ class MeshFactory {
   /// Object encoding the level of verbosity and output stream for
   /// diagnostic messages
 
-  const VerboseObject *verbosity_obj;
+  Teuchos::RCP<const VerboseObject> verbosity_obj;
 
  public:
 
   /// Default constructor.
   explicit MeshFactory(const Epetra_MpiComm *communicator, 
-                       const VerboseObject *meshverbobj = NULL);
+                       const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null);
 
   /// Destructor
   ~MeshFactory(void);
@@ -74,8 +74,7 @@ class MeshFactory {
 
   /// Create a mesh by reading the specified file (or set of files)
   Teuchos::RCP<Mesh> create(const std::string& filename, 
-                            const AmanziGeometry::GeometricModelPtr &gm = 
-                            (AmanziGeometry::GeometricModelPtr) NULL,
+                            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null, 
                             const bool request_faces = true,
                             const bool request_edges = false);
 
@@ -84,8 +83,7 @@ class MeshFactory {
   Teuchos::RCP<Mesh> create(double x0, double y0, double z0,
                             double x1, double y1, double z1,
                             int nx, int ny, int nz, 
-                            const AmanziGeometry::GeometricModelPtr &gm = 
-                            (AmanziGeometry::GeometricModelPtr) NULL,
+                            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null, 
                             const bool request_faces = true,
                             const bool request_edges = false);
 
@@ -94,16 +92,14 @@ class MeshFactory {
   Teuchos::RCP<Mesh> create(double x0, double y0,
                             double x1, double y1,
                             int nx, int ny,
-                            const AmanziGeometry::GeometricModelPtr &gm = 
-                            (AmanziGeometry::GeometricModelPtr) NULL,
+                            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null, 
                             const bool request_faces = true,
                             const bool request_edges = false);
 
     
   /// Create a quadrilateral/hexahedral mesh using the specified parameter list
   Teuchos::RCP<Mesh> create(Teuchos::ParameterList &parameter_list, 
-                            const AmanziGeometry::GeometricModelPtr &gm = 
-                            (AmanziGeometry::GeometricModelPtr) NULL,
+                            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null, 
                             const bool request_faces = true,
                             const bool request_edges = false);
 
@@ -119,8 +115,7 @@ class MeshFactory {
 
   /// Create a mesh by reading the specified file (or set of files) -- operator
   Teuchos::RCP<Mesh> operator() (const std::string& filename, 
-                                 const AmanziGeometry::GeometricModelPtr &gm = 
-                                 (AmanziGeometry::GeometricModelPtr) NULL,
+                                 const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null, 
                                  const bool request_faces = true,
                                  const bool request_edges = false) {
 
@@ -131,8 +126,7 @@ class MeshFactory {
   Teuchos::RCP<Mesh> operator() (double x0, double y0, double z0,
                                  double x1, double y1, double z1,
                                  int nx, int ny, int nz, 
-                                 const AmanziGeometry::GeometricModelPtr &gm = 
-                                 (AmanziGeometry::GeometricModelPtr) NULL,
+                                 const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null, 
                                  const bool request_faces = true,
                                  const bool request_edges = false) {
 
@@ -144,8 +138,7 @@ class MeshFactory {
   Teuchos::RCP<Mesh> operator() (double x0, double y0,
                                  double x1, double y1,
                                  int nx, int ny,
-                                 const AmanziGeometry::GeometricModelPtr &gm = 
-                                 (AmanziGeometry::GeometricModelPtr) NULL,
+                                 const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null, 
                                  const bool request_faces = true,
                                  const bool request_edges = false)  {
  
@@ -154,8 +147,7 @@ class MeshFactory {
 
   /// Create a quadrilateral/hexahedral mesh using the specified parameter list
   Teuchos::RCP<Mesh> operator() (Teuchos::ParameterList &parameter_list, 
-                                 const AmanziGeometry::GeometricModelPtr &gm = 
-                                 (AmanziGeometry::GeometricModelPtr) NULL,
+                                 const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null, 
                                  const bool request_faces = true,
                                  const bool request_edges = false) {
 

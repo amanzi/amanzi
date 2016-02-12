@@ -3,7 +3,7 @@
 #include "Geometry.hh"
 #include "dbc.hh"
 #include "errors.hh"
-
+#include "RegionLabeledSet.hh"
 
 #include "Mesh.hh"
 
@@ -528,7 +528,7 @@ int Mesh::compute_cell_geometry(const Entity_ID cellid, double *volume,
 				AmanziGeometry::Point *centroid) const {
 
 
-  if (celldim == 3) {
+  if (topodim == 3) {
 
     // 3D Elements with possibly curved faces
     // We have to build a description of the element topology
@@ -599,7 +599,7 @@ int Mesh::compute_cell_geometry(const Entity_ID cellid, double *volume,
 
     return 1;
   }
-  else if (celldim == 2) {
+  else if (topodim == 2) {
 
     std::vector<AmanziGeometry::Point> ccoords;
 
@@ -627,7 +627,7 @@ int Mesh::compute_face_geometry(const Entity_ID faceid, double *area,
   (*normal0).set(0.0L);
   (*normal1).set(0.0L);
 
-  if (celldim == 3) {
+  if (topodim == 3) {
 
     // 3D Elements with possibly curved faces
     // We have to build a description of the element topology
@@ -668,7 +668,7 @@ int Mesh::compute_face_geometry(const Entity_ID faceid, double *area,
 
     return 1;
   }
-  else if (celldim == 2) {
+  else if (topodim == 2) {
 
     if (spacedim == 2) {   // 2D mesh
 
@@ -1044,11 +1044,11 @@ AmanziGeometry::Point Mesh::edge_vector (const Entity_ID edgeid,
 
 Set_ID Mesh::set_id_from_name(const std::string setname) const
 {
-  if (!geometric_model_) return 0;
+  if (!geometric_model_.get()) return 0;
 
-  unsigned int ngr = geometric_model_->Num_Regions();
+  unsigned int ngr = geometric_model_->RegionSize();
   for (int i = 0; i < ngr; i++) {
-    AmanziGeometry::RegionPtr rgn = geometric_model_->Region_i(i);
+    Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(i);
 
     if (rgn->name() == setname)
       return rgn->id();
@@ -1063,11 +1063,11 @@ std::string Mesh::set_name_from_id(const int setid) const
 {
   std::string nullname("");
 
-  if (!geometric_model_) return nullname;
+  if (!geometric_model_.get()) return nullname;
 
-  unsigned int ngr = geometric_model_->Num_Regions();
+  unsigned int ngr = geometric_model_->RegionSize();
   for (int i = 0; i < ngr; i++) {
-    AmanziGeometry::RegionPtr rgn = geometric_model_->Region_i(i);
+    Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(i);
 
     if (rgn->id() == setid)
       return rgn->name();
@@ -1083,15 +1083,13 @@ std::string Mesh::set_name_from_id(const int setid) const
 bool Mesh::valid_set_id(Set_ID id, Entity_kind kind) const
 {
 
-  if (!geometric_model_) return false;
+  if (!geometric_model_.get()) return false;
 
-  unsigned int gdim = geometric_model_->dimension();
-
-  unsigned int ngr = geometric_model_->Num_Regions();
+  unsigned int ngr = geometric_model_->RegionSize();
   for (int i = 0; i < ngr; i++) {
-    AmanziGeometry::RegionPtr rgn = geometric_model_->Region_i(i);
+    Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(i);
 
-    unsigned int rdim = rgn->dimension();
+    unsigned int rdim = rgn->topological_dimension();
 
     if (rgn->id() == id) {
 
@@ -1104,12 +1102,12 @@ bool Mesh::valid_set_id(Set_ID id, Entity_kind kind) const
       // If we are looking for a cell set the region has to be
       // of the same topological dimension as the cells
 
-      if (kind == CELL && rdim == celldim) return true;
+      if (kind == CELL && rdim == topodim) return true;
 
       // If we are looking for a side set, the region has to be
       // one topological dimension less than the cells
 
-      if (kind == FACE && rdim == celldim-1) return true;
+      if (kind == FACE && rdim == topodim-1) return true;
 
       // If we are looking for a node set, the region can be of any
       // dimension upto the spatial dimension of the domain
@@ -1129,18 +1127,16 @@ bool Mesh::valid_set_id(Set_ID id, Entity_kind kind) const
 bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
 {
 
-  if (!geometric_model_) {
+  if (!geometric_model_.get()) {
     Errors::Message mesg("Mesh sets not enabled because mesh was created without reference to a geometric model");
     amanzi_throw(mesg);
   }
 
-  unsigned int gdim = geometric_model_->dimension();
-
-  unsigned int ngr = geometric_model_->Num_Regions();
+  unsigned int ngr = geometric_model_->RegionSize();
   for (int i = 0; i < ngr; i++) {
-    AmanziGeometry::RegionPtr rgn = geometric_model_->Region_i(i);
+    Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(i);
 
-    unsigned int rdim = rgn->dimension();
+    unsigned int rdim = rgn->topological_dimension();
 
     if (rgn->name() == name) {
 
@@ -1152,7 +1148,8 @@ bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
       // For regions of type Labeled set, extract some more info and verify
 
       if (rgn->type() == AmanziGeometry::LABELEDSET) {
-        AmanziGeometry::LabeledSetRegionPtr lsrgn = dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
+        Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+            Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
         std::string entity_type = lsrgn->entity_str();
         
         if ((kind == CELL && entity_type == "CELL") ||
@@ -1167,13 +1164,12 @@ bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
       // If we are looking for a cell set the region has to be
       // of the same topological dimension as the cells or it
       // has to be a point region
-
-      if (kind == CELL && (rdim >= celldim || rdim == 0)) return true;
+      if (kind == CELL && (rdim >= topodim || rdim == 1 || rdim == 0)) return true;
 
       // If we are looking for a side set, the region has to be
       // one topological dimension less than the cells
 
-      if (kind == FACE && rdim >= celldim-1) return true;
+      if (kind == FACE && rdim >= topodim-1) return true;
 
       // If we are looking for a node set, the region can be of any
       // dimension upto the spatial dimension of the domain
@@ -1191,7 +1187,7 @@ bool Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid)
 {
   std::vector<AmanziGeometry::Point> ccoords;
 
-  if (celldim == 3) {
+  if (topodim == 3) {
 
     // 3D Elements with possibly curved faces
     // We have to build a description of the element topology
@@ -1230,7 +1226,7 @@ bool Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid)
     return AmanziGeometry::point_in_polyhed(p,ccoords,nf,nfnodes,cfcoords);
 
   }
-  else if (celldim == 2) {
+  else if (topodim == 2) {
 
     cell_get_coordinates(cellid,&ccoords);
 

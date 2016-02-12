@@ -63,7 +63,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 20, 20, NULL);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 20, 20, Teuchos::null);
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion tensor

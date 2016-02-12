@@ -55,14 +55,16 @@ namespace mpl = boost::mpl;
  * is used, but not available, or is available, but misused.
  * 
  */
+namespace Amanzi {
+namespace AmanziMesh {
 
 class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
  public:
   
   /// Default constructor.
   bogus_mesh(const char *filename, const Epetra_MpiComm *c,
-             const Amanzi::AmanziGeometry::GeometricModelPtr& gm,
-             const Amanzi::VerboseObject *verbobj,
+             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+             const Teuchos::RCP<const VerboseObject>& verbobj,
              const bool request_faces, const bool request_edges) 
     : Mesh(verbobj,request_faces,request_edges), bogus_map_(NULL) 
   {
@@ -70,8 +72,8 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
   }
   
   bogus_mesh(const char *filename, const Epetra_MpiComm *c, int dim,
-             const Amanzi::AmanziGeometry::GeometricModelPtr& gm,
-             const Amanzi::VerboseObject *verbobj,
+             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+             const Teuchos::RCP<const VerboseObject>& verbobj,
              const bool request_faces, const bool request_edges) 
     : Mesh(verbobj,request_faces,request_edges), bogus_map_(NULL) 
   {
@@ -82,8 +84,8 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
 	     double x1, double y1, double z1,
 	     int nx, int ny, int nz, 
 	     const Epetra_MpiComm *communicator,
-             const Amanzi::AmanziGeometry::GeometricModelPtr& gm,
-             const Amanzi::VerboseObject *verbobj,
+             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+             const Teuchos::RCP<const VerboseObject>& verbobj,
              const bool request_faces, const bool request_edges)
     : Mesh(verbobj,request_faces,request_edges), bogus_map_(NULL) 
   {
@@ -94,8 +96,8 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
 	     double x1, double y1,
 	     int nx, int ny,
 	     const Epetra_MpiComm *communicator,
-             const Amanzi::AmanziGeometry::GeometricModelPtr& gm,
-             const Amanzi::VerboseObject *verbobj,
+             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+             const Teuchos::RCP<const VerboseObject>& verbobj,
              const bool request_faces, const bool request_edges)
     : Mesh(verbobj,request_faces,request_edges), bogus_map_(NULL) 
   {
@@ -104,8 +106,8 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
 
   bogus_mesh(const Amanzi::AmanziMesh::GenerationSpec& gspec, 
              const Epetra_MpiComm *communicator,
-             const Amanzi::AmanziGeometry::GeometricModelPtr& gm,
-             const Amanzi::VerboseObject *verbobj,
+             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+             const Teuchos::RCP<const VerboseObject>& verbobj,
              const bool request_faces, const bool request_edges)
     : Mesh(verbobj,request_faces,request_edges), bogus_map_(NULL) 
   {
@@ -314,6 +316,9 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
 
 };
 
+} // namespace
+} // namespace
+
 
 // Here, and in the Mesh::Framework unit test are hopefully the only
 // places where there has to be ifdef's for mesh frameworks.
@@ -325,7 +330,7 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
 #undef USE_MPI
 #else
 #define MOAB_FLAG false
-typedef bogus_mesh Mesh_MOAB;
+typedef Amanzi::AmanziMesh::bogus_mesh Mesh_MOAB;
 #endif
 
 #ifdef HAVE_STK_MESH
@@ -333,7 +338,7 @@ typedef bogus_mesh Mesh_MOAB;
 #include "Mesh_STK.hh"
 #else
 #define STK_FLAG false
-typedef bogus_mesh Mesh_STK;
+typedef Amanzi::AmanziMesh::bogus_mesh Mesh_STK;
 #endif
 
 #ifdef HAVE_MSTK_MESH
@@ -341,7 +346,7 @@ typedef bogus_mesh Mesh_STK;
 #include "Mesh_MSTK.hh"
 #else
 #define MSTK_FLAG false
-typedef bogus_mesh Mesh_MSTK;
+typedef Amanzi::AmanziMesh::bogus_mesh Mesh_MSTK;
 #endif
 
 
@@ -485,8 +490,8 @@ struct FrameworkTraits {
   /// Construct a mesh from a Exodus II file or file set
   static Teuchos::RCP<Mesh>
   read(const Epetra_MpiComm *comm, const std::string& fname,
-       const AmanziGeometry::GeometricModelPtr& gm,
-       const VerboseObject *verbobj,
+       const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+       const Teuchos::RCP<const VerboseObject>& verbobj,
        const bool request_faces, 
        const bool request_edges)
   {
@@ -534,8 +539,8 @@ struct FrameworkTraits {
            const double& x1, const double& y1, const double& z1,
            const unsigned int& nx, const unsigned int& ny, const unsigned int& nz, 
            const Epetra_MpiComm *comm,
-           const AmanziGeometry::GeometricModelPtr& gm,
-           const VerboseObject *verbobj, 
+           const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+           const Teuchos::RCP<const VerboseObject>& verbobj,
            const bool request_faces, 
            const bool request_edges)
   {
@@ -553,8 +558,8 @@ struct FrameworkTraits {
            const double& x1, const double& y1,
            const unsigned int& nx, const unsigned int& ny,
            const Epetra_MpiComm *comm,
-           const AmanziGeometry::GeometricModelPtr& gm,
-           const VerboseObject *verbobj, 
+           const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+           const Teuchos::RCP<const VerboseObject>& verbobj,
            const bool request_faces, 
            const bool request_edges)
   {
@@ -568,8 +573,8 @@ struct FrameworkTraits {
   /// Generate a hex mesh from arguments sent in through a parameter list
   static Teuchos::RCP<Mesh>
   generate(Teuchos::ParameterList &parameter_list, const Epetra_MpiComm *comm,
-           const AmanziGeometry::GeometricModelPtr& gm, 
-           const VerboseObject *verbobj,
+           const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+           const Teuchos::RCP<const VerboseObject>& verbobj,
            const bool request_faces, const bool request_edges)
   {
     GenerationSpec gspec(parameter_list);
@@ -770,8 +775,8 @@ framework_reads(const Framework& f, const Format& fmt, const bool& parallel)
 Teuchos::RCP<Mesh> 
 framework_read(const Epetra_MpiComm *comm, const Framework& f, 
                const std::string& fname,
-               const AmanziGeometry::GeometricModelPtr& gm,
-               const VerboseObject *verbobj, 
+               const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+               const Teuchos::RCP<const VerboseObject>& verbobj,
                const bool request_faces, const bool request_edges)
 {
   Teuchos::RCP<Mesh> result;
@@ -875,8 +880,8 @@ framework_generate(const Epetra_MpiComm *comm, const Framework& f,
                    const double& x1, const double& y1, const double& z1,
                    const unsigned int& nx, const unsigned int& ny, 
                    const unsigned int& nz,
-                   const AmanziGeometry::GeometricModelPtr& gm,
-                   const VerboseObject *verbobj,
+                   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                   const Teuchos::RCP<const VerboseObject>& verbobj,
                    const bool request_faces, const bool request_edges)
 {
   Teuchos::RCP<Mesh> result;
@@ -906,7 +911,7 @@ framework_generate(const Epetra_MpiComm *comm, const Framework& f,
                                              request_faces, request_edges);
     break;
   case MSTK:
-    if (verbobj && verbobj->getVerbLevel() >= Teuchos::VERB_LOW)
+    if (verbobj.get() && verbobj->getVerbLevel() >= Teuchos::VERB_LOW)
       *verbobj->os() << "Using MSTK framework to generate mesh" << std::endl;
     result = FrameworkTraits<MSTK>::generate(x0, y0, z0, x1, y1, z1, 
                                              nx, ny, nz, comm,
@@ -931,8 +936,8 @@ framework_generate(const Epetra_MpiComm *comm, const Framework& f,
                    const double& x0, const double& y0,
                    const double& x1, const double& y1,
                    const unsigned int& nx, const unsigned int& ny,
-                   const AmanziGeometry::GeometricModelPtr& gm,
-                   const VerboseObject *verbobj, 
+                   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                   const Teuchos::RCP<const VerboseObject>& verbobj,
                    const bool request_faces, const bool request_edges)
 {
   Teuchos::RCP<Mesh> result;
@@ -978,8 +983,8 @@ framework_generate(const Epetra_MpiComm *comm, const Framework& f,
 Teuchos::RCP<Mesh> 
 framework_generate(const Epetra_MpiComm *comm, const Framework& f, 
                    Teuchos::ParameterList &parameter_list,
-                   const AmanziGeometry::GeometricModelPtr& gm,
-                   const VerboseObject *verbobj,
+                   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                   const Teuchos::RCP<const VerboseObject>& verbobj,
                    const bool request_faces, const bool request_edges)
 {
   Teuchos::RCP<Mesh> result;

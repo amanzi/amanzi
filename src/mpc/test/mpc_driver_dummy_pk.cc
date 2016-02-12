@@ -43,8 +43,8 @@ using namespace std;
   Teuchos::ParameterList reg_params = plist.sublist("Regions");
 
   int spdim = 2;
-  Amanzi::AmanziGeometry::GeometricModelPtr 
-      geom_model_ptr( new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm) );
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model_ptr =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm));
 
   Amanzi::AmanziGeometry::Domain *simdomain_ptr = new Amanzi::AmanziGeometry::Domain(spdim);
 
@@ -56,8 +56,8 @@ using namespace std;
   // get the Mesh sublist
   Teuchos::ParameterList mesh_parameter_list = plist.sublist("Mesh");
 
-  Amanzi::VerboseObject *meshverbobj = 
-    new Amanzi::VerboseObject("Mesh", plist);
+  Teuchos::RCP<Amanzi::VerboseObject> meshverbobj = 
+      Teuchos::rcp(new Amanzi::VerboseObject("Mesh", plist));
 
   // Create a mesh factory for this geometric model
   Amanzi::AmanziMesh::MeshFactory factory(comm,meshverbobj) ;

@@ -22,7 +22,7 @@
 #include "Geometry.hh"
 #include "../Mesh_MSTK.hh"
 #include "../ColumnMesh.hh"
-#include "BoxRegion.hh"
+#include "RegionBox.hh"
 #include "GeometricModel.hh"
 
 
@@ -39,20 +39,22 @@ TEST(COLUMN_MESH_3D)
   int dx = 1.0, dy = 1.0, dz = 1.0;
 
   // create a geometric model with regions
-  Amanzi::AmanziGeometry::GeometricModel gm(3);
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3));
 
   Amanzi::AmanziGeometry::Point p0(3), p1(3);
   p0[2] = 2.5;
   p1[0] = 4.; p1[1] = 4.; p1[2] = 5.;
-  Amanzi::AmanziGeometry::BoxRegion r0("myregion", 0, p0, p1);
-  gm.Add_Region(&r0);
+  Teuchos::RCP<Amanzi::AmanziGeometry::RegionBox> r0 =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::RegionBox("myregion", 0, p0, p1));
+  gm->AddRegion(r0);
   
 
   // Create the mesh
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
       Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,
               lx,ly,lz,nx,ny,nz,
-              &comm, &gm));
+              &comm, gm));
 
   // Perturb the nodes above the base layer just a bit
   int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,

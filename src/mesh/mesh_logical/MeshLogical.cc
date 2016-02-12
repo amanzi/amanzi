@@ -1,4 +1,4 @@
-#include "EnumeratedSetRegion.hh"
+#include "RegionEnumerated.hh"
 #include "MeshLogical.hh"
 
 namespace Amanzi {
@@ -27,7 +27,7 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *incomm,
 			 const std::vector<std::vector<double> >& face_cell_lengths_,
 			 const std::vector<AmanziGeometry::Point>& face_area_normals_,
 			 const std::vector<AmanziGeometry::Point>* cell_centroids_,
-			 const VerboseObject *verbosity_obj)
+             const Teuchos::RCP<const VerboseObject>& verbosity_obj)
   : Mesh(verbosity_obj) {
 
   ASSERT(face_cell_ids_.size() == face_cell_lengths_.size());
@@ -487,7 +487,8 @@ MeshLogical::get_set_entities (const Set_ID setid,
 			       const Entity_kind kind,
 			       const Parallel_type ptype,
 			       Entity_ID_List *entids) const {
-  AmanziGeometry::RegionPtr rgn = geometric_model_->FindRegion(setid);
+  Teuchos::RCP<const AmanziGeometry::Region> rgn =
+      geometric_model_->FindRegion(setid);
 
   if (rgn->name() == "All" || rgn->name() == "all" || rgn->name() == "ALL") {
     int nent = num_entities(kind, ptype);
@@ -498,9 +499,9 @@ MeshLogical::get_set_entities (const Set_ID setid,
     return;
   }
 
-  if (rgn->type() == AmanziGeometry::ENUMERATEDSET) {
-    AmanziGeometry::EnumeratedSetRegionPtr esrgn =
-      dynamic_cast<AmanziGeometry::EnumeratedSetRegionPtr>(rgn);
+  if (rgn->type() == AmanziGeometry::ENUMERATED) {
+    Teuchos::RCP<const AmanziGeometry::RegionEnumerated> esrgn =
+        Teuchos::rcp_static_cast<const AmanziGeometry::RegionEnumerated>(rgn);
 
     if ((esrgn->entity_str() == "CELL" && kind == CELL) ||
 	(esrgn->entity_str() == "FACE" && kind == FACE)) {

@@ -77,14 +77,14 @@ void RunTestUpwind(std::string method) {
 
   // create an SIMPLE mesh framework
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
   pref.push_back(STKMESH);
 
-  VerboseObject* vo = new VerboseObject("dummy", "none");
+  Teuchos::RCP<VerboseObject> vo = Teuchos::rcp(new VerboseObject("dummy", "none"));
   MeshFactory meshfactory(&comm, vo);
   meshfactory.preference(pref);
 

@@ -22,10 +22,10 @@ TEST(Extract_Column_MSTK)
 
   Teuchos::ParameterList reg_spec; // no regions declared here
   
-  Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get());
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get()));
 
   // Generate a mesh consisting of 3x3x3 elements 
-
   Amanzi::AmanziMesh::Mesh_MSTK mesh(0,0,0,1,1,1,3,3,3,comm.get(),gm);
 
   CHECK_EQUAL(9,mesh.num_columns());
@@ -78,13 +78,5 @@ TEST(Extract_Column_MSTK)
     CHECK_EQUAL(cell_list[i], parent_cell);
   }
 
-
-  // Once we can make RegionFactory work with reference counted pointers 
-  // we can get rid of this code
-
-  for (int i = 0; i < gm->Num_Regions(); i++)
-    delete (gm->Region_i(i));
-  delete gm;
-  
 }
 

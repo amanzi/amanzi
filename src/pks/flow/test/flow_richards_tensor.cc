@@ -49,8 +49,9 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   std::string xmlFileName = "test/flow_richards_tensor.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-  ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
+  ParameterList regions_list = plist->get<Teuchos::ParameterList>("Regions");
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm));
 
   FrameworkPreference pref;
   pref.clear();

@@ -31,10 +31,11 @@ namespace AmanziMesh {
 // -------------------------------------------------------------
 // MeshFactory:: constructors / destructor
 // -------------------------------------------------------------
- MeshFactory::MeshFactory(const Epetra_MpiComm *communicator,
-                          const VerboseObject *meshverbobj)
-   : my_comm(communicator), verbosity_obj(meshverbobj),
-     my_preference(default_preference())
+MeshFactory::MeshFactory(const Epetra_MpiComm *communicator,
+                         const Teuchos::RCP<const VerboseObject>& vo)
+  : my_comm(communicator),
+    verbosity_obj(vo),
+    my_preference(default_preference())
 {
   
 }
@@ -86,7 +87,7 @@ MeshFactory::preference(const FrameworkPreference& pref)
  */
 Teuchos::RCP<Mesh> 
 MeshFactory::create(const std::string& filename, 
-                    const AmanziGeometry::GeometricModelPtr &gm,
+                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                     const bool request_faces, 
                     const bool request_edges)
 {
@@ -112,10 +113,6 @@ MeshFactory::create(const std::string& filename,
       try {
         result = framework_read(my_comm, *i, filename, gm, verbosity_obj,
                                 request_faces, request_edges);
-        if (gm && (gm->dimension() != result->space_dimension())) {
-          Errors::Message mesg("Geometric model and mesh dimension do not match");
-          amanzi_throw(mesg);
-        }
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
@@ -158,7 +155,7 @@ Teuchos::RCP<Mesh>
 MeshFactory::create(double x0, double y0, double z0,
                     double x1, double y1, double z1,
                     int nx, int ny, int nz, 
-                    const AmanziGeometry::GeometricModelPtr &gm,
+                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                     const bool request_faces, 
                     const bool request_edges)
 {
@@ -169,11 +166,6 @@ MeshFactory::create(double x0, double y0, double z0,
   aerr[0] = 0;
 
   unsigned int dim = 3;
-
-  if (gm && (gm->dimension() != 3)) {
-    Errors::Message mesg("Geometric model and mesh dimension do not match");
-    amanzi_throw(mesg);
-  }
 
   if (nx <= 0 || ny <= 0 || nz <= 0) {
     ierr[0] += 1;
@@ -238,7 +230,7 @@ Teuchos::RCP<Mesh>
 MeshFactory::create(double x0, double y0,
                     double x1, double y1,
                     int nx, int ny,
-                    const AmanziGeometry::GeometricModelPtr &gm,
+                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                     const bool request_faces, 
                     const bool request_edges)
 {
@@ -249,11 +241,6 @@ MeshFactory::create(double x0, double y0,
   aerr[0] = 0;
 
   unsigned int dim = 2;
-
-  if (gm && (gm->dimension() != 2)) {
-    Errors::Message mesg("Geometric model and mesh dimension do not match");
-    amanzi_throw(mesg);
-  }
 
   if (nx <= 0 || ny <= 0) {
     ierr[0] += 1;
@@ -308,7 +295,7 @@ MeshFactory::create(double x0, double y0,
  */
 Teuchos::RCP<Mesh> 
 MeshFactory::create(Teuchos::ParameterList &parameter_list, 
-                    const AmanziGeometry::GeometricModelPtr &gm,
+                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                     const bool request_faces, 
                     const bool request_edges)
 {
@@ -328,10 +315,6 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list,
         result = framework_generate(my_comm, *i, parameter_list, gm, 
                                     verbosity_obj,
                                     request_faces, request_edges);
-        if (gm && (gm->dimension() != result->space_dimension())) {
-          Errors::Message mesg("Geometric model and mesh dimension do not match");
-          amanzi_throw(mesg);
-        }
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;

@@ -36,8 +36,8 @@ TEST(MSTK_EDGES_2D)
   
   bool request_faces = true, request_edges = true;
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-    mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,2.0,1.0,4,4,comm.get(),NULL,
-					   NULL,request_faces,request_edges));
+    mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,2.0,1.0,4,4,comm.get(),Teuchos::null,
+					   Teuchos::null,request_faces,request_edges));
 
   // Check that we get the expected number of edges
 
@@ -155,7 +155,7 @@ TEST(MSTK_EDGES_3D)
   bool request_faces = true, request_edges = true;
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
     mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,2.0,1.0,4.0,4,4,4,
-					   comm.get(),NULL,NULL,request_faces,
+					   comm.get(),Teuchos::null,Teuchos::null,request_faces,
 					   request_edges));
 
   // How many owned and used edges are there?

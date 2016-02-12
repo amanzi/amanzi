@@ -241,7 +241,7 @@ TEST(SUPERMAP_FROM_COMPOSITEVECTOR) {
 
   // create a mesh 
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();
@@ -284,7 +284,7 @@ TEST(SUPERMAP_FROM_TREEVECTOR) {
 
   // create a mesh 
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();

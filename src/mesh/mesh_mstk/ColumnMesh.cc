@@ -18,8 +18,8 @@ namespace AmanziMesh {
 // -----------------------------------------------------------------------------
 ColumnMesh::ColumnMesh (const Mesh& inmesh,
                         const int column_id, 
-                        const VerboseObject *verbosity_obj) :
-    Mesh(verbosity_obj, true, false),
+                        const Teuchos::RCP<const VerboseObject>& vo) :
+    Mesh(vo, true, false),
     parent_mesh_(inmesh),
     column_id_(column_id),
     extracted_(new Epetra_MpiComm(MPI_COMM_SELF),

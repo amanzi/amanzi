@@ -138,6 +138,10 @@ class Region {
   
 };
 
+
+
+typedef std::vector<Region> RegionVector;
+
 } // namespace AmanziGeometry
 } // namespace Amanzi
 

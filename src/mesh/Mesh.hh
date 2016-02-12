@@ -5,12 +5,16 @@
 #include <Epetra_MpiComm.h>
 #include <Epetra_Import.h>
 
-#include "MeshDefs.hh"
-#include "Cell_topology.hh"
+#include "errors.hh"
+#include "VerboseObject.hh"
+
 #include "Point.hh"
 #include "GeometricModel.hh"
 #include "Region.hh"
-#include "VerboseObject.hh"
+
+#include "MeshDefs.hh"
+#include "Cell_topology.hh"
+
 
 
 #include <map>
@@ -54,7 +58,7 @@ class Mesh
  public:
 
   // constructor
-  Mesh(const Teuchos::RCP<VerboseObject>& vo=Teuchos::null,
+  Mesh(const Teuchos::RCP<const VerboseObject>& vo=Teuchos::null,
        const bool request_faces=true,
        const bool request_edges=false)
     : spacedim(3),
@@ -71,7 +75,7 @@ class Mesh
       cell2edge_info_cached(false),
       face2edge_info_cached(false), 
       comm(NULL),
-      geometric_model_(NULL),
+      geometric_model_(Teuchos::null),
       vo_(vo)
   {}
 
@@ -104,10 +108,10 @@ class Mesh
   }
 
   // Set/Get geometric model
-  void set_geometric_model(const Teuchos::RCP<GeometricModel>& gm) {
+  void set_geometric_model(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm) {
     geometric_model_ = gm;
   }
-  Teuchos::RCP<const GeometricModel> geometric_model() const {
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model() const {
     return geometric_model_;
   }
 
@@ -730,7 +734,7 @@ class Mesh
 
  protected:
 
-  Teuchos::RCP<VerboseObject> vo_;
+  Teuchos::RCP<const VerboseObject> vo_;
 
   unsigned int topodim, spacedim;
 
@@ -760,7 +764,7 @@ class Mesh
     edge_geometry_precomputed;
   mutable bool columns_built;
 
-  Teuchos::RCP<GeometricModel> geometric_model_;
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model_;
 
   const Epetra_MpiComm *comm; // temporary until we get an amanzi communicator
 

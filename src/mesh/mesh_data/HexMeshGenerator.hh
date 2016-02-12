@@ -89,7 +89,7 @@ protected:
   static const unsigned int nvcell;     /**< number of vertexes per cell (8) */
 
   struct Block {                        /**< element block */
-    AmanziGeometry::RegionPtr region;
+    Teuchos::RCP<AmanziGeometry::Region> region;
     std::vector<unsigned int> gidx;
     std::vector<int> connectivity;
   };

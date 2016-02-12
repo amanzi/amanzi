@@ -51,7 +51,8 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
 
   /* create a mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);

@@ -38,7 +38,8 @@ TEST(MSTK_HEX_3x3x3_SETS)
 
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
-  Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get());
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get()));
 
   // Load a mesh consisting of 3x3x3 elements
 
@@ -53,9 +54,10 @@ TEST(MSTK_HEX_3x3x3_SETS)
 
     // See if the geometric model has a region by this name
   
-    Amanzi::AmanziGeometry::RegionPtr reg = gm->FindRegion(reg_name);
+    Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg =
+        gm->FindRegion(reg_name);
 
-    CHECK(reg != NULL);
+    CHECK(reg.get());
 
     // Do their names match ?
 
@@ -349,14 +351,5 @@ TEST(MSTK_HEX_3x3x3_SETS)
       
     }
   }
-
-
-  // Once we can make RegionFactory work with reference counted pointers 
-  // we can get rid of this code
-
-  for (int i = 0; i < gm->Num_Regions(); i++)
-    delete (gm->Region_i(i));
-  delete gm;
-
 }
 

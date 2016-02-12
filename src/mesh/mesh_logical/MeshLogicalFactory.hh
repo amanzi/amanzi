@@ -26,7 +26,7 @@ class MeshLogicalFactory {
   };
   
   MeshLogicalFactory(const Epetra_MpiComm* incomm,
-		     AmanziGeometry::GeometricModelPtr& gm) :
+                     const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm) :
     comm_(incomm),
     gm_(gm),
     centroids_good_(true)
@@ -104,7 +104,7 @@ class MeshLogicalFactory {
   bool centroids_good_;
 
   const Epetra_MpiComm* comm_;
-  AmanziGeometry::GeometricModelPtr gm_;
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm_;
   
 
 };
