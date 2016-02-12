@@ -1,6 +1,6 @@
 // -------------------------------------------------------------
 /**
- * @file   Mesh_common.cc
+ * @file   Mesh_comm_on.cc
  * @author William A. Perkins
  * @date Wed Dec 29 12:12:43 2010
  *
@@ -19,7 +19,7 @@
 #include <stk_mesh/fem/FEMMetaData.hpp>
 
 #include "dbc.hh"
-#include "Mesh_common.hh"
+#include "Mesh_comm_on.hh"
 
 namespace stk {
 namespace mesh {

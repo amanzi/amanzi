@@ -5,7 +5,7 @@ namespace bl = boost::lambda;
 
 #include "Mesh_STK_Impl.hh"
 #include "dbc.hh"
-#include "Mesh_common.hh"
+#include "Mesh_comm_on.hh"
 #include "GeometricModel.hh"
 #include "LabeledSetRegion.hh"
 
@@ -27,14 +27,14 @@ namespace STK {
 // ------------
 
 Mesh_STK_Impl::Mesh_STK_Impl (int space_dimension, 
-                              const Epetra_MpiComm *comm,
+                              const Epetra_MpiComm *comm_,
                               Entity_map* entity_map,
                               stk::mesh::fem::FEMMetaData *meta_data,
                               stk::mesh::BulkData *bulk_data,
                               const Id_map& set_to_part,
                               Vector_field_type &coordinate_field) :
     space_dimension_ (space_dimension),
-    communicator_ (comm),
+    comm_unicator_ (comm_),
     entity_map_ (entity_map),
     meta_data_ (meta_data),
     bulk_data_ (bulk_data),
@@ -158,7 +158,7 @@ void
 Mesh_STK_Impl::element_to_face_dirs(stk::mesh::EntityId element, 
                                     std::vector<int>& dirs) const
 {
-  const int me = communicator_->MyPID();
+  const int me = comm_unicator_->MyPID();
   const int cell_rank = entity_map_->kind_to_rank (CELL);
   const int face_rank = entity_map_->kind_to_rank (FACE);
 
@@ -543,8 +543,8 @@ bool Mesh_STK_Impl::dimension_ok_ ()
 void
 Mesh_STK_Impl::summary(std::ostream& os) const
 {
-  const int nproc(communicator_->NumProc());
-  const int me(communicator_->MyPID());
+  const int nproc(comm_unicator_->NumProc());
+  const int me(comm_unicator_->MyPID());
 
   for (int p = 0; p < nproc; p++) {
     if (p == me) {
@@ -568,7 +568,7 @@ Mesh_STK_Impl::summary(std::ostream& os) const
                        count_entities(Amanzi::AmanziMesh::CELL, USED))
          << std::endl;
     }
-    communicator_->Barrier();
+    comm_unicator_->Barrier();
   }
   
 }

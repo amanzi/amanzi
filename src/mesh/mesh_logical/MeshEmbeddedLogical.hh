@@ -49,7 +49,7 @@ class MeshEmbeddedLogical : public Mesh {
   //                              face, points from cell 1 to 2 in
   //                              face_cell_list topology, magnitude
   //                              is area
-  MeshEmbeddedLogical(const Epetra_MpiComm* incomm,
+  MeshEmbeddedLogical(const Epetra_MpiComm* incomm_,
 		      Teuchos::RCP<Mesh> bg_mesh,
 		      Teuchos::RCP<Mesh> log_mesh,
 		      const std::vector<std::vector<int> >& face_cell_list,
@@ -219,8 +219,8 @@ class MeshEmbeddedLogical : public Mesh {
 
   // deformation not supported
   virtual
-  int deform (const std::vector<double>& target_cell_volumes_in,
-              const std::vector<double>& min_cell_volumes_in,
+  int deform (const std::vector<double>& target_cell_volumes__in,
+              const std::vector<double>& min_cell_volumes__in,
               const Entity_ID_List& fixed_nodes,
               const bool move_vertical);
 
@@ -297,11 +297,11 @@ class MeshEmbeddedLogical : public Mesh {
 
   // individual versions, if recompute is used
   virtual
-  int compute_cell_geometry(const Entity_ID cellid, 
+  int compute_cell_geometry_(const Entity_ID cellid, 
                             double *volume, 
                             AmanziGeometry::Point *centroid) const;
   virtual
-  int compute_face_geometry(const Entity_ID faceid, 
+  int compute_face_geometry_(const Entity_ID faceid, 
                             double *area, 
                             AmanziGeometry::Point *centroid, 
                             AmanziGeometry::Point *normal0,
@@ -309,9 +309,9 @@ class MeshEmbeddedLogical : public Mesh {
 
   // build the cache
   virtual
-  int compute_cell_geometric_quantities() const;
+  int compute_cell_geometric_quantities_() const;
   virtual
-  int compute_face_geometric_quantities() const;
+  int compute_face_geometric_quantities_() const;
   
   // build maps
   void init_maps();
@@ -322,7 +322,7 @@ class MeshEmbeddedLogical : public Mesh {
   // the base class
 
   virtual
-  void cell_get_faces_and_dirs_internal (const Entity_ID cellid,
+  void cell_get_faces_and_dirs_internal_ (const Entity_ID cellid,
                                          Entity_ID_List *faceids,
                                          std::vector<int> *face_dirs,
                                          const bool ordered=false) const;
@@ -331,7 +331,7 @@ class MeshEmbeddedLogical : public Mesh {
   // mesh framework. The results are cached in the base class
   
   virtual
-  void face_get_cells_internal (const Entity_ID faceid,
+  void face_get_cells_internal_ (const Entity_ID faceid,
                                 const Parallel_type ptype,
                                 Entity_ID_List *cellids) const;
 
@@ -340,7 +340,7 @@ class MeshEmbeddedLogical : public Mesh {
   // framework. The results are cached in the base class
 
   virtual
-  void face_get_edges_and_dirs_internal (const Entity_ID faceid,
+  void face_get_edges_and_dirs_internal_ (const Entity_ID faceid,
 					 Entity_ID_List *edgeids,
 					 std::vector<int> *edge_dirs,
 					 const bool ordered=true) const;
@@ -348,25 +348,25 @@ class MeshEmbeddedLogical : public Mesh {
   // edges of a cell - this function is implemented in each mesh
   // framework. The results are cached in the base class. 
   virtual
-  void cell_get_edges_internal (const Entity_ID cellid,
+  void cell_get_edges_internal_ (const Entity_ID cellid,
                                 Entity_ID_List *edgeids) const;
 
   // edges and directions of a 2D cell - this function is implemented
   // in each mesh framework. The results are cached in the base class.
   virtual
-  void cell_2D_get_edges_and_dirs_internal (const Entity_ID cellid,
+  void cell_2D_get_edges_and_dirs_internal_ (const Entity_ID cellid,
                                             Entity_ID_List *edgeids,
                                             std::vector<int> *edge_dirs) const;
 
   // Cache connectivity info.
   virtual
-  void cache_cell2face_info() const; 
+  void cache_cell2face_info_() const; 
   virtual
-  void cache_face2cell_info() const;
+  void cache_face2cell_info_() const;
 
   
   virtual
-  int build_columns() const;
+  int build_columns_() const;
   
 protected:
   bool initialized_;

@@ -55,7 +55,7 @@ Mesh_STK::Mesh_STK(STK::Mesh_STK_Impl_p mesh)
   : mesh_(mesh), 
     map_owned_(), map_used_()
 {
-  Mesh::set_comm(mesh->communicator());
+  Mesh::set_comm(mesh->comm_unicator());
   build_maps_();
 }
 
@@ -276,7 +276,7 @@ Mesh_STK::LID(const Entity_ID& gid, const Entity_kind& kind) const
 // direction as the cell polygon, and -1 otherwise
 
 void 
-Mesh_STK::cell_get_faces_and_dirs_internal (const Entity_ID cellid,
+Mesh_STK::cell_get_faces_and_dirs_internal_ (const Entity_ID cellid,
                                             Entity_ID_List *outfaceids,
                                             std::vector<int> *face_dirs,
 				            const bool ordered) const
@@ -461,7 +461,7 @@ Mesh_STK::node_get_cell_faces(const Entity_ID nodeid,
 // Mesh_STK::face_get_cells
 // -------------------------------------------------------------
 void
-Mesh_STK::face_get_cells_internal(const Entity_ID faceid, 
+Mesh_STK::face_get_cells_internal_(const Entity_ID faceid, 
                                   const Parallel_type ptype,
                                   Entity_ID_List *outcellids) const
 {
@@ -813,7 +813,7 @@ Mesh_STK::get_set_entities (const std::string setname,
   stk::mesh::Part *part;
 
   int celldim = cell_dimension();
-  int spacedim = space_dimension();
+  int spacedim_ = space_dimension();
 
   AmanziGeometry::GeometricModelPtr gm = geometric_model();
   AmanziGeometry::RegionPtr rgn = gm->FindRegion(setname);
@@ -917,8 +917,8 @@ Mesh_STK::get_set_entities (const std::string setname,
   // move_vertical = true, nodes will be allowed to move only in the
   // vertical direction (right now arbitrary node movement is not allowed)
 
-int Mesh_STK::deform(const std::vector<double>& target_cell_volumes_in, 
-                     const std::vector<double>& min_cell_volumes_in, 
+int Mesh_STK::deform(const std::vector<double>& target_cell_volumes__in, 
+                     const std::vector<double>& min_cell_volumes__in, 
                      const Entity_ID_List& fixed_nodes,
                      const bool move_vertical) {
     Errors::Message mesg("deformation not implemented for STK mesh");
@@ -946,7 +946,7 @@ extract_global_ids(const STK::Entity_vector& entities,
 void 
 Mesh_STK::build_maps_ ()
 {
-  const Epetra_Comm *comm = Mesh::get_comm();
+  const Epetra_Comm *comm_ = Mesh::get_comm();
 
   map_owned_.clear();
   map_used_.clear();
@@ -965,7 +965,7 @@ Mesh_STK::build_maps_ ()
     mesh_->get_entities (rank, OWNED, entities);
     extract_global_ids(entities, entity_ids);
 
-    map.reset(new Epetra_Map(-1, entity_ids.size(), &entity_ids[0], ZERO, *comm));
+    map.reset(new Epetra_Map(-1, entity_ids.size(), &entity_ids[0], ZERO, *comm_));
     map_owned_.insert(MapSet::value_type(kind, map));
 
     // Get the collection of "ghost" entities
@@ -976,7 +976,7 @@ Mesh_STK::build_maps_ ()
     std::copy(ghost_entity_ids.begin(), ghost_entity_ids.end(), 
               std::back_inserter(entity_ids));
 
-    map.reset(new Epetra_Map(-1, entity_ids.size(), &entity_ids[0], ZERO, *comm));
+    map.reset(new Epetra_Map(-1, entity_ids.size(), &entity_ids[0], ZERO, *comm_));
     map_used_.insert(MapSet::value_type(kind, map));
   }
 

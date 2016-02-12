@@ -26,7 +26,7 @@ namespace bl = boost::lambda;
 #include "Mesh_STK_factory.hh"
 #include "Element_field_types.hh"
 #include "Cell_type_to_shards.hh"
-#include "Mesh_common.hh"
+#include "Mesh_comm_on.hh"
 #include "stk_mesh_error.hh"
 
 // Trilinos
@@ -40,10 +40,10 @@ namespace Amanzi {
 namespace AmanziMesh {
 namespace STK {
 
-Mesh_STK_factory::Mesh_STK_factory (const Epetra_MpiComm *comm, int bucket_size) 
-  : parallel_machine_ (comm->GetMpiComm()),
+Mesh_STK_factory::Mesh_STK_factory (const Epetra_MpiComm *comm_, int bucket_size) 
+  : parallel_machine_ (comm_->GetMpiComm()),
     bucket_size_ (bucket_size),
-    communicator_ (comm)
+    comm_unicator_ (comm_)
 {  }
 
 /** 
@@ -58,13 +58,13 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data,
 					     const Data::Fields& fields,
 					     const AmanziGeometry::GeometricModelPtr& gm)
 {
-  ASSERT(communicator_->NumProc() == 1);
+  ASSERT(comm_unicator_->NumProc() == 1);
 
   int ncell(data.parameters().num_elements_);
-  Epetra_Map cmap(ncell, 1, *communicator_);
+  Epetra_Map cmap(ncell, 1, *comm_unicator_);
 
   int nvert(data.parameters().num_nodes_);
-  Epetra_Map vmap(nvert, 1, *communicator_);
+  Epetra_Map vmap(nvert, 1, *comm_unicator_);
 
   return build_mesh(data, cmap, vmap, fields, gm);
 }
@@ -120,7 +120,7 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data,
   // allocated in one code block and deleted somewhere else. I
   // wasted too much of my life looking for memory leaks. -WAP
 
-  mesh = new Mesh_STK_Impl (space_dimension, communicator_, entity_map_, 
+  mesh = new Mesh_STK_Impl (space_dimension, comm_unicator_, entity_map_, 
                             meta_data_, bulk_data_,
                             set_to_part_,
                             *(meta_data_->get_field<Vector_field_type> (std::string ("coordinates"))));
@@ -186,7 +186,7 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data,
   if (gm)
     init_extra_parts_from_gm(gm);
 
-  meta_data_->commit ();
+  meta_data_->comm_it ();
 
 }
 
@@ -236,8 +236,8 @@ void Mesh_STK_factory::build_bulk_data_ (const Data::Data& data,
   // and starting global indexes distributed.
     
   int nface_local(count_local_faces_());
-  std::vector<int> nface(communicator_->NumProc(), 0);
-  communicator_->GatherAll(&nface_local, &nface[0], 1);
+  std::vector<int> nface(comm_unicator_->NumProc(), 0);
+  comm_unicator_->GatherAll(&nface_local, &nface[0], 1);
 
   std::vector<int> global_fidx(nface.size() + 1);
   int nface_global(0);
@@ -247,16 +247,16 @@ void Mesh_STK_factory::build_bulk_data_ (const Data::Data& data,
     nface_global += nface[i-1];
   }
 
-  // std::cerr << "Process " << communicator_.MyPID() 
+  // std::cerr << "Process " << comm_unicator_.MyPID() 
   //           << " owns " << nface_local 
   //           << " of " << nface_global 
-  //           << " faces, index " << global_fidx[communicator_.MyPID()]
-  //           << " to "  << global_fidx[communicator_.MyPID()+1] - 1
+  //           << " faces, index " << global_fidx[comm_unicator_.MyPID()]
+  //           << " to "  << global_fidx[comm_unicator_.MyPID()+1] - 1
   //           << std::endl;
   ASSERT((global_fidx.back()-1) == nface_global);
 
   bulk_data_->modification_begin();
-  generate_local_faces_(global_fidx[communicator_->MyPID()], false);
+  generate_local_faces_(global_fidx[comm_unicator_->MyPID()], false);
   bulk_data_->modification_end();
 
   // Put side set faces in the correct parts
@@ -658,7 +658,7 @@ Mesh_STK_factory::declare_face_(stk::mesh::EntityVector& nodes,
 int 
 Mesh_STK_factory::generate_local_faces_(const int& faceidx0, const bool& justcount)
 {      
-  const unsigned int me = communicator_->MyPID();
+  const unsigned int me = comm_unicator_->MyPID();
   int faceidx(faceidx0);
   stk::mesh::Selector owned(meta_data_->locally_owned_part());
 
@@ -790,7 +790,7 @@ Mesh_STK_factory::generate_local_faces_(const int& faceidx0, const bool& justcou
 void
 Mesh_STK_factory::generate_cell_face_relations(void)
 {
-  const unsigned int me = communicator_->MyPID();
+  const unsigned int me = comm_unicator_->MyPID();
   stk::mesh::Selector owned(meta_data_->locally_owned_part());
   stk::mesh::PartVector parts(meta_data_->get_parts());
 
@@ -863,7 +863,7 @@ void Mesh_STK_factory::add_sides_to_part_ (const Data::Side_set& side_set,
                                            stk::mesh::Part &part,
                                            const Epetra_Map& cmap)
 {
-  const unsigned int me(communicator_->MyPID());
+  const unsigned int me(comm_unicator_->MyPID());
 
   // Side set consists of elements (local index) and a local face
   // number. We need to convert these to the unique face indices.
@@ -918,7 +918,7 @@ void Mesh_STK_factory::add_sides_to_part_ (const Data::Side_set& side_set,
  * This routine puts the nodes in the node set in the specified part.
  * Ownership of nodes should be established before this is
  * called. Only those nodes owned by this process are put in the part.
- * See comments for ::add_coordinates_() for an explanation of
+ * See comm_ents for ::add_coordinates_() for an explanation of
  * indexing.
  * 
  * @param node_set 
@@ -929,7 +929,7 @@ void Mesh_STK_factory::add_nodes_to_part_ (const Data::Node_set& node_set,
                                        stk::mesh::Part &part,
                                        const Epetra_Map& vmap)
 {
-  const unsigned int me(communicator_->MyPID());
+  const unsigned int me(comm_unicator_->MyPID());
 
   stk::mesh::PartVector parts_to_add;
   parts_to_add.push_back (&part);

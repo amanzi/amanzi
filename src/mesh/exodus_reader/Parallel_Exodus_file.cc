@@ -40,15 +40,15 @@ namespace Exodus {
  * basename.N.n, where @e N is the total number of processors and @e n
  * is the local processor rank.
  * 
- * @param comm parallel environment
+ * @param comm_ parallel environment
  * @param basename ExodusII file set base name
  */
-Parallel_Exodus_file::Parallel_Exodus_file(const Epetra_Comm& comm, 
+Parallel_Exodus_file::Parallel_Exodus_file(const Epetra_Comm& comm_, 
                                            const std::string& basename)
-  : my_comm(comm.Clone()), my_basename(basename)
+  : my_comm_(comm_.Clone()), my_basename(basename)
 {
-  const int np(my_comm->NumProc());
-  const int me(my_comm->MyPID());
+  const int np(my_comm_->NumProc());
+  const int me(my_comm_->MyPID());
 
   std::string s(my_basename);
 
@@ -77,7 +77,7 @@ Parallel_Exodus_file::Parallel_Exodus_file(const Epetra_Comm& comm,
   }
 
   int gerr(0);
-  my_comm->SumAll(&ierr, &gerr, 1);
+  my_comm_->SumAll(&ierr, &gerr, 1);
 
   if (gerr > 0) {
     Exceptions::amanzi_throw( ex_all );
@@ -102,9 +102,9 @@ Parallel_Exodus_file::read_mesh(void)
   // local block is empty, it will not have a cell type specified, so
   // we need get that from the other processes
 
-  my_comm->Barrier();
-  const int np(my_comm->NumProc());
-  const int me(my_comm->MyPID());
+  my_comm_->Barrier();
+  const int np(my_comm_->NumProc());
+  const int me(my_comm_->MyPID());
 
   std::vector<int> byproc(np);
   int nblk(my_mesh->element_blocks());
@@ -112,12 +112,12 @@ Parallel_Exodus_file::read_mesh(void)
   // check the number of blocks; should be the same on all processes
 
   int ierr(0);
-  my_comm->GatherAll(&nblk, &byproc[0], 1);
+  my_comm_->GatherAll(&nblk, &byproc[0], 1);
   for (int p = 1; p < np; p++) {
     if (byproc[p] != byproc[p-1]) ierr++;
   }
   int aerr(0);
-  my_comm->SumAll(&ierr, &aerr, 1);
+  my_comm_->SumAll(&ierr, &aerr, 1);
 
   if (aerr) {
     std::string msg(my_basename);
@@ -128,7 +128,7 @@ Parallel_Exodus_file::read_mesh(void)
   for (int b = 0; b < nblk; b++) {
     int mytype(my_mesh->element_block(b).element_type());
     std::vector<int> alltype(np, AmanziMesh::CELLTYPE_UNKNOWN);
-    my_comm->GatherAll(&mytype, &alltype[0], 1);
+    my_comm_->GatherAll(&mytype, &alltype[0], 1);
 
     std::vector<int>::iterator junk;
     junk = std::remove(alltype.begin(), alltype.end(),
@@ -173,7 +173,7 @@ Parallel_Exodus_file::read_mesh(void)
     }
   }
 
-  my_comm->SumAll(&ierr, &aerr, 1);
+  my_comm_->SumAll(&ierr, &aerr, 1);
   if (aerr) {
     std::string msg = 
       boost::str(boost::format("%s: element block type errors") % my_basename);
@@ -207,9 +207,9 @@ Parallel_Exodus_file::cellmap(void)
     Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
   }
 
-  my_comm->Barrier();
+  my_comm_->Barrier();
 
-  Teuchos::RCP<Epetra_Map> cmap(new Epetra_Map(-1, myelem, &gids[0], 1, *my_comm));
+  Teuchos::RCP<Epetra_Map> cmap(new Epetra_Map(-1, myelem, &gids[0], 1, *my_comm_));
   
   return cmap;
 }
@@ -238,9 +238,9 @@ Parallel_Exodus_file::vertexmap(void)
     Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
   }
 
-  my_comm->Barrier();
+  my_comm_->Barrier();
 
-  Teuchos::RCP<Epetra_Map> vmap(new Epetra_Map(-1, myvert, &gids[0], 1, *my_comm));
+  Teuchos::RCP<Epetra_Map> vmap(new Epetra_Map(-1, myvert, &gids[0], 1, *my_comm_));
   
   return vmap;
 }

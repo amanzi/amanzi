@@ -30,7 +30,7 @@ namespace bfs = boost::filesystem;
 // -------------------------------------------------------------
 // test_file_path
 // -------------------------------------------------------------
-/// A common way to specify a full path to a test Exodus file
+/// A comm_on way to specify a full path to a test Exodus file
 std::string
 test_file_path(const std::string& fname)
 {

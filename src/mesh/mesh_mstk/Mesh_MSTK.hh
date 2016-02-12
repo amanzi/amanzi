@@ -48,13 +48,13 @@ public:
   
 
   Mesh_MSTK (const char *filename,
-             const Epetra_MpiComm *incomm,
+             const Epetra_MpiComm *incomm_,
              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
              const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	     const bool request_faces = true,
 	     const bool request_edges = false);
 
-  Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm, 
+  Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm_, 
              int space_dimension,
 	     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = 
              Teuchos::null,
@@ -69,7 +69,7 @@ public:
 	    const double x1, const double y1, const double z1,
 	    const unsigned int nx, const unsigned int ny, 
             const unsigned int nz, 
-            const Epetra_MpiComm *incomm,
+            const Epetra_MpiComm *incomm_,
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
@@ -80,7 +80,7 @@ public:
   Mesh_MSTK(const double x0, const double y0,
 	    const double x1, const double y1,
 	    const int nx, const int ny, 
-	    const Epetra_MpiComm *comm,
+	    const Epetra_MpiComm *comm_,
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
@@ -88,7 +88,7 @@ public:
 
   // Construct a hexahedral mesh from specs 
   Mesh_MSTK(const GenerationSpec& gspec,
-	    const Epetra_MpiComm *comm,
+	    const Epetra_MpiComm *comm_,
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm =Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
@@ -126,7 +126,7 @@ public:
 	    const bool request_faces = true,
 	    const bool request_edges = false);
 
-  Mesh_MSTK(const Epetra_MpiComm *comm,
+  Mesh_MSTK(const Epetra_MpiComm *comm_,
             const Mesh& inmesh,
             const Entity_ID_List& entity_ids, 
             const Entity_kind entity_kind,
@@ -368,8 +368,8 @@ public:
   // of different criteria and the '2' constants to influence how tightly
   // the criteria are adhered
 
-  int deform(const std::vector<double>& target_cell_volumes_in, 
-             const std::vector<double>& min_cell_volumes_in, 
+  int deform(const std::vector<double>& target_cell_volumes__in, 
+             const std::vector<double>& min_cell_volumes__in, 
              const Entity_ID_List& fixed_nodes,
              const bool move_vertical) {
 
@@ -380,7 +380,7 @@ public:
     const double quality_func_const1 = 0.0e+0; // ignore quality
     const double quality_func_const2 = 1.0e+0;
 
-    int ierr = deform(target_cell_volumes_in, min_cell_volumes_in, fixed_nodes,
+    int ierr = deform(target_cell_volumes__in, min_cell_volumes__in, fixed_nodes,
                       move_vertical, min_vol_const1, min_vol_const2,
                       target_vol_const1, target_vol_const2, 
                       quality_func_const1, quality_func_const2);
@@ -388,8 +388,8 @@ public:
   }
 
 
-  int deform(const std::vector<double>& target_cell_volumes_in, 
-             const std::vector<double>& min_cell_volumes_in, 
+  int deform(const std::vector<double>& target_cell_volumes__in, 
+             const std::vector<double>& min_cell_volumes__in, 
              const Entity_ID_List& fixed_nodes,
              const bool move_vertical,
              const double min_vol_const1,
@@ -405,7 +405,7 @@ public:
 
 private:
 
-  MPI_Comm mpicomm;
+  MPI_Comm mpicomm_;
   int myprocid, numprocs;
 
   Mesh_ptr mesh;
@@ -502,7 +502,7 @@ private:
   // variables needed for mesh deformation
 
   double *meshxyz;
-  double *target_cell_volumes, *min_cell_volumes, *target_weights;
+  double *target_cell_volumes_, *min_cell_volumes_, *target_weights;
 
   // Teuchos Verbose Object to control how much diagnostic info is printed
   Teuchos::RCP<const VerboseObject> verbose_obj_;
@@ -512,7 +512,7 @@ private:
   
   void clear_internals_();
 
-  void pre_create_steps_(const int space_dimension, const Epetra_MpiComm *incomm, 
+  void pre_create_steps_(const int space_dimension, const Epetra_MpiComm *incomm_, 
                          const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm);
   void post_create_steps_(const bool request_faces, const bool request_edges);
 
@@ -589,7 +589,7 @@ private:
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
 
-  void cell_get_faces_and_dirs_internal (const Entity_ID cellid,
+  void cell_get_faces_and_dirs_internal_ (const Entity_ID cellid,
                                          Entity_ID_List *faceids,
                                          std::vector<int> *face_dirs,
                                          const bool ordered=false) const;
@@ -605,25 +605,25 @@ private:
 
   // Cells connected to a face
     
-  void face_get_cells_internal (const Entity_ID faceid, 
+  void face_get_cells_internal_ (const Entity_ID faceid, 
                                 const Parallel_type ptype,
                                 Entity_ID_List *cellids) const;
 
 
   // Get edges of a cell
 
-  void cell_get_edges_internal (const Entity_ID cellid,
+  void cell_get_edges_internal_ (const Entity_ID cellid,
 				Entity_ID_List *edgeids) const;
 
   // Get edges and directions of a 2D cell
 
-  void cell_2D_get_edges_and_dirs_internal (const Entity_ID cellid,
+  void cell_2D_get_edges_and_dirs_internal_ (const Entity_ID cellid,
                                             Entity_ID_List *edgeids,
                                             std::vector<int> *edgedirs) const;
 
   // Edges and edge directions of a face
 
-  void face_get_edges_and_dirs_internal (const Entity_ID cellid,
+  void face_get_edges_and_dirs_internal_ (const Entity_ID cellid,
 					 Entity_ID_List *edgeids,
 					 std::vector<int> *edgedirs,
 					 bool ordered=true) const;

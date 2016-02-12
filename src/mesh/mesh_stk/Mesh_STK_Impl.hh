@@ -28,7 +28,7 @@ class Mesh_STK_Impl {
   // ---------
     
   Mesh_STK_Impl (int space_dimension, 
-                 const Epetra_MpiComm *communicator, 
+                 const Epetra_MpiComm *comm_unicator, 
                  Entity_map* entity_map, 
                  stk::mesh::fem::FEMMetaData *meta_data, 
                  stk::mesh::BulkData *bulk_data,
@@ -46,9 +46,9 @@ class Mesh_STK_Impl {
   const stk::mesh::fem::FEMMetaData& meta_data    () const { return *meta_data_; }
   const stk::mesh::BulkData& build_data   () const { return *bulk_data_; }
   const Entity_map&          entity_map   () const { return *entity_map_; }
-  const Epetra_MpiComm      *communicator () const { return communicator_; }
+  const Epetra_MpiComm      *comm_unicator () const { return comm_unicator_; }
   bool                       consistent   () const { return consistent_; }
-  unsigned int               rank_id      () const { return communicator_->MyPID (); }
+  unsigned int               rank_id      () const { return comm_unicator_->MyPID (); }
     
   unsigned int count_entities (stk::mesh::EntityRank rank,  Parallel_type category) const;
   unsigned int count_entities (const stk::mesh::Part& part, Parallel_type category) const;
@@ -125,7 +125,7 @@ class Mesh_STK_Impl {
 
  private:
 
-  const Epetra_MpiComm *communicator_;
+  const Epetra_MpiComm *comm_unicator_;
   Teuchos::RCP<Entity_map> entity_map_;
     
   int space_dimension_;

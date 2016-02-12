@@ -18,7 +18,7 @@ namespace AmanziMesh
 Mesh_simple::Mesh_simple (double x0, double y0, double z0,
  			  double x1, double y1, double z1,
 			  int nx, int ny, int nz,
-			  const Epetra_MpiComm *communicator,
+			  const Epetra_MpiComm *comm_unicator,
 			  const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                           const Teuchos::RCP<const VerboseObject>&verbosity_obj,
                           const bool request_faces,
@@ -29,8 +29,10 @@ Mesh_simple::Mesh_simple (double x0, double y0, double z0,
     z0_(z0), z1_(z1),
     Mesh(verbosity_obj,request_faces,request_edges)
 {
-  Mesh::set_comm(communicator);
+  Mesh::set_comm(comm_unicator);
   Mesh::set_mesh_type(RECTANGULAR);
+  Mesh::set_space_dimension(3);
+  Mesh::set_cell_dimension(3);
   if (gm != Teuchos::null) Mesh::set_geometric_model(gm);
  
   update();
@@ -45,7 +47,7 @@ Mesh_simple::Mesh_simple (double x0, double y0, double z0,
 Mesh_simple::Mesh_simple (double x0, double y0,
                           double x1, double y1,
                           int nx, int ny, 
-                          const Epetra_MpiComm *communicator,
+                          const Epetra_MpiComm *comm_unicator,
                           const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                           const Teuchos::RCP<const VerboseObject>&verbosity_obj,
                           const bool request_faces,
@@ -57,14 +59,14 @@ Mesh_simple::Mesh_simple (double x0, double y0,
 
 
 Mesh_simple::Mesh_simple ( Teuchos::ParameterList &parameter_list,
-			   const Epetra_MpiComm *communicator,
+			   const Epetra_MpiComm *comm_unicator,
 			   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                            const Teuchos::RCP<const VerboseObject>&verbosity_obj,
                            const bool request_faces,
                            const bool request_edges) :
   Mesh(verbosity_obj,request_faces,request_edges)
 {
-  Mesh::set_comm(communicator);
+  Mesh::set_comm(comm_unicator);
   Mesh::set_mesh_type(RECTANGULAR);
   if (gm != Teuchos::null)
     Mesh::set_geometric_model(gm);
@@ -74,14 +76,14 @@ Mesh_simple::Mesh_simple ( Teuchos::ParameterList &parameter_list,
 }
 
 Mesh_simple::Mesh_simple (const GenerationSpec& gspec,
-                          const Epetra_MpiComm *communicator,
+                          const Epetra_MpiComm *comm_unicator,
                           const Teuchos::RCP<const AmanziGeometry::GeometricModel> &gm,
                           const Teuchos::RCP<const VerboseObject>&verbosity_obj,
                           const bool request_faces,
                           const bool request_edges) :
   Mesh(verbosity_obj,request_faces,request_edges)
 {
-  Mesh::set_comm(communicator);
+  Mesh::set_comm(comm_unicator);
   Mesh::set_mesh_type(RECTANGULAR);
   if (gm != Teuchos::null) 
     Mesh::set_geometric_model(gm);
@@ -155,7 +157,14 @@ Mesh_simple::generate_(const GenerationSpec& gspec)
   z0_ = gspec.domain().point0().z();
   z1_ = gspec.domain().point1().z();
 
-
+  if (nz_ == 0) {
+    Mesh::set_space_dimension(2);
+    Mesh::set_cell_dimension(2);
+  } else {
+    Mesh::set_space_dimension(3);
+    Mesh::set_cell_dimension(3);
+  }
+  
   //  std::copy(gspec.block_begin(), gspec.block_end(), 
   //          std::back_inserter(mesh_blocks_));
   
@@ -433,7 +442,7 @@ void Mesh_simple::update_internals_()
 
 void Mesh_simple::build_maps_ ()
 {
-  const Epetra_Comm *epcomm = Mesh::get_comm();
+  const Epetra_Comm *epcomm_ = Mesh::get_comm();
   std::vector<int> cells( num_cells_ );
   for (int i=0; i< num_cells_; i++) cells[i] = i;
   
@@ -444,9 +453,9 @@ void Mesh_simple::build_maps_ ()
   for (int i=0; i< num_faces_; i++) faces[i] = i;
 
   
-  cell_map_ = new Epetra_Map(-1, num_cells_, &cells[0], 0, *epcomm );
-  face_map_ = new Epetra_Map(-1, num_faces_, &faces[0], 0, *epcomm );
-  node_map_ = new Epetra_Map(-1, num_nodes_, &nodes[0], 0, *epcomm );
+  cell_map_ = new Epetra_Map(-1, num_cells_, &cells[0], 0, *epcomm_ );
+  face_map_ = new Epetra_Map(-1, num_faces_, &faces[0], 0, *epcomm_ );
+  node_map_ = new Epetra_Map(-1, num_nodes_, &nodes[0], 0, *epcomm_ );
 
 }
 
@@ -499,7 +508,7 @@ unsigned int Mesh_simple::num_entities (AmanziMesh::Entity_kind kind,
 }
 
 
-void Mesh_simple::cell_get_faces_and_dirs_internal (const AmanziMesh::Entity_ID cellid,
+void Mesh_simple::cell_get_faces_and_dirs_internal_ (const AmanziMesh::Entity_ID cellid,
                                            AmanziMesh::Entity_ID_List *faceids,
                                            std::vector<int> *cfacedirs,
                                            const bool ordered) const
@@ -697,7 +706,7 @@ void Mesh_simple::node_get_cell_faces (const AmanziMesh::Entity_ID nodeid,
     
 // Cells connected to a face
     
-void Mesh_simple::face_get_cells_internal (const AmanziMesh::Entity_ID faceid, 
+void Mesh_simple::face_get_cells_internal_ (const AmanziMesh::Entity_ID faceid, 
                                          const AmanziMesh::Parallel_type ptype,
                                          AmanziMesh::Entity_ID_List *cellids) const
 {
@@ -1255,8 +1264,8 @@ void Mesh_simple::get_set_entities (const std::string setname,
 // move_vertical = true, nodes will be allowed to move only in the
 // vertical direction (right now arbitrary node movement is not allowed)
 
-int Mesh_simple::deform(const std::vector<double>& target_cell_volumes_in, 
-                        const std::vector<double>& min_cell_volumes_in, 
+int Mesh_simple::deform(const std::vector<double>& target_cell_volumes__in, 
+                        const std::vector<double>& min_cell_volumes__in, 
                         const Entity_ID_List& fixed_nodes,
                         const bool move_vertical) 
 {

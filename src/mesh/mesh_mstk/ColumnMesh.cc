@@ -31,6 +31,8 @@ ColumnMesh::ColumnMesh (const Mesh& inmesh,
   // set supporting subclasses
   set_comm(extracted_.get_comm());
   set_geometric_model(extracted_.geometric_model());
+  set_space_dimension(3);
+  set_cell_dimension(3);
   
   // compute special geometric quantities for column entities (node
   // coordinates, face centroids, cell centroids, face areas)
@@ -68,45 +70,45 @@ void ColumnMesh::compute_special_node_coordinates_() {
 
   // Get the ordered face indexes of the column
   const Entity_ID_List& colfaces = extracted_.faces_of_column(0);
-  column_faces_ = colfaces;
+  column_faces__ = colfaces;
 
   // mask for face index in the column of faces
   face_in_column_.resize(extracted_.num_entities(FACE, AmanziMesh::USED), -1);
   
   // How many nodes each "horizontal" face has in the column
   Entity_ID_List face_nodes;
-  extracted_.face_get_nodes(column_faces_[0],&face_nodes);
+  extracted_.face_get_nodes(column_faces__[0],&face_nodes);
   nfnodes_ = face_nodes.size(); 
 
   // Set up the new node coordinates This is done in two passes, which may be
   // unnecessary, but I'm not sure if face_centroid() would break if done in
   // one.
-  int spacedim = space_dimension(); // from parent mesh
-  int nfaces = column_faces_.size();
+  int spacedim_ = space_dimension(); // from parent mesh
+  int nfaces = column_faces__.size();
   int nnodes = nfaces*nfnodes_;
-  AmanziGeometry::Point p(spacedim);
+  AmanziGeometry::Point p(spacedim_);
   std::vector<AmanziGeometry::Point> node_coordinates(nnodes, p);
   
   for (int j=0; j!=nfaces; ++j) {
     // set the mask
-    face_in_column_[column_faces_[j]] = j;
+    face_in_column_[column_faces__[j]] = j;
 
     // calculate node coordinates
     std::vector<AmanziGeometry::Point> face_coordinates;
-    extracted_.face_get_nodes(column_faces_[j], &face_nodes);
-    extracted_.face_get_coordinates(column_faces_[j], &face_coordinates);
+    extracted_.face_get_nodes(column_faces__[j], &face_nodes);
+    extracted_.face_get_coordinates(column_faces__[j], &face_coordinates);
 
-    AmanziGeometry::Point fcen = extracted_.face_centroid(column_faces_[j]);
+    AmanziGeometry::Point fcen = extracted_.face_centroid(column_faces__[j]);
     
     for (int i=0; i!=nfnodes_; ++i) {
-      AmanziGeometry::Point coords(spacedim);
+      AmanziGeometry::Point coords(spacedim_);
 
       // last coordinate is z-coordinate of face centroid
-      coords[spacedim-1] = fcen[spacedim-1];
+      coords[spacedim_-1] = fcen[spacedim_-1];
 
       // remain coordinates are coordinates of the corresponding node on
       // the bottom face
-      for (int d=0; d!=spacedim-1; ++d) coords[d] = face_coordinates[i][d];
+      for (int d=0; d!=spacedim_-1; ++d) coords[d] = face_coordinates[i][d];
         
       node_coordinates[face_nodes[i]] = coords;
     }
@@ -123,14 +125,14 @@ void ColumnMesh::compute_special_node_coordinates_() {
 // processors and their dependencies (through global IDs).
 //
 // In this case since the columns are all on one processor, the map is
-// just a contiguous sequence of numbers and the communicator is a serial
-// communicator
+// just a contiguous sequence of numbers and the comm_unicator is a serial
+// comm_unicator
 void ColumnMesh::build_epetra_maps_() {
-  Epetra_SerialComm epcomm;
+  Epetra_SerialComm epcomm_;
   int indexBase = 0;
 
-  int nfaces = column_faces_.size();
-  face_map_ = new Epetra_Map(nfaces,indexBase,epcomm);
+  int nfaces = column_faces__.size();
+  face_map_ = new Epetra_Map(nfaces,indexBase,epcomm_);
 
   std::vector<int> ext_gids(2,-1);
   ext_gids[0] = 0;

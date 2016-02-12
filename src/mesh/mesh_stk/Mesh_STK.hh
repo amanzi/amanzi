@@ -62,7 +62,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   // blocking the implicit conversion.
   
   /// Construct hexahedral mesh of the given size and spacing
-  Mesh_STK(const Epetra_MpiComm *comm, 
+  Mesh_STK(const Epetra_MpiComm *comm_, 
            const unsigned int& ni, const unsigned int& nj, const unsigned int& nk,
            const double& xorigin = 0.0, 
            const double& yorigin = 0.0, 
@@ -80,7 +80,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   Mesh_STK(double x0, double y0, double z0,
            double x1, double y1, double z1,
            int nx, int ny, int nz, 
-           const Epetra_MpiComm *comm,
+           const Epetra_MpiComm *comm_,
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL,
            const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
@@ -93,7 +93,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const double y1,
            const int nx, 
            const int ny, 
-           const Epetra_MpiComm *communicator,
+           const Epetra_MpiComm *comm_unicator,
            const AmanziGeometry::GeometricModelPtr &gm = 
            (AmanziGeometry::GeometricModelPtr) NULL,
            const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
@@ -102,7 +102,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   
   /// Construct a hexedral mesh from a parameter list (Mesh_simple alternative)
   Mesh_STK(Teuchos::ParameterList &parameter_list,
-           const Epetra_MpiComm *comm,
+           const Epetra_MpiComm *comm_,
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL,
            const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
@@ -111,7 +111,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
 
   /// Construct a hexedral mesh from specs (Mesh_simple alternative)
   Mesh_STK(const GenerationSpec& gspec,
-           const Epetra_MpiComm *comm,
+           const Epetra_MpiComm *comm_,
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL,
            const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
@@ -119,7 +119,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const bool request_edges = false);
 
   /// Construct a mesh from a Exodus II file or file set
-  Mesh_STK(const Epetra_MpiComm *comm, 
+  Mesh_STK(const Epetra_MpiComm *comm_, 
            const std::string& fname,
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL,
@@ -128,7 +128,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const bool request_edges = false);
 
   /// Construct a mesh from a Exodus II file or file set
-  Mesh_STK(const char *filename, const Epetra_MpiComm *comm,
+  Mesh_STK(const char *filename, const Epetra_MpiComm *comm_,
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL,
            const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
@@ -358,8 +358,8 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
 
 
 
-  int deform(const std::vector<double>& target_cell_volumes_in, 
-             const std::vector<double>& min_cell_volumes_in, 
+  int deform(const std::vector<double>& target_cell_volumes__in, 
+             const std::vector<double>& min_cell_volumes__in, 
              const Entity_ID_List& fixed_nodes,
              const bool move_vertical);
 
@@ -441,14 +441,14 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
 
-  void cell_get_faces_and_dirs_internal (const Entity_ID cellid,
+  void cell_get_faces_and_dirs_internal_ (const Entity_ID cellid,
                                 Entity_ID_List *faceids,
                                 std::vector<int> *face_dirs,
                                 const bool ordered=false) const;
 
   // Edges of a cell
 
-  void cell_get_edges_internal (const Entity_ID cellid,
+  void cell_get_edges_internal_ (const Entity_ID cellid,
                                 Entity_ID_List *edgeids) const 
   { 
     Errors::Message mesg("Edges not implemented in this interface. Use MSTK");
@@ -457,7 +457,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
 
   // Edges and edge directions of a 2D cell
 
-  void cell_2D_get_edges_and_dirs_internal (const Entity_ID cellid,
+  void cell_2D_get_edges_and_dirs_internal_ (const Entity_ID cellid,
                                             Entity_ID_List *edgeids,
                                             std::vector<int> *edgedirs) const 
   { 
@@ -467,13 +467,13 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
 
   // Cells connected to a face
 
-  void face_get_cells_internal (const Entity_ID faceid, 
+  void face_get_cells_internal_ (const Entity_ID faceid, 
                                 const Parallel_type ptype,
                                 Entity_ID_List *cellids) const;
     
   // Edges and edge directions of a face
 
-  void face_get_edges_and_dirs_internal (const Entity_ID cellid,
+  void face_get_edges_and_dirs_internal_ (const Entity_ID cellid,
 					 Entity_ID_List *edgeids,
 					 std::vector<int> *edgedirs,
 					 bool ordered=true) const

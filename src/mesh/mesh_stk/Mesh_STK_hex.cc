@@ -89,7 +89,7 @@ Mesh_STK::generate_(const GenerationSpec& gspec)
 // -------------------------------------------------------------
 // Mesh_STK:: constructors / destructor
 // -------------------------------------------------------------
-Mesh_STK::Mesh_STK(const Epetra_MpiComm *comm, 
+Mesh_STK::Mesh_STK(const Epetra_MpiComm *comm_, 
                    const unsigned int& ni, const unsigned int& nj, const unsigned int& nk,
                    const double& xorigin, 
                    const double& yorigin, 
@@ -106,7 +106,7 @@ Mesh_STK::Mesh_STK(const Epetra_MpiComm *comm,
   Mesh(verbobj,request_faces,request_edges)
   
 {
-  Mesh::set_comm(comm);
+  Mesh::set_comm(comm_);
   Mesh::set_geometric_model(gm);
   Mesh::set_mesh_type(RECTANGULAR);
   generate_(ni, nj, nk, xorigin, yorigin, zorigin, xdelta, ydelta, zdelta);
@@ -115,7 +115,7 @@ Mesh_STK::Mesh_STK(const Epetra_MpiComm *comm,
 Mesh_STK::Mesh_STK(const double x0, const double y0, const double z0,
                    const double x1, const double y1, const double z1,
                    const int nx, const int ny, const int nz, 
-                   const Epetra_MpiComm *comm,
+                   const Epetra_MpiComm *comm_,
                    const AmanziGeometry::GeometricModelPtr& gm,
                    const VerboseObject *verbobj,
                    const bool request_faces,
@@ -124,7 +124,7 @@ Mesh_STK::Mesh_STK(const double x0, const double y0, const double z0,
     map_owned_(), map_used_(),
     Mesh(verbobj,request_faces,request_edges)  
 {
-  Mesh::set_comm(comm);
+  Mesh::set_comm(comm_);
   Mesh::set_geometric_model(gm);
   Mesh::set_mesh_type(RECTANGULAR);
   double xdelta((x1 - x0)/static_cast<double>(nx));
@@ -147,7 +147,7 @@ Mesh_STK::Mesh_STK (const double x0,
                     const double y1,
                     const int nx, 
                     const int ny, 
-                    const Epetra_MpiComm *communicator,
+                    const Epetra_MpiComm *comm_unicator,
                     const AmanziGeometry::GeometricModelPtr &gm,
                     const VerboseObject *verbobj,
 		    const bool request_faces,
@@ -163,7 +163,7 @@ Mesh_STK::Mesh_STK (const double x0,
 
 
 Mesh_STK::Mesh_STK(Teuchos::ParameterList &parameter_list,
-                   const Epetra_MpiComm *comm,
+                   const Epetra_MpiComm *comm_,
                    const AmanziGeometry::GeometricModelPtr& gm,
                    const VerboseObject *verbobj,
                    const bool request_faces,
@@ -172,7 +172,7 @@ Mesh_STK::Mesh_STK(Teuchos::ParameterList &parameter_list,
     map_owned_(), map_used_(),
     Mesh(verbobj,request_faces,request_edges)
 {
-  Mesh::set_comm(comm);
+  Mesh::set_comm(comm_);
   Mesh::set_geometric_model(gm);
   Mesh::set_mesh_type(RECTANGULAR);
 
@@ -182,7 +182,7 @@ Mesh_STK::Mesh_STK(Teuchos::ParameterList &parameter_list,
 }
 
 Mesh_STK::Mesh_STK(const GenerationSpec& gspec,
-                   const Epetra_MpiComm *comm,
+                   const Epetra_MpiComm *comm_,
                    const AmanziGeometry::GeometricModelPtr& gm,
                    const VerboseObject *verbobj,
                    const bool request_faces,
@@ -191,7 +191,7 @@ Mesh_STK::Mesh_STK(const GenerationSpec& gspec,
     map_owned_(), map_used_(),
     Mesh(verbobj,request_faces,request_edges)
 {
-  Mesh::set_comm(comm);
+  Mesh::set_comm(comm_);
   Mesh::set_geometric_model(gm);
   Mesh::set_mesh_type(RECTANGULAR);
   generate_(gspec);

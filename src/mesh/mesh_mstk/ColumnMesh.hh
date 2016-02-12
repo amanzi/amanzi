@@ -80,7 +80,7 @@ class ColumnMesh : public Mesh {
     Entity_ID ent;
     switch (kind) {
       case FACE:
-        ent = extracted_.entity_get_parent(kind, column_faces_[entid]);
+        ent = extracted_.entity_get_parent(kind, column_faces__[entid]);
         break;
 
       default:
@@ -115,7 +115,7 @@ class ColumnMesh : public Mesh {
     int count;
     switch (kind) {
       case FACE:
-        count = (ptype == GHOST) ? 0 : column_faces_.size();
+        count = (ptype == GHOST) ? 0 : column_faces__.size();
         break;
 
       case BOUNDARY_FACE:
@@ -165,7 +165,7 @@ class ColumnMesh : public Mesh {
   virtual
   void face_get_nodes (const Entity_ID faceid,
                        Entity_ID_List *nodeids) const {
-    extracted_.face_get_nodes(column_faces_[faceid], nodeids);
+    extracted_.face_get_nodes(column_faces__[faceid], nodeids);
   }
 
 
@@ -273,7 +273,7 @@ class ColumnMesh : public Mesh {
   virtual
   void face_get_coordinates (const Entity_ID faceid,
                              std::vector<AmanziGeometry::Point> *fcoords) const {
-    extracted_.face_get_coordinates(column_faces_[faceid], fcoords);
+    extracted_.face_get_coordinates(column_faces__[faceid], fcoords);
   }
 
   // Coordinates of cells in standard order (Exodus II convention)
@@ -314,11 +314,11 @@ class ColumnMesh : public Mesh {
   // vertical direction (right now arbitrary node movement is not allowed)
   // Nodes in any set in the fixed_sets will not be permitted to move.
   virtual
-  int deform(const std::vector<double>& target_cell_volumes_in,
-             const std::vector<double>& min_cell_volumes_in,
+  int deform(const std::vector<double>& target_cell_volumes__in,
+             const std::vector<double>& min_cell_volumes__in,
              const Entity_ID_List& fixed_nodes,
              const bool move_vertical) {
-    return extracted_.deform(target_cell_volumes_in, min_cell_volumes_in,
+    return extracted_.deform(target_cell_volumes__in, min_cell_volumes__in,
                        fixed_nodes, move_vertical);
   }
 
@@ -456,7 +456,7 @@ class ColumnMesh : public Mesh {
   // cached or it can be called directly by the
   // cell_get_faces_and_dirs method of this class
   virtual
-  void cell_get_faces_and_dirs_internal (const Entity_ID cellid,
+  void cell_get_faces_and_dirs_internal_ (const Entity_ID cellid,
           Entity_ID_List *faceids,
           std::vector<int> *face_dirs,
           const bool ordered=false) const {
@@ -486,17 +486,17 @@ class ColumnMesh : public Mesh {
   // Cells connected to a face - this function is implemented in each
   // mesh framework. The results are cached in the base class
   virtual
-  void face_get_cells_internal (const Entity_ID faceid,
+  void face_get_cells_internal_ (const Entity_ID faceid,
           const Parallel_type ptype,
           Entity_ID_List *cellids) const {
-    extracted_.face_get_cells(column_faces_[faceid], ptype, cellids);
+    extracted_.face_get_cells(column_faces__[faceid], ptype, cellids);
   }
 
 
   // edges of a face - this function is implemented in each mesh
   // framework. The results are cached in the base class
   virtual
-  void face_get_edges_and_dirs_internal (const Entity_ID faceid,
+  void face_get_edges_and_dirs_internal_ (const Entity_ID faceid,
 					 Entity_ID_List *edgeids,
 					 std::vector<int> *edge_dirs,
           const bool ordered=true) const {
@@ -507,7 +507,7 @@ class ColumnMesh : public Mesh {
   // edges of a cell - this function is implemented in each mesh
   // framework. The results are cached in the base class. 
   virtual
-  void cell_get_edges_internal (const Entity_ID cellid,
+  void cell_get_edges_internal_ (const Entity_ID cellid,
           Entity_ID_List *edgeids) const {
     Errors::Message mesg("Not implemented");
     Exceptions::amanzi_throw(mesg);
@@ -517,7 +517,7 @@ class ColumnMesh : public Mesh {
   // edges and directions of a 2D cell - this function is implemented
   // in each mesh framework. The results are cached in the base class.
   virtual
-  void cell_2D_get_edges_and_dirs_internal (const Entity_ID cellid,
+  void cell_2D_get_edges_and_dirs_internal_ (const Entity_ID cellid,
                                             Entity_ID_List *edgeids,
           std::vector<int> *edge_dirs) const {
     Errors::Message mesg("Not implemented");
@@ -535,7 +535,7 @@ class ColumnMesh : public Mesh {
   Mesh_MSTK extracted_;
   int nfnodes_;
   int column_id_;
-  Entity_ID_List column_faces_;
+  Entity_ID_List column_faces__;
   Entity_ID_List face_in_column_;
 
   Epetra_Map *face_map_;

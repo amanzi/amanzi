@@ -29,9 +29,9 @@
 TEST(COLUMN_MESH_3D)
 {
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
+  Epetra_MpiComm comm_(MPI_COMM_WORLD);
+  const int nproc(comm_.NumProc());
+  const int me(comm_.MyPID());
 
 
   int nx = 4, ny = 4, nz = 4;
@@ -54,7 +54,7 @@ TEST(COLUMN_MESH_3D)
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
       Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,
               lx,ly,lz,nx,ny,nz,
-              &comm, gm));
+              &comm_, gm));
 
   // Perturb the nodes above the base layer just a bit
   int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,

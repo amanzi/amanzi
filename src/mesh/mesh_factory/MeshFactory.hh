@@ -41,7 +41,7 @@ class MeshFactory {
  protected:
 
   /// The parallel environment
-  const Epetra_MpiComm *my_comm;
+  const Epetra_MpiComm *my_comm_;
 
   /// A list of preferred mesh frameworks to consider
   FrameworkPreference my_preference;
@@ -59,7 +59,7 @@ class MeshFactory {
  public:
 
   /// Default constructor.
-  explicit MeshFactory(const Epetra_MpiComm *communicator, 
+  explicit MeshFactory(const Epetra_MpiComm *comm_unicator, 
                        const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null);
 
   /// Destructor

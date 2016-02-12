@@ -12,9 +12,9 @@
 TEST(NUMBERING) {
 
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm *comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  Epetra_SerialComm *comm_ = new Epetra_SerialComm();
 #endif
 
 
@@ -41,7 +41,7 @@ TEST(NUMBERING) {
 
 
   // Create a single-cell mesh;
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm_));
   
   //  State S(1,mesh);
   

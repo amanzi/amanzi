@@ -24,19 +24,19 @@ namespace AmanziMesh
 // itself; rather it is modifying mutable data structures - see
 // declaration of Mesh class for further explanation
 //
-// sets up: cell_face_ids, cell_face_dirs
-void Mesh::cache_cell2face_info() const {
+// sets up: cell_face_ids_, cell_face_dirs_
+void Mesh::cache_cell2face_info_() const {
 
   int ncells = num_entities(CELL,USED);
-  cell_face_ids.resize(ncells);
-  cell_face_dirs.resize(ncells);
+  cell_face_ids_.resize(ncells);
+  cell_face_dirs_.resize(ncells);
   
   for (int c = 0; c < ncells; c++)
-    cell_get_faces_and_dirs_internal(c, &(cell_face_ids[c]), 
-				     &(cell_face_dirs[c]), false);
+    cell_get_faces_and_dirs_internal_(c, &(cell_face_ids_[c]), 
+				     &(cell_face_dirs_[c]), false);
   
-  cell2face_info_cached = true;
-  faces_requested = true;
+  cell2face_info_cached_ = true;
+  faces_requested_ = true;
 }
 
 
@@ -46,34 +46,34 @@ void Mesh::cache_cell2face_info() const {
 // itself; rather it is modifying mutable data structures - see
 // declaration of Mesh class for further explanation
 //
-// sets up: face_cell_ids, face_cell_ptype
-void Mesh::cache_face2cell_info() const {
+// sets up: face_cell_ids_, face_cell_ptype_
+void Mesh::cache_face2cell_info_() const {
 
   int nfaces = num_entities(FACE,USED);
-  face_cell_ids.resize(nfaces);
-  face_cell_ptype.resize(nfaces);
+  face_cell_ids_.resize(nfaces);
+  face_cell_ptype_.resize(nfaces);
   
   std::vector<Entity_ID> fcells;
   
   for (int f = 0; f < nfaces; f++) {      
-    face_get_cells_internal(f, USED, &fcells);
+    face_get_cells_internal_(f, USED, &fcells);
     
-    face_cell_ids[f].resize(2);
-    face_cell_ptype[f].resize(2);
+    face_cell_ids_[f].resize(2);
+    face_cell_ptype_[f].resize(2);
     
     for (int i = 0; i < fcells.size(); i++) {
       int c = fcells[i];
-      face_cell_ids[f][i] = c;
-      face_cell_ptype[f][i] = entity_get_ptype(CELL,c);
+      face_cell_ids_[f][i] = c;
+      face_cell_ptype_[f][i] = entity_get_ptype(CELL,c);
     }
     for (int i = fcells.size(); i < 2; i++) {
-      face_cell_ids[f][i] = -1;
-      face_cell_ptype[f][i] = PTYPE_UNKNOWN;
+      face_cell_ids_[f][i] = -1;
+      face_cell_ptype_[f][i] = PTYPE_UNKNOWN;
     }
   }
       
-  face2cell_info_cached = true;
-  faces_requested = true;
+  face2cell_info_cached_ = true;
+  faces_requested_ = true;
 }
 
 // Gather and cache face to edge connectivity info.
@@ -82,23 +82,23 @@ void Mesh::cache_face2cell_info() const {
 // itself; rather it is modifying mutable data structures - see
 // declaration of Mesh class for further explanation
 
-void Mesh::cache_face2edge_info() const {
+void Mesh::cache_face2edge_info_() const {
 
   int nfaces = num_entities(FACE,USED);
-  face_edge_ids.resize(nfaces);
-  face_edge_dirs.resize(nfaces);
+  face_edge_ids_.resize(nfaces);
+  face_edge_dirs_.resize(nfaces);
   
   for (int f = 0; f < nfaces; f++) {
     Entity_ID_List fedgeids;
     std::vector<int> fedgedirs;
     
-    face_get_edges_and_dirs_internal(f, &(face_edge_ids[f]), 
-				     &(face_edge_dirs[f]), true);
+    face_get_edges_and_dirs_internal_(f, &(face_edge_ids_[f]), 
+				     &(face_edge_dirs_[f]), true);
   }
 
-  face2edge_info_cached = true;
-  faces_requested = true;
-  edges_requested = true;
+  face2edge_info_cached_ = true;
+  faces_requested_ = true;
+  edges_requested_ = true;
 }
 
 // Gather and cache cell to edge connectivity info.
@@ -107,22 +107,22 @@ void Mesh::cache_face2edge_info() const {
 // itself; rather it is modifying mutable data structures - see
 // declaration of Mesh class for further explanation
 
-void Mesh::cache_cell2edge_info() const {
+void Mesh::cache_cell2edge_info_() const {
 
   int ncells = num_entities(CELL,USED);
-  cell_edge_ids.resize(ncells);
+  cell_edge_ids_.resize(ncells);
   
-  if (spacedim == 2) {
-    cell_2D_edge_dirs.resize(ncells);
+  if (spacedim_ == 2) {
+    cell_2D_edge_dirs_.resize(ncells);
     for (int c = 0; c < ncells; c++)
-      cell_2D_get_edges_and_dirs_internal(c, &(cell_edge_ids[c]), 
-                                          &(cell_2D_edge_dirs[c]));
+      cell_2D_get_edges_and_dirs_internal_(c, &(cell_edge_ids_[c]), 
+                                          &(cell_2D_edge_dirs_[c]));
   }
   else
     for (int c = 0; c < ncells; c++) 
-      cell_get_edges_internal(c, &(cell_edge_ids[c]));
+      cell_get_edges_internal_(c, &(cell_edge_ids_[c]));
   
-  cell2edge_info_cached = true;
+  cell2edge_info_cached_ = true;
 }
 
 
@@ -139,9 +139,9 @@ unsigned int Mesh::cell_get_num_faces(const Entity_ID cellid) const {
   //
   // Cached version - turn off for profiling or to save memory
   //
-  if (!cell2face_info_cached) cache_cell2face_info();
+  if (!cell2face_info_cached_) cache_cell2face_info_();
 
-  return cell_face_ids[cellid].size();
+  return cell_face_ids_[cellid].size();
 
 #else
 
@@ -150,7 +150,7 @@ unsigned int Mesh::cell_get_num_faces(const Entity_ID cellid) const {
   Entity_ID_List cfaceids;
   std::vector<int> cfacedirs;
 
-  cell_get_faces_and_dirs_internal(cellid, &cfaceids, &cfacedirs, false);
+  cell_get_faces_and_dirs_internal_(cellid, &cfaceids, &cfacedirs, false);
 
   return cfaceids.size();
 
@@ -170,17 +170,17 @@ void Mesh::cell_get_faces_and_dirs(const Entity_ID cellid,
   // Cached version - turn off for profiling or to save memory
   //
 
-  if (!cell2face_info_cached) cache_cell2face_info();
+  if (!cell2face_info_cached_) cache_cell2face_info_();
 
   if (ordered)
-    cell_get_faces_and_dirs_internal(cellid, faceids, face_dirs, ordered);
+    cell_get_faces_and_dirs_internal_(cellid, faceids, face_dirs, ordered);
   else {
-    Entity_ID_List &cfaceids = cell_face_ids[cellid];
+    Entity_ID_List &cfaceids = cell_face_ids_[cellid];
 
     *faceids = cfaceids; // copy operation
 
     if (face_dirs) {
-      std::vector<int> &cfacedirs = cell_face_dirs[cellid];
+      std::vector<int> &cfacedirs = cell_face_dirs_[cellid];
       *face_dirs = cfacedirs; // copy operation
     }
   }
@@ -191,7 +191,7 @@ void Mesh::cell_get_faces_and_dirs(const Entity_ID cellid,
   // Non-cached version
   //
   
-  cell_get_faces_and_dirs_internal(cellid, faceids, face_dirs, ordered);
+  cell_get_faces_and_dirs_internal_(cellid, faceids, face_dirs, ordered);
   
 #endif
   
@@ -228,7 +228,7 @@ void Mesh::face_get_cells (const Entity_ID faceid, const Parallel_type ptype,
   // Cached version - turn off for profiling or to save memory
   //
   
-  if (!face2cell_info_cached) cache_face2cell_info();
+  if (!face2cell_info_cached_) cache_face2cell_info_();
 
 
   cellids->clear();
@@ -236,18 +236,18 @@ void Mesh::face_get_cells (const Entity_ID faceid, const Parallel_type ptype,
   switch (ptype) {
   case USED:
     for (int i = 0; i < 2; i++)
-      if (face_cell_ptype[faceid][i] != PTYPE_UNKNOWN)
-	cellids->push_back(face_cell_ids[faceid][i]);
+      if (face_cell_ptype_[faceid][i] != PTYPE_UNKNOWN)
+	cellids->push_back(face_cell_ids_[faceid][i]);
     break;
   case OWNED:
     for (int i = 0; i < 2; i++)
-      if (face_cell_ptype[faceid][i] == OWNED) 
-	cellids->push_back(face_cell_ids[faceid][i]);
+      if (face_cell_ptype_[faceid][i] == OWNED) 
+	cellids->push_back(face_cell_ids_[faceid][i]);
     break;
   case GHOST:
     for (int i = 0; i < 2; i++)
-      if (face_cell_ptype[faceid][i] == GHOST)
-	cellids->push_back(face_cell_ids[faceid][i]);
+      if (face_cell_ptype_[faceid][i] == GHOST)
+	cellids->push_back(face_cell_ids_[faceid][i]);
     break;
   }
   
@@ -259,7 +259,7 @@ void Mesh::face_get_cells (const Entity_ID faceid, const Parallel_type ptype,
   
   Entity_ID_List fcells;
   
-  face_get_cells_internal(faceid, USED, &fcells);
+  face_get_cells_internal_(faceid, USED, &fcells);
   
   cellids->clear();
   
@@ -297,12 +297,12 @@ void Mesh::face_get_edges_and_dirs(const Entity_ID faceid,
   // Cached version - turn off for profiling or to save memory
   //
 
-  if (!face2edge_info_cached) cache_face2edge_info();
+  if (!face2edge_info_cached_) cache_face2edge_info_();
 
-  *edgeids = face_edge_ids[faceid]; // copy operation
+  *edgeids = face_edge_ids_[faceid]; // copy operation
 
   if (edge_dirs) {
-    std::vector<int> &fedgedirs = face_edge_dirs[faceid];
+    std::vector<int> &fedgedirs = face_edge_dirs_[faceid];
     *edge_dirs = fedgedirs; // copy operation
   }
 
@@ -313,7 +313,7 @@ void Mesh::face_get_edges_and_dirs(const Entity_ID faceid,
   // Non-cached version
   //
 
-  face_get_edges_and_dirs_internal(faceid, edgeids, edge_dirs, ordered);
+  face_get_edges_and_dirs_internal_(faceid, edgeids, edge_dirs, ordered);
 
 #endif
 
@@ -332,15 +332,15 @@ void Mesh::face_to_cell_edge_map(const Entity_ID faceid,
   // Cached version - turn off for profiling or to save memory
   //
 
-  if (!face2edge_info_cached) cache_face2edge_info();
-  if (!cell2edge_info_cached) cache_cell2edge_info();
+  if (!face2edge_info_cached_) cache_face2edge_info_();
+  if (!cell2edge_info_cached_) cache_cell2edge_info_();
 
-  map->resize(face_edge_ids[faceid].size());
-  for (int f = 0; f < face_edge_ids[faceid].size(); ++f) {
-    Entity_ID fedge = face_edge_ids[faceid][f];
+  map->resize(face_edge_ids_[faceid].size());
+  for (int f = 0; f < face_edge_ids_[faceid].size(); ++f) {
+    Entity_ID fedge = face_edge_ids_[faceid][f];
     
-    for (int c = 0; c < cell_edge_ids[cellid].size(); ++c) {
-      if (fedge == cell_edge_ids[cellid][c]) {
+    for (int c = 0; c < cell_edge_ids_[cellid].size(); ++c) {
+      if (fedge == cell_edge_ids_[cellid][c]) {
 	(*map)[f] = c;
 	break;
       }
@@ -382,11 +382,11 @@ void Mesh::cell_get_edges (const Entity_ID cellid,
   // Cached version - turn off for profiling
   //
 
-  if (!cell2edge_info_cached) cache_cell2edge_info();
+  if (!cell2edge_info_cached_) cache_cell2edge_info_();
 
-  Entity_ID_List &cedgeids = cell_edge_ids[cellid];
+  Entity_ID_List &cedgeids = cell_edge_ids_[cellid];
 
-  *edgeids = cell_edge_ids[cellid]; // copy operation
+  *edgeids = cell_edge_ids_[cellid]; // copy operation
 
 #else
 
@@ -394,7 +394,7 @@ void Mesh::cell_get_edges (const Entity_ID cellid,
   // Non-cached version
   //
 
-  cell_get_edges_internal(cellid, edgeids);
+  cell_get_edges_internal_(cellid, edgeids);
 
 #endif
 
@@ -412,10 +412,10 @@ void Mesh::cell_2D_get_edges_and_dirs (const Entity_ID cellid,
   // Cached version - turn off for profiling
   //
 
-  if (!cell2edge_info_cached) cache_cell2edge_info();
+  if (!cell2edge_info_cached_) cache_cell2edge_info_();
 
-  *edgeids = cell_edge_ids[cellid]; // copy operation
-  *edgedirs = cell_2D_edge_dirs[cellid];
+  *edgeids = cell_edge_ids_[cellid]; // copy operation
+  *edgedirs = cell_2D_edge_dirs_[cellid];
 
 #else
 
@@ -423,7 +423,7 @@ void Mesh::cell_2D_get_edges_and_dirs (const Entity_ID cellid,
   // Non-cached version
   //
 
-  cell_2D_get_edges_and_dirs_internal(cellid, edgeids, edgedirs);
+  cell_2D_get_edges_and_dirs_internal_(cellid, edgeids, edgedirs);
 
 #endif
 
@@ -433,102 +433,102 @@ void Mesh::cell_2D_get_edges_and_dirs (const Entity_ID cellid,
 
 
 
-int Mesh::compute_cell_geometric_quantities() const {
+int Mesh::compute_cell_geometric_quantities_() const {
 
   int ncells = num_entities(CELL,USED);
 
-  cell_volumes.resize(ncells);
-  cell_centroids.resize(ncells);
+  cell_volumes_.resize(ncells);
+  cell_centroids_.resize(ncells);
   for (int i = 0; i < ncells; i++) {
     double volume;
-    AmanziGeometry::Point centroid(spacedim);
+    AmanziGeometry::Point centroid(spacedim_);
 
-    compute_cell_geometry(i,&volume,&centroid);
+    compute_cell_geometry_(i,&volume,&centroid);
 
-    cell_volumes[i] = volume;
-    cell_centroids[i] = centroid;
+    cell_volumes_[i] = volume;
+    cell_centroids_[i] = centroid;
   }
 
-  cell_geometry_precomputed = true;
+  cell_geometry_precomputed_ = true;
 
   return 1;
 
-} // Mesh::compute_cell_geometric_quantities
+} // Mesh::compute_cell_geometric_quantities_
 
 
 
-int Mesh::compute_face_geometric_quantities() const {
+int Mesh::compute_face_geometric_quantities_() const {
 
   if (space_dimension() == 3 && cell_dimension() == 2) {
     // need cell centroids to compute normals 
 
-    if (!cell_geometry_precomputed)
-      compute_cell_geometric_quantities();
+    if (!cell_geometry_precomputed_)
+      compute_cell_geometric_quantities_();
   }
 
   int nfaces = num_entities(FACE,USED);
 
-  face_areas.resize(nfaces);
-  face_centroids.resize(nfaces);
-  face_normal0.resize(nfaces);
-  face_normal1.resize(nfaces);
+  face_areas_.resize(nfaces);
+  face_centroids_.resize(nfaces);
+  face_normal0_.resize(nfaces);
+  face_normal1_.resize(nfaces);
 
   for (int i = 0; i < nfaces; i++) {
     double area;
-    AmanziGeometry::Point centroid(spacedim), normal0(spacedim),
-        normal1(spacedim);
+    AmanziGeometry::Point centroid(spacedim_), normal0(spacedim_),
+        normal1(spacedim_);
 
     // normal0 and normal1 are outward normals of the face with
     // respect to the cell0 and cell1 of the face. The natural normal
     // of the face points out of cell0 and into cell1. If one of these
     // cells do not exist, then the normal is the null vector.
 
-    compute_face_geometry(i, &area, &centroid, &normal0, &normal1);
+    compute_face_geometry_(i, &area, &centroid, &normal0, &normal1);
 
-    face_areas[i] = area;
-    face_centroids[i] = centroid;
-    face_normal0[i] = normal0;
-    face_normal1[i] = normal1;
+    face_areas_[i] = area;
+    face_centroids_[i] = centroid;
+    face_normal0_[i] = normal0;
+    face_normal1_[i] = normal1;
   }
 
-  face_geometry_precomputed = true;
+  face_geometry_precomputed_ = true;
 
   return 1;
 
-} // Mesh::compute_face_geometric_quantities
+} // Mesh::compute_face_geometric_quantities_
 
 
 
-int Mesh::compute_edge_geometric_quantities() const {
+int Mesh::compute_edge_geometric_quantities_() const {
 
   int nedges = num_entities(EDGE,USED);
 
-  edge_vectors.resize(nedges);
-  edge_lengths.resize(nedges);
+  edge_vectors_.resize(nedges);
+  edge_lengths_.resize(nedges);
 
   for (int i = 0; i < nedges; i++) {
     double length;
-    AmanziGeometry::Point evector(spacedim);
+    AmanziGeometry::Point evector(spacedim_);
 
-    compute_edge_geometry(i,&length,&evector);
+    compute_edge_geometry_(i,&length,&evector);
 
-    edge_lengths[i] = length;
-    edge_vectors[i] = evector;
+    edge_lengths_[i] = length;
+    edge_vectors_[i] = evector;
   }
 
-  edge_geometry_precomputed = true;
+  edge_geometry_precomputed_ = true;
 
   return 1;
 
-} // Mesh::compute_edge_geometric_quantities
+} // Mesh::compute_edge_geometric_quantities_
 
 
 
-int Mesh::compute_cell_geometry(const Entity_ID cellid, double *volume, 
+int Mesh::compute_cell_geometry_(const Entity_ID cellid, double *volume, 
 				AmanziGeometry::Point *centroid) const {
 
 
-  if (topodim == 3) {
+  if (topodim_ == 3) {
 
     // 3D Elements with possibly curved faces
     // We have to build a description of the element topology
@@ -553,8 +553,8 @@ int Mesh::compute_cell_geometry(const Entity_ID cellid, double *volume,
     if (nf == 2) { /* special case of column mesh - only top and bottom faces
                       are returned */
 
-      AmanziGeometry::Point fcentroid0(spacedim), fcentroid1(spacedim);
-      AmanziGeometry::Point normal(spacedim);
+      AmanziGeometry::Point fcentroid0(spacedim_), fcentroid1(spacedim_);
+      AmanziGeometry::Point normal(spacedim_);
       double farea;
 
       /* compute volume on the assumption that the top and bottom faces form
@@ -599,13 +599,13 @@ int Mesh::compute_cell_geometry(const Entity_ID cellid, double *volume,
 
     return 1;
   }
-  else if (topodim == 2) {
+  else if (topodim_ == 2) {
 
     std::vector<AmanziGeometry::Point> ccoords;
 
     cell_get_coordinates(cellid,&ccoords);
 
-    AmanziGeometry::Point normal(spacedim);
+    AmanziGeometry::Point normal(spacedim_);
 
     AmanziGeometry::polygon_get_area_centroid_normal(ccoords,volume,centroid,
 						     &normal);
@@ -614,10 +614,10 @@ int Mesh::compute_cell_geometry(const Entity_ID cellid, double *volume,
   }
 
   return 0;
-} // Mesh::compute_cell_geometry
+} // Mesh::compute_cell_geometry_
 
 
-int Mesh::compute_face_geometry(const Entity_ID faceid, double *area,
+int Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
 				AmanziGeometry::Point *centroid,
 				AmanziGeometry::Point *normal0,
 				AmanziGeometry::Point *normal1) const {
@@ -627,7 +627,7 @@ int Mesh::compute_face_geometry(const Entity_ID faceid, double *area,
   (*normal0).set(0.0L);
   (*normal1).set(0.0L);
 
-  if (topodim == 3) {
+  if (topodim_ == 3) {
 
     // 3D Elements with possibly curved faces
     // We have to build a description of the element topology
@@ -668,9 +668,9 @@ int Mesh::compute_face_geometry(const Entity_ID faceid, double *area,
 
     return 1;
   }
-  else if (topodim == 2) {
+  else if (topodim_ == 2) {
 
-    if (spacedim == 2) {   // 2D mesh
+    if (spacedim_ == 2) {   // 2D mesh
 
       face_get_coordinates(faceid,&fcoords);
 
@@ -743,7 +743,7 @@ int Mesh::compute_face_geometry(const Entity_ID faceid, double *area,
 
         ASSERT(found);
 
-        AmanziGeometry::Point cvec = fcoords[0]-cell_centroids[cellids[i]];
+        AmanziGeometry::Point cvec = fcoords[0]-cell_centroids_[cellids[i]];
         AmanziGeometry::Point trinormal = cvec^evec;
 
         AmanziGeometry::Point normal = evec^trinormal;
@@ -765,10 +765,10 @@ int Mesh::compute_face_geometry(const Entity_ID faceid, double *area,
 
   return 0;
 
-} // Mesh::compute_face_geometry
+} // Mesh::compute_face_geometry_
 
 
-int Mesh::compute_edge_geometry(const Entity_ID edgeid, double *edge_length,
+int Mesh::compute_edge_geometry_(const Entity_ID edgeid, double *edge_length,
 				AmanziGeometry::Point *edge_vector) const {
 
   (*edge_vector).set(0.0L);
@@ -787,7 +787,7 @@ int Mesh::compute_edge_geometry(const Entity_ID edgeid, double *edge_length,
 
   return 0;
 
-} // Mesh::compute_face_geometry
+} // Mesh::compute_face_geometry_
 
 
 
@@ -795,19 +795,19 @@ int Mesh::compute_edge_geometry(const Entity_ID edgeid, double *edge_length,
 
 double Mesh::cell_volume (const Entity_ID cellid, const bool recompute) const {
 
-  if (!cell_geometry_precomputed) {
-    compute_cell_geometric_quantities();
-    return cell_volumes[cellid];
+  if (!cell_geometry_precomputed_) {
+    compute_cell_geometric_quantities_();
+    return cell_volumes_[cellid];
   }
   else {
     if (recompute) {
       double volume;
-      AmanziGeometry::Point centroid(spacedim);
-      compute_cell_geometry(cellid, &volume, &centroid);
+      AmanziGeometry::Point centroid(spacedim_);
+      compute_cell_geometry_(cellid, &volume, &centroid);
       return volume;
     }
     else
-      return cell_volumes[cellid];
+      return cell_volumes_[cellid];
   }
 }
 
@@ -815,22 +815,22 @@ double Mesh::cell_volume (const Entity_ID cellid, const bool recompute) const {
 
 double Mesh::face_area(const Entity_ID faceid, const bool recompute) const {
 
-  ASSERT(faces_requested);
+  ASSERT(faces_requested_);
 
-  if (!face_geometry_precomputed) {
-    compute_face_geometric_quantities();
-    return face_areas[faceid];
+  if (!face_geometry_precomputed_) {
+    compute_face_geometric_quantities_();
+    return face_areas_[faceid];
   }
   else {
     if (recompute) {
       double area;
-      AmanziGeometry::Point centroid(spacedim);
-      AmanziGeometry::Point normal0(spacedim), normal1(spacedim);
-      compute_face_geometry(faceid, &area, &centroid, &normal0, &normal1);
+      AmanziGeometry::Point centroid(spacedim_);
+      AmanziGeometry::Point normal0(spacedim_), normal1(spacedim_);
+      compute_face_geometry_(faceid, &area, &centroid, &normal0, &normal1);
       return area;
     }
     else
-      return face_areas[faceid];
+      return face_areas_[faceid];
   }
 }
 
@@ -838,21 +838,21 @@ double Mesh::face_area(const Entity_ID faceid, const bool recompute) const {
 
 double Mesh::edge_length(const Entity_ID edgeid, const bool recompute) const {
 
-  ASSERT(edges_requested);
+  ASSERT(edges_requested_);
 
-  if (!edge_geometry_precomputed) {
-    compute_edge_geometric_quantities();
-    return edge_lengths[edgeid];
+  if (!edge_geometry_precomputed_) {
+    compute_edge_geometric_quantities_();
+    return edge_lengths_[edgeid];
   }
   else {
     if (recompute) {
       double length;
-      AmanziGeometry::Point vector(spacedim);
-      compute_edge_geometry(edgeid, &length, &vector);
+      AmanziGeometry::Point vector(spacedim_);
+      compute_edge_geometry_(edgeid, &length, &vector);
       return length;
     }
     else
-      return edge_lengths[edgeid];
+      return edge_lengths_[edgeid];
   }
 }
 
@@ -861,19 +861,19 @@ double Mesh::edge_length(const Entity_ID edgeid, const bool recompute) const {
 AmanziGeometry::Point Mesh::cell_centroid (const Entity_ID cellid, 
 					   const bool recompute) const {
 
-  if (!cell_geometry_precomputed) {
-    compute_cell_geometric_quantities();
-    return cell_centroids[cellid];
+  if (!cell_geometry_precomputed_) {
+    compute_cell_geometric_quantities_();
+    return cell_centroids_[cellid];
   }
   else {
     if (recompute) {
       double volume;
-      AmanziGeometry::Point centroid(spacedim);
-      compute_cell_geometry(cellid, &volume, &centroid);
+      AmanziGeometry::Point centroid(spacedim_);
+      compute_cell_geometry_(cellid, &volume, &centroid);
       return centroid;
     }
     else
-      return cell_centroids[cellid];
+      return cell_centroids_[cellid];
   }
 
 }
@@ -882,22 +882,22 @@ AmanziGeometry::Point Mesh::cell_centroid (const Entity_ID cellid,
 
 AmanziGeometry::Point Mesh::face_centroid (const Entity_ID faceid, const bool recompute) const {
 
-  ASSERT(faces_requested);
+  ASSERT(faces_requested_);
 
-  if (!face_geometry_precomputed) {
-    compute_face_geometric_quantities();
-    return face_centroids[faceid];
+  if (!face_geometry_precomputed_) {
+    compute_face_geometric_quantities_();
+    return face_centroids_[faceid];
   }
   else {
     if (recompute) {
       double area;
-      AmanziGeometry::Point centroid(spacedim);
-      AmanziGeometry::Point normal0(spacedim), normal1(spacedim);
-      compute_face_geometry(faceid, &area, &centroid, &normal0, &normal1);
+      AmanziGeometry::Point centroid(spacedim_);
+      AmanziGeometry::Point normal0(spacedim_), normal1(spacedim_);
+      compute_face_geometry_(faceid, &area, &centroid, &normal0, &normal1);
       return centroid;
     }
     else
-      return face_centroids[faceid];
+      return face_centroids_[faceid];
   }
 
 }
@@ -926,26 +926,26 @@ AmanziGeometry::Point Mesh::face_normal (const Entity_ID faceid,
 					 const Entity_ID cellid, 
 					 int *orientation) const {
 
-  ASSERT(faces_requested);
+  ASSERT(faces_requested_);
 
-  AmanziGeometry::Point normal0(spacedim);
-  AmanziGeometry::Point normal1(spacedim);
+  AmanziGeometry::Point normal0(spacedim_);
+  AmanziGeometry::Point normal1(spacedim_);
 
-  if (!face_geometry_precomputed) {
-    compute_face_geometric_quantities();
+  if (!face_geometry_precomputed_) {
+    compute_face_geometric_quantities_();
 
-    normal0 = face_normal0[faceid];    
-    normal1 = face_normal1[faceid];   
+    normal0 = face_normal0_[faceid];    
+    normal1 = face_normal1_[faceid];   
   }
   else {
     if (recompute) {
       double area;
-      AmanziGeometry::Point centroid(spacedim);
-      compute_face_geometry(faceid, &area, &centroid, &normal0, &normal1);
+      AmanziGeometry::Point centroid(spacedim_);
+      compute_face_geometry_(faceid, &area, &centroid, &normal0, &normal1);
     }
     else {
-      normal0 = face_normal0[faceid];  
-      normal1 = face_normal1[faceid];
+      normal0 = face_normal0_[faceid];  
+      normal1 = face_normal1_[faceid];
     }
   }
 
@@ -1005,21 +1005,21 @@ AmanziGeometry::Point Mesh::edge_vector (const Entity_ID edgeid,
 					 const Entity_ID pointid,
 					 int *orientation) const {
 
-  ASSERT(edges_requested);
+  ASSERT(edges_requested_);
 
-  AmanziGeometry::Point evector(spacedim);
+  AmanziGeometry::Point evector(spacedim_);
   AmanziGeometry::Point& evector_ref = evector; // to avoid extra copying
 
-  if (!edge_geometry_precomputed)
-    compute_edge_geometric_quantities();
+  if (!edge_geometry_precomputed_)
+    compute_edge_geometric_quantities_();
 
   if (recompute) {
     double length;
-    compute_edge_geometry(edgeid, &length, &evector);
+    compute_edge_geometry_(edgeid, &length, &evector);
     // evector_ref already points to evector
   }
   else
-    evector_ref = edge_vectors[edgeid];
+    evector_ref = edge_vectors_[edgeid];
 
   if (orientation) *orientation = 1;
 
@@ -1102,12 +1102,12 @@ bool Mesh::valid_set_id(Set_ID id, Entity_kind kind) const
       // If we are looking for a cell set the region has to be
       // of the same topological dimension as the cells
 
-      if (kind == CELL && rdim == topodim) return true;
+      if (kind == CELL && rdim == topodim_) return true;
 
       // If we are looking for a side set, the region has to be
       // one topological dimension less than the cells
 
-      if (kind == FACE && rdim == topodim-1) return true;
+      if (kind == FACE && rdim == topodim_-1) return true;
 
       // If we are looking for a node set, the region can be of any
       // dimension upto the spatial dimension of the domain
@@ -1164,12 +1164,12 @@ bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
       // If we are looking for a cell set the region has to be
       // of the same topological dimension as the cells or it
       // has to be a point region
-      if (kind == CELL && (rdim >= topodim || rdim == 1 || rdim == 0)) return true;
+      if (kind == CELL && (rdim >= topodim_ || rdim == 1 || rdim == 0)) return true;
 
       // If we are looking for a side set, the region has to be
       // one topological dimension less than the cells
 
-      if (kind == FACE && rdim >= topodim-1) return true;
+      if (kind == FACE && rdim >= topodim_-1) return true;
 
       // If we are looking for a node set, the region can be of any
       // dimension upto the spatial dimension of the domain
@@ -1187,7 +1187,7 @@ bool Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid)
 {
   std::vector<AmanziGeometry::Point> ccoords;
 
-  if (topodim == 3) {
+  if (topodim_ == 3) {
 
     // 3D Elements with possibly curved faces
     // We have to build a description of the element topology
@@ -1226,7 +1226,7 @@ bool Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid)
     return AmanziGeometry::point_in_polyhed(p,ccoords,nf,nfnodes,cfcoords);
 
   }
-  else if (topodim == 2) {
+  else if (topodim_ == 2) {
 
     cell_get_coordinates(cellid,&ccoords);
 
@@ -1377,9 +1377,9 @@ int Mesh::deform (const Entity_ID_List& nodeids,
 
   // recompute all geometric quantities
 
-  compute_cell_geometric_quantities();
-  if (faces_requested) compute_face_geometric_quantities();
-  if (edges_requested) compute_edge_geometric_quantities();
+  compute_cell_geometric_quantities_();
+  if (faces_requested_) compute_face_geometric_quantities_();
+  if (edges_requested_) compute_edge_geometric_quantities_();
 
   return status;
 }
@@ -1402,7 +1402,7 @@ int Mesh::deform (const Entity_ID_List& nodeids,
 
 
 
-int Mesh::build_columns() const {
+int Mesh::build_columns_() const {
   int status = 1;
 
   // Find the faces at the bottom of the domain. For now we assume
@@ -1413,17 +1413,17 @@ int Mesh::build_columns() const {
   int nf = num_entities(FACE,USED); // Can we ignore ghost columns?
   int nc = num_entities(CELL,USED); // Can we ignore ghost columns?
 
-  columnID.resize(nc);
+  columnID_.resize(nc);
 
   // Initialize cell_below and cell_above so that we can assign using
   // cell_below[i] = j type operations below
 
-  cell_cellbelow.resize(nc);
-  cell_cellbelow.assign(nc,-1);
-  cell_cellabove.resize(nc);
-  cell_cellabove.assign(nc,-1);
-  node_nodeabove.resize(nn);
-  node_nodeabove.assign(nn,-1);
+  cell_cellbelow_.resize(nc);
+  cell_cellbelow_.assign(nc,-1);
+  cell_cellabove_.resize(nc);
+  cell_cellabove_.assign(nc,-1);
+  node_nodeabove_.resize(nn);
+  node_nodeabove_.assign(nn,-1);
 
   int ncolumns = 0;
   for (int i = 0; i < nf; i++) {
@@ -1436,10 +1436,10 @@ int Mesh::build_columns() const {
     AmanziGeometry::Point normal = face_normal(i,false,fcells[0]);
     normal /= norm(normal);
 
-    AmanziGeometry::Point negzvec(spacedim);
-    if (spacedim == 2)
+    AmanziGeometry::Point negzvec(spacedim_);
+    if (spacedim_ == 2)
       negzvec.set(0.0,-1.0);
-    else if (spacedim == 3)
+    else if (spacedim_ == 3)
       negzvec.set(0.0,0.0,-1.0);
 
     double dp = negzvec*normal;
@@ -1464,7 +1464,7 @@ int Mesh::build_columns() const {
     // Just to make sure we are not making a mistake, lets check that
     // the centroid of the cell is above the centroid of the face
 
-    AmanziGeometry::Point ccen(spacedim),fcen(spacedim);
+    AmanziGeometry::Point ccen(spacedim_),fcen(spacedim_);
     ccen = cell_centroid(fcells[0]);
     fcen = face_centroid(i);
 
@@ -1491,7 +1491,7 @@ int Mesh::build_columns() const {
     bool done = false;
     while (!done) {
 
-      columnID[cur_cell] = ncolumns;
+      columnID_[cur_cell] = ncolumns;
       colcells.push_back(cur_cell);
       colfaces.push_back(bot_face);
 
@@ -1526,20 +1526,20 @@ int Mesh::build_columns() const {
       face_get_cells(top_face,USED,&fcells2);
       if (fcells2.size() == 2) {
 
-        if (cell_cellabove[cur_cell] != -1) {  // intersecting column of cells
+        if (cell_cellabove_[cur_cell] != -1) {  // intersecting column of cells
           status = 0;
           Errors::Message mesg("Intersecting column of cells");
           Exceptions::amanzi_throw(mesg);
         }
 
         if (fcells2[0] == cur_cell) {
-          cell_cellabove[cur_cell] = fcells2[1];
-          cell_cellbelow[fcells2[1]] = cur_cell;
+          cell_cellabove_[cur_cell] = fcells2[1];
+          cell_cellbelow_[fcells2[1]] = cur_cell;
           cur_cell = fcells2[1];
         }
         else if (fcells2[1] == cur_cell) {
-          cell_cellabove[cur_cell] = fcells2[0];
-          cell_cellbelow[fcells2[0]] = cur_cell;
+          cell_cellabove_[cur_cell] = fcells2[0];
+          cell_cellbelow_[fcells2[0]] = cur_cell;
           cur_cell = fcells2[0];
         }
         else {
@@ -1580,7 +1580,7 @@ int Mesh::build_columns() const {
 	node_get_coordinates(topnodes[k], &kc);
 
 	double horiz_dist = 0.;
-	for (int m=0; m!=spacedim-1; ++m) {
+	for (int m=0; m!=spacedim_-1; ++m) {
 	  horiz_dist += std::abs(botnode0c[m]-kc[m]);
 	}
 
@@ -1606,8 +1606,8 @@ int Mesh::build_columns() const {
 
       // We have a matching botnode and topnode - now match up the rest
       // even or odd handedness?
-      double even_odd_product = face_normal(top_face)[spacedim-1]
-	* face_normal(bot_face)[spacedim-1];
+      double even_odd_product = face_normal(top_face)[spacedim_-1]
+	* face_normal(bot_face)[spacedim_-1];
       ASSERT(std::abs(even_odd_product) > 0);
       int even_odd = even_odd_product >= 0. ? 1 : -1;
       
@@ -1616,7 +1616,7 @@ int Mesh::build_columns() const {
 	int top_i = (ind+even_odd*k)%nfvbot;
 	if (top_i < 0) top_i += nfvbot;
         Entity_ID topnode = topnodes[top_i];
-        node_nodeabove[botnode] = topnode;          
+        node_nodeabove_[botnode] = topnode;          
 
 	// ASSERT used in debugging
 	// AmanziGeometry::Point bc;
@@ -1624,7 +1624,7 @@ int Mesh::build_columns() const {
 	// node_get_coordinates(botnode, &bc);
 	// node_get_coordinates(topnode, &tc);
 	// double horiz_dist = 0.;
-	// for (int m=0; m!=spacedim-1; ++m) {
+	// for (int m=0; m!=spacedim_-1; ++m) {
 	//   horiz_dist += std::abs(bc[m]-tc[m]);
 	// }
 	// ASSERT(horz_dist < 1.e-10);
@@ -1634,12 +1634,12 @@ int Mesh::build_columns() const {
     } // while (!done)
 
     colfaces.push_back(top_face);
-    column_cells.push_back(colcells);
-    column_faces.push_back(colfaces);
+    column_cells_.push_back(colcells);
+    column_faces_.push_back(colfaces);
     ncolumns++;
   }
 
-  columns_built = true;
+  columns_built_ = true;
   return status;
 }
 

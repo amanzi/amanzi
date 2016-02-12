@@ -37,13 +37,13 @@ SUITE (HexMesh)
   {
     const unsigned int isize(3), jsize(3), ksize(3);
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    const int nproc(comm.NumProc());
-    const int me(comm.MyPID());
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
+    const int nproc(comm_.NumProc());
+    const int me(comm_.MyPID());
 
-    stk::ParallelMachine pm(comm.Comm());
+    stk::ParallelMachine pm(comm_.Comm());
 
-    Amanzi::AmanziMesh::Data::HexMeshGenerator g(&comm, isize, jsize, ksize);
+    Amanzi::AmanziMesh::Data::HexMeshGenerator g(&comm_, isize, jsize, ksize);
 
     Teuchos::RCP<Amanzi::AmanziMesh::Data::Data> meshdata(g.generate());
 
@@ -56,7 +56,7 @@ SUITE (HexMesh)
     //     std::cerr << ">>>>>> Process " << p << " End <<<<<<" << std::endl;
     //     std::cerr << std::endl;
     //   }
-    //   comm.Barrier();
+    //   comm_.Barrier();
     // }
 
     // need to have 1-based global indexes for stk::mesh
@@ -72,7 +72,7 @@ SUITE (HexMesh)
     CHECK_EQUAL(vmap->MaxAllGID(), (isize+1)*(jsize+1)*(ksize+1));
 
 
-    Amanzi::AmanziMesh::STK::Mesh_STK_factory mf(&comm, 1000);
+    Amanzi::AmanziMesh::STK::Mesh_STK_factory mf(&comm_, 1000);
     Amanzi::AmanziMesh::Data::Fields nofields;
     Amanzi::AmanziMesh::STK::Mesh_STK_Impl_p 
       mesh(mf.build_mesh(*meshdata, *cmap, *vmap, nofields, NULL));
@@ -81,18 +81,18 @@ SUITE (HexMesh)
         
     int lcount, gcount;
     lcount = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL),Amanzi::AmanziMesh::OWNED);
-    comm.SumAll(&lcount, &gcount, 1);
+    comm_.SumAll(&lcount, &gcount, 1);
     CHECK_EQUAL (gcount, isize*jsize*ksize);
 
     lcount = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::FACE), Amanzi::AmanziMesh::OWNED);
-    comm.SumAll(&lcount, &gcount, 1);
+    comm_.SumAll(&lcount, &gcount, 1);
     CHECK_EQUAL (gcount, 
                  (isize  )*(jsize  )*(ksize+1) + 
                  (isize  )*(jsize+1)*(ksize ) + 
                  (isize+1)*(jsize  )*(ksize ));
 
     lcount = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Amanzi::AmanziMesh::OWNED);
-    comm.SumAll(&lcount, &gcount, 1);
+    comm_.SumAll(&lcount, &gcount, 1);
     CHECK_EQUAL (gcount, (isize+1)*(jsize+1)*(ksize+1));
 
 
@@ -102,32 +102,32 @@ SUITE (HexMesh)
 
     // side = mesh->get_set("West", mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
     // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
-    // comm.SumAll(&lcount, &gcount, 1);
+    // comm_.SumAll(&lcount, &gcount, 1);
     // CHECK_EQUAL (gcount, isize*jsize);
 
     // side = mesh->get_set("East", mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
     // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
-    // comm.SumAll(&lcount, &gcount, 1);
+    // comm_.SumAll(&lcount, &gcount, 1);
     // CHECK_EQUAL (gcount, isize*jsize);
 
     // side = mesh->get_set("South", mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
     // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
-    // comm.SumAll(&lcount, &gcount, 1);
+    // comm_.SumAll(&lcount, &gcount, 1);
     // CHECK_EQUAL (gcount, isize*ksize);
 
     // side = mesh->get_set("North", mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
     // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
-    // comm.SumAll(&lcount, &gcount, 1);
+    // comm_.SumAll(&lcount, &gcount, 1);
     // CHECK_EQUAL (gcount, isize*ksize);
 
     // side = mesh->get_set("Bottom", mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
     // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
-    // comm.SumAll(&lcount, &gcount, 1);
+    // comm_.SumAll(&lcount, &gcount, 1);
     // CHECK_EQUAL (gcount, isize*jsize);
 
     // side = mesh->get_set("East", mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
     // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
-    // comm.SumAll(&lcount, &gcount, 1);
+    // comm_.SumAll(&lcount, &gcount, 1);
     // CHECK_EQUAL (gcount, jsize*ksize);
 
 
@@ -145,19 +145,19 @@ SUITE (HexMesh)
   {
     const unsigned int isize(1), jsize(1), ksize(8);
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    const int nproc(comm.NumProc());
-    const int me(comm.MyPID());
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
+    const int nproc(comm_.NumProc());
+    const int me(comm_.MyPID());
 
-    stk::ParallelMachine pm(comm.Comm());
+    stk::ParallelMachine pm(comm_.Comm());
 
-    Amanzi::AmanziMesh::Data::HexMeshGenerator g(&comm, isize, jsize, ksize);
+    Amanzi::AmanziMesh::Data::HexMeshGenerator g(&comm_, isize, jsize, ksize);
 
     Teuchos::RCP<Amanzi::AmanziMesh::Data::Data> meshdata(g.generate());
     Teuchos::RCP<Epetra_Map> cmap(g.cellmap(true));
     Teuchos::RCP<Epetra_Map> vmap(g.vertexmap(true));
 
-    Amanzi::AmanziMesh::STK::Mesh_STK_factory mf(&comm, 1000);
+    Amanzi::AmanziMesh::STK::Mesh_STK_factory mf(&comm_, 1000);
     Amanzi::AmanziMesh::Data::Fields nofields;
     Amanzi::AmanziMesh::STK::Mesh_STK_Impl_p 
       mesh(mf.build_mesh(*meshdata, *cmap, *vmap, nofields, NULL));
@@ -223,7 +223,7 @@ SUITE (HexMesh)
       //         }
       //         std::cerr << ">>>>>> Process " << p << " End <<<<<< " << std::endl;
       //     }
-      //     comm.Barrier();
+      //     comm_.Barrier();
       // }
 
     } else {
@@ -246,9 +246,9 @@ SUITE (HexMesh)
 
   TEST (HexGenerator)
   {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-        mesh_map(new Amanzi::AmanziMesh::Mesh_STK(&comm, 10, 10, 10));
+        mesh_map(new Amanzi::AmanziMesh::Mesh_STK(&comm_, 10, 10, 10));
     
     // Must disable until STKmesh can give us contiguous entity IDs
  
@@ -267,9 +267,9 @@ SUITE (HexMesh)
 
     //    Amanzi::AmanziMesh::GenerationSpec gspec(parameter_list);
 
-    //    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    //    Epetra_MpiComm comm_(MPI_COMM_WORLD);
     //    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-    //        mesh_map(new Amanzi::AmanziMesh::Mesh_STK(gspec, &comm));
+    //        mesh_map(new Amanzi::AmanziMesh::Mesh_STK(gspec, &comm_));
      
     //    Auditor audit("stk_mesh_generated_", mesh_map);
     //    audit();
@@ -278,9 +278,9 @@ SUITE (HexMesh)
 
   TEST (HexPartition)
   {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
     Amanzi::AmanziMesh::Mesh_STK
-        *mesh_stk = new Amanzi::AmanziMesh::Mesh_STK(&comm, 4, 2, 2);
+        *mesh_stk = new Amanzi::AmanziMesh::Mesh_STK(&comm_, 4, 2, 2);
 
     Teuchos::RCP<Epetra_CrsGraph> cgraph = mesh_stk->cellgraph();
     //    cgraph->Print(std::cerr);  // must check, not just print!

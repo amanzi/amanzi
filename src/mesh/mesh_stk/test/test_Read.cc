@@ -36,7 +36,7 @@ class ReadFixture {
 
  public:
 
-  Epetra_MpiComm comm;
+  Epetra_MpiComm comm_;
   const int nproc;
 
   Amanzi::AmanziMesh::STK::Mesh_STK_factory mf;
@@ -47,9 +47,9 @@ class ReadFixture {
   
   /// Default constructor.
   ReadFixture(void)
-      : comm(MPI_COMM_WORLD),
-        nproc(comm.NumProc()),
-        mf(&comm, 1000)
+      : comm_(MPI_COMM_WORLD),
+        nproc(comm_.NumProc()),
+        mf(&comm_, 1000)
   { }
 
   void read(const std::string& name)
@@ -59,11 +59,11 @@ class ReadFixture {
       my_read(name);
       // maps.reset(new Amanzi::AmanziMesh::STK::Mesh_maps_stk(mesh));
     } catch (const std::exception& e) {
-      std::cerr << comm.MyPID() << ": error: " << e.what() << std::endl;
+      std::cerr << comm_.MyPID() << ": error: " << e.what() << std::endl;
       ierr++;
     }
     int aerr(0);
-    comm.SumAll(&ierr, &aerr, 1);
+    comm_.SumAll(&ierr, &aerr, 1);
 
     if (aerr) {
       throw std::runtime_error("Problem in ReadFixture");
@@ -105,19 +105,19 @@ class ParallelReadFixture : public ReadFixture {
   
   void my_read(const std::string& name) 
   {
-    Amanzi::Exodus::Parallel_Exodus_file thefile(comm, name);
+    Amanzi::Exodus::Parallel_Exodus_file thefile(comm_, name);
     meshdata = thefile.read_mesh();
 
     // Must check/verify, not just print
     // for (int p = 0; p < nproc; p++) {
-    //   if (comm.MyPID() == p) {
+    //   if (comm_.MyPID() == p) {
     //     std::cerr << std::endl;
     //     std::cerr << ">>>>>> Process " << p << " Begin <<<<<<" << std::endl;
     //     meshdata->to_stream(std::cerr, verbose);
     //     std::cerr << ">>>>>> Process " << p << " End <<<<<<" << std::endl;
     //     std::cerr << std::endl;
     //   }
-    //   comm.Barrier();
+    //   comm_.Barrier();
     // }
 
     Teuchos::RCP<Epetra_Map> cmap(thefile.cellmap());
@@ -146,8 +146,8 @@ SUITE (Exodus)
 {
   TEST (Processes) 
   {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    const int nproc(comm.NumProc());
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
+    const int nproc(comm_.NumProc());
     CHECK(nproc >= 1 && nproc <= 4);
   }
 
@@ -289,13 +289,13 @@ SUITE (Exodus)
       CHECK_EQUAL(mesh->num_sets(mesh->kind_to_rank(Amanzi::AmanziMesh::FACE)), 20);
       int local, global;
       local = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
+      comm_.SumAll(&local, &global, 1);
       CHECK_EQUAL(global, 11*11*11);
       local = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::FACE), Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
+      comm_.SumAll(&local, &global, 1);
       CHECK_EQUAL(global, 10*10*11*3);
       local = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
+      comm_.SumAll(&local, &global, 1);
       CHECK_EQUAL(global, 10*10*10);
 
 
@@ -306,19 +306,19 @@ SUITE (Exodus)
       // p = mesh->get_set("side set 1", mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
       // CHECK(p != NULL);
       // local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      // comm.SumAll(&local, &global, 1);
+      // comm_.SumAll(&local, &global, 1);
       // CHECK_EQUAL(global, 600);
             
       // p = mesh->get_set("element block 20000", mesh->kind_to_rank(Amanzi::AmanziMesh::CELL));
       // CHECK(p != NULL);
       // local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      // comm.SumAll(&local, &global, 1);
+      // comm_.SumAll(&local, &global, 1);
       // CHECK_EQUAL(global, 9);
 
       // p = mesh->get_set("node set 103", mesh->kind_to_rank(Amanzi::AmanziMesh::NODE));
       // CHECK(p != NULL);
       // local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      // comm.SumAll(&local, &global, 1);
+      // comm_.SumAll(&local, &global, 1);
       // CHECK_EQUAL(global, 121);
 
      //  Disable until STKmesh can give us contiguous entity IDs
@@ -339,13 +339,13 @@ SUITE (Exodus)
 
       int local, global;
       local = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
+      comm_.SumAll(&local, &global, 1);
       CHECK_EQUAL(global, 4*4*4);
       local = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::FACE), Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
+      comm_.SumAll(&local, &global, 1);
       CHECK_EQUAL(global, 3*3*4*3);
       local = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
+      comm_.SumAll(&local, &global, 1);
       CHECK_EQUAL(global, 3*3*3);
 
       //      stk::mesh::Part *p;
@@ -353,19 +353,19 @@ SUITE (Exodus)
       //      p = mesh->get_set(1, mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
       //      CHECK(p != NULL);
       // local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      // comm.SumAll(&local, &global, 1);
+      // comm_.SumAll(&local, &global, 1);
       // CHECK_EQUAL(global, 54);
             
       // p = mesh->get_set(20000, mesh->kind_to_rank(Amanzi::AmanziMesh::CELL));
       // CHECK(p != NULL);
       // local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      // comm.SumAll(&local, &global, 1);
+      // comm_.SumAll(&local, &global, 1);
       // CHECK_EQUAL(global, 9);
 
       // p = mesh->get_set(103, mesh->kind_to_rank(Amanzi::AmanziMesh::NODE));
       // CHECK(p != NULL);
       // local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      // comm.SumAll(&local, &global, 1);
+      // comm_.SumAll(&local, &global, 1);
       // CHECK_EQUAL(global, 16);
 
      //  Disable until STKmesh can give us contiguous entity IDs
@@ -383,10 +383,10 @@ SUITE (Exodus)
       CHECK_EQUAL(mesh->num_sets(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL)), 1);
       int local, global;
       local = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
+      comm_.SumAll(&local, &global, 1);
       CHECK_EQUAL(global, 1920);
       local = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
+      comm_.SumAll(&local, &global, 1);
       CHECK_EQUAL(global, 2634);
 
       stk::mesh::Part *p;
@@ -394,7 +394,7 @@ SUITE (Exodus)
       p = mesh->get_set(1, mesh->kind_to_rank(Amanzi::AmanziMesh::CELL));
       CHECK(p != NULL);
       local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
+      comm_.SumAll(&local, &global, 1);
       CHECK_EQUAL(global, 2634);
 
      //  Disable until STKmesh can give us contiguous entity IDs
@@ -411,10 +411,10 @@ SUITE (Exodus)
       CHECK_EQUAL(mesh->num_sets(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL)), 5);
       int local, global;
       local = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
+      comm_.SumAll(&local, &global, 1);
       CHECK_EQUAL(global, 361);
       local = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
+      comm_.SumAll(&local, &global, 1);
       CHECK_EQUAL(global, 592);
 
       stk::mesh::Part *p;
@@ -422,19 +422,19 @@ SUITE (Exodus)
       p = mesh->get_set(1, mesh->kind_to_rank(Amanzi::AmanziMesh::CELL));
       CHECK(p != NULL);
       local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
+      comm_.SumAll(&local, &global, 1);
       CHECK_EQUAL(global, 120);
 
       p = mesh->get_set(2, mesh->kind_to_rank(Amanzi::AmanziMesh::CELL));
       CHECK(p != NULL);
       local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
+      comm_.SumAll(&local, &global, 1);
       CHECK_EQUAL(global, 48);
 
       p = mesh->get_set(3, mesh->kind_to_rank(Amanzi::AmanziMesh::CELL));
       CHECK(p != NULL);
       local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
+      comm_.SumAll(&local, &global, 1);
       CHECK_EQUAL(global, 48);
 
      //  Disable until STKmesh can give us contiguous entity IDs
@@ -446,13 +446,13 @@ SUITE (Exodus)
 
   TEST (DirectReader) 
   {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
 
     // FIXME: need to be able to assign path from configuration
 
     std::string fpath("../exodus_reader/test_files/");
     std::string fname("hex_10x10x10_ss");
-    if (comm.NumProc() == 1) {
+    if (comm_.NumProc() == 1) {
       fname += ".exo";
     } else {
       fpath += "split1/";
@@ -461,7 +461,7 @@ SUITE (Exodus)
     fname = fpath + fname;
 
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-      mesh(new Amanzi::AmanziMesh::Mesh_STK(&comm, fname.c_str()));
+      mesh(new Amanzi::AmanziMesh::Mesh_STK(&comm_, fname.c_str()));
 
      //  Disable until STKmesh can give us contiguous entity IDs
 

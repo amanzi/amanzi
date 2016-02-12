@@ -15,7 +15,7 @@
 TEST(Extract_Surface_MSTK1_4P)
 {
 
-  Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
+  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
 
 
   Teuchos::ParameterList parameterlist;
@@ -45,10 +45,10 @@ TEST(Extract_Surface_MSTK1_4P)
 
 //  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get()));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm_.get()));
 
   // Generate a mesh consisting of 4x4x4 elements 
-  Amanzi::AmanziMesh::Mesh_MSTK mesh(0,0,0,1,1,1,4,4,4,comm.get(),gm);
+  Amanzi::AmanziMesh::Mesh_MSTK mesh(0,0,0,1,1,1,4,4,4,comm_.get(),gm);
 
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top Surface"));
@@ -100,7 +100,7 @@ TEST(Extract_Surface_MSTK1_4P)
 TEST(Extract_Surface_MSTK2_4P)
 {
 
-  Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
+  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
 
 
   Teuchos::ParameterList parameterlist;
@@ -122,10 +122,10 @@ TEST(Extract_Surface_MSTK2_4P)
 
   //  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get()));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm_.get()));
 
   // Generate a mesh consisting of 4x4x4 elements 
-  Amanzi::AmanziMesh::Mesh_MSTK mesh(0.0,0.0,0.0,1.0,1.0,1.0,4,4,4,comm.get(),gm);
+  Amanzi::AmanziMesh::Mesh_MSTK mesh(0.0,0.0,0.0,1.0,1.0,1.0,4,4,4,comm_.get(),gm);
 
 
   // Perturb some nodes
@@ -199,7 +199,7 @@ TEST(Extract_Surface_MSTK3_4P)
 
   std::string filename("test/hex_3x3x3_sets.exo");
 
-  Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
+  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
 
   Teuchos::ParameterList parameterlist;
 
@@ -222,10 +222,10 @@ TEST(Extract_Surface_MSTK3_4P)
 //  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
 
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get()));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm_.get()));
 
   // Read a mesh from the file
-  Amanzi::AmanziMesh::Mesh_MSTK mesh(filename.c_str(),comm.get(),3,gm);
+  Amanzi::AmanziMesh::Mesh_MSTK mesh(filename.c_str(),comm_.get(),3,gm);
 
 
   std::vector<std::string> setnames;

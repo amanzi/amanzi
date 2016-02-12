@@ -12,14 +12,14 @@ TEST(NODE_CELL_FACES) {
   using namespace std;
 
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm *comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  Epetra_SerialComm *comm_ = new Epetra_SerialComm();
 #endif
 
   const unsigned int exp_nnode = 27;
 
-  Amanzi::AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, comm); 
+  Amanzi::AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, comm_); 
 
 
   for (int i = 0; i < exp_nnode; i++)

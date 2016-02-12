@@ -16,99 +16,99 @@ namespace AmanziMesh {
 //                              face, points from cell 1 to 2 in
 //                              face_cell_list topology, magnitude
 //                              is area
-//  - cell_centroids          : (optional, for plotting) length ncell
+//  - cell_centroids_          : (optional, for plotting) length ncell
 //                              array of centroids
 //
 // Breaks standards following the rest of the mesh infrastructure.
 //
-MeshLogical::MeshLogical(const Epetra_MpiComm *incomm,
-			 const std::vector<double>& cell_volumes_,
-			 const std::vector<Entity_ID_List>& face_cell_ids_,
+MeshLogical::MeshLogical(const Epetra_MpiComm *incomm_,
+			 const std::vector<double>& cell_volumes__,
+			 const std::vector<Entity_ID_List>& face_cell_ids__,
 			 const std::vector<std::vector<double> >& face_cell_lengths_,
 			 const std::vector<AmanziGeometry::Point>& face_area_normals_,
-			 const std::vector<AmanziGeometry::Point>* cell_centroids_,
+			 const std::vector<AmanziGeometry::Point>* cell_centroids__,
              const Teuchos::RCP<const VerboseObject>& verbosity_obj)
   : Mesh(verbosity_obj) {
 
-  ASSERT(face_cell_ids_.size() == face_cell_lengths_.size());
-  ASSERT(face_cell_ids_.size() == face_area_normals_.size());
+  ASSERT(face_cell_ids__.size() == face_cell_lengths_.size());
+  ASSERT(face_cell_ids__.size() == face_area_normals_.size());
   
-  set_comm(incomm);
-  cell_volumes = cell_volumes_;
-  face_cell_ids = face_cell_ids_;
+  set_comm(incomm_);
+  cell_volumes_ = cell_volumes__;
+  face_cell_ids_ = face_cell_ids__;
   
   // normal1 is negative normal0
-  face_normal0 = face_area_normals_;
-  face_normal1 = face_area_normals_;
+  face_normal0_ = face_area_normals_;
+  face_normal1_ = face_area_normals_;
   for (int f=0; f!=face_area_normals_.size(); ++f) {
-    if (cell_centroids_) {
-      if (face_cell_ids[f].size() == 2) {
-	if (face_normal0[f] * ((*cell_centroids_)[face_cell_ids[f][1]] -
-			       (*cell_centroids_)[face_cell_ids[f][0]]) > 0.) {
+    if (cell_centroids__) {
+      if (face_cell_ids_[f].size() == 2) {
+	if (face_normal0_[f] * ((*cell_centroids__)[face_cell_ids_[f][1]] -
+			       (*cell_centroids__)[face_cell_ids_[f][0]]) > 0.) {
 	  // normal is outward from cell 0 to cell 1
-	  face_normal1[f] = -face_normal1[f];
+	  face_normal1_[f] = -face_normal1_[f];
 	} else {
 	  // normal is outward from cell 1 to cell 0
-	  face_normal0[f] = -face_normal0[f];
+	  face_normal0_[f] = -face_normal0_[f];
 	}
       } else {
 	// pass, boundary face and we must assume normal given was correct
       }
     } else {
       // no centroid info, doesn't matter what we choose
-      face_normal1[f] = -face_normal1[f];
+      face_normal1_[f] = -face_normal1_[f];
     }
   }
 
   // optional centroids
-  if (cell_centroids_) {
-    cell_centroids = *cell_centroids_;
+  if (cell_centroids__) {
+    cell_centroids_ = *cell_centroids__;
 
     // face centroids constructed from normals, lengths, cell
     // centroids using assumption of perpendicular bisector
-    face_centroids.resize(face_cell_ids.size());
-    for (int f=0; f!=face_cell_ids.size(); ++f) {
-      if (face_cell_ids[f].size() == 2) {
-	face_centroids[f] = (cell_centroids[face_cell_ids[f][0]] +
-			     cell_centroids[face_cell_ids[f][1]]) / 2.0;
+    face_centroids_.resize(face_cell_ids_.size());
+    for (int f=0; f!=face_cell_ids_.size(); ++f) {
+      if (face_cell_ids_[f].size() == 2) {
+	face_centroids_[f] = (cell_centroids_[face_cell_ids_[f][0]] +
+			     cell_centroids_[face_cell_ids_[f][1]]) / 2.0;
       } else {
-	ASSERT(face_cell_ids[f].size() == 1);
-	face_centroids[f] = cell_centroids[face_cell_ids[f][0]]
-	  + (face_cell_lengths_[f][0] / AmanziGeometry::norm(face_normal0[f]))
-	  * face_normal0[f];
+	ASSERT(face_cell_ids_[f].size() == 1);
+	face_centroids_[f] = cell_centroids_[face_cell_ids_[f][0]]
+	  + (face_cell_lengths_[f][0] / AmanziGeometry::norm(face_normal0_[f]))
+	  * face_normal0_[f];
       }
     }
   }
 
   // populate cell, extra face info
-  face_cell_ptype.resize(face_cell_ids.size());
-  face_areas.resize(face_cell_ids.size());
+  face_cell_ptype_.resize(face_cell_ids_.size());
+  face_areas_.resize(face_cell_ids_.size());
   
-  cell_face_ids.resize(cell_volumes.size());
-  cell_face_dirs.resize(cell_volumes.size());
-  cell_face_bisectors.resize(cell_volumes.size());
+  cell_face_ids_.resize(cell_volumes_.size());
+  cell_face_dirs_.resize(cell_volumes_.size());
+  cell_face_bisectors.resize(cell_volumes_.size());
   int f_id=0;
-  for (std::vector<Entity_ID_List>::const_iterator f=face_cell_ids.begin();
-       f!=face_cell_ids.end(); ++f) {
-    face_cell_ptype[f_id].push_back(OWNED);
-    face_cell_ptype[f_id].push_back(f->size() == 2 ?
+  for (std::vector<Entity_ID_List>::const_iterator f=face_cell_ids_.begin();
+       f!=face_cell_ids_.end(); ++f) {
+    face_cell_ptype_[f_id].push_back(OWNED);
+    face_cell_ptype_[f_id].push_back(f->size() == 2 ?
 				    OWNED : PTYPE_UNKNOWN);
-    face_areas[f_id] = AmanziGeometry::norm(face_normal0[f_id]);
+    face_areas_[f_id] = AmanziGeometry::norm(face_normal0_[f_id]);
     
-    cell_face_ids[(*f)[0]].push_back(f_id);
-    cell_face_dirs[(*f)[0]].push_back(1);
+    cell_face_ids_[(*f)[0]].push_back(f_id);
+    cell_face_dirs_[(*f)[0]].push_back(1);
 
-    AmanziGeometry::Point unit_normal(face_normal0[f_id]);
+    AmanziGeometry::Point unit_normal(face_normal0_[f_id]);
     unit_normal /= AmanziGeometry::norm(unit_normal);
     unit_normal *= face_cell_lengths_[f_id][0];
     cell_face_bisectors[(*f)[0]].push_back(unit_normal);
 
     if (f->size() > 1 && (*f)[1] >= 0) {
-      cell_face_ids[(*f)[1]].push_back(f_id);
-      cell_face_dirs[(*f)[1]].push_back(-1);
+      cell_face_ids_[(*f)[1]].push_back(f_id);
+      cell_face_dirs_[(*f)[1]].push_back(-1);
 
-      AmanziGeometry::Point unit_normal(face_normal1[f_id]);
-      unit_normal /= face_areas[f_id];
+      AmanziGeometry::Point unit_normal(face_normal1_[f_id]);
+      unit_normal /= face_areas_[f_id];
       cell_face_bisectors[(*f)[0]].push_back(unit_normal * face_cell_lengths_[f_id][1]);
     }      
     
@@ -116,11 +116,11 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *incomm,
   }
 
   // toggle flags
-  cell_geometry_precomputed = true;
-  face_geometry_precomputed = true;
-  cell2face_info_cached = true;
-  faces_requested = true;
-  face2cell_info_cached = true;
+  cell_geometry_precomputed_ = true;
+  face_geometry_precomputed_ = true;
+  cell2face_info_cached_ = true;
+  faces_requested_ = true;
+  face2cell_info_cached_ = true;
 
   // build epetra maps
   init_maps();
@@ -131,25 +131,25 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *incomm,
 void
 MeshLogical::init_maps() {
   // cell map
-  maps_[CELL] = Teuchos::rcp(new Epetra_Map(-1, cell_face_ids.size(), 0, *comm));
+  maps_[CELL] = Teuchos::rcp(new Epetra_Map(-1, cell_face_ids_.size(), 0, *comm_));
 
   // face map
   Teuchos::RCP<Epetra_Map> face_map =
-    Teuchos::rcp(new Epetra_Map(-1, face_cell_ids.size(), 0, *comm));
+    Teuchos::rcp(new Epetra_Map(-1, face_cell_ids_.size(), 0, *comm_));
   maps_[FACE] = face_map;
 
   // exterior face map
   std::vector<int> extface_ids;
   int f_id = 0;
-  for (std::vector<Entity_ID_List>::iterator f=face_cell_ids.begin();
-       f!=face_cell_ids.end(); ++f) {
+  for (std::vector<Entity_ID_List>::iterator f=face_cell_ids_.begin();
+       f!=face_cell_ids_.end(); ++f) {
     if (f->size() == 1) {
       extface_ids.push_back(face_map->GID(f_id));
     }
     f_id++;
   }
   maps_[BOUNDARY_FACE] = Teuchos::rcp(new Epetra_Map(-1, extface_ids.size(),
-						     &extface_ids[0], 0, *comm));
+						     &extface_ids[0], 0, *comm_));
 
   exterior_face_importer_ = Teuchos::rcp(new Epetra_Import(*maps_[BOUNDARY_FACE],
 							   *face_map));  
@@ -168,32 +168,32 @@ MeshLogical::operator==(const MeshLogical& other) {
   double _eps = 1.e-10;
   
   if (&other == this) return true;
-  if (cell_face_ids != other.cell_face_ids) return false;
-  if (face_cell_ids != other.face_cell_ids) return false;
+  if (cell_face_ids_ != other.cell_face_ids_) return false;
+  if (face_cell_ids_ != other.face_cell_ids_) return false;
 
-  if (cell_volumes.size() != other.cell_volumes.size()) return false;
-  for (size_t i=0; i!=cell_volumes.size(); ++i) {
-    if (std::abs(cell_volumes[i] - other.cell_volumes[i]) > _eps) return false;
+  if (cell_volumes_.size() != other.cell_volumes_.size()) return false;
+  for (size_t i=0; i!=cell_volumes_.size(); ++i) {
+    if (std::abs(cell_volumes_[i] - other.cell_volumes_[i]) > _eps) return false;
   }
 
-  if (face_normal0.size() != other.face_normal0.size()) return false;
-  for (size_t i=0; i!=face_normal0.size(); ++i) {
-    if (AmanziGeometry::norm(face_normal0[i] - other.face_normal0[i]) > _eps) return false;
+  if (face_normal0_.size() != other.face_normal0_.size()) return false;
+  for (size_t i=0; i!=face_normal0_.size(); ++i) {
+    if (AmanziGeometry::norm(face_normal0_[i] - other.face_normal0_[i]) > _eps) return false;
   }
 
-  if (face_normal1.size() != other.face_normal1.size()) return false;  
-  for (size_t i=0; i!=face_normal1.size(); ++i) {
-    if (AmanziGeometry::norm(face_normal1[i] - other.face_normal1[i]) > _eps) return false;
+  if (face_normal1_.size() != other.face_normal1_.size()) return false;  
+  for (size_t i=0; i!=face_normal1_.size(); ++i) {
+    if (AmanziGeometry::norm(face_normal1_[i] - other.face_normal1_[i]) > _eps) return false;
   }
 
-  if (cell_centroids.size() != other.cell_centroids.size()) return false;  
-  for (size_t i=0; i!=cell_centroids.size(); ++i) {
-    if (AmanziGeometry::norm(cell_centroids[i] - other.cell_centroids[i]) > _eps) return false;
+  if (cell_centroids_.size() != other.cell_centroids_.size()) return false;  
+  for (size_t i=0; i!=cell_centroids_.size(); ++i) {
+    if (AmanziGeometry::norm(cell_centroids_[i] - other.cell_centroids_[i]) > _eps) return false;
   }
 
-  if (face_centroids.size() != other.face_centroids.size()) return false;  
-  for (size_t i=0; i!=face_centroids.size(); ++i) {
-    if (AmanziGeometry::norm(face_centroids[i] - other.face_centroids[i]) > _eps) return false;
+  if (face_centroids_.size() != other.face_centroids_.size()) return false;  
+  for (size_t i=0; i!=face_centroids_.size(); ++i) {
+    if (AmanziGeometry::norm(face_centroids_[i] - other.face_centroids_[i]) > _eps) return false;
   }
   return true;
 }
@@ -259,7 +259,7 @@ MeshLogical::cell_get_faces_and_bisectors (const Entity_ID cellid,
 			   Entity_ID_List *faceids,
 			   std::vector<AmanziGeometry::Point> *bisectors,
 			   const bool ordered) const {
-  if (faceids) *faceids = cell_face_ids[cellid];
+  if (faceids) *faceids = cell_face_ids_[cellid];
   if (bisectors) *bisectors = cell_face_bisectors[cellid];
 }
   
@@ -408,8 +408,8 @@ MeshLogical::node_set_coordinates (const Entity_ID nodeid,
 
 // Deformation not supported.
 int
-MeshLogical::deform (const std::vector<double>& target_cell_volumes_in,
-		     const std::vector<double>& min_cell_volumes_in,
+MeshLogical::deform (const std::vector<double>& target_cell_volumes__in,
+		     const std::vector<double>& min_cell_volumes__in,
 		     const Entity_ID_List& fixed_nodes,
 		     const bool move_vertical) {
   Errors::Message mesg("No nodes in MeshLogical.");
@@ -540,15 +540,15 @@ MeshLogical::write_to_exodus_file(const std::string filename) const {
 
 // Geometry
 int
-MeshLogical::compute_cell_geometry(const Entity_ID cellid, 
+MeshLogical::compute_cell_geometry_(const Entity_ID cellid, 
 				   double *volume, 
 				   AmanziGeometry::Point *centroid) const {
   // this is a placeholder, these cannot be recomputed
-  if (volume) *volume = cell_volumes[cellid];
+  if (volume) *volume = cell_volumes_[cellid];
 
   if (centroid) {
-    if (cell_centroids.size() > 0) {
-      *centroid = cell_centroids[cellid];
+    if (cell_centroids_.size() > 0) {
+      *centroid = cell_centroids_[cellid];
     } else {
       *centroid = AmanziGeometry::Point();
     }
@@ -558,16 +558,16 @@ MeshLogical::compute_cell_geometry(const Entity_ID cellid,
 
 
 int
-MeshLogical::compute_face_geometry(const Entity_ID faceid, 
+MeshLogical::compute_face_geometry_(const Entity_ID faceid, 
 				   double *area, 
 				   AmanziGeometry::Point *centroid, 
 				   AmanziGeometry::Point *normal0,
 				   AmanziGeometry::Point *normal1) const {
   // this is a placeholder, these cannot be recomputed
-  if (area) *area = face_areas[faceid];
+  if (area) *area = face_areas_[faceid];
   if (centroid) *centroid = AmanziGeometry::Point();
-  if (normal0) *normal0 = face_normal0[faceid];
-  if (normal1) *normal1 = face_normal1[faceid];
+  if (normal0) *normal0 = face_normal0_[faceid];
+  if (normal1) *normal1 = face_normal1_[faceid];
   return 1;
 }
   
@@ -576,28 +576,28 @@ MeshLogical::compute_face_geometry(const Entity_ID faceid,
 // is implemented in each mesh framework. The results are cached in 
 // the base class
 void
-MeshLogical::cell_get_faces_and_dirs_internal (const Entity_ID cellid,
+MeshLogical::cell_get_faces_and_dirs_internal_ (const Entity_ID cellid,
 					       Entity_ID_List *faceids,
 					       std::vector<int> *face_dirs,
 					       const bool ordered) const {
-  Errors::Message mesg("DEVELOPER ERROR: cell_get_faces_and_dirs_internal() should not be called");
+  Errors::Message mesg("DEVELOPER ERROR: cell_get_faces_and_dirs_internal_() should not be called");
   Exceptions::amanzi_throw(mesg);
 }
 
 // Cells connected to a face - this function is implemented in each
 // mesh framework. The results are cached in the base class
 void
-MeshLogical::face_get_cells_internal (const Entity_ID faceid,
+MeshLogical::face_get_cells_internal_ (const Entity_ID faceid,
 				      const Parallel_type ptype,
 				      Entity_ID_List *cellids) const {
-  Errors::Message mesg("DEVELOPER ERROR: face_get_cells_internal() should not be called");
+  Errors::Message mesg("DEVELOPER ERROR: face_get_cells_internal_() should not be called");
   Exceptions::amanzi_throw(mesg);
 }
 
 // edges of a face - this function is implemented in each mesh
 // framework. The results are cached in the base class
 void
-MeshLogical::face_get_edges_and_dirs_internal (const Entity_ID faceid,
+MeshLogical::face_get_edges_and_dirs_internal_ (const Entity_ID faceid,
 					       Entity_ID_List *edgeids,
 					       std::vector<int> *edge_dirs,
 					       const bool ordered) const {
@@ -609,7 +609,7 @@ MeshLogical::face_get_edges_and_dirs_internal (const Entity_ID faceid,
 // edges of a cell - this function is implemented in each mesh
 // framework. The results are cached in the base class. 
 void
-MeshLogical::cell_get_edges_internal (const Entity_ID cellid,
+MeshLogical::cell_get_edges_internal_ (const Entity_ID cellid,
 				      Entity_ID_List *edgeids) const {
   Errors::Message mesg("No edges in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
@@ -619,7 +619,7 @@ MeshLogical::cell_get_edges_internal (const Entity_ID cellid,
 // edges and directions of a 2D cell - this function is implemented
 // in each mesh framework. The results are cached in the base class.
 void
-MeshLogical::cell_2D_get_edges_and_dirs_internal (const Entity_ID cellid,
+MeshLogical::cell_2D_get_edges_and_dirs_internal_ (const Entity_ID cellid,
 						  Entity_ID_List *edgeids,
 						  std::vector<int> *edge_dirs) const {
   Errors::Message mesg("No edges in MeshLogical.");
@@ -628,7 +628,7 @@ MeshLogical::cell_2D_get_edges_and_dirs_internal (const Entity_ID cellid,
   
 
 int
-MeshLogical::build_columns() const {
+MeshLogical::build_columns_() const {
   Errors::Message mesg("No columns are buildable in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -636,26 +636,26 @@ MeshLogical::build_columns() const {
 
 // Cache connectivity info.
 void
-MeshLogical::cache_cell2face_info() const {
+MeshLogical::cache_cell2face_info_() const {
   Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
   Exceptions::amanzi_throw(mesg);
 }
 
 void
-MeshLogical::cache_face2cell_info() const {
+MeshLogical::cache_face2cell_info_() const {
   Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
   Exceptions::amanzi_throw(mesg);
 }
   
   
 int
-MeshLogical::compute_cell_geometric_quantities() const {
+MeshLogical::compute_cell_geometric_quantities_() const {
   Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
   Exceptions::amanzi_throw(mesg);
 }
 
 int
-MeshLogical::compute_face_geometric_quantities() const {
+MeshLogical::compute_face_geometric_quantities_() const {
   Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
   Exceptions::amanzi_throw(mesg);
 }

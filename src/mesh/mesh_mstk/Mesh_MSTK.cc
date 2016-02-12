@@ -27,19 +27,19 @@ namespace AmanziMesh
 // Constructor - load up mesh from file
 //--------------------------------------
 
-Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
+Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm_,
 		      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                       const Teuchos::RCP<const VerboseObject>& verbobj,
 		      const bool request_faces,
 		      const bool request_edges) :
   Mesh(verbobj,request_faces,request_edges), 
-  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
+  mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
   faces_initialized(false), edges_initialized(false),
-  target_cell_volumes(NULL), min_cell_volumes(NULL),
+  target_cell_volumes_(NULL), min_cell_volumes_(NULL),
   extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {  
 
-  int numprocs = incomm->NumProc();
+  int numprocs = incomm_->NumProc();
 
   // Assume three dimensional problem if constructor called without 
   // the space_dimension parameter
@@ -55,7 +55,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
   // Pre-processing (init, MPI queries etc)
 
   int space_dim = 3;
-  pre_create_steps_(space_dim, incomm, gm);
+  pre_create_steps_(space_dim, incomm_, gm);
 
 
 
@@ -71,7 +71,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
   if (len > 4 && strncmp(&(filename[len-4]),".exo",4) == 0) { // Exodus file 
 
     if (numprocs == 1) {
-      ok = MESH_ImportFromExodusII(mesh,filename,NULL,mpicomm);
+      ok = MESH_ImportFromExodusII(mesh,filename,NULL,mpicomm_);
     }
     else {
       int opts[5] = {0,0,0,0,0};
@@ -81,7 +81,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
       opts[2] = 1;   // Number of ghost layers
       opts[3] = 1;   // Use Zoltan for partitioning if available
 
-      ok = MESH_ImportFromExodusII(mesh,filename,opts,mpicomm);
+      ok = MESH_ImportFromExodusII(mesh,filename,opts,mpicomm_);
     }
 
   }
@@ -91,7 +91,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
     opts[0] = 1;     // Parallel weave distributed meshes
     opts[1] = 1;     // Number of ghost layers
 
-    ok = MESH_ImportFromNemesisI(mesh,filename,opts,mpicomm);
+    ok = MESH_ImportFromNemesisI(mesh,filename,opts,mpicomm_);
 
   }
   else {
@@ -111,7 +111,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
   int cell_dim = MESH_Num_Regions(mesh) ? 3 : 2;
   
   int max;
-  incomm->MaxAll(&cell_dim,&max,1);
+  incomm_->MaxAll(&cell_dim,&max,1);
 
   if (max != cell_dim) {
     Errors::Message mesg("cell dimension on this processor is different from max cell dimension across all processors");
@@ -144,7 +144,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
     if (planar)
       space_dim = 2;
 
-    incomm->MaxAll(&space_dim,&max,1);
+    incomm_->MaxAll(&space_dim,&max,1);
 
     space_dim = max;
     set_space_dimension(space_dim);      
@@ -161,16 +161,16 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
 // Constructor - load up mesh from file
 //--------------------------------------
 
-Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm, 
+Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm_, 
 		      int space_dimension,
 		      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                       const Teuchos::RCP<const VerboseObject>& verbobj,
 		      const bool request_faces,
 		      const bool request_edges) :
   Mesh(verbobj,request_faces,request_edges), 
-  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
+  mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
   faces_initialized(false), edges_initialized(false),
-  target_cell_volumes(NULL), min_cell_volumes(NULL),
+  target_cell_volumes_(NULL), min_cell_volumes_(NULL),
   extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {
 
@@ -183,7 +183,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
   // Pre-processing (init, MPI queries etc)
 
   int space_dim = 3;
-  pre_create_steps_(space_dim, incomm, gm);
+  pre_create_steps_(space_dim, incomm_, gm);
 
 
 
@@ -198,7 +198,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
   if (len > 4 && strncmp(&(filename[len-4]),".exo",4) == 0) { // Exodus file
 
     if (numprocs == 1) {
-      ok = MESH_ImportFromExodusII(mesh,filename,NULL,mpicomm);
+      ok = MESH_ImportFromExodusII(mesh,filename,NULL,mpicomm_);
     }
     else {
       int opts[5] = {0,0,0,0,0};
@@ -208,7 +208,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
       opts[2] = 1;   // Number of ghost layers
       opts[3] = 1;   // Use Zoltan for partitioning if available
 
-      ok = MESH_ImportFromExodusII(mesh,filename,opts,mpicomm);
+      ok = MESH_ImportFromExodusII(mesh,filename,opts,mpicomm_);
     }
 
   }
@@ -218,7 +218,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
     opts[0] = 1;     // Parallel weave distributed meshes
     opts[1] = 1;     // Number of ghost layers
 
-    ok = MESH_ImportFromNemesisI(mesh,filename,opts,mpicomm);
+    ok = MESH_ImportFromNemesisI(mesh,filename,opts,mpicomm_);
 
   }
   else {
@@ -238,7 +238,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
   int cell_dim = MESH_Num_Regions(mesh) ? 3 : 2;
   
   int max;
-  incomm->MaxAll(&cell_dim,&max,1);
+  incomm_->MaxAll(&cell_dim,&max,1);
 
   if (max != cell_dim) {
     Errors::Message mesg("cell dimension on this processor is different from max cell dimension across all processors");
@@ -263,21 +263,21 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 		     const double x1, const double y1, const double z1,
 		     const unsigned int nx, const unsigned int ny, 
 		     const unsigned int nz, 
-		     const Epetra_MpiComm *incomm,
+		     const Epetra_MpiComm *incomm_,
 		     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                      const Teuchos::RCP<const VerboseObject>& verbobj,
 		     const bool request_faces,
 		     const bool request_edges) :
   Mesh(verbobj,request_faces,request_edges), 
-  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
+  mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
   faces_initialized(false), edges_initialized(false),
-  target_cell_volumes(NULL), min_cell_volumes(NULL),
+  target_cell_volumes_(NULL), min_cell_volumes_(NULL),
   extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {
   int ok;
 
   int space_dimension = 3;
-  pre_create_steps_(space_dimension, incomm, gm);
+  pre_create_steps_(space_dimension, incomm_, gm);
 
 
   Mesh::set_mesh_type(RECTANGULAR);   // Discretizations can use this info if they want
@@ -317,10 +317,10 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 
 #ifdef MSTK_2_21rc1_OR_NEWER
     ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
-                                   method,del_inmesh,mpicomm);
+                                   method,del_inmesh,mpicomm_);
 #else
     ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
-                                   method,mpicomm);
+                                   method,mpicomm_);
     if (myprocid == 0)
       MESH_Delete(globalmesh);
 #endif
@@ -355,20 +355,20 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 		     const double x1, const double y1,
 		     const int nx, const int ny, 
-		     const Epetra_MpiComm *incomm,
+		     const Epetra_MpiComm *incomm_,
 		     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                      const Teuchos::RCP<const VerboseObject>&verbobj,
 		     const bool request_faces,
 		     const bool request_edges) :
   Mesh(verbobj,request_faces,request_edges), 
-  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
+  mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
   faces_initialized(false), edges_initialized(false),
-  target_cell_volumes(NULL), min_cell_volumes(NULL),
+  target_cell_volumes_(NULL), min_cell_volumes_(NULL),
   extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {
   int ok;
   int space_dim = 2;
-  pre_create_steps_(space_dim, incomm, gm);
+  pre_create_steps_(space_dim, incomm_, gm);
 
 
 
@@ -423,10 +423,10 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 
 #ifdef MSTK_2_21rc1_OR_NEWER
     ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
-                                   method,del_inmesh,mpicomm);
+                                   method,del_inmesh,mpicomm_);
 #else
     ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
-                                   method,mpicomm);
+                                   method,mpicomm_);
     if (myprocid == 0)
       MESH_Delete(globalmesh);
 #endif
@@ -458,15 +458,15 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 //--------------------------------------
 
 Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
-		     const Epetra_MpiComm *incomm,
+		     const Epetra_MpiComm *incomm_,
 		     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                      const Teuchos::RCP<const VerboseObject>&verbobj,
 		     const bool request_faces,
 		     const bool request_edges) :
   Mesh(verbobj,request_faces,request_edges), 
-  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
+  mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
   faces_initialized(false), edges_initialized(false),
-  target_cell_volumes(NULL), min_cell_volumes(NULL),
+  target_cell_volumes_(NULL), min_cell_volumes_(NULL),
   extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {
   int ok;
@@ -478,7 +478,7 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
   AmanziGeometry::Point p1(gspec.domain().point1());
 
   int space_dim = p0.dim();
-  pre_create_steps_(space_dim, incomm, gm);
+  pre_create_steps_(space_dim, incomm_, gm);
 
 
   Mesh::set_mesh_type(RECTANGULAR);   // Discretizations can use this info if they want
@@ -537,10 +537,10 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
       
 #ifdef MSTK_2_21rc1_OR_NEWER
     ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
-                                   method,del_inmesh,mpicomm);
+                                   method,del_inmesh,mpicomm_);
 #else
     ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
-                                   method,mpicomm);
+                                   method,mpicomm_);
     if (myprocid == 0)
       MESH_Delete(globalmesh);
 #endif
@@ -575,7 +575,7 @@ Mesh_MSTK::Mesh_MSTK (const Mesh *inmesh,
                       const bool extrude,
 		      const bool request_faces,
 		      const bool request_edges) :
-  mpicomm(inmesh->get_comm()->GetMpiComm()),
+  mpicomm_(inmesh->get_comm()->GetMpiComm()),
   Mesh(inmesh->verbosity_obj(),request_faces,request_edges),
   extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {  
@@ -628,7 +628,7 @@ Mesh_MSTK::Mesh_MSTK (const Mesh& inmesh,
                       const bool extrude,
 		      const bool request_faces,
 		      const bool request_edges) :
-  mpicomm(inmesh.get_comm()->GetMpiComm()),
+  mpicomm_(inmesh.get_comm()->GetMpiComm()),
   Mesh(inmesh.verbosity_obj(),request_faces,request_edges),
   extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {  
@@ -688,7 +688,7 @@ Mesh_MSTK::Mesh_MSTK (const Mesh& inmesh,
                       const bool extrude,
 		      const bool request_faces,
 		      const bool request_edges) :
-  mpicomm(inmesh.get_comm()->GetMpiComm()),
+  mpicomm_(inmesh.get_comm()->GetMpiComm()),
   Mesh(inmesh.verbosity_obj(),request_faces,request_edges),
   extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {  
@@ -719,7 +719,7 @@ Mesh_MSTK::Mesh_MSTK (const Mesh& inmesh,
 // Extract MSTK entities from an ID list and make a new MSTK mesh WITH A NEW COMM
 //---------------------------------------------------------
 
-Mesh_MSTK::Mesh_MSTK (const Epetra_MpiComm *comm,
+Mesh_MSTK::Mesh_MSTK (const Epetra_MpiComm *comm_,
                       const Mesh& inmesh, 
                       const Entity_ID_List& entity_ids, 
                       const Entity_kind entity_kind,
@@ -727,7 +727,7 @@ Mesh_MSTK::Mesh_MSTK (const Epetra_MpiComm *comm,
                       const bool extrude,
                       const bool request_faces,
                       const bool request_edges) :
-    mpicomm(comm->GetMpiComm()),
+    mpicomm_(comm_->GetMpiComm()),
     Mesh(inmesh.verbosity_obj(),request_faces,request_edges),
     extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {  
@@ -1116,7 +1116,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
     int num_ghost_layers = 1; 
     int input_type = 0; /* No parallel info is given */
     int status = MSTK_Weave_DistributedMeshes(mesh, cell_dimension(),
-                                              num_ghost_layers, input_type, mpicomm);
+                                              num_ghost_layers, input_type, mpicomm_);
 
     // Now we have to build parent information for global entities
 
@@ -1163,7 +1163,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
     // Update attributes on ghost entities - this will ensure that
     // ghost entities have their parent global ID information
 
-    status &= MESH_UpdateAttributes(mesh,mpicomm);
+    status &= MESH_UpdateAttributes(mesh,mpicomm_);
 
     // Now reverse engineer the parents of ghost entities from the global IDs
 
@@ -1733,7 +1733,7 @@ void Mesh_MSTK::cell_get_faces_and_dirs_unordered (const Entity_ID cellid,
 
 
 
-void Mesh_MSTK::cell_get_faces_and_dirs_internal (const Entity_ID cellid,
+void Mesh_MSTK::cell_get_faces_and_dirs_internal_ (const Entity_ID cellid,
                                                   Entity_ID_List *faceids,
                                                   std::vector<int> *face_dirs,
                                                   const bool ordered) const 
@@ -1747,7 +1747,7 @@ void Mesh_MSTK::cell_get_faces_and_dirs_internal (const Entity_ID cellid,
 }
 
 
-void Mesh_MSTK::cell_get_edges_internal (const Entity_ID cellid,
+void Mesh_MSTK::cell_get_edges_internal_ (const Entity_ID cellid,
 					 Entity_ID_List *edgeids) const 
 {
 
@@ -1827,7 +1827,7 @@ void Mesh_MSTK::cell_get_edges_internal (const Entity_ID cellid,
 
 // For 2D cells, get edges and directions in which edges are used in cell
 
-void Mesh_MSTK::cell_2D_get_edges_and_dirs_internal (const Entity_ID cellid,
+void Mesh_MSTK::cell_2D_get_edges_and_dirs_internal_ (const Entity_ID cellid,
                                                      Entity_ID_List *edgeids,
                                                      std::vector<int> *edgedirs) const 
 {
@@ -1958,7 +1958,7 @@ void Mesh_MSTK::cell_get_nodes (const Entity_ID cellid,
 
 
 
-void Mesh_MSTK::face_get_edges_and_dirs_internal (const Entity_ID faceid,
+void Mesh_MSTK::face_get_edges_and_dirs_internal_ (const Entity_ID faceid,
 						  Entity_ID_List *edgeids,
 						  std::vector<int> *edge_dirs,
 						  bool ordered) const
@@ -2389,7 +2389,7 @@ void Mesh_MSTK::node_get_cell_faces (const Entity_ID nodeid,
     
 // Cells connected to a face
     
-void Mesh_MSTK::face_get_cells_internal (const Entity_ID faceid, 
+void Mesh_MSTK::face_get_cells_internal_ (const Entity_ID faceid, 
                                          const Parallel_type ptype,
                                          std::vector<Entity_ID> *cellids) const
 {
@@ -2818,7 +2818,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
                               const Entity_kind kind) const {
 
   int celldim = Mesh::cell_dimension();
-  int spacedim = Mesh::space_dimension();
+  int spacedim_ = Mesh::space_dimension();
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
 
   // Modify region/set name by prefixing it with the type of entity requested
@@ -2846,8 +2846,8 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 
     }
     else if (region->type() == AmanziGeometry::POINT) {
-      AmanziGeometry::Point vpnt(spacedim);
-      AmanziGeometry::Point rgnpnt(spacedim);
+      AmanziGeometry::Point vpnt(spacedim_);
+      AmanziGeometry::Point rgnpnt(spacedim_);
 
       rgnpnt = Teuchos::rcp_static_cast<const AmanziGeometry::RegionPoint>(region)->point();
         
@@ -2890,7 +2890,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         int ncells = num_entities(CELL, USED);              
         for (int ic = 0; ic < ncells; ic++) {
 
-          std::vector<AmanziGeometry::Point> ccoords(spacedim);
+          std::vector<AmanziGeometry::Point> ccoords(spacedim_);
 
           cell_get_coordinates(ic, &ccoords);
 
@@ -2994,7 +2994,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       int nface = num_entities(FACE, USED);
               
       for (int iface = 0; iface < nface; iface++) {
-        std::vector<AmanziGeometry::Point> fcoords(spacedim);
+        std::vector<AmanziGeometry::Point> fcoords(spacedim_);
             
         face_get_coordinates(iface, &fcoords);
             
@@ -3058,7 +3058,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 
       for (int inode = 0; inode < nnode; inode++) {
 
-        AmanziGeometry::Point vpnt(spacedim);
+        AmanziGeometry::Point vpnt(spacedim_);
         node_get_coordinates(inode, &vpnt);
                   
         if (region->inside(vpnt)) {
@@ -3297,8 +3297,8 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
   MEntity_ptr ment;
   bool found(false);
   int celldim = Mesh::cell_dimension();
-  int spacedim = Mesh::space_dimension();
-  const Epetra_Comm *epcomm = get_comm();
+  int spacedim_ = Mesh::space_dimension();
+  const Epetra_Comm *epcomm_ = get_comm();
   Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
 
   assert(setents != NULL);
@@ -3360,7 +3360,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
         /// set is not on this processor
       
         if (!mset1) {
-          if (epcomm->NumProc() == 1) {
+          if (epcomm_->NumProc() == 1) {
             std::stringstream mesg_stream;
             mesg_stream << "Could not find labeled set " << label << " in mesh file in order to initialize mesh set " << setname << ". Verify mesh file.";
             Errors::Message mesg(mesg_stream.str());
@@ -3430,7 +3430,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
 #ifdef DEBUG
   int nent_glob;
 
-  epcomm->SumAll(&nent_loc,&nent_glob,1);
+  epcomm_->SumAll(&nent_loc,&nent_glob,1);
   if (nent_glob == 0) {
     std::stringstream mesg_stream;
     mesg_stream << "Could not retrieve any mesh entities for set " << setname << std::endl;
@@ -3483,7 +3483,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
        extracting the appropriate category of entities */
     
 #ifdef DEBUG
-  epcomm->SumAll(&nent_loc,&nent_glob,1);
+  epcomm_->SumAll(&nent_loc,&nent_glob,1);
   
   if (nent_glob == 0) {
     std::stringstream mesg_stream;
@@ -3632,7 +3632,7 @@ void Mesh_MSTK::init_cell_map ()
   int *cell_gids;
   int ncell, idx, i;
   MEntity_ptr ment;
-  const Epetra_Comm *epcomm = get_comm();
+  const Epetra_Comm *epcomm_ = get_comm();
 
   if (!serial_run) {
 
@@ -3650,7 +3650,7 @@ void Mesh_MSTK::init_cell_map ()
     while ((ment = MSet_Next_Entry(OwnedCells,&idx)))
       cell_gids[i++] = MEnt_GlobalID(ment)-1;
 
-    cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm);
+    cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm_);
     
 
 
@@ -3660,7 +3660,7 @@ void Mesh_MSTK::init_cell_map ()
     while ((ment = MSet_Next_Entry(GhostCells,&idx)))
       cell_gids[i++] = MEnt_GlobalID(ment)-1;
     
-    cell_map_w_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm);
+    cell_map_w_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm_);
 
   }
   else {    
@@ -3671,7 +3671,7 @@ void Mesh_MSTK::init_cell_map ()
     while ((ment = MSet_Next_Entry(OwnedCells,&idx)))      
       cell_gids[i++] = MEnt_ID(ment)-1;
 
-    cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm);
+    cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm_);
   }
 
   delete [] cell_gids;
@@ -3691,7 +3691,7 @@ void Mesh_MSTK::init_face_map ()
   int *face_gids, *extface_gids;
   int nface, n_extface, idx, i, j;
   MEntity_ptr ment;
-  const Epetra_Comm *epcomm = get_comm();
+  const Epetra_Comm *epcomm_ = get_comm();
 
   if (!serial_run) {
 
@@ -3729,9 +3729,9 @@ void Mesh_MSTK::init_face_map ()
     n_extface = j;
     nface = nowned;
     
-    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm);
+    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm_);
 
-    extface_map_wo_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*epcomm);
+    extface_map_wo_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*epcomm_);
 
     idx = 0;
     while ((ment = MSet_Next_Entry(NotOwnedFaces,&idx))) 
@@ -3739,7 +3739,7 @@ void Mesh_MSTK::init_face_map ()
 
     nface += nnotowned;
 
-    face_map_w_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm);
+    face_map_w_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm_);
 
   }
   else {
@@ -3784,9 +3784,9 @@ void Mesh_MSTK::init_face_map ()
     }
     n_extface = j;
 
-    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm);
+    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm_);
 
-    extface_map_wo_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*epcomm);
+    extface_map_wo_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*epcomm_);
   }
 
   owned_to_extface_importer_ = new Epetra_Import(*extface_map_wo_ghosts_,*face_map_wo_ghosts_);
@@ -3809,7 +3809,7 @@ void Mesh_MSTK::init_edge_map ()
   int *edge_gids;
   int nedge, idx, i;
   MEntity_ptr ment;
-  const Epetra_Comm *epcomm = get_comm();
+  const Epetra_Comm *epcomm_ = get_comm();
 
   if (!serial_run) {
 
@@ -3829,7 +3829,7 @@ void Mesh_MSTK::init_edge_map ()
     }
     nedge = nowned;
     
-    edge_map_wo_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*epcomm);
+    edge_map_wo_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*epcomm_);
 
     idx = 0;
     while ((ment = MSet_Next_Entry(NotOwnedEdges,&idx))) 
@@ -3837,7 +3837,7 @@ void Mesh_MSTK::init_edge_map ()
 
     nedge += nnotowned;
 
-    edge_map_w_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*epcomm);
+    edge_map_w_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*epcomm_);
 
   }
   else {
@@ -3851,7 +3851,7 @@ void Mesh_MSTK::init_edge_map ()
       edge_gids[i++] = gid-1;
     }
 
-    edge_map_wo_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*epcomm);
+    edge_map_wo_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*epcomm_);
   }
 
   delete [] edge_gids;
@@ -3872,7 +3872,7 @@ void Mesh_MSTK::init_node_map ()
   int *vert_gids;
   int nvert, idx, i;
   MEntity_ptr ment;
-  const Epetra_Comm *epcomm = get_comm();
+  const Epetra_Comm *epcomm_ = get_comm();
 
   if (!serial_run) {
 
@@ -3890,7 +3890,7 @@ void Mesh_MSTK::init_node_map ()
 
     nvert = nowned;
     
-    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm);
+    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm_);
     
 
 
@@ -3900,7 +3900,7 @@ void Mesh_MSTK::init_node_map ()
 
     nvert += nnotowned;
 
-    node_map_w_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm);
+    node_map_w_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm_);
 
   }
   else {
@@ -3912,7 +3912,7 @@ void Mesh_MSTK::init_node_map ()
     while ((ment = MSet_Next_Entry(OwnedVerts,&idx)))
       vert_gids[i++] = MEnt_ID(ment)-1;
 
-    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm);
+    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm_);
   }
 
   delete [] vert_gids;
@@ -4304,7 +4304,7 @@ void Mesh_MSTK::init_pedge_dirs() {
     }  
 
 
-    MESH_UpdateAttributes(mesh,mpicomm);
+    MESH_UpdateAttributes(mesh,mpicomm_);
     
     
     edgeflip = new bool[ne];
@@ -4470,7 +4470,7 @@ void Mesh_MSTK::init_pface_dirs() {
 
 
 
-    MESH_UpdateAttributes(mesh,mpicomm);
+    MESH_UpdateAttributes(mesh,mpicomm_);
 
 
 
@@ -5504,24 +5504,24 @@ int Mesh_MSTK::generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
 }
 
 void Mesh_MSTK::pre_create_steps_(const int space_dimension, 
-                                  const Epetra_MpiComm *comm, 
+                                  const Epetra_MpiComm *comm_, 
                                   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm) 
 {
   clear_internals_();
 
   MSTK_Init();
 
-  Mesh::set_comm(comm);
+  Mesh::set_comm(comm_);
   Mesh::set_geometric_model(gm);
 
-  mpicomm = comm->GetMpiComm();
+  mpicomm_ = comm_->GetMpiComm();
 
   set_space_dimension(space_dimension);
 
-  MPI_Comm_rank(mpicomm,&myprocid);
-  MPI_Comm_size(mpicomm,&numprocs);
+  MPI_Comm_rank(mpicomm_,&myprocid);
+  MPI_Comm_size(mpicomm_,&numprocs);
 
-  serial_run =  (!mpicomm || numprocs == 1) ? true : false;
+  serial_run =  (!mpicomm_ || numprocs == 1) ? true : false;
 
   parent_mesh = NULL;
 
@@ -5671,7 +5671,7 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt) {
 
 void
 Mesh_MSTK::write_to_exodus_file(const std::string filename) const {
-  MESH_ExportToExodusII(mesh,filename.c_str(),-1,NULL,NULL,mpicomm);
+  MESH_ExportToExodusII(mesh,filename.c_str(),-1,NULL,NULL,mpicomm_);
 }
 
 

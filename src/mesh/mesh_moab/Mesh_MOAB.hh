@@ -49,7 +49,7 @@ public:
   // we could "delete" the illegal version of the call effectively
   // blocking the implicit conversion.
   
-  Mesh_MOAB (const char *filename, const Epetra_MpiComm *comm,
+  Mesh_MOAB (const char *filename, const Epetra_MpiComm *comm_,
 	     const AmanziGeometry::GeometricModelPtr& gm = 
 	     (AmanziGeometry::GeometricModelPtr) NULL,
 	     const VerboseObject *verbosity_obj = (VerboseObject *) NULL, 
@@ -143,7 +143,7 @@ public:
     
   // Edges and edge directions of a face
 
-  void face_get_edges_and_dirs_internal (const Entity_ID cellid,
+  void face_get_edges_and_dirs_internal_ (const Entity_ID cellid,
 					 Entity_ID_List *edgeids,
 					 std::vector<int> *edgedirs,
 					 bool ordered=true) const
@@ -317,8 +317,8 @@ public:
   // move_vertical = true, nodes will be allowed to move only in the
   // vertical direction (right now arbitrary node movement is not allowed)
 
-  int deform(const std::vector<double>& target_cell_volumes_in, 
-             const std::vector<double>& min_cell_volumes_in, 
+  int deform(const std::vector<double>& target_cell_volumes__in, 
+             const std::vector<double>& min_cell_volumes__in, 
              const Entity_ID_List& fixed_nodes,
              const bool move_vertical);
 
@@ -330,11 +330,11 @@ public:
   private:
 
     MBCore *mbcore;
-    MBParallelComm *mbcomm;
+    MBParallelComm *mbcomm_;
 
     int serial_run;
 
-    int spacedim;
+    int spacedim_;
     int celldim; // Topological dimension of highest level entities
     int facedim; // Topological dimension of 2nd highest level entities
 
@@ -463,7 +463,7 @@ public:
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
 
-  void cell_get_faces_and_dirs_internal (const Entity_ID cellid,
+  void cell_get_faces_and_dirs_internal_ (const Entity_ID cellid,
                                 Entity_ID_List *faceids,
                                 std::vector<int> *face_dirs,
 				const bool ordered=false) const;
@@ -471,14 +471,14 @@ public:
 
   // Cells connected to a face
     
-  void face_get_cells_internal (const Entity_ID faceid, 
+  void face_get_cells_internal_ (const Entity_ID faceid, 
                                 const Parallel_type ptype,
                                 Entity_ID_List *cellids) const;
     
 
   // Edges of a cell
 
-  void cell_get_edges_internal (const Entity_ID cellid,
+  void cell_get_edges_internal_ (const Entity_ID cellid,
                                 Entity_ID_List *edgeids) const 
   { 
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
@@ -487,7 +487,7 @@ public:
 
   // Edges and edge directions of a 2D cell
 
-  void cell_2D_get_edges_and_dirs_internal (const Entity_ID cellid,
+  void cell_2D_get_edges_and_dirs_internal_ (const Entity_ID cellid,
                                             Entity_ID_List *edgeids,
                                             std::vector<int> *edgedirs) const 
   { 
@@ -497,7 +497,7 @@ public:
 
   // Edges and edge directions of a face
 
-  void face_get_edges_and_dirs_internal (const Entity_ID cellid,
+  void face_get_edges_and_dirs_internal_ (const Entity_ID cellid,
 					 Entity_ID_List *edgeids,
 					 std::vector<int> *edgedirs,
 					 bool ordered=true) const
