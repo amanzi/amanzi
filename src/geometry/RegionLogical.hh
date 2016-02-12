@@ -39,13 +39,13 @@ class RegionLogical : public Region {
   /// Is the the specified point inside this region
   bool inside(const Point& p) const;
 
-  const std::vector<const std::string>& component_regions() const {
+  std::vector<std::string> component_regions() const {
     return component_regions_; }
 
 
 protected:  
   BoolOpType operation_; // what logical operation should be performed
-  std::vector<const std::string> component_regions_;
+  std::vector<std::string> component_regions_;
     // names of regions in operation
 };
 

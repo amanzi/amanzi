@@ -7,7 +7,6 @@ namespace bl = boost::lambda;
 #include "dbc.hh"
 #include "Mesh_common.hh"
 #include "GeometricModel.hh"
-#include "LabeledSetRegion.hh"
 
 
 #include <stk_mesh/fem/FEMMetaData.hpp>

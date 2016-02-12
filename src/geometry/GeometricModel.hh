@@ -36,6 +36,8 @@ class GeometricModel {
                  Teuchos::ParameterList& gm_param_list,
                  const Epetra_MpiComm *comm);      
 
+  unsigned int dimension() const { return dim_; }
+  
   // Add a Region to a GeometricModel
   void AddRegion(const Teuchos::RCP<Region>& r);
 

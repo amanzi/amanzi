@@ -25,9 +25,11 @@ class RegionPolygon : public Region {
                 const Set_ID id, 
                 const std::vector<Point>& polypoints, 
                 const LifeCycleType lifecycle=PERMANENT);
-  
-  unsigned int num_points() const { return points_.size(); }
-  const std::vector<const Point>& points() const { return points_; }
+
+  typedef std::vector<AmanziGeometry::Point>::const_iterator PointIterator;
+  std::size_t PointsSize() const { return points_.size(); }
+  PointIterator PointsBegin() const { return points_.begin(); }
+  PointIterator PointsEnd() const { return points_.end(); }
 
   const Point& normal() const { return normal_; }
 
@@ -36,7 +38,7 @@ class RegionPolygon : public Region {
 
 protected:
   
-  std::vector<const Point> points_;  /* Points of the polygon */
+  std::vector<Point> points_;  /* Points of the polygon */
   Point normal_;                     /* Normal to the polygon */
   unsigned int elim_dir_;            /* Coord dir to eliminate while projecting
                                         polygon for in/out tests 

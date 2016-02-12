@@ -85,7 +85,7 @@ class SerialReadFixture : public ReadFixture {
   {
     meshdata.reset(Amanzi::Exodus::read_exodus_file(name.c_str()));
     // meshdata->to_stream(std::cerr, verbose);
-    mesh.reset(mf.build_mesh(*meshdata, nofields, NULL));
+    mesh.reset(mf.build_mesh(*meshdata, nofields, Teuchos::null));
   }
 
  public:
@@ -128,7 +128,7 @@ class ParallelReadFixture : public ReadFixture {
     //      cmap->Print(std::cerr);
     //      vmap->Print(std::cerr);
     //    }
-    mesh.reset(mf.build_mesh(*meshdata, *cmap, *vmap, nofields, NULL));
+    mesh.reset(mf.build_mesh(*meshdata, *cmap, *vmap, nofields, Teuchos::null));
   }
 
  public:

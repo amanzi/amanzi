@@ -19,8 +19,7 @@ namespace bl = boost::lambda;
 
 // AmanziGeometry
 #include "Geometry.hh"
-#include "BoxRegion.hh"
-#include "PointRegion.hh"
+#include "RegionPoint.hh"
 
 // STK_mesh
 #include "Mesh_STK_factory.hh"
@@ -56,7 +55,7 @@ Mesh_STK_factory::Mesh_STK_factory (const Epetra_MpiComm *comm, int bucket_size)
  */
 Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data, 
 					     const Data::Fields& fields,
-					     const AmanziGeometry::GeometricModelPtr& gm)
+        const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
 {
   ASSERT(communicator_->NumProc() == 1);
 
@@ -83,7 +82,7 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data,
 					     const Epetra_Map& cellmap,
 					     const Epetra_Map& vertmap,
 					     const Data::Fields& fields,
-					     const AmanziGeometry::GeometricModelPtr& gm)
+        const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
 {
 
   // Update construction variables for the new mesh.
@@ -131,7 +130,7 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data,
 
   void Mesh_STK_factory::build_meta_data_ (const Data::Data& data, 
 					   const Data::Fields& fields, 
-					   const AmanziGeometry::GeometricModelPtr& gm)
+        const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
 {
   const int num_element_blocks = data.element_blocks ();
   const int num_side_sets      = data.side_sets ();
@@ -183,7 +182,7 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data,
   // Add some additional parts as place holders for meshets that will
   // be created based on the region specifications in the geometric model
 
-  if (gm)
+  if (gm != Teuchos::null)
     init_extra_parts_from_gm(gm);
 
   meta_data_->commit ();
@@ -202,7 +201,7 @@ void Mesh_STK_factory::build_bulk_data_ (const Data::Data& data,
 					 const Epetra_Map& cellmap, 
 					 const Epetra_Map& vertmap,
 					 const Data::Fields& fields,
-					 const AmanziGeometry::GeometricModelPtr& gm)
+        const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
 {
   const int space_dimension = data.parameters ().dimensions ();
 
@@ -272,7 +271,7 @@ void Mesh_STK_factory::build_bulk_data_ (const Data::Data& data,
   // Fill in the elements/faces/nodes for the extra parts that are created
   // based on the region specifications in the geometric model
 
-  if (gm)
+  if (gm != Teuchos::null)
     fill_extra_parts_from_gm(gm);
 }
 
@@ -403,7 +402,7 @@ stk::mesh::Part* Mesh_STK_factory::add_element_block_ (const Data::Element_block
 
   meta_data_->declare_part_subset(*elements_part_, new_part);
 
-  add_set_part_relation_ (id, new_part);
+  add_set_part_relation_ (id + 5432123, new_part);
 
   return &new_part;
 }
@@ -433,7 +432,7 @@ stk::mesh::Part* Mesh_STK_factory::add_side_set_ (const Data::Side_set& set)
   stk::mesh::Part &new_part (meta_data_->declare_part (name, face_rank_));
   meta_data_->declare_part_subset(*faces_part_, new_part);
 
-  add_set_part_relation_ (id, new_part);
+  add_set_part_relation_ (id + 5432123, new_part);
 
   return &new_part;
 }
@@ -461,7 +460,7 @@ stk::mesh::Part* Mesh_STK_factory::add_node_set_ (const Data::Node_set& set)
   stk::mesh::Part &new_part (meta_data_->declare_part (name, meta_data_->node_rank()));
   meta_data_->declare_part_subset(*nodes_part_, new_part);
 
-  add_set_part_relation_ (id, new_part);
+  add_set_part_relation_ (id + 5432123, new_part);
 
   return &new_part;
 }
@@ -956,19 +955,14 @@ void Mesh_STK_factory::add_nodes_to_part_ (const Data::Node_set& node_set,
 
 
 
-void Mesh_STK_factory::init_extra_parts_from_gm(const AmanziGeometry::GeometricModelPtr& gm) 
+void Mesh_STK_factory::init_extra_parts_from_gm(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
 {
+  if (gm == Teuchos::null) return;
 
-  if (gm == NULL) return;
-
-
-  int space_dim = gm->dimension();
-
-
-  int ngr = gm->Num_Regions();
+  int ngr = gm->RegionSize();
   for (int i = 0; i < ngr; i++)
     {
-      AmanziGeometry::RegionPtr greg = gm->Region_i(i);
+      Teuchos::RCP<const AmanziGeometry::Region> greg = gm->FindRegion(i);
       
       switch (greg->type())
         {
@@ -1031,20 +1025,18 @@ void Mesh_STK_factory::init_extra_parts_from_gm(const AmanziGeometry::GeometricM
 
 
 
-void Mesh_STK_factory::fill_extra_parts_from_gm(const AmanziGeometry::GeometricModelPtr& gm) 
+void Mesh_STK_factory::fill_extra_parts_from_gm(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
 {
-  if (gm == NULL) return;
+  if (gm == Teuchos::null) return;
 
+  const int space_dim = gm->dimension();
 
   bulk_data_->modification_begin();
 
-  int space_dim = gm->dimension();
-
-
-  int ngr = gm->Num_Regions();
+  int ngr = gm->RegionSize();
   for (int i = 0; i < ngr; i++)
     {
-      AmanziGeometry::RegionPtr greg = gm->Region_i(i);
+      Teuchos::RCP<const AmanziGeometry::Region> greg = gm->FindRegion(i);
       stk::mesh::Part *part;
       stk::mesh::PartVector parts_to_add;
 
@@ -1078,11 +1070,11 @@ void Mesh_STK_factory::fill_extra_parts_from_gm(const AmanziGeometry::GeometricM
                  it != nodes.end (); ++it)
               {
                 double *xyz = stk::mesh::field_data(*coordinate_field_, *(it->entity()));
-                for (int k = 0; k < space_dim; k++)
+                for (int k = 0; k < gm->dimension(); k++)
                   cen[k] += xyz[k];
                 nfn++;
               }
-            for (int k = 0; k < space_dim; k++)
+            for (int k = 0; k < gm->dimension(); k++)
               cen[k] /= nfn;
             
             AmanziGeometry::Point pcen(space_dim);
@@ -1202,7 +1194,7 @@ void Mesh_STK_factory::fill_extra_parts_from_gm(const AmanziGeometry::GeometricM
 	  stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->node_rank()), nodes);
 	 
 
-          AmanziGeometry::Point rgnpnt(((AmanziGeometry::PointRegionPtr)greg)->point());
+      AmanziGeometry::Point rgnpnt(Teuchos::rcp_static_cast<const AmanziGeometry::RegionPoint>(greg)->point());
 
           double mindist2 = 1.0e+16;
           stk::mesh::Entity *minnode = NULL;
