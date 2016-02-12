@@ -1722,7 +1722,7 @@ MBTag Mesh_MOAB::build_set(const AmanziGeometry::RegionPtr region,
 }
 
 
-void Mesh_MOAB::get_set_entities (const Set_Name setname, 
+void Mesh_MOAB::get_set_entities (const std::string setname, 
                                   const Entity_kind kind, 
                                   const Parallel_type ptype,
                                   Entity_ID_List *setents) const {
@@ -1916,7 +1916,7 @@ void Mesh_MOAB::get_set_entities (const Set_ID set_id,
   amanzi_throw(mesg);    
 }
 
-unsigned int Mesh_MOAB::get_set_size(const Set_Name setname, 
+unsigned int Mesh_MOAB::get_set_size(const std::string setname, 
                                      const Entity_kind kind, 
                                      const Parallel_type ptype) const {   
   Entity_ID_List setents;

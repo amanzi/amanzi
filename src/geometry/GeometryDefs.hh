@@ -12,16 +12,10 @@ namespace Amanzi {
 namespace AmanziGeometry {  
 
 typedef int Entity_ID; 
-typedef std::vector<Entity_ID> Entity_ID_List;
-
 typedef int Set_ID;
-typedef std::vector<Set_ID> Set_ID_List;
-typedef std::string Set_Name;
-
-
 
 typedef enum {
-  BOX=0,
+  BOX,
   PLANE,
   LABELEDSET,
   LAYER,
@@ -30,7 +24,8 @@ typedef enum {
   COLORFUNCTION,  
   LOGICAL,
   POLYGON,
-  ENUMERATEDSET
+  ENUMERATED,
+  ALL
 } RegionType;
 
 
@@ -48,7 +43,17 @@ typedef enum {
   SUBTRACT
 } BoolOpType;
 
+const double TOL = 1.0e-08;
+
+// arbitrary number to avoid clashing
+// with IDs of LabeledSet regions
+const unsigned int REGION_ID_OFFSET = 59049;  
+
+
 } // namespace
 } // namespace
+
+
+
 
 #endif

@@ -328,7 +328,7 @@ public:
 			     const Entity_kind kind,
 			     const Parallel_type ptype) const;
 
-  unsigned int get_set_size (const Set_Name setname, 
+  unsigned int get_set_size (const std::string setname, 
 			     const Entity_kind kind,
 			     const Parallel_type ptype) const;
 
@@ -344,7 +344,7 @@ public:
 			 const Parallel_type ptype, 
 			 Entity_ID_List *entids) const; 
 
-  void get_set_entities (const Set_Name setname, 
+  void get_set_entities (const std::string setname, 
 			 const Entity_kind kind, 
 			 const Parallel_type ptype, 
 			 std::vector<Entity_ID> *entids) const; 

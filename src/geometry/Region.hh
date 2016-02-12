@@ -1,141 +1,142 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/**
- * @file   Region.hh
- * @author William A. Perkins
- * @date Mon Aug  1 09:57:42 2011
- * 
- * @brief  Declaration of the abstract Region class 
- * 
- * 
- */
+/*
+  Abstract class for a Region, which is a geometric or discrete
+  subdomain, along with some basic setters/getters.
+
+  A geometric region is just some arbitrary subset of space, that can
+  be specified in a myriad of ways.  At a minimum, there is a need to
+  be able to determine if a point is inside that space.  A disrete
+  region is an enumerated (via input spec or labeled sets inside the
+  mesh file) list of entities, and is specific to a mesh.
+
+  The region class does not use a constructor based on the XML parameter
+  list because it has to create derived region classes based on the shape 
+  parameter of the region specification.
+
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: William Perkins
+           Ethan Coon (ecoon@lanl.gov)
+*/
 
 #ifndef AMANZI_REGION_HH_
 #define AMANZI_REGION_HH_
 
-#include <vector>
-
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include <string>
 
 #include "VerboseObject.hh"
-
 #include "GeometryDefs.hh"
-#include "Point.hh"
 
 namespace Amanzi {
 namespace AmanziGeometry {
 
-
-// -------------------------------------------------------------
-//  class Region
-// -------------------------------------------------------------
-// A class to represent a geometric region
-/**
- * A Region is just some arbitrary subset of space, that can be
- * specified in a myriad of ways.  At a minimum, there is a need to be
- * able to determine if a point is inside that space.  Other needs to
- * be added later.
- *
- * The region class does not use a constructor based on the XML parameter
- * list because it has to create derived region classes based on the shape 
- * parameter of the region specification.
- *
- * 
- */
+class Point;
 
 class Region {
-public:
+ public:
 
-  /// Default constructor.
-  Region(void);
+  // Destructor
+  virtual ~Region() {}
 
-  /// Constructor with name and ID
-  Region(const Set_Name& name, const Set_ID id,
-         const unsigned int dim=3, const LifeCycleType lifecycle=PERMANENT,
-         const VerboseObject *verbobj=NULL);
-
-  /// Copy constructor 
-  Region(const Region& old);
-
-  /// Destructor
-  virtual ~Region(void);
-
-
-  /// Set the dimension of the region
-  inline
-  void set_dimension(const unsigned int dim)
-  {
-    topo_dimension_ = dim;
+  // Dimension of the subdomain
+  unsigned int topological_dimension() const {
+    return topo_dimension_;
+  }
+  void set_topological_dimension(unsigned int dimension) {
+    topo_dimension_ = dimension;
   }
 
-  /// Name of the region
-  inline
-  std::string name() const
-  {
+  // Dimension of points in the subdomain
+  unsigned int space_dimension() const {
+    return space_dimension_;
+  }
+  void set_space_dimension(unsigned int dimension) {
+    space_dimension_ = dimension;
+  }
+  
+  // Name of the region -- no setter (set by constructor)
+  std::string name() const {
     return name_;
   }
 
-  /// Integer identifier of the region
-  inline
-  Set_ID id() const
-  {
+  // Integer identifier of the region
+  Set_ID id() const {
     return id_;
   }
+  void set_id(Set_ID id) {
+    id_ = id;
+  }
 
-  // Topological dimension of region (0 - point, 1 - curve, 2 - surface, 3 - volume)
-  inline 
-  unsigned int dimension(void) const
-  {
-    return topo_dimension_;
+  // Geometric/enumerated
+  bool is_geometric() const {
+    return geometric_;
+  }
+  
+  // Type of the region
+  RegionType type() const {
+    return type_;
   }
 
   // Get the Lifecycle of this region - Do mesh entity sets derived from
   // it have to be kept around or are they temporary and can be destroyed
   // as soon as they are used?
-  
-  inline
-  LifeCycleType lifecycle(void) const 
+  LifeCycleType lifecycle() const 
   {
     return lifecycle_;
   }
 
-  // Get object encoding verbosity of diagnostic messages and output stream
-
-  inline
-  const VerboseObject *verbosity_obj(void) const {
-    return verbosity_obj_;
-  }
-
-  // Type of the region
-  virtual RegionType type() const = 0;
-
-  /// Is the specified point inside the Region
-  /// Does being on the boundary count as inside or not?
+  // Is the specified point inside the closure of the Region
   virtual bool inside(const Point& p) const = 0;
 
+ protected:
 
-private:
+  // Constructor -- protected as it should never be called directly
+  Region(const std::string& name,
+         Set_ID id,
+         bool geometric,
+         RegionType type,
+         unsigned int dim,
+         unsigned int geom_dim,
+         LifeCycleType lifecycle=PERMANENT)
+    : name_(name),
+      id_(id),
+      geometric_(geometric),
+      type_(type),
+      topo_dimension_(dim),
+      space_dimension_(geom_dim),
+      lifecycle_(lifecycle) {}
+    
 
-  // Object encoding output stream and verbosity of diagnostics
-  const VerboseObject *verbosity_obj_;
+ protected:
 
   // Lifecycle (Temporary or Permanent)
   LifeCycleType lifecycle_;
   
   // Topological dimension of region (0, 1, 2, 3)
   unsigned int topo_dimension_;
+  unsigned int space_dimension_;
 
   // Name of identifier
-  Set_Name name_;
+  std::string name_;
 
   // Integer identifier of region
   Set_ID id_;
 
-};
+  // Region type
+  RegionType type_;
 
-// Useful typedefs
-typedef Region* RegionPtr;
-typedef std::vector< RegionPtr > RegionVector;
+  // Geometric or enumerated?
+  bool geometric_;
+
+ private:
+  Region(const Region& other); // prevent copy constructor
+  Region& operator=(const Region& other); // prevent operator=
+  
+  
+};
 
 } // namespace AmanziGeometry
 } // namespace Amanzi

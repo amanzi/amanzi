@@ -596,7 +596,7 @@ MeshEmbeddedLogical::get_set_size (const Set_ID setid,
 }
 
 unsigned int
-MeshEmbeddedLogical::get_set_size (const Set_Name setname,
+MeshEmbeddedLogical::get_set_size (const std::string setname,
 			   const Entity_kind kind,
 			   const Parallel_type ptype) const {
   return get_set_size(geometric_model_->FindRegion(setname)->id(),kind,ptype);
@@ -606,7 +606,7 @@ unsigned int
 MeshEmbeddedLogical::get_set_size (const char *setname,
 			   const Entity_kind kind,
 			   const Parallel_type ptype) const {
-  Set_Name name(setname);
+  std::string name(setname);
   return get_set_size(name,kind,ptype);
 }
 
@@ -646,7 +646,7 @@ MeshEmbeddedLogical::get_set_entities (const Set_ID setid,
 }
 
 void
-MeshEmbeddedLogical::get_set_entities (const Set_Name setname,
+MeshEmbeddedLogical::get_set_entities (const std::string setname,
 			       const Entity_kind kind,
 			       const Parallel_type ptype,
 			       Entity_ID_List *entids) const {
@@ -660,7 +660,7 @@ MeshEmbeddedLogical::get_set_entities (const char *setname,
 			       const Entity_kind kind,
 			       const Parallel_type ptype,
 			       Entity_ID_List *entids) const {
-  Set_Name name(setname);
+  std::string name(setname);
   get_set_entities(name, kind, ptype, entids);
   return;
 }

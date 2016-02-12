@@ -1,134 +1,71 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/**
- * @file   GeometricModel.hh
- * @author Rao Garimella
- * @date   Sep 15, 2011
- * 
- * @brief  Declaration of the GeometricModel class
- * 
- * 
- */
+/*
+  Collection of Regions which decompose the domain into subdomains.
 
-#ifndef _GeometricModel_hh_
-#define _GeometricModel_hh_
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: William Perkins
+           Ethan Coon (ecoon@lanl.gov)
+*/
+
+#ifndef AMANZI_GEOMETRIC_MODEL_HH_
+#define AMANZI_GEOMETRIC_MODEL_HH_
 
 #include <vector>
+#include <map>
 
 #include "Teuchos_RCP.hpp"
 #include "Epetra_MpiComm.h"
 
 #include "Region.hh"
-#include "RegionFactory.hh"
 
 namespace Amanzi {
 namespace AmanziGeometry {
 
-// -------------------------------------------------------------
-//  class GeometricModel
-// -------------------------------------------------------------
-// A class that represent a geometric model or more specifically, 
-// a particular decomposition of the domain into subdomains
-/**
- * The geometric model is an object that contains a list of
- * geometric regions that tile the domain (no gaps, no overlaps)
- **/
-
 class GeometricModel {
-public:
+ public:
 
   // constructor.
-
-  GeometricModel(const unsigned int dim, const VerboseObject *verbobj=NULL);
-
-  // Copy constructor 
-
-  GeometricModel(const GeometricModel& old);
-
+  GeometricModel(unsigned int dim);
 
   // Constructor from parameter list
-
-  GeometricModel(const unsigned int dim, Teuchos::ParameterList gm_param_list,
-                 const Epetra_MpiComm *comm, const VerboseObject *verbobj=NULL);
-
-
-  // Constructor from a list of regions
-
-  GeometricModel(const unsigned int dim, 
-                 const std::vector<RegionPtr>& in_Regions,
-                 const VerboseObject *verbobj=NULL); 
-
-
-  // Destructor
-
-  ~GeometricModel(void);
-
-
-  // Object specifying verbosity of diagnostic error messages
-
-  inline
-  const VerboseObject *verbosity_obj() const {
-    return verbosity_obj_;
-  }
-
-
-  // Topological Dimension of geometric model
-
-  inline
-  unsigned int dimension() const {
-    return topo_dimension_;
-  }
-
+  GeometricModel(unsigned int dim,
+                 Teuchos::ParameterList& gm_param_list,
+                 const Epetra_MpiComm *comm);      
 
   // Add a Region to a GeometricModel
+  void AddRegion(const Teuchos::RCP<Region>& r);
 
-  void Add_Region(const RegionPtr& r);
-
-
-  // Number of Regions
-
-  int Num_Regions(void) const;
-
-
-  // Get the i'th region of the model
-
-  RegionPtr Region_i(const int i) const;
-
-
+  // Region iterators
+  typedef std::vector<Teuchos::RCP<const Region> >::const_iterator RegionConstIterator;
+  std::size_t RegionSize() const { return regions_.size(); }
+  RegionConstIterator RegionBegin() const { return regions_.begin(); }
+  RegionConstIterator RegionEnd() const { return regions_.end(); }
+  
   // Get a region by its ID
-  RegionPtr FindRegion(const int id) const;
+  Teuchos::RCP<const Region>
+  FindRegion(const int id) const {
+    return regions_id_.at(id);
+  }
 
-
-  // Get a region by its ID
-  RegionPtr FindRegion(const std::string name) const;
-
-
-  // Check if regions cover the domain extents.  
-  // This will work perfectly for domains with rectangular regions
-  // but not so for other types of regions
-
-  bool Rough_Check_Tiling(void) const;
+  // Get a region by its name
+  Teuchos::RCP<const Region>
+  FindRegion(const std::string name) const {
+    return regions_name_.at(name);
+  }
 
 private:
-
-  // Topological dimension of the model
-
-  unsigned int topo_dimension_;
-
   // List of regions in this geometric model
+  std::vector<Teuchos::RCP<const Region> > regions_;
+  std::map<std::string, Teuchos::RCP<const Region> > regions_name_;
+  std::map<int, Teuchos::RCP<const Region> > regions_id_;
 
-  std::vector<RegionPtr> Regions;
-
-  const VerboseObject *verbosity_obj_;
+  unsigned int dim_;
 };
 
-
-
-  // Smart pointer to an instance of the GeometricModel class
-  // RVG: Someone with better C++ knowledge than me could make this work
-  //
-  // typedef Teuchos::RCP<GeometricModel> GeometricModelPtr;
-
-  typedef GeometricModel *GeometricModelPtr;
 
 } // namespace AmanziGeometry
 } // namespace Amanzi

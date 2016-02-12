@@ -258,7 +258,7 @@ class MeshEmbeddedLogical : public Mesh {
                              const Parallel_type ptype) const;
 
   virtual
-  unsigned int get_set_size (const Set_Name setname,
+  unsigned int get_set_size (const std::string setname,
                              const Entity_kind kind,
                              const Parallel_type ptype) const;
 
@@ -276,7 +276,7 @@ class MeshEmbeddedLogical : public Mesh {
                          Entity_ID_List *entids) const;
 
   virtual
-  void get_set_entities (const Set_Name setname,
+  void get_set_entities (const std::string setname,
                          const Entity_kind kind,
                          const Parallel_type ptype,
                          Entity_ID_List *entids) const;
