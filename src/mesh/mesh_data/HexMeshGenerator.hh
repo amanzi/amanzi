@@ -94,7 +94,7 @@ protected:
     std::vector<int> connectivity;
   };
 
-  const Epetra_Comm *comm__;      /**< The parallel environment */
+  const Epetra_Comm *comm_;      /**< The parallel environment */
 
   const unsigned int ni_;       /**< Number of elements in the i-direction */
   const unsigned int nj_;       /**< Number of elements in the j-direction */

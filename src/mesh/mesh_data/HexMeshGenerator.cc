@@ -46,7 +46,7 @@ const unsigned int HexMeshGenerator::nvcell(8);
  * @param ydelta cell size in the y-direction
  * @param zdelta cell size in the z-direction
  */
-HexMeshGenerator::HexMeshGenerator(const Epetra_Comm *comm_, 
+HexMeshGenerator::HexMeshGenerator(const Epetra_Comm *comm, 
                                    const unsigned int& ni, 
                                    const unsigned int& nj, 
                                    const unsigned int& nk,
@@ -56,7 +56,7 @@ HexMeshGenerator::HexMeshGenerator(const Epetra_Comm *comm_,
                                    const double& xdelta, 
                                    const double& ydelta, 
                                    const double& zdelta)
-  : comm__(comm_), 
+  : comm_(comm), 
     ni_(ni), nj_(nj), nk_(nk),
     ncell_(ni_*nj_*nk_), nvert_((ni_+1)*(nj_+1)*(nk_+1)),
     xorig_(xorigin), yorig_(yorigin), zorig_(zorigin),
@@ -67,9 +67,9 @@ HexMeshGenerator::HexMeshGenerator(const Epetra_Comm *comm_,
   ASSERT(ni_ > 0);
   ASSERT(nj_ > 0);
   ASSERT(nk_ > 0);
-  const int p_size(comm__->NumProc());
+  const int p_size(comm_->NumProc());
   ASSERT(ncell_ >= p_size);      // require at least 1 cell per process
-  const int p_rank(comm__->MyPID());
+  const int p_rank(comm_->MyPID());
   unsigned int proccell(ncell_/p_size);
   int cell0_ = p_rank * proccell;
   int cell1_ = (p_rank + 1) * proccell - 1;
@@ -275,7 +275,7 @@ HexMeshGenerator::generate_the_elements_(void)
     r->gidx.push_back(gidx);
     std::copy(c, c+nvcell, std::back_inserter(r->connectivity));
     
-    // std::cerr << comm__->MyPID() << ": "
+    // std::cerr << comm_->MyPID() << ": "
     //           << "cell " << gidx << ": " << i << ", " << j << ", " << k 
     //           << ": " << p << ": block " << r->id << std::endl;
 
@@ -475,7 +475,7 @@ HexMeshGenerator::cellmap(bool onebased)
     std::for_each(myidx.begin(), myidx.end(), bl::_1 += 1);
 
   Epetra_Map *result(new Epetra_Map(ncell_, myidx.size(), &myidx[0], 
-                                    (onebased ? 1 : 0), *comm__));
+                                    (onebased ? 1 : 0), *comm_));
 
   return result;
 }
@@ -503,7 +503,7 @@ HexMeshGenerator::vertexmap(bool onebased)
     std::for_each(myidx.begin(), myidx.end(), bl::_1 += 1);
   
   Epetra_Map *result(new Epetra_Map(-1, vertex_gidx_.size(), &myidx[0], 
-                                    (onebased ? 1 : 0), *comm__));
+                                    (onebased ? 1 : 0), *comm_));
 
   return result;
 }

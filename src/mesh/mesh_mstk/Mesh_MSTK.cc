@@ -5059,7 +5059,7 @@ int Mesh_MSTK::generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
   k   j
   |  /
   | /
-  |/___ i
+  |/__ i
 
 
   Model vertex, edge and face enumeration for classification templates 
@@ -5068,15 +5068,15 @@ int Mesh_MSTK::generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
          MODEL                   MODEL                  MODEL
          VERTICES                EDGES                  FACES
 
-     7 ____________ 8          ______7_____           ____________  
+     7 ______ 8          ___7___           ______  
       /|          /|          /|          /|         /|      2   /| 
      / |         / |       12/ |8      11/ | 	    / |  4      / | 
-   5/___________/6 |        /_____3_____/  |6	   /___________/  | 
+   5/______/6 |        /___3___/  |6	   /______/  | 
     |  |        |  |        |  |        |  | 	   |  |        | 5| 
-    |  |________|__|        |  |_____5__|__| 	   |6 |_1______|__| 
+    |  |____|_|        |  |___5_|_| 	   |6 |_1___|_| 
     |  /3       |  /4      4|  /        |  / 	   |  /        |  / 
     | /         | /         | /9       2| /10	   | /      3  | /  
-    |/__________|/          |/__________|/   	   |/__________|/   
+    |/_____|/          |/_____|/   	   |/_____|/   
    1             2                1
                                                    
                                                     Front  - Face1

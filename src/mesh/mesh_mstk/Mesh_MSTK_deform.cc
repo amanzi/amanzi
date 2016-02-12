@@ -30,8 +30,8 @@ double c1=1.0, c2=1.0, c3=1.0, k1=1.0, k2=1.0, k3=0.0;
 // ABOVE THE DEFORMED CELLS MAY NOT SHIFT DOWN
 
 
-int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes__in,
-                      const std::vector<double>& min_cell_volumes__in,
+int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
+                      const std::vector<double>& min_cell_volumes_in,
                       const Entity_ID_List& fixed_nodes,
                       const bool move_vertical,
                       const double min_vol_const1,
@@ -102,9 +102,9 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes__in,
   target_cell_volumes_ = new double[nc];     // class variable
   min_cell_volumes_    = new double[nc];     // class variable
  
-  std::copy(&(target_cell_volumes__in[0]), &(target_cell_volumes__in[nc]), 
+  std::copy(&(target_cell_volumes_in[0]), &(target_cell_volumes_in[nc]), 
             target_cell_volumes_);
-  std::copy(&(min_cell_volumes__in[0]), &(min_cell_volumes__in[nc]), 
+  std::copy(&(min_cell_volumes_in[0]), &(min_cell_volumes_in[nc]), 
             min_cell_volumes_);
 
 

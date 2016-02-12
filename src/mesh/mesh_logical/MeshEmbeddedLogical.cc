@@ -20,18 +20,20 @@ namespace AmanziMesh {
 //                              face, points from cell 1 to 2 in
 //                              face_cell_list topology, magnitude
 //                              is area
-MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* incomm_,
+MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
         Teuchos::RCP<Mesh> bg_mesh,
         Teuchos::RCP<Mesh> log_mesh,
-        const std::vector<Entity_ID_List>& face_cell_ids__,
-        const std::vector<std::vector<double> >& face_cell_lengths_,
-        const std::vector<AmanziGeometry::Point>& face_area_normals_,
+        const std::vector<Entity_ID_List>& face_cell_ids,
+        const std::vector<std::vector<double> >& face_cell_lengths,
+        const std::vector<AmanziGeometry::Point>& face_area_normals,
         const Teuchos::RCP<const VerboseObject>& verbosity_obj)
-  : Mesh(verbosity_obj),
+    : Mesh(verbosity_obj, true, false),
     bg_mesh_(bg_mesh),
     log_mesh_(log_mesh)
 {
-  set_comm(incomm_);
+  set_comm(comm);
+  set_space_dimension(3);
+  set_manifold_dimension(3); // mixed?
 
   // ensure cached properties are available
   if (!bg_mesh->cell_geometry_precomputed_)
@@ -63,7 +65,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* incomm_,
   int nfaces_bg_owned = bg_mesh->num_entities(FACE, OWNED);
   int nfaces_bg_used = bg_mesh->num_entities(FACE, USED);
   int nfaces_log = log_mesh->num_entities(FACE, OWNED);
-  int nfaces_extra = face_cell_ids__.size();
+  int nfaces_extra = face_cell_ids_.size();
   int nfaces_my_owned = nfaces_bg_owned + nfaces_log + nfaces_extra;
   int nfaces_my_used = nfaces_bg_used + nfaces_log + nfaces_extra;
 
@@ -80,8 +82,8 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* incomm_,
   // -- first faces are the logical-logical faces
   face_cell_ids_ = log_mesh->face_cell_ids_;
   // -- next are the logical-background faces, insert and remap
-  face_cell_ids_.insert(face_cell_ids_.end(), face_cell_ids__.begin(),
-		      face_cell_ids__.end());
+  face_cell_ids_.insert(face_cell_ids_.end(), face_cell_ids.begin(),
+		      face_cell_ids.end());
   for (int f=nfaces_log; f!=face_cell_ids_.size(); ++f) {
     // all new faces are logical,bg.  must remap the bg cell
     face_cell_ids_[f][2] += ncells_log;
@@ -98,14 +100,14 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* incomm_,
 
   // face normals -- same order: log-log, log-bg, bg-bg
   face_normal0_ = log_mesh->face_normal0_;
-  face_normal0_.insert(face_normal0_.end(), face_area_normals_.begin(),
-		      face_area_normals_.end());
+  face_normal0_.insert(face_normal0_.end(), face_area_normals.begin(),
+		      face_area_normals.end());
   face_normal0_.insert(face_normal0_.end(), bg_mesh->face_normal0_.begin(),
 		      bg_mesh->face_normal0_.end());
 
   face_normal1_ = log_mesh->face_normal1_;
-  face_normal1_.insert(face_normal1_.end(), face_area_normals_.begin(),
-		      face_area_normals_.end());
+  face_normal1_.insert(face_normal1_.end(), face_area_normals.begin(),
+		      face_area_normals.end());
   // -- negate normal1, normal direction implied from log->bg
   for (int f=nfaces_log; f!=face_normal1_.size(); ++f) {
     face_normal1_[f] = -face_normal1_[f];
@@ -152,12 +154,12 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* incomm_,
 
   // bisectors -- special interface since the cache isn't used for Mesh
   Entity_ID_List faces;
-  cell_face_bisectors.resize(cell_face_ids_.size());
+  cell_face_bisectors_.resize(cell_face_ids_.size());
   for (int c=0; c!=ncells_log; ++c) {
-    log_mesh_->cell_get_faces_and_bisectors(c, &faces, &cell_face_bisectors[c]);
+    log_mesh_->cell_get_faces_and_bisectors(c, &faces, &cell_face_bisectors_[c]);
   } 
   for (int c=0; c!=ncells_bg_used; ++c) {
-    bg_mesh_->cell_get_faces_and_bisectors(c, &faces, &cell_face_bisectors[c+ncells_log]);
+    bg_mesh_->cell_get_faces_and_bisectors(c, &faces, &cell_face_bisectors_[c+ncells_log]);
   }
 
   // now loop over new faces, adding the updates to the cell-ordered versions
@@ -168,10 +170,10 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* incomm_,
     cell_face_ids_[c1].push_back(f);
     cell_face_dirs_[c0].push_back(1);
     cell_face_dirs_[c1].push_back(-1);
-    cell_face_bisectors[c0].push_back(face_cell_lengths_[f-nfaces_log][0]
+    cell_face_bisectors_[c0].push_back(face_cell_lengths[f-nfaces_log][0]
 				      / AmanziGeometry::norm(face_normal0_[f])
 				      * face_normal0_[f]);
-    cell_face_bisectors[c1].push_back(face_cell_lengths_[f-nfaces_log][1]
+    cell_face_bisectors_[c1].push_back(face_cell_lengths[f-nfaces_log][1]
 				      / AmanziGeometry::norm(face_normal1_[f])
 				      * face_normal1_[f]);
   }
@@ -389,7 +391,7 @@ MeshEmbeddedLogical::cell_get_faces_and_bisectors (const Entity_ID cellid,
 			   std::vector<AmanziGeometry::Point> *bisectors,
 			   const bool ordered) const {
   if (faceids) *faceids = cell_face_ids_[cellid];
-  if (bisectors) *bisectors = cell_face_bisectors[cellid];
+  if (bisectors) *bisectors = cell_face_bisectors_[cellid];
 }
   
 
@@ -537,8 +539,8 @@ MeshEmbeddedLogical::node_set_coordinates (const Entity_ID nodeid,
 
 // Deformation not supported.
 int
-MeshEmbeddedLogical::deform (const std::vector<double>& target_cell_volumes__in,
-		     const std::vector<double>& min_cell_volumes__in,
+MeshEmbeddedLogical::deform (const std::vector<double>& target_cell_volumes_in,
+		     const std::vector<double>& min_cell_volumes_in,
 		     const Entity_ID_List& fixed_nodes,
 		     const bool move_vertical) {
   Errors::Message mesg("No nodes in MeshEmbeddedLogical.");

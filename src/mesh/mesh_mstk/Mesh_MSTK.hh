@@ -301,8 +301,6 @@ public:
     
   const Epetra_Map& face_map (bool include_ghost) const; 
 
-  const Epetra_Map& edge_map (bool include_ghost) const;
-
   const Epetra_Map& node_map (bool include_ghost) const;
     
   const Epetra_Map& exterior_face_map (void) const; 
@@ -368,8 +366,8 @@ public:
   // of different criteria and the '2' constants to influence how tightly
   // the criteria are adhered
 
-  int deform(const std::vector<double>& target_cell_volumes__in, 
-             const std::vector<double>& min_cell_volumes__in, 
+  int deform(const std::vector<double>& target_cell_volumes_in, 
+             const std::vector<double>& min_cell_volumes_in, 
              const Entity_ID_List& fixed_nodes,
              const bool move_vertical) {
 
@@ -380,7 +378,7 @@ public:
     const double quality_func_const1 = 0.0e+0; // ignore quality
     const double quality_func_const2 = 1.0e+0;
 
-    int ierr = deform(target_cell_volumes__in, min_cell_volumes__in, fixed_nodes,
+    int ierr = deform(target_cell_volumes_in, min_cell_volumes_in, fixed_nodes,
                       move_vertical, min_vol_const1, min_vol_const2,
                       target_vol_const1, target_vol_const2, 
                       quality_func_const1, quality_func_const2);
@@ -388,8 +386,8 @@ public:
   }
 
 
-  int deform(const std::vector<double>& target_cell_volumes__in, 
-             const std::vector<double>& min_cell_volumes__in, 
+  int deform(const std::vector<double>& target_cell_volumes_in, 
+             const std::vector<double>& min_cell_volumes_in, 
              const Entity_ID_List& fixed_nodes,
              const bool move_vertical,
              const double min_vol_const1,

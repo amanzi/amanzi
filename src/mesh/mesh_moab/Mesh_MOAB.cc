@@ -32,8 +32,8 @@ namespace AmanziMesh
 
   if (comm_) {
     // MOAB's parallel comm_unicator
-    int mbcomm__id;
-    mbcomm_ = new ParallelComm(mbcore,comm_->GetMpiComm(),&mbcomm__id);
+    int mbcomm_id;
+    mbcomm_ = new ParallelComm(mbcore,comm_->GetMpiComm(),&mbcomm_id);
 
     if (!mbcomm_) {
       cerr << "Failed to initialize MOAB comm_unicator\n";
@@ -2395,8 +2395,8 @@ Mesh_MOAB::internal_name_of_set(const AmanziGeometry::RegionPtr r,
 // move_vertical = true, nodes will be allowed to move only in the
 // vertical direction (right now arbitrary node movement is not allowed)
 
-int Mesh_MOAB::deform(const std::vector<double>& target_cell_volumes__in, 
-                      const std::vector<double>& min_cell_volumes__in, 
+int Mesh_MOAB::deform(const std::vector<double>& target_cell_volumes_in, 
+                      const std::vector<double>& min_cell_volumes_in, 
                       const Entity_ID_List& fixed_nodes,
                       const bool move_vertical) 
 {

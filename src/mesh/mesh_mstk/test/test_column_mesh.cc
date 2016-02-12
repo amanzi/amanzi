@@ -21,7 +21,7 @@
 
 #include "Geometry.hh"
 #include "../Mesh_MSTK.hh"
-#include "../ColumnMesh.hh"
+#include "../MeshColumn.hh"
 #include "RegionBox.hh"
 #include "GeometricModel.hh"
 
@@ -73,7 +73,7 @@ TEST(COLUMN_MESH_3D)
   CHECK_EQUAL(5, mesh->faces_of_column(10).size());
   
   // Create a column mesh from one of the columns
-  Amanzi::AmanziMesh::ColumnMesh colmesh(*mesh,10);
+  Amanzi::AmanziMesh::MeshColumn colmesh(*mesh,10);
 
   
   // Verify column mesh topology

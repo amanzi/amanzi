@@ -27,7 +27,7 @@ class MeshLogicalFactory {
   
   MeshLogicalFactory(const Epetra_MpiComm* incomm_,
                      const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm) :
-    comm__(incomm_),
+    comm_(incomm_),
     gm_(gm),
     centroids_good_(true)
   {}
@@ -100,10 +100,10 @@ class MeshLogicalFactory {
   std::vector<Entity_ID_List> face_cell_list_;
   std::vector<std::vector<double> > face_cell_lengths_;
   std::vector<AmanziGeometry::Point> face_cell_normals_;
-  std::vector<AmanziGeometry::Point> cell_centroids__;
+  std::vector<AmanziGeometry::Point> cell_centroids_;
   bool centroids_good_;
 
-  const Epetra_MpiComm* comm__;
+  const Epetra_MpiComm* comm_;
   Teuchos::RCP<AmanziGeometry::GeometricModel> gm_;
   
 

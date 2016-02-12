@@ -4,7 +4,7 @@
 
 #include <Teuchos_RCP.hpp>
 
-#include "ColumnMesh.hh"
+#include "MeshColumn.hh"
 #include "dbc.hh"
 #include "errors.hh"
 
@@ -16,7 +16,7 @@ namespace AmanziMesh {
 // Constructor: instantiates base MSTK mesh, generates new nodal coordiantes,
 //              fixes faces, and makes maps.
 // -----------------------------------------------------------------------------
-ColumnMesh::ColumnMesh (const Mesh& inmesh,
+MeshColumn::MeshColumn (const Mesh& inmesh,
                         const int column_id, 
                         const Teuchos::RCP<const VerboseObject>& vo) :
     Mesh(vo, true, false),
@@ -43,7 +43,7 @@ ColumnMesh::ColumnMesh (const Mesh& inmesh,
 }
 
 
-ColumnMesh::~ColumnMesh () {
+MeshColumn::~MeshColumn () {
   if (face_map_) delete face_map_;
   if (exterior_face_map_) delete exterior_face_map_;
   if (exterior_face_importer_) delete exterior_face_importer_;  
@@ -54,7 +54,7 @@ ColumnMesh::~ColumnMesh () {
 // Compute special coordinates for the nodes - all the other 
 // quantities will follow suit
 // -----------------------------------------------------------------------------
-void ColumnMesh::compute_special_node_coordinates_() {
+void MeshColumn::compute_special_node_coordinates_() {
   // Assume that the column is vertical - nodes are stacked vertically
   // above each other. Assume that the base face is perfectly horizontal
   //
@@ -70,35 +70,35 @@ void ColumnMesh::compute_special_node_coordinates_() {
 
   // Get the ordered face indexes of the column
   const Entity_ID_List& colfaces = extracted_.faces_of_column(0);
-  column_faces__ = colfaces;
+  column_faces_ = colfaces;
 
   // mask for face index in the column of faces
   face_in_column_.resize(extracted_.num_entities(FACE, AmanziMesh::USED), -1);
   
   // How many nodes each "horizontal" face has in the column
   Entity_ID_List face_nodes;
-  extracted_.face_get_nodes(column_faces__[0],&face_nodes);
+  extracted_.face_get_nodes(column_faces_[0],&face_nodes);
   nfnodes_ = face_nodes.size(); 
 
   // Set up the new node coordinates This is done in two passes, which may be
   // unnecessary, but I'm not sure if face_centroid() would break if done in
   // one.
   int space_dim_ = space_dimension(); // from parent mesh
-  int nfaces = column_faces__.size();
+  int nfaces = column_faces_.size();
   int nnodes = nfaces*nfnodes_;
   AmanziGeometry::Point p(space_dim_);
   std::vector<AmanziGeometry::Point> node_coordinates(nnodes, p);
   
   for (int j=0; j!=nfaces; ++j) {
     // set the mask
-    face_in_column_[column_faces__[j]] = j;
+    face_in_column_[column_faces_[j]] = j;
 
     // calculate node coordinates
     std::vector<AmanziGeometry::Point> face_coordinates;
-    extracted_.face_get_nodes(column_faces__[j], &face_nodes);
-    extracted_.face_get_coordinates(column_faces__[j], &face_coordinates);
+    extracted_.face_get_nodes(column_faces_[j], &face_nodes);
+    extracted_.face_get_coordinates(column_faces_[j], &face_coordinates);
 
-    AmanziGeometry::Point fcen = extracted_.face_centroid(column_faces__[j]);
+    AmanziGeometry::Point fcen = extracted_.face_centroid(column_faces_[j]);
     
     for (int i=0; i!=nfnodes_; ++i) {
       AmanziGeometry::Point coords(space_dim_);
@@ -127,11 +127,11 @@ void ColumnMesh::compute_special_node_coordinates_() {
 // In this case since the columns are all on one processor, the map is
 // just a contiguous sequence of numbers and the comm_unicator is a serial
 // comm_unicator
-void ColumnMesh::build_epetra_maps_() {
+void MeshColumn::build_epetra_maps_() {
   Epetra_SerialComm epcomm_;
   int indexBase = 0;
 
-  int nfaces = column_faces__.size();
+  int nfaces = column_faces_.size();
   face_map_ = new Epetra_Map(nfaces,indexBase,epcomm_);
 
   std::vector<int> ext_gids(2,-1);

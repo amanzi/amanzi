@@ -917,8 +917,8 @@ Mesh_STK::get_set_entities (const std::string setname,
   // move_vertical = true, nodes will be allowed to move only in the
   // vertical direction (right now arbitrary node movement is not allowed)
 
-int Mesh_STK::deform(const std::vector<double>& target_cell_volumes__in, 
-                     const std::vector<double>& min_cell_volumes__in, 
+int Mesh_STK::deform(const std::vector<double>& target_cell_volumes_in, 
+                     const std::vector<double>& min_cell_volumes_in, 
                      const Entity_ID_List& fixed_nodes,
                      const bool move_vertical) {
     Errors::Message mesg("deformation not implemented for STK mesh");

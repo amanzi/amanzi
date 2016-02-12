@@ -283,7 +283,7 @@ MeshLogicalFactory::AddSegment(int n_cells,
   // cell centroids
   normal /= cross_section_area;
   for (int i=0; i!=n_cells; ++i) {
-    cell_centroids__.push_back(begin + (n_halflengths_before_my_first_cell + 2*i)*ds_halflength*normal);
+    cell_centroids_.push_back(begin + (n_halflengths_before_my_first_cell + 2*i)*ds_halflength*normal);
   }
 
   // create the region
@@ -534,15 +534,15 @@ Teuchos::RCP<MeshLogical>
 MeshLogicalFactory::Create() {
   Teuchos::RCP<AmanziMesh::MeshLogical> mesh;
   if (centroids_good_) {
-    mesh = Teuchos::rcp(new MeshLogical(comm__,
+    mesh = Teuchos::rcp(new MeshLogical(comm_,
 					cell_volume_,
 					face_cell_list_,
 					face_cell_lengths_,
 					face_cell_normals_,
-					&cell_centroids__));
+					&cell_centroids_));
     
   } else {
-    mesh = Teuchos::rcp(new MeshLogical(comm__,
+    mesh = Teuchos::rcp(new MeshLogical(comm_,
 					cell_volume_,
 					face_cell_list_,
 					face_cell_lengths_,
