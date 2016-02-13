@@ -46,7 +46,7 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
                     // Note that static cast is safe here because we have
                     // already ensured it was MSTK.
 
-  if (domain_mesh->cell_dimension() == 3) {
+  if (domain_mesh->manifold_dimension() == 3) {
     // Set the elevation on cells by getting the corresponding face and its
     // centroid.
     int ncells = elev_c.MyLength();
@@ -86,7 +86,7 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
         elev_f[0][f] = (coord0[2] + coord1[2])/2.0;
       }
     }
-  } else if (domain_mesh->cell_dimension() == 2) {
+  } else if (domain_mesh->manifold_dimension() == 2) {
     // Set the elevation on cells by getting the corresponding cell and its
     // centroid.
     int ncells = elev_c.MyLength();

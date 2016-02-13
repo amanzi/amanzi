@@ -22,7 +22,7 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "Teuchos_TimeMonitor.hpp"
 
 #include "TimeStepManager.hh"
-#include "visualization.hh"
+#include "Visualization.hh"
 #include "checkpoint.hh"
 #include "UnstructuredObservations.hh"
 #include "State.hh"
