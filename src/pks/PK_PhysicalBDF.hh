@@ -30,6 +30,13 @@ public:
     PK_Default(pk_tree, glist, S, soln),
     PK_Physical(pk_tree, glist, S, soln),
     PK_BDF(pk_tree, glist, S, soln){};
+
+  PK_PhysicalBDF(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                 Teuchos::ParameterList& FElist,
+                 const Teuchos::RCP<TreeVector>& solution):
+    PK_Default(plist, FElist, solution),
+    PK_Physical(plist, FElist, solution),
+    PK_BDF(plist, FElist, solution){};
     
 // Virtual destructor
   virtual ~PK_PhysicalBDF(){};

@@ -144,7 +144,7 @@ class Energy_PK : public PK_PhysicalBDF {
   bool prec_include_enthalpy_;
 
  protected:
-  VerboseObject* vo_;
+  Teuchos::RCP<VerboseObject> vo_;
 };
 
 }  // namespace Energy

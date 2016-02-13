@@ -28,7 +28,7 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
     Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
 {
   Teuchos::ParameterList vlist;
-  vo_ = new VerboseObject("FlowEnergy_PK", vlist); 
+  vo_ =  Teuchos::rcp(new VerboseObject("FlowEnergy_PK", vlist)); 
 }
 
 

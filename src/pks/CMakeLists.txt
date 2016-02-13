@@ -37,6 +37,7 @@ set(pks_src_files PK_Factory.cc
                   PK_BoundaryFunction.cc
                   PK_DomainFunction.cc
                   PK_Utils.cc
+                  PK_Default.cc
    )
 
 add_amanzi_library(pks
@@ -49,6 +50,12 @@ add_amanzi_library(pks
 set(pks_inc_files 
   CommonDefs.hh
   PK.hh
+  PK_Default.hh
+  PK_BDF.hh
+  PK_Implicit.hh
+  PK_Explicit.hh
+  PK_Physical.hh
+  PK_PhysicalBDF.hh
   PK_BoundaryFunction.hh
   PK_DomainFunction.hh
   PK_Factory.hh

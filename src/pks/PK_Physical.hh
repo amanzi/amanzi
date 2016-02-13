@@ -31,6 +31,11 @@ class PK_Physical : public virtual PK_Default {
               const Teuchos::RCP<State>& S,
               const Teuchos::RCP<TreeVector>& soln){};
 
+  PK_Physical(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+              Teuchos::ParameterList& FElist,
+              const Teuchos::RCP<TreeVector>& solution):
+    PK_Default(plist, FElist, solution){};
+
 
   // Virtual destructor
   virtual ~PK_Physical() {}
@@ -67,16 +72,16 @@ class PK_Physical : public virtual PK_Default {
 
   // solution and evaluator
   std::string key_;
-  //  Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator_;
 
   // debugger for dumping vectors
   Teuchos::RCP<Debugger> db_;
 
-  // ENORM struct
-  // typedef struct ENorm_t {
-  //   double value;
-  //   int gid;
-  // } ENorm_t;
+  //ENORM struct
+  typedef struct ENorm_t {
+    double value;
+    int gid;
+  } ENorm_t;
 
 };
 

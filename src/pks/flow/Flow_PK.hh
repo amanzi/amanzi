@@ -172,8 +172,8 @@ class Flow_PK : public PK_PhysicalBDF {
   Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_, pressure_matrix_eval_;
 
- protected:
-  VerboseObject* vo_;
+ // protected:
+  Teuchos::RCP<VerboseObject> vo_;
 };
 
 }  // namespace Flow

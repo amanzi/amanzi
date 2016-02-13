@@ -99,7 +99,7 @@ Darcy_PK::~Darcy_PK()
   for (int i = 0; i < srcs.size(); i++) {
     if (srcs[i] != NULL) delete srcs[i]; 
   }
-  if (vo_ != NULL) delete vo_;
+  if (vo_ != Teuchos::null) vo_ = Teuchos::null;
 }
 
 
@@ -230,7 +230,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   // create verbosity object
   Teuchos::ParameterList vlist;
   vlist.sublist("VerboseObject") = dp_list_->sublist("VerboseObject");
-  vo_ = new VerboseObject("FlowPK::Darcy", vlist); 
+  vo_ =  Teuchos::rcp(new VerboseObject("FlowPK::Darcy", vlist)); 
 
   // Initilize various common data depending on mesh and state.
   Flow_PK::Initialize(S);

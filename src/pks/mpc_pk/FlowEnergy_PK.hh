@@ -54,7 +54,7 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> porosity_eval;
   Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> saturation_liquid_eval;
 
-  VerboseObject* vo_;
+  Teuchos::RCP<VerboseObject> vo_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergy_PK> reg_;

@@ -77,7 +77,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
   linear_operator_list_ = Teuchos::sublist(glist, "Solvers", true);
   ti_list_ = Teuchos::sublist(rp_list_, "time integrator");
 
-  vo_ = NULL;
+  vo_ = Teuchos::null;
 }
 
 
@@ -107,7 +107,7 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   ms_itrs_ = 0;
   ms_calls_ = 0;
 
-  vo_ = NULL;
+  vo_ = Teuchos::null;
 }
 
 
@@ -124,7 +124,7 @@ Richards_PK::~Richards_PK()
   for (int i = 0; i < srcs.size(); i++) {
     if (srcs[i] != NULL) delete srcs[i]; 
   }
-  if (vo_ != NULL) delete vo_;
+  if (vo_ != Teuchos::null) vo_ = Teuchos::null;
 }
 
 
@@ -357,7 +357,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   // create verbosity object
   Teuchos::ParameterList vlist;
   vlist.sublist("VerboseObject") = rp_list_->sublist("VerboseObject");
-  vo_ = new VerboseObject("FlowPK::Richards", vlist); 
+  vo_ =  Teuchos::rcp(new VerboseObject("FlowPK::Richards", vlist)); 
 
   // Initilize various common data depending on mesh and state.
   Flow_PK::Initialize(S);

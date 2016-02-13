@@ -93,7 +93,7 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   // create verbosity object
   Teuchos::ParameterList vlist;
   vlist.sublist("VerboseObject") = ep_list_->sublist("VerboseObject");
-  vo_ = new VerboseObject("EnergyPK::2Phase", vlist); 
+  vo_ =  Teuchos::rcp(new VerboseObject("EnergyPK::2Phase", vlist)); 
 
   // Call the base class initialize.
   Energy_PK::Initialize(S);

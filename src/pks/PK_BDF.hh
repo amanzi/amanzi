@@ -38,6 +38,11 @@ public:
                      const Teuchos::RCP<TreeVector>& soln) :
   PK_Default(pk_tree, global_list, S, soln){};
 
+  PK_BDF(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                 Teuchos::ParameterList& FElist,
+                 const Teuchos::RCP<TreeVector>& solution):
+    PK_Default(plist, FElist, solution){};
+
  // Virtual destructor
   virtual ~PK_BDF() {};
 

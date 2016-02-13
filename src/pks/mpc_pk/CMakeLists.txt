@@ -89,7 +89,7 @@ set(mpc_tree_inc_files
     PK_MPCStrong.hh
     PK_MPCWeak.hh
     PK_MPCSubcycled.hh
-    PK_MPC_PK.hh
+    PK_MPC.hh
     PK_MPCAdditive.hh
     ReactiveTransport_PK.hh
     FlowEnergy_PK.hh

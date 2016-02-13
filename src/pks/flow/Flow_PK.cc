@@ -38,7 +38,7 @@ Flow_PK::Flow_PK(Teuchos::ParameterList& pk_tree,
   bc_flux(NULL),
   bc_head(NULL),
   bc_seepage(NULL),
-  vo_(NULL),
+  vo_(Teuchos::null),
   passwd_("flow")
 {
 }
@@ -48,7 +48,7 @@ Flow_PK::Flow_PK() :
   bc_flux(NULL),
   bc_head(NULL),
   bc_seepage(NULL),
-  vo_(NULL),
+  vo_(Teuchos::null),
   passwd_("flow")
 {
 }

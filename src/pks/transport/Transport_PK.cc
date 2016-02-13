@@ -83,7 +83,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
   Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "Units");
   units_.Init(*units_list);
 
-  vo_ = NULL;
+  vo_ = Teuchos::null;
 }
 
 
@@ -105,7 +105,7 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   linear_solver_list_ = Teuchos::sublist(glist, "Solvers");
   nonlinear_solver_list_ = Teuchos::sublist(glist, "Nonlinear solvers");
 
-  vo_ = NULL;
+  vo_ = Teuchos::null;
 }
 
 
@@ -115,8 +115,8 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 ****************************************************************** */
 Transport_PK::~Transport_PK()
 { 
-  if (vo_ != NULL) {
-    delete vo_;
+  if (vo_ != Teuchos::null) {
+    vo_ = Teuchos::null;
   }
   for (int i = 0; i < bcs.size(); i++) {
     if (bcs[i] != NULL) delete bcs[i]; 
@@ -253,7 +253,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Create verbosity object.
   Teuchos::ParameterList vlist;
   vlist.sublist("VerboseObject") = tp_list_->sublist("VerboseObject");
-  vo_ = new VerboseObject("TransportPK", vlist); 
+  vo_ =  Teuchos::rcp(new VerboseObject("TransportPK", vlist)); 
 
   MyPID = mesh_->get_comm()->MyPID();
 

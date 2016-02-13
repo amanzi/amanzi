@@ -40,21 +40,17 @@ public:
   // Virtual destructor
   virtual ~PK_Default() {}
 
-  virtual void Setup(const Teuchos::Ptr<State>& S) {}
-
-  // virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {}
-
-  // virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S){}
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // virtual void set_states(const Teuchos::RCP<const State>& S,
   //                         const Teuchos::RCP<State>& S_inter,
   //                         const Teuchos::RCP<State>& S_next);
 
 
-  // virtual void solution_to_state(TreeVector& soln,
-  //         const Teuchos::RCP<State>& S) = 0; // this is here to pass the buck virtually
-  // virtual void solution_to_state(const TreeVector& soln,
-  //         const Teuchos::RCP<State>& S);
+  // virtual void Solution_to_State(TreeVector& soln,
+  //         const Teuchos::RCP<State>& S) = 0; 
+  virtual void Solution_to_State(const TreeVector& soln,
+          const Teuchos::RCP<State>& S);
 
 
   virtual std::string name() { return name_; }
@@ -67,12 +63,13 @@ protected:
   std::string name_;
 
  //  // states
- //  Teuchos::RCP<const State> S_;
- //  Teuchos::RCP<State> S_inter_;
- //  Teuchos::RCP<State> S_next_;
+  Teuchos::RCP<const State> S_;
+  Teuchos::RCP<State> S_inter_;
+  Teuchos::RCP<State> S_next_;
 
  //  // fancy OS
-  VerboseObject* vo_;
+  Teuchos::RCP<VerboseObject> vo_;
+  //VerboseObject* vo_;
 };
 
 } // namespace
