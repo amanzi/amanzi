@@ -48,7 +48,7 @@ class Parallel_Exodus_file {
  protected:
 
   
-  Teuchos::RCP<Epetra_Comm> my_comm; /**< The parallel environment */
+  Teuchos::RCP<Epetra_Comm> my_comm_; /**< The parallel environment */
   std::string my_basename;      /**< The Exodus files' base name */
 
   Teuchos::RCP<Exodus_file> my_file; /**< The local Exodus file description */
@@ -61,13 +61,13 @@ class Parallel_Exodus_file {
  public:
 
   /// Default constructor.
-  Parallel_Exodus_file(const Epetra_Comm& comm, const std::string& basename);
+  Parallel_Exodus_file(const Epetra_Comm& comm_, const std::string& basename);
 
   /// Destructor
   ~Parallel_Exodus_file(void);
 
   /// Get the parallel environment
-  const Epetra_Comm& comm() { return *my_comm; }
+  const Epetra_Comm& comm_() { return *my_comm_; }
 
   /// Read the (local) mesh from the file
   Teuchos::RCP<AmanziMesh::Data::Data> read_mesh(void);

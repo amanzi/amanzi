@@ -58,7 +58,7 @@ SUITE(GeochemistryTestsChemistryPK) {
 
    private:
     Epetra_SerialComm* comm_;
-    ag::GeometricModelPtr gm_;
+    Teuchos::RCP<ag::GeometricModel> gm_;
   };  // end class SpeciationTest
 
   ChemistryPKTest::ChemistryPKTest() {
@@ -77,7 +77,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     am::GenerationSpec g(mesh_parameter_list);
     
     Teuchos::ParameterList region_parameter_list = glist_->sublist("Regions");
-    gm_ = new ag::GeometricModel(3, region_parameter_list, (const Epetra_MpiComm *)comm_);
+    gm_ = Teuchos::rcp(new ag::GeometricModel(3, region_parameter_list, (const Epetra_MpiComm *)comm_));
   
     am::FrameworkPreference pref;
     pref.clear();
@@ -110,7 +110,6 @@ SUITE(GeochemistryTestsChemistryPK) {
   ChemistryPKTest::~ChemistryPKTest() {
     //delete cpk_;
     delete comm_;
-    delete gm_;
   }
 
   void ChemistryPKTest::RunTest(const std::string name, double * gamma) {

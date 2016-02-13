@@ -19,7 +19,7 @@ TEST(MSTK_EXTFACE_MAP_4P)
   std::vector<int> facedirs(6);
   std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 
-  Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
+  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
 			      
 
   int rank, size;
@@ -34,7 +34,7 @@ TEST(MSTK_EXTFACE_MAP_4P)
   MPI_Comm_size(MPI_COMM_WORLD,&size);
   CHECK_EQUAL(4,size);
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm.get(),3));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm_.get(),3));
 
   Epetra_Map face_map(mesh->face_map(false));
   Epetra_Map extface_map(mesh->exterior_face_map());

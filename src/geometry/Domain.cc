@@ -45,13 +45,13 @@ Domain::Domain(const Domain& old)
 
   ng = old.Num_Geometric_Models();
   for (i = 0; i < ng; i++) {
-    GeometricModelPtr g = old.Geometric_Model_i(i);
+    Teuchos::RCP<GeometricModel> g = old.Geometric_Model_i(i);
     GeometricModels.push_back(g);
   }
 
   nr = old.Num_Free_Regions();
   for (i = 0; i < nr; i++) {
-    RegionPtr r = old.Free_Region_i(i);
+    Teuchos::RCP<Region> r = old.Free_Region_i(i);
     FreeRegions.push_back(r);
   }
 }
@@ -69,8 +69,8 @@ Domain::~Domain(void)
 // Constructor with lists of geometric models and free regions
 
 Domain::Domain(const unsigned int dim, 
-               const std::vector<GeometricModelPtr>& in_geometric_models, 
-               const std::vector<RegionPtr>& in_Regions) :
+               const std::vector<Teuchos::RCP<GeometricModel> >& in_geometric_models, 
+               const std::vector<Teuchos::RCP<Region> >& in_Regions) :
   spatial_dimension_(dim), GeometricModels(in_geometric_models),
   FreeRegions(in_Regions)
 {
@@ -83,15 +83,14 @@ Domain::Domain(const unsigned int dim,
 
 
 // Add a geometric model
-
-void Domain::Add_Geometric_Model(const GeometricModelPtr& gm)
+void Domain::Add_Geometric_Model(const Teuchos::RCP<GeometricModel>& gm)
 {
-  // Make sure spatial dimension of domain and geometric model are the same
+  // // Make sure spatial dimension of domain and geometric model are the same
 
-  if (spatial_dimension_ != gm->dimension()) {
-    std::cerr << "Spatial dimension of domain and geometric model mismatch" << std::endl;
-    throw std::exception();
-  }
+  // if (spatial_dimension_ != gm->dimension()) {
+  //   std::cerr << "Spatial dimension of domain and geometric model mismatch" << std::endl;
+  //   throw std::exception();
+  // }
 
   GeometricModels.push_back(gm);
 }
@@ -99,9 +98,9 @@ void Domain::Add_Geometric_Model(const GeometricModelPtr& gm)
 
 // Add a Free Region
 
-void Domain::Add_Free_Region(const RegionPtr& regptr)
+void Domain::Add_Free_Region(const Teuchos::RCP<Region>& regptr)
 {
-  if (spatial_dimension_ < regptr->dimension()) {
+  if (spatial_dimension_ < regptr->manifold_dimension()) {
     std::cerr << "Spatial dimension of domain is less than that of the free region" << std::endl;
     throw std::exception();
   }
@@ -118,7 +117,7 @@ int Domain::Num_Geometric_Models(void) const
 
 // Get the i'th Decomposition
 
-GeometricModelPtr Domain::Geometric_Model_i(const int i) const
+Teuchos::RCP<GeometricModel> Domain::Geometric_Model_i(const int i) const
 {
   return GeometricModels[i];
 }
@@ -132,7 +131,7 @@ int Domain::Num_Free_Regions(void) const
 
 // Get the i'th Free Region
 
-RegionPtr Domain::Free_Region_i(const int i) const
+Teuchos::RCP<Region> Domain::Free_Region_i(const int i) const
 {
   return FreeRegions[i];
 }

@@ -1,6 +1,3 @@
-#ifndef __H_GenerationSpec
-#define __H_GenerationSpec
-
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /**
  * @file   GenerationSpec.hh
@@ -12,7 +9,11 @@
  * 
  */
 
-#include "BoxRegion.hh"
+#ifndef __H_GenerationSpec
+#define __H_GenerationSpec
+
+#include "Region.hh"
+#include "RegionBox.hh"
 
 namespace Teuchos {
   class ParameterList;
@@ -42,7 +43,7 @@ class GenerationSpec {
   ~GenerationSpec(void);
 
   /// Get the overall spatial domain
-  const AmanziGeometry::BoxRegion& domain(void) const
+  const AmanziGeometry::RegionBox& domain(void) const
   { return *domain_; }
 
   /// Get the mesh dimensions in the x-direction
@@ -66,7 +67,7 @@ class GenerationSpec {
   
   /// overall mesh domain  FIXME: We already have a domain
 
-  AmanziGeometry::BoxRegionPtr domain_;
+  Teuchos::RCP<AmanziGeometry::RegionBox> domain_;
 
   unsigned int nx_;                     /**< number of cells in the x-direction */
   unsigned int ny_;                     /**< number of cells in the y-direction */

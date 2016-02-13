@@ -1,5 +1,6 @@
 <ParameterList name="Regions">
   <ParameterList name="Top Section">
+<!--
     <ParameterList name="Region: Labeled Set">
       <Parameter name="Label" type="string" value="Sideset1"/>
       <Parameter name="File" type="string" value="mesh.exo"/>
@@ -14,6 +15,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Top Section">
+-->
     <ParameterList name="Region: Box">
       <Parameter name="Low Coordinate" type="Array(double)" value="{2, 3, 5}"/>
       <Parameter name="High Coordinate" type="Array(double)" value="{4, 5, 8}"/>

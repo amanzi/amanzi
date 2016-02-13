@@ -51,8 +51,9 @@ void RunTestConvergence(std::string input_xml) {
   std::vector<double> h, p_error, v_error;
 
   for (int n = 0; n < nmeshes; n++) {  // Use "n < 3" for the full test
-    Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
-    GeometricModelPtr gm = new GeometricModel(2, region_list, comm);
+    Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("Regions");
+    Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, comm));
     
     FrameworkPreference pref;
     pref.clear();

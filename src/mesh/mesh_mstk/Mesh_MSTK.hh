@@ -4,20 +4,17 @@
 #include <memory>
 #include <vector>
 #include <sstream>
-#include <Epetra_MpiComm.h>
 
-#include <MSTK.h>
+#include "Epetra_MpiComm.h"
+#include "MSTK.h"
 
-#include <Mesh.hh>
-#include <Point.hh>
-#include <GeometricModel.hh>
-#include <LabeledSetRegion.hh>
-#include <PointRegion.hh>
-#include <LogicalRegion.hh>
-#include <GenerationSpec.hh>
-#include <dbc.hh>
-#include <errors.hh>
-#include <VerboseObject.hh>
+#include "Mesh.hh"
+#include "Point.hh"
+#include "GeometricModel.hh"
+#include "GenerationSpec.hh"
+#include "dbc.hh"
+#include "errors.hh"
+#include "VerboseObject.hh"
 
 namespace Amanzi 
 {
@@ -50,18 +47,18 @@ public:
   // blocking the implicit conversion.
   
 
-  Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
-	     const AmanziGeometry::GeometricModelPtr& gm = 
-	     (AmanziGeometry::GeometricModelPtr) NULL,
-             const VerboseObject * verbosity_obj = (VerboseObject *) NULL,
+  Mesh_MSTK (const char *filename,
+             const Epetra_MpiComm *incomm_,
+             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	     const bool request_faces = true,
 	     const bool request_edges = false);
 
-  Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm, 
+  Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm_, 
              int space_dimension,
-	     const AmanziGeometry::GeometricModelPtr& gm = 
-	     (AmanziGeometry::GeometricModelPtr) NULL,
-             const VerboseObject * verbosity_obj = (VerboseObject *) NULL,
+	     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = 
+             Teuchos::null,
+             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	     const bool request_faces = true,
 	     const bool request_edges = false);
 
@@ -72,10 +69,9 @@ public:
 	    const double x1, const double y1, const double z1,
 	    const unsigned int nx, const unsigned int ny, 
             const unsigned int nz, 
-            const Epetra_MpiComm *incomm,
-            const AmanziGeometry::GeometricModelPtr& gm = 
-            (AmanziGeometry::GeometricModelPtr) NULL,
-            const VerboseObject * verbosity_obj = (VerboseObject *) NULL,
+            const Epetra_MpiComm *incomm_,
+            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+            const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
 	    const bool request_edges = false);
 
@@ -84,19 +80,17 @@ public:
   Mesh_MSTK(const double x0, const double y0,
 	    const double x1, const double y1,
 	    const int nx, const int ny, 
-	    const Epetra_MpiComm *comm,
-	    const AmanziGeometry::GeometricModelPtr& gm = 
-	    (AmanziGeometry::GeometricModelPtr) NULL,
-             const VerboseObject * verbosity_obj = (VerboseObject *) NULL,
+	    const Epetra_MpiComm *comm_,
+            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+            const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
 	    const bool request_edges = false);
 
   // Construct a hexahedral mesh from specs 
   Mesh_MSTK(const GenerationSpec& gspec,
-	    const Epetra_MpiComm *comm,
-	    const AmanziGeometry::GeometricModelPtr& gm = 
-	    (AmanziGeometry::GeometricModelPtr) NULL,
-            const VerboseObject * verbosity_obj = (VerboseObject *) NULL,
+	    const Epetra_MpiComm *comm_,
+            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm =Teuchos::null,
+            const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
 	    const bool request_edges = false);
 
@@ -132,7 +126,7 @@ public:
 	    const bool request_faces = true,
 	    const bool request_edges = false);
 
-  Mesh_MSTK(const Epetra_MpiComm *comm,
+  Mesh_MSTK(const Epetra_MpiComm *comm_,
             const Mesh& inmesh,
             const Entity_ID_List& entity_ids, 
             const Entity_kind entity_kind,
@@ -307,8 +301,6 @@ public:
     
   const Epetra_Map& face_map (bool include_ghost) const; 
 
-  const Epetra_Map& edge_map (bool include_ghost) const;
-
   const Epetra_Map& node_map (bool include_ghost) const;
     
   const Epetra_Map& exterior_face_map (void) const; 
@@ -328,7 +320,7 @@ public:
 			     const Entity_kind kind,
 			     const Parallel_type ptype) const;
 
-  unsigned int get_set_size (const Set_Name setname, 
+  unsigned int get_set_size (const std::string setname, 
 			     const Entity_kind kind,
 			     const Parallel_type ptype) const;
 
@@ -344,7 +336,7 @@ public:
 			 const Parallel_type ptype, 
 			 Entity_ID_List *entids) const; 
 
-  void get_set_entities (const Set_Name setname, 
+  void get_set_entities (const std::string setname, 
 			 const Entity_kind kind, 
 			 const Parallel_type ptype, 
 			 std::vector<Entity_ID> *entids) const; 
@@ -411,7 +403,7 @@ public:
 
 private:
 
-  MPI_Comm mpicomm;
+  MPI_Comm mpicomm_;
   int myprocid, numprocs;
 
   Mesh_ptr mesh;
@@ -508,19 +500,18 @@ private:
   // variables needed for mesh deformation
 
   double *meshxyz;
-  double *target_cell_volumes, *min_cell_volumes, *target_weights;
+  double *target_cell_volumes_, *min_cell_volumes_, *target_weights;
 
   // Teuchos Verbose Object to control how much diagnostic info is printed
-
-  VerboseObject* verbose_obj_;
+  Teuchos::RCP<const VerboseObject> verbose_obj_;
   
   // Private methods
   // ----------------------------
   
   void clear_internals_();
 
-  void pre_create_steps_(const int space_dimension, const Epetra_MpiComm *incomm, 
-                         const AmanziGeometry::GeometricModelPtr& gm);
+  void pre_create_steps_(const int space_dimension, const Epetra_MpiComm *incomm_, 
+                         const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm);
   void post_create_steps_(const bool request_faces, const bool request_edges);
 
   void collapse_degen_edges();
@@ -553,9 +544,9 @@ private:
 
   void init_set_info();
   void inherit_labeled_sets(MAttrib_ptr copyatt);
-  std::string internal_name_of_set(const AmanziGeometry::RegionPtr region,
+  std::string internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
                                    const Entity_kind entity_kind) const;
-  std::string other_internal_name_of_set(const AmanziGeometry::RegionPtr r,
+  std::string other_internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>& r,
                                          const Entity_kind entity_kind) const;
 
   int  generate_regular_mesh(Mesh_ptr mesh, double x0, double y0, double z0,
@@ -572,7 +563,7 @@ private:
 			 const bool request_faces = true,
 			 const bool request_edges = false);
 
-  MSet_ptr build_set(const AmanziGeometry::RegionPtr region,
+  MSet_ptr build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
                      const Entity_kind kind) const;
 
 
@@ -596,7 +587,7 @@ private:
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
 
-  void cell_get_faces_and_dirs_internal (const Entity_ID cellid,
+  void cell_get_faces_and_dirs_internal_ (const Entity_ID cellid,
                                          Entity_ID_List *faceids,
                                          std::vector<int> *face_dirs,
                                          const bool ordered=false) const;
@@ -612,25 +603,25 @@ private:
 
   // Cells connected to a face
     
-  void face_get_cells_internal (const Entity_ID faceid, 
+  void face_get_cells_internal_ (const Entity_ID faceid, 
                                 const Parallel_type ptype,
                                 Entity_ID_List *cellids) const;
 
 
   // Get edges of a cell
 
-  void cell_get_edges_internal (const Entity_ID cellid,
+  void cell_get_edges_internal_ (const Entity_ID cellid,
 				Entity_ID_List *edgeids) const;
 
   // Get edges and directions of a 2D cell
 
-  void cell_2D_get_edges_and_dirs_internal (const Entity_ID cellid,
+  void cell_2D_get_edges_and_dirs_internal_ (const Entity_ID cellid,
                                             Entity_ID_List *edgeids,
                                             std::vector<int> *edgedirs) const;
 
   // Edges and edge directions of a face
 
-  void face_get_edges_and_dirs_internal (const Entity_ID cellid,
+  void face_get_edges_and_dirs_internal_ (const Entity_ID cellid,
 					 Entity_ID_List *edgeids,
 					 std::vector<int> *edgedirs,
 					 bool ordered=true) const;
@@ -656,7 +647,7 @@ private:
                           {MVERTEX, MEDGE,   MEDGE,   MFACE},    // 2d meshes
                           {MVERTEX, MEDGE,   MFACE,   MREGION}}; // 3d meshes
     
-    return kind2mtype[cell_dimension()][(int)kind];
+    return kind2mtype[manifold_dimension()][(int)kind];
   }
 
 

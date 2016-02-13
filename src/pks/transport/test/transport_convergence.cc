@@ -10,7 +10,7 @@
 #include <vector>
 
 // TPLs
-#include "Epetra_SerialComm.h"
+#include "Epetra_MpiComm.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
@@ -50,7 +50,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
   using namespace Amanzi::AmanziGeometry;
 
   std::cout << "TEST: convergence analysis, donor scheme, orthogonal meshes" << std::endl;
-  Epetra_SerialComm* comm = new Epetra_SerialComm();
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_convergence.xml";
@@ -64,7 +64,8 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
   for (int nx = 20; nx < 321; nx *= 2) {
     /* create a SIMPLE mesh framework */
     ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
-    GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
+    Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
 
     FrameworkPreference pref;
     pref.clear();
@@ -143,7 +144,6 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     L1error.push_back(L1);
     L2error.push_back(L2);
 
-    delete gm;
   }
 
   double L1rate = Amanzi::Utils::bestLSfit(h, L1error);
@@ -166,7 +166,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
   using namespace Amanzi::AmanziGeometry;
 
   std::cout << "\nTEST: convergence analysis, donor scheme, orthogonal meshes with subcycling" << std::endl;
-  Epetra_SerialComm* comm = new Epetra_SerialComm();
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_convergence.xml";
@@ -179,7 +179,8 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
   for (int nx = 20; nx < 321; nx *= 2) {
     /* create a SIMPLE mesh framework */
     ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
-    GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
+    Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
 
     FrameworkPreference pref;
     pref.clear();
@@ -262,7 +263,6 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     L1error.push_back(L1);
     L2error.push_back(L2);
 
-    delete gm;
   }
 
   double L1rate = Amanzi::Utils::bestLSfit(h, L1error);
@@ -285,7 +285,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
   using namespace Amanzi::AmanziGeometry;
 
   std::cout << "\nTest: Convergence analysis, 2nd order scheme" << std::endl;
-  Epetra_SerialComm  *comm = new Epetra_SerialComm();
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_convergence.xml";
@@ -293,7 +293,8 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
 
   /* create a SIMPLE mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
  
   /* convergence estimate */
   double dt0;
@@ -392,7 +393,6 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
   CHECK_CLOSE(2.0, L1rate, 0.4);
   CHECK_CLOSE(2.0, L2rate, 0.5);
 
-  delete gm;
   delete comm;
 }
 
@@ -419,7 +419,8 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
   for (int loop = 0; loop < 3; loop++) {
     /* create a mesh framework */
     ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
-    GeometricModelPtr gm = new GeometricModel(2, region_list, comm);
+    Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
 
     FrameworkPreference pref;
     pref.clear();
@@ -507,7 +508,6 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
     L1error.push_back(L1);
     L2error.push_back(L2);
 
-    delete gm;
   }
 
   double L1rate = Amanzi::Utils::bestLSfit(h, L1error);
@@ -543,7 +543,8 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
   for (int loop = 0; loop < 3; loop++) {
     /* create a mesh framework */
     ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
-    GeometricModelPtr gm = new GeometricModel(2, region_list, comm);
+    Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
 
     FrameworkPreference pref;
     pref.clear();
@@ -631,7 +632,6 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
     L1error.push_back(L1);
     L2error.push_back(L2);
 
-    delete gm;
   }
 
   double L1rate = Amanzi::Utils::bestLSfit(h, L1error);

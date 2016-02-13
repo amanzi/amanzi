@@ -31,7 +31,7 @@ checkit(Amanzi::Exodus::Parallel_Exodus_file & thefile)
   Teuchos::RCP<Amanzi::AmanziMesh::Data::Data> themesh(thefile.read_mesh());
   
   int lcell(themesh->parameters().num_elements_), gcell;
-  thefile.comm().SumAll(&lcell, &gcell, 1);
+  thefile.comm_().SumAll(&lcell, &gcell, 1);
 
   Teuchos::RCP<Epetra_Map> cmap(thefile.cellmap());
   CHECK_EQUAL(cmap->NumGlobalElements(), gcell);

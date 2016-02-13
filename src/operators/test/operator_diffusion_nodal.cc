@@ -58,7 +58,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
   // create an SIMPLE mesh framework
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();
@@ -220,7 +220,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
 
   // create an SIMPLE mesh framework
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();

@@ -2,6 +2,14 @@
 
 #include "dbc.hh"
 #include "errors.hh"
+
+#include "Point.hh"
+#include "GeometricModel.hh"
+
+#include "RegionLogical.hh"
+#include "RegionPoint.hh"
+#include "RegionLabeledSet.hh"
+
 #include "Mesh_MSTK.hh"
 
 using namespace std;
@@ -19,19 +27,19 @@ namespace AmanziMesh
 // Constructor - load up mesh from file
 //--------------------------------------
 
-Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
-		      const AmanziGeometry::GeometricModelPtr& gm,
-                      const VerboseObject * verbobj,
+Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm_,
+		      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                      const Teuchos::RCP<const VerboseObject>& verbobj,
 		      const bool request_faces,
 		      const bool request_edges) :
   Mesh(verbobj,request_faces,request_edges), 
-  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
+  mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
   faces_initialized(false), edges_initialized(false),
-  target_cell_volumes(NULL), min_cell_volumes(NULL),
+  target_cell_volumes_(NULL), min_cell_volumes_(NULL),
   extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {  
 
-  int numprocs = incomm->NumProc();
+  int numprocs = incomm_->NumProc();
 
   // Assume three dimensional problem if constructor called without 
   // the space_dimension parameter
@@ -39,7 +47,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
   int ok;
 
 #ifdef DEBUG
-  if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+  if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
       *(verbobj->os()) << "Testing Verbosity !!!! - Construct mesh from file" << std::endl;
   }
 #endif
@@ -47,7 +55,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
   // Pre-processing (init, MPI queries etc)
 
   int space_dim = 3;
-  pre_create_steps_(space_dim, incomm, gm);
+  pre_create_steps_(space_dim, incomm_, gm);
 
 
 
@@ -63,7 +71,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
   if (len > 4 && strncmp(&(filename[len-4]),".exo",4) == 0) { // Exodus file 
 
     if (numprocs == 1) {
-      ok = MESH_ImportFromExodusII(mesh,filename,NULL,mpicomm);
+      ok = MESH_ImportFromExodusII(mesh,filename,NULL,mpicomm_);
     }
     else {
       int opts[5] = {0,0,0,0,0};
@@ -73,7 +81,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
       opts[2] = 1;   // Number of ghost layers
       opts[3] = 1;   // Use Zoltan for partitioning if available
 
-      ok = MESH_ImportFromExodusII(mesh,filename,opts,mpicomm);
+      ok = MESH_ImportFromExodusII(mesh,filename,opts,mpicomm_);
     }
 
   }
@@ -83,7 +91,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
     opts[0] = 1;     // Parallel weave distributed meshes
     opts[1] = 1;     // Number of ghost layers
 
-    ok = MESH_ImportFromNemesisI(mesh,filename,opts,mpicomm);
+    ok = MESH_ImportFromNemesisI(mesh,filename,opts,mpicomm_);
 
   }
   else {
@@ -103,14 +111,14 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
   int cell_dim = MESH_Num_Regions(mesh) ? 3 : 2;
   
   int max;
-  incomm->MaxAll(&cell_dim,&max,1);
+  incomm_->MaxAll(&cell_dim,&max,1);
 
   if (max != cell_dim) {
     Errors::Message mesg("cell dimension on this processor is different from max cell dimension across all processors");
     amanzi_throw(mesg);
   }
 
-  set_cell_dimension(cell_dim);
+  set_manifold_dimension(cell_dim);
 
   if (cell_dim == 2 && space_dim == 3) {
       
@@ -136,7 +144,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
     if (planar)
       space_dim = 2;
 
-    incomm->MaxAll(&space_dim,&max,1);
+    incomm_->MaxAll(&space_dim,&max,1);
 
     space_dim = max;
     set_space_dimension(space_dim);      
@@ -153,16 +161,16 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
 // Constructor - load up mesh from file
 //--------------------------------------
 
-Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm, 
+Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm_, 
 		      int space_dimension,
-		      const AmanziGeometry::GeometricModelPtr& gm,
-                      const VerboseObject * verbobj,
+		      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                      const Teuchos::RCP<const VerboseObject>& verbobj,
 		      const bool request_faces,
 		      const bool request_edges) :
   Mesh(verbobj,request_faces,request_edges), 
-  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
+  mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
   faces_initialized(false), edges_initialized(false),
-  target_cell_volumes(NULL), min_cell_volumes(NULL),
+  target_cell_volumes_(NULL), min_cell_volumes_(NULL),
   extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {
 
@@ -175,7 +183,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
   // Pre-processing (init, MPI queries etc)
 
   int space_dim = 3;
-  pre_create_steps_(space_dim, incomm, gm);
+  pre_create_steps_(space_dim, incomm_, gm);
 
 
 
@@ -190,7 +198,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
   if (len > 4 && strncmp(&(filename[len-4]),".exo",4) == 0) { // Exodus file
 
     if (numprocs == 1) {
-      ok = MESH_ImportFromExodusII(mesh,filename,NULL,mpicomm);
+      ok = MESH_ImportFromExodusII(mesh,filename,NULL,mpicomm_);
     }
     else {
       int opts[5] = {0,0,0,0,0};
@@ -200,7 +208,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
       opts[2] = 1;   // Number of ghost layers
       opts[3] = 1;   // Use Zoltan for partitioning if available
 
-      ok = MESH_ImportFromExodusII(mesh,filename,opts,mpicomm);
+      ok = MESH_ImportFromExodusII(mesh,filename,opts,mpicomm_);
     }
 
   }
@@ -210,7 +218,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
     opts[0] = 1;     // Parallel weave distributed meshes
     opts[1] = 1;     // Number of ghost layers
 
-    ok = MESH_ImportFromNemesisI(mesh,filename,opts,mpicomm);
+    ok = MESH_ImportFromNemesisI(mesh,filename,opts,mpicomm_);
 
   }
   else {
@@ -230,14 +238,14 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
   int cell_dim = MESH_Num_Regions(mesh) ? 3 : 2;
   
   int max;
-  incomm->MaxAll(&cell_dim,&max,1);
+  incomm_->MaxAll(&cell_dim,&max,1);
 
   if (max != cell_dim) {
     Errors::Message mesg("cell dimension on this processor is different from max cell dimension across all processors");
     amanzi_throw(mesg);
   }
 
-  set_cell_dimension(cell_dim);
+  set_manifold_dimension(cell_dim);
 
   // Do all the processing required for setting up the mesh for Amanzi 
   
@@ -255,21 +263,21 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 		     const double x1, const double y1, const double z1,
 		     const unsigned int nx, const unsigned int ny, 
 		     const unsigned int nz, 
-		     const Epetra_MpiComm *incomm,
-		     const AmanziGeometry::GeometricModelPtr& gm,
-                     const VerboseObject * verbobj,
+		     const Epetra_MpiComm *incomm_,
+		     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                     const Teuchos::RCP<const VerboseObject>& verbobj,
 		     const bool request_faces,
 		     const bool request_edges) :
   Mesh(verbobj,request_faces,request_edges), 
-  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
+  mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
   faces_initialized(false), edges_initialized(false),
-  target_cell_volumes(NULL), min_cell_volumes(NULL),
+  target_cell_volumes_(NULL), min_cell_volumes_(NULL),
   extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {
   int ok;
 
   int space_dimension = 3;
-  pre_create_steps_(space_dimension, incomm, gm);
+  pre_create_steps_(space_dimension, incomm_, gm);
 
 
   Mesh::set_mesh_type(RECTANGULAR);   // Discretizations can use this info if they want
@@ -282,7 +290,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
     mesh = MESH_New(F1);
     ok = generate_regular_mesh(mesh,x0,y0,z0,x1,y1,z1,nx,ny,nz);
 
-    set_cell_dimension(3);
+    set_manifold_dimension(3);
 
     myprocid = 0;
   }
@@ -309,15 +317,15 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 
 #ifdef MSTK_2_21rc1_OR_NEWER
     ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
-                                   method,del_inmesh,mpicomm);
+                                   method,del_inmesh,mpicomm_);
 #else
     ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
-                                   method,mpicomm);
+                                   method,mpicomm_);
     if (myprocid == 0)
       MESH_Delete(globalmesh);
 #endif
 
-    set_cell_dimension(topo_dim);
+    set_manifold_dimension(topo_dim);
   }
 
   if (!ok) {
@@ -347,20 +355,20 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 		     const double x1, const double y1,
 		     const int nx, const int ny, 
-		     const Epetra_MpiComm *incomm,
-		     const AmanziGeometry::GeometricModelPtr& gm,
-                     const VerboseObject *verbobj,
+		     const Epetra_MpiComm *incomm_,
+		     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                     const Teuchos::RCP<const VerboseObject>&verbobj,
 		     const bool request_faces,
 		     const bool request_edges) :
   Mesh(verbobj,request_faces,request_edges), 
-  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
+  mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
   faces_initialized(false), edges_initialized(false),
-  target_cell_volumes(NULL), min_cell_volumes(NULL),
+  target_cell_volumes_(NULL), min_cell_volumes_(NULL),
   extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {
   int ok;
   int space_dim = 2;
-  pre_create_steps_(space_dim, incomm, gm);
+  pre_create_steps_(space_dim, incomm_, gm);
 
 
 
@@ -383,7 +391,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 
 
   int topo_dim=space_dim; // What is the topological dimension of the mesh
-  set_cell_dimension(topo_dim);
+  set_manifold_dimension(topo_dim);
 
   if (serial_run) {
 
@@ -415,10 +423,10 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 
 #ifdef MSTK_2_21rc1_OR_NEWER
     ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
-                                   method,del_inmesh,mpicomm);
+                                   method,del_inmesh,mpicomm_);
 #else
     ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
-                                   method,mpicomm);
+                                   method,mpicomm_);
     if (myprocid == 0)
       MESH_Delete(globalmesh);
 #endif
@@ -450,15 +458,15 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 //--------------------------------------
 
 Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
-		     const Epetra_MpiComm *incomm,
-		     const AmanziGeometry::GeometricModelPtr& gm,
-                     const VerboseObject *verbobj,
+		     const Epetra_MpiComm *incomm_,
+		     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                     const Teuchos::RCP<const VerboseObject>&verbobj,
 		     const bool request_faces,
 		     const bool request_edges) :
   Mesh(verbobj,request_faces,request_edges), 
-  mpicomm(incomm->GetMpiComm()), meshxyz(NULL), 
+  mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
   faces_initialized(false), edges_initialized(false),
-  target_cell_volumes(NULL), min_cell_volumes(NULL),
+  target_cell_volumes_(NULL), min_cell_volumes_(NULL),
   extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {
   int ok;
@@ -470,7 +478,7 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
   AmanziGeometry::Point p1(gspec.domain().point1());
 
   int space_dim = p0.dim();
-  pre_create_steps_(space_dim, incomm, gm);
+  pre_create_steps_(space_dim, incomm_, gm);
 
 
   Mesh::set_mesh_type(RECTANGULAR);   // Discretizations can use this info if they want
@@ -482,7 +490,7 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
   }
 
   int topo_dim=space_dim;
-  set_cell_dimension(topo_dim);
+  set_manifold_dimension(topo_dim);
 
   if (serial_run) {
 
@@ -529,10 +537,10 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
       
 #ifdef MSTK_2_21rc1_OR_NEWER
     ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
-                                   method,del_inmesh,mpicomm);
+                                   method,del_inmesh,mpicomm_);
 #else
     ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
-                                   method,mpicomm);
+                                   method,mpicomm_);
     if (myprocid == 0)
       MESH_Delete(globalmesh);
 #endif
@@ -567,7 +575,7 @@ Mesh_MSTK::Mesh_MSTK (const Mesh *inmesh,
                       const bool extrude,
 		      const bool request_faces,
 		      const bool request_edges) :
-  mpicomm(inmesh->get_comm()->GetMpiComm()),
+  mpicomm_(inmesh->get_comm()->GetMpiComm()),
   Mesh(inmesh->verbosity_obj(),request_faces,request_edges),
   extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {  
@@ -579,8 +587,8 @@ Mesh_MSTK::Mesh_MSTK (const Mesh *inmesh,
   for (int i = 0; i < setnames.size(); ++i) {
     MSet_ptr mset;
     
-    AmanziGeometry::GeometricModelPtr gm = inmesh->geometric_model();
-    AmanziGeometry::RegionPtr rgn = gm->FindRegion(setnames[i]);
+    Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = inmesh->geometric_model();
+    Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setnames[i]);
 
     // access the set in Amanzi so that the set gets created in 'inmesh'
     // if it already does not exist
@@ -620,7 +628,7 @@ Mesh_MSTK::Mesh_MSTK (const Mesh& inmesh,
                       const bool extrude,
 		      const bool request_faces,
 		      const bool request_edges) :
-  mpicomm(inmesh.get_comm()->GetMpiComm()),
+  mpicomm_(inmesh.get_comm()->GetMpiComm()),
   Mesh(inmesh.verbosity_obj(),request_faces,request_edges),
   extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {  
@@ -632,8 +640,8 @@ Mesh_MSTK::Mesh_MSTK (const Mesh& inmesh,
   for (int i = 0; i < setnames.size(); ++i) {
     MSet_ptr mset;
     
-    AmanziGeometry::GeometricModelPtr gm = inmesh.geometric_model();
-    AmanziGeometry::RegionPtr rgn = gm->FindRegion(setnames[i]);
+    Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = inmesh.geometric_model();
+    Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setnames[i]);
 
 
     // access the set in Amanzi so that the set gets created in 'inmesh'
@@ -680,7 +688,7 @@ Mesh_MSTK::Mesh_MSTK (const Mesh& inmesh,
                       const bool extrude,
 		      const bool request_faces,
 		      const bool request_edges) :
-  mpicomm(inmesh.get_comm()->GetMpiComm()),
+  mpicomm_(inmesh.get_comm()->GetMpiComm()),
   Mesh(inmesh.verbosity_obj(),request_faces,request_edges),
   extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {  
@@ -711,7 +719,7 @@ Mesh_MSTK::Mesh_MSTK (const Mesh& inmesh,
 // Extract MSTK entities from an ID list and make a new MSTK mesh WITH A NEW COMM
 //---------------------------------------------------------
 
-Mesh_MSTK::Mesh_MSTK (const Epetra_MpiComm *comm,
+Mesh_MSTK::Mesh_MSTK (const Epetra_MpiComm *comm_,
                       const Mesh& inmesh, 
                       const Entity_ID_List& entity_ids, 
                       const Entity_kind entity_kind,
@@ -719,7 +727,7 @@ Mesh_MSTK::Mesh_MSTK (const Epetra_MpiComm *comm,
                       const bool extrude,
                       const bool request_faces,
                       const bool request_edges) :
-    mpicomm(comm->GetMpiComm()),
+    mpicomm_(comm_->GetMpiComm()),
     Mesh(inmesh.verbosity_obj(),request_faces,request_edges),
     extface_map_wo_ghosts_(NULL), owned_to_extface_importer_(NULL)
 {  
@@ -750,15 +758,15 @@ Mesh_MSTK::Mesh_MSTK (const Epetra_MpiComm *comm,
 // indicating which type of entity is in that set
 
 std::string 
-Mesh_MSTK::internal_name_of_set(const AmanziGeometry::RegionPtr r,
+Mesh_MSTK::internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>& r,
                                 const Entity_kind entity_kind) const {
 
   std::string internal_name;
   
   if (r->type() == AmanziGeometry::LABELEDSET) {
     
-    AmanziGeometry::LabeledSetRegionPtr lsrgn = 
-      dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (r);
+    Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+        Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(r);
     std::string label = lsrgn->label();
 
     if (entity_kind == CELL)
@@ -788,15 +796,15 @@ Mesh_MSTK::internal_name_of_set(const AmanziGeometry::RegionPtr r,
 // Labeled Set and entity kind Cell. For everything else return regular name 
 
 std::string 
-Mesh_MSTK::other_internal_name_of_set(const AmanziGeometry::RegionPtr r,
+Mesh_MSTK::other_internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>& r,
                                       const Entity_kind entity_kind) const {
 
   std::string internal_name;
   
   if (r->type() == AmanziGeometry::LABELEDSET && entity_kind == CELL) {
     
-    AmanziGeometry::LabeledSetRegionPtr lsrgn = 
-      dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (r);
+    Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+        Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(r);
     std::string label = lsrgn->label();
 
     internal_name = "elemset_" + label;
@@ -873,19 +881,19 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
       amanzi_throw(mesg);
     }
     else 
-      set_cell_dimension(3); // extract regions/cells from mesh
+      set_manifold_dimension(3); // extract regions/cells from mesh
     break;
     
   case MFACE:
     if (extrude)
-      set_cell_dimension(3); // extract faces and extrude them into regions/cells
+      set_manifold_dimension(3); // extract faces and extrude them into regions/cells
     else
-      set_cell_dimension(2); // extract faces from mesh
+      set_manifold_dimension(2); // extract faces from mesh
     break;
     
   case MEDGE:
     if (extrude)
-      set_cell_dimension(2); // extract edges and extrude them into faces/cells
+      set_manifold_dimension(2); // extract edges and extrude them into faces/cells
     else {
       Errors::Message mesg("Edge list passed into extract mesh. Cannot extract a wire or point mesh");
       amanzi_throw(mesg);
@@ -1107,8 +1115,8 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
 
     int num_ghost_layers = 1; 
     int input_type = 0; /* No parallel info is given */
-    int status = MSTK_Weave_DistributedMeshes(mesh, cell_dimension(),
-                                              num_ghost_layers, input_type, mpicomm);
+    int status = MSTK_Weave_DistributedMeshes(mesh, manifold_dimension(),
+                                              num_ghost_layers, input_type, mpicomm_);
 
     // Now we have to build parent information for global entities
 
@@ -1155,7 +1163,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
     // Update attributes on ghost entities - this will ensure that
     // ghost entities have their parent global ID information
 
-    status &= MESH_UpdateAttributes(mesh,mpicomm);
+    status &= MESH_UpdateAttributes(mesh,mpicomm_);
 
     // Now reverse engineer the parents of ghost entities from the global IDs
 
@@ -1410,7 +1418,7 @@ unsigned int Mesh_MSTK::num_entities (const Entity_kind kind,
       return !serial_run ? MSet_Num_Entries(NotOwnedFaces) : 0;
       break;
     case USED:
-      return (cell_dimension() == 2 ? MESH_Num_Edges(mesh) : MESH_Num_Faces(mesh));
+      return (manifold_dimension() == 2 ? MESH_Num_Edges(mesh) : MESH_Num_Faces(mesh));
       break;
     default:
       return 0;
@@ -1428,7 +1436,7 @@ unsigned int Mesh_MSTK::num_entities (const Entity_kind kind,
       return !serial_run ? MSet_Num_Entries(GhostCells) : 0;
       break;
     case USED:
-      return ((cell_dimension() == 2) ? MESH_Num_Faces(mesh) : MESH_Num_Regions(mesh));
+      return ((manifold_dimension() == 2) ? MESH_Num_Faces(mesh) : MESH_Num_Regions(mesh));
       break;
     default:
       return 0;
@@ -1482,7 +1490,7 @@ void Mesh_MSTK::cell_get_faces_and_dirs_ordered (const Entity_ID cellid,
 
   MEntity_ptr cell;
 
-  if (cell_dimension() == 3) {
+  if (manifold_dimension() == 3) {
 
     int celltype = cell_get_type(cellid);
       
@@ -1631,7 +1639,7 @@ void Mesh_MSTK::cell_get_faces_and_dirs_unordered (const Entity_ID cellid,
 
   cell = cell_id_to_handle[cellid];
 
-  if (cell_dimension() == 3) {
+  if (manifold_dimension() == 3) {
     int nrf;
     List_ptr rfaces;
 
@@ -1675,7 +1683,7 @@ void Mesh_MSTK::cell_get_faces_and_dirs_unordered (const Entity_ID cellid,
     }
     
   }
-  else {  // cell_dimension() = 2; surface or 2D mesh
+  else {  // manifold_dimension() = 2; surface or 2D mesh
     int nfe;
 
     List_ptr fedges;
@@ -1725,7 +1733,7 @@ void Mesh_MSTK::cell_get_faces_and_dirs_unordered (const Entity_ID cellid,
 
 
 
-void Mesh_MSTK::cell_get_faces_and_dirs_internal (const Entity_ID cellid,
+void Mesh_MSTK::cell_get_faces_and_dirs_internal_ (const Entity_ID cellid,
                                                   Entity_ID_List *faceids,
                                                   std::vector<int> *face_dirs,
                                                   const bool ordered) const 
@@ -1739,7 +1747,7 @@ void Mesh_MSTK::cell_get_faces_and_dirs_internal (const Entity_ID cellid,
 }
 
 
-void Mesh_MSTK::cell_get_edges_internal (const Entity_ID cellid,
+void Mesh_MSTK::cell_get_edges_internal_ (const Entity_ID cellid,
 					 Entity_ID_List *edgeids) const 
 {
 
@@ -1751,7 +1759,7 @@ void Mesh_MSTK::cell_get_edges_internal (const Entity_ID cellid,
 
   cell = cell_id_to_handle[cellid];
 
-  if (cell_dimension() == 3) {
+  if (manifold_dimension() == 3) {
     int nre;
     List_ptr redges;
 
@@ -1782,7 +1790,7 @@ void Mesh_MSTK::cell_get_edges_internal (const Entity_ID cellid,
     */
     
   }
-  else {  // cell_dimension() = 2; surface or 2D mesh
+  else {  // manifold_dimension() = 2; surface or 2D mesh
     int nfe;
 
     List_ptr fedges;
@@ -1819,12 +1827,12 @@ void Mesh_MSTK::cell_get_edges_internal (const Entity_ID cellid,
 
 // For 2D cells, get edges and directions in which edges are used in cell
 
-void Mesh_MSTK::cell_2D_get_edges_and_dirs_internal (const Entity_ID cellid,
+void Mesh_MSTK::cell_2D_get_edges_and_dirs_internal_ (const Entity_ID cellid,
                                                      Entity_ID_List *edgeids,
                                                      std::vector<int> *edgedirs) const 
 {
 
-  ASSERT(cell_dimension() == 2); 
+  ASSERT(manifold_dimension() == 2); 
 
   if (!edgedirs) 
     cell_get_edges(cellid, edgeids);
@@ -1903,7 +1911,7 @@ void Mesh_MSTK::cell_get_nodes (const Entity_ID cellid,
   /* Reserved for next major MSTK release
   int vertids[MAXPV3];
 
-  if (cell_dimension() == 3)            // Volume mesh
+  if (manifold_dimension() == 3)            // Volume mesh
     MR_VertexIDs(cell,&nn,vertids);
   else                                  // Surface mesh
     MF_VertexIDs(cell,1,0,&nn,vertids);
@@ -1916,7 +1924,7 @@ void Mesh_MSTK::cell_get_nodes (const Entity_ID cellid,
   }
   */
     
-  if (cell_dimension() == 3) {                    // Volume mesh
+  if (manifold_dimension() == 3) {                    // Volume mesh
     List_ptr rverts = MR_Vertices(cell);
  
     nn = List_Num_Entries(rverts);
@@ -1950,7 +1958,7 @@ void Mesh_MSTK::cell_get_nodes (const Entity_ID cellid,
 
 
 
-void Mesh_MSTK::face_get_edges_and_dirs_internal (const Entity_ID faceid,
+void Mesh_MSTK::face_get_edges_and_dirs_internal_ (const Entity_ID faceid,
 						  Entity_ID_List *edgeids,
 						  std::vector<int> *edge_dirs,
 						  bool ordered) const
@@ -1965,7 +1973,7 @@ void Mesh_MSTK::face_get_edges_and_dirs_internal (const Entity_ID faceid,
 
   face = face_id_to_handle[faceid];
 
-  if (cell_dimension() == 3) {
+  if (manifold_dimension() == 3) {
     int nfe;
     List_ptr fedges;
 
@@ -2009,7 +2017,7 @@ void Mesh_MSTK::face_get_edges_and_dirs_internal (const Entity_ID faceid,
     }
     
   }
-  else {  // cell_dimension() = 2; surface or 2D mesh
+  else {  // manifold_dimension() = 2; surface or 2D mesh
 
     // face is same dimension as edge; just return the edge with a
     // direction of 1
@@ -2046,7 +2054,7 @@ void Mesh_MSTK::face_get_nodes (const Entity_ID faceid,
 
   genface = face_id_to_handle[faceid];
   
-  if (cell_dimension() == 3) {  // Volume mesh
+  if (manifold_dimension() == 3) {  // Volume mesh
     int dir = !faceflip[faceid];
 
     /* Reserved for next major MSTK release
@@ -2131,7 +2139,7 @@ void Mesh_MSTK::node_get_cells (const Entity_ID nodeid,
   /* Reserved for next major release of MSTK
   if (MV_PType(mv) == PINTERIOR && ptype != GHOST) { 
 
-    if (cell_dimension() == 3) {
+    if (manifold_dimension() == 3) {
       int nvr, regionids[200];
       MV_RegionIDs(mv,&nvr,regionids);
       ASSERT(nvr < 200);
@@ -2161,7 +2169,7 @@ void Mesh_MSTK::node_get_cells (const Entity_ID nodeid,
     // and ghost cells. So depending on the requested cell type, we
     // may have to omit some entries
 
-    if (cell_dimension() == 3)
+    if (manifold_dimension() == 3)
       cell_list = MV_Regions(mv);
     else
       cell_list = MV_Faces(mv);
@@ -2221,7 +2229,7 @@ void Mesh_MSTK::node_get_faces (const Entity_ID nodeid,
 
   /* Reserved for next major release of MSTK 
   if (MV_PType(mv) == PINTERIOR && ptype != GHOST) {
-    if (cell_dimension() == 3) {
+    if (manifold_dimension() == 3) {
       int nvf, vfaceids[200];
 
       MV_FaceIDs(mv,&nvf,vfaceids);
@@ -2234,7 +2242,7 @@ void Mesh_MSTK::node_get_faces (const Entity_ID nodeid,
 	++it;
       }
     }
-    else if (cell_dimension() == 2) {
+    else if (manifold_dimension() == 2) {
       int nve, vedgeids[200];
 
       MV_EdgeIDs(mv,&nve,vedgeids);
@@ -2251,7 +2259,7 @@ void Mesh_MSTK::node_get_faces (const Entity_ID nodeid,
   else {
   */
     
-    if (cell_dimension() == 3)
+    if (manifold_dimension() == 3)
       face_list = MV_Faces(mv);
     else
       face_list = MV_Edges(mv);
@@ -2312,7 +2320,7 @@ void Mesh_MSTK::node_get_cell_faces (const Entity_ID nodeid,
 
   MVertex_ptr mv = (MVertex_ptr) vtx_id_to_handle[nodeid];
 
-  if (cell_dimension() == 3) {
+  if (manifold_dimension() == 3) {
     mr = (MRegion_ptr) cell_id_to_handle[cellid];
     List_ptr rfaces = MR_Faces(mr);
 
@@ -2381,7 +2389,7 @@ void Mesh_MSTK::node_get_cell_faces (const Entity_ID nodeid,
     
 // Cells connected to a face
     
-void Mesh_MSTK::face_get_cells_internal (const Entity_ID faceid, 
+void Mesh_MSTK::face_get_cells_internal_ (const Entity_ID faceid, 
                                          const Parallel_type ptype,
                                          std::vector<Entity_ID> *cellids) const
 {
@@ -2393,7 +2401,7 @@ void Mesh_MSTK::face_get_cells_internal (const Entity_ID faceid,
   Entity_ID_List::iterator it = cellids->begin();
   n = 0;
 
-  if (cell_dimension() == 3) {
+  if (manifold_dimension() == 3) {
     MFace_ptr mf = (MFace_ptr) face_id_to_handle[faceid];
    
     List_ptr fregs = MF_Regions(mf);
@@ -2486,7 +2494,7 @@ void Mesh_MSTK::cell_get_face_adj_cells(const Entity_ID cellid,
 
   fadj_cellids->clear();
 
-  if (cell_dimension() == 3) {
+  if (manifold_dimension() == 3) {
 
     MRegion_ptr mr = (MRegion_ptr) cell_id_to_handle[cellid];
 
@@ -2519,7 +2527,7 @@ void Mesh_MSTK::cell_get_face_adj_cells(const Entity_ID cellid,
     List_Delete(rfaces);
 
   }
-  else if (cell_dimension() == 2) {
+  else if (manifold_dimension() == 2) {
 
     MFace_ptr mf = (MFace_ptr) cell_id_to_handle[cellid];
 
@@ -2576,7 +2584,7 @@ void Mesh_MSTK::cell_get_node_adj_cells(const Entity_ID cellid,
   mkid = MSTK_GetMarker();
 
   cell_list = List_New(0);
-  if (cell_dimension() == 3) {
+  if (manifold_dimension() == 3) {
 
     MRegion_ptr mr = (MRegion_ptr) cell_id_to_handle[cellid];
 
@@ -2611,7 +2619,7 @@ void Mesh_MSTK::cell_get_node_adj_cells(const Entity_ID cellid,
     List_Delete(rvertices);
     
   }
-  else if (cell_dimension() == 2) {
+  else if (manifold_dimension() == 2) {
 
     MFace_ptr mf = (MFace_ptr) cell_id_to_handle[cellid];
 
@@ -2686,7 +2694,7 @@ void Mesh_MSTK::cell_get_coordinates (const Entity_ID cellid,
   MEntity_ptr cell;
   double coords[3];
   int nn, result;
-  int spdim = space_dimension(), celldim = cell_dimension();
+  int spdim = space_dimension(), celldim = manifold_dimension();
 
   ASSERT(ccoords != NULL);
 
@@ -2738,7 +2746,7 @@ void Mesh_MSTK::face_get_coordinates (const Entity_ID faceid,
 {
   MEntity_ptr genface;
   double coords[3];
-  int spdim = space_dimension(), celldim = cell_dimension();
+  int spdim = space_dimension(), celldim = manifold_dimension();
 
   ASSERT(faces_initialized);
   ASSERT(fcoords != NULL);
@@ -2806,12 +2814,12 @@ void Mesh_MSTK::node_set_coordinates(const AmanziMesh::Entity_ID nodeid,
 }
 
 
-MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
+MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
                               const Entity_kind kind) const {
 
-  int celldim = Mesh::cell_dimension();
-  int spacedim = Mesh::space_dimension();
-  AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
+  int celldim = Mesh::manifold_dimension();
+  int space_dim_ = Mesh::space_dimension();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
 
   // Modify region/set name by prefixing it with the type of entity requested
 
@@ -2838,10 +2846,10 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
 
     }
     else if (region->type() == AmanziGeometry::POINT) {
-      AmanziGeometry::Point vpnt(spacedim);
-      AmanziGeometry::Point rgnpnt(spacedim);
+      AmanziGeometry::Point vpnt(space_dim_);
+      AmanziGeometry::Point rgnpnt(space_dim_);
 
-      rgnpnt = ((AmanziGeometry::PointRegionPtr)region)->point();
+      rgnpnt = Teuchos::rcp_static_cast<const AmanziGeometry::RegionPoint>(region)->point();
         
       int nnode = num_entities(NODE, USED);
       double mindist2 = 1.e+16;
@@ -2882,7 +2890,7 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
         int ncells = num_entities(CELL, USED);              
         for (int ic = 0; ic < ncells; ic++) {
 
-          std::vector<AmanziGeometry::Point> ccoords(spacedim);
+          std::vector<AmanziGeometry::Point> ccoords(space_dim_);
 
           cell_get_coordinates(ic, &ccoords);
 
@@ -2906,8 +2914,8 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
     else if (region->type() == AmanziGeometry::LABELEDSET) {
       // Just retrieve and return the set
 
-      AmanziGeometry::LabeledSetRegionPtr lsrgn = 
-        dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (region);
+      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+          Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(region);
       std::string label = lsrgn->label();
       std::string entity_type = lsrgn->entity_str();
 
@@ -2944,11 +2952,11 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
       std::stringstream tempstr;
       tempstr << "Requested CELLS on region " << region->name() << 
           " of type " << region->type() << 
-          " and dimension " << region->dimension() << ".\n" << 
+          " and dimension " << region->manifold_dimension() << ".\n" << 
           "This request will result in an empty set";
     
-      const VerboseObject *verbobj = Mesh::verbosity_obj();
-      if (verbobj && verbobj->os_OK(Teuchos::VERB_HIGH)) {
+      Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
+      if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
         *(verbobj->os()) << tempstr;
       }
@@ -2961,7 +2969,7 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
     //
     // Commented out so that we can ask for a face set in a 3D box
     //
-    //          if (region->dimension() != celldim-1) 
+    //          if (region->manifold_dimension() != celldim-1) 
     //            {
     //              std::cerr << "No region of dimension " << celldim-1 << " defined in geometric model" << std::endl;
     //              std::cerr << "Cannot construct cell set from region " << setname << std::endl;
@@ -2986,7 +2994,7 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
       int nface = num_entities(FACE, USED);
               
       for (int iface = 0; iface < nface; iface++) {
-        std::vector<AmanziGeometry::Point> fcoords(spacedim);
+        std::vector<AmanziGeometry::Point> fcoords(space_dim_);
             
         face_get_coordinates(iface, &fcoords);
             
@@ -3006,8 +3014,8 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
     else if (region->type() == AmanziGeometry::LABELEDSET) {
       // Just retrieve and return the set
 
-      AmanziGeometry::LabeledSetRegionPtr lsrgn = 
-        dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (region);
+      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+          Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(region);
       std::string label = lsrgn->label();
       std::string entity_type = lsrgn->entity_str();
 
@@ -3025,11 +3033,11 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
       std::stringstream tempstr;
       tempstr << "Requested FACES on region " << region->name() << 
           " of type " << region->type() << " and dimension " << 
-          region->dimension() << ".\n" << 
+          region->manifold_dimension() << ".\n" << 
           "This request will result in an empty set";
     
-      const VerboseObject *verbobj = Mesh::verbosity_obj();
-      if (verbobj && verbobj->os_OK(Teuchos::VERB_HIGH)) {
+      Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
+      if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
         *(verbobj->os()) << tempstr;
       }
@@ -3050,7 +3058,7 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
 
       for (int inode = 0; inode < nnode; inode++) {
 
-        AmanziGeometry::Point vpnt(spacedim);
+        AmanziGeometry::Point vpnt(space_dim_);
         node_get_coordinates(inode, &vpnt);
                   
         if (region->inside(vpnt)) {
@@ -3065,8 +3073,8 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
     else if (region->type() == AmanziGeometry::LABELEDSET) {
       // Just retrieve and return the set
 
-      AmanziGeometry::LabeledSetRegionPtr lsrgn = 
-        dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (region);
+      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+          Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(region);
       std::string label = lsrgn->label();
       std::string entity_type = lsrgn->entity_str();
 
@@ -3084,11 +3092,11 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
       std::stringstream tempstr;
       tempstr << "Requested POINTS on region " << region->name() << 
           " of type " << region->type() << " and dimension " << 
-          region->dimension() << ".\n" << 
+          region->manifold_dimension() << ".\n" << 
           "This request will result in an empty set";
     
-      const VerboseObject *verbobj = Mesh::verbosity_obj();
-      if (verbobj && verbobj->os_OK(Teuchos::VERB_HIGH)) {
+      Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
+      if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
         *(verbobj->os()) << tempstr;
       }
@@ -3102,19 +3110,20 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
 
 
   if (region->type() == AmanziGeometry::LOGICAL) {
-    AmanziGeometry::LogicalRegionPtr boolregion = (AmanziGeometry::LogicalRegionPtr) region;
-    std::vector<std::string> region_names = boolregion->component_regions();
+    Teuchos::RCP<const AmanziGeometry::RegionLogical> boolregion =
+        Teuchos::rcp_static_cast<const AmanziGeometry::RegionLogical>(region);
+    const std::vector<std::string> region_names = boolregion->component_regions();
     int nreg = region_names.size();
     
     std::vector<MSet_ptr> msets;
-    std::vector<AmanziGeometry::RegionPtr> regions;
+    std::vector<Teuchos::RCP<const AmanziGeometry::Region> > regions;
     
     for (int r = 0; r < nreg; r++) {
-      AmanziGeometry::RegionPtr rgn1 = gm->FindRegion(region_names[r]);
+      Teuchos::RCP<const AmanziGeometry::Region> rgn1 = gm->FindRegion(region_names[r]);
       regions.push_back(rgn1);
 
       // Did not find the region
-      if (rgn1 == NULL) {
+      if (rgn1 == Teuchos::null) {
         std::stringstream mesg_stream;
         mesg_stream << "Geometric model has no region named " << 
           region_names[r];
@@ -3171,6 +3180,8 @@ MSet_ptr Mesh_MSTK::build_set(const AmanziGeometry::RegionPtr region,
         while ((mv = MESH_Next_Vertex(mesh,&idx))) 
           if (!MEnt_IsMarked(mv,mkid))
             MSet_Add(mset,mv);
+        break;
+      default:
         break;
       }
       
@@ -3284,24 +3295,24 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
   MSet_ptr mset=NULL, mset1=NULL;
   MEntity_ptr ment;
   bool found(false);
-  int celldim = Mesh::cell_dimension();
-  int spacedim = Mesh::space_dimension();
-  const Epetra_Comm *epcomm = get_comm();
-  const VerboseObject *verbobj = verbosity_obj();
+  int celldim = Mesh::manifold_dimension();
+  int space_dim_ = Mesh::space_dimension();
+  const Epetra_Comm *epcomm_ = get_comm();
+  Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
 
   assert(setents != NULL);
   
   setents->clear();
 
-  AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
 
   // Is there an appropriate region by this name?
 
-  AmanziGeometry::RegionPtr rgn = gm->FindRegion(setname);
+  Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setname);
 
   // Did not find the region
   
-  if (rgn == NULL) {
+  if (rgn == Teuchos::null) {
     std::stringstream mesg_stream;
     mesg_stream << "Geometric model has no region named " << setname;
     Errors::Message mesg(mesg_stream.str());
@@ -3316,7 +3327,8 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
   
   if (rgn->type() == AmanziGeometry::LABELEDSET)
     {
-      AmanziGeometry::LabeledSetRegionPtr lsrgn = dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
+      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+          Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
       std::string label = lsrgn->label();
       std::string entity_type = lsrgn->entity_str();
 
@@ -3324,7 +3336,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
           (kind == FACE && entity_type != "FACE") ||
           (kind == NODE && entity_type != "NODE"))
         {
-          if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+          if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
             *(verbobj->os()) << "Found labeled set region named " << setname << " but it contains entities of type " << entity_type << ", not the requested type";
           }
         } 
@@ -3347,7 +3359,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
         /// set is not on this processor
       
         if (!mset1) {
-          if (epcomm->NumProc() == 1) {
+          if (epcomm_->NumProc() == 1) {
             std::stringstream mesg_stream;
             mesg_stream << "Could not find labeled set " << label << " in mesh file in order to initialize mesh set " << setname << ". Verify mesh file.";
             Errors::Message mesg(mesg_stream.str());
@@ -3417,7 +3429,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
 #ifdef DEBUG
   int nent_glob;
 
-  epcomm->SumAll(&nent_loc,&nent_glob,1);
+  epcomm_->SumAll(&nent_loc,&nent_glob,1);
   if (nent_glob == 0) {
     std::stringstream mesg_stream;
     mesg_stream << "Could not retrieve any mesh entities for set " << setname << std::endl;
@@ -3470,7 +3482,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
        extracting the appropriate category of entities */
     
 #ifdef DEBUG
-  epcomm->SumAll(&nent_loc,&nent_glob,1);
+  epcomm_->SumAll(&nent_loc,&nent_glob,1);
   
   if (nent_glob == 0) {
     std::stringstream mesg_stream;
@@ -3501,13 +3513,13 @@ void Mesh_MSTK::get_set_entities (const Set_ID setid,
 				  const Parallel_type ptype, 
 				  std::vector<Entity_ID> *setents) const 
 {
-  AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
-  AmanziGeometry::RegionPtr rgn = gm->FindRegion(setid);
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
+  Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setid);
 
   std::cerr << "DEPRECATED METHOD!" << std::endl;
   std::cerr << "Call get_set_entities with setname instead of setid" << std::endl;
 
-  if (!rgn)
+  if (rgn == Teuchos::null)
     {
       std::cerr << "No region with id" << setid << std::endl;
     }
@@ -3578,11 +3590,11 @@ Entity_ID Mesh_MSTK::entity_get_parent (const Entity_kind kind, const Entity_ID 
 
   switch(kind) {
   case CELL:
-    att = (cell_dimension() == 3) ? rparentatt : fparentatt;
+    att = (manifold_dimension() == 3) ? rparentatt : fparentatt;
     ment = (MEntity_ptr) cell_id_to_handle[entid];
     break;
   case FACE:
-    att = (cell_dimension() == 3) ? fparentatt : eparentatt;
+    att = (manifold_dimension() == 3) ? fparentatt : eparentatt;
     ment = (MEntity_ptr) face_id_to_handle[entid];
     break;
   case EDGE:
@@ -3619,7 +3631,7 @@ void Mesh_MSTK::init_cell_map ()
   int *cell_gids;
   int ncell, idx, i;
   MEntity_ptr ment;
-  const Epetra_Comm *epcomm = get_comm();
+  const Epetra_Comm *epcomm_ = get_comm();
 
   if (!serial_run) {
 
@@ -3637,7 +3649,7 @@ void Mesh_MSTK::init_cell_map ()
     while ((ment = MSet_Next_Entry(OwnedCells,&idx)))
       cell_gids[i++] = MEnt_GlobalID(ment)-1;
 
-    cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm);
+    cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm_);
     
 
 
@@ -3647,7 +3659,7 @@ void Mesh_MSTK::init_cell_map ()
     while ((ment = MSet_Next_Entry(GhostCells,&idx)))
       cell_gids[i++] = MEnt_GlobalID(ment)-1;
     
-    cell_map_w_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm);
+    cell_map_w_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm_);
 
   }
   else {    
@@ -3658,7 +3670,7 @@ void Mesh_MSTK::init_cell_map ()
     while ((ment = MSet_Next_Entry(OwnedCells,&idx)))      
       cell_gids[i++] = MEnt_ID(ment)-1;
 
-    cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm);
+    cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm_);
   }
 
   delete [] cell_gids;
@@ -3678,7 +3690,7 @@ void Mesh_MSTK::init_face_map ()
   int *face_gids, *extface_gids;
   int nface, n_extface, idx, i, j;
   MEntity_ptr ment;
-  const Epetra_Comm *epcomm = get_comm();
+  const Epetra_Comm *epcomm_ = get_comm();
 
   if (!serial_run) {
 
@@ -3698,14 +3710,14 @@ void Mesh_MSTK::init_face_map ()
 
       face_gids[i++] = gid-1;
      
-      if (cell_dimension() == 3) {
+      if (manifold_dimension() == 3) {
         List_ptr fregs = MF_Regions((MFace_ptr) ment);
         if (List_Num_Entries(fregs) == 1)
           extface_gids[j++] = gid-1;
         if (fregs)
           List_Delete(fregs);
       }
-      else if (cell_dimension() == 2) {
+      else if (manifold_dimension() == 2) {
         List_ptr efaces = ME_Faces((MEdge_ptr) ment);
         if (List_Num_Entries(efaces) == 1)
           extface_gids[j++] = gid-1;
@@ -3716,9 +3728,9 @@ void Mesh_MSTK::init_face_map ()
     n_extface = j;
     nface = nowned;
     
-    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm);
+    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm_);
 
-    extface_map_wo_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*epcomm);
+    extface_map_wo_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*epcomm_);
 
     idx = 0;
     while ((ment = MSet_Next_Entry(NotOwnedFaces,&idx))) 
@@ -3726,12 +3738,12 @@ void Mesh_MSTK::init_face_map ()
 
     nface += nnotowned;
 
-    face_map_w_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm);
+    face_map_w_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm_);
 
   }
   else {
 
-    if (cell_dimension() == 3) {
+    if (manifold_dimension() == 3) {
 
       nface = MESH_Num_Faces(mesh);
       face_gids = new int[nface];
@@ -3750,7 +3762,7 @@ void Mesh_MSTK::init_face_map ()
       }
       
     }
-    else if (cell_dimension() == 2) {
+    else if (manifold_dimension() == 2) {
       
       nface = MESH_Num_Edges(mesh);
       face_gids = new int[nface];
@@ -3771,9 +3783,9 @@ void Mesh_MSTK::init_face_map ()
     }
     n_extface = j;
 
-    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm);
+    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm_);
 
-    extface_map_wo_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*epcomm);
+    extface_map_wo_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*epcomm_);
   }
 
   owned_to_extface_importer_ = new Epetra_Import(*extface_map_wo_ghosts_,*face_map_wo_ghosts_);
@@ -3796,7 +3808,7 @@ void Mesh_MSTK::init_edge_map ()
   int *edge_gids;
   int nedge, idx, i;
   MEntity_ptr ment;
-  const Epetra_Comm *epcomm = get_comm();
+  const Epetra_Comm *epcomm_ = get_comm();
 
   if (!serial_run) {
 
@@ -3816,7 +3828,7 @@ void Mesh_MSTK::init_edge_map ()
     }
     nedge = nowned;
     
-    edge_map_wo_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*epcomm);
+    edge_map_wo_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*epcomm_);
 
     idx = 0;
     while ((ment = MSet_Next_Entry(NotOwnedEdges,&idx))) 
@@ -3824,7 +3836,7 @@ void Mesh_MSTK::init_edge_map ()
 
     nedge += nnotowned;
 
-    edge_map_w_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*epcomm);
+    edge_map_w_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*epcomm_);
 
   }
   else {
@@ -3838,7 +3850,7 @@ void Mesh_MSTK::init_edge_map ()
       edge_gids[i++] = gid-1;
     }
 
-    edge_map_wo_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*epcomm);
+    edge_map_wo_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*epcomm_);
   }
 
   delete [] edge_gids;
@@ -3859,7 +3871,7 @@ void Mesh_MSTK::init_node_map ()
   int *vert_gids;
   int nvert, idx, i;
   MEntity_ptr ment;
-  const Epetra_Comm *epcomm = get_comm();
+  const Epetra_Comm *epcomm_ = get_comm();
 
   if (!serial_run) {
 
@@ -3877,7 +3889,7 @@ void Mesh_MSTK::init_node_map ()
 
     nvert = nowned;
     
-    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm);
+    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm_);
     
 
 
@@ -3887,7 +3899,7 @@ void Mesh_MSTK::init_node_map ()
 
     nvert += nnotowned;
 
-    node_map_w_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm);
+    node_map_w_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm_);
 
   }
   else {
@@ -3899,7 +3911,7 @@ void Mesh_MSTK::init_node_map ()
     while ((ment = MSet_Next_Entry(OwnedVerts,&idx)))
       vert_gids[i++] = MEnt_ID(ment)-1;
 
-    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm);
+    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm_);
   }
 
   delete [] vert_gids;
@@ -3965,7 +3977,7 @@ void Mesh_MSTK::post_create_steps_(const bool request_faces,
   if (request_faces) init_faces();
   init_cells();
 
-  if (Mesh::geometric_model() != NULL)
+  if (Mesh::geometric_model() != Teuchos::null)
     init_set_info();
 
 }
@@ -4157,7 +4169,7 @@ void Mesh_MSTK::init_face_id2handle_maps() {
   
   // Amanzi has IDs starting from 0, MSTK has IDs starting from 1
 
-  nf = (cell_dimension() == 2) ? MESH_Num_Edges(mesh) : MESH_Num_Faces(mesh);
+  nf = (manifold_dimension() == 2) ? MESH_Num_Edges(mesh) : MESH_Num_Faces(mesh);
 
   face_id_to_handle.reserve(nf);
 
@@ -4188,7 +4200,7 @@ void Mesh_MSTK::init_cell_id2handle_maps() {
   
   // Amanzi has IDs starting from 0, MSTK has IDs starting from 1
 
-  nc = (cell_dimension() == 2) ? MESH_Num_Faces(mesh) : MESH_Num_Regions(mesh);
+  nc = (manifold_dimension() == 2) ? MESH_Num_Faces(mesh) : MESH_Num_Regions(mesh);
 
   cell_id_to_handle.reserve(nc);
 
@@ -4291,7 +4303,7 @@ void Mesh_MSTK::init_pedge_dirs() {
     }  
 
 
-    MESH_UpdateAttributes(mesh,mpicomm);
+    MESH_UpdateAttributes(mesh,mpicomm_);
     
     
     edgeflip = new bool[ne];
@@ -4338,7 +4350,7 @@ void Mesh_MSTK::init_pface_lists() {
 
   // Get all faces on this processor 
 
-  if (cell_dimension() == 3) {
+  if (manifold_dimension() == 3) {
 
     MFace_ptr face;
 
@@ -4353,7 +4365,7 @@ void Mesh_MSTK::init_pface_lists() {
 	MSet_Add(OwnedFaces,face);
     }
   }
-  else if (cell_dimension() == 2) {
+  else if (manifold_dimension() == 2) {
 
     MEdge_ptr edge;
 
@@ -4387,7 +4399,7 @@ void Mesh_MSTK::init_pface_dirs() {
   int local_faceid0, local_faceid1;
   int remote_faceid0, remote_faceid1;
 
-  int nf = (cell_dimension() == 2) ? MESH_Num_Edges(mesh) : MESH_Num_Faces(mesh);
+  int nf = (manifold_dimension() == 2) ? MESH_Num_Edges(mesh) : MESH_Num_Faces(mesh);
 
   if (serial_run) {
     faceflip = new bool[nf];
@@ -4398,16 +4410,16 @@ void Mesh_MSTK::init_pface_dirs() {
     // are oriented the same way; if not, turn on flag to flip the directions
     // when returning to the application code
 
-    if (cell_dimension() == 3) {
+    if (manifold_dimension() == 3) {
       attfc0 = MAttrib_New(mesh,"TMP_FC0_ATT",INT,MFACE);
       attfc1 = MAttrib_New(mesh,"TMP_FC1_ATT",INT,MFACE);
     }
-    else if (cell_dimension() == 2) {
+    else if (manifold_dimension() == 2) {
       attfc0 = MAttrib_New(mesh,"TMP_FC0_ATT",INT,MEDGE);
       attfc1 = MAttrib_New(mesh,"TMP_FC1_ATT",INT,MEDGE);
     }
 
-    if (cell_dimension() == 3) {
+    if (manifold_dimension() == 3) {
     
       idx = 0;
       while ((face = MESH_Next_Face(mesh,&idx))) {
@@ -4423,7 +4435,7 @@ void Mesh_MSTK::init_pface_dirs() {
       }    
 	
     }
-    else if (cell_dimension() == 2) {
+    else if (manifold_dimension() == 2) {
 
       idx = 0;
       while ((edge = MESH_Next_Edge(mesh,&idx))) {
@@ -4453,18 +4465,18 @@ void Mesh_MSTK::init_pface_dirs() {
 	}
       }
 
-    }  // else if (cell_dimension() == 2)
+    }  // else if (manifold_dimension() == 2)
 
 
 
-    MESH_UpdateAttributes(mesh,mpicomm);
+    MESH_UpdateAttributes(mesh,mpicomm_);
 
 
 
     faceflip = new bool[nf];
     for (int i = 0; i < nf; ++i) faceflip[i] = false;
     
-    if (cell_dimension() == 3) {
+    if (manifold_dimension() == 3) {
       double rval;
       void *pval;
 
@@ -4497,7 +4509,7 @@ void Mesh_MSTK::init_pface_dirs() {
 	}
       }
     }
-    else if (cell_dimension() == 2) {
+    else if (manifold_dimension() == 2) {
       double rval;
       void *pval;
 
@@ -4546,7 +4558,7 @@ void Mesh_MSTK::init_pface_dirs() {
 void Mesh_MSTK::init_pcell_lists() {
   int idx = 0;
 
-  if (cell_dimension() == 3) {
+  if (manifold_dimension() == 3) {
     MRegion_ptr region;
 
     OwnedCells = MSet_New(mesh,"OwnedCells",MREGION);
@@ -4560,7 +4572,7 @@ void Mesh_MSTK::init_pcell_lists() {
 	MSet_Add(OwnedCells,region);
     }
   }
-  else if (cell_dimension() == 2) {
+  else if (manifold_dimension() == 2) {
     MFace_ptr face;
 
     OwnedCells = MSet_New(mesh,"OwnedCells",MFACE);
@@ -4590,24 +4602,24 @@ void Mesh_MSTK::init_set_info() {
   MSet_ptr mset;
   char setname[256];
   
-  AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
 
-  if (gm == NULL) { 
+  if (gm == Teuchos::null) { 
     Errors::Message mesg("Need region definitions to initialize sets");
     amanzi_throw(mesg);
   }
     
 
-  unsigned int ngr = gm->Num_Regions();
+  unsigned int ngr = gm->RegionSize();
 
   for (int i = 0; i < ngr; ++i) {
-    AmanziGeometry::RegionPtr rgn = gm->Region_i(i);
+    Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(i);
 
     MType entdim;
     if (rgn->type() == AmanziGeometry::LABELEDSET) {
 
-      AmanziGeometry::LabeledSetRegionPtr lsrgn =
-        dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
+      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+          Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
 
       std::string internal_name;
       std::string label = lsrgn->label();
@@ -4630,7 +4642,7 @@ void Mesh_MSTK::init_set_info() {
       }
 
       entdim = MSet_EntDim(mset);
-      if (Mesh::cell_dimension() == 3) {
+      if (Mesh::manifold_dimension() == 3) {
 
         if ((entity_type_str == "CELL" && entdim != MREGION) ||
             (entity_type_str == "FACE" && entdim != MFACE) ||
@@ -4639,7 +4651,7 @@ void Mesh_MSTK::init_set_info() {
           amanzi_throw(mesg);
         }
       }
-      else if (Mesh::cell_dimension() == 2) {
+      else if (Mesh::manifold_dimension() == 2) {
         if ((entity_type_str == "CELL" && entdim != MFACE) ||
             (entity_type_str == "FACE" && entdim != MEDGE) ||
             (entity_type_str == "NODE" && entdim != MVERTEX)) {
@@ -4963,12 +4975,12 @@ void Mesh_MSTK::label_celltype() {
   MFace_ptr face;
   MRegion_ptr region;
 
-  if (cell_dimension() == 2) 
+  if (manifold_dimension() == 2) 
     celltype_att = MAttrib_New(mesh,"Cell_type",INT,MFACE);
   else
     celltype_att = MAttrib_New(mesh,"Cell_type",INT,MREGION);
 
-  if (cell_dimension() == 2) {
+  if (manifold_dimension() == 2) {
 
     idx = 0;
     while ((face = MESH_Next_Face(mesh,&idx))) {
@@ -4977,7 +4989,7 @@ void Mesh_MSTK::label_celltype() {
     }
       
   }
-  else if (cell_dimension() == 3) {
+  else if (manifold_dimension() == 3) {
 
     idx = 0;
     while ((region = MESH_Next_Region(mesh,&idx))) {
@@ -5047,7 +5059,7 @@ int Mesh_MSTK::generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
   k   j
   |  /
   | /
-  |/___ i
+  |/__ i
 
 
   Model vertex, edge and face enumeration for classification templates 
@@ -5056,15 +5068,15 @@ int Mesh_MSTK::generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
          MODEL                   MODEL                  MODEL
          VERTICES                EDGES                  FACES
 
-     7 ____________ 8          ______7_____           ____________  
+     7 ______ 8          ___7___           ______  
       /|          /|          /|          /|         /|      2   /| 
      / |         / |       12/ |8      11/ | 	    / |  4      / | 
-   5/___________/6 |        /_____3_____/  |6	   /___________/  | 
+   5/______/6 |        /___3___/  |6	   /______/  | 
     |  |        |  |        |  |        |  | 	   |  |        | 5| 
-    |  |________|__|        |  |_____5__|__| 	   |6 |_1______|__| 
+    |  |____|_|        |  |___5_|_| 	   |6 |_1___|_| 
     |  /3       |  /4      4|  /        |  / 	   |  /        |  / 
     | /         | /         | /9       2| /10	   | /      3  | /  
-    |/__________|/          |/__________|/   	   |/__________|/   
+    |/_____|/          |/_____|/   	   |/_____|/   
    1             2                1
                                                    
                                                     Front  - Face1
@@ -5491,24 +5503,24 @@ int Mesh_MSTK::generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
 }
 
 void Mesh_MSTK::pre_create_steps_(const int space_dimension, 
-                                  const Epetra_MpiComm *comm, 
-                                  const AmanziGeometry::GeometricModelPtr& gm) 
+                                  const Epetra_MpiComm *comm_, 
+                                  const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm) 
 {
   clear_internals_();
 
   MSTK_Init();
 
-  Mesh::set_comm(comm);
+  Mesh::set_comm(comm_);
   Mesh::set_geometric_model(gm);
 
-  mpicomm = comm->GetMpiComm();
+  mpicomm_ = comm_->GetMpiComm();
 
   set_space_dimension(space_dimension);
 
-  MPI_Comm_rank(mpicomm,&myprocid);
-  MPI_Comm_size(mpicomm,&numprocs);
+  MPI_Comm_rank(mpicomm_,&myprocid);
+  MPI_Comm_size(mpicomm_,&numprocs);
 
-  serial_run =  (!mpicomm || numprocs == 1) ? true : false;
+  serial_run =  (!mpicomm_ || numprocs == 1) ? true : false;
 
   parent_mesh = NULL;
 
@@ -5533,9 +5545,9 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt) {
   MSet_ptr mset;
   char setname[256];
   
-  AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
 
-  if (gm == NULL) { 
+  if (gm == Teuchos::null) { 
     std::cerr << "Need region definitions to initialize sets" << std::endl;
     return;
   }
@@ -5545,23 +5557,23 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt) {
   // Difference in cell dimension of this mesh and its parent
   // Labeled set entity dimensions will be similarly dialed down
   
-  diffdim = parent_mesh->cell_dimension() - cell_dimension();
+  diffdim = parent_mesh->manifold_dimension() - manifold_dimension();
   if (diffdim > 1) {
     Errors::Message mesg("Dimension of mesh and its parent differ by more than 1");
     amanzi_throw(mesg);
   }
     
-  unsigned int ngr = gm->Num_Regions();
+  unsigned int ngr = gm->RegionSize();
 
   for (int i = 0; i < ngr; ++i) {
-    AmanziGeometry::RegionPtr rgn = gm->Region_i(i);
+    Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(i);
 
     if (rgn->type() == AmanziGeometry::LABELEDSET) {
 
       // Get the set from the parent mesh
 
-      AmanziGeometry::LabeledSetRegionPtr lsrgn =
-        dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
+      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+          Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
 
       std::string internal_name;
       std::string label = lsrgn->label();
@@ -5658,7 +5670,7 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt) {
 
 void
 Mesh_MSTK::write_to_exodus_file(const std::string filename) const {
-  MESH_ExportToExodusII(mesh,filename.c_str(),-1,NULL,NULL,mpicomm);
+  MESH_ExportToExodusII(mesh,filename.c_str(),-1,NULL,NULL,mpicomm_);
 }
 
 

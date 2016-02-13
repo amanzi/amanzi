@@ -9,14 +9,15 @@
 #include <iostream>
 
 
-#include "../Region.hh"
-#include "../PlaneRegion.hh"
-#include "../RegionFactory.hh"
-
 #include "Epetra_MpiComm.h"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
+
+#include "../Point.hh"
+#include "../Region.hh"
+#include "../RegionPlane.hh"
+#include "../RegionFactory.hh"
 
 #include "mpi.h"
 
@@ -41,9 +42,9 @@ TEST(PLANE_REGION)
 
   // Create a rectangular region
   
-  Amanzi::AmanziGeometry::RegionPtr reg = 
-    Amanzi::AmanziGeometry::RegionFactory(reg_spec.name(i), reg_id, reg_params,
-                                          3, &ecomm);
+  Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg = 
+    Amanzi::AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
+					 reg_params, &ecomm);
   
   // See if we retrieved the name and id correctly
   
@@ -63,10 +64,10 @@ TEST(PLANE_REGION)
   in_nrm = plane_params.get< Teuchos::Array<double> >("Direction");
 
   double tolerance=1.0e-08;
-  if (plane_params.isSublist("Expert Parameters")) {
-    Teuchos::ParameterList expert_params = plane_params.sublist("Expert Parameters");
-    tolerance = expert_params.get<double>("Tolerance");
-  }
+  // if (plane_params.isSublist("Expert Parameters")) {
+  //   Teuchos::ParameterList expert_params = plane_params.sublist("Expert Parameters");
+  //   tolerance = expert_params.get<double>("Tolerance");
+  // }
  
   // Make sure that the region type is a Plane
 
@@ -75,8 +76,8 @@ TEST(PLANE_REGION)
   // See if the min-max of the region were correctly retrieved
   
   Amanzi::AmanziGeometry::Point p, n;
-  Amanzi::AmanziGeometry::PlaneRegionPtr plane =
-    dynamic_cast<Amanzi::AmanziGeometry::PlaneRegionPtr> (reg);
+  Teuchos::RCP<const Amanzi::AmanziGeometry::RegionPlane> plane =
+    Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionPlane>(reg);
 
   p = plane->point();
   n = plane->normal();

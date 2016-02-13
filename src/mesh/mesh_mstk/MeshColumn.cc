@@ -4,7 +4,7 @@
 
 #include <Teuchos_RCP.hpp>
 
-#include "ColumnMesh.hh"
+#include "MeshColumn.hh"
 #include "dbc.hh"
 #include "errors.hh"
 
@@ -16,10 +16,10 @@ namespace AmanziMesh {
 // Constructor: instantiates base MSTK mesh, generates new nodal coordiantes,
 //              fixes faces, and makes maps.
 // -----------------------------------------------------------------------------
-ColumnMesh::ColumnMesh (const Mesh& inmesh,
+MeshColumn::MeshColumn (const Mesh& inmesh,
                         const int column_id, 
-                        const VerboseObject *verbosity_obj) :
-    Mesh(verbosity_obj, true, false),
+                        const Teuchos::RCP<const VerboseObject>& vo) :
+    Mesh(vo, true, false),
     parent_mesh_(inmesh),
     column_id_(column_id),
     extracted_(new Epetra_MpiComm(MPI_COMM_SELF),
@@ -31,6 +31,8 @@ ColumnMesh::ColumnMesh (const Mesh& inmesh,
   // set supporting subclasses
   set_comm(extracted_.get_comm());
   set_geometric_model(extracted_.geometric_model());
+  set_space_dimension(3);
+  set_manifold_dimension(3);
   
   // compute special geometric quantities for column entities (node
   // coordinates, face centroids, cell centroids, face areas)
@@ -41,7 +43,7 @@ ColumnMesh::ColumnMesh (const Mesh& inmesh,
 }
 
 
-ColumnMesh::~ColumnMesh () {
+MeshColumn::~MeshColumn () {
   if (face_map_) delete face_map_;
   if (exterior_face_map_) delete exterior_face_map_;
   if (exterior_face_importer_) delete exterior_face_importer_;  
@@ -52,7 +54,7 @@ ColumnMesh::~ColumnMesh () {
 // Compute special coordinates for the nodes - all the other 
 // quantities will follow suit
 // -----------------------------------------------------------------------------
-void ColumnMesh::compute_special_node_coordinates_() {
+void MeshColumn::compute_special_node_coordinates_() {
   // Assume that the column is vertical - nodes are stacked vertically
   // above each other. Assume that the base face is perfectly horizontal
   //
@@ -81,10 +83,10 @@ void ColumnMesh::compute_special_node_coordinates_() {
   // Set up the new node coordinates This is done in two passes, which may be
   // unnecessary, but I'm not sure if face_centroid() would break if done in
   // one.
-  int spacedim = space_dimension(); // from parent mesh
+  int space_dim_ = space_dimension(); // from parent mesh
   int nfaces = column_faces_.size();
   int nnodes = nfaces*nfnodes_;
-  AmanziGeometry::Point p(spacedim);
+  AmanziGeometry::Point p(space_dim_);
   std::vector<AmanziGeometry::Point> node_coordinates(nnodes, p);
   
   for (int j=0; j!=nfaces; ++j) {
@@ -99,14 +101,14 @@ void ColumnMesh::compute_special_node_coordinates_() {
     AmanziGeometry::Point fcen = extracted_.face_centroid(column_faces_[j]);
     
     for (int i=0; i!=nfnodes_; ++i) {
-      AmanziGeometry::Point coords(spacedim);
+      AmanziGeometry::Point coords(space_dim_);
 
       // last coordinate is z-coordinate of face centroid
-      coords[spacedim-1] = fcen[spacedim-1];
+      coords[space_dim_-1] = fcen[space_dim_-1];
 
       // remain coordinates are coordinates of the corresponding node on
       // the bottom face
-      for (int d=0; d!=spacedim-1; ++d) coords[d] = face_coordinates[i][d];
+      for (int d=0; d!=space_dim_-1; ++d) coords[d] = face_coordinates[i][d];
         
       node_coordinates[face_nodes[i]] = coords;
     }
@@ -123,14 +125,14 @@ void ColumnMesh::compute_special_node_coordinates_() {
 // processors and their dependencies (through global IDs).
 //
 // In this case since the columns are all on one processor, the map is
-// just a contiguous sequence of numbers and the communicator is a serial
-// communicator
-void ColumnMesh::build_epetra_maps_() {
-  Epetra_SerialComm epcomm;
+// just a contiguous sequence of numbers and the comm_unicator is a serial
+// comm_unicator
+void MeshColumn::build_epetra_maps_() {
+  Epetra_SerialComm epcomm_;
   int indexBase = 0;
 
   int nfaces = column_faces_.size();
-  face_map_ = new Epetra_Map(nfaces,indexBase,epcomm);
+  face_map_ = new Epetra_Map(nfaces,indexBase,epcomm_);
 
   std::vector<int> ext_gids(2,-1);
   ext_gids[0] = 0;

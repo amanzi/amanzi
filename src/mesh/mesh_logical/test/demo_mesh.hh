@@ -11,7 +11,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "EnumeratedSetRegion.hh"
+#include "RegionEnumerated.hh"
 #include "MeshLogical.hh"
 #include "MeshEmbeddedLogical.hh"
 

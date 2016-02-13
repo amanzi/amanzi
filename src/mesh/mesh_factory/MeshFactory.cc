@@ -31,10 +31,11 @@ namespace AmanziMesh {
 // -------------------------------------------------------------
 // MeshFactory:: constructors / destructor
 // -------------------------------------------------------------
- MeshFactory::MeshFactory(const Epetra_MpiComm *communicator,
-                          const VerboseObject *meshverbobj)
-   : my_comm(communicator), verbosity_obj(meshverbobj),
-     my_preference(default_preference())
+MeshFactory::MeshFactory(const Epetra_MpiComm *comm_unicator,
+                         const Teuchos::RCP<const VerboseObject>& vo)
+  : my_comm_(comm_unicator),
+    verbosity_obj(vo),
+    my_preference(default_preference())
 {
   
 }
@@ -86,12 +87,12 @@ MeshFactory::preference(const FrameworkPreference& pref)
  */
 Teuchos::RCP<Mesh> 
 MeshFactory::create(const std::string& filename, 
-                    const AmanziGeometry::GeometricModelPtr &gm,
+                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                     const bool request_faces, 
                     const bool request_edges)
 {
   // check the file format
-  Format fmt = file_format(*my_comm, filename);
+  Format fmt = file_format(*my_comm_, filename);
 
   if (fmt == UnknownFormat) {
     FileMessage 
@@ -108,14 +109,10 @@ MeshFactory::create(const std::string& filename,
   Teuchos::RCP<Mesh> result;
   for (FrameworkPreference::const_iterator i = my_preference.begin(); 
        i != my_preference.end(); i++) {
-    if (framework_reads(*i, fmt, my_comm->NumProc() > 1)) {
+    if (framework_reads(*i, fmt, my_comm_->NumProc() > 1)) {
       try {
-        result = framework_read(my_comm, *i, filename, gm, verbosity_obj,
+        result = framework_read(my_comm_, *i, filename, gm, verbosity_obj,
                                 request_faces, request_edges);
-        if (gm && (gm->dimension() != result->space_dimension())) {
-          Errors::Message mesg("Geometric model and mesh dimension do not match");
-          amanzi_throw(mesg);
-        }
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
@@ -125,7 +122,7 @@ MeshFactory::create(const std::string& filename,
         e.add_data("internal error: ");
         e.add_data(stde.what());
       }
-      my_comm->SumAll(ierr, aerr, 1);
+      my_comm_->SumAll(ierr, aerr, 1);
       if (aerr[0] > 0) amanzi_throw(e);
     }
   }
@@ -158,7 +155,7 @@ Teuchos::RCP<Mesh>
 MeshFactory::create(double x0, double y0, double z0,
                     double x1, double y1, double z1,
                     int nx, int ny, int nz, 
-                    const AmanziGeometry::GeometricModelPtr &gm,
+                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                     const bool request_faces, 
                     const bool request_edges)
 {
@@ -170,17 +167,12 @@ MeshFactory::create(double x0, double y0, double z0,
 
   unsigned int dim = 3;
 
-  if (gm && (gm->dimension() != 3)) {
-    Errors::Message mesg("Geometric model and mesh dimension do not match");
-    amanzi_throw(mesg);
-  }
-
   if (nx <= 0 || ny <= 0 || nz <= 0) {
     ierr[0] += 1;
     e.add_data(boost::str(boost::format("invalid mesh cells requested: %d x %d x %d") %
                           nx % ny % nz).c_str());
   }
-  my_comm->SumAll(ierr, aerr, 1);
+  my_comm_->SumAll(ierr, aerr, 1);
   if (aerr[0] > 0) amanzi_throw(e);
 
   if (x1 - x0 <= 0.0 || y1 - y0 <= 0.0 || z1 - z0 <= 0.0) {
@@ -188,14 +180,14 @@ MeshFactory::create(double x0, double y0, double z0,
     e.add_data(boost::str(boost::format("invalid mesh dimensions requested: %.6g x %.6g x %.6g") %
                           (x1 - x0) % (y1 - y0) % (z1 - z0)).c_str());
   }
-  my_comm->SumAll(ierr, aerr, 1);
+  my_comm_->SumAll(ierr, aerr, 1);
   if (aerr[0] > 0) amanzi_throw(e);
       
   for (FrameworkPreference::const_iterator i = my_preference.begin(); 
        i != my_preference.end(); i++) {
-    if (framework_generates(*i, my_comm->NumProc() > 1, dim)) {
+    if (framework_generates(*i, my_comm_->NumProc() > 1, dim)) {
       try {
-        result = framework_generate(my_comm, *i, 
+        result = framework_generate(my_comm_, *i, 
                                     x0, y0, z0, x1, y1, z1, 
                                     nx, ny, nz,
                                     gm, verbosity_obj,
@@ -209,7 +201,7 @@ MeshFactory::create(double x0, double y0, double z0,
         e.add_data("internal error: ");
         e.add_data(stde.what());
       }
-      my_comm->SumAll(ierr, aerr, 1);
+      my_comm_->SumAll(ierr, aerr, 1);
       if (aerr[0] > 0) amanzi_throw(e);
     }
   }
@@ -238,7 +230,7 @@ Teuchos::RCP<Mesh>
 MeshFactory::create(double x0, double y0,
                     double x1, double y1,
                     int nx, int ny,
-                    const AmanziGeometry::GeometricModelPtr &gm,
+                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                     const bool request_faces, 
                     const bool request_edges)
 {
@@ -250,17 +242,12 @@ MeshFactory::create(double x0, double y0,
 
   unsigned int dim = 2;
 
-  if (gm && (gm->dimension() != 2)) {
-    Errors::Message mesg("Geometric model and mesh dimension do not match");
-    amanzi_throw(mesg);
-  }
-
   if (nx <= 0 || ny <= 0) {
     ierr[0] += 1;
     e.add_data(boost::str(boost::format("invalid mesh cells requested: %d x %d") %
                           nx % ny).c_str());
   }
-  my_comm->SumAll(ierr, aerr, 1);
+  my_comm_->SumAll(ierr, aerr, 1);
   if (aerr[0] > 0) amanzi_throw(e);
 
   if (x1 - x0 <= 0.0 || y1 - y0 <= 0.0) {
@@ -268,14 +255,14 @@ MeshFactory::create(double x0, double y0,
     e.add_data(boost::str(boost::format("invalid mesh dimensions requested: %.6g x %.6g") %
                           (x1 - x0) % (y1 - y0)).c_str());
   }
-  my_comm->SumAll(ierr, aerr, 1);
+  my_comm_->SumAll(ierr, aerr, 1);
   if (aerr[0] > 0) amanzi_throw(e);
       
   for (FrameworkPreference::const_iterator i = my_preference.begin(); 
        i != my_preference.end(); i++) {
-    if (framework_generates(*i, my_comm->NumProc() > 1, dim)) {
+    if (framework_generates(*i, my_comm_->NumProc() > 1, dim)) {
       try {
-        result = framework_generate(my_comm, *i, 
+        result = framework_generate(my_comm_, *i, 
                                     x0, y0, x1, y1,
                                     nx, ny,
                                     gm, verbosity_obj,
@@ -289,7 +276,7 @@ MeshFactory::create(double x0, double y0,
         e.add_data("internal error: ");
         e.add_data(stde.what());
       }
-      my_comm->SumAll(ierr, aerr, 1);
+      my_comm_->SumAll(ierr, aerr, 1);
       if (aerr[0] > 0) amanzi_throw(e);
     }
   }
@@ -308,7 +295,7 @@ MeshFactory::create(double x0, double y0,
  */
 Teuchos::RCP<Mesh> 
 MeshFactory::create(Teuchos::ParameterList &parameter_list, 
-                    const AmanziGeometry::GeometricModelPtr &gm,
+                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                     const bool request_faces, 
                     const bool request_edges)
 {
@@ -323,15 +310,11 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list,
 
   for (FrameworkPreference::const_iterator i = my_preference.begin(); 
        i != my_preference.end(); i++) {
-    if (framework_generates(*i, my_comm->NumProc() > 1, dim)) {
+    if (framework_generates(*i, my_comm_->NumProc() > 1, dim)) {
       try {
-        result = framework_generate(my_comm, *i, parameter_list, gm, 
+        result = framework_generate(my_comm_, *i, parameter_list, gm, 
                                     verbosity_obj,
                                     request_faces, request_edges);
-        if (gm && (gm->dimension() != result->space_dimension())) {
-          Errors::Message mesg("Geometric model and mesh dimension do not match");
-          amanzi_throw(mesg);
-        }
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
@@ -341,7 +324,7 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list,
         e.add_data("internal error: ");
         e.add_data(stde.what());
       }
-      my_comm->SumAll(ierr, aerr, 1);
+      my_comm_->SumAll(ierr, aerr, 1);
       if (aerr[0] > 0) amanzi_throw(e);
     }
   }
@@ -376,13 +359,13 @@ MeshFactory::create(const Mesh *inmesh,
   ierr[0] = 0;
   aerr[0] = 0;
 
-  int dim = inmesh->cell_dimension();
+  int dim = inmesh->manifold_dimension();
 
   for (FrameworkPreference::const_iterator i = my_preference.begin(); 
        i != my_preference.end(); i++) {
-    if (framework_extracts(*i, my_comm->NumProc() > 1, dim)) {
+    if (framework_extracts(*i, my_comm_->NumProc() > 1, dim)) {
       try {
-        result = framework_extract(my_comm, *i, inmesh, setnames, setkind, 
+        result = framework_extract(my_comm_, *i, inmesh, setnames, setkind, 
                                    flatten, extrude,
                                    request_faces, request_edges);
         return result;
@@ -394,7 +377,7 @@ MeshFactory::create(const Mesh *inmesh,
         e.add_data("internal error: ");
         e.add_data(stde.what());
       }
-      my_comm->SumAll(ierr, aerr, 1);
+      my_comm_->SumAll(ierr, aerr, 1);
       if (aerr[0] > 0) amanzi_throw(e);
     }
   }

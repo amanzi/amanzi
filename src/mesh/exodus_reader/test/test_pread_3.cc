@@ -31,11 +31,11 @@ SUITE (Exodus_3_Proc)
   {
     std::string bname(split_file_path("hex_3x3x3_ss.par").c_str());
     
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
 
-    CHECK_EQUAL(comm.NumProc(), 3);
+    CHECK_EQUAL(comm_.NumProc(), 3);
     
-    Amanzi::Exodus::Parallel_Exodus_file thefile(comm, bname);
+    Amanzi::Exodus::Parallel_Exodus_file thefile(comm_, bname);
     checkit(thefile);
   }
 
@@ -44,11 +44,11 @@ SUITE (Exodus_3_Proc)
   {
     std::string bname(split_file_path("htc_rad_test-random.par").c_str());
     
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
 
-    CHECK_EQUAL(comm.NumProc(), 3);
+    CHECK_EQUAL(comm_.NumProc(), 3);
     
-    Amanzi::Exodus::Parallel_Exodus_file thefile(comm, bname);
+    Amanzi::Exodus::Parallel_Exodus_file thefile(comm_, bname);
     checkit(thefile);
   }
 
@@ -56,11 +56,11 @@ SUITE (Exodus_3_Proc)
   {
     std::string bname(split_file_path("hex_10x10x10_ss.par").c_str());
     
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
 
-    CHECK_EQUAL(comm.NumProc(), 3);
+    CHECK_EQUAL(comm_.NumProc(), 3);
     
-    Amanzi::Exodus::Parallel_Exodus_file thefile(comm, bname);
+    Amanzi::Exodus::Parallel_Exodus_file thefile(comm_, bname);
     checkit(thefile);
   }
 
@@ -68,11 +68,11 @@ SUITE (Exodus_3_Proc)
   {
     std::string bname(split_file_path("twoblktet_ss.par").c_str());
     
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
 
-    CHECK_EQUAL(comm.NumProc(), 3);
+    CHECK_EQUAL(comm_.NumProc(), 3);
     
-    Amanzi::Exodus::Parallel_Exodus_file thefile(comm, bname);
+    Amanzi::Exodus::Parallel_Exodus_file thefile(comm_, bname);
     checkit(thefile);
   }
 }

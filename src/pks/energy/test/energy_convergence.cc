@@ -104,7 +104,8 @@ TEST(ENERGY_CONVERGENCE) {
   double dt(0.02);
   for (int n = 0; n < nmeshes; n++, nx *= 2) {
     Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
-    GeometricModelPtr gm = new GeometricModel(2, region_list, comm);
+    Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
     
     FrameworkPreference pref;
     pref.clear();
@@ -215,7 +216,8 @@ TEST(ENERGY_PRECONDITIONER) {
   int num_itrs[2];
   for (int loop = 0; loop < 2; loop++) {
     Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
-    GeometricModelPtr gm = new GeometricModel(2, region_list, comm);
+    Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
     
     FrameworkPreference pref;
     pref.clear();

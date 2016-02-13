@@ -60,7 +60,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
 
   // create a mesh
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();

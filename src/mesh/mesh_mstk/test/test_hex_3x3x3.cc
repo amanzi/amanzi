@@ -20,11 +20,11 @@ TEST(MSTK_HEX_3x3x3)
   int NF = 108;
   int NC = 27;
 
-  Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
+  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
 
   // Load a mesh consisting of 3x3x3 elements 
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm.get(),3));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm_.get(),3));
 
   nf = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NF,nf);

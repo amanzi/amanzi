@@ -723,7 +723,7 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D_POLYMESH) {
 
   // load polygonal mesh
   Teuchos::ParameterList region_list;
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();

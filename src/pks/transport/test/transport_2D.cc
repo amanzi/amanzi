@@ -46,7 +46,8 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 
   /* create a mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, (Epetra_MpiComm *)comm);
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
 
   FrameworkPreference pref;
   pref.clear();

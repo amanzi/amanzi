@@ -80,12 +80,12 @@ TEST(MOAB_HEX_2x2x1)
 			      {0,3,2,1},
 			      {4,5,6,7}};
 
-  std::auto_ptr<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
+  std::auto_ptr<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
 
 
   // Load a single hex from the hex1.exo file
 
-  Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_2x2x1_ss.exo",comm.get());
+  Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_2x2x1_ss.exo",comm_.get());
 
 
   nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);

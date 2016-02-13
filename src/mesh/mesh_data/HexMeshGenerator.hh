@@ -47,7 +47,7 @@ class HexMeshGenerator
 public:
 
   /// (Collective) Default constructor.
-  HexMeshGenerator(const Epetra_Comm *comm, 
+  HexMeshGenerator(const Epetra_Comm *comm_, 
                    const unsigned int& ni, const unsigned int& nj, const unsigned int& nk,
                    const double& xorigin = 0.0, 
                    const double& yorigin = 0.0, 
@@ -89,7 +89,7 @@ protected:
   static const unsigned int nvcell;     /**< number of vertexes per cell (8) */
 
   struct Block {                        /**< element block */
-    AmanziGeometry::RegionPtr region;
+    Teuchos::RCP<AmanziGeometry::Region> region;
     std::vector<unsigned int> gidx;
     std::vector<int> connectivity;
   };

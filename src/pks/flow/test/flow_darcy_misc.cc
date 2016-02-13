@@ -72,8 +72,9 @@ class DarcyProblem {
 
     // create a MSTK mesh framework
     plist = Teuchos::getParametersFromXmlFile(xmlFileName);
-    Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
-    GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
+    Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("Regions");
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm));
 
     FrameworkPreference pref;
     pref.clear();

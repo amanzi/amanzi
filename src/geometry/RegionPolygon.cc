@@ -1,167 +1,121 @@
-/**
- * @file   PolygonRegion.cc
- * @author Rao Garimella
- * @date Fri Jul 29 12:28:10 2011
- * 
- * @brief  Implementation of PolygonRegion class 
- * 
- * 
- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  A closed polygonal segment of a plane.
 
-#include "PolygonRegion.hh"
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Rao Garimella
+*/
+
 #include "dbc.hh"
 #include "errors.hh"
+
+#include "Point.hh"
+#include "RegionPolygon.hh"
 
 namespace Amanzi {
 namespace AmanziGeometry {
 
+//
+// Polygon:: constructor
 // -------------------------------------------------------------
-//  class PolygonRegion
-// -------------------------------------------------------------
-
-// -------------------------------------------------------------
-// Polygon:: constructors / destructor
-// -------------------------------------------------------------
-PolygonRegion::PolygonRegion(const Set_Name& name, const Set_ID id,
-                             const unsigned int num_points, 
+RegionPolygon::RegionPolygon(const std::string& name,
+			     const Set_ID id,
                              const std::vector<Point>& points,
-                             const double tolerance,
-                             const LifeCycleType lifecycle,
-                             const VerboseObject *verbobj)
-  : Region(name,id,points[0].dim()-1,lifecycle,verbobj), num_points_(num_points), 
-    points_(points),tolerance_(tolerance),normal_(points[0].dim()),elim_dir_(0)
+                             const LifeCycleType lifecycle)
+  : Region(name, id, true, POLYGON, points[0].dim()-1, points[0].dim(), lifecycle),
+    normal_(points[0].dim()),
+    elim_dir_(0)
 {
-  init();
-}
-
-PolygonRegion::PolygonRegion(const PolygonRegion& old)
-  : Region(old), num_points_(old.num_points_), points_(old.points_),
-    tolerance_(old.tolerance_),normal_(old.normal_), elim_dir_(old.elim_dir_)
-{
-  // empty
-}
-
-PolygonRegion::~PolygonRegion(void)
-{
-  
-}
-
-void PolygonRegion::init() {
-  if (num_points_ < dimension()) {
-    std::stringstream tempstr;
-    tempstr << "\nDimension " << dimension() << 
-      " regions need to be specified by at least " << dimension() << 
-      " points\n";
-
-    const VerboseObject *verbobj = Region::verbosity_obj();
-    if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
-      Teuchos::OSTab tag = verbobj->getOSTab();
-      *(verbobj->os()) << tempstr;
-    }
-    Errors::Message mesg(tempstr.str());
-    Exceptions::amanzi_throw(mesg);
+  for (std::vector<Point>::const_iterator itr=points.begin();
+       itr!=points.end(); ++itr) {
+    points_.push_back(*itr);
   }
 
-  if (num_points_ > dimension()+1) {
-    const VerboseObject *verbobj = Region::verbosity_obj();
-    if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
-      Teuchos::OSTab tag = verbobj->getOSTab();
-      *(verbobj->os()) << "\nDimension " << dimension() << 
-        " regions specified by more points (" << num_points_ << ") " <<
-          "than needed\n" << "Using only the first " << dimension()+1 << "points.\n";
-    }
+  Init_();
+}
+
+
+void RegionPolygon::Init_() {
+  if (PointsSize() < manifold_dimension()) {
+    Errors::Message mesg;
+    mesg << "Polygons of dimension " << (int) manifold_dimension() << 
+      " need to be specified by at least " << (int) manifold_dimension() << 
+      " points";
+    Exceptions::amanzi_throw(mesg);
   }
   
   int space_dimension = points_[0].dim();
-
   if (space_dimension == 2) {
     Point vec = points_[1] - points_[0];
     vec /= norm(vec);
     normal_.set(vec[1],-vec[0]);
 
     elim_dir_ = (vec[0] < vec[1]) ? 0 : 1;
-  }
-  else if (space_dimension == 3) {
+
+  } else if (space_dimension == 3) {
     Point vec0 = points_[2]-points_[1];
     Point vec1 = points_[0]-points_[1];
     normal_ = vec0^vec1;
     normal_ /= norm(normal_);
 
-#ifdef ENABLE_DBC    
-    for (int i = 3; i < num_points_; i++) {
-      vec0 = points_[(i+1)%num_points_]-points_[i];
-      vec1 = points_[(i-1+num_points_)%num_points_]-points_[i];
+    for (int i = 3; i!=points_.size(); ++i) {
+      vec0 = points_[(i+1)%PointsSize()]-points_[i];
+      vec1 = points_[(i-1+PointsSize())%PointsSize()]-points_[i];
       Point nrml = vec0^vec1;
       nrml /= norm(nrml);
 
       double dp = nrml*normal_;
-      if (fabs(dp-1.0) > 1.0e-06) {
-        const VerboseObject *verbobj = Region::verbosity_obj();
-        if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
-          Teuchos::OSTab tag = verbobj->getOSTab();
-          *(verbobj->os()) << "Polygon region is not exactly planar" << 
-            std::endl;
-        }
+      if (std::abs(dp-1.0) > TOL) {
         Errors::Message mesg("Polygon region is not exactly planar");
         Exceptions::amanzi_throw(mesg);
       }
     }
-#endif
 
     /* Determine which direction to eliminate while projecting to one
        of the coordinate planes - to do this we have to find the
        direction in which the polygon is the smallest or in other
        words, the direction in which the normal to the polygon is the
        largest */
-
     int dmax = -1; 
     double maxlen = -1;
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++) {
       if (normal_[i] > maxlen) {
         maxlen = normal_[i];
         dmax = i;
       }
+    }
        
     elim_dir_ = dmax;
-  }
-  else {
-    std::stringstream tempstr;
-    tempstr << "Cannot handle polygon regions with points of dimension " << space_dimension << "\n";
-    
-    const VerboseObject *verbobj = Region::verbosity_obj();
-    if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
-      Teuchos::OSTab tab = verbobj->getOSTab();
-      *(verbobj->os()) << tempstr;
-    }
-    Errors::Message mesg(tempstr.str());
+
+  } else {
+    Errors::Message mesg;
+    mesg << "Cannot handle polygon regions with points of dimension "
+	 << space_dimension;
     Exceptions::amanzi_throw(mesg);
   }
 }
 
 // -------------------------------------------------------------
-// PolygonRegion::inside
+// RegionPolygon::inside
 // -------------------------------------------------------------
 bool
-PolygonRegion::inside(const Point& p) const
+RegionPolygon::inside(const Point& p) const
 {
 
 #ifdef ENABLE_DBC
   if (p.dim() != points_[0].dim()) {
-    std::stringstream tempstr;
-    tempstr << "\nMismatch in corner dimension of Polygon \"" << Region::name() << "\" and query point.\n Perhaps the region is improperly defined?\n";
-
-    const VerboseObject *verbobj = Region::verbosity_obj();
-    if (verbobj && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
-      Teuchos::OSTab tab = verbobj->getOSTab();
-      *(verbobj->os()) << tempstr;
-    }
-    Errors::Message mesg(tempstr.str());
+    Errors::Message mesg;
+    mesg << "Mismatch in corner dimension of Polygon \"" << name()
+         << "\" and query point.";
     Exceptions::amanzi_throw(mesg);
   }
 #endif
 
   /* First check if the point is on the infinite line/plane */
-
   double d(0.0), res(0.0);
 
   for (int i = 0; i < p.dim(); ++i) {
@@ -170,9 +124,7 @@ PolygonRegion::inside(const Point& p) const
   }
   res -= d;
 
-  if (fabs(res) > tolerance_)
-    return false;
-
+  if (std::abs(res) > TOL) return false;
 
   bool result(false);
   if (points_[0].dim() == 2) {
@@ -203,11 +155,10 @@ PolygonRegion::inside(const Point& p) const
       double d_sqr = L22(dvec);
       
       // Is the distance 0? Point is inside segment
-      if (d_sqr < tolerance_*tolerance_)
-        result = true;
+      if (d_sqr < TOL*TOL) result = true;
     }
-  }
-  else {
+
+  } else {
     /* Now check if the point is in the polygon */
 
     /* 
@@ -227,8 +178,8 @@ PolygonRegion::inside(const Point& p) const
     double u, v;
     u = p[d0]; v = p[d1];
     
-    for (int i = 0; i < num_points_; i++) {
-      int iplus1 = (i+1)%num_points_;
+    for (int i = 0; i!=PointsSize(); ++i) {
+      int iplus1 = (i+1)%PointsSize();
       double u_i = points_[i][d0];
       double v_i = points_[i][d1];
       double u_iplus1 = points_[iplus1][d0];
@@ -247,9 +198,9 @@ PolygonRegion::inside(const Point& p) const
 
     if (!result) { 
 
-      for (int i = 0; i < num_points_; i++) {
+      for (int i = 0; i < PointsSize(); i++) {
 
-        int iplus1 = (i+1)%num_points_;
+        int iplus1 = (i+1)%PointsSize();
 
         Point p_i(2);
         p_i.set(points_[i][d0],points_[i][d1]);
@@ -287,7 +238,7 @@ PolygonRegion::inside(const Point& p) const
         double d_sqr = L22(dvec);
       
         // Is the distance 0? Point is inside segment
-        if (d_sqr < tolerance_*tolerance_) {
+        if (d_sqr < TOL*TOL) {
           result = true;
           break;
         }

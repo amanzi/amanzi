@@ -39,11 +39,11 @@ TEST(MSTK_HEX1)
 					{4,5,6,7}};
 
 
-  Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
+  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
 
   // Load a single hex from the hex1.exo file
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_1x1x1_ss.exo",comm.get(),3));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_1x1x1_ss.exo",comm_.get(),3));
 
 
   // Check number of nodes and their coordinates

@@ -66,9 +66,9 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, NULL);
+  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, Teuchos::null);
   std::string file = op_list.get<std::string>("file name", "test/random20.exo");
-  Teuchos::RCP<const Mesh> mesh = meshfactory(file, NULL);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(file, Teuchos::null);
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion tensor
@@ -229,8 +229,8 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, NULL);
-  // Teuchos::RCP<const Mesh> mesh = meshfactory("test/mesh.exo", NULL);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, Teuchos::null);
+  // Teuchos::RCP<const Mesh> mesh = meshfactory("test/mesh.exo", Teuchos::null);
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the nonlinear coefficient.

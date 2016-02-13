@@ -94,7 +94,8 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   //------------ DOMAIN, GEOMETRIC MODEL, ETC ----------------------------
   // Create a VerboseObject to pass to the geometric model class 
-  Amanzi::VerboseObject *gmverbobj = new Amanzi::VerboseObject("Geometric Model", *plist_);
+  Teuchos::RCP<Amanzi::VerboseObject> gmverbobj =
+      Teuchos::rcp(new Amanzi::VerboseObject("Geometric Model", *plist_));
 
   // Create the simulation domain
   Amanzi::timer_manager.add("Geometric Model creation",Amanzi::Timer::ONCE);
@@ -114,9 +115,8 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList reg_params = plist_->sublist("Regions");
 
-  Amanzi::AmanziGeometry::GeometricModelPtr 
-      geom_model_ptr(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm));
-
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model_ptr =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm));
 
   // Add the geometric model to the domain
   simdomain_ptr->Add_Geometric_Model(geom_model_ptr);
@@ -133,7 +133,8 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   Amanzi::timer_manager.start("Mesh creation");
 
   // Create a Verbose object to pass to the mesh_factory and mesh
-  Amanzi::VerboseObject *meshverbobj = new Amanzi::VerboseObject("Mesh", *plist_);
+  Teuchos::RCP<Amanzi::VerboseObject> meshverbobj =
+      Teuchos::rcp(new Amanzi::VerboseObject("Mesh", *plist_));
 
   // Create a mesh factory for this geometric model
   Amanzi::AmanziMesh::MeshFactory factory(comm, meshverbobj) ;
@@ -336,8 +337,6 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   // Clean up
   mesh.reset();
-  delete meshverbobj;
-  delete gmverbobj;
   delete simdomain_ptr;
   delete comm;
       

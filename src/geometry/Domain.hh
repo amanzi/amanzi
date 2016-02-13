@@ -50,8 +50,8 @@ public:
   // Constructor with Geometric Model List
 
   Domain(const unsigned int dim, 
-         const std::vector<GeometricModelPtr>& in_geometric_models, 
-         const std::vector<RegionPtr>& in_Regions); 
+         const std::vector<Teuchos::RCP<GeometricModel> >& in_geometric_models, 
+         const std::vector<Teuchos::RCP<Region> >& in_Regions); 
 
   // Destructor
 
@@ -67,12 +67,12 @@ public:
 
   // Add a Geometric Model
 
-  void Add_Geometric_Model(const GeometricModelPtr& gm);
+  void Add_Geometric_Model(const Teuchos::RCP<GeometricModel>& gm);
 
 
   // Add a Free Region
 
-  void Add_Free_Region(const RegionPtr& regptr);
+  void Add_Free_Region(const Teuchos::RCP<Region>& regptr);
 
 
   // Number of Geometric Models
@@ -82,7 +82,7 @@ public:
 
   // Get the i'th Geometric Model
 
-  GeometricModelPtr Geometric_Model_i(const int i) const;
+  Teuchos::RCP<GeometricModel> Geometric_Model_i(const int i) const;
 
 
   // Number of Free Regions
@@ -92,7 +92,7 @@ public:
 
   // Get the i'th Free Region
 
-  RegionPtr Free_Region_i(const int i) const;
+  Teuchos::RCP<Region> Free_Region_i(const int i) const;
 
 private:
 
@@ -103,13 +103,13 @@ private:
 
   // List of geometric models in domain
 
-  std::vector<GeometricModelPtr> GeometricModels;
+  std::vector<Teuchos::RCP<GeometricModel> > GeometricModels;
 
 
   // List of Free Region pointers (regions that are not part of any
   // geometric model)
 
-  std::vector<RegionPtr> FreeRegions;
+  std::vector<Teuchos::RCP<Region> > FreeRegions;
 
 };
 
