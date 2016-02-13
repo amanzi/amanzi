@@ -41,7 +41,7 @@ TEST(MPC_SUBSURFACE_HYDROLOGY) {
 
   // create a mesh framework
   Teuchos::RCP<Teuchos::ParameterList> region_list = Teuchos::sublist(global_list, "Regions");
-  GeometricModelPtr gm = new GeometricModel(3, *region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, *region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();
@@ -133,7 +133,7 @@ TEST(MPC_SUBSURFACE_ENERGY) {
 
   // create a mesh framework
   Teuchos::RCP<Teuchos::ParameterList> region_list = Teuchos::sublist(global_list, "Regions");
-  GeometricModelPtr gm = new GeometricModel(3, *region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, *region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();
@@ -235,7 +235,7 @@ TEST(MPC_SUBSURFACE_THERMAL_HYDROLOGY) {
 
   // create a mesh framework
   Teuchos::RCP<Teuchos::ParameterList> region_list = Teuchos::sublist(global_list, "Regions");
-  GeometricModelPtr gm = new GeometricModel(3, *region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, *region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();

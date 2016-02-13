@@ -38,7 +38,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
   
   // intantiate the mesh: build the geometric model
   const int dim2D = 2 ;
-  GeometricModelPtr gm = new GeometricModel(dim2D, region_list, (Epetra_MpiComm *)comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(dim2D, region_list, (Epetra_MpiComm *)comm));
   
   // intantiate the mesh: build the geometric model
   int nx(100), ny(100) ;
