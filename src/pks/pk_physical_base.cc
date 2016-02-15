@@ -42,6 +42,7 @@ void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
   // get the mesh
   mesh_ = S->GetMesh(domain_);
 
+
   // set up the debugger
   db_ = Teuchos::rcp(new Debugger(mesh_, name_, *plist_));
 

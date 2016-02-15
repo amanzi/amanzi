@@ -8,7 +8,6 @@
 #include "Mesh.hh"
 #include "Mesh_MSTK.hh"
 #include "Point.hh"
-
 #include "meshed_elevation_evaluator.hh"
 
 namespace Amanzi {
@@ -34,33 +33,51 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
 
   Epetra_MultiVector& elev_c = *elev->ViewComponent("cell", false);
   Epetra_MultiVector& slope_c = *slope->ViewComponent("cell", false);
-
+  
   // Get the elevation and slope values from the domain mesh.
-  Teuchos::RCP<const AmanziMesh::Mesh_MSTK> domain_mesh =
-      Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh());
-      // Note that static cast is safe here because we have
-      // already ensured it was MSTK.
-
   Key key=plist_.get<std::string>("elevation key");
   Key domain = getDomain(key);
-  Teuchos::RCP<const AmanziMesh::Mesh_MSTK> surface_mesh =
-      Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh(domain));
-                    // Note that static cast is safe here because we have
-                    // already ensured it was MSTK.
+  Key domain_ss = " ";
+  if(domain.substr(0,6) =="column")
+    domain_ss = domain.substr(0,8);
+  
+  Teuchos::RCP<const AmanziMesh::Mesh_MSTK> domain_mesh;
+  if (domain_ss == " ")
+    domain_mesh = Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh());
+  else
+     domain_mesh = Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh(domain_ss));
 
-  if (domain_mesh->cell_dimension() == 3) {
+  /* 
+  Teuchos::RCP<const AmanziMesh::Mesh_MSTK> domain_mesh =
+    Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh(domain_ss));
+  */
+  // Note that static cast is safe here because we have
+  // already ensured it was MSTK.
+  
+  //--  Key key=plist_.get<std::string>("elevation key");
+  //--Key domain = getDomain(key);
+  Teuchos::RCP<const AmanziMesh::Mesh_MSTK> surface_mesh =
+    Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh(domain));
+  // Note that static cast is safe here because we have
+  // already ensured it was MSTK.
+  
+  
+  if (domain_mesh->manifold_dimension() == 3) {
     // Set the elevation on cells by getting the corresponding face and its
     // centroid.
     int ncells = elev_c.MyLength();
+    
     for (int c=0; c!=ncells; ++c) {
       // Note that a surface cell is a volume mesh's face
-      AmanziMesh::Entity_ID domain_face =
-          surface_mesh->entity_get_parent(AmanziMesh::CELL, c);
-
+      AmanziMesh::Entity_ID domain_face;
+      if(domain.substr(0,6) =="column")
+        domain_face = domain_mesh->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+      else
+        domain_face = surface_mesh->entity_get_parent(AmanziMesh::CELL, c);
+      
       // First elevation.
       AmanziGeometry::Point x = domain_mesh->face_centroid(domain_face);
       elev_c[0][c] = x[2];
-
       // Now slope.
       AmanziGeometry::Point n = domain_mesh->face_normal(domain_face);
       // -- S = || n - (n dot z) z || / | n dot z |
@@ -88,7 +105,7 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
         elev_f[0][f] = (coord0[2] + coord1[2])/2.0;
       }
     }
-  } else if (domain_mesh->cell_dimension() == 2) {
+  } else if (domain_mesh->manifold_dimension() == 2) {
     // Set the elevation on cells by getting the corresponding cell and its
     // centroid.
     int ncells = elev_c.MyLength();

@@ -126,6 +126,15 @@ void OverlandPressureFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& 
     // source term is in units of [mol / s]
     g_c.Update(-1., *source1->ViewComponent("cell",false), 1.);
   }
+  /*
+  //I-ADDED
+  if (coupled_to_subsurface_via_flux_) {
+    Epetra_MultiVector& source = *S_next_->GetFieldData(getKey(domain_.substr(0,8),"surface_subsurface_flux"),
+                                                        S_inter_->GetField(getKey(domain_.substr(0,8),"surface_subsurface_flux"))->owner())->ViewComponent("cell",false);
+    source = g_c;
+    g_c =  *g->ViewComponent("cell",false)->PutScalar(0.0);
+  }
+  */
 };
 
 

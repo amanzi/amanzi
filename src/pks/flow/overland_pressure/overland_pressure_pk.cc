@@ -85,15 +85,19 @@ void OverlandPressureFlow::setup(const Teuchos::Ptr<State>& S) {
   if (S->HasMesh("surface_star") && domain_=="surface_star")
     standalone_mode_=false;
 
-  if (!S->HasMesh("surface") && standalone_mode_==false) {
+  if(domain_.substr(0,6) =="column")
+    standalone_mode_ = false;
+  else if (!S->HasMesh("surface") && standalone_mode_==false) {
     Teuchos::RCP<const AmanziMesh::Mesh> domain = S->GetMesh();
-    //    ASSERT(domain->space_dimension() == 2);
+    //   ASSERT(domain->space_dimension() == 2);
 
   standalone_mode_ = true;
   S->AliasMesh("domain","surface");
 
   }
   
+  //if (domain_ != "surface" && domain_ != "surface_star")
+  //  S->AliasMesh("surface", domain_);
   // -- water content
   S->RequireField(getKey(domain_,"water_content"))->SetMesh(mesh_)->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -372,7 +376,6 @@ void OverlandPressureFlow::initialize(const Teuchos::Ptr<State>& S) {
     S->GetField(solnstream.str(),name_)->set_initialized();
   }
 #endif
-
   Teuchos::RCP<CompositeVector> head_cv = S->GetFieldData(key_, name_);
 
   // initial condition is tricky
@@ -385,16 +388,19 @@ void OverlandPressureFlow::initialize(const Teuchos::Ptr<State>& S) {
     }
     head_cv->PutScalar(0.);
   }
-
   // Initialize BDF stuff and physical domain stuff.
   PKPhysicalBDFBase::initialize(S);
-
   if (!S->GetField(key_)->initialized()) {
     // -- set the cell initial condition if it is taken from the subsurface
     Teuchos::ParameterList ic_plist = plist_->sublist("initial condition");
     if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
       Epetra_MultiVector& head = *head_cv->ViewComponent("cell",false);
-      const Epetra_MultiVector& pres = *S->GetFieldData("pressure")
+      Key key_ss = " ";
+      if (domain_.substr(0,6) == "column")
+        key_ss = getKey(domain_.substr(0,8),"pressure");
+      else
+        key_ss = "pressure";
+      const Epetra_MultiVector& pres = *S->GetFieldData(key_ss)
         ->ViewComponent("face",false);
 
       unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
@@ -411,8 +417,7 @@ void OverlandPressureFlow::initialize(const Teuchos::Ptr<State>& S) {
       }
     }
   }
-
-  // Initialize BC data structures
+   // Initialize BC data structures
   unsigned int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
   bc_values_.resize(nfaces, 0.0);
@@ -440,7 +445,7 @@ void OverlandPressureFlow::initialize(const Teuchos::Ptr<State>& S) {
   S->GetField(getKey(domain_,"mass_flux_direction"), name_)->set_initialized();
   S->GetFieldData(getKey(domain_,"velocity"), name_)->PutScalar(0.);
   S->GetField(getKey(domain_,"velocity"), name_)->set_initialized();
-};
+ };
 
 
 // -----------------------------------------------------------------------------

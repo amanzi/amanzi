@@ -1,0 +1,76 @@
+\contentsline {section}{Notes}{2}{section*.4}
+\contentsline {section}{Syntax of the Specification}{2}{section*.5}
+\contentsline {section}{Main}{3}{section*.6}
+\contentsline {section}{Mesh}{4}{section*.7}
+\contentsline {section}{Domain}{5}{section*.8}
+\contentsline {section}{Region}{5}{section*.9}
+\contentsline {section}{Coordinator}{8}{section*.10}
+\contentsline {section}{Visualization}{9}{section*.11}
+\contentsline {section}{Checkpoint}{9}{section*.12}
+\contentsline {section}{Observation}{10}{section*.13}
+\contentsline {section}{PK}{11}{section*.14}
+\contentsline {subsection}{Base PKs}{12}{section*.15}
+\contentsline {subsubsection}{PKDefaultBase}{12}{section*.16}
+\contentsline {subsubsection}{PKPhysicalBase}{12}{section*.17}
+\contentsline {subsubsection}{PKBDFBase}{13}{section*.18}
+\contentsline {subsubsection}{PKPhysicalBDFBase}{13}{section*.19}
+\contentsline {subsection}{Physical PKs}{14}{section*.20}
+\contentsline {subsubsection}{Flow PKs}{14}{section*.21}
+\contentsline {paragraph}{Richards PK}{14}{section*.22}
+\contentsline {paragraph}{Permafrost Flow PK}{14}{section*.23}
+\contentsline {paragraph}{Overland Flow, head primary variable PK}{14}{section*.24}
+\contentsline {paragraph}{Overland Flow, pressure primary variable, PK}{14}{section*.25}
+\contentsline {paragraph}{Snow Distribution PK}{14}{section*.26}
+\contentsline {subsubsection}{Energy PKs}{14}{section*.27}
+\contentsline {paragraph}{Advection Diffusion PK}{14}{section*.28}
+\contentsline {paragraph}{Energy Base PK}{14}{section*.29}
+\contentsline {paragraph}{Two-Phase subsurface Energy PK}{14}{section*.30}
+\contentsline {paragraph}{Three-Phase subsurface Energy PK}{14}{section*.31}
+\contentsline {paragraph}{Three-Phase subsurface Energy PK}{14}{section*.32}
+\contentsline {paragraph}{Surface Ice Energy PK}{14}{section*.33}
+\contentsline {subsubsection}{Surface Energy Balance PKs}{14}{section*.34}
+\contentsline {paragraph}{Surface Energy Balance / Snow -{}- Monolithic Version}{14}{section*.35}
+\contentsline {paragraph}{Surface Energy Balance -{}- Generic Version}{14}{section*.36}
+\contentsline {subsubsection}{Biogeochemistry}{14}{section*.37}
+\contentsline {paragraph}{Biogeochemistry -{}- Monolithic Version}{14}{section*.38}
+\contentsline {subsubsection}{Deformation}{14}{section*.39}
+\contentsline {paragraph}{Volumetric Deformation}{14}{section*.40}
+\contentsline {subsection}{MPCs}{15}{section*.41}
+\contentsline {subsubsection}{WeakMPC}{15}{section*.42}
+\contentsline {subsubsection}{StrongMPC}{15}{section*.43}
+\contentsline {subsection}{Physical MPCs}{15}{section*.44}
+\contentsline {subsubsection}{Coupled Water MPC}{15}{section*.45}
+\contentsline {subsubsection}{Subsurface MPC}{15}{section*.46}
+\contentsline {subsubsection}{Permafrost MPC}{15}{section*.47}
+\contentsline {section}{State}{15}{section*.48}
+\contentsline {subsection}{Field Evaluators}{15}{section*.49}
+\contentsline {subsubsection}{Field Evaluator Base Classes}{15}{section*.50}
+\contentsline {paragraph}{PrimaryVariableEvaluator}{15}{section*.51}
+\contentsline {paragraph}{SecondaryVariableEvaluator}{15}{section*.52}
+\contentsline {paragraph}{SecondaryVariablesEvaluator}{15}{section*.53}
+\contentsline {paragraph}{IndependentVariableEvaluator}{15}{section*.54}
+\contentsline {subsection}{InitialConditions}{16}{section*.55}
+\contentsline {subsubsection}{Initialization of constant scalars}{16}{section*.56}
+\contentsline {subsubsection}{Initialization of constant vectors}{16}{section*.57}
+\contentsline {subsubsection}{Initialization of scalar fields}{16}{section*.58}
+\contentsline {subsubsection}{Initialization of tensor fields}{17}{section*.59}
+\contentsline {subsubsection}{Initialization from a file}{17}{section*.60}
+\contentsline {section}{Time integrators, solvers, and other mathematical specs}{18}{section*.61}
+\contentsline {subsection}{TimeIntegrator}{18}{section*.62}
+\contentsline {subsection}{Linear Solver Spec}{18}{section*.63}
+\contentsline {subsection}{Preconditioner}{18}{section*.64}
+\contentsline {subsubsection}{Hypre AMG}{19}{section*.65}
+\contentsline {subsubsection}{Trilinos ML}{19}{section*.66}
+\contentsline {subsubsection}{Block ILU}{20}{section*.67}
+\contentsline {subsubsection}{Indentity}{20}{section*.68}
+\contentsline {subsection}{NonlinearSolver}{20}{section*.69}
+\contentsline {section}{Other Common Specs}{20}{section*.70}
+\contentsline {subsection}{TimeControl}{20}{section*.71}
+\contentsline {subsection}{VerboseObject}{21}{section*.72}
+\contentsline {subsection}{Function}{21}{section*.73}
+\contentsline {subsubsection}{Constant function}{21}{section*.74}
+\contentsline {subsubsection}{Tabular function}{21}{section*.75}
+\contentsline {subsubsection}{Smooth step function}{22}{section*.76}
+\contentsline {subsubsection}{Polynomial function}{22}{section*.77}
+\contentsline {subsubsection}{Multi-variable linear function}{22}{section*.78}
+\contentsline {subsubsection}{Separable function}{23}{section*.79}

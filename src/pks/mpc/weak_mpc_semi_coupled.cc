@@ -176,6 +176,7 @@ bool WeakMPCSemiCoupled::advance(double dt) {
 			 S_inter_->GetFieldData("temperature", S_inter_->GetField("temperature")->owner()).ptr());
   
   // NOTE: later do it in the setup --aj
+  
   Teuchos::RCP<PKBDFBase> pk_domain =
     Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[1]);
   ASSERT(pk_domain.get()); // make sure the pk_domain is not empty

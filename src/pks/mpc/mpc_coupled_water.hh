@@ -78,6 +78,7 @@ class MPCCoupledWater : public StrongMPC<PKPhysicalBDFBase> {
   // factory registration
   static RegisteredPKFactory<MPCCoupledWater> reg_;
 
+  std::string domain_surf, domain_ss;
 };
 
 } // namespace

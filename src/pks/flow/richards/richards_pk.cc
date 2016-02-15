@@ -307,21 +307,30 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
         ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(source_key_);
   }
-
   // coupling
   // -- coupling done by a Neumann condition
   coupled_to_surface_via_flux_ = plist_->get<bool>("coupled to surface via flux", false);
   if (coupled_to_surface_via_flux_) {
     if (ss_flux_key_.empty()) {
       ss_flux_key_ = plist_->get<std::string>("surface-subsurface flux key",
-              getKey(domain_, "surface_subsurface_flux"));
+                                              getKey(domain_, "surface_subsurface_flux")); // remember to change
     }
 
-    S->RequireField(ss_flux_key_)
+   
+    if (domain_ .substr(0,6)=="column"){
+      std::string domain_surf = " ";
+      domain_surf = domain_ + "_surface";
+      S->RequireField(ss_flux_key_)->SetMesh(S->GetMesh(domain_surf))
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+      if (!S->GetField(ss_flux_key_)->initialized())
+        S->GetField(ss_flux_key_, S->GetField(ss_flux_key_)->owner())->set_initialized();
+    }
+    else
+      S->RequireField(ss_flux_key_)
         ->SetMesh(S->GetMesh("surface"))
         ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
-
+  
   // -- coupling done by a Dirichlet condition
   coupled_to_surface_via_head_ = plist_->get<bool>("coupled to surface via head", false);
   if (coupled_to_surface_via_head_) {
@@ -417,10 +426,8 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // Initialize PK
 // -------------------------------------------------------------
 void Richards::initialize(const Teuchos::Ptr<State>& S) {
-
-  // Initialize BDF stuff and physical domain stuff.
+    // Initialize BDF stuff and physical domain stuff.
   PKPhysicalBDFBase::initialize(S);
-
 
   // debugggin cruft
 #if DEBUG_RES_FLAG
@@ -471,7 +478,6 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
   AmanziGeometry::Point g(3);
   g[0] = (*gvec)[0]; g[1] = (*gvec)[1]; g[2] = (*gvec)[2];
-
   matrix_diff_->SetGravity(g);
   matrix_diff_->SetBCs(bc_, bc_);
   matrix_diff_->SetTensorCoefficient(K_);
@@ -481,7 +487,6 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   preconditioner_diff_->SetBCs(bc_, bc_);
   preconditioner_diff_->SetTensorCoefficient(K_);
   preconditioner_->SymbolicAssembleMatrix();
-
   face_matrix_diff_->SetGravity(g);
   face_matrix_diff_->SetBCs(bc_, bc_);
   face_matrix_diff_->SetTensorCoefficient(K_);
@@ -494,6 +499,36 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
   //   res_vapor = Teuchos::rcp(new CompositeVector(*S->GetFieldData(key_))); 
   // }
 
+  /*
+  // I-ADDED
+  // -- coupling done by a Neumann condition
+  coupled_to_surface_via_flux_ = plist_->get<bool>("coupled to surface via flux", false);
+  if (coupled_to_surface_via_flux_) {
+    Key key_ss =" ";
+    if(domain_.substr(0,6) == "column")
+      key_ss = getKey(domain_,"surface_subsurface_flux");
+    else
+      key_ss = "surface_subsurface_flux";
+    if (ss_flux_key_.empty()) {
+      ss_flux_key_ = plist_->get<std::string>("surface-subsurface flux key",key_ss);
+    }
+
+   
+    if (domain_ .substr(0,6)=="column"){
+      std::string domain_surf = " ";
+      domain_surf = domain_ + "_surface";
+      S->RequireField(ss_flux_key_)->SetMesh(S->GetMesh(domain_surf))
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+      //    S->GetFieldData(ss_flux_key_, S->GetField(ss_flux_key_)->owner())->PutScalar(0.0);
+      S->GetField(ss_flux_key_, S->GetField(ss_flux_key_)->owner())->set_initialized();
+    }
+    else
+      S->RequireField(ss_flux_key_)->SetMesh(S->GetMesh("surface"))
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+  }
+  */
+
+  
 };
 
 
@@ -814,19 +849,38 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     }
   }
 
+
   // surface coupling
   if (coupled_to_surface_via_flux_) {
     // Face is Neumann with value of surface residual
-    Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
-    const Epetra_MultiVector& flux = *S->GetFieldData("surface_subsurface_flux")
-        ->ViewComponent("cell",false);
-
-    unsigned int ncells_surface = flux.MyLength();
+   
+    Teuchos::RCP<const AmanziMesh::Mesh> surface = Teuchos::null;
+    Key key_ss = " ";
+    if (domain_.substr(0,6)=="column"){
+      surface = S->GetMesh(domain_ + "_surface");
+      key_ss = getKey(domain_,"surface_subsurface_flux");
+    }
+    else {
+      surface = S->GetMesh("surface");
+      key_ss = "surface_subsurface_flux";
+    }
+    
+    const Epetra_MultiVector& flux = *S->GetFieldData(key_ss)->ViewComponent("cell",false);
+ 
+    unsigned int ncells_surface = flux.MyLength(); // I-CHANGED
     for (unsigned int c=0; c!=ncells_surface; ++c) {
       // -- get the surface cell's equivalent subsurface face
-      AmanziMesh::Entity_ID f =
+      /* AmanziMesh::Entity_ID f =
         surface->entity_get_parent(AmanziMesh::CELL, c);
+      */
 
+      //--------- ADDED FOR COLUMNS ----
+      AmanziMesh::Entity_ID f;
+      if (domain_.substr(0,6) =="column")
+        f = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+      else
+        f = surface->entity_get_parent(AmanziMesh::CELL, c);
+      //       ---------------------------
       // -- set that value to Neumann
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_values_[f] = flux[0][c] / mesh_->face_area(f);

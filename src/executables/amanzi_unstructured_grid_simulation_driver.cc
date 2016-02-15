@@ -245,6 +245,7 @@ int AmanziUnstructuredGridSimulationDriver::Run(
   }  // If expert_params_specified
 
   // Create the surface mesh if needed
+   
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> surface_mesh = Teuchos::null;
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> surface3D_mesh = Teuchos::null;
   if (mesh_plist.isSublist("Surface Mesh")) {
@@ -267,7 +268,7 @@ int AmanziUnstructuredGridSimulationDriver::Run(
       surface3D_mesh = mesh;
       surface_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::CELL,true,false);
     }
-
+  
     bool surf_expert_params_specified = surface_plist.isSublist("Expert");
     if (surf_expert_params_specified) {
       Teuchos::ParameterList surf_expert_mesh_params = surface_plist.sublist("Expert");
@@ -320,14 +321,28 @@ int AmanziUnstructuredGridSimulationDriver::Run(
 
   // column meshes
   std::vector<Teuchos::RCP<Amanzi::AmanziMesh::Mesh> > col_meshes;
+  std::vector<Teuchos::RCP<Amanzi::AmanziMesh::SurfaceMeshCell> > col_surface_meshes; //--I-ADDED
+
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_temp;  
+  bool col_surf_mesh = false;
   if (mesh_plist.isSublist("Column Meshes")) {
     int nc = mesh->num_columns();
     col_meshes.resize(nc, Teuchos::null);
+    col_surface_meshes.resize(nc, Teuchos::null);
     for (int c=0; c!=nc; ++c) {
       col_meshes[c] = Teuchos::rcp(new Amanzi::AmanziMesh::ColumnMesh(*mesh, c));
+
+      if (mesh_plist.isSublist("Column Surface Meshes")) {
+        col_surf_mesh = true;
+        std::stringstream name, name1;
+        std::vector<std::string> setname, setname1;
+        name << "column_" << c << "_surface";
+        setname.push_back(name.str());
+        col_surface_meshes[c] = Teuchos::rcp(new Amanzi::AmanziMesh::MeshSurfaceCell(col_meshes[c], setname));
+      }
     }
   }  
-  
+
   Teuchos::TimeMonitor::summarize();
   Teuchos::TimeMonitor::zeroOutTimers();
 
@@ -348,8 +363,14 @@ int AmanziUnstructuredGridSimulationDriver::Run(
       std::stringstream namestream;
       namestream << "column_" << c;
       S->RegisterMesh(namestream.str(), col_meshes[c], deformable);
+      //S->RegisterMesh(namestream.str(), col_meshes3D[c], deformable);
+      if(col_surf_mesh){
+       S->RegisterMesh(namestream.str() + "_surface", col_surface_meshes[c], deformable);
+      }
     }
+
   }
+  
   
   // create the top level Coordinator
   Amanzi::Coordinator coordinator(params_copy, S, comm);

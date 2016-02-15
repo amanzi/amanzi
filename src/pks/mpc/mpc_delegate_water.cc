@@ -4,7 +4,7 @@
 
 namespace Amanzi {
 
-MPCDelegateWater::MPCDelegateWater(const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+  MPCDelegateWater::MPCDelegateWater(const Teuchos::RCP<Teuchos::ParameterList>& plist, std::string domain) :
     plist_(plist),
     i_domain_(-1),
     i_surf_(-1),
@@ -37,6 +37,8 @@ MPCDelegateWater::MPCDelegateWater(const Teuchos::RCP<Teuchos::ParameterList>& p
 
   // create the VO
   vo_ = Teuchos::rcp(new VerboseObject(plist->name(), *plist_));
+
+  domain_ss = domain;
 }
 
 // Approach 1: global face limiter on the correction size
@@ -222,8 +224,14 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
         ->ViewComponent("cell",false);
     Epetra_MultiVector& domain_pnew_f = *u->SubVector(i_domain_)->Data()
         ->ViewComponent("face",false);
+    Key key_ss;
+    if (domain_ss.substr(0,6) == "column")
+      key_ss = getKey(domain_ss,"pressure");
+    else
+      key_ss = "pressure";
+
     const Epetra_MultiVector& domain_pold_f =
-        *S_->GetFieldData("pressure")->ViewComponent("face",false);
+        *S_->GetFieldData(key_ss)->ViewComponent("face",false);
 
     int rank = surf_mesh->get_comm()->MyPID();
     double damp = 1.;
