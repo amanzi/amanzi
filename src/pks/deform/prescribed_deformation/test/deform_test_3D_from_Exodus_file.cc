@@ -39,8 +39,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
   
   // intantiate the mesh: build the geometric model
   const int dim3D = 3 ;
-  GeometricModelPtr gm = 
-    new GeometricModel(dim3D, region_list, (Epetra_MpiComm *)comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(dim3D, region_list, (Epetra_MpiComm *)comm));
   
   // intantiate the mesh: build the geometric model
   string fname = string("./test/tmp_proto_fs.exo") ;
