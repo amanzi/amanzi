@@ -9,8 +9,9 @@
 #ifndef AMANZI_MESH_SURFACE_CELL_HH_
 #define AMANZI_MESH_SURFACE_CELL_HH_
 
-#include <memory>
 #include <vector>
+#include <string>
+#include <algorithm>
 
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_Map.h"
@@ -84,7 +85,7 @@ class MeshSurfaceCell : public Mesh {
         Entity_ID_List faces_in_set;
         inmesh.get_set_entities((*r)->id(), FACE, OWNED, &faces_in_set);
         sets_[(*r)->id()] = std::find(faces_in_set.begin(), faces_in_set.end(),
-                parent_face_) == faces_in_set.end();
+                parent_face_) != faces_in_set.end();
 
       } else if ((*r)->is_geometric()) {
         // check containment
