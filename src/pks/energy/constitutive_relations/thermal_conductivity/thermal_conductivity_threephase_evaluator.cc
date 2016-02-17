@@ -121,8 +121,122 @@ void ThermalConductivityThreePhaseEvaluator::EvaluateField_(
 void ThermalConductivityThreePhaseEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S, Key wrt_key,
     const Teuchos::Ptr<CompositeVector>& result) {
-  ASSERT(0); // not implemented, not yet needed
-  result->Scale(1.e-6);
+  // pull out the dependencies
+  Teuchos::RCP<const CompositeVector> poro = S->GetFieldData(poro_key_);
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
+  Teuchos::RCP<const CompositeVector> sat = S->GetFieldData(sat_key_);
+  Teuchos::RCP<const CompositeVector> sat2 = S->GetFieldData(sat2_key_);
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->Mesh();
+
+  for (CompositeVector::name_iterator comp = result->begin();
+       comp!=result->end(); ++comp) {
+    ASSERT(*comp == "cell");
+    const Epetra_MultiVector& poro_v = *poro->ViewComponent(*comp,false);
+    const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
+    const Epetra_MultiVector& sat_v = *sat->ViewComponent(*comp,false);
+    const Epetra_MultiVector& sat2_v = *sat2->ViewComponent(*comp,false);
+    Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
+
+    if (wrt_key == poro_key_) {
+      for (std::vector<RegionModelPair>::const_iterator lcv = tcs_.begin();
+           lcv != tcs_.end(); ++lcv) {
+        std::string region_name = lcv->first;
+        if (mesh->valid_set_name(region_name, AmanziMesh::CELL)) {
+          // get the indices of the domain.
+          AmanziMesh::Entity_ID_List id_list;
+          mesh->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::OWNED, &id_list);
+
+          // loop over indices
+          for (AmanziMesh::Entity_ID_List::const_iterator id=id_list.begin();
+               id!=id_list.end(); ++id) {
+            result_v[0][*id] = lcv->second->DThermalConductivity_DPorosity(poro_v[0][*id],
+                                              sat_v[0][*id], sat2_v[0][*id], temp_v[0][*id]);
+          }
+        } else {
+          std::stringstream m;
+          m << "Thermal conductivity evaluator: unknown region on cells: \"" << region_name << "\"";
+          Errors::Message message(m.str());
+          Exceptions::amanzi_throw(message);
+        }
+      }
+      
+    } else if (wrt_key == sat_key_) {
+      for (std::vector<RegionModelPair>::const_iterator lcv = tcs_.begin();
+           lcv != tcs_.end(); ++lcv) {
+        std::string region_name = lcv->first;
+        if (mesh->valid_set_name(region_name, AmanziMesh::CELL)) {
+          // get the indices of the domain.
+          AmanziMesh::Entity_ID_List id_list;
+          mesh->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::OWNED, &id_list);
+
+          // loop over indices
+          for (AmanziMesh::Entity_ID_List::const_iterator id=id_list.begin();
+               id!=id_list.end(); ++id) {
+            result_v[0][*id] = lcv->second->DThermalConductivity_DSaturationLiquid(
+                                    poro_v[0][*id], sat_v[0][*id], sat2_v[0][*id], temp_v[0][*id]);
+          }
+        } else {
+          std::stringstream m;
+          m << "Thermal conductivity evaluator: unknown region on cells: \"" << region_name << "\"";
+          Errors::Message message(m.str());
+          Exceptions::amanzi_throw(message);
+        }
+      }
+
+    } else if (wrt_key == sat2_key_) {
+      for (std::vector<RegionModelPair>::const_iterator lcv = tcs_.begin();
+           lcv != tcs_.end(); ++lcv) {
+        std::string region_name = lcv->first;
+        if (mesh->valid_set_name(region_name, AmanziMesh::CELL)) {
+          // get the indices of the domain.
+          AmanziMesh::Entity_ID_List id_list;
+          mesh->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::OWNED, &id_list);
+
+          // loop over indices
+          for (AmanziMesh::Entity_ID_List::const_iterator id=id_list.begin();
+               id!=id_list.end(); ++id) {
+            result_v[0][*id] = lcv->second->DThermalConductivity_DSaturationIce(
+                                    poro_v[0][*id], sat_v[0][*id], sat2_v[0][*id], temp_v[0][*id]);
+          }
+        } else {
+          std::stringstream m;
+          m << "Thermal conductivity evaluator: unknown region on cells: \"" << region_name << "\"";
+          Errors::Message message(m.str());
+          Exceptions::amanzi_throw(message);
+        }
+      }
+
+    } else if (wrt_key == temp_key_) {
+      for (std::vector<RegionModelPair>::const_iterator lcv = tcs_.begin();
+           lcv != tcs_.end(); ++lcv) {
+        std::string region_name = lcv->first;
+        if (mesh->valid_set_name(region_name, AmanziMesh::CELL)) {
+          // get the indices of the domain.
+          AmanziMesh::Entity_ID_List id_list;
+          mesh->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::OWNED, &id_list);
+
+          // loop over indices
+          for (AmanziMesh::Entity_ID_List::const_iterator id=id_list.begin();
+               id!=id_list.end(); ++id) {
+            result_v[0][*id] = lcv->second->DThermalConductivity_DTemperature(
+                                    poro_v[0][*id], sat_v[0][*id], sat2_v[0][*id], temp_v[0][*id]);
+          }
+        } else {
+          std::stringstream m;
+          m << "Thermal conductivity evaluator: unknown region on cells: \"" << region_name << "\"";
+          Errors::Message message(m.str());
+          Exceptions::amanzi_throw(message);
+        }
+      }
+      
+    } else {
+      ASSERT(false);
+    }
+  }
+    
+  result->Scale(1.e-6); // convert to MJ
+
+  Epetra_MultiVector& result_v = *result->ViewComponent("cell",false);
 }
 
 
