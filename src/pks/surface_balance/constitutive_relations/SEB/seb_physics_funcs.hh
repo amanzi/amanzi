@@ -7,6 +7,8 @@
 
 #include <cmath>
 #include <string>
+
+#include "VerboseObject.hh"
 #include "seb_physics_defs.hh"
 
 namespace Amanzi {
@@ -14,16 +16,16 @@ namespace SurfaceBalance {
 namespace SEBPhysics {
 
 // Main SEB functions
-void UpdateIncomingRadiation(const SEB& seb, EnergyBalance& eb, bool debug=false);
-void UpdateEvapResistance(const SEB& seb, EnergyBalance& eb, bool debug=false);
+void UpdateIncomingRadiation(const SEB& seb, EnergyBalance& eb, bool debug=false, const Teuchos::RCP<VerboseObject>& vo=Teuchos::null);
+void UpdateEvapResistance(const SEB& seb, EnergyBalance& eb, bool debug=false, const Teuchos::RCP<VerboseObject>& vo=Teuchos::null);
 void UpdateEnergyBalance(const SEB& seb, const ThermoProperties& vp_surf,
-                         EnergyBalance& eb, bool debug=false);
+                         EnergyBalance& eb, bool debug=false, const Teuchos::RCP<VerboseObject>& vo=Teuchos::null);
 
 double DetermineSnowTemperature(const SEB& seb, ThermoProperties& vp_snow,
         EnergyBalance& eb, std::string method="toms");
 void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb,
-                       SnowProperties& snow_new, bool debug=false);
-void CalculateSurfaceBalance(SEB& seb, bool debug=false);
+                       SnowProperties& snow_new, bool debug=false, const Teuchos::RCP<VerboseObject>& vo=Teuchos::null);
+void CalculateSurfaceBalance(SEB& seb, bool debug=false, const Teuchos::RCP<VerboseObject>& vo=Teuchos::null);
 
 // Random helper functions
 double CalcAlbedoSnow(double density_snow);
