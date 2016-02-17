@@ -161,12 +161,32 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 
   // div K_e grad u
   UpdateConductivityData_(S_next_.ptr());
+  if (jacobian_) UpdateConductivityDerivativeData_(S_next_.ptr());
+
   Teuchos::RCP<const CompositeVector> conductivity =
       S_next_->GetFieldData(uw_conductivity_key_);
 
+  // jacobian term
+  Teuchos::RCP<const CompositeVector> dKdT = Teuchos::null;
+  if (jacobian_) {
+    if (!duw_conductivity_key_.empty()) {
+      dKdT = S_next_->GetFieldData(duw_conductivity_key_);
+    } else {
+      dKdT = S_next_->GetFieldData(dconductivity_key_);
+    }
+  }
+
+  // create local matrices
   preconditioner_->Init();
-  preconditioner_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
-  preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  preconditioner_diff_->SetScalarCoefficient(conductivity, dKdT);
+  preconditioner_diff_->UpdateMatrices(Teuchos::null, up->Data().ptr());
+
+  if (jacobian_ && preconditioner_->RangeMap().HasComponent("face")) {
+    Teuchos::RCP<CompositeVector> flux =
+      S_next_->GetFieldData(energy_flux_key_, name_);
+    preconditioner_diff_->UpdateFlux(*up->Data(), *flux);
+    preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), up->Data().ptr());
+  }
 
   // update with accumulation terms
   // -- update the accumulation derivatives, de/dT

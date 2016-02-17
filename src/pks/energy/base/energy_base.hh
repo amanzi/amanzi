@@ -102,6 +102,7 @@ public:
 
   // Upwinding conductivities
   virtual bool UpdateConductivityData_(const Teuchos::Ptr<State>& S);
+  virtual bool UpdateConductivityDerivativeData_(const Teuchos::Ptr<State>& S);
 
 
   // boundary condition members
@@ -133,7 +134,7 @@ public:
 
   // operators
   Teuchos::RCP<Operators::Upwinding> upwinding_;
-  Teuchos::RCP<Operators::Upwinding> dkdT_upwinding_;
+  Teuchos::RCP<Operators::Upwinding> upwinding_deriv_;
 
   // mathematical operators
   Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
@@ -146,7 +147,6 @@ public:
   Teuchos::RCP<Operators::Operator> lin_solver_;
 
   // flags and control
-  double dT_max_;
   bool modify_predictor_with_consistent_faces_;
   bool modify_predictor_for_freezing_;
   bool modify_correction_for_freezing_;
@@ -156,7 +156,8 @@ public:
   bool implicit_advection_in_pc_;
   bool precon_used_;
   bool flux_exists_;
-
+  bool jacobian_;
+  
   double T_limit_;
   
   bool coupled_to_subsurface_via_temp_;
@@ -173,6 +174,8 @@ public:
   Key adv_energy_flux_key_;
   Key conductivity_key_;
   Key uw_conductivity_key_;
+  Key dconductivity_key_;
+  Key duw_conductivity_key_;
   Key de_dT_key_;
   Key source_key_;
   Key dsource_dT_key_;
