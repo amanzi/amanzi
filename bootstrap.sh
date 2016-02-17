@@ -1134,6 +1134,7 @@ if [ -z "${tpl_config_file}" ]; then
                 -DENABLE_PETSC:BOOL=${petsc} \
                 -DENABLE_ALQUIMIA:BOOL=${alquimia} \
                 -DENABLE_PFLOTRAN:BOOL=${plotran} \
+                -DENABLE_Silo:BOOL=${silo} \
                 -DBUILD_SHARED_LIBS:BOOL=${shared} \
                 -DCCSE_BL_SPACEDIM:INT=${spacedim} \
                 -DPREFER_STATIC_LIBRARIES:BOOL=${static} \

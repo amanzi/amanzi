@@ -42,11 +42,10 @@ extern bool framework_reads(const Framework& f, const Format& fmt, const bool& p
 
 /// Read a mesh
 extern Teuchos::RCP<Mesh> 
-framework_read(const Epetra_MpiComm *comm, const Framework& f, 
+framework_read(const Epetra_MpiComm *comm_, const Framework& f, 
                const std::string& fname,
-               const AmanziGeometry::GeometricModelPtr& gm = 
-               (AmanziGeometry::GeometricModelPtr) NULL,
-               const VerboseObject *verbobj = (VerboseObject *) NULL,
+               const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm =  Teuchos::null,
+               const Teuchos::RCP<const VerboseObject>& verbobj = Teuchos::null,
                const bool request_faces = true,
                const bool request_edges = false);
 
@@ -58,40 +57,37 @@ extern bool framework_extracts(const Framework& f, const bool& parallel, const u
 
 /// Generate a hexahedral mesh
 extern Teuchos::RCP<Mesh> 
-framework_generate(const Epetra_MpiComm *comm, const Framework& f, 
+framework_generate(const Epetra_MpiComm *comm_, const Framework& f, 
                    const double& x0, const double& y0, const double& z0,
                    const double& x1, const double& y1, const double& z1,
                    const unsigned int& nx, const unsigned int& ny, 
                    const unsigned int& nz,
-                   const AmanziGeometry::GeometricModelPtr& gm =
-                   (AmanziGeometry::GeometricModelPtr) NULL,
-                   const VerboseObject *verbobj = (VerboseObject *) NULL,
+                   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+                   const Teuchos::RCP<const VerboseObject>& verbobj = Teuchos::null,
                    const bool request_faces = true,
                    const bool request_edges = false);
 
 /// Generate a quadrilateral mesh
 extern Teuchos::RCP<Mesh> 
-framework_generate(const Epetra_MpiComm *comm, const Framework& f, 
+framework_generate(const Epetra_MpiComm *comm_, const Framework& f, 
                    const double& x0, const double& y0,
                    const double& x1, const double& y1,
                    const unsigned int& nx, const unsigned int& ny,
-                   const AmanziGeometry::GeometricModelPtr& gm =
-                   (AmanziGeometry::GeometricModelPtr) NULL,
-                   const VerboseObject *verbobj = (VerboseObject *) NULL,
+                   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+                   const Teuchos::RCP<const VerboseObject>& verbobj = Teuchos::null,
                    const bool request_faces = true,
                    const bool request_edges = false);
 
 extern Teuchos::RCP<Mesh> 
-framework_generate(const Epetra_MpiComm *comm, const Framework& f, 
+framework_generate(const Epetra_MpiComm *comm_, const Framework& f, 
                    Teuchos::ParameterList &parameter_list,
-                   const AmanziGeometry::GeometricModelPtr& gm = 
-                   (AmanziGeometry::GeometricModelPtr) NULL,
-                   const VerboseObject *verbobj = (VerboseObject *) NULL,
+                   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+                   const Teuchos::RCP<const VerboseObject>& verbobj = Teuchos::null,
                    const bool request_faces = true,
                    const bool request_edges = false);
 
 extern Teuchos::RCP<Mesh>
-framework_extract(const Epetra_MpiComm *comm, const Framework& f,
+framework_extract(const Epetra_MpiComm *comm_, const Framework& f,
                   const Mesh *inmesh,
                   const std::vector<std::string>& setnames,
                   const Entity_kind setkind,

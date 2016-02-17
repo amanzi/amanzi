@@ -145,10 +145,6 @@ if ( BUILD_TESTS )
                         KIND unit
                         SOURCE test/Main.cc test/operator_parabolic_surface.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(operators_nonlinear_surface operators_nonlinear_surface
-                        KIND unit
-                        SOURCE test/Main.cc test/operator_nonlinear_surface.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
         add_amanzi_test(operators_marshak operators_marshak
                         KIND unit
                         SOURCE test/Main.cc test/operator_marshak.cc
@@ -158,15 +154,19 @@ if ( BUILD_TESTS )
                         SOURCE test/Main.cc test/operator_marshak_logical.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     else()
-        add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
+        add_amanzi_test(operators_bundle_pdes operators_bundle_pdes
                         KIND unit
                         SOURCE test/Main.cc test/operator_laplace_beltrami.cc 
                                             test/operator_parabolic_surface.cc
-                                            test/operator_nonlinear_surface.cc
                                             test/operator_marshak.cc
                                             test/operator_marshak_logical.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()
+
+    add_amanzi_test(operators_nonlinear_surface operators_nonlinear_surface
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_nonlinear_surface.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_diffusion operators_diffusion
                     KIND unit

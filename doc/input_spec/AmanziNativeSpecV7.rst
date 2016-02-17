@@ -2295,7 +2295,12 @@ The Alquimia chemistry process kernel only requires the *Engine* and *Engine Inp
 entries, but will also accept and respect the value given for *max time step (s)*. 
 Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
 
-* `"Minerals`" [Array(string)] is the list of mineral names.
+* `"minerals`" [Array(string)] is the list of mineral names.
+
+* `"sorption sites`" [Array(string)] 
+
+* `"auxiliary data`" [Array(string)] defines additional chemistry related data that the user 
+  can request be saved to vis files. 
 
 * `"max time step (s)`" [double] is the maximum time step that chemistry will allow the MPC to take.
 
@@ -2325,8 +2330,7 @@ Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
     <ParameterList name="Chemistry">
       <Parameter name="Engine" type="string" value="PFloTran"/>
       <Parameter name="Engine Input File" type="string" value="1d-tritium-trim.in"/>
-      <Parameter name="Verbosity" type="Array(string)" value="{verbose}"/>
-      <Parameter name="Minerals" type="Array(string)" value="{quartz, kaolinite, goethite, opal}"/>
+      <Parameter name="minerals" type="Array(string)" value="{quartz, kaolinite, goethite, opal}"/>
       <Parameter name="min time step (s)" type="double" value="1.5778463e-07"/>
       <Parameter name="max time step (s)" type="double" value="1.5778463e+07"/>
       <Parameter name="initial time step (s)" type="double" value="1.0e-02"/>
@@ -2344,8 +2348,20 @@ Amanzi
 
 The Amanzi chemistry process kernel uses the following parameters.
 
+* `"Thermodynamic Database`" [list] 
+
+  * `"file`" [string] is the name of the chemistry database file, relative to the execution directory.
+
+  * `"format`" [string] is the format of the database file. Actual database format is not XML and 
+    is the same as described for the 2010 demo with additions for the new chemical processes. 
+    Valid values: "simple".
+
+* `"minerals`" [Array(string)] is the list of mineral names.
+
+* `"sorption sites`" [Array(string)] 
+
 * `"activity model`" [string] is the type of model used for activity corrections. 
-  Valid options are `"unit`" and `"debye-huckel`".
+  Valid options are `"unit`", `"debye-huckel`", and `"pitzer-hwm`",
 
 * `"tolerance`" [double] defines tolerance in Newton solves inside the chemistry library.
 
@@ -2360,59 +2376,15 @@ The Amanzi chemistry process kernel uses the following parameters.
   <ParameterList>  <!-- parent list -->
     <ParameterList name="Chemistry">
       <ParameterList name="Thermodynamic Database">
-        <Parameter name="Format" type="string" value="simple"/>
-        <Parameter name="File" type="string" value="tritium.bgd"/>
+        <Parameter name="file" type="string" value="tritium.bgd"/>
+        <Parameter name="format" type="string" value="simple"/>
       </ParameterList>
-      <Parameter name="Verbosity" type="Array(string)" value="{verbose}"/>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="tolerance" type="double" value="1.5e-12"/>
       <Parameter name="maximum Newton iterations" type="int" value="25"/>
       <Parameter name="max time step (s)" type="double" value="1.5e+07"/>
-      <Parameter name="min time step (s)" type="double" value="1.0e-6"/>
-      <Parameter name="number of component concentrations" type="int" value="1"/>
       <Parameter name="auxiliary data" type="Array(string)" value="{pH}"/>
-    </ParameterList>
-  </ParameterList>
-
-
-Initial conditions
-..................
-
-This sublist completes initialization of state variable, see list `"State`" for 
-more detail. This section is only required for the native chemistry kernel, the
-Alquimia chemistry kernel reads initial conditions from the `"State`" list.
-The following cell-based fields can be initialized here:
-
-* `"mineral_volume_fractions`" (Alquimia only)
-* `"mineral_specific_surface_area`" (Alqumia only)
-* `"ion_exchange_sites`"
-* `"ion_exchange_ref_cation_conc`"
-* `"isotherm_kd`"
-* `"isotherm_langmuir_b`"
-* `"surface_complexation`"
-* `"free_ion_species`"
-
-.. code-block:: xml
-
-  <ParameterList name="Chemistry">  <!-- parent list -->
-    <ParameterList name="initial conditions">
-      <ParameterList name="free_ion_species">
-        <ParameterList name="function">
-          <ParameterList name="ENTIRE DOMAIN">
-            <Parameter name="region" type="string" value="Entire Domain"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <Parameter name="number of dofs" type="int" value="1"/>
-              <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0e-09"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
+      <Parameter name="number of component concentrations" type="int" value="1"/>
     </ParameterList>
   </ParameterList>
 
@@ -4867,7 +4839,13 @@ time step values or intervals corresponding to the cycle number; writes are cont
   The file name can contain relative or absolute path to an *existing* directory only. 
 
   * `"file name base`" [string] ("amanzi_vis")
-  
+
+  * `"file format`" [string] ("XDMF") Amanzi supports two types of
+    visualization files.  XDMF is the default and preferred method, but does
+    not correctly handle general polyhedra.  Serial, 3D general polyhedral
+    support is supported by the "SILO" option.  This will eventually be
+    extended to parallel, 2/3D support, but this is not yet implemented.
+
   * `"cycles start period stop`" [Array(int)] the first entry is the start cycle, 
     the second is the cycle period, and the third is the stop cycle or -1 in which case 
     there is no stop cycle. A visualization dump shall be written at such cycles that 

@@ -24,7 +24,7 @@ namespace Amanzi
 {
 
 MeshAuditOld:: MeshAuditOld(Teuchos::RCP<AmanziMesh::Mesh> &mesh_, ostream& os_) :
-      mesh(mesh_), comm(*(mesh_->get_comm())), MyPID(mesh_->get_comm()->MyPID()),
+      mesh(mesh_), comm_(*(mesh_->get_comm())), MyPID(mesh_->get_comm()->MyPID()),
       os(os_),
       nnode(mesh_->node_map(true).NumMyElements()),
       nface(mesh_->face_map(true).NumMyElements()),
@@ -320,7 +320,7 @@ void MeshAuditOld::create_test_dependencies()
 // Tests (and auxillary functions) follow.  Tests must be const functions
 // that take no arguments and that return a bool result: true if an error
 // was found, otherwise false.  Tests must be considered collective procedures
-// when in a parallel context, and so return a common collective result.
+// when in a parallel context, and so return a comm_on collective result.
 // This is easily done using the function global_any(bool) which returns true
 // on all processes if the argument is true on any of the processes.
 //
@@ -1237,7 +1237,7 @@ bool MeshAuditOld::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_u
   error = global_any(error);
   if (error) return error;
 
-  if (comm.NumProc() == 1)
+  if (comm_.NumProc() == 1)
   {
 
     // Serial or 1-process MPI
@@ -1283,7 +1283,7 @@ bool MeshAuditOld::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_u
     map_own.RemoteIDList(num_ovl, gids, pids, lids);
     bad_map = false;
     for (int j = 0; j < num_ovl; ++j)
-      if (pids[j] < 0 || pids[j] == comm.MyPID()) bad_map = true;
+      if (pids[j] < 0 || pids[j] == comm_.MyPID()) bad_map = true;
     if (bad_map) {
       os << "ERROR: invalid ghosts in overlap map." << std::endl;
       error = true;
@@ -1622,9 +1622,9 @@ bool MeshAuditOld::check_get_set_ids(AmanziMesh::Entity_kind kind) const
   if (error) return error;
 
   // In parallel, verify that each process returns the exact same result.
-  if (comm.NumProc() > 1) {
+  if (comm_.NumProc() > 1) {
     // Check the number of sets are the same.
-    comm.Broadcast(&nset, 1, 0);
+    comm_.Broadcast(&nset, 1, 0);
     if (nset != mesh->num_sets(kind)) {
       os << "ERROR: inconsistent num_sets() value" << std::endl;
       error = true;
@@ -1637,7 +1637,7 @@ bool MeshAuditOld::check_get_set_ids(AmanziMesh::Entity_kind kind) const
       mesh->get_set_ids(kind, sids.begin(), sids.end());
       int *sids0 = new int[nset];
       for (int j = 0; j < nset; ++j) sids0[j] = sids[j];
-      comm.Broadcast(sids0, nset, 0);
+      comm_.Broadcast(sids0, nset, 0);
 
       // Check the set IDs, using the vector on process 0 as the reference.
       bool bad_data = false;
@@ -1828,7 +1828,7 @@ bool MeshAuditOld::check_used_set(unsigned int sid,
 				  const Epetra_Map &map_own, 
 				  const Epetra_Map &map_use) const
 {
-  if (comm.NumProc() == 1) {
+  if (comm_.NumProc() == 1) {
 
     // In serial, the owned and used sets should be identical.
 
@@ -2126,7 +2126,7 @@ void MeshAuditOld::write_list(const vector<unsigned int> &list, unsigned int max
 bool MeshAuditOld::global_any(bool value) const
 {
   int lval=value, gval;
-  comm.MaxAll(&lval, &gval, 1);
+  comm_.MaxAll(&lval, &gval, 1);
   return gval;
 }
 

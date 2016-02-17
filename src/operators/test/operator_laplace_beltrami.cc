@@ -54,7 +54,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
 
   // create an SIMPLE mesh framework
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Flat");
-  GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();
@@ -174,7 +174,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
 
   // create an SIMPLE mesh framework
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Flat");
-  GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();
@@ -294,7 +294,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
 
   // create an SIMPLE mesh framework
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Flat");
-  GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();

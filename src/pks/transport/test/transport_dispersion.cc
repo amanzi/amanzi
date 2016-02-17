@@ -58,7 +58,8 @@ TEST(DISPERSION) {
 
   /* create an MSTK mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
 
   FrameworkPreference pref;
   pref.clear();
@@ -163,7 +164,8 @@ TEST(DIFFUSION) {
 
   /* create an MSTK mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, comm);
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
 
   FrameworkPreference pref;
   pref.clear();
@@ -266,7 +268,8 @@ TEST(GAS_DIFFUSION) {
 
   /* create an MSTK mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, comm);
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
 
   FrameworkPreference pref;
   pref.clear();

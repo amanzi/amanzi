@@ -57,7 +57,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
   // create an MSTK mesh framework
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();

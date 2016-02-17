@@ -970,7 +970,7 @@ void OperatorDiffusionMFD::CreateMassMatrices_()
   WhetStone::MFD3D_Diffusion mfd(mesh_);
   mfd.ModifyStabilityScalingFactor(factor_);
 
-  bool surface_mesh = (mesh_->cell_dimension() != mesh_->space_dimension());
+  bool surface_mesh = (mesh_->manifold_dimension() != mesh_->space_dimension());
   AmanziMesh::Entity_ID_List faces;
 
   Wff_cells_.resize(ncells_owned);

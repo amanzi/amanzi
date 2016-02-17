@@ -223,8 +223,8 @@ void Chemistry_PK::InitializeField_(std::string fieldname, double default_val)
 void Chemistry_PK::InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist)
 {
   mineral_names_.clear();
-  if (plist->isParameter("Minerals")) {
-    mineral_names_ = plist->get<Teuchos::Array<std::string> >("Minerals").toVector();
+  if (plist->isParameter("minerals")) {
+    mineral_names_ = plist->get<Teuchos::Array<std::string> >("minerals").toVector();
   }
 
   number_minerals_ = mineral_names_.size();

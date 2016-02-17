@@ -1,39 +1,34 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/**
- * @file   RegionFactory.hh
- * @author Rao V Garimella
- * @date 
- * 
- * @brief  Factory to create specific types of regions
- * 
- * 
- */
+/*
+  Nonmember function for creating regions.
 
-#ifndef _RegionFactory_hh_
-#define _RegionFactory_hh_
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Rao Garimella
+           Ethan Coon (ecoon@lanl.gov)
+*/
+
+#ifndef AMANZI_REGION_FACTORY_HH_
+#define AMANZI_REGION_FACTORY_HH_
 
 #include "Epetra_MpiComm.h"
-#include <Teuchos_ParameterList.hpp>
+#include "Teuchos_ParameterList.hpp"
 
-
-#include "Region.hh"
-
-#include "dbc.hh"
-#include "errors.hh"
-#include "VerboseObject.hh"
+#include "GeometryDefs.hh"
 
 namespace Amanzi {
 namespace AmanziGeometry {
 
-
-// Factory for creating specific types of regions based on the shape
-// specification. We cannot use a constructor because the we have to 
-// create derived region classes based on the shape parameter
-RegionPtr RegionFactory(const std::string reg_name, const unsigned int reg_id,
-                        const Teuchos::ParameterList& reg_spec,
-                        const int space_dimension,
-                        const Epetra_MpiComm *comm,
-                        const VerboseObject *verbobj=NULL);
+class Region;
+  
+Teuchos::RCP<Region>
+createRegion(const std::string reg_name,
+             Set_ID reg_id,
+             Teuchos::ParameterList& reg_spec,
+             const Epetra_MpiComm *comm);
 
 } // namespace AmanziGeometry
 } // namespace Amanzi

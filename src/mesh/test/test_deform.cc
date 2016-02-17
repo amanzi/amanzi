@@ -27,9 +27,9 @@
 TEST(MESH_DEFORM2D)
 {
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
+  Epetra_MpiComm comm_(MPI_COMM_WORLD);
+  const int nproc(comm_.NumProc());
+  const int me(comm_.MyPID());
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh
@@ -68,7 +68,7 @@ TEST(MESH_DEFORM2D)
 
     // Create the mesh
 
-    Amanzi::AmanziMesh::MeshFactory factory(&comm);
+    Amanzi::AmanziMesh::MeshFactory factory(&comm_);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
     int ierr = 0;
@@ -90,7 +90,7 @@ TEST(MESH_DEFORM2D)
       ierr++;
     }
 
-    comm.SumAll(&ierr, &aerr, 1);
+    comm_.SumAll(&ierr, &aerr, 1);
 
     CHECK_EQUAL(aerr,0);
 
@@ -144,9 +144,9 @@ TEST(MESH_DEFORM2D)
 TEST(MESH_DEFORM3D)
 {
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
+  Epetra_MpiComm comm_(MPI_COMM_WORLD);
+  const int nproc(comm_.NumProc());
+  const int me(comm_.MyPID());
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh
@@ -178,7 +178,7 @@ TEST(MESH_DEFORM3D)
 
     // Create the mesh
 
-    Amanzi::AmanziMesh::MeshFactory factory(&comm);
+    Amanzi::AmanziMesh::MeshFactory factory(&comm_);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
     int ierr = 0;
@@ -200,7 +200,7 @@ TEST(MESH_DEFORM3D)
       ierr++;
     }
 
-    comm.SumAll(&ierr, &aerr, 1);
+    comm_.SumAll(&ierr, &aerr, 1);
 
     CHECK_EQUAL(aerr,0);
 

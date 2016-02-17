@@ -23,18 +23,18 @@ demoMeshLogicalSegmentRegularManual()
 {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
+  Epetra_MpiComm comm_(MPI_COMM_WORLD);
+  const int nproc(comm_.NumProc());
+  const int me(comm_.MyPID());
 
-  GeometricModelPtr gm = new GeometricModel(3);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
   
   // Create the mesh:
-  std::vector<double> cell_volumes;
-  cell_volumes.push_back(.25);
-  cell_volumes.push_back(.25);
-  cell_volumes.push_back(.25);
-  cell_volumes.push_back(.25);
+  std::vector<double> cell_volumes_;
+  cell_volumes_.push_back(.25);
+  cell_volumes_.push_back(.25);
+  cell_volumes_.push_back(.25);
+  cell_volumes_.push_back(.25);
 
   std::vector<std::vector<int> > face_cell_list(5);
   face_cell_list[0].push_back(0);
@@ -62,7 +62,7 @@ demoMeshLogicalSegmentRegularManual()
   face_area_normals.resize(5,normal);
 
   Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical> mesh =
-    Teuchos::rcp(new MeshLogical(&comm,cell_volumes,
+    Teuchos::rcp(new MeshLogical(&comm_,cell_volumes_,
 				 face_cell_list,
 				 face_cell_lengths,
 				 face_area_normals));
@@ -77,10 +77,10 @@ demoMeshLogicalSegmentRegular() {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  Epetra_MpiComm comm_(MPI_COMM_WORLD);
 
-  GeometricModelPtr gm = new GeometricModel(3);
-  MeshLogicalFactory fac(&comm, gm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
+  MeshLogicalFactory fac(&comm_, gm);
 
   Entity_ID_List cells, faces;
   fac.AddSegment(4, 1.0, false, 1.0, MeshLogicalFactory::TIP_BOUNDARY, MeshLogicalFactory::TIP_BOUNDARY, "myregion", &cells, &faces,NULL);
@@ -95,17 +95,17 @@ demoMeshLogicalSegmentIrregularManual() {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
+  Epetra_MpiComm comm_(MPI_COMM_WORLD);
+  const int nproc(comm_.NumProc());
+  const int me(comm_.MyPID());
 
-  GeometricModelPtr gm = new GeometricModel(3);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
   
   // Create the mesh:
-  std::vector<double> cell_volumes;
-  cell_volumes.push_back(2);
-  cell_volumes.push_back(3);
-  cell_volumes.push_back(4);
+  std::vector<double> cell_volumes_;
+  cell_volumes_.push_back(2);
+  cell_volumes_.push_back(3);
+  cell_volumes_.push_back(4);
 
   std::vector<std::vector<int> > face_cell_list;
   face_cell_list.resize(4);
@@ -133,7 +133,7 @@ demoMeshLogicalSegmentIrregularManual() {
   face_area_normals.resize(4,normal);
 
   Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical> mesh =
-    Teuchos::rcp(new MeshLogical(&comm,cell_volumes,
+    Teuchos::rcp(new MeshLogical(&comm_,cell_volumes_,
 				 face_cell_list,
 				 face_cell_lengths,
 				 face_area_normals));
@@ -147,17 +147,17 @@ demoMeshLogicalYManual() {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
+  Epetra_MpiComm comm_(MPI_COMM_WORLD);
+  const int nproc(comm_.NumProc());
+  const int me(comm_.MyPID());
 
-  GeometricModelPtr gm = new GeometricModel(3);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
 
   std::vector<double> cell_vols;
   std::vector<std::vector<Entity_ID> > face_cells;
   std::vector<std::vector<double> > face_cell_lengths;
   std::vector<Point> face_normals;
-  std::vector<Point> cell_centroids;
+  std::vector<Point> cell_centroids_;
 
   double half_cell_coarse = 0.25;
   double half_cell_fine = 0.25*std::sqrt(2);
@@ -169,36 +169,36 @@ demoMeshLogicalYManual() {
   // coarse root
   Point stem_root_intersection(0., 0., 0.);
   Point down(0.,0.,-half_cell_coarse);
-  cell_centroids.push_back(stem_root_intersection + down); // c0
-  cell_centroids.push_back(cell_centroids[0] + 2*down); // c1
-  cell_centroids.push_back(cell_centroids[1] + 2*down); // c2
+  cell_centroids_.push_back(stem_root_intersection + down); // c0
+  cell_centroids_.push_back(cell_centroids_[0] + 2*down); // c1
+  cell_centroids_.push_back(cell_centroids_[1] + 2*down); // c2
 
   // branch cell
-  Point branch = cell_centroids[cell_centroids.size()-1];
+  Point branch = cell_centroids_[cell_centroids_.size()-1];
   
   // fine root 1
   Point root_normal1(1., 0., -1.);
   root_normal1 *= half_cell_fine / norm(root_normal1);
-  cell_centroids.push_back(branch + 2*root_normal1); // c3
-  cell_centroids.push_back(cell_centroids[3] + 2*root_normal1); // c4
+  cell_centroids_.push_back(branch + 2*root_normal1); // c3
+  cell_centroids_.push_back(cell_centroids_[3] + 2*root_normal1); // c4
 
   // fine root 2
   Point root_normal2(-1., 0., -1.);
   root_normal2 *= half_cell_fine / norm(root_normal2);
-  cell_centroids.push_back(branch + 2*root_normal2); // c5
-  cell_centroids.push_back(cell_centroids[5] + 2*root_normal2); // c6
+  cell_centroids_.push_back(branch + 2*root_normal2); // c5
+  cell_centroids_.push_back(cell_centroids_[5] + 2*root_normal2); // c6
 
   // fine root 3
   Point root_normal3(0., 1., -1.);
   root_normal3 *= half_cell_fine / norm(root_normal3);
-  cell_centroids.push_back(branch + 2*root_normal3); // c7
-  cell_centroids.push_back(cell_centroids[7] + 2*root_normal3); // c8
+  cell_centroids_.push_back(branch + 2*root_normal3); // c7
+  cell_centroids_.push_back(cell_centroids_[7] + 2*root_normal3); // c8
 
   // fine root 4
   Point root_normal4(0., -1., -1.);
   root_normal4 *= half_cell_fine / norm(root_normal4);
-  cell_centroids.push_back(branch + 2*root_normal4); // c9
-  cell_centroids.push_back(cell_centroids[9] + 2*root_normal4); // c10
+  cell_centroids_.push_back(branch + 2*root_normal4); // c9
+  cell_centroids_.push_back(cell_centroids_[9] + 2*root_normal4); // c10
 
 
   // cell volumes
@@ -295,23 +295,23 @@ demoMeshLogicalYManual() {
 
   // make the mesh  
   Teuchos::RCP<MeshLogical> m =
-    Teuchos::rcp(new MeshLogical(&comm, cell_vols, face_cells, face_cell_lengths, face_normals, &cell_centroids));
+    Teuchos::rcp(new MeshLogical(&comm_, cell_vols, face_cells, face_cell_lengths, face_normals, &cell_centroids_));
 
   // make sets
   // -- coarse roots
   Entity_ID_List coarse_cells;
   for (int lcv=0; lcv!=3; ++lcv) coarse_cells.push_back(lcv);
-  AmanziGeometry::EnumeratedSetRegionPtr coarse_rgn =
-    new AmanziGeometry::EnumeratedSetRegion("coarse_root", gm->Num_Regions(),
-			    "CELL", coarse_cells);
-  gm->Add_Region(coarse_rgn);
+  Teuchos::RCP<AmanziGeometry::RegionEnumerated> coarse_rgn =
+      Teuchos::rcp(new AmanziGeometry::RegionEnumerated("coarse_root",
+              gm->RegionSize(), "CELL", coarse_cells));
+  gm->AddRegion(coarse_rgn);
 
   Entity_ID_List fine_cells;
   for (int lcv=3; lcv!=11; ++lcv) fine_cells.push_back(lcv);
-  AmanziGeometry::EnumeratedSetRegionPtr fine_rgn =
-    new AmanziGeometry::EnumeratedSetRegion("fine_root", gm->Num_Regions(),
-			    "CELL", fine_cells);
-  gm->Add_Region(fine_rgn);
+  Teuchos::RCP<AmanziGeometry::RegionEnumerated> fine_rgn =
+      Teuchos::rcp(new AmanziGeometry::RegionEnumerated("fine_root",
+              gm->RegionSize(), "CELL", fine_cells));
+  gm->AddRegion(fine_rgn);
 
   m->set_geometric_model(gm);
   return m;
@@ -324,13 +324,13 @@ demoMeshLogicalY() {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
+  Epetra_MpiComm comm_(MPI_COMM_WORLD);
+  const int nproc(comm_.NumProc());
+  const int me(comm_.MyPID());
 
-  GeometricModelPtr gm = new GeometricModel(3);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
 
-  MeshLogicalFactory fac(&comm, gm);
+  MeshLogicalFactory fac(&comm_, gm);
 
 
   double half_cell_coarse = 0.25;
@@ -414,12 +414,12 @@ demoMeshLogicalYFromXML() {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
+  Epetra_MpiComm comm_(MPI_COMM_WORLD);
+  const int nproc(comm_.NumProc());
+  const int me(comm_.MyPID());
 
-  GeometricModelPtr gm = new GeometricModel(3);
-  MeshLogicalFactory fac(&comm, gm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
+  MeshLogicalFactory fac(&comm_, gm);
 
   // load the xml
   std::string xmlFileName = "test/demo_mesh_Y.xml";
@@ -455,9 +455,9 @@ demoMeshLogicalYEmbedded() {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
+  Epetra_MpiComm comm_(MPI_COMM_WORLD);
+  const int nproc(comm_.NumProc());
+  const int me(comm_.MyPID());
   
   Teuchos::RCP<MeshLogical> m_log = demoMeshLogicalYManual();
 
@@ -467,19 +467,19 @@ demoMeshLogicalYEmbedded() {
 
   Teuchos::RCP<Mesh_MSTK> m_bg =
     Teuchos::rcp(new Mesh_MSTK(X0[0], X0[1],X0[2], X1[0], X1[1], X1[2],
-			       nx, ny, nz, &comm,
-			       m_log->geometric_model(), NULL, true, false));
+			       nx, ny, nz, &comm_,
+            m_log->geometric_model(), Teuchos::null, true, false));
 
 
   // make the new connections, 1 per logical cell
   int ncells_log = m_log->num_entities(CELL, USED);
-  std::vector<Entity_ID_List> face_cell_ids(ncells_log);
+  std::vector<Entity_ID_List> face_cell_ids_(ncells_log);
 
   RegularMeshCellFromCoordFunctor cellID(X0, X1, nx, ny, nz);
   for (int c=0; c!=ncells_log; ++c) {
     int bg_c = cellID(m_log->cell_centroid(c));
-    face_cell_ids[c].push_back(c);
-    face_cell_ids[c].push_back(bg_c);
+    face_cell_ids_[c].push_back(c);
+    face_cell_ids_[c].push_back(bg_c);
   }
 
   // cross-sectional areas and lengths given by root class
@@ -505,8 +505,8 @@ demoMeshLogicalYEmbedded() {
   }
 
   Teuchos::RCP<MeshEmbeddedLogical> m =
-    Teuchos::rcp(new MeshEmbeddedLogical(&comm, m_bg, m_log,
-  					 face_cell_ids, face_cell_lengths,
+    Teuchos::rcp(new MeshEmbeddedLogical(&comm_, m_bg, m_log,
+  					 face_cell_ids_, face_cell_lengths,
   					 face_area_normals));
   return m;
 }

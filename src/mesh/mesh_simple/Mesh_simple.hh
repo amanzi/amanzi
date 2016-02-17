@@ -37,35 +37,31 @@ public:
   
   Mesh_simple (double x0, double y0, double z0,
 	       double x1, double y1, double z1,
-	       int nx, int ny, int nz, const Epetra_MpiComm *communicator,
-	       const AmanziGeometry::GeometricModelPtr gm = 
-               (AmanziGeometry::GeometricModelPtr) NULL,
-               const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+	       int nx, int ny, int nz, const Epetra_MpiComm *comm_unicator,
+               const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+               const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
 	       const bool request_faces = true,
 	       const bool request_edges = false);
   
   Mesh_simple (double x0, double y0,
 	       double x1, double y1,
-	       int nx, int ny, const Epetra_MpiComm *communicator,
-	       const AmanziGeometry::GeometricModelPtr &gm = 
-               (AmanziGeometry::GeometricModelPtr) NULL,
-               const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+	       int nx, int ny, const Epetra_MpiComm *comm_unicator,
+	       const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+               const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
 	       const bool request_faces = true,
 	       const bool request_edges = false);
   
   Mesh_simple ( const GenerationSpec& gspec,
-		const Epetra_MpiComm *communicator,
-                const AmanziGeometry::GeometricModelPtr &gm = 
-                (AmanziGeometry::GeometricModelPtr) NULL,
-                const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+		const Epetra_MpiComm *comm_unicator,
+                const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+                const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
 		const bool request_faces = true,
 		const bool request_edges = false);
 
   Mesh_simple ( Teuchos::ParameterList &parameter_list,
-		const Epetra_MpiComm *communicator,
-		const AmanziGeometry::GeometricModelPtr &gm = 
-                (AmanziGeometry::GeometricModelPtr) NULL,
-                const VerboseObject *verbosity_obj = (VerboseObject *) NULL,
+		const Epetra_MpiComm *comm_unicator,
+                const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+                const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
 		const bool request_faces = true,
 		const bool request_edges = false);
   
@@ -289,7 +285,7 @@ public:
 			     const Parallel_type ptype) const;
 
 
-  unsigned int get_set_size (const Set_Name setname, 
+  unsigned int get_set_size (const std::string setname, 
 			     const Entity_kind kind,
 			     const Parallel_type ptype) const;
 
@@ -306,7 +302,7 @@ public:
 			 const Parallel_type ptype, 
 			 Entity_ID_List *entids) const; 
 
-  void get_set_entities (const Set_Name setname, 
+  void get_set_entities (const std::string setname, 
 			 const Entity_kind kind, 
 			 const Parallel_type ptype, 
 			 Entity_ID_List *entids) const; 
@@ -338,8 +334,8 @@ public:
   // move_vertical = true, nodes will be allowed to move only in the
   // vertical direction (right now arbitrary node movement is not allowed)
   
-  int deform(const std::vector<double>& target_cell_volumes_in, 
-             const std::vector<double>& min_cell_volumes_in, 
+  int deform(const std::vector<double>& target_cell_volumes__in, 
+             const std::vector<double>& min_cell_volumes__in, 
              const Entity_ID_List& fixed_nodes,
              const bool move_vertical);  
 
@@ -385,10 +381,9 @@ private:
   mutable std::vector<std::vector<Entity_ID> > side_sets_;
   mutable std::vector<std::vector<Entity_ID> > element_blocks_;
   mutable std::vector<std::vector<Entity_ID> > node_sets_;
-  mutable std::vector<AmanziGeometry::RegionPtr> element_block_regions_;
-  mutable std::vector<AmanziGeometry::RegionPtr> side_set_regions_;
-  mutable std::vector<AmanziGeometry::RegionPtr> node_set_regions_;
-
+  mutable std::vector<Teuchos::RCP<const AmanziGeometry::Region> > element_block_regions_;
+  mutable std::vector<Teuchos::RCP<const AmanziGeometry::Region> > side_set_regions_;
+  mutable std::vector<Teuchos::RCP<const AmanziGeometry::Region> > node_set_regions_;
 
   // Get faces of a cell.
 
@@ -408,21 +403,21 @@ private:
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
 
-  void cell_get_faces_and_dirs_internal (const Entity_ID cellid,
+  void cell_get_faces_and_dirs_internal_ (const Entity_ID cellid,
                                 Entity_ID_List *faceids,
                                 std::vector<int> *face_dirs,
                                 const bool ordered=false) const;
 
   // Cells connected to a face
     
-  void face_get_cells_internal (const Entity_ID faceid, 
+  void face_get_cells_internal_ (const Entity_ID faceid, 
                                 const Parallel_type ptype,
                                 std::vector<Entity_ID> *cellids) const;
 
 
   // Edges of a cell
 
-  void cell_get_edges_internal (const Entity_ID cellid,
+  void cell_get_edges_internal_ (const Entity_ID cellid,
                                 Entity_ID_List *edgeids) const 
   { 
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
@@ -431,7 +426,7 @@ private:
 
   // Edges and directions of a 2D cell
 
-  void cell_2D_get_edges_and_dirs_internal (const Entity_ID cellid,
+  void cell_2D_get_edges_and_dirs_internal_ (const Entity_ID cellid,
                                             Entity_ID_List *edgeids,
                                             std::vector<int> *edgedirs) const 
   { 
@@ -441,7 +436,7 @@ private:
 
   // Edges and edge directions of a face
 
-  void face_get_edges_and_dirs_internal (const Entity_ID cellid,
+  void face_get_edges_and_dirs_internal_ (const Entity_ID cellid,
 					 Entity_ID_List *edgeids,
 					 std::vector<int> *edgedirs,
 					 bool ordered=true) const

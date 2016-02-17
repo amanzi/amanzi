@@ -45,8 +45,8 @@ using namespace std;
   Teuchos::ParameterList reg_params = driver_parameter_list.sublist("Regions");
    
   int spdim = 2;
-  Amanzi::AmanziGeometry::GeometricModelPtr 
-      geom_model_ptr( new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm) );
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model_ptr =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm));
 
   Amanzi::AmanziGeometry::Domain *simdomain_ptr = new Amanzi::AmanziGeometry::Domain(spdim);
 

@@ -43,7 +43,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   int idx, id;
   MVertex_ptr mv;
   const int ndim = space_dimension();
-  const int celldim = cell_dimension();
+  const int celldim = manifold_dimension();
   double eps = 1.0e-06;
   double damping_factor = 0.25;
   static const double macheps = 2.2e-16;
@@ -99,23 +99,23 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   // copy the target and min volumes for cells from the input
  
   int nc = num_entities(CELL,USED);
-  target_cell_volumes = new double[nc];     // class variable
-  min_cell_volumes    = new double[nc];     // class variable
+  target_cell_volumes_ = new double[nc];     // class variable
+  min_cell_volumes_    = new double[nc];     // class variable
  
   std::copy(&(target_cell_volumes_in[0]), &(target_cell_volumes_in[nc]), 
-            target_cell_volumes);
+            target_cell_volumes_);
   std::copy(&(min_cell_volumes_in[0]), &(min_cell_volumes_in[nc]), 
-            min_cell_volumes);
+            min_cell_volumes_);
 
 
   // if the target cell volume is the same as the current volume, then 
   // assume that the cell volume is unconstrained down to the min volume
 
   for (int i = 0; i < nc; ++i) {
-    if (target_cell_volumes[i] > 0.0) {
+    if (target_cell_volumes_[i] > 0.0) {
       double vol = cell_volume(i);
-      if (vol == target_cell_volumes[i])
-        target_cell_volumes[i] = 0.0;
+      if (vol == target_cell_volumes_[i])
+        target_cell_volumes_[i] = 0.0;
     }
   }
 
@@ -135,7 +135,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
       MEntity_ptr ent = List_Entry(vcells,i);
       int id = MEnt_ID(ent); 
 
-      if (target_cell_volumes[id-1] > 0.0) {
+      if (target_cell_volumes_[id-1] > 0.0) {
         // At least one cell connected to node/vertex needs to meet
         // a target vol. Mark the node/vertex as one that must move
         List_Add(driven_verts,mv);
@@ -368,7 +368,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
     // Update ghost vertex values for parallel runs
 
     if (get_comm()->NumProc() > 1)
-      MESH_UpdateVertexCoords(mesh,mpicomm);
+      MESH_UpdateVertexCoords(mesh,mpicomm_);
 
     double meshsize_rms = sqrt(meshsizesqr_sum/nv);
     eps = 1.0e-06*meshsize_rms;
@@ -385,8 +385,8 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   //    std::cerr << "INCREASE MAXITER_GLOBAL....!!" << std::endl;
     
   delete [] meshxyz;
-  delete [] target_cell_volumes;
-  delete [] min_cell_volumes;
+  delete [] target_cell_volumes_;
+  delete [] min_cell_volumes_;
 
   List_Unmark(fixed_verts,fixedmk);
   List_Delete(fixed_verts);  
@@ -402,9 +402,9 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
   // recompute all geometric quantities
   
-  compute_cell_geometric_quantities();
-  if (faces_initialized) compute_face_geometric_quantities();
-  if (edges_initialized) compute_edge_geometric_quantities();
+  compute_cell_geometric_quantities_();
+  if (faces_initialized) compute_face_geometric_quantities_();
+  if (edges_initialized) compute_edge_geometric_quantities_();
 
   return 1;
 }
@@ -796,7 +796,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
       // this face contributes to the objective function,
       // only if a +ve target area was requested for this face,
 
-      double target_area = target_cell_volumes[fid-1];
+      double target_area = target_cell_volumes_[fid-1];
       if (target_area > 0) {
         double area_diff = (face_area-target_area)/target_area;
         volfunc += area_diff*area_diff;
@@ -805,7 +805,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
       // every face always contributes a barrier function to
       // keep it from going below a certain area
 
-      double min_area = min_cell_volumes[fid-1];
+      double min_area = min_cell_volumes_[fid-1];
       double min_area_diff = (face_area-min_area)/min_area;
 
       double bfunc = 1/exp(c1*min_area_diff);
@@ -998,7 +998,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
       // about driving the volume towards the target_volume, so make
       // this function value 0
 
-      double target_volume = target_cell_volumes[rid-1];
+      double target_volume = target_cell_volumes_[rid-1];
       double volume_diff = (target_volume > 0) ? 
           (region_volume-target_volume)/target_volume : 0.0;
       volfunc += volume_diff*volume_diff;
@@ -1006,7 +1006,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
       // every region always contributes a barrier function to
       // keep it from going below a certain region
 
-      double min_volume = min_cell_volumes[rid-1];
+      double min_volume = min_cell_volumes_[rid-1];
       double min_volume_diff = (region_volume-min_volume)/min_volume;
 
       double bfunc = 1/exp(c1*min_volume_diff);
@@ -1470,14 +1470,14 @@ int Mesh_MSTK::hessian_inverse(const double H[3][3], double iH[3][3]) const {
 //       // is some small parameter chosen relative to cell size or problem size
 
 //       int fid = MF_ID(vf);
-//       double target_area = target_cell_volumes[fid-1];
+//       double target_area = target_cell_volumes_[fid-1];
 //       double weight = target_weights[fid-1];
 //       if (target_area > 0.0) {
 //         double area_diff = (area-target_area)/target_area;
 //         volfunc += weight*area_diff*area_diff;
 //       }
 
-//       double min_area = min_cell_volumes[fid-1];
+//       double min_area = min_cell_volumes_[fid-1];
 //       double min_area_diff = (area-min_area)/min_area;
 //       barrierfunc += 1/(1+exp(10*min_area_diff));
 //     }
@@ -1554,14 +1554,14 @@ int Mesh_MSTK::hessian_inverse(const double H[3][3], double iH[3][3]) const {
 //       // is some small parameter chosen relative to cell size or problem size
 
 //       int rid = MR_ID(vr);
-//       double target_volume = target_cell_volumes[rid-1];
+//       double target_volume = target_cell_volumes_[rid-1];
 //       double weight = target_weights[rid-1];
 //       if (target_volume > 0.0) {
 //         double volume_diff = (volume-target_volume)/target_volume;
 //         volfunc += weight*volume_diff*volume_diff;
 //       }
 
-//       double min_volume = min_cell_volumes[rid-1];
+//       double min_volume = min_cell_volumes_[rid-1];
 //       double min_volume_diff = (volume-min_volume)/min_volume;
 //       barrierfunc += 1/(1+exp(10*min_volume_diff));
 //     }

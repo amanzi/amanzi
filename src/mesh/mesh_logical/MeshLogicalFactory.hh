@@ -25,9 +25,9 @@ class MeshLogicalFactory {
     TIP_BRANCH // tip branches from a junction.  add neither cell nor face.
   };
   
-  MeshLogicalFactory(const Epetra_MpiComm* incomm,
-		     AmanziGeometry::GeometricModelPtr& gm) :
-    comm_(incomm),
+  MeshLogicalFactory(const Epetra_MpiComm* incomm_,
+                     const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm) :
+    comm_(incomm_),
     gm_(gm),
     centroids_good_(true)
   {}
@@ -104,7 +104,7 @@ class MeshLogicalFactory {
   bool centroids_good_;
 
   const Epetra_MpiComm* comm_;
-  AmanziGeometry::GeometricModelPtr gm_;
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm_;
   
 
 };

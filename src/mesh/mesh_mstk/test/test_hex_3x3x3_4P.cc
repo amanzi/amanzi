@@ -17,7 +17,7 @@ TEST(MSTK_HEX_3x3x3_4P)
   std::vector<Amanzi::AmanziMesh::Entity_ID> faces(6), nodes(8);
   std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 
-  Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
+  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
 			      
 
   int rank, size;
@@ -44,7 +44,7 @@ TEST(MSTK_HEX_3x3x3_4P)
 
   // Load a single hex from the hex1.exo file
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm.get(),3));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm_.get(),3));
 
 
   std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(6);

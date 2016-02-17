@@ -34,7 +34,8 @@ TEST(FIELD_INITIALIZATION) {
 
   // create geometric model
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-  AmanziGeometry::GeometricModelPtr gm = new AmanziGeometry::GeometricModel(3, region_list, &comm);
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, &comm));
 
   // create a mesh
   AmanziMesh::FrameworkPreference pref;

@@ -92,7 +92,8 @@ SUITE(VISUALIZATION) {
     plist = xmlreader.getParameters();
 
     Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-    Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, region_list, &comm);
+    Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, &comm));
 
     Amanzi::AmanziMesh::FrameworkPreference pref;
     pref.clear();

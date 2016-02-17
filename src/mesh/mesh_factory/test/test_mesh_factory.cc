@@ -67,10 +67,10 @@ SUITE (MeshFramework)
   // exception should be thrown, while setting preferences
   TEST (PreferenceThrow)
   {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    bool parallel(comm.NumProc() > 1);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
+    bool parallel(comm_.NumProc() > 1);
     
-    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm_);
     Amanzi::AmanziMesh::FrameworkPreference pref(mesh_factory.preference());
 
     // The Simple framework should always be there
@@ -82,12 +82,12 @@ SUITE (MeshFramework)
     
   TEST (Generate)
   {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    bool parallel(comm.NumProc() > 1);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
+    bool parallel(comm_.NumProc() > 1);
     
     Amanzi::AmanziMesh::FrameworkPreference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm_);
 
     double x0( 0.0), y0( 0.0), z0( 0.0);
     double x1(10.0), y1(10.0), z1(10.0);
@@ -153,12 +153,12 @@ SUITE (MeshFramework)
 
   TEST (Generate2D)
   {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    bool parallel(comm.NumProc() > 1);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
+    bool parallel(comm_.NumProc() > 1);
     
     Amanzi::AmanziMesh::FrameworkPreference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm_);
 
     double x0( 0.0), y0( 0.0);
     double x1(10.0), y1(10.0);
@@ -216,12 +216,12 @@ SUITE (MeshFramework)
 
   TEST (ParameterGenerate3)
   {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    bool parallel(comm.NumProc() > 1);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
+    bool parallel(comm_.NumProc() > 1);
     
     Amanzi::AmanziMesh::FrameworkPreference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm_);
 
     // make a parameter list to try out
     
@@ -277,12 +277,12 @@ SUITE (MeshFramework)
 
   TEST (ParameterGenerate2)
   {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    bool parallel(comm.NumProc() > 1);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
+    bool parallel(comm_.NumProc() > 1);
     
     Amanzi::AmanziMesh::FrameworkPreference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm_);
 
     // make a parameter list to try out
     
@@ -337,12 +337,12 @@ SUITE (MeshFramework)
 
   // The Simple framework cannot read anything, even if it exists
   TEST (ReadSimple) {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    bool parallel(comm.NumProc() > 1);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
+    bool parallel(comm_.NumProc() > 1);
     
     Amanzi::AmanziMesh::FrameworkPreference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm_);
 
     pref.clear(); pref.push_back(Amanzi::AmanziMesh::Simple);
     mesh_factory.preference(pref);
@@ -360,11 +360,11 @@ SUITE (MeshFramework)
   // framework
   TEST (ReadMOABHDF5)
   {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    bool parallel(comm.NumProc() > 1);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
+    bool parallel(comm_.NumProc() > 1);
 
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm_);
 
     if (Amanzi::AmanziMesh::framework_available(Amanzi::AmanziMesh::MOAB)) {
       mesh = mesh_factory(MOAB_TEST_FILE);
@@ -387,11 +387,11 @@ SUITE (MeshFramework)
 
   TEST (ReadExodus) 
   {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    bool parallel(comm.NumProc() > 1);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
+    bool parallel(comm_.NumProc() > 1);
 
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm_);
 
     bool available =
         (Amanzi::AmanziMesh::framework_available(Amanzi::AmanziMesh::STKMESH) && !parallel) ||
@@ -407,11 +407,11 @@ SUITE (MeshFramework)
   }
   TEST (ReadNemesis) 
   {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    bool parallel(comm.NumProc() > 1);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
+    bool parallel(comm_.NumProc() > 1);
     
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm_);
     if ((Amanzi::AmanziMesh::framework_available(Amanzi::AmanziMesh::STKMESH) ||
          Amanzi::AmanziMesh::framework_available(Amanzi::AmanziMesh::MSTK)) && 
         parallel) {
@@ -426,12 +426,12 @@ SUITE (MeshFramework)
 
   TEST (Extract3)
   {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    bool parallel(comm.NumProc() > 1);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
+    bool parallel(comm_.NumProc() > 1);
     
     Amanzi::AmanziMesh::FrameworkPreference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh, newmesh;
-    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm_);
 
     double x0( 0.0), y0( 0.0), z0( 0.0);
     double x1(10.0), y1(10.0), z1(10.0);
@@ -455,7 +455,8 @@ SUITE (MeshFramework)
     top_surface_def.set< Teuchos::Array<double> >("Location",loc1);
     top_surface_def.set< Teuchos::Array<double> >("Direction",dir1);
 
-    Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3,reg_spec,&comm);
+    Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, &comm_));
 
     std::string topsurfname("Top Surface");
     std::vector<std::string> setnames;

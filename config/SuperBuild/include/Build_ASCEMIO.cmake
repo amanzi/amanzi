@@ -45,6 +45,23 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ascemio-install-step.cmake.in
                @ONLY)
 set(ASCEMIO_INSTALL_COMMAND ${CMAKE_COMMAND} -P ${ASCEMIO_cmake_install})
 
+# --- Set the name of the patch
+set(ASCEMIO_patch_file ascemio-2.2-sprintf.patch)
+# --- Configure the bash patch script
+set(ASCEMIO_sh_patch ${ASCEMIO_prefix_dir}/ascemio-patch-step.sh)
+message(STATUS "ASCEMIO_sh_patch: ${ASCEMIO_sh_patch}")
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ascemio-patch-step.sh.in
+               ${ASCEMIO_sh_patch}
+               @ONLY)
+# --- Configure the CMake patch step
+set(ASCEMIO_cmake_patch ${ASCEMIO_prefix_dir}/ascemio-patch-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ascemio-patch-step.cmake.in
+               ${ASCEMIO_cmake_patch}
+               @ONLY)
+# --- Set the patch command
+set(ASCEMIO_PATCH_COMMAND ${CMAKE_COMMAND} -P ${ASCEMIO_cmake_patch})     
+
+
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${ASCEMIO_BUILD_TARGET}
                     DEPENDS   ${ASCEMIO_PACKAGE_DEPENDS}             # Package dependency target
@@ -54,6 +71,8 @@ ExternalProject_Add(${ASCEMIO_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}                 # Download directory
                     URL          ${ASCEMIO_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${ASCEMIO_MD5_SUM}                  # md5sum of the archive file
+                    # -- Patch 
+                    PATCH_COMMAND ${ASCEMIO_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR       ${ASCEMIO_source_dir}           # Source directory
                     CONFIGURE_COMMAND ""

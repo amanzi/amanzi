@@ -93,10 +93,10 @@ namespace AmanziMesh {
    * @return format type identifier (::UnknownFormat if something goes wrong)
    */
   Format
-  file_format(const Epetra_Comm& comm, const char *name) 
+  file_format(const Epetra_Comm& comm_, const char *name) 
   {
-    const int np(comm.NumProc());
-    const int me(comm.MyPID());
+    const int np(comm_.NumProc());
+    const int me(comm_.MyPID());
     Format result(UnknownFormat);
 
     // take a guess at the format using the file name
@@ -112,7 +112,7 @@ namespace AmanziMesh {
       std::string fmt = 
         boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
       fname = boost::str(boost::format(fmt) % 
-                         name % comm.NumProc() % comm.MyPID());
+                         name % comm_.NumProc() % comm_.MyPID());
     } else {
       result = UnknownFormat;
     }

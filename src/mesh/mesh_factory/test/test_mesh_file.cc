@@ -34,14 +34,14 @@ SUITE (MeshFileType)
 {
   TEST (ExodusII)
   {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
 
     // EXODUS_TEST_FILE is macro defined by cmake
     std::string fname(EXODUS_TEST_FILE); 
 
     Amanzi::AmanziMesh::Format f;
     try {
-      f = Amanzi::AmanziMesh::file_format(comm, fname);
+      f = Amanzi::AmanziMesh::file_format(comm_, fname);
     } catch (const Amanzi::AmanziMesh::Message& e) {
       throw e;
     }
@@ -51,38 +51,38 @@ SUITE (MeshFileType)
 
   TEST (Nemesis) 
   {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
 
     // NEMESIS_TEST_FILE is macro defined by cmake
     std::string fname(NEMESIS_TEST_FILE); 
     
     Amanzi::AmanziMesh::Format f;
-    if (comm.NumProc() > 1 && comm.NumProc() <= 4) {
+    if (comm_.NumProc() > 1 && comm_.NumProc() <= 4) {
       int ierr[1];
       ierr[0] = 0;
       try {
-        f = Amanzi::AmanziMesh::file_format(comm, fname);
+        f = Amanzi::AmanziMesh::file_format(comm_, fname);
       } catch (const Amanzi::AmanziMesh::Message& e) {
         throw e;
       }
 
       CHECK(f == Amanzi::AmanziMesh::Nemesis);
     } else {
-      CHECK_THROW(f = Amanzi::AmanziMesh::file_format(comm, fname), 
+      CHECK_THROW(f = Amanzi::AmanziMesh::file_format(comm_, fname), 
                   Amanzi::AmanziMesh::FileMessage);
     }  
   }
    
   TEST (MOABHD5) 
   {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
 
     // MOAB_TEST_FILE is macro defined by cmake
     std::string fname(MOAB_TEST_FILE); 
 
     Amanzi::AmanziMesh::Format f;
     try {
-      f = Amanzi::AmanziMesh::file_format(comm, fname);
+      f = Amanzi::AmanziMesh::file_format(comm_, fname);
     } catch (const Amanzi::AmanziMesh::Message& e) {
       throw e;
     }
@@ -92,25 +92,25 @@ SUITE (MeshFileType)
 
   TEST (PathFailure) 
   {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
 
     std::string fname("/some/bogus/path.exo"); 
 
     Amanzi::AmanziMesh::Format f;
 
-    CHECK_THROW(Amanzi::AmanziMesh::file_format(comm, fname), 
+    CHECK_THROW(Amanzi::AmanziMesh::file_format(comm_, fname), 
                 Amanzi::AmanziMesh::FileMessage);
   }    
 
   TEST (MagicNumberFailure)
   {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
 
     std::string fname(BOGUS_TEST_FILE); 
 
     Amanzi::AmanziMesh::Format f;
 
-    CHECK_THROW(Amanzi::AmanziMesh::file_format(comm, fname), 
+    CHECK_THROW(Amanzi::AmanziMesh::file_format(comm_, fname), 
                 Amanzi::AmanziMesh::FileMessage);
   }
     

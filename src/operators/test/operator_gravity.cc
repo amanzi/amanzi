@@ -62,7 +62,7 @@ void RunTestGravity(std::string op_list_name) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 3, 3, NULL);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 3, 3, Teuchos::null);
 
   // create diffusion coefficient
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);

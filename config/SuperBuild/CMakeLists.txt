@@ -136,9 +136,6 @@ option(ENABLE_MOAB_Mesh "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
 
 # Amanzi output formats
 option(ENABLE_Silo "Enable the Silo output specification for visualization" FALSE)
-message("Silo? ${ENABLE_Silo}")
-message(STATUS "CXXFLAGS: ${CMAKE_CXX_FLAGS}")
-
 
 # OpenMP Search - ENABLED ONLY WHEN STRUCTURED IS ON BECAUSE
 # WE SUSPECT THAT IT MAY NOT BE WORKING WELL WITH HYPRE ON
@@ -747,7 +744,6 @@ if ( BUILD_Amanzi )
 	${XERCES_BUILD_TARGET}
 	${UnitTest_BUILD_TARGET}
 	${Boost_BUILD_TARGET}
-	${CCSE_BUILD_TARGET}
 	${Trilinos_BUILD_TARGET})
 
   if ( ENABLE_Unstructured )

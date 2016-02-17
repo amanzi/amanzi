@@ -8,10 +8,7 @@
 
 #include <iostream>
 
-
-#include "../Region.hh"
-#include "../LabeledSetRegion.hh"
-#include "../RegionFactory.hh"
+#include "mpi.h"
 
 #include "Epetra_MpiComm.h"
 #include "Teuchos_ParameterXMLFileReader.hpp"
@@ -19,8 +16,10 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 
-#include "mpi.h"
-
+#include "../Point.hh"
+#include "../Region.hh"
+#include "../RegionLabeledSet.hh"
+#include "../RegionFactory.hh"
 
 TEST(LABELEDSET_REGION)
 {
@@ -43,21 +42,16 @@ TEST(LABELEDSET_REGION)
     Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
 
     // Create a Labeled Set Region
-  
-    Amanzi::AmanziGeometry::RegionPtr reg = 
-      Amanzi::AmanziGeometry::RegionFactory(reg_spec.name(i), reg_id, reg_params, 3, &ecomm);
+    Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg = 
+      Amanzi::AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
+					   reg_params, &ecomm);
   
     // See if we retrieved the name and id correctly
-  
     CHECK_EQUAL(reg->name(),reg_name);
     CHECK_EQUAL(reg->id(),reg_id);
-  
 
     // Get the entity type and mesh file name directly from the XML
-  
-
     CHECK_EQUAL(reg_spec.isSublist(reg_spec.name(i)),true);
-
   
     Teuchos::ParameterList::ConstIterator j = reg_params.begin();
     Teuchos::ParameterList labset_params = reg_params.sublist(reg_params.name(j));
@@ -65,20 +59,19 @@ TEST(LABELEDSET_REGION)
 
     
     // Make sure that the region type is a Labeled Set
-
     CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::LABELEDSET);
   
     // See if the min-max of the region were correctly retrieved
-  
     Amanzi::AmanziGeometry::Point p, n;
-      Amanzi::AmanziGeometry::LabeledSetRegionPtr lsreg =
-      dynamic_cast<Amanzi::AmanziGeometry::LabeledSetRegionPtr> (reg);
+    Teuchos::RCP<const Amanzi::AmanziGeometry::RegionLabeledSet> lsreg =
+      Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionLabeledSet>(reg);
 
     // Did we get the entity string right?
-
     CHECK_EQUAL(in_entity_str,lsreg->entity_str());
-
   }
+
+
+  // cannot test functionality without a mesh
 }  
 
 

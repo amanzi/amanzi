@@ -12,9 +12,9 @@ TEST(FACE_ADJ_CELLS) {
   using namespace std;
 
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm *comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  Epetra_SerialComm *comm_ = new Epetra_SerialComm();
 #endif
 
   const unsigned int exp_ncell = 27, exp_nface = 108, exp_nnode = 64;
@@ -52,7 +52,7 @@ TEST(FACE_ADJ_CELLS) {
 				   { 23, 25, 17, -1, -1, -1}};
 
 
-  Amanzi::AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3, comm); 
+  Amanzi::AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3, comm_); 
 
   CHECK_EQUAL(exp_ncell,Mm.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED));
   CHECK_EQUAL(exp_nface,Mm.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED));

@@ -25,7 +25,7 @@ namespace AmanziMesh {
 // GenerationSpec:: constructors / destructor
 // -------------------------------------------------------------
 GenerationSpec::GenerationSpec(const Teuchos::ParameterList& parameter_list)
-  : domain_(NULL), nx_(0), ny_(0), nz_(0), blocks_()
+    : domain_(Teuchos::null), nx_(0), ny_(0), nz_(0), blocks_()
 {
   parse_(parameter_list);
 }
@@ -62,7 +62,7 @@ GenerationSpec::parse_(const Teuchos::ParameterList& parameter_list)
   p1.set(&(high_corner[0]));
 
   
-  domain_ = new AmanziGeometry::BoxRegion("GenDomain", 0, p0, p1);
+  domain_ = Teuchos::rcp(new AmanziGeometry::RegionBox("GenDomain", 0, p0, p1));
 
 }
 

@@ -61,7 +61,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
   // create a logical mesh
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshLogicalFactory fac(&comm, gm);
 

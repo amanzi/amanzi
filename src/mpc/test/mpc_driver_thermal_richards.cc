@@ -2,6 +2,7 @@
 #include "stdlib.h"
 #include "math.h"
 
+// TPLs
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
@@ -9,6 +10,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
 
+// Amanzi
 #include "CycleDriver.hh"
 #include "energy_tcm_registration.hh"
 #include "energy_iem_registration.hh"
@@ -39,7 +41,8 @@ using namespace Amanzi::AmanziGeometry;
   
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, &comm));
 
   // create mesh
   FrameworkPreference pref;
