@@ -20,7 +20,7 @@ set(Boost_projects "system,filesystem,program_options,regex,graph")
 # --- Define the configure command
 
 # I believe these should always get set?
-set(Boost_bjam_args "cxxflags=${Amanzi_COMMON_CXXFLAGS}")
+set(Boost_bjam_args "cxxflags=\"${Amanzi_COMMON_CXXFLAGS}\"")
 
 
 # Determine toolset type

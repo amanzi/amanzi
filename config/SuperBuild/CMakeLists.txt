@@ -3,21 +3,15 @@
 #
 # Amanzi SuperBuild
 #       Amanzi TPL Build Targets
-cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 3.2)
 
-if ("${CMAKE_PATCH_VERSION}" GREATER 3)
-  set(ADJUST_POLICY "True")
-endif()
+# cmake_policy(SET CMP0017 NEW)
+# cmake_policy(SET CMP0022 NEW)
+# cmake_policy(SET CMP0037 OLD)
+# cmake_policy(SET CMP0048 OLD)
 
-if (${ADJUST_POLICY})
-  cmake_policy(SET CMP0017 NEW)
-endif()
-
-if (CMAKE_VERSION VERSION_LESS "3.1")
-  set (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
-else ()
-  set(CMAKE_CXX_STANDARD 11)
-endif ()
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CX_STANDARD_REQUIRED ON)
 
 # ############################################################################ #
 # Compiler Definition Warnings
@@ -139,6 +133,12 @@ option(ENABLE_Structured   "Enable Amanzi structured mesh capability" TRUE)
 option(ENABLE_STK_Mesh "Enable the Unstructured STK Mesh Toolkit" TRUE)
 option(ENABLE_MSTK_Mesh "Enable the Unstructured MSTK Mesh Toolkit" TRUE)
 option(ENABLE_MOAB_Mesh "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
+
+# Amanzi output formats
+option(ENABLE_Silo "Enable the Silo output specification for visualization" FALSE)
+message("Silo? ${ENABLE_Silo}")
+message(STATUS "CXXFLAGS: ${CMAKE_CXX_FLAGS}")
+
 
 # OpenMP Search - ENABLED ONLY WHEN STRUCTURED IS ON BECAUSE
 # WE SUSPECT THAT IT MAY NOT BE WORKING WELL WITH HYPRE ON
@@ -607,6 +607,15 @@ if ( ENABLE_MSTK_Mesh )
             -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
 endif()
 
+# Silo
+if (ENABLE_Silo)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_Silo.cmake)
+  append_set(Amanzi_TPL_CMAKE_ARGS
+    -DENABLE_Silo:BOOL=${ENABLE_Silo}
+    -DSilo_INCLUDE_DIR:PATH=${Silo_INCLUDE_DIR}
+    -DSilo_LIBRARY_DIR:PATH=${Silo_LIBRARY_DIR})
+endif()
+
 # Alquimia and PFlotran
 option(ENABLE_ALQUIMIA "Build the Alquimia chemistry interface" FALSE)
 option(ENABLE_PFLOTRAN "Build the PFlotran chemistry package" FALSE)
@@ -728,39 +737,44 @@ if ( BUILD_Amanzi )
   endif()
   message(STATUS "Will build Amanzi source located in ${Amanzi_SOURCE_DIR}")
 
-
   # Now add amanzi to the build stack
   include(ExternalProject)
 
   set(Amanzi_DEPENDS 
-                  ${ExodusII_BUILD_TARGET}
-		          ${HDF5_BUILD_TARGET}
-		          ${ASCEMIO_BUILD_TARGET}
-			  ${XERCES_BUILD_TARGET}
-		          ${UnitTest_BUILD_TARGET}
-		          ${Boost_BUILD_TARGET}
-		          ${MSTK_BUILD_TARGET}
-		          ${MOAB_BUILD_TARGET}
-		          ${CCSE_BUILD_TARGET}
-		          ${Trilinos_BUILD_TARGET})
+    ${ExodusII_BUILD_TARGET}
+	${HDF5_BUILD_TARGET}
+	${ASCEMIO_BUILD_TARGET}
+	${XERCES_BUILD_TARGET}
+	${UnitTest_BUILD_TARGET}
+	${Boost_BUILD_TARGET}
+	${CCSE_BUILD_TARGET}
+	${Trilinos_BUILD_TARGET})
 
+  if ( ENABLE_Unstructured )
+    list(APPEND Amanzi_DEPENDS ${MSTK_BUILD_TARGET} ${MOAB_BUILD_TARGET})
+  endif()
+  
   if ( ENABLE_Structured )
     list(APPEND Amanzi_DEPENDS ${CCSE_BUILD_TARGET})
   endif()  
+
+  if ( ENABLE_Silo )
+    list(APPEND Amanzi_DEPENDS ${Silo_BUILD_TARGET})
+  endif()
+
   ExternalProject_Add(amanzi
-                      DEPENDS ${Amanzi_DEPENDS}
-		      PREFIX ${CMAKE_BINARY_DIR}/Amanzi
-                      SOURCE_DIR ${Amanzi_SOURCE_DIR}
-                      DOWNLOAD_COMMAND ""
-                      UPDATE_COMMAND ""
-                      CMAKE_ARGS
-		                ${Amanzi_CMAKE_ARGS}
-			        ${Amanzi_CMAKE_C_COMPILER_ARGS}
-                                -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
-			       	${Amanzi_CMAKE_CXX_COMPILER_ARGS}
-                                -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE}
-			        ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
-                                -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
-                       INSTALL_DIR ${Amanzi_INSTALL_PREFIX} )
+    DEPENDS ${Amanzi_DEPENDS}
+	PREFIX ${CMAKE_BINARY_DIR}/Amanzi
+    SOURCE_DIR ${Amanzi_SOURCE_DIR}
+    DOWNLOAD_COMMAND ""
+    UPDATE_COMMAND ""
+    CMAKE_ARGS	${Amanzi_CMAKE_ARGS}
+                ${Amanzi_CMAKE_C_COMPILER_ARGS}
+                -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
+			    ${Amanzi_CMAKE_CXX_COMPILER_ARGS}
+                -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE}
+			    ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
+                -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
+    INSTALL_DIR ${Amanzi_INSTALL_PREFIX} )
 endif()        
                
