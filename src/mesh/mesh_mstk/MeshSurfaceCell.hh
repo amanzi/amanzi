@@ -92,7 +92,7 @@ class MeshSurfaceCell : public Mesh {
         if ((*r)->space_dimension() == 3) {
           sets_[(*r)->id()] = (*r)->inside(inmesh.face_centroid(parent_face_));
 
-        } else if ((*r)->space_dimension() == 3 && flatten) {
+        } else if ((*r)->space_dimension() == 2 && flatten) {
           sets_[(*r)->id()] = (*r)->inside(cell_centroid(0));
         }
       }      

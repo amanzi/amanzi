@@ -48,9 +48,15 @@ TEST(SURFACE_COLUMN_MESH_3D)
   p0[2] = 3.999;
   p1[0] = 4.; p1[1] = 4.; p1[2] = 5.;
   Teuchos::RCP<Amanzi::AmanziGeometry::RegionBox> r0 =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::RegionBox("surface", 0, p0, p1));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::RegionBox("surface", -1, p0, p1));
   gm->AddRegion(r0);
 
+  Amanzi::AmanziGeometry::Point p2(2), p3(2);
+  p3[0] = 4.; p3[1] = 4.;
+  Teuchos::RCP<Amanzi::AmanziGeometry::RegionBox> r1 =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::RegionBox("surface_domain", -1, p2, p3));
+  gm->AddRegion(r1);
+  
   // Create the mesh
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
       Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,
@@ -83,6 +89,12 @@ TEST(SURFACE_COLUMN_MESH_3D)
   CHECK_EQUAL(1, cells_in_surf.size());
   CHECK_EQUAL(0, cells_in_surf[0]);
 
+  Amanzi::AmanziMesh::Entity_ID_List cells_in_surf_2D;
+  col_surf.get_set_entities("surface_domain", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED, &cells_in_surf_2D);
+  CHECK_EQUAL(1, cells_in_surf.size());
+  CHECK_EQUAL(0, cells_in_surf[0]);
+
+  
   CHECK_CLOSE(1.0, col_surf.cell_volume(0), 1.e-9);
   CHECK_CLOSE(1.0, col_surf.face_area(3), 1.e-9);
   
@@ -99,9 +111,15 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3));
 
-  Teuchos::RCP<Amanzi::AmanziGeometry::RegionLabeledSet> r1 =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::RegionLabeledSet("surface", 0, "FACE",
+  Teuchos::RCP<Amanzi::AmanziGeometry::RegionLabeledSet> r0 =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::RegionLabeledSet("surface", -1, "FACE",
               "test/slab-0.05-5x4x25.exo", "Exodus II", "1"));
+  gm->AddRegion(r0);
+
+  Amanzi::AmanziGeometry::Point p2(2), p3(2);
+  p3[0] = 4.; p3[1] = 4.;
+  Teuchos::RCP<Amanzi::AmanziGeometry::RegionBox> r1 =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::RegionBox("surface_domain", -1, p2, p3));
   gm->AddRegion(r1);
 
   // Create the mesh
@@ -126,6 +144,11 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
   CHECK_EQUAL(1, cells_in_surf.size());
   CHECK_EQUAL(0, cells_in_surf[0]);
 
+  Amanzi::AmanziMesh::Entity_ID_List cells_in_surf_2D;
+  col_surf.get_set_entities("surface_domain", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED, &cells_in_surf_2D);
+  CHECK_EQUAL(1, cells_in_surf.size());
+  CHECK_EQUAL(0, cells_in_surf[0]);
+  
   CHECK_CLOSE(6400.0, col_surf.cell_volume(0), 1.e-9);
   CHECK_CLOSE(80.0, col_surf.face_area(3), 1.e-9);
   
