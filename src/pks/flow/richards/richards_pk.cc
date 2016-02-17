@@ -823,7 +823,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   if (coupled_to_surface_via_flux_) {
     // Face is Neumann with value of surface residual
     Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
-    const Epetra_MultiVector& flux = *S->GetFieldData("surface_subsurface_flux")
+    const Epetra_MultiVector& flux = *S->GetFieldData(ss_flux_key_)
         ->ViewComponent("cell",false);
 
     unsigned int ncells_surface = flux.MyLength();
@@ -1006,16 +1006,10 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
 
   Teuchos::RCP<const CompositeVector> rel_perm = 
     S_next_->GetFieldData(uw_coef_key_);
-  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    *vo_->os() << "  consistent face rel perm = " << (*rel_perm->ViewComponent("face",false))[0][7] << std::endl;
-  }
-
   S_next_->GetFieldEvaluator(mass_dens_key_)
       ->HasFieldChanged(S_next_.ptr(), name_);
   Teuchos::RCP<const CompositeVector> rho =
       S_next_->GetFieldData(mass_dens_key_);
-  Teuchos::RCP<const Epetra_Vector> gvec =
-      S_next_->GetConstantVectorData("gravity");
 
   // Update the preconditioner with darcy and gravity fluxes
   matrix_->Init();
@@ -1025,9 +1019,9 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
   matrix_diff_->ApplyBCs(true, true);
 
   // derive the consistent faces, involves a solve
-  db_->WriteVector(" p_consistent face Richards guess:", u.ptr(), true);
+  db_->WriteVector(" p_cf guess:", u.ptr(), true);
   matrix_diff_->UpdateConsistentFaces(*u);
-  db_->WriteVector(" p_consistent face Richards:", u.ptr(), true);
+  db_->WriteVector(" p_cf soln:", u.ptr(), true);
 }
 
 // -----------------------------------------------------------------------------
