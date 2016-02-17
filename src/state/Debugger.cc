@@ -177,7 +177,7 @@ Debugger::WriteCellInfo(bool include_faces) {
           for (unsigned int n=0; n!=fnums0.size(); ++n) {
             AmanziMesh::Entity_ID f_gid = mesh_->face_map(true).GID(fnums0[n]);
             AmanziGeometry::Point f_centroid = mesh_->face_centroid(fnums0[n]);
-            *dcvo_[i]->os() << "  neighbor face(" << f_gid << ") centroid = " << f_centroid << std::endl;
+            *dcvo_[i]->os() << "  neighbor face(" << f_gid << ") [dir=" << dirs[n] << "] centroid = " << f_centroid << std::endl;
           }
         }
       }
