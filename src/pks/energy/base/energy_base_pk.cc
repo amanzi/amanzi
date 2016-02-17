@@ -206,6 +206,34 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   preconditioner_diff_->SetTensorCoefficient(Teuchos::null);
   preconditioner_ = preconditioner_diff_->global_operator();
   
+  //    If using approximate Jacobian for the preconditioner, we also
+  //    need derivative information.  This means upwinding the
+  //    derivative.
+  jacobian_ = mfd_pc_plist.get<std::string>("newton correction", "none") != "none";
+  if (jacobian_) {
+    if (preconditioner_->RangeMap().HasComponent("face")) {
+      // MFD -- upwind required
+      dconductivity_key_ = getDerivKey(conductivity_key_, key_);
+      duw_conductivity_key_ = getDerivKey(uw_conductivity_key_, key_);
+        
+      S->RequireField(duw_conductivity_key_, name_)
+        ->SetMesh(mesh_)->SetGhosted()
+        ->SetComponent("face", AmanziMesh::FACE, 1);
+
+      // upwinding_deriv_ = Teuchos::rcp(new Operators::UpwindArithmeticMean(name_,
+      //                                 dconductivity_key_, duw_conductivity_key_));
+      upwinding_deriv_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
+                                      dconductivity_key_, duw_conductivity_key_,
+                                      energy_flux_key_, 1.e-8));
+
+    } else {
+      // FV -- no upwinding
+      dconductivity_key_ = getDerivKey(conductivity_key_, key_);
+      duw_conductivity_key_ = std::string();
+    }
+  }
+  
+
   // -- accumulation terms
   Teuchos::ParameterList& acc_pc_plist = plist_->sublist("Accumulation PC");
   acc_pc_plist.set("entity kind", "cell");
@@ -302,10 +330,6 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   S->RequireField(adv_energy_flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("face", AmanziMesh::FACE, 1);
 
-  // Controls on PCs, predictors
-  // -- constraint on max delta T, which kicks us out of bad iterates faster?
-  dT_max_ = plist_->get<double>("maximum temperature change", 10.);
-
   // -- simply limit to close to 0
   modify_predictor_for_freezing_ =
       plist_->get<bool>("modify predictor for freezing", false);
@@ -347,7 +371,11 @@ void EnergyBase::initialize(const Teuchos::Ptr<State>& S) {
   S->GetField(adv_energy_flux_key_, name_)->set_initialized();
   S->GetFieldData(uw_conductivity_key_, name_)->PutScalar(0.0);
   S->GetField(uw_conductivity_key_, name_)->set_initialized();
-
+  if (!duw_conductivity_key_.empty()) {
+    S->GetFieldData(duw_conductivity_key_, name_)->PutScalar(0.);
+    S->GetField(duw_conductivity_key_, name_)->set_initialized();
+  }
+  
   // potentially initialize mass flux
   if (!flux_exists_) {
     S->GetField(flux_key_, name_)->Initialize(plist_->sublist(flux_key_));
@@ -417,6 +445,32 @@ bool EnergyBase::UpdateConductivityData_(const Teuchos::Ptr<State>& S) {
         S->GetFieldData(uw_conductivity_key_, name_);
     if (uw_cond->HasComponent("face"))
       uw_cond->ScatterMasterToGhosted("face");
+  }
+  return update;
+}
+
+
+bool EnergyBase::UpdateConductivityDerivativeData_(const Teuchos::Ptr<State>& S) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "  Updating conductivity derivatives? ";
+
+  bool update = S->GetFieldEvaluator(conductivity_key_)
+    ->HasFieldDerivativeChanged(S, name_, key_);
+
+  if (update) {
+    if (!duw_conductivity_key_.empty()) {
+      upwinding_deriv_->Update(S);
+
+      Teuchos::RCP<CompositeVector> duw_cond =
+        S->GetFieldData(duw_conductivity_key_, name_);
+      if (duw_cond->HasComponent("face"))
+        duw_cond->ScatterMasterToGhosted("face");
+    } else {
+      Teuchos::RCP<CompositeVector> dcond =
+        S->GetFieldData(dconductivity_key_, name_);
+      dcond->ScatterMasterToGhosted("cell");
+    }
   }
   return update;
 }
@@ -750,7 +804,7 @@ EnergyBase::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
         }
       }
     }
-    mesh_->get_comm()->MaxAll(&my_limited, &n_limited, 1);
+    mesh_->get_comm()->SumAll(&my_limited, &n_limited, 1);
   }
 
   if (n_limited > 0) {
