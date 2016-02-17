@@ -42,18 +42,12 @@ endif()
 # --------------------------------------------------------------------------- #
 #  Define the compilers
 # --------------------------------------------------------------------------- #
-
 set(CMAKE_C_COMPILER ${Amanzi_C_COMPILER})
 set(CMAKE_CXX_COMPILER ${Amanzi_CXX_COMPILER})
 set(CMAKE_Fortran_COMPILER ${Amanzi_Fortran_COMPILER})
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${Amanzi_C_COMPILER_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Amanzi_CXX_COMPILER_FLAGS}")
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${Amanzi_Fortran_COMPILER_FLAGS}")
-
-if (${PROFILE_FLAGS})
-  set(CMAKE_BUILD_TYPE Release)
-  add_definitions("-g -O3")
-endif()
 
 if (CMAKE_BUILD_TYPE MATCHES Debug)
   add_definitions(-DENABLE_DBC)
@@ -116,6 +110,15 @@ endif()
 if ( Amanzi_ENABLE_STRUCTURED )
   add_definitions(-DENABLE_Structured)
 endif()
+
+#silo
+if ( Amanzi_TPL_Silo_ENABLED )
+  set(ENABLE_Silo ON)
+  add_definitions(-DENABLE_Silo)
+endif()
+
+message(STATUS "Silo Enabled?: ${Amanzi_TPL_Silo_ENABLED}")
+message(STATUS "Silo Enabled?: ${ENABLE_Silo}")
 
 # We make every effort in the Amanzi build system to include TPL libraries 
 # in the target definitions. Avoid using Amanzi_TPL_*_LIBRARY or

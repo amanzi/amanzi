@@ -34,7 +34,7 @@ Effectively stolen from Amanzi, with few modifications.
 
 #include "MeshAudit.hh"
 #include "MeshFactory.hh"
-#include "ColumnMesh.hh"
+#include "MeshColumn.hh"
 #include "Domain.hh"
 #include "GeometricModel.hh"
 #include "coordinator.hh"
@@ -87,8 +87,8 @@ int AmanziUnstructuredGridSimulationDriver::Run(
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList reg_params = params_copy.sublist("Regions");
 
-  Amanzi::AmanziGeometry::GeometricModelPtr
-    geom_model_ptr( new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm) );
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model_ptr =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm));
 
   // Add the geometric model to the domain
   simdomain_ptr->Add_Geometric_Model(geom_model_ptr);
@@ -260,7 +260,7 @@ int AmanziUnstructuredGridSimulationDriver::Run(
       Exceptions::amanzi_throw(message);
     }
 
-    if (mesh->cell_dimension() == 3) {
+    if (mesh->manifold_dimension() == 3) {
       surface3D_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::FACE,false,false);
       surface_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::FACE,true,false);
     } else {
@@ -324,7 +324,7 @@ int AmanziUnstructuredGridSimulationDriver::Run(
     int nc = mesh->num_columns();
     col_meshes.resize(nc, Teuchos::null);
     for (int c=0; c!=nc; ++c) {
-      col_meshes[c] = Teuchos::rcp(new Amanzi::AmanziMesh::ColumnMesh(*mesh, c));
+      col_meshes[c] = Teuchos::rcp(new Amanzi::AmanziMesh::MeshColumn(*mesh, c));
     }
   }  
   
@@ -361,11 +361,6 @@ int AmanziUnstructuredGridSimulationDriver::Run(
   delete comm;
   delete simdomain_ptr;
 
-  // this is poor design
-  for (int i=0; i!=geom_model_ptr->Num_Regions(); ++i) {
-    delete geom_model_ptr->Region_i(i);
-  }
-  delete geom_model_ptr;
   return 0;
 }
 
