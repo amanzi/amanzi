@@ -3027,7 +3027,6 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       // Will handle it later in the routine
     }
     else {
-      const VerboseObject *verbobj = Mesh::verbosity_obj();
       Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
       if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
