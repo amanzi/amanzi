@@ -48,10 +48,7 @@ RegionLabeledSet::RegionLabeledSet(const std::string& name,
     file_(file),
     format_(format),
     label_(label)
-{
-  // Region dimension is set arbitrarily as 3 since the set of
-  // entities in the mesh will determine the dimension
-}
+{}
 
 
 // -------------------------------------------------------------

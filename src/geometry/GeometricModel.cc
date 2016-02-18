@@ -41,7 +41,7 @@ GeometricModel::GeometricModel(unsigned int dim,
 
       // Create the region
       Teuchos::RCP<Region> reg =
-          createRegion(region_name, RegionSize(), reg_spec, comm);
+          createRegion(region_name, -1, reg_spec, comm);
 
       // Add it to the geometric model
       AddRegion(reg);
@@ -72,6 +72,7 @@ GeometricModel::AddRegion(const Teuchos::RCP<Region>& reg)
     Exceptions::amanzi_throw(mesg);
   }
 
+  reg->set_id(RegionSize());
   regions_.push_back(reg);
   regions_name_[reg->name()] = reg;
   regions_id_[reg->id()] = reg;
