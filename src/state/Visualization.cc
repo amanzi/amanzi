@@ -144,10 +144,6 @@ void Visualization::CreateFiles() {
 
   std::string file_format = plist_.get<std::string>("file format", "XDMF");
 
-#ifdef ENABLE_Silo  
-  std::cout << "silo defined and val = " << ENABLE_Silo << std::endl;
-#endif
-  
   if (file_format == "XDMF" || file_format == "xdmf") {
     visualization_output_ = Teuchos::rcp(new OutputXDMF(plist_, mesh_, true, dynamic_mesh_));
 #if ENABLE_Silo    
