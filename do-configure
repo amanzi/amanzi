@@ -1,0 +1,22 @@
+export CXX=`which mpiCC`
+export CC=`which mpicc`
+
+#export AMANZI_DIR=/home/scratch/dasvyat/Amanzi/build/amanzi_ats/
+#export ATS_DIR=/home/scratch/dasvyat/ats-build/
+
+AMANZI_DIR=/home/scratch/dasvyat/Amanzi/build/amanzi_ats
+ATS_DIR=/home/scratch/dasvyat/ats-build/
+
+ats_build=build-debug
+rm -rf $ats_build
+mkdir $ats_build
+cd $ats_build
+
+AMANZI_INSTALL_DIR=${AMANZI_DIR}
+
+cmake \
+    -D CMAKE_BUILD_TYPE:STRING=Release \
+    -D Amanzi_DIR=${AMANZI_INSTALL_DIR}/lib  \
+    -D ATS_INSTALL_DIR=${ATS_DIR}/build-debug \
+    -D CMAKE_INSTALL_PREFIX=/home/scratch/dasvyat/ats-build/new \
+    ..
