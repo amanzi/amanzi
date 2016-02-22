@@ -46,20 +46,6 @@ class MPCPermafrost4 : public MPCSubsurface {
                        Teuchos::RCP<TreeVector> du);
 
  protected:
-  // void
-  // UpdateConsistentFaceCorrectionWater_(const Teuchos::Ptr<const TreeVector>& r,
-  //   			       const Teuchos::Ptr<const TreeVector>& u,
-  //   			       const Teuchos::Ptr<TreeVector>& du);
-
-
-  int
-  ModifyCorrection_FrozenSurface_(double h, Teuchos::RCP<const TreeVector> res,
-          Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
-  
-  // void
-  // IteratateFlow_(double h, const Teuchos::RCP<TreeVector>& u);
-
- protected:
   // sub PKs
   Teuchos::RCP<PKPhysicalBDFBase> domain_flow_pk_;
   Teuchos::RCP<PKPhysicalBDFBase> domain_energy_pk_;

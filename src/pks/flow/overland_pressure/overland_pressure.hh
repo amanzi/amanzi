@@ -134,6 +134,7 @@ protected:
   bool smoothed_ponded_accumulation_;
 
   double p_limit_;
+  double patm_limit_;
 
   // coupling term
   bool coupled_to_subsurface_via_head_;

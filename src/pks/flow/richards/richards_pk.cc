@@ -1133,9 +1133,66 @@ Richards::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
     du->Data()->ViewComponent("boundary_face")->PutScalar(0.);
   }
 
+  // debugging -- remove me! --etc
+  for (CompositeVector::name_iterator comp=du->Data()->begin();
+       comp!=du->Data()->end(); ++comp) {
+    Epetra_MultiVector& du_c = *du->Data()->ViewComponent(*comp,false);
+    double max, l2;
+    du_c.NormInf(&max);
+    du_c.Norm2(&l2);
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "Linf, L2 pressure correction (" << *comp << ") = " << max << ", " << l2 << std::endl;
+    }
+  }
+  
+  // limit by capping corrections when they cross atmospheric pressure
+  // (where pressure derivatives are discontinuous)
   int my_limited = 0;
-  int n_limited = 0;
-  if (p_limit_ > 0.) {
+  int n_limited_spurt = 0;
+  if (patm_limit_ > 0.) {
+    double patm = *S_next_->GetScalarData("atmospheric_pressure");
+    for (CompositeVector::name_iterator comp=du->Data()->begin();
+         comp!=du->Data()->end(); ++comp) {
+      Epetra_MultiVector& du_c = *du->Data()->ViewComponent(*comp,false);
+      const Epetra_MultiVector& u_c = *u->Data()->ViewComponent(*comp,false);
+
+      for (int c=0; c!=du_c.MyLength(); ++c) {
+        if ((u_c[0][c] < patm) &&
+            (u_c[0][c] - du_c[0][c] > patm + patm_limit_)) {
+          du_c[0][c] = u_c[0][c] - (patm + patm_limit_);          
+          my_limited++;
+        } else if ((u_c[0][c] > patm) &&
+                   (u_c[0][c] - du_c[0][c] < patm - patm_limit_)) {
+          du_c[0][c] = u_c[0][c] - (patm - patm_limit_);          
+          my_limited++;
+        }
+      }
+    }
+    mesh_->get_comm()->MaxAll(&my_limited, &n_limited_spurt, 1);
+  }
+
+  if (n_limited_spurt > 0) {
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "  limiting the spurt." << std::endl;
+    }
+  }
+
+  // debugging -- remove me! --etc
+  for (CompositeVector::name_iterator comp=du->Data()->begin();
+       comp!=du->Data()->end(); ++comp) {
+    Epetra_MultiVector& du_c = *du->Data()->ViewComponent(*comp,false);
+    double max, l2;
+    du_c.NormInf(&max);
+    du_c.Norm2(&l2);
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "Linf, L2 pressure correction (" << *comp << ") = " << max << ", " << l2 << std::endl;
+    }
+  }
+  
+  // Limit based on a max pressure change
+  my_limited = 0;
+  int n_limited_change = 0;
+  if (p_limit_ >= 0.) {
     for (CompositeVector::name_iterator comp=du->Data()->begin();
          comp!=du->Data()->end(); ++comp) {
       Epetra_MultiVector& du_c = *du->Data()->ViewComponent(*comp,false);
@@ -1154,13 +1211,30 @@ Richards::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
       }
     }
     
-    mesh_->get_comm()->MaxAll(&my_limited, &n_limited, 1);
+    mesh_->get_comm()->MaxAll(&my_limited, &n_limited_change, 1);
   }
 
-  if (n_limited > 0) {
+  // debugging -- remove me! --etc
+  for (CompositeVector::name_iterator comp=du->Data()->begin();
+       comp!=du->Data()->end(); ++comp) {
+    Epetra_MultiVector& du_c = *du->Data()->ViewComponent(*comp,false);
+    double max, l2;
+    du_c.NormInf(&max);
+    du_c.Norm2(&l2);
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "Linf, L2 pressure correction (" << *comp << ") = " << max << ", " << l2 << std::endl;
+    }
+  }
+  
+  if (n_limited_change > 0) {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << "  limited by pressure." << std::endl;
     }
+  }
+
+  if (n_limited_spurt > 0) {
+    return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED_LAG_BACKTRACKING;
+  } else if (n_limited_change > 0) {
     return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED;
   }
   return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
