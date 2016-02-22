@@ -10,7 +10,7 @@
 // faces.
 // -----------------------------------------------------------------------------
 
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "CompositeVector.hh"
 #include "State.hh"
 #include "upwind_gravity_flux.hh"

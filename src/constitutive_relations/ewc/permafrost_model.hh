@@ -13,7 +13,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "Point.hh"
 
 #include "wrm_partition.hh"
