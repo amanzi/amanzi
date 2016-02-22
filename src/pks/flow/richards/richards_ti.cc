@@ -213,8 +213,6 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   Key dwc_dp_key = getDerivKey(conserved_key_, key_);
   const Epetra_MultiVector& dwc_dp =
       *S_next_->GetFieldData(dwc_dp_key)->ViewComponent("cell",false);
-  const Epetra_MultiVector& pres =
-      *S_next_->GetFieldData(key_)->ViewComponent("cell",false);
 
 #if DEBUG_FLAG
   db_->WriteVector("    dwc_dp", S_next_->GetFieldData(dwc_dp_key).ptr());

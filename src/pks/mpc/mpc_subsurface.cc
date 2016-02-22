@@ -18,6 +18,7 @@ with freezing.
 #include "OperatorAccumulation.hh"
 #include "Operator.hh"
 #include "upwind_total_flux.hh"
+#include "upwind_arithmetic_mean.hh"
 
 #include "permafrost_model.hh"
 #include "richards.hh"
@@ -41,15 +42,28 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   uw_tc_key_ = getKey(domain_name_, "upwind_thermal_conductivity");
   kr_key_ = getKey(domain_name_, "relative_permeability");
   uw_kr_key_ = getKey(domain_name_, "upwind_relative_permeability");
+  enth_key_ = getKey(domain_name_, "enthalpy");
   hkr_key_ = getKey(domain_name_, "enthalpy_times_relative_permeability");
   uw_hkr_key_ = getKey(domain_name_, "upwind_enthalpy_times_relative_permeability");
+  energy_flux_key_ = getKey(domain_name_, "energy_flux");
   mass_flux_key_ = getKey(domain_name_, "mass_flux");
   mass_flux_dir_key_ = getKey(domain_name_, "mass_flux_direction");
   rho_key_ = getKey(domain_name_, "mass_density_liquid");
 
   // supress energy's vision of advective terms as we can do better
   Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
-  plist_->sublist("PKs").sublist(pk_order[1]).set("supress advective terms in preconditioner", true);
+  if (plist_->isParameter("supress Jacobian terms: div hq / dp")) {
+    Errors::Message message("MPC Incorrect input: parameter \"supress Jacobian terms: div hq / dp\" changed to \"supress Jacobian terms: div hq / dp,T\" for clarity.");
+    Exceptions::amanzi_throw(message);
+  }
+  if (!plist_->get<bool>("supress Jacobian terms: div hq / dp,T", false)) {
+    if (plist_->sublist("PKs").sublist(pk_order[1]).isParameter("supress advective terms in preconditioner")
+        && !plist_->sublist("PKs").sublist(pk_order[1]).get("supress advective terms in preconditioner",false)) {
+       Errors::Message msg("MPC Incorrect input: options \"supress Jacobian terms: div hq / dp,T\" and subsurface energy PK option \"supress advective terms in preconditioner\" should not both be false, as these include some of the same Jacobian information.\n Recommended: Enable/suppress the latter.");
+
+       Exceptions::amanzi_throw(msg);
+    }
+  }
   
   // set up the sub-pks
   StrongMPC<PKPhysicalBDFBase>::setup(S);
@@ -99,7 +113,7 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
     locations2[0] = AmanziMesh::CELL;
     names2[0] = "cell";
 
-      // Create the block for derivatives of mass conservation with respect to temperature
+    // Create the block for derivatives of mass conservation with respect to temperature
     // -- derivatives of kr with respect to temperature
     if (!plist_->get<bool>("supress Jacobian terms: d div q / dT", false)) {
       // need to upwind dkr/dT
@@ -107,7 +121,7 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       S->RequireField(dkrdT_key, name_)
           ->SetMesh(mesh_)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
       S->GetField(dkrdT_key,name_)->set_io_vis(false);
-      uw_dkrdT_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
+      upwinding_dkrdT_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
               getDerivKey(kr_key_, temp_key_),
               dkrdT_key, mass_flux_dir_key_, 1.e-8));
 
@@ -131,23 +145,37 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
     // Create the block for derivatives of energy conservation with respect to pressure
     // -- derivatives of thermal conductivity with respect to pressure
     if (!plist_->get<bool>("supress Jacobian terms: d div K grad T / dp", false)) {
-      ASSERT(0); // this is not useful until newton corrections are added for non-upwinded schemes
-      Teuchos::ParameterList divq_plist(plist_->sublist("PKs").sublist(pk_order[1]).sublist("Diffusion PC"));
-      divq_plist.set("newton correction", "approximate jacobian");
-      divq_plist.set("exclude primary terms", true);
+      //      ASSERT(0); // this is not useful until newton corrections are added for non-upwinded schemes
+      // need to upwind dKappa/dp
+      Key uw_dKappa_dp_key = getDerivKey(uw_tc_key_, pres_key_);
+      Key dKappa_dp_key = getDerivKey(tc_key_, pres_key_);
+      S->RequireField(uw_dKappa_dp_key, name_)
+          ->SetMesh(mesh_)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
+      S->GetField(uw_dKappa_dp_key,name_)->set_io_vis(false);
+
+      upwinding_dKappa_dp_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
+                                      dKappa_dp_key, uw_dKappa_dp_key,
+                                      energy_flux_key_, 1.e-8));
+      // upwinding_dKappa_dp_ = Teuchos::rcp(new Operators::UpwindArithmeticMean(name_,
+      //         dKappa_dp_key, uw_dKappa_dp_key));
+
+      // set up the operator
+      Teuchos::ParameterList ddivKgT_dp_plist(plist_->sublist("PKs").sublist(pk_order[1]).sublist("Diffusion PC"));
+      ddivKgT_dp_plist.set("newton correction", "approximate jacobian");
+      ddivKgT_dp_plist.set("exclude primary terms", true);
       Operators::OperatorDiffusionFactory opfactory;
       if (dE_dp_block_ == Teuchos::null) {
-        ddivKgT_dp_ = opfactory.Create(divq_plist, mesh_);
+        ddivKgT_dp_ = opfactory.Create(ddivKgT_dp_plist, mesh_);
         dE_dp_block_ = ddivKgT_dp_->global_operator();
       } else {
-        ddivKgT_dp_ = opfactory.Create(divq_plist, dE_dp_block_);
+        ddivKgT_dp_ = opfactory.Create(ddivKgT_dp_plist, dE_dp_block_);
       }
       ddivKgT_dp_->SetBCs(sub_pks_[0]->BCs(), sub_pks_[1]->BCs());
-
     }
 
+
     // -- derivatives of advection term
-    if (!plist_->get<bool>("supress Jacobian terms: div hq / dp", false)) {
+    if (!plist_->get<bool>("supress Jacobian terms: div hq / dp,T", false)) {
       // derivative with respect to pressure
       Teuchos::ParameterList divhq_dp_plist(plist_->sublist("PKs").sublist(pk_order[0]).sublist("Diffusion PC"));
       divhq_dp_plist.set("newton correction", "approximate jacobian");
@@ -171,7 +199,7 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       Teuchos::ParameterList hkr_eval_list;
       hkr_eval_list.set("evaluator name", hkr_key_);
       Teuchos::Array<std::string> deps(2);
-      deps[0] = "enthalpy"; deps[1] = kr_key_;
+      deps[0] = enth_key_; deps[1] = kr_key_;
       hkr_eval_list.set("evaluator dependencies", deps);
       Teuchos::RCP<FieldEvaluator> hkr_eval =
           Teuchos::rcp(new Relations::MultiplicativeEvaluator(hkr_eval_list));
@@ -212,7 +240,8 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
               hkr_key_, uw_hkr_key_, mass_flux_dir_key_, 1.e-8));
       upwinding_dhkr_dp_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
               getDerivKey(hkr_key_, pres_key_),
-              getDerivKey(uw_hkr_key_, pres_key_),                                                 mass_flux_dir_key_, 1.e-8));
+              getDerivKey(uw_hkr_key_, pres_key_),
+              mass_flux_dir_key_, 1.e-8));
       upwinding_dhkr_dT_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
               getDerivKey(hkr_key_, temp_key_),
               getDerivKey(uw_hkr_key_, temp_key_),
@@ -279,6 +308,10 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
   }
 
   if (ddivKgT_dp_ != Teuchos::null) {
+    Key uw_dKappa_dp_key = getDerivKey(uw_tc_key_, pres_key_);
+    S->GetFieldData(uw_dKappa_dp_key,name_)->PutScalar(1.0);
+    S->GetField(uw_dKappa_dp_key,name_)->set_initialized();
+
     ddivKgT_dp_->SetTensorCoefficient(Teuchos::null);
   }
 
@@ -357,11 +390,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       Teuchos::RCP<CompositeVector> dkrdT_uw =
           S_next_->GetFieldData(dkrdT_key, name_);
       dkrdT_uw->PutScalar(0.);
-      uw_dkrdT_->Update(S_next_.ptr());
-      double min,max;
-      dkrdT_uw->ViewComponent("face",false)->MaxValue(&max);
-      dkrdT_uw->ViewComponent("face",false)->MinValue(&min);
-      //      std::cout << "Min/Max dkrdT = " << min << ", " << max << std::endl;
+      upwinding_dkrdT_->Update(S_next_.ptr());
 
       // form the operator
       Teuchos::RCP<const CompositeVector> kr_uw = S_next_->GetFieldData(uw_kr_key_);
@@ -388,13 +417,21 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     // dE / dp block
     // -- d Kappa / dp
     if (ddivKgT_dp_ != Teuchos::null) {
+      // Update and upwind thermal conductivity
       S_next_->GetFieldEvaluator(tc_key_)
           ->HasFieldDerivativeChanged(S_next_.ptr(), name_, pres_key_);
-      Teuchos::RCP<const CompositeVector> dKdp = S_next_->GetFieldData("dthermal_conductivity_dpressure");
-      Teuchos::RCP<const CompositeVector> Kappa = S_next_->GetFieldData(uw_tc_key_);
-      ddivKgT_dp_->SetScalarCoefficient(Kappa, dKdp);
-      ASSERT(false); // this UpdateMatrices call does not work?
-      ddivKgT_dp_->UpdateMatrices(Teuchos::null, up->SubVector(1)->Data().ptr());
+      Teuchos::RCP<CompositeVector> uw_dKappa_dp =
+        S_next_->GetFieldData(getDerivKey(uw_tc_key_, pres_key_), name_);
+      uw_dKappa_dp->PutScalar(0.);
+      upwinding_dKappa_dp_->Update(S_next_.ptr(), db_.ptr());
+
+      // form the operator
+      Teuchos::RCP<const CompositeVector> uw_Kappa =
+        S_next_->GetFieldData(uw_tc_key_);
+      Teuchos::RCP<const CompositeVector> flux =
+        S_next_->GetFieldData(energy_flux_key_);
+      ddivKgT_dp_->SetScalarCoefficient(uw_Kappa, uw_dKappa_dp);
+      ddivKgT_dp_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
       ddivKgT_dp_->ApplyBCs(false, true);
     }
 
@@ -480,7 +517,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
 
     }
 
-    // -- dWC/dT diagonal term
+    // -- dE/dp diagonal term
     S_next_->GetFieldEvaluator(e_key_)
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, pres_key_);
     Teuchos::RCP<const CompositeVector> dE_dp =

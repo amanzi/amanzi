@@ -14,7 +14,7 @@ energy/water-content space instead of temperature/pressure space.
 
 #include "VerboseObject.hh"
 #include "Debugger.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "State.hh"
 #include "TreeVector.hh"
 #include "pk_default_base.hh"

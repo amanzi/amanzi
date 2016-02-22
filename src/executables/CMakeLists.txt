@@ -124,6 +124,7 @@ set(AMANZI_LIBS
                       amanzi_interface
                       amanzi_output
                       amanzi_mstk_mesh
+		      amanzi_mesh_logical
 )
 
 target_link_libraries(ats ${ATS_LIBS} ${AMANZI_LIBS})

@@ -212,8 +212,7 @@ protected:
 
   // limiters
   double p_limit_;
-  double sl_limit_;
-  double si_limit_;
+  double patm_limit_;
 
   // keys
   Key mass_dens_key_;
