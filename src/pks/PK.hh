@@ -82,8 +82,6 @@ class PK {
                                  const Teuchos::RCP<State>& S){};
 
 
-
-
 };
 
 }  // namespace Amanzi

@@ -42,15 +42,15 @@ class PK_Physical : public virtual PK_Default {
 
   // Default implementations of PK methods.
   // -- transfer operators -- pointer copies only
-  // virtual void state_to_solution(const Teuchos::RCP<State>& S,
-  //                                TreeVector& soln);
-  // virtual void solution_to_state(TreeVector& soln,
-  //                                const Teuchos::RCP<State>& S);
+  virtual void State_to_Solution(const Teuchos::RCP<State>& S,
+                                  TreeVector& soln);
+  virtual void Solution_to_State(TreeVector& soln,
+                                  const Teuchos::RCP<State>& S);
 
   // new virtual set_states() to also get the primary field evaulator.
-  // virtual void set_states(const Teuchos::RCP<const State>& S,
-  //         const Teuchos::RCP<State>& S_inter,
-  //         const Teuchos::RCP<State>& S_next);
+  virtual void set_states(const Teuchos::RCP<const State>& S,
+                          const Teuchos::RCP<State>& S_inter,
+                          const Teuchos::RCP<State>& S_next);
 
 
   // -- setup
@@ -62,8 +62,6 @@ class PK_Physical : public virtual PK_Default {
   // Accessor for debugger, for use by coupling MPCs
   //  Teuchos::RCP<Debugger> debugger() { return db_; }
 
- protected: // methods
-  //  void DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<CompositeVector>& cv);
 
  protected: // data
   // name of domain, associated mesh
