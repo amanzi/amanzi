@@ -92,11 +92,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   // grab the component names
   comp_names_.clear();
   chem_engine_->GetPrimarySpeciesNames(comp_names_);
-  for (int i = 0; i < chem_engine_->NumAqueousComplexes(); ++i) {
-    std::stringstream ss;
-    ss << "secondary_" << i;
-    comp_names_.push_back(ss.str());
-  }
+
   number_aqueous_components_ = comp_names_.size();
   number_free_ion_ = number_aqueous_components_;
   number_total_sorbed_ = number_aqueous_components_;
