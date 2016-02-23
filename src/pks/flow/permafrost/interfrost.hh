@@ -25,7 +25,7 @@
 #include "upwinding.hh"
 #include "boundary_function.hh"
 
-#include "PK.hh"
+#include "pk.hh"
 #include "pk_factory.hh"
 
 #include "permafrost.hh"

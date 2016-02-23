@@ -51,6 +51,7 @@ class PKPhysicalBase : public virtual PKDefaultBase {
   Teuchos::RCP<Debugger> debugger() { return db_; }
 
  protected: // methods
+
   void DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<CompositeVector>& cv);
 
  protected: // data

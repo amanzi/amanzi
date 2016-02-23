@@ -13,7 +13,7 @@
 #include "boundary_function.hh"
 
 #include "PK.hh"
-#include "pk_factory.hh"
+#include "PK_Factory.hh"
 
 #include "richards.hh"
 
@@ -31,7 +31,7 @@ public:
   virtual ~RichardsSteadyState() {}
 
 protected:
-  virtual void setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // ConstantTemperature is a BDFFnBase
   // computes the non-linear functional g = g(t,u,udot)

@@ -22,11 +22,11 @@ hierarchies.
 
 namespace Amanzi {
 
-class PK {
+class PK_ATS {
 
 public:
   // Virtual destructor
-  virtual ~PK() {}
+  virtual ~PK_ATS() {}
 
   // -- Setup
   virtual void setup(const Teuchos::Ptr<State>& S) = 0;

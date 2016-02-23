@@ -26,7 +26,7 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "checkpoint.hh"
 #include "UnstructuredObservations.hh"
 #include "State.hh"
-#include "PK.hh"
+#include "pk.hh"
 #include "TreeVector.hh"
 #include "pk_factory.hh"
 
@@ -245,8 +245,9 @@ void Coordinator::initialize() {
   // -- register any intermediate requested times
   if (coordinator_list_->isSublist("required times")) {
     Teuchos::ParameterList& sublist = coordinator_list_->sublist("required times");
-    IOEvent pause_times(sublist);
-    pause_times.RegisterWithTimeStepManager(tsm_.ptr());
+    //IOEvent pause_times(sublist);
+    IOEvent pause_times();
+    //pause_times.RegisterWithTimeStepManager(tsm_.ptr());
   }
 
   // Create an intermediate state that will store the updated solution until

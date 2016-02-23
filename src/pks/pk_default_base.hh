@@ -15,12 +15,12 @@ Default base with a few methods implemented in standard ways.
 #include "Teuchos_ParameterList.hpp"
 
 #include "VerboseObject.hh"
-#include "PK.hh"
-
+#include "pk.hh"
+    
 
 namespace Amanzi {
 
-class PKDefaultBase : public PK {
+class PKDefaultBase : public PK_ATS {
 
  public:
 

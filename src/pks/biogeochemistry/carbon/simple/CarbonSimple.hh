@@ -14,7 +14,7 @@ Process kernel for energy equation for Richard's flow.
 
 #include "pk_factory.hh"
 #include "pk_physical_explicit_base.hh"
-#include "PK.hh"
+#include "pk.hh"
 
 namespace Amanzi {
 namespace BGC {

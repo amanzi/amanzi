@@ -27,6 +27,7 @@ add_subdirectory(deform)
 add_subdirectory(surface_balance)
 add_subdirectory(biogeochemistry)
 add_subdirectory(mpc)
+add_subdirectory(dummy)
 
 
 

@@ -24,7 +24,7 @@ simple passive tracer transport
 #include "boundary_function.hh"
 
 #include "pk_factory.hh"
-#include "PK.hh"
+#include "pk.hh"
 #include "bdf_time_integrator.hh"
 
 

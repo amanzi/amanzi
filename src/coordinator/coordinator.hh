@@ -59,7 +59,7 @@ private:
   void read_parameter_list();
 
   // PK container and factory
-  Teuchos::RCP<PK> pk_;
+  Teuchos::RCP<PK_ATS> pk_;
 
   // states
   Teuchos::RCP<State> S_;

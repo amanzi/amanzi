@@ -17,7 +17,7 @@ using namespace std;
 #include "TreeVector.hh"
 #include "State.hh"
 
-#include "PK.hh"
+#include "pk.hh"
 #include "pk_factory.hh"
 
 using namespace Amanzi;
