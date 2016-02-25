@@ -14,7 +14,7 @@ us to the air-water system.
 #ifndef PKS_ENERGY_DIFFUSION_HH_
 #define PKS_ENERGY_DIFFUSION_HH_
 
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 #include "advection.hh"
 #include "Operator.hh"
 #include "OperatorDiffusion.hh"
@@ -99,7 +99,7 @@ private:
   double rtol_;
 
   // factory registration
-  static RegisteredPKFactory<AdvectionDiffusion> reg_;
+  static RegisteredPKFactory_ATS<AdvectionDiffusion> reg_;
 
 };
 

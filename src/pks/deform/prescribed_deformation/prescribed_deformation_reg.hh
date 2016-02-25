@@ -21,7 +21,7 @@ namespace Deform {
 
 using namespace Amanzi::AmanziMesh;
 
-RegisteredPKFactory<PrescribedDeformation> PrescribedDeformation::reg_("prescribed deformation");
+RegisteredPKFactory_ATS<PrescribedDeformation> PrescribedDeformation::reg_("prescribed deformation");
 
 } // namespace
 } // namespace

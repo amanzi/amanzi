@@ -73,7 +73,7 @@ OverlandPressureFlow::OverlandPressureFlow(const Teuchos::RCP<Teuchos::Parameter
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
     plist_->set("absolute error tolerance", 0.01 * 55000.0); // h * nl
-
+  
 }
 
 
@@ -247,6 +247,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   // primary variable
   S->RequireField(key_, name_)->Update(matrix_->RangeMap())->SetGhosted();
+  S->RequireField("surface-pressure")->Update(matrix_->RangeMap())->SetGhosted();
 
   // fluxes
   S->RequireField("surface-mass_flux", name_)->SetMesh(mesh_)->SetGhosted()
@@ -256,6 +257,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   // limiters
   p_limit_ = plist_->get<double>("limit correction to pressure change [Pa]", -1.);
+  patm_limit_ = plist_->get<double>("limit correction when crossing atmospheric pressure [Pa]", -1.);
   
 };
 
@@ -373,7 +375,7 @@ void OverlandPressureFlow::initialize(const Teuchos::Ptr<State>& S) {
   }
 #endif
 
-  Teuchos::RCP<CompositeVector> head_cv = S->GetFieldData(key_, name_);
+  Teuchos::RCP<CompositeVector> pres_cv = S->GetFieldData(key_, name_);
 
   // initial condition is tricky
   if (!S->GetField(key_)->initialized()) {
@@ -383,7 +385,7 @@ void OverlandPressureFlow::initialize(const Teuchos::Ptr<State>& S) {
       Errors::Message message(messagestream.str());
       Exceptions::amanzi_throw(message);
     }
-    head_cv->PutScalar(0.);
+    pres_cv->PutScalar(0.);
   }
 
   // Initialize BDF stuff and physical domain stuff.
@@ -393,8 +395,8 @@ void OverlandPressureFlow::initialize(const Teuchos::Ptr<State>& S) {
     // -- set the cell initial condition if it is taken from the subsurface
     Teuchos::ParameterList ic_plist = plist_->sublist("initial condition");
     if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
-      Epetra_MultiVector& head = *head_cv->ViewComponent("cell",false);
-      const Epetra_MultiVector& pres = *S->GetFieldData("pressure")
+      Epetra_MultiVector& pres = *pres_cv->ViewComponent("cell",false);
+      const Epetra_MultiVector& subsurf_pres = *S->GetFieldData("pressure")
         ->ViewComponent("face",false);
 
       unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
@@ -402,7 +404,7 @@ void OverlandPressureFlow::initialize(const Teuchos::Ptr<State>& S) {
         // -- get the surface cell's equivalent subsurface face and neighboring cell
         AmanziMesh::Entity_ID f =
           mesh_->entity_get_parent(AmanziMesh::CELL, c);
-        head[0][c] = pres[0][f];
+        pres[0][c] = subsurf_pres[0][f];
       }
 
       // mark as initialized
@@ -1022,8 +1024,64 @@ OverlandPressureFlow::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> 
                  Teuchos::RCP<TreeVector> du) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
+  // debugging -- remove me! --etc
+  for (CompositeVector::name_iterator comp=du->Data()->begin();
+       comp!=du->Data()->end(); ++comp) {
+    Epetra_MultiVector& du_c = *du->Data()->ViewComponent(*comp,false);
+    double max, l2;
+    du_c.NormInf(&max);
+    du_c.Norm2(&l2);
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "Linf, L2 pressure correction (" << *comp << ") = " << max << ", " << l2 << std::endl;
+    }
+  }
+  
+
+  // limit by capping corrections when they cross atmospheric pressure
+  // (where pressure derivatives are discontinuous)
   int my_limited = 0;
-  int n_limited = 0;
+  int n_limited_spurt = 0;
+  if (patm_limit_ > 0.) {
+    double patm = *S_next_->GetScalarData("atmospheric_pressure");
+
+    Epetra_MultiVector& du_c = *du->Data()->ViewComponent("cell",false);
+    const Epetra_MultiVector& u_c = *u->Data()->ViewComponent("cell",false);
+
+    for (int c=0; c!=du_c.MyLength(); ++c) {
+      if ((u_c[0][c] < patm) &&
+          (u_c[0][c] - du_c[0][c] > patm + patm_limit_)) {
+        du_c[0][c] = u_c[0][c] - (patm + patm_limit_);          
+        my_limited++;
+      } else if ((u_c[0][c] > patm) &&
+                 (u_c[0][c] - du_c[0][c] < patm - patm_limit_)) {
+        du_c[0][c] = u_c[0][c] - (patm - patm_limit_);          
+        my_limited++;
+      }
+    }
+    mesh_->get_comm()->MaxAll(&my_limited, &n_limited_spurt, 1);
+  }
+
+  if (n_limited_spurt > 0) {
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "  limiting the spurt." << std::endl;
+    }
+  }
+
+  // debugging -- remove me! --etc
+  for (CompositeVector::name_iterator comp=du->Data()->begin();
+       comp!=du->Data()->end(); ++comp) {
+    Epetra_MultiVector& du_c = *du->Data()->ViewComponent(*comp,false);
+    double max, l2;
+    du_c.NormInf(&max);
+    du_c.Norm2(&l2);
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "Linf, L2 pressure correction (" << *comp << ") = " << max << ", " << l2 << std::endl;
+    }
+  }
+  
+  // Limit based on a max pressure change
+  my_limited = 0;
+  int n_limited_change = 0;
   if (p_limit_ > 0.) {
     for (CompositeVector::name_iterator comp=du->Data()->begin();
          comp!=du->Data()->end(); ++comp) {
@@ -1042,13 +1100,30 @@ OverlandPressureFlow::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> 
         }
       }
     }
-    mesh_->get_comm()->MaxAll(&my_limited, &n_limited, 1);
+    mesh_->get_comm()->SumAll(&my_limited, &n_limited_change, 1);
   }
 
-  if (n_limited > 0) {
+  if (n_limited_change > 0) {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-      *vo_->os() << "  limited by overland pressure." << std::endl;
+      *vo_->os() << "  limited by pressure." << std::endl;
     }
+  }
+  
+  // debugging -- remove me! --etc
+  for (CompositeVector::name_iterator comp=du->Data()->begin();
+       comp!=du->Data()->end(); ++comp) {
+    Epetra_MultiVector& du_c = *du->Data()->ViewComponent(*comp,false);
+    double max, l2;
+    du_c.NormInf(&max);
+    du_c.Norm2(&l2);
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << "Linf, L2 pressure correction (" << *comp << ") = " << max << ", " << l2 << std::endl;
+    }
+  }
+
+  if (n_limited_spurt > 0) {
+    return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED_LAG_BACKTRACKING;
+  } else if (n_limited_change > 0) {
     return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED;
   }
   return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;

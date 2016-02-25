@@ -31,7 +31,7 @@ respective methods.
 #include "TreeVector.hh"
 
 #include "pk_default_base.hh"
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 
 namespace Amanzi {
 
@@ -88,7 +88,7 @@ MPC<PK_t>::MPC(const Teuchos::RCP<Teuchos::ParameterList>& plist,
 
   // loop over sub-PKs in the PK sublist, constructing the hierarchy recursively
   Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(plist_, "PKs");
-  PKFactory pk_factory;
+  PKFactory_ATS pk_factory_ats;
 
   if (plist_->isParameter("PKs order")) {
     // ordered
@@ -104,7 +104,7 @@ MPC<PK_t>::MPC(const Teuchos::RCP<Teuchos::ParameterList>& plist,
       std::string name_i = pk_order[i];
       Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list,name_i);
       pk_list->set("PK name", name_i);
-      Teuchos::RCP<PK_ATS> pk_notype = pk_factory.CreatePK(pk_list, FElist, pk_soln);
+      Teuchos::RCP<PK_ATS> pk_notype = pk_factory_ats.CreatePK(pk_list, FElist, pk_soln);
       Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
       sub_pks_.push_back(pk);
     }
@@ -124,7 +124,7 @@ MPC<PK_t>::MPC(const Teuchos::RCP<Teuchos::ParameterList>& plist,
         // create the PK
         Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list,name_i);
         pk_list->set("PK name", name_i);
-        Teuchos::RCP<PK_ATS> pk_notype = pk_factory.CreatePK(pk_list, FElist, pk_soln);
+        Teuchos::RCP<PK_ATS> pk_notype = pk_factory_ats.CreatePK(pk_list, FElist, pk_soln);
         Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
         sub_pks_.push_back(pk);
       }

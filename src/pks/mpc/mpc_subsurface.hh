@@ -28,6 +28,7 @@ class OperatorAdvection;
 class OperatorAccumulation;
 class Operator;
 class UpwindTotalFlux;
+class UpwindArithmeticMean;
 class Upwinding;
 }
 
@@ -92,26 +93,37 @@ class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
   // preconditioner methods
   PreconditionerType precon_type_;
 
-  // off-diagonal precon terms
-  // equations are given by:
-  // dWC/dt + div q = 0
-  // dE/dt + div K grad T + div hq = 0
-  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> ddivq_dT_;
-  Teuchos::RCP<Operators::Upwinding> uw_dkrdT_;
+  // Additional precon terms
+  //   equations are given by:
+  // 1. conservation of WC: dWC/dt + div q = 0
+  // 2. conservation of E:  dE/dt + div K grad T + div hq = 0
 
-  Teuchos::RCP<Operators::OperatorAccumulation> dWC_dT_;
+  // dWC / dT off-diagonal block
   Teuchos::RCP<Operators::Operator> dWC_dT_block_;
+  // -- d ( div q ) / dT  terms
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> ddivq_dT_;
+  Teuchos::RCP<Operators::Upwinding> upwinding_dkrdT_;
+  // -- d ( dWC/dt ) / dT terms
+  Teuchos::RCP<Operators::OperatorAccumulation> dWC_dT_;
 
-  Teuchos::RCP<Operators::OperatorDiffusion> ddivKgT_dp_;
-  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> ddivhq_dp_;
-  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> ddivhq_dT_;
-  Teuchos::RCP<Operators::OperatorAccumulation> dE_dp_;
+  // dE / dp off-diagonal block
   Teuchos::RCP<Operators::Operator> dE_dp_block_;
-
+  // -- d ( div K grad T ) / dp terms
+  Teuchos::RCP<Operators::OperatorDiffusion> ddivKgT_dp_;
+  Teuchos::RCP<Operators::Upwinding> upwinding_dKappa_dp_;
+  // -- d ( div hq ) / dp terms
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> ddivhq_dp_;
   Teuchos::RCP<Operators::UpwindTotalFlux> upwinding_hkr_;
   Teuchos::RCP<Operators::UpwindTotalFlux> upwinding_dhkr_dp_;
+  // -- d ( dE/dt ) / dp terms
+  Teuchos::RCP<Operators::OperatorAccumulation> dE_dp_;
+
+  // dE / dT on-diagonal block additional terms that use q info
+  // -- d ( div hq ) / dT terms
+  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> ddivhq_dT_;
   Teuchos::RCP<Operators::UpwindTotalFlux> upwinding_dhkr_dT_;
 
+  
   // friend sub-pk Richards (need K_, some flags from private data)
   Teuchos::RCP<Flow::Richards> richards_pk_;
 
@@ -124,8 +136,10 @@ class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
   Key uw_tc_key_;
   Key kr_key_;
   Key uw_kr_key_;
+  Key enth_key_;
   Key hkr_key_;
   Key uw_hkr_key_;
+  Key energy_flux_key_;
   Key mass_flux_key_;
   Key mass_flux_dir_key_;
   Key rho_key_;
@@ -139,7 +153,7 @@ class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
   
 private:
   // factory registration
-  static RegisteredPKFactory<MPCSubsurface> reg_;
+  static RegisteredPKFactory_ATS<MPCSubsurface> reg_;
 
 };
 

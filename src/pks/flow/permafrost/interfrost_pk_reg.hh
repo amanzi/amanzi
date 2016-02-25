@@ -11,7 +11,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-RegisteredPKFactory<Interfrost> Interfrost::reg_("interfrost flow");
+RegisteredPKFactory_ATS<Interfrost> Interfrost::reg_("interfrost flow");
 
 } // namespace
 } // namespace

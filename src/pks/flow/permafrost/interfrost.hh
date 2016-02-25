@@ -26,7 +26,7 @@
 #include "boundary_function.hh"
 
 #include "pk.hh"
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 
 #include "permafrost.hh"
 
@@ -40,6 +40,7 @@ public:
   Interfrost(const Teuchos::RCP<Teuchos::ParameterList>& plist,
              Teuchos::ParameterList& FElist,
              const Teuchos::RCP<TreeVector>& solution) :
+    //      PK_Default(plist, FElist, solution),
       PKDefaultBase(plist, FElist, solution),
       Permafrost(plist, FElist, solution) {}
 
@@ -58,7 +59,7 @@ protected:
 
 private:
   // factory registration
-  static RegisteredPKFactory<Interfrost> reg_;
+  static RegisteredPKFactory_ATS<Interfrost> reg_;
 
 };
 

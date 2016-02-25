@@ -12,7 +12,7 @@ Process kernel for energy equation for Richard's flow.
 #ifndef PKS_ENERGY_SURFACE_ICE_HH_
 #define PKS_ENERGY_SURFACE_ICE_HH_
 
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 #include "energy_base.hh"
 
 namespace Amanzi {
@@ -68,7 +68,7 @@ protected:
 
 private:
   // factory registration
-  static RegisteredPKFactory<EnergySurfaceIce> reg_;
+  static RegisteredPKFactory_ATS<EnergySurfaceIce> reg_;
 
 };
 

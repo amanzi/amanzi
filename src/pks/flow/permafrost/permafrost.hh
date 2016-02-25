@@ -26,7 +26,7 @@
 #include "boundary_function.hh"
 
 #include "pk.hh"
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 
 #include "richards.hh"
 
@@ -42,6 +42,7 @@ public:
   Permafrost(const Teuchos::RCP<Teuchos::ParameterList>& plist,
              Teuchos::ParameterList& FElist,
              const Teuchos::RCP<TreeVector>& solution) :
+    //      PK_Default(plist, FElist, solution),
       PKDefaultBase(plist, FElist, solution),
       Richards(plist, FElist, solution) {}
 
@@ -54,7 +55,7 @@ protected:
 
 private:
   // factory registration
-  static RegisteredPKFactory<Permafrost> reg_;
+  static RegisteredPKFactory_ATS<Permafrost> reg_;
 
 };
 

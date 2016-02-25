@@ -58,6 +58,21 @@ public:
                           const Teuchos::RCP<State>& S_next) = 0;
 
   virtual std::string name() = 0;
+
+
+  virtual void Setup(const Teuchos::Ptr<State>& S){setup(S);};
+  virtual void Initialize(const Teuchos::Ptr<State>& S){initialize(S);};
+  virtual void State_to_Solution(const Teuchos::RCP<State>& S,
+                                 TreeVector& soln){state_to_solution(S, soln);};
+  virtual void Solution_to_State(TreeVector& soln,
+                                 const Teuchos::RCP<State>& S){solution_to_state(soln, S);};
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit){advance(t_new - t_old);};
+  virtual void CommitStep(double t_old, double t_new, 
+                          const Teuchos::RCP<State>& S) {commit_state(t_new - t_old, S);};
+
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {calculate_diagnostics(S);};
+
+
 };
 
 } // namespace

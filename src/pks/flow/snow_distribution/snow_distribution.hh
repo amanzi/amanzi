@@ -17,7 +17,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "OperatorDiffusion.hh"
 #include "OperatorAccumulation.hh"
 
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 #include "pk_physical_bdf_base.hh"
 
 namespace Amanzi {
@@ -104,7 +104,7 @@ protected:
   Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
 
   // factory registration
-  static RegisteredPKFactory<SnowDistribution> reg_;
+  static RegisteredPKFactory_ATS<SnowDistribution> reg_;
 };
 
 }  // namespace AmanziFlow

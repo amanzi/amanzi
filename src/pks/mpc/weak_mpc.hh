@@ -41,7 +41,7 @@ public:
 
 private:
   // factory registration
-  static RegisteredPKFactory<WeakMPC> reg_;
+  static RegisteredPKFactory_ATS<WeakMPC> reg_;
 
 
 };

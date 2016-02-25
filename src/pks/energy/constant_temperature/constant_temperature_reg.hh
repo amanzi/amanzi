@@ -24,7 +24,7 @@
 namespace Amanzi {
 namespace Energy {
 
-RegisteredPKFactory<ConstantTemperature> ConstantTemperature::reg_("constant temperature energy");
+RegisteredPKFactory_ATS<ConstantTemperature> ConstantTemperature::reg_("constant temperature energy");
 
 } // namespace
 } // namespace

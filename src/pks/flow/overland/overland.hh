@@ -16,7 +16,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "OperatorDiffusion.hh"
 #include "OperatorAccumulation.hh"
 
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 #include "pk_physical_bdf_base.hh"
 
 namespace Amanzi {
@@ -133,7 +133,7 @@ protected:
   int niter_;
 
   // factory registration
-  static RegisteredPKFactory<OverlandFlow> reg_;
+  static RegisteredPKFactory_ATS<OverlandFlow> reg_;
 };
 
 }  // namespace AmanziFlow

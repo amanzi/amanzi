@@ -150,7 +150,8 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   // update state with the solution up.
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
-  PK_Default::Solution_to_State(*up, S_next_);
+  //PK_Default::Solution_to_State(*up, S_next_);
+  PKDefaultBase::solution_to_state(*up, S_next_);
 
   // update the rel perm according to the scheme of choice, also upwind derivatives of rel perm
   UpdatePermeabilityData_(S_next_.ptr());
@@ -213,8 +214,6 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   Key dwc_dp_key = getDerivKey(conserved_key_, key_);
   const Epetra_MultiVector& dwc_dp =
       *S_next_->GetFieldData(dwc_dp_key)->ViewComponent("cell",false);
-  const Epetra_MultiVector& pres =
-      *S_next_->GetFieldData(key_)->ViewComponent("cell",false);
 
 #if DEBUG_FLAG
   db_->WriteVector("    dwc_dp", S_next_->GetFieldData(dwc_dp_key).ptr());

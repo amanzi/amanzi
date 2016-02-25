@@ -12,7 +12,7 @@ Author: Ethan Coon
 namespace Amanzi {
 namespace Energy {
 
-RegisteredPKFactory<ThreePhase> ThreePhase::reg_("three-phase energy");
+RegisteredPKFactory_ATS<ThreePhase> ThreePhase::reg_("three-phase energy");
 
 } // namespace Energy
 } // namespace Amanzi

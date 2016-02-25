@@ -22,13 +22,13 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "Teuchos_TimeMonitor.hpp"
 
 #include "TimeStepManager.hh"
-#include "visualization.hh"
+#include "Visualization.hh"
 #include "checkpoint.hh"
 #include "UnstructuredObservations.hh"
 #include "State.hh"
 #include "pk.hh"
 #include "TreeVector.hh"
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 
 #include "coordinator.hh"
 
@@ -66,12 +66,12 @@ void Coordinator::coordinator_init() {
   soln_ = Teuchos::rcp(new TreeVector());
 
   // create the pk
-  PKFactory pk_factory;
+  PKFactory_ATS pk_factory_ats;
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list, pk_name);
   pk_list->set("PK name", pk_name);
  
-  pk_ = pk_factory.CreatePK(pk_list, S_->FEList(), soln_);
-  pk_->setup(S_.ptr());
+  pk_ = pk_factory_ats.CreatePK(pk_list, S_->FEList(), soln_);
+  pk_->Setup(S_.ptr());
 
   // create the checkpointing
   Teuchos::ParameterList& chkp_plist = parameter_list_->sublist("checkpoint");
@@ -133,7 +133,7 @@ void Coordinator::initialize() {
   }
 
   // Initialize the process kernels (initializes all independent variables)
-  pk_->initialize(S_.ptr());
+  pk_->Initialize(S_.ptr());
   *S_->GetScalarData("dt", "coordinator") = 0.;
   S_->GetField("dt","coordinator")->set_initialized();
 
@@ -141,7 +141,7 @@ void Coordinator::initialize() {
   S_->Initialize();
 
   // commit the initial conditions.
-  pk_->commit_state(0., S_);
+  pk_->CommitStep(0., 0., S_);
 
   // vis for the state
   // HACK to vis with a surrogate surface mesh.  This needs serious re-design. --etc
@@ -268,7 +268,7 @@ void Coordinator::finalize() {
   // the same file twice.
   // This really should be removed, but for now is left to help stupid developers.
   if (!checkpoint_->DumpRequested(S_next_->cycle(), S_next_->time())) {
-    pk_->calculate_diagnostics(S_next_);
+    pk_->CalculateDiagnostics(S_next_);
     WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), 0.0);
   }
 
@@ -433,16 +433,19 @@ double Coordinator::get_dt(bool after_fail) {
 
 
 // This is used by CLM
-bool Coordinator::advance(double dt) {
+  bool Coordinator::advance(double t_old, double t_new) {
+
+    double dt = t_new - t_old;
+
   S_next_->advance_time(dt);
-  bool fail = pk_->advance(dt);
+  bool fail = pk_->AdvanceStep(t_old, t_new, false);
 
   // advance the iteration count and timestep size
   S_next_->advance_cycle();
 
   if (!fail) {
     // commit the state
-    pk_->commit_state(dt, S_next_);
+    pk_->CommitStep(t_old, t_new, S_next_);
     
     // make observations, vis, and checkpoints
     observations_->MakeObservations(*S_next_);
@@ -480,7 +483,7 @@ void Coordinator::visualize(bool force) {
   }
 
   if (dump) {
-    pk_->calculate_diagnostics(S_next_);
+    pk_->CalculateDiagnostics(S_next_);
   }
 
   for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
@@ -545,7 +548,7 @@ void Coordinator::cycle_driver() {
       *S_->GetScalarData("dt", "coordinator") = dt;
       *S_inter_->GetScalarData("dt", "coordinator") = dt;
       *S_next_->GetScalarData("dt", "coordinator") = dt;
-      fail = advance(dt);
+      fail = advance(S_->time(), S_->time() + dt);
       dt = get_dt(fail);
 
     } // while not finished

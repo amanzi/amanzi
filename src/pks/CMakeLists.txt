@@ -14,7 +14,7 @@ add_library(pk_bases
   pk_explicit_base.cc
   pk_bdf_base.cc
   pk_default_base.cc
-  pk_factory.cc)
+  pk_factory_ats.cc)
 
 install(TARGETS pk_bases DESTINATION lib)
 

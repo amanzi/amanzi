@@ -38,17 +38,18 @@
 
 namespace Amanzi {
 
-class PKFactory {
+class PKFactory_ATS {
 
 public:
   typedef std::map<std::string,
                    PK_ATS* (*)(const Teuchos::RCP<Teuchos::ParameterList>&,
-                           Teuchos::ParameterList&,
-                           const Teuchos::RCP<TreeVector>&)> map_type;
+                               Teuchos::ParameterList&,
+                               const Teuchos::RCP<TreeVector>&)> map_type;
 
   static Teuchos::RCP<PK_ATS> CreatePK(const Teuchos::RCP<Teuchos::ParameterList>& plist,
           Teuchos::ParameterList& FElist,
           const Teuchos::RCP<TreeVector>& soln) {
+
     std::string s = plist->get<std::string>("PK type");
     map_type::iterator iter = GetMap()->find(s);
     if (iter == GetMap()->end()) {
@@ -85,12 +86,12 @@ template<typename T> PK_ATS* CreateT(const Teuchos::RCP<Teuchos::ParameterList>&
 
 
 template<typename T>
-class RegisteredPKFactory : public PKFactory {
+class RegisteredPKFactory_ATS : public PKFactory_ATS {
 public:
   // Constructor for the registered factory.  Needs some error checking in
   // case a name s is already in the map? (i.e. two implementations trying to
   // call themselves the same thing) --etc
-  RegisteredPKFactory(const std::string& s) {
+  RegisteredPKFactory_ATS(const std::string& s) {
     GetMap()->insert(std::pair<std::string, PK_ATS* (*)(const Teuchos::RCP<Teuchos::ParameterList>&,
             Teuchos::ParameterList&,
             const Teuchos::RCP<TreeVector>&)>(s, &CreateT<T>));

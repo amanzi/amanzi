@@ -20,7 +20,7 @@
 #include "VerboseObject.hh"
 #include "TreeVector.hh"
 
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 #include "pk_physical_base.hh"
 
 #include "SoilCarbonParameters.hh"
@@ -118,7 +118,7 @@ class BGCSimple : public PKPhysicalBase {
 
  private:
   // factory registration
-  static RegisteredPKFactory<BGCSimple> reg_;
+  static RegisteredPKFactory_ATS<BGCSimple> reg_;
 
 
 };

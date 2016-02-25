@@ -101,9 +101,12 @@ bool MPCDelegateEWCSubsurface::modify_predictor_smart_ewc_(double h, Teuchos::RC
     double p = p1[0][c];
     double T = T1[0][c];
 
+    double T_eps = 0.;
+
     double wc_tmp(0.), e_tmp(0.);
     if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
-      *dcvo->os() << "Predicting: c = " << c << std::endl
+      *dcvo->os() << std::setprecision(14)
+                  << "Predicting: c = " << c << std::endl
                   << "   based upon h_old = " << dt_prev << ", h_next = " << dt_next << std::endl
                   << "   -------------" << std::endl
                   << "   Prev wc,e: " << wc1[0][c] << ", " << e1[0][c] << std::endl
@@ -127,12 +130,17 @@ bool MPCDelegateEWCSubsurface::modify_predictor_smart_ewc_(double h, Teuchos::RC
       if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
           *dcvo->os() << "   decreasing temps..." << std::endl;
 
-      if (!model_->Freezing(T_guess + .001, p_guess)) {
-        if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
+      if (!model_->Freezing(T_guess + T_eps, p_guess)) {
+        if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME)) {
           *dcvo->os() << "   above freezing, keep T,p projections" << std::endl;
+          double sl,si,sg;
+          model_->EvaluateSaturations(T_guess+T_eps, p_guess, sg, sl, si);
+          *dcvo->os() << "   si,sl,sg = " << si << "," << sl << "," << sg << std::endl;
+        }
+
         // pass, guesses are good
 
-      } else if (model_->Freezing(T_prev + 0.001, p_prev)) {
+      } else if (model_->Freezing(T_prev + T_eps, p_prev)) {
         if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
           *dcvo->os() << "   second point past the freezing point, keep T,p projections" << std::endl;
         // pass, guesses are good
@@ -165,7 +173,7 @@ bool MPCDelegateEWCSubsurface::modify_predictor_smart_ewc_(double h, Teuchos::RC
       if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
         *dcvo->os() << "   increasing temps..." << std::endl;
 
-      if (!model_->Freezing(T_prev + .001, p_prev)) {
+      if (!model_->Freezing(T_prev + T_eps, p_prev)) {
         if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
           *dcvo->os() << "   above freezing, keep T,p projections" << std::endl;
         // pass, guesses are good

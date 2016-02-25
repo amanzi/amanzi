@@ -12,7 +12,7 @@ Process kernel for energy equation for Richard's flow.
 #ifndef PKS_ENERGY_TWO_PHASE_HH_
 #define PKS_ENERGY_TWO_PHASE_HH_
 
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 #include "energy_base.hh"
 
 namespace Amanzi {
@@ -60,7 +60,7 @@ protected:
 
 private:
   // factory registration
-  static RegisteredPKFactory<TwoPhase> reg_;
+  static RegisteredPKFactory_ATS<TwoPhase> reg_;
 
   // Energy has a friend in couplers...
   friend class Amanzi::MPCCoupledFlowEnergy;

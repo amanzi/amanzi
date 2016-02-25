@@ -17,7 +17,7 @@
 #ifndef PK_SURFACE_BALANCE_EXPLICIT_HH_
 #define PK_SURFACE_BALANCE_EXPLICIT_HH_
 
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 #include "pk_physical_base.hh"
 
 namespace Amanzi {
@@ -67,7 +67,7 @@ public:
 
  private:
   // factory registration
-  static RegisteredPKFactory<SurfaceBalanceExplicit> reg_;
+  static RegisteredPKFactory_ATS<SurfaceBalanceExplicit> reg_;
 };
 
 }  // namespace AmanziFlow

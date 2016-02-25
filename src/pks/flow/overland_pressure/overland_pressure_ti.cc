@@ -236,11 +236,11 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   S_next_->GetFieldEvaluator("surface-water_content_bar")
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
   const Epetra_MultiVector& dwc_dp =
-      *S_next_->GetFieldData("dsurface-water_content_bar_d"+key_)
+    *S_next_->GetFieldData(getDerivKey("surface-water_content_bar", key_))
       ->ViewComponent("cell",false);
 
-  db_->WriteVector("    dwc_dp", S_next_->GetFieldData("dsurface-water_content_bar_dsurface-pressure").ptr());
-  db_->WriteVector("    dh_dp", S_next_->GetFieldData("dponded_depth_bar_dsurface-pressure").ptr());
+  db_->WriteVector("    dwc_dp", S_next_->GetFieldData(getDerivKey("surface-water_content_bar", key_)).ptr());
+  db_->WriteVector("    dh_dp", S_next_->GetFieldData(getDerivKey("ponded_depth_bar", key_)).ptr());
 
   // -- pull out other needed data
   std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;

@@ -16,7 +16,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "OperatorDiffusion.hh"
 #include "OperatorAccumulation.hh"
 
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 #include "pk_physical_bdf_base.hh"
 
 namespace Amanzi {
@@ -134,6 +134,7 @@ protected:
   bool smoothed_ponded_accumulation_;
 
   double p_limit_;
+  double patm_limit_;
 
   // coupling term
   bool coupled_to_subsurface_via_head_;
@@ -169,7 +170,7 @@ protected:
   int niter_;
 
   // factory registration
-  static RegisteredPKFactory<OverlandPressureFlow> reg_;
+  static RegisteredPKFactory_ATS<OverlandPressureFlow> reg_;
 };
 
 }  // namespace AmanziFlow

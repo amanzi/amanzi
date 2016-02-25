@@ -11,7 +11,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-RegisteredPKFactory<Permafrost> Permafrost::reg_("permafrost flow");
+RegisteredPKFactory_ATS<Permafrost> Permafrost::reg_("permafrost flow");
 
 } // namespace
 } // namespace

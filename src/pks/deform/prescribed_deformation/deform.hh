@@ -18,7 +18,7 @@ using namespace std;
 #include "State.hh"
 
 #include "pk.hh"
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;

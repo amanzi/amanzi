@@ -54,6 +54,7 @@ Interfrost::UpdatePreconditioner(double t,
 
   // update state with the solution up.
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
+  //PK_Default::Solution_to_State(*up, S_next_);
   PKDefaultBase::solution_to_state(*up, S_next_);
 
   // update the rel perm according to the scheme of choice, also upwind derivatives of rel perm

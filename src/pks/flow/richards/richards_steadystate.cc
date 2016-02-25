@@ -10,7 +10,8 @@ namespace Flow {
 RichardsSteadyState::RichardsSteadyState(const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution) :
-    PK_Default(plist, FElist, solution),
+  //    PK_Default(plist, FElist, solution),
+    PKDefaultBase(plist, FElist, solution),
     Richards(plist, FElist, solution) {}
 
 void RichardsSteadyState::Setup(const Teuchos::Ptr<State>& S) {
@@ -28,7 +29,8 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
     *vo_->os() << "Precon update at t = " << t << std::endl;
   }
 
-  PK_Default::Solution_to_State(*up, S_next_);
+  //PK_Default::Solution_to_State(*up, S_next_);
+  PKDefaultBase::solution_to_state(*up, S_next_);
 
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());

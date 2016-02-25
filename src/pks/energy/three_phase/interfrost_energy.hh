@@ -15,7 +15,7 @@ Inherits TwoPhase instead of EnergyBase to pick up the enthalpy from TwoPhase.
 #ifndef PKS_ENERGY_INTERFROST_ENERGY_HH_
 #define PKS_ENERGY_INTERFROST_ENERGY_HH_
 
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 #include "three_phase.hh"
 
 namespace Amanzi {
@@ -42,7 +42,7 @@ public:
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
 
 private:
-  static RegisteredPKFactory<InterfrostEnergy> reg_;
+  static RegisteredPKFactory_ATS<InterfrostEnergy> reg_;
 
   friend  class MPCCoupledFlowEnergy;
 };

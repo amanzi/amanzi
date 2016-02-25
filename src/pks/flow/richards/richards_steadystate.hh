@@ -12,8 +12,8 @@
 #include "upwinding.hh"
 #include "boundary_function.hh"
 
-#include "PK.hh"
-#include "PK_Factory.hh"
+#include "pk.hh"
+#include "pk_factory_ats.hh"
 
 #include "richards.hh"
 
@@ -46,7 +46,7 @@ protected:
 
  private:
   // factory registration
-  static RegisteredPKFactory<RichardsSteadyState> reg_;
+  static RegisteredPKFactory_ATS<RichardsSteadyState> reg_;
 
 };
 

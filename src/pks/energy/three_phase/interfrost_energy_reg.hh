@@ -12,7 +12,7 @@ Author: Ethan Coon
 namespace Amanzi {
 namespace Energy {
 
-RegisteredPKFactory<InterfrostEnergy> InterfrostEnergy::reg_("interfrost energy");
+RegisteredPKFactory_ATS<InterfrostEnergy> InterfrostEnergy::reg_("interfrost energy");
 
 } // namespace Energy
 } // namespace Amanzi

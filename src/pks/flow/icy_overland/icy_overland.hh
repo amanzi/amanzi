@@ -12,7 +12,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "Teuchos_TimeMonitor.hpp"
 
 
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 #include "overland_pressure.hh"
 #include "icy_height_model.hh"
 
@@ -42,7 +42,7 @@ class IcyOverlandFlow : public OverlandPressureFlow {
 
  private:
   // factory registration
-  static RegisteredPKFactory<IcyOverlandFlow> reg_;
+  static RegisteredPKFactory_ATS<IcyOverlandFlow> reg_;
 };
 
 }  // namespace AmanziFlow

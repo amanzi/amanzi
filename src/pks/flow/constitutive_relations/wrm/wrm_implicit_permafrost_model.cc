@@ -4,7 +4,7 @@
 
 #include "dbc.hh"
 #include "errors.hh"
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "Point.hh"
 
 #include "wrm.hh"

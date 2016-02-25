@@ -22,7 +22,7 @@ Example usage:
 #ifndef PKS_ENERGY_CONSTANT_TEMPERATURE_HH_
 #define PKS_ENERGY_CONSTANT_TEMPERATURE_HH_
 
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 #include "pk_physical_bdf_base.hh"
 
 namespace Amanzi {
@@ -86,7 +86,7 @@ private:
   double rtol_;
 
   // factory registration
-  static RegisteredPKFactory<ConstantTemperature> reg_;
+  static RegisteredPKFactory_ATS<ConstantTemperature> reg_;
 };
 
 } // namespace

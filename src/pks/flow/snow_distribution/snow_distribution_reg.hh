@@ -11,7 +11,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-RegisteredPKFactory<SnowDistribution> SnowDistribution::reg_("snow distribution");
+RegisteredPKFactory_ATS<SnowDistribution> SnowDistribution::reg_("snow distribution");
 
 } // namespace
 } // namespace

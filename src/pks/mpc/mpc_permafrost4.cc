@@ -335,6 +335,7 @@ MPCPermafrost4::UpdatePreconditioner(double t,
 bool
 MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
         Teuchos::RCP<TreeVector> u) {
+  Teuchos::OSTab tab = vo_->getOSTab();
   bool modified = false;
 
   // write predictor
@@ -368,16 +369,16 @@ MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   if (modified && vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "EWC Prediction (surface):" << std::endl;
     std::vector<std::string> vnames;
-    vnames.push_back("  ps_extrap");
-    vnames.push_back("  Ts_extrap");
+    vnames.push_back("  ps_ewc");
+    vnames.push_back("  Ts_ewc");
     std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
     vecs.push_back(u->SubVector(2)->Data().ptr());
     vecs.push_back(u->SubVector(3)->Data().ptr());
     surf_db_->WriteVectors(vnames, vecs, true);
 
     *vo_->os() << "EWC Prediction (subsurface):" << std::endl;
-    vnames[0] = "  p_extrap";
-    vnames[1] = "  T_extrap";
+    vnames[0] = "  p_ewc";
+    vnames[1] = "  T_ewc";
     vecs[0] = u->SubVector(0)->Data().ptr();
     vecs[1] = u->SubVector(1)->Data().ptr();
     domain_db_->WriteVectors(vnames, vecs, true);
@@ -425,16 +426,16 @@ MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   if (newly_modified && vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "Spurt Fixed Prediction (surface):" << std::endl;
     std::vector<std::string> vnames;
-    vnames.push_back("  ps_extrap");
-    vnames.push_back("  Ts_extrap");
+    vnames.push_back("  ps_spurt");
+    vnames.push_back("  Ts_spurt");
     std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
     vecs.push_back(u->SubVector(2)->Data().ptr());
     vecs.push_back(u->SubVector(3)->Data().ptr());
     surf_db_->WriteVectors(vnames, vecs, true);
 
     *vo_->os() << "Spurt Fixed Prediction (subsurface):" << std::endl;
-    vnames[0] = "  p_extrap";
-    vnames[1] = "  T_extrap";
+    vnames[0] = "  p_spurt";
+    vnames[1] = "  T_spurt";
     vecs[0] = u->SubVector(0)->Data().ptr();
     vecs[1] = u->SubVector(1)->Data().ptr();
     domain_db_->WriteVectors(vnames, vecs, true);
@@ -452,7 +453,7 @@ MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   surf_energy_pk_->ChangedSolution();
   modified |= surf_flow_pk_->ModifyPredictor(h, u0->SubVector(2), u->SubVector(2));
   modified |= surf_energy_pk_->ModifyPredictor(h, u0->SubVector(3), u->SubVector(3));
-
+  
   return modified;
 }
 
@@ -481,79 +482,40 @@ MPCPermafrost4::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
     domain_db_->WriteVectors(vnames, vecs, true);
   }
 
-  int n_modified = 0;
-
-  // apply limiters
-  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult base_result =   
-    MPCSubsurface::ModifyCorrection(h,r,u,du);
-  if (base_result) n_modified++;
-  
+  // apply PK modifications
+  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult pk_modified =   
+      StrongMPC<PKPhysicalBDFBase>::ModifyCorrection(h,r,u,du);
+  if (pk_modified) {
+    CopySurfaceToSubsurface(*du->SubVector(2)->Data(),
+                            du->SubVector(0)->Data().ptr());
+    CopySurfaceToSubsurface(*du->SubVector(3)->Data(),
+                            du->SubVector(1)->Data().ptr());
+  }
+    
   // modify correction using water approaches
-  n_modified += water_->ModifyCorrection_WaterFaceLimiter(h, r, u, du);
-  double damping = water_->ModifyCorrection_WaterSpurtDamp(h, r, u, du);
-  n_modified += water_->ModifyCorrection_WaterSpurtCap(h, r, u, du, damping);
+  int n_modified = 0;
+  double damping = water_->ModifyCorrection_SaturatedSpurtDamp(h, r, u, du);
+  n_modified += water_->ModifyCorrection_SaturatedSpurtCap(h, r, u, du, damping);
 
+  double damping_surf = water_->ModifyCorrection_WaterSpurtDamp(h, r, u, du);
+  n_modified += water_->ModifyCorrection_WaterSpurtCap(h, r, u, du, damping_surf);
+
+  // -- total damping
+  damping = damping * damping_surf;
+  
   // -- accumulate globally
   int n_modified_l = n_modified;
   u->SubVector(0)->Data()->Comm().SumAll(&n_modified_l, &n_modified, 1);
   bool modified = (n_modified > 0) || (damping < 1.);
 
-  // -- calculate consistent subsurface cells
-  // if (modified) {
-  //   if (consistent_cells_) {
-  //     // Derive subsurface cell corrections.
-  //     pc_flow_->UpdateConsistentCellCorrection(
-  //         *u->SubVector(0)->Data(),
-  //         du->SubVector(0)->Data().ptr());
-  //   }
-  // }
-
-  // // modify correction on subsurface cells using EWC
-  // if (precon_type_ == PRECON_EWC) {
-  //     // make a new TreeVector that is just the subsurface values (by pointer).
-  //     // -- note these const casts are necessary to create the new TreeVector, but
-  //     //    since the TreeVector COULD be const (it is only used in a single method,
-  //     //    in which it is const), const-correctness is not violated here.
-  //     Teuchos::RCP<TreeVector> domain_res_tv = Teuchos::rcp(new TreeVector());
-  //     domain_res_tv->PushBack(Teuchos::rcp_const_cast<TreeVector>(r->SubVector(0)));
-  //     domain_res_tv->PushBack(Teuchos::rcp_const_cast<TreeVector>(r->SubVector(1)));
-      
-  //     Teuchos::RCP<TreeVector> domain_du_tv = Teuchos::rcp(new TreeVector());
-  //     domain_du_tv->PushBack(du->SubVector(0));
-  //     domain_du_tv->PushBack(du->SubVector(1));
-
-  //     // make sure we can back-calc face corrections that preserve residuals on faces
-  //     Teuchos::RCP<TreeVector> res0 = Teuchos::rcp(new TreeVector(*domain_res_tv));
-  //     res0->PutScalar(0.);
-  //     Teuchos::RCP<TreeVector> du_std = Teuchos::rcp(new TreeVector(*domain_du_tv));
-  //     *du_std = *domain_du_tv;
-
-  //     // call EWC, which does Pu_p <-- Pu_p_std + dPu_p
-  //     sub_ewc_->ApplyPreconditioner(domain_res_tv, domain_du_tv);
-
-  //     // calculate dPu_lambda from dPu_p
-  //     du_std->Update(1.0, *domain_du_tv, -1.0);
-  //     preconditioner_->UpdateConsistentFaceCorrection(*res0, du_std.ptr());
-
-  //     // update Pu_lambda <-- Pu_lambda_std + dPu_lambda
-  //     domain_du_tv->SubVector(0)->Data()->ViewComponent("face",false)->Update(1.,
-  //             *du_std->SubVector(0)->Data()->ViewComponent("face",false), 1.);
-  //     domain_du_tv->SubVector(1)->Data()->ViewComponent("face",false)->Update(1.,
-  //             *du_std->SubVector(1)->Data()->ViewComponent("face",false), 1.);
-  //     modified = true;
-  // }
-  
   if (modified) {
     // Copy subsurface face corrections to surface cell corrections
     CopySubsurfaceToSurface(*du->SubVector(0)->Data(),
                             du->SubVector(2)->Data().ptr());
-
-    // Derive surface face corrections.
-    //    UpdateConsistentFaceCorrectionWater_(r.ptr(), u.ptr(), du.ptr());
   }
 
   // dump modified correction to screen
-  if (modified && vo_->os_OK(Teuchos::VERB_HIGH)) {
+  if ((modified || pk_modified) && vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "Modified correction:" << std::endl;
     std::vector<std::string> vnames;
     vnames.push_back("  Mod NKA*PC*r_ps");
@@ -571,128 +533,12 @@ MPCPermafrost4::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
     domain_db_->WriteVectors(vnames, vecs, true);
   }
 
-  return modified ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED_LAG_BACKTRACKING :
-      AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
-}
-
-// void
-// MPCPermafrost4::UpdateConsistentFaceCorrectionWater_(const Teuchos::Ptr<const TreeVector>& r,
-//         const Teuchos::Ptr<const TreeVector>& u,
-//         const Teuchos::Ptr<TreeVector>& du) {
-//   Teuchos::OSTab tab = vo_->getOSTab();
-
-//   // pull out corrections
-//   Teuchos::RCP<CompositeVector> surf_dp = du->SubVector(2)->Data();
-//   Epetra_MultiVector& surf_dp_c = *surf_dp->ViewComponent("cell",false);
-//   Teuchos::RCP<CompositeVector> surf_dT = du->SubVector(3)->Data();
-//   Epetra_MultiVector& surf_dT_c = *surf_dT->ViewComponent("cell",false);
-
-//   // Calculate resulting delta h on the surface
-//   Teuchos::RCP<CompositeVector> surf_dh = Teuchos::rcp(new CompositeVector(*surf_dp));
-//   surf_dh->PutScalar(0.);
-
-//   // Grab the necessary components of the solution, in both CV and TV forms.
-//   Teuchos::RCP<CompositeVector> cv_p = S_next_->GetFieldData("surface-pressure", sub_pks_[2]->name());
-//   Teuchos::RCP<CompositeVector> cv_T = S_next_->GetFieldData("surface-temperature", sub_pks_[3]->name());
-
-//   Teuchos::RCP<const TreeVector> tv_p;
-//   Teuchos::RCP<const TreeVector> tv_T;
-//   if (u == Teuchos::null) {
-//     // This method is called by the ApplyPreconditioner(), which does not have access to u.
-//     Teuchos::RCP<TreeVector> tv_p_tmp = Teuchos::rcp(new TreeVector());
-//     tv_p_tmp->SetData(cv_p);
-//     tv_p = tv_p_tmp;
-
-//     Teuchos::RCP<TreeVector> tv_T_tmp = Teuchos::rcp(new TreeVector());
-//     tv_T_tmp->SetData(cv_T);
-//     tv_T = tv_T_tmp;
-//   } else {
-//     // This method is called by ModifyCorrection(), which does have access to u.
-//     tv_p = u->SubVector(2);
-//     tv_T = u->SubVector(3);
-//   }
-
-//   // Calculate/get old ponded depth, first ensuring PC didn't result in inadmissible solution
-//   if (sub_pks_[2]->IsAdmissible(tv_p) &&
-//       sub_pks_[3]->IsAdmissible(tv_T)) {
-//     S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
-//     *surf_dh->ViewComponent("cell",false) = *S_next_->GetFieldData("ponded_depth")->ViewComponent("cell",false);
-
-//     // new ponded depth (again, checking admissibility)
-//     cv_p->ViewComponent("cell",false)->Update(-1., surf_dp_c, 1.);
-//     cv_T->ViewComponent("cell",false)->Update(-1., surf_dT_c, 1.);
-//     sub_pks_[2]->ChangedSolution();
-//     sub_pks_[3]->ChangedSolution();
-
-//     if (sub_pks_[2]->IsAdmissible(tv_p) &&
-//         sub_pks_[3]->IsAdmissible(tv_T)) {
-//       S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
-
-//       // put delta ponded depth into surf_dh_cell
-//       surf_dh->ViewComponent("cell",false)
-//           ->Update(-1., *S_next_->GetFieldData("ponded_depth")->ViewComponent("cell",false), 1.);
-
-//       // update delta faces
-//       pc_surf_flow_->UpdateConsistentFaceCorrection(*r->SubVector(2)->Data(), surf_dh.ptr());
-//       *surf_dp->ViewComponent("face",false) = *surf_dh->ViewComponent("face",false);
-
-//       // dump to screen
-//       if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-//         *vo_->os() << "Precon water correction." << std::endl;
-
-//         std::vector<std::string> vnames;
-//         vnames.push_back("pd_new");
-//         vnames.push_back("delta_pd");
-
-//         std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-//         vecs.push_back(S_next_->GetFieldData("ponded_depth").ptr());
-//         vecs.push_back(surf_dh.ptr());
-//         surf_db_->WriteVectors(vnames, vecs, true);
-//       }
-//     }
-
-//     // revert solution so we don't break things
-//     S_next_->GetFieldData("surface-pressure",sub_pks_[2]->name())
-//         ->ViewComponent("cell",false)->Update(1., surf_dp_c, 1.);
-//     sub_pks_[2]->ChangedSolution();
-//     S_next_->GetFieldData("surface-temperature",sub_pks_[3]->name())
-//         ->ViewComponent("cell",false)->Update(1., surf_dT_c, 1.);
-//     sub_pks_[3]->ChangedSolution();
-//   }
-// }
-
-
-int
-MPCPermafrost4::ModifyCorrection_FrozenSurface_(double h, Teuchos::RCP<const TreeVector> res,
-        Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
-  const Epetra_MultiVector& res_surf_c = *res->SubVector(2)->Data()->ViewComponent("cell",false);
-  const Epetra_MultiVector& u_surf_c = *u->SubVector(2)->Data()->ViewComponent("cell",false);
-
-  Epetra_MultiVector& du_surf_c = *du->SubVector(2)->Data()->ViewComponent("cell",false);
-  Epetra_MultiVector& du_domain_f = *du->SubVector(0)->Data()->ViewComponent("face",false);
-
-  const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
-  S_next_->GetFieldEvaluator("surface-water_content")
-      ->HasFieldDerivativeChanged(S_next_.ptr(), name_, "surface-pressure");
-  const Epetra_MultiVector& dWC_dp_surf_c =
-      *S_next_->GetFieldData("dsurface-water_content_dsurface-pressure")
-      ->ViewComponent("cell",false);
-
-  int nmodified = 0;
-  for (unsigned int sc=0; sc!=du_surf_c.MyLength(); ++sc) {
-    if (std::abs(res_surf_c[0][sc]) > 0.) {
-      nmodified++;
-
-      du_surf_c[0][sc] = u_surf_c[0][sc] - (patm - res_surf_c[0][sc] / (dWC_dp_surf_c[0][sc] / h));
-      AmanziMesh::Entity_ID f =
-          surf_mesh_->entity_get_parent(AmanziMesh::CELL, sc);
-      du_domain_f[0][f] = du_surf_c[0][sc];
-      if (vo_->os_OK(Teuchos::VERB_HIGH))
-        *vo_->os() << "  Source on frozen surface: res = " << res_surf_c[0][sc] << ", dWC_dp = " << dWC_dp_surf_c[0][sc]
-                   << ", du = " << du_surf_c[0][sc] << std::endl;
-    }
+  if (modified) {
+    // disallow backtracking which takes us back under patm
+    return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED_LAG_BACKTRACKING;
+  } else {
+    return pk_modified;
   }
-  return nmodified;
 }
 
 

@@ -17,7 +17,7 @@
 #ifndef PKS_PRESCRIBED_VOLUMETRIC_DEFORMATION_HH_
 #define PKS_PRESCRIBED_VOLUMETRIC_DEFORMATION_HH_
 
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 #include "pk_default_base.hh"
 #include "pk_physical_base.hh"
 
@@ -75,7 +75,7 @@ class PrescribedVolumetricDeformation : public PKPhysicalBase {
   Teuchos::ParameterList prescribed_volumetric_deformation_plist_;
 
   // factory registration
-  static RegisteredPKFactory<PrescribedVolumetricDeformation> reg_;
+  static RegisteredPKFactory_ATS<PrescribedVolumetricDeformation> reg_;
 };
 
 } // namespace
