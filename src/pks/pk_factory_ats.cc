@@ -24,9 +24,11 @@
    ------------------------------------------------------------------------- */
 
 #include "pk_factory_ats.hh"
+#include "PK_Factory.hh"
 
 namespace Amanzi {
 
-PKFactory_ATS::map_type* PKFactory_ATS::map_;
+PKFactory_ATS::map_type* PKFactory_ATS::map_ats_;
+PKFactory::map_type* PKFactory::map_;
 
 } // namespace

@@ -27,7 +27,9 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "UnstructuredObservations.hh"
 #include "State.hh"
 #include "pk.hh"
+#include "PK.hh"
 #include "TreeVector.hh"
+#include "PK_Factory.hh"
 #include "pk_factory_ats.hh"
 
 #include "coordinator.hh"
@@ -67,10 +69,22 @@ void Coordinator::coordinator_init() {
 
   // create the pk
   PKFactory_ATS pk_factory_ats;
+  PKFactory pk_factory;
+
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list, pk_name);
   pk_list->set("PK name", pk_name);
- 
-  pk_ = pk_factory_ats.CreatePK(pk_list, S_->FEList(), soln_);
+  const std::string &pk_origin = pk_list -> get<std::string>("PK origin", "ATS");
+
+  if (pk_origin == "ATS"){
+    Teuchos::RCP<PK_ATS> pk_tmp = pk_factory_ats.CreatePK(pk_list, S_->FEList(), soln_);
+    pk_ = Teuchos::rcp_dynamic_cast<PK> (pk_tmp);
+  }else if (pk_origin == "Amanzi"){
+    pk_ = pk_factory.CreatePK(*pk_list, parameter_list_, S_, soln_);
+  }else{
+    Errors::Message message("Coordinator: invalid PK origin");
+    Exceptions::amanzi_throw(message);
+  }
+  
   pk_->Setup(S_.ptr());
 
   // create the checkpointing
@@ -548,6 +562,12 @@ void Coordinator::cycle_driver() {
       *S_->GetScalarData("dt", "coordinator") = dt;
       *S_inter_->GetScalarData("dt", "coordinator") = dt;
       *S_next_->GetScalarData("dt", "coordinator") = dt;
+
+      S_->set_initial_time(S_->time());
+      S_->set_final_time(S_->time() + dt);
+      S_->set_intermediate_time(S_->time());
+
+
       fail = advance(S_->time(), S_->time() + dt);
       dt = get_dt(fail);
 

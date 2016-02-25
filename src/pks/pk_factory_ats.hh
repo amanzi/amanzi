@@ -67,14 +67,14 @@ public:
 
 protected:
   static map_type* GetMap() {
-    if (!map_) {
-      map_ = new map_type;
+    if (!map_ats_) {
+      map_ats_ = new map_type;
     }
-    return map_;
+    return map_ats_;
   }
 
 private:
-  static map_type* map_;
+  static map_type* map_ats_;
 };
 
 

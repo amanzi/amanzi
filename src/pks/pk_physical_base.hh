@@ -9,8 +9,8 @@ Author: Ethan Coon
 Default base with default implementations of methods for a physical PK.
 ------------------------------------------------------------------------- */
 
-#ifndef AMANZI_PK_PHYSICAL_BASE_HH_
-#define AMANZI_PK_PHYSICAL_BASE_HH_
+#ifndef ATS_PK_PHYSICAL_BASE_HH_
+#define ATS_PK_PHYSICAL_BASE_HH_
 
 #include "Debugger.hh"
 #include "primary_variable_field_evaluator.hh"

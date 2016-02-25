@@ -51,7 +51,7 @@ public:
   //                                TreeVector& soln){state_to_solution(S, soln);};
   // virtual void Solution_to_State(TreeVector& soln,
   //                                const Teuchos::RCP<State>& S){solution_to_state(soln, S);};
-  virtual bool advance(double dt){AdvanceStep(0, dt, false);};
+  virtual bool advance(double dt){ return PKBDFBase::advance(dt);};
   virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {CommitStep(0, dt, S);};
 
   virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {CalculateDiagnostics(S);};

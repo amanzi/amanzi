@@ -10,8 +10,8 @@ Default base with default implementations of methods for a PK integrated using
 Explicit.
 ------------------------------------------------------------------------- */
 
-#ifndef AMANZI_PK_EXPLICIT_BASE_HH_
-#define AMANZI_PK_EXPLICIT_BASE_HH_
+#ifndef ATS_PK_EXPLICIT_BASE_HH_
+#define ATS_PK_EXPLICIT_BASE_HH_
 
 #include "Teuchos_TimeMonitor.hpp"
 

@@ -29,7 +29,7 @@ class Visualization;
 class Checkpoint;
 class State;
 class TreeVector;
-  //class PK;
+class PK;
 class PK_ATS;
 class UnstructuredObservations;
 
@@ -60,7 +60,9 @@ private:
   void read_parameter_list();
 
   // PK container and factory
-  Teuchos::RCP<PK_ATS> pk_;
+  Teuchos::RCP<PK_ATS> pk_ats_;
+  Teuchos::RCP<PK> pk_;
+
 
   // states
   Teuchos::RCP<State> S_;

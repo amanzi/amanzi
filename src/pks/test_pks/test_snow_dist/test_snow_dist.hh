@@ -12,7 +12,7 @@ Test PK for testing snow distribution
 #ifndef PKS_TEST_SNOW_DIST_HH_
 #define PKS_TEST_SNOW_DIST_HH_
 
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 #include "pk_physical_base.hh"
 
 namespace Amanzi {
@@ -54,7 +54,7 @@ public:
 
  private:
   // factory registration
-  static RegisteredPKFactory<TestSnowDist> reg_;
+  static RegisteredPKFactory_ATS<TestSnowDist> reg_;
 };
 
 } // namespace

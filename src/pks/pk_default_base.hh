@@ -9,8 +9,8 @@ Author: Ethan Coon
 Default base with a few methods implemented in standard ways.
 ------------------------------------------------------------------------- */
 
-#ifndef AMANZI_PK_DEFAULT_BASE_HH_
-#define AMANZI_PK_DEFAULT_BASE_HH_
+#ifndef ATS_PK_DEFAULT_BASE_HH_
+#define ATS_PK_DEFAULT_BASE_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
