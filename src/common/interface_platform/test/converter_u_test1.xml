@@ -56,7 +56,7 @@
   <execution_controls>
     <verbosity level="high" />
     <execution_control_defaults init_dt="1.0" method="picard" mode="steady" />
-    <execution_control end="1956,y" mode="steady" start="0.0" />
+    <execution_control mode="steady" start="0.0" />
     <execution_control end="END" mode="transient" start="START" />
   </execution_controls>
 

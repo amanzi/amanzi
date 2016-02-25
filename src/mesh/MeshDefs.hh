@@ -34,7 +34,6 @@ namespace AmanziMesh {
   using AmanziGeometry::Entity_ID_List;
   using AmanziGeometry::Set_ID;
   using AmanziGeometry::Set_ID_List;
-  using AmanziGeometry::Set_Name;
   
 
   

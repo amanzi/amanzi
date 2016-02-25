@@ -1,7 +1,7 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -54,7 +54,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
 
   // create an SIMPLE mesh framework
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Flat");
-  GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();
@@ -174,7 +174,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
 
   // create an SIMPLE mesh framework
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Flat");
-  GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();
@@ -294,7 +294,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
 
   // create an SIMPLE mesh framework
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Flat");
-  GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();

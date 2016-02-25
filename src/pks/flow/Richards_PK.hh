@@ -148,7 +148,6 @@ class Richards_PK : public Flow_PK {
  private:
   void InitializeFields_();
   void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
-  void InitializeUpwind_();
   void InitializeStatistics_();
 
   void Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f);
@@ -174,7 +173,6 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<WRMPartition> wrm_;
 
   Teuchos::RCP<RelPerm> relperm_;
-  int krel_upwind_method_;
   Teuchos::RCP<CompositeVector> krel_;
   Teuchos::RCP<CompositeVector> dKdP_;
 
@@ -213,8 +211,7 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<CompositeVector> darcy_flux_copy;
 
   // upwind
-  int update_upwind;
-  Teuchos::RCP<CompositeVector> darcy_flux_upwind;
+  int upwind_frequency_;
 
   // evaluators
   Teuchos::RCP<RelPermEvaluator> rel_perm_eval_;

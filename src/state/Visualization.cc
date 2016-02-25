@@ -16,12 +16,15 @@
 #include "Epetra_MpiComm.h"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
-// Amanzi
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 
-// State
+#include "OutputXDMF.hh"
+#if ENABLE_Silo
+#include "OutputSilo.hh"
+#endif
+
 #include "Visualization.hh"
 
 namespace Amanzi {
@@ -30,7 +33,7 @@ namespace Amanzi {
 // Constructor
 // -----------------------------------------------------------------------------
 Visualization::Visualization (Teuchos::ParameterList& plist, Epetra_MpiComm* comm) :
-  IOEvent(plist), dynamic_mesh_(false) {
+  IOEvent(plist) {
   ReadParameters_();
 
   // set the line prefix for output
@@ -40,11 +43,6 @@ Visualization::Visualization (Teuchos::ParameterList& plist, Epetra_MpiComm* com
 
   // Read the sublist for verbosity settings.
   Teuchos::readVerboseObjectSublist(&plist_,this);
-
-  // Set up the HDF5
-  visualization_output_ = Teuchos::rcp(new Amanzi::HDF5_MPI(*comm));
-  visualization_output_->setTrackXdmf(true);
-  visualization_output_->setDynMesh(dynamic_mesh_);
 }
 
 
@@ -58,9 +56,6 @@ Visualization::Visualization () : IOEvent() {}
 // Set up control from parameter list.
 // -----------------------------------------------------------------------------
 void Visualization::ReadParameters_() {
-  filebasename_ = plist_.get<std::string>("file name base","amanzi_vis");
-  dynamic_mesh_ = plist_.get<bool>("dynamic mesh",false);
-
   Teuchos::Array<std::string> no_regions(0);
   Teuchos::ParameterList& tmp = plist_.sublist("write regions");
     
@@ -69,6 +64,8 @@ void Visualization::ReadParameters_() {
     regions_[it->first] = tmp.get<Teuchos::Array<std::string> >(it->first, no_regions);
   }
   write_partition_ = plist_.get<bool>("write partitions", false);
+
+  dynamic_mesh_ = plist_.get<bool>("dynamic mesh",false);
 }
 
 
@@ -76,29 +73,15 @@ void Visualization::ReadParameters_() {
 // Write a multivector
 // -----------------------------------------------------------------------------
 void Visualization::WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const {
-  if (names.size() < vec.NumVectors()) {
-    Errors::Message m("Amanzi::Visualization::write_vector... not enough names were specified for the the components of the multi vector");
-    Exceptions::amanzi_throw(m);
-  }
-  for (int i=0; i!=vec.NumVectors(); ++i) {
-    visualization_output_->writeCellDataReal(*vec(i), names[i]);
-  }
+  visualization_output_->WriteMultiVector(vec, names);
 }
 
 
 // -----------------------------------------------------------------------------
 // Write a vector
 // -----------------------------------------------------------------------------
-void Visualization::WriteVector(const Epetra_Vector& vec, const std::string name ) const {
-  visualization_output_->writeCellDataReal(vec ,name);
-}
-
-
-// -----------------------------------------------------------------------------
-// Write the mesh
-// -----------------------------------------------------------------------------
-void Visualization::WriteMesh(const double time, const int iteration) const {
-  visualization_output_->writeMesh(time, iteration);
+void Visualization::WriteVector(const Epetra_Vector& vec, const std::string& name) const {
+  visualization_output_->WriteVector(vec ,name);
 }
 
 
@@ -157,34 +140,30 @@ void Visualization::WritePartition() {
 // Writing to files
 // -----------------------------------------------------------------------------
 void Visualization::CreateFiles() {
+  ASSERT(mesh_ != Teuchos::null);
 
-  if (!is_disabled()) {
-    // create file name for the mesh
-    std::stringstream meshfilename;
-    meshfilename.flush();
-    meshfilename << filebasename_;
-    meshfilename << "_mesh";
-    // create file name for the data
-    std::stringstream datafilename;
-    datafilename.flush();
-    datafilename << filebasename_;
-    datafilename << "_data";
-    // create the files
-    visualization_output_->createMeshFile(mesh_, meshfilename.str());
-    visualization_output_->createDataFile(datafilename.str());
+  std::string file_format = plist_.get<std::string>("file format", "XDMF");
+
+  if (file_format == "XDMF" || file_format == "xdmf") {
+    visualization_output_ = Teuchos::rcp(new OutputXDMF(plist_, mesh_, true, dynamic_mesh_));
+#if ENABLE_Silo    
+  } else if (file_format == "Silo" || file_format == "SILO" || file_format == "silo") {
+    visualization_output_ = Teuchos::rcp(new OutputSilo(plist_, mesh_, true, dynamic_mesh_));
+#endif
+  } else {
+    Errors::Message msg("Visualization: Unknown file format: \""+file_format+"\"");
+    Exceptions::amanzi_throw(msg);
   }
 }
 
 
 void Visualization::CreateTimestep(const double& time, const int& cycle) {
-  visualization_output_->createTimestep(time,cycle);
-  visualization_output_->open_h5file();
+  visualization_output_->InitializeCycle(time,cycle);
 }
 
 
 void Visualization::FinalizeTimestep() const {
-  visualization_output_->close_h5file();
-  visualization_output_->endTimestep();
+  visualization_output_->FinalizeCycle();
 }
 
 } // namespace Amanzi

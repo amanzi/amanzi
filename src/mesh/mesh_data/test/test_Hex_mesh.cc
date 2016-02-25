@@ -25,11 +25,11 @@ SUITE (HexMeshGenerator)
 {
   TEST (Generation)
   {
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    Epetra_MpiComm comm_(MPI_COMM_WORLD);
 
-    int me(comm.MyPID());
+    int me(comm_.MyPID());
 
-    Amanzi::AmanziMesh::Data::HexMeshGenerator gen(&comm, size*size, size, size);
+    Amanzi::AmanziMesh::Data::HexMeshGenerator gen(&comm_, size*size, size, size);
     Amanzi::AmanziMesh::Data::Data *mesh;
     mesh = gen.generate();
 
@@ -65,7 +65,7 @@ SUITE (HexMeshGenerator)
       Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
     }
 
-    comm.Barrier();             // probably not necessary
+    comm_.Barrier();             // probably not necessary
 
     // if it runs, it passes the test, right?
   }

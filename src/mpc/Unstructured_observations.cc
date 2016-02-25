@@ -15,8 +15,9 @@
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
-#include "PlaneRegion.hh"
-#include "PolygonRegion.hh"
+#include "Point.hh"
+#include "RegionPlane.hh"
+#include "RegionPolygon.hh"
 #include "ReconstructionCell.hh"
 #include "Units.hh"
 
@@ -146,15 +147,17 @@ int Unstructured_observations::MakeObservations(State& S)
       // check if observation is planar
       bool obs_planar(false);
 
-      AmanziGeometry::GeometricModelPtr gm_ptr = S.GetMesh()->geometric_model();
-      AmanziGeometry::RegionPtr reg_ptr = gm_ptr->FindRegion((i->second).region);
+      Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = S.GetMesh()->geometric_model();
+      Teuchos::RCP<const AmanziGeometry::Region> reg_ptr = gm_ptr->FindRegion((i->second).region);
       AmanziGeometry::Point reg_normal;
       if (reg_ptr->type() == AmanziGeometry::POLYGON) {
-        AmanziGeometry::PolygonRegion *poly_reg = dynamic_cast<AmanziGeometry::PolygonRegion*>(reg_ptr);
+        Teuchos::RCP<const AmanziGeometry::RegionPolygon> poly_reg =
+            Teuchos::rcp_static_cast<const AmanziGeometry::RegionPolygon>(reg_ptr);
         reg_normal = poly_reg->normal();
         obs_planar = true;
       } else if (reg_ptr->type() == AmanziGeometry::PLANE) {
-        AmanziGeometry::PlaneRegion *plane_reg = dynamic_cast<AmanziGeometry::PlaneRegion*>(reg_ptr);
+        Teuchos::RCP<const AmanziGeometry::RegionPlane> plane_reg =
+            Teuchos::rcp_static_cast<const AmanziGeometry::RegionPlane>(reg_ptr);
         reg_normal = plane_reg->normal();
         obs_planar = true;
       }

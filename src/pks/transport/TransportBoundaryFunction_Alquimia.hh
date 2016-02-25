@@ -1,7 +1,7 @@
 /*
-  This is the Transport component of Amanzi
+  Transport PK
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -23,7 +23,7 @@
 #include "TransportBoundaryFunction.hh"
 
 #ifdef ALQUIMIA_ENABLED
-#include "Chemistry_State.hh"
+#include "Alquimia_PK.hh"
 #include "ChemistryEngine.hh"
 
 namespace Amanzi {
@@ -34,18 +34,16 @@ class TransportBoundaryFunction_Alquimia : public TransportBoundaryFunction {
   TransportBoundaryFunction_Alquimia(const std::vector<double>& times,
                                      const std::vector<std::string>& cond_names, 
                                      const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
-                                     Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
+                                     Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
                                      Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
   ~TransportBoundaryFunction_Alquimia();
   
   void Compute(double time);
 
   void Define(const std::vector<std::string> &regions);
-
   void Define(std::string region);
 
  private:
-  // The computational mesh.
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   // The geochemical conditions we are enforcing, and the times we are enforcing them at.
@@ -53,7 +51,7 @@ class TransportBoundaryFunction_Alquimia : public TransportBoundaryFunction {
   std::vector<std::string> cond_names_;
 
   // Chemistry state and engine.
-  Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state_;
+  Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk_;
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
 
   // Containers for interacting with the chemistry engine.
@@ -64,7 +62,6 @@ class TransportBoundaryFunction_Alquimia : public TransportBoundaryFunction {
 
   // A mapping of boundary face indices to interior cells.
   std::map<int, int> cell_for_face_;
-
 };
 
 }  // namespace Transport

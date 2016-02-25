@@ -1,7 +1,7 @@
 /*
-  This is the transport component of the Amanzi code. 
+  Transport PK
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -122,10 +122,10 @@ void Transport_PK::InitializeAll_()
 
   if (tp_list_->isSublist("boundary conditions")) {  // New flexible format.
     std::vector<std::string> bcs_tcc_name;
-    Teuchos::RCP<Teuchos::ParameterList>
-       bcs_list = Teuchos::rcp(new Teuchos::ParameterList(tp_list_->get<Teuchos::ParameterList>("boundary conditions")));
+    Teuchos::RCP<Teuchos::ParameterList> bcs_list =
+        Teuchos::rcp(new Teuchos::ParameterList(tp_list_->get<Teuchos::ParameterList>("boundary conditions")));
 #ifdef ALQUIMIA_ENABLED
-    TransportBCFactory bc_factory(mesh_, bcs_list, chem_state_, chem_engine_);
+    TransportBCFactory bc_factory(mesh_, bcs_list, chem_pk_, chem_engine_);
 #else
     TransportBCFactory bc_factory(mesh_, bcs_list);
 #endif

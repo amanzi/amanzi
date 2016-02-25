@@ -1,7 +1,7 @@
 /*
   Operators
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -37,7 +37,7 @@
 #include "Operator.hh"
 #include "OperatorAccumulation.hh"
 #include "OperatorDiffusionFV.hh"
-#include "UpwindStandard.hh"
+#include "UpwindFlux.hh"
 
 #include "operator_marshak_testclass.hh"
 
@@ -61,7 +61,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
   // create a logical mesh
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshLogicalFactory fac(&comm, gm);
 
@@ -136,7 +136,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
   // Create upwind model
   ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
-  UpwindStandard<HeatConduction> upwind(mesh, knc);
+  UpwindFlux<HeatConduction> upwind(mesh, knc);
   upwind.Init(ulist);
 
   // MAIN LOOP

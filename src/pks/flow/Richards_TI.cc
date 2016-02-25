@@ -45,7 +45,7 @@ void Richards_PK::Functional(double t_old, double t_new,
 
   relperm_->Compute(u_new->Data(), krel_); 
   RelPermUpwindFn func1 = &RelPerm::Compute;
-  upwind_->Compute(*darcy_flux_upwind, *u_new->Data(), bc_model, bc_value, *krel_, *krel_, func1);
+  upwind_->Compute(*darcy_flux_copy, *u_new->Data(), bc_model, bc_value, *krel_, *krel_, func1);
   Operators::CellToFace_ScaleInverse(mu, krel_);
   krel_->ScaleMasterAndGhosted(molar_rho_);
 
@@ -54,7 +54,7 @@ void Richards_PK::Functional(double t_old, double t_new,
 
   relperm_->ComputeDerivative(u_new->Data(), dKdP_); 
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
-  upwind_->Compute(*darcy_flux_upwind, *u_new->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
+  upwind_->Compute(*darcy_flux_copy, *u_new->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
   Operators::CellToFace_ScaleInverse(mu, dKdP_);
   dKdP_->ScaleMasterAndGhosted(molar_rho_);
 
@@ -296,7 +296,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
 
   // update coefficients
-  if (update_upwind == FLOW_UPWIND_UPDATE_ITERATION) {
+  if (upwind_frequency_ == FLOW_UPWIND_UPDATE_ITERATION) {
     op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
     Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face");
     for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
@@ -305,7 +305,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
 
   relperm_->Compute(u->Data(), krel_);
   RelPermUpwindFn func1 = &RelPerm::Compute;
-  upwind_->Compute(*darcy_flux_upwind, *u->Data(), bc_model, bc_value, *krel_, *krel_, func1);
+  upwind_->Compute(*darcy_flux_copy, *u->Data(), bc_model, bc_value, *krel_, *krel_, func1);
   Operators::CellToFace_ScaleInverse(mu, krel_);
   krel_->ScaleMasterAndGhosted(molar_rho_);
 
@@ -314,7 +314,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
 
   relperm_->ComputeDerivative(u->Data(), dKdP_);
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
-  upwind_->Compute(*darcy_flux_upwind, *u->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
+  upwind_->Compute(*darcy_flux_copy, *u->Data(), bc_model, bc_value, *dKdP_, *dKdP_, func2);
   Operators::CellToFace_ScaleInverse(mu, dKdP_);
   dKdP_->ScaleMasterAndGhosted(molar_rho_);
 
@@ -464,9 +464,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   const Epetra_MultiVector& duc = *du->Data()->ViewComponent("cell");
 
   AmanziGeometry::Point face_centr, cell_cntr;
-  double max_sat_pert = 0.25;
-  double damping_factor = 0.5;
-  double reference_pressure = 101325.0;
+  double max_sat_pert(0.25), damping_factor(0.5);
   
   if (rp_list_->isSublist("clipping parameters")) {
     Teuchos::ParameterList& clip_list = rp_list_->sublist("clipping parameters");
@@ -488,12 +486,8 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
     double tmp = duc[0][c];
 
     if ((fabs(duc[0][c]) > du_pert_max) && (1 - sat > 1e-5)) {
-      if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "clip saturation: c=" << c 
-                   << " p=" << uc[0][c]
-                   << " dp: " << duc[0][c] << " -> " << du_pert_max << std::endl;
-      }
+      // std::cout << "clip saturation: c=" << c << " p=" << uc[0][c]
+      //           << " dp: " << duc[0][c] << " -> " << du_pert_max << std::endl;
 
       if (duc[0][c] >= 0.0) duc[0][c] = du_pert_max;
       else duc[0][c] = -du_pert_max;
@@ -507,9 +501,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
     double tmp = duc[0][c];
 
     if ((unew > atm_pressure_) && (uc[0][c] < atm_pressure_)) {
-      if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-        *vo_->os() << "pressure change: " << uc[0][c] << " -> " << unew << std::endl;
-      }
+      // std::cout << "pressure change: " << uc[0][c] << " -> " << unew << std::endl;
       duc[0][c] = tmp * damping_factor;
       npre_clipped++;
     }

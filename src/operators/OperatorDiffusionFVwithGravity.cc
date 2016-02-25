@@ -1,5 +1,5 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -24,7 +24,7 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Initialization completes initialization of the base class.
+* This completes initialization of the base class.
 ****************************************************************** */
 void OperatorDiffusionFVwithGravity::InitDiffusion_(Teuchos::ParameterList& plist)
 {
@@ -32,14 +32,18 @@ void OperatorDiffusionFVwithGravity::InitDiffusion_(Teuchos::ParameterList& plis
 }
 
 
-void
-OperatorDiffusionFVwithGravity::SetDensity(const Teuchos::RCP<const CompositeVector>& rho) {
+/* ******************************************************************
+* This completes initialization of the base class.
+****************************************************************** */
+void OperatorDiffusionFVwithGravity::SetDensity(
+    const Teuchos::RCP<const CompositeVector>& rho)
+{
   OperatorDiffusionWithGravity::SetDensity(rho);
   transmissibility_initialized_ = false;
 }
 
-void
-OperatorDiffusionFVwithGravity::SetDensity(double rho) {
+
+void OperatorDiffusionFVwithGravity::SetDensity(double rho) {
   OperatorDiffusionWithGravity::SetDensity(rho);
   transmissibility_initialized_ = false;
 }
@@ -48,8 +52,9 @@ OperatorDiffusionFVwithGravity::SetDensity(double rho) {
 /* ******************************************************************
 * Populate face-based matrices.
 ****************************************************************** */
-void OperatorDiffusionFVwithGravity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-                                                    const Teuchos::Ptr<const CompositeVector>& u)
+void OperatorDiffusionFVwithGravity::UpdateMatrices(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u)
 {
   if (!transmissibility_initialized_) ComputeTransmissibility_(gravity_term_);
 
@@ -86,7 +91,7 @@ void OperatorDiffusionFVwithGravity::UpdateMatrices(const Teuchos::Ptr<const Com
 
 /* ******************************************************************
 * Special implementation of boundary conditions.
-**********************************;******************************** */
+****************************************************************** */
 void OperatorDiffusionFVwithGravity::ApplyBCs(bool primary, bool eliminate)
 {
   OperatorDiffusionFV::ApplyBCs(primary, eliminate);
@@ -186,9 +191,7 @@ void OperatorDiffusionFVwithGravity::ComputeJacobianLocal_(
 
 
 /* ******************************************************************
-* Compute transmissibilities on faces 
-*
-* Requires K, g, rho
+* Compute transmissibilities on faces. Requires K, g, rho.
 ****************************************************************** */
 void OperatorDiffusionFVwithGravity::ComputeTransmissibility_(
    Teuchos::RCP<CompositeVector> g_cv)

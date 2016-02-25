@@ -1,13 +1,13 @@
 /*
-This is the flow component of the Amanzi code. 
+  Flow PK
 
-Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided Reconstruction.cppin the top-level COPYRIGHT file.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Neil Carlson, version 1 (nnc@lanl.gov), 
-         Konstantin Lipnikov, version 2 (lipnikov@lanl.gov)
+  Authors: Neil Carlson, version 1 (nnc@lanl.gov), 
+           Konstantin Lipnikov, version 2 (lipnikov@lanl.gov)
 */
 
 #include "UnitTest++.h"
@@ -33,7 +33,7 @@ struct bits_and_pieces
 {
   Epetra_MpiComm *comm;
   Teuchos::RCP<Mesh> mesh;
-  GeometricModel *gm;
+  Teuchos::RCP<GeometricModel> gm;
 
   enum Side {LEFT, RIGHT, FRONT, BACK, BOTTOM, TOP};
 
@@ -63,7 +63,7 @@ struct bits_and_pieces
         set("Location", corner_max).set("Direction", back);
     regions.sublist("TOP").sublist("Region: Plane").
         set("Location", corner_max).set("Direction", top);
-    gm = new GeometricModel(3, regions, comm);
+    gm = Teuchos::rcp(new GeometricModel(3, regions, comm));
     // Create the mesh
     MeshFactory mesh_fact(comm);
     mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2, gm);

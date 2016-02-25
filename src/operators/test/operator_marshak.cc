@@ -34,7 +34,7 @@
 #include "OperatorAccumulation.hh"
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionFactory.hh"
-#include "UpwindStandard.hh"
+#include "UpwindFlux.hh"
 
 #include "operator_marshak_testclass.hh"
 
@@ -57,7 +57,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
   // create an MSTK mesh framework
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();
@@ -133,7 +133,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
   // Create upwind model
   ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
-  UpwindStandard<HeatConduction> upwind(mesh, knc);
+  UpwindFlux<HeatConduction> upwind(mesh, knc);
   upwind.Init(ulist);
 
   // MAIN LOOP

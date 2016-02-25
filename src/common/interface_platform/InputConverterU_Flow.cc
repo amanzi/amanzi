@@ -59,30 +59,24 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   rel_perm_out = boost::replace_all_copy(rel_perm, "-", ": ");
   replace(rel_perm_out.begin(), rel_perm_out.end(), '_', ' ');
 
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, update_upwind_frequency", flag);
+  if (flag) update_upwind = mm.transcode(node->getTextContent());
+  replace(update_upwind.begin(), update_upwind.end(), '_', ' ');
+
   // create flow header
   if (pk_model_["flow"] == "darcy") {
     Teuchos::ParameterList& darcy_list = out_list.sublist("Darcy problem");
-    darcy_list.set<double>("atmospheric pressure", atm_pres);
 
     flow_list = &darcy_list;
     flow_single_phase_ = true;
   } else if (pk_model_["flow"] == "richards") {
     Teuchos::ParameterList& richards_list = out_list.sublist("Richards problem");
-    Teuchos::ParameterList& upw_list = richards_list.sublist("upwind");
-    upw_list.set<std::string>("relative permeability", rel_perm_out);
-    upw_list.set<std::string>("upwind update", update_upwind);
-
-    // "standard" is the most robust upwind method for variety of subsurface
-    // scenarios. Note that "upwind: amanzi" requires "upwind method"="divk" 
-    // to reproduce the same behavior on orthogonal meshes. 
-    if (strcmp(rel_perm_out.c_str(), "upwind: amanzi") == 0) {
-      upw_list.set<std::string>("upwind method", "divk");
-      upw_list.sublist("upwind divk parameters").set<double>("tolerance", 1e-12);
-    } else {
-      upw_list.set<std::string>("upwind method", "standard");
-      upw_list.sublist("upwind standard parameters").set<double>("tolerance", 1e-12);
-    }
-    richards_list.set<double>("atmospheric pressure", atm_pres);
+    Teuchos::ParameterList& upw_list = richards_list.sublist("relative permeability");
+    upw_list.set<std::string>("upwind method", rel_perm_out);
+    upw_list.set<std::string>("upwind frequency", update_upwind);
+    upw_list.sublist("upwind parameters").set<double>("tolerance", 1e-12)
+        .set<std::string>("method", "cell-based").set<int>("polynomial order", 1)
+        .set<std::string>("limiter", "Barth-Jespersen");
     flow_list = &richards_list;
 
     richards_list.sublist("water retention models") = TranslateWRM_();
@@ -122,8 +116,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   // Newton method requires to overwrite some parameters.
   if (nonlinear_solver == "newton") {
     modify_correction = true;
-    out_list.sublist("Richards problem").sublist("upwind")
-        .set<std::string>("upwind update", "every nonlinear iteration");
+    out_list.sublist("Richards problem").sublist("relative permeability")
+        .set<std::string>("upwind frequency", "every nonlinear iteration");
 
     if (disc_method != "fv-default" ||
         rel_perm != "upwind-darcy_velocity" ||
@@ -138,12 +132,12 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
 
   // Newton-Picard method requires to overwrite some parameters.
   if (nonlinear_solver == "newton-picard") {
-    out_list.sublist("Richards problem").sublist("upwind")
-        .set<std::string>("upwind update", "every nonlinear iteration");
+    out_list.sublist("Richards problem").sublist("relative permeability")
+        .set<std::string>("upwind frequency", "every nonlinear iteration");
   }
 
   flow_list->sublist("operators") = TranslateDiffusionOperator_(
-      disc_method, pc_method, nonlinear_solver, "vapor matrix", true);
+      disc_method, pc_method, nonlinear_solver, rel_perm, "vapor matrix", true);
   
   // insert time integrator
   std::string err_options, unstr_controls;
@@ -543,57 +537,74 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
     if (!flag) continue;
 
     // process a group of similar elements defined by the first element
-    std::string bctype;
-    std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
+    // -- get BC type 
+    std::string bctype_in;
+    std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype_in, flag, true);
 
-    std::map<double, double> tp_values, tp_fluxes;
-    std::map<double, std::string> tp_forms;
-
-    for (int j = 0; j < same_list.size(); ++j) {
-      DOMNode* jnode = same_list[j];
-      element = static_cast<DOMElement*>(jnode);
-      double t0 = GetAttributeValueD_(element, "start");
-
-      tp_forms[t0] = GetAttributeValueS_(element, "function");
-      tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, false, 0.0);
-      tp_fluxes[t0] = GetAttributeValueD_(element, "inward_mass_flux", TYPE_NUMERICAL, false, 0.0);
+    // -- identify global BC that do not require forms
+    bool global_bc(false);
+    if (bctype_in == "linear_pressure" || bctype_in == "linear_hydrostatic") {
+      global_bc = true;
     }
 
-    // create vectors of values and forms
+    // -- process global and local BC separately
+    double refv;
+    std::vector<double> grad, refc;
     std::vector<double> times, values, fluxes;
     std::vector<std::string> forms;
-    for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
-      times.push_back(it->first);
-      values.push_back(it->second);
-      fluxes.push_back(tp_fluxes[it->second]);
-      forms.push_back(tp_forms[it->first]);
+
+    if (global_bc) {
+      element = static_cast<DOMElement*>(same_list[0]);
+      refv = GetAttributeValueD_(element, "reference_value");
+      grad = GetAttributeVector_(element, "gradient_value");
+      refc = GetAttributeVector_(element, "reference_point");
+    } else {
+      std::map<double, double> tp_values, tp_fluxes;
+      std::map<double, std::string> tp_forms;
+
+      for (int j = 0; j < same_list.size(); ++j) {
+        element = static_cast<DOMElement*>(same_list[j]);
+        double t0 = GetAttributeValueD_(element, "start");
+
+        tp_forms[t0] = GetAttributeValueS_(element, "function");
+        tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, false, 0.0);
+        tp_fluxes[t0] = GetAttributeValueD_(element, "inward_mass_flux", TYPE_NUMERICAL, false, 0.0);
+      }
+
+      // create vectors of values and forms
+      for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
+        times.push_back(it->first);
+        values.push_back(it->second);
+        fluxes.push_back(tp_fluxes[it->second]);
+        forms.push_back(tp_forms[it->first]);
+      }
+      forms.pop_back();
     }
-    forms.pop_back();
 
     // create names, modify data
-    std::string bcname;
-    if (bctype == "inward_mass_flux") {
+    std::string bcname, bctype(bctype_in);
+    if (bctype_in == "inward_mass_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
       for (int k = 0; k < values.size(); k++) values[k] *= -1;
-    } else if (bctype == "outward_mass_flux") {
+    } else if (bctype_in == "outward_mass_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
-    } else if (bctype == "outward_volumetric_flux") {
+    } else if (bctype_in == "outward_volumetric_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
       for (int k = 0; k < values.size(); k++) values[k] *= rho_;
-    } else if (bctype == "inward_volumetric_flux") {
+    } else if (bctype_in == "inward_volumetric_flux") {
       bctype = "mass flux";
       bcname = "outward mass flux";
       for (int k = 0; k < values.size(); k++) values[k] *= -rho_;
-    } else if (bctype == "uniform_pressure") {
+    } else if (bctype_in == "uniform_pressure" || bctype_in == "linear_pressure") {
       bctype = "pressure";
       bcname = "boundary pressure";
-    } else if (bctype == "hydrostatic") {
+    } else if (bctype_in == "hydrostatic" || bctype_in == "linear_hydrostatic") {
       bctype = "static head";
       bcname = "water table elevation";
-    } else if (bctype == "seepage_face") {
+    } else if (bctype_in == "seepage_face") {
       bctype = "seepage face";
       bcname = "outward mass flux";
       values = fluxes;
@@ -612,7 +623,15 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
         transport_diagnostics_.insert(transport_diagnostics_.end(), regions.begin(), regions.end());
 
     Teuchos::ParameterList& bcfn = bc.sublist(bcname);
-    if (times.size() == 1) {
+    if (global_bc) {
+      grad.insert(grad.begin(), 0.0);
+      refc.insert(refc.begin(), 0.0);
+
+      bcfn.sublist("function-linear")
+          .set<double>("y0", refv)
+          .set<Teuchos::Array<double> >("x0", refc)
+          .set<Teuchos::Array<double> >("gradient", grad);
+    } else if (times.size() == 1) {
       bcfn.sublist("function-constant").set<double>("value", values[0]);
     } else {
       bcfn.sublist("function-tabular")

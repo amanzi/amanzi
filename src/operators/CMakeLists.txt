@@ -78,17 +78,20 @@ set(operators_inc_files
     OperatorDiffusionMFD.hh
     OperatorDiffusionMFDwithGravity.hh
     OperatorDiffusionFV.hh
-    OperatorDiffusionNLFV.hh
     OperatorDiffusionFVwithGravity.hh
+    OperatorDiffusionNLFV.hh
+    OperatorDiffusionNLFVwithGravity.hh
     OperatorAccumulation.hh
     OperatorAdvection.hh
     TreeOperator.hh
     Reconstruction.hh
     ReconstructionCell.hh
     Upwind.hh
-    UpwindFactory.hh
-    UpwindStandard.hh
+    UpwindArithmeticAverage.hh
     UpwindDivK.hh
+    UpwindFactory.hh
+    UpwindFlux.hh
+    UpwindGravity.hh
     UpwindSecondOrder.hh
 )
 
@@ -107,11 +110,13 @@ add_amanzi_library(operators
                           OperatorDiffusionFV.cc
                           OperatorDiffusionFVwithGravity.cc
                           OperatorDiffusionNLFV.cc
+                          OperatorDiffusionNLFVwithGravity.cc
                           OperatorDiffusionFactory.cc                   
                           OperatorAccumulation.cc
                           OperatorAdvection.cc  
                           TreeOperator.cc
-                          ReconstructionCell.cc  ReconstructionCell_Limiters.cc
+                          ReconstructionCell.cc
+                          ReconstructionCell_Limiters.cc
                    HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})
 
@@ -140,10 +145,6 @@ if ( BUILD_TESTS )
                         KIND unit
                         SOURCE test/Main.cc test/operator_parabolic_surface.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(operators_nonlinear_surface operators_nonlinear_surface
-                        KIND unit
-                        SOURCE test/Main.cc test/operator_nonlinear_surface.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
         add_amanzi_test(operators_marshak operators_marshak
                         KIND unit
                         SOURCE test/Main.cc test/operator_marshak.cc
@@ -153,19 +154,25 @@ if ( BUILD_TESTS )
                         SOURCE test/Main.cc test/operator_marshak_logical.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     else()
-        add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
+        add_amanzi_test(operators_bundle_pdes operators_bundle_pdes
                         KIND unit
                         SOURCE test/Main.cc test/operator_laplace_beltrami.cc 
                                             test/operator_parabolic_surface.cc
-                                            test/operator_nonlinear_surface.cc
                                             test/operator_marshak.cc
                                             test/operator_marshak_logical.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()
 
+    add_amanzi_test(operators_nonlinear_surface operators_nonlinear_surface
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_nonlinear_surface.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
     add_amanzi_test(operators_diffusion operators_diffusion
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion.cc
+                                        test/operator_diffusion_nodal.cc
+                                        test/operator_diffusion_divk.cc
                                         test/operator_diffusion_nonsymmetric.cc
                                         test/operator_diffusion_nlfv.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})

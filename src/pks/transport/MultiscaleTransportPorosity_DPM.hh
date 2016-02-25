@@ -1,18 +1,18 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Transport PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
   A two-scale porosity model (fracture + matrix) aka dual porosity
   model. Current naming convention is that the fields used in the 
   single-porosity model correspond now to the fracture continuum.
   Example: tcc = total component concentration in the fracture continuum;
            tcc_matrix = total component concentration in the matrix continuum.
-
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #ifndef MULTISCALE_TRANSPORT_POROSITY_DPM_HH_

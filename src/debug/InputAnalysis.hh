@@ -23,6 +23,10 @@ class InputAnalysis {
   void RegionAnalysis();
   void OutputBCs();
 
+  // supporting members
+  template<class Iterator> 
+  Iterator SelectUniqueEntries(Iterator first, Iterator last);
+
  private:
   Teuchos::ParameterList* plist_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

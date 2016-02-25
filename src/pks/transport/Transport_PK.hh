@@ -1,7 +1,7 @@
 /*
-  This is the transport component of Amanzi. 
+  Transport PK 
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -32,7 +32,7 @@
 #include "VerboseObject.hh"
 
 #ifdef ALQUIMIA_ENABLED
-#include "Chemistry_State.hh"
+#include "Alquimia_PK.hh"
 #include "ChemistryEngine.hh"
 #endif
 
@@ -90,7 +90,7 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
 
   // coupling with chemistry
 #ifdef ALQUIMIA_ENABLED
-  void SetupAlquimia(Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
+  void SetupAlquimia(Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
                      Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
 #endif
 
@@ -206,7 +206,7 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi;
   
 #ifdef ALQUIMIA_ENABLED
-  Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state_;
+  Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk_;
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
 #endif
 

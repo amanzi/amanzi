@@ -1,7 +1,7 @@
 /*
   Operators
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -22,6 +22,7 @@
 #include "OperatorDiffusionNLFV.hh"
 #include "OperatorDiffusionMFDwithGravity.hh"
 #include "OperatorDiffusionFVwithGravity.hh"
+#include "OperatorDiffusionNLFVwithGravity.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -49,6 +50,15 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
 
   } else if (name == "fv: default" && flag) {
     op = Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh, rho, g));
+    op->SetBCs(bc, bc);
+
+  // NLFV methods
+  } else if (name == "nlfv: default" && !flag) {
+    op = Teuchos::rcp(new OperatorDiffusionNLFV(oplist, mesh)); 
+    op->SetBCs(bc, bc);
+
+  } else if (name == "nlfv: default" && flag) {
+    op = Teuchos::rcp(new OperatorDiffusionNLFVwithGravity(oplist, mesh, rho, g)); 
     op->SetBCs(bc, bc);
 
   // MFD methods
@@ -88,7 +98,7 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
 
   } else if (name == "fv: default" && flag) {
     Teuchos::RCP<OperatorDiffusionFVwithGravity> op_g =
-      Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh, g));
+        Teuchos::rcp(new OperatorDiffusionFVwithGravity(oplist, mesh, g));
     op_g->SetBCs(bc, bc);
     op_g->SetDensity(rho);
     op = op_g;
@@ -100,7 +110,7 @@ Teuchos::RCP<OperatorDiffusion> OperatorDiffusionFactory::Create(
 
   } else {
     Teuchos::RCP<OperatorDiffusionMFDwithGravity> op_g =
-      Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, mesh, g));
+        Teuchos::rcp(new OperatorDiffusionMFDwithGravity(oplist, mesh, g));
     op_g->SetBCs(bc, bc);
     op_g->SetDensity(rho);
     op = op_g;

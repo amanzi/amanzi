@@ -14,6 +14,7 @@
 #include <boost/lambda/lambda.hpp>
 namespace bl = boost::lambda;
 
+#include "Point.hh"
 #include "HexMeshGenerator.hh"
 
 namespace Amanzi {
@@ -34,7 +35,7 @@ const unsigned int HexMeshGenerator::nvcell(8);
  *
  * Also, initializes the blocks from the geometric model regions
  * 
- * @param comm parallel environment
+ * @param comm_ parallel environment
  * @param ni number of cells in the i-direction
  * @param nj number of cells in the j-direction
  * @param nk number of cells in the k-direction
@@ -91,7 +92,7 @@ HexMeshGenerator::HexMeshGenerator(const Epetra_Comm *comm,
   // Put the default block in the block list
 
   Block b;
-  b.region = NULL;
+  b.region = Teuchos::null;
   blocks_.push_back(b);
 }
 
@@ -261,7 +262,7 @@ HexMeshGenerator::generate_the_elements_(void)
     
     std::vector<Block>::iterator r;
     for (r = blocks_.begin(); r != blocks_.end(); ++r) {
-      if (r->region) {
+      if (r->region != Teuchos::null) {
         int id = r->region->id();
         if (r->region->inside(p)) {
           break;

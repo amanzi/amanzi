@@ -30,12 +30,13 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
   tranport_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[1]);
   ASSERT(tranport_pk_ != Teuchos::null);
 
-  chemistry_pk_ = Teuchos::rcp_dynamic_cast<Amanzi::AmanziChemistry::Chemistry_PK_Wrapper>(sub_pks_[0]);
+  chemistry_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(sub_pks_[0]);
   ASSERT(chemistry_pk_ != Teuchos::null);
 
   // communicate chemistry engine to transport.
 #ifdef ALQUIMIA_ENABLED
-  tranport_pk_->SetupAlquimia(chemistry_pk_->chem_state(), chemistry_pk_->chem_engine());
+  tranport_pk_->SetupAlquimia(Teuchos::rcp_static_cast<AmanziChemistry::Alquimia_PK>(chemistry_pk_),
+                              chemistry_pk_->chem_engine());
 #endif
 
   // master_ = 1;  // Transport;
@@ -100,7 +101,7 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
   // First we do a transport step.
   bool pk_fail = tranport_pk_->AdvanceStep(t_old, t_new, reinit);
 
-  //Right now transport step is always succeeded.
+  // Right now transport step is always succeeded.
   if (!pk_fail) {
     *total_component_concentration_stor = *tranport_pk_->total_component_concentration()->ViewComponent("cell", true);
   } else {
@@ -110,30 +111,25 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
 
   // Second, we do a chemistry step.
   try {
-    chemistry_pk_->set_total_component_concentration(total_component_concentration_stor);
+    chemistry_pk_->set_aqueous_components(total_component_concentration_stor);
 
     pk_fail = chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
     chem_step_succeeded = true;
-
-    *S_->GetFieldData("total_component_concentration", "state")->ViewComponent("cell", true)
-                = *chemistry_pk_->get_total_component_concentration();
-    
-    //std::cout<<*S_->GetFieldData("total_component_concentration", "state")->ViewComponent("cell", true);
+ 
+    *S_->GetFieldData("total_component_concentration", "state")
+       ->ViewComponent("cell", true) = *chemistry_pk_->aqueous_components();
   }
   catch (const Errors::Message& chem_error) {
-    // If the chemistry step failed, we have to try again.
-    // Let the user know that the chemistry step failed.
-    // if (vo_->os_OK(Teuchos::VERB_LOW)) {
-    //   *vo_->os() << chem_error.what() << std::endl
-    // 		 << "Chemistry step failed, reducing chemistry time step." << std::endl;      
-    // } // end if
-    // Set AdvanceStep of ReactiveTransport_PK fail
     fail = true;
-  } // end catch
+  }
     
   return fail;
 };
 
+
+// -----------------------------------------------------------------------------
+// 
+// -----------------------------------------------------------------------------
 void ReactiveTransport_PK::CommitStep(double t_old, double t_new) {
   chemistry_pk_->CommitStep(t_old, t_new);
 }

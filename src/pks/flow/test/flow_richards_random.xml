@@ -69,12 +69,9 @@
   <ParameterList name="PKs">
     <ParameterList name="Flow">
       <ParameterList name="Richards problem">
-	<Parameter name="atmospheric pressure" type="double" value="1e-10"/>
-
-        <ParameterList name="upwind">
-          <Parameter name="relative permeability" type="string" value="upwind: gravity"/>
-	  <Parameter name="upwind method" type="string" value="standard"/>
-	  <ParameterList name="upwind standard parameters">
+        <ParameterList name="relative permeability">
+          <Parameter name="upwind method" type="string" value="upwind: gravity"/>
+	  <ParameterList name="upwind parameters">
             <Parameter name="tolerance" type="double" value="1e-12"/>
 	  </ParameterList>
         </ParameterList>
@@ -89,15 +86,16 @@
 	      <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
 	      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
 	      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-	      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+	      <Parameter name="preconditioner schema" type="Array(string)" value="{face,cell}"/>
 	      <Parameter name="gravity" type="bool" value="true"/>
 	    </ParameterList>
 	    <ParameterList name="preconditioner">
 	      <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
 	      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
 	      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-	      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+	      <Parameter name="preconditioner schema" type="Array(string)" value="{face,cell}"/>
 	      <Parameter name="gravity" type="bool" value="true"/>
+	      <Parameter name="newton correction" type="string" value="approximate jacobian"/>
 	    </ParameterList>
 	  </ParameterList>
 	</ParameterList>
@@ -158,16 +156,6 @@
 	</ParameterList>
 
 	<ParameterList name="boundary conditions">
-	  <ParameterList name="mass flux">
-	    <ParameterList name="BC 0">
-	      <Parameter name="regions" type="Array(string)" value="{Left side,Right side}"/>
-	      <ParameterList name="outward mass flux">
-		<ParameterList name="function-constant">
-		  <Parameter name="value" type="double" value="0.0"/>
-		</ParameterList>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
 	  <ParameterList name="pressure">
 	    <ParameterList name="BC 1">
 	      <Parameter name="regions" type="Array(string)" value="{Top side}"/>
@@ -207,6 +195,9 @@
       <ParameterList name="pcg parameters">
         <Parameter name="maximum number of iterations" type="int" value="400"/>
         <Parameter name="error tolerance" type="double" value="1e-14"/>
+	<ParameterList name="VerboseObject">
+	  <Parameter name="Verbosity Level" type="string" value="none"/>
+	</ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -247,8 +238,7 @@
     </ParameterList>
   </ParameterList>
 
-  <!--  STATE: this super input desk will be used to cut-off smaller 
-  input deks for other flow tests -->
+  <!--  STATE -->
   <ParameterList name="State">
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
@@ -278,6 +268,10 @@
 
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -2.0}"/>
+      </ParameterList>
+
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="1e-10"/>
       </ParameterList>
 
       <ParameterList name="pressure">
@@ -370,8 +364,8 @@
             <Parameter name="region" type="string" value="Material 1 Region"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Function type" type="string" value="composite function"/>
-              <Parameter name="Number of DoFs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.5"/>
@@ -388,8 +382,8 @@
             <Parameter name="region" type="string" value="Material 2 Region"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="Function type" type="string" value="composite function"/>
-              <Parameter name="Number of DoFs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
               <ParameterList name="DoF 1 Function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.0"/>

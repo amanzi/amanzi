@@ -2,7 +2,7 @@
   WhetStone, version 2.0
   Release name: naka-to.
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -649,7 +649,8 @@ int MFD3D_Diffusion::MassMatrixInverseMMatrix(
 
   DenseMatrix R(nfaces, d);
 
-  int ok = L2consistencyInverse(c, K, R, W, true);
+  // use boolean flag to populate the whole matrix
+  int ok = L2consistencyInverse(c, K, R, W, false);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   // scaling of matrix W for numerical stability

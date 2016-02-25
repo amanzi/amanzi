@@ -59,6 +59,7 @@ namespace Amanzi {
 class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
  public:
   // Constructors
+  VerboseObject(std::string name, const std::string& verbosity);
   VerboseObject(std::string name, Teuchos::ParameterList& plist);
   VerboseObject(const Epetra_MpiComm* const comm, std::string name,
                 Teuchos::ParameterList& plist);

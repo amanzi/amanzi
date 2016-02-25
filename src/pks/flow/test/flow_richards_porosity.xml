@@ -62,12 +62,9 @@
           <Parameter name="porosity model" type="string" value="compressible: pressure function"/>
         </ParameterList>
 
-	<Parameter name="atmospheric pressure" type="double" value="10.0"/>
-
-        <ParameterList name="upwind">
-	  <Parameter name="relative permeability" type="string" value="upwind: gravity"/>
-	  <Parameter name="upwind method" type="string" value="standard"/>
-	  <ParameterList name="upwind standard parameters">
+        <ParameterList name="relative permeability">
+	  <Parameter name="upwind method" type="string" value="upwind: gravity"/>
+	  <ParameterList name="upwind parameters">
             <Parameter name="tolerance" type="double" value="1e-12"/>
           </ParameterList>
 	</ParameterList>
@@ -218,6 +215,9 @@
       </ParameterList>
       <ParameterList name="fluid_viscosity">
         <Parameter name="value" type="double" value="0.001"/>
+      </ParameterList>
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="10.0"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

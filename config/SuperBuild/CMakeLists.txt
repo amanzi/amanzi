@@ -134,6 +134,10 @@ option(ENABLE_STK_Mesh "Enable the Unstructured STK Mesh Toolkit" TRUE)
 option(ENABLE_MSTK_Mesh "Enable the Unstructured MSTK Mesh Toolkit" TRUE)
 option(ENABLE_MOAB_Mesh "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
 
+# Amanzi output formats
+option(ENABLE_Silo "Enable the Silo output specification for visualization" FALSE)
+message("Silo? ${ENABLE_Silo}")
+
 # OpenMP Search - ENABLED ONLY WHEN STRUCTURED IS ON BECAUSE
 # WE SUSPECT THAT IT MAY NOT BE WORKING WELL WITH HYPRE ON
 # THE UNSTRUCTURED SIDE
@@ -599,6 +603,15 @@ if ( ENABLE_MSTK_Mesh )
             -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
 endif()
 
+# Silo
+if (ENABLE_Silo)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_Silo.cmake)
+  append_set(Amanzi_TPL_CMAKE_ARGS
+    -DENABLE_Silo:BOOL=${ENABLE_Silo}
+    -DSilo_INCLUDE_DIR:PATH=${Silo_INCLUDE_DIR}
+    -DSilo_LIBRARY_DIR:PATH=${Silo_LIBRARY_DIR})
+endif()
+
 # Alquimia and PFlotran
 option(ENABLE_ALQUIMIA "Build the Alquimia chemistry interface" FALSE)
 option(ENABLE_PFLOTRAN "Build the PFlotran chemistry package" FALSE)
@@ -728,7 +741,7 @@ if ( BUILD_Amanzi )
                   ${ExodusII_BUILD_TARGET}
 		          ${HDF5_BUILD_TARGET}
 		          ${ASCEMIO_BUILD_TARGET}
-			  ${XERCES_BUILD_TARGET}
+			      ${XERCES_BUILD_TARGET}
 		          ${UnitTest_BUILD_TARGET}
 		          ${Boost_BUILD_TARGET}
 		          ${MSTK_BUILD_TARGET}
@@ -738,7 +751,12 @@ if ( BUILD_Amanzi )
 
   if ( ENABLE_Structured )
     list(APPEND Amanzi_DEPENDS ${CCSE_BUILD_TARGET})
-  endif()  
+  endif()
+
+  if ( ENABLE_Silo )
+    list(APPEND Amanzi_DEPENDS ${Silo_BUILD_TARGET})
+  endif()
+
   ExternalProject_Add(amanzi
                       DEPENDS ${Amanzi_DEPENDS}
 		      PREFIX ${CMAKE_BINARY_DIR}/Amanzi

@@ -18,7 +18,12 @@
 
 class Analytic01 : public AnalyticBase {
  public:
-  Analytic01(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : AnalyticBase(mesh) {};
+  Analytic01(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
+      AnalyticBase(mesh),
+      g_(0.0) {};
+  Analytic01(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, double g) :
+      AnalyticBase(mesh),
+      g_(g) {};
   ~Analytic01() {};
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
@@ -35,7 +40,7 @@ class Analytic01 : public AnalyticBase {
     double x = p[0];
     double y = p[1];
     double xy = x * y;
-    return x * xy * xy + x * sin(2 * M_PI * xy) * sin(2 * M_PI * y);
+    return x * xy * xy + x * sin(2 * M_PI * xy) * sin(2 * M_PI * y) - g_ * y;
   }
 
   Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
@@ -113,6 +118,9 @@ class Analytic01 : public AnalyticBase {
     double y = p[1];
     return -x * y;
   }
+
+ private:
+  double g_;
 };
 
 #endif

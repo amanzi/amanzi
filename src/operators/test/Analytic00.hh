@@ -1,5 +1,5 @@
 /*
-  This is the operators component of the Amanzi code.
+  Operators
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -8,7 +8,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Linear solution plus constact coefficient.
+  Linear solution plus constant coefficient.
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_00_HH_

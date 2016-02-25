@@ -29,7 +29,7 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 # geometry library
 #
 file (GLOB geometry_source_files "*.cc")
-file(GLOB  geometry_inc_files "*.h*")
+file(GLOB  geometry_inc_files "*.hh")
 add_amanzi_library(geometry 
                    SOURCE ${geometry_source_files} HEADERS ${geometry_inc_files}
                    LINK_LIBS error_handling functions ${Teuchos_LIBRARIES} )
@@ -39,14 +39,15 @@ add_amanzi_library(geometry
 # Unit tests
 #
 if (BUILD_TESTS)
-    
    # Add UnitTest ExodusII include directories
    include_directories(${UnitTest_INCLUDE_DIRS})
 
-   # Need to copy files for the tests 
-   if (NOT (${GEOMETRY_SOURCE_DIR} EQUAL ${GEOMETRY_BINARY_DIR}))
-       execute_process(COMMAND ${CMAKE_COMMAND} -E 
-         copy_directory ${GEOMETRY_SOURCE_DIR}/test ${GEOMETRY_BINARY_DIR}/test) 
+   # Copy test directory files if an out of source build
+   if (NOT (${GEOMETRY_SOURCE_DIR} EQUAL ${GEOMETRY_BINARY_DIR}) )
+       file(GLOB DataFiles "${GEOMETRY_SOURCE_DIR}/test/*.xml"
+                           "${GEOMETRY_SOURCE_DIR}/test/*.txt"
+                           "${GEOMETRY_SOURCE_DIR}/test/*.exo")
+       file(COPY ${DataFiles} DESTINATION ${GEOMETRY_BINARY_DIR}/test/)
    endif()
 
    # Test: test point creation and deletion

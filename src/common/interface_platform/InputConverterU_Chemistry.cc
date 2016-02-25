@@ -69,8 +69,8 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     }
 
     Teuchos::ParameterList& bgd_list = out_list.sublist("Thermodynamic Database");
-    bgd_list.set<std::string>("File", bgdfilename);
-    bgd_list.set<std::string>("Format", format);
+    bgd_list.set<std::string>("file", bgdfilename);
+    bgd_list.set<std::string>("format", format);
 
   } else {
     bool valid_engine(true);
@@ -114,6 +114,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   }
 
   // region specific initial conditions
+  std::vector<std::string> sorption_sites;
   Teuchos::ParameterList& ic_list = out_list.sublist("initial conditions");
 
   node_list = doc_->getElementsByTagName(mm.transcode("materials"));
@@ -127,44 +128,42 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     text = mm.transcode(node->getTextContent());
     std::vector<std::string> regions = CharToStrings_(text);
 
-    // mineral volume fraction and specific surface area are created for the 
-    // native chemistry only.
+    // mineral volume fraction and specific surface area.
     if (minerals.size() > 0) {
-      out_list.set<Teuchos::Array<std::string> >("Minerals", minerals);
+      out_list.set<Teuchos::Array<std::string> >("minerals", minerals);
 
-      if (pk_model_["chemistry"] == "amanzi") {
-        Teuchos::ParameterList& volfrac = ic_list.sublist("mineral_volume_fractions");
-        Teuchos::ParameterList& surfarea = ic_list.sublist("mineral_specific_surface_area");
+      // if (pk_model_["chemistry"] == "amanzi") {
+      Teuchos::ParameterList& volfrac = ic_list.sublist("mineral_volume_fractions");
+      Teuchos::ParameterList& surfarea = ic_list.sublist("mineral_specific_surface_area");
 
-        for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); it++) {
-          Teuchos::ParameterList& aux1_list = volfrac.sublist("function").sublist(*it)
-              .set<std::string>("region", *it)
-              .set<std::string>("component", "cell")
-              .sublist("function");
-          aux1_list.set<int>("Number of DoFs", minerals.size())
-              .set("Function type", "composite function");
+      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); it++) {
+        Teuchos::ParameterList& aux1_list = volfrac.sublist("function").sublist(*it)
+            .set<std::string>("region", *it)
+            .set<std::string>("component", "cell")
+            .sublist("function");
+        aux1_list.set<int>("number of dofs", minerals.size())
+            .set("function type", "composite function");
 
-          Teuchos::ParameterList& aux2_list = surfarea.sublist("function").sublist(*it)
-              .set<std::string>("region", *it)
-              .set<std::string>("component", "cell")
-              .sublist("function");
-          aux2_list.set<int>("Number of DoFs", minerals.size())
-              .set("Function type", "composite function");
+        Teuchos::ParameterList& aux2_list = surfarea.sublist("function").sublist(*it)
+            .set<std::string>("region", *it)
+            .set<std::string>("component", "cell")
+            .sublist("function");
+        aux2_list.set<int>("number of dofs", minerals.size())
+            .set("function type", "composite function");
 
-          for (int j = 0; j < minerals.size(); ++j) {
-            std::stringstream ss;
-            ss << "DoF " << j + 1 << " Function";
+        for (int j = 0; j < minerals.size(); ++j) {
+          std::stringstream ss;
+          ss << "DoF " << j + 1 << " Function";
  
-            node = GetUniqueElementByTagsString_(inode, "minerals", flag);
-            double mvf(0.0), msa(0.0);
-            if (flag) {
-              element = GetUniqueChildByAttribute_(node, "name", minerals[j], flag, true);
-              mvf = GetAttributeValueD_(element, "volume_fraction", TYPE_NUMERICAL, false, 0.0);
-              msa = GetAttributeValueD_(element, "specific_surface_area", TYPE_NUMERICAL, false, 0.0);
-            }
-            aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", mvf);
-            aux2_list.sublist(ss.str()).sublist("function-constant").set<double>("value", msa);
+          node = GetUniqueElementByTagsString_(inode, "minerals", flag);
+          double mvf(0.0), msa(0.0);
+          if (flag) {
+            element = GetUniqueChildByAttribute_(node, "name", minerals[j], flag, true);
+            mvf = GetAttributeValueD_(element, "volume_fraction", TYPE_NUMERICAL, false, 0.0);
+            msa = GetAttributeValueD_(element, "specific_surface_area", TYPE_NUMERICAL, false, 0.0);
           }
+          aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", mvf);
+          aux2_list.sublist(ss.str()).sublist("function-constant").set<double>("value", msa);
         }
       }
     }
@@ -184,31 +183,8 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       }
     }
 
-    node = GetUniqueElementByTagsString_(inode, "ion_exchange, cations", flag);
-    int nsolutes = phases_["water"].size();
-    if (flag && nsolutes > 0) {
-      Teuchos::ParameterList& cation = ic_list.sublist("ion_exchange_ref_cation_conc");
-
-      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
-        Teuchos::ParameterList& aux1_list = cation.sublist("function").sublist(*it)
-            .set<std::string>("region", *it)
-            .set<std::string>("component", "cell")
-            .sublist("function");
-        aux1_list.set<int>("Number of DoFs", nsolutes).set("Function type", "composite function");
-
-        for (int j = 0; j < nsolutes; ++j) {
-          std::string solute_name = phases_["water"][j];
-          element = GetUniqueChildByAttribute_(node, "name", solute_name, flag, false);
-          double val = (!flag) ? 0.0 : GetAttributeValueD_(element, "selectivity", TYPE_NUMERICAL, false, 0.0);
-
-          std::stringstream ss;
-          ss << "DoF " << j + 1 << " Function";
-          aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", val);
-        }
-      }
-    }
-
     // sorption 
+    int nsolutes = phases_["water"].size();
     node = GetUniqueElementByTagsString_(inode, "sorption_isotherms", flag);
     if (flag && nsolutes > 0) {
       Teuchos::ParameterList& kd = ic_list.sublist("isotherm_kd");
@@ -220,19 +196,19 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
             .set<std::string>("region", *it)
             .set<std::string>("component", "cell")
             .sublist("function");
-        aux1_list.set<int>("Number of DoFs", nsolutes).set("Function type", "composite function");
+        aux1_list.set<int>("number of dofs", nsolutes).set("function type", "composite function");
 
         Teuchos::ParameterList& aux2_list = langmuir_b.sublist("function").sublist(*it)
             .set<std::string>("region", *it)
             .set<std::string>("component", "cell")
             .sublist("function");
-        aux2_list.set<int>("Number of DoFs", nsolutes).set("Function type", "composite function");
+        aux2_list.set<int>("number of dofs", nsolutes).set("function type", "composite function");
 
         Teuchos::ParameterList& aux3_list = langmuir_b.sublist("function").sublist(*it)
             .set<std::string>("region", *it)
             .set<std::string>("component", "cell")
             .sublist("function");
-        aux3_list.set<int>("Number of DoFs", nsolutes).set("Function type", "composite function");
+        aux3_list.set<int>("number of dofs", nsolutes).set("function type", "composite function");
 
         for (int j = 0; j < nsolutes; ++j) {
           std::string solute_name = phases_["water"][j];
@@ -258,8 +234,9 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     }
 
     // surface complexation
-    node = GetUniqueElementByTagsString_(inode, "surface_complexation, site", flag);
+    node = GetUniqueElementByTagsString_(inode, "surface_complexation", flag);
     if (flag) {
+      // sorption_sites.push_back("siteA");  // no translation rules so far
       Teuchos::ParameterList& complexation = ic_list.sublist("surface_complexation");
 
       double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "density");
@@ -282,7 +259,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
             .set<std::string>("region", *it)
             .set<std::string>("component", "cell")
             .sublist("function");
-        aux1_list.set<int>("Number of DoFs", nsolutes).set("Function type", "composite function");
+        aux1_list.set<int>("number of dofs", nsolutes).set("function type", "composite function");
 
         for (int j = 0; j < nsolutes; ++j) {
           std::string solute_name = phases_["water"][j];
@@ -350,6 +327,8 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   out_list.set<std::string>("time step control method", dt_method);
   if (aux_data.size() > 0)
       out_list.set<Teuchos::Array<std::string> >("auxiliary data", aux_data);
+  if (sorption_sites.size() > 0)
+      out_list.set<Teuchos::Array<std::string> >("sorption sites", sorption_sites);
 
   // miscalleneous
   out_list.set<int>("number of component concentrations", comp_names_all_.size());

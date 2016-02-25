@@ -1016,7 +1016,7 @@ void WriteVis(const Teuchos::Ptr<Visualization>& vis,
               const Teuchos::Ptr<State>& S) {
   if (!vis->is_disabled()) {
     // Create the new time step (internally we use seconds, but write the time in years).
-    vis->WriteMesh(S->time()/(365.25*24*60*60),S->cycle());
+    //    vis->WriteMesh(S->time()/(365.25*24*60*60),S->cycle());
     vis->CreateTimestep(S->time()/(365.25*24*60*60),S->cycle());
 
     // Write all fields to the visualization file, the fields know if they

@@ -129,17 +129,24 @@ void InputConverterU::ParseSolutes_()
 
   MemoryManager mm;
 
+  DOMNode* node;
   DOMNode* knode = doc_->getElementsByTagName(mm.transcode("phases"))->item(0);
 
-  // liquid phase
-  DOMNode* node = GetUniqueElementByTagsString_(knode, "liquid_phase, dissolved_components, solutes", flag);
+  // liquid phase (try solutes, then primaries)
+  std::string species("solute");
+  node = GetUniqueElementByTagsString_(knode, "liquid_phase, dissolved_components, solutes", flag);
+  if (!flag) {
+    node = GetUniqueElementByTagsString_(knode, "liquid_phase, dissolved_components, primaries", flag);
+    species = "primary";
+  }
+
   DOMNodeList* children = node->getChildNodes();
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     tagname = mm.transcode(inode->getNodeName());
     text_content = mm.transcode(inode->getTextContent());
 
-    if (strcmp(tagname, "solute") == 0) {
+    if (species == tagname) {
       phases_["water"].push_back(TrimString_(text_content));
     }
   }
@@ -161,6 +168,15 @@ void InputConverterU::ParseSolutes_()
     }
 
     comp_names_all_.insert(comp_names_all_.end(), phases_["air"].begin(), phases_["air"].end());
+  }
+
+  // output
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    int nsolutes = phases_["water"].size();
+    *vo_->os() << "Phase 'water' has " << nsolutes << " solutes\n";
+    for (int i = 0; i < nsolutes; ++i) {
+      *vo_->os() << " solute: " << phases_["water"][i] << std::endl;
+    }
   }
 }
 

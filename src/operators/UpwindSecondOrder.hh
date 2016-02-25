@@ -1,7 +1,7 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators 
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -15,15 +15,16 @@
 #include <string>
 #include <vector>
 
-#include "Epetra_IntVector.h"
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+// Amanzi
 #include "CompositeVector.hh"
 #include "Mesh.hh"
 #include "mfd3d_diffusion.hh"
-#include "VerboseObject.hh"
 
+// Operators
 #include "Upwind.hh"
 
 namespace Amanzi {
@@ -38,17 +39,31 @@ class UpwindSecondOrder : public Upwind<Model> {
   ~UpwindSecondOrder() {};
 
   // main methods
+  // -- initialization of control parameters
   void Init(Teuchos::ParameterList& plist);
 
+  // -- upwind of a given cell-centered field on mesh faces
+  // -- not all input parameters are use by some algorithms
   void Compute(const CompositeVector& flux, const CompositeVector& solution,
                const std::vector<int>& bc_model, const std::vector<double>& bc_value,
                const CompositeVector& field, CompositeVector& field_upwind,
                double (Model::*Value)(int, double) const);
 
+  // -- returns combined map for the original and upwinded fields.
+  // -- Currently, composite vector cannot be extended on a fly. 
+  Teuchos::RCP<CompositeVectorSpace> Map() {
+    Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
+    cvs->SetMesh(mesh_)->SetGhosted(true)
+       ->AddComponent("cell", AmanziMesh::CELL, 1)
+       ->AddComponent("face", AmanziMesh::FACE, 1)
+       ->AddComponent("grad", AmanziMesh::CELL, mesh_->space_dimension());
+    return cvs;
+  }
+
  private:
-  using Upwind<Model>::vo_;
   using Upwind<Model>::mesh_;
   using Upwind<Model>::model_;
+  using Upwind<Model>::face_comp_;
 
  private:
   int method_, order_;
@@ -62,12 +77,9 @@ class UpwindSecondOrder : public Upwind<Model> {
 template<class Model>
 void UpwindSecondOrder<Model>::Init(Teuchos::ParameterList& plist)
 {
-  vo_ = Teuchos::rcp(new VerboseObject("UpwindSecondOrder", plist));
-
-  method_ = Operators::OPERATOR_UPWIND_FLUX;
+  method_ = Operators::OPERATOR_UPWIND_FLUX_SECOND_ORDER;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
-
-  order_ = plist.get<int>("order", 2);
+  order_ = plist.get<int>("polynomial order", 2);
 }
 
 
@@ -83,9 +95,7 @@ void UpwindSecondOrder<Model>::Compute(
 {
   ASSERT(field.HasComponent("cell"));
   ASSERT(field.HasComponent("grad"));
-  ASSERT(field_upwind.HasComponent("face"));
-
-  Teuchos::OSTab tab = vo_->getOSTab();
+  ASSERT(field_upwind.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
   flux.ScatterMasterToGhosted("face");
@@ -95,7 +105,7 @@ void UpwindSecondOrder<Model>::Compute(
   const Epetra_MultiVector& fld_grad = *field.ViewComponent("grad", true);
   const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
-  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent("face", true);
+  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent(face_comp_, true);
   upw_face.PutScalar(0.0);
 
   double flxmin, flxmax;

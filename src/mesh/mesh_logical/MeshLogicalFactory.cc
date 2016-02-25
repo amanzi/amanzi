@@ -1,7 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
 #include "errors.hh"
-#include "EnumeratedSetRegion.hh"
+#include "RegionEnumerated.hh"
 #include "MeshLogicalFactory.hh"
 
 namespace Amanzi {
@@ -136,27 +136,25 @@ MeshLogicalFactory::AddSegment(int n_cells,
 
   // create the region
   // - these are destroyed when the gm is destroyed
-  AmanziGeometry::EnumeratedSetRegionPtr enum_rgn =
-    new AmanziGeometry::EnumeratedSetRegion(set_name, gm_->Num_Regions(),
-			    "CELL", new_cells);
-  gm_->Add_Region(enum_rgn);
+  Teuchos::RCP<AmanziGeometry::RegionEnumerated> enum_rgn =
+      Teuchos::rcp(new AmanziGeometry::RegionEnumerated(set_name, gm_->RegionSize(),
+              "CELL", new_cells));
+  gm_->AddRegion(enum_rgn);
 
   if (first_tip == MeshLogicalFactory::TIP_BOUNDARY) {
     Entity_ID_List boundary_face(1,first_face);
-    AmanziGeometry::EnumeratedSetRegionPtr boundary_rgn =
-      new AmanziGeometry::EnumeratedSetRegion(set_name+"_first_tip",
-                                              gm_->Num_Regions(),
-                                              "FACE", boundary_face);
-    gm_->Add_Region(boundary_rgn);
+    Teuchos::RCP<AmanziGeometry::RegionEnumerated> boundary_rgn =
+        Teuchos::rcp(new AmanziGeometry::RegionEnumerated(set_name+"_first_tip",
+                gm_->RegionSize(), "FACE", boundary_face));
+    gm_->AddRegion(boundary_rgn);
   }
   
   if (last_tip == MeshLogicalFactory::TIP_BOUNDARY) {
     Entity_ID_List boundary_face(1,last_face);
-    AmanziGeometry::EnumeratedSetRegionPtr boundary_rgn =
-      new AmanziGeometry::EnumeratedSetRegion(set_name+"_last_tip",
-                                              gm_->Num_Regions(),
-                                              "FACE", boundary_face);
-    gm_->Add_Region(boundary_rgn);
+    Teuchos::RCP<AmanziGeometry::RegionEnumerated> boundary_rgn =
+        Teuchos::rcp(new AmanziGeometry::RegionEnumerated(set_name+"_last_tip",
+                gm_->RegionSize(), "FACE", boundary_face));
+    gm_->AddRegion(boundary_rgn);
   }
   
   centroids_good_ = false;
@@ -290,10 +288,10 @@ MeshLogicalFactory::AddSegment(int n_cells,
 
   // create the region
   // - these are destroyed when the gm is destroyed
-  AmanziGeometry::EnumeratedSetRegionPtr enum_rgn =
-    new AmanziGeometry::EnumeratedSetRegion(set_name, gm_->Num_Regions(),
-			    "CELL", new_cells);
-  gm_->Add_Region(enum_rgn);
+  Teuchos::RCP<AmanziGeometry::RegionEnumerated> enum_rgn =
+      Teuchos::rcp(new AmanziGeometry::RegionEnumerated(set_name, gm_->RegionSize(),
+              "CELL", new_cells));
+  gm_->AddRegion(enum_rgn);
 
   return;
 }
@@ -328,11 +326,11 @@ MeshLogicalFactory::AddSet(const std::string& set_name,
 
   // create the region
   // - these are destroyed when the gm is destroyed
-  AmanziGeometry::EnumeratedSetRegionPtr enum_rgn =
-    new AmanziGeometry::EnumeratedSetRegion(set_name, gm_->Num_Regions(),
-                                            "CELL", ents);
-  gm_->Add_Region(enum_rgn);
-  return gm_->Num_Regions() - 1;
+  Teuchos::RCP<AmanziGeometry::RegionEnumerated> enum_rgn = 
+      Teuchos::rcp(new AmanziGeometry::RegionEnumerated(set_name, gm_->RegionSize(),
+              "CELL", ents));
+  gm_->AddRegion(enum_rgn);
+  return gm_->RegionSize() - 1;
 }
 
 

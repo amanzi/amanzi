@@ -1,7 +1,7 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators 
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -20,6 +20,7 @@ typedef enum { OPERATOR_DIFFUSION_MFD,
                OPERATOR_DIFFUSION_NLFV,
                OPERATOR_DIFFUSION_MFD_GRAVITY,
                OPERATOR_DIFFUSION_FV_GRAVITY,
+               OPERATOR_DIFFUSION_NLFV_GRAVITY,
                OPERATOR_ADVECTION,
                OPERATOR_ACCUMULATION} OperatorType;
 
@@ -65,11 +66,12 @@ const int OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE = 2;
 
 // upwind options
 const int OPERATOR_UPWIND_NONE = 0;
-const int OPERATOR_UPWIND_CONSTANT_VECTOR = 3;
-const int OPERATOR_UPWIND_FLUX = 4;
-const int OPERATOR_UPWIND_ARITHMETIC_AVERAGE = 5;
-const int OPERATOR_UPWIND_AMANZI_DIVK = 7;
-const int OPERATOR_UPWIND_AMANZI_SECOND_ORDER = 8;
+const int OPERATOR_UPWIND_CONSTANT_VECTOR = 1;
+const int OPERATOR_UPWIND_FLUX = 2;
+const int OPERATOR_UPWIND_GRAVITY = 4;
+const int OPERATOR_UPWIND_DIVK = 8;
+const int OPERATOR_UPWIND_ARITHMETIC_AVERAGE = 16;
+const int OPERATOR_UPWIND_FLUX_SECOND_ORDER = 32;
 const double OPERATOR_UPWIND_RELATIVE_TOLERANCE = 1e-12;
 
 // method for nonlinear coefficient (use power of 2)

@@ -186,8 +186,6 @@ class HDF5_MPI {
   int SpaceDim_;
 
   // Mesh information
-  int conn_;
-  AmanziMesh::Cell_type ctype_;
   std::string cname_;
   
   static std::string xdmfHeader_;

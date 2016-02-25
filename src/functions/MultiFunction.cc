@@ -10,7 +10,7 @@ Factory for vector functions which are composed of multiple scalar functions.
 The expected plist is of the form:
 
 <ParameterList name="constuctor plist">
-  <Parameter name="Number of DoFs">
+  <Parameter name="number of dofs">
 
   <ParameterList name="DoF 1 Function">
     <ParameterList name="function-constant">
@@ -53,9 +53,9 @@ MultiFunction::MultiFunction(const Teuchos::RCP<const Function>& function) :
 MultiFunction::MultiFunction(Teuchos::ParameterList& plist) {
   FunctionFactory factory;
 
-  if (plist.isParameter("Number of DoFs")) {
-    if (plist.isType<int>("Number of DoFs")) {
-      int ndofs = plist.get<int>("Number of DoFs");
+  if (plist.isParameter("number of dofs")) {
+    if (plist.isType<int>("number of dofs")) {
+      int ndofs = plist.get<int>("number of dofs");
 
       if (ndofs < 1) {
         // ERROR -- invalid number of dofs

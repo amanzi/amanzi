@@ -403,10 +403,11 @@ for name in verification['index']['index_list']:
                subprocess.call(["python", filename], stdout=stdout_file, stderr=subprocess.STDOUT)
 
                for el in find("stdout.out", run_directory):
+                   el2 = el[el.find("verification"):]
+                   print("   file: " + el2)
                    if ("Amanzi::SIMULATION_SUCCESSFUL" in open(el).read()):
                       print("   result: SIMULATION_SUCCESSFUL")
                    else:
-                      el = el[el.find("verification"):]
                       print("   ERROR: " + el)
         os.chdir(cwd)
 
@@ -425,9 +426,10 @@ for name in benchmark['index']['index_list']:
                subprocess.call(["python", filename], stdout=stdout_file, stderr=subprocess.STDOUT)
 
                for el in find("stdout.out", run_directory):
+                   el2 = el[el.find("benchmarking"):]
+                   print("   file: " + el2)
                    if ("Amanzi::SIMULATION_SUCCESSFUL" in open(el).read()):
                       print("   result: SIMULATION_SUCCESSFUL")
                    else:
-                      el = el[el.find("benchmarking"):]
-                      print("   ERROR: " + el)
+                      print("   ERROR:" + open(el).readline())
         os.chdir(cwd)

@@ -85,7 +85,7 @@ class CycleDriver {
   Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> coordinator_list_;
 
-  std::vector<double> t_, tp_start_, tp_end_, tp_dt_, tp_max_cycle_;  
+  std::vector<double> t_, tp_start_, tp_end_, tp_dt_, tp_max_cycle_, tp_max_dt_;  
   double max_dt_, min_dt_;
   int cycle0_, cycle1_;
   int num_time_periods_;

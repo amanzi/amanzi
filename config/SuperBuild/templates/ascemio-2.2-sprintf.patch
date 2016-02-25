@@ -1,0 +1,11 @@
+--- ./ascem-io-2.2/src/parallelIOwrite.c	2012-08-29 13:57:16.000000000 -0600
++++ ./ascem-io-2.2-patch/src/parallelIOwrite.c	2016-02-07 22:10:24.630236863 -0700
+@@ -841,7 +841,7 @@
+ 		PRINT_MSG((ASCEMIO_VERBOSE, "Maximum string length: %d ", maxstr_len));
+ 
+ 		currfile = myIOgroup->file[fhandle];
+-		buffer = (char *) malloc( nstrings * maxstr_len * sizeof(char));
++		buffer = (char *) malloc( nstrings * maxstr_len * sizeof(char) + 1);
+ 		pbuffer = buffer;
+ 
+ 		for (i=0; i < nstrings; i++)

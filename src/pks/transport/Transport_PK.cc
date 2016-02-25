@@ -1,7 +1,7 @@
 /*
-  This is the Transport component of Amanzi. 
+  Transport PK 
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -131,10 +131,10 @@ Transport_PK::~Transport_PK()
 * Setup for Alquimia.
 ****************************************************************** */
 #ifdef ALQUIMIA_ENABLED
-void Transport_PK::SetupAlquimia(Teuchos::RCP<AmanziChemistry::Chemistry_State> chem_state,
+void Transport_PK::SetupAlquimia(Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
                                  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
 {
-  chem_state_ = chem_state;
+  chem_pk_ = chem_pk;
   chem_engine_ = chem_engine;
 
   if (chem_engine_ != Teuchos::null) {
@@ -143,8 +143,7 @@ void Transport_PK::SetupAlquimia(Teuchos::RCP<AmanziChemistry::Chemistry_State> 
     std::vector<std::string> component_names;
     chem_engine_->GetPrimarySpeciesNames(component_names);
     component_names_ = component_names;
-    for (int i = 0; i < chem_engine_->NumAqueousComplexes(); ++i)
-    {
+    for (int i = 0; i < chem_engine_->NumAqueousComplexes(); ++i) {
       char secondary_name[128];
       snprintf(secondary_name, 127, "secondary_%d", i);
       component_names_.push_back(secondary_name);
@@ -345,11 +344,11 @@ void Transport_PK::Initialize()
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << std::endl 
-        << vo_->color("green") << "Initalization of PK is complete." << vo_->reset() << std::endl;
     *vo_->os() << "Number of components: " << tcc->size() << std::endl
                << "cfl=" << cfl_ << " spatial/temporal discretization: " 
                << spatial_disc_order << " " << temporal_disc_order << std::endl;
+    *vo_->os() << vo_->color("green") << "Initalization of PK is complete." 
+               << vo_->reset() << std::endl << std::endl;
   }
 }
 

@@ -8,7 +8,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Epetra_MpiComm.h"
 
-#include "EnumeratedSetRegion.hh"
+#include "RegionEnumerated.hh"
 #include "MeshLogical.hh"
 #include "MeshLogicalFactory.hh"
 #include "Geometry.hh"
@@ -88,16 +88,18 @@ test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
-  GeometricModelPtr gm = m->geometric_model();
+  Teuchos::RCP<const GeometricModel> gm_c = m->geometric_model();
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp_const_cast<GeometricModel>(gm_c);
+  
 
   Entity_ID_List ents;
   ents.push_back(0);
   ents.push_back(3);
 
   Teuchos::RCP<Region> enum_rgn =
-    Teuchos::rcp(new EnumeratedSetRegion("myregion",
+    Teuchos::rcp(new RegionEnumerated("myregion",
 					   0, "CELL", ents));
-  gm->Add_Region(&*enum_rgn);
+  gm->AddRegion(enum_rgn);
 
 
   CHECK_EQUAL(2, m->get_set_size("myregion", CELL, USED));

@@ -1,127 +1,97 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry PK
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Base class for chemical process kernels. It should be never
+  instantiated.
+*/
+ 
 #ifndef AMANZI_CHEMISTRY_PK_HH_
 #define AMANZI_CHEMISTRY_PK_HH_
 
-#include <string>
 #include <vector>
 
-#include "Teuchos_RCP.hpp"
+// TPLs
+#include "Epetra_MultiVector.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RCP.hpp"
+#include "VerboseObject.hh"
 
-#include "beaker.hh"
-#include "Chemistry_PK_Base.hh"
-#include "chemistry_exception.hh"
-#include "chemistry_verbosity.hh"
-
-// forward declarations
-class Epetra_MultiVector;
-class Epetra_Vector;
-class Epetra_SerialDenseVector;
+// Amanzi
+#ifdef ALQUIMIA_ENABLED
+#include "ChemistryEngine.hh"
+#endif
+#include "Mesh.hh"
+#include "PK.hh"
+#include "State.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
-// Trilinos based chemistry process kernel for the unstructured mesh
-class Chemistry_PK: public Chemistry_PK_Base {
+class Chemistry_PK : public PK {
  public:
-  Chemistry_PK(const Teuchos::ParameterList& param_list,
-               Teuchos::RCP<Chemistry_State> chem_state);
+  Chemistry_PK();
+  virtual ~Chemistry_PK() {};
 
-  ~Chemistry_PK();
+  // required members for PK interface
+  virtual void Setup();
+  virtual void Initialize();
 
-  void InitializeChemistry(void);
+  // Required members for chemistry interface
+  // -- output of auxillary cellwise data from chemistry
+  virtual Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data() = 0;
 
-  void Advance(const double& delta_time,
-               Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star);
-  void CommitState(Teuchos::RCP<Chemistry_State> chem_state, const double& time);
-  Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration(void) const;
+  // Basic capabilities
+  // -- get/set auxiliary tcc vector that now contains only aqueous components.
+  Teuchos::RCP<Epetra_MultiVector> aqueous_components() { return aqueous_components_; } 
+  void set_aqueous_components(Teuchos::RCP<Epetra_MultiVector> tcc) { aqueous_components_ = tcc; }
 
-  void set_max_time_step(const double mts) {
-    this->max_time_step_ = mts;
-  }
-  double time_step(void) const {
-    return this->max_time_step_;
-  }
+  // -- process various objects before/during setup phase
+  void InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist);
+  void InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
+                               Teuchos::RCP<Teuchos::ParameterList> state_list);
 
-  int number_aqueous_components(void) const {
-    return chemistry_state_->number_of_aqueous_components();
-  }
+  // -- access
+#ifdef ALQUIMIA_ENABLED
+  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine() { return chem_engine_; }
+#endif
 
-  int number_free_ion(void) const {
-    return chemistry_state_->number_of_aqueous_components();
-  }
-
-  int number_total_sorbed(void) const {
-    return chemistry_state_->number_of_aqueous_components();
-  }
-
-  int number_minerals(void) const {
-    return chemistry_state_->number_of_minerals();
-  }
-
-  int number_ion_exchange_sites(void) const {
-    return chemistry_state_->number_of_ion_exchange_sites();
-  }
-
-  int number_sorption_sites(void) const {
-    return chemistry_state_->number_of_sorption_sites();
-  }
-
-  int using_sorption(void) const {
-    return chemistry_state_->using_sorption();
-  }
-
-  int using_sorption_isotherms(void) const {
-    return chemistry_state_->using_sorption_isotherms();
-  }
-
-  bool debug(void) const {
-    return debug_;
-  }
-
-  void set_debug(const bool value) {
-    debug_ = value;
-  }
-
-  // Ben: the following two routines provide the interface for
-  // output of auxillary cellwise data from chemistry
-  Teuchos::RCP<Epetra_MultiVector> get_extra_chemistry_output_data();
-  void set_chemistry_output_names(std::vector<std::string>* names);
+  // -- output of error messages.
+  void ErrorAnalysis(int ierr, std::string& internal_msg);
 
  private:
-  bool debug_;
-  bool display_free_columns_;
-  double max_time_step_;
-  // auxilary state for process kernel
-  Teuchos::RCP<Chemistry_State> chemistry_state_;
+  void InitializeField_(std::string fieldname, double default_val);
 
-  // parameter list
-  Teuchos::ParameterList parameter_list_;
+ protected:
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<State> S_;
+  std::string passwd_;
 
-  Beaker* chem_;
-  Beaker::BeakerParameters beaker_parameters_;
-  Beaker::BeakerComponents beaker_components_;
-  Beaker::BeakerComponents beaker_components_copy_;
+  int number_aqueous_components_;
+  std::vector<std::string> comp_names_;
+  Teuchos::RCP<Epetra_MultiVector> aqueous_components_;
 
-  double current_time_;
-  double saved_time_;
+  int number_minerals_;
+  std::vector<std::string> mineral_names_;
 
-  std::vector<std::string> aux_names_;
-  std::vector<int> aux_index_;
+  int number_sorption_sites_, number_total_sorbed_;
+  std::vector<std::string> sorption_site_names_;
+  bool using_sorption_, using_sorption_isotherms_;
 
-  Teuchos::RCP<Epetra_MultiVector> aux_data_;
+  int number_free_ion_, number_ion_exchange_sites_;
 
-  void UpdateChemistryStateStorage(void);
+#ifdef ALQUIMIA_ENABLED
+  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
+#endif
 
-  void XMLParameters(void);
-  void SetupAuxiliaryOutput(void);
-  void SizeBeakerStructures(void);
-  void CopyCellStateToBeakerStructures(
-      const int cell_id,
-      Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
-  void CopyBeakerStructuresToCellState(const int cell_id);
+  // verbosity object thatis not shared with common chemistry
+  Teuchos::RCP<VerboseObject> vo_;
 };
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_PK_HH_
+#endif

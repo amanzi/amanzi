@@ -33,10 +33,6 @@ class RelPerm {
           double patm,
           const Teuchos::RCP<WRMPartition>& wrm);
 
-  void ComputeGravityFlux(const std::vector<WhetStone::Tensor>& K,
-                          const AmanziGeometry::Point& g,
-                          Teuchos::RCP<CompositeVector> flux);
-
   // main members
   void Compute(Teuchos::RCP<const CompositeVector> p, Teuchos::RCP<CompositeVector> krel);
   void ComputeDerivative(Teuchos::RCP<const CompositeVector> p, Teuchos::RCP<CompositeVector> dKdP);
@@ -50,17 +46,10 @@ class RelPerm {
   // other
   void PlotWRMcurves();
 
-  // access
-  int method() { return method_; }
-
- private:
-  void Init_(Teuchos::ParameterList& plist);
-
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<WRMPartition> wrm_;
 
-  int method_;
   double patm_;
 };
 

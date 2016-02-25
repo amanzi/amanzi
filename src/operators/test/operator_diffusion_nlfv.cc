@@ -1,7 +1,7 @@
 /*
   Operators
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -28,17 +28,18 @@
 #include "Tensor.hh"
 
 // Operators
+#include "Analytic01.hh"
 #include "Analytic02.hh"
 
 #include "OperatorAccumulation.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionFV.hh"
-#include "OperatorDiffusionNLFV.hh"
+#include "OperatorDiffusionNLFVwithGravity.hh"
 
 /* *****************************************************************
-* Nonlinear finite volume scheme.Non-symmetric diffusion tensor.
+* Nonlinear finite volume scheme.
 ***************************************************************** */
-TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
+template<class Analytic>
+void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -46,7 +47,7 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, NLFV with DMP" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, NLFV with DMP, g=" << gravity << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
@@ -62,18 +63,17 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 3, 3, NULL);
+  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2, NULL);
   Teuchos::RCP<const Mesh> mesh = meshfactory("test/random10.exo");
 
   // modify diffusion coefficient
-  // -- since rho=mu=1.0, we do not need to scale the diffusion tensor
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
-  Analytic02 ana(mesh);
+  Analytic ana(mesh, gravity);
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -96,12 +96,16 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
       double area = mesh->face_area(f);
       bc_model[f] = OPERATOR_BC_NEUMANN;
       bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
+      bc_model[f] = OPERATOR_BC_DIRICHLET;
+      bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionNLFV(op_list, mesh));
+  double rho(1.0);
+  AmanziGeometry::Point g(0.0, -gravity);
+  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionNLFVwithGravity(op_list, mesh, rho, g));
   Teuchos::RCP<Operator> global_op = op->global_operator();
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = global_op->DomainMap();
@@ -152,7 +156,18 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
     ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
     // compute flux error
-    double unorm(1.0), ul2_err(0.0), uinf_err(0.0);
+    CompositeVectorSpace cvs_tmp;
+    cvs_tmp.SetMesh(mesh)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("face", AmanziMesh::FACE, 1);
+    Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs_tmp));
+    Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
+
+    op->UpdateFlux(*solution, *flux);
+    double unorm, ul2_err, uinf_err;
+
+    ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
+
     if (MyPID == 0) {
       pl2_err /= pnorm; 
       ul2_err /= unorm;
@@ -160,10 +175,22 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP) {
           pl2_err, pinf_err, ul2_err, uinf_err,
           solver->num_itrs(), solver->residual(), solver->returned_code());
 
-      CHECK(pl2_err < 0.1 / loop && ul2_err < 0.1);
+      if (testing) CHECK(pl2_err < 0.1 / (loop + 1) && ul2_err < 0.4 / (loop + 1));
       CHECK(solver->num_itrs() < 15);
     }
   }
 }
 
+
+TEST(OPERATOR_DIFFUSION_NLFV_DMP_02) {
+  RunTestDiffusionNLFV_DMP<Analytic02>(0.0, true);
+}
+
+TEST(OPERATOR_DIFFUSION_NLFV_wGravity) {
+  RunTestDiffusionNLFV_DMP<Analytic02>(2.7, true);
+}
+
+TEST(OPERATOR_DIFFUSION_NLFV_DMP_01) {
+  RunTestDiffusionNLFV_DMP<Analytic01>(2.7, false);
+}
 

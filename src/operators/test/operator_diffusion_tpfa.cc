@@ -1,12 +1,12 @@
 /*
-  This is the operators component of the Amanzi code. 
+  Operators
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Ethan Coon (ecoon@lanl.gov)
 */
 
 #include <cstdlib>
@@ -51,7 +51,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, nodal discretization" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, TPFA with zero permeability" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_strip.xml";
@@ -60,7 +60,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
 
   // create a mesh
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();
@@ -85,7 +85,6 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   Teuchos::RCP<CompositeVectorSpace> face_space = Teuchos::rcp(new CompositeVectorSpace());
   face_space->SetMesh(mesh)->SetComponent("face",FACE,1)->SetGhosted();
 
-  
   // create source
   CompositeVector source(*cell_space);
   Epetra_MultiVector& src = *source.ViewComponent("cell", false);

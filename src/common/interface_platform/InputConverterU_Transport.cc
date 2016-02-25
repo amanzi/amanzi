@@ -248,7 +248,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   disc_methods.append(", mfd-two_point_flux_approximation");
 
   out_list.sublist("operators") = TranslateDiffusionOperator_(
-      disc_methods, "diffusion_operator", "", "", false);
+      disc_methods, "diffusion_operator", "", "", "", false);
 
   // multiscale model list
   out_list.sublist("multiscale models") = TranslateTransportMSM_();
@@ -386,7 +386,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
         element = static_cast<DOMElement*>(same_list[j]);
         double t0 = GetAttributeValueD_(element, "start");
         tp_values[t0] = GetAttributeValueS_(element, "name");
-        tp_forms[t0] = GetAttributeValueS_(element, "function", TYPE_NONE, false); // no form -> use geochemistry engine
+        tp_forms[t0] = GetAttributeValueS_(element, "function", TYPE_NONE, false, "constant");
+        // no form -> use geochemistry engine
       }
 
       // create vectors of values and forms
@@ -440,7 +441,7 @@ void InputConverterU::TranslateTransportBCsGroup_(
   std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
 
   while (same_list.size() > 0) {
-    // process a group of elements named as the i0-th element
+    // process a group of elements named after the 0-th element
     solute_name = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "name");
 
     std::map<double, double> tp_values;

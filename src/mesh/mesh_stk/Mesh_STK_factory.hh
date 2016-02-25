@@ -54,12 +54,12 @@ class Mesh_STK_factory {
   void add_coordinates_ (const Data::Coordinates<double>& data, 
                          const Epetra_Map& vertmap);
   void build_meta_data_ (const Data::Data& data, const Data::Fields& fields,
-			 const AmanziGeometry::GeometricModelPtr& gm);
+                         const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm);
   void build_bulk_data_ (const Data::Data& data, 
                          const Epetra_Map& cellmap, 
                          const Epetra_Map& vertmap,
                          const Data::Fields& fields,
-			 const AmanziGeometry::GeometricModelPtr& gm);
+                         const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm);
 
   // Add parts to the meta-data.
   stk::mesh::Part* add_element_block_ (const Data::Element_block& block);
@@ -109,8 +109,8 @@ class Mesh_STK_factory {
     
 
   // Build extra part info from the geometric model
-  void init_extra_parts_from_gm(const AmanziGeometry::GeometricModelPtr& gm);
-  void fill_extra_parts_from_gm(const AmanziGeometry::GeometricModelPtr& gm);
+  void init_extra_parts_from_gm(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm);
+  void fill_extra_parts_from_gm(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm);
 
   // Temporary information for the mesh currently under construction.
 
@@ -139,19 +139,19 @@ class Mesh_STK_factory {
 
  public:
 
-  Mesh_STK_factory (const Epetra_MpiComm *comm, int bucket_size);
+  Mesh_STK_factory (const Epetra_MpiComm *comm_, int bucket_size);
 
   //! Build a mesh from data.
   Mesh_STK_Impl* build_mesh (const Data::Data& data, 
                              const Data::Fields& fields,
-			     const AmanziGeometry::GeometricModelPtr& gm);
+                             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm);
 
   //! Build a mesh from data with global indexes specified.
   Mesh_STK_Impl* build_mesh (const Data::Data& data, 
                              const Epetra_Map& cellmap,
                              const Epetra_Map& vertmap,
                              const Data::Fields& fields,
-			     const AmanziGeometry::GeometricModelPtr& gm);
+                             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm);
 
 };
 

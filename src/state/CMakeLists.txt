@@ -20,24 +20,25 @@ include(LibraryManager)
 project(STATE)
 
 # Amanzi include directories
-include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+include_directories(${DBC_SOURCE_DIR})
+include_directories(${DBG_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
-include_directories(${MESH_FACTORY_SOURCE_DIR})
-include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
-include_directories(${DBG_SOURCE_DIR})
-include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIR})
+if(ENABLE_Silo)
+  include_directories(${Silo_INCLUDE_DIRS})
+  add_definitions(-DENABLE_Silo)
+endif(ENABLE_Silo)
 
 
 # This state library will move to a new location 

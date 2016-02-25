@@ -1,5 +1,5 @@
 /*
-  This is the opeartors component of the Amanzi code.  
+  Operators
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -15,16 +15,18 @@
 
 #include <strings.h>
 
+// TPLs
 #include "Ifpack.h" 
-
 #include "Teuchos_RCP.hpp"
 
+// Amanzi
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
 #include "Preconditioner.hh"
+
+// Operators
 #include "OperatorDiffusionFV.hh"
 #include "OperatorDiffusionWithGravity.hh"
-
 
 namespace Amanzi {
 namespace Operators {
@@ -44,7 +46,6 @@ class OperatorDiffusionFVwithGravity : public OperatorDiffusionFV,
     InitDiffusion_(plist);
   }
 
-
   OperatorDiffusionFVwithGravity(Teuchos::ParameterList& plist,
                                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       OperatorDiffusionFV(plist, mesh),
@@ -54,7 +55,6 @@ class OperatorDiffusionFVwithGravity : public OperatorDiffusionFV,
     operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
     InitDiffusion_(plist);
   }
-
 
   OperatorDiffusionFVwithGravity(Teuchos::ParameterList& plist,
                                  const Teuchos::RCP<Operator>& global_op,
@@ -68,7 +68,6 @@ class OperatorDiffusionFVwithGravity : public OperatorDiffusionFV,
 
     SetGravity(g);
   }
-
 
   OperatorDiffusionFVwithGravity(Teuchos::ParameterList& plist,
                                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
@@ -83,7 +82,6 @@ class OperatorDiffusionFVwithGravity : public OperatorDiffusionFV,
     SetGravity(g);
   }
 
-  
   OperatorDiffusionFVwithGravity(Teuchos::ParameterList& plist,
                                  const Teuchos::RCP<Operator>& global_op,
                                  double rho, const AmanziGeometry::Point& g) :
@@ -98,7 +96,6 @@ class OperatorDiffusionFVwithGravity : public OperatorDiffusionFV,
     SetDensity(rho);
   }
 
-  
   OperatorDiffusionFVwithGravity(Teuchos::ParameterList& plist,
                                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                  double rho, const AmanziGeometry::Point& g) :

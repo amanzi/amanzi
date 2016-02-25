@@ -52,7 +52,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
   boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
   if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
 
-  
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_name, true);
@@ -138,7 +137,7 @@ void Darcy_PK::Setup()
   names.push_back("cell");
   locations.push_back(AmanziMesh::CELL);
   ndofs.push_back(1);
-  if (name != "fv: default") {
+  if (name != "fv: default" && name != "nlfv: default") {
     names.push_back("face");
     locations.push_back(AmanziMesh::FACE);
     ndofs.push_back(1);
@@ -245,7 +244,6 @@ void Darcy_PK::Initialize()
   op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // Create solution and auxiliary data for time history.
-  // solution = Teuchos::rcp(new CompositeVector(*(S_->GetFieldData("pressure"))));
   solution = S_->GetFieldData("pressure", passwd_);
 
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
@@ -353,8 +351,6 @@ void Darcy_PK::Initialize()
   // print initialization head for this time period
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << std::endl 
-        << vo_->color("green") << "Initalization of PK is complete." << vo_->reset() << std::endl;
     *vo_->os() << "TI:\"" << ti_method_name.c_str() << "\""
                << " dt:" << dt_method_name
                << " LS:\"" << solver_name_.c_str() << "\""
@@ -369,6 +365,9 @@ void Darcy_PK::Initialize()
     }
 
     VV_PrintHeadExtrema(*solution);
+
+    *vo_->os() << vo_->color("green") << "Initalization of PK is complete." 
+               << vo_->reset() << std::endl << std::endl;
   }
 }
 

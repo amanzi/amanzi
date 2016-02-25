@@ -22,7 +22,7 @@
 TEST(MSTK_DEFORM_VOLS_2D)
 {
 
-  Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
+  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
 
   // Define a box region to capture bottom boundary
   Teuchos::ParameterList param_list;
@@ -36,17 +36,15 @@ TEST(MSTK_DEFORM_VOLS_2D)
 
   //  Teuchos::writeParameterListToXmlOStream(param_list,std::cout);
 
-  if (comm->NumProc() > 1) return;
+  if (comm_->NumProc() > 1) return;
 
   // Create a geometric model from region spec
-
-  Amanzi::AmanziGeometry::GeometricModelPtr gm = 
-    new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm.get());
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm_.get()));
 
   // Generate a mesh consisting of 3x3 elements 
-
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-      mesh(new Amanzi::AmanziMesh::Mesh_MSTK(-5.0,0.0,5.0,10.0,10,10,comm.get(),gm));
+      mesh(new Amanzi::AmanziMesh::Mesh_MSTK(-5.0,0.0,5.0,10.0,10,10,comm_.get(),gm));
 
   int nc = 
     mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED);
@@ -103,7 +101,7 @@ TEST(MSTK_DEFORM_VOLS_2D)
 
 TEST(MSTK_DEFORM_VOLS_3D)
 {
-  Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
+  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
 
   // Define a box region to capture bottom boundary
   Teuchos::ParameterList param_list;
@@ -118,21 +116,17 @@ TEST(MSTK_DEFORM_VOLS_3D)
   //  Teuchos::writeParameterListToXmlOStream(param_list,std::cout);
 
   // Create a geometric model from region spec
-
-  Amanzi::AmanziGeometry::GeometricModelPtr gm = 
-    new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm.get());
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm_.get()));
 
   // Generate a mesh consisting of 10x10 elements 
-
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-      mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,10.0,1.0,10.0,10,1,10,comm.get(),gm));
+      mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,10.0,1.0,10.0,10,1,10,comm_.get(),gm));
 
   int ncused = 
     mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED);
   int ncowned = 
     mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
-
-
 
   // Request target volume of 50% for some cells at the bottom of the center column
   // The others are unconstrained except for a barrier of minimum volume
@@ -188,7 +182,7 @@ TEST(MSTK_DEFORM_VOLS_3D)
       double diff = mesh->cell_volume(i)-min_volumes[i];
       std::cerr << "Cell Global ID " << mesh->GID(i,Amanzi::AmanziMesh::CELL)
                 << " Cell Local ID " << i 
-                << " Rank " << comm->MyPID() 
+                << " Rank " << comm_->MyPID() 
                 << ": Min volume = " << min_volumes[i] << "    "
                 << "Cell volume = " << mesh->cell_volume(i)  << "  Diff = "
                 << diff << std::endl;

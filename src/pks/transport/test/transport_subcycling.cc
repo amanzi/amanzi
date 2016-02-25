@@ -1,7 +1,7 @@
 /*
-  This is the Transport component of Amanzi. 
+  Transport
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -49,7 +49,8 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
 
   /* create a mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, (Epetra_MpiComm *)comm);
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
 
   FrameworkPreference pref;
   pref.clear();

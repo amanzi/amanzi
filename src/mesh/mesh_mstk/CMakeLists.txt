@@ -57,7 +57,7 @@ endif ()
 #
 # Library: mstk_mesh
 #
-set(mstk_mesh_files Mesh_MSTK.cc Mesh_MSTK_deform.cc ColumnMesh.cc) 
+set(mstk_mesh_files Mesh_MSTK.cc Mesh_MSTK_deform.cc MeshColumn.cc) 
 file(GLOB mstk_inc_files "*.hh")
 add_amanzi_library(mstk_mesh
                    SOURCE ${mstk_mesh_files} HEADERS ${mstk_inc_files}
@@ -114,6 +114,13 @@ if (BUILD_TESTS)
                     SOURCE
                           test/Main.cc 
                           test/test_column_mesh.cc 
+                    LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES})
+    # Test: extracted surface from column_mesh
+    add_amanzi_test(surface_column_mesh test_surface_column_mesh
+                    KIND unit
+                    SOURCE
+                          test/Main.cc 
+                          test/test_surface_column_mesh.cc 
                     LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES})
 
 endif()

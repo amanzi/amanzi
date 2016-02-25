@@ -51,8 +51,8 @@ TEST(MASS_MATRIX_2D) {
   factory.preference(pref);
 
   bool request_faces(true), request_edges(true);
-  // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1, NULL, true, true); 
-  Teuchos::RCP<Mesh> mesh = factory("test/two_cell2.exo", NULL, request_faces, request_edges); 
+  // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1,NULL, true, true); 
+  Teuchos::RCP<Mesh> mesh = factory("test/two_cell2.exo", Teuchos::null, request_faces, request_edges); 
  
   MFD3D_Electromagnetics mfd(mesh);
 
@@ -145,8 +145,8 @@ TEST(MASS_MATRIX_3D) {
   bool request_faces(true), request_edges(true);
 
   // RCP<Mesh> mesh = meshfactory("test/dodecahedron.exo", NULL, request_faces, request_edges); 
-  RCP<Mesh> mesh = meshfactory("test/one_cell.exo", NULL, request_faces, request_edges); 
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, NULL, true, true); 
+  RCP<Mesh> mesh = meshfactory("test/one_cell.exo", Teuchos::null, request_faces, request_edges); 
+  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, Teuchos::null, true, true); 
  
   MFD3D_Electromagnetics mfd(mesh);
 
@@ -238,8 +238,8 @@ TEST(STIFFNESS_MATRIX_2D) {
   factory.preference(pref);
 
   bool request_faces(true), request_edges(true);
-  // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1, NULL, true, true); 
-  Teuchos::RCP<Mesh> mesh = factory("test/two_cell2.exo", NULL, request_faces, request_edges); 
+  // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1, Teuchos::null, true, true); 
+  Teuchos::RCP<Mesh> mesh = factory("test/two_cell2.exo", Teuchos::null, request_faces, request_edges); 
  
   MFD3D_Electromagnetics mfd(mesh);
 
@@ -328,9 +328,9 @@ TEST(STIFFNESS_MATRIX_3D) {
 
   bool request_faces(true), request_edges(true);
 
-  // RCP<Mesh> mesh = meshfactory("test/dodecahedron.exo", NULL, request_faces, request_edges); 
-  RCP<Mesh> mesh = meshfactory("test/one_cell.exo", NULL, request_faces, request_edges); 
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, NULL, true, true); 
+  // RCP<Mesh> mesh = meshfactory("test/dodecahedron.exo", Teuchos::null, request_faces, request_edges); 
+  RCP<Mesh> mesh = meshfactory("test/one_cell.exo", Teuchos::null, request_faces, request_edges); 
+  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, Teuchos::null, true, true); 
  
   MFD3D_Electromagnetics mfd(mesh);
 

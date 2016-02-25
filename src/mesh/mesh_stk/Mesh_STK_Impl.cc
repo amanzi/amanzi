@@ -7,7 +7,6 @@ namespace bl = boost::lambda;
 #include "dbc.hh"
 #include "Mesh_common.hh"
 #include "GeometricModel.hh"
-#include "LabeledSetRegion.hh"
 
 
 #include <stk_mesh/fem/FEMMetaData.hpp>
@@ -27,14 +26,14 @@ namespace STK {
 // ------------
 
 Mesh_STK_Impl::Mesh_STK_Impl (int space_dimension, 
-                              const Epetra_MpiComm *comm,
+                              const Epetra_MpiComm *comm_,
                               Entity_map* entity_map,
                               stk::mesh::fem::FEMMetaData *meta_data,
                               stk::mesh::BulkData *bulk_data,
                               const Id_map& set_to_part,
                               Vector_field_type &coordinate_field) :
     space_dimension_ (space_dimension),
-    communicator_ (comm),
+    communicator_ (comm_),
     entity_map_ (entity_map),
     meta_data_ (meta_data),
     bulk_data_ (bulk_data),

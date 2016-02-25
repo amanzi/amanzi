@@ -48,7 +48,7 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA) {
 
   // create a mesh 
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();
@@ -124,7 +124,7 @@ TEST(FE_GRAPH_FACE_FACE) {
 
   // create a mesh 
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();

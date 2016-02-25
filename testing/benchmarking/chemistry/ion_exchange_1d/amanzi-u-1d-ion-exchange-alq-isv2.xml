@@ -138,11 +138,12 @@
 
       <ion_exchange>
 	<cec>750.0"</cec>
-	<cations>
+<!--	Not needed for now - only when we write the engine input file, and then probably will have to go elsewhere
+        <cations>
 	    <cation name="Na+" value="1.0"/>
 	    <cation name="Ca++" value="0.2953"/>
 	    <cation name="Mg++" value="0.1666"/>
-	</cations>
+	</cations> -->
       </ion_exchange>
     </material>
   </materials>

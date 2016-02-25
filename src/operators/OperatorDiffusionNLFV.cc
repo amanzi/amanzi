@@ -56,16 +56,27 @@ void OperatorDiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
   local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
   global_op_->OpPushBack(local_op_);
 
-  // upwind options
+  // upwind options (not used yet)
   Errors::Message msg;
   std::string uwname = plist.get<std::string>("nonlinear coefficient", "upwind: face");
+  little_k_ = OPERATOR_LITTLE_K_UPWIND;
   if (uwname == "none") {
     little_k_ = OPERATOR_LITTLE_K_NONE;
-  } else if (uwname == "upwind: face") {
-    little_k_ = OPERATOR_LITTLE_K_UPWIND;
-  } else {
-    msg << "OperatorDiffusionNLFV: unknown or not supported upwind scheme specified.";
-    Exceptions::amanzi_throw(msg);
+  // } else {
+  //   msg << "OperatorDiffusionNLFV: unknown or not supported upwind scheme specified.";
+  //   Exceptions::amanzi_throw(msg);
+  }
+
+  // Newton correction terms
+  newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
+  std::string jacobian = plist.get<std::string>("newton correction", "none");
+  if (jacobian == "approximate jacobian") {
+    newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
+
+    std::string name = "Diffusion: FACE_CELL Jacobian terms";
+    jac_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+
+    global_op_->OpPushBack(jac_op_);
   }
 
   // mesh info
@@ -195,6 +206,7 @@ void OperatorDiffusionNLFV::InitStencils_()
   stencil_data_->ScatterMasterToGhosted("gamma");
 
   // calculate coefficients in positive decompositions of conormals
+  int dir;
   std::vector<int> dirs;
   AmanziGeometry::Point conormal(dim_), v(dim_);
   std::vector<AmanziGeometry::Point> tau;
@@ -210,7 +222,8 @@ void OperatorDiffusionNLFV::InitStencils_()
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-        v = (*K_)[c] * mesh_->face_normal(f);
+        const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+        v = (*K_)[c] * normal;
       } else {
         for (int i = 0; i < dim_; ++i) v[i] = hap[i][f] - xc[i];
       }
@@ -284,7 +297,11 @@ void OperatorDiffusionNLFV::UpdateMatrices(
 
   // calculate one-sides flux corrections. Since a flux stencil can 
   // occupy (dim_ + 1) cells, we need parallel communications.
-  OneSidedFluxCorrections_(*u, sideflux_cv);
+  OneSidedFluxCorrections_(1, *u, sideflux_cv);
+
+  // un-rolling little-k data
+  Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
+  if (k_ != Teuchos::null) k_face = k_->ViewComponent("face");
 
   // split each stencil between different local matrices
   int c1, c2, c3, c4, k1, k2;
@@ -304,6 +321,10 @@ void OperatorDiffusionNLFV::UpdateMatrices(
       OrderCellsByGlobalId_(cells, c1, c2);
       k1 = (c1 == c) ? 0 : 1;
       k2 = k1 * dim_;      
+
+      // calculate little_k on the current face
+      double kf(1.0);
+      if (k_face.get()) kf = (*k_face)[0][f];
 
       // Calculate solution-dependent weigths using corrections to the
       // two-point flux. Note mu does not depend on one-sided flux. 
@@ -326,7 +347,7 @@ void OperatorDiffusionNLFV::UpdateMatrices(
       }
 
       tpfa = mu * w1 + (1.0 - mu) * w2;
-      matrix[k1][f] += tpfa;
+      matrix[k1][f] += kf * tpfa;
 
       // remaining terms of one-sided flux in cell c. Now we need
       // to select mu depending on the one-sided flux. 
@@ -346,19 +367,13 @@ void OperatorDiffusionNLFV::UpdateMatrices(
           }
 
           double tmp = ncells * weight[i + k2][f] * gamma * mu;
-          matrix[k1][f1] += tmp;
+          matrix[k1][f1] += kf * tmp;
         }
       }
     }
   }
 
   matrix_cv.GatherGhostedToMaster();
-
-  // un-rolling little-k data
-  Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
-  if (k_ != Teuchos::null) {
-    if (k_->HasComponent("face")) k_face = k_->ViewComponent("face");
-  }
 
   // populate local matrices
   for (int f = 0; f < nfaces_owned; ++f) {
@@ -379,20 +394,75 @@ void OperatorDiffusionNLFV::UpdateMatrices(
       Aface(0, 0) = matrix[0][f];
     }
 
-    if (little_k_ == OPERATOR_LITTLE_K_UPWIND && k_face.get()) {
-      Aface *= (*k_face)[0][f];
-    }
-  
     local_op_->matrices[f] = Aface;
   }
 }
 
 
 /* ******************************************************************
-* Calculate one-sided fluxorrections for all faces
+* Modify operator by adding an upwind approximation of the Newton 
+* correction term.
+****************************************************************** */
+void OperatorDiffusionNLFV::UpdateMatricesNewtonCorrection(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u, double scalar_limiter)
+{
+  // ignore correction if no flux provided.
+  if (flux == Teuchos::null) return;
+
+  // Correction is zero for linear problems
+  if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
+
+  // Correction is not required
+  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_NONE) return;
+
+  // only works on upwinded methods
+  if (little_k_ == OPERATOR_UPWIND_NONE) return;
+
+  const Epetra_MultiVector& kf = *k_->ViewComponent("face");
+  const Epetra_MultiVector& dkdp_f = *dkdp_->ViewComponent("face");
+  const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
+
+  // populate the local matrices
+  double v, vmod;
+  AmanziMesh::Entity_ID_List cells;
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+    WhetStone::DenseMatrix Aface(ncells, ncells);
+    Aface.PutScalar(0.0);
+
+    // We use the upwind discretization of the generalized flux.
+    v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] * dkdp_f[0][f] / kf[0][f] : 0.0;
+    vmod = std::abs(v);
+
+    // prototype for future limiters
+    vmod *= scalar_limiter;
+
+    // We use the upwind discretization of the generalized flux.
+    int i, dir, c1;
+    c1 = cells[0];
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
+    i = (v * dir >= 0.0) ? 0 : 1;
+
+    if (ncells == 2) {
+      Aface(i, i) = vmod;
+      Aface(1 - i, i) = -vmod;
+    } else if (i == 0) {
+      Aface(0, 0) = vmod;
+    }
+
+    jac_op_->matrices[f] = Aface;
+  }
+}
+
+
+/* ******************************************************************
+* Calculate one-sided fluxes (i0=0) or flux corrections (i0=1).
 ****************************************************************** */
 double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
-  const CompositeVector& u, CompositeVector& flux_cv) 
+  int i0, const CompositeVector& u, CompositeVector& flux_cv) 
 {
   // un-rolling composite vectors
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
@@ -406,11 +476,9 @@ double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
   
   // un-rolling little-k data
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
-  if (k_ != Teuchos::null) {
-    if (k_->HasComponent("face")) k_face = k_->ViewComponent("face");
-  }
+  if (k_ != Teuchos::null) k_face = k_->ViewComponent("face");
 
-  int c1, c2, c3, k1, k2;
+  int c1, c2, c3, k1, k2, dir;
   double gamma, tmp;
   std::vector<int> dirs;
   AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
@@ -427,9 +495,13 @@ double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
       OrderCellsByGlobalId_(cells, c1, c2);
       k1 = (c1 == c) ? 0 : 1;
       k2 = k1 * dim_;      
-    
+
+      // scalar (nonlinear) coefficient
+      double kf(1.0);    
+      if (k_face.get()) kf = (*k_face)[0][f];
+
       double sideflux(0.0), neumann_flux(0.0);
-      for (int i = 1; i < dim_; ++i) {
+      for (int i = i0; i < dim_; ++i) {
         int f1 = (*stencil_faces_[i + k2])[f];
         c3 = (*stencil_cells_[i + k2])[f];
         if (c3 >= 0) {
@@ -443,17 +515,15 @@ double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
           sideflux += tmp * (uc[0][c] - uc[0][c3]);
         } else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
           tmp = weight[i + k2][f];
-          sideflux += tmp * (uc[0][c] - bc_value[f1]);
+          const AmanziGeometry::Point& normal = mesh_->face_normal(f1, false, c, &dir);
+          sideflux += tmp * (uc[0][c] - MapBoundaryValue_(f1, bc_value[f1])) * dir;
         } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
           tmp = weight[i + k2][f];
           neumann_flux += tmp * bc_value[f1] * mesh_->face_area(f1);
         }
       }
 
-      if (little_k_ == OPERATOR_LITTLE_K_UPWIND && k_face.get()) {
-        sideflux *= (*k_face)[0][f];
-      }
-      flux[k1][f] = sideflux + neumann_flux; 
+      flux[k1][f] = kf * sideflux + neumann_flux; 
     }
   }
 
@@ -472,6 +542,10 @@ void OperatorDiffusionNLFV::ApplyBCs(bool primary, bool eliminate)
 
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell", true);
 
+  // un-rolling little-k data
+  Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
+  if (k_ != Teuchos::null) k_face = k_->ViewComponent("face");
+
   AmanziMesh::Entity_ID_List cells;
 
   for (int f = 0; f < nfaces_owned; f++) {
@@ -486,9 +560,52 @@ void OperatorDiffusionNLFV::ApplyBCs(bool primary, bool eliminate)
         WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
         local_op_->matrices_shadow[f] = Aface;
 
-        rhs_cell[0][c] -= Aface(0, 0) * bc_value[f] * mesh_->face_area(f);
+        double kf(1.0);
+        if (k_face.get()) kf = (*k_face)[0][f];
+
+        rhs_cell[0][c] -= (Aface(0, 0) / kf) * bc_value[f] * mesh_->face_area(f);
         Aface = 0.0;
       }
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Calculate flux using cell-centered data.
+* **************************************************************** */
+void OperatorDiffusionNLFV::UpdateFlux(const CompositeVector& u, CompositeVector& flux) 
+{
+  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
+  const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
+
+  CompositeVectorSpace cvs; 
+  cvs.SetMesh(mesh_)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 2);
+  CompositeVector sideflux_cv(cvs);
+
+  Epetra_MultiVector& sideflux = *sideflux_cv.ViewComponent("face", true);
+  Epetra_MultiVector& flux_data = *flux.ViewComponent("face", true);
+
+  u.ScatterMasterToGhosted("cell");
+  OneSidedFluxCorrections_(0, u, sideflux_cv);
+
+  int c1, c2, dir;
+  AmanziMesh::Entity_ID_List cells;
+
+  for (int f = 0; f < nfaces_owned; ++f) {
+    if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+      flux_data[0][f] = sideflux[0][f]; 
+    } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+      flux_data[0][f] = bc_value[f] * mesh_->face_area(f);
+    } else if (bc_model[f] == OPERATOR_BC_NONE) {
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      OrderCellsByGlobalId_(cells, c1, c2);
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
+
+      double g1 = sideflux[0][f]; 
+      double g2 = sideflux[1][f]; 
+      double det = fabs(g1) + fabs(g2);
+      flux_data[0][f] = (det == 0.0) ? 0.0 : 2 * dir * fabs(g2) * g1 / det; 
     }
   }
 }

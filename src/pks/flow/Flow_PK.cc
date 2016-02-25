@@ -149,7 +149,7 @@ void Flow_PK::InitializeFields_()
       S_->GetField("atmospheric_pressure", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized atmospheric_pressure to default value 101325.0" << std::endl;  
+          *vo_->os() << "initilized atmospheric_pressure to default value " << FLOW_PRESSURE_ATMOSPHERIC << std::endl;  
     }
   }
 
@@ -250,7 +250,7 @@ void Flow_PK::UpdateLocalFields_()
 void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 {
   // Process main one-line options (not sublists)
-  atm_pressure_ = plist.get<double>("atmospheric pressure", FLOW_PRESSURE_ATMOSPHERIC);
+  atm_pressure_ = *S_->GetScalarData("atmospheric_pressure");
   coordinate_system = plist.get<std::string>("absolute permeability coordinate system", "cartesian");
 
   // Create the BC objects.

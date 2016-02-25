@@ -18,7 +18,7 @@ include(TestManager)
 # through these variables.
 project(TRANSPORT)
 
-# Get the includes directory for chemistry (needed for Chemistry_State and BCs).
+# Get the includes directory for chemistry (needed for BCs).
 get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
 
 # External (TPL) include directories
@@ -28,19 +28,19 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${CHEM_INCLUDES_DIR})
 include_directories(${CHEMPK_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
-include_directories(${DATA_STRUCTURES_SOURCE_DIR})
-include_directories(${STATE_SOURCE_DIR})
-include_directories(${GEOMETRY_SOURCE_DIR})
-include_directories(${WHETSTONE_SOURCE_DIR})
-include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
+include_directories(${SOLVERS_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
+include_directories(${WHETSTONE_SOURCE_DIR})
 
 #
 # Transport registrations
