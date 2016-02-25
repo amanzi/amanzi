@@ -27,12 +27,20 @@
         }
       }
       void UnweightVector(const Vector& xw, Vector& xunw) {
-        xunw.COPY(xw);
-        xunw.MULTAYI(*W);
+	if (&xunw != &xw) {
+	  xunw.COPY(xw);
+	}
+	if (W != 0) {
+	  xunw.MULTAYI(*W);
+	}
       }
       void WeightVector(const Vector& xunw, Vector& xw) {
-        xw.COPY(xunw);
-        xw.MULTAY(*W);
+	if (&xunw != &xw) {
+	  xw.COPY(xunw);
+	}
+	if (W != 0) {
+	  xw.MULTAY(*W);
+	}
       }
       bool isValid() const {return op != 0;}
       Op& LinOp() {BL_ASSERT(op!=0); return *op;}

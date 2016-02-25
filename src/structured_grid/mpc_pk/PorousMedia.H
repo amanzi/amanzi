@@ -379,7 +379,6 @@ public:
 
   void init_rock_properties (bool restart); // Initialize the rock properties
   void buildMetrics ();         // 1-D metric arrays for RZ
-  static void setup_list ();
   static void read_params ();   // Read input file
   static void read_geometry ();
   static void read_prob ();
@@ -428,7 +427,7 @@ public:
   void reinstate_component_saturations();
   void get_fillpatched_rhosat(Real t_eval, MultiFab& RhoSat, int nGrow);
 
-  void richard_init_to_steady();
+  Real solve_for_initial_flow_field();
 
   bool advance_chemistry (Real time,
 			  Real dt,
@@ -734,27 +733,28 @@ public:
   static std::map<std::string, int> comp_list;
   static std::map<std::string, int> tracer_list;
 
-  /*
-    Flow model.  Options are
-    0: single-phase flow with no precipitate.
-    1: single-phase flow with precipitate
-    2: 2-phase 2-component flow
-    3: polymer flow (2-phase 3-component)
-    4: steady-saturated
-  */
-  enum MODEL_ID
+  enum FLOW_MODEL_ID
   {
-    PM_SINGLE_PHASE,
-    PM_SINGLE_PHASE_SOLID,
-    PM_TWO_PHASE,
-    PM_POLYMER,
-    PM_RICHARDS,
-    PM_STEADY_SATURATED,
-    PM_SATURATED, // FIXME: Merge this and STEADY_SATURATED into SINGLE_PHASE
-    PM_INVALID
+    PM_FLOW_MODEL_INVALID,
+    PM_FLOW_MODEL_SATURATED,
+    PM_FLOW_MODEL_RICHARDS,
+    PM_FLOW_MODEL_OFF
   };
-  static MODEL_ID model;
-  static int Model() {return (int)model;}
+  static FLOW_MODEL_ID flow_model;
+  static int FlowModel() {return (int)flow_model;}
+
+  enum FLOW_EVAL_ID
+  {
+    PM_FLOW_EVAL_INVALID,
+    PM_FLOW_EVAL_CONSTANT,
+    PM_FLOW_EVAL_COMPUTE_GIVEN_P,
+    PM_FLOW_EVAL_SOLVE_GIVEN_PBC,
+    PM_FLOW_EVAL_EVOLVE,
+    PM_FLOW_EVAL_OFF
+  };
+  static FLOW_EVAL_ID flow_eval;
+  static bool flow_is_static;
+  static int FlowEval() {return (int)flow_eval;}
 
   PMAmr* PMParent();
   const PMAmr* PMParent() const;
@@ -787,7 +787,6 @@ public:
   void set_vel_from_bcs(Real      time,
 			MultiFab* vel);
 
-  Real GetUserInputInitDt();
   static int NGrowHYP() {return nGrowHYP;}
 
   void derive_Material_ID(Real      time,
@@ -817,6 +816,10 @@ public:
   void derive_Aqueous_Pressure(Real      time,
                                MultiFab& mf,
                                int       dcomp);
+
+  void derive_Capillary_Pressure(Real      time,
+				 MultiFab& mf,
+				 int       dcomp);
 
   void derive_Hydraulic_Head(Real      time,
                              MultiFab& mf,
@@ -1094,7 +1097,6 @@ protected:
   // Chemistry/solute/tracer parameters 
   //
   static bool do_tracer_chemistry; // Does the user want to react tracers
-  static bool shut_off_reactions; //Hack to do all chemistry-related work, but bypass actual reactions update
   static bool do_tracer_advection; // Does the user want to advect tracers
   static bool do_tracer_diffusion; // Does the user want to diffuse tracers
   static bool setup_tracer_transport; // Should the memory for tracers be allocated/initialized
@@ -1113,7 +1115,6 @@ protected:
   //
   static bool do_reflux;
   static ExecutionMode execution_mode;
-  static Real switch_time;
   static Real ic_chem_relax_dt;
   static bool solute_transport_limits_dt;
   static int nGrowHYP;
@@ -1124,14 +1125,9 @@ protected:
   static bool do_output_chemistry_time_in_years;
   static bool do_output_transport_time_in_years;
 
-
-  static int  richard_solver_verbose;
-
   //
   // Init-to-steady parameters
   //
-  static bool do_richard_init_to_steady;
-  static int  richard_init_to_steady_verbose;
   static int  steady_min_iterations;
   static int  steady_min_iterations_2;
   static int  steady_max_iterations;
@@ -1144,21 +1140,18 @@ protected:
   static Real steady_time_step_retry_factor_f;
   static int  steady_max_consecutive_failures_1;
   static int  steady_max_consecutive_failures_2;
-  static Real steady_init_time_step;
   static int  steady_max_time_steps;
   static Real steady_max_time_step_size;
   static int  steady_max_num_consecutive_success;
   static Real steady_extra_time_step_increase_factor;
   static int  steady_max_num_consecutive_increases;
   static Real steady_consecutive_increase_reduction_factor;
-  static Real steady_max_psuedo_time;
-  static bool steady_abort_on_psuedo_timestep_failure;
   static int  steady_limit_function_evals;
   static Real steady_abs_tolerance;
   static Real steady_rel_tolerance;
   static Real steady_abs_update_tolerance;
   static Real steady_rel_update_tolerance;
-  static int  steady_do_grid_sequence;
+  static bool steady_do_grid_sequence;
   static Array<Real> steady_grid_sequence_new_level_dt_factor;
   static std::string steady_record_file;
 
@@ -1172,9 +1165,9 @@ protected:
   static int  richard_monitor_linear_solve;
   static int  richard_monitor_line_search;
   static Real richard_perturbation_scale_for_J;
-  static int  richard_use_fd_jac;
-  static int  richard_use_dense_Jacobian;
-  static int  richard_upwind_krel;
+  static bool richard_use_fd_jac;
+  static bool richard_use_dense_Jacobian;
+  static string richard_rel_perm_method;
   static int  richard_pressure_maxorder;
   static bool richard_scale_solution_before_solve;
   static bool richard_semi_analytic_J;

@@ -493,10 +493,10 @@ Structured_controls
 
 .. code-block:: xml
 
-  <unstructured_controls>
+  <structured_controls>
       Required Elements: NONE
       Optional Elements: str_steady-state_controls, str_transient_controls, str_amr_controls, max_n_subcycle_transport
-  </unstructured_controls>
+  </structured_controls>
 
 `"structured_controls`" contains options specific to the structured modes.  It has the following structure and elements
 

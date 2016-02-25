@@ -25,19 +25,12 @@
   <process_kernels>
     <comments>Richards</comments>
     <flow model="saturated" state="on"/>
-    <transport algorithm="xxxx" state="on"/>
-    <chemistry engine="pflotran" process_model="alquimia" state="on"/>
+    <transport state="on"/>
+    <chemistry engine="pflotran" process_model="implicit operator split" state="on"/>
   </process_kernels>
 
-  <geochemistry>
-    <pflotran_chemistry>
-      <reaction_network file="Tank_isotherms.in"/>
-      <database file="Tank_isotherms.dat"/>
-    </pflotran_chemistry>
-  </geochemistry>
-
   <phases>
-    <liquid_phase name="Water">
+    <liquid_phase name="water">
       <eos>false</eos>
       <viscosity>1.002E-03</viscosity>
       <density>998.2</density>
@@ -53,15 +46,8 @@
 
   <execution_controls>
     <verbosity level="medium"/>
-    <execution_control_defaults init_dt="1000"
-				max_dt="1.e7"
-				reduction_factor="0.7"
-				increase_factor="2"
-				mode="steady"
-				method="bdf1"
-				max_cycles="20"/> 
-    <execution_control end="1.5778463e8"
-		       start="0"/> 
+    <!-- <execution_control end="10" init_dt="10" start="0" mode="steady"/> -->
+    <execution_control end="1.5778463e8" init_dt="1000" start="0" max_cycles="20" mode="transient"/> 
   </execution_controls>
 
   <regions>
@@ -203,17 +189,50 @@
       <point> ( 13.75,  0.9) </point>
       <point> ( 13.775, 0.9) </point>
     </polygon>
-    <logical name="InletOutlet" operation="union" region_list="Inlet, Outlet" />
-    <logical name="Wall"    operation="union" region_list="Wall Right, Wall Left, Wall Top, Wall Bottom"/>
-    <logical name="FF"      operation="union" region_list="FF Right, FF Left, FF Right 1, FF Left 1" />
-    <logical name="Sand"    operation="union" region_list="Primary Sand Pad,Secondary Sand Pad" />
-    <logical name="Liners"  operation="union" region_list="Primary Liner, Primary Liner Floor, Secondary Liner" />
-    <logical name="Waste"   operation="union" region_list="Waste Floor, Waste Left, Waste Right" />
-    <logical name="Grout"   operation="subtraction" region_list="Tank Block, Wall, FF, Sand, Liners, Waste" />
-    <logical name="Tank"    operation="union" region_list="Wall, FF, Sand, Liners, Waste, Grout" />
-    <logical name="Soil"    operation="complement" region_list="Tank" />
-    <logical name="Sources" operation="union" region_list="Waste Floor, Waste Left, Waste Right, Primary Sand Pad,Secondary Sand Pad" />
-    <logical name="NonSources" operation="complement" region_list="Sources" />
+    <logical name="InletOutlet">
+      <operation>union</operation>
+      <region_list>Inlet, Outlet</region_list>
+    </logical>
+    <logical name="Wall">
+      <operation>union</operation>
+      <region_list>Wall Right, Wall Left, Wall Top, Wall Bottom</region_list>
+    </logical>
+    <logical name="FF">
+      <operation>union</operation>
+      <region_list>FF Right,FF Left,FF Right 1,FF Left 1</region_list>
+    </logical>
+    <logical name="Sand">
+      <operation>union</operation>
+      <region_list>Primary Sand Pad,Secondary Sand Pad</region_list>
+    </logical>
+    <logical name="Liners">
+      <operation>union</operation>
+      <region_list>Primary Liner, Primary Liner Floor, Secondary Liner</region_list>
+    </logical>
+    <logical name="Waste">
+      <operation>union</operation>
+      <region_list>Waste Floor, Waste Left, Waste Right</region_list>
+    </logical>
+    <logical name="Grout">
+      <operation>subtraction</operation>
+      <region_list>Tank Block, Wall, FF, Sand, Liners, Waste</region_list>
+    </logical>
+    <logical name="Tank">
+      <operation>union</operation>
+      <region_list>Wall, FF, Sand, Liners, Waste, Grout</region_list>
+    </logical>
+    <logical name="Soil">
+      <operation>complement</operation>
+      <region_list>Tank</region_list>
+    </logical>
+    <logical name="Sources">
+      <operation>union</operation>
+      <region_list>Waste Floor, Waste Left, Waste Right, Primary Sand Pad,Secondary Sand Pad</region_list>
+    </logical>
+    <logical name="NonSources">
+      <operation>complement</operation>
+      <region_list>Sources</region_list>
+    </logical>
   </regions>
 
   <numerical_controls>
@@ -221,6 +240,11 @@
 
       <max_n_subcycle_transport>4</max_n_subcycle_transport>
       <petsc_options_file>DOTpetsc_hypre</petsc_options_file>
+
+      <str_chemistry_controls>
+	<read_chemistry_engine_inputfile>Tank_isotherms.in</read_chemistry_engine_inputfile>
+	<chem_max_time_step>15778463.0</chem_max_time_step>
+      </str_chemistry_controls>
 
       <str_steady-state_controls>
       </str_steady-state_controls>
@@ -230,12 +254,12 @@
       </str_transient_controls>
 
       <str_amr_controls>
-	<amr_levels>5</amr_levels>
+	<amr_levels>4</amr_levels>
 	<refinement_ratio>4, 4, 4</refinement_ratio>
 	<regrid_interval>2</regrid_interval>
-	<blocking_factor>2, 16, 16, 16, 16</blocking_factor>
+	<blocking_factor>2, 16, 16, 16</blocking_factor>
 	<number_error_buffer_cells>1, 1, 1, 1</number_error_buffer_cells>
-	<max_grid_size>32, 32, 32, 32, 32</max_grid_size>
+	<max_grid_size>32, 32, 32, 32</max_grid_size>
 
 	<refinement_indicator name="Tank ref">
 	  <regions>Tank</regions>
@@ -275,7 +299,7 @@
 	</refinement_indicator>
 
 	<refinement_indicator name="Tracer ref">
-	  <field_name>Tracer Water Concentration</field_name>
+	  <field_name>Tracer Aqueous Concentration</field_name>
 	  <regions>All</regions>
 	  <max_refinement_level>4</max_refinement_level>
 	  <value_greater>1.e-2</value_greater>
@@ -300,7 +324,7 @@
 	<porosity value="0.2"/>
 	<tortuosity value="1"/>
       </mechanical_properties>
-      <hydraulic_conductivity x="1.e-11" y="1.e-11"/>
+      <hydraulic_conductivity x="1.e-11" y="1.e-11" z="1.e-11"/>
       <cap_pressure model="none"/>
       <sorption_isotherms>
       	<solute name="Tracer">
@@ -321,7 +345,7 @@
 	<porosity value="0.2"/>
 	<tortuosity value="1"/>
       </mechanical_properties>
-      <hydraulic_conductivity x="1.e-11" y="1.e-11"/>
+      <hydraulic_conductivity x="1.e-11" y="1.e-11" z="1.e-11"/>
       <cap_pressure model="none"/>
       <sorption_isotherms>
       	<solute name="Tracer">
@@ -342,7 +366,7 @@
 	<porosity value="0.35"/>
 	<tortuosity value="1"/>
       </mechanical_properties>
-      <hydraulic_conductivity x="1.e-6" y="1.e-6"/>
+      <hydraulic_conductivity x="1.e-6" y="1.e-6" z="1.e-6"/>
       <cap_pressure model="none"/>
       <sorption_isotherms>
       	<solute name="Tracer">
@@ -363,7 +387,7 @@
 	<porosity value="0.3"/>
 	<tortuosity value="1"/>
       </mechanical_properties>
-      <hydraulic_conductivity x=".15e-2" y=".15e-2"/>
+      <hydraulic_conductivity x=".15e-2" y=".15e-2" z=".15e-2"/>
       <cap_pressure model="none"/>
       <sorption_isotherms>
       	<solute name="Tracer">
@@ -384,7 +408,7 @@
 	<porosity value="0.3"/>
 	<tortuosity value="1"/>
       </mechanical_properties>
-      <hydraulic_conductivity x=".15e-2" y=".15e-2"/>
+      <hydraulic_conductivity x=".15e-2" y=".15e-2" z=".15e-2"/>
       <cap_pressure model="none"/>
       <sorption_isotherms>
       	<solute name="Tracer">
@@ -405,7 +429,7 @@
 	<porosity value="0.3"/>
 	<tortuosity value="1"/>
       </mechanical_properties>
-      <hydraulic_conductivity x=".15e-2" y=".15e-2"/>
+      <hydraulic_conductivity x=".15e-2" y=".15e-2" z=".15e-2"/>
       <cap_pressure model="none"/>
       <sorption_isotherms>
       	<solute name="Tracer">
@@ -426,7 +450,7 @@
 	<porosity value="0.3"/>
 	<tortuosity value="1"/>
       </mechanical_properties>
-      <hydraulic_conductivity x=".15e-2" y=".15e-2"/>
+      <hydraulic_conductivity x=".15e-2" y=".15e-2" z=".15e-2"/>
       <cap_pressure model="none"/>
       <sorption_isotherms>
       	<solute name="Tracer">
@@ -439,7 +463,7 @@
       	  <kd_model kd="1.e-6"/>
       	</solute>
       </sorption_isotherms>
-      <assigned_regions>Waste Left,Waste Right</assigned_regions>
+      <assigned_regions>Waste Left, Waste Right</assigned_regions>
     </material>
 
     <material name="Liner">
@@ -447,7 +471,7 @@
 	<porosity value="0.2"/>
 	<tortuosity value="1"/>
       </mechanical_properties>
-      <hydraulic_conductivity x="1.e-14" y="1.e-14"/>
+      <hydraulic_conductivity x="1.e-14" y="1.e-14" z=".15e-2"/>
       <cap_pressure model="none"/>
       <sorption_isotherms>
       	<solute name="Tracer">
@@ -468,8 +492,8 @@
   <initial_conditions>
     <initial_condition name="Initial Condition NonSources">
       <assigned_regions>NonSources</assigned_regions>
-      <liquid_phase name="Water">
-	<liquid_component name="Water">
+      <liquid_phase name="water">
+	<liquid_component name="water">
 	  <uniform_pressure  value="101325"/>
 	</liquid_component>
 	<geochemistry function="uniform" constraint="initial_nonsources" />
@@ -478,8 +502,8 @@
 
     <initial_condition name="Initial Condition Waste Floor">
       <assigned_regions>Waste Floor</assigned_regions>
-      <liquid_phase name="Water">
-	<liquid_component name="Water">
+      <liquid_phase name="water">
+	<liquid_component name="water">
 	  <uniform_pressure  value="101325"/>
 	</liquid_component>
 	<geochemistry function="uniform" constraint="initial_waste_floor" />
@@ -487,9 +511,9 @@
     </initial_condition>
 
     <initial_condition name="Initial Condition Annulus Waste">
-      <assigned_regions>Waste Left,Waste Right</assigned_regions>
-      <liquid_phase name="Water">
-	<liquid_component name="Water">
+      <assigned_regions>Waste Left, Waste Right</assigned_regions>
+      <liquid_phase name="water">
+	<liquid_component name="water">
 	  <uniform_pressure  value="101325"/>
 	</liquid_component>
 	<geochemistry function="uniform" constraint="initial_annulus_waste" />
@@ -498,8 +522,8 @@
 
     <initial_condition name="Initial Condition Primary Sand Pad">
       <assigned_regions>Primary Sand Pad</assigned_regions>
-      <liquid_phase name="Water">
-	<liquid_component name="Water">
+      <liquid_phase name="water">
+	<liquid_component name="water">
 	  <uniform_pressure  value="101325"/>
 	</liquid_component>
 	<geochemistry function="uniform" constraint="initial_primary_sand_pad" />
@@ -508,8 +532,8 @@
 
     <initial_condition name="Initial Condition Secondary Sand Pad">
       <assigned_regions>Secondary Sand Pad</assigned_regions>
-      <liquid_phase name="Water">
-	<liquid_component name="Water">
+      <liquid_phase name="water">
+	<liquid_component name="water">
 	  <uniform_pressure  value="101325"/>
 	</liquid_component>
 	<geochemistry function="uniform" constraint="initial_secondary_sand_pad" />
@@ -522,8 +546,8 @@
   <boundary_conditions>
     <boundary_condition name="West BC">
       <assigned_regions>XLOBC</assigned_regions>
-      <liquid_phase name="Water">
-	<liquid_component name="Water">
+      <liquid_phase name="water">
+	<liquid_component name="water">
 	  <hydrostatic value="30.5" start="0" function="constant"/>
 	</liquid_component>
 	<geochemistry function="uniform" constraint="west" />
@@ -532,8 +556,8 @@
 
     <boundary_condition name="East BC">
       <assigned_regions>XHIBC</assigned_regions>
-      <liquid_phase name="Water">
-	<liquid_component name="Water">
+      <liquid_phase name="water">
+	<liquid_component name="water">
 	  <hydrostatic value="30.0" start="0" function="constant"/>
 	</liquid_component>
       </liquid_phase>

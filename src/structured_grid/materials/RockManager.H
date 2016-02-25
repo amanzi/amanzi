@@ -54,7 +54,11 @@ public:
   typedef std::map<std::string, std::map<std::string,int> > LabelIdx;
 
   RockManager(const RegionManager*      _region_manager,
-              const Array<std::string>* solute_names = 0);
+	      const Array<std::string>* _solute_names = 0,
+	      Real                      _liquid_density = 0,
+	      Real                      _liquid_viscosity = 0,
+	      Real                      _gravity = 0);
+
   ~RockManager();
 
   void FinalizeBuild(const Array<Geometry>& geomArray,
@@ -188,6 +192,7 @@ protected:
                     int       nGrow) const;
 
   const RegionManager* region_manager;
+  Real liquid_density, liquid_viscosity, gravity;
   MatFiller* materialFiller;
   PArray<Material> rock;
   bool is_saturated;

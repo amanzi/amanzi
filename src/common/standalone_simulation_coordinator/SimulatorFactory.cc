@@ -8,11 +8,12 @@
 #include "amanzi_structured_grid_simulation_driver.H"
 #endif
 
+#include "xercesc/util/PlatformUtils.hpp"
 #include "InputConverter.hh"
 #include "SimulatorFactory.hh"
 
 using namespace std;
-using namespace xercesc;
+XERCES_CPP_NAMESPACE_USE
 
 namespace Amanzi
 {
@@ -81,10 +82,10 @@ Simulator* Create(const std::string& input_filename)
   {
 #ifdef ENABLE_Structured
     // Uncomment the following lines when the new v2 -> PP translator works.
-//    if (version == "v2")
-//      simulator = new AmanziStructuredGridSimulationDriver(doc);
-//    else 
-      simulator = new AmanziStructuredGridSimulationDriver(input_filename);
+    if (version == "v2")
+      simulator = new AmanziStructuredGridSimulationDriver(input_filename, doc);
+    else 
+      amanzi_throw(Errors::Message("Input spec v1 is no longer supported by Amanzi-S."));
 #else
     amanzi_throw(Errors::Message("Structured not supported in current build"));
 #endif

@@ -26,7 +26,7 @@ geometry.SoilC.type = box
 geometry.SoilC.lo_coordinate =  0 16
 geometry.SoilC.hi_coordinate = 32 32
 
-rock.rock = Soil1 Soil2
+rock.rocks = Soil1 Soil2
 
 rock.Soil1.regions                      = SoilA
 rock.Soil1.cpl.type                     = VanGenuchten

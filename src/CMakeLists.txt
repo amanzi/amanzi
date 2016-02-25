@@ -24,8 +24,6 @@ if (ENABLE_Physics)
   endif()
 endif()
 
-add_subdirectory(common/interface_platform)
-
 if (ENABLE_Unstructured)
   # Mesh
   add_subdirectory(mesh)
@@ -68,6 +66,8 @@ if (ENABLE_Unstructured AND ENABLE_Physics)
   # unstructured grid simualtion driver, and Amanzi binaries
   add_subdirectory(executables)
 endif()
+
+add_subdirectory(common/interface_platform)
 
 # structured grid
 if (ENABLE_Structured AND ENABLE_Physics)

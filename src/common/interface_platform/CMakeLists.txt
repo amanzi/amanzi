@@ -31,6 +31,11 @@ endif()
 
 include_directories(${Boost_INCLUDE_DIRS})
 
+if (ENABLE_Structured)
+  add_definitions("-DENABLE_Structured")
+  include_directories(${SAMR_SOURCE_DIR}) 
+endif()
+
 #
 # interface library
 #
@@ -50,6 +55,7 @@ add_amanzi_library(interface
                            InputConverterU_Flow.cc InputConverterU_Transport.cc
                            InputConverterU_Energy.cc InputConverterU_Chemistry.cc
                            InputConverterU_Solvers.cc InputConverterU_Mesh.cc InputConverterU_Output.cc
+                           InputConverterS.cc
 			   InputTranslator.cc
                       HEADERS ${interface_inc_files}
                       LINK_LIBS error_handling geometry ${Teuchos_LIBRARIES})
@@ -73,6 +79,15 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/converter_u_base.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${Boost_LIBRARIES}
                                              ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
+ 
+    # Test: translate Amanzi-S input
+    if (ENABLE_Structured)
+      add_amanzi_test(converter_s converter_s
+                      KIND int
+                      SOURCE test/Main.cc test/converter_s.cc
+                      LINK_LIBS ${amanzi_libs} ${CCSE_LIBRARIES} ${UnitTest_LIBRARIES} ${Boost_LIBRARIES}
+                                               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
+    endif()
  
 endif()
 
