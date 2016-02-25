@@ -24,10 +24,29 @@
 
 namespace Amanzi {
 
-  class TreeVector;
+  //class TreeVector;
+  //class Epetra_Vector;
 
   template <class Vector>
-  class PK_Explicit : virtual public PK_Default, public Explicit_TI::fnBase<Vector> {};
+  class PK_Explicit : virtual public Amanzi::PK_Default, public Explicit_TI::fnBase<Vector> {
+   
+  public:
+    PK_Explicit(){};
+    
+    PK_Explicit(Teuchos::ParameterList& pk_tree,
+                const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                const Teuchos::RCP<State>& S,
+                const Teuchos::RCP<TreeVector>& soln) :
+      PK_Default(pk_tree, global_list, S, soln){};
+    
+    PK_Explicit(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                Teuchos::ParameterList& FElist,
+                const Teuchos::RCP<TreeVector>& solution):
+      PK_Default(plist, FElist, solution){};
+
+// Virtual destructor
+    virtual ~PK_Explicit() {};
+  };
 
 }  // namespace Amanzi
 
