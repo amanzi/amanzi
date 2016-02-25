@@ -103,14 +103,14 @@ RStdata::SetPCapParams(Real t)
           if (is_vG) {
             res(iv,0) = 0;
             res(iv,1) = pc_params(iv,VG_M);
-            res(iv,2) = pc_params(iv,VG_ALPHA) * Pa_per_ATM;
+            res(iv,2) = pc_params(iv,VG_ALPHA) / Pa_per_ATM;
             res(iv,3) = pc_params(iv,VG_SR);
             res(iv,4) = pc_params(iv,VG_KR_SMOOTHING_MAX_PC);
           }
           else if (is_BC) {
             res(iv,0) = 0;
             res(iv,1) = pc_params(iv,BC_LAMBDA);
-            res(iv,2) = pc_params(iv,BC_ALPHA) * Pa_per_ATM;
+            res(iv,2) = pc_params(iv,BC_ALPHA) / Pa_per_ATM;
             res(iv,3) = pc_params(iv,BC_SR);
             res(iv,4) = pc_params(iv,BC_KR_SMOOTHING_MAX_PC);
           }
@@ -299,7 +299,6 @@ RStdata::calcInvPressure (MFTower&       N,
     MultiFab pc(P[lev].boxArray(),1,nGrow);
     pc.setVal(inputs.Pwt,0,1,nGrow);
     MultiFab::Subtract(pc,P[lev],0,0,1,nGrow);
-    pc.mult(Pa_per_ATM,0,1,nGrow);
     rock_manager->InverseCapillaryPressure(pc,materialID[lev],time,N[lev],0,dComp,nGrow);    
     N[lev].mult(rho_loc,dComp,1,nGrow);
     if (nGrow > 0) {
@@ -337,7 +336,6 @@ RStdata::calcLambda (MFTower&       Lambda,
     sat.mult(1/rho_loc,0,1,nGrow);
     rock_manager->RelativePermeability(sat,materialID[lev],time,Lambda[lev],0,dComp,nGrow);
     Lambda[lev].mult(1/mu_loc,dComp,1,nGrow);
-
     if (nGrow > 0) {
       Lambda[lev].FillBoundary(dComp,1);
       const Geometry& geom = rock_manager->GetMatFiller()->Geom(lev);
@@ -371,7 +369,6 @@ RStdata::calcRichardAlpha (MFTower&       Alpha,
       const Geometry& geom = rock_manager->GetMatFiller()->Geom(lev);
       geom.FillPeriodicBoundary(Alpha[lev],dComp,1);
     }
-    Alpha[lev].mult(Pa_per_ATM,0,1,nGrow);
   }
 }
 
@@ -391,7 +388,6 @@ RStdata::GetKappaCCdir(Real t)
       int nGrow = (*KappaCCdir)[lev].nGrow();
       bool ret = rock_manager->GetProperty(t,lev,(*KappaCCdir)[lev],"permeability",0,nGrow);
       if (!ret) BoxLib::Abort("Failed to build permeability");
-      (*KappaCCdir)[lev].mult(Pa_per_ATM*1.e10,0,BL_SPACEDIM,nGrow);
     }
     eval_time_for_KappaCCdir = t;
   }

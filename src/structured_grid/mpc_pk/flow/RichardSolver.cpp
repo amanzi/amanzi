@@ -1405,12 +1405,11 @@ RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
   // Get  -(Grad(p) + rho.g)
   CCtoECgradAdd(darcy_vel,pressure,rhog);
 
-  if ( (rs_data.rel_perm_method == "upwind-darcy_velocity")
-       && (rs_data.rel_perm_method == "other-arithmetic_average")
-       && (rs_data.rel_perm_method == "other-harmonic_average") ) {
+  if ( (rs_data.rel_perm_method != "upwind-darcy_velocity")
+       && (rs_data.rel_perm_method != "other-arithmetic_average")
+       && (rs_data.rel_perm_method != "other-harmonic_average") ) {
     BoxLib::Abort("Invalid rel_perm_method");
   }
-
 
   if (rs_data.rel_perm_method == "upwind-darcy_velocity") {
     rs_data.calcLambda(lambda,rhoSat,t,0,0,1);
@@ -1464,7 +1463,7 @@ RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
 	MultiFab::Multiply(darcy_vel[d][lev],GetRichardCoefs()[d][lev],0,0,1,0);
       }
     }
-  }  
+  }
 
   // Overwrite face velocities at boundary with boundary conditions
   rs_data.SetInflowVelocity(darcy_vel,t);
@@ -2268,8 +2267,8 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
     if (rs->GetNLScontrol().centered_diff_J) {
       // w2 <- w2 - w1 = F(w3) - F(w4) = F(x1 + dx) - F(x1 - dx)
       ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-      ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
-      ierr = (*f)(sctx,w4,w1,fctx);CHKPETSC(ierr);        
+      ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);
+      ierr = (*f)(sctx,w4,w1,fctx);CHKPETSC(ierr);
       ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
       ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
       epsilon_inv = 0.5/epsilon;

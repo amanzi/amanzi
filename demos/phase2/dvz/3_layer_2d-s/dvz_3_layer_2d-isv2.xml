@@ -229,7 +229,7 @@
       <assigned_regions>All</assigned_regions>
       <liquid_phase name = "Water">
 	<liquid_component name = "Water">
-	  <linear_pressure value = "101325" reference_coord ="(0.0,0.0)" gradient="(0.0,-9793.5192)"/>
+	  <linear_pressure value = "101325" reference_coord ="(0.0,0.0)" gradient="(0.0,-9789.3474)"/>
 	</liquid_component>
 	<solute_component name="solute">
 	  <uniform_conc name="Tc-99" value="0"/>

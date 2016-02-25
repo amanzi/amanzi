@@ -113,6 +113,7 @@ list<string> MakePPEntry(double d)
 {
   list<string> pp;
   stringstream s;
+  s << setprecision(15);
   s << d;
   pp.push_back(s.str());
   return pp;
@@ -158,6 +159,7 @@ list<string> MakePPEntry(const vector<double>& ds)
   for (size_t i = 0; i < ds.size(); ++i)
   {
     stringstream s;
+    s << setprecision(15);
     s << ds[i];
     pp.push_back(s.str());
   }

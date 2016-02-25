@@ -6,7 +6,7 @@ geometry.coord_sys = 0
 geometry.geometry_eps = 1.e-6
 geometry.generate_default_regions = true
 
-rock.rock = Soil
+rock.rocks = Soil
 
 rock.Soil.regions                      = All
 rock.Soil.cpl.type                     = VanGenuchten
@@ -25,7 +25,7 @@ rock.Soil.permeability_dist            = uniform
 dt              = 1.e5    # Time evolve starting dt
 inflow_velocity = -5e-12  # Flux into domain top (IC has flux=0)
 Niter           = 400     # Number of iters per evolve
-do_upwind       = 0       # 0: Harmonic product, 1: Upwind Kr, harmonic K
+krel_upwind_method = "other-harmonic_average"
 Nlev            = 3       # Number of cases, need >= 3 to compute convergence rate
 Ny0             = 64      # Number of cells on base grid
 

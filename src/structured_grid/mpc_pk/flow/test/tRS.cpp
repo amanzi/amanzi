@@ -165,21 +165,23 @@ main (int   argc,
 
   NLScontrol nlsc;
 
+  nlsc.verbosity = verbose ? 5 : 0;
   nlsc.max_nl_iterations=15;
   nlsc.time_step_reduction_factor=0.8;
-  nlsc.time_step_retry_factor=0.5;
-  nlsc.max_num_consecutive_success=1;
-  nlsc.min_nl_iterations_for_dt=13;
-  nlsc.time_step_increase_factor=1.4;
-  nlsc.ls_acceptance_factor=5;
+  nlsc.time_step_retry_factor=0.2;
+  nlsc.max_num_consecutive_success=0;
+  nlsc.min_nl_iterations_for_dt=10;
+  nlsc.time_step_increase_factor=1.6;
+  nlsc.ls_acceptance_factor=1.4;
   nlsc.monitor_line_search=0;
+  nlsc.scale_soln_before_solve = 1;
 
   RStstruct inputs;
   inputs.rho.resize(1,998.2);
   inputs.mu.resize(1,0.001005);
-  inputs.g = 9.81117 / RStdata::Pa_per_ATM;
+  inputs.g = 9.807 / RStdata::Pa_per_ATM;
   inputs.saturated = false;
-  inputs.inflow_velocity = -1.1091e-10;
+  inputs.inflow_velocity = -1.109096373e-10;
   inputs.Pwt = 1;
 
   pp.query("inflow_velocity",inputs.inflow_velocity);
@@ -202,7 +204,7 @@ main (int   argc,
 
 
   RStdata rs_data(0,nLevs,layout,nlsc,inputs,&rockManager);
-  rs_data.upwind_krel=1;
+  rs_data.rel_perm_method = "upwind-darcy_velocity";
   rs_data.semi_analytic_J=true;
 
   pp.query("Niter",Niter);
@@ -212,7 +214,8 @@ main (int   argc,
   pp.query("semi_analytic",rs_data.semi_analytic_J);
   bool abort_on_nl_fail = false; pp.query("abort_on_nl_fail",abort_on_nl_fail);
 
-  pp.query("do_upwind",rs_data.upwind_krel);
+  pp.query("rel_perm_method",rs_data.rel_perm_method);
+  pp.query("pressure_maxorder",rs_data.pressure_maxorder);
 
   // Boundary conditions:
   // Components are  0:Interior, 1:Inflow, 2:Outflow, 3:Symmetry, 4:SlipWall, 5:NoSlipWall.
@@ -255,6 +258,7 @@ main (int   argc,
 
   PlusMFT(Pnew,inputs.Pwt);
   PlusMFT(Pold,inputs.Pwt);
+
   rs_data.calcInvPressure(RSnew,Pnew,rs_data.new_time,0,0,0);
 
   Array<MFTower*> output_set;

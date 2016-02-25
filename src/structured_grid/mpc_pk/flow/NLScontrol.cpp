@@ -250,7 +250,7 @@ std::ostream& operator<<(std::ostream& os, const NLScontrol& rhs)
   os << "  max_num_consecutive_increases = " << rhs.max_num_consecutive_increases << "\n";
   os << "  consecutive_increase_reduction_factor = " << rhs.consecutive_increase_reduction_factor << "\n";
   os << "  min_nl_iterations_for_dt = " << rhs.min_nl_iterations_for_dt << "\n";
-  os << "  min_nl_iterations_for_dt = " << rhs.min_nl_iterations_for_dt_2 << "\n";
+  os << "  min_nl_iterations_for_dt_2 = " << rhs.min_nl_iterations_for_dt_2 << "\n";
   os << "  max_nl_iterations_for_dt = " << rhs.max_nl_iterations_for_dt << "\n";
   os << "  time_step_increase_factor = " << rhs.time_step_increase_factor << "\n";
   os << "  time_step_increase_factor_2 = " << rhs.time_step_increase_factor_2 << "\n";

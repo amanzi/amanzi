@@ -604,7 +604,7 @@ RockManager::Initialize(const Array<std::string>* solute_names)
     bool hasPerm =  pprk.countval(VertValName.c_str()) > 0;
     bool hasHC   = pprhc.countval(VertValName.c_str()) > 0;
     if (!(hasPerm ^ hasHC)) {
-      BoxLib::Abort(std::string("Must specify either permeability and hydraulic conductivy for rock: \""+rname).c_str());
+      BoxLib::Abort(std::string("Must specify either permeability or hydraulic conductivy for rock: \""+rname).c_str());
     }
 
     std::string KName = hasPerm ? PermeabilityName : HydCondName;
@@ -1430,11 +1430,6 @@ RockManager::InverseCapillaryPressure(const Real* capillaryPressure, int* matID,
         int idx = mat_pts[j][i];
         Real seff = (capillaryPressure[idx] <= 0  ? 1 : 
                      std::pow( std::pow(alpha*capillaryPressure[idx],n) + 1, -m));
-#if 0
-	if (capillaryPressure[idx] > 10.2) {
-	  std::cout << capillaryPressure[idx] << " " << seff << " " << alpha << std::endl;
-	}
-#endif
         seff = std::max(0.,std::min(1.,seff));
         saturation[idx] = seff*(1 - Sr) + Sr;
       }
@@ -1443,7 +1438,6 @@ RockManager::InverseCapillaryPressure(const Real* capillaryPressure, int* matID,
       Real mLambda = -pc_params[BC_LAMBDA];
       Real alpha   =  pc_params[BC_ALPHA];
       Real Sr      =  pc_params[BC_SR];
-      
       for (int i=0, End=mat_pts[j].size(); i<End; ++i) {
         int idx = mat_pts[j][i];
         Real seff = (capillaryPressure[idx] <= 0  ? 1 : 
