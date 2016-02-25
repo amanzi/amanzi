@@ -1,11 +1,18 @@
-#include "InputTranslator.hh"
+#ifndef ENABLE_Structured
+#define ENABLE_Structured
+#endif
+
+#include "InputConverterS.hh"
 #include "amanzi_structured_grid_simulation_driver.H"
 #include "ParmParse.H"
 #include "PMAmr.H"
 #include "PMAMR_Labels.H"
 #include "PorousMedia.H"
+#include "InputParser_Structured.H"
 
 #include "ParmParseHelpers.H"
+
+XERCES_CPP_NAMESPACE_USE
 
 static std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::AmanziInput::AMRToAmanziLabelMap();
 
@@ -103,28 +110,14 @@ bool ConfirmFileExists(const std::string& name) {
   return ok;
 }
 
-
-// v1 spec constructor -- delete when we get rid of v1.2 spec.
-AmanziStructuredGridSimulationDriver::AmanziStructuredGridSimulationDriver(const std::string& xmlInFileName)
+AmanziStructuredGridSimulationDriver::AmanziStructuredGridSimulationDriver(const std::string& input_file, xercesc::DOMDocument* input)
 {
-  std::string spec;
-  Teuchos::ParameterList parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName, spec);
-  if (spec == "v2")
-    plist_ = parameter_list;
-  else
-  {
-    Teuchos::RCP<Teuchos::ParameterList> parameter_list = Teuchos::getParametersFromXmlFile(xmlInFileName);
-    plist_ = *parameter_list;
-  }
-}
+  int argc = 0;
+  char** argv = NULL;
+	ParmParse::Initialize(argc,argv,NULL);
 
-AmanziStructuredGridSimulationDriver::AmanziStructuredGridSimulationDriver(xercesc::DOMDocument* input)
-{
-//	ParmParse::Initialize(argc,argv,NULL);
-//
-//  Amanzi::AmanziInput::InputConverterS converter(input);
-//  plist_ = new Teuchos::ParameterList(converter.Translate());
-// NOT IN DEFAULT YET.
+  Amanzi::AmanziInput::InputConverterS converter(input_file, input);
+  converter.Translate(0); // Called before mpi setup, pass rank=0
 }
 
 AmanziStructuredGridSimulationDriver::~AmanziStructuredGridSimulationDriver()
@@ -135,30 +128,42 @@ Amanzi::Simulator::ReturnType
 AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_comm,
                                            Amanzi::ObservationData&      output_observations)
 {
+    ParmParse pp;
     int argc=0;
     char** argv;
 
-    // NOTE: Delay checking input version until we have started parallel so that we can guarantee
-    //       a single error message
+    ParmParse pt("translated_input");
 
-    bool petsc_file_exists = false;
-    bool petsc_file_specified = false;
+    if (pt.countval("file_name") > 0) {
+      std::string file_name; pt.get("file_name",file_name);
+      std::string format = "structured_native"; pt.get("format",format);
+      if (format != "structured_native") {
+	BoxLib::Abort("Under Structured, \"structured_native\" is the only supported format for writing translated input");
+      }
+      else {
+	EnsureFolderExists(file_name);
+	std::ofstream osf; osf.open(file_name.c_str());
+	osf << std::setprecision(15);
+	pp.dumpTable(osf);
+	osf.close();
+      }
+    }
 
 #ifdef BL_USE_PETSC
+    ParmParse pb("prob");
     std::string petsc_help = "Amanzi-S passthrough access to PETSc help option\n";
-    std::string petsc_file_str = "Petsc Options File";
+    std::string petsc_file_str = "petsc_options_file";
     std::string petsc_options_file;
 
-    petsc_file_specified = plist_.isParameter(petsc_file_str);
-    if (petsc_file_specified) {
-      petsc_options_file = Teuchos::getParameter<std::string>(plist_, petsc_file_str);
-      petsc_file_exists = ConfirmFileExists(petsc_options_file);
+    if (pb.countval(petsc_file_str.c_str()) > 0) {
+      pb.get(petsc_file_str.c_str(),petsc_options_file);
+      bool petsc_file_exists = ConfirmFileExists(petsc_options_file);
       if (petsc_file_exists) {
-	PetscInitialize(&argc,&argv,petsc_options_file.c_str(),petsc_help.c_str());
+       PetscInitialize(&argc,&argv,petsc_options_file.c_str(),petsc_help.c_str());
       }
       else
       {
-	PetscInitializeNoArguments();
+       PetscInitializeNoArguments();
       }
     }
     else {
@@ -168,107 +173,13 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
 
     BoxLib::Initialize(argc,argv,false,mpi_comm);
 
-    // Now its ok to write message
-    if (petsc_file_specified) {
-      if (petsc_file_exists) {
-	if (ParallelDescriptor::IOProcessor()) {
-	  std::cout << "Initializing PETSc with parameter file: \""
-		    << petsc_options_file << "\"" << std::endl;
-	}
-      }
-      else {
-	std::cout << "\nWARNING: Couldn't open PETSc parameter file: \""
-		  << petsc_options_file << "\" ... continuing anyway\n" << std::endl;
-      }
-    }
-
     BL_PROFILE_VAR("main()", pmain);
-
-    // Check version number
-    std::string amanzi_version_str = "Amanzi Input Format Version";
-    if (!plist_.isParameter(amanzi_version_str))
-    {
-      std::string str = "Must specify a value for the top-level parameter: \"" 
-        + amanzi_version_str + "\"";
-      BoxLib::Abort(str.c_str());
-    }
-
-    std::string version = Teuchos::getParameter<std::string>(plist_, amanzi_version_str);
-    std::pair<bool,std::string> status = InputVersionOK(version);
-    if (!status.first) {
-      if (ParallelDescriptor::IOProcessor()) {
-        std::cout << status.second << std::endl;
-      }
-      ParallelDescriptor::Barrier();
-      BoxLib::Abort();
-    }
-
-    bool pause_for_debug = false;
-    if (plist_.isParameter("Pause For Debug"))
-      {
-          pause_for_debug= Teuchos::getParameter<bool>(plist_, "Pause For Debug");
-      }
-
-    if ( pause_for_debug && ParallelDescriptor::IOProcessor() ) {
-        std::string junk;
-        std::cout << "Waiting to attach debugger.  Enter any string to continue ";
-        std::cin >> junk;
-    }
-    ParallelDescriptor::Barrier();
-
-    if ( pause_for_debug && ParallelDescriptor::IOProcessor() ) {
-        std::cout << "   continuing run..." << std::endl;
-    }
-
-    if (plist_.isParameter("PPfile"))
-      {
-	const std::string& PPfile = Teuchos::getParameter<std::string>(plist_, "PPfile");
-	ParmParse::Initialize(argc,argv,PPfile.c_str());
-      }
-
-    // Determine whether we need to convert to input file to 
-    //native structured format
-    bool native = plist_.get<bool>("Native Structured Input",false);
-    Teuchos::ParameterList converted_parameter_list;
-    if (!native) 
-      converted_parameter_list =
-	Amanzi::AmanziInput::convert_to_structured(plist_);
-    else
-      converted_parameter_list = plist_;
-
-    if (plist_.isParameter("EchoXMLfile"))
-      {
-        const std::string& EchoXMLfile = Teuchos::getParameter<std::string>(plist_, "EchoXMLfile");
-        Teuchos::writeParameterListToXmlFile(converted_parameter_list,EchoXMLfile);
-      }
-
-    // Stuff away a static copy of the input parameters
-    PorousMedia::SetInputParameterList(converted_parameter_list);
-
-    BoxLib::Initialize_ParmParse(converted_parameter_list);
-
-    const Teuchos::ParameterList& echo_list = plist_.sublist("Echo Translated Input");
-    if (echo_list.isParameter("Format")) {
-      if (echo_list.get<std::string>("Format") == "native") {
-	if (ParallelDescriptor::IOProcessor()) {
-	  const std::string& pp_file = echo_list.get<std::string>("File Name");
-	  EnsureFolderExists(pp_file);
-	  std::ofstream ofs; ofs.open(pp_file.c_str());
-	  bool prettyPrint = false;
-	  ParmParse::dumpTable(ofs,prettyPrint);
-	  ofs.close();
-	}
-      }
-      ParallelDescriptor::Barrier();
-    }
 
     const Real run_strt = ParallelDescriptor::second();
 
     int  max_step;
     Real strt_time;
     Real stop_time;
-
-    ParmParse pp;
 
     max_step  = -1;    
     strt_time =  0.0;  

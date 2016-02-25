@@ -36,7 +36,7 @@ geometry.Tank.type = box
 geometry.Tank.lo_coordinate = 12 12 0
 geometry.Tank.hi_coordinate = 20 20 32
 
-rock.rock = Soil Concrete
+rock.rocks = Soil Concrete
 
 rock.Soil.regions                      = SoilLeft SoilRight SoilBottom SoilTop
 rock.Soil.cpl.type                     = VanGenuchten

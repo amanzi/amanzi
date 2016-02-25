@@ -9,7 +9,7 @@ geometry.coord_sys = 0
 geometry.geometry_eps = 1.e-6
 geometry.generate_default_regions = true
 
-rock.rock = Soil
+rock.rocks = Soil
 
 rock.Soil.regions                      = All
 rock.Soil.cpl.type                     = VanGenuchten
@@ -23,5 +23,6 @@ rock.Soil.porosity.distribution_type   = uniform
 rock.Soil.permeability.horizontal.vals = 2.87e-13
 rock.Soil.permeability.vertical.vals   = 2.87e-13
 rock.Soil.permeability_dist            = uniform
+
 
 

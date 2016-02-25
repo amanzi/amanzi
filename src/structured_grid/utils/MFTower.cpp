@@ -585,12 +585,12 @@ operator!=(const MFTFillPatch::MyHash& lhs, const MFTFillPatch::MyHash& rhs)
     return !operator==(lhs,rhs);
 }
 
-void
+int // Return 0 if successful, 1 if bc not properly defined
 MFTFillPatch::BuildStencil(const BCRec& bc,
                           int maxorder)
 {
     if (MyHash(bc,maxorder)==myhash) {
-        return; // we have already made what we need
+        return 0; // we have already made what we need
     }
 
     int myproc = ParallelDescriptor::MyProc();
@@ -665,7 +665,7 @@ MFTFillPatch::BuildStencil(const BCRec& bc,
                             interpCoef = &iCoefsRO;
                         }
                         else {
-                            BoxLib::Abort("MFTower::BuildStencil: Unrecognized BC type");
+			    return 1;
                         }
 
                         int sgn = (hilo==0 ? +1  : -1); // Direction of interp stencil (inward)
@@ -726,6 +726,7 @@ MFTFillPatch::BuildStencil(const BCRec& bc,
     }
 
     myhash = MyHash(bc,maxorder);
+    return 0;
 }
 
 void

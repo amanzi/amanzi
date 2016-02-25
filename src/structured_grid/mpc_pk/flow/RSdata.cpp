@@ -3,7 +3,7 @@
 
 // Richards Solver algorithm defaults
 static bool semi_analytic_J_DEF                       = false;
-static bool upwind_krel_DEF                           = false;
+static std::string rel_perm_method_DEF                = "upwind-darcy_velocity";
 static Real variable_switch_saturation_threshold_DEF  = -0.9999;
 static int pressure_maxorder_DEF                      = 3;
 static int max_num_Jacobian_reuses_DEF                = 0; // This just doesnt seem to work very well....
@@ -14,7 +14,7 @@ RSdata::RSdata(int slev, int nlevs, Layout& _layout, NLScontrol& nlsc, const Roc
 {
   semi_analytic_J = semi_analytic_J_DEF;
   variable_switch_saturation_threshold = variable_switch_saturation_threshold_DEF;
-  upwind_krel = upwind_krel_DEF;
+  rel_perm_method = rel_perm_method_DEF;
   pressure_maxorder = pressure_maxorder_DEF;
   max_num_Jacobian_reuses = max_num_Jacobian_reuses_DEF;
 

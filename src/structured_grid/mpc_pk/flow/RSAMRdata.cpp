@@ -101,10 +101,7 @@ RSAMRdata::~RSAMRdata()
 void
 RSAMRdata::SetIsSaturated()
 {
-  int pm_model = PorousMedia::Model();
-  is_saturated = (pm_model == PorousMedia::PM_STEADY_SATURATED)
-    || (pm_model == PorousMedia::PM_SATURATED);
-  is_steady = (pm_model == PorousMedia::PM_STEADY_SATURATED);
+  is_saturated = (PorousMedia::FlowModel() == PorousMedia::PM_FLOW_MODEL_SATURATED);
 }
 
 void
@@ -130,7 +127,10 @@ RSAMRdata::SetUpMemory(NLScontrol& nlsc)
   PArray<MultiFab> pcap_params(nLevs,PArrayNoManage);
 
   if (is_saturated) {
-    upwind_krel = false;
+    if ( (rel_perm_method != "other-arithmetic_average")
+	 && (rel_perm_method != "other-harmonic_average") ) {
+      BoxLib::Abort("rel_perm_method must be either \"other-arithmetic_average\" or \"other-harmonic_average\"");
+    }
   }
 
   for (int lev=0; lev<nLevs; ++lev) {
@@ -140,7 +140,7 @@ RSAMRdata::SetUpMemory(NLScontrol& nlsc)
     }
     porosity.set(lev,pm[lev].Porosity());
 
-    if (is_saturated && !is_steady) {
+    if (is_saturated) {
       specific_storage.set(lev,pm[lev].SpecificStorage());
     }
 
@@ -166,7 +166,7 @@ RSAMRdata::SetUpMemory(NLScontrol& nlsc)
   }
   Porosity = new MFTower(layout,porosity,nLevs);
 
-  if (is_saturated && !is_steady) {
+  if (is_saturated) {
     SpecificStorage = new MFTower(layout,specific_storage,nLevs);
   }
   else {
@@ -193,7 +193,7 @@ RSAMRdata::SetUpMemory(NLScontrol& nlsc)
     utmp.clear();
   }
 
-  if (upwind_krel) {
+  if (rel_perm_method == "upwind-darcy_velocity") {
     KappaCCdir = 0;
     CoeffCC = 0;
 

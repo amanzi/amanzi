@@ -8,10 +8,19 @@
 #include <Utility.H>
 #include <ParmParse.H>
 
+// Note that the permeability may be specified in m^2 or in mDa
+static bool Permeability_in_m2 = true;
+static bool Permeability_in_mDa = false;
+
+// Note that the capillary pressure model alpha can be in Pa^-1 or atm^-1
+static bool Capillary_Pressure_alpha_in_invPa = true;
+static bool Capillary_Pressure_alpha_in_invAtm = false;
+
 static std::string CapillaryPressureName    = "capillary_pressure";
 static std::string PorosityName             = "porosity";
 static std::string PermeabilityName         = "permeability";
 static std::string RelativePermeabilityName = "relative_permeability";
+static std::string HydCondName              = "hydraulic_conductivity";
 
 static std::string CP_model_None = "None";
 static std::string CP_model_vG = "VanGenuchten";
@@ -62,13 +71,20 @@ static std::vector<std::pair<bool,Real> > Kr_smoothing_min_seff; // Bool says wh
 static int max_grid_size_fine_gen_DEF = 96; // Blocking size for generating GSLib datafiles
 static int ngrow_fine_gen_DEF = 9; // nGrow for generating GSLib datafiles, note really a fn of correl search radii
 
-RockManager::RockManager(const RegionManager*     _region_manager,
-                         const Array<std::string>* solute_names)
-  : region_manager(_region_manager), finalized(false)
+RockManager::RockManager(const RegionManager*      _region_manager,
+                         const Array<std::string>* _solute_names,
+			 Real                      _liquid_density,
+			 Real                      _liquid_viscosity,
+			 Real                      _gravity)
+  : region_manager(_region_manager),
+    liquid_density(_liquid_density),
+    liquid_viscosity(_liquid_viscosity),
+    gravity(_gravity),
+    finalized(false)
 {
   BL_PROFILE("RockManager::RockManager()");
 
-  Initialize(solute_names);
+  Initialize(_solute_names);
 
   rock_mgr_ID = Rock_Mgr_ID_ctr++;
   Rock_Mgr_Ptrs.resize(rock_mgr_ID+1); Rock_Mgr_Ptrs[rock_mgr_ID] = this;
@@ -418,11 +434,11 @@ RockManager::Initialize(const Array<std::string>* solute_names)
   Kr_models[Kr_model_BC_Burdine] = Kr_cnt++;
 
   ParmParse pp("rock");
-  int nrock = pp.countval("rock");
+  int nrock = pp.countval("rocks");
   if (nrock <= 0) {
     BoxLib::Abort("At least one rock type must be defined.");
   }
-  Array<std::string> r_names;  pp.getarr("rock",r_names,0,nrock);
+  Array<std::string> r_names;  pp.getarr("rocks",r_names,0,nrock);
 
   ParmParse ppp("prob");
   max_grid_size_fine_gen = max_grid_size_fine_gen_DEF;
@@ -571,22 +587,41 @@ RockManager::Initialize(const Array<std::string>* solute_names)
     }
 
     Property* kappa_func = 0;
-    std::string PermeabilityValName = "val";
-    std::string PermeabilityStdName = "std";
-    std::string PermeabilityDistName = "distribution_type";
-    std::string PermeabilityGSParamFileName = "gslib_param_file";
-    std::string PermeabilityGSDataFileName = "gslib_data_file";
-    std::string PermeabilityGSFileShiftName = "gslib_file_shift";
+    std::string KValName = "val";
+    std::string KValsName = "vals";
+    std::string KStdName = "std";
+    std::string KDistName = "distribution_type";
+    std::string KGSParamFileName = "gslib_param_file";
+    std::string KGSDataFileName = "gslib_data_file";
+    std::string KGSFileShiftName = "gslib_file_shift";
 
     const std::string perm_prefix(prefix+"."+PermeabilityName);
+    const std::string HC_prefix(prefix+"."+HydCondName);
     ParmParse pprk(perm_prefix.c_str());
+    ParmParse pprhc(HC_prefix.c_str());
 
-    std::string perm_dist = "uniform"; pprk.query(PermeabilityDistName.c_str(),perm_dist);
-
-    if (perm_dist != "uniform" && perm_dist!="gslib") {
-      BoxLib::Abort(std::string("Unrecognized distribution_type for rock: \""+rname).c_str());
+    std::string VertValName = "vertical."+KValsName;
+    bool hasPerm =  pprk.countval(VertValName.c_str()) > 0;
+    bool hasHC   = pprhc.countval(VertValName.c_str()) > 0;
+    if (!(hasPerm ^ hasHC)) {
+      BoxLib::Abort(std::string("Must specify either permeability or hydraulic conductivy for rock: \""+rname).c_str());
     }
-    if (perm_dist == "uniform") {
+
+    std::string KName = hasPerm ? PermeabilityName : HydCondName;
+    ParmParse& pprK = hasPerm ? pprk : pprhc;
+
+    if (hasHC) {
+      if (liquid_density<=0 || liquid_viscosity<=0 || gravity <= 0) {
+	BoxLib::Abort("hydraulic_conductivity requires non-negative values for gravity and for the density, viscosity of liquid.");
+      }
+    }
+
+    std::string K_dist = "uniform"; pprK.query(KDistName.c_str(),K_dist);
+
+    if (K_dist != "uniform" && K_dist!="gslib") {
+      BoxLib::Abort(std::string("Unrecognized perm/HC distribution_type for rock: \""+rname).c_str());
+    }
+    if (K_dist == "uniform") {
 
       Array<Real> rvpvals(1), rhpvals(1), rh1pvals(1), rvptimes(1), rhptimes(1), rh1ptimes(1);
       Array<std::string> rvpforms, rhpforms, rh1pforms;
@@ -602,30 +637,30 @@ RockManager::Initialize(const Array<std::string>* solute_names)
       }
       else {
 
-	std::string PermeabilityVertValName = PermeabilityName+".vertical.vals";
-	std::string PermeabilityVertTimesName = PermeabilityName+".vertical.times";
-	std::string PermeabilityVertFormsName = PermeabilityName+".vertical.forms";
+	std::string KVertValName = KName+".vertical.vals";
+	std::string KVertTimesName = KName+".vertical.times";
+	std::string KVertFormsName = KName+".vertical.forms";
 
-	int nrvpvals = ppr.countval(PermeabilityVertValName.c_str());
+	int nrvpvals = ppr.countval(KVertValName.c_str());
 	if (nrvpvals>0) {
-	  ppr.getarr(PermeabilityVertValName.c_str(),rvpvals,0,nrvpvals);
+	  ppr.getarr(KVertValName.c_str(),rvpvals,0,nrvpvals);
 	  if (nrvpvals>1) {
-	    ppr.getarr(PermeabilityVertTimesName.c_str(),rvptimes,0,nrvpvals);
-	    ppr.getarr(PermeabilityVertFormsName.c_str(),rvpforms,0,nrvpvals-1);
+	    ppr.getarr(KVertTimesName.c_str(),rvptimes,0,nrvpvals);
+	    ppr.getarr(KVertFormsName.c_str(),rvpforms,0,nrvpvals-1);
 	  }
 	} else {
 	  BoxLib::Abort(std::string("No vertical permeability function specified for rock: \""+rname).c_str());
 	}
 
-	std::string PermeabilityHoriValName = PermeabilityName+".horizontal.vals";
-	std::string PermeabilityHoriTimesName = PermeabilityName+".horizontal.times";
-	std::string PermeabilityHoriFormsName = PermeabilityName+".horizontal.forms";
-	int nrhpvals = ppr.countval(PermeabilityHoriValName.c_str());
+	std::string KHoriValName   = KName+".horizontal.vals";
+	std::string KHoriTimesName = KName+".horizontal.times";
+	std::string KHoriFormsName = KName+".horizontal.forms";
+	int nrhpvals = ppr.countval(KHoriValName.c_str());
 	if (nrhpvals>0) {
-	  ppr.getarr(PermeabilityHoriValName.c_str(),rhpvals,0,nrhpvals);
+	  ppr.getarr(KHoriValName.c_str(),rhpvals,0,nrhpvals);
 	  if (nrhpvals>1) {
-	    ppr.getarr(PermeabilityHoriTimesName.c_str(),rhptimes,0,nrhpvals);
-	    ppr.getarr(PermeabilityHoriFormsName.c_str(),rhpforms,0,nrhpvals-1);
+	    ppr.getarr(KHoriTimesName.c_str(),rhptimes,0,nrhpvals);
+	    ppr.getarr(KHoriFormsName.c_str(),rhpforms,0,nrhpvals-1);
 	  }
 
 	} else {
@@ -633,15 +668,15 @@ RockManager::Initialize(const Array<std::string>* solute_names)
 	}
 
 #if BL_SPACEDIM==3
-	std::string PermeabilityHori1ValName = PermeabilityName+".horizontal1.vals";
-	std::string PermeabilityHori1TimesName = PermeabilityName+".horizontal1.times";
-	std::string PermeabilityHori1FormsName = PermeabilityName+".horizontal1.forms";
-	int nrh1pvals = ppr.countval(PermeabilityHori1ValName.c_str());
+	std::string KHori1ValName   = KName+".horizontal1.vals";
+	std::string KHori1TimesName = KName+".horizontal1.times";
+	std::string KHori1FormsName = KName+".horizontal1.forms";
+	int nrh1pvals = ppr.countval(KHori1ValName.c_str());
 	if (nrh1pvals>0) {
-	  ppr.getarr(PermeabilityHori1ValName.c_str(),rh1pvals,0,nrh1pvals);
+	  ppr.getarr(KHori1ValName.c_str(),rh1pvals,0,nrh1pvals);
 	  if (nrh1pvals>1) {
-	    ppr.getarr(PermeabilityHori1TimesName.c_str(),rh1ptimes,0,nrh1pvals);
-	    ppr.getarr(PermeabilityHori1FormsName.c_str(),rh1pforms,0,nrh1pvals-1);
+	    ppr.getarr(KHori1TimesName.c_str(),rh1ptimes,0,nrh1pvals);
+	    ppr.getarr(KHori1FormsName.c_str(),rh1pforms,0,nrh1pvals-1);
 	  }
 
 	} else {
@@ -650,7 +685,41 @@ RockManager::Initialize(const Array<std::string>* solute_names)
 #endif
       }
 
-      // The permeability is specified in mDa.  
+      // Convert input permeability values to mDa, if necessary
+      if (Permeability_in_m2) {
+	BL_ASSERT(!Permeability_in_mDa);
+	for (int j=0; j<rvpvals.size(); ++j) {
+	  rvpvals[j] *= 1.01325e15; // mDa/m^2
+	}
+	for (int j=0; j<rhpvals.size(); ++j) {
+	  rhpvals[j] *= 1.01325e15; // mDa/m^2
+	}
+#if BL_SPACEDIM==3
+	for (int j=0; j<rh1pvals.size(); ++j) {
+	  rh1pvals[j] *= 1.01325e15; // mDa/m^2
+	}
+#endif
+      }
+
+      // Convert hydraulic conductivity to intrinsic permeability, if necessary
+      // FIXME: Reflect this conversion in the GSLib file as well
+      if (hasHC) {
+	Real HC_to_IP_conversion_factor = liquid_viscosity / (liquid_density * gravity);
+
+	for (int j=0; j<rvpvals.size(); ++j) {
+	  rvpvals[j] *= HC_to_IP_conversion_factor;
+	}
+	for (int j=0; j<rhpvals.size(); ++j) {
+	  rhpvals[j] *= HC_to_IP_conversion_factor;
+	}
+#if BL_SPACEDIM==3
+	for (int j=0; j<rh1pvals.size(); ++j) {
+	  rh1pvals[j] *= HC_to_IP_conversion_factor;
+	}
+#endif
+      }
+
+      // The permeability is now in mDa.  
       // This needs to be multiplied with 1e-10 to be consistent 
       // with the other units in the code.  What this means is that
       // we will be evaluating the darcy velocity as:
@@ -699,24 +768,28 @@ RockManager::Initialize(const Array<std::string>* solute_names)
 
     }
     else {
-      // perm_dist == gslib
+      // K_dist == gslib
       std::string gslib_param_file, gslib_data_file;
-      generate_perm_gslib_file = (pprk.countval(PermeabilityGSParamFileName.c_str()) != 0);
-      if (pprk.countval(PermeabilityGSDataFileName.c_str()) == 0) {
-        pprk.get(PermeabilityGSParamFileName.c_str(),gslib_param_file);
+      generate_perm_gslib_file = (pprK.countval(KGSParamFileName.c_str()) != 0);
+      if (pprK.countval(KGSDataFileName.c_str()) == 0) {
+        pprK.get(KGSParamFileName.c_str(),gslib_param_file);
         gslib_data_file="permeability.gslib";
       }
       else {
-        pprk.query(PermeabilityGSParamFileName.c_str(),gslib_param_file);
-        pprk.get(PermeabilityGSDataFileName.c_str(),gslib_data_file);
+        pprK.query(KGSParamFileName.c_str(),gslib_param_file);
+        pprK.get(KGSDataFileName.c_str(),gslib_data_file);
       }
 
       Array<Real> gslib_file_shift(BL_SPACEDIM,0);
-      pprk.queryarr(PermeabilityGSFileShiftName.c_str(),gslib_file_shift,0,BL_SPACEDIM);
+      pprK.queryarr(KGSFileShiftName.c_str(),gslib_file_shift,0,BL_SPACEDIM);
 
-      Real avg; pprk.get(PermeabilityValName.c_str(),avg);
+      Real avg; pprK.get(KValName.c_str(),avg);
 
       // Scale (as above)
+      if (Permeability_in_m2) {
+	BL_ASSERT(!Permeability_in_mDa);
+	avg *= 1.01325e15; // to mDa
+      }
       avg *= 1.e-10;
 
       kappa_func = new GSLibProperty(PermeabilityName,avg,gslib_param_file,gslib_data_file,gslib_file_shift,harm_crsn,pc_refine);
@@ -725,7 +798,7 @@ RockManager::Initialize(const Array<std::string>* solute_names)
     // capillary pressure: include cpl_coef, residual_saturation, sigma
     const std::string cpl_prefix(prefix+".cpl");
     ParmParse pp_cpl(cpl_prefix.c_str());
-    std::string cpl_model = CP_model_None; pp_cpl.query("type",cpl_model); 
+    std::string cpl_model = CP_model_None; pp_cpl.query("type",cpl_model);
     std::map<std::string,int>::const_iterator it = CP_models.find(cpl_model);
     int rcplType = -1;
     int rKrType = -1;
@@ -774,6 +847,12 @@ RockManager::Initialize(const Array<std::string>* solute_names)
         }
 
         std::string Kr_model; ppr.get("Kr_model", Kr_model);
+	if (Kr_model != Kr_model_None
+	    && Kr_model != Kr_model_Mualem
+	    && Kr_model != Kr_model_Burdine) {
+	  BoxLib::Abort(std::string("Invalid Kr model: \""+Kr_model
+				    +"\" given for material: \""+rname+"\"").c_str());
+	}
         std::string Kr_full_model_name = cpl_model + "_" + Kr_model;
         std::map<std::string,int>::const_iterator itKr = Kr_models.find(Kr_full_model_name);
         if (it != Kr_models.end()) {
@@ -808,6 +887,12 @@ RockManager::Initialize(const Array<std::string>* solute_names)
           WRM_plot_file[i].first = NUM_INIT_INTERP_EVAL_PTS_DEF;
           ppr.query("WRM_plot_file_num_pts",WRM_plot_file[i].first);
         }
+
+	// Convert input alpa values to invAtm, if necessary	
+	if (Capillary_Pressure_alpha_in_invPa) {
+	  BL_ASSERT(!Capillary_Pressure_alpha_in_invAtm);
+	  alpha *= 1.01325e5;
+	}
 
         // Finally, load array of Real numbers for this model
         rcplParam[CPL_MODEL_ID] = (Real)rcplType;
@@ -1353,7 +1438,6 @@ RockManager::InverseCapillaryPressure(const Real* capillaryPressure, int* matID,
       Real mLambda = -pc_params[BC_LAMBDA];
       Real alpha   =  pc_params[BC_ALPHA];
       Real Sr      =  pc_params[BC_SR];
-      
       for (int i=0, End=mat_pts[j].size(); i<End; ++i) {
         int idx = mat_pts[j][i];
         Real seff = (capillaryPressure[idx] <= 0  ? 1 : 

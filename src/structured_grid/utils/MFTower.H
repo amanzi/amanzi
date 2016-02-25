@@ -100,8 +100,8 @@ struct MFTFillPatch
     int NumLevels() const;
     Layout& GetLayout();
 
-    void BuildStencil(const BCRec& bc,
-                      int          maxorder);
+    int BuildStencil(const BCRec& bc,
+                     int          maxorder); // Returns 0 if successful, returns 1 if bc not properly defined
 
     void DoCoarseFineParallelInterp(MFTower& mft,
                                     int      sComp=1,

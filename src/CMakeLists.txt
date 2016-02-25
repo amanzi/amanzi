@@ -24,8 +24,6 @@ if (ENABLE_Physics)
   endif()
 endif()
 
-add_subdirectory(common/interface_platform)
-
 if (ENABLE_Unstructured)
   # Mesh
   add_subdirectory(mesh)
@@ -58,6 +56,8 @@ if (ENABLE_Unstructured)
   add_subdirectory(state)
 
 endif()
+
+add_subdirectory(common/interface_platform)
 
 if (ENABLE_Unstructured AND ENABLE_Physics)  
   add_subdirectory(pks)

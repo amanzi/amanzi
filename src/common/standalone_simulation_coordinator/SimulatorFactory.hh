@@ -1,7 +1,6 @@
 #ifndef SIMULATORFACTORY_H
 #define SIMULATORFACTORY_H
 
-#include "xercesc/util/PlatformUtils.hpp"
 #include "Simulator.hh"
 
 // This factory method creates a Simulator object that can run a simulation 

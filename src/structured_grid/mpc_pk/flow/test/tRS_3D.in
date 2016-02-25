@@ -8,7 +8,7 @@ geometry.coord_sys = 0
 
 geometry.geometry_eps = 1.e-6
 geometry.generate_default_regions = true
-rock.rock = Soil
+rock.rocks = Soil
 
 rock.Soil.regions                      = All
 rock.Soil.cpl.type                     = VanGenuchten

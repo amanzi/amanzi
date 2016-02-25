@@ -220,3 +220,43 @@ NLScontrol::AdjustDt(Real      dt,
   return true;
 }
 
+std::ostream& operator<<(std::ostream& os, const NLScontrol& rhs)
+{
+  os << "NLScontrol configuration:\n";
+  os << "{\n";
+  os << "  label = " << rhs.label << "\n";
+  os << "  verbosity = " << rhs.verbosity << "\n";
+  os << "  use_PETSc_snes = " << rhs.use_PETSc_snes << "\n";
+  os << "  use_fd_jac = " << rhs.use_fd_jac << "\n";
+  os << "  use_dense_Jacobian = " << rhs.use_dense_Jacobian << "\n";
+  os << "  errfd = " << rhs.errfd << "\n";
+  os << "  max_ls_iterations = " << rhs.max_ls_iterations << "\n";
+  os << "  min_ls_factor = " << rhs.min_ls_factor << "\n";
+  os << "  ls_acceptance_factor = " << rhs.ls_acceptance_factor << "\n";
+  os << "  ls_reduction_factor = " << rhs.ls_reduction_factor << "\n";
+  os << "  monitor_line_search = " << rhs.monitor_line_search << "\n";
+  os << "  maxit = " << rhs.maxit << "\n";
+  os << "  maxf = " << rhs.maxf << "\n";
+  os << "  atol = " << rhs.atol << "\n";
+  os << "  rtol = " << rhs.rtol << "\n";
+  os << "  stol = " << rhs.stol << "\n";
+  os << "  scale_soln_before_solve = " << rhs.scale_soln_before_solve << "\n";
+  os << "  centered_diff_J = " << rhs.centered_diff_J << "\n";
+  os << "  max_nl_iterations = " << rhs.max_nl_iterations << "\n";
+  os << "  max_nl_residual_norm = " << rhs.max_nl_residual_norm << "\n";
+  os << "  max_num_consecutive_success = " << rhs.max_num_consecutive_success << "\n";
+  os << "  max_num_consecutive_failures_1 = " << rhs.max_num_consecutive_failures_1 << "\n";
+  os << "  max_num_consecutive_failures_2 = " << rhs.max_num_consecutive_failures_1 << "\n";
+  os << "  max_num_consecutive_increases = " << rhs.max_num_consecutive_increases << "\n";
+  os << "  consecutive_increase_reduction_factor = " << rhs.consecutive_increase_reduction_factor << "\n";
+  os << "  min_nl_iterations_for_dt = " << rhs.min_nl_iterations_for_dt << "\n";
+  os << "  min_nl_iterations_for_dt_2 = " << rhs.min_nl_iterations_for_dt_2 << "\n";
+  os << "  max_nl_iterations_for_dt = " << rhs.max_nl_iterations_for_dt << "\n";
+  os << "  time_step_increase_factor = " << rhs.time_step_increase_factor << "\n";
+  os << "  time_step_increase_factor_2 = " << rhs.time_step_increase_factor_2 << "\n";
+  os << "  time_step_reduction_factor = " << rhs.time_step_reduction_factor << "\n";
+  os << "  time_step_retry_factor = " << rhs.time_step_retry_factor << "\n";
+  os << "  time_step_retry_factor_2 = " << rhs.time_step_retry_factor_2 << "\n";
+  os << "  time_step_retry_factor_f = " << rhs.time_step_retry_factor_f << "\n";
+  os << "}";
+}

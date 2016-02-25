@@ -43,14 +43,21 @@ set(interface_inc_files
   InputParserIS_Defs.hh
   InputTranslator.hh)
 
-add_amanzi_library(interface
-                      SOURCE 
-                           InputConverter.cc InputConverterU.cc
+set(interface_src_files    InputConverter.cc InputConverterU.cc
                            InputConverterU_State.cc InputConverterU_MPC.cc InputConverterU_PK.cc
                            InputConverterU_Flow.cc InputConverterU_Transport.cc
                            InputConverterU_Energy.cc InputConverterU_Chemistry.cc
                            InputConverterU_Solvers.cc InputConverterU_Mesh.cc InputConverterU_Output.cc
-			   InputTranslator.cc
+			   InputTranslator.cc)
+
+if (ENABLE_Structured)
+  add_definitions("-DENABLE_Structured")
+  include_directories(../../structured_grid/mpc_pk) 
+  list(APPEND interface_src_files InputConverterS.cc)
+endif()
+
+add_amanzi_library(interface 
+                      SOURCE ${interface_src_files}
                       HEADERS ${interface_inc_files}
                       LINK_LIBS error_handling geometry ${Teuchos_LIBRARIES})
 
@@ -73,6 +80,15 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/converter_u_base.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${Boost_LIBRARIES}
                                              ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
+ 
+    # Test: translate Amanzi-S input
+    if (ENABLE_Structured)
+      add_amanzi_test(converter_s converter_s
+                      KIND int
+                      SOURCE test/Main.cc test/converter_s.cc
+                      LINK_LIBS ${amanzi_libs} ${CCSE_LIBRARIES} ${UnitTest_LIBRARIES} ${Boost_LIBRARIES}
+                                               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
+    endif()
  
 endif()
 

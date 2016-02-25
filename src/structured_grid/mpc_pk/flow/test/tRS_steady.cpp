@@ -1,4 +1,6 @@
-#include "VerboseObject_objs.hh"
+// This is needed to define some external symbols for linking. 
+// It's kind of silly to do things this way. -JNJ
+#include <VerboseObject_objs.hh> 
 
 #include <RichardSolver.H>
 #include <RStdata.H>
@@ -191,7 +193,8 @@ main (int   argc,
     Ny[lev] = Ny[lev-1]*2;
   }
 
-  bool do_upwind = false; pp.query("do_upwind",do_upwind);
+  std::string krel_upwind_method = "upwind-darcy_velocity"; pp.query("krel_upwind_method",krel_upwind_method);
+
   for (int lev = 0; lev < Nlev; ++lev) {
     Real dt = dt_init;
     int Nx = 2;
@@ -210,7 +213,7 @@ main (int   argc,
     rockManager.FinalizeBuild(geom_array,refRatio_array,nGrow,false);
 
     RStdata rs_data(0,nLevs,layout,nlsc,inputs,&rockManager);
-    rs_data.upwind_krel = do_upwind;
+    rs_data.rel_perm_method = krel_upwind_method;
     rs_data.semi_analytic_J=true; pp.query("semi_analytic",rs_data.semi_analytic_J);
 
     rs_data.SetPressureBC(pressure_bc);
@@ -363,6 +366,7 @@ main (int   argc,
     if (verbose) {
       std::cout << "Level " << lev << ": (r0,r1,r2) = " << rates[lev][0] << " " << rates[lev][1] << " " << rates[lev][2] << std::endl;
     }
+    bool do_upwind = krel_upwind_method == "upwind-darcy_velocity";
     if (!do_upwind && (rates[lev][0]< 1.9 || rates[lev][1]< 1.9 || rates[lev][2]< 1.9)) retVal = 1; // If harmonic averaging used, we expect second order
     if (do_upwind &&  (rates[lev][0]< 0.9 || rates[lev][1]< 0.9 || rates[lev][2]< 0.9)) retVal = 1; // If upwind averaging used, we expect first order
   }
