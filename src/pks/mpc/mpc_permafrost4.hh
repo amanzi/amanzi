@@ -87,6 +87,7 @@ class MPCPermafrost4 : public MPCSubsurface {
  private:
   // factory registration
   static RegisteredPKFactory<MPCPermafrost4> reg_;
+  Key domain_surf, domain_ss;
 
 };
 

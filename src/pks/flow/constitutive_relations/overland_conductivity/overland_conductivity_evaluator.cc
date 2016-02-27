@@ -33,7 +33,7 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
 
   coef_key_ = plist_.get<std::string>("coefficient key", getKey(domain,"manning_coefficient"));
   dependencies_.insert(coef_key_);
-
+ 
   dt_ = plist_.get<bool>("include dt factor", false);
   if (dt_) {
     factor_ = plist_.get<double>("dt factor");
@@ -113,7 +113,7 @@ void OverlandConductivityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
       }
     }
-
+  
     if (dens_) {
       const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(*comp,false);
       for (int i=0; i!=ncomp; ++i) {

@@ -29,7 +29,6 @@ SurfaceIceEnergyEvaluator::SurfaceIceEnergyEvaluator(Teuchos::ParameterList& pli
  
  
   std::string domain = getDomain(my_key_);
- 
   // densities
   dens_key_ = plist.get<std::string>("molar density liquid key",
           getKey(domain, "molar_density_liquid"));

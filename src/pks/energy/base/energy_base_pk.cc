@@ -53,7 +53,7 @@ EnergyBase::EnergyBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
 
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance")) {
-    if (domain_ == "surface" || domain_ == "surface_star") {
+    if (domain_ == "surface" || domain_ == "surface_star" || (boost::ends_with(domain_, "surface"))) {
       // h * nl * u at 1C in MJ/mol
       plist_->set("absolute error tolerance", .01 * 55000. * 76.e-6);
     } else if ((domain_ == "domain") || (boost::starts_with(domain_, "column"))) {
@@ -265,8 +265,14 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
       ss_flux_key_ = plist_->get<std::string>("surface-subsurface energy flux key",
               getKey(domain_, "surface_subsurface_energy_flux"));
     }
+    std::string domain_surf;
+    if (boost::starts_with(domain_, "column"))
+      domain_surf = domain_ + "_surface";
+    else
+      domain_surf = "surface";
+    
     S->RequireField(ss_flux_key_)
-        ->SetMesh(S->GetMesh("surface"))
+        ->SetMesh(S->GetMesh(domain_surf))
         ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 
@@ -488,9 +494,15 @@ void EnergyBase::UpdateBoundaryConditions_(
   if (coupled_to_surface_via_flux_) {
     // Diffusive fluxes are given by the residual of the surface equation.
     // Advective fluxes are given by the surface temperature and whatever flux we have.
-    Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
+    Key domain_surf;
+    if(domain_.substr(0,6) == "column")
+      domain_surf = domain_ + "_surface";
+    else
+      domain_surf = "surface";
+      
+    Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh(domain_surf);
     const Epetra_MultiVector& flux =
-        *S->GetFieldData("surface_subsurface_energy_flux")
+      *S->GetFieldData(getKey(domain_,"surface_subsurface_energy_flux"))
         ->ViewComponent("cell",false);
 
     int ncells_surface = flux.MyLength();

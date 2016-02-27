@@ -55,6 +55,8 @@ void EnergySurfaceIce::setup(const Teuchos::Ptr<State>& S) {
   // set up the meshes
   if (S->HasMesh("surface_star") && domain_=="surface_star")
     standalone_mode_ = false;
+  else if(domain_.substr(0,6) == "column")
+    standalone_mode_ = false;
 
   if (!S->HasMesh("surface") && standalone_mode_ == false) {
     Teuchos::RCP<const AmanziMesh::Mesh> domain = S->GetMesh();
@@ -100,7 +102,12 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_ ) {
     // -- ensure mass source from subsurface exists
-    S->RequireField("surface_subsurface_flux")
+    Key key_ss = " ";
+    if (domain_.substr(0,6) == "column")
+      key_ss = getKey(domain_.substr(0,8),"surface_subsurface_flux");
+    else
+      key_ss = "surface_subsurface_flux";
+    S->RequireField(key_ss)
         ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 
@@ -140,7 +147,12 @@ void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
     if (ic_plist.get<bool>("initialize surface temperature from subsurface",false)) {
       Teuchos::RCP<CompositeVector> surf_temp_cv = S->GetFieldData(key_, name_);
       Epetra_MultiVector& surf_temp = *surf_temp_cv->ViewComponent("cell",false);
-      const Epetra_MultiVector& temp = *S->GetFieldData("temperature")
+      std::string key_ss;
+      if (domain_.substr(0,6) == "column")
+        key_ss = getKey(domain_.substr(0,8),"temperature");
+      else
+        key_ss = "temperature";
+      const Epetra_MultiVector& temp = *S->GetFieldData(key_ss)
         ->ViewComponent("face",false);
 
       unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
@@ -236,12 +248,16 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
     S->GetFieldEvaluator(getKey(domain_,"enthalpy"))->HasFieldChanged(S.ptr(), name_);
     S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
-
     // -- advection source
+    Key key_ss = " ";
+    if (domain_.substr(0,6) == "column")
+      key_ss = getKey(domain_.substr(0,8),"surface_subsurface_flux");
+    else
+      key_ss = "surface_subsurface_flux";
     const Epetra_MultiVector& source1 =
-        *S->GetFieldData("surface_subsurface_flux")->ViewComponent("cell",false);
+      *S->GetFieldData(key_ss)->ViewComponent("cell",false);
     const Epetra_MultiVector& enth_surf =
-        *S->GetFieldData(enthalpy_key_)->ViewComponent("cell",false);
+      *S->GetFieldData(enthalpy_key_)->ViewComponent("cell",false);
     const Epetra_MultiVector& enth_subsurf =
       *S->GetFieldData(getKey(domain_,"enthalpy"))->ViewComponent("cell",false);
 

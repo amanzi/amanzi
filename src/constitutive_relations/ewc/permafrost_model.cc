@@ -42,13 +42,16 @@ void PermafrostModel::InitializeModel(const Teuchos::Ptr<State>& S,
   // these are not yet initialized
   rho_rock_ = -1.;
   p_atm_ = -1.e12;
-  domain = plist.get<std::string>("domain key", "");
+  
+  //domain = plist.get<std::string>("domain key", "");
+  Key temp =  plist.get<std::string>("temperature key", "");
+  domain = getDomain(temp);
   if (!domain.empty()) {
     mesh_ = S->GetMesh(domain);
   } else {
     mesh_ = S->GetMesh("domain");
   }
-  
+
   // Grab the models.
   // get the WRM models and their regions
 

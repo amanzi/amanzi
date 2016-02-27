@@ -262,7 +262,7 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
         *vo_->os() << "  DAMPING THE SPURT!, coef = " << damp << std::endl;
 
       // apply the damping
-      Teuchos::RCP<const CompositeVector> domain_pold = S_->GetFieldData("pressure");
+      Teuchos::RCP<const CompositeVector> domain_pold = S_->GetFieldData(key_ss);
       Teuchos::RCP<CompositeVector> domain_pnew = u->SubVector(i_domain_)->Data();
       db_->WriteVector("p_old", domain_pold.ptr());
       db_->WriteVector("p_new", domain_pnew.ptr());

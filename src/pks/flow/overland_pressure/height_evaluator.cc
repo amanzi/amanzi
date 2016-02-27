@@ -37,6 +37,7 @@ HeightEvaluator::HeightEvaluator(Teuchos::ParameterList& plist) :
   // model
   Teuchos::ParameterList model_plist = plist_.sublist("height model parameters");
   model_ = Teuchos::rcp(new HeightModel(model_plist));
+  
 }
 
 
@@ -94,7 +95,6 @@ void HeightEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
     }
   }
 
-
 }
 
 
@@ -108,6 +108,7 @@ void HeightEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
 void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key) {
   Key dmy_key = getDerivKey(my_key_,wrt_key);
+ 
   Teuchos::RCP<CompositeVector> dmy;
   if (S->HasField(dmy_key)) {
     // Get the field...
@@ -133,7 +134,7 @@ void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
   for (KeySet::const_iterator dep=dependencies_.begin();
        dep!=dependencies_.end(); ++dep) {
     Teuchos::RCP<CompositeVector> tmp = Teuchos::rcp(new CompositeVector(*dmy));
-
+    Key ddep_key11 = getDerivKey(*dep,wrt_key);
     if (wrt_key == *dep) {
       // partial F / partial x
       EvaluateFieldPartialDerivative_(S, wrt_key, tmp.ptr());

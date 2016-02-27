@@ -182,18 +182,18 @@ void RichardsSteadyState::Functional(double t_old, double t_new, Teuchos::RCP<Tr
 #if DEBUG_FLAG
   // dump s_old, s_new
   vnames[0] = "sl_old"; vnames[1] = "sl_new";
-  vecs[0] = S_inter_->GetFieldData("saturation_liquid").ptr();
-  vecs[1] = S_next_->GetFieldData("saturation_liquid").ptr();
+  vecs[0] = S_inter_->GetFieldData(getKey(domain_,"saturation_liquid")).ptr();
+  vecs[1] = S_next_->GetFieldData(getKey(domain_,"saturation_liquid")).ptr();
 
-  if (S_next_->HasField("saturation_ice")) {
+  if (S_next_->HasField(getKey(domain_,"saturation_ice"))) {
     vnames.push_back("si_old");
     vnames.push_back("si_new");
-    vecs.push_back(S_inter_->GetFieldData("saturation_ice").ptr());
-    vecs.push_back(S_next_->GetFieldData("saturation_ice").ptr());
+    vecs.push_back(S_inter_->GetFieldData(getKey(domain_,"saturation_ice")).ptr());
+    vecs.push_back(S_next_->GetFieldData(getKey(domain_,"saturation_ice")).ptr());
   }
 
   vnames.push_back("k_rel");
-  vecs.push_back(S_next_->GetFieldData("relative_permeability").ptr());
+  vecs.push_back(S_next_->GetFieldData(getKey(domain_,"relative_permeability")).ptr());
   db_->WriteVectors(vnames,vecs,true);
 
   db_->WriteVector("res (post diffusion)", res.ptr(), true);

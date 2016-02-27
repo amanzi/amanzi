@@ -30,26 +30,30 @@ with freezing.
 namespace Amanzi {
 
 // -- Initialize owned (dependent) variables.
-void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
-  // set up keys
-  domain_name_ = plist_->get<std::string>("domain name", "domain");
-  temp_key_ = getKey(domain_name_, "temperature");
-  pres_key_ = getKey(domain_name_, "pressure");
-  e_key_ = getKey(domain_name_, "energy");
-  wc_key_ = getKey(domain_name_, "water_content");
-  tc_key_ = getKey(domain_name_, "thermal_conductivity");
-  uw_tc_key_ = getKey(domain_name_, "upwind_thermal_conductivity");
-  kr_key_ = getKey(domain_name_, "relative_permeability");
-  uw_kr_key_ = getKey(domain_name_, "upwind_relative_permeability");
-  hkr_key_ = getKey(domain_name_, "enthalpy_times_relative_permeability");
-  uw_hkr_key_ = getKey(domain_name_, "upwind_enthalpy_times_relative_permeability");
-  mass_flux_key_ = getKey(domain_name_, "mass_flux");
-  mass_flux_dir_key_ = getKey(domain_name_, "mass_flux_direction");
-  rho_key_ = getKey(domain_name_, "mass_density_liquid");
+  void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
+    // supress energy's vision of advective terms as we can do better
+    Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
+    plist_->sublist("PKs").sublist(pk_order[1]).set("supress advective terms in preconditioner", true);
 
-  // supress energy's vision of advective terms as we can do better
-  Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
-  plist_->sublist("PKs").sublist(pk_order[1]).set("supress advective terms in preconditioner", true);
+    // set up keys
+    //  domain_name_ = plist_->get<std::string>("domain name", "domain");
+    domain_name_ =  plist_->sublist("PKs").sublist(pk_order[1]).get<std::string>("domain name", "domain");
+    
+    temp_key_ = getKey(domain_name_, "temperature");
+    pres_key_ = getKey(domain_name_, "pressure");
+    e_key_ = getKey(domain_name_, "energy");
+    wc_key_ = getKey(domain_name_, "water_content");
+    tc_key_ = getKey(domain_name_, "thermal_conductivity");
+    uw_tc_key_ = getKey(domain_name_, "upwind_thermal_conductivity");
+    kr_key_ = getKey(domain_name_, "relative_permeability");
+    uw_kr_key_ = getKey(domain_name_, "upwind_relative_permeability");
+    hkr_key_ = getKey(domain_name_, "enthalpy_times_relative_permeability");
+    uw_hkr_key_ = getKey(domain_name_, "upwind_enthalpy_times_relative_permeability");
+    mass_flux_key_ = getKey(domain_name_, "mass_flux");
+    mass_flux_dir_key_ = getKey(domain_name_, "mass_flux_direction");
+    rho_key_ = getKey(domain_name_, "mass_density_liquid");
+
+  
   
   // set up the sub-pks
   StrongMPC<PKPhysicalBDFBase>::setup(S);
@@ -171,7 +175,7 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       Teuchos::ParameterList hkr_eval_list;
       hkr_eval_list.set("evaluator name", hkr_key_);
       Teuchos::Array<std::string> deps(2);
-      deps[0] = "enthalpy"; deps[1] = kr_key_;
+      deps[0] = getKey(domain_name_,"enthalpy"); deps[1] = kr_key_;
       hkr_eval_list.set("evaluator dependencies", deps);
       Teuchos::RCP<FieldEvaluator> hkr_eval =
           Teuchos::rcp(new Relations::MultiplicativeEvaluator(hkr_eval_list));

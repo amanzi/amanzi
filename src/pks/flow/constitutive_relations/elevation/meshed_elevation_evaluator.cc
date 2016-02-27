@@ -70,9 +70,9 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
     for (int c=0; c!=ncells; ++c) {
       // Note that a surface cell is a volume mesh's face
       AmanziMesh::Entity_ID domain_face;
-      if(domain.substr(0,6) =="column")
-        domain_face = domain_mesh->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
-      else
+//--      if(domain.substr(0,6) =="column")
+ //--       domain_face = domain_mesh->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+ //--     else
         domain_face = surface_mesh->entity_get_parent(AmanziMesh::CELL, c);
       
       // First elevation.
@@ -88,22 +88,25 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
     // Set the elevation on faces by getting the corresponding nodes and
     // averaging.
     if (elev->HasComponent("face")) {
-      Epetra_MultiVector& elev_f = *elev->ViewComponent("face", false);
-      AmanziMesh::Entity_ID_List surface_nodes(2);
-      AmanziMesh::Entity_ID node0, node1;
-      AmanziGeometry::Point coord0(3);
-      AmanziGeometry::Point coord1(3);
-
-      int nfaces = elev_f.MyLength();
-      for (int f=0; f!=nfaces; ++f) {
-        surface_mesh->face_get_nodes(f, &surface_nodes);
-        node0 = surface_mesh->entity_get_parent(AmanziMesh::NODE, surface_nodes[0]);
-        node1 = surface_mesh->entity_get_parent(AmanziMesh::NODE, surface_nodes[1]);
-
-        domain_mesh->node_get_coordinates(node0, &coord0);
-        domain_mesh->node_get_coordinates(node1, &coord1);
-        elev_f[0][f] = (coord0[2] + coord1[2])/2.0;
-      }
+        Epetra_MultiVector& elev_f = *elev->ViewComponent("face", false);
+        AmanziMesh::Entity_ID_List surface_nodes(2);
+        AmanziMesh::Entity_ID node0, node1;
+        AmanziGeometry::Point coord0(3);
+        AmanziGeometry::Point coord1(3);
+        
+        int nfaces = elev_f.MyLength();
+        for (int f=0; f!=nfaces; ++f) {
+          surface_mesh->face_get_nodes(f, &surface_nodes);
+          if ( domain.substr(0,6) != "column"){
+          node0 = surface_mesh->entity_get_parent(AmanziMesh::NODE, surface_nodes[0]);
+          node1 = surface_mesh->entity_get_parent(AmanziMesh::NODE, surface_nodes[1]); 
+          domain_mesh->node_get_coordinates(node0, &coord0);
+          domain_mesh->node_get_coordinates(node1, &coord1);
+          elev_f[0][f] = (coord0[2] + coord1[2])/2.0;
+          }
+          else
+           elev_f[0][f] = elev_c[0][0];
+        }
     }
   } else if (domain_mesh->manifold_dimension() == 2) {
     // Set the elevation on cells by getting the corresponding cell and its

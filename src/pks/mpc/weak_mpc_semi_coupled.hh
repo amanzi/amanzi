@@ -13,13 +13,15 @@ class WeakMPCSemiCoupled : public WeakMPC {
 		     Teuchos::ParameterList& FElist,
 		     const Teuchos::RCP<TreeVector>& soln) :
     PKDefaultBase(plist, FElist, soln),
-    WeakMPC(plist, FElist, soln)  {}; 
+    WeakMPC(plist, FElist, soln){}; 
 
   virtual bool advance (double dt);
   virtual void setup(const Teuchos::Ptr<State>& S);
-
+  
  private :
   static RegisteredPKFactory<WeakMPCSemiCoupled> reg_;
+  Key domain_ss, domain_sf;
+
 };
 
   

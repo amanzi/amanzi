@@ -34,7 +34,8 @@ Effectively stolen from Amanzi, with few modifications.
 
 #include "MeshAudit.hh"
 #include "MeshFactory.hh"
-#include "ColumnMesh.hh"
+#include "MeshColumn.hh"
+#include "MeshSurfaceCell.hh"
 #include "Domain.hh"
 #include "GeometricModel.hh"
 #include "coordinator.hh"
@@ -87,8 +88,8 @@ int AmanziUnstructuredGridSimulationDriver::Run(
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList reg_params = params_copy.sublist("Regions");
 
-  Amanzi::AmanziGeometry::GeometricModelPtr
-    geom_model_ptr( new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm) );
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model_ptr =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm));
 
   // Add the geometric model to the domain
   simdomain_ptr->Add_Geometric_Model(geom_model_ptr);
@@ -260,7 +261,7 @@ int AmanziUnstructuredGridSimulationDriver::Run(
       Exceptions::amanzi_throw(message);
     }
 
-    if (mesh->cell_dimension() == 3) {
+    if (mesh->manifold_dimension() == 3) {
       surface3D_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::FACE,false,false);
       surface_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::FACE,true,false);
     } else {
@@ -320,13 +321,20 @@ int AmanziUnstructuredGridSimulationDriver::Run(
 
   // column meshes
   std::vector<Teuchos::RCP<Amanzi::AmanziMesh::Mesh> > col_meshes;
+  std::vector<Teuchos::RCP<Amanzi::AmanziMesh::Mesh> > col_surf_meshes;
+
   if (mesh_plist.isSublist("Column Meshes")) {
     int nc = mesh->num_columns();
     col_meshes.resize(nc, Teuchos::null);
+    col_surf_meshes.resize(nc, Teuchos::null);
     for (int c=0; c!=nc; ++c) {
-      col_meshes[c] = Teuchos::rcp(new Amanzi::AmanziMesh::ColumnMesh(*mesh, c));
+      col_meshes[c] = Teuchos::rcp(new Amanzi::AmanziMesh::MeshColumn(*mesh, c));
     }
-  }  
+
+    if (mesh_plist.isSublist("Column Surface Meshes"))
+      for (int c1=0; c1!=nc; ++c1)
+        col_surf_meshes[c1] = Teuchos::rcp(new Amanzi::AmanziMesh::MeshSurfaceCell(*col_meshes[c1], "surface"));
+  } 
   
   Teuchos::TimeMonitor::summarize();
   Teuchos::TimeMonitor::zeroOutTimers();
@@ -345,12 +353,15 @@ int AmanziUnstructuredGridSimulationDriver::Run(
 
   if (col_meshes.size() > 0) {
     for (int c=0; c!=col_meshes.size(); ++c) {
-      std::stringstream namestream;
+      std::stringstream namestream, namestream_surf;
       namestream << "column_" << c;
+      namestream_surf << "column_" << c << "_surface";
       S->RegisterMesh(namestream.str(), col_meshes[c], deformable);
+      if (mesh_plist.isSublist("Column Surface Meshes"))
+        S->RegisterMesh(namestream_surf.str(), col_surf_meshes[c], deformable);
     }
   }
-  
+
   // create the top level Coordinator
   Amanzi::Coordinator coordinator(params_copy, S, comm);
 
@@ -361,11 +372,6 @@ int AmanziUnstructuredGridSimulationDriver::Run(
   delete comm;
   delete simdomain_ptr;
 
-  // this is poor design
-  for (int i=0; i!=geom_model_ptr->Num_Regions(); ++i) {
-    delete geom_model_ptr->Region_i(i);
-  }
-  delete geom_model_ptr;
   return 0;
 }
 

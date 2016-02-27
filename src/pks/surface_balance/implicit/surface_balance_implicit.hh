@@ -80,7 +80,7 @@ public:
   double min_snow_trans_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> subsurf_mesh_;
-
+  Key domain_surf, domain_ss;
  private:
   // factory registration
   static RegisteredPKFactory<SurfaceBalanceImplicit> reg_;

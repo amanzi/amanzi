@@ -8,6 +8,7 @@ Authors: Neil Carlson (version 1)
          Ethan Coon (ATS version) (ecoon@lanl.gov)
 ------------------------------------------------------------------------- */
 #include "boost/math/special_functions/fpclassify.hpp"
+#include "boost/algorithm/string/predicate.hpp"
 
 #include "Epetra_Import.h"
 
@@ -313,22 +314,17 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   if (coupled_to_surface_via_flux_) {
     if (ss_flux_key_.empty()) {
       ss_flux_key_ = plist_->get<std::string>("surface-subsurface flux key",
-                                              getKey(domain_, "surface_subsurface_flux")); // remember to change
+                                              getKey(domain_, "surface_subsurface_flux"));
     }
 
-   
-    if (domain_ .substr(0,6)=="column"){
-      std::string domain_surf = " ";
+    std::string domain_surf;
+    if (boost::starts_with(domain_, "column"))
       domain_surf = domain_ + "_surface";
-      S->RequireField(ss_flux_key_)->SetMesh(S->GetMesh(domain_surf))
-        ->AddComponent("cell", AmanziMesh::CELL, 1);
-      if (!S->GetField(ss_flux_key_)->initialized())
-        S->GetField(ss_flux_key_, S->GetField(ss_flux_key_)->owner())->set_initialized();
-    }
     else
-      S->RequireField(ss_flux_key_)
-        ->SetMesh(S->GetMesh("surface"))
-        ->AddComponent("cell", AmanziMesh::CELL, 1);
+      domain_surf = "surface";
+
+    S->RequireField(ss_flux_key_)->SetMesh(S->GetMesh(domain_surf))
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
   
   // -- coupling done by a Dirichlet condition

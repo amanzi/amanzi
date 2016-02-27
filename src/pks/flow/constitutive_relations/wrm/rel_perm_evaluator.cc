@@ -55,10 +55,8 @@ void RelPermEvaluator::InitializeFromPlist_() {
   if (my_key_ == std::string("")) {
     my_key_ = plist_.get<std::string>("rel perm key", "relative_permeability");
   }
-
   // dependencies
   Key domain_name = getDomain(my_key_);
-  
   // -- saturation liquid
   sat_key_ = plist_.get<std::string>("saturation key",
           getKey(domain_name, "saturation_liquid"));
@@ -82,7 +80,11 @@ void RelPermEvaluator::InitializeFromPlist_() {
             "surface-relative_permeability");
     dependencies_.insert(surf_rel_perm_key_);
 
-    surf_mesh_key_ = plist_.get<std::string>("surface mesh key", "surface");
+    Key domain_surf = getDomain(surf_rel_perm_key_);
+    if(domain_surf.substr(0,6) == "column")
+      surf_mesh_key_ = plist_.get<std::string>("surface mesh key", domain_surf);
+    else
+      surf_mesh_key_ = plist_.get<std::string>("surface mesh key", "surface");
   }
   
   // cutoff above 0?
@@ -132,8 +134,9 @@ void RelPermEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
       }
 
       // Check the dependency for surf rel perm
+      Key domain = getDomain(surf_rel_perm_key_);
       S->RequireField(surf_rel_perm_key_)
-          ->SetMesh(S->GetMesh("surface"))
+          ->SetMesh(S->GetMesh(domain))
           ->AddComponent("cell",AmanziMesh::CELL,1);
      
       S->RequireFieldEvaluator(surf_rel_perm_key_)->EnsureCompatibility(S);

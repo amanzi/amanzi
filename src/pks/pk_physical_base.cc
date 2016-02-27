@@ -117,7 +117,6 @@ void PKPhysicalBase::initialize(const Teuchos::Ptr<State>& S) {
     // -- Calculate the IC.
     Teuchos::ParameterList ic_plist = plist_->sublist("initial condition");
     field->Initialize(ic_plist);
-
     // -- Update faces from cells if needed.
     // if (ic_plist.get<bool>("initialize faces from cells", false)) {
     //   DeriveFaceValuesFromCellValues_(field->GetFieldData().ptr());
