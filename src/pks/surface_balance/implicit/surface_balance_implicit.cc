@@ -313,7 +313,8 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
   double T_eps = 0.0001;
 
   bool debug = false;
-  if (vo_->os_OK(Teuchos::VERB_EXTREME)) debug = true;
+  Teuchos::RCP<VerboseObject> dcvo = Teuchos::null;
+  int rank = mesh_->get_comm()->MyPID();
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "----------------------------------------------------------------" << std::endl
@@ -449,6 +450,10 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
 
   unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (unsigned int c=0; c!=ncells; ++c) { // START CELL LOOP  ##########################
+    dcvo = Teuchos::null;
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) dcvo = db_->GetVerboseObject(c, rank);
+    Teuchos::OSTab dctab = dcvo == Teuchos::null ? vo_->getOSTab() : dcvo->getOSTab();
+
     SEBPhysics::SEB seb;
 
     double snow_depth = snow_depth_old[0][c];
@@ -523,7 +528,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       seb.in.surf.Zo = SEBPhysics::CalcRoughnessFactor(seb.in.met.vp_air.temp);
 
       // Run the model
-      SEBPhysics::CalculateSurfaceBalance(seb, debug);
+      SEBPhysics::CalculateSurfaceBalance(seb, false, dcvo);
 
       // Evaluate the residual
       res[0][c] =  snow_depth_new[0][c] - seb.out.snow_new.ht;
@@ -650,8 +655,8 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       seb_bare.in.vp_ground.porosity = other_part.Interpolate(1., 1., 1., surf_porosity[0][c]);
 
       // Run the model for both snowy case and bare case
-      SEBPhysics::CalculateSurfaceBalance(seb, debug);
-      SEBPhysics::CalculateSurfaceBalance(seb_bare, debug);
+      SEBPhysics::CalculateSurfaceBalance(seb, false, dcvo);
+      SEBPhysics::CalculateSurfaceBalance(seb_bare, false, dcvo);
 
       // Evaluate the residual
       double snow_depth_new_tmp = theta * seb.out.snow_new.ht + (1-theta) * seb_bare.out.snow_new.ht;

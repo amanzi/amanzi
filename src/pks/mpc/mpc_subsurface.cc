@@ -596,44 +596,44 @@ int MPCSubsurface::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
 }
 
 
-AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-    MPCSubsurface::ModifyCorrection(double h,
-                                    Teuchos::RCP<const TreeVector> res,
-                                    Teuchos::RCP<const TreeVector> u,
-                                    Teuchos::RCP<TreeVector> du) {
+// AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+//     MPCSubsurface::ModifyCorrection(double h,
+//                                     Teuchos::RCP<const TreeVector> res,
+//                                     Teuchos::RCP<const TreeVector> u,
+//                                     Teuchos::RCP<TreeVector> du) {
 
-  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    *vo_->os() << "NKA * PC * residuals:" << std::endl;
-    std::vector<std::string> vnames;
-    vnames.push_back("  NKA*PC*r_p"); vnames.push_back("  NKA*PC*r_T"); 
-    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-    vecs.push_back(du->SubVector(0)->Data().ptr()); 
-    vecs.push_back(du->SubVector(1)->Data().ptr()); 
-    db_->WriteVectors(vnames, vecs, true);
-  }
+//   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+//     *vo_->os() << "NKA * PC * residuals:" << std::endl;
+//     std::vector<std::string> vnames;
+//     vnames.push_back("  NKA*PC*r_p"); vnames.push_back("  NKA*PC*r_T"); 
+//     std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+//     vecs.push_back(du->SubVector(0)->Data().ptr()); 
+//     vecs.push_back(du->SubVector(1)->Data().ptr()); 
+//     db_->WriteVectors(vnames, vecs, true);
+//   }
 
-  // if (precon_type_ == PRECON_EWC) {
-  //   // make sure we can back-calc face corrections that preserve residuals on faces
-  //   Teuchos::RCP<TreeVector> res0 = Teuchos::rcp(new TreeVector(*res));
-  //   res0->PutScalar(0.);
-  //   Teuchos::RCP<TreeVector> du_std = Teuchos::rcp(new TreeVector(*du));
-  //   *du_std = *du;
+//   // if (precon_type_ == PRECON_EWC) {
+//   //   // make sure we can back-calc face corrections that preserve residuals on faces
+//   //   Teuchos::RCP<TreeVector> res0 = Teuchos::rcp(new TreeVector(*res));
+//   //   res0->PutScalar(0.);
+//   //   Teuchos::RCP<TreeVector> du_std = Teuchos::rcp(new TreeVector(*du));
+//   //   *du_std = *du;
 
-  //   // call EWC, which does du_p <-- du_p_std + ddu_p
-  //   ewc_->ApplyPreconditioner(res, du);
+//   //   // call EWC, which does du_p <-- du_p_std + ddu_p
+//   //   ewc_->ApplyPreconditioner(res, du);
 
-  //   // calculate ddu_lambda from ddu_p
-  //   du_std->Update(1.0, *du, -1.0);
-  //   preconditioner_->UpdateConsistentFaceCorrection(*res0, du_std.ptr());
+//   //   // calculate ddu_lambda from ddu_p
+//   //   du_std->Update(1.0, *du, -1.0);
+//   //   preconditioner_->UpdateConsistentFaceCorrection(*res0, du_std.ptr());
 
-  //   // update du_lambda <-- du_lambda_std + ddu_lambda
-  //   du->SubVector(0)->Data()->ViewComponent("face",false)->Update(1.,
-  //           *du_std->SubVector(0)->Data()->ViewComponent("face",false), 1.);
-  //   du->SubVector(1)->Data()->ViewComponent("face",false)->Update(1.,
-  //           *du_std->SubVector(1)->Data()->ViewComponent("face",false), 1.);
-  // }
+//   //   // update du_lambda <-- du_lambda_std + ddu_lambda
+//   //   du->SubVector(0)->Data()->ViewComponent("face",false)->Update(1.,
+//   //           *du_std->SubVector(0)->Data()->ViewComponent("face",false), 1.);
+//   //   du->SubVector(1)->Data()->ViewComponent("face",false)->Update(1.,
+//   //           *du_std->SubVector(1)->Data()->ViewComponent("face",false), 1.);
+//   // }
 
-  return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
-}
+//   return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+// }
 
 } // namespace

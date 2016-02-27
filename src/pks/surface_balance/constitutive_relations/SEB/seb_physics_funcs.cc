@@ -17,7 +17,7 @@ namespace SEBPhysics {
 
 #define SWE_EPS 1.e-12
 
-void UpdateIncomingRadiation(const SEB& seb, EnergyBalance& eb, bool debug) {
+void UpdateIncomingRadiation(const SEB& seb, EnergyBalance& eb, bool debug, const Teuchos::RCP<VerboseObject>& vo) {
   // Calculate incoming short-wave radiation
   eb.fQswIn = (1 - seb.in.surf.albedo) * seb.in.met.QswIn;
 
@@ -36,14 +36,13 @@ void UpdateIncomingRadiation(const SEB& seb, EnergyBalance& eb, bool debug) {
               << "  fQswIn   = " << eb.fQswIn << "\n"
               << "  fQlwIn   = " << eb.fQlwIn << "\n"
               << "  wind Ref Ht [m] = " << seb.params.Zr << std::endl;
-  }
-
+  }    
 }
 
-void UpdateEvapResistance(const SEB& seb, const ThermoProperties& vp_surf, EnergyBalance& eb, bool debug) {
+void UpdateEvapResistance(const SEB& seb, const ThermoProperties& vp_surf, EnergyBalance& eb, bool debug, const Teuchos::RCP<VerboseObject>& vo) {
    const ThermoProperties& vp_air = seb.in.met.vp_air;
    
-   double Vaper_direction = vp_air.actual_vaporpressure - vp_surf.actual_vaporpressure;  //
+   double Vapor_direction = vp_air.actual_vaporpressure - vp_surf.actual_vaporpressure;  //
    
 // Equation for reduced vapor diffusivity See Sakagucki and Zeng 2009 eqaution (9) and Moldrup et al., 2004. 
    double Clab_Horn_b = 1;
@@ -56,7 +55,7 @@ void UpdateEvapResistance(const SEB& seb, const ThermoProperties& vp_surf, Energ
    L_Rsoil = cell_dimension * (L_Rsoil -1) * (1/(std::exp(1.)-1));
    double Rsoil = 0.0;
    
-   if(Vaper_direction <= 0){
+   if(Vapor_direction <= 0){
       Rsoil = L_Rsoil/Surface_Vap_Diffusion;
       }else{
       Rsoil = 0.0;
@@ -71,17 +70,18 @@ void UpdateEvapResistance(const SEB& seb, const ThermoProperties& vp_surf, Energ
    }
 
    if (debug) {
-   std::cout<<"Snow ht: "<<seb.out.snow_new.ht<<"  Saturation: "<<seb.in.surf.saturation_liquid<<std::endl;
-   std::cout<<"Air_Temp: "<<vp_air.temp<<" Ground Temp: "<<vp_surf.temp<< std::endl;
-   std::cout<<"Vapor Direction: "<<Vaper_direction<<" Air Vapor Pres: "<<vp_air.actual_vaporpressure<<" Surf Vapor Pres: "<<vp_surf.actual_vaporpressure << std::endl;
-   std::cout<<"Surface_Vap_Diffusion: "<< Surface_Vap_Diffusion <<"  L_Rsoil:  "<<L_Rsoil<<"  Rsoil: "<<Rsoil<<"   sat_l: "<<seb.in.surf.saturation_liquid<<std::endl;
-   std::cout<<"Air Resistance: "<<Rair<<std::endl;
-   std::cout<<"Evap Resistance: "<<eb.Evap_Resistance<<std::endl; 
+     std::cout<<"Snow ht: "<<seb.out.snow_new.ht<<"  Saturation: "<<seb.in.surf.saturation_liquid<<std::endl;
+     std::cout<<"Air_Temp: "<<vp_air.temp<<" Ground Temp: "<<vp_surf.temp<< std::endl;
+     std::cout<<"Vapor Direction: "<<Vapor_direction<<" Air Vapor Pres: "<<vp_air.actual_vaporpressure<<" Surf Vapor Pres: "<<vp_surf.actual_vaporpressure << std::endl;
+     std::cout<<"Surface_Vap_Diffusion: "<< Surface_Vap_Diffusion <<"  L_Rsoil:  "<<L_Rsoil<<"  Rsoil: "<<Rsoil<<"   sat_l: "<<seb.in.surf.saturation_liquid<<std::endl;
+     std::cout<<"Air Resistance: "<<Rair<<std::endl;
+     std::cout<<"Evap Resistance: "<<eb.Evap_Resistance<<std::endl; 
    }
+   
 }
 
 
-void UpdateEnergyBalance(const SEB& seb, const ThermoProperties& vp_surf, EnergyBalance& eb, bool debug) {
+void UpdateEnergyBalance(const SEB& seb, const ThermoProperties& vp_surf, EnergyBalance& eb, bool debug, const Teuchos::RCP<VerboseObject>& vo) {
   const ThermoProperties& vp_air = seb.in.met.vp_air;
 
   // Calculate outgoing long-wave radiation
@@ -138,11 +138,10 @@ void UpdateEnergyBalance(const SEB& seb, const ThermoProperties& vp_surf, Energy
               << "  fQe      = " << eb.fQe << "\n"
               << "  fQc      = " << eb.fQc << std::endl;
   }
-
 }
 
 
-void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowProperties& snow_new, bool debug) {
+void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowProperties& snow_new, bool debug, const Teuchos::RCP<VerboseObject>& vo) {
   // this dt is the max timestep that may be taken to conserve snow mass
   mb.dt = seb.in.dt;
 
@@ -296,8 +295,8 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
     std::cout << "Mass Balance:\n"
               << "  Mm   = " << mb.Mm << "\n"
               << "  Me   = " << mb.Me << "\n"
-	      << "  Ps   = " << seb.in.met.Ps << "\n"
-	      << "  Pr   = " << seb.in.met.Pr << "\n"
+              << "  Ps   = " << seb.in.met.Ps << "\n"
+              << "  Pr   = " << seb.in.met.Pr << "\n"
               << "  Snow Melt:\n"
               << "    old ht   = " << seb.in.snow_old.ht << "\n"
               << "    new ht   = " << snow_new.ht << "\n"
@@ -358,16 +357,16 @@ double DetermineSnowTemperature(const SEB& seb, ThermoProperties& vp_snow,
 }
 
 // master driver
-void CalculateSurfaceBalance(SEB& seb, bool debug) {
+void CalculateSurfaceBalance(SEB& seb, bool debug, const Teuchos::RCP<VerboseObject>& vo) {
   // initialize the data
   seb.in.met.vp_air.UpdateVaporPressure();
   seb.in.vp_ground.UpdateVaporPressure();  // This ground vapor pressure will be ignored in the case of snow
 
   // Energy balance
-  UpdateIncomingRadiation(seb, seb.out.eb, debug);
+  UpdateIncomingRadiation(seb, seb.out.eb, debug, vo);
   
   // Evaporation Resistance Term
-  UpdateEvapResistance(seb, seb.in.vp_ground, seb.out.eb, debug);  
+  UpdateEvapResistance(seb, seb.in.vp_ground, seb.out.eb, debug, vo);  
 
   if (seb.in.snow_old.ht > 0.) {
     // snow on the ground, solve for snow temperature
@@ -376,25 +375,62 @@ void CalculateSurfaceBalance(SEB& seb, bool debug) {
       // limit snow temp to 0, then melt with the remaining energy
       seb.in.vp_snow.temp = 273.15;
       seb.in.vp_snow.UpdateVaporPressure();
-      UpdateEnergyBalance(seb, seb.in.vp_snow, seb.out.eb, debug);
+      UpdateEnergyBalance(seb, seb.in.vp_snow, seb.out.eb, debug, vo);
       seb.out.eb.BalanceViaMelt();
     } else {
       // snow not melting
       seb.in.vp_snow.temp = T_snow;
       seb.in.vp_snow.UpdateVaporPressure();
-      UpdateEnergyBalance(seb, seb.in.vp_snow, seb.out.eb, debug);
+      UpdateEnergyBalance(seb, seb.in.vp_snow, seb.out.eb, debug, vo);
       seb.out.eb.fQm = 0.;
     }
 
   } else {
     // no snow on the ground, balance given by conduction
     seb.in.vp_ground.UpdateVaporPressure();
-    UpdateEnergyBalance(seb, seb.in.vp_ground, seb.out.eb, debug);
+    UpdateEnergyBalance(seb, seb.in.vp_ground, seb.out.eb, debug, vo);
     seb.out.eb.BalanceViaConduction();
   }
 
   // Mass balance
-  UpdateMassBalance(seb, seb.out.mb, seb.out.eb, seb.out.snow_new, debug);
+  UpdateMassBalance(seb, seb.out.mb, seb.out.eb, seb.out.snow_new, debug, vo);
+
+  if (vo.get()) {
+    *vo->os() << "---------------------------------------------------------" << std::endl
+              << "Surface Energy Balance:" << std::endl
+              << "  Incoming Radiation Energy Terms:" << std::endl
+              << "    windspeed, Zo: " << seb.in.met.Us << "  " << seb.in.surf.Zo << std::endl
+              << "    fQswIn   = " << seb.out.eb.fQswIn << std::endl
+              << "    fQlwIn   = " << seb.out.eb.fQlwIn << std::endl
+              << "    wind Ref Ht [m] = " << seb.params.Zr << std::endl
+              << "  Evap/Cond Terms:" << std::endl
+              << "    air temp, skin temp: " << seb.in.met.vp_air.temp << "  " << (seb.in.snow_old.ht > 0 ? seb.in.vp_snow.temp : seb.in.vp_ground.temp) << std::endl
+              << "    skin saturation: " << seb.in.surf.saturation_liquid << std::endl
+              << "    vapor direction (- = evap): " << seb.in.met.vp_air.actual_vaporpressure - (seb.in.snow_old.ht > 0 ? seb.in.vp_snow.actual_vaporpressure : seb.in.vp_ground.actual_vaporpressure) << std::endl
+              << "    air,surf vapor pres: " << seb.in.met.vp_air.actual_vaporpressure << "  " << (seb.in.snow_old.ht > 0 ? seb.in.vp_snow.actual_vaporpressure : seb.in.vp_ground.actual_vaporpressure) << std::endl
+              << "    evap resistance: " << seb.out.eb.Evap_Resistance << std::endl 
+              << "  Energy Balance Terms (ht_snow = " << seb.in.snow_old.ht << "):" << std::endl
+              << "    SnowSurfaceTemp  = " << seb.in.vp_snow.temp << std::endl
+              << "    GroundSurfaceTemp  = " << seb.in.vp_ground.temp << std::endl
+              << "    fQlwOut  = " << seb.out.eb.fQlwOut << std::endl
+              << "    fQh      = " << seb.out.eb.fQh << std::endl
+              << "    fQe      = " << seb.out.eb.fQe << std::endl
+              << "    fQc      = " << seb.out.eb.fQc << std::endl
+              << "  Mass Balance:\n"
+              << "    Mm   = " << seb.out.mb.Mm << std::endl
+              << "    Me   = " << seb.out.mb.Me << std::endl
+              << "    Ps   = " << seb.in.met.Ps << std::endl
+              << "    Pr   = " << seb.in.met.Pr << std::endl
+              << "    Snow Melt:\n"
+              << "      old ht   = " << seb.in.snow_old.ht << std::endl
+              << "      new ht   = " << seb.out.snow_new.ht << std::endl
+              << "      new age  = " << seb.out.snow_new.age << std::endl
+              << "      new dens = " << seb.out.snow_new.density << std::endl
+              << "      SWE      = " << seb.out.snow_new.SWE << std::endl
+              << "    Water Balance:\n"
+              << "      surf src = " << seb.out.mb.MWg << std::endl
+              << "      sub src  = " << seb.out.mb.MWg_subsurf << std::endl;
+  }
 }
 
 double CalcAlbedoSnow(double density_snow) {

@@ -70,9 +70,9 @@ class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
   
   // preconditioner application
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
-  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-      ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
-                       Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
+  // virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+  //     ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+  //                      Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
 
   Teuchos::RCP<Operators::TreeOperator> preconditioner() { return preconditioner_; }
   

@@ -334,6 +334,7 @@ MPCPermafrost4::UpdatePreconditioner(double t,
 bool
 MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
         Teuchos::RCP<TreeVector> u) {
+  Teuchos::OSTab tab = vo_->getOSTab();
   bool modified = false;
 
   // write predictor
@@ -367,16 +368,16 @@ MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   if (modified && vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "EWC Prediction (surface):" << std::endl;
     std::vector<std::string> vnames;
-    vnames.push_back("  ps_extrap");
-    vnames.push_back("  Ts_extrap");
+    vnames.push_back("  ps_ewc");
+    vnames.push_back("  Ts_ewc");
     std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
     vecs.push_back(u->SubVector(2)->Data().ptr());
     vecs.push_back(u->SubVector(3)->Data().ptr());
     surf_db_->WriteVectors(vnames, vecs, true);
 
     *vo_->os() << "EWC Prediction (subsurface):" << std::endl;
-    vnames[0] = "  p_extrap";
-    vnames[1] = "  T_extrap";
+    vnames[0] = "  p_ewc";
+    vnames[1] = "  T_ewc";
     vecs[0] = u->SubVector(0)->Data().ptr();
     vecs[1] = u->SubVector(1)->Data().ptr();
     domain_db_->WriteVectors(vnames, vecs, true);
@@ -424,16 +425,16 @@ MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   if (newly_modified && vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "Spurt Fixed Prediction (surface):" << std::endl;
     std::vector<std::string> vnames;
-    vnames.push_back("  ps_extrap");
-    vnames.push_back("  Ts_extrap");
+    vnames.push_back("  ps_spurt");
+    vnames.push_back("  Ts_spurt");
     std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
     vecs.push_back(u->SubVector(2)->Data().ptr());
     vecs.push_back(u->SubVector(3)->Data().ptr());
     surf_db_->WriteVectors(vnames, vecs, true);
 
     *vo_->os() << "Spurt Fixed Prediction (subsurface):" << std::endl;
-    vnames[0] = "  p_extrap";
-    vnames[1] = "  T_extrap";
+    vnames[0] = "  p_spurt";
+    vnames[1] = "  T_spurt";
     vecs[0] = u->SubVector(0)->Data().ptr();
     vecs[1] = u->SubVector(1)->Data().ptr();
     domain_db_->WriteVectors(vnames, vecs, true);
@@ -451,7 +452,7 @@ MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   surf_energy_pk_->ChangedSolution();
   modified |= surf_flow_pk_->ModifyPredictor(h, u0->SubVector(2), u->SubVector(2));
   modified |= surf_energy_pk_->ModifyPredictor(h, u0->SubVector(3), u->SubVector(3));
-
+  
   return modified;
 }
 
@@ -460,7 +461,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 MPCPermafrost4::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
   Teuchos::OSTab tab = vo_->getOSTab();
-
+  
   // dump NKAd correction to screen
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "NKA * PC * residuals (surface):" << std::endl;
@@ -480,8 +481,14 @@ MPCPermafrost4::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
     domain_db_->WriteVectors(vnames, vecs, true);
   }
 
-  // modify correction using water approaches
   int n_modified = 0;
+
+  // apply limiters
+  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult base_result =   
+    MPCSubsurface::ModifyCorrection(h,r,u,du);
+  if (base_result) n_modified++;
+  
+  // modify correction using water approaches
   n_modified += water_->ModifyCorrection_WaterFaceLimiter(h, r, u, du);
   double damping = water_->ModifyCorrection_WaterSpurtDamp(h, r, u, du);
   n_modified += water_->ModifyCorrection_WaterSpurtCap(h, r, u, du, damping);
