@@ -96,6 +96,10 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
         element = static_cast<DOMElement*>(node);
         std::string inpfilename = GetAttributeValueS_(element, "file");
         out_list.set<std::string>("Engine Input File", inpfilename);
+      } else {
+        Errors::Message msg;
+        msg << "Unique tag string \"" << file_location << "\" must exists.\n";
+        Exceptions::amanzi_throw(msg);
       }
     }
   }
