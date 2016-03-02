@@ -110,6 +110,7 @@ native=${FALSE}
 nersc=${FALSE}
 nersc_tpl_opts=
 nersc_amanzi_opts=
+#silo=${TRUE}
 
 
 # ---------------------------------------------------------------------------- #

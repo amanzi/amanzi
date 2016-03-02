@@ -36,12 +36,12 @@
       <viscosity>1.002e-3</viscosity>
       <density>998.2</density>
       <dissolved_components>
-        <solutes>
+        <!--solutes>
           <solute>H+</solute>
           <solute>Na+</solute>
           <solute>NO3-</solute>
           <solute>Zn++</solute>
-        </solutes>
+        </solutes-->
       </dissolved_components>
     </liquid_phase>
   </phases>
@@ -136,7 +136,7 @@
       <permeability x="1.0e-12" y="1.0e-12" z="1.0e-12"/>
       <assigned_regions>All</assigned_regions>
 
-      <surface_complexation_site name="davis_OH" density="0.156199"/>
+      <!--surface_complexation_site name="davis_OH" density="0.156199"/-->
     </material>
   </materials>
 
