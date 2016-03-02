@@ -219,8 +219,8 @@ WeakMPCSemiCoupled::setup(const Teuchos::Ptr<State>& S) {
 
 
   Teuchos::Array<std::string> names = plist_->get<Teuchos::Array<std::string> >("PKs order");
-  domain_sf = plist_->sublist("PKs").sublist(names[1]).get<std::string>("surface domain name", "surface");  
-  domain_ss = plist_->sublist("PKs").sublist(names[1]).get<std::string>("subsurface domain name", "domain");
+  //domain_sf = plist_->sublist("PKs").sublist(names[1]).get<std::string>("surface domain name", "surface");  
+  // domain_ss = plist_->sublist("PKs").sublist(names[1]).get<std::string>("subsurface domain name", "domain");
 
   
 };
@@ -257,32 +257,37 @@ bool WeakMPCSemiCoupled::advance(double dt) {
 
   //copying temperatures
   for (unsigned c=0; c<size_t; c++){
-    std::stringstream name;
+    std::stringstream name, name_ss;
     name << "column_" << c <<"_surface";
+    name_ss << "column_" << c;
     Epetra_MultiVector& surf_temp = *S_inter_->GetFieldData(getKey(name.str(),"temperature"), S_inter_->GetField(getKey(name.str(),"temperature"))->owner())->ViewComponent("cell", false);
     surf_temp[0][0] = surfstar_temp[0][c];
-  }
   
-  CopySurfaceToSubsurface(*S_inter_->GetFieldData(getKey(domain_sf,"pressure")),
-			  S_inter_->GetFieldData(getKey(domain_ss,"pressure"), S_inter_->GetField(getKey(domain_ss,"pressure"))->owner()).ptr());
+  
+    CopySurfaceToSubsurface(*S_inter_->GetFieldData(getKey(name.str(),"pressure")),
+			    S_inter_->GetFieldData(getKey(name_ss.str(),"pressure"), S_inter_->GetField(getKey(name_ss.str(),"pressure"))->owner()).ptr());
 
-  CopySurfaceToSubsurface(*S_inter_->GetFieldData(getKey(domain_sf,"temperature")),
-			  S_inter_->GetFieldData(getKey(domain_ss,"temperature"), S_inter_->GetField(getKey(domain_ss,"temperature"))->owner()).ptr());
-  
+    CopySurfaceToSubsurface(*S_inter_->GetFieldData(getKey(name.str(),"temperature")),
+			    S_inter_->GetFieldData(getKey(name_ss.str(),"temperature"), S_inter_->GetField(getKey(name_ss.str(),"temperature"))->owner()).ptr());
+  } 
   // NOTE: later do it in the setup --aj
-  
+ 
+
+  for(int i=1; i<6; i++){
   Teuchos::RCP<PKBDFBase> pk_domain =
-    Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[1]);
+    Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[i]);
   ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
   pk_domain->ChangedSolution(S_inter_.ptr());
-  
+  }
   if(fail) return fail;  
 
   // advance surface-pressure from t_n to t_(n+1)
   ++pk;
-  fail += (*pk)->advance(dt);
-  if (fail) return fail;
-  
+  while (pk != sub_pks_.end()){
+    fail += (*pk)->advance(dt);
+    if (fail) return fail;
+    ++pk;
+  }
   
   Epetra_MultiVector& surfstar_p = *S_next_->GetFieldData("surface_star-pressure",
 				   S_inter_->GetField("surface_star-pressure")->owner())->ViewComponent("cell", false);
