@@ -376,7 +376,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
     }
 
     // geochemical BCs 
-    node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry", flag);
+    node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry_component", flag);
     if (flag) {
       std::string bctype;
       std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);

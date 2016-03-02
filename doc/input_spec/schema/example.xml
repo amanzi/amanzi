@@ -516,9 +516,9 @@
                     <velocity x="exp" y="exp" z="exp"/>
                 </liquid_component>
 
-                <geochemistry>
+                <geochemistry_component>
                     <constraint name="constraint_name" />
-                </geochemistry>
+                </geochemistry_component>
             </liquid_phase>
 
             <solid_phase name="string">
@@ -527,9 +527,9 @@
                     <mineral>string</mineral>
 	        </mineral>
 
-                <geochemistry>
+                <geochemistry_component>
                     <constraint name="constraint_name"/>
-                </geochemistry>
+                </geochemistry_component>
             </solid_phase>
         </initial_condition>
     </initial_conditions>
@@ -555,10 +555,10 @@
                     <no_flow name="string" start="time" function= "constant | linear"/>
                 </liquid_component>
 
-                <geochemistry>
+                <geochemistry_component>
 		    <!-- Must include at least 1 -->
                     <constraint name="string" start="time" function= "constant | linear"/>
-                </geochemistry>
+                </geochemistry_component>
             </liquid_phase>
         </boundary_condition>
     </boundary_conditions>
@@ -574,10 +574,10 @@
                     <perm_weighted   start="time" value="exp" function="linear | constant"/>
                 </liquid_component>
 
-                <geochemistry>
+                <geochemistry_component>
 		    <!-- Must include at least 1 -->
                     <constraint name="string" start="time" function= "constant | linear"/>
-                </geochemistry>
+                </geochemistry_component>
             </liquid_phase>
         </source>
     </sources>

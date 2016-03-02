@@ -1890,7 +1890,7 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 	<xs:all minOccurs="1">		
 		<xs:element name="liquid_component" type="typedef_src_liquid_component" minOccurs="0" maxOccurs="1"/>
 		<xs:element name="solute_component" type="typedef_src_solute_component" minOccurs="0" maxOccurs="unbounded"/>
-		<xs:element name="geochemistry" type="typedef_src_geochemistry" minOccurs="0" maxOccurs="unbounded"/>
+		<xs:element name="geochemistry_component" type="typedef_src_geochemistry" minOccurs="0" maxOccurs="unbounded"/>
 	</xs:all>
 	<xs:attribute name="name" type="xs:string"/>
 	<xs:assert  test="@name = ('water')"/>	

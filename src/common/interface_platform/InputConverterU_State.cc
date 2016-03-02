@@ -439,7 +439,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       }
 
       // -- geochemical condition
-      node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry, constraint", flag);
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry_component, constraint", flag);
       if (flag) {
         std::string name = GetAttributeValueS_(static_cast<DOMElement*>(node), "name");
 
