@@ -46,8 +46,8 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& glist,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln) :
-    S_(S),
-    soln_(soln)
+  S_(S),
+  soln_(soln)
 {
   std::string pk_name = pk_tree.name();
   const char* result = pk_name.data();
