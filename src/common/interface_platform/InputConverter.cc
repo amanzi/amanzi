@@ -515,9 +515,15 @@ double InputConverter::GetAttributeValueD_(
   double val;
   MemoryManager mm;
 
+  Errors::Message msg;
   std::string text, parsed, found_type;
+
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
     text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+    if (text.size() == 0) {
+      msg << "Attribute \"" << attr_name << "\" cannot be empty.\n";
+      Exceptions::amanzi_throw(msg);
+    }
 
     // process constants
     found_type = GetConstantType_(text, parsed);
@@ -528,7 +534,6 @@ double InputConverter::GetAttributeValueD_(
         found_type == TYPE_NOT_CONSTANT) found_type = type;
 
     if (type != found_type) {
-      Errors::Message msg;
       msg << "Usage of constant \"" << text << "\" of type=" << found_type 
           << ". Expect type=" << type << ".\n";
       Exceptions::amanzi_throw(msg);
