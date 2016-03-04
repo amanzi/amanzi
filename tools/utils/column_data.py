@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Loads, sorts, and writes column data from a 1D (potentially disordered) simulation into a H5 file.
+"""Loads, sorts, writes, and plots column data from a 1D (potentially disordered) simulation into a H5 file.
 
 Usage: column_data.py
 
@@ -17,7 +17,6 @@ import mesh
 
 def meshX(coord=2, filename="visdump_mesh.h5", directory="."):
     return mesh.meshElemCentroids(filename,directory)[:,coord]
-
 
 def fullname(varname):
     fullname = varname
@@ -56,6 +55,22 @@ def column_data(varnames, keys='all', directory=".", filename="visdump_data.h5",
     # sort in z coordinate
     return vals[:,:,vals[0,0,:].argsort()]
 
+def getFigs(inset, is_temp, figsize=(12,3)):
+    from matplotlib import pyplot as plt
+    fig = plt.figure(figsize=figsize)
+    axs = []
+    if is_temp:
+        axs.append(fig.add_subplot(131))
+        axs.append(fig.add_subplot(132))
+        axs.append(fig.add_subplot(133))
+        if inset:
+            axs.append(fig.add_axes([0.6,0.5,0.25, 0.25]))
+    else:
+        axs.append(fig.add_subplot(121))
+        axs.append(fig.add_subplot(122))
+        if inset:
+            axs.append(fig.add_axes([0.86,0.67,0.1, 0.25]))
+    return fig,axs
 
 
 if __name__ == "__main__":

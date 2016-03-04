@@ -34,7 +34,6 @@ def readATS(directory='.', base='visdump_data.h5', inds=None):
     dat = h5py.File(os.path.join(directory,base),'r')
     keys = dat[dat.keys()[0]].keys()
     keys.sort(lambda a,b: int.__cmp__(int(a),int(b)))
-    print len(keys)
     parser = ETreeParser(directory,base)
 
     if inds is None:

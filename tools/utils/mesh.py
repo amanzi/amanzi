@@ -18,7 +18,6 @@ def meshElemXYZ(filename="visdump_mesh.h5", directory="."):
         mesh = dat[dat.keys()[0]]['Mesh']
         elem_conn = mesh['MixedElements'][:,0]
 
-        print 'elem conn:', elem_conn[0]
         etype = elem_type[elem_conn[0]]
         if (etype == 'PRISM'):
             nnodes_per_elem = 6
