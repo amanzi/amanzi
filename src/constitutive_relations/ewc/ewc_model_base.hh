@@ -13,7 +13,7 @@ evaluating.
 #ifndef AMANZI_EWC_MODEL_BASE_HH_
 #define AMANZI_EWC_MODEL_BASE_HH_
 
-#include "tensor.hh"
+#include "Tensor.hh"
 #include "Point.hh"
 
 #include "ewc_model.hh"
