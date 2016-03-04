@@ -907,9 +907,11 @@ std::vector<double> InputConverter::MakeCoordinates_(const std::string& array)
   char* tmp2 = strtok(tmp1, "(, ");
 
   while (tmp2 != NULL) {
-    std::string str(tmp2);
+    std::string str(tmp2), parsed_str;
     boost::algorithm::trim(str);
-    coords.push_back(std::strtod(str.c_str(), NULL));
+
+    GetConstantType_(str, parsed_str);
+    coords.push_back(std::strtod(parsed_str.c_str(), NULL));
     tmp2 = strtok(NULL, ",");
   }
 
