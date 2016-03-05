@@ -29,13 +29,27 @@ namespace Flow {
 /* ******************************************************************
 * default constructor that initializes all pointers to NULL
 ****************************************************************** */
+Flow_PK::Flow_PK(Teuchos::ParameterList& pk_tree,
+                 const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                 const Teuchos::RCP<State>& S,
+                 const Teuchos::RCP<TreeVector>& soln) :
+  PK_PhysicalBDF(pk_tree, glist, S, soln),
+  bc_pressure(NULL),
+  bc_flux(NULL),
+  bc_head(NULL),
+  bc_seepage(NULL),
+  vo_(Teuchos::null),
+  passwd_("flow")
+{
+}
+
 Flow_PK::Flow_PK() :
-    bc_pressure(NULL),
-    bc_flux(NULL),
-    bc_head(NULL),
-    bc_seepage(NULL),
-    vo_(NULL),
-    passwd_("flow")
+  bc_pressure(NULL),
+  bc_flux(NULL),
+  bc_head(NULL),
+  bc_seepage(NULL),
+  vo_(Teuchos::null),
+  passwd_("flow")
 {
 }
 
@@ -43,22 +57,22 @@ Flow_PK::Flow_PK() :
 /* ******************************************************************
 * Setup of static fields common for Darcy and Richards.
 ****************************************************************** */
-void Flow_PK::Setup()
+void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
 {
-  if (!S_->HasField("fluid_density")) {
-    S_->RequireScalar("fluid_density", passwd_);
+  if (!S->HasField("fluid_density")) {
+    S->RequireScalar("fluid_density", passwd_);
   }
 
-  if (!S_->HasField("atmospheric_pressure")) {
-    S_->RequireScalar("atmospheric_pressure", passwd_);
+  if (!S->HasField("atmospheric_pressure")) {
+    S->RequireScalar("atmospheric_pressure", passwd_);
   }
 
-  if (!S_->HasField("gravity")) {
-    S_->RequireConstantVector("gravity", passwd_, dim);  // state resets ownership.
+  if (!S->HasField("gravity")) {
+    S->RequireConstantVector("gravity", passwd_, dim);  // state resets ownership.
   } 
 
-  if (!S_->HasField("permeability")) {
-    S_->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("permeability")) {
+    S->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim);
   }
 }
@@ -67,7 +81,7 @@ void Flow_PK::Setup()
 /* ******************************************************************
 * Initiazition of fundamental flow sturctures.
 ****************************************************************** */
-void Flow_PK::Initialize()
+void Flow_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   dt_ = 0.0;
 
@@ -83,12 +97,12 @@ void Flow_PK::Initialize()
   // Fundamental physical quantities
   // -- temporarily these quantities are constant
   double* gravity_data;
-  S_->GetConstantVectorData("gravity")->ExtractView(&gravity_data);
+  S->GetConstantVectorData("gravity")->ExtractView(&gravity_data);
   gravity_.set(dim, &(gravity_data[0]));  // do it in complicated way because we
                                           // are not sure if gravity_data is an
                                           // array or vector
   g_ = fabs(gravity_[dim - 1]);
-  rho_ = *S_->GetScalarData("fluid_density");
+  rho_ = *S->GetScalarData("fluid_density");
 
   // -- molar rescaling of some quantatities.
   molar_rho_ = rho_ / CommonDefs::MOLAR_MASS_H2O;
@@ -217,16 +231,16 @@ void Flow_PK::InitializeFields_()
 /* ****************************************************************
 * Hydraulic head support for Flow PKs.
 **************************************************************** */
-void Flow_PK::UpdateLocalFields_() 
+void Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S) 
 {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     *vo_->os() << "Secondary fields: hydraulic head, darcy_velocity" << std::endl;  
   }  
 
-  Epetra_MultiVector& hydraulic_head = *(S_->GetFieldData("hydraulic_head", passwd_)->ViewComponent("cell"));
-  const Epetra_MultiVector& pressure = *(S_->GetFieldData("pressure")->ViewComponent("cell"));
-  double rho = *(S_->GetScalarData("fluid_density"));
+  Epetra_MultiVector& hydraulic_head = *(S->GetFieldData("hydraulic_head", passwd_)->ViewComponent("cell"));
+  const Epetra_MultiVector& pressure = *(S->GetFieldData("pressure")->ViewComponent("cell"));
+  double rho = *(S->GetScalarData("fluid_density"));
 
   // calculate hydraulic head
   double g = fabs(gravity_[dim - 1]);
@@ -238,8 +252,8 @@ void Flow_PK::UpdateLocalFields_()
   }
 
   // calculate full velocity vector
-  darcy_flux_eval_->SetFieldAsChanged(S_.ptr());
-  S_->GetFieldEvaluator("darcy_velocity")->HasFieldChanged(S_.ptr(), "darcy_velocity");
+  darcy_flux_eval_->SetFieldAsChanged(S);
+  S->GetFieldEvaluator("darcy_velocity")->HasFieldChanged(S, "darcy_velocity");
 }
 
 

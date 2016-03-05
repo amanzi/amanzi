@@ -11,20 +11,20 @@
   Class for subcycling a slave step within a master step.
   Assumes that intermediate_time() can be used (i.e. this is not nestable?)
 
-  See additional documentation in the base class src/pks/mpc_pk/MPC_PK.hh
+  See additional documentation in the base class src/pks/mpc_pk/PK_MPC.hh
 */
 
 #ifndef AMANZI_SUBCYCLED_MPC_HH_
 #define AMANZI_SUBCYCLED_MPC_HH_
 
-#include "MPC_PK.hh"
+#include "PK_MPC.hh"
 #include "PK.hh"
 
 namespace Amanzi {
 
-class MPCSubcycled : public MPC_PK<PK> {
+class PK_MPCSubcycled : public PK_MPC<PK> {
  public:
-  MPCSubcycled(Teuchos::ParameterList& pk_tree,
+  PK_MPCSubcycled(Teuchos::ParameterList& pk_tree,
                const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                const Teuchos::RCP<State>& S,
                const Teuchos::RCP<TreeVector>& soln);
@@ -46,7 +46,7 @@ class MPCSubcycled : public MPC_PK<PK> {
 
  private:
   // factory registration
-  static RegisteredPKFactory<MPCSubcycled> reg_;
+  static RegisteredPKFactory<PK_MPCSubcycled> reg_;
 };
 
 }  // namespace Amanzi

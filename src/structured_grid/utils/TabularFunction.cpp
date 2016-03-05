@@ -22,10 +22,10 @@ TabularFunction::TabularFunction(const Array<double>&      x,
   else {
     form_.resize(form.size());
     for (int j = 0; j < form.size(); ++j) {
-        if (form[j]=="Linear") {
+        if (form[j]=="Linear" || form[j]=="linear") {
             form_[j] = LINEAR;
         }
-        else if (form[j]=="Constant") {
+        else if (form[j]=="Constant" || form[j]=="constant") {
             form_[j] = CONSTANT;
         }
         else {

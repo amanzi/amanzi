@@ -12,7 +12,7 @@
 */
 
 #include "FlowEnergy_PK.hh"
-#include "MPCStrong.hh"
+#include "PK_MPCStrong.hh"
 
 namespace Amanzi {
 
@@ -24,32 +24,33 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
                              const Teuchos::RCP<State>& S,
                              const Teuchos::RCP<TreeVector>& soln) :
     glist_(glist),
-    Amanzi::MPCStrong<FnTimeIntegratorPK>(pk_tree, glist, S, soln)
+    PK_Default(pk_tree, glist, S, soln),
+    Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
 {
   Teuchos::ParameterList vlist;
-  vo_ = new VerboseObject("FlowEnergy_PK", vlist); 
+  vo_ =  Teuchos::rcp(new VerboseObject("FlowEnergy_PK", vlist)); 
 }
 
 
 /* ******************************************************************* 
 * Physics-based setup of PK.
 ******************************************************************* */
-void FlowEnergy_PK::Setup()
+void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 {
-  mesh_ = S_->GetMesh();
+  mesh_ = S->GetMesh();
   int dim = mesh_->space_dimension();
 
-  Teuchos::ParameterList& elist = S_->FEList();
+  Teuchos::ParameterList& elist = S->FEList();
 
   // Fields for solids
   // -- rock
-  if (!S_->HasField("particle_density")) {
-    S_->RequireField("particle_density", "particle_density")->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("particle_density")) {
+    S->RequireField("particle_density", "particle_density")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireFieldEvaluator("particle_density");
+    S->RequireFieldEvaluator("particle_density");
   }
 
-  if (!S_->HasField("internal_energy_rock")) {
+  if (!S->HasField("internal_energy_rock")) {
     elist.sublist("internal_energy_rock")
          .set<std::string>("field evaluator type", "iem")
          .set<std::string>("internal energy key", "internal_energy_rock");
@@ -60,14 +61,14 @@ void FlowEnergy_PK::Setup()
 
   // Fields for gas
   // -- internal energy
-  if (!S_->HasField("internal_energy_gas")) {
+  if (!S->HasField("internal_energy_gas")) {
     elist.sublist("internal_energy_gas")
          .set<std::string>("field evaluator type", "iem water vapor")
          .set<std::string>("internal energy key", "internal_energy_gas");
   }
 
   // -- molar density
-  if (!S_->HasField("molar_density_gas")) {
+  if (!S->HasField("molar_density_gas")) {
     elist.sublist("molar_density_gas")
          .set<std::string>("field evaluator type", "eos")
          .set<std::string>("eos basis", "molar")
@@ -80,7 +81,7 @@ void FlowEnergy_PK::Setup()
   }
 
   // -- molar fraction
-  if (!S_->HasField("molar_fraction_gas")) {
+  if (!S->HasField("molar_fraction_gas")) {
     elist.sublist("molar_fraction_gas")
          .set<std::string>("field evaluator type", "molar fraction gas")
          .set<std::string>("molar fraction key", "molar_fraction_gas");
@@ -91,7 +92,7 @@ void FlowEnergy_PK::Setup()
 
   // Fields for liquid
   // -- internal energy
-  if (!S_->HasField("internal_energy_liquid")) {
+  if (!S->HasField("internal_energy_liquid")) {
     elist.sublist("internal_energy_liquid")
          .set<std::string>("field evaluator type", "iem")
          .set<std::string>("internal energy key", "internal_energy_liquid");
@@ -102,7 +103,7 @@ void FlowEnergy_PK::Setup()
   }
 
   // -- molar and mass density
-  if (!S_->HasField("molar_density_liquid")) {
+  if (!S->HasField("molar_density_liquid")) {
     elist.sublist("molar_density_liquid")
          .set<std::string>("field evaluator type", "eos")
          .set<std::string>("eos basis", "both")
@@ -113,13 +114,13 @@ void FlowEnergy_PK::Setup()
     elist.sublist("molar_density_liquid")
          .sublist("VerboseObject").set<std::string>("Verbosity Level", "medium");
 
-    S_->RequireField("molar_density_liquid", "molar_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
+    S->RequireField("molar_density_liquid", "molar_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireFieldEvaluator("molar_density_liquid");
+    S->RequireFieldEvaluator("molar_density_liquid");
   }
 
   // -- viscosity model
-  if (!S_->HasField("viscosity_liquid")) {
+  if (!S->HasField("viscosity_liquid")) {
     elist.sublist("viscosity_liquid")
          .set<std::string>("field evaluator type", "viscosity")
          .set<std::string>("viscosity key", "viscosity_liquid")
@@ -128,20 +129,20 @@ void FlowEnergy_PK::Setup()
     elist.sublist("viscosity_liquid")
          .sublist("VerboseObject").set<std::string>("Verbosity Level", "high");
 
-    S_->RequireField("viscosity_liquid", "viscosity_liquid")->SetMesh(mesh_)->SetGhosted(true)
+    S->RequireField("viscosity_liquid", "viscosity_liquid")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireFieldEvaluator("viscosity_liquid");
+    S->RequireFieldEvaluator("viscosity_liquid");
   }
 
   // Other fields
-  if (!S_->HasField("effective_pressure")) {
+  if (!S->HasField("effective_pressure")) {
     elist.sublist("effective_pressure")
          .set<std::string>("field evaluator type", "effective_pressure");
 
-    S_->RequireField("effective_pressure", "effective_pressure")->SetMesh(mesh_)->SetGhosted(true)
+    S->RequireField("effective_pressure", "effective_pressure")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireFieldEvaluator("effective_pressure");
-    S_->GetField("effective_pressure", "effective_pressure")->set_io_vis(false);
+    S->RequireFieldEvaluator("effective_pressure");
+    S->GetField("effective_pressure", "effective_pressure")->set_io_vis(false);
   }
 
   // inform other PKs about strong coupling
@@ -158,7 +159,7 @@ void FlowEnergy_PK::Setup()
   energy.set("vapor diffusion", true);
 
   // process other PKs.
-  MPCStrong<FnTimeIntegratorPK>::Setup();
+  PK_MPCStrong<PK_BDF>::Setup(S);
 }
 
 
@@ -194,7 +195,7 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   e_prev = e;
  
   // try a step
-  bool fail = MPCStrong<FnTimeIntegratorPK>::AdvanceStep(t_old, t_new, reinit);
+  bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
 
   if (fail) {
     // revover the original conserved quantaties

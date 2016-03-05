@@ -59,10 +59,10 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     out_list.set<std::string>("chemistry model", "Amanzi");
 
     std::string bgdfilename, format("simple");
-    node = GetUniqueElementByTagsString_("geochemistry, amanzi_chemistry, reaction_network", flag);
+    node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
     if (flag) {
       element = static_cast<DOMElement*>(node);
-      bgdfilename = GetAttributeValueS_(element, "file");
+      bgdfilename = GetAttributeValueS_(element, "input_filename");
       format = GetAttributeValueS_(element, "format", TYPE_NONE, false, format);
     } else {
       bgdfilename = CreateBGDFile(xmlfilename_);
@@ -78,10 +78,10 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
     if (engine == "pflotran") {
       out_list.set<std::string>("Engine", "PFloTran");
-      file_location = "geochemistry, pflotran_chemistry, reaction_network";
+      file_location = "process_kernels, chemistry";
     } else if (engine == "crunchflow") {
       out_list.set<std::string>("Engine", "CrunchFlow");
-      file_location = "geochemistry, crunchflow_chemistry, reaction_network";
+      file_location = "process_kernels, chemistry";
     } else {
       valid_engine = false;
     }
@@ -94,8 +94,12 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       node = GetUniqueElementByTagsString_(file_location, flag);
       if (flag) {
         element = static_cast<DOMElement*>(node);
-        std::string inpfilename = GetAttributeValueS_(element, "file");
+        std::string inpfilename = GetAttributeValueS_(element, "input_filename");
         out_list.set<std::string>("Engine Input File", inpfilename);
+      } else {
+        Errors::Message msg;
+        msg << "Unique tag string \"" << file_location << "\" must exists.\n";
+        Exceptions::amanzi_throw(msg);
       }
     }
   }

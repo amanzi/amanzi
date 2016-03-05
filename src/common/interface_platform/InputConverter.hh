@@ -89,8 +89,8 @@ XercesDOMParser* CreateXMLParser();
 
 // Using the given XML parser, parses the document contained in the file with 
 // the given name.
-xercesc::DOMDocument* OpenXMLInput(XercesDOMParser* parser,
-                                   const std::string& xml_input);
+DOMDocument* OpenXMLInput(XercesDOMParser* parser,
+                          const std::string& xml_input);
 //------------------------------------------------------------------------
 
 class InputConverter {
@@ -102,7 +102,7 @@ class InputConverter {
 
   // This constructor uses an already-parsed XML document, and does not 
   // manage the parser.
-  InputConverter(const std::string& input_filename, xercesc::DOMDocument* input_doc);
+  InputConverter(const std::string& input_filename, DOMDocument* input_doc);
 
   virtual ~InputConverter();
 
@@ -113,6 +113,7 @@ class InputConverter {
 
  protected:
   // Useful tools wrapping low-level DOM commands
+
   // -- generalization of getElementsByTagNames(): returns node
   //    where all tags (list of names in the given string) are unique 
   //    leaves of the tree.
@@ -129,6 +130,10 @@ class InputConverter {
       xercesc::DOMNode* node, const char* attr_name, const std::string& attr_value,
       bool& flag, bool exception = false);
 
+  // -- extracts the child of the given node with the given name.
+  xercesc::DOMElement* GetChildByName_(
+      xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception = false);
+
   // -- extract and verify children
   // -- extract existing attribute value
   int GetAttributeValueL_(
@@ -141,11 +146,23 @@ class InputConverter {
       xercesc::DOMElement* elem, const char* attr_name,
       const std::string& type = TYPE_NUMERICAL, bool exception = true, std::string val = "");
   std::vector<double> GetAttributeVector_(
-      xercesc::DOMElement* elem, const char* attr_name);
+      xercesc::DOMElement* elem, const char* attr_name, bool exception = true);
+  std::vector<std::string> GetAttributeVectorS_(
+      xercesc::DOMElement* elem, const char* attr_name, bool exception = true);
  
+  // -- extract the text content of the child of the given node with the given name.
+  std::string GetChildValueS_(
+      xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception = false);
+  std::vector<std::string> GetChildVectorS_(
+      xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception = false);
+
   // -- extract existing attribute value and verify it
   std::string GetAttributeValueS_(
       xercesc::DOMElement* elem, const char* attr_name, const char* options);
+
+  // -- extract all children of the given node that share the given common name.
+  std::vector<xercesc::DOMNode*> GetChildren_(
+      xercesc::DOMNode* node, const std::string& childrenName, bool& flag, bool exception = false);
 
   //    the name of identical nodes will be extracted too
   std::vector<xercesc::DOMNode*> GetSameChildNodes_(
@@ -182,6 +199,8 @@ class InputConverter {
       const std::string& section, const std::string& type, const std::string& ill_formed, const std::string& options);
   void ThrowErrorMissattr_(
       const std::string& section, const std::string& type, const std::string& missing, const std::string& name);
+  void ThrowErrorMisschild_(
+    const std::string& section, const std::string& missing, const std::string& name = std::string());
 
  protected:
   // various constants defined by the users
@@ -192,8 +211,14 @@ class InputConverter {
   std::map<std::string, std::string> constants_;  // no check
 
   std::string xmlfilename_;
-  xercesc::DOMDocument* doc_;
+  DOMDocument* doc_;
   XercesDOMParser* parser_;
+
+ private:
+
+  // Disallowed deep-copy-related methods.
+  InputConverter(const InputConverter&);
+  InputConverter& operator=(const InputConverter&);
 };
 
 }  // namespace AmanziInput

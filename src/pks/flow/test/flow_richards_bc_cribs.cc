@@ -72,16 +72,16 @@ TEST(FLOW_3D_RICHARDS) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Richards_PK* RPK = new Richards_PK(plist, "Flow", S, soln);
 
-  RPK->Setup();
+  RPK->Setup(S.ptr());
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
   // initialize the Richards process kernel
-  RPK->Initialize();
+  RPK->Initialize(S.ptr());
   S->CheckAllFieldsInitialized();
 
-  RPK->CommitStep(0.0, 1.0);  // dummay times
+  RPK->CommitStep(0.0, 1.0, S);  // dummay times
 
   // derive dependent variable
   const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");

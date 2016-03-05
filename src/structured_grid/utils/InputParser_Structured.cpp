@@ -2559,7 +2559,7 @@ namespace Amanzi {
         rock_list.set(_label,rsublist_mat[label]);
       }
             
-      rock_list.set("rock",arrayrock);
+      rock_list.set("rocks",arrayrock);
       if (kp_file_out_set) {
         rock_list.set("permeability_output_file",kp_file_out);
       }

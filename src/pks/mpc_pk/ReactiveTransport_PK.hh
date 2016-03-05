@@ -21,11 +21,11 @@
 #include "Transport_PK.hh"
 #include "Chemistry_PK.hh"
 #include "PK_Factory.hh"
-#include "MPCAdditive.hh"
+#include "PK_MPCAdditive.hh"
 
 namespace Amanzi {
 
-class ReactiveTransport_PK : public MPCAdditive<PK> {
+class ReactiveTransport_PK : public PK_MPCAdditive<PK> {
  public:
   ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
                const Teuchos::RCP<Teuchos::ParameterList>& global_list,
@@ -42,9 +42,9 @@ class ReactiveTransport_PK : public MPCAdditive<PK> {
   // -- advance each sub pk dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
 
-  virtual void Initialize();
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
-  virtual void CommitStep(double t_old, double t_new);
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
 
   std::string name() { return "reactive transport"; } 
 

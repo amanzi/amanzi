@@ -55,9 +55,9 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
                          const Teuchos::RCP<Teuchos::ParameterList>& glist,
                          const Teuchos::RCP<State>& S,
                          const Teuchos::RCP<TreeVector>& soln) :
-    Flow_PK(),
-    glist_(glist),
-    soln_(soln)
+  Flow_PK(pk_tree, glist, S, soln),
+  glist_(glist),
+  soln_(soln)
 {
   S_ = S;
 
@@ -77,7 +77,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
   linear_operator_list_ = Teuchos::sublist(glist, "Solvers", true);
   ti_list_ = Teuchos::sublist(rp_list_, "time integrator");
 
-  vo_ = NULL;
+  vo_ = Teuchos::null;
 }
 
 
@@ -107,7 +107,7 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   ms_itrs_ = 0;
   ms_calls_ = 0;
 
-  vo_ = NULL;
+  vo_ = Teuchos::null;
 }
 
 
@@ -124,7 +124,7 @@ Richards_PK::~Richards_PK()
   for (int i = 0; i < srcs.size(); i++) {
     if (srcs[i] != NULL) delete srcs[i]; 
   }
-  if (vo_ != NULL) delete vo_;
+  if (vo_ != Teuchos::null) vo_ = Teuchos::null;
 }
 
 
@@ -134,13 +134,13 @@ Richards_PK::~Richards_PK()
 * model factories, evaluator factories, and parameters of the list
 * "physical models and assumptions".
 ****************************************************************** */
-void Richards_PK::Setup()
+void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   dt_ = 0.0;
-  mesh_ = S_->GetMesh();
+  mesh_ = S->GetMesh();
   dim = mesh_->space_dimension();
 
-  Flow_PK::Setup();
+  Flow_PK::Setup(S);
 
   // Our decision can be affected by the list of models
   Teuchos::RCP<Teuchos::ParameterList> physical_models =
@@ -167,61 +167,61 @@ void Richards_PK::Setup()
     ndofs.push_back(1);
   }
 
-  if (!S_->HasField("pressure")) {
-    S_->RequireField("pressure", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("pressure")) {
+    S->RequireField("pressure", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
 
     Teuchos::ParameterList elist;
     elist.set<std::string>("evaluator name", "pressure");
     pressure_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S_->SetFieldEvaluator("pressure", pressure_eval_);
+    S->SetFieldEvaluator("pressure", pressure_eval_);
   }
 
   // Require conserved quantity.
   // -- water content
-  if (!S_->HasField("water_content")) {
-    S_->RequireField("water_content", "water_content")->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("water_content")) {
+    S->RequireField("water_content", "water_content")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList vwc_list;
     VWContentEvaluatorFactory fac;
     Teuchos::RCP<VWContentEvaluator> eval = fac.Create(vwc_model, vwc_list);
-    S_->SetFieldEvaluator("water_content", eval);
+    S->SetFieldEvaluator("water_content", eval);
   }
 
   // -- water content from the previous time step
-  if (!S_->HasField("prev_water_content")) {
-    S_->RequireField("prev_water_content", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("prev_water_content")) {
+    S->RequireField("prev_water_content", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->GetField("prev_water_content", passwd_)->set_io_vis(false);
+    S->GetField("prev_water_content", passwd_)->set_io_vis(false);
   }
 
   // -- multiscale extension: secondary (immobile water content)
   if (multiscale_model == "dual porosity") {
-    if (!S_->HasField("pressure_matrix")) {
-      S_->RequireField("pressure_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+    if (!S->HasField("pressure_matrix")) {
+      S->RequireField("pressure_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
 
       Teuchos::ParameterList elist;
       elist.set<std::string>("evaluator name", "pressure_matrix");
       pressure_matrix_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-      S_->SetFieldEvaluator("pressure_matrix", pressure_matrix_eval_);
+      S->SetFieldEvaluator("pressure_matrix", pressure_matrix_eval_);
     }
 
     Teuchos::RCP<Teuchos::ParameterList> msp_list = Teuchos::sublist(rp_list_, "multiscale models", true);
     msp_ = CreateMultiscaleFlowPorosityPartition(mesh_, msp_list);
 
-    if (!S_->HasField("water_content_matrix")) {
-      S_->RequireField("water_content_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+    if (!S->HasField("water_content_matrix")) {
+      S->RequireField("water_content_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     }
-    if (!S_->HasField("prev_water_content_matrix")) {
-      S_->RequireField("prev_water_content_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+    if (!S->HasField("prev_water_content_matrix")) {
+      S->RequireField("prev_water_content_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
-      S_->GetField("prev_water_content_matrix", passwd_)->set_io_vis(false);
+      S->GetField("prev_water_content_matrix", passwd_)->set_io_vis(false);
     }
 
-    S_->RequireField("porosity_matrix", "porosity_matrix")->SetMesh(mesh_)->SetGhosted(false)
+    S->RequireField("porosity_matrix", "porosity_matrix")->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList elist;
@@ -229,24 +229,24 @@ void Richards_PK::Setup()
     elist.set<std::string>("pressure key", "pressure_matrix");
     Teuchos::RCP<PorosityModelPartition> pom = CreatePorosityModelPartition(mesh_, msp_list);
     Teuchos::RCP<PorosityModelEvaluator> eval = Teuchos::rcp(new PorosityModelEvaluator(elist, pom));
-    S_->SetFieldEvaluator("porosity_matrix", eval);
+    S->SetFieldEvaluator("porosity_matrix", eval);
   }
 
   // Require additional fields and evaluators for this PK.
   // -- darcy flux
-  if (!S_->HasField("darcy_flux")) {
-    S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("darcy_flux")) {
+    S->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
 
     Teuchos::ParameterList elist;
     elist.set<std::string>("evaluator name", "darcy_flux");
     darcy_flux_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S_->SetFieldEvaluator("darcy_flux", darcy_flux_eval_);
+    S->SetFieldEvaluator("darcy_flux", darcy_flux_eval_);
   }
 
   // -- porosity
-  if (!S_->HasField("porosity")) {
-    S_->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("porosity")) {
+    S->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::RCP<Teuchos::ParameterList> physical_models = 
@@ -261,33 +261,33 @@ void Richards_PK::Setup()
       Teuchos::ParameterList elist;
       // elist.sublist("VerboseObject").set<std::string>("Verbosity Level", "extreme");
       Teuchos::RCP<PorosityModelEvaluator> eval = Teuchos::rcp(new PorosityModelEvaluator(elist, pom));
-      S_->SetFieldEvaluator("porosity", eval);
+      S->SetFieldEvaluator("porosity", eval);
     } else {
-      S_->RequireFieldEvaluator("porosity");
+      S->RequireFieldEvaluator("porosity");
     }
   }
 
   // -- viscosity: if not requested by any PK, we request its constant value.
-  if (!S_->HasField("viscosity_liquid")) {
-    if (!S_->HasField("fluid_viscosity")) {
-      S_->RequireScalar("fluid_viscosity", passwd_);
+  if (!S->HasField("viscosity_liquid")) {
+    if (!S->HasField("fluid_viscosity")) {
+      S->RequireScalar("fluid_viscosity", passwd_);
     }
-    S_->RequireField("viscosity_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+    S->RequireField("viscosity_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->GetField("viscosity_liquid", passwd_)->set_io_vis(false);
+    S->GetField("viscosity_liquid", passwd_)->set_io_vis(false);
   }
 
   // -- model for liquid density is constant density unless specified otherwise
   //    in high-level PKs.
-  if (!S_->HasField("molar_density_liquid")) {
-    S_->RequireField("molar_density_liquid", "molar_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("molar_density_liquid")) {
+    S->RequireField("molar_density_liquid", "molar_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     double rho = glist_->sublist("State").sublist("initial conditions")
                         .sublist("fluid_density").get<double>("value", 1000.0);
     double n_l = rho / CommonDefs::MOLAR_MASS_H2O;
 
-    Teuchos::ParameterList& wc_eval = S_->FEList().sublist("molar_density_liquid");
+    Teuchos::ParameterList& wc_eval = S->FEList().sublist("molar_density_liquid");
     wc_eval.sublist("function").sublist("DOMAIN")
            .set<std::string>("region", "All")
            .set<std::string>("component","cell")
@@ -295,7 +295,7 @@ void Richards_PK::Setup()
            .set<double>("value", n_l);
     wc_eval.set<std::string>("field evaluator type", "independent variable");
 
-    S_->RequireFieldEvaluator("molar_density_liquid");
+    S->RequireFieldEvaluator("molar_density_liquid");
   }
   
   // -- saturation
@@ -303,36 +303,36 @@ void Richards_PK::Setup()
       wrm_list = Teuchos::sublist(rp_list_, "water retention models", true);
   wrm_ = CreateWRMPartition(mesh_, wrm_list);
 
-  if (!S_->HasField("saturation_liquid")) {
-    S_->RequireField("saturation_liquid", "saturation_liquid")->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("saturation_liquid")) {
+    S->RequireField("saturation_liquid", "saturation_liquid")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList elist;
     // elist.sublist("VerboseObject").set<std::string>("Verbosity Level", "extreme");
     Teuchos::RCP<WRMEvaluator> eval = Teuchos::rcp(new WRMEvaluator(elist, wrm_));
-    S_->SetFieldEvaluator("saturation_liquid", eval);
+    S->SetFieldEvaluator("saturation_liquid", eval);
   }
 
-  if (!S_->HasField("prev_saturation_liquid")) {
-    S_->RequireField("prev_saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("prev_saturation_liquid")) {
+    S->RequireField("prev_saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->GetField("prev_saturation_liquid", passwd_)->set_io_vis(false);
+    S->GetField("prev_saturation_liquid", passwd_)->set_io_vis(false);
   }
 
   // Local fields and evaluators.
   // -- hydraulic head
-  if (!S_->HasField("hydraulic_head")) {
-    S_->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("hydraulic_head")) {
+    S->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // -- Darcy velocity vector
-  S_->RequireField("darcy_velocity", "darcy_velocity")->SetMesh(mesh_)->SetGhosted(true)
+  S->RequireField("darcy_velocity", "darcy_velocity")->SetMesh(mesh_)->SetGhosted(true)
     ->SetComponent("cell", AmanziMesh::CELL, dim);
 
   Teuchos::ParameterList elist;
   Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
-  S_->SetFieldEvaluator("darcy_velocity", eval);
+  S->SetFieldEvaluator("darcy_velocity", eval);
 }
 
 
@@ -341,10 +341,10 @@ void Richards_PK::Setup()
 * list and initializes various objects created during setup step.
 * Some local objects needs to the most 
 ****************************************************************** */
-void Richards_PK::Initialize()
+void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // times, initialization could be done on any non-zero interval.
-  double t_old = S_->time(); 
+  double t_old = S->time(); 
   dt_ = ti_list_->get<double>("initial time step", 1.0);
   double t_new = t_old + dt_;
 
@@ -357,14 +357,14 @@ void Richards_PK::Initialize()
   // create verbosity object
   Teuchos::ParameterList vlist;
   vlist.sublist("VerboseObject") = rp_list_->sublist("VerboseObject");
-  vo_ = new VerboseObject("FlowPK::Richards", vlist); 
+  vo_ =  Teuchos::rcp(new VerboseObject("FlowPK::Richards", vlist)); 
 
   // Initilize various common data depending on mesh and state.
-  Flow_PK::Initialize();
+  Flow_PK::Initialize(S);
 
   // Create local evaluators. Initialize local fields.
   InitializeFields_();
-  UpdateLocalFields_();
+  UpdateLocalFields_(S);
 
   // Initialize BCs and source terms.
   InitializeBCsSources_(*rp_list_);
@@ -453,7 +453,7 @@ void Richards_PK::Initialize()
   }
 
   // Create pointers to the primary flow field pressure.
-  solution = S_->GetFieldData("pressure", passwd_);
+  solution = S->GetFieldData("pressure", passwd_);
   soln_->SetData(solution); 
   
   // Create auxiliary vectors for time history and error estimates.
@@ -462,7 +462,7 @@ void Richards_PK::Initialize()
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap_owned));
 
   // Initialize flux copy for the upwind operator.
-  darcy_flux_copy = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("darcy_flux", passwd_)));
+  darcy_flux_copy = Teuchos::rcp(new CompositeVector(*S->GetFieldData("darcy_flux", passwd_)));
 
   // Other quantatities: injected water mass
   mass_bc = 0.0;
@@ -472,7 +472,7 @@ void Richards_PK::Initialize()
   num_itrs_ = 0;
   
   // Conditional initialization of lambdas from pressures.
-  CompositeVector& pressure = *S_->GetFieldData("pressure", passwd_);
+  CompositeVector& pressure = *S->GetFieldData("pressure", passwd_);
 
   if (pressure.HasComponent("face")) {
     DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
@@ -515,7 +515,7 @@ void Richards_PK::Initialize()
   for (int i = 0; i < srcs.size(); ++i) {
     int type = srcs[i]->CollectActionsList();
     if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
+      PKUtils_CalculatePermeabilityFactorInWell(S, Kxy);
     }
     srcs[i]->Compute(t_old, t_new, Kxy); 
   }
@@ -573,7 +573,7 @@ void Richards_PK::Initialize()
   // and clip it as requested. We have to do it only once at the beginning
   // of time period.
   if (ti_list_->isSublist("initialization") && initialize_with_darcy_ 
-      && S_->position() == Amanzi::TIME_PERIOD_START) {
+      && S->position() == Amanzi::TIME_PERIOD_START) {
     initialize_with_darcy_ = false;
     Teuchos::ParameterList& ini_list = ti_list_->sublist("initialization");
  
@@ -612,30 +612,30 @@ void Richards_PK::Initialize()
     else if (solver_name_ini == "picard") {
       AdvanceToSteadyState_Picard(ti_list_->sublist("initialization").sublist("picard parameters"));
     }
-    pressure_eval_->SetFieldAsChanged(S_.ptr());
+    pressure_eval_->SetFieldAsChanged(S.ptr());
 
     // initialization is usually done at time 0, so we need to update other
     // fields such as prev_saturation_liquid
-    S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), "flow");
-    CompositeVector& s_l = *S_->GetFieldData("saturation_liquid", "saturation_liquid");
-    CompositeVector& s_l_prev = *S_->GetFieldData("prev_saturation_liquid", passwd_);
+    S->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S.ptr(), "flow");
+    CompositeVector& s_l = *S->GetFieldData("saturation_liquid", "saturation_liquid");
+    CompositeVector& s_l_prev = *S->GetFieldData("prev_saturation_liquid", passwd_);
     s_l_prev = s_l;
 
-    S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
-    CompositeVector& wc = *S_->GetFieldData("water_content", "water_content");
-    CompositeVector& wc_prev = *S_->GetFieldData("prev_water_content", passwd_);
+    S->GetFieldEvaluator("water_content")->HasFieldChanged(S.ptr(), "flow");
+    CompositeVector& wc = *S->GetFieldData("water_content", "water_content");
+    CompositeVector& wc_prev = *S->GetFieldData("prev_water_content", passwd_);
     wc_prev = wc;
 
     // We start with pressure equilibrium
     if (multiscale_porosity_) {
-      *S_->GetFieldData("pressure_matrix", passwd_)->ViewComponent("cell") =
-          *S_->GetFieldData("pressure")->ViewComponent("cell");
-      pressure_matrix_eval_->SetFieldAsChanged(S_.ptr());
+      *S->GetFieldData("pressure_matrix", passwd_)->ViewComponent("cell") =
+          *S->GetFieldData("pressure")->ViewComponent("cell");
+      pressure_matrix_eval_->SetFieldAsChanged(S.ptr());
     }
   }
 
   // Trigger update of secondary fields depending on the primary pressure.
-  pressure_eval_->SetFieldAsChanged(S_.ptr());
+  pressure_eval_->SetFieldAsChanged(S.ptr());
 
   // derive mass flux (state may not have it at time 0)
   double tmp;
@@ -651,9 +651,9 @@ void Richards_PK::Initialize()
   if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")) {
     solver_name_constraint_ = ti_list_->sublist("pressure-lambda constraints").get<std::string>("linear solver");
 
-    if (S_->position() == Amanzi::TIME_PERIOD_START) {
+    if (S->position() == Amanzi::TIME_PERIOD_START) {
       EnforceConstraints(t_new, solution);
-      pressure_eval_->SetFieldAsChanged(S_.ptr());
+      pressure_eval_->SetFieldAsChanged(S.ptr());
 
       // update mass flux
       op_matrix_->Init();
@@ -924,10 +924,10 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 * Save internal data needed by time integration. Calculate temporarily
 * the Darcy flux.
 ****************************************************************** */
-void Richards_PK::CommitStep(double t_old, double t_new)
+void Richards_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   // calculate Darcy flux.
-  CompositeVector& darcy_flux = *S_->GetFieldData("darcy_flux", passwd_);
+  CompositeVector& darcy_flux = *S->GetFieldData("darcy_flux", passwd_);
   op_matrix_diff_->UpdateFlux(*solution, darcy_flux);
 
   Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
@@ -1046,8 +1046,8 @@ void Richards_PK::VV_ReportMultiscale()
 /* ******************************************************************
 * This is strange.
 ****************************************************************** */
-void Richards_PK::CalculateDiagnostics() {
-  UpdateLocalFields_();
+void Richards_PK::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
+  UpdateLocalFields_(S.ptr());
 }
 
 }  // namespace Flow

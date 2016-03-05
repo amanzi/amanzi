@@ -91,6 +91,10 @@ RichardSolver::RichardSolver(RSdata& _rs_data, NLScontrol& _nlsc)
   Layout& layout = GetLayout();
   mftfp = new MFTFillPatch(layout);
 
+  if (nlsc.verbosity > 4 && ParallelDescriptor::IOProcessor()) {
+    std::cout << nlsc << std::endl;
+  }
+
   PetscErrorCode ierr;
   int n = layout.NumberOfLocalNodeIds();
   int N = layout.NumberOfGlobalNodeIds();
@@ -102,7 +106,10 @@ RichardSolver::RichardSolver(RSdata& _rs_data, NLScontrol& _nlsc)
   ierr = VecDuplicate(RhsV,&GV); CHKPETSC(ierr);
   ierr = VecDuplicate(RhsV,&AlphaV); CHKPETSC(ierr);
 
-  mftfp->BuildStencil(rs_data.pressure_bc, rs_data.pressure_maxorder);
+  int retVal = mftfp->BuildStencil(rs_data.pressure_bc, rs_data.pressure_maxorder);
+  if (retVal != 0) {
+    BoxLib::Abort("Pressure boundary condition not properly set for RichardSolver");
+  }
 
   bool calcSpace = true;
   BuildOpSkel(Jac,calcSpace);
@@ -1208,7 +1215,7 @@ RichardSolver::CenterToEdgeUpwind(PArray<MFTower>&       mfte,
 	int dir_bc_lo = bc.lo()[d]==EXT_DIR && vccbox.smallEnd()[d]==domain.smallEnd()[d];
 	int dir_bc_hi = bc.hi()[d]==EXT_DIR && vccbox.bigEnd()[d]==domain.bigEnd()[d];
 
-	int upwind_flag = (int)rs_data.upwind_krel;
+	int upwind_flag = (rs_data.rel_perm_method == "upwind-darcy_velocity");
 	FORT_RS_CTE_UPW(efab.dataPtr(), ARLIM(efab.loVect()), ARLIM(efab.hiVect()),
 			cfab.dataPtr(), ARLIM(cfab.loVect()), ARLIM(cfab.hiVect()),
 			sgnfab.dataPtr(),ARLIM(sgnfab.loVect()), ARLIM(sgnfab.hiVect()),
@@ -1398,7 +1405,13 @@ RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
   // Get  -(Grad(p) + rho.g)
   CCtoECgradAdd(darcy_vel,pressure,rhog);
 
-  if (rs_data.upwind_krel) {
+  if ( (rs_data.rel_perm_method != "upwind-darcy_velocity")
+       && (rs_data.rel_perm_method != "other-arithmetic_average")
+       && (rs_data.rel_perm_method != "other-harmonic_average") ) {
+    BoxLib::Abort("Invalid rel_perm_method");
+  }
+
+  if (rs_data.rel_perm_method == "upwind-darcy_velocity") {
     rs_data.calcLambda(lambda,rhoSat,t,0,0,1);
 
     // Get edge-centered lambda (= krel/mu) based on the sign of -(Grad(p) + rho.g)
@@ -1441,7 +1454,7 @@ RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
       MultiFab::Multiply(CoeffCC[lev],(*KappaCCdir)[lev],0,0,BL_SPACEDIM,1);
     }
 
-    int do_harmonic = 1;
+    int do_harmonic = (rs_data.rel_perm_method == "other-harmonic_average"); // If not harmonic, then arithmetic
     int nComp = -1; // Note signal to take multiple components of cc to single comp of ec
     MFTower::CCtoECavg(GetRichardCoefs(),CoeffCC,1.0,0,0,nComp,do_harmonic);
     
@@ -1450,7 +1463,7 @@ RichardSolver::ComputeDarcyVelocity(MFTower& pressure,
 	MultiFab::Multiply(darcy_vel[d][lev],GetRichardCoefs()[d][lev],0,0,1,0);
       }
     }
-  }  
+  }
 
   // Overwrite face velocities at boundary with boundary conditions
   rs_data.SetInflowVelocity(darcy_vel,t);
@@ -1595,7 +1608,8 @@ void RichardSolver::CreateJac(Mat& J,
   rs_data.calcInvPressure (GetRhoSatNp1(),pressure,t,0,0,1);
   rs_data.calcLambda(GetLambda(),GetRhoSatNp1(),t,0,0,1); 
 
-  int do_upwind = (int)rs_data.upwind_krel;
+  int do_upwind = rs_data.rel_perm_method == "upwind-darcy_velocity";
+
   for (int lev=0; lev<nLevs; ++lev) {
     const Box& domain = GeomArray()[lev].Domain();
     const Real* dx = GeomArray()[lev].CellSize();
@@ -2253,8 +2267,8 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
     if (rs->GetNLScontrol().centered_diff_J) {
       // w2 <- w2 - w1 = F(w3) - F(w4) = F(x1 + dx) - F(x1 - dx)
       ierr = PetscLogEventBegin(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
-      ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);        
-      ierr = (*f)(sctx,w4,w1,fctx);CHKPETSC(ierr);        
+      ierr = (*f)(sctx,w3,w2,fctx);CHKPETSC(ierr);
+      ierr = (*f)(sctx,w4,w1,fctx);CHKPETSC(ierr);
       ierr = PetscLogEventEnd(MAT_FDColoringFunction,0,0,0,0);CHKPETSC(ierr);
       ierr = VecAXPY(w2,-1.0,w1);CHKPETSC(ierr); 
       epsilon_inv = 0.5/epsilon;

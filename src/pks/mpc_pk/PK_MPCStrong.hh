@@ -10,42 +10,43 @@
           Daniil Svyatskiy
           Konstantin Lipnikov
 
-  Interface for the derived MPCStrong class.  Is both a PK and a Model
+  Interface for the derived PK_MPCStrong class.  Is both a PK and a Model
   Evalulator, providing needed methods for BDF time integration of the
   coupled system.
 
   Completely automated and generic to any sub PKs, this uses a block diagonal
   preconditioner.
 
-  See additional documentation in the base class src/pks/mpc_pk/MPC_PK.hh
+  See additional documentation in the base class src/pks/mpc_pk/PK_MPC.hh
 */
 
 #ifndef AMANZI_STRONG_MPC_HH_
 #define AMANZI_STRONG_MPC_HH_
 
 #include <vector>
-
 #include "Teuchos_ParameterList.hpp"
 
 #include "BDF1_TI.hh"
-#include "FnTimeIntegratorPK.hh"
-#include "MPC_PK.hh"
+#include "PK_BDF.hh"
+
+#include "PK_MPC.hh"
+#include "State.hh"
 #include "PK_Factory.hh"
 
 namespace Amanzi {
 
 template<class PK_Base>
-class MPCStrong : public MPC_PK<PK_Base>, public FnTimeIntegratorPK
+class PK_MPCStrong : public PK_MPC<PK_Base>, public PK_BDF
 {
  public:
-  MPCStrong(Teuchos::ParameterList& pk_tree,
+  PK_MPCStrong(Teuchos::ParameterList& pk_tree,
             const Teuchos::RCP<Teuchos::ParameterList>& global_list,
             const Teuchos::RCP<State>& S,
             const Teuchos::RCP<TreeVector>& soln);
 
-  // MPCStrong is a PK
-  virtual void Setup();
-  virtual void Initialize();
+  // PK_MPCStrong is a PK
+  virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   // -- dt is the minimum of the sub pks
   virtual double get_dt() { return dt_; }
@@ -54,7 +55,7 @@ class MPCStrong : public MPC_PK<PK_Base>, public FnTimeIntegratorPK
   // -- advance each sub pk dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
 
-  // MPCStrong is an ImplicitFn
+  // PK_MPCStrong is an PK_Implicit
   // -- computes the non-linear functional g = g(t,u,udot)
   //    By default this just calls each sub pk Functional().
   virtual void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
@@ -64,7 +65,7 @@ class MPCStrong : public MPC_PK<PK_Base>, public FnTimeIntegratorPK
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du);
 
-  // MPCStrong's preconditioner is, by default, just the block-diagonal
+  // PK_MPCStrong's preconditioner is, by default, just the block-diagonal
   // operator formed by placing the sub PK's preconditioners on the diagonal.
   // -- Apply preconditioner to u and returns the result in Pu.
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
@@ -91,14 +92,14 @@ class MPCStrong : public MPC_PK<PK_Base>, public FnTimeIntegratorPK
                        Teuchos::RCP<TreeVector> du);
 
  protected:
-  using MPC_PK<PK_Base>::sub_pks_;
-  using MPC_PK<PK_Base>::S_;
+  using PK_MPC<PK_Base>::sub_pks_;
+  using PK_MPC<PK_Base>::S_;
 
-  using MPC_PK<PK_Base>::global_list_;
-  using MPC_PK<PK_Base>::pk_tree_;
-  using MPC_PK<PK_Base>::my_list_;
+  using PK_MPC<PK_Base>::global_list_;
+  using PK_MPC<PK_Base>::pk_tree_;
+  using PK_MPC<PK_Base>::my_list_;
 
-  using MPC_PK<PK_Base>::solution_;
+  using PK_MPC<PK_Base>::solution_;
 
   // timestep control
   double dt_;
@@ -106,7 +107,7 @@ class MPCStrong : public MPC_PK<PK_Base>, public FnTimeIntegratorPK
 
  private:
   // factory registration
-  static RegisteredPKFactory<MPCStrong> reg_;
+  static RegisteredPKFactory<PK_MPCStrong> reg_;
 };
 
 
@@ -114,19 +115,20 @@ class MPCStrong : public MPC_PK<PK_Base>, public FnTimeIntegratorPK
 // Constructor
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-MPCStrong<PK_Base>::MPCStrong(Teuchos::ParameterList& pk_tree,
+PK_MPCStrong<PK_Base>::PK_MPCStrong(Teuchos::ParameterList& pk_tree,
                               const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                               const Teuchos::RCP<State>& S,
                               const Teuchos::RCP<TreeVector>& soln) :
-    MPC_PK<PK_Base>(pk_tree, global_list, S, soln) {
-};
+  PK_Default(pk_tree, global_list, S, soln),
+  PK_MPC<PK_Base>(pk_tree, global_list, S, soln),
+  PK_BDF(pk_tree, global_list, S, soln) {};
 
 
 // -----------------------------------------------------------------------------
 // Setup
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-void MPCStrong<PK_Base>::Setup()
+void PK_MPCStrong<PK_Base>::Setup(const Teuchos::Ptr<State>& S)
 {
   // Tweak the sub-PK parameter lists. This allows the PK to
   // potentially not assemble things.
@@ -140,7 +142,7 @@ void MPCStrong<PK_Base>::Setup()
   }
 
   // call each sub-PKs Setup()
-  MPC_PK<PK_Base>::Setup();
+  PK_MPC<PK_Base>::Setup(S);
 
   // Set the initial timestep as the min of the sub-pk sizes.
   dt_ = get_dt();
@@ -151,7 +153,7 @@ void MPCStrong<PK_Base>::Setup()
 // Initialize each sub-PK and the time integrator.
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-void MPCStrong<PK_Base>::Initialize()
+void PK_MPCStrong<PK_Base>::Initialize(const Teuchos::Ptr<State>& S)
 {
   // Just calls both subclass's initialize.  NOTE - order is important
   // here -- MPC<PK_Base> grabs the primary variables from each sub-PK
@@ -159,7 +161,7 @@ void MPCStrong<PK_Base>::Initialize()
   // initializing the timestepper.
 
   // Initialize all sub PKs.
-  MPC_PK<PK_Base>::Initialize();
+  PK_MPC<PK_Base>::Initialize(S);
 
   // set up the timestepping algorithm if this is not strongly coupled
   if (!my_list_->template get<bool>("strongly coupled PK", false)) {
@@ -183,7 +185,7 @@ void MPCStrong<PK_Base>::Initialize()
 // Make one time step 
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-bool MPCStrong<PK_Base>::AdvanceStep(double t_old, double t_new, bool reinit)
+bool PK_MPCStrong<PK_Base>::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   dt_ = t_new - t_old;
 
@@ -228,7 +230,7 @@ bool MPCStrong<PK_Base>::AdvanceStep(double t_old, double t_new, bool reinit)
 // Compute the non-linear functional g = g(t,u,udot).
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-void MPCStrong<PK_Base>::Functional(
+void PK_MPCStrong<PK_Base>::Functional(
     double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
     Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   // loop over sub-PKs
@@ -267,7 +269,7 @@ void MPCStrong<PK_Base>::Functional(
 // Applies preconditioner to u and returns the result in Pu.
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-int MPCStrong<PK_Base>::ApplyPreconditioner(
+int PK_MPCStrong<PK_Base>::ApplyPreconditioner(
     Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu)
 {
   int ierr(0);
@@ -299,7 +301,7 @@ int MPCStrong<PK_Base>::ApplyPreconditioner(
 // For a Strong MPC, the enorm is just the max of the sub PKs enorms.
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-double MPCStrong<PK_Base>::ErrorNorm(Teuchos::RCP<const TreeVector> u,
+double PK_MPCStrong<PK_Base>::ErrorNorm(Teuchos::RCP<const TreeVector> u,
                                      Teuchos::RCP<const TreeVector> du)
 {
   double norm = 0.0;
@@ -309,14 +311,14 @@ double MPCStrong<PK_Base>::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     // pull out the u sub-vector
     Teuchos::RCP<const TreeVector> pk_u = u->SubVector(i);
     if (pk_u == Teuchos::null) {
-      Errors::Message message("MPCStrong: vector structure does not match PK structure");
+      Errors::Message message("PK_MPCStrong: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     }
 
     // pull out the du sub-vector
     Teuchos::RCP<const TreeVector> pk_du = du->SubVector(i);
     if (pk_du == Teuchos::null) {
-      Errors::Message message("MPCStrong: vector structure does not match PK structure");
+      Errors::Message message("PK_MPCStrong: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     }
 
@@ -332,7 +334,7 @@ double MPCStrong<PK_Base>::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 // Update the preconditioner.
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-void MPCStrong<PK_Base>::UpdatePreconditioner(
+void PK_MPCStrong<PK_Base>::UpdatePreconditioner(
     double t, Teuchos::RCP<const TreeVector> up, double h)
 {
   // loop over sub-PKs
@@ -355,10 +357,10 @@ void MPCStrong<PK_Base>::UpdatePreconditioner(
 // scheme is changing the value of the solution in state.
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-void MPCStrong<PK_Base>::ChangedSolution() {
+void PK_MPCStrong<PK_Base>::ChangedSolution() {
   // loop over sub-PKs
-  for (typename MPC_PK<PK_Base>::SubPKList::iterator pk = MPC_PK<PK_Base>::sub_pks_.begin();
-      pk != MPC_PK<PK_Base>::sub_pks_.end(); ++pk) {
+  for (typename PK_MPC<PK_Base>::SubPKList::iterator pk = PK_MPC<PK_Base>::sub_pks_.begin();
+      pk != PK_MPC<PK_Base>::sub_pks_.end(); ++pk) {
     (*pk)->ChangedSolution();
   }
 }
@@ -368,7 +370,7 @@ void MPCStrong<PK_Base>::ChangedSolution() {
 // Check admissibility of each sub-pk
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-bool MPCStrong<PK_Base>::IsAdmissible(Teuchos::RCP<const TreeVector> u)
+bool PK_MPCStrong<PK_Base>::IsAdmissible(Teuchos::RCP<const TreeVector> u)
 {
   // First ensure each PK thinks we are admissible -- this will ensure
   // the residual can at least be evaluated.
@@ -392,7 +394,7 @@ bool MPCStrong<PK_Base>::IsAdmissible(Teuchos::RCP<const TreeVector> u)
 // Modify predictor from each sub pk.
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-bool MPCStrong<PK_Base>::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
+bool PK_MPCStrong<PK_Base>::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
                                          Teuchos::RCP<TreeVector> u)
 {
   // loop over sub-PKs
@@ -417,7 +419,7 @@ bool MPCStrong<PK_Base>::ModifyPredictor(double h, Teuchos::RCP<const TreeVector
 // -----------------------------------------------------------------------------
 template<class PK_Base>
 AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-    MPCStrong<PK_Base>::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+    PK_MPCStrong<PK_Base>::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                                          Teuchos::RCP<const TreeVector> u,
                                          Teuchos::RCP<TreeVector> du)
 {

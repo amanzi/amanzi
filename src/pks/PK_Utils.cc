@@ -20,7 +20,7 @@ namespace Amanzi {
 * Averages permeability tensor in horizontal direction.
 ****************************************************************** */
 void PKUtils_CalculatePermeabilityFactorInWell(
-    Teuchos::RCP<State>& S, Teuchos::RCP<Epetra_Vector>& Kxy)
+    const Teuchos::Ptr<State>& S, Teuchos::RCP<Epetra_Vector>& Kxy)
 {
   const CompositeVector& cv = *S->GetFieldData("permeability");
   cv.ScatterMasterToGhosted("cell");

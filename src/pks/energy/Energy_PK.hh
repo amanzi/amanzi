@@ -20,12 +20,13 @@
 
 // Amanzi
 #include "CompositeVector.hh"
-#include "FnTimeIntegratorPK.hh"
+#include "PK_BDF.hh"
 #include "Operator.hh"
 #include "OperatorAccumulation.hh"
 #include "OperatorAdvection.hh"
 #include "OperatorDiffusion.hh"
 #include "PK.hh"
+#include "PK_PhysicalBDF.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "Tensor.hh"
 #include "TreeVector.hh"
@@ -37,14 +38,14 @@
 namespace Amanzi {
 namespace Energy {
 
-class Energy_PK : public FnTimeIntegratorPK {
+class Energy_PK : public PK_PhysicalBDF {
  public:
   Energy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist, Teuchos::RCP<State> S);
   virtual ~Energy_PK() {};
 
   // methods required by PK interface
-  virtual void Setup();
-  virtual void Initialize();
+  virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
   virtual std::string name() { return passwd_; }
 
   // methods required for time integration
@@ -143,7 +144,7 @@ class Energy_PK : public FnTimeIntegratorPK {
   bool prec_include_enthalpy_;
 
  protected:
-  VerboseObject* vo_;
+  Teuchos::RCP<VerboseObject> vo_;
 };
 
 }  // namespace Energy

@@ -50,56 +50,56 @@ EnergyOnePhase_PK::EnergyOnePhase_PK(
 * Create the physical evaluators for energy, enthalpy, thermal
 * conductivity, and any sources.
 ****************************************************************** */
-void EnergyOnePhase_PK::Setup()
+void EnergyOnePhase_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   // basic class setup
-  Energy_PK::Setup();
+  Energy_PK::Setup(S);
 
   // Get data and evaluators needed by the PK
   // -- energy, the conserved quantity
-  S_->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
+  S->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   Teuchos::ParameterList ee_list = ep_list_->sublist("energy evaluator");
   ee_list.set("energy key", energy_key_);
   Teuchos::RCP<TotalEnergyEvaluator> ee = Teuchos::rcp(new TotalEnergyEvaluator(ee_list));
-  S_->SetFieldEvaluator(energy_key_, ee);
+  S->SetFieldEvaluator(energy_key_, ee);
 
   // -- advection of enthalpy
-  S_->RequireField(enthalpy_key_)->SetMesh(mesh_)
+  S->RequireField(enthalpy_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  if (!S_->HasFieldEvaluator(enthalpy_key_)) {
+  if (!S->HasFieldEvaluator(enthalpy_key_)) {
     Teuchos::ParameterList enth_plist = ep_list_->sublist("enthalpy evaluator");
     enth_plist.set("enthalpy key", enthalpy_key_);
     Teuchos::RCP<EnthalpyEvaluator> enth = Teuchos::rcp(new EnthalpyEvaluator(enth_plist));
-    S_->SetFieldEvaluator(enthalpy_key_, enth);
+    S->SetFieldEvaluator(enthalpy_key_, enth);
   }
 
   // -- thermal conductivity
-  S_->RequireField(conductivity_key_)->SetMesh(mesh_)
+  S->RequireField(conductivity_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList tcm_plist = ep_list_->sublist("thermal conductivity evaluator");
   Teuchos::RCP<TCMEvaluator_OnePhase> tcm = Teuchos::rcp(new TCMEvaluator_OnePhase(tcm_plist));
-  S_->SetFieldEvaluator(conductivity_key_, tcm);
+  S->SetFieldEvaluator(conductivity_key_, tcm);
 }
 
 
 /* ******************************************************************
 * Initialize the needed models to plug in enthalpy.
 ****************************************************************** */
-void EnergyOnePhase_PK::Initialize()
+void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // create verbosity object
   Teuchos::ParameterList vlist;
   vlist.sublist("VerboseObject") = ep_list_->sublist("VerboseObject");
-  vo_ = new VerboseObject("EnergyPK::2Phase", vlist); 
+  vo_ =  Teuchos::rcp(new VerboseObject("EnergyPK::2Phase", vlist)); 
 
   // Call the base class initialize.
-  Energy_PK::Initialize();
+  Energy_PK::Initialize(S);
 
   // Create pointers to the primary flow field pressure.
-  solution = S_->GetFieldData("temperature", passwd_);
+  solution = S->GetFieldData("temperature", passwd_);
   soln_->SetData(solution); 
 
   // Create local evaluators. Initialize local fields.
@@ -115,12 +115,12 @@ void EnergyOnePhase_PK::Initialize()
   op_matrix_diff_->SetBCs(op_bc_, op_bc_);
   op_matrix_ = op_matrix_diff_->global_operator();
   op_matrix_->Init();
-  op_matrix_diff_->SetScalarCoefficient(S_->GetFieldData(conductivity_key_), Teuchos::null);
+  op_matrix_diff_->SetScalarCoefficient(S->GetFieldData(conductivity_key_), Teuchos::null);
 
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
   op_matrix_advection_ = Teuchos::rcp(new Operators::OperatorAdvection(oplist_adv, mesh_));
 
-  const CompositeVector& flux = *S_->GetFieldData("darcy_flux");
+  const CompositeVector& flux = *S->GetFieldData("darcy_flux");
   op_matrix_advection_->Setup(flux);
   op_advection_ = op_matrix_advection_->global_operator();
 
@@ -129,7 +129,7 @@ void EnergyOnePhase_PK::Initialize()
   op_preconditioner_diff_->SetBCs(op_bc_, op_bc_);
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
   op_preconditioner_->Init();
-  op_preconditioner_diff_->SetScalarCoefficient(S_->GetFieldData(conductivity_key_), Teuchos::null);
+  op_preconditioner_diff_->SetScalarCoefficient(S->GetFieldData(conductivity_key_), Teuchos::null);
 
   op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_));
   op_preconditioner_advection_ = Teuchos::rcp(new Operators::OperatorAdvection(oplist_adv, op_preconditioner_));
@@ -246,7 +246,7 @@ bool EnergyOnePhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 /* ******************************************************************
 * TBW 
 ****************************************************************** */
-void EnergyOnePhase_PK::CommitStep(double t_old, double t_new)
+void EnergyOnePhase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   dt_ = dt_next_;
 }

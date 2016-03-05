@@ -25,9 +25,9 @@
 #include "BDFFnBase.hh"
 #include "checkpoint.hh"
 #include "CompositeVectorSpace.hh"
-#include "FnTimeIntegratorPK.hh"
 #include "independent_variable_field_evaluator_fromfunction.hh"
 #include "PK.hh"
+#include "PK_PhysicalBDF.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "Tensor.hh"
 #include "VerboseObject.hh"
@@ -43,18 +43,22 @@
 namespace Amanzi {
 namespace Flow {
 
-class Flow_PK : public FnTimeIntegratorPK {
+class Flow_PK : public PK_PhysicalBDF {
  public:
   Flow_PK();
+  Flow_PK(Teuchos::ParameterList& pk_tree,
+                 const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                 const Teuchos::RCP<State>& S,
+                 const Teuchos::RCP<TreeVector>& soln);
   virtual ~Flow_PK() {};
 
   // members required by PK interface
-  virtual void Setup();
-  virtual void Initialize();
+  virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   // other members of this PK.
   // -- initialize simple fields common for both flow models.
-  void UpdateLocalFields_();
+  void UpdateLocalFields_(const Teuchos::Ptr<State>& S);
 
   // --- management of boundary and source terms
   void ProcessBCs();
@@ -168,8 +172,8 @@ class Flow_PK : public FnTimeIntegratorPK {
   Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_, pressure_matrix_eval_;
 
- protected:
-  VerboseObject* vo_;
+ // protected:
+  Teuchos::RCP<VerboseObject> vo_;
 };
 
 }  // namespace Flow

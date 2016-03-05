@@ -71,7 +71,7 @@ TEST(FLOW_3D_RICHARDS) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Richards_PK* RPK = new Richards_PK(plist, "Flow", S, soln);
 
-  RPK->Setup();
+  RPK->Setup(S.ptr());
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -115,7 +115,7 @@ TEST(FLOW_3D_RICHARDS) {
   }
 
   // initialize the Richards process kernel
-  RPK->Initialize();
+  RPK->Initialize(S.ptr());
   S->CheckAllFieldsInitialized();
 
   /* solve the problem */
@@ -126,7 +126,7 @@ TEST(FLOW_3D_RICHARDS) {
   ti_specs.max_itrs = 400;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  RPK->CommitStep(0.0, 1.0);  // dummy times
+  RPK->CommitStep(0.0, 1.0, S);  // dummy times
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");

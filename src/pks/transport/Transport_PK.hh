@@ -30,6 +30,7 @@
 #include "Tensor.hh"
 #include "Units.hh"
 #include "VerboseObject.hh"
+#include "PK_Explicit.hh"
 
 #ifdef ALQUIMIA_ENABLED
 #include "Alquimia_PK.hh"
@@ -57,30 +58,32 @@ namespace Transport {
 
 typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
-class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
- public:
-  Transport_PK(Teuchos::ParameterList& pk_tree,
+  // class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
+  // class Transport_PK : public PK, public Explicit_TI::fnBase<TreeVector> {
+  class Transport_PK : public PK_Explicit<Epetra_Vector> {
+  public:
+    Transport_PK(Teuchos::ParameterList& pk_tree,
                const Teuchos::RCP<Teuchos::ParameterList>& glist,
                const Teuchos::RCP<State>& S,
                const Teuchos::RCP<TreeVector>& soln);
 
-  Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-               Teuchos::RCP<State> S,
-               const std::string& pk_list_name,
-               std::vector<std::string>& component_names);
+    Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                 Teuchos::RCP<State> S,
+                 const std::string& pk_list_name,
+                 std::vector<std::string>& component_names);
 
-  ~Transport_PK();
+    ~Transport_PK();
 
   // members required by PK interface
-  virtual void Setup();
-  virtual void Initialize();
+  virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   virtual double get_dt();
   virtual void set_dt(double dt) {};
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false); 
-  virtual void CommitStep(double t_old, double t_new);
-  virtual void CalculateDiagnostics() {};
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
 
   virtual std::string name() { return passwd_; }
 
@@ -136,7 +139,8 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   void AdvanceSecondOrderUpwindRK2(double dT);
 
   // time integration members
-  void Functional(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
+    void Functional(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
+    //  void Functional(const double t, const Epetra_Vector& component, TreeVector& f_component);
 
   void IdentifyUpwindCells();
 
@@ -262,7 +266,8 @@ class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
 
   // io
   Utils::Units units_;
-  VerboseObject* vo_;
+    //VerboseObject* vo_;
+    Teuchos::RCP<VerboseObject> vo_;
 
   // Forbidden.
   Transport_PK(const Transport_PK&);

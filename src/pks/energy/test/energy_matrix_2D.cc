@@ -78,7 +78,7 @@ TEST(ENERGY_2D_MATRIX) {
   Teuchos::ParameterList pk_tree;
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   EnergyTwoPhase_PK* EPK = new EnergyTwoPhase_PK(pk_tree, plist, S, soln);
-  EPK->Setup();
+  EPK->Setup(S.ptr());
 std::cout << "Passes EPK.Setup()" << std::endl;
   S->Setup();
 std::cout << "Passed S.Setup()" << std::endl;
@@ -86,7 +86,7 @@ std::cout << "Passed S.Setup()" << std::endl;
 std::cout << "Passed S.InitilizeFields()" << std::endl;
   S->InitializeEvaluators();
 std::cout << "Passed S.InitilizeEvaluators()" << std::endl;
-  EPK->Initialize();
+  EPK->Initialize(S.ptr());
 std::cout << "Passed EPK.Initilize()" << std::endl;
   S->WriteDependencyGraph();
   S->CheckAllFieldsInitialized();

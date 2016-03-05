@@ -8,22 +8,22 @@
 
   Author: Ethan Coon
 
-  Implementation for the derived MPCStrong class.  Is both a PK and a Model
+  Implementation for the derived PK_MPCStrong class.  Is both a PK and a Model
   Evalulator, providing needed methods for BDF time integration of the coupled
   system.
 
   Completely automated and generic to any sub PKs, this uses a block diagonal
   preconditioner.
 
-  See additional documentation in the base class src/pks/mpc_pk/MPC_PK.hh
+  See additional documentation in the base class src/pks/mpc_pk/PK_MPC.hh
 */
 
-#include "MPCAdditive.hh"
+#include "PK_MPCAdditive.hh"
 
 namespace Amanzi {
 
 template<>
-RegisteredPKFactory<MPCStrong<ImplicitFnPK> > MPCStrong<ImplicitFnPK>::reg_("additive MPC");
+RegisteredPKFactory<PK_MPCStrong<PK_Implicit> > PK_MPCStrong<PK_Implicit>::reg_("additive MPC");
 
 }  // namespace Amanzi
 

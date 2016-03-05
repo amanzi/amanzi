@@ -259,11 +259,18 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
   flag = false;
 
   MemoryManager mm;
-  DOMNode* node;
+  DOMNode* node = NULL;
   DOMNode* node_good;
 
   std::vector<std::string> tag_names = CharToStrings_(tags.c_str());
   if (tag_names.size() == 0) return node;
+
+  if (tag_names.size() == 1)
+  {
+    // We only need the top-level (hopefully unique) tag.
+    DOMElement* root = doc_->getDocumentElement();
+    return GetChildByName_(root, tag_names[0], flag);
+  }
 
   // get the first node
   DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode(tag_names[0].c_str()));
@@ -386,6 +393,77 @@ DOMElement* InputConverter::GetUniqueChildByAttribute_(
 
 
 /* ******************************************************************
+* Extracts children of the given node with the given name,
+****************************************************************** */
+std::vector<xercesc::DOMNode*> InputConverter::GetChildren_(
+    xercesc::DOMNode* node, const std::string& name, bool& flag, bool exception)
+{
+  flag = false;
+
+  MemoryManager mm;
+  int n(0), m(0);
+  std::vector<DOMNode*> namedChildren;
+
+  DOMNodeList* children = node->getChildNodes();
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* inode = children->item(i);
+    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+
+    char* text = mm.transcode(inode->getNodeName());
+    if (name == text) {
+      namedChildren.push_back(inode);
+      flag = true;
+    }
+  }
+
+  // exception
+  if (!flag and exception) {
+    char* tagname = mm.transcode(node->getNodeName());
+    Errors::Message msg;
+    msg << "Amanzi::InputConverter: node \"" << tagname << "\" must have same elements\n";
+    if (n) msg << "  The first element is \"" << name << "\".\n";
+    msg << "  Please correct and try again.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return namedChildren;
+}
+
+xercesc::DOMElement* InputConverter::GetChildByName_(
+    xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception)
+{
+  flag = false;
+
+  MemoryManager mm;
+  int n(0), m(0);
+  DOMNode* child = NULL;
+
+  DOMNodeList* children = node->getChildNodes();
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* inode = children->item(i);
+    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+
+    char* text = mm.transcode(inode->getNodeName());
+    if (childName == text) {
+      child = inode;
+      flag = true;
+      break;
+    }
+  }
+
+  // exception
+  if (!flag and exception) {
+    Errors::Message msg;
+    char* nodeName = mm.transcode(node->getNodeName());
+    msg << "Amanzi::InputConverter: child node \"" << childName << "\" was not found for node \"" << nodeName << "\".\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return static_cast<DOMElement*>(child);
+
+}
+
+/* ******************************************************************
 * Extracts children and verifies that their have the common tagname.
 * The name is the name of the first element.
 ****************************************************************** */
@@ -437,9 +515,15 @@ double InputConverter::GetAttributeValueD_(
   double val;
   MemoryManager mm;
 
+  Errors::Message msg;
   std::string text, parsed, found_type;
+
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
     text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+    if (text.size() == 0) {
+      msg << "Attribute \"" << attr_name << "\" cannot be empty.\n";
+      Exceptions::amanzi_throw(msg);
+    }
 
     // process constants
     found_type = GetConstantType_(text, parsed);
@@ -450,7 +534,6 @@ double InputConverter::GetAttributeValueD_(
         found_type == TYPE_NOT_CONSTANT) found_type = type;
 
     if (type != found_type) {
-      Errors::Message msg;
       msg << "Usage of constant \"" << text << "\" of type=" << found_type 
           << ". Expect type=" << type << ".\n";
       Exceptions::amanzi_throw(msg);
@@ -545,10 +628,10 @@ std::string InputConverter::GetAttributeValueS_(
 
 
 /* ******************************************************************
-* Extract attribute of type vector.
+* Extract attribute of type vector<double>.
 ****************************************************************** */
 std::vector<double> InputConverter::GetAttributeVector_(
-    DOMElement* elem, const char* attr_name)
+    DOMElement* elem, const char* attr_name, bool exception)
 {
   std::vector<double> val;
   MemoryManager mm;
@@ -556,7 +639,7 @@ std::vector<double> InputConverter::GetAttributeVector_(
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
     char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
     val = MakeCoordinates_(text_content);
-  } else {
+  } else if (exception) {
     char* tagname = mm.transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
   }
@@ -564,6 +647,84 @@ std::vector<double> InputConverter::GetAttributeVector_(
   return val;
 }
 
+/* ******************************************************************
+* Extract attribute of type vector<string>.
+****************************************************************** */
+std::vector<std::string> InputConverter::GetAttributeVectorS_(DOMElement* elem, const char* attr_name, bool exception)
+{
+  std::vector<std::string> val;
+  MemoryManager mm;
+
+  if (elem->hasAttribute(mm.transcode(attr_name))) {
+    char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
+    val = CharToStrings_(text_content);
+  } else if (exception) {
+    char* tagname = mm.transcode(elem->getNodeName());
+    ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
+  }
+
+  return val;
+}
+
+std::string InputConverter::GetChildValueS_(
+    xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception)
+{
+  MemoryManager mm;
+
+  std::string val;
+  flag = false;
+
+  DOMNodeList* children = node->getChildNodes();
+  for (int i = 0; i < children->getLength(); ++i) 
+  {
+    DOMNode* inode = children->item(i);
+    char* tagname = mm.transcode(inode->getNodeName());   
+    if (childName == tagname)
+    {
+      val = mm.transcode(inode->getTextContent());
+      flag = true;
+      break;
+    }
+  }
+
+  if (!flag and exception)
+  {
+    char* nodeName = mm.transcode(node->getNodeName());
+    ThrowErrorMisschild_(nodeName, childName, nodeName);
+  }
+
+  return val;
+}
+
+std::vector<std::string> InputConverter::GetChildVectorS_(
+    xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception)
+{
+  MemoryManager mm;
+
+  std::vector<std::string> val;
+  flag = false;
+
+  DOMNodeList* children = node->getChildNodes();
+  for (int i = 0; i < children->getLength(); ++i) 
+  {
+    DOMNode* inode = children->item(i);
+    char* tagname = mm.transcode(inode->getNodeName());   
+    if (childName == tagname)
+    {
+      val = CharToStrings_(mm.transcode(inode->getTextContent()));
+      flag = true;
+      break;
+    }
+  }
+
+  if (!flag and exception)
+  {
+    char* nodeName = mm.transcode(node->getNodeName());
+    ThrowErrorMisschild_(nodeName, childName, nodeName);
+  }
+
+  return val;
+}
 
 /* ******************************************************************
 * Extract atribute of type std::string.
@@ -673,10 +834,14 @@ std::vector<std::string> InputConverter::CharToStrings_(const char* namelist)
   char* tmp1 = new char[strlen(namelist) + 1];
   strcpy(tmp1, namelist);
 
+  std::vector<std::string> regs;
   char* tmp2;
   tmp2 = strtok(tmp1, ",");
+  if (tmp2 == NULL) {
+    // No commas in the string means that it's a single name.
+    regs.push_back(namelist);
+  }
 
-  std::vector<std::string> regs;
   while (tmp2 != NULL) {
     std::string str(tmp2);
     boost::algorithm::trim(str);
@@ -742,16 +907,17 @@ std::vector<double> InputConverter::MakeCoordinates_(const std::string& array)
   char* tmp2 = strtok(tmp1, "(, ");
 
   while (tmp2 != NULL) {
-    std::string str(tmp2);
+    std::string str(tmp2), parsed_str;
     boost::algorithm::trim(str);
-    coords.push_back(std::strtod(str.c_str(), NULL));
+
+    GetConstantType_(str, parsed_str);
+    coords.push_back(std::strtod(parsed_str.c_str(), NULL));
     tmp2 = strtok(NULL, ",");
   }
 
   delete[] tmp1;
   return coords;
 }
-
 
 /* ******************************************************************
 * Empty
@@ -762,7 +928,6 @@ std::string InputConverter::TrimString_(char* tmp)
   boost::algorithm::trim(str);
   return str;
 }
-
 
 /* *******************************************************************
 * Generate error message when list is empty.
@@ -820,6 +985,23 @@ void InputConverter::ThrowErrorMissattr_(
   msg << "An error occurred during parsing node \"" << section << "\"\n";
   msg << "No " << type << " \"" << missing << "\" found for \"" << name << "\".\n";
   msg << "Please correct and try again \n";
+  Exceptions::amanzi_throw(msg);
+}
+
+/* *******************************************************************
+* Generate unified error message for missing child
+******************************************************************* */
+void InputConverter::ThrowErrorMisschild_(
+    const std::string& section, const std::string& missing, const std::string& name)
+{
+  Errors::Message msg;
+  msg << "Amanzi::InputConverter: an error occurred during parsing node \"" << section << "\"\n";
+  msg << "  No child \"" << missing << "\" found";
+  if (!name.empty()) {
+    msg << " for \"" << name << "\"";
+  }
+  msg << ".\n";
+  msg << "  Please correct and try again \n";
   Exceptions::amanzi_throw(msg);
 }
 

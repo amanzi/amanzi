@@ -60,7 +60,7 @@ struct RSdata
 
   // Algorithm switches for Richard Solver
   bool semi_analytic_J;                      // Explicitly use dPc/ds relationship in computing the Jacobian
-  bool upwind_krel;                          // Upwind Krel based on sign of Darcy forcing
+  std::string rel_perm_method;               // Upwind Krel based on sign of Darcy forcing, or average (harm/arith)
   Real variable_switch_saturation_threshold; // Newton iterate s if this is less than s, otherwise p
 
   int  pressure_maxorder;                    // Polynomial order of boundary condition extrapolation
@@ -99,7 +99,6 @@ struct RSdata
   const Array<Real>& GetGravity();
   const Array<Real>& GetViscosity() const {return viscosity;}
   bool IsSaturated() const {return is_saturated;}
-  bool IsSteady() const {return is_steady;}
   Real time, dt;
   int time_step;
   int start_level, end_level;
@@ -123,7 +122,6 @@ protected:
   Array<Real> density;
   Array<Real> viscosity;
   bool is_saturated;
-  bool is_steady;
 
   const RockManager* rock_manager;
 };

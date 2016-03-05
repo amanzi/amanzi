@@ -140,11 +140,11 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
 
           al = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_l");
           ath = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_th");
-          ath = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_tv");
+          atv = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_tv");
 
           tmp_list.sublist("parameters for Burnett-Frind")
               .set<double>("alphaL", al).set<double>("alphaTH", ath)
-              .set<double>("alphaTH", atv);
+              .set<double>("alphaTV", atv);
 
           transport_permeability_ = true;
         } else if (strcmp(model.c_str(), "lichtner_kelkar_robinson") == 0) {
@@ -157,7 +157,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
 
           tmp_list.sublist("parameters for Lichtner-Kelkar-Robinson")
               .set<double>("alphaLH", alh).set<double>("alphaLV", alv)
-              .set<double>("alphaTH", ath).set<double>("alphaTH", atv);
+              .set<double>("alphaTH", ath).set<double>("alphaTV", atv);
 
           transport_permeability_ = true;
         } 
@@ -376,7 +376,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
     }
 
     // geochemical BCs 
-    node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry", flag);
+    node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry_component", flag);
     if (flag) {
       std::string bctype;
       std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);

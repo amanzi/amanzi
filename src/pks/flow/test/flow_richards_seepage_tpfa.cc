@@ -70,7 +70,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Richards_PK* RPK = new Richards_PK(plist, "Flow", S, soln);
 
-  RPK->Setup();
+  RPK->Setup(S.ptr());
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -108,7 +108,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   }
 
   // create Richards process kernel
-  RPK->Initialize();
+  RPK->Initialize(S.ptr());
   S->CheckAllFieldsInitialized();
 
   // solve the steady-state problem
@@ -119,7 +119,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   ti_specs.max_itrs = 10;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  RPK->CommitStep(0.0, 1.0);  // dummy times for flow
+  RPK->CommitStep(0.0, 1.0, S);  // dummy times for flow
 
   const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
   if (MyPID == 0) {

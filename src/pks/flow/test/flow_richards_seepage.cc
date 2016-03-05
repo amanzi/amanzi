@@ -70,7 +70,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Richards_PK* RPK = new Richards_PK(plist, "Flow", S, soln);
 
-  RPK->Setup();
+  RPK->Setup(S.ptr());
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -110,7 +110,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
   RPK->DeriveFaceValuesFromCellValues(p, lambda); 
 
   /* create Richards process kernel */
-  RPK->Initialize();
+  RPK->Initialize(S.ptr());
   S->CheckAllFieldsInitialized();
 
   /* solve the steady-state problem */
@@ -121,7 +121,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
   ti_specs.max_itrs = 30;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  RPK->CommitStep(0.0, 1.0);  // dummy times for flow
+  RPK->CommitStep(0.0, 1.0, S);  // dummy times for flow
   printf("seepage face total = %12.4f\n", RPK->seepage_mass());
 
   const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");

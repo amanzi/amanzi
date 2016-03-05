@@ -12,6 +12,14 @@ class MFTGrowFill;
 #include <Observation.H>
 #include <EventCoord.H>
 
+struct ExecControl
+{
+  Real start, end, init_dt, max_dt, reduction_factor, increase_factor;
+  int max_cycles;
+  std::string mode, method, label;
+};
+std::ostream& operator<<(std::ostream& os, const ExecControl& ec);
+
 class PMAmr
     : public Amr
 {
@@ -61,7 +69,9 @@ public:
                         Real time, int iter);
 
     Layout& GetLayout() {return layout;}
-    const Array<Real>& TPCStartTimes() const {return tpc_start_times;}
+
+    const ExecControl* GetExecControl (Real time_value) const;
+    const std::vector<ExecControl>& GetExecControls () const {return ecs;}
 
     Real Dt0FromPreviousAdvance() const {return dt0_from_previous_advance;}
     Real Dt0BeforeEventCut() const {return dt0_before_event_cut;}
@@ -97,11 +107,7 @@ protected:
     Array<std::string> vis_cycle_macros, vis_time_macros;
     Array<std::string> chk_cycle_macros, chk_time_macros;
 
-    Array<std::string> tpc_labels;
-    Array<Real> tpc_start_times;
-    Array<Real> tpc_initial_time_steps;
-    Array<Real> tpc_initial_time_step_multipliers;
-    Array<Real> tpc_maximum_time_steps;
+    std::vector<ExecControl> ecs;
 
     static int plot_file_digits;
     static int chk_file_digits;

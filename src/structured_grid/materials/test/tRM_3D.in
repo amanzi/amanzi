@@ -31,7 +31,7 @@ geometry.Soil.type = logical
 geometry.Soil.operation = complement
 geometry.Soil.region = Tank
 
-rock.rock = Soil Concrete
+rock.rocks = Soil Concrete
 
 rock.Soil.regions                      = Soil
 rock.Soil.cpl.type                     = VanGenuchten

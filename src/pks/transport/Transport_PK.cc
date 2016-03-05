@@ -46,8 +46,8 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& glist,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln) :
-    S_(S),
-    soln_(soln)
+  S_(S),
+  soln_(soln)
 {
   std::string pk_name = pk_tree.name();
   const char* result = pk_name.data();
@@ -83,7 +83,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
   Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "Units");
   units_.Init(*units_list);
 
-  vo_ = NULL;
+  vo_ = Teuchos::null;
 }
 
 
@@ -105,7 +105,7 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   linear_solver_list_ = Teuchos::sublist(glist, "Solvers");
   nonlinear_solver_list_ = Teuchos::sublist(glist, "Nonlinear solvers");
 
-  vo_ = NULL;
+  vo_ = Teuchos::null;
 }
 
 
@@ -115,8 +115,8 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 ****************************************************************** */
 Transport_PK::~Transport_PK()
 { 
-  if (vo_ != NULL) {
-    delete vo_;
+  if (vo_ != Teuchos::null) {
+    vo_ = Teuchos::null;
   }
   for (int i = 0; i < bcs.size(); i++) {
     if (bcs[i] != NULL) delete bcs[i]; 
@@ -156,11 +156,11 @@ void Transport_PK::SetupAlquimia(Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem
 /* ******************************************************************
 * Define structure of this PK.
 ****************************************************************** */
-void Transport_PK::Setup()
+void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   passwd_ = "state";  // owner's password
 
-  mesh_ = S_->GetMesh();
+  mesh_ = S->GetMesh();
   dim = mesh_->space_dimension();
 
   // cross-coupling of PKs
@@ -170,22 +170,22 @@ void Transport_PK::Setup()
   std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single porosity");
 
   // require state fields when Flow PK is off
-  if (!S_->HasField("permeability") && abs_perm) {
-    S_->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("permeability") && abs_perm) {
+    S->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim);
   }
-  if (!S_->HasField("darcy_flux")) {
-    S_->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("darcy_flux")) {
+    S->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
   }
-  if (!S_->HasField("saturation_liquid")) {
-    S_->RequireField("saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("saturation_liquid")) {
+    S->RequireField("saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
-  if (!S_->HasField("prev_saturation_liquid")) {
-    S_->RequireField("prev_saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("prev_saturation_liquid")) {
+    S->RequireField("prev_saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->GetField("prev_saturation_liquid", passwd_)->set_io_vis(false);
+    S->GetField("prev_saturation_liquid", passwd_)->set_io_vis(false);
   }
 
   // require state fields when Transport PK is on
@@ -196,20 +196,20 @@ void Transport_PK::Setup()
   }
 
   int ncomponents = component_names_.size();
-  if (!S_->HasField("total_component_concentration")) {
+  if (!S->HasField("total_component_concentration")) {
     std::vector<std::vector<std::string> > subfield_names(1);
     subfield_names[0] = component_names_;
 
-    S_->RequireField("total_component_concentration", passwd_, subfield_names)
+    S->RequireField("total_component_concentration", passwd_, subfield_names)
       ->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
   }
 
   // testing evaluators
-  if (!S_->HasField("porosity")) {
-    S_->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField("porosity")) {
+    S->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireFieldEvaluator("porosity");
+    S->RequireFieldEvaluator("porosity");
   }
 
   // require multiscale fields
@@ -220,11 +220,11 @@ void Transport_PK::Setup()
         msp_list = Teuchos::sublist(tp_list_, "multiscale models", true);
     msp_ = CreateMultiscaleTransportPorosityPartition(mesh_, msp_list);
 
-    if (!S_->HasField("total_component_concentraion_matrix")) {
+    if (!S->HasField("total_component_concentraion_matrix")) {
       std::vector<std::vector<std::string> > subfield_names(1);
       subfield_names[0] = component_names_;
 
-      S_->RequireField("total_component_concentration_matrix", passwd_, subfield_names)
+      S->RequireField("total_component_concentration_matrix", passwd_, subfield_names)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
     }
@@ -236,11 +236,11 @@ void Transport_PK::Setup()
 * Routine processes parameter list. It needs to be called only once
 * on each processor.                                                     
 ****************************************************************** */
-void Transport_PK::Initialize()
+void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // Set initial values for transport variables.
   dt_ = dt_debug_ = t_physics_ = 0.0;
-  double time = S_->time();
+  double time = S->time();
   if (time >= 0.0) t_physics_ = time;
 
   dispersion_preconditioner = "identity";
@@ -253,7 +253,7 @@ void Transport_PK::Initialize()
   // Create verbosity object.
   Teuchos::ParameterList vlist;
   vlist.sublist("VerboseObject") = tp_list_->sublist("VerboseObject");
-  vo_ = new VerboseObject("TransportPK", vlist); 
+  vo_ =  Teuchos::rcp(new VerboseObject("TransportPK", vlist)); 
 
   MyPID = mesh_->get_comm()->MyPID();
 
@@ -261,7 +261,7 @@ void Transport_PK::Initialize()
   InitializeFields_();
 
   // Check input parameters. Due to limited amount of checks, we can do it earlier.
-  Policy(S_.ptr());
+  Policy(S.ptr());
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -276,23 +276,23 @@ void Transport_PK::Initialize()
  
   // state pre-prosessing
   Teuchos::RCP<const CompositeVector> cv;
-  S_->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
-  cv = S_->GetFieldData("darcy_flux");
+  S->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
+  cv = S->GetFieldData("darcy_flux");
   darcy_flux = cv->ViewComponent("face", true);
 
-  cv = S_->GetFieldData("saturation_liquid");
+  cv = S->GetFieldData("saturation_liquid");
   ws = cv->ViewComponent("cell", false);
 
-  cv = S_->GetFieldData("prev_saturation_liquid");
+  cv = S->GetFieldData("prev_saturation_liquid");
   ws_prev = cv->ViewComponent("cell", false);
 
-  cv = S_->GetFieldData("porosity");
+  cv = S->GetFieldData("porosity");
   phi = cv->ViewComponent("cell", false);
 
-  tcc = S_->GetFieldData("total_component_concentration", passwd_);
+  tcc = S->GetFieldData("total_component_concentration", passwd_);
 
   // memory for new components
-  tcc_tmp = Teuchos::rcp(new CompositeVector(*(S_->GetFieldData("total_component_concentration"))));
+  tcc_tmp = Teuchos::rcp(new CompositeVector(*(S->GetFieldData("total_component_concentration"))));
   *tcc_tmp = *tcc;
 
   // upwind 
@@ -334,7 +334,7 @@ void Transport_PK::Initialize()
   for (int i =0; i < srcs.size(); i++) {
     int type = srcs[i]->CollectActionsList();
     if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      PKUtils_CalculatePermeabilityFactorInWell(S_, Kxy);
+      PKUtils_CalculatePermeabilityFactorInWell(S, Kxy);
       break;
     }
   }
@@ -879,10 +879,10 @@ void Transport_PK::AddMultiscalePorosity_(
 /* ******************************************************************* 
 * Copy the advected tcc field to the state.
 ******************************************************************* */
-void Transport_PK::CommitStep(double t_old, double t_new)
+void Transport_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   Teuchos::RCP<CompositeVector> tcc;
-  tcc = S_->GetFieldData("total_component_concentration", passwd_);
+  tcc = S->GetFieldData("total_component_concentration", passwd_);
   *tcc = *tcc_tmp;
 }
 

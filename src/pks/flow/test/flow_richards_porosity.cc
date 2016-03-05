@@ -69,7 +69,7 @@ TEST(FLOW_POROSITY_MODELS) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(plist, "Flow", S, soln));
 
-  RPK->Setup();
+  RPK->Setup(S.ptr());
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -114,7 +114,7 @@ TEST(FLOW_POROSITY_MODELS) {
   }
 
   // initialize the Richards process kernel
-  RPK->Initialize();
+  RPK->Initialize(S.ptr());
   S->CheckAllFieldsInitialized();
 
   // solve the problem 
@@ -125,7 +125,7 @@ TEST(FLOW_POROSITY_MODELS) {
   ti_specs.max_itrs = 400;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  RPK->CommitStep(0.0, 1.0);  // dummy times
+  RPK->CommitStep(0.0, 1.0, S);  // dummy times
 
   // output
   double pmin, pmax;

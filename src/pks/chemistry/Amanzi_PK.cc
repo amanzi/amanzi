@@ -107,10 +107,10 @@ Amanzi_PK::~Amanzi_PK() {
 /* ******************************************************************
 * Register fields and evaluators with the State
 ******************************************************************* */
-void Amanzi_PK::Setup()
+void Amanzi_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   // use common registration steps
-  Chemistry_PK::Setup();
+  Chemistry_PK::Setup(S);
 
   // no additional steps to be done.
 }
@@ -140,13 +140,13 @@ void Amanzi_PK::AllocateAdditionalChemistryStorage_(
 /* *******************************************************************
 * Initialization
 ******************************************************************* */
-void Amanzi_PK::Initialize()
+void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // initialization using base class
-  Chemistry_PK::Initialize();
+  Chemistry_PK::Initialize(S);
 
   Teuchos::RCP<Epetra_MultiVector> tcc = 
-      S_->GetFieldData("total_component_concentration", passwd_)->ViewComponent("cell", true);
+      S->GetFieldData("total_component_concentration", passwd_)->ViewComponent("cell", true);
 
   XMLParameters();
 
@@ -212,7 +212,7 @@ void Amanzi_PK::Initialize()
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << vo_->color("green") << "Initalization of PK was successful, T=" 
-        << S_->time() << vo_->reset() << std::endl << std::endl;
+        << S->time() << vo_->reset() << std::endl << std::endl;
   }
 }
 
@@ -676,7 +676,7 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 * that it has accepted the state update, thus, the PK should update
 * possible auxilary state variables here
 ******************************************************************* */
-void Amanzi_PK::CommitStep(double t_old, double t_new)
+void Amanzi_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   saved_time_ = t_new;
 

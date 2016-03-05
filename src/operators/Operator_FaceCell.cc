@@ -204,6 +204,7 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   ASSERT(!ierr);
 }
 
+
 /* ******************************************************************
 * Visit methods for symbolic assemble: Face
 ****************************************************************** */

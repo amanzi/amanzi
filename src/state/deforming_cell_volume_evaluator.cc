@@ -65,7 +65,7 @@ DeformingCellVolumeEvaluator::Clone() const {
 void DeformingCellVolumeEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // Require the field
   Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_);
-
+ 
   if (!my_fac->Owned()) {
     // requirements not yet set, claim ownership and set valid component
     S->RequireField(my_key_, my_key_)->SetMesh(S->GetMesh(my_mesh_))
@@ -105,9 +105,10 @@ void DeformingCellVolumeEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 void DeformingCellVolumeEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-  
-	//Errors::Message message("Deforming cell volume's derivatives are not implemented");
-	// Exceptions::amanzi_throw(message);
+
+  result->PutScalar(0.);
+  // Errors::Message message("Deforming cell volume's derivatives are not implemented");
+  // Exceptions::amanzi_throw(message);
 }
 
 

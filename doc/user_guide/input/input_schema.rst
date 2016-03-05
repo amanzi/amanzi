@@ -11,7 +11,7 @@ The present document describes how to specify the data required to execute Amanz
 
 The open-source, platform independent Akuna_ user environment can generate *Amanzi* models and generate corresponding valid, human-readable XML input files that can then be executed by *Amanzi*.  Example input files are available in the Amanzi source repository.
 
-XML Schema 2.2.1
+XML Schema 2.3.0
 ++++++++++++++++
 
 Amanzi solves a set of parameterized models for multiphase flow in porous media. An Amanzi simulation is specified by providing:
@@ -43,7 +43,7 @@ For an unstructured simulations the root tag would looks as the following.
 
 .. code-block:: xml
 
-    <amanzi_input version="2.2.0" type="unstructured">
+    <amanzi_input version="2.3.0" type="unstructured">
     </amanzi_input>
 
 Model Description
@@ -87,8 +87,6 @@ The units block specifies the default units to be used through out the input fil
 | conc_unit      | string     | ``molar, mol/m^3`` |
 +----------------+------------+--------------------+
 
-Note, the concentration unit of mol/m^3 is currently only available for unstructured.
-
 Here is an overall example for the model description element.
 
 .. code-block:: xml
@@ -130,22 +128,22 @@ The user may specify as many constants as desired.  The available constants fall
 
 Each element has the following format:
 
-+-------------------------+-----------------+----------------+------------------------------------+
-| Constants Elements      | Attribute Names | Attribute Type | Attribute Values                   |
-+=========================+=================+================+====================================+
-| constant                | | name          | | string       | | (user specified name)            |
-|                         | | value         | | string       | | (value of constant)              |
-|                         | | type          | | string       | | ``none, time, area_mass_flux``   |
-+-------------------------+-----------------+----------------+------------------------------------+
-| time_constant           | | name          | | string       | | (user specified name)            |
-|                         | | value         | | time(,char)  | | (time value with optional units) |
-+-------------------------+-----------------+----------------+------------------------------------+
-| numerical_constant      | | name          | | string       | | (user specified name)            |
-|                         | | value         | | exponential  | | (numerical constant value)       |
-+-------------------------+-----------------+----------------+------------------------------------+
-| area_mass_flux_constant | | name          | | string       | | (user specified name)            |
-|                         | | value         | | exponential  | | (flux value)                     |
-+-------------------------+-----------------+----------------+------------------------------------+
++-------------------------+-----------------+----------------+----------------------------------+
+| Constants Elements      | Attribute Names | Attribute Type | Attribute Values                 |
++=========================+=================+================+==================================+
+| constant                | name            | string         | (user specified name)            |
+|                         | value           | string         | (value of constant)              |
+|                         | type            | string         | ``none, time, area_mass_flux``   |
++-------------------------+-----------------+----------------+----------------------------------+
+| time_constant           | name            | string         | (user specified name)            |
+|                         | value           | time(,char)    | (time value with optional units) |
++-------------------------+-----------------+----------------+----------------------------------+
+| numerical_constant      | name            | string         | (user specified name)            |
+|                         | value           | exponential    | (numerical constant value)       |
++-------------------------+-----------------+----------------+----------------------------------+
+| area_mass_flux_constant | name            | string         | (user specified name)            |
+|                         | value           | exponential    | (flux value)                     |
++-------------------------+-----------------+----------------+----------------------------------+
 
 Here is an overall structure for the constants element.
 
@@ -163,21 +161,21 @@ ______
 
 The ``macros`` section defines time and cycle macros.  These specify a series of times or cycles for writing out visualization, checkpoint, walkabout, or observation files.  Each macro type is described in the following table.  The macro can contain a list of specific time values at which to perform an action or a time/cycle interval at which to perform an action.
 
-+--------------------------+-----------------+----------------+---------------------+------------------------------------------------+
-| Macros Elements          | Attribute Names | Attribute Type | Sub-Elements        | Sub-Element Type/Value                         |
-+==========================+=================+================+=====================+================================================+
-| time_macro (time series) | name            | string         | time                | time(,unit) / value of time with optional unit |
-+--------------------------+-----------------+----------------+---------------------+------------------------------------------------+
-| time_macro (interval)    | name            | string         | | start             | | time(,unit) / value of start time            |
-|                          |                 |                | | timestep_interval | | time(,unit) / time interval between actions  |
-|                          |                 |                | | stop              | | time(,unit) / final time value               |
-|                          |                 |                |                     | | ( -1 specifies final time )                  | 
-+--------------------------+-----------------+----------------+---------------------+------------------------------------------------+
-| cycle_macro (interval)   | name            | string         | | start             | | integer / cycle number to start action       |
-|                          |                 |                | | timestep_interval | | integer / number of cycles between actions   |
-|                          |                 |                | | stop              | | integer / cycle number to stop action        | 
-|                          |                 |                | |                   | | ( -1 specifies final step )                  | 
-+--------------------------+-----------------+----------------+---------------------+------------------------------------------------+
++--------------------------+-----------------+----------------+-------------------+------------------------------------------------+
+| Macros Elements          | Attribute Names | Attribute Type | Sub-Elements      | Sub-Element Type/Value                         |
++==========================+=================+================+===================+================================================+
+| time_macro (time series) | name            | string         | time              | time(,unit) / value of time with optional unit |
++--------------------------+-----------------+----------------+-------------------+------------------------------------------------+
+| time_macro (interval)    | name            | string         | start             | time(,unit) / value of start time              |
+|                          |                 |                | timestep_interval | time(,unit) / time interval between actions    |
+|                          |                 |                | stop              | time(,unit) / final time value                 |
+|                          |                 |                |                   | ( -1 specifies final time )                    | 
++--------------------------+-----------------+----------------+-------------------+------------------------------------------------+
+| cycle_macro (interval)   | name            | string         | start             | integer / cycle number to start action         |
+|                          |                 |                | timestep_interval | integer / number of cycles between actions     |
+|                          |                 |                | stop              | integer / cycle number to stop action          | 
+|                          |                 |                |                   | ( -1 specifies final step )                    | 
++--------------------------+-----------------+----------------+-------------------+------------------------------------------------+
 
 
 Here are examples of the macros:
@@ -201,27 +199,27 @@ Here is an overall example for the ``definition`` element.
 
 .. code-block:: xml
 
-    <definitions>
-      <constants>
-        <constant name="zero" type="none" value="0.000"/>
-        <constant name="start" type="time" value="1956.0,y"/>
-	<constant name="future_recharge" type="area_mass_flux" value="1.48666E-6"/>
-	<time_constant name="start_time" value="1956.0,y"/>
-	<numerical_constant name="zero" value="0.000"/>
-      </constants>
-      <macros>
-	<time_macro name="Macro 1">
-	  <time>6.17266656E10</time>
-	  <time>6.3372710016E10</time>
-	  <time>6.33834396E10</time>
-	</time_macro>
-	<cycle_macro name = "Every_1000_timesteps">
-	  <start>0</start>
-	  <timestep_interval>1000</timestep_interval>
-	  <stop>-1 </stop>
-	</cycle_macro>
-      </macros>
-    </definitions>
+   <definitions>
+	<constants>
+		<constant name="zero" type="none" value="0.000"/>
+		<constant name="start" type="time" value="1956.0,y"/>
+		<constant name="future_recharge" type="area_mass_flux" value="1.48666E-6"/>
+		<time_constant name="start_time" value="1956.0,y"/>
+		<numerical_constant name="zero" value="0.000"/>
+	</constants>
+	<macros>
+		<time_macro name="Macro 1">
+			<time>6.17266656E10</time>
+			<time>6.3372710016E10</time>
+			<time>6.33834396E10</time>
+		</time_macro>
+	  	<cycle_macro name = "Every_1000_timesteps">
+			<start>0</start>
+			<timestep_interval>1000</timestep_interval>
+			<stop>-1 </stop>
+		</cycle_macro>
+	</macros>
+   </definitions>
 
 
 Execution Control
@@ -239,6 +237,8 @@ The ``execution_controls`` element has the following subelements:
 | comments                    | string       | user specified comments                                                  |
 +-----------------------------+--------------+--------------------------------------------------------------------------+
 | verbosity                   | string       | verbosity level ``extreme, high, medium, low, none``                     |
++-----------------------------+--------------+--------------------------------------------------------------------------+
+| restart                     | string       | name of Amanzi checkpoint file to be used for restart                    |
 +-----------------------------+--------------+--------------------------------------------------------------------------+
 | execution_control_defaults  | see below    | default values to be used if not specified in execution_control elements |
 +-----------------------------+--------------+--------------------------------------------------------------------------+
@@ -263,7 +263,7 @@ The ``execution_control_defaults`` element has the following attributes.
 +------------------+----------------+----------------------------------+
 | mode             | string         | ``steady, transient``            |
 +------------------+----------------+----------------------------------+
-| method           | string         | ``bdf1``                         |
+| method           | string         | ``bdf1, picard``                 |
 +------------------+----------------+----------------------------------+
 
 Execution_control
@@ -284,9 +284,7 @@ The ``execution_control`` element has the following attributes.
 +------------------+----------------+----------------------------------+
 | mode             | string         | ``steady, transient``            |
 +------------------+----------------+----------------------------------+
-| method           | string         | ``bdf1``                         |
-+------------------+----------------+----------------------------------+
-| max_cycles       | integer        | max number of cycles to use      |
+| method           | string         | ``bdf1, picard``                 |
 +------------------+----------------+----------------------------------+
 
 The ``execution_control`` element has the following attributes. 
@@ -296,13 +294,11 @@ The ``execution_control`` element has the following attributes.
 +------------------+----------------+-----------------------------------------------------+
 | Attribute Names  | Attribute Type | Attribute Values                                    |
 +==================+================+=====================================================+
-| restart          | string         | name of restart file (if restarting)                |
-+------------------+----------------+-----------------------------------------------------+
 | start            | time           | time value(,unit) (start time for this time period) |
 +------------------+----------------+-----------------------------------------------------+
 | end              | time           | time value(,unit) (stop time for this time period)  |
 +------------------+----------------+-----------------------------------------------------+
-| max_cycles       | integer        | max number of cycles to use                         |
+| max_cycles       | integer        | max cycles to use for structured                    |
 +------------------+----------------+-----------------------------------------------------+
 | init_dt          | time           | time value(,unit)                                   |
 +------------------+----------------+-----------------------------------------------------+
@@ -314,16 +310,16 @@ The ``execution_control`` element has the following attributes.
 +------------------+----------------+-----------------------------------------------------+
 | mode             | string         | ``steady, transient``                               |
 +------------------+----------------+-----------------------------------------------------+
-| method           | string         | ``bdf1``                                            |
+| method           | string         | ``bdf1, picard``                                    |
 +------------------+----------------+-----------------------------------------------------+
 
 Each ``execution_control`` is required to define a ``start`` time.  The final control period must define an ``end`` time.  It is assumed that the start time of the next control period is the end time of the previous period.  Therefore, it is not required that each ``execution_control`` element have an ``end`` time defined.
 
-Under the structure algorithm, the attribute ``max_cycles`` is only valid for transient and transient with static flow execution modes.
+The attribute ``max_cycles`` is only valid for transient and transient with static flow execution modes.
 
-The ``execution_control`` section also provides the elements ``comments`` and ``verbosity``.  Users may provide any text within the ``comment`` element to annotate this section.  ``verbosity`` takes the attribute level= ``extreme | high | medium | low | none``.  This triggers increasing levels of reporting from inside Amanzi.  `"extreme`" is recommended for developers and debugging.  For users wishing to monitor solver performance and convergence more closely or debug input files, `"high`" is recommended.
+The ``execution_control`` section also provides the elements ``comments`` and ``verbosity``.  Users may provide any text within the ``comment`` element to annotate this section.  ``verbosity`` takes the attribute level=`` extreme | high | medium | low | none``.  This triggers increasing levels of reporting from inside Amanzi.  For debugging purposes use the level extreme.
 
-Restarting a simulation is available using the ``restart`` attribute.  The value given for the ``restart`` attribute is the name of the Amanzi checkpoint file to be read in and initialized from.
+Restarting a simulation is available using the ``restart`` element.  The text given for the ``restart`` element is the name of the Amanzi checkpoint file to be read in and initialized from.
 
 Here is an overall example for the ``execution_control`` element.
 
@@ -369,9 +365,11 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
     <unstr_transport_controls>
       <algorithm> explicit first-order(default) | explicit second-order | implicit upwind </algorithm>
       <sub_cycling> off(default) | on </sub_cycling>
+      <cfl> exp </cfl>
     </unstr_transport_controls>
 
     <unstr_steady-state_controls>
+      <comments>Comment text here</comments>
       <min_iterations> Integer </min_iterations>
       <limit_iterations> Integer </limit_iterations>
       <max_iterations> Integer </max_iterations>
@@ -397,23 +395,27 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
     </unstr_steady-state_controls>
 
     <unstr_transient_controls>
-      <min_iterations> Integer </min_iterations>
-      <max_iterations> Integer </max_iterations>
-      <limit_iterations> Integer </limit_iterations>
-      <nonlinear_tolerance> Exponential </nonlinear_tolerance>
-      <nonlinear_iteration_damping_factor> Exponential </nonlinear_iteration_damping_factor>
-      <max_preconditioner_lag_iterations> Integer </max_preconditioner_lag_iterations>
-      <max_divergent_iterations> Integer </max_divergent_iterations>
-      <nonlinear_iteration_divergence_factor> Exponential </nonlinear_iteration_divergence_factor>
-      <restart_tolerance_factor> Exponential </restart_tolerance_factor>
-      <restart_tolerance_relaxation_factor> Exponential </restart_tolerance_relaxation_factor>
-      <initialize_with_darcy> true | false </initialize_with_darcy>
+      <comments>Comment text here</comments>
+      <bdf1_integration_method> 
+        <min_iterations> Integer </min_iterations>
+        <max_iterations> Integer </max_iterations>
+        <limit_iterations> Integer </limit_iterations>
+        <nonlinear_tolerance> Exponential </nonlinear_tolerance>
+        <nonlinear_iteration_damping_factor> Exponential </nonlinear_iteration_damping_factor>
+        <max_preconditioner_lag_iterations> Integer </max_preconditioner_lag_iterations>
+        <max_divergent_iterations> Integer </max_divergent_iterations>
+        <nonlinear_iteration_divergence_factor> Exponential </nonlinear_iteration_divergence_factor>
+        <restart_tolerance_factor> Exponential </restart_tolerance_factor>
+        <restart_tolerance_relaxation_factor> Exponential </restart_tolerance_relaxation_factor>
+        <initialize_with_darcy> true | false </initialize_with_darcy>
+      <bdf1_integration_method> 
       <preconditioner> trilinos_ml | hypre_amg | block_ilu </preconditioner>
       <initialize_with_darcy>true | false</initialize_with_darcy>
       <nonlinear_iteration_initial_guess_extrapolation_order>int</nonlinear_iteration_initial_guess_extrapolation_order>
     </unstr_transient_controls>
 
     <unstr_linear_solver>
+      <comments>Comment text here</comments>
       <method> gmres </method>
       <max_iterations> Integer </max_iterations>
       <tolerance> Exponential </tolerance>
@@ -423,20 +425,8 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
     <unstr_nonlinear_solver name="nka | newton | inexact newton" />
 
     <unstr_chemistry_controls>
-      <process_model> implicit operator split | none </process_model>
-      <activity_model> unit | debye-huckel </activity_model>
-      <maximum_newton_iterations> Integer </maximum_newton_iterations>
-      <tolerance> Exponential </tolerance>
-      <auxiliary_data> pH </auxiliary_data>
-      <!-- OR -->
-      <min_time_step> Exponential </min_time_step>
-      <max_time_step> Exponential </max_time_step>
-      <initial_time_step> Exponential </initial_time_step>
-      <time_step_control_method> fixed | simple </time_step_control_method>
-      <time_step_cut_threshold> Integer </time_step_cut_threshold> <!-- use only if method = simple -->
-      <time_step_cut_factor> Exponential </time_step_cut_factor> <!-- use only if method = simple -->
-      <time_step_increase_threshold> Integer </time_step_increase_threshold> <!-- use only if method = simple -->
-      <time_step_increase_factor> Exponential </time_step_increase_factor> <!-- use only if method = simple -->
+      <chem_tolerance> Exponential </chem_tolerance>
+      <chem_max_newton_iterations> Integer </chem_max_newton_iterations>
     </unstr_chemistry_controls>
 
     <unstr_preconditioners>
@@ -472,14 +462,18 @@ Here is an overall example for the ``unstructured_controls`` element.
 		<comments>Numerical controls comments here</comments>
 
 		<unstr_steady-state_controls>
+		        <comments>Note that this section contained data on timesteps, which was moved into the execution control section.</comments>
           		<min_iterations>10</min_iterations>
 		      	<max_iterations>15</max_iterations>
           		<max_preconditioner_lag_iterations>30</max_preconditioner_lag_iterations>
           		<nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
 		</unstr_steady-state_controls>
 		<unstr_transient_controls>
+			<comments>Proposed comments section.</comments>
+			<bdf1_integration_method min_iterations="10" max_iterations="15" max_preconditioner_lag_iterations="5" />
 		</unstr_transient_controls>
 		<unstr_linear_solver>
+			<comments>Proposed comment section.</comments>
 			<method>gmres</method>
 			<max_iterations>20</max_iterations>
 			<tolerance>1.0e-18</tolerance>
@@ -542,13 +536,13 @@ The ``structured_controls`` sections is divided in the subsections: ``str_steady
 
     <str_transient_controls>
       <amr_levels> Integer </amr_levels>
-      <refinement_ratio>List of Integers<!-- amr_levels-1 number of integers should be listed-->
+      <refinement_ratio>Integer Integer</refinement_ratio> <!-- amr_levels-1 number of integers should be listed-->
       <do_amr_cubcycling> true | false </do_amr_cubcycling>
-      <regrid_interval>List of Integers</regrid_interval> <!-- amr_levels number of integers should be listed-->
-      <blocking_factor>List of Integers</blocking_factor> <!-- amr_levels number of integers should be listed-->
-      <number_error_buffer_cells>List of Integers</number_error_buffer_cells> <!-- amr_levels-1 number of integers should be listed-->
-      <max_grid_size>List of Integers</max_grid_size> <!-- amr_levels number of integers should be listed-->
-      <refinement_indicator name="string"> 
+      <regrid_interval>Integer Integer</regrid_interval> <!-- amr_levels number of integers should be listed-->
+      <blocking_factor>Integer Integer</blocking_factor> <!-- amr_levels number of integers should be listed-->
+      <number_error_buffer_cells>Integer Integer</number_error_buffer_cells> <!-- amr_levels-1 number of integers should be listed-->
+      <max_grid_size>Integer Integer</max_grid_size> <!-- amr_levels number of integers should be listed-->
+      <refinement_indicators> 
         <field_name> String </field_name>
         <regions> String </regions>
         <max_refinement_level> Integer </max_refinement_level>
@@ -560,7 +554,7 @@ The ``structured_controls`` sections is divided in the subsections: ``str_steady
         <value_less> Exponential </value_less>
         <adjacent_difference_greater> Exponential </adjacent_difference_greater>
         <inside_region> true | false </inside_region>
-      </refinement_indicator>
+      </refinement_indicators>
     </str_transient_controls>
 
     <max_n_subcycle_transport> Integer </max_n_subcycle_transport>
@@ -625,7 +619,7 @@ The unstructured mode of Amanzi can utilize different mesh frameworks.  Therefor
 
 The ``mesh`` section takes a ``dimension`` element which indicates if the mesh is 2D or 3D. A 2D mesh can be given in 3D space with a third coordinate of 0. If a 2D mesh is specified this impacts other aspects of the input file.  It is up to the user to ensure consistency within the input file.  Other effected parts of the input file include region definitions and initial conditions which use coordinates, the material property permeability which must be specified using the correct subset of x, y, and z coordinates, and the initial condition velocity which also requires the correct subset of x, y, and z coordinates.
 
-The unstructured mode of Amanzi can read meshes in the Exodus II format.  The ``read`` element contains the subelements ``file`` and ``format`` for specifying the mesh file format (currently only Exodus II) and the mesh file name (relative path allowed).  Any regions or attributes specified in the mesh file will also be read.  These names of the regions and attributes can be utilized in appropriate sections of the input file.
+The unstructured mode of Amanzi can read meshes in the Exodus II format.  The ``read`` element contains the subelements ``file``, ``format``, and ``verify`` for specifying the mesh file format (currently only Exodus II) and the mesh file name (relative path allowed).  Any regions or attributes specified in the mesh file will also be read.  These names of the regions and attributes can be utilized in appropriate sections of the input file.  The subelement ``verify`` turns on or off checks performed on the mesh when it is read it.  The mesh verification takes time and is only recommended for debugging meshes on first use.
 
 Finally, as in other sections, a ``comments`` element is provide to include any comments or documentation the user wishes.
 
@@ -639,6 +633,7 @@ Finally, an example of reading an unstructured mesh from a file is given below.
     <read>
       <file>dvz.exo</file>
       <format>exodus ii</format>
+      <verify>true</verify>
     </read>
 
   </mesh>
@@ -650,11 +645,11 @@ Regions are geometrical constructs used in Amanzi to define subsets of the compu
 
 Amanzi automatically defines the special region labeled "All", which is the entire simulation domain. Under the "Structured" option, Amanzi also automatically defines regions for the coordinate-aligned planes that bound the domain, using the following labels: "XLOBC", "XHIBC", "YLOBC", "YHIBC", "ZLOBC", "ZHIBC"
 
-The ``regions`` block is required.  Within the region block no regions are required to be defined.  The optional elements valid for both structured and unstructured include ``region``, ``box``, ``point``, and ``plane``.  As in other sections there is also an options ``comments`` element.
+The ``regions`` block is required.  Within the region block no regions are required to be defined.  The optional elements valid for both structured and unstructured include ``region``, ``box``, ``point``, ``plane``, and ``logical``.  As in other sections there is also an options ``comments`` element.
 
 The elements ``box``, ``point``, and ``plane`` allow for in-line description of regions.  The ``region`` element uses a subelement to either define a ``box`` or ``plane`` region or specify a region file.  Below are further descriptions of these elements.
 
-Additional regions valid only for unstructured are ``polygonal_surface`` and ``logical``.  Additional regions valid only for structured include ``polygon`` and ``ellipse`` in 2D and ``rotated_``polygon`` and ``swept_polygon`` in 3D.
+Additional regions valid only for unstructured are ``polygonal_surface``.  Additional regions valid only for structured include ``polygon`` and ``ellipse`` in 2D and ``rotated_``polygon`` and ``swept_polygon`` in 3D.
 
 Each region definition requires a ``name`` attribute.  These names must be unique to avoid confusion when other sections refer to the regions.
 
@@ -712,6 +707,15 @@ A color function region defines a region based on a specified integer color in a
       <region_file label="integer label" name="filename" type="color" format="exodus ii"  entity=["cell"|"face"]/>
   </region>
 
+Logical
+_______
+
+Logical regions are compound regions formed from other primitive type regions using boolean operations. Supported operators are union, intersection, subtraction and complement.  This region type is only valid for the unstructured algorithm.
+
+
+.. code-block:: xml
+
+    <logical  name="logical name" operation = "union | intersection | subtraction | complement" region_list = "region1, region2, region3"/>
 
 Polygonal_Surface (unstructured only)
 _____________________________________
@@ -721,22 +725,12 @@ A polygonal_surface region is used to define a bounded planar region and is spec
 .. code-block:: xml
 
     <polygonal_surface name="polygon name" num_points="3" tolerance="optional exp">
-      <point> X, Y, Z </point>
-      <point> X, Y, Z </point>
-      <point> X, Y, Z </point>
+      <point> (X, Y, Z) </point>
+      <point> (X, Y, Z) </point>
+      <point> (X, Y, Z) </point>
     </polygonal_surface>
 
 The attribute ``tolerance`` is optional.  This value prescribes a tolerance for determining the cell face centroids that lie on the defined plane.
-
-Logical (unstructured only)
-___________________________
-
-Logical regions are compound regions formed from other primitive type regions using boolean operations. Supported operators are union, intersection, subtraction and complement.  This region type is only valid for the unstructured algorithm.
-
-
-.. code-block:: xml
-
-    <logical  name="logical name" operation = "union | intersection | subtraction | complement" region_list = "region1, region2, region3"/>
 
 Polygon (structured 2D only)
 ____________________________
@@ -746,9 +740,9 @@ A polygon region is used to define a bounded planar region and is specified by t
 .. code-block:: xml
 
     <polygon name="polygon name" num_points="3">
-      <point> X, Y </point>
-      <point> X, Y </point>
-      <point> X, Y </point>
+      <point> (X, Y) </point>
+      <point> (X, Y) </point>
+      <point> (X, Y) </point>
     </polygon>
 
 Ellipse (structured 2D only)
@@ -759,8 +753,8 @@ An ellipse region is used to define a bounded planar region and is specified by 
 .. code-block:: xml
 
     <ellipse name="polygon name" num_points="3">
-      <center> X, Y </center>
-      <radius> radiusX, radiusY </radius>
+      <center> (X, Y) </center>
+      <radius> (radiusX, radiusY) </radius>
     </ellipse>
 
 Rotated Polygon (structured 3D only)
@@ -771,12 +765,12 @@ A rotated_polygon region is defined by a list of points defining the polygon, th
 .. code-block:: xml
 
     <rotated_polygon name="rotated_polygon name">
-      <vertex> X, Y, Z </vertex>
-      <vertex> X, Y, Z </vertex>
-      <vertex> X, Y, Z </vertex>
-      <xyz_plane> XY | YZ | XZ </xyz_plane>
-      <axis> X | Y | Z </axis>
-      <reference_point> X, Y </reference_point>
+      <vertex> (X, Y, Z) </vertex>
+      <vertex> (X, Y, Z) </vertex>
+      <vertex> (X, Y, Z) </vertex>
+      <xyz_plane> (XY | YZ | XZ) </xyz_plane>
+      <axis> (X | Y | Z) </axis>
+      <reference_point> (X, Y) </reference_point>
     </rotated_polygon>
 
 Swept Polygon (structured 3D only)
@@ -787,10 +781,10 @@ A swept_polygon region is defined by a list of points defining the polygon, the 
 .. code-block:: xml
 
     <swept_polygon name="swept_polygon name">
-      <vertex> X, Y, Z </vertex>
-      <vertex> X, Y, Z </vertex>
-      <vertex> X, Y, Z </vertex>
-      <xyz_plane> XY | YZ | XZ </xyz_plane>
+      <vertex> (X, Y, Z) </vertex>
+      <vertex> (X, Y, Z) </vertex>
+      <vertex> (X, Y, Z) </vertex>
+      <xyz_plane> (XY | YZ | XZ) </xyz_plane>
       <extent_min> exponential </extent_min>
       <extent_max> exponential </extent_max>
     </swept_polygon>
@@ -798,13 +792,31 @@ A swept_polygon region is defined by a list of points defining the polygon, the 
 Geochemistry
 ------------
 
-The ``geochemistry`` section allow for chemistry engine inputs to be defined as well as constraints.  
+The ``geochemistry`` section allows for geochemical constraints to be named and defined.  These named constraints are referred to in the ``initial_conditions``, ``boundary_conditions``, and ``sources`` sections.
 
-External chemistry engines may provide additional screen output.  Therefore, a chemistry specific verbosity is specified here using the ``verbosity`` element.  Available options in `"silent, terse, verbose, warnings, and errors`".
+Note, at this time the geochemistry constraints must be named and defined in the external chemistry engine input file.  This chemistry input file must be provided by the user.  The capability to create the chemistry input file based on information provided within the XML input file is currently under development.
 
-A capability to generate additional engine specific input blocks is currently under development.  Currently, the user must provide any additional engine specific files.  This includes the bgd file for the Amanzi native chemistry engine or the PFLOTRAN input blocks (\*.in) and database file (\*.dat).  The files are specified using the appropriate block ``amanzi_chemistry`` or ``pflotran_chemistry``.
+The ``geochemistry`` section has the subelements ``comments``, ``verbosity``, and an unbounded number of ``constraint`` elements.  The ``verbosity`` element specifies the verbosity level to be used by the chemistry engine.  The current options are: silent, terse, verbose, warnings, and errors.  
 
-The ``geochemistry`` section also provides a ``constraints`` block.  This block accepts an unbounded number of subelements ``constraint`` to define individual geochemical constraints to be referenced in other areas of the input file.  This section is utilized by the PFLOTRAN chemistry engine.  Currently, only the name of the constraint needs to be specified using the attribute ``name``.  The name should correspond to a constraint defined in the PFLOTRAN input file.
+Currently, each named constraint must correspond to a constraint with matching name in the external chemistry engine input file.  With the XML input file, the ``constraint`` element takes an attribute ``name``.  This name must match the name of a constraint within the chemistry input file.  In addition, the use may include the constraint information as subelements to the ``constraint`` element for information purposes.  The ``constraint`` element accepts three version of a ``primary`` subelement.  The ``primary`` element describes the constraint on a primary specie, mineral, or gas.  
+
+For each type of primary, the ``primary`` element takes the attributes ``name``, ``type``, and ``value``.  The ``name`` should match a primary listed in the ``phases`` section.  The  ``type`` can be: free_ino, pH, total, mineral, gas, total+sorbed, or charge.  Note, for a non-reacting primary (i.e. tracer or solute), only the type total is valid.  If the type selected is mineral, an additional attribute ``mineral`` giving the mineral name is expected.   If the type selected is gas, an additional attribute ``gas`` giving the gas name is expected.  Again, the names given should match names specified in the ``phases`` section.
+
+.. code-block:: xml
+
+    <geochemistry>
+      <verbosity>silent | terse | verbose | warnings | errors</verbosity>
+
+      <constraints> <!-- REQUIRED -->
+        <constraint name="string"> <!-- REQUIRED -->
+          <primary name="primary_name_string"     initial_guess="exp"   type="free_ion | pH | total | total+sorbed | charge"/>
+          <primary name="nonreactive_primary"     initial_guess="exp"   type="total"/>
+          <primary name="primary_name_string"     initial_guess="exp"   type="mineral" mineral="mineral_name"/>
+          <primary name="primary_name_string"     initial_guess="exp"   type="gas" gas = "gas_name"/>
+          <mineral name="mineral_name_string"     volume_fraction="exp" surface_area ="exp"/>
+        </constraint>
+      </constraints>
+    </geochemistry>
 
 Materials
 ---------
@@ -832,21 +844,21 @@ This element collects a series of mechanical properties as subelements.  As ment
 For ``dispersion_tensor`` several models are available.  The model is specified using the ``type`` attribute and additional attributes are used to specify the properties of the given model.  The available dispersion models are described in the following table.
 
 
-+--------------------------+-----------------+---------------------+
-| Dispersion Model         | Attribute Names | Attribute Values    |
-+==========================+=================+=====================+
-| uniform_isotropic        | | alpha_l       | | Exponential value |
-|                          | | alpha_t       | | Exponential value |
-+--------------------------+-----------------+---------------------+
-| burnett_frind            | | alpha_l       | | Exponential value |
-|                          | | alpha_th      | | Exponential value |
-|                          | | alpha_tv      | | Exponential value |
-+--------------------------+-----------------+---------------------+
-| lichtner_kelkar_robinson | | alpha_lh      | | Exponential value |
-|                          | | alpha_tv      | | Exponential value |
-|                          | | alpha_th      | | Exponential value |
-|                          | | alpha_tv      | | Exponential value |
-+--------------------------+-----------------+---------------------+
++--------------------------+-----------------+-------------------+
+| Dispersion Model         | Attribute Names | Attribute Values  |
++==========================+=================+===================+
+| uniform_isotropic        | alpha_l         | Exponential value |
+|                          | alpha_t         | Exponential value |
++--------------------------+-----------------+-------------------+
+| burnett_frind            | alpha_l         | Exponential value |
+|                          | alpha_th        | Exponential value |
+|                          | alpha_tv        | Exponential value |
++--------------------------+-----------------+-------------------+
+| lichtner_kelkar_robinson | alpha_lh        | Exponential value |
+|                          | alpha_tv        | Exponential value |
+|                          | alpha_th        | Exponential value |
+|                          | alpha_tv        | Exponential value |
++--------------------------+-----------------+-------------------+
 
 .. code-block:: xml
 
@@ -907,20 +919,20 @@ Relative permeability can be specified using the element ``rel_perm``.  The attr
 Sorption_isotherms
 __________________
 
-Kd models can be specified for 1 or more solutes using the ``sorption_isotherms`` element. Note for the Kd model to be active the chemistry state under ``process_kernels`` must be "on" and an engine must be specified.  Also, all solutes must be listed for each material.  Three Kd models are available.  All model parameters for the given model must be present.
+Kd models can be specified for 1 or more primaries using the ``sorption_isotherms`` element. Note for the Kd model to be active the chemistry state under ``process_kernels`` must be "on" and an engine must be specified.  Also, all primaries must be listed for each material.  Three Kd models are available.  All model parameters for the given model must be present.
 
 .. code-block:: xml
 
     <sorption_isotherms>
-	<solute name="Name of Solute" >
+	<primary name="Name of Primary" >
             <kd_model model="linear" kd = "Exponential" />
-        </solute>
-	<solute name="Name of Solute" >
+        </primary>
+	<primary name="Name of Primary" >
             <kd_model model="langmuir" kd="Exponential" b="Exponential"/>
-        </solute>
-	<solute name="Name of Solute" >
+        </primary>
+	<primary name="Name of Primary" >
             <kd_model model="freundlich" kd="Exponential" n="Exponential" />
-        </solute>
+        </primary>
     </sorption_isotherms>
 
 
@@ -972,12 +984,14 @@ For `"transport`" a `"state`" must be specified.
 Chemistry
 _________
 
-For `"chemistry`" a combination of `"state`" and `"engine`"must be specified.  If `"state`" is `"off`" then `"engine`" is set to `"none`".  Otherwise the `"engine`" model must be specified. 
+For `"chemistry`" a combination of `"state`", `"engine`", `"input_filename`", and `"database`" must be specified.  If `"state`" is `"off`" then `"engine`" is set to `"none`".  Otherwise the `"engine`" model must be specified.  If pflotran is specified as the chemistry engine, the user must specify a pflotran input filename which contains geochemistry information in the `"input_filename`" attribute and a database filename in the `"database`" attribute.  As noted previously, the capability to generate the chemistry engine input file from information in the XML input file is currently under development.  
 
 .. code-block:: xml
 
     <chemistry state = "on | off" 
-               engine = "amanzi | pflotran | none" />
+               engine = "amanzi | pflotran | none" 
+               input_filename = "string"
+               database = "string" />
 
 An example ``process_kernels`` is as follows:
 
@@ -987,42 +1001,26 @@ An example ``process_kernels`` is as follows:
     <comments>This is a proposed comment field for process_kernels</comments>
     <flow state = "on" model = "richards"/>
     <transport state = "on" algorithm = "explicit first-order" sub_cycling = "on"/>
-    <chemistry state = "off" engine="none" />
+    <chemistry state = "off" engine="none"/>
   </process_kernels>
 
 Phases
 ------
 
-The ``phases`` section is used to specify components of each of the phases that are mobile, and solutes that are contained within them. For each phase, the list identifies the set of all independent variables that are to be stored on each discrete mesh cell.
+The ``phases`` section is used to specify components of each of the phases that are mobile, and species that are contained within them. For each phase, the list identifies the set of all independent variables that are to be stored on each discrete mesh cell.
 
-The terminology for flow in porous media can be somewhat ambiguous between the multiphase and groundwater communities, particularly in regards to "components", "solutes" and "chemicals". Since Amanzi is designed to handle a wide variety of problems, we must settle on a nomenclature for our use here. In the general problem, multiple "phases" may coexist in the domain (e.g. gaseous, aqueous/liquid, etc), and each is comprised of a number of "components" (section 2.2). In turn, each component may carry a number of "solutes" and some of these may participate in chemical reactions. As a result of reactions, a chemical source or sink term may appear for the solutes involved in the reaction, including solutes in other mobile phases or in the material matrix. Additionally, certain reactions such as precipitation may affect the flow properties of the material itself during the simulation, and some might affect the properties of the fluid (e.g. brines affect the liquid density). While Amanzi does not currently support chemical reactions and thermal processes, the specification here allows for the existence of the necessary data structures and input data framework. Note that if solute concentrations are significant, the system may be better modeled with that solute treated as a separate component. Clearly, these definitions are highly problem-dependent, so Amanzi provide a generalized interface to accommodate a variety of scenarios.
+The terminology for flow in porous media can be somewhat ambiguous between the multiphase and groundwater communities, particularly in regards to "components", "solutes", "primaries/secondaries", and "chemicals". Since Amanzi is designed to handle a wide variety of problems, we must settle on a nomenclature for our use here. In the general problem, multiple "phases" may coexist in the domain (e.g. gaseous, aqueous/liquid, etc), and each is comprised of a number of "components" (section 2.2). In turn, each component may carry a number of "primaries" and "secondaries" and some of these may participate in chemical reactions. As a result of reactions, a chemical source or sink term may appear for the primaries involved in the reaction, including primaries in other mobile phases or in the material matrix. Additionally, certain reactions such as precipitation may affect the flow properties of the material itself during the simulation, and some might affect the properties of the fluid (e.g. brines affect the liquid density). While Amanzi does not currently support chemical reactions and thermal processes, the specification here allows for the existence of the necessary data structures and input data framework. Note that if primary concentrations are significant, the system may be better modeled with that primary treated as a separate component. Clearly, these definitions are highly problem-dependent, so Amanzi provide a generalized interface to accommodate a variety of scenarios.
 
-Currently in Amanzi, solutes are transported in the various phase components, and are treated in "complexes". Each complex is typically in chemical equilibrium with itself and does not undergo phase change. Under these conditions, knowledge of the local concentration of the "basis" or "primary" species (the terms are used here interchangeably) in a chemical complex is sufficient to determine the concentrations of all related secondary species in the phase. Each basis species has a total component concentration and a free ion concentration. The total component concentration for each basis species is a sum of the free ion concentrations in the phase components and its stoichiometric contribution to all secondary species. Amanzi splits the total component concentration into a set of totals for each of the transported phase components, and a total sorbed concentration. Given the free ion concentration of each basis species (and if there is more than one phase, a specification of the thermodynamic relationships that determine the partitioning between phase components (if mass transfer is allowed - not in current Amanzi), we can reconstruct the concentration of the primary and secondary species in each phase. As a result only the basis species are maintained in the state data structures for each phases component.
+Currently in Amanzi, primaries are transported in the various phase components, and are treated in "complexes". Each complex is typically in chemical equilibrium with itself and does not undergo phase change. Under these conditions, knowledge of the local concentration of the "basis" or "primary" species (the terms are used here interchangeably) in a chemical complex is sufficient to determine the concentrations of all related secondary species in the phase. Each basis species has a total component concentration and a free ion concentration. The total component concentration for each basis species is a sum of the free ion concentrations in the phase components and its stoichiometric contribution to all secondary species. Amanzi splits the total component concentration into a set of totals for each of the transported phase components, and a total sorbed concentration. Given the free ion concentration of each basis species (and if there is more than one phase, a specification of the thermodynamic relationships that determine the partitioning between phase components (if mass transfer is allowed - not in current Amanzi), we can reconstruct the concentration of the primary and secondary species in each phase. As a result only the basis species are maintained in the state data structures for each phases component.
 
-In addition to solutes in the transported phases, there may be various immobile chemical constituents within the porous media (material) matrix, such as "minerals" and "surface complexes". Bookkeeping for these constituents is managed in Amanzi data structures by generalizing the "solute" concept - a slot in the state is allocated for each of these immobile species, but their concentrations are not included in the transport/flow components of the numerical integration. To allow selective transport of the various solutes, Amanzi uses the concept of solute groups. The aqueous solute concentrations are typically treated together as a group, for example, and often represent the only chemical constituents that are mobile. Thus, the current Amanzi will assume that any other groups specified in an Aqueous phase are immobile.
+In addition to primaries in the transported phases, there may be various immobile chemical constituents within the porous media (material) matrix, such as "minerals" and "surface complexes". Bookkeeping for these constituents is managed in Amanzi data structures by generalizing the "primary" concept - a slot in the state is allocated for each of these immobile species, but their concentrations are not included in the transport/flow components of the numerical integration. To allow selective transport of the various primaries, Amanzi uses the concept of primary groups. The aqueous primary concentrations are typically treated together as a group, for example, and often represent the only chemical constituents that are mobile. Thus, the current Amanzi will assume that any other groups specified in an Aqueous phase are immobile.
 
-This section specifies the phases present and specific properties about those phases.  The first grouping is by `liquid_phase`_ and `solid_phase`_.  
+This section specifies the phases present and specific properties about those phases.  The first grouping is by `liquid_phase`_, `solid_phase`_, and `gas_phase`_.  
 
 Liquid_phase
 ____________
 
-The ``liquid_phase`` element is required to produce a valid input file.  If solutes are being transported properties of the solutes in the current phase can be specified.  
-
-If reactive chemistry is being utilized, primaries and secondaries are specified here as well.
-
-.. code-block:: xml
-
-    <liquid_phase name = "water">
-	<viscosity> Exponential </viscosity>
-	<density> Exponential </density>
-	<dissolved_components> 
-	    <solutes>
-	       <solute coefficient_of_diffusion="Exponential" first_order_decay_constant="Exponential"> SoluteName </solute>
-	    </solutes> 
-	</dissolved_components>
-    </liquid_phase>
-
-If reactive chemistry is being utilized, primaries and secondaries are specified here as well. Note that the names given to primary and secondary species should be consistent within the Amanzi input file and any external files, such as a database file, necessary to conduct the simulation.
+The ``liquid_phase`` element is required to produce a valid input file.  If primaries are being transported properties of the primaries in the current phase can be specified.  If primaries are being reacted a list of secondary chemical is also specified.
 
 .. code-block:: xml
 
@@ -1031,11 +1029,11 @@ If reactive chemistry is being utilized, primaries and secondaries are specified
 	<density> Exponential </density>
 	<dissolved_components> 
 	    <primaries>
-	       <primary coefficient_of_diffusion="Exponential"> PrimaryName </primary>
+	       <primary coefficient_of_diffusion="Exponential" first_order_decay_constant="Exponential"> PrimaryName </primary>
 	    </primaries> 
-	    <secondaries>
-	       <secondary> SecondaryName </secondary>
-	    </secondaries> 
+            <secondaries>
+               <secondary>SecondaryName</secondary>
+            </secondaries>
 	</dissolved_components>
     </liquid_phase>
 
@@ -1052,6 +1050,19 @@ The ``solid_phase`` element allows the user to define a ``minerals`` element und
 	</minerals> 
     </solid_phase>
 
+Gas_phase
+_________
+
+The ``gas_phase`` element allows the user to define a ``gases`` element under which a series of ``gas`` elements can be listed to specify any gases present in the gas phase.  The ``gas`` elements contain the name of the gas.
+
+.. code-block:: xml
+
+    <gas_phase>
+	<gases>
+	    <gas> GasName </gas>
+	</gases> 
+    </gas_phase>
+
 An example ``phases`` element looks like the following.
 
 .. code-block:: xml
@@ -1061,9 +1072,9 @@ An example ``phases`` element looks like the following.
 	<viscosity>1.002E-03</viscosity>
 	<density>998.2</density>
 	<dissolved_components> 
-	    <solutes>
-	       <solute coefficient_of_diffusion="1.0e-9" first_order_decay_constant="1.0e-9">Tc-99</solute>
-	    </solutes> 
+	    <primaries>
+	       <primary coefficient_of_diffusion="1.0e-9" first_order_decay_constant="1.0e-9">Tc-99</primary>
+	    </primaries>
 	</dissolved_components>
     </liquid_phase>
   </phases>
@@ -1074,39 +1085,37 @@ Initial Conditions
 
 The `"initial_conditions`" section contains at least 1 and up to an unbounded number of `"initial_condition`" elements.  Each `"initial_condition`" element defines a single initial condition that is applied to one or more region specified in the ``assigned_regions`` element.  The initial condition can be applied to a liquid phase or solid phase using the appropriate subelement.
 
-To specify a liquid phase the ``liquid_phase`` element is used.  At least one ``liquid_component`` must be specified.  In addition a single ``solute_component`` element and ``geochemistry`` element can be specified.  Under the ``liquid_component`` and ``solute_component`` elements an initial condition can be defined.  Under the ``geochemistry`` element a geochemistry constraint is defined.
+To specify a liquid phase the ``liquid_phase`` element is used.  At least one ``liquid_component`` must be specified.  In addition a ``geochemistry_component`` element can be specified.  Under the ``liquid_component`` element an initial condition can be defined.  Under the ``geochemistry_component`` element a geochemistry constraint is listed.
 
 The initial conditions are defined using a specific elements.  The element name indicates the type of condition and the attributes define the necessary information.  Below is a table of the conditions available for the liquid phase and the attributes required to define them.
 
-+-----------------------+------------------+---------------------------------+
-| Initial Condition Type| Attributes       | Value Type                      |
-+=======================+==================+=================================+
-| uniform_pressure      | | name           | | string                        |
-|                       | | value          | | double/time_constant/constant |
-+-----------------------+------------------+---------------------------------+
-| linear_pressure       | | name           | | string                        |
-|                       | | value          | | double/time_constant/constant |
-|                       | | reference_coord| | coordinate                    |
-|                       | | gradient       | | coordinate                    |
-+-----------------------+------------------+---------------------------------+
-| velocity              | | name           | | string                        |
-|                       | | x              | | double/constant               |
-|                       | | y              | | double/constant               |
-|                       | | (z)            | | double/constant               |
-+-----------------------+------------------+---------------------------------+
-| uniform_saturation    | | name           | | string                        |
-|                       | | value          | | double/time_constant/constant |
-+-----------------------+------------------+---------------------------------+
-| linear_saturation     | | name           | | string                        |
-|                       | | value          | | double/time_constant/constant |
-|                       | | reference_coord| | coordinate                    |
-|                       | | gradient       | | coordinate                    |
-+-----------------------+------------------+---------------------------------+
++-----------------------+------------------+-------------------------------+
+| Initial Condition Type| Attributes       | Value Type                    |
++=======================+==================+===============================+
+| uniform_pressure      | name             | string                        |
+|                       | value            | double/time_constant/constant |
++-----------------------+------------------+-------------------------------+
+| linear_pressure       | name             | string                        |
+|                       | value            | double/time_constant/constant |
+|                       | reference_coord  | coordinate                    |
+|                       | gradient         | coordinate                    |
++-----------------------+------------------+-------------------------------+
+| velocity              | name             | string                        |
+|                       | x                | double/constant               |
+|                       | y                | double/constant               |
+|                       | (z)              | double/constant               |
++-----------------------+------------------+-------------------------------+
+| uniform_saturation    | name             | string                        |
+|                       | value            | double/time_constant/constant |
++-----------------------+------------------+-------------------------------+
+| linear_saturation     | name             | string                        |
+|                       | value            | double/time_constant/constant |
+|                       | reference_coord  | coordinate                    |
+|                       | gradient         | coordinate                    |
++-----------------------+------------------+-------------------------------+
 
 
-The ``solute_component`` element can have an unbounded number of subelements defining the initial uniform concentration of a solute.  Pairings of solute name and initial aqueous concentration value are assigned using the subelement ``uniform_conc``. 
-
-The ``geochemistry`` element can have an unbounded number of subelements specifying geochemistry constraints to be used.  The subelement ``constraint`` with the attribute *name* is used to specify which geochemistry constraints to apply.  The constraints are defined either in the main ``geochemistry`` section or an external file using the appropriate chemistry engine input format.
+For the geochemistry_component, an unbounded number of ``constraint`` elements can be listed.  Each ``constraint`` element has the attribute *name*.  The *name*  attribute refers to a geochemical constraint defined in the `"geochemisty`" section.
 
 If in the ``process_kernels`` section the flow model is set to *constant* then the flow field is set in one of the following ways: (1) A constant Darcy velocity is specified in the initial condition (as above); (2) Boundary conditions for the flow (e.g., pressure), along with the initial condition for the pressure field are used to solve for the Darcy velocity.
 
@@ -1120,13 +1129,11 @@ An example ``initial_conditions`` element looks like the following.
 	    <assigned_regions>All</assigned_regions>
 	    <liquid_phase name = "water">
 		<liquid_component name = "water">
-		    <linear_pressure value = "101325" reference_coord ="0.0,0.0,0.5" gradient="0.0,0.0,-9793.5192"/>
+		    <linear_pressure value = "101325" reference_coord ="(0.0,0.0,0.5)" gradient="(0.0,0.0,-9793.5192)"/>
 		</liquid_component>
-		<solute_component name="solute">
-                    <uniform_conc name="Cs137" value="400"/>
-                    <uniform_conc name="Tracer" value="4"/>
-                    <uniform_conc name="Sr90" value="40"/>
-                </solute_component>
+		<geochemistry_component>
+                    <constraint name = "initial"/>
+		</geochemistry_component>
 	    </liquid_phase>
           </initial_condition>
 	</initial_conditions>
@@ -1134,9 +1141,9 @@ An example ``initial_conditions`` element looks like the following.
 Boundary Conditions
 -------------------
 
-Boundary conditions are defined in a similar manor to the initial conditions.  Under the tag ``boundary_conditions`` and series of individual ``boundary_condition`` elements can be defined.  Within each ``boundary_condition`` element the ``assigned_regions`` and ``liquid_phase`` elements must appear.  The boundary condition can be applied to one or more region using a comma separated list of region names.  Under the ``liquid_phase`` element the ``liquid_component`` element must be define.  One ``solute_component`` element and one ``geochemistry`` element may optionally be defined.
+Boundary conditions are defined in a similar manor to the initial conditions.  Under the tag ``boundary_conditions`` and series of individual ``boundary_condition`` elements can be defined.  Within each ``boundary_condition`` element the ``assigned_regions`` and ``liquid_phase`` elements must appear.  The boundary condition can be applied to one or more region using a comma separated list of region names.  Under the ``liquid_phase`` element the ``liquid_component`` element must be define.  A ``geochemistry_component`` element may optionally be defined.
 
-Under the ``liquid_component`` and ``solute_component`` elements a time series of boundary conditions is defined using the boundary condition elements available in the table below.  Each component element can only contain one type of boundary condition.  Both elements also accept a *name* attribute to indicate the phase associated with the boundary condition.
+Under the ``liquid_component`` and ``geochemistry_component`` elements a time series of boundary conditions is defined using the boundary condition elements available in the table below.  Each component element can only contain one type of boundary condition.  Both elements also accept a *name* attribute to indicate the phase associated with the boundary condition.
 
 +-------------------------+--------------------------------+----------------------------------------+
 |Boundary Condition Type  | Attributes                     | Value Type                             |
@@ -1144,12 +1151,12 @@ Under the ``liquid_component`` and ``solute_component`` elements a time series o
 |inward_mass_flux         | | name                         | | string                               | 
 |inward_volumetric_flux   | | start                        | | double/time_constant/constant        |
 |outward_mass_flux        | | value                        | | double                               |
-|outward_volumetric_flux  | | function                     | | ``linear | constant``                |
+|outward_volumetric_flux  | | function                     | | ``linear | uniform | constant``      |
 +-------------------------+--------------------------------+----------------------------------------+
 |uniform_pressure         | | name                         | | string                               |
 |                         | | start                        | | double/time_constant/constant        |
 |                         | | value                        | | double                               |
-|                         | | function                     | | ``linear | constant``                |
+|                         | | function                     | | ``uniform | constant``               |
 +-------------------------+--------------------------------+----------------------------------------+
 |linear_pressure          | | name                         | | string                               |
 |                         | | gradient_value               | | coordinate                           |
@@ -1159,7 +1166,7 @@ Under the ``liquid_component`` and ``solute_component`` elements a time series o
 |hydrostatic              | | name                         | | string                               |
 |                         | | start                        | | double/time_constant/constant        |
 |                         | | value                        | | double                               |
-|                         | | function                     | | ``linear | constant``                |
+|                         | | function                     | | ``uniform | constant``               |
 |                         | | coordinate_system            | | ``absolute | relative to mesh top``  |
 |                         | | submodel                     | | ``no_flow_above_water_table | none`` |
 +-------------------------+--------------------------------+----------------------------------------+ 
@@ -1172,16 +1179,14 @@ Under the ``liquid_component`` and ``solute_component`` elements a time series o
 |seepage_face             | | name                         | | string                               |
 |(unstructured only)      | | start                        | | double/time_constant/constant        |
 |                         | | inward_mass_flux             | | double/time_constant/constant        |
-|                         | | function                     | | ``linear | constant``                |
+|                         | | function                     | | ``linear | uniform | constant``      |
 +-------------------------+--------------------------------+----------------------------------------+
 |no_flow                  | | name                         | | string                               |
 |                         | | start                        | | double/time_constant/constant        |
-|                         | | function                     | | ``linear | constant``                |
+|                         | | function                     | | ``linear | uniform | constant``      |
 +-------------------------+--------------------------------+----------------------------------------+
 
-For the solute component, the boundary condition available is ``aqueous_conc`` which has the attributes *name*, *value*, *function*, and *start*.  The time function options available are *constant* and *linear*. At this time only the *constant* has been implemented. Note that aqueous concentrations may be defined for multiple solutes.  A given ``aqueous_conc`` is applied to the solute in the ``name`` attribute.
- 
-A time series of geochemical constraints are listed under the ``geochemisty`` element.  Each constraint is defined in the main ``geochemistry`` section or an extrenal chemistry engine input file.  The element ``constraint`` has the attributes *name*, *function*, and *start*. The time function options available are *constant* and *linear*.
+For the geochemistry_component, an unbounded number of ``constraint`` elements may be listed.  Each constraint has the attributes *name*, *function*, and *start*.  The function option available is *constant*.  The name should match a constraint defined in the `"phases`" section
 
 An example ``boundary_conditions`` element looks like the following.
 
@@ -1197,14 +1202,10 @@ An example ``boundary_conditions`` element looks like the following.
 		<inward_mass_flux start="2012.0,y" function= "constant"  value="future_recharge"/>
 		<inward_mass_flux start="3000.0,y" function= "constant"  value="future_recharge"/>
 	    </liquid_component>
-	    <solute_component name = "solute">
-		<aqueous_conc name = "Tc-99" start="0.0"     function= "constant"  value="zero"/>
-		<aqueous_conc name = "Tc-99" start="1956.0,y"  function= "constant"  value="zero"/>
-		<aqueous_conc name = "Tc-99" start="2012.0,y"  function= "constant"  value="zero"/>
-		<aqueous_conc name = "Tc-99" start="3000.0,y"  function= "constant"  value="zero"/>
-		<aqueous_conc name = "U-238" start="0.0"     function= "constant"  value="zero"/>
-		<aqueous_conc name = "I-129" start="0.0"     function= "constant"  value="zero"/>
-	    </solute_component>
+	    <geochemistry_component>
+		<constraint name = "west"  start="0.0"      function= "constant"/>
+		<constraint name = "west2" start="1956.0,y" function= "constant"/>
+	    </geochemistry_component>
 	</liquid_phase>
     </boundary_condition>
   </boundary_conditions>
@@ -1213,33 +1214,19 @@ An example ``boundary_conditions`` element looks like the following.
 Sources
 -------
 
-Sources are defined in a similar manner to the boundary conditions.  Under the tag ``sources`` and series of individual ``source`` elements can be defined.  Within each ``source`` element the ``assigned_regions`` and ``liquid_phase`` elements must appear.  Sources can be applied to one or more region using a comma separated list of region names.  Under the ``liquid_phase`` element the ``liquid_component`` element must be define.  An unbounded number of ``solute_component`` elements and one ``geochemistry`` element may optionally be defined.
+Sources are defined in a similar manner to the boundary conditions.  Under the tag ``sources`` and series of individual ``source`` elements can be defined.  Within each ``source`` element the ``assigned_regions`` and ``liquid_phase`` elements must appear.  Sources can be applied to one or more region using a comma separated list of region names.  Under the ``liquid_phase`` element the ``liquid_component`` element must be define.  An unbounded number of ``solute_component`` elements and one ``geochemistry_component`` element may optionally be defined.
 
 Under the ``liquid_component`` and ``solute_component`` elements a time series of boundary conditions is defined using the boundary condition elements available in the table below.  Each component element can only contain one type of source.  Both elements also accept a *name* attribute to indicate the phase associated with the source.
 
-+-----------------------------+--------------------+-----------------------------------+
-|Liquid Component Source Type | Attributes         | Value Type                        |
-+=============================+====================+===================================+
-|volume_weighted              | | start            | | double/time_constant/constant   |
-|perm_weighted                | | value            | | double                          |
-|                             | | function         | | ``linear | constant``           |
-+-----------------------------+--------------------+-----------------------------------+
++-------------------------+--------------------+-----------------------------------+
+|Liquid Phase Source Type | Attributes         | Value Type                        |
++=========================+====================+===================================+
+|volume_weighted          | | start            | | double/time_constant/constant   |
+|perm_weighted            | | value            | | double                          |
+|                         | | function         | | ``linear | uniform | constant`` |
++-------------------------+--------------------+-----------------------------------+
 
-For the solute component, the sources available are ``uniform_conc``, ``flow_weighted_conc``, and ``diffusion_dominated_release`` which are described below.
-
-+-----------------------------+-----------------------------------+---------------------------------+
-|Solute Component Source Type | Attributes                        | Value Type                      |
-+=============================+===================================+=================================+
-|uniform_conc                 | | start                           | | double/time_constant/constant |
-|flow_weighted_conc           | | value                           | | double                        |
-|                             | | function                        | | ``linear | constant``         |
-+-----------------------------+-----------------------------------+---------------------------------+
-|diffusion_dominated_release  | | name                            | | string                        |
-|                             | | start                           | | double/time_constant/constant |
-|                             | | total_inventory                 | | double                        |
-|                             | | mixing_length                   | | double                        |
-|                             | | effective_diffusion_coefficient | | double                        |
-+-----------------------------+-----------------------------------+---------------------------------+
+For the solute component, the source available is ``aqueous_conc`` which has the attributes *name*, *value*, *function*, and *start*.  The function options available are *uniform*, *linear*, and *constant*.
 
 
 An example ``sources`` element looks like the following.
@@ -1296,7 +1283,7 @@ An example ``vis`` element looks like the following.
 Checkpoint
 __________
 
-The ``checkpoint`` element defines the file naming scheme and frequency for writing out the checkpoint files.  The ``base_filename`` element contains the text component of the how the checkpoint files will be named.  The ``base_filename`` is appended with an index number to indicate the sequential order of the checkpoint files.  The ``num_digits`` elements indicates how many digits to use for the index.  See the about NOTE about specifying a file location other than the current working directory.  Finally, the ``cycle_macros`` element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the checkpoint files.
+The ``checkpoint`` element defines the file naming scheme and frequency for writing out the checkpoint files.  The ``base_filename`` element contains the text component of the how the checkpoint files will be named.  The ``base_filename`` is appended with an index number to indicate the sequential order of the checkpoint files.  The ``num_digits`` elements indicates how many digits to use for the index.  See the about NOTE about specifying a file location other than the current working directory.  Finally, the ``cycle_macro`` element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the checkpoint files.
 
 An example ``checkpoint`` element looks like the following.
 
@@ -1305,7 +1292,7 @@ An example ``checkpoint`` element looks like the following.
     <checkpoint>
 	<base_filename>chk</base_filename>
 	<num_digits>5</num_digits>
-	<cycle_macros>Every_1000_steps</cycle_macros>
+	<cycle_macro>Every_1000_steps</cycle_macro>
     </checkpoint>
 
 Observations
@@ -1313,7 +1300,7 @@ ____________
 
 The ``observations`` element defines the file for writing observations to and specifies individual observations to be made.  At this time, all observations are written to a single file defined in the ``filename`` element.  See the about NOTE about specifying a file location other than the current working directory. Also, observations are only available for the liquid phases.  Therefore individual observations are defined in subelements under the ``liquid_phase`` tag.  The ``liquid_phase`` tag takes an attribute ``name`` to identify which phase the observations are associated with.
 
-The element name of individual observations indicate the quantity being observed.  Below is a list of currently available observations.  Individual observations require the subelements ``assigned_regions``, ``functional``, and ``time_macros``.  ``aqueous_conc`` and ``solute_volumetric_flow_rate`` observations also require the name of the solute.  This is specified with an extra subelement ``solute``. 
+The element name of individual observations indicate the quantity being observed.  Below is a list of currently available observations.  Individual observations require the subelements ``assigned_regions``, ``functional``, and ``time_macros``.  ``aqueous_conc`` and ``primary_volumetric_flow_rate`` observations also require the name of the primary.  This is specified with an extra subelement ``primary``. 
 
 Available Observations:
 
@@ -1330,7 +1317,7 @@ Available Observations:
 - aqueous_volumetric_flow_rate
 - aqueous_conc
 - drawdown
-- solute_volumetric_flow_rate
+- primary_volumetric_flow_rate
 
 An example ``observations`` element looks like the following.
 
@@ -1366,9 +1353,9 @@ An example ``observations`` element looks like the following.
 Walkabout
 _________
 
-The ''walkabout'' element defines the file naming scheme and frequency for writing out the walkabout files.  As mentioned above, the user does not influence what is written to the walkabout files only the writing frequency and naming scheme.  Thus, the ''walkabout'' element requires the subelements ``base_filename``, ``num_digits``, and ``cycle_macros``.
+The ''walkabout'' element defines the file naming scheme and frequency for writing out the walkabout files.  As mentioned above, the user does not influence what is written to the walkabout files only the writing frequency and naming scheme.  Thus, the ''walkabout'' element requires the subelements ``base_filename``, ``num_digits``, and ``cycle_macro``.
 
-The *base_filename* element contain the text component of the how the walkabout files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the walkabout files.  The *num_digits* elements indicates how many digits to use for the index.  Finally, the *cycle_macros* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the walkabout files.
+The *base_filename* element contain the text component of the how the walkabout files will be named.  The *base_filename* is appended with an index number to indicate the seqential order of the walkabout files.  The *num_digits* elements indicates how many digits to use for the index.  Final the *cycle_macro* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the walkabout files.
 
 Example:
 
@@ -1377,5 +1364,5 @@ Example:
   <walkabout>
      <base_filename>chk</base_filename>
      <num_digits>5</num_digits>
-     <cycle_macros>Every_100_steps</cycle_macros>
+     <cycle_macro>Every_100_steps</cycle_macro>
   </walkabout>

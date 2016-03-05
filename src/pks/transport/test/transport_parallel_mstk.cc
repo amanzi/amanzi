@@ -72,7 +72,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   S->set_intermediate_time(0.0);
 
   Transport_PK TPK(plist, S, "Transport", component_names);
-  TPK.Setup();
+  TPK.Setup(S.ptr());
   TPK.CreateDefaultState(mesh, 2);
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -99,7 +99,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   }
 
   /* initialize a transport process kernel */
-  TPK.Initialize();
+  TPK.Initialize(S.ptr());
 
   /* advance the state */
   double t_old(0.0), t_new, dt;
@@ -114,7 +114,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
     t_new = t_old + dt;
 
     TPK.AdvanceStep(t_old, t_new);
-    TPK.CommitStep(t_old, t_new);
+    TPK.CommitStep(t_old, t_new, S);
 
     t_old = t_new;
     iter++;

@@ -116,9 +116,9 @@ Alquimia_PK::~Alquimia_PK()
 /* ******************************************************************
 * Register fields and evaluators with the State
 ******************************************************************* */
-void Alquimia_PK::Setup()
+void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
 {
-  Chemistry_PK::Setup();
+  Chemistry_PK::Setup(S);
 
   // Set up auxiliary chemistry data using the ChemistryEngine.
   std::vector<std::string> aux_names;
@@ -127,8 +127,8 @@ void Alquimia_PK::Setup()
   for (size_t i = 0; i < aux_names.size(); ++i) {
     std::vector<std::vector<std::string> > subname(1);
     subname[0].push_back("0");
-    if (!S_->HasField(aux_names[i])) {
-      S_->RequireField(aux_names[i], passwd_, subname)
+    if (!S->HasField(aux_names[i])) {
+      S->RequireField(aux_names[i], passwd_, subname)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     }
@@ -140,7 +140,7 @@ void Alquimia_PK::Setup()
     for (Teuchos::Array<std::string>::const_iterator it = names.begin(); it != names.end(); ++it) {
       std::vector<std::vector<std::string> > subname(1);
       subname[0].push_back("0");
-      S_->RequireField(*it, passwd_, subname)
+      S->RequireField(*it, passwd_, subname)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     }
@@ -151,10 +151,10 @@ void Alquimia_PK::Setup()
 /* *******************************************************************
 * Initialization
 ******************************************************************* */
-void Alquimia_PK::Initialize() 
+void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S) 
 { 
   // initilaization using the base class
-  Chemistry_PK::Initialize();
+  Chemistry_PK::Initialize(S);
 
   // initialize auxiliary fields
   std::vector<std::string> aux_names;
@@ -166,8 +166,8 @@ void Alquimia_PK::Initialize()
   }
 
   for (std::vector<std::string>::const_iterator it = aux_names.begin(); it != aux_names.end(); ++it) {
-    S_->GetFieldData(*it, passwd_)->PutScalar(0.0);
-    S_->GetField(*it, passwd_)->set_initialized();
+    S->GetFieldData(*it, passwd_)->PutScalar(0.0);
+    S->GetField(*it, passwd_)->set_initialized();
   }
 
   // Read XML parameters from our input file.
@@ -207,7 +207,7 @@ void Alquimia_PK::Initialize()
   // now publish auxiliary data to state
   if (aux_output_ != Teuchos::null) {
     for (int i = 0; i < aux_output_->NumVectors(); ++i) {
-      Epetra_MultiVector& aux_state = *S_->GetFieldData(aux_names_[i], passwd_)->ViewComponent("cell", true);
+      Epetra_MultiVector& aux_state = *S->GetFieldData(aux_names_[i], passwd_)->ViewComponent("cell", true);
       aux_state[0] = (*aux_output_)[i];
     }
   }
@@ -220,7 +220,7 @@ void Alquimia_PK::Initialize()
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << vo_->color("green") << "Initalization of PK was successful, T="
-        << S_->time() << vo_->reset() << std::endl << std::endl;
+        << S->time() << vo_->reset() << std::endl << std::endl;
   }
 }
 
@@ -901,7 +901,7 @@ void Alquimia_PK::ComputeNextTimeStep()
 * it has accepted the state update, thus, the PK should update
 * possible auxilary state variables here
 ******************************************************************* */
-void Alquimia_PK::CommitStep(double t_old, double t_new) 
+void Alquimia_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) 
 {
   saved_time_ = t_new;
 }

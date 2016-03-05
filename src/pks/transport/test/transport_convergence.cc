@@ -89,7 +89,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     S->set_intermediate_time(0.0);
 
     Transport_PK TPK(plist, S, "Transport", component_names);
-    TPK.Setup();
+    TPK.Setup(S.ptr());
     TPK.CreateDefaultState(mesh, 1);
     S->InitializeFields();
     S->InitializeEvaluators();
@@ -118,7 +118,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.Initialize();
+    TPK.Initialize(S.ptr());
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
  
     /* advance the state */
@@ -129,7 +129,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
       t_new = t_old + dt;
 
       TPK.AdvanceStep(t_old, t_new);
-      TPK.CommitStep(t_old, t_new);
+      TPK.CommitStep(t_old, t_new, S);
 
       t_old = t_new;
       iter++;
@@ -204,7 +204,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     S->set_intermediate_time(0.0);
 
     Transport_PK TPK(plist, S, "Transport", component_names);
-    TPK.Setup();
+    TPK.Setup(S.ptr());
     TPK.CreateDefaultState(mesh, 1);
     S->InitializeFields();
     S->InitializeEvaluators();
@@ -233,7 +233,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.Initialize();
+    TPK.Initialize(S.ptr());
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
  
     /* advance the state */
@@ -245,7 +245,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
       t_new = t_old + dt;
 
       TPK.AdvanceStep(t_old, t_new);
-      TPK.CommitStep(t_old ,t_new);
+      TPK.CommitStep(t_old ,t_new, S);
 
       t_old = t_new;
       ncycles += TPK.nsubcycles;
@@ -322,7 +322,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
     Transport_PK TPK(plist, S, "Transport", component_names);
-    TPK.Setup();
+    TPK.Setup(S.ptr());
     TPK.CreateDefaultState(mesh, 1);
     S->InitializeFields();
     S->InitializeEvaluators();
@@ -351,7 +351,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.Initialize();
+    TPK.Initialize(S.ptr());
     TPK.spatial_disc_order = TPK.temporal_disc_order = 2;
  
     /* advance the state */
@@ -366,7 +366,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
       t_new = t_old + dt;
 
       TPK.AdvanceStep(t_old, t_new);
-      TPK.CommitStep(t_old, t_new);
+      TPK.CommitStep(t_old, t_new, S);
 
       t_old = t_new;
 
@@ -452,7 +452,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
     S->set_intermediate_time(0.0);
 
     Transport_PK TPK(plist, S, "Transport", component_names);
-    TPK.Setup();
+    TPK.Setup(S.ptr());
     TPK.CreateDefaultState(mesh, 1);
     S->InitializeFields();
     S->InitializeEvaluators();
@@ -481,7 +481,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.Initialize();
+    TPK.Initialize(S.ptr());
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
  
     /* advance the state */
@@ -492,7 +492,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
       t_new = t_old + dt;
 
       TPK.AdvanceStep(t_old, t_new);
-      TPK.CommitStep(t_old, t_new);
+      TPK.CommitStep(t_old, t_new, S);
 
       t_old = t_new;
       iter++;
@@ -576,7 +576,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
     S->set_intermediate_time(0.0);
 
     Transport_PK TPK(plist, S, "Transport", component_names);
-    TPK.Setup();
+    TPK.Setup(S.ptr());
     TPK.CreateDefaultState(mesh, 1);
     S->InitializeFields();
     S->InitializeEvaluators();
@@ -605,7 +605,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
     *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.Initialize();
+    TPK.Initialize(S.ptr());
     TPK.spatial_disc_order = TPK.temporal_disc_order = 2;
  
     /* advance the state */
@@ -616,7 +616,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
       t_new = t_old + dt;
 
       TPK.AdvanceStep(t_old, t_new);
-      TPK.CommitStep(t_old, t_new);
+      TPK.CommitStep(t_old, t_new, S);
 
       t_old = t_new;
       iter++;

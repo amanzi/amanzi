@@ -1,4 +1,4 @@
-<amanzi_input version="2.1.1" type="unstructured | structured">
+<amanzi_input version="2.3.0" type="unstructured | structured">
 
     <echo_translated_input file_name="string"/>
 
@@ -60,7 +60,7 @@
         <comments>string</comments>
 	<flow state = "on | off" model = "richards | saturated | constant | none"/> <!-- REQUIRED -->
         <transport state = "on | off"/> <!-- REQUIRED -->
-        <chemistry state = "on | off" engine="amanzi | pflotran | none" /> <!-- REQUIRED -->
+        <chemistry state = "on | off" engine="amanzi | pflotran | none" input_filename="filename.in" database="filename.dat"/> <!-- REQUIRED -->
 
     </process_kernels>
 
@@ -68,21 +68,18 @@
 
         <comments>string</comments>
 
-        <liquid_phase name = "water"> <!-- REQUIRED -->
+        <liquid_phase name = "water"> <!-- REQUIRED - name must equal water -->
             <eos>false | true</eos>  <!-- default: false -->
             <viscosity>exp</viscosity> <!-- REQUIRED -->
             <density>exp</density> <!-- REQUIRED -->
             <dissolved_components> 
-                <solutes>
-                    <solute coefficient_of_diffusion="exp" first_order_decay_constant="exp">solute_name_string</solute>
-                </solutes> 
                 <primaries>
-                    <primary coefficient_of_diffusion="exp">primary_name_string</primary>
-                    <!-- primary name must match the name in the engine database -->
+                    <primary coefficient_of_diffusion="exp" first_order_decay_constant="exp">primary_name_string</primary>
+                    <!-- primary name must match the name in the engine database file -->
                 </primaries> 
                 <secondaries>
                     <secondary>secondary_name_string</secondary>
-                    <!-- secondary name must match the name in the engine database -->
+                    <!-- secondary name must match the name in the engine database file -->
                 </secondaries> 
             </dissolved_components>
         </liquid_phase>
@@ -108,8 +105,9 @@
 
         <verbosity level="none | low | medium | high | extreme"/> <!-- default: medium -->
         <!-- level=extreme should be used for debugging -->
+	<restart>restartfilename</restart>
         <execution_control_defaults init_dt="time" max_dt="time" reduction_factor="exp" increase_factor="exp" mode="steady | transient" method="bdf1"/> <!-- REQUIRED -->
-        <execution_control  start="time" end="time" init_dt= "time" max_dt="time" reduction_factor="exp" increase_factor="exp" mode="steady | transient" method="bdf1" max_cycles="int" restart="filename_string"/> <!-- REQUIRED -->
+        <execution_control  start="time" end="time" init_dt= "time" max_dt="time" reduction_factor="exp" increase_factor="exp" mode="steady | transient" method="bdf1" max_cycles="int" /> <!-- REQUIRED -->
         <execution_control  start="time" />
         <execution_control  start="time" end="time" />
         <!-- start is REQUIRED -->
@@ -148,13 +146,13 @@
             </unstr_transport_controls>
 
             <unstr_chemistry_controls>
-                <!-- Amanzi native chemistry -->
 		<process_model> implicit operator split | none </process_model>
+              <!-- Amanzi native chemistry -->
 		<activity_model> unit | debye-huckel </activity_model> <!-- default: unit -->
-		<maximum_newton_iterations> int </maximum_newton_iterations> <!-- default: 1e-12 -->
 		<tolerance> exp </tolerance> <!-- default: 100 -->
+		<maximum_newton_iterations> int </maximum_newton_iterations> <!-- default: 1e-12 -->
 		<auxiliary_data> pH </auxiliary_data> 
-                <!-- Pflotran chemistry -->
+              <!-- Pflotran chemistry -->
 		<min_time_step> exp </min_time_step> <!-- default: 1e+10 -->
 		<max_time_step> exp </max_time_step> <!-- default: 1e+10 -->
 		<initial_time_step> exp </initial_time_step> <!-- default: 1e+7 -->
@@ -164,6 +162,7 @@
 		<time_step_cut_factor> exp </time_step_cut_factor> <!-- default: 2.0 -->
 		<time_step_increase_threshold> int </time_step_increase_threshold> <!-- default: 4 -->
 		<time_step_increase_factor> exp </time_step_increase_factor> <!-- default: 1.2 -->
+		<log_formulation> string </log_formulation>
             </unstr_chemistry_controls>
 
             <unstr_steady-state_controls>
@@ -179,7 +178,6 @@
                 <restart_tolerance_relaxation_factor>exp</restart_tolerance_relaxation_factor> <!-- default: 1.0 suggested range: 1.0-1000.0 -->
                 <restart_tolerance_relaxation_factor_damping>exp</restart_tolerance_relaxation_factor_damping> <!-- default: 1.0 suggested range: 0.001-1.0 -->
                 <preconditioner>hypre_amg | trilinos_ml | block_ilu</preconditioner> <!-- default: hypre_amg -->
-                <initialize_with_darcy>true | false</initialize_with_darcy> <!-- default: true -->
                 <nonlinear_iteration_initial_guess_extrapolation_order>int</nonlinear_iteration_initial_guess_extrapolation_order> <!-- default: 1 -->
                 <unstr_initialization>
                     <!-- EIB: ask Konstantin if this only needs to be included if steady method = picard? -->
@@ -187,7 +185,7 @@
                     <clipping_pressure>exp</clipping_pressure> 
                     <method>picard | darcy_solver</method> <!-- default: picard -->
                     <preconditioner>hypre_amg | trilinos_ml | block_ilu</preconditioner> <!-- default: hypre_amg -->
-                    <linear_solver>aztec00</linear_solver> <!-- default: aztec00 -->
+                    <linear_solver>aztec00 | aztecoo | AztecOO</linear_solver>
                     <error_control_options>pressure | residual</error_control_options> <!-- default: pressure -->
                     <convergence_tolerance>exp</convergence_tolerance> <!-- default: 1.0e-8 suggested range: 1.0e-10-1.0e-4 -->
                     <max_iterations>int</max_iterations> <!-- default: 400 suggested range: 50-1000 -->
@@ -247,7 +245,7 @@
         </unstructured_controls>
 
         <structured_controls>
-            <comments>
+	    <comments/>
 
 	    <petsc_options_file>string</petsc_options_file> <!-- if not specified, assumed .petsc -->
             
@@ -346,17 +344,17 @@
         <box name="string" low_coordinates="coordinate" high_coordinates="coordinate"/>
         <point name="string" coordinate="coordinate"/>
         <plane name="string" location="coordinate" normal="normal" tolerane="optional exp"/>
+        <logical name="string">
+	    <!-- ALL Subelements REQUIRED -->
+            <operation>union | intersection | subtraction | complement</operation>
+            <region_list>list of regions</region_list>
+        </logical>
 
         <!-- only available for unstructured -->
 
         <polygonal_surface name="string" num_points="int" tolerane="optional exp">
             <point>coordinate</point>
         </polygonal_surface>
-        <logical name="string">
-	    <!-- ALL Subelements REQUIRED -->
-            <operation>union | intersection | subtraction | complement</operation>
-            <region_list>list of regions</region_list>
-        </logical>
 
         <!-- only available for structured -->
 
@@ -393,16 +391,6 @@
     <geochemistry>
 	<verbosity>silent | terse | verbose | warnings | errors</verbosity>
 
-	<amanzi_chemistry>
-	    <reaction_network file="filename.bgd" format="simple | none"/> <!-- REQUIRED -->
-	</amanzi_chemistry>
-
-	<pflotran_chemistry>
-	    <reaction_network file="filename.in" format="simple | none"/> <!-- REQUIRED -->
-            <database>default_reduced_database.dat</database> <!-- REQUIRED -->
-	    <radioactive_decay></radioactive_decay>
-	</pflotran_chemistry>
-
 	<constraints> <!-- REQUIRED -->
             <!-- Provide a list of constraints for various chemistry in system. -->
             <!-- Chemistry input needs to be consolidated and migrated to xml file
@@ -410,10 +398,10 @@
             <!-- activity model, database specification, mineral kinetics, secondary species specified
                  in external file -->
             <constraint name="string"> <!-- REQUIRED -->
-                <!-- EIB: need full set of examples here, what are the various options? -->
                 <primary name="primary_name_string"     initial_guess="exp"   type="free_ion | pH | total | total+sorbed | charge"/>
-                <primary name="primary_name_string"     initial_guess="exp"   type="mineral" mineral="geothite"/>
-                <primary name="primary_name_string(aq)" initial_guess="exp"   type="gas" gas = "CO2(g)"/>
+                <primary name="nonreactive_primary"     initial_guess="exp"   type="total"/>
+                <primary name="primary_name_string"     initial_guess="exp"   type="mineral" mineral="mineral_name"/>
+                <primary name="primary_name_string(aq)" initial_guess="exp"   type="gas" gas = "gas_name"/>
                 <mineral name="mineral_name_string"     volume_fraction="exp" surface_area ="exp"/>
                 <!-- cation exchange capacity and surface site density are specified in the
                      external pflotran input file, and scaled by mineral volume fraction -->
@@ -429,6 +417,7 @@
         <read>
             <file>string</file> <!-- REQUIRED -->
             <format>exodus ii</format> <!-- REQUIRED -->
+            <verify>true | false</verify> 
         </read>
         <!-- OR -->
         <generate>
@@ -491,10 +480,10 @@
             </rel_perm>
 
             <sorption_isotherms>
-                <solute name="string"> <!-- REQUIRED -->
+                <primary name="string"> <!-- REQUIRED -->
                     <kd_model model="linear | langmuir | freundlich" kd="exp" b="exp" n="exp"/>
                     <!-- b and n are model specific -->
-                </solute>
+                </primary>
             </sorption_isotherms>
 
             <minerals>
@@ -504,8 +493,7 @@
             <surface_complexation model="string" value="exp" density="exp"/>
 
             <ion_exchange>
-		<cec>exp</cec>
-		<cations>
+		<cations cec="exp">
 		    <cation name="string" value="exp"/>
 		</cations>
             </ion_exchange>
@@ -528,16 +516,9 @@
                     <velocity x="exp" y="exp" z="exp"/>
                 </liquid_component>
 
-                <solute_component name="solute">
-                    <uniform_conc name="string1" value="exp"/>
-                    <uniform_conc name="string2" value="exp"/>
-                    <uniform_conc name="string3" value="exp"/>
-                    <linear_conc name="string4" value="exp" reference_coord="coordinate" gradient="coordinate"/>
-                </solute_component>
-
-                <geochemistry>
+                <geochemistry_component>
                     <constraint name="constraint_name" />
-                </geochemistry>
+                </geochemistry_component>
             </liquid_phase>
 
             <solid_phase name="string">
@@ -546,9 +527,9 @@
                     <mineral>string</mineral>
 	        </mineral>
 
-                <geochemistry>
+                <geochemistry_component>
                     <constraint name="constraint_name"/>
-                </geochemistry>
+                </geochemistry_component>
             </solid_phase>
         </initial_condition>
     </initial_conditions>
@@ -574,16 +555,10 @@
                     <no_flow name="string" start="time" function= "constant | linear"/>
                 </liquid_component>
 
-                <solute_component name="solute">
-                    <aqueous_conc name="string1" start="time" function="constant | linear"  value="exp"/>
-                    <aqueous_conc name="string2" start="time" function="constant | linear"  value="exp"/>
-                    <aqueous_conc name="string3" start="time" function="constant | linear"  value="exp"/>
-                </solute_component>
-
-                <geochemistry>
+                <geochemistry_component>
 		    <!-- Must include at least 1 -->
                     <constraint name="string" start="time" function= "constant | linear"/>
-                </geochemistry>
+                </geochemistry_component>
             </liquid_phase>
         </boundary_condition>
     </boundary_conditions>
@@ -599,16 +574,10 @@
                     <perm_weighted   start="time" value="exp" function="linear | constant"/>
                 </liquid_component>
 
-                <solute_component name="solute">
-                    <uniform_conc name="string" start="time" value="exp" function="linear | constant"/>
-                    <flow_weighted_conc start="time" value="exp" function="linear | constant"/>
-                    <diffusion_dominated_release name="string" start="time" total_inventory="exp" mixing_length="exp" effective_diffusion_coefficient="exp"/>
-                </solute_component>
-
-                <geochemistry>
+                <geochemistry_component>
 		    <!-- Must include at least 1 -->
                     <constraint name="string" start="time" function= "constant | linear"/>
-                </geochemistry>
+                </geochemistry_component>
             </liquid_phase>
         </source>
     </sources>
@@ -712,19 +681,19 @@
 
                 <aqueous_conc>
                     <filename>string</filename>
-                    <solute>string</solute> <!-- REQUIRED -->
+                    <primary>string</primary> <!-- REQUIRED -->
 		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
                     <functional>point | integral</functional> <!-- REQUIRED -->
                     <time_macros>string</time_macros> <!-- REQUIRED -->
                 </aqueous_conc>
 
-                <solute_volumetric_flow_rate>
+                <primary_volumetric_flow_rate>
                     <filename>string</filename>
-                    <solute>string</solute> <!-- REQUIRED -->
+                    <primary>string</primary> <!-- REQUIRED -->
 		    <assigned_regions>string</assigned_regions> <!-- REQUIRED -->
                     <functional>point | integral</functional> <!-- REQUIRED -->
                     <time_macros>string</time_macros> <!-- REQUIRED -->
-                </solute_volumetric_flow_rate>
+                </primary_volumetric_flow_rate>
 
             </liquid_phase>
         </observations>

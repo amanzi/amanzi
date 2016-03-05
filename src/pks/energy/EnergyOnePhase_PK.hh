@@ -37,12 +37,12 @@ public:
   virtual ~EnergyOnePhase_PK() {};
 
   // methods required for PK intrefcae
-  virtual void Setup();
-  virtual void Initialize();
+  virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
-  virtual void CommitStep(double t_old, double t_new);
-  virtual void CalculateDiagnostics() {};
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
 
   double get_dt() { return dt_; }
   void set_dt(double dt) { dt_ = dt; }

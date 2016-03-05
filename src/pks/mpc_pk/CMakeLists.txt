@@ -72,8 +72,8 @@ generate_evaluators_registration_header(
 # Library: mpc_tree
 #
 set(mpc_tree_src_files 
-    MPCWeak.cc 
-    MPCSubcycled.cc 
+    PK_MPCWeak.cc 
+    PK_MPCSubcycled.cc 
     ReactiveTransport_PK.cc
     FlowEnergy_PK.cc
     FlowReactiveTransport_PK.cc)
@@ -86,11 +86,11 @@ add_amanzi_library(mpc_tree SOURCE ${mpc_tree_src_files}
 # Install Targets
 #
 set(mpc_tree_inc_files
-    MPCStrong.hh
-    MPCWeak.hh
-    MPCSubcycled.hh
-    MPC_PK.hh
-    MPCAdditive.hh
+    PK_MPCStrong.hh
+    PK_MPCWeak.hh
+    PK_MPCSubcycled.hh
+    PK_MPC.hh
+    PK_MPCAdditive.hh
     ReactiveTransport_PK.hh
     FlowEnergy_PK.hh
     FlowReactiveTransport_PK.hh)

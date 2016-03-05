@@ -140,12 +140,12 @@ TEST(ENERGY_CONVERGENCE) {
     Teuchos::RCP<TestEnthalpyEvaluator> enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
     S->SetFieldEvaluator("enthalpy", enthalpy);
 
-    EPK->Setup();
+    EPK->Setup(S.ptr());
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
 
-    EPK->Initialize();
+    EPK->Initialize(S.ptr());
     S->CheckAllFieldsInitialized();
 
     // constant time stepping 
@@ -173,7 +173,7 @@ TEST(ENERGY_CONVERGENCE) {
       itrs++;
     }
 
-    EPK->CommitStep(0.0, 1.0);
+    EPK->CommitStep(0.0, 1.0, S);
 
     // calculate errors
     Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
@@ -244,12 +244,12 @@ TEST(ENERGY_PRECONDITIONER) {
     Teuchos::RCP<TestEnthalpyEvaluator> enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
     S->SetFieldEvaluator("enthalpy", enthalpy);
 
-    EPK->Setup();
+    EPK->Setup(S.ptr());
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
 
-    EPK->Initialize();
+    EPK->Initialize(S.ptr());
     S->CheckAllFieldsInitialized();
 
     // constant time stepping 
@@ -277,7 +277,7 @@ TEST(ENERGY_PRECONDITIONER) {
       itrs++;
     }
 
-    EPK->CommitStep(0.0, 1.0);
+    EPK->CommitStep(0.0, 1.0, S);
     num_itrs[loop] = EPK->bdf1_dae()->number_nonlinear_steps();
     printf("number of nonlinear steps: %d\n", num_itrs[loop]);
     plist->sublist("PKs").sublist("Energy").sublist("One-phase problem")
