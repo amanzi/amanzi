@@ -62,7 +62,8 @@ public:
   // -- loops over sub-PKs
   virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
   virtual void calculate_diagnostics(const Teuchos::RCP<State>& S);
-
+  virtual bool valid_step();
+  
   // set States
   virtual void set_states(const Teuchos::RCP<const State>& S,
                           const Teuchos::RCP<State>& S_inter,
@@ -213,6 +214,21 @@ void MPC<PK_t>::calculate_diagnostics(const Teuchos::RCP<State>& S) {
        pk != sub_pks_.end(); ++pk) {
     (*pk)->calculate_diagnostics(S);
   }
+};
+
+
+// -----------------------------------------------------------------------------
+// loop over sub-PKs, calling their valid_step() method
+// -----------------------------------------------------------------------------
+template <class PK_t>
+bool MPC<PK_t>::valid_step() {
+  bool valid(true);
+  for (typename SubPKList::iterator pk = sub_pks_.begin();
+       pk != sub_pks_.end(); ++pk) {
+    bool is_valid = (*pk)->valid_step();
+    if (!is_valid) valid = is_valid;
+  }
+  return valid;
 };
 
 
