@@ -11,9 +11,11 @@
 */
 
 #include "Operator_Cell.hh"
+#include "Operator_Edge.hh"
 #include "Operator_Node.hh"
-#include "Op_Node_Node.hh"
 #include "Op_Cell_Cell.hh"
+#include "Op_Edge_Edge.hh"
+#include "Op_Node_Node.hh"
 #include "Op_SurfaceCell_SurfaceCell.hh"
 
 #include "OperatorAccumulation.hh"
@@ -52,7 +54,8 @@ OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
         const CompositeVector& s0, const CompositeVector& ss,
         double dT, const std::string& name)
 {
-  AmanziMesh::Entity_ID_List nodes;
+
+  AmanziMesh::Entity_ID_List nodes, edges;
   CompositeVector entity_volume(ss);
 
   if (name == "cell" && ss.HasComponent("cell")) {
@@ -61,9 +64,25 @@ OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
     for (int c=0; c!=ncells_owned; ++c) {
       volume[0][c] = mesh_->cell_volume(c); 
     }
+
   } else if (name == "face" && ss.HasComponent("face")) {
     // Missing code.
     ASSERT(false);
+
+  } else if (name == "edge" && ss.HasComponent("edge")) {
+    Epetra_MultiVector& volume = *entity_volume.ViewComponent(name, true); 
+    volume.PutScalar(0.0);
+
+    for (int c=0; c!=ncells_owned; ++c) {
+      mesh_->cell_get_edges(c, &edges);
+      int nedges = edges.size();
+
+      for (int i = 0; i < nedges; i++) {
+        volume[0][edges[i]] += mesh_->cell_volume(c) / nedges; 
+      }
+    }
+    entity_volume.GatherGhostedToMaster(name);
+
   } else if (name == "node" && ss.HasComponent("node")) {
     Epetra_MultiVector& volume = *entity_volume.ViewComponent(name, true); 
     volume.PutScalar(0.0);
@@ -76,8 +95,8 @@ OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
         volume[0][nodes[i]] += mesh_->cell_volume(c) / nnodes; 
       }
     }
-
     entity_volume.GatherGhostedToMaster(name);
+
   } else {
     ASSERT(false);
   }
@@ -104,7 +123,7 @@ void
 OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
         const CompositeVector& ss, double dT, const std::string& name)
 {
-  AmanziMesh::Entity_ID_List nodes;
+  AmanziMesh::Entity_ID_List nodes, edges;
 
   CompositeVector entity_volume(ss);
 
@@ -114,9 +133,25 @@ OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
     for (int c = 0; c != ncells_owned; ++c) {
       volume[0][c] = mesh_->cell_volume(c); 
     }
+
   } else if (name == "face" && ss.HasComponent("face")) {
     // Missing code.
     ASSERT(false);
+
+  } else if (name == "edge" && ss.HasComponent("edge")) {
+    Epetra_MultiVector& volume = *entity_volume.ViewComponent(name, true); 
+    volume.PutScalar(0.0);
+
+    for (int c = 0; c != ncells_owned; ++c) {
+      mesh_->cell_get_edges(c, &edges);
+      int nedges = edges.size();
+
+      for (int i = 0; i < nedges; i++) {
+        volume[0][edges[i]] += mesh_->cell_volume(c) / nedges; 
+      }
+    }
+    entity_volume.GatherGhostedToMaster(name);
+
   } else if (name == "node" && ss.HasComponent("node")) {
     Epetra_MultiVector& volume = *entity_volume.ViewComponent(name, true); 
     volume.PutScalar(0.0);
@@ -129,8 +164,8 @@ OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
         volume[0][nodes[i]] += mesh_->cell_volume(c) / nnodes; 
       }
     }
-
     entity_volume.GatherGhostedToMaster(name);
+
   } else {
     ASSERT(false);
   }
@@ -193,6 +228,16 @@ OperatorAccumulation::InitAccumulation_(AmanziMesh::Entity_kind entity, bool sur
         local_op_ = Teuchos::rcp(new Op_Cell_Cell(name, mesh_));
       }
 
+    } else if (entity == AmanziMesh::EDGE) {
+      global_op_schema_ = OPERATOR_SCHEMA_DOFS_EDGE;
+      Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
+      cvs->SetMesh(mesh_)->AddComponent("edge", AmanziMesh::EDGE, 1);
+      global_op_ = Teuchos::rcp(new Operator_Edge(cvs, plist));
+
+      local_op_schema_ = OPERATOR_SCHEMA_BASE_EDGE | OPERATOR_SCHEMA_DOFS_EDGE;
+      std::string name("EDGE_EDGE");
+      local_op_ = Teuchos::rcp(new Op_Edge_Edge(name, mesh_));
+
     } else if (entity == AmanziMesh::NODE) {
       global_op_schema_ = OPERATOR_SCHEMA_DOFS_NODE;
       Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -222,6 +267,11 @@ OperatorAccumulation::InitAccumulation_(AmanziMesh::Entity_kind entity, bool sur
       } else {
         local_op_ = Teuchos::rcp(new Op_Cell_Cell(name, mesh_));
       }
+
+    } else if (entity == AmanziMesh::EDGE) {
+      local_op_schema_ = OPERATOR_SCHEMA_BASE_EDGE | OPERATOR_SCHEMA_DOFS_EDGE;
+      std::string name("EDGE_EDGE");
+      local_op_ = Teuchos::rcp(new Op_Edge_Edge(name, mesh_));
 
     } else if (entity == AmanziMesh::NODE) {
       local_op_schema_ = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL;

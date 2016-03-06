@@ -71,13 +71,24 @@ class Operator_Edge : public Operator {
   virtual int ApplyMatrixFreeOp(const Op_Cell_Edge& op,
           const CompositeVector& X, CompositeVector& Y) const;
 
+  virtual int ApplyMatrixFreeOp(const Op_Edge_Edge& op,
+          const CompositeVector& X, CompositeVector& Y) const;
+
   // visit methods for symbolic assemble
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
   
+  virtual void SymbolicAssembleMatrixOp(const Op_Edge_Edge& op,
+          const SuperMap& map, GraphFE& graph,
+          int my_block_row, int my_block_col) const;
+
   // visit methods for assemble
   virtual void AssembleMatrixOp(const Op_Cell_Edge& op,
+          const SuperMap& map, MatrixFE& mat,
+          int my_block_row, int my_block_col) const;
+
+  virtual void AssembleMatrixOp(const Op_Edge_Edge& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
 };

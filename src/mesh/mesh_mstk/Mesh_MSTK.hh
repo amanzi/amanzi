@@ -155,8 +155,6 @@ public:
   Entity_ID entity_get_parent (const Entity_kind kind, const Entity_ID entid) const;
 
 
-        
-   
   //
   // General mesh information
   // -------------------------
@@ -168,6 +166,10 @@ public:
   unsigned int num_entities (const Entity_kind kind,
 			     const Parallel_type ptype) const;
     
+  // Were optional edges initialized?
+  virtual
+  bool valid_edges() const { return edges_initialized; }
+
     
   // Global ID of any entity
     
@@ -301,6 +303,8 @@ public:
     
   const Epetra_Map& face_map (bool include_ghost) const; 
 
+  const Epetra_Map& edge_map (bool include_ghost) const;
+    
   const Epetra_Map& node_map (bool include_ghost) const;
     
   const Epetra_Map& exterior_face_map (void) const; 

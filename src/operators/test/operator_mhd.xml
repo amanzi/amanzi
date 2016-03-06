@@ -1,0 +1,68 @@
+<ParameterList name="Main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+  <Parameter name="grid_option" type="string" value="Unstructured"/>
+
+  <!--  REGIONS  -->
+  <ParameterList name="Regions">
+    <ParameterList name="Left side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{-1.0,0.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Right side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array(double)" value="{1.0,0.0,0.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{1.0,0.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Top surface">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array(double)" value="{0.0,0.0,5.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{0.0,0.0,5.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!--  OPERATORS  -->
+  <ParameterList name="PK operator">
+    <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+
+    <ParameterList name="curl-curl operator">
+      <Parameter name="schema" type="Array(string)" value="{edge}"/>
+      <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{edge}"/>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- SOLVERS -->
+  <ParameterList name="Solvers">
+    <ParameterList name="AztecOO CG">
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="error tolerance" type="double" value="1e-16"/>
+        <Parameter name="maximum number of iterations" type="int" value="200"/>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="high"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- PRECONDITIONERS -->
+  <ParameterList name="Preconditioners">
+    <ParameterList name="Hypre AMG">
+      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <ParameterList name="boomer amg parameters">
+        <Parameter name="cycle applications" type="int" value="2"/>
+        <Parameter name="smoother sweeps" type="int" value="3"/>
+        <Parameter name="strong threshold" type="double" value="0.25"/>
+        <Parameter name="tolerance" type="double" value="0.0"/>
+        <Parameter name="verbosity" type="int" value="1"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
+

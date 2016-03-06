@@ -188,6 +188,16 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
     ghost_maps.push_back(meshmaps.second);
   }
 
+  if (schema & OPERATOR_SCHEMA_DOFS_EDGE) {
+    ASSERT(cvs.HasComponent("edge"));
+    compnames.push_back("edge");
+    dofnums.push_back(n_dofs);
+    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
+        getMaps(*cvs.Mesh(), AmanziMesh::EDGE);
+    maps.push_back(meshmaps.first);
+    ghost_maps.push_back(meshmaps.second);
+  }
+
   if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
     ASSERT(cvs.HasComponent("node"));
     compnames.push_back("node");

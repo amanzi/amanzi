@@ -11,6 +11,7 @@
 */
 
 #include "DenseMatrix.hh"
+#include "Op_Edge_Edge.hh"
 #include "Op_Cell_Edge.hh"
 
 #include "SuperMap.hh"
@@ -98,6 +99,25 @@ int Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
 
 
 /* ******************************************************************
+* Visit methods for Apply.
+* Apply the local matrices directly as schema is a subset of 
+* assembled schema.
+****************************************************************** */
+int Operator_Edge::ApplyMatrixFreeOp(const Op_Edge_Edge& op,
+                                     const CompositeVector& X, CompositeVector& Y) const
+{
+  ASSERT(op.vals.size() == nedges_owned);
+  const Epetra_MultiVector& Xc = *X.ViewComponent("edge");
+  Epetra_MultiVector& Yc = *Y.ViewComponent("edge");
+
+  for (int e = 0; e != nedges_owned; ++e) {
+    Yc[0][e] += Xc[0][e] * op.vals[e];
+  }
+  return 0;
+}
+
+
+/* ******************************************************************
 * Visit methods for symbolic assemble.
 * Apply the local matrices directly as schemas match.
 ****************************************************************** */
@@ -123,6 +143,28 @@ void Operator_Edge::SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
       lid_c[n] = edge_col_inds[edges[n]];
     }
     ierr |= graph.InsertMyIndices(nedges, lid_r, nedges, lid_c);
+  }
+  ASSERT(!ierr);
+}
+
+
+/* ******************************************************************
+* Visit methods for symbolic assemble.
+* Insert the diagonal on edges
+****************************************************************** */
+void Operator_Edge::SymbolicAssembleMatrixOp(const Op_Edge_Edge& op,
+                                             const SuperMap& map, GraphFE& graph,
+                                             int my_block_row, int my_block_col) const
+{
+  const std::vector<int>& edge_row_inds = map.GhostIndices("edge", my_block_row);
+  const std::vector<int>& edge_col_inds = map.GhostIndices("edge", my_block_col);
+
+  int ierr(0);
+  for (int e=0; e!=nedges_owned; ++e) {
+    int row = edge_row_inds[e];
+    int col = edge_col_inds[e];
+
+    ierr |= graph.InsertMyIndices(row, 1, &col);
   }
   ASSERT(!ierr);
 }
@@ -157,6 +199,30 @@ void Operator_Edge::AssembleMatrixOp(const Op_Cell_Edge& op,
     }
 
     ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[c]);
+  }
+  ASSERT(!ierr);
+}
+
+
+/* ******************************************************************
+* Visit methods for assemble
+* Insert each diagonal values for edges.
+****************************************************************** */
+void Operator_Edge::AssembleMatrixOp(const Op_Edge_Edge& op,
+                                     const SuperMap& map, MatrixFE& mat,
+                                     int my_block_row, int my_block_col) const
+{
+  ASSERT(op.vals.size() == nedges_owned);
+
+  const std::vector<int>& edge_row_inds = map.GhostIndices("edge", my_block_row);
+  const std::vector<int>& edge_col_inds = map.GhostIndices("edge", my_block_col);
+
+  int ierr(0);
+  for (int e=0; e!=nedges_owned; ++e) {
+    int row = edge_row_inds[e];
+    int col = edge_col_inds[e];
+
+    ierr |= mat.SumIntoMyValues(row, 1, &op.vals[e], &col);
   }
   ASSERT(!ierr);
 }

@@ -72,6 +72,7 @@ set(operators_inc_files
     Operator_Node.hh
     Operator_Edge.hh
     BoundaryFlux.hh
+    OperatorCurlCurl.hh
     OperatorDiffusion.hh
     OperatorDiffusionWithGravity.hh
     OperatorDiffusionFactory.hh
@@ -105,6 +106,7 @@ add_amanzi_library(operators
                           Operator_ConsistentFace.cc
                           Operator_Node.cc
                           Operator_Edge.cc
+                          OperatorCurlCurl.cc
                           OperatorDiffusionMFD.cc
                           OperatorDiffusionMFDwithGravity.cc
                           OperatorDiffusionFV.cc
@@ -201,6 +203,12 @@ if ( BUILD_TESTS )
     add_amanzi_test(operators_advdiff_surface operators_advdiff_surface
                     KIND unit
                     SOURCE test/Main.cc test/operator_advdiff_surface.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: operators on 
+    add_amanzi_test(operators_mhd operators_mhd
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_mhd.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: utils

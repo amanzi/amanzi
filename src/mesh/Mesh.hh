@@ -172,6 +172,10 @@ class Mesh
   unsigned int num_entities(const Entity_kind kind,
                             const Parallel_type ptype) const = 0;
 
+  // Were optional edges initialized?
+  virtual
+  bool valid_edges() const { return false; }
+
 
   //
   // Entity meta-data
@@ -570,9 +574,9 @@ class Mesh
   virtual
   const Epetra_Map& edge_map(const bool include_ghost) const
   {
-    Errors::Message mesg("Edges not implemented in this framework");
+    Errors::Message mesg("Edges are not implemented in this framework.");
     amanzi_throw(mesg);
-    return face_map(include_ghost);  // avoids clang warnings for every file.
+    return edge_map(include_ghost);  // avoids clang warnings for every file.
   };
 
   // Get node map
