@@ -31,7 +31,7 @@ class BDF1_TI {
 
   // After a successful step, this method commits the new
   // solution to the solution history
-  void CommitSolution(const double h, const Teuchos::RCP<Vector>& u);
+  void CommitSolution(const double h, const Teuchos::RCP<Vector>& u, bool valid=true);
 
   // Computes a step and returns true whan it fails.
   bool TimeStep(double dt, double& dt_next, const Teuchos::RCP<Vector>& x);
@@ -50,7 +50,7 @@ class BDF1_TI {
   void ReportStatistics_();
 
  protected:
-  Teuchos::RCP<TimestepController> ts_control;  // timestep controller
+  Teuchos::RCP<TimestepController> ts_control_;  // timestep controller
   Teuchos::RCP<BDF1_State<Vector> > state_;
 
   Teuchos::RCP<AmanziSolvers::Solver<Vector,VectorSpace> > solver_;
@@ -101,7 +101,7 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
 
   // timestep controller
   TimestepControllerFactory<Vector> fac;
-  ts_control = fac.Create(plist, udot_, udot_prev_);
+  ts_control_ = fac.Create(plist, udot_, udot_prev_);
 
   // misc internal parameters
   tol_solver_=solver_->tolerance();
@@ -126,19 +126,24 @@ void BDF1_TI<Vector,VectorSpace>::SetInitialState(const double t,
 * Record solution to the history.
 ****************************************************************** */
 template<class Vector,class VectorSpace>
-void BDF1_TI<Vector,VectorSpace>::CommitSolution(const double h, const Teuchos::RCP<Vector>& u) {
-  double t = h + state_->uhist->MostRecentTime();
+void BDF1_TI<Vector,VectorSpace>::CommitSolution(const double h,
+        const Teuchos::RCP<Vector>& u, bool valid) {
+  if (valid) {
+    double t = h + state_->uhist->MostRecentTime();
 
-  // record the solution for later use when computing an initial guess
-  // for the nonlinear solver
-  state_->uhist->RecordSolution(t, *u);
+    // record the solution for later use when computing an initial guess
+    // for the nonlinear solver
+    state_->uhist->RecordSolution(t, *u);
 
-  // record some information about this time step
-  state_->hlast = h;
-  state_->seq++;
-  state_->failed_current = 0;
-  state_->hmin = std::min<double>(h, state_->hmin);
-  state_->hmax = std::max<double>(h, state_->hmax);
+    // record some information about this time step
+    state_->hlast = h;
+    state_->seq++;
+    state_->failed_current = 0;
+    state_->hmin = std::min<double>(h, state_->hmin);
+    state_->hmax = std::max<double>(h, state_->hmax);
+  } else {
+    ts_control_->get_timestep(h, -1); // register that we failed
+  }
 }
 
 
@@ -233,7 +238,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
 
   // update the next timestep size
   if (ierr != 0) itr = -1;
-  dt_next = ts_control->get_timestep(dt, itr);
+  dt_next = ts_control_->get_timestep(dt, itr);
 
   // update the preconditioner lag and tolerance multiplier
   if (ierr != 0) {
