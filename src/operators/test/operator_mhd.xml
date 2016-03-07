@@ -40,8 +40,8 @@
   <ParameterList name="Solvers">
     <ParameterList name="AztecOO CG">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-      <Parameter name="iterative method" type="string" value="gmres"/>
-      <ParameterList name="gmres parameters">
+      <Parameter name="iterative method" type="string" value="pcg"/>
+      <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="1e-16"/>
         <Parameter name="maximum number of iterations" type="int" value="200"/>
         <ParameterList name="VerboseObject">

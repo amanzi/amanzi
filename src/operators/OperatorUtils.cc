@@ -38,6 +38,12 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector
     for (int c = 0; c != data.MyLength(); ++c) sv[cell_inds[c]] = data[0][c];
   } 
 
+  if (cv.HasComponent("edge") && smap.HasComponent("edge")) {
+    const std::vector<int>& edge_inds = smap.Indices("edge", dofnum);
+    const Epetra_MultiVector& data = *cv.ViewComponent("edge");
+    for (int e = 0; e != data.MyLength(); ++e) sv[edge_inds[e]] = data[0][e];
+  } 
+
   if (cv.HasComponent("node") && smap.HasComponent("node")) {
     const std::vector<int>& node_inds = smap.Indices("node", dofnum);
     const Epetra_MultiVector& data = *cv.ViewComponent("node");
@@ -65,6 +71,12 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
     for (int c = 0; c != data.MyLength(); ++c) data[0][c] = sv[cell_inds[c]];
   } 
 
+  if (cv.HasComponent("edge") && smap.HasComponent("edge")) {
+    const std::vector<int>& edge_inds = smap.Indices("edge", dofnum);
+    Epetra_MultiVector& data = *cv.ViewComponent("edge");
+    for (int e = 0; e != data.MyLength(); ++e) data[0][e] = sv[edge_inds[e]];
+  } 
+
   if (cv.HasComponent("node") && smap.HasComponent("node")) {
     const std::vector<int>& node_inds = smap.Indices("node", dofnum);
     Epetra_MultiVector& data = *cv.ViewComponent("node");
@@ -90,6 +102,12 @@ int AddSuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& s
     const std::vector<int>& cell_inds = smap.Indices("cell", dofnum);
     Epetra_MultiVector& data = *cv.ViewComponent("cell");
     for (int c = 0; c != data.MyLength(); ++c) data[0][c] += sv[cell_inds[c]];
+  } 
+
+  if (cv.HasComponent("edge") && smap.HasComponent("edge")) {
+    const std::vector<int>& edge_inds = smap.Indices("edge", dofnum);
+    Epetra_MultiVector& data = *cv.ViewComponent("edge");
+    for (int e = 0; e != data.MyLength(); ++e) data[0][e] += sv[edge_inds[e]];
   } 
 
   if (cv.HasComponent("node") && smap.HasComponent("node")) {

@@ -19,7 +19,7 @@
 #include "LinearOperator.hh"
 #include "LinearOperatorFactory.hh"
 #include "MatrixFE.hh"
-#include "mfd3d_diffusion.hh"
+#include "mfd3d_electromagnetics.hh"
 #include "PreconditionerFactory.hh"
 #include "SuperMap.hh"
 #include "WhetStoneDefs.hh"
@@ -54,7 +54,7 @@ void OperatorCurlCurl::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetS
 void OperatorCurlCurl::UpdateMatrices()
 {
   AmanziMesh::Entity_ID_List edges;
-  WhetStone::MFD3D_Diffusion mfd(mesh_);
+  WhetStone::MFD3D_Electromagnetics mfd(mesh_);
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;

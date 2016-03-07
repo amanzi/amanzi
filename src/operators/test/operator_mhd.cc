@@ -30,11 +30,12 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
+#include "AnalyticMHD_01.hh"
+
 #include "OperatorAccumulation.hh"
 #include "OperatorCurlCurl.hh"
 #include "OperatorDefs.hh"
 #include "Verification.hh"
-
 
 /* *****************************************************************
 * TBW 
@@ -70,13 +71,16 @@ TEST(RESISTIVE_MHD) {
   bool request_faces(true), request_edges(true);
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 5.0, 10, 10, 50, gm, request_faces, request_edges);
 
-  /* modify resistivity coefficient */
+  // create resistivity coefficient
+  AnalyticMHD_01 ana(mesh);
+  WhetStone::Tensor Kc(3, 2);
+
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
-    WhetStone::Tensor Kc(3, 1);
-    Kc(0, 0) = 1.0;
+    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    Kc = ana.Tensor(xc, 0.0);
     K->push_back(Kc);
   }
 
@@ -91,6 +95,8 @@ TEST(RESISTIVE_MHD) {
   AmanziGeometry::Point p1(3), p2(3), xe(3);
 
   for (int e = 0; e < nedges_wghost; e++) {
+    double len = mesh->edge_length(e);
+    const AmanziGeometry::Point& tau = mesh->edge_vector(e);
     mesh->edge_get_nodes(e, &n1, &n2);
     mesh->node_get_coordinates(n1, &p1);
     mesh->node_get_coordinates(n2, &p2);
@@ -98,9 +104,9 @@ TEST(RESISTIVE_MHD) {
 
     if (fabs(xe[0]) < 1e-6 || fabs(xe[0] - 1.0) < 1e-6 ||
         fabs(xe[1]) < 1e-6 || fabs(xe[1] - 1.0) < 1e-6 ||
-        fabs(xe[2]) < 1e-6 || fabs(xe[2] - 1.0) < 1e-6) {
+        fabs(xe[2]) < 1e-6 || fabs(xe[2] - 5.0) < 1e-6) {
       bc_model[e] = OPERATOR_BC_DIRICHLET;
-      bc_value[e] = 0.0;
+      bc_value[e] = (ana.electric_exact(xe, 0.0) * tau) / len;
     }
   }
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_EDGE, bc_model, bc_value, bc_mixed));
@@ -118,10 +124,10 @@ TEST(RESISTIVE_MHD) {
 
   // Add an accumulation term.
   CompositeVector solution(cvs);
-  solution.PutScalar(1.0);  // solution at time T=0
+  solution.PutScalar(0.0);  // solution at time T=0
 
   CompositeVector phi(cvs);
-  phi.PutScalar(0.2);
+  phi.PutScalar(0.0);
 
   Teuchos::RCP<Operator> global_op = op_curlcurl->global_operator();
   Teuchos::RCP<OperatorAccumulation> op_acc =
@@ -162,5 +168,18 @@ TEST(RESISTIVE_MHD) {
     std::cout << "pressure solver (" << solver->name() 
               << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
               << " code=" << solver->returned_code() << std::endl;
+  }
+
+  // compute electric error
+  Epetra_MultiVector& E = *solution.ViewComponent("edge", false);
+  double enorm, el2_err, einf_err;
+  ana.ComputeEdgeError(E, 0.0, enorm, el2_err, einf_err);
+
+  if (MyPID == 0) {
+    el2_err /= enorm; 
+    el2_err /= enorm;
+    printf("L2(e)=%9.6f  Inf(e)=%9.6f  itr=%3d\n", el2_err, einf_err, solver->num_itrs());
+
+    CHECK(el2_err < 1e-12);
   }
 }
