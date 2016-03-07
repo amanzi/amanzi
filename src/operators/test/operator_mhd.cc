@@ -40,7 +40,8 @@
 /* *****************************************************************
 * TBW 
 * **************************************************************** */
-TEST(RESISTIVE_MHD) {
+template<class Analytic>
+void ResistiveMHD() {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -72,7 +73,7 @@ TEST(RESISTIVE_MHD) {
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 5.0, 10, 10, 50, gm, request_faces, request_edges);
 
   // create resistivity coefficient
-  AnalyticMHD_01 ana(mesh);
+  Analytic ana(mesh);
   WhetStone::Tensor Kc(3, 2);
 
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -118,6 +119,31 @@ TEST(RESISTIVE_MHD) {
   op_curlcurl->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op_curlcurl->global_operator()->DomainMap();
 
+  // create source 
+  AmanziMesh::Entity_ID_List edges;
+  CompositeVector source(cvs);
+  Epetra_MultiVector& src = *source.ViewComponent("edge");
+
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh->cell_get_edges(c, &edges);
+    int nedges = edges.size();
+    double vol = 3.0 * mesh->cell_volume(c) / nedges;
+
+    for (int n = 0; n < nedges; ++n) {
+      int e = edges[n];
+      double len = mesh->edge_length(e);
+
+      const AmanziGeometry::Point& tau = mesh->edge_vector(e);
+      mesh->edge_get_nodes(e, &n1, &n2);
+      mesh->node_get_coordinates(n1, &p1);
+      mesh->node_get_coordinates(n2, &p2);
+      xe = (p1 + p2) / 2;
+
+      src[0][e] += (ana.source_exact(xe, 0.0) * tau) / len * vol;
+    }
+  }
+  source.GatherGhostedToMaster("edge");
+
   // set up the diffusion operator
   op_curlcurl->SetTensorCoefficient(K);
   op_curlcurl->UpdateMatrices();
@@ -136,10 +162,11 @@ TEST(RESISTIVE_MHD) {
   double dT = 10.0;
   op_acc->AddAccumulationTerm(solution, phi, dT, "edge");
 
-  // BCs and assemble
+  // BCs, sources, and assemble
   op_curlcurl->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
+  global_op->UpdateRHS(source, false);
 
   // Create a preconditioner.
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
@@ -183,3 +210,8 @@ TEST(RESISTIVE_MHD) {
     CHECK(el2_err < 1e-12);
   }
 }
+
+TEST(RESISTIVE_MHD) {
+  ResistiveMHD<AnalyticMHD_01>();
+}
+
