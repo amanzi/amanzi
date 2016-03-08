@@ -54,6 +54,7 @@ if (ENABLE_Structured)
   add_definitions("-DENABLE_Structured")
   include_directories(../../structured_grid/mpc_pk) 
   list(APPEND interface_src_files InputConverterS.cc)
+  link_directories(${CCSE_LIBRARY_DIR})
 endif()
 
 add_amanzi_library(interface 
