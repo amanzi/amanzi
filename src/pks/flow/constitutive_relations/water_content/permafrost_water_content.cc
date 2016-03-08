@@ -170,10 +170,16 @@ void PermafrostWaterContent::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<
     for (int c=0; c!=ncells; ++c) {
       result_v[0][c] = phi[0][c] * s_g[0][c]*n_g[0][c];
     }
+  } else if (wrt_key == cv_key_) {
+    // pass
+  } else {
+    ASSERT(0);
   }
 
-  for (int c=0; c!=ncells; ++c) {
-    result_v[0][c] *= cell_volume[0][c];
+  if (wrt_key != cv_key_) {
+    for (int c=0; c!=ncells; ++c) {
+      result_v[0][c] *= cell_volume[0][c];
+    }
   }
 };
 

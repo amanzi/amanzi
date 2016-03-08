@@ -37,6 +37,7 @@ private:
   double heat_fusion_;
   double gamma_;
   double T0_;
+  double halfwidth_;
 };
 
 } //namespace

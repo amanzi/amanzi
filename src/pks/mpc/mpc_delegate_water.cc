@@ -29,8 +29,17 @@ namespace Amanzi {
     cap_the_spurt_ = true;
   }
 
+  cap_the_sat_spurt_ = plist_->get<bool>("cap the saturated spurt", false);
+  damp_the_sat_spurt_ = plist_->get<bool>("damp the saturated spurt", false);
+  bool damp_and_cap_the_sat_spurt = plist_->get<bool>("damp and cap the saturated spurt", false);
+  if (damp_and_cap_the_sat_spurt) {
+    damp_the_sat_spurt_ = true;
+    cap_the_sat_spurt_ = true;
+  }
+  
   // set the size of the caps
   if (cap_the_spurt_ || damp_the_spurt_ ||
+      cap_the_sat_spurt_ || damp_the_sat_spurt_ ||
       modify_predictor_heuristic_ || modify_predictor_spurt_damping_) {
     cap_size_ = plist_->get<double>("cap over atmospheric", 100.0);
   }
@@ -153,6 +162,84 @@ MPCDelegateWater::ModifyCorrection_WaterSpurtCap(double h, Teuchos::RCP<const Tr
   return n_modified;
 }
 
+
+// Approach 2: damping of the spurt -- limit the max oversaturated pressure
+//  using a global damping term.
+// Approach 3: capping of the spurt -- limit the max oversaturated pressure
+//  if coming from undersaturated.
+double
+MPCDelegateWater::ModifyCorrection_SaturatedSpurtDamp(double h, Teuchos::RCP<const TreeVector> res,
+        Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+  const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
+
+  Teuchos::RCP<const AmanziMesh::Mesh> domain_mesh =
+      u->SubVector(i_domain_)->Data()->Mesh();
+  int ncells_domain = domain_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  const Epetra_MultiVector& domain_p_c = *u->SubVector(i_domain_)->Data()
+      ->ViewComponent("cell",false);
+  Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(i_domain_)->Data();
+  Epetra_MultiVector& domain_Pu_c = *domain_Pu->ViewComponent("cell",false);
+
+  // Approach 2
+  double damp = 1.;
+  if (damp_the_sat_spurt_) {
+    for (int c=0; c!=ncells_domain; ++c) {
+      double p_old = domain_p_c[0][c];
+      double p_new = p_old - domain_Pu_c[0][c];
+      if ((p_new > patm + cap_size_) && (p_old < patm)) {
+        double my_damp = ((patm + cap_size_) - p_old) / (p_new - p_old);
+        damp = std::min(damp, my_damp);
+        if (vo_->os_OK(Teuchos::VERB_EXTREME))
+          std::cout << "   DAMPING THE SATURATED SPURT (c=" << domain_mesh->cell_map(false).GID(c) << "): p_old = " << p_old << ", p_new = " << p_new << ", coef = " << my_damp << std::endl;
+      }
+    }
+
+    double proc_damp = damp;
+    domain_Pu_c.Comm().MinAll(&proc_damp, &damp, 1);
+    if (damp < 1.0) {
+      if (vo_->os_OK(Teuchos::VERB_HIGH))
+        *vo_->os() << "  DAMPING THE SATURATED SPURT!, coef = " << damp << std::endl;
+      domain_Pu->Scale(damp);
+    }
+  }
+  return damp;
+}
+
+
+int
+MPCDelegateWater::ModifyCorrection_SaturatedSpurtCap(double h, Teuchos::RCP<const TreeVector> res,
+        Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu, double damp) {
+  const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
+
+  Teuchos::RCP<const AmanziMesh::Mesh> domain_mesh =
+      u->SubVector(i_domain_)->Data()->Mesh();
+  int ncells_domain = domain_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  const Epetra_MultiVector& domain_p_c = *u->SubVector(i_domain_)->Data()
+      ->ViewComponent("cell",false);
+  Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(i_domain_)->Data();
+  Epetra_MultiVector& domain_Pu_c = *domain_Pu->ViewComponent("cell",false);
+
+  // Approach 3
+  int n_modified = 0;
+  if (cap_the_sat_spurt_) {
+    for (int c=0; c!=ncells_domain; ++c) {
+      double p_old = domain_p_c[0][c];
+      double p_new = p_old - domain_Pu_c[0][c] / damp;
+      if ((p_new > patm + cap_size_) && (p_old < patm)) {
+        domain_Pu_c[0][c] = p_old - (patm + cap_size_);
+        n_modified++;
+        if (vo_->os_OK(Teuchos::VERB_HIGH))
+          std::cout << "  CAPPING THE SATURATED SPURT (c=" << domain_mesh->cell_map(false).GID(c)
+                    << "): p_old = " << p_old
+                    << ", p_new = " << p_new << ", p_capped = " << p_old - domain_Pu_c[0][c] << std::endl;
+      }
+    }
+  }
+
+  return n_modified;
+}
 
 // modify predictor via heuristic stops spurting in the surface flow
 bool

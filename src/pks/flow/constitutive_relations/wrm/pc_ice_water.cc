@@ -22,15 +22,72 @@ PCIceWater::PCIceWater(Teuchos::ParameterList& pc_plist) :
 };
 
 double PCIceWater::CapillaryPressure(double T, double dens) {
-  return T < T0_ ? gamma_ * dens * (T0_ - T)/T0_ : 0.;
+  double pc; 
+  if (halfwidth_ > 0) {
+    double dx = halfwidth_;
+    double alpha = gamma_*dens/T0_; 
+    double a = alpha* dx/4.; 
+    double b = -alpha/2.; 
+    double c = alpha/(4.*dx); 
+    double x = T-T0_; 
+
+    if(x < -dx) { 
+      pc = -alpha* x; 
+    } else if( x > dx ) { 
+      pc = 0.; 
+    } else { 
+      pc = a + b*x + c*x*x;
+    }
+  } else {
+    pc = T < T0_ ? gamma_ * dens * (T0_ - T)/T0_ : 0.;
+  }
+  return pc;
 };
 
 double PCIceWater::DCapillaryPressureDT(double T, double dens) {
-  return T < T0_ ? -gamma_ * dens / T0_ : 0.;
+  double dpc; 
+  if (halfwidth_ > 0.) {
+    double dx = halfwidth_; 
+    double alpha = gamma_*dens/T0_; 
+    double a = alpha* dx /4.; 
+    double b = -1.0*alpha/2.; 
+    double c = alpha/(4.*dx); 
+    double x = T-T0_; 
+    
+    if(x < -dx) { 
+      dpc = -alpha ; 
+    } else if( x > dx ) { 
+      dpc = 0.; 
+    } else { 
+      dpc =  b + 2.*c*x; 
+    } 
+  } else {
+    dpc = T < T0_ ? -gamma_ * dens / T0_ : 0.;
+  }
+  return dpc; 
 };
 
 double PCIceWater::DCapillaryPressureDRho(double T, double dens) {
-  return T < T0_ ? gamma_ * (T0_ - T)/T0_ : 0.;
+  double dpc; 
+  if (halfwidth_ > 0.) {
+    double dx = halfwidth_; 
+    double dalpha = gamma_/T0_; 
+    double a = dalpha* dx/4.; 
+    double b = -1.0*dalpha/2.; 
+    double c = dalpha/(4.*dx); 
+    double x = T-T0_; 
+
+    if(x < -dx) { 
+      dpc = -dalpha * x ; 
+    } else if( x > dx ) { 
+      dpc = 0.; 
+    } else { 
+      dpc =  a + b *x + c* x*x; 
+    } 
+  } else {
+    dpc = T < T0_ ? gamma_ * (T0_ - T)/T0_ : 0.;
+  }
+  return dpc;
 };
 
 
@@ -39,6 +96,8 @@ void PCIceWater::InitializeFromPlist_() {
   sigma_gas_liq_ = pc_plist_.get<double>("interfacial tension air-water", 72.7);
   T0_ = pc_plist_.get<double>("heat of fusion reference temperature [K]", 273.15);
 
+  halfwidth_  = pc_plist_.get<double>("smoothing width [K]", -1.)/2.;  
+  
   if (pc_plist_.isParameter("heat of fusion of water [J/mol]")) {
     heat_fusion_ = pc_plist_.get<double>("heat of fusion of water [J/mol]");
     molar_basis_ = true;

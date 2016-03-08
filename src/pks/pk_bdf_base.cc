@@ -77,7 +77,7 @@ double PKBDFBase::get_dt() { return dt_; }
 // -- Commit any secondary (dependent) variables.
 void PKBDFBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
   if (dt > 0. && time_stepper_ != Teuchos::null)
-    time_stepper_->CommitSolution(dt, solution_);
+    time_stepper_->CommitSolution(dt, solution_, true);
 }
 
 
@@ -104,17 +104,20 @@ bool PKBDFBase::advance(double dt) {
   }
 
   if (!fail) {
-    // commit the step as successful
-    //    time_stepper_->CommitSolution(dt, solution_);
-    //    commit_state(dt, S_next_);
-
-    // update the timestep size
-    if (dt_solver < dt_ && dt_solver >= dt) {
-      // We took a smaller step than we recommended, and it worked fine (not
-      // suprisingly).  Likely this was due to constraints from other PKs or
-      // vis.  Do not reduce our recommendation.
+    // check step validity
+    bool valid = valid_step();
+    if (valid) {
+      // update the timestep size
+      if (dt_solver < dt_ && dt_solver >= dt) {
+        // We took a smaller step than we recommended, and it worked fine (not
+        // suprisingly).  Likely this was due to constraints from other PKs or
+        // vis.  Do not reduce our recommendation.
+      } else {
+        dt_ = dt_solver;
+      }
     } else {
-      dt_ = dt_solver;
+      time_stepper_->CommitSolution(dt_, solution_, valid);
+      dt_ = 0.5*dt_;
     }
   } else {
     // take the decreased timestep size

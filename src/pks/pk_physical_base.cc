@@ -31,6 +31,10 @@ PKPhysicalBase::PKPhysicalBase(const Teuchos::RCP<Teuchos::ParameterList>& plist
   Teuchos::ParameterList& pv_sublist = FElist.sublist(key_);
   pv_sublist.set("evaluator name", key_);
   pv_sublist.set("field evaluator type", "primary variable");
+
+  // primary variable max change
+  max_valid_change_ = plist_->get<double>("max valid change", -1.0);
+
 }
 
 // -----------------------------------------------------------------------------
@@ -96,6 +100,26 @@ void PKPhysicalBase::set_states(const Teuchos::RCP<const State>& S,
 
   solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
 };
+
+
+// -----------------------------------------------------------------------------
+// Ensures the step size is smaller than max_valid_change
+// -----------------------------------------------------------------------------
+bool PKPhysicalBase::valid_step() {
+  if (max_valid_change_ > 0.0) {
+    const CompositeVector& var_new = *S_next_->GetFieldData(key_);
+    const CompositeVector& var_old = *S_->GetFieldData(key_);
+    CompositeVector dvar(var_new);
+    dvar.Update(-1., var_old, 1.);
+    double change = 0.;
+    dvar.NormInf(&change);
+    if (change > max_valid_change_) {
+      std::cout << "FAILED MAX VALID CHANGE! " << change << ", " << max_valid_change_ << std::endl;
+      return false;
+    }
+  }
+  return true;
+}
 
 
 // -----------------------------------------------------------------------------

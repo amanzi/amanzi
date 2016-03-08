@@ -83,7 +83,6 @@ OverlandPressureFlow::OverlandPressureFlow(const Teuchos::RCP<Teuchos::Parameter
 void OverlandPressureFlow::setup(const Teuchos::Ptr<State>& S) {
   // set up the meshes
   if (S->HasMesh("surface_star") && domain_=="surface_star")
-    standalone_mode_=false;
 
   if(domain_.substr(0,6) =="column")
     standalone_mode_ = false;
@@ -333,7 +332,6 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
   wcbar_plist.set<bool>("water content bar", true);
   Teuchos::RCP<FlowRelations::OverlandPressureWaterContentEvaluator> wc_evaluator =
       Teuchos::rcp(new FlowRelations::OverlandPressureWaterContentEvaluator(wcbar_plist));
-  S->SetFieldEvaluator(getKey(domain_,"water_content_bar"), wc_evaluator);
 
   // -- ponded depth
   S->RequireField(getKey(domain_,"ponded_depth"))->Update(matrix_->RangeMap())->SetGhosted();

@@ -38,6 +38,8 @@ class PKDefaultBase : public PK {
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
 
+  // -- ensure a solution is valid
+  virtual bool valid_step() { return true; }
 
   virtual void solution_to_state(TreeVector& soln,
           const Teuchos::RCP<State>& S) = 0; // this is here to pass the buck virtually

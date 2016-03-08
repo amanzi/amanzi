@@ -67,6 +67,14 @@ class MPCDelegateWater {
   ModifyCorrection_WaterSpurtCap(double h, Teuchos::RCP<const TreeVector> res,
                                     Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du, double damping);
 
+  double
+  ModifyCorrection_SaturatedSpurtDamp(double h, Teuchos::RCP<const TreeVector> res,
+          Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
+
+  int
+  ModifyCorrection_SaturatedSpurtCap(double h, Teuchos::RCP<const TreeVector> res,
+                                    Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du, double damping);
+
  protected:
   Teuchos::RCP<Teuchos::ParameterList> plist_;
   Teuchos::RCP<VerboseObject> vo_;
@@ -86,6 +94,8 @@ class MPCDelegateWater {
   // -- control
   bool cap_the_spurt_;
   bool damp_the_spurt_;
+  bool cap_the_sat_spurt_;
+  bool damp_the_sat_spurt_;
 
   // -- parameters
   double cap_size_;

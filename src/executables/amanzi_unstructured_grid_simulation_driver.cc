@@ -34,6 +34,7 @@ Effectively stolen from Amanzi, with few modifications.
 
 #include "MeshAudit.hh"
 #include "MeshFactory.hh"
+#include "MeshLogicalFactory.hh"
 #include "MeshColumn.hh"
 #include "MeshSurfaceCell.hh"
 #include "Domain.hh"
@@ -45,6 +46,7 @@ Effectively stolen from Amanzi, with few modifications.
 #include "exceptions.hh"
 
 #include "amanzi_unstructured_grid_simulation_driver.hh"
+
 
 int AmanziUnstructuredGridSimulationDriver::Run(
     const MPI_Comm& mpi_comm, Teuchos::ParameterList& input_parameter_list) {
@@ -139,12 +141,11 @@ int AmanziUnstructuredGridSimulationDriver::Run(
   }
 
   // Create the mesh
-  std::string file(""), format("");
-
   if (mesh_plist.isSublist("Read Mesh File")) {
     // try to read mesh from file
     Teuchos::ParameterList read_params = mesh_plist.sublist("Read Mesh File");
 
+    std::string file;
     if (read_params.isParameter("File")) {
       file = read_params.get<std::string>("File");
     } else {
@@ -152,6 +153,7 @@ int AmanziUnstructuredGridSimulationDriver::Run(
       throw std::exception();
     }
 
+    std::string format;
     if (read_params.isParameter("Format")) {
       // Is the format one that we can read?
       format = read_params.get<std::string>("Format");
@@ -193,6 +195,12 @@ int AmanziUnstructuredGridSimulationDriver::Run(
 
     comm->SumAll(&ierr, &aerr, 1);
     if (aerr > 0) return 1;
+
+  } else if (mesh_plist.isSublist("Logical Mesh")) {
+    Amanzi::AmanziMesh::MeshLogicalFactory fac(comm, geom_model_ptr);
+    mesh = fac.Create(mesh_plist.sublist("Logical Mesh"));
+    
+  } else if (mesh_plist.isSublist("Embedded Logical Mesh")) {
 
   } else {
     std::cerr << rank << ": error: "
