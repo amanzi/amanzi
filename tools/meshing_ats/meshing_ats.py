@@ -4,16 +4,43 @@ Extrudes a VTK 2D mesh to generate an ExodusII 3D mesh.
 Works with and assumes all polyhedra cells (and polygon faces).
 
 To see usage, run:
+------------------------------------------------------------
 
 python meshing_ats.py -h
 
-Example distributed with this source, to run:
 
-cd four-polygon-test
-python ../meshing_ats.py -n 10 -d 1 ./four_polygon.vtk
-mkdir run0
-cd run0
-ats --xml_file=../test1-fv-four-polygon.xml 
+
+Example distributed with this source, to run:
+------------------------------------------------------------
+
+$> cd four-polygon-test
+$> python ../meshing_ats.py -n 10 -d 1 ./four_polygon.vtk
+$> mkdir run0
+$> cd run0
+$> ats --xml_file=../test1-fv-four-polygon.xml 
+
+
+
+Requires building Ethan's hacked exodus python wrappers:
+------------------------------------------------------------
+
+first, edit $ATS_SRC_DIR/tools/meshing_ats/cmake-script to fit your
+system
+
+then, download exodus-6.09
+unzip/untar
+
+$> cd exodus-6.09
+$> patch -p1 < $ATS_SRC_DIR/tools/meshing_ats/exodus-6.09.patch
+
+$> cd exodus
+$> mkdir build
+$> cd build
+$> . $ATS_SRC_DIR/tools/meshing_ats/cmake-script
+$> make
+$> make install
+
+
 """
 
 import sys,os
