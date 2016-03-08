@@ -18,9 +18,13 @@ class WeakMPCSemiCoupled : public WeakMPC {
   virtual bool advance (double dt);
   virtual void setup(const Teuchos::Ptr<State>& S);
   
+  bool CoupledSurfSubsurfColumns(double dt);
+  bool CoupledSurfSubsurf3D(double dt);
+
  private :
   static RegisteredPKFactory<WeakMPCSemiCoupled> reg_;
-  Key domain_ss, domain_sf;
+  Key coupling_key_;
+  unsigned int numPKs_;
 
 };
 
