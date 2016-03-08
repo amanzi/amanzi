@@ -214,6 +214,33 @@ void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
 }
 
  
+/* ******************************************************************
+* Calculate source extrema.                                   
+****************************************************************** */
+void Flow_PK::VV_PrintSourceExtrema() const
+{
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    double smin(0.0), smax(0.0);
+    for (int i = 0; i < srcs.size(); ++i) {
+      for (FlowDomainFunction::Iterator it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
+        int c = it->first;
+        smin = std::min(smin, it->second);
+        smax = std::max(smax, it->second);
+      }
+    }
+    double tmp(smin);
+    mesh_->get_comm()->MinAll(&tmp, &smin, 1);
+    tmp = smax;
+    mesh_->get_comm()->MaxAll(&tmp, &smax, 1);
+
+    if (MyPID == 0) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "sources: min=" << smin << " max=" << smax << std::endl;
+    }
+  }
+}
+
+
 /* ****************************************************************
 * Find string for the preconditoner.
 **************************************************************** */

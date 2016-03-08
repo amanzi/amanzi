@@ -333,6 +333,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
       PKUtils_CalculatePermeabilityFactorInWell(S, Kxy);
     }
     srcs[i]->Compute(t_old, t_new, Kxy); 
+    VV_PrintSourceExtrema();
   }
   
   // Optional step: calculate hydrostatic solution consistent with BCs.
