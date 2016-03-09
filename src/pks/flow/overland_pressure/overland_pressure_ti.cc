@@ -100,6 +100,7 @@ void OverlandPressureFlow::Functional( double t_old,
     vecs[1] = S_next_->GetFieldData("unfrozen_fraction").ptr();
     db_->WriteVectors(vnames, vecs, false);
   }
+  db_->WriteVector("q_s", S_next_->GetFieldData("surface-mass_flux").ptr(), true);
   db_->WriteVector("k_s", S_next_->GetFieldData("upwind_overland_conductivity").ptr(), true);
   db_->WriteVector("res (diff)", res.ptr(), true);
 #endif
