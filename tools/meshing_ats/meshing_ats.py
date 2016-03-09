@@ -150,7 +150,6 @@ class Mesh2D(object):
 
         verts = [[self.coords[i,0:2] for i in f] for f in self.conn]
         from matplotlib import collections
-        print verts
         gons = collections.PolyCollection(verts, facecolors=colors)
         from matplotlib import pyplot as plt
         fig,ax = plt.subplots(1,1)
@@ -308,28 +307,37 @@ class Mesh3D(object):
         e.put_node_count_per_face(1, np.array([len(f) for f in self.face_to_node_conn]))
         e.put_face_node_conn(1, np.array(face_raveled)+1)
 
-        # put the elem blocks
+        # put cells in with blocks, which renumbers the cells, so we have to track sidesets.
+        # Therefore we keep a map of old cell to new cell ordering
+        new_to_old = []
         for i_m,m_id in enumerate(self.material_id_list):
-            elems = [c for i,c in enumerate(self.elem_to_face_conn) if self.material_ids[i] == m_id]
-            elems_raveled = [i for c in elems for i in c]
+            elems = [(i,c) for (i,c) in enumerate(self.elem_to_face_conn) if self.material_ids[i] == m_id]
+            elems_raveled = [f for (i,c) in elems for f in c]
+            new_to_old.extend([i for (i,c) in elems])
 
             e.put_polyhedra_elem_blk(m_id, len(elems), len(elems_raveled), 0)
             e.put_elem_blk_name(m_id, "MATERIAL_ID_%d"%m_id)
-            e.put_face_count_per_polyhedra(m_id, np.array([len(c) for c in elems]))
+            e.put_face_count_per_polyhedra(m_id, np.array([len(c) for i,c in elems]))
             e.put_elem_face_conn(m_id, np.array(elems_raveled)+1)
 
         # add sidesets
+        old_to_new = sorted([(old,i) for (i,old) in enumerate(new_to_old)], lambda a,b: int.__cmp__(a[0],b[0]))
+        
         e.put_side_set_names([ss.name for ss in self.side_sets])
         for ss in self.side_sets:
+
+            for elem in ss.elem_list:
+                assert old_to_new[elem][0] == elem
+            new_elem_list = [old_to_new[elem][1] for elem in ss.elem_list]                
             e.put_side_set_params(ss.setid, len(ss.elem_list), 0)
-            e.put_side_set(ss.setid, np.array(ss.elem_list)+1, np.array(ss.side_list)+1)
+            e.put_side_set(ss.setid, np.array(new_elem_list)+1, np.array(ss.side_list)+1)
 
         # finish and close
         e.close()
         
 
     @classmethod
-    def extruded_Mesh2D(cls, mesh2D, layer_thicknesses, ncells_per_layer, mat_ids):
+    def extruded_Mesh2D(cls, mesh2D, layer_thicknesses, ncells_per_layer, mat_ids, snap_bottom=False):
         """
         Regularly extrude a 2D mesh to make a 3D mesh.
 
@@ -367,11 +375,26 @@ class Mesh3D(object):
         if mesh2D.dim == 3:
             coords[:,0,2] = mesh2D.coords[:,2]
 
-        cell = 0
-        for ncells, dz in zip(ncells_per_layer, dzs):
-            for i in range(ncells):
-                coords[:,cell+1,2] = coords[:,cell,2] - dz
-                cell = cell + 1
+        if snap_bottom:
+            # do all but the bottom layer
+            cell = 0
+            for ncells, dz in zip(ncells_per_layer[:-1], dzs[:-1]):
+                for i in range(ncells):
+                    coords[:,cell+1,2] = coords[:,cell,2] - dz
+                    cell = cell + 1
+
+            # do the bottom layer as a variable spacing to match the bottom
+            for node_col in range(mesh2D.coords.shape[0]):
+                coords[node_col,cell:,2] = np.linspace(coords[node_col,cell,2], layer_thicknesses[-1], ncells_per_layer[-1]+1)
+
+        else:
+            cell = 0
+            for ncells, dz in zip(ncells_per_layer[:-1], dzs[:-1]):
+                for i in range(ncells):
+                    coords[:,cell+1,2] = coords[:,cell,2] - dz
+                    cell = cell + 1
+                    
+
 
         # create faces, face sets, cells
         bottom = []
@@ -382,7 +405,7 @@ class Mesh3D(object):
         # -- loop over the columns, adding the horizontal faces
         for col in range(mesh2D.num_cells()):
             nodes_2 = mesh2D.conn[col]
-            bottom.append(col_to_id(col,0))
+            surface.append(col_to_id(col,0))
             for z_face in range(ncells_tall + 1):
                 i_f = len(faces)
                 f = [node_to_id(n, z_face) for n in nodes_2]
@@ -393,7 +416,7 @@ class Mesh3D(object):
                     cells[col_to_id(col, z_face-1)].append(i_f)
 
                 faces.append(f)
-            surface.append(col_to_id(col,ncells_tall-1))
+            bottom.append(col_to_id(col,ncells_tall-1))
 
         # -- loop over the columns, adding the vertical faces
         added = dict()
@@ -442,11 +465,24 @@ class Mesh3D(object):
 
         # make the side sets
         side_sets = []
-        side_sets.append(SideSet("bottom", 1, bottom, [0,]*len(bottom)))
-        side_sets.append(SideSet("surface", 2, surface, [1,]*len(surface)))
+        side_sets.append(SideSet("bottom", 1, bottom, [1,]*len(bottom)))
+        side_sets.append(SideSet("surface", 2, surface, [0,]*len(surface)))
 
+        # reshape coords
+        coords = coords.reshape(nnodes_total, 3)        
+        
+        for e,s in zip(side_sets[0].elem_list, side_sets[0].side_list):
+            face = cells[e][s]
+            fz_coords = np.array([coords[n] for n in faces[face]])
+            print "bottom centroid = ", np.mean(fz_coords, axis=0)
+
+        for e,s in zip(side_sets[1].elem_list, side_sets[1].side_list):
+            face = cells[e][s]
+            fz_coords = np.array([coords[n] for n in faces[face]])
+            print "surface centroid = ", np.mean(fz_coords, axis=0)
+        
         # instantiate the mesh
-        return cls(coords.reshape(nnodes_total, 3), faces, cells, side_sets=side_sets, material_ids=material_ids)
+        return cls(coords, faces, cells, side_sets=side_sets, material_ids=material_ids)
 
 
 
