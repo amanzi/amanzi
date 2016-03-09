@@ -31,6 +31,7 @@
 
 // Amanzi::Operators
 #include "AnalyticMHD_01.hh"
+#include "AnalyticMHD_02.hh"
 
 #include "OperatorAccumulation.hh"
 #include "OperatorCurlCurl.hh"
@@ -41,7 +42,7 @@
 * TBW 
 * **************************************************************** */
 template<class Analytic>
-void ResistiveMHD() {
+void ResistiveMHD(double tolerance) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -70,7 +71,7 @@ void ResistiveMHD() {
   meshfactory.preference(pref);
 
   bool request_faces(true), request_edges(true);
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 5.0, 10, 10, 50, gm, request_faces, request_edges);
+  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 5.0, 8, 8, 40, gm, request_faces, request_edges);
 
   // create resistivity coefficient
   Analytic ana(mesh);
@@ -205,13 +206,18 @@ void ResistiveMHD() {
   if (MyPID == 0) {
     el2_err /= enorm; 
     el2_err /= enorm;
-    printf("L2(e)=%9.6f  Inf(e)=%9.6f  itr=%3d\n", el2_err, einf_err, solver->num_itrs());
+    printf("L2(e)=%9.6f  Inf(e)=%9.6f  itr=%3d  size=%d\n", el2_err, einf_err,
+            solver->num_itrs(), rhs.GlobalLength());
 
-    CHECK(el2_err < 1e-12);
+    CHECK(el2_err < tolerance);
   }
 }
 
-TEST(RESISTIVE_MHD) {
-  ResistiveMHD<AnalyticMHD_01>();
+TEST(RESISTIVE_MHD_LINEAR) {
+  ResistiveMHD<AnalyticMHD_01>(1e-12);
+}
+
+TEST(RESISTIVE_MHD_NONLINEAR) {
+  ResistiveMHD<AnalyticMHD_02>(2e-4);
 }
 

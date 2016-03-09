@@ -8,28 +8,23 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Linear vector field and constant tensor.
+  Identity tensor and non-zero source term.
 */
 
-#ifndef AMANZI_OPERATOR_ANALYTIC_MHD_01_HH_
-#define AMANZI_OPERATOR_ANALYTIC_MHD_01_HH_
+#ifndef AMANZI_OPERATOR_ANALYTIC_MHD_02_HH_
+#define AMANZI_OPERATOR_ANALYTIC_MHD_02_HH_
 
 #include "AnalyticMHD_Base.hh"
 
-class AnalyticMHD_01 : public AnalyticMHD_Base {
+class AnalyticMHD_02 : public AnalyticMHD_Base {
  public:
-  AnalyticMHD_01(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
+  AnalyticMHD_02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
       AnalyticMHD_Base(mesh) {};
-  ~AnalyticMHD_01() {};
+  ~AnalyticMHD_02() {};
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
-    Amanzi::WhetStone::Tensor K(3, 2);
+    Amanzi::WhetStone::Tensor K(3, 1);
     K(0, 0) = 1.0;
-    K(1, 1) = 2.0;
-    K(2, 2) = 3.0;
-    K(0, 1) = K(1, 0) = -0.5;
-    K(0, 2) = K(2, 0) = -0.1;
-    K(1, 2) = K(2, 1) = -0.2;
     return K;
   }
 
@@ -37,7 +32,10 @@ class AnalyticMHD_01 : public AnalyticMHD_Base {
     double x = p[0];
     double y = p[1];
     double z = p[2];
-    return Amanzi::AmanziGeometry::Point(z, x, y);
+    double Ex = y * y * sin(z);
+    double Ey = z * z * sin(x);
+    double Ez = x * x * sin(y);
+    return Amanzi::AmanziGeometry::Point(Ex, Ey, Ez);
   }
 
   Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
@@ -45,7 +43,13 @@ class AnalyticMHD_01 : public AnalyticMHD_Base {
   }
 
   Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    return Amanzi::AmanziGeometry::Point(0.0, 0.0, 0.0);
+    double x = p[0];
+    double y = p[1];
+    double z = p[2];
+    double fx = -2 * sin(z) + y * y * sin(z);
+    double fy = -2 * sin(x) + z * z * sin(x);
+    double fz = -2 * sin(y) + x * x * sin(y);
+    return Amanzi::AmanziGeometry::Point(fx, fy, fz);
   }
 };
 
