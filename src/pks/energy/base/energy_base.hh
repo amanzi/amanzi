@@ -15,14 +15,14 @@ This provides the base of an advection-diffusion equation for energy.
 #ifndef PKS_ENERGY_BASE_HH_
 #define PKS_ENERGY_BASE_HH_
 
-#include "pk_factory_ats.hh"
+#include "PK_Factory.hh"
 
 #include "OperatorDiffusion.hh"
 #include "OperatorDiffusionMFD.hh"
 #include "OperatorAccumulation.hh"
 #include "OperatorAdvection.hh"
 
-#include "pk_physical_bdf_base.hh"
+#include "PK_PhysicalBDF_ATS.hh"
 #include "upwinding.hh"
 
 namespace Amanzi {
@@ -33,11 +33,12 @@ namespace Functions { class BoundaryFunction; }
 
 namespace Energy {
 
-class EnergyBase : public PKPhysicalBDFBase {
+class EnergyBase : public PK_PhysicalBDF_ATS{
 
 public:
-  EnergyBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-             Teuchos::ParameterList& FElist,
+  EnergyBase(Teuchos::ParameterList& FElist,
+             const Teuchos::RCP<Teuchos::ParameterList>& plist,
+             const Teuchos::RCP<State>& S,
              const Teuchos::RCP<TreeVector>& solution);
   
   // Virtual destructor
@@ -45,16 +46,16 @@ public:
 
   // EnergyBase is a PK
   // -- Setup data
-  virtual void setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // -- Initialize owned (dependent) variables.
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   // -- Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
 
   // -- Calculate any diagnostics prior to doing vis
-  virtual void calculate_diagnostics(const Teuchos::RCP<State>& S);
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
 
 
   // EnergyBase is a BDFFnBase

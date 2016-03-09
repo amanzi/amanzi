@@ -11,8 +11,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 
 #include "Teuchos_TimeMonitor.hpp"
 
-
-#include "pk_factory_ats.hh"
+#include "PK_Factory.hh"
 #include "overland_pressure.hh"
 #include "icy_height_model.hh"
 
@@ -27,11 +26,13 @@ namespace FlowRelations { class UnfrozenFractionModel; }
 class IcyOverlandFlow : public OverlandPressureFlow {
 
  public:
-  IcyOverlandFlow(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                  Teuchos::ParameterList& FElist,
+  IcyOverlandFlow(Teuchos::ParameterList& FElist,
+                  const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                  const Teuchos::RCP<State>& S,
                   const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, FElist, solution),
-      OverlandPressureFlow(plist, FElist, solution) {}
+    //PKDefaultBase(plist, FElist, solution),
+    PK_Default(plist, FElist, solution),
+    OverlandPressureFlow(FElist, plist, S, solution) {}
 
   // Virtual destructor
   virtual ~IcyOverlandFlow() {}
@@ -42,7 +43,7 @@ class IcyOverlandFlow : public OverlandPressureFlow {
 
  private:
   // factory registration
-  static RegisteredPKFactory_ATS<IcyOverlandFlow> reg_;
+  static RegisteredPKFactory<IcyOverlandFlow> reg_;
 };
 
 }  // namespace AmanziFlow

@@ -12,7 +12,7 @@ Authors: Neil Carlson (version 1)
 namespace Amanzi {
 namespace Flow {
 
-RegisteredPKFactory_ATS<Richards> Richards::reg_("richards flow");
+RegisteredPKFactory<Richards> Richards::reg_("richards flow");
 
 } // namespace
 } // namespace

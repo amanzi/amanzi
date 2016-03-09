@@ -11,7 +11,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-RegisteredPKFactory_ATS<OverlandPressureFlow> OverlandPressureFlow::reg_("overland flow, pressure basis");
+RegisteredPKFactory<OverlandPressureFlow> OverlandPressureFlow::reg_("overland flow, pressure basis");
 
 
 } // namespace

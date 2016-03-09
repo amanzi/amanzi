@@ -19,8 +19,8 @@ Author: Ethan Coon
 namespace Amanzi {
 namespace Energy {
 
-void AdvectionDiffusion::setup(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBDFBase::setup(S);
+void AdvectionDiffusion::Setup(const Teuchos::Ptr<State>& S) {
+  PK_PhysicalBDF_ATS::Setup(S);
 
   // require fields
   Teuchos::RCP<CompositeVectorSpace> factory;
@@ -110,8 +110,8 @@ void AdvectionDiffusion::setup(const Teuchos::Ptr<State>& S) {
 
 
 // -- Initialize owned (dependent) variables.
-void AdvectionDiffusion::initialize(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBDFBase::initialize(S);
+void AdvectionDiffusion::Initialize(const Teuchos::Ptr<State>& S) {
+  PK_PhysicalBDF_ATS::Initialize(S);
 
   double time = S->time();
   bc_temperature_->Compute(time);

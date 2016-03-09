@@ -14,7 +14,7 @@ Process kernel for energy equation for Richard's flow.
 namespace Amanzi {
 namespace Energy {
 
-RegisteredPKFactory_ATS<TwoPhase> TwoPhase::reg_("two-phase energy");
+RegisteredPKFactory<TwoPhase> TwoPhase::reg_("two-phase energy");
 
 } // namespace
 } // namespace

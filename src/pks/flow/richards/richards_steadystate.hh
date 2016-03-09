@@ -12,8 +12,10 @@
 #include "upwinding.hh"
 #include "boundary_function.hh"
 
-#include "pk.hh"
-#include "pk_factory_ats.hh"
+// #include "pk.hh"
+// #include "pk_factory_ats.hh"
+#include "PK_Factory.hh"
+#include "PK_PhysicalBDF_ATS.hh"
 
 #include "richards.hh"
 
@@ -23,8 +25,9 @@ namespace Flow {
 class RichardsSteadyState : public Richards {
 public:
   // Constructors.
-  RichardsSteadyState(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                      Teuchos::ParameterList& FElist,
+  RichardsSteadyState(Teuchos::ParameterList& FElist,
+                      const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                      const Teuchos::RCP<State>& S,
                       const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor
@@ -46,7 +49,7 @@ protected:
 
  private:
   // factory registration
-  static RegisteredPKFactory_ATS<RichardsSteadyState> reg_;
+  static RegisteredPKFactory<RichardsSteadyState> reg_;
 
 };
 

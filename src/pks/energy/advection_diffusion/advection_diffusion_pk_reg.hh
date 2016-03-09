@@ -12,7 +12,7 @@ Author: Ethan Coon
 namespace Amanzi {
 namespace Energy {
 
-RegisteredPKFactory_ATS<AdvectionDiffusion> AdvectionDiffusion::reg_("advection-diffusion energy");
+RegisteredPKFactory<AdvectionDiffusion> AdvectionDiffusion::reg_("advection-diffusion energy");
 
 } // namespace Energy
 } // namespace Amanzi

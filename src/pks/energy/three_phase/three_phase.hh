@@ -24,22 +24,23 @@ namespace Energy {
 class ThreePhase : public TwoPhase {
 
 public:
-  ThreePhase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-             Teuchos::ParameterList& FElist,
+  ThreePhase(Teuchos::ParameterList& FElist,
+             const Teuchos::RCP<Teuchos::ParameterList>& plist,
+             const Teuchos::RCP<State>& S,
              const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, FElist, solution),
-      TwoPhase(plist, FElist, solution) {}
+      PK_Default(plist, FElist, solution),
+      TwoPhase(FElist, plist, S, solution) {}
 
   // Virtual destructor
   virtual ~ThreePhase() {}
 
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
   
 protected:
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
 
 private:
-  static RegisteredPKFactory_ATS<ThreePhase> reg_;
+  static RegisteredPKFactory<ThreePhase> reg_;
 
   friend  class MPCCoupledFlowEnergy;
 };

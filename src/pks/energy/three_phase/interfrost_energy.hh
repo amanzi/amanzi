@@ -24,11 +24,12 @@ namespace Energy {
 class InterfrostEnergy : public ThreePhase {
 
 public:
-  InterfrostEnergy(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-             Teuchos::ParameterList& FElist,
-             const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, FElist, solution),
-      ThreePhase(plist, FElist, solution) {}
+  InterfrostEnergy(Teuchos::ParameterList& FElist,
+                   const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                   const Teuchos::RCP<State>& S,
+                   const Teuchos::RCP<TreeVector>& solution) :
+      PK_Default(plist, FElist, solution),
+      ThreePhase(FElist, plist, S, solution) {}
 
   // Virtual destructor
   virtual ~InterfrostEnergy() {}
@@ -42,7 +43,7 @@ public:
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
 
 private:
-  static RegisteredPKFactory_ATS<InterfrostEnergy> reg_;
+  static RegisteredPKFactory<InterfrostEnergy> reg_;
 
   friend  class MPCCoupledFlowEnergy;
 };

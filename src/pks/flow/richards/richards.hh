@@ -17,11 +17,10 @@
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorAccumulation.hh"
 
-// #include "PK_Factory.hh"
-// #include "PK_PhysicalBDF.hh"
-// #include "PK_PhysicalBDF_ATS.hh"
-#include "pk_factory_ats.hh"
-#include "pk_physical_bdf_base.hh"
+#include "PK_Factory.hh"
+#include "PK_PhysicalBDF_ATS.hh"
+// #include "pk_factory_ats.hh"
+// #include "pk_physical_bdf_base.hh"
 
 namespace Amanzi {
 
@@ -32,12 +31,13 @@ namespace WhetStone { class Tensor; }
 
 namespace Flow {
 
-//class Richards : public PK_PhysicalBDF_ATS {
-class Richards : public PKPhysicalBDFBase {
+class Richards : public PK_PhysicalBDF_ATS {
+//class Richards : public PKPhysicalBDFBase {
 
 public:
-  Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-           Teuchos::ParameterList& FElist,
+  Richards(Teuchos::ParameterList& FElist,
+           const Teuchos::RCP<Teuchos::ParameterList>& plist,
+           const Teuchos::RCP<State>& S,
            const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor
@@ -45,16 +45,16 @@ public:
 
   // main methods
 
-  virtual void setup(const Teuchos::Ptr<State>& S){Setup(S);};
-  virtual void initialize(const Teuchos::Ptr<State>& S){Initialize(S);};
-  // virtual void State_to_Solution(const Teuchos::RCP<State>& S,
-  //                                TreeVector& soln){state_to_solution(S, soln);};
-  // virtual void Solution_to_State(TreeVector& soln,
-  //                                const Teuchos::RCP<State>& S){solution_to_state(soln, S);};
-  virtual bool advance(double dt){ return PKBDFBase::advance(dt);};
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {CommitStep(0, dt, S);};
+  // virtual void setup(const Teuchos::Ptr<State>& S){Setup(S);};
+  // virtual void initialize(const Teuchos::Ptr<State>& S){Initialize(S);};
+  // // virtual void State_to_Solution(const Teuchos::RCP<State>& S,
+  // //                                TreeVector& soln){state_to_solution(S, soln);};
+  // // virtual void Solution_to_State(TreeVector& soln,
+  // //                                const Teuchos::RCP<State>& S){solution_to_state(soln, S);};
+  // virtual bool advance(double dt){ return PKBDFBase::advance(dt);};
+  // virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {CommitStep(0, dt, S);};
 
-  virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {CalculateDiagnostics(S);};
+  // virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {CalculateDiagnostics(S);};
 
 
 
@@ -253,7 +253,7 @@ protected:
 
  private:
   // factory registration
-  static RegisteredPKFactory_ATS<Richards> reg_;
+  static RegisteredPKFactory<Richards> reg_;
 
   // Richards has a friend in couplers...
   friend class Amanzi::MPCSubsurface;

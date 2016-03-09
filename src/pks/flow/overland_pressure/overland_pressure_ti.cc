@@ -78,7 +78,7 @@ void OverlandPressureFlow::Functional( double t_old,
 #endif
 
   // pointer-copy temperature into state and update any auxilary data
-  solution_to_state(*u_new, S_next_);
+  Solution_to_State(*u_new, S_next_);
 
   // update boundary conditions
   bc_head_->Compute(t_new);
@@ -179,7 +179,7 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
 
   // update state with the solution up.
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
-  PKDefaultBase::solution_to_state(*up, S_next_);
+  PK_Default::Solution_to_State(*up, S_next_);
 
   // calculating the operator is done in 3 steps:
   // 1. Diffusion components

@@ -10,6 +10,7 @@ add_library(pk_energy_advection_diffusion advection_diffusion_pk.cc advection_di
 install(TARGETS pk_energy_advection_diffusion DESTINATION lib)
 
 if ( BUILD_TESTS )
+#if (0)
   # Add UnitTest includes
   include_directories(${Amanzi_TPL_UnitTest_INCLUDE_DIRS})
 
@@ -20,7 +21,8 @@ if ( BUILD_TESTS )
   target_link_libraries(advection_diffusion_test 
     pk_energy_advection_diffusion
     bc_factory
-    pk_bases
+#    pk_bases
+    amanzi_pks
     advection 
     amanzi_solvers amanzi_time_integration amanzi_operators
     amanzi_state amanzi_whetstone amanzi_mesh amanzi_geometry

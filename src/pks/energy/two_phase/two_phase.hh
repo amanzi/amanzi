@@ -12,7 +12,7 @@ Process kernel for energy equation for Richard's flow.
 #ifndef PKS_ENERGY_TWO_PHASE_HH_
 #define PKS_ENERGY_TWO_PHASE_HH_
 
-#include "pk_factory_ats.hh"
+#include "PK_Factory.hh"
 #include "energy_base.hh"
 
 namespace Amanzi {
@@ -28,15 +28,16 @@ namespace Energy {
 class TwoPhase : public EnergyBase {
 
 public:
-  TwoPhase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-           Teuchos::ParameterList& FElist,
+  TwoPhase(Teuchos::ParameterList& FElist,
+           const Teuchos::RCP<Teuchos::ParameterList>& plist,
+           const Teuchos::RCP<State>& S,
            const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor
   virtual ~TwoPhase() {}
 
   // -- Initialize owned (dependent) variables.
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
 protected:
   // -- setup the evaluators
@@ -60,7 +61,7 @@ protected:
 
 private:
   // factory registration
-  static RegisteredPKFactory_ATS<TwoPhase> reg_;
+  static RegisteredPKFactory<TwoPhase> reg_;
 
   // Energy has a friend in couplers...
   friend class Amanzi::MPCCoupledFlowEnergy;
