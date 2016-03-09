@@ -1,4 +1,4 @@
-<amanzi_input version="2.0.0" type="unstructured">
+<amanzi_input version="2.2.1" type="unstructured">
 
 	<model_description name="BC Cribs">
 
@@ -257,7 +257,7 @@
 			<assigned_regions>Recharge_Boundary_WestofCribs,Recharge_Boundary_btwnCribs,Recharge_Boundary_EastofCribs</assigned_regions>
 			<liquid_phase name = "water">
 				<liquid_component name = "water">
-					<inward_mass_flux start="0.0"    function= "constant"  value="pre_1956_recharge"/>
+					<inward_mass_flux start="0.0"      function= "constant"  value="pre_1956_recharge"/>
 					<inward_mass_flux start="1956.0,y" function= "constant"  value="post_1956_recharge"/>
 					<inward_mass_flux start="2012.0,y" function= "constant"  value="future_recharge"/>
 					<inward_mass_flux start="3000.0,y" function= "constant"  value="future_recharge"/>

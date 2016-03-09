@@ -15,6 +15,33 @@ Default base with a few methods implemented for ATS
 
 namespace Amanzi {
 
+
+  PK_PhysicalBDF_ATS::PK_PhysicalBDF_ATS(Teuchos::ParameterList& FElist,
+                                         const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                                         const Teuchos::RCP<State>& S,
+                                         const Teuchos::RCP<TreeVector>& solution):
+  PK_PhysicalBDF(plist, FElist, solution)
+{
+
+  // domain -- default is the entire mesh, no prefix
+  if (domain_.empty()) {
+    domain_ = plist_->get<std::string>("domain name", std::string("domain"));
+  }
+  
+  if (key_.empty()) {
+    key_ = plist_->get<std::string>("primary variable");
+  }
+
+  // set up the primary variable solution, and its evaluator
+  Teuchos::ParameterList& pv_sublist = FElist.sublist(key_);
+  pv_sublist.set("evaluator name", key_);
+  pv_sublist.set("field evaluator type", "primary variable");
+
+}
+
+
+
+
   PK_PhysicalBDF_ATS::PK_PhysicalBDF_ATS(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                    Teuchos::ParameterList& FElist,
                    const Teuchos::RCP<TreeVector>& solution):

@@ -34,8 +34,9 @@ public:
 
   PK_Default(const Teuchos::RCP<Teuchos::ParameterList>& plist,
              Teuchos::ParameterList& FElist,
-             const Teuchos::RCP<TreeVector>& solution) :
-      plist_(plist), solution_(solution) {}
+             const Teuchos::RCP<TreeVector>& solution):
+    plist_(plist), solution_(solution){};
+
 
   // Virtual destructor
   virtual ~PK_Default() {}

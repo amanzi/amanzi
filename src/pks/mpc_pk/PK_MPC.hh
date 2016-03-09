@@ -49,6 +49,10 @@ class PK_MPC : virtual public PK_Default {
          const Teuchos::RCP<State>& S,
          const Teuchos::RCP<TreeVector>& soln);
 
+ PK_MPC(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+        Teuchos::ParameterList& FElist,
+        const Teuchos::RCP<TreeVector>& solution);
+
   ~PK_MPC() {};
 
   // PK methods
@@ -107,12 +111,6 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
   boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->");
 
   if (res.end() - name_.end() != 0)  boost::algorithm::erase_head(name_,  res.end() - name_.begin());
-
-  // const char* result = name_.data();
-  // while ((result = std::strstr(result, "->")) != NULL) {
-  //   result += 2;
-  //   name_ = result;   
-  // }
 
   // get my parameter list
   my_list_ = Teuchos::sublist(Teuchos::sublist(global_list_, "PKs"), name_);

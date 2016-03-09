@@ -25,13 +25,13 @@ void PK_Default::Setup(const Teuchos::Ptr<State>& S) {
 }
 
 
-  void PK_Default::set_states(const Teuchos::RCP<const State>& S,
+void PK_Default::set_states(const Teuchos::RCP<const State>& S,
                               const Teuchos::RCP<State>& S_inter,
                               const Teuchos::RCP<State>& S_next) {
     S_ = S;
     S_inter_ = S_inter;
     S_next_ = S_next;
-  }
+}
 
 
 void PK_Default::Solution_to_State(const TreeVector& soln,

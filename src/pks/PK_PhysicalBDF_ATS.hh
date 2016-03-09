@@ -29,8 +29,7 @@ public:
   PK_PhysicalBDF_ATS(Teuchos::ParameterList& pk_tree,
                      const Teuchos::RCP<Teuchos::ParameterList>& glist,
                      const Teuchos::RCP<State>& S,
-                     const Teuchos::RCP<TreeVector>& soln):
-    PK_PhysicalBDF(pk_tree, glist, S, soln){};
+                     const Teuchos::RCP<TreeVector>& soln);
 
   PK_PhysicalBDF_ATS(const Teuchos::RCP<Teuchos::ParameterList>& plist,
                      Teuchos::ParameterList& FElist,
@@ -41,15 +40,22 @@ public:
 
   virtual void Setup(const Teuchos::Ptr<State>& S);
   virtual void Initialize(const Teuchos::Ptr<State>& S);
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
   virtual void CommitStep (double t_old, double t_new, const Teuchos::RCP<State>& S);
   virtual double get_dt() { return dt_; }
   // -- transfer operators
-  virtual void State_to_Solution(const Teuchos::RCP<State>& S,
-                                 TreeVector& soln);
-  virtual void Solution_to_State(TreeVector& soln,
-                                 const Teuchos::RCP<State>& S);
-
+  // virtual void State_to_Solution(const Teuchos::RCP<State>& S,
+  //                                TreeVector& soln);
+  // virtual void Solution_to_State(TreeVector& soln,
+  //                                const Teuchos::RCP<State>& S);
+  virtual void set_dt(double dt){ dt_ = dt;}
+  virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u){};
+  virtual bool ModifyCorrection(double h, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u){};
+  virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up){};
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult ModifyCorrection(double h, 
+                                                                             Teuchos::RCP<const TreeVector> res,
+                                                                             Teuchos::RCP<const TreeVector> u,
+                                                                             Teuchos::RCP<TreeVector> du) {};
     
   // Default preconditioner is Picard
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {

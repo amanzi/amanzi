@@ -99,6 +99,26 @@ class PKFactory {
     return Teuchos::rcp(iter->second(pk_tree, global_list, state, soln));
   }
 
+  // static Teuchos::RCP<PK> CreatePK(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  //         Teuchos::ParameterList& FElist,
+  //         const Teuchos::RCP<TreeVector>& soln) {
+
+  //   std::string s = plist->get<std::string>("PK type");
+  //   map_type::iterator iter = GetMap()->find(s);
+  //   if (iter == GetMap()->end()) {
+  //     std::stringstream errmsg;
+  //     errmsg << "PK Factory: cannot find PK type \"" << s << "\"";
+  //     for (map_type::iterator iter=GetMap()->begin();
+  //          iter!=GetMap()->end(); ++iter) {
+  //       errmsg << std::endl << "  option: " << iter->first;
+  //     }
+  //     Errors::Message message(errmsg.str());
+  //     Exceptions::amanzi_throw(message);
+  //   }
+  //   return Teuchos::rcp(iter->second(plist, FElist, soln));
+  // }
+
+
  private:
   static map_type* map_;
 
@@ -115,6 +135,13 @@ template<typename T> PK* CreateT(Teuchos::ParameterList& pk_tree,
         const Teuchos::RCP<State>& state,
         const Teuchos::RCP<TreeVector>& soln) {
   return new T(pk_tree, global_list, state, soln);
+}
+
+template<typename D> PK* CreateD(Teuchos::ParameterList& pk_tree,
+        const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+        const Teuchos::RCP<State>& state,
+        const Teuchos::RCP<TreeVector>& soln) {
+  return new D(pk_tree, global_list, state, soln);
 }
 
 
