@@ -93,16 +93,10 @@ void ResistiveMHD(double tolerance) {
   std::vector<double> bc_value(nedges_wghost);
   std::vector<double> bc_mixed;
 
-  int n1, n2;
-  AmanziGeometry::Point p1(3), p2(3), xe(3);
-
   for (int e = 0; e < nedges_wghost; e++) {
     double len = mesh->edge_length(e);
     const AmanziGeometry::Point& tau = mesh->edge_vector(e);
-    mesh->edge_get_nodes(e, &n1, &n2);
-    mesh->node_get_coordinates(n1, &p1);
-    mesh->node_get_coordinates(n2, &p2);
-    xe = (p1 + p2) / 2;
+    const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
 
     if (fabs(xe[0]) < 1e-6 || fabs(xe[0] - 1.0) < 1e-6 ||
         fabs(xe[1]) < 1e-6 || fabs(xe[1] - 1.0) < 1e-6 ||
@@ -133,12 +127,8 @@ void ResistiveMHD(double tolerance) {
     for (int n = 0; n < nedges; ++n) {
       int e = edges[n];
       double len = mesh->edge_length(e);
-
       const AmanziGeometry::Point& tau = mesh->edge_vector(e);
-      mesh->edge_get_nodes(e, &n1, &n2);
-      mesh->node_get_coordinates(n1, &p1);
-      mesh->node_get_coordinates(n2, &p2);
-      xe = (p1 + p2) / 2;
+      const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
 
       src[0][e] += (ana.source_exact(xe, 0.0) * tau) / len * vol;
     }

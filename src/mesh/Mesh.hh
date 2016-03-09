@@ -465,6 +465,10 @@ class Mesh
   AmanziGeometry::Point face_centroid(const Entity_ID faceid,
           const bool recompute=false) const;
 
+  // Centroid of edge
+  AmanziGeometry::Point edge_centroid(const Entity_ID edgeid) const;
+
+
   // Normal to face
   //
   // The vector is normalized and then weighted by the area of the face
