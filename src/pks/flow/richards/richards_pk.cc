@@ -352,6 +352,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
   // correctors
   p_limit_ = plist_->get<double>("limit correction to pressure change [Pa]", -1.);
+  patm_limit_ = plist_->get<double>("limit correction to pressure change when crossing atmospheric [Pa]", -1.);
   // sl_limit_ = plist_->get<double>("limit correction to liquid saturation change [-]", -1.);
   // si_limit_ = plist_->get<double>("limit correction to ice saturation change [-]", -1.);
   
