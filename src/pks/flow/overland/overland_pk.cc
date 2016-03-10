@@ -150,13 +150,20 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   //    diffusion
   Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("Diffusion PC");
   mfd_pc_plist.set("nonlinear coefficient", coef_location);
-  mfd_pc_plist.set("scaled constraint equation", mfd_plist.get<bool>("scaled constraint equation"));
+  mfd_pc_plist.set("scaled constraint equation",
+                   mfd_plist.get<bool>("scaled constraint equation"));
+  mfd_pc_plist.set("constraint equation scaling cutoff",
+                   mfd_plist.get<double>("constraint equation scaling cutoff", 1.0));
   if (!mfd_pc_plist.isParameter("discretization primary"))
-    mfd_pc_plist.set("discretization primary", mfd_plist.get<std::string>("discretization primary"));
-  if (!mfd_pc_plist.isParameter("discretization secondary") && mfd_plist.isParameter("discretization secondary"))
-    mfd_pc_plist.set("discretization secondary", mfd_plist.get<std::string>("discretization secondary"));
-  if (!mfd_pc_plist.isParameter("schema"))
-    mfd_pc_plist.set("schema", mfd_plist.get<Teuchos::Array<std::string> >("schema"));
+    mfd_pc_plist.set("discretization primary",
+                     mfd_plist.get<std::string>("discretization primary"));
+  if (!mfd_pc_plist.isParameter("discretization secondary") &&
+      mfd_plist.isParameter("discretization secondary"))
+    mfd_pc_plist.set("discretization secondary",
+                     mfd_plist.get<std::string>("discretization secondary"));
+  if (!mfd_pc_plist.isParameter("schema") && mfd_plist.isParameter("schema"))
+    mfd_pc_plist.set("schema",
+                     mfd_plist.get<Teuchos::Array<std::string> >("schema"));
 
   preconditioner_diff_ = opfactory.Create(mfd_pc_plist, mesh_, bc_);
   preconditioner_diff_->SetTensorCoefficient(Teuchos::null);

@@ -8,6 +8,8 @@
 
 #include <cmath>
 #include <boost/math/constants/constants.hpp>
+
+#include "errors.hh"
 #include "unfrozen_fraction_model.hh"
 
 namespace Amanzi {

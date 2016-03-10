@@ -230,12 +230,16 @@ void ThreePhaseEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::P
     for (unsigned int c=0; c!=ncells; ++c) {
       result_v[0][c] = (1.0 - phib[0][c])*u_rock[0][c];
     }
+  } else if (wrt_key == cv_key_) {
+    // pass
   } else {
     ASSERT(0);
   }
 
-  for (unsigned int c=0; c!=ncells; ++c) {
-    result_v[0][c] *= cell_volume[0][c];
+  if (wrt_key != cv_key_) {
+    for (unsigned int c=0; c!=ncells; ++c) {
+      result_v[0][c] *= cell_volume[0][c];
+    }
   }
 };
 
