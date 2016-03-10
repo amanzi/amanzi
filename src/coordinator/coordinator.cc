@@ -453,6 +453,7 @@ double Coordinator::get_dt(bool after_fail) {
 
   S_next_->advance_time(dt);
   bool fail = pk_->AdvanceStep(t_old, t_new, false);
+  fail |= !pk_->valid_step();
 
   // advance the iteration count and timestep size
   S_next_->advance_cycle();

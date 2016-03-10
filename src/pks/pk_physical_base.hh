@@ -40,6 +40,7 @@ class PKPhysicalBase : public virtual PKDefaultBase {
           const Teuchos::RCP<State>& S_inter,
           const Teuchos::RCP<State>& S_next);
 
+  virtual bool valid_step();
 
   // -- setup
   virtual void setup(const Teuchos::Ptr<State>& S);
@@ -58,6 +59,9 @@ class PKPhysicalBase : public virtual PKDefaultBase {
   // name of domain, associated mesh
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   std::string domain_;
+
+  // step validity
+  double max_valid_change_;
 
   // solution and evaluator
   std::string key_;

@@ -47,6 +47,9 @@ public:
   // -- Advance from state S0 to state S1 at time S0.time + dt.
   virtual bool advance(double dt) = 0;
 
+  // -- ensure a solution is valid
+  virtual bool valid_step() = 0;  
+  
   // -- Commit any secondary (dependent) variables.
   virtual void commit_state(double dt, const Teuchos::RCP<State>& S) = 0;
 
