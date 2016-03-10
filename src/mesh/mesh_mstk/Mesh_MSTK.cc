@@ -1359,7 +1359,7 @@ Mesh_MSTK::~Mesh_MSTK() {
 // Number of OWNED, GHOST or USED entities of different types
 
     
-// Number of entities of any kind (cell, face, node) and in a
+// Number of entities of any kind (cell, face, edge, node) and in a
 // particular category (OWNED, GHOST, USED)
     
 unsigned int Mesh_MSTK::num_entities (const Entity_kind kind, 
@@ -5024,6 +5024,15 @@ const Epetra_Map& Mesh_MSTK::face_map (const bool include_ghost) const
     return *face_map_wo_ghosts_;
   else
     return (include_ghost ? *face_map_w_ghosts_ : *face_map_wo_ghosts_);
+}
+    
+inline 
+const Epetra_Map& Mesh_MSTK::edge_map (const bool include_ghost) const
+{
+  if (serial_run)
+    return *edge_map_wo_ghosts_;
+  else
+    return (include_ghost ? *edge_map_w_ghosts_ : *edge_map_wo_ghosts_);
 }
     
 inline 

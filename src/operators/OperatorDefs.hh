@@ -22,7 +22,8 @@ typedef enum { OPERATOR_DIFFUSION_MFD,
                OPERATOR_DIFFUSION_FV_GRAVITY,
                OPERATOR_DIFFUSION_NLFV_GRAVITY,
                OPERATOR_ADVECTION,
-               OPERATOR_ACCUMULATION} OperatorType;
+               OPERATOR_ACCUMULATION,
+               OPERATOR_CURLCURL_MFD} OperatorType;
 
 // Constants in the next block must powers of 2.
 const int OPERATOR_SCHEMA_DOFS_FACE = 1;

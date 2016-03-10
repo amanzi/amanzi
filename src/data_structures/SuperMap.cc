@@ -184,6 +184,10 @@ getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
       return std::make_pair(Teuchos::rcpFromRef(mesh.face_map(false)),
                             Teuchos::rcpFromRef(mesh.face_map(true)));
 
+    case AmanziMesh::EDGE:
+      return std::make_pair(Teuchos::rcpFromRef(mesh.edge_map(false)),
+                            Teuchos::rcpFromRef(mesh.edge_map(true)));
+
     case AmanziMesh::NODE:
       return std::make_pair(Teuchos::rcpFromRef(mesh.node_map(false)),
                             Teuchos::rcpFromRef(mesh.node_map(true)));

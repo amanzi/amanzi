@@ -58,7 +58,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
-  // create an SIMPLE mesh framework
+  // create an MSTK mesh framework
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
@@ -87,7 +87,6 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
     Kc(0, 0) = 1.0;
     K->push_back(Kc);
   }
-  double rho(1.0), mu(1.0);
 
   // create boundary data
   std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);

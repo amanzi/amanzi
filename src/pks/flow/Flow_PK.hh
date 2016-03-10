@@ -99,6 +99,7 @@ class Flow_PK : public PK_PhysicalBDF {
   void VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const;
   void VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const;
   void VV_PrintHeadExtrema(const CompositeVector& pressure) const;
+  void VV_PrintSourceExtrema() const;
 
   // -- extensions 
   int BoundaryFaceGetCell(int f) const;  // of AmanziMesh

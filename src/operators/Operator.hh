@@ -93,6 +93,7 @@ class Op_Cell_Node;
 class Op_Cell_Edge;
 class Op_Face_Cell;
 class Op_Node_Node;
+class Op_Edge_Edge;
 class Op_SurfaceCell_SurfaceCell;
 class Op_SurfaceFace_SurfaceCell;
 
@@ -201,6 +202,8 @@ class Operator {
       const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_Face_Cell& op,
       const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Edge_Edge& op,
+      const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_Node_Node& op,
       const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
@@ -225,6 +228,9 @@ class Operator {
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
   virtual void SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
+          const SuperMap& map, GraphFE& graph,
+          int my_block_row, int my_block_col) const;
+  virtual void SymbolicAssembleMatrixOp(const Op_Edge_Edge& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
   virtual void SymbolicAssembleMatrixOp(const Op_Node_Node& op,
@@ -256,6 +262,9 @@ class Operator {
   virtual void AssembleMatrixOp(const Op_Face_Cell& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
+  virtual void AssembleMatrixOp(const Op_Edge_Edge& op,
+          const SuperMap& map, MatrixFE& mat,
+          int my_block_row, int my_block_col) const;
   virtual void AssembleMatrixOp(const Op_Node_Node& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
@@ -281,8 +290,8 @@ class Operator {
   Teuchos::RCP<CompositeVector> rhs_, rhs_checkpoint_;
   Teuchos::RCP<BCs> bc_trial_, bc_test_;
 
-  int ncells_owned, nfaces_owned, nnodes_owned;
-  int ncells_wghost, nfaces_wghost, nnodes_wghost;
+  int ncells_owned, nfaces_owned, nnodes_owned, nedges_owned;
+  int ncells_wghost, nfaces_wghost, nnodes_wghost, nedges_wghost;
  
   Teuchos::RCP<Epetra_CrsMatrix> A_;
   Teuchos::RCP<MatrixFE> Amat_;

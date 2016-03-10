@@ -145,7 +145,7 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   op->Setup(K, knc->values(), knc->derivatives());
   op->UpdateMatrices(flux.ptr(), Teuchos::null);
 
-  // get and assmeble the global operator
+  // get and assemble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
   op->ApplyBCs(true, true);

@@ -33,6 +33,7 @@
 #include "Op_Cell_FaceCell.hh"
 #include "Op_Cell_Face.hh"
 #include "Op_Cell_Node.hh"
+#include "Op_Edge_Edge.hh"
 #include "Op_Face_Cell.hh"
 #include "Op_Node_Node.hh"
 #include "Op_SurfaceCell_SurfaceCell.hh"
@@ -65,6 +66,14 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+
+  if (mesh_->valid_edges()) {
+    nedges_owned = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::OWNED);
+    nedges_wghost = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::USED);
+  } else {
+    nedges_owned = 0;
+    nedges_wghost = 0;
+  }
 
   Teuchos::ParameterList vo_list = plist.sublist("Verbose Object");
   vo_ = Teuchos::rcp(new VerboseObject("Operators", vo_list));
@@ -432,8 +441,7 @@ void Operator::OpExtend(op_iterator begin, op_iterator end)
 int Operator::SchemaMismatch_(const std::string& schema1, const std::string& schema2) const
 {
   std::stringstream err;
-  err << "Invalid schema combination -- " << schema1
-      << " cannot be used with a matrix on " << schema2;
+  err << "Scheme mismatch " << schema1 << " |= " << schema2;
   Errors::Message message(err.str());
   Exceptions::amanzi_throw(message);
   return 1;
@@ -490,6 +498,15 @@ int Operator::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
 * Visit methods for Apply: Face
 ****************************************************************** */
 int Operator::ApplyMatrixFreeOp(const Op_Face_Cell& op,
+                                const CompositeVector& X, CompositeVector& Y) const {
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+/* ******************************************************************
+* Visit methods for Apply: Edges
+****************************************************************** */
+int Operator::ApplyMatrixFreeOp(const Op_Edge_Edge& op,
                                 const CompositeVector& X, CompositeVector& Y) const {
   return SchemaMismatch_(op.schema_string, schema_string_);
 }
@@ -573,6 +590,16 @@ void Operator::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
 
 
 /* ******************************************************************
+* Visit methods for symbolic assemble: Edge.
+****************************************************************** */
+void Operator::SymbolicAssembleMatrixOp(const Op_Edge_Edge& op,
+                                        const SuperMap& map, GraphFE& graph,
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+/* ******************************************************************
 * Visit methods for symbolic assemble: Node.
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrixOp(const Op_Node_Node& op,
@@ -590,7 +617,7 @@ void Operator::SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
                                         int my_block_row, int my_block_col) const
 {
   std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
+  err << "Symbolic assemble: invalid schema combination -- " << op.schema_string
       << " cannot be used with a matrix on " << schema_string_;
   Errors::Message message(err.str());
   Exceptions::amanzi_throw(message);
@@ -605,7 +632,7 @@ void Operator::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
                                         int my_block_row, int my_block_col) const
 {
   std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
+  err << "Symbolic assemble: invalid schema combination -- " << op.schema_string
       << " cannot be used with a matrix on " << schema_string_;
   Errors::Message message(err.str());
   Exceptions::amanzi_throw(message);
@@ -661,6 +688,16 @@ void Operator::AssembleMatrixOp(const Op_Face_Cell& op,
 
 
 /* ******************************************************************
+* Visit methods for assemble: Edge.
+****************************************************************** */
+void Operator::AssembleMatrixOp(const Op_Edge_Edge& op,
+                                const SuperMap& map, MatrixFE& mat,
+                                int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+/* ******************************************************************
 * Visit methods for assemble: Node.
 ****************************************************************** */
 void Operator::AssembleMatrixOp(const Op_Node_Node& op,
@@ -678,7 +715,7 @@ void Operator::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
                                 int my_block_row, int my_block_col) const
 {
   std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
+  err << "Assemble matrix: invalid schema combination -- " << op.schema_string
       << " cannot be used with a matrix on " << schema_string_;
   Errors::Message message(err.str());
   Exceptions::amanzi_throw(message);
@@ -693,7 +730,7 @@ void Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
                                 int my_block_row, int my_block_col) const
 {
   std::stringstream err;
-  err << "Invalid schema combination -- " << op.schema_string
+  err << "Assemble matrix: invalid schema combination -- " << op.schema_string
       << " cannot be used with a matrix on " << schema_string_;
   Errors::Message message(err.str());
   Exceptions::amanzi_throw(message);

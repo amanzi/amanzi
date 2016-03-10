@@ -165,6 +165,8 @@ void CompositeVector::InitMap_(const CompositeVectorSpace& space) {
       mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->face_map(false)));
     } else if (space.Location(*name) == AmanziMesh::NODE) {
       mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->node_map(false)));
+    } else if (space.Location(*name) == AmanziMesh::EDGE) {
+      mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->edge_map(false)));
     } else if (space.Location(*name) == AmanziMesh::BOUNDARY_FACE) {
       mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->exterior_face_map()));
     }
@@ -185,6 +187,8 @@ void CompositeVector::InitMap_(const CompositeVectorSpace& space) {
         ghostmaps.push_back(Teuchos::rcpFromRef(Mesh()->face_map(true)));
       } else if (space.Location(*name) == AmanziMesh::NODE) {
         ghostmaps.push_back(Teuchos::rcpFromRef(Mesh()->node_map(true)));
+      } else if (space.Location(*name) == AmanziMesh::EDGE) {
+        ghostmaps.push_back(Teuchos::rcpFromRef(Mesh()->edge_map(true)));
       } else if (space.Location(*name) == AmanziMesh::BOUNDARY_FACE) {
         ghostmaps.push_back(mastermaps[Index_(*name)]);
       }
