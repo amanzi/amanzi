@@ -194,6 +194,16 @@ int BlockVector::PutScalar(std::string name, std::vector<double> scalar) {
 };
 
 
+// this <- abs(this)
+int BlockVector::Abs(const BlockVector& other) {
+  for (int i = 0; i != num_components_; ++i) {
+    int ierr = data_[i]->Abs(other.data_[i]);
+    if (ierr) return ierr;
+  }
+  return 0;
+}
+
+
 // -- this <- value*this
 int BlockVector::Scale(double value) {
   for (int i = 0; i != num_components_; ++i) {
@@ -233,6 +243,16 @@ int BlockVector::Shift(std::string name, double scalarA) {
   }
   return 0;
 };
+
+
+// this <- abs(this)
+int BlockVector::Reciprocal(const BlockVector& other) {
+  for (int i = 0; i != num_components_; ++i) {
+    int ierr = data_[i]->Reciprocal(other.data_[i]);
+    if (ierr) return ierr;
+  }
+  return 0;
+}
 
 
 // -- result <- other \dot this

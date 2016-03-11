@@ -102,6 +102,9 @@ public:
   // Insert values into component [name].
   int PutScalar(std::string name, std::vector<double> scalar);
 
+  // this <- abs(this)
+  int Abs(const BlockVector& other);
+
   // this <- this * scalarThis
   int Scale(double value);
 
@@ -114,6 +117,9 @@ public:
   // Shift() applied to component name.
   int Shift(std::string name, double scalarA);
 
+  // this <- element wise reciprocal(this)
+  int Reciprocal(const BlockVector& other);
+  
   // result <- other \dot this
   int Dot(const BlockVector& other, double* result) const;
 

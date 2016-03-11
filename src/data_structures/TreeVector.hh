@@ -110,12 +110,18 @@ class TreeVector {
   int Norm1(double* n1) const;
   int NormInf(double* ninf) const;
 
+  // this <- abs(this)
+  int Abs(const TreeVector& other);
+  
   // this <- value*this
   int Scale(double value);
 
   // this <- this + scalarA
   int Shift(double scalarA);
 
+  // this <- element wise reciprocal(this)
+  int Reciprocal(const TreeVector& other);
+  
   // result <- other \dot this
   int Dot(const TreeVector& other, double* result) const;
 

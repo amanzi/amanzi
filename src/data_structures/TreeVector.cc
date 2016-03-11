@@ -188,6 +188,24 @@ void TreeVector::Print(std::ostream &os) const {
   }
 };
 
+
+// this <- abs(this)
+int TreeVector::Abs(const TreeVector& other) {
+  // this <- value*this
+  int ierr = 0;
+  if (data_ != Teuchos::null) {
+    ierr = data_->Abs(other.data_);
+    if (ierr) return ierr;
+  }
+  for (std::vector< Teuchos::RCP<TreeVector> >::iterator subvec = subvecs_.begin();
+       subvec != subvecs_.end(); ++subvec) {
+    ierr = (*subvec)->Abs(other.subvecs_[subvec - subvecs_.begin()]);
+    if (ierr) return ierr;
+  }
+  return ierr;
+}
+  
+
 int TreeVector::Scale(double value) {
   // this <- value*this
   int ierr = 0;
@@ -219,6 +237,24 @@ int TreeVector::Shift(double value) {
   }
   return ierr;
 };
+
+
+// this <- element-wise reciprocal(this)
+int TreeVector::Reciprocal(const TreeVector& other) {
+  // this <- value*this
+  int ierr = 0;
+  if (data_ != Teuchos::null) {
+    ierr = data_->Reciprocal(other.data_);
+    if (ierr) return ierr;
+  }
+  for (std::vector< Teuchos::RCP<TreeVector> >::iterator subvec = subvecs_.begin();
+       subvec != subvecs_.end(); ++subvec) {
+    ierr = (*subvec)->Reciprocal(other.subvecs_[subvec - subvecs_.begin()]);
+    if (ierr) return ierr;
+  }
+  return ierr;
+}
+
 
 int TreeVector::Dot(const TreeVector& other, double* result) const {
   // compute the dot product of all components of the tree vector

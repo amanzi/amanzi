@@ -327,6 +327,9 @@ public:
   int Scale(double scalar);
   int ScaleMasterAndGhosted(double scalar);
 
+  // this <- abs(this)
+  int Abs(const CompositeVector& other);
+  
   // this(name,:,:) <- scalar*this(name,:,:)
   int Scale(std::string name, double scalar);
 
@@ -336,6 +339,9 @@ public:
   // this(name,:,:) <- scalar + this(name,:,:)
   int Shift(std::string name, double scalar);
 
+  // this <- element wise reciprocal(this)
+  int Reciprocal(const CompositeVector& other);
+  
   // result <- other \dot this
   int Dot(const CompositeVector& other, double* result) const;
 
@@ -465,6 +471,12 @@ CompositeVector::PutScalar(std::string name, std::vector<double> scalar) {
 }
 
 inline int
+CompositeVector::Abs(const CompositeVector& other) {
+  ChangedValue();
+  return mastervec_->Abs(other.mastervec_);
+}
+
+inline int
 CompositeVector::Scale(double scalar) {
   ChangedValue();
   return mastervec_->Scale(scalar);
@@ -492,6 +504,12 @@ inline int
 CompositeVector::Shift(std::string name, double scalar) {
   ChangedValue(name);
   return mastervec_->Shift(name, scalar);
+}
+
+inline int
+CompositeVector::Reciprocal(const CompositeVector& other) {
+  ChangedValue();
+  return mastervec_->Reciprocal(other.mastervec_);
 }
 
 inline int
