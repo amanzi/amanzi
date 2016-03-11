@@ -12,12 +12,12 @@
 #include "Teuchos_RCP.hpp"
 
 #include "TreeVector.hh"
-#include "PK_BDF.hh"
+#include "PK_PhysicalBDF.hh"
 #include "PK_Factory.hh"
 
 namespace Amanzi {
 
-class Dummy_PK : public PK_BDF {
+class Dummy_PK : public PK_PhysicalBDF {
  public:
   Dummy_PK(Teuchos::ParameterList& pk_tree,
                       const Teuchos::RCP<Teuchos::ParameterList>& global_list,

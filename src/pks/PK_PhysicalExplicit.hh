@@ -3,27 +3,25 @@
 /* -------------------------------------------------------------------------
 
 
-Author: Ethan Coon
+Author: Daniil Svyatsky, Ethan Coon
 
 Default base with a few methods implemented in standard ways.
 ------------------------------------------------------------------------- */
+#ifndef AMANZI_PK_PHYSICAL_EXPLICIT_HH_
+#define AMANZI_PK_PHYSICAL_EXPLICIT_HH_
 
-#ifndef AMANZI_PK_PHYSICAL_BDF_BASE_HH_
-#define AMANZI_PK_PHYSICAL_BDF_BASE_HH_
-
-#include "PK_BDF.hh"
+#include "PK_Explicit.hh"
 #include "PK_Physical.hh"
-#include "primary_variable_field_evaluator.hh"
-#include "Debugger.hh"
 
 namespace Amanzi {
 
-class PK_PhysicalBDF : virtual public PK_Physical, public PK_BDF{
+template <class Vector>
+class PK_PhysicalExplicit : virtual public PK_Physical, public PK_Explicit<Vector> {
 
 public:
-  PK_PhysicalBDF(){};
+  PK_PhysicalExplicit(){};
 
-  PK_PhysicalBDF(Teuchos::ParameterList& pk_tree,
+  PK_PhysicalExplicit(Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
                  const Teuchos::RCP<State>& S,
                  const Teuchos::RCP<TreeVector>& soln):
@@ -31,11 +29,10 @@ public:
    
 
 // Virtual destructor
-  virtual ~PK_PhysicalBDF(){};
+  virtual ~PK_PhysicalExplicit(){};
 
 };
 
 } // namespace
 
 #endif
-

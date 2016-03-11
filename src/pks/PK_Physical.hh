@@ -15,12 +15,12 @@ Default base with a few methods implemented in standard ways.
 
 #include "VerboseObject.hh"
 #include "primary_variable_field_evaluator.hh"
-#include "PK_Default.hh"
+#include "PK.hh"
 #include "Debugger.hh"
 
 namespace Amanzi {
 
-class PK_Physical : public virtual PK_Default {
+class PK_Physical : public virtual PK{
 
  public:
 
@@ -29,12 +29,8 @@ class PK_Physical : public virtual PK_Default {
   PK_Physical(Teuchos::ParameterList& pk_tree,
               const Teuchos::RCP<Teuchos::ParameterList>& glist,
               const Teuchos::RCP<State>& S,
-              const Teuchos::RCP<TreeVector>& soln){};
-
-  PK_Physical(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-              Teuchos::ParameterList& FElist,
-              const Teuchos::RCP<TreeVector>& solution):
-    PK_Default(plist, FElist, solution){};
+              const Teuchos::RCP<TreeVector>& soln):
+  solution_(soln){};
 
 
   // Virtual destructor
@@ -60,7 +56,7 @@ class PK_Physical : public virtual PK_Default {
   //virtual void Initialize(const Teuchos::Ptr<State>& S){};
 
   // Accessor for debugger, for use by coupling MPCs
-  //  Teuchos::RCP<Debugger> debugger() { return db_; }
+  Teuchos::RCP<Debugger> debugger() { return db_; }
 
 
  protected: // data
@@ -75,11 +71,18 @@ class PK_Physical : public virtual PK_Default {
   // debugger for dumping vectors
   Teuchos::RCP<Debugger> db_;
 
-  //ENORM struct
-  typedef struct ENorm_t {
-    double value;
-    int gid;
-  } ENorm_t;
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
+  Teuchos::RCP<TreeVector> solution_;
+  std::string name_;
+
+ //  // states
+  Teuchos::RCP<const State> S_;
+  Teuchos::RCP<State> S_inter_;
+  Teuchos::RCP<State> S_next_;
+
+ //  // fancy OS
+  Teuchos::RCP<VerboseObject> vo_;
+  //VerboseObject* vo_;
 
 };
 

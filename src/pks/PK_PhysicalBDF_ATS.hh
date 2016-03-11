@@ -44,10 +44,6 @@ public:
   virtual void CommitStep (double t_old, double t_new, const Teuchos::RCP<State>& S);
   virtual double get_dt() { return dt_; }
   // -- transfer operators
-  // virtual void State_to_Solution(const Teuchos::RCP<State>& S,
-  //                                TreeVector& soln);
-  // virtual void Solution_to_State(TreeVector& soln,
-  //                                const Teuchos::RCP<State>& S);
   virtual void set_dt(double dt){ dt_ = dt;}
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u){};
   virtual bool ModifyCorrection(double h, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u){};

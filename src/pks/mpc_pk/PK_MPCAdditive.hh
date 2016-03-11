@@ -35,13 +35,13 @@
 #include "State.hh"
 #include "TreeVector.hh"
 
-#include "PK.hh"
+#include "PK_MPC.hh"
 #include "PK_Factory.hh"
 
 namespace Amanzi {
 
 template <class PK_Base>
-class PK_MPCAdditive : virtual public PK {
+class PK_MPCAdditive :  public PK_MPC<PK> {
  public:
   PK_MPCAdditive(Teuchos::ParameterList& pk_tree,
          const Teuchos::RCP<Teuchos::ParameterList>& global_list,

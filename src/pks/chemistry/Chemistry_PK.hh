@@ -26,13 +26,13 @@
 #include "ChemistryEngine.hh"
 #endif
 #include "Mesh.hh"
-#include "PK.hh"
+#include "PK_Physical.hh"
 #include "State.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
-class Chemistry_PK : public PK {
+class Chemistry_PK : public PK_Physical {
  public:
   Chemistry_PK();
   virtual ~Chemistry_PK() {};

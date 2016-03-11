@@ -88,7 +88,7 @@ add_install_include_file(${chem_inc_files})
 add_amanzi_library(chemistry_pk
                    SOURCE ${chem_src_files}
                    HEADERS ${chem_inc_files}
-                   LINK_LIBS ${GEOCHEM_LIBS} ${Epetra_LIBRARIES})
+                   LINK_LIBS ${GEOCHEM_LIBS} pks ${Epetra_LIBRARIES})
 
 if (BUILD_TESTS AND ENABLE_Unstructured)
     # Add UnitTest include directory
@@ -108,7 +108,7 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
     add_amanzi_test(chemistry_amanzi_pk chemistry_amanzi_pk
                     KIND int
                     SOURCE test/Main.cc test/chemistry_amanzi_pk.cc
-                    LINK_LIBS chemistry_pk state data_structures
+                    LINK_LIBS chemistry_pk state pks data_structures
                               mesh_functions mesh mesh_factory error_handling 
 		              interface
                               ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
@@ -118,7 +118,7 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
     add_amanzi_test(chemistry_benchmarks_1d chemistry_benchmark_1d
                     KIND int
                     SOURCE test/chemistry_benchmarks_1d.cc
-                    LINK_LIBS chemistry_pk state data_structures
+                    LINK_LIBS chemistry_pk state pks data_structures
                               mesh_functions mesh mesh_factory error_handling interface
                               ${UnitTest_LIBRARIES} 
                               ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${HDF5_LIBRARIES})

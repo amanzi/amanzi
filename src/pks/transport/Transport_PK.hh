@@ -24,6 +24,7 @@
 #include "Explicit_TI_FnBase.hh"
 #include "MaterialProperties.hh"
 #include "PK.hh"
+#include "PK_PhysicalExplicit.hh"
 #include "PK_Factory.hh"
 #include "ReconstructionCell.hh"
 #include "State.hh"
@@ -58,9 +59,7 @@ namespace Transport {
 
 typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
-  // class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
-  // class Transport_PK : public PK, public Explicit_TI::fnBase<TreeVector> {
-  class Transport_PK : public PK_Explicit<Epetra_Vector> {
+  class Transport_PK : public  PK_PhysicalExplicit<Epetra_Vector> {
   public:
     Transport_PK(Teuchos::ParameterList& pk_tree,
                const Teuchos::RCP<Teuchos::ParameterList>& glist,

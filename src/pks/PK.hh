@@ -73,13 +73,13 @@ class PK {
  // -- set pointers to State, and point the solution vector to the data in S_next
   virtual void set_states(const Teuchos::RCP<const State>& S,
                           const Teuchos::RCP<State>& S_inter,
-                          const Teuchos::RCP<State>& S_next){};
+                          const Teuchos::RCP<State>& S_next) = 0;
 
   // -- transfer operators
   virtual void State_to_Solution(const Teuchos::RCP<State>& S,
-                                 TreeVector& soln) {};
+                                 TreeVector& soln) = 0;
   virtual void Solution_to_State(TreeVector& soln,
-                                 const Teuchos::RCP<State>& S){};
+                                 const Teuchos::RCP<State>& S) = 0;
 
 
 };

@@ -41,8 +41,11 @@ namespace Amanzi {
   void PK_Physical::set_states(const Teuchos::RCP<const State>& S,
                                   const Teuchos::RCP<State>& S_inter,
                                   const Teuchos::RCP<State>& S_next) {
-    PK_Default::set_states(S, S_inter, S_next);
 
+    S_ = S;
+    S_inter_ = S_inter;
+    S_next_ = S_next;
+    
     // Get the FE and mark it as changed.
     // Note that this is necessary because we need this to point at the
     // FE in S_next_, not the one which we created in S_.

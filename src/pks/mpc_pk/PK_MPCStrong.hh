@@ -36,7 +36,7 @@
 namespace Amanzi {
 
 template<class PK_Base>
-class PK_MPCStrong : public PK_MPC<PK_Base>, public PK_BDF
+class PK_MPCStrong :  virtual public PK_MPC<PK_Base>, public PK_BDF
 {
  public:
   PK_MPCStrong(Teuchos::ParameterList& pk_tree,
@@ -85,6 +85,9 @@ class PK_MPCStrong : public PK_MPC<PK_Base>, public PK_BDF
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
           Teuchos::RCP<TreeVector> u);
 
+  // virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
+  // virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
+
   // -- Modify the correction.
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
       ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
@@ -119,10 +122,7 @@ PK_MPCStrong<PK_Base>::PK_MPCStrong(Teuchos::ParameterList& pk_tree,
                               const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                               const Teuchos::RCP<State>& S,
                               const Teuchos::RCP<TreeVector>& soln) :
-  PK_Default(pk_tree, global_list, S, soln),
-  PK_MPC<PK_Base>(pk_tree, global_list, S, soln),
-  PK_BDF(pk_tree, global_list, S, soln) {};
-
+  PK_MPC<PK_Base>(pk_tree, global_list, S, soln){};
 
 // -----------------------------------------------------------------------------
 // Setup
@@ -412,6 +412,17 @@ bool PK_MPCStrong<PK_Base>::ModifyPredictor(double h, Teuchos::RCP<const TreeVec
   }
   return modified;
 }
+
+// template <class PK_Base>
+// void PK_MPCStrong<PK_Base>::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
+//   PK_MPC<PK_Base>::CommitStep(t_old, t_new, S);
+// }
+
+
+//  template<class PK_Base>
+//  void PK_MPCStrong<PK_Base>::CalculateDiagnostics(const Teuchos::RCP<State>& S){
+//    PK_MPC<PK_Base>::CalculateDiagnostics(S);
+//  };
 
 
 // -----------------------------------------------------------------------------
