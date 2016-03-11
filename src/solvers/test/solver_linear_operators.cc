@@ -10,6 +10,7 @@
 #include "LinearOperatorPCG.hh"
 #include "LinearOperatorGMRES.hh"
 #include "LinearOperatorNKA.hh"
+#include "LinearOperatorBelosGMRES.hh"
 
 using namespace Amanzi;
 
@@ -79,7 +80,8 @@ TEST(PCG_SOLVER) {
 
   // solve
   Epetra_Vector v(*map);
-  pcg.ApplyInverse(u, v);
+  int ierr = pcg.ApplyInverse(u, v);
+  CHECK(ierr > 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 
@@ -106,8 +108,8 @@ TEST(GMRES_SOLVER_LEFT_PRECONDITIONER) {
 
     // solve
     Epetra_Vector v(*map);
-    gmres.ApplyInverse(u, v);
-
+    int ierr = gmres.ApplyInverse(u, v);
+    CHECK(ierr > 0);
     for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
   }
 
@@ -137,7 +139,8 @@ TEST(GMRES_SOLVER_RIGHT_PRECONDITIONER) {
 
     // solve
     Epetra_Vector v(*map);
-    gmres.ApplyInverse(u, v);
+    int ierr = gmres.ApplyInverse(u, v);
+    CHECK(ierr > 0);
 
     for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
   }
@@ -170,7 +173,8 @@ TEST(GMRES_SOLVER_DEFLATION) {
 
   // solve
   Epetra_Vector v(*map);
-  gmres.ApplyInverse(u, v);
+  int ierr = gmres.ApplyInverse(u, v);
+  CHECK(ierr > 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 
@@ -194,7 +198,39 @@ TEST(NKA_SOLVER) {
 
   // solve
   Epetra_Vector v(*map);
-  nka.ApplyInverse(u, v);
+  int ierr = nka.ApplyInverse(u, v);
+  CHECK(ierr > 0);
+
+  for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
+
+  delete comm;
+};
+
+TEST(BELOS_GMRES_SOLVER) {
+  std::cout << "\nChecking Belos GMRES solver..." << std::endl;
+
+  Teuchos::ParameterList plist;
+  Teuchos::ParameterList& vo = plist.sublist("VerboseObject");
+  vo.set("Verbosity Level", "high");
+  plist.set<int>("size of Krylov space", 15);
+  plist.set<double>("error tolerance", 1e-12);
+  
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
+  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
+
+  // create the operator
+  Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
+  AmanziSolvers::LinearOperatorBelosGMRES<Matrix, Epetra_Vector, Epetra_Map> gmres(m, m);
+  gmres.Init(plist);
+
+  // initial guess
+  Epetra_Vector u(*map);
+  u[55] = 1.0;
+
+  // solve
+  Epetra_Vector v(*map);
+  int ierr = gmres.ApplyInverse(u, v);
+  CHECK(ierr > 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 
@@ -224,7 +260,8 @@ TEST(SOLVER_FACTORY) {
 
   // solve
   Epetra_Vector v(*map);
-  solver->ApplyInverse(u, v);
+  int ierr = solver->ApplyInverse(u, v);
+  CHECK(ierr > 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 
@@ -258,7 +295,8 @@ TEST(VERBOSITY_OBJECT) {
 
   // solve
   Epetra_Vector v(*map);
-  solver->ApplyInverse(u, v);
+  int ierr = solver->ApplyInverse(u, v);
+  CHECK(ierr > 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 

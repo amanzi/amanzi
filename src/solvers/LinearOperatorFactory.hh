@@ -130,8 +130,8 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
       lin_op->Init(gmres_list);
       lin_op->set_name(method_name);
       return lin_op;
-    } else if (method_name == "belosgmres") {
-      Teuchos::ParameterList gmres_list = slist.sublist("gmres parameters");
+    } else if (method_name == "belos gmres") {
+      Teuchos::ParameterList gmres_list = slist.sublist("belos gmres parameters");
       Teuchos::RCP<LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace> >
           lin_op = Teuchos::rcp(new LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>(m, h));
       lin_op->Init(gmres_list);

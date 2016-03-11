@@ -61,10 +61,12 @@ class LinearOperatorBelosGMRES : public LinearOperator<Matrix, Vector, VectorSpa
   int returned_code() { return returned_code_; }
 
  private:
-  using LinearOperator<Matrix, Vector, VectorSpace>::m_; // solving mx=f
-  using LinearOperator<Matrix, Vector, VectorSpace>::h_; // h is preconditioner
-  using LinearOperator<Matrix, Vector, VectorSpace>::name_;
+  // using LinearOperator<Matrix, Vector, VectorSpace>::m_; // solving mx=f
+  // using LinearOperator<Matrix, Vector, VectorSpace>::h_; // h is preconditioner
+  // using LinearOperator<Matrix, Vector, VectorSpace>::name_;
 
+  Teuchos::RCP<VerboseObject> vo_;
+  
   int max_itrs_, criteria_, krylov_dim_;
   double tol_, overflow_tol_;
   mutable int num_itrs_, returned_code_;
@@ -83,6 +85,8 @@ class LinearOperatorBelosGMRES : public LinearOperator<Matrix, Vector, VectorSpa
 template<class Matrix, class Vector, class VectorSpace>
 void LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
 {
+  vo_ = Teuchos::rcp(new VerboseObject("Solvers::BelosGMRES", plist));
+
   tol_ = plist.get<double>("error tolerance", 1e-16);
   max_itrs_ = plist.get<int>("maximum number of iterations", 100);
   krylov_dim_ = plist.get<int>("size of Krylov space", 10);
@@ -134,9 +138,19 @@ int LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::ApplyInverse(const Ve
   pl->set("Maximum Iterations", max_itrs_);
   pl->set("Maximum Restarts", 2*krylov_dim_*max_itrs_);
   pl->set("Convergence Tolerance", tol_);
-//  pl->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::IterationDetails + Belos::StatusTestDetails + Belos::Debug + Belos::TimingDetails);
-//  pl->set("Output Frequency", 1);
+  pl->set("Output Frequency", 1);
 
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {  
+    pl->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::IterationDetails + Belos::StatusTestDetails + Belos::Debug + Belos::TimingDetails);
+  } else if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    pl->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::IterationDetails + Belos::StatusTestDetails);
+  } else if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    pl->set("Verbosity", Belos::Errors + Belos::Warnings);
+  } else if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+    pl->set("Verbosity", Belos::Errors + Belos::Warnings);
+  }
+
+    
   if(criteria_ & LIN_SOLVER_RELATIVE_RHS)
   {
     pl->set("Implicit Residual Scaling", "Norm of RHS");
@@ -153,8 +167,8 @@ int LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::ApplyInverse(const Ve
     pl->set("Explicit Residual Scaling", "None");
   }
 
-  RCP<Belos::Operator<double> > Op = rcp(new AmanziBelosOp<Matrix,Vector>(m_));
-  RCP<Belos::Operator<double> > Prec = rcp(new AmanziBelosOp<Matrix,Vector>(h_,true));
+  RCP<Belos::Operator<double> > Op = rcp(new AmanziBelosOp<Matrix,Vector>(this->m_));
+  RCP<Belos::Operator<double> > Prec = rcp(new AmanziBelosOp<Matrix,Vector>(this->h_,true));
   RCP<Belos::MultiVec<double> > LHS = rcp(new CompositeMultiVector<Vector>(rcp(&hv,false)));
   RCP<const Belos::MultiVec<double> > RHS = rcp(new CompositeMultiVector<Vector>(rcp(const_cast<Vector*>(&v),false)));
   RCP<LinearProblem> problem = rcp(new LinearProblem(Op,LHS,RHS));
@@ -165,9 +179,9 @@ int LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::ApplyInverse(const Ve
   Belos::ReturnType success = solver.solve();
   num_itrs_ = solver.getNumIters();
   if(success == Belos::Converged)
-    returned_code_ = 0;
+    returned_code_ = LIN_SOLVER_BELOS_SAYS_SUCCESS;
   else
-    returned_code_ = 1;
+    returned_code_ = LIN_SOLVER_BELOS_SAYS_FAIL;
 
   return returned_code_;
 }
