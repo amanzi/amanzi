@@ -65,6 +65,7 @@
 #   0.92.21      - update Alquimia to version 0.3.1 (CrunchFlow integration)
 #   0.92.22      - added optional Silo package
 #   0.92.23      - Patched ASCEM-IO to allocate space for sprintf() correctly.
+#   0.92.24      - update MSTK to version 2.2.5 (updates to meshconvert, exoatt)
 
 include(CMakeParseArguments)
 
@@ -114,7 +115,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 23)
+set (AMANZI_TPLS_VERSION_PATCH 24)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -274,12 +275,12 @@ set(ExodusII_MD5_SUM       cfd240dbc1251b08fb1d0ee2de40a44c)
 # TPL: MSTK
 #
 set(MSTK_VERSION_MAJOR 2)
-set(MSTK_VERSION_MINOR 23)
+set(MSTK_VERSION_MINOR 25)
 set(MSTK_VERSION_PATCH )
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM        d1ceedfd43e18f8b5eee85b2d8e7d4fe)
+set(MSTK_MD5_SUM        4195d0f190a456f7fbb6db36d25cd269)
 
 #
 # TPL: MOAB
