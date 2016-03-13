@@ -33,7 +33,7 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(
   // -- surface energy source
   domain_surf =  plist_->get<std::string>("domain name", "domain");
   if(domain_surf.substr(0,6) == "column")
-    domain_ss = domain_.substr(0,8);
+    domain_ss = domain_.substr(0,domain_surf.size()-8);
   else
     domain_ss = "domain";
   Teuchos::ParameterList& esource_sublist =

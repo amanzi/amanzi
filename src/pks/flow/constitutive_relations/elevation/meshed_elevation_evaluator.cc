@@ -39,7 +39,7 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
   Key domain = getDomain(key);
   Key domain_ss = " ";
   if(domain.substr(0,6) =="column")
-    domain_ss = domain.substr(0,8);
+    domain_ss = domain.substr(0,domain.size()-8);
   
   Teuchos::RCP<const AmanziMesh::Mesh_MSTK> domain_mesh;
   if (domain_ss == " ")

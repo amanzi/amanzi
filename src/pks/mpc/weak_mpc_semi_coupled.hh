@@ -17,6 +17,7 @@ class WeakMPCSemiCoupled : public WeakMPC {
 
   virtual bool advance (double dt);
   virtual void setup(const Teuchos::Ptr<State>& S);
+  //  virtual void initialize(const Teuchos::Ptr<State>& S);
   
   bool CoupledSurfSubsurfColumns(double dt);
   bool CoupledSurfSubsurf3D(double dt);

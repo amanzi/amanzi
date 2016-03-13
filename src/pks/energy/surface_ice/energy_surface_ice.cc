@@ -104,7 +104,7 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     // -- ensure mass source from subsurface exists
     Key key_ss = " ";
     if (domain_.substr(0,6) == "column")
-      key_ss = getKey(domain_.substr(0,8),"surface_subsurface_flux");
+      key_ss = getKey(domain_.substr(0,domain_.size()-8),"surface_subsurface_flux");
     else
       key_ss = "surface_subsurface_flux";
     S->RequireField(key_ss)
@@ -149,7 +149,7 @@ void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
       Epetra_MultiVector& surf_temp = *surf_temp_cv->ViewComponent("cell",false);
       std::string key_ss;
       if (domain_.substr(0,6) == "column")
-        key_ss = getKey(domain_.substr(0,8),"temperature");
+        key_ss = getKey(domain_.substr(0,domain_.size()-8),"temperature");
       else
         key_ss = "temperature";
       const Epetra_MultiVector& temp = *S->GetFieldData(key_ss)
@@ -170,7 +170,35 @@ void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
 
       // mark as initialized
       S->GetField(key_,name_)->set_initialized();
-    }
+    } /*
+    else if (ic_plist.get<bool>("initialize surface temperature from subsurface columns",false)) {
+      Teuchos::RCP<CompositeVector> surf_temp_cv = S->GetFieldData(key_, name_);
+      Epetra_MultiVector& surf_temp = *surf_temp_cv->ViewComponent("cell",false);
+      unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+
+      for (unsigned int c=0; c!=ncells_surface; ++c) {
+        // -- get the surface cell's equivalent subsurface face and neighboring cell
+        std::stringstream namestream;
+        namestream << "column_"<< c <<"-temperature";
+        
+        const Epetra_MultiVector& temp = *S->GetFieldData(namestream.str())
+        ->ViewComponent("face",false);
+        
+        unsigned int f = temp.MyLength()-1;
+      
+        surf_temp[0][c] = temp[0][f];
+        std::cout<<"ENERGY PK1 : "<<namestream.str()<<" "<<temp[0][f]<< " "<<f<<"\n";
+      }
+
+      // -- Update faces from cells if needed.
+      if (ic_plist.get<bool>("initialize faces from cells", false)) {
+        DeriveFaceValuesFromCellValues_(surf_temp_cv.ptr());
+      }
+
+      // mark as initialized
+      S->GetField(key_,name_)->set_initialized();
+      } */
+
   }
 
   // For the boundary conditions, we currently hack in the enthalpy to
@@ -251,7 +279,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     // -- advection source
     Key key_ss = " ";
     if (domain_.substr(0,6) == "column")
-      key_ss = getKey(domain_.substr(0,8),"surface_subsurface_flux");
+      key_ss = getKey(domain_.substr(0,domain_.size()-8),"surface_subsurface_flux");
     else
       key_ss = "surface_subsurface_flux";
     const Epetra_MultiVector& source1 =

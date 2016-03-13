@@ -225,9 +225,17 @@ WeakMPCSemiCoupled::setup(const Teuchos::Ptr<State>& S) {
   ASSERT(!(coupling_key_ == " "));
 };
 
-
-
-
+  /*
+void
+WeakMPCSemiCoupled::initialize(const Teuchos::Ptr<State>& S) {
+  MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
+  ++pk;
+  while (pk != sub_pks_.end()){
+    (*pk)->initialize(S);
+    ++pk;
+  }
+}
+  */
 //-------------------------------------------------------------------------------------
 // Semi coupled thermal hydrology
 bool WeakMPCSemiCoupled::advance(double dt) {
@@ -248,7 +256,12 @@ bool
 WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
   bool fail = false;
   MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
-    
+  static bool flag = true;
+  if (flag){
+
+
+    flag = false;
+  }
     // advance surface_star-pressure from t_n to t_(n+1)
     fail = (*pk)->advance(dt);
     
