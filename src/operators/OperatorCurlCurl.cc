@@ -65,7 +65,7 @@ void OperatorCurlCurl::UpdateMatrices()
 
     WhetStone::DenseMatrix Acell(nedges, nedges);
     if (K_.get()) Kc = (*K_)[c];
-    mfd.StiffnessMatrixOptimized(c, Kc, Acell);
+    mfd.StiffnessMatrix(c, Kc, Acell);
 
     local_op_->matrices[c] = Acell;
   }
