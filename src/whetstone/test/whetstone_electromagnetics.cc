@@ -121,14 +121,14 @@ TEST(MASS_MATRIX_2D) {
 
 
 /* **************************************************************** */
-TEST(MASS_MATRIX_3D) {
+void MassMatrix3D(std::string mesh_file, int max_row) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Mass matrix for edge elements in 3D" << std::endl;
+  std::cout << "\nTest: Mass matrix for edge elements in 3D: " << mesh_file << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -144,9 +144,8 @@ TEST(MASS_MATRIX_3D) {
 
   bool request_faces(true), request_edges(true);
 
-  // RCP<Mesh> mesh = meshfactory("test/dodecahedron.exo", NULL, request_faces, request_edges); 
-  RCP<Mesh> mesh = meshfactory("test/one_cell.exo", Teuchos::null, request_faces, request_edges); 
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, Teuchos::null, true, true); 
+  RCP<Mesh> mesh = meshfactory(mesh_file, Teuchos::null, request_faces, request_edges); 
  
   MFD3D_Electromagnetics mfd(mesh);
 
@@ -179,9 +178,11 @@ TEST(MASS_MATRIX_3D) {
       M.Inverse();
     }
 
-    printf("Mass matrix for cell %3d method=%d\n", cell, method);
-    for (int i = 0; i < nrows; i++) {
-      for (int j = 0; j < nrows; j++ ) printf("%8.4f ", M(i, j)); 
+    int m = std::min(nrows, max_row);
+    printf("Mass matrix: method=%d  edges=%d  submatrix=%dx%d\n", method, nedges, m, m);
+
+    for (int i = 0; i < m; i++) {
+      for (int j = 0; j < m; j++ ) printf("%8.4f ", M(i, j)); 
       printf("\n");
     }
 
@@ -213,6 +214,19 @@ TEST(MASS_MATRIX_3D) {
 
   delete comm;
 }
+
+TEST(MASS_MATRIX_3D_HEX) {
+  MassMatrix3D("test/one_cell.exo", 12);
+}
+
+TEST(MASS_MATRIX_3D_DODECAHEDRON) {
+  MassMatrix3D("test/dodecahedron.exo", 10);
+}
+
+TEST(MASS_MATRIX_3D_24SIDED) {
+  MassMatrix3D("test/one_cell3.exo", 10);
+}
+
 
 
 /* **************************************************************** */
@@ -305,14 +319,14 @@ TEST(STIFFNESS_MATRIX_2D) {
 
 
 /* **************************************************************** */
-TEST(STIFFNESS_MATRIX_3D) {
+void StiffnessMatrix3D(std::string mesh_file, int max_row) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Stiffness matrix for edge elements in 3D" << std::endl;
+  std::cout << "\nTest: Stiffness matrix for edge elements in 3D: " << mesh_file << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -328,9 +342,8 @@ TEST(STIFFNESS_MATRIX_3D) {
 
   bool request_faces(true), request_edges(true);
 
-  // RCP<Mesh> mesh = meshfactory("test/dodecahedron.exo", Teuchos::null, request_faces, request_edges); 
-  RCP<Mesh> mesh = meshfactory("test/one_cell.exo", Teuchos::null, request_faces, request_edges); 
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, Teuchos::null, true, true); 
+  RCP<Mesh> mesh = meshfactory(mesh_file, Teuchos::null, request_faces, request_edges); 
  
   MFD3D_Electromagnetics mfd(mesh);
 
@@ -357,9 +370,11 @@ TEST(STIFFNESS_MATRIX_3D) {
       mfd.StiffnessMatrixOptimized(cell, T, A);
     }
 
-    printf("Stiffness matrix for cell %3d\n", cell);
-    for (int i = 0; i < nrows; i++) {
-      for (int j = 0; j < nrows; j++ ) printf("%8.4f ", A(i, j)); 
+    int m = std::min(nrows, max_row);
+    printf("Stiffness matrix: method=%d  edges=%d  submatrix=%dx%d\n", method, nedges, m, m);
+
+    for (int i = 0; i < m; i++) {
+      for (int j = 0; j < m; j++ ) printf("%8.4f ", A(i, j)); 
       printf("\n");
     }
 
@@ -404,3 +419,17 @@ TEST(STIFFNESS_MATRIX_3D) {
 
   delete comm;
 }
+
+TEST(STIFFNESS_MATRIX_3D_HEX) {
+  StiffnessMatrix3D("test/one_cell.exo", 12);
+}
+
+TEST(STIFFNESS_MATRIX_3D_DODECAHEDRON) {
+  StiffnessMatrix3D("test/dodecahedron.exo", 10);
+}
+
+TEST(STIFFNESS_MATRIX_3D_24SIDES) {
+  StiffnessMatrix3D("test/one_cell3.exo", 10);
+} 
+
+

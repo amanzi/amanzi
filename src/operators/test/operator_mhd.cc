@@ -32,6 +32,7 @@
 // Amanzi::Operators
 #include "AnalyticMHD_01.hh"
 #include "AnalyticMHD_02.hh"
+#include "AnalyticMHD_03.hh"
 
 #include "OperatorAccumulation.hh"
 #include "OperatorCurlCurl.hh"
@@ -42,7 +43,7 @@
 * TBW 
 * **************************************************************** */
 template<class Analytic>
-void ResistiveMHD(double tolerance) {
+void ResistiveMHD(double c_t, double tolerance) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -71,9 +72,11 @@ void ResistiveMHD(double tolerance) {
   meshfactory.preference(pref);
 
   bool request_faces(true), request_edges(true);
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 5.0, 8, 8, 40, gm, request_faces, request_edges);
+  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 8, 8, gm, request_faces, request_edges);
+  RCP<const Mesh> mesh = meshfactory("test/hex_split_faces5.exo", gm, request_faces, request_edges);
 
   // create resistivity coefficient
+  double time = 1.0;
   Analytic ana(mesh);
   WhetStone::Tensor Kc(3, 2);
 
@@ -82,7 +85,7 @@ void ResistiveMHD(double tolerance) {
 
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-    Kc = ana.Tensor(xc, 0.0);
+    Kc = ana.Tensor(xc, time);
     K->push_back(Kc);
   }
 
@@ -100,9 +103,9 @@ void ResistiveMHD(double tolerance) {
 
     if (fabs(xe[0]) < 1e-6 || fabs(xe[0] - 1.0) < 1e-6 ||
         fabs(xe[1]) < 1e-6 || fabs(xe[1] - 1.0) < 1e-6 ||
-        fabs(xe[2]) < 1e-6 || fabs(xe[2] - 5.0) < 1e-6) {
+        fabs(xe[2]) < 1e-6 || fabs(xe[2] - 1.0) < 1e-6) {
       bc_model[e] = OPERATOR_BC_DIRICHLET;
-      bc_value[e] = (ana.electric_exact(xe, 0.0) * tau) / len;
+      bc_value[e] = (ana.electric_exact(xe, time) * tau) / len;
     }
   }
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_EDGE, bc_model, bc_value, bc_mixed));
@@ -114,7 +117,7 @@ void ResistiveMHD(double tolerance) {
   op_curlcurl->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op_curlcurl->global_operator()->DomainMap();
 
-  // create source 
+  // create source for a manufactured solution.
   AmanziMesh::Entity_ID_List edges;
   CompositeVector source(cvs);
   Epetra_MultiVector& src = *source.ViewComponent("edge");
@@ -130,27 +133,37 @@ void ResistiveMHD(double tolerance) {
       const AmanziGeometry::Point& tau = mesh->edge_vector(e);
       const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
 
-      src[0][e] += (ana.source_exact(xe, 0.0) * tau) / len * vol;
+      src[0][e] += (ana.source_exact(xe, time) * tau) / len * vol;
     }
   }
   source.GatherGhostedToMaster("edge");
+
+  // set up initial guess for a time-dependent problem
+  CompositeVector solution(cvs);
+  Epetra_MultiVector& sol = *solution.ViewComponent("edge");
+  if (c_t != 0.0) {
+    for (int e = 0; e < nedges_owned; e++) {
+      double len = mesh->edge_length(e);
+      const AmanziGeometry::Point& tau = mesh->edge_vector(e);
+      const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
+
+      sol[0][e] = (ana.electric_exact(xe, time) * tau) / len;
+    }
+  }
 
   // set up the diffusion operator
   op_curlcurl->SetTensorCoefficient(K);
   op_curlcurl->UpdateMatrices();
 
   // Add an accumulation term.
-  CompositeVector solution(cvs);
-  solution.PutScalar(0.0);  // solution at time T=0
-
   CompositeVector phi(cvs);
-  phi.PutScalar(0.0);
+  phi.PutScalar(c_t);
 
   Teuchos::RCP<Operator> global_op = op_curlcurl->global_operator();
   Teuchos::RCP<OperatorAccumulation> op_acc =
       Teuchos::rcp(new OperatorAccumulation(AmanziMesh::EDGE, global_op));
 
-  double dT = 10.0;
+  double dT = 1.0;
   op_acc->AddAccumulationTerm(solution, phi, dT, "edge");
 
   // BCs, sources, and assemble
@@ -164,11 +177,9 @@ void ResistiveMHD(double tolerance) {
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // Test SPD properties of the matrix and preconditioner.
-  /*
   Verification ver(global_op);
   ver.CheckMatrixSPD(false, true);
   ver.CheckPreconditionerSPD(false, true);
-  */
 
   // Solve the problem.
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
@@ -191,7 +202,7 @@ void ResistiveMHD(double tolerance) {
   // compute electric error
   Epetra_MultiVector& E = *solution.ViewComponent("edge", false);
   double enorm, el2_err, einf_err;
-  ana.ComputeEdgeError(E, 0.0, enorm, el2_err, einf_err);
+  ana.ComputeEdgeError(E, time, enorm, el2_err, einf_err);
 
   if (MyPID == 0) {
     el2_err /= enorm; 
@@ -204,10 +215,13 @@ void ResistiveMHD(double tolerance) {
 }
 
 TEST(RESISTIVE_MHD_LINEAR) {
-  ResistiveMHD<AnalyticMHD_01>(1e-12);
+  ResistiveMHD<AnalyticMHD_01>(0.0, 1e-2);
 }
 
 TEST(RESISTIVE_MHD_NONLINEAR) {
-  ResistiveMHD<AnalyticMHD_02>(2e-4);
+  ResistiveMHD<AnalyticMHD_02>(0.0, 2e-2);
 }
 
+TEST(RESISTIVE_MHD_TIME_DEPENDENT) {
+  ResistiveMHD<AnalyticMHD_03>(1.0, 2e-2);
+}
