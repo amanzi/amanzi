@@ -125,11 +125,11 @@ message(STATUS "Install TPLs in ${TPL_INSTALL_PREFIX}")
 set(CMAKE_INSTALL_PREFIX ${TPL_INSTALL_PREFIX})
 
 # Amanzi structured AMR mesh API and tools
-option(ENABLE_Unstructured "Enable Amanzi unstructured mesh capability" TRUE)
+option(ENABLE_Structured "Enable Amanzi structured mesh capability" TRUE)
 option(ENABLE_CCSE_TOOLS "Enable building CCSE post processing tools" FALSE)
 
 # Amanzi unstructured mesh API and frameworks
-option(ENABLE_Structured   "Enable Amanzi structured mesh capability" TRUE)
+option(ENABLE_Unstructured "Enable Amanzi unstructured mesh capability" TRUE)
 option(ENABLE_STK_Mesh "Enable the Unstructured STK Mesh Toolkit" TRUE)
 option(ENABLE_MSTK_Mesh "Enable the Unstructured MSTK Mesh Toolkit" TRUE)
 option(ENABLE_MOAB_Mesh "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
