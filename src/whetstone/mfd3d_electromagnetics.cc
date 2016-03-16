@@ -117,14 +117,14 @@ int MFD3D_Electromagnetics::L2consistency2D_(int c, const Tensor& T,
 int MFD3D_Electromagnetics::L2consistency3D_(int c, const Tensor& T,
                                              DenseMatrix& N, DenseMatrix& Mc)
 {
-  int n1, n2, d(3);
+  int d(3);
   Entity_ID_List edges, faces;
   std::vector<int> fdirs, edirs, map;
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
   int nfaces = faces.size();
 
-  AmanziGeometry::Point v1(d), v2(d), v3(d), tau(d), p1(d), p2(d);
+  AmanziGeometry::Point v1(d), v2(d), v3(d), tau(d);
   AmanziGeometry::Point vv[3];
 
   // To calculate matrix R, we re-use matrix N
@@ -154,11 +154,9 @@ int MFD3D_Electromagnetics::L2consistency3D_(int c, const Tensor& T,
 
     for (int m = 0; m < nedges; ++m) {
       int e = edges[m];
-      mesh_->edge_get_nodes(e, &n1, &n2);
-      mesh_->node_get_coordinates(n1, &p1);
-      mesh_->node_get_coordinates(n2, &p2);
+      const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
  
-      v3 = ((p1 + p2) / 2) - xf;
+      v3 = xe - xf;
 
       double len = mesh_->edge_length(e);
       len /= 2.0 * area * area * fdirs[i] * edirs[m];
@@ -289,7 +287,7 @@ int MFD3D_Electromagnetics::L2consistencyInverse2D_(
 int MFD3D_Electromagnetics::L2consistencyInverse3D_(
     int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
 {
-  int n1, n2, d(3);
+  int d(3);
   Entity_ID_List edges, faces;
   std::vector<int> fdirs, edirs, map;
 
@@ -345,11 +343,9 @@ int MFD3D_Electromagnetics::L2consistencyInverse3D_(
 
     for (int m = 0; m < nedges; ++m) {
       int e = edges[m];
-      mesh_->edge_get_nodes(e, &n1, &n2);
-      mesh_->node_get_coordinates(n1, &p1);
-      mesh_->node_get_coordinates(n2, &p2);
+      const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
  
-      v3 = ((p1 + p2) / 2) - xf;
+      v3 = xe - xf;
 
       double len = mesh_->edge_length(e);
       len /= 2.0 * area * area * fdirs[i] * edirs[m];
@@ -434,8 +430,7 @@ int MFD3D_Electromagnetics::H1consistency2D_(int c, const Tensor& T,
 int MFD3D_Electromagnetics::H1consistency3D_(int c, const Tensor& T,
                                              DenseMatrix& N, DenseMatrix& Ac)
 {
-  int n1, n2, d(3);
-
+  int d(3);
   Entity_ID_List edges, faces;
   std::vector<int> fdirs, edirs, map;
 
@@ -445,7 +440,7 @@ int MFD3D_Electromagnetics::H1consistency3D_(int c, const Tensor& T,
   // To calculate matrix R, we re-use matrix N
   N.PutScalar(0.0);
 
-  AmanziGeometry::Point v1(d), v2(d), v3(d), p1(d), p2(d);
+  AmanziGeometry::Point v1(d), v2(d), v3(d);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   double volume = mesh_->cell_volume(c);
@@ -492,16 +487,13 @@ int MFD3D_Electromagnetics::H1consistency3D_(int c, const Tensor& T,
   // Matrix N(:, 1:3) are simply tangents
   for (int i = 0; i < nedges; i++) {
     int e = edges[i];
+    const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
     const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
     double len = mesh_->edge_length(e);
 
     for (int k = 0; k < d; ++k) N(i, k) = tau[k] / len;
 
-    mesh_->edge_get_nodes(e, &n1, &n2);
-    mesh_->node_get_coordinates(n1, &p1);
-    mesh_->node_get_coordinates(n2, &p2);
- 
-    v1 = ((p1 + p2) / 2) - xc;
+    v1 = xe - xc;
     v2 = v1^tau;
 
     for (int k = 0; k < d; ++k) {

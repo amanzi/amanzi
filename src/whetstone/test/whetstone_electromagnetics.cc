@@ -342,7 +342,7 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
 
   bool request_faces(true), request_edges(true);
 
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, Teuchos::null, true, true); 
+  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, Teuchos::null, true, true); 
   RCP<Mesh> mesh = meshfactory(mesh_file, Teuchos::null, request_faces, request_edges); 
  
   MFD3D_Electromagnetics mfd(mesh);
@@ -357,9 +357,9 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
   Tensor T(3, 2);
   T(0, 0) = 2.0;
   T(1, 1) = 1.0;
+  T(2, 2) = 3.0;
   T(0, 1) = 1.0;
   T(1, 0) = 1.0;
-  T(2, 2) = 1.0;
 
   for (int method = 0; method < 2; method++) {
     DenseMatrix A(nrows, nrows);
@@ -383,38 +383,35 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
 
     // verify exact integration property
     int n1, n2;
-    double xi, xj;
-    double vxx = 0.0, volume = mesh->cell_volume(cell); 
-    AmanziGeometry::Point p1(3), p2(3), v1(3);
+    double xi, xj, yj;
+    double vxx(0.0), vxy(0.0), volume = mesh->cell_volume(cell); 
+    AmanziGeometry::Point v1(3);
 
     for (int i = 0; i < nedges; i++) {
       int e1 = edges[i];
+      const AmanziGeometry::Point& xe = mesh->edge_centroid(e1);
       const AmanziGeometry::Point& t1 = mesh->edge_vector(e1);
       double a1 = mesh->edge_length(e1);
 
-      mesh->edge_get_nodes(e1, &n1, &n2);
-      mesh->node_get_coordinates(n1, &p1);
-      mesh->node_get_coordinates(n2, &p2);
- 
-      v1 = (p1 + p2)^t1;
+      v1 = xe^t1;
       xi = v1[0] / a1;
 
       for (int j = 0; j < nedges; j++) {
         int e2 = edges[j];
+        const AmanziGeometry::Point& ye = mesh->edge_centroid(e2);
         const AmanziGeometry::Point& t2 = mesh->edge_vector(e2);
         double a2 = mesh->edge_length(e2);
 
-        mesh->edge_get_nodes(e2, &n1, &n2);
-        mesh->node_get_coordinates(n1, &p1);
-        mesh->node_get_coordinates(n2, &p2);
- 
-        v1 = (p1 + p2)^t2;
+        v1 = ye^t2;
         xj = v1[0] / a2;
+        yj = v1[1] / a2;
 
         vxx += A(i, j) * xi * xj;
+        vxy += A(i, j) * xi * yj;
       }
     }
-    CHECK_CLOSE(32 * volume, vxx, 1e-10);
+    CHECK_CLOSE(4 * volume * T(0,0), vxx, 1e-10);
+    CHECK_CLOSE(4 * volume * T(0,1), vxy, 1e-10);
   }
 
   delete comm;

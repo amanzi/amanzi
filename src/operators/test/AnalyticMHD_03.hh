@@ -37,7 +37,7 @@ class AnalyticMHD_03 : public AnalyticMHD_Base {
     double x = p[0];
     double y = p[1];
     double z = p[2];
-    return Amanzi::AmanziGeometry::Point(z + t, x + t, y + t);
+    return Amanzi::AmanziGeometry::Point(z - y + t, x - z + t, y - x + t);
   }
 
   Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 

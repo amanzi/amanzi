@@ -72,8 +72,8 @@ void ResistiveMHD(double c_t, double tolerance) {
   meshfactory.preference(pref);
 
   bool request_faces(true), request_edges(true);
-  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 8, 8, gm, request_faces, request_edges);
-  RCP<const Mesh> mesh = meshfactory("test/hex_split_faces5.exo", gm, request_faces, request_edges);
+  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 8, 8, gm, request_faces, request_edges);
+  // RCP<const Mesh> mesh = meshfactory("test/hex_split_faces5.exo", gm, request_faces, request_edges);
 
   // create resistivity coefficient
   double time = 1.0;
@@ -215,7 +215,7 @@ void ResistiveMHD(double c_t, double tolerance) {
 }
 
 TEST(RESISTIVE_MHD_LINEAR) {
-  ResistiveMHD<AnalyticMHD_01>(0.0, 1e-2);
+  ResistiveMHD<AnalyticMHD_01>(0.0, 1e-12);
 }
 
 TEST(RESISTIVE_MHD_NONLINEAR) {
@@ -223,5 +223,5 @@ TEST(RESISTIVE_MHD_NONLINEAR) {
 }
 
 TEST(RESISTIVE_MHD_TIME_DEPENDENT) {
-  ResistiveMHD<AnalyticMHD_03>(1.0, 2e-2);
+  ResistiveMHD<AnalyticMHD_03>(1.0, 2e-3);
 }
