@@ -33,6 +33,7 @@
 #include "RegionPolygon.hh"
 #include "RegionEnumerated.hh"
 #include "RegionAll.hh"
+#include "RegionBoundary.hh"
 
 #include "RegionFactory.hh"
 
@@ -213,6 +214,9 @@ createRegion(const std::string reg_name,
 
   } else if (shape == "Region: All") {
     region = Teuchos::rcp(new RegionAll(reg_name, reg_id, lifecycle));
+
+  } else if (shape == "Region: Boundary") {
+    region = Teuchos::rcp(new RegionBoundary(reg_name, reg_id, lifecycle));
 
   } else {
     Errors::Message mesg;

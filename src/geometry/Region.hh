@@ -37,9 +37,8 @@ class Point;
 
 class Region {
  public:
-
   // Destructor
-  virtual ~Region() {}
+  virtual ~Region() {};
 
   // Dimension of the subdomain
   unsigned int manifold_dimension() const {
@@ -83,8 +82,7 @@ class Region {
   // Get the Lifecycle of this region - Do mesh entity sets derived from
   // it have to be kept around or are they temporary and can be destroyed
   // as soon as they are used?
-  LifeCycleType lifecycle() const 
-  {
+  LifeCycleType lifecycle() const {
     return lifecycle_;
   }
 
@@ -92,7 +90,6 @@ class Region {
   virtual bool inside(const Point& p) const = 0;
 
  protected:
-
   // Constructor -- protected as it should never be called directly
   Region(const std::string& name,
          Set_ID id,
@@ -107,11 +104,9 @@ class Region {
       type_(type),
       manifold_dimension_(dim),
       space_dimension_(geom_dim),
-      lifecycle_(lifecycle) {}
-    
+      lifecycle_(lifecycle) {};
 
  protected:
-
   // Lifecycle (Temporary or Permanent)
   LifeCycleType lifecycle_;
   
@@ -134,16 +129,13 @@ class Region {
  private:
   Region(const Region& other); // prevent copy constructor
   Region& operator=(const Region& other); // prevent operator=
-  
-  
 };
-
 
 
 typedef std::vector<Teuchos::RCP<Region> > RegionVector;
 
-} // namespace AmanziGeometry
-} // namespace Amanzi
+}  // namespace AmanziGeometry
+}  // namespace Amanzi
 
 #endif
 

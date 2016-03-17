@@ -28,8 +28,8 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 #
 # geometry library
 #
-file (GLOB geometry_source_files "*.cc")
-file(GLOB  geometry_inc_files "*.hh")
+file(GLOB geometry_source_files "*.cc")
+file(GLOB geometry_inc_files "*.hh")
 add_amanzi_library(geometry 
                    SOURCE ${geometry_source_files} HEADERS ${geometry_inc_files}
                    LINK_LIBS error_handling functions ${Teuchos_LIBRARIES} )
@@ -90,7 +90,6 @@ if (BUILD_TESTS)
                           ${UnitTest_LIBRARIES}
                           ${Teuchos_LIBRARIES}
                           ${Epetra_LIBRARIES})  
-           
 
 endif()
 

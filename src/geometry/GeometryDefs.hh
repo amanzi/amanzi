@@ -28,6 +28,7 @@ typedef enum {
   LOGICAL,
   POLYGON,
   ENUMERATED,
+  BOUNDARY,
   ALL
 } RegionType;
 
