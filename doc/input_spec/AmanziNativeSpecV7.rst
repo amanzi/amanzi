@@ -4406,6 +4406,8 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 +------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Color Function"`   | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
 +------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Boundary"`         |                                         |                              | Set defined by domain boundary                                         |
++------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 
 
 Point
@@ -4573,6 +4575,22 @@ Currently, multi-region booleans are not supported in the same expression.
       <Parameter name="RegionList" type="Array(string)" value="{Middle1, Middle2, Bottom}"/>
     </ParameterList>
   </ParameterList>
+
+
+Boundary
+--------
+
+List *Region: Boundary* defines a set of all boundary faces. 
+Using this definition, faces located on the domain boundary are extracted.
+
+.. code-block:: xml
+
+   <ParameterList name="DomainBoundary"> <!-- parent list -->
+     <ParameterList name="Region: Boundary">
+       <Parameter name="element type" type="string" value="face"/>
+     </ParameterList>
+   </ParameterList>
+
 
 
 Notes and example

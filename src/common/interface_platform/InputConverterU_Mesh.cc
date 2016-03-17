@@ -412,6 +412,12 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
           ThrowErrorMissattr_("Regions", "element", "region_list", "logical");
         }
       }
+
+      else if (strcmp(node_name, "boundary") == 0) {
+        tree_["regions"].push_back(reg_name);
+        std::string type = GetAttributeValueS_(reg_elem, "element_type");
+        out_list.sublist(reg_name).sublist("Region: Boundary").set<std::string>("element type", type);
+      }
     }
   }
 
