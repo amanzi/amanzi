@@ -137,7 +137,7 @@ class OperatorDiffusion {
   }
 
   // -- working with consistent faces -- may not be implemented
-  virtual int UpdateConsistentFaces(CompositeVector& u){
+  virtual int UpdateConsistentFaces(CompositeVector& u) {
     Errors::Message msg("OperatorDiffusion: This diffusion implementation does not support working with consistent faces.");
     Exceptions::amanzi_throw(msg);
     return 1;

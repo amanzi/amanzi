@@ -20,7 +20,7 @@ class Walkabout_observations : public Checkpoint {
 
 public:
 
-  Walkabout_observations(Teuchos::ParameterList& plist, Epetra_MpiComm *comm): Checkpoint (plist, comm){};
+  Walkabout_observations(Teuchos::ParameterList& plist, Epetra_MpiComm *comm): Checkpoint (plist, comm) {};
   Walkabout_observations() : Checkpoint() {};
 
   void WriteWalkabout(Teuchos::RCP<State>& S);

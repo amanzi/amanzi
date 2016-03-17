@@ -35,7 +35,7 @@ class Dummy_PK : public PK_PhysicalBDF {
     return dummy_dt;
   }
 
-  virtual void set_dt(double dt){
+  virtual void set_dt(double dt) {
     dummy_dt = dt;
   };
 

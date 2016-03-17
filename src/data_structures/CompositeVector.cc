@@ -575,7 +575,7 @@ int CompositeVector::ReciprocalMultiply(double scalarAB, const CompositeVector& 
 // Interpolate pressure ICs on cells to ICs for lambda (faces).
 // -----------------------------------------------------------------------------
 void DeriveFaceValuesFromCellValues(CompositeVector& cv) {
-  if (cv.HasComponent("face")){
+  if (cv.HasComponent("face")) {
     cv.ScatterMasterToGhosted("cell");
     const Epetra_MultiVector& cv_c = *cv.ViewComponent("cell",true);
     Epetra_MultiVector& cv_f = *cv.ViewComponent("face",false);
@@ -593,7 +593,7 @@ void DeriveFaceValuesFromCellValues(CompositeVector& cv) {
       cv_f[0][f] = face_value / ncells;
     }
   }
-  else if (cv.HasComponent("boundary_face")){
+  else if (cv.HasComponent("boundary_face")) {
     const Epetra_MultiVector& cv_c = *cv.ViewComponent("cell",true);
     Epetra_MultiVector& cv_f = *cv.ViewComponent("boundary_face",false);
 

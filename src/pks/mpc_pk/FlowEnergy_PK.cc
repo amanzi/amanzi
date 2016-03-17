@@ -23,9 +23,9 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
                              const Teuchos::RCP<Teuchos::ParameterList>& glist,
                              const Teuchos::RCP<State>& S,
                              const Teuchos::RCP<TreeVector>& soln) :
-  glist_(glist),
-  Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
-  Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
+    glist_(glist),
+    Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
+    Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
 {
   Teuchos::ParameterList vlist;
   vo_ =  Teuchos::rcp(new VerboseObject("FlowEnergy_PK", vlist)); 

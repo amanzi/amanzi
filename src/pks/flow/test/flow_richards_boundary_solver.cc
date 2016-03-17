@@ -150,7 +150,7 @@ TEST(FLOW_BOUNDARY_SOLVER) {
     mesh1->face_get_cells(f, AmanziMesh::USED, &cells);
     int dir;
     const Point& norm = mesh1->face_normal(f, false, cells[0], &dir);
-    if ((cells.size() == 1) && (norm[2] * dir > 0)){
+    if ((cells.size() == 1) && (norm[2] * dir > 0)) {
       bnd_val1 = RPK1->BoundaryFaceValue(f, *S1->GetFieldData("pressure", passwd));
       std::cout << ": " << f << " " << bnd_val1 << "\n";
     }
@@ -164,7 +164,7 @@ TEST(FLOW_BOUNDARY_SOLVER) {
     mesh2->face_get_cells(f, AmanziMesh::USED, &cells);
     int dir;
     const Point& norm = mesh2->face_normal(f, false, cells[0], &dir);
-    if ((cells.size() == 1) && (norm[2]*dir > 0)){
+    if ((cells.size() == 1) && (norm[2]*dir > 0)) {
       const Point& xc = mesh2->cell_centroid(cells[0]);
       // bnd_val1 = RPK1->BoundaryFaceValue(f, *S1->GetFieldData("pressure", passwd));
       bnd_val2 = RPK2->BoundaryFaceValue(f, *S2->GetFieldData("pressure", passwd));

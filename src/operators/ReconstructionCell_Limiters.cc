@@ -656,7 +656,7 @@ void ReconstructionCell::IdentifyUpwindCells_()
         upwind_cell_[f] = c;
       } else if (tmp < 0.0) {
         downwind_cell_[f] = c;
-      } else if (dirs[i] > 0){
+      } else if (dirs[i] > 0) {
         upwind_cell_[f] = c;
       } else {
         downwind_cell_[f] = c;

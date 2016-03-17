@@ -191,7 +191,7 @@ void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
       WhetStone::DenseMatrix Aface(ncells, ncells);
       Aface = 0.0;
 
-      // if (bc_model[f] != OPERATOR_BC_NEUMANN){
+      // if (bc_model[f] != OPERATOR_BC_NEUMANN) {
       double tij = trans_face[0][f] * (k_face.get() ? (*k_face)[0][f] : 1.0);
       for (int i = 0; i != ncells; ++i) {
         Aface(i, i) = tij;

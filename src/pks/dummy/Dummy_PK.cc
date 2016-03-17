@@ -37,7 +37,7 @@ bool Dummy_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
 
   bool failed = false;
 
-  if ((step_count + 2)%3 == 0){
+  if ((step_count + 2)%3 == 0) {
     failed = true;
     dummy_dt = 0.8*dummy_dt;
     std::cout<<"Step failed\n";

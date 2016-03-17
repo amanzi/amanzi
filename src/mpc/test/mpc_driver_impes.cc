@@ -104,7 +104,7 @@ using namespace std;
 
   bool mpc_new = true;
   
-  // if (input_parameter_list.isParameter("New multi-process coordinator")){
+  // if (input_parameter_list.isParameter("New multi-process coordinator")) {
   //   mpc_new = input_parameter_list.get<bool>("New multi-process coordinator",false);
   //   //mpc_new = true;
   // }
@@ -113,13 +113,8 @@ using namespace std;
   Amanzi::ObservationData obs_data;    
 
 
-
-
-
-   
-
-  if (mpc_new){
-    if (driver_parameter_list.isSublist("State")){
+  if (mpc_new) {
+    if (driver_parameter_list.isSublist("State")) {
       // Create the state.    
       Teuchos::ParameterList state_plist = driver_parameter_list.sublist("State");
       Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
@@ -133,7 +128,6 @@ using namespace std;
     }
   }
 
-  
   delete comm;
 }
 

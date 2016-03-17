@@ -790,7 +790,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
     }
 
     if (position == TIME_PERIOD_END) {
-      if (time_period_id_ < num_time_periods_ - 1){
+      if (time_period_id_ < num_time_periods_ - 1) {
         time_period_id_++;
         ResetDriver(time_period_id_); 
         restart_dT =  tp_dt_[time_period_id_];

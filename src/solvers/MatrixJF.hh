@@ -152,45 +152,44 @@ double MatrixJF<Vector,VectorSpace>::CalculateEpsilon_(const Vector& u, const Ve
   double eps = eps_;
   double typical_size_u = 100.;
 
-
-  if (method_name_ == "Knoll-Keyes"){
+  if (method_name_ == "Knoll-Keyes") {
     double xinf(0.0);
     x.NormInf(&xinf);
     
-    if (xinf > 0){
+    if (xinf > 0) {
       double uinf(0.0);
       u.NormInf(&uinf);      
       eps = std::sqrt((1 + uinf) * 1.0e-12) / xinf;
     }
   }
-  else if (method_name_ == "Knoll-Keyes L2"){
+  else if (method_name_ == "Knoll-Keyes L2") {
     double x_l2(0.0);
     x.Norm2(&x_l2);
     
-    if (x_l2 > 0){
+    if (x_l2 > 0) {
       double u_l2(0.0);
       u.Norm2(&u_l2);      
       eps = std::sqrt((1 + u_l2) * 1.0e-12) / x_l2;
     }
   }
-  else if (method_name_ == "Brown-Saad"){
+  else if (method_name_ == "Brown-Saad") {
     double x_l2(0.0);
     x.Norm2(&x_l2);
     double xinf(0.0);
     x.NormInf(&xinf);
 
-    if (x_l2 > 0){
+    if (x_l2 > 0) {
       double alp(0.);
       u.Dot(x, &alp);
       double sgn = (alp > 0) ? 1 : -1; 
       eps = (1e-12/x_l2)*std::max(fabs(alp), typical_size_u*xinf);
     }
   }              
-  // else if (method_name_ == "simple"){
+  // else if (method_name_ == "simple") {
   //   double x_l2(0.0);
   //   x.Norm2(&x_l2);
 
-  //   if (x_l2 > 0){
+  //   if (x_l2 > 0) {
   //     double b = 1e-13;
   //     double u_l1(0.);
   //     u.Norm1(&u_l1);
