@@ -307,11 +307,6 @@ public:
 			 const Parallel_type ptype, 
 			 std::vector<Entity_ID> *entids) const; 
 
-  void get_set_entities (const char *setname, 
-			 const Entity_kind kind, 
-			 const Parallel_type ptype, 
-			 std::vector<Entity_ID> *entids) const; 
-
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If
   // move_vertical = true, nodes will be allowed to move only in the

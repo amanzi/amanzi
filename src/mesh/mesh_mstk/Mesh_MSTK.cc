@@ -3496,18 +3496,6 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
 } // Mesh_MSTK::get_set_entities (by set name) 
 
 
-void Mesh_MSTK::get_set_entities (const char *setname,
-				  const Entity_kind kind, 
-				  const Parallel_type ptype, 
-				  std::vector<Entity_ID> *setents) const 
-{
-  std::string setname1(setname);
-
-  get_set_entities(setname1,kind,ptype,setents);
-  
-} // Mesh_MSTK::get_set_entities (by set name) 
-
-
 void Mesh_MSTK::get_set_entities (const Set_ID setid, 
 				  const Entity_kind kind, 
 				  const Parallel_type ptype, 

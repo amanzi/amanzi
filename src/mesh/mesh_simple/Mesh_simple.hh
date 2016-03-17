@@ -308,12 +308,6 @@ public:
 			 Entity_ID_List *entids) const; 
 
 
-  void get_set_entities (const char *setname, 
-			 const Entity_kind kind, 
-			 const Parallel_type ptype, 
-			 Entity_ID_List *entids) const; 
-
-
   // Miscellaneous
 
   void write_to_exodus_file (const std::string filename) const;

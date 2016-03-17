@@ -283,12 +283,6 @@ class MeshLogical : public Mesh {
                         const Parallel_type ptype,
                         Entity_ID_List *entids) const;
 
-  virtual
-  void get_set_entities(const char *setname,
-                        const Entity_kind kind,
-                        const Parallel_type ptype,
-                        Entity_ID_List *entids) const;
-
 
   // Miscellaneous functions
   virtual

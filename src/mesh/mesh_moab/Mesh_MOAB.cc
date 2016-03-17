@@ -1891,18 +1891,6 @@ void Mesh_MOAB::get_set_entities (const std::string setname,
     Exceptions::amanzi_throw(mesg);
   }
 #endif
-
-
-}
-
-void Mesh_MOAB::get_set_entities (const char *setname, 
-                                  const Entity_kind kind, 
-                                  const Parallel_type ptype,
-                                  Entity_ID_List *setents) const {
-
-  std::string setname_str(setname);
-  get_set_entities(setname_str,kind,ptype,setents);
-
 }
 
 

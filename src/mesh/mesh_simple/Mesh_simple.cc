@@ -871,14 +871,6 @@ void Mesh_simple::get_set_entities (const AmanziMesh::Set_ID set_id,
   get_set_entities(rgn->name(),kind,ptype,setents);
 }
 
-void Mesh_simple::get_set_entities (const char *setname, 
-				    const AmanziMesh::Entity_kind kind, 
-				    const AmanziMesh::Parallel_type ptype, 
-				    AmanziMesh::Entity_ID_List *setents) const
-{
-  std::string setname1(setname);
-  get_set_entities(setname1,kind,ptype,setents);
-}
 
 void Mesh_simple::get_set_entities (const std::string setname, 
 				    const AmanziMesh::Entity_kind kind, 

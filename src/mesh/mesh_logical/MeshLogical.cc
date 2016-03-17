@@ -524,16 +524,6 @@ MeshLogical::get_set_entities (const std::string setname,
 }
 
 
-void
-MeshLogical::get_set_entities (const char *setname,
-        const Entity_kind kind,
-        const Parallel_type ptype,
-        Entity_ID_List *entids) const {
-  std::string name(setname);
-  get_set_entities(name, kind, ptype, entids);
-  return;
-}
-
 // Miscellaneous functions
 void
 MeshLogical::write_to_exodus_file(const std::string filename) const {
