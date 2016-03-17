@@ -2949,16 +2949,13 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       }
     }
     else {
-      std::stringstream tempstr;
-      tempstr << "Requested CELLS on region " << region->name() << 
-          " of type " << region->type() << 
-          " and dimension " << region->manifold_dimension() << ".\n" << 
-          "This request will result in an empty set";
-    
       Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
       if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
-        *(verbobj->os()) << tempstr;
+        *(verbobj->os()) << "Requested CELLS on region " << region->name() << 
+          " of type " << region->type() << 
+          " and dimension " << region->manifold_dimension() << ".\n" << 
+          "This request will result in an empty set";
       }
     }
       
@@ -3030,16 +3027,13 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       // Will handle it later in the routine
     }
     else {
-      std::stringstream tempstr;
-      tempstr << "Requested FACES on region " << region->name() << 
-          " of type " << region->type() << " and dimension " << 
-          region->manifold_dimension() << ".\n" << 
-          "This request will result in an empty set";
-    
       Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
       if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
-        *(verbobj->os()) << tempstr;
+        *(verbobj->os()) << "Requested FACES on region " << region->name() << 
+          " of type " << region->type() << " and dimension " << 
+          region->manifold_dimension() << ".\n" << 
+          "This request will result in an empty set";
       }
     }
     break;
@@ -3089,16 +3083,13 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       // We will handle it later in the routine
     }
     else {
-      std::stringstream tempstr;
-      tempstr << "Requested POINTS on region " << region->name() << 
-          " of type " << region->type() << " and dimension " << 
-          region->manifold_dimension() << ".\n" << 
-          "This request will result in an empty set";
-    
       Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
       if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
-        *(verbobj->os()) << tempstr;
+        *(verbobj->os()) << "Requested POINTS on region " << region->name() << 
+          " of type " << region->type() << " and dimension " << 
+          region->manifold_dimension() << ".\n" << 
+          "This request will result in an empty set";
       }
     }
       

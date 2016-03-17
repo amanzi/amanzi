@@ -32,6 +32,7 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
+include_directories($Belos_INCLUDE_DIRS})
 include_directories(${NOX_INCLUDE_DIRS})
 
 #
@@ -45,12 +46,20 @@ set(solvers_source_files ResidualDebugger.cc
 			 PreconditionerEuclid.cc
 			 PreconditionerBlockILU.cc)
 
-set(solvers_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
+set(solvers_tpl_libs ${DBC_LIBRARIES}
+		     ${Teuchos_LIBRARIES}
+		     ${Epetra_LIBRARIES} ${Belos_LIBRARIES} ${NOX_LIBRARIES})
 list(REVERSE solvers_tpl_libs)
 list(REMOVE_DUPLICATES solvers_tpl_libs)
 list(REVERSE solvers_tpl_libs)
 
-set(solvers_link_libs data_structures output mesh geometry error_handling whetstone atk )
+set(solvers_link_libs data_structures
+		      output
+		      mesh
+		      geometry
+		      error_handling
+		      whetstone
+		      atk )
 
 add_amanzi_library(solvers
                    SOURCE ${solvers_source_files} 
@@ -59,7 +68,7 @@ add_amanzi_library(solvers
 
 
 if (BUILD_TESTS)
-   set(solvers_test_link_libs solvers ${solvers_link_libs})
+    set(solvers_test_link_libs solvers ${solvers_link_libs})
 
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
@@ -70,7 +79,7 @@ if (BUILD_TESTS)
           copy_directory ${SOLVERS_SOURCE_DIR}/test ${SOLVERS_BINARY_DIR}/test)
     endif()
 
-    # Add the time_integration directory to the include paths
+    # Add the solvers directory to the include paths
     include_directories(${SOLVERS_SOURCE_DIR})
 
     add_amanzi_test(solver_linear_operators solver_linear_operators
@@ -97,4 +106,5 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/solver_continuation.cc
                     LINK_LIBS  ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+
 endif()

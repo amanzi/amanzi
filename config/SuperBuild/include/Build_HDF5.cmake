@@ -39,6 +39,12 @@ else()
   build_whitespace_string(hdf5_ldflags -L${TPL_INSTALL_PREFIX}/lib ${CMAKE_EXE_LINKER_FLAGS} )
 endif()  
 
+# share libraries -- disabled by default
+set(hdf5_shared_opt --disable-shared) 
+if (BUILD_SHARED_LIBS)
+  set(hdf5_shared_opt --enable-shared)
+endif()
+
 # --- Set the name of the patch
 set(HDF5_patch_file hdf5-1.8.8-comment.patch)
 # --- Configure the bash patch script
@@ -70,6 +76,7 @@ ExternalProject_Add(${HDF5_BUILD_TARGET}
                     CONFIGURE_COMMAND
                                      <SOURCE_DIR>/configure
                                                  --prefix=<INSTALL_DIR>
+                                                 ${hdf5_shared_opt}
                                                  --disable-fortran
                                                  --disable-cxx
                                                  --enable-production

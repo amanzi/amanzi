@@ -124,11 +124,11 @@ set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${A
 #
 set(XERCES_VERSION_MAJOR 3)
 set(XERCES_VERSION_MINOR 1)
-set(XERCES_VERSION_PATCH 1)
+set(XERCES_VERSION_PATCH 2)
 set(XERCES_VERSION ${XERCES_VERSION_MAJOR}.${XERCES_VERSION_MINOR}.${XERCES_VERSION_PATCH})
 set(XERCES_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(XERCES_ARCHIVE_FILE   xerces-c-${XERCES_VERSION}.tar.gz)
-set(XERCES_MD5_SUM        6a8ec45d83c8cfb1584c5a5345cb51ae ) 
+set(XERCES_ARCHIVE_FILE   xerces-c-${XERCES_VERSION}.tar.bz2)
+set(XERCES_MD5_SUM        d987b8bb576aea456e92454781fe3615 ) 
 
 #
 # TPL: OpenMPI
@@ -190,11 +190,11 @@ set(CCSE_MD5_SUM        faa52bb553cea8ca9ea436c1a7135b12)
 # TPL: UnitTest
 #
 set(UnitTest_VERSION_MAJOR 1)
-set(UnitTest_VERSION_MINOR 4)
+set(UnitTest_VERSION_MINOR 5)
 set(UnitTest_VERSION ${UnitTest_VERSION_MAJOR}.${UnitTest_VERSION_MINOR})
 set(UnitTest_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(UnitTest_ARCHIVE_FILE   unittest-cpp-${UnitTest_VERSION}.zip)
-set(UnitTest_MD5_SUM       bd373a53403ed51ea1bbb60b1952d7e3) 
+set(UnitTest_MD5_SUM      6f6e05fa07eeb2d44e5b11bd1f38865d) 
 
 #
 # TPL: Boost
@@ -349,24 +349,24 @@ set(PETSc_MD5_SUM        ad170802b3b058b5deb9cd1f968e7e13)
 #
 # TPL: Trilinos
 #
-set(Trilinos_VERSION_MAJOR 11)
-set(Trilinos_VERSION_MINOR 6)
+set(Trilinos_VERSION_MAJOR 12)
+set(Trilinos_VERSION_MINOR 2)
 set(Trilinos_VERSION_PATCH 1)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}.${Trilinos_VERSION_MINOR}.${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(Trilinos_ARCHIVE_FILE   trilinos-${Trilinos_VERSION}-Source.tar.bz2)
-set(Trilinos_MD5_SUM        b97d882535fd1856599b1c7338f5b45a)
+set(Trilinos_MD5_SUM        760f14cbce482b4b9a41d1c18297b531)
 
 #
 # TPL: SEACAS
 #  SEACAS is available in Trilinos 10.8 and above
-set(SEACAS_VERSION_MAJOR 11)
-set(SEACAS_VERSION_MINOR 6)
+set(SEACAS_VERSION_MAJOR 12)
+set(SEACAS_VERSION_MINOR 2)
 set(SEACAS_VERSION_PATCH 1)
 set(SEACAS_VERSION ${SEACAS_VERSION_MAJOR}.${SEACAS_VERSION_MINOR}.${SEACAS_VERSION_PATCH})
 set(SEACAS_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(SEACAS_ARCHIVE_FILE   trilinos-${SEACAS_VERSION}-Source.tar.bz2)
-set(SEACAS_MD5_SUM        b97d882535fd1856599b1c7338f5b45a)
+set(SEACAS_MD5_SUM        760f14cbce482b4b9a41d1c18297b531)
 
 #
 # TPL: PFlotran

@@ -30,20 +30,28 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 #endif()
 
 # List of packages enabled in the Trilinos build
-set(Trilinos_PACKAGE_LIST Teuchos Epetra NOX)
+set(Trilinos_PACKAGE_LIST Teuchos Epetra EpetraExt Belos NOX Ifpack AztecOO)
 if ( ENABLE_STK_Mesh )
   list(APPEND Trilinos_PACKAGE_LIST STK)
 endif()
 if ( ENABLE_MSTK_Mesh )
   list(APPEND Trilinos_PACKAGE_LIST Zoltan)
 endif()
+if ( ENABLE_Unstructured )
+  list(APPEND Trilinos_PACKAGE_LIST ML)
+endif()
 
 
 # Generate the Trilinos Package CMake Arguments
-set(Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF")
+set(Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF")
 foreach(package ${Trilinos_PACKAGE_LIST})
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_${package}:STRING=ON")
 endforeach()
+
+# Build PyTrilinos if shared
+if (BUILD_SHARED_LIBS)
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_PyTrilinos:BOOL=ON")
+endif()
 
 # Trilinos 11.0.3 has some C++ compile errors in it that we can sidestep by 
 # defining HAVE_TEUCHOS_ARRAY_BOUNDSCHECK.
@@ -94,9 +102,13 @@ endif()
 
 # Boost
 list(APPEND Trilinos_CMAKE_TPL_ARGS
+            "-DTPL_ENABLE_BoostLib:BOOL=ON" 
             "-DTPL_ENABLE_Boost:BOOL=ON" 
+            "-DTPL_ENABLE_GLM:BOOL=OFF" 
+            "-DTPL_BoostLib_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include"
+            "-DBoostLib_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
             "-DTPL_Boost_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include"
-            "-DTPL_Boost_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib")
+            "-DBoost_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib")
 
 # NetCDF
 list(APPEND Trilinos_CMAKE_TPL_ARGS
@@ -118,7 +130,10 @@ set(Trilinos_CMAKE_EXTRA_ARGS
     "-DTrilinos_VERBOSE_CONFIGURE:BOOL=ON"
     "-DTrilinos_ENABLE_TESTS:BOOL=OFF"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
+    "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA:BOOL=OFF"
+    "-DNOX_ENABLE_THYRA_EPETRA_ADAPTERS:BOOL=OFF"    
     )
+
 if ( CMAKE_BUILD_TYPE )
   list(APPEND Trilinos_CMAKE_EXTRA_ARGS
               "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
@@ -169,7 +184,7 @@ set(Trilinos_CMAKE_LANG_ARGS
 # Trilinos patches
 set(ENABLE_Trilinos_Patch ON)
 if (ENABLE_Trilinos_Patch)
-  set(Trilinos_patch_file trilinos-ifpack-hypre.patch trilinos-duplicate-parameters.patch)
+  set(Trilinos_patch_file trilinos-ifpack-hypre.patch trilinos-duplicate-parameters.patch trilinos-ifpack-hypre2.patch)
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
                  ${Trilinos_prefix_dir}/trilinos-patch-step.sh
                  @ONLY)

@@ -322,6 +322,38 @@ TEST_FIXTURE(test_data, AA_SOLVER) {
 };
 
 
+
+/* ******************************************************************/
+TEST_FIXTURE(test_data, NOX_SOLVER) {
+  std::cout << "\NOX solver..." << std::endl;
+
+  // create the function class
+  Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, true));
+
+  // create the SolverState
+  Teuchos::ParameterList plist;
+  plist.set("nonlinear tolerance", 1e-6);
+  plist.set("diverged tolerance", 1e10);
+  plist.set("limit iterations", 15);
+  plist.set("max du growth factor", 1e5);
+  plist.sublist("VerboseObject").set("Verbosity Level", "high");
+
+  // create the Solver
+  Teuchos::RCP<AmanziSolvers::SolverNox<Epetra_Vector, Epetra_BlockMap> > nox =
+      Teuchos::rcp(new AmanziSolvers::SolverNox<Epetra_Vector, Epetra_BlockMap>(plist));
+  nox->Init(fn, *map);
+
+  // initial guess
+  Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
+  (*u)[0] = -0.9;
+  (*u)[1] =  0.9;
+
+  // solve
+  nox->Solve(u);
+  CHECK_CLOSE(0.0, (*u)[0], 1.0e-6);
+  CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
+};
+
 }  // SUITE
 
 

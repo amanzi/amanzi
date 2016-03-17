@@ -278,7 +278,7 @@ void Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> 
 ******************************************************************* */
 void Chemistry_PK::ErrorAnalysis(int ierr, std::string& internal_msg)
 {
-  int tmp_out[2], tmp_in[2] = {ierr, internal_msg.size()};
+  int tmp_out[2], tmp_in[2] = {ierr, (int) internal_msg.size()};
   mesh_->get_comm()->MaxAll(tmp_in, tmp_out, 2);
 
   if (tmp_out[0] != 0) {
