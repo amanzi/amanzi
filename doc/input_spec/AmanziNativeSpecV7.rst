@@ -4587,10 +4587,25 @@ Using this definition, faces located on the domain boundary are extracted.
 
    <ParameterList name="DomainBoundary"> <!-- parent list -->
      <ParameterList name="Region: Boundary">
-       <Parameter name="element type" type="string" value="face"/>
+       <Parameter name="entity" type="string" value="face"/>
      </ParameterList>
    </ParameterList>
 
+
+Enumerated Set
+--------------
+
+List *Region: Enumerated Set* defines a set of mesh entities via the list 
+of input global ids..
+
+.. code-block:: xml
+
+   <ParameterList name="Well"> <!-- parent list -->
+     <ParameterList name="Region: Enumerated Set">
+       <Parameter name="Entity" type="string" value="face"/>
+       <Parameter name="Entity GIDs" type="Array(int)" value="{1, 12, 23, 34}"/>
+     </ParameterList>
+   </ParameterList>
 
 
 Notes and example

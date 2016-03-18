@@ -15,13 +15,11 @@
 using namespace std;
 
 
-namespace Amanzi
-{
+namespace Amanzi {
 
-namespace AmanziMesh
-{
+namespace AmanziMesh {
 
-  char kind_to_string[4][256] = {"NODE","EDGE","FACE","CELL"};
+char kind_to_string[4][256] = {"NODE","EDGE","FACE","CELL"};
 
 //--------------------------------------
 // Constructor - load up mesh from file

@@ -415,8 +415,8 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
 
       else if (strcmp(node_name, "boundary") == 0) {
         tree_["regions"].push_back(reg_name);
-        std::string type = GetAttributeValueS_(reg_elem, "element_type");
-        out_list.sublist(reg_name).sublist("Region: Boundary").set<std::string>("element type", type);
+        std::string type = GetAttributeValueS_(reg_elem, "entity");
+        out_list.sublist(reg_name).sublist("Region: Boundary").set<std::string>("entity", type);
       }
     }
   }

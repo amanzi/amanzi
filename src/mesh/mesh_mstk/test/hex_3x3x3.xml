@@ -169,9 +169,14 @@
     </ParameterList>
   </ParameterList>
 
+  <!-- Miscaleneous -->
+  <ParameterList name="Domain Boundary">
+    <ParameterList name="Region: Boundary">
+      <Parameter name="entity" type="string" value="face"/>
+    </ParameterList>
+  </ParameterList>
 
   <!-- Cells sets from point regions -->
-
   <ParameterList name="Sample Point InCell">
     <ParameterList name="Region: Point">
       <Parameter name="Coordinate" type="Array(double)" value="{0.5,0.5,0.5}"/>
