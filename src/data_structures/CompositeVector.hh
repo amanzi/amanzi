@@ -473,7 +473,7 @@ CompositeVector::PutScalar(std::string name, std::vector<double> scalar) {
 inline int
 CompositeVector::Abs(const CompositeVector& other) {
   ChangedValue();
-  return mastervec_->Abs(other.mastervec_);
+  return mastervec_->Abs(*other.mastervec_);
 }
 
 inline int
@@ -509,7 +509,7 @@ CompositeVector::Shift(std::string name, double scalar) {
 inline int
 CompositeVector::Reciprocal(const CompositeVector& other) {
   ChangedValue();
-  return mastervec_->Reciprocal(other.mastervec_);
+  return mastervec_->Reciprocal(*other.mastervec_);
 }
 
 inline int
