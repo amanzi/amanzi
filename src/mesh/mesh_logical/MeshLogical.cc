@@ -424,17 +424,17 @@ MeshLogical::deform (const std::vector<double>& target_cell_volumes_in,
 // Epetra maps
 //------------
 const Epetra_Map&
-MeshLogical::cell_map (const bool include_ghost) const {
+MeshLogical::cell_map(bool include_ghost) const {
   return *maps_.at(CELL);
 }
 
 const Epetra_Map&
-MeshLogical::face_map (const bool include_ghost) const {
+MeshLogical::face_map(bool include_ghost) const {
   return *maps_.at(FACE);
 }
 
 const Epetra_Map&
-MeshLogical::node_map (const bool include_ghost) const {
+MeshLogical::node_map(bool include_ghost) const {
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
   return *maps_.at(NODE);
@@ -442,7 +442,7 @@ MeshLogical::node_map (const bool include_ghost) const {
 
 
 const Epetra_Map&
-MeshLogical::exterior_face_map (void) const {
+MeshLogical::exterior_face_map(bool include_ghost) const {
   return *maps_.at(BOUNDARY_FACE);
 }
 

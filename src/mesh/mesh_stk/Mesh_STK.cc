@@ -685,7 +685,7 @@ Mesh_STK::face_map(bool include_ghost) const
 // Mesh_STK::node_map
 // -------------------------------------------------------------
 const Epetra_Map& 
-Mesh_STK::node_map (bool include_ghost) const
+Mesh_STK::node_map(bool include_ghost) const
 {
   return get_map_(NODE, include_ghost);
 }
@@ -694,7 +694,7 @@ Mesh_STK::node_map (bool include_ghost) const
 // Mesh_STK::exterior_face_map
 // -------------------------------------------------------------
 const Epetra_Map& 
-Mesh_STK::exterior_face_map(void) const
+Mesh_STK::exterior_face_map(bool include_ghost) const
 {
   Errors::Message mesg("not implemented");
   Exceptions::amanzi_throw(mesg);

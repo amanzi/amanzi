@@ -1107,7 +1107,7 @@ Mesh::valid_set_name(std::string name, Entity_kind kind) const
 
       // If we are looking for a side set, the region has to be
       // one topological dimension less than the cells
-      if (kind == FACE && rdim >= manifold_dim_-1) return true;
+      if (kind == FACE && (rdim >= manifold_dim_-1 || rdim == 0)) return true;
 
       // If we are looking for a node set, the region can be of any
       // dimension upto the spatial dimension of the domain

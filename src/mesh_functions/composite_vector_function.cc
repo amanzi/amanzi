@@ -62,7 +62,7 @@ void CompositeVectorFunction::Compute(double time,
       if (*region == std::string("ENTIRE_MESH_REGION")) {
         if (kind == AmanziMesh::BOUNDARY_FACE) {
           unsigned int nfaces = mesh->num_entities(kind, AmanziMesh::OWNED);
-          const Epetra_Map& vandelay_map = mesh->exterior_face_map();
+          const Epetra_Map& vandelay_map = mesh->exterior_face_map(false);
           const Epetra_Map& face_map = mesh->face_map(AmanziMesh::OWNED);
 
           // loop over indices
@@ -118,7 +118,7 @@ void CompositeVectorFunction::Compute(double time,
             mesh->get_set_entities(*region, AmanziMesh::FACE, AmanziMesh::OWNED, &id_list);
 
             const Epetra_Map& face_map = mesh->face_map(AmanziMesh::OWNED);
-            const Epetra_Map& vandelay_map = mesh->exterior_face_map();
+            const Epetra_Map& vandelay_map = mesh->exterior_face_map(false);
 
             // loop over indices
             AmanziMesh::Entity_ID_List cells;

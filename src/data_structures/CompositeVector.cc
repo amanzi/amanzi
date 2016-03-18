@@ -168,7 +168,7 @@ void CompositeVector::InitMap_(const CompositeVectorSpace& space) {
     } else if (space.Location(*name) == AmanziMesh::EDGE) {
       mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->edge_map(false)));
     } else if (space.Location(*name) == AmanziMesh::BOUNDARY_FACE) {
-      mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->exterior_face_map()));
+      mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->exterior_face_map(false)));
     }
   }
 
@@ -479,7 +479,7 @@ void CompositeVector::GatherGhostedToMaster(std::string name,
 // Vandelay operations
 void CompositeVector::CreateVandelay_() const {
   vandelay_importer_ = Teuchos::rcp(new Epetra_Import(Mesh()->exterior_face_importer()));
-  vandelay_vector_ = Teuchos::rcp(new Epetra_MultiVector(Mesh()->exterior_face_map(),
+  vandelay_vector_ = Teuchos::rcp(new Epetra_MultiVector(Mesh()->exterior_face_map(false),
           mastervec_->NumVectors("face"), false));
 }
 
@@ -597,7 +597,7 @@ void DeriveFaceValuesFromCellValues(CompositeVector& cv) {
     const Epetra_MultiVector& cv_c = *cv.ViewComponent("cell",true);
     Epetra_MultiVector& cv_f = *cv.ViewComponent("boundary_face",false);
 
-    const Epetra_Map& fb_map = cv.Mesh()->exterior_face_map();
+    const Epetra_Map& fb_map = cv.Mesh()->exterior_face_map(false);
     const Epetra_Map& f_map = cv.Mesh()->face_map(false);
 
     int fb_owned = cv_f.MyLength();

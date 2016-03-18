@@ -552,17 +552,17 @@ MeshEmbeddedLogical::deform (const std::vector<double>& target_cell_volumes_in,
 // Epetra maps
 //------------
 const Epetra_Map&
-MeshEmbeddedLogical::cell_map (const bool include_ghost) const {
+MeshEmbeddedLogical::cell_map(bool include_ghost) const {
   return include_ghost ? *maps_used_.at(CELL) : *maps_owned_.at(CELL);
 }
 
 const Epetra_Map&
-MeshEmbeddedLogical::face_map (const bool include_ghost) const {
+MeshEmbeddedLogical::face_map(bool include_ghost) const {
   return include_ghost ? *maps_used_.at(FACE) : *maps_owned_.at(FACE);
 }  
 
 const Epetra_Map&
-MeshEmbeddedLogical::node_map (const bool include_ghost) const {
+MeshEmbeddedLogical::node_map(bool include_ghost) const {
   Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
   return include_ghost ? *maps_used_.at(NODE) : *maps_owned_.at(NODE);
@@ -570,7 +570,7 @@ MeshEmbeddedLogical::node_map (const bool include_ghost) const {
 
 
 const Epetra_Map&
-MeshEmbeddedLogical::exterior_face_map (void) const {
+MeshEmbeddedLogical::exterior_face_map(bool include_ghost) const {
   return *maps_owned_.at(BOUNDARY_FACE);
 }
 

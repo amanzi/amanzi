@@ -349,29 +349,29 @@ class MeshSurfaceCell : public Mesh {
   // Epetra maps
   //------------
   virtual
-  const Epetra_Map& cell_map(const bool include_ghost) const {
+  const Epetra_Map& cell_map(bool include_ghost) const {
     return *cell_map_;
   }
 
   virtual
-  const Epetra_Map& face_map(const bool include_ghost) const {
+  const Epetra_Map& face_map(bool include_ghost) const {
     return *face_map_;
   }
 
   // dummy implementation so that frameworks can skip or overwrite
-  const Epetra_Map& edge_map(const bool include_ghost) const
+  const Epetra_Map& edge_map(bool include_ghost) const
   {
     Errors::Message mesg("Edges not implemented in this framework");
     amanzi_throw(mesg);
   };
 
   virtual
-  const Epetra_Map& node_map(const bool include_ghost) const {
+  const Epetra_Map& node_map(bool include_ghost) const {
     return *face_map_;
   }
 
   virtual
-  const Epetra_Map& exterior_face_map(void) const {
+  const Epetra_Map& exterior_face_map(bool include_ghost) const {
     return *face_map_;
   }
 

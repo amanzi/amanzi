@@ -313,12 +313,12 @@ class MeshColumn : public Mesh {
   }
 
   virtual
-  const Epetra_Map& face_map(const bool include_ghost) const {
+  const Epetra_Map& face_map(bool include_ghost) const {
     return *face_map_;
   }
 
   // dummy implementation so that frameworks can skip or overwrite
-  const Epetra_Map& edge_map(const bool include_ghost) const
+  const Epetra_Map& edge_map(bool include_ghost) const
   {
     Errors::Message mesg("Edges not implemented in this framework");
     amanzi_throw(mesg);
@@ -330,7 +330,7 @@ class MeshColumn : public Mesh {
   }
 
   virtual
-  const Epetra_Map& exterior_face_map(void) const {
+  const Epetra_Map& exterior_face_map(bool include_ghost) const {
     return *exterior_face_map_;
   }
 
