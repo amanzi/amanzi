@@ -18,14 +18,16 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 set(Boost_projects "system,filesystem,program_options,regex,graph")
 
 # --- Define the configure command
-
-# I believe these should always get set?
-set(Boost_bjam_args "cxxflags=\"${Amanzi_COMMON_CXXFLAGS}\"")
+message("  etc: BOOST FLAGS ISSUES")
+set(Boost_bjam_args "cxxflags=${Amanzi_COMMON_CXXFLAGS}")
+string(REPLACE " " "\\ " Boost_bjam_args ${Boost_bjam_args})
+message("  etc: bjam args escape spaces not quote them: ${Boost_bjam_args}")
 
 
 # Determine toolset type
 set(Boost_toolset)
 string(TOLOWER ${CMAKE_C_COMPILER_ID} compiler_id_lc)
+
 if (compiler_id_lc)
   if (APPLE)
     # CMAKE_SYSTEM of the form Darwin-12.5.0
@@ -61,6 +63,8 @@ if (compiler_id_lc)
         set(Boost_toolset pgi)
     elseif(${compiler_id_lc} STREQUAL "pathscale")
         set(Boost_toolset pathscale)
+    elseif(${compiler_id_lc} STREQUAL "clang")
+        set(Boost_toolset clang)
     endif()
   endif()
 endif()
