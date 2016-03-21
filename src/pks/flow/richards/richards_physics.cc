@@ -94,7 +94,7 @@ void Richards::AddSources_(const Teuchos::Ptr<State>& S,
         *S->GetFieldData(source_key_)->ViewComponent("cell",false);
 
     const Epetra_MultiVector& cv =
-        *S->GetFieldData("cell_volume")->ViewComponent("cell",false);
+      *S->GetFieldData(getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
 
     // Add into residual
     unsigned int ncells = g_c.MyLength();
