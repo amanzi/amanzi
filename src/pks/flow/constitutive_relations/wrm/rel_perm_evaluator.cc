@@ -175,7 +175,7 @@ void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     Epetra_MultiVector& res_bf = *result->ViewComponent("boundary_face",false);
 
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->Mesh();
-    const Epetra_Map& vandelay_map = mesh->exterior_face_map();
+    const Epetra_Map& vandelay_map = mesh->exterior_face_map(false);
     const Epetra_Map& face_map = mesh->face_map(false);
   
     // Evaluate the model to calculate krel.
@@ -201,7 +201,7 @@ void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh(surf_mesh_key_);
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->Mesh();
-    const Epetra_Map& vandelay_map = mesh->exterior_face_map();
+    const Epetra_Map& vandelay_map = mesh->exterior_face_map(false);
     const Epetra_Map& face_map = mesh->face_map(false);
     
     unsigned int nsurf_cells = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -283,7 +283,7 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
       Epetra_MultiVector& res_bf = *result->ViewComponent("boundary_face",false);
 
       Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->Mesh();
-      const Epetra_Map& vandelay_map = mesh->exterior_face_map();
+      const Epetra_Map& vandelay_map = mesh->exterior_face_map(false);
       const Epetra_Map& face_map = mesh->face_map(false);
   
       // Evaluate the model to calculate krel.
@@ -313,7 +313,7 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
 
       Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh(surf_mesh_key_);
       Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->Mesh();
-      const Epetra_Map& vandelay_map = mesh->exterior_face_map();
+      const Epetra_Map& vandelay_map = mesh->exterior_face_map(false);
       const Epetra_Map& face_map = mesh->face_map(false);
     
       unsigned int nsurf_cells = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);

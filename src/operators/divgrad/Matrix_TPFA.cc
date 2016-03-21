@@ -71,7 +71,7 @@ void Matrix_TPFA::CreateMFDstiffnessMatrices(
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
   Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("boundary_face",false);
-  const Epetra_Map& fb_map = mesh_->exterior_face_map();
+  const Epetra_Map& fb_map = mesh_->exterior_face_map(false);
   const Epetra_Map& f_map = mesh_->face_map(false);
 
   if (Afc_cells_.size() != nfaces) {
@@ -122,7 +122,7 @@ void Matrix_TPFA::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_graph
         const Teuchos::Ptr<Epetra_FECrsGraph> ff_graph) {
 
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  const Epetra_Map& fbmap = mesh_->exterior_face_map();
+  const Epetra_Map& fbmap = mesh_->exterior_face_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
 
   AmanziMesh::Entity_ID_List cells;
@@ -179,7 +179,7 @@ void Matrix_TPFA::SymbolicAssembleGlobalMatrices() {
   // get the standard matrices
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  const Epetra_Map& fbmap = mesh_->exterior_face_map();
+  const Epetra_Map& fbmap = mesh_->exterior_face_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
 
   int avg_entries_row = (mesh_->space_dimension() == 2) ? MFD_QUAD_FACES : MFD_HEX_FACES;
@@ -276,7 +276,7 @@ void Matrix_TPFA::AssembleSchur_() const {
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
-  const Epetra_Map& fb_map = mesh_->exterior_face_map();
+  const Epetra_Map& fb_map = mesh_->exterior_face_map(false);
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   AmanziMesh::Entity_ID_List cells;
@@ -383,7 +383,7 @@ Matrix_TPFA::ComputeSchurComplement(const std::vector<MatrixBC>& bc_markers,
 void Matrix_TPFA::AssembleRHS_() const {
 
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
-  const Epetra_Map& fb_map = mesh_->exterior_face_map();
+  const Epetra_Map& fb_map = mesh_->exterior_face_map(false);
 
   Epetra_MultiVector& rhs_cells = *rhs_->ViewComponent("cell",false);
   Epetra_MultiVector& rhs_bf = *rhs_->ViewComponent("boundary_face",false);
@@ -429,7 +429,7 @@ int Matrix_TPFA::Apply(const CompositeVector& X,
   ASSERT(!ierr);
 
 
-  const Epetra_Map& fb_map = mesh_->exterior_face_map();
+  const Epetra_Map& fb_map = mesh_->exterior_face_map(false);
   const Epetra_Map& f_map = mesh_->face_map(false);
 
   const  Epetra_MultiVector& Xc  = *X.ViewComponent("cell", false);
@@ -507,7 +507,7 @@ void Matrix_TPFA::ComputeNegativeResidual(const CompositeVector& solution,
   Epetra_MultiVector& rhs_bf   = *rhs_->ViewComponent("boundary_face");
   Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("boundary_face",false);
 
-  const Epetra_Map& fb_map = mesh_->exterior_face_map();
+  const Epetra_Map& fb_map = mesh_->exterior_face_map(false);
   const Epetra_Map& f_map = mesh_->face_map(false);
 
 
@@ -572,7 +572,7 @@ void Matrix_TPFA::DeriveFlux(const CompositeVector& solution,
   // const Epetra_MultiVector& Krel_face = *rel_perm->ViewComponent("face", true);
   Epetra_MultiVector& flux = *mass_flux->ViewComponent("face", true);
 
-  const Epetra_Map& fb_map = mesh_->exterior_face_map();
+  const Epetra_Map& fb_map = mesh_->exterior_face_map(false);
   const Epetra_Map& f_map = mesh_->face_map(false);
 
   int ncells_owned  = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -639,7 +639,7 @@ int Matrix_TPFA::ApplyInverse(const CompositeVector& X,
   Epetra_MultiVector Tc(Xc);
   int nb_faces = Xb.MyLength();
 
-  const Epetra_Map& fb_map = mesh_->exterior_face_map();
+  const Epetra_Map& fb_map = mesh_->exterior_face_map(false);
   const Epetra_Map& f_map = mesh_->face_map(false);
   AmanziMesh::Entity_ID_List cells;
 
@@ -917,7 +917,7 @@ void Matrix_TPFA::ApplyBoundaryConditions(const std::vector<MatrixBC>& bc_marker
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  const Epetra_Map& fb_map = mesh_->exterior_face_map();
+  const Epetra_Map& fb_map = mesh_->exterior_face_map(false);
   const Epetra_Map& f_map = mesh_->face_map(false);
   AmanziMesh::Entity_ID_List faces;
   AmanziMesh::Entity_ID_List cells;
@@ -971,7 +971,7 @@ double Matrix_TPFA::BoundaryValue(const Amanzi::CompositeVector& solution, int f
   }
   else if  (solution.HasComponent("boundary_face")) {
     const Epetra_MultiVector& pres = *solution.ViewComponent("boundary_face",false);
-    const Epetra_Map& fb_map = mesh_->exterior_face_map();
+    const Epetra_Map& fb_map = mesh_->exterior_face_map(false);
     const Epetra_Map& f_map = mesh_->face_map(false);
 
     int face_gid = f_map.GID(face_id);
@@ -996,7 +996,7 @@ void Matrix_TPFA::SetBoundaryValue(Amanzi::CompositeVector& solution, int face_i
   }
   else if  (solution.HasComponent("boundary_face")) {
     Epetra_MultiVector& pres = *solution.ViewComponent("boundary_face",false);
-    const Epetra_Map& fb_map = mesh_->exterior_face_map();
+    const Epetra_Map& fb_map = mesh_->exterior_face_map(false);
     const Epetra_Map& f_map = mesh_->face_map(false);
 
     int face_gid = f_map.GID(face_id);

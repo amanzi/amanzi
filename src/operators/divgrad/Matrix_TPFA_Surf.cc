@@ -35,7 +35,7 @@ void Matrix_TPFA_Surf::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
-  const Epetra_Map& fbmap = mesh_->exterior_face_map();
+  const Epetra_Map& fbmap = mesh_->exterior_face_map(false);
   const Epetra_Map& surf_cmap_wghost = surface_mesh_->cell_map(true);
   int ierr(0);
 
@@ -161,7 +161,7 @@ void Matrix_TPFA_Surf::AssembleRHS_() const{
       *surface_A_->rhs()->ViewComponent("cell",false);
   const Epetra_MultiVector& rhs_faces =
       *rhs_->ViewComponent("boundary_face",false);
-  const Epetra_Map& fb_map = mesh_->exterior_face_map();
+  const Epetra_Map& fb_map = mesh_->exterior_face_map(false);
   const Epetra_Map& f_map = mesh_->face_map(false);
   
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {

@@ -150,7 +150,6 @@ class Mesh2D(object):
 
         verts = [[self.coords[i,0:2] for i in f] for f in self.conn]
         from matplotlib import collections
-        print verts
         gons = collections.PolyCollection(verts, facecolors=colors)
         from matplotlib import pyplot as plt
         fig,ax = plt.subplots(1,1)
@@ -285,68 +284,201 @@ class Mesh3D(object):
         return self.coords.shape[0]
 
 
-    def write_exodus(self, filename):
+    def write_exodus(self, filename, face_block_mode="one block"):
         """Write the 3D mesh to ExodusII using arbitrary polyhedra spec"""
+
+        # put cells in with blocks, which renumbers the cells, so we have to track sidesets.
+        # Therefore we keep a map of old cell to new cell ordering
+        #
+        # also, though not required by the spec, paraview and visit
+        # seem to crash if num_face_blocks != num_elem_blocks.  So
+        # make face blocks here too, which requires renumbering the faces.
+
+        # -- first pass, form all elem blocks and make the map from old-to-new
+        new_to_old_elems = []
+        elem_blks = []
+        for i_m,m_id in enumerate(self.material_id_list):
+            # split out elems of this material, save new_to_old map
+            elems_tuple = [(i,c) for (i,c) in enumerate(self.elem_to_face_conn) if self.material_ids[i] == m_id]
+            new_to_old_elems.extend([i for (i,c) in elems_tuple])
+            elems = [c for (i,c) in elems_tuple]
+            elem_blks.append(elems)
+
+        old_to_new_elems = sorted([(old,i) for (i,old) in enumerate(new_to_old_elems)], lambda a,b: int.__cmp__(a[0],b[0]))
+
+        # -- deal with faces, form all face blocks and make the map from old-to-new
+        face_blks = []
+        if face_block_mode == "one block":
+            # no reordering of faces needed
+            face_blks.append(self.face_to_node_conn)
+            
+        elif face_block_mode == "n blocks, not duplicated":
+            used_faces = np.zeros((len(self.face_to_node_conn),),'bool')
+            new_to_old_faces = []
+            for i_m,m_id in enumerate(self.material_id_list):
+                # split out faces of this material, save new_to_old map
+                def used(f):
+                    result = used_faces[f]
+                    used_faces[f] = True
+                    return result
+
+                elem_blk = elem_blks[i_m]
+                faces_tuple = [(j,self.face_to_node_conn[f]) for c in elem_blk for (j,f) in enumerate(c) if not used(f)]
+                new_to_old_faces.extend([j for (j,f) in faces_tuple])
+                faces = [f for (j,f) in faces_tuple]
+                face_blks.append(faces)
+
+            # get the renumbering in the elems
+            old_to_new_faces = sorted([(old,j) for (j,old) in enumerate(new_to_old_faces)], lambda a,b: int.__cmp__(a[0],b[0]))
+            elem_blks = [[[old_to_new_faces[f][1] for f in c] for c in elem_blk] for elem_blk in elem_blks]
+
+        elif face_block_mode == "n blocks, duplicated":
+            elem_blks_new = []
+            offset = 0
+            for i_m, m_id in enumerate(self.material_id_list):
+                used_faces = np.zeros((len(self.face_to_node_conn),),'bool')
+                def used(f):
+                    result = used_faces[f]
+                    used_faces[f] = True
+                    return result
+
+                elem_blk = elem_blks[i_m]
+                faces_tuple = [(j,self.face_to_node_conn[f]) for c in elem_blk for (j,f) in enumerate(c) if not used(f)]
+                new_to_old_blk = [j for (j,f) in faces_tuple]
+
+                faces = [f for (j,f) in faces_tuple]
+
+                old_to_new_blk = np.zeros((len(self.face_to_node_conn),),'i')
+                for i,j in enumerate(new_to_old_blk):
+                    old_to_new_blk[j] = i+offset
+                elem_blk = [[old_to_new_blk[f] for f in c] for c in elem_blk]
+                offset = offset + len(new_to_old_blk)
+
+                elem_blks_new.append(elem_blk)
+                face_blks.append(faces)
+            elem_blks = elem_blks_new
+        else:
+            raise RuntimeError("Invalid face_block_mode: '%s', valid='one block', 'n blocks, duplicated', 'n blocks, not duplicated'"%face_block_mode)
+                
+
         # open the mesh file
+        num_elems = sum(len(elem_blk) for elem_blk in elem_blks)
+        num_faces = sum(len(face_blk) for face_blk in face_blks)
         ep = exodus.ex_init_params(title=filename,
                                    num_dim=3,
                                    num_nodes=self.num_nodes(),
-                                   num_face=self.num_faces(),
-                                   num_face_blk=1,
-                                   num_elem=self.num_cells(),
-                                   num_elem_blk=len(self.material_id_list),
-                                   num_side_sets=len(self.side_sets))
+                                   num_face=num_faces,
+                                   num_face_blk=len(face_blks),
+                                   num_elem=num_elems,
+                                   num_elem_blk=len(elem_blks))
+        #                                   num_side_sets=len(self.side_sets))
         e = exodus.exodus(filename, mode='w', array_type='numpy', init_params=ep)
 
         # put the coordinates
         e.put_coord_names(['coordX', 'coordY', 'coordZ'])
         e.put_coords(self.coords[:,0], self.coords[:,1], self.coords[:,2])
 
-        # put the face block
-        face_raveled = [i for f in self.face_to_node_conn for i in f]
-        e.put_polyhedra_face_blk(1, self.num_faces(), len(face_raveled), 0)
-        e.put_node_count_per_face(1, np.array([len(f) for f in self.face_to_node_conn]))
-        e.put_face_node_conn(1, np.array(face_raveled)+1)
+        # put the face blocks
+        for i_blk, face_blk in enumerate(face_blks):
+            face_raveled = [n for f in face_blk for n in f]
+            e.put_polyhedra_face_blk(i_blk+1, len(face_blk), len(face_raveled), 0)
+            e.put_node_count_per_face(i_blk+1, np.array([len(f) for f in face_blk]))
+            e.put_face_node_conn(i_blk+1, np.array(face_raveled)+1)
 
         # put the elem blocks
-        for i_m,m_id in enumerate(self.material_id_list):
-            elems = [c for i,c in enumerate(self.elem_to_face_conn) if self.material_ids[i] == m_id]
-            elems_raveled = [i for c in elems for i in c]
+        print len(elem_blks), len(self.material_id_list)
+        assert len(elem_blks) == len(self.material_id_list)
+        for i_blk, (m_id, elem_blk) in enumerate(zip(self.material_id_list, elem_blks)):
+            elems_raveled = [f for c in elem_blk for f in c]
+            print elems_raveled
 
-            e.put_polyhedra_elem_blk(m_id, len(elems), len(elems_raveled), 0)
+            e.put_polyhedra_elem_blk(m_id, len(elem_blk), len(elems_raveled), 0)
             e.put_elem_blk_name(m_id, "MATERIAL_ID_%d"%m_id)
-            e.put_face_count_per_polyhedra(m_id, np.array([len(c) for c in elems]))
+            e.put_face_count_per_polyhedra(m_id, np.array([len(c) for c in elem_blk]))
             e.put_elem_face_conn(m_id, np.array(elems_raveled)+1)
 
-        # add sidesets
-        e.put_side_set_names([ss.name for ss in self.side_sets])
-        for ss in self.side_sets:
-            e.put_side_set_params(ss.setid, len(ss.elem_list), 0)
-            e.put_side_set(ss.setid, np.array(ss.elem_list)+1, np.array(ss.side_list)+1)
+        # # add sidesets
+        # e.put_side_set_names([ss.name for ss in self.side_sets])
+        # for ss in self.side_sets:
+        #     for elem in ss.elem_list:
+        #         assert old_to_new_elems[elem][0] == elem
+        #     new_elem_list = [old_to_new_elems[elem][1] for elem in ss.elem_list]                
+        #     e.put_side_set_params(ss.setid, len(ss.elem_list), 0)
+        #     e.put_side_set(ss.setid, np.array(new_elem_list)+1, np.array(ss.side_list)+1)
 
         # finish and close
         e.close()
         
 
     @classmethod
-    def extruded_Mesh2D(cls, mesh2D, layer_thicknesses, ncells_per_layer, mat_ids):
+    def extruded_Mesh2D(cls, mesh2D, layer_types, layer_data, ncells_per_layer, mat_ids):
         """
         Regularly extrude a 2D mesh to make a 3D mesh.
 
         mesh2D              : a Mesh2D object
-        layer_thicknesses   : an array/list of layer thicknesses
-        ncells_per_layer    : an array/list of number of cells in the layer
-        mat_ids             : an array/list of IDs for each layer
+        layer_types         : either a string (type) or list of strings (types)
+        layer_data          : array of data needed (specific to the type)
+        ncells_per_layer    : either a single integer (same number of cells in all
+                            : layers) or a list of number of cells in the layer
+        mat_ids             : either a single integer (one mat_id for all layers)
+                            : or a list of integers (mat_id for each layer)
 
-        NOTE: dz = layer_thickness[i] / ncells_per_layer[i]
+        types:
+          - 'constant'      : (data=float thickness) uniform thickness
+          - 'function'      : (data=function or functor) thickness as a function
+                            : of (x,y)
+          - 'snapped'       : (data=float z coordinate) snap the layer to
+                            : provided z coordinate, telescoping as needed
+          - 'node'          : thickness provided on each node of the surface domain
+          - 'cell'          : thickness provided on each cell of the surface domain,
+                            : interpolate to nodes
+    
+        NOTE: dz is uniform through the layer in all but the 'snapped' case
         NOTE: 2D mesh is always labeled 'surface', extrusion is always downwards
         """
-        # DBC
-        assert len(layer_thicknesses) == len(ncells_per_layer)
 
-        # helpers
+        # make the data all lists
+        # ---------------------------------
+        def is_list(data):
+            if type(data) is str:
+                return False
+            try:
+                len(data)
+            except TypeError:
+                return False
+            else:
+                return True
+        
+        if is_list(layer_types):
+            if not is_list(layer_data):
+                layer_data = [layer_data,]*len(layer_types)
+            else:
+                assert len(layer_data) == len(layer_types)
+
+            if not is_list(ncells_per_layer):
+                ncells_per_layer = [ncells_per_layer,]*len(layer_types)
+            else:
+                assert len(ncells_per_layer) == len(layer_types)
+
+        elif is_list(layer_data):
+            layer_type = [layer_type,]*len(layer_data)
+
+            if not is_list(ncells_per_layer):
+                ncells_per_layer = [ncells_per_layer,]*len(layer_data)
+            else:
+                assert len(ncells_per_layer) == len(layer_data)
+
+        elif is_list(ncells_per_layer):
+            layer_type = [layer_type,]*len(ncells_per_layer)
+            layer_data = [layer_data,]*len(ncells_per_layer)
+        else:
+            layer_type = [layer_type,]
+            layer_data = [layer_data,]
+            ncells_per_layer = [ncells_per_layer,]
+                
+        # helper data and functions for mapping indices from 2D to 3D
+        # ------------------------------------------------------------------
         ncells_tall = sum(ncells_per_layer)
-        dzs = [thickness/ncells for (thickness,ncells) in zip(layer_thicknesses, ncells_per_layer)]
         ncells_total = ncells_tall * mesh2D.num_cells()
         nfaces_total = (ncells_tall+1) * mesh2D.num_cells() + ncells_tall * mesh2D.num_edges()
         nnodes_total = (ncells_tall+1) * mesh2D.num_nodes()
@@ -361,17 +493,53 @@ class Mesh3D(object):
             return (ncells_tall + 1) * mesh2D.num_cells() + z_cell + edge * ncells_tall
 
         # create coordinates
+        # ---------------------------------
         coords = np.zeros((mesh2D.coords.shape[0],ncells_tall+1, 3),'d')
         coords[:,:,0:2] = np.expand_dims(mesh2D.coords[:,0:2],1)
 
         if mesh2D.dim == 3:
             coords[:,0,2] = mesh2D.coords[:,2]
+        # else the surface is at 0 depth
 
-        cell = 0
-        for ncells, dz in zip(ncells_per_layer, dzs):
-            for i in range(ncells):
-                coords[:,cell+1,2] = coords[:,cell,2] - dz
-                cell = cell + 1
+        cell_layer_start = 0
+        for layer_type, layer_datum, ncells in zip(layer_types, layer_data, ncells_per_layer):
+            if layer_type.lower() == 'constant':
+                dz = float(layer_datum) / ncells
+                for i in range(1,ncells+1):
+                    coords[:,cell_layer_start+i,2] = coords[:,cell_layer_start,2] - i * dz
+
+            else:
+                # allocate an array of coordinates for the bottom of the layer
+                layer_bottom = np.zeros((mesh2D.coords.shape[0],),'d')
+
+                if layer_type.lower() == 'snapped':
+                    # layer bottom is uniform
+                    layer_bottom[:] = layer_datum
+
+                elif layer_type.lower() == 'function':
+                    # layer bottom is given by a function evaluation of x,y
+                    for node_col in range(mesh2D.coords.shape[0]):
+                        layer_bottom[node_col] = layer_datum(coords[node_col,0,0], coords[node_col,0,1])
+
+                elif layer_type.lower() == 'node':
+                    # layer bottom specifically provided through thickness
+                    layer_bottom[:] = coords[:,cell_layer_start,2] - layar_datum
+
+                elif layer_type.lower() == 'cell':
+                    # interpolate cell thicknesses to node thicknesses
+                    import scipy.interplate
+                    centroids = mesh2D.cell_centroids()
+                    interp = scipy.interpolate.interp2d(centroids[:,0], centroids[:,1], layer_datum, kind='linear')
+                    layer_bottom[:] = coords[:,cell_layer_start,2] - interp(mesh2D.coords[:,0], mesh2D.coords[:,1])
+
+                else:
+                    raise RuntimeError("Unrecognized layer_type '%s'"%layer_type)
+
+                # linspace from bottom of previous layer to bottom of this layer
+                for node_col in range(mesh2D.coords.shape[0]):
+                    coords[node_col,cell_layer_start:cell_layer_start+ncells+1,2] = np.linspace(coords[node_col,cell_layer_start,2], layer_bottom[node_col], ncells+1)
+                
+            cell_layer_start = cell_layer_start + ncells
 
         # create faces, face sets, cells
         bottom = []
@@ -382,7 +550,7 @@ class Mesh3D(object):
         # -- loop over the columns, adding the horizontal faces
         for col in range(mesh2D.num_cells()):
             nodes_2 = mesh2D.conn[col]
-            bottom.append(col_to_id(col,0))
+            surface.append(col_to_id(col,0))
             for z_face in range(ncells_tall + 1):
                 i_f = len(faces)
                 f = [node_to_id(n, z_face) for n in nodes_2]
@@ -393,7 +561,7 @@ class Mesh3D(object):
                     cells[col_to_id(col, z_face-1)].append(i_f)
 
                 faces.append(f)
-            surface.append(col_to_id(col,ncells_tall-1))
+            bottom.append(col_to_id(col,ncells_tall-1))
 
         # -- loop over the columns, adding the vertical faces
         added = dict()
@@ -442,11 +610,24 @@ class Mesh3D(object):
 
         # make the side sets
         side_sets = []
-        side_sets.append(SideSet("bottom", 1, bottom, [0,]*len(bottom)))
-        side_sets.append(SideSet("surface", 2, surface, [1,]*len(surface)))
+        side_sets.append(SideSet("bottom", 1, bottom, [1,]*len(bottom)))
+        side_sets.append(SideSet("surface", 2, surface, [0,]*len(surface)))
 
+        # reshape coords
+        coords = coords.reshape(nnodes_total, 3)        
+        
+        for e,s in zip(side_sets[0].elem_list, side_sets[0].side_list):
+            face = cells[e][s]
+            fz_coords = np.array([coords[n] for n in faces[face]])
+            print "bottom centroid = ", np.mean(fz_coords, axis=0)
+
+        for e,s in zip(side_sets[1].elem_list, side_sets[1].side_list):
+            face = cells[e][s]
+            fz_coords = np.array([coords[n] for n in faces[face]])
+            print "surface centroid = ", np.mean(fz_coords, axis=0)
+        
         # instantiate the mesh
-        return cls(coords.reshape(nnodes_total, 3), faces, cells, side_sets=side_sets, material_ids=material_ids)
+        return cls(coords, faces, cells, side_sets=side_sets, material_ids=material_ids)
 
 
 

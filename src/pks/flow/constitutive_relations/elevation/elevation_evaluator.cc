@@ -37,7 +37,7 @@ void ElevationEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   Teuchos::Ptr<CompositeVector> slope = results[1];
 
   if (slope->HasComponent("boundary_face")) {
-    const Epetra_Map& vandelay_map = slope->Mesh()->exterior_face_map();
+    const Epetra_Map& vandelay_map = slope->Mesh()->exterior_face_map(false);
     const Epetra_Map& face_map = slope->Mesh()->face_map(false);
     Epetra_MultiVector& slope_bf = *slope->ViewComponent("boundary_face",false);
     const Epetra_MultiVector& slope_c = *slope->ViewComponent("cell",false);
