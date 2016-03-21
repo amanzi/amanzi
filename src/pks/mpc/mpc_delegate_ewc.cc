@@ -87,12 +87,12 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
   // Smart EWC uses a heuristic to guess when we need the EWC instead of using
   // it blindly.
   if (predictor_type_ == PREDICTOR_SMART_EWC || precon_type_ == PRECON_SMART_EWC) {
-    if (plist_->isParameter("cusp distance in T")) {
-      cusp_size_T_freezing_ = plist_->get<double>("cusp distance in T");
+    if (plist_->isParameter("freeze-thaw cusp width [K]")) {
+      cusp_size_T_freezing_ = plist_->get<double>("freeze-thaw cusp width [K]");
       cusp_size_T_thawing_ = cusp_size_T_freezing_;
     } else {
-      cusp_size_T_freezing_ = plist_->get<double>("cusp distance in T, freezing", 0.005);
-      cusp_size_T_thawing_ = plist_->get<double>("cusp distance in T, thawing", 0.005);
+      cusp_size_T_freezing_ = plist_->get<double>("freeze-thaw cusp width (freezing) [K]", 0.);
+      cusp_size_T_thawing_ = plist_->get<double>("freeze-thaw cusp width (thawing) [K]", 0.);
     }
   }
 }

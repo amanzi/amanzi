@@ -27,7 +27,7 @@ class WRMFPDPermafrostModel : public WRMPermafrostModel {
   // required methods from the base class
   // sats[0] = sg, sats[1] = sl, sats[2] = si
   virtual bool freezing(double T, double pc_liq, double pc_ice) { 
-    return pc_liq <= 0. ? T < 273.15 : pc_liq < pc_ice;
+    return pc_liq <= 0. ? pc_ice < 0. : pc_liq < pc_ice;
   }
 
   virtual void saturations(double pc_liq, double pc_ice, double (&sats)[3]);
