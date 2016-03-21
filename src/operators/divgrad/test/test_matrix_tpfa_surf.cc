@@ -221,7 +221,7 @@ struct mfd {
       }
     }
 
-    const Epetra_Map& fb_map = mesh->exterior_face_map();
+    const Epetra_Map& fb_map = mesh->exterior_face_map(false);
     const Epetra_Map& f_map = mesh->face_map(false);
 
 

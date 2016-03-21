@@ -170,7 +170,7 @@ PKPhysicalBDFBase::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>&
       }
     }
   } else if (u->HasComponent("boundary_face")) {
-    const Epetra_Map& vandalay_map = mesh_->exterior_face_map();
+    const Epetra_Map& vandalay_map = mesh_->exterior_face_map(false);
     const Epetra_Map& face_map = mesh_->face_map(false);
 
     Epetra_MultiVector& u_bf = *u->ViewComponent("boundary_face",false);
@@ -194,7 +194,7 @@ double PKPhysicalBDFBase::BoundaryValue(const Teuchos::RCP<const Amanzi::Composi
   }
   else if  (solution->HasComponent("boundary_face")){
     const Epetra_MultiVector& u = *solution -> ViewComponent("boundary_face",false);
-    const Epetra_Map& fb_map = mesh_->exterior_face_map();
+    const Epetra_Map& fb_map = mesh_->exterior_face_map(false);
     const Epetra_Map& f_map = mesh_->face_map(false);
 
     int face_gid = f_map.GID(face_id);
