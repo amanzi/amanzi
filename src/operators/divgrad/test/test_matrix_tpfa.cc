@@ -144,7 +144,7 @@ struct mfd {
       }
     }
 
-    const Epetra_Map& fb_map = mesh->exterior_face_map();
+    const Epetra_Map& fb_map = mesh->exterior_face_map(false);
     const Epetra_Map& f_map = mesh->face_map(false);
 
     if (x->HasComponent("boundary_face")) {
@@ -699,7 +699,7 @@ TEST_FIXTURE(mfd, AssembleRandomTPFANormed) {
     EpetraExt::MatlabFileToCrsMatrix(filename_Spp_test.str().c_str(), mycomm, Stest);
     
     // compare
-    const Epetra_Map& ext_fmap = mesh->exterior_face_map();
+    const Epetra_Map& ext_fmap = mesh->exterior_face_map(false);
     for (int f=0; f!=ext_fmap.NumGlobalElements(); ++f) {
       std::vector<int> inds(20);
       std::vector<double> vals(20);
