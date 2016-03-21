@@ -291,7 +291,7 @@ void OperatorDiffusionFV::UpdateFlux(
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         double value = bc_value[f];
         double area = mesh_->face_area(f);
-        flux[0][f] = value * area;
+        flux[0][f] = dirs[n] * value * area;
         
       } else {
         if (f < nfaces_owned && !flag[f]) {
