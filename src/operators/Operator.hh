@@ -305,6 +305,7 @@ class Operator {
   std::string schema_string_;
   bool symbolic_assembled_;
   bool assembled_;
+  double shift_;
 
 
   mutable int apply_calls_;

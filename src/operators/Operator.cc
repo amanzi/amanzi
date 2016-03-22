@@ -54,7 +54,8 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
     cvs_(cvs),
     schema_(schema),
     symbolic_assembled_(false),
-    assembled_(false)
+    assembled_(false),
+    shift_(0.0)
 {
   mesh_ = cvs_->Mesh();
   rhs_ = Teuchos::rcp(new CompositeVector(*cvs_, true));
@@ -77,6 +78,8 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
 
   Teuchos::ParameterList vo_list = plist.sublist("Verbose Object");
   vo_ = Teuchos::rcp(new VerboseObject("Operators", vo_list));
+
+  shift_ = plist.get<double>("diagonal shift", 0.0);
 
   apply_calls_ = 0; 
 }
@@ -149,6 +152,10 @@ void Operator::AssembleMatrix()
   Amat_->Zero();
   AssembleMatrix(*smap_, *Amat_, 0, 0);
   Amat_->FillComplete();
+
+  if (shift_ > 0.) {
+    Amat_->DiagonalShift(shift_);
+  }
   
 //  std::stringstream filename_s2;
 //  filename_s2 << "assembled_matrix" << 0 << ".txt";
