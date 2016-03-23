@@ -15,47 +15,47 @@
   <ParameterList name="Regions">
     <ParameterList name="Entire Domain">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="West">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{0.00000e+00, 1.00000e+00, 1.00000e+00}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.00000e+00, 1.00000e+00, 1.00000e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="East">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{1.00000e+00, 0.00000e+00, 0.00000e+00}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{1.00000e+00, 0.00000e+00, 0.00000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Soil_1">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{5.00000000000000000e-01, 1.00000e+00, 1.00000e+00}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{5.00000000000000000e-01, 1.00000e+00, 1.00000e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Soil_2">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{5.00000000000000000e-01, 0.00000e+00, 0.00000e+00}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{5.00000000000000000e-01, 0.00000e+00, 0.00000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="All">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-9.99999999999999967e+98, -9.99999999999999967e+98, -9.99999999999999967e+98}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{9.99999999999999967e+98, 9.99999999999999967e+98, 9.99999999999999967e+98}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{-9.99999999999999967e+98, -9.99999999999999967e+98, -9.99999999999999967e+98}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{9.99999999999999967e+98, 9.99999999999999967e+98, 9.99999999999999967e+98}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Mesh">
     <ParameterList name="Unstructured">
       <ParameterList name="Generate Mesh">
-        <Parameter name="Number of Cells" type="Array(int)" value="{100, 1, 1}"/>
-        <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
-        <Parameter name="Domain High Coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
+        <Parameter name="number of cells" type="Array(int)" value="{100, 1, 1}"/>
+        <Parameter name="domain low coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
       </ParameterList>
       <ParameterList name="Expert">
         <Parameter name="Framework" type="string" value="MSTK"/>

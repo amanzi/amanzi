@@ -116,8 +116,8 @@ TEST(MSTK_HEX_3x3x3_SETS)
     }
     else if (shape == "Region: Box") {
       Teuchos::ParameterList box_params = reg_params.sublist(shape);
-      Teuchos::Array<double> pmin = box_params.get< Teuchos::Array<double> >("Low Coordinate");
-      Teuchos::Array<double> pmax = box_params.get< Teuchos::Array<double> >("High Coordinate");
+      Teuchos::Array<double> pmin = box_params.get< Teuchos::Array<double> >("low coordinate");
+      Teuchos::Array<double> pmax = box_params.get< Teuchos::Array<double> >("high coordinate");
 
       if (pmin[0] == pmax[0] || pmin[1] == pmax[1] || pmin[2] == pmax[2]) {          
 
@@ -243,9 +243,9 @@ TEST(MSTK_HEX_3x3x3_SETS)
 
       // Find the entity type in this parameter list
 
-      std::string entity_type = lsparams.get<std::string>("Entity");
+      std::string entity_type = lsparams.get<std::string>("entity");
 
-      if (entity_type == "Face") {
+      if (entity_type == "face") {
 
         // Do we have a valid sideset by this name
 
@@ -271,7 +271,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
         mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
 
       }
-      else if (entity_type == "Cell") {
+      else if (entity_type == "cell") {
         // Do we have a valid cellset  by this name
 
         CHECK(mesh->valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));

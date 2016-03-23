@@ -32,15 +32,15 @@ TEST(Extract_Surface_MSTK1_4P)
   Teuchos::ParameterList& top_surface_def = top_surface.sublist("Region: Plane");
   Teuchos::Array<double> loc1 = Teuchos::tuple(0.0,0.0,1.0);
   Teuchos::Array<double> dir1 = Teuchos::tuple(0.0,0.0,-1.0);
-  top_surface_def.set< Teuchos::Array<double> >("Location",loc1);
-  top_surface_def.set< Teuchos::Array<double> >("Direction",dir1);
+  top_surface_def.set< Teuchos::Array<double> >("point",loc1);
+  top_surface_def.set< Teuchos::Array<double> >("normal",dir1);
 
   Teuchos::ParameterList& right_surface = reg_spec.sublist("Right Surface");
   Teuchos::ParameterList& right_surface_def = right_surface.sublist("Region: Plane");
   Teuchos::Array<double> loc2 = Teuchos::tuple(1.0,0.0,0.0);
   Teuchos::Array<double> dir2 = Teuchos::tuple(1.0,0.0,0.0);
-  right_surface_def.set< Teuchos::Array<double> >("Location",loc2);
-  right_surface_def.set< Teuchos::Array<double> >("Direction",dir2);
+  right_surface_def.set< Teuchos::Array<double> >("point",loc2);
+  right_surface_def.set< Teuchos::Array<double> >("normal",dir2);
 
 
 //  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
@@ -117,8 +117,8 @@ TEST(Extract_Surface_MSTK2_4P)
   Teuchos::ParameterList& top_surface_def = top_surface.sublist("Region: Plane");
   Teuchos::Array<double> loc1 = Teuchos::tuple(0.0,0.0,1.0);
   Teuchos::Array<double> dir1 = Teuchos::tuple(-1/sqrt(2.0),0.0,1/sqrt(2.0));
-  top_surface_def.set< Teuchos::Array<double> >("Location",loc1);
-  top_surface_def.set< Teuchos::Array<double> >("Direction",dir1);
+  top_surface_def.set< Teuchos::Array<double> >("point",loc1);
+  top_surface_def.set< Teuchos::Array<double> >("normal",dir1);
 
   //  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
@@ -214,9 +214,9 @@ TEST(Extract_Surface_MSTK3_4P)
   Teuchos::ParameterList& top_surface = reg_spec.sublist("Top Surface");
   Teuchos::ParameterList& top_surface_def = top_surface.sublist("Region: Labeled Set");
   top_surface_def.set<std::string>("Label","106");
-  top_surface_def.set<std::string>("File",filename.c_str());
-  top_surface_def.set<std::string>("Format","Exodus II");
-  top_surface_def.set<std::string>("Entity","Face");
+  top_surface_def.set<std::string>("file",filename.c_str());
+  top_surface_def.set<std::string>("format","Exodus II");
+  top_surface_def.set<std::string>("entity","face");
   
 
 //  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);

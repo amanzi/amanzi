@@ -7,38 +7,38 @@
   <ParameterList name="Regions">
     <ParameterList name="All">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-9.9e+98, -9.9e+98}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{9.9e+98,  9.9e+98}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{-9.9e+98, -9.9e+98}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{9.9e+98,  9.9e+98}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom Surface">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 0.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{6.0, 0.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{6.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 120.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{6.0, 120.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 120.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{6.0, 120.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionBottom">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 0.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{6.0, 40.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{6.0, 40.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionMiddle">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 40.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{6.0, 80.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 40.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{6.0, 80.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionTop">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 80.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{6.0, 120.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 80.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{6.0, 120.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

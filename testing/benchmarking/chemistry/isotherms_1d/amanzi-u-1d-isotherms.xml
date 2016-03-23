@@ -1,269 +1,213 @@
-<ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
-  <ParameterList name="General Description">
-    <Parameter name="Model ID" type="string" value="1D Flow and Transport"/>
-    <Parameter name="Author" type="string" value="Glenn Hammond"/>
-  </ParameterList>
-  <ParameterList name="Execution Control">
-    <Parameter name="Flow Model" type="string" value="Single Phase"/>
-    <Parameter name="Transport Model" type="string" value="On"/>
-    <Parameter name="Chemistry Model" type="string" value="Amanzi"/>
-    <ParameterList name="Time Integration Mode">
-      <ParameterList name="Initialize To Steady">
-        <Parameter name="Start" type="double" value="0.0"/>
-        <Parameter name="End" type="double" value="1.5778463e9"/>
-        <Parameter name="Switch" type="double" value="0.0"/>
-	<Parameter name="Steady Initial Time Step" type="double" value="1.5768e+5"/>
-        <Parameter name="Transient Initial Time Step" type="double" value="1.5768e+5"/>
-      </ParameterList>
-    </ParameterList>
-    <Parameter name="Verbosity" type="string" value="High"/>
-    <ParameterList name="Numerical Control Parameters">
-      <ParameterList name="Unstructured Algorithm">
-        <ParameterList name="Flow Process Kernel">
-          <Parameter name="Preconditioning Strategy" type="string" value="Diffusion Operator"/>
-        </ParameterList>
-        <ParameterList name="Transport Process Kernel">
-          <Parameter name="Transport Integration Algorithm" type="string" value="Explicit Second-Order"/>
-        </ParameterList>
-        <ParameterList name="Steady-State Implicit Time Integration">
-          <Parameter name="steady max iterations" type="int" value="15"/>
-          <Parameter name="steady min iterations" type="int" value="10"/>
-          <Parameter name="steady limit iterations" type="int" value="20"/>
-          <Parameter name="steady nonlinear tolerance" type="double" value="1e-12"/>
-          <Parameter name="steady max time step" type="double" value="6.0e+10"/>
-          <Parameter name="steady max preconditioner lag iterations" type="int" value="4"/>
-          <Parameter name="steady time step reduction factor" type="double" value="0.8"/>
-          <Parameter name="steady time step increase factor" type="double" value="1.25"/>
-          <Parameter name="steady preconditioner" type="string" value="Hypre AMG"/>
-        </ParameterList>
-        <ParameterList name="Transient Implicit Time Integration">
-          <Parameter name="transient max iterations" type="int" value="15"/>
-          <Parameter name="transient min iterations" type="int" value="10"/>
-          <Parameter name="transient limit iterations" type="int" value="20"/>
-          <Parameter name="transient nonlinear tolerance" type="double" value="1e-12"/>
-          <Parameter name="transient max time step" type="double" value="6.0e+10"/>
-          <Parameter name="transient max preconditioner lag iterations" type="int" value="4"/>
-          <Parameter name="transient time step reduction factor" type="double" value="0.8"/>
-          <Parameter name="transient time step increase factor" type="double" value="1.25"/>
-          <Parameter name="transient preconditioner" type="string" value="Hypre AMG"/>
-        </ParameterList>
-        <ParameterList name="Linear Solver">
-          <Parameter name="linear solver tolerance" type="double" value="1e-22"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-  <ParameterList name="Domain">
-    <Parameter name="Spatial Dimension" type="int" value="3"/>
-  </ParameterList>
-  <ParameterList name="Mesh">
-    <ParameterList name="Unstructured">
-      <ParameterList name="Expert">
-        <Parameter name="Framework" type="string" value="MSTK"/>
-      </ParameterList>
-      <ParameterList name="Generate Mesh">
-        <ParameterList name="Uniform Structured">
-          <Parameter name="Number of Cells" type="Array(int)" value="{100, 1, 1}"/>
-          <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.0, 0.0,  0.0}" />
-          <Parameter name="Domain High Coordinate" type="Array(double)" value="{100.0, 1.0, 1.0}" />
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-  <ParameterList name="Regions">
-    <ParameterList name="Entire Domain">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{100.0,1.0,1.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="West">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{0.0,1.0,1.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="East">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{100.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{100.0,1.0,1.0}"/>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-  <ParameterList name="Material Properties">
-    <ParameterList name="Soil">
-      <Parameter name="Assigned Regions" type="Array(string)" value="{Entire Domain}"/>
-      <ParameterList name="Porosity: Uniform">
-        <Parameter name="Value" type="double" value="0.25"/>
-      </ParameterList>
-      <ParameterList name="Intrinsic Permeability: Uniform">
-        <Parameter name="Value" type="double" value="1.E-12"/>
-      </ParameterList>
-      <ParameterList name="Sorption Isotherms">
- 	<ParameterList name="A">
-	  <Parameter name="Kd" type="double" value="10.0"/>
-	</ParameterList>
- 	<ParameterList name="B">
-	  <Parameter name="Kd" type="double" value="30.0"/>
-	  <Parameter name="Langmuir b" type="double" value="0.1"/>
-	</ParameterList>
-	<ParameterList name="C">
-	  <Parameter name="Kd" type="double" value="1.5"/>
-	  <Parameter name="Freundlich n" type="double" value="1.25"/>
-	</ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-  <ParameterList name="Phase Definitions">
-    <ParameterList name="Aqueous">
-      <ParameterList name="Phase Properties">
-        <ParameterList name="Viscosity: Uniform">
-          <Parameter name="Viscosity" type="double" value="1.002e-3 "/>
-        </ParameterList>
-        <ParameterList name="Density: Uniform">
-          <Parameter name="Density" type="double" value="998.2 "/>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="Phase Components">
-        <ParameterList name="Water">
-          <Parameter name="Component Solutes" type="Array(string)" value="{A, B, C}"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-  <ParameterList name="Initial Conditions">
-    <ParameterList name="Initial Condition">
-      <Parameter name="Assigned Regions" type="Array(string)" value="{Entire Domain}"/>
-      <ParameterList name="IC: Uniform Pressure">
-        <Parameter name="Phase" type="string" value="Aqueous"/>
-        <Parameter name="Value" type="double" value="201325.0"/>
-      </ParameterList>
-      <ParameterList name="Solute IC">
-        <ParameterList name="Aqueous">
-          <ParameterList name="Water">
-            <ParameterList name="A">
-              <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.e-20"/>
-              </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="TBC"/>
-            </ParameterList>
-            <ParameterList name="B">
-              <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.e-20"/>
-              </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="TBC"/>
-            </ParameterList>
-            <ParameterList name="C">
-              <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Value" type="double" value="1.e-20"/>
-              </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="TBC"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-  <ParameterList name="Boundary Conditions">
-    <ParameterList name="West BC">
-      <Parameter name="Assigned Regions" type="Array(string)" value="{West}"/>
-      <ParameterList name="BC: Flux">
-        <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Inward Mass Flux" type="Array(double)" value="{7.91317859e-6, 7.91317859e-6}"/>
-<!--        <Parameter name="Inward Volumetric Flux" type="Array(double)" value="{7.927447996e-9,7.927447996e-9}"/>	 		-->
-      </ParameterList>
-      <ParameterList name="Solute BC">
-        <ParameterList name="Aqueous">
-          <ParameterList name="Water">
-            <ParameterList name="A">
-              <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
-                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.e-3, 1.e-3}"/>
-              </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
-            </ParameterList>
-            <ParameterList name="B">
-              <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
-                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.e-3, 1.e-3}"/>
-              </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
-            </ParameterList>
-            <ParameterList name="C">
-              <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
-                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.e-3, 1.e-3}"/>
-              </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="East BC">
-      <Parameter name="Assigned Regions" type="Array(string)" value="{East}"/>
-      <ParameterList name="BC: Uniform Pressure">
-        <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
-        <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-	<Parameter name="Values" type="Array(double)" value="{201325.0, 201325.0}"/>	 		
-      </ParameterList>
-      <ParameterList name="Solute BC">
-        <ParameterList name="Aqueous">
-          <ParameterList name="Water">
-            <ParameterList name="A">
-              <ParameterList name="BC: Zero Gradient">
-              </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
-            </ParameterList>
-            <ParameterList name="B">
-              <ParameterList name="BC: Zero Gradient">
-              </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
-            </ParameterList>
-            <ParameterList name="C">
-              <ParameterList name="BC: Zero Gradient">
-                <Parameter name="Times" type="Array(double)" value="{0.0, 1.5778463e9}"/>
-                <Parameter name="Time Functions" type="Array(string)" value="{Constant}"/>
-                <Parameter name="Values" type="Array(double)" value="{1.e-20, 1.e-20}"/>
-              </ParameterList>
-              <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-  <ParameterList name="Output">
-    <ParameterList name="Time Macros">
-      <ParameterList name="Every_0.05_year">
-	<Parameter name="Start_Period_Stop" type="Array(double)" value="{0., 1.5768e6, -1}"/>
-      </ParameterList>
-      <ParameterList name="Every_year">
-	<Parameter name="Start_Period_Stop" type="Array(double)" value="{0.0, 31556926.0, -1}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Visualization Data">
-      <Parameter name="File Name Base" type="string" value="isotherms"/>
-      <Parameter name="File Name Digits" type="string" value="5"/>
-      <Parameter name="Time Macros" type="Array(string)" value="{Every_year}"/>
-<!-- 	<Parameter name="Time Macro" type="string" value="Every_0.05_year"/> -->
-    </ParameterList>
-  </ParameterList>
+<amanzi_input version="2.2.1" type="unstructured">
+  <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
 
-  <ParameterList name="Chemistry">
-    <ParameterList name="Thermodynamic Database">
-      <Parameter name="Format" type="string" value="simple" />
-      <Parameter name="File" type="string" value="isotherms.bgd" />
-    </ParameterList> 
-    <Parameter name="Verbosity" type="Array(string)" value="{verbose}" />
-    <Parameter name="Activity Model" type="string" value="unit" />
-    <Parameter name="Tolerance" type="double" value="1.0e-12"/>
-    <Parameter name="Maximum Newton Iterations" type="int" value="250"/>
-    <Parameter name="Max Time Step (s)" type="double" value="15778463.0"/>
-  </ParameterList> <!-- Chemistry -->
-</ParameterList>
+  <model_description name="1D Flow and Transport w/Kd">
+    <author>Glenn Hammond</author>
+    <units>
+      <length_unit>m</length_unit>
+      <time_unit>y</time_unit>
+      <mass_unit>kg</mass_unit>
+      <conc_unit>molar</conc_unit>
+    </units>
+  </model_description>
+
+  <definitions>
+    <macros>
+      <time_macro name="every_0.05_year">
+        <start>0</start>
+        <timestep_interval>1.5768e6</timestep_interval>
+        <stop>-1</stop>
+      </time_macro>
+      <time_macro name="every_year">
+        <start>0</start>
+        <timestep_interval>31556926.0</timestep_interval>
+        <stop>-1</stop>
+      </time_macro>
+      <cycle_macro name="every_10_steps">
+        <start>0</start>
+        <timestep_interval>10</timestep_interval>
+        <stop>-1</stop>
+      </cycle_macro>
+    </macros>
+  </definitions>
+
+  <process_kernels>
+    <flow state="on" model="saturated"/>
+    <transport state="on" />
+    <chemistry engine="amanzi" state="on" input_filename="isotherms.bgd"/>
+  </process_kernels>
+
+  <phases>
+    <liquid_phase name="water">
+      <eos>False</eos>
+      <viscosity>1.002e-3</viscosity>
+      <density>998.2</density>
+      <dissolved_components>
+        <solutes>
+          <solute coefficient_of_diffusion="1.0e-29">A</solute>
+          <solute coefficient_of_diffusion="1.0e-29">B</solute>
+          <solute coefficient_of_diffusion="1.0e-29">C</solute>
+        </solutes>
+      </dissolved_components>
+    </liquid_phase>
+  </phases>
+
+  <execution_controls>
+    <comments> </comments>
+    <verbosity level="extreme"/>
+    <execution_control_defaults init_dt= "1.5768e+5"   max_dt="6.0e+10"  reduction_factor="0.8"  increase_factor="1.25" mode="transient" method="bdf1"/>
+    <execution_control  start="0.0 y" end="0.0 y" init_dt= "1.5768e+5" max_dt="6.0e+10"  reduction_factor="0.8"  increase_factor="1.25" mode="steady" method="bdf1"/>
+    <execution_control  start="0.0 y" end="1.5778463e9" mode = "transient" />
+  </execution_controls>
+
+  <numerical_controls>
+
+      <unstr_transport_controls>
+	  <algorithm>explicit second-order</algorithm>
+	  <sub_cycling>on</sub_cycling>
+      </unstr_transport_controls>
+
+      <unstr_chemistry_controls>
+	  <process_model>implicit operator split</process_model>
+        <chem_tolerance>1e-12</chem_tolerance>
+        <chem_max_newton_iterations>250</chem_max_newton_iterations>
+      </unstr_chemistry_controls>
+
+    <unstructured_controls>
+      <unstr_steady-state_controls>
+        <min_iterations>10</min_iterations>
+        <max_iterations>15</max_iterations>
+        <limit_iterations>20</limit_iterations>
+        <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
+        <nonlinear_tolerance>1.0e-12</nonlinear_tolerance>
+      </unstr_steady-state_controls>
+
+      <unstr_transient_controls>
+        <min_iterations>10</min_iterations>
+        <max_iterations>15</max_iterations>
+        <limit_iterations>20</limit_iterations>
+        <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
+        <nonlinear_tolerance>1.0e-12</nonlinear_tolerance>
+      </unstr_transient_controls>
+      <unstr_linear_solver>
+        <comments>Comment section.</comments>
+        <method>gmres</method>
+        <max_iterations>20</max_iterations>
+        <tolerance>1.0e-22</tolerance>
+        <preconditioner name = "trilinos_ml" />
+      </unstr_linear_solver>
+
+    </unstructured_controls>
+  </numerical_controls>
+
+  <mesh framework="mstk">
+    <comments>pseudo 3D</comments>
+    <dimension>3</dimension>
+    <generate>
+      <number_of_cells nx = "100"  ny = "1"  nz = "1"/>
+      <box  low_coordinates = "(0.0,0.0,0.0)" high_coordinates = "(100.0,1.0,1.0)"/>
+    </generate>
+  </mesh>
+
+  <regions>
+    <region name ="All">
+      <box low_coordinates= "(0.0,0.0,0.0)"     high_coordinates="(100.0,1.0,1.0)"/>
+    </region>
+
+    <region name ="west">
+      <box low_coordinates= "(0.0,0.0,0.0)"     high_coordinates="(0.0,1.0,1.0)"/>
+    </region>
+
+    <region name ="east">
+      <box low_coordinates= "(100.0,0.0,0.0)"   high_coordinates="(100.0,1.0,1.0)"/>
+    </region>
+  </regions>
+
+  <materials>
+    <material name="soil">
+      <mechanical_properties>
+        <porosity value="0.25"/>
+        <!--particle_density value="2720.0"/-->
+      </mechanical_properties>
+      <!-- Begin proposed isotherm section using Amanzi native chemistry -->
+      <sorption_isotherms>
+        <solute name = "A">
+          <kd_model model = "linear" kd = "10.0"/>
+        </solute>
+        <solute name = "B">
+          <kd_model model = "langmuir" kd = "30.0" b = "0.1"/>
+        </solute>
+        <solute name = "C">
+          <kd_model model = "freundlich" kd = "1.5" n = "1.25"/>
+        </solute>
+      </sorption_isotherms>
+      <!-- End proposed isotherm section -->
+      <permeability x="1.0e-12" y="1.0e-12" z="1.0e-12"/>
+      <assigned_regions>All</assigned_regions>
+    </material>
+  </materials>
+
+  <initial_conditions>  
+    <initial_condition name="initial_ic">
+      <assigned_regions>All</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="201325.0"/>
+        </liquid_component>
+        <solute_component name="solute">
+          <uniform_conc name= "A" value= "1.e-20"/>
+          <uniform_conc name= "B" value= "1.e-20"/>
+          <uniform_conc name= "C" value= "1.e-20"/>
+        </solute_component>
+      </liquid_phase>
+    </initial_condition>
+  </initial_conditions>
+
+  <boundary_conditions> 
+    <boundary_condition name="west_bc">
+      <assigned_regions>west</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <inward_mass_flux value="7.91317859e-6" start="0" function="constant"/>
+        </liquid_component>
+        <solute_component name="solute">
+          <aqueous_conc name = "A" start = "0.0" value= "1.e-03" function="constant"/>
+          <aqueous_conc name = "B" start = "0.0" value= "1.e-03" function="constant"/>
+          <aqueous_conc name = "C" start = "0.0" value= "1.e-03" function="constant"/>
+        </solute_component>
+      </liquid_phase>
+    </boundary_condition>
+    <boundary_condition name="east_bc">
+      <assigned_regions>east</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="201325.0" start="0" function="constant"/>
+        </liquid_component>
+      </liquid_phase>
+    </boundary_condition>
+    <!-- EIB: problem I'm matching uses BC: Zero Gradient which doesn't actually exist, 
+         so removing BC to match target problem.-->
+    <!--boundary_condition name="east_bc">
+      <assigned_regions>east</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="201325.0" start="0.0" function="constant"/>
+        </liquid_component>
+        <solute_component name="solute">
+          <aqueous_conc name = "A" start = "0.0" value= "0" function="constant"/>
+          <aqueous_conc name = "B" start = "0.0" value= "0" function="constant"/>
+          <aqueous_conc name = "C" start = "0.0" value= "0" function="constant"/>
+        </solute_component>
+      </liquid_phase>
+    </boundary_condition-->
+  </boundary_conditions>
+
+  <output>
+    <vis>
+      <base_filename>isotherms</base_filename>
+        <num_digits>5</num_digits>
+        <time_macros>every_year</time_macros>
+    </vis>
+  </output>
+
+</amanzi_input>

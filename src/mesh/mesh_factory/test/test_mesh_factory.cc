@@ -229,9 +229,9 @@ SUITE (MeshFramework)
     Teuchos::Array<int> ncells = Teuchos::tuple<int>(10,10,10);
     Teuchos::Array<double> low = Teuchos::tuple<double>(0.0, 0.0, 0.0);
     Teuchos::Array<double> high = Teuchos::tuple<double>(1.0, 1.0, 1.0);
-    parameter_list.set< Teuchos::Array<int> >("Number of Cells", ncells);
-    parameter_list.set< Teuchos::Array<double> >("Domain Low Coordinate", low);
-    parameter_list.set< Teuchos::Array<double> >("Domain High Coordinate", high);
+    parameter_list.set< Teuchos::Array<int> >("number of cells", ncells);
+    parameter_list.set< Teuchos::Array<double> >("domain low coordinate", low);
+    parameter_list.set< Teuchos::Array<double> >("domain high coordinate", high);
     
     pref.clear(); pref.push_back(Amanzi::AmanziMesh::Simple);
     mesh_factory.preference(pref);
@@ -290,9 +290,9 @@ SUITE (MeshFramework)
     Teuchos::Array<int> ncells = Teuchos::tuple<int>(10,10);
     Teuchos::Array<double> low = Teuchos::tuple<double>(0.0, 0.0);
     Teuchos::Array<double> high = Teuchos::tuple<double>(1.0, 1.0);
-    parameter_list.set< Teuchos::Array<int> >("Number of Cells", ncells);
-    parameter_list.set< Teuchos::Array<double> >("Domain Low Coordinate", low);
-    parameter_list.set< Teuchos::Array<double> >("Domain High Coordinate", high);
+    parameter_list.set< Teuchos::Array<int> >("number of cells", ncells);
+    parameter_list.set< Teuchos::Array<double> >("domain low coordinate", low);
+    parameter_list.set< Teuchos::Array<double> >("domain high coordinate", high);
     
 
     // MSTK, if available, can generate 2D meshes
@@ -452,8 +452,8 @@ SUITE (MeshFramework)
     Teuchos::ParameterList& top_surface_def = top_surface.sublist("Region: Plane");
     Teuchos::Array<double> loc1 = Teuchos::tuple(0.0,0.0,10.0);
     Teuchos::Array<double> dir1 = Teuchos::tuple(0.0,0.0,-1.0);
-    top_surface_def.set< Teuchos::Array<double> >("Location",loc1);
-    top_surface_def.set< Teuchos::Array<double> >("Direction",dir1);
+    top_surface_def.set< Teuchos::Array<double> >("point",loc1);
+    top_surface_def.set< Teuchos::Array<double> >("normal",dir1);
 
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
         Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, &comm_));
