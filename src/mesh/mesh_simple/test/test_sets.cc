@@ -150,8 +150,8 @@ TEST(SETS) {
     else if (shape == "Region: Box") {
 
       Teuchos::ParameterList box_params = reg_params.sublist(shape);
-      Teuchos::Array<double> pmin = box_params.get< Teuchos::Array<double> >("Low Coordinate");
-      Teuchos::Array<double> pmax = box_params.get< Teuchos::Array<double> >("High Coordinate");
+      Teuchos::Array<double> pmin = box_params.get< Teuchos::Array<double> >("low coordinate");
+      Teuchos::Array<double> pmax = box_params.get< Teuchos::Array<double> >("high coordinate");
 
       if (pmin[0] == pmax[0] || pmin[1] == pmax[1] || pmin[2] == pmax[2])
 	{

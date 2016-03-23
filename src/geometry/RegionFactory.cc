@@ -86,10 +86,10 @@ createRegion(const std::string reg_name,
     Teuchos::ParameterList& box_params = reg_spec.sublist(shape);
 
     Teuchos::Array<double> p0_vec =
-      box_params.get<Teuchos::Array<double> >("Low Coordinate");
+      box_params.get<Teuchos::Array<double> >("low coordinate");
         
     Teuchos::Array<double> p1_vec =
-      box_params.get<Teuchos::Array<double> >("High Coordinate");
+      box_params.get<Teuchos::Array<double> >("high coordinate");
 
     int dim = p0_vec.size();
     Point p0, p1;
@@ -104,10 +104,10 @@ createRegion(const std::string reg_name,
     Teuchos::ParameterList plane_params = reg_spec.sublist(shape);
 
     Teuchos::Array<double> p_vec =
-      plane_params.get< Teuchos::Array<double> >("Location");
+      plane_params.get< Teuchos::Array<double> >("point");
         
     Teuchos::Array<double> n_vec =
-      plane_params.get< Teuchos::Array<double> >("Direction");
+      plane_params.get< Teuchos::Array<double> >("normal");
 
     int dim = p_vec.size();
     Point p, n;
@@ -120,9 +120,9 @@ createRegion(const std::string reg_name,
   } else if (shape == "Region: Polygon") {
     Teuchos::ParameterList poly_params = reg_spec.sublist(shape);
 
-    int num_points = poly_params.get<int>("Number of points");
+    int num_points = poly_params.get<int>("number of points");
     Teuchos::Array<double> pvec =
-      poly_params.get<Teuchos::Array<double> >("Points");
+      poly_params.get<Teuchos::Array<double> >("points");
 
     if (pvec.size()%num_points != 0) {
       Errors::Message mesg;
@@ -148,10 +148,10 @@ createRegion(const std::string reg_name,
   } else if (shape == "Region: Labeled Set") {
     Teuchos::ParameterList labeledset_params = reg_spec.sublist(shape);
 
-    std::string file = labeledset_params.get<std::string>("File");
-    std::string format = labeledset_params.get<std::string>("Format");
+    std::string file = labeledset_params.get<std::string>("file");
+    std::string format = labeledset_params.get<std::string>("format");
     std::string name = labeledset_params.get<std::string>("Label");
-    std::string entity_str = labeledset_params.get<std::string>("Entity");
+    std::string entity_str = labeledset_params.get<std::string>("entity");
 
     if (entity_str == "Cell" || entity_str == "cell" || entity_str == "CELL")
       entity_str = "CELL";
@@ -166,8 +166,8 @@ createRegion(const std::string reg_name,
   } else if (shape == "Region: Color Function") {
     Teuchos::ParameterList colorfunc_params = reg_spec.sublist(shape);
 
-    std::string file = colorfunc_params.get<std::string>("File");
-    int value = colorfunc_params.get<int>("Value");
+    std::string file = colorfunc_params.get<std::string>("file");
+    int value = colorfunc_params.get<int>("value");
 
     region = Teuchos::rcp(new RegionColorFunction(reg_name, reg_id, file, 
                                                   value, comm, lifecycle));
@@ -176,7 +176,7 @@ createRegion(const std::string reg_name,
     Teuchos::ParameterList point_params = reg_spec.sublist(shape);
 
     Teuchos::Array<double> p_vec =
-      point_params.get<Teuchos::Array<double> >("Coordinate");
+      point_params.get<Teuchos::Array<double> >("coordinate");
         
     int dim = p_vec.size();
     Point pnt;
@@ -186,9 +186,9 @@ createRegion(const std::string reg_name,
 
   } else if (shape == "Region: Logical") {
     Teuchos::ParameterList logical_params = reg_spec.sublist(shape);
-    std::string opstr = logical_params.get<std::string>("Operation");
+    std::string opstr = logical_params.get<std::string>("operation");
     Teuchos::Array<std::string> region_names = 
-      logical_params.get< Teuchos::Array<std::string> >("Regions");
+      logical_params.get< Teuchos::Array<std::string> >("regions");
 
     region = Teuchos::rcp(new RegionLogical(reg_name, reg_id, opstr,
                                             region_names.toVector(),
@@ -196,7 +196,7 @@ createRegion(const std::string reg_name,
 
   } else if (shape == "Region: Enumerated Set") {
     Teuchos::ParameterList enum_params = reg_spec.sublist(shape);
-    std::string entity_str = enum_params.get<std::string>("Entity");
+    std::string entity_str = enum_params.get<std::string>("entity");
 
     if (entity_str == "Cell" || entity_str == "cell" || entity_str == "CELL")
       entity_str = "CELL";
@@ -206,7 +206,7 @@ createRegion(const std::string reg_name,
       entity_str = "NODE";
       
     Teuchos::Array<int> entity_list = 
-      enum_params.get< Teuchos::Array<int> >("Entity GIDs");
+      enum_params.get< Teuchos::Array<int> >("entity gids");
 
     region = Teuchos::rcp(new RegionEnumerated(reg_name, reg_id, entity_str,
                                                entity_list.toVector(),

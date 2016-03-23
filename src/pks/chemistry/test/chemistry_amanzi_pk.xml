@@ -6,56 +6,56 @@
   <ParameterList name="Regions">
     <ParameterList name="All">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.00e+00, 0.00e+00, 0.00e+00}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.00e+00, 1.00e+00, 1.00e+00}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.00e+00, 0.00e+00, 0.00e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.00e+00, 1.00e+00, 1.00e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Upper">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.00e+00, 0.00e+00, 5.00e-01}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.00e+00, 1.00e+00, 1.00e+00}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.00e+00, 0.00e+00, 5.00e-01}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.00e+00, 1.00e+00, 1.00e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Lower">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.00e+00, 0.00e+00, 0.00e+00}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.00e+00, 1.00e+00, 5.00e-01}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.00e+00, 0.00e+00, 0.00e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.00e+00, 1.00e+00, 5.00e-01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="XLOW">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{0.00e+00, 5.00e-01, 5.00e-01}"/>
-        <Parameter name="Direction" type="Array(double)" value="{1.00e+00, 0.00e+00, 0.00e+00}"/>
+        <Parameter name="point" type="Array(double)" value="{0.00e+00, 5.00e-01, 5.00e-01}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.00e+00, 0.00e+00, 0.00e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="XHIGH">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{1.00e+00, 5.00e-01, 5.00e-01}"/>
-        <Parameter name="Direction" type="Array(double)" value="{-1.00e+00, 0.00e+00, 0.00e+00}"/>
+        <Parameter name="point" type="Array(double)" value="{1.00e+00, 5.00e-01, 5.00e-01}"/>
+        <Parameter name="normal" type="Array(double)" value="{-1.00e+00, 0.00e+00, 0.00e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="YLOW">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{5.00e-01, 0.00e+00, 5.00e-01}"/>
-        <Parameter name="Direction" type="Array(double)" value="{0.00e+00, 1.00e+00, 0.00e+00}"/>
+        <Parameter name="point" type="Array(double)" value="{5.00e-01, 0.00e+00, 5.00e-01}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.00e+00, 1.00e+00, 0.00e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="YHIGH">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{5.00e-01, 1.00e+00, 5.00e-01}"/>
-        <Parameter name="Direction" type="Array(double)" value="{0.00e+00, -1.00e+00, 0.00e+00}"/>
+        <Parameter name="point" type="Array(double)" value="{5.00e-01, 1.00e+00, 5.00e-01}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.00e+00, -1.00e+00, 0.00e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="ZLOW">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{5.00e-01, 5.00e-01, 0.00e+00}"/>
-        <Parameter name="Direction" type="Array(double)" value="{0.00e+00, 0.00e+00, 1.00e+00}"/>
+        <Parameter name="point" type="Array(double)" value="{5.00e-01, 5.00e-01, 0.00e+00}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.00e+00, 0.00e+00, 1.00e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="ZHIGH">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{5.00e-01, 5.00e-01, 1.00e+00}"/>
-        <Parameter name="Direction" type="Array(double)" value="{0.00e+00, 0.00e+00, -1.00e+00}"/>
+        <Parameter name="point" type="Array(double)" value="{5.00e-01, 5.00e-01, 1.00e+00}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.00e+00, 0.00e+00, -1.00e+00}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -63,9 +63,9 @@
   <ParameterList name="Mesh">
     <ParameterList name="Unstructured">
       <ParameterList name="Generate Mesh">
-        <Parameter name="Number of Cells" type="Array(int)" value="{1, 1, 10}"/>
-        <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.00e+00, 0.00e+00, 0.00e+00}"/>
-        <Parameter name="Domain High Coordinate" type="Array(double)" value="{1.00e+00, 1.00e+00, 1.00e+00}"/>
+        <Parameter name="number of cells" type="Array(int)" value="{1, 1, 10}"/>
+        <Parameter name="domain low coordinate" type="Array(double)" value="{0.00e+00, 0.00e+00, 0.00e+00}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{1.00e+00, 1.00e+00, 1.00e+00}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -182,31 +182,31 @@
         <Parameter name="Al+++" type="Array(double)" value="{1.00e+00}"/>
         <Parameter name="times" type="Array(double)" value="{0.00e+00}"/>
         <Parameter name="time functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Regions" type="Array(string)" value="{ZHIGH}"/>
+        <Parameter name="regions" type="Array(string)" value="{ZHIGH}"/>
       </ParameterList>
       <ParameterList name="BC upper H+">
         <Parameter name="H+" type="Array(double)" value="{1.00e+00}"/>
         <Parameter name="times" type="Array(double)" value="{0.00e+00}"/>
         <Parameter name="time functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Regions" type="Array(string)" value="{ZHIGH}"/>
+        <Parameter name="regions" type="Array(string)" value="{ZHIGH}"/>
       </ParameterList>
       <ParameterList name="BC upper HPO4-">
         <Parameter name="HPO4-" type="Array(double)" value="{1.00e+00}"/>
         <Parameter name="times" type="Array(double)" value="{0.00e+00}"/>
         <Parameter name="time functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Regions" type="Array(string)" value="{ZHIGH}"/>
+        <Parameter name="regions" type="Array(string)" value="{ZHIGH}"/>
       </ParameterList>
       <ParameterList name="BC upper SiO2(aq)">
         <Parameter name="SiO2(aq)" type="Array(double)" value="{1.00e+00}"/>
         <Parameter name="times" type="Array(double)" value="{0.00e+00}"/>
         <Parameter name="time functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Regions" type="Array(string)" value="{ZHIGH}"/>
+        <Parameter name="regions" type="Array(string)" value="{ZHIGH}"/>
       </ParameterList>
       <ParameterList name="BC upper UO2++">
         <Parameter name="UO2++" type="Array(double)" value="{1.00e+00}"/>
         <Parameter name="times" type="Array(double)" value="{0.00e+00}"/>
         <Parameter name="time functions" type="Array(string)" value="{Constant}"/>
-        <Parameter name="Regions" type="Array(string)" value="{ZHIGH}"/>
+        <Parameter name="regions" type="Array(string)" value="{ZHIGH}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

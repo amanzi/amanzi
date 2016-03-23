@@ -19,77 +19,77 @@
   <ParameterList name="Regions">
     <ParameterList name="Bottom Surface Outside All">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000e+02, 0.0e+00}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 0.0e+00}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Retion Bottom">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000e+02, 4.0e+01}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 4.0e+01}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Region Middle">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000e+02, 8.0e+01}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0e+00, 4.0e+01}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 8.0e+01}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 4.0e+01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Region Top">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0e+00, 8.0e+01}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 8.0e+01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface Outside Recharge_Boundary_westOfCribs">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0e+00, 1.20000e+02}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{7.20000e+01, 1.20000e+02}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 1.20000e+02}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{7.20000e+01, 1.20000e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface Outside Crib_216-B-17">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{7.20000e+01, 1.20000e+02}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{8.0e+01, 1.20000e+02}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{7.20000e+01, 1.20000e+02}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{8.0e+01, 1.20000e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface Outside Recharge_Boundary_btwnCribs">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{8.0e+01, 1.20000e+02}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.36000e+02, 1.20000e+02}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{8.0e+01, 1.20000e+02}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.36000e+02, 1.20000e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface Outside Crib_216-B-18">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{1.36000e+02, 1.20000e+02}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.48000e+02, 1.20000e+02}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{1.36000e+02, 1.20000e+02}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.48000e+02, 1.20000e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface Outside Recharge_Boundary_eastOfCribs">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{1.48000e+02, 1.20000e+02}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{1.48000e+02, 1.20000e+02}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Well">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{1.08000e+02, 4.0e+01}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.12000e+02, 6.0e+01}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{1.08000e+02, 4.0e+01}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.12000e+02, 6.0e+01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="All">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-9.99999999999999967e+98, -9.99999999999999967e+98}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{9.99999999999999967e+98, 9.99999999999999967e+98}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{-9.99999999999999967e+98, -9.99999999999999967e+98}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{9.99999999999999967e+98, 9.99999999999999967e+98}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Mesh">
     <ParameterList name="Unstructured">
       <ParameterList name="Generate Mesh">
-        <Parameter name="Number of Cells" type="Array(int)" value="{54, 60}"/>
-        <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
-        <Parameter name="Domain High Coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
+        <Parameter name="number of cells" type="Array(int)" value="{54, 60}"/>
+        <Parameter name="domain low coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
       </ParameterList>
       <ParameterList name="Expert">
         <Parameter name="Framework" type="string" value="MSTK"/>

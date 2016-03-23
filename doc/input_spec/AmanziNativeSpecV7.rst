@@ -4325,9 +4325,9 @@ This specification format uses and describes the unstructured mesh only.
 
       * `"Uniform Structured`" [list] accepts coordinates defining the extents of simulation domain, and number of cells in each direction.
 
-        * `"Domain Low Coordinate`" [Array(double)] Location of low corner of domain
-        * `"Domain High Coordinate`" [Array(double)] Location of high corner of domain
-        * `"Number Of Cells`" [Array(int)] the number of uniform cells in each coordinate direction
+        * `"domain low coordinate`" [Array(double)] Location of low corner of domain
+        * `"domain high coordinate`" [Array(double)] Location of high corner of domain
+        * `"number of cells`" [Array(int)] the number of uniform cells in each coordinate direction
 
       * `"Expert`" [list] accepts parameters that control which particular mesh framework is to be used.
 
@@ -4343,9 +4343,9 @@ Example of *Unstructured* mesh generated internally:
        <ParameterList name="Unstructured"/>
          <ParameterList name="Generate Mesh"/>
            <ParameterList name="Uniform Structured"/>
-             <Parameter name="Number of Cells" type="Array(int)" value="{100, 1, 100}"/>
-             <Parameter name="Domain Low Corner" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-             <Parameter name="Domain High Corner" type="Array(double)" value="{103.2, 1.0, 103.2}"/>
+             <Parameter name="number of cells" type="Array(int)" value="{100, 1, 100}"/>
+             <Parameter name="domain low corner" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+             <Parameter name="domain high corner" type="Array(double)" value="{103.2, 1.0, 103.2}"/>
            </ParameterList>   
          </ParameterList>   
        </ParameterList>   
@@ -4359,8 +4359,8 @@ Example of *Unstructured* mesh read from an external file:
    <ParameterList name="Mesh">  <!-- parent list -->
      <ParameterList name="Unstructured">
        <ParameterList name="Read Mesh File">
-         <Parameter name="File" type="string" value="mesh_filename"/>
-         <Parameter name="Format" type="string" value="Exodus II"/>
+         <Parameter name="file" type="string" value="mesh_filename"/>
+         <Parameter name="format" type="string" value="Exodus II"/>
        </ParameterList>   
      </ParameterList>   
    </ParameterList>
@@ -4397,13 +4397,13 @@ Point
 List *Region: Point* defines a point in space. 
 Using this definition, cell sets encompassing this point are retrieved inside Amanzi.
 
-* `"Coordinate`" [Array(double)] Location of point in space.
+* `"coordinate`" [Array(double)] Location of point in space.
 
 .. code-block:: xml
 
    <ParameterList name="Dnwind150"> <!-- parent list -->
      <ParameterList name="Region: Point">
-       <Parameter name="Coordinate" type="Array(double)" value="{-150.0, 0.0, 0.0}"/>
+       <Parameter name="coordinate" type="Array(double)" value="{-150.0, 0.0, 0.0}"/>
      </ParameterList>
    </ParameterList>
 
@@ -4415,16 +4415,16 @@ List *Region: Box* defines a region bounded by coordinate-aligned
 planes. Boxes are allowed to be of zero thickness in only one
 direction in which case they are equivalent to planes.
 
-* `"Low Coordinate`" [Array(double)] Location of the boundary point with the lowest coordinates.
+* `"low coordinate`" [Array(double)] Location of the boundary point with the lowest coordinates.
 
-* `"High Coordinate`" [Array(double)] Location of the boundary points with the highest coordinates.
+* `"high coordinate`" [Array(double)] Location of the boundary points with the highest coordinates.
 
 .. code-block:: xml
 
    <ParameterList name="Well">  <!-- parent list -->
      <ParameterList name="Region: Box">
-       <Parameter name="Low Coordinate" type="Array(double)" value="{-5.0,-5.0, -5.0}"/>
-       <Parameter name="High Coordinate" type="Array(double)" value="{5.0, 5.0,  5.0}"/>
+       <Parameter name="low coordinate" type="Array(double)" value="{-5.0,-5.0, -5.0}"/>
+       <Parameter name="high coordinate" type="Array(double)" value="{5.0, 5.0,  5.0}"/>
      </ParameterList>
    </ParameterList>
 
@@ -4432,21 +4432,20 @@ direction in which case they are equivalent to planes.
 Plane
 -----
 
-List *Region: Plane* defines a plane using a point lying on the plane, called *Location*,
-and normal to the plane, called *Direction*.
+List *Region: Plane* defines a plane using a point lying on the plane and normal to the plane.
 
-* `"Direction`" [Array(double)] Normal to the plane.
+* `"normal`" [Array(double)] Normal to the plane.
 
-* `"Location`" [Array(double)] Point in space.
+* `"point`" [Array(double)] Point in space.
 
 .. code-block:: xml
 
    <ParameterList name="Top Section"> <!-- parent list -->
      <ParameterList name="Region: Plane">
-       <Parameter name="Location" type="Array(double)" value="{2, 3, 5}"/>
-       <Parameter name="Direction" type="Array(double)" value="{1, 1, 0}"/>
+       <Parameter name="point" type="Array(double)" value="{2, 3, 5}"/>
+       <Parameter name="normal" type="Array(double)" value="{1, 1, 0}"/>
        <ParameterList name="Expert Parameters">
-         <Parameter name="Tolerance" type="double" value="1.0e-05"/>
+         <Parameter name="tolerance" type="double" value="1.0e-05"/>
        </ParameterList>
      </ParameterList>
    </ParameterList>
@@ -4471,22 +4470,22 @@ requires *Cell*, *Face* or *Node* as well as a label (which is
 an integer).  The resulting region will have the dimensionality 
 associated with the entities in the indicated set. 
 
-* `"Label`" [string] Set per label defined in the mesh file.
+* `"label`" [string] Set per label defined in the mesh file.
 
-* `"File`" [string] File name.
+* `"file`" [string] File name.
 
-* `"Format`" [string] Currently, we only support mesh files in the Exodus II format.
+* `"format`" [string] Currently, we only support mesh files in the Exodus II format.
 
-* `"Entity`" [string] Type of the mesh object (cell, face, etc).
+* `"entity`" [string] Type of the mesh object (cell, face, etc).
 
 .. code-block:: xml
 
    <ParameterList name="Aquifer">
      <ParameterList name="Region: Labeled Set">
-       <Parameter name="Entity" type="string" value="Cell"/>
-       <Parameter name="File" type="string" value="porflow4_4.exo"/>
-       <Parameter name="Format" type="string" value="Exodus II"/>
-       <Parameter name="Label" type="string" value="1"/>
+       <Parameter name="entity" type="string" value="cell"/>
+       <Parameter name="file" type="string" value="porflow4_4.exo"/>
+       <Parameter name="format" type="string" value="Exodus II"/>
+       <Parameter name="label" type="string" value="1"/>
      </ParameterList>
    </ParameterList>
 
@@ -4509,16 +4508,16 @@ In order to avoid, gaps and overlaps in specifying materials, it is
 strongly recommended that regions be defined using a single color
 function file. 
 
-* `"File`" [string] File name.
+* `"file`" [string] File name.
 
-* `"Value`" [int] Color that defines the set in a tabulated function file.
+* `"value`" [int] Color that defines the set in a tabulated function file.
 
 .. code-block:: xml
 
    <ParameterList name="SOIL1">
      <ParameterList name="Region: Color Function">
-       <Parameter name="File" type="string" value="geology_resamp_2D.tf3"/>
-       <Parameter name="Value" type="int" value="1"/>
+       <Parameter name="file" type="string" value="geology_resamp_2D.tf3"/>
+       <Parameter name="value" type="int" value="1"/>
      </ParameterList>
    </ParameterList>
 
@@ -4540,22 +4539,22 @@ defined as [Vy,-Vx] where [Vx,Vy] is the vector from point 1 to point 2.
 In 3D, the normal of the polygon is defined by the order in which points 
 are specified.
 
-* `"Number of points`" [int] Number of polygon points.
+* `"number of points`" [int] Number of polygon points.
 
-* `"Points`" [Array(double)] Point coordinates in a linear array. 
+* `"points`" [Array(double)] Point coordinates in a linear array. 
 
 .. code-block:: xml
 
    <ParameterList name="XY pentagon">
      <ParameterList name="Region: Polygon">
-       <Parameter name="Number of points" type="int" value="5"/>
-       <Parameter name="Points" type="Array(double)" value="{-0.5, -0.5, -0.5, 
+       <Parameter name="number of points" type="int" value="5"/>
+       <Parameter name="points" type="Array(double)" value="{-0.5, -0.5, -0.5, 
                                                               0.5, -0.5, -0.5,
                                                               0.8, 0.0, 0.0,
                                                               0.5,  0.5, 0.5,
                                                              -0.5, 0.5, 0.5}"/>
        <ParameterList name="Expert Parameters">
-         <Parameter name="Tolerance" type="double" value="1.0e-3"/>
+         <Parameter name="tolerance" type="double" value="1.0e-3"/>
        </ParameterList>
      </ParameterList>
    </ParameterList>
@@ -4574,17 +4573,17 @@ special case in that it is the only case that operates on single
 region, and returns the complement to it within the domain *Entire Domain*.
 Currently, multi-region booleans are not supported in the same expression.
 
-* `"Operation`" [string] defines operation on the list of regions.
+* `"operation`" [string] defines operation on the list of regions.
   Availale options are *Union*, *Intersection*, *Subtraction*, *Complement*
 
-* `"RegionList`" [Array(string)] specifies the list of involved regions.
+* `"regions`" [Array(string)] specifies the list of involved regions.
 
 .. code-block:: xml
 
   <ParameterList name="Lower Layers">
     <ParameterList name="Region: Logical">
-      <Parameter name="Operation" type="string" value="Union"/>
-      <Parameter name="RegionList" type="Array(string)" value="{Middle1, Middle2, Bottom}"/>
+      <Parameter name="operation" type="string" value="Union"/>
+      <Parameter name="regions" type="Array(string)" value="{Middle1, Middle2, Bottom}"/>
     </ParameterList>
   </ParameterList>
 
@@ -4614,8 +4613,8 @@ of input global ids..
 
    <ParameterList name="Well"> <!-- parent list -->
      <ParameterList name="Region: Enumerated Set">
-       <Parameter name="Entity" type="string" value="face"/>
-       <Parameter name="Entity GIDs" type="Array(int)" value="{1, 12, 23, 34}"/>
+       <Parameter name="entity" type="string" value="face"/>
+       <Parameter name="entity gids" type="Array(int)" value="{1, 12, 23, 34}"/>
      </ParameterList>
    </ParameterList>
 
@@ -4642,46 +4641,46 @@ Notes and example
      <ParameterList name="Regions">
        <ParameterList name="TOP SECTION">
          <ParameterList name="Region: Box">
-           <Parameter name="Low Coordinate" type="Array(double)" value="{2, 3, 5}"/>
-           <Parameter name="High Coordinate" type="Array(double)" value="{4, 5, 8}"/>
+           <Parameter name="low coordinate" type="Array(double)" value="{2, 3, 5}"/>
+           <Parameter name="high coordinate" type="Array(double)" value="{4, 5, 8}"/>
          </ParameterList>
        </ParameterList>
        <ParameterList name="MIDDLE SECTION">
          <ParameterList name="Region: Box">
-           <Parameter name="Low Coordinate" type="Array(double)" value="{2, 3, 3}"/>
-           <Parameter name="High Coordinate" type="Array(double)" value="{4, 5, 5}"/>
+           <Parameter name="low coordinate" type="Array(double)" value="{2, 3, 3}"/>
+           <Parameter name="high coordinate" type="Array(double)" value="{4, 5, 5}"/>
          </ParameterList>
        </ParameterList>
        <ParameterList name="BOTTOM SECTION">
          <ParameterList name="Region: Box">
-           <Parameter name="Low Coordinate" type="Array(double)" value="{2, 3, 0}"/>
-           <Parameter name="High Coordinate" type="Array(double)" value="{4, 5, 3}"/>
+           <Parameter name="low coordinate" type="Array(double)" value="{2, 3, 0}"/>
+           <Parameter name="high coordinate" type="Array(double)" value="{4, 5, 3}"/>
          </ParameterList>
        </ParameterList>
        <ParameterList name="INFLOW SURFACE">
          <ParameterList name="Region: Labeled Set">
-           <Parameter name="Label"  type="string" value="sideset_2"/>
-           <Parameter name="File"   type="string" value="F_area_mesh.exo"/>
-           <Parameter name="Format" type="string" value="Exodus II"/>
-           <Parameter name="Entity" type="string" value="Face"/>
+           <Parameter name="label"  type="string" value="sideset_2"/>
+           <Parameter name="file"   type="string" value="F_area_mesh.exo"/>
+           <Parameter name="format" type="string" value="Exodus II"/>
+           <Parameter name="entity" type="string" value="face"/>
          </ParameterList>
        </ParameterList>
        <ParameterList name="OUTFLOW PLANE">
          <ParameterList name="Region: Plane">
-           <Parameter name="Location" type="Array(double)" value="{0.5, 0.5, 0.5}"/>
-           <Parameter name="Direction" type="Array(double)" value="{0, 0, 1}"/>
+           <Parameter name="point" type="Array(double)" value="{0.5, 0.5, 0.5}"/>
+           <Parameter name="normal" type="Array(double)" value="{0, 0, 1}"/>
          </ParameterList>
        </ParameterList>
        <ParameterList name="BLOODY SAND">
          <ParameterList name="Region: Color Function">
-           <Parameter name="File" type="string" value="F_area_col.txt"/>
-           <Parameter name="Value" type="int" value="25"/>
+           <Parameter name="file" type="string" value="F_area_col.txt"/>
+           <Parameter name="value" type="int" value="25"/>
          </ParameterList>
        </ParameterList>
        <ParameterList name="FLUX PLANE">
          <ParameterList name="Region: Polygon">
-           <Parameter name="Number of points" type="int" value="5"/>
-           <Parameter name="Points" type="Array(double)" value="{-0.5, -0.5, -0.5, 
+           <Parameter name="number of points" type="int" value="5"/>
+           <Parameter name="points" type="Array(double)" value="{-0.5, -0.5, -0.5, 
                                                                   0.5, -0.5, -0.5,
                                                                   0.8, 0.0, 0.0,
                                                                   0.5,  0.5, 0.5,

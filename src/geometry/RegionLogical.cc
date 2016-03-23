@@ -43,13 +43,13 @@ RegionLogical::RegionLogical(const std::string& name,
   // Region dimension is set arbitrarily as 3 since the set of
   // entities in the mesh will determine the dimension
 
-  if (operation_str == "Complement")
+  if (operation_str == "complement")
     operation_ = COMPLEMENT;
-  else if (operation_str == "Union")
+  else if (operation_str == "union")
     operation_ = UNION;
-  else if (operation_str == "Intersect")
+  else if (operation_str == "intersect")
     operation_ = INTERSECT;
-  else if (operation_str == "Subtract")
+  else if (operation_str == "subtract")
     operation_ = SUBTRACT;
   else {
     Errors::Message mesg("Unknown logical operation type requested on regions");

@@ -2,8 +2,8 @@
   <ParameterList name="Regions">
     <ParameterList name="domain">
       <ParameterList name="Region: Box">
-	<Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
+	<Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

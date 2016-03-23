@@ -261,9 +261,9 @@ SUITE (HexMesh)
 
     // FIXME: I DON'T KNOW HOW TO INITIALIZE ARRAYS USING TEUCHOS PARAMETER LISTS
     //    Teuchos::ParameterList parameter_list;
-    //    parameter_list.set< Teuchos::Array<double> >("Domain Low Coordinate",{0.0, 0.0, 0.0});
-    //    parameter_list.set< Teuchos::Array<double> >("Domain High Coordinate",{1.0, 1.0, 1.0});
-    //    parameter_list.set< Teuchos::Array<int> >("Number of Cells", {10, 10, 10});
+    //    parameter_list.set< Teuchos::Array<double> >("domain low coordinate",{0.0, 0.0, 0.0});
+    //    parameter_list.set< Teuchos::Array<double> >("domain high coordinate",{1.0, 1.0, 1.0});
+    //    parameter_list.set< Teuchos::Array<int> >("number of cells", {10, 10, 10});
 
     //    Amanzi::AmanziMesh::GenerationSpec gspec(parameter_list);
 

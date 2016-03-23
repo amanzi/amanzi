@@ -44,8 +44,8 @@ TEST(BOX_REGION_2D)
 
   Teuchos::ParameterList::ConstIterator j = reg_params.begin();
   Teuchos::ParameterList box_params = reg_params.sublist(reg_params.name(j));
-  in_min_xyz = box_params.get< Teuchos::Array<double> >("Low Coordinate");
-  in_max_xyz = box_params.get< Teuchos::Array<double> >("High Coordinate");
+  in_min_xyz = box_params.get< Teuchos::Array<double> >("low coordinate");
+  in_max_xyz = box_params.get< Teuchos::Array<double> >("high coordinate");
  
   // Make sure that the region type is a BOX
   CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::BOX);
@@ -127,8 +127,8 @@ TEST(BOX_REGION_3D)
 
   Teuchos::ParameterList::ConstIterator j = reg_params.begin();
   Teuchos::ParameterList box_params = reg_params.sublist(reg_params.name(j));
-  in_min_xyz = box_params.get< Teuchos::Array<double> >("Low Coordinate");
-  in_max_xyz = box_params.get< Teuchos::Array<double> >("High Coordinate");
+  in_min_xyz = box_params.get< Teuchos::Array<double> >("low coordinate");
+  in_max_xyz = box_params.get< Teuchos::Array<double> >("high coordinate");
  
   // Make sure that the region type is a BOX
   CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::BOX);

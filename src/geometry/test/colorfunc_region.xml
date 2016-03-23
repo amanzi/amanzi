@@ -1,14 +1,14 @@
 <ParameterList name="Regions">
   <ParameterList name="Top">
     <ParameterList name="Region: Color Function">
-      <Parameter name="File" type="string" value="test/colorfunc.txt"/>
-      <Parameter name="Value" type="int" value="23"/>
+      <Parameter name="file" type="string" value="test/colorfunc.txt"/>
+      <Parameter name="value" type="int" value="23"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Bottom">
     <ParameterList name="Region: Color Function">
-      <Parameter name="File" type="string" value="test/colorfunc.txt"/>
-      <Parameter name="Value" type="int" value="55"/>
+      <Parameter name="file" type="string" value="test/colorfunc.txt"/>
+      <Parameter name="value" type="int" value="55"/>
     </ParameterList>
   </ParameterList>
 </ParameterList>

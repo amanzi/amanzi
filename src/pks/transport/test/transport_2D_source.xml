@@ -10,31 +10,31 @@
     <ParameterList name="Computational domain">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Label" type="string" value="1"/>
-        <Parameter name="File" type="string" value="rect2D_50x50_ss.exo"/>
-        <Parameter name="Format" type="string" value="Exodus II"/>
-        <Parameter name="Entity" type="string" value="Cell"/>
+        <Parameter name="file" type="string" value="rect2D_50x50_ss.exo"/>
+        <Parameter name="format" type="string" value="Exodus II"/>
+        <Parameter name="entity" type="string" value="cell"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Label" type="string" value="3"/>
-        <Parameter name="File" type="string" value="rect2D_50x50_ss.exo"/>
-        <Parameter name="Format" type="string" value="Exodus II"/>
-        <Parameter name="Entity" type="string" value="Face"/>
+        <Parameter name="file" type="string" value="rect2D_50x50_ss.exo"/>
+        <Parameter name="format" type="string" value="Exodus II"/>
+        <Parameter name="entity" type="string" value="face"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Label" type="string" value="2"/>
-        <Parameter name="File" type="string" value="rect2D_50x50_ss.exo"/>
-        <Parameter name="Format" type="string" value="Exodus II"/>
-        <Parameter name="Entity" type="string" value="Face"/>
+        <Parameter name="file" type="string" value="rect2D_50x50_ss.exo"/>
+        <Parameter name="format" type="string" value="Exodus II"/>
+        <Parameter name="entity" type="string" value="face"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Well">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-0.1,-0.1}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{0.1,0.1}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{-0.1,-0.1}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.1,0.1}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

@@ -60,13 +60,13 @@ TEST(PLANE_REGION)
 
   Teuchos::ParameterList::ConstIterator j = reg_params.begin();
   Teuchos::ParameterList plane_params = reg_params.sublist(reg_params.name(j));
-  in_xyz = plane_params.get< Teuchos::Array<double> >("Location");
-  in_nrm = plane_params.get< Teuchos::Array<double> >("Direction");
+  in_xyz = plane_params.get< Teuchos::Array<double> >("point");
+  in_nrm = plane_params.get< Teuchos::Array<double> >("normal");
 
   double tolerance=1.0e-08;
   // if (plane_params.isSublist("Expert Parameters")) {
   //   Teuchos::ParameterList expert_params = plane_params.sublist("Expert Parameters");
-  //   tolerance = expert_params.get<double>("Tolerance");
+  //   tolerance = expert_params.get<double>("tolerance");
   // }
  
   // Make sure that the region type is a Plane

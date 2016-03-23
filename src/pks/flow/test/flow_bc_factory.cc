@@ -52,17 +52,17 @@ struct bits_and_pieces
     // Create the geometric model
     Teuchos::ParameterList regions;
     regions.sublist("LEFT").sublist("Region: Plane").
-        set("Location", corner_min).set("Direction", left);
+        set("point", corner_min).set("normal", left);
     regions.sublist("FRONT").sublist("Region: Plane").
-        set("Location", corner_min).set("Direction", front);
+        set("point", corner_min).set("normal", front);
     regions.sublist("BOTTOM").sublist("Region: Plane").
-        set("Location", corner_min).set("Direction", bottom);
+        set("point", corner_min).set("normal", bottom);
     regions.sublist("RIGHT").sublist("Region: Plane").
-        set("Location", corner_max).set("Direction", right);
+        set("point", corner_max).set("normal", right);
     regions.sublist("BACK").sublist("Region: Plane").
-        set("Location", corner_max).set("Direction", back);
+        set("point", corner_max).set("normal", back);
     regions.sublist("TOP").sublist("Region: Plane").
-        set("Location", corner_max).set("Direction", top);
+        set("point", corner_max).set("normal", top);
     gm = Teuchos::rcp(new GeometricModel(3, regions, comm));
     // Create the mesh
     MeshFactory mesh_fact(comm);

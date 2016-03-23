@@ -217,23 +217,23 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   if (unstr_mesh_params.isSublist("Read Mesh File")) {
     Teuchos::ParameterList read_params = unstr_mesh_params.sublist("Read Mesh File");
     
-    if (read_params.isParameter("File")) {
-      file = read_params.get<std::string>("File");
+    if (read_params.isParameter("file")) {
+      file = read_params.get<std::string>("file");
     } else {
       std::cerr << "Must specify File parameter for Read option under Mesh" << std::endl;
       throw std::exception();
     }
 
-    if (read_params.isParameter("Format")) {
+    if (read_params.isParameter("format")) {
       // Is the format one that we can read?
-      format = read_params.get<std::string>("Format");
+      format = read_params.get<std::string>("format");
 
       if (format != "Exodus II" && format != "H5M") {	    
 	std::cerr << "Can only read files in Exodus II or H5M format" << std::endl;
 	throw std::exception();
       }
     } else {
-      std::cerr << "Must specify Format parameter for Read option under Mesh" << std::endl;
+      std::cerr << "Must specify 'format' parameter for Read option under Mesh" << std::endl;
       throw std::exception();
     }
 

@@ -31,8 +31,8 @@ TEST(MSTK_DEFORM_VOLS_2D)
   Teuchos::ParameterList& botreg_def = botreg_list.sublist("Region: Box");
   Teuchos::Array<double> lo_coord = Teuchos::tuple(-5.1,-0.01);
   Teuchos::Array<double> hi_coord = Teuchos::tuple(5.1,0.01);
-  botreg_def.set< Teuchos::Array<double> >("Low Coordinate",lo_coord);
-  botreg_def.set< Teuchos::Array<double> >("High Coordinate",hi_coord);
+  botreg_def.set< Teuchos::Array<double> >("low coordinate",lo_coord);
+  botreg_def.set< Teuchos::Array<double> >("high coordinate",hi_coord);
 
   //  Teuchos::writeParameterListToXmlOStream(param_list,std::cout);
 
@@ -110,8 +110,8 @@ TEST(MSTK_DEFORM_VOLS_3D)
   Teuchos::ParameterList& botreg_def = botreg_list.sublist("Region: Box");
   Teuchos::Array<double> lo_coord = Teuchos::tuple(-0.1,-0.1,-0.01);
   Teuchos::Array<double> hi_coord = Teuchos::tuple(10.1,10.1,0.01);
-  botreg_def.set< Teuchos::Array<double> >("Low Coordinate",lo_coord);
-  botreg_def.set< Teuchos::Array<double> >("High Coordinate",hi_coord);
+  botreg_def.set< Teuchos::Array<double> >("low coordinate",lo_coord);
+  botreg_def.set< Teuchos::Array<double> >("high coordinate",hi_coord);
 
   //  Teuchos::writeParameterListToXmlOStream(param_list,std::cout);
 

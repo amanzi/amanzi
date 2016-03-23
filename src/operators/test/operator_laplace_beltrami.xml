@@ -6,20 +6,20 @@
   <ParameterList name="Regions Flat">
     <ParameterList name="Left side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{-1.0,0.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{1.0,0.0,0.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{1.0,0.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{1.0,0.0,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top surface">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{0.0,0.0,1.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{0.0,0.0,1.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0,0.0,1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -28,9 +28,9 @@
     <ParameterList name="Top surface">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Label" type="string" value="1"/>
-        <Parameter name="File" type="string" value="test/sphere.exo"/>
-        <Parameter name="Format" type="string" value="Exodus II"/>
-        <Parameter name="Entity" type="string" value="Face"/>
+        <Parameter name="file" type="string" value="test/sphere.exo"/>
+        <Parameter name="format" type="string" value="Exodus II"/>
+        <Parameter name="entity" type="string" value="face"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
