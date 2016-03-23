@@ -154,11 +154,11 @@ void SolverNKA_BT_ATS<Vector, VectorSpace>::Init_()
   pc_lag_ = 0;
   solve_calls_ = 0;
 
-  max_backtrack_ = plist_.get<int>("max backtrack steps", 0);
+  max_backtrack_ = plist_.get<int>("max backtrack steps", 10);
   max_total_backtrack_ = plist_.get<int>("max total backtrack steps", 1e6);
   backtrack_lag_ = plist_.get<int>("backtrack lag", 0);
   last_backtrack_iter_ = plist_.get<int>("last backtrack iteration", 1e6);
-  backtrack_factor_ = plist_.get<double>("backtrack factor", 0.8);
+  backtrack_factor_ = plist_.get<double>("backtrack factor", 0.5);
 
   double backtrack_tol = plist_.get<double>("backtrack tolerance", 0.);
   backtrack_rtol_ = plist_.get<double>("backtrack relative tolerance", backtrack_tol);
