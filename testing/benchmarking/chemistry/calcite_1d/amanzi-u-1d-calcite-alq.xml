@@ -222,7 +222,7 @@
 
   <output>
     <vis>
-      <base_filename>data/calcite_pflotran</base_filename>
+      <base_filename>calcite_pflotran</base_filename>
         <num_digits>5</num_digits>
         <time_macros>Every_year</time_macros>
     </vis>

@@ -240,7 +240,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     // surface complexation
     node = GetUniqueElementByTagsString_(inode, "surface_complexation", flag);
     if (flag) {
-      // sorption_sites.push_back("siteA");  // no translation rules so far
+      sorption_sites.push_back("siteA");  // no translation rules so far
       Teuchos::ParameterList& complexation = ic_list.sublist("surface_complexation");
 
       double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "density");
