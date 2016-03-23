@@ -4331,8 +4331,8 @@ This specification format uses and describes the unstructured mesh only.
 
       * `"Expert`" [list] accepts parameters that control which particular mesh framework is to be used.
 
-        * `"Framework`" [string] one of `"stk::mesh`", `"MSTK`", `"MOAB`" or `"Simple`". 
-        * `"Verify Mesh`" [bool] true or false. 
+        * `"framework`" [string] one of `"stk::mesh`", `"MSTK`", `"MOAB`" or `"Simple`". 
+        * `"verify mesh`" [bool] true or false. 
 
 Example of *Unstructured* mesh generated internally:
 

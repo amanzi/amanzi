@@ -86,7 +86,7 @@
         <Parameter name="domain high coordinate" type="Array(double)" value="{2.160e+02, 1.2e+02}"/>
       </ParameterList>
       <ParameterList name="Expert">
-        <Parameter name="Framework" type="string" value="MSTK"/>
+        <Parameter name="framework" type="string" value="MSTK"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

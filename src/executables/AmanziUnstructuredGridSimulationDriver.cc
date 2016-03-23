@@ -166,14 +166,14 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     if (expert_params_specified) {
       Teuchos::ParameterList expert_mesh_params = unstr_mesh_params.sublist("Expert");  
 
-      bool framework_specified = expert_mesh_params.isParameter("Framework");
+      bool framework_specified = expert_mesh_params.isParameter("framework");
 
       // If caller has specified a particular framework to use, make
       // that the primary framework. Otherwise, use default framework
       // preferences
 
       if (framework_specified) {
-	std::string framework = expert_mesh_params.get<std::string>("Framework");
+	std::string framework = expert_mesh_params.get<std::string>("framework");
 
 	if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::Simple)) {
 	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Simple);
@@ -198,7 +198,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     factory.preference(prefs);
 
   } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
-    // do nothing, this means that the "Framework" parameter was 
+    // do nothing, this means that the "framework" parameter was 
     // not in the input
 
   } catch (const std::exception& e) {
@@ -283,9 +283,9 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   if (expert_params_specified) {
     Teuchos::ParameterList expert_mesh_params = unstr_mesh_params.sublist("Expert");  
-    bool verify_mesh_param = expert_mesh_params.isParameter("Verify Mesh");
+    bool verify_mesh_param = expert_mesh_params.isParameter("verify mesh");
     if (verify_mesh_param) {
-      bool verify = expert_mesh_params.get<bool>("Verify Mesh");
+      bool verify = expert_mesh_params.get<bool>("verify mesh");
       if (verify) {
         if (rank == 0)
           std::cerr << "Verifying mesh with Mesh Audit..." << std::endl;

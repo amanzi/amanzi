@@ -186,20 +186,20 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
   if (generate || read) {
     Teuchos::ParameterList& tmp_list = out_list.sublist("Unstructured").sublist("Expert");
     if (strcmp(framework.c_str(), "mstk") == 0) {
-      tmp_list.set<std::string>("Framework", "MSTK");
+      tmp_list.set<std::string>("framework", "MSTK");
     } else if (strcmp(framework.c_str() ,"moab") == 0) {
-      tmp_list.set<std::string>("Framework", "MOAB");
+      tmp_list.set<std::string>("framework", "MOAB");
     } else if (strcmp(framework.c_str(), "simple") == 0) {
-      tmp_list.set<std::string>("Framework", "Simple");
+      tmp_list.set<std::string>("framework", "Simple");
     } else if (strcmp(framework.c_str(), "stk::mesh") == 0) {
-      tmp_list.set<std::string>("Framework", "stk::mesh");
+      tmp_list.set<std::string>("framework", "stk::mesh");
     } else {
       msg << "Amanzi::InputConverter: an error occurred during parsing mesh.\n"
           << "  Unknown framework \"" << framework << "\".\n";
       Exceptions::amanzi_throw(msg); 
     }
     if (strcmp(verify.c_str(), "true") == 0) {
-      tmp_list.set<bool>("Verify Mesh", (strcmp(verify.c_str(), "true") == 0));
+      tmp_list.set<bool>("verify mesh", (strcmp(verify.c_str(), "true") == 0));
     }
   }
 

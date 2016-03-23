@@ -48,7 +48,7 @@
   <ParameterList name="Mesh">
     <ParameterList name="Unstructured">
       <ParameterList name="Expert">
-	<Parameter name="Framework" type="string" value="MSTK"/>
+	<Parameter name="framework" type="string" value="MSTK"/>
       </ParameterList>
 
       <ParameterList name="Read Mesh File">
