@@ -4381,33 +4381,14 @@ near future.
 
 User-defined regions are constructed using the following syntax
 
- * "Regions" [list] can accept a number of lists for named regions (REGION)
+ * `"Regions`" [list] can accept a number of lists for named regions (REGION)
 
-   * Shape [list] Geometric model primitive, choose exactly one of the following [see table below]: `"Region: Point`", `"Region: Box`", `"Region: Plane`", `"Region: Labeled Set`", `"Region: Layer`", `"Region: Surface`"
+   * Shape [list] Geometric model primitive, choose exactly one of the following: 
+     `"Region: Point`", `"Region: Box`", `"Region: Plane`", `"Region: Labeled Set`", 
+     `"Region: Layer`", `"Region: Surface`", or `"Region: Boundary`".
 
-Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex definitions based on triangulated surface files.  
-
-+------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-|  shape functional name       | parameters                              | type(s)                      | Comment                                                                |
-+==============================+=========================================+==============================+========================================================================+
-| `"Region: Point"`            | `"Coordinate`"                          | Array(double)                | Location of point in space                                             |
-+------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Box"`              | `"Low Coordinate`", `"High Coordinate`" | Array(double), Array(double) | Location of boundary points of box                                     |
-+------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Plane"`            | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
-+------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Polygonal Surface"`| `"Number of points`", `"Points`"        | int, Array(double)           | Number of polygon points and point coordinates in linear array. This   |
-|                              |                                         |                              | provides a set of faces with a normal for computing flux               |    
-+------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Logical"`          | `"Operation`", `"RegionList`"           | string, Array(string)        | Operation can be Union, Intersection, Subtraction, Complement          |
-+------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Labeled Set"`      | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
-|                              | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
-+------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Color Function"`   | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
-+------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region: Boundary"`         |                                         |                              | Set defined by domain boundary                                         |
-+------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex 
+definitions based on triangulated surface files.  
 
 
 Point
@@ -4415,6 +4396,8 @@ Point
 
 List *Region: Point* defines a point in space. 
 Using this definition, cell sets encompassing this point are retrieved inside Amanzi.
+
+* `"Coordinate`" [Array(double)] Location of point in space.
 
 .. code-block:: xml
 
@@ -4432,6 +4415,10 @@ List *Region: Box* defines a region bounded by coordinate-aligned
 planes. Boxes are allowed to be of zero thickness in only one
 direction in which case they are equivalent to planes.
 
+* `"Low Coordinate`" [Array(double)] Location of the boundary point with the lowest coordinates.
+
+* `"High Coordinate`" [Array(double)] Location of the boundary points with the highest coordinates.
+
 .. code-block:: xml
 
    <ParameterList name="Well">  <!-- parent list -->
@@ -4447,6 +4434,10 @@ Plane
 
 List *Region: Plane* defines a plane using a point lying on the plane, called *Location*,
 and normal to the plane, called *Direction*.
+
+* `"Direction`" [Array(double)] Normal to the plane.
+
+* `"Location`" [Array(double)] Point in space.
 
 .. code-block:: xml
 
@@ -4480,7 +4471,13 @@ requires *Cell*, *Face* or *Node* as well as a label (which is
 an integer).  The resulting region will have the dimensionality 
 associated with the entities in the indicated set. 
 
-Currently, Amanzi-U only supports mesh files in the Exodus II format.
+* `"Label`" [string] Set per label defined in the mesh file.
+
+* `"File`" [string] File name.
+
+* `"Format`" [string] Currently, we only support mesh files in the Exodus II format.
+
+* `"Entity`" [string] Type of the mesh object (cell, face, etc).
 
 .. code-block:: xml
 
@@ -4512,6 +4509,10 @@ In order to avoid, gaps and overlaps in specifying materials, it is
 strongly recommended that regions be defined using a single color
 function file. 
 
+* `"File`" [string] File name.
+
+* `"Value`" [int] Color that defines the set in a tabulated function file.
+
 .. code-block:: xml
 
    <ParameterList name="SOIL1">
@@ -4527,15 +4528,21 @@ Polygon
 
 The list *Region: Polygon* defines a polygonal region on which mesh faces and
 nodes can be queried. NOTE that one cannot ask for cells in a polygonal surface
-region. In 2D, the "polygonal surface" region is a line and is specified by 2 points.
-In 3D, the "polygonal surface" region is specified by an arbitrary number of points.
+region. In 2D, the polygonal region is a line and is specified by 2 points.
+In 3D, the polygonal region is specified by an arbitrary number of points.
 In both cases the point coordinates are given as a linear array. The polygon
 can be non-convex.
+
+This provides a set of faces with a normal for computing flux.
 
 The polygonal surface region can be queried for a normal. In 2D, the normal is
 defined as [Vy,-Vx] where [Vx,Vy] is the vector from point 1 to point 2.
 In 3D, the normal of the polygon is defined by the order in which points 
 are specified.
+
+* `"Number of points`" [int] Number of polygon points.
+
+* `"Points`" [Array(double)] Point coordinates in a linear array. 
 
 .. code-block:: xml
 
@@ -4566,6 +4573,11 @@ performed from the first region in the list.  The Complement is a
 special case in that it is the only case that operates on single
 region, and returns the complement to it within the domain *Entire Domain*.
 Currently, multi-region booleans are not supported in the same expression.
+
+* `"Operation`" [string] defines operation on the list of regions.
+  Availale options are *Union*, *Intersection*, *Subtraction*, *Complement*
+
+* `"RegionList`" [Array(string)] specifies the list of involved regions.
 
 .. code-block:: xml
 
