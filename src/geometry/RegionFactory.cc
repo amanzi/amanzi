@@ -150,7 +150,7 @@ createRegion(const std::string reg_name,
 
     std::string file = labeledset_params.get<std::string>("file");
     std::string format = labeledset_params.get<std::string>("format");
-    std::string name = labeledset_params.get<std::string>("Label");
+    std::string name = labeledset_params.get<std::string>("label");
     std::string entity_str = labeledset_params.get<std::string>("entity");
 
     if (entity_str == "Cell" || entity_str == "cell" || entity_str == "CELL")
