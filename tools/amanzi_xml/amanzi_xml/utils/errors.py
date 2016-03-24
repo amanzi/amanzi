@@ -10,3 +10,7 @@ class NonUniqueXMLError(XMLError):
     """Multiple children of name in AmanziXML"""
     pass
 
+class NotNativeSpecError(RuntimeError):
+    """Error for attempting to read a non-native spec file."""
+    pass
+    

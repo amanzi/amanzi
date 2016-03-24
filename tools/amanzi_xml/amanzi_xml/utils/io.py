@@ -1,4 +1,4 @@
-import parser
+import parser, errors
 try:
     import elementtree.ElementTree as etree
 except ImportError:
@@ -7,10 +7,16 @@ except ImportError:
 def fromFile(file_or_filename):
     """Reads a amanzi-xml hierarchy from a file or file handle"""
     elem = etree.parse(file_or_filename)
-    if elem.getroot().tag == "ParameterList":
+
+    try:
         return parser.fromElement(elem.getroot())
-    else:
+    except AssertionError:
         return elem.getroot()
+    except RuntimeError, msg:
+        if "amanzi_input" in msg.__str__():
+            raise errors.NotNativeSpecError()
+        else:
+            raise RuntimeError(msg)
 
 def fromString(string):
     """Reads a amanzi-xml hierarchy from a string"""
