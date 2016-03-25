@@ -15,7 +15,7 @@
     </ParameterList>
     <ParameterList name="Left side">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label" type="string" value="4"/>
+        <Parameter name="label" type="string" value="4"/>
         <Parameter name="file" type="string" value="test/cube_4x4x4.par"/>
         <Parameter name="format" type="string" value="Unknown"/>
         <Parameter name="entity" type="string" value="face"/>

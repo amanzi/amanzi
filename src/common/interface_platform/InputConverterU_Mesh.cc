@@ -320,7 +320,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         }
         else if (strcmp(text.c_str(), "labeled set") == 0) {
           std::string value = GetAttributeValueS_(reg_elem, "label");
-          rfPL.set<std::string>("Label", value);
+          rfPL.set<std::string>("label", value);
           
           value = GetAttributeValueS_(reg_elem, "format");
           if (strcmp(value.c_str(), "exodus ii") == 0) {

@@ -15,7 +15,7 @@
     </ParameterList>
     <ParameterList name="Left side">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label" type="string" value="103"/>
+        <Parameter name="label" type="string" value="103"/>
         <Parameter name="file" type="string" value="hex_3x3x3_ss.exo"/>
         <Parameter name="format" type="string" value="Exodus II"/>
         <Parameter name="entity" type="string" value="face"/>

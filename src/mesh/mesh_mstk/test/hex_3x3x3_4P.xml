@@ -1,7 +1,7 @@
 <ParameterList name="Regions">
   <ParameterList name="Bottom LS">
     <ParameterList name="Region: Labeled Set">
-      <Parameter name="Label" type="string" value="10000"/>
+      <Parameter name="label" type="string" value="10000"/>
       <Parameter name="file" type="string" value="hex_3x3x3_sets.exo"/>
       <Parameter name="format" type="string" value="Exodus II"/>
       <Parameter name="entity" type="string" value="cell"/>
@@ -9,7 +9,7 @@
   </ParameterList>
   <ParameterList name="Middle LS">
     <ParameterList name="Region: Labeled Set">
-      <Parameter name="Label" type="string" value="20000"/>
+      <Parameter name="label" type="string" value="20000"/>
       <Parameter name="file" type="string" value="hex_3x3x3_sets.exo"/>
       <Parameter name="format" type="string" value="Exodus II"/>
       <Parameter name="entity" type="string" value="cell"/>
@@ -17,7 +17,7 @@
   </ParameterList>
   <ParameterList name="Top LS">
     <ParameterList name="Region: Labeled Set">
-      <Parameter name="Label" type="string" value="30000"/>
+      <Parameter name="label" type="string" value="30000"/>
       <Parameter name="file" type="string" value="hex_3x3x3_sets.exo"/>
       <Parameter name="format" type="string" value="Exodus II"/>
       <Parameter name="entity" type="string" value="cell"/>
@@ -57,7 +57,7 @@
   <!-- sidesets -->
   <ParameterList name="Face 101">
     <ParameterList name="Region: Labeled Set">
-      <Parameter name="Label" type="string" value="101"/>
+      <Parameter name="label" type="string" value="101"/>
       <Parameter name="file" type="string" value="hex_3x3x3_sets.exo"/>
       <Parameter name="format" type="string" value="Exodus II"/>
       <Parameter name="entity" type="string" value="face"/>
@@ -65,7 +65,7 @@
   </ParameterList>
   <ParameterList name="Face 30004">
     <ParameterList name="Region: Labeled Set">
-      <Parameter name="Label" type="string" value="30004"/>
+      <Parameter name="label" type="string" value="30004"/>
       <Parameter name="file" type="string" value="hex_3x3x3_sets.exo"/>
       <Parameter name="format" type="string" value="Exodus II"/>
       <Parameter name="entity" type="string" value="face"/>

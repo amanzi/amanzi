@@ -27,7 +27,7 @@
   <ParameterList name="Regions Closed">
     <ParameterList name="Top surface">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label" type="string" value="1"/>
+        <Parameter name="label" type="string" value="1"/>
         <Parameter name="file" type="string" value="test/sphere.exo"/>
         <Parameter name="format" type="string" value="Exodus II"/>
         <Parameter name="entity" type="string" value="face"/>

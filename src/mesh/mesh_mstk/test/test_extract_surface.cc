@@ -219,14 +219,14 @@ TEST(Extract_Surface_MSTK3)
   
   Teuchos::ParameterList& top_surface = reg_spec.sublist("Top Surface");
   Teuchos::ParameterList& top_surface_def = top_surface.sublist("Region: Labeled Set");
-  top_surface_def.set<std::string>("Label","106");
+  top_surface_def.set<std::string>("label","106");
   top_surface_def.set<std::string>("file",filename.c_str());
   top_surface_def.set<std::string>("format","Exodus II");
   top_surface_def.set<std::string>("entity","face");
 
   Teuchos::ParameterList& side_surface = reg_spec.sublist("Side Surface");
   Teuchos::ParameterList& side_surface_def = side_surface.sublist("Region: Labeled Set");
-  side_surface_def.set<std::string>("Label","102");
+  side_surface_def.set<std::string>("label","102");
   side_surface_def.set<std::string>("file",filename.c_str());
   side_surface_def.set<std::string>("format","Exodus II");
   side_surface_def.set<std::string>("entity","face");

@@ -2,7 +2,7 @@
   <ParameterList name="Top Section">
 <!--
     <ParameterList name="Region: Labeled Set">
-      <Parameter name="Label" type="string" value="Sideset1"/>
+      <Parameter name="label" type="string" value="Sideset1"/>
       <Parameter name="file" type="string" value="mesh.exo"/>
       <Parameter name="format" type="string" value="Exodus II"/>
       <Parameter name="entity" type="string" value="FACE"/>
@@ -23,7 +23,7 @@
   </ParameterList>
   <ParameterList name="Middle">
     <ParameterList name="Region: Labeled Set">
-      <Parameter name="Label" type="string" value="CellSet2"/>
+      <Parameter name="label" type="string" value="CellSet2"/>
       <Parameter name="file" type="string" value="mesh.exo"/>
       <Parameter name="format" type="string" value="Exodus II"/>
       <Parameter name="entity" type="string" value="CELL"/>

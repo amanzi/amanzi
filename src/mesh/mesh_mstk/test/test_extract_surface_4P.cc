@@ -213,7 +213,7 @@ TEST(Extract_Surface_MSTK3_4P)
   
   Teuchos::ParameterList& top_surface = reg_spec.sublist("Top Surface");
   Teuchos::ParameterList& top_surface_def = top_surface.sublist("Region: Labeled Set");
-  top_surface_def.set<std::string>("Label","106");
+  top_surface_def.set<std::string>("label","106");
   top_surface_def.set<std::string>("file",filename.c_str());
   top_surface_def.set<std::string>("format","Exodus II");
   top_surface_def.set<std::string>("entity","face");
