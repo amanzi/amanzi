@@ -287,10 +287,10 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         tree_["regions"].push_back(reg_name);
         
         std::vector<double> low = GetAttributeVector_(reg_elem, "low_coordinates");
-        out_list.sublist(reg_name).sublist("Region: Box").set<Teuchos::Array<double> >("low coordinate", low);
-        
         std::vector<double> high = GetAttributeVector_(reg_elem, "high_coordinates");
-        out_list.sublist(reg_name).sublist("Region: Box").set<Teuchos::Array<double> >("high coordinate", high);
+        out_list.sublist(reg_name).sublist("Region: Box")
+            .set<Teuchos::Array<double> >("low coordinate", low)
+            .set<Teuchos::Array<double> >("high coordinate", high);
       }
 
       else if (strcmp(node_name, "plane") == 0) {
@@ -298,11 +298,13 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         
         text = GetAttributeValueS_(reg_elem, "location");
         std::vector<double> loc = MakeCoordinates_(text);
-        out_list.sublist(reg_name).sublist("Region: Plane").set<Teuchos::Array<double> >("point", loc);
-        
+
         text = GetAttributeValueS_(reg_elem, "normal");
         std::vector<double> dir = MakeCoordinates_(text);
-        out_list.sublist(reg_name).sublist("Region: Plane").set<Teuchos::Array<double> >("normal", dir);
+
+        out_list.sublist(reg_name).sublist("Region: Plane")
+           .set<Teuchos::Array<double> >("point", loc)
+           .set<Teuchos::Array<double> >("normal", dir);
       }
 
       else if (strcmp(node_name,"region_file") == 0) {
@@ -417,6 +419,22 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         tree_["regions"].push_back(reg_name);
         std::string type = GetAttributeValueS_(reg_elem, "entity");
         out_list.sublist(reg_name).sublist("Region: Boundary").set<std::string>("entity", type);
+      }
+
+      else if (strcmp(node_name, "box_volume_fractions") == 0) {
+        tree_["regions"].push_back(reg_name);
+        
+        std::vector<double> low = GetAttributeVector_(reg_elem, "corner_coordinates");
+        std::vector<double> high = GetAttributeVector_(reg_elem, "opposite_corner_coordinates");
+        std::vector<double> normals = GetAttributeVector_(reg_elem, "normals", false);
+
+        out_list.sublist(reg_name).sublist("Region: Box Volume Fractions")
+           .set<Teuchos::Array<double> >("corner coordinate", low)
+           .set<Teuchos::Array<double> >("opposite corner coordinate", high);
+
+        if (normals.size() > 0) 
+          out_list.sublist(reg_name).sublist("Region: Box Volume Fractions")
+             .set<Teuchos::Array<double> >("normals", normals);
       }
     }
   }

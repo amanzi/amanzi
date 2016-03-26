@@ -4385,7 +4385,7 @@ User-defined regions are constructed using the following syntax
 
    * Shape [list] Geometric model primitive, choose exactly one of the following: 
      `"Region: Point`", `"Region: Box`", `"Region: Plane`", `"Region: Labeled Set`", 
-     `"Region: Layer`", `"Region: Surface`", or `"Region: Boundary`".
+     `"Region: Layer`", `"Region: Surface`", `"Region: Boundary`", or `"Region: Box Volume Franctions`".
 
 Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex 
 definitions based on triangulated surface files.  
@@ -4617,6 +4617,37 @@ of input global ids..
        <Parameter name="entity gids" type="Array(int)" value="{1, 12, 23, 34}"/>
      </ParameterList>
    </ParameterList>
+
+
+Box Volume Fractions
+--------------------
+
+List *Region: Box Volume Franction* defines a region bounded by a box *not* 
+aligned with coordinate axes. 
+Boxes are allowed to be of zero thickness in only one direction in which case 
+they are equivalent to rectangles on a plane or segments on a line.
+
+* `"corner coordinate`" [Array(double)] Location of one box corner.
+
+* `"opposite corner coordinate`" [Array(double)] Location of the opposite box corner.
+
+* `"normals`" [Array(double)] Normals to sides in a linear array. Default is columns of
+  the identity matrix. The normals may be scaled arbitrarily but must be orthogonal to
+  one another and form the right coordinate frame.
+
+.. code-block:: xml
+
+   <ParameterList name="Basin">  <!-- parent list -->
+     <ParameterList name="Region: Box Volume Fraction">
+       <Parameter name="corner coordinate" type="Array(double)" value="{-1.0,-1.0, 1.0}"/>
+       <Parameter name="opposite corner coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
+       <Parameter name="normals" type="Array(double)" value="{1.0, 0.0, 0.0
+                                                              0.0, 2.0, 0.0,
+                                                              0.0, 0.0, 3.0}"/>
+     </ParameterList>
+   </ParameterList>
+
+This example defines a degenerate box, a square on a surface *z=1*.
 
 
 Notes and example
