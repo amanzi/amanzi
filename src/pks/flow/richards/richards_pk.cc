@@ -40,11 +40,14 @@ namespace Flow {
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------
-Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                   Teuchos::ParameterList& FElist,
+Richards::Richards(Teuchos::ParameterList& FElist,
+                   const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                   const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, FElist, solution),
-    PKPhysicalBDFBase(plist, FElist, solution),
+    // PKDefaultBase(plist, FElist, solution),
+    // PKPhysicalBDFBase(plist, FElist, solution),
+    PK_Default(plist, FElist, solution),
+    PK_PhysicalBDF_ATS(FElist, plist,  S, solution),
     coupled_to_surface_via_head_(false),
     coupled_to_surface_via_flux_(false),
     infiltrate_only_if_unfrozen_(false),
@@ -73,8 +76,11 @@ Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
 // -------------------------------------------------------------
 // Setup data
 // -------------------------------------------------------------
-void Richards::setup(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBDFBase::setup(S);
+void Richards::Setup(const Teuchos::Ptr<State>& S) {
+  
+  PK_PhysicalBDF_ATS::Setup(S);
+  //PKPhysicalBDFBase::setup(S);
+  
   SetupRichardsFlow_(S);
   SetupPhysicalEvaluators_(S);
 
@@ -420,10 +426,11 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // -------------------------------------------------------------
 // Initialize PK
 // -------------------------------------------------------------
-void Richards::initialize(const Teuchos::Ptr<State>& S) {
+void Richards::Initialize(const Teuchos::Ptr<State>& S) {
 
   // Initialize BDF stuff and physical domain stuff.
-  PKPhysicalBDFBase::initialize(S);
+  PK_PhysicalBDF_ATS::Initialize(S);
+  //PKPhysicalBDFBase::initialize(S);
 
 
   // debugggin cruft
@@ -508,12 +515,15 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 //   secondary variables have been updated to be consistent with the new
 //   solution.
 // -----------------------------------------------------------------------------
-void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
-  Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_EXTREME))
-    *vo_->os() << "Commiting state." << std::endl;
+  void Richards::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
 
-  PKPhysicalBDFBase::commit_state(dt, S);
+    double dt = t_new - t_old;
+    Teuchos::OSTab tab = vo_->getOSTab();
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "Commiting state." << std::endl;
+
+    PK_PhysicalBDF_ATS::CommitStep(t_old, t_new, S);
+    //PKPhysicalBDFBase::commit_state(dt, S);
   
   // update BCs, rel perm
   UpdateBoundaryConditions_(S.ptr());
@@ -571,7 +581,7 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // -----------------------------------------------------------------------------
 // Update any diagnostic variables prior to vis (in this case velocity field).
 // -----------------------------------------------------------------------------
-void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
+void Richards::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Calculating diagnostic variables." << std::endl;

@@ -32,7 +32,7 @@
 #ifndef PKS_ENERGY_SEB_HH_
 #define PKS_ENERGY_SEB_HH_
 
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 #include "pk_physical_bdf_base.hh"
 #include "primary_variable_field_evaluator.hh"
 
@@ -88,7 +88,7 @@ class SurfaceBalanceSEB : public PKPhysicalBase {
 
  private:
   // factory registration
-  static RegisteredPKFactory<SurfaceBalanceSEB> reg_;
+  static RegisteredPKFactory_ATS<SurfaceBalanceSEB> reg_;
 };
 
 } // namespace

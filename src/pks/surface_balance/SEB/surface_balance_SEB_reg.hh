@@ -14,7 +14,7 @@
 namespace Amanzi {
 namespace SurfaceBalance {
 
-RegisteredPKFactory<SurfaceBalanceSEB>
+RegisteredPKFactory_ATS<SurfaceBalanceSEB>
 SurfaceBalanceSEB::reg_("surface balance SEB");
 
 Utils::RegisteredFactory<FieldEvaluator,SurfaceBalanceEvaluator>

@@ -25,6 +25,8 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/deformation)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
+include_directories(${ATS_SOURCE_DIR}/src/pks/transport)
+include_directories(${ATS_SOURCE_DIR}/src/pks/transport/transport_amanzi)
 
 include_directories(${ATS_SOURCE_DIR}/src/coordinator)
 
@@ -86,6 +88,7 @@ set(ATS_LIBS
                       pk_flow_overland
                       pk_flow_overland_pressure
                       pk_flow_icy_overland
+                      pk_transport
 		              # pk_prescribed_deformation
 #                      pk_prescribed_volumetric_deformation
                       pk_volumetric_deformation
@@ -109,7 +112,9 @@ set(ATS_LIBS
 )
 
 set(AMANZI_LIBS
+#                      amanzi_transport
                       amanzi_operators
+                      amanzi_pks
                       amanzi_state
 	              amanzi_whetstone
                       amanzi_time_integration

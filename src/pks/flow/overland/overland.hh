@@ -16,8 +16,10 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "OperatorDiffusion.hh"
 #include "OperatorAccumulation.hh"
 
-#include "pk_factory.hh"
-#include "pk_physical_bdf_base.hh"
+// #include "pk_factory_ats.hh"
+// #include "pk_physical_bdf_base.hh"
+#include "PK_Factory.hh"
+#include "PK_PhysicalBDF_ATS.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -27,28 +29,29 @@ namespace FlowRelations {
 }
 
 
-class OverlandFlow : public PKPhysicalBDFBase {
+class OverlandFlow : public PK_PhysicalBDF_ATS {
 
 public:
-  OverlandFlow(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                   Teuchos::ParameterList& FElist,
-                   const Teuchos::RCP<TreeVector>& solution);
+  OverlandFlow(Teuchos::ParameterList& FElist,
+               const Teuchos::RCP<Teuchos::ParameterList>& plist,
+               const Teuchos::RCP<State>& S,
+               const Teuchos::RCP<TreeVector>& solution);
   
   // Virtual destructor
   virtual ~OverlandFlow() {}
 
   // main methods
   // -- Initialize owned (dependent) variables.
-  virtual void setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // -- Initialize owned (dependent) variables.
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   // -- Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
 
   // -- Update diagnostics for vis.
-  virtual void calculate_diagnostics(const Teuchos::RCP<State>& S);
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
 
   // ConstantTemperature is a BDFFnBase
   // computes the non-linear functional g = g(t,u,udot)

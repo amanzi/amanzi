@@ -28,11 +28,14 @@ namespace Flow {
 
 #define DEBUG_FLAG 1
 
-SnowDistribution::SnowDistribution(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        Teuchos::ParameterList& FElist,
-        const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, FElist, solution),
-    PKPhysicalBDFBase(plist, FElist, solution),
+SnowDistribution::SnowDistribution(Teuchos::ParameterList& FElist,
+                                   const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                                   const Teuchos::RCP<State>& S,
+                                   const Teuchos::RCP<TreeVector>& solution) :
+    // PKDefaultBase(plist, FElist, solution),
+    // PKPhysicalBDFBase(plist, FElist, solution),
+    PK_Default(plist, FElist, solution),
+    PK_PhysicalBDF_ATS(FElist, plist, S, solution),
     full_jacobian_(false) {
   plist_->set("primary variable key", "precipitation_snow");
   plist_->set("domain name", "surface");
@@ -46,8 +49,9 @@ SnowDistribution::SnowDistribution(const Teuchos::RCP<Teuchos::ParameterList>& p
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------
-void SnowDistribution::setup(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBDFBase::setup(S);
+void SnowDistribution::Setup(const Teuchos::Ptr<State>& S) {
+  //PKPhysicalBDFBase::setup(S);
+  PK_PhysicalBDF_ATS::Setup(S);
   SetupSnowDistribution_(S);
   SetupPhysicalEvaluators_(S);
 }
@@ -148,9 +152,10 @@ void SnowDistribution::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // -------------------------------------------------------------
 // Initialize PK
 // -------------------------------------------------------------
-void SnowDistribution::initialize(const Teuchos::Ptr<State>& S) {
+void SnowDistribution::Initialize(const Teuchos::Ptr<State>& S) {
   // Initialize BDF stuff and physical domain stuff.
-  PKPhysicalBDFBase::initialize(S);
+  //PKPhysicalBDFBase::initialize(S);
+  PK_PhysicalBDF_ATS::Initialize(S);
 
   // Set extra fields as initialized -- these don't currently have evaluators.
   S->GetFieldData("upwind_snow_conductivity",name_)->PutScalar(1.0);

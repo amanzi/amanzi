@@ -17,7 +17,7 @@
 #ifndef PKS_PRESCRIBED_DEFORMATION_HH_
 #define PKS_PRESCRIBED_DEFORMATION_HH_
 
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 #include "pk_default_base.hh"
 #include "pk_physical_base.hh"
 
@@ -73,7 +73,7 @@ class PrescribedDeformation : public PKPhysicalBase {
   Teuchos::ParameterList prescribed_deformation_plist_;
 
   // factory registration
-  static RegisteredPKFactory<PrescribedDeformation> reg_;
+  static RegisteredPKFactory_ATS<PrescribedDeformation> reg_;
 };
 
 } // namespace

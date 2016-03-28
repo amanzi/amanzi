@@ -118,7 +118,7 @@ class MPCPermafrost3 : public StrongMPC<PKPhysicalBDFBase> {
 
  private:
   // factory registration
-  static RegisteredPKFactory<MPCPermafrost3> reg_;
+  static RegisteredPKFactory_ATS<MPCPermafrost3> reg_;
 
 };
 

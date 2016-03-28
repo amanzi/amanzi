@@ -90,7 +90,7 @@ protected:
 
 private:
   // factory registration
-  static RegisteredPKFactory<StrongMPC> reg_;
+  static RegisteredPKFactory_ATS<StrongMPC> reg_;
 
 };
 

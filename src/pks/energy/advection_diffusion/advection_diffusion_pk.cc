@@ -19,8 +19,8 @@ Author: Ethan Coon
 namespace Amanzi {
 namespace Energy {
 
-void AdvectionDiffusion::setup(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBDFBase::setup(S);
+void AdvectionDiffusion::Setup(const Teuchos::Ptr<State>& S) {
+  PK_PhysicalBDF_ATS::Setup(S);
 
   // require fields
   Teuchos::RCP<CompositeVectorSpace> factory;
@@ -82,8 +82,9 @@ void AdvectionDiffusion::setup(const Teuchos::Ptr<State>& S) {
   // operator for the diffusion terms
   Operators::OperatorDiffusionFactory opfactory;
   AmanziGeometry::Point g;
+
   matrix_diff_ = opfactory.Create(mfd_plist, mesh_, bc_);
-  matrix_diff_->SetTensorCoefficient(Teuchos::null);
+  // matrix_diff_->SetTensorCoefficient(Teuchos::null);
 
   // operator for advection terms
   Teuchos::ParameterList advect_plist = plist_->sublist("Advection");
@@ -92,25 +93,25 @@ void AdvectionDiffusion::setup(const Teuchos::Ptr<State>& S) {
   // preconditioner
   Teuchos::ParameterList mfd_pc_plist = plist_->sublist("Diffusion PC");
   preconditioner_diff_ = opfactory.Create(mfd_pc_plist, mesh_, bc_);
-  preconditioner_diff_->SetTensorCoefficient(Teuchos::null);
-  preconditioner_ = preconditioner_diff_->global_operator();
-  preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, preconditioner_));
+  // preconditioner_diff_->SetTensorCoefficient(Teuchos::null);
+  // preconditioner_ = preconditioner_diff_->global_operator();
+  // preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, preconditioner_));
 
-  implicit_advection_ = plist_->get<bool>("implicit advection", false);
-  if (implicit_advection_) {
-    preconditioner_adv_ = Teuchos::rcp(new Operators::OperatorAdvection(advect_plist, preconditioner_));
-  }
+  // implicit_advection_ = plist_->get<bool>("implicit advection", false);
+  // if (implicit_advection_) {
+  //   preconditioner_adv_ = Teuchos::rcp(new Operators::OperatorAdvection(advect_plist, preconditioner_));
+  // }
 
-  preconditioner_->SymbolicAssembleMatrix();
-  preconditioner_->InitPreconditioner("preconditioner", mfd_pc_plist);
+  // preconditioner_->SymbolicAssembleMatrix();
+  // preconditioner_->InitPreconditioner("preconditioner", mfd_pc_plist);
   
   
 };
 
 
 // -- Initialize owned (dependent) variables.
-void AdvectionDiffusion::initialize(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBDFBase::initialize(S);
+void AdvectionDiffusion::Initialize(const Teuchos::Ptr<State>& S) {
+  PK_PhysicalBDF_ATS::Initialize(S);
 
   double time = S->time();
   bc_temperature_->Compute(time);

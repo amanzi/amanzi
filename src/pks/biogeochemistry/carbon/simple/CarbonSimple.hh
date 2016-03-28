@@ -12,9 +12,9 @@ Process kernel for energy equation for Richard's flow.
 #ifndef PKS_CARBON_SIMPLE_HH_
 #define PKS_CARBON_SIMPLE_HH_
 
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 #include "pk_physical_explicit_base.hh"
-#include "PK.hh"
+#include "pk.hh"
 
 namespace Amanzi {
 namespace BGC {
@@ -72,7 +72,7 @@ class CarbonSimple : public PKPhysicalExplicitBase {
 
  private:
   // factory registration
-  static RegisteredPKFactory<CarbonSimple> reg_;
+  static RegisteredPKFactory_ATS<CarbonSimple> reg_;
   
 };
 

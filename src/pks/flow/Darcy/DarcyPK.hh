@@ -9,13 +9,13 @@
 #include "Epetra_Vector.h"
 #include "AztecOO.h"
 
-#include "PK.hh"
+#include "pk.hh"
 #include "State.hh"
 #include "DarcyProblem.hh"
 
 namespace Amanzi {
 
-  class DarcyPK : public PK {
+  class DarcyPK : public PK_ATS {
 
   public:
     // Populate state with pressure, porosity, perm

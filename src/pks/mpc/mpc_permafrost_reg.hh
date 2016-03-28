@@ -24,6 +24,6 @@ subtree:
 
 namespace Amanzi {
 
-RegisteredPKFactory<MPCPermafrost4> MPCPermafrost4::reg_("permafrost model");
+RegisteredPKFactory_ATS<MPCPermafrost4> MPCPermafrost4::reg_("permafrost model");
 
 } // namespace

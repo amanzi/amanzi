@@ -22,21 +22,24 @@ Example usage:
 #ifndef PKS_ENERGY_CONSTANT_TEMPERATURE_HH_
 #define PKS_ENERGY_CONSTANT_TEMPERATURE_HH_
 
-#include "pk_factory.hh"
-#include "pk_physical_bdf_base.hh"
+// #include "pk_factory_ats.hh"
+// #include "pk_physical_bdf_base.hh"
+#include "PK_Factory.hh"
+#include "PK_PhysicalBDF_ATS.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-class ConstantTemperature : public PKPhysicalBDFBase {
+class ConstantTemperature : public PK_PhysicalBDF_ATS {
 
 public:
 
-  ConstantTemperature(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                      Teuchos::ParameterList& FElist,
+  ConstantTemperature(Teuchos::ParameterList& FElist,
+                      const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                      const Teuchos::RCP<State>& S,
                       const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, FElist, solution),
-      PKPhysicalBDFBase(plist, FElist, solution) {
+    PK_Default(plist, FElist, solution),
+    PK_PhysicalBDF_ATS(FElist, plist, S, solution) {
     plist_->set("solution key", "temperature");
   }
 
@@ -45,19 +48,19 @@ public:
 
   // ConstantTemperature is a PK
   // -- Setup data
-  virtual void setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // -- Initialize owned (dependent) variables.
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   // -- Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {}
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S){};
 
   // -- Update diagnostics for vis.
-  virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {}
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S){};
 
   // -- advance via one of a few methods
-  virtual bool advance(double dt);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit);
 
   // ConstantTemperature is a BDFFnBase
   // computes the non-linear functional f = f(t,u,udot)

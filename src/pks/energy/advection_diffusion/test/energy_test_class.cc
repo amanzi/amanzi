@@ -16,8 +16,8 @@ EnergyTest::EnergyTest(Teuchos::RCP<Teuchos::ParameterList> plist_,
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
 
   // create the PK
-  EPK = Teuchos::rcp(new Energy::AdvectionDiffusion(energy_plist, S0->FEList(), soln));
-  EPK->setup(S0.ptr());
+  EPK = Teuchos::rcp(new Energy::AdvectionDiffusion(S0->FEList(), energy_plist, S0, soln));
+  EPK->Setup(S0.ptr());
   S0->Setup();
 }
 
@@ -25,7 +25,7 @@ void EnergyTest::initialize() {
   // initialize energy
   initialize_owned();
   initialize_mass_flux();
-  EPK->initialize(S0.ptr());
+  EPK->Initialize(S0.ptr());
 
   // initialize state, including darcy flux, sat, density, poro from parameter list
   S0->Initialize();
@@ -42,7 +42,7 @@ void EnergyTest::initialize() {
 }
 
 void EnergyTest::commit_step(double dt) {
-  EPK->commit_state(dt, S1);
+  EPK->CommitStep(0, dt, S1);
   *S0 = *S1;
 }
 

@@ -15,19 +15,19 @@ See additional documentation in the base class src/pks/mpc/MPC.hh
 #ifndef PKS_MPC_WEAKMPC_HH_
 #define PKS_MPC_WEAKMPC_HH_
 
-#include "PK.hh"
+#include "pk.hh"
 #include "mpc.hh"
 
 namespace Amanzi {
 
-class WeakMPC : public MPC<PK> {
+class WeakMPC : public MPC<PK_ATS> {
 
 public:
   WeakMPC(const Teuchos::RCP<Teuchos::ParameterList>& plist,
           Teuchos::ParameterList& FElist,
           const Teuchos::RCP<TreeVector>& soln) :
       PKDefaultBase(plist, FElist, soln),
-      MPC<PK>(plist, FElist, soln) {};
+      MPC<PK_ATS>(plist, FElist, soln) {};
 
   // Virtual destructor
   virtual ~WeakMPC() {}
@@ -41,7 +41,7 @@ public:
 
 private:
   // factory registration
-  static RegisteredPKFactory<WeakMPC> reg_;
+  static RegisteredPKFactory_ATS<WeakMPC> reg_;
 
 
 };

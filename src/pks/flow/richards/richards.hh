@@ -17,8 +17,10 @@
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorAccumulation.hh"
 
-#include "pk_factory.hh"
-#include "pk_physical_bdf_base.hh"
+#include "PK_Factory.hh"
+#include "PK_PhysicalBDF_ATS.hh"
+// #include "pk_factory_ats.hh"
+// #include "pk_physical_bdf_base.hh"
 
 namespace Amanzi {
 
@@ -29,28 +31,44 @@ namespace WhetStone { class Tensor; }
 
 namespace Flow {
 
-class Richards : public PKPhysicalBDFBase {
+class Richards : public PK_PhysicalBDF_ATS {
+//class Richards : public PKPhysicalBDFBase {
 
 public:
-  Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-           Teuchos::ParameterList& FElist,
+  Richards(Teuchos::ParameterList& FElist,
+           const Teuchos::RCP<Teuchos::ParameterList>& plist,
+           const Teuchos::RCP<State>& S,
            const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor
   virtual ~Richards() {}
 
   // main methods
+
+  // virtual void setup(const Teuchos::Ptr<State>& S){Setup(S);};
+  // virtual void initialize(const Teuchos::Ptr<State>& S){Initialize(S);};
+  // // virtual void State_to_Solution(const Teuchos::RCP<State>& S,
+  // //                                TreeVector& soln){state_to_solution(S, soln);};
+  // // virtual void Solution_to_State(TreeVector& soln,
+  // //                                const Teuchos::RCP<State>& S){solution_to_state(soln, S);};
+  // virtual bool advance(double dt){ return PKBDFBase::advance(dt);};
+  // virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {CommitStep(0, dt, S);};
+
+  // virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {CalculateDiagnostics(S);};
+
+
+
   // -- Setup data.
-  virtual void setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // -- Initialize owned (dependent) variables.
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   // -- Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
 
   // -- Update diagnostics for vis.
-  virtual void calculate_diagnostics(const Teuchos::RCP<State>& S);
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
 
   // ConstantTemperature is a BDFFnBase
   // computes the non-linear functional g = g(t,u,udot)
@@ -138,6 +156,13 @@ protected:
       ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                        Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<TreeVector> du);
+
+
+
+
+  
+
+
   
 protected:
   // control switches

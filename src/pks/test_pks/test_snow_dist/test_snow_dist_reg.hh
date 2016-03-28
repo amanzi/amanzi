@@ -11,6 +11,6 @@ Authors: Neil Carlson (version 1)
 
 namespace Amanzi {
 
-RegisteredPKFactory<TestSnowDist> TestSnowDist::reg_("snow distribution test");
+RegisteredPKFactory_ATS<TestSnowDist> TestSnowDist::reg_("snow distribution test");
 
 } // namespace

@@ -7,15 +7,17 @@ namespace Flow {
 #define DEBUG_FLAG 1
 #define DEBUG_RES_FLAG 0
 
-RichardsSteadyState::RichardsSteadyState(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        Teuchos::ParameterList& FElist,
-        const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, FElist, solution),
-    Richards(plist, FElist, solution) {}
+  RichardsSteadyState::RichardsSteadyState(Teuchos::ParameterList& FElist,
+                                           const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                                           const Teuchos::RCP<State>& S,
+                                           const Teuchos::RCP<TreeVector>& solution):
+  PK_Default(plist, FElist, solution),
+  //PKDefaultBase(plist, FElist, solution),
+    Richards( FElist, plist, S, solution) {}
 
-void RichardsSteadyState::setup(const Teuchos::Ptr<State>& S) {
+void RichardsSteadyState::Setup(const Teuchos::Ptr<State>& S) {
   max_iters_ = plist_->sublist("time integrator").get<int>("max iterations", 10);
-  Richards::setup(S);
+  Richards::Setup(S);
 }
 
 // -----------------------------------------------------------------------------
@@ -28,7 +30,8 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
     *vo_->os() << "Precon update at t = " << t << std::endl;
   }
 
-  PKDefaultBase::solution_to_state(*up, S_next_);
+  PK_Default::Solution_to_State(*up, S_next_);
+  //PKDefaultBase::solution_to_state(*up, S_next_);
 
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
@@ -147,7 +150,7 @@ void RichardsSteadyState::Functional(double t_old, double t_new, Teuchos::RCP<Tr
   ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
 
   // pointer-copy temperature into state and update any auxilary data
-  solution_to_state(*u_new, S_next_);
+  Solution_to_State(*u_new, S_next_);
   Teuchos::RCP<CompositeVector> u = u_new->Data();
 
   if (dynamic_mesh_) matrix_diff_->SetTensorCoefficient(K_);

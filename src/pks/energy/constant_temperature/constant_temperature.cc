@@ -26,8 +26,8 @@
 namespace Amanzi {
 namespace Energy {
 
-void ConstantTemperature::setup(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBDFBase::setup(S);
+void ConstantTemperature::Setup(const Teuchos::Ptr<State>& S) {
+  PK_PhysicalBDF_ATS::Setup(S);
 
   // require fields for the state and solution
   Teuchos::RCP<CompositeVectorSpace> factory =
@@ -49,7 +49,7 @@ void ConstantTemperature::setup(const Teuchos::Ptr<State>& S) {
 };
 
 // initialize ICs
-void ConstantTemperature::initialize(const Teuchos::Ptr<State>& S) {
+void ConstantTemperature::Initialize(const Teuchos::Ptr<State>& S) {
   // This pk provides a constant temperature, given by the intial temp.
   // Therefore we store the initial temp to evaluate changes.
   Teuchos::RCP<CompositeVector> temp = S->GetFieldData(key_, name_);
@@ -59,7 +59,7 @@ void ConstantTemperature::initialize(const Teuchos::Ptr<State>& S) {
   temp->PutScalar(273.65);
   S->GetField(key_,name_)->set_initialized();
 
-  PKPhysicalBDFBase::initialize(S);
+  PK_PhysicalBDF_ATS::Initialize(S);
 
 };
 
@@ -71,9 +71,9 @@ bool ConstantTemperature::advance_analytic_(double dt) {
 };
 
 // -- call your favorite
-bool ConstantTemperature::advance(double dt) {
+bool ConstantTemperature::AdvanceStep(double t_old, double t_new, bool reinit) {
   //  return advance_analytic_(dt);
-  return PKPhysicalBDFBase::advance(dt);
+  return PK_PhysicalBDF_ATS::AdvanceStep(t_old, t_new, reinit);
 };
 
 // Methods for the BDF integrator

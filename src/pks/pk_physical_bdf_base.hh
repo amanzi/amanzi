@@ -10,8 +10,8 @@ Standard base for most diffusion-dominated PKs, this combines both
 domains/meshes of PKPhysicalBase and BDF methods of PKBDFBase.
 ------------------------------------------------------------------------- */
 
-#ifndef AMANZI_PK_PHYSICAL_BDF_BASE_HH_
-#define AMANZI_PK_PHYSICAL_BDF_BASE_HH_
+#ifndef ATS_PK_PHYSICAL_BDF_BASE_HH_
+#define ATS_PK_PHYSICAL_BDF_BASE_HH_
 
 #include "errors.hh"
 #include "pk_default_base.hh"

@@ -34,21 +34,22 @@
 
 #include "errors.hh"
 #include "TreeVector.hh"
-#include "PK.hh"
+#include "pk.hh"
 
 namespace Amanzi {
 
-class PKFactory {
+class PKFactory_ATS {
 
 public:
   typedef std::map<std::string,
-                   PK* (*)(const Teuchos::RCP<Teuchos::ParameterList>&,
-                           Teuchos::ParameterList&,
-                           const Teuchos::RCP<TreeVector>&)> map_type;
+                   PK_ATS* (*)(const Teuchos::RCP<Teuchos::ParameterList>&,
+                               Teuchos::ParameterList&,
+                               const Teuchos::RCP<TreeVector>&)> map_type;
 
-  static Teuchos::RCP<PK> CreatePK(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  static Teuchos::RCP<PK_ATS> CreatePK(const Teuchos::RCP<Teuchos::ParameterList>& plist,
           Teuchos::ParameterList& FElist,
           const Teuchos::RCP<TreeVector>& soln) {
+
     std::string s = plist->get<std::string>("PK type");
     map_type::iterator iter = GetMap()->find(s);
     if (iter == GetMap()->end()) {
@@ -66,18 +67,18 @@ public:
 
 protected:
   static map_type* GetMap() {
-    if (!map_) {
-      map_ = new map_type;
+    if (!map_ats_) {
+      map_ats_ = new map_type;
     }
-    return map_;
+    return map_ats_;
   }
 
 private:
-  static map_type* map_;
+  static map_type* map_ats_;
 };
 
 
-template<typename T> PK* CreateT(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+template<typename T> PK_ATS* CreateT(const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& soln) {
   return new T(plist, FElist, soln);
@@ -85,13 +86,13 @@ template<typename T> PK* CreateT(const Teuchos::RCP<Teuchos::ParameterList>& pli
 
 
 template<typename T>
-class RegisteredPKFactory : public PKFactory {
+class RegisteredPKFactory_ATS : public PKFactory_ATS {
 public:
   // Constructor for the registered factory.  Needs some error checking in
   // case a name s is already in the map? (i.e. two implementations trying to
   // call themselves the same thing) --etc
-  RegisteredPKFactory(const std::string& s) {
-    GetMap()->insert(std::pair<std::string, PK* (*)(const Teuchos::RCP<Teuchos::ParameterList>&,
+  RegisteredPKFactory_ATS(const std::string& s) {
+    GetMap()->insert(std::pair<std::string, PK_ATS* (*)(const Teuchos::RCP<Teuchos::ParameterList>&,
             Teuchos::ParameterList&,
             const Teuchos::RCP<TreeVector>&)>(s, &CreateT<T>));
   }

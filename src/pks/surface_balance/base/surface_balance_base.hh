@@ -19,7 +19,7 @@ d theta(u)
 #ifndef PK_SURFACE_BALANCE_BASE_HH_
 #define PK_SURFACE_BALANCE_BASE_HH_
 
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 #include "pk_physical_bdf_base.hh"
 
 namespace Amanzi {
@@ -61,7 +61,7 @@ class SurfaceBalanceBase : public PKPhysicalBDFBase {
   
  private:
   // factory registration
-  static RegisteredPKFactory<SurfaceBalanceBase> reg_;
+  static RegisteredPKFactory_ATS<SurfaceBalanceBase> reg_;
 };
 
 }  // namespace AmanziFlow

@@ -5,7 +5,7 @@
 namespace Amanzi {
 namespace Deform {
 
-RegisteredPKFactory<VolumetricDeformation> VolumetricDeformation::reg_("volumetric deformation");
+RegisteredPKFactory_ATS<VolumetricDeformation> VolumetricDeformation::reg_("volumetric deformation");
 
 } // namespace
 } // namespace

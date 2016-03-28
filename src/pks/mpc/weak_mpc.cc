@@ -21,7 +21,7 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 double WeakMPC::get_dt() {
   double dt = 1.0e99;
-  for (MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
+  for (MPC<PK_ATS>::SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
     dt = std::min<double>(dt, (*pk)->get_dt());
   }
@@ -33,7 +33,7 @@ double WeakMPC::get_dt() {
 // -----------------------------------------------------------------------------
 bool WeakMPC::advance(double dt) {
   bool fail = false;
-  for (MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
+  for (MPC<PK_ATS>::SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
     fail = (*pk)->advance(dt);
     if (fail) {

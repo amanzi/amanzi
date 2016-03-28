@@ -26,9 +26,11 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "checkpoint.hh"
 #include "UnstructuredObservations.hh"
 #include "State.hh"
+#include "pk.hh"
 #include "PK.hh"
 #include "TreeVector.hh"
-#include "pk_factory.hh"
+#include "PK_Factory.hh"
+#include "pk_factory_ats.hh"
 
 #include "coordinator.hh"
 
@@ -66,12 +68,24 @@ void Coordinator::coordinator_init() {
   soln_ = Teuchos::rcp(new TreeVector());
 
   // create the pk
+  PKFactory_ATS pk_factory_ats;
   PKFactory pk_factory;
+
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list, pk_name);
   pk_list->set("PK name", pk_name);
- 
-  pk_ = pk_factory.CreatePK(pk_list, S_->FEList(), soln_);
-  pk_->setup(S_.ptr());
+  const std::string &pk_origin = pk_list -> get<std::string>("PK origin", "ATS");
+
+  if (pk_origin == "ATS"){
+    Teuchos::RCP<PK_ATS> pk_tmp = pk_factory_ats.CreatePK(pk_list, S_->FEList(), soln_);
+    pk_ = Teuchos::rcp_dynamic_cast<PK> (pk_tmp);
+  }else if (pk_origin == "Amanzi"){
+    pk_ = pk_factory.CreatePK(*pk_list, parameter_list_, S_, soln_);
+  }else{
+    Errors::Message message("Coordinator: invalid PK origin");
+    Exceptions::amanzi_throw(message);
+  }
+  
+  pk_->Setup(S_.ptr());
 
   // create the checkpointing
   Teuchos::ParameterList& chkp_plist = parameter_list_->sublist("checkpoint");
@@ -133,7 +147,7 @@ void Coordinator::initialize() {
   }
 
   // Initialize the process kernels (initializes all independent variables)
-  pk_->initialize(S_.ptr());
+  pk_->Initialize(S_.ptr());
   *S_->GetScalarData("dt", "coordinator") = 0.;
   S_->GetField("dt","coordinator")->set_initialized();
 
@@ -141,7 +155,7 @@ void Coordinator::initialize() {
   S_->Initialize();
 
   // commit the initial conditions.
-  pk_->commit_state(0., S_);
+  pk_->CommitStep(0., 0., S_);
 
   // vis for the state
   // HACK to vis with a surrogate surface mesh.  This needs serious re-design. --etc
@@ -245,8 +259,9 @@ void Coordinator::initialize() {
   // -- register any intermediate requested times
   if (coordinator_list_->isSublist("required times")) {
     Teuchos::ParameterList& sublist = coordinator_list_->sublist("required times");
-    IOEvent pause_times(sublist);
-    pause_times.RegisterWithTimeStepManager(tsm_.ptr());
+    //IOEvent pause_times(sublist);
+    IOEvent pause_times();
+    //pause_times.RegisterWithTimeStepManager(tsm_.ptr());
   }
 
   // Create an intermediate state that will store the updated solution until
@@ -267,7 +282,7 @@ void Coordinator::finalize() {
   // the same file twice.
   // This really should be removed, but for now is left to help stupid developers.
   if (!checkpoint_->DumpRequested(S_next_->cycle(), S_next_->time())) {
-    pk_->calculate_diagnostics(S_next_);
+    pk_->CalculateDiagnostics(S_next_);
     WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), 0.0);
   }
 
@@ -432,9 +447,12 @@ double Coordinator::get_dt(bool after_fail) {
 
 
 // This is used by CLM
-bool Coordinator::advance(double dt) {
+  bool Coordinator::advance(double t_old, double t_new) {
+
+    double dt = t_new - t_old;
+
   S_next_->advance_time(dt);
-  bool fail = pk_->advance(dt);
+  bool fail = pk_->AdvanceStep(t_old, t_new, false);
   fail |= !pk_->valid_step();
 
   // advance the iteration count and timestep size
@@ -442,7 +460,7 @@ bool Coordinator::advance(double dt) {
 
   if (!fail) {
     // commit the state
-    pk_->commit_state(dt, S_next_);
+    pk_->CommitStep(t_old, t_new, S_next_);
     
     // make observations, vis, and checkpoints
     observations_->MakeObservations(*S_next_);
@@ -480,7 +498,7 @@ void Coordinator::visualize(bool force) {
   }
 
   if (dump) {
-    pk_->calculate_diagnostics(S_next_);
+    pk_->CalculateDiagnostics(S_next_);
   }
 
   for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
@@ -545,7 +563,13 @@ void Coordinator::cycle_driver() {
       *S_->GetScalarData("dt", "coordinator") = dt;
       *S_inter_->GetScalarData("dt", "coordinator") = dt;
       *S_next_->GetScalarData("dt", "coordinator") = dt;
-      fail = advance(dt);
+
+      S_->set_initial_time(S_->time());
+      S_->set_final_time(S_->time() + dt);
+      S_->set_intermediate_time(S_->time());
+
+
+      fail = advance(S_->time(), S_->time() + dt);
       dt = get_dt(fail);
 
     } // while not finished

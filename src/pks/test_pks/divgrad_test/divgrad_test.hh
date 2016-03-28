@@ -13,7 +13,7 @@
 #include "boundary_function.hh"
 #include "MatrixMFD.hh"
 
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 #include "pk_physical_base.hh"
 
 namespace Amanzi {
@@ -73,7 +73,7 @@ protected:
 
  private:
   // factory registration
-  static RegisteredPKFactory<DivGradTest> reg_;
+  static RegisteredPKFactory_ATS<DivGradTest> reg_;
 };
 
 }  // namespace

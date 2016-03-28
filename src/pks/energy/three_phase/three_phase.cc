@@ -40,7 +40,7 @@ void ThreePhase::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 }
 
 void
-ThreePhase::initialize(const Teuchos::Ptr<State>& S) {
+ThreePhase::Initialize(const Teuchos::Ptr<State>& S) {
   // INTERFROST comparison needs some very specialized ICs
   Teuchos::ParameterList& ic_plist = plist_->sublist("initial condition");
   if (ic_plist.isParameter("interfrost initial condition")) {
@@ -69,7 +69,7 @@ ThreePhase::initialize(const Teuchos::Ptr<State>& S) {
     field->Initialize(ic_plist);
   }
 
-  TwoPhase::initialize(S);
+  TwoPhase::Initialize(S);
 }
 
 
