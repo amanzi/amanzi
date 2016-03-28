@@ -1,7 +1,7 @@
 /*
   Mesh Functions
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -20,7 +20,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "mesh_function.hh"
+#include "MeshFunction.hh"
 
 namespace Amanzi {
 namespace Functions {
@@ -42,7 +42,7 @@ class UniqueMeshFunction : public MeshFunction {
   std::map<AmanziMesh::Entity_kind, Teuchos::RCP<UniqueSpecList> > unique_specs_;
 };
 
-} //namespace Functions
-} //namespace Amanzi
+}  //namespace Functions
+}  //namespace Amanzi
 
 #endif

@@ -13,7 +13,7 @@
   application per entity.
 */
 
-#include "boundary_function.hh"
+#include "BoundaryFunction.hh"
 
 namespace Amanzi {
 namespace Functions {

@@ -22,8 +22,8 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 #include "dbc.hh"
 #include "errors.hh"
 #include "CompositeVector.hh"
-#include "composite_vector_function.hh"
-#include "composite_vector_function_factory.hh"
+#include "CompositeVectorFunction.hh"
+#include "CompositeVectorFunctionFactory.hh"
 
 #include "Field.hh"
 #include "Field_CompositeVector.hh"

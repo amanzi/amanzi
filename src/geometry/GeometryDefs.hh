@@ -29,6 +29,7 @@ typedef enum {
   POLYGON,
   ENUMERATED,
   BOUNDARY,
+  BOX_VOF,
   ALL
 } RegionType;
 

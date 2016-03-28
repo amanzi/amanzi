@@ -18,7 +18,7 @@ of this function in a ComposteVector.
 #include <vector>
 
 #include "Teuchos_RCP.hpp"
-#include "mesh_function.hh"
+#include "MeshFunction.hh"
 #include "CompositeVector.hh"
 
 namespace Amanzi {

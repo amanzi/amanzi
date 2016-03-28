@@ -20,7 +20,7 @@
 namespace Amanzi {
 namespace AmanziGeometry {
 
-//
+// -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------
 RegionBox::RegionBox(const std::string& name,
@@ -32,7 +32,6 @@ RegionBox::RegionBox(const std::string& name,
     p0_(p0),
     p1_(p1)
 {
-
   if (p0_.dim() != p1_.dim()) {
     Errors::Message msg;
     msg << "Mismatch in dimensions of corner points of RegionBox \""

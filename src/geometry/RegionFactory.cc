@@ -34,6 +34,7 @@
 #include "RegionEnumerated.hh"
 #include "RegionAll.hh"
 #include "RegionBoundary.hh"
+#include "RegionBoxVolumeFractions.hh"
 
 #include "RegionFactory.hh"
 
@@ -217,6 +218,32 @@ createRegion(const std::string reg_name,
 
   } else if (shape == "Region: Boundary") {
     region = Teuchos::rcp(new RegionBoundary(reg_name, reg_id, lifecycle));
+
+  } else if (shape == "Region: Box Volume Fractions") {
+    Teuchos::ParameterList& box_params = reg_spec.sublist(shape);
+
+    Teuchos::Array<double> p0_vec =
+        box_params.get<Teuchos::Array<double> >("corner coordinate");
+        
+    Teuchos::Array<double> p1_vec =
+        box_params.get<Teuchos::Array<double> >("opposite corner coordinate");
+
+    Teuchos::Array<double> normals_vec =
+        box_params.get<Teuchos::Array<double> >("normals");
+
+    int dim = p0_vec.size();
+    Point p0, p1, p2;
+    std::vector<Point> normals;
+      
+    p0.set(dim,&(p0_vec[0]));
+    p1.set(dim,&(p1_vec[0]));
+    for (int i = 0; i < dim; ++i) {
+      p2.set(dim,&(normals_vec[i*dim]));
+      normals.push_back(p2);
+    }
+
+    region = Teuchos::rcp(new RegionBoxVolumeFractions(
+        reg_name, reg_id, p0, p1, normals, lifecycle));
 
   } else {
     Errors::Message mesg;

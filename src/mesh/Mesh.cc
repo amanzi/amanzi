@@ -45,12 +45,8 @@
 
 #include "Mesh.hh"
 
-namespace Amanzi
-{
-
-namespace AmanziMesh
-{
-
+namespace Amanzi {
+namespace AmanziMesh {
 
 // Gather and cache cell to face connectivity info.
 //

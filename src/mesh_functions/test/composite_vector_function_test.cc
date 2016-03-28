@@ -11,7 +11,7 @@
 #include "MeshFactory.hh"
 #include "MultiFunction.hh"
 #include "ConstantFunction.hh"
-#include "composite_vector_function.hh"
+#include "CompositeVectorFunction.hh"
 #include "errors.hh"
 
 using namespace Amanzi;

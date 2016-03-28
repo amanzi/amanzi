@@ -66,12 +66,8 @@ namespace AmanziMesh {
 // friended class that uses cache
 class MeshEmbeddedLogical;
 
-//
 
-
-class Mesh
-{
-
+class Mesh {
  public:
 
   // constructor
@@ -645,6 +641,11 @@ class Mesh
                         const Parallel_type ptype,
                         Entity_ID_List *entids) const = 0;
 
+  void get_set_entities_box_vof(
+      Teuchos::RCP<const AmanziGeometry::Region> region,
+      const Entity_kind kind, 
+      const Parallel_type ptype, 
+      std::vector<Entity_ID>* setents) const;
 
   //
   // Miscellaneous functions
@@ -794,22 +795,19 @@ class Mesh
     edge_geometry_precomputed_;
 
 
-  mutable bool faces_requested_, edges_requested_;
   // probably should not be mutable?  these should be set by constructor and not changed! --etc
+  mutable bool faces_requested_, edges_requested_;
 
 
   // friend classes change the cache?  why is this necessary? --etc
   friend class MeshEmbeddedLogical;
-
-}; // End class Mesh
+};
 
 
 #include "Mesh_impl.hh"
 
+}  // namespace AmanziMesh
+}  // namespace Amanzi
 
-} // end namespace AmanziMesh
-} // end namespace Amanzi
+#endif
 
-
-
-#endif /* _AMANZI_MESH_H_ */

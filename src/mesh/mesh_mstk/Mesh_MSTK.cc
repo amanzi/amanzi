@@ -3295,14 +3295,13 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 //---------------------------------------------------------
 // Get list of entities of type 'category' in set specified by setname
 //---------------------------------------------------------
-
 void Mesh_MSTK::get_set_entities(const std::string setname, 
 				 const Entity_kind kind, 
 				 const Parallel_type ptype, 
 				 std::vector<Entity_ID> *setents) const 
 {
   int idx, i, lid;
-  MSet_ptr mset=NULL, mset1=NULL;
+  MSet_ptr mset(NULL), mset1(NULL);
   MEntity_ptr ment;
   bool found(false);
   int celldim = Mesh::manifold_dimension();
@@ -3371,13 +3370,21 @@ void Mesh_MSTK::get_set_entities(const std::string setname,
       
         if (!mset1) {
           if (epcomm_->NumProc() == 1) {
-            std::stringstream mesg_stream;
-            mesg_stream << "Could not find labeled set " << label << " in mesh file in order to initialize mesh set " << setname << ". Verify mesh file.";
-            Errors::Message mesg(mesg_stream.str());
-            amanzi_throw(mesg);
+            Errors::Message msg;
+            msg << "Could not find labeled set \"" << label 
+                << "\" in mesh file to initialize mesh set \"" << setname 
+                << "\". Verify mesh file.";
+            amanzi_throw(msg);
           }
         }
       }
+    }
+
+  else if (rgn->type() == AmanziGeometry::BOX_VOF) 
+    {
+      // Call routine from the base class and exit.
+      Mesh::get_set_entities_box_vof(rgn, kind, ptype, setents);
+      return;
     }
   else
     {
@@ -3429,10 +3436,11 @@ void Mesh_MSTK::get_set_entities(const std::string setname,
 
   // All attempts to find the set failed so it must not exist - build it
 
-  if (mset1 == NULL && rgn->type() != AmanziGeometry::LABELEDSET) 
+  if (mset1 == NULL && rgn->type() != AmanziGeometry::LABELEDSET) {
     mset1 = build_set(rgn, kind);
+  }
 
-  /* Check if no processor got any mesh entities */
+  // Check if no processor got any mesh entities
 
   int nent_loc = (mset1 == NULL) ? 0 : MSet_Num_Entries(mset1);
 
@@ -3489,8 +3497,8 @@ void Mesh_MSTK::get_set_entities(const std::string setname,
     setents->resize(nent_loc);
   }
       
-    /* Check if there were no entities left on any processor after
-       extracting the appropriate category of entities */
+  // Check if there were no entities left on any processor after
+  // extracting the appropriate category of entities
     
 #ifdef DEBUG
   epcomm_->SumAll(&nent_loc,&nent_glob,1);
