@@ -17,7 +17,7 @@ Parameters labeled by [O] (Obsolete) are old capabilities and will be removed so
 Changes V6 -> V7
 ================
 
-* Observations use lower-case names.
+* Many lists follows now the lower-case naming convention for parameters.
 * Added dual porosity model to flow and transport.
 
 
@@ -112,12 +112,34 @@ Additional conventions:
 * User-defined labels are marked with ALL_CAPS in this document.
   In practice, no rules are imposed on these names.
 
-* For developers: we are gradually migrating to low-case naming convention for all parameters
-  with exceptions of proper name (e.g. CO2, Linux), personal names (e.g. van Genuchten), 
-  list names (e.g. Mesh), and well-established abbreviations (e.g. PK).
-
 * Lists with too many parameters are described using multiple sections and multiple examples.
   For most examples we show name of the parent sublist.
+
+
+Naming convention rule
+----------------------
+
+It is hard to overestimate importance of a reasonable naming convention rule for efficient
+code development and its daily usage in reasearch.
+
+* Camel-case names should *not* be used as names for fixed keywords (parameters and parameter lists).  
+  The following is a short list of allowed exceptions. 
+ 
+  * The names crated by the user are not fixed keywords and are exempt from the above
+    rule.
+
+  * Proper names such as an individual person, place, or organization, including their derivatives
+    *should* be spelled using capital letters. Examples: *van Genuchten m*, *Brocks-Corey lambda*, 
+    *Jacobian matrix*, *Newton correction*, *Richards problem*
+
+  * Names of chemical species (inside fixed keywords) should be capitalized. Examples: *CO2*, *H+*.
+
+  * A few well-established abbreviations. Their complete list is here: *PK*, *MPC*, *BDF1*, *EOS*,
+    *IEM, *PFloTran*, *pH*. Not that names of linear and nonlinear solvers and preconditioners are 
+    not included in this list. Thus, we have to use *pcg*, *gmres*, *nka*, *jfnk*, *amg*, *ml*, and *ilu*
+
+  * Trilinos *VerbosityObject* for historical reasons. There are a few other camel-case parameters that
+    required by Trilinos and therefore outside of our control.
 
 
 Verbose output
