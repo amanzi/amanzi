@@ -3298,7 +3298,8 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 void Mesh_MSTK::get_set_entities(const std::string setname, 
 				 const Entity_kind kind, 
 				 const Parallel_type ptype, 
-				 std::vector<Entity_ID> *setents) const 
+				 std::vector<Entity_ID> *setents,
+                                 std::vector<double> *vofs) const
 {
   int idx, i, lid;
   MSet_ptr mset(NULL), mset1(NULL);
@@ -3383,7 +3384,7 @@ void Mesh_MSTK::get_set_entities(const std::string setname,
   else if (rgn->type() == AmanziGeometry::BOX_VOF) 
     {
       // Call routine from the base class and exit.
-      Mesh::get_set_entities_box_vof(rgn, kind, ptype, setents);
+      Mesh::get_set_entities_box_vof(rgn, kind, ptype, setents, vofs);
       return;
     }
   else
@@ -3529,7 +3530,7 @@ void Mesh_MSTK::get_set_entities(const Set_ID setid,
       std::cerr << "No region with id" << setid << std::endl;
     }
 
-  get_set_entities(rgn->name(),kind,ptype,setents);
+  get_set_entities(rgn->name(), kind, ptype, setents, NULL);
 }
 
 

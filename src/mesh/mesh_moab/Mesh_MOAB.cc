@@ -8,18 +8,17 @@ using namespace std;
 using namespace moab;
 
 
-namespace Amanzi
-{
-namespace AmanziMesh
-{
+namespace Amanzi {
+namespace AmanziMesh {
 
   // Constructor - load up mesh from file
 
   Mesh_MOAB::Mesh_MOAB (const char *filename, const Epetra_MpiComm *comm_, 
 			const AmanziGeometry::GeometricModelPtr& gm,
-                        const VerboseObject *verbosity_obj) :
-			const bool request_faces, const bool request_edges,
-    Mesh(verbosity_obj,request_faces,request_edges)
+                        const VerboseObject *verbosity_obj)
+    : const bool request_faces,
+      const bool request_edges,
+      Mesh(verbosity_obj,request_faces,request_edges)
 {
   int result, rank;
   
@@ -1725,7 +1724,8 @@ MBTag Mesh_MOAB::build_set(const AmanziGeometry::RegionPtr region,
 void Mesh_MOAB::get_set_entities (const std::string setname, 
                                   const Entity_kind kind, 
                                   const Parallel_type ptype,
-                                  Entity_ID_List *setents) const {
+                                  Entity_ID_List *setents,
+                                  std::vector<double> *vofs) const {
 
   int idx, i, lid, one=1;
   bool found(false);

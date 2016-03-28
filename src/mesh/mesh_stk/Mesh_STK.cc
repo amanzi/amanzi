@@ -786,27 +786,14 @@ Mesh_STK::get_set_entities (const Set_ID setid,
 
 
 // -------------------------------------------------------------
-// Mesh_STK::get_set_entities  (by char *setname)
-// -------------------------------------------------------------
-void 
-Mesh_STK::get_set_entities (const char *setname,
-                            const Entity_kind kind, 
-                            const Parallel_type ptype, 
-                            Entity_ID_List *entids) const
-{
-  std::string setname1(setname);
-
-  get_set_entities(setname1, kind, ptype, entids);
-}
-
-// -------------------------------------------------------------
 // Mesh_STK::get_set_entities  (by std::string setname)
 // -------------------------------------------------------------
 void 
 Mesh_STK::get_set_entities (const std::string setname,
                             const Entity_kind kind, 
                             const Parallel_type ptype, 
-                            Entity_ID_List *entids) const
+                            Entity_ID_List *entids,
+                            std::vector<double> *vofs) const
 {
 
   ASSERT (entity_valid_ptype(ptype));

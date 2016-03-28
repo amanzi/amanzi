@@ -339,16 +339,8 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   void get_set_entities (const std::string setname, 
 			 const Entity_kind kind, 
 			 const Parallel_type ptype, 
-			 std::vector<Entity_ID> *entids) const; 
-
-
-  void get_set_entities (const char *setname, 
-			 const Entity_kind kind, 
-			 const Parallel_type ptype, 
-			 std::vector<Entity_ID> *entids) const; 
-
-
-
+			 std::vector<Entity_ID> *entids,
+                         std::vector<double> *vofs = NULL) const;
 
 
   int deform(const std::vector<double>& target_cell_volumes__in, 

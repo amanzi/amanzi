@@ -30,14 +30,10 @@
 #include <memory>
 #include <vector>
 
-namespace Amanzi
-{
-namespace AmanziMesh
-{
+namespace Amanzi {
+namespace AmanziMesh {
 
-class Mesh_MOAB : public Mesh
-{
-
+class Mesh_MOAB : public Mesh {
 
 public:
 
@@ -305,7 +301,8 @@ public:
   void get_set_entities (const std::string setname, 
 			 const Entity_kind kind, 
 			 const Parallel_type ptype, 
-			 std::vector<Entity_ID> *entids) const; 
+			 std::vector<Entity_ID> *entids,
+                         std::vector<double> *vofs = NULL) const;
 
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If
@@ -500,10 +497,9 @@ public:
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     amanzi_throw(mesg);
   };
-
 };
 
-} // close namespace AmanziMesh
-} // close namespace Amanzi
+} // namespace AmanziMesh
+} // namespace Amanzi
 
-#endif /* _MESH_MAPS_MOAB_H_ */
+#endif

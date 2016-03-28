@@ -390,7 +390,8 @@ class MeshColumn : public Mesh {
   void get_set_entities(const std::string setname,
                         const Entity_kind kind,
                         const Parallel_type ptype,
-                        Entity_ID_List *entids) const {
+                        Entity_ID_List *entids,
+                        std::vector<double> *vofs = NULL) const {
     switch (kind) {
       case FACE: {
         Entity_ID_List faces;
@@ -408,15 +409,6 @@ class MeshColumn : public Mesh {
         break;
       }
     }
-  }
-
-  virtual
-  void get_set_entities(const char *setname,
-                        const Entity_kind kind,
-                        const Parallel_type ptype,
-                        Entity_ID_List *entids) const {
-    std::string setname1(setname);
-    get_set_entities(setname1,kind,ptype,entids);
   }
 
 
@@ -519,18 +511,9 @@ class MeshColumn : public Mesh {
   Epetra_Map *face_map_;
   Epetra_Map *exterior_face_map_;
   Epetra_Import *exterior_face_importer_;
-
-
-
-
 };
 
+} // namespace AmanziMesh
+} // namespace Amanzi
 
-} // close namespace AmanziMesh
-} // close namespace Amanzi
-
-
-
-
-
-#endif /* _MESH_MAPS_H_ */
+#endif

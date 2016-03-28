@@ -222,16 +222,23 @@ createRegion(const std::string reg_name,
   } else if (shape == "Region: Box Volume Fractions") {
     Teuchos::ParameterList& box_params = reg_spec.sublist(shape);
 
-    Teuchos::Array<double> p0_vec =
-        box_params.get<Teuchos::Array<double> >("corner coordinate");
-        
-    Teuchos::Array<double> p1_vec =
-        box_params.get<Teuchos::Array<double> >("opposite corner coordinate");
-
-    Teuchos::Array<double> normals_vec =
-        box_params.get<Teuchos::Array<double> >("normals");
+    Teuchos::Array<double> p0_vec = box_params.get<Teuchos::Array<double> >("corner coordinate");
+    Teuchos::Array<double> p1_vec = box_params.get<Teuchos::Array<double> >("opposite corner coordinate");
 
     int dim = p0_vec.size();
+    Teuchos::Array<double> normals_vec;
+
+    if (box_params.isParameter("normals")) {
+      normals_vec = box_params.get<Teuchos::Array<double> >("normals");
+    } else {
+      for (int i = 0; i < dim; ++i) {
+        for (int j = 0; j < dim; ++j) {
+          double tmp = (i == j) ? 1.0 : 0.0;
+          normals_vec.push_back(tmp);
+        }
+      }
+    }
+
     Point p0, p1, p2;
     std::vector<Point> normals;
       

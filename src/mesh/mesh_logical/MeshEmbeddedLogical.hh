@@ -279,14 +279,8 @@ class MeshEmbeddedLogical : public Mesh {
   void get_set_entities(const std::string setname,
                         const Entity_kind kind,
                         const Parallel_type ptype,
-                        Entity_ID_List *entids) const;
-
-  virtual
-  void get_set_entities(const char *setname,
-                        const Entity_kind kind,
-                        const Parallel_type ptype,
-                        Entity_ID_List *entids) const;
-
+                        Entity_ID_List *entids,
+                        std::vector<double> *vofs = NULL) const;
 
   // Miscellaneous functions
   virtual

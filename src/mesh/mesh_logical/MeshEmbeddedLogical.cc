@@ -652,22 +652,13 @@ void
 MeshEmbeddedLogical::get_set_entities (const std::string setname,
 			       const Entity_kind kind,
 			       const Parallel_type ptype,
-			       Entity_ID_List *entids) const {
+			       Entity_ID_List *entids,
+                               std::vector<double> *vofs) const {
   get_set_entities(geometric_model_->FindRegion(setname)->id(), kind, ptype, entids);
   return;
 }
   
   
-void
-MeshEmbeddedLogical::get_set_entities (const char *setname,
-			       const Entity_kind kind,
-			       const Parallel_type ptype,
-			       Entity_ID_List *entids) const {
-  std::string name(setname);
-  get_set_entities(name, kind, ptype, entids);
-  return;
-}
-
 // Miscellaneous functions
 void
 MeshEmbeddedLogical::write_to_exodus_file(const std::string filename) const {

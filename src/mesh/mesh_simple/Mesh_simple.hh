@@ -17,7 +17,6 @@
 #include "VerboseObject.hh"
 
 namespace Amanzi {
-
 namespace AmanziMesh {
 
 class GenerationSpec;
@@ -302,7 +301,8 @@ public:
   void get_set_entities(const std::string setname, 
                         const Entity_kind kind, 
                         const Parallel_type ptype, 
-                        Entity_ID_List *entids) const; 
+                        Entity_ID_List *entids,
+                        std::vector<double> *vofs = NULL) const;
 
 
   // Miscellaneous

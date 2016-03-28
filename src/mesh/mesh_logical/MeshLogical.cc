@@ -516,9 +516,10 @@ MeshLogical::get_set_entities (const Set_ID setid,
 
 void
 MeshLogical::get_set_entities (const std::string setname,
-        const Entity_kind kind,
-        const Parallel_type ptype,
-        Entity_ID_List *entids) const {
+                               const Entity_kind kind,
+                               const Parallel_type ptype,
+                               Entity_ID_List *entids,
+                               std::vector<double> *vofs) const {
   get_set_entities(geometric_model_->FindRegion(setname)->id(), kind, ptype, entids);
   return;
 }

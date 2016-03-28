@@ -341,7 +341,8 @@ public:
   void get_set_entities(const std::string setname, 
                         const Entity_kind kind, 
                         const Parallel_type ptype, 
-                        std::vector<Entity_ID> *entids) const; 
+                        std::vector<Entity_ID> *entids,
+                        std::vector<double> *vofs = NULL) const;
 
 
   // Deform a mesh so that cell volumes conform as closely as possible
