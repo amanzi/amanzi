@@ -58,7 +58,6 @@ add_amanzi_library(pks
 set(pks_inc_files 
   CommonDefs.hh
   PK.hh
-#  PK_Default.hh
   PK_BDF.hh
   PK_Implicit.hh
   PK_Explicit.hh
