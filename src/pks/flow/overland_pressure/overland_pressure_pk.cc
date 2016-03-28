@@ -749,7 +749,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
         double dz = elevation_cells[0][c] - elevation[0][f];
 
         if (h_cells[0][c] + dz < h0) {
-          bc_markers_[f] = Operators::OPERATOR_BC_NONE;
+          bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
           bc_values_[f] = 0.0;
         } else {
           bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -770,7 +770,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
         double dz = elevation_cells[0][c] - elevation[0][f];
 
         if (h_cells[0][c] + dz < h0) {
-          bc_markers_[f] = Operators::OPERATOR_BC_NONE;
+          bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
           bc_values_[f] = 0.0;
         } else {
           bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -800,6 +800,24 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
     }
   }
 
+  // check that there are no internal faces and mark all remaining boundary conditions as zero flux conditions
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f = 0; f < nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    if ((bc_markers_[f] != Operators::OPERATOR_BC_NONE) && (ncells == 2)) {
+      std::stringstream mesg_stream;
+      mesg_stream << "Tried to set a boundary condition on an internal face ";
+      Errors::Message mesg(mesg_stream.str());
+      amanzi_throw(mesg);
+    }
+    if ((bc_markers_[f] == Operators::OPERATOR_BC_NONE) && (ncells == 1)) {
+        bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_values_[f] = 0.0;
+    }
+  } 
+/*
   // mark all remaining boundary conditions as zero flux conditions
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
@@ -813,7 +831,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
       }
     }
   }
-  
+*/  
 }
 
 
