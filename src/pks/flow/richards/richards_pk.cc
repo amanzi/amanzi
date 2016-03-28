@@ -56,6 +56,7 @@ Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
     precon_wc_(false),
     dynamic_mesh_(false),
     clobber_surf_kr_(false),
+    clobber_boundary_flux_dir_(false),
     vapor_diffusion_(false),
     perm_scale_(1.)
 {
@@ -157,6 +158,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // -- nonlinear coefficients/upwinding
   Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
   clobber_surf_kr_ = plist_->get<bool>("clobber surface rel perm", false);
+  clobber_boundary_flux_dir_ = plist_->get<bool>("clobber boundary flux direction for upwinding", false);
   std::string method_name = plist_->get<std::string>("relative permeability method", "upwind with Darcy flux");
 
   if (method_name == "upwind with gravity") {
@@ -169,7 +171,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     Krel_method_ = Operators::UPWIND_METHOD_CENTERED;
   } else if (method_name == "upwind with Darcy flux") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-            coef_key_, uw_coef_key_, flux_dir_key_, 1.e-8));
+            coef_key_, uw_coef_key_, flux_dir_key_, 1.e-5));
     Krel_method_ = Operators::UPWIND_METHOD_TOTAL_FLUX;
   } else if (method_name == "arithmetic mean") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindArithmeticMean(name_,
@@ -632,6 +634,24 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
         face_matrix_diff_->ApplyBCs(true, true);
 
       face_matrix_diff_->UpdateFlux(*pres, *flux_dir);
+
+      if (clobber_boundary_flux_dir_) {
+        Epetra_MultiVector& flux_dir_f = *flux_dir->ViewComponent("face",false);
+        for (int f=0; f!=bc_markers_.size(); ++f) {
+          if (bc_markers_[f] == Operators::OPERATOR_BC_NEUMANN) {
+            AmanziMesh::Entity_ID_List cells;
+            mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+            ASSERT(cells.size() == 1);
+            int c = cells[0];
+            AmanziMesh::Entity_ID_List faces;
+            std::vector<int> dirs;
+            mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+            int i = std::find(faces.begin(), faces.end(), f) - faces.begin();
+            
+            flux_dir_f[0][f] = bc_values_[f]*dirs[i];
+          }
+        }
+      }      
     }
 
     update_perm |= update_dir;
