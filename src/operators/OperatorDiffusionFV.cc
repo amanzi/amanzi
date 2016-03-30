@@ -49,15 +49,20 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
     mesh_ = global_op_->DomainMap().Mesh();
   }
 
+  // Do we need to exclude the primary terms?
+  exclude_primary_terms_ = plist.get<bool>("exclude primary terms", false);
+  
   // create the local Op and register it with the global Operator
-  if (plist.get<bool>("surface operator", false)) {
-    std::string name = "Diffusion: FACE_CELL Surface";
-    local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));
-    global_op_->OpPushBack(local_op_);
-  } else {
-    std::string name = "Diffusion: FACE_CELL";
-    local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
-    global_op_->OpPushBack(local_op_);
+  if (!exclude_primary_terms_) {
+    if (plist.get<bool>("surface operator", false)) {
+      std::string name = "Diffusion: FACE_CELL Surface";
+      local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));
+      global_op_->OpPushBack(local_op_);
+    } else {
+      std::string name = "Diffusion: FACE_CELL";
+      local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+      global_op_->OpPushBack(local_op_);
+    }
   }
   
   // upwind options
@@ -80,9 +85,6 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
     Exceptions::amanzi_throw(msg);
   }
 
-  // Do we need to exclude the primary terms?
-  exclude_primary_terms_ = plist.get<bool>("exclude primary terms", false);
-  
   // Do we need to calculate Newton correction terms?
   newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
   std::string jacobian = plist.get<std::string>("newton correction", "none");

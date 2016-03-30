@@ -594,7 +594,7 @@ struct Problem {
                    CompositeVector& err1,
                    bool faces=false) {
     std::ofstream fid;
-    fid.open(filename);
+    fid.open(filename.c_str());
 
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     Epetra_MultiVector& e0_c = *err0.ViewComponent("cell",false);
@@ -774,10 +774,10 @@ std::pair<double,double> RunForwardProblem(
   double error_linf = std::max(error0_linf, error1_linf);
 
   if (problem->comm->MyPID() == 0) {
-    printf("[%4d, %6.12e, %6.12e],\n",(int) std::round(std::log2(nx)), std::log2(error_l2), std::log2(error_linf));
+    printf("[%4d, %6.12e, %6.12e],\n",(int) round(log2(nx)), log2(error_l2), log2(error_linf));
   }
 
-  return std::make_pair(std::log2(error_l2), std::log2(error_linf));
+  return std::make_pair(log2(error_l2), log2(error_linf));
 }
 
 
@@ -862,10 +862,10 @@ std::pair<double,double> RunForwardProblem_Assembled(
   double error_linf = std::max(error0_linf, error1_linf);
 
   if (problem->comm->MyPID() == 0) {
-    printf("[%4d, %6.12e, %6.12e],\n",(int) std::round(std::log2(nx)), std::log2(error_l2), std::log2(error_linf));
+    printf("[%4d, %6.12e, %6.12e],\n",(int) round(log2(nx)), log2(error_l2), log2(error_linf));
   }
 
-  return std::make_pair(std::log2(error_l2), std::log2(error_linf));
+  return std::make_pair(log2(error_l2), log2(error_linf));
 }
 
 
@@ -921,8 +921,6 @@ std::pair<double,double> RunInverseProblem(
   *B.SubVector(1)->Data() = *problem->op11->global_operator()->rhs();
 
   TreeVector X(*problem->tvs);
-  X.PutScalar(0.);
-
   TreeVector AX(*problem->tvs);
 
   // apply inverse
@@ -952,6 +950,7 @@ std::pair<double,double> RunInverseProblem(
   Teuchos::RCP<AmanziSolvers::LinearOperator<TreeOperator,TreeVector,TreeVectorSpace> > lin_op =
       fac.Create(lin_list, problem->op);
 
+  X.PutScalar(0.);
   int ierr = lin_op->ApplyInverse(B,X);
   CHECK(ierr >= 0);
   CHECK(lin_op->num_itrs() < 10);
@@ -989,10 +988,10 @@ std::pair<double,double> RunInverseProblem(
   double error_linf = std::max(error0_linf, error1_linf);
 
   if (problem->comm->MyPID() == 0) {
-    printf("[%4d, %6.12e, %6.12e],\n",(int) std::round(std::log2(nx)), std::log2(error_l2), std::log2(error_linf));
+    printf("[%4d, %6.12e, %6.12e],\n",(int) round(log2(nx)), log2(error_l2), log2(error_linf));
   }
 
-  return std::make_pair(std::log2(error_l2), std::log2(error_linf));
+  return std::make_pair(log2(error_l2), log2(error_linf));
 }
 
 
@@ -1175,6 +1174,7 @@ std::pair<double,double> RunNonlinearProblem(
         fac.Create(lin_list, problem->pc);
 
     // invert the preconditioner to get a correction
+    DX.PutScalar(0.);
     int converged_reason = lin_op->ApplyInverse(R, DX);
     CHECK(converged_reason >= 0);
 
@@ -1218,10 +1218,10 @@ std::pair<double,double> RunNonlinearProblem(
   double error_linf = std::max(error0_linf, error1_linf);
 
   if (problem->comm->MyPID() == 0) {
-    printf("[%4d, %6.12e, %6.12e],\n",(int) std::round(std::log2(nx)), std::log2(error_l2), std::log2(error_linf));
+    printf("[%4d, %6.12e, %6.12e],\n",(int) round(log2(nx)), log2(error_l2), log2(error_linf));
   }
 
-  return std::make_pair(std::log2(error_l2), std::log2(error_linf));
+  return std::make_pair(log2(error_l2), log2(error_linf));
 }
 
 
@@ -1349,10 +1349,10 @@ std::pair<double,double> RunInverseProblem_Diag(
   double error_linf = std::max(error0_linf, error1_linf);
 
   if (problem->comm->MyPID() == 0) {
-    printf("[%4d, %6.12e, %6.12e],\n",(int) std::round(std::log2(nx)), std::log2(error_l2), std::log2(error_linf));
+    printf("[%4d, %6.12e, %6.12e],\n",(int) round(log2(nx)), log2(error_l2), log2(error_linf));
   }
 
-  return std::make_pair(std::log2(error_l2), std::log2(error_linf));
+  return std::make_pair(log2(error_l2), log2(error_linf));
 }
 
 
