@@ -441,7 +441,7 @@ TEST(DARCY_FULL_TENSOR_3D) {
 
 
 /* **************************************************************** */
-TEST(DARCY_STIFFNESS_2D) {
+TEST(DARCY_STIFFNESS_2D_NODE) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
@@ -509,6 +509,81 @@ TEST(DARCY_STIFFNESS_2D) {
         v = nodes[j];
         mesh->node_get_coordinates(v, &p);
         xj = p[0];
+        vxx += A(i, j) * xi * xj;
+        vxy += A(i, j) * yi * xj;
+      }
+    }
+    CHECK_CLOSE(vxx, volume, 1e-10);
+    CHECK_CLOSE(vxy, 0.0, 1e-10);
+  }
+
+  delete comm;
+}
+
+
+/* **************************************************************** */
+TEST(DARCY_STIFFNESS_2D_EDGE) {
+  using namespace Teuchos;
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: Stiffness matrix for Darcy in 2D:edges" << std::endl;
+#ifdef HAVE_MPI
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm *comm = new Epetra_SerialComm();
+#endif
+
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(MSTK);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(pref);
+  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  RCP<Mesh> mesh = meshfactory("test/one_cell2.exo", Teuchos::null, true, true); 
+ 
+  MFD3D_Diffusion mfd(mesh);
+
+  int nedges = 5, cell = 0;
+  Tensor T(2, 1);
+  T(0, 0) = 1;
+
+  DenseMatrix A(nedges, nedges);
+  for (int method = 0; method < 1; method++) {
+    if (method == 0) {
+      mfd.StiffnessMatrixEdge(cell, T, A);
+    }
+
+    printf("Stiffness matrix for cell %3d\n", cell);
+    for (int i=0; i<nedges; i++) {
+      for (int j=0; j<nedges; j++ ) printf("%8.4f ", A(i, j)); 
+      printf("\n");
+    }
+
+    // verify SPD propery
+    for (int i=0; i<nedges; i++) CHECK(A(i, i) > 0.0);
+
+    // verify exact integration property
+    AmanziMesh::Entity_ID_List edges;
+    mesh->cell_get_edges(cell, &edges);
+    
+    int d = mesh->space_dimension();
+    Point p(d);
+
+    double xi, yi, xj;
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+    for (int i = 0; i < nedges; i++) {
+      int e = edges[i];
+      const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
+      xi = xe[0];
+      yi = xe[1];
+      for (int j = 0; j < nedges; j++) {
+        e = edges[j];
+        const AmanziGeometry::Point& ye = mesh->edge_centroid(e);
+        xj = ye[0];
         vxx += A(i, j) * xi * xj;
         vxy += A(i, j) * yi * xj;
       }
