@@ -7,9 +7,12 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+          Ethan Coon (ecoon@lanl.gov)
 
   Non-polynomial solution plus discontinous (scalar) coefficient. This solution
   has discontinuous tangential flux.
+
+  Same as Analytic03, but moves the coefficient from the tensor to the scalar.
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_03_HH_
@@ -31,15 +34,21 @@ class Analytic03 : public AnalyticBase {
   ~Analytic03() {};
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
+    Amanzi::WhetStone::Tensor K(1,1);
+    K(0, 0) = 1.0;
+    return K;
+  }
+
+  double ScalarCoefficient(const Amanzi::AmanziGeometry::Point& p, double t) {
     double x = p[0];
     double y = p[1];
-    Amanzi::WhetStone::Tensor K(dim, 1);
+    double kr;
     if (x < 0.5) { 
-      K(0, 0) = k1 * (1.0 + x * sin(y));
+      kr = k1 * (1.0 + x * sin(y));
     } else {
-      K(0, 0) = k2 * (1.0 + 2 * x * x * sin(y));
+      kr = k2 * (1.0 + 2 * x * x * sin(y));
     }
-    return K;
+    return kr;
   }
 
   // gradient of scalar factor of the tensor
@@ -88,7 +97,7 @@ class Analytic03 : public AnalyticBase {
     double plaplace, pmean, kmean;
     Amanzi::AmanziGeometry::Point pgrad(dim), kgrad(dim);
 
-    kmean = (Tensor(p, t))(0, 0);
+    kmean = ScalarCoefficient(p,t);
     kgrad = ScalarTensorGradient(p, t);
 
     pmean = pressure_exact(p, t);

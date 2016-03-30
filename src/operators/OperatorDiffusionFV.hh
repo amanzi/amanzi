@@ -93,6 +93,10 @@ class OperatorDiffusionFV : public virtual OperatorDiffusion {
   // -- create an operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                               const Teuchos::Ptr<const CompositeVector>& u);
+  virtual void UpdateMatricesNewtonCorrection(
+      const Teuchos::Ptr<const CompositeVector>& flux,
+      const Teuchos::Ptr<const CompositeVector>& u,
+      double scalar_limiter=1.);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
 
   // -- modify an operator
@@ -114,7 +118,7 @@ class OperatorDiffusionFV : public virtual OperatorDiffusion {
   void AnalyticJacobian_(const CompositeVector& solution);
 
   virtual void ComputeJacobianLocal_(
-      int mcells, int f, int face_dir, int bc_model, double bc_value,
+      int mcells, int f, int bc_model, double bc_value,
       double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp);
 
   virtual void InitDiffusion_(Teuchos::ParameterList& plist);

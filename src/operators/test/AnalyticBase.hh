@@ -12,6 +12,22 @@
     -div (K (grad(p) - g)) = f
   where g is the gravity vector pointing downward of axis z 
   or axis y in two dimensions.
+
+
+  List of problems.  Note that all are 2D:
+
+  Analytic00: linear solution with constant, scalar coefficient
+  Analytic01: non-polynomial solution with full, non-constant tensor
+  Analytic02: linear solution with constant, tensor coefficient
+  Analytic03: non-polynomial solution with discontinuous (scalar)
+              coefficient
+  Analytic03b: same as 03, but with the coef as a scalar instead of
+               scaling the tensor
+  Analytic04: non-polynomial solution with non-constant scalar
+              coefficient, coefficient can be zero
+  Analytic05: linear solution with non-symmetric, non-constant
+              tensor coefficient
+
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_BASE_HH_
@@ -28,10 +44,17 @@ class AnalyticBase {
   // analytic solution for diffusion problem with gravity
   // -- diffusion tensor T
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+
+  // -- scalar component of the coefficient
+  virtual double ScalarCoefficient(const Amanzi::AmanziGeometry::Point& p, double t) {
+    return 1.; }
+
   // -- analytic solution p
   virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+
   // -- gradient of continuous velocity grad(h), where h = p + g z
   virtual Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+
   // -- source term
   virtual double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
@@ -39,7 +62,8 @@ class AnalyticBase {
   virtual Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
     Amanzi::WhetStone::Tensor K = Tensor(p, t);
     Amanzi::AmanziGeometry::Point g = gradient_exact(p, t);
-    return -(K * g);
+    double kr = ScalarCoefficient(p, t);
+    return -(K * g) * kr;
   }
 
   // error calculation

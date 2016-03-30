@@ -53,8 +53,6 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                    int schema) :
     cvs_(cvs),
     schema_(schema),
-    symbolic_assembled_(false),
-    assembled_(false),
     shift_(0.0)
 {
   mesh_ = cvs_->Mesh();
@@ -226,24 +224,42 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
   }
 
   int ierr(0);
-  // THIS NEEDS TESTING: which should be the preferred execution pathway?
-  // Apply via assembled matrix or via local matrices (assuming the assembled
-  // matrix is available).
-
-  // if (use_assembled && assembled_) {
-  //   Epetra_Vector Xcopy(A_->RowMap());
-  //   Epetra_Vector Ycopy(A_->RowMap());
-  //   int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
-  //   ierr |= A_->Apply(Xcopy, Ycopy);
-  //   ierr |= AddSuperVectorToCompositeVector(*smap_, Ycopy, Y, 0);
-  //   ASSERT(!ierr);
-  // } else {
   apply_calls_++;
 
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     (*it)->ApplyMatrixFreeOp(this, X, Y);
   }
-  // }
+
+  return ierr;
+}
+
+
+/* ******************************************************************
+* Parallel matvec product Y = A * X.
+*
+* This method mainly for debugging!  Matrix-free is likely better here!
+******************************************************************* */
+int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar) const
+{
+  X.ScatterMasterToGhosted();
+
+  // initialize ghost elements
+  if (scalar == 0.0) {
+    Y.PutScalarMasterAndGhosted(0.0);
+  } else if (scalar == 1.0) {
+    Y.PutScalarGhosted(0.0);
+  } else {
+    Y.Scale(scalar);
+    Y.PutScalarGhosted(0.0);
+  }
+
+  Epetra_Vector Xcopy(A_->RowMap());
+  Epetra_Vector Ycopy(A_->RowMap());
+  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
+  ierr |= A_->Apply(Xcopy, Ycopy);
+  ierr |= AddSuperVectorToCompositeVector(*smap_, Ycopy, Y, 0);
+  ASSERT(!ierr);
+  apply_calls_++;
 
   return ierr;
 }

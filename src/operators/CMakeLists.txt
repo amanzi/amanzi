@@ -138,6 +138,13 @@ if ( BUILD_TESTS )
     set(amanzi_libs geometry atk mesh mesh_factory mesh_logical data_structures operators whetstone output atk)
 
     # Test: operators for various PDEs
+    add_amanzi_test(operators_utils operators_utils
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_utils.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    
+
     if ( ENABLE_INDIVIDUAL_TESTS_OPERATORS OR ENABLE_INDIVIDUAL_TESTS )
         add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
                         KIND unit
@@ -235,6 +242,17 @@ if ( BUILD_TESTS )
 
     add_amanzi_test(operators_tree_2pe operators_tree NPROCS 2 KIND unit)
 
+    # converge rates
+    add_amanzi_test(operators_diffusion_convergence operators_diffusion_convergence
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_diffusion_convergence.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(operators_coupled_diffusion operators_coupled_diffusion
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_coupled_diffusion.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    
     # Test: diffusion with gravity
     add_amanzi_test(operators_gravity operators_gravity
                     KIND unit

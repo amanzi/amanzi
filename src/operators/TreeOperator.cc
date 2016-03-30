@@ -93,6 +93,24 @@ int TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const
 
 
 /* ******************************************************************
+* Calculate Y = A * X using matrix-free matvec on blocks of operators.
+****************************************************************** */
+int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
+{
+  Y.PutScalar(0.0);
+  Epetra_Vector Xcopy(A_->RowMap());
+  Epetra_Vector Ycopy(A_->RowMap());
+  int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
+  int returned_code(0);
+
+  ierr |= A_->Apply(Xcopy, Ycopy);
+  ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
+  ASSERT(!ierr);
+  return ierr;
+}
+
+
+/* ******************************************************************
 * Calculate Y = inv(A) * X using global matrix.
 ****************************************************************** */
 int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
