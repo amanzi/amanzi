@@ -207,12 +207,6 @@ void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
       local_op_->matrices[f] = Aface;
     }
   }
-
-  // Add derivatives to the matrix (Jacobian in this case)
-  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
-    ASSERT(u != Teuchos::null);
-    AnalyticJacobian_(*u);
-  }
 }
 
 
@@ -225,6 +219,11 @@ void OperatorDiffusionFV::UpdateMatricesNewtonCorrection(
     const Teuchos::Ptr<const CompositeVector>& u,
     double scalar_limiter)
 {
+  // Add derivatives to the matrix (Jacobian in this case)
+  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
+    ASSERT(u != Teuchos::null);
+    AnalyticJacobian_(*u);
+  }
 }
 
 /* ******************************************************************

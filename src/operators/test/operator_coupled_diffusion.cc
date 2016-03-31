@@ -1083,8 +1083,8 @@ std::pair<double,double> RunNonlinearProblem(
     R.Norm2(&l2error);
     double unorm;
     X.Norm2(&unorm);
-    std::cout << "Iteration: " << nits << " residual: Linf = " << error
-              << ", L2 = " << l2error / unorm << std::endl;
+    // std::cout << "Iteration: " << nits << " residual: Linf = " << error
+    //           << ", L2 = " << l2error / unorm << std::endl;
 
     if (write_file) {
       std::stringstream suffix;
@@ -1396,7 +1396,7 @@ void RunForwardTest(const std::string& discretization, bool upwind) {
     CHECK(rate2 > 0.8);
     CHECK(rateinf > 0.8);
   } else {
-    CHECK(rate2 > 1.9);
+    CHECK(rate2 > 1.8);
     CHECK(rateinf > 1.5);
   }
 }
@@ -1442,26 +1442,25 @@ void RunInverseTest(const std::string& discretization, bool upwind) {
     CHECK(rate2 > 0.8);
     CHECK(rateinf > 0.8);
   } else {
-    CHECK(rate2 > 1.9);
+    CHECK(rate2 > 1.8);
     CHECK(rateinf > 1.5);
   }    
 }
 
 
-void RunNonlinearTest(const std::string& discretization, bool upwind) {
+void RunNonlinearTest(const std::string& discretization, const std::string& jacobian) {
   std::cout << std::endl
             << std::endl
             << "============================================================================="
             << std::endl;
-  std::cout << "Convergence for inverse operator with discretization: " << discretization;
-  if (upwind) std::cout << " with upwinding";
-  std::cout << std::endl;
+  std::cout << "Convergence for nonlinear operator with discretization: " << discretization
+            << " with jacobian: " << jacobian << std::endl;
   
   std::cout << "x = np.array([";
   std::vector<std::pair<double,double> > l2s;
-  for (int i=2; i<=129; i*=2) {
-    std::pair<double,double> l2 = RunNonlinearProblem(discretization, "none",
-            upwind, i, i, false, 1.);
+  for (int i=2; i<=65; i*=2) {
+    std::pair<double,double> l2 = RunNonlinearProblem(discretization, jacobian,
+            true, i, i, false, 0.5);
     l2s.push_back(l2);
   }
   std::cout << "])" << std::endl;
@@ -1483,18 +1482,15 @@ void RunNonlinearTest(const std::string& discretization, bool upwind) {
 
   double rate2 = -mean_dl2 / size;
   double rateinf = -mean_dlinf / size;
-  std::cout << " Mean convergence rate (l2, linf) = " << rate2 << ", " << rateinf << std::endl;
+  std::cout << " Mean convergence rate (l2, linf) = " << rate2 << ", "
+            << rateinf << std::endl;
 
-  if (upwind) {
-    CHECK(rate2 > 0.8);
-    CHECK(rateinf > 0.8);
-  } else {
-    CHECK(rate2 > 1.9);
-    CHECK(rateinf > 1.5);
-  }    
+  CHECK(rate2 > 0.8);
+  CHECK(rateinf > 0.8);
 }
 
-
+// Full Suite is the following 12 tests
+// -----------------------------------------------------------------------------
 // TEST(OPERATOR_COUPLED_DIFFUSION_FORWARD_HARMONIC_CONVERGENCE_FV) {
 //   RunForwardTest("fv: default", false);
 // }
@@ -1504,8 +1500,14 @@ void RunNonlinearTest(const std::string& discretization, bool upwind) {
 // TEST(OPERATOR_COUPLED_DIFFUSION_FORWARD_UPWIND_CONVERGENCE_FV) {
 //   RunForwardTest("fv: default", true);
 // }
-// TEST(OPERATOR_COUPLED_DIFFUSION_INVERSE_UPWIND_CONVERGENCE_FV) {
-//   RunInverseTest("fv: default", true);
+TEST(OPERATOR_COUPLED_DIFFUSION_INVERSE_UPWIND_CONVERGENCE_FV) {
+  RunInverseTest("fv: default", true);
+}
+// TEST(OPERATOR_COUPLED_DIFFUSION_NONLINEAR_UPWIND_CONVERGENCE_FV) {
+//   RunNonlinearTest("fv: default", "none");
+// }
+// TEST(OPERATOR_COUPLED_DIFFUSION_NONLINEAR_UPWIND_CONVERGENCE_FV_JACOBIAN) {
+//   RunNonlinearTest("fv: default", "full");
 // }
 
 
@@ -1519,23 +1521,26 @@ void RunNonlinearTest(const std::string& discretization, bool upwind) {
 // TEST(OPERATOR_COUPLED_DIFFUSION_FORWARD_UPWIND_CONVERGENCE_MFD) {
 //   RunForwardTest("mfd: default", true);
 // }
-// TEST(OPERATOR_COUPLED_DIFFUSION_INVERSE_UPWIND_CONVERGENCE_MFD) {
-//   RunInverseTest("mfd: default", true);
+TEST(OPERATOR_COUPLED_DIFFUSION_INVERSE_UPWIND_CONVERGENCE_MFD) {
+  RunInverseTest("mfd: default", true);
+}
+// TEST(OPERATOR_COUPLED_DIFFUSION_NONLINEAR_UPWIND_CONVERGENCE_MFD) {
+//   RunNonlinearTest("mfd: default", "none");
+// }
+// TEST(OPERATOR_COUPLED_DIFFUSION_NONLINEAR_UPWIND_CONVERGENCE_MFD_JACOBIAN) {
+//   RunNonlinearTest("mfd: default", "full");
 // }
 
 
+//
+// debugging tests, simply run one run and write more info to files
+// -----------------------------------------------------------------------------
 // TEST(OPERATOR_COUPLED_DIFFUSION_NONLINEAR_MFD_NONE) {
 //   RunNonlinearProblem("fv: default", "none", true, 2,2, true, 1.);
 // }
-
-TEST(OPERATOR_COUPLED_DIFFUSION_NONLINEAR_MFD_FULL) {
-  RunNonlinearProblem("fv: default", "full", true, 2,2, true, 1.);
-}
-
-
-
-
-// // just a useful writer for debugging
+// TEST(OPERATOR_COUPLED_DIFFUSION_NONLINEAR_MFD_FULL) {
+//   RunNonlinearProblem("fv: default", "full", true, 2,2, true, 1.);
+// }
 // TEST(OPERATOR_COUPLED_DIFFUSION_WRITE_MATRIX) {
 //   RunInverseProblem("mfd: default", true, 2,2, true);
 // }

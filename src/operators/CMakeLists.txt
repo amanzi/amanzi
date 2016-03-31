@@ -234,20 +234,17 @@ if ( BUILD_TESTS )
 
     add_amanzi_test(operators_stability_2pe operators_stability NPROCS 2 KIND unit)
 
-    # correctness of tree operator
-    add_amanzi_test(operators_tree operators_tree
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_tree.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-    add_amanzi_test(operators_tree_2pe operators_tree NPROCS 2 KIND unit)
-
     # converge rates
     add_amanzi_test(operators_diffusion_convergence operators_diffusion_convergence
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion_convergence.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     add_amanzi_test(operators_coupled_diffusion operators_coupled_diffusion
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_coupled_diffusion.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(operators_coupled_diffusion_2pe operators_coupled_diffusion
+                    NPROCS 2
                     KIND unit
                     SOURCE test/Main.cc test/operator_coupled_diffusion.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})

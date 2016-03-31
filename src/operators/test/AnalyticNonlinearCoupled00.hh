@@ -16,8 +16,11 @@
   u = a x^2 + y^2
   v = sin^2( pi/4 * (x+y) )
 
-  k0 = uv
-  k1 = (u+v)/2
+  k0 = exp(uv)
+  k1 = exp((u+v)/2)
+
+  Note that k0 and k1 are both positive, monotonically increasing functions of
+  both u and v.
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_NONLINEAR_00_HH_
@@ -45,28 +48,28 @@ class AnalyticNonlinearCoupled00 : public AnalyticNonlinearCoupledBase {
   }
 
   double DScalarCoefficient00D0(double u, double v) {
-    if (exp(u*v) * v < 0) {
-      std::cout << "negative deriv" << std::endl;
-    }
+    // if (exp(u*v) * v < 0) {
+    //   std::cout << "negative deriv" << std::endl;
+    // }
     return exp(u*v) * v;
   }
   double DScalarCoefficient00D1(double u, double v) {
-    if (exp(u*v) * u < 0) {
-      std::cout << "negative deriv" << std::endl;
-    }
+    // if (exp(u*v) * u < 0) {
+    //   std::cout << "negative deriv" << std::endl;
+    // }
     return exp(u*v) * u;
   }
 
   double DScalarCoefficient11D0(double u, double v) {
-    if (exp((u+v)/2.) * 0.5 < 0) {
-      std::cout << "negative deriv" << std::endl;
-    }
+    // if (exp((u+v)/2.) * 0.5 < 0) {
+    //   std::cout << "negative deriv" << std::endl;
+    // }
     return exp((u+v)/2.) * 0.5;
   }
   double DScalarCoefficient11D1(double u, double v) {
-    if (exp((u+v)/2.) * 0.5 < 0) {
-      std::cout << "negative deriv" << std::endl;
-    }
+    // if (exp((u+v)/2.) * 0.5 < 0) {
+    //   std::cout << "negative deriv" << std::endl;
+    // }
     return exp((u+v)/2.) * 0.5;
   }
   
