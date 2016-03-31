@@ -19,7 +19,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 //#include "pk_factory_ats.hh"
 //#include "pk_physical_bdf_base.hh"
 #include "PK_Factory.hh"
-#include "PK_PhysicalBDF_ATS.hh"
+#include "pk_physical_bdf_default.hh"
 
 namespace Amanzi {
 
@@ -32,7 +32,7 @@ namespace FlowRelations {
 }
 
 //class OverlandPressureFlow : public PKPhysicalBDFBase {
-class OverlandPressureFlow : public PK_PhysicalBDF_ATS {
+class OverlandPressureFlow : public PK_PhysicalBDF_Default {
 
 public:
   OverlandPressureFlow(Teuchos::ParameterList& FElist,

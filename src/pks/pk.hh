@@ -45,13 +45,13 @@ public:
   virtual double get_dt() = 0;
 
   // -- Advance from state S0 to state S1 at time S0.time + dt.
-  virtual bool advance(double dt) = 0;
+  virtual bool advance(double dt);
 
   // -- ensure a solution is valid
   virtual bool valid_step() = 0;  
   
   // -- Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S) = 0;
+  virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
 
   // -- Calculate any diagnostics prior to doing vis
   virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) = 0;

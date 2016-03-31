@@ -35,8 +35,8 @@ EnergyBase::EnergyBase(Teuchos::ParameterList& FElist,
                        const Teuchos::RCP<Teuchos::ParameterList>& plist,
                        const Teuchos::RCP<State>& S,
                        const Teuchos::RCP<TreeVector>& solution) :
-    PK_Default(plist, FElist, solution),
-    PK_PhysicalBDF_ATS(FElist, plist, S, solution),
+    PK(FElist, plist, S, solution),
+    PK_PhysicalBDF_Default(FElist, plist, S, solution),
     modify_predictor_with_consistent_faces_(false),
     modify_predictor_for_freezing_(false),
     coupled_to_subsurface_via_temp_(false),
@@ -71,7 +71,7 @@ EnergyBase::EnergyBase(Teuchos::ParameterList& FElist,
 // Setup
 // -------------------------------------------------------------
 void EnergyBase::Setup(const Teuchos::Ptr<State>& S) {
-  PK_PhysicalBDF_ATS::Setup(S);
+  PK_PhysicalBDF_Default::Setup(S);
 
   SetupEnergy_(S);
   SetupPhysicalEvaluators_(S);
@@ -348,7 +348,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 // -------------------------------------------------------------
 void EnergyBase::Initialize(const Teuchos::Ptr<State>& S) {
   // initialize BDF stuff and physical domain stuff
-  PK_PhysicalBDF_ATS::Initialize(S);
+  PK_PhysicalBDF_Default::Initialize(S);
 
 #if MORE_DEBUG_FLAG
   for (int i=1; i!=23; ++i) {
@@ -398,7 +398,7 @@ void EnergyBase::CommitStep(double t_old, double t_new, const Teuchos::RCP<State
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Commiting state." << std::endl;
-  PK_PhysicalBDF_ATS::CommitStep(t_old, t_new, S);
+  PK_PhysicalBDF_Default::CommitStep(t_old, t_new, S);
 
   bc_temperature_->Compute(S->time());
   bc_diff_flux_->Compute(S->time());

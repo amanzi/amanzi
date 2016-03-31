@@ -142,7 +142,7 @@ void OverlandFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
 
   // update state with the solution up.
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
-  PK_Default::Solution_to_State(*up, S_next_);
+  PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
 
   // calculating the operator is done in 3 steps:
   // 1. Diffusion components

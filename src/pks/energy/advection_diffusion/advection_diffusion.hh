@@ -20,12 +20,13 @@ us to the air-water system.
 #include "OperatorDiffusion.hh"
 #include "OperatorAdvection.hh"
 #include "OperatorAccumulation.hh"
-#include "PK_PhysicalBDF_ATS.hh"
+//#include "PK_PhysicalBDF_ATS.hh"
+#include "pk_physical_bdf_default.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-class AdvectionDiffusion : public PK_PhysicalBDF_ATS {
+class AdvectionDiffusion : public PK_PhysicalBDF_Default {
 
 public:
 
@@ -33,8 +34,8 @@ public:
                      const Teuchos::RCP<Teuchos::ParameterList>& plist,
                      const Teuchos::RCP<State>& S,
                      const Teuchos::RCP<TreeVector>& solution) :
-      PK_Default(plist, FElist, solution),
-      PK_PhysicalBDF_ATS(FElist, plist, S, solution) {}
+    PK(FElist, plist, S, solution),
+      PK_PhysicalBDF_Default(FElist, plist, S, solution) {}
 
   // Virtual destructor
   virtual ~AdvectionDiffusion() {}
@@ -48,7 +49,7 @@ public:
 
   // -- Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
-    PK_PhysicalBDF_ATS::CommitStep(t_old, t_new, S);
+    PK_PhysicalBDF_Default::CommitStep(t_old, t_new, S);
   }
 
   // -- Calculate any diagnostics prior to doing vis

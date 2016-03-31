@@ -18,9 +18,9 @@
 #include "OperatorAccumulation.hh"
 
 #include "PK_Factory.hh"
-#include "PK_PhysicalBDF_ATS.hh"
+//#include "PK_PhysicalBDF_ATS.hh"
 // #include "pk_factory_ats.hh"
-// #include "pk_physical_bdf_base.hh"
+#include "pk_physical_bdf_default.hh"
 
 namespace Amanzi {
 
@@ -31,7 +31,7 @@ namespace WhetStone { class Tensor; }
 
 namespace Flow {
 
-class Richards : public PK_PhysicalBDF_ATS {
+class Richards : public PK_PhysicalBDF_Default {
 //class Richards : public PKPhysicalBDFBase {
 
 public:

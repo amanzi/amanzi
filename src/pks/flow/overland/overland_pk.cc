@@ -43,8 +43,9 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& FElist,
                            const Teuchos::RCP<Teuchos::ParameterList>& plist,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& solution) :
-    PK_Default(plist, FElist, solution),
-    PK_PhysicalBDF_ATS(FElist, plist, S, solution),
+  //PK_Default(plist, FElist, solution),
+    PK(FElist, plist, S, solution),
+    PK_PhysicalBDF_Default(FElist, plist, S, solution),
     standalone_mode_(false),
     is_source_term_(false),
     niter_(0)
@@ -73,7 +74,7 @@ void OverlandFlow::Setup(const Teuchos::Ptr<State>& S) {
     standalone_mode_ = false;
   }
 
-  PK_PhysicalBDF_ATS::Setup(S);
+  PK_PhysicalBDF_Default::Setup(S);
   SetupOverlandFlow_(S);
   SetupPhysicalEvaluators_(S);
 }
@@ -277,7 +278,7 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // -------------------------------------------------------------
 void OverlandFlow::Initialize(const Teuchos::Ptr<State>& S) {
   // Initialize BDF stuff and physical domain stuff.
-  PK_PhysicalBDF_ATS::Initialize(S);
+  PK_PhysicalBDF_Default::Initialize(S);
 
   // Initialize BC data structures
   unsigned int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -322,7 +323,7 @@ void OverlandFlow::Initialize(const Teuchos::Ptr<State>& S) {
 *vo_->os() << "Commiting state." << std::endl;
 
   //PKPhysicalBDFBase::commit_state(, S);
-  PK_PhysicalBDF_ATS::CommitStep(t_old, t_new, S);
+  PK_PhysicalBDF_Default::CommitStep(t_old, t_new, S);
 
   // update boundary conditions
   bc_head_->Compute(S->time());

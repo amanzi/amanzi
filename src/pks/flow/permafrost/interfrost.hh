@@ -41,7 +41,7 @@ public:
              const Teuchos::RCP<Teuchos::ParameterList>& plist,
              const Teuchos::RCP<State>& S,
              const Teuchos::RCP<TreeVector>& solution) :
-    PK_Default(plist, FElist, solution),
+    //PK_Default(plist, FElist, solution),
     //PKDefaultBase(plist, FElist, solution),
     Permafrost(FElist, plist, S, solution) {}
 

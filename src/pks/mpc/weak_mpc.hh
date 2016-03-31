@@ -15,19 +15,20 @@ See additional documentation in the base class src/pks/mpc/MPC.hh
 #ifndef PKS_MPC_WEAKMPC_HH_
 #define PKS_MPC_WEAKMPC_HH_
 
-#include "pk.hh"
+#include "PK.hh"
 #include "mpc.hh"
 
 namespace Amanzi {
 
-class WeakMPC : public MPC<PK_ATS> {
+class WeakMPC : public MPC<PK> {
 
 public:
-  WeakMPC(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-          Teuchos::ParameterList& FElist,
-          const Teuchos::RCP<TreeVector>& soln) :
-      PKDefaultBase(plist, FElist, soln),
-      MPC<PK_ATS>(plist, FElist, soln) {};
+  WeakMPC(Teuchos::ParameterList& FElist,
+          const Teuchos::RCP<Teuchos::ParameterList>& plist,
+          const Teuchos::RCP<State>& S,
+          const Teuchos::RCP<TreeVector>& solution) :
+    //PKDefaultBase(plist, FElist, soln),
+    MPC<PK>(FElist, plist, S, solution) {};
 
   // Virtual destructor
   virtual ~WeakMPC() {}
@@ -37,11 +38,11 @@ public:
   virtual double get_dt();
 
   // -- advance each sub pk dt.
-  virtual bool advance(double dt);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit);
 
 private:
   // factory registration
-  static RegisteredPKFactory_ATS<WeakMPC> reg_;
+  static RegisteredPKFactory<WeakMPC> reg_;
 
 
 };

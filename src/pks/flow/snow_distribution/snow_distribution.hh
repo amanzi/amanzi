@@ -18,14 +18,13 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "OperatorAccumulation.hh"
 
 #include "PK_Factory.hh"
-#include "PK_PhysicalBDF_ATS.hh"
-
+#include "pk_physical_bdf_default.hh"
 
 namespace Amanzi {
 namespace Flow {
 
 //class SnowDistribution : public PKPhysicalBDFBase {
-class SnowDistribution : public PK_PhysicalBDF_ATS {
+class SnowDistribution : public PK_PhysicalBDF_Default {
 
 public:
   SnowDistribution(Teuchos::ParameterList& FElist,
@@ -50,7 +49,7 @@ public:
   //   PKPhysicalBDFBase::commit_state(dt,S);
   // }
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S){
-    PK_PhysicalBDF_ATS::CommitStep(t_old, t_new, S);
+    PK_PhysicalBDF_Default::CommitStep(t_old, t_new, S);
   }
 
 

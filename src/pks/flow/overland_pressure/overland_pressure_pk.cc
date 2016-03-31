@@ -48,9 +48,9 @@ namespace Flow {
 OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& FElist,
                                            const Teuchos::RCP<Teuchos::ParameterList>& plist,
                                            const Teuchos::RCP<State>& S,                        
-                                           const Teuchos::RCP<TreeVector>& solution) :
-    PK_Default(plist, FElist, solution),
-    PK_PhysicalBDF_ATS(FElist, plist, S, solution),
+                                           const Teuchos::RCP<TreeVector>& solution) :   
+    PK(FElist, plist, S, solution),
+    PK_PhysicalBDF_Default(FElist, plist, S, solution),
     standalone_mode_(false),
     is_source_term_(false),
     coupled_to_subsurface_via_head_(false),
@@ -97,7 +97,7 @@ void OverlandPressureFlow::Setup(const Teuchos::Ptr<State>& S) {
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("surface-water_content");
 
-  PK_PhysicalBDF_ATS::Setup(S);
+  PK_PhysicalBDF_Default::Setup(S);
   SetupOverlandFlow_(S);
   SetupPhysicalEvaluators_(S);
 }
@@ -390,7 +390,7 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
   }
 
   // Initialize BDF stuff and physical domain stuff.
-  PK_PhysicalBDF_ATS::Initialize(S);
+  PK_PhysicalBDF_Default::Initialize(S);
 
   if (!S->GetField(key_)->initialized()) {
     // -- set the cell initial condition if it is taken from the subsurface
@@ -463,7 +463,7 @@ void OverlandPressureFlow::CommitStep(double t_old, double t_new, const Teuchos:
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Commiting state." << std::endl;
 
-  PK_PhysicalBDF_ATS::CommitStep(t_old, t_new, S);
+  PK_PhysicalBDF_Default::CommitStep(t_old, t_new, S);
 
   // update boundary conditions
   bc_head_->Compute(S->time());

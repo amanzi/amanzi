@@ -22,7 +22,8 @@ This provides the base of an advection-diffusion equation for energy.
 #include "OperatorAccumulation.hh"
 #include "OperatorAdvection.hh"
 
-#include "PK_PhysicalBDF_ATS.hh"
+//#include "PK_PhysicalBDF_ATS.hh"
+#include "pk_physical_bdf_default.hh"
 #include "upwinding.hh"
 
 namespace Amanzi {
@@ -33,7 +34,7 @@ namespace Functions { class BoundaryFunction; }
 
 namespace Energy {
 
-class EnergyBase : public PK_PhysicalBDF_ATS{
+class EnergyBase : public PK_PhysicalBDF_Default{
 
 public:
   EnergyBase(Teuchos::ParameterList& FElist,

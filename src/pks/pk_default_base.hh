@@ -38,6 +38,9 @@ class PKDefaultBase : public PK_ATS {
 
   virtual void setup(const Teuchos::Ptr<State>& S);
 
+  virtual void commit_state(double dt, const Teuchos::RCP<State>& S){};
+  virtual bool advance(double dt){};
+
   virtual void set_states(const Teuchos::RCP<const State>& S,
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);

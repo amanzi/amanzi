@@ -28,8 +28,11 @@ public:
              const Teuchos::RCP<Teuchos::ParameterList>& plist,
              const Teuchos::RCP<State>& S,
              const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, FElist, solution),
-      ThreePhase(FElist, plist, S, solution) {}
+    //PKDefaultBase(plist, FElist, solution),
+      ThreePhase(FElist, plist, S, solution) {
+    plist_ = plist;
+    solution_ = solution;
+  }
 
   // Virtual destructor
   virtual ~Interfrost() {}

@@ -25,12 +25,13 @@ Example usage:
 // #include "pk_factory_ats.hh"
 // #include "pk_physical_bdf_base.hh"
 #include "PK_Factory.hh"
-#include "PK_PhysicalBDF_ATS.hh"
+//#include "PK_PhysicalBDF_ATS.hh"
+#include "pk_physical_bdf_default.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-class ConstantTemperature : public PK_PhysicalBDF_ATS {
+class ConstantTemperature : public PK_PhysicalBDF_Default {
 
 public:
 
@@ -38,8 +39,8 @@ public:
                       const Teuchos::RCP<Teuchos::ParameterList>& plist,
                       const Teuchos::RCP<State>& S,
                       const Teuchos::RCP<TreeVector>& solution) :
-    PK_Default(plist, FElist, solution),
-    PK_PhysicalBDF_ATS(FElist, plist, S, solution) {
+    PK(FElist, plist, S, solution),
+    PK_PhysicalBDF_Default(FElist, plist, S, solution) {
     plist_->set("solution key", "temperature");
   }
 

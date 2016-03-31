@@ -46,8 +46,9 @@ Richards::Richards(Teuchos::ParameterList& FElist,
                    const Teuchos::RCP<TreeVector>& solution) :
     // PKDefaultBase(plist, FElist, solution),
     // PKPhysicalBDFBase(plist, FElist, solution),
-    PK_Default(plist, FElist, solution),
-    PK_PhysicalBDF_ATS(FElist, plist,  S, solution),
+    //PK_Default(plist, FElist, solution),
+    PK(FElist, plist,  S, solution),
+    PK_PhysicalBDF_Default(FElist, plist,  S, solution),
     coupled_to_surface_via_head_(false),
     coupled_to_surface_via_flux_(false),
     infiltrate_only_if_unfrozen_(false),
@@ -78,7 +79,7 @@ Richards::Richards(Teuchos::ParameterList& FElist,
 // -------------------------------------------------------------
 void Richards::Setup(const Teuchos::Ptr<State>& S) {
   
-  PK_PhysicalBDF_ATS::Setup(S);
+  PK_PhysicalBDF_Default::Setup(S);
   //PKPhysicalBDFBase::setup(S);
   
   SetupRichardsFlow_(S);
@@ -429,7 +430,7 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 void Richards::Initialize(const Teuchos::Ptr<State>& S) {
 
   // Initialize BDF stuff and physical domain stuff.
-  PK_PhysicalBDF_ATS::Initialize(S);
+  PK_PhysicalBDF_Default::Initialize(S);
   //PKPhysicalBDFBase::initialize(S);
 
 
@@ -522,7 +523,7 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
       *vo_->os() << "Commiting state." << std::endl;
 
-    PK_PhysicalBDF_ATS::CommitStep(t_old, t_new, S);
+    PK_PhysicalBDF_Default::CommitStep(t_old, t_new, S);
     //PKPhysicalBDFBase::commit_state(dt, S);
   
   // update BCs, rel perm

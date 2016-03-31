@@ -34,8 +34,9 @@ SnowDistribution::SnowDistribution(Teuchos::ParameterList& FElist,
                                    const Teuchos::RCP<TreeVector>& solution) :
     // PKDefaultBase(plist, FElist, solution),
     // PKPhysicalBDFBase(plist, FElist, solution),
-    PK_Default(plist, FElist, solution),
-    PK_PhysicalBDF_ATS(FElist, plist, S, solution),
+    //PK_Default(plist, FElist, solution),
+    PK(FElist, plist, S, solution),
+    PK_PhysicalBDF_Default(FElist, plist, S, solution),
     full_jacobian_(false) {
   plist_->set("primary variable key", "precipitation_snow");
   plist_->set("domain name", "surface");
@@ -51,7 +52,7 @@ SnowDistribution::SnowDistribution(Teuchos::ParameterList& FElist,
 // -------------------------------------------------------------
 void SnowDistribution::Setup(const Teuchos::Ptr<State>& S) {
   //PKPhysicalBDFBase::setup(S);
-  PK_PhysicalBDF_ATS::Setup(S);
+  PK_PhysicalBDF_Default::Setup(S);
   SetupSnowDistribution_(S);
   SetupPhysicalEvaluators_(S);
 }
@@ -155,7 +156,7 @@ void SnowDistribution::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 void SnowDistribution::Initialize(const Teuchos::Ptr<State>& S) {
   // Initialize BDF stuff and physical domain stuff.
   //PKPhysicalBDFBase::initialize(S);
-  PK_PhysicalBDF_ATS::Initialize(S);
+  PK_PhysicalBDF_Default::Initialize(S);
 
   // Set extra fields as initialized -- these don't currently have evaluators.
   S->GetFieldData("upwind_snow_conductivity",name_)->PutScalar(1.0);

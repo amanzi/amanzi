@@ -27,7 +27,7 @@ namespace Amanzi {
 namespace Energy {
 
 void ConstantTemperature::Setup(const Teuchos::Ptr<State>& S) {
-  PK_PhysicalBDF_ATS::Setup(S);
+  PK_PhysicalBDF_Default::Setup(S);
 
   // require fields for the state and solution
   Teuchos::RCP<CompositeVectorSpace> factory =
@@ -59,7 +59,7 @@ void ConstantTemperature::Initialize(const Teuchos::Ptr<State>& S) {
   temp->PutScalar(273.65);
   S->GetField(key_,name_)->set_initialized();
 
-  PK_PhysicalBDF_ATS::Initialize(S);
+  PK_PhysicalBDF_Default::Initialize(S);
 
 };
 
@@ -73,7 +73,7 @@ bool ConstantTemperature::advance_analytic_(double dt) {
 // -- call your favorite
 bool ConstantTemperature::AdvanceStep(double t_old, double t_new, bool reinit) {
   //  return advance_analytic_(dt);
-  return PK_PhysicalBDF_ATS::AdvanceStep(t_old, t_new, reinit);
+  return PK_PhysicalBDF_Default::AdvanceStep(t_old, t_new, reinit);
 };
 
 // Methods for the BDF integrator
