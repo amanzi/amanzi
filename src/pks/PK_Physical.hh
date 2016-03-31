@@ -28,7 +28,7 @@ class PK_Physical : public virtual PK {
               const Teuchos::RCP<Teuchos::ParameterList>& glist,
               const Teuchos::RCP<State>& S,
               const Teuchos::RCP<TreeVector>& soln):
-  solution_(soln) {};
+    PK(pk_tree, glist, S, soln) {};
 
 
   // Virtual destructor
@@ -67,8 +67,8 @@ class PK_Physical : public virtual PK {
   // debugger for dumping vectors
   Teuchos::RCP<Debugger> db_;
 
-  Teuchos::RCP<Teuchos::ParameterList> plist_;
-  Teuchos::RCP<TreeVector> solution_;
+  // Teuchos::RCP<Teuchos::ParameterList> plist_;
+  // Teuchos::RCP<TreeVector> solution_;
   //  std::string name_;
 
   // // states

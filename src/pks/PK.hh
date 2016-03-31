@@ -29,11 +29,14 @@ class State;
 
 class PK {
  public:
+  PK(){};
   // Required constructor of the form:
-  // PK(Teuchos::ParameterList& pk_tree,
-  //    const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-  //    const Teuchos::RCP<State>& S,
-  //    const Teuchos::RCP<TreeVector>& solution);
+  PK(Teuchos::ParameterList& pk_tree,
+     const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
+     const Teuchos::RCP<State>& S,
+     const Teuchos::RCP<TreeVector>& solution):
+    plist_(global_plist),
+    solution_(solution){};
 
   // Virtual destructor
   virtual ~PK() {};
