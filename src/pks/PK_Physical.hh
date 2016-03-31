@@ -69,15 +69,15 @@ class PK_Physical : public virtual PK {
 
   Teuchos::RCP<Teuchos::ParameterList> plist_;
   Teuchos::RCP<TreeVector> solution_;
-  std::string name_;
+  //  std::string name_;
 
-  // states
-  Teuchos::RCP<const State> S_;
-  Teuchos::RCP<State> S_inter_;
-  Teuchos::RCP<State> S_next_;
+  // // states
+  // Teuchos::RCP<const State> S_;
+  // Teuchos::RCP<State> S_inter_;
+  // Teuchos::RCP<State> S_next_;
 
   // fancy OS
-  Teuchos::RCP<VerboseObject> vo_;
+  //Teuchos::RCP<VerboseObject> vo_;
 };
 
 } // namespace Amanzi
