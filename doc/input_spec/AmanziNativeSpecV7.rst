@@ -138,6 +138,8 @@ code development and its daily usage in reasearch.
     *IEM*, *PFloTran*, *pH*. Note that names of linear and nonlinear solvers and preconditioners are 
     not included in this list. Thus, we have to use *pcg*, *gmres*, *nka*, *jfnk*, *amg*, *ml*, and *ilu*.
 
+  * Units such as energy [J] and temperature [K].
+
   * Trilinos *VerbosityObject* for historical reasons. There are a few other camel-case parameters that
     go directly to Trilinos and therefore outside of our control.
 

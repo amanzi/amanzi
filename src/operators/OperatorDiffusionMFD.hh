@@ -115,6 +115,7 @@ class OperatorDiffusionMFD : public virtual OperatorDiffusion {
   void CreateMassMatrices_();
 
   void UpdateMatricesNodal_();
+  void UpdateMatricesEdge_();
   void UpdateMatricesTPFA_();
   void UpdateMatricesMixed_(const Teuchos::Ptr<const CompositeVector>& flux);
   void UpdateMatricesMixedWithGrad_(const Teuchos::Ptr<const CompositeVector>& flux);
@@ -123,12 +124,11 @@ class OperatorDiffusionMFD : public virtual OperatorDiffusion {
                                 const Teuchos::Ptr<const CompositeVector>& u,
                                 double scalar_limiter);
 
-  void ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
-                       bool primary, bool eliminate);
+  void ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test, bool primary, bool eliminate);
+  void ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test, bool primary, bool eliminate);
+  void ApplyBCs_Edge_(BCs& bc_trial, BCs& bc_test, bool primary, bool eliminate);
   void ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f, const Teuchos::Ptr<BCs>& bc_n,
                        bool primary, bool eliminate);
-  void ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test,
-                      bool primary, bool eliminate);
 
  protected:
   Teuchos::ParameterList plist_;

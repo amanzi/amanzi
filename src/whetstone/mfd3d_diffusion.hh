@@ -48,6 +48,7 @@ class MFD3D_Diffusion : public MFD3D {
   int L2consistencyInverse(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
 
   int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
+  int H1consistencyEdge(int cell, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
 
   int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
   int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W);
@@ -58,6 +59,8 @@ class MFD3D_Diffusion : public MFD3D {
   int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A);
   int StiffnessMatrixOptimized(int c, const Tensor& K, DenseMatrix& A);
   int StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix& A);
+
+  int StiffnessMatrixEdge(int c, const Tensor& K, DenseMatrix& A);
 
   // natural scaling of fluxes which was found to be the right way.
   int L2consistencyInverseScaled(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);
