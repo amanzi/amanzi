@@ -2,9 +2,9 @@
 
 #include <iostream>
 
-
 #include "../Region.hh"
 #include "../RegionBox.hh"
+#include "../RegionBoxVolumeFractions.hh"
 #include "../RegionFactory.hh"
 
 #include "Epetra_MpiComm.h"
@@ -95,7 +95,6 @@ TEST(BOX_REGION_2D)
 
 TEST(BOX_REGION_3D)
 {
-
   Epetra_MpiComm ecomm(MPI_COMM_WORLD);
 
   // read the parameter list from input file
@@ -180,3 +179,36 @@ TEST(BOX_REGION_3D)
   }
 }  
 
+
+TEST(BOX_VOF_REGION_2D_INTERSECTION)
+{
+  Amanzi::AmanziGeometry::Point v1(2), v2(2), v3(2), v4(2), vv(2);
+  std::vector<Amanzi::AmanziGeometry::Point> xy1, xy2, xy3;
+
+  v1.set(0.0, 0.0);
+  v2.set(1.0, 0.0);
+  v3.set(0.0, 1.0);
+  v4.set(1.0, 1.0);
+
+  xy2.push_back(v1);
+  xy2.push_back(v2);
+  xy2.push_back(v4);
+  xy2.push_back(v3);
+
+  int n(0), sizes[6] = {3, 5, 5, 4, 4, 0};
+  for (double d = 0.0; d <= 1.0; d += 0.2) {
+    vv.set(d, d);
+    xy1.clear();
+    xy1.push_back(vv + v1);
+    xy1.push_back(vv + v2);
+    xy1.push_back(vv + v3);
+    std::cout << "\nshift: " << xy1[0] << std::endl;
+
+    Amanzi::AmanziGeometry::IntersectConvexPolygons(xy1, xy2, xy3);
+
+    for (int i = 0; i < xy3.size(); ++i) {
+      std::cout << i << " xy=" << xy3[i] << std::endl;
+    }
+    CHECK(xy3.size() == sizes[n++]);
+  }
+}

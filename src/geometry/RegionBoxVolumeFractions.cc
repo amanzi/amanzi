@@ -119,5 +119,78 @@ bool RegionBoxVolumeFractions::is_degenerate(int *ndeg) const
   return false;
 }
 
+
+// -------------------------------------------------------------
+// Intersection of two clock-wise oriented polygons xy1 and xy2.
+// -------------------------------------------------------------
+void IntersectConvexPolygons(const std::vector<Point>& xy1,
+                             const std::vector<Point>& xy2,
+                             std::vector<Point>& xy3)
+{
+  std::list<std::pair<double, Point> > result;
+  std::list<std::pair<double, Point> >::iterator it, it_next, it2;
+
+  // populate list with the second polygon
+  int n2 = xy2.size();
+  for (int i = 0; i < xy2.size(); ++i) {
+    result.push_back(std::make_pair(0.0, xy2[i]));
+  }
+
+  // intersect each edge of the first polygon with the result
+  int n1 = xy1.size();
+  double eps(1e-6);
+  Point v1(xy1[0]);
+
+  for (int i = 0; i < n1; ++i) {
+    if (result.size() <= 2) break;
+
+    int j = (i + 1) % n1;
+    Point edge(xy1[j] - xy1[i]);
+    Point normal(edge[1], -edge[0]);
+    normal /= norm(normal);
+
+    // Calculate distance of polygon vertices to the plane defined by 
+    // the point xy1[i] and exterior normal normal.
+    for (it = result.begin(); it != result.end(); ++it) {
+      double tmp = normal * (it->second - xy1[i]);
+      if (std::fabs(tmp) < eps) tmp = 0.0;
+      it->first = tmp;
+    }
+
+    double d1, d2, tmp;
+    for (it = result.begin(); it != result.end(); ++it) {
+      it_next = it;
+      if (++it_next == result.end()) it_next = result.begin();
+
+      d1 = it->first;
+      d2 = it_next->first;
+      // add vertex if intersection was found; otherwise, remove vertex.
+      if (d1 * d2 < 0.0) {  
+        tmp = d2 / (d2 - d1);
+        v1 = tmp * it->second + (1.0 - tmp) * it_next->second; 
+        result.insert(it_next, std::make_pair(0.0, v1));
+      }
+    } 
+
+    // removing cut-out edges
+    it = result.begin();
+    while (it != result.end()) {
+      if (it->first > 0.0) {
+        it = result.erase(it);
+        if (result.size() == 2) break;
+      } else {
+        it++;
+      }
+    }
+  }
+
+  xy3.clear();
+  if (result.size() > 2) { 
+    for (it = result.begin(); it != result.end(); ++it) {
+      xy3.push_back(it->second);
+    }
+  }
+}
+
 }  // namespace AmanziGeometry
 }  // namespace Amanzi

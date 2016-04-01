@@ -49,6 +49,13 @@ class RegionBoxVolumeFractions : public Region {
   TensorSimple N_;
 };
 
+
+// non-member functions
+// -- intersection of oriented convex polygons
+void IntersectConvexPolygons(const std::vector<Point>& xy1,
+                             const std::vector<Point>& xy2,
+                             std::vector<Point>& xy3);
+
 }  // namespace AmanziGeometry
 }  // namespace Amanzi
 
