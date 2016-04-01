@@ -45,6 +45,8 @@ namespace Amanzi {
                                  TreeVector& soln);
   virtual void Solution_to_State(TreeVector& soln,
                                  const Teuchos::RCP<State>& S);
+  virtual void Solution_to_State(const TreeVector& soln,
+                                 const Teuchos::RCP<State>& S);
 
 
   // new virtual set_states() to also get the primary field evaulator.

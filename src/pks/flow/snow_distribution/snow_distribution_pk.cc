@@ -13,8 +13,9 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "Point.hh"
 
 #include "FunctionFactory.hh"
-#include "composite_vector_function.hh"
-#include "composite_vector_function_factory.hh"
+#include "CompositeVectorFunction.hh"
+
+#include "CompositeVectorFunctionFactory.hh"
 #include "independent_variable_field_evaluator.hh"
 
 #include "OperatorDiffusionFV.hh"

@@ -11,7 +11,7 @@ Solves:
 de/dt + q dot grad h = div Ke grad T + S?
 ------------------------------------------------------------------------- */
 
-#include "boundary_function.hh"
+#include "BoundaryFunction.hh"
 #include "FieldEvaluator.hh"
 #include "Op.hh"
 #include "interfrost_energy.hh"

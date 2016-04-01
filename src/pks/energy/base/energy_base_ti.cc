@@ -11,7 +11,7 @@ Author: Ethan Coon
 #include <boost/test/floating_point_comparison.hpp>
 
 #include "Debugger.hh"
-#include "boundary_function.hh"
+#include "BoundaryFunction.hh"
 #include "FieldEvaluator.hh"
 #include "energy_base.hh"
 #include "Op.hh"

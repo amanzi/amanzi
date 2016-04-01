@@ -98,11 +98,15 @@ void PK_BDF_Default::set_states(const Teuchos::RCP<const State>& S,
 }
 
 
-void PK_BDF_Default::Solution_to_State(const TreeVector& soln,
-        const Teuchos::RCP<State>& S) {
-  TreeVector* soln_nc_ptr = const_cast<TreeVector*>(&soln);
-  Solution_to_State(*soln_nc_ptr, S);
-}
+
+// void PK_BDF_Default::Solution_to_State(TreeVector& solution,
+//         const Teuchos::RCP<State>& S) {
+//   //ASSERT(solution.Data() == S->GetFieldData(key_));
+//   //  S->SetData(key_, name_, solution->Data());
+//   //  solution_evaluator_->SetFieldAsChanged();
+// };
+
+
 
 
 // -----------------------------------------------------------------------------

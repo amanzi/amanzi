@@ -18,7 +18,7 @@
 #define PKS_VOLUMETRIC_DEFORMATION_HH_
 
 #include "CompositeMatrix.hh"
-#include "composite_vector_function.hh"
+#include "CompositeVectorFunction.hh"
 #include "Function.hh"
 
 #include "pk_factory_ats.hh"

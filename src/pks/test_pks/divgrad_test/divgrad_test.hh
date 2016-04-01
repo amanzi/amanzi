@@ -10,7 +10,7 @@
 #ifndef PK_TESTS_DIVGRAD_TEST_HH_
 #define PK_TESTS_DIVGRAD_TEST_HH_
 
-#include "boundary_function.hh"
+#include "BoundaryFunction.hh"
 #include "MatrixMFD.hh"
 
 #include "pk_factory_ats.hh"

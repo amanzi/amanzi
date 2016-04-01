@@ -54,32 +54,32 @@ register_evaluator_with_factory(
   LISTNAME   MPC_PK_FAC
   )
 
-register_evaluator_with_factory(
-  HEADERFILE strong_mpc_reg.hh
-  LISTNAME   MPC_PK_FAC
-  )
+#register_evaluator_with_factory(
+#  HEADERFILE strong_mpc_reg.hh
+#  LISTNAME   MPC_PK_FAC
+#  )
 
-register_evaluator_with_factory(
-  HEADERFILE mpc_subsurface_reg.hh
-  LISTNAME   MPC_PK_FAC
-  )
+#register_evaluator_with_factory(
+#  HEADERFILE mpc_subsurface_reg.hh
+#  LISTNAME   MPC_PK_FAC
+#  )
 
-register_evaluator_with_factory(
-  HEADERFILE mpc_permafrost_reg.hh
-  LISTNAME   MPC_PK_FAC
-  )
+#register_evaluator_with_factory(
+#  HEADERFILE mpc_permafrost_reg.hh
+#  LISTNAME   MPC_PK_FAC
+#  )
 
-register_evaluator_with_factory(
-  HEADERFILE mpc_coupled_water_reg.hh
-  LISTNAME   MPC_PK_FAC
-  )
+#register_evaluator_with_factory(
+#  HEADERFILE mpc_coupled_water_reg.hh
+#  LISTNAME   MPC_PK_FAC
+#  )
 
 
 generate_evaluators_registration_header(
   HEADERFILE mpc_registration.hh
   LISTNAME   MPC_PK_FAC
   INSTALL    True
-  )
+)
 
 
 include_evaluators_directories(LISTNAME ATS_POROSITY_EVAL_INCLUDES)
@@ -97,9 +97,10 @@ include_evaluators_directories(LISTNAME ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_RE
 include_evaluators_directories(LISTNAME ENERGY_TWO_PHASE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ENERGY_THREE_PHASE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME MPC_PK_FAC_INCLUDES)
-
+    
 
 if ( BUILD_TESTS )
+#if (0)
   # Add UnitTest includes
   set(amanzi_libs atk geometry mesh mesh_audit simple_mesh state whetstone mesh_functions)
 
@@ -110,16 +111,20 @@ if ( BUILD_TESTS )
   # Test: miscaleneous transport routines
   add_executable(test_mpc_subsurface test/Main.cc test/test_mpc_subsurface.cc)
 #  add_executable(test_mpc_subsurface test/Main.cc )
-  target_link_libraries(test_mpc_subsurface mpc pk_energy_two_phase pk_energy_three_phase pk_energy_base
-                                            pk_flow_permafrost pk_flow_richards
-                                            pk_bases
-                                            energy_relations_thermal_conductivity energy_relations_internal_energy
-                                            energy_relations_enthalpy energy_relations_source_terms
-                                            flow_relations
-                                            generic_evaluators relations_eos relations_ewc bc_factory divgrad
-                                            amanzi_solvers amanzi_time_integration amanzi_operators
-                                            amanzi_state amanzi_whetstone amanzi_mesh amanzi_geometry amanzi_mesh_functions amanzi_mesh_factory
-                                            amanzi_output amanzi_data_structures amanzi_atk
-                                            ${Amanzi_TPL_UnitTest_LIBRARIES})
+  target_link_libraries(test_mpc_subsurface 
+    mpc pk_energy_two_phase 
+    pk_energy_three_phase 
+    pk_energy_base
+    pk_flow_permafrost pk_flow_richards
+    pk_bases
+    energy_relations_thermal_conductivity energy_relations_internal_energy
+    energy_relations_enthalpy energy_relations_source_terms
+    flow_relations
+    generic_evaluators relations_eos relations_ewc bc_factory divgrad
+    amanzi_solvers amanzi_time_integration amanzi_operators amanzi_pks
+    amanzi_state amanzi_whetstone amanzi_mesh amanzi_geometry 
+    amanzi_mesh_functions amanzi_mesh_factory
+    amanzi_output amanzi_data_structures amanzi_atk
+    ${Amanzi_TPL_UnitTest_LIBRARIES})
 
 endif()

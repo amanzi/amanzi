@@ -9,7 +9,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #ifndef PK_FLOW_OVERLAND_HH_
 #define PK_FLOW_OVERLAND_HH_
 
-#include "boundary_function.hh"
+#include "BoundaryFunction.hh"
 #include "upwinding.hh"
 
 #include "Operator.hh"

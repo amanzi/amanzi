@@ -16,6 +16,6 @@ See additional documentation in the base class src/pks/mpc/MPC.hh
 
 namespace Amanzi {
 
-RegisteredPKFactory_ATS<WeakMPC> WeakMPC::reg_("weak MPC");
+RegisteredPKFactory<WeakMPC> WeakMPC::reg_("weak MPC");
 
 } // namespace

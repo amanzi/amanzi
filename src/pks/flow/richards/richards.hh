@@ -11,7 +11,7 @@
 #define PK_FLOW_RICHARDS_HH_
 
 #include "wrm_partition.hh"
-#include "boundary_function.hh"
+#include "BoundaryFunction.hh"
 #include "upwinding.hh"
 
 #include "OperatorDiffusionFactory.hh"

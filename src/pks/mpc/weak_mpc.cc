@@ -29,6 +29,17 @@ double WeakMPC::get_dt() {
 };
 
 // -----------------------------------------------------------------------------
+// Set timestep for sub PKs 
+// -----------------------------------------------------------------------------
+void WeakMPC::set_dt( double dt) {
+  for (MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
+       pk != sub_pks_.end(); ++pk) {
+    (*pk)->set_dt(dt);
+  }
+
+};
+
+// -----------------------------------------------------------------------------
 // Advance each sub-PK individually.
 // -----------------------------------------------------------------------------
 bool WeakMPC::AdvanceStep(double t_old, double t_new, bool reinit) {

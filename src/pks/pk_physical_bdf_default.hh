@@ -36,12 +36,16 @@ class PK_PhysicalBDF_Default : virtual public PK_BDF_Default, public PK_Physical
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
     
-  virtual void Solution_to_State(TreeVector& solution,
-                                 const Teuchos::RCP<State>& S);
-  virtual void Solution_to_State(const TreeVector& soln,
-                                 const Teuchos::RCP<State>& S);
+  // virtual void Solution_to_State(TreeVector& solution,
+  //                                const Teuchos::RCP<State>& S);
+  // virtual void Solution_to_State(const TreeVector& soln,
+  //                                const Teuchos::RCP<State>& S);
 
   virtual void Setup(const Teuchos::Ptr<State>& S);
+
+  virtual std::string name() { return name_; }
+
+  virtual void set_dt(double dt) { dt_ = dt; }
 
   // initialize.  Note both BDFBase and PhysicalBase have initialize()
   // methods, so we need a unique overrider.
@@ -68,6 +72,8 @@ class PK_PhysicalBDF_Default : virtual public PK_BDF_Default, public PK_Physical
 
   virtual double BoundaryValue(const Teuchos::RCP<const Amanzi::CompositeVector>& solution, int face_id);
   virtual void ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& u);
+
+  
   
   // PC operator access
   Teuchos::RCP<Operators::Operator> preconditioner() { return preconditioner_; }

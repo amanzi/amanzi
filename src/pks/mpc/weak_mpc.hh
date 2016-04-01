@@ -40,6 +40,10 @@ public:
   // -- advance each sub pk dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit);
 
+  virtual void set_dt(double dt);
+
+  virtual std::string name() {return "weak_mpc";};
+
 private:
   // factory registration
   static RegisteredPKFactory<WeakMPC> reg_;

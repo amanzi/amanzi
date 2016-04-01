@@ -84,6 +84,14 @@ void PK_Physical_Default::Solution_to_State(TreeVector& solution,
 };
 
 
+void PK_Physical_Default::Solution_to_State(const TreeVector& solution,
+        const Teuchos::RCP<State>& S) {
+
+  TreeVector* soln_nc_ptr = const_cast<TreeVector*>(&solution);
+  Solution_to_State(*soln_nc_ptr, S);
+};
+
+
 // -----------------------------------------------------------------------------
 // Experimental approach -- we must pull out S_next_'s solution_evaluator_ to
 // stay current for ChangedSolution()

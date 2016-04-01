@@ -19,8 +19,8 @@ Author: Ethan Coon
 #include "upwind_gravity_flux.hh"
 #include "enthalpy_evaluator.hh"
 
-#include "composite_vector_function.hh"
-#include "composite_vector_function_factory.hh"
+#include "CompositeVectorFunction.hh"
+#include "CompositeVectorFunctionFactory.hh"
 
 #include "energy_base.hh"
 

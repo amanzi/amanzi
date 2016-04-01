@@ -10,7 +10,7 @@
 #include "State.hh"
 #include "MatrixMFD.hh"
 #include "upwinding.hh"
-#include "boundary_function.hh"
+#include "BoundaryFunction.hh"
 
 // #include "pk.hh"
 // #include "pk_factory_ats.hh"

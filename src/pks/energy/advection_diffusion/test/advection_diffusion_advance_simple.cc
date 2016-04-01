@@ -73,7 +73,7 @@ void RunTest(std::string filename, std::string testname) {
     double dT = test->EPK->get_dt();
     test->S1->advance_cycle();
     test->S1->advance_time(dT);
-    test->EPK->AdvanceStep(0, dT);
+    test->EPK->AdvanceStep(0, dT, false);
     T += dT;
     iter++;
 

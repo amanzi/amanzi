@@ -211,18 +211,16 @@ double PK_PhysicalBDF_Default::BoundaryValue(const Teuchos::RCP<const Amanzi::Co
 
 }
 
-  void PK_PhysicalBDF_Default::Solution_to_State(TreeVector& solution,
-                                                  const Teuchos::RCP<State>& S){
-    PK_BDF_Default::Solution_to_State(solution, S);
+  // void PK_PhysicalBDF_Default::Solution_to_State(TreeVector& solution,
+  //                                                 const Teuchos::RCP<State>& S){
+  //   PK_Physical_Default::Solution_to_State(solution, S);
+  // }
 
-  }
-
-  void PK_PhysicalBDF_Default::Solution_to_State(const TreeVector& solution,
-                                                  const Teuchos::RCP<State>& S){
-
-    PK_BDF_Default::Solution_to_State(solution, S);
-
-  }
+  // void PK_PhysicalBDF_Default::Solution_to_State(const TreeVector& soln,
+  //                                                const Teuchos::RCP<State>& S){
+  //   TreeVector* soln_nc_ptr = const_cast<TreeVector*>(&soln);
+  //   PK_Physical_Default::Solution_to_State(soln_nc_ptr, S);    
+  // }
 
   void PK_PhysicalBDF_Default::set_states(const Teuchos::RCP<const State>& S,
                                const Teuchos::RCP<State>& S_inter,

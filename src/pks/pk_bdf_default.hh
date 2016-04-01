@@ -57,10 +57,10 @@ namespace Amanzi {
   // -- Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
 
-  virtual void Solution_to_State(const TreeVector& soln,
-                                 const Teuchos::RCP<State>& S);
-  virtual void Solution_to_State(TreeVector& soln,
-                                 const Teuchos::RCP<State>& S) = 0;
+  // virtual void Solution_to_State(const TreeVector& soln,
+  //                                const Teuchos::RCP<State>& S);
+  // virtual void Solution_to_State(TreeVector& soln,
+  //                                const Teuchos::RCP<State>& S);
 
   virtual void set_states(const Teuchos::RCP<const State>& S,
                         const Teuchos::RCP<State>& S_inter,

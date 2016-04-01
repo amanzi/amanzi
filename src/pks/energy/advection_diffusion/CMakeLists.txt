@@ -21,7 +21,7 @@ if ( BUILD_TESTS )
   target_link_libraries(advection_diffusion_test 
     pk_energy_advection_diffusion
     bc_factory
-#    pk_bases
+    pk_bases
     amanzi_pks
     advection 
     amanzi_solvers amanzi_time_integration amanzi_operators
