@@ -185,7 +185,7 @@ TEST(COLUMN_MESH_3D)
 
   // verify that the regions have made it through
   Amanzi::AmanziMesh::Entity_ID_List myregion;
-  colmesh.get_set_entities("myregion", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::USED, &myregion);
+  colmesh.get_set_entities("myregion", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::USED, &myregion, NULL);
   CHECK_EQUAL(2, myregion.size());
   CHECK(colmesh.cell_centroid(myregion[0])[2] >= 2.5);
   CHECK(colmesh.cell_centroid(myregion[1])[2] >= 2.5);

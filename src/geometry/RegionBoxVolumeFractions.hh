@@ -34,12 +34,12 @@ class RegionBoxVolumeFractions : public Region {
                            const std::vector<Point>& normals,
                            const LifeCycleType lifecycle=PERMANENT);
 
-  // Is the the specified point inside this region
+  // Is the specified point inside this region?
   bool inside(const Point& p) const;
 
-  // Is the box degenerate - zero length in one or more directions and
-  // if so in how many directions?
-  bool is_degenerate(int *ndeg) const;
+  // Calculate intersection volume of polytope object with the box. The operation
+  // is well defined when the polytope and box have same dimensionality.
+  double intersect(const std::vector<Point>& polytope) const;
 
  protected:
   const Point p0_, p1_; // two corners of the box
@@ -47,14 +47,19 @@ class RegionBoxVolumeFractions : public Region {
 
  private:
   TensorSimple N_;
+  double jacobian_;  // change of area/volume during transformation
+  int degeneracy_;  // degenerate box direction, only is allowed.
 };
 
 
 // non-member functions
-// -- intersection of oriented convex polygons
+// -- intersection of counter clockwise oriented convex polygons
 void IntersectConvexPolygons(const std::vector<Point>& xy1,
                              const std::vector<Point>& xy2,
                              std::vector<Point>& xy3);
+
+// -- intersection area of counter clockwise oriented star-shaped 
+// polygon xy1 and convex polygon xy2.
 
 }  // namespace AmanziGeometry
 }  // namespace Amanzi

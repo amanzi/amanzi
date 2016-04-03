@@ -4662,7 +4662,7 @@ they are equivalent to rectangles on a plane or segments on a line.
 .. code-block:: xml
 
    <ParameterList name="Basin">  <!-- parent list -->
-     <ParameterList name="Region: Box Volume Fraction">
+     <ParameterList name="Region: Box Volume Fractions">
        <Parameter name="corner coordinate" type="Array(double)" value="{-1.0,-1.0, 1.0}"/>
        <Parameter name="opposite corner coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
        <Parameter name="normals" type="Array(double)" value="{1.0, 0.0, 0.0

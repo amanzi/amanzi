@@ -75,7 +75,7 @@ test_segment_regular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
     CHECK_EQUAL(0, m->get_set_size("myregion", FACE, USED));
 
     Entity_ID_List set_ents;
-    m->get_set_entities("myregion", CELL, USED, &set_ents);
+    m->get_set_entities("myregion", CELL, USED, &set_ents, NULL);
     CHECK_EQUAL(0, set_ents[0]);
     CHECK_EQUAL(2, set_ents[2]);
   }
@@ -91,14 +91,12 @@ test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   Teuchos::RCP<const GeometricModel> gm_c = m->geometric_model();
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp_const_cast<GeometricModel>(gm_c);
   
-
   Entity_ID_List ents;
   ents.push_back(0);
   ents.push_back(3);
 
   Teuchos::RCP<Region> enum_rgn =
-    Teuchos::rcp(new RegionEnumerated("myregion",
-					   0, "CELL", ents));
+    Teuchos::rcp(new RegionEnumerated("myregion", 0, "CELL", ents));
   gm->AddRegion(enum_rgn);
 
 
@@ -107,7 +105,7 @@ test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
 
   if (test_region) {
     Entity_ID_List set_ents;
-    m->get_set_entities("myregion", CELL, USED, &set_ents);
+    m->get_set_entities("myregion", CELL, USED, &set_ents, NULL);
     CHECK_EQUAL(0, set_ents[0]);
     CHECK_EQUAL(3, set_ents[1]);
   }

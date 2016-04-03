@@ -71,9 +71,10 @@ void Transport_PK::CalculateDiffusionTensor_(
     Teuchos::RCP<MaterialProperties> spec = mat_properties_[mb]; 
 
     std::vector<AmanziMesh::Entity_ID> block;
+    std::vector<double> vofs;
     for (int r = 0; r < (spec->regions).size(); r++) {
       std::string region = (spec->regions)[r];
-      mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+      mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
 
       AmanziMesh::Entity_ID_List::iterator c;
       if (phase == TRANSPORT_PHASE_LIQUID) {

@@ -1,4 +1,3 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
   Abstract class for a Region, which is a geometric or discrete
   subdomain, along with some basic setters/getters.
@@ -13,7 +12,7 @@
   list because it has to create derived region classes based on the shape 
   parameter of the region specification.
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -89,6 +88,12 @@ class Region {
   // Is the specified point inside the closure of the Region
   virtual bool inside(const Point& p) const = 0;
 
+  // Calculate intersection measure of object with the Region. The intersection
+  // is defined when the object and Region have same dimensionality.
+  virtual double intersect(const std::vector<Point>& object) const { 
+    return -1.0;
+  }
+
  protected:
   // Constructor -- protected as it should never be called directly
   Region(const std::string& name,
@@ -127,8 +132,8 @@ class Region {
   bool geometric_;
 
  private:
-  Region(const Region& other); // prevent copy constructor
-  Region& operator=(const Region& other); // prevent operator=
+  Region(const Region& other);  // prevent copy constructor
+  Region& operator=(const Region& other);  // prevent operator=
 };
 
 

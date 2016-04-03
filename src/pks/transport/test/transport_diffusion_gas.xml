@@ -108,7 +108,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-      </ParameterList>	
+      </ParameterList>        
 
       <ParameterList name="source terms">
         <ParameterList name="concentration">
@@ -173,7 +173,7 @@
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
         <ParameterList name="VerboseObject">
-	  <Parameter name="Verbosity Level" type="string" value="extreme"/>
+          <Parameter name="Verbosity Level" type="string" value="extreme"/>
         </ParameterList>
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">

@@ -86,7 +86,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
         // Verify that we can retrieve the set entities
         
         Amanzi::AmanziMesh::Entity_ID_List setents;
-        mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
+        mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents,NULL);
         
       }
       else if (reg_name == "INTERIOR XY PLANE") {
@@ -110,7 +110,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
         // Verify that we can retrieve the set entities
         
         Amanzi::AmanziMesh::Entity_ID_List setents;
-        mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED,&setents);
+        mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED,&setents,NULL);
       }
 
     }
@@ -146,7 +146,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
           // Verify that we can retrieve the set entities
             
           Amanzi::AmanziMesh::Entity_ID_List setents;
-          mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
+          mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents,NULL);
 
           // Also try to extract a node set using this same box and same set name
 
@@ -160,7 +160,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
           // Verify that we can retrieve the set entities
 
           setents.clear();
-          mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED,&setents);
+          mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED,&setents,NULL);
 
         }
         else if (reg_name == "TOP BOX") {
@@ -184,7 +184,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
           // Verify that we can retrieve the set entities
             
           Amanzi::AmanziMesh::Entity_ID_List setents;
-          mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED,&setents);
+          mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED,&setents,NULL);
         }
 
       }
@@ -210,7 +210,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
         // Verify that we can retrieve the set entities
     
         Amanzi::AmanziMesh::Entity_ID_List setents;
-        mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
+        mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents,NULL);
       }
 
     }
@@ -235,7 +235,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
       // Verify that we can retrieve the set entities
       
       Amanzi::AmanziMesh::Entity_ID_List setents;
-      mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED,&setents);
+      mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED,&setents,NULL);
       
     }
     else if (shape == "Region: Labeled Set") {
@@ -268,7 +268,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
         // Verify that we can retrieve the set entities
   
         Amanzi::AmanziMesh::Entity_ID_List setents;
-        mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
+        mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents,NULL);
 
       }
       else if (entity_type == "cell") {
@@ -293,7 +293,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
         // Verify that we can retrieve the set entities
   
         Amanzi::AmanziMesh::Entity_ID_List setents;
-        mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
+        mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents,NULL);
       }
 
     }
@@ -320,7 +320,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
       // Verify that we can retrieve the set entities
       
       Amanzi::AmanziMesh::Entity_ID_List setents;
-      mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
+      mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents,NULL);
 
     }
     else if (shape == "Region: Color Function") {
@@ -345,7 +345,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
       // Verify that we can retrieve the set entities
       
       Amanzi::AmanziMesh::Entity_ID_List setents;
-      mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
+      mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents,NULL);
     }
   }
 }

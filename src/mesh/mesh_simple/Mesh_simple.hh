@@ -1,6 +1,16 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef _MESH_SIMPLE_H_
-#define _MESH_SIMPLE_H_
+/*
+  Mesh
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Implementation of simple mesh.
+*/
+
+#ifndef AMANZI_MESH_SIMPLE_HH_
+#define AMANZI_MESH_SIMPLE_HH_
 
 #include <Epetra_Map.h>
 #include <Epetra_MpiComm.h>
@@ -22,9 +32,7 @@ namespace AmanziMesh {
 class GenerationSpec;
 
 class Mesh_simple : public virtual Mesh {
-      
-public:
-      
+ public:
   // the request_faces and request_edges arguments have to be at the
   // end and not in the middle because if we omit them and specify a
   // pointer argument like gm or verbosity_obj, then there is implicit
@@ -108,7 +116,6 @@ public:
     
   Cell_type cell_get_type(const Entity_ID cellid) const;
         
-   
   //
   // General mesh information
   // -------------------------
@@ -126,15 +133,12 @@ public:
   Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const;
     
     
-    
   //
   // Mesh Entity Adjacencies 
   //-------------------------
 
-
   // Downward Adjacencies
   //---------------------
-    
     
   // Get nodes of cell 
   // On a distributed mesh, all nodes (OWNED or GHOST) of the cell 
@@ -274,7 +278,6 @@ public:
   //----------------------------
   //
     
-
   // Get number of entities of type 'category' in set
 
   unsigned int get_set_size(const Set_ID setid, 
@@ -302,7 +305,7 @@ public:
                         const Entity_kind kind, 
                         const Parallel_type ptype, 
                         Entity_ID_List *entids,
-                        std::vector<double> *vofs = NULL) const;
+                        std::vector<double> *vofs) const;
 
 
   // Miscellaneous
@@ -312,6 +315,7 @@ public:
 
   // this should be used with extreme caution:
   // modify coordinates
+
   void set_coordinate(Entity_ID local_node_id,
                       double* source_begin, double* source_end);
 
@@ -327,7 +331,7 @@ public:
              const Entity_ID_List& fixed_nodes,
              const bool move_vertical);  
 
-private:
+ private:
   void generate_(const GenerationSpec& g);
   void update_internals_();
   void clear_internals_();
@@ -436,7 +440,6 @@ private:
   // Template & inline members
   // ------------------------
 
-
   unsigned int Mesh_simple::node_index_(int i, int j, int k) const
   {
     return i + j*(nx_+1) + k*(nx_+1)*(ny_+1);
@@ -462,8 +465,8 @@ private:
     return i + j*(nx_+1) + k*(nx_+1)*ny_ + xzface_index_(0,0,nz_);
   }
 
-} // namespace AmanziMesh
-} // namespace Amanzi
+}  // namespace AmanziMesh
+}  // namespace Amanzi
 
 #endif
 

@@ -331,8 +331,8 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
 
           // Evalute error
           error = fn_->ErrorNorm(u, res);
-	  db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_nka.ptr());
-	  
+          db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_nka.ptr());
+          
           residual_ = error;
           res->Norm2(&l2_error);
           if (vo_->os_OK(Teuchos::VERB_LOW)) {
@@ -384,7 +384,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
 
                 // Evalute error
                 error = fn_->ErrorNorm(u, res);
-		db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
+                db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
 
                 residual_ = error;
                 res->Norm2(&l2_error);
@@ -434,8 +434,8 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
 
             // Evalute error
             error = fn_->ErrorNorm(u, res);
-	    db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
-	    
+            db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
+            
             residual_ = error;
             res->Norm2(&l2_error);
             if (vo_->os_OK(Teuchos::VERB_LOW)) {
@@ -496,12 +496,12 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
 
         // Evalute error
         error = fn_->ErrorNorm(u, res);
-	if (nka_applied) {
-	  db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_nka.ptr());
-	} else {
-	  db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
-	}
-	
+        if (nka_applied) {
+          db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_nka.ptr());
+        } else {
+          db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
+        }
+        
         residual_ = error;
         res->Norm2(&l2_error);
         if (vo_->os_OK(Teuchos::VERB_LOW)) {

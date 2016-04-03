@@ -283,7 +283,7 @@ class MeshLogical : public Mesh {
                         const Entity_kind kind,
                         const Parallel_type ptype,
                         Entity_ID_List *entids,
-                        std::vector<double> *vofs = NULL) const;
+                        std::vector<double> *vofs) const;
 
 
   // Miscellaneous functions

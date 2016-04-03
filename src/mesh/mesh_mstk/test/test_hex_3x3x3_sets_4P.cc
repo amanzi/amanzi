@@ -104,7 +104,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
       // Verify that we can get the set entities
      
       Amanzi::AmanziMesh::Entity_ID_List setents;
-      mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
+      mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents,NULL);
 
     }
     else if (shape == "Region: Box") {
@@ -137,8 +137,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 	  // Verify that we can get the correct set entities
 	  
 	  Amanzi::AmanziMesh::Entity_ID_List setents;
-	  mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
-	  
+	  mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents,NULL);
 	}
       else 
 	{
@@ -162,8 +161,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 	  // Verify that we can get the set entities
 	  
 	  Amanzi::AmanziMesh::Entity_ID_List setents;
-	  mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
-	  
+	  mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents,NULL);
 	}
     }
     else if (shape == "Region: Labeled Set") {
@@ -197,7 +195,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 	// Verify that we can get the correct set entities
 	
         Amanzi::AmanziMesh::Entity_ID_List setents;
-	mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
+	mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents,NULL);
 
       }
       else if (entity_type == "cell") {
@@ -222,7 +220,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 	// Verify that we can get the set entities
 	
         Amanzi::AmanziMesh::Entity_ID_List setents;
-	mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
+	mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents,NULL);
 
       }
 
@@ -249,7 +247,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
       // Verify that we can get the set entities
 	
       Amanzi::AmanziMesh::Entity_ID_List setents;
-      mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
+      mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents,NULL);
 
     }
   }

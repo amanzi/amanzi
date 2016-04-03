@@ -39,24 +39,24 @@
       <!-- end of developers parameters -->
 
       <ParameterList name="VerboseObject">
-	<Parameter name="Verbosity Level" type="string" value="medium"/>
+        <Parameter name="Verbosity Level" type="string" value="medium"/>
       </ParameterList>
 
       <ParameterList name="boundary conditions">
-	<ParameterList name="concentration">
-	  <ParameterList name="Component 0">
-	    <ParameterList name="BC for left side">
-	      <Parameter name="regions" type="Array(string)" value="{Left side, Bottom side}"/>
-	      <ParameterList name="boundary concentration">
-		<ParameterList name="function-tabular">
-		  <Parameter name="forms" type="Array(string)" value="{constant}"/>
-		  <Parameter name="x values" type="Array(double)" value="{0.0, 0.1}"/>
-		  <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
-		</ParameterList>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
+        <ParameterList name="concentration">
+          <ParameterList name="Component 0">
+            <ParameterList name="BC for left side">
+              <Parameter name="regions" type="Array(string)" value="{Left side, Bottom side}"/>
+              <ParameterList name="boundary concentration">
+                <ParameterList name="function-tabular">
+                  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 0.1}"/>
+                  <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -65,7 +65,7 @@
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
         <ParameterList name="VerboseObject">
-	  <Parameter name="Verbosity Level" type="string" value="extreme"/>
+          <Parameter name="Verbosity Level" type="string" value="extreme"/>
         </ParameterList>
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">

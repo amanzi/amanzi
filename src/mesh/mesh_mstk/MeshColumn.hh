@@ -364,7 +364,7 @@ class MeshColumn : public Mesh {
                             const Entity_kind kind,
                             const Parallel_type ptype) const {
     Entity_ID_List ents;
-    get_set_entities(setname, kind, ptype, &ents);
+    get_set_entities(setname, kind, ptype, &ents, NULL);
     return ents.size();
   }
 
@@ -383,7 +383,7 @@ class MeshColumn : public Mesh {
                         const Entity_kind kind,
                         const Parallel_type ptype,
                         Entity_ID_List *entids) const {
-    get_set_entities(set_name_from_id(setid), kind, ptype, entids);
+    get_set_entities(set_name_from_id(setid), kind, ptype, entids, NULL);
   }
 
   virtual
@@ -391,11 +391,11 @@ class MeshColumn : public Mesh {
                         const Entity_kind kind,
                         const Parallel_type ptype,
                         Entity_ID_List *entids,
-                        std::vector<double> *vofs = NULL) const {
+                        std::vector<double> *vofs) const {
     switch (kind) {
       case FACE: {
         Entity_ID_List faces;
-        extracted_.get_set_entities(setname, kind, ptype, &faces);
+        extracted_.get_set_entities(setname, kind, ptype, &faces, NULL);
 
         for (Entity_ID_List::const_iterator f=faces.begin();
              f!=faces.end(); ++f) {
@@ -405,7 +405,7 @@ class MeshColumn : public Mesh {
       }
 
       default: {
-        extracted_.get_set_entities(setname, kind, ptype, entids);
+        extracted_.get_set_entities(setname, kind, ptype, entids, NULL);
         break;
       }
     }

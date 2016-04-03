@@ -306,7 +306,7 @@ void OperatorDiffusionFV::UpdateFlux(
             flux[0][f] = dirs[n] * trans_face[0][f] * (p[0][c1] - p[0][c2]);
           } else {
             flux[0][f] = dirs[n] * trans_face[0][f] * (p[0][c2] - p[0][c1]);
-          }	    
+          }            
           if (Krel_face.get()) flux[0][f] *= (*Krel_face)[0][f];
           flag[f] = 1;
         }
@@ -354,7 +354,7 @@ void OperatorDiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 
         WhetStone::DenseMatrix Aface(mcells, mcells);
 
-        int face_dir;   	
+        int face_dir;           
         // face_dir is equal to 1 if normal direction points from cells[0],
         // otherwise face_dir is -1
         if (cells[0] == c) face_dir = dirs[i];

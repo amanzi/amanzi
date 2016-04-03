@@ -187,7 +187,8 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
     // Get the cells that belong to this region.
     unsigned int num_cells = mesh_->get_set_size(region_name, AmanziMesh::CELL, AmanziMesh::OWNED);
     AmanziMesh::Entity_ID_List cell_indices;
-    mesh_->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::OWNED, &cell_indices);
+    std::vector<double> vofs;
+    mesh_->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::OWNED, &cell_indices, &vofs);
   
     // Loop over the cells.
     for (unsigned int i = 0; i < num_cells; ++i) {

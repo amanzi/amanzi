@@ -61,10 +61,10 @@ class DenseVector {
   DenseVector& operator=(const DenseVector& B) {
     if (this != &B) {
       if (m_ != B.m_ && B.m_ != 0) {
-	if (data_ != NULL) {
-	  delete [] data_;
-	}
-	data_ = new double[B.m_];
+        if (data_ != NULL) {
+          delete [] data_;
+        }
+        data_ = new double[B.m_];
       }
       m_ = B.m_;
       const double *b = B.Values();

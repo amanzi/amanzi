@@ -66,7 +66,7 @@ void OperatorDiffusionMFD::SetTensorCoefficient(const Teuchos::RCP<std::vector<W
 * Initialization of the operator: nonlinear coefficient.
 ****************************************************************** */
 void OperatorDiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
-						const Teuchos::RCP<const CompositeVector>& dkdp)
+                                                const Teuchos::RCP<const CompositeVector>& dkdp)
 {
   k_ = k;
   dkdp_ = dkdp;

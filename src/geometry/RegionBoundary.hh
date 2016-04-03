@@ -22,21 +22,20 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 class RegionBoundary : public Region {
-public:
-
+ public:
   RegionBoundary(const std::string& name,
-	         const Set_ID id,
-	         const LifeCycleType lifecycle=PERMANENT);
+                 const Set_ID id,
+                 const LifeCycleType lifecycle=PERMANENT);
 
   // Is the the specified point inside this region
   bool inside(const Point& p) const;
   
-protected:
+ protected:
   const std::string entity_str_; // what kind of entities make up this set
   const std::vector<Entity_ID> entities_; // list of those included
 };
 
-} // namespace AmanziGeometry
-} // namespace Amanzi
+}  // namespace AmanziGeometry
+}  // namespace Amanzi
 
 #endif

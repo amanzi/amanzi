@@ -201,8 +201,8 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   // arbitrary order
   // In 2D, the nodes of the polygon will be returned in ccw order 
   // consistent with the face normal
-  void cell_get_nodes (const Entity_ID cellid, 
-                       Entity_ID_List *nodeids) const;
+  void cell_get_nodes(const Entity_ID cellid, 
+                      Entity_ID_List *nodeids) const;
 
   // Get nodes of face 
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face 
@@ -210,14 +210,14 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   // In 3D, the nodes of the face are returned in ccw order consistent
   // with the face normal
   // In 2D, nfnodes is 2
-  void face_get_nodes (const Entity_ID faceid, 
-                       Entity_ID_List *nodeids) const;
+  void face_get_nodes(const Entity_ID faceid, 
+                      Entity_ID_List *nodeids) const;
 
 
   // Get nodes of edge
 
-  void edge_get_nodes (const Entity_ID edgeid, Entity_ID *nodeid0,
-		       Entity_ID *nodeid1) const {
+  void edge_get_nodes(const Entity_ID edgeid, Entity_ID *nodeid0,
+                      Entity_ID *nodeid1) const {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     amanzi_throw(mesg);
   }
@@ -226,9 +226,9 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   //-------------------
   
   // Cells of type 'ptype' connected to a node
-  void node_get_cells (const Entity_ID nodeid, 
-                       const Parallel_type ptype,
-                       Entity_ID_List *cellids) const;
+  void node_get_cells(const Entity_ID nodeid, 
+                      const Parallel_type ptype,
+                      Entity_ID_List *cellids) const;
     
   // Faces of type 'ptype' connected to a node
   void node_get_faces (const Entity_ID nodeid, 
@@ -271,22 +271,22 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   //
     
   // Node coordinates - 3 in 3D and 2 in 2D
-  void node_get_coordinates (const Entity_ID nodeid, 
-			     AmanziGeometry::Point *ncoord) const;
+  void node_get_coordinates(const Entity_ID nodeid, 
+                            AmanziGeometry::Point *ncoord) const;
     
     
   // Face coordinates - conventions same as face_to_nodes call 
   // Number of nodes is the vector size divided by number of spatial dimensions
-  void face_get_coordinates (const Entity_ID faceid, 
-			     std::vector<AmanziGeometry::Point> *fcoords) const; 
+  void face_get_coordinates(const Entity_ID faceid, 
+                            std::vector<AmanziGeometry::Point> *fcoords) const; 
     
   // Coordinates of cells in standard order (Exodus II convention)
   // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
   // For a general polyhedron this will return the node coordinates in
   // arbitrary order
   // Number of nodes is vector size divided by number of spatial dimensions
-  void cell_get_coordinates (const Entity_ID cellid, 
-			     std::vector<AmanziGeometry::Point> *ccoords) const;
+  void cell_get_coordinates(const Entity_ID cellid, 
+                            std::vector<AmanziGeometry::Point> *ccoords) const;
 
 
   // Modify the coordinates of a node
@@ -316,31 +316,30 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
 
 
   // Get number of entities of type 'category' in set
-  unsigned int get_set_size (const Set_ID setid, 
-                             const Entity_kind kind,
-                             const Parallel_type ptype) const;
+  unsigned int get_set_size(const Set_ID setid, 
+                            const Entity_kind kind,
+                            const Parallel_type ptype) const;
 
-  unsigned int get_set_size (const std::string setname, 
-			     const Entity_kind kind,
-			     const Parallel_type ptype) const;
+  unsigned int get_set_size(const std::string setname, 
+                            const Entity_kind kind,
+                            const Parallel_type ptype) const;
 
-
-  unsigned int get_set_size (const char *setname, 
-			     const Entity_kind kind,
-			     const Parallel_type ptype) const;
+  unsigned int get_set_size(const char *setname, 
+                            const Entity_kind kind,
+                            const Parallel_type ptype) const;
 
 
   // Get list of entities of type 'category' in set
-  void get_set_entities (const Set_ID setid, 
-                         const Entity_kind kind, 
-                         const Parallel_type ptype, 
-                         Entity_ID_List *entids) const; 
+  void get_set_entities(const Set_ID setid, 
+                        const Entity_kind kind, 
+                        const Parallel_type ptype, 
+                        Entity_ID_List *entids) const; 
 
-  void get_set_entities (const std::string setname, 
-			 const Entity_kind kind, 
-			 const Parallel_type ptype, 
-			 std::vector<Entity_ID> *entids,
-                         std::vector<double> *vofs = NULL) const;
+  void get_set_entities(const std::string setname, 
+                        const Entity_kind kind, 
+                        const Parallel_type ptype, 
+                        std::vector<Entity_ID> *entids,
+                        std::vector<double> *vofs) const;
 
 
   int deform(const std::vector<double>& target_cell_volumes__in, 
@@ -426,14 +425,14 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
 
-  void cell_get_faces_and_dirs_internal_ (const Entity_ID cellid,
-                                Entity_ID_List *faceids,
-                                std::vector<int> *face_dirs,
-                                const bool ordered=false) const;
+  void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
+                                         Entity_ID_List *faceids,
+                                         std::vector<int> *face_dirs,
+                                         const bool ordered=false) const;
 
   // Edges of a cell
 
-  void cell_get_edges_internal_ (const Entity_ID cellid,
+  void cell_get_edges_internal_(const Entity_ID cellid,
                                 Entity_ID_List *edgeids) const 
   { 
     Errors::Message mesg("Edges not implemented in this interface. Use MSTK");
@@ -442,7 +441,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
 
   // Edges and edge directions of a 2D cell
 
-  void cell_2D_get_edges_and_dirs_internal_ (const Entity_ID cellid,
+  void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
                                             Entity_ID_List *edgeids,
                                             std::vector<int> *edgedirs) const 
   { 
@@ -452,16 +451,16 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
 
   // Cells connected to a face
 
-  void face_get_cells_internal_ (const Entity_ID faceid, 
+  void face_get_cells_internal_(const Entity_ID faceid, 
                                 const Parallel_type ptype,
                                 Entity_ID_List *cellids) const;
     
   // Edges and edge directions of a face
 
-  void face_get_edges_and_dirs_internal_ (const Entity_ID cellid,
-					 Entity_ID_List *edgeids,
-					 std::vector<int> *edgedirs,
-					 bool ordered=true) const
+  void face_get_edges_and_dirs_internal_(const Entity_ID cellid,
+                                         Entity_ID_List *edgeids,
+                                         std::vector<int> *edgedirs,
+                                          bool ordered=true) const
   {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     amanzi_throw(mesg);

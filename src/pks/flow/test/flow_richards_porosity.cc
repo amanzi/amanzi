@@ -79,14 +79,16 @@ TEST(FLOW_POROSITY_MODELS) {
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
   
   AmanziMesh::Entity_ID_List block;
-  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  std::vector<double> vofs;
+
+  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K[0][c] = 0.1;
     K[1][c] = 2.0;
   }
 
-  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K[0][c] = 0.5;

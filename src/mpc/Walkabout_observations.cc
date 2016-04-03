@@ -1,13 +1,13 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-Amanzi
+/*
+  MPC
 
-License:
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-
-Walkabout
-
-------------------------------------------------------------------------- */
+  Walkabout
+*/
 
 #include "Walkabout_observations.hh"
 #include "Epetra_MpiComm.h"
@@ -29,7 +29,7 @@ namespace Amanzi {
 * is evaluated at cell-center and at boundary points.
 ****************************************************************** */
 void Walkabout_observations::CalculateDarcyVelocity(Teuchos::RCP<State>& S,
-				     std::vector<AmanziGeometry::Point>& xyz, 
+                                     std::vector<AmanziGeometry::Point>& xyz, 
                                      std::vector<AmanziGeometry::Point>& velocity)
 {
   xyz.clear();
@@ -151,11 +151,12 @@ void Walkabout_observations::CalculateDarcyVelocity(Teuchos::RCP<State>& S,
 * Calculating an extended vector of Darcy velocities. The velocity
 * is evaluated at cell-center and at boundary points.
 ****************************************************************** */
-void Walkabout_observations::CalculatePoreVelocity( Teuchos::RCP<State>& S,
-						    std::vector<AmanziGeometry::Point>& xyz, 
-						    std::vector<AmanziGeometry::Point>& velocity,
-						    std::vector<double>& porosity, std::vector<double>& saturation,
-						    std::vector<double>& pressure, std::vector<double>& isotherm_kd)
+void Walkabout_observations::CalculatePoreVelocity(
+    Teuchos::RCP<State>& S,
+    std::vector<AmanziGeometry::Point>& xyz, 
+    std::vector<AmanziGeometry::Point>& velocity,
+    std::vector<double>& porosity, std::vector<double>& saturation,
+    std::vector<double>& pressure, std::vector<double>& isotherm_kd)
 {
   const AmanziMesh::Mesh& mesh = *S->GetMesh();
   S->GetFieldData("porosity")->ScatterMasterToGhosted();

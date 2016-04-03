@@ -461,25 +461,25 @@ MeshLogical::exterior_face_importer (void) const {
 //
 // Get number of entities of type 'category' in set
 unsigned int
-MeshLogical::get_set_size (const Set_ID setid,
-                           const Entity_kind kind,
-                           const Parallel_type ptype) const {
+MeshLogical::get_set_size(const Set_ID setid,
+                          const Entity_kind kind,
+                          const Parallel_type ptype) const {
   Entity_ID_List ents;
   get_set_entities(setid, kind, ptype, &ents);
   return ents.size();
 }
 
 unsigned int
-MeshLogical::get_set_size (const std::string setname,
-                           const Entity_kind kind,
-                           const Parallel_type ptype) const {
+MeshLogical::get_set_size(const std::string setname,
+                          const Entity_kind kind,
+                          const Parallel_type ptype) const {
   return get_set_size(geometric_model_->FindRegion(setname)->id(),kind,ptype);
 }
 
 unsigned int
-MeshLogical::get_set_size (const char *setname,
-                           const Entity_kind kind,
-                           const Parallel_type ptype) const {
+MeshLogical::get_set_size(const char *setname,
+                          const Entity_kind kind,
+                          const Parallel_type ptype) const {
   std::string name(setname);
   return get_set_size(name,kind,ptype);
 }

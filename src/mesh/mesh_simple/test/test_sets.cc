@@ -111,7 +111,7 @@ TEST(SETS) {
         // Verify that we can get the correct set entities
         
         Amanzi::AmanziMesh::Entity_ID_List setents;
-        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::USED,&setents);
+        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::USED,&setents,NULL);
         
         CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);
         
@@ -140,7 +140,7 @@ TEST(SETS) {
         // Verify that we can get the correct set entities
         
         Amanzi::AmanziMesh::Entity_ID_List setents;
-        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED,&setents);
+        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED,&setents,NULL);
         
         CHECK_ARRAY_EQUAL(expnsetnodes[j],setents,set_size);
         
@@ -181,7 +181,7 @@ TEST(SETS) {
             // Verify that we can get the correct set entities
             
             Amanzi::AmanziMesh::Entity_ID_List setents;
-            mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::USED,&setents);
+            mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::USED,&setents,NULL);
             
             CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);	  
             
@@ -210,7 +210,7 @@ TEST(SETS) {
             // Verify that we can get the correct set entities
             
             Amanzi::AmanziMesh::Entity_ID_List setents;
-            mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED,&setents);
+            mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED,&setents,NULL);
             
             CHECK_ARRAY_EQUAL(expnsetnodes[j],setents,set_size);	  
                         
@@ -239,7 +239,7 @@ TEST(SETS) {
 	  // Verify that we can get the correct set entities
 	  
 	  Amanzi::AmanziMesh::Entity_ID_List setents;
-	  mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED,&setents);
+	  mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED,&setents,NULL);
 	  
 	  CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
 	}
@@ -268,7 +268,7 @@ TEST(SETS) {
       // Verify that we can get the correct set entities
       
       Amanzi::AmanziMesh::Entity_ID_List setents;
-      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED,&setents);
+      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED,&setents,NULL);
       
       CHECK_ARRAY_EQUAL(expnsetnodes[j],setents,set_size);	  
                         
@@ -281,7 +281,6 @@ TEST(SETS) {
 
     }
     else if (shape == "Region: Color Function") {
-
 
       // Do we have a valid set by this name
             
@@ -305,12 +304,10 @@ TEST(SETS) {
       // Verify that we can get the correct set entities
             
       Amanzi::AmanziMesh::Entity_ID_List setents;
-      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED,&setents);
+      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED,&setents,NULL);
             
       CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);	  
-                        
     }
   }
-
 }
 }

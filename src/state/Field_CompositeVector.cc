@@ -378,11 +378,12 @@ void Field_CompositeVector::InitializeFromColumn_(Teuchos::ParameterList& plist)
     double z0;
     std::vector<double> z(1);
 
-    AmanziMesh::Entity_ID_List surf_faces;
+    AmanziMesh::Entity_ID_List surf_faces; 
+    std::vector<double> vofs;
     for (Teuchos::Array<std::string>::const_iterator setname=sidesets.begin();
          setname!=sidesets.end(); ++setname) {
       data_->Mesh()->get_set_entities(*setname,AmanziMesh::FACE,
-              AmanziMesh::OWNED, &surf_faces);
+              AmanziMesh::OWNED, &surf_faces, &vofs);
 
       for (AmanziMesh::Entity_ID_List::const_iterator f=surf_faces.begin();
            f!=surf_faces.end(); ++f) {
@@ -410,10 +411,11 @@ void Field_CompositeVector::InitializeFromColumn_(Teuchos::ParameterList& plist)
     std::vector<double> z(1);
 
     AmanziMesh::Entity_ID_List surf_faces;
+    std::vector<double> vofs;
     for (Teuchos::Array<std::string>::const_iterator setname=sidesets.begin();
          setname!=sidesets.end(); ++setname) {
       data_->Mesh()->get_set_entities(*setname,AmanziMesh::FACE,
-              AmanziMesh::OWNED, &surf_faces);
+              AmanziMesh::OWNED, &surf_faces, &vofs);
 
       for (AmanziMesh::Entity_ID_List::const_iterator f=surf_faces.begin();
            f!=surf_faces.end(); ++f) {

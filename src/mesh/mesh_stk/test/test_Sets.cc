@@ -140,7 +140,7 @@ SUITE (STK_SETS)
         // Verify that we can get the correct set entities
      
         Amanzi::AmanziMesh::Entity_ID_List setents;
-        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
+        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents,NULL);
 
         CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);
 
@@ -177,7 +177,7 @@ SUITE (STK_SETS)
             // Verify that we can get the correct set entities
 	  
             Amanzi::AmanziMesh::Entity_ID_List setents;
-            mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
+            mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents,NULL);
 	  
             CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);	  
           }
@@ -204,7 +204,7 @@ SUITE (STK_SETS)
             // Verify that we can get the correct set entities
 	  
             Amanzi::AmanziMesh::Entity_ID_List setents;
-            mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
+            mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents,NULL);
 	  
             CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
           }
@@ -238,7 +238,7 @@ SUITE (STK_SETS)
         // Verify that we can get the correct set entities
       
         Amanzi::AmanziMesh::Entity_ID_List setents;
-        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
+        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents,NULL);
 	  
         CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);	  
 
@@ -274,7 +274,7 @@ SUITE (STK_SETS)
           // Verify that we can get the correct set entities
 	
           Amanzi::AmanziMesh::Entity_ID_List setents;
-          mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
+          mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents,NULL);
 
           CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);
 
@@ -302,7 +302,7 @@ SUITE (STK_SETS)
           // Verify that we can get the correct set entities
 	
           Amanzi::AmanziMesh::Entity_ID_List setents;
-          mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
+          mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents,NULL);
 
           CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
         }
@@ -331,7 +331,7 @@ SUITE (STK_SETS)
         // Verify that we can get the correct set entities
       
         Amanzi::AmanziMesh::Entity_ID_List setents;
-        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
+        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents,NULL);
       
         CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
 
@@ -431,7 +431,7 @@ SUITE (STK_SETS)
 	// Verify that we can get the correct set entities
      
 	Amanzi::AmanziMesh::Entity_ID_List setents;
-	mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::USED,&setents);
+	mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::USED,&setents,NULL);
 
 	CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);
 
@@ -468,7 +468,7 @@ SUITE (STK_SETS)
 	    // Verify that we can get the correct set entities
 	  
 	    Amanzi::AmanziMesh::Entity_ID_List setents;
-	    mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::USED,&setents);
+	    mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::USED,&setents,NULL);
 	  
 	    CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);	  
 
@@ -496,7 +496,7 @@ SUITE (STK_SETS)
 	    // Verify that we can get the correct set entities
 	  
 	    Amanzi::AmanziMesh::Entity_ID_List setents;
-	    mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED,&setents);
+	    mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED,&setents,NULL);
 	  
 	    CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
 	  }
@@ -528,7 +528,7 @@ SUITE (STK_SETS)
         // Verify that we can get the correct set entities
         
         Amanzi::AmanziMesh::Entity_ID_List setents;
-        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
+        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents,NULL);
         
         CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);	  
         
@@ -538,10 +538,8 @@ SUITE (STK_SETS)
 	std::cerr << "Mesh framework cannot do labeled sets" << std::endl;
 
 	CHECK(false); 
-
       }
     }
-
   }
 }
 

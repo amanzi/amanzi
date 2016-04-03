@@ -45,12 +45,12 @@ public:
   // we could "delete" the illegal version of the call effectively
   // blocking the implicit conversion.
   
-  Mesh_MOAB (const char *filename, const Epetra_MpiComm *comm_,
-	     const AmanziGeometry::GeometricModelPtr& gm = 
-	     (AmanziGeometry::GeometricModelPtr) NULL,
-	     const VerboseObject *verbosity_obj = (VerboseObject *) NULL, 
-	     const bool request_faces = true,
-	     const bool request_edges = false);
+  Mesh_MOAB(const char *filename, const Epetra_MpiComm *comm_,
+	    const AmanziGeometry::GeometricModelPtr& gm = 
+	       (AmanziGeometry::GeometricModelPtr) NULL,
+	    const VerboseObject *verbosity_obj = (VerboseObject *) NULL, 
+	    const bool request_faces = true,
+	    const bool request_edges = false);
 
   // Construct a mesh by extracting a subset of entities from another
   // mesh. In some cases like extracting a surface mesh from a volume
@@ -74,17 +74,17 @@ public:
 	    const bool request_faces = true,
 	    const bool request_edges = false);
 
-  Mesh_MOAB (const Mesh& inmesh, 
-             const std::vector<int>& entity_id_list, 
-             const Entity_kind entity_kind,
-             const bool flatten = false,
-             const bool extrude = false,
-             const bool request_faces = true,
-             const bool request_edges = false);
+  Mesh_MOAB(const Mesh& inmesh, 
+            const std::vector<int>& entity_id_list, 
+            const Entity_kind entity_kind,
+            const bool flatten = false,
+            const bool extrude = false,
+            const bool request_faces = true,
+            const bool request_edges = false);
 
   ~Mesh_MOAB();
   
-  void update ();
+  void update();
   
   // Get parallel type of entity
     
@@ -105,8 +105,8 @@ public:
   // Number of entities of any kind (cell, face, node) and in a
   // particular category (OWNED, GHOST, USED)
     
-  unsigned int num_entities (const Entity_kind kind,
-			     const Parallel_type ptype) const;
+  unsigned int num_entities(const Entity_kind kind,
+			    const Parallel_type ptype) const;
     
     
   // Global ID of any entity
@@ -133,13 +133,13 @@ public:
   // In 2D, the nodes of the polygon will be returned in ccw order 
   // consistent with the face normal
     
-  void cell_get_nodes (const Entity_ID cellid, 
-		       Entity_ID_List *nodeids) const;
+  void cell_get_nodes(const Entity_ID cellid, 
+		      Entity_ID_List *nodeids) const;
     
     
   // Edges and edge directions of a face
 
-  void face_get_edges_and_dirs_internal_ (const Entity_ID cellid,
+  void face_get_edges_and_dirs_internal_(const Entity_ID cellid,
 					 Entity_ID_List *edgeids,
 					 std::vector<int> *edgedirs,
 					 bool ordered=true) const
@@ -155,15 +155,15 @@ public:
   // with the face normal
   // In 2D, nfnodes is 2
     
-  void face_get_nodes (const Entity_ID faceid, 
-		       Entity_ID_List *nodeids) const;
+  void face_get_nodes(const Entity_ID faceid, 
+		      Entity_ID_List *nodeids) const;
     
 
 
   // Get nodes of edge
 
-  void edge_get_nodes (const Entity_ID edgeid, Entity_ID *nodeid0,
-		       Entity_ID *nodeid1) const {
+  void edge_get_nodes(const Entity_ID edgeid, Entity_ID *nodeid0,
+		      Entity_ID *nodeid1) const {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     amanzi_throw(mesg);
   }
@@ -174,23 +174,23 @@ public:
     
   // Cells of type 'ptype' connected to a node
     
-  void node_get_cells (const Entity_ID nodeid, 
-		       const Parallel_type ptype,
+  void node_get_cells(const Entity_ID nodeid, 
+		      const Parallel_type ptype,
 		       Entity_ID_List *cellids) const;
     
   // Faces of type 'ptype' connected to a node
     
-  void node_get_faces (const Entity_ID nodeid, 
-		       const Parallel_type ptype,
-		       Entity_ID_List *faceids) const;
+  void node_get_faces(const Entity_ID nodeid, 
+		      const Parallel_type ptype,
+		      Entity_ID_List *faceids) const;
     
   // Get faces of ptype of a particular cell that are connected to the
   // given node
     
-  void node_get_cell_faces (const Entity_ID nodeid, 
-			    const Entity_ID cellid,
-			    const Parallel_type ptype,
-			    Entity_ID_List *faceids) const;    
+  void node_get_cell_faces(const Entity_ID nodeid, 
+			   const Entity_ID cellid,
+			   const Parallel_type ptype,
+			   Entity_ID_List *faceids) const;    
     
 
   // Same level adjacencies
@@ -224,15 +224,15 @@ public:
     
   // Node coordinates - 3 in 3D and 2 in 2D
     
-  void node_get_coordinates (const Entity_ID nodeid, 
-			     AmanziGeometry::Point *ncoord) const;
+  void node_get_coordinates(const Entity_ID nodeid, 
+			    AmanziGeometry::Point *ncoord) const;
     
     
   // Face coordinates - conventions same as face_to_nodes call 
   // Number of nodes is the vector size divided by number of spatial dimensions
     
-  void face_get_coordinates (const Entity_ID faceid, 
-			     std::vector<AmanziGeometry::Point> *fcoords) const; 
+  void face_get_coordinates(const Entity_ID faceid, 
+			    std::vector<AmanziGeometry::Point> *fcoords) const; 
     
   // Coordinates of cells in standard order (Exodus II convention)
   // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
@@ -240,14 +240,14 @@ public:
   // arbitrary order
   // Number of nodes is vector size divided by number of spatial dimensions
     
-  void cell_get_coordinates (const Entity_ID cellid, 
-			     std::vector<AmanziGeometry::Point> *ccoords) const;
+  void cell_get_coordinates(const Entity_ID cellid, 
+			    std::vector<AmanziGeometry::Point> *ccoords) const;
     
   // Modify the coordinates of a node
 
-  void node_set_coordinates (const Entity_ID nodeid, const AmanziGeometry::Point coords);
+  void node_set_coordinates(const Entity_ID nodeid, const AmanziGeometry::Point coords);
 
-  void node_set_coordinates (const Entity_ID nodeid, const double *coords);
+  void node_set_coordinates(const Entity_ID nodeid, const double *coords);
 
     
   //
@@ -267,7 +267,7 @@ public:
   // Epetra vector defined on all owned faces into an Epetra vector
   // defined only on exterior faces
   
-  const Epetra_Import& exterior_face_importer (void) const;
+  const Epetra_Import& exterior_face_importer(void) const;
     
     
     
@@ -278,31 +278,31 @@ public:
     
   // Get number of entities of type 'category' in set
 
-  unsigned int get_set_size (const Set_ID setid, 
-			     const Entity_kind kind,
-			     const Parallel_type ptype) const;
+  unsigned int get_set_size(const Set_ID setid, 
+			    const Entity_kind kind,
+			    const Parallel_type ptype) const;
 
-  unsigned int get_set_size (const std::string setname, 
-			     const Entity_kind kind,
-			     const Parallel_type ptype) const;
+  unsigned int get_set_size(const std::string setname, 
+			    const Entity_kind kind,
+			    const Parallel_type ptype) const;
 
-  unsigned int get_set_size (const char *setname, 
-			     const Entity_kind kind,
-			     const Parallel_type ptype) const;
+  unsigned int get_set_size(const char *setname, 
+			    const Entity_kind kind,
+			    const Parallel_type ptype) const;
 
 
   // Get list of entities of type 'category' in set
 
-  void get_set_entities (const Set_ID setid, 
-			 const Entity_kind kind, 
-			 const Parallel_type ptype, 
-			 Entity_ID_List *entids) const;   
+  void get_set_entities(const Set_ID setid, 
+                        const Entity_kind kind, 
+                        const Parallel_type ptype, 
+                        Entity_ID_List *entids) const;   
 
-  void get_set_entities (const std::string setname, 
-			 const Entity_kind kind, 
-			 const Parallel_type ptype, 
-			 std::vector<Entity_ID> *entids,
-                         std::vector<double> *vofs = NULL) const;
+  void get_set_entities(const std::string setname, 
+                        const Entity_kind kind, 
+                        const Parallel_type ptype, 
+                        std::vector<Entity_ID> *entids,
+                        std::vector<double> *vofs) const;
 
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If
@@ -317,7 +317,7 @@ public:
  
  // Miscellaneous
   
-  void write_to_exodus_file (const std::string filename) const;
+  void write_to_exodus_file(const std::string filename) const;
 
   private:
 
@@ -415,7 +415,7 @@ public:
     // Private methods
     // ----------------------------
 
-    bool valid_entity_kind_ (int kind) const;
+    bool valid_entity_kind_(int kind) const;
 
 
     void clear_internals_();
@@ -455,22 +455,22 @@ public:
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
 
-  void cell_get_faces_and_dirs_internal_ (const Entity_ID cellid,
-                                Entity_ID_List *faceids,
-                                std::vector<int> *face_dirs,
-				const bool ordered=false) const;
+  void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
+                                         Entity_ID_List *faceids,
+                                         std::vector<int> *face_dirs,
+				         const bool ordered=false) const;
 
 
   // Cells connected to a face
     
-  void face_get_cells_internal_ (const Entity_ID faceid, 
+  void face_get_cells_internal_(const Entity_ID faceid, 
                                 const Parallel_type ptype,
                                 Entity_ID_List *cellids) const;
     
 
   // Edges of a cell
 
-  void cell_get_edges_internal_ (const Entity_ID cellid,
+  void cell_get_edges_internal_(const Entity_ID cellid,
                                 Entity_ID_List *edgeids) const 
   { 
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
@@ -479,7 +479,7 @@ public:
 
   // Edges and edge directions of a 2D cell
 
-  void cell_2D_get_edges_and_dirs_internal_ (const Entity_ID cellid,
+  void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
                                             Entity_ID_List *edgeids,
                                             std::vector<int> *edgedirs) const 
   { 
@@ -489,7 +489,7 @@ public:
 
   // Edges and edge directions of a face
 
-  void face_get_edges_and_dirs_internal_ (const Entity_ID cellid,
+  void face_get_edges_and_dirs_internal_(const Entity_ID cellid,
 					 Entity_ID_List *edgeids,
 					 std::vector<int> *edgedirs,
 					 bool ordered=true) const

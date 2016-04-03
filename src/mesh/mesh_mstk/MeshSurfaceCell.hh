@@ -51,7 +51,7 @@ class MeshSurfaceCell : public Mesh {
 
     // set my face
     Entity_ID_List my_face;
-    inmesh.get_set_entities(surface_set_name, FACE, OWNED, &my_face);
+    inmesh.get_set_entities(surface_set_name, FACE, OWNED, &my_face, NULL);
     ASSERT(my_face.size() == 1);
     parent_face_ = my_face[0];
 
@@ -441,7 +441,7 @@ class MeshSurfaceCell : public Mesh {
                         const Entity_kind kind,
                         const Parallel_type ptype,
                         Entity_ID_List *entids,
-                        std::vector<double> *vofs = NULL) const {
+                        std::vector<double> *vofs) const {
     return get_set_entities(geometric_model()->FindRegion(setname)->id(),
                             kind, ptype, entids);
   }

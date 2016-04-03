@@ -185,11 +185,11 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
       fn_->ChangedSolution();
 
       if (fn_->IsAdmissible(u)) {
-    	bool changed = fn_->ModifyPredictor(dt, u0, u);
-    	if (changed) fn_->ChangedSolution();
+        bool changed = fn_->ModifyPredictor(dt, u0, u);
+        if (changed) fn_->ChangedSolution();
       } else {
-	*u = *u0;
-	fn_->ChangedSolution();
+        *u = *u0;
+        fn_->ChangedSolution();
       }
     }
   }
