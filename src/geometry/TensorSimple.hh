@@ -30,7 +30,7 @@ class TensorSimple {
   ~TensorSimple() {};
 
   // primary members
-  int set(int d) { d_ = d; }
+  void set(int d) { d_ = d; }
 
   void Inverse() {
     if (d_ == 2) {
