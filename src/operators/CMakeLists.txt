@@ -243,11 +243,7 @@ if ( BUILD_TESTS )
                     KIND unit
                     SOURCE test/Main.cc test/operator_coupled_diffusion.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(operators_coupled_diffusion_2pe operators_coupled_diffusion
-                    NPROCS 2
-                    KIND unit
-                    SOURCE test/Main.cc test/operator_coupled_diffusion.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(operators_coupled_diffusion_2pe operators_coupled_diffusion NPROCS 2 KIND unit)
 
     
     # Test: diffusion with gravity
