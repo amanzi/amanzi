@@ -617,42 +617,36 @@ class Mesh {
   virtual
   unsigned int get_set_size(const Set_ID setid,
                             const Entity_kind kind,
-                            const Parallel_type ptype) const = 0;
+                            const Parallel_type ptype) const;
 
   virtual
   unsigned int get_set_size(const std::string setname,
                             const Entity_kind kind,
-                            const Parallel_type ptype) const = 0;
+                            const Parallel_type ptype) const;
 
+  // Get list of entities of type 'category' in set by set name.
+  // -- original interface. The returned volume fractions are ignored.
   virtual
-  unsigned int get_set_size(const char *setname,
-                            const Entity_kind kind,
-                            const Parallel_type ptype) const = 0;
-
-  // Get list of entities of type 'category' in set
-  // -- by set id 
-  virtual
-  void get_set_entities(const Set_ID setid,
+  void get_set_entities(const std::string setname,
                         const Entity_kind kind,
                         const Parallel_type ptype,
-                        Entity_ID_List *entids) const = 0;
+                        Entity_ID_List *entids) const;
 
-  // -- by set name. This is the default method. Since not all regions
-  //    support volume fractions (vofs), this vector is optional and 
-  //    could be empty.
+  // -- deprecated interface
+  virtual
+  void get_set_entities(const Set_ID setid, 
+                        const Entity_kind kind, 
+                        const Parallel_type ptype, 
+                        Entity_ID_List *entids) const;
+
+  // -- new interface. Since not all regions support volume fractions 
+  // (vofs), this vector is optional and could be empty.
   virtual
   void get_set_entities(const std::string setname,
                         const Entity_kind kind,
                         const Parallel_type ptype,
                         Entity_ID_List *entids,
                         std::vector<double> *vofs) const = 0;
-
-  void get_set_entities_box_vofs(
-      Teuchos::RCP<const AmanziGeometry::Region> region,
-      const Entity_kind kind, 
-      const Parallel_type ptype, 
-      std::vector<Entity_ID>* setents,
-      std::vector<double> *vofs) const;
 
   //
   // Miscellaneous functions
@@ -662,10 +656,19 @@ class Mesh {
   virtual
   void write_to_exodus_file(const std::string filename) const = 0;
 
+
  protected:
   // Helper function to build columns
   virtual
   int build_columns_() const;
+
+  // Beginning of new interface to regions using the base mesh.
+  void get_set_entities_box_vofs_(
+      Teuchos::RCP<const AmanziGeometry::Region> region,
+      const Entity_kind kind, 
+      const Parallel_type ptype, 
+      std::vector<Entity_ID>* setents,
+      std::vector<double> *vofs) const;
 
 
   //

@@ -117,7 +117,7 @@ if (BUILD_TESTS)
 
     set(test_src_files test/Main.cc test/test_mesh_geometry.cc)
 
-    add_amanzi_test(mesh_geometry test_mesh_geometry
+    add_amanzi_test(mesh_geometry mesh_geometry
                     KIND unit
 		            SOURCE ${test_src_files}
 		            LINK_LIBS ${test_link_libs})
@@ -126,7 +126,7 @@ if (BUILD_TESTS)
     # Test: mesh deformation
     set(test_src_files test/Main.cc test/test_deform.cc)
 
-    add_amanzi_test(mesh_deform test_deform
+    add_amanzi_test(mesh_deform mesh_deform
                     KIND unit
 		    SOURCE ${test_src_files}
 		    LINK_LIBS ${test_link_libs})
@@ -135,7 +135,7 @@ if (BUILD_TESTS)
 
     set(test_src_files test/Main.cc test/test_columns.cc)
 
-    add_amanzi_test(mesh_columns test_columns
+    add_amanzi_test(mesh_columns mesh_columns
                     KIND unit
 		    SOURCE ${test_src_files}
 		    LINK_LIBS ${test_link_libs})

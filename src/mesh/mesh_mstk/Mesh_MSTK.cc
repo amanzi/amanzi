@@ -3345,7 +3345,7 @@ void Mesh_MSTK::get_set_entities(const std::string setname,
   else if (rgn->type() == AmanziGeometry::BOX_VOF) 
     {
       // Call routine from the base class and exit.
-      Mesh::get_set_entities_box_vofs(rgn, kind, ptype, setents, vofs);
+      Mesh::get_set_entities_box_vofs_(rgn, kind, ptype, setents, vofs);
       return;
     }
   else
@@ -3472,73 +3472,6 @@ void Mesh_MSTK::get_set_entities(const std::string setname,
     Exceptions::amanzi_throw(mesg);
   }
 #endif
-}
-
-
-void Mesh_MSTK::get_set_entities(const Set_ID setid, 
-                                 const Entity_kind kind, 
-                                 const Parallel_type ptype, 
-                                 std::vector<Entity_ID> *setents) const 
-{
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
-  Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setid);
-
-  std::cerr << "DEPRECATED METHOD!" << std::endl;
-  std::cerr << "Call get_set_entities with setname instead of setid" << std::endl;
-
-  if (rgn == Teuchos::null)
-    {
-      std::cerr << "No region with id" << setid << std::endl;
-    }
-
-  get_set_entities(rgn->name(), kind, ptype, setents, NULL);
-}
-
-
-//---------------------------------------------------------
-// Get number of entities of type 'ptype' in set
-//---------------------------------------------------------
-unsigned int Mesh_MSTK::get_set_size(const char *setname,
-                                     const Entity_kind kind, 
-                                     const Parallel_type ptype) const 
-{
-  Entity_ID_List setents;
-  std::string setname1(setname);
-
-  get_set_entities(setname1, kind, ptype, &setents, NULL);
-  
-  return setents.size();
-}
-
-
-//---------------------------------------------------------
-// Get number of entities of type 'ptype' in set
-//---------------------------------------------------------
-unsigned int Mesh_MSTK::get_set_size(const std::string setname, 
-                                     const Entity_kind kind, 
-                                     const Parallel_type ptype) const 
-{
-  Entity_ID_List setents;
-
-  get_set_entities(setname, kind, ptype, &setents, NULL);
-  
-  return setents.size();
-}
-
-
-//---------------------------------------------------------
-// Get number of entities of type 'ptype' in set
-//---------------------------------------------------------
-unsigned int Mesh_MSTK::get_set_size(const Set_ID setid, 
-                                     const Entity_kind kind, 
-                                     const Parallel_type ptype) const 
-{
-  
-  Entity_ID_List setents;
-
-  get_set_entities(setid,kind,ptype,&setents);
-  
-  return setents.size();
 }
 
 

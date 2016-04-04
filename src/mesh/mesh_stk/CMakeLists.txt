@@ -55,7 +55,7 @@ if (BUILD_TESTS)
 
 
     # Test: stk_mesh
-    add_amanzi_test(stk_mesh test_stk_mesh
+    add_amanzi_test(stk_mesh_basis stk_mesh_basis
                     KIND unit
                     SOURCE
                           test/Main.cc
@@ -77,7 +77,7 @@ if (BUILD_TESTS)
 #  endif()
 
     # Test: stk_mesh_parallel
-    add_amanzi_test(stk_mesh_parallel test_stk_mesh_parallel
+    add_amanzi_test(stk_mesh_parallel stk_mesh_parallel
                     KIND unit
                     NPROCS 4
                     SOURCE test/Main.cc test/test_Hex.cc
@@ -85,14 +85,14 @@ if (BUILD_TESTS)
                               ${UnitTest_LIBRARIES})
      
     # Test: stk_mesh_read (serial and parallel)
-    add_amanzi_test(stk_mesh_read test_stk_mesh_read
+    add_amanzi_test(stk_mesh_read stk_mesh_read
                     KIND int
                     SOURCE test/Main.cc test/test_Read.cc
                     LINK_LIBS exodus_reader stk_mesh mesh_audit ${UnitTest_LIBRARIES})
-    add_amanzi_test(stk_mesh_read_parallel test_stk_mesh_read NPROCS 4 KIND int)
+    add_amanzi_test(stk_mesh_read_parallel stk_mesh_read NPROCS 4 KIND int)
 
     # Test: Create sets and respond to set queries
-    add_amanzi_test(stk_mesh_sets test_stk_sets
+    add_amanzi_test(stk_mesh_sets stk_mesh_sets
                     KIND int
                     SOURCE test/Main.cc test/test_Sets.cc
                     LINK_LIBS stk_mesh exodus_reader ${UnitTest_LIBRARIES})

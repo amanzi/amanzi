@@ -305,36 +305,16 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   // Epetra importer that will allow apps to import values from a
   // Epetra vector defined on all owned faces into an Epetra vector
   // defined only on exterior faces
-  
   const Epetra_Import& exterior_face_importer (void) const;
     
   //
   // Boundary Conditions or Sets
   //----------------------------
-  //
-    
-
-
-  // Get number of entities of type 'category' in set
-  unsigned int get_set_size(const Set_ID setid, 
-                            const Entity_kind kind,
-                            const Parallel_type ptype) const;
-
-  unsigned int get_set_size(const std::string setname, 
-                            const Entity_kind kind,
-                            const Parallel_type ptype) const;
-
-  unsigned int get_set_size(const char *setname, 
-                            const Entity_kind kind,
-                            const Parallel_type ptype) const;
-
 
   // Get list of entities of type 'category' in set
-  void get_set_entities(const Set_ID setid, 
-                        const Entity_kind kind, 
-                        const Parallel_type ptype, 
-                        Entity_ID_List *entids) const; 
+  using Mesh::get_set_entities;
 
+  virtual
   void get_set_entities(const std::string setname, 
                         const Entity_kind kind, 
                         const Parallel_type ptype, 
@@ -348,46 +328,43 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
              const bool move_vertical);
 
 
-
-  /// Make a cell-to-cell graph from the mesh
+  // Make a cell-to-cell graph from the mesh
   Teuchos::RCP<Epetra_CrsGraph> cellgraph(void) const;
 
-  /// Redistribute the mesh according to the specified cell map
+  // Redistribute the mesh according to the specified cell map
   void redistribute(const Epetra_Map& cellmap);
 
-  /// Repartition and redistribute the mesh according to the specified parameters
+  // Repartition and redistribute the mesh according to the specified parameters
   void redistribute(const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
 
 
-  /// Miscellaneous
-
+  // Miscellaneous
   void write_to_exodus_file(const std::string filename) const;
 
  private:
-
-  /// A list of supported entity kinds
+  // A list of supported entity kinds
   static const unsigned int num_kinds_;
   static const Entity_kind kinds_[];
 
-  /// The mesh implementation
+  // The mesh implementation
   STK::Mesh_STK_Impl_p mesh_;
 
   // Maps, Accessors and setters.
   // ----------------------------
   
-  /// A thing to relate Epetra_Maps to mesh entities
+  // A thing to relate Epetra_Maps to mesh entities
   typedef std::map< Entity_kind, Teuchos::RCP<Epetra_Map> > MapSet;
 
   MapSet map_owned_;          /**< The Epetra_Map's for owned entities */
   MapSet map_used_;           /**< The Epetra_Map's for used (owned + ghost) entities */
     
-  /// Build a mesh from a Exodus II file or file set
+  // Build a mesh from a Exodus II file or file set
   void read_exodus_(const std::string& fname);
 
-  /// Generate a mesh with a hexahedral generator
+  // Generate a mesh with a hexahedral generator
   void generate_(Data::HexMeshGenerator& generator);
 
-  /// Generate a hexahedral mesh 
+  // Generate a hexahedral mesh 
   void generate_(const unsigned int& ni, const unsigned int& nj, const unsigned int& nk,
                  const double& xorigin, 
                  const double& yorigin, 
@@ -396,18 +373,18 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
                  const double& ydelta, 
                  const double& zdelta);
 
-  /// Generate a hexahedral mesh (with specifications)
+  // Generate a hexahedral mesh (with specifications)
   void generate_(const GenerationSpec& gspec);
 
-  /// Build and store the required Epetra_Map instances
+  // Build and store the required Epetra_Map instances
   void build_maps_();
 
-  /// Get the appropriate map for the specified @c kind
+  // Get the appropriate map for the specified @c kind
   const Epetra_Map& get_map_(const Entity_kind& kind, 
                              const bool& include_ghost) const;
 
-  /// fill Mesh::tmp_setnameid_map with Cell part name/id
-  /// void fill_setnameid_map_(void);
+  // fill Mesh::tmp_setnameid_map with Cell part name/id
+  // void fill_setnameid_map_(void);
 
   // Get faces of a cell and directions in which the cell uses the face 
 
@@ -424,14 +401,12 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   // and -1 if face normal points into cell
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
-
   void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
                                          Entity_ID_List *faceids,
                                          std::vector<int> *face_dirs,
                                          const bool ordered=false) const;
 
   // Edges of a cell
-
   void cell_get_edges_internal_(const Entity_ID cellid,
                                 Entity_ID_List *edgeids) const 
   { 
@@ -440,7 +415,6 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   }
 
   // Edges and edge directions of a 2D cell
-
   void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
                                             Entity_ID_List *edgeids,
                                             std::vector<int> *edgedirs) const 
@@ -450,25 +424,22 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   }
 
   // Cells connected to a face
-
   void face_get_cells_internal_(const Entity_ID faceid, 
                                 const Parallel_type ptype,
                                 Entity_ID_List *cellids) const;
     
   // Edges and edge directions of a face
-
   void face_get_edges_and_dirs_internal_(const Entity_ID cellid,
                                          Entity_ID_List *edgeids,
                                          std::vector<int> *edgedirs,
-                                          bool ordered=true) const
+                                         bool ordered=true) const
   {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     amanzi_throw(mesg);
   };
-    
 };
 
-} // namespace AmanziMesh
-} // namespace Amanzi
+}  // namespace AmanziMesh
+}  // namespace Amanzi
 
 #endif

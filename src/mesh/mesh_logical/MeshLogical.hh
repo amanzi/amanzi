@@ -253,25 +253,10 @@ class MeshLogical : public Mesh {
   //
   // Mesh Sets for ICs, BCs, Material Properties and whatever else
   //--------------------------------------------------------------
-  //
-  // Get number of entities of type 'category' in set
-  virtual
-  unsigned int get_set_size(const Set_ID setid,
-                            const Entity_kind kind,
-                            const Parallel_type ptype) const;
-
-  virtual
-  unsigned int get_set_size(const std::string setname,
-                            const Entity_kind kind,
-                            const Parallel_type ptype) const;
-
-  virtual
-  unsigned int get_set_size(const char *setname,
-                            const Entity_kind kind,
-                            const Parallel_type ptype) const;
-
 
   // Get list of entities of type 'category' in set
+  using Mesh::get_set_entities;
+
   virtual
   void get_set_entities(const Set_ID setid,
                         const Entity_kind kind,

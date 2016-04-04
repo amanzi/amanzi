@@ -817,51 +817,6 @@ const Epetra_Import& Mesh_simple::exterior_face_importer(void) const
 }
 
 
-unsigned int Mesh_simple::get_set_size(const AmanziMesh::Set_ID set_id, 
-                                       const AmanziMesh::Entity_kind kind,
-                                       const AmanziMesh::Parallel_type ptype) const
-{
-  Entity_ID_List setents;
-  get_set_entities(set_id,kind,ptype,&setents);
-
-  return setents.size();
-}
-
-
-unsigned int Mesh_simple::get_set_size(const char *setname,
-                                       const AmanziMesh::Entity_kind kind,
-                                       const AmanziMesh::Parallel_type ptype) const
-{
-  Entity_ID_List setents;
-  get_set_entities(setname, kind, ptype, &setents, NULL);
-
-  return setents.size();
-}
-
-
-unsigned int Mesh_simple::get_set_size(const std::string setname, 
-                                       const AmanziMesh::Entity_kind kind,
-                                       const AmanziMesh::Parallel_type ptype) const
-{
-  Entity_ID_List setents;
-  get_set_entities(setname, kind, ptype, &setents, NULL);
-
-  return setents.size();
-}
-
-
-void Mesh_simple::get_set_entities(const AmanziMesh::Set_ID set_id, 
-                                   const AmanziMesh::Entity_kind kind, 
-                                   const AmanziMesh::Parallel_type ptype, 
-                                   AmanziMesh::Entity_ID_List *setents) const
-{
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
-  Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(set_id);
-
-  get_set_entities(rgn->name(), kind, ptype, setents, NULL);
-}
-
-
 void Mesh_simple::get_set_entities(const std::string setname, 
                                    const AmanziMesh::Entity_kind kind, 
                                    const AmanziMesh::Parallel_type ptype, 

@@ -586,39 +586,15 @@ MeshEmbeddedLogical::exterior_face_importer (void) const {
 //
 // Mesh Sets for ICs, BCs, Material Properties and whatever else
 //--------------------------------------------------------------
-//
-// Get number of entities of type 'category' in set
-unsigned int
-MeshEmbeddedLogical::get_set_size (const Set_ID setid,
-			   const Entity_kind kind,
-			   const Parallel_type ptype) const {
-  Entity_ID_List ents;
-  get_set_entities(setid, kind, ptype, &ents);
-  return ents.size();
-}
-
-unsigned int
-MeshEmbeddedLogical::get_set_size (const std::string setname,
-			   const Entity_kind kind,
-			   const Parallel_type ptype) const {
-  return get_set_size(geometric_model_->FindRegion(setname)->id(),kind,ptype);
-}
-
-unsigned int
-MeshEmbeddedLogical::get_set_size (const char *setname,
-			   const Entity_kind kind,
-			   const Parallel_type ptype) const {
-  std::string name(setname);
-  return get_set_size(name,kind,ptype);
-}
 
 // Get list of entities of type 'category' in set
 // FIX ME: This is probably not generic enough. --etc
+// OBSOLETE: use region name bassed routine.
 void
-MeshEmbeddedLogical::get_set_entities (const Set_ID setid,
-			       const Entity_kind kind,
-			       const Parallel_type ptype,
-			       Entity_ID_List *entids) const {
+MeshEmbeddedLogical::get_set_entities(const Set_ID setid,
+			              const Entity_kind kind,
+			              const Parallel_type ptype,
+			              Entity_ID_List *entids) const {
   Teuchos::RCP<const AmanziGeometry::Region> rgn =
       geometric_model_->FindRegion(setid);
 
@@ -634,9 +610,9 @@ MeshEmbeddedLogical::get_set_entities (const Set_ID setid,
   // ASSUMES that logical mesh is EnumeratedSets, bg mesh is all others.
   // This is bad.  --etc
   if (rgn->type() == AmanziGeometry::ENUMERATED) {
-    log_mesh_->get_set_entities(setid, kind, ptype, entids);
+    log_mesh_->get_set_entities(rgn->name(), kind, ptype, entids);
   } else {
-    bg_mesh_->get_set_entities(setid, kind, ptype, entids);
+    bg_mesh_->get_set_entities(rgn->name(), kind, ptype, entids);
 
     // shift local indices
     Entity_ID shift = num_entities(kind, ptype)
@@ -648,12 +624,13 @@ MeshEmbeddedLogical::get_set_entities (const Set_ID setid,
   return;
 }
 
+
 void
-MeshEmbeddedLogical::get_set_entities (const std::string setname,
-			       const Entity_kind kind,
-			       const Parallel_type ptype,
-			       Entity_ID_List *entids,
-                               std::vector<double> *vofs) const {
+MeshEmbeddedLogical::get_set_entities(const std::string setname,
+			              const Entity_kind kind,
+			              const Parallel_type ptype,
+			              Entity_ID_List *entids,
+                                      std::vector<double> *vofs) const {
   get_set_entities(geometric_model_->FindRegion(setname)->id(), kind, ptype, entids);
   return;
 }

@@ -65,8 +65,7 @@ void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 
   for (int lcv = 0; lcv != regions_.size(); ++lcv) {
     AmanziMesh::Entity_ID_List block;
-    std::vector<double> vofs;
-    mesh->get_set_entities(regions_[lcv], kind_, AmanziMesh::OWNED, &block, &vofs);
+    mesh->get_set_entities(regions_[lcv], kind_, AmanziMesh::OWNED, &block);
 
     for (AmanziMesh::Entity_ID_List::iterator id = block.begin(); id != block.end(); ++id) {
       // Check regions are non-overlapping
@@ -133,8 +132,7 @@ void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     const std::vector<std::string>& regs = regions[lcv]; 
     for (int r = 0; r < regs.size(); ++r) {
       AmanziMesh::Entity_ID_List block;
-      std::vector<double> vofs;
-      mesh->get_set_entities(regs[r], kind_, AmanziMesh::OWNED, &block, &vofs);
+      mesh->get_set_entities(regs[r], kind_, AmanziMesh::OWNED, &block);
 
       for (AmanziMesh::Entity_ID_List::iterator id = block.begin(); id != block.end(); ++id) {
         if ((*map_)[*id] >= 0) {

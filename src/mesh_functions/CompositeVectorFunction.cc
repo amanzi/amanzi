@@ -117,8 +117,7 @@ void CompositeVectorFunction::Compute(double time,
           if (mesh->valid_set_name(*region, AmanziMesh::FACE)) {
             // get the indices of the domain.
             AmanziMesh::Entity_ID_List id_list;
-            std::vector<double> vofs;
-            mesh->get_set_entities(*region, AmanziMesh::FACE, AmanziMesh::OWNED, &id_list, &vofs);
+            mesh->get_set_entities(*region, AmanziMesh::FACE, AmanziMesh::OWNED, &id_list);
 
             const Epetra_Map& face_map = mesh->face_map(AmanziMesh::OWNED);
             const Epetra_Map& vandelay_map = mesh->exterior_face_map(false);
@@ -155,8 +154,7 @@ void CompositeVectorFunction::Compute(double time,
           if (mesh->valid_set_name(*region, kind)) {
             // get the indices of the domain.
             AmanziMesh::Entity_ID_List id_list;
-            std::vector<double> vofs;
-            mesh->get_set_entities(*region, kind, AmanziMesh::OWNED, &id_list, &vofs);
+            mesh->get_set_entities(*region, kind, AmanziMesh::OWNED, &id_list);
 
             // loop over indices
             for (AmanziMesh::Entity_ID_List::const_iterator id=id_list.begin();

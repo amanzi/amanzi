@@ -27,7 +27,7 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-void Mesh::get_set_entities_box_vofs(
+void Mesh::get_set_entities_box_vofs_(
     Teuchos::RCP<const AmanziGeometry::Region> region,
     const Entity_kind kind, 
     const Parallel_type ptype, 
@@ -142,6 +142,46 @@ void Mesh::get_set_entities_box_vofs(
     msg << "Could not retrieve any mesh entities for set \"" << region->name() << "\".\n";
     Exceptions::amanzi_throw(msg);
   }
+}
+
+
+//---------------------------------------------------------
+// Generic implemnetation of set routines.
+//---------------------------------------------------------
+unsigned int Mesh::get_set_size(const Set_ID setid,
+                                const Entity_kind kind,
+                                const Parallel_type ptype) const 
+{
+  Entity_ID_List ents;
+  std::string setname = geometric_model()->FindRegion(setid)->name();
+
+  get_set_entities(setname, kind, ptype, &ents);
+
+  return ents.size();
+}
+
+
+unsigned int Mesh::get_set_size(const std::string setname, 
+                                const Entity_kind kind, 
+                                const Parallel_type ptype) const 
+{
+  Entity_ID_List setents;
+  std::vector<double> vofs;
+
+  get_set_entities(setname, kind, ptype, &setents, &vofs);
+  
+  return setents.size();
+}
+
+
+void Mesh::get_set_entities(const Set_ID setid, 
+                            const Entity_kind kind, 
+                            const Parallel_type ptype, 
+                            Entity_ID_List *entids) const
+{
+  std::vector<double> vofs;
+  std::string setname = geometric_model()->FindRegion(setid)->name();
+  get_set_entities(setname, kind, ptype, entids, &vofs);
 }
 
 }  // namespace AmanziMesh

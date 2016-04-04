@@ -19,7 +19,7 @@ void DataDebug::write_region_data(std::string& region_name,
                                                      AmanziMesh::CELL,
                                                      AmanziMesh::OWNED);
   AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
-  mesh_->get_set_entities(region_name, AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED, &cell_ids, NULL);
+  mesh_->get_set_entities(region_name, AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED, &cell_ids);
   
   std::cerr << "Printing " << description << " on region " << region_name << std::endl;
   for(AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin(); c != cell_ids.end(); ++c) {
@@ -40,7 +40,7 @@ void DataDebug::write_region_statistics(std::string& region_name,
                                                      AmanziMesh::CELL,
                                                      AmanziMesh::OWNED);
   AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
-  mesh_->get_set_entities(region_name, AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED, &cell_ids, NULL);
+  mesh_->get_set_entities(region_name, AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED, &cell_ids);
   
   // find min and max and their indices
   int max_index(0), min_index(0);

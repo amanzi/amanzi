@@ -103,8 +103,7 @@ void Visualization::WriteRegions() {
         // for a region that consists of cells
         if (mesh_->valid_set_name(*reg_it, AmanziMesh::CELL)) {
           AmanziMesh::Entity_ID_List ids;
-          std::vector<double> vofs;
-          mesh_->get_set_entities(*reg_it, AmanziMesh::CELL, AmanziMesh::OWNED, &ids, &vofs);
+          mesh_->get_set_entities(*reg_it, AmanziMesh::CELL, AmanziMesh::OWNED, &ids);
 
           for (AmanziMesh::Entity_ID_List::const_iterator it = ids.begin(); it != ids.end(); ++it) {
             reg[0][*it] = reg_index;

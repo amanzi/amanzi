@@ -137,8 +137,7 @@ void Observable::Update_(const State& S,
 
     AmanziMesh::Entity_kind entity = vec->Location(location_);
     AmanziMesh::Entity_ID_List ids;
-    std::vector<double> vofs;
-    vec->Mesh()->get_set_entities(region_, entity, AmanziMesh::OWNED, &ids, &vofs);
+    vec->Mesh()->get_set_entities(region_, entity, AmanziMesh::OWNED, &ids);
 
     double value(0.);
     if (functional_ == "Observation Data: Minimum") {

@@ -11,14 +11,13 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-
 // -----------------------------------------------------------------------------
 // Constructor: instantiates base MSTK mesh, generates new nodal coordiantes,
 //              fixes faces, and makes maps.
 // -----------------------------------------------------------------------------
-MeshColumn::MeshColumn (const Mesh& inmesh,
-                        const int column_id, 
-                        const Teuchos::RCP<const VerboseObject>& vo) :
+MeshColumn::MeshColumn(const Mesh& inmesh,
+                       const int column_id, 
+                       const Teuchos::RCP<const VerboseObject>& vo) :
     Mesh(vo, true, false),
     parent_mesh_(inmesh),
     column_id_(column_id),
@@ -43,7 +42,7 @@ MeshColumn::MeshColumn (const Mesh& inmesh,
 }
 
 
-MeshColumn::~MeshColumn () {
+MeshColumn::~MeshColumn() {
   if (face_map_) delete face_map_;
   if (exterior_face_map_) delete exterior_face_map_;
   if (exterior_face_importer_) delete exterior_face_importer_;  
@@ -117,16 +116,17 @@ void MeshColumn::compute_special_node_coordinates_() {
   // Set the mesh coordinates
   for (int n=0; n!=nnodes; ++n)
     node_set_coordinates(n, node_coordinates[n]);
-  
 }
 
 
+// -----------------------------------------------------------------------------
 // Build Epetra_maps indicating the distribution of entities across
 // processors and their dependencies (through global IDs).
 //
 // In this case since the columns are all on one processor, the map is
 // just a contiguous sequence of numbers and the comm_unicator is a serial
 // comm_unicator
+// -----------------------------------------------------------------------------
 void MeshColumn::build_epetra_maps_() {
   Epetra_SerialComm epcomm_;
   int indexBase = 0;
@@ -140,10 +140,7 @@ void MeshColumn::build_epetra_maps_() {
 
   exterior_face_map_ = new Epetra_Map(-1, 2, &ext_gids[0], 0, *get_comm());
   exterior_face_importer_ = new Epetra_Import(*exterior_face_map_, *face_map_);
-  
 }
 
-
-
-} // close namespace AmanziMesh
-} // close namespace Amanzi
+}  // namespace AmanziMesh
+}  // namespace Amanzi

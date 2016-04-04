@@ -93,7 +93,6 @@ class LinearOperator : public Matrix {
  private:
   LinearOperator();
   LinearOperator(const LinearOperator<Matrix,Vector,VectorSpace>& other); // specifically not implemented
-
 };
 
 }  // namespace AmanziSolvers

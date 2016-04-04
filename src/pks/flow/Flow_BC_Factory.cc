@@ -463,8 +463,7 @@ void FlowBCFactory::PopulateSubmodelFlag(
   int nregions = regions.size();
   for (int n = 0; n < nregions; n++) {
     AmanziMesh::Entity_ID_List faces;
-    std::vector<double> vofs;
-    mesh_->get_set_entities(regions[n], AmanziMesh::FACE, AmanziMesh::OWNED, &faces, &vofs);
+    mesh_->get_set_entities(regions[n], AmanziMesh::FACE, AmanziMesh::OWNED, &faces);
 
     int nfaces = faces.size();
     for (int m = 0; m < nfaces; m++) {

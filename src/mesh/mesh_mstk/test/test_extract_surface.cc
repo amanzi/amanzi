@@ -286,7 +286,7 @@ TEST(Extract_Surface_MSTK3)
 
   Amanzi::AmanziMesh::Entity_ID_List setents;
   surfmesh.get_set_entities("Side Surface",Amanzi::AmanziMesh::FACE,
-                            Amanzi::AmanziMesh::OWNED,&setents,NULL);
+                            Amanzi::AmanziMesh::OWNED,&setents);
 
   CHECK(setents.size() != 0);
 
@@ -418,7 +418,7 @@ TEST(Extract_Surface_MSTK4)
   delete [] found;
 
   Amanzi::AmanziMesh::Entity_ID_List setents;  
-  surfmesh2D.get_set_entities("Top Surface 2D",Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents,NULL);
+  surfmesh2D.get_set_entities("Top Surface 2D",Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
   
   Amanzi::AmanziMesh::Entity_ID expents[4] = {11,21,30,39};
   double exp_centroid[4][2] = {{0.125,1.0},{0.375,1.0},{0.625,1.0},{0.875,1.0}};

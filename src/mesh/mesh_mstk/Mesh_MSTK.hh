@@ -16,10 +16,9 @@
 #include "errors.hh"
 #include "VerboseObject.hh"
 
-namespace Amanzi 
-{
-namespace AmanziMesh 
-{
+namespace Amanzi {
+
+namespace AmanziMesh {
 
 // Mesh class based on the MSTK framework. 
 //
@@ -288,25 +287,10 @@ class Mesh_MSTK : public Mesh {
   // Boundary Conditions or Sets
   //----------------------------
     
-  // Get number of entities of type 'category' in set
-  unsigned int get_set_size(const Set_ID setid, 
-			    const Entity_kind kind,
-			    const Parallel_type ptype) const;
-
-  unsigned int get_set_size(const std::string setname, 
-			    const Entity_kind kind,
-			    const Parallel_type ptype) const;
-
-  unsigned int get_set_size(const char *setname, 
-			    const Entity_kind kind,
-			    const Parallel_type ptype) const;
-
   // Get list of entities of type 'category' in set
-  void get_set_entities(const Set_ID setid, 
-                        const Entity_kind kind, 
-                        const Parallel_type ptype, 
-			Entity_ID_List *entids) const; 
+  using Mesh::get_set_entities;
 
+  virtual
   void get_set_entities(const std::string setname, 
                         const Entity_kind kind, 
                         const Parallel_type ptype, 
@@ -331,7 +315,6 @@ class Mesh_MSTK : public Mesh {
   // *Loosely* speaking, change the '1' constants to influence the weighting
   // of different criteria and the '2' constants to influence how tightly
   // the criteria are adhered
-
   int deform(const std::vector<double>& target_cell_volumes_in, 
              const std::vector<double>& min_cell_volumes_in, 
              const Entity_ID_List& fixed_nodes,

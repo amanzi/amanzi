@@ -468,8 +468,7 @@ demoMeshLogicalYEmbedded() {
   Teuchos::RCP<Mesh_MSTK> m_bg =
     Teuchos::rcp(new Mesh_MSTK(X0[0], X0[1],X0[2], X1[0], X1[1], X1[2],
 			       nx, ny, nz, &comm_,
-            m_log->geometric_model(), Teuchos::null, true, false));
-
+                               m_log->geometric_model(), Teuchos::null, true, false));
 
   // make the new connections, 1 per logical cell
   int ncells_log = m_log->num_entities(CELL, USED);
@@ -485,8 +484,8 @@ demoMeshLogicalYEmbedded() {
   // cross-sectional areas and lengths given by root class
   // relatively made up numbers, this could be done formally if we wanted to.
   Entity_ID_List coarse_roots, fine_roots;
-  m_log->get_set_entities("coarse_root", CELL, USED, &coarse_roots, NULL);
-  m_log->get_set_entities("fine_root", CELL, USED, &fine_roots, NULL);
+  m_log->get_set_entities("coarse_root", CELL, USED, &coarse_roots);
+  m_log->get_set_entities("fine_root", CELL, USED, &fine_roots);
   
   std::vector<std::vector<double> > face_cell_lengths(ncells_log);
   std::vector<AmanziGeometry::Point> face_area_normals(ncells_log);

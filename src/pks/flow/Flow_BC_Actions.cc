@@ -69,12 +69,11 @@ void Flow_PK::CalculateShiftWaterTable(const std::string region)
 
   AmanziMesh::Entity_ID_List cells, faces, ss_faces;
   AmanziMesh::Entity_ID_List nodes1, nodes2, common_nodes;
-  std::vector<double> vofs;
 
   AmanziGeometry::Point p1(dim), p2(dim), p3(dim);
   std::vector<AmanziGeometry::Point> edges;
 
-  mesh_->get_set_entities(region, AmanziMesh::FACE, AmanziMesh::OWNED, &ss_faces, &vofs);
+  mesh_->get_set_entities(region, AmanziMesh::FACE, AmanziMesh::OWNED, &ss_faces);
   int n = ss_faces.size();
 
   for (int i = 0; i < n; i++) {
