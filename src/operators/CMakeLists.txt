@@ -181,6 +181,7 @@ if ( BUILD_TESTS )
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion.cc
                                         test/operator_diffusion_nodal.cc
+                                        test/operator_diffusion_edges.cc
                                         test/operator_diffusion_divk.cc
                                         test/operator_diffusion_nonsymmetric.cc
                                         test/operator_diffusion_nlfv.cc

@@ -282,7 +282,6 @@ TEST(SETS) {
     }
     else if (shape == "Region: Color Function") {
 
-
       // Do we have a valid set by this name
             
       CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
@@ -308,9 +307,7 @@ TEST(SETS) {
       mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED,&setents);
             
       CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);	  
-                        
     }
   }
-
 }
 }

@@ -429,5 +429,5 @@ TEST(Extract_Surface_MSTK4)
     CHECK_CLOSE(exp_centroid[k][0],centroid1[0],1.0e-10);
     CHECK_CLOSE(exp_centroid[k][1],centroid1[1],1.0e-10);
   } 
-
 }
+

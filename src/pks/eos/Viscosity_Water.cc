@@ -52,7 +52,7 @@ double Viscosity_Water::DViscosityDT(double T) {
   double dT = kT1_ - T;
   double xi;
 
-  Errors::Message message("EOS Visc Water: derivative not implemented");
+  Errors::Message message("EOS viscoty of water: derivative not implemented");
   Exceptions::amanzi_throw(message);
   return -1.0;
 };

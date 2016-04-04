@@ -24,9 +24,9 @@ namespace AmanziGeometry {
 // Constructor
 // -------------------------------------------------------------
 RegionBox::RegionBox(const std::string& name,
-		     const Set_ID id,
+                     const Set_ID id,
                      const Point& p0,
-		     const Point& p1,
+                     const Point& p1,
                      const LifeCycleType lifecycle)
   : Region(name, id, true, BOX, p0.dim(), p0.dim(), lifecycle),
     p0_(p0),
@@ -35,7 +35,7 @@ RegionBox::RegionBox(const std::string& name,
   if (p0_.dim() != p1_.dim()) {
     Errors::Message msg;
     msg << "Mismatch in dimensions of corner points of RegionBox \""
-	<< Region::name() << "\"";
+        << Region::name() << "\"";
     Exceptions::amanzi_throw(msg);
   }
   
@@ -79,7 +79,7 @@ RegionBox::inside(const Point& p) const
   if (p.dim() != p0_.dim()) {
     Errors::Message msg;
     msg << "Mismatch in corner dimension of RegionBox \""
-	<< name() << "\" and query point.";
+        << name() << "\" and query point.";
     Exceptions::amanzi_throw(msg);
   }
 #endif

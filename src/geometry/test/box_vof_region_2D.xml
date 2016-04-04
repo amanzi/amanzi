@@ -1,0 +1,8 @@
+<ParameterList name="Regions">
+  <ParameterList name="Top Section">
+    <ParameterList name="Region: Box Volume Fractions">
+      <Parameter name="corner coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+      <Parameter name="opposite corner coordinate" type="Array(double)" value="{1.0, 1.0}"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

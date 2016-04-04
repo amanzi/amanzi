@@ -82,7 +82,7 @@ int TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const
     CompositeVector& yN = *(*yN_tv)->Data();
     int m = 0;
     for (TreeVector::const_iterator xM_tv=X.begin();
-	 xM_tv!=X.end(); ++xM_tv, ++m) {
+         xM_tv!=X.end(); ++xM_tv, ++m) {
       if (blocks_[n][m] != Teuchos::null) {
         ierr |= blocks_[n][m]->Apply(*(*xM_tv)->Data(), yN, 1.0);
       }

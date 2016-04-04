@@ -27,8 +27,8 @@ class RegionAll : public Region {
 public:
 
   RegionAll(const std::string& name,
-	    const Set_ID id,
-	    const LifeCycleType lifecycle=PERMANENT);
+            const Set_ID id,
+            const LifeCycleType lifecycle=PERMANENT);
 
   // Is the the specified point inside this region
   bool inside(const Point& p) const;

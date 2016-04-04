@@ -135,11 +135,13 @@ code development and its daily usage in reasearch.
   * Names of chemical species (inside fixed keywords) should be capitalized. Examples: *CO2*, *H+*.
 
   * A few well-established abbreviations. Their complete list is here: *PK*, *MPC*, *BDF1*, *EOS*,
-    *IEM, *PFloTran*, *pH*. Not that names of linear and nonlinear solvers and preconditioners are 
-    not included in this list. Thus, we have to use *pcg*, *gmres*, *nka*, *jfnk*, *amg*, *ml*, and *ilu*
+    *IEM*, *PFloTran*, *pH*. Note that names of linear and nonlinear solvers and preconditioners are 
+    not included in this list. Thus, we have to use *pcg*, *gmres*, *nka*, *jfnk*, *amg*, *ml*, and *ilu*.
+
+  * Units such as energy [J] and temperature [K].
 
   * Trilinos *VerbosityObject* for historical reasons. There are a few other camel-case parameters that
-    required by Trilinos and therefore outside of our control.
+    go directly to Trilinos and therefore outside of our control.
 
 
 Verbose output
@@ -4596,7 +4598,7 @@ region, and returns the complement to it within the domain *Entire Domain*.
 Currently, multi-region booleans are not supported in the same expression.
 
 * `"operation`" [string] defines operation on the list of regions.
-  Availale options are *Union*, *Intersection*, *Subtraction*, *Complement*
+  Availale options are *union*, *intersect*, *subtract*, *complement*
 
 * `"regions`" [Array(string)] specifies the list of involved regions.
 
@@ -4604,7 +4606,7 @@ Currently, multi-region booleans are not supported in the same expression.
 
   <ParameterList name="Lower Layers">
     <ParameterList name="Region: Logical">
-      <Parameter name="operation" type="string" value="Union"/>
+      <Parameter name="operation" type="string" value="union"/>
       <Parameter name="regions" type="Array(string)" value="{Middle1, Middle2, Bottom}"/>
     </ParameterList>
   </ParameterList>
@@ -4660,7 +4662,7 @@ they are equivalent to rectangles on a plane or segments on a line.
 .. code-block:: xml
 
    <ParameterList name="Basin">  <!-- parent list -->
-     <ParameterList name="Region: Box Volume Fraction">
+     <ParameterList name="Region: Box Volume Fractions">
        <Parameter name="corner coordinate" type="Array(double)" value="{-1.0,-1.0, 1.0}"/>
        <Parameter name="opposite corner coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
        <Parameter name="normals" type="Array(double)" value="{1.0, 0.0, 0.0

@@ -38,12 +38,12 @@ double EOS_IdealGas::DMolarDensityDp(double T, double p) {
 
 void EOS_IdealGas::InitializeFromPlist_()
 {
-  R_ = eos_plist_.get<double>("Ideal gas constant [J/mol-K]", 8.3144621);
+  R_ = eos_plist_.get<double>("ideal gas constant [J/mol-K]", 8.3144621);
 
-  if (eos_plist_.isParameter("Molar mass of gas [kg/mol]")) {
-    M_ = eos_plist_.get<double>("Molar mass of gas [kg/mol]");
+  if (eos_plist_.isParameter("molar mass of gas [kg/mol]")) {
+    M_ = eos_plist_.get<double>("molar mass of gas [kg/mol]");
   } else {
-    M_ = eos_plist_.get<double>("Molar mass of gas [g/mol]", 28.956)*1e-3;
+    M_ = eos_plist_.get<double>("molar mass of gas [g/mol]", 28.956)*1e-3;
   }
 };
  

@@ -1,6 +1,16 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef _MESH_SIMPLE_H_
-#define _MESH_SIMPLE_H_
+/*
+  Mesh
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Implementation of simple mesh.
+*/
+
+#ifndef AMANZI_MESH_SIMPLE_HH_
+#define AMANZI_MESH_SIMPLE_HH_
 
 #include <Epetra_Map.h>
 #include <Epetra_MpiComm.h>
@@ -22,9 +32,7 @@ namespace AmanziMesh {
 class GenerationSpec;
 
 class Mesh_simple : public virtual Mesh {
-      
-public:
-      
+ public:
   // the request_faces and request_edges arguments have to be at the
   // end and not in the middle because if we omit them and specify a
   // pointer argument like gm or verbosity_obj, then there is implicit
@@ -32,7 +40,6 @@ public:
   // of the call and making the pointer argument seem NULL. In C++11,
   // we could "delete" the illegal version of the call effectively
   // blocking the implicit conversion.
-  
   Mesh_simple(double x0, double y0, double z0,
               double x1, double y1, double z1,
               int nx, int ny, int nz, const Epetra_MpiComm *comm_unicator,
@@ -68,7 +75,6 @@ public:
   // mesh, constructor can be asked to "flatten" the mesh to a lower
   // dimensional space or to extrude the mesh to give higher
   // dimensional cells
-
   Mesh_simple(const Mesh *inmesh,
               const std::vector<std::string>& setnames,
               const Entity_kind setkind,
@@ -99,7 +105,6 @@ public:
 
 
   // Get parallel type of entity
-    
   Parallel_type entity_get_ptype(const Entity_kind kind, 
                                  const Entity_ID entid) const;
 
@@ -108,7 +113,6 @@ public:
     
   Cell_type cell_get_type(const Entity_ID cellid) const;
         
-   
   //
   // General mesh information
   // -------------------------
@@ -116,25 +120,20 @@ public:
     
   // Number of entities of any kind (cell, face, node) and in a
   // particular category (OWNED, GHOST, USED)
-    
   unsigned int num_entities(const Entity_kind kind,
                             const Parallel_type ptype) const;
     
     
   // Global ID of any entity
-    
   Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const;
-    
     
     
   //
   // Mesh Entity Adjacencies 
   //-------------------------
 
-
   // Downward Adjacencies
   //---------------------
-    
     
   // Get nodes of cell 
   // On a distributed mesh, all nodes (OWNED or GHOST) of the cell 
@@ -145,7 +144,6 @@ public:
   // arbitrary order
   // In 2D, the nodes of the polygon will be returned in ccw order 
   // consistent with the face normal
-    
   void cell_get_nodes(const Entity_ID cellid, 
                       std::vector<Entity_ID> *nodeids) const;
     
@@ -156,13 +154,11 @@ public:
   // In 3D, the nodes of the face are returned in ccw order consistent
   // with the face normal
   // In 2D, nfnodes is 2
-    
   void face_get_nodes(const Entity_ID faceid, 
                       std::vector<Entity_ID> *nodeids) const;
     
 
   // Get nodes of edge
-
   void edge_get_nodes(const Entity_ID edgeid, Entity_ID *nodeid0,
                       Entity_ID *nodeid1) const {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
@@ -173,20 +169,17 @@ public:
   //-------------------
     
   // Cells of type 'ptype' connected to a node
-    
   void node_get_cells(const Entity_ID nodeid, 
                       const Parallel_type ptype,
                       std::vector<Entity_ID> *cellids) const;
     
   // Faces of type 'ptype' connected to a node
-    
   void node_get_faces(const Entity_ID nodeid, 
                       const Parallel_type ptype,
                       std::vector<Entity_ID> *faceids) const;
     
   // Get faces of ptype of a particular cell that are connected to the
   // given node
-    
   void node_get_cell_faces(const Entity_ID nodeid, 
                            const Entity_ID cellid,
                            const Parallel_type ptype,
@@ -203,7 +196,6 @@ public:
   // guaranteed in general except when ptype = USED, in which case
   // the cellids will correcpond to cells across the respective
   // faces given by cell_get_faces
-
   void cell_get_face_adj_cells(const Entity_ID cellid,
                                const Parallel_type ptype,
                                std::vector<Entity_ID> *fadj_cellids) const;
@@ -211,7 +203,6 @@ public:
   // Node connected neighboring cells of given cell
   // (a hex in a structured mesh has 26 node connected neighbors)
   // The cells are returned in no particular order
-
   void cell_get_node_adj_cells(const Entity_ID cellid,
                                const Parallel_type ptype,
                                std::vector<Entity_ID> *nadj_cellids) const;
@@ -219,18 +210,15 @@ public:
     
   //
   // Mesh entity geometry
-  //--------------
-  //
+  //---------------------
     
   // Node coordinates - 3 in 3D and 2 in 2D
-    
   void node_get_coordinates(const Entity_ID nodeid, 
                             AmanziGeometry::Point *ncoord) const;
     
     
   // Face coordinates - conventions same as face_to_nodes call 
   // Number of nodes is the vector size divided by number of spatial dimensions
-    
   void face_get_coordinates(const Entity_ID faceid, 
                             std::vector<AmanziGeometry::Point> *fcoords) const; 
     
@@ -239,12 +227,10 @@ public:
   // For a general polyhedron this will return the node coordinates in
   // arbitrary order
   // Number of nodes is vector size divided by number of spatial dimensions
-    
   void cell_get_coordinates(const Entity_ID cellid, 
                             std::vector<AmanziGeometry::Point> *ccoords) const;
     
   // Modify the coordinates of a node
-
   void node_set_coordinates(const Entity_ID nodeid, const AmanziGeometry::Point coords);
 
   void node_set_coordinates(const Entity_ID nodeid, const double *coords);
@@ -265,48 +251,25 @@ public:
   // Epetra importer that will allow apps to import values from a
   // Epetra vector defined on all owned faces into an Epetra vector
   // defined only on exterior faces
-  
   const Epetra_Import& exterior_face_importer(void) const;
     
     
   //
   // Boundary Conditions or Sets
   //----------------------------
-  //
     
-
-  // Get number of entities of type 'category' in set
-
-  unsigned int get_set_size(const Set_ID setid, 
-                            const Entity_kind kind,
-                            const Parallel_type ptype) const;
-
-
-  unsigned int get_set_size(const std::string setname, 
-                            const Entity_kind kind,
-                            const Parallel_type ptype) const;
-
-  unsigned int get_set_size(const char *setname, 
-                            const Entity_kind kind,
-                            const Parallel_type ptype) const;
-
-
   // Get list of entities of type 'category' in set
+  using Mesh::get_set_entities;
 
-  void get_set_entities(const Set_ID setid, 
-                        const Entity_kind kind, 
-                        const Parallel_type ptype, 
-                        Entity_ID_List *entids) const; 
-
+  virtual
   void get_set_entities(const std::string setname, 
                         const Entity_kind kind, 
                         const Parallel_type ptype, 
                         Entity_ID_List *entids,
-                        std::vector<double> *vofs = NULL) const;
+                        std::vector<double> *vofs) const;
 
 
   // Miscellaneous
-
   void write_to_exodus_file(const std::string filename) const;
 
 
@@ -316,18 +279,16 @@ public:
                       double* source_begin, double* source_end);
 
 
-
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If
   // move_vertical = true, nodes will be allowed to move only in the
   // vertical direction (right now arbitrary node movement is not allowed)
-  
   int deform(const std::vector<double>& target_cell_volumes__in, 
              const std::vector<double>& min_cell_volumes__in, 
              const Entity_ID_List& fixed_nodes,
              const bool move_vertical);  
 
-private:
+ private:
   void generate_(const GenerationSpec& g);
   void update_internals_();
   void clear_internals_();
@@ -394,14 +355,12 @@ private:
                                          const bool ordered=false) const;
 
   // Cells connected to a face
-    
   void face_get_cells_internal_(const Entity_ID faceid, 
                                 const Parallel_type ptype,
                                 std::vector<Entity_ID> *cellids) const;
 
 
   // Edges of a cell
-
   void cell_get_edges_internal_(const Entity_ID cellid,
                                 Entity_ID_List *edgeids) const 
   { 
@@ -410,7 +369,6 @@ private:
   }
 
   // Edges and directions of a 2D cell
-
   void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
                                             Entity_ID_List *edgeids,
                                             std::vector<int> *edgedirs) const 
@@ -420,7 +378,6 @@ private:
   }
 
   // Edges and edge directions of a face
-
   void face_get_edges_and_dirs_internal_(const Entity_ID cellid,
                                          Entity_ID_List *edgeids,
                                          std::vector<int> *edgedirs,
@@ -432,38 +389,37 @@ private:
 };
 
 
-  // -------------------------
-  // Template & inline members
-  // ------------------------
+// -------------------------
+// Template & inline members
+// ------------------------
 
+unsigned int Mesh_simple::node_index_(int i, int j, int k) const
+{
+  return i + j*(nx_+1) + k*(nx_+1)*(ny_+1);
+}
 
-  unsigned int Mesh_simple::node_index_(int i, int j, int k) const
-  {
-    return i + j*(nx_+1) + k*(nx_+1)*(ny_+1);
-  }
+unsigned int Mesh_simple::cell_index_(int i, int j, int k) const
+{
+  return i + j*nx_ + k*nx_*ny_;
+}
 
-  unsigned int Mesh_simple::cell_index_(int i, int j, int k) const
-  {
-    return i + j*nx_ + k*nx_*ny_;
-  }
+unsigned int Mesh_simple::xyface_index_(int i, int j, int k) const
+{
+  return i + j*nx_ + k*nx_*ny_;
+}
 
-  unsigned int Mesh_simple::xyface_index_(int i, int j, int k) const
-  {
-    return i + j*nx_ + k*nx_*ny_;
-  }
+unsigned int Mesh_simple::xzface_index_(int i, int j, int k) const
+{
+  return i + j*nx_ + k*nx_*(ny_+1) + xyface_index_(0,0,nz_+1);
+}
 
-  unsigned int Mesh_simple::xzface_index_(int i, int j, int k) const
-  {
-    return i + j*nx_ + k*nx_*(ny_+1) +  xyface_index_(0,0,nz_+1);
-  }
+unsigned int Mesh_simple::yzface_index_(int i, int j, int k) const
+{
+  return i + j*(nx_+1) + k*(nx_+1)*ny_ + xzface_index_(0,0,nz_);
+}
 
-  unsigned int Mesh_simple::yzface_index_(int i, int j, int k) const
-  {
-    return i + j*(nx_+1) + k*(nx_+1)*ny_ + xzface_index_(0,0,nz_);
-  }
-
-} // namespace AmanziMesh
-} // namespace Amanzi
+}  // namespace AmanziMesh
+}  // namespace Amanzi
 
 #endif
 

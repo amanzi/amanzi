@@ -37,6 +37,7 @@
 
 #include <memory>
 #include <vector>
+#include <string>
 
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_Map.h"
@@ -48,15 +49,14 @@
 #include "errors.hh"
 
 #include "Region.hh"
+#include "Mesh.hh"
 #include "Mesh_MSTK.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
 
 class MeshColumn : public Mesh {
-
  public:
-
   MeshColumn(const Mesh& inmesh,
              const int column_id,
              const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null);
@@ -347,51 +347,16 @@ class MeshColumn : public Mesh {
   //
   // Mesh Sets for ICs, BCs, Material Properties and whatever else
   //--------------------------------------------------------------
-  //
-
-  // Get number of entities of type 'category' in set
-  virtual
-  unsigned int get_set_size(const Set_ID setid,
-                            const Entity_kind kind,
-                            const Parallel_type ptype) const {
-
-    return get_set_size(set_name_from_id(setid), kind, ptype);
-  }
-
-
-  virtual
-  unsigned int get_set_size(const std::string setname,
-                            const Entity_kind kind,
-                            const Parallel_type ptype) const {
-    Entity_ID_List ents;
-    get_set_entities(setname, kind, ptype, &ents);
-    return ents.size();
-  }
-
-  virtual
-  unsigned int get_set_size(const char *setname,
-                            const Entity_kind kind,
-                            const Parallel_type ptype) const {
-    std::string setname1(setname);
-    return get_set_size(setname1,kind,ptype);
-  }
-
 
   // Get list of entities of type 'category' in set
-  virtual
-  void get_set_entities(const Set_ID setid,
-                        const Entity_kind kind,
-                        const Parallel_type ptype,
-                        Entity_ID_List *entids) const {
-    get_set_entities(set_name_from_id(setid), kind, ptype, entids);
-  }
+  using Mesh::get_set_entities;
 
   virtual
   void get_set_entities(const std::string setname,
                         const Entity_kind kind,
                         const Parallel_type ptype,
                         Entity_ID_List *entids,
-                        std::vector<double> *vofs = NULL) const {
+                        std::vector<double> *vofs) const {
     switch (kind) {
       case FACE: {
         Entity_ID_List faces;
@@ -498,9 +463,7 @@ class MeshColumn : public Mesh {
   void build_epetra_maps_();
   void compute_special_node_coordinates_();
 
-
  protected:
-
   Mesh const& parent_mesh_;
   Mesh_MSTK extracted_;
   int nfnodes_;

@@ -82,14 +82,16 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
 
   AmanziMesh::Entity_ID_List block;
-  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  std::vector<double> vofs;
+
+  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K[0][c] = 0.1;
     K[1][c] = 2.0;
   }
 
-  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K[0][c] = 0.5;
@@ -210,7 +212,9 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
   
   AmanziMesh::Entity_ID_List block;
-  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  std::vector<double> vofs;
+
+  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K[0][c] = 0.1;
@@ -218,7 +222,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
     K[2][c] = 2.0;
   }
 
-  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K[0][c] = 0.5;
@@ -242,11 +246,11 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
     p[0][c] = xc[2] * (xc[2] + 2.0) * (xc[1] + 1.0) * (xc[0] - 1.0);
   }
 
-  /* initialize the Darcy process kernel */
+  // initialize the Darcy process kernel
   DPK->Initialize(S.ptr());
   S->CheckAllFieldsInitialized();
 
-  /* transient solution */
+  // transient solution
   double t_old(0.0), t_new, dt(0.1);
   for (int n = 0; n < 5; n++) {
     t_new = t_old + dt;

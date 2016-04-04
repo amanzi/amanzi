@@ -205,15 +205,17 @@ MeshLogical::operator==(const MeshLogical& other) {
 // Get parallel type of entity - OWNED, GHOST, USED (See MeshDefs.hh)
 Parallel_type
 MeshLogical::entity_get_ptype(const Entity_kind kind,
-        const Entity_ID entid) const {
+                              const Entity_ID entid) const {
   return OWNED;
 }
+
 
 // Parent entity in the source mesh if mesh was derived from another mesh
 Entity_ID
 MeshLogical::entity_get_parent(const Entity_kind kind, const Entity_ID entid) const {
   return -1;
 }
+
 
 // Get cell type - UNKNOWN, TRI, QUAD, POLYGON, TET, PRISM, PYRAMID, HEX, POLYHED
 // See MeshDefs.hh
@@ -230,10 +232,11 @@ MeshLogical::cell_get_type(const Entity_ID cellid) const {
 // Number of entities of any kind (cell, face, node) and in a
 // particular category (OWNED, GHOST, USED)
 unsigned int
-MeshLogical::num_entities (const Entity_kind kind,
-                           const Parallel_type ptype) const {
+MeshLogical::num_entities(const Entity_kind kind,
+                          const Parallel_type ptype) const {
   return num_entities_.at(kind);
 }
+
 
 // Global ID of any entity
 Entity_ID
@@ -245,12 +248,14 @@ MeshLogical::GID(const Entity_ID lid, const Entity_kind kind) const {
 //
 // Mesh Entity Adjacencies
 //-------------------------
+
 // Downward Adjacencies
 //---------------------
+
 // Get nodes of a cell
 void
-MeshLogical::cell_get_nodes (const Entity_ID cellid,
-                             Entity_ID_List *nodeids) const {
+MeshLogical::cell_get_nodes(const Entity_ID cellid,
+                            Entity_ID_List *nodeids) const {
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -258,10 +263,11 @@ MeshLogical::cell_get_nodes (const Entity_ID cellid,
 
 // Get the bisectors, i.e. vectors from cell centroid to face centroids.
 void
-MeshLogical::cell_get_faces_and_bisectors (const Entity_ID cellid,
-        Entity_ID_List *faceids,
-        std::vector<AmanziGeometry::Point> *bisectors,
-        const bool ordered) const {
+MeshLogical::cell_get_faces_and_bisectors(
+    const Entity_ID cellid,
+    Entity_ID_List *faceids,
+    std::vector<AmanziGeometry::Point> *bisectors,
+    const bool ordered) const {
   if (faceids) *faceids = cell_face_ids_[cellid];
   if (bisectors) *bisectors = cell_face_bisectors_[cellid];
 }
@@ -274,8 +280,8 @@ MeshLogical::cell_get_faces_and_bisectors (const Entity_ID cellid,
 // with the face normal
 // In 2D, nfnodes is 2
 void
-MeshLogical::face_get_nodes (const Entity_ID faceid,
-                             Entity_ID_List *nodeids) const {
+MeshLogical::face_get_nodes(const Entity_ID faceid,
+                            Entity_ID_List *nodeids) const {
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -283,11 +289,12 @@ MeshLogical::face_get_nodes (const Entity_ID faceid,
 
 // Get nodes of edge
 void
-MeshLogical::edge_get_nodes (const Entity_ID edgeid,
-                             Entity_ID *nodeid0, Entity_ID *nodeid1) const {
+MeshLogical::edge_get_nodes(const Entity_ID edgeid,
+                            Entity_ID *nodeid0, Entity_ID *nodeid1) const {
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
+
 
 // Upward adjacencies
 //-------------------
@@ -296,35 +303,38 @@ MeshLogical::edge_get_nodes (const Entity_ID edgeid,
 // not guaranteed to be the same for corresponding nodes on
 // different processors
 void
-MeshLogical::node_get_cells (const Entity_ID nodeid,
-                             const Parallel_type ptype,
-                             Entity_ID_List *cellids) const {
+MeshLogical::node_get_cells(const Entity_ID nodeid,
+                            const Parallel_type ptype,
+                            Entity_ID_List *cellids) const {
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
+
 
 // Faces of type 'ptype' connected to a node - The order of faces is
 // not guarnateed to be the same for corresponding nodes on
 // different processors
 void
-MeshLogical::node_get_faces (const Entity_ID nodeid,
-                             const Parallel_type ptype,
-                             Entity_ID_List *faceids) const {
+MeshLogical::node_get_faces(const Entity_ID nodeid,
+                            const Parallel_type ptype,
+                            Entity_ID_List *faceids) const {
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
+
 
 // Get faces of ptype of a particular cell that are connected to the
 // given node - The order of faces is not guarnateed to be the same
 // for corresponding nodes on different processors
 void
-MeshLogical::node_get_cell_faces (const Entity_ID nodeid,
-        const Entity_ID cellid,
-        const Parallel_type ptype,
-        Entity_ID_List *faceids) const {
+MeshLogical::node_get_cell_faces(const Entity_ID nodeid,
+                                 const Entity_ID cellid,
+                                 const Parallel_type ptype,
+                                 Entity_ID_List *faceids) const {
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
+
 
 // Same level adjacencies
 //-----------------------
@@ -338,31 +348,33 @@ MeshLogical::node_get_cell_faces (const Entity_ID nodeid,
 // faces given by cell_get_faces
 void
 MeshLogical::cell_get_face_adj_cells(const Entity_ID cellid,
-        const Parallel_type ptype,
-        Entity_ID_List *fadj_cellids) const {
+                                     const Parallel_type ptype,
+                                     Entity_ID_List *fadj_cellids) const {
   Errors::Message mesg("Not implemented."); // this could be implemented, just not sure we need it yet. --etc
   Exceptions::amanzi_throw(mesg);
 }
+
 
 // Node connected neighboring cells of given cell
 // (a hex in a structured mesh has 26 node connected neighbors)
 // The cells are returned in no particular order
 void
 MeshLogical::cell_get_node_adj_cells(const Entity_ID cellid,
-        const Parallel_type ptype,
-        Entity_ID_List *nadj_cellids) const {
+                                     const Parallel_type ptype,
+                                     Entity_ID_List *nadj_cellids) const {
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
 
+
 //
 // Mesh entity geometry
 //--------------
-//
+
 // Node coordinates - 3 in 3D and 2 in 2D
 void
-MeshLogical::node_get_coordinates (const Entity_ID nodeid,
-        AmanziGeometry::Point *ncoord) const {
+MeshLogical::node_get_coordinates(const Entity_ID nodeid,
+                                  AmanziGeometry::Point *ncoord) const {
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -371,11 +383,13 @@ MeshLogical::node_get_coordinates (const Entity_ID nodeid,
 // Face coordinates - conventions same as face_to_nodes call
 // Number of nodes is the vector size divided by number of spatial dimensions
 void
-MeshLogical::face_get_coordinates (const Entity_ID faceid,
-        std::vector<AmanziGeometry::Point> *fcoords) const {
+MeshLogical::face_get_coordinates(
+    const Entity_ID faceid,
+    std::vector<AmanziGeometry::Point> *fcoords) const {
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
+
 
 // Coordinates of cells in standard order (Exodus II convention)
 // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
@@ -383,11 +397,13 @@ MeshLogical::face_get_coordinates (const Entity_ID faceid,
 // arbitrary order
 // Number of nodes is vector size divided by number of spatial dimensions
 void
-MeshLogical::cell_get_coordinates (const Entity_ID cellid,
-        std::vector<AmanziGeometry::Point> *ccoords) const {
+MeshLogical::cell_get_coordinates(
+    const Entity_ID cellid,
+    std::vector<AmanziGeometry::Point> *ccoords) const {
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
+
 
 //
 // Mesh modification
@@ -395,15 +411,16 @@ MeshLogical::cell_get_coordinates (const Entity_ID cellid,
 
 // Set coordinates of node
 void
-MeshLogical::node_set_coordinates (const Entity_ID nodeid,
-        const AmanziGeometry::Point ncoord) {
+MeshLogical::node_set_coordinates(const Entity_ID nodeid,
+                                  const AmanziGeometry::Point ncoord) {
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
 
+
 void
-MeshLogical::node_set_coordinates (const Entity_ID nodeid,
-        const double *ncoord) {
+MeshLogical::node_set_coordinates(const Entity_ID nodeid,
+                                  const double *ncoord) {
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -411,14 +428,15 @@ MeshLogical::node_set_coordinates (const Entity_ID nodeid,
 
 // Deformation not supported.
 int
-MeshLogical::deform (const std::vector<double>& target_cell_volumes_in,
-                     const std::vector<double>& min_cell_volumes_in,
-                     const Entity_ID_List& fixed_nodes,
-                     const bool move_vertical) {
+MeshLogical::deform(const std::vector<double>& target_cell_volumes_in,
+                    const std::vector<double>& min_cell_volumes_in,
+                    const Entity_ID_List& fixed_nodes,
+                    const bool move_vertical) {
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
   return -1;
 }
+
 
 //
 // Epetra maps
@@ -446,11 +464,12 @@ MeshLogical::exterior_face_map(bool include_ghost) const {
   return *maps_.at(BOUNDARY_FACE);
 }
 
+
 // Epetra importer that will allow apps to import values from a
 // Epetra vector defined on all owned faces into an Epetra vector
 // defined only on exterior faces
 const Epetra_Import&
-MeshLogical::exterior_face_importer (void) const {
+MeshLogical::exterior_face_importer(void) const {
   return *exterior_face_importer_;
 }
 
@@ -458,40 +477,15 @@ MeshLogical::exterior_face_importer (void) const {
 //
 // Mesh Sets for ICs, BCs, Material Properties and whatever else
 //--------------------------------------------------------------
-//
-// Get number of entities of type 'category' in set
-unsigned int
-MeshLogical::get_set_size (const Set_ID setid,
-                           const Entity_kind kind,
-                           const Parallel_type ptype) const {
-  Entity_ID_List ents;
-  get_set_entities(setid, kind, ptype, &ents);
-  return ents.size();
-}
-
-unsigned int
-MeshLogical::get_set_size (const std::string setname,
-                           const Entity_kind kind,
-                           const Parallel_type ptype) const {
-  return get_set_size(geometric_model_->FindRegion(setname)->id(),kind,ptype);
-}
-
-unsigned int
-MeshLogical::get_set_size (const char *setname,
-                           const Entity_kind kind,
-                           const Parallel_type ptype) const {
-  std::string name(setname);
-  return get_set_size(name,kind,ptype);
-}
 
 // Get list of entities of type 'category' in set
 void
-MeshLogical::get_set_entities (const Set_ID setid,
-        const Entity_kind kind,
-        const Parallel_type ptype,
-        Entity_ID_List *entids) const {
-  Teuchos::RCP<const AmanziGeometry::Region> rgn =
-      geometric_model_->FindRegion(setid);
+MeshLogical::get_set_entities(const Set_ID setid,
+                              const Entity_kind kind,
+                              const Parallel_type ptype,
+                              Entity_ID_List *entids) const {
+
+  Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(setid);
 
   if (rgn->name() == "All" || rgn->name() == "all" || rgn->name() == "ALL") {
     int nent = num_entities(kind, ptype);
@@ -514,12 +508,13 @@ MeshLogical::get_set_entities (const Set_ID setid,
   return;
 }
 
+
 void
-MeshLogical::get_set_entities (const std::string setname,
-                               const Entity_kind kind,
-                               const Parallel_type ptype,
-                               Entity_ID_List *entids,
-                               std::vector<double> *vofs) const {
+MeshLogical::get_set_entities(const std::string setname,
+                              const Entity_kind kind,
+                              const Parallel_type ptype,
+                              Entity_ID_List *entids,
+                              std::vector<double> *vofs) const {
   get_set_entities(geometric_model_->FindRegion(setname)->id(), kind, ptype, entids);
   return;
 }
@@ -552,11 +547,12 @@ MeshLogical::compute_cell_geometry_(const Entity_ID cellid,
 
 
 int
-MeshLogical::compute_face_geometry_(const Entity_ID faceid,
-        double *area,
-        AmanziGeometry::Point *centroid,
-        AmanziGeometry::Point *normal0,
-        AmanziGeometry::Point *normal1) const {
+MeshLogical::compute_face_geometry_(
+    const Entity_ID faceid,
+    double *area,
+    AmanziGeometry::Point *centroid,
+    AmanziGeometry::Point *normal0,
+    AmanziGeometry::Point *normal1) const {
   // this is a placeholder, these cannot be recomputed
   if (area) *area = face_areas_[faceid];
   if (centroid) *centroid = AmanziGeometry::Point();
@@ -570,31 +566,35 @@ MeshLogical::compute_face_geometry_(const Entity_ID faceid,
 // is implemented in each mesh framework. The results are cached in
 // the base class
 void
-MeshLogical::cell_get_faces_and_dirs_internal_ (const Entity_ID cellid,
-        Entity_ID_List *faceids,
-        std::vector<int> *face_dirs,
-        const bool ordered) const {
+MeshLogical::cell_get_faces_and_dirs_internal_(
+    const Entity_ID cellid,
+    Entity_ID_List *faceids,
+    std::vector<int> *face_dirs,
+    const bool ordered) const {
   Errors::Message mesg("DEVELOPER ERROR: cell_get_faces_and_dirs_internal_() should not be called");
   Exceptions::amanzi_throw(mesg);
 }
 
+
 // Cells connected to a face - this function is implemented in each
 // mesh framework. The results are cached in the base class
 void
-MeshLogical::face_get_cells_internal_ (const Entity_ID faceid,
-        const Parallel_type ptype,
-        Entity_ID_List *cellids) const {
+MeshLogical::face_get_cells_internal_(const Entity_ID faceid,
+                                      const Parallel_type ptype,
+                                      Entity_ID_List *cellids) const {
   Errors::Message mesg("DEVELOPER ERROR: face_get_cells_internal_() should not be called");
   Exceptions::amanzi_throw(mesg);
 }
 
+
 // edges of a face - this function is implemented in each mesh
 // framework. The results are cached in the base class
 void
-MeshLogical::face_get_edges_and_dirs_internal_ (const Entity_ID faceid,
-        Entity_ID_List *edgeids,
-        std::vector<int> *edge_dirs,
-        const bool ordered) const {
+MeshLogical::face_get_edges_and_dirs_internal_(
+    const Entity_ID faceid,
+    Entity_ID_List *edgeids,
+    std::vector<int> *edge_dirs,
+    const bool ordered) const {
   Errors::Message mesg("No edges in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -603,8 +603,8 @@ MeshLogical::face_get_edges_and_dirs_internal_ (const Entity_ID faceid,
 // edges of a cell - this function is implemented in each mesh
 // framework. The results are cached in the base class.
 void
-MeshLogical::cell_get_edges_internal_ (const Entity_ID cellid,
-        Entity_ID_List *edgeids) const {
+MeshLogical::cell_get_edges_internal_(const Entity_ID cellid,
+                                      Entity_ID_List *edgeids) const {
   Errors::Message mesg("No edges in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -613,9 +613,10 @@ MeshLogical::cell_get_edges_internal_ (const Entity_ID cellid,
 // edges and directions of a 2D cell - this function is implemented
 // in each mesh framework. The results are cached in the base class.
 void
-MeshLogical::cell_2D_get_edges_and_dirs_internal_ (const Entity_ID cellid,
-        Entity_ID_List *edgeids,
-        std::vector<int> *edge_dirs) const {
+MeshLogical::cell_2D_get_edges_and_dirs_internal_(
+    const Entity_ID cellid,
+    Entity_ID_List *edgeids,
+    std::vector<int> *edge_dirs) const {
   Errors::Message mesg("No edges in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -654,5 +655,5 @@ MeshLogical::compute_face_geometric_quantities_() const {
   Exceptions::amanzi_throw(mesg);
 }
 
-} // close namespace AmanziMesh
-} // close namespace Amanzi
+}  // namespace AmanziMesh
+}  // namespace Amanzi

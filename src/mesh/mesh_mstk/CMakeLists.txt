@@ -76,7 +76,7 @@ if (BUILD_TESTS)
 
 
     # Test: mstk_mesh
-    add_amanzi_test(mstk_mesh test_mstk_mesh
+    add_amanzi_test(mstk_mesh_basis mstk_mesh_basis
                     KIND int
                     SOURCE
                          test/Main.cc 
@@ -92,7 +92,7 @@ if (BUILD_TESTS)
                     LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES}) 
 
     # Test: mstk_mesh_parallel
-    add_amanzi_test(mstk_mesh_parallel test_parallel_mstk_mesh
+    add_amanzi_test(mstk_mesh_parallel mstk_mesh_parallel
                     KIND unit
                     NPROCS 4
                     SOURCE
@@ -109,14 +109,14 @@ if (BUILD_TESTS)
                     LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES})
 
     # Test: column_mesh
-    add_amanzi_test(column_mesh test_column_mesh
+    add_amanzi_test(mstk_column_mesh mstk_column_mesh
                     KIND unit
                     SOURCE
                           test/Main.cc 
                           test/test_column_mesh.cc 
                     LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES})
     # Test: extracted surface from column_mesh
-    add_amanzi_test(surface_column_mesh test_surface_column_mesh
+    add_amanzi_test(mstk_surface_column_mesh mstk_surface_column_mesh
                     KIND unit
                     SOURCE
                           test/Main.cc 

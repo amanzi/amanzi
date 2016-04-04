@@ -29,9 +29,7 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 class MeshSurfaceCell : public Mesh {
-
  public:
-
   MeshSurfaceCell(const Mesh& inmesh,
                   const std::string& surface_set_name,
                   const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
@@ -83,7 +81,8 @@ class MeshSurfaceCell : public Mesh {
           || (*r)->type() == AmanziGeometry::ENUMERATED) {
         // label pulled from parent
         Entity_ID_List faces_in_set;
-        inmesh.get_set_entities((*r)->id(), FACE, OWNED, &faces_in_set);
+        std::vector<double> vofs;
+        inmesh.get_set_entities((*r)->name(), FACE, OWNED, &faces_in_set, &vofs);
         sets_[(*r)->id()] = std::find(faces_in_set.begin(), faces_in_set.end(),
                 parent_face_) != faces_in_set.end();
 
@@ -108,7 +107,7 @@ class MeshSurfaceCell : public Mesh {
     }
   }
 
-  ~MeshSurfaceCell() {}
+  ~MeshSurfaceCell() {};
 
   // Get parallel type of entity - OWNED, GHOST, USED (See MeshDefs.hh)
   virtual
@@ -409,15 +408,6 @@ class MeshSurfaceCell : public Mesh {
     return get_set_size(geometric_model()->FindRegion(setname)->id(), kind, ptype);
   }
 
-  virtual
-  unsigned int get_set_size(const char *setname,
-                            const Entity_kind kind,
-                            const Parallel_type ptype) const {
-    std::string setname1(setname);
-    return get_set_size(setname1,kind,ptype);
-  }
-
-
   // Get list of entities of type 'category' in set
   virtual
   void get_set_entities(const Set_ID setid,
@@ -441,7 +431,7 @@ class MeshSurfaceCell : public Mesh {
                         const Entity_kind kind,
                         const Parallel_type ptype,
                         Entity_ID_List *entids,
-                        std::vector<double> *vofs = NULL) const {
+                        std::vector<double> *vofs) const {
     return get_set_entities(geometric_model()->FindRegion(setname)->id(),
                             kind, ptype, entids);
   }

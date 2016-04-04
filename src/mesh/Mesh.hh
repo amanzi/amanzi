@@ -1,6 +1,12 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 //
-// Base mesh class for Amanzi
+// Mesh
+//
+// Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+// Amanzi is released under the three-clause BSD License. 
+// The terms of use and "as is" disclaimer for this license are 
+// provided in the top-level COPYRIGHT file.
+//
+// Base mesh class
 //
 // Use the associated mesh factory to create an instance of a
 // derived class based on a particular mesh framework (like MSTK,
@@ -66,39 +72,36 @@ namespace AmanziMesh {
 // friended class that uses cache
 class MeshEmbeddedLogical;
 
-
 class Mesh {
  public:
-
   // constructor
   Mesh(const Teuchos::RCP<const VerboseObject>& vo=Teuchos::null,
        const bool request_faces=true,
        const bool request_edges=false)
-      : space_dim_(-1),
-        manifold_dim_(-1),
-        mesh_type_(GENERAL),
-        cell_geometry_precomputed_(false),
-        face_geometry_precomputed_(false),
-        edge_geometry_precomputed_(false),
-        columns_built_(false),
-        faces_requested_(request_faces),
-        edges_requested_(request_edges),
-        cell2face_info_cached_(false),
-        face2cell_info_cached_(false),
-        cell2edge_info_cached_(false),
-        face2edge_info_cached_(false),
-        parent_(Teuchos::null),
-        geometric_model_(Teuchos::null),
-        vo_(vo),
-        comm_(NULL)
-  {}
+  : space_dim_(-1),
+    manifold_dim_(-1),
+    mesh_type_(GENERAL),
+    cell_geometry_precomputed_(false),
+    face_geometry_precomputed_(false),
+    edge_geometry_precomputed_(false),
+    columns_built_(false),
+    faces_requested_(request_faces),
+    edges_requested_(request_edges),
+    cell2face_info_cached_(false),
+    face2cell_info_cached_(false),
+    cell2edge_info_cached_(false),
+    face2edge_info_cached_(false),
+    parent_(Teuchos::null),
+    geometric_model_(Teuchos::null),
+    vo_(vo),
+    comm_(NULL) {};
 
   // virtual destructor
-  virtual ~Mesh() {}
+  virtual ~Mesh() {};
 
   //
   // Accessors and Mutators
-  // ------------------------------
+  // ----------------------
 
   // Get/set comm_unicator
   void set_comm(const Epetra_MpiComm *incomm) {
@@ -160,7 +163,7 @@ class Mesh {
 
   //
   // General mesh information
-  // -------------------------
+  // ------------------------
 
   // Number of entities of any kind (cell, face, node) and in a
   // particular category (OWNED, GHOST, USED)
@@ -175,13 +178,13 @@ class Mesh {
 
   //
   // Entity meta-data
-  // ------------------------------
+  // ----------------
   // NOTE: Anything here could be cached if need be. --etc
 
   // Get parallel type of entity - OWNED, GHOST, USED (See MeshDefs.hh)
   virtual
   Parallel_type entity_get_ptype(const Entity_kind kind,
-          const Entity_ID entid) const = 0;
+                                 const Entity_ID entid) const = 0;
 
   // Parent entity in the source mesh if mesh was derived from another mesh
   virtual
@@ -244,16 +247,16 @@ class Mesh {
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
   void cell_get_faces_and_dirs(const Entity_ID cellid,
-          Entity_ID_List *faceids,
-          std::vector<int> *face_dirs,
-          const bool ordered=false) const;
+                               Entity_ID_List *faceids,
+                               std::vector<int> *face_dirs,
+                               const bool ordered=false) const;
 
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
   virtual
   void cell_get_faces_and_bisectors(const Entity_ID cellid,
-          Entity_ID_List *faceids,
-          std::vector<AmanziGeometry::Point> *bisectors,
-          const bool ordered=false) const;
+                                    Entity_ID_List *faceids,
+                                    std::vector<AmanziGeometry::Point> *bisectors,
+                                    const bool ordered=false) const;
 
   // Get edges of a cell
   void cell_get_edges(const Entity_ID cellid, Entity_ID_List *edgeids) const;
@@ -265,8 +268,8 @@ class Mesh {
   // face information is more cumbersome (one would have to take the face
   // normals, rotate them and then get a consistent edge vector)
   void cell_2D_get_edges_and_dirs(const Entity_ID cellid,
-          Entity_ID_List *edgeids,
-          std::vector<int> *edge_dirs) const;
+                                  Entity_ID_List *edgeids,
+                                  std::vector<int> *edge_dirs) const;
 
   // Get nodes of a cell
   virtual
@@ -285,9 +288,9 @@ class Mesh {
   // this direction cannot be relied upon to compute, say, a contour
   // integral around the 2D cell.
   void face_get_edges_and_dirs(const Entity_ID faceid,
-          Entity_ID_List *edgeids,
-          std::vector<int> *edge_dirs,
-          const bool ordered=false) const;
+                               Entity_ID_List *edgeids,
+                               std::vector<int> *edge_dirs,
+                               const bool ordered=false) const;
 
   // Get the local index of a face edge in a cell edge list
   // Example:
@@ -368,21 +371,21 @@ class Mesh {
   // faces given by cell_get_faces
   virtual
   void cell_get_face_adj_cells(const Entity_ID cellid,
-          const Parallel_type ptype,
-          Entity_ID_List *fadj_cellids) const = 0;
+                               const Parallel_type ptype,
+                               Entity_ID_List *fadj_cellids) const = 0;
 
   // Node connected neighboring cells of given cell
   // (a hex in a structured mesh has 26 node connected neighbors)
   // The cells are returned in no particular order
   virtual
   void cell_get_node_adj_cells(const Entity_ID cellid,
-          const Parallel_type ptype,
-          Entity_ID_List *nadj_cellids) const = 0;
+                               const Parallel_type ptype,
+                               Entity_ID_List *nadj_cellids) const = 0;
 
 
   //
   // Column information
-  //-----------------------
+  //-------------------
 
   // Special adjacency information for geological domains with a
   // semi-structured mesh. Will return -1 if there is no suitable cell
@@ -401,10 +404,10 @@ class Mesh {
   int num_columns() const;
 
   // Given a column ID, get the cells of the column
-  Entity_ID_List const & cells_of_column(const int columnID_) const;
+  const Entity_ID_List& cells_of_column(const int columnID_) const;
 
   // Given a column ID, get the cells of the column
-  Entity_ID_List const & faces_of_column(const int columnID_) const;
+  const Entity_ID_List& faces_of_column(const int columnID_) const;
 
   // Given a cell, get its column ID
   int column_ID(const Entity_ID cellid) const;
@@ -421,8 +424,7 @@ class Mesh {
 
   //
   // Mesh entity geometry
-  // ------------------------------
-  //
+  // --------------------
 
   // Node coordinates - 3 in 3D and 2 in 2D
   virtual
@@ -430,7 +432,7 @@ class Mesh {
                             AmanziGeometry::Point *ncoord) const = 0;
 
   // Face coordinates - conventions same as face_to_nodes call
-  // Number of nodes is the vector size divided by number of spatial dimensions
+  // Number of nodes is the vector size.
   virtual
   void face_get_coordinates(const Entity_ID faceid,
                             std::vector<AmanziGeometry::Point> *fcoords) const = 0;
@@ -455,11 +457,11 @@ class Mesh {
 
   // Centroid of cell
   AmanziGeometry::Point cell_centroid(const Entity_ID cellid,
-          const bool recompute=false) const;
+                                      const bool recompute=false) const;
 
   // Centroid of face
   AmanziGeometry::Point face_centroid(const Entity_ID faceid,
-          const bool recompute=false) const;
+                                      const bool recompute=false) const;
 
   // Centroid of edge
   AmanziGeometry::Point edge_centroid(const Entity_ID edgeid) const;
@@ -487,9 +489,9 @@ class Mesh {
   // the natural normal of the face with respect to the cell (1 is
   // pointing out of the cell and -1 pointing in)
   AmanziGeometry::Point face_normal(const Entity_ID faceid,
-          const bool recompute=false,
-          const Entity_ID cellid=-1,
-          int *orientation=NULL) const;
+                                    const bool recompute=false,
+                                    const Entity_ID cellid=-1,
+                                    int *orientation=NULL) const;
 
   // Edge vector
   //
@@ -508,9 +510,9 @@ class Mesh {
   // the natural direction of the edge with respect to the point (1 is
   // away from the point and -1 is towards)
   AmanziGeometry::Point edge_vector(const Entity_ID edgeid,
-          const bool recompute=false,
-          const Entity_ID pointid=-1,
-          int *orientation=NULL) const;
+                                    const bool recompute=false,
+                                    const Entity_ID pointid=-1,
+                                    int *orientation=NULL) const;
 
   // Is a point in a given cell?
   bool point_in_cell(const AmanziGeometry::Point &p,
@@ -519,7 +521,7 @@ class Mesh {
 
   //
   // Mesh modification
-  //-------------------
+  //------------------
 
   // Set coordinates of node
   virtual
@@ -569,7 +571,6 @@ class Mesh {
   const Epetra_Map& face_map(bool include_ghost) const = 0;
 
   // Get edge map
-  //
   // dummy implementation so that frameworks can skip or overwrite
   virtual
   const Epetra_Map& edge_map(bool include_ghost) const
@@ -577,7 +578,7 @@ class Mesh {
     Errors::Message mesg("Edges are not implemented in this framework.");
     amanzi_throw(mesg);
     return edge_map(include_ghost);  // avoids clang warnings for every file.
-  };
+  }
 
   // Get node map
   virtual
@@ -616,58 +617,63 @@ class Mesh {
   virtual
   unsigned int get_set_size(const Set_ID setid,
                             const Entity_kind kind,
-                            const Parallel_type ptype) const = 0;
+                            const Parallel_type ptype) const;
 
   virtual
   unsigned int get_set_size(const std::string setname,
                             const Entity_kind kind,
-                            const Parallel_type ptype) const = 0;
+                            const Parallel_type ptype) const;
 
+  // Get list of entities of type 'category' in set by set name.
+  // -- original interface. The returned volume fractions are ignored.
   virtual
-  unsigned int get_set_size(const char *setname,
-                            const Entity_kind kind,
-                            const Parallel_type ptype) const = 0;
-
-  // Get list of entities of type 'category' in set
-  virtual
-  void get_set_entities(const Set_ID setid,
+  void get_set_entities(const std::string setname,
                         const Entity_kind kind,
                         const Parallel_type ptype,
-                        Entity_ID_List *entids) const = 0;
+                        Entity_ID_List *entids) const;
 
+  // -- deprecated interface
+  virtual
+  void get_set_entities(const Set_ID setid, 
+                        const Entity_kind kind, 
+                        const Parallel_type ptype, 
+                        Entity_ID_List *entids) const;
+
+  // -- new interface. Since not all regions support volume fractions 
+  // (vofs), this vector is optional and could be empty.
   virtual
   void get_set_entities(const std::string setname,
                         const Entity_kind kind,
                         const Parallel_type ptype,
                         Entity_ID_List *entids,
-                        std::vector<double> *vofs = NULL) const = 0;
+                        std::vector<double> *vofs) const = 0;
 
-  void get_set_entities_box_vof(
+  //
+  // Miscellaneous functions
+  //------------------------
+
+  // Write to file
+  virtual
+  void write_to_exodus_file(const std::string filename) const = 0;
+
+
+ protected:
+  // Helper function to build columns
+  virtual
+  int build_columns_() const;
+
+  // Beginning of new interface to regions using the base mesh.
+  void get_set_entities_box_vofs_(
       Teuchos::RCP<const AmanziGeometry::Region> region,
       const Entity_kind kind, 
       const Parallel_type ptype, 
       std::vector<Entity_ID>* setents,
       std::vector<double> *vofs) const;
 
-  //
-  // Miscellaneous functions
-  //--------------------------------------------------------------
-
-  // Write to file
-  virtual
-  void write_to_exodus_file(const std::string filename) const = 0;
-
- protected:
-
-  // Helper function to build columns
-  virtual
-  int build_columns_() const;
-
 
   //
   // Cache management
-  //--------------------------------------------------------------
-  //
+  //-----------------
 
   // Virtual methods to fill the cache with geometric quantities.
   //
@@ -703,33 +709,35 @@ class Mesh {
   // Get faces of a cell and directions in which it is used.
   virtual
   void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
-          Entity_ID_List *faceids,
-          std::vector<int> *face_dirs,
-          const bool ordered=false) const = 0;
+                                         Entity_ID_List *faceids,
+                                         std::vector<int> *face_dirs,
+                                         const bool ordered=false) const = 0;
 
   // Cells connected to a face
   virtual
   void face_get_cells_internal_(const Entity_ID faceid,
-          const Parallel_type ptype,
-          Entity_ID_List *cellids) const = 0;
+                                const Parallel_type ptype,
+                                Entity_ID_List *cellids) const = 0;
 
   // edges of a face
   virtual
-  void face_get_edges_and_dirs_internal_(const Entity_ID faceid,
-          Entity_ID_List *edgeids,
-          std::vector<int> *edge_dirs,
-          const bool ordered=true) const = 0;
+  void face_get_edges_and_dirs_internal_(
+      const Entity_ID faceid,
+      Entity_ID_List *edgeids,
+      std::vector<int> *edge_dirs,
+      const bool ordered=true) const = 0;
 
   // edges of a cell
   virtual
   void cell_get_edges_internal_(const Entity_ID cellid,
-          Entity_ID_List *edgeids) const = 0;
+                                Entity_ID_List *edgeids) const = 0;
 
   // edges and directions of a 2D cell
   virtual
-  void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
-          Entity_ID_List *edgeids,
-          std::vector<int> *edge_dirs) const = 0;
+  void cell_2D_get_edges_and_dirs_internal_(
+      const Entity_ID cellid,
+      Entity_ID_List *edgeids,
+      std::vector<int> *edge_dirs) const = 0;
 
   // Virtual methods to fill the cache with geometric quantities.
   //
@@ -753,7 +761,6 @@ class Mesh {
                              AmanziGeometry::Point *edge_vector) const;
 
  protected:
-
   const Epetra_MpiComm *comm_;
   Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model_;
   Teuchos::RCP<const VerboseObject> vo_;
@@ -793,13 +800,14 @@ class Mesh {
   // -- flags to indicate what part of cache is up-to-date
   mutable bool cell2face_info_cached_, face2cell_info_cached_;
   mutable bool cell2edge_info_cached_, face2edge_info_cached_;
-  mutable bool cell_geometry_precomputed_, face_geometry_precomputed_,
-    edge_geometry_precomputed_;
+  mutable bool cell_geometry_precomputed_, face_geometry_precomputed_, edge_geometry_precomputed_;
 
+  // -- region data
+  mutable std::map<std::string, std::vector<int> > region_ids;
+  mutable std::map<std::string, std::vector<double> > region_vofs;
 
   // probably should not be mutable?  these should be set by constructor and not changed! --etc
   mutable bool faces_requested_, edges_requested_;
-
 
   // friend classes change the cache?  why is this necessary? --etc
   friend class MeshEmbeddedLogical;

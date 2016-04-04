@@ -21,6 +21,7 @@
 
 #include "State.hh"
 #include "TreeVector.hh"
+#include "Teuchos_ParameterList.hpp"
 
 namespace Amanzi {
 
@@ -28,11 +29,14 @@ class State;
 
 class PK {
  public:
+  PK(){};
   // Required constructor of the form:
-  // PK(Teuchos::ParameterList& pk_tree,
-  //    const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-  //    const Teuchos::RCP<State>& S,
-  //    const Teuchos::RCP<TreeVector>& solution);
+  PK(Teuchos::ParameterList& pk_tree,
+     const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
+     const Teuchos::RCP<State>& S,
+     const Teuchos::RCP<TreeVector>& solution):
+    plist_(global_plist),
+    solution_(solution){};
 
   // Virtual destructor
   virtual ~PK() {};
@@ -81,6 +85,19 @@ class PK {
   virtual void Solution_to_State(TreeVector& soln,
                                  const Teuchos::RCP<State>& S) = 0;
 
+protected:
+
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
+  std::string name_;
+  Teuchos::RCP<TreeVector> solution_;
+
+  // states
+  Teuchos::RCP<const State> S_;
+  Teuchos::RCP<State> S_inter_;
+  Teuchos::RCP<State> S_next_;
+
+  // fancy OS
+  Teuchos::RCP<VerboseObject> vo_;
 
 };
 

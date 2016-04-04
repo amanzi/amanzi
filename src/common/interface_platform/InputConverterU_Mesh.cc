@@ -385,16 +385,16 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
                 out_list.sublist(reg_name).sublist("Region: Logical").set<std::string>("operation", "union");
               }
               else if (strcmp(text_content2,"intersection") == 0) {
-                out_list.sublist(reg_name).sublist("Region: Logical").set<std::string>("operation", "intersection");
+                out_list.sublist(reg_name).sublist("Region: Logical").set<std::string>("operation", "intersect");
               }
               else if (strcmp(text_content2,"subtraction") == 0) {
-                out_list.sublist(reg_name).sublist("Region: Logical").set<std::string>("operation","subtraction");
+                out_list.sublist(reg_name).sublist("Region: Logical").set<std::string>("operation","subtract");
               }
               else if (strcmp(text_content2,"complement") == 0) {
                 out_list.sublist(reg_name).sublist("Region: Logical").set<std::string>("operation", "complement");
               }
               else {
-                ThrowErrorIllformed_("regions", "element", "operation", "union, intersection, subtraction, or complement");
+                ThrowErrorIllformed_("regions", "element", "operation", "union, intersect, subtract, or complement");
               }
               haveOp = true;
             }

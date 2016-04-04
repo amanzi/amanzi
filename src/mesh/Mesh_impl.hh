@@ -82,3 +82,19 @@ Mesh::node_get_node_above(const Entity_ID nodeid) const
   return node_nodeabove_[nodeid];
 }
 
+
+//
+// Column information
+//-----------------------
+inline
+void
+Mesh::get_set_entities(const std::string setname,
+                       const Entity_kind kind,
+                       const Parallel_type ptype,
+                       Entity_ID_List *entids) const
+{
+  std::vector<double> vofs;
+  get_set_entities(setname, kind, ptype, entids, &vofs);
+}
+
+

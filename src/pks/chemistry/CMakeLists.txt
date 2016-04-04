@@ -110,7 +110,7 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
                     SOURCE test/Main.cc test/chemistry_amanzi_pk.cc
                     LINK_LIBS chemistry_pk state pks data_structures
                               mesh_functions mesh mesh_factory error_handling 
-		              interface
+                              interface
                               ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 
     # The following test is disabled in parallel environments. It has to be rewritten in order 

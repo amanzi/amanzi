@@ -14,13 +14,14 @@ class TabularFunction : public Function {
  
  public:
   TabularFunction(const std::vector<double>& x, const std::vector<double>& y,
-		  const int xi);
+                  const int xi);
   TabularFunction(const std::vector<double>& x, const std::vector<double>& y,
                   const int xi, const std::vector<Form>& form);
   TabularFunction(const std::vector<double>& x, const std::vector<double>& y,
                   const int xi, const std::vector<Form>& form,
                   const std::vector<Function*>& func);
-  ~TabularFunction() {}
+  ~TabularFunction() {};
+
   TabularFunction* Clone() const { return new TabularFunction(*this); }
   double operator()(const std::vector<double>& x) const;
 

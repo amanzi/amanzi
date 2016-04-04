@@ -538,10 +538,8 @@ SUITE (STK_SETS)
 	std::cerr << "Mesh framework cannot do labeled sets" << std::endl;
 
 	CHECK(false); 
-
       }
     }
-
   }
 }
 

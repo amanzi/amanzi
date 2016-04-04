@@ -295,7 +295,7 @@ void RK<Vector>::TimeStep(const double t, const double h, const Vector& y, Vecto
       if (a_(i,j) != 0.0) {
         sum_vec.Update(a_(i,j), *k_[j], 1.0);
       }
-	}
+    }
     fn_.Functional(sum_time, sum_vec, *k_[i]);
     k_[i]->Scale(h);
   }

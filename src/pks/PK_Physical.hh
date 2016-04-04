@@ -28,7 +28,7 @@ class PK_Physical : public virtual PK {
               const Teuchos::RCP<Teuchos::ParameterList>& glist,
               const Teuchos::RCP<State>& S,
               const Teuchos::RCP<TreeVector>& soln):
-  solution_(soln) {};
+    PK(pk_tree, glist, S, soln) {};
 
 
   // Virtual destructor
@@ -67,17 +67,17 @@ class PK_Physical : public virtual PK {
   // debugger for dumping vectors
   Teuchos::RCP<Debugger> db_;
 
-  Teuchos::RCP<Teuchos::ParameterList> plist_;
-  Teuchos::RCP<TreeVector> solution_;
-  std::string name_;
+  // Teuchos::RCP<Teuchos::ParameterList> plist_;
+  // Teuchos::RCP<TreeVector> solution_;
+  //  std::string name_;
 
-  // states
-  Teuchos::RCP<const State> S_;
-  Teuchos::RCP<State> S_inter_;
-  Teuchos::RCP<State> S_next_;
+  // // states
+  // Teuchos::RCP<const State> S_;
+  // Teuchos::RCP<State> S_inter_;
+  // Teuchos::RCP<State> S_next_;
 
   // fancy OS
-  Teuchos::RCP<VerboseObject> vo_;
+  //Teuchos::RCP<VerboseObject> vo_;
 };
 
 } // namespace Amanzi

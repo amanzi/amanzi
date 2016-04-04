@@ -179,7 +179,9 @@ int Unstructured_observations::MakeObservations(State& S)
       bool obs_boundary(false);
       unsigned int mesh_block_size(0);
       AmanziMesh::Entity_ID_List entity_ids;
+      std::vector<double> vofs;
       std::string solute_var;
+
       if (obs_solute) solute_var = comp_names_[tcc_index] + " volumetric flow rate";
       if (var == "aqueous mass flow rate" || 
           var == "aqueous volumetric flow rate" ||
@@ -190,7 +192,7 @@ int Unstructured_observations::MakeObservations(State& S)
         entity_ids.resize(mesh_block_size);
         S.GetMesh()->get_set_entities((i->second).region, 
                                       Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED,
-                                      &entity_ids);
+                                      &entity_ids, &vofs);
         obs_boundary = true;
         for (int i = 0; i != mesh_block_size; ++i) {
           int f = entity_ids[i];
@@ -208,7 +210,7 @@ int Unstructured_observations::MakeObservations(State& S)
         entity_ids.resize(mesh_block_size);
         S.GetMesh()->get_set_entities((i->second).region,
                                       Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-                                      &entity_ids);
+                                      &entity_ids, &vofs);
       }
       
       // find global meshblocksize
