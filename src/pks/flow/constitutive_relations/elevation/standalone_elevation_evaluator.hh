@@ -9,7 +9,7 @@
 #ifndef AMANZI_FLOWRELATIONS_STANDALONE_ELEVATION_EVALUATOR_
 #define AMANZI_FLOWRELATIONS_STANDALONE_ELEVATION_EVALUATOR_
 
-#include "composite_vector_function.hh"
+#include "CompositeVectorFunction.hh"
 #include "elevation_evaluator.hh"
 
 namespace Amanzi {

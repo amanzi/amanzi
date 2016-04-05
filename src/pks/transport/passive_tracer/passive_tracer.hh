@@ -21,7 +21,7 @@ simple passive tracer transport
 #include "TreeVector.hh"
 #include "State.hh"
 #include "advection.hh"
-#include "boundary_function.hh"
+#include "BoundaryFunction.hh"
 
 #include "pk_factory.hh"
 #include "PK.hh"
