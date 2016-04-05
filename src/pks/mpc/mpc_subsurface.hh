@@ -144,6 +144,8 @@ class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
   Key mass_flux_dir_key_;
   Key rho_key_;
   
+  bool is_fv_;
+  
   // EWC delegate
   Teuchos::RCP<MPCDelegateEWCSubsurface> ewc_;
 
