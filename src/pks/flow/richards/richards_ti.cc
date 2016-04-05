@@ -186,7 +186,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   preconditioner_diff_->SetScalarCoefficient(rel_perm, dkrdp);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, up->Data().ptr());
 
-  if (jacobian_ && preconditioner_->RangeMap().HasComponent("face")) {
+  if (jacobian_) {// && preconditioner_->RangeMap().HasComponent("face")) {
     Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData(flux_key_, name_);
     preconditioner_diff_->UpdateFlux(*up->Data(), *flux);
     preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), up->Data().ptr());

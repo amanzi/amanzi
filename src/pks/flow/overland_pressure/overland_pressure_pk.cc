@@ -813,7 +813,6 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
       }
     }
   }
-  
 }
 
 
