@@ -6,7 +6,7 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#include "composite_vector_function_factory.hh"
+#include "CompositeVectorFunctionFactory.hh"
 #include "standalone_elevation_evaluator.hh"
 
 namespace Amanzi {

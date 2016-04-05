@@ -17,7 +17,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "LinearOperatorFactory.hh"
-#include "composite_vector_function_factory.hh"
+#include "CompositeVectorFunctionFactory.hh"
 
 #include "volumetric_deformation.hh"
 #include "porosity_evaluator.hh"

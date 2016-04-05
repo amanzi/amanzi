@@ -127,10 +127,10 @@ int main(int argc, char *argv[])
   typedef Teuchos::StringToIntegralParameterEntryValidator<int> StrValidator;
   Teuchos::RCP<StrValidator> frameworkValidator = Teuchos::rcp(
           new StrValidator(Teuchos::tuple<std::string>( "Structured", "SimpleMesh",
-                  "stk::mesh", "MSTK" ) ,"Framework") );
+                  "stk::mesh", "MSTK" ) ,"framework") );
 
   std::string framework = frameworkValidator->validateString(
-          Teuchos::getParameter<std::string>(mesh_parameter_list,"Framework"));
+          Teuchos::getParameter<std::string>(mesh_parameter_list,"framework"));
 
   AmanziUnstructuredGridSimulationDriver* simulator = new AmanziUnstructuredGridSimulationDriver();
   int ret = simulator->Run(mpi_comm, driver_parameter_list);

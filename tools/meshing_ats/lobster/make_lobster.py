@@ -12,5 +12,15 @@ print "total ncells = ", sum(ncells)
 mat_ids = [10000,]+[20000,]*5
 
 m3 = meshing_ats.Mesh3D.extruded_Mesh2D(m2, types, thicknesses, ncells, mat_ids)
-m3.write_exodus("lobster_full.exo", "n blocks, duplicated")
+m3.write_exodus("lobster_full-one_block.exo", "one block")
+
+# m3 = meshing_ats.Mesh3D.extruded_Mesh2D(m2, types, thicknesses, ncells, mat_ids)
+# m3.write_exodus("lobster_full-not_duplicated.exo", "n blocks, not duplicated")
+
+# m3 = meshing_ats.Mesh3D.extruded_Mesh2D(m2, types, thicknesses, ncells, mat_ids)
+# m3.write_exodus("lobster_full-duplicated.exo", "n blocks, duplicated")
+
+# m3 = meshing_ats.Mesh3D.extruded_Mesh2D(m2, types, thicknesses, ncells, mat_ids)
+# m3.write_exodus("lobster_full-repeated.exo", "one block, repeated")
+
 
