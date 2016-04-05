@@ -127,7 +127,7 @@ double RegionBoxVolumeFractions::intersect(const std::vector<Point>& polytope) c
   mdim = manifold_dimension();
   sdim = polytope[0].dim();
    
-  if (sdim == 2 && degeneracy_ < 0 || sdim == 3 && degeneracy_ >= 0) {
+  if ((sdim == 2 && degeneracy_ < 0) || (sdim == 3 && degeneracy_ >= 0)) {
     box.push_back(Point(0.0, 0.0));
     box.push_back(Point(1.0, 0.0)); 
     box.push_back(Point(1.0, 1.0));
