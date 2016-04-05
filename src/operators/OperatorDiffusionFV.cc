@@ -388,7 +388,12 @@ void OperatorDiffusionFV::AnalyticJacobian_(const CompositeVector& u)
       dkdp[1] = dKdP_face.get() ? (*dKdP_face)[0][f] : 0.;
     }
 
-    ComputeJacobianLocal_(mcells, f, bc_model[f], bc_value[f],
+    // find the face direction from cell 0 to cell 1
+    AmanziMesh::Entity_ID_List cfaces;
+    std::vector<int> fdirs;
+    mesh_->cell_get_faces_and_dirs(cells[0], &cfaces, &fdirs);
+    int f_index = std::find(cfaces.begin(), cfaces.end(), f) - cfaces.begin();
+    ComputeJacobianLocal_(mcells, f, fdirs[f_index], bc_model[f], bc_value[f],
                           pres, dkdp, Aface);
 
     jac_op_->matrices[f] = Aface;
@@ -401,7 +406,7 @@ void OperatorDiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 * (its nonlinear part) on face f.
 ****************************************************************** */
 void OperatorDiffusionFV::ComputeJacobianLocal_(
-    int mcells, int f, int bc_model_f, double bc_value_f,
+    int mcells, int f, int face_dir_0to1, int bc_model_f, double bc_value_f,
     double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);

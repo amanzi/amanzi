@@ -118,7 +118,7 @@ class OperatorDiffusionFV : public virtual OperatorDiffusion {
   void AnalyticJacobian_(const CompositeVector& solution);
 
   virtual void ComputeJacobianLocal_(
-      int mcells, int f, int bc_model, double bc_value,
+      int mcells, int f, int face_dir_0to1, int bc_model, double bc_value,
       double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp);
 
   virtual void InitDiffusion_(Teuchos::ParameterList& plist);
