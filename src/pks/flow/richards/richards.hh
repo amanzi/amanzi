@@ -49,6 +49,9 @@ public:
   // -- Commit any secondary (dependent) variables.
   virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
 
+  // -- limit changes in a valid time step
+  virtual bool valid_step();
+
   // -- Update diagnostics for vis.
   virtual void calculate_diagnostics(const Teuchos::RCP<State>& S);
 
@@ -215,6 +218,10 @@ protected:
   double p_limit_;
   double patm_limit_;
 
+  // valid step controls
+  double sat_change_limit_;
+  double sat_ice_change_limit_;
+  
   // keys
   Key mass_dens_key_;
   Key molar_dens_key_;
@@ -226,6 +233,8 @@ protected:
   Key velocity_key_;
   Key source_key_;
   Key ss_flux_key_;
+  Key sat_key_;
+  Key sat_ice_key_;
 
  private:
   // factory registration
