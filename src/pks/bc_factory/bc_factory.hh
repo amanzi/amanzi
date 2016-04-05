@@ -13,7 +13,7 @@ Author: ...
 
 #include "Point.hh"
 #include "Mesh.hh"
-#include "boundary_function.hh"
+#include "BoundaryFunction.hh"
 
 namespace Amanzi {
 

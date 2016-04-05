@@ -20,8 +20,8 @@ Authors: Neil Carlson (version 1)
 #include "upwind_total_flux.hh"
 #include "upwind_gravity_flux.hh"
 
-#include "composite_vector_function.hh"
-#include "composite_vector_function_factory.hh"
+#include "CompositeVectorFunction.hh"
+#include "CompositeVectorFunctionFactory.hh"
 
 #include "predictor_delegate_bc_flux.hh"
 #include "wrm_evaluator.hh"
