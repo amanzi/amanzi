@@ -108,7 +108,7 @@ int AmanziUnstructuredGridSimulationDriver::Run(
 
   int ierr = 0;
   try {
-    std::string framework = mesh_plist.get<std::string>("Framework");
+    std::string framework = mesh_plist.get<std::string>("framework");
     Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
     if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::Simple)) {
       prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Simple);
@@ -127,7 +127,7 @@ int AmanziUnstructuredGridSimulationDriver::Run(
     }
     factory.preference(prefs);
   } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
-    // do nothing, this means that the "Framework" parameter was not in the input
+    // do nothing, this means that the "framework" parameter was not in the input
   } catch (const std::exception& e) {
     std::cout << rank << ": error: " << e.what() << std::endl;
     ierr++;
@@ -145,17 +145,17 @@ int AmanziUnstructuredGridSimulationDriver::Run(
     Teuchos::ParameterList read_params = mesh_plist.sublist("Read Mesh File");
 
     std::string file;
-    if (read_params.isParameter("File")) {
-      file = read_params.get<std::string>("File");
+    if (read_params.isParameter("file")) {
+      file = read_params.get<std::string>("file");
     } else {
       std::cerr << "Must specify File parameter for Read option under Mesh" << std::endl;
       throw std::exception();
     }
 
     std::string format;
-    if (read_params.isParameter("Format")) {
+    if (read_params.isParameter("format")) {
       // Is the format one that we can read?
-      format = read_params.get<std::string>("Format");
+      format = read_params.get<std::string>("format");
       if (format != "Exodus II") {
         std::cerr << "Can only read files in Exodus II format" << std::endl;
         throw std::exception();
@@ -213,9 +213,9 @@ int AmanziUnstructuredGridSimulationDriver::Run(
   if (expert_params_specified) {
     Teuchos::ParameterList expert_mesh_params = mesh_plist.sublist("Expert");
 
-    bool verify_mesh_param = expert_mesh_params.isParameter("Verify Mesh");
+    bool verify_mesh_param = expert_mesh_params.isParameter("verify mesh");
     if (verify_mesh_param) {
-      bool verify = expert_mesh_params.get<bool>("Verify Mesh");
+      bool verify = expert_mesh_params.get<bool>("verify mesh");
       if (verify) {
         std::cerr << "Verifying mesh with Mesh Audit..." << std::endl;
         if (size == 1) {
@@ -279,9 +279,9 @@ int AmanziUnstructuredGridSimulationDriver::Run(
     bool surf_expert_params_specified = surface_plist.isSublist("Expert");
     if (surf_expert_params_specified) {
       Teuchos::ParameterList surf_expert_mesh_params = surface_plist.sublist("Expert");
-      bool verify_surf_mesh_param = surf_expert_mesh_params.isParameter("Verify Mesh");
+      bool verify_surf_mesh_param = surf_expert_mesh_params.isParameter("verify mesh");
       if (verify_surf_mesh_param) {
-        bool verify = surf_expert_mesh_params.get<bool>("Verify Mesh");
+        bool verify = surf_expert_mesh_params.get<bool>("verify mesh");
         if (verify) {
           std::cerr << "Verifying surface mesh with Mesh Audit..." << std::endl;
           if (size == 1) {
