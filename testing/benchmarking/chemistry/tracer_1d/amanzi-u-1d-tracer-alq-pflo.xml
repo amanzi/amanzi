@@ -46,10 +46,10 @@
 
   <execution_controls>
       <comments> </comments>
-      <verbosity level="extreme"/>
+      <verbosity level="high"/>
       <execution_control_defaults init_dt="1.5768e+5" max_dt="6.0e+10" reduction_factor="0.8" increase_factor="1.25" mode="transient" method="bdf1"/>
-      <execution_control start="0.0" end="1.0" init_dt="1.5768e+5" max_dt="6.0e+10" mode="steady" method="bdf1"/>
-      <execution_control start="1.0" end="1.5778463e9" mode = "transient"/>
+      <execution_control start="0.0" end="0.0" init_dt="1.5768e+5" max_dt="6.0e+10" mode="steady" method="bdf1"/>
+      <execution_control start="0.0" end="1.5778463e9" mode = "transient"/>
   </execution_controls>
 
   <numerical_controls>
@@ -63,7 +63,10 @@
 	  <sub_cycling>on</sub_cycling>
       </unstr_transport_controls>
 
-      <unstr_chemistry_controls/>
+      <unstr_chemistry_controls>
+          <max_time_step>1.5778463e+07</max_time_step>
+          <initial_time_step>1.5778463e+07</initial_time_step>
+      </unstr_chemistry_controls>
 
       <unstr_steady-state_controls>
         <min_iterations>10</min_iterations>

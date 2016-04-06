@@ -139,7 +139,7 @@ if __name__ == "__main__":
         comp = 'total_component_concentration.cell.tracer' # conc'
         
         # Amanzi native chemistry
-        input_filename = os.path.join("amanzi-u-1d-"+root+"-isv2.xml")
+        input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "amanzi-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanzi)
 
@@ -152,7 +152,7 @@ if __name__ == "__main__":
 # run+read Amanzi-Alquimia-PFloTran simulation
     try:
         comp = 'total_component_concentration.cell.Tracer conc'
-        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-pflo-isv2.xml")
+        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-pflo.xml")
         path_to_amanzi = "amanzi-alquimia-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+".in",root+".dat"], path_to_amanzi)
         x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
