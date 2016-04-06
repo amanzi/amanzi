@@ -488,7 +488,8 @@ class Mesh_MSTK : public Mesh {
   int generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
                             double x1, double y1, int nx, int ny);
 
-  void extract_mstk_mesh(const Mesh_MSTK& inmesh,
+  void extract_mstk_mesh(const Epetra_MpiComm *incomm,
+                         const Mesh_MSTK& inmesh,
                          const List_ptr entity_ids,
                          const MType entity_dim,
                          const bool flatten = false,

@@ -401,7 +401,7 @@ class Mesh {
   // is called and then cached
 
   // Number of columns in mesh
-  int num_columns() const;
+  int num_columns(bool ghosted=false) const;
 
   // Given a column ID, get the cells of the column
   const Entity_ID_List& cells_of_column(const int columnID_) const;
@@ -785,6 +785,7 @@ class Mesh {
   mutable std::vector<Entity_ID_List> column_cells_;
   mutable std::vector<Entity_ID_List> column_faces_;
   mutable std::vector<Entity_ID> columnID_;
+  mutable int num_owned_cols_;
   mutable bool columns_built_;
   
   // -- topology

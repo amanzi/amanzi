@@ -581,7 +581,7 @@ Mesh_MSTK::Mesh_MSTK(const Mesh *inmesh,
 
   MType entity_dim = ((Mesh_MSTK *) inmesh)->entity_kind_to_mtype(setkind);
 
-  extract_mstk_mesh(*((Mesh_MSTK *) inmesh), src_ents, entity_dim,
+  extract_mstk_mesh(inmesh->get_comm(), *((Mesh_MSTK *) inmesh), src_ents, entity_dim,
                     flatten, extrude, request_faces, request_edges);
 
   List_Delete(src_ents);
@@ -637,7 +637,7 @@ Mesh_MSTK::Mesh_MSTK(const Mesh& inmesh,
 
   MType entity_dim = ((Mesh_MSTK&) inmesh).entity_kind_to_mtype(setkind);
 
-  extract_mstk_mesh((Mesh_MSTK&) inmesh, src_ents, entity_dim, flatten, extrude,
+  extract_mstk_mesh(inmesh.get_comm(), (Mesh_MSTK&) inmesh, src_ents, entity_dim, flatten, extrude,
                     request_faces, request_edges);
 
   List_Delete(src_ents);
@@ -676,7 +676,7 @@ Mesh_MSTK::Mesh_MSTK(const Mesh& inmesh,
     List_Add(src_ents,ent);
   }
   
-  extract_mstk_mesh((Mesh_MSTK&) inmesh, src_ents, entity_dim, flatten, extrude,
+  extract_mstk_mesh(inmesh.get_comm(), (Mesh_MSTK&) inmesh, src_ents, entity_dim, flatten, extrude,
                     request_faces, request_edges);
 
   List_Delete(src_ents);
@@ -716,7 +716,7 @@ Mesh_MSTK::Mesh_MSTK(const Epetra_MpiComm *comm_,
     List_Add(src_ents,ent);
   }
   
-  extract_mstk_mesh((Mesh_MSTK&) inmesh, src_ents, entity_dim, flatten, extrude,
+  extract_mstk_mesh(comm_, (Mesh_MSTK&) inmesh, src_ents, entity_dim, flatten, extrude,
                     request_faces, request_edges);
 
   List_Delete(src_ents);
@@ -793,7 +793,8 @@ Mesh_MSTK::other_internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::R
 // Extract a list of MSTK entities and make a new MSTK mesh
 // For private use of Mesh_MSTK class only
 //---------------------------------------------------------
-void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
+void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
+                                  const Mesh_MSTK& inmesh,
                                   List_ptr src_entities, 
                                   const MType entity_dim,
                                   const bool flatten,
@@ -830,10 +831,10 @@ void Mesh_MSTK::extract_mstk_mesh(const Mesh_MSTK& inmesh,
   // Pre-processing (init, MPI queries etc)
 
   if (flatten)
-    pre_create_steps_(inmesh.space_dimension()-1, inmesh.get_comm(), 
+    pre_create_steps_(inmesh.space_dimension()-1, incomm, 
                       inmesh.geometric_model());
   else
-    pre_create_steps_(inmesh.space_dimension(), inmesh.get_comm(), 
+    pre_create_steps_(inmesh.space_dimension(), incomm,
                       inmesh.geometric_model());
 
   if (myprocid == 0) {

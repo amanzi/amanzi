@@ -1325,9 +1325,10 @@ Mesh::build_columns_() const
   int status = 1;
 
   // Allocate space and initialize.
-  int nn = num_entities(NODE,USED); // Should this be USED or OWNED?
-  int nf = num_entities(FACE,USED); // Should this be USED or OWNED?
-  int nc = num_entities(CELL,USED); // Should this be USED or OWNED?
+  int nn = num_entities(NODE,USED);
+  int nf = num_entities(FACE,USED);
+  int nc = num_entities(CELL,USED);
+  int nc_owned = num_entities(CELL, OWNED);
 
   columnID_.resize(nc);
   cell_cellbelow_.resize(nc);
@@ -1340,7 +1341,9 @@ Mesh::build_columns_() const
   // Find the faces at the bottom of the domain. We assume that these are all
   // the boundary faces whose normal points in the negative z-direction
   //
+  bool owned_cols = true;
   int ncolumns = 0;
+  num_owned_cols_ = 0;
   for (int i = 0; i < nf; i++) {
 
     Entity_ID_List fcells;
@@ -1521,6 +1524,13 @@ Mesh::build_columns_() const
       bot_face = top_face;
     } // while (!done)
 
+    if (colcells[0] < nc_owned) {
+      ASSERT(owned_cols); // this ensures that the owned columns are the first ones in the list
+      num_owned_cols_++;
+    } else {
+      owned_cols = false;
+    }
+    
     colfaces.push_back(top_face);
     column_cells_.push_back(colcells);
     column_faces_.push_back(colfaces);
