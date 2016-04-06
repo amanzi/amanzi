@@ -21,8 +21,8 @@ Authors: Neil Carlson (version 1)
 #include "upwind_total_flux.hh"
 #include "upwind_gravity_flux.hh"
 
-#include "composite_vector_function.hh"
-#include "composite_vector_function_factory.hh"
+#include "CompositeVectorFunction.hh"
+#include "CompositeVectorFunctionFactory.hh"
 
 #include "predictor_delegate_bc_flux.hh"
 #include "wrm_evaluator.hh"
@@ -57,6 +57,7 @@ Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
     precon_wc_(false),
     dynamic_mesh_(false),
     clobber_surf_kr_(false),
+    clobber_boundary_flux_dir_(false),
     vapor_diffusion_(false),
     perm_scale_(1.)
 {
@@ -121,6 +122,14 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     velocity_key_ = plist_->get<std::string>("darcy velocity key",
             getKey(domain_, "darcy_velocity"));
   }
+  if (sat_key_.empty()) {
+    sat_key_ = plist_->get<std::string>("saturation key",
+            getKey(domain_, "saturation_liquid"));
+  }
+  if (sat_ice_key_.empty()) {
+    sat_ice_key_ = plist_->get<std::string>("saturation ice key",
+            getKey(domain_, "saturation_ice"));
+  }
   
   // Get data for special-case entities.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
@@ -158,6 +167,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // -- nonlinear coefficients/upwinding
   Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
   clobber_surf_kr_ = plist_->get<bool>("clobber surface rel perm", false);
+  clobber_boundary_flux_dir_ = plist_->get<bool>("clobber boundary flux direction for upwinding", false);
   std::string method_name = plist_->get<std::string>("relative permeability method", "upwind with Darcy flux");
 
   if (method_name == "upwind with gravity") {
@@ -170,7 +180,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     Krel_method_ = Operators::UPWIND_METHOD_CENTERED;
   } else if (method_name == "upwind with Darcy flux") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-            coef_key_, uw_coef_key_, flux_dir_key_, 1.e-8));
+            coef_key_, uw_coef_key_, flux_dir_key_, 1.e-5));
     Krel_method_ = Operators::UPWIND_METHOD_TOTAL_FLUX;
   } else if (method_name == "arithmetic mean") {
     upwinding_ = Teuchos::rcp(new Operators::UpwindArithmeticMean(name_,
@@ -348,6 +358,14 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     plist_->get<bool>("modify predictor for initial flux BCs", false);
   modify_predictor_wc_ =
     plist_->get<bool>("modify predictor via water content", false);
+
+  // correctors
+  p_limit_ = plist_->get<double>("limit correction to pressure change [Pa]", -1.);
+  patm_limit_ = plist_->get<double>("limit correction to pressure change when crossing atmospheric [Pa]", -1.);
+
+  // valid step controls
+  sat_change_limit_ = plist_->get<double>("max valid change in saturation in a time step [-]", -1.);
+  sat_ice_change_limit_ = plist_->get<double>("max valid change in ice saturation in a time step [-]", -1.);
 
   // Require fields and evaluators for those fields.
   // -- primary variables
@@ -596,6 +614,48 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
 
 
 // -----------------------------------------------------------------------------
+// Check for controls on saturation
+// -----------------------------------------------------------------------------
+bool
+Richards::valid_step() {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Validating time step." << std::endl;
+
+  if (sat_change_limit_ > 0.0) {
+    const CompositeVector& sl_new = *S_next_->GetFieldData(sat_key_);
+    const CompositeVector& sl_old = *S_->GetFieldData(sat_key_);
+    CompositeVector dsl(sl_new);
+    dsl.Update(-1., sl_old, 1.);
+    double change = 0.;
+    dsl.NormInf(&change);
+    if (change > sat_change_limit_) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+        *vo_->os() << "Invalid time step, max sl change="
+                   << change << " > limit=" << sat_change_limit_ << std::endl;
+      return false;
+    }
+  }
+  if (sat_ice_change_limit_ > 0.0) {
+    const CompositeVector& si_new = *S_next_->GetFieldData(sat_ice_key_);
+    const CompositeVector& si_old = *S_->GetFieldData(sat_ice_key_);
+    CompositeVector dsl(si_new);
+    dsl.Update(-1., si_old, 1.);
+    double change = 0.;
+    dsl.NormInf(&change);
+    if (change > sat_ice_change_limit_) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+        *vo_->os() << "Invalid time step, max si change="
+                   << change << " > limit=" << sat_ice_change_limit_ << std::endl;
+      return false;
+    }
+  }
+
+  return PKPhysicalBDFBase::valid_step();
+}
+
+
+// -----------------------------------------------------------------------------
 // Update any diagnostic variables prior to vis (in this case velocity field).
 // -----------------------------------------------------------------------------
 void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
@@ -659,6 +719,24 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
         face_matrix_diff_->ApplyBCs(true, true);
 
       face_matrix_diff_->UpdateFlux(*pres, *flux_dir);
+
+      if (clobber_boundary_flux_dir_) {
+        Epetra_MultiVector& flux_dir_f = *flux_dir->ViewComponent("face",false);
+        for (int f=0; f!=bc_markers_.size(); ++f) {
+          if (bc_markers_[f] == Operators::OPERATOR_BC_NEUMANN) {
+            AmanziMesh::Entity_ID_List cells;
+            mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+            ASSERT(cells.size() == 1);
+            int c = cells[0];
+            AmanziMesh::Entity_ID_List faces;
+            std::vector<int> dirs;
+            mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+            int i = std::find(faces.begin(), faces.end(), f) - faces.begin();
+            
+            flux_dir_f[0][f] = bc_values_[f]*dirs[i];
+          }
+        }
+      }      
     }
 
     update_perm |= update_dir;

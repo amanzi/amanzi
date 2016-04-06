@@ -106,6 +106,10 @@ void PKPhysicalBase::set_states(const Teuchos::RCP<const State>& S,
 // Ensures the step size is smaller than max_valid_change
 // -----------------------------------------------------------------------------
 bool PKPhysicalBase::valid_step() {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Validating time step." << std::endl;
+
   if (max_valid_change_ > 0.0) {
     const CompositeVector& var_new = *S_next_->GetFieldData(key_);
     const CompositeVector& var_old = *S_->GetFieldData(key_);
@@ -114,7 +118,9 @@ bool PKPhysicalBase::valid_step() {
     double change = 0.;
     dvar.NormInf(&change);
     if (change > max_valid_change_) {
-      std::cout << "FAILED MAX VALID CHANGE! " << change << ", " << max_valid_change_ << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+        *vo_->os() << "Invalid time step, max primary variable change="
+                   << change << " > limit=" << max_valid_change_ << std::endl;
       return false;
     }
   }

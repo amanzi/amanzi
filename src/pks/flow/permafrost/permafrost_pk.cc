@@ -14,8 +14,8 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "upwind_total_flux.hh"
 #include "upwind_gravity_flux.hh"
 
-#include "composite_vector_function.hh"
-#include "composite_vector_function_factory.hh"
+#include "CompositeVectorFunction.hh"
+#include "CompositeVectorFunctionFactory.hh"
 
 #include "primary_variable_field_evaluator.hh"
 #include "wrm_permafrost_evaluator.hh"

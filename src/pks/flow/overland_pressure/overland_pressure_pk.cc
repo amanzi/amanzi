@@ -16,8 +16,8 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "Point.hh"
 #include "Op.hh"
 
-#include "composite_vector_function.hh"
-#include "composite_vector_function_factory.hh"
+#include "CompositeVectorFunction.hh"
+#include "CompositeVectorFunctionFactory.hh"
 #include "independent_variable_field_evaluator.hh"
 
 #include "upwind_potential_difference.hh"
@@ -781,7 +781,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
         double dz = elevation_cells[0][c] - elevation[0][f];
 
         if (h_cells[0][c] + dz < h0) {
-          bc_markers_[f] = Operators::OPERATOR_BC_NONE;
+          bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
           bc_values_[f] = 0.0;
         } else {
           bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -802,7 +802,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
         double dz = elevation_cells[0][c] - elevation[0][f];
 
         if (h_cells[0][c] + dz < h0) {
-          bc_markers_[f] = Operators::OPERATOR_BC_NONE;
+          bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
           bc_values_[f] = 0.0;
         } else {
           bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -832,20 +832,23 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
     }
   }
 
-  // mark all remaining boundary conditions as zero flux conditions
+  // check that there are no internal faces and mark all remaining boundary conditions as zero flux conditions
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_markers_[f] == Operators::OPERATOR_BC_NONE) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      int ncells = cells.size();
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
 
-      if (ncells == 1) {
+    if ((bc_markers_[f] != Operators::OPERATOR_BC_NONE) && (ncells == 2)) {
+      std::stringstream mesg_stream;
+      mesg_stream << "Tried to set a boundary condition on an internal face ";
+      Errors::Message mesg(mesg_stream.str());
+      amanzi_throw(mesg);
+    }
+    if ((bc_markers_[f] == Operators::OPERATOR_BC_NONE) && (ncells == 1)) {
         bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_values_[f] = 0.0;
-      }
     }
-  }
-  
+  } 
 }
 
 

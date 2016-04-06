@@ -72,7 +72,7 @@ void PKPhysicalBDFBase::initialize(const Teuchos::Ptr<State>& S) {
 double PKPhysicalBDFBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<const TreeVector> du) {
   S_next_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& conserved = *S_next_->GetFieldData(conserved_key_)
+  const Epetra_MultiVector& conserved = *S_->GetFieldData(conserved_key_)
       ->ViewComponent("cell",true);
   const Epetra_MultiVector& cv = *S_next_->GetFieldData(cell_vol_key_)
       ->ViewComponent("cell",true);

@@ -19,8 +19,8 @@ Author: Ethan Coon
 #include "upwind_gravity_flux.hh"
 #include "enthalpy_evaluator.hh"
 
-#include "composite_vector_function.hh"
-#include "composite_vector_function_factory.hh"
+#include "CompositeVectorFunction.hh"
+#include "CompositeVectorFunctionFactory.hh"
 
 #include "energy_base.hh"
 
@@ -473,8 +473,8 @@ bool EnergyBase::UpdateConductivityDerivativeData_(const Teuchos::Ptr<State>& S)
       if (duw_cond->HasComponent("face"))
         duw_cond->ScatterMasterToGhosted("face");
     } else {
-      Teuchos::RCP<CompositeVector> dcond =
-        S->GetFieldData(dconductivity_key_, name_);
+      Teuchos::RCP<const CompositeVector> dcond =
+        S->GetFieldData(dconductivity_key_);
       dcond->ScatterMasterToGhosted("cell");
     }
   }
