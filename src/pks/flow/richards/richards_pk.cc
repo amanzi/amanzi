@@ -592,12 +592,15 @@ Richards::valid_step() {
     *vo_->os() << "Validating time step." << std::endl;
 
   if (sat_change_limit_ > 0.0) {
-    const CompositeVector& sl_new = *S_next_->GetFieldData(sat_key_);
-    const CompositeVector& sl_old = *S_->GetFieldData(sat_key_);
-    CompositeVector dsl(sl_new);
+    const Epetra_MultiVector& sl_new = *S_next_->GetFieldData(sat_key_)
+        ->ViewComponent("cell",false);
+    const Epetra_MultiVector& sl_old = *S_->GetFieldData(sat_key_)
+        ->ViewComponent("cell",false);
+    Epetra_MultiVector dsl(sl_new);
     dsl.Update(-1., sl_old, 1.);
     double change = 0.;
     dsl.NormInf(&change);
+
     if (change > sat_change_limit_) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
         *vo_->os() << "Invalid time step, max sl change="
@@ -606,12 +609,15 @@ Richards::valid_step() {
     }
   }
   if (sat_ice_change_limit_ > 0.0) {
-    const CompositeVector& si_new = *S_next_->GetFieldData(sat_ice_key_);
-    const CompositeVector& si_old = *S_->GetFieldData(sat_ice_key_);
-    CompositeVector dsl(si_new);
-    dsl.Update(-1., si_old, 1.);
+    const Epetra_MultiVector& si_new = *S_next_->GetFieldData(sat_ice_key_)
+        ->ViewComponent("cell",false);
+    const Epetra_MultiVector& si_old = *S_->GetFieldData(sat_ice_key_)
+        ->ViewComponent("cell",false);
+    Epetra_MultiVector dsi(si_new);
+    dsi.Update(-1., si_old, 1.);
     double change = 0.;
-    dsl.NormInf(&change);
+    dsi.NormInf(&change);
+
     if (change > sat_ice_change_limit_) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
         *vo_->os() << "Invalid time step, max si change="
