@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 
 # ----------- AMANZI + ALQUIMIA -----------------------------------------------------------------
 
-def GetXY_Amanzi(path,root,time,comp):
+def GetXY_Amanzi(path,root,comp):
 
     # open amanzi concentration and mesh files
     dataname = os.path.join(path,root+"_data.h5")
@@ -29,6 +29,7 @@ def GetXY_Amanzi(path,root,time,comp):
     x_amanzi_alquimia  = np.diff(y)/2+y[0:-1]
 
     # extract concentration array
+    time = max(amanzi_file[comp].keys())
     c_amanzi_alquimia = np.array(amanzi_file[comp][time]).flatten()
     amanzi_file.close()
     amanzi_mesh.close()
@@ -70,7 +71,7 @@ def GetXY_PFloTran(path,root,time,comp):
 
     # extract concentrations
     c_pflotran = np.array(pfdata[time][comp]).flatten()
-#    c_pflotran = c_pflotran.flatten()
+#   c_pflotran = c_pflotran.flatten()
     pfdata.close()
 
     return (x_pflotran, c_pflotran)
@@ -146,7 +147,6 @@ if __name__ == "__main__":
     ignore = 4
 
     try:
-
       u_crunchflow = [[[] for x in range(len(components))] for x in range(len(times_CF))]
       for i, time in enumerate(times_CF):
          for j, comp in enumerate(components):          
@@ -204,13 +204,13 @@ if __name__ == "__main__":
         u_amanzi_native = [[[] for x in range(len(amanzi_components))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_components):
-              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
               u_amanzi_native[i][j] = c_amanzi_native
 
         v_amanzi_native = [[[] for x in range(len(amanzi_sorbed))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_sorbed):
-              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
               v_amanzi_native[i][j] = c_amanzi_native
 
         native = True
@@ -219,7 +219,6 @@ if __name__ == "__main__":
         native = False
 
     try:
-
         # Amanzi-Alquimia
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
         path_to_amanzi = "amanzi-alquimia-output"
@@ -228,13 +227,13 @@ if __name__ == "__main__":
         u_amanzi_alquimia = [[[] for x in range(len(amanzi_components))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_components):
-              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
               u_amanzi_alquimia[i][j] = c_amanzi_alquimia
               
         v_amanzi_alquimia = [[[] for x in range(len(amanzi_sorbed))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_sorbed):
-              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
               v_amanzi_alquimia[i][j] = c_amanzi_alquimia
 
         alq = True
@@ -252,13 +251,13 @@ if __name__ == "__main__":
         u_amanzi_alquimia_crunch = [[[] for x in range(len(amanzi_components))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_components):
-              x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+              x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
               u_amanzi_alquimia_crunch[i][j] = c_amanzi_alquimia_crunch
               
         v_amanzi_alquimia_crunch = [[[] for x in range(len(amanzi_sorbed))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_sorbed):
-              x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+              x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
               v_amanzi_alquimia_crunch[i][j] = c_amanzi_alquimia_crunch
 
         alq_crunch = True

@@ -30,14 +30,14 @@ def GetXY_Amanzi(path,root,comp):
     x_amanzi_alquimia  = np.diff(y)/2+y[0:-1]
 
     # extract concentration array
-    time= max(amanzi_file[comp].keys())
+    time = max(amanzi_file[comp].keys())
     c_amanzi_alquimia = np.array(amanzi_file[comp][time])
     amanzi_file.close()
     amanzi_mesh.close()
     
     return (x_amanzi_alquimia, c_amanzi_alquimia)
 
-def GetXY_AmanziS(path,root,time,comp):
+def GetXY_AmanziS(path,root,comp):
     try:
         import fsnapshot
         fsnok = True
