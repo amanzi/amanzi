@@ -438,8 +438,11 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       ENorm_t l_err;
       l_err.value = enorm_comp;
       l_err.gid = dvec_v.Map().GID(enorm_loc);
-      
-      int ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+      int ierr;
+      if (domain_.substr(0,6) == "column")
+        ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_SELF);
+      else
+        ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
       ASSERT(!ierr);
       *vo_->os() << "  ENorm (" << *comp << ") = " << err.value << "[" << err.gid << "] (" << infnorm << ")" << std::endl;
     }
@@ -448,7 +451,11 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   }
   
   double enorm_val_l = enorm_val;
-  int ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+  int ierr;
+  if (domain_.substr(0,6) == "column")
+    ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_SELF);
+  else
+    ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
   ASSERT(!ierr);
   return enorm_val;
 }

@@ -362,8 +362,9 @@ int AmanziUnstructuredGridSimulationDriver::Run(
   if (col_meshes.size() > 0) {
     for (int c=0; c!=col_meshes.size(); ++c) {
       std::stringstream namestream, namestream_surf;
-      namestream << "column_" << c;
-      namestream_surf << "column_" << c << "_surface";
+      int id = surface_mesh->cell_map(false).GID(c);
+      namestream << "column_" << id;
+      namestream_surf << "column_" << id << "_surface";
       S->RegisterMesh(namestream.str(), col_meshes[c], deformable);
       if (mesh_plist.isSublist("Column Surface Meshes"))
         S->RegisterMesh(namestream_surf.str(), col_surf_meshes[c], deformable);

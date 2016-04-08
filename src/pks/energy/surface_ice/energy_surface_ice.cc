@@ -299,7 +299,11 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
       if (flux > 0.) { // exfiltration
         // get the subsurface's enthalpy
         AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
-        S->GetMesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+        if (domain_.substr(0,6) == "column")
+          S->GetMesh(domain_.substr(0,domain_.size()-8))->face_get_cells(f, AmanziMesh::OWNED, &cells);
+        else
+          S->GetMesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+      
         ASSERT(cells.size() == 1);
 
         g_c[0][c] -= flux * enth_subsurf[0][cells[0]];

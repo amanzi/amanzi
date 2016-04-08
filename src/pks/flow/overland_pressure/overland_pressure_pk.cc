@@ -419,31 +419,7 @@ void OverlandPressureFlow::initialize(const Teuchos::Ptr<State>& S) {
       if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
         S->GetField(key_,name_)->set_initialized();
       }
-    }/*
-    else if (ic_plist.get<bool>("initialize surface head from subsurface columns",false)){
-      
-      Epetra_MultiVector& head = *head_cv->ViewComponent("cell",false);
-      const Epetra_MultiVector& pres_face = *S->GetFieldData("column_0-pressure")
-        ->ViewComponent("face",false);
-      unsigned numface = pres_face.MyLength()-1;
-
-      unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
-      for (unsigned int c=0; c!=ncells_surface; ++c) {
-        std::stringstream namestream;
-        namestream << "column_" << c << "-pressure";
-        const Epetra_MultiVector& pres = *S->GetFieldData(namestream.str())
-        ->ViewComponent("face",false);
-        
-        head[0][c] = pres[0][numface];
-        std::cout<<"OVERLAND PK: "<<head[0][c]<<"\n";
-      }
-
-      // mark as initialized
-      if (ic_plist.get<bool>("initialize surface head from subsurface columns",false)) {
-        S->GetField(key_,name_)->set_initialized();
-      }
-    } 
-     */
+    }
 
   }
    // Initialize BC data structures

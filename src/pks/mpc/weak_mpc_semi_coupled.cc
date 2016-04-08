@@ -9,6 +9,20 @@
 
 namespace Amanzi {
 
+
+
+// -----------------------------------------------------------------------------
+// Calculate the min of sub PKs timestep sizes.
+// -----------------------------------------------------------------------------
+double WeakMPCSemiCoupled::get_dt() {
+  double dt = 1.0e99;
+  for (MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
+       pk != sub_pks_.end(); ++pk) {
+    dt = std::min<double>(dt, (*pk)->get_dt());
+  }
+  return dt;
+};
+
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually.
 // -----------------------------------------------------------------------------
@@ -60,12 +74,17 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
   unsigned int size_t = surfstar_pres.MyLength();
 
   ASSERT(size_t == numPKs_ -1); // check if the subsurface columns are equal to the surface cells
-
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  
+  
   //copying pressure
   for (unsigned c=0; c<size_t; c++){
     if(surfstar_pres[0][c] > 101325.00){
       std::stringstream name;
-      name << "column_" << c <<"_surface";
+      int id = S_->GetMesh("surface")->cell_map(false).GID(c);
+     
+      name << "column_" << id <<"_surface";
       Epetra_MultiVector& surf_pres = *S_inter_->GetFieldData(getKey(name.str(),"pressure"), 
 							      S_inter_->GetField(getKey(name.str(),"pressure"))->owner())->ViewComponent("cell", false);
       surf_pres[0][0] = surfstar_pres[0][c];
@@ -77,8 +96,10 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
   //copying temperatures
   for (unsigned c=0; c<size_t; c++){
     std::stringstream name, name_ss;
-    name << "column_" << c <<"_surface";
-    name_ss << "column_" << c;
+    int id = S_->GetMesh("surface")->cell_map(false).GID(c);
+    name << "column_" << id <<"_surface";
+    name_ss << "column_" << id;
+   
     Epetra_MultiVector& surf_temp = *S_inter_->GetFieldData(getKey(name.str(),"temperature"), 
 							    S_inter_->GetField(getKey(name.str(),"temperature"))->owner())->ViewComponent("cell", false);
     surf_temp[0][0] = surfstar_temp[0][c];
@@ -94,7 +115,7 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
   } 
   // NOTE: later do it in the setup --aj
   
-  
+ 
   for(int i=1; i<numPKs_; i++){
     Teuchos::RCP<PKBDFBase> pk_domain =
       Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[i]);
@@ -103,14 +124,24 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
   }
   if(fail) return fail;  
   
+ 
+ 
   // advance surface-pressure from t_n to t_(n+1)
   ++pk;
+  int k=0;
+  for (pk; pk!=sub_pks_.end(); ++pk){
+    fail += (*pk)->advance(dt);
+    if (fail) return fail;
+  }
+  /*
   while (pk != sub_pks_.end()){
+    std::cout<<"COUPLED: "<<rank<<" "<<k<<"\n";
     fail += (*pk)->advance(dt);
     if (fail) return fail;
     ++pk;
-  }
-  
+    k++;
+    }*/
+
   Epetra_MultiVector& surfstar_p = *S_next_->GetFieldData("surface_star-pressure",
 							  S_inter_->GetField("surface_star-pressure")->owner())->ViewComponent("cell", false);
   Epetra_MultiVector& surfstar_t = *S_next_->GetFieldData("surface_star-temperature",
@@ -118,7 +149,8 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
   
   for (unsigned c=0; c<size_t; c++){
     std::stringstream name;
-    name << "column_" << c <<"_surface";
+    int id = S_->GetMesh("surface")->cell_map(false).GID(c);
+    name << "column_" << id <<"_surface";
     const Epetra_MultiVector& surf_p = *S_next_->GetFieldData(getKey(name.str(),"pressure"))->ViewComponent("cell", false);
     if(surf_p[0][0] > 101325.00)
       surfstar_p[0][c] = surf_p[0][0];
@@ -129,7 +161,8 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
   
   for (unsigned c=0; c<size_t; c++){
     std::stringstream name;
-    name << "column_" << c <<"_surface";
+    int id = S_->GetMesh("surface")->cell_map(false).GID(c);
+    name << "column_" << id <<"_surface";
     const Epetra_MultiVector& surf_t = *S_next_->GetFieldData(getKey(name.str(),"temperature"))->ViewComponent("cell", false);
     surfstar_t[0][c] = surf_t[0][0];
   }
@@ -141,7 +174,12 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
     Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[0]);
   ASSERT(pk_surf.get());
   pk_surf->ChangedSolution();
+
+
+ 
   return fail;
+
+
 }
   
 

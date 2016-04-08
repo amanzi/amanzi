@@ -42,7 +42,8 @@ public:
   MPC(const Teuchos::RCP<Teuchos::ParameterList>& plist,
       Teuchos::ParameterList& FElist,
       const Teuchos::RCP<TreeVector>& soln);
-
+  
+  MPC(){};
   // Virtual destructor
   virtual ~MPC() {}
 
@@ -69,6 +70,9 @@ public:
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
 
+  virtual void init_(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                     Teuchos::ParameterList& FElist,
+                     const Teuchos::RCP<TreeVector>& soln);
  protected: // data
 
   typedef std::vector<Teuchos::RCP<PK_t> > SubPKList;
@@ -131,7 +135,66 @@ MPC<PK_t>::MPC(const Teuchos::RCP<Teuchos::ParameterList>& plist,
       }
     }
   }
+  //  init_(plist,FElist,soln);
 }
+
+
+// -----------------------------------------------------------------------------
+// Initialize PKs for column version from local PList
+// -----------------------------------------------------------------------------
+template <class PK_t>
+void MPC<PK_t>::init_(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+               Teuchos::ParameterList& FElist,
+               const Teuchos::RCP<TreeVector>& soln) {
+  plist_ = plist;
+  // loop over sub-PKs in the PK sublist, constructing the hierarchy recursively
+  Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(plist_, "PKs");
+  PKFactory pk_factory;
+
+  if (plist_->isParameter("PKs order")) {
+    // ordered
+    Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
+    int npks = pk_order.size();
+    
+    for (int i=0; i!=npks; ++i) {
+      // create the solution vector
+      Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
+      solution_->PushBack(pk_soln);
+
+      // create the PK
+      std::string name_i = pk_order[i];
+      Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list,name_i);
+    
+      pk_list->set("PK name", name_i);
+      Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_list, FElist, pk_soln);
+      Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
+      sub_pks_.push_back(pk);
+    }
+
+  } else {
+    // no order, just loop over all sublists
+    for (Teuchos::ParameterList::ConstIterator i = pks_list->begin();
+         i != pks_list->end(); ++i) {
+
+      const std::string &name_i  = pks_list->name(i);
+      const Teuchos::ParameterEntry  &entry_i = pks_list->entry(i);
+      if (entry_i.isList()) {
+        // create the solution vector
+        Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
+        solution_->PushBack(pk_soln);
+
+        // create the PK
+        Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list,name_i);
+        pk_list->set("PK name", name_i);
+        Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_list, FElist, pk_soln);
+        Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
+        sub_pks_.push_back(pk);
+      }
+    }
+  }
+}
+
+
 
 
 // -----------------------------------------------------------------------------
