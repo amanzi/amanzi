@@ -3004,6 +3004,9 @@ It also has one global parameters.
   * `"include enthalpy in preconditioner`" [bool] allows us to study impact (usually positive) 
     of including enthalpy term in the preconditioner. Default value is *true*.
 
+  * `"diagonal shift`" [double] allows for a constant shift to be applied to
+    the diagonal of the assembled operator, which can b useful for dealing
+    with singular or near-singular matrices.  Default is *0.0*.
 
 Diffusion operator
 ``````````````````

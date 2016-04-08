@@ -151,7 +151,7 @@ void Operator::AssembleMatrix()
   AssembleMatrix(*smap_, *Amat_, 0, 0);
   Amat_->FillComplete();
 
-  if (shift_ > 0.) {
+  if (shift_ != 0.) {
     Amat_->DiagonalShift(shift_);
   }
   
