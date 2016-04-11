@@ -800,7 +800,7 @@ The ``geochemistry`` section has the subelements ``comments``, ``verbosity``, an
 
 Currently, each named constraint must correspond to a constraint with matching name in the external chemistry engine input file.  With the XML input file, the ``constraint`` element takes an attribute ``name``.  This name must match the name of a constraint within the chemistry input file.  In addition, the use may include the constraint information as subelements to the ``constraint`` element for information purposes.  The ``constraint`` element accepts three version of a ``primary`` subelement.  The ``primary`` element describes the constraint on a primary specie, mineral, or gas.  
 
-For each type of primary, the ``primary`` element takes the attributes ``name``, ``type``, and ``value``.  The ``name`` should match a primary listed in the ``phases`` section.  The  ``type`` can be: free_ino, pH, total, mineral, gas, total+sorbed, or charge.  Note, for a non-reacting primary (i.e. tracer or solute), only the type total is valid.  If the type selected is mineral, an additional attribute ``mineral`` giving the mineral name is expected.   If the type selected is gas, an additional attribute ``gas`` giving the gas name is expected.  Again, the names given should match names specified in the ``phases`` section.
+For each type of primary, the ``primary`` element takes the attributes ``name``, ``type``, and ``value``.  The ``name`` should match a primary listed in the ``phases`` section.  The  ``type`` can be: free_ion, pH, total, mineral, gas, total+sorbed, or charge.  Note, for a non-reacting primary (i.e. tracer or solute), only the type total is valid.  If the type selected is mineral, an additional attribute ``mineral`` giving the mineral name is expected.   If the type selected is gas, an additional attribute ``gas`` giving the gas name is expected.  Again, the names given should match names specified in the ``phases`` section.
 
 .. code-block:: xml
 
@@ -935,6 +935,47 @@ Kd models can be specified for 1 or more primaries using the ``sorption_isotherm
         </primary>
     </sorption_isotherms>
 
+Minerals
+________
+
+Mineral concentrations are specified using the volume fraction and specific surface area attributes ``volume_fraction`` and ``specific_surface_area`` respectively in the ``minerals`` block
+
+.. code-block:: xml
+
+       <minerals>
+           <mineral name="Calcite" volume_fraction="0.1" specific_surface_area"1.0"/>
+       </minerals>
+
+Ion_exchange
+____________
+
+Ion exchange reactions are specified in the ``ion_exchange`` block.  Cations active in the reaction are grouped under the subelement ``cations``.  The attribute ``cec`` specifies the cation exchange capacity for the reaction.  Each cation is listed in a ``cation`` subelement with the attributes ``name`` and ``value`` to specify the cation name and the associated selectivity coefficient.
+
+.. code-block:: xml
+
+        <ion_exchange>
+            <cations cec="750.0">
+                <cation name="Ca++" value="0.2953"/>
+                <cation name="Mg++" value="0.1666"/>
+                <cation name="Na+" value="1.0"/>
+            </cations>
+        </ion_exchange>
+
+Surface_complexation
+____________________
+
+Surface complexation reactions are specified in the ``surface_complexation`` block.  Individual reactions are specified using the ``site`` block.  It has the attributes ``density`` and ``name`` to specify the site density and the name of the site.  Note, the site name must match a surface complexation site in the database file without any leading characters, such as `>`.  The subelement ``complexes`` provides a comma separated list of complexes.  Again, the names of the complexes must match names within the datafile without any leading characters.
+
+.. code-block:: xml
+
+        <surface_complexation>
+            <site density="1.908e-3" name="FeOH_s">
+                <complexes>FeOHZn+_s, FeOH2+_s, FeO-_s</complexes>
+            </site>
+            <site density="7.6355e-2" name="FeOH_w">
+                <complexes>FeOHZn+_w, FeO-_w, FeOH2+_w</complexes>
+            </site>
+        </surface_complexation>
 
 
 An example materials element would look like
@@ -984,7 +1025,7 @@ For `"transport`" a `"state`" must be specified.
 Chemistry
 _________
 
-For `"chemistry`" a combination of `"state`", `"engine`", `"input_filename`", and `"database`" must be specified.  If `"state`" is `"off`" then `"engine`" is set to `"none`".  Otherwise the `"engine`" model must be specified.  If pflotran is specified as the chemistry engine, the user must specify a pflotran input filename which contains geochemistry information in the `"input_filename`" attribute and a database filename in the `"database`" attribute.  As noted previously, the capability to generate the chemistry engine input file from information in the XML input file is currently under development.  
+For `"chemistry`" a combination of `"state`", `"engine`", `"input_filename`", and `"database`" must be specified.  If `"state`" is `"off`" then `"engine`" is set to `"none`".  Otherwise the `"engine`" model must be specified.  If PFloTran is specified as the chemistry engine, the user must specify a PFloTran database filename in the `"database`" attribute.  Also, if PFloTran is the chemistry engine, the user may provide a PFloTran input file using the attribute ``input_filename`` or omit the attribute.  If the attribute is omitted, Amanzi will automatically generate the PFloTran input file using information in the XML input file.  It should be noted the automatically generated file is written to a file using the same name as the XML input file, but with the extension .in.  If such a file exists in the run directory, Amanzi will not overwrite the file and just use the existing file.
 
 .. code-block:: xml
 

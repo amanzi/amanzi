@@ -27,7 +27,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry state="on" engine="pflotran" input_filename="1d-calcite-trim.in"  />
+    <chemistry state="on" engine="pflotran" database="calcite.dat"  />
   </process_kernels>
 
   <phases>
@@ -36,11 +36,19 @@
       <viscosity>1.002e-03</viscosity>
       <density>998.2</density>
       <dissolved_components>
-        <solutes>
-          <solute coefficient_of_diffusion="0.0">H+</solute>
-          <solute coefficient_of_diffusion="0.0">HCO3-</solute>
-          <solute coefficient_of_diffusion="0.0">Ca++</solute>
-	</solutes>
+        <primaries>
+          <primary coefficient_of_diffusion="0.0000E00">H+</primary>
+          <primary coefficient_of_diffusion="0.0000E00">HCO3-</primary>
+          <primary coefficient_of_diffusion="0.0000E00">Ca++</primary>
+        </primaries>
+        <secondaries>
+          <secondary>CO2(aq)</secondary>
+          <secondary>CO3--</secondary>
+          <secondary>CaCO3(aq)</secondary>
+          <secondary>CaHCO3+</secondary>
+          <secondary>CaOH+</secondary>
+          <secondary>OH-</secondary>
+        </secondaries>
       </dissolved_components>
     </liquid_phase>
     <solid_phase>
@@ -212,12 +220,19 @@
   </boundary_conditions>
 
   <geochemistry>
-    <pflotran_chemistry>
-      <reaction_network file="1d-calcite-trim.in" format="simple"/>
-
-      <constraint name="initial" filename="1d-calcite-trim.in"/>
-      <constraint name="west" filename="1d-calcite-trim.in"/>
-    </pflotran_chemistry>
+    <verbosity>silent</verbosity>
+    <constraints>
+      <constraint name="initial">
+        <primary mineral="Calcite" name="Ca++" type="mineral" value="5.0e-4"/>
+        <primary name="HCO3-" type="gas" value="1.0e-3" gas="CO2(g)"/>
+        <primary name="H+" type="free_ion" value="1.0e-8"/>
+      </constraint>
+      <constraint name="west">
+        <primary name="Ca++" type="charge" value="1e-6"/>
+        <primary name="HCO3-" type="total" value="1e-3"/>
+        <primary name="H+" type="pH" value="5"/>
+      </constraint>
+    </constraints>
   </geochemistry>
 
   <output>

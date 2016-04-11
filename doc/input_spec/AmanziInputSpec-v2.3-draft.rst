@@ -1,5 +1,5 @@
 ====================================================
-Amanzi XML Input Specification (Version 2.2.1-draft)
+Amanzi XML Input Specification (Version 2.3-draft)
 ====================================================
 
 .. contents:: **Table of Contents**
@@ -108,7 +108,7 @@ Definitions allows the user the define and name constants, times, and macros to 
 Constants
 ---------
 
-Here the user can define and name constants to be used in other sections of the input file.  Note that if a name is repeated the last read value will be retained and all others will be overwritten.  See `Named Times`_ for specifying time units other than seconds.
+Here the user can define and name constants to be used in other sections of the input file.  Note that if a name is repeated the last read value will be retained and all others will be overwritten.  See `Constants`_ for specifying time units other than seconds.
 
 .. code-block:: xml
 
@@ -117,7 +117,7 @@ Here the user can define and name constants to be used in other sections of the 
       Optional Elements: constant, time_constant, numerical_constant, area_mass_flux_constant 
   </constants>
 
-A ``constant`` has three attributes ``name``, ``type``, and ``value``.  The user can provide any name, but note it should not be repeated anywhere within the input to avoid confusion.  The available types include: `"none`", `"time`", `"numerical`", and `"area_mass_flux`".  Values assigned to constants of type `"time`" can include known units, otherwise seconds will be assumed as the default. See `Named Times`_ for specifying time units other than seconds.
+A ``constant`` has three attributes ``name``, ``type``, and ``value``.  The user can provide any name, but note it should not be repeated anywhere within the input to avoid confusion.  The available types include: `"none`", `"time`", `"numerical`", and `"area_mass_flux`".  Values assigned to constants of type `"time`" can include known units, otherwise seconds will be assumed as the default. See `Constants`_ for specifying time units other than seconds.
 
 .. code-block:: xml
 
@@ -408,7 +408,7 @@ ________________________
 Unstr_chemistry_controls
 ________________________
 
-``unstr_chemistry_controls`` specifies numerical controls for the chemistry process kernel available under the unstructured algorithm. Currently two chemistry engines are available through Amanzi.  They are the Amanzi native chemistry engine or the PFLOTRAN chemistry engine available through the Alquimia interface.  Options for both engines are specified here. 
+``unstr_chemistry_controls`` specifies numerical controls for the chemistry process kernel available under the unstructured algorithm. Currently two chemistry engines are available through Amanzi.  They are the Amanzi native chemistry engine or the PFloTran chemistry engine available through the Alquimia interface.  Options for both engines are specified here. 
 
 The subelements pertaining to the Amanzi native chemistry engine are:
 
@@ -1073,13 +1073,13 @@ A swept_polygon region is defined by a list of points defining the polygon, the 
 Geochemistry
 ============
 
-Geochemistry allows users to define a reaction network and constraints to be associated with species defined under the ``dissolved_components`` section of the ``phases`` block.  Amanzi provides access to an internal geochemical engine as well as the Alquimia interface.  The Alquimia interface provides access to third-party geochemistry engines.  Currently available through Alquimia is the PFLOTRAN engine. The user may specify engine specific information using the appropriate subelement.
+Geochemistry allows users to define a reaction network and constraints to be associated with species defined under the ``dissolved_components`` section of the ``phases`` block.  Amanzi provides access to an internal geochemical engine as well as the Alquimia interface.  The Alquimia interface provides access to third-party geochemistry engines.  Currently available through Alquimia is the PFloTran engine. The user may specify engine specific information using the appropriate subelement.
 
 .. code-block:: xml
 
   <geochemistry>
       Required Elements: NONE
-      Optional Elements: verbosity, amanzi_chemistry, pflotran_chemistry, constraints
+      Optional Elements: verbosity, constraints
   </geochemistry>
 
 Verbosity
@@ -1087,72 +1087,76 @@ Verbosity
 
 The ``verbosity`` element sets the verbosity for the geochemistry engine.  Available options are silent, terse, verbose, warnings, and errors.
 
-
-Amanzi Chemistry
-----------------
-
-The ``amanzi_chemistry`` block specifies options specific to the native Amanzi chemistry PK.
-
-.. code-block:: xml
-
-  <amanzi_chemistry>
-      Required Elements: NONE
-      Optional Elements: reaction_network
-  </amanzi_chemistry>
-
-* ``reaction_network`` specifies the external file containing chemistry information (\*.bgd) using the attributes ``file`` and ``format``.  By default the format of an existing bgd file is simple.  Amanzi currently has the capability to automatically generate the bgd file for isotherm only.
-
-.. code-block:: xml
-
-    <amanzi_chemistry>
-          <reaction_network file="calcite.bgd" format="simple" />
-    </amanzi_chemistry>
-
-Pflotran Chemistry
-------------------
-
-For geochemistry simulated through PFLOTRAN, the user defines a reaction network and constraints.  These are defined within the same or separate text files through PFLOTRAN's input specification (see the CHEMISTRY and CONSTRAINT card definitions at https://bitbucket.org/pflotran/pflotran-dev/wiki/Documentation/QuickGuide).
-
-.. code-block:: xml
-
-  <amanzi_chemistry>
-      Required Elements: NONE
-      Optional Elements: database, reaction_network
-  </amanzi_chemistry>
-
-* ``database`` has a ``name`` attribute that should refer to a PFLOTRAN chemical database file (\*.dat).
-
-* ``reaction_network`` has ``file`` and ``format`` attributes that defines a file containing a PFLOTRAN CHEMISTRY block and a PFLOTRAN CONSTRAINT block (\*.in). The constraints are specified in the ``contstraint`` block.
-
-.. code-block:: xml
-
-    <pflotran_chemistry>
-      <reaction_network file="1d-calcite-trim.in" format="simple"/>
-      <database file="calcite.dat" />
-    </pflotran_chemistry>
-
 Constraints
 -----------
 
-The ``constraints`` block is a list of ``constraint`` and ``mineral_kinetics`` subelements identifying geochemical constraints and any relevant minerals for the reaction network.  Currently utilized by the PFLOTRAN engine only.
+The ``constraints`` block is a list of ``constraint`` subelements identifying geochemical constraints and any relevant minerals for the reaction network.  Currently utilized by the PFloTran engine only.  If the attribute ``input_filename`` is missing from the ``process_kernels`` subelement ``chemistry``, Amanzi will automatically generating the PFloTran engine inputfile including the constraints defined here.  The constraints named and/or defined here can be referenced in the ``initial_conditions`` and ``boundary_conditions`` blocks.
 
-* Each ``constraint`` has a ``name`` attribute which must match the corresponding constraint name in the PFLOTRAN input file provided.  If user has provided the PFLOTRAN input file, then only the constraint name is required.  When the capability to auto generate the PFLOTRAN file is complete, additional information will be required to specify the constrain here.
+* Each ``constraint`` has a ``name`` attribute.  If the user is providing the PFloTran input file, the name must match a constraint defined in the file.  Otherwise, the subelements defining the constraint must be provided and Amanzi will generate a constraint using this name. 
+
+Individual constraints can have an unbounded number of chemical constraints defined under it.  The possible constraints are as follows.
+
+  * Primary constraints are specified using the element ``primary``.  Attributes include ``name`` the name of the primary species, ``type`` the constraint type, and ``value`` the initial value to be used. For constraints based on equilibrium with a specific mineral or gas, an additional attribute specifying the mineral or gas is expected, ``mineral`` or ``gas`` respectively.  The table below lists the constraint types, which attributes are requires, and the corresponding value of the attribute ``type``.  Note, for non-reactive species/solutes, use the type "total".
+
+  * Mineral constraints are specified using the element ``mineral``.  Attributes include ``name`` the name of the mineral, ``volume_fraction`` the volume fraction, and ``surface_area`` the specific surface area.
+
+
++------------------+---------------------+----------------+
+| Constraint Type  | Required Attributes | ``type`` Value |
++==================+=====================+================+
+| | Free ion       | | name              | free_ion       |
+| | concentration  | | value             |                |
+|                  | | type              |                |
++------------------+---------------------+----------------+
+| | pH             | | name              | pH             |
+|                  | | value             |                |
+|                  | | type              |                |
++------------------+---------------------+----------------+
+| | Total aquesous | | name              | total          |
+| | concentration  | | value             |                |
+|                  | | type              |                |
++------------------+---------------------+----------------+
+| | Total aquesous | | name              | total+sorbed   |
+| | + sorbed       | | value             |                |
+| | concentration  | | type              |                |
++------------------+---------------------+----------------+
+| | Charge balance | | name              | charge         |
+|                  | | value             |                |
+|                  | | type              |                |
++------------------+---------------------+----------------+
+| | Concentration  | | name              | mineral        |
+| | based on       | | value             |                |
+| | mineral        | | type              |                |
+|                  | | mineral           |                |
++------------------+---------------------+----------------+
+| | Concentration  | | name              | gas            |
+| | based on       | | value             |                |
+| | mineral        | | type              |                |
+|                  | | gas               |                |
++------------------+---------------------+----------------+
+
+An example of a fully specified constraint is as follows.
 
 .. code-block:: xml
 
-    <constraints>
-          <constraint name="initial" />
-          <constraint name="west" />
-    </constraints>
+  <constraints>
+    <constraint name="initial">
+        <primary name="Tc-99"   value="1e-3" type="total"/>
+        <primary name="H2O"     value="1e-9"   type="mineral" mineral="Calcite"/>
+        <primary name="CO2(aq)" value="1e-9"   type="gas" gas="CO2"/>
+        <mineral name="Calcite" volume_fraction="1e-3" surface_area ="1e-5"/>
+    </constraint>
+  </constraints>
 
-.. * ``constraint`` has a ``type`` attribute that identifies the type of geochemical constraint desired. Different engines support different types of constraints. The behavior of the constraint may be defined in one of two ways:
+Note, if the user has provided a PFloTran input file, all that is required is the following,
 
-..    * The constraint can have a ``name`` attribute identifying a constraint defined in the reaction network file.
+.. code-block:: xml
 
-..    * If the constraint does not have a ``name`` attribute, it should have ``primary`` subelements that define the constraint in terms of its effects on the primary chemical species for the problem.
+  <constraints>
+    <constraint name="initial"/>
+  </constraints>
 
-.. * ``mineral_kinetics`` is a list of ``mineral`` subelements that each have ``name`` and ``rate_constant`` attributes.
-
+Any additional information provided is for the user's reference and will be ignored by Amanzi.
 
 Materials
 =========
@@ -1168,7 +1172,7 @@ Within the Materials block an unbounded number of ``material`` elements can be d
 
   <material>
       Required Elements: mechanical_properties, permeability or hydraulic_conductivity, assigned_regions
-      Optional Elements: comments, cap_pressure, rel_perm, sorption_isotherms 
+      Optional Elements: comments, cap_pressure, rel_perm, sorption_isotherms, minerals, ion_exchange, surface_complexation 
   </material>
  
 Mechanical_properties
@@ -1271,7 +1275,7 @@ Rel_perm
 Sorption_isotherms
 ------------------
 
-*  ``sorption_isotherms`` is an optional element for providing Kd models and molecular diffusion values for individual solutes.  All solutes should be listed under each material.  Values of 0 indicate that the solute is not present/active in the current material.  The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".  Different models and parameters are assigned per solute in sub-elements through attributes. The Kd and molecular diffusion parameters are specified in subelements.
+*  ``sorption_isotherms`` is an optional element for providing Kd models and molecular diffusion values for individual solutes.  All non-reactive primaries or solutes should be listed under each material.  Values of 0 indicate that the primary is not present/active in the current material.  The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".  Different models and parameters are assigned per solute in sub-elements through attributes. The Kd and molecular diffusion parameters are specified in subelements.
 
 .. code-block:: xml
 
@@ -1287,11 +1291,52 @@ Sorption_isotherms
 .. code-block:: xml
  
     <sorption_isotherms>
-	<solute name="string" />
+	<primary name="string" />
             <kd_model model="linear|langmuir|freundlich" kd="Value" b="Value (langmuir only)" n="Value (freundlich only)" />
-	</solute>
+	</primary>
     </sorption_isotherms>
   
+Minerals
+--------
+
+* For each mineral, the concentrations are specified using the volume fraction and specific surface area using the attributes ``volume_fraction`` and ``specific_surface_area`` respectively.  
+
+.. code-block:: xml
+
+       <minerals>
+           <mineral name="Calcite" volume_fraction="0.1" specific_surface_area"1.0"/>
+       </minerals>
+
+Ion_exchange
+------------
+
+* The ``ion_exhange`` block, specified parameters for an ion exchange reaction.  Cations active in the reaction are grouped under the element ``cations``.  The attribute ``cec`` specifies the cation exchange capacity for the reaction.  Each cation is listed in a ``cation`` subelement with the attributes ``name`` and ``value`` to specify the cation name and the associated selectivity coefficient.
+
+.. code-block:: xml
+
+        <ion_exchange>
+            <cations cec="750.0">
+                <cation name="Ca++" value="0.2953"/>
+                <cation name="Mg++" value="0.1666"/>
+                <cation name="Na+" value="1.0"/>
+            </cations>
+        </ion_exchange>
+
+Surface_complexation
+--------------------
+
+* The ``surface_complexation`` block specifies parameters for surface complexation reactions.  Individual reactions are specified using the ``site`` block.  It has the attributes ``density`` and ``name`` to specify the site density and the name of the site.  Note, the site name must match a surface complexation site in the database file without any leading characters, such as `>`.  The subelement ``complexes`` provides a comma seperated list of complexes.  Again, the names of the complexes must match names within the datafile without any leading characters.
+
+.. code-block:: xml
+
+        <surface_complexation>
+            <site density="1.908e-3" name="FeOH_s">
+                <complexes>FeOHZn+_s, FeOH2+_s, FeO-_s</complexes>
+            </site>
+            <site density="7.6355e-2" name="FeOH_w">
+                <complexes>FeOHZn+_w, FeO-_w, FeOH2+_w</complexes>
+            </site>
+        </surface_complexation>
     
 Process Kernels
 ===============
@@ -1340,9 +1385,9 @@ Chemistry
       
       * ``engine`` = "amanzi | pflotran | crunchflow | none"
 
-      * ``input_filename`` is the name of the chemistry engine input file (filename.in).   
+      * ``input_filename`` is the name of the chemistry engine input file (filename.in).  If this is omitted Amanzi will automatically generate this file.
 
-      * ``database`` is the name of the chemisty reaction database file (filename.dat).   
+      * ``database`` is the name of the chemistry reaction database file (filename.dat).   
 
 For ``chemistry`` a combination of ``state`` and ``engine`` must be specified.  If ``state`` is `"off`" then ``engine`` is set to `"none`".  Otherwise the ``engine`` must be specified. 
 
@@ -1381,23 +1426,22 @@ Here is more info on the ``liquid_phase`` elements:
 
     * ``dissolved_components`` has the elements
 
-        * ``solutes``
+        * ``primaries`` 
+          
+        * ``secondaries``
 
-        * or ``primaries`` and ``secondaries``
-
-The subelement ``solutes`` can have an unbounded number of subelements ``solute`` which defines individual solutes present.  The ``solute`` element takes the following form:
-  
-    * ``solute`` = "string", containing the name of the solute
+The subelement ``primaries`` is used for specifying reactive and non-reactive primary species.  An unbounded number of subelements ``primary`` can be specified.  The text body of the element lists the name of the primary.  Note, the name of the primary must match a species in the database file.  The ``primary`` element has the following attributes:
 
     * ``coefficient_of_diffusion`` = "exponential", this is an optional attribute
 
     * ``first_order_decay_constant`` = "exponential", this is an optional attribute
 
-The subelements ``primaries`` and ``secondaries`` are used for specifing reactive species.  Each can have an unbounded number of sublements ``primary`` or ``secondary``.
+    * ``forward_rate`` = "exponential", this is a required attribute when being used with non-reactive primaries/solutes and automatically generating the chemistry engine input file
 
-    * ``primary`` contains the name of the primary which must match the name used in any additional chemistry files (\*.dat, \*.in \*.bgd).  It also has the optional attribute ``coefficient_of_diffusion``.
+    * ``backward_rate`` = "exponential", this is a required attribute when being used with non-reactive primaries/solutes and automatically generating the chemistry engine input file
 
-    * ``secondary`` contains the name of the secondary which must match the name used in any additional chemistry files (\*.dat, \*.in \*.bgd). 
+The subelement ``secondaries`` is used for specifying secondaries species for reactive chemistry.  An unbounded number of sublements ``secondary`` can be specified.  The body of the element lists the name of the secondary species.  Note, the name of the secondary must match a species in the database file.
+
 
 Solid_phase
 -----------
@@ -1415,7 +1459,7 @@ Here is more info on the ``solid_phase`` elements:
 
     * ``minerals`` has the element 
 
-        * ``mineral`` which contains the name of the mineral
+        * ``mineral`` which contains the name of the mineral. Note, the name of the mineral must match a species in the database file.
 
 Initial Conditions
 ==================
@@ -1445,7 +1489,7 @@ Liquid_phase
 
   <liquid_phase>
       Required Elements: liquid_component
-      Optional Elements: solute_component, geochemistry
+      Optional Elements: geochemistry_component
   </liquid_phase>
 
 *  Here is more info on the ``liquid_component`` block:
@@ -1468,21 +1512,9 @@ Liquid_phase
     <linear_saturation name="some name" value="exponential" reference_coord="coordinate" gradient="coordinate"/>
     <velocity name="some name" x="exponential" y="exponential" z="exponential"/>
 
-*  Here is more info on the ``solute_component`` block:
+*  Here is more info on the ``geochemistry_component`` block:
 
-    * ``solute_component`` appears once with the attribute name="solute".  Subelements ``uniform_conc`` are used to define the uniform aqueous concentration of the specified solute. The attributes include "name" and "value". 
-
-.. code-block:: xml
-
-     <solute_component name="solute">
-         <uniform_conc name="solute name 1" value="exponential"/>
-         <uniform_conc name="solute name 2" value="exponential"/>
-         <uniform_conc name="solute name 3" value="exponential"/>
-     </solute_component>
-
-*  Here is more info on the ``geochemistry`` block:
-
-    * ``geochemistry`` appears once.  An unbounded number of subelements ``constraint`` are used specify geochemical constraints to be applied at the beginning of the simulation.  Each ``constraint`` has an attribute ``name``.  The specified constraint must be defined in the external geochemistry file and the name must match.
+    * ``geochemistry_component`` appears once.  An unbounded number of subelements ``constraint`` are used specify geochemical constraints to be applied at the beginning of the simulation.  Each ``constraint`` has an attribute ``name``.  The specified constraint must be defined in the external geochemistry file and the name must match.
 
 .. code-block:: xml
 
@@ -1541,7 +1573,7 @@ Liquid_phase
 
   <liquid_phase>
       Required Elements: liquid_component
-      Optional Elements: solute_component, geochemistry
+      Optional Elements: geochemistry_component
   </liquid_phase>
 
 *  Here is more info on the ``liquid_component`` elements:
@@ -1579,22 +1611,7 @@ Liquid_phase
      <linear_hydrostatic name="some name" gradient_value="exponential" reference_point="coordinate" reference_water_table_height="exponential" submodel="no_flow_above_water_table | none"/>
      <no_flow function="linear | constant" start="time" />
 
-Solute_component
-----------------
-
-*  To define boundary conditions for any solutes, a single ``solute_component`` element, with the attribute ``name``="solute" is included under the ``liquid_phase`` element.  This element appears once.  An unbounded number of ``aqueous_conc`` subelements may appear to define changes in aqueous concentration at specified times for a given solute.  The aqueous concentration may be defined for multiple solutes. 
-  
-    * ``aqueous_conc`` is an element with the following attributes: 
-
-.. code-block:: xml
-
-     <aqueous_conc name="some name" value="exponential" function="constant" start="time" />
-
-
-Geochemistry
-------------
-
-*  Here is more info on the ``geochemistry`` elements:
+*  Here is more info on the ``geochemistry_component`` elements:
 
     * ``constraint`` is an element with the following attributes: ONLY UNIFORM, for now
     * If function is not specified and there is a geochemical constraint of the given name in the 
@@ -1603,7 +1620,7 @@ Geochemistry
 
 .. code-block:: xml
 
-     <constraint name="some name" start="time" function="linear | uniform | constant"/>
+     <constraint name="some name" start="time" function="constant"/>
 
 Sources
 =======
@@ -1681,7 +1698,7 @@ The *base_filename* element contains the text component of the how the visualiza
 
 The presence of the ''vis'' element means that visualization files will be written out after cycle 0 and the final cycle of the simulation.  The optional elements *time_macros* or *cycle_macros* indicate additional points during the simulation at which visualization files are to be written out.  Both elements allow one or more of the appropriate type of macro to be listed.  These macros will be determine the appropriate times or cycles to write out visualization files.  See the `Definitions`_ section for defining individual macros.
 
-The ``vis`` element also includes an optional subelement ``write_regions``.  This was primarily implemented for debugging purposes but is also useful for visualizing fields only on specific regions.  The subelement accepts an arbitrary number of subelements named ``field``, with attibutes ``name`` (a string) and ``regions`` (a comma separated list of region names).  For each such subelement, a field will be created in the vis files using the name as a label.  The field will be initialized to 0, and then, for region list R1, R2, R3..., cells in R1 will be set to 1, cells in R2 will be set to 2, etc.  When regions in the list overlap, later ones in the list will take precedence.
+The ``vis`` element also includes an optional subelement ``write_regions``.  This was primarily implemented for debugging purposes but is also useful for visualizing fields only on specific regions.  The subelement accepts an arbitrary number of subelements named ``field``, with attributes ``name`` (a string) and ``regions`` (a comma separated list of region names).  For each such subelement, a field will be created in the vis files using the name as a label.  The field will be initialized to 0, and then, for region list R1, R2, R3..., cells in R1 will be set to 1, cells in R2 will be set to 2, etc.  When regions in the list overlap, later ones in the list will take precedence.
 
 (*EIB NOTE* - there should be a comment here about how the output is controlled, i.e. for each PK where do you go to turn on and off fields.  This will probably get filled in as the other sections fill out.)
 
@@ -1712,7 +1729,7 @@ The ''checkpoint'' element defines the file naming scheme and frequency for writ
       Optional Elements: NONE
   </checkpoint>
 
-The *base_filename* element contain the text component of the how the checkpoint files will be named.  The *base_filename* is appended with an index number to indicate the sequential order of the checkpoint files.  The *num_digits* elements indicates how many digits to use for the index. (*EIB NOTE* - verify if this is sequence index or iteration id)  Final the *cycle_macros* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the checkpoint files. Multiple cycle macros may be specified in a comma seperated list. See the about NOTE about specifying a file location other than the current working directory.
+The *base_filename* element contain the text component of the how the checkpoint files will be named.  The *base_filename* is appended with an index number to indicate the sequential order of the checkpoint files.  The *num_digits* elements indicates how many digits to use for the index. (*EIB NOTE* - verify if this is sequence index or iteration id)  Final the *cycle_macros* element indicates the previously defined cycle_macro to be used to determine the frequency at which to write the checkpoint files. Multiple cycle macros may be specified in a comma separated list. See the about NOTE about specifying a file location other than the current working directory.
 
 NOTE: Previously the ''walkabout'' element had the subelement ''cycle_macro''.  All output is moving away from only allowing a single macro to be specified to allowing multiple macros as a comma separated list.  To ease the transition for users both singular and plural are currently accepted.  However, the singular option will go away in the future.  Please update existing input files to use ''cycle_macros''.
 
@@ -1755,7 +1772,7 @@ The *liquid_phase* element requires that the name of the phase be specified as a
 
 The observation element identifies the field quantity to be observed.  Subelements identify the elements for a region, a model (functional) with which it will extract its source data, and a list of discrete times for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments. The elements for each observation type are as follows:
 
-.. code-block :: xml
+.. code-block:: xml
 
    <observation_type>
      Required Elements: assigned_region, functional, time_macros or cycle_macros 
@@ -1771,7 +1788,7 @@ NOTE: Observation "water_table" calculates maximum position of the water table (
 
 Example:
 
-.. code-block :: xml
+.. code-block:: xml
 
     <observations>
 
@@ -1887,9 +1904,9 @@ Full Example
         <viscosity>1.002E-03</viscosity>
         <density>998.2</density>
         <dissolved_components>
-            <solutes>
-                <solute coefficient_of_diffusion="1e-9">Tc-99</solute>
-            </solutes>
+            <primaries>
+                <primary coefficient_of_diffusion="1e-9">Tc-99</primary>
+            </primaries>
         </dissolved_components>
       </liquid_phase>
     </phases>
@@ -2037,6 +2054,20 @@ Full Example
       </material>
     </materials>
 
+     <geochemistry>
+        <verbosity>silent</verbosity>
+        <constraints>
+            <constraint name="initial">
+                <primary name="Tc-99" type="total" value="0.0"/>
+            </constraint>
+            <constraint name="Crib_216-B-17">
+                <primary name="Tc-99" type="total" value="1.881389E-06"/>
+            </constraint>
+            <constraint name="Crib_216-B-18">
+                <primary name="Tc-99" type="total" value="2.266885E-06"/>
+            </constraint>
+        </constraints>
+    </geochemistry>
     <initial_conditions>
       <initial_condition name="All">
         <assigned_regions>All</assigned_regions>
@@ -2044,9 +2075,9 @@ Full Example
           <liquid_component name="water">
             <linear_pressure name="IC1" value="101325.0" reference_coord="0.0, 0.0" gradient="0,-9793.5192" />
           </liquid_component>
-          <solute_component name="solute">
-            <uniform_conc name="Tc-99" value="0.0"/>
-          </solute_component>
+          <geochemistry_component>
+            <constraint name="initial"/>
+          </geochemistry_component>
         </liquid_phase>
       </initial_condition>
     </initial_conditions>
@@ -2058,10 +2089,9 @@ Full Example
           <liquid_component name="water">
             <hydrostatic function="uniform" start="0.0" value="0.0"/>
           </liquid_component>
-          <solute_component>
-            <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>
-            <aqueous_conc name="Tc-99" value="0.0" function="constant" start="9.4672798E10"/>
-          </solute_component> 
+          <geochemistry_component>
+            <constraint function="constant" name="initial" start="0.0 y"/>
+          </geochemistry_component>
         </liquid_phase>
       </boundary_condition>
   
@@ -2074,11 +2104,11 @@ Full Example
             <inward_volumetric_flux value="1.48666E-9" function="constant" start="6.1729344E10" />
             <inward_volumetric_flux value="1.48666E-9" function="constant" start="9.4672798E10" />
           </liquid_component>
-          <solute_component>
-            <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>
-            <aqueous_conc name="Tc-99" value="1.881389E-06" function="constant" start="6.17266656e+10"/>
-            <aqueous_conc name="Tc-99" value="0.0" function="constant" start="6.1729344E10"/>
-         </solute_component> 
+          <geochemistry_component>
+            <constraint function="constant" name="initial" start="0.0"/>
+            <constraint function="constant" name="Crib_216-B-17" start="6.17266656e+10"/>
+            <constraint function="constant" name="initial" start="6.1729344E10"/>
+          </geochemistry_component>
         </liquid_phase>
       </boundary_condition>
   
@@ -2092,11 +2122,11 @@ Full Example
             <inward_volumetric_flux value="1.48666E-9" function="constant" start="6.173705521E10" />
             <inward_volumetric_flux value="1.48666E-9" function="constant" start="9.4672798E10" />
           </liquid_component>
-          <solute_component>
-            <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>
-            <aqueous_conc name="Tc-99" value="2.266885E-06" function="constant" start="6.173178481E10"/>
-            <aqueous_conc name="Tc-99" value="0.0" function="constant" start="6.173705521E10"/>
-         </solute_component> 
+          <geochemistry_component>
+            <constraint function="constant" name="initial" start="0.0"/>
+            <constraint function="constant" name="Crib_216-B-17" start="6.173178481E10"/>
+            <constraint function="constant" name="initial" start="6.173705521E10"/>
+          </geochemistry_component>
         </liquid_phase>
       </boundary_condition>
   
@@ -2109,9 +2139,9 @@ Full Example
             <inward_volumetric_flux value="1.1071E-10" function="constant" start="0.0" />
             <inward_volumetric_flux value="1.48666E-9" function="constant" start="6.17266656e+10" />
           </liquid_component>
-          <solute_component>
-            <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>
-         </solute_component> 
+          <geochemistry_component>
+            <constraint function="constant" name="initial" start="0.0 y"/>
+          </geochemistry_component>
         </liquid_phase>
       </boundary_condition>
     </boundary_conditions>
