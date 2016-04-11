@@ -61,6 +61,8 @@ public:
           TreeVector& soln);
   virtual void Solution_to_State(TreeVector& soln,
           const Teuchos::RCP<State>& S);
+  virtual void Solution_to_State(const TreeVector& soln,
+          const Teuchos::RCP<State>& S);
 
   // -- loops over sub-PKs
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
@@ -75,7 +77,8 @@ public:
  protected: // data
 
   typedef std::vector<Teuchos::RCP<PK_t> > SubPKList;
-
+  Teuchos::RCP<Teuchos::ParameterList> my_list_;
+  Teuchos::RCP<Teuchos::ParameterList> global_list_;
   SubPKList sub_pks_;
 
 };
@@ -96,7 +99,10 @@ MPC<PK_t>::MPC(Teuchos::ParameterList& FElist,
   solution_ = solution;
 
   // loop over sub-PKs in the PK sublist, constructing the hierarchy recursively
-  Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(plist_, "PKs");
+  Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(plist_, "PKs");;
+
+  my_list_ = Teuchos::sublist(plist_, "PKs");
+  
   PKFactory pk_factory;
 
   if (plist_->isParameter("PKs order")) {
@@ -112,10 +118,23 @@ MPC<PK_t>::MPC(Teuchos::ParameterList& FElist,
       // create the PK
       std::string name_i = pk_order[i];
       Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list,name_i);
+      std::cout<<"name "<<name_i<<"\n";
       pk_list->set("PK name", name_i);
-      Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(FElist, pk_list, S, pk_soln);
-      Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
-      sub_pks_.push_back(pk);
+      const std::string &pk_origin = pk_list -> get<std::string>("PK origin", "ATS");
+      std::cout<<"pk_origin "<<pk_origin<<"\n";
+      //      std::cout<<*pk_list<<"\n";
+      if (pk_origin == "ATS"){
+        std::cout<<"ATS\n";
+        Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(FElist, pk_list, S, pk_soln);
+        Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
+        sub_pks_.push_back(pk);
+      }
+      else if (pk_origin == "Amanzi"){
+        std::cout<<"Amanzi\n";
+        Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(*pk_list, plist_, S, pk_soln);
+        Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
+        sub_pks_.push_back(pk);
+      }
     }
 
   } else {
@@ -133,9 +152,19 @@ MPC<PK_t>::MPC(Teuchos::ParameterList& FElist,
         // create the PK
         Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list,name_i);
         pk_list->set("PK name", name_i);
-        Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(FElist, pk_list, S, pk_soln);
-        Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
-        sub_pks_.push_back(pk);
+        const std::string &pk_origin = pk_list -> get<std::string>("PK origin", "ATS");
+        
+        if (pk_origin == "ATS"){
+          Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(FElist, pk_list, S, pk_soln);
+          Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
+          sub_pks_.push_back(pk);
+        }
+        else if (pk_origin == "Amanzi"){
+          Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(*pk_list, plist_, S, pk_soln);
+          Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
+          sub_pks_.push_back(pk);
+        }
+
       }
     }
   }
@@ -204,6 +233,13 @@ void MPC<PK_t>::Solution_to_State(TreeVector& soln,
     sub_pks_[i]->Solution_to_State(*pk_soln, S);
   }
 };
+
+template <class PK_t>
+void MPC<PK_t>::Solution_to_State(const TreeVector& soln,
+                            const Teuchos::RCP<State>& S) {
+  TreeVector* soln_nc_ptr = const_cast<TreeVector*>(&soln);
+  Solution_to_State(*soln_nc_ptr, S);
+}
 
 
 // -----------------------------------------------------------------------------

@@ -45,6 +45,7 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& FElist,
                            const Teuchos::RCP<TreeVector>& solution) :
   //PK_Default(plist, FElist, solution),
     PK(FElist, plist, S, solution),
+    PK_BDF_Default(FElist, plist, S, solution),
     PK_PhysicalBDF_Default(FElist, plist, S, solution),
     standalone_mode_(false),
     is_source_term_(false),
@@ -248,6 +249,7 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- evaluator for potential field, h + z
   S->RequireField("pres_elev")->Update(matrix_->RangeMap())->SetGhosted();
   Teuchos::ParameterList pres_elev_plist = plist_->sublist("potential evaluator");
+  std::cout<<pres_elev_plist<<"\n";
   Teuchos::RCP<FlowRelations::PresElevEvaluator> pres_elev_eval =
       Teuchos::rcp(new FlowRelations::PresElevEvaluator(pres_elev_plist));
   S->SetFieldEvaluator("pres_elev", pres_elev_eval);

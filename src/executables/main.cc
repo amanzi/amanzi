@@ -35,7 +35,7 @@
 
 //#include "deform_constitutive_relations_porosity_registration.hh"
 //#include "deform_prescribed_deformation_registration.hh"
-#include "deform_volumetric_deformation_registration.hh"
+//#include "deform_volumetric_deformation_registration.hh"
 
 #include "energy_advection_diffusion_registration.hh"
 // #include "energy_constant_temperature_registration.hh"
@@ -46,12 +46,10 @@
 #include "energy_two_phase_registration.hh"
 #include "energy_three_phase_registration.hh"
 
-#include "surface_balance_SEB_registration.hh"
-#include "BGC_registration.hh"
+//#include "surface_balance_SEB_registration.hh"
+//#include "BGC_registration.hh"
 
 // #include "test_pks_registration.hh"
-
-
 
 #include "mpc_registration.hh"
 

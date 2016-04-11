@@ -153,7 +153,7 @@ class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
   
 private:
   // factory registration
-  static RegisteredPKFactory_ATS<MPCSubsurface> reg_;
+  static RegisteredPKFactory<MPCSubsurface> reg_;
 
 };
 

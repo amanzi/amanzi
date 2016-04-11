@@ -2,6 +2,6 @@
 
 namespace Amanzi {
 
-RegisteredPKFactory_ATS<MPCCoupledWater> MPCCoupledWater::reg_("coupled water");
+RegisteredPKFactory<MPCCoupledWater> MPCCoupledWater::reg_("coupled water");
 
 }

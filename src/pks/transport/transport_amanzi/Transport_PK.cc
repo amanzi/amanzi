@@ -161,6 +161,15 @@ void Transport_PK::SetupAlquimia(Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem
 }
 #endif
 
+  void Transport_PK::set_states(const Teuchos::RCP<const State>& S,
+                                const Teuchos::RCP<State>& S_inter,
+                                const Teuchos::RCP<State>& S_next) {
+
+    //S_ = S;
+    S_inter_ = S_inter;
+    S_next_ = S_next;
+  }
+
 
 /* ******************************************************************
 * Define structure of this PK.
@@ -168,6 +177,9 @@ void Transport_PK::SetupAlquimia(Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem
 void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   passwd_ = "state";  // owner's password
+
+
+  //  domain_name_ = plist_->get<std::string>("domain name", "domain");
 
   mesh_ = S->GetMesh();
   dim = mesh_->space_dimension();
@@ -178,21 +190,26 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   bool abs_perm = physical_models->get<bool>("permeability field is required", false);
   std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single porosity");
 
+
+
+
   // require state fields when Flow PK is off
   if (!S->HasField("permeability") && abs_perm) {
-    S->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, dim);
+    S->RequireField("permeability")->SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, dim);
   }
+
   if (!S->HasField("darcy_flux")) {
-    S->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+    S->RequireField("darcy_flux")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
   }
   if (!S->HasField("saturation_liquid")) {
-    S->RequireField("saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireField("saturation_liquid")->SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  //   std::cout<<"saturation_liquid "<<S->RequireField("saturation_liquid")->Owned()<<"\n";
   }
   if (!S->HasField("prev_saturation_liquid")) {
-    S->RequireField("prev_saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+    S->RequireField("prev_saturation_liquid")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S->GetField("prev_saturation_liquid", passwd_)->set_io_vis(false);
   }
@@ -211,7 +228,7 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
 
     S->RequireField("total_component_concentration", passwd_, subfield_names)
       ->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+      ->AddComponent("cell", AmanziMesh::CELL, ncomponents);
   }
 
   // testing evaluators
@@ -379,33 +396,72 @@ void Transport_PK::InitializeFields_()
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
             *vo_->os() << "initilized saturation_liquid to value 1.0" << std::endl;  
       }
+      InitializeFieldFromField_("prev_saturation_liquid", "saturation_liquid", false, false);
+    }
+    else {
+      if (S_->GetField("prev_saturation_liquid")->owner() == passwd_) {
+        if (!S_->GetField("prev_saturation_liquid", passwd_)->initialized()) {
+          S_->GetFieldData("prev_saturation_liquid", passwd_)->PutScalar(1.0);
+          S_->GetField("prev_saturation_liquid", passwd_)->set_initialized();
+          // if (S_->HasFieldEvaluator(getKey(domain_,"saturation_liquid"))){
+          //   S_->GetFieldEvaluator(getKey(domain_,"saturation_liquid"))->HasFieldChanged(S_.ptr(), "transport");
+          // }
+          // InitializeFieldFromField_("prev_saturation_liquid", "saturation_liquid", false);
+          // S_->GetField("prev_saturation_liquid", passwd_)->set_initialized();
+
+          if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+            *vo_->os() << "initilized prev_saturation_liquid from saturation" << std::endl;
+        }
+      }
     }
   }
 
-  InitializeFieldFromField_("prev_saturation_liquid", "saturation_liquid", false);
-  InitializeFieldFromField_("total_component_concentration_matrix", "total_component_concentration", false);
+  ws = S_->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
+
+
+  InitializeFieldFromField_("total_component_concentration_matrix", "total_component_concentration", false, false);
 }
 
 
 /* ****************************************************************
 * Auxiliary initialization technique.
 **************************************************************** */
-void Transport_PK::InitializeFieldFromField_(
-    const std::string& field0, const std::string& field1, bool call_evaluator)
+void Transport_PK::InitializeFieldFromField_(const std::string& field0, 
+                                             const std::string& field1, 
+                                             bool call_evaluator,
+                                             bool overwrite)
 {
   if (S_->HasField(field0)) {
     if (S_->GetField(field0)->owner() == passwd_) {
-      if (!S_->GetField(field0, passwd_)->initialized()) {
+      if ((!S_->GetField(field0, passwd_)->initialized())||(overwrite)) {
         if (call_evaluator)
             S_->GetFieldEvaluator(field1)->HasFieldChanged(S_.ptr(), passwd_);
 
         const CompositeVector& f1 = *S_->GetFieldData(field1);
         CompositeVector& f0 = *S_->GetFieldData(field0, passwd_);
+
+        // double vmin0, vmax0, vavg0;
+        // double vmin1, vmax1, vavg1;
+
+        // f0.MinValue(&vmin0);
+        // f1.MinValue(&vmin1);
+ 
+        // std::cout<<field0<<" vmin "<<vmin0<<"\n"; 
+        // std::cout<<field1<<" vmin "<<vmin1<<"\n";
+
         f0 = f1;
+
+       // f0.MinValue(&vmin0);
+       // f1.MinValue(&vmin1);
+ 
+       // std::cout<<field0<<" vmin "<<vmin0<<"\n"; 
+       // std::cout<<field1<<" vmin "<<vmin1<<"\n";
+ 
+ 
 
         S_->GetField(field0, passwd_)->set_initialized();
 
-        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+        if ((vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)&&(!overwrite))
             *vo_->os() << "initiliazed " << field0 << " to " << field1 << std::endl;
       }
     }
@@ -425,7 +481,7 @@ void Transport_PK::InitializeFieldFromField_(
 * ***************************************************************** */
 double Transport_PK::CalculateTransportDt()
 {
-  S_->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
+  S_next_->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
 
   IdentifyUpwindCells();
 
@@ -439,8 +495,8 @@ double Transport_PK::CalculateTransportDt()
 
   // modify estimate for other models
   if (multiscale_porosity_) {
-    const Epetra_MultiVector& wcm_prev = *S_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
-    const Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix")->ViewComponent("cell");
+    const Epetra_MultiVector& wcm_prev = *S_next_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
+    const Epetra_MultiVector& wcm = *S_next_->GetFieldData("water_content_matrix")->ViewComponent("cell");
 
     double dtg = S_->final_time() - S_->initial_time();
     for (int c = 0; c < ncells_owned; ++c) {
@@ -459,11 +515,16 @@ double Transport_PK::CalculateTransportDt()
       vol = mesh_->cell_volume(c);
       dt_cell = vol * (*phi)[0][c] * std::min((*ws_prev)[0][c], (*ws)[0][c]) / outflux;
     }
+    //    std::cout<<c<<" "<<dt_cell<<" vol "<<vol<<" outflux "<<outflux<<" "<<(*ws_prev)[0][c]<<" "<<(*ws)[0][c]<<"\n";
     if (dt_cell < dt_) {
       dt_ = dt_cell;
       cmin_dt = c;
     }
   }
+
+  // std::cout<<"DT "<<dt_<<"\n";
+  // exit(0);
+
   if (spatial_disc_order == 2) dt_ /= 2;
 
   // communicate global time step
@@ -824,6 +885,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     VV_PrintSoluteExtrema(tcc_next, dt_MPC);
   }
 
+
   return failed;
 }
 
@@ -841,11 +903,11 @@ void Transport_PK::AddMultiscalePorosity_(
   Epetra_MultiVector& tcc_matrix = 
      *S_->GetFieldData("total_component_concentration_matrix", passwd_)->ViewComponent("cell");
 
-  const Epetra_MultiVector& wcf_prev = *S_->GetFieldData("prev_water_content")->ViewComponent("cell");
-  const Epetra_MultiVector& wcf = *S_->GetFieldData("water_content")->ViewComponent("cell");
+  const Epetra_MultiVector& wcf_prev = *S_next_->GetFieldData("prev_water_content")->ViewComponent("cell");
+  const Epetra_MultiVector& wcf = *S_next_->GetFieldData("water_content")->ViewComponent("cell");
 
-  const Epetra_MultiVector& wcm_prev = *S_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
-  const Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix")->ViewComponent("cell");
+  const Epetra_MultiVector& wcm_prev = *S_next_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
+  const Epetra_MultiVector& wcm = *S_next_->GetFieldData("water_content_matrix")->ViewComponent("cell");
 
   double flux_solute, flux_liquid, f1, f2, f3;
   std::vector<AmanziMesh::Entity_ID> block;
@@ -893,6 +955,8 @@ void Transport_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<Sta
   Teuchos::RCP<CompositeVector> tcc;
   tcc = S->GetFieldData("total_component_concentration", passwd_);
   *tcc = *tcc_tmp;
+  InitializeFieldFromField_("prev_saturation_liquid", "saturation_liquid", false, true);
+
 }
 
 

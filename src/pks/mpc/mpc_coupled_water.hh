@@ -76,7 +76,7 @@ class MPCCoupledWater : public StrongMPC<PKPhysicalBDFBase> {
 
  private:
   // factory registration
-  static RegisteredPKFactory_ATS<MPCCoupledWater> reg_;
+  static RegisteredPKFactory<MPCCoupledWater> reg_;
 
 };
 

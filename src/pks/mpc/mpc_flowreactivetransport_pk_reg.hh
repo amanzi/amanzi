@@ -5,22 +5,17 @@ ATS
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 
-Implementation for the derived StrongMPC class.  Is both a PK and a Model
-Evalulator, providing needed methods for BDF time integration of the coupled
-system.
-
-Completely automated and generic to any sub PKs, this uses a block diagonal
-preconditioner.
+Implementation for the derived WeakMPC class.  Provides only the advance()
+method missing from MPC.hh.  In weak coupling, we simply loop over the
+sub-PKs, calling their advance() methods and returning failure if any fail.
 
 See additional documentation in the base class src/pks/mpc/MPC.hh
 ------------------------------------------------------------------------- */
 
-
-#include "strong_mpc.hh"
+#include "mpc_flowreactivetransport_pk.hh"
 
 namespace Amanzi {
 
-template<>
-RegisteredPKFactory<StrongMPC<PK_BDF_Default> > StrongMPC<PK_BDF_Default>::reg_("strong MPC");
+RegisteredPKFactory<FlowReactiveTransport_PK_ATS> FlowReactiveTransport_PK_ATS::reg_("flow reactive transport ATS");
 
 } // namespace

@@ -29,8 +29,9 @@ class PK_PhysicalBDF_Default : virtual public PK_BDF_Default, public PK_Physical
                           const Teuchos::RCP<Teuchos::ParameterList>& plist,
                           const Teuchos::RCP<State>& S,
                           const Teuchos::RCP<TreeVector>& solution):
+    PK_BDF_Default(FElist, plist, S, solution),
     PK_Physical_Default(FElist, plist, S, solution){}
-  //    PK_BDF_Default(FElist, plist, S,  solution) {}
+
 
   virtual void set_states(const Teuchos::RCP<const State>& S,
                           const Teuchos::RCP<State>& S_inter,

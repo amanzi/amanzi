@@ -30,7 +30,7 @@
 #include "Tensor.hh"
 #include "Units.hh"
 #include "VerboseObject.hh"
-#include "PK_Explicit.hh"
+#include "PK_PhysicalExplicit.hh"
 
 #ifdef ALQUIMIA_ENABLED
 #include "Alquimia_PK.hh"
@@ -60,7 +60,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   // class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
   // class Transport_PK : public PK, public Explicit_TI::fnBase<TreeVector> {
-  class Transport_PK : public PK_Explicit<Epetra_Vector> {
+  class Transport_PK : public PK_PhysicalExplicit<Epetra_Vector> {
   //class Transport_PK : public PK_Explicit{
   public:
     Transport_PK(Teuchos::ParameterList& pk_tree,
@@ -85,6 +85,10 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false); 
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
+
+  virtual void set_states(const Teuchos::RCP<const State>& S,
+                          const Teuchos::RCP<State>& S_inter,
+                          const Teuchos::RCP<State>& S_next) ;
 
   virtual std::string name() { return passwd_; }
 
@@ -176,10 +180,17 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   // initialization methods
   void InitializeAll_();
-  void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
+  void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator, bool overwrite);
 
   // miscaleneous methods
   int FindComponentNumber(const std::string component_name);
+
+    // void set_states(const Teuchos::RCP<const State>& S,
+    //                 const Teuchos::RCP<State>& S_inter,
+    //                 const Teuchos::RCP<State>& S_next)
+    // {
+    //   PK_
+    // };
 
  public:
   Teuchos::RCP<Teuchos::ParameterList> tp_list_;
@@ -195,7 +206,18 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   double tests_tolerance;
 
  protected:
-  Teuchos::RCP<TreeVector> soln_;
+    Teuchos::RCP<TreeVector> soln_;
+
+    // Key domain_name_;
+    // Key saturation_name_;
+    // Key prev_saturation_name_;
+    // Key flux_name_;
+    // Key permeability_name_;
+    // Key tcc_name_;
+    // Key porosity_name_;
+    // Key tcc_matrix_;
+
+  
  
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

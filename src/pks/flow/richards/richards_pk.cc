@@ -48,6 +48,7 @@ Richards::Richards(Teuchos::ParameterList& FElist,
     // PKPhysicalBDFBase(plist, FElist, solution),
     //PK_Default(plist, FElist, solution),
     PK(FElist, plist,  S, solution),
+    PK_BDF_Default(FElist, plist,  S, solution),
     PK_PhysicalBDF_Default(FElist, plist,  S, solution),
     coupled_to_surface_via_head_(false),
     coupled_to_surface_via_flux_(false),
@@ -121,7 +122,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   }
   if (flux_dir_key_.empty()) {
     flux_dir_key_ = plist_->get<std::string>("darcy flux direction key",
-            getKey(domain_, "mass_flux_direction"));
+            getKey(domain_, "mass_flux_direction")); 
   }
   if (velocity_key_.empty()) {
     velocity_key_ = plist_->get<std::string>("darcy velocity key",
@@ -131,6 +132,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // Get data for special-case entities.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
+
   S->RequireFieldEvaluator(cell_vol_key_);
   S->RequireGravity();
   S->RequireScalar("atmospheric_pressure");

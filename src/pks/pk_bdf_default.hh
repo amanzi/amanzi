@@ -31,10 +31,11 @@ namespace Amanzi {
   //                Teuchos::ParameterList& FElist,
   //                const Teuchos::RCP<TreeVector>& solution);
   //  :      PKDefaultBase(plist, FElist, solution) {}
-  // PK_BDF_Default(Teuchos::ParameterList& FElist,
-  //                const Teuchos::RCP<Teuchos::ParameterList>& plist,
-  //                const Teuchos::RCP<State>& S,
-  //                const Teuchos::RCP<TreeVector>& solution) :
+  PK_BDF_Default(Teuchos::ParameterList& FElist,
+                 const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                 const Teuchos::RCP<State>& S,
+                 const Teuchos::RCP<TreeVector>& solution) :
+    PK(FElist, plist, S, solution){}
   
   // Virtual destructor
   virtual ~PK_BDF_Default() {}

@@ -38,6 +38,7 @@ EnergySurfaceIce::EnergySurfaceIce(Teuchos::ParameterList& FElist,
                                    const Teuchos::RCP<State>& S,
                                    const Teuchos::RCP<TreeVector>& solution) :
   PK(FElist, plist, S,  solution),
+  PK_BDF_Default(FElist, plist, S, solution),
     EnergyBase(FElist, plist, S,  solution),
     standalone_mode_(false),
     is_energy_source_term_(false),

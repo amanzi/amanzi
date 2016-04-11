@@ -29,7 +29,8 @@ public:
                    const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& solution) :
     PK(FElist, plist, S, solution),
-      ThreePhase(FElist, plist, S, solution) {}
+    PK_BDF_Default(FElist, plist, S, solution),
+    ThreePhase(FElist, plist, S, solution) {}
 
   // Virtual destructor
   virtual ~InterfrostEnergy() {}

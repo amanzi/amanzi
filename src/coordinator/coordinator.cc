@@ -30,7 +30,7 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "PK.hh"
 #include "TreeVector.hh"
 #include "PK_Factory.hh"
-#include "pk_factory_ats.hh"
+//#include "pk_factory_ats.hh"
 
 #include "coordinator.hh"
 
@@ -68,16 +68,18 @@ void Coordinator::coordinator_init() {
   soln_ = Teuchos::rcp(new TreeVector());
 
   // create the pk
-  PKFactory_ATS pk_factory_ats;
+  //  PKFactory_ATS pk_factory_ats;
   PKFactory pk_factory;
 
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list, pk_name);
   pk_list->set("PK name", pk_name);
   const std::string &pk_origin = pk_list -> get<std::string>("PK origin", "ATS");
 
+
   if (pk_origin == "ATS"){
-    Teuchos::RCP<PK_ATS> pk_tmp = pk_factory_ats.CreatePK(pk_list, S_->FEList(), soln_);
-    pk_ = Teuchos::rcp_dynamic_cast<PK> (pk_tmp);
+    // Teuchos::RCP<PK_ATS> pk_tmp = pk_factory_ats.CreatePK(pk_list, S_->FEList(), soln_);
+    // pk_ = Teuchos::rcp_dynamic_cast<PK> (pk_tmp);
+    pk_ = pk_factory.CreatePK(S_->FEList(), pk_list, S_, soln_);
   }else if (pk_origin == "Amanzi"){
     pk_ = pk_factory.CreatePK(*pk_list, parameter_list_, S_, soln_);
   }else{
@@ -151,11 +153,16 @@ void Coordinator::initialize() {
   *S_->GetScalarData("dt", "coordinator") = 0.;
   S_->GetField("dt","coordinator")->set_initialized();
 
+
   // Initialize the state (initializes all dependent variables).
   S_->Initialize();
 
+
   // commit the initial conditions.
   pk_->CommitStep(0., 0., S_);
+
+  std::cout<<"AFTER COMMIT\n";
+  S_->WriteStatistics(vo_);  
 
   // vis for the state
   // HACK to vis with a surrogate surface mesh.  This needs serious re-design. --etc
@@ -453,7 +460,14 @@ double Coordinator::get_dt(bool after_fail) {
 
   S_next_->advance_time(dt);
   bool fail = pk_->AdvanceStep(t_old, t_new, false);
-  fail |= !pk_->valid_step();
+  //  fail |= !pk_->valid_step();
+
+  // std::cout<<"State S **************\n";
+  // S_->WriteStatistics(vo_);  
+  // std::cout<<"State S_next_ **************\n";
+  // S_next_->WriteStatistics(vo_);  
+  // exit(0);
+
 
   // advance the iteration count and timestep size
   S_next_->advance_cycle();
@@ -526,11 +540,12 @@ void Coordinator::cycle_driver() {
   // start at time t = t0 and initialize the state.
   {
     Teuchos::TimeMonitor monitor(*setup_timer_);
-    setup();
-    
+    setup();   
     initialize();
-    
+   
   }
+
+  //  exit(0);
 
   // get the intial timestep -- note, this would have to be fixed for a true restart
   double dt = get_dt(false);
@@ -538,6 +553,8 @@ void Coordinator::cycle_driver() {
   // visualization at IC
   visualize();
   checkpoint(dt);
+
+
 
   // iterate process kernels
   {
@@ -596,7 +613,10 @@ void Coordinator::cycle_driver() {
   }
 #endif
   }
-  
+
+
+  // finalizing simulation                                                                                                                                                                                                               
+  S_->WriteStatistics(vo_);  
   report_memory();
   Teuchos::TimeMonitor::summarize(*vo_->os());
 

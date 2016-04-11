@@ -27,7 +27,7 @@ public:
           const Teuchos::RCP<Teuchos::ParameterList>& plist,
           const Teuchos::RCP<State>& S,
           const Teuchos::RCP<TreeVector>& solution) :
-    //PKDefaultBase(plist, FElist, soln),
+    PK(FElist, plist, S, solution),
     MPC<PK>(FElist, plist, S, solution) {};
 
   // Virtual destructor
