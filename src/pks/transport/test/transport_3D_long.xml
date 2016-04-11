@@ -63,10 +63,10 @@
                   <Parameter name="y values" type="Array(double)" value="{1.0, 0.0}"/>
                 </ParameterList>
               </ParameterList>
-            </ParameterList>	 
-	  </ParameterList>
+            </ParameterList>         
+          </ParameterList>
         </ParameterList>
-      </ParameterList>	
+      </ParameterList>        
     </ParameterList>
   </ParameterList>
 
@@ -74,7 +74,7 @@
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
         <ParameterList name="VerboseObject">
-	  <Parameter name="Verbosity Level" type="string" value="extreme"/>
+          <Parameter name="Verbosity Level" type="string" value="extreme"/>
         </ParameterList>
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">

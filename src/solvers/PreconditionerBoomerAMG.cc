@@ -46,19 +46,19 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
   }
     
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetTol,
-						      plist_.get<double>("tolerance", 0.0))));
+                                                      plist_.get<double>("tolerance", 0.0))));
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetPrintLevel,
-						      plist_.get<int>("verbosity", 0))));
+                                                      plist_.get<int>("verbosity", 0))));
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxIter,
-						      plist_.get<int>("cycle applications", 5))));
+                                                      plist_.get<int>("cycle applications", 5))));
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCoarsenType,
-						      plist_.get<int>("coarsen type", 0))));
+                                                      plist_.get<int>("coarsen type", 0))));
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetStrongThreshold,
-						      plist_.get<double>("strong threshold", 0.5))));
+                                                      plist_.get<double>("strong threshold", 0.5))));
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCycleType,
-						      plist_.get<int>("cycle type", 1))));
+                                                      plist_.get<int>("cycle type", 1))));
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetNumSweeps,
-						      plist_.get<int>("smoother sweeps", 3))));
+                                                      plist_.get<int>("smoother sweeps", 3))));
   if (plist_.isParameter("relaxation type down") && plist_.isParameter("relaxation type up")) {
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCycleRelaxType,
                                                         plist_.get<int>("relaxation type down"), 1)));
@@ -71,10 +71,10 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
 
   if (plist_.isParameter("max multigrid levels"))
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxLevels,
-							plist_.get<int>("max multigrid levels"))));
+                                                        plist_.get<int>("max multigrid levels"))));
   if (plist_.isParameter("max coarse size"))
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxCoarseSize,
-							plist_.get<int>("max coarse size"))));
+                                                        plist_.get<int>("max coarse size"))));
 
   if (plist_.isParameter("number of functions")) {
     // num_funcs > 1 tells BoomerAMG to use the "systems of PDEs" code.  Note
@@ -125,27 +125,27 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
       // we call a hybrid systems method.
       // 
       if (plist_.isParameter("nodal relaxation levels")) {
-	int num_levels = plist_.get<int>("nodal relaxation levels");
+        int num_levels = plist_.get<int>("nodal relaxation levels");
 
-	// I believe this works, but needs testing -- we do not pop previous
-	// settings, and instead just call the function twice. --ETC
-	funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
-			 &HYPRE_BoomerAMGSetSmoothType, 6)));
-	funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+        // I believe this works, but needs testing -- we do not pop previous
+        // settings, and instead just call the function twice. --ETC
+        funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+                         &HYPRE_BoomerAMGSetSmoothType, 6)));
+        funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
                          &HYPRE_BoomerAMGSetDomainType, 1)));
-	funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+        funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
                          &HYPRE_BoomerAMGSetOverlap, 0)));
-	funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+        funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
                          &HYPRE_BoomerAMGSetSmoothNumLevels, num_levels)));
-	funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
-		         &HYPRE_BoomerAMGSetSchwarzUseNonSymm, 1))); // should provide an option for non-sym
+        funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+                         &HYPRE_BoomerAMGSetSchwarzUseNonSymm, 1))); // should provide an option for non-sym
 
-	// Note that if num_levels > 1, you MUST also do nodal coarsening (to maintain the nodes on coarser grids).
-	if (num_levels > 1) {
-	  int nodal = plist_.get<int>("nodal strength of connection norm", 1);
-	  funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+        // Note that if num_levels > 1, you MUST also do nodal coarsening (to maintain the nodes on coarser grids).
+        if (num_levels > 1) {
+          int nodal = plist_.get<int>("nodal strength of connection norm", 1);
+          funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
                            &HYPRE_BoomerAMGSetNodal, nodal)));
-	}
+        }
       }
     }
   }

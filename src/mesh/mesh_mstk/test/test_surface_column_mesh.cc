@@ -85,12 +85,14 @@ TEST(SURFACE_COLUMN_MESH_3D)
   CHECK_EQUAL(4, col_surf.num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED));
 
   Amanzi::AmanziMesh::Entity_ID_List cells_in_surf;
-  col_surf.get_set_entities("surface", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED, &cells_in_surf);
+  col_surf.get_set_entities("surface", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+                            &cells_in_surf, NULL);
   CHECK_EQUAL(1, cells_in_surf.size());
   CHECK_EQUAL(0, cells_in_surf[0]);
 
   Amanzi::AmanziMesh::Entity_ID_List cells_in_surf_2D;
-  col_surf.get_set_entities("surface_domain", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED, &cells_in_surf_2D);
+  col_surf.get_set_entities("surface_domain", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+                            &cells_in_surf_2D, NULL);
   CHECK_EQUAL(1, cells_in_surf.size());
   CHECK_EQUAL(0, cells_in_surf[0]);
 
@@ -140,12 +142,14 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
   CHECK_EQUAL(4, col_surf.num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED));
 
   Amanzi::AmanziMesh::Entity_ID_List cells_in_surf;
-  col_surf.get_set_entities("surface", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED, &cells_in_surf);
+  col_surf.get_set_entities("surface", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+                            &cells_in_surf, NULL);
   CHECK_EQUAL(1, cells_in_surf.size());
   CHECK_EQUAL(0, cells_in_surf[0]);
 
   Amanzi::AmanziMesh::Entity_ID_List cells_in_surf_2D;
-  col_surf.get_set_entities("surface_domain", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED, &cells_in_surf_2D);
+  col_surf.get_set_entities("surface_domain", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+                            &cells_in_surf_2D, NULL);
   CHECK_EQUAL(1, cells_in_surf.size());
   CHECK_EQUAL(0, cells_in_surf[0]);
   

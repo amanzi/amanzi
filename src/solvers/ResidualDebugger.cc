@@ -63,7 +63,7 @@ ResidualDebugger::StartIteration<TreeVectorSpace>(double time,
 template<>
 void
 ResidualDebugger::WriteVector<TreeVector>(int iter,
-			      const TreeVector& res,
+                              const TreeVector& res,
                               const Teuchos::Ptr<const TreeVector>& u,
                               const Teuchos::Ptr<const TreeVector>& du) {
   if (on_) {

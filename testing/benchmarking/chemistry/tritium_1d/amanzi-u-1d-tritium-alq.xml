@@ -27,7 +27,7 @@
 
   <process_kernels>
     <flow state="on" model="saturated"/>
-    <transport state="on" algorithm="explicit first-order" sub_cycling = "on"/>
+    <transport state="on" />
     <chemistry engine="pflotran" state="on" input_filename="1d-tritium-trim.in" format="simple" />
   </process_kernels>
 
@@ -54,6 +54,11 @@
 
   <numerical_controls>
     <unstructured_controls>
+      <unstr_transport_controls>
+          <sub_cycling>on</sub_cycling>
+          <algorithm>explicit second-order</algorithm>
+      </unstr_transport_controls>
+
       <unstr_steady-state_controls>
         <min_iterations>10</min_iterations>
         <max_iterations>15</max_iterations>

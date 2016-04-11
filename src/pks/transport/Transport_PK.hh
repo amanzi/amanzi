@@ -62,9 +62,9 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   class Transport_PK : public  PK_PhysicalExplicit<Epetra_Vector> {
   public:
     Transport_PK(Teuchos::ParameterList& pk_tree,
-               const Teuchos::RCP<Teuchos::ParameterList>& glist,
-               const Teuchos::RCP<State>& S,
-               const Teuchos::RCP<TreeVector>& soln);
+                 const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                 const Teuchos::RCP<State>& S,
+                 const Teuchos::RCP<TreeVector>& soln);
 
     Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
                  Teuchos::RCP<State> S,

@@ -207,7 +207,7 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
 
   if (vo_->os_OK(Teuchos::VERB_MEDIUM))
     *vo_->os() << "Failed (" << num_itrs_ << " itrs) ||r|| = "
-	       << residual_ << std::endl;
+               << residual_ << std::endl;
   return LIN_SOLVER_MAX_ITERATIONS;
 }
 

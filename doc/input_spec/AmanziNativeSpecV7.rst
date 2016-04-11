@@ -3004,6 +3004,9 @@ It also has one global parameters.
   * `"include enthalpy in preconditioner`" [bool] allows us to study impact (usually positive) 
     of including enthalpy term in the preconditioner. Default value is *true*.
 
+  * `"diagonal shift`" [double] allows for a constant shift to be applied to
+    the diagonal of the assembled operator, which can b useful for dealing
+    with singular or near-singular matrices.  Default is *0.0*.
 
 Diffusion operator
 ``````````````````
@@ -4662,7 +4665,7 @@ they are equivalent to rectangles on a plane or segments on a line.
 .. code-block:: xml
 
    <ParameterList name="Basin">  <!-- parent list -->
-     <ParameterList name="Region: Box Volume Fraction">
+     <ParameterList name="Region: Box Volume Fractions">
        <Parameter name="corner coordinate" type="Array(double)" value="{-1.0,-1.0, 1.0}"/>
        <Parameter name="opposite corner coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
        <Parameter name="normals" type="Array(double)" value="{1.0, 0.0, 0.0

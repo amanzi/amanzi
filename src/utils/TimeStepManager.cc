@@ -64,8 +64,8 @@ double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
   if ((dt_stable_storage > 0)&&(!after_failure)) {
     if (vo_ != Teuchos::null) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-	Teuchos::OSTab tab = vo_->getOSTab();
-	*vo_->os() << "PK proposed dT=" << dT << " [sec], changing it to " << dt_stable_storage << " [sec]" << std::endl;
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "PK proposed dT=" << dT << " [sec], changing it to " << dt_stable_storage << " [sec]" << std::endl;
       }
     }
     dT = dt_stable_storage;
@@ -113,8 +113,8 @@ double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
     if (!physical) dt_stable_storage = dT;
     if (vo_ != Teuchos::null) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-	Teuchos::OSTab tab = vo_->getOSTab();
-    	*vo_->os() << "Proposed dT=" << dT 
+        Teuchos::OSTab tab = vo_->getOSTab();
+            *vo_->os() << "Proposed dT=" << dT 
                    << " [sec]. CD limits it to " << time_remaining << std::endl;
       }
     }
@@ -125,8 +125,8 @@ double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
     if (!physical) dt_stable_storage = dT + (dT - 0.5*time_remaining);
     if (vo_!=Teuchos::null) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-	Teuchos::OSTab tab = vo_->getOSTab();
-	*vo_->os() << "Proposed dT=" << dT 
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "Proposed dT=" << dT 
                    << " [sec]. CD limits it to " << 0.5*time_remaining << std::endl;
       }
     }

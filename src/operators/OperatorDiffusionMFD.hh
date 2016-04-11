@@ -65,7 +65,7 @@ class OperatorDiffusionMFD : public virtual OperatorDiffusion {
   // main virtual members for populating an operator
   virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
-				    const Teuchos::RCP<const CompositeVector>& dkdp);
+                                    const Teuchos::RCP<const CompositeVector>& dkdp);
 
   // -- To calculate elemetal matrices, we can use input parameters flux 
   //    and u from the previous nonlinear iteration. Otherwise, use null-pointers.

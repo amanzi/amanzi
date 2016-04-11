@@ -34,7 +34,7 @@ namespace Operators {
 class BCs;
 
 class OperatorDiffusionFVwithGravity : public OperatorDiffusionFV,
-				       public OperatorDiffusionWithGravity {
+                                       public OperatorDiffusionWithGravity {
  public:
   OperatorDiffusionFVwithGravity(Teuchos::ParameterList& plist,
                                  const Teuchos::RCP<Operator>& global_op) :
@@ -155,7 +155,7 @@ class OperatorDiffusionFVwithGravity : public OperatorDiffusionFV,
 
  protected:
   virtual void ComputeJacobianLocal_(
-      int mcells, int f, int face_dir, int bc_model, double bc_value,
+      int mcells, int f, int face_dir_0to1, int bc_model, double bc_value,
       double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp);
 
   void ComputeTransmissibility_(Teuchos::RCP<CompositeVector> g_cv);

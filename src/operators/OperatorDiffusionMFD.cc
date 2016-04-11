@@ -66,7 +66,7 @@ void OperatorDiffusionMFD::SetTensorCoefficient(const Teuchos::RCP<std::vector<W
 * Initialization of the operator: nonlinear coefficient.
 ****************************************************************** */
 void OperatorDiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
-						const Teuchos::RCP<const CompositeVector>& dkdp)
+                                                const Teuchos::RCP<const CompositeVector>& dkdp)
 {
   k_ = k;
   dkdp_ = dkdp;
@@ -668,7 +668,7 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
           Acell(n,n) = 1.0;
         }
 
-      } else if (bc_model_trial[f] == OPERATOR_BC_NEUMANN) {
+      } else if (bc_model_trial[f] == OPERATOR_BC_NEUMANN && primary) {
         if (scaled_constraint_) {
           if (std::abs(kf[n]) < scaled_constraint_fuzzy_) {
             ASSERT(value == 0.0);
@@ -682,7 +682,7 @@ void OperatorDiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
           rhs_face[0][f] -= value * mesh_->face_area(f);
         }
 
-      } else if (bc_model_trial[f] == OPERATOR_BC_MIXED) {
+      } else if (bc_model_trial[f] == OPERATOR_BC_MIXED && primary) {
         if (flag) {  // make a copy of elemental matrix
           local_op_->matrices_shadow[c] = Acell;
           flag = false;

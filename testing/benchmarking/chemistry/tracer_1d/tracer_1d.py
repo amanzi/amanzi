@@ -7,13 +7,13 @@ import sys
 import h5py
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
 
 # ----------- AMANZI + ALQUIMIA -----------------------------------------------------------------
 
-def GetXY_Amanzi(path,root,time,comp):
+def GetXY_Amanzi(path,root,comp):
 
     # open amanzi concentration and mesh files
 
@@ -30,13 +30,14 @@ def GetXY_Amanzi(path,root,time,comp):
     x_amanzi_alquimia  = np.diff(y)/2+y[0:-1]
 
     # extract concentration array
+    time = max(amanzi_file[comp].keys())
     c_amanzi_alquimia = np.array(amanzi_file[comp][time])
     amanzi_file.close()
     amanzi_mesh.close()
     
     return (x_amanzi_alquimia, c_amanzi_alquimia)
 
-def GetXY_AmanziS(path,root,time,comp):
+def GetXY_AmanziS(path,root,comp):
     try:
         import fsnapshot
         fsnok = True
@@ -135,15 +136,14 @@ if __name__ == "__main__":
 
 # run+read Amanzi native chemistry simulation
     try:
-        time = '71'
         comp = 'total_component_concentration.cell.tracer' # conc'
         
         # Amanzi native chemistry
-        input_filename = os.path.join("amanzi-u-1d-"+root+"-isv2.xml")
+        input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "amanzi-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanzi)
 
-        x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+        x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
         native = len(x_amanzi_native)
 
     except:
@@ -152,10 +152,10 @@ if __name__ == "__main__":
 # run+read Amanzi-Alquimia-PFloTran simulation
     try:
         comp = 'total_component_concentration.cell.Tracer conc'
-        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-pflo-isv2.xml")
+        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-pflo.xml")
         path_to_amanzi = "amanzi-alquimia-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+".in",root+".dat"], path_to_amanzi)
-        x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+        x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
         alq = len(x_amanzi_alquimia)
 
     except:
@@ -167,7 +167,7 @@ if __name__ == "__main__":
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
         path_to_amanzi = "amanzi-alquimia-crunch-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+"-crunch.in",root+".dbs"], path_to_amanzi)
-        x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+        x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
         alq_crunch = len(x_amanzi_alquimia_crunch)
 
     except:
@@ -183,7 +183,7 @@ if __name__ == "__main__":
         run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
         root_amanziS = "plt00051"
         compS = "Tracer_Aqueous_Concentration"
-        x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,compS)
         struct = len(x_amanziS)
     except:
         struct = 0
@@ -196,7 +196,7 @@ if __name__ == "__main__":
         run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
         root_amanziS = "plt00051"
         compS = "Tracer_Aqueous_Concentration"
-        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,compS)
         struct_c = len(x_amanziS_crunch)
     except:
         struct_c = 0
@@ -244,9 +244,7 @@ if __name__ == "__main__":
     plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
     plt.tick_params(axis='both', which='major', labelsize=20)
 
-    #pyplot.show()
     plt.savefig(root+"_1d.png",format="png")
-#    plt.close()
+#   plt.show()
+#   plt.close()
 
-#    finally:
-#        pass 

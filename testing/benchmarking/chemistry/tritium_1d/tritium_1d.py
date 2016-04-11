@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 
 # ----------- AMANZI + ALQUIMIA -----------------------------------------------------------------
 
-def GetXY_Amanzi(path,root,time,comp):
+def GetXY_Amanzi(path,root,comp):
 
     # open amanzi concentration and mesh files
     dataname = os.path.join(path,root+"_data.h5")
@@ -29,6 +29,7 @@ def GetXY_Amanzi(path,root,time,comp):
     x_amanzi_alquimia  = np.diff(y)/2+y[0:-1]
 
     # extract concentration array
+    time = max(amanzi_file[comp].keys())
     c_amanzi_alquimia = np.array(amanzi_file[comp][time])
     amanzi_file.close()
     amanzi_mesh.close()
@@ -151,49 +152,43 @@ if __name__ == "__main__":
         
     try:
         # hardwired for 1d-calcite: Tritium = component 0, last time = '72'
-        time = '71'
         comp = 'total_component_concentration.cell.Tritium conc'
 
         # Amanzi native chemistry
         input_filename = os.path.join("amanzi-u-1d-"+root+".xml") #+"-alq-FO.xml")
         path_to_amanzi = "amanzi-native-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, [root+".bgd"], path_to_amanzi)
-        x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+        x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
         native = True
      
     except:
-
         native = False
         pass
 
     try:
-
         # Amanzi-Alquimia
-        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-isv2.xml")
+        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
         path_to_amanzi = "amanzi-alquimia-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+"-trim.in",root+".dat"], path_to_amanzi)
-        x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+        x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
 
         alquim = True
 
     except:
-
         alquim = False
 
     try:
-
         # Amanzi-Alquimia-Crunch
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
         path_to_amanzi = "amanzi-alquimia-crunch-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, 
                                        ["1d-"+root+"-crunch.in",root+".dbs","aqueous"+".dbs"],
                                        path_to_amanzi)
-        x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+        x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
 
         alquim_crunch = True
 
     except:
-
         alquim_crunch = False
 
 

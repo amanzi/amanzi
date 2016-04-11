@@ -47,7 +47,7 @@ TEST(vanGenuchten) {
   // check saturation for p = 0  
   pc = p_atm;
   CHECK_CLOSE(vG.saturation(pc),
-	      pow(1.0 + pow(alpha * pc, 1.0/ (1.0-m)), -m) * (1.0-sr) + sr, 1e-15);
+              pow(1.0 + pow(alpha * pc, 1.0/ (1.0-m)), -m) * (1.0-sr) + sr, 1e-15);
 
   // check derivative of saturation(pc) at p = 2*p_atm.
   pc = -p_atm;

@@ -47,7 +47,7 @@ if (BUILD_TESTS)
     endif()
 
     # Test: simple_mesh
-    add_amanzi_test(simple_mesh test_simple_mesh
+    add_amanzi_test(simple_mesh_all simple_mesh_all
                     KIND unit
 		    SOURCE
                           test/Main.cc 

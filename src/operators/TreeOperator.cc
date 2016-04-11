@@ -82,12 +82,30 @@ int TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const
     CompositeVector& yN = *(*yN_tv)->Data();
     int m = 0;
     for (TreeVector::const_iterator xM_tv=X.begin();
-	 xM_tv!=X.end(); ++xM_tv, ++m) {
+         xM_tv!=X.end(); ++xM_tv, ++m) {
       if (blocks_[n][m] != Teuchos::null) {
         ierr |= blocks_[n][m]->Apply(*(*xM_tv)->Data(), yN, 1.0);
       }
     }
   }
+  return ierr;
+}
+
+
+/* ******************************************************************
+* Calculate Y = A * X using matrix-free matvec on blocks of operators.
+****************************************************************** */
+int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
+{
+  Y.PutScalar(0.0);
+  Epetra_Vector Xcopy(A_->RowMap());
+  Epetra_Vector Ycopy(A_->RowMap());
+  int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
+  int returned_code(0);
+
+  ierr |= A_->Apply(Xcopy, Ycopy);
+  ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
+  ASSERT(!ierr);
   return ierr;
 }
 

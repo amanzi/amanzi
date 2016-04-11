@@ -150,6 +150,7 @@ add_amanzi_library(transport
                              ${geochem_lib} chemistry_pk time_integration ${Epetra_LIBRARIES})
 
 if ( BUILD_TESTS )
+
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
 
@@ -221,17 +222,26 @@ if ( BUILD_TESTS )
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     if ( ENABLE_MSTK_Mesh )
-	add_amanzi_test(transport_parallel_mstk transport_parallel_mstk
-			       KIND int
-	               NPROCS 4 
-	               SOURCE test/Main.cc test/transport_parallel_mstk.cc
-	               LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+       add_amanzi_test(transport_parallel_mstk transport_parallel_mstk
+                       KIND int
+                       NPROCS 4 
+                       SOURCE test/Main.cc test/transport_parallel_mstk.cc
+                       LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
         add_amanzi_test(transport_parallel_read_mstk transport_parallel_read_mstk
-		       KIND int
-	               NPROCS 4 
+                       KIND int
+                       NPROCS 4 
                        SOURCE test/Main.cc test/transport_parallel_read_mstk.cc
                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()    
+
+    if ( ENABLE_STK_Mesh )
+        add_amanzi_test(transport_parallel_read_stk transport_parallel_read_stk
+                       KIND int
+                       NPROCS 4 
+                       SOURCE test/Main.cc test/transport_parallel_read_stk.cc
+                       LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    endif()    
+
 endif()
 

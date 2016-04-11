@@ -52,7 +52,7 @@ int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     if ((*it)->schema & OPERATOR_SCHEMA_DOFS_CELL) {
       if (((*it)->schema == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
-	  && ((*it)->vals.size() == ncells_owned)) {
+          && ((*it)->vals.size() == ncells_owned)) {
         // diagonal schema
         for (int c = 0; c != ncells_owned; ++c) {
           D_c[0][c] += (*it)->vals[c];
@@ -154,7 +154,7 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     if ((*it)->schema & OPERATOR_SCHEMA_DOFS_CELL) {
       if (((*it)->schema == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
-	  && ((*it)->vals.size() == ncells_owned)) {
+          && ((*it)->vals.size() == ncells_owned)) {
         // diagonal schema
         for (int c = 0; c != ncells_owned; ++c) {
           D_c[0][c] += (*it)->vals[c];
@@ -241,8 +241,8 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
       // Assemble this Schur Op into matrix
       schur_op->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
     } else if (((*it)->schema ==
-		(OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
-	       && ((*it)->vals.size() == ncells_owned)) {
+                (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
+               && ((*it)->vals.size() == ncells_owned)) {
       // pass, already part of cell inverse
     } else {
       (*it)->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);

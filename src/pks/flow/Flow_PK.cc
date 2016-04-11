@@ -432,12 +432,12 @@ void Flow_PK::SetAbsolutePermeabilityTensor()
   if (dim == 2) {
     for (int c = 0; c < ncells_owned; c++) {
       if (perm[0][c] == perm[1][c]) {
-	K[c].Init(dim, 1);
-	K[c](0, 0) = perm[0][c];
+        K[c].Init(dim, 1);
+        K[c](0, 0) = perm[0][c];
       } else if (coordinate_system == "cartesian") {
-	K[c].Init(dim, 2);
-	K[c](0, 0) = perm[0][c];
-	K[c](1, 1) = perm[1][c];
+        K[c].Init(dim, 2);
+        K[c](0, 0) = perm[0][c];
+        K[c](1, 1) = perm[1][c];
       } else {
         VerticalNormals(c, n1, n2);
         normal = (n1 - n2) / 2;
@@ -460,13 +460,13 @@ void Flow_PK::SetAbsolutePermeabilityTensor()
   } else if (dim == 3) {
     for (int c = 0; c < K.size(); c++) {
       if (perm[0][c] == perm[1][c] && perm[0][c] == perm[2][c]) {
-	K[c].Init(dim, 1);
-	K[c](0, 0) = perm[0][c];
+        K[c].Init(dim, 1);
+        K[c](0, 0) = perm[0][c];
       } else {
-	K[c].Init(dim, 2);
-	K[c](0, 0) = perm[0][c];
-	K[c](1, 1) = perm[1][c];
-	K[c](2, 2) = perm[2][c];
+        K[c].Init(dim, 2);
+        K[c](0, 0) = perm[0][c];
+        K[c](1, 1) = perm[1][c];
+        K[c](2, 2) = perm[2][c];
       }
     }        
   }

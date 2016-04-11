@@ -76,7 +76,7 @@ class OperatorDiffusion {
   // -- setup 
   virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) = 0;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
-				    const Teuchos::RCP<const CompositeVector>& dkdp) = 0;
+                                    const Teuchos::RCP<const CompositeVector>& dkdp) = 0;
 
   // -- creation of an operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
@@ -84,7 +84,7 @@ class OperatorDiffusion {
   virtual void UpdateMatricesNewtonCorrection(
           const Teuchos::Ptr<const CompositeVector>& flux,
           const Teuchos::Ptr<const CompositeVector>& u,
-          double scalar_limiter = 1.0) {};
+          double scalar_limiter = 1.0) = 0;
 
   // -- after solving the problem: postrocessing
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux) = 0;

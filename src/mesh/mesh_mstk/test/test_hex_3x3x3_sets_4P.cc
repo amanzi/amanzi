@@ -138,7 +138,6 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 	  
 	  Amanzi::AmanziMesh::Entity_ID_List setents;
 	  mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
-	  
 	}
       else 
 	{
@@ -163,7 +162,6 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 	  
 	  Amanzi::AmanziMesh::Entity_ID_List setents;
 	  mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
-	  
 	}
     }
     else if (shape == "Region: Labeled Set") {

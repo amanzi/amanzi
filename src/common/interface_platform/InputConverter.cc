@@ -362,7 +362,7 @@ DOMElement* InputConverter::GetUniqueChildByAttribute_(
   MemoryManager mm;
   int n(0);
   DOMElement* child = NULL;
-	
+
   DOMNodeList* children = node->getChildNodes();
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
