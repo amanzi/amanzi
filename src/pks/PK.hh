@@ -72,6 +72,8 @@ class PK {
   // Return PK's name
   virtual std::string name() = 0;
 
+  //  virtual bool valid_step();
+
   /////////////////////////////////////////////////////////////////////
 
  // -- set pointers to State, and point the solution vector to the data in S_next

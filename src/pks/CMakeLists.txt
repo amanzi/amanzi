@@ -62,6 +62,7 @@ set(pks_inc_files
   PK_Implicit.hh
   PK_Explicit.hh
   PK_Physical.hh
+  PK_PhysicalExplicit.hh
   PK_PhysicalBDF.hh
   PK_PhysicalBDF_ATS.hh
   PK_BoundaryFunction.hh
