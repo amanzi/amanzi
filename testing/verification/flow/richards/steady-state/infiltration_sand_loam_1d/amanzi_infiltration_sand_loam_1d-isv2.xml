@@ -22,7 +22,7 @@
     <process_kernels>
       <flow model="richards" state="on" />
       <transport state="off" />
-      <chemistry engine="none" process_model="none" state="off" />
+      <chemistry engine="none" state="off" />
     </process_kernels>
     <execution_controls>
       <verbosity level="medium" />
@@ -129,9 +129,6 @@
         <viscosity>1.002e-3</viscosity>
         <density>998.2</density>
         <dissolved_components>
-          <solutes>
-            <solute coefficient_of_diffusion="1e-9">Tc-99</solute>
-          </solutes>
         </dissolved_components>
       </liquid_phase>
     </phases>
@@ -142,9 +139,6 @@
           <liquid_component name="water">
             <uniform_pressure value="81747.0" />
           </liquid_component>
-          <solute_component name="solute">
-            <uniform_conc name="Tc-99" value="0.0"/>
-          </solute_component>
         </liquid_phase>
       </initial_condition>
     </initial_conditions>

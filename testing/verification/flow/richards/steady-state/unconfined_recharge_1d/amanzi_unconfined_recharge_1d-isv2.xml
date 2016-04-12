@@ -27,7 +27,7 @@
       <comments>Variably saturated flow</comments>
       <flow model="richards" state="on" />
       <transport state="off" />
-      <chemistry engine="none" process_model="none" state="off" />
+      <chemistry engine="none" state="off" />
     </process_kernels>
     <phases>
       <liquid_phase name="water">
