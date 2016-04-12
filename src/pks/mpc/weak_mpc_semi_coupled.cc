@@ -129,10 +129,15 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
   // advance surface-pressure from t_n to t_(n+1)
   ++pk;
   int k=0;
+  int nfailed = 0;
   for (pk; pk!=sub_pks_.end(); ++pk){
-    fail += (*pk)->advance(dt);
-    if (fail) return fail;
+    bool c_fail = (*pk)->advance(dt);
+    if (c_fail) nfailed++;
   }
+  int nfailed_local = nfailed;
+  S_->GetMesh("surface")->get_comm()->SumAll(&nfailed_local, &nfailed, 1);
+  if (nfailed > 0) return true;
+  
   /*
   while (pk != sub_pks_.end()){
     std::cout<<"COUPLED: "<<rank<<" "<<k<<"\n";
