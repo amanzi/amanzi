@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<amanzi_input type="unstructured" version="2.2.1">
+<amanzi_input type="unstructured" version="2.3.0">
     <echo_translated_input format="unstructured_native"/>
     <model_description name="infiltration_dry_sand-unstr">
         <comments>infiltration_dry_sand-unstr	Tue Sep 22 14:24:43 PDT 2015</comments>
