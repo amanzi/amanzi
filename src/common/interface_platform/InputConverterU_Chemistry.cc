@@ -448,6 +448,7 @@ std::string InputConverterU::CreateINFile(std::string& filename)
   std::stringstream complexes;
   std::stringstream constraints;
   std::stringstream reactionrates;
+  std::stringstream decayrates;
 
   // database filename
   bool flag;
@@ -478,6 +479,12 @@ std::string InputConverterU::CreateINFile(std::string& filename)
         reactionrates << "    REACTION " << name << " <->\n";
         reactionrates << "    FORWARD_RATE " << frate << "\n";
         reactionrates << "    BACKWARD_RATE " << brate << "\n";
+      }
+      if (element->hasAttribute(mm.transcode("first_order_decay_constant"))) {
+        double decay = GetAttributeValueD_(element, "first_order_decay_constant");
+        std::string name = TrimString_(mm.transcode(inode->getTextContent()));
+        decayrates << "    REACTION " << name << " <-> \n";
+        decayrates << "    RATE_CONSTANT " << decay << "\n";
       }
     }
   }
@@ -727,6 +734,11 @@ std::string InputConverterU::CreateINFile(std::string& filename)
       if (!reactionrates.str().empty()) {
         in_file << "  GENERAL_REACTION\n";
         in_file << reactionrates.str();
+        in_file << "  /\n";
+      }
+      if (!decayrates.str().empty()) {
+        in_file << "  RADIOACTIVE_DECAY_REACTION\n";
+        in_file << decayrates.str();
         in_file << "  /\n";
       }
       if (!secondaries.str().empty()) {
