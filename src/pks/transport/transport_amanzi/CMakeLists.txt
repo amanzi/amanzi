@@ -71,7 +71,7 @@ set(transport_inc_files
   TransportBoundaryFunction_Alquimia.hh
   TransportDefs.hh
   TransportDomainFunction.hh
-  Transport_PK.hh
+  Transport_PK_ATS.hh
   TransportSourceFactory.hh)
 
 set(transport_src_files Transport_PK.cc Transport_TI.cc 

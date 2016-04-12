@@ -20,7 +20,7 @@
 #include "GMVMesh.hh"
 
 #include "Mesh.hh"
-#include "Transport_PK.hh"
+#include "Transport_PK_ATS.hh"
 #include "TransportBCFactory.hh"
 
 namespace Amanzi {
@@ -29,7 +29,7 @@ namespace Transport {
 /* ******************************************************************
 * Inialization of various transport structures.
 ****************************************************************** */
-void Transport_PK::InitializeAll_()
+void Transport_PK_ATS::InitializeAll_()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
@@ -165,7 +165,7 @@ void Transport_PK::InitializeAll_()
 /* ****************************************************************
 * Find place of the given component in a multivector.
 **************************************************************** */
-int Transport_PK::FindComponentNumber(const std::string component_name)
+int Transport_PK_ATS::FindComponentNumber(const std::string component_name)
 {
   int ncomponents = component_names_.size();
   for (int i = 0; i < ncomponents; i++) {

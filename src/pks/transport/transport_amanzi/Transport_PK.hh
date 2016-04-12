@@ -9,8 +9,8 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_TRANSPORT_PK_HH_
-#define AMANZI_TRANSPORT_PK_HH_
+#ifndef AMANZI_ATS_TRANSPORT_PK_HH_
+#define AMANZI_ATS_TRANSPORT_PK_HH_
 
 // TPLs
 #include "Epetra_Vector.h"
@@ -31,6 +31,8 @@
 #include "Units.hh"
 #include "VerboseObject.hh"
 #include "PK_PhysicalExplicit.hh"
+
+#include <string>
 
 #ifdef ALQUIMIA_ENABLED
 #include "Alquimia_PK.hh"
@@ -59,21 +61,20 @@ namespace Transport {
 typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   // class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
-  // class Transport_PK : public PK, public Explicit_TI::fnBase<TreeVector> {
-  class Transport_PK : public PK_PhysicalExplicit<Epetra_Vector> {
-  //class Transport_PK : public PK_Explicit{
+  class Transport_PK_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
+
   public:
-    Transport_PK(Teuchos::ParameterList& pk_tree,
+    Transport_PK_ATS(Teuchos::ParameterList& pk_tree,
                const Teuchos::RCP<Teuchos::ParameterList>& glist,
                const Teuchos::RCP<State>& S,
                const Teuchos::RCP<TreeVector>& soln);
 
-    Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+    Transport_PK_ATS(const Teuchos::RCP<Teuchos::ParameterList>& glist,
                  Teuchos::RCP<State> S,
                  const std::string& pk_list_name,
                  std::vector<std::string>& component_names);
 
-    ~Transport_PK();
+    ~Transport_PK_ATS();
 
   // members required by PK interface
   virtual void Setup(const Teuchos::Ptr<State>& S);
@@ -185,37 +186,31 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   // miscaleneous methods
   int FindComponentNumber(const std::string component_name);
 
-    // void set_states(const Teuchos::RCP<const State>& S,
-    //                 const Teuchos::RCP<State>& S_inter,
-    //                 const Teuchos::RCP<State>& S_next)
-    // {
-    //   PK_
-    // };
-
  public:
-  Teuchos::RCP<Teuchos::ParameterList> tp_list_;
-  Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
-  Teuchos::RCP<const Teuchos::ParameterList> linear_solver_list_;
-  Teuchos::RCP<const Teuchos::ParameterList> nonlinear_solver_list_;
+    Teuchos::RCP<Teuchos::ParameterList> tp_list_;
+    Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
+    Teuchos::RCP<const Teuchos::ParameterList> linear_solver_list_;
+    Teuchos::RCP<const Teuchos::ParameterList> nonlinear_solver_list_;
 
-  int MyPID;  // parallel information: will be moved to private
-  int spatial_disc_order, temporal_disc_order, limiter_model;
+    int MyPID;  // parallel information: will be moved to private
+    int spatial_disc_order, temporal_disc_order, limiter_model;
 
-  int nsubcycles;  // output information
-  int internal_tests;
-  double tests_tolerance;
+    int nsubcycles;  // output information
+    int internal_tests;
+    double tests_tolerance;
+
 
  protected:
     Teuchos::RCP<TreeVector> soln_;
 
-    // Key domain_name_;
-    // Key saturation_name_;
-    // Key prev_saturation_name_;
-    // Key flux_name_;
-    // Key permeability_name_;
-    // Key tcc_name_;
-    // Key porosity_name_;
-    // Key tcc_matrix_;
+    Key domain_name_;
+    Key saturation_name_;
+    Key prev_saturation_name_;
+    Key flux_name_;
+    Key permeability_name_;
+    Key tcc_name_;
+    Key porosity_name_;
+    Key tcc_matrix_;
 
   
  
@@ -226,6 +221,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   bool subcycling_;
   int dim;
+
 
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
@@ -293,12 +289,12 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
     Teuchos::RCP<VerboseObject> vo_;
 
   // Forbidden.
-  Transport_PK(const Transport_PK&);
-  Transport_PK& operator=(const Transport_PK&);
+  Transport_PK_ATS(const Transport_PK_ATS&);
+  Transport_PK_ATS& operator=(const Transport_PK_ATS&);
 
  private:
   // factory registration
-  static RegisteredPKFactory<Transport_PK> reg_;
+  static RegisteredPKFactory<Transport_PK_ATS> reg_;
 };
 
 }  // namespace Transport

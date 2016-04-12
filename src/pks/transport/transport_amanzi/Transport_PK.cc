@@ -34,7 +34,7 @@
 #include "PK_Utils.hh"
 
 #include "MultiscaleTransportPorosityFactory.hh"
-#include "Transport_PK.hh"
+#include "Transport_PK_ATS.hh"
 
 namespace Amanzi {
 namespace Transport {
@@ -42,12 +42,12 @@ namespace Transport {
 /* ******************************************************************
 * New constructor compatible with new MPC framework.
 ****************************************************************** */
-Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
+Transport_PK_ATS::Transport_PK_ATS(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& glist,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln) :
-    S_(S),
-    soln_(soln)
+  S_(S),
+  soln_(soln)
 {
   std::string pk_name = pk_tree.name();
   const char* result = pk_name.data();
@@ -58,6 +58,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
   
 // Create miscaleneous lists.
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+  //std::cout<<*pk_list;
   tp_list_ = Teuchos::sublist(pk_list, pk_name, true);
 
 
@@ -99,7 +100,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
 /* ******************************************************************
 * Old constructor for unit tests.
 ****************************************************************** */
-Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+Transport_PK_ATS::Transport_PK_ATS(const Teuchos::RCP<Teuchos::ParameterList>& glist,
                            Teuchos::RCP<State> S, 
                            const std::string& pk_list_name,
                            std::vector<std::string>& component_names) :
@@ -122,7 +123,7 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 * Routine processes parameter list. It needs to be called only once
 * on each processor.                                                     
 ****************************************************************** */
-Transport_PK::~Transport_PK()
+Transport_PK_ATS::~Transport_PK_ATS()
 { 
   if (vo_ != Teuchos::null) {
     vo_ = Teuchos::null;
@@ -140,7 +141,7 @@ Transport_PK::~Transport_PK()
 * Setup for Alquimia.
 ****************************************************************** */
 #ifdef ALQUIMIA_ENABLED
-void Transport_PK::SetupAlquimia(Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
+void Transport_PK_ATS::SetupAlquimia(Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
                                  Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
 {
   chem_pk_ = chem_pk;
@@ -161,7 +162,7 @@ void Transport_PK::SetupAlquimia(Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem
 }
 #endif
 
-  void Transport_PK::set_states(const Teuchos::RCP<const State>& S,
+  void Transport_PK_ATS::set_states(const Teuchos::RCP<const State>& S,
                                 const Teuchos::RCP<State>& S_inter,
                                 const Teuchos::RCP<State>& S_next) {
 
@@ -174,14 +175,23 @@ void Transport_PK::SetupAlquimia(Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem
 /* ******************************************************************
 * Define structure of this PK.
 ****************************************************************** */
-void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
+void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
 {
   passwd_ = "state";  // owner's password
 
 
-  //  domain_name_ = plist_->get<std::string>("domain name", "domain");
+  domain_name_ = tp_list_->get<std::string>("domain name", "domain");
 
-  mesh_ = S->GetMesh();
+  saturation_key_ = tp_list_->get<std::string>("saturation_key", getKey(domain_name_, "saturation_liquid"));
+  prev_saturation_key_ = tp_list_->get<std::string>("prev_saturation_key", getKey(domain_name_, "prev_saturation_liquid"));
+  flux_key_ = tp_list_->get<std::string>("flux_key", getKey(domain_name_, "darcy_flux"));
+  permeability_key_ = tp_list_->get<std::string>("permeability_key", getKey(domain_name_, "permeability"));
+  tcc_key_ = tp_list_->get<std::string>("concentration_key", getKey(domain_name_, "total_component_concentration"));
+  porosity_key_ = tp_list_->get<std::string>("porosity_key", getKey(domain_name_, "porosity"));
+  tcc_matrix_key_ = tp_list_->get<std::string>("tcc_matrix_key", getKey(domain_name_, "total_component_concentraion_matrix"));
+  
+
+  mesh_ = S->GetMesh(domain_name_);
   dim = mesh_->space_dimension();
 
   // cross-coupling of PKs
@@ -190,28 +200,25 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   bool abs_perm = physical_models->get<bool>("permeability field is required", false);
   std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single porosity");
 
-
-
-
   // require state fields when Flow PK is off
-  if (!S->HasField("permeability") && abs_perm) {
-    S->RequireField("permeability")->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField(permeability_key_) && abs_perm) {
+    S->RequireField(permeability_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, dim);
   }
-
-  if (!S->HasField("darcy_flux")) {
-    S->RequireField("darcy_flux")->SetMesh(mesh_)->SetGhosted(true)
+  std::cout<<flux_key_<<"\n";
+  if (!S->HasField(flux_key_)) {
+    S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
   }
-  if (!S->HasField("saturation_liquid")) {
-    S->RequireField("saturation_liquid")->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField(saturation_key_)) {
+    S->RequireField(saturation_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   //   std::cout<<"saturation_liquid "<<S->RequireField("saturation_liquid")->Owned()<<"\n";
   }
-  if (!S->HasField("prev_saturation_liquid")) {
-    S->RequireField("prev_saturation_liquid")->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField(prev_saturation_key_)) {
+    S->RequireField(prev_saturation_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->GetField("prev_saturation_liquid", passwd_)->set_io_vis(false);
+    S->GetField(prev_saturation_key_, passwd_)->set_io_vis(false);
   }
 
   // require state fields when Transport PK is on
@@ -222,20 +229,20 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   int ncomponents = component_names_.size();
-  if (!S->HasField("total_component_concentration")) {
+  if (!S->HasField(tcc_key_)) {
     std::vector<std::vector<std::string> > subfield_names(1);
     subfield_names[0] = component_names_;
 
-    S->RequireField("total_component_concentration", passwd_, subfield_names)
+    S->RequireField(tcc_key_, passwd_, subfield_names)
       ->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, ncomponents);
   }
 
   // testing evaluators
-  if (!S->HasField("porosity")) {
-    S->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField(porosity_key_)) {
+    S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator("porosity");
+    S->RequireFieldEvaluator(porosity_key_);
   }
 
   // require multiscale fields
@@ -246,11 +253,11 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
         msp_list = Teuchos::sublist(tp_list_, "multiscale models", true);
     msp_ = CreateMultiscaleTransportPorosityPartition(mesh_, msp_list);
 
-    if (!S->HasField("total_component_concentraion_matrix")) {
+    if (!S->HasField(tcc_matrix_key_)) {
       std::vector<std::vector<std::string> > subfield_names(1);
       subfield_names[0] = component_names_;
 
-      S->RequireField("total_component_concentration_matrix", passwd_, subfield_names)
+      S->RequireField(tcc_matrix_key_, passwd_, subfield_names)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
     }
@@ -262,7 +269,7 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
 * Routine processes parameter list. It needs to be called only once
 * on each processor.                                                     
 ****************************************************************** */
-void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
+void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
 {
   // Set initial values for transport variables.
   dt_ = dt_debug_ = t_physics_ = 0.0;
@@ -382,7 +389,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 /* ******************************************************************
 * Initalized fields left by State and other PKs.
 ****************************************************************** */
-void Transport_PK::InitializeFields_()
+void Transport_PK_ATS::InitializeFields_()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
@@ -426,7 +433,7 @@ void Transport_PK::InitializeFields_()
 /* ****************************************************************
 * Auxiliary initialization technique.
 **************************************************************** */
-void Transport_PK::InitializeFieldFromField_(const std::string& field0, 
+void Transport_PK_ATS::InitializeFieldFromField_(const std::string& field0, 
                                              const std::string& field1, 
                                              bool call_evaluator,
                                              bool overwrite)
@@ -479,7 +486,7 @@ void Transport_PK::InitializeFieldFromField_(const std::string& field0,
 * takes into account sinks and sources but preserves only positivity
 * of an advected mass.
 * ***************************************************************** */
-double Transport_PK::CalculateTransportDt()
+double Transport_PK_ATS::CalculateTransportDt()
 {
   S_next_->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
 
@@ -562,7 +569,7 @@ double Transport_PK::CalculateTransportDt()
 /* ******************************************************************* 
 * Estimate returns last time step unless it is zero.     
 ******************************************************************* */
-double Transport_PK::get_dt()
+double Transport_PK_ATS::get_dt()
 {
   if (subcycling_) {
     return 1e+99;
@@ -578,7 +585,7 @@ double Transport_PK::get_dt()
 * Efficient subcycling requires to calculate an intermediate state of
 * saturation only once, which leads to a leap-frog-type algorithm.
 ******************************************************************* */
-bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
 { 
   bool failed = false;
   double dt_MPC = t_new - t_old;
@@ -895,7 +902,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 *   d(VWC_f)/dt -= G_s, d(VWC_m) = G_s 
 *   G_s = G_w C^* + omega_s (C_f - C_m).
 ******************************************************************* */
-void Transport_PK::AddMultiscalePorosity_(
+void Transport_PK_ATS::AddMultiscalePorosity_(
     double t_old, double t_new, double t_int1, double t_int2)
 {
   const Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
@@ -950,7 +957,7 @@ void Transport_PK::AddMultiscalePorosity_(
 /* ******************************************************************* 
 * Copy the advected tcc field to the state.
 ******************************************************************* */
-void Transport_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
+void Transport_PK_ATS::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   Teuchos::RCP<CompositeVector> tcc;
   tcc = S->GetFieldData("total_component_concentration", passwd_);
@@ -963,7 +970,7 @@ void Transport_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<Sta
 /* ******************************************************************* 
  * A simple first-order transport method 
  ****************************************************************** */
-void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
+void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
 {
   dt_ = dt_cycle;  // overwrite the maximum stable transport step
   mass_solutes_source_.assign(num_aqueous + num_gaseous, 0.0);
@@ -1068,7 +1075,7 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
  * tcc_next when owned and ghost data. This is a special routine for 
  * transient flow and uses first-order time integrator. 
  ****************************************************************** */
-void Transport_PK::AdvanceSecondOrderUpwindRK1(double dt_cycle)
+void Transport_PK_ATS::AdvanceSecondOrderUpwindRK1(double dt_cycle)
 {
   dt_ = dt_cycle;  // overwrite the maximum stable transport step
   mass_solutes_source_.assign(num_aqueous + num_gaseous, 0.0);
@@ -1115,7 +1122,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dt_cycle)
  * reconstructions. This is a special routine for transient flow and 
  * uses second-order predictor-corrector time integrator. 
  ****************************************************************** */
-void Transport_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
+void Transport_PK_ATS::AdvanceSecondOrderUpwindRK2(double dt_cycle)
 {
   dt_ = dt_cycle;  // overwrite the maximum stable transport step
   mass_solutes_source_.assign(num_aqueous + num_gaseous, 0.0);
@@ -1184,7 +1191,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
  * The generic means that saturation is constant during time step. 
  ****************************************************************** */
 /*
-void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dt_cycle)
+void Transport_PK_ATS::AdvanceSecondOrderUpwindGeneric(double dt_cycle)
 {
   dt_ = dt_cycle;  // overwrite the maximum stable transport step
 
@@ -1222,7 +1229,7 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dt_cycle)
 * Return mass rate for the tracer.
 * The routine treats two cases of tcc with one and all components.
 ****************************************************************** */
-void Transport_PK::ComputeAddSourceTerms(double tp, double dtp, 
+void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp, 
                                          std::vector<TransportDomainFunction*>& srcs, 
                                          Epetra_MultiVector& tcc, int n0, int n1)
 {
@@ -1259,7 +1266,7 @@ void Transport_PK::ComputeAddSourceTerms(double tp, double dtp,
 * Populates operators' boundary data for given component.
 * Returns true if at least one face was populated.
 ******************************************************************* */
-bool Transport_PK::PopulateBoundaryData(
+bool Transport_PK_ATS::PopulateBoundaryData(
     std::vector<int>& bc_model, std::vector<double>& bc_value, int component)
 {
   bool flag = false;
@@ -1304,7 +1311,7 @@ bool Transport_PK::PopulateBoundaryData(
 * Identify flux direction based on orientation of the face normal 
 * and sign of the  Darcy velocity.                               
 ******************************************************************* */
-void Transport_PK::IdentifyUpwindCells()
+void Transport_PK_ATS::IdentifyUpwindCells()
 {
   for (int f = 0; f < nfaces_wghost; f++) {
     (*upwind_cell_)[f] = -1;  // negative value indicates boundary
@@ -1339,7 +1346,7 @@ void Transport_PK::IdentifyUpwindCells()
 * is measuared relative to value v0; so that v1 is at time dt. The
 * interpolated data are at time dt_int.            
 ******************************************************************* */
-void Transport_PK::InterpolateCellVector(
+void Transport_PK_ATS::InterpolateCellVector(
     const Epetra_MultiVector& v0, const Epetra_MultiVector& v1, 
     double dt_int, double dt, Epetra_MultiVector& v_int) 
 {

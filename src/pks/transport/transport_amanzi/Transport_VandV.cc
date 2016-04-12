@@ -18,7 +18,7 @@
 #include "Mesh.hh"
 #include "errors.hh"
 
-#include "Transport_PK.hh"
+#include "Transport_PK_ATS.hh"
 
 namespace Amanzi {
 namespace Transport {
@@ -26,7 +26,7 @@ namespace Transport {
 /* ****************************************************************
 * Construct default state for unit tests.
 **************************************************************** */
-void Transport_PK::CreateDefaultState(
+void Transport_PK_ATS::CreateDefaultState(
     Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int ncomponents) 
 {
   std::string name("state"); 
@@ -82,7 +82,7 @@ void Transport_PK::CreateDefaultState(
 /* *******************************************************************
 * Routine verifies that the velocity field is divergence free                 
 ******************************************************************* */
-void Transport_PK::Policy(Teuchos::Ptr<State> S)
+void Transport_PK_ATS::Policy(Teuchos::Ptr<State> S)
 {
   if (mesh_->get_comm()->NumProc() > 1) {
     if (!S->GetFieldData("total_component_concentration")->Ghosted()) {
@@ -98,7 +98,7 @@ void Transport_PK::Policy(Teuchos::Ptr<State> S)
 /* *******************************************************************
 * Calculates extrema of specified solutes and print them.
 ******************************************************************* */
-void Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, double dT_MPC)
+void Transport_PK_ATS::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, double dT_MPC)
 {
   int num_components = tcc_next.NumVectors();
   double tccmin_vec[num_components];
@@ -167,7 +167,7 @@ void Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, dou
 /********************************************************************
 * Check completeness of influx boundary conditions.                        
 ****************************************************************** */
-void Transport_PK::VV_CheckInfluxBC() const
+void Transport_PK_ATS::VV_CheckInfluxBC() const
 {
   int number_components = tcc->ViewComponent("cell")->NumVectors();
   std::vector<int> influx_face(nfaces_wghost);
@@ -222,7 +222,7 @@ void Transport_PK::VV_CheckInfluxBC() const
 /* *******************************************************************
  * Check that global extrema diminished                          
  ****************************************************************** */
-void Transport_PK::VV_CheckGEDproperty(Epetra_MultiVector& tracer) const
+void Transport_PK_ATS::VV_CheckGEDproperty(Epetra_MultiVector& tracer) const
 {
   int i, num_components = tracer.NumVectors();
   double tr_min[num_components];
@@ -233,7 +233,7 @@ void Transport_PK::VV_CheckGEDproperty(Epetra_MultiVector& tracer) const
 
   for (i = 0; i < num_components; i++) {
     if (tr_min[i] < 0) {
-      std::cout << "Transport_PK: concentration violates GED property" << std::endl;
+      std::cout << "Transport_PK_ATS: concentration violates GED property" << std::endl;
       std::cout << "    Make an Amanzi ticket or turn off internal transport tests" << std::endl;
       std::cout << "    MyPID = " << MyPID << std::endl;
       std::cout << "    component = " << i << std::endl;
@@ -251,7 +251,7 @@ void Transport_PK::VV_CheckGEDproperty(Epetra_MultiVector& tracer) const
 /* *******************************************************************
  * Check that the tracer is between 0 and 1.                        
  ****************************************************************** */
-void Transport_PK::VV_CheckTracerBounds(Epetra_MultiVector& tracer,
+void Transport_PK_ATS::VV_CheckTracerBounds(Epetra_MultiVector& tracer,
                                         int component,
                                         double lower_bound,
                                         double upper_bound,
@@ -262,7 +262,7 @@ void Transport_PK::VV_CheckTracerBounds(Epetra_MultiVector& tracer,
   for (int c = 0; c < ncells_owned; c++) {
     double value = tracer[component][c];
     if (value < lower_bound - tol || value > upper_bound + tol) {
-      std::cout << "Transport_PK: tracer violates bounds" << std::endl;
+      std::cout << "Transport_PK_ATS: tracer violates bounds" << std::endl;
       std::cout << "    Make an Amanzi ticket or turn off internal transport tests" << std::endl;
       std::cout << "    MyPID = " << MyPID << std::endl;
       std::cout << "    component = " << component << std::endl;
@@ -284,7 +284,7 @@ void Transport_PK::VV_CheckTracerBounds(Epetra_MultiVector& tracer,
 * Calculate change of tracer volume per second due to boundary flux.
 * This is the simplified version (lipnikov@lanl.gov).
 ****************************************************************** */
-double Transport_PK::VV_SoluteVolumeChangePerSecond(int idx_tracer)
+double Transport_PK_ATS::VV_SoluteVolumeChangePerSecond(int idx_tracer)
 {
   double volume = 0.0;
 
@@ -317,7 +317,7 @@ double Transport_PK::VV_SoluteVolumeChangePerSecond(int idx_tracer)
 /* *******************************************************************
 * Error estimate uses analytic function and solution.
 * ***************************************************************** */
-void Transport_PK::CalculateLpErrors(
+void Transport_PK_ATS::CalculateLpErrors(
     AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2)
 {
   *L1 = *L2 = 0.0;

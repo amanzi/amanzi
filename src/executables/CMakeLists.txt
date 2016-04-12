@@ -112,7 +112,6 @@ set(ATS_LIBS
 )
 
 set(AMANZI_LIBS
-#                      amanzi_transport
                       amanzi_operators
                       amanzi_pks
                       amanzi_state

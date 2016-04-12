@@ -12,7 +12,7 @@
 // TPLs
 #include <boost/algorithm/string.hpp>
 
-#include "Transport_PK.hh"
+#include "Transport_PK_ATS.hh"
 
 namespace Amanzi {
 namespace Transport {
@@ -20,7 +20,7 @@ namespace Transport {
 /* *******************************************************************
 * Re-partition components between liquid and gas phases.
 ******************************************************************* */
-void Transport_PK::PrepareAirWaterPartitioning_()
+void Transport_PK_ATS::PrepareAirWaterPartitioning_()
 {
   henry_law_ = true;
   for (int i = 0; i < num_gaseous; i++) {
@@ -54,7 +54,7 @@ void Transport_PK::PrepareAirWaterPartitioning_()
 /* *******************************************************************
 * Re-partition components between liquid and gas phases.
 ******************************************************************* */
-void Transport_PK::MakeAirWaterPartitioning_()
+void Transport_PK_ATS::MakeAirWaterPartitioning_()
 {
   Epetra_MultiVector& tcc = *tcc_tmp->ViewComponent("cell", false);
   const Epetra_MultiVector& sat_l = *ws;

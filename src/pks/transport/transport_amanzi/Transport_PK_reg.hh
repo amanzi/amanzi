@@ -9,12 +9,12 @@
   Author: Daniil Svyatskiy (dasvyat@lanl.gov)
 */
 
-#include "Transport_PK.hh"
+#include "Transport_PK_ATS.hh"
 
 namespace Amanzi {
 namespace Transport {
 
-RegisteredPKFactory<Transport_PK> Transport_PK::reg_("transport");
+RegisteredPKFactory<Transport_PK_ATS> Transport_PK_ATS::reg_("transport");
 
 }  // namespace Transport
 }  // namespace Amanzi
