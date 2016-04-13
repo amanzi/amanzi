@@ -62,6 +62,7 @@ public:
     
   };
   virtual double get_dt();
+  virtual bool valid_step();
   virtual bool advance (double dt);
   virtual void setup(const Teuchos::Ptr<State>& S);
   bool  CoupledSurfSubsurf3D(double dt);

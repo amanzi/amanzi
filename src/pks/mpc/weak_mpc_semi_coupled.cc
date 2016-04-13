@@ -12,6 +12,19 @@ namespace Amanzi {
 
 
 // -----------------------------------------------------------------------------
+// loop over sub-PKs, calling their valid_step() method
+// -----------------------------------------------------------------------------
+bool WeakMPCSemiCoupled::valid_step() {
+  bool valid_local = MPC<PK>::valid_step();
+  int valid_int_local = valid_local ? 1 : 0;
+  int valid_int = 0;
+  S_->GetMesh("surface")->get_comm()->MinAll(&valid_int_local, &valid_int, 1);
+  return valid_int == 0 ? false : true;
+};
+
+
+
+// -----------------------------------------------------------------------------
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
 double WeakMPCSemiCoupled::get_dt() {
@@ -20,15 +33,14 @@ double WeakMPCSemiCoupled::get_dt() {
        pk != sub_pks_.end(); ++pk) {
     dt = std::min<double>(dt, (*pk)->get_dt());
   }
+  double dt_local = dt;
+  S_->GetMesh("surface")->get_comm()->MinAll(&dt_local, &dt, 1);
   return dt;
 };
 
 // -----------------------------------------------------------------------------
-// Advance each sub-PK individually.
+// Set up each PK
 // -----------------------------------------------------------------------------
-
-
-
 void
 WeakMPCSemiCoupled::setup(const Teuchos::Ptr<State>& S) {
   S->AliasMesh("surface", "surface_star");
@@ -172,19 +184,14 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
     surfstar_t[0][c] = surf_t[0][0];
   }
   
-  
   // Mark surface_star-pressure evaluator as changed.
   // NOTE: later do it in the setup --aj
   Teuchos::RCP<PKBDFBase> pk_surf =
     Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[0]);
   ASSERT(pk_surf.get());
   pk_surf->ChangedSolution();
-
-
  
-  return fail;
-
-
+  return false;
 }
   
 
