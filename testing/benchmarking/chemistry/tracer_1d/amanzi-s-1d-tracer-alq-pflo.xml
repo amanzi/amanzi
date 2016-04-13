@@ -1,144 +1,158 @@
-<ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
-  <Parameter name="Petsc Options File" type="string" value=".petsc"/>
+<amanzi_input type="structured" version="2.1.1">
+  <model_description name="tracer_1d-str">
+    <comments></comments>
+  </model_description>
 
-  <ParameterList name="General Description">
-    <Parameter name="Model ID" type="string" value="1D Flow and Transport tracer transport"/>
-  </ParameterList>
-  <ParameterList name="Execution Control">
-    <Parameter name="Flow Model" type="string" value="Single Phase"/>
-    <Parameter name="Transport Model" type="string" value="On"/>
-    <Parameter name="Chemistry Model" type="string" value="Alquimia"/>
-    <ParameterList name="Time Integration Mode">
-      <ParameterList name="Transient">
-        <Parameter name="Start" type="double" value="0.0"/>
-        <Parameter name="End" type="double" value="1.5778463e9"/>
-        <Parameter name="Initial Time Step" type="double" value="3153600"/>
-        <Parameter name="Maximum Cycle Number" type="int" value="1000000"/>
-      </ParameterList>
-    </ParameterList>
-    <Parameter name="Verbosity" type="string" value="High"/>
-    <ParameterList name="Numerical Control Parameters">
-      <ParameterList name="Structured Algorithm">
-        <ParameterList name="Expert Settings">
-          <Parameter name="gravity" type="double" value="0"/>
-          <Parameter name="max_n_subcycle_transport" type="int" value="1"/>
-          <Parameter name="cfl" type="double" value="1.0"/> 
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-  <ParameterList name="Domain">
-    <Parameter name="Spatial Dimension" type="int" value="2"/>
-  </ParameterList>
-  <ParameterList name="Mesh">
-    <ParameterList name="Structured">
-      <Parameter name="Number of Cells" type="Array(int)" value="{100, 2}"/>
-      <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.0, 0.0}" />
-      <Parameter name="Domain High Coordinate" type="Array(double)" value="{100.0, 1.0}" />
-    </ParameterList>
-  </ParameterList>
-  <ParameterList name="Regions">
-  </ParameterList>
-  <ParameterList name="Material Properties">
-    <ParameterList name="Soil">
-      <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
-      <ParameterList name="Porosity: Uniform">
-        <Parameter name="Value" type="double" value="0.25"/>
-      </ParameterList>
-      <ParameterList name="Intrinsic Permeability: Uniform">
-        <Parameter name="Value" type="double" value="1.E-12"/>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-  <ParameterList name="Phase Definitions">
-    <ParameterList name="Aqueous">
-      <ParameterList name="Phase Properties">
-        <ParameterList name="Viscosity: Uniform">
-          <Parameter name="Viscosity" type="double" value="1.002e-3 "/>
-        </ParameterList>
-        <ParameterList name="Density: Uniform">
-          <Parameter name="Density" type="double" value="998.2 "/>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="Phase Components">
-        <ParameterList name="Water">
-          <Parameter name="Component Solutes" type="Array(string)" value="{Tracer}"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-  <ParameterList name="Initial Conditions">
-    <ParameterList name="Initial Condition">
-      <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
-      <ParameterList name="IC: Uniform Pressure">
-        <Parameter name="Value" type="double" value="201325.0"/>
-      </ParameterList>
-      <ParameterList name="Solute IC">
-        <ParameterList name="Aqueous">
-          <ParameterList name="Water">
-            <ParameterList name="Tracer">
-              <ParameterList name="IC: Uniform Concentration">
-                <Parameter name="Geochemical Condition" type="string" value="initial"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-  <ParameterList name="Boundary Conditions">
-    <ParameterList name="West BC">
-      <Parameter name="Assigned Regions" type="Array(string)" value="{XLOBC}"/>
-      <ParameterList name="BC: Flux">
-        <Parameter name="Inward Mass Flux" type="Array(double)" value="{7.91317859e-6}"/>
-      </ParameterList>
-      <ParameterList name="Solute BC">
-        <ParameterList name="Aqueous">
-          <ParameterList name="Water">
-            <ParameterList name="Tracer">
-              <ParameterList name="BC: Uniform Concentration">
-                <Parameter name="Geochemical Condition" type="string" value="west"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="East BC">
-      <Parameter name="Assigned Regions" type="Array(string)" value="{XHIBC}"/>
-      <ParameterList name="BC: Uniform Pressure">
-        <Parameter name="Values" type="Array(double)" value="{201325.0}"/>       
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-  <ParameterList name="Output">
-    <ParameterList name="Time Macros">
-      <ParameterList name="Every_0.05_year">
-        <Parameter name="Start_Period_Stop" type="Array(double)" value="{0., 1.5768e6, -1}"/>
-      </ParameterList>
-      <ParameterList name="Every_year">
-        <Parameter name="Start_Period_Stop" type="Array(double)" value="{0.0, 31556926.0, -1}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Cycle Macros">
-      <ParameterList name="Every_step">
-        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0, 1, -1}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Visualization Data">
-      <Parameter name="File Name Base" type="string" value="struct_amanzi-output-pflo/plt"/>
-    </ParameterList>
-    <ParameterList name="Checkpoint Data">
-      <Parameter name="File Name Base" type="string" value="struct_amanzi-output-pflo/chk"/>
-    </ParameterList>
-  </ParameterList>
+  <definitions>
+    <macros>
+      <time_macro name="every_year">
+	<start>0 s</start>
+	<timestep_interval>31556926.0 s</timestep_interval>
+	<stop>1.5778463e9 s</stop>
+      </time_macro>
+      <cycle_macro name="every_step">
+	<start>0 s</start>
+	<timestep_interval>1</timestep_interval>
+	<stop>-1</stop>
+      </cycle_macro>
+    </macros>
+  </definitions>
 
-  <ParameterList name="Chemistry">
-    <Parameter name="Engine" type="string" value="PFloTran"/>
-    <Parameter name="Engine Input File" type="string" value="1d-tracer.in"/>
-    <Parameter name="Verbosity" type="string" value="verbose" />
-    <Parameter name="Auxiliary Data" type="Array(string)" value="{pH}"/>
-    <Parameter name="Max Time Step (s)" type="double" value="15778463.0"/>
-  </ParameterList> <!-- Chemistry -->
-</ParameterList>
+  <process_kernels>
+    <flow model="saturated" state="on"/>
+    <transport state="on"/>
+    <chemistry state="on" engine="pflotran" database="tracer.dat" />
+  </process_kernels>
+
+  <phases>
+    <liquid_phase name="water">
+      <viscosity>1.002e-3</viscosity>
+      <density>998.2</density>
+      <dissolved_components>
+	<primaries>
+          <primary backward_rate="0.0" coefficient_of_diffusion="1.0E-9" forward_rate="0.0">Tracer</primary>
+	</primaries>
+      </dissolved_components>
+    </liquid_phase>
+  </phases>
+
+  <execution_controls>
+    <verbosity level="medium"/>
+    <execution_control_defaults increase_factor="1."
+				init_dt="31536000. s"
+				max_dt="6.0e+10 s"
+				method="bdf1"
+				mode="transient"
+				max_cycles="100"
+				reduction_factor="1."/>
+    <execution_control start="0" end="1.5778463e9 s"/>
+  </execution_controls>
+
+  <numerical_controls>
+    <structured_controls>
+      <str_time_step_controls>
+      </str_time_step_controls>
+
+      <str_flow_controls>
+      	<gravity>0</gravity>
+      </str_flow_controls>
+
+      <str_transport_controls>
+      	<max_n_subcycle_transport>10</max_n_subcycle_transport>
+      </str_transport_controls>
+
+      <str_amr_controls>
+	<max_grid_size>64</max_grid_size>
+      </str_amr_controls>
+    </structured_controls>
+  </numerical_controls>
+
+  <mesh>
+    <dimension>2</dimension>
+    <generate>
+      <number_of_cells nx="100" ny="2"/>
+      <box high_coordinates="(100.0, 1.0)" low_coordinates="(0.0, 0.0)"/>
+    </generate>
+  </mesh>
+
+  <regions>
+  </regions>
+
+  <materials>
+    <material name="soil">
+      <mechanical_properties>
+	<porosity value="0.25"/>
+	<particle_density value="2720.0"/>
+	<specific_storage value="1.0"/>
+	<dispersion_tensor alpha_l="0.0" alpha_t="0.0" type="uniform_isotropic"/>
+      </mechanical_properties>
+      <permeability x="1.0E-12" y="1.0E-12" />
+      <cap_pressure model="none"/>
+      <rel_perm model="none"/>
+      <assigned_regions>All</assigned_regions>
+    </material>
+  </materials>
+
+  <geochemistry>
+      <verbosity>silent</verbosity>
+      <constraints>
+        <constraint name="initial">
+          <primary name="Tracer" type="total" value="1.0e-20"/>
+        </constraint>
+        <constraint name="west_constraint">
+          <primary name="Tracer" type="total" value="1.0e-3"/>
+        </constraint>
+      </constraints>
+  </geochemistry>
+
+  <initial_conditions>  
+    <initial_condition name="initial_ic">
+      <assigned_regions>All</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="201325.0"/>
+        </liquid_component>
+        <geochemistry_component>
+          <constraint name= "initial" />
+        </geochemistry_component>
+      </liquid_phase>
+    </initial_condition>
+  </initial_conditions>
+
+  <boundary_conditions> 
+    <boundary_condition name="west_bc">
+      <assigned_regions>XLOBC</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <inward_mass_flux value="7.91317859e-6" start="0" function="constant"/>
+        </liquid_component>
+        <geochemistry_component>
+          <constraint name= "west_constraint" start="0" function="constant"/>
+        </geochemistry_component>
+      </liquid_phase>
+    </boundary_condition>
+    <boundary_condition name="east_bc">
+      <assigned_regions>XHIBC</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="201325.0" start="0" function="constant"/>
+        </liquid_component>
+        <geochemistry_component>
+          <constraint name= "initial" start="0" function="constant"/>
+        </geochemistry_component>
+      </liquid_phase>
+    </boundary_condition>
+  </boundary_conditions>
+
+  <output>
+    <vis>
+      <base_filename>plt</base_filename>
+      <num_digits>5</num_digits>
+      <cycle_macros>every_step</cycle_macros>
+    </vis>
+    <checkpoint>
+      <base_filename>chk</base_filename>
+      <num_digits>5</num_digits>
+    </checkpoint>
+  </output>
+</amanzi_input>
