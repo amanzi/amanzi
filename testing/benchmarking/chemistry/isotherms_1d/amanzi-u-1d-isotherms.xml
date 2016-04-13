@@ -61,7 +61,7 @@
   </execution_controls>
 
   <numerical_controls>
-
+    <unstructured_controls>
       <unstr_transport_controls>
 	  <algorithm>explicit second-order</algorithm>
 	  <sub_cycling>on</sub_cycling>
@@ -69,11 +69,12 @@
 
       <unstr_chemistry_controls>
 	  <process_model>implicit operator split</process_model>
-        <chem_tolerance>1e-12</chem_tolerance>
-        <chem_max_newton_iterations>250</chem_max_newton_iterations>
+          <chem_tolerance>1e-12</chem_tolerance>
+          <chem_max_newton_iterations>250</chem_max_newton_iterations>
+          <max_time_step>1.5778463e+07</max_time_step>
+          <initial_time_step>1.5778463e+07</initial_time_step>
       </unstr_chemistry_controls>
 
-    <unstructured_controls>
       <unstr_steady-state_controls>
         <min_iterations>10</min_iterations>
         <max_iterations>15</max_iterations>
