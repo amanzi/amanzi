@@ -1,4 +1,4 @@
-<amanzi_input type="structured" version="2.1.1">
+<amanzi_input type="structured" version="2.3">
   <model_description name="tracer_1d-str">
     <comments></comments>
   </model_description>
