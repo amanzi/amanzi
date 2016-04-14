@@ -74,15 +74,23 @@ def getFigs(inset, is_temp, figsize=(12,3)):
 
 
 if __name__ == "__main__":
+    if sys.argv[-1] == "-t":
+        temp = True
+    else:
+        temp = False
+        
     if sys.argv[-1] == "column_data.py":
         z0 = 0.0
     else:
         z0 = float(sys.argv[-1])
     
     with h5py.File("column_data.h5", 'w') as fout:
-        dat = column_data(["pressure", "temperature"], keys=-1)
-        #dat = column_data(["pressure",], keys=-1)
+        to_read = ['pressure']
+        if temp:
+            to_read.append("temperature")
+        dat = column_data(to_read, keys=-1)
         z_depth = z0 - dat[0,0,:] # correction to get surface set, depth coordinate
         fout.create_dataset("z", data=np.flipud(z_depth))
         fout.create_dataset("pressure", data=np.flipud(dat[1,0,:]))
-        fout.create_dataset("temperature", data=np.flipud(dat[2,0,:]))
+        if temp:
+            fout.create_dataset("temperature", data=np.flipud(dat[2,0,:]))
