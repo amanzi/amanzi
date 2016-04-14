@@ -207,6 +207,7 @@ OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
   }
 }
 
+
 void
 OperatorAccumulation::InitAccumulation_(AmanziMesh::Entity_kind entity, bool surf)
 {

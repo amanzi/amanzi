@@ -53,7 +53,7 @@ void ResistiveMHD(double c_t, double tolerance) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Resistive MHD" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Resistive MHD, tol=" << tolerance << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_mhd.xml";
@@ -178,8 +178,8 @@ void ResistiveMHD(double c_t, double tolerance) {
 
   // Test SPD properties of the matrix and preconditioner.
   Verification ver(global_op);
-  ver.CheckMatrixSPD(false, true);
-  ver.CheckPreconditionerSPD(false, true);
+  ver.CheckMatrixSPD(true, true);
+  ver.CheckPreconditionerSPD(true, true);
 
   // Solve the problem.
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
@@ -215,7 +215,7 @@ void ResistiveMHD(double c_t, double tolerance) {
 }
 
 TEST(RESISTIVE_MHD_LINEAR) {
-  ResistiveMHD<AnalyticMHD_01>(0.0, 1e-12);
+  ResistiveMHD<AnalyticMHD_01>(0.0, 2e-2);
 }
 
 TEST(RESISTIVE_MHD_NONLINEAR) {

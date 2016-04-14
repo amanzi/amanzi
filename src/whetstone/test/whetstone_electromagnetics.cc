@@ -268,13 +268,13 @@ TEST(STIFFNESS_MATRIX_2D) {
   Tensor T(2, 1);
   T(0, 0) = 1.0;
 
-  for (int method = 0; method < 2; method++) {
+  for (int method = 1; method < 2; method++) {
     DenseMatrix A(nrows, nrows);
 
     if (method == 0) {
       mfd.StiffnessMatrix(cell, T, A);
     } else if (method == 1) {
-      mfd.StiffnessMatrixOptimized(cell, T, A);
+      mfd.StiffnessMatrixExperimental(cell, T, A);
     }
 
     printf("Stiffness matrix for cell %3d method=%d\n", cell, method);
@@ -367,7 +367,7 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
     if (method == 0) {
       mfd.StiffnessMatrix(cell, T, A);
     } else if (method == 1) {
-      mfd.StiffnessMatrixOptimized(cell, T, A);
+      mfd.StiffnessMatrixExperimental(cell, T, A);
     }
 
     int m = std::min(nrows, max_row);

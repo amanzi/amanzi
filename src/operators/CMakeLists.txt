@@ -216,7 +216,7 @@ if ( BUILD_TESTS )
     # Test: operators on 
     add_amanzi_test(operators_mhd operators_mhd
                     KIND unit
-                    SOURCE test/Main.cc test/operator_mhd.cc
+                    SOURCE test/Main.cc test/operator_mhd.cc 
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: utils
