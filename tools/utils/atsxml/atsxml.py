@@ -7,6 +7,8 @@ from xml.dom import minidom
 import re
 import sys
 import numpy
+from glob import glob
+import parse_xml
 
 class ATSXML(object):
     def __init__(self,filename=None,xml_string=None):
@@ -30,6 +32,17 @@ class ATSXML(object):
     @property
     def parent_map(self):
         return {c:p for p in self.tree.iter() for c in p}
+    @property
+    def simulated_times(self):
+        base_name = self.find_name('visualization').find('.//*/[@name="file name base"]').attrib['value']
+        # Assume base_name+'_data*' will get the times ok, should work unless things change in ATS output
+        base_name += '_data'
+        ts = []
+        for fn in glob(base_name+'.h5.*.xmf'):
+            t = ET.parse(fn)
+            r = t.getroot()
+            ts.append(float(r.find('.//*/Time').attrib['Value']))
+        return numpy.array(ts)
     def replace_regions(self,fromatsxml,mapping=None):
         ''' 
         Replace regions in xml with regions in another xml
@@ -74,17 +87,27 @@ class ATSXML(object):
     def replace_by_value(self,oldvalue,newvalue):
         for r in self.root.findall('.//Parameter/[@value="'+oldvalue+'"]'):
             r.set('value',str(newvalue))
-    def replace_all_by_name(self,name,value):
+    def replace_by_name(self,name,value):
         for r in self.root.findall('.//Parameter/[@name="'+str(name)+'"]'):
             r.set('value',str(value))
-    def replace_by_name(self,name,value,elem=None):
-        e = self.find_name(name,elem=None)
-        e.set('value',str(value))
+    #def replace_by_name(self,name,value,elem=None):
+    #    e = self.find_name(name,elem=None)
+    #    e.set('value',str(value))
     def replace_file(self,newfilename,oldfilename=None):
         if oldfilename is not None: self.replace_by_value(oldfilename,newfilename)
         else: self.replace_by_name('file',newfilename)
     def replace_mesh_file(self,newfilename):
-        self.replace_all_by_name('File',newfilename)
+        for e in self.root.findall('.//ParameterList/[@name="Region: Labeled Set"]'):
+            e2 = e.find('.//Parameter/[@name="file"]')
+            print e2.attrib
+            if e2 is not None: e2.set('value',newfilename)
+            e2 = e.find('.//Parameter/[@name="File"]')
+            if e2 is not None: e2.set('value',newfilename)
+        for e in self.root.findall('.//ParameterList/[@name="Read Mesh File"]'):
+            e2 = e.find('.//Parameter/[@name="file"]')
+            if e2 is not None: e2.set('value',newfilename)
+            e2 = e.find('.//Parameter/[@name="File"]')
+            if e2 is not None: e2.set('value',newfilename)
     def replace_restart_file(self,filename):
         self.replace_all_by_name('restart file', filename)
     #def replace_elems(self,fromatsxml,element_names):
@@ -191,7 +214,6 @@ class ATSXML(object):
     def add_ParameterList(self,name,elem=None):
         if elem is None: ET.SubElement(self.root,'ParameterList',{'name':name,'type':'ParameterList'})
         else: ET.SubElement(elem,'ParameterList',{'name':name,'type':'ParameterList'})
-       
 class Region(object):
     def __init__(self,element):
         self.element = element
