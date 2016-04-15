@@ -15,7 +15,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Mesh.hh"
 #include "CompositeVector.hh"
-#include "boundary_function.hh"
+#include "BoundaryFunction.hh"
 
 namespace Amanzi {
 namespace Operators {
