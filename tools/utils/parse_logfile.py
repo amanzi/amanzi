@@ -64,8 +64,11 @@ if __name__ == "__main__":
         with open(fname,'r') as fid:
             data = parse_file(fid)
             plt.subplot(121)
-            if (args.colors is None):
-                c = cm(float(i)/(len(fnames)-1))
+            if args.colors is None:
+                if len(fnames) > 1:
+                    c = cm(float(i)/(len(fnames)-1))
+                else:
+                    c = 'b'
             else:
                 if type(args.colors[i]) is float:
                     c = cm(args.colors[i])

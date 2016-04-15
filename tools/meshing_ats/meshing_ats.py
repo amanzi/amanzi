@@ -46,7 +46,7 @@ $> make install
 import sys,os
 import numpy as np
 import collections
-sys.path.append("/Users/ecoon/research/coastal/exodus-6.09/exodus/install/python/")
+sys.path.append("/Users/ecoon/research/coastal/seacas-git/lib/")
 import exodus
 import argparse
 
@@ -180,12 +180,21 @@ class Mesh2D(object):
                 gon = [int(n) for n in line]
 
                 # check handedness -- need normals to point up!
-                d31 = (coords[gon[-1]] - coords[gon[0]])
-                d21 = (coords[gon[1]] - coords[gon[0]])
-                d31[2] = 0
-                d21[2] = 0
-                up = np.cross(d21,d31)
-                if (up[2] < 0):
+                cross = []
+                for i in range(len(gon)):
+                    if i == len(gon)-1:
+                        ip = 0
+                        ipp = 1
+                    elif i == len(gon)-2:
+                        ip = i+1
+                        ipp = 0
+                    else:
+                        ip = i+1
+                        ipp = i+2
+                    d2 = coords[gon[ipp]] - coords[gon[ip]]
+                    d1 = coords[gon[i]] - coords[gon[ip]]
+                    cross.append(np.cross(d2, d1))
+                if (np.array([c[2] for c in cross]).mean() < 0):
                     gon.reverse()
                     
                 gons.append(gon)
@@ -323,7 +332,7 @@ class Mesh3D(object):
                     return result
 
                 elem_blk = elem_blks[i_m]
-                faces_tuple = [(j,self.face_to_node_conn[f]) for c in elem_blk for (j,f) in enumerate(c) if not used(f)]
+                faces_tuple = [(f,self.face_to_node_conn[f]) for c in elem_blk for (j,f) in enumerate(c) if not used(f)]
                 new_to_old_faces.extend([j for (j,f) in faces_tuple])
                 faces = [f for (j,f) in faces_tuple]
                 face_blks.append(faces)
@@ -343,20 +352,24 @@ class Mesh3D(object):
                     return result
 
                 elem_blk = elem_blks[i_m]
-                faces_tuple = [(j,self.face_to_node_conn[f]) for c in elem_blk for (j,f) in enumerate(c) if not used(f)]
-                new_to_old_blk = [j for (j,f) in faces_tuple]
 
-                faces = [f for (j,f) in faces_tuple]
+                tuple_old_f = [(f,self.face_to_node_conn[f]) for c in elem_blk for f in c if not used(f)]
+                tuple_new_old_f = [(new,old,f) for (new,(old,f)) in enumerate(tuple_old_f)]
 
-                old_to_new_blk = np.zeros((len(self.face_to_node_conn),),'i')
-                for i,j in enumerate(new_to_old_blk):
-                    old_to_new_blk[j] = i+offset
-                elem_blk = [[old_to_new_blk[f] for f in c] for c in elem_blk]
-                offset = offset + len(new_to_old_blk)
+                old_to_new_blk = np.zeros((len(self.face_to_node_conn),),'i')-1
+                for new,old,f in tuple_new_old_f:
+                    old_to_new_blk[old] = new + offset
 
-                elem_blks_new.append(elem_blk)
-                face_blks.append(faces)
+                elem_blk_new = [[old_to_new_blk[f] for f in c] for c in elem_blk]
+                #offset = offset + len(ftuple_new)
+
+                elem_blks_new.append(elem_blk_new)
+                face_blks.append([f for i,j,f in tuple_new_old_f])
             elem_blks = elem_blks_new
+        elif face_block_mode == "one block, repeated":
+            # no reordering of faces needed, just repeat
+            for eblock in elem_blks:
+                face_blks.append(self.face_to_node_conn)
         else:
             raise RuntimeError("Invalid face_block_mode: '%s', valid='one block', 'n blocks, duplicated', 'n blocks, not duplicated'"%face_block_mode)
                 
@@ -370,8 +383,8 @@ class Mesh3D(object):
                                    num_face=num_faces,
                                    num_face_blk=len(face_blks),
                                    num_elem=num_elems,
-                                   num_elem_blk=len(elem_blks))
-        #                                   num_side_sets=len(self.side_sets))
+                                   num_elem_blk=len(elem_blks),
+                                   num_side_sets=len(self.side_sets))
         e = exodus.exodus(filename, mode='w', array_type='numpy', init_params=ep)
 
         # put the coordinates
@@ -386,25 +399,23 @@ class Mesh3D(object):
             e.put_face_node_conn(i_blk+1, np.array(face_raveled)+1)
 
         # put the elem blocks
-        print len(elem_blks), len(self.material_id_list)
         assert len(elem_blks) == len(self.material_id_list)
         for i_blk, (m_id, elem_blk) in enumerate(zip(self.material_id_list, elem_blks)):
             elems_raveled = [f for c in elem_blk for f in c]
-            print elems_raveled
 
             e.put_polyhedra_elem_blk(m_id, len(elem_blk), len(elems_raveled), 0)
             e.put_elem_blk_name(m_id, "MATERIAL_ID_%d"%m_id)
             e.put_face_count_per_polyhedra(m_id, np.array([len(c) for c in elem_blk]))
             e.put_elem_face_conn(m_id, np.array(elems_raveled)+1)
 
-        # # add sidesets
-        # e.put_side_set_names([ss.name for ss in self.side_sets])
-        # for ss in self.side_sets:
-        #     for elem in ss.elem_list:
-        #         assert old_to_new_elems[elem][0] == elem
-        #     new_elem_list = [old_to_new_elems[elem][1] for elem in ss.elem_list]                
-        #     e.put_side_set_params(ss.setid, len(ss.elem_list), 0)
-        #     e.put_side_set(ss.setid, np.array(new_elem_list)+1, np.array(ss.side_list)+1)
+        # add sidesets
+        e.put_side_set_names([ss.name for ss in self.side_sets])
+        for ss in self.side_sets:
+            for elem in ss.elem_list:
+                assert old_to_new_elems[elem][0] == elem
+            new_elem_list = [old_to_new_elems[elem][1] for elem in ss.elem_list]                
+            e.put_side_set_params(ss.setid, len(ss.elem_list), 0)
+            e.put_side_set(ss.setid, np.array(new_elem_list)+1, np.array(ss.side_list)+1)
 
         # finish and close
         e.close()
@@ -517,9 +528,9 @@ class Mesh3D(object):
                     layer_bottom[:] = layer_datum
 
                 elif layer_type.lower() == 'function':
-                    # layer bottom is given by a function evaluation of x,y
+                    # layer thickness is given by a function evaluation of x,y
                     for node_col in range(mesh2D.coords.shape[0]):
-                        layer_bottom[node_col] = layer_datum(coords[node_col,0,0], coords[node_col,0,1])
+                        layer_bottom[node_col] = coords[node_col,cell_layer_start,2] - layer_datum(coords[node_col,0,0], coords[node_col,0,1])
 
                 elif layer_type.lower() == 'node':
                     # layer bottom specifically provided through thickness
@@ -619,12 +630,12 @@ class Mesh3D(object):
         for e,s in zip(side_sets[0].elem_list, side_sets[0].side_list):
             face = cells[e][s]
             fz_coords = np.array([coords[n] for n in faces[face]])
-            print "bottom centroid = ", np.mean(fz_coords, axis=0)
+            #print "bottom centroid = ", np.mean(fz_coords, axis=0)
 
         for e,s in zip(side_sets[1].elem_list, side_sets[1].side_list):
             face = cells[e][s]
             fz_coords = np.array([coords[n] for n in faces[face]])
-            print "surface centroid = ", np.mean(fz_coords, axis=0)
+            #print "surface centroid = ", np.mean(fz_coords, axis=0)
         
         # instantiate the mesh
         return cls(coords, faces, cells, side_sets=side_sets, material_ids=material_ids)

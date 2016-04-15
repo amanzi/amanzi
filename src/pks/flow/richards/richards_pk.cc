@@ -20,8 +20,8 @@ Authors: Neil Carlson (version 1)
 #include "upwind_total_flux.hh"
 #include "upwind_gravity_flux.hh"
 
-#include "composite_vector_function.hh"
-#include "composite_vector_function_factory.hh"
+#include "CompositeVectorFunction.hh"
+#include "CompositeVectorFunctionFactory.hh"
 
 #include "predictor_delegate_bc_flux.hh"
 #include "wrm_evaluator.hh"
@@ -120,6 +120,14 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   if (velocity_key_.empty()) {
     velocity_key_ = plist_->get<std::string>("darcy velocity key",
             getKey(domain_, "darcy_velocity"));
+  }
+  if (sat_key_.empty()) {
+    sat_key_ = plist_->get<std::string>("saturation key",
+            getKey(domain_, "saturation_liquid"));
+  }
+  if (sat_ice_key_.empty()) {
+    sat_ice_key_ = plist_->get<std::string>("saturation ice key",
+            getKey(domain_, "saturation_ice"));
   }
   
   // Get data for special-case entities.
@@ -349,6 +357,10 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // correctors
   p_limit_ = plist_->get<double>("limit correction to pressure change [Pa]", -1.);
   patm_limit_ = plist_->get<double>("limit correction to pressure change when crossing atmospheric [Pa]", -1.);
+
+  // valid step controls
+  sat_change_limit_ = plist_->get<double>("max valid change in saturation in a time step [-]", -1.);
+  sat_ice_change_limit_ = plist_->get<double>("max valid change in ice saturation in a time step [-]", -1.);
   
   // Require fields and evaluators for those fields.
   // -- primary variables
@@ -568,6 +580,54 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
 //   }
 // #endif
 };
+
+
+// -----------------------------------------------------------------------------
+// Check for controls on saturation
+// -----------------------------------------------------------------------------
+bool
+Richards::valid_step() {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Validating time step." << std::endl;
+
+  if (sat_change_limit_ > 0.0) {
+    const Epetra_MultiVector& sl_new = *S_next_->GetFieldData(sat_key_)
+        ->ViewComponent("cell",false);
+    const Epetra_MultiVector& sl_old = *S_->GetFieldData(sat_key_)
+        ->ViewComponent("cell",false);
+    Epetra_MultiVector dsl(sl_new);
+    dsl.Update(-1., sl_old, 1.);
+    double change = 0.;
+    dsl.NormInf(&change);
+
+    if (change > sat_change_limit_) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+        *vo_->os() << "Invalid time step, max sl change="
+                   << change << " > limit=" << sat_change_limit_ << std::endl;
+      return false;
+    }
+  }
+  if (sat_ice_change_limit_ > 0.0) {
+    const Epetra_MultiVector& si_new = *S_next_->GetFieldData(sat_ice_key_)
+        ->ViewComponent("cell",false);
+    const Epetra_MultiVector& si_old = *S_->GetFieldData(sat_ice_key_)
+        ->ViewComponent("cell",false);
+    Epetra_MultiVector dsi(si_new);
+    dsi.Update(-1., si_old, 1.);
+    double change = 0.;
+    dsi.NormInf(&change);
+
+    if (change > sat_ice_change_limit_) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+        *vo_->os() << "Invalid time step, max si change="
+                   << change << " > limit=" << sat_ice_change_limit_ << std::endl;
+      return false;
+    }
+  }
+
+  return PKPhysicalBDFBase::valid_step();
+}
 
 
 // -----------------------------------------------------------------------------
@@ -801,21 +861,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_values_[f] = bc->second;
     } else {
-      AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      ASSERT(cells.size() == 1);
-      int c = cells[0];
-      if (u_cell[0][c] < face_value) {
-        bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_values_[f] = bc->second;
-      } else {
-        bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
-        bc_values_[f] = p_atm;
-      }
-    }
-    if (flux[0][f] < 0.0) {
-      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-      bc_values_[f] = bc->second;
+      bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_values_[f] = p_atm;
     }
   }
 

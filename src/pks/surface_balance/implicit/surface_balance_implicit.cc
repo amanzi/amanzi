@@ -299,7 +299,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
                             Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   Teuchos::OSTab tab = vo_->getOSTab();
   double dt = t_new - t_old;
-  double T_eps = 0.0001;
+  double T_eps = 1.e-10;
 
   bool debug = false;
   Teuchos::RCP<VerboseObject> dcvo = Teuchos::null;
