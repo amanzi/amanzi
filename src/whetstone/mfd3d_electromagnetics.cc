@@ -625,7 +625,7 @@ int MFD3D_Electromagnetics::StiffnessMatrix(
 
 
 /* ******************************************************************
-* Stiffness matrix: the standard algorithm.
+* Stiffness matrix: the experimental algorithm.
 ****************************************************************** */
 int MFD3D_Electromagnetics::StiffnessMatrixExperimental(
     int c, const Tensor& T, DenseMatrix& A)

@@ -108,6 +108,18 @@ void OperatorCurlCurl::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
   global_op_->rhs()->PutScalarGhosted(0.0);
   Epetra_MultiVector& rhs_edge = *global_op_->rhs()->ViewComponent("edge", true);
 
+  // calculate number of cells for each edge 
+  // move to properties of BCs (lipnikov@lanl.gov)
+  std::vector<int> edge_get_cells(nedges_wghost, 0);
+  for (int c = 0; c != ncells_wghost; ++c) {
+    mesh_->cell_get_edges(c, &edges);
+    int nedges = edges.size();
+
+    for (int n = 0; n < nedges; ++n) {
+      edge_get_cells[edges[n]]++;
+    }
+  }
+
   int nn(0), nm(0);
   for (int c = 0; c != ncells_owned; ++c) {
     bool flag(true);
@@ -150,10 +162,8 @@ void OperatorCurlCurl::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
           }
 
           if (primary) {
-            // mesh_->edge_get_cells(e, AmanziMesh::USED, &cells);
-            int ncells = 4;
-            rhs_edge[0][e] += value / ncells;
-            Acell(n, n) = 1.0 / ncells;
+            rhs_edge[0][e] = value;
+            Acell(n, n) = 1.0 / edge_get_cells[e];
           }
         }
       }

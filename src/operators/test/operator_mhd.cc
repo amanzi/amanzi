@@ -43,7 +43,7 @@
 * TBW 
 * **************************************************************** */
 template<class Analytic>
-void ResistiveMHD(double c_t, double tolerance) {
+void ResistiveMHD(double c_t, double tolerance, bool initial_guess) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -72,8 +72,8 @@ void ResistiveMHD(double c_t, double tolerance) {
   meshfactory.preference(pref);
 
   bool request_faces(true), request_edges(true);
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 8, 8, gm, request_faces, request_edges);
-  // RCP<const Mesh> mesh = meshfactory("test/hex_split_faces5.exo", gm, request_faces, request_edges);
+  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4, gm, request_faces, request_edges);
+  RCP<const Mesh> mesh = meshfactory("test/hex_split_faces5.exo", gm, request_faces, request_edges);
 
   // create resistivity coefficient
   double time = 1.0;
@@ -92,20 +92,33 @@ void ResistiveMHD(double c_t, double tolerance) {
   // create boundary data
   int nedges_owned = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::OWNED);
   int nedges_wghost = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::USED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+
   std::vector<int> bc_model(nedges_wghost, OPERATOR_BC_NONE);
   std::vector<double> bc_value(nedges_wghost);
   std::vector<double> bc_mixed;
 
-  for (int e = 0; e < nedges_wghost; e++) {
-    double len = mesh->edge_length(e);
-    const AmanziGeometry::Point& tau = mesh->edge_vector(e);
-    const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
+  std::vector<int> edirs;
+  AmanziMesh::Entity_ID_List cells, edges;
 
-    if (fabs(xe[0]) < 1e-6 || fabs(xe[0] - 1.0) < 1e-6 ||
-        fabs(xe[1]) < 1e-6 || fabs(xe[1] - 1.0) < 1e-6 ||
-        fabs(xe[2]) < 1e-6 || fabs(xe[2] - 1.0) < 1e-6) {
-      bc_model[e] = OPERATOR_BC_DIRICHLET;
-      bc_value[e] = (ana.electric_exact(xe, time) * tau) / len;
+  for (int f = 0; f < nfaces_wghost; ++f) {
+    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
+        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
+        fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
+
+      mesh->face_get_edges_and_dirs(f, &edges, &edirs);
+      int nedges = edges.size();
+      for (int i = 0; i < nedges; ++i) {
+        int e = edges[i];
+        double len = mesh->edge_length(e);
+        const AmanziGeometry::Point& tau = mesh->edge_vector(e);
+        const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
+
+        bc_model[e] = OPERATOR_BC_DIRICHLET;
+        bc_value[e] = (ana.electric_exact(xe, time) * tau) / len;
+      }
     }
   }
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_EDGE, bc_model, bc_value, bc_mixed));
@@ -118,7 +131,6 @@ void ResistiveMHD(double c_t, double tolerance) {
   const CompositeVectorSpace& cvs = op_curlcurl->global_operator()->DomainMap();
 
   // create source for a manufactured solution.
-  AmanziMesh::Entity_ID_List edges;
   CompositeVector source(cvs);
   Epetra_MultiVector& src = *source.ViewComponent("edge");
 
@@ -141,7 +153,9 @@ void ResistiveMHD(double c_t, double tolerance) {
   // set up initial guess for a time-dependent problem
   CompositeVector solution(cvs);
   Epetra_MultiVector& sol = *solution.ViewComponent("edge");
-  if (c_t != 0.0) {
+
+  sol.PutScalar(0.0);
+  if (initial_guess) {
     for (int e = 0; e < nedges_owned; e++) {
       double len = mesh->edge_length(e);
       const AmanziGeometry::Point& tau = mesh->edge_vector(e);
@@ -149,7 +163,7 @@ void ResistiveMHD(double c_t, double tolerance) {
 
       sol[0][e] = (ana.electric_exact(xe, time) * tau) / len;
     }
-  }
+  } 
 
   // set up the diffusion operator
   op_curlcurl->SetTensorCoefficient(K);
@@ -172,7 +186,6 @@ void ResistiveMHD(double c_t, double tolerance) {
   global_op->AssembleMatrix();
   global_op->UpdateRHS(source, false);
 
-  // Create a preconditioner.
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
 
@@ -207,7 +220,7 @@ void ResistiveMHD(double c_t, double tolerance) {
   if (MyPID == 0) {
     el2_err /= enorm; 
     el2_err /= enorm;
-    printf("L2(e)=%9.6f  Inf(e)=%9.6f  itr=%3d  size=%d\n", el2_err, einf_err,
+    printf("L2(e)=%10.7f  Inf(e)=%9.6f  itr=%3d  size=%d\n", el2_err, einf_err,
             solver->num_itrs(), rhs.GlobalLength());
 
     CHECK(el2_err < tolerance);
@@ -215,13 +228,13 @@ void ResistiveMHD(double c_t, double tolerance) {
 }
 
 TEST(RESISTIVE_MHD_LINEAR) {
-  ResistiveMHD<AnalyticMHD_01>(0.0, 2e-2);
+  ResistiveMHD<AnalyticMHD_01>(1.0e-3, 1e-3, false);
 }
 
 TEST(RESISTIVE_MHD_NONLINEAR) {
-  ResistiveMHD<AnalyticMHD_02>(0.0, 2e-2);
+  ResistiveMHD<AnalyticMHD_02>(1.0e-3, 2e-2, false);
 }
 
 TEST(RESISTIVE_MHD_TIME_DEPENDENT) {
-  ResistiveMHD<AnalyticMHD_03>(1.0, 2e-3);
+  ResistiveMHD<AnalyticMHD_03>(1.0, 2e-3, true);
 }
