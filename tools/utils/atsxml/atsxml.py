@@ -7,6 +7,8 @@ from xml.dom import minidom
 import re
 import sys
 import numpy
+from glob import glob
+import parse_xml
 
 class ATSXML(object):
     def __init__(self,filename=None,xml_string=None):
@@ -30,6 +32,17 @@ class ATSXML(object):
     @property
     def parent_map(self):
         return {c:p for p in self.tree.iter() for c in p}
+    @property
+    def simulated_times(self):
+        base_name = self.find_name('visualization').find('.//*/[@name="file name base"]').attrib['value']
+        # Assume base_name+'_data*' will get the times ok, should work unless things change in ATS output
+        base_name += '_data'
+        ts = []
+        for fn in glob(base_name+'.h5.*.xmf'):
+            t = ET.parse(fn)
+            r = t.getroot()
+            ts.append(float(r.find('.//*/Time').attrib['Value']))
+        return numpy.array(ts)
     def replace_regions(self,fromatsxml,mapping=None):
         ''' 
         Replace regions in xml with regions in another xml
@@ -201,7 +214,6 @@ class ATSXML(object):
     def add_ParameterList(self,name,elem=None):
         if elem is None: ET.SubElement(self.root,'ParameterList',{'name':name,'type':'ParameterList'})
         else: ET.SubElement(elem,'ParameterList',{'name':name,'type':'ParameterList'})
-       
 class Region(object):
     def __init__(self,element):
         self.element = element
