@@ -10,13 +10,13 @@ def fromFile(file_or_filename):
 
     try:
         return parser.fromElement(elem.getroot())
-    except AssertionError:
+    except Error:
         return elem.getroot()
-    except RuntimeError, msg:
-        if "amanzi_input" in msg.__str__():
-            raise errors.NotNativeSpecError()
-        else:
-            raise RuntimeError(msg)
+    # except RuntimeError, msg:
+    #     if "amanzi_input" in msg.__str__():
+    #         raise errors.NotNativeSpecError()
+    #     else:
+    #         raise RuntimeError(msg)
 
 def fromString(string):
     """Reads a amanzi-xml hierarchy from a string"""
