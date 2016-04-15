@@ -72,7 +72,6 @@ set(operators_inc_files
     Operator_Node.hh
     Operator_Edge.hh
     BoundaryFlux.hh
-    OperatorCurlCurl.hh
     OperatorDiffusion.hh
     OperatorDiffusionWithGravity.hh
     OperatorDiffusionFactory.hh
@@ -82,6 +81,8 @@ set(operators_inc_files
     OperatorDiffusionFVwithGravity.hh
     OperatorDiffusionNLFV.hh
     OperatorDiffusionNLFVwithGravity.hh
+    OperatorElectromagnetics.hh
+    OperatorElectromagneticsMHD.hh
     OperatorAccumulation.hh
     OperatorAdvection.hh
     TreeOperator.hh
@@ -106,7 +107,6 @@ add_amanzi_library(operators
                           Operator_ConsistentFace.cc
                           Operator_Node.cc
                           Operator_Edge.cc
-                          OperatorCurlCurl.cc
                           OperatorDiffusionMFD.cc
                           OperatorDiffusionMFDwithGravity.cc
                           OperatorDiffusionFV.cc
@@ -114,6 +114,8 @@ add_amanzi_library(operators
                           OperatorDiffusionNLFV.cc
                           OperatorDiffusionNLFVwithGravity.cc
                           OperatorDiffusionFactory.cc                   
+                          OperatorElectromagnetics.cc
+                          OperatorElectromagneticsMHD.cc
                           OperatorAccumulation.cc
                           OperatorAdvection.cc  
                           TreeOperator.cc
@@ -214,9 +216,10 @@ if ( BUILD_TESTS )
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: operators on 
-    add_amanzi_test(operators_mhd operators_mhd
+    add_amanzi_test(operators_electromagnetics operators_electromagnetics
                     KIND unit
-                    SOURCE test/Main.cc test/operator_mhd.cc 
+                    SOURCE test/Main.cc test/operator_electromagnetics.cc 
+                                        test/operator_electromagnetics_mhd.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: utils

@@ -57,6 +57,7 @@ class MFD3D_Electromagnetics : public MFD3D {
   int MassMatrixInverseOptimized(int c, const Tensor& T, DenseMatrix& W);
 
   int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
+  int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A, DenseMatrix& M, DenseMatrix& C);
   int StiffnessMatrixExperimental(int c, const Tensor& T, DenseMatrix& A);
 
  private:

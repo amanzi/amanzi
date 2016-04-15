@@ -9,8 +9,8 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_OPERATOR_CURLCURL_HH_
-#define AMANZI_OPERATOR_CURLCURL_HH_
+#ifndef AMANZI_OPERATOR_ELECTROMAGNETICS_HH_
+#define AMANZI_OPERATOR_ELECTROMAGNETICS_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -26,9 +26,9 @@
 namespace Amanzi {
 namespace Operators {
 
-class OperatorCurlCurl {
+class OperatorElectromagnetics {
  public:
-  OperatorCurlCurl(const Teuchos::RCP<Operator>& global_op) :
+  OperatorElectromagnetics(const Teuchos::RCP<Operator>& global_op) :
       global_op_(global_op),
       K_(Teuchos::null),
       ncells_owned(-1),
@@ -39,8 +39,8 @@ class OperatorCurlCurl {
       nedges_wghost(-1)
   {};
 
-  OperatorCurlCurl(Teuchos::ParameterList& plist,
-                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+  OperatorElectromagnetics(Teuchos::ParameterList& plist,
+                           const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       plist_(plist),
       mesh_(mesh),
       K_(Teuchos::null),
@@ -52,33 +52,37 @@ class OperatorCurlCurl {
       nedges_owned(-1),
       nedges_wghost(-1)
   {
-    operator_type_ = OPERATOR_CURLCURL_MFD;
-    InitCurlCurl_(plist);
+    operator_type_ = OPERATOR_ELECTROMAGNETICS;
+    InitElectromagnetics_(plist);
   }
 
   // main virtual members
   // -- setup 
-  void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
+  virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
 
   // -- creation of an operator
-  void UpdateMatrices();
-
-  // -- after solving the problem: postrocessing
-  void UpdateFields(const CompositeVector& E, CompositeVector& B);
+  virtual void UpdateMatrices();
 
   // -- matrix modification
-  void ApplyBCs(bool primary, bool eliminate);
+  virtual void ApplyBCs(bool primary, bool eliminate);
 
   // boundary conditions (BC) require information on test and
   // trial spaces. For a single PDE, these BCs could be the same.
-  void SetBCs(const Teuchos::RCP<BCs>& bc_trial,
-              const Teuchos::RCP<BCs>& bc_test) {
+  virtual void SetBCs(const Teuchos::RCP<BCs>& bc_trial,
+                      const Teuchos::RCP<BCs>& bc_test) {
     bcs_trial_.clear();
     bcs_test_.clear();
 
     bcs_trial_.push_back(bc_trial);
     bcs_test_.push_back(bc_test);
   }
+
+  // new virtual members
+  // -- before solving the problem
+  virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B) {};
+
+  // -- after solving the problem
+  virtual void ModifyFields(CompositeVector& E, CompositeVector& B) {};
 
   // access
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
@@ -89,8 +93,8 @@ class OperatorCurlCurl {
   Teuchos::RCP<Op> local_matrices() { return local_op_; }
   int schema_dofs() { return local_op_schema_; }
 
- private:
-  void InitCurlCurl_(Teuchos::ParameterList& plist);
+ protected:
+  void InitElectromagnetics_(Teuchos::ParameterList& plist);
   void ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
                       const Teuchos::Ptr<BCs>& bc_e, bool primary, bool eliminate);
 

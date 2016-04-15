@@ -34,8 +34,9 @@
 #include "AnalyticMHD_02.hh"
 #include "AnalyticMHD_03.hh"
 
+#include "Operator.hh"
 #include "OperatorAccumulation.hh"
-#include "OperatorCurlCurl.hh"
+#include "OperatorElectromagneticsMHD.hh"
 #include "OperatorDefs.hh"
 #include "Verification.hh"
 
@@ -56,7 +57,7 @@ void ResistiveMHD(double c_t, double tolerance, bool initial_guess) {
   if (MyPID == 0) std::cout << "\nTest: Resistive MHD, tol=" << tolerance << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/operator_mhd.xml";
+  std::string xmlFileName = "test/operator_electromagnetics.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
@@ -72,7 +73,7 @@ void ResistiveMHD(double c_t, double tolerance, bool initial_guess) {
   meshfactory.preference(pref);
 
   bool request_faces(true), request_edges(true);
-  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4, gm, request_faces, request_edges);
+  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3, gm, request_faces, request_edges);
   RCP<const Mesh> mesh = meshfactory("test/hex_split_faces5.exo", gm, request_faces, request_edges);
 
   // create resistivity coefficient
@@ -123,15 +124,24 @@ void ResistiveMHD(double c_t, double tolerance, bool initial_guess) {
   }
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_EDGE, bc_model, bc_value, bc_mixed));
 
-  // create curl-curl operator
+  // create electromagnetics operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>("curl-curl operator");
-  Teuchos::RCP<OperatorCurlCurl> op_curlcurl = Teuchos::rcp(new OperatorCurlCurl(olist, mesh));
-  op_curlcurl->SetBCs(bc, bc);
-  const CompositeVectorSpace& cvs = op_curlcurl->global_operator()->DomainMap();
+                                      .get<Teuchos::ParameterList>("electromagnetics operator");
+  Teuchos::RCP<OperatorElectromagneticsMHD> op_mhd = Teuchos::rcp(new OperatorElectromagneticsMHD(olist, mesh));
+  op_mhd->SetBCs(bc, bc);
+
+  // create/extract solution maps
+  const CompositeVectorSpace& cvs_e = op_mhd->global_operator()->DomainMap();
+
+  Teuchos::RCP<CompositeVectorSpace> cvs_b = Teuchos::rcp(new CompositeVectorSpace());
+  cvs_b->SetMesh(mesh)->SetGhosted(true)
+       ->AddComponent("face", AmanziMesh::FACE, 1);
+
+  CompositeVector E(cvs_e);
+  CompositeVector B(*cvs_b);
 
   // create source for a manufactured solution.
-  CompositeVector source(cvs);
+  CompositeVector source(cvs_e);
   Epetra_MultiVector& src = *source.ViewComponent("edge");
 
   for (int c = 0; c < ncells_owned; c++) {
@@ -151,40 +161,40 @@ void ResistiveMHD(double c_t, double tolerance, bool initial_guess) {
   source.GatherGhostedToMaster("edge");
 
   // set up initial guess for a time-dependent problem
-  CompositeVector solution(cvs);
-  Epetra_MultiVector& sol = *solution.ViewComponent("edge");
+  Epetra_MultiVector& Ee = *E.ViewComponent("edge");
+  Ee.PutScalar(0.0);
 
-  sol.PutScalar(0.0);
   if (initial_guess) {
     for (int e = 0; e < nedges_owned; e++) {
       double len = mesh->edge_length(e);
       const AmanziGeometry::Point& tau = mesh->edge_vector(e);
       const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
 
-      sol[0][e] = (ana.electric_exact(xe, time) * tau) / len;
+      Ee[0][e] = (ana.electric_exact(xe, time) * tau) / len;
     }
   } 
 
   // set up the diffusion operator
-  op_curlcurl->SetTensorCoefficient(K);
-  op_curlcurl->UpdateMatrices();
+  op_mhd->SetTensorCoefficient(K);
+  op_mhd->UpdateMatrices();
 
   // Add an accumulation term.
-  CompositeVector phi(cvs);
+  CompositeVector phi(cvs_e);
   phi.PutScalar(c_t);
 
-  Teuchos::RCP<Operator> global_op = op_curlcurl->global_operator();
+  Teuchos::RCP<Operator> global_op = op_mhd->global_operator();
   Teuchos::RCP<OperatorAccumulation> op_acc =
       Teuchos::rcp(new OperatorAccumulation(AmanziMesh::EDGE, global_op));
 
   double dT = 1.0;
-  op_acc->AddAccumulationTerm(solution, phi, dT, "edge");
+  op_acc->AddAccumulationTerm(E, phi, dT, "edge");
 
   // BCs, sources, and assemble
-  op_curlcurl->ApplyBCs(true, true);
+  op_mhd->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
   global_op->UpdateRHS(source, false);
+  op_mhd->ModifyMatrices(E, B);
 
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
@@ -201,8 +211,11 @@ void ResistiveMHD(double c_t, double tolerance, bool initial_guess) {
      solver = factory.Create("AztecOO CG", lop_list, global_op);
 
   CompositeVector& rhs = *global_op->rhs();
-  int ierr = solver->ApplyInverse(rhs, solution);
+  int ierr = solver->ApplyInverse(rhs, E);
 
+  op_mhd->ModifyFields(E, B);
+
+  // verify convergence
   int num_itrs = solver->num_itrs();
   CHECK(num_itrs < 100);
 
@@ -212,10 +225,9 @@ void ResistiveMHD(double c_t, double tolerance, bool initial_guess) {
               << " code=" << solver->returned_code() << std::endl;
   }
 
-  // compute electric error
-  Epetra_MultiVector& E = *solution.ViewComponent("edge", false);
+  // compute various errors
   double enorm, el2_err, einf_err;
-  ana.ComputeEdgeError(E, time, enorm, el2_err, einf_err);
+  ana.ComputeEdgeError(Ee, time, enorm, el2_err, einf_err);
 
   if (MyPID == 0) {
     el2_err /= enorm; 
@@ -227,14 +239,8 @@ void ResistiveMHD(double c_t, double tolerance, bool initial_guess) {
   }
 }
 
+
 TEST(RESISTIVE_MHD_LINEAR) {
   ResistiveMHD<AnalyticMHD_01>(1.0e-3, 1e-3, false);
 }
 
-TEST(RESISTIVE_MHD_NONLINEAR) {
-  ResistiveMHD<AnalyticMHD_02>(1.0e-3, 2e-2, false);
-}
-
-TEST(RESISTIVE_MHD_TIME_DEPENDENT) {
-  ResistiveMHD<AnalyticMHD_03>(1.0, 2e-3, true);
-}

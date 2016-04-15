@@ -587,17 +587,35 @@ int MFD3D_Electromagnetics::MassMatrixInverseOptimized(
 int MFD3D_Electromagnetics::StiffnessMatrix(
     int c, const Tensor& T, DenseMatrix& A)
 {
+  Entity_ID_List faces;
+  std::vector<int> fdirs, edirs, map;
+
+  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+  int nfaces = faces.size();
+  int nedges = A.NumRows();
+
+  DenseMatrix M(nfaces, nfaces), C(nfaces, nedges);
+
+  int ok = StiffnessMatrix(c, T, A, M, C);
+
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Stiffness matrix: the standard algorithm.
+****************************************************************** */
+int MFD3D_Electromagnetics::StiffnessMatrix(
+    int c, const Tensor& T, DenseMatrix& A, DenseMatrix& M, DenseMatrix& C)
+{
   Entity_ID_List faces, edges;
   std::vector<int> fdirs, edirs, map;
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
-  mesh_->cell_get_edges(c, &edges);
-
   int nfaces = faces.size();
-  int nedges = edges.size();
+  int nedges = A.NumRows();
 
-  DenseMatrix M(nfaces, nfaces);
-  DenseMatrix C(nfaces, nedges), MC(nfaces, nedges);
+  DenseMatrix MC(nfaces, nedges);
 
   MFD3D_Diffusion diffusion(mesh_);
   int ok = diffusion.MassMatrix(c, T, M);
