@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.2.1">
+<amanzi_input type="unstructured" version="2.3.0">
     <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
     <model_description name="unconfined_layered_2d">
       <comments>Steady-State Richards: unconfined_layered_2d</comments>
@@ -22,7 +22,7 @@
       <comments>Variably saturated flow</comments>
       <flow model="richards" state="on" />
       <transport state="off" />
-      <chemistry engine="none" process_model="none" state="off" />
+      <chemistry engine="none" state="off" />
     </process_kernels>
     <phases>
       <liquid_phase name="water">

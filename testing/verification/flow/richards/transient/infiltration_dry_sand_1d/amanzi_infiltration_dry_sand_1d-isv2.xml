@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<amanzi_input type="unstructured" version="2.2.1">
+<amanzi_input type="unstructured" version="2.3.0">
     <echo_translated_input format="unstructured_native"/>
     <model_description name="infiltration_dry_sand-unstr">
         <comments>infiltration_dry_sand-unstr	Tue Sep 22 14:24:43 PDT 2015</comments>
@@ -52,7 +52,6 @@
                 <preconditioner>hypre_amg</preconditioner>
             </unstr_steady-state_controls>
             <unstr_transient_controls>
-                <bdf1_integration_method>
                     <min_iterations>10</min_iterations>
                     <max_iterations>15</max_iterations>
                     <limit_iterations>20</limit_iterations>
@@ -63,7 +62,6 @@
                     <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
                     <restart_tolerance_relaxation_factor>1</restart_tolerance_relaxation_factor>
                     <error_control_options>pressure,residual</error_control_options>
-                </bdf1_integration_method>
                 <preconditioner>hypre_amg</preconditioner>
                 <initialize_with_darcy>true</initialize_with_darcy>
             </unstr_transient_controls>

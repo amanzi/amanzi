@@ -34,8 +34,9 @@
 #include "AnalyticMHD_02.hh"
 #include "AnalyticMHD_03.hh"
 
+#include "Operator.hh"
 #include "OperatorAccumulation.hh"
-#include "OperatorCurlCurl.hh"
+#include "OperatorElectromagneticsMHD.hh"
 #include "OperatorDefs.hh"
 #include "Verification.hh"
 
@@ -43,7 +44,7 @@
 * TBW 
 * **************************************************************** */
 template<class Analytic>
-void ResistiveMHD(double c_t, double tolerance) {
+void ResistiveMHD(double c_t, double tolerance, bool initial_guess) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -53,10 +54,10 @@ void ResistiveMHD(double c_t, double tolerance) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Resistive MHD" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Resistive MHD, tol=" << tolerance << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/operator_mhd.xml";
+  std::string xmlFileName = "test/operator_electromagnetics.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
@@ -72,8 +73,8 @@ void ResistiveMHD(double c_t, double tolerance) {
   meshfactory.preference(pref);
 
   bool request_faces(true), request_edges(true);
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 8, 8, gm, request_faces, request_edges);
-  // RCP<const Mesh> mesh = meshfactory("test/hex_split_faces5.exo", gm, request_faces, request_edges);
+  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3, gm, request_faces, request_edges);
+  RCP<const Mesh> mesh = meshfactory("test/hex_split_faces5.exo", gm, request_faces, request_edges);
 
   // create resistivity coefficient
   double time = 1.0;
@@ -92,34 +93,55 @@ void ResistiveMHD(double c_t, double tolerance) {
   // create boundary data
   int nedges_owned = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::OWNED);
   int nedges_wghost = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::USED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+
   std::vector<int> bc_model(nedges_wghost, OPERATOR_BC_NONE);
   std::vector<double> bc_value(nedges_wghost);
   std::vector<double> bc_mixed;
 
-  for (int e = 0; e < nedges_wghost; e++) {
-    double len = mesh->edge_length(e);
-    const AmanziGeometry::Point& tau = mesh->edge_vector(e);
-    const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
+  std::vector<int> edirs;
+  AmanziMesh::Entity_ID_List cells, edges;
 
-    if (fabs(xe[0]) < 1e-6 || fabs(xe[0] - 1.0) < 1e-6 ||
-        fabs(xe[1]) < 1e-6 || fabs(xe[1] - 1.0) < 1e-6 ||
-        fabs(xe[2]) < 1e-6 || fabs(xe[2] - 1.0) < 1e-6) {
-      bc_model[e] = OPERATOR_BC_DIRICHLET;
-      bc_value[e] = (ana.electric_exact(xe, time) * tau) / len;
+  for (int f = 0; f < nfaces_wghost; ++f) {
+    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
+        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
+        fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
+
+      mesh->face_get_edges_and_dirs(f, &edges, &edirs);
+      int nedges = edges.size();
+      for (int i = 0; i < nedges; ++i) {
+        int e = edges[i];
+        double len = mesh->edge_length(e);
+        const AmanziGeometry::Point& tau = mesh->edge_vector(e);
+        const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
+
+        bc_model[e] = OPERATOR_BC_DIRICHLET;
+        bc_value[e] = (ana.electric_exact(xe, time) * tau) / len;
+      }
     }
   }
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_EDGE, bc_model, bc_value, bc_mixed));
 
-  // create curl-curl operator
+  // create electromagnetics operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>("curl-curl operator");
-  Teuchos::RCP<OperatorCurlCurl> op_curlcurl = Teuchos::rcp(new OperatorCurlCurl(olist, mesh));
-  op_curlcurl->SetBCs(bc, bc);
-  const CompositeVectorSpace& cvs = op_curlcurl->global_operator()->DomainMap();
+                                      .get<Teuchos::ParameterList>("electromagnetics operator");
+  Teuchos::RCP<OperatorElectromagneticsMHD> op_mhd = Teuchos::rcp(new OperatorElectromagneticsMHD(olist, mesh));
+  op_mhd->SetBCs(bc, bc);
+
+  // create/extract solution maps
+  const CompositeVectorSpace& cvs_e = op_mhd->global_operator()->DomainMap();
+
+  Teuchos::RCP<CompositeVectorSpace> cvs_b = Teuchos::rcp(new CompositeVectorSpace());
+  cvs_b->SetMesh(mesh)->SetGhosted(true)
+       ->AddComponent("face", AmanziMesh::FACE, 1);
+
+  CompositeVector E(cvs_e);
+  CompositeVector B(*cvs_b);
 
   // create source for a manufactured solution.
-  AmanziMesh::Entity_ID_List edges;
-  CompositeVector source(cvs);
+  CompositeVector source(cvs_e);
   Epetra_MultiVector& src = *source.ViewComponent("edge");
 
   for (int c = 0; c < ncells_owned; c++) {
@@ -139,47 +161,48 @@ void ResistiveMHD(double c_t, double tolerance) {
   source.GatherGhostedToMaster("edge");
 
   // set up initial guess for a time-dependent problem
-  CompositeVector solution(cvs);
-  Epetra_MultiVector& sol = *solution.ViewComponent("edge");
-  if (c_t != 0.0) {
+  Epetra_MultiVector& Ee = *E.ViewComponent("edge");
+  Ee.PutScalar(0.0);
+
+  if (initial_guess) {
     for (int e = 0; e < nedges_owned; e++) {
       double len = mesh->edge_length(e);
       const AmanziGeometry::Point& tau = mesh->edge_vector(e);
       const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
 
-      sol[0][e] = (ana.electric_exact(xe, time) * tau) / len;
+      Ee[0][e] = (ana.electric_exact(xe, time) * tau) / len;
     }
-  }
+  } 
 
   // set up the diffusion operator
-  op_curlcurl->SetTensorCoefficient(K);
-  op_curlcurl->UpdateMatrices();
+  op_mhd->SetTensorCoefficient(K);
+  op_mhd->UpdateMatrices();
 
   // Add an accumulation term.
-  CompositeVector phi(cvs);
+  CompositeVector phi(cvs_e);
   phi.PutScalar(c_t);
 
-  Teuchos::RCP<Operator> global_op = op_curlcurl->global_operator();
+  Teuchos::RCP<Operator> global_op = op_mhd->global_operator();
   Teuchos::RCP<OperatorAccumulation> op_acc =
       Teuchos::rcp(new OperatorAccumulation(AmanziMesh::EDGE, global_op));
 
   double dT = 1.0;
-  op_acc->AddAccumulationTerm(solution, phi, dT, "edge");
+  op_acc->AddAccumulationTerm(E, phi, dT, "edge");
 
   // BCs, sources, and assemble
-  op_curlcurl->ApplyBCs(true, true);
+  op_mhd->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
   global_op->UpdateRHS(source, false);
+  op_mhd->ModifyMatrices(E, B);
 
-  // Create a preconditioner.
   ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // Test SPD properties of the matrix and preconditioner.
   Verification ver(global_op);
-  ver.CheckMatrixSPD(false, true);
-  ver.CheckPreconditionerSPD(false, true);
+  ver.CheckMatrixSPD(true, true);
+  ver.CheckPreconditionerSPD(true, true);
 
   // Solve the problem.
   ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
@@ -188,8 +211,11 @@ void ResistiveMHD(double c_t, double tolerance) {
      solver = factory.Create("AztecOO CG", lop_list, global_op);
 
   CompositeVector& rhs = *global_op->rhs();
-  int ierr = solver->ApplyInverse(rhs, solution);
+  int ierr = solver->ApplyInverse(rhs, E);
 
+  op_mhd->ModifyFields(E, B);
+
+  // verify convergence
   int num_itrs = solver->num_itrs();
   CHECK(num_itrs < 100);
 
@@ -199,29 +225,22 @@ void ResistiveMHD(double c_t, double tolerance) {
               << " code=" << solver->returned_code() << std::endl;
   }
 
-  // compute electric error
-  Epetra_MultiVector& E = *solution.ViewComponent("edge", false);
+  // compute various errors
   double enorm, el2_err, einf_err;
-  ana.ComputeEdgeError(E, time, enorm, el2_err, einf_err);
+  ana.ComputeEdgeError(Ee, time, enorm, el2_err, einf_err);
 
   if (MyPID == 0) {
     el2_err /= enorm; 
     el2_err /= enorm;
-    printf("L2(e)=%9.6f  Inf(e)=%9.6f  itr=%3d  size=%d\n", el2_err, einf_err,
+    printf("L2(e)=%10.7f  Inf(e)=%9.6f  itr=%3d  size=%d\n", el2_err, einf_err,
             solver->num_itrs(), rhs.GlobalLength());
 
     CHECK(el2_err < tolerance);
   }
 }
 
+
 TEST(RESISTIVE_MHD_LINEAR) {
-  ResistiveMHD<AnalyticMHD_01>(0.0, 1e-12);
+  ResistiveMHD<AnalyticMHD_01>(1.0e-3, 1e-3, false);
 }
 
-TEST(RESISTIVE_MHD_NONLINEAR) {
-  ResistiveMHD<AnalyticMHD_02>(0.0, 2e-2);
-}
-
-TEST(RESISTIVE_MHD_TIME_DEPENDENT) {
-  ResistiveMHD<AnalyticMHD_03>(1.0, 2e-3);
-}

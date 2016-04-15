@@ -858,9 +858,11 @@ void OperatorDiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
             }
           }
 
+          // We take into account multiple contributions to matrix diagonal
+          // by dividing by the number of cells attached to a vertex.
           if (primary) {
             mesh_->node_get_cells(v, AmanziMesh::USED, &cells);
-            rhs_node[0][v] += value / cells.size();
+            if (v < nnodes_owned) rhs_node[0][v] = value;
             Acell(n, n) = 1.0 / cells.size();
           }
         }

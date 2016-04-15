@@ -234,7 +234,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
   }
 
   if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-    *vo_->os() << "Failed (" << num_itrs_ << " itrs) ||r||=" << residual_ << std::endl;
+    *vo_->os() << "Failed (" << num_itrs_ << " itrs) ||r||=" << residual_ << " ||f||=" << fnorm << std::endl;
 
   return LIN_SOLVER_MAX_ITERATIONS;
 };

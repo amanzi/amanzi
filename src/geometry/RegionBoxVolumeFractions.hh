@@ -58,8 +58,12 @@ void IntersectConvexPolygons(const std::vector<Point>& xy1,
                              const std::vector<Point>& xy2,
                              std::vector<Point>& xy3);
 
-// -- intersection area of counter clockwise oriented star-shaped 
-// polygon xy1 and convex polygon xy2.
+// -- intersection of a convex polyhedra, one is defined by a set of half-spaces
+void IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
+                              const std::vector<std::vector<int> > faces1,
+                              const std::vector<std::pair<Point, Point> >& xyz2,
+                              std::vector<Point>& xyz3,
+                              std::vector<std::vector<int> > faces3);
 
 }  // namespace AmanziGeometry
 }  // namespace Amanzi

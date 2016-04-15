@@ -1,4 +1,4 @@
-<amanzi_input version="2.2.1" type="unstructured">
+<amanzi_input version="2.3.0" type="unstructured">
 
   <model_description name="1D Flow and Transport w/ ion exchange">
     <units>
@@ -27,7 +27,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry state="on" engine="pflotran" input_filename="1d-surface-complexation.in" format="simple" />
+    <chemistry state="on" engine="pflotran" database="surface-complexation.dat" />
   </process_kernels>
 
   <phases>
@@ -36,12 +36,19 @@
       <viscosity>1.002e-3</viscosity>
       <density>998.2</density>
       <dissolved_components>
-        <solutes>
-          <solute>H+</solute>
-          <solute>Na+</solute>
-          <solute>NO3-</solute>
-          <solute>Zn++</solute>
-        </solutes>
+        <primaries>
+          <primary coefficient_of_diffusion="">H+</primary>
+          <primary coefficient_of_diffusion="">Na+</primary>
+          <primary coefficient_of_diffusion="">NO3-</primary>
+          <primary coefficient_of_diffusion="">Zn++</primary>
+        </primaries>
+        <secondaries>
+          <secondary>OH-</secondary>
+          <secondary>Zn(OH)2(aq)</secondary>
+          <secondary>Zn(OH)3-</secondary>
+          <secondary>Zn(OH)4--</secondary>
+          <secondary>ZnOH+</secondary>
+        </secondaries>
       </dissolved_components>
     </liquid_phase>
   </phases>
@@ -118,9 +125,24 @@
   <geochemistry>
     <verbosity>verbose</verbosity>
     <constraints>
-	<constraint name="initial"/>
-	<constraint name="east"/>
-	<constraint name="west"/>
+      <constraint name="initial">
+        <primary name="Zn++" type="total" value="1.0e-7"/>
+        <primary name="NO3-" type="total" value="1.0e-1"/>
+        <primary name="H+" type="pH" value="5"/>
+        <primary name="Na+" type="charge" value="1.0e-5"/>
+      </constraint>
+      <constraint name="west">
+        <primary name="Zn++" type="total" value="1.0e-6"/>
+        <primary name="NO3-" type="total" value="1.0e-1"/>
+        <primary name="H+" type="pH" value="6"/>
+        <primary name="Na+" type="charge" value="1.0e-5"/>
+      </constraint>
+      <constraint name="east">
+        <primary name="Zn++" type="total" value="1.0e-7"/>
+        <primary name="NO3-" type="total" value="1.0e-1"/>
+        <primary name="H+" type="pH" value="5"/>
+        <primary name="Na+" type="charge" value="1.0e-5"/>
+      </constraint>
     </constraints>
   </geochemistry>
 
@@ -132,7 +154,14 @@
       <permeability x="1.0e-12" y="1.0e-12" z="1.0e-12"/>
       <assigned_regions>All</assigned_regions>
 
-      <surface_complexation_site name="davis_OH" density="0.156199"/>
+      <surface_complexation>
+        <site density="1.908e-3" name="FeOH_s">
+          <complexes>FeOHZn+_s, FeOH2+_s, FeO-_s</complexes>
+        </site>
+        <site density="7.6355e-2" name="FeOH_w">
+          <complexes>FeOHZn+_w, FeO-_w, FeOH2+_w</complexes>
+        </site>
+      </surface_complexation>
     </material>
   </materials>
 

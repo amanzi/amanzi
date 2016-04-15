@@ -1,4 +1,4 @@
-<amanzi_input version="2.2.1" type="unstructured">
+<amanzi_input version="2.3.0" type="unstructured">
 
   <model_description name="1D Flow and Transport w/ ion exchange">
     <units>
@@ -27,7 +27,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry state="on" engine="pflotran" input_filename="1d-ion-exchange-trim.in" format="simple" />
+    <chemistry state="on" engine="pflotran" database="ion-exchange.dat" />
   </process_kernels>
 
   <phases>
@@ -118,9 +118,24 @@
   <geochemistry>
     <verbosity>verbose</verbosity>
     <constraints>
-      <constraint name="initial" />
-      <constraint name="west" />
-      <constraint name="east" />
+      <constraint name="initial">
+          <primary name="Ca++" type="total" value="1.82e-2"/>
+          <primary name="Mg++" type="total" value="1.11e-2"/>
+          <primary name="Cl-" type="charge" value="2.0e-3"/>
+          <primary name="Na+" type="total" value="8.65e-2"/>
+      </constraint>
+      <constraint name="west">
+          <primary name="Ca++" type="total" value="5.0e-4"/>
+          <primary name="Mg++" type="total" value="2.13e-3"/>
+          <primary name="Cl-" type="charge" value="1.0e-2"/>
+          <primary name="Na+" type="total" value="9.4e-3"/>
+      </constraint>
+      <constraint name="east">
+          <primary name="Ca++" type="total" value="1.82e-2"/>
+          <primary name="Mg++" type="total" value="1.11e-2"/>
+          <primary name="Cl-" type="charge" value="2.0e-3"/>
+          <primary name="Na+" type="total" value="8.65e-2"/>
+      </constraint>
     </constraints>
   </geochemistry>
 
@@ -133,13 +148,11 @@
       <assigned_regions>All</assigned_regions>
 
       <ion_exchange>
-	<cec>750.0"</cec>
-<!--	Not needed for now - only when we write the engine input file, and then probably will have to go elsewhere
-        <cations>
-	    <cation name="Na+" value="1.0"/>
-	    <cation name="Ca++" value="0.2953"/>
-	    <cation name="Mg++" value="0.1666"/>
-	</cations> -->
+        <cations cec="750.0">
+          <cation name="Ca++" value="0.2953"/>
+          <cation name="Mg++" value="0.1666"/>
+          <cation name="Na+" value="1.0"/>
+        </cations>
       </ion_exchange>
     </material>
   </materials>

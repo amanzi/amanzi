@@ -13,10 +13,7 @@ from matplotlib import pyplot as plt
 
 # ----------- AMANZI + ALQUIMIA -----------------------------------------------------------------
 
-def GetXY_Amanzi(path,root,comp):
-
-    # open amanzi concentration and mesh files
-
+def GetXY_AmanziU(path,root,comp):
     dataname = os.path.join(path,root+"_data.h5")
     amanzi_file = h5py.File(dataname,'r')
     meshname = os.path.join(path,root+"_mesh.h5")
@@ -134,72 +131,31 @@ if __name__ == "__main__":
     CWD = os.getcwd()
     local_path = "" 
 
-# run+read Amanzi native chemistry simulation
-    try:
-        comp = 'total_component_concentration.cell.tracer' # conc'
-        
-        # Amanzi native chemistry
-        input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
-        path_to_amanzi = "amanzi-output"
-        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanzi)
+    # amanziU
 
-        x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
-        native = len(x_amanzi_native)
-
-    except:
-        native = len(x_amanzi_native)
-
-# run+read Amanzi-Alquimia-PFloTran simulation
     try:
         comp = 'total_component_concentration.cell.Tracer conc'
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-pflo.xml")
-        path_to_amanzi = "amanzi-alquimia-output"
+        path_to_amanzi = "amanzi-u-alq-pflo-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+".in",root+".dat"], path_to_amanzi)
-        x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
+        x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,root,comp)
         alq = len(x_amanzi_alquimia)
 
     except:
         alq = 0
 
-# run+read Amanzi-Alquimia-CrunchFlow simulation
-    try:
-        comp = 'total_component_concentration.cell.Tracer conc'
-        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
-        path_to_amanzi = "amanzi-alquimia-crunch-output"
-        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+"-crunch.in",root+".dbs"], path_to_amanzi)
-        x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
-        alq_crunch = len(x_amanzi_alquimia_crunch)
-
-    except:
-        alq_crunch = 0
-
-
-    # amanziS data
+    # amanziS
     
-    # +pflotran
     try:
-        input_filename = os.path.join("amanzi-s-1d-tracer-alq-pflo.xml")
-        path_to_amanziS = "struct_amanzi-output-pflo"
-        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
+        input_filename = os.path.join("amanzi-s-1d-"+root+"-alq-pflo.xml")
+        path_to_amanziS = "amanzi-s-alq-pflo-output"
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+".in",root+".dat"], path_to_amanziS)
         root_amanziS = "plt00051"
-        compS = "Tracer_Aqueous_Concentration"
+        compS = "Tracer_water_Concentration"
         x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,compS)
         struct = len(x_amanziS)
     except:
         struct = 0
-
-    # +crunchflow
-    try:
-        # import pdb; pdb.set_trace()
-        input_filename = os.path.join("amanzi-s-1d-tracer-alq-crunch.xml")
-        path_to_amanziS = "struct_amanzi-output-crunch"
-        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
-        root_amanziS = "plt00051"
-        compS = "Tracer_Aqueous_Concentration"
-        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,compS)
-        struct_c = len(x_amanziS_crunch)
-    except:
-        struct_c = 0
 
 # plotting --------------------------------------------------------
 
@@ -213,25 +169,13 @@ if __name__ == "__main__":
     ax.plot(x_crunchflow, c_crunchflow,'m--',label='CrunchFlow GIMRT',linewidth=2)
     ax.plot(x_crunchOS3D, c_crunchOS3D,'m*',label='CrunchFlow OS3D',linewidth=2) 
 
-# unstruct amanzi native chem
-    if native>0:
-        ax.plot(x_amanzi_native, c_amanzi_native,'rx',label='Amanzi',linewidth=2)
-
 # unstruct amanzi alquimia + pflotran
     if alq>0:
-        ax.plot(x_amanzi_alquimia, c_amanzi_alquimia,'r-',label='Amanzi-Alq(PFT)',linewidth=2)
-
-# unstruct amanzi alquimia + pflotran
-    if alq_crunch>0:
-        ax.plot(x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch,'r*',label='Amanzi-Alq(CF)',linewidth=2)
+        ax.plot(x_amanzi_alquimia, c_amanzi_alquimia,'r-',label='AmanziU+Alq(PFT)',linewidth=2)
 
 # struct amanzi alquimia + pflotran
     if (struct>0):
         sam = ax.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alq(PFT)',linewidth=2)     
-
-# struct amanzi alquimia + crunchflow
-    if (struct_c>0):
-        samc = ax.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=2)     
 
 # figure look
     # axes
