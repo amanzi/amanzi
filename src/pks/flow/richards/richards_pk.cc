@@ -861,21 +861,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_values_[f] = bc->second;
     } else {
-      AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      ASSERT(cells.size() == 1);
-      int c = cells[0];
-      if (u_cell[0][c] < face_value) {
-        bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_values_[f] = bc->second;
-      } else {
-        bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
-        bc_values_[f] = p_atm;
-      }
-    }
-    if (flux[0][f] < 0.0) {
-      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-      bc_values_[f] = bc->second;
+      bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_values_[f] = p_atm;
     }
   }
 
