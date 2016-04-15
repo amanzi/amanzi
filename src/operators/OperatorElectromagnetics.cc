@@ -16,8 +16,6 @@
 
 // Amanzi
 #include "errors.hh"
-#include "LinearOperator.hh"
-#include "LinearOperatorFactory.hh"
 #include "MatrixFE.hh"
 #include "mfd3d_electromagnetics.hh"
 #include "PreconditionerFactory.hh"
@@ -30,7 +28,7 @@
 #include "OperatorDefs.hh"
 #include "Operator_Edge.hh"
 
-#include "OperatorCurlCurl.hh"
+#include "OperatorElectromagnetics.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -38,7 +36,8 @@ namespace Operators {
 /* ******************************************************************
 * Initialization of the operator, scalar coefficient.
 ****************************************************************** */
-void OperatorCurlCurl::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
+void OperatorElectromagnetics::SetTensorCoefficient(
+    const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
 {
   K_ = K;
 
@@ -51,7 +50,7 @@ void OperatorCurlCurl::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetS
 /* ******************************************************************
 * Calculate elemental matrices.
 ****************************************************************** */
-void OperatorCurlCurl::UpdateMatrices()
+void OperatorElectromagnetics::UpdateMatrices()
 {
   AmanziMesh::Entity_ID_List edges;
   WhetStone::MFD3D_Electromagnetics mfd(mesh_);
@@ -78,7 +77,7 @@ void OperatorCurlCurl::UpdateMatrices()
 * options: (a) eliminate or not, (b) if eliminate, then put 1 on
 * the diagonal or not.
 ****************************************************************** */
-void OperatorCurlCurl::ApplyBCs(bool primary, bool eliminate)
+void OperatorElectromagnetics::ApplyBCs(bool primary, bool eliminate)
 {
   if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                          | OPERATOR_SCHEMA_DOFS_EDGE)) {
@@ -99,14 +98,26 @@ void OperatorCurlCurl::ApplyBCs(bool primary, bool eliminate)
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void OperatorCurlCurl::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
-                                      const Teuchos::Ptr<BCs>& bc_e,
-                                      bool primary, bool eliminate)
+void OperatorElectromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
+                                              const Teuchos::Ptr<BCs>& bc_e,
+                                              bool primary, bool eliminate)
 {
   AmanziMesh::Entity_ID_List edges, cells;
 
   global_op_->rhs()->PutScalarGhosted(0.0);
   Epetra_MultiVector& rhs_edge = *global_op_->rhs()->ViewComponent("edge", true);
+
+  // calculate number of cells for each edge 
+  // move to properties of BCs (lipnikov@lanl.gov)
+  std::vector<int> edge_get_cells(nedges_wghost, 0);
+  for (int c = 0; c != ncells_wghost; ++c) {
+    mesh_->cell_get_edges(c, &edges);
+    int nedges = edges.size();
+
+    for (int n = 0; n < nedges; ++n) {
+      edge_get_cells[edges[n]]++;
+    }
+  }
 
   int nn(0), nm(0);
   for (int c = 0; c != ncells_owned; ++c) {
@@ -150,10 +161,8 @@ void OperatorCurlCurl::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
           }
 
           if (primary) {
-            // mesh_->edge_get_cells(e, AmanziMesh::USED, &cells);
-            int ncells = 4;
-            rhs_edge[0][e] += value / ncells;
-            Acell(n, n) = 1.0 / ncells;
+            rhs_edge[0][e] = value;
+            Acell(n, n) = 1.0 / edge_get_cells[e];
           }
         }
       }
@@ -165,18 +174,9 @@ void OperatorCurlCurl::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
 
 
 /* ******************************************************************
-* TBW 
-* **************************************************************** */
-void OperatorCurlCurl::UpdateFields(const CompositeVector& E, CompositeVector& B)
-{
-  B.PutScalar(0.0);
-}
-
-
-/* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-void OperatorCurlCurl::InitCurlCurl_(Teuchos::ParameterList& plist)
+void OperatorElectromagnetics::InitElectromagnetics_(Teuchos::ParameterList& plist)
 {
   // Determine discretization
   std::string primary = plist.get<std::string>("discretization primary");
@@ -189,7 +189,7 @@ void OperatorCurlCurl::InitCurlCurl_(Teuchos::ParameterList& plist)
     mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
   } else {
     Errors::Message msg;
-    msg << "OperatorCurlCurl: primary discretization method \"" << primary << "\" is not supported.";
+    msg << "OperatorElectromagnetics: primary discretization method \"" << primary << "\" is not supported.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -214,7 +214,7 @@ void OperatorCurlCurl::InitCurlCurl_(Teuchos::ParameterList& plist)
     local_op_schema_ = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_EDGE;
   } else {
     Errors::Message msg;
-    msg << "OperatorDiffusion: \"schema\" must be CELL, FACE+CELL, or NODE";
+    msg << "OperatorElectromagnetics: \"schema\" must be CELL or EDGE";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -249,7 +249,7 @@ void OperatorCurlCurl::InitCurlCurl_(Teuchos::ParameterList& plist)
       global_op_ = Teuchos::rcp(new Operator_Edge(cvs, plist));
     } else {
       Errors::Message msg;
-      msg << "OperatorCurlCurl: \"preconditioner schema\" must be EDGE";
+      msg << "OperatorElectromagnetics: \"preconditioner schema\" must be EDGE";
       Exceptions::amanzi_throw(msg);
     }
 
@@ -261,7 +261,7 @@ void OperatorCurlCurl::InitCurlCurl_(Teuchos::ParameterList& plist)
 
   // create the local Op and register it with the global Operator
   if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_EDGE)) {
-      std::string name = "CurlCurl: CELL_EDGE";
+      std::string name = "Electromagnetics: CELL_EDGE";
       local_op_ = Teuchos::rcp(new Op_Cell_Edge(name, mesh_));
   } else {
     ASSERT(0);

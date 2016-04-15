@@ -151,13 +151,13 @@ void Operator::AssembleMatrix()
   AssembleMatrix(*smap_, *Amat_, 0, 0);
   Amat_->FillComplete();
 
-  if (shift_ != 0.) {
+  if (shift_ != 0.0) {
     Amat_->DiagonalShift(shift_);
   }
   
-//  std::stringstream filename_s2;
-//  filename_s2 << "assembled_matrix" << 0 << ".txt";
-//  EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_ ->Matrix());
+// std::stringstream filename_s2;
+// filename_s2 << "assembled_matrix" << 0 << ".txt";
+// EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_ ->Matrix());
 }
 
 

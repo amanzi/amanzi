@@ -1,4 +1,4 @@
-<amanzi_input version="2.2.1" type="unstructured">
+<amanzi_input version="2.3.0" type="unstructured">
 
   <model_description name="1D Flow and Transport">
     <author>Glenn Hammond</author>
@@ -28,7 +28,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" algorithm="explicit first-order" />
-    <chemistry state="on" engine="pflotran" input_filename="1d-tracer.in" format="simple" />
+    <chemistry state="on" engine="pflotran" database="tracer.dat" />
   </process_kernels>
 
   <phases>
@@ -37,9 +37,9 @@
       <viscosity>1.002e-3</viscosity>
       <density>998.2</density>
       <dissolved_components>
-        <solutes>
-          <solute coefficient_of_diffusion="1.0e-9">tracer</solute>
-        </solutes>
+        <primaries>
+          <primary backward_rate="0.0" coefficient_of_diffusion="1.0E-9" forward_rate="0.0">Tracer</primary>
+        </primaries>
       </dissolved_components>
     </liquid_phase>
   </phases>
@@ -133,8 +133,12 @@
   <geochemistry>
       <verbosity>silent</verbosity>
       <constraints>
-	  <constraint name="initial" filename="1d-tracer.in"/>
-	  <constraint name="west" filename="1d-tracer.in"/>
+        <constraint name="initial">
+          <primary name="Tracer" type="total" value="1.0e-20"/>
+        </constraint>
+        <constraint name="west_constraint">
+          <primary name="Tracer" type="total" value="1.0e-3"/>
+        </constraint>
       </constraints>
   </geochemistry>
 
@@ -145,7 +149,7 @@
         <liquid_component name="water">
           <uniform_pressure value="201325.0"/>
         </liquid_component>
-        <geochemistry_component name="solute">
+        <geochemistry_component>
           <constraint name= "initial" />
         </geochemistry_component>
       </liquid_phase>
@@ -159,8 +163,8 @@
         <liquid_component name="water">
           <inward_mass_flux value="7.91317859e-6" start="0" function="constant"/>
         </liquid_component>
-        <geochemistry_component name="solute">
-          <constraint name= "west" start="0" function="constant"/>
+        <geochemistry_component>
+          <constraint name= "west_constraint" start="0" function="constant"/>
         </geochemistry_component>
       </liquid_phase>
     </boundary_condition>
@@ -170,7 +174,7 @@
         <liquid_component name="water">
           <uniform_pressure value="201325.0" start="0" function="constant"/>
         </liquid_component>
-        <geochemistry_component name="solute">
+        <geochemistry_component>
           <constraint name= "initial" start="0" function="constant"/>
         </geochemistry_component>
       </liquid_phase>

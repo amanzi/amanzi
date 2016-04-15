@@ -22,9 +22,9 @@
 namespace Amanzi {
 namespace AmanziGeometry {
 
-// -------------------------------------------------------------
+// -------------------------------------------------------------------
 // Constructor
-// -------------------------------------------------------------
+// -------------------------------------------------------------------
 RegionBoxVolumeFractions::RegionBoxVolumeFractions(
     const std::string& name, const Set_ID id,
     const Point& p0, const Point& p1,
@@ -90,9 +90,9 @@ RegionBoxVolumeFractions::RegionBoxVolumeFractions(
 }
 
 
-// -------------------------------------------------------------
+// -------------------------------------------------------------------
 // Implementation of a virtual member function.
-// -------------------------------------------------------------
+// -------------------------------------------------------------------
 bool RegionBoxVolumeFractions::inside(const Point& p) const
 {
 #ifdef ENABLE_DBC
@@ -114,10 +114,10 @@ bool RegionBoxVolumeFractions::inside(const Point& p) const
 }
 
 
-// -------------------------------------------------------------
+// -------------------------------------------------------------------
 // Implementation of a virtual member function.
 // We have to analyze 
-// -------------------------------------------------------------
+// -------------------------------------------------------------------
 double RegionBoxVolumeFractions::intersect(const std::vector<Point>& polytope) const
 {
   double volume(-1.0);
@@ -171,11 +171,11 @@ double RegionBoxVolumeFractions::intersect(const std::vector<Point>& polytope) c
 }
 
 
-// -------------------------------------------------------------
+// -------------------------------------------------------------------
 // Non-member function.
 // Intersection of two counter clockwise oriented polygons given
 // by vertices xy1 and xy2.
-// -------------------------------------------------------------
+// -------------------------------------------------------------------
 void IntersectConvexPolygons(const std::vector<Point>& xy1,
                              const std::vector<Point>& xy2,
                              std::vector<Point>& xy3)
@@ -241,6 +241,61 @@ void IntersectConvexPolygons(const std::vector<Point>& xy1,
   if (result.size() > 2) { 
     for (it = result.begin(); it != result.end(); ++it) {
       xy3.push_back(it->second);
+    }
+  }
+}
+
+
+// -------------------------------------------------------------------
+// Non-member function.
+// Intersection of two convex polyhedra P1 and P2. Polyhedron P1 is 
+// defined by vertices xyz1 and faces ordered counter clockwise with
+// respect to their exterior normals. Polyhedron P2 is defined by a
+// set of half-spaces (point and exterior normal). The result is
+// polyhedron P3 ordered as P1.
+// -------------------------------------------------------------------
+void IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
+                              const std::vector<std::vector<int> > faces1,
+                              const std::vector<std::pair<Point, Point> >& xyz2,
+                              std::vector<Point>& xyz3,
+                              std::vector<std::vector<int> > faces3)
+{
+  // initialize result with the first polyhedron
+  int nfaces1 = faces1.size();
+  std::vector<std::pair<double, Point> > result_xyz;
+  std::vector<std::list<int> > result_faces(nfaces1);
+
+  for (int i = 0; i < xyz1.size(); ++i)
+    result_xyz.push_back(std::make_pair(0.0, xyz1[i]));
+
+  for (int i = 0; i < nfaces1; ++i) {
+    for (int n = 0; n < faces1[i].size(); ++n) {
+      result_faces[i].push_back(faces1[i][n]);
+    }
+  }
+
+  // clip polyhedron using the second polyhedron.
+  int nfaces2 = xyz2.size();
+  double d1, d2, tmp, eps(1e-6);
+
+  for (int n = 0; n < nfaces2; ++n) {
+    const Point& p = xyz2[n].first;
+    const Point& normal = xyz2[n].second;
+
+    // location of nodes relative to the n-th plane
+    int nnodes = result_xyz.size();
+    for (int i = 0; i < nnodes; ++i) {
+      if (result_xyz[i].first <= 0.0) {
+        tmp = normal * (result_xyz[i].second - p);
+        if (std::fabs(tmp) < eps) tmp = 0.0;
+        result_xyz[i].first = tmp;
+      }
+    }
+
+    // clip each face of the resulting polyhedron
+    int nfaces3 = result_faces.size();
+    for (int m = 0; m < nfaces3; ++m) {
+      
     }
   }
 }

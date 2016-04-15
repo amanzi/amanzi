@@ -61,6 +61,9 @@
 	<flow state = "on | off" model = "richards | saturated | constant | none"/> <!-- REQUIRED -->
         <transport state = "on | off"/> <!-- REQUIRED -->
         <chemistry state = "on | off" engine="amanzi | pflotran | none" input_filename="filename.in" database="filename.dat"/> <!-- REQUIRED -->
+	<!-- If state="on" and engine="pflotran, but input_filename is missing, 
+	     the pflotran engine input file will be automatically generated --> 
+        <!-- If state="on" and engine="pflotran, the database file name must be included -->
 
     </process_kernels>
 
@@ -74,8 +77,10 @@
             <density>exp</density> <!-- REQUIRED -->
             <dissolved_components> 
                 <primaries>
-                    <primary coefficient_of_diffusion="exp" first_order_decay_constant="exp">primary_name_string</primary>
-                    <!-- primary name must match the name in the engine database file -->
+                    <primary coefficient_of_diffusion="exp" first_order_decay_constant="exp" forward_rate="exp" backward_rate="exp">primary_name_string</primary>
+		    <!-- primary name must match the name in the engine database file -->
+		    <!-- NOTE: if primary is a non-reactive species/solute, 
+			 include the forward and backward rates.  Dummy values of 0 are acceptable -->
                 </primaries> 
                 <secondaries>
                     <secondary>secondary_name_string</secondary>
@@ -180,7 +185,8 @@
                 <preconditioner>hypre_amg | trilinos_ml | block_ilu</preconditioner> <!-- default: hypre_amg -->
                 <nonlinear_iteration_initial_guess_extrapolation_order>int</nonlinear_iteration_initial_guess_extrapolation_order> <!-- default: 1 -->
                 <unstr_initialization>
-                    <!-- EIB: ask Konstantin if this only needs to be included if steady method = picard? -->
+		    <!-- NOTE: including an empty section here turns intialization on with default values
+			 To deactive intialization, remove section completely -->
                     <clipping_saturation>exp</clipping_saturation> <!-- default: 0.9 suggested range: 0.7-0.95 -->
                     <clipping_pressure>exp</clipping_pressure> 
                     <method>picard | darcy_solver</method> <!-- default: picard -->
@@ -393,18 +399,14 @@
 
 	<constraints> <!-- REQUIRED -->
             <!-- Provide a list of constraints for various chemistry in system. -->
-            <!-- Chemistry input needs to be consolidated and migrated to xml file
-                 as funding becomes available -->
-            <!-- activity model, database specification, mineral kinetics, secondary species specified
-                 in external file -->
+	    <!-- If the user is providing the PFloTran input file, only the attribute "name" is required -->
+	    <!-- If Amanzi is autogenerating the PFloTran input file, at least one subelement must be included -->
             <constraint name="string"> <!-- REQUIRED -->
-                <primary name="primary_name_string"     initial_guess="exp"   type="free_ion | pH | total | total+sorbed | charge"/>
-                <primary name="nonreactive_primary"     initial_guess="exp"   type="total"/>
-                <primary name="primary_name_string"     initial_guess="exp"   type="mineral" mineral="mineral_name"/>
-                <primary name="primary_name_string(aq)" initial_guess="exp"   type="gas" gas = "gas_name"/>
+                <primary name="primary_name_string"     value="exp"   type="free_ion | pH | total | total+sorbed | charge"/>
+                <primary name="nonreactive_primary"     value="exp"   type="total"/>
+                <primary name="primary_name_string"     value="exp"   type="mineral" mineral="mineral_name"/>
+                <primary name="primary_name_string(aq)" value="exp"   type="gas" gas = "gas_name"/>
                 <mineral name="mineral_name_string"     volume_fraction="exp" surface_area ="exp"/>
-                <!-- cation exchange capacity and surface site density are specified in the
-                     external pflotran input file, and scaled by mineral volume fraction -->
             </constraint>
         </constraints>
     </geochemistry>
@@ -490,7 +492,12 @@
                 <mineral name="mineral_name_string" volume_fraction="exp" specific_surface_area="exp"/>
             </minerals>
 
-            <surface_complexation model="string" value="exp" density="exp"/>
+            <surface_complexation>
+		<!-- NOTE: site name and complexes must match name in chemistry database file without leading characters, such as '>' -->
+		<site name="site_name" density="exp">
+		    <complexes>string1,string2</complexes>
+		</site>
+	    </surface_complexation>
 
             <ion_exchange>
 		<cations cec="exp">
@@ -517,6 +524,7 @@
                 </liquid_component>
 
                 <geochemistry_component>
+		    <!-- constraint_name must match a constraint named/defined in the geochemistry block -->
                     <constraint name="constraint_name" />
                 </geochemistry_component>
             </liquid_phase>
@@ -528,6 +536,7 @@
 	        </mineral>
 
                 <geochemistry_component>
+		    <!-- constraint_name must match a constraint named/defined in the geochemistry block -->
                     <constraint name="constraint_name"/>
                 </geochemistry_component>
             </solid_phase>
@@ -557,6 +566,7 @@
 
                 <geochemistry_component>
 		    <!-- Must include at least 1 -->
+		    <!-- constraint name must match a constraint named/defined in the geochemistry block -->
                     <constraint name="string" start="time" function= "constant | linear"/>
                 </geochemistry_component>
             </liquid_phase>
@@ -576,6 +586,7 @@
 
                 <geochemistry_component>
 		    <!-- Must include at least 1 -->
+		    <!-- constraint name must match a constraint named/defined in the geochemistry block -->
                     <constraint name="string" start="time" function= "constant | linear"/>
                 </geochemistry_component>
             </liquid_phase>

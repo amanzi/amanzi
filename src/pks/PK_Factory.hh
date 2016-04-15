@@ -66,15 +66,17 @@ class PKFactory {
           const Teuchos::RCP<State>& state,
           const Teuchos::RCP<TreeVector>& soln) {
 
-    if (!global_list->isSublist("PKs")) {
-      Errors::Message message("PK_Factory: Missing sublist \"PKs\" in global list.");
-      Exceptions::amanzi_throw(message);
-    }
+    // if (!global_list->isSublist("PKs")) {
+    //   Errors::Message message("PK_Factory: Missing sublist \"PKs\" in global list.");
+    //   Exceptions::amanzi_throw(message);
+    // }
    
     std::string pk_type;
     if (pk_tree.isParameter("PK type")) {
       pk_type = pk_tree.get<std::string>("PK type");
-      // if (!global_list->sublist("PKs").isSublist(pk_tree.name(pk_ite)) {
+    }
+    else if (global_list->isParameter("PK type")){
+      pk_type = global_list->get<std::string>("PK type"); 
     }
     else{
       std::stringstream errmsg;

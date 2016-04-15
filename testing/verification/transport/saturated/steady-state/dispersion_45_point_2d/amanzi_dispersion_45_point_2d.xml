@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.2.1">
+<amanzi_input type="unstructured" version="2.3.0">
   <model_description name="Dispersion Example Problem">
     <comments>Example input file</comments>
     <model_id>Single-Phase Saturated</model_id>
@@ -33,7 +33,7 @@
     <comments>Single phase flow only</comments>
     <flow model="constant" state="on" />
     <transport state="on" />
-    <chemistry engine="none" process_model="none" state="off" />
+    <chemistry engine="none" state="off" />
   </process_kernels>
 
   <phases>
@@ -42,9 +42,9 @@
       <viscosity>1.002E-03</viscosity>
       <density>998.2</density>
       <dissolved_components>
-        <solutes>
-          <solute coefficient_of_diffusion="0.0">Tc-99</solute>
-        </solutes>
+        <primaries>
+          <primary coefficient_of_diffusion="0.0">Tc-99</primary>
+        </primaries>
       </dissolved_components>
     </liquid_phase>
   </phases>

@@ -9,6 +9,45 @@ Overview
 
 The Amanzi simulator will continue to expand the available features and enhance current functionality.  This progress will result in modifications and additions to the XML input specification.  Specific versions of the XML input specification will only work with the corresponding Amanzi release version.  The following is a description of the changes made to the XML input specification and the Amanzi release version(s) that accept the input version.
 
+Version 2.3 (Amanzi Release - devel - #### )
+==================================================
+
+Changeset ####
+
+NERSC build on  April #, 2016.
+
+Edison build path /project/projectdirs/m1012/amanzi/install/edison/mpich-7.3.1-gnu-5.2.0/Release-TPLs-0.92.24/default-1604##/
+
+This commit includes major updates to geochemistry.  Therefore, the schema version has been updated to 2.3.
+
+Process Kernels
+------------------
+
+* The capability to automatically generate the PFloTran engine input file has been added.  If state="on" and engine="pflotran", but input_filename is missing the PFloTran input file will be written based on information in the XML input file.  Note, that the attribute database="filename.dat" must still be included and provided by the user or Akuna.
+
+Phases
+------
+
+* Additionl attributes have been added to the "primary" element.  If the primary is a non-reactive species/solute and Amanzi is auto-generating the PFlotran input file, the attributes forward_rate and backward_rate need to be included.  Dummy values of 0 may be used.  This information need to be included in the PFloTran input file.
+
+Geochemistry
+------------
+
+* If Amanzi is auto-generating the PFloTran input file, any geochemistry constraints must be named and defined here.  See example.xml for the possible options.
+
+Materials
+---------
+
+* Additional subelements have been added to include information need if Amanzi is auto-generating the PFloTran input file.  Below are the new subelements.  See example.xml for examples of the syntax.
+  
+  * The subelement "minerals" has been added for defining minerals in the current material.  For each mineral, include a subelement "mineral" with the attributes "name", "volume_fraction", and "surface_area".
+
+  * The subelement "ion_exchange" has been added for defining ion exchange in the current material. The subelement "cations" has the attribute "cec" for specifying the cation exchange capacity.  A series of subelements listing the cations and associated selectivity coefficient. 
+
+  * The subelement "surface_complexation" has been added for defining surface complexes in the current material.  For each site, the subelement site has the attributes "name" for the site name and "density" for the site density.  A subelement "complexes" is a comma seperated list of complexes for the current site.  Note, the site and complexe names must match the names in the chemistry database file minus leading characters, such as ">".  Leading characters will be added when Amanzi writes the PFloTran input file.
+
+
+
 Version 2.2.1 (Amanzi Release - devel - 8925 )
 ==================================================
 

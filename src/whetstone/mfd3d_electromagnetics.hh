@@ -57,7 +57,8 @@ class MFD3D_Electromagnetics : public MFD3D {
   int MassMatrixInverseOptimized(int c, const Tensor& T, DenseMatrix& W);
 
   int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
-  int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);
+  int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A, DenseMatrix& M, DenseMatrix& C);
+  int StiffnessMatrixExperimental(int c, const Tensor& T, DenseMatrix& A);
 
  private:
   int L2consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
@@ -66,8 +67,8 @@ class MFD3D_Electromagnetics : public MFD3D {
   int L2consistencyInverse2D_(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc);
   int L2consistencyInverse3D_(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc);
 
-  int H1consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
-  int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+  int H1consistency2DExperimental_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+  int H1consistency3DExperimental_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
 };
 
 }  // namespace WhetStone

@@ -1,6 +1,7 @@
 #include <UnitTest++.h>
 
 #include <iostream>
+#include <vector>
 
 #include "../Region.hh"
 #include "../RegionBox.hh"
@@ -180,7 +181,7 @@ TEST(BOX_REGION_3D)
 }  
 
 
-TEST(BOX_VOF_REGION_2D_INTERSECTION)
+TEST(BOXREGION_VOFS_2D_INTERSECTION)
 {
   Amanzi::AmanziGeometry::Point v1(2), v2(2), v3(2), v4(2), vv(2);
   std::vector<Amanzi::AmanziGeometry::Point> xy1, xy2, xy3;
@@ -214,12 +215,12 @@ TEST(BOX_VOF_REGION_2D_INTERSECTION)
 }
 
 
-TEST(BOX_VOF_REGION_2D_AREA)
+TEST(BOXREGION_VOFS_2D_AREA)
 {
   Epetra_MpiComm ecomm(MPI_COMM_WORLD);
 
   // read the parameter list from input file
-  std::string infilename = "test/box_vof_region_2D.xml";
+  std::string infilename = "test/boxregion_vofs.xml";
   Teuchos::ParameterXMLFileReader xmlreader(infilename);
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
@@ -252,3 +253,46 @@ TEST(BOX_VOF_REGION_2D_AREA)
     CHECK_CLOSE(area, area_exact[n++], 1e-6);
   }
 }
+
+
+TEST(BOXREGION_VOFS_3D_INTERSECTION)
+{
+  using namespace Amanzi::AmanziGeometry;
+
+  Point v1(3);
+  std::vector<Point> xy1, xy3;
+  std::vector<std::vector<int> > faces1(4), faces3;
+  std::vector<std::pair<Point, Point> > xy2;
+
+  xy2.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(-1.0, 0.0, 0.0)));
+  xy2.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(0.0, -1.0, 0.0)));
+  xy2.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(0.0, 0.0, -1.0)));
+
+  xy2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(1.0, 0.0, 0.0)));
+  xy2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 1.0, 0.0)));
+  xy2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 0.0, 1.0)));
+
+  xy1.push_back(Point(0.0, 0.0, 0.0));
+  xy1.push_back(Point(1.0, 0.0, 0.0));
+  xy1.push_back(Point(0.0, 1.0, 0.0));
+  xy1.push_back(Point(0.0, 0.0, 1.0));
+
+  faces1[0].push_back(0);
+  faces1[0].push_back(2);
+  faces1[0].push_back(1);
+
+  faces1[1].push_back(0);
+  faces1[1].push_back(1);
+  faces1[1].push_back(3);
+
+  faces1[2].push_back(0);
+  faces1[2].push_back(3);
+  faces1[2].push_back(2);
+
+  faces1[3].push_back(1);
+  faces1[3].push_back(2);
+  faces1[3].push_back(3);
+
+  Amanzi::AmanziGeometry::IntersectConvexPolyhedra(xy1, faces1, xy2, xy3, faces3);
+}
+
