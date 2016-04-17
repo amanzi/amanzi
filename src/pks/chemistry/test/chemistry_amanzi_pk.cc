@@ -104,7 +104,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     component_names.push_back("UO2++");
 
     // other input parameters in the constructor
-    pk_tree_ = glist_->sublist("PK tree");
+    pk_tree_ = glist_->sublist("PK tree").sublist("chemistry");
   }
 
   ChemistryPKTest::~ChemistryPKTest() {
