@@ -1,14 +1,13 @@
-<ParameterList name="Main">
+<ParameterList name="main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
 
-  <ParameterList name="Mesh">
+  <ParameterList name="mesh">
     <Parameter name="framework" type="string" value="MSTK"/>
   </ParameterList>    
    
-  <ParameterList name="Regions">
+  <ParameterList name="regions">
     <ParameterList name="Computational domain">
-      <ParameterList name="Region: Labeled Set">
+      <ParameterList name="region: labeled set">
         <Parameter name="label" type="string" value="1"/>
         <Parameter name="file" type="string" value="rect2D_10x10_ss.exo"/>
         <Parameter name="format" type="string" value="Exodus II"/>
@@ -16,7 +15,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
-      <ParameterList name="Region: Labeled Set">
+      <ParameterList name="region: labeled set">
         <Parameter name="label" type="string" value="3"/>
         <Parameter name="file" type="string" value="rect2D_10x10_ss.exo"/>
         <Parameter name="format" type="string" value="Exodus II"/>
@@ -24,7 +23,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
-      <ParameterList name="Region: Labeled Set">
+      <ParameterList name="region: labeled set">
         <Parameter name="label" type="string" value="2"/>
         <Parameter name="file" type="string" value="rect2D_10x10_ss.exo"/>
         <Parameter name="format" type="string" value="Exodus II"/>
@@ -34,7 +33,7 @@
   </ParameterList>
 
   <ParameterList name="PKs">
-    <ParameterList name="Transport">
+    <ParameterList name="transport">
       <Parameter name="cfl" type="double" value="0.5"/>   
       <Parameter name="spatial discretization order" type="int" value="2"/>   
       <Parameter name="temporal discretization order" type="int" value="2"/>   
@@ -93,7 +92,7 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="State">
+  <ParameterList name="state">
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
         <ParameterList name="VerboseObject">

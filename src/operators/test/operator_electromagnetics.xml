@@ -1,23 +1,22 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
 
   <!--  REGIONS  -->
-  <ParameterList name="Regions">
+  <ParameterList name="regions">
     <ParameterList name="Left side">
-      <ParameterList name="Region: Plane">
+      <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.0}"/>
         <Parameter name="normal" type="Array(double)" value="{-1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
-      <ParameterList name="Region: Plane">
+      <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{1.0,0.0,0.0}"/>
         <Parameter name="normal" type="Array(double)" value="{1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top surface">
-      <ParameterList name="Region: Plane">
+      <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.0,0.0,5.0}"/>
         <Parameter name="normal" type="Array(double)" value="{0.0,0.0,5.0}"/>
       </ParameterList>
@@ -37,8 +36,8 @@
   </ParameterList>
 
   <!-- SOLVERS -->
-  <ParameterList name="Solvers">
-    <ParameterList name="AztecOO CG">
+  <ParameterList name="solvers">
+    <ParameterList name="default">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
@@ -49,10 +48,22 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
+
+    <ParameterList name="silent">
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      <Parameter name="iterative method" type="string" value="pcg"/>
+      <ParameterList name="pcg parameters">
+        <Parameter name="error tolerance" type="double" value="1e-12"/>
+        <Parameter name="maximum number of iterations" type="int" value="200"/>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="none"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
   <!-- PRECONDITIONERS -->
-  <ParameterList name="Preconditioners">
+  <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">

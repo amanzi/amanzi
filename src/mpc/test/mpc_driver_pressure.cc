@@ -42,7 +42,7 @@ using namespace std;
   driver_parameter_list = xmlreader.getParameters();
   
   // For now create one geometric model from all the regions in the spec
-  Teuchos::ParameterList reg_params = driver_parameter_list.sublist("Regions");
+  Teuchos::ParameterList reg_params = driver_parameter_list.sublist("regions");
 
   int spdim = 2;
   Amanzi::AmanziGeometry::GeometricModelPtr 
@@ -56,29 +56,25 @@ using namespace std;
   int rank, ierr, aerr, size;
 
   // get the Mesh sublist
-  Teuchos::ParameterList mesh_parameter_list = driver_parameter_list.sublist("Mesh");
+  Teuchos::ParameterList mesh_parameter_list = driver_parameter_list.sublist("mesh");
 
   Amanzi::VerboseObject *meshverbobj = 
-    new Amanzi::VerboseObject("Mesh", driver_parameter_list);
+    new Amanzi::VerboseObject("mesh", driver_parameter_list);
 
   // Create a mesh factory for this geometric model
   Amanzi::AmanziMesh::MeshFactory factory(comm,meshverbobj) ;
 
   // get the Mesh sublist
   ierr = 0;
-  Teuchos::ParameterList mesh_params = driver_parameter_list.sublist("Mesh");
+  Teuchos::ParameterList mesh_params = driver_parameter_list.sublist("mesh");
   
-  Teuchos::ParameterList unstr_mesh_params = mesh_params.sublist("Unstructured");
+  Teuchos::ParameterList unstr_mesh_params = mesh_params.sublist("unstructured");
 
   // Decide on which mesh framework to use
-  bool expert_params_specified = unstr_mesh_params.isSublist("Expert");
-
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
-
-
-  if (unstr_mesh_params.isSublist("Generate Mesh")) {  // If Read parameters are specified
-    Teuchos::ParameterList gen_params = unstr_mesh_params.sublist("Generate Mesh");
+  if (unstr_mesh_params.isSublist("generate mesh")) {  // If Read parameters are specified
+    Teuchos::ParameterList gen_params = unstr_mesh_params.sublist("generate mesh");
     ierr = 0;
     
     try {
@@ -113,9 +109,9 @@ using namespace std;
   Amanzi::ObservationData obs_data;
 
   if (mpc_new) {
-    if (driver_parameter_list.isSublist("State")) {
+    if (driver_parameter_list.isSublist("state")) {
       // Create the state.
-      Teuchos::ParameterList state_plist = driver_parameter_list.sublist("State");
+      Teuchos::ParameterList state_plist = driver_parameter_list.sublist("state");
       Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
       S->RegisterMesh("domain",mesh);
 

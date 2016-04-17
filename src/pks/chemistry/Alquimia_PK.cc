@@ -66,10 +66,10 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
 
   // create pointer to the chemistry parameter list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  cp_list_ = Teuchos::sublist(pk_list, "Chemistry", true);
+  cp_list_ = Teuchos::sublist(pk_list, pk_name, true);
 
   // collect high-level information about the problem
-  Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "State", true);
+  Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
 
   InitializeMinerals(cp_list_);
   InitializeSorptionSites(cp_list_, state_list);
@@ -365,12 +365,12 @@ void Alquimia_PK::XMLParameters()
 
   // Now associate regions with chemical conditions based on initial 
   // condition specifications in the file.
-  if (!glist_->isSublist("State")) {
+  if (!glist_->isSublist("state")) {
     msg << "Alquimia_PK::XMLParameters(): \n";
     msg << "  No 'State' sublist was found!\n";
     Exceptions::amanzi_throw(msg);
   }
-  Teuchos::ParameterList& state_list = glist_->sublist("State");
+  Teuchos::ParameterList& state_list = glist_->sublist("state");
   Teuchos::ParameterList& initial_conditions = state_list.sublist("initial conditions");
   if (!initial_conditions.isSublist("geochemical conditions")) {
     msg << "Alquimia_PK::XMLParameters(): \n";

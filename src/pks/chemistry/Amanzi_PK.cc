@@ -69,17 +69,17 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
 
   // create pointer to the chemistry parameter list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  cp_list_ = Teuchos::sublist(pk_list, "Chemistry", true);
+  cp_list_ = Teuchos::sublist(pk_list, pk_name, true);
 
   // collect high-level information about the problem
-  Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "State", true);
+  Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
 
   InitializeMinerals(cp_list_);
   InitializeSorptionSites(cp_list_, state_list);
 
   // grab the component names
   comp_names_.clear();
-  Teuchos::RCP<Teuchos::ParameterList> cd_list = Teuchos::sublist(glist, "Cycle Driver", true);
+  Teuchos::RCP<Teuchos::ParameterList> cd_list = Teuchos::sublist(glist, "cycle driver", true);
   if (cd_list->isParameter("component names")) {
     comp_names_ = cd_list->get<Teuchos::Array<std::string> >("component names").toVector();
   } else{

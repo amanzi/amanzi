@@ -38,10 +38,10 @@ EnergyTwoPhase_PK::EnergyTwoPhase_PK(
     soln_(soln)
 {
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  ep_list_ = Teuchos::sublist(Teuchos::sublist(pk_list, "Energy", true), "Two-phase problem", true);
+  ep_list_ = Teuchos::sublist(Teuchos::sublist(pk_list, "energy", true), "Two-phase problem", true);
 
   // We also need miscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners", true);
+  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   ti_list_ = Teuchos::sublist(ep_list_, "time integrator");
 }
 

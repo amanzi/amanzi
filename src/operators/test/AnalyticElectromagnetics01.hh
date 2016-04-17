@@ -8,23 +8,28 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Identity tensor and non-zero source term.
+  Linear vector field and constant tensor.
 */
 
-#ifndef AMANZI_OPERATOR_ANALYTIC_MHD_02_HH_
-#define AMANZI_OPERATOR_ANALYTIC_MHD_02_HH_
+#ifndef AMANZI_OPERATOR_ANALYTIC_ELECTROMAGNETICS_01_HH_
+#define AMANZI_OPERATOR_ANALYTIC_ELECTROMAGNETICS_01_HH_
 
-#include "AnalyticMHD_Base.hh"
+#include "AnalyticElectromagneticsBase.hh"
 
-class AnalyticMHD_02 : public AnalyticMHD_Base {
+class AnalyticElectromagnetics01 : public AnalyticElectromagneticsBase {
  public:
-  AnalyticMHD_02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
-      AnalyticMHD_Base(mesh) {};
-  ~AnalyticMHD_02() {};
+  AnalyticElectromagnetics01(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
+      AnalyticElectromagneticsBase(mesh) {};
+  ~AnalyticElectromagnetics01() {};
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
-    Amanzi::WhetStone::Tensor K(3, 1);
+    Amanzi::WhetStone::Tensor K(3, 2);
     K(0, 0) = 1.0;
+    K(1, 1) = 2.0;
+    K(2, 2) = 3.0;
+    K(0, 1) = K(1, 0) = -0.5;
+    K(0, 2) = K(2, 0) = -0.1;
+    K(1, 2) = K(2, 1) = -0.2;
     return K;
   }
 
@@ -32,10 +37,7 @@ class AnalyticMHD_02 : public AnalyticMHD_Base {
     double x = p[0];
     double y = p[1];
     double z = p[2];
-    double Ex = y * y * sin(z);
-    double Ey = z * z * sin(x);
-    double Ez = x * x * sin(y);
-    return Amanzi::AmanziGeometry::Point(Ex, Ey, Ez);
+    return Amanzi::AmanziGeometry::Point(z - y, x - z, y - x);
   }
 
   Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
@@ -43,13 +45,7 @@ class AnalyticMHD_02 : public AnalyticMHD_Base {
   }
 
   Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    double x = p[0];
-    double y = p[1];
-    double z = p[2];
-    double fx = -2 * sin(z) + y * y * sin(z);
-    double fy = -2 * sin(x) + z * z * sin(x);
-    double fz = -2 * sin(y) + x * x * sin(y);
-    return Amanzi::AmanziGeometry::Point(fx, fy, fz);
+    return Amanzi::AmanziGeometry::Point(0.0, 0.0, 0.0);
   }
 };
 

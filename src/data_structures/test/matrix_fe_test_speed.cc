@@ -1,5 +1,5 @@
 /*
-  This is the operator component of the Amanzi code. 
+  Data Structures
 
   Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -57,7 +57,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs) {
   Amanzi::VerboseObject::hide_line_prefix = true;
 
   // create a mesh 
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
   FrameworkPreference pref;
@@ -154,7 +154,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs_Nonlocal) {
   Amanzi::VerboseObject::hide_line_prefix = true;
 
   // create a mesh 
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
   FrameworkPreference pref;
@@ -257,7 +257,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
   Amanzi::VerboseObject::hide_line_prefix = true;
 
   // create a mesh 
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
   FrameworkPreference pref;
@@ -354,7 +354,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   Amanzi::VerboseObject::hide_line_prefix = true;
 
 //   // create a mesh 
-//   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+//   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
 //   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
 //   FrameworkPreference pref;
@@ -434,7 +434,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   Amanzi::VerboseObject::hide_line_prefix = true;
 
 //   // create a mesh 
-//   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+//   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
 //   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
 //   FrameworkPreference pref;
@@ -518,7 +518,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   Amanzi::VerboseObject::hide_line_prefix = true;
 
 //   // create a mesh 
-//   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+//   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
 //   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
 //   FrameworkPreference pref;
@@ -596,7 +596,7 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2) {
   Amanzi::VerboseObject::hide_line_prefix = true;
 
   // create a mesh 
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
   FrameworkPreference pref;
@@ -672,7 +672,7 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2) {
   Amanzi::VerboseObject::hide_line_prefix = true;
 
   // create a mesh 
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
   FrameworkPreference pref;
@@ -750,7 +750,7 @@ TEST(FE_MATRIX_FACE_FACE_MatrixFE2) {
   Amanzi::VerboseObject::hide_line_prefix = true;
 
   // create a mesh 
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
 
   FrameworkPreference pref;

@@ -198,7 +198,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     }
 
     Teuchos::ParameterList& tmp_list = out_list.sublist("time periods").sublist("TP 0");
-    tmp_list.sublist("PK Tree").sublist("Flow Steady").set<std::string>("PK type", pk_model_["flow"]);
+    tmp_list.sublist("PK tree").sublist("Flow Steady").set<std::string>("PK type", pk_model_["flow"]);
     tmp_list.set<double>("start period time", t0_steady);
     tmp_list.set<double>("end period time", t1_steady);
     tmp_list.set<double>("initial time step", dt0_steady);
@@ -214,48 +214,48 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   while (it != tp_mode.end()) {
     switch (transient_model) {
     case 1:
-      pk_tree_list.sublist("Chemistry").set<std::string>("PK type", "chemistry");
+      pk_tree_list.sublist("chemistry").set<std::string>("PK type", "chemistry");
       break;
     case 2:
-      pk_tree_list.sublist("Transport").set<std::string>("PK type", "transport");
+      pk_tree_list.sublist("transport").set<std::string>("PK type", "transport");
       break;
     case 3:
       {
-        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("Reactive Transport");
+        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("reactive transport");
         tmp_list.set<std::string>("PK type", "reactive transport");
-        tmp_list.sublist("Transport").set<std::string>("PK type", "transport");
-        tmp_list.sublist("Chemistry").set<std::string>("PK type", submodel);  
+        tmp_list.sublist("transport").set<std::string>("PK type", "transport");
+        tmp_list.sublist("chemistry").set<std::string>("PK type", submodel);  
         break;
       }
     case 4:
-      pk_tree_list.sublist("Flow").set<std::string>("PK type", pk_model_["flow"]);    
+      pk_tree_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]);    
       break;
     case 5:
       {
         submodel = (pk_model_["chemistry"] == "amanzi") ? "chemistry amanzi" : "chemistry alquimia";
-        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("Flow and Chemistry");
+        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("flow and chemistry");
         tmp_list.set<std::string>("PK type", "flow reactive transport");
-        tmp_list.sublist("Flow").set<std::string>("PK type", pk_model_["flow"]); 
-        tmp_list.sublist("Chemistry").set<std::string>("PK type", submodel);
+        tmp_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]); 
+        tmp_list.sublist("chemistry").set<std::string>("PK type", submodel);
         break;
       }
     case 6:
       {
-        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("Flow and Transport");
+        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("flow and transport");
         tmp_list.set<std::string>("PK type", "flow reactive transport");
-        tmp_list.sublist("Flow").set<std::string>("PK type", pk_model_["flow"]);
-        tmp_list.sublist("Transport").set<std::string>("PK type", "transport");
+        tmp_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]);
+        tmp_list.sublist("transport").set<std::string>("PK type", "transport");
         break;
       }
     case 7:
       {
         submodel = (pk_model_["chemistry"] == "amanzi") ? "chemistry amanzi" : "chemistry alquimia";
-        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("Flow and Reactive Transport");
+        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("flow and reactive transport");
         tmp_list.set<std::string>("PK type", "flow reactive transport");
-        tmp_list.sublist("Reactive Transport").set<std::string>("PK type", "reactive transport");
-        tmp_list.sublist("Reactive Transport").sublist("Transport").set<std::string>("PK type", "transport");
-        tmp_list.sublist("Reactive Transport").sublist("Chemistry").set<std::string>("PK type", submodel);
-        tmp_list.sublist("Flow").set<std::string>("PK type", pk_model_["flow"]);
+        tmp_list.sublist("reactive transport").set<std::string>("PK type", "reactive transport");
+        tmp_list.sublist("reactive transport").sublist("transport").set<std::string>("PK type", "transport");
+        tmp_list.sublist("reactive transport").sublist("chemistry").set<std::string>("PK type", submodel);
+        tmp_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]);
         break;
       }
     default:
@@ -266,7 +266,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     ss << "TP " << tp_id;
 
     Teuchos::ParameterList& tmp_list = out_list.sublist("time periods").sublist(ss.str());
-    tmp_list.sublist("PK Tree") = pk_tree_list;
+    tmp_list.sublist("PK tree") = pk_tree_list;
     tmp_list.set<double>("start period time", it->first);
     tmp_list.set<double>("end period time", tp_t1[it->first]);
     tmp_list.set<int>("maximum cycle number", tp_max_cycles[it->first]);
@@ -449,56 +449,56 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
 
     switch (transient_model) {
     case 1:
-      pk_tree_list.sublist("Chemistry").set<std::string>("PK type", "chemistry amanzi");
+      pk_tree_list.sublist("chemistry").set<std::string>("PK type", "chemistry amanzi");
       break;
     case 2:
-      pk_tree_list.sublist("Transport").set<std::string>("PK type", "transport");
+      pk_tree_list.sublist("transport").set<std::string>("PK type", "transport");
       break;
     case 3:
       {
-        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("Reactive Transport");
+        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("reactive transport");
         tmp_list.set<std::string>("PK type", "reactive transport");
-        tmp_list.sublist("Transport").set<std::string>("PK type", "transport");
-        tmp_list.sublist("Chemistry").set<std::string>("PK type", "chemistry");  
+        tmp_list.sublist("transport").set<std::string>("PK type", "transport");
+        tmp_list.sublist("chemistry").set<std::string>("PK type", "chemistry");  
         break;
       }
     case 4:
-      pk_tree_list.sublist("Flow").set<std::string>("PK type", pk_model_["flow"]);    
+      pk_tree_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]);    
       break;
     case 5:
       {
-        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("Flow and Chemistry");
+        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("flow and chemistry");
         tmp_list.set<std::string>("PK type", "flow reactive transport");
-        tmp_list.sublist("Chemistry").set<std::string>("PK type", "chemistry amanzi");
-        tmp_list.sublist("Flow").set<std::string>("PK type", pk_model_["flow"]); 
+        tmp_list.sublist("chemistry").set<std::string>("PK type", "chemistry amanzi");
+        tmp_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]); 
         break;
       }
     case 6:
       {
-        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("Flow and Transport");
+        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("flow and transport");
         tmp_list.set<std::string>("PK type", "flow reactive transport");
-        tmp_list.sublist("Transport").set<std::string>("PK type", "transport");
-        tmp_list.sublist("Flow").set<std::string>("PK type", pk_model_["flow"]);
+        tmp_list.sublist("transport").set<std::string>("PK type", "transport");
+        tmp_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]);
         break;
       }
     case 7:
       {
-        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("Flow and Reactive Transport");
+        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("flow and reactive transport");
         tmp_list.set<std::string>("PK type", "flow reactive transport");
-        tmp_list.sublist("Reactive Transport").set<std::string>("PK type", "reactive transport");
-        tmp_list.sublist("Reactive Transport").sublist("Transport").set<std::string>("PK type", "transport");
-        tmp_list.sublist("Reactive Transport").sublist("Chemistry").set<std::string>("PK type", "chemistry");
-        tmp_list.sublist("Flow").set<std::string>("PK type", pk_model_["flow"]);
+        tmp_list.sublist("reactive transport").set<std::string>("PK type", "reactive transport");
+        tmp_list.sublist("reactive transport").sublist("transport").set<std::string>("PK type", "transport");
+        tmp_list.sublist("reactive transport").sublist("chemistry").set<std::string>("PK type", "chemistry");
+        tmp_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]);
         break;
       }
     case 12: 
       {
         pk_master_["thermal richards"] = true;
 
-        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("Flow and Energy");
+        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("flow and energy");
         tmp_list.set<std::string>("PK type", "thermal richards");
-        tmp_list.sublist("Flow").set<std::string>("PK type", pk_model_["flow"]);
-        tmp_list.sublist("Energy").set<std::string>("PK type", pk_model_["energy"]);
+        tmp_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]);
+        tmp_list.sublist("energy").set<std::string>("PK type", pk_model_["energy"]);
         break;
       }
     default:
@@ -506,7 +506,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
     }
 
     Teuchos::ParameterList& tmp_list = out_list.sublist("time periods").sublist(ss.str());
-    tmp_list.sublist("PK Tree") = pk_tree_list;
+    tmp_list.sublist("PK tree") = pk_tree_list;
     tmp_list.set<double>("start period time", tp_t0[mode]);
     tmp_list.set<double>("end period time", tp_t1[mode]);
     tmp_list.set<int>("maximum cycle number", tp_max_cycles[mode]);
@@ -678,7 +678,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
 
   for (Teuchos::ParameterList::ConstIterator it = tp_list.begin(); it !=tp_list.end(); ++it) {
     if ((it->second).isList()) {
-      Teuchos::ParameterList& pk_tree = tp_list.sublist(it->first).sublist("PK Tree");
+      Teuchos::ParameterList& pk_tree = tp_list.sublist(it->first).sublist("PK tree");
       RegisterPKsList_(pk_tree, out_list);
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -695,49 +695,49 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
       if (it->first == "Flow Steady") {
         out_list.sublist(it->first) = TranslateFlow_("steady");
       }
-      else if (it->first == "Flow") {
+      else if (it->first == "flow") {
         out_list.sublist(it->first) = TranslateFlow_("transient");
       }
-      else if (it->first == "Energy") {
+      else if (it->first == "energy") {
         out_list.sublist(it->first) = TranslateEnergy_();
       }
-      else if (it->first == "Transport") {
+      else if (it->first == "transport") {
         out_list.sublist(it->first) = TranslateTransport_();
       }
-      else if (it->first == "Chemistry") {
+      else if (it->first == "chemistry") {
         out_list.sublist(it->first) = TranslateChemistry_();
       }
-      else if (it->first == "Reactive Transport") {
+      else if (it->first == "reactive transport") {
         Teuchos::Array<std::string> pk_names;
-        pk_names.push_back("Chemistry");
-        pk_names.push_back("Transport");
+        pk_names.push_back("chemistry");
+        pk_names.push_back("transport");
         out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
       }
-      else if (it->first == "Flow and Reactive Transport") {
+      else if (it->first == "flow and reactive transport") {
         Teuchos::Array<std::string> pk_names;
-        pk_names.push_back("Flow");
-        pk_names.push_back("Reactive Transport");
-        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-        out_list.sublist(it->first).set<int>("master PK index", 0);
-      }
-      else if (it->first == "Flow and Transport") {
-        Teuchos::Array<std::string> pk_names;
-        pk_names.push_back("Flow");
-        pk_names.push_back("Transport");
+        pk_names.push_back("flow");
+        pk_names.push_back("reactive transport");
         out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
         out_list.sublist(it->first).set<int>("master PK index", 0);
       }
-      else if (it->first == "Flow and Chemistry") {
+      else if (it->first == "flow and transport") {
         Teuchos::Array<std::string> pk_names;
-        pk_names.push_back("Flow");
-        pk_names.push_back("Chemistry");
+        pk_names.push_back("flow");
+        pk_names.push_back("transport");
         out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
         out_list.sublist(it->first).set<int>("master PK index", 0);
       }
-      else if (it->first == "Flow and Energy") {
+      else if (it->first == "flow and chemistry") {
         Teuchos::Array<std::string> pk_names;
-        pk_names.push_back("Flow");
-        pk_names.push_back("Energy");
+        pk_names.push_back("flow");
+        pk_names.push_back("chemistry");
+        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(it->first).set<int>("master PK index", 0);
+      }
+      else if (it->first == "flow and energy") {
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back("flow");
+        pk_names.push_back("energy");
         out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
         out_list.sublist(it->first).set<int>("master PK index", 0);
 

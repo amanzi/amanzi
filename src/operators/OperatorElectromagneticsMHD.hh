@@ -47,10 +47,10 @@ class OperatorElectromagneticsMHD : public OperatorElectromagnetics {
   virtual void UpdateMatrices();
 
   // -- before solving the problem
-  virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B);
+  virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt);
 
   // -- after solving the problem
-  virtual void ModifyFields(CompositeVector& E, CompositeVector& B);
+  virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt);
 
  private:
   void InitElectromagneticsMHD_();

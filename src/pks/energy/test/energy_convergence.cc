@@ -103,7 +103,7 @@ TEST(ENERGY_CONVERGENCE) {
   int nx(20);
   double dt(0.02);
   for (int n = 0; n < nmeshes; n++, nx *= 2) {
-    Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
+    Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
         Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
     
@@ -127,7 +127,7 @@ TEST(ENERGY_CONVERGENCE) {
     }
 
     // create a simple state and populate it
-    Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("State");
+    Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
     Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
     S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
@@ -215,7 +215,7 @@ TEST(ENERGY_PRECONDITIONER) {
   // preconditioner with (loop=0) and without (loop=1) enthalpy term.
   int num_itrs[2];
   for (int loop = 0; loop < 2; loop++) {
-    Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
+    Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
         Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
     
@@ -231,7 +231,7 @@ TEST(ENERGY_PRECONDITIONER) {
     // mesh = meshfactory("test/random_mesh1.exo", gm);
 
     // create a simple state and populate it
-    Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("State");
+    Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
     Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
     S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
@@ -280,7 +280,7 @@ TEST(ENERGY_PRECONDITIONER) {
     EPK->CommitStep(0.0, 1.0, S);
     num_itrs[loop] = EPK->bdf1_dae()->number_nonlinear_steps();
     printf("number of nonlinear steps: %d\n", num_itrs[loop]);
-    plist->sublist("PKs").sublist("Energy").sublist("One-phase problem")
+    plist->sublist("PKs").sublist("energy").sublist("One-phase problem")
           .sublist("operators").set<bool>("include enthalpy in preconditioner", false);
   }
   CHECK(num_itrs[1] > num_itrs[0]);

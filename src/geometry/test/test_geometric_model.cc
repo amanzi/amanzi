@@ -59,7 +59,7 @@ TEST(GEOMETRIC_MODEL)
 
     std::string shape = reg_params.name(j);
 
-    if (shape == "Region: Plane") {
+    if (shape == "region: plane") {
       // Make sure that the region type is a Plane
       CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::PLANE);
 
@@ -89,7 +89,7 @@ TEST(GEOMETRIC_MODEL)
       if (p.dim() == 3)
 	CHECK_EQUAL(n.z(),in_nrm[2]/len);
       
-    } else if (shape == "Region: Box") {
+    } else if (shape == "region: box") {
       // Make sure that the region type is a BOX
       CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::BOX);
 
@@ -127,7 +127,7 @@ TEST(GEOMETRIC_MODEL)
 	CHECK_EQUAL(pmax.z(),in_max_xyz[2]);
       }
 
-    } else if (shape == "Region: Labeled Set") {
+    } else if (shape == "region: labeled set") {
       Teuchos::ParameterList labset_params = reg_params.sublist(reg_params.name(j));
       std::string in_entity_str = labset_params.get< std::string >("entity");
 

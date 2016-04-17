@@ -64,17 +64,17 @@ struct reference_mesh
     Teuchos::Array<double> top(Teuchos::tuple(0.0, 0.0, 1.0));
     // Create the geometric model
     Teuchos::ParameterList regions;
-    regions.sublist("LEFT").sublist("Region: Plane").
+    regions.sublist("LEFT").sublist("region: plane").
         set("point",corner_min).set("normal",left);
-    regions.sublist("FRONT").sublist("Region: Plane").
+    regions.sublist("FRONT").sublist("region: plane").
         set("point",corner_min).set("normal",front);
-    regions.sublist("BOTTOM").sublist("Region: Plane").
+    regions.sublist("BOTTOM").sublist("region: plane").
         set("point",corner_min).set("normal",bottom);
-    regions.sublist("RIGHT").sublist("Region: Plane").
+    regions.sublist("RIGHT").sublist("region: plane").
         set("point",corner_max).set("normal",right);
-    regions.sublist("BACK").sublist("Region: Plane").
+    regions.sublist("BACK").sublist("region: plane").
         set("point",corner_max).set("normal",back);
-    regions.sublist("TOP").sublist("Region: Plane").
+    regions.sublist("TOP").sublist("region: plane").
         set("point",corner_max).set("normal",top);
     gm = new GeometricModel(3,regions,comm);
     // Create the mesh

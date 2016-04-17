@@ -46,7 +46,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   Teuchos::RCP<ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create SIMPLE mesh framework
-  ParameterList regions_list = plist->get<Teuchos::ParameterList>("Regions");
+  ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, &comm));
 
@@ -63,11 +63,11 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   Amanzi::VerboseObject::hide_line_prefix = true;
   Amanzi::VerboseObject::global_default_level = Teuchos::VERB_EXTREME;
 
-  Teuchos::ParameterList state_list = plist->sublist("State");
+  Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "Flow", S));
+  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S));
   DPK->Setup(S.ptr());
   std::cout << "Owner of " << S->GetField("permeability")->fieldname() 
             << " is " << S->GetField("permeability")->owner() << "\n";
@@ -181,7 +181,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   Teuchos::RCP<ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* create an SIMPLE mesh framework */
-  ParameterList regions_list = plist->get<Teuchos::ParameterList>("Regions");
+  ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, &comm));
 
@@ -197,11 +197,11 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   /* create and populate flow state */
   Amanzi::VerboseObject::hide_line_prefix = true;
 
-  Teuchos::ParameterList state_list = plist->sublist("State");
+  Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "Flow", S));
+  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S));
   DPK->Setup(S.ptr());
   S->Setup();
   S->InitializeFields();

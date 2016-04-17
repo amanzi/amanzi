@@ -446,10 +446,10 @@ SUITE (MeshFramework)
 
     Teuchos::ParameterList parameterlist;
 
-    Teuchos::ParameterList& reg_spec = parameterlist.sublist("Regions"); 
+    Teuchos::ParameterList& reg_spec = parameterlist.sublist("regions"); 
   
     Teuchos::ParameterList& top_surface = reg_spec.sublist("Top Surface");
-    Teuchos::ParameterList& top_surface_def = top_surface.sublist("Region: Plane");
+    Teuchos::ParameterList& top_surface_def = top_surface.sublist("region: plane");
     Teuchos::Array<double> loc1 = Teuchos::tuple(0.0,0.0,10.0);
     Teuchos::Array<double> dir1 = Teuchos::tuple(0.0,0.0,-1.0);
     top_surface_def.set< Teuchos::Array<double> >("point",loc1);

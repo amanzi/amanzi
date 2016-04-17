@@ -40,7 +40,7 @@ using namespace std;
   plist = xmlreader.getParameters();
   
   // For now create one geometric model from all the regions in the spec
-  Teuchos::ParameterList reg_params = plist.sublist("Regions");
+  Teuchos::ParameterList reg_params = plist.sublist("regions");
 
   int spdim = 2;
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model_ptr =
@@ -54,27 +54,27 @@ using namespace std;
   int rank, ierr, aerr, size;
 
   // get the Mesh sublist
-  Teuchos::ParameterList mesh_parameter_list = plist.sublist("Mesh");
+  Teuchos::ParameterList mesh_parameter_list = plist.sublist("mesh");
 
   Teuchos::RCP<Amanzi::VerboseObject> meshverbobj = 
-      Teuchos::rcp(new Amanzi::VerboseObject("Mesh", plist));
+      Teuchos::rcp(new Amanzi::VerboseObject("mesh", plist));
 
   // Create a mesh factory for this geometric model
   Amanzi::AmanziMesh::MeshFactory factory(comm,meshverbobj) ;
 
   // get the Mesh sublist
   ierr = 0;
-  Teuchos::ParameterList mesh_params = plist.sublist("Mesh");
+  Teuchos::ParameterList mesh_params = plist.sublist("mesh");
   
-  Teuchos::ParameterList unstr_mesh_params = mesh_params.sublist("Unstructured");
+  Teuchos::ParameterList unstr_mesh_params = mesh_params.sublist("unstructured");
 
   // Decide on which mesh framework to use
-  bool expert_params_specified = unstr_mesh_params.isSublist("Expert");
+  bool expert_params_specified = unstr_mesh_params.isSublist("expert");
 
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
-  if (unstr_mesh_params.isSublist("Generate Mesh")) {  // If Read parameters are specified
-    Teuchos::ParameterList gen_params = unstr_mesh_params.sublist("Generate Mesh");
+  if (unstr_mesh_params.isSublist("generate mesh")) {  // If Read parameters are specified
+    Teuchos::ParameterList gen_params = unstr_mesh_params.sublist("generate mesh");
     ierr = 0;
     
     try {

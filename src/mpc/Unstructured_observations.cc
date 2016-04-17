@@ -123,10 +123,10 @@ int Unstructured_observations::MakeObservations(State& S)
       num_obs++; 
       
       // for now we can only observe Integrals and Values
-      if ((i->second).functional != "Observation Data: Integral"  &&
-          (i->second).functional != "Observation Data: Point" )  {
-        msg << "Unstructured_observations: can only handle Functional == Observation Data:"
-            << " Integral, or Functional == Observation Data: Point";
+      if ((i->second).functional != "observation data: integral"  &&
+          (i->second).functional != "observation data: point" )  {
+        msg << "Unstructured_observations: can only handle Functional == observation data:"
+            << " integral, or functional == observation data: point";
         Exceptions::amanzi_throw(msg);
       }
       
@@ -430,9 +430,9 @@ int Unstructured_observations::MakeObservations(State& S)
       double vresult;
       S.GetMesh()->get_comm()->SumAll(&volume, &vresult, 1);
  
-      if ((i->second).functional == "Observation Data: Integral") {  
+      if ((i->second).functional == "observation data: integral") {  
         data_triplet.value = result;  
-      } else if ((i->second).functional == "Observation Data: Point") {
+      } else if ((i->second).functional == "observation data: point") {
         data_triplet.value = result / vresult;
       }
       

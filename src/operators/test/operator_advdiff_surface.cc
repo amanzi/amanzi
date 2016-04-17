@@ -59,7 +59,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an MSTK mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   FrameworkPreference pref;
@@ -153,7 +153,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   global_op->AssembleMatrix();
 
   // Create a preconditioner.
-  ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // Test SPD properties of the matrix and preconditioner.
@@ -162,7 +162,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   ver.CheckPreconditionerSPD(false, true);
 
   // Solve the problem.
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
   AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create("AztecOO CG", lop_list, global_op);

@@ -1,14 +1,14 @@
-<ParameterList name="Main">
-  <ParameterList name="Regions">
+<ParameterList name="main">
+  <ParameterList name="regions">
     <ParameterList name="domain">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
 	<Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
   
-  <ParameterList name="State">
+  <ParameterList name="state">
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
 	<Parameter name="field evaluator type" type="string" value="independent variable"/>

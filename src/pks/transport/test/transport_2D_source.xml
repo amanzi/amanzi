@@ -1,14 +1,13 @@
-<ParameterList name="Main">
+<ParameterList name="main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
 
-  <ParameterList name="Mesh">
+  <ParameterList name="mesh">
     <Parameter name="framework" type="string" value="MSTK"/>
   </ParameterList>    
    
-  <ParameterList name="Regions">
+  <ParameterList name="regions">
     <ParameterList name="Computational domain">
-      <ParameterList name="Region: Labeled Set">
+      <ParameterList name="region: labeled set">
         <Parameter name="label" type="string" value="1"/>
         <Parameter name="file" type="string" value="rect2D_50x50_ss.exo"/>
         <Parameter name="format" type="string" value="Exodus II"/>
@@ -16,7 +15,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
-      <ParameterList name="Region: Labeled Set">
+      <ParameterList name="region: labeled set">
         <Parameter name="label" type="string" value="3"/>
         <Parameter name="file" type="string" value="rect2D_50x50_ss.exo"/>
         <Parameter name="format" type="string" value="Exodus II"/>
@@ -24,7 +23,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
-      <ParameterList name="Region: Labeled Set">
+      <ParameterList name="region: labeled set">
         <Parameter name="label" type="string" value="2"/>
         <Parameter name="file" type="string" value="rect2D_50x50_ss.exo"/>
         <Parameter name="format" type="string" value="Exodus II"/>
@@ -32,7 +31,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Well">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{-0.1,-0.1}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{0.1,0.1}"/>
       </ParameterList>
@@ -40,7 +39,7 @@
   </ParameterList>
 
   <ParameterList name="PKs">
-    <ParameterList name="Transport">
+    <ParameterList name="transport">
       <ParameterList name="physical models and assumptions">
         <Parameter name="permeability field is required" type="bool" value="true"/>
       </ParameterList>
@@ -109,7 +108,7 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="State">
+  <ParameterList name="state">
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
         <ParameterList name="VerboseObject">

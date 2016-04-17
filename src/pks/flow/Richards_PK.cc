@@ -63,18 +63,17 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
 
   std::string pk_name = pk_tree.name();
 
-  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
-  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
+  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name, "->"); 
+  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name, res.end() - pk_name.begin());
 
-  
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_name, true);
   rp_list_ = Teuchos::sublist(flow_list, "Richards problem", true);
   
   // We also need miscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners", true);
-  linear_operator_list_ = Teuchos::sublist(glist, "Solvers", true);
+  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
+  linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(rp_list_, "time integrator");
 
   vo_ = Teuchos::null;
@@ -100,8 +99,8 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   rp_list_ = Teuchos::sublist(flow_list, "Richards problem", true);
  
   // We also need miscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners", true);
-  linear_operator_list_ = Teuchos::sublist(glist, "Solvers", true);
+  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
+  linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(rp_list_, "time integrator");
 
   ms_itrs_ = 0;
@@ -283,7 +282,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField("molar_density_liquid", "molar_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    double rho = glist_->sublist("State").sublist("initial conditions")
+    double rho = glist_->sublist("state").sublist("initial conditions")
                         .sublist("fluid_density").get<double>("value", 1000.0);
     double n_l = rho / CommonDefs::MOLAR_MASS_H2O;
 

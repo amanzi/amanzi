@@ -16,8 +16,8 @@ void InputAnalysis::Init(Teuchos::ParameterList& plist)
 {
   plist_ = &plist;
 
-  if (plist.isSublist("Analysis")) {
-    Teuchos::ParameterList vo_list = plist.sublist("Analysis");
+  if (plist.isSublist("analysis")) {
+    Teuchos::ParameterList vo_list = plist.sublist("analysis");
     vo_ = new VerboseObject("InputAnalysis", vo_list); 
   } 
 }
@@ -28,8 +28,8 @@ void InputAnalysis::Init(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void InputAnalysis::RegionAnalysis() 
 {
-  if (!plist_->isSublist("Analysis")) return;
-  Teuchos::ParameterList alist = plist_->sublist("Analysis");
+  if (!plist_->isSublist("analysis")) return;
+  Teuchos::ParameterList alist = plist_->sublist("analysis");
 
   Errors::Message msg;
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -165,13 +165,13 @@ void InputAnalysis::RegionAnalysis()
 ****************************************************************** */
 void InputAnalysis::OutputBCs() 
 {
-  if (!plist_->isSublist("Analysis")) return;
+  if (!plist_->isSublist("analysis")) return;
   if (vo_->getVerbLevel() < Teuchos::VERB_EXTREME) return;
 
   int bc_counter = 0;
 
-  if (plist_->isSublist("Flow")) {
-    Teuchos::ParameterList& flow_list = plist_->sublist("Flow");
+  if (plist_->isSublist("flow")) {
+    Teuchos::ParameterList& flow_list = plist_->sublist("flow");
 
     Teuchos::ParameterList richards_list;
     if (flow_list.isSublist("Richards problem")) {

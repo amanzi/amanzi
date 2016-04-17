@@ -184,7 +184,7 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
   }
 
   if (generate || read) {
-    Teuchos::ParameterList& tmp_list = out_list.sublist("Unstructured").sublist("Expert");
+    Teuchos::ParameterList& tmp_list = out_list.sublist("unstructured").sublist("expert");
     if (strcmp(framework.c_str(), "mstk") == 0) {
       tmp_list.set<std::string>("framework", "MSTK");
     } else if (strcmp(framework.c_str() ,"moab") == 0) {
@@ -204,9 +204,9 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
   }
 
   if (generate) {
-    out_list.sublist("Unstructured").sublist("Generate Mesh") = mesh_list;
+    out_list.sublist("unstructured").sublist("generate mesh") = mesh_list;
   } else if (read) {
-    out_list.sublist("Unstructured").sublist("Read Mesh File") = mesh_list;
+    out_list.sublist("unstructured").sublist("read mesh file") = mesh_list;
   } else {
     msg << "Amanzi::InputConverter: an error occurred during parsing mesh.\n";
     Exceptions::amanzi_throw(msg);
@@ -288,7 +288,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         
         std::vector<double> low = GetAttributeVector_(reg_elem, "low_coordinates");
         std::vector<double> high = GetAttributeVector_(reg_elem, "high_coordinates");
-        out_list.sublist(reg_name).sublist("Region: Box")
+        out_list.sublist(reg_name).sublist("region: box")
             .set<Teuchos::Array<double> >("low coordinate", low)
             .set<Teuchos::Array<double> >("high coordinate", high);
       }
@@ -302,7 +302,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         text = GetAttributeValueS_(reg_elem, "normal");
         std::vector<double> dir = MakeCoordinates_(text);
 
-        out_list.sublist(reg_name).sublist("Region: Plane")
+        out_list.sublist(reg_name).sublist("region: plane")
            .set<Teuchos::Array<double> >("point", loc)
            .set<Teuchos::Array<double> >("normal", dir);
       }
@@ -318,7 +318,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         if (strcmp(text.c_str(), "color") == 0) {
           int value = GetAttributeValueD_(reg_elem, "label");
           rfPL.set<int>("value", value);
-          out_list.sublist(reg_name).sublist("Region: Color Function") = rfPL;
+          out_list.sublist(reg_name).sublist("region: color function") = rfPL;
         }
         else if (strcmp(text.c_str(), "labeled set") == 0) {
           std::string value = GetAttributeValueS_(reg_elem, "label");
@@ -332,14 +332,14 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
           value = GetAttributeValueS_(reg_elem, "entity");
           rfPL.set<std::string>("entity", value);
           
-          out_list.sublist(reg_name).sublist("Region: Labeled Set") = rfPL;
+          out_list.sublist(reg_name).sublist("region: labeled set") = rfPL;
         }
       }
 
       else if (strcmp(node_name, "point") == 0) {
         tree_["regions"].push_back(reg_name);
         std::vector<double> coord = GetAttributeVector_(reg_elem, "coordinate");
-        out_list.sublist(reg_name).sublist("Region: Point").set<Teuchos::Array<double> >("coordinate", coord);
+        out_list.sublist(reg_name).sublist("region: point").set<Teuchos::Array<double> >("coordinate", coord);
       }
 
       else if (strcmp(node_name,"polygonal_surface") == 0) {
@@ -359,10 +359,10 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         // get expert parameters
         if (reg_elem->hasAttribute(XMLString::transcode("tolerance"))) {
           text_content2 = mm.transcode(reg_elem->getAttribute(mm.transcode("tolerance")));
-          out_list.sublist(reg_name).sublist("Region: Polygon").sublist("Expert Parameters")
+          out_list.sublist(reg_name).sublist("region: polygon").sublist("expert parameters")
               .set<double>("tolerance", std::strtod(text_content2, NULL));
         }
-        out_list.sublist(reg_name).sublist("Region: Polygon")
+        out_list.sublist(reg_name).sublist("region: polygon")
             .set<Teuchos::Array<double> >("points", points)
             .set<int>("number of points", num_points);
       }
@@ -382,16 +382,16 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
             if (strcmp(node_name, "operation") == 0) {
               text_content2 = mm.transcode(jnode->getTextContent());
               if (strcmp(text_content2,"union") == 0) {
-                out_list.sublist(reg_name).sublist("Region: Logical").set<std::string>("operation", "union");
+                out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation", "union");
               }
               else if (strcmp(text_content2,"intersection") == 0) {
-                out_list.sublist(reg_name).sublist("Region: Logical").set<std::string>("operation", "intersect");
+                out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation", "intersect");
               }
               else if (strcmp(text_content2,"subtraction") == 0) {
-                out_list.sublist(reg_name).sublist("Region: Logical").set<std::string>("operation","subtract");
+                out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation","subtract");
               }
               else if (strcmp(text_content2,"complement") == 0) {
-                out_list.sublist(reg_name).sublist("Region: Logical").set<std::string>("operation", "complement");
+                out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation", "complement");
               }
               else {
                 ThrowErrorIllformed_("regions", "element", "operation", "union, intersect, subtract, or complement");
@@ -402,23 +402,23 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
             else if (strcmp(node_name, "region_list") == 0) {
               text_content2 = mm.transcode(jnode->getTextContent());
               Teuchos::Array<std::string> regs = CharToStrings_(text_content2);
-              out_list.sublist(reg_name).sublist("Region: Logical").set<Teuchos::Array<std::string> >("regions", regs);
+              out_list.sublist(reg_name).sublist("region: logical").set<Teuchos::Array<std::string> >("regions", regs);
               haveRL = true;
             }
           }
         }
         if (!haveOp) {
-          ThrowErrorMissattr_("Regions", "element", "operation", "logical");
+          ThrowErrorMissattr_("regions", "element", "operation", "logical");
         }
         if (!haveRL) {
-          ThrowErrorMissattr_("Regions", "element", "region_list", "logical");
+          ThrowErrorMissattr_("regions", "element", "region_list", "logical");
         }
       }
 
       else if (strcmp(node_name, "boundary") == 0) {
         tree_["regions"].push_back(reg_name);
         std::string type = GetAttributeValueS_(reg_elem, "entity");
-        out_list.sublist(reg_name).sublist("Region: Boundary").set<std::string>("entity", type);
+        out_list.sublist(reg_name).sublist("region: boundary").set<std::string>("entity", type);
       }
 
       else if (strcmp(node_name, "box_volume_fractions") == 0) {
@@ -428,12 +428,12 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         std::vector<double> high = GetAttributeVector_(reg_elem, "opposite_corner_coordinates");
         std::vector<double> normals = GetAttributeVector_(reg_elem, "normals", false);
 
-        out_list.sublist(reg_name).sublist("Region: Box Volume Fractions")
+        out_list.sublist(reg_name).sublist("region: box Volume Fractions")
            .set<Teuchos::Array<double> >("corner coordinate", low)
            .set<Teuchos::Array<double> >("opposite corner coordinate", high);
 
         if (normals.size() > 0) 
-          out_list.sublist(reg_name).sublist("Region: Box Volume Fractions")
+          out_list.sublist(reg_name).sublist("region: box Volume Fractions")
              .set<Teuchos::Array<double> >("normals", normals);
       }
     }
@@ -455,7 +455,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
 Teuchos::ParameterList InputConverterU::CreateRegionAll_()
 {
   Teuchos::ParameterList out_list;
-  Teuchos::ParameterList& all = out_list.sublist("Region: Box");
+  Teuchos::ParameterList& all = out_list.sublist("region: box");
 
   std::vector<double> low(2, -1e99), high(2, 1e99);
 

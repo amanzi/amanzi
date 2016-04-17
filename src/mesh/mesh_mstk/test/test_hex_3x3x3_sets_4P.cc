@@ -82,7 +82,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 
     std::string shape = reg_params.name(j);
 
-    if (shape == "Region: Plane") {
+    if (shape == "region: plane") {
 
       // Do we have a valid sideset by this name
 
@@ -107,7 +107,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
       mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
 
     }
-    else if (shape == "Region: Box") {
+    else if (shape == "region: box") {
 
       Teuchos::ParameterList box_params = reg_params.sublist(shape);
       Teuchos::Array<double> pmin = box_params.get< Teuchos::Array<double> >("low coordinate");
@@ -164,7 +164,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 	  mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
 	}
     }
-    else if (shape == "Region: Labeled Set") {
+    else if (shape == "region: labeled set") {
 
       Teuchos::ParameterList lsparams = reg_params.sublist(shape);
 
@@ -225,7 +225,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
       }
 
     }
-    else if (shape == "Region: Color Function") {
+    else if (shape == "region: color function") {
 
       // Do we have a valid cellset by this name
 

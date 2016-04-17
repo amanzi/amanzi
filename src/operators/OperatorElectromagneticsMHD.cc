@@ -70,10 +70,11 @@ void OperatorElectromagneticsMHD::UpdateMatrices()
 /* ******************************************************************
 * System modification before solving the problem.
 * **************************************************************** */
-void OperatorElectromagneticsMHD::ModifyMatrices(CompositeVector& E,
-                                                 CompositeVector& B)
+void OperatorElectromagneticsMHD::ModifyMatrices(
+   CompositeVector& E, CompositeVector& B, double dt)
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
+  Epetra_MultiVector& rhs_e = *global_op_->rhs()->ViewComponent("edge", true);
 
   std::vector<int> dirs;
   AmanziMesh::Entity_ID_List faces, edges;
@@ -88,14 +89,20 @@ void OperatorElectromagneticsMHD::ModifyMatrices(CompositeVector& E,
     int nfaces = faces.size();
     int nedges = edges.size();
 
-    WhetStone::DenseVector v(nfaces), mv(nfaces);
+    WhetStone::DenseVector v1(nfaces), v2(nfaces), v3(nedges);
 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
-      v(n) = Bf[0][f];
+      v1(n) = Bf[0][f] * dirs[n];
     }
 
-    Mcell.Multiply(v, mv, false);
+    Mcell.Multiply(v1, v2, false);
+    Ccell.Multiply(v2, v3, true);
+
+    for (int n = 0; n < nedges; ++n) {
+      int e = edges[n];
+      rhs_e[0][e] += v3(n);
+    }
   }
 }
 
@@ -103,10 +110,38 @@ void OperatorElectromagneticsMHD::ModifyMatrices(CompositeVector& E,
 /* ******************************************************************
 * Solution postprocessing
 * **************************************************************** */
-void OperatorElectromagneticsMHD::ModifyFields(CompositeVector& E,
-                                               CompositeVector& B)
+void OperatorElectromagneticsMHD::ModifyFields(
+   CompositeVector& E, CompositeVector& B, double dt)
 {
-  B.PutScalar(0.0);
+  Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
+  Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
+  
+  std::vector<int> dirs;
+  AmanziMesh::Entity_ID_List faces, edges;
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    const WhetStone::DenseMatrix& Ccell = curl_op_[c];
+
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_edges(c, &edges);
+
+    int nfaces = faces.size();
+    int nedges = edges.size();
+
+    WhetStone::DenseVector v1(nedges), v2(nfaces);
+
+    for (int n = 0; n < nedges; ++n) {
+      int e = edges[n];
+      v1(n) = Ee[0][e];
+    }
+
+    Ccell.Multiply(v1, v2, false);
+
+    for (int n = 0; n < nfaces; ++n) {
+      int f = faces[n];
+      Bf[0][f] -= dt * v2(n) * dirs[n] / mesh_->face_area(f);
+    }
+  }
 }
 
 

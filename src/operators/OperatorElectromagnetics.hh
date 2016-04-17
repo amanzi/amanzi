@@ -79,10 +79,10 @@ class OperatorElectromagnetics {
 
   // new virtual members
   // -- before solving the problem
-  virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B) {};
+  virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt) {};
 
   // -- after solving the problem
-  virtual void ModifyFields(CompositeVector& E, CompositeVector& B) {};
+  virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt) {};
 
   // access
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
