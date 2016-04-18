@@ -34,7 +34,19 @@ changes_regions = ["Coordinate",
                    "Number of points",
                    "Points",
                    "Union",
-                   "Entity GIDs",]
+                   "Entity GIDs",
+                   "Region: Box",
+                   "Region: Plane",
+                   "Region: Polygon",
+                   "Region: Labeled Set",
+                   "Region: Color Function",
+                   "Region: Point",
+                   "Region: Logical",
+                   "Region: Enumerated Set",
+                   "Region: All",
+                   "Region: Boundary",
+                   "Region: Box Volume Fractions"
+                   ]
 
 changes_mesh = ["Number of Cells",
                 "Domain Low Corner",
@@ -44,7 +56,12 @@ changes_mesh = ["Number of Cells",
                 "Framework",
                 "Verify Mesh",
                 "File",
-                "Format"]
+                "Format",
+                "Expert",
+                "Read Mesh File",
+                "Generate Mesh",
+                "Surface Mesh"
+                ]
 
 
 def lower_case(xml):
@@ -59,14 +76,17 @@ def lower_case(xml):
         param.set('name', 'point')
     for param in xml_search.generateElementByNamePath(xml, "Region: Plane/direction"):
         param.set('name', 'normal')
-        
+    regions.set('name', "regions")
         
     mesh = xml_search.getElementByNamePath(xml, "Mesh")
     for label in changes_mesh:
         for param in xml_search.generateElementByNamePath(mesh, label):
             param.set('name', label.lower())
 
-    
+    mesh.set('name', "mesh")
+
+    domain = xml_search.getElementByNamePath(xml, "Domain")
+    xml.remove(domain)
 
 
 if __name__ == "__main__":
