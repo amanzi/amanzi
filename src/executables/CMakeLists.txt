@@ -68,7 +68,7 @@ include_evaluators_directories(LISTNAME MPC_PK_FAC_INCLUDES)
   
 
 
-add_executable(ats amanzi_unstructured_grid_simulation_driver.cc main.cc )
+add_executable(ats simulation_driver.cc main.cc )
 
 set(ATS_LIBS
 		     coordinator
