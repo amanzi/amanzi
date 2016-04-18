@@ -186,9 +186,11 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
   prev_saturation_key_ = tp_list_->get<std::string>("prev_saturation_key", getKey(domain_name_, "prev_saturation_liquid"));
   flux_key_ = tp_list_->get<std::string>("flux_key", getKey(domain_name_, "darcy_flux"));
   permeability_key_ = tp_list_->get<std::string>("permeability_key", getKey(domain_name_, "permeability"));
-  tcc_key_ = tp_list_->get<std::string>("concentration_key", getKey(domain_name_, "total_component_concentration"));
+  tcc_key_ = tp_list_->get<std::string>("concentration_key", 
+                                        getKey(domain_name_, "total_component_concentration"));
   porosity_key_ = tp_list_->get<std::string>("porosity_key", getKey(domain_name_, "porosity"));
-  tcc_matrix_key_ = tp_list_->get<std::string>("tcc_matrix_key", getKey(domain_name_, "total_component_concentraion_matrix"));
+  tcc_matrix_key_ = tp_list_->get<std::string>("tcc_matrix_key", 
+                                               getKey(domain_name_, "total_component_concentraion_matrix"));
   
 
   mesh_ = S->GetMesh(domain_name_);
@@ -205,7 +207,7 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField(permeability_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, dim);
   }
-  std::cout<<flux_key_<<"\n";
+
   if (!S->HasField(flux_key_)) {
     S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
@@ -213,7 +215,6 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
   if (!S->HasField(saturation_key_)) {
     S->RequireField(saturation_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  //   std::cout<<"saturation_liquid "<<S->RequireField("saturation_liquid")->Owned()<<"\n";
   }
   if (!S->HasField(prev_saturation_key_)) {
     S->RequireField(prev_saturation_key_)->SetMesh(mesh_)->SetGhosted(true)
@@ -238,7 +239,8 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
       ->AddComponent("cell", AmanziMesh::CELL, ncomponents);
   }
 
-  // testing evaluators
+
+  //testing evaluators
   if (!S->HasField(porosity_key_)) {
     S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -291,7 +293,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   MyPID = mesh_->get_comm()->MyPID();
 
   // initialize missed fields
-  InitializeFields_();
+  InitializeFields_(S);
 
   // Check input parameters. Due to limited amount of checks, we can do it earlier.
   Policy(S.ptr());
@@ -309,23 +311,23 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
  
   // state pre-prosessing
   Teuchos::RCP<const CompositeVector> cv;
-  S->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
-  cv = S->GetFieldData("darcy_flux");
-  darcy_flux = cv->ViewComponent("face", true);
 
-  cv = S->GetFieldData("saturation_liquid");
+  S->GetFieldData(flux_key_)->ScatterMasterToGhosted("face");
+  cv = S->GetFieldData(flux_key_);
+  darcy_flux = cv->ViewComponent("face", true);
+  cv = S->GetFieldData(saturation_key_);
   ws = cv->ViewComponent("cell", false);
 
-  cv = S->GetFieldData("prev_saturation_liquid");
+  cv = S->GetFieldData(prev_saturation_key_);
   ws_prev = cv->ViewComponent("cell", false);
 
-  cv = S->GetFieldData("porosity");
+  cv = S->GetFieldData(porosity_key_);
   phi = cv->ViewComponent("cell", false);
 
-  tcc = S->GetFieldData("total_component_concentration", passwd_);
+  tcc = S->GetFieldData(tcc_key_, passwd_);
 
   // memory for new components
-  tcc_tmp = Teuchos::rcp(new CompositeVector(*(S->GetFieldData("total_component_concentration"))));
+  tcc_tmp = Teuchos::rcp(new CompositeVector(*(S->GetFieldData(tcc_key_))));
   *tcc_tmp = *tcc;
 
   // upwind 
@@ -389,44 +391,42 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
 /* ******************************************************************
 * Initalized fields left by State and other PKs.
 ****************************************************************** */
-void Transport_PK_ATS::InitializeFields_()
+void Transport_PK_ATS::InitializeFields_(const Teuchos::Ptr<State>& S)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // set popular default values when flow PK is off
-  if (S_->HasField("saturation_liquid")) {
-    if (S_->GetField("saturation_liquid")->owner() == passwd_) {
-      if (!S_->GetField("saturation_liquid", passwd_)->initialized()) {
-        S_->GetFieldData("saturation_liquid", passwd_)->PutScalar(1.0);
-        S_->GetField("saturation_liquid", passwd_)->set_initialized();
+  if (S->HasField(saturation_key_)) {
+    if (S->GetField(saturation_key_)->owner() == passwd_) {
+      if (!S->GetField(saturation_key_, passwd_)->initialized()) {
+        S->GetFieldData(saturation_key_, passwd_)->PutScalar(1.0);
+        S->GetField(saturation_key_, passwd_)->set_initialized();
 
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
             *vo_->os() << "initilized saturation_liquid to value 1.0" << std::endl;  
       }
-      InitializeFieldFromField_("prev_saturation_liquid", "saturation_liquid", false, false);
+      InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S, false, false);
     }
     else {
-      if (S_->GetField("prev_saturation_liquid")->owner() == passwd_) {
-        if (!S_->GetField("prev_saturation_liquid", passwd_)->initialized()) {
-          S_->GetFieldData("prev_saturation_liquid", passwd_)->PutScalar(1.0);
-          S_->GetField("prev_saturation_liquid", passwd_)->set_initialized();
-          // if (S_->HasFieldEvaluator(getKey(domain_,"saturation_liquid"))){
-          //   S_->GetFieldEvaluator(getKey(domain_,"saturation_liquid"))->HasFieldChanged(S_.ptr(), "transport");
+      if (S->GetField(prev_saturation_key_)->owner() == passwd_) {
+        if (!S->GetField(prev_saturation_key_, passwd_)->initialized()) {
+          S->GetFieldData(prev_saturation_key_, passwd_)->PutScalar(1.0);
+          S->GetField(prev_saturation_key_, passwd_)->set_initialized();
+          // if (S->HasFieldEvaluator(getKey(domain_,saturation_key_))){
+          //   S->GetFieldEvaluator(getKey(domain_,saturation_key_))->HasFieldChanged(S.ptr(), "transport");
           // }
-          // InitializeFieldFromField_("prev_saturation_liquid", "saturation_liquid", false);
-          // S_->GetField("prev_saturation_liquid", passwd_)->set_initialized();
+          // InitializeFieldFromField_(prev_saturation_key_, saturation_key_, false);
+          // S->GetField(prev_saturation_key_, passwd_)->set_initialized();
 
-          if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-            *vo_->os() << "initilized prev_saturation_liquid from saturation" << std::endl;
+          // if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          //   *vo_->os() << "initilized prev_saturation_liquid from saturation" << std::endl;
         }
       }
     }
   }
 
-  ws = S_->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
 
-
-  InitializeFieldFromField_("total_component_concentration_matrix", "total_component_concentration", false, false);
+  InitializeFieldFromField_(tcc_matrix_key_, tcc_key_, S, false, false);
 }
 
 
@@ -434,42 +434,43 @@ void Transport_PK_ATS::InitializeFields_()
 * Auxiliary initialization technique.
 **************************************************************** */
 void Transport_PK_ATS::InitializeFieldFromField_(const std::string& field0, 
-                                             const std::string& field1, 
-                                             bool call_evaluator,
-                                             bool overwrite)
+                                                 const std::string& field1, 
+                                                 const Teuchos::Ptr<State>& S,
+                                                 bool call_evaluator,
+                                                 bool overwrite)
 {
-  if (S_->HasField(field0)) {
-    if (S_->GetField(field0)->owner() == passwd_) {
-      if ((!S_->GetField(field0, passwd_)->initialized())||(overwrite)) {
+  if (S->HasField(field0)) {
+    if (S->GetField(field0)->owner() == passwd_) {
+      if ((!S->GetField(field0, passwd_)->initialized())||(overwrite)) {
         if (call_evaluator)
-            S_->GetFieldEvaluator(field1)->HasFieldChanged(S_.ptr(), passwd_);
+            S->GetFieldEvaluator(field1)->HasFieldChanged(S.ptr(), passwd_);
 
-        const CompositeVector& f1 = *S_->GetFieldData(field1);
-        CompositeVector& f0 = *S_->GetFieldData(field0, passwd_);
-
-        // double vmin0, vmax0, vavg0;
-        // double vmin1, vmax1, vavg1;
-
-        // f0.MinValue(&vmin0);
-        // f1.MinValue(&vmin1);
+        const CompositeVector& f1 = *S->GetFieldData(field1);
+        CompositeVector& f0 = *S->GetFieldData(field0, passwd_);
+        
+        double vmin0, vmax0, vavg0;
+        double vmin1, vmax1, vavg1;
+        
+        // f0.ViewComponent("cell")->MinValue(&vmin0);
+        // f1.ViewComponent("cell")->MinValue(&vmin1);
  
         // std::cout<<field0<<" vmin "<<vmin0<<"\n"; 
         // std::cout<<field1<<" vmin "<<vmin1<<"\n";
 
         f0 = f1;
 
-       // f0.MinValue(&vmin0);
-       // f1.MinValue(&vmin1);
+        // f0.ViewComponent("cell")->MinValue(&vmin0);
+        // f1.ViewComponent("cell")->MinValue(&vmin1);
  
-       // std::cout<<field0<<" vmin "<<vmin0<<"\n"; 
-       // std::cout<<field1<<" vmin "<<vmin1<<"\n";
- 
- 
+        // std::cout<<field0<<" vmin "<<vmin0<<"\n"; 
+        // std::cout<<field1<<" vmin "<<vmin1<<"\n";
+        // *vo_->os() << "initiliazed " << field0 << " to " << field1 << std::endl;
+      
 
-        S_->GetField(field0, passwd_)->set_initialized();
-
-        if ((vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)&&(!overwrite))
-            *vo_->os() << "initiliazed " << field0 << " to " << field1 << std::endl;
+        if ((vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)&&(!overwrite)){
+          S->GetField(field0, passwd_)->set_initialized();
+          *vo_->os() << "initiliazed " << field0 << " to " << field1 << std::endl;
+        }
       }
     }
   }
@@ -488,9 +489,12 @@ void Transport_PK_ATS::InitializeFieldFromField_(const std::string& field0,
 * ***************************************************************** */
 double Transport_PK_ATS::CalculateTransportDt()
 {
-  S_next_->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
-
+  S_next_->GetFieldData(flux_key_)->ScatterMasterToGhosted("face");
+  darcy_flux = S_next_->GetFieldData(flux_key_)->ViewComponent("face", true);
   IdentifyUpwindCells();
+
+  tcc = S_->GetFieldData(tcc_key_, passwd_);
+  Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
 
   // loop over faces and accumulate upwinding fluxes
   std::vector<double> total_outflux(ncells_wghost, 0.0);
@@ -514,23 +518,24 @@ double Transport_PK_ATS::CalculateTransportDt()
 
   // loop over cells and calculate minimal time step
   double vol, outflux, dt_cell;
+  vol=0;
   dt_ = dt_cell = TRANSPORT_LARGE_TIME_STEP;
   int cmin_dt = 0;
   for (int c = 0; c < ncells_owned; c++) {
     outflux = total_outflux[c];
-    if (outflux) {
+    if ((outflux > 0) && ((*ws_prev)[0][c]>0)&&(tcc_prev[0][c]>0) ) {
       vol = mesh_->cell_volume(c);
       dt_cell = vol * (*phi)[0][c] * std::min((*ws_prev)[0][c], (*ws)[0][c]) / outflux;
+      //dt_cell = vol * (*phi)[0][c] * (*ws)[0][c] / outflux;
+      //std::cout<<c<<" "<<dt_cell<<" vol "<<vol<<" por "<<(*phi)[0][c]<<" outflux "<<outflux<<" "<<(*ws_prev)[0][c]<<" "<<(*ws)[0][c]<<"\n";
     }
-    //    std::cout<<c<<" "<<dt_cell<<" vol "<<vol<<" outflux "<<outflux<<" "<<(*ws_prev)[0][c]<<" "<<(*ws)[0][c]<<"\n";
     if (dt_cell < dt_) {
       dt_ = dt_cell;
       cmin_dt = c;
     }
   }
 
-  // std::cout<<"DT "<<dt_<<"\n";
-  // exit(0);
+  //  exit(0);
 
   if (spatial_disc_order == 2) dt_ /= 2;
 
@@ -590,9 +595,15 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
   bool failed = false;
   double dt_MPC = t_new - t_old;
 
+
+  darcy_flux = S_next_->GetFieldData(flux_key_)->ViewComponent("face", true);
+  ws = S_next_->GetFieldData(saturation_key_)->ViewComponent("cell", false);
+
   // We use original tcc and make a copy of it later if needed.
-  tcc = S_->GetFieldData("total_component_concentration", passwd_);
+  tcc = S_->GetFieldData(tcc_key_, passwd_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
+
+  
 
   // calculate stable time step    
   double dt_shift = 0.0, dt_global = dt_MPC;
@@ -908,7 +919,7 @@ void Transport_PK_ATS::AddMultiscalePorosity_(
   const Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
   Epetra_MultiVector& tcc = *tcc_tmp->ViewComponent("cell");
   Epetra_MultiVector& tcc_matrix = 
-     *S_->GetFieldData("total_component_concentration_matrix", passwd_)->ViewComponent("cell");
+     *S_->GetFieldData(tcc_matrix_key_, passwd_)->ViewComponent("cell");
 
   const Epetra_MultiVector& wcf_prev = *S_next_->GetFieldData("prev_water_content")->ViewComponent("cell");
   const Epetra_MultiVector& wcf = *S_next_->GetFieldData("water_content")->ViewComponent("cell");
@@ -960,9 +971,9 @@ void Transport_PK_ATS::AddMultiscalePorosity_(
 void Transport_PK_ATS::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   Teuchos::RCP<CompositeVector> tcc;
-  tcc = S->GetFieldData("total_component_concentration", passwd_);
+  tcc = S->GetFieldData(tcc_key_, passwd_);
   *tcc = *tcc_tmp;
-  InitializeFieldFromField_("prev_saturation_liquid", "saturation_liquid", false, true);
+  InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S.ptr(), false, true);
 
 }
 
@@ -1055,7 +1066,10 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   // recover concentration from new conservative state
   for (int c = 0; c < ncells_owned; c++) {
     vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_end)[0][c];
-    for (int i = 0; i < num_advect; i++) tcc_next[i][c] /= vol_phi_ws;
+    for (int i = 0; i < num_advect; i++) {
+      if (vol_phi_ws > 0 ) tcc_next[i][c] /= vol_phi_ws;
+      else  tcc_next[i][c] = 0.;
+    }
   }
 
   // update mass balance
@@ -1085,7 +1099,7 @@ void Transport_PK_ATS::AdvanceSecondOrderUpwindRK1(double dt_cycle)
   Epetra_Vector f_component(cmap_wghost);
 
   // distribute vector of concentrations
-  S_->GetFieldData("total_component_concentration")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData(tcc_key_)->ScatterMasterToGhosted("cell");
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
@@ -1132,7 +1146,7 @@ void Transport_PK_ATS::AdvanceSecondOrderUpwindRK2(double dt_cycle)
   Epetra_Vector f_component(cmap_wghost);
 
   // distribute old vector of concentrations
-  S_->GetFieldData("total_component_concentration")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData(tcc_key_)->ScatterMasterToGhosted("cell");
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 

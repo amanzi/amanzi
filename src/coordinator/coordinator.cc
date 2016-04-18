@@ -161,9 +161,6 @@ void Coordinator::initialize() {
   // commit the initial conditions.
   pk_->CommitStep(0., 0., S_);
 
-  std::cout<<"AFTER COMMIT\n";
-  S_->WriteStatistics(vo_);  
-
   // vis for the state
   // HACK to vis with a surrogate surface mesh.  This needs serious re-design. --etc
   bool surface_done = false;
@@ -585,8 +582,8 @@ void Coordinator::cycle_driver() {
       S_->set_final_time(S_->time() + dt);
       S_->set_intermediate_time(S_->time());
 
-
       fail = advance(S_->time(), S_->time() + dt);
+      //S_->WriteStatistics(vo_);  
       dt = get_dt(fail);
 
     } // while not finished

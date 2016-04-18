@@ -136,7 +136,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
                              Teuchos::RCP<Epetra_Vector>& limiter);
 
  private:
-  void InitializeFields_();
+  void InitializeFields_(const Teuchos::Ptr<State>& S);
 
   // advection members
   void AdvanceDonorUpwind(double dT);
@@ -181,10 +181,20 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   // initialization methods
   void InitializeAll_();
-  void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator, bool overwrite);
+  void InitializeFieldFromField_(const std::string& field0, 
+                                 const std::string& field1, 
+                                 const Teuchos::Ptr<State>& S,
+                                 bool call_evaluator, bool overwrite);
 
   // miscaleneous methods
   int FindComponentNumber(const std::string component_name);
+
+    // void set_states(const Teuchos::RCP<const State>& S,
+    //                 const Teuchos::RCP<State>& S_inter,
+    //                 const Teuchos::RCP<State>& S_next)
+    // {
+    //   PK_
+    // };
 
  public:
     Teuchos::RCP<Teuchos::ParameterList> tp_list_;
@@ -204,13 +214,13 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
     Teuchos::RCP<TreeVector> soln_;
 
     Key domain_name_;
-    Key saturation_name_;
-    Key prev_saturation_name_;
-    Key flux_name_;
-    Key permeability_name_;
-    Key tcc_name_;
-    Key porosity_name_;
-    Key tcc_matrix_;
+    Key saturation_key_;
+    Key prev_saturation_key_;
+    Key flux_key_;
+    Key permeability_key_;
+    Key tcc_key_;
+    Key porosity_key_;
+    Key tcc_matrix_key_;
 
   
  
@@ -221,7 +231,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   bool subcycling_;
   int dim;
-
+  int saturation_name_;
 
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 

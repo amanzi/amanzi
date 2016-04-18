@@ -254,6 +254,8 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   // fluxes
   S->RequireField("surface-mass_flux", name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("face", AmanziMesh::FACE, 1);
+  S->RequireField("surface-flux", name_)->SetMesh(mesh_)->SetGhosted()
+      ->SetComponent("face", AmanziMesh::FACE, 1);
   S->RequireField("surface-velocity", name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("cell", AmanziMesh::CELL, 3);
 
@@ -441,6 +443,7 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
   }
 
   S->GetField("surface-mass_flux", name_)->set_initialized();
+  S->GetField("surface-flux", name_)->set_initialized();
   S->GetFieldData("surface-mass_flux_direction", name_)->PutScalar(0.);
   S->GetField("surface-mass_flux_direction", name_)->set_initialized();
   S->GetFieldData("surface-velocity", name_)->PutScalar(0.);
@@ -490,8 +493,28 @@ void OverlandPressureFlow::CommitStep(double t_old, double t_new, const Teuchos:
   
   // derive the fluxes
   Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
-  Teuchos::RCP<CompositeVector> flux = S->GetFieldData("surface-mass_flux", name_);
-  matrix_diff_->UpdateFlux(*potential, *flux);
+  Teuchos::RCP<CompositeVector> mass_flux = S->GetFieldData("surface-mass_flux", name_);
+  const Epetra_MultiVector& nrho_l = *S->GetFieldData("surface-molar_density_liquid")->ViewComponent("cell");
+  matrix_diff_->UpdateFlux(*potential, *mass_flux);
+
+  const Epetra_MultiVector& mass_flux_v = *mass_flux->ViewComponent("face");
+  const Epetra_MultiVector& mass_flux_dir = *S->GetFieldData("surface-mass_flux_direction")->ViewComponent("face");;
+  Epetra_MultiVector& flux_v =  *S->GetFieldData("surface-flux", name_)->ViewComponent("face");
+
+  AmanziMesh::Entity_ID_List cells;
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f=0; f!=nfaces_owned; ++f) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    if (cells.size() == 1) {
+      int c = cells[0];      
+      flux_v[0][f] = mass_flux_v[0][f]/nrho_l[0][c];
+    }
+    else{
+      double nrho_l_avr=0.5*(nrho_l[0][ cells[0] ] + nrho_l[0][ cells[1] ]);
+      flux_v[0][f] = mass_flux_v[0][f] / nrho_l_avr; 
+    }
+  }
+
 
 };
 

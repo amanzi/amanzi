@@ -32,27 +32,27 @@ void Transport_PK_ATS::CreateDefaultState(
   std::string name("state"); 
   S_->RequireScalar("fluid_density", name);
 
-  if (!S_->HasField("saturation_liquid")) {
-    S_->RequireField("saturation_liquid", name)->SetMesh(mesh)->SetGhosted(true)
+  if (!S_->HasField(saturation_key_)) {
+    S_->RequireField(saturation_key_, name)->SetMesh(mesh)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
   
-  if (!S_->HasField("prev_saturation_liquid")) {
-    S_->RequireField("prev_saturation_liquid", name)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S_->HasField(prev_saturation_key_)) {
+    S_->RequireField(prev_saturation_key_, name)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  if (!S_->HasField("darcy_flux")) {
-    S_->RequireField("darcy_flux", name)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S_->HasField(flux_key_)) {
+    S_->RequireField(flux_key_, name)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("face", AmanziMesh::FACE, 1);
   }
   
-  if (!S_->HasField("total_component_concentration")) {
+  if (!S_->HasField(tcc_key_)) {
     std::vector<std::vector<std::string> > subfield_names(1);
     for (int i = 0; i != ncomponents; ++i) {
       subfield_names[0].push_back(component_names_[i]);
     }
-    S_->RequireField("total_component_concentration", name, subfield_names)->SetMesh(mesh_)
+    S_->RequireField(tcc_key_, name, subfield_names)->SetMesh(mesh_)
         ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);
   }
 
@@ -63,17 +63,17 @@ void Transport_PK_ATS::CreateDefaultState(
   *(S_->GetScalarData("fluid_density", name)) = 1000.0;
   S_->GetField("fluid_density", name)->set_initialized();
 
-  S_->GetFieldData("saturation_liquid", name)->PutScalar(1.0);
-  S_->GetField("saturation_liquid", name)->set_initialized();
+  S_->GetFieldData(saturation_key_, name)->PutScalar(1.0);
+  S_->GetField(saturation_key_, name)->set_initialized();
 
-  S_->GetFieldData("prev_saturation_liquid", name)->PutScalar(1.0);
-  S_->GetField("prev_saturation_liquid", name)->set_initialized();
+  S_->GetFieldData(prev_saturation_key_, name)->PutScalar(1.0);
+  S_->GetField(prev_saturation_key_, name)->set_initialized();
 
-  S_->GetFieldData("total_component_concentration", name)->PutScalar(0.0);
-  S_->GetField("total_component_concentration", name)->set_initialized();
+  S_->GetFieldData(tcc_key_, name)->PutScalar(0.0);
+  S_->GetField(tcc_key_, name)->set_initialized();
 
-  S_->GetFieldData("darcy_flux", name)->PutScalar(0.0);
-  S_->GetField("darcy_flux", name)->set_initialized();
+  S_->GetFieldData(flux_key_, name)->PutScalar(0.0);
+  S_->GetField(flux_key_, name)->set_initialized();
 
   S_->InitializeFields();
 }
@@ -85,7 +85,7 @@ void Transport_PK_ATS::CreateDefaultState(
 void Transport_PK_ATS::Policy(Teuchos::Ptr<State> S)
 {
   if (mesh_->get_comm()->NumProc() > 1) {
-    if (!S->GetFieldData("total_component_concentration")->Ghosted()) {
+    if (!S->GetFieldData(tcc_key_)->Ghosted()) {
       Errors::Message msg;
       msg << "Field \"total component concentration\" has no ghost values."
           << " Transport PK is giving up.\n";

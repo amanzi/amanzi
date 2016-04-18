@@ -249,7 +249,6 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- evaluator for potential field, h + z
   S->RequireField("pres_elev")->Update(matrix_->RangeMap())->SetGhosted();
   Teuchos::ParameterList pres_elev_plist = plist_->sublist("potential evaluator");
-  std::cout<<pres_elev_plist<<"\n";
   Teuchos::RCP<FlowRelations::PresElevEvaluator> pres_elev_eval =
       Teuchos::rcp(new FlowRelations::PresElevEvaluator(pres_elev_plist));
   S->SetFieldEvaluator("pres_elev", pres_elev_eval);
