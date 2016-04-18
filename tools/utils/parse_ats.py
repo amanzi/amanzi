@@ -1,4 +1,5 @@
 import sys,os
+import shutil
 import h5py
 import numpy as np
 import argparse
@@ -104,3 +105,95 @@ def subsetFile(directory=".", base="visdump_data.h5", outfile="my_visdump_data.h
     return keys, times
 
     
+def subsetXMFFile(out_directory, base="visdump_data.VisIt.xmf", inds=None, interval=1, time_range=None, names=None, dry_run=False):
+    """Read one simulation set, write another."""
+    import xml.etree.ElementTree as etree
+
+    null_time_range = False
+    if (time_range[0] == 0.0) and (time_range[1] == 1.e99):
+        null_time_range = True
+
+    xmf_in = etree.parse(base)
+    files = list(xmf_in.getroot()[0][0])
+    if interval > 1:
+        files = files[::interval]
+
+    if (interval == 1) and (null_time_range) and (inds == None) and dry_run:
+        print "Available times (count = %d):"%len(times), times
+        return (None,None)
+    elif dry_run:
+        print "Matched times (count = %d):"%len(times), times
+        return (None, None)
+
+    to_remove = [f for f in xmf_in.getroot()[0][0] if f not in files]
+    for f in to_remove:
+        xmf_in.getroot()[0][0].remove(f)
+
+    # write the VisIt.xmf file
+    xmf_in.write(os.path.join(out_directory,os.path.split(base)[-1]))
+
+    # write the .N.xmf files
+    in_dir_list = os.path.split(base)
+    if len(in_dir_list) > 1:
+        in_dir = os.path.join(*in_dir_list[:-1])
+    else:
+        in_dir = "."
+
+    if names is None:
+        for f in xmf_in.getroot()[0][0]:
+            # simply copy over the filenames
+            fname = f.get("href")
+            in_f = os.path.join(in_dir, f.get("href"))
+
+            fname_strip = os.path.split(fname)[-1]
+            out_f = os.path.join(out_directory, fname_strip)
+            assert not os.path.exists(out_f)
+            shutil.copyfile(in_f, out_f)
+
+    else:
+        for f in xmf_in.getroot()[0][0]:
+            # write new files with a subset of the data
+            fname = f.get("href")
+            in_f = os.path.join(in_dir, f.get("href"))
+
+            fname_strip = os.path.split(fname)[-1]
+            out_f = os.path.join(out_directory, fname_strip)
+            try:
+                assert not os.path.exists(out_f)
+            except AssertionError:
+                print "Exists:", out_f
+                raise AssertionError
+
+            step_xmf = etree.parse(in_f)
+            to_remove = [e for e in step_xmf.getroot()[0][0] if e.tag == "Attribute" and e.get("Name") not in names]
+            for e in to_remove:
+                step_xmf.getroot()[0][0].remove(e)
+
+            step_xmf.write(out_f)
+    
+    # find the h5 file, and assume that all use the same h5
+    an_xmf_in = xmf_in.getroot()[0][0][0].get("href")
+    in_f = os.path.join(in_dir, f.get("href"))
+    an_step_xmf = etree.parse(in_f)
+    in_data = an_step_xmf.getroot()[0][0][-1]
+    assert in_data.tag == "Attribute"
+    fname_h5 = in_data[-1].text.strip("\n").strip().split(":")[0]
+    in_h5 = os.path.join(in_dir, fname_h5)
+
+    fname_h5_strip = os.path.split(fname_h5)[-1]
+    out_h5 = os.path.join(out_directory, fname_h5_strip)
+    assert not os.path.exists(out_h5)
+
+    subsetFile(base=in_h5, outfile=out_h5, inds=inds, interval=interval, time_range=time_range, names=names, dry_run=False)
+
+    # find the mesh file, copy it over
+    mesh_name = an_step_xmf.getroot()[0][0][0][-1].text.strip("\n").strip().split(":")[0]
+    in_mesh = os.path.join(in_dir, mesh_name)
+    mesh_name_strip = os.path.split(mesh_name)[-1]
+    out_mesh = os.path.join(out_directory, mesh_name_strip)
+    assert not os.path.exists(out_mesh)
+    shutil.copyfile(in_mesh, out_mesh)
+    
+    
+
+        
