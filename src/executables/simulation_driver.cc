@@ -2,10 +2,9 @@
 /* -------------------------------------------------------------------------
 ATS
 
-License: see $AMANZI_DIR/COPYRIGHT
-Author: ??
+License: see ATS_DIR/COPYRIGHT
+Author: Ethan Coon (ecoon@lanl.gov)
 
-Effectively stolen from Amanzi, with few modifications.
 ------------------------------------------------------------------------- */
 
 #include <iostream>
@@ -44,67 +43,46 @@ Effectively stolen from Amanzi, with few modifications.
 #include "errors.hh"
 #include "exceptions.hh"
 
-#include "amanzi_unstructured_grid_simulation_driver.hh"
+#include "simulation_driver.hh"
 
 
-int AmanziUnstructuredGridSimulationDriver::Run(
-    const MPI_Comm& mpi_comm, Teuchos::ParameterList& input_parameter_list) {
+int SimulationDriver::Run(
+    const MPI_Comm& mpi_comm, Teuchos::ParameterList& plist) {
 
-  using Teuchos::OSTab;
+  Teuchos::RCP<Epetra_MpiComm> comm = Teuchos::rcp(new Epetra_MpiComm(mpi_comm));
+  
+  // verbosity settings
   setDefaultVerbLevel(Amanzi::VerbosityLevel::level_);
   Teuchos::EVerbosityLevel verbLevel = getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = getOStream();
-  OSTab tab = getOSTab(); // This sets the line prefix and adds one tab
+  Teuchos::OSTab tab = getOSTab(); // This sets the line prefix and adds one tab
 
-  Epetra_MpiComm *comm = new Epetra_MpiComm(mpi_comm);
+  // size, rank
+  int rank = comm->MyPID();
+  int size = comm->NumProc();
 
-  int rank;
-  MPI_Comm_rank(mpi_comm,&rank);
-  int size;
-  MPI_Comm_size(mpi_comm,&size);
-
-  Teuchos::ParameterList params_copy;
-  bool native = input_parameter_list.get<bool>("Native Unstructured Input",false);
-  ASSERT(native);
-  params_copy = input_parameter_list;
-
+  // print header material
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
     // print parameter list
     *out << "======================> dumping parameter list <======================" <<
       std::endl;
-    Teuchos::writeParameterListToXmlOStream(params_copy, *out);
+    Teuchos::writeParameterListToXmlOStream(plist, *out);
     *out << "======================> done dumping parameter list. <================" <<
       std::endl;
   }
 
-  // ------  domain and geometric model  ------
-  Teuchos::ParameterList domain_params = params_copy.sublist("Domain");
-  unsigned int spdim = domain_params.get<int>("Spatial Dimension");
-  Amanzi::AmanziGeometry::Domain *simdomain_ptr = new Amanzi::AmanziGeometry::Domain(spdim);
-
-  // Under the simulation domain we have different geometric
-  // models. We can also have free geometric regions not associated
-  // with a geometric model.
-
-  // For now create one geometric model from all the regions in the spec
-  Teuchos::ParameterList reg_params = params_copy.sublist("Regions");
+  // create the geometric model and regions
+  Teuchos::ParameterList reg_params = plist.sublist("regions");
 
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model_ptr =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_params, comm.get()));
 
-  // Add the geometric model to the domain
-  simdomain_ptr->Add_Geometric_Model(geom_model_ptr);
-
-  // If we had geometric models and free regions coexisting then we would 
-  // create the free regions here and add them to the simulation domain
-  // Nothing to do for now
-
-  // ------ mesh ------
-  Amanzi::AmanziMesh::MeshFactory factory(comm);
+  // create meshes
+  Amanzi::AmanziMesh::MeshFactory factory(comm.get());
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
   // select the mesh framework
-  Teuchos::ParameterList mesh_plist = params_copy.sublist("Mesh");
+  Teuchos::ParameterList mesh_plist = plist.sublist("mesh");
 
   int ierr = 0;
   try {
@@ -121,9 +99,9 @@ int AmanziUnstructuredGridSimulationDriver::Run(
     } else if (framework == "") {
       // do nothing
     } else {
-      std::string s(framework);
-      s += ": specified mesh framework preference not understood";
-      amanzi_throw(Errors::Message(s));
+      Errors::Message msg;
+      msg << "\"" << framework << "\" framework preferences not understood.";
+      Exceptions::amanzi_throw(msg);
     }
     factory.preference(prefs);
   } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
@@ -139,17 +117,18 @@ int AmanziUnstructuredGridSimulationDriver::Run(
     return 1;
   }
 
-  // Create the mesh
-  if (mesh_plist.isSublist("Read Mesh File")) {
+  // create the base mesh
+  if (mesh_plist.isSublist("read mesh file")) {
+    // -- from file
     // try to read mesh from file
-    Teuchos::ParameterList read_params = mesh_plist.sublist("Read Mesh File");
+    Teuchos::ParameterList read_params = mesh_plist.sublist("read mesh file");
 
     std::string file;
     if (read_params.isParameter("file")) {
       file = read_params.get<std::string>("file");
     } else {
-      std::cerr << "Must specify File parameter for Read option under Mesh" << std::endl;
-      throw std::exception();
+      Errors::Message msg("\"read mesh file\" list missing \"file\" parameter.");
+      Exceptions::amanzi_throw(msg);
     }
 
     std::string format;
@@ -157,12 +136,14 @@ int AmanziUnstructuredGridSimulationDriver::Run(
       // Is the format one that we can read?
       format = read_params.get<std::string>("format");
       if (format != "Exodus II") {
-        std::cerr << "Can only read files in Exodus II format" << std::endl;
-        throw std::exception();
+        Errors::Message msg;
+        msg << "\"read mesh file\" parameter \"format\" with value \"" << format
+            << "\" not understood: valid formats are: \"Exodus II\".";
+        Exceptions::amanzi_throw(msg);
       }
     } else {
-      std::cerr << "Must specify Format parameter for Read option under Mesh" << std::endl;
-      throw std::exception();
+      Errors::Message msg("\"read mesh file\" parameter \"format\" missing.");
+      Exceptions::amanzi_throw(msg);
     }
 
     if (!file.empty()) {
@@ -180,9 +161,12 @@ int AmanziUnstructuredGridSimulationDriver::Run(
       comm->SumAll(&ierr, &aerr, 1);
       if (aerr > 0) return 1;
     }
-  } else if (mesh_plist.isSublist("Generate Mesh")) {
+
+
+  } else if (mesh_plist.isSublist("generate mesh")) {
+    // -- generated mesh
     // try to generate the mesh from data in plist
-    Teuchos::ParameterList gen_params = mesh_plist.sublist("Generate Mesh");
+    Teuchos::ParameterList gen_params = mesh_plist.sublist("generate mesh");
     ierr = 0;
 
     try {
@@ -195,23 +179,26 @@ int AmanziUnstructuredGridSimulationDriver::Run(
     comm->SumAll(&ierr, &aerr, 1);
     if (aerr > 0) return 1;
 
-  } else if (mesh_plist.isSublist("Logical Mesh")) {
-    Amanzi::AmanziMesh::MeshLogicalFactory fac(comm, geom_model_ptr);
-    mesh = fac.Create(mesh_plist.sublist("Logical Mesh"));
+  } else if (mesh_plist.isSublist("logical mesh")) {
+    // -- from logical mesh file
+    Amanzi::AmanziMesh::MeshLogicalFactory fac(comm.get(), geom_model_ptr);
+    mesh = fac.Create(mesh_plist.sublist("logical mesh"));
     
-  } else if (mesh_plist.isSublist("Embedded Logical Mesh")) {
-
+  } else if (mesh_plist.isSublist("embedded logical mesh")) {
+    Errors::Message msg("\"embedded logical mesh\" option not yet implemented.");
+    Exceptions::amanzi_throw(msg);
+    
   } else {
-    std::cerr << rank << ": error: "
-              << "Neither Read nor Generate options specified for mesh" << std::endl;
-    throw std::exception();
+    Errors::Message msg("Must specify mesh sublist of type: \"read mesh file\", \"generate mesh\", or \"logical mesh\".");
+    Exceptions::amanzi_throw(msg);
+
   }
   ASSERT(!mesh.is_null());
 
   // mesh verification
-  bool expert_params_specified = mesh_plist.isSublist("Expert");
+  bool expert_params_specified = mesh_plist.isSublist("expert");
   if (expert_params_specified) {
-    Teuchos::ParameterList expert_mesh_params = mesh_plist.sublist("Expert");
+    Teuchos::ParameterList expert_mesh_params = mesh_plist.sublist("expert");
 
     bool verify_mesh_param = expert_mesh_params.isParameter("verify mesh");
     if (verify_mesh_param) {
@@ -241,7 +228,8 @@ int AmanziUnstructuredGridSimulationDriver::Run(
 
           comm->SumAll(&ierr, &aerr, 1);
           if (aerr == 0) {
-            std::cerr << "Mesh Audit confirms that mesh is ok" << std::endl;
+            if (rank == 0)
+              std::cerr << "Mesh Audit confirms that mesh is ok" << std::endl;
           } else {
             if (rank == 0)
               std::cerr << "Mesh Audit could not verify correctness of mesh" << std::endl;
@@ -255,8 +243,8 @@ int AmanziUnstructuredGridSimulationDriver::Run(
   // Create the surface mesh if needed
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> surface_mesh = Teuchos::null;
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> surface3D_mesh = Teuchos::null;
-  if (mesh_plist.isSublist("Surface Mesh")) {
-    Teuchos::ParameterList surface_plist = mesh_plist.sublist("Surface Mesh");
+  if (mesh_plist.isSublist("surface mesh")) {
+    Teuchos::ParameterList surface_plist = mesh_plist.sublist("surface mesh");
 
     std::vector<std::string> setnames;
     if (surface_plist.isParameter("surface sideset name")) {
@@ -264,7 +252,7 @@ int AmanziUnstructuredGridSimulationDriver::Run(
     } else if (surface_plist.isParameter("surface sideset names")) {
       setnames = surface_plist.get<Teuchos::Array<std::string> >("surface sideset names").toVector();
     } else {
-      Errors::Message message("Surface mesh ParameterList needs sideset names.");
+      Errors::Message message("Surface mesh sublist missing parameter \"surface sideset names\".");
       Exceptions::amanzi_throw(message);
     }
 
@@ -276,9 +264,9 @@ int AmanziUnstructuredGridSimulationDriver::Run(
       surface_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::CELL,true,false);
     }
 
-    bool surf_expert_params_specified = surface_plist.isSublist("Expert");
+    bool surf_expert_params_specified = surface_plist.isSublist("expert");
     if (surf_expert_params_specified) {
-      Teuchos::ParameterList surf_expert_mesh_params = surface_plist.sublist("Expert");
+      Teuchos::ParameterList surf_expert_mesh_params = surface_plist.sublist("expert");
       bool verify_surf_mesh_param = surf_expert_mesh_params.isParameter("verify mesh");
       if (verify_surf_mesh_param) {
         bool verify = surf_expert_mesh_params.get<bool>("verify mesh");
@@ -328,7 +316,7 @@ int AmanziUnstructuredGridSimulationDriver::Run(
 
   // column meshes
   std::vector<Teuchos::RCP<Amanzi::AmanziMesh::Mesh> > col_meshes;
-  if (mesh_plist.isSublist("Column Meshes")) {
+  if (mesh_plist.isSublist("column meshes")) {
     int nc = mesh->num_columns();
     col_meshes.resize(nc, Teuchos::null);
     for (int c=0; c!=nc; ++c) {
@@ -340,7 +328,7 @@ int AmanziUnstructuredGridSimulationDriver::Run(
   Teuchos::TimeMonitor::zeroOutTimers();
 
   // Create the state.
-  Teuchos::ParameterList state_plist = params_copy.sublist("state");
+  Teuchos::ParameterList state_plist = plist.sublist("state");
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
 
   // register meshes with state
@@ -360,15 +348,11 @@ int AmanziUnstructuredGridSimulationDriver::Run(
   }
   
   // create the top level Coordinator
-  Amanzi::Coordinator coordinator(params_copy, S, comm);
+  Amanzi::Coordinator coordinator(plist, S, comm.get());
 
   // run the simulation
   coordinator.cycle_driver();
-
   mesh.reset();
-  delete comm;
-  delete simdomain_ptr;
-
   return 0;
 }
 
