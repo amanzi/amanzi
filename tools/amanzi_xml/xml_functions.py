@@ -76,7 +76,7 @@ def replace_by_name(xml,name,value):
 # ---------------------------------------------------------------------------
 def create_parent_map(xml):
     """Creates the parent map dictionary, a map from child to parent in the XML hierarchy."""
-    return {c:p for p in self.tree.iter() for c in p}
+    return {c:p for p in xml.iter() for c in p}
 
 def replace_elem(xml, elem_sink, elem_src):
     """Replace the element 'sink' with the element 'src' in the hierarchy 'xml'"""    
@@ -115,6 +115,18 @@ def get_path(xml, elem, level=None):
     
     path.reverse()
     return path
+
+def get_value(xml, name):
+    """Return value associated with name
+
+    Returns a single value if there is one occurrence of name,
+    a list if there is more than one.
+    """
+    out = []
+    for r in findall_name(xml,name):
+        out.append(r.attrib['value'])
+    if len(out) > 1: return out
+    else: return out[0]
 
 def remove(xml, elem):
     """Removes the xml 'elem' wherever it is locaed in 'xml'"""
