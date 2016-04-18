@@ -1230,9 +1230,15 @@ bool Richards::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
       local_maxT_c.value = maxT_c;
       local_maxT_c.gid = pres_c.Map().GID(max_c);
 
-      MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
-      MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-      *vo_->os() << "   cells (min/max): [" << global_minT_c.gid << "] " << global_minT_c.value
+      if (domain_.substr(0,6) == "column"){
+        MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_SELF);
+        MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_SELF);
+      }
+      else{
+        MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
+        MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+      }
+        *vo_->os() << "   cells (min/max): [" << global_minT_c.gid << "] " << global_minT_c.value
                  << ", [" << global_maxT_c.gid << "] " << global_maxT_c.value << std::endl;
 
       if (pres->HasComponent("face")) {
@@ -1245,9 +1251,16 @@ bool Richards::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
         local_maxT_f.value = maxT_f;
         local_maxT_f.gid = pres_f.Map().GID(max_f);
         
-        MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
-        MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-        *vo_->os() << "   cells (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value
+        if (domain_.substr(0,6) == "column"){
+          MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_SELF);
+          MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_SELF);
+        }
+        else {
+          MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
+          MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+        }
+
+          *vo_->os() << "   cells (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value
                    << ", [" << global_maxT_f.gid << "] " << global_maxT_f.value << std::endl;
       }
     }

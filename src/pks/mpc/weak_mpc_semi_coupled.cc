@@ -10,7 +10,6 @@
 namespace Amanzi {
 
 
-
 // -----------------------------------------------------------------------------
 // loop over sub-PKs, calling their valid_step() method
 // -----------------------------------------------------------------------------
@@ -41,6 +40,9 @@ double WeakMPCSemiCoupled::get_dt() {
 // -----------------------------------------------------------------------------
 // Set up each PK
 // -----------------------------------------------------------------------------
+
+
+
 void
 WeakMPCSemiCoupled::setup(const Teuchos::Ptr<State>& S) {
   S->AliasMesh("surface", "surface_star");
@@ -149,16 +151,8 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
   int nfailed_local = nfailed;
   S_->GetMesh("surface")->get_comm()->SumAll(&nfailed_local, &nfailed, 1);
   if (nfailed > 0) return true;
+ 
   
-  /*
-  while (pk != sub_pks_.end()){
-    std::cout<<"COUPLED: "<<rank<<" "<<k<<"\n";
-    fail += (*pk)->advance(dt);
-    if (fail) return fail;
-    ++pk;
-    k++;
-    }*/
-
   Epetra_MultiVector& surfstar_p = *S_next_->GetFieldData("surface_star-pressure",
 							  S_inter_->GetField("surface_star-pressure")->owner())->ViewComponent("cell", false);
   Epetra_MultiVector& surfstar_t = *S_next_->GetFieldData("surface_star-temperature",
@@ -183,6 +177,7 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
     const Epetra_MultiVector& surf_t = *S_next_->GetFieldData(getKey(name.str(),"temperature"))->ViewComponent("cell", false);
     surfstar_t[0][c] = surf_t[0][0];
   }
+  
   
   // Mark surface_star-pressure evaluator as changed.
   // NOTE: later do it in the setup --aj
@@ -262,10 +257,351 @@ bool WeakMPCSemiCoupled::CoupledSurfSubsurf3D(double dt) {
 
 
 
+void 
+WeakMPCSemiCoupled::generalize_inputspec(){
+
+ 
+  Teuchos::Array<std::string> pk_order = plist_->get<Teuchos::Array<std::string> >("PKs order"); // top PKs <PKG1 PKG2 >
+  
+  Teuchos::Array<int> pk_proc = plist_->get<Teuchos::Array<int> >("PKs process index");
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  
+  Teuchos::Array<std::string> loc_list;
+  int pk_start, pk_end;
+ 
+  pk_start = pk_proc[rank];
+  pk_end = pk_proc[rank+1];
+  
+  loc_list.push_back("PKG1");
+  for(int i=pk_start; i<pk_end; i++){
+    std::stringstream name;
+    name << "PK" << i;
+    loc_list.push_back(name.str());
+  }
+  
+  plist_->set("PKs order", loc_list);
+
+ 
+  Teuchos::ParameterList pks_list_main = plist_->sublist("PKs");
+  
+
+  Teuchos::Array<std::string> pk_order_pkg2 = pks_list_main.sublist(pk_order[1]).get<Teuchos::Array<std::string> >("PKs order"); // SEB PSS
+  
+
+  int l=1;
+  for(int i=pk_start; i<pk_end;i++){
+    Teuchos::ParameterList pks_list = pks_list_main.sublist(pk_order[1]); //PKG2
+    
+    pks_list.setName(loc_list[l]);
+    
+    
+    std::string names_seb = pk_order_pkg2[0];
+    Teuchos::Array<std::string> names = pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).get<Teuchos::Array<std::string> >("PKs order");
 
 
+    
+
+    //SEB parameters
+    std::stringstream domain_surf1, domain_ss1;
+    domain_surf1 << "column_" << i << "_" << "surface";
+    domain_ss1 << "column_" << i;
+    std::string domain_surf=domain_surf1.str();
+    std::string domain_ss = domain_ss1.str();
+    
+    pks_list.sublist("PKs").sublist(names_seb).set("primary variable",getKey(domain_surf,"snow_depth"));
+    pks_list.sublist("PKs").sublist(names_seb).set("conserved quantity key",getKey(domain_surf,"snow_depth"));
+    pks_list.sublist("PKs").sublist(names_seb).set("domain name",domain_surf);
+    
+
+    //PSS parameters
+    
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("ewc delegate").set("domain name",domain_ss);
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("surface ewc delegate").set("domain name",domain_surf);
+   
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[0]).set("primary variable",getKey(domain_ss, "pressure"));
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[0]).set("domain name",domain_ss);
+ 
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[0]).sublist("water retention evaluator").set("rel perm key",getKey(domain_ss,"relative_permeability"));
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[0]).sublist("water retention evaluator").set("liquid saturation key",getKey(domain_ss,"saturation_liquid"));
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[0]).sublist("water retention evaluator").set("ice saturation key",getKey(domain_ss,"saturation_ice"));
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[0]).sublist("water retention evaluator").set("gas saturation key",getKey(domain_ss,"saturation_gas"));
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[0]).sublist("water retention evaluator").set("surface rel perm key",getKey(domain_surf,"relative_permeability"));
 
 
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[1]).set("primary variable",getKey(domain_ss, "temperature"));
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[1]).set("domain name",domain_ss);
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[1]).sublist("thermal conductivity evaluator").set("thermal conductivity key",getKey(domain_ss,"thermal_conductivity"));
+
+
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[2]).set("primary variable",getKey(domain_surf, "pressure"));
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[2]).set("domain name",domain_surf);
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[2]).sublist("elevation evaluator").set("elevation key",getKey(domain_surf,"elevation"));
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[2]).sublist("potential evaluator").set("potential key",getKey(domain_surf,"pres_elev"));
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[2]).sublist("overland water content evaluator").set("domain name",domain_surf);
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[2]).sublist("overland conductivity evaluator").set("overland conductivity key",getKey(domain_surf,"overland_conductivity"));
+
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[3]).set("primary variable",getKey(domain_surf, "temperature"));
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[3]).set("domain name",domain_surf);
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[3]).set("flux key",getKey(domain_surf, "mass_flux")); 
+    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[3]).sublist("thermal conductivity evaluator").set("thermal conductivity key",getKey(domain_surf,"thermal_conductivity"));
+
+
+    plist_->sublist("PKs").set(loc_list[l], pks_list);
+    
+    l++;
+  }
+
+  Teuchos::ParameterList state_list =  FElist_loc;
+  
+  //Generalize state
+  for(int i=pk_start; i<pk_end;i++){
+  
+    
+    std::stringstream domain_surf1, domain_ss1;
+    domain_surf1 << "column_" << i << "_" << "surface";
+    domain_ss1 << "column_" << i;
+    std::string domain_surf=domain_surf1.str();
+    std::string domain_ss = domain_ss1.str();
+
+    
+    Teuchos::ParameterList surf_wc = state_list.sublist("surface-water_content");
+    surf_wc.setName(getKey(domain_surf,"water_content"));
+    FElist_loc.set(surf_wc.name(), surf_wc);
+ 
+
+    Teuchos::ParameterList surf_energy = state_list.sublist("surface-energy");
+    surf_energy.setName(getKey(domain_surf,"energy"));
+    FElist_loc.set(surf_energy.name(), surf_energy);
+    
+
+    Teuchos::ParameterList surf_pd = state_list.sublist("surface-ponded_depth");
+    surf_pd.setName(getKey(domain_surf,"ponded_depth"));
+    FElist_loc.set(surf_pd.name(), surf_pd);
+ 
+    Teuchos::ParameterList surf_tes = state_list.sublist("surface-total_energy_source");
+    surf_tes.setName(getKey(domain_surf,"total_energy_source"));
+    surf_tes.set("domain",domain_surf);
+    surf_tes.set("internal enthalpy key",getKey(domain_surf,"enthalpy"));
+    surf_tes.set("external enthalpy key",getKey(domain_surf,"mass_source_enthalpy"));
+    surf_tes.set("internal density key",getKey(domain_surf,"molar_density_liquid"));
+    surf_tes.set("external density key",getKey(domain_surf,"source_molar_density"));
+    FElist_loc.set(surf_tes.name(), surf_tes);
+
+    Teuchos::ParameterList surf_mse = state_list.sublist("surface-mass_source_enthalpy");
+    surf_mse.setName(getKey(domain_surf,"mass_source_enthalpy"));
+    surf_mse.set("pressure key",getKey(domain_surf,"effective_pressure"));
+    surf_mse.set("molar density key",getKey(domain_surf,"source_molar_density"));
+    surf_mse.set("internal energy key",getKey(domain_surf,"source_internal_energy"));
+    FElist_loc.set(surf_mse.name(), surf_mse);
+
+    Teuchos::ParameterList surf_smd = state_list.sublist("surface-source_molar_density");
+    surf_smd.setName(getKey(domain_surf,"source_molar_density"));
+    surf_smd.set("pressure key",getKey(domain_surf,"effective_pressure"));
+    surf_smd.set("molar density key",getKey(domain_surf,"source_molar_density"));
+    surf_smd.set("temperature key",getKey(domain_surf,"mass_source_temperature"));
+    FElist_loc.set(surf_smd.name(), surf_smd);
+
+    Teuchos::ParameterList surf_sie = state_list.sublist("surface-source_internal_energy");
+    surf_sie.setName(getKey(domain_surf,"source_internal_energy"));
+    surf_sie.set("internal energy key",getKey(domain_surf,"source_internal_energy"));
+    surf_sie.set("temperature key",getKey(domain_surf,"mass_source_temperature"));
+    FElist_loc.set(surf_sie.name(), surf_sie);
+
+    Teuchos::ParameterList surf_uf = state_list.sublist("surface-unfrozen_fraction");
+    surf_uf.setName(getKey(domain_surf,"unfrozen_fraction"));
+    FElist_loc.set(surf_uf.name(), surf_uf);
+
+    Teuchos::ParameterList surf_mdl = state_list.sublist("surface-molar_density_liquid");
+    surf_mdl.setName(getKey(domain_surf,"molar_density_liquid"));
+    surf_mdl.set("pressure key",getKey(domain_surf,"effective_pressure"));
+    surf_mdl.set("molar density key",getKey(domain_surf,"molar_density_liquid"));
+    surf_mdl.set("mass density key",getKey(domain_surf,"mass_density_liquid"));
+    FElist_loc.set(surf_mdl.name(), surf_mdl);
+
+    Teuchos::ParameterList surf_ued = state_list.sublist("surface-unfrozen_effective_depth");
+    surf_ued.setName(getKey(domain_surf,"unfrozen_effective_depth"));
+    FElist_loc.set(surf_ued.name(), surf_ued);
+
+    Teuchos::ParameterList surf_rp = state_list.sublist("surface-relative_permeability");
+    surf_rp.setName(getKey(domain_surf,"relative_permeability"));
+    FElist_loc.set(surf_rp.name(), surf_rp);
+
+
+    Teuchos::ParameterList surf_mdi = state_list.sublist("surface-mass_density_ice");
+    surf_mdi.setName(getKey(domain_surf,"mass_density_ice"));
+    surf_mdi.set("pressure key",getKey(domain_surf,"effective_pressure"));
+    surf_mdi.set("molar density key",getKey(domain_surf,"molar_density_ice"));
+    surf_mdi.set("mass density key",getKey(domain_surf,"mass_density_ice"));
+    FElist_loc.set(surf_mdi.name(), surf_mdi);
+
+    Teuchos::ParameterList surf_modi = state_list.sublist("surface-molar_density_ice");
+    surf_modi.setName(getKey(domain_surf,"molar_density_ice"));
+    surf_modi.set("pressure key",getKey(domain_surf,"effective_pressure"));
+    surf_modi.set("molar density key",getKey(domain_surf,"molar_density_ice"));
+    surf_modi.set("mass density key",getKey(domain_surf,"mass_density_ice"));
+    FElist_loc.set(surf_modi.name(), surf_modi);
+
+    Teuchos::ParameterList surf_madl = state_list.sublist("surface-mass_density_liquid");
+    surf_madl.setName(getKey(domain_surf,"mass_density_liquid"));
+    surf_madl.set("pressure key",getKey(domain_surf,"effective_pressure"));
+    surf_madl.set("molar density key",getKey(domain_surf,"molar_density_liquid"));
+    surf_madl.set("mass density key",getKey(domain_surf,"mass_density_liquid"));
+    FElist_loc.set(surf_madl.name(), surf_madl);
+
+    Teuchos::ParameterList surf_iel = state_list.sublist("surface-internal_energy_liquid");
+    surf_iel.setName(getKey(domain_surf,"internal_energy_liquid"));
+    surf_iel.set("internal energy key",getKey(domain_surf,"internal_energy_liquid"));
+    FElist_loc.set(surf_iel.name(), surf_iel);
+ 
+    Teuchos::ParameterList surf_iei = state_list.sublist("surface-internal_energy_ice");
+    surf_iei.setName(getKey(domain_surf,"internal_energy_ice"));
+    surf_iei.set("internal energy key",getKey(domain_surf,"internal_energy_ice"));
+    FElist_loc.set(surf_iei.name(), surf_iei);
+
+    Teuchos::ParameterList surf_vp = state_list.sublist("surface-vapor_pressure");
+    surf_vp.setName(getKey(domain_surf,"vapor_pressure"));
+    surf_vp.set("surface key",getKey(domain_surf,"vapor_pressure"));
+    surf_vp.set("subsurface key",getKey(domain_ss,"mol_frac_gas"));
+    FElist_loc.set(surf_vp.name(), surf_vp);
+
+    Teuchos::ParameterList surf_mc = state_list.sublist("surface-manning_coefficient");
+    surf_mc.setName(getKey(domain_surf,"manning_coefficient"));
+    FElist_loc.set(surf_mc.name(), surf_mc);
+
+    Teuchos::ParameterList surf_ep = state_list.sublist("surface-effective_pressure");
+    surf_ep.setName(getKey(domain_surf,"effective_pressure"));
+    FElist_loc.set(surf_ep.name(), surf_ep);
+
+    Teuchos::ParameterList surf_ilwr = state_list.sublist("surface-incoming_longwave_radiation");
+    surf_ilwr.setName(getKey(domain_surf,"incoming_longwave_radiation"));
+    FElist_loc.set(surf_ilwr.name(), surf_ilwr);
+ 
+
+    Teuchos::ParameterList surf_iswr = state_list.sublist("surface-incoming_shortwave_radiation");
+    surf_iswr.setName(getKey(domain_surf,"incoming_shortwave_radiation"));
+    FElist_loc.set(surf_iswr.name(), surf_iswr);
+
+    Teuchos::ParameterList surf_at = state_list.sublist("surface-air_temperature");
+    surf_at.setName(getKey(domain_surf,"air_temperature"));
+    FElist_loc.set(surf_at.name(), surf_at);
+
+    Teuchos::ParameterList surf_rh = state_list.sublist("surface-relative_humidity");
+    surf_rh.setName(getKey(domain_surf,"relative_humidity"));
+    FElist_loc.set(surf_rh.name(), surf_rh);
+
+
+    Teuchos::ParameterList surf_ws = state_list.sublist("surface-wind_speed");
+    surf_ws.setName(getKey(domain_surf,"wind_speed"));
+    FElist_loc.set(surf_ws.name(), surf_ws);
+ 
+    Teuchos::ParameterList surf_pr = state_list.sublist("surface-precipitation_rain");
+    surf_pr.setName(getKey(domain_surf,"precipitation_rain"));
+    FElist_loc.set(surf_pr.name(), surf_pr);
+
+    Teuchos::ParameterList surf_ps = state_list.sublist("surface-precipitation_snow");
+    surf_ps.setName(getKey(domain_surf,"precipitation_snow"));
+    FElist_loc.set(surf_ps.name(), surf_ps);
+
+    Teuchos::ParameterList surf_sp = state_list.sublist("surface-porosity");
+    surf_sp.setName(getKey(domain_surf,"porosity"));
+    surf_sp.set("surface key",getKey(domain_surf,"porosity"));
+    surf_sp.set("subsurface key",getKey(domain_ss,"porosity"));
+    FElist_loc.set(surf_sp.name(), surf_sp);
+
+
+    //---------------------- SUBSURFACE -----------
+    
+    Teuchos::ParameterList ss_wc = state_list.sublist("water_content");
+    ss_wc.setName(getKey(domain_ss,"water_content"));
+    FElist_loc.set(ss_wc.name(), ss_wc);
+
+    Teuchos::ParameterList ss_energy = state_list.sublist("energy");
+    ss_energy.setName(getKey(domain_ss,"energy"));
+    FElist_loc.set(ss_energy.name(), ss_energy);
+    
+    Teuchos::ParameterList ss_cpgl = state_list.sublist("capillary_pressure_gas_liq");
+    ss_cpgl.setName(getKey(domain_ss,"capillary_pressure_gas_liq"));
+    FElist_loc.set(ss_cpgl.name(), ss_cpgl);
+
+    Teuchos::ParameterList ss_cpil = state_list.sublist("capillary_pressure_liq_ice");
+    ss_cpil.setName(getKey(domain_ss,"capillary_pressure_liq_ice"));
+    FElist_loc.set(ss_cpil.name(), ss_cpil);
+
+    Teuchos::ParameterList ss_mdl = state_list.sublist("molar_density_liquid");
+    ss_mdl.setName(getKey(domain_ss,"molar_density_liquid"));
+    ss_mdl.set("pressure key",getKey(domain_ss,"effective_pressure"));
+    ss_mdl.set("molar density key",getKey(domain_ss,"molar_density_liquid"));
+    ss_mdl.set("mass density key",getKey(domain_ss,"mass_density_liquid"));
+    FElist_loc.set(ss_mdl.name(), ss_mdl);
+
+    Teuchos::ParameterList ss_vis = state_list.sublist("viscosity_liquid");
+    ss_vis.setName(getKey(domain_ss,"viscosity_liquid"));
+    ss_vis.set("viscosity key",getKey(domain_ss,"viscosity_liquid"));
+    FElist_loc.set(ss_vis.name(), ss_vis);
+
+    Teuchos::ParameterList ss_mdg = state_list.sublist("molar_density_gas");
+    ss_mdg.setName(getKey(domain_ss,"molar_density_gas"));
+    ss_mdg.set("molar density key",getKey(domain_ss,"molar_density_gas"));
+    FElist_loc.set(ss_mdg.name(), ss_mdg);
+
+     
+    Teuchos::ParameterList ss_mdi = state_list.sublist("molar_density_ice");
+    ss_mdi.setName(getKey(domain_ss,"molar_density_ice"));
+    ss_mdi.set("molar density key",getKey(domain_ss,"molar_density_ice"));
+    FElist_loc.set(ss_mdi.name(), ss_mdi);
+
+
+    Teuchos::ParameterList ss_iel = state_list.sublist("internal_energy_liquid");
+    ss_iel.setName(getKey(domain_ss,"internal_energy_liquid"));
+    ss_iel.set("molar density key",getKey(domain_ss,"internal_energy_liquid"));
+    FElist_loc.set(ss_iel.name(), ss_iel);
+
+    Teuchos::ParameterList ss_ier = state_list.sublist("internal_energy_rock");
+    ss_ier.setName(getKey(domain_ss,"internal_energy_rock"));
+    ss_ier.set("internal energy key",getKey(domain_ss,"internal_energy_rock"));
+    FElist_loc.set(ss_ier.name(), ss_ier);
+
+    Teuchos::ParameterList ss_ieg = state_list.sublist("internal_energy_gas");
+    ss_ieg.setName(getKey(domain_ss,"internal_energy_gas"));
+    ss_ieg.set("internal energy key",getKey(domain_ss,"internal_energy_gas"));
+    FElist_loc.set(ss_ieg.name(), ss_ieg);
+
+    Teuchos::ParameterList ss_iei = state_list.sublist("internal_energy_ice");
+    ss_iei.setName(getKey(domain_ss,"internal_energy_ice"));
+    ss_iei.set("internal energy key",getKey(domain_ss,"internal_energy_ice"));
+    FElist_loc.set(ss_iei.name(), ss_iei);
+
+    Teuchos::ParameterList ss_mf = state_list.sublist("mol_frac_gas");
+    ss_mf.setName(getKey(domain_ss,"mol_frac_gas"));
+    ss_mf.set("molar fraction key",getKey(domain_ss,"mol_frac_gas"));
+    FElist_loc.set(ss_mf.name(), ss_mf);
+
+    Teuchos::ParameterList ss_bp = state_list.sublist("base_porosity");
+    ss_bp.setName(getKey(domain_ss,"base_porosity"));
+    FElist_loc.set(ss_bp.name(), ss_bp);
+
+    Teuchos::ParameterList ss_por = state_list.sublist("porosity");
+    ss_por.setName(getKey(domain_ss,"porosity"));
+    FElist_loc.set(ss_por.name(), ss_por);
+    
+    Teuchos::ParameterList ss_perm = state_list.sublist("permeability");
+    ss_perm.setName(getKey(domain_ss,"permeability"));
+    FElist_loc.set(ss_perm.name(), ss_perm);
+
+    Teuchos::ParameterList ss_dr = state_list.sublist("density_rock");
+    ss_dr.setName(getKey(domain_ss,"density_rock"));
+    FElist_loc.set(ss_dr.name(), ss_dr);
+
+    Teuchos::ParameterList ss_ep = state_list.sublist("effective_pressure");
+    ss_ep.setName(getKey(domain_ss,"effective_pressure"));
+    FElist_loc.set(ss_ep.name(), ss_ep);
+    
+  }
+  
+  
+}
+  
 } // namespace Amanzi
 
 

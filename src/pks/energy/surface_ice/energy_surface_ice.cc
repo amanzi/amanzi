@@ -170,34 +170,7 @@ void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
 
       // mark as initialized
       S->GetField(key_,name_)->set_initialized();
-    } /*
-    else if (ic_plist.get<bool>("initialize surface temperature from subsurface columns",false)) {
-      Teuchos::RCP<CompositeVector> surf_temp_cv = S->GetFieldData(key_, name_);
-      Epetra_MultiVector& surf_temp = *surf_temp_cv->ViewComponent("cell",false);
-      unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
-
-      for (unsigned int c=0; c!=ncells_surface; ++c) {
-        // -- get the surface cell's equivalent subsurface face and neighboring cell
-        std::stringstream namestream;
-        namestream << "column_"<< c <<"-temperature";
-        
-        const Epetra_MultiVector& temp = *S->GetFieldData(namestream.str())
-        ->ViewComponent("face",false);
-        
-        unsigned int f = temp.MyLength()-1;
-      
-        surf_temp[0][c] = temp[0][f];
-        std::cout<<"ENERGY PK1 : "<<namestream.str()<<" "<<temp[0][f]<< " "<<f<<"\n";
-      }
-
-      // -- Update faces from cells if needed.
-      if (ic_plist.get<bool>("initialize faces from cells", false)) {
-        DeriveFaceValuesFromCellValues_(surf_temp_cv.ptr());
-      }
-
-      // mark as initialized
-      S->GetField(key_,name_)->set_initialized();
-      } */
+    } 
 
   }
 
@@ -287,17 +260,19 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     const Epetra_MultiVector& enth_surf =
       *S->GetFieldData(enthalpy_key_)->ViewComponent("cell",false);
     const Epetra_MultiVector& enth_subsurf =
-      *S->GetFieldData(getKey(domain_,"enthalpy"))->ViewComponent("cell",false);
-
+      *S->GetFieldData(getKey(domain_.substr(0,domain_.size()-8),"enthalpy"))->ViewComponent("cell",false);
+ 
     AmanziMesh::Entity_ID_List cells;
 
     unsigned int ncells = g_c.MyLength();
+
     for (unsigned int c=0; c!=ncells; ++c) {
       double flux = source1[0][c];
 
       // upwind the enthalpy
       if (flux > 0.) { // exfiltration
         // get the subsurface's enthalpy
+       
         AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
         if (domain_.substr(0,6) == "column")
           S->GetMesh(domain_.substr(0,domain_.size()-8))->face_get_cells(f, AmanziMesh::OWNED, &cells);
