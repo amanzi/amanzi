@@ -28,6 +28,7 @@
     <flow state="on" model="saturated"/>
     <transport state="on" />
     <chemistry state="on" engine="pflotran" database="calcite.dat"  />
+    <!--chemistry state="on" engine="pflotran" input_filename="1d-calcite-trim.in" database="calcite.dat"/-->
   </process_kernels>
 
   <phases>
@@ -162,7 +163,7 @@
       <permeability x="1.0e-12" y="1.0e-12" z="1.0e-12"/>
       <assigned_regions>All</assigned_regions>
       <minerals>
-        <mineral name="Calcite" volume_fraction="1.0e-5" specific_surface_area="1.0"/>
+        <mineral name="Calcite" volume_fraction="1.0e-5" specific_surface_area="2.0"/>
       </minerals>
     </material>
   </materials>
@@ -226,6 +227,7 @@
         <primary mineral="Calcite" name="Ca++" type="mineral" value="5.0e-4"/>
         <primary name="HCO3-" type="gas" value="1.0e-3" gas="CO2(g)"/>
         <primary name="H+" type="free_ion" value="1.0e-8"/>
+	<mineral name="Calcite"     volume_fraction="1.0e-5" specific_surface_area="2.0"/>
       </constraint>
       <constraint name="west">
         <primary name="Ca++" type="charge" value="1e-6"/>
@@ -237,7 +239,7 @@
 
   <output>
     <vis>
-      <base_filename>calcite_pflotran</base_filename>
+      <base_filename>calcite</base_filename>
         <num_digits>5</num_digits>
         <time_macros>Every_year</time_macros>
     </vis>

@@ -27,8 +27,9 @@
 
   <process_kernels>
     <flow state="on" model="saturated"/>
-    <transport state="on" algorithm="explicit first-order" />
+    <transport state="on" />
     <chemistry state="on" engine="pflotran" database="tracer.dat" />
+    <!--chemistry state="on" engine="pflotran" input_filename="1d-tracer.in" database="tracer.dat" /-->
   </process_kernels>
 
   <phases>
@@ -61,6 +62,7 @@
 
       <unstr_transport_controls>
 	  <sub_cycling>on</sub_cycling>
+	  <algorithm>explicit second-order</algorithm>
       </unstr_transport_controls>
 
       <unstr_chemistry_controls>

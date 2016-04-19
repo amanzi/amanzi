@@ -28,6 +28,7 @@
     <flow state="on" model="saturated"/>
     <transport state="on" />
     <chemistry state="on" engine="pflotran" database="surface-complexation.dat" />
+    <!--chemistry state="on" engine="pflotran" input_filename="1d-surface-complexation.in" database="surface-complexation.dat" /-->
   </process_kernels>
 
   <phases>
@@ -206,7 +207,7 @@
 
   <output>
     <vis>
-      <base_filename>ion-exchange</base_filename>
+      <base_filename>surface-complexation</base_filename>
         <num_digits>5</num_digits>
         <time_macros>every_year</time_macros>
     </vis>
