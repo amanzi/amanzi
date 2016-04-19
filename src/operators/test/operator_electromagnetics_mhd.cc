@@ -169,20 +169,22 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
   // Epetra_MultiVector& B0f = *B0.ViewComponent("face");
 
   int cycle(0);
+  double energy0(1e+99);
   while (told < tend) {
     // set up the diffusion operator
     global_op->Init();
     op_mhd->SetTensorCoefficient(K);
     op_mhd->UpdateMatrices();
 
-    // Add an accumulation term.
+    // Add an accumulation term using dt=1 since time step is taken into
+    // account in the system modification routine.
     CompositeVector phi(cvs_e);
     phi.PutScalar(1.0);
 
     Teuchos::RCP<OperatorAccumulation> op_acc =
         Teuchos::rcp(new OperatorAccumulation(AmanziMesh::EDGE, global_op));
 
-    op_acc->AddAccumulationTerm(E, phi, dt, "edge");
+    op_acc->AddAccumulationTerm(phi, 1.0, "edge");
 
     // BCs, sources, and assemble
     op_mhd->ModifyMatrices(E, B, dt);
@@ -207,6 +209,9 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
 
     op_mhd->ModifyFields(E, B, dt);
     double energy = op_mhd->CalculateMagneticEnergy(B);
+
+    CHECK(energy < energy0);
+    energy0 = energy;
 
     cycle++;
     told = tnew;
