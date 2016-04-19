@@ -46,7 +46,7 @@
     </liquid_phase>
     <solid_phase name="rock">
       <minerals>
-        <mineral name="Calcite"/>
+        <mineral>Calcite</mineral>
       </minerals>     
     </solid_phase>
   </phases>

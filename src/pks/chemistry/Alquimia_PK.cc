@@ -138,11 +138,13 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
     Teuchos::Array<std::string> names = cp_list_->get<Teuchos::Array<std::string> >("auxiliary data");  
     
     for (Teuchos::Array<std::string>::const_iterator it = names.begin(); it != names.end(); ++it) {
-      std::vector<std::vector<std::string> > subname(1);
-      subname[0].push_back("0");
-      S->RequireField(*it, passwd_, subname)
-        ->SetMesh(mesh_)->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+      if (!S->HasField(*it)) {
+        std::vector<std::vector<std::string> > subname(1);
+        subname[0].push_back("0");
+        S->RequireField(*it, passwd_, subname)
+          ->SetMesh(mesh_)->SetGhosted(false)
+          ->SetComponent("cell", AmanziMesh::CELL, 1);
+      }
     }
   }
 }
