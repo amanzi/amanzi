@@ -16,7 +16,7 @@ public:
     PKDefaultBase(plist, FElist, soln),MPC<PK>(),FElist_loc(FElist){
     
     plist_ = plist;
-    std::cout<<"WEAK MPIC\n";
+    
     generalize_inputspec();
     MPC<PK>::init_(plist_,FElist_loc, soln);
     

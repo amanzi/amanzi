@@ -35,6 +35,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "MeshFactory.hh"
 #include "MeshLogicalFactory.hh"
 #include "MeshColumn.hh"
+#include "MeshSurfaceCell.hh"
 #include "Domain.hh"
 #include "GeometricModel.hh"
 #include "coordinator.hh"
@@ -321,9 +322,14 @@ int SimulationDriver::Run(
   if (mesh_plist.isSublist("column meshes")) {
     int nc = mesh->num_columns();
     col_meshes.resize(nc, Teuchos::null);
+    col_surf_meshes.resize(nc, Teuchos::null);
     for (int c=0; c!=nc; ++c) {
       col_meshes[c] = Teuchos::rcp(new Amanzi::AmanziMesh::MeshColumn(*mesh, c));
     }
+    
+    if (mesh_plist.isSublist("column surface meshes"))
+      for (int c1=0; c1!=nc; ++c1)
+        col_surf_meshes[c1] = Teuchos::rcp(new Amanzi::AmanziMesh::MeshSurfaceCell(*col_meshes[c1], "surface"));
   }  
   
   Teuchos::TimeMonitor::summarize();
