@@ -131,11 +131,11 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   global_op->AssembleMatrix();
 
   // create preconditoner using the base operator class
-  Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+  Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem
-  Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+  Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
   AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create("AztecOO GMRES", lop_list, global_op);

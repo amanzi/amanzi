@@ -55,8 +55,8 @@ TEST(POLYGON_REGION2)
   in_xyz = poly_params.get< Teuchos::Array<double> >("points");
 
   double tolerance = 1.0e-08;
-  // if (poly_params.isSublist("Expert Parameters")) {
-  //   Teuchos::ParameterList expert_params = poly_params.sublist("Expert Parameters");
+  // if (poly_params.isSublist("expert parameters")) {
+  //   Teuchos::ParameterList expert_params = poly_params.sublist("expert parameters");
   //   tolerance = expert_params.get<double>("tolerance");
   // }
   

@@ -1,22 +1,13 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
 
-  <ParameterList name="Checkpoint Data">
-    <ParameterList name="Cycle Data">
-      <Parameter name="End" type="int" value="-1"/>
-      <Parameter name="Interval" type="int" value="1000"/>
-      <Parameter name="Start" type="int" value="0"/>
-    </ParameterList>
-    <Parameter name="File Name Base" type="string" value="dump-"/>
-  </ParameterList>
-  <ParameterList name="Domain">
-    <Parameter name="Spatial Dimension" type="int" value="3"/>
+  <ParameterList name="domain">
+    <Parameter name="spatial dimension" type="int" value="3"/>
   </ParameterList>
 
   <!--  FLOW:  -->
   <ParameterList name="PKs">
-    <ParameterList name="Flow">
+    <ParameterList name="flow">
       <ParameterList name="Richards problem">
         <ParameterList name="relative permeability">
           <Parameter name="upwind method" type="string" value="upwind: gravity"/>
@@ -174,25 +165,10 @@
     </ParameterList>
   </ParameterList>
 
-  <!--  MPC:  -->
-  <ParameterList name="MPC">
-    <Parameter name="End Cycle" type="int" value="-1"/>
-    <Parameter name="End Time" type="double" value="1e-12"/>
-    <Parameter name="Flow model" type="string" value="Richards"/>
-    <Parameter name="Initial time step" type="double" value="1e-12"/>
-    <Parameter name="Start Time" type="double" value="0"/>
-    <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="low"/>
-    </ParameterList>
-    <Parameter name="disable Chemistry_PK" type="string" value="yes"/>
-    <Parameter name="disable Flow_PK" type="string" value="no"/>
-    <Parameter name="disable Transport_PK" type="string" value="yes"/>
-  </ParameterList>
-
   <!--  MESH:  -->
-  <ParameterList name="Mesh">
-    <ParameterList name="Unstructured">
-      <ParameterList name="Generate Mesh">
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured">
+      <ParameterList name="generate mesh">
         <Parameter name="number of cells" type="Array(int)" value="{1, 1, 516}"/>
         <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}" />
         <Parameter name="domain high coordinate" type="Array(double)" value="{64.5, 1.0, 103.2}" />
@@ -201,100 +177,100 @@
   </ParameterList>
 
   <!--  REGIONS:  -->
-  <ParameterList name="Regions">
+  <ParameterList name="regions">
     <ParameterList name="All">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="high coordinate" type="Array(double)" value="{64.5, 1, 103.2}"/>
         <Parameter name="low coordinate" type="Array(double)" value="{0, 0, 0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="90 Meter Plane Region">
-      <ParameterList name="Region: Plane">
+      <ParameterList name="region: plane">
         <Parameter name="normal" type="Array(double)" value="{0, 0, 1}"/>
         <Parameter name="point" type="Array(double)" value="{0, 0, 90}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bfr">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="high coordinate" type="Array(double)" value="{64.5, 1, 103.2}"/>
         <Parameter name="low coordinate" type="Array(double)" value="{0, 0, 96.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Hcsr">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="high coordinate" type="Array(double)" value="{64.5, 1, 96.0}"/>
         <Parameter name="low coordinate" type="Array(double)" value="{0, 0, 82.2}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Hfsr">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="high coordinate" type="Array(double)" value="{64.5, 1, 82.2}"/>
         <Parameter name="low coordinate" type="Array(double)" value="{0, 0, 23.4}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Hgr">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="high coordinate" type="Array(double)" value="{64.5, 1, 23.4}"/>
         <Parameter name="low coordinate" type="Array(double)" value="{0, 0, 22.2}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="CCuzr">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="high coordinate" type="Array(double)" value="{64.5, 1, 22.2}"/>
         <Parameter name="low coordinate" type="Array(double)" value="{0, 0, 18.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="CCugr">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="high coordinate" type="Array(double)" value="{64.5, 1, 18.0}"/>
         <Parameter name="low coordinate" type="Array(double)" value="{0, 0, 11.4}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Rlmr">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="high coordinate" type="Array(double)" value="{64.5, 1, 11.4}"/>
         <Parameter name="low coordinate" type="Array(double)" value="{0, 0, 6.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Rwiar">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="high coordinate" type="Array(double)" value="{64.5, 1, 6.0}"/>
         <Parameter name="low coordinate" type="Array(double)" value="{0, 0, 0}"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Bottom Surface Region">
-      <ParameterList name="Region: Plane">
+      <ParameterList name="region: plane">
         <Parameter name="normal" type="Array(double)" value="{0, 0, -1}"/>
         <Parameter name="point" type="Array(double)" value="{0, 0, 0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="East Surface Region">
-      <ParameterList name="Region: Plane">
+      <ParameterList name="region: plane">
         <Parameter name="normal" type="Array(double)" value="{1, 0, 0}"/>
         <Parameter name="point" type="Array(double)" value="{64.5, 0, 0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="North Surface Region">
-      <ParameterList name="Region: Plane">
+      <ParameterList name="region: plane">
         <Parameter name="normal" type="Array(double)" value="{0, 1, 0}"/>
         <Parameter name="point" type="Array(double)" value="{0, 1, 0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="South Surface Region">
-      <ParameterList name="Region: Plane">
+      <ParameterList name="region: plane">
         <Parameter name="normal" type="Array(double)" value="{0, -1, 0}"/>
         <Parameter name="point" type="Array(double)" value="{0, 0, 0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface Region">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="high coordinate" type="Array(double)" value="{64.5, 1, 103.2}"/>
         <Parameter name="low coordinate" type="Array(double)" value="{0, 0, 103.2}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="West Surface Region">
-      <ParameterList name="Region: Plane">
+      <ParameterList name="region: plane">
         <Parameter name="normal" type="Array(double)" value="{-1, 0, 0}"/>
         <Parameter name="point" type="Array(double)" value="{0, 0, 0}"/>
       </ParameterList>
@@ -302,7 +278,7 @@
   </ParameterList>
 
   <!-- SOLVERS -->
-  <ParameterList name="Solvers">
+  <ParameterList name="solvers">
     <ParameterList name="PCG with Hypre AMG">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
@@ -326,7 +302,7 @@
   </ParameterList>
 
   <!-- PRECONDITIONERS -->
-  <ParameterList name="Preconditioners">
+  <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
@@ -343,7 +319,7 @@
   </ParameterList>
 
   <!--  STATE:  -->
-  <ParameterList name="State">
+  <ParameterList name="state">
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
@@ -725,14 +701,5 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-  </ParameterList>
-
-  <ParameterList name="Visualization Data">
-    <ParameterList name="Cycle Data">
-      <Parameter name="End" type="int" value="-1"/>
-      <Parameter name="Interval" type="int" value="100"/>
-      <Parameter name="Start" type="int" value="0"/>
-    </ParameterList>
-    <Parameter name="File Name Base" type="string" value="viz-"/>
   </ParameterList>
 </ParameterList>

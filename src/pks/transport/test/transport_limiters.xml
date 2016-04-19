@@ -1,27 +1,26 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
 
-  <ParameterList name="Mesh">
+  <ParameterList name="mesh">
     <Parameter name="framework" type="string" value="MSTK"/>
   </ParameterList>    
    
-  <ParameterList name="Regions">
+  <ParameterList name="regions">
     <ParameterList name="Computational domain">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Left side">
-      <ParameterList name="Region: Plane">
+      <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.0}"/>
         <Parameter name="normal" type="Array(double)" value="{-1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
-      <ParameterList name="Region: Plane">
+      <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.0}"/>
         <Parameter name="normal" type="Array(double)" value="{0.0,0.0,-1.0}"/>
       </ParameterList>
@@ -29,7 +28,7 @@
   </ParameterList>
  
   <ParameterList name="PKs">
-    <ParameterList name="Transport">
+    <ParameterList name="transport">
       <Parameter name="cfl" type="double" value="0.5"/>   
       <Parameter name="spatial discretization order" type="int" value="1"/>   
       <Parameter name="temporal discretization order" type="int" value="1"/>   

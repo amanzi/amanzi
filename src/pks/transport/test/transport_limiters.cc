@@ -1,5 +1,6 @@
 /*
-  The transport component of the Amanzi code, serial unit tests.
+  Transport
+
   License: BSD
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
@@ -44,7 +45,7 @@ TEST(LIMITER_BARTH_JESPERSEN) {
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
  
   /* create an MSTK mesh framework */
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
 

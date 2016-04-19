@@ -252,7 +252,7 @@ void IntersectConvexPolygons(const std::vector<Point>& xy1,
 // defined by vertices xyz1 and faces ordered counter clockwise with
 // respect to their exterior normals. Polyhedron P2 is defined by a
 // set of half-spaces (point and exterior normal). The result is
-// polyhedron P3 ordered as P1.
+// polyhedron P3 ordered similar to P1.
 // -------------------------------------------------------------------
 void IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
                               const std::vector<std::vector<int> > faces1,
@@ -264,8 +264,10 @@ void IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
   int nfaces1 = faces1.size();
   std::vector<std::pair<double, Point> > result_xyz;
   std::vector<std::list<int> > result_faces(nfaces1);
+  std::vector<std::pair<int, int> > new_edges;
 
-  for (int i = 0; i < xyz1.size(); ++i)
+  int nxyz = xyz1.size();
+  for (int i = 0; i < nxyz; ++i)
     result_xyz.push_back(std::make_pair(0.0, xyz1[i]));
 
   for (int i = 0; i < nfaces1; ++i) {
@@ -277,25 +279,119 @@ void IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
   // clip polyhedron using the second polyhedron.
   int nfaces2 = xyz2.size();
   double d1, d2, tmp, eps(1e-6);
+  Point v1(xyz1[0]);
+  std::list<int>::iterator it, it_prev, it_next, it2;
 
   for (int n = 0; n < nfaces2; ++n) {
     const Point& p = xyz2[n].first;
     const Point& normal = xyz2[n].second;
+std::cout << "plane=" << p << " normal=" << normal << std::endl;
 
     // location of nodes relative to the n-th plane
-    int nnodes = result_xyz.size();
-    for (int i = 0; i < nnodes; ++i) {
+    for (int i = 0; i < nxyz; ++i) {
       if (result_xyz[i].first <= 0.0) {
         tmp = normal * (result_xyz[i].second - p);
         if (std::fabs(tmp) < eps) tmp = 0.0;
-        result_xyz[i].first = tmp;
+        result_xyz[i].first = tmp / norm(normal);
       }
     }
 
     // clip each face of the resulting polyhedron
     int nfaces3 = result_faces.size();
+    new_edges.clear();
+    new_edges.resize(nfaces3, std::make_pair(-1, -1));
+
     for (int m = 0; m < nfaces3; ++m) {
-      
+      if (result_faces[m].size() <= 2) continue;
+
+      for (it = result_faces[m].begin(); it != result_faces[m].end(); ++it) {
+        it_next = it;
+        if (++it_next == result_faces[m].end()) it_next = result_faces[m].begin();
+
+        std::pair<double, Point>& p1 = result_xyz[*it];
+        std::pair<double, Point>& p2 = result_xyz[*it_next];
+
+        d1 = p1.first;
+        d2 = p2.first;
+        // add vertex if intersection was found; otherwise, remove vertex.
+        if (d1 * d2 < 0.0) {  
+          tmp = d2 / (d2 - d1);
+          v1 = tmp * p1.second + (1.0 - tmp) * p2.second; 
+
+          int idx(-1);
+          for (int i = 0; i < nxyz; ++i) {
+            if (norm(v1 - result_xyz[i].second) < 1e-8) {
+              idx = i;
+              break;
+            }
+          }
+
+          if (idx >= 0) {
+            result_faces[m].insert(it_next, idx);
+          } else {
+            result_xyz.push_back(std::make_pair(0.0, v1));
+            result_faces[m].insert(it_next, nxyz);
+std::cout << "  face=" << m << " add " << v1 << std::endl;
+            nxyz++;
+          }
+        }
+      }
+
+      // removing cut-out edges
+      it = result_faces[m].begin();
+      while (it != result_faces[m].end()) {
+        if (result_xyz[*it].first > 0.0) {
+          it = result_faces[m].erase(it);
+          if (result_faces[m].size() == 2) break;
+
+          it_next = it;
+          if (it_next == result_faces[m].end()) it_next = result_faces[m].begin();
+
+          it_prev = it;
+          if (it_prev == result_faces[m].begin()) it_prev = result_faces[m].end();
+          else it_prev--;
+
+          new_edges[m] = std::make_pair(*it_prev, *it_next);
+std::cout << "  new edge:" << *it_prev << " " << *it_next << "   p1=" 
+          << result_xyz[*it_prev].second << "  p2=" << result_xyz[*it_next].second << std::endl;
+        } else {
+          it++;
+        }
+      }
+    } 
+
+    // forming a new face
+    std::sort(new_edges.begin(), new_edges.end());
+    std::list<int> new_face;
+
+    for (int m = 0; m < nfaces3; ++m) {
+      int p1 = new_edges[m].first;
+      int p2 = new_edges[m].second;
+      if (p1 >= 0) new_face.push_back(p2);
+    }
+
+    if (new_face.size() > 2) {
+std::cout << "  adding new face" << std::endl;
+      result_faces.push_back(new_face);
+    }
+  }
+
+  // output of the result
+  int mfaces3(0), nfaces3(result_faces.size());
+
+  for (int i = 0; i < nfaces3; ++i) {
+    if (result_faces[i].size() > 2) mfaces3++;
+  }
+  faces3.resize(mfaces3);
+
+std::cout << "Total number of faces: " << mfaces3 << " out of " << nfaces3 << std::endl;
+  for (int i = 0; i < nfaces3; ++i) {
+    if (result_faces[i].size() > 2) {
+      for (it = result_faces[i].begin(); it != result_faces[i].end(); ++it) {
+        faces3[i].push_back(*it);
+std::cout << *it << " ";
+      }
+std::cout << std::endl;
     }
   }
 }

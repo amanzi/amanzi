@@ -1,49 +1,49 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <ParameterList name="Domain">
-    <Parameter name="Spatial Dimension" type="int" value="2"/>
+  <ParameterList name="domain">
+    <Parameter name="spatial dimension" type="int" value="2"/>
   </ParameterList>
 
-  <ParameterList name="Regions">
+  <ParameterList name="regions">
     <ParameterList name="All">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{-9.9e+98, -9.9e+98}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{9.9e+98,  9.9e+98}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom Surface">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{6.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0, 120.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{6.0, 120.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionBottom">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{6.0, 40.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionMiddle">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0, 40.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{6.0, 80.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionTop">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0, 80.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{6.0, 120.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="State">
+  <ParameterList name="state">
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
         <ParameterList name="function">
@@ -185,11 +185,11 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-  <ParameterList name="Cycle Driver">
+  <ParameterList name="cycle driver">
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
-        <ParameterList name="PK Tree">
-          <ParameterList name="Flow">
+        <ParameterList name="PK tree">
+          <ParameterList name="flow">
             <Parameter name="PK type" type="string" value="richards"/>
           </ParameterList>
         </ParameterList>
@@ -201,7 +201,7 @@
     <Parameter name="component names" type="Array(string)" value="{}"/>
   </ParameterList>
   <ParameterList name="PKs">
-    <ParameterList name="Flow">
+    <ParameterList name="flow">
       <ParameterList name="Richards problem">
         <ParameterList name="relative permeability">
           <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
@@ -407,7 +407,7 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Solvers">
+  <ParameterList name="solvers">
     <ParameterList name="AztecOO">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
@@ -431,7 +431,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-  <ParameterList name="Preconditioners">
+  <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">

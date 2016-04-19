@@ -133,8 +133,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
           al = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_l");
           at = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_t");
 
-          tmp_list.sublist("parameters for Bear").set<double>("alphaL", al)
-                                                 .set<double>("alphaT", at);
+          tmp_list.sublist("parameters for Bear").set<double>("alpha_l", al)
+                                                 .set<double>("alpha_t", at);
         } else if (strcmp(model.c_str(), "burnett_frind") == 0) {
           tmp_list.set<std::string>("model", "Burnett-Frind");
 
@@ -143,8 +143,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
           atv = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_tv");
 
           tmp_list.sublist("parameters for Burnett-Frind")
-              .set<double>("alphaL", al).set<double>("alphaTH", ath)
-              .set<double>("alphaTV", atv);
+              .set<double>("alpha_l", al).set<double>("alpha_th", ath)
+              .set<double>("alpha_tv", atv);
 
           transport_permeability_ = true;
         } else if (strcmp(model.c_str(), "lichtner_kelkar_robinson") == 0) {
@@ -156,8 +156,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
           ath = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_tv");
 
           tmp_list.sublist("parameters for Lichtner-Kelkar-Robinson")
-              .set<double>("alphaLH", alh).set<double>("alphaLV", alv)
-              .set<double>("alphaTH", ath).set<double>("alphaTV", atv);
+              .set<double>("alpha_lh", alh).set<double>("alpha_lv", alv)
+              .set<double>("alpha_th", ath).set<double>("alpha_tv", atv);
 
           transport_permeability_ = true;
         } 

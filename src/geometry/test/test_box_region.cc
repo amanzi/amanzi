@@ -259,7 +259,7 @@ TEST(BOXREGION_VOFS_3D_INTERSECTION)
 {
   using namespace Amanzi::AmanziGeometry;
 
-  Point v1(3);
+  Point v1(3), vv(3);
   std::vector<Point> xy1, xy3;
   std::vector<std::vector<int> > faces1(4), faces3;
   std::vector<std::pair<Point, Point> > xy2;
@@ -272,10 +272,12 @@ TEST(BOXREGION_VOFS_3D_INTERSECTION)
   xy2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 1.0, 0.0)));
   xy2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 0.0, 1.0)));
 
-  xy1.push_back(Point(0.0, 0.0, 0.0));
-  xy1.push_back(Point(1.0, 0.0, 0.0));
-  xy1.push_back(Point(0.0, 1.0, 0.0));
-  xy1.push_back(Point(0.0, 0.0, 1.0));
+  double d(0.1);
+  vv.set(d, d, d);
+  xy1.push_back(vv + Point(0.0, 0.0, 0.0));
+  xy1.push_back(vv + Point(1.0, 0.0, 0.0));
+  xy1.push_back(vv + Point(0.0, 1.0, 0.0));
+  xy1.push_back(vv + Point(0.0, 0.0, 1.0));
 
   faces1[0].push_back(0);
   faces1[0].push_back(2);

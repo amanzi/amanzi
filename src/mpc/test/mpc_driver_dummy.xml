@@ -1,88 +1,87 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
 
-  <ParameterList name="Checkpoint Data">
+  <ParameterList name="checkpoint data">
     <Parameter name="file name base" type="string" value="chkpoint"/>
     <Parameter name="file name digits" type="int" value="5"/>
     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1000, -1}"/>
   </ParameterList>
-  <ParameterList name="Visualization Data">
+  <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{70, 20, -1}"/>
   </ParameterList>
-  <ParameterList name="Regions">
+  <ParameterList name="regions">
     <ParameterList name="Bottom Surface">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 0.0e+00}"/>
         <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionBottom">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 4.0e+01}"/>
         <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionMiddle">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 8.0e+01}"/>
         <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 4.0e+01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionTop">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
         <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 8.0e+01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface West">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 1.20000e+02}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{7.20000e+01, 1.20000e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Crib-1">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{7.20000e+01, 1.20000e+02}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{8.0e+01, 1.20000e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface East">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{8.0e+01, 1.20000e+02}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="All">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{-9.9e+98, -9.9e+98}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{9.9e+98, 9.9e+98}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Mesh">
-    <ParameterList name="Unstructured">
-      <ParameterList name="Generate Mesh">
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured">
+      <ParameterList name="generate mesh">
         <Parameter name="number of cells" type="Array(int)" value="{54, 60}"/>
         <Parameter name="domain low coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
         <Parameter name="domain high coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
       </ParameterList>
-      <ParameterList name="Expert">
+      <ParameterList name="expert">
         <Parameter name="framework" type="string" value="MSTK"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Domain">
-    <Parameter isUsed="true" name="Spatial Dimension" type="int" value="2"/>
+  <ParameterList name="domain">
+    <Parameter name="spatial dimension" type="int" value="2"/>
   </ParameterList>
 
-  <ParameterList name="Cycle Driver">
+  <ParameterList name="cycle driver">
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
-        <ParameterList name="PK Tree">
+        <ParameterList name="PK tree">
           <ParameterList name="Dummy">
             <Parameter name="PK type" type="string" value="dummy"/>
           </ParameterList>
@@ -93,7 +92,7 @@
         <Parameter name="initial time step" type="double" value="1000.0"/>
       </ParameterList>
       <ParameterList name="TP 1">
-        <ParameterList name="PK Tree">
+        <ParameterList name="PK tree">
           <ParameterList name="Dummy">
             <Parameter name="PK type" type="string" value="dummy"/>
           </ParameterList>
@@ -115,7 +114,7 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="State">
+  <ParameterList name="state">
     <ParameterList name="initial conditions">
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
@@ -134,7 +133,7 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Preconditioners">
+  <ParameterList name="preconditioners">
     <ParameterList name="Trilinos ML">
       <Parameter name="preconditioner type" type="string" value="ml"/>
       <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
@@ -184,7 +183,7 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Solvers">
+  <ParameterList name="solvers">
     <ParameterList name="AztecOO">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="gmres"/>

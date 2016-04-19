@@ -1,6 +1,6 @@
-<ParameterList name="Regions">
+<ParameterList name="regions">
   <ParameterList name="Bottom LS">
-    <ParameterList name="Region: Labeled Set">
+    <ParameterList name="region: labeled set">
       <Parameter name="label" type="string" value="10000"/>
       <Parameter name="file" type="string" value="hex_3x3x3.exo"/>
       <Parameter name="format" type="string" value="Exodus II"/>
@@ -8,7 +8,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Middle LS">
-    <ParameterList name="Region: Labeled Set">
+    <ParameterList name="region: labeled set">
       <Parameter name="label" type="string" value="20000"/>
       <Parameter name="file" type="string" value="hex_3x3x3.exo"/>
       <Parameter name="format" type="string" value="Exodus II"/>
@@ -16,7 +16,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Top LS">
-    <ParameterList name="Region: Labeled Set">
+    <ParameterList name="region: labeled set">
       <Parameter name="label" type="string" value="30000"/>
       <Parameter name="file" type="string" value="hex_3x3x3.exo"/>
       <Parameter name="format" type="string" value="Exodus II"/>
@@ -24,7 +24,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Cell Set 1">
-    <ParameterList name="Region: Labeled Set">
+    <ParameterList name="region: labeled set">
       <Parameter name="label" type="string" value="1"/>
       <Parameter name="file" type="string" value="hex_3x3x3.exo"/>
       <Parameter name="format" type="string" value="Exodus II"/>
@@ -32,7 +32,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Cell Set 2">
-    <ParameterList name="Region: Labeled Set">
+    <ParameterList name="region: labeled set">
       <Parameter name="label" type="string" value="2"/>
       <Parameter name="file" type="string" value="hex_3x3x3.exo"/>
       <Parameter name="format" type="string" value="Exodus II"/>
@@ -40,7 +40,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Cell Set 3">
-    <ParameterList name="Region: Labeled Set">
+    <ParameterList name="region: labeled set">
       <Parameter name="label" type="string" value="3"/>
       <Parameter name="file" type="string" value="hex_3x3x3.exo"/>
       <Parameter name="format" type="string" value="Exodus II"/>
@@ -48,55 +48,55 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Bottom+Middle Box">
-    <ParameterList name="Region: Box">
+    <ParameterList name="region: box">
       <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
       <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,0.66}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Top Box">
-    <ParameterList name="Region: Box">
+    <ParameterList name="region: box">
       <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.66}"/>
       <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Bottom ColFunc">
-    <ParameterList name="Region: Color Function">
+    <ParameterList name="region: color function">
       <Parameter name="file" type="string" value="test/colorfunc.txt"/>
       <Parameter name="value" type="int" value="25"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Middle ColFunc">
-    <ParameterList name="Region: Color Function">
+    <ParameterList name="region: color function">
       <Parameter name="file" type="string" value="test/colorfunc.txt"/>
       <Parameter name="value" type="int" value="33"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Top ColFunc">
-    <ParameterList name="Region: Color Function">
+    <ParameterList name="region: color function">
       <Parameter name="file" type="string" value="test/colorfunc.txt"/>
       <Parameter name="value" type="int" value="10"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="BOTTOM_LS+MIDDLE_LS+TOP_LS">
-    <ParameterList name="Region: Logical">
+    <ParameterList name="region: logical">
       <Parameter name="operation" type="string" value="union"/>
       <Parameter name="regions" type="Array(string)" value="{Bottom LS, Middle LS, Top LS}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="NOT_Bottom+Middle Box">
-    <ParameterList name="Region: Logical">
+    <ParameterList name="region: logical">
       <Parameter name="operation" type="string" value="complement"/>
       <Parameter name="regions" type="Array(string)" value="{Bottom+Middle Box}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="BOTTOM_LS+MIDDLE_LS+TOP_LS - Top ColFunc - Middle ColFunc">
-    <ParameterList name="Region: Logical">
+    <ParameterList name="region: logical">
       <Parameter name="operation" type="string" value="subtract"/>
       <Parameter name="regions" type="Array(string)" value="{BOTTOM_LS+MIDDLE_LS+TOP_LS, Top ColFunc, Middle ColFunc}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Bottom+Middle Box INT Middle ColFunc">
-    <ParameterList name="Region: Logical">
+    <ParameterList name="region: logical">
       <Parameter name="operation" type="string" value="intersect"/>
       <Parameter name="regions" type="Array(string)" value="{Bottom+Middle Box, Middle ColFunc}"/>
     </ParameterList>
@@ -104,7 +104,7 @@
 
   <!-- sidesets -->
   <ParameterList name="Face 101">
-    <ParameterList name="Region: Labeled Set">
+    <ParameterList name="region: labeled set">
       <Parameter name="label" type="string" value="101"/>
       <Parameter name="file" type="string" value="mesh.exo"/>
       <Parameter name="format" type="string" value="Exodus II"/>
@@ -112,7 +112,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Face 102">
-    <ParameterList name="Region: Labeled Set">
+    <ParameterList name="region: labeled set">
       <Parameter name="label" type="string" value="102"/>
       <Parameter name="file" type="string" value="mesh.exo"/>
       <Parameter name="format" type="string" value="Exodus II"/>
@@ -120,7 +120,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Face 10005">
-    <ParameterList name="Region: Labeled Set">
+    <ParameterList name="region: labeled set">
       <Parameter name="label" type="string" value="10005"/>
       <Parameter name="file" type="string" value="mesh.exo"/>
       <Parameter name="format" type="string" value="Exodus II"/>
@@ -128,7 +128,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Face 20004">
-    <ParameterList name="Region: Labeled Set">
+    <ParameterList name="region: labeled set">
       <Parameter name="label" type="string" value="20004"/>
       <Parameter name="file" type="string" value="mesh.exo"/>
       <Parameter name="format" type="string" value="Exodus II"/>
@@ -136,7 +136,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="Face 30004">
-    <ParameterList name="Region: Labeled Set">
+    <ParameterList name="region: labeled set">
       <Parameter name="label" type="string" value="30004"/>
       <Parameter name="file" type="string" value="mesh.exo"/>
       <Parameter name="format" type="string" value="Exodus II"/>
@@ -144,26 +144,26 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="ZLO FACE Plane">
-    <ParameterList name="Region: Plane">
+    <ParameterList name="region: plane">
       <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.0}"/>
       <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="YLO FACE Box">
-    <ParameterList name="Region: Box">
+    <ParameterList name="region: box">
       <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
       <Parameter name="high coordinate" type="Array(double)" value="{1.0,0.0,1.0}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="BOX 102">
-    <ParameterList name="Region: Box">
+    <ParameterList name="region: box">
       <Parameter name="low coordinate" type="Array(double)" value="{0.3,0.0,0.3}"/>
       <Parameter name="high coordinate" type="Array(double)" value="{0.7,0.0,0.7}"/>
       <Parameter name="Lifecycle" type="string" value="Temporary"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="FACE_102_MINUS_BOX102">
-    <ParameterList name="Region: Logical">
+    <ParameterList name="region: logical">
       <Parameter name="operation" type="string" value="subtract"/>
       <Parameter name="regions" type="Array(string)" value="{Face 102, BOX 102}"/>
     </ParameterList>
@@ -171,29 +171,29 @@
 
   <!-- Miscaleneous -->
   <ParameterList name="Domain Boundary">
-    <ParameterList name="Region: Boundary">
+    <ParameterList name="region: boundary">
       <Parameter name="entity" type="string" value="face"/>
     </ParameterList>
   </ParameterList>
 
   <!-- Cells sets from point regions -->
   <ParameterList name="Sample Point InCell">
-    <ParameterList name="Region: Point">
+    <ParameterList name="region: point">
       <Parameter name="coordinate" type="Array(double)" value="{0.5,0.5,0.5}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Sample Point OnFace">
-    <ParameterList name="Region: Point">
+    <ParameterList name="region: point">
       <Parameter name="coordinate" type="Array(double)" value="{0.3333333333333,0.5,0.5}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Sample Point OnEdge">
-    <ParameterList name="Region: Point">
+    <ParameterList name="region: point">
       <Parameter name="coordinate" type="Array(double)" value="{0.3333333333333,0.3333333333333,0.5}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Sample Point OnVertex">
-    <ParameterList name="Region: Point">
+    <ParameterList name="region: point">
       <Parameter name="coordinate" type="Array(double)" value="{0.3333333333333,0.3333333333333,0.3333333333333}"/>
     </ParameterList>
   </ParameterList>
@@ -201,13 +201,13 @@
 
   <!-- nodesets -->
   <ParameterList name="INTERIOR XY PLANE">
-    <ParameterList name="Region: Plane">
+    <ParameterList name="region: plane">
       <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.3333333333333}"/>
       <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="TOP BOX">
-    <ParameterList name="Region: Box">
+    <ParameterList name="region: box">
       <Parameter name="low coordinate" type="Array(double)" value="{0.2,0.2,1.0}"/>
       <Parameter name="high coordinate" type="Array(double)" value="{0.8,0.8,1.0}"/>
     </ParameterList>

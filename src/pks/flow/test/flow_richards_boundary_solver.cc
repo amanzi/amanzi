@@ -49,7 +49,7 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a mesh framework
-  Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, &comm));
 
@@ -66,16 +66,16 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   Teuchos::RCP<const Mesh> mesh2 = meshfactory("test/hex_2x2x1-2.exo", gm);
 
   // // create a simple state and populate it
-  Teuchos::ParameterList state_list = plist->sublist("State");
+  Teuchos::ParameterList state_list = plist->sublist("state");
   Teuchos::RCP<State> S1 = Teuchos::rcp(new State(state_list));
   Teuchos::RCP<State> S2 = Teuchos::rcp(new State(state_list));
   S1->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh1));
   S2->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh2));
 
   Teuchos::RCP<TreeVector> soln1 = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Richards_PK> RPK1 = Teuchos::rcp(new Richards_PK(plist, "Flow", S1, soln1));
+  Teuchos::RCP<Richards_PK> RPK1 = Teuchos::rcp(new Richards_PK(plist, "flow", S1, soln1));
   Teuchos::RCP<TreeVector> soln2 = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Richards_PK> RPK2 = Teuchos::rcp(new Richards_PK(plist, "Flow", S2, soln2));
+  Teuchos::RCP<Richards_PK> RPK2 = Teuchos::rcp(new Richards_PK(plist, "flow", S2, soln2));
 
   RPK1->Setup(S1.ptr());
   S1->Setup();

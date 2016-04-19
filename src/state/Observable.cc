@@ -41,14 +41,14 @@ Observable::Observable(Teuchos::ParameterList& plist, Epetra_MpiComm *comm) :
   delimiter_ = plist.get<std::string>("delimiter", ",");
 
   functional_ = plist.get<std::string>("functional");
-  if (functional_ == "Observation Data: Point" ||
-      functional_ == "Observation Data: Integral") {
+  if (functional_ == "observation data: point" ||
+      functional_ == "observation data: integral") {
     function_ = &ObservableIntensiveSum;
-  } else if (functional_ == "Observation Data: Extensive Integral") {
+  } else if (functional_ == "observation data: extensive integral") {
     function_ = &ObservableExtensiveSum;
-  } else if (functional_ == "Observation Data: Minimum") {
+  } else if (functional_ == "observation data: minimum") {
     function_ = &ObservableMin;
-  } else if (functional_ == "Observation Data: Maximum") {
+  } else if (functional_ == "observation data: maximum") {
     function_ = &ObservableMax;
   } else {
     Errors::Message msg;
@@ -140,9 +140,9 @@ void Observable::Update_(const State& S,
     vec->Mesh()->get_set_entities(region_, entity, AmanziMesh::OWNED, &ids);
 
     double value(0.);
-    if (functional_ == "Observation Data: Minimum") {
+    if (functional_ == "observation data: minimum") {
       value = 1.e20;
-    } else if (functional_ == "Observation Data: Maximum") {
+    } else if (functional_ == "observation data: maximum") {
       value = -1.e20;
     }
 
@@ -187,19 +187,19 @@ void Observable::Update_(const State& S,
     }
 
     // syncronize the result across processors
-    if (functional_ == "Observation Data: Point" ||
-        functional_ == "Observation Data: Integral" ||
-        functional_ == "Observation Data: Extensive Integral") {
+    if (functional_ == "observation data: point" ||
+        functional_ == "observation data: integral" ||
+        functional_ == "observation data: extensive integral") {
       double local[2], global[2];
       local[0] = value; local[1] = volume;
       S.GetMesh()->get_comm()->SumAll(local, global, 2);
 
       if (global[1] > 0) {
-        if (functional_ == "Observation Data: Point") {
+        if (functional_ == "observation data: point") {
           data.value = global[0] / global[1];
           data.is_valid = true;
-        } else if (functional_ == "Observation Data: Integral" ||
-                   functional_ == "Observation Data: Extensive Integral") {
+        } else if (functional_ == "observation data: integral" ||
+                   functional_ == "observation data: extensive integral") {
           data.value = global[0];
           data.is_valid = true;
         }
@@ -207,12 +207,12 @@ void Observable::Update_(const State& S,
         data.value = 0.;
         data.is_valid = false;
       }
-    } else if (functional_ == "Observation Data: Minimum") {
+    } else if (functional_ == "observation data: minimum") {
       double global;
       S.GetMesh()->get_comm()->MinAll(&value, &global, 1);
       data.value = global;
       data.is_valid = true;
-    } else if (functional_ == "Observation Data: Maximum") {
+    } else if (functional_ == "observation data: maximum") {
       double global;
       S.GetMesh()->get_comm()->MaxAll(&value, &global, 1);
       data.value = global;

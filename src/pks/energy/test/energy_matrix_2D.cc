@@ -1,5 +1,5 @@
 /*
-  This is the energy component of the Amanzi code. 
+  Energy
 
   Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -54,7 +54,7 @@ TEST(ENERGY_2D_MATRIX) {
       Teuchos::rcp(new Teuchos::ParameterList(xmlreader.getParameters()));
 
   // create a mesh framework
-  Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, &comm));
 
@@ -70,7 +70,7 @@ TEST(ENERGY_2D_MATRIX) {
   // create a simple state and populate it
   Amanzi::VerboseObject::hide_line_prefix = true;
 
-  Teuchos::ParameterList state_list = plist->sublist("State");
+  Teuchos::ParameterList state_list = plist->sublist("state");
   Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
   S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
@@ -118,7 +118,7 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
   
   // create diffusion operator 
-  const Teuchos::ParameterList& elist = plist->sublist("PKs").sublist("Energy")
+  const Teuchos::ParameterList& elist = plist->sublist("PKs").sublist("energy")
                                               .sublist("Two-phase problem");
   Teuchos::ParameterList oplist = elist.sublist("operators")
                                        .sublist("diffusion operator")
@@ -184,7 +184,7 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   // make preconditioner
   // Teuchos::RCP<Operator> op3 = Teuchos::rcp(new Operator(*op2));
 
-  Teuchos::ParameterList slist = plist->sublist("Preconditioners");
+  Teuchos::ParameterList slist = plist->sublist("preconditioners");
   op->InitPreconditioner("Hypre AMG", slist);
 
   if (MyPID == 0) {

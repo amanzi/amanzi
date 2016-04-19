@@ -109,10 +109,6 @@ AA_Base<Vector, VectorSpace>::AA_Base(int mvec, double vtol, double beta, const 
 };
 
 
-
-
-
-
 /* ******************************************************************
  * Destroy memory
  ***************************************************************** */
@@ -241,7 +237,6 @@ void AA_Base<Vector, VectorSpace>::QRdelete() {
   first_f_=(first_f_ + 1)%(mvec_ + 1);
   num_vec_--;
 
-  
 
   // for (int i=0;i<m-1;i++) {
   //   //int I = (first_f_ + i)%(mvec_ + 1);
@@ -292,7 +287,6 @@ void AA_Base<Vector, VectorSpace>::TestQR(int nv) {
   }
 
   if (norm2 > 0.0001) exit(0);
-
 }
 
 
@@ -311,7 +305,6 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   Teuchos::RCP<Vector> ff = Teuchos::rcp(new Vector(f));
   Teuchos::RCP<Vector> fun = Teuchos::rcp(new Vector(f));
   Teuchos::RCP<Vector> tmp = Teuchos::rcp(new Vector(f));
-
 
 
   // std::cout<<"F\n"; ff->Print(std::cout);
@@ -465,7 +458,6 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   delete[] th;
 
 
-
   if (num_vec_ < mvec_) {
     if (first_f_ < 0) {
       first_f_ = 0;
@@ -486,14 +478,9 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     else new_f_++;
   }
 
-
-
-
   // std::cout<<"new_f "<<new_f_<<" first "<<first_f_<<" last "<<last_f_<<"\n";
   // std::cout<<"\n";
-
 };
-
 
 }  // namespace AmanziSolvers
 }  // namespace Amanzi

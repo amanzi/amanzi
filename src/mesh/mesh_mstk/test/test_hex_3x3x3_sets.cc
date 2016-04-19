@@ -62,7 +62,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
 
     std::string shape = reg_params.name(j);
 
-    if (shape == "Region: Plane") {
+    if (shape == "region: plane") {
 
       if (reg_name == "ZLO FACE Plane") {
 
@@ -114,7 +114,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
       }
 
     }
-    else if (shape == "Region: Box") {
+    else if (shape == "region: box") {
       Teuchos::ParameterList box_params = reg_params.sublist(shape);
       Teuchos::Array<double> pmin = box_params.get< Teuchos::Array<double> >("low coordinate");
       Teuchos::Array<double> pmax = box_params.get< Teuchos::Array<double> >("high coordinate");
@@ -214,7 +214,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
       }
 
     }
-    else if (shape == "Region: Point") {
+    else if (shape == "region: point") {
       // Do we have a valid cell set by this name
       
       CHECK(mesh->valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
@@ -238,7 +238,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
       mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED,&setents);
       
     }
-    else if (shape == "Region: Labeled Set") {
+    else if (shape == "region: labeled set") {
       Teuchos::ParameterList lsparams = reg_params.sublist(shape);
 
       // Find the entity type in this parameter list
@@ -297,7 +297,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
       }
 
     }
-    else if (shape == "Region: Boundary") {
+    else if (shape == "region: boundary") {
       // Do we have a valid sideset by this name
       
       CHECK(mesh->valid_set_name(reg_name,Amanzi::AmanziMesh::FACE));
@@ -323,7 +323,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
       mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
 
     }
-    else if (shape == "Region: Color Function") {
+    else if (shape == "region: color function") {
       // Do we have a valid sideset by this name
       
       CHECK(mesh->valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));

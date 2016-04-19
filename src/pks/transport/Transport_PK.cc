@@ -52,13 +52,13 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
   std::string pk_name = pk_tree.name();
   const char* result = pk_name.data();
 
-  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
-  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
+  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name, "->"); 
+  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name, res.end() - pk_name.begin());
 
-  if (glist->isSublist("Cycle Driver")) {
-    if (glist->sublist("Cycle Driver").isParameter("component names")) {
+  if (glist->isSublist("cycle driver")) {
+    if (glist->sublist("cycle driver").isParameter("component names")) {
       // grab the component names
-      component_names_ = glist->sublist("Cycle Driver")
+      component_names_ = glist->sublist("cycle driver")
           .get<Teuchos::Array<std::string> >("component names").toVector();
     } else {
       Errors::Message msg("Transport PK: parameter component names is missing.");
@@ -73,14 +73,14 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   tp_list_ = Teuchos::sublist(pk_list, pk_name, true);
 
-  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners");
-  linear_solver_list_ = Teuchos::sublist(glist, "Solvers");
-  nonlinear_solver_list_ = Teuchos::sublist(glist, "Nonlinear solvers");
+  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners");
+  linear_solver_list_ = Teuchos::sublist(glist, "solvers");
+  nonlinear_solver_list_ = Teuchos::sublist(glist, "nonlinear solvers");
 
   subcycling_ = tp_list_->get<bool>("transport subcycling", true);
    
   // initialize io
-  Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "Units");
+  Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
   units_.Init(*units_list);
 
   vo_ = Teuchos::null;
@@ -101,9 +101,9 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   tp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
 
-  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners");
-  linear_solver_list_ = Teuchos::sublist(glist, "Solvers");
-  nonlinear_solver_list_ = Teuchos::sublist(glist, "Nonlinear solvers");
+  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners");
+  linear_solver_list_ = Teuchos::sublist(glist, "solvers");
+  nonlinear_solver_list_ = Teuchos::sublist(glist, "nonlinear solvers");
 
   vo_ = Teuchos::null;
 }

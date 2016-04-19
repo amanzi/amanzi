@@ -1,12 +1,12 @@
-<ParameterList name="Regions">
+<ParameterList name="regions">
   <ParameterList name="Top Section">
-    <ParameterList name="Region: Enumerated Set">
+    <ParameterList name="region: enumerated set">
       <Parameter name="entity" type="string" value="FACE"/>
       <Parameter name="entity gids" type="Array(int)" value="{0,1,2}"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Middle">
-    <ParameterList name="Region: Enumerated Set">
+    <ParameterList name="region: enumerated set">
       <Parameter name="entity" type="string" value="CELL"/>
       <Parameter name="entity gids" type="Array(int)" value="{0,1,2}"/>
     </ParameterList>

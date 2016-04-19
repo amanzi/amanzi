@@ -30,13 +30,13 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
-#include "AnalyticMHD_01.hh"
-#include "AnalyticMHD_02.hh"
-#include "AnalyticMHD_03.hh"
+#include "AnalyticElectromagnetics01.hh"
+#include "AnalyticElectromagnetics02.hh"
+#include "AnalyticElectromagnetics03.hh"
 
 #include "OperatorAccumulation.hh"
-#include "OperatorElectromagnetics.hh"
 #include "OperatorDefs.hh"
+#include "OperatorElectromagnetics.hh"
 #include "Verification.hh"
 
 /* *****************************************************************
@@ -61,7 +61,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   ParameterList plist = xmlreader.getParameters();
 
   // create a MSTK mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   FrameworkPreference pref;
@@ -186,7 +186,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   global_op->AssembleMatrix();
   global_op->UpdateRHS(source, false);
 
-  ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // Test SPD properties of the matrix and preconditioner.
@@ -195,10 +195,10 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   ver.CheckPreconditionerSPD(true, true);
 
   // Solve the problem.
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
   AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, global_op);
+     solver = factory.Create("default", lop_list, global_op);
 
   CompositeVector& rhs = *global_op->rhs();
   int ierr = solver->ApplyInverse(rhs, solution);
@@ -207,7 +207,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   CHECK(num_itrs < 100);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (" << solver->name() 
+    std::cout << "electric solver (" << solver->name() 
               << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
               << " code=" << solver->returned_code() << std::endl;
   }
@@ -227,14 +227,15 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   }
 }
 
+
 TEST(CURL_CURL_LINEAR) {
-  CurlCurl<AnalyticMHD_01>(1.0e-3, 1e-3, false);
+  CurlCurl<AnalyticElectromagnetics01>(1.0e-3, 1e-3, false);
 }
 
 TEST(CURL_CURL_NONLINEAR) {
-  CurlCurl<AnalyticMHD_02>(1.0e-3, 2e-2, false);
+  CurlCurl<AnalyticElectromagnetics02>(1.0e-3, 2e-2, false);
 }
 
 TEST(CURL_CURL_TIME_DEPENDENT) {
-  CurlCurl<AnalyticMHD_03>(1.0, 2e-3, true);
+  CurlCurl<AnalyticElectromagnetics03>(1.0, 2e-3, true);
 }

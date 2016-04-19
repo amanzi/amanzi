@@ -116,7 +116,7 @@ SUITE (STK_SETS)
 
       std::string shape = reg_params.name(j);
 
-      if (shape == "Region: Plane") {
+      if (shape == "region: plane") {
 
         // Do we have a valid sideset by this name
 
@@ -145,7 +145,7 @@ SUITE (STK_SETS)
         CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);
 
       }
-      else if (shape == "Region: Box") {
+      else if (shape == "region: box") {
 
         Teuchos::ParameterList box_params = reg_params.sublist(shape);
         Teuchos::Array<double> pmin = box_params.get< Teuchos::Array<double> >("low coordinate");
@@ -209,7 +209,7 @@ SUITE (STK_SETS)
             CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
           }
       }
-      else if (shape == "Region: Point") {
+      else if (shape == "region: point") {
 
         // Get cells around this point
 
@@ -243,7 +243,7 @@ SUITE (STK_SETS)
         CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);	  
 
       }
-      else if (shape == "Region: Labeled Set") {
+      else if (shape == "region: labeled set") {
 
         Teuchos::ParameterList lsparams = reg_params.sublist(shape);
 
@@ -308,7 +308,7 @@ SUITE (STK_SETS)
         }
 
       }
-      else if (shape == "Region: Color Function") {
+      else if (shape == "region: color function") {
 
         // Do we have a valid sideset by this name
       
@@ -407,7 +407,7 @@ SUITE (STK_SETS)
 
       std::string shape = reg_params.name(j);
 
-      if (shape == "Region: Plane") {
+      if (shape == "region: plane") {
 
 	// Do we have a valid sideset by this name
 
@@ -436,7 +436,7 @@ SUITE (STK_SETS)
 	CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);
 
       }
-      else if (shape == "Region: Box") {
+      else if (shape == "region: box") {
 
 	Teuchos::ParameterList box_params = reg_params.sublist(shape);
 	Teuchos::Array<double> pmin = box_params.get< Teuchos::Array<double> >("low coordinate");
@@ -501,7 +501,7 @@ SUITE (STK_SETS)
 	    CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
 	  }
       }
-      else if (shape == "Region: Point") {
+      else if (shape == "region: point") {
         
         Teuchos::ParameterList point_params = reg_params.sublist(shape);
         Teuchos::Array<double> p_vec = point_params.get< Teuchos::Array<double> >("coordinate");
@@ -533,7 +533,7 @@ SUITE (STK_SETS)
         CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);	  
         
       }
-      else if (shape == "Region: Labeled Set") {
+      else if (shape == "region: labeled set") {
 
 	std::cerr << "Mesh framework cannot do labeled sets" << std::endl;
 

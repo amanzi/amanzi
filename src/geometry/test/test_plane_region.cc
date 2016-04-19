@@ -64,8 +64,8 @@ TEST(PLANE_REGION)
   in_nrm = plane_params.get< Teuchos::Array<double> >("normal");
 
   double tolerance=1.0e-08;
-  // if (plane_params.isSublist("Expert Parameters")) {
-  //   Teuchos::ParameterList expert_params = plane_params.sublist("Expert Parameters");
+  // if (plane_params.isSublist("expert parameters")) {
+  //   Teuchos::ParameterList expert_params = plane_params.sublist("expert parameters");
   //   tolerance = expert_params.get<double>("tolerance");
   // }
  

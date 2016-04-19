@@ -48,7 +48,7 @@ TEST(FLOW_2D_DARCY_WELL) {
   Teuchos::RCP<ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create an MSTK mesh framework
-  ParameterList regions_list = plist->get<Teuchos::ParameterList>("Regions");
+  ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, &comm));
 
@@ -64,11 +64,11 @@ TEST(FLOW_2D_DARCY_WELL) {
   // create a simple state and populate it
   Amanzi::VerboseObject::hide_line_prefix = true;
 
-  Teuchos::ParameterList state_list = plist->sublist("State");
+  Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "Flow", S));
+  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S));
   DPK->Setup(S.ptr());
   S->Setup();
   S->InitializeFields();

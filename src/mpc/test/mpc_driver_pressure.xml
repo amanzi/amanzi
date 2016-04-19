@@ -1,66 +1,63 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
-  <Parameter isUsed="true" name="input file name" type="string" value="dvz_3layer_2D_short.xml"/>
-  <Parameter name="New multi-process coordinator" type="bool" value="true"/>
 
   <!--  REGIONS  -->
-  <ParameterList name="Regions">
+  <ParameterList name="regions">
     <ParameterList name="Well">
-      <ParameterList name="Region: Point">
+      <ParameterList name="region: point">
         <Parameter name="coordinate" type="Array(double)" value="{0.5,0.5}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
-      <ParameterList name="Region: Plane">
+      <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
         <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
-      <ParameterList name="Region: Plane">
+      <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{1.0,1.0}"/>
         <Parameter name="normal" type="Array(double)" value="{1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
-      <ParameterList name="Region: Plane">
+      <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
         <Parameter name="normal" type="Array(double)" value="{0.0,-1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top side">
-      <ParameterList name="Region: Plane">
+      <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{1.0,1.0}"/>
         <Parameter name="normal" type="Array(double)" value="{0.0,1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="All">
-      <ParameterList name="Region: Box">
+      <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Mesh">
-    <ParameterList name="Unstructured">
-      <ParameterList name="Generate Mesh">
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured">
+      <ParameterList name="generate mesh">
           <Parameter name="number of cells" type="Array(int)" value="{5, 5}"/>
-          <Parameter name="domain low coordinate" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00}"/>
+          <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
           <Parameter name="domain high coordinate" type="Array(double)" value="{1.0, 1.0}"/>
       </ParameterList>
-      <ParameterList name="Expert">
+      <ParameterList name="expert">
         <Parameter name="framework" type="string" value="MSTK"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Domain">
-    <Parameter isUsed="true" name="Spatial Dimension" type="int" value="2"/>
+  <ParameterList name="domain">
+    <Parameter name="spatial dimension" type="int" value="2"/>
   </ParameterList>
 
-  <ParameterList name="Cycle Driver">
+  <ParameterList name="cycle driver">
     <Parameter name="start time" type="double" value="0"/>
     <Parameter name="end time" type="double" value="2"/>
     <ParameterList name="time intervals">
@@ -104,13 +101,13 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="PK Tree">
+  <ParameterList name="PK tree">
     <ParameterList name="Pressure PK">
       <Parameter name="PK type" type="string" value="Pressure PK"/>
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="State">
+  <ParameterList name="state">
     <ParameterList name="initial conditions">
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.00000000000000000e+00, -9.80664999999999942e+00}"/>
@@ -191,7 +188,7 @@
   </ParameterList>
 
   <!--  FLOW  -->
-  <ParameterList name="Flow">
+  <ParameterList name="flow">
     <ParameterList name="Pressure Problem">
       <Parameter name="atmospheric pressure" type="double" value="0.0"/>
       <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
@@ -256,7 +253,7 @@
   </ParameterList>
 
   <!-- SOLVERS -->
-  <ParameterList name="Solvers">
+  <ParameterList name="solvers">
     <ParameterList name="AztecOO CG">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
@@ -268,7 +265,7 @@
   </ParameterList>
 
   <!-- PRECONDITIONERS -->
-  <ParameterList name="Preconditioners">
+  <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
       <Parameter name="discretization method" type="string" value="finite volume"/>
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>

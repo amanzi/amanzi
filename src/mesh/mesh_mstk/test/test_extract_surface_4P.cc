@@ -26,17 +26,17 @@ TEST(Extract_Surface_MSTK1_4P)
   // important to define reg_spec and other lists below as references
   // - otherwise, a new copy is made of the sublist that is retrieved
 
-  Teuchos::ParameterList& reg_spec = parameterlist.sublist("Regions"); 
+  Teuchos::ParameterList& reg_spec = parameterlist.sublist("regions"); 
   
   Teuchos::ParameterList& top_surface = reg_spec.sublist("Top Surface");
-  Teuchos::ParameterList& top_surface_def = top_surface.sublist("Region: Plane");
+  Teuchos::ParameterList& top_surface_def = top_surface.sublist("region: plane");
   Teuchos::Array<double> loc1 = Teuchos::tuple(0.0,0.0,1.0);
   Teuchos::Array<double> dir1 = Teuchos::tuple(0.0,0.0,-1.0);
   top_surface_def.set< Teuchos::Array<double> >("point",loc1);
   top_surface_def.set< Teuchos::Array<double> >("normal",dir1);
 
   Teuchos::ParameterList& right_surface = reg_spec.sublist("Right Surface");
-  Teuchos::ParameterList& right_surface_def = right_surface.sublist("Region: Plane");
+  Teuchos::ParameterList& right_surface_def = right_surface.sublist("region: plane");
   Teuchos::Array<double> loc2 = Teuchos::tuple(1.0,0.0,0.0);
   Teuchos::Array<double> dir2 = Teuchos::tuple(1.0,0.0,0.0);
   right_surface_def.set< Teuchos::Array<double> >("point",loc2);
@@ -111,10 +111,10 @@ TEST(Extract_Surface_MSTK2_4P)
   // important to define reg_spec and other lists below as references
   // - otherwise, a new copy is made of the sublist that is retrieved
 
-  Teuchos::ParameterList& reg_spec = parameterlist.sublist("Regions"); 
+  Teuchos::ParameterList& reg_spec = parameterlist.sublist("regions"); 
 
   Teuchos::ParameterList& top_surface = reg_spec.sublist("Top Surface");
-  Teuchos::ParameterList& top_surface_def = top_surface.sublist("Region: Plane");
+  Teuchos::ParameterList& top_surface_def = top_surface.sublist("region: plane");
   Teuchos::Array<double> loc1 = Teuchos::tuple(0.0,0.0,1.0);
   Teuchos::Array<double> dir1 = Teuchos::tuple(-1/sqrt(2.0),0.0,1/sqrt(2.0));
   top_surface_def.set< Teuchos::Array<double> >("point",loc1);
@@ -209,10 +209,10 @@ TEST(Extract_Surface_MSTK3_4P)
   // important to define reg_spec and other lists below as references
   // - otherwise, a new copy is made of the sublist that is retrieved
 
-  Teuchos::ParameterList& reg_spec = parameterlist.sublist("Regions"); 
+  Teuchos::ParameterList& reg_spec = parameterlist.sublist("regions"); 
   
   Teuchos::ParameterList& top_surface = reg_spec.sublist("Top Surface");
-  Teuchos::ParameterList& top_surface_def = top_surface.sublist("Region: Labeled Set");
+  Teuchos::ParameterList& top_surface_def = top_surface.sublist("region: labeled set");
   top_surface_def.set<std::string>("label","106");
   top_surface_def.set<std::string>("file",filename.c_str());
   top_surface_def.set<std::string>("format","Exodus II");

@@ -1,23 +1,22 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
 
   <!--  REGIONS  -->
   <ParameterList name="Regions Flat">
     <ParameterList name="Left side">
-      <ParameterList name="Region: Plane">
+      <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.0}"/>
         <Parameter name="normal" type="Array(double)" value="{-1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
-      <ParameterList name="Region: Plane">
+      <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{1.0,0.0,0.0}"/>
         <Parameter name="normal" type="Array(double)" value="{1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top surface">
-      <ParameterList name="Region: Plane">
+      <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.0,0.0,1.0}"/>
         <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
       </ParameterList>
@@ -26,7 +25,7 @@
 
   <ParameterList name="Regions Closed">
     <ParameterList name="Top surface">
-      <ParameterList name="Region: Labeled Set">
+      <ParameterList name="region: labeled set">
         <Parameter name="label" type="string" value="1"/>
         <Parameter name="file" type="string" value="test/sphere.exo"/>
         <Parameter name="format" type="string" value="Exodus II"/>
@@ -63,7 +62,7 @@
   </ParameterList>
 
   <!-- SOLVERS -->
-  <ParameterList name="Solvers">
+  <ParameterList name="solvers">
     <ParameterList name="AztecOO CG">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
@@ -89,7 +88,7 @@
   </ParameterList>
 
   <!-- PRECONDITIONERS -->
-  <ParameterList name="Preconditioners">
+  <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">

@@ -17,10 +17,10 @@
 #include "mfd3d_electromagnetics.hh"
 #include "Mesh.hh"
 
-class AnalyticMHD_Base {
+class AnalyticElectromagneticsBase {
  public:
-  AnalyticMHD_Base(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
-  ~AnalyticMHD_Base() {};
+  AnalyticElectromagneticsBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
+  ~AnalyticElectromagneticsBase() {};
 
   // analytic solution for MHD problem
   // -- resitivity tensor T

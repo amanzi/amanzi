@@ -37,7 +37,7 @@ using namespace Amanzi::AmanziGeometry;
   Teuchos::ParameterList plist = xmlreader.getParameters();
   
   // For now create one geometric model from all the regions in the spec
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, &comm));
 

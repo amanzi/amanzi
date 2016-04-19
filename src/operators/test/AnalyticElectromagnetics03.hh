@@ -8,19 +8,19 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Linear vector field and constant tensor.
+  Linear vector field and constant tensor, time-dependent
 */
 
-#ifndef AMANZI_OPERATOR_ANALYTIC_MHD_01_HH_
-#define AMANZI_OPERATOR_ANALYTIC_MHD_01_HH_
+#ifndef AMANZI_OPERATOR_ANALYTIC_ELECTROMAGNETICS_03_HH_
+#define AMANZI_OPERATOR_ANALYTIC_ELECTROMAGNETICS_03_HH_
 
-#include "AnalyticMHD_Base.hh"
+#include "AnalyticElectromagneticsBase.hh"
 
-class AnalyticMHD_01 : public AnalyticMHD_Base {
+class AnalyticElectromagnetics03 : public AnalyticElectromagneticsBase {
  public:
-  AnalyticMHD_01(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
-      AnalyticMHD_Base(mesh) {};
-  ~AnalyticMHD_01() {};
+  AnalyticElectromagnetics03(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
+      AnalyticElectromagneticsBase(mesh) {};
+  ~AnalyticElectromagnetics03() {};
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
     Amanzi::WhetStone::Tensor K(3, 2);
@@ -37,7 +37,7 @@ class AnalyticMHD_01 : public AnalyticMHD_Base {
     double x = p[0];
     double y = p[1];
     double z = p[2];
-    return Amanzi::AmanziGeometry::Point(z - y, x - z, y - x);
+    return Amanzi::AmanziGeometry::Point(z - y + t, x - z + t, y - x + t);
   }
 
   Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
@@ -45,7 +45,7 @@ class AnalyticMHD_01 : public AnalyticMHD_Base {
   }
 
   Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    return Amanzi::AmanziGeometry::Point(0.0, 0.0, 0.0);
+    return Amanzi::AmanziGeometry::Point(1.0, 1.0, 1.0);
   }
 };
 

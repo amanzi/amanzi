@@ -56,7 +56,7 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;
@@ -137,7 +137,7 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
   global_op->AssembleMatrix();
 
   // create preconditoner using the base operator class
-  ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // Test SPD properties of the preconditioner.
@@ -163,7 +163,7 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
   CHECK(bhb > 0.0);
 
   // solve the problem
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
   AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create("AztecOO CG", lop_list, global_op);
