@@ -71,8 +71,9 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
 
   double Xb(4.0), Yb(4.0), Zb(10.0);
   bool request_faces(true), request_edges(true);
-  RCP<const Mesh> mesh = meshfactory(-Xb, -Yb, -Zb, Xb, Yb, Zb, 16, 16, 40, gm, request_faces, request_edges);
+  RCP<const Mesh> mesh = meshfactory(-Xb, -Yb, -Zb, Xb, Yb, Zb, 8, 8, 20, gm, request_faces, request_edges);
   // RCP<const Mesh> mesh = meshfactory("test/hex_split_faces5.exo", gm, request_faces, request_edges);
+  // RCP<const Mesh> mesh = meshfactory("test/isohelix.exo", gm, request_faces, request_edges);
 
   // create resistivity coefficient
   double told(0.0), tnew(dt);
@@ -199,9 +200,13 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
         solver = factory.Create("silent", lop_list, global_op);
 
     CompositeVector& rhs = *global_op->rhs();
+// {double a; rhs.Norm2(&a); std::cout << "RHS= "<<nedges_owned<<" " <<a<<std::endl; }
+// std::cout << *global_op->A() << std::endl;
     int ierr = solver->ApplyInverse(rhs, E);
+// {double a; E.Norm2(&a); std::cout << "SOL= "<<a<<std::endl; }
 
     op_mhd->ModifyFields(E, B, dt);
+    double energy = op_mhd->CalculateMagneticEnergy(B);
 
     cycle++;
     told = tnew;
@@ -240,13 +245,14 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
     }
 
     if (MyPID == 0) {
-      std::cout << "time: " << tnew << "  ||r||=" << solver->residual() 
-                << " itr=" << solver->num_itrs() << "  avgB=" << avgB / ncells_owned 
+      std::cout << "time: " << told << "  ||r||=" << solver->residual() 
+                << " itr=" << solver->num_itrs() << "  energy= " << energy 
+                << "  avgB=" << avgB / ncells_owned 
                 << "  divB=" << std::pow(divB, 0.5) << std::endl;
     }
 
     // viaualization
-    if (MyPID == 0 && (cycle % 1 == 0)) {
+    if (MyPID == 0 && (cycle % 100 == 0)) {
       GMV::open_data_file(*mesh, (std::string)"operators.gmv");
       GMV::start_data();
       GMV::write_cell_data(sol, 0, "Bx");

@@ -53,10 +53,8 @@ class DenseVector {
   ~DenseVector() { if (data_ != NULL) { delete[] data_; } }
 
   // primary members 
+  // -- initialization
   void clear() { for (int i = 0; i < m_; i++) data_[i] = 0.0; } 
-
-  inline double& operator()(int i) { return data_[i]; }
-  inline const double& operator()(int i) const { return data_[i]; }
 
   DenseVector& operator=(const DenseVector& B) {
     if (this != &B) {
@@ -77,6 +75,11 @@ class DenseVector {
     for (int i = 0; i < m_; i++) data_[i] = val;
   }
 
+  // -- access to components
+  inline double& operator()(int i) { return data_[i]; }
+  inline const double& operator()(int i) const { return data_[i]; }
+
+  // -- dot products
   int Dot(const DenseVector& B, double* result) {
     if (m_ != B.m_) return -1;
 
@@ -87,7 +90,13 @@ class DenseVector {
     return 0;
   }
 
-  // access
+  friend double operator*(const DenseVector& A, const DenseVector& B) {
+    double s = 0.0; 
+    for (int i = 0; i < A.NumRows(); i++ ) s += A(i) * B(i);
+    return s;
+  }
+
+  // access to private data
   int NumRows() const { return m_; }
   double* Values() { return data_; }
   const double* Values() const { return data_; }
