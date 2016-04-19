@@ -373,7 +373,7 @@ void Coordinator::read_parameter_list() {
   } else if (t0_units == "d") { // days
     t0_ = t0_ * 24.0*3600.0;
   } else if (t0_units == "yr") { // years
-    t0_ = t0_ * 365.25*24.0*3600.0;
+    t0_ = t0_ * 365.*24.0*3600.0;
   } else {
     Errors::Message message("Coordinator: error, invalid start time units");
     Exceptions::amanzi_throw(message);

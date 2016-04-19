@@ -861,53 +861,68 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   }
 
   // seepage face -- pressure <= p_atm, outward mass flux >= 0
+  const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)->ViewComponent("face", true);
+  const double& p_atm = *S->GetScalarData("atmospheric_pressure");
   Teuchos::RCP<const CompositeVector> u = S->GetFieldData(key_);
+  double seepage_tol = p_atm * 1e-14;
 
   for (bc=bc_seepage_->begin(); bc!=bc_seepage_->end(); ++bc) {
     int f = bc->first;
-    //    std::cout << "Found seepage face: " << f << " at: " << mesh_->face_centroid(f) << " with normal: " << mesh_->face_normal(f) << std::endl;
-    double bc_pressure = BoundaryValue(u, f);
-    if (bc_pressure < bc->second) {
+    double boundary_pressure = BoundaryValue(u, f);
+    double boundary_flux = flux[0][f]*BoundaryDirection(f);
+    if (boundary_pressure < bc->second - seepage_tol) {
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_values_[f] = 0.;
-      
-    } else {
+    } else if (boundary_flux > 0.) {
       bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_values_[f] = bc->second;
+    } else {
+      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+      bc_values_[f] = 0.;
     }
   }
 
   // seepage face -- pressure <= p_atm, outward mass flux is specified
-  const double& p_atm = *S->GetScalarData("atmospheric_pressure");
-
-  const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)->ViewComponent("face", true);
-  const Epetra_MultiVector& u_cell = *S->GetFieldData(key_)->ViewComponent("cell");
-  double tol = p_atm * 1e-14;
-
   for (bc=bc_seepage_infilt_->begin(); bc!=bc_seepage_infilt_->end(); ++bc) {
     int f = bc->first;
-    double face_value = BoundaryValue(u, f);
+    double flux_seepage_tol = std::abs(bc->second) * .001;
+    
+    double boundary_pressure = BoundaryValue(u, f);
+    double boundary_flux = flux[0][f]*BoundaryDirection(f);
 
-    if (face_value < p_atm - tol) {
+    std::cout << "BFlux = " << boundary_flux << " with constraint = " << bc->second - flux_seepage_tol << std::endl;
+    if (boundary_flux < bc->second - flux_seepage_tol &&
+        boundary_pressure > p_atm + seepage_tol) {
+      // both constraints are violated, either option should push things in the right direction
+      bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_values_[f] = p_atm;
+      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in DIRICHLET pressure " << p_atm << std::endl;
+
+    } else if (boundary_flux >= bc->second - flux_seepage_tol &&
+        boundary_pressure > p_atm - seepage_tol) {
+      // max pressure condition violated
+      bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_values_[f] = p_atm;
+      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in DIRICHLET pressure " << p_atm << std::endl;
+
+    } else if (boundary_flux < bc->second - flux_seepage_tol &&
+        boundary_pressure <= p_atm + seepage_tol) {
+      // max infiltration violated
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_values_[f] = bc->second;
+      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in NEUMANN flux " << bc->second << std::endl;
+
+    } else if (boundary_flux >= bc->second - flux_seepage_tol &&
+        boundary_pressure <= p_atm - seepage_tol) {
+      // both conditions are valid
+      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+      bc_values_[f] = bc->second;
+      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in NEUMANN flux " << bc->second << std::endl;
+
     } else {
-      AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      ASSERT(cells.size() == 1);
-      int c = cells[0];
-      if (u_cell[0][c] < face_value) {
-        bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_values_[f] = bc->second;
-      } else {
-        bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
-        bc_values_[f] = p_atm;
-      }
+      ASSERT(0);
     }
-    if (flux[0][f] < 0.0) {
-      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-      bc_values_[f] = bc->second;
-    }
+
   }
 
   // surface coupling
