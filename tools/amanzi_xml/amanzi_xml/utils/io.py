@@ -10,7 +10,7 @@ def fromFile(file_or_filename):
 
     try:
         return parser.fromElement(elem.getroot())
-    except Error:
+    except:
         return elem.getroot()
     # except RuntimeError, msg:
     #     if "amanzi_input" in msg.__str__():
