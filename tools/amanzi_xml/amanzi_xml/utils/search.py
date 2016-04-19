@@ -37,6 +37,18 @@ def find_name_value(xml,name,value):
     assert len(findall) == 1
     return findall[0]
 
+def find_by_path(xml,names):
+    """Find an xml object with name path defined by list of name strings in decending hierarchical order.
+    
+    """
+    e = xml
+    for n in names: 
+        if n == 'Main': continue
+        findall = e.findall('./*/[@name="%s"]'%n)
+        assert len(findall) == 1
+        e = findall[0]
+    return e
+
 def replace_by_value(xml,oldvalue,newvalue):
     """Replace all matches of a given 'value'='oldvalue' with 'newvalue'"""
     for r in findall_value(xml, oldvalue):
@@ -91,6 +103,24 @@ def get_path(xml, elem, level=None):
     
     path.reverse()
     return path
+
+def get_path_namelist(xml, elem, level=None):
+    """Parses up the parent map through the entire hierarchy and returns list of path names.
+
+    Returns a list, [xml, ..., elem_parent, elem]
+    """
+    return [e.attrib['name'] for e in get_path(xml,elem,level)]
+
+def print_path(xml,elem,level=None):
+    """Parses up the parent map through the entire hierarchy and prints to terminal.
+    """
+    elems = get_path(xml,elem,level)
+    ind = ''
+    s = ''
+    for e in elems:
+        s += "\n"+ind+e.attrib['name']
+        ind += '    '
+    print s
 
 def get_value(xml, name):
     """Return value associated with name
