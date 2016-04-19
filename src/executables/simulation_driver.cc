@@ -35,7 +35,6 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "MeshFactory.hh"
 #include "MeshLogicalFactory.hh"
 #include "MeshColumn.hh"
-#include "MeshSurfaceCell.hh"
 #include "Domain.hh"
 #include "GeometricModel.hh"
 #include "coordinator.hh"
@@ -64,8 +63,6 @@ int SimulationDriver::Run(
 
   // print header material
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-
-  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
     // print parameter list
     *out << "======================> dumping parameter list <======================" <<
       std::endl;
@@ -82,16 +79,6 @@ int SimulationDriver::Run(
 
   // create meshes
   Amanzi::AmanziMesh::MeshFactory factory(comm.get());
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model_ptr =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_params, comm.get()));
-
-  // create meshes
-  Amanzi::AmanziMesh::MeshFactory factory(comm.get());
-
-  // ------ mesh ------
-  Amanzi::AmanziMesh::MeshFactory factory(comm);
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
   // select the mesh framework
@@ -134,7 +121,7 @@ int SimulationDriver::Run(
   if (mesh_plist.isSublist("read mesh file")) {
     // -- from file
     // try to read mesh from file
-    Teuchos::ParameterList read_params = mesh_plist.sublist("Read Mesh File");
+    Teuchos::ParameterList read_params = mesh_plist.sublist("read mesh file");
 
     std::string file;
     if (read_params.isParameter("file")) {
@@ -155,8 +142,8 @@ int SimulationDriver::Run(
         Exceptions::amanzi_throw(msg);
       }
     } else {
-      std::cerr << "Must specify Format parameter for Read option under Mesh" << std::endl;
-      throw std::exception();
+      Errors::Message msg("\"read mesh file\" parameter \"format\" missing.");
+      Exceptions::amanzi_throw(msg);
     }
 
     if (!file.empty()) {
@@ -179,7 +166,7 @@ int SimulationDriver::Run(
   } else if (mesh_plist.isSublist("generate mesh")) {
     // -- generated mesh
     // try to generate the mesh from data in plist
-    Teuchos::ParameterList gen_params = mesh_plist.sublist("Generate Mesh");
+    Teuchos::ParameterList gen_params = mesh_plist.sublist("generate mesh");
     ierr = 0;
 
     try {
@@ -203,17 +190,15 @@ int SimulationDriver::Run(
     
   } else {
     Errors::Message msg("Must specify mesh sublist of type: \"read mesh file\", \"generate mesh\", or \"logical mesh\".");
-  } else {
-    Errors::Message msg("Must specify mesh sublist of type: \"read mesh file\", \"generate mesh\", or \"logical mesh\".");
     Exceptions::amanzi_throw(msg);
 
   }
   ASSERT(!mesh.is_null());
 
   // mesh verification
-  bool expert_params_specified = mesh_plist.isSublist("Expert");
+  bool expert_params_specified = mesh_plist.isSublist("expert");
   if (expert_params_specified) {
-    Teuchos::ParameterList expert_mesh_params = mesh_plist.sublist("Expert");
+    Teuchos::ParameterList expert_mesh_params = mesh_plist.sublist("expert");
 
     bool verify_mesh_param = expert_mesh_params.isParameter("verify mesh");
     if (verify_mesh_param) {
@@ -281,7 +266,7 @@ int SimulationDriver::Run(
 
     bool surf_expert_params_specified = surface_plist.isSublist("expert");
     if (surf_expert_params_specified) {
-      Teuchos::ParameterList surf_expert_mesh_params = surface_plist.sublist("Expert");
+      Teuchos::ParameterList surf_expert_mesh_params = surface_plist.sublist("expert");
       bool verify_surf_mesh_param = surf_expert_mesh_params.isParameter("verify mesh");
       if (verify_surf_mesh_param) {
         bool verify = surf_expert_mesh_params.get<bool>("verify mesh");
@@ -331,18 +316,15 @@ int SimulationDriver::Run(
 
   // column meshes
   std::vector<Teuchos::RCP<Amanzi::AmanziMesh::Mesh> > col_meshes;
+  std::vector<Teuchos::RCP<Amanzi::AmanziMesh::Mesh> > col_surf_meshes;
+
   if (mesh_plist.isSublist("column meshes")) {
     int nc = mesh->num_columns();
     col_meshes.resize(nc, Teuchos::null);
-    col_surf_meshes.resize(nc, Teuchos::null);
     for (int c=0; c!=nc; ++c) {
       col_meshes[c] = Teuchos::rcp(new Amanzi::AmanziMesh::MeshColumn(*mesh, c));
     }
-
-    if (mesh_plist.isSublist("Column Surface Meshes"))
-      for (int c1=0; c1!=nc; ++c1)
-        col_surf_meshes[c1] = Teuchos::rcp(new Amanzi::AmanziMesh::MeshSurfaceCell(*col_meshes[c1], "surface"));
-  } 
+  }  
   
   Teuchos::TimeMonitor::summarize();
   Teuchos::TimeMonitor::zeroOutTimers();
@@ -359,7 +341,7 @@ int SimulationDriver::Run(
   if (surface_mesh != Teuchos::null)
     S->RegisterMesh("surface", surface_mesh, deformable);
 
-  if (col_meshes.size() > 0) {
+    if (col_meshes.size() > 0) {
     for (int c=0; c!=col_meshes.size(); ++c) {
       std::stringstream namestream, namestream_surf;
       int id = surface_mesh->cell_map(false).GID(c);
@@ -371,12 +353,12 @@ int SimulationDriver::Run(
     }
   }
 
+  
   // create the top level Coordinator
   Amanzi::Coordinator coordinator(plist, S, comm.get());
 
   // run the simulation
   coordinator.cycle_driver();
-
   mesh.reset();
   return 0;
 }
