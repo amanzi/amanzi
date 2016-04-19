@@ -93,7 +93,7 @@ void OperatorElectromagneticsMHD::ModifyMatrices(
 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
-      v1(n) = Bf[0][f] * dirs[n];
+      v1(n) = Bf[0][f] * dirs[n] * mesh_->face_area(f) / dt;
     }
 
     Mcell.Multiply(v1, v2, false);
@@ -142,6 +142,38 @@ void OperatorElectromagneticsMHD::ModifyFields(
       Bf[0][f] -= dt * v2(n) * dirs[n] / mesh_->face_area(f);
     }
   }
+}
+
+
+/* ******************************************************************
+* Put here stuff that has to be done in constructor.
+****************************************************************** */
+double OperatorElectromagneticsMHD::CalculateMagneticEnergy(const CompositeVector& B)
+{
+  const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
+
+  std::vector<int> dirs;
+  AmanziMesh::Entity_ID_List faces;
+
+  double energy(0.0);
+  for (int c = 0; c < ncells_owned; ++c) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    const WhetStone::DenseMatrix& Mcell = mass_op_[c];
+
+    WhetStone::DenseVector v1(nfaces), v2(nfaces);
+
+    for (int n = 0; n < nfaces; ++n) {
+      int f = faces[n];
+      v1(n) = Bf[0][f] * dirs[n] * mesh_->face_area(f);
+    }
+
+    Mcell.Multiply(v1, v2, false);
+    energy += v1 * v2;
+  }
+
+  return energy / 2;
 }
 
 

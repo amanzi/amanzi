@@ -52,6 +52,9 @@ class OperatorElectromagneticsMHD : public OperatorElectromagnetics {
   // -- after solving the problem
   virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt);
 
+  // magnetic energy
+  double CalculateMagneticEnergy(const CompositeVector& B);
+
  private:
   void InitElectromagneticsMHD_();
 
