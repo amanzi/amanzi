@@ -54,7 +54,7 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
                      const Teuchos::RCP<State>& S,
                      const Teuchos::RCP<TreeVector>& soln) :
     soln_(soln),
-    max_time_step_(9.9e9),
+    dt_max_(9.9e9),
     chem_(NULL),
     current_time_(0.0),
     saved_time_(0.0)
@@ -305,7 +305,15 @@ void Amanzi_PK::XMLParameters()
   }
 
   // misc other chemistry flags
-  max_time_step_ = cp_list_->get<double>("max time step (s)", 9.9e+9);
+  dt_max_ = cp_list_->get<double>("max time step (s)", 9.9e+9);
+  dt_next_ = cp_list_->get<double>("initial time step (s)", dt_max_);
+  dt_cut_factor_ = cp_list_->get<double>("time step cut factor", 2.0);
+  dt_increase_factor_ = cp_list_->get<double>("time step increase factor", 1.2);
+
+  dt_cut_threshold_ = cp_list_->get<int>("time step cut threshold", 8);
+  dt_increase_threshold_ = cp_list_->get<int>("time step increase threshold", 4);
+
+  num_successful_steps_ = 0;
 }
 
 
@@ -657,6 +665,9 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   ErrorAnalysis(ierr, internal_msg);
   
+  int tmp(max_itrs);
+  mesh_->get_comm()->MaxAll(&tmp, &max_itrs, 1);
+
   std::stringstream ss;
   ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/" 
      << avg_itrs / num_cells << ", maximum in gid=" << mesh_->GID(cmax, AmanziMesh::CELL) << std::endl;
@@ -666,6 +677,10 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // but can be move up into the loops....
   // chem_->DisplayTotalColumnHeaders(true);
   // chem_->DisplayTotalColumns(current_time_, beaker_components_, true);
+
+  // update time control parameters
+  num_successful_steps_++;
+  num_iterations_ = max_itrs;
 
   return failed;
 }
@@ -679,6 +694,21 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void Amanzi_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   saved_time_ = t_new;
+
+  if ((num_successful_steps_ == 0) || (num_iterations_ >= dt_cut_threshold_)) {
+    dt_next_ /= dt_cut_factor_;
+  }
+  else if (num_successful_steps_ >= dt_increase_threshold_) {
+    dt_next_ *= dt_increase_factor_;
+    num_successful_steps_ = 0;
+  }
+
+  dt_next_ = std::min(dt_next_, dt_max_);
+
+  // synchronize processors since update of control parameters was 
+  // made in many places.
+  double tmp(dt_next_);
+  mesh_->get_comm()->MinAll(&tmp, &dt_next_, 1);
 
   // debug output
   // chem_->Speciate(&beaker_components_, beaker_parameters_);

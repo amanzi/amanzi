@@ -77,10 +77,10 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     std::string file_location;
 
     if (engine == "pflotran") {
-      out_list.set<std::string>("Engine", "PFloTran");
+      out_list.set<std::string>("engine", "PFloTran");
       file_location = "process_kernels, chemistry";
     } else if (engine == "crunchflow") {
-      out_list.set<std::string>("Engine", "CrunchFlow");
+      out_list.set<std::string>("engine", "CrunchFlow");
       file_location = "process_kernels, chemistry";
     } else {
       valid_engine = false;
@@ -96,10 +96,10 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
         element = static_cast<DOMElement*>(node);
 	if (element->hasAttribute(mm.transcode("input_filename"))) {
             std::string inpfilename = GetAttributeValueS_(element, "input_filename");
-            out_list.set<std::string>("Engine Input File", inpfilename);
+            out_list.set<std::string>("engine input file", inpfilename);
 	} else {
 	    std::string inpfilename = CreateINFile(xmlfilename_);
-            out_list.set<std::string>("Engine Input File", inpfilename);
+            out_list.set<std::string>("engine input file", inpfilename);
 	}
       } else {
         Errors::Message msg;
