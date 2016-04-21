@@ -1,9 +1,10 @@
+import sys
 try:
     import xml.etree.cElementTree as ET
 except:
     import xml.etree.ElementTree as ET
 try:
-    from amanzi_xml.utils import search as xf
+    from amanzi_xml.utils.search import *
 except:
     print "Error: Unable to locate amanzi xml_functions module"
     print "Add $AMANZI_SRC_DIR/tools/amanzi_xml to your PYTHONPATH environment variable"
@@ -36,7 +37,7 @@ class ATSXML(object):
         return self.root.findall('ParameterList/[@name="Regions"]/ParameterList')
     @property
     def parent_map(self):
-        return xf.create_parent_map(self)
+        return create_parent_map(self)
     # In amanzi_xml mesh.py
     #@property
     #def simulated_times(self):
@@ -61,13 +62,13 @@ class ATSXML(object):
         replace_regions(self,fromatsxml,mapping=mapping)
     def replace_by_value(self,oldvalue,newvalue):
         """Replace all matches of a given 'value'='oldvalue' with 'newvalue'"""
-        xf.replace_by_value(self.root,oldvalue,newvalue)
+        replace_by_value(self.root,oldvalue,newvalue)
     def replace_by_name(self,name,value):
         """Replace all matches of a given 'name' with 'newvalue'"""
-        xf.replace_by_name(self.root,name,value)
+        replace_by_name(self.root,name,value)
     def replace_file(self,newfilename,oldfilename=None):
-        if oldfilename is not None: xf.replace_by_value(self.root,oldfilename,newfilename)
-        else: xf.replace_by_name(self.root,'file',newfilename)
+        if oldfilename is not None: replace_by_value(self.root,oldfilename,newfilename)
+        else: replace_by_name(self.root,'file',newfilename)
     def replace_mesh_file(self,newfilename):
         for e in self.root.findall('.//ParameterList/[@name="Region: Labeled Set"]'):
             e2 = e.find('.//Parameter/[@name="file"]')
@@ -81,7 +82,7 @@ class ATSXML(object):
             e2 = e.find('.//Parameter/[@name="File"]')
             if e2 is not None: e2.set('value',newfilename)
     def replace_restart_file(self,filename):
-        xf.replace_by_name(self.root,'restart file', filename)
+        replace_by_name(self.root,'restart file', filename)
     #def replace_elems(self,fromatsxml,element_names):
     #    for nm in element_names:
     #        e = fromatsxml.root.findall(".//ParameterList[@name='"+nm+"']")[0]
@@ -89,7 +90,7 @@ class ATSXML(object):
     #        self.root.append(e)        
     def replace_elem(self,elem_sink,elem_src):
         """Replace the element 'sink' with the element 'src' in the hierarchy 'xml'"""
-        xf.replace_elem(self.root,elem_sink,elem_src)
+        replace_elem(self.root,elem_sink,elem_src)
         #pm = self.parent_map
         #p_elem_sink = pm[elem_sink]
         #p_elem_sink.remove(elem_sink)
@@ -174,7 +175,7 @@ class ATSXML(object):
         print "remove_elem deprecated, it has been replaced with remove"
     def remove(self,elem):
         """Removes the xml 'elem' wherever it is locaed in 'xml'"""
-        xf.remove(self.root,elem)
+        remove(self.root,elem)
     def set_verbosity(self,value):
         '''
         Set verbosity level to value in all available Verbose Objects
@@ -182,7 +183,7 @@ class ATSXML(object):
         :param value: Verbosity level: high,low
         :type value: str
         '''
-        for e in xf.findall_name(self.root,'Verbosity Level'):
+        for e in findall_name(self.root,'Verbosity Level'):
             e.set('value',value)
     # Now in xml_functions
     #def add_Parameter(self,name,value,vtype,elem=None):
@@ -271,12 +272,12 @@ def replace_regions(toatsxml,fromatsxml,mapping=None):
     for r in toatsxml.findall('.//Parameter/[@name="domain name"]'):
         r.set('value',m[r.attrib['value']])
     # Replace Mesh and Regions blocks
-    xf.replace_elem(toatsxml,toatsxml.find('./ParameterList/[@name="Regions"]'),fromatsxml.find('./ParameterList/[@name="Regions"]'))
-    xf.replace_elem(toatsxml,xf.find_name(toatsxml,'Mesh'),xf.find_name(fromatsxml,'Mesh'))
-    newinput = xf.get_value(toatsxml,'Native Unstructured Input')
-    xf.replace_by_name(toatsxml,'Native Unstructured Input',newinput)
-    newgridoption = xf.get_value(toatsxml,'grid_option')
-    xf.replace_by_name(toatsxml,'grid_option',newgridoption)
+    replace_elem(toatsxml,toatsxml.find('./ParameterList/[@name="Regions"]'),fromatsxml.find('./ParameterList/[@name="Regions"]'))
+    replace_elem(toatsxml,find_name(toatsxml,'Mesh'),find_name(fromatsxml,'Mesh'))
+    newinput = get_value(toatsxml,'Native Unstructured Input')
+    replace_by_name(toatsxml,'Native Unstructured Input',newinput)
+    newgridoption = get_value(toatsxml,'grid_option')
+    replace_by_name(toatsxml,'grid_option',newgridoption)
 
 
 
