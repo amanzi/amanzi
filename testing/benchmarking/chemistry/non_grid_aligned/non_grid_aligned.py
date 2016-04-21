@@ -17,7 +17,7 @@ def get_chunks(arr, chunk_size = 10):
 
 # ----------- AMANZI + ALQUIMIA -----------------------------------------------------------------
 
-def GetXYZ_Amanzi(path,root,time,comp,nodesx=121,nodesy=101):
+def GetXYZ_Amanzi(path,root,comp,nodesx=121,nodesy=101):
 
     # open amanzi concentration and mesh files
     dataname = os.path.join(path,root+"_data.h5")
@@ -40,6 +40,7 @@ def GetXYZ_Amanzi(path,root,time,comp,nodesx=121,nodesy=101):
     y_amanzi = np.array( [ycoord[0:-1] for ycoord in y_amanzi] )
 
     # element data for x, y -- not sure why this thing is transposed
+    time = max(amanzi_file[comp].keys())
     v = [v[0] for v in amanzi_file[comp][time]]
     z_amanzi = np.array( get_chunks(v,chunk_size=nodesy-1) )
     z_amanzi = z_amanzi.T
@@ -65,16 +66,13 @@ if __name__ == "__main__":
     plt.subplots(1,figsize=(10,8))
     
     try:
-        # hardwired for last time step
-        time = '360'
-
         # Amanzi native chemistry
         input_filename = os.path.join("non_grid_aligned-u.xml")
         path_to_amanzi = "amanzi-native-output"
-        run_amanzi_standard.run_amanzi(input_filename, 1, ["calcite_dbs.bgd"], path_to_amanzi)
+        run_amanzi_standard.run_amanzi(input_filename, 8, ["calcite_dbs.bgd"], path_to_amanzi)
         
         comp = 'mineral_volume_fractions.cell.Calcite vol frac'
-        x_native, y_native, z_native = GetXYZ_Amanzi(path_to_amanzi,root,time,comp,nodesx=nodesx,nodesy=nodesy)
+        x_native, y_native, z_native = GetXYZ_Amanzi(path_to_amanzi,root,comp,nodesx=nodesx,nodesy=nodesy)
 
     except:
         pass    

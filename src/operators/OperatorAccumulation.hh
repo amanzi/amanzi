@@ -19,6 +19,7 @@
 #include "exceptions.hh"
 #include "CompositeVector.hh"
 
+#include "BCs.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 
@@ -112,6 +113,9 @@ class OperatorAccumulation {
                            double dT, const std::string& name);
   void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& ss,
                            const std::string& name);
+
+  // -- operator modification
+  void ApplyBCs(const Teuchos::RCP<BCs>& bc);
 
   // access (for developers only)
   int schema_dofs() { return local_op_schema_; }

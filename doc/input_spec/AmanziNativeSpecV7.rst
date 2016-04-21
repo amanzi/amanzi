@@ -1357,7 +1357,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
           <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-          <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+          <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -2355,8 +2355,8 @@ Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
 
   <ParameterList>  <!-- parent list -->
     <ParameterList name="chemistry">
-      <Parameter name="Engine" type="string" value="PFloTran"/>
-      <Parameter name="Engine Input File" type="string" value="1d-tritium-trim.in"/>
+      <Parameter name="engine" type="string" value="PFloTran"/>
+      <Parameter name="engine input file" type="string" value="1d-tritium-trim.in"/>
       <Parameter name="minerals" type="Array(string)" value="{quartz, kaolinite, goethite, opal}"/>
       <Parameter name="min time step (s)" type="double" value="1.5778463e-07"/>
       <Parameter name="max time step (s)" type="double" value="1.5778463e+07"/>
@@ -2394,6 +2394,20 @@ The Amanzi chemistry process kernel uses the following parameters.
 
 * `"maximum Newton iterations`" [int] is the maximum number of iteration the chemistry 
   library can take.
+
+* `"max time step (s)`" [double] is the maximum time step that chemistry will allow the MPC to take.
+
+* `"initial time step (s)`" [double] is the initial time step that chemistry will ask the MPC to take.
+
+* `"time step cut threshold`" [int] is the number of Newton iterations that if exceeded
+  will trigger a time step cut. Default is 8.
+
+* `"time step cut factor`" [double] is the factor by which the time step is cut. Default is 2.0
+
+* `"time step increase threshold`" [int] is the number of consecutive successful time steps that
+  will trigger a time step increase. Default is 4.
+
+* `"time step increase factor`" [double] is the factor by which the time step is increased. Default is 1.2
 
 * `"auxiliary data`" [Array(string)] defines additional chemistry related data that the user 
   can request be saved to vis files. Currently `"pH`" is the only variable supported.
@@ -3050,7 +3064,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
            <Parameter name="gravity" type="bool" value="true"/>
-           <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+           <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
            <Parameter name="upwind method" type="string" value="standard: cell"/>
          </ParameterList>
        </ParameterList>
@@ -3223,7 +3237,7 @@ Diffusion operator
        <Parameter name="exclude primary terms" type="bool" value="false"/>
        <Parameter name="scaled constraint equation" type="bool" value="false"/>
        <Parameter name="gravity" type="bool" value="false"/>
-       <Parameter name="newton correction" type="string" value="none"/>
+       <Parameter name="Newton correction" type="string" value="none"/>
      </ParameterList>
    </ParameterList>
    </ParameterList>
@@ -3291,9 +3305,9 @@ Diffusion operator
     and derives gravity discretization by the reserve shifting.
     The second option is based on the divergence formula.
 
-  * `"newton correction`" [string] specifies a model for non-physical terms 
+  * `"Newton correction`" [string] specifies a model for non-physical terms 
     that must be added to the matrix. These terms represent Jacobian and are needed 
-    for the preconditioner. Available options are `"true jacobian`" and `"approximate jacobian`".
+    for the preconditioner. Available options are `"true Jacobian`" and `"approximate Jacobian`".
     The FV scheme accepts only the first options. The othre schemes accept only the second option.
 
   * `"scaled constraint equation`" [bool] rescales flux continuity equations on mesh faces.
@@ -3323,7 +3337,7 @@ Diffusion operator
       <Parameter name="gravity" type="bool" value="true"/>
       <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
       <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
-      <Parameter name="newton correction" type="string" value="true jacobian"/>
+      <Parameter name="Newton correction" type="string" value="true Jacobian"/>
 
       <ParameterList name="consistent faces">
         <ParameterList name="linear solver">
@@ -4124,7 +4138,7 @@ Here is the list of selected parameters for the Newton-Picard solver.
          <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
          <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
          <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-         <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+         <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
        </ParameterList>
      </ParameterList>
    </ParameterList>
