@@ -314,7 +314,7 @@
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="gravity" type="bool" value="true"/>
-              <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+              <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
             </ParameterList>
             <ParameterList name="vapor matrix">
               <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -325,7 +325,7 @@
               <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
               <Parameter name="exclude primary terms" type="bool" value="false"/>
               <Parameter name="scaled constraint equation" type="bool" value="false"/>
-              <Parameter name="newton correction" type="string" value="none"/>
+              <Parameter name="Newton correction" type="string" value="none"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>

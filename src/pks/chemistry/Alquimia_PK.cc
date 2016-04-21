@@ -75,18 +75,18 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   InitializeSorptionSites(cp_list_, state_list);
 
   // create chemistry engine. (should we do it later in Initialize()?)
-  if (!cp_list_->isParameter("Engine")) {
+  if (!cp_list_->isParameter("engine")) {
     Errors::Message msg;
-    msg << "No 'Engine' parameter found in the parameter list for 'Chemistry'.\n";
+    msg << "No 'engine' parameter found in the parameter list for 'Chemistry'.\n";
     Exceptions::amanzi_throw(msg);
   }
-  if (!cp_list_->isParameter("Engine Input File")) {
+  if (!cp_list_->isParameter("engine input file")) {
     Errors::Message msg;
-    msg << "No 'Engine Input File' parameter found in the parameter list for 'Chemistry'.\n";
+    msg << "No 'engine input file' parameter found in the parameter list for 'Chemistry'.\n";
     Exceptions::amanzi_throw(msg);
   }
-  std::string engine_name = cp_list_->get<std::string>("Engine");
-  std::string engine_inputfile = cp_list_->get<std::string>("Engine Input File");
+  std::string engine_name = cp_list_->get<std::string>("engine");
+  std::string engine_inputfile = cp_list_->get<std::string>("engine input file");
   chem_engine_ = Teuchos::rcp(new AmanziChemistry::ChemistryEngine(engine_name, engine_inputfile));
 
   // grab the component names
@@ -869,7 +869,7 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
 
 /* *******************************************************************
-*
+* Time step calculation based on control parameters.
 ******************************************************************* */
 void Alquimia_PK::ComputeNextTimeStep()
 {
@@ -877,14 +877,16 @@ void Alquimia_PK::ComputeNextTimeStep()
     if ((num_successful_steps_ == 0) || (num_iterations_ >= num_iterations_for_time_step_cut_)) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "Number of Newton iterations exceeds threshold (" << num_iterations_for_time_step_cut_ << ") for time step cut, cutting dT by " << time_step_cut_factor_ << std::endl;
+        *vo_->os() << "Number of Newton iterations exceeds threshold (" << num_iterations_for_time_step_cut_ 
+                   << ") for time step cut, cutting dT by " << time_step_cut_factor_ << std::endl;
       }
       time_step_ = prev_time_step_ / time_step_cut_factor_;
     }
     else if (num_successful_steps_ >= num_steps_before_time_step_increase_) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "Number of successful steps exceeds threshold (" << num_steps_before_time_step_increase_ << ") for time step increase, growing dT by " << time_step_increase_factor_ << std::endl;
+        *vo_->os() << "Number of successful steps exceeds threshold (" << num_steps_before_time_step_increase_ 
+                   << ") for time step increase, growing dT by " << time_step_increase_factor_ << std::endl;
       }
       time_step_ = prev_time_step_ * time_step_increase_factor_;
       num_successful_steps_ = 0;

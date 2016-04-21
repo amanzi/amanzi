@@ -71,8 +71,8 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
 
   double Xb(4.0), Yb(4.0), Zb(10.0);
   bool request_faces(true), request_edges(true);
-  RCP<const Mesh> mesh = meshfactory(-Xb, -Yb, -Zb, Xb, Yb, Zb, 8, 8, 20, gm, request_faces, request_edges);
-  // RCP<const Mesh> mesh = meshfactory("test/hex_split_faces5.exo", gm, request_faces, request_edges);
+  // RCP<const Mesh> mesh = meshfactory(-Xb, -Yb, -Zb, Xb, Yb, Zb, 8, 8, 20, gm, request_faces, request_edges);
+  RCP<const Mesh> mesh = meshfactory("test/hex_split_faces5.exo", gm, request_faces, request_edges);
   // RCP<const Mesh> mesh = meshfactory("test/isohelix.exo", gm, request_faces, request_edges);
 
   // create resistivity coefficient
@@ -189,6 +189,7 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
     // BCs, sources, and assemble
     op_mhd->ModifyMatrices(E, B, dt);
     op_mhd->ApplyBCs(true, true);
+    op_acc->ApplyBCs(bc);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 
@@ -202,13 +203,10 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
         solver = factory.Create("silent", lop_list, global_op);
 
     CompositeVector& rhs = *global_op->rhs();
-// {double a; rhs.Norm2(&a); std::cout << "RHS= "<<nedges_owned<<" " <<a<<std::endl; }
-// std::cout << *global_op->A() << std::endl;
     int ierr = solver->ApplyInverse(rhs, E);
-// {double a; E.Norm2(&a); std::cout << "SOL= "<<a<<std::endl; }
 
-    op_mhd->ModifyFields(E, B, dt);
     double energy = op_mhd->CalculateMagneticEnergy(B);
+    op_mhd->ModifyFields(E, B, dt);
 
     CHECK(energy < energy0);
     energy0 = energy;
@@ -258,7 +256,7 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
 
     // viaualization
     if (MyPID == 0 && (cycle % 100 == 0)) {
-      GMV::open_data_file(*mesh, (std::string)"operators.gmv");
+      GMV::open_data_file(*mesh, "operators.gmv");
       GMV::start_data();
       GMV::write_cell_data(sol, 0, "Bx");
       GMV::write_cell_data(sol, 1, "By");

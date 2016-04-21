@@ -87,12 +87,12 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
 
   // Do we need to calculate Newton correction terms?
   newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
-  std::string jacobian = plist.get<std::string>("newton correction", "none");
-  if (jacobian == "true jacobian") {
+  std::string jacobian = plist.get<std::string>("Newton correction", "none");
+  if (jacobian == "true Jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
-  } else if (jacobian == "approximate jacobian") {
+  } else if (jacobian == "approximate Jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
-    msg << "OperatorDiffusionFV: \"approximate jacobian\" not supported, use \"true jacobian\".";
+    msg << "OperatorDiffusionFV: \"approximate Jacobian\" not supported, use \"true Jacobian\".";
     Exceptions::amanzi_throw(msg);
   }
 

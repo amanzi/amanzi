@@ -145,9 +145,9 @@ TEST(FLOW_2D_RICHARDS) {
     // modify the preconditioner
     plist->sublist("PKs").sublist("flow").sublist("Richards problem")
           .sublist("operators").sublist("diffusion operator").sublist("preconditioner")
-          .set<std::string>("newton correction", "approximate jacobian");
+          .set<std::string>("Newton correction", "approximate Jacobian");
   }
 
-  // verify positive impact of newton correction in the preconditioner.
+  // verify positive impact of Newton correction in the preconditioner.
   CHECK(itrs[1] < 0.7 * itrs[0]);
 }

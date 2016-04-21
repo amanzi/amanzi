@@ -470,9 +470,9 @@ struct Problem {
     }
     if (jac_ondiag) {
       if (discretization == "fv: default") {
-        op_list00.set("newton correction", "true jacobian");
+        op_list00.set("Newton correction", "true Jacobian");
       } else {
-        op_list00.set("newton correction", "approximate jacobian");
+        op_list00.set("Newton correction", "approximate Jacobian");
       }
     }
     pc00 = fac.Create(op_list00, mesh_c);
@@ -488,9 +488,9 @@ struct Problem {
     }
     if (jac_ondiag) {
       if (discretization == "fv: default") {
-        op_list11.set("newton correction", "true jacobian");
+        op_list11.set("Newton correction", "true Jacobian");
       } else {
-        op_list11.set("newton correction", "approximate jacobian");
+        op_list11.set("Newton correction", "approximate Jacobian");
       }
     }
     pc11 = fac.Create(op_list11, mesh_c);
@@ -508,9 +508,9 @@ struct Problem {
       }
       op_list01.set("exclude primary terms", true);
       if (discretization == "fv: default") {
-        op_list01.set("newton correction", "true jacobian");
+        op_list01.set("Newton correction", "true Jacobian");
       } else {
-        op_list01.set("newton correction", "approximate jacobian");
+        op_list01.set("Newton correction", "approximate Jacobian");
       }
       pc01 = fac.Create(op_list01, mesh_c);
       pc01->SetBCs(bc0,bc1);
@@ -525,9 +525,9 @@ struct Problem {
       }
       op_list10.set("exclude primary terms", true);
       if (discretization == "fv: default") {
-        op_list10.set("newton correction", "true jacobian");
+        op_list10.set("Newton correction", "true Jacobian");
       } else {
-        op_list10.set("newton correction", "approximate jacobian");
+        op_list10.set("Newton correction", "approximate Jacobian");
       }
       pc10 = fac.Create(op_list10, mesh_c);
       pc10->SetBCs(bc1,bc0);

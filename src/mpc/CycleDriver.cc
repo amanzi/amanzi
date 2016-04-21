@@ -511,7 +511,7 @@ double CycleDriver::get_dt(bool after_failure) {
   }
 
   if (S_->time() > 0) {
-    if (dt/S_->time() < 1e-14) {
+    if (dt / S_->time() < 1e-14) {
       Errors::Message message("CycleDriver: error, timestep too small with respect to current time");
       Exceptions::amanzi_throw(message);
     }
