@@ -94,7 +94,7 @@
               <Parameter name="schema" type="Array(string)" value="{cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
               <Parameter name="gravity" type="bool" value="true"/>
-              <!--Parameter name="newton correction" type="string" value="exact jacobian"/-->
+              <!--Parameter name="Newton correction" type="string" value="exact jacobian"/-->
             </ParameterList>
           </ParameterList>
         </ParameterList>

@@ -73,7 +73,7 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
   bool request_faces(true), request_edges(true);
   // RCP<const Mesh> mesh = meshfactory(-Xb, -Yb, -Zb, Xb, Yb, Zb, 8, 8, 20, gm, request_faces, request_edges);
   RCP<const Mesh> mesh = meshfactory("test/hex_split_faces5.exo", gm, request_faces, request_edges);
-  // RCP<const Mesh> mesh = meshfactory("test/isohelix_coarse.exo", gm, request_faces, request_edges);
+  // RCP<const Mesh> mesh = meshfactory("test/isohelix.exo", gm, request_faces, request_edges);
 
   // create resistivity coefficient
   double told(0.0), tnew(dt);
@@ -165,8 +165,8 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
       Bf[0][f] = (ana.magnetic_exact(xf, told) * normal) / area;
     }
   } 
-//  CompositeVector B0(B);
-//  Epetra_MultiVector& B0f = *B0.ViewComponent("face");
+  // CompositeVector B0(B);
+  // Epetra_MultiVector& B0f = *B0.ViewComponent("face");
 
   int cycle(0);
   double energy0(1e+99);
@@ -256,7 +256,7 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
 
     // viaualization
     if (MyPID == 0 && (cycle % 100 == 0)) {
-      GMV::open_data_file(*mesh, (std::string)"operators.gmv");
+      GMV::open_data_file(*mesh, "operators.gmv");
       GMV::start_data();
       GMV::write_cell_data(sol, 0, "Bx");
       GMV::write_cell_data(sol, 1, "By");

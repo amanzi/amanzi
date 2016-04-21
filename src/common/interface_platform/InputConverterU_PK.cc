@@ -376,24 +376,24 @@ Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
     vapor.set<bool>("exclude primary terms", false);
     vapor.set<bool>("scaled constraint equation", false);
     vapor.set<bool>("gravity", "false");
-    vapor.set<std::string>("newton correction", "none");
+    vapor.set<std::string>("Newton correction", "none");
   }
 
   // fixing miscalleneous scenarious
   if (pc_method == "linearized_operator") {
     out_list.sublist("diffusion operator").sublist("preconditioner")
-        .set<std::string>("newton correction", "approximate jacobian");
+        .set<std::string>("Newton correction", "approximate Jacobian");
   }
 
   if (nonlinear_solver == "newton") {
     Teuchos::ParameterList& pc_list = 
         out_list.sublist("diffusion operator").sublist("preconditioner");
-    pc_list.set<std::string>("newton correction", "true jacobian");
+    pc_list.set<std::string>("Newton correction", "true Jacobian");
   }
   else if (nonlinear_solver == "newton-picard") {
     Teuchos::ParameterList& pc_list = 
         out_list.sublist("diffusion operator").sublist("preconditioner");
-    pc_list.set<std::string>("newton correction", "approximate jacobian");
+    pc_list.set<std::string>("Newton correction", "approximate Jacobian");
   }
 
   return out_list;

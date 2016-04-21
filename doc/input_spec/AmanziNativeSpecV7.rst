@@ -1357,7 +1357,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
           <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-          <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+          <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -3064,7 +3064,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
            <Parameter name="gravity" type="bool" value="true"/>
-           <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+           <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
            <Parameter name="upwind method" type="string" value="standard: cell"/>
          </ParameterList>
        </ParameterList>
@@ -3237,7 +3237,7 @@ Diffusion operator
        <Parameter name="exclude primary terms" type="bool" value="false"/>
        <Parameter name="scaled constraint equation" type="bool" value="false"/>
        <Parameter name="gravity" type="bool" value="false"/>
-       <Parameter name="newton correction" type="string" value="none"/>
+       <Parameter name="Newton correction" type="string" value="none"/>
      </ParameterList>
    </ParameterList>
    </ParameterList>
@@ -3305,9 +3305,9 @@ Diffusion operator
     and derives gravity discretization by the reserve shifting.
     The second option is based on the divergence formula.
 
-  * `"newton correction`" [string] specifies a model for non-physical terms 
+  * `"Newton correction`" [string] specifies a model for non-physical terms 
     that must be added to the matrix. These terms represent Jacobian and are needed 
-    for the preconditioner. Available options are `"true jacobian`" and `"approximate jacobian`".
+    for the preconditioner. Available options are `"true Jacobian`" and `"approximate Jacobian`".
     The FV scheme accepts only the first options. The othre schemes accept only the second option.
 
   * `"scaled constraint equation`" [bool] rescales flux continuity equations on mesh faces.
@@ -3337,7 +3337,7 @@ Diffusion operator
       <Parameter name="gravity" type="bool" value="true"/>
       <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
       <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
-      <Parameter name="newton correction" type="string" value="true jacobian"/>
+      <Parameter name="Newton correction" type="string" value="true Jacobian"/>
 
       <ParameterList name="consistent faces">
         <ParameterList name="linear solver">
@@ -4138,7 +4138,7 @@ Here is the list of selected parameters for the Newton-Picard solver.
          <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
          <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
          <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-         <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+         <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
        </ParameterList>
      </ParameterList>
    </ParameterList>
