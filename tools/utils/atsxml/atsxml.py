@@ -3,7 +3,7 @@ try:
 except:
     import xml.etree.ElementTree as ET
 try:
-    import xml_functions as xf
+    from amanzi_xml.utils import search as xf
 except:
     print "Error: Unable to locate amanzi xml_functions module"
     print "Add $AMANZI_SRC_DIR/tools/amanzi_xml to your PYTHONPATH environment variable"
