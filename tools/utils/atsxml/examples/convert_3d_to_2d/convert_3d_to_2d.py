@@ -30,7 +30,7 @@ find_value(x3d,'/Windspeed').set('value','/Us')
 find_value(x3d,'/Relative_humidity').set('value','/RH')
 find_value(x3d,'/Temperature').set('value','/Ta')
 find_value(x3d,'/Shortwave').set('value','/QswIn')
-replace_by_name(x3d,'../../Data/Barrow-Anna-2010-2013.h5','/scratch/tundra/dharp/arctic/geophysics/run_newmesh02/10yr-WinterStartRAW-heavystart.h5')
+replace_by_value(x3d,'../../Data/Barrow-Anna-2010-2013.h5','/scratch/tundra/dharp/arctic/geophysics/run_newmesh02/10yr-WinterStartRAW-heavystart.h5')
 
 # Remove longwave radiation BC
 remove(x3d,find_name(x3d,'incoming_longwave_radiation'))
