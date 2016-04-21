@@ -302,6 +302,22 @@ void OperatorAccumulation::InitAccumulation_(AmanziMesh::Entity_kind entity, boo
   nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
 }
 
+
+/* ******************************************************************
+* Apply boundary conditions to 
+****************************************************************** */
+void OperatorAccumulation::ApplyBCs(const Teuchos::RCP<BCs>& bc)
+{
+  const std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& diag = local_op_->vals;
+
+  for (int i = 0; i < diag.size(); i++) {
+    if (bc_model[i] == OPERATOR_BC_DIRICHLET) {
+      diag[i] = 0.0;
+    }
+  }
+}
+
 }  // namespace Operators
 }  // namespace Amanzi
 
