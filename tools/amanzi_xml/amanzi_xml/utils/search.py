@@ -37,18 +37,24 @@ def find_name_value(xml,name,value):
     assert len(findall) == 1
     return findall[0]
 
+def gen_by_path(xml, names):
+    assert len(names) > 0
+    if len(names) == 1:
+        for m in findall_name(xml,names[0]):
+            yield m
+
+    else:
+        for m in findall_name(xml, names[0]):
+            for n in gen_by_path(m, names[1:]): yield n
+
 def find_by_path(xml,names):
     """Find an xml object with name path defined by list of name strings in decending hierarchical order.
     
     """
-    e = xml
-    for n in names: 
-        if n == 'Main': continue
-        findall = e.findall('./*/[@name="%s"]'%n)
-        assert len(findall) == 1
-        e = findall[0]
-    return e
-
+    matches = [m for m in gen_by_path(xml, names)]
+    assert len(matches) == 1, "Path has %d matches"%len(matches)
+    return matches[0]
+  
 def replace_by_value(xml,oldvalue,newvalue):
     """Replace all matches of a given 'value'='oldvalue' with 'newvalue'"""
     for r in findall_value(xml, oldvalue):
@@ -59,6 +65,14 @@ def replace_by_name(xml,name,value):
     for r in findall_name(xml, name):
         r.set('value', str(value))
 
+def replace_by_path(xml,names,value):
+    """Replace value at end of path defined by list of name strings in decending hierarchical order."""
+    find_by_path(xml,names).set('value',value)
+
+def depth (xml):
+    """Return depth of xml object"""
+    return max([0] + [depth(child) + 1 for child in xml])
+ 
 #
 # parent map functionality
 # ---------------------------------------------------------------------------
