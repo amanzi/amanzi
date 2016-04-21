@@ -67,7 +67,7 @@ def replace_by_name(xml,name,value):
 
 def replace_by_path(xml,names,value):
     """Replace value at end of path defined by list of name strings in decending hierarchical order."""
-    find_by_path(xml,names).set('value',value)
+    find_by_path(xml,names).set('value',str(value))
 
 def depth (xml):
     """Return depth of xml object"""
