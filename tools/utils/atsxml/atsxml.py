@@ -15,6 +15,7 @@ import re
 import sys
 import numpy
 from glob import glob
+from subprocess import call
 
 class ATSXML(object):
     def __init__(self,filename=None,xml_string=None):
@@ -278,6 +279,27 @@ def replace_regions(toatsxml,fromatsxml,mapping=None):
     replace_by_name(toatsxml,'Native Unstructured Input',newinput)
     newgridoption = get_value(toatsxml,'grid_option')
     replace_by_name(toatsxml,'grid_option',newgridoption)
+
+def run_ats(pars, tpl_file_name='../CESM8_5-implicit.xml', run_file_name='run.xml',hostname=None,processor=None):
+    ''' Run ats model based on tpl_xml_file using parameters defined in pars dictionary '''
+
+    print hostname, processor
+    mpirun_exe = '/usr/projects/terraarctic/ats/openmpi/openmpi-1.8.1/wolf/gcc-4.7.2/bin/mpirun'
+
+    # ensure that ATS's executable exists and that it's module is loaded
+    try:
+        path = os.path.join(os.environ['ATS_DIR'],'bin')
+    except KeyError:
+        raise RuntimeError("Missing ATS installation, please set the ATS_DIR environmental variable.")
+    executable = os.path.join(path, "ats")
+    if not os.path.isfile(executable):
+        raise RuntimeError("Missing ATS installation, please build and install ATS.")
+    
+    try:
+        #ierr = os.system(' '.join([mpirun_exe,"-n 1","-H",hostname,"--cpu-set",str(processor),executable,"--xml_file="+run_file_name,">&","stdout.out"]))
+        ierr = call([executable,"--xml_file="+run_file_name], stdout=stdout_file, stderr= subprocess.STDOUT)
+    except:
+        return [ierr]
 
 
 
