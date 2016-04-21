@@ -1,4 +1,4 @@
-import sys
+import os,sys
 try:
     import xml.etree.cElementTree as ET
 except:
@@ -39,18 +39,6 @@ class ATSXML(object):
     @property
     def parent_map(self):
         return create_parent_map(self)
-    # In amanzi_xml mesh.py
-    #@property
-    #def simulated_times(self):
-    #    base_name = self.find_name('visualization').find('.//*/[@name="file name base"]').attrib['value']
-    #    # Assume base_name+'_data*' will get the times ok, should work unless things change in ATS output
-    #    base_name += '_data'
-    #    ts = []
-    #    for fn in glob(base_name+'.h5.*.xmf'):
-    #        t = ET.parse(fn)
-    #        r = t.getroot()
-    #        ts.append(float(r.find('.//*/Time').attrib['Value']))
-    #    return numpy.array(ts)
     def replace_regions(self,fromatsxml,mapping=None):
         ''' 
         Replace regions in xml with regions in another xml
@@ -84,25 +72,9 @@ class ATSXML(object):
             if e2 is not None: e2.set('value',newfilename)
     def replace_restart_file(self,filename):
         replace_by_name(self.root,'restart file', filename)
-    #def replace_elems(self,fromatsxml,element_names):
-    #    for nm in element_names:
-    #        e = fromatsxml.root.findall(".//ParameterList[@name='"+nm+"']")[0]
-    #        self.root.remove(self.root.findall(".//ParameterList[@name='"+nm+"']")[0])
-    #        self.root.append(e)        
     def replace_elem(self,elem_sink,elem_src):
         """Replace the element 'sink' with the element 'src' in the hierarchy 'xml'"""
         replace_elem(self.root,elem_sink,elem_src)
-        #pm = self.parent_map
-        #p_elem_sink = pm[elem_sink]
-        #p_elem_sink.remove(elem_sink)
-        #p_elem_sink.append(elem_src)
-    # Now in xml_functions
-    #def getvalue(self,name):
-    #    out = []
-    #    for r in self.root.findall('.//Parameter/[@name="'+str(name)+'"]'):
-    #        out.append(r.attrib['value'])
-    #    if len(out) > 1: return out
-    #    else: return out[0]
     # Potentially not needed anymore, xml's written directly with write look ok now
     def write(self,filename):
         #self.tree.write(filename)
@@ -186,7 +158,7 @@ class ATSXML(object):
         '''
         for e in findall_name(self.root,'Verbosity Level'):
             e.set('value',value)
-    # Now in xml_functions
+    # Now in amanzi_xml.utils.search
     #def add_Parameter(self,name,value,vtype,elem=None):
     #    if elem is None: ET.SubElement(self.root,'Parameter',{'name':name,'type':vtype,'value':str(value)})
     #    else: ET.SubElement(elem,'Parameter',{'name':name,'type':vtype,'value':str(value)})
@@ -194,7 +166,6 @@ class ATSXML(object):
     #    if elem is None: ET.SubElement(self.root,'ParameterList',{'name':name,'type':'ParameterList'})
     #    else: ET.SubElement(elem,'ParameterList',{'name':name,'type':'ParameterList'})
 
-# Doesn't seem to get used anymore
 #class Region(object):
 #    def __init__(self,element):
 #        self.element = element
@@ -218,11 +189,6 @@ def get_root(filename=None,xml_string=None):
     elif xml_string is not None: 
         r = ET.fromstring(xml_string)
     return r
-    #def read_xml(self,filename):
-    #    t = ET.parse(filename)
-    #    r = t.getroot()
-    #def fromstring(self,xml_string):
-    #    r = ET.fromstring(xml_string)
 
 def get_regions(xml):
     return xml.findall('ParameterList/[@name="Regions"]/ParameterList')
@@ -280,11 +246,8 @@ def replace_regions(toatsxml,fromatsxml,mapping=None):
     newgridoption = get_value(toatsxml,'grid_option')
     replace_by_name(toatsxml,'grid_option',newgridoption)
 
-def run_ats(pars, tpl_file_name='../CESM8_5-implicit.xml', run_file_name='run.xml',hostname=None,processor=None):
+def run(xml, nproc=1, mpiexec='mpiexec', run_file_name='run.xml',stdout=None,stderr=None,hostname=None,processor=None):
     ''' Run ats model based on tpl_xml_file using parameters defined in pars dictionary '''
-
-    print hostname, processor
-    mpirun_exe = '/usr/projects/terraarctic/ats/openmpi/openmpi-1.8.1/wolf/gcc-4.7.2/bin/mpirun'
 
     # ensure that ATS's executable exists and that it's module is loaded
     try:
@@ -294,12 +257,18 @@ def run_ats(pars, tpl_file_name='../CESM8_5-implicit.xml', run_file_name='run.xm
     executable = os.path.join(path, "ats")
     if not os.path.isfile(executable):
         raise RuntimeError("Missing ATS installation, please build and install ATS.")
+
+    write_xml(xml,run_file_name)
     
     try:
-        #ierr = os.system(' '.join([mpirun_exe,"-n 1","-H",hostname,"--cpu-set",str(processor),executable,"--xml_file="+run_file_name,">&","stdout.out"]))
-        ierr = call([executable,"--xml_file="+run_file_name], stdout=stdout_file, stderr= subprocess.STDOUT)
+        #print ' '.join([mpiexec,'-n',str(nproc),executable,"--xml_file="+run_file_name])
+        outfile = open(stdout,'w')
+        if not stderr is None:
+            errfile = open(stderr,'w')
+        ierr = call([mpiexec,'-n',str(nproc),executable,"--xml_file="+run_file_name],stdout=outfile,stderr=errfile)
+        print ierr
     except:
-        return [ierr]
+        print "Error: ATS simulation failed"
 
 
 
