@@ -1,37 +1,36 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
 
   <!--  REGIONS  -->
-  <ParameterList name="Regions">
+  <ParameterList name="regions">
     <ParameterList name="Left side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{-1.0,0.0}"/>
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{1.0,1.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{1.0,0.0}"/>
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{1.0,1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{0.0,-1.0}"/>
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,-1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{1.0,1.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{0.0,1.0}"/>
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{1.0,1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
   <!-- SOLVERS -->
-  <ParameterList name="Solvers">
+  <ParameterList name="solvers">
     <ParameterList name="AztecOO CG">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
@@ -55,7 +54,7 @@
   </ParameterList>
 
   <!-- PRECONDITIONERS -->
-  <ParameterList name="Preconditioners">
+  <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
       <Parameter name="discretization method" type="string" value="generic mfd"/>
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
@@ -80,6 +79,14 @@
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{node}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{node}"/>
+    </ParameterList>
+
+    <!-- EDGE MFD schemes -->
+    <ParameterList name="diffusion operator edge">
+      <Parameter name="discretization primary" type="string" value="mfd: default"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="schema" type="Array(string)" value="{edge}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{edge}"/>
     </ParameterList>
 
     <!-- MIXED MFD schemes -->

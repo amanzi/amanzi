@@ -1,40 +1,38 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
 
   <!--  REGIONS  -->
-  <ParameterList name="Regions">
-
+  <ParameterList name="regions">
     <ParameterList name="All">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-0.5, -0.5, -0.25}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{0.5, 0.5, 0.25}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{-0.5, -0.5, -0.25}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.5, 0.5, 0.25}"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Material 1">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate"  type="Array(double)" value="{-0.5, -0.5,-0.25}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{0.5,  0.5, 0.25}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate"  type="Array(double)" value="{-0.5, -0.5,-0.25}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.5,  0.5, 0.25}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-0.5, -0.5, -0.25}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{0.5, 0.5, -0.25}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{-0.5, -0.5, -0.25}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.5, 0.5, -0.25}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top side">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-0.5, -0.5, 0.25}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{0.5, 0.5, 0.25}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{-0.5, -0.5, 0.25}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.5, 0.5, 0.25}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
   <!-- FLOW -->
   <ParameterList name="PKs">
-    <ParameterList name="Flow">
+    <ParameterList name="flow">
       <ParameterList name="Richards problem">
         <ParameterList name="relative permeability">
         <Parameter name="upwind method" type="string" value="upwind: gravity"/>
@@ -156,7 +154,7 @@
   </ParameterList>
 
   <!--  STATE  -->
-  <ParameterList name="State">
+  <ParameterList name="state">
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
@@ -187,7 +185,7 @@
   </ParameterList>
 
   <!-- SOLVERS -->
-  <ParameterList name="Solvers">
+  <ParameterList name="solvers">
     <ParameterList name="PCG with Hypre AMG">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
@@ -215,7 +213,7 @@
   </ParameterList>
 
   <!-- PRECONDITIONERS -->
-  <ParameterList name="Preconditioners">
+  <ParameterList name="preconditioners">
     <ParameterList name="Trilinos ML">
       <Parameter name="preconditioner type" type="string" value="ml"/>
       <ParameterList name="ml parameters">

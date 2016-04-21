@@ -65,37 +65,37 @@ Mesh_STK::Mesh_STK(STK::Mesh_STK_Impl_p mesh)
 // Constructor - Construct a new mesh from a subset of an existing mesh
 //--------------------------------------
 
-Mesh_STK::Mesh_STK (const Mesh *inmesh, 
-                    const std::vector<std::string>& setnames, 
-                    const Entity_kind setkind,
-                    const bool flatten,
-                    const bool extrude,
-		    const bool request_faces,
-		    const bool request_edges)
+Mesh_STK::Mesh_STK(const Mesh *inmesh, 
+                   const std::vector<std::string>& setnames, 
+                   const Entity_kind setkind,
+                   const bool flatten,
+                   const bool extrude,
+                   const bool request_faces,
+                   const bool request_edges)
 {  
   Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the STK framework\n");
   Exceptions::amanzi_throw(mesg);
 }
 
-Mesh_STK::Mesh_STK (const Mesh& inmesh, 
-                    const std::vector<std::string>& setnames, 
-                    const Entity_kind setkind,
-                    const bool flatten,
-                    const bool extrude,
-		    const bool request_faces,
-		    const bool request_edges)
+Mesh_STK::Mesh_STK(const Mesh& inmesh, 
+                   const std::vector<std::string>& setnames, 
+                   const Entity_kind setkind,
+                   const bool flatten,
+                   const bool extrude,
+                   const bool request_faces,
+                   const bool request_edges)
 {  
   Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the STK framework\n");
   Exceptions::amanzi_throw(mesg);
 }
 
-Mesh_STK::Mesh_STK (const Mesh& inmesh, 
-                    const std::vector<int>& entity_id_list, 
-                    const Entity_kind entity_kind,
-                    const bool flatten,
-                    const bool extrude,
-		    const bool request_faces,
-		    const bool request_edges)
+Mesh_STK::Mesh_STK(const Mesh& inmesh, 
+                   const std::vector<int>& entity_id_list, 
+                   const Entity_kind entity_kind,
+                   const bool flatten,
+                   const bool extrude,
+                   const bool request_faces,
+                   const bool request_edges)
 {  
   Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the STK framework\n");
   Exceptions::amanzi_throw(mesg);
@@ -278,10 +278,10 @@ Mesh_STK::LID(const Entity_ID& gid, const Entity_kind& kind) const
 // direction as the cell polygon, and -1 otherwise
 
 void 
-Mesh_STK::cell_get_faces_and_dirs_internal_ (const Entity_ID cellid,
-                                            Entity_ID_List *outfaceids,
-                                            std::vector<int> *face_dirs,
-				            const bool ordered) const
+Mesh_STK::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
+                                           Entity_ID_List *outfaceids,
+                                           std::vector<int> *face_dirs,
+                                           const bool ordered) const
 {
   stk::mesh::EntityId global_cell_id = this->GID(cellid, CELL);
   global_cell_id += 1;                  // need 1-based for stk::mesh
@@ -685,7 +685,7 @@ Mesh_STK::face_map(bool include_ghost) const
 // Mesh_STK::node_map
 // -------------------------------------------------------------
 const Epetra_Map& 
-Mesh_STK::node_map (bool include_ghost) const
+Mesh_STK::node_map(bool include_ghost) const
 {
   return get_map_(NODE, include_ghost);
 }
@@ -694,7 +694,7 @@ Mesh_STK::node_map (bool include_ghost) const
 // Mesh_STK::exterior_face_map
 // -------------------------------------------------------------
 const Epetra_Map& 
-Mesh_STK::exterior_face_map(void) const
+Mesh_STK::exterior_face_map(bool include_ghost) const
 {
   Errors::Message mesg("not implemented");
   Exceptions::amanzi_throw(mesg);
@@ -712,103 +712,16 @@ Mesh_STK::exterior_face_importer (void) const
 }
 
 
-
-// -------------------------------------------------------------
-// Mesh_STK::get_set_size (by int setid)
-// -------------------------------------------------------------
-unsigned int 
-Mesh_STK::get_set_size (const Set_ID setid, const Entity_kind kind, 
-                        const Parallel_type ptype) const
-{
-  Entity_ID_List setents;
-
-  get_set_entities(setid, kind, ptype, &setents);
-
-  return setents.size();
-}
-
-
-// -------------------------------------------------------------
-// Mesh_STK::get_set_size (by char *setname)
-// -------------------------------------------------------------
-unsigned int 
-Mesh_STK::get_set_size (const char *setname, const Entity_kind kind, 
-                        const Parallel_type ptype) const
-{
-  Entity_ID_List setents;
-
-  get_set_entities(setname, kind, ptype, &setents);
-
-  return setents.size();
-}
-
-
-// -------------------------------------------------------------
-// Mesh_STK::get_set_size (by std::string setname)
-// -------------------------------------------------------------
-unsigned int 
-Mesh_STK::get_set_size (const std::string setname, const Entity_kind kind, 
-                        const Parallel_type ptype) const
-{
-  Entity_ID_List setents;
-
-  get_set_entities(setname, kind, ptype, &setents);
-
-  return setents.size();
-}
-
-
-// -------------------------------------------------------------
-// Mesh_STK::get_set_entities  (by int setid)
-// -------------------------------------------------------------
-void 
-Mesh_STK::get_set_entities (const Set_ID setid,
-                            const Entity_kind kind, 
-                            const Parallel_type ptype, 
-                            Entity_ID_List *entids) const
-{  
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
-  Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setid);
-
-  std::cerr << "DEPRECATED METHOD!" << std::endl;
-  std::cerr << "Call get_set_entities with setname instead of setid" << std::endl;
-
-  if (rgn == Teuchos::null)
-    {
-      std::cerr << "Mesh_STK::get_set_entities: No region with id" << setid << std::endl;
-      std::cerr << "Cannot construct requested set" << std::endl;
-      throw std::exception();
-    }
-
-  
-  get_set_entities(rgn->name(),kind,ptype,entids);
-}
-
-
-// -------------------------------------------------------------
-// Mesh_STK::get_set_entities  (by char *setname)
-// -------------------------------------------------------------
-void 
-Mesh_STK::get_set_entities (const char *setname,
-                            const Entity_kind kind, 
-                            const Parallel_type ptype, 
-                            Entity_ID_List *entids) const
-{
-  std::string setname1(setname);
-
-  get_set_entities(setname1, kind, ptype, entids);
-}
-
 // -------------------------------------------------------------
 // Mesh_STK::get_set_entities  (by std::string setname)
 // -------------------------------------------------------------
 void 
-Mesh_STK::get_set_entities (const std::string setname,
-                            const Entity_kind kind, 
-                            const Parallel_type ptype, 
-                            Entity_ID_List *entids) const
+Mesh_STK::get_set_entities(const std::string setname,
+                           const Entity_kind kind, 
+                           const Parallel_type ptype, 
+                           Entity_ID_List *entids,
+                           std::vector<double> *vofs) const
 {
-
   ASSERT (entity_valid_ptype(ptype));
   stk::mesh::EntityRank rank(mesh_->kind_to_rank(kind));
 
@@ -822,55 +735,48 @@ Mesh_STK::get_set_entities (const std::string setname,
 
   // Did not find the region
   
-  if (rgn == Teuchos::null) 
-    {
-      std::cerr << "Geometric model has no region named " << setname << std::endl;
-      std::cerr << "Cannot construct set by this name" << std::endl;
+  if (rgn == Teuchos::null) {
+    std::cerr << "Geometric model has no region named " << setname << std::endl;
+    std::cerr << "Cannot construct set by this name" << std::endl;
+    throw std::exception();
+  }
+  
+  if (rgn->type() == AmanziGeometry::LABELEDSET) {
+    // Region is of type labeled set and a mesh set should have been
+    // initialized from the input file
+    Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+        Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
+    std::string label = lsrgn->label();
+    std::string entity_type = lsrgn->entity_str();
+      
+    if ((kind == CELL && entity_type != "CELL") ||
+        (kind == FACE && entity_type != "FACE") ||
+        (kind == NODE && entity_type != "NODE")) {
+      std::cerr << "Found labeled set region named " << setname << " but it"<< std::endl;
+      std::cerr << "contains entities of type " << entity_type << ", not the requested type" << std::endl;
+          
+      throw std::exception();
+    } 
+      
+    std::stringstream internal_name;
+
+    if (kind == CELL)
+      internal_name << "element block " << label;
+    else if (kind == FACE)
+      internal_name << "side set " << label;
+    else if (kind == NODE)
+      internal_name << "node set " << label;
+
+    part = mesh_->get_set(internal_name.str(), rank);
+
+    if (part == NULL) {
+      std::cerr << "Mesh set " << setname << " should have been read in" << std::endl;
+      std::cerr << "as set " << label << " from the mesh file. Its absence" << std::endl;
+      std::cerr << "indicates an error in the input file or in the mesh file" << std::endl;
+          
       throw std::exception();
     }
-  
-  if (rgn->type() == AmanziGeometry::LABELEDSET)
-    {
-
-      // Region is of type labeled set and a mesh set should have been
-      // initialized from the input file
-      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
-          Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
-      std::string label = lsrgn->label();
-      std::string entity_type = lsrgn->entity_str();
-      
-      
-      if ((kind == CELL && entity_type != "CELL") ||
-          (kind == FACE && entity_type != "FACE") ||
-          (kind == NODE && entity_type != "NODE"))
-        {
-          std::cerr << "Found labeled set region named " << setname << " but it"<< std::endl;
-          std::cerr << "contains entities of type " << entity_type << ", not the requested type" << std::endl;
-          
-          throw std::exception();
-        } 
-      
-      std::stringstream internal_name;
-
-      if (kind == CELL)
-        internal_name << "element block " << label;
-      else if (kind == FACE)
-        internal_name << "side set " << label;
-      else if (kind == NODE)
-        internal_name << "node set " << label;
-
- 
-      part = mesh_->get_set(internal_name.str(), rank);
-
-      if (part == NULL)
-        {
-          std::cerr << "Mesh set " << setname << " should have been read in" << std::endl;
-          std::cerr << "as set " << label << " from the mesh file. Its absence" << std::endl;
-          std::cerr << "indicates an error in the input file or in the mesh file" << std::endl;
-          
-          throw std::exception();
-        }
-    }
+  }
   else if (rgn->type() == AmanziGeometry::BOX) {
     std::string internal_name;
 
@@ -883,11 +789,9 @@ Mesh_STK::get_set_entities (const std::string setname,
 
     part = mesh_->get_set(internal_name, rank);
   }
-  else
-    {
-      part = mesh_->get_set(setname, rank);
-    }
-
+  else {
+    part = mesh_->get_set(setname, rank);
+  }
 
   // Until STKmesh allows modification of meta_data_ we cannot do anything
   // if the part is not found. It has to have been created during the 
@@ -911,13 +815,12 @@ Mesh_STK::get_set_entities (const std::string setname,
 }
     
 
-
-
-
-  // Deform a mesh so that cell volumes conform as closely as possible
-  // to target volumes without dropping below the minimum volumes.  If
-  // move_vertical = true, nodes will be allowed to move only in the
-  // vertical direction (right now arbitrary node movement is not allowed)
+// -------------------------------------------------------------
+// Deform a mesh so that cell volumes conform as closely as possible
+// to target volumes without dropping below the minimum volumes.  If
+// move_vertical = true, nodes will be allowed to move only in the
+// vertical direction (right now arbitrary node movement is not allowed)
+// -------------------------------------------------------------
 
 int Mesh_STK::deform(const std::vector<double>& target_cell_volumes_in, 
                      const std::vector<double>& min_cell_volumes_in, 
@@ -926,8 +829,6 @@ int Mesh_STK::deform(const std::vector<double>& target_cell_volumes_in,
     Errors::Message mesg("deformation not implemented for STK mesh");
     Exceptions::amanzi_throw(mesg);
 }
-
-
 
 
 // -------------------------------------------------------------
@@ -1040,21 +941,18 @@ Mesh_STK::cellgraph() const
   return result;
 }
 
+
 // -------------------------------------------------------------
-// Mesh_STK::redistribute
+// This routine redistributes cells amongst the processors according
+// to the specified @c cellmap0.  The indexes in @c cellmap0 are
+// 0-based.
+// 
+// @param cellmap 0-based map of desired cell ownership
 // -------------------------------------------------------------
-/** 
- * This routine redistributes cells amongst the processors according
- * to the specified @c cellmap0.  The indexes in @c cellmap0 are
- * 0-based.
- * 
- * @param cellmap 0-based map of desired cell ownership
- */
 void 
 Mesh_STK::redistribute(const Epetra_Map& cellmap0)
 {
   // change the 0-based map to a 1-based one
-
   
   std::vector<int> gids(cellmap0.NumMyElements());
   std::copy(cellmap0.MyGlobalElements(), 

@@ -48,7 +48,7 @@ TEST(FLOW_3D_RICHARDS) {
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create an SIMPLE mesh framework
-  ParameterList regions_list = plist->get<Teuchos::ParameterList>("Regions");
+  ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, &comm));
 
@@ -64,12 +64,12 @@ TEST(FLOW_3D_RICHARDS) {
   // create a simple state and populate it
   Amanzi::VerboseObject::hide_line_prefix = false;
 
-  Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("State");
+  Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Richards_PK* RPK = new Richards_PK(plist, "Flow", S, soln);
+  Richards_PK* RPK = new Richards_PK(plist, "flow", S, soln);
 
   RPK->Setup(S.ptr());
   S->Setup();
@@ -82,7 +82,9 @@ TEST(FLOW_3D_RICHARDS) {
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
   
   AmanziMesh::Entity_ID_List block;
-  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  std::vector<double> vofs;
+
+  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K[0][c] = 0.1;
@@ -90,7 +92,7 @@ TEST(FLOW_3D_RICHARDS) {
     K[2][c] = 2.0;
   }
 
-  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K[0][c] = 0.5;

@@ -82,8 +82,8 @@ CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
     observations_data_(observations_data),
     restart_requested_(false) {
 
-  if (glist_->isSublist("State")) {
-    Teuchos::ParameterList state_plist = glist_->sublist("State");
+  if (glist_->isSublist("state")) {
+    Teuchos::ParameterList state_plist = glist_->sublist("state");
     S_ = Teuchos::rcp(new Amanzi::State(state_plist));
     S_->RegisterMesh("domain", mesh_); 
   } else{
@@ -94,7 +94,7 @@ CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
   // create and start the global timer
   CoordinatorInit_();
 
-  vo_ = Teuchos::rcp(new VerboseObject("CycleDriver", glist_->sublist("Cycle Driver")));
+  vo_ = Teuchos::rcp(new VerboseObject("CycleDriver", glist_->sublist("cycle driver")));
 };
 
 
@@ -102,7 +102,7 @@ CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
 * High-level initialization.
 ****************************************************************** */
 void CycleDriver::CoordinatorInit_() {
-  coordinator_list_ = Teuchos::sublist(glist_, "Cycle Driver");
+  coordinator_list_ = Teuchos::sublist(glist_, "cycle driver");
   ReadParameterList_();
 
   // create the global solution vector
@@ -121,16 +121,16 @@ void CycleDriver::Init_PK(int time_pr_id) {
   std::ostringstream ss; ss << time_pr_id;
   std::string tp_list_name = "TP "+ ss.str();
   Teuchos::RCP<Teuchos::ParameterList> tp_list =Teuchos::sublist( time_periods_list, tp_list_name.data(), true);
-  Teuchos::ParameterList pk_tree_list = tp_list->sublist("PK Tree");
+  Teuchos::ParameterList pk_tree_list = tp_list->sublist("PK tree");
   if (pk_tree_list.numParams() != 1) {
-    Errors::Message message("CycleDriver: PK Tree list should contain exactly one root node list");
+    Errors::Message message("CycleDriver: PK tree list should contain exactly one root node list");
     Exceptions::amanzi_throw(message);
   }
   Teuchos::ParameterList::ConstIterator pk_item = pk_tree_list.begin();
   const std::string &pk_name = pk_tree_list.name(pk_item);
 
   if (!pk_tree_list.isSublist(pk_name)) {
-    Errors::Message message("CycleDriver: PK Tree list does not have node \"" + pk_name + "\".");
+    Errors::Message message("CycleDriver: PK tree list does not have node \"" + pk_name + "\".");
     Exceptions::amanzi_throw(message);
   }
 
@@ -145,9 +145,9 @@ void CycleDriver::Setup() {
   // Set up the states, creating all data structures.
 
   // create the observations
-  if (glist_->isSublist("Observation Data")) {
-    Teuchos::RCP<Teuchos::ParameterList> obs_list = Teuchos::sublist(glist_, "Observation Data");
-    Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist_, "Units");
+  if (glist_->isSublist("observation data")) {
+    Teuchos::RCP<Teuchos::ParameterList> obs_list = Teuchos::sublist(glist_, "observation data");
+    Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist_, "units");
     observations_ = Teuchos::rcp(new Amanzi::Unstructured_observations(obs_list, units_list, observations_data_, comm_));
 
     if (coordinator_list_->isParameter("component names")) {
@@ -158,8 +158,8 @@ void CycleDriver::Setup() {
   }
 
   // create the checkpointing
-  if (glist_->isSublist("Checkpoint Data")) {
-    Teuchos::ParameterList& chkp_plist = glist_->sublist("Checkpoint Data");
+  if (glist_->isSublist("checkpoint data")) {
+    Teuchos::ParameterList& chkp_plist = glist_->sublist("checkpoint data");
     checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
   }
   else{
@@ -167,8 +167,8 @@ void CycleDriver::Setup() {
   }
 
   // create the walkabout
-  if (glist_->isSublist("Walkabout Data")) {
-    Teuchos::ParameterList& walk_plist = glist_->sublist("Walkabout Data");
+  if (glist_->isSublist("walkabout data")) {
+    Teuchos::ParameterList& walk_plist = glist_->sublist("walkabout data");
     walkabout_ = Teuchos::rcp(new Amanzi::Walkabout_observations(walk_plist, comm_));
   }
   else {
@@ -184,10 +184,10 @@ void CycleDriver::Setup() {
       // pass
     } else {
       // vis successful steps
-      std::string plist_name = "Visualization Data "+mesh->first;
+      std::string plist_name = "visualization data " + mesh->first;
       // in the case of just a domain mesh, we want to allow no name.
       if ((mesh->first == "domain") && !glist_->isSublist(plist_name)) {
-        plist_name = "Visualization Data";
+        plist_name = "visualization data";
       }
 
       if (glist_->isSublist(plist_name)) {
@@ -199,10 +199,10 @@ void CycleDriver::Setup() {
       }
 
       // vis unsuccessful steps
-      std::string fail_plist_name = "Visualization Data "+mesh->first+" Failed Steps";
+      std::string fail_plist_name = "visualization data " + mesh->first + " Failed Steps";
       // in the case of just a domain mesh, we want to allow no name.
       if ((mesh->first == "domain") && !glist_->isSublist(fail_plist_name)) {
-        fail_plist_name = "Visualization Data Failed Steps";
+        fail_plist_name = "visualization data failed steps";
       }
 
       if (glist_->isSublist(fail_plist_name)) {
@@ -222,7 +222,7 @@ void CycleDriver::Setup() {
   S_->Setup();
 
   // create the time step manager
-  tsm_ = Teuchos::ptr(new TimeStepManager(glist_->sublist("Cycle Driver")));
+  tsm_ = Teuchos::ptr(new TimeStepManager(glist_->sublist("cycle driver")));
   //tsm_ = Teuchos::ptr(new TimeStepManager(vo_));
 
   // set up the TSM
@@ -790,7 +790,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
     }
 
     if (position == TIME_PERIOD_END) {
-      if (time_period_id_ < num_time_periods_ - 1){
+      if (time_period_id_ < num_time_periods_ - 1) {
         time_period_id_++;
         ResetDriver(time_period_id_); 
         restart_dT =  tp_dt_[time_period_id_];
@@ -904,7 +904,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   S_old_ = S_;
 
-  Teuchos::ParameterList state_plist = glist_->sublist("State");
+  Teuchos::ParameterList state_plist = glist_->sublist("state");
   S_ = Teuchos::rcp(new Amanzi::State(state_plist));
 
   S_->RegisterMesh("domain", mesh);

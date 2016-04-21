@@ -54,25 +54,25 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   out_list.set<bool>("Native Unstructured Input", "true");
 
   out_list.sublist("Miscalleneous") = TranslateMisc_();  
-  out_list.sublist("Units") = TranslateUnits_();  
-  out_list.sublist("Mesh") = TranslateMesh_();
-  out_list.sublist("Domain").set<int>("Spatial Dimension", dim_);
-  out_list.sublist("Regions") = TranslateRegions_();
+  out_list.sublist("units") = TranslateUnits_();  
+  out_list.sublist("mesh") = TranslateMesh_();
+  out_list.sublist("domain").set<int>("spatial dimension", dim_);
+  out_list.sublist("regions") = TranslateRegions_();
 
   const Teuchos::ParameterList& tmp = TranslateOutput_();
   for (Teuchos::ParameterList::ConstIterator it = tmp.begin(); it != tmp.end(); ++it)
     out_list.sublist(it->first) = tmp.sublist(it->first);
 
-  out_list.sublist("State") = TranslateState_();
-  out_list.sublist("Cycle Driver") = TranslateCycleDriver_();
-  Teuchos::ParameterList& cd_list = out_list.sublist("Cycle Driver");
+  out_list.sublist("state") = TranslateState_();
+  out_list.sublist("cycle driver") = TranslateCycleDriver_();
+  Teuchos::ParameterList& cd_list = out_list.sublist("cycle driver");
   out_list.sublist("PKs") = TranslatePKs_(cd_list);
 
-  out_list.sublist("Solvers") = TranslateSolvers_();
-  out_list.sublist("Preconditioners") = TranslatePreconditioners_();
+  out_list.sublist("solvers") = TranslateSolvers_();
+  out_list.sublist("preconditioners") = TranslatePreconditioners_();
 
   // analysis list
-  out_list.sublist("Analysis") = CreateAnalysis_();
+  out_list.sublist("analysis") = CreateAnalysis_();
   FilterEmptySublists_(out_list);
 
   // post-processing (may go away)
@@ -81,12 +81,12 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   // miscalleneous cross-list information
   // -- initialization file name
   if (init_filename_.size() > 0) {
-    out_list.sublist("State").set<std::string>("initialization filename", init_filename_);
+    out_list.sublist("state").set<std::string>("initialization filename", init_filename_);
   }
 
   // -- additional transport diagnostics (FIXME)
   if (transport_diagnostics_.size() > 0) {
-    out_list.sublist("PKs").sublist("Transport")
+    out_list.sublist("PKs").sublist("transport")
         .set<Teuchos::Array<std::string> >("runtime diagnostics: regions", transport_diagnostics_);
   }
 
@@ -340,10 +340,10 @@ Teuchos::ParameterList InputConverterU::CreateAnalysis_()
 ****************************************************************** */
 void InputConverterU::MergeInitialConditionsLists_(Teuchos::ParameterList& plist)
 {
-  if (plist.sublist("PKs").isSublist("Chemistry")) {
-    Teuchos::ParameterList& ics = plist.sublist("State")
+  if (plist.sublist("PKs").isSublist("chemistry")) {
+    Teuchos::ParameterList& ics = plist.sublist("state")
                                        .sublist("initial conditions");
-    Teuchos::ParameterList& icc = plist.sublist("PKs").sublist("Chemistry")
+    Teuchos::ParameterList& icc = plist.sublist("PKs").sublist("chemistry")
                                        .sublist("initial conditions");
 
     for (Teuchos::ParameterList::ConstIterator it = icc.begin(); it != icc.end(); ++it) {
@@ -351,7 +351,7 @@ void InputConverterU::MergeInitialConditionsLists_(Teuchos::ParameterList& plist
         Teuchos::ParameterList& slist = icc.sublist(it->first);
         if (slist.isSublist("function")) {
           ics.sublist(it->first) = slist;
-          slist.set<std::string>("function", "list was moved to State");
+          slist.set<std::string>("function", "list was moved to state");
         }
       }
     }

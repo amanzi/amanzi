@@ -105,6 +105,9 @@ class MatrixFE {
   int SumIntoMyValues_Transposed(const int *row_inds, const int *col_inds,
           const WhetStone::DenseMatrix& vals);
   
+  // hack the diagonal
+  int DiagonalShift(double shift);
+
   // Passthroughs.
   // --
   // NOTE that currently many of these cannot work on an offproc -- the Export is

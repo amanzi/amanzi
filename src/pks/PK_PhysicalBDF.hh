@@ -18,24 +18,22 @@ Default base with a few methods implemented in standard ways.
 
 namespace Amanzi {
 
-class PK_PhysicalBDF : virtual public PK_Physical, public PK_BDF{
+class PK_PhysicalBDF : virtual public PK_Physical, public PK_BDF {
 
 public:
-  PK_PhysicalBDF(){};
+  PK_PhysicalBDF() {};
 
   PK_PhysicalBDF(Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
                  const Teuchos::RCP<State>& S,
                  const Teuchos::RCP<TreeVector>& soln):
-    PK_Physical(pk_tree, glist, S, soln){};
+      PK_Physical(pk_tree, glist, S, soln) {};
    
-
-// Virtual destructor
-  virtual ~PK_PhysicalBDF(){};
-
+  // Virtual destructor
+  virtual ~PK_PhysicalBDF() {};
 };
 
-} // namespace
+} // namespace Amanzi
 
 #endif
 

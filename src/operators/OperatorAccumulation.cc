@@ -23,10 +23,10 @@
 namespace Amanzi {
 namespace Operators {
 
-// update methods
-// -- update method for just adding to PC
-void
-OperatorAccumulation::AddAccumulationTerm(const Epetra_MultiVector& du)
+/* ******************************************************************
+* Update method for just adding to PC.  Op += du.
+****************************************************************** */
+void OperatorAccumulation::AddAccumulationTerm(const Epetra_MultiVector& du)
 {
   std::vector<double>& diag = local_op_->vals;
   ASSERT(diag.size() == du.MyLength());
@@ -36,9 +36,10 @@ OperatorAccumulation::AddAccumulationTerm(const Epetra_MultiVector& du)
 }
 
 
-// -- update method for just adding to PC
-void
-OperatorAccumulation::AddAccumulationTerm(const Epetra_MultiVector& du, double dT)
+/* ******************************************************************
+* Update method for just adding to PC.  Op += du / dt
+****************************************************************** */
+void OperatorAccumulation::AddAccumulationTerm(const Epetra_MultiVector& du, double dT)
 {
   std::vector<double>& diag = local_op_->vals;
   ASSERT(diag.size() == du.MyLength());
@@ -48,58 +49,42 @@ OperatorAccumulation::AddAccumulationTerm(const Epetra_MultiVector& du, double d
 }
 
 
-// -- linearized update methods with storage terms
-void
-OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
-        const CompositeVector& s0, const CompositeVector& ss,
-        double dT, const std::string& name)
+/* ******************************************************************
+* Update method for just adding to PC's component "name".
+* Op += du * vol / dt.
+****************************************************************** */
+void OperatorAccumulation::AddAccumulationTerm(
+    const CompositeVector& du, double dT, const std::string& name)
+{
+  CompositeVector entity_volume(du);
+  CalculateEntitylVolume_(entity_volume, name);
+
+  std::vector<double>& diag = local_op_->vals;
+  const Epetra_MultiVector& duc = *du.ViewComponent(name);
+  Epetra_MultiVector& volume = *entity_volume.ViewComponent(name); 
+
+  int n = duc.MyLength();
+  ASSERT(diag.size() == n); 
+  for (int i = 0; i < n; i++) {
+    diag[i] += volume[0][i] * duc[0][i] / dT;
+  }
+}
+
+
+/* ******************************************************************
+* Linearized update methods with storage terms for component "name".
+* Op  += ss * vol / dt
+* RHS += s0 * vol * u0 / dt
+****************************************************************** */
+void OperatorAccumulation::AddAccumulationTerm(
+    const CompositeVector& u0, const CompositeVector& s0, 
+    const CompositeVector& ss, double dT, const std::string& name)
 {
 
   AmanziMesh::Entity_ID_List nodes, edges;
+
   CompositeVector entity_volume(ss);
-
-  if (name == "cell" && ss.HasComponent("cell")) {
-    Epetra_MultiVector& volume = *entity_volume.ViewComponent(name); 
-
-    for (int c=0; c!=ncells_owned; ++c) {
-      volume[0][c] = mesh_->cell_volume(c); 
-    }
-
-  } else if (name == "face" && ss.HasComponent("face")) {
-    // Missing code.
-    ASSERT(false);
-
-  } else if (name == "edge" && ss.HasComponent("edge")) {
-    Epetra_MultiVector& volume = *entity_volume.ViewComponent(name, true); 
-    volume.PutScalar(0.0);
-
-    for (int c=0; c!=ncells_owned; ++c) {
-      mesh_->cell_get_edges(c, &edges);
-      int nedges = edges.size();
-
-      for (int i = 0; i < nedges; i++) {
-        volume[0][edges[i]] += mesh_->cell_volume(c) / nedges; 
-      }
-    }
-    entity_volume.GatherGhostedToMaster(name);
-
-  } else if (name == "node" && ss.HasComponent("node")) {
-    Epetra_MultiVector& volume = *entity_volume.ViewComponent(name, true); 
-    volume.PutScalar(0.0);
-
-    for (int c=0; c!=ncells_owned; ++c) {
-      mesh_->cell_get_nodes(c, &nodes);
-      int nnodes = nodes.size();
-
-      for (int i = 0; i < nnodes; i++) {
-        volume[0][nodes[i]] += mesh_->cell_volume(c) / nnodes; 
-      }
-    }
-    entity_volume.GatherGhostedToMaster(name);
-
-  } else {
-    ASSERT(false);
-  }
+  CalculateEntitylVolume_(entity_volume, name);
 
   const Epetra_MultiVector& u0c = *u0.ViewComponent(name);
   const Epetra_MultiVector& s0c = *s0.ViewComponent(name);
@@ -119,56 +104,19 @@ OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
 }
 
 
-void
-OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
-        const CompositeVector& ss, double dT, const std::string& name)
+/* ******************************************************************
+* Linearized update methods with storage terms for component "name".
+* Op  += ss * vol / dt
+* RHS += ss * vol * u0 / dt
+****************************************************************** */
+void OperatorAccumulation::AddAccumulationTerm(
+    const CompositeVector& u0, const CompositeVector& ss,
+    double dT, const std::string& name)
 {
   AmanziMesh::Entity_ID_List nodes, edges;
 
   CompositeVector entity_volume(ss);
-
-  if (name == "cell" && ss.HasComponent("cell")) {
-    Epetra_MultiVector& volume = *entity_volume.ViewComponent(name); 
-
-    for (int c = 0; c != ncells_owned; ++c) {
-      volume[0][c] = mesh_->cell_volume(c); 
-    }
-
-  } else if (name == "face" && ss.HasComponent("face")) {
-    // Missing code.
-    ASSERT(false);
-
-  } else if (name == "edge" && ss.HasComponent("edge")) {
-    Epetra_MultiVector& volume = *entity_volume.ViewComponent(name, true); 
-    volume.PutScalar(0.0);
-
-    for (int c = 0; c != ncells_owned; ++c) {
-      mesh_->cell_get_edges(c, &edges);
-      int nedges = edges.size();
-
-      for (int i = 0; i < nedges; i++) {
-        volume[0][edges[i]] += mesh_->cell_volume(c) / nedges; 
-      }
-    }
-    entity_volume.GatherGhostedToMaster(name);
-
-  } else if (name == "node" && ss.HasComponent("node")) {
-    Epetra_MultiVector& volume = *entity_volume.ViewComponent(name, true); 
-    volume.PutScalar(0.0);
-
-    for (int c = 0; c != ncells_owned; ++c) {
-      mesh_->cell_get_nodes(c, &nodes);
-      int nnodes = nodes.size();
-
-      for (int i = 0; i < nnodes; i++) {
-        volume[0][nodes[i]] += mesh_->cell_volume(c) / nnodes; 
-      }
-    }
-    entity_volume.GatherGhostedToMaster(name);
-
-  } else {
-    ASSERT(false);
-  }
+  CalculateEntitylVolume_(entity_volume, name);
 
   const Epetra_MultiVector& u0c = *u0.ViewComponent(name);
   const Epetra_MultiVector& ssc = *ss.ViewComponent(name);
@@ -187,9 +135,13 @@ OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
 }
 
 
-void
-OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
-        const CompositeVector& ss, const std::string& name)
+/* ******************************************************************
+* Linearized update methods with storage terms for component "name".
+* Op  += ss  / dt
+* RHS += ss * u0 / dt
+****************************************************************** */
+void OperatorAccumulation::AddAccumulationTerm(
+    const CompositeVector& u0, const CompositeVector& ss, const std::string& name)
 {
   if (!ss.HasComponent(name)) ASSERT(false);
 
@@ -207,8 +159,64 @@ OperatorAccumulation::AddAccumulationTerm(const CompositeVector& u0,
   }
 }
 
-void
-OperatorAccumulation::InitAccumulation_(AmanziMesh::Entity_kind entity, bool surf)
+
+/* ******************************************************************
+* Calculate entity volume for component "name" of vector ss.
+****************************************************************** */
+void OperatorAccumulation::CalculateEntitylVolume_(
+    CompositeVector& entity_volume, const std::string& name)
+{
+  AmanziMesh::Entity_ID_List nodes, edges;
+
+  if (name == "cell" && entity_volume.HasComponent("cell")) {
+    Epetra_MultiVector& volume = *entity_volume.ViewComponent(name); 
+
+    for (int c = 0; c != ncells_owned; ++c) {
+      volume[0][c] = mesh_->cell_volume(c); 
+    }
+
+  } else if (name == "face" && entity_volume.HasComponent("face")) {
+    // Missing code.
+    ASSERT(false);
+
+  } else if (name == "edge" && entity_volume.HasComponent("edge")) {
+    Epetra_MultiVector& volume = *entity_volume.ViewComponent(name, true); 
+    volume.PutScalar(0.0);
+
+    for (int c = 0; c != ncells_owned; ++c) {
+      mesh_->cell_get_edges(c, &edges);
+      int nedges = edges.size();
+
+      for (int i = 0; i < nedges; i++) {
+        volume[0][edges[i]] += mesh_->cell_volume(c) / nedges; 
+      }
+    }
+    entity_volume.GatherGhostedToMaster(name);
+
+  } else if (name == "node" && entity_volume.HasComponent("node")) {
+    Epetra_MultiVector& volume = *entity_volume.ViewComponent(name, true); 
+    volume.PutScalar(0.0);
+
+    for (int c = 0; c != ncells_owned; ++c) {
+      mesh_->cell_get_nodes(c, &nodes);
+      int nnodes = nodes.size();
+
+      for (int i = 0; i < nnodes; i++) {
+        volume[0][nodes[i]] += mesh_->cell_volume(c) / nnodes; 
+      }
+    }
+    entity_volume.GatherGhostedToMaster(name);
+
+  } else {
+    ASSERT(false);
+  }
+}
+
+
+/* ******************************************************************
+* TBW.
+****************************************************************** */
+void OperatorAccumulation::InitAccumulation_(AmanziMesh::Entity_kind entity, bool surf)
 {
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh

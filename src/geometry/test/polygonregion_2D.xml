@@ -1,11 +1,11 @@
-<ParameterList name="Regions">
+<ParameterList name="regions">
   <ParameterList name="XY pentagon">
-    <ParameterList name="Region: Polygon">
-      <Parameter name="Number of points" type="int" value="2"/>
-      <Parameter name="Points" type="Array(double)" value="{0.5, -0.5,
+    <ParameterList name="region: polygon">
+      <Parameter name="number of points" type="int" value="2"/>
+      <Parameter name="points" type="Array(double)" value="{0.5, -0.5,
 							   -0.5, 0.5}"/>
-      <ParameterList name="Expert Parameters">
-	<Parameter name="Tolerance" type="double" value="1.0e-06"/>
+      <ParameterList name="expert parameters">
+	<Parameter name="tolerance" type="double" value="1.0e-06"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

@@ -123,10 +123,10 @@ int Unstructured_observations::MakeObservations(State& S)
       num_obs++; 
       
       // for now we can only observe Integrals and Values
-      if ((i->second).functional != "Observation Data: Integral"  &&
-          (i->second).functional != "Observation Data: Point" )  {
-        msg << "Unstructured_observations: can only handle Functional == Observation Data:"
-            << " Integral, or Functional == Observation Data: Point";
+      if ((i->second).functional != "observation data: integral"  &&
+          (i->second).functional != "observation data: point" )  {
+        msg << "Unstructured_observations: can only handle Functional == observation data:"
+            << " integral, or functional == observation data: point";
         Exceptions::amanzi_throw(msg);
       }
       
@@ -179,7 +179,9 @@ int Unstructured_observations::MakeObservations(State& S)
       bool obs_boundary(false);
       unsigned int mesh_block_size(0);
       AmanziMesh::Entity_ID_List entity_ids;
+      std::vector<double> vofs;
       std::string solute_var;
+
       if (obs_solute) solute_var = comp_names_[tcc_index] + " volumetric flow rate";
       if (var == "aqueous mass flow rate" || 
           var == "aqueous volumetric flow rate" ||
@@ -190,7 +192,7 @@ int Unstructured_observations::MakeObservations(State& S)
         entity_ids.resize(mesh_block_size);
         S.GetMesh()->get_set_entities((i->second).region, 
                                       Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED,
-                                      &entity_ids);
+                                      &entity_ids, &vofs);
         obs_boundary = true;
         for (int i = 0; i != mesh_block_size; ++i) {
           int f = entity_ids[i];
@@ -208,7 +210,7 @@ int Unstructured_observations::MakeObservations(State& S)
         entity_ids.resize(mesh_block_size);
         S.GetMesh()->get_set_entities((i->second).region,
                                       Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-                                      &entity_ids);
+                                      &entity_ids, &vofs);
       }
       
       // find global meshblocksize
@@ -428,9 +430,9 @@ int Unstructured_observations::MakeObservations(State& S)
       double vresult;
       S.GetMesh()->get_comm()->SumAll(&volume, &vresult, 1);
  
-      if ((i->second).functional == "Observation Data: Integral") {  
+      if ((i->second).functional == "observation data: integral") {  
         data_triplet.value = result;  
-      } else if ((i->second).functional == "Observation Data: Point") {
+      } else if ((i->second).functional == "observation data: point") {
         data_triplet.value = result / vresult;
       }
       

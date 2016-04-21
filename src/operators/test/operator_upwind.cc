@@ -76,7 +76,7 @@ void RunTestUpwind(std::string method) {
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   FrameworkPreference pref;

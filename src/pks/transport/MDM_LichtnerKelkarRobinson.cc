@@ -26,11 +26,11 @@ namespace Transport {
 ****************************************************************** */
 MDM_LichtnerKelkarRobinson::MDM_LichtnerKelkarRobinson(Teuchos::ParameterList& plist)
 {
-  alphaLV_ = plist.get<double>("alphaLV", 0.0);
-  alphaLH_ = plist.get<double>("alphaLH", 0.0);
+  alphaLV_ = plist.get<double>("alpha_lv", 0.0);
+  alphaLH_ = plist.get<double>("alpha_lh", 0.0);
 
-  alphaTV_ = plist.get<double>("alphaTV", 0.0);
-  alphaTH_ = plist.get<double>("alphaTH", 0.0);
+  alphaTV_ = plist.get<double>("alpha_tv", 0.0);
+  alphaTH_ = plist.get<double>("alpha_th", 0.0);
 }
 
 

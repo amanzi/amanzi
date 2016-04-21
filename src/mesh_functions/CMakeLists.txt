@@ -36,16 +36,16 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 # Library: mesh_functions
 #
 add_amanzi_library(mesh_functions
-                   SOURCE composite_vector_function.cc
-                          composite_vector_function_factory.cc
+                   SOURCE CompositeVectorFunction.cc
+                          CompositeVectorFunctionFactory.cc
                           UniqueMeshFunction.cc
-                          boundary_function.cc
+                          BoundaryFunction.cc
                           MeshPartition.cc
-                   HEADERS boundary_function.hh
-                           composite_vector_function.hh
-                           composite_vector_function_factory.hh
+                   HEADERS BoundaryFunction.hh
+                           CompositeVectorFunction.hh
+                           CompositeVectorFunctionFactory.hh
                            MeshPartition.hh
-                           mesh_function.hh
+                           MeshFunction.hh
                            UniqueMeshFunction.hh
                    LINK_LIBS error_handling functions mesh ${Teuchos_LIBRARIES})
 

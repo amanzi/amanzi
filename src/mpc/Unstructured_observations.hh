@@ -43,7 +43,7 @@ class Unstructured_observations {
   Unstructured_observations(Teuchos::RCP<Teuchos::ParameterList> obs_list,
                             Teuchos::RCP<Teuchos::ParameterList> units_list,
                             Amanzi::ObservationData& observation_data,
-			    Epetra_MpiComm* comm);
+                            Epetra_MpiComm* comm);
 
   ~Unstructured_observations() {
     if (vo_ != NULL) delete vo_;

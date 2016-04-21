@@ -52,9 +52,9 @@ public:
 
 private:
   std::string     _name;               //!< Name of the timer (defaults to "Timer + _numTimerInstances")
-  clock_t 	      _startTime;          //!< Time at which the timer was started
-  clock_t 	      _stopTime;           //!< Time at which the timer was stopped
-  bool 		      _running;            //!< Flag for determining if the timer is running
+  clock_t         _startTime;          //!< Time at which the timer was started
+  clock_t         _stopTime;           //!< Time at which the timer was stopped
+  bool            _running;            //!< Flag for determining if the timer is running
   static unsigned _numTimerInstances;  //!< Keeps track of the number of timers instantiated
   unsigned        _id;                 //!< Number of this timer
   clock_t         _runningTotal;       //!< Used to keep track of running totals, etc.
@@ -64,6 +64,6 @@ private:
   double          _max_elapsed, _min_elapsed, _avg_elapsed;
 };
 
-} //end of namespace Amanzi
+}  // namespace Amanzi
 
 #endif /* TIMER_H_ */

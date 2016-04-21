@@ -35,11 +35,11 @@ void TransportSourceFactory::Create(std::vector<TransportDomainFunction*>& srcs)
       std::string name = it->first;
       if (clist.isSublist(name)) {
         Teuchos::ParameterList& srclist = clist.sublist(name);
-	for (Teuchos::ParameterList::ConstIterator it1 = srclist.begin(); it1 != srclist.end(); ++it1) {
-	  std::string specname = it1->first;
+        for (Teuchos::ParameterList::ConstIterator it1 = srclist.begin(); it1 != srclist.end(); ++it1) {
+          std::string specname = it1->first;
 
-	  if (srclist.isSublist(specname)) {
-	    Teuchos::ParameterList& spec = srclist.sublist(specname);
+          if (srclist.isSublist(specname)) {
+            Teuchos::ParameterList& spec = srclist.sublist(specname);
             try {
               TransportDomainFunction* src = new TransportDomainFunction(mesh_);
               ProcessSourceSpec(spec, name, src);

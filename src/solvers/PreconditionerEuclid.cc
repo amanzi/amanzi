@@ -40,9 +40,9 @@ void PreconditionerEuclid::Init(const std::string& name, const Teuchos::Paramete
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_EuclidSetStats,
           plist_.get<int>("verbosity", 0))));
 
-  if (plist_.isParameter("ILU(k) fill level"))
+  if (plist_.isParameter("ilu(k) fill level"))
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_EuclidSetLevel,
-            plist_.get<int>("ILU(k) fill level"))));
+            plist_.get<int>("ilu(k) fill level"))));
 
   if (plist_.isParameter("rescale rows")) {
     bool rescale_rows = plist_.get<bool>("rescale rows");
@@ -50,9 +50,9 @@ void PreconditionerEuclid::Init(const std::string& name, const Teuchos::Paramete
             rescale_rows ? 1 : 0)));
   }
 
-  if (plist_.isParameter("ILUT drop tolerance"))
+  if (plist_.isParameter("ilut drop tolerance"))
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_EuclidSetILUT,
-            plist_.get<double>("ILUT drop tolerance"))));
+            plist_.get<double>("ilut drop tolerance"))));
 #else
   Errors::Message msg("Hypre (Euclid) is not available in this installation of Amanzi.  To use Hypre, please reconfigure.");
   Exceptions::amanzi_throw(msg);

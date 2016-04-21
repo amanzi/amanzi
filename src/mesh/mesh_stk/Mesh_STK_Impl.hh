@@ -20,28 +20,24 @@ namespace AmanziMesh {
 namespace STK {
 
 class Mesh_STK_Impl {
-
  public:
-    
-    
+  //
   // Structors
   // ---------
+  Mesh_STK_Impl(int space_dimension, 
+                const Epetra_MpiComm *communicator, 
+                Entity_map* entity_map, 
+                stk::mesh::fem::FEMMetaData *meta_data, 
+                stk::mesh::BulkData *bulk_data,
+                const Id_map &set_to_part,
+                Vector_field_type& coordinate_field);
     
-  Mesh_STK_Impl (int space_dimension, 
-                 const Epetra_MpiComm *communicator, 
-                 Entity_map* entity_map, 
-                 stk::mesh::fem::FEMMetaData *meta_data, 
-                 stk::mesh::BulkData *bulk_data,
-                 const Id_map &set_to_part,
-                 Vector_field_type& coordinate_field);
-    
-  virtual ~Mesh_STK_Impl () { }
+  virtual ~Mesh_STK_Impl () {};
     
     
   // Accessors
   // ---------
-    
-  int space_dimension () const { return space_dimension_;  }
+  int space_dimension() const { return space_dimension_;  }
     
   const stk::mesh::fem::FEMMetaData& meta_data    () const { return *meta_data_; }
   const stk::mesh::BulkData& build_data   () const { return *bulk_data_; }

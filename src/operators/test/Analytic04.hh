@@ -8,7 +8,7 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 
-  Complex solution plus degenerate (zero in a subdomain) coefficient.
+  Non-polynomial solution with constant tensor and non-constant scalar coefficients.
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_04_HH_

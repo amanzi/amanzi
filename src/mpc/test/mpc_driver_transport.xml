@@ -1,74 +1,72 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
-  <Parameter isUsed="true" name="input file name" type="string" value="dvz_3layer_2D_short.xml"/>
-  <Parameter name="new cycle driver" type="bool" value="true"/>
 
-  <ParameterList name="Checkpoint Data">
+  <ParameterList name="checkpoint data">
     <Parameter name="file name base" type="string" value="chkpoint"/>
     <Parameter name="file name digits" type="int" value="5"/>
     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
   </ParameterList>
-  <ParameterList name="Visualization Data">
+  <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
   </ParameterList>
-  <ParameterList name="Regions">
+
+  <ParameterList name="regions">
     <ParameterList name="Computational domain">
-      <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label" type="string" value="1"/>
-        <Parameter name="File" type="string" value="mpc_driver_transport_mesh_10x10.exo"/>
-        <Parameter name="Format" type="string" value="Exodus II"/>
-        <Parameter name="Entity" type="string" value="Cell"/>
+      <ParameterList name="region: labeled set">
+        <Parameter name="label" type="string" value="1"/>
+        <Parameter name="file" type="string" value="mpc_driver_transport_mesh_10x10.exo"/>
+        <Parameter name="format" type="string" value="Exodus II"/>
+        <Parameter name="entity" type="string" value="cell"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="All domain">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-1.0, -1.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,  1.0}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{-1.0, -1.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,  1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
-      <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label" type="string" value="3"/>
-        <Parameter name="File" type="string" value="mpc_driver_transport_mesh.exo"/>
-        <Parameter name="Format" type="string" value="Exodus II"/>
-        <Parameter name="Entity" type="string" value="Face"/>
+      <ParameterList name="region: labeled set">
+        <Parameter name="label" type="string" value="3"/>
+        <Parameter name="file" type="string" value="mpc_driver_transport_mesh.exo"/>
+        <Parameter name="format" type="string" value="Exodus II"/>
+        <Parameter name="entity" type="string" value="face"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
-      <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label" type="string" value="2"/>
-        <Parameter name="File" type="string" value="mpc_driver_transport_mesh.exo"/>
-        <Parameter name="Format" type="string" value="Exodus II"/>
-        <Parameter name="Entity" type="string" value="Face"/>
+      <ParameterList name="region: labeled set">
+        <Parameter name="label" type="string" value="2"/>
+        <Parameter name="file" type="string" value="mpc_driver_transport_mesh.exo"/>
+        <Parameter name="format" type="string" value="Exodus II"/>
+        <Parameter name="entity" type="string" value="face"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
-  <ParameterList name="Mesh">
-    <ParameterList name="Unstructured">
-      <ParameterList name="Expert">
-	<Parameter name="Framework" type="string" value="MSTK"/>
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured">
+      <ParameterList name="expert">
+	<Parameter name="framework" type="string" value="MSTK"/>
       </ParameterList>
 
-      <ParameterList name="Read Mesh File">
-	<Parameter name="File" type="string" value="test/mpc_driver_transport_mesh.exo"/>
-	<Parameter name="Format" type="string" value="Exodus II"/>
+      <ParameterList name="read mesh file">
+	<Parameter name="file" type="string" value="test/mpc_driver_transport_mesh.exo"/>
+	<Parameter name="format" type="string" value="Exodus II"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
-  <ParameterList name="Domain">
-    <Parameter isUsed="true" name="Spatial Dimension" type="int" value="2"/>
+  <ParameterList name="domain">
+    <Parameter name="spatial dimension" type="int" value="2"/>
   </ParameterList>
 
-  <ParameterList name="Cycle Driver">
+  <ParameterList name="cycle driver">
     <Parameter name="start time" type="double" value="0"/>
     <Parameter name="end time" type="double" value="100"/>
     <Parameter name="component names" type="Array(string)" value="{Tc-99, Tc-98}"/>
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
-	<ParameterList name="PK Tree">
-	  <ParameterList name="Transport">
+	<ParameterList name="PK tree">
+	  <ParameterList name="transport">
 	    <Parameter name="PK type" type="string" value="transport"/>
 	  </ParameterList>
 	</ParameterList>
@@ -80,7 +78,7 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="State">
+  <ParameterList name="state">
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
@@ -212,7 +210,7 @@
   </ParameterList>
 
   <ParameterList name="PKs">
-    <ParameterList name="Transport">
+    <ParameterList name="transport">
       <Parameter name="PK type" type="string" value="transport"/>
       <Parameter name="cfl" type="double" value="0.5"/>   
       <Parameter name="spatial discretization order" type="int" value="2"/>   
@@ -271,7 +269,7 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Preconditioners">
+  <ParameterList name="preconditioners">
     <ParameterList name="Trilinos ML">
       <Parameter name="preconditioner type" type="string" value="ml"/>
       <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
@@ -321,7 +319,7 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Solvers">
+  <ParameterList name="solvers">
     <ParameterList name="AztecOO">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="gmres"/>

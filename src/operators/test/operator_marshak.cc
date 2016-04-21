@@ -56,7 +56,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an MSTK mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;
@@ -180,11 +180,11 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     global_op->AssembleMatrix();
 
     // create preconditoner
-    ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+    ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
     global_op->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem
-    ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+    ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
     AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
        solver = factory.Create("Amanzi GMRES", lop_list, global_op);

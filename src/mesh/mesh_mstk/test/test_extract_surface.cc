@@ -29,21 +29,21 @@ TEST(Extract_Surface_MSTK1)
   // important to define reg_spec and other lists below as references
   // - otherwise, a new copy is made of the sublist that is retrieved
 
-  Teuchos::ParameterList& reg_spec = parameterlist.sublist("Regions"); 
+  Teuchos::ParameterList& reg_spec = parameterlist.sublist("regions"); 
   
   Teuchos::ParameterList& top_surface = reg_spec.sublist("Top Surface");
-  Teuchos::ParameterList& top_surface_def = top_surface.sublist("Region: Plane");
+  Teuchos::ParameterList& top_surface_def = top_surface.sublist("region: plane");
   Teuchos::Array<double> loc1 = Teuchos::tuple(0.0,0.0,1.0);
   Teuchos::Array<double> dir1 = Teuchos::tuple(0.0,0.0,-1.0);
-  top_surface_def.set< Teuchos::Array<double> >("Location",loc1);
-  top_surface_def.set< Teuchos::Array<double> >("Direction",dir1);
+  top_surface_def.set< Teuchos::Array<double> >("point",loc1);
+  top_surface_def.set< Teuchos::Array<double> >("normal",dir1);
 
   Teuchos::ParameterList& right_surface = reg_spec.sublist("Right Surface");
-  Teuchos::ParameterList& right_surface_def = right_surface.sublist("Region: Plane");
+  Teuchos::ParameterList& right_surface_def = right_surface.sublist("region: plane");
   Teuchos::Array<double> loc2 = Teuchos::tuple(1.0,0.0,0.0);
   Teuchos::Array<double> dir2 = Teuchos::tuple(1.0,0.0,0.0);
-  right_surface_def.set< Teuchos::Array<double> >("Location",loc2);
-  right_surface_def.set< Teuchos::Array<double> >("Direction",dir2);
+  right_surface_def.set< Teuchos::Array<double> >("point",loc2);
+  right_surface_def.set< Teuchos::Array<double> >("normal",dir2);
 
 
   //  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
@@ -116,14 +116,14 @@ TEST(Extract_Surface_MSTK2)
   // important to define reg_spec and other lists below as references
   // - otherwise, a new copy is made of the sublist that is retrieved
 
-  Teuchos::ParameterList& reg_spec = parameterlist.sublist("Regions"); 
+  Teuchos::ParameterList& reg_spec = parameterlist.sublist("regions"); 
 
   Teuchos::ParameterList& top_surface = reg_spec.sublist("Top Surface");
-  Teuchos::ParameterList& top_surface_def = top_surface.sublist("Region: Plane");
+  Teuchos::ParameterList& top_surface_def = top_surface.sublist("region: plane");
   Teuchos::Array<double> loc1 = Teuchos::tuple(0.0,0.0,1.0);
   Teuchos::Array<double> dir1 = Teuchos::tuple(-1/sqrt(2.0),0.0,1/sqrt(2.0));
-  top_surface_def.set< Teuchos::Array<double> >("Location",loc1);
-  top_surface_def.set< Teuchos::Array<double> >("Direction",dir1);
+  top_surface_def.set< Teuchos::Array<double> >("point",loc1);
+  top_surface_def.set< Teuchos::Array<double> >("normal",dir1);
 
   
 
@@ -215,21 +215,21 @@ TEST(Extract_Surface_MSTK3)
   // important to define reg_spec and other lists below as references
   // - otherwise, a new copy is made of the sublist that is retrieved
 
-  Teuchos::ParameterList& reg_spec = parameterlist.sublist("Regions"); 
+  Teuchos::ParameterList& reg_spec = parameterlist.sublist("regions"); 
   
   Teuchos::ParameterList& top_surface = reg_spec.sublist("Top Surface");
-  Teuchos::ParameterList& top_surface_def = top_surface.sublist("Region: Labeled Set");
-  top_surface_def.set<std::string>("Label","106");
-  top_surface_def.set<std::string>("File",filename.c_str());
-  top_surface_def.set<std::string>("Format","Exodus II");
-  top_surface_def.set<std::string>("Entity","Face");
+  Teuchos::ParameterList& top_surface_def = top_surface.sublist("region: labeled set");
+  top_surface_def.set<std::string>("label","106");
+  top_surface_def.set<std::string>("file",filename.c_str());
+  top_surface_def.set<std::string>("format","Exodus II");
+  top_surface_def.set<std::string>("entity","face");
 
   Teuchos::ParameterList& side_surface = reg_spec.sublist("Side Surface");
-  Teuchos::ParameterList& side_surface_def = side_surface.sublist("Region: Labeled Set");
-  side_surface_def.set<std::string>("Label","102");
-  side_surface_def.set<std::string>("File",filename.c_str());
-  side_surface_def.set<std::string>("Format","Exodus II");
-  side_surface_def.set<std::string>("Entity","Face");
+  Teuchos::ParameterList& side_surface_def = side_surface.sublist("region: labeled set");
+  side_surface_def.set<std::string>("label","102");
+  side_surface_def.set<std::string>("file",filename.c_str());
+  side_surface_def.set<std::string>("format","Exodus II");
+  side_surface_def.set<std::string>("entity","face");
 
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm_.get()));
@@ -313,29 +313,29 @@ TEST(Extract_Surface_MSTK4)
   // important to define reg_spec and other lists below as references
   // - otherwise, a new copy is made of the sublist that is retrieved
 
-  Teuchos::ParameterList& reg_spec = parameterlist.sublist("Regions"); 
+  Teuchos::ParameterList& reg_spec = parameterlist.sublist("regions"); 
 
   Teuchos::ParameterList& top_surface = reg_spec.sublist("Top Surface");
-  Teuchos::ParameterList& top_surface_def = top_surface.sublist("Region: Plane");
+  Teuchos::ParameterList& top_surface_def = top_surface.sublist("region: plane");
   Teuchos::Array<double> loc1 = Teuchos::tuple(0.0,0.0,1.0);
   Teuchos::Array<double> dir1 = Teuchos::tuple(-1/sqrt(2.0),0.0,1/sqrt(2.0));
-  top_surface_def.set< Teuchos::Array<double> >("Location",loc1);
-  top_surface_def.set< Teuchos::Array<double> >("Direction",dir1);
+  top_surface_def.set< Teuchos::Array<double> >("point",loc1);
+  top_surface_def.set< Teuchos::Array<double> >("normal",dir1);
 
 
   Teuchos::ParameterList& whole_surface = reg_spec.sublist("Whole Surface");
-  Teuchos::ParameterList& whole_surface_def = whole_surface.sublist("Region: Box");
+  Teuchos::ParameterList& whole_surface_def = whole_surface.sublist("region: box");
   Teuchos::Array<double> corner1 = Teuchos::tuple(0.0,0.0,1.0);
   Teuchos::Array<double> corner2 = Teuchos::tuple(1.0,1.0,3.0);
-  whole_surface_def.set< Teuchos::Array<double> >("Low Coordinate",corner1);
-  whole_surface_def.set< Teuchos::Array<double> >("High Coordinate",corner2);
+  whole_surface_def.set< Teuchos::Array<double> >("low coordinate",corner1);
+  whole_surface_def.set< Teuchos::Array<double> >("high coordinate",corner2);
 
   Teuchos::ParameterList& top_surface2D = reg_spec.sublist("Top Surface 2D");
-  Teuchos::ParameterList& top_surface2D_def = top_surface2D.sublist("Region: Plane");
+  Teuchos::ParameterList& top_surface2D_def = top_surface2D.sublist("region: plane");
   Teuchos::Array<double> loc2 = Teuchos::tuple(0.0,1.0);
   Teuchos::Array<double> dir2 = Teuchos::tuple(0.0,1.0);
-  top_surface2D_def.set< Teuchos::Array<double> >("Location",loc2);
-  top_surface2D_def.set< Teuchos::Array<double> >("Direction",dir2);
+  top_surface2D_def.set< Teuchos::Array<double> >("point",loc2);
+  top_surface2D_def.set< Teuchos::Array<double> >("normal",dir2);
 
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm_.get()));
@@ -429,5 +429,5 @@ TEST(Extract_Surface_MSTK4)
     CHECK_CLOSE(exp_centroid[k][0],centroid1[0],1.0e-10);
     CHECK_CLOSE(exp_centroid[k][1],centroid1[1],1.0e-10);
   } 
-
 }
+

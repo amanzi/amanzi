@@ -91,14 +91,12 @@ test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   Teuchos::RCP<const GeometricModel> gm_c = m->geometric_model();
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp_const_cast<GeometricModel>(gm_c);
   
-
   Entity_ID_List ents;
   ents.push_back(0);
   ents.push_back(3);
 
   Teuchos::RCP<Region> enum_rgn =
-    Teuchos::rcp(new RegionEnumerated("myregion",
-					   0, "CELL", ents));
+    Teuchos::rcp(new RegionEnumerated("myregion", 0, "CELL", ents));
   gm->AddRegion(enum_rgn);
 
 

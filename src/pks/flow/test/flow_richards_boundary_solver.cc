@@ -49,7 +49,7 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a mesh framework
-  Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, &comm));
 
@@ -66,16 +66,16 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   Teuchos::RCP<const Mesh> mesh2 = meshfactory("test/hex_2x2x1-2.exo", gm);
 
   // // create a simple state and populate it
-  Teuchos::ParameterList state_list = plist->sublist("State");
+  Teuchos::ParameterList state_list = plist->sublist("state");
   Teuchos::RCP<State> S1 = Teuchos::rcp(new State(state_list));
   Teuchos::RCP<State> S2 = Teuchos::rcp(new State(state_list));
   S1->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh1));
   S2->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh2));
 
   Teuchos::RCP<TreeVector> soln1 = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Richards_PK> RPK1 = Teuchos::rcp(new Richards_PK(plist, "Flow", S1, soln1));
+  Teuchos::RCP<Richards_PK> RPK1 = Teuchos::rcp(new Richards_PK(plist, "flow", S1, soln1));
   Teuchos::RCP<TreeVector> soln2 = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Richards_PK> RPK2 = Teuchos::rcp(new Richards_PK(plist, "Flow", S2, soln2));
+  Teuchos::RCP<Richards_PK> RPK2 = Teuchos::rcp(new Richards_PK(plist, "flow", S2, soln2));
 
   RPK1->Setup(S1.ptr());
   S1->Setup();
@@ -90,8 +90,11 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   // modify the default state for the problem at hand
   std::string passwd("flow"); 
   Epetra_MultiVector& K1 = *S1->GetFieldData("permeability", passwd)->ViewComponent("cell"); 
+
   AmanziMesh::Entity_ID_List block;
-  mesh1->get_set_entities("All", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  std::vector<double> vofs;
+
+  mesh1->get_set_entities("All", AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K1[0][c] = 1e-9;
@@ -101,7 +104,7 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   S1->GetField("permeability", "flow")->set_initialized();
 
   Epetra_MultiVector& K2 = *S2->GetFieldData("permeability", passwd)->ViewComponent("cell");  
-  mesh2->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  mesh2->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K2[0][c] = 1e-9;
@@ -150,7 +153,7 @@ TEST(FLOW_BOUNDARY_SOLVER) {
     mesh1->face_get_cells(f, AmanziMesh::USED, &cells);
     int dir;
     const Point& norm = mesh1->face_normal(f, false, cells[0], &dir);
-    if ((cells.size() == 1) && (norm[2] * dir > 0)){
+    if ((cells.size() == 1) && (norm[2] * dir > 0)) {
       bnd_val1 = RPK1->BoundaryFaceValue(f, *S1->GetFieldData("pressure", passwd));
       std::cout << ": " << f << " " << bnd_val1 << "\n";
     }
@@ -164,7 +167,7 @@ TEST(FLOW_BOUNDARY_SOLVER) {
     mesh2->face_get_cells(f, AmanziMesh::USED, &cells);
     int dir;
     const Point& norm = mesh2->face_normal(f, false, cells[0], &dir);
-    if ((cells.size() == 1) && (norm[2]*dir > 0)){
+    if ((cells.size() == 1) && (norm[2]*dir > 0)) {
       const Point& xc = mesh2->cell_centroid(cells[0]);
       // bnd_val1 = RPK1->BoundaryFaceValue(f, *S1->GetFieldData("pressure", passwd));
       bnd_val2 = RPK2->BoundaryFaceValue(f, *S2->GetFieldData("pressure", passwd));

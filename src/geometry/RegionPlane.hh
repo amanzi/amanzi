@@ -40,8 +40,8 @@ class RegionPlane : public Region {
   bool inside(const Point& p) const;
 
 protected:
-  const Point p_;              /* point on the plane */
-  const Point n_;              /* normal to the plane */
+  const Point p_;  /* point on the plane */
+  const Point n_;  /* normal to the plane */
 
 };
 

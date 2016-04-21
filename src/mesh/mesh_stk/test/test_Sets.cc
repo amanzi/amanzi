@@ -116,7 +116,7 @@ SUITE (STK_SETS)
 
       std::string shape = reg_params.name(j);
 
-      if (shape == "Region: Plane") {
+      if (shape == "region: plane") {
 
         // Do we have a valid sideset by this name
 
@@ -145,11 +145,11 @@ SUITE (STK_SETS)
         CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);
 
       }
-      else if (shape == "Region: Box") {
+      else if (shape == "region: box") {
 
         Teuchos::ParameterList box_params = reg_params.sublist(shape);
-        Teuchos::Array<double> pmin = box_params.get< Teuchos::Array<double> >("Low Coordinate");
-        Teuchos::Array<double> pmax = box_params.get< Teuchos::Array<double> >("High Coordinate");
+        Teuchos::Array<double> pmin = box_params.get< Teuchos::Array<double> >("low coordinate");
+        Teuchos::Array<double> pmax = box_params.get< Teuchos::Array<double> >("high coordinate");
 
         if (pmin[0] == pmax[0] || pmin[1] == pmax[1] || pmin[2] == pmax[2])
           {
@@ -209,12 +209,12 @@ SUITE (STK_SETS)
             CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
           }
       }
-      else if (shape == "Region: Point") {
+      else if (shape == "region: point") {
 
         // Get cells around this point
 
         Teuchos::ParameterList point_params = reg_params.sublist(shape);
-        Teuchos::Array<double> p_vec = point_params.get< Teuchos::Array<double> >("Coordinate");
+        Teuchos::Array<double> p_vec = point_params.get< Teuchos::Array<double> >("coordinate");
 
         // Do we have a valid set by this name
       
@@ -243,15 +243,15 @@ SUITE (STK_SETS)
         CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);	  
 
       }
-      else if (shape == "Region: Labeled Set") {
+      else if (shape == "region: labeled set") {
 
         Teuchos::ParameterList lsparams = reg_params.sublist(shape);
 
         // Find the entity type in this parameter list
 
-        std::string entity_type = lsparams.get<std::string>("Entity");
+        std::string entity_type = lsparams.get<std::string>("entity");
 
-        if (entity_type == "Face") {
+        if (entity_type == "face") {
 
           // Do we have a valid sideset by this name
 
@@ -279,7 +279,7 @@ SUITE (STK_SETS)
           CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);
 
         }
-        else if (entity_type == "Cell") {
+        else if (entity_type == "cell") {
 
           // Do we have a valid sideset by this name
 
@@ -308,7 +308,7 @@ SUITE (STK_SETS)
         }
 
       }
-      else if (shape == "Region: Color Function") {
+      else if (shape == "region: color function") {
 
         // Do we have a valid sideset by this name
       
@@ -407,7 +407,7 @@ SUITE (STK_SETS)
 
       std::string shape = reg_params.name(j);
 
-      if (shape == "Region: Plane") {
+      if (shape == "region: plane") {
 
 	// Do we have a valid sideset by this name
 
@@ -436,11 +436,11 @@ SUITE (STK_SETS)
 	CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);
 
       }
-      else if (shape == "Region: Box") {
+      else if (shape == "region: box") {
 
 	Teuchos::ParameterList box_params = reg_params.sublist(shape);
-	Teuchos::Array<double> pmin = box_params.get< Teuchos::Array<double> >("Low Coordinate");
-	Teuchos::Array<double> pmax = box_params.get< Teuchos::Array<double> >("High Coordinate");
+	Teuchos::Array<double> pmin = box_params.get< Teuchos::Array<double> >("low coordinate");
+	Teuchos::Array<double> pmax = box_params.get< Teuchos::Array<double> >("high coordinate");
 
 	if (pmin[0] == pmax[0] || pmin[1] == pmax[1] || pmin[2] == pmax[2])
 	  {
@@ -501,10 +501,10 @@ SUITE (STK_SETS)
 	    CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
 	  }
       }
-      else if (shape == "Region: Point") {
+      else if (shape == "region: point") {
         
         Teuchos::ParameterList point_params = reg_params.sublist(shape);
-        Teuchos::Array<double> p_vec = point_params.get< Teuchos::Array<double> >("Coordinate");
+        Teuchos::Array<double> p_vec = point_params.get< Teuchos::Array<double> >("coordinate");
         
         // Do we have a valid set by this name
         
@@ -533,15 +533,13 @@ SUITE (STK_SETS)
         CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);	  
         
       }
-      else if (shape == "Region: Labeled Set") {
+      else if (shape == "region: labeled set") {
 
 	std::cerr << "Mesh framework cannot do labeled sets" << std::endl;
 
 	CHECK(false); 
-
       }
     }
-
   }
 }
 

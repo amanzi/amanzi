@@ -22,8 +22,8 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 #include "dbc.hh"
 #include "errors.hh"
 #include "CompositeVector.hh"
-#include "composite_vector_function.hh"
-#include "composite_vector_function_factory.hh"
+#include "CompositeVectorFunction.hh"
+#include "CompositeVectorFunctionFactory.hh"
 
 #include "Field.hh"
 #include "Field_CompositeVector.hh"
@@ -378,7 +378,7 @@ void Field_CompositeVector::InitializeFromColumn_(Teuchos::ParameterList& plist)
     double z0;
     std::vector<double> z(1);
 
-    AmanziMesh::Entity_ID_List surf_faces;
+    AmanziMesh::Entity_ID_List surf_faces; 
     for (Teuchos::Array<std::string>::const_iterator setname=sidesets.begin();
          setname!=sidesets.end(); ++setname) {
       data_->Mesh()->get_set_entities(*setname,AmanziMesh::FACE,

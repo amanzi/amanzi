@@ -20,17 +20,15 @@ Default base with a few methods implemented in standard ways.
 
 namespace Amanzi {
 
-class PK_Physical : public virtual PK{
-
+class PK_Physical : public virtual PK {
  public:
-
-  PK_Physical(){};
+  PK_Physical() {};
 
   PK_Physical(Teuchos::ParameterList& pk_tree,
               const Teuchos::RCP<Teuchos::ParameterList>& glist,
               const Teuchos::RCP<State>& S,
               const Teuchos::RCP<TreeVector>& soln):
-  solution_(soln){};
+    PK(pk_tree, glist, S, soln) {};
 
 
   // Virtual destructor
@@ -48,18 +46,16 @@ class PK_Physical : public virtual PK{
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
 
-
   // -- setup
-  //virtual void Setup(const Teuchos::Ptr<State>& S){};
+  //virtual void Setup(const Teuchos::Ptr<State>& S) {};
 
   // -- initialize
-  //virtual void Initialize(const Teuchos::Ptr<State>& S){};
+  //virtual void Initialize(const Teuchos::Ptr<State>& S) {};
 
   // Accessor for debugger, for use by coupling MPCs
   Teuchos::RCP<Debugger> debugger() { return db_; }
 
-
- protected: // data
+ protected:
   // name of domain, associated mesh
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   std::string domain_;
@@ -71,21 +67,19 @@ class PK_Physical : public virtual PK{
   // debugger for dumping vectors
   Teuchos::RCP<Debugger> db_;
 
-  Teuchos::RCP<Teuchos::ParameterList> plist_;
-  Teuchos::RCP<TreeVector> solution_;
-  std::string name_;
+  // Teuchos::RCP<Teuchos::ParameterList> plist_;
+  // Teuchos::RCP<TreeVector> solution_;
+  //  std::string name_;
 
- //  // states
-  Teuchos::RCP<const State> S_;
-  Teuchos::RCP<State> S_inter_;
-  Teuchos::RCP<State> S_next_;
+  // // states
+  // Teuchos::RCP<const State> S_;
+  // Teuchos::RCP<State> S_inter_;
+  // Teuchos::RCP<State> S_next_;
 
- //  // fancy OS
-  Teuchos::RCP<VerboseObject> vo_;
-  //VerboseObject* vo_;
-
+  // fancy OS
+  //Teuchos::RCP<VerboseObject> vo_;
 };
 
-} // namespace
+} // namespace Amanzi
 
 #endif

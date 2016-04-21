@@ -1,61 +1,60 @@
-<ParameterList name="Main">
+<ParameterList name="main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
   <Parameter name="number of meshes" type="int" value="3"/>
 
-  <ParameterList name="Domain">
-    <Parameter name="Spatial Dimension" type="int" value="2"/>
+  <ParameterList name="domain">
+    <Parameter name="spatial dimension" type="int" value="2"/>
   </ParameterList>
 
-  <ParameterList name="Mesh">
-    <ParameterList name="Unstructured">
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured">
       <ParameterList name="Read">
-        <Parameter name="File" type="string" value="mesh1.exo"/>
-        <Parameter name="Format" type="string" value="Exodus II"/>
+        <Parameter name="file" type="string" value="mesh1.exo"/>
+        <Parameter name="format" type="string" value="Exodus II"/>
       </ParameterList>
-      <ParameterList name="Expert">
-        <Parameter name="Framework" type="string" value="MSTK"/>
+      <ParameterList name="expert">
+        <Parameter name="framework" type="string" value="MSTK"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>    
    
   <!--  REGIONS  -->
-  <ParameterList name="Regions">
+  <ParameterList name="regions">
     <ParameterList name="All">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-10.0, -10.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{10.0, 10.0}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{-10.0, -10.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{10.0, 10.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{  1.0, 0.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{-1.0, 0.0}"/>
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{  1.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{-1.0, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{ 2.0,0.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{1.0,0.0}"/>
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{ 2.0,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{1.0, 0.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{0.0,-1.0}"/>
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{1.0, 0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,-1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{1.0,1.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{0.0,1.0}"/>
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{1.0,1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
   <!--  FLOW  -->
   <ParameterList name="PKs">
-    <ParameterList name="Energy">
+    <ParameterList name="energy">
       <ParameterList name="One-phase problem">
         <ParameterList name="VerboseObject">
          <Parameter name="Verbosity Level" type="string" value="none"/>
@@ -212,7 +211,7 @@
   </ParameterList>
 
   <!-- SOLVERS -->
-  <ParameterList name="Solvers">
+  <ParameterList name="solvers">
     <ParameterList name="PCG with Hypre AMG">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
@@ -232,7 +231,7 @@
   </ParameterList>
 
   <!-- PRECONDITIONERS -->
-  <ParameterList name="Preconditioners">
+  <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
@@ -246,7 +245,7 @@
 
   <!--  STATE: this super input desk will be used to cut-off smaller 
   input deks for other flow tests -->
-  <ParameterList name="State">
+  <ParameterList name="state">
     <ParameterList name="field evaluators">
       <ParameterList name="particle_density">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>

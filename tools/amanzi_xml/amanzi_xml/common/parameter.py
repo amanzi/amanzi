@@ -10,13 +10,13 @@ def _valid_parameter_from_string(ptype, value):
         try:
             retval = float(value)
         except ValueError:
-            raise RuntimeError("Parameter of type double with invalid value %s"%str(value))
+            raise RuntimeError("Parameter of type double with invalid value \"%s\""%str(value))
 
     elif ptype == "int":
         try:
             retval = int(value)
         except ValueError:
-            raise RuntimeError("Parameter of type int with invalid value %s"%str(value))
+            raise RuntimeError("Parameter of type int with invalid value \"%s\""%str(value))
 
     elif ptype == "bool":
         if value is True:
@@ -27,18 +27,22 @@ def _valid_parameter_from_string(ptype, value):
             retval = True
         elif value == "True":
             retval = True
+        elif value == "TRUE":
+            retval = True
         elif value == "false":
             retval = False
         elif value == "False":
             retval = False
+        elif value == "FALSE":
+            retval = False
         else:
-            raise RuntimeError("Parameter of type bool with invalid value %s"%str(value))
+            raise RuntimeError("Parameter of type bool with invalid value \"%s\""%str(value))
 
     elif ptype == "string":
         try:
             assert type(value) is str
         except AssertionError:
-            raise RuntimeError("Parameter of type string with invalid value %s"%str(value))
+            raise RuntimeError("Parameter of type string with invalid value \"%s\""%str(value))
         else:
             retval = str(value)
     return retval

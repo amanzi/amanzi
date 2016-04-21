@@ -228,16 +228,16 @@ class MeshEmbeddedLogical : public Mesh {
   // Epetra maps
   //------------
   virtual
-  const Epetra_Map& cell_map(const bool include_ghost) const;
+  const Epetra_Map& cell_map(bool include_ghost) const;
 
   virtual
-  const Epetra_Map& face_map(const bool include_ghost) const;
+  const Epetra_Map& face_map(bool include_ghost) const;
 
   virtual
-  const Epetra_Map& node_map(const bool include_ghost) const;
+  const Epetra_Map& node_map(bool include_ghost) const;
 
   virtual
-  const Epetra_Map& exterior_face_map(void) const;
+  const Epetra_Map& exterior_face_map(bool include_ghost) const;
 
   // Epetra importer that will allow apps to import values from a
   // Epetra vector defined on all owned faces into an Epetra vector
@@ -250,23 +250,6 @@ class MeshEmbeddedLogical : public Mesh {
   //
   // Mesh Sets for ICs, BCs, Material Properties and whatever else
   //--------------------------------------------------------------
-  //
-  // Get number of entities of type 'category' in set
-  virtual
-  unsigned int get_set_size(const Set_ID setid,
-                            const Entity_kind kind,
-                            const Parallel_type ptype) const;
-
-  virtual
-  unsigned int get_set_size(const std::string setname,
-                            const Entity_kind kind,
-                            const Parallel_type ptype) const;
-
-  virtual
-  unsigned int get_set_size(const char *setname,
-                            const Entity_kind kind,
-                            const Parallel_type ptype) const;
-
 
   // Get list of entities of type 'category' in set
   virtual
@@ -279,14 +262,8 @@ class MeshEmbeddedLogical : public Mesh {
   void get_set_entities(const std::string setname,
                         const Entity_kind kind,
                         const Parallel_type ptype,
-                        Entity_ID_List *entids) const;
-
-  virtual
-  void get_set_entities(const char *setname,
-                        const Entity_kind kind,
-                        const Parallel_type ptype,
-                        Entity_ID_List *entids) const;
-
+                        Entity_ID_List *entids,
+                        std::vector<double> *vofs) const;
 
   // Miscellaneous functions
   virtual

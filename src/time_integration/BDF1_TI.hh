@@ -80,7 +80,7 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
 
   // update the verbose options
   vo_ = Teuchos::rcp(new VerboseObject("TI::BDF1", plist_));
-  db_ = Teuchos::rcp(new AmanziSolvers::ResidualDebugger(plist_.sublist("ResidualDebugger")));
+  db_ = Teuchos::rcp(new AmanziSolvers::ResidualDebugger(plist_.sublist("residual debugger")));
 
   // Create the state.
   state_ = Teuchos::rcp(new BDF1_State<Vector>());
@@ -185,11 +185,11 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teu
       fn_->ChangedSolution();
 
       if (fn_->IsAdmissible(u)) {
-    	bool changed = fn_->ModifyPredictor(dt, u0, u);
-    	if (changed) fn_->ChangedSolution();
+        bool changed = fn_->ModifyPredictor(dt, u0, u);
+        if (changed) fn_->ChangedSolution();
       } else {
-	*u = *u0;
-	fn_->ChangedSolution();
+        *u = *u0;
+        fn_->ChangedSolution();
       }
     }
   }

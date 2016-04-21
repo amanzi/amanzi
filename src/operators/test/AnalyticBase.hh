@@ -12,6 +12,22 @@
     -div (K (grad(p) - g)) = f
   where g is the gravity vector pointing downward of axis z 
   or axis y in two dimensions.
+
+
+  List of problems.  Note that all are 2D:
+
+  Analytic00: linear solution with constant, scalar coefficient
+  Analytic01: non-polynomial solution with full, non-constant tensor
+  Analytic02: linear solution with constant, tensor coefficient
+  Analytic03: non-polynomial solution with discontinuous (scalar)
+              coefficient
+  Analytic03b: same as 03, but with the coef as a scalar instead of
+               scaling the tensor
+  Analytic04: non-polynomial solution with non-constant scalar
+              coefficient, coefficient can be zero
+  Analytic05: linear solution with non-symmetric, non-constant
+              tensor coefficient
+
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_BASE_HH_
@@ -28,10 +44,17 @@ class AnalyticBase {
   // analytic solution for diffusion problem with gravity
   // -- diffusion tensor T
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+
+  // -- scalar component of the coefficient
+  virtual double ScalarCoefficient(const Amanzi::AmanziGeometry::Point& p, double t) {
+    return 1.; }
+
   // -- analytic solution p
   virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+
   // -- gradient of continuous velocity grad(h), where h = p + g z
   virtual Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+
   // -- source term
   virtual double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
@@ -39,7 +62,8 @@ class AnalyticBase {
   virtual Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
     Amanzi::WhetStone::Tensor K = Tensor(p, t);
     Amanzi::AmanziGeometry::Point g = gradient_exact(p, t);
-    return -(K * g);
+    double kr = ScalarCoefficient(p, t);
+    return -(K * g) * kr;
   }
 
   // error calculation
@@ -132,7 +156,6 @@ class AnalyticBase {
         mesh_->node_get_coordinates(v, &xv);
         double tmp = pressure_exact(xv, t);
 
-
         if (std::abs(tmp - p[0][v]) > .01) {
           Amanzi::AmanziGeometry::Point xv(2);
           mesh_->node_get_coordinates(v, &xv);
@@ -167,6 +190,53 @@ class AnalyticBase {
 
     hnorm = sqrt(hnorm);
     h1_err = sqrt(h1_err);
+  }
+
+  void ComputeEdgeError(
+      Epetra_MultiVector& p, double t,
+      double& pnorm, double& l2_err, double& inf_err, double& hnorm, double& h1_err) {
+    pnorm = 0.0;
+    l2_err = 0.0;
+    inf_err = 0.0;
+    hnorm = 1.0;  // missing code
+    h1_err = 0.0;
+
+    int d = mesh_->space_dimension();
+    Amanzi::AmanziGeometry::Point grad(d);
+
+    Amanzi::AmanziMesh::Entity_ID_List edges;
+    Amanzi::WhetStone::MFD3D_Diffusion mfd(mesh_);
+    int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+
+    for (int c = 0; c < ncells; c++) {
+      double volume = mesh_->cell_volume(c);
+
+      mesh_->cell_get_edges(c, &edges);
+      int nedges = edges.size();
+      std::vector<double> cell_solution(nedges);
+
+      for (int k = 0; k < nedges; k++) {
+        int e = edges[k];
+        cell_solution[k] = p[0][e];
+
+        const Amanzi::AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
+        double tmp = pressure_exact(xe, t);
+        l2_err += std::pow(tmp - p[0][e], 2.0) * volume / nedges;
+        inf_err = std::max(inf_err, tmp - p[0][e]);
+        pnorm += std::pow(tmp, 2.0) * volume / nedges;
+        // std::cout << e << " at " << xe << " error: " << tmp << " " << p[0][e] << std::endl;
+      }
+    }
+#ifdef HAVE_MPI
+    double tmp = pnorm;
+    mesh_->get_comm()->SumAll(&tmp, &pnorm, 1);
+    tmp = l2_err;
+    mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
+    tmp = inf_err;
+    mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+#endif
+    pnorm = sqrt(pnorm);
+    l2_err = sqrt(l2_err);
   }
 
  protected:

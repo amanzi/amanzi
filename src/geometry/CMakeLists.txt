@@ -28,8 +28,8 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 #
 # geometry library
 #
-file (GLOB geometry_source_files "*.cc")
-file(GLOB  geometry_inc_files "*.hh")
+file(GLOB geometry_source_files "*.cc")
+file(GLOB geometry_inc_files "*.hh")
 add_amanzi_library(geometry 
                    SOURCE ${geometry_source_files} HEADERS ${geometry_inc_files}
                    LINK_LIBS error_handling functions ${Teuchos_LIBRARIES} )
@@ -51,22 +51,24 @@ if (BUILD_TESTS)
    endif()
 
    # Test: test point creation and deletion
-   add_amanzi_test(point-tests test_points
+   add_amanzi_test(geometry_points geometry_points
                    KIND unit
 		   SOURCE test/Main.cc test/test_points.cc
 		   LINK_LIBS geometry ${UnitTest_LIBRARIES})
 
    # Test: test geometric operators
-   add_amanzi_test(geometry-operators test_geomops
+   add_amanzi_test(geometry_operators geometry_operations
                    KIND unit
-                   SOURCE test/Main.cc test/test_geometric_ops.cc
-                   LINK_LIBS geometry ${Teuchos_LIBRARIES} ${UnitTest_LIBRARIES})
+                   SOURCE test/Main.cc 
+                          test/test_geometric_ops.cc
+                   LINK_LIBS 
+                          geometry
+                          ${Teuchos_LIBRARIES} ${UnitTest_LIBRARIES})
 
    # Test: test region creation
-   add_amanzi_test(geometry-region test_region
+   add_amanzi_test(geometry_region geometry_region
                    KIND unit
-                   SOURCE  
-                          test/Main.cc 
+                   SOURCE test/Main.cc 
                           test/test_box_region.cc
                           test/test_plane_region.cc
                           test/test_labeledset.cc
@@ -75,22 +77,16 @@ if (BUILD_TESTS)
 			  test/test_polygon_region.cc
                    LINK_LIBS 
                           geometry
-                          ${UnitTest_LIBRARIES}
-                          ${Teuchos_LIBRARIES}
-                          ${Epetra_LIBRARIES})  
+                          ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})  
 
    # Test: test geometric model creation
-   add_amanzi_test(geometry-model test_geometric_model
+   add_amanzi_test(geometry_geometric_model geometry_geometric_model
                    KIND unit
-                   SOURCE
-                          test/Main.cc
+                   SOURCE test/Main.cc
                           test/test_geometric_model.cc
                    LINK_LIBS 
                           geometry
-                          ${UnitTest_LIBRARIES}
-                          ${Teuchos_LIBRARIES}
-                          ${Epetra_LIBRARIES})  
-           
+                          ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})  
 
 endif()
 

@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.2.1">
+<amanzi_input type="unstructured" version="2.3.0">
   <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
     <model_description name="Dispersion Example Problem">
       <comments>Example input file</comments>
@@ -161,7 +161,7 @@
         <assigned_regions>Well</assigned_regions>
         <liquid_phase name = "water">
           <solute_component name="group1">
-            <volume_weighted name="Tc-99" value="8.1483e-08" function="constant" start="0.0"/>
+            <volume_weighted name="Tc-99" value="8.1483e-11" function="constant" start="0.0"/>
           </solute_component> 
         </liquid_phase>
       </source>

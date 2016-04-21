@@ -34,7 +34,7 @@ add_amanzi_library(atk
                           XMLParameterListWriter.cc 
                           LeastSquare.cc 
                           VerboseObject.cc
-			  IOEvent.cc
+                          IOEvent.cc
                    HEADERS HDF5Reader.hh
                            Utils.hh
                            Units.hh
@@ -45,8 +45,8 @@ add_amanzi_library(atk
                            VerboseObject.hh
                            VerboseObject_objs.hh
                            GlobalVerbosity.hh
-			   IOEvent.hh
-			   Iterators.hh
+                           IOEvent.hh
+                           Iterators.hh
                            factory.hh
                            factory_with_state.hh
                            LeastSquare.hh

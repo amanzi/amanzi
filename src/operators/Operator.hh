@@ -112,6 +112,7 @@ class Operator {
   // main members
   // -- virtual methods potentially altered by the schema
   virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
+  virtual int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
   // symbolic assembly:
@@ -303,8 +304,7 @@ class Operator {
 
   int schema_;
   std::string schema_string_;
-  bool symbolic_assembled_;
-  bool assembled_;
+  double shift_;
 
 
   mutable int apply_calls_;

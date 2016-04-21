@@ -11,8 +11,8 @@ namespace Amanzi {
 class BilinearFunction : public Function {
  public:
   BilinearFunction(const std::vector<double> &x, const std::vector<double> &y,
-		 		  const Epetra_SerialDenseMatrix &v, const int xi, const int yi);
-  ~BilinearFunction() {}
+                   const Epetra_SerialDenseMatrix &v, const int xi, const int yi);
+  ~BilinearFunction() {};
   BilinearFunction* Clone() const { return new BilinearFunction(*this); }
   double operator()(const std::vector<double>& x) const;
 

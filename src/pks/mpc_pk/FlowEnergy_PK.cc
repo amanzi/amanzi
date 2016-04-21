@@ -23,9 +23,9 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
                              const Teuchos::RCP<Teuchos::ParameterList>& glist,
                              const Teuchos::RCP<State>& S,
                              const Teuchos::RCP<TreeVector>& soln) :
-  glist_(glist),
-  Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
-  Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
+    glist_(glist),
+    Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
+    Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
 {
   Teuchos::ParameterList vlist;
   vo_ =  Teuchos::rcp(new VerboseObject("FlowEnergy_PK", vlist)); 
@@ -147,14 +147,14 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // inform other PKs about strong coupling
   // -- flow
-  Teuchos::ParameterList& flow = glist_->sublist("PKs").sublist("Flow")
+  Teuchos::ParameterList& flow = glist_->sublist("PKs").sublist("flow")
                                         .sublist("Richards problem")
                                         .sublist("physical models and assumptions");
   flow.set("vapor diffusion", true);
   flow.set<std::string>("water content model", "generic");
 
   // -- energy
-  Teuchos::ParameterList& energy = glist_->sublist("PKs").sublist("Energy")
+  Teuchos::ParameterList& energy = glist_->sublist("PKs").sublist("energy")
                                           .sublist("physical models and assumptions");
   energy.set("vapor diffusion", true);
 

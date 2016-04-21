@@ -23,7 +23,7 @@ namespace AmanziGeometry {
 // Polygon:: constructor
 // -------------------------------------------------------------
 RegionPolygon::RegionPolygon(const std::string& name,
-			     const Set_ID id,
+                             const Set_ID id,
                              const std::vector<Point>& points,
                              const LifeCycleType lifecycle)
   : Region(name, id, true, POLYGON, points[0].dim()-1, points[0].dim(), lifecycle),
@@ -94,7 +94,7 @@ void RegionPolygon::Init_() {
   } else {
     Errors::Message mesg;
     mesg << "Cannot handle polygon regions with points of dimension "
-	 << space_dimension;
+         << space_dimension;
     Exceptions::amanzi_throw(mesg);
   }
 }

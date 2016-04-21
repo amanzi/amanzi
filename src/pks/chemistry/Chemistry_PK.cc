@@ -261,7 +261,8 @@ void Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> 
     using_sorption_isotherms_ = true;
   }
 
-  if (state_list->sublist("initial conditions").isSublist("sorption_sites")) {
+  //if (state_list->sublist("initial conditions").isSublist("sorption_sites")) {
+  if (state_list->sublist("initial conditions").isSublist("surface_complexation")) {
     using_sorption_ = true;
   }
 

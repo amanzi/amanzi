@@ -133,7 +133,7 @@ void OperatorDiffusionFVwithGravity::UpdateFlux(
 * (its nonlinear part) on face f.
 ****************************************************************** */
 void OperatorDiffusionFVwithGravity::ComputeJacobianLocal_(
-    int mcells, int f, int face_dir, int bc_model_f, double bc_value_f,
+    int mcells, int f, int face_dir_0to1, int bc_model_f, double bc_value_f,
     double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
@@ -148,7 +148,7 @@ void OperatorDiffusionFVwithGravity::ComputeJacobianLocal_(
     if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
       double flux0to1;
       flux0to1 = trans_face[0][f] * dpres;
-      if (gravity_face.get()) flux0to1 += face_dir * (*gravity_face)[0][f];
+      if (gravity_face.get()) flux0to1 += face_dir_0to1 * (*gravity_face)[0][f];
       if (flux0to1  > OPERATOR_UPWIND_RELATIVE_TOLERANCE) {  // Upwind
         dKrel_dp[0] = dkdp_cell[0];
         dKrel_dp[1] = 0.0;
@@ -170,8 +170,8 @@ void OperatorDiffusionFVwithGravity::ComputeJacobianLocal_(
     Jpp(0, 1) = trans_face[0][f] * dpres * dKrel_dp[1];
 
     if (gravity_face.get()) {
-      Jpp(0,0) += face_dir * (*gravity_face)[0][f] * dKrel_dp[0];
-      Jpp(0,1) += face_dir * (*gravity_face)[0][f] * dKrel_dp[1];
+      Jpp(0,0) += face_dir_0to1 * (*gravity_face)[0][f] * dKrel_dp[0];
+      Jpp(0,1) += face_dir_0to1 * (*gravity_face)[0][f] * dKrel_dp[1];
     }
     Jpp(1, 0) = -Jpp(0, 0);
     Jpp(1, 1) = -Jpp(0, 1);
@@ -182,7 +182,7 @@ void OperatorDiffusionFVwithGravity::ComputeJacobianLocal_(
       dpres = pres[0] - pres[1];  // + grn;
       Jpp(0, 0) = trans_face[0][f] * dpres * dkdp_cell[0];
       if (gravity_face.get())
-          Jpp(0,0) += face_dir * (*gravity_face)[0][f] * dkdp_cell[0];
+          Jpp(0,0) += face_dir_0to1 * (*gravity_face)[0][f] * dkdp_cell[0];
     } else {
       Jpp(0, 0) = 0.0;
     }

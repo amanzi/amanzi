@@ -22,7 +22,7 @@ SorptionIsothermLinear::SorptionIsothermLinear()
 SorptionIsothermLinear::SorptionIsothermLinear(const double KD)
     : SorptionIsotherm("linear", SorptionIsotherm::LINEAR),
       KD_(KD),
-      params_(1, 0.0){
+      params_(1, 0.0) {
 }  // end SorptionIsothermLinear() constructor
 
 SorptionIsothermLinear::~SorptionIsothermLinear() {

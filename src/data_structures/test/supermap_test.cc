@@ -240,7 +240,7 @@ TEST(SUPERMAP_FROM_COMPOSITEVECTOR) {
   Amanzi::VerboseObject::hide_line_prefix = true;
 
   // create a mesh 
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;
@@ -283,7 +283,7 @@ TEST(SUPERMAP_FROM_TREEVECTOR) {
   Amanzi::VerboseObject::hide_line_prefix = true;
 
   // create a mesh 
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;

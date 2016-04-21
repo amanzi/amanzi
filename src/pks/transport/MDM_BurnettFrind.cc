@@ -26,9 +26,9 @@ namespace Transport {
 ****************************************************************** */
 MDM_BurnettFrind::MDM_BurnettFrind(Teuchos::ParameterList& plist)
 {
-  alphaL_ = plist.get<double>("alphaL", 0.0);
-  alphaTV_ = plist.get<double>("alphaTV", 0.0);
-  alphaTH_ = plist.get<double>("alphaTH", 0.0);
+  alphaL_ = plist.get<double>("alpha_l", 0.0);
+  alphaTV_ = plist.get<double>("alpha_tv", 0.0);
+  alphaTH_ = plist.get<double>("alpha_th", 0.0);
 }
 
 

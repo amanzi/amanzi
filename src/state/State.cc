@@ -638,7 +638,7 @@ void State::SetData(Key fieldname, Key pk_name,
 };
 
 void State::SetData(Key fieldname, Key pk_name,
-                    const Teuchos::RCP<CompositeVector>& data){
+                    const Teuchos::RCP<CompositeVector>& data) {
   GetField(fieldname, pk_name)->SetData(data);
 };
 
@@ -735,14 +735,14 @@ void State::Initialize(Teuchos::RCP<State> S) {
     Teuchos::RCP<Field> field = f_it->second;
     Teuchos::RCP<Field> copy = S->GetField_(field->fieldname());
     if (copy != Teuchos::null) {
-      if (field->type() != copy->type()){
+      if (field->type() != copy->type()) {
         std::stringstream messagestream;
         messagestream << "States has fields with the same name but different types\n";
         Errors::Message message(messagestream.str());
         Exceptions::amanzi_throw(message);
       }
-      if (copy->initialized()){
-        switch (field->type()){
+      if (copy->initialized()) {
+        switch (field->type()) {
         case CONSTANT_SCALAR:
           *field->GetScalarData() = *copy->GetScalarData();
           break;
@@ -790,14 +790,14 @@ void State::InitializeFields() {
 
   bool pre_initialization = false;
 
-  if (state_plist_.isParameter("initialization filename")){
+  if (state_plist_.isParameter("initialization filename")) {
     pre_initialization = true;
     std::string filename = state_plist_.get<std::string>("initialization filename");
     Teuchos::RCP<Amanzi::HDF5_MPI> file_input =
       Teuchos::rcp(new Amanzi::HDF5_MPI(*(GetMesh()->get_comm()), filename));
     file_input->open_h5file();
     for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
-      if (f_it->second->type() == COMPOSITE_VECTOR_FIELD){
+      if (f_it->second->type() == COMPOSITE_VECTOR_FIELD) {
         bool read_complete = f_it->second->ReadCheckpoint(file_input.ptr());
         if (read_complete)
           f_it->second->set_initialized();
@@ -921,14 +921,14 @@ bool State::CheckAllFieldsInitialized(Teuchos::RCP<State> S) {
     Teuchos::RCP<Field> field = f_it->second;
     Teuchos::RCP<Field> copy = S->GetField_(field->fieldname());
     if (copy != Teuchos::null) {
-      if (field->type() != copy->type()){
+      if (field->type() != copy->type()) {
         std::stringstream messagestream;
         messagestream << "States has fields with the same name but different types\n";
         Errors::Message message(messagestream.str());
         Exceptions::amanzi_throw(message);
         return false;
       }
-      switch (field->type()){
+      switch (field->type()) {
       case CONSTANT_SCALAR:
         *field->GetScalarData() = *copy->GetScalarData();
         break;

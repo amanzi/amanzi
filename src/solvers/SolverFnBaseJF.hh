@@ -42,20 +42,20 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
   // -- Standard SolverFnBase interface.
   // computes the non-linear functional r = F(u)
   virtual void Residual(const Teuchos::RCP<Vector>& u,
-			const Teuchos::RCP<Vector>& r) {
+                        const Teuchos::RCP<Vector>& r) {
     fn_->Residual(u, r);
   }
 
   // preconditioner application
   virtual int ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
-				   const Teuchos::RCP<Vector>& Pr);
+                                   const Teuchos::RCP<Vector>& Pr);
 
   // Update the preconditioner
   virtual void UpdatePreconditioner(const Teuchos::RCP<const Vector>& u0);
 
   // error norm
   virtual double ErrorNorm(const Teuchos::RCP<const Vector>& u,
-			   const Teuchos::RCP<const Vector>& du) {
+                           const Teuchos::RCP<const Vector>& du) {
     return fn_->ErrorNorm(u, du);
   }
 

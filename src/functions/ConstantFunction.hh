@@ -1,3 +1,12 @@
+//! ConstantFunction: Implements the Function interface using a constant value.
+
+/*!
+<ul>Native Spec Example</ul>
+    <ParameterList name="function-constant">
+      <Parameter name="value" type="double" value="1.0"/>
+    </ParameterList>
+ */
+
 #ifndef AMANZI_CONSTANT_FUNCTION_HH_
 #define AMANZI_CONSTANT_FUNCTION_HH_
 

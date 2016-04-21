@@ -19,20 +19,18 @@ template <class Vector>
 class PK_PhysicalExplicit : virtual public PK_Physical, public PK_Explicit<Vector> {
 
 public:
-  PK_PhysicalExplicit(){};
+  PK_PhysicalExplicit() {};
 
   PK_PhysicalExplicit(Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
                  const Teuchos::RCP<State>& S,
                  const Teuchos::RCP<TreeVector>& soln):
-    PK_Physical(pk_tree, glist, S, soln){};
+      PK_Physical(pk_tree, glist, S, soln) {};
    
-
-// Virtual destructor
-  virtual ~PK_PhysicalExplicit(){};
-
+  // Virtual destructor
+  virtual ~PK_PhysicalExplicit() {};
 };
 
-} // namespace
+} // namespace Amanzi
 
 #endif

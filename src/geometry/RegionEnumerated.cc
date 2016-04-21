@@ -19,10 +19,10 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 RegionEnumerated::RegionEnumerated(const std::string& name,
-				   const Set_ID id,
-				   const std::string& entity_str,
-				   const std::vector<Entity_ID>& ents,
-				   const LifeCycleType lifecycle)
+                                   const Set_ID id,
+                                   const std::string& entity_str,
+                                   const std::vector<Entity_ID>& ents,
+                                   const LifeCycleType lifecycle)
   : Region(name, id, false, ENUMERATED, 0, 0, lifecycle),
     entity_str_(entity_str),
     entities_(ents) {

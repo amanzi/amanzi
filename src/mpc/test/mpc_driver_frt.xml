@@ -1,90 +1,88 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
-  <Parameter isUsed="true" name="input file name" type="string" value="amanzi-u-1d-ion-exchange-valocchi.xml"/>
 
-  <ParameterList name="Visualization Data">
+  <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/>
   </ParameterList>
-  <ParameterList name="Checkpoint Data">
+  <ParameterList name="checkpoint data">
     <Parameter name="file name base" type="string" value="chkpoint"/>
     <Parameter name="file name digits" type="int" value="5"/>
     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 5, -1}" />
   </ParameterList>  
-  <ParameterList name="Regions">
+  <ParameterList name="regions">
     <ParameterList name="Entire Domain">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="West">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{0.00000e+00, 1.00000e+00, 1.00000e+00}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.00000e+00, 1.00000e+00, 1.00000e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="East">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{1.00000e+00, 0.00000e+00, 0.00000e+00}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{1.00000e+00, 0.00000e+00, 0.00000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Soil_1">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{5.00000000000000000e-01, 1.00000e+00, 1.00000e+00}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{5.00000000000000000e-01, 1.00000e+00, 1.00000e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Soil_2">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{5.00000000000000000e-01, 0.00000e+00, 0.00000e+00}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{5.00000000000000000e-01, 0.00000e+00, 0.00000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="All">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-9.99999999999999967e+98, -9.99999999999999967e+98, -9.99999999999999967e+98}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{9.99999999999999967e+98, 9.99999999999999967e+98, 9.99999999999999967e+98}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{-9.99e+98, -9.99e+98, -9.99e+98}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{9.99e+98, 9.99e+98, 9.99e+98}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
-  <ParameterList name="Mesh">
-    <ParameterList name="Unstructured">
-      <ParameterList name="Generate Mesh">
-        <Parameter name="Number of Cells" type="Array(int)" value="{100, 1, 1}"/>
-        <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
-        <Parameter name="Domain High Coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured">
+      <ParameterList name="generate mesh">
+        <Parameter name="number of cells" type="Array(int)" value="{100, 1, 1}"/>
+        <Parameter name="domain low coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
       </ParameterList>
-      <ParameterList name="Expert">
-        <Parameter name="Framework" type="string" value="MSTK"/>
+      <ParameterList name="expert">
+        <Parameter name="framework" type="string" value="MSTK"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Domain">
-    <Parameter isUsed="true" name="Spatial Dimension" type="int" value="3"/>
+  <ParameterList name="domain">
+    <Parameter name="spatial dimension" type="int" value="3"/>
   </ParameterList>
 
-  <ParameterList name="Cycle Driver">
+  <ParameterList name="cycle driver">
     <Parameter name="start time" type="double" value="0"/>
     <Parameter name="end time" type="double" value="1.0e+4"/>
     <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
-	<ParameterList name="PK Tree">
-	  <ParameterList name="Flow and Reactive Transport">
+	<ParameterList name="PK tree">
+	  <ParameterList name="flow and reactive transport">
 	    <Parameter name="PK type" type="string" value="flow reactive transport"/>      
-	    <ParameterList name="Flow">
+	    <ParameterList name="flow">
 	      <Parameter name="PK type" type="string" value="darcy"/>
 	    </ParameterList>    
-	    <ParameterList name="Reactive Transport">
+	    <ParameterList name="reactive transport">
 	      <Parameter name="PK type" type="string" value="reactive transport"/>
-	      <ParameterList name="Transport">
+	      <ParameterList name="transport">
 		<Parameter name="PK type" type="string" value="transport"/>
 	      </ParameterList>
-	      <ParameterList name="Chemistry">
+	      <ParameterList name="chemistry">
 		<Parameter name="PK type" type="string" value="chemistry amanzi"/>
 	      </ParameterList>
 	    </ParameterList>
@@ -95,22 +93,19 @@
         <Parameter name="initial time step" type="double" value="1000.0"/>
       </ParameterList>
     </ParameterList>
-    <!--ParameterList name="Restart from Checkpoint Data File">
-      <Parameter name="Checkpoint Data File Name" type="string" value="test/restart.h5"/>
-    </ParameterList-->
   </ParameterList>
 
   <ParameterList name="PKs">
-    <ParameterList name="Flow and Reactive Transport">
+    <ParameterList name="flow and reactive transport">
       <Parameter name="PK type" type="string" value="flow reactive transport"/>      
-      <Parameter name="PKs order" type="Array(string)" value="{Flow, Reactive Transport}"/> 
+      <Parameter name="PKs order" type="Array(string)" value="{flow, reactive transport}"/> 
       <Parameter name="master PK index" type="int" value="0"/>
     </ParameterList>
-    <ParameterList name="Reactive Transport">
+    <ParameterList name="reactive transport">
       <Parameter name="PK type" type="string" value="reactive transport"/>      
-      <Parameter name="PKs order" type="Array(string)" value="{Chemistry, Transport}"/> 
+      <Parameter name="PKs order" type="Array(string)" value="{chemistry, transport}"/> 
     </ParameterList>
-    <ParameterList name="Flow">
+    <ParameterList name="flow">
       <ParameterList name="Darcy problem">
 	<ParameterList name="VerboseObject">
 	  <Parameter name="Verbosity Level" type="string" value="high"/>
@@ -204,7 +199,7 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Chemistry">
+    <ParameterList name="chemistry">
       <Parameter name="PK type" type="string" value="chemistry pk"/>
       <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
       <ParameterList name="Thermodynamic Database">
@@ -215,19 +210,19 @@
       <Parameter name="maximum Newton iterations" type="int" value="50"/>
       <ParameterList name="initial conditions">
 	<ParameterList name="mineral_volume_fractions">
-          <Parameter name="function" type="string" value="list was moved to State"/>
+          <Parameter name="function" type="string" value="list was moved to state"/>
 	</ParameterList>
 	<ParameterList name="mineral_specific_surface_area">
-          <Parameter name="function" type="string" value="list was moved to State"/>
+          <Parameter name="function" type="string" value="list was moved to state"/>
 	</ParameterList>
 	<ParameterList name="ion_exchange_sites">
-          <Parameter name="function" type="string" value="list was moved to State"/>
+          <Parameter name="function" type="string" value="list was moved to state"/>
 	</ParameterList>
 	<ParameterList name="ion_exchange_ref_cation_conc">
-          <Parameter name="function" type="string" value="list was moved to State"/>
+          <Parameter name="function" type="string" value="list was moved to state"/>
 	</ParameterList>
 	<ParameterList name="free_ion_species">
-          <Parameter name="function" type="string" value="list was moved to State"/>
+          <Parameter name="function" type="string" value="list was moved to state"/>
 	</ParameterList>
       </ParameterList>
       <Parameter name="minerals" type="Array(string)" value="{Halite}"/>
@@ -237,7 +232,7 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Transport">
+    <ParameterList name="transport">
       <!--Parameter name="PK type" type="string" value="transport pk"/-->
       <Parameter name="spatial discretization order" type="int" value="1"/>
       <Parameter name="temporal discretization order" type="int" value="1"/>
@@ -311,7 +306,7 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="State">
+  <ParameterList name="state">
     <ParameterList name="field evaluators">
       <ParameterList name="viscosity_liquid">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
@@ -686,7 +681,7 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Preconditioners">
+  <ParameterList name="preconditioners">
     <ParameterList name="Trilinos ML">
       <Parameter name="preconditioner type" type="string" value="ml"/>
       <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
@@ -737,7 +732,7 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Solvers">
+  <ParameterList name="solvers">
     <ParameterList name="AztecOO">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
@@ -762,24 +757,24 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Observation Data">
+  <ParameterList name="observation data">
     <Parameter name="observation output filename" type="string" value="obs_output.out"/>
     <Parameter name="precision" type="int" value="10"/>
     <ParameterList name="OBS-1">
       <Parameter name="region" type="string" value="Soil_1"/>
-      <Parameter name="functional" type="string" value="Observation Data: Point"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
       <Parameter name="variable" type="string" value="drawdown"/>
       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
     </ParameterList>
     <ParameterList name="OBS-2">
       <Parameter name="region" type="string" value="Soil_2"/>
-      <Parameter name="functional" type="string" value="Observation Data: Point"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
       <Parameter name="variable" type="string" value="drawdown"/>
       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Analysis">
+  <ParameterList name="analysis">
     <Parameter name="used boundary condition regions" type="Array(string)" value="{West, East, West, East}"/>
     <Parameter name="used source regions" type="Array(string)" value="{}"/>
     <Parameter name="used observation regions" type="Array(string)" value="{}"/>

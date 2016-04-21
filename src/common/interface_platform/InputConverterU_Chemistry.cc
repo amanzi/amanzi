@@ -65,7 +65,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       bgdfilename = GetAttributeValueS_(element, "input_filename");
       format = GetAttributeValueS_(element, "format", TYPE_NONE, false, format);
     } else {
-      bgdfilename = CreateBGDFile(xmlfilename_);
+        bgdfilename = CreateBGDFile(xmlfilename_);
     }
 
     Teuchos::ParameterList& bgd_list = out_list.sublist("Thermodynamic Database");
@@ -94,8 +94,13 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       node = GetUniqueElementByTagsString_(file_location, flag);
       if (flag) {
         element = static_cast<DOMElement*>(node);
-        std::string inpfilename = GetAttributeValueS_(element, "input_filename");
-        out_list.set<std::string>("Engine Input File", inpfilename);
+	if (element->hasAttribute(mm.transcode("input_filename"))) {
+            std::string inpfilename = GetAttributeValueS_(element, "input_filename");
+            out_list.set<std::string>("Engine Input File", inpfilename);
+	} else {
+	    std::string inpfilename = CreateINFile(xmlfilename_);
+            out_list.set<std::string>("Engine Input File", inpfilename);
+	}
       } else {
         Errors::Message msg;
         msg << "Unique tag string \"" << file_location << "\" must exists.\n";
@@ -173,10 +178,10 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     }
 
     // ion exchange
-    node = GetUniqueElementByTagsString_(inode, "ion_exchange, cec", flag);
+    node = GetUniqueElementByTagsString_(inode, "ion_exchange, cations", flag);
     if (flag) {
       Teuchos::ParameterList& sites = ic_list.sublist("ion_exchange_sites");
-      double cec = std::strtod(mm.transcode(node->getTextContent()), NULL);
+      double cec = GetAttributeValueD_(static_cast<DOMElement*>(node), "cec");
 
       for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
         sites.sublist("function").sublist(*it)
@@ -243,7 +248,9 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       // sorption_sites.push_back("siteA");  // no translation rules so far
       Teuchos::ParameterList& complexation = ic_list.sublist("surface_complexation");
 
-      double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "density");
+      //double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "density");
+      DOMNode* dnode = GetUniqueElementByTagsString_(node, "density", flag);
+      double val = strtod(mm.transcode(dnode->getTextContent()), NULL);;
 
       for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
         complexation.sublist("function").sublist(*it)
@@ -419,6 +426,396 @@ std::string InputConverterU::CreateBGDFile(std::string& filename)
   return bgdfilename;
 }
 
+/* ******************************************************************
+* Adds kd values to a bgd file (using the first material).
+* Returns the name of this file.  
+****************************************************************** */
+std::string InputConverterU::CreateINFile(std::string& filename)
+{
+  MemoryManager mm;
+  DOMNode* node;
+  DOMElement* element;
+
+  std::ofstream in_file;
+  std::stringstream primaries;
+  std::stringstream secondaries;
+  std::stringstream minerals;
+  std::stringstream mineral_list;
+  std::stringstream gases;
+  std::stringstream mineral_kinetics;
+  std::stringstream isotherms;
+  std::stringstream cations;
+  std::stringstream complexes;
+  std::stringstream constraints;
+  std::stringstream reactionrates;
+  std::stringstream decayrates;
+
+  // database filename
+  bool flag;
+  node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
+  element = static_cast<DOMElement*>(node);
+  std::string datfilename = GetAttributeValueS_(element, "database", TYPE_NONE, true, "");
+
+  // get species names
+  int nsolutes = phases_["water"].size();
+  for (int i = 0; i < nsolutes; ++i) {
+    std::string name = phases_["water"][i];
+    primaries << "    " << name << "\n";
+  }
+
+  // check for forward/backward rates on primaries (for solutes/non-reactive primaries only)
+  node = GetUniqueElementByTagsString_("liquid_phase, dissolved_components, primaries", flag);
+  if (flag) {
+    std::string primary;
+    std::vector<DOMNode*> children = GetSameChildNodes_(node, primary, flag, false);
+
+    for (int i = 0; i < children.size(); ++i) {
+      DOMNode* inode = children[i];
+      element = static_cast<DOMElement*>(inode);
+      if (element->hasAttribute(mm.transcode("forward_rate"))) {
+        double frate = GetAttributeValueD_(element, "forward_rate");
+        double brate = GetAttributeValueD_(element, "backward_rate");
+        std::string name = TrimString_(mm.transcode(inode->getTextContent()));
+        reactionrates << "    REACTION " << name << " <->\n";
+        reactionrates << "    FORWARD_RATE " << frate << "\n";
+        reactionrates << "    BACKWARD_RATE " << brate << "\n";
+      }
+      if (element->hasAttribute(mm.transcode("first_order_decay_constant"))) {
+        double decay = GetAttributeValueD_(element, "first_order_decay_constant");
+        std::string name = TrimString_(mm.transcode(inode->getTextContent()));
+        decayrates << "    REACTION " << name << " <-> \n";
+        decayrates << "    RATE_CONSTANT " << decay << "\n";
+      }
+    }
+  }
+
+
+  node = GetUniqueElementByTagsString_("liquid_phase, dissolved_components, secondaries", flag);
+  if (flag) {
+    //std::vector<DOMNode*> children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode("secondary"));
+    std::string secondary;
+    std::vector<DOMNode*> children = GetSameChildNodes_(node, secondary, flag, false);
+
+    for (int i = 0; i < children.size(); ++i) {
+      DOMNode* inode = children[i];
+      std::string name = TrimString_(mm.transcode(inode->getTextContent()));
+      secondaries << "    " << name << "\n";
+    }
+  }
+
+
+  node = GetUniqueElementByTagsString_("phases, solid_phase, minerals", flag);
+  if (flag) {
+    //std::vector<DOMNode*> children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode("mineral"));
+    std::string mineral;
+    std::vector<DOMNode*> children = GetSameChildNodes_(node, mineral, flag, false);
+
+    for (int i = 0; i < children.size(); ++i) {
+      DOMNode* inode = children[i];
+      std::string name = TrimString_(mm.transcode(inode->getTextContent()));
+      minerals << "    " << name << "\n";
+      mineral_list << name << ", ";
+
+      element = static_cast<DOMElement*>(inode);
+      double rate = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, false, 0.0);
+      if (rate > 0.0) {
+        mineral_kinetics << "    " << name << "\n";
+        mineral_kinetics << "      RATE_CONSTANT " << rate << "\n";
+        //mineral_kinetics << "      RATE_CONSTANT " << rate << " mol/cm^2-sec\n";
+        mineral_kinetics << "    /\n";
+      }
+    }
+  }
+
+  node = GetUniqueElementByTagsString_("phases, gas_phase, gases", flag);
+  if (flag) {
+    //std::vector<DOMNode*> children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode("gas"));
+    std::string gas;
+    std::vector<DOMNode*> children = GetSameChildNodes_(node, gas, flag, false);
+
+    for (int i = 0; i < children.size(); ++i) {
+      DOMNode* inode = children[i];
+      std::string name = TrimString_(mm.transcode(inode->getTextContent()));
+      gases << "    " << name << "\n";
+    }
+  }
+
+  // soprtion isotherms
+  node = GetUniqueElementByTagsString_("materials, material, sorption_isotherms", flag);
+  if (flag) {
+    std::string name;
+    std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
+    for (int i = 0; i < children.size(); ++i) {
+      DOMNode* inode = children[i];
+      element = static_cast<DOMElement*>(inode);
+      name = GetAttributeValueS_(element, "name");
+
+      DOMNode* knode = GetUniqueElementByTagsString_(inode, "kd_model", flag);
+      element = static_cast<DOMElement*>(knode);
+      if (flag) {
+        double kd = GetAttributeValueD_(element, "kd");
+        std::string model = GetAttributeValueS_(element, "model");
+        if (model == "linear") {
+	  isotherms << "      " << name << "\n";
+	  isotherms << "        TYPE LINEAR\n";
+	  isotherms << "        DISTRIBUTION_COEFFICIENT " << kd << "\n";
+	} else if (model == "langmuir") {
+	  isotherms << "      " << name << "\n";
+	  isotherms << "        TYPE LANGMUIR\n";
+	  isotherms << "        DISTRIBUTION_COEFFICIENT " << kd << "\n";
+          double b = GetAttributeValueD_(element, "b");
+          isotherms << "        LANGMUIR_B " << b << "\n";
+        } else if (model == "freundlich") {
+	  isotherms << "      " << name << "\n";
+	  isotherms << "        TYPE FREUNDLICH\n";
+	  isotherms << "        DISTRIBUTION_COEFFICIENT " << kd << "\n";
+          double n = GetAttributeValueD_(element, "n");
+          isotherms << "        FREUNDLICH_N " << n << "\n";
+        }
+	isotherms << "      /\n";
+      }
+    }
+  }
+  
+  // soprtion ion exchange
+  node = GetUniqueElementByTagsString_("materials, material, ion_exchange, cations", flag);
+  if (flag) {
+    element = static_cast<DOMElement*>(node);
+    double cec = GetAttributeValueD_(element, "cec");
+    cations << "      CEC " << cec << "\n";
+    cations << "      CATIONS\n";
+
+    std::string name;
+    std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
+    for (int i = 0; i < children.size(); ++i) {
+      DOMNode* inode = children[i];
+      element = static_cast<DOMElement*>(inode);
+      name = GetAttributeValueS_(element, "name");
+      double value = GetAttributeValueD_(element, "value");
+      cations << "        " << name << " " << value << "\n";
+    }
+  }
+
+  // soprtion surface complexation
+  //node = GetUniqueElementByTagsString_("materials, material, surface_complexation, mineral", flag);
+  //if (flag) {
+  //  std::string name = GetTextContentS_(node, mineral_list.str().c_str());
+  //  complexes << "      MINERAL " << name << "\n";
+  //}
+  node = GetUniqueElementByTagsString_("materials, material, surface_complexation", flag);
+  if (flag) {
+    
+    std::string name;
+    std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
+    for (int i = 0; i < children.size(); ++i) {
+      DOMNode* inode = children[i];
+      element = static_cast<DOMElement*>(inode);
+      name = GetAttributeValueS_(element, "name");
+      double density = GetAttributeValueD_(element, "density");
+      complexes << "    SURFACE_COMPLEXATION_RXN\n";
+      complexes << "      EQUILIBRIUM\n";
+      complexes << "      SITE >" << name << " " << density << "\n";
+      
+      //DOMNode* cnode = GetUniqueElementByTagsString_("materials, material, surface_complexation, complexes", flag);
+      std::vector<DOMNode*> kids = GetChildren_(inode, "complexes", flag);
+      if (flag) {
+        complexes << "      COMPLEXES\n";
+        for (int j = 0; j < kids.size(); ++j) {
+          DOMNode* jnode = kids[j];
+          std::vector<std::string> complexe_names = CharToStrings_(mm.transcode(jnode->getTextContent()));
+          for (std::vector<std::string>::const_iterator it = complexe_names.begin(); it != complexe_names.end(); it++) {
+            complexes << "        >" << *it << "\n";
+          }
+        }
+        complexes << "      /\n";
+        complexes << "    /\n";
+      }
+    }
+  }
+
+  // constraints
+  node = GetUniqueElementByTagsString_("geochemistry, constraints", flag);
+  if (flag) {
+
+    // loop over constraints
+    std::string name;
+    std::vector<DOMNode*> constraint_list = GetSameChildNodes_(node, name, flag, false);
+    for (int i = 0; i < constraint_list.size(); ++i) {
+      std::stringstream primary;
+      std::stringstream mineral;
+      std::stringstream gas;
+
+      DOMNode* inode = constraint_list[i];
+      element = static_cast<DOMElement*>(inode);
+      std::string const_name = GetAttributeValueS_(element, "name");
+       
+      // loop over individual items in current constraint
+      std::string constraint;
+      bool found;
+      std::vector<DOMNode*> children = GetChildren_(inode, "primary", found);
+      if (found) {
+        for (int j = 0; j < children.size(); ++j) {
+          DOMNode* jnode = children[j];
+          element = static_cast<DOMElement*>(jnode);
+
+	  std::string constname = GetAttributeValueS_(element, "name");
+	  std::string ctype = GetAttributeValueS_(element, "type");
+	  double constvalue = GetAttributeValueD_(element, "value");
+	  std::string typeletter;
+	  if (ctype == "free_ion") {
+	      typeletter = "F";
+	  } else if (ctype == "pH" || ctype == "ph") {
+	      typeletter = "P";
+	  } else if (ctype == "total") {
+	      typeletter = "T";
+	  } else if (ctype == "total+sorbed") {
+	      typeletter = "S";
+	  } else if (ctype == "charge") {
+	      typeletter = "Z";
+	  } else if (ctype == "mineral") {
+	      std::string mname = GetAttributeValueS_(element, "mineral");
+	      typeletter = "M " + mname;
+	  } else if (ctype == "gas") {
+	      std::string gname = GetAttributeValueS_(element, "gas");
+	      typeletter = "G " + gname;
+	  }
+	  primary << "    " << constname << " " << constvalue << " " << typeletter << "\n";
+	}
+      }
+
+      children = GetChildren_(inode, "mineral", found);
+      if (found) {
+        for (int j = 0; j < children.size(); ++j) {
+          DOMNode* jnode = children[j];
+          element = static_cast<DOMElement*>(jnode);
+	  std::string constname = GetAttributeValueS_(element, "name");
+	  double constvf = GetAttributeValueD_(element, "volume_fraction");
+	  double constsa = GetAttributeValueD_(element, "specific_surface_area");
+          mineral << "    " << constname << " " << constvf << " " << constsa << "\n";
+          //mineral << "    " << constname << " " << constvf << " " << constsa << " cm^2/cm^3\n";
+	}
+      }
+
+      children = GetChildren_(inode, "gas", found);
+      if (found) {
+        for (int j = 0; j < children.size(); ++j) {
+          DOMNode* jnode = children[j];
+          element = static_cast<DOMElement*>(jnode);
+	  std::string constname = GetAttributeValueS_(element, "name");
+	  gas << "    " << constname << "\n";
+	}
+      }
+
+      constraints << "CONSTRAINT " << const_name << "\n";
+      constraints << "  CONCENTRATIONS\n";
+      constraints << primary.str();
+      constraints << "  /\n";
+      if (!mineral.str().empty()) {
+        constraints << "  MINERALS\n";
+        constraints << mineral.str();
+        constraints << "  /\n";
+      }
+      constraints << "END\n";
+    }
+  }
+
+
+  // build in filename
+  std::string infilename(filename);
+  std::string new_extension(".in");
+  size_t pos = infilename.find(".xml");
+  infilename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)4);
+
+  // open output in file
+  if (rank_ == 0) {
+    struct stat buffer;
+    int status = stat(infilename.c_str(), &buffer);
+    if (!status) {
+      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "File \"" << infilename.c_str() 
+                   << "\" exists, skipping its creation." << std::endl;
+      }
+    } else {
+      in_file.open(infilename.c_str());
+
+      in_file << "CHEMISTRY\n";
+      // Chemistry - Species
+      in_file << "  PRIMARY_SPECIES\n";
+      in_file << primaries.str();
+      in_file << "  /\n";
+      if (!reactionrates.str().empty()) {
+        in_file << "  GENERAL_REACTION\n";
+        in_file << reactionrates.str();
+        in_file << "  /\n";
+      }
+      if (!decayrates.str().empty()) {
+        in_file << "  RADIOACTIVE_DECAY_REACTION\n";
+        in_file << decayrates.str();
+        in_file << "  /\n";
+      }
+      if (!secondaries.str().empty()) {
+        in_file << "  SECONDARY_SPECIES\n";
+        in_file << secondaries.str();
+        in_file << "  /\n";
+      }
+      //in_file << "  REDOX_SPECIES\n";
+      //in_file << species.str();
+      //in_file << "  /\n";
+      if (!gases.str().empty()) {
+        in_file << "  GAS_SPECIES\n";
+        in_file << gases.str();
+        in_file << "  /\n";
+      }
+      if (!minerals.str().empty()) {
+        in_file << "  MINERALS\n";
+        in_file << minerals.str();
+        in_file << "  /\n";
+      }
+
+      // Chemistry - Mineral Kinetics
+      if (!mineral_kinetics.str().empty()) {
+        in_file << "  MINERAL_KINETICS\n";
+        in_file << mineral_kinetics.str();
+        in_file << "  /\n";
+      }
+
+      // Chemistry - Sorption
+      if (!isotherms.str().empty() || !complexes.str().empty() || !cations.str().empty()) {
+        in_file << "  SORPTION\n";
+        if (!isotherms.str().empty()) {
+          in_file << "    ISOTHERM_REACTIONS\n";
+          in_file << isotherms.str();
+          in_file << "    /\n";
+        }
+        if (!complexes.str().empty()) {
+          in_file << complexes.str();
+        }
+        if (!cations.str().empty()) {
+          in_file << "    ION_EXCHANGE_RXN\n";
+          in_file << cations.str();
+          in_file << "      /\n";
+          in_file << "    /\n";
+        }
+        in_file << "  /\n";
+      }
+
+      // Chemistry - Controls
+      in_file << "  DATABASE " << datfilename.c_str() << "\n";
+      in_file << "  LOG_FORMULATION\n";
+      in_file << "  ACTIVITY_COEFFICIENTS TIMESTEP\n";
+      in_file << "END\n";
+
+      // Constraints
+      in_file << constraints.str();
+      //in_file << "END\n";
+
+      in_file.close();
+    }
+  }
+
+  return infilename;
+}
 }  // namespace AmanziInput
 }  // namespace Amanzi
 

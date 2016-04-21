@@ -66,10 +66,10 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
 
   // create pointer to the chemistry parameter list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  cp_list_ = Teuchos::sublist(pk_list, "Chemistry", true);
+  cp_list_ = Teuchos::sublist(pk_list, pk_name, true);
 
   // collect high-level information about the problem
-  Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "State", true);
+  Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
 
   InitializeMinerals(cp_list_);
   InitializeSorptionSites(cp_list_, state_list);
@@ -138,11 +138,13 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
     Teuchos::Array<std::string> names = cp_list_->get<Teuchos::Array<std::string> >("auxiliary data");  
     
     for (Teuchos::Array<std::string>::const_iterator it = names.begin(); it != names.end(); ++it) {
-      std::vector<std::vector<std::string> > subname(1);
-      subname[0].push_back("0");
-      S->RequireField(*it, passwd_, subname)
-        ->SetMesh(mesh_)->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+      if (!S->HasField(*it)) {
+        std::vector<std::vector<std::string> > subname(1);
+        subname[0].push_back("0");
+        S->RequireField(*it, passwd_, subname)
+          ->SetMesh(mesh_)->SetGhosted(false)
+          ->SetComponent("cell", AmanziMesh::CELL, 1);
+      }
     }
   }
 }
@@ -365,12 +367,12 @@ void Alquimia_PK::XMLParameters()
 
   // Now associate regions with chemical conditions based on initial 
   // condition specifications in the file.
-  if (!glist_->isSublist("State")) {
+  if (!glist_->isSublist("state")) {
     msg << "Alquimia_PK::XMLParameters(): \n";
     msg << "  No 'State' sublist was found!\n";
     Exceptions::amanzi_throw(msg);
   }
-  Teuchos::ParameterList& state_list = glist_->sublist("State");
+  Teuchos::ParameterList& state_list = glist_->sublist("state");
   Teuchos::ParameterList& initial_conditions = state_list.sublist("initial conditions");
   if (!initial_conditions.isSublist("geochemical conditions")) {
     msg << "Alquimia_PK::XMLParameters(): \n";

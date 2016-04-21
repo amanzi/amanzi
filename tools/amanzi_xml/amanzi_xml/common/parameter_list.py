@@ -9,9 +9,7 @@ from amanzi_xml.utils import search
 
 _doublespace = ["field evaluators", "PKs", "initial conditions"]
 _doublespace_two = ["PKs"]
-_postspace = ["Mesh", "Domain", "Regions", "coordinator", "checkpoint",
-              "time integrator", "Diffusion", "Diffusion PC", "Coupled PC",
-              "Coupled Solver", "boundary conditions", "initial conditions",
+_postspace = ["mesh", "regions", "coordinator", "checkpoint",
               "visualization", "visualization_surface", "PKs"]
 _prespace = ["PKs", "field evaluators", "initial conditions"]
 
@@ -38,7 +36,7 @@ class ParameterList(base.TeuchosBaseXML):
 
     def __init__(self, name):
         """Initialize ParameterList with name"""
-        super(ParameterList, self).__init__('ParameterList',{'name': str(name), 'type': str(self._type)})
+        super(ParameterList, self).__init__('ParameterList',{'name': str(name)})
 
     @classmethod
     def from_Element(cls, elem, validation=None):
@@ -195,5 +193,6 @@ class ParameterList(base.TeuchosBaseXML):
     def pop(self, name):
         return self.getchildren().pop(self.getchildren().index(self.getElement(name)))
 
+    
 # register
 parser.objects['ParameterList'] = ParameterList

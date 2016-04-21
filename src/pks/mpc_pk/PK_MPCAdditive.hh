@@ -117,7 +117,7 @@ PK_MPCAdditive<PK_Base>::PK_MPCAdditive(Teuchos::ParameterList& pk_tree,
   my_list_ = Teuchos::sublist(Teuchos::sublist(global_list_, "PKs"), name_);
 
   Teuchos::RCP<Teuchos::ParameterList> plist;
-  if (global_list_->isSublist("PKs")){
+  if (global_list_->isSublist("PKs")) {
     plist = Teuchos::sublist(global_list, "PKs");
   }
 
@@ -148,7 +148,6 @@ PK_MPCAdditive<PK_Base>::PK_MPCAdditive(Teuchos::ParameterList& pk_tree,
     Teuchos::RCP<PK_Base> pk = Teuchos::rcp_dynamic_cast<PK_Base>(pk_notype);
     sub_pks_.push_back(pk);
   }
-
 }
 
 

@@ -1,15 +1,17 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-ATS
+/*
+  State
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-A field evaluator with no dependencies specified by a function.
+  Author: Ethan Coon
 
-------------------------------------------------------------------------- */
+  A field evaluator with no dependencies specified by a function.
+*/
 
-#include "composite_vector_function_factory.hh"
+#include "CompositeVectorFunctionFactory.hh"
 #include "independent_variable_field_evaluator_fromfunction.hh"
 
 namespace Amanzi {

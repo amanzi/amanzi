@@ -21,7 +21,7 @@ class VirialCoefficient {
 
   double GetVirial() const {return virial;};
 
-  void SetPol(const double& poli){
+  void SetPol(const double& poli) {
 	  npol++;
 	  pol.push_back(poli);
   };
@@ -38,17 +38,17 @@ class VirialCoefficient {
 
   int GetIfun3() const {return ifun3;};
 
-  void SetIsp1(const int isp1_){isp1=isp1_;};
+  void SetIsp1(const int isp1_) {isp1=isp1_;};
 
-  void SetIsp2(const int isp2_){isp2=isp2_;};
+  void SetIsp2(const int isp2_) {isp2=isp2_;};
 
-  void SetIsp3(const int isp3_){isp3=isp3_;};
+  void SetIsp3(const int isp3_) {isp3=isp3_;};
 
-  void SetIfun1(const int ifun1_){ifun1=ifun1_;};
+  void SetIfun1(const int ifun1_) {ifun1=ifun1_;};
 
-  void SetIfun2(const int ifun2_){ifun2=ifun2_;};
+  void SetIfun2(const int ifun2_) {ifun2=ifun2_;};
 
-  void SetIfun3(const int ifun3_){ifun3=ifun3_;};
+  void SetIfun3(const int ifun3_) {ifun3=ifun3_;};
 
  protected:
 

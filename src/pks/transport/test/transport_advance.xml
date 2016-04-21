@@ -1,30 +1,25 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
 
-  <!--ParameterList name="Mesh">
-    <Parameter name="Framework" type="string" value="mstk::mesh"/>
-  </ParameterList-->    
-   
-  <ParameterList name="Regions">
+  <ParameterList name="regions">
     <ParameterList name="Computational domain">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
-      <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label" type="string" value="103"/>
-        <Parameter name="File" type="string" value="hex_3x3x3_ss.exo"/>
-        <Parameter name="Format" type="string" value="Exodus II"/>
-        <Parameter name="Entity" type="string" value="Face"/>
+      <ParameterList name="region: labeled set">
+        <Parameter name="label" type="string" value="103"/>
+        <Parameter name="file" type="string" value="hex_3x3x3_ss.exo"/>
+        <Parameter name="format" type="string" value="Exodus II"/>
+        <Parameter name="entity" type="string" value="face"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
   <ParameterList name="PKs">
-    <ParameterList name="Transport">
+    <ParameterList name="transport">
       <Parameter name="cfl" type="double" value="0.5"/>   
       <Parameter name="spatial discretization order" type="int" value="1"/>   
       <Parameter name="temporal discretization order" type="int" value="1"/>   
@@ -34,45 +29,45 @@
       <!-- end of developers parameters -->
 
       <ParameterList name="VerboseObject">
-	<Parameter name="Verbosity Level" type="string" value="medium"/>
+        <Parameter name="Verbosity Level" type="string" value="medium"/>
       </ParameterList>
 
       <ParameterList name="boundary conditions">
-	<ParameterList name="concentration">
-	  <ParameterList name="Component 0">
-	    <ParameterList name="BC for left side">
-	      <Parameter name="regions" type="Array(string)" value="{Left side}"/>
-	      <ParameterList name="boundary concentration">
-		<ParameterList name="function-tabular">
-		  <Parameter name="forms" type="Array(string)" value="{constant}"/>
-		  <Parameter name="x values" type="Array(double)" value="{0.0, 0.1}"/>
-		  <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
-		</ParameterList>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
-	  <ParameterList name="Component 1">
-	    <ParameterList name="BC for left side">
-	      <Parameter name="regions" type="Array(string)" value="{Left side}"/>
-	      <ParameterList name="boundary concentration">
-		<ParameterList name="function-tabular">
-		  <Parameter name="forms" type="Array(string)" value="{constant}"/>
-		  <Parameter name="x values" type="Array(double)" value="{0.0, 0.1}"/>
-		  <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
-		</ParameterList>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
-      </ParameterList>	
+        <ParameterList name="concentration">
+          <ParameterList name="Component 0">
+            <ParameterList name="BC for left side">
+              <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+              <ParameterList name="boundary concentration">
+                <ParameterList name="function-tabular">
+                  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 0.1}"/>
+                  <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Component 1">
+            <ParameterList name="BC for left side">
+              <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+              <ParameterList name="boundary concentration">
+                <ParameterList name="function-tabular">
+                  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 0.1}"/>
+                  <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>        
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="State">
+  <ParameterList name="state">
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
         <ParameterList name="VerboseObject">
-	  <Parameter name="Verbosity Level" type="string" value="extreme"/>
+          <Parameter name="Verbosity Level" type="string" value="extreme"/>
         </ParameterList>
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">

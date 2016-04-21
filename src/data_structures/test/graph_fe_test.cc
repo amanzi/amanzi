@@ -1,5 +1,5 @@
 /*
-  This is the operator component of the Amanzi code. 
+  Data Structures
 
   Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -47,7 +47,7 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA) {
   Amanzi::VerboseObject::hide_line_prefix = true;
 
   // create a mesh 
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;
@@ -123,7 +123,7 @@ TEST(FE_GRAPH_FACE_FACE) {
   Amanzi::VerboseObject::hide_line_prefix = true;
 
   // create a mesh 
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;

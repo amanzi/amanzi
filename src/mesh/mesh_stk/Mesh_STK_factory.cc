@@ -43,7 +43,7 @@ Mesh_STK_factory::Mesh_STK_factory (const Epetra_MpiComm *comm_, int bucket_size
   : parallel_machine_ (comm_->GetMpiComm()),
     bucket_size_ (bucket_size),
     communicator_ (comm_)
-{  }
+{};
 
 /** 
  * This should only be called for serial 
@@ -53,9 +53,10 @@ Mesh_STK_factory::Mesh_STK_factory (const Epetra_MpiComm *comm_, int bucket_size
  * 
  * @return 
  */
-Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data, 
-					     const Data::Fields& fields,
-        const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
+Mesh_STK_Impl* Mesh_STK_factory::build_mesh(
+    const Data::Data& data, 
+    const Data::Fields& fields,
+    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
 {
   ASSERT(communicator_->NumProc() == 1);
 
@@ -68,6 +69,7 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data,
   return build_mesh(data, cmap, vmap, fields, gm);
 }
 
+
 /** 
  * Construct a Mesh instance, in parallel
  * 
@@ -78,25 +80,23 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data,
  * 
  * @return Mesh instance
  */
-Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data, 
-					     const Epetra_Map& cellmap,
-					     const Epetra_Map& vertmap,
-					     const Data::Fields& fields,
-        const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
+Mesh_STK_Impl* Mesh_STK_factory::build_mesh(
+    const Data::Data& data, 
+    const Epetra_Map& cellmap,
+    const Epetra_Map& vertmap,
+    const Data::Fields& fields,
+    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
 {
-
   // Update construction variables for the new mesh.
-  const int space_dimension = data.parameters ().dimensions ();
+  const int space_dimension = data.parameters().dimensions();
 
-  meta_data_  = new stk::mesh::fem::FEMMetaData (space_dimension,stk::mesh::fem::entity_rank_names (space_dimension));
-  bulk_data_  = new stk::mesh::BulkData (*((stk::mesh::MetaData *)meta_data_), 
-                                         parallel_machine_, bucket_size_);
+  meta_data_ = new stk::mesh::fem::FEMMetaData(space_dimension,stk::mesh::fem::entity_rank_names(space_dimension));
+  bulk_data_ = new stk::mesh::BulkData(*((stk::mesh::MetaData *)meta_data_), parallel_machine_, bucket_size_);
 
   entity_map_ = new Entity_map (meta_data_);
-  node_rank_    = entity_map_->kind_to_rank (NODE);
-  face_rank_    = entity_map_->kind_to_rank (FACE);
+  node_rank_ = entity_map_->kind_to_rank (NODE);
+  face_rank_ = entity_map_->kind_to_rank (FACE);
   element_rank_ = entity_map_->kind_to_rank (CELL);
-
 
   // Reset all of the mesh-specific data.
   face_id_ = 0;
@@ -104,7 +104,7 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data,
   Parts (0).swap (side_sets_);
   Parts (0).swap (node_sets_);
   coordinate_field_ = 0;
-  set_to_part_.clear ();
+  set_to_part_.clear();
     
   // Build the data for the mesh object.
 
@@ -119,31 +119,30 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data,
   // allocated in one code block and deleted somewhere else. I
   // wasted too much of my life looking for memory leaks. -WAP
 
-  mesh = new Mesh_STK_Impl (space_dimension, communicator_, entity_map_, 
-                            meta_data_, bulk_data_,
-                            set_to_part_,
-                            *(meta_data_->get_field<Vector_field_type> (std::string ("coordinates"))));
+  mesh = new Mesh_STK_Impl(space_dimension, communicator_, entity_map_, 
+                           meta_data_, bulk_data_,
+                           set_to_part_,
+                           *(meta_data_->get_field<Vector_field_type> (std::string ("coordinates"))));
     
   return mesh;
 }
 
 
-  void Mesh_STK_factory::build_meta_data_ (const Data::Data& data, 
-					   const Data::Fields& fields, 
-        const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
+void Mesh_STK_factory::build_meta_data_(
+    const Data::Data& data, 
+    const Data::Fields& fields, 
+    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
 {
-  const int num_element_blocks = data.element_blocks ();
-  const int num_side_sets      = data.side_sets ();
-  const int num_node_sets      = data.node_sets ();
+  const int num_element_blocks = data.element_blocks();
+  const int num_side_sets = data.side_sets();
+  const int num_node_sets = data.node_sets();
 
-  const int space_dimension = data.parameters ().dimensions ();
+  const int space_dimension = data.parameters().dimensions();
 
   // Something to put elements in
-
-  elements_part_ = &meta_data_->declare_part ("Elements", element_rank_);
+  elements_part_ = &meta_data_->declare_part("Elements", element_rank_);
 
   // Convert element blocks, node and side sets into Parts:
-
   for (int block = 0; block < num_element_blocks; ++block) {
     element_blocks_.push_back (add_element_block_ (data.element_block (block)));
   }
@@ -155,8 +154,7 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data,
   faces_part_ = &meta_data_->declare_part ("Element sides", face_rank_);
 
   // Add a field to faces that represents the face "owner"
-    
-  face_owner_ = &( meta_data_->declare_field< Id_field_type >("FaceOwner") );
+  face_owner_ = &( meta_data_->declare_field< Id_field_type >("FaceOwner"));
   stk::mesh::put_field(*face_owner_, face_rank_, *faces_part_);
 
   for (int side_set = 0; side_set < num_side_sets; ++side_set)
@@ -166,28 +164,24 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data,
     node_sets_.push_back (add_node_set_ (data.node_set (node_set)));
 
   // Get the universal part. There's only one everything.
-  stk::mesh::Part &universal_part (meta_data_->universal_part ());
+  stk::mesh::Part &universal_part (meta_data_->universal_part());
 
   put_coordinate_field_ (universal_part, space_dimension);
 
   // Declare and Put fields
-  for (Data::Fields::const_iterator field = fields.begin ();
-       field != fields.end (); 
-       ++field)
-  {
-    put_field_ (*field, universal_part, space_dimension);
+  for (Data::Fields::const_iterator field = fields.begin();
+       field != fields.end(); ++field) {
+    put_field_(*field, universal_part, space_dimension);
   }
-
 
   // Add some additional parts as place holders for meshets that will
   // be created based on the region specifications in the geometric model
-
   if (gm != Teuchos::null)
     init_extra_parts_from_gm(gm);
 
-  meta_data_->commit ();
-
+  meta_data_->commit();
 }
+
 
 /** 
  * add contents of the blocks and sets to their respctive parts
@@ -197,22 +191,22 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data,
  * @param vertmap 
  * @param fields 
  */
-void Mesh_STK_factory::build_bulk_data_ (const Data::Data& data, 
-					 const Epetra_Map& cellmap, 
-					 const Epetra_Map& vertmap,
-					 const Data::Fields& fields,
-        const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
+void Mesh_STK_factory::build_bulk_data_(
+    const Data::Data& data, 
+    const Epetra_Map& cellmap, 
+    const Epetra_Map& vertmap,
+    const Data::Fields& fields,
+   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
 {
-  const int space_dimension = data.parameters ().dimensions ();
+  const int space_dimension = data.parameters().dimensions();
 
   // elements first, nodes will be declared and will overlap on processors
-
   bulk_data_->modification_begin();
 
   unsigned int localcidx(0);
-  for (unsigned int block = 0; block < element_blocks_.size (); ++block) {
-    add_elements_to_part_ (data.element_block (block), *element_blocks_ [block], 
-                           cellmap, vertmap, localcidx);
+  for (unsigned int block = 0; block < element_blocks_.size(); ++block) {
+    add_elements_to_part_(data.element_block (block), *element_blocks_ [block], 
+                          cellmap, vertmap, localcidx);
   }
     
   bulk_data_->modification_end();
@@ -223,9 +217,9 @@ void Mesh_STK_factory::build_bulk_data_ (const Data::Data& data,
 
   bulk_data_->modification_begin();
 
-  for (int set = 0; set < node_sets_.size (); ++set)
+  for (int set = 0; set < node_sets_.size(); ++set)
     add_nodes_to_part_ (data.node_set (set), *node_sets_ [set], vertmap);
-  add_coordinates_ (data.coordinates (), vertmap);
+  add_coordinates_(data.coordinates(), vertmap);
 
   bulk_data_->modification_end();
 
@@ -259,11 +253,10 @@ void Mesh_STK_factory::build_bulk_data_ (const Data::Data& data,
   bulk_data_->modification_end();
 
   // Put side set faces in the correct parts
-    
   check_face_ownership_();
   generate_cell_face_relations();
   bulk_data_->modification_begin();
-  for (int set = 0; set < side_sets_.size (); ++set) {
+  for (int set = 0; set < side_sets_.size(); ++set) {
     add_sides_to_part_ (data.side_set (set), *side_sets_ [set], cellmap);
   }
   bulk_data_->modification_end();
@@ -276,33 +269,30 @@ void Mesh_STK_factory::build_bulk_data_ (const Data::Data& data,
 }
 
 
-void Mesh_STK_factory::put_field_ (const Data::Field& field_data, 
-                               stk::mesh::Part& part, 
-                               unsigned int space_dimension)
+void Mesh_STK_factory::put_field_(const Data::Field& field_data, 
+                                  stk::mesh::Part& part, 
+                                  unsigned int space_dimension)
 {
-  const unsigned int location = entity_map_->kind_to_rank (field_data.location ());
+  const unsigned int location = entity_map_->kind_to_rank(field_data.location());
 
-  if (field_data.type () == Data::SCALAR)
-  {
-    Scalar_field_type& field (meta_data_->
-                              declare_field<Scalar_field_type>(field_data.name ()));
-    stk::mesh::put_field (field, location, part);
+  if (field_data.type() == Data::SCALAR) {
+    Scalar_field_type& field(meta_data_->declare_field<Scalar_field_type>(field_data.name()));
+    stk::mesh::put_field(field, location, part);
   }
 
-  if (field_data.type () == Data::VECTOR)
-  {
-    Vector_field_type& field (meta_data_->
-                              declare_field<Vector_field_type>(field_data.name ()));
-    stk::mesh::put_field (field, location, part, space_dimension);
+  if (field_data.type() == Data::VECTOR) {
+    Vector_field_type& field(meta_data_->declare_field<Vector_field_type>(field_data.name()));
+    stk::mesh::put_field(field, location, part, space_dimension);
   }
-
 }
 
-void Mesh_STK_factory::put_coordinate_field_ (stk::mesh::Part& part, unsigned int space_dimension)
+
+void Mesh_STK_factory::put_coordinate_field_(stk::mesh::Part& part, unsigned int space_dimension)
 {
   coordinate_field_ = & meta_data_->declare_field<Vector_field_type>("coordinates");
-  stk::mesh::put_field (*coordinate_field_, meta_data_->node_rank(), part, space_dimension);
+  stk::mesh::put_field(*coordinate_field_, meta_data_->node_rank(), part, space_dimension);
 }
+
 
 /** 
  * This routine puts the coordinate fields on @em local nodes.  
@@ -316,58 +306,48 @@ void Mesh_STK_factory::put_coordinate_field_ (stk::mesh::Part& part, unsigned in
  * @param coordinate_data coordinates of nodes originally declared on this processor
  * @param vertmap local to global node index map for nodes originally declared on this processor
  */
-void Mesh_STK_factory::add_coordinates_ (const Data::Coordinates<double>& coordinate_data,
-                                     const Epetra_Map& vertmap)
+void Mesh_STK_factory::add_coordinates_(const Data::Coordinates<double>& coordinate_data,
+                                        const Epetra_Map& vertmap)
 {
-
   // Select all the local nodes this process knows about
-  stk::mesh::Selector owned(meta_data_->universal_part ());
+  stk::mesh::Selector owned(meta_data_->universal_part());
   Entity_vector local_nodes;
-  stk::mesh::get_selected_entities (owned,
-                                    bulk_data_->buckets (meta_data_->node_rank()), 
-                                    local_nodes);
+  stk::mesh::get_selected_entities(owned,
+                                   bulk_data_->buckets(meta_data_->node_rank()), 
+                                   local_nodes);
 
   // Loop over the nodes, if the node is used by the cells owned by
   // this process, set the coordinate
   int node_coordinate_index = 0;
-  for (Entity_vector::const_iterator node_it = local_nodes.begin ();
-       node_it != local_nodes.end (); ++node_it)
-  {
+  for (Entity_vector::const_iterator node_it = local_nodes.begin();
+       node_it != local_nodes.end(); ++node_it) {
     int global_vidx((*node_it)->identifier());
     if (vertmap.MyGID(global_vidx)) {
       // only set the coordinates for the nodes this process
       // knows about
       int local_vidx(vertmap.LID(global_vidx));
       double * coordinate_field_data = 
-          stk::mesh::field_data (*coordinate_field_, **node_it);
-      coordinate_data (local_vidx, coordinate_field_data);
-      // std::cerr << "add_coordinates: node " << global_vidx << " (" 
-      //           << local_vidx << " local): " 
-      //           << coordinate_field_data[0] << ", "
-      //           << coordinate_field_data[1] << ", "
-      //           << coordinate_field_data[2] << ", "
-      //           << std::endl;
+          stk::mesh::field_data(*coordinate_field_, **node_it);
+      coordinate_data(local_vidx, coordinate_field_data);
     }
   }
 }
 
 
-  // Declare a part from an element block
-
-stk::mesh::Part* Mesh_STK_factory::add_element_block_ (const Data::Element_block& block)
+// Declare a part from an element block
+stk::mesh::Part* Mesh_STK_factory::add_element_block_(const Data::Element_block& block)
 {
-
   std::ostringstream name;
-  if (block.name ().size () > 0)
-    name << block.name ();
+  if (block.name().size() > 0)
+    name << block.name();
   else
-    name << "element block " << block.id ();
+    name << "element block " << block.id();
 
-  stk::mesh::Part &new_part (meta_data_->declare_part (name.str (), element_rank_));
+  stk::mesh::Part &new_part(meta_data_->declare_part(name.str(), element_rank_));
 
   meta_data_->declare_part_subset(*elements_part_, new_part);
 
-  Cell_type mdtype(block.element_type ());
+  Cell_type mdtype(block.element_type());
   switch (mdtype) {
     case HEX:
     case TET:
@@ -379,55 +359,52 @@ stk::mesh::Part* Mesh_STK_factory::add_element_block_ (const Data::Element_block
       std::string msg = 
           boost::str(boost::format("%s has unsupported cell type %s") %
                      name.str() % Data::type_to_name(block.element_type()));
-      Exceptions::amanzi_throw( STK::Error (msg.c_str()) );
+      Exceptions::amanzi_throw(STK::Error(msg.c_str()));
       break;
   }
 
   const shards::CellTopology topo(get_topology_data(mdtype));
       
-  stk::mesh::fem::set_cell_topology (new_part, topo);
+  stk::mesh::fem::set_cell_topology(new_part, topo);
 
-  add_set_part_relation_ (block.id (), new_part);
+  add_set_part_relation_(block.id(), new_part);
 
   return &new_part;
 }
 
 
-  // Declare a part from just a name and id (we don't yet know the elements that will go into it)
-
-  stk::mesh::Part* Mesh_STK_factory::add_element_block_ (const std::string name, const int id)
+// Declare a part from just a name and id (we don't yet know the elements that will go into it)
+stk::mesh::Part* Mesh_STK_factory::add_element_block_(const std::string name, const int id)
 {
-
-  stk::mesh::Part &new_part (meta_data_->declare_part (name, element_rank_));
+  stk::mesh::Part &new_part(meta_data_->declare_part(name, element_rank_));
 
   meta_data_->declare_part_subset(*elements_part_, new_part);
 
-  add_set_part_relation_ (id + 5432123, new_part);
+  add_set_part_relation_(id + 5432123, new_part);
 
   return &new_part;
 }
 
 
-  // Declare a part from a side set data structure
-
-stk::mesh::Part* Mesh_STK_factory::add_side_set_ (const Data::Side_set& set)
+// Declare a part from a side set data structure
+stk::mesh::Part* Mesh_STK_factory::add_side_set_(const Data::Side_set& set)
 {
   std::ostringstream name;
-  if (set.name ().size () > 0)
-    name << set.name ();
+  if (set.name().size() > 0)
+    name << set.name();
   else
-    name << "side set " << set.id ();
-  stk::mesh::Part &new_part (meta_data_->declare_part (name.str (), face_rank_));
+    name << "side set " << set.id();
+  stk::mesh::Part &new_part (meta_data_->declare_part (name.str(), face_rank_));
   meta_data_->declare_part_subset(*faces_part_, new_part);
 
-  add_set_part_relation_ (set.id (), new_part);
+  add_set_part_relation_ (set.id(), new_part);
 
   return &new_part;
 }
 
-  // Declare a part from a side set name and id
 
-  stk::mesh::Part* Mesh_STK_factory::add_side_set_ (const std::string name, const int id)
+// Declare a part from a side set name and id
+stk::mesh::Part* Mesh_STK_factory::add_side_set_(const std::string name, const int id)
 {
   stk::mesh::Part &new_part (meta_data_->declare_part (name, face_rank_));
   meta_data_->declare_part_subset(*faces_part_, new_part);
@@ -438,43 +415,43 @@ stk::mesh::Part* Mesh_STK_factory::add_side_set_ (const Data::Side_set& set)
 }
 
 
-  // Declare a part from a node set data structure
-
-stk::mesh::Part* Mesh_STK_factory::add_node_set_ (const Data::Node_set& set)
+// Declare a part from a node set data structure
+stk::mesh::Part* Mesh_STK_factory::add_node_set_(const Data::Node_set& set)
 {
   std::ostringstream name;
-  if (set.name ().size () > 0)
-    name << set.name ();
+  if (set.name().size() > 0)
+    name << set.name();
   else
-    name << "node set " << set.id ();
-  stk::mesh::Part &new_part (meta_data_->declare_part (name.str (), meta_data_->node_rank()));
+    name << "node set " << set.id();
+  stk::mesh::Part &new_part(meta_data_->declare_part(name.str(), meta_data_->node_rank()));
   meta_data_->declare_part_subset(*nodes_part_, new_part);
 
-  add_set_part_relation_ (set.id (), new_part);
+  add_set_part_relation_(set.id(), new_part);
 
   return &new_part;
 }
 
-  stk::mesh::Part* Mesh_STK_factory::add_node_set_ (const std::string name, const int id)
+
+stk::mesh::Part* Mesh_STK_factory::add_node_set_(const std::string name, const int id)
 {
-  stk::mesh::Part &new_part (meta_data_->declare_part (name, meta_data_->node_rank()));
+  stk::mesh::Part &new_part(meta_data_->declare_part(name, meta_data_->node_rank()));
   meta_data_->declare_part_subset(*nodes_part_, new_part);
 
-  add_set_part_relation_ (id + 5432123, new_part);
+  add_set_part_relation_(id + 5432123, new_part);
 
   return &new_part;
 }
 
-void Mesh_STK_factory::add_set_part_relation_ (unsigned int set_id, stk::mesh::Part& part)
+
+void Mesh_STK_factory::add_set_part_relation_(unsigned int set_id, stk::mesh::Part& part)
 {
-  const unsigned int part_id = part.mesh_meta_data_ordinal ();
-  const stk::mesh::EntityRank rank = part.primary_entity_rank ();
-  const Rank_and_id rank_set_id = std::make_pair (rank, set_id);
+  const unsigned int part_id = part.mesh_meta_data_ordinal();
+  const stk::mesh::EntityRank rank = part.primary_entity_rank();
+  const Rank_and_id rank_set_id = std::make_pair(rank, set_id);
 
-  ASSERT (set_to_part_.find (rank_set_id) == set_to_part_.end ());
+  ASSERT (set_to_part_.find (rank_set_id) == set_to_part_.end());
 
-  set_to_part_ [rank_set_id]  = &part;
-
+  set_to_part_[rank_set_id] = &part;
 }
 
 
@@ -490,18 +467,18 @@ void Mesh_STK_factory::add_set_part_relation_ (unsigned int set_id, stk::mesh::P
  * @param vmap 
  * @param localidx0 current local element index (updated)
  */
-void Mesh_STK_factory::add_elements_to_part_ (const Data::Element_block& block, stk::mesh::Part &part,
-                                          const Epetra_Map& cmap, const Epetra_Map& vmap, unsigned int& localidx0)
+void Mesh_STK_factory::add_elements_to_part_(
+    const Data::Element_block& block, stk::mesh::Part &part,
+    const Epetra_Map& cmap, const Epetra_Map& vmap, unsigned int& localidx0)
 {
   // Add connectivity information via stk::mesh::declare_element
-  std::vector<int> storage (block.nodes_per_element ());
-  std::vector<stk::mesh::EntityId> global_vidx(block.nodes_per_element ());
+  std::vector<int> storage (block.nodes_per_element());
+  std::vector<stk::mesh::EntityId> global_vidx(block.nodes_per_element());
 
-  for (int bidx = 0; bidx < block.num_elements (); ++bidx, ++localidx0)
-  {
-    block.connectivity (bidx, storage.begin ());
+  for (int bidx = 0; bidx < block.num_elements(); ++bidx, ++localidx0) {
+    block.connectivity(bidx, storage.begin());
 
-    for (unsigned int i = 0; i < block.nodes_per_element (); i++) {
+    for (unsigned int i = 0; i < block.nodes_per_element(); i++) {
       global_vidx[i] = vmap.GID(storage[i]);
     }
 
@@ -509,7 +486,7 @@ void Mesh_STK_factory::add_elements_to_part_ (const Data::Element_block& block, 
 
     try {
       stk::mesh::Entity &element = 
-        stk::mesh::fem::declare_element (*bulk_data_, part, global_cidx, &global_vidx[0]);
+        stk::mesh::fem::declare_element(*bulk_data_, part, global_cidx, &global_vidx[0]);
     } catch (const std::exception& e) {
       std::stringstream msg;
       std::cerr << e.what() << std::endl;
@@ -519,34 +496,32 @@ void Mesh_STK_factory::add_elements_to_part_ (const Data::Element_block& block, 
       std::copy(global_vidx.begin(), global_vidx.end(), std::ostream_iterator<int>(msg, ", "));
       std::cerr << msg.str() << std::endl;
 
-      Exceptions::amanzi_throw( STK::Error (msg.str().c_str()) );
+      Exceptions::amanzi_throw(STK::Error (msg.str().c_str()));
     }
-
   }
 }
+
 
 Entity_vector
 Mesh_STK_factory::get_element_side_nodes_(const stk::mesh::Entity& element, 
-                                      const unsigned int& s)
+                                          const unsigned int& s)
 {
   ASSERT(element.entity_rank() == element_rank_);
 
-  const CellTopologyData* topo = stk::mesh::fem::get_cell_topology (element).getCellTopologyData();
+  const CellTopologyData* topo = stk::mesh::fem::get_cell_topology(element).getCellTopologyData();
   ASSERT(topo != NULL);
 
   // get the cell nodes on this side
-
   const CellTopologyData *side_topo = (topo->side[s].topology);
   const unsigned * const side_node_map = topo->side[s].node;
 
-  stk::mesh::PairIterRelation rel = element.relations( node_rank_ );
+  stk::mesh::PairIterRelation rel = element.relations(node_rank_);
   Entity_vector snodes;
-  for ( unsigned i = 0 ; i < side_topo->node_count ; ++i ) {
-    snodes.push_back(rel[ side_node_map[i] ].entity());
+  for (unsigned i = 0; i < side_topo->node_count; ++i) {
+    snodes.push_back(rel[side_node_map[i]].entity());
   }
   return snodes;
 }
-
 
 
 /** 
@@ -577,8 +552,6 @@ Mesh_STK_factory::get_element_side_face_(const stk::mesh::Entity& element, const
 }
     
 
-
-
 /** 
  * This routine takes care of declaring a (local) face, include
  * declaring the entity and making necessary relations to related
@@ -592,8 +565,8 @@ Mesh_STK_factory::get_element_side_face_(const stk::mesh::Entity& element, const
  */
 const stk::mesh::Entity&
 Mesh_STK_factory::declare_face_(stk::mesh::EntityVector& nodes, 
-                            const unsigned int& index, 
-                            const unsigned int& owner_index)
+                                const unsigned int& index, 
+                                const unsigned int& owner_index)
 {
   stk::mesh::PartVector p;
   p.push_back(faces_part_);
@@ -612,6 +585,7 @@ Mesh_STK_factory::declare_face_(stk::mesh::EntityVector& nodes,
 
   return face;
 }
+
 
 /** 
  * Local
@@ -684,7 +658,6 @@ Mesh_STK_factory::generate_local_faces_(const int& faceidx0, const bool& justcou
          c != cells.end(); c++, localidx++) {
 
       for (unsigned int s = 0; s < topo->side_count; s++) {
-
         // see if the face already exists (on the local
         // processor); if so, we don't need to bother with
 
@@ -725,13 +698,12 @@ Mesh_STK_factory::generate_local_faces_(const int& faceidx0, const bool& justcou
 
         stk::mesh::Entity *rcell(NULL);
 
-        for ( std::vector< stk::mesh::Entity * >::iterator r = rcells.begin();
-              r != rcells.end(); r++) {
+        for (std::vector< stk::mesh::Entity * >::iterator r = rcells.begin();
+             r != rcells.end(); r++) {
           if ((*r != *c)) {
             rcell = *r;
           }
         }
-
 
         // if there is no cell on the other side (rcell ==
         // NULL) of the face, just declare/count the face
@@ -753,26 +725,18 @@ Mesh_STK_factory::generate_local_faces_(const int& faceidx0, const bool& justcou
           }
         }
 
-
         if (!justcount) {
           const stk::mesh::Entity& face = 
             declare_face_(snodes, faceidx, (*c)->identifier());
         }
         faceidx++;
-                
-        // std::cerr << "Cell " << (*c)->identifier() 
-        //           << ": side " << s 
-        //           << ": face idx = " << faceidx
-        //           << std::endl;
-
-      } // side loop
-
-    } // entity (element) loop
- 
-  } // part loop
+      }
+    }
+  }
     
   return faceidx - faceidx0;
 }
+
 
 // -------------------------------------------------------------
 // Mesh_STK_factory::generate_cell_face_relations
@@ -798,7 +762,7 @@ Mesh_STK_factory::generate_cell_face_relations(void)
   for (stk::mesh::PartVector::iterator p = parts.begin(); 
        p != parts.end(); p++) {
 
-    const CellTopologyData* topo = meta_data_->get_cell_topology (**p).getCellTopologyData();
+    const CellTopologyData* topo = meta_data_->get_cell_topology(**p).getCellTopologyData();
         
     if (topo == NULL) continue;
 
@@ -815,7 +779,6 @@ Mesh_STK_factory::generate_cell_face_relations(void)
          c != cells.end(); c++, localidx++) {
 
       for (unsigned int s = 0; s < topo->side_count; s++) {
-
         // see if the face already exists (on the local
         // processor); if so, see if this cell is already
         // related to it (it shouldn't be)
@@ -828,6 +791,7 @@ Mesh_STK_factory::generate_cell_face_relations(void)
 
   bulk_data_->modification_end();
 }
+
 
 /** 
  * Collective
@@ -854,13 +818,13 @@ Mesh_STK_factory::check_face_ownership_(void)
   stk::mesh::check_face_ownership(*bulk_data_);
 }
 
+
 // -------------------------------------------------------------
 // Mesh_STK_factory::add_sides_to_part_
 // -------------------------------------------------------------
-
-void Mesh_STK_factory::add_sides_to_part_ (const Data::Side_set& side_set, 
-                                           stk::mesh::Part &part,
-                                           const Epetra_Map& cmap)
+void Mesh_STK_factory::add_sides_to_part_(const Data::Side_set& side_set, 
+                                          stk::mesh::Part &part,
+                                          const Epetra_Map& cmap)
 {
   const unsigned int me(communicator_->MyPID());
 
@@ -868,16 +832,15 @@ void Mesh_STK_factory::add_sides_to_part_ (const Data::Side_set& side_set,
   // number. We need to convert these to the unique face indices.
 
   stk::mesh::PartVector parts_to_add;
-  parts_to_add.push_back (&part);
+  parts_to_add.push_back(&part);
 
-  const int num_sides  = side_set.num_sides ();
-  const std::vector<int>& element_list = side_set.element_list ();
-  const std::vector<int>& side_list    = side_set.side_list ();
-  ASSERT (element_list.size () == num_sides);
-  ASSERT (side_list.size ()    == num_sides);
+  const int num_sides = side_set.num_sides();
+  const std::vector<int>& element_list = side_set.element_list();
+  const std::vector<int>& side_list = side_set.side_list();
+  ASSERT (element_list.size() == num_sides);
+  ASSERT (side_list.size() == num_sides);
 
-  for (int index=0; index < num_sides; ++index)
-  {
+  for (int index=0; index < num_sides; ++index) {
     int local_idx(element_list [index]);
     ASSERT(local_idx < cmap.NumMyElements());
 
@@ -924,23 +887,21 @@ void Mesh_STK_factory::add_sides_to_part_ (const Data::Side_set& side_set,
  * @param part 
  * @param vmap 
  */
-void Mesh_STK_factory::add_nodes_to_part_ (const Data::Node_set& node_set, 
-                                       stk::mesh::Part &part,
-                                       const Epetra_Map& vmap)
+void Mesh_STK_factory::add_nodes_to_part_(const Data::Node_set& node_set, 
+                                          stk::mesh::Part &part,
+                                          const Epetra_Map& vmap)
 {
   const unsigned int me(communicator_->MyPID());
 
   stk::mesh::PartVector parts_to_add;
   parts_to_add.push_back (&part);
 
-  const int num_nodes = node_set.num_nodes ();
-  const std::vector<int>& node_list = node_set.node_list ();
-  ASSERT (node_list.size () == num_nodes);
+  const int num_nodes = node_set.num_nodes();
+  const std::vector<int>& node_list = node_set.node_list();
+  ASSERT (node_list.size() == num_nodes);
 
-  for (std::vector<int>::const_iterator it = node_list.begin ();
-       it != node_list.end ();
-       ++it)
-  {
+  for (std::vector<int>::const_iterator it = node_list.begin();
+       it != node_list.end(); ++it) {
     int local_vidx(*it);
     int global_vidx(vmap.GID(local_vidx));
     stk::mesh::Entity *node = bulk_data_->get_entity (node_rank_, global_vidx);
@@ -948,11 +909,7 @@ void Mesh_STK_factory::add_nodes_to_part_ (const Data::Node_set& node_set,
       bulk_data_->change_entity_parts(*node, parts_to_add);
     }
   }
-
 }
-
-
-
 
 
 void Mesh_STK_factory::init_extra_parts_from_gm(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
@@ -960,69 +917,57 @@ void Mesh_STK_factory::init_extra_parts_from_gm(const Teuchos::RCP<const AmanziG
   if (gm == Teuchos::null) return;
 
   int ngr = gm->RegionSize();
-  for (int i = 0; i < ngr; i++)
-    {
-      Teuchos::RCP<const AmanziGeometry::Region> greg = gm->FindRegion(i);
+  for (int i = 0; i < ngr; i++) {
+    Teuchos::RCP<const AmanziGeometry::Region> greg = gm->FindRegion(i);
       
-      switch (greg->type())
-        {
-        case AmanziGeometry::BOX: { 
+    switch (greg->type())
+      {
+      case AmanziGeometry::BOX: { 
 
-          // Assume that users can ask for faces or cells in a box
+        // Assume that users can ask for faces or cells in a box
+        //          std::string faceset_name = internal_name_of_set(greg->name(),FACE);
+        add_side_set_("FACES_of_"+greg->name(), greg->id());
 
-          //          std::string faceset_name = internal_name_of_set(greg->name(),FACE);
-          add_side_set_("FACES_of_"+greg->name(), greg->id());
+        //          std::string cellset_name = internal_name_of_set(greg->name(),CELL);
+        add_element_block_("CELLS_of_"+greg->name(), greg->id());
 
-          //          std::string cellset_name = internal_name_of_set(greg->name(),CELL);
-          add_element_block_("CELLS_of_"+greg->name(), greg->id());
+        break;
+      }
 
-          break;
-        }
-        case AmanziGeometry::PLANE: {
-
-          // Assumption is that user wants to extract side sets
+      case AmanziGeometry::PLANE: {
+        // Assumption is that user wants to extract side sets
           
-          add_side_set_(greg->name(), greg->id());
+        add_side_set_(greg->name(), greg->id());
+        break;
+      }
 
-          break;
-        }
-        case AmanziGeometry::LABELEDSET: {
+      case AmanziGeometry::LABELEDSET: {
+        // This should already be in there
+        break;
+      }
 
-          // This should already be in there
+      case AmanziGeometry::SURFACE: {
+        // Not implemented
+        break;
+      }
 
-          break;
-          }
-        case AmanziGeometry::SURFACE: {
-          // Not implemented
+      case AmanziGeometry::POINT: {
+        // Cell set based on points
+        add_element_block_(greg->name(), greg->id());
+        break;
+      }
 
+      case AmanziGeometry::COLORFUNCTION: {
+        // Cell set based on points
+        add_element_block_(greg->name(), greg->id());
+        break;
+      }
 
-          break;
-        }
-        case AmanziGeometry::POINT: {
-
-          // Cell set based on points
-
-          add_element_block_(greg->name(), greg->id());
-
-          break;
-        }
-        case AmanziGeometry::COLORFUNCTION: {
-
-	  // Cell set based on points
-
-          add_element_block_(greg->name(), greg->id());
-
-          break;
-        }
-        default:
-          throw std::exception();
-        }
-      
+      default:
+        throw std::exception();
+      }
     }
-
 }
-
-
 
 
 void Mesh_STK_factory::fill_extra_parts_from_gm(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
@@ -1034,336 +979,299 @@ void Mesh_STK_factory::fill_extra_parts_from_gm(const Teuchos::RCP<const AmanziG
   bulk_data_->modification_begin();
 
   int ngr = gm->RegionSize();
-  for (int i = 0; i < ngr; i++)
-    {
-      Teuchos::RCP<const AmanziGeometry::Region> greg = gm->FindRegion(i);
-      stk::mesh::Part *part;
-      stk::mesh::PartVector parts_to_add;
+  for (int i = 0; i < ngr; i++) {
+    Teuchos::RCP<const AmanziGeometry::Region> greg = gm->FindRegion(i);
+    stk::mesh::Part *part;
+    stk::mesh::PartVector parts_to_add;
 
-      switch (greg->type())
-        {
-        case AmanziGeometry::BOX: { 
+    switch (greg->type())
+      {
+      case AmanziGeometry::BOX: { 
 
-          // Find the part with this name and prepended with "FACES_of"
-          // Add faces in the region to this part
+        // Find the part with this name and prepended with "FACES_of"
+        // Add faces in the region to this part
 
-	  part = meta_data_->get_part ("FACES_of_"+greg->name());
-          ASSERT (part);
-	  parts_to_add.push_back(part);
+        part = meta_data_->get_part ("FACES_of_"+greg->name());
+        ASSERT (part);
+        parts_to_add.push_back(part);
 
-          ASSERT (part->primary_entity_rank () == face_rank_);
+        ASSERT (part->primary_entity_rank() == face_rank_);
 
-          // Collect faces that lie in this region
+        // Collect faces that lie in this region
           
-          stk::mesh::Selector owned(meta_data_->locally_owned_part());
-          stk::mesh::EntityVector faces;
-          stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->face_rank()), faces);
+        stk::mesh::Selector owned(meta_data_->locally_owned_part());
+        stk::mesh::EntityVector faces;
+        stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->face_rank()), faces);
           
-          stk::mesh::EntityVector::iterator f;
-          for (f = faces.begin(); f != faces.end(); f++) {
+        stk::mesh::EntityVector::iterator f;
+        for (f = faces.begin(); f != faces.end(); f++) {
             
-            stk::mesh::PairIterRelation nodes = (*f)->relations (node_rank_);
+          stk::mesh::PairIterRelation nodes = (*f)->relations (node_rank_);
             
-            double cen[3]={0.0,0.0,0.0};
-            int nfn = 0;
-            for (stk::mesh::PairIterRelation::iterator it = nodes.begin (); 
-                 it != nodes.end (); ++it)
-              {
-                double *xyz = stk::mesh::field_data(*coordinate_field_, *(it->entity()));
-                for (int k = 0; k < gm->dimension(); k++)
-                  cen[k] += xyz[k];
-                nfn++;
-              }
+          double cen[3]={0.0,0.0,0.0};
+          int nfn = 0;
+          for (stk::mesh::PairIterRelation::iterator it = nodes.begin(); 
+               it != nodes.end(); ++it) {
+            double *xyz = stk::mesh::field_data(*coordinate_field_, *(it->entity()));
             for (int k = 0; k < gm->dimension(); k++)
-              cen[k] /= nfn;
-            
-            AmanziGeometry::Point pcen(space_dim);
-            pcen.set(cen);
-            
-            if (greg->inside(pcen))  // If face center is inside region
-              {
-                bulk_data_->change_entity_parts(*(*f),parts_to_add);
-              }
+              cen[k] += xyz[k];
+            nfn++;
           }
-
-
-          // Get the part with this name prepended with "CELLS_of_"
-          // Collect cells that lie in this region
-
-	  part = meta_data_->get_part ("CELLS_of_"+greg->name());
-          ASSERT(part);
-          parts_to_add.clear();
-          parts_to_add.push_back(part);
-
-          ASSERT (part->primary_entity_rank () == element_rank_);
-          
-          stk::mesh::EntityVector cells;
-          stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->volume_rank()), cells);
-          
-          stk::mesh::EntityVector::iterator c;
-          for (c = cells.begin(); c != cells.end(); c++) {
+          for (int k = 0; k < gm->dimension(); k++)
+            cen[k] /= nfn;
             
-            stk::mesh::PairIterRelation nodes = (*c)->relations (node_rank_);
+          AmanziGeometry::Point pcen(space_dim);
+          pcen.set(cen);
             
-            double cen[3]={0.0,0.0,0.0};
-            int nen = 0;
-            for (stk::mesh::PairIterRelation::iterator it = nodes.begin (); 
-                 it != nodes.end (); ++it)
-              {
-                double *xyz = stk::mesh::field_data(*coordinate_field_, *(it->entity()));
-                for (int k = 0; k < space_dim; k++)
-                  cen[k] += xyz[k];
-                nen++;
-              }
+          if (greg->inside(pcen)) { // If face center is inside region
+            bulk_data_->change_entity_parts(*(*f),parts_to_add);
+          }
+        }
+
+        // Get the part with this name prepended with "CELLS_of_"
+        // Collect cells that lie in this region
+
+        part = meta_data_->get_part ("CELLS_of_"+greg->name());
+        ASSERT(part);
+        parts_to_add.clear();
+        parts_to_add.push_back(part);
+
+        ASSERT (part->primary_entity_rank() == element_rank_);
+          
+        stk::mesh::EntityVector cells;
+        stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->volume_rank()), cells);
+          
+        stk::mesh::EntityVector::iterator c;
+        for (c = cells.begin(); c != cells.end(); c++) {
+          stk::mesh::PairIterRelation nodes = (*c)->relations (node_rank_);
+            
+          double cen[3]={0.0,0.0,0.0};
+          int nen = 0;
+          for (stk::mesh::PairIterRelation::iterator it = nodes.begin(); 
+               it != nodes.end(); ++it) {
+            double *xyz = stk::mesh::field_data(*coordinate_field_, *(it->entity()));
             for (int k = 0; k < space_dim; k++)
-              cen[k] /= nen;
-            
-            AmanziGeometry::Point pcen(space_dim);
-            pcen.set(cen);
-            
-            if (greg->inside(pcen))  // If center is inside region
-              {
-                bulk_data_->change_entity_parts(*(*c),parts_to_add);
-              }
+              cen[k] += xyz[k];
+            nen++;
           }
+          for (int k = 0; k < space_dim; k++)
+            cen[k] /= nen;
+            
+          AmanziGeometry::Point pcen(space_dim);
+          pcen.set(cen);
+            
+          if (greg->inside(pcen)) {  // If center is inside region
+            bulk_data_->change_entity_parts(*(*c),parts_to_add);
+          }
+        }
           
-          break;
+        break;
+      }
+
+      case AmanziGeometry::PLANE: {
+
+        part = meta_data_->get_part (greg->name());
+        ASSERT (part);
+        parts_to_add.push_back(part);
+          
+        // Assumption is that user wants to extract side sets
+          
+        ASSERT (part->primary_entity_rank() == face_rank_);
+
+        stk::mesh::Selector owned(meta_data_->locally_owned_part());
+        stk::mesh::EntityVector faces;
+        stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->face_rank()), faces);
+          
+        stk::mesh::EntityVector::iterator f;
+        for (f = faces.begin(); f != faces.end(); f++) {
+          stk::mesh::PairIterRelation nodes = (*f)->relations (node_rank_);
+            
+          bool on_plane = true;
+          for (stk::mesh::PairIterRelation::iterator it = nodes.begin(); 
+               it != nodes.end(); ++it) {
+            double *xyz = stk::mesh::field_data(*coordinate_field_, *(it->entity()));
+            AmanziGeometry::Point pxyz(space_dim);
+            pxyz.set(xyz);
+                
+            if (!greg->inside(pxyz)) {
+              on_plane = false;
+              break;
+            }
+          }
+            
+          if (on_plane) {  // If face center is inside region
+            bulk_data_->change_entity_parts(*(*f),parts_to_add);
+          }
         }
-        case AmanziGeometry::PLANE: {
 
-	  part = meta_data_->get_part (greg->name());
-          ASSERT (part);
-	  parts_to_add.push_back(part);
-	  
-          // Assumption is that user wants to extract side sets
-	  
-	  ASSERT (part->primary_entity_rank () == face_rank_);
+        break;
+      }
 
-	  stk::mesh::Selector owned(meta_data_->locally_owned_part());
-	  stk::mesh::EntityVector faces;
-	  stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->face_rank()), faces);
-	  
-	  stk::mesh::EntityVector::iterator f;
-	  for (f = faces.begin(); f != faces.end(); f++) {
-	    
-	    stk::mesh::PairIterRelation nodes = (*f)->relations (node_rank_);
-	    
-	    bool on_plane = true;
-	    for (stk::mesh::PairIterRelation::iterator it = nodes.begin (); 
-		 it != nodes.end (); ++it)
-	      {
-		double *xyz = stk::mesh::field_data(*coordinate_field_, *(it->entity()));
-		AmanziGeometry::Point pxyz(space_dim);
-		pxyz.set(xyz);
-		
-		if (!greg->inside(pxyz)) {
-		  on_plane = false;
-		  break;
-		}
-	      }
-	    
-	    if (on_plane)  // If face center is inside region
-	      {
-		bulk_data_->change_entity_parts(*(*f),parts_to_add);
-	      }
-	  }
+      case AmanziGeometry::LABELEDSET: {
+        // This should already be in there
+        break;
+      }
 
-          break;
-        }
-        case AmanziGeometry::LABELEDSET: {
+      case AmanziGeometry::SURFACE: {
+        // Not implemented
+        break;
+      }
 
-          // This should already be in there
+      case AmanziGeometry::POINT: {
+        part = meta_data_->get_part (greg->name());
+        ASSERT (part);
+        parts_to_add.push_back(part);
+          
+        stk::mesh::Selector owned(meta_data_->locally_owned_part());
+        stk::mesh::EntityVector nodes;
+        stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->node_rank()), nodes);
+         
+        AmanziGeometry::Point rgnpnt(Teuchos::rcp_static_cast<const AmanziGeometry::RegionPoint>(greg)->point());
 
-          break;
-	}
-        case AmanziGeometry::SURFACE: {
-          // Not implemented
-
-
-          break;
-        }
-        case AmanziGeometry::POINT: {
-
-	  part = meta_data_->get_part (greg->name());
-          ASSERT (part);
-	  parts_to_add.push_back(part);
-	  
-	  
-	  stk::mesh::Selector owned(meta_data_->locally_owned_part());
-	  stk::mesh::EntityVector nodes;
-	  stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->node_rank()), nodes);
-	 
-
-      AmanziGeometry::Point rgnpnt(Teuchos::rcp_static_cast<const AmanziGeometry::RegionPoint>(greg)->point());
-
-          double mindist2 = 1.0e+16;
-          stk::mesh::Entity *minnode = NULL;
+        double mindist2 = 1.0e+16;
+        stk::mesh::Entity *minnode = NULL;
  
-	  stk::mesh::EntityVector::iterator n;
-	  for (n = nodes.begin(); n != nodes.end(); n++) {
-	    
-            double *xyz = stk::mesh::field_data(*coordinate_field_, *(*n));
+        stk::mesh::EntityVector::iterator n;
+        for (n = nodes.begin(); n != nodes.end(); n++) {
+          double *xyz = stk::mesh::field_data(*coordinate_field_, *(*n));
+          AmanziGeometry::Point vpnt(space_dim);
+          vpnt.set(xyz);
+
+          double dist2 = (vpnt-rgnpnt)*(vpnt-rgnpnt);
+
+          if (dist2 < mindist2) {              
+            mindist2 = dist2;
+            minnode = *n;
+            if (mindist2 <= 1.0e-32)
+              break;
+          }            
+        }
+
+        stk::mesh::PairIterRelation cells = minnode->relations (element_rank_);
+            
+        for (stk::mesh::PairIterRelation::iterator it = cells.begin(); 
+             it != cells.end(); it++) {
+          stk::mesh::Entity *element = it->entity();
+
+          // build up a description of the element in terms of its nodes ...
+
+          std::vector<AmanziGeometry::Point> ccoord;
+
+          stk::mesh::PairIterRelation elnodes = element->relations(node_rank_);
+          for (stk::mesh::PairIterRelation::iterator jt = elnodes.begin();
+               jt != elnodes.end(); jt++) {
+            stk::mesh::Entity *elnode = jt->entity();
+
+            double *xyz = stk::mesh::field_data(*coordinate_field_, *elnode);
             AmanziGeometry::Point vpnt(space_dim);
             vpnt.set(xyz);
+            ccoord.push_back(vpnt);
+          }
 
-            double dist2 = (vpnt-rgnpnt)*(vpnt-rgnpnt);
+          // ... and its faces (while ensuring that they are pointing out of
+          // the element)
 
-            if (dist2 < mindist2) {              
-              mindist2 = dist2;
-              minnode = *n;
-              if (mindist2 <= 1.0e-32)
-                break;
-            }            
-		
-	  }
+          std::vector<AmanziGeometry::Point> fcoord;
+          std::vector<unsigned int> nfnodes;
 
-          stk::mesh::PairIterRelation cells = minnode->relations (element_rank_);
-	    
-          for (stk::mesh::PairIterRelation::iterator it = cells.begin(); 
-               it != cells.end(); it++) {
+          stk::mesh::PairIterRelation elfaces = element->relations(face_rank_);
 
-            stk::mesh::Entity *element = it->entity();
+          int nf = elfaces.size();
 
-
-            // build up a description of the element in terms of its nodes ...
-
-            std::vector<AmanziGeometry::Point> ccoord;
-
-            stk::mesh::PairIterRelation elnodes = element->relations(node_rank_);
-            for (stk::mesh::PairIterRelation::iterator jt = elnodes.begin();
-                 jt != elnodes.end(); jt++) {
-
-              stk::mesh::Entity *elnode = jt->entity();
-
-              double *xyz = stk::mesh::field_data(*coordinate_field_, *elnode);
+          for (stk::mesh::PairIterRelation::iterator jt = elfaces.begin(); 
+               jt != elfaces.end(); ++jt) {
+            stk::mesh::Entity *elface = jt->entity();
+                
+            stk::mesh::FieldTraits<Id_field_type>::data_type *owner = 
+              stk::mesh::field_data<Id_field_type>(*face_owner_, *elface);
+                
+            int dir = (*owner == element->identifier()) ? 1 : -1;
+                
+            stk::mesh::PairIterRelation fnodes = elface->relations(node_rank_);                
+            nfnodes.push_back(fnodes.size());
+                
+            std::vector<AmanziGeometry::Point> thisfcoord;
+            for (stk::mesh::PairIterRelation::iterator kt = fnodes.begin();
+                 kt != fnodes.end(); ++kt) {
+              stk::mesh::Entity *fnode = kt->entity();
+                    
+              double *xyz = stk::mesh::field_data(*coordinate_field_, *fnode);
               AmanziGeometry::Point vpnt(space_dim);
               vpnt.set(xyz);
-              ccoord.push_back(vpnt);
-              
-            }
-
-            
-            // ... and its faces (while ensuring that they are pointing out of
-            // the element)
-
-            std::vector<AmanziGeometry::Point> fcoord;
-            std::vector<unsigned int> nfnodes;
-
-            stk::mesh::PairIterRelation elfaces = element->relations(face_rank_);
-
-            int nf = elfaces.size();
-
-            for (stk::mesh::PairIterRelation::iterator jt = elfaces.begin (); 
-                 jt != elfaces.end (); ++jt)
-              {
-                stk::mesh::Entity *elface = jt->entity();
+              thisfcoord.push_back(vpnt);
+            }       
                 
-                stk::mesh::FieldTraits<Id_field_type>::data_type *owner = 
-                  stk::mesh::field_data<Id_field_type>(*face_owner_, *elface);
-                
-                int dir = (*owner == element->identifier()) ? 1 : -1;
-                
-                
-                stk::mesh::PairIterRelation fnodes = elface->relations(node_rank_);                
-                nfnodes.push_back(fnodes.size());
-                
-                std::vector<AmanziGeometry::Point> thisfcoord;
-                for (stk::mesh::PairIterRelation::iterator kt = fnodes.begin();
-                     kt != fnodes.end(); ++kt)
-                  {
-                    stk::mesh::Entity *fnode = kt->entity();
-                    
-                    double *xyz = stk::mesh::field_data(*coordinate_field_, *fnode);
-                    AmanziGeometry::Point vpnt(space_dim);
-                    vpnt.set(xyz);
-                    thisfcoord.push_back(vpnt);
-                  }       
-                
-                if (dir == 1) {
-                  for (std::vector<AmanziGeometry::Point>::iterator kt = thisfcoord.begin(); kt != thisfcoord.end(); ++kt)
-                    {
-                      fcoord.push_back(*kt);
-                    }
-                }
-                else {
-                  for (std::vector<AmanziGeometry::Point>::reverse_iterator kt = thisfcoord.rbegin(); kt != thisfcoord.rend(); ++kt)
-                    {
-                      fcoord.push_back(*kt);
-                    }
-                }
+            if (dir == 1) {
+              for (std::vector<AmanziGeometry::Point>::iterator kt = thisfcoord.begin();
+                   kt != thisfcoord.end(); ++kt) {
+                fcoord.push_back(*kt);
               }
+            }
+            else {
+              for (std::vector<AmanziGeometry::Point>::reverse_iterator kt = thisfcoord.rbegin();
+                   kt != thisfcoord.rend(); ++kt) {
+                fcoord.push_back(*kt);
+              }
+            }
+          }
                         
-
-            // Test if the element polyhedron contains the rgn pnt
-
-            if (AmanziGeometry::point_in_polyhed(rgnpnt,ccoord,nf,nfnodes,
-                                                       fcoord)) {
-              bulk_data_->change_entity_parts(*element,parts_to_add);
-            }
-
+          // Test if the element polyhedron contains the rgn pnt
+          if (AmanziGeometry::point_in_polyhed(rgnpnt,ccoord,nf,nfnodes, fcoord)) {
+            bulk_data_->change_entity_parts(*element,parts_to_add);
           }
-
-          break;
         }
-        case AmanziGeometry::COLORFUNCTION: { 
 
-          // Find the part with this name
+        break;
+      }
+
+      case AmanziGeometry::COLORFUNCTION: { 
+        // Find the part with this name
+        part = meta_data_->get_part(greg->name());
+        ASSERT(part);
+        parts_to_add.push_back(part);
           
-	  part = meta_data_->get_part (greg->name());
-          ASSERT (part);
-	  parts_to_add.push_back(part);
+        // Assumption is that user wants to extract cell sets
+        ASSERT(part->primary_entity_rank() == element_rank_);
           
+        stk::mesh::Selector owned(meta_data_->locally_owned_part());
+        stk::mesh::EntityVector cells;
+        stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->volume_rank()), cells);
           
-          // Assumption is that user wants to extract cell sets
-          
-          ASSERT (part->primary_entity_rank () == element_rank_);
-          
-          
-          stk::mesh::Selector owned(meta_data_->locally_owned_part());
-          stk::mesh::EntityVector cells;
-          stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->volume_rank()), cells);
-          
-          stk::mesh::EntityVector::iterator c;
-          for (c = cells.begin(); c != cells.end(); c++) {
+        stk::mesh::EntityVector::iterator c;
+        for (c = cells.begin(); c != cells.end(); c++) {
+          stk::mesh::PairIterRelation nodes = (*c)->relations (node_rank_);
             
-            stk::mesh::PairIterRelation nodes = (*c)->relations (node_rank_);
-            
-            double cen[3]={0.0,0.0,0.0};
-            int nen = 0;
-            for (stk::mesh::PairIterRelation::iterator it = nodes.begin (); 
-                 it != nodes.end (); ++it)
-              {
-                double *xyz = stk::mesh::field_data(*coordinate_field_, *(it->entity()));
-                for (int k = 0; k < space_dim; k++)
-                  cen[k] += xyz[k];
-                nen++;
-              }
+          double cen[3]={0.0,0.0,0.0};
+          int nen = 0;
+          for (stk::mesh::PairIterRelation::iterator it = nodes.begin(); 
+               it != nodes.end(); ++it) {
+            double *xyz = stk::mesh::field_data(*coordinate_field_, *(it->entity()));
             for (int k = 0; k < space_dim; k++)
-              cen[k] /= nen;
-            
-            AmanziGeometry::Point pcen(space_dim);
-            pcen.set(cen);
-            
-            if (greg->inside(pcen))  // If center is inside region
-              {
-                bulk_data_->change_entity_parts(*(*c),parts_to_add);
-              }
+              cen[k] += xyz[k];
+            nen++;
           }
+          for (int k = 0; k < space_dim; k++)
+            cen[k] /= nen;
+            
+          AmanziGeometry::Point pcen(space_dim);
+          pcen.set(cen);
+            
+          if (greg->inside(pcen)) {  // If center is inside region
+            bulk_data_->change_entity_parts(*(*c),parts_to_add);
+          }
+        }
           
-          break;
-        }
-        default:
-          throw std::exception();
-        }
-      
-    }
+        break;
+      }
 
+      default:
+        throw std::exception();
+      }
+    }
 }
 
-
-
-} // close namespace STK 
-} // close namespace Mesh 
-} // close namespace Amanzi 
+}  // namespace STK 
+}  // namespace AmanziMesh 
+}  // namespace Amanzi 
 
 

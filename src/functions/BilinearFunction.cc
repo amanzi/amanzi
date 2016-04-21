@@ -4,16 +4,17 @@
 
 namespace Amanzi {
 
-BilinearFunction::BilinearFunction(const std::vector<double> &x, const std::vector<double> &y,
-	const Epetra_SerialDenseMatrix &v, const int xi, const int yi) : 
-	x_(x), y_(y), v_(v), xi_(xi), yi_(yi)
+BilinearFunction::BilinearFunction(
+    const std::vector<double> &x, const std::vector<double> &y,
+    const Epetra_SerialDenseMatrix &v, const int xi, const int yi) : 
+    x_(x), y_(y), v_(v), xi_(xi), yi_(yi)
 {
   check_args(x, y, v);
 }
 
 
 void BilinearFunction::check_args(const std::vector<double> &x, const std::vector<double> &y,
-		const Epetra_SerialDenseMatrix &v) const
+                                  const Epetra_SerialDenseMatrix &v) const
 {
   if (x.size() != v.N()) {
     Errors::Message m;
