@@ -65,8 +65,8 @@
           </ParameterList>
         </ParameterList>
 
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
 
         <ParameterList name="operators">
@@ -220,8 +220,8 @@
         <Parameter name="error tolerance" type="double" value="1e-7"/>
         <Parameter name="maximum number of iterations" type="int" value="50"/>
         <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, relative residual, absolute residual}"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

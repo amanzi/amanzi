@@ -326,8 +326,8 @@
       <Parameter name="initial time step" type="Array(double)" value="{1.0e+03, 1.0, 1.0, 1.0, 1.0, 1.0}"/>
       <Parameter name="maximum time step" type="Array(double)" value="{4.3234e+17, 4.3234e+17, 4.3234e+17, 4.3234e+17, 4.3234e+17, 4.3234e+17}"/>
     </ParameterList>
-    <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="high"/>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="PKs">
@@ -457,8 +457,8 @@
             <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0e+00"/>
             <Parameter name="nonlinear iteration damping factor" type="double" value="1.0e+00"/>
             <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-            <ParameterList name="VerboseObject">
-              <Parameter name="Verbosity Level" type="string" value="high"/>
+            <ParameterList name="verbose object">
+              <Parameter name="verbosity level" type="string" value="high"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -510,8 +510,8 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -554,13 +554,13 @@
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.0e+00"/>
           <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0e+00"/>
           <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="high"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="high"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="energy">
@@ -630,8 +630,8 @@
             <Parameter name="restart tolerance relaxation factor" type="double" value="1.0e+00"/>
             <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0e+00"/>
             <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-            <ParameterList name="VerboseObject">
-              <Parameter name="Verbosity Level" type="string" value="high"/>
+            <ParameterList name="verbose object">
+              <Parameter name="verbosity level" type="string" value="high"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -648,17 +648,17 @@
           </ParameterList>
         </ParameterList>
         <ParameterList name="energy evaluator">
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="high"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="enthalpy evaluator">
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="high"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -672,8 +672,8 @@
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -683,8 +683,8 @@
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="1.0e-20"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -739,8 +739,8 @@
     <Parameter name="used boundary condition regions" type="Array(string)" value="{Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_WestOfCribs, Recharge_Boundary_btwnCribs, Recharge_Boundary_EastOfCribs, Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_WestOfCribs, Recharge_Boundary_btwnCribs, Recharge_Boundary_EastOfCribs}"/>
     <Parameter name="used source regions" type="Array(string)" value="{}"/>
     <Parameter name="used observation regions" type="Array(string)" value="{}"/>
-    <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="high"/>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
 

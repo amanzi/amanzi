@@ -945,7 +945,7 @@ std::pair<double,double> RunInverseProblem(
 
   Teuchos::ParameterList lin_list;
   lin_list.set("iterative method", "nka");
-  lin_list.sublist("nka parameters").sublist("VerboseObject").set("Verbosity Level", "low");
+  lin_list.sublist("nka parameters").sublist("verbose object").set("verbosity level", "low");
   AmanziSolvers::LinearOperatorFactory<TreeOperator,TreeVector,TreeVectorSpace> fac;
   Teuchos::RCP<AmanziSolvers::LinearOperator<TreeOperator,TreeVector,TreeVectorSpace> > lin_op =
       fac.Create(lin_list, problem->op);
@@ -1168,7 +1168,7 @@ std::pair<double,double> RunNonlinearProblem(
 
     Teuchos::ParameterList lin_list;
     lin_list.set("iterative method", "gmres");
-    lin_list.sublist("gmres parameters").sublist("VerboseObject").set("Verbosity Level", "low");
+    lin_list.sublist("gmres parameters").sublist("verbose object").set("verbosity level", "low");
     AmanziSolvers::LinearOperatorFactory<TreeOperator,TreeVector,TreeVectorSpace> fac;
     Teuchos::RCP<AmanziSolvers::LinearOperator<TreeOperator,TreeVector,TreeVectorSpace> > lin_op =
         fac.Create(lin_list, problem->pc);
@@ -1293,7 +1293,7 @@ std::pair<double,double> RunInverseProblem_Diag(
   
   Teuchos::ParameterList lin_list;
   lin_list.set("iterative method", "gmres");
-  lin_list.sublist("gmres parameters").sublist("VerboseObject").set("Verbosity Level", "low");
+  lin_list.sublist("gmres parameters").sublist("verbose object").set("verbosity level", "low");
   AmanziSolvers::LinearOperatorFactory<Operator,CompositeVector,CompositeVectorSpace> fac;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator,CompositeVector,CompositeVectorSpace> > lin_op =
       fac.Create(lin_list, problem->op00->global_operator());
@@ -1301,7 +1301,7 @@ std::pair<double,double> RunInverseProblem_Diag(
 
   Teuchos::ParameterList lin_list11;
   lin_list11.set("iterative method", "gmres");
-  lin_list11.sublist("gmres parameters").sublist("VerboseObject").set("Verbosity Level", "low");
+  lin_list11.sublist("gmres parameters").sublist("verbose object").set("verbosity level", "low");
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator,CompositeVector,CompositeVectorSpace> > lin_op11 =
       fac.Create(lin_list, problem->op11->global_operator());
   

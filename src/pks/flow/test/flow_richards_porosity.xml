@@ -68,8 +68,8 @@
           </ParameterList>
         </ParameterList>
 
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
 
         <ParameterList name="operators">
@@ -130,8 +130,8 @@
               <Parameter name="max du growth factor" type="double" value="1e+5"/>
               <Parameter name="max divergent iterations" type="int" value="3"/>
               <Parameter name="max nka vectors" type="int" value="10"/>
-              <ParameterList name="VerboseObject">
-                <Parameter name="Verbosity Level" type="string" value="medium"/>
+              <ParameterList name="verbose object">
+                <Parameter name="verbosity level" type="string" value="medium"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

@@ -54,16 +54,23 @@ VerboseObject::VerboseObject(std::string name, Teuchos::ParameterList& plist) :
   // Options from ParameterList
 
   // -- Set up the VerboseObject header.
-  std::string headername = plist.sublist("VerboseObject").get<std::string>("Name", name);
-  plist.sublist("VerboseObject").remove("Name");
+  std::string headername(name);
+  if (plist.sublist("verbose object").isParameter("name")) {
+    headername = plist.sublist("verbose object").get<std::string>("name");
+  }
   set_name(headername);
 
   // -- Show the line prefix
-  bool no_pre = plist.sublist("VerboseObject").get<bool>("Hide Line Prefix", hide_line_prefix);
-  plist.sublist("VerboseObject").remove("Hide Line Prefix");
+  bool no_pre = plist.sublist("verbose object").get<bool>("hide line prefix", hide_line_prefix);
 
   // Override from ParameterList.
-  Teuchos::readVerboseObjectSublist(&plist,this);
+  Teuchos::ParameterList plist_out;
+  if (plist.sublist("verbose object").isParameter("verbosity level")) {
+    plist_out.sublist("VerboseObject").set("Verbosity Level",
+        plist.sublist("verbose object").get<std::string>("verbosity level"));
+  }
+
+  Teuchos::readVerboseObjectSublist(&plist_out, this);
 
   // out, tab
   out_ = getOStream();
@@ -77,9 +84,8 @@ VerboseObject::VerboseObject(const Epetra_MpiComm* const comm, std::string name,
 {
   int root = -1;
   // Check if we are in the mode of writing only a specific rank.
-  if (plist.sublist("VerboseObject").isParameter("Write On Rank")) {
-    root = plist.sublist("VerboseObject").get<int>("Write On Rank");
-    plist.sublist("VerboseObject").remove("Write On Rank");
+  if (plist.sublist("verbose object").isParameter("write on rank")) {
+    root = plist.sublist("verbose object").get<int>("write on rank");
   }
 
   // Init the basics
@@ -89,18 +95,23 @@ VerboseObject::VerboseObject(const Epetra_MpiComm* const comm, std::string name,
   // Options from ParameterList
 
   // -- Set up the VerboseObject header.
-  std::string headername = plist.sublist("VerboseObject").get<std::string>("name",name);
-  plist.sublist("VerboseObject").remove("name");
-
+  std::string headername(name);
+  if (plist.sublist("verbose object").isParameter("name")) {
+    std::string headername = plist.sublist("verbose object").get<std::string>("name");
+  }
   set_name(headername);
 
   // -- Show the line prefix
-  bool no_pre = plist.sublist("VerboseObject").get<bool>("hide line prefix",
-          hide_line_prefix);
-  plist.sublist("VerboseObject").remove("hide line prefix");
+  bool no_pre = plist.sublist("verbose object").get<bool>("hide line prefix", hide_line_prefix);
 
   // Override from ParameterList.
-  Teuchos::readVerboseObjectSublist(&plist,this);
+  Teuchos::ParameterList plist_out;
+  if (plist.sublist("verbose object").isParameter("verbosity level")) {
+    plist_out.sublist("VerboseObject").set("Verbosity Level",
+        plist.sublist("verbose object").get<std::string>("verbosity level"));
+  }
+
+  Teuchos::readVerboseObjectSublist(&plist_out, this);
 
   // out, tab
   out_ = getOStream();

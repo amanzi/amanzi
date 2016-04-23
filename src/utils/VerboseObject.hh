@@ -33,11 +33,11 @@ class MyClass {
 Parameters:
 
 <ParameterList name="my class">
-  <ParameterList name="VerboseObject">
-    <Parameter name="Verbosity Level" type="string" value="medium"/>
-    <Parameter name="Name" type="string" value="my header"/>
-    <Parameter name="Hide Line Prefix" type="bool" value="false"/>
-    <Parameter name="Write On Rank" type="int" value="0"/>
+  <ParameterList name="verbose object">
+    <Parameter name="verbosity level" type="string" value="medium"/>
+    <Parameter name="name" type="string" value="my header"/>
+    <Parameter name="hide line prefix" type="bool" value="false"/>
+    <Parameter name="write on rank" type="int" value="0"/>
   </ParameterList>
 </ParameterList>
 

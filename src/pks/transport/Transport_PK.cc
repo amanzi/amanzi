@@ -252,7 +252,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Create verbosity object.
   Teuchos::ParameterList vlist;
-  vlist.sublist("VerboseObject") = tp_list_->sublist("VerboseObject");
+  vlist.sublist("verbose object") = tp_list_->sublist("verbose object");
   vo_ =  Teuchos::rcp(new VerboseObject("TransportPK", vlist)); 
 
   MyPID = mesh_->get_comm()->MyPID();

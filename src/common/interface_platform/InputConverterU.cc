@@ -241,7 +241,7 @@ Teuchos::ParameterList InputConverterU::TranslateVerbosity_()
             node_attr = attr_map->getNamedItem(mm.transcode("level"));
             if (node_attr) {
               text_content = mm.transcode(node_attr->getNodeValue());
-              vlist.sublist("VerboseObject").set<std::string>("Verbosity Level", TrimString_(text_content));
+              vlist.sublist("verbose object").set<std::string>("verbosity level", TrimString_(text_content));
               break;
             } else {
               ThrowErrorIllformed_("verbosity", "value", "level");
@@ -329,7 +329,7 @@ Teuchos::ParameterList InputConverterU::CreateAnalysis_()
   out_list.set<Teuchos::Array<std::string> >("used source regions", vv_src_regions_);
   out_list.set<Teuchos::Array<std::string> >("used observation regions", vv_obs_regions_);
 
-  out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
+  out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
 
   return out_list;
 }

@@ -123,8 +123,8 @@
       </ParameterList>
       <Parameter name="minerals" type="Array(string)" value="{Halite}"/>
       <Parameter name="number of component concentrations" type="int" value="4"/>
-      <ParameterList name="VerboseObject">
-	<Parameter name="Verbosity Level" type="string" value="high"/>
+      <ParameterList name="verbose object">
+	<Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
 
@@ -136,8 +136,8 @@
       <Parameter name="flow mode" type="string" value="transient"/>
       <Parameter name="advection limiter" type="string" value="Tensorial"/>
       <Parameter name="solver" type="string" value="PCG with Hypre AMG"/>
-      <ParameterList name="VerboseObject">
-	<Parameter name="Verbosity Level" type="string" value="high"/>
+      <ParameterList name="verbose object">
+	<Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
       <Parameter name="enable internal tests" type="string" value="no"/>
       <ParameterList name="molecular diffusion">
@@ -593,8 +593,8 @@
 
   <ParameterList name="flow">
     <ParameterList name="Darcy problem">
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="high"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
@@ -678,8 +678,8 @@
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.0e+00"/>
           <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0e+00"/>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -743,8 +743,8 @@
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -754,8 +754,8 @@
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -764,8 +764,8 @@
     <Parameter name="used boundary condition regions" type="Array(string)" value="{West, East, West, East}"/>
     <Parameter name="used source regions" type="Array(string)" value="{}"/>
     <Parameter name="used observation regions" type="Array(string)" value="{}"/>
-    <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="high"/>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
 </ParameterList>

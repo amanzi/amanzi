@@ -43,8 +43,8 @@
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="1e-16"/>
         <Parameter name="maximum number of iterations" type="int" value="200"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="medium"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="medium"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -54,8 +54,8 @@
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="1e-16"/>
         <Parameter name="maximum number of iterations" type="int" value="200"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="low"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

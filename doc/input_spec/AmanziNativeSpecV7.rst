@@ -143,8 +143,8 @@ code development and its daily usage in reasearch.
   * The Hilbert spaces *L2* and *H1*. Note that *L2* and *l2* are different spaces and shouldbe used
     appropriately.
 
-  * Trilinos *VerbosityObject* for historical reasons. There are a few other camel-case parameters that
-    go directly to Trilinos and therefore outside of our control.
+  * Trilinos parameters. There are a few camel-case parameters that
+    go directly to Trilinos functions and therefore outside of our control, e.g. *ML output*.
 
 
 Verbose output
@@ -154,12 +154,24 @@ Output of all components of Amanzi is controlled by a standard verbose
 object list. This list can be inserted in almost any significant
 component of this spec to produce a verbose output, see the embedded examples.
 If this list is not specified, the default verbosity value is used.
-The name *Verbosity Level* is reserved by Trilinos.
+
+* `"verbosity level`" [string] Available options are *none*, *low*, *medium*, *high*, and *extreme*.
+  Option *extreme is used by the developers only. For communication between users and developers, 
+  the recommended option is *high*. 
+
+* `"hide line prefix`" [bool] defines prefix for output messages. Defualt value is *true*.
+
+* `"name`" [string] is the name of the prefix.
+
+* `"write on rank`" [int] is processor rank on which the output is performed. Default is 0.
 
 .. code-block:: xml
 
-   <ParameterList name="VerboseObject">
-     <Parameter name="Verbosity Level" type="string" value="high"/>
+   <ParameterList name="verbose object">
+     <Parameter name="verbosity level" type="string" value="medium"/>
+     <Parameter name="name" type="string" value="my header"/>
+     <Parameter name="hide line prefix" type="bool" value="false"/>
+     <Parameter name="write on rank" type="int" value="0"/>
    </ParameterList>
 
 
@@ -448,8 +460,8 @@ The evaluator has the following fields.
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="extreme"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="extreme"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -505,8 +517,8 @@ as custom parameters (see the examples).
       <ParameterList name="EOS parameters">
         <Parameter name="eos type" type="string" value="liquid water"/>
       </ParameterList>
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="extreme"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="extreme"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -528,8 +540,8 @@ The *eos* evaluator requires one-parameter list to select the proper model for e
         <Parameter name="iem type" type="string" value="linear"/>
         <Parameter name="heat capacity [J/kg-K]" type="double" value="620.0"/>
       </ParameterList>
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="extreme"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="extreme"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -1716,8 +1728,8 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
            <Parameter name="max divergent iterations" type="int" value="3"/>
            <Parameter name="max nka vectors" type="int" value="10"/>
            <Parameter name="modify correction" type="bool" value="false"/>
-           <ParameterList name="VerboseObject">
-             <Parameter name="Verbosity Level" type="string" value="high"/>
+           <ParameterList name="verbose object">
+             <Parameter name="verbosity level" type="string" value="high"/>
            </ParameterList>
          </ParameterList>
 
@@ -1936,8 +1948,8 @@ and temporal accuracy, and verbosity:
         <Parameter name="limiter extension for transport" type="bool" value="true"/>
       </ParameterList>
 
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="high"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>  
   </ParameterList>  
@@ -2919,8 +2931,8 @@ in a variety of regimes, e.g. with or without gas phase.
        <Parameter name="energy key" type="string" value="energy"/>
        <Parameter name="evaluator type" type="string" value="constant liquid density"/>
        <Parameter name="vapor diffusion" type="bool" value="true"/>
-       <ParameterList name="VerboseObject">
-         <Parameter name="Verbosity Level" type="string" value="high"/>
+       <ParameterList name="verbose object">
+         <Parameter name="verbosity level" type="string" value="high"/>
        </ParameterList>
      </ParameterList>
    </ParameterList>
@@ -3831,8 +3843,8 @@ Internal parameters for GMRES include
        <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
        <Parameter name="maximum size of deflation space" type="int" value="0"/>
 
-       <ParameterList name="VerboseObject">
-         <Parameter name="Verbosity Level" type="string" value="high"/>
+       <ParameterList name="verbose object">
+         <Parameter name="verbosity level" type="string" value="high"/>
        </ParameterList>
      </ParameterList>
    </ParameterList>
@@ -3864,8 +3876,8 @@ Internal parameters for PCG include
       <Parameter name="convergence criteria" type="Array(string)" value="{relative residual,make one iteration}"/>
       <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
 
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="high"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -3907,8 +3919,8 @@ Internal parameters for NKA include
       <Parameter name="max nka vectors" type="int" value="10"/>
       <Parameter name="nka vector tolerance" type="double" value="0.05"/>
 
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="high"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -3999,8 +4011,8 @@ Newton-Krylov acceleration (NKA)
       <Parameter name="modify correction" type="bool" value="false"/>
       <Parameter name="lag iterations" type="int" value="0"/>
 
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="high"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -5193,8 +5205,8 @@ This list contains data collected by the input parser of a higher-level spec.
        <Parameter name="used boundary condition regions" type="Array(string)" value="{region1,region2}"/>
        <Parameter name="used source and sink regions" type="Array(string)" value="{region3,region4}"/>
        <Parameter name="used observation regions" type="Array(string)" value="{region5}"/>
-       <ParameterList name="VerboseObject">
-         <Parameter name="Verbosity Level" type="string" value="high"/>
+       <ParameterList name="verbose object">
+         <Parameter name="verbosity level" type="string" value="high"/>
        </ParameterList>
      </ParameterList>
    </ParameterList>

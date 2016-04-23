@@ -258,7 +258,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
       Teuchos::RCP<PorosityModelPartition> pom = CreatePorosityModelPartition(mesh_, pom_list);
 
       Teuchos::ParameterList elist;
-      // elist.sublist("VerboseObject").set<std::string>("Verbosity Level", "extreme");
+      // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
       Teuchos::RCP<PorosityModelEvaluator> eval = Teuchos::rcp(new PorosityModelEvaluator(elist, pom));
       S->SetFieldEvaluator("porosity", eval);
     } else {
@@ -307,7 +307,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList elist;
-    // elist.sublist("VerboseObject").set<std::string>("Verbosity Level", "extreme");
+    // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     Teuchos::RCP<WRMEvaluator> eval = Teuchos::rcp(new WRMEvaluator(elist, wrm_));
     S->SetFieldEvaluator("saturation_liquid", eval);
   }
@@ -355,7 +355,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // create verbosity object
   Teuchos::ParameterList vlist;
-  vlist.sublist("VerboseObject") = rp_list_->sublist("VerboseObject");
+  vlist.sublist("verbose object") = rp_list_->sublist("verbose object");
   vo_ =  Teuchos::rcp(new VerboseObject("FlowPK::Richards", vlist)); 
 
   // Initilize various common data depending on mesh and state.
@@ -505,8 +505,8 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   ASSERT(ti_method_name == "BDF1");
   Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
 
-  if (! bdf1_list.isSublist("VerboseObject"))
-      bdf1_list.sublist("VerboseObject") = rp_list_->sublist("VerboseObject");
+  if (! bdf1_list.isSublist("verbose object"))
+      bdf1_list.sublist("verbose object") = rp_list_->sublist("verbose object");
 
   bdf1_dae = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
 

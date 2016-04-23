@@ -125,7 +125,7 @@ TEST(DIAGONAL_PRECONDITIONER_OPENMP) {
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(N, 0, *comm));
 
   Teuchos::ParameterList plist;
-  plist.sublist("VerboseObject").set<std::string>("Verbosity Level", "low");
+  plist.sublist("verbose object").set<std::string>("verbosity level", "low");
 
   // solving with identity preconditioner
   std::string prec_names[4];

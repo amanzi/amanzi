@@ -56,21 +56,21 @@
   <ParameterList name="PKs">
     <ParameterList name="energy">
       <ParameterList name="One-phase problem">
-        <ParameterList name="VerboseObject">
-         <Parameter name="Verbosity Level" type="string" value="none"/>
+        <ParameterList name="verbose object">
+         <Parameter name="verbosity level" type="string" value="none"/>
         </ParameterList>
 
         <ParameterList name="energy evaluator">
           <Parameter name="vapor diffusion" type="bool" value="false"/>
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="high"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
 
         <ParameterList name="enthalpy evaluator">
           <Parameter name="include work term" type="bool" value="false"/>
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="high"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
 
@@ -82,8 +82,8 @@
             <Parameter name="reference temperature" type="double" value="1.0"/>
             <Parameter name="polynomial expansion" type="Array(double)" value="{0.0, 1.0, 0.0}"/>
           </ParameterList>
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="high"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
 
@@ -134,8 +134,8 @@
               <Parameter name="max nka vectors" type="int" value="10"/>
               <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
               <Parameter name="modify correction" type="bool" value="false"/>
-              <ParameterList name="VerboseObject">
-                <Parameter name="Verbosity Level" type="string" value="none"/>
+              <ParameterList name="verbose object">
+                <Parameter name="verbosity level" type="string" value="none"/>
               </ParameterList>
             </ParameterList>
 
@@ -327,8 +327,8 @@
           <Parameter name="heat capacity [J/mol-K]" type="double" value="1.0"/>
           <Parameter name="reference temperature" type="double" value="1.0"/>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="internal_energy_rock">
@@ -339,8 +339,8 @@
           <Parameter name="heat capacity [J/kg-K]" type="double" value="1.0"/>
           <Parameter name="reference temperature" type="double" value="1.0"/>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

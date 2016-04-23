@@ -365,8 +365,8 @@
             <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
             <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
             <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
-            <ParameterList name="VerboseObject">
-              <Parameter name="Verbosity Level" type="string" value="high"/>
+            <ParameterList name="verbose object">
+              <Parameter name="verbosity level" type="string" value="high"/>
             </ParameterList>
           </ParameterList>
           <ParameterList name="initialization">
@@ -400,8 +400,8 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -414,8 +414,8 @@
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="9.9e-20"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -425,8 +425,8 @@
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="9.99e-20"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

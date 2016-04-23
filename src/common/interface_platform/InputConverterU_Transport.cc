@@ -269,7 +269,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   out_list.sublist("physical models and assumptions")
       .set<bool>("permeability field is required", transport_permeability_);
 
-  out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
+  out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;
 }
 

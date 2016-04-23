@@ -16,8 +16,8 @@
           </ParameterList>
         </ParameterList>
 
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
 
         <ParameterList name="operators">
@@ -294,8 +294,8 @@
       <ParameterList name="gmres parameters">
         <Parameter name="maximum number of iterations" type="int" value="400"/>
         <Parameter name="error tolerance" type="double" value="1e-15"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="low"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

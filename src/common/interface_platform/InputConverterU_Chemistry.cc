@@ -344,7 +344,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   // miscalleneous
   out_list.set<int>("number of component concentrations", comp_names_all_.size());
 
-  out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
+  out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;
 }
 

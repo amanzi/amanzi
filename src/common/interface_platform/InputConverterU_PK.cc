@@ -248,7 +248,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
     gmres_solvers_.push_back(std::make_pair(ss.str(), nonlinear_tol));
   }
 
-  bdf1.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
+  bdf1.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;
 }
 

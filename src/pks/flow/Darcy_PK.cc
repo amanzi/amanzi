@@ -229,7 +229,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // create verbosity object
   Teuchos::ParameterList vlist;
-  vlist.sublist("VerboseObject") = dp_list_->sublist("VerboseObject");
+  vlist.sublist("verbose object") = dp_list_->sublist("verbose object");
   vo_ =  Teuchos::rcp(new VerboseObject("FlowPK::Darcy", vlist)); 
 
   // Initilize various common data depending on mesh and state.

@@ -86,8 +86,8 @@
             <Parameter name="maximum number of iterations" type="int" value="100"/>
             <Parameter name="error tolerance" type="double" value="1e-15"/>
            </ParameterList>
-          <ParameterList name="VerboseObject" type="ParameterList">
-            <Parameter name="Verbosity Level" type="string" value="extreme" />
+          <ParameterList name="verbose object" type="ParameterList">
+            <Parameter name="verbosity level" type="string" value="extreme" />
           </ParameterList>
         </ParameterList>
       </ParameterList>

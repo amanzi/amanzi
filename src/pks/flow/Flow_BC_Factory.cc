@@ -31,7 +31,7 @@ FlowBCFactory::FlowBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 {
   // create verbosity object
   Teuchos::ParameterList vlist;
-  // vlist.set("Verbosity Level", "medium");
+  // vlist.set("verbosity level", "medium");
   vo_ =  Teuchos::rcp(new VerboseObject("FlowBCFactory", vlist)); 
 }
 

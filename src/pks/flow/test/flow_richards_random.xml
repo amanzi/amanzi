@@ -75,8 +75,8 @@
           </ParameterList>
         </ParameterList>
 
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="none"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="none"/>
         </ParameterList>
 
         <ParameterList name="operators">
@@ -136,8 +136,8 @@
               <Parameter name="max nka vectors" type="int" value="10"/>
               <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
               <Parameter name="modify correction" type="bool" value="false"/>
-              <ParameterList name="VerboseObject">
-                <Parameter name="Verbosity Level" type="string" value="none"/>
+              <ParameterList name="verbose object">
+                <Parameter name="verbosity level" type="string" value="none"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -194,8 +194,8 @@
       <ParameterList name="pcg parameters">
         <Parameter name="maximum number of iterations" type="int" value="400"/>
         <Parameter name="error tolerance" type="double" value="1e-14"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="none"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="none"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

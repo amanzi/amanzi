@@ -108,13 +108,13 @@ SUITE(SOLVERS) {
     // create the JFNK object
     Teuchos::ParameterList jfnk_list;
     jfnk_list.sublist("nonlinear solver").set("solver type", "Newton");
-    jfnk_list.sublist("nonlinear solver").sublist("Newton parameters").sublist("VerboseObject")
-        .set("Verbosity Level", "extreme");
+    jfnk_list.sublist("nonlinear solver").sublist("Newton parameters").sublist("verbose object")
+        .set("verbosity level", "extreme");
     jfnk_list.sublist("nonlinear solver").sublist("Newton parameters").set("monitor", "monitor residual");
     jfnk_list.sublist("JF matrix parameters").set("finite difference epsilon", 1e-7);
     jfnk_list.sublist("linear operator").set("iterative method", "pcg");
-    jfnk_list.sublist("linear operator").sublist("pcg parameters").sublist("VerboseObject")
-        .set("Verbosity Level", "extreme");
+    jfnk_list.sublist("linear operator").sublist("pcg parameters").sublist("verbose object")
+        .set("verbosity level", "extreme");
     
     Teuchos::RCP<AmanziSolvers::SolverJFNK<Epetra_Vector,Epetra_Map> > jfnk =
         Teuchos::rcp(new AmanziSolvers::SolverJFNK<Epetra_Vector,Epetra_Map>(jfnk_list));

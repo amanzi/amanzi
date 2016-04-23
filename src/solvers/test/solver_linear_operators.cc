@@ -156,8 +156,8 @@ TEST(GMRES_SOLVER_DEFLATION) {
   plist.set<int>("maximum number of iterations", 200);
   plist.set<int>("size of Krylov space", 15);
   plist.set<double>("error tolerance", 1e-12);
-  Teuchos::ParameterList& vlist = plist.sublist("VerboseObject");
-  vlist.set("Verbosity Level", "extreme");
+  Teuchos::ParameterList& vlist = plist.sublist("verbose object");
+  vlist.set("verbosity level", "extreme");
 
   // create the gmres operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
@@ -244,7 +244,7 @@ TEST(VERBOSITY_OBJECT) {
       .set("size of Krylov space", 50)
       .set<double>("error tolerance", 1e-12);
   slist.sublist("gmres parameters")
-       .sublist("VerboseObject").set("Verbosity Level", "extreme");
+       .sublist("verbose object").set("verbosity level", "extreme");
 
   // create the pcg operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));

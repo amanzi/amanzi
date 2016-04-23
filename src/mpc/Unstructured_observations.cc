@@ -43,7 +43,7 @@ Unstructured_observations::Unstructured_observations(
   units_.Init(*units_list);
 
   Teuchos::ParameterList tmp_list;
-  tmp_list.set<std::string>("Verbosity Level", "high");
+  tmp_list.set<std::string>("verbosity level", "high");
   vo_ = new VerboseObject("Observations", tmp_list);
 
   // loop over the sublists and create an observation for each

@@ -58,8 +58,8 @@
   <ParameterList name="PKs">
     <ParameterList name="flow">
       <ParameterList name="Darcy problem">
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
 
         <ParameterList name="operators">

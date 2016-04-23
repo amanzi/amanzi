@@ -100,7 +100,7 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
     method_list.set<int>("maximum number of iterations", maxiter);
     method_list.set<int>("controller training start", 0);  // two gmres extensions
     method_list.set<int>("controller training end", 3);
-    method_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
+    method_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   }
 
   // add default PCG solver
@@ -111,7 +111,7 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
     Teuchos::ParameterList& method_list = pcg_list.sublist("pcg parameters");
     method_list.set<double>("error tolerance", tol);
     method_list.set<int>("maximum number of iterations", maxiter);
-    method_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
+    method_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   }
 
   // add default "GMRES for Newton" solver
@@ -128,7 +128,7 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
       method_list.set<Teuchos::Array<std::string> >("convergence criteria", criteria);
       method_list.set<int>("controller training start", 0);
       method_list.set<int>("controller training end", 3);
-      method_list.sublist("VerboseObject").set<std::string>("Verbosity Level", "low");
+      method_list.sublist("verbose object").set<std::string>("verbosity level", "low");
     }
   }
 
