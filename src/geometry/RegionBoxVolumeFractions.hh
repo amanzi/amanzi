@@ -60,10 +60,10 @@ void IntersectConvexPolygons(const std::vector<Point>& xy1,
 
 // -- intersection of a convex polyhedra, one is defined by a set of half-spaces
 void IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
-                              const std::vector<std::vector<int> > faces1,
+                              const std::vector<std::vector<int> >& faces1,
                               const std::vector<std::pair<Point, Point> >& xyz2,
                               std::vector<Point>& xyz3,
-                              std::vector<std::vector<int> > faces3);
+                              std::vector<std::vector<int> >& faces3);
 
 }  // namespace AmanziGeometry
 }  // namespace Amanzi

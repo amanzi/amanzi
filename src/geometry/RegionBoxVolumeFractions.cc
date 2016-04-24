@@ -1,6 +1,5 @@
 /*
-  A rectangular region in space, defined by two corner points and
-  normals to its side.
+  Geometry
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -9,6 +8,8 @@
 
   Authors: Lipnikov Konstantin (lipnikov@lanl.gov)
            Rao Garimella (rao@lanl.gov)
+
+  A box region defined by two corner points and normals to its side.
 */
 
 #include <vector>
@@ -255,10 +256,10 @@ void IntersectConvexPolygons(const std::vector<Point>& xy1,
 // polyhedron P3 ordered similar to P1.
 // -------------------------------------------------------------------
 void IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
-                              const std::vector<std::vector<int> > faces1,
+                              const std::vector<std::vector<int> >& faces1,
                               const std::vector<std::pair<Point, Point> >& xyz2,
                               std::vector<Point>& xyz3,
-                              std::vector<std::vector<int> > faces3)
+                              std::vector<std::vector<int> >& faces3)
 {
   // initialize result with the first polyhedron
   int nfaces1 = faces1.size();
@@ -331,7 +332,7 @@ std::cout << "plane=" << p << " normal=" << normal << std::endl;
           } else {
             result_xyz.push_back(std::make_pair(0.0, v1));
             result_faces[m].insert(it_next, nxyz);
-std::cout << "  face=" << m << " add " << v1 << std::endl;
+std::cout << "  add " << v1 << std::endl;
             nxyz++;
           }
         }
@@ -342,6 +343,7 @@ std::cout << "  face=" << m << " add " << v1 << std::endl;
       while (it != result_faces[m].end()) {
         if (result_xyz[*it].first > 0.0) {
           it = result_faces[m].erase(it);
+if (result_faces[m].size() == 2) std::cout << "  removing face, m=" << m << std::endl;
           if (result_faces[m].size() == 2) break;
 
           it_next = it;
@@ -361,37 +363,64 @@ std::cout << "  new edge:" << *it_prev << " " << *it_next << "   p1="
     } 
 
     // forming a new face
-    std::sort(new_edges.begin(), new_edges.end());
+    int n1, n2, n3, n4(-1);
     std::list<int> new_face;
 
     for (int m = 0; m < nfaces3; ++m) {
-      int p1 = new_edges[m].first;
-      int p2 = new_edges[m].second;
-      if (p1 >= 0) new_face.push_back(p2);
+      n1 = new_edges[m].second;
+      n2 = new_edges[m].first;
+      if (n1 >= 0) {
+        new_face.push_back(n1);
+        break;
+      }
+    }
+
+    while(n4 != n1) {
+      for (int m = 0; m < nfaces3; ++m) {
+        n3 = new_edges[m].second;
+        n4 = new_edges[m].first;
+        if (n2 == n3) {
+          new_face.push_back(n3);
+          n2 = n4;
+          break;
+        }
+      }
     }
 
     if (new_face.size() > 2) {
-std::cout << "  adding new face" << std::endl;
+      std::cout << "  adding new face:" << std::endl;
       result_faces.push_back(new_face);
     }
   }
 
   // output of the result
-  int mfaces3(0), nfaces3(result_faces.size());
+  int n(0), nfaces3(result_faces.size());
+  int nxyz3(result_xyz.size());
+  std::vector<bool> flag(nxyz3, false);
 
+  // -- count only true faces
   for (int i = 0; i < nfaces3; ++i) {
-    if (result_faces[i].size() > 2) mfaces3++;
+    if (result_faces[i].size() > 2) n++;
   }
-  faces3.resize(mfaces3);
+  faces3.resize(n);
 
-std::cout << "Total number of faces: " << mfaces3 << " out of " << nfaces3 << std::endl;
+  n = 0;
   for (int i = 0; i < nfaces3; ++i) {
     if (result_faces[i].size() > 2) {
+      faces3[n].clear();
       for (it = result_faces[i].begin(); it != result_faces[i].end(); ++it) {
-        faces3[i].push_back(*it);
-std::cout << *it << " ";
+        faces3[n].push_back(*it);
+        flag[*it] = true;
       }
-std::cout << std::endl;
+      n++;
+    }
+  }
+
+  // -- count only true vertices
+  xyz3.clear();
+  if (n > 4) { 
+    for (int i = 0; i < nxyz3; ++i) {
+      if (flag[i]) xyz3.push_back(result_xyz[i].second);
     }
   }
 }

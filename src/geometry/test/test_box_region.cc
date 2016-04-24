@@ -36,9 +36,9 @@ TEST(BOX_REGION_2D)
     Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, &ecomm);
   
   // See if we retrieved the name and id correctly
-  CHECK_EQUAL(reg->name(),reg_name);
-  CHECK_EQUAL(reg->id(),reg_id);
-  CHECK_EQUAL(reg_spec.isSublist(reg_spec.name(i)),true);
+  CHECK_EQUAL(reg->name(), reg_name);
+  CHECK_EQUAL(reg->id(), reg_id);
+  CHECK_EQUAL(reg_spec.isSublist(reg_spec.name(i)), true);
   
   // Get the min-max bounds of the region from the XML specification
   Teuchos::Array<double> in_min_xyz, in_max_xyz;
@@ -49,10 +49,10 @@ TEST(BOX_REGION_2D)
   in_max_xyz = box_params.get< Teuchos::Array<double> >("high coordinate");
  
   // Make sure that the region type is a BOX
-  CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::BOX);
+  CHECK_EQUAL(reg->type(), Amanzi::AmanziGeometry::BOX);
 
   // Make sure that the region dimension is 2
-  CHECK_EQUAL(reg->manifold_dimension(),2);
+  CHECK_EQUAL(reg->manifold_dimension(), 2);
   
   // See if the min-max of the region were correctly retrieved
   Amanzi::AmanziGeometry::Point pmin, pmax;
@@ -72,10 +72,10 @@ TEST(BOX_REGION_2D)
 
   // test the functionality of the region
   std::vector<Amanzi::AmanziGeometry::Point> pin;
-  pin.push_back(Amanzi::AmanziGeometry::Point(9.,8.));
-  pin.push_back(Amanzi::AmanziGeometry::Point(11.,8.));
-  pin.push_back(Amanzi::AmanziGeometry::Point(11.,1.5));
-  pin.push_back(Amanzi::AmanziGeometry::Point(9.,1.5));
+  pin.push_back(Amanzi::AmanziGeometry::Point(9., 8.));
+  pin.push_back(Amanzi::AmanziGeometry::Point(11., 8.));
+  pin.push_back(Amanzi::AmanziGeometry::Point(11., 1.5));
+  pin.push_back(Amanzi::AmanziGeometry::Point(9., 1.5));
   pin.push_back(Amanzi::AmanziGeometry::Point(10., 5.));
 
   for (std::vector<Amanzi::AmanziGeometry::Point>::iterator p=pin.begin();
@@ -84,8 +84,8 @@ TEST(BOX_REGION_2D)
   }
 
   std::vector<Amanzi::AmanziGeometry::Point> pout;
-  pin.push_back(Amanzi::AmanziGeometry::Point(9.9,8.));
-  pin.push_back(Amanzi::AmanziGeometry::Point(11,7.9));
+  pin.push_back(Amanzi::AmanziGeometry::Point(9.9, 8.));
+  pin.push_back(Amanzi::AmanziGeometry::Point(11, 7.9));
 
   for (std::vector<Amanzi::AmanziGeometry::Point>::iterator p=pout.begin();
        p!=pout.end(); ++p) {
@@ -108,7 +108,7 @@ TEST(BOX_REGION_3D)
 
   Teuchos::ParameterList::ConstIterator i = reg_spec.begin();
   const std::string reg_name = reg_spec.name(i);     
-  const unsigned int reg_id = 9959;                   // something arbitrary
+  const unsigned int reg_id = 9959;  // something arbitrary
   
   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_spec.name(i));
   
@@ -260,41 +260,57 @@ TEST(BOXREGION_VOFS_3D_INTERSECTION)
   using namespace Amanzi::AmanziGeometry;
 
   Point v1(3), vv(3);
-  std::vector<Point> xy1, xy3;
+  std::vector<Point> xyz1, xyz3;
   std::vector<std::vector<int> > faces1(4), faces3;
-  std::vector<std::pair<Point, Point> > xy2;
+  std::vector<std::pair<Point, Point> > xyz2;
 
-  xy2.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(-1.0, 0.0, 0.0)));
-  xy2.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(0.0, -1.0, 0.0)));
-  xy2.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(0.0, 0.0, -1.0)));
+  xyz2.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(-1.0, 0.0, 0.0)));
+  xyz2.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(0.0, -1.0, 0.0)));
+  xyz2.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(0.0, 0.0, -1.0)));
 
-  xy2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(1.0, 0.0, 0.0)));
-  xy2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 1.0, 0.0)));
-  xy2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 0.0, 1.0)));
+  xyz2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(1.0, 0.0, 0.0)));
+  xyz2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 1.0, 0.0)));
+  xyz2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 0.0, 1.0)));
 
-  double d(0.1);
-  vv.set(d, d, d);
-  xy1.push_back(vv + Point(0.0, 0.0, 0.0));
-  xy1.push_back(vv + Point(1.0, 0.0, 0.0));
-  xy1.push_back(vv + Point(0.0, 1.0, 0.0));
-  xy1.push_back(vv + Point(0.0, 0.0, 1.0));
+  int n(0), sizes[6] = {4, 7, 7, 7, 6, 0};
+  for (double d = 0.0; d <= 1.01; d += 0.2) {
+    vv.set(d, d, d);
+    std::cout << "\nShift: " << vv << std::endl;
+    xyz1.clear();
+    xyz1.push_back(vv + Point(0.0, 0.0, 0.0));
+    xyz1.push_back(vv + Point(1.0, 0.0, 0.0));
+    xyz1.push_back(vv + Point(0.0, 1.0, 0.0));
+    xyz1.push_back(vv + Point(0.0, 0.0, 1.0));
 
-  faces1[0].push_back(0);
-  faces1[0].push_back(2);
-  faces1[0].push_back(1);
+    for (int i = 0; i < 4; ++i) faces1[i].clear();
+    faces1[0].push_back(0);
+    faces1[0].push_back(2);
+    faces1[0].push_back(1);
 
-  faces1[1].push_back(0);
-  faces1[1].push_back(1);
-  faces1[1].push_back(3);
+    faces1[1].push_back(0);
+    faces1[1].push_back(1);
+    faces1[1].push_back(3);
 
-  faces1[2].push_back(0);
-  faces1[2].push_back(3);
-  faces1[2].push_back(2);
+    faces1[2].push_back(0);
+    faces1[2].push_back(3);
+    faces1[2].push_back(2);
 
-  faces1[3].push_back(1);
-  faces1[3].push_back(2);
-  faces1[3].push_back(3);
+    faces1[3].push_back(1);
+    faces1[3].push_back(2);
+    faces1[3].push_back(3);
 
-  Amanzi::AmanziGeometry::IntersectConvexPolyhedra(xy1, faces1, xy2, xy3, faces3);
+    Amanzi::AmanziGeometry::IntersectConvexPolyhedra(xyz1, faces1, xyz2, xyz3, faces3);
+
+    int nfaces3(faces3.size());
+    std::cout << "Total number of faces: " << nfaces3 << std::endl;
+    for (int i = 0; i < nfaces3; ++i) {
+      int nnodes(faces3[i].size());
+      for (int n = 0; n < nnodes; ++n) std::cout << faces3[i][n] << " ";
+      std::cout << std::endl;
+    }
+    std::cout << "Total number of vertices: " << xyz3.size() << std::endl;
+
+    CHECK(nfaces3 == sizes[n++]);
+  }
 }
 
