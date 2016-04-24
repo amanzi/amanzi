@@ -1,14 +1,15 @@
 /*
-  This is the EOS component of the ATS and Amanzi codes.
+  EOS
    
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Author: Ethan Coon (ecoon@lanl.gov)
 
-  Constant density/viscosity EOS, defaults to reasonable values for water.
+  Constant density/viscosity EOS. It defaults to reasonable values 
+  for water.
 */
 
 #include "EOS_Constant.hh"
