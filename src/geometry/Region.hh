@@ -90,7 +90,17 @@ class Region {
 
   // Calculate intersection measure of object with the Region. The intersection
   // is defined when the object and Region have same dimensionality.
-  virtual double intersect(const std::vector<Point>& object) const { 
+  //
+  // -- counter clockwise ordered polygon does notrequire faces
+  double intersect(const std::vector<Point>& polytope) const 
+  {
+    std::vector<std::vector<int> > faces;
+    return intersect(polytope, faces);
+  }
+
+  // Polyhedron with counter clockwise ordered faces (wrt normals)
+  virtual double intersect(const std::vector<Point>& polytope, 
+                           const std::vector<std::vector<int> >& faces) const {
     return -1.0;
   }
 

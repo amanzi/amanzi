@@ -39,7 +39,10 @@ class RegionBoxVolumeFractions : public Region {
 
   // Calculate intersection volume of polytope object with the box. The operation
   // is well defined when the polytope and box have same dimensionality.
-  double intersect(const std::vector<Point>& polytope) const;
+  //
+  // Polyhedron with counter clockwise ordered faces (wrt normals)
+  double intersect(const std::vector<Point>& polytope, 
+                   const std::vector<std::vector<int> >& faces) const;
 
  protected:
   const Point p0_, p1_; // two corners of the box

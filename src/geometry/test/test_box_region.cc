@@ -217,6 +217,8 @@ TEST(BOXREGION_VOFS_2D_INTERSECTION)
 
 TEST(BOXREGION_VOFS_2D_AREA)
 {
+  using namespace Amanzi::AmanziGeometry;
+
   Epetra_MpiComm ecomm(MPI_COMM_WORLD);
 
   // read the parameter list from input file
@@ -250,7 +252,7 @@ TEST(BOXREGION_VOFS_2D_AREA)
     polygon.push_back(vv + v3);
 
     double area = reg->intersect(polygon);
-    CHECK_CLOSE(area, area_exact[n++], 1e-6);
+    CHECK_CLOSE(area_exact[n++], area, 1e-6);
   }
 }
 
@@ -313,4 +315,61 @@ TEST(BOXREGION_VOFS_3D_INTERSECTION)
     CHECK(nfaces3 == sizes[n++]);
   }
 }
+
+
+TEST(BOXREGION_VOFS_3D_VOLUME)
+{
+  using namespace Amanzi::AmanziGeometry;
+
+  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+
+  // read the parameter list from input file
+  std::string infilename = "test/boxregion_vofs_3D.xml";
+  Teuchos::ParameterXMLFileReader xmlreader(infilename);
+  Teuchos::ParameterList reg_spec(xmlreader.getParameters());
+
+  // create a rectangular region
+  Teuchos::ParameterList::ConstIterator i = reg_spec.begin();
+  std::string reg_name = reg_spec.name(i);     
+  unsigned int reg_id = 9959;  // something arbitrary
+  Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
+    
+  Teuchos::RCP<Amanzi::AmanziGeometry::Region> reg = 
+    Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, &ecomm);
+  
+  std::vector<Point> xyz;
+  std::vector<std::vector<int> > faces(4);
+
+  int n(0);
+  double volume_exact[5] = {0.5, 0.46, 0.34, 0.16, 0.04};
+  for (double d = 0.0; d <= 0.8; d += 0.2) {
+    Point vv(d, d, d);
+    xyz.clear();
+    xyz.push_back(vv + Point(0.0, 0.0, 0.0));
+    xyz.push_back(vv + Point(1.0, 0.0, 0.0));
+    xyz.push_back(vv + Point(0.0, 1.0, 0.0));
+    xyz.push_back(vv + Point(0.0, 0.0, 1.0));
+
+    for (int i = 0; i < 4; ++i) faces[i].clear();
+    faces[0].push_back(0);
+    faces[0].push_back(2);
+    faces[0].push_back(1);
+
+    faces[1].push_back(0);
+    faces[1].push_back(1);
+    faces[1].push_back(3);
+
+    faces[2].push_back(0);
+    faces[2].push_back(3);
+    faces[2].push_back(2);
+
+    faces[3].push_back(1);
+    faces[3].push_back(2);
+    faces[3].push_back(3);
+
+    double volume = reg->intersect(xyz, faces);
+std::cout << "volume=" << volume << std::endl;
+  }
+}
+
 
