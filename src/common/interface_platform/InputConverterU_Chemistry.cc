@@ -614,7 +614,7 @@ std::string InputConverterU::CreateINFile(std::string& filename)
       double density = GetAttributeValueD_(element, "density");
       complexes << "    SURFACE_COMPLEXATION_RXN\n";
       complexes << "      EQUILIBRIUM\n";
-      complexes << "      SITE >" << name << " " << density << "\n";
+      complexes << "      SITE " << name << " " << density << "\n";
       
       //DOMNode* cnode = GetUniqueElementByTagsString_("materials, material, surface_complexation, complexes", flag);
       std::vector<DOMNode*> kids = GetChildren_(inode, "complexes", flag);
@@ -624,7 +624,7 @@ std::string InputConverterU::CreateINFile(std::string& filename)
           DOMNode* jnode = kids[j];
           std::vector<std::string> complexe_names = CharToStrings_(mm.transcode(jnode->getTextContent()));
           for (std::vector<std::string>::const_iterator it = complexe_names.begin(); it != complexe_names.end(); it++) {
-            complexes << "        >" << *it << "\n";
+            complexes << "        " << *it << "\n";
           }
         }
         complexes << "      /\n";
