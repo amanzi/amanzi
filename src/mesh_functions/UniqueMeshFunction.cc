@@ -35,8 +35,7 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
     // Get the ids from the mesh by region name and entity kind.
     if (mesh_->valid_set_name(*region, kind)) {
       AmanziMesh::Entity_ID_List id_list;
-      std::vector<double> vofs;
-      mesh_->get_set_entities(*region, kind, AmanziMesh::USED, &id_list, &vofs);
+      mesh_->get_set_entities(*region, kind, AmanziMesh::USED, &id_list);
       this_spec_ids->insert(id_list.begin(), id_list.end());
     } else {
       std::stringstream m;

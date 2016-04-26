@@ -1279,6 +1279,26 @@ This list is optional.
    </ParameterList>
 
 
+Absolute permeability
+.....................
+
+* `"coordinate system`" [string] defines coordinate system
+  for calculating absolute permeability. The available options are `"cartesian`"
+  and `"layer`".
+
+* `"off-diagonal components`" [int] defines additional (typically off-diagonal) 
+  components of the absolute permeability. Deafult is 0.
+
+.. code-block:: xml
+
+   <ParameterList name="Richards problem">  <!-- parent list -->
+     <ParameterList name="absolute permeability">
+       <Parameter name="coordinate system" type="string" value="cartesian"/>
+       <Parameter name="off-diagonal components" type="int" value="0"/>
+     </ParameterList>
+   </ParameterList>
+
+
 Relative permeability
 .....................
 
@@ -1759,33 +1779,10 @@ between 11 and 15.
 The time step will be cut twice if the number of nonlinear iterations exceeds 15.
 
 
-Developer parameters
-````````````````````
-
-The remaining parameters in the time integrator sublist include 
-those needed for unit tests, and future code development. 
-
-.. code-block:: xml
-
-   <ParameterList name="time integrator">
-     <ParameterList name="obsolete parameters">
-       <Parameter name="start time" type="double" value="0.0"/>
-       <Parameter name="end time" type="double" value="100.0"/>
-       <Parameter name="maximum number of iterations" type="int" value="400"/>
-       <Parameter name="error abs tol" type="double" value="1"/>
-       <Parameter name="error rel tol" type="double" value="0"/>
-     </ParameterList>
-   </ParameterList>
-
-
 Other parameters
 ................
 
 The remaining *flow* parameters are
-
-* `"absolute permeability coordinate system`" [string] defines coordinate system
-  for calculating absolute permeability. The available options are `"cartesian`"
-  and `"layer`".
 
 * `"clipping parameters`" [list] defines how solution increment calculated by a nonlinear 
   solver is modified e.g., clipped.

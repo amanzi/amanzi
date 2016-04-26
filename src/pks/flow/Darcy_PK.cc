@@ -205,6 +205,17 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
     S->SetFieldEvaluator("darcy_velocity", eval);
   }
+
+  // Require additional components for the existing fields
+  Teuchos::ParameterList abs_perm = dp_list_->sublist("absolute permeability");
+  coordinate_system_ = abs_perm.get<std::string>("coordinate system", "cartesian");
+  int noff = abs_perm.get<int>("off-diagonal components", 0);
+ 
+  if (noff > 0) {
+    CompositeVectorSpace& cvs = *S->RequireField("permeability", passwd_);
+    cvs.SetOwned(false);
+    cvs.AddComponent("offd", AmanziMesh::CELL, noff)->SetOwned(true);
+  }
 }
 
 

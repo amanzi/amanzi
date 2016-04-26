@@ -150,7 +150,7 @@ class Flow_PK : public PK_PhysicalBDF {
   double flux_units_;  // scaling for flux units from kg to moles.
 
   Teuchos::RCP<Epetra_Vector> Kxy;
-  std::string coordinate_system;
+  std::string coordinate_system_;
 
   // boundary conditons
   FlowBoundaryFunction* bc_pressure; 

@@ -72,7 +72,7 @@ TEST(MSTK_DEFORM_VOLS_2D)
 
   Amanzi::AmanziMesh::Entity_ID_List fixed_nodes;
   mesh->get_set_entities("Bottom Region", Amanzi::AmanziMesh::NODE,
-                         Amanzi::AmanziMesh::USED, &fixed_nodes, NULL);
+                         Amanzi::AmanziMesh::USED, &fixed_nodes);
 
   bool move_vertical = true;
   int status = mesh->deform(target_volumes,min_volumes,fixed_nodes,
@@ -155,8 +155,8 @@ TEST(MSTK_DEFORM_VOLS_3D)
   }
 
   Amanzi::AmanziMesh::Entity_ID_List fixed_nodes;
-  mesh->get_set_entities("Bottom Region", Amanzi::AmanziMesh::NODE,
-                         Amanzi::AmanziMesh::USED, &fixed_nodes, NULL);
+  mesh->get_set_entities_and_vofs("Bottom Region", Amanzi::AmanziMesh::NODE,
+                                  Amanzi::AmanziMesh::USED, &fixed_nodes, NULL);
 
   bool move_vertical = true;
   int status = mesh->deform(target_volumes,min_volumes,fixed_nodes,

@@ -296,6 +296,7 @@ void Field_CompositeVector::ReadCellsFromCheckpoint_(std::string filename) {
   file_input->close_h5file();
 }
 
+
 bool Field_CompositeVector::ReadCheckpoint_(std::string filename) {
   Teuchos::RCP<Amanzi::HDF5_MPI> file_input =
       Teuchos::rcp(new Amanzi::HDF5_MPI(data_->Comm(), filename));
@@ -311,7 +312,7 @@ bool Field_CompositeVector::ReadCheckpoint_(std::string filename) {
 bool Field_CompositeVector::ReadCheckpoint(const Teuchos::Ptr<HDF5_MPI>& file_input) {
   EnsureSubfieldNames_();
 
-  // loop over the components and dump them to the checkpoint file if possible
+  // loop over the components and read them from the checkpoint file if possible
   int i = 0;
   for (CompositeVector::name_iterator compname=data_->begin();
        compname!=data_->end(); ++compname) {

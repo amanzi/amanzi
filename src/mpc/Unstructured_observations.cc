@@ -190,14 +190,14 @@ int Unstructured_observations::MakeObservations(State& S)
                                                     Amanzi::AmanziMesh::FACE,
                                                     Amanzi::AmanziMesh::OWNED);
         entity_ids.resize(mesh_block_size);
-        S.GetMesh()->get_set_entities((i->second).region, 
-                                      Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED,
-                                      &entity_ids, &vofs);
+        S.GetMesh()->get_set_entities_and_vofs((i->second).region,
+                                               AmanziMesh::FACE, AmanziMesh::OWNED,
+                                               &entity_ids, &vofs);
         obs_boundary = true;
         for (int i = 0; i != mesh_block_size; ++i) {
           int f = entity_ids[i];
           Amanzi::AmanziMesh::Entity_ID_List cells;
-          S.GetMesh()->face_get_cells(f, Amanzi::AmanziMesh::USED, &cells);
+          S.GetMesh()->face_get_cells(f, AmanziMesh::USED, &cells);
           if (cells.size() == 2) {
             obs_boundary = false;
             break;
@@ -205,12 +205,11 @@ int Unstructured_observations::MakeObservations(State& S)
         }
       } else { // all others need cells
         mesh_block_size = S.GetMesh()->get_set_size((i->second).region,
-                                                    Amanzi::AmanziMesh::CELL,
-                                                    Amanzi::AmanziMesh::OWNED);    
+                                                    AmanziMesh::CELL, AmanziMesh::OWNED);    
         entity_ids.resize(mesh_block_size);
-        S.GetMesh()->get_set_entities((i->second).region,
-                                      Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-                                      &entity_ids, &vofs);
+        S.GetMesh()->get_set_entities_and_vofs((i->second).region,
+                                               AmanziMesh::CELL, AmanziMesh::OWNED,
+                                               &entity_ids, &vofs);
       }
       
       // find global meshblocksize

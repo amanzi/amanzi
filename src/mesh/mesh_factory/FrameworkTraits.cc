@@ -281,11 +281,11 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
                             const Amanzi::AmanziMesh::Parallel_type ptype) const
   { return 0; }
 
-  void get_set_entities(const std::string setname, 
-                        const Amanzi::AmanziMesh::Entity_kind kind, 
-                        const Amanzi::AmanziMesh::Parallel_type ptype, 
-                        Amanzi::AmanziMesh::Entity_ID_List *entids,
-                        std::vector<double> *vofs) const
+  void get_set_entities_and_vofs(const std::string setname, 
+                                 const Amanzi::AmanziMesh::Entity_kind kind, 
+                                 const Amanzi::AmanziMesh::Parallel_type ptype, 
+                                 Amanzi::AmanziMesh::Entity_ID_List *entids,
+                                 std::vector<double> *vofs) const
   {};
 
   void get_set_entities(const Amanzi::AmanziMesh::Set_ID setid, 
@@ -697,7 +697,7 @@ framework_available(const Framework& f)
 // -------------------------------------------------------------
 // parallel_test
 // -------------------------------------------------------------
-template < class thetest >
+template <class thetest>
 static bool 
 parallel_test(const bool& isp)
 {

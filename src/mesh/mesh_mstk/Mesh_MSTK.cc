@@ -3257,11 +3257,11 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 //---------------------------------------------------------
 // Get list of entities of type 'category' in set specified by setname
 //---------------------------------------------------------
-void Mesh_MSTK::get_set_entities(const std::string setname, 
-                                 const Entity_kind kind, 
-                                 const Parallel_type ptype, 
-                                 std::vector<Entity_ID> *setents,
-                                 std::vector<double> *vofs) const
+void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname, 
+                                          const Entity_kind kind, 
+                                          const Parallel_type ptype, 
+                                          std::vector<Entity_ID> *setents,
+                                          std::vector<double> *vofs) const
 {
   int idx, i, lid;
   MSet_ptr mset(NULL), mset1(NULL);

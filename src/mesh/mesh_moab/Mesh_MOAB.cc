@@ -1671,11 +1671,11 @@ MBTag Mesh_MOAB::build_set(const AmanziGeometry::RegionPtr region,
 }
 
 
-void Mesh_MOAB::get_set_entities(const std::string setname, 
-                                 const Entity_kind kind, 
-                                 const Parallel_type ptype,
-                                 Entity_ID_List *setents,
-                                 std::vector<double> *vofs) const
+void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname, 
+                                          const Entity_kind kind, 
+                                          const Parallel_type ptype,
+                                          Entity_ID_List *setents,
+                                          std::vector<double> *vofs) const
 {
   int idx, i, lid, one=1;
   bool found(false);

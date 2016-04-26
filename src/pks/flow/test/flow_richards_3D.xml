@@ -57,6 +57,10 @@
   <ParameterList name="PKs">
     <ParameterList name="flow">
       <ParameterList name="Richards problem">
+        <ParameterList name="absolute permeability">
+          <Parameter name="off-diagonal components" type="int" value="3"/>
+        </ParameterList>
+
         <ParameterList name="relative permeability">
           <Parameter name="upwind method" type="string" value="upwind: gravity"/>
           <ParameterList name="upwind parameters">
@@ -210,6 +214,79 @@
       </ParameterList>
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="10.0"/>
+      </ParameterList>
+      <ParameterList name="permeability">
+        <ParameterList name="function">
+          <ParameterList name="Material 1">
+            <Parameter name="regions" type="Array(string)" value="{Material 1}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="3"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="DoF 1 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.1"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 2 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.1"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 3 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="2.0"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Material 2">
+            <Parameter name="regions" type="Array(string)" value="{Material 2}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="3"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="DoF 1 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.5"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 2 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.5"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 3 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.5"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Off-diagonal components">
+            <Parameter name="regions" type="Array(string)" value="{Material 1, Material 2}"/>
+            <Parameter name="component" type="string" value="offd"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="3"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="DoF 1 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.01"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 2 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.01"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="DoF 3 Function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.02"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>

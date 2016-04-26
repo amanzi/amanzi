@@ -41,7 +41,7 @@ void InputAnalysis::RegionAnalysis()
     for (int i = 0; i < regions.size(); i++) {
       AmanziMesh::Entity_ID_List block;
       std::vector<double> vofs;
-      mesh_->get_set_entities(regions[i], AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
+      mesh_->get_set_entities_and_vofs(regions[i], AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
       int nblock = block.size();
 
       double volume(0.0);
@@ -79,7 +79,8 @@ void InputAnalysis::RegionAnalysis()
       AmanziMesh::Entity_ID_List block;
       std::vector<double> volume_fractions;
 
-      mesh_->get_set_entities(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED, &block, &volume_fractions);
+      mesh_->get_set_entities_and_vofs(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED,
+                                       &block, &volume_fractions);
       int nblock = block.size();
 
       double area(0.0);
@@ -117,14 +118,14 @@ void InputAnalysis::RegionAnalysis()
       std::vector<double> vofs;
 
       if (mesh_->valid_set_name(regions[i], AmanziMesh::CELL)) {
-        mesh_->get_set_entities(regions[i], AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
+        mesh_->get_set_entities_and_vofs(regions[i], AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
         nblock = block.size();
         type = "cells";
         for (int n = 0; n < nblock; n++) 
             volume += mesh_->cell_volume(block[n]);
       }
       else if (mesh_->valid_set_name(regions[i], AmanziMesh::FACE)) {
-        mesh_->get_set_entities(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED, &block, &vofs);
+        mesh_->get_set_entities_and_vofs(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED, &block, &vofs);
         nblock = block.size();
         type = "faces";
         for (int n = 0; n < nblock; n++) 

@@ -168,7 +168,7 @@ unsigned int Mesh::get_set_size(const std::string setname,
   Entity_ID_List setents;
   std::vector<double> vofs;
 
-  get_set_entities(setname, kind, ptype, &setents, &vofs);
+  get_set_entities_and_vofs(setname, kind, ptype, &setents, &vofs);
   
   return setents.size();
 }
@@ -181,7 +181,7 @@ void Mesh::get_set_entities(const Set_ID setid,
 {
   std::vector<double> vofs;
   std::string setname = geometric_model()->FindRegion(setid)->name();
-  get_set_entities(setname, kind, ptype, entids, &vofs);
+  get_set_entities_and_vofs(setname, kind, ptype, entids, &vofs);
 }
 
 }  // namespace AmanziMesh

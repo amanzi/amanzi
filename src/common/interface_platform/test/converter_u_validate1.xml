@@ -323,6 +323,9 @@
         <ParameterList name="physical models and assumptions">
           <Parameter name="water content model" type="string" value="constant density"/>
         </ParameterList>
+        <ParameterList name="absolute permeability">
+          <Parameter name="coordinate system" type="string" value="cartesian"/>
+        </ParameterList>
         <ParameterList name="relative permeability">
           <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
           <Parameter name="upwind frequency" type="string" value="every timestep"/>
@@ -602,6 +605,9 @@
       <ParameterList name="Richards problem">
         <ParameterList name="physical models and assumptions">
           <Parameter name="water content model" type="string" value="constant density"/>
+        </ParameterList>
+        <ParameterList name="absolute permeability">
+          <Parameter name="coordinate system" type="string" value="cartesian"/>
         </ParameterList>
         <ParameterList name="relative permeability">
           <Parameter name="upwind method" type="string" value="upwind: amanzi"/>

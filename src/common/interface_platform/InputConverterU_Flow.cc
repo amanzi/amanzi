@@ -96,6 +96,9 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
     Exceptions::amanzi_throw(msg);
   }
 
+  // absolute permeability (default list so far)
+  flow_list->sublist("absolute permeability").set<std::string>("coordinate system", "cartesian");
+
   // insert operator sublist
   std::string disc_method("mfd-optimized_for_sparsity");
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, discretization_method", flag);

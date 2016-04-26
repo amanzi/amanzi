@@ -642,11 +642,11 @@ class Mesh {
   // -- new interface. Since not all regions support volume fractions 
   // (vofs), this vector is optional and could be empty.
   virtual
-  void get_set_entities(const std::string setname,
-                        const Entity_kind kind,
-                        const Parallel_type ptype,
-                        Entity_ID_List *entids,
-                        std::vector<double> *vofs) const = 0;
+  void get_set_entities_and_vofs(const std::string setname,
+                                 const Entity_kind kind,
+                                 const Parallel_type ptype,
+                                 Entity_ID_List *entids,
+                                 std::vector<double> *vofs) const = 0;
 
   //
   // Miscellaneous functions
