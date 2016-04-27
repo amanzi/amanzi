@@ -19,12 +19,13 @@
 namespace Amanzi {
 namespace SurfaceBalance {
 
-SurfaceBalanceBase::SurfaceBalanceBase(
-           const Teuchos::RCP<Teuchos::ParameterList>& plist,
-           Teuchos::ParameterList& FElist,
-           const Teuchos::RCP<TreeVector>& solution) :
-    PKPhysicalBDFBase(plist, FElist, solution),
-    PKDefaultBase(plist, FElist, solution)
+SurfaceBalanceBase::SurfaceBalanceBase(Teuchos::ParameterList& FElist,
+                                       const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                                       const Teuchos::RCP<State>& S,
+                                       const Teuchos::RCP<TreeVector>& solution):
+    PK(FElist, plist,  S, solution),
+    PK_BDF_Default(FElist, plist,  S, solution),
+    PK_PhysicalBDF_Default(FElist, plist,  S, solution)
 {
   // name the layer
   layer_ = plist->get<std::string>("layer name", name_);
@@ -44,8 +45,8 @@ SurfaceBalanceBase::SurfaceBalanceBase(
 // main methods
 // -- Setup data.
 void
-SurfaceBalanceBase::setup(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBDFBase::setup(S);
+SurfaceBalanceBase::Setup(const Teuchos::Ptr<State>& S) {
+  PK_PhysicalBDF_Default::Setup(S);
 
   // requirements: primary variable
   S->RequireField(key_, name_)->SetMesh(mesh_)->
@@ -130,7 +131,7 @@ SurfaceBalanceBase::UpdatePreconditioner(double t,
         Teuchos::RCP<const TreeVector> up, double h) {
   // update state with the solution up.
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
-  PKDefaultBase::solution_to_state(*up, S_next_);
+  PK_Physical_Default::Solution_to_State(*up, S_next_);
 
   if (conserved_quantity_) {
     if (jac_ == Teuchos::null) {

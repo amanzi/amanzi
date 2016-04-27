@@ -32,7 +32,6 @@ namespace WhetStone { class Tensor; }
 namespace Flow {
 
 class Richards : public PK_PhysicalBDF_Default {
-//class Richards : public PKPhysicalBDFBase {
 
 public:
   Richards(Teuchos::ParameterList& FElist,
