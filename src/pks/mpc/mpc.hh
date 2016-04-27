@@ -118,6 +118,7 @@ MPC<PK_t>::MPC(Teuchos::ParameterList& FElist,
       // create the PK
       std::string name_i = pk_order[i];
       Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list,name_i);
+      //std::cout << *pk_list<<"\n";
       pk_list->set("PK name", name_i);
       const std::string &pk_origin = pk_list -> get<std::string>("PK origin", "ATS");
       //      std::cout<<*pk_list<<"\n";
@@ -147,6 +148,7 @@ MPC<PK_t>::MPC(Teuchos::ParameterList& FElist,
 
         // create the PK
         Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list,name_i);
+        //std::cout << *pk_list<<"\n";
         pk_list->set("PK name", name_i);
         const std::string &pk_origin = pk_list -> get<std::string>("PK origin", "ATS");
         
@@ -160,7 +162,6 @@ MPC<PK_t>::MPC(Teuchos::ParameterList& FElist,
           Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
           sub_pks_.push_back(pk);
         }
-
       }
     }
   }

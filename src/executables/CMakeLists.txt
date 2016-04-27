@@ -27,6 +27,8 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/deformation)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
 include_directories(${ATS_SOURCE_DIR}/src/pks/transport)
 include_directories(${ATS_SOURCE_DIR}/src/pks/transport/transport_amanzi)
+include_directories(${ATS_SOURCE_DIR}/src/pks/chemistry)
+include_directories(${ATS_SOURCE_DIR}/src/pks/chemistry/chemistry_amanzi)
 
 include_directories(${ATS_SOURCE_DIR}/src/coordinator)
 
@@ -89,6 +91,7 @@ set(ATS_LIBS
                       pk_flow_overland_pressure
                       pk_flow_icy_overland
                       pk_transport
+                      pk_chemistry
 	              # pk_prescribed_deformation
 #                      pk_prescribed_volumetric_deformation
 #                      pk_volumetric_deformation
@@ -129,6 +132,7 @@ set(AMANZI_LIBS
                       amanzi_output
                       amanzi_mstk_mesh
 		      amanzi_mesh_logical
+                      amanzi_geochemistry
 )
 
 target_link_libraries(ats ${ATS_LIBS} ${AMANZI_LIBS})

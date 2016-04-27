@@ -36,12 +36,12 @@ add_library(mpc
   mpc_coupled_cells.cc
   pk_mpcsubcycled.cc
   mpc_flowreactivetransport_pk.cc
-#  mpc_surface_subsurface_helpers.cc
-#  mpc_delegate_ewc.cc
+  mpc_surface_subsurface_helpers.cc
+  mpc_delegate_ewc.cc
 ##  mpc_delegate_ewc_surface.cc
-#  mpc_delegate_ewc_subsurface.cc
-#  mpc_delegate_water.cc
-#  mpc_coupled_water.cc
+  mpc_delegate_ewc_subsurface.cc
+  mpc_delegate_water.cc
+  mpc_coupled_water.cc
 #  mpc_subsurface.cc
 ##  mpc_permafrost3.cc
 #  mpc_permafrost4.cc

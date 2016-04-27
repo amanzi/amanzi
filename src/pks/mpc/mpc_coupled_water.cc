@@ -6,15 +6,16 @@
 
 namespace Amanzi {
 
-MPCCoupledWater::MPCCoupledWater(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        Teuchos::ParameterList& FElist,
-        const Teuchos::RCP<TreeVector>& soln) :
-    PKDefaultBase(plist, FElist, soln),
-    StrongMPC<PKPhysicalBDFBase>(plist, FElist, soln) {}
+MPCCoupledWater::MPCCoupledWater(Teuchos::ParameterList& FElist,
+                  const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                  const Teuchos::RCP<State>& S,
+                  const Teuchos::RCP<TreeVector>& soln) :
+    PK(FElist, plist,  S, soln),
+    StrongMPC<PK_PhysicalBDF_Default>(FElist, plist,  S, soln) {}
 
 
 void
-MPCCoupledWater::setup(const Teuchos::Ptr<State>& S) {
+MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
   // tweak the sub-PK parameter lists
   Teuchos::Array<std::string> names = plist_->get<Teuchos::Array<std::string> >("PKs order");
 
@@ -35,7 +36,7 @@ MPCCoupledWater::setup(const Teuchos::Ptr<State>& S) {
   surf_flow_pk_ = sub_pks_[1];
 
   // call the MPC's setup, which calls the sub-pk's setups
-  StrongMPC<PKPhysicalBDFBase>::setup(S);
+  StrongMPC<PK_PhysicalBDF_Default>::Setup(S);
 
   // require the coupling fields, claim ownership
   S->RequireField("surface_subsurface_flux", name_)
@@ -76,27 +77,27 @@ MPCCoupledWater::setup(const Teuchos::Ptr<State>& S) {
 }
 
 void
-MPCCoupledWater::initialize(const Teuchos::Ptr<State>& S) {
+MPCCoupledWater::Initialize(const Teuchos::Ptr<State>& S) {
   // initialize coupling terms
   S->GetFieldData("surface_subsurface_flux", name_)->PutScalar(0.);
   S->GetField("surface_subsurface_flux", name_)->set_initialized();
 
   // Initialize all sub PKs.
-  MPC<PKPhysicalBDFBase>::initialize(S);
+  MPC<PK_PhysicalBDF_Default>::Initialize(S);
 
   // ensure continuity of ICs... surface takes precedence.
   CopySurfaceToSubsurface(*S->GetFieldData("surface-pressure", sub_pks_[1]->name()),
                           S->GetFieldData("pressure", sub_pks_[0]->name()).ptr());
 
   // Initialize my timestepper.
-  PKBDFBase::initialize(S);
+  PK_BDF_Default::Initialize(S);
 }
 
 void
 MPCCoupledWater::set_states(const Teuchos::RCP<const State>& S,
                             const Teuchos::RCP<State>& S_inter,
                             const Teuchos::RCP<State>& S_next) {
-  StrongMPC<PKPhysicalBDFBase>::set_states(S,S_inter,S_next);
+  StrongMPC<PK_PhysicalBDF_Default>::set_states(S,S_inter,S_next);
   water_->set_states(S,S_inter,S_next);
 }
 
@@ -107,7 +108,7 @@ void
 MPCCoupledWater::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                             Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   // propagate updated info into state
-  solution_to_state(*u_new, S_next_);
+  Solution_to_State(*u_new, S_next_);
 
   // Evaluate the surface flow residual
   surf_flow_pk_->Functional(t_old, t_new, u_old->SubVector(1),
@@ -180,7 +181,7 @@ MPCCoupledWater::UpdatePreconditioner(double t,
   // order important -- subsurface's pk includes the surface's local ops, so
   // doing the subsurface 2nd re-inits the surface matrices (and doesn't
   // refill them).  This is why subsurface is first
-  StrongMPC<PKPhysicalBDFBase>::UpdatePreconditioner(t, up, h);
+  StrongMPC<PK_PhysicalBDF_Default>::UpdatePreconditioner(t, up, h);
   
   precon_->AssembleMatrix();
   precon_->InitPreconditioner(plist_->sublist("preconditioner"));
@@ -250,7 +251,7 @@ MPCCoupledWater::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
 
   // modify correction using sub-pk approaches
   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult modified_res =
-    StrongMPC<PKPhysicalBDFBase>::ModifyCorrection(h, res, u, du);
+    StrongMPC<PK_PhysicalBDF_Default>::ModifyCorrection(h, res, u, du);
   
   // modify correction using water approaches
   int n_modified = 0;

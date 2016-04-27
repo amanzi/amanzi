@@ -33,6 +33,8 @@
 #include "multiscale_transport_registration.hh"
 #include "mdm_transport_registration.hh"
 
+#include "chemistry_amanzi_registration.hh"
+
 //#include "deform_constitutive_relations_porosity_registration.hh"
 //#include "deform_prescribed_deformation_registration.hh"
 //#include "deform_volumetric_deformation_registration.hh"

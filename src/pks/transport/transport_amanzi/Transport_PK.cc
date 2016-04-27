@@ -1264,6 +1264,7 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
     for (TransportDomainFunction::Iterator it = srcs[m]->begin(); it != srcs[m]->end(); ++it) {
       int c = it->first;
       double value = mesh_->cell_volume(c) * it->second;
+      std::cout<<c<<" vol "<<mesh_->cell_volume(c)<<" center "<<mesh_->cell_centroid(c)<<" val "<<it->second<<"\n";
 
       if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME ||
          (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY))

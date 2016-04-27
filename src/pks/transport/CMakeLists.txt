@@ -2,7 +2,7 @@
 
 #
 #  ATS
-#    Flow PK class
+#    Transport Amanzi
 #
 
 # ATS include directories
