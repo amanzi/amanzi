@@ -305,7 +305,7 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list,
   ierr[0] = 0;
   aerr[0] = 0;
 
-  Teuchos::Array<int> ncells = parameter_list.get< Teuchos::Array<int> >("Number of Cells");
+  Teuchos::Array<int> ncells = parameter_list.get< Teuchos::Array<int> >("number of cells");
   unsigned int dim = ncells.size();
 
   for (FrameworkPreference::const_iterator i = my_preference.begin(); 

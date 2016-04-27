@@ -1,4 +1,3 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
   Abstract class for a Region, which is a geometric or discrete
   subdomain, along with some basic setters/getters.
@@ -13,7 +12,7 @@
   list because it has to create derived region classes based on the shape 
   parameter of the region specification.
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -37,9 +36,8 @@ class Point;
 
 class Region {
  public:
-
   // Destructor
-  virtual ~Region() {}
+  virtual ~Region() {};
 
   // Dimension of the subdomain
   unsigned int manifold_dimension() const {
@@ -83,16 +81,30 @@ class Region {
   // Get the Lifecycle of this region - Do mesh entity sets derived from
   // it have to be kept around or are they temporary and can be destroyed
   // as soon as they are used?
-  LifeCycleType lifecycle() const 
-  {
+  LifeCycleType lifecycle() const {
     return lifecycle_;
   }
 
   // Is the specified point inside the closure of the Region
   virtual bool inside(const Point& p) const = 0;
 
- protected:
+  // Calculate intersection measure of object with the Region. The intersection
+  // is defined when the object and Region have same dimensionality.
+  //
+  // -- counter clockwise ordered polygon does notrequire faces
+  double intersect(const std::vector<Point>& polytope) const 
+  {
+    std::vector<std::vector<int> > faces;
+    return intersect(polytope, faces);
+  }
 
+  // Polyhedron with counter clockwise ordered faces (wrt normals)
+  virtual double intersect(const std::vector<Point>& polytope, 
+                           const std::vector<std::vector<int> >& faces) const {
+    return -1.0;
+  }
+
+ protected:
   // Constructor -- protected as it should never be called directly
   Region(const std::string& name,
          Set_ID id,
@@ -107,11 +119,9 @@ class Region {
       type_(type),
       manifold_dimension_(dim),
       space_dimension_(geom_dim),
-      lifecycle_(lifecycle) {}
-    
+      lifecycle_(lifecycle) {};
 
  protected:
-
   // Lifecycle (Temporary or Permanent)
   LifeCycleType lifecycle_;
   
@@ -132,18 +142,15 @@ class Region {
   bool geometric_;
 
  private:
-  Region(const Region& other); // prevent copy constructor
-  Region& operator=(const Region& other); // prevent operator=
-  
-  
+  Region(const Region& other);  // prevent copy constructor
+  Region& operator=(const Region& other);  // prevent operator=
 };
-
 
 
 typedef std::vector<Teuchos::RCP<Region> > RegionVector;
 
-} // namespace AmanziGeometry
-} // namespace Amanzi
+}  // namespace AmanziGeometry
+}  // namespace Amanzi
 
 #endif
 

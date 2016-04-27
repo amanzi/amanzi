@@ -8,7 +8,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Non-polynomial solution plus discontinous coefficient. This solution
+  Non-polynomial solution plus discontinous (scalar) coefficient. This solution
   has discontinuous tangential flux.
 */
 

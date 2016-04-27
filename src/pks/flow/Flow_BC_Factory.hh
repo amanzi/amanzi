@@ -64,7 +64,7 @@ portion of the mesh boundary where the condition is to be applied.
     
 transient-flow-pressure-spec(NAME) is:
   <ParameterList name=NAME>
-    <Parameter name="regions" type="Array string" value=string-array />
+    <Parameter name="regions" type="Array(string)" value=string-array />
     function-factory-list("boundary pressure")
   </ParameterList>
   
@@ -73,7 +73,7 @@ is the vector (t, x, y, z).
     
 transient-flow-mass-flux-spec(NAME) is:
   <ParameterList name=NAME>
-    <Parameter name="Regions" type="Array string" value=string-array />
+    <Parameter name="regions" type="Array(string)" value=string-array />
     function-factory-list("outward mass flux")
   </ParameterList>
   
@@ -82,7 +82,7 @@ is the vector (t, x, y, z).
 
 transient-flow-static-head-spec(NAME) is:
   <ParameterList name=NAME>
-    <Parameter name="Regions" type="Array string" value=string-array />
+    <Parameter name="regions" type="Array string" value=string-array />
     function-factory-list("water table elevation")
   </ParameterList>
   

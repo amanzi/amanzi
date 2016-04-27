@@ -49,7 +49,7 @@ int MeshAuditOld::Verify() const
   mark_do_not_run vis;
 
   for (std::list<Vertex>::iterator itr = run_order.begin(); itr != run_order.end(); ++itr) {
-    if (g[*itr].run){
+    if (g[*itr].run) {
       os << "Checking " << g[*itr].name << " ..." << std::endl;
       if (((*this).*(g[*itr].test))()) {
         status = 1;

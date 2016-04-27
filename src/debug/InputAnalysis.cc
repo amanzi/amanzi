@@ -16,8 +16,8 @@ void InputAnalysis::Init(Teuchos::ParameterList& plist)
 {
   plist_ = &plist;
 
-  if (plist.isSublist("Analysis")) {
-    Teuchos::ParameterList vo_list = plist.sublist("Analysis");
+  if (plist.isSublist("analysis")) {
+    Teuchos::ParameterList vo_list = plist.sublist("analysis");
     vo_ = new VerboseObject("InputAnalysis", vo_list); 
   } 
 }
@@ -28,8 +28,8 @@ void InputAnalysis::Init(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void InputAnalysis::RegionAnalysis() 
 {
-  if (!plist_->isSublist("Analysis")) return;
-  Teuchos::ParameterList alist = plist_->sublist("Analysis");
+  if (!plist_->isSublist("analysis")) return;
+  Teuchos::ParameterList alist = plist_->sublist("analysis");
 
   Errors::Message msg;
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -40,7 +40,8 @@ void InputAnalysis::RegionAnalysis()
 
     for (int i = 0; i < regions.size(); i++) {
       AmanziMesh::Entity_ID_List block;
-      mesh_->get_set_entities(regions[i], AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+      std::vector<double> vofs;
+      mesh_->get_set_entities_and_vofs(regions[i], AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
       int nblock = block.size();
 
       double volume(0.0);
@@ -76,7 +77,10 @@ void InputAnalysis::RegionAnalysis()
 
     for (int i = 0; i < regions.size(); i++) {
       AmanziMesh::Entity_ID_List block;
-      mesh_->get_set_entities(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED, &block);
+      std::vector<double> volume_fractions;
+
+      mesh_->get_set_entities_and_vofs(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED,
+                                       &block, &volume_fractions);
       int nblock = block.size();
 
       double area(0.0);
@@ -109,18 +113,19 @@ void InputAnalysis::RegionAnalysis()
     int nblock;
     for (int i = 0; i < regions.size(); i++) {
       double volume(0.0);
-      AmanziMesh::Entity_ID_List block;
       std::string type;
+      AmanziMesh::Entity_ID_List block;
+      std::vector<double> vofs;
 
       if (mesh_->valid_set_name(regions[i], AmanziMesh::CELL)) {
-        mesh_->get_set_entities(regions[i], AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+        mesh_->get_set_entities_and_vofs(regions[i], AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
         nblock = block.size();
         type = "cells";
         for (int n = 0; n < nblock; n++) 
             volume += mesh_->cell_volume(block[n]);
       }
       else if (mesh_->valid_set_name(regions[i], AmanziMesh::FACE)) {
-        mesh_->get_set_entities(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED, &block);
+        mesh_->get_set_entities_and_vofs(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED, &block, &vofs);
         nblock = block.size();
         type = "faces";
         for (int n = 0; n < nblock; n++) 
@@ -161,13 +166,13 @@ void InputAnalysis::RegionAnalysis()
 ****************************************************************** */
 void InputAnalysis::OutputBCs() 
 {
-  if (!plist_->isSublist("Analysis")) return;
+  if (!plist_->isSublist("analysis")) return;
   if (vo_->getVerbLevel() < Teuchos::VERB_EXTREME) return;
 
   int bc_counter = 0;
 
-  if (plist_->isSublist("Flow")) {
-    Teuchos::ParameterList& flow_list = plist_->sublist("Flow");
+  if (plist_->isSublist("flow")) {
+    Teuchos::ParameterList& flow_list = plist_->sublist("flow");
 
     Teuchos::ParameterList richards_list;
     if (flow_list.isSublist("Richards problem")) {

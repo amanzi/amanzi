@@ -1,5 +1,5 @@
-<ParameterList name="Main">
-  <ParameterList name="Mesh">
+<ParameterList name="main">
+  <ParameterList name="mesh">
     <ParameterList name="Generate">
 
       <!-- Set mesh resolution here -->

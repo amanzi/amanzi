@@ -51,7 +51,7 @@ void RunTestConvergence(std::string input_xml) {
   std::vector<double> h, p_error, v_error;
 
   for (int n = 0; n < nmeshes; n++) {  // Use "n < 3" for the full test
-    Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("Regions");
+    Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
         Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, comm));
     
@@ -74,12 +74,12 @@ void RunTestConvergence(std::string input_xml) {
     /* create a simple state and populate it */
     Amanzi::VerboseObject::hide_line_prefix = false;
 
-    Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("State");
+    Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
     Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
     S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-    Richards_PK* RPK = new Richards_PK(plist, "Flow", S, soln);
+    Richards_PK* RPK = new Richards_PK(plist, "flow", S, soln);
 
     RPK->Setup(S.ptr());
     S->Setup();

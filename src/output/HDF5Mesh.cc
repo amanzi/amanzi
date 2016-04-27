@@ -415,7 +415,7 @@ Teuchos::XMLObject HDF5::findMeshNode_(Teuchos::XMLObject xmlobject) {
 }
 
 void HDF5::writeFieldData_(const Epetra_Vector &x, std::string varname,
-                       std::string loc) {
+                           std::string loc) {
   // write field data
   double *data;
   int err = x.ExtractView(&data);

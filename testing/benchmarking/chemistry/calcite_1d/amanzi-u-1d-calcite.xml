@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.2.1">
+<amanzi_input type="unstructured" version="2.3.0">
   <model_description name="1D Flow and Transport w/ calcite dissolution">
     <units>
       <length_unit>m</length_unit>
@@ -52,17 +52,17 @@
   <execution_controls>
     <verbosity level="high" />
     <execution_control_defaults init_dt="1.0" mode="steady" />
-    <execution_control end="0.0" mode="steady" start="0.0" reduction_factor="0.8" increase_factor="1.25"
-                       init_dt="1.5768e+5"/>
-    <execution_control end="1.5778463e9" mode="transient" 
-                       dt_max="6.0e+10" reduction_factor="0.8" increase_factor="1.25" start="0.0" init_dt="1.5768e+5"/>
+    <execution_control end="0.0" mode="steady" start="0.0" reduction_factor="0.8" increase_factor="1.25" init_dt="1.5768e+5"/>
+    <execution_control end="1.5778463e9" mode="transient" dt_max="6.0e+10" reduction_factor="0.8" increase_factor="1.25" start="0.0" init_dt="1.5768e+5"/>
   </execution_controls>
 
   <numerical_controls>
     <unstructured_controls>
+
       <unstr_flow_controls>
         <preconditioning_strategy>diffusion_operator</preconditioning_strategy>
       </unstr_flow_controls>
+
       <unstr_transport_controls>
         <algorithm>explicit second-order</algorithm>
         <cfl>1</cfl>
@@ -91,12 +91,12 @@
       </unstr_transient_controls>
 
       <unstr_chemistry_controls>
-        <Parameter name="Verbosity" type="Array(string)" value="{verbose}" />
         <activity_model>debye-huckel</activity_model>
         <tolerance>1.5e-12</tolerance>
         <maximum_newton_terations>150</maximum_newton_terations>
         <auxiliary_data>pH</auxiliary_data>
         <max_time_step>15778463.0</max_time_step>
+        <time_step_cut_threshold>12</time_step_cut_threshold>
       </unstr_chemistry_controls>
 
       <unstr_linear_solver>
@@ -190,12 +190,6 @@
       </liquid_phase>
     </boundary_condition>
   </boundary_conditions>
-
-  <geochemistry>
-    <amanzi_chemistry>
-      <reaction_network file="calcite.bgd" format="simple"/>
-    </amanzi_chemistry>
-  </geochemistry>
 
   <output>
     <vis>

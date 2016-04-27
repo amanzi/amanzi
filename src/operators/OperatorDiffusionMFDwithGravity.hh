@@ -30,7 +30,7 @@ namespace Operators {
 class BCs;
 
 class OperatorDiffusionMFDwithGravity : public OperatorDiffusionMFD,
-					public OperatorDiffusionWithGravity {
+                                        public OperatorDiffusionWithGravity {
  public:
   OperatorDiffusionMFDwithGravity(Teuchos::ParameterList& plist,
                                   const Teuchos::RCP<Operator>& global_op) :

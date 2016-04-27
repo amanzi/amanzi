@@ -121,14 +121,14 @@ TEST(MASS_MATRIX_2D) {
 
 
 /* **************************************************************** */
-TEST(MASS_MATRIX_3D) {
+void MassMatrix3D(std::string mesh_file, int max_row) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Mass matrix for edge elements in 3D" << std::endl;
+  std::cout << "\nTest: Mass matrix for edge elements in 3D: " << mesh_file << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -144,9 +144,8 @@ TEST(MASS_MATRIX_3D) {
 
   bool request_faces(true), request_edges(true);
 
-  // RCP<Mesh> mesh = meshfactory("test/dodecahedron.exo", NULL, request_faces, request_edges); 
-  RCP<Mesh> mesh = meshfactory("test/one_cell.exo", Teuchos::null, request_faces, request_edges); 
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, Teuchos::null, true, true); 
+  RCP<Mesh> mesh = meshfactory(mesh_file, Teuchos::null, request_faces, request_edges); 
  
   MFD3D_Electromagnetics mfd(mesh);
 
@@ -179,9 +178,11 @@ TEST(MASS_MATRIX_3D) {
       M.Inverse();
     }
 
-    printf("Mass matrix for cell %3d method=%d\n", cell, method);
-    for (int i = 0; i < nrows; i++) {
-      for (int j = 0; j < nrows; j++ ) printf("%8.4f ", M(i, j)); 
+    int m = std::min(nrows, max_row);
+    printf("Mass matrix: method=%d  edges=%d  submatrix=%dx%d\n", method, nedges, m, m);
+
+    for (int i = 0; i < m; i++) {
+      for (int j = 0; j < m; j++ ) printf("%8.4f ", M(i, j)); 
       printf("\n");
     }
 
@@ -213,6 +214,19 @@ TEST(MASS_MATRIX_3D) {
 
   delete comm;
 }
+
+TEST(MASS_MATRIX_3D_HEX) {
+  MassMatrix3D("test/one_cell.exo", 12);
+}
+
+TEST(MASS_MATRIX_3D_DODECAHEDRON) {
+  MassMatrix3D("test/dodecahedron.exo", 10);
+}
+
+TEST(MASS_MATRIX_3D_24SIDED) {
+  MassMatrix3D("test/one_cell3.exo", 10);
+}
+
 
 
 /* **************************************************************** */
@@ -254,13 +268,13 @@ TEST(STIFFNESS_MATRIX_2D) {
   Tensor T(2, 1);
   T(0, 0) = 1.0;
 
-  for (int method = 0; method < 2; method++) {
+  for (int method = 1; method < 2; method++) {
     DenseMatrix A(nrows, nrows);
 
     if (method == 0) {
       mfd.StiffnessMatrix(cell, T, A);
     } else if (method == 1) {
-      mfd.StiffnessMatrixOptimized(cell, T, A);
+      mfd.StiffnessMatrixExperimental(cell, T, A);
     }
 
     printf("Stiffness matrix for cell %3d method=%d\n", cell, method);
@@ -305,14 +319,14 @@ TEST(STIFFNESS_MATRIX_2D) {
 
 
 /* **************************************************************** */
-TEST(STIFFNESS_MATRIX_3D) {
+void StiffnessMatrix3D(std::string mesh_file, int max_row) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Stiffness matrix for edge elements in 3D" << std::endl;
+  std::cout << "\nTest: Stiffness matrix for edge elements in 3D: " << mesh_file << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -328,9 +342,8 @@ TEST(STIFFNESS_MATRIX_3D) {
 
   bool request_faces(true), request_edges(true);
 
-  // RCP<Mesh> mesh = meshfactory("test/dodecahedron.exo", Teuchos::null, request_faces, request_edges); 
-  RCP<Mesh> mesh = meshfactory("test/one_cell.exo", Teuchos::null, request_faces, request_edges); 
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, Teuchos::null, true, true); 
+  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, Teuchos::null, true, true); 
+  RCP<Mesh> mesh = meshfactory(mesh_file, Teuchos::null, request_faces, request_edges); 
  
   MFD3D_Electromagnetics mfd(mesh);
 
@@ -344,9 +357,9 @@ TEST(STIFFNESS_MATRIX_3D) {
   Tensor T(3, 2);
   T(0, 0) = 2.0;
   T(1, 1) = 1.0;
+  T(2, 2) = 3.0;
   T(0, 1) = 1.0;
   T(1, 0) = 1.0;
-  T(2, 2) = 1.0;
 
   for (int method = 0; method < 2; method++) {
     DenseMatrix A(nrows, nrows);
@@ -354,12 +367,14 @@ TEST(STIFFNESS_MATRIX_3D) {
     if (method == 0) {
       mfd.StiffnessMatrix(cell, T, A);
     } else if (method == 1) {
-      mfd.StiffnessMatrixOptimized(cell, T, A);
+      mfd.StiffnessMatrixExperimental(cell, T, A);
     }
 
-    printf("Stiffness matrix for cell %3d\n", cell);
-    for (int i = 0; i < nrows; i++) {
-      for (int j = 0; j < nrows; j++ ) printf("%8.4f ", A(i, j)); 
+    int m = std::min(nrows, max_row);
+    printf("Stiffness matrix: method=%d  edges=%d  submatrix=%dx%d\n", method, nedges, m, m);
+
+    for (int i = 0; i < m; i++) {
+      for (int j = 0; j < m; j++ ) printf("%9.5f ", A(i, j)); 
       printf("\n");
     }
 
@@ -368,39 +383,51 @@ TEST(STIFFNESS_MATRIX_3D) {
 
     // verify exact integration property
     int n1, n2;
-    double xi, xj;
-    double vxx = 0.0, volume = mesh->cell_volume(cell); 
-    AmanziGeometry::Point p1(3), p2(3), v1(3);
+    double xi, xj, yj;
+    double vxx(0.0), vxy(0.0), volume = mesh->cell_volume(cell); 
+    AmanziGeometry::Point v1(3);
 
     for (int i = 0; i < nedges; i++) {
       int e1 = edges[i];
+      const AmanziGeometry::Point& xe = mesh->edge_centroid(e1);
       const AmanziGeometry::Point& t1 = mesh->edge_vector(e1);
       double a1 = mesh->edge_length(e1);
 
-      mesh->edge_get_nodes(e1, &n1, &n2);
-      mesh->node_get_coordinates(n1, &p1);
-      mesh->node_get_coordinates(n2, &p2);
- 
-      v1 = (p1 + p2)^t1;
+      v1 = xe^t1;
       xi = v1[0] / a1;
 
       for (int j = 0; j < nedges; j++) {
         int e2 = edges[j];
+        const AmanziGeometry::Point& ye = mesh->edge_centroid(e2);
         const AmanziGeometry::Point& t2 = mesh->edge_vector(e2);
         double a2 = mesh->edge_length(e2);
 
-        mesh->edge_get_nodes(e2, &n1, &n2);
-        mesh->node_get_coordinates(n1, &p1);
-        mesh->node_get_coordinates(n2, &p2);
- 
-        v1 = (p1 + p2)^t2;
+        v1 = ye^t2;
         xj = v1[0] / a2;
+        yj = v1[1] / a2;
 
         vxx += A(i, j) * xi * xj;
+        vxy += A(i, j) * xi * yj;
       }
     }
-    CHECK_CLOSE(32 * volume, vxx, 1e-10);
+    double tol = vxx * 1e-10;
+    CHECK_CLOSE(4 * volume * T(0,0), vxx, tol);
+    CHECK_CLOSE(4 * volume * T(0,1), vxy, tol);
   }
 
   delete comm;
 }
+
+TEST(STIFFNESS_MATRIX_3D_HEX) {
+  StiffnessMatrix3D("test/one_cell.exo", 12);
+}
+
+TEST(STIFFNESS_MATRIX_3D_DODECAHEDRON) {
+  StiffnessMatrix3D("test/dodecahedron.exo", 10);
+}
+
+TEST(STIFFNESS_MATRIX_3D_24SIDES) {
+  StiffnessMatrix3D("test/one_cell3.exo", 10);
+} 
+
+

@@ -63,18 +63,17 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
 
   std::string pk_name = pk_tree.name();
 
-  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
-  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
+  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name, "->"); 
+  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name, res.end() - pk_name.begin());
 
-  
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_name, true);
   rp_list_ = Teuchos::sublist(flow_list, "Richards problem", true);
   
   // We also need miscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners", true);
-  linear_operator_list_ = Teuchos::sublist(glist, "Solvers", true);
+  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
+  linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(rp_list_, "time integrator");
 
   vo_ = Teuchos::null;
@@ -100,8 +99,8 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   rp_list_ = Teuchos::sublist(flow_list, "Richards problem", true);
  
   // We also need miscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners", true);
-  linear_operator_list_ = Teuchos::sublist(glist, "Solvers", true);
+  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
+  linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(rp_list_, "time integrator");
 
   ms_itrs_ = 0;
@@ -259,7 +258,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
       Teuchos::RCP<PorosityModelPartition> pom = CreatePorosityModelPartition(mesh_, pom_list);
 
       Teuchos::ParameterList elist;
-      // elist.sublist("VerboseObject").set<std::string>("Verbosity Level", "extreme");
+      // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
       Teuchos::RCP<PorosityModelEvaluator> eval = Teuchos::rcp(new PorosityModelEvaluator(elist, pom));
       S->SetFieldEvaluator("porosity", eval);
     } else {
@@ -283,7 +282,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField("molar_density_liquid", "molar_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    double rho = glist_->sublist("State").sublist("initial conditions")
+    double rho = glist_->sublist("state").sublist("initial conditions")
                         .sublist("fluid_density").get<double>("value", 1000.0);
     double n_l = rho / CommonDefs::MOLAR_MASS_H2O;
 
@@ -308,7 +307,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList elist;
-    // elist.sublist("VerboseObject").set<std::string>("Verbosity Level", "extreme");
+    // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     Teuchos::RCP<WRMEvaluator> eval = Teuchos::rcp(new WRMEvaluator(elist, wrm_));
     S->SetFieldEvaluator("saturation_liquid", eval);
   }
@@ -333,6 +332,17 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList elist;
   Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
   S->SetFieldEvaluator("darcy_velocity", eval);
+
+  // Require additional components for the existing fields
+  Teuchos::ParameterList abs_perm = rp_list_->sublist("absolute permeability");
+  coordinate_system_ = abs_perm.get<std::string>("coordinate system", "cartesian");
+  int noff = abs_perm.get<int>("off-diagonal components", 0);
+ 
+  if (noff > 0) {
+    CompositeVectorSpace& cvs = *S->RequireField("permeability", passwd_);
+    cvs.SetOwned(false);
+    cvs.AddComponent("offd", AmanziMesh::CELL, noff)->SetOwned(true);
+  }
 }
 
 
@@ -356,7 +366,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // create verbosity object
   Teuchos::ParameterList vlist;
-  vlist.sublist("VerboseObject") = rp_list_->sublist("VerboseObject");
+  vlist.sublist("verbose object") = rp_list_->sublist("verbose object");
   vo_ =  Teuchos::rcp(new VerboseObject("FlowPK::Richards", vlist)); 
 
   // Initilize various common data depending on mesh and state.
@@ -506,8 +516,8 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   ASSERT(ti_method_name == "BDF1");
   Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
 
-  if (! bdf1_list.isSublist("VerboseObject"))
-      bdf1_list.sublist("VerboseObject") = rp_list_->sublist("VerboseObject");
+  if (! bdf1_list.isSublist("verbose object"))
+      bdf1_list.sublist("verbose object") = rp_list_->sublist("verbose object");
 
   bdf1_dae = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
 

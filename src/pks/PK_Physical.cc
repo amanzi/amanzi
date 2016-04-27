@@ -39,8 +39,8 @@ namespace Amanzi {
   // stay current for ChangedSolution()
   // -----------------------------------------------------------------------------
   void PK_Physical::set_states(const Teuchos::RCP<const State>& S,
-                                  const Teuchos::RCP<State>& S_inter,
-                                  const Teuchos::RCP<State>& S_next) {
+                               const Teuchos::RCP<State>& S_inter,
+                               const Teuchos::RCP<State>& S_next) {
 
     S_ = S;
     S_inter_ = S_inter;

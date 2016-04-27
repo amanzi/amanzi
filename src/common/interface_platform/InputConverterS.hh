@@ -38,6 +38,7 @@ class InputConverterS : public InputConverter {
 
  private:
   std::string CreateBGDFile(std::string& filename);
+  std::string CreateINFile(std::string& filename);
 
   void ParseUnits_();
   void ParseDefinitions_();
@@ -45,6 +46,7 @@ class InputConverterS : public InputConverter {
   void ParseNumericalControls_(const std::string& flow_model);
   void ParseMesh_();
   void ParseRegions_();
+  void ParseSoluteNames_();
   void ParseGeochemistry_();
   void ParseMaterials_(bool& do_tracer_diffusion);
   void ParseProcessKernels_(std::string& flow_model, bool& do_tracer_diffusion);
@@ -67,6 +69,7 @@ class InputConverterS : public InputConverter {
   std::vector<double> lo_coords_, hi_coords_;
   std::string chemistry_engine_;
   std::vector<std::string> solutes_;
+  bool solute_names_parsed_;
   double gravity_, liquid_density_, liquid_viscosity_;
   std::vector<std::string> constraint_names_;
 };

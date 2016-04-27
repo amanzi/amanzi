@@ -72,11 +72,11 @@ SUITE(GeochemistryTestsChemistryPK) {
     // create a test mesh
     comm_ = new Epetra_SerialComm();
     Teuchos::ParameterList mesh_parameter_list =
-      glist_->sublist("Mesh").sublist("Unstructured").sublist("Generate Mesh");
+      glist_->sublist("mesh").sublist("unstructured").sublist("generate mesh");
 
     am::GenerationSpec g(mesh_parameter_list);
     
-    Teuchos::ParameterList region_parameter_list = glist_->sublist("Regions");
+    Teuchos::ParameterList region_parameter_list = glist_->sublist("regions");
     gm_ = Teuchos::rcp(new ag::GeometricModel(3, region_parameter_list, (const Epetra_MpiComm *)comm_));
   
     am::FrameworkPreference pref;
@@ -89,13 +89,13 @@ SUITE(GeochemistryTestsChemistryPK) {
     mesh_ = meshfactory(mesh_parameter_list, gm_);
 
     // get the state parameter list and create the state object
-    Teuchos::ParameterList state_parameter_list = glist_->sublist("State");
+    Teuchos::ParameterList state_parameter_list = glist_->sublist("state");
 
     state_ = Teuchos::rcp(new Amanzi::State(state_parameter_list));
     state_->RegisterDomainMesh(mesh_);
 
     // create the chemistry state object
-    Teuchos::ParameterList chemistry_parameter_list = glist_->sublist("PKs").sublist("Chemistry");
+    Teuchos::ParameterList chemistry_parameter_list = glist_->sublist("PKs").sublist("chemistry");
     std::vector<std::string> component_names;
     component_names.push_back("Al+++");
     component_names.push_back("H+");
@@ -104,7 +104,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     component_names.push_back("UO2++");
 
     // other input parameters in the constructor
-    pk_tree_ = glist_->sublist("PK Tree");
+    pk_tree_ = glist_->sublist("PK tree").sublist("chemistry");
   }
 
   ChemistryPKTest::~ChemistryPKTest() {

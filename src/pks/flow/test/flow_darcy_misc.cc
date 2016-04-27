@@ -72,7 +72,7 @@ class DarcyProblem {
 
     // create a MSTK mesh framework
     plist = Teuchos::getParametersFromXmlFile(xmlFileName);
-    Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("Regions");
+    Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm));
 
@@ -89,12 +89,12 @@ class DarcyProblem {
     mesh = meshfactory(meshExodus, gm);
 
     /* create Darcy process kernel */
-    Teuchos::ParameterList state_list = plist->sublist("State");
+    Teuchos::ParameterList state_list = plist->sublist("state");
     S = Teuchos::rcp(new State(state_list));
     S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
     S->set_time(0.0);
 
-    DPK = new Darcy_PK(plist, "Flow", S);
+    DPK = new Darcy_PK(plist, "flow", S);
     DPK->Setup(S.ptr());
     S->Setup();
     S->InitializeFields();
@@ -116,7 +116,7 @@ class DarcyProblem {
     } else if (!strcmp(type, "mass flux")) {
       func_list_name = "outward mass flux";
     }
-    Teuchos::ParameterList& flow_list = plist->sublist("PKs").get<Teuchos::ParameterList>("Flow");
+    Teuchos::ParameterList& flow_list = plist->sublist("PKs").get<Teuchos::ParameterList>("flow");
     Teuchos::ParameterList& dp_list = flow_list.get<Teuchos::ParameterList>("Darcy problem");
 
     Teuchos::ParameterList& bc_list = dp_list.get<Teuchos::ParameterList>("boundary conditions");

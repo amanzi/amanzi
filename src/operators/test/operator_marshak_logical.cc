@@ -60,7 +60,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
   ParameterList plist = xmlreader.getParameters();
 
   // create a logical mesh
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshLogicalFactory fac(&comm, gm);
@@ -182,11 +182,11 @@ void RunTestMarshakLogical(std::string op_list_name) {
     global_op->AssembleMatrix();
 
     // create preconditoner
-    ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+    ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
     global_op->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem
-    ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+    ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
     AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
        solver = factory.Create("Amanzi GMRES", lop_list, global_op);

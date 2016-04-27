@@ -209,7 +209,7 @@ void HeatConduction::Init(
   op_->AssembleMatrix();
 
   // create preconditoner
-  Teuchos::ParameterList slist = plist.sublist("Preconditioners");
+  Teuchos::ParameterList slist = plist.sublist("preconditioners");
   op_->InitPreconditioner("Hypre AMG", slist);
 }
 
@@ -274,7 +274,7 @@ void HeatConduction::UpdatePreconditioner(const Teuchos::RCP<const CompositeVect
   // Assemble matrix and calculate preconditioner.
   op_->AssembleMatrix();
 
-  Teuchos::ParameterList prec_list = plist_.sublist("Preconditioners");
+  Teuchos::ParameterList prec_list = plist_.sublist("preconditioners");
   op_->InitPreconditioner("Hypre AMG", prec_list);
 }
 
@@ -342,7 +342,7 @@ TEST(NKA) {
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
   // create a mesh framework
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
         Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, &comm));
  

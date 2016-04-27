@@ -1,13 +1,13 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/**
- * @file   Domain.cc
- * @author Rao V. Garimella
- * @date Mon Aug  1 10:05:25 2011
- * 
- * @brief  
- * 
- * 
- */
+/*
+  Geometry
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Rao Garimella (rao@lanl.gov)
+*/
 
 #include "Domain.hh"
 
@@ -23,7 +23,6 @@ namespace AmanziGeometry {
 // -------------------------------------------------------------
 
 // Constructor
-
 Domain::Domain(const unsigned int dim): spatial_dimension_(dim)
 {
   if (dim < 2u || dim > 3u) {
@@ -35,8 +34,8 @@ Domain::Domain(const unsigned int dim): spatial_dimension_(dim)
   FreeRegions.clear();
 }
 
-// Copy constructor
 
+// Copy constructor
 Domain::Domain(const Domain& old)
 {
   int i, ng, nr;
@@ -56,8 +55,8 @@ Domain::Domain(const Domain& old)
   }
 }
 
-// Destructor
 
+// Destructor
 Domain::~Domain(void)
 {
   GeometricModels.clear();
@@ -65,9 +64,7 @@ Domain::~Domain(void)
 }
 
 
-
 // Constructor with lists of geometric models and free regions
-
 Domain::Domain(const unsigned int dim, 
                const std::vector<Teuchos::RCP<GeometricModel> >& in_geometric_models, 
                const std::vector<Teuchos::RCP<Region> >& in_Regions) :
@@ -79,7 +76,6 @@ Domain::Domain(const unsigned int dim,
     throw std::exception();
   }
 }
-
 
 
 // Add a geometric model
@@ -97,7 +93,6 @@ void Domain::Add_Geometric_Model(const Teuchos::RCP<GeometricModel>& gm)
 
 
 // Add a Free Region
-
 void Domain::Add_Free_Region(const Teuchos::RCP<Region>& regptr)
 {
   if (spatial_dimension_ < regptr->manifold_dimension()) {
@@ -108,33 +103,33 @@ void Domain::Add_Free_Region(const Teuchos::RCP<Region>& regptr)
   FreeRegions.push_back(regptr);
 }
 
-// Number of geometric models
 
+// Number of geometric models
 int Domain::Num_Geometric_Models(void) const
 {
   return GeometricModels.size();
 }
 
-// Get the i'th Decomposition
 
+// Get the i'th Decomposition
 Teuchos::RCP<GeometricModel> Domain::Geometric_Model_i(const int i) const
 {
   return GeometricModels[i];
 }
 
-// Number of Free Regions
 
+// Number of Free Regions
 int Domain::Num_Free_Regions(void) const
 {
   return FreeRegions.size();
 }
 
-// Get the i'th Free Region
 
+// Get the i'th Free Region
 Teuchos::RCP<Region> Domain::Free_Region_i(const int i) const
 {
   return FreeRegions[i];
 }
 
-} // namespace AmanziGeometry
-} // namespace Amanzi
+}  // namespace AmanziGeometry
+}  // namespace Amanzi

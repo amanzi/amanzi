@@ -57,7 +57,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;
@@ -134,7 +134,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
   // update the source term
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  global_op->UpdateRHS(source, false);
+  global_op->UpdateRHS(source, true);
 
   // apply BCs (primary=true, eliminate=true) and assemble
   op->ApplyBCs(true, true);
@@ -142,7 +142,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   global_op->AssembleMatrix();
 
   // create preconditoner using the base operator class
-  ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // Test SPD properties of the preconditioner.
@@ -168,7 +168,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   CHECK(bhb > 0.0);
 
   // solve the problem
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
   AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create("AztecOO CG", lop_list, global_op);
@@ -193,6 +193,22 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   }
 
   CHECK(solver->num_itrs() < 10);
+
+  // compute pressure error
+  solution.ScatterMasterToGhosted();
+  Epetra_MultiVector& p = *solution.ViewComponent("node", false);
+
+  double pnorm, pl2_err, pinf_err, hnorm, ph1_err;
+  ana.ComputeNodeError(p, 0.0, pnorm, pl2_err, pinf_err, hnorm, ph1_err);
+
+  if (MyPID == 0) {
+    pl2_err /= pnorm;
+    ph1_err /= hnorm;
+    printf("L2(p)=%9.6f  H1(p)=%9.6f  itr=%3d\n", pl2_err, ph1_err, solver->num_itrs());
+
+    CHECK(pl2_err < 3e-3 && ph1_err < 2e-2);
+    CHECK(solver->num_itrs() < 10);
+  }
 }
 
 
@@ -219,7 +235,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;
@@ -303,11 +319,11 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   global_op->AssembleMatrix();
 
   // create preconditoner using the base operator class
-  ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
   AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create("AztecOO CG", lop_list, global_op);

@@ -923,7 +923,7 @@ bool HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
   parallelIO_get_dataset_ndims(&ndims, data_file_, h5path, &IOgroup_);
   
   if (ndims < 0) {
-    if (viz_comm_.MyPID() == 0){
+    if (viz_comm_.MyPID() == 0) {
       std::cout<< "Dimension of the field "<<h5path<<" is negative.\n";
     }
     return false;

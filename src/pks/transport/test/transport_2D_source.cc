@@ -45,7 +45,7 @@ std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* create a mesh framework */
-  ParameterList region_list = plist->get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
 
@@ -65,11 +65,11 @@ std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
   component_names.push_back("Component 0");
   component_names.push_back("Component 1");
 
-  Teuchos::ParameterList state_list = plist->sublist("State");
+  Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Transport_PK TPK(plist, S, "Transport", component_names);
+  Transport_PK TPK(plist, S, "transport", component_names);
   TPK.Setup(S.ptr());
   TPK.CreateDefaultState(mesh, 2);
   S->InitializeFields();

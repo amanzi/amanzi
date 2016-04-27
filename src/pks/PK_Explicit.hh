@@ -1,5 +1,5 @@
 /*
-  This is the PKs component of the Amanzi code. 
+  Process Kernels
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -22,11 +22,8 @@
 
 namespace Amanzi {
 
-  //class TreeVector;
-  //class Epetra_Vector;
-
-  template <class Vector>
-  class PK_Explicit : virtual public PK, public Explicit_TI::fnBase<Vector> {};
+template <class Vector>
+class PK_Explicit : virtual public PK, public Explicit_TI::fnBase<Vector> {};
 
 }  // namespace Amanzi
 

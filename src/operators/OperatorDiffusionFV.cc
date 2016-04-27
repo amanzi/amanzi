@@ -49,15 +49,20 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
     mesh_ = global_op_->DomainMap().Mesh();
   }
 
+  // Do we need to exclude the primary terms?
+  exclude_primary_terms_ = plist.get<bool>("exclude primary terms", false);
+  
   // create the local Op and register it with the global Operator
-  if (plist.get<bool>("surface operator", false)) {
-    std::string name = "Diffusion: FACE_CELL Surface";
-    local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));
-    global_op_->OpPushBack(local_op_);
-  } else {
-    std::string name = "Diffusion: FACE_CELL";
-    local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
-    global_op_->OpPushBack(local_op_);
+  if (!exclude_primary_terms_) {
+    if (plist.get<bool>("surface operator", false)) {
+      std::string name = "Diffusion: FACE_CELL Surface";
+      local_op_ = Teuchos::rcp(new Op_SurfaceFace_SurfaceCell(name, mesh_));
+      global_op_->OpPushBack(local_op_);
+    } else {
+      std::string name = "Diffusion: FACE_CELL";
+      local_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+      global_op_->OpPushBack(local_op_);
+    }
   }
   
   // upwind options
@@ -80,17 +85,14 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
     Exceptions::amanzi_throw(msg);
   }
 
-  // Do we need to exclude the primary terms?
-  exclude_primary_terms_ = plist.get<bool>("exclude primary terms", false);
-  
   // Do we need to calculate Newton correction terms?
   newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
-  std::string jacobian = plist.get<std::string>("newton correction", "none");
-  if (jacobian == "true jacobian") {
+  std::string jacobian = plist.get<std::string>("Newton correction", "none");
+  if (jacobian == "true Jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
-  } else if (jacobian == "approximate jacobian") {
+  } else if (jacobian == "approximate Jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
-    msg << "OperatorDiffusionFV: \"approximate jacobian\" not supported, use \"true jacobian\".";
+    msg << "OperatorDiffusionFV: \"approximate Jacobian\" not supported, use \"true Jacobian\".";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -191,7 +193,7 @@ void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
       WhetStone::DenseMatrix Aface(ncells, ncells);
       Aface = 0.0;
 
-      // if (bc_model[f] != OPERATOR_BC_NEUMANN){
+      // if (bc_model[f] != OPERATOR_BC_NEUMANN) {
       double tij = trans_face[0][f] * (k_face.get() ? (*k_face)[0][f] : 1.0);
       for (int i = 0; i != ncells; ++i) {
         Aface(i, i) = tij;
@@ -205,13 +207,24 @@ void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
       local_op_->matrices[f] = Aface;
     }
   }
+}
 
+
+/* ******************************************************************
+* Populate face-based 2x2 matrices on interior faces and 1x1 matrices
+* on boundary faces with Newton information
+****************************************************************** */
+void OperatorDiffusionFV::UpdateMatricesNewtonCorrection(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u,
+    double scalar_limiter)
+{
   // Add derivatives to the matrix (Jacobian in this case)
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
+    ASSERT(u != Teuchos::null);
     AnalyticJacobian_(*u);
   }
 }
-
 
 /* ******************************************************************
 * Special implementation of boundary conditions.
@@ -228,25 +241,43 @@ void OperatorDiffusionFV::ApplyBCs(bool primary, bool eliminate)
     k_face = k_->ViewComponent("face", true);
   }
 
-  Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell", true);
+  if (!exclude_primary_terms_) {
+    Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell", true);
 
-  AmanziMesh::Entity_ID_List cells;
+    AmanziMesh::Entity_ID_List cells;
 
-  for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_model[f] != OPERATOR_BC_NONE) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      int c = cells[0];
+    for (int f = 0; f < nfaces_owned; f++) {
+      if (bc_model[f] != OPERATOR_BC_NONE) {
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        int c = cells[0];
 
-      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-        rhs_cell[0][c] += bc_value[f] * trans_face[0][f] * (k_face.get() ? (*k_face)[0][f] : 1.0);
-      } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-        local_op_->matrices_shadow[f] = local_op_->matrices[f];
-        local_op_->matrices[f](0,0) = 0.0;
-            
-        rhs_cell[0][c] -= bc_value[f] * mesh_->face_area(f);
-        // trans_face[0][f] = 0.0;
+        if (bc_model[f] == OPERATOR_BC_DIRICHLET && primary) {
+          rhs_cell[0][c] += bc_value[f] * trans_face[0][f] * (k_face.get() ? (*k_face)[0][f] : 1.0);
+        } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+          local_op_->matrices_shadow[f] = local_op_->matrices[f];
+          local_op_->matrices[f](0,0) = 0.0;
+
+          if (primary)
+            rhs_cell[0][c] -= bc_value[f] * mesh_->face_area(f);
+        }
       }
     }
+  }
+
+  if (jac_op_ != Teuchos::null) {
+    const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
+    ASSERT(bc_model.size() == nfaces_wghost);
+
+
+    for (int f = 0; f != nfaces_owned; ++f) {
+      WhetStone::DenseMatrix& Aface = jac_op_->matrices[f];
+
+      if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+        jac_op_->matrices_shadow[f] = Aface;
+        Aface *= 0.0;
+      }
+    }
+    
   }
 }
 
@@ -291,7 +322,7 @@ void OperatorDiffusionFV::UpdateFlux(
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         double value = bc_value[f];
         double area = mesh_->face_area(f);
-        flux[0][f] = value * area;
+        flux[0][f] = dirs[n] * value * area;
         
       } else {
         if (f < nfaces_owned && !flag[f]) {
@@ -306,7 +337,7 @@ void OperatorDiffusionFV::UpdateFlux(
             flux[0][f] = dirs[n] * trans_face[0][f] * (p[0][c1] - p[0][c2]);
           } else {
             flux[0][f] = dirs[n] * trans_face[0][f] * (p[0][c2] - p[0][c1]);
-          }	    
+          }            
           if (Krel_face.get()) flux[0][f] *= (*Krel_face)[0][f];
           flag[f] = 1;
         }
@@ -341,42 +372,31 @@ void OperatorDiffusionFV::AnalyticJacobian_(const CompositeVector& u)
     dKdP_face = dkdp_->ViewComponent("face", true);
   }
 
-  std::vector<int> flag(nfaces_owned, 0);
-  for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
+  for (int f=0; f!=nfaces_owned; ++f) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int mcells = cells.size();
 
-    for (int i = 0; i != nfaces; ++i) {
-      int f = faces[i];
-      if (f < nfaces_owned && !flag[f]) {
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-        int mcells = cells.size();
+    WhetStone::DenseMatrix Aface(mcells, mcells);
 
-        WhetStone::DenseMatrix Aface(mcells, mcells);
-
-        int face_dir;   	
-        // face_dir is equal to 1 if normal direction points from cells[0],
-        // otherwise face_dir is -1
-        if (cells[0] == c) face_dir = dirs[i];
-        else face_dir = -dirs[i];
-
-        for (int n = 0; n < mcells; n++) {
-          int c1 = cells[n];
-          pres[n] = uc[0][c1];
-          dkdp[n] = dKdP_cell[0][c1];
-        }
-
-        if (mcells == 1) {
-          dkdp[1] = dKdP_face.get() ? (*dKdP_face)[0][f] : 0.;
-        }
-
-        ComputeJacobianLocal_(mcells, f, face_dir,
-                              bc_model[f], bc_value[f], pres, dkdp, Aface);
-
-        jac_op_->matrices[f] = Aface;
-        flag[f] = 1;
-      }
+    for (int n = 0; n < mcells; n++) {
+      int c1 = cells[n];
+      pres[n] = uc[0][c1];
+      dkdp[n] = dKdP_cell[0][c1];
     }
+
+    if (mcells == 1) {
+      dkdp[1] = dKdP_face.get() ? (*dKdP_face)[0][f] : 0.;
+    }
+
+    // find the face direction from cell 0 to cell 1
+    AmanziMesh::Entity_ID_List cfaces;
+    std::vector<int> fdirs;
+    mesh_->cell_get_faces_and_dirs(cells[0], &cfaces, &fdirs);
+    int f_index = std::find(cfaces.begin(), cfaces.end(), f) - cfaces.begin();
+    ComputeJacobianLocal_(mcells, f, fdirs[f_index], bc_model[f], bc_value[f],
+                          pres, dkdp, Aface);
+
+    jac_op_->matrices[f] = Aface;
   }
 }
 
@@ -386,7 +406,7 @@ void OperatorDiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 * (its nonlinear part) on face f.
 ****************************************************************** */
 void OperatorDiffusionFV::ComputeJacobianLocal_(
-    int mcells, int f, int face_dir, int bc_model_f, double bc_value_f,
+    int mcells, int f, int face_dir_0to1, int bc_model_f, double bc_value_f,
     double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
@@ -451,10 +471,6 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
   Epetra_MultiVector& beta_face = *beta.ViewComponent("face", true);
   beta.PutScalar(0.0);
 
-  CompositeVector h(cvs, true);
-  Epetra_MultiVector& h_face = *h.ViewComponent("face", true);
-  h.PutScalar(0.0);
-
   AmanziMesh::Entity_ID_List faces, cells;
   std::vector<AmanziGeometry::Point> bisectors;
   AmanziGeometry::Point a_dist;
@@ -476,13 +492,11 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
       double s = area / h_tmp;
       double perm = ((Kc * a) * normal) * s;
       double dxn = a * normal;
-      h_face[0][f] += h_tmp;
       beta_face[0][f] += fabs(dxn / perm);
     }
   }
 
   beta.GatherGhostedToMaster(Add);
-  h.GatherGhostedToMaster(Add);
 
   // Compute transmissibilities. Since it is done only once, we repeat
   // some calculatons.

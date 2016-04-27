@@ -22,6 +22,7 @@
 #include "DenseMatrix.hh"
 #include "Tensor.hh"
 #include "mfd3d_electromagnetics.hh"
+#include "mfd3d_diffusion.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -117,14 +118,14 @@ int MFD3D_Electromagnetics::L2consistency2D_(int c, const Tensor& T,
 int MFD3D_Electromagnetics::L2consistency3D_(int c, const Tensor& T,
                                              DenseMatrix& N, DenseMatrix& Mc)
 {
-  int n1, n2, d(3);
+  int d(3);
   Entity_ID_List edges, faces;
   std::vector<int> fdirs, edirs, map;
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
   int nfaces = faces.size();
 
-  AmanziGeometry::Point v1(d), v2(d), v3(d), tau(d), p1(d), p2(d);
+  AmanziGeometry::Point v1(d), v2(d), v3(d), tau(d);
   AmanziGeometry::Point vv[3];
 
   // To calculate matrix R, we re-use matrix N
@@ -154,11 +155,9 @@ int MFD3D_Electromagnetics::L2consistency3D_(int c, const Tensor& T,
 
     for (int m = 0; m < nedges; ++m) {
       int e = edges[m];
-      mesh_->edge_get_nodes(e, &n1, &n2);
-      mesh_->node_get_coordinates(n1, &p1);
-      mesh_->node_get_coordinates(n2, &p2);
+      const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
  
-      v3 = ((p1 + p2) / 2) - xf;
+      v3 = xe - xf;
 
       double len = mesh_->edge_length(e);
       len /= 2.0 * area * area * fdirs[i] * edirs[m];
@@ -289,7 +288,7 @@ int MFD3D_Electromagnetics::L2consistencyInverse2D_(
 int MFD3D_Electromagnetics::L2consistencyInverse3D_(
     int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
 {
-  int n1, n2, d(3);
+  int d(3);
   Entity_ID_List edges, faces;
   std::vector<int> fdirs, edirs, map;
 
@@ -345,11 +344,9 @@ int MFD3D_Electromagnetics::L2consistencyInverse3D_(
 
     for (int m = 0; m < nedges; ++m) {
       int e = edges[m];
-      mesh_->edge_get_nodes(e, &n1, &n2);
-      mesh_->node_get_coordinates(n1, &p1);
-      mesh_->node_get_coordinates(n2, &p2);
+      const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
  
-      v3 = ((p1 + p2) / 2) - xf;
+      v3 = xe - xf;
 
       double len = mesh_->edge_length(e);
       len /= 2.0 * area * area * fdirs[i] * edirs[m];
@@ -366,15 +363,16 @@ int MFD3D_Electromagnetics::L2consistencyInverse3D_(
 
 /* ******************************************************************
 * Efficient implementation is possible in 2D. Hence, we fork the code.
+* This is the experimental algorithm.
 ****************************************************************** */
-int MFD3D_Electromagnetics::H1consistency(int c, const Tensor& T,
-                                          DenseMatrix& N, DenseMatrix& Ac)
+int MFD3D_Electromagnetics::H1consistency(
+    int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
 {
   int ok, d = mesh_->space_dimension();
   if (d == 2) {
-    ok = H1consistency2D_(c, T, N, Ac);
+    ok = H1consistency2DExperimental_(c, T, N, Ac);
   } else {
-    ok = H1consistency3D_(c, T, N, Ac);
+    ok = H1consistency3DExperimental_(c, T, N, Ac);
   }
   return ok;
 }
@@ -383,8 +381,8 @@ int MFD3D_Electromagnetics::H1consistency(int c, const Tensor& T,
 /* ******************************************************************
 * Stiffness matrix for edge-based discretization.
 ****************************************************************** */
-int MFD3D_Electromagnetics::H1consistency2D_(int c, const Tensor& T,
-                                             DenseMatrix& N, DenseMatrix& Ac)
+int MFD3D_Electromagnetics::H1consistency2DExperimental_(
+    int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
 {
   int d(2);
   Entity_ID_List faces;
@@ -431,11 +429,10 @@ int MFD3D_Electromagnetics::H1consistency2D_(int c, const Tensor& T,
 /* ******************************************************************
 * Stiffness matrix for edge-based discretization.
 ****************************************************************** */
-int MFD3D_Electromagnetics::H1consistency3D_(int c, const Tensor& T,
-                                             DenseMatrix& N, DenseMatrix& Ac)
+int MFD3D_Electromagnetics::H1consistency3DExperimental_(
+    int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
 {
-  int n1, n2, d(3);
-
+  int d(3);
   Entity_ID_List edges, faces;
   std::vector<int> fdirs, edirs, map;
 
@@ -445,7 +442,7 @@ int MFD3D_Electromagnetics::H1consistency3D_(int c, const Tensor& T,
   // To calculate matrix R, we re-use matrix N
   N.PutScalar(0.0);
 
-  AmanziGeometry::Point v1(d), v2(d), v3(d), p1(d), p2(d);
+  AmanziGeometry::Point v1(d), v2(d), v3(d);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   double volume = mesh_->cell_volume(c);
@@ -492,16 +489,13 @@ int MFD3D_Electromagnetics::H1consistency3D_(int c, const Tensor& T,
   // Matrix N(:, 1:3) are simply tangents
   for (int i = 0; i < nedges; i++) {
     int e = edges[i];
+    const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
     const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
     double len = mesh_->edge_length(e);
 
     for (int k = 0; k < d; ++k) N(i, k) = tau[k] / len;
 
-    mesh_->edge_get_nodes(e, &n1, &n2);
-    mesh_->node_get_coordinates(n1, &p1);
-    mesh_->node_get_coordinates(n2, &p2);
- 
-    v1 = ((p1 + p2) / 2) - xc;
+    v1 = xe - xc;
     v2 = v1^tau;
 
     for (int k = 0; k < d; ++k) {
@@ -590,7 +584,69 @@ int MFD3D_Electromagnetics::MassMatrixInverseOptimized(
 /* ******************************************************************
 * Stiffness matrix: the standard algorithm.
 ****************************************************************** */
-int MFD3D_Electromagnetics::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
+int MFD3D_Electromagnetics::StiffnessMatrix(
+    int c, const Tensor& T, DenseMatrix& A)
+{
+  Entity_ID_List faces;
+  std::vector<int> fdirs, edirs, map;
+
+  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+  int nfaces = faces.size();
+  int nedges = A.NumRows();
+
+  DenseMatrix M(nfaces, nfaces), C(nfaces, nedges);
+
+  int ok = StiffnessMatrix(c, T, A, M, C);
+
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Stiffness matrix: the standard algorithm.
+****************************************************************** */
+int MFD3D_Electromagnetics::StiffnessMatrix(
+    int c, const Tensor& T, DenseMatrix& A, DenseMatrix& M, DenseMatrix& C)
+{
+  Entity_ID_List faces, edges;
+  std::vector<int> fdirs, edirs, map;
+
+  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+  int nfaces = faces.size();
+  int nedges = A.NumRows();
+
+  DenseMatrix MC(nfaces, nedges);
+
+  MFD3D_Diffusion diffusion(mesh_);
+  int ok = diffusion.MassMatrix(c, T, M);
+
+  C.PutScalar(0.0);
+  for (int i = 0; i < nfaces; ++i) {
+    int f = faces[i];
+
+    mesh_->face_to_cell_edge_map(f, c, &map);
+    mesh_->face_get_edges_and_dirs(f, &edges, &edirs);
+    int medges = edges.size();
+
+    for (int j = 0; j < medges; ++j) {
+      int e = edges[j]; 
+      double len = mesh_->edge_length(e);
+      C(i, map[j]) = len * edirs[j] * fdirs[i];
+    }
+  }
+
+  MC.Multiply(M, C, false);
+  A.Multiply(C, MC, true); 
+
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Stiffness matrix: the experimental algorithm.
+****************************************************************** */
+int MFD3D_Electromagnetics::StiffnessMatrixExperimental(
+    int c, const Tensor& T, DenseMatrix& A)
 {
   int d = mesh_->space_dimension();
   int nedges = A.NumRows();
@@ -603,26 +659,6 @@ int MFD3D_Electromagnetics::StiffnessMatrix(int c, const Tensor& T, DenseMatrix&
 
   StabilityScalar(c, N, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
-}
-
-
-/* ******************************************************************
-* Stiffness matrix optimized for sparsity.
-****************************************************************** */
-int MFD3D_Electromagnetics::StiffnessMatrixOptimized(
-    int c, const Tensor& T, DenseMatrix& A)
-{
-  int d = mesh_->space_dimension();
-  int nedges = A.NumRows();
-
-  int nd = d * (d + 1) / 2;
-  DenseMatrix N(nedges, nd);
-
-  int ok = H1consistency(c, T, N, A);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
-
-  ok = StabilityOptimized(T, N, A);
-  return ok;
 }
 
 }  // namespace WhetStone

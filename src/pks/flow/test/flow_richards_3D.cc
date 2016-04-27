@@ -48,7 +48,7 @@ TEST(FLOW_3D_RICHARDS) {
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create an SIMPLE mesh framework
-  Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, &comm));
 
@@ -64,12 +64,12 @@ TEST(FLOW_3D_RICHARDS) {
   /* create a simple state and populate it */
   Amanzi::VerboseObject::hide_line_prefix = false;
 
-  Teuchos::ParameterList state_list = plist->sublist("State");
+  Teuchos::ParameterList state_list = plist->sublist("state");
   Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
   S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Richards_PK* RPK = new Richards_PK(plist, "Flow", S, soln);
+  Richards_PK* RPK = new Richards_PK(plist, "flow", S, soln);
 
   RPK->Setup(S.ptr());
   S->Setup();
@@ -78,25 +78,6 @@ TEST(FLOW_3D_RICHARDS) {
 
   // modify the default state for the problem at hand
   std::string passwd("flow"); 
-  Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
-  
-  AmanziMesh::Entity_ID_List block;
-  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K[0][c] = 0.1;
-    K[1][c] = 0.1;
-    K[2][c] = 2.0;
-  }
-
-  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K[0][c] = 0.5;
-    K[1][c] = 0.5;
-    K[2][c] = 0.5;
-  }
-  S->GetField("permeability", passwd)->set_initialized();
 
   *S->GetScalarData("fluid_density", passwd) = 1.0;
   S->GetFieldData("viscosity_liquid", passwd)->PutScalar(1.0);

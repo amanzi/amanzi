@@ -1,34 +1,33 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
 
-  <ParameterList name="Mesh">
-    <Parameter name="Framework" type="string" value="mesh::simple"/>
+  <ParameterList name="mesh">
+    <Parameter name="framework" type="string" value="mesh::simple"/>
   </ParameterList>    
    
-  <ParameterList name="Regions">
+  <ParameterList name="regions">
     <ParameterList name="Computational domain">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{0.0,0.5,0.5}"/>
-        <Parameter name="Direction" type="Array(double)" value="{1.0,0.0,0.0}"/>
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.5,0.5}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{0.0,0.0,-1.0}"/>
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,0.0,-1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
  
   <ParameterList name="PKs">
-    <ParameterList name="Transport">
+    <ParameterList name="transport">
       <Parameter name="cfl" type="double" value="0.5"/>   
       <Parameter name="spatial discretization order" type="int" value="1"/>   
       <Parameter name="temporal discretization order" type="int" value="1"/>   
@@ -38,34 +37,34 @@
       <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
       <!-- end of developers parameters -->
 
-      <ParameterList name="VerboseObject">
-	<Parameter name="Verbosity Level" type="string" value="medium"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="medium"/>
       </ParameterList>
 
       <ParameterList name="boundary conditions">
-	<ParameterList name="concentration">
-	  <ParameterList name="Component 0">
-	    <ParameterList name="BC for left side">
-	      <Parameter name="regions" type="Array(string)" value="{Left side, Bottom side}"/>
-	      <ParameterList name="boundary concentration">
-		<ParameterList name="function-tabular">
-		  <Parameter name="forms" type="Array(string)" value="{constant}"/>
-		  <Parameter name="x values" type="Array(double)" value="{0.0, 0.1}"/>
-		  <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
-		</ParameterList>
-	      </ParameterList>
-	    </ParameterList>
-	  </ParameterList>
-	</ParameterList>
+        <ParameterList name="concentration">
+          <ParameterList name="Component 0">
+            <ParameterList name="BC for left side">
+              <Parameter name="regions" type="Array(string)" value="{Left side, Bottom side}"/>
+              <ParameterList name="boundary concentration">
+                <ParameterList name="function-tabular">
+                  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 0.1}"/>
+                  <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="State">
+  <ParameterList name="state">
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
-        <ParameterList name="VerboseObject">
-	  <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">

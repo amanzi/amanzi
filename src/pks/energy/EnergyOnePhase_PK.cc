@@ -38,10 +38,10 @@ EnergyOnePhase_PK::EnergyOnePhase_PK(
     soln_(soln)
 {
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  ep_list_ = Teuchos::sublist(Teuchos::sublist(pk_list, "Energy", true), "One-phase problem", true);
+  ep_list_ = Teuchos::sublist(Teuchos::sublist(pk_list, "energy", true), "One-phase problem", true);
 
   // We also need miscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners", true);
+  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   ti_list_ = Teuchos::sublist(ep_list_, "time integrator");
 };
 
@@ -92,7 +92,7 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // create verbosity object
   Teuchos::ParameterList vlist;
-  vlist.sublist("VerboseObject") = ep_list_->sublist("VerboseObject");
+  vlist.sublist("verbose object") = ep_list_->sublist("verbose object");
   vo_ =  Teuchos::rcp(new VerboseObject("EnergyPK::2Phase", vlist)); 
 
   // Call the base class initialize.
@@ -144,8 +144,8 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (ti_method_name == "BDF1") {
     Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
 
-    if (! bdf1_list.isSublist("VerboseObject"))
-        bdf1_list.sublist("VerboseObject") = ep_list_->sublist("VerboseObject");
+    if (! bdf1_list.isSublist("verbose object"))
+        bdf1_list.sublist("verbose object") = ep_list_->sublist("verbose object");
 
     bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
   }

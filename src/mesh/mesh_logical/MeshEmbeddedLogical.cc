@@ -83,14 +83,14 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
   face_cell_ids_ = log_mesh->face_cell_ids_;
   // -- next are the logical-background faces, insert and remap
   face_cell_ids_.insert(face_cell_ids_.end(), face_cell_ids.begin(),
-		      face_cell_ids.end());
+                        face_cell_ids.end());
   for (int f=nfaces_log; f!=face_cell_ids_.size(); ++f) {
     // all new faces are logical,bg.  must remap the bg cell
     face_cell_ids_[f][2] += ncells_log;
   }
   // -- finally the bg-bg faces, insert and remap
   face_cell_ids_.insert(face_cell_ids_.end(), bg_mesh->face_cell_ids_.begin(),
-		      bg_mesh->face_cell_ids_.end());
+                        bg_mesh->face_cell_ids_.end());
   for (int f=nfaces_log+nfaces_extra; f!=face_cell_ids_.size(); ++f) {
     int n_cells = face_cell_ids_[f].size();
     for (int i=0; i!=n_cells; ++i) {
@@ -101,19 +101,19 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
   // face normals -- same order: log-log, log-bg, bg-bg
   face_normal0_ = log_mesh->face_normal0_;
   face_normal0_.insert(face_normal0_.end(), face_area_normals.begin(),
-		      face_area_normals.end());
+                       face_area_normals.end());
   face_normal0_.insert(face_normal0_.end(), bg_mesh->face_normal0_.begin(),
-		      bg_mesh->face_normal0_.end());
+                       bg_mesh->face_normal0_.end());
 
   face_normal1_ = log_mesh->face_normal1_;
   face_normal1_.insert(face_normal1_.end(), face_area_normals.begin(),
-		      face_area_normals.end());
+                       face_area_normals.end());
   // -- negate normal1, normal direction implied from log->bg
   for (int f=nfaces_log; f!=face_normal1_.size(); ++f) {
     face_normal1_[f] = -face_normal1_[f];
   }
   face_normal1_.insert(face_normal1_.end(), bg_mesh->face_normal1_.begin(),
-		      bg_mesh->face_normal1_.end());
+                       bg_mesh->face_normal1_.end());
 
   // ptypes -- no remap.  all added faces are owned-owned
   face_cell_ptype_ = log_mesh->face_cell_ptype_;
@@ -122,7 +122,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
     face_cell_ptype_.push_back(extra_ptypes);
   }
   face_cell_ptype_.insert(face_cell_ptype_.end(), bg_mesh->face_cell_ptype_.begin(),
-		      bg_mesh->face_cell_ptype_.end());
+                          bg_mesh->face_cell_ptype_.end());
 
   // areas -- no remap
   face_areas_ = log_mesh->face_areas_;
@@ -130,7 +130,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
     face_areas_.push_back(AmanziGeometry::norm(face_normal0_[f]));
   }
   face_areas_.insert(face_areas_.end(), bg_mesh->face_areas_.begin(),
-		      bg_mesh->face_areas_.end());
+                     bg_mesh->face_areas_.end());
 
   //
   // cell-ordered
@@ -139,7 +139,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
   // cell-to-face map -- remap
   cell_face_ids_ = log_mesh->cell_face_ids_;
   cell_face_ids_.insert(cell_face_ids_.end(), bg_mesh->cell_face_ids_.begin(),
-		      bg_mesh->cell_face_ids_.end());
+                        bg_mesh->cell_face_ids_.end());
   for (int c=ncells_log; c!=cell_face_ids_.size(); ++c) {
     int n_faces = cell_face_ids_[c].size();
     for (int i=0; i!=n_faces; ++i) {
@@ -150,7 +150,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
   // directions
   cell_face_dirs_ = log_mesh->cell_face_dirs_;
   cell_face_dirs_.insert(cell_face_dirs_.end(), bg_mesh->cell_face_dirs_.begin(),
-		      bg_mesh->cell_face_dirs_.end());
+                         bg_mesh->cell_face_dirs_.end());
 
   // bisectors -- special interface since the cache isn't used for Mesh
   Entity_ID_List faces;
@@ -171,18 +171,17 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
     cell_face_dirs_[c0].push_back(1);
     cell_face_dirs_[c1].push_back(-1);
     cell_face_bisectors_[c0].push_back(face_cell_lengths[f-nfaces_log][0]
-				      / AmanziGeometry::norm(face_normal0_[f])
-				      * face_normal0_[f]);
+                                       / AmanziGeometry::norm(face_normal0_[f])
+                                       * face_normal0_[f]);
     cell_face_bisectors_[c1].push_back(face_cell_lengths[f-nfaces_log][1]
-				      / AmanziGeometry::norm(face_normal1_[f])
-				      * face_normal1_[f]);
+                                       / AmanziGeometry::norm(face_normal1_[f])
+                                       * face_normal1_[f]);
   }
   
   // cell volumes, just a straightforward merge
   cell_volumes_ = log_mesh->cell_volumes_;
   cell_volumes_.insert(cell_volumes_.end(), bg_mesh->cell_volumes_.begin(),
-		      bg_mesh->cell_volumes_.end());
-
+                       bg_mesh->cell_volumes_.end());
 
   //
   // centroids
@@ -191,16 +190,16 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
     // -- cell, straighforward merge
     cell_centroids_ = log_mesh->cell_centroids_;
     cell_centroids_.insert(cell_centroids_.end(), bg_mesh->cell_centroids_.begin(),
-			bg_mesh->cell_centroids_.end());
+                           bg_mesh->cell_centroids_.end());
 
     // -- face, take new face centroids as mean of cell centroids
     face_centroids_ = log_mesh->face_centroids_;
     for (int f=nfaces_log; f!=nfaces_log+nfaces_extra; ++f) {
       face_centroids_.push_back((cell_centroids_[face_cell_ids_[f][0]] +
-				cell_centroids_[face_cell_ids_[f][1]])/2.0);
+                                cell_centroids_[face_cell_ids_[f][1]])/2.0);
     }
     face_centroids_.insert(face_centroids_.end(), bg_mesh->face_centroids_.begin(),
-			bg_mesh->face_centroids_.end());
+                           bg_mesh->face_centroids_.end());
   }
   
   // set up counts
@@ -287,7 +286,7 @@ MeshEmbeddedLogical::init_maps() {
 
   // -- create the map
   maps_used_[CELL] = Teuchos::rcp(new Epetra_Map(-1, ncells_my_used,
-						 &cells_my_used[0], 0, *comm_));
+                                                 &cells_my_used[0], 0, *comm_));
 
   // FACE:
   int nfaces_bg_owned = bg_mesh_->num_entities(FACE,OWNED);
@@ -321,15 +320,14 @@ MeshEmbeddedLogical::init_maps() {
 
   // -- create the map
   maps_used_[FACE] = Teuchos::rcp(new Epetra_Map(-1, nfaces_my_used,
-						 &faces_my_used[0], 0, *comm_));
-
+                                                 &faces_my_used[0], 0, *comm_));
 }
 
   
 // Get parallel type of entity - OWNED, GHOST, USED (See MeshDefs.hh)
 Parallel_type
 MeshEmbeddedLogical::entity_get_ptype(const Entity_kind kind,
-			      const Entity_ID entid) const {
+                                      const Entity_ID entid) const {
   return entid < num_entities_owned_.at(kind) ? OWNED : USED;
 }
 
@@ -359,7 +357,7 @@ MeshEmbeddedLogical::cell_get_type(const Entity_ID cellid) const {
 // particular category (OWNED, GHOST, USED)
 unsigned int
 MeshEmbeddedLogical::num_entities(const Entity_kind kind,
-				  const Parallel_type ptype) const {
+                                  const Parallel_type ptype) const {
   return ptype == OWNED ? num_entities_owned_.at(kind) : num_entities_used_.at(kind);
 }
 
@@ -377,8 +375,8 @@ MeshEmbeddedLogical::GID(const Entity_ID lid, const Entity_kind kind) const {
 //---------------------
 // Get nodes of a cell
 void
-MeshEmbeddedLogical::cell_get_nodes (const Entity_ID cellid, 
-			     Entity_ID_List *nodeids) const {
+MeshEmbeddedLogical::cell_get_nodes(const Entity_ID cellid, 
+                                    Entity_ID_List *nodeids) const {
   Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -386,10 +384,11 @@ MeshEmbeddedLogical::cell_get_nodes (const Entity_ID cellid,
 
 // Get the bisectors, i.e. vectors from cell centroid to face centroids.
 void
-MeshEmbeddedLogical::cell_get_faces_and_bisectors (const Entity_ID cellid,
-			   Entity_ID_List *faceids,
-			   std::vector<AmanziGeometry::Point> *bisectors,
-			   const bool ordered) const {
+MeshEmbeddedLogical::cell_get_faces_and_bisectors(
+    const Entity_ID cellid,
+    Entity_ID_List *faceids,
+    std::vector<AmanziGeometry::Point> *bisectors,
+    const bool ordered) const {
   if (faceids) *faceids = cell_face_ids_[cellid];
   if (bisectors) *bisectors = cell_face_bisectors_[cellid];
 }
@@ -402,8 +401,8 @@ MeshEmbeddedLogical::cell_get_faces_and_bisectors (const Entity_ID cellid,
 // with the face normal
 // In 2D, nfnodes is 2
 void
-MeshEmbeddedLogical::face_get_nodes (const Entity_ID faceid,
-			     Entity_ID_List *nodeids) const {
+MeshEmbeddedLogical::face_get_nodes(const Entity_ID faceid,
+                                    Entity_ID_List *nodeids) const {
   Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -411,8 +410,9 @@ MeshEmbeddedLogical::face_get_nodes (const Entity_ID faceid,
 
 // Get nodes of edge
 void
-MeshEmbeddedLogical::edge_get_nodes (const Entity_ID edgeid, 
-			     Entity_ID *nodeid0, Entity_ID *nodeid1) const {
+MeshEmbeddedLogical::edge_get_nodes(
+    const Entity_ID edgeid, 
+    Entity_ID *nodeid0, Entity_ID *nodeid1) const {
   Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -424,9 +424,9 @@ MeshEmbeddedLogical::edge_get_nodes (const Entity_ID edgeid,
 // not guaranteed to be the same for corresponding nodes on
 // different processors
 void
-MeshEmbeddedLogical::node_get_cells (const Entity_ID nodeid,
-			     const Parallel_type ptype,
-			     Entity_ID_List *cellids) const {
+MeshEmbeddedLogical::node_get_cells(const Entity_ID nodeid,
+                                    const Parallel_type ptype,
+                                    Entity_ID_List *cellids) const {
   Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
 }  
@@ -435,9 +435,9 @@ MeshEmbeddedLogical::node_get_cells (const Entity_ID nodeid,
 // not guarnateed to be the same for corresponding nodes on
 // different processors
 void
-MeshEmbeddedLogical::node_get_faces (const Entity_ID nodeid,
-			     const Parallel_type ptype,
-			     Entity_ID_List *faceids) const {
+MeshEmbeddedLogical::node_get_faces(const Entity_ID nodeid,
+                                    const Parallel_type ptype,
+                                    Entity_ID_List *faceids) const {
   Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
 }  
@@ -446,10 +446,10 @@ MeshEmbeddedLogical::node_get_faces (const Entity_ID nodeid,
 // given node - The order of faces is not guarnateed to be the same
 // for corresponding nodes on different processors
 void
-MeshEmbeddedLogical::node_get_cell_faces (const Entity_ID nodeid,
-				  const Entity_ID cellid,
-				  const Parallel_type ptype,
-				  Entity_ID_List *faceids) const {
+MeshEmbeddedLogical::node_get_cell_faces(const Entity_ID nodeid,
+                                         const Entity_ID cellid,
+                                         const Parallel_type ptype,
+                                         Entity_ID_List *faceids) const {
   Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
 }  
@@ -466,8 +466,8 @@ MeshEmbeddedLogical::node_get_cell_faces (const Entity_ID nodeid,
 // faces given by cell_get_faces
 void
 MeshEmbeddedLogical::cell_get_face_adj_cells(const Entity_ID cellid,
-				     const Parallel_type ptype,
-				     Entity_ID_List *fadj_cellids) const {
+                                             const Parallel_type ptype,
+                                             Entity_ID_List *fadj_cellids) const {
   Errors::Message mesg("Not implemented."); // this could be implemented, just not sure we need it yet. --etc
   Exceptions::amanzi_throw(mesg);
 }  
@@ -477,8 +477,8 @@ MeshEmbeddedLogical::cell_get_face_adj_cells(const Entity_ID cellid,
 // The cells are returned in no particular order
 void
 MeshEmbeddedLogical::cell_get_node_adj_cells(const Entity_ID cellid,
-				     const Parallel_type ptype,
-				     Entity_ID_List *nadj_cellids) const {
+                                             const Parallel_type ptype,
+                                             Entity_ID_List *nadj_cellids) const {
   Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -489,8 +489,8 @@ MeshEmbeddedLogical::cell_get_node_adj_cells(const Entity_ID cellid,
 //
 // Node coordinates - 3 in 3D and 2 in 2D
 void
-MeshEmbeddedLogical::node_get_coordinates (const Entity_ID nodeid,
-				   AmanziGeometry::Point *ncoord) const {
+MeshEmbeddedLogical::node_get_coordinates(const Entity_ID nodeid,
+                                          AmanziGeometry::Point *ncoord) const {
   Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
 }  
@@ -499,8 +499,9 @@ MeshEmbeddedLogical::node_get_coordinates (const Entity_ID nodeid,
 // Face coordinates - conventions same as face_to_nodes call
 // Number of nodes is the vector size divided by number of spatial dimensions
 void
-MeshEmbeddedLogical::face_get_coordinates (const Entity_ID faceid,
-				   std::vector<AmanziGeometry::Point> *fcoords) const {
+MeshEmbeddedLogical::face_get_coordinates(
+    const Entity_ID faceid,
+    std::vector<AmanziGeometry::Point> *fcoords) const {
   Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -511,8 +512,9 @@ MeshEmbeddedLogical::face_get_coordinates (const Entity_ID faceid,
 // arbitrary order
 // Number of nodes is vector size divided by number of spatial dimensions
 void
-MeshEmbeddedLogical::cell_get_coordinates (const Entity_ID cellid,
-				   std::vector<AmanziGeometry::Point> *ccoords) const {
+MeshEmbeddedLogical::cell_get_coordinates(
+    const Entity_ID cellid,
+    std::vector<AmanziGeometry::Point> *ccoords) const {
   Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -523,15 +525,16 @@ MeshEmbeddedLogical::cell_get_coordinates (const Entity_ID cellid,
 
 // Set coordinates of node
 void
-MeshEmbeddedLogical::node_set_coordinates (const Entity_ID nodeid,
-				   const AmanziGeometry::Point ncoord) {
+MeshEmbeddedLogical::node_set_coordinates(
+    const Entity_ID nodeid,
+    const AmanziGeometry::Point ncoord) {
   Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
 }  
 
 void
-MeshEmbeddedLogical::node_set_coordinates (const Entity_ID nodeid,
-				   const double *ncoord) {
+MeshEmbeddedLogical::node_set_coordinates(const Entity_ID nodeid,
+                                          const double *ncoord) {
   Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -539,10 +542,10 @@ MeshEmbeddedLogical::node_set_coordinates (const Entity_ID nodeid,
 
 // Deformation not supported.
 int
-MeshEmbeddedLogical::deform (const std::vector<double>& target_cell_volumes_in,
-		     const std::vector<double>& min_cell_volumes_in,
-		     const Entity_ID_List& fixed_nodes,
-		     const bool move_vertical) {
+MeshEmbeddedLogical::deform(const std::vector<double>& target_cell_volumes_in,
+                            const std::vector<double>& min_cell_volumes_in,
+                            const Entity_ID_List& fixed_nodes,
+                            const bool move_vertical) {
   Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
   return -1;
@@ -552,17 +555,17 @@ MeshEmbeddedLogical::deform (const std::vector<double>& target_cell_volumes_in,
 // Epetra maps
 //------------
 const Epetra_Map&
-MeshEmbeddedLogical::cell_map (const bool include_ghost) const {
+MeshEmbeddedLogical::cell_map(bool include_ghost) const {
   return include_ghost ? *maps_used_.at(CELL) : *maps_owned_.at(CELL);
 }
 
 const Epetra_Map&
-MeshEmbeddedLogical::face_map (const bool include_ghost) const {
+MeshEmbeddedLogical::face_map(bool include_ghost) const {
   return include_ghost ? *maps_used_.at(FACE) : *maps_owned_.at(FACE);
 }  
 
 const Epetra_Map&
-MeshEmbeddedLogical::node_map (const bool include_ghost) const {
+MeshEmbeddedLogical::node_map(bool include_ghost) const {
   Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
   return include_ghost ? *maps_used_.at(NODE) : *maps_owned_.at(NODE);
@@ -570,7 +573,7 @@ MeshEmbeddedLogical::node_map (const bool include_ghost) const {
 
 
 const Epetra_Map&
-MeshEmbeddedLogical::exterior_face_map (void) const {
+MeshEmbeddedLogical::exterior_face_map(bool include_ghost) const {
   return *maps_owned_.at(BOUNDARY_FACE);
 }
 
@@ -586,39 +589,15 @@ MeshEmbeddedLogical::exterior_face_importer (void) const {
 //
 // Mesh Sets for ICs, BCs, Material Properties and whatever else
 //--------------------------------------------------------------
-//
-// Get number of entities of type 'category' in set
-unsigned int
-MeshEmbeddedLogical::get_set_size (const Set_ID setid,
-			   const Entity_kind kind,
-			   const Parallel_type ptype) const {
-  Entity_ID_List ents;
-  get_set_entities(setid, kind, ptype, &ents);
-  return ents.size();
-}
-
-unsigned int
-MeshEmbeddedLogical::get_set_size (const std::string setname,
-			   const Entity_kind kind,
-			   const Parallel_type ptype) const {
-  return get_set_size(geometric_model_->FindRegion(setname)->id(),kind,ptype);
-}
-
-unsigned int
-MeshEmbeddedLogical::get_set_size (const char *setname,
-			   const Entity_kind kind,
-			   const Parallel_type ptype) const {
-  std::string name(setname);
-  return get_set_size(name,kind,ptype);
-}
 
 // Get list of entities of type 'category' in set
 // FIX ME: This is probably not generic enough. --etc
+// OBSOLETE: use region name bassed routine.
 void
-MeshEmbeddedLogical::get_set_entities (const Set_ID setid,
-			       const Entity_kind kind,
-			       const Parallel_type ptype,
-			       Entity_ID_List *entids) const {
+MeshEmbeddedLogical::get_set_entities(const Set_ID setid,
+                                      const Entity_kind kind,
+                                      const Parallel_type ptype,
+                                      Entity_ID_List *entids) const {
   Teuchos::RCP<const AmanziGeometry::Region> rgn =
       geometric_model_->FindRegion(setid);
 
@@ -634,9 +613,9 @@ MeshEmbeddedLogical::get_set_entities (const Set_ID setid,
   // ASSUMES that logical mesh is EnumeratedSets, bg mesh is all others.
   // This is bad.  --etc
   if (rgn->type() == AmanziGeometry::ENUMERATED) {
-    log_mesh_->get_set_entities(setid, kind, ptype, entids);
+    log_mesh_->get_set_entities(rgn->name(), kind, ptype, entids);
   } else {
-    bg_mesh_->get_set_entities(setid, kind, ptype, entids);
+    bg_mesh_->get_set_entities(rgn->name(), kind, ptype, entids);
 
     // shift local indices
     Entity_ID shift = num_entities(kind, ptype)
@@ -648,26 +627,19 @@ MeshEmbeddedLogical::get_set_entities (const Set_ID setid,
   return;
 }
 
+
 void
-MeshEmbeddedLogical::get_set_entities (const std::string setname,
-			       const Entity_kind kind,
-			       const Parallel_type ptype,
-			       Entity_ID_List *entids) const {
+MeshEmbeddedLogical::get_set_entities_and_vofs(
+    const std::string setname,
+    const Entity_kind kind,
+    const Parallel_type ptype,
+    Entity_ID_List *entids,
+    std::vector<double> *vofs) const {
   get_set_entities(geometric_model_->FindRegion(setname)->id(), kind, ptype, entids);
   return;
 }
   
   
-void
-MeshEmbeddedLogical::get_set_entities (const char *setname,
-			       const Entity_kind kind,
-			       const Parallel_type ptype,
-			       Entity_ID_List *entids) const {
-  std::string name(setname);
-  get_set_entities(name, kind, ptype, entids);
-  return;
-}
-
 // Miscellaneous functions
 void
 MeshEmbeddedLogical::write_to_exodus_file(const std::string filename) const {
@@ -678,8 +650,8 @@ MeshEmbeddedLogical::write_to_exodus_file(const std::string filename) const {
 // Geometry
 int
 MeshEmbeddedLogical::compute_cell_geometry_(const Entity_ID cellid, 
-				   double *volume, 
-				   AmanziGeometry::Point *centroid) const {
+                                            double *volume, 
+                                            AmanziGeometry::Point *centroid) const {
   // this is a placeholder, these cannot be recomputed
   if (volume) *volume = cell_volumes_[cellid];
 
@@ -695,11 +667,12 @@ MeshEmbeddedLogical::compute_cell_geometry_(const Entity_ID cellid,
 
 
 int
-MeshEmbeddedLogical::compute_face_geometry_(const Entity_ID faceid, 
-				   double *area, 
-				   AmanziGeometry::Point *centroid, 
-				   AmanziGeometry::Point *normal0,
-				   AmanziGeometry::Point *normal1) const {
+MeshEmbeddedLogical::compute_face_geometry_(
+    const Entity_ID faceid, 
+    double *area, 
+    AmanziGeometry::Point *centroid, 
+    AmanziGeometry::Point *normal0,
+    AmanziGeometry::Point *normal1) const {
   // this is a placeholder, these cannot be recomputed
   if (area) *area = face_areas_[faceid];
   if (centroid) *centroid = AmanziGeometry::Point();
@@ -713,10 +686,11 @@ MeshEmbeddedLogical::compute_face_geometry_(const Entity_ID faceid,
 // is implemented in each mesh framework. The results are cached in 
 // the base class
 void
-MeshEmbeddedLogical::cell_get_faces_and_dirs_internal_ (const Entity_ID cellid,
-					       Entity_ID_List *faceids,
-					       std::vector<int> *face_dirs,
-					       const bool ordered) const {
+MeshEmbeddedLogical::cell_get_faces_and_dirs_internal_(
+    const Entity_ID cellid,
+    Entity_ID_List *faceids,
+    std::vector<int> *face_dirs,
+    const bool ordered) const {
   Errors::Message mesg("DEVELOPER ERROR: cell_get_faces_and_dirs_internal_() should not be called");
   Exceptions::amanzi_throw(mesg);
 }
@@ -724,9 +698,10 @@ MeshEmbeddedLogical::cell_get_faces_and_dirs_internal_ (const Entity_ID cellid,
 // Cells connected to a face - this function is implemented in each
 // mesh framework. The results are cached in the base class
 void
-MeshEmbeddedLogical::face_get_cells_internal_ (const Entity_ID faceid,
-				      const Parallel_type ptype,
-				      Entity_ID_List *cellids) const {
+MeshEmbeddedLogical::face_get_cells_internal_(
+    const Entity_ID faceid,
+    const Parallel_type ptype,
+    Entity_ID_List *cellids) const {
   Errors::Message mesg("DEVELOPER ERROR: face_get_cells_internal_() should not be called");
   Exceptions::amanzi_throw(mesg);
 }
@@ -734,10 +709,11 @@ MeshEmbeddedLogical::face_get_cells_internal_ (const Entity_ID faceid,
 // edges of a face - this function is implemented in each mesh
 // framework. The results are cached in the base class
 void
-MeshEmbeddedLogical::face_get_edges_and_dirs_internal_ (const Entity_ID faceid,
-					       Entity_ID_List *edgeids,
-					       std::vector<int> *edge_dirs,
-					       const bool ordered) const {
+MeshEmbeddedLogical::face_get_edges_and_dirs_internal_(
+    const Entity_ID faceid,
+    Entity_ID_List *edgeids,
+    std::vector<int> *edge_dirs,
+    const bool ordered) const {
   Errors::Message mesg("No edges in MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -746,8 +722,9 @@ MeshEmbeddedLogical::face_get_edges_and_dirs_internal_ (const Entity_ID faceid,
 // edges of a cell - this function is implemented in each mesh
 // framework. The results are cached in the base class. 
 void
-MeshEmbeddedLogical::cell_get_edges_internal_ (const Entity_ID cellid,
-				      Entity_ID_List *edgeids) const {
+MeshEmbeddedLogical::cell_get_edges_internal_(
+    const Entity_ID cellid,
+    Entity_ID_List *edgeids) const {
   Errors::Message mesg("No edges in MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
 }
@@ -756,9 +733,10 @@ MeshEmbeddedLogical::cell_get_edges_internal_ (const Entity_ID cellid,
 // edges and directions of a 2D cell - this function is implemented
 // in each mesh framework. The results are cached in the base class.
 void
-MeshEmbeddedLogical::cell_2D_get_edges_and_dirs_internal_ (const Entity_ID cellid,
-						  Entity_ID_List *edgeids,
-						  std::vector<int> *edge_dirs) const {
+MeshEmbeddedLogical::cell_2D_get_edges_and_dirs_internal_(
+    const Entity_ID cellid,
+    Entity_ID_List *edgeids,
+    std::vector<int> *edge_dirs) const {
   Errors::Message mesg("No edges in MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
 }

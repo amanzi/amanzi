@@ -14,6 +14,7 @@ map, not the true row map.
 #include <vector>
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_Vector.h"
 #include "Epetra_SerialDenseMatrix.h"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
@@ -128,6 +129,17 @@ MatrixFE::SumIntoMyValues(const int *row_indices, const int *col_indices,
     for (int j=0; j!=vals.NumCols(); ++j) row_vals[j] = vals(i,j);
     ierr |= SumIntoMyValues(row_indices[i], vals.NumCols(), &row_vals[0], col_indices);
   }
+  return ierr;
+}
+
+// diagonal shift for (near) singular matrices where the constant vector is the null space
+int
+MatrixFE::DiagonalShift(double shift) {
+  int ierr(0);
+  Epetra_Vector diag(RowMap());
+  ierr = matrix_->ExtractDiagonalCopy(diag);
+  for (int i=0; i!=diag.MyLength(); ++i) diag[i] += shift;
+  ierr |= matrix_->ReplaceDiagonalValues(diag);  
   return ierr;
 }
 

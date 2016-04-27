@@ -56,18 +56,18 @@ chemistry_data::chemistry_data(const Epetra_BlockMap &map, int number_of_compone
 }
 
 void chemistry_data::store(Teuchos::RCP<Epetra_MultiVector> free_ion_concentrations,
-			   Teuchos::RCP<Epetra_MultiVector> primary_activity_coeff,
-			   Teuchos::RCP<Epetra_MultiVector> secondary_activity_coeff,
-			   Teuchos::RCP<Epetra_MultiVector> mineral_volume_fractions,
-			   Teuchos::RCP<Epetra_MultiVector> mineral_specific_surface_area,
-			   Teuchos::RCP<Epetra_MultiVector> total_sorbed,
-			   Teuchos::RCP<Epetra_MultiVector> sorption_sites,
-			   Teuchos::RCP<Epetra_MultiVector> surface_complex_free_site_conc,
-			   Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites,
-			   Teuchos::RCP<Epetra_MultiVector> ion_exchange_ref_cation_conc,
-			   Teuchos::RCP<Epetra_MultiVector> isotherm_kd,
-			   Teuchos::RCP<Epetra_MultiVector> isotherm_freundlich_n,
-			   Teuchos::RCP<Epetra_MultiVector> isotherm_langmuir_b) {
+                           Teuchos::RCP<Epetra_MultiVector> primary_activity_coeff,
+                           Teuchos::RCP<Epetra_MultiVector> secondary_activity_coeff,
+                           Teuchos::RCP<Epetra_MultiVector> mineral_volume_fractions,
+                           Teuchos::RCP<Epetra_MultiVector> mineral_specific_surface_area,
+                           Teuchos::RCP<Epetra_MultiVector> total_sorbed,
+                           Teuchos::RCP<Epetra_MultiVector> sorption_sites,
+                           Teuchos::RCP<Epetra_MultiVector> surface_complex_free_site_conc,
+                           Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites,
+                           Teuchos::RCP<Epetra_MultiVector> ion_exchange_ref_cation_conc,
+                           Teuchos::RCP<Epetra_MultiVector> isotherm_kd,
+                           Teuchos::RCP<Epetra_MultiVector> isotherm_freundlich_n,
+                           Teuchos::RCP<Epetra_MultiVector> isotherm_langmuir_b) {
 
   if ( free_ion_concentrations != Teuchos::null && free_ion_concentrations_ != Teuchos::null ) {
     *free_ion_concentrations_ = *free_ion_concentrations;
@@ -112,18 +112,18 @@ void chemistry_data::store(Teuchos::RCP<Epetra_MultiVector> free_ion_concentrati
 
 
 void chemistry_data::retrieve(Teuchos::RCP<Epetra_MultiVector> free_ion_concentrations,
-			      Teuchos::RCP<Epetra_MultiVector> primary_activity_coeff,
-			      Teuchos::RCP<Epetra_MultiVector> secondary_activity_coeff,
-			      Teuchos::RCP<Epetra_MultiVector> mineral_volume_fractions,
-			      Teuchos::RCP<Epetra_MultiVector> mineral_specific_surface_area,
-			      Teuchos::RCP<Epetra_MultiVector> total_sorbed,
-			      Teuchos::RCP<Epetra_MultiVector> sorption_sites,
-			      Teuchos::RCP<Epetra_MultiVector> surface_complex_free_site_conc,
-			      Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites,
-			      Teuchos::RCP<Epetra_MultiVector> ion_exchange_ref_cation_conc,
-			      Teuchos::RCP<Epetra_MultiVector> isotherm_kd,
-			      Teuchos::RCP<Epetra_MultiVector> isotherm_freundlich_n,
-			      Teuchos::RCP<Epetra_MultiVector> isotherm_langmuir_b) {
+                              Teuchos::RCP<Epetra_MultiVector> primary_activity_coeff,
+                              Teuchos::RCP<Epetra_MultiVector> secondary_activity_coeff,
+                              Teuchos::RCP<Epetra_MultiVector> mineral_volume_fractions,
+                              Teuchos::RCP<Epetra_MultiVector> mineral_specific_surface_area,
+                              Teuchos::RCP<Epetra_MultiVector> total_sorbed,
+                              Teuchos::RCP<Epetra_MultiVector> sorption_sites,
+                              Teuchos::RCP<Epetra_MultiVector> surface_complex_free_site_conc,
+                              Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites,
+                              Teuchos::RCP<Epetra_MultiVector> ion_exchange_ref_cation_conc,
+                              Teuchos::RCP<Epetra_MultiVector> isotherm_kd,
+                              Teuchos::RCP<Epetra_MultiVector> isotherm_freundlich_n,
+                              Teuchos::RCP<Epetra_MultiVector> isotherm_langmuir_b) {
 
   if ( free_ion_concentrations != Teuchos::null && free_ion_concentrations_ != Teuchos::null ) {
     *free_ion_concentrations = *free_ion_concentrations_;

@@ -11,7 +11,7 @@
 #include "MeshFactory.hh"
 #include "MultiFunction.hh"
 #include "ConstantFunction.hh"
-#include "composite_vector_function.hh"
+#include "CompositeVectorFunction.hh"
 #include "errors.hh"
 
 using namespace Amanzi;
@@ -60,20 +60,20 @@ struct another_reference_mesh
     Teuchos::Array<double> top(Teuchos::tuple(0.0, 0.0, 1.0));
     // Create the geometric model
     Teuchos::ParameterList regions;
-    regions.sublist("LEFT").sublist("Region: Plane").
-        set("Location",corner_min).set("Direction",left);
-    regions.sublist("FRONT").sublist("Region: Plane").
-        set("Location",corner_min).set("Direction",front);
-    regions.sublist("BOTTOM").sublist("Region: Plane").
-        set("Location",corner_min).set("Direction",bottom);
-    regions.sublist("RIGHT").sublist("Region: Plane").
-        set("Location",corner_max).set("Direction",right);
-    regions.sublist("BACK").sublist("Region: Plane").
-        set("Location",corner_max).set("Direction",back);
-    regions.sublist("TOP").sublist("Region: Plane").
-        set("Location",corner_max).set("Direction",top);
-    regions.sublist("DOMAIN").sublist("Region: Box").
-      set("Low Coordinate", corner_min).set("High Coordinate", corner_max);
+    regions.sublist("LEFT").sublist("region: plane").
+        set("point",corner_min).set("normal",left);
+    regions.sublist("FRONT").sublist("region: plane").
+        set("point",corner_min).set("normal",front);
+    regions.sublist("BOTTOM").sublist("region: plane").
+        set("point",corner_min).set("normal",bottom);
+    regions.sublist("RIGHT").sublist("region: plane").
+        set("point",corner_max).set("normal",right);
+    regions.sublist("BACK").sublist("region: plane").
+        set("point",corner_max).set("normal",back);
+    regions.sublist("TOP").sublist("region: plane").
+        set("point",corner_max).set("normal",top);
+    regions.sublist("DOMAIN").sublist("region: box").
+      set("low coordinate", corner_min).set("high coordinate", corner_max);
 
     gm = Teuchos::rcp(new GeometricModel(3,regions,comm));
     // Create the mesh

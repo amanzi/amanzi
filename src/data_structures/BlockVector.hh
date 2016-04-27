@@ -82,12 +82,12 @@ public:
   // -- Set entries in the vectors.
   void SetComponent(std::string name, const Teuchos::RCP<Epetra_MultiVector>& data);
 
-  double& operator()(std::string name, int i, int j) {
-    return (*data_[Index_(name)])[i][j];
-  }
-  double& operator()(std::string name, int j) {
-    return (*data_[Index_(name)])[0][j];
-  }
+  // double& operator()(std::string name, int i, int j) {
+  //   return (*data_[Index_(name)])[i][j];
+  // }
+  // double& operator()(std::string name, int j) {
+  //   return (*data_[Index_(name)])[0][j];
+  // }
 
   // Vector operations.
   // Insert value into data.

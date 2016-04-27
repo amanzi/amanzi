@@ -1,36 +1,35 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
 
   <!--  REGIONS  -->
   <ParameterList name="Regions Flat">
     <ParameterList name="Left side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{-1.0,0.0,0.0}"/>
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{1.0,0.0,0.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{1.0,0.0,0.0}"/>
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{1.0,0.0,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top surface">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{0.0,0.0,1.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{0.0,0.0,1.0}"/>
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.0,1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
   <ParameterList name="Regions Closed">
     <ParameterList name="Top surface">
-      <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label" type="string" value="1"/>
-        <Parameter name="File" type="string" value="test/sphere.exo"/>
-        <Parameter name="Format" type="string" value="Exodus II"/>
-        <Parameter name="Entity" type="string" value="Face"/>
+      <ParameterList name="region: labeled set">
+        <Parameter name="label" type="string" value="1"/>
+        <Parameter name="file" type="string" value="test/sphere.exo"/>
+        <Parameter name="format" type="string" value="Exodus II"/>
+        <Parameter name="entity" type="string" value="face"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -63,15 +62,15 @@
   </ParameterList>
 
   <!-- SOLVERS -->
-  <ParameterList name="Solvers">
+  <ParameterList name="solvers">
     <ParameterList name="AztecOO CG">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="1e-16"/>
         <Parameter name="maximum number of iterations" type="int" value="200"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -81,15 +80,15 @@
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="1e-16"/>
         <Parameter name="maximum number of iterations" type="int" value="200"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
   <!-- PRECONDITIONERS -->
-  <ParameterList name="Preconditioners">
+  <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">

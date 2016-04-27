@@ -265,7 +265,6 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 {
   // Process main one-line options (not sublists)
   atm_pressure_ = *S_->GetScalarData("atmospheric_pressure");
-  coordinate_system = plist.get<std::string>("absolute permeability coordinate system", "cartesian");
 
   // Create the BC objects.
   bc_model.resize(nfaces_wghost, 0);
@@ -422,53 +421,78 @@ void Flow_PK::SetAbsolutePermeabilityTensor()
   const CompositeVector& cv = *S_->GetFieldData("permeability");
   cv.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& perm = *cv.ViewComponent("cell", true);
- 
+
   // For permeabilities given in local (layer-based) coordinates
   AmanziGeometry::Point n1(dim), n2(dim), normal(dim), tau(dim);
   WhetStone::Tensor N(dim, 2), Ninv(dim, 2), D(dim, 2);
 
   K.resize(ncells_owned);
+  bool cartesian = (coordinate_system_ == "cartesian");
+  bool off_diag = cv.HasComponent("offd");
 
-  if (dim == 2) {
+  // most common cases of diagonal permeability
+  if (cartesian && dim == 2) {
     for (int c = 0; c < ncells_owned; c++) {
-      if (perm[0][c] == perm[1][c]) {
-	K[c].Init(dim, 1);
-	K[c](0, 0) = perm[0][c];
-      } else if (coordinate_system == "cartesian") {
-	K[c].Init(dim, 2);
-	K[c](0, 0) = perm[0][c];
-	K[c](1, 1) = perm[1][c];
+      if (!off_diag && perm[0][c] == perm[1][c]) {
+        K[c].Init(dim, 1);
+        K[c](0, 0) = perm[0][c];
       } else {
-        VerticalNormals(c, n1, n2);
-        normal = (n1 - n2) / 2;
-        normal /= norm(normal);
-
-        tau[0] = normal[1];
-        tau[1] = -normal[0];
-        
-        N.SetColumn(0, tau); 
-        N.SetColumn(1, normal); 
-
-        Ninv = N;
-        Ninv.Inverse();
-
-        D(0, 0) = perm[0][c];
-        D(1, 1) = perm[1][c];
-        K[c] = N * D * Ninv;
+        K[c].Init(dim, 2);
+        K[c](0, 0) = perm[0][c];
+        K[c](1, 1) = perm[1][c];
       }
     }    
-  } else if (dim == 3) {
+  } 
+  else if (cartesian && dim == 3) {
     for (int c = 0; c < K.size(); c++) {
-      if (perm[0][c] == perm[1][c] && perm[0][c] == perm[2][c]) {
-	K[c].Init(dim, 1);
-	K[c](0, 0) = perm[0][c];
+      if (!off_diag && perm[0][c] == perm[1][c] && perm[0][c] == perm[2][c]) {
+        K[c].Init(dim, 1);
+        K[c](0, 0) = perm[0][c];
       } else {
-	K[c].Init(dim, 2);
-	K[c](0, 0) = perm[0][c];
-	K[c](1, 1) = perm[1][c];
-	K[c](2, 2) = perm[2][c];
+        K[c].Init(dim, 2);
+        K[c](0, 0) = perm[0][c];
+        K[c](1, 1) = perm[1][c];
+        K[c](2, 2) = perm[2][c];
       }
     }        
+  }
+
+  // special case of layer-oriented permeability
+  if (!cartesian && dim == 2) {
+    for (int c = 0; c < ncells_owned; c++) {
+      VerticalNormals(c, n1, n2);
+      normal = (n1 - n2) / 2;
+      normal /= norm(normal);
+
+      tau[0] = normal[1];
+      tau[1] = -normal[0];
+        
+      N.SetColumn(0, tau); 
+      N.SetColumn(1, normal); 
+
+      Ninv = N;
+      Ninv.Inverse();
+
+      D(0, 0) = perm[0][c];
+      D(1, 1) = perm[1][c];
+      K[c] = N * D * Ninv;
+    }    
+  } 
+
+  // special case of permeability with off-diagonal components 
+  if (cartesian && off_diag) {
+    const Epetra_MultiVector& offd = *cv.ViewComponent("offd");
+
+    for (int c = 0; c < ncells_owned; c++) {
+      if (dim == 2) {
+        K[c](0, 1) = K[c](1, 0) = offd[0][c];
+      } 
+      else if (dim == 3) {
+        K[c](0, 1) = K[c](1, 0) = offd[0][c];
+        K[c](0, 2) = K[c](2, 0) = offd[1][c];
+        K[c](1, 2) = K[c](2, 1) = offd[2][c];
+      }  
+    }
   }
 }
 

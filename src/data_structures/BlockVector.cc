@@ -223,9 +223,10 @@ int BlockVector::Scale(std::string name, double value) {
 // -- this <- this + scalarA
 int BlockVector::Shift(double scalarA) {
   for (int i=0; i!=num_components_; ++i) {
+    Epetra_MultiVector& v = *data_[i];
     for (int j=0; j!=num_dofs_[i]; ++j) {
       for (int k=0; k!=sizes_[i]; ++k) {
-        operator()(names_[i], j, k) += scalarA;
+        v[j][k] += scalarA;
       }
     }
   }
@@ -236,9 +237,10 @@ int BlockVector::Shift(double scalarA) {
 // Shift() applied to component name.
 int BlockVector::Shift(std::string name, double scalarA) {
   int i = Index_(name);
+  Epetra_MultiVector& v = *data_[i];
   for (int j=0; j!=num_dofs_[i]; ++j) {
     for (int k=0; k!=sizes_[i]; ++k) {
-      operator()(names_[i], j, k) += scalarA;
+      v[j][k] += scalarA;
     }
   }
   return 0;

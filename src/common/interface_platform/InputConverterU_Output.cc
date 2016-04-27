@@ -201,7 +201,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
         }
       }
     }
-    out_list.sublist("Visualization Data") = visPL;
+    out_list.sublist("visualization data") = visPL;
   }
 
   // get output->checkpoint node - this node must exist ONCE
@@ -228,7 +228,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
         ProcessMacros_("cycles", text, cmPL, chkPL);
       }
     }
-    out_list.sublist("Checkpoint Data") = chkPL;
+    out_list.sublist("checkpoint data") = chkPL;
   }
 
   // get output->walkabout node - this node must exist ONCE
@@ -254,7 +254,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
         ProcessMacros_("cycles", text, cmPL, chkPL);
       }
     }
-    out_list.sublist("Walkabout Data") = chkPL;
+    out_list.sublist("walkabout data") = chkPL;
   }
 
   // get output->observations node - this node must exist ONCE
@@ -342,11 +342,11 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
                 vv_obs_regions_.push_back(TrimString_(value));
               } else if (strcmp(elem, "functional") == 0) {
                 if (strcmp(value, "point") == 0) {
-                  obPL.set<std::string>("functional", "Observation Data: Point");
+                  obPL.set<std::string>("functional", "observation data: point");
                 } else if (strcmp(value, "integral") == 0) {
-                  obPL.set<std::string>("functional", "Observation Data: Integral");
+                  obPL.set<std::string>("functional", "observation data: integral");
                 } else if (strcmp(value, "mean") == 0) {
-                  obPL.set<std::string>("functional", "Observation Data: Mean");
+                  obPL.set<std::string>("functional", "observation data: mean");
                 }
               // Keeping singular macro around to help users. This will go away
               } else if (strcmp(elem, "time_macros") == 0 ||
@@ -395,11 +395,11 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
                 vv_obs_regions_.push_back(TrimString_(value));
               } else if (strcmp(elem, "functional") == 0) {
                 if (strcmp(value, "point") == 0) {
-                  obPL.set<std::string>("functional", "Observation Data: Point");
+                  obPL.set<std::string>("functional", "observation data: point");
                 } else if (strcmp(value, "integral") == 0) {
-                  obPL.set<std::string>("functional", "Observation Data: Integral");
+                  obPL.set<std::string>("functional", "observation data: integral");
                 } else if (strcmp(value, "mean") == 0) {
-                  obPL.set<std::string>("functional", "Observation Data: Mean");
+                  obPL.set<std::string>("functional", "observation data: mean");
                 }
               // Keeping singular macro around to help users. This will go away
               } else if (strcmp(elem, "time_macros") == 0 ||
@@ -418,7 +418,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
       }
     }
 
-    out_list.sublist("Observation Data") = obsPL;
+    out_list.sublist("observation data") = obsPL;
   }
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {

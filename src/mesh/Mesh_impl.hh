@@ -22,10 +22,10 @@ Mesh::cell_get_faces(const Entity_ID cellid, Entity_ID_List *faceids,
 //-----------------------
 inline
 int
-Mesh::num_columns() const
+Mesh::num_columns(bool ghosted) const
 {
   if (!columns_built_) build_columns_();
-  return column_cells_.size(); // number of vector of vectors
+  return ghosted ? column_cells_.size() : num_owned_cols_; // number of vector of vectors
 }
 
 
@@ -81,4 +81,20 @@ Mesh::node_get_node_above(const Entity_ID nodeid) const
   if (!columns_built_) build_columns_();
   return node_nodeabove_[nodeid];
 }
+
+
+//
+// Column information
+//-----------------------
+inline
+void
+Mesh::get_set_entities(const std::string setname,
+                       const Entity_kind kind,
+                       const Parallel_type ptype,
+                       Entity_ID_List *entids) const
+{
+  std::vector<double> vofs;
+  get_set_entities_and_vofs(setname, kind, ptype, entids, &vofs);
+}
+
 

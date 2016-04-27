@@ -59,7 +59,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   Amanzi::VerboseObject::hide_line_prefix = true;
 
   // create a mesh 
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;
@@ -152,11 +152,11 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
     
-    Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+    Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
     global_op->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem
-    Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+    Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
     solution.PutScalar(0.0);
     AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
@@ -218,7 +218,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   FrameworkPreference pref;
@@ -308,11 +308,11 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
     
-    Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+    Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
     global_op->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem
-    ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+    ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
     solution.PutScalar(0.0);
     AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >

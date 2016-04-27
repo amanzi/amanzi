@@ -142,9 +142,9 @@ void SolverNKA_BT_ATS<Vector, VectorSpace>::Init_()
   tol_ = plist_.get<double>("nonlinear tolerance", 1.e-6);
   overflow_tol_ = plist_.get<double>("diverged tolerance", 1.0e10);
   max_itrs_ = plist_.get<int>("limit iterations", 20);
-  nka_lag_iterations_ = plist_.get<int>("lag iterations", 0);
 
-  nka_dim_ = plist_.get<int>("max nka vectors", 10);
+  nka_lag_iterations_ = plist_.get<int>("nka lag iterations", 0);
+  nka_dim_ = plist_.get<int>("nka max vectors", 10);
   nka_dim_ = std::min<int>(nka_dim_, max_itrs_ - 1);
   nka_tol_ = plist_.get<double>("nka vector tolerance", 0.05);
 
@@ -154,17 +154,16 @@ void SolverNKA_BT_ATS<Vector, VectorSpace>::Init_()
   pc_lag_ = 0;
   solve_calls_ = 0;
 
-  max_backtrack_ = plist_.get<int>("max backtrack steps", 0);
-  max_total_backtrack_ = plist_.get<int>("max total backtrack steps", 1e6);
-  backtrack_lag_ = plist_.get<int>("backtrack lag", 0);
-  last_backtrack_iter_ = plist_.get<int>("last backtrack iteration", 1e6);
-  backtrack_factor_ = plist_.get<double>("backtrack factor", 0.8);
+  max_backtrack_ = plist_.get<int>("backtrack max steps", 10);
+  max_total_backtrack_ = plist_.get<int>("backtrack max total steps", 1e6);
+  backtrack_lag_ = plist_.get<int>("backtrack lag iterations", 0);
+  last_backtrack_iter_ = plist_.get<int>("backtrack last iteration", 1e6);
+  backtrack_factor_ = plist_.get<double>("backtrack factor", 0.5);
 
   double backtrack_tol = plist_.get<double>("backtrack tolerance", 0.);
   backtrack_rtol_ = plist_.get<double>("backtrack relative tolerance", backtrack_tol);
   backtrack_atol_ = plist_.get<double>("backtrack absolute tolerance", backtrack_tol);
-
-  fail_on_failed_backtrack_ = plist_.get<bool>("fail on failed backtrack", false);
+  fail_on_failed_backtrack_ = plist_.get<bool>("backtrack fail on bad search direction", false);
 
   std::string bt_monitor_string = plist_.get<std::string>("backtrack monitor",
           "monitor either");
@@ -331,8 +330,8 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
 
           // Evalute error
           error = fn_->ErrorNorm(u, res);
-	  db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_nka.ptr());
-	  
+          db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_nka.ptr());
+          
           residual_ = error;
           res->Norm2(&l2_error);
           if (vo_->os_OK(Teuchos::VERB_LOW)) {
@@ -370,6 +369,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
             *du_pic = *du_nka;
           } else {
             hacked = fn_->ModifyCorrection(res, u, du_pic);
+
             if (hacked == FnBaseDefs::CORRECTION_MODIFIED_LAG_BACKTRACKING) {
               // no backtracking, just use this correction, checking admissibility
               u->Update(-1., *du_pic, 1.);
@@ -384,7 +384,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
 
                 // Evalute error
                 error = fn_->ErrorNorm(u, res);
-		db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
+                db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
 
                 residual_ = error;
                 res->Norm2(&l2_error);
@@ -434,8 +434,8 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
 
             // Evalute error
             error = fn_->ErrorNorm(u, res);
-	    db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
-	    
+            db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
+            
             residual_ = error;
             res->Norm2(&l2_error);
             if (vo_->os_OK(Teuchos::VERB_LOW)) {
@@ -496,12 +496,12 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
 
         // Evalute error
         error = fn_->ErrorNorm(u, res);
-	if (nka_applied) {
-	  db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_nka.ptr());
-	} else {
-	  db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
-	}
-	
+        if (nka_applied) {
+          db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_nka.ptr());
+        } else {
+          db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
+        }
+        
         residual_ = error;
         res->Norm2(&l2_error);
         if (vo_->os_OK(Teuchos::VERB_LOW)) {

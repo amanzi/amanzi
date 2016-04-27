@@ -47,7 +47,7 @@ TEST(FLOW_2D_RICHARDS) {
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a mesh framework
-  Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, &comm));
 
@@ -63,12 +63,12 @@ TEST(FLOW_2D_RICHARDS) {
   int itrs[2];
   for (int loop = 0; loop < 2; ++loop) {
     // create a simple state and populate it
-    Teuchos::ParameterList state_list = plist->sublist("State");
+    Teuchos::ParameterList state_list = plist->sublist("state");
     Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
     S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-    Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(plist, "Flow", S, soln));
+    Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(plist, "flow", S, soln));
 
     RPK->Setup(S.ptr());
     S->Setup();
@@ -141,11 +141,11 @@ TEST(FLOW_2D_RICHARDS) {
     for (int c = 0; c < ncells; c++) CHECK(p[0][c] > -4.0 && p[0][c] < 0.01);
 
     // modify the preconditioner
-    plist->sublist("PKs").sublist("Flow").sublist("Richards problem")
+    plist->sublist("PKs").sublist("flow").sublist("Richards problem")
           .sublist("operators").sublist("diffusion operator").sublist("preconditioner")
-          .set<std::string>("newton correction", "approximate jacobian");
+          .set<std::string>("Newton correction", "approximate Jacobian");
   }
 
-  // verify positive impact of newton correction in the preconditioner.
+  // verify positive impact of Newton correction in the preconditioner.
   CHECK(itrs[1] < 0.7 * itrs[0]);
 }

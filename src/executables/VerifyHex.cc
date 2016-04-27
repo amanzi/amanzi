@@ -289,8 +289,7 @@ main(int argc, char **argv)
     try {
       Teuchos::ParameterXMLFileReader xmlreader(inname);
       Teuchos::ParameterList all_parameter_list(xmlreader.getParameters());      
-      // DEPRECATED      Teuchos::updateParametersFromXmlFile(inname, &all_parameter_list);
-      Teuchos::ParameterList mesh_parameter_list = all_parameter_list.sublist("Mesh");
+      Teuchos::ParameterList mesh_parameter_list = all_parameter_list.sublist("mesh");
       parameter_list = mesh_parameter_list.sublist("Generate");
     } catch (const std::runtime_error& e) {
       std::cerr << me << ": error parsing xml-file: " << e.what() << std::endl;

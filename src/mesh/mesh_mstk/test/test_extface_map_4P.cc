@@ -37,7 +37,7 @@ TEST(MSTK_EXTFACE_MAP_4P)
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm_.get(),3));
 
   Epetra_Map face_map(mesh->face_map(false));
-  Epetra_Map extface_map(mesh->exterior_face_map());
+  Epetra_Map extface_map(mesh->exterior_face_map(false));
 
   Epetra_Import all_to_extface_importer = mesh->exterior_face_importer();
 

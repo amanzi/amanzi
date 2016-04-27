@@ -58,8 +58,8 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
   dp_list_ = Teuchos::sublist(flow_list, "Darcy problem", true);
 
   // We also need iscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners", true);
-  linear_operator_list_ = Teuchos::sublist(glist, "Solvers", true);
+  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
+  linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(dp_list_, "time integrator", true);
 }
 
@@ -80,8 +80,8 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   dp_list_ = Teuchos::sublist(flow_list, "Darcy problem", true);
 
   // We also need iscaleneous sublists
-  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners", true);
-  linear_operator_list_ = Teuchos::sublist(glist, "Solvers", true);
+  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
+  linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(dp_list_, "time integrator", true);
 }
 
@@ -205,6 +205,17 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
     S->SetFieldEvaluator("darcy_velocity", eval);
   }
+
+  // Require additional components for the existing fields
+  Teuchos::ParameterList abs_perm = dp_list_->sublist("absolute permeability");
+  coordinate_system_ = abs_perm.get<std::string>("coordinate system", "cartesian");
+  int noff = abs_perm.get<int>("off-diagonal components", 0);
+ 
+  if (noff > 0) {
+    CompositeVectorSpace& cvs = *S->RequireField("permeability", passwd_);
+    cvs.SetOwned(false);
+    cvs.AddComponent("offd", AmanziMesh::CELL, noff)->SetOwned(true);
+  }
 }
 
 
@@ -229,7 +240,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // create verbosity object
   Teuchos::ParameterList vlist;
-  vlist.sublist("VerboseObject") = dp_list_->sublist("VerboseObject");
+  vlist.sublist("verbose object") = dp_list_->sublist("verbose object");
   vo_ =  Teuchos::rcp(new VerboseObject("FlowPK::Darcy", vlist)); 
 
   // Initilize various common data depending on mesh and state.

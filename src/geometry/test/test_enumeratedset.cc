@@ -56,7 +56,7 @@ TEST(ENUMERATEDSET_REGION)
   
     Teuchos::ParameterList::ConstIterator j = reg_params.begin();
     Teuchos::ParameterList labset_params = reg_params.sublist(reg_params.name(j));
-    std::string in_entity_str = labset_params.get< std::string >("Entity");
+    std::string in_entity_str = labset_params.get< std::string >("entity");
     
     // Make sure that the region type is a Enumerated Set
     CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::ENUMERATED);

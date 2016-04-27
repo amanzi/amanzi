@@ -1,5 +1,5 @@
 /*
-  This is the EOS component of the ATS and Amanzi codes.
+  EOS
    
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -18,7 +18,6 @@
 // template<> 
 // Amanzi::Utils::Factory<Amanzi::EOS>::map_type* 
 //    Amanzi::Utils::Factory<Amanzi::EOS>::map_;
-
 
 namespace Amanzi {
 namespace EOS {

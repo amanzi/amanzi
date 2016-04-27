@@ -39,11 +39,13 @@ struct SolverFactory {
 
 #include "SolverAA.hh"
 #include "SolverNKA.hh"
-#include "SolverNKA_BT.hh"
+#include "SolverNKA_LS.hh"
 #include "SolverNKA_BT_ATS.hh"
+#include "SolverNKA_LS_ATS.hh"
 #include "SolverNewton.hh"
 #include "SolverJFNK.hh"
 #include "SolverContinuation.hh"
+#include "SolverBT.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -105,14 +107,14 @@ SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
       Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
           Teuchos::rcp(new SolverNewton<Vector,VectorSpace>(newton_list));
       return solver;
-    } else if (type == "nka_bt") {
-      if (!slist.isSublist("nka_bt parameters")) {
-        Errors::Message msg("SolverFactory: missing sublist \"nka_bt parameters\"");
+    } else if (type == "nka line search") {
+      if (!slist.isSublist("nka line search parameters")) {
+        Errors::Message msg("SolverFactory: missing sublist \"nka line search parameters\"");
         Exceptions::amanzi_throw(msg);
       }
-      Teuchos::ParameterList nka_list = slist.sublist("nka_bt parameters");
+      Teuchos::ParameterList nka_list = slist.sublist("nka line search parameters");
       Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
-          Teuchos::rcp(new SolverNKA_BT<Vector,VectorSpace>(nka_list));
+          Teuchos::rcp(new SolverNKA_LS<Vector,VectorSpace>(nka_list));
       return solver;
     } else if (type == "nka_bt_ats") {
       if (!slist.isSublist("nka_bt_ats parameters")) {
@@ -122,6 +124,15 @@ SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
       Teuchos::ParameterList nka_list = slist.sublist("nka_bt_ats parameters");
       Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
           Teuchos::rcp(new SolverNKA_BT_ATS<Vector,VectorSpace>(nka_list));
+      return solver;
+    } else if (type == "nka_ls_ats") {
+      if (!slist.isSublist("nka_ls_ats parameters")) {
+        Errors::Message msg("SolverFactory: missing sublist \"nka_ls_ats parameters\"");
+        Exceptions::amanzi_throw(msg);
+      }
+      Teuchos::ParameterList nka_list = slist.sublist("nka_ls_ats parameters");
+      Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
+          Teuchos::rcp(new SolverNKA_LS_ATS<Vector,VectorSpace>(nka_list));
       return solver;
     } else if (type == "JFNK") {
       if (!slist.isSublist("JFNK parameters")) {
@@ -140,6 +151,15 @@ SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
       Teuchos::ParameterList cont_list = slist.sublist("continuation parameters");
       Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
           Teuchos::rcp(new SolverContinuation<Vector,VectorSpace>(cont_list));
+      return solver;
+    } else if (type == "line search") {
+      if (!slist.isSublist("line search parameters")) {
+        Errors::Message msg("SolverFactory: missing sublist \"line search parameters\"");
+        Exceptions::amanzi_throw(msg);
+      }
+      Teuchos::ParameterList ls_list = slist.sublist("line search parameters");
+      Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
+          Teuchos::rcp(new SolverBT<Vector,VectorSpace>(ls_list));
       return solver;
     } else {
       Errors::Message msg("SolverFactory: wrong value of parameter `\"solver type`\"");

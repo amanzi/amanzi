@@ -1,94 +1,94 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
 
-  <ParameterList name="Checkpoint Data">
+  <ParameterList name="checkpoint data">
     <Parameter name="file name base" type="string" value="chkpoint"/>
     <Parameter name="file name digits" type="int" value="5"/>
     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1000, -1}"/>
   </ParameterList>
-  <ParameterList name="Visualization Data">
+  <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{70, 20, -1}"/>
   </ParameterList>
-  <ParameterList name="Regions">
+
+  <ParameterList name="regions">
     <ParameterList name="Bottom Surface">
-      <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000e+02, 0.0e+00}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
+      <ParameterList name="region: box">
+        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 0.0e+00}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionBottom">
-      <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000e+02, 4.0e+01}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
+      <ParameterList name="region: box">
+        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 4.0e+01}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionMiddle">
-      <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000e+02, 8.0e+01}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0e+00, 4.0e+01}"/>
+      <ParameterList name="region: box">
+        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 8.0e+01}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 4.0e+01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionTop">
-      <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0e+00, 8.0e+01}"/>
+      <ParameterList name="region: box">
+        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 8.0e+01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface West">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0e+00, 1.20000e+02}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{7.20000e+01, 1.20000e+02}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 1.20000e+02}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{7.20000e+01, 1.20000e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Crib-1">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{7.20000e+01, 1.20000e+02}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{8.0e+01, 1.20000e+02}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{7.20000e+01, 1.20000e+02}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{8.0e+01, 1.20000e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface East">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{8.0e+01, 1.20000e+02}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{8.0e+01, 1.20000e+02}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="All">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-9.9e+98, -9.9e+98}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{9.9e+98, 9.9e+98}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{-9.9e+98, -9.9e+98}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{9.9e+98, 9.9e+98}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Mesh">
-    <ParameterList name="Unstructured">
-      <ParameterList name="Generate Mesh">
-        <Parameter name="Number of Cells" type="Array(int)" value="{54, 60}"/>
-        <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
-        <Parameter name="Domain High Coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured">
+      <ParameterList name="generate mesh">
+        <Parameter name="number of cells" type="Array(int)" value="{54, 60}"/>
+        <Parameter name="domain low coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
       </ParameterList>
-      <ParameterList name="Expert">
-        <Parameter name="Framework" type="string" value="MSTK"/>
+      <ParameterList name="expert">
+        <Parameter name="framework" type="string" value="MSTK"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Domain">
-    <Parameter isUsed="true" name="Spatial Dimension" type="int" value="2"/>
+  <ParameterList name="domain">
+    <Parameter name="spatial dimension" type="int" value="2"/>
   </ParameterList>
 
-  <ParameterList name="Cycle Driver">
+  <ParameterList name="cycle driver">
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
-        <ParameterList name="PK Tree">
-          <ParameterList name="Flow and Energy">
+        <ParameterList name="PK tree">
+          <ParameterList name="flow and energy">
             <Parameter name="PK type" type="string" value="thermal richards"/>
-            <ParameterList name="Flow">
+            <ParameterList name="flow">
               <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>
-            <ParameterList name="Energy">
+            <ParameterList name="energy">
               <Parameter name="PK type" type="string" value="two-phase energy"/>
             </ParameterList>
           </ParameterList>
@@ -105,12 +105,12 @@
       <Parameter name="maximum time step" type="Array(double)" value="{4.3234e+17, 4.3234e+17}"/>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{}"/>
-    <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="high"/>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="State">
+  <ParameterList name="state">
     <ParameterList name="field evaluators">
       <ParameterList name="particle_density">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
@@ -276,7 +276,7 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Preconditioners">
+  <ParameterList name="preconditioners">
     <ParameterList name="Trilinos ML">
       <Parameter name="preconditioner type" type="string" value="ml"/>
       <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
@@ -326,15 +326,15 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Solvers">
+  <ParameterList name="solvers">
     <ParameterList name="AztecOO">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -344,16 +344,16 @@
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
   <ParameterList name="PKs">
-    <ParameterList name="Flow and Energy">
-      <Parameter name="PKs order" type="Array(string)" value="{Flow, Energy}"/>
+    <ParameterList name="flow and energy">
+      <Parameter name="PKs order" type="Array(string)" value="{flow, energy}"/>
       <Parameter name="master PK index" type="int" value="0"/>
 
       <ParameterList name="time integrator">
@@ -387,29 +387,29 @@
           <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
           <Parameter name="restart tolerance relaxation factor" type="double" value="10.0"/>
           <Parameter name="restart tolerance relaxation factor damping" type="double" value="0.9"/>
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="high"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Energy">
+    <ParameterList name="energy">
       <ParameterList name="Two-phase problem">
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
         <ParameterList name="energy evaluator">
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="high"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="enthalpy evaluator">
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="high"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="thermal conductivity evaluator">
@@ -438,7 +438,7 @@
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="gravity" type="bool" value="false"/>
-              <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+              <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
             </ParameterList>
           </ParameterList>
           <ParameterList name="advection operator">
@@ -497,14 +497,14 @@
             <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
             <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
           </ParameterList>
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="high"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Flow">
+    <ParameterList name="flow">
       <ParameterList name="Richards problem">
         <ParameterList name="relative permeability">
           <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
@@ -513,8 +513,8 @@
             <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
           </ParameterList>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
         <ParameterList name="water retention models">
           <ParameterList name="WRM for RegionMiddle">
@@ -563,7 +563,7 @@
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="gravity" type="bool" value="true"/>
-              <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+              <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
             </ParameterList>
             <ParameterList name="vapor matrix">
               <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -573,7 +573,7 @@
               <Parameter name="exclude primary terms" type="bool" value="false"/>
               <Parameter name="scaled constraint equation" type="bool" value="false"/>
               <Parameter name="gravity" type="bool" value="false"/>
-              <Parameter name="newton correction" type="string" value="none"/>
+              <Parameter name="Newton correction" type="string" value="none"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -653,8 +653,8 @@
             <Parameter name="restart tolerance relaxation factor" type="double" value="1.0e+00"/>
             <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0e+00"/>
           </ParameterList>
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="high"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>

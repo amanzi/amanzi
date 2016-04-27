@@ -40,11 +40,11 @@ include_directories(${NOX_INCLUDE_DIRS})
 #
 file(GLOB solvers_inc_files "*.hh")
 set(solvers_source_files ResidualDebugger.cc
-			 PreconditionerFactory.cc
-			 PreconditionerBoomerAMG.cc
-			 PreconditionerML.cc
-			 PreconditionerEuclid.cc
-			 PreconditionerBlockILU.cc)
+                         PreconditionerFactory.cc
+                         PreconditionerBoomerAMG.cc
+                         PreconditionerML.cc
+                         PreconditionerEuclid.cc
+                         PreconditionerBlockILU.cc)
 
 set(solvers_tpl_libs ${DBC_LIBRARIES}
 		     ${Teuchos_LIBRARIES}

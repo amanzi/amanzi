@@ -87,6 +87,8 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
                     # -- Output control
                     ${CCSE_logging_args}) 
 
+if ( ENABLE_CCSE_TOOLS )
+
 # --- This custom command builds fsnapshot.so, which is a Python module used 
 # --- to extract Amanzi-S plot data. It executes after the CCSE library is 
 # --- built, builds the module, and copies it into place.
@@ -115,3 +117,4 @@ add_custom_command(TARGET ${CCSE_BUILD_TARGET}
                    DEPENDS ${CCSE_BUILD_TARGET}
                    WORKING_DIRECTORY ${CCSE_source_dir}/Tools/C_util/AmrDeriveTecplot)
 
+endif()

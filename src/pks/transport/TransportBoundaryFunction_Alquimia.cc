@@ -75,6 +75,7 @@ void TransportBoundaryFunction_Alquimia::Define(const std::vector<std::string> &
     // are applied on faces).
     assert(mesh_->valid_set_name(regions[i], AmanziMesh::FACE));
     unsigned int num_faces = mesh_->get_set_size(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED);
+
     AmanziMesh::Entity_ID_List face_indices;
     mesh_->get_set_entities(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED, &face_indices);
 

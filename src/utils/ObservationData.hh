@@ -67,7 +67,7 @@ class ObservationData {
   
       for (std::vector<DataTriple>::const_iterator jt = it->second.begin(); jt != it->second.end(); jt++)
         jt->print(os);
-    }	  
+    }          
   }
 
  private:

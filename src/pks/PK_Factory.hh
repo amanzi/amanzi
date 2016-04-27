@@ -1,5 +1,5 @@
 /*
-  This is the PKs component of the Amanzi code. 
+  Process Kernels
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -66,15 +66,17 @@ class PKFactory {
           const Teuchos::RCP<State>& state,
           const Teuchos::RCP<TreeVector>& soln) {
 
-    if (!global_list->isSublist("PKs")) {
-      Errors::Message message("PK_Factory: Missing sublist \"PKs\" in global list.");
-      Exceptions::amanzi_throw(message);
-    }
+    // if (!global_list->isSublist("PKs")) {
+    //   Errors::Message message("PK_Factory: Missing sublist \"PKs\" in global list.");
+    //   Exceptions::amanzi_throw(message);
+    // }
    
     std::string pk_type;
-    if (pk_tree.isParameter("PK type")){
+    if (pk_tree.isParameter("PK type")) {
       pk_type = pk_tree.get<std::string>("PK type");
-      // if (!global_list->sublist("PKs").isSublist(pk_tree.name(pk_ite)) {
+    }
+    else if (global_list->isParameter("PK type")){
+      pk_type = global_list->get<std::string>("PK type"); 
     }
     else{
       std::stringstream errmsg;
@@ -136,7 +138,6 @@ template<typename T> PK* CreateT(Teuchos::ParameterList& pk_tree,
         const Teuchos::RCP<TreeVector>& soln) {
   return new T(pk_tree, global_list, state, soln);
 }
-
 
 
 template<typename T>

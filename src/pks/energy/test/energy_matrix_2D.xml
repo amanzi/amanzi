@@ -1,57 +1,56 @@
-<ParameterList name="Main">
+<ParameterList name="main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
 
   <!--  REGIONS  -->
-  <ParameterList name="Regions">
+  <ParameterList name="regions">
     <ParameterList name="Computational domain">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{-1.0,0.0}"/>
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{1.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{1.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{0.0,-1.0}"/>
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,-1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array(double)" value="{1.0,1.0}"/>
-        <Parameter name="Direction" type="Array(double)" value="{0.0,1.0}"/>
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{1.0,1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
   <!-- ENERGY -->
   <ParameterList name="PKs">
-    <ParameterList name="Energy">
+    <ParameterList name="energy">
       <ParameterList name="Two-phase problem">
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
 
         <ParameterList name="energy evaluator">
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="extreme"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="extreme"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="enthalpy evaluator">
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="extreme"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="extreme"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="thermal conductivity evaluator">
@@ -121,7 +120,7 @@
   </ParameterList>
 
   <!-- STATE -->
-  <ParameterList name="State">
+  <ParameterList name="state">
     <ParameterList name="field evaluators">
       <ParameterList name="saturation_liquid">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
@@ -136,8 +135,8 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
 
@@ -154,8 +153,8 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
 
@@ -172,8 +171,8 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
 
@@ -190,8 +189,8 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
 
@@ -202,8 +201,8 @@
           <Parameter name="iem type" type="string" value="linear"/>
           <Parameter name="heat capacity [J/mol-K]" type="double" value="76.0"/>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
 
@@ -214,16 +213,16 @@
           <Parameter name="iem type" type="string" value="linear"/>
           <Parameter name="heat capacity [J/kg-K]" type="double" value="620.0"/>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
 
       <ParameterList name="internal_energy_gas">
         <Parameter name="field evaluator type" type="string" value="iem water vapor"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_gas"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
 
@@ -235,8 +234,8 @@
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water"/>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
 
@@ -250,8 +249,8 @@
             <Parameter name="eos type" type="string" value="ideal gas"/>
           </ParameterList>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
 
@@ -261,15 +260,15 @@
         <ParameterList name="vapor pressure model parameters">
           <Parameter name="vapor pressure model type" type="string" value="water vapor over water/ice"/>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
 
       <ParameterList name="effective_pressure">
         <Parameter name="field evaluator type" type="string" value="effective_pressure"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -327,7 +326,7 @@
   </ParameterList>
 
   <!-- SOLVERS -->
-  <ParameterList name="Solvers">
+  <ParameterList name="solvers">
     <ParameterList name="PCG with Hypre AMG">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
@@ -355,7 +354,7 @@
   </ParameterList>
 
   <!-- PRECONDITIONERS -->
-  <ParameterList name="Preconditioners">
+  <ParameterList name="preconditioners">
    <ParameterList name="Hypre AMG">
       <Parameter name="discretization method" type="string" value="optimized mfd"/>
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>

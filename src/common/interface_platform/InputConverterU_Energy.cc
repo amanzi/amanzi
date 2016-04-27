@@ -98,11 +98,11 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_()
 
   // insert internal evaluators
   energy_list->sublist("energy evaluator")
-              .sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
+              .sublist("verbose object") = verb_list_.sublist("verbose object");
   energy_list->sublist("enthalpy evaluator")
-              .sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
+              .sublist("verbose object") = verb_list_.sublist("verbose object");
 
-  energy_list->sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
+  energy_list->sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;
 }
 

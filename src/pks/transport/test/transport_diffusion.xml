@@ -1,28 +1,23 @@
-<ParameterList name="Main">
+<ParameterList name="main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
 
-  <ParameterList name="Mesh">
-    <Parameter name="Framework" type="string" value="mesh::simple"/>
-  </ParameterList>    
-   
-  <ParameterList name="Regions">
+  <ParameterList name="regions">
     <ParameterList name="Computational domain">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.0}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Left side">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{0.0,0.5}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.0,0.5}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
  
   <!-- SOLVERS -->
-  <ParameterList name="Solvers">
+  <ParameterList name="solvers">
     <ParameterList name="Dispersion Solver">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
@@ -32,15 +27,15 @@
         <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, make one iteration}"/>
         <Parameter name="size of Krylov space" type="int" value="5"/>
 
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
   <ParameterList name="PKs">
-    <ParameterList name="Transport">
+    <ParameterList name="transport">
       <Parameter name="cfl" type="double" value="0.5"/>   
       <Parameter name="spatial discretization order" type="int" value="2"/>   
       <Parameter name="temporal discretization order" type="int" value="1"/>   
@@ -80,8 +75,8 @@
         <Parameter name="limiter extension for transport" type="bool" value="true"/>
       </ParameterList>
 
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="high"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
 
       <ParameterList name="boundary conditions">
@@ -99,12 +94,12 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-      </ParameterList>	
+      </ParameterList>        
     </ParameterList>
   </ParameterList>
 
   <!-- PRECONDITIONERS -->
-  <ParameterList name="Preconditioners">
+  <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
       <Parameter name="discretization method" type="string" value="optimized mfd"/>
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
@@ -139,11 +134,11 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="State">
+  <ParameterList name="state">
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
-        <ParameterList name="VerboseObject">
-	  <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">

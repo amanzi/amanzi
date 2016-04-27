@@ -48,7 +48,7 @@ class PK_MPC : virtual public PK {
          const Teuchos::RCP<State>& S,
          const Teuchos::RCP<TreeVector>& soln);
 
-  PK_MPC(){};
+  PK_MPC() {};
 
   ~PK_MPC() {};
 
@@ -68,10 +68,10 @@ class PK_MPC : virtual public PK {
                           const Teuchos::RCP<State>& S_next);
 
   virtual void Solution_to_State(TreeVector& soln,
-                                 const Teuchos::RCP<State>& S){};
+                                 const Teuchos::RCP<State>& S) {};
 
   virtual void State_to_Solution(const Teuchos::RCP<State>& S,
-                                 TreeVector& soln){} ;
+                                 TreeVector& soln) {} ;
 
   // -- identifier accessor
   std::string name() const { return name_; }
@@ -113,16 +113,15 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
   // name the PK
   name_ = pk_tree.name();
 
-
   boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->");
 
-  if (res.end() - name_.end() != 0)  boost::algorithm::erase_head(name_,  res.end() - name_.begin());
+  if (res.end() - name_.end() != 0) boost::algorithm::erase_head(name_, res.end() - name_.begin());
 
   // get my parameter list
   my_list_ = Teuchos::sublist(Teuchos::sublist(global_list_, "PKs"), name_);
 
   Teuchos::RCP<Teuchos::ParameterList> plist;
-  if (global_list_->isSublist("PKs")){
+  if (global_list_->isSublist("PKs")) {
     plist = Teuchos::sublist(global_list, "PKs");
   }
 
@@ -200,7 +199,7 @@ void PK_MPC<PK_Base>::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
 template <class PK_Base>
 void PK_MPC<PK_Base> :: set_states(const Teuchos::RCP<const State>& S,
                                    const Teuchos::RCP<State>& S_inter,
-                                   const Teuchos::RCP<State>& S_next){
+                                   const Teuchos::RCP<State>& S_next) {
 
   for (typename SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {

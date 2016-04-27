@@ -72,7 +72,6 @@ set(operators_inc_files
     Operator_Node.hh
     Operator_Edge.hh
     BoundaryFlux.hh
-    OperatorCurlCurl.hh
     OperatorDiffusion.hh
     OperatorDiffusionWithGravity.hh
     OperatorDiffusionFactory.hh
@@ -82,6 +81,8 @@ set(operators_inc_files
     OperatorDiffusionFVwithGravity.hh
     OperatorDiffusionNLFV.hh
     OperatorDiffusionNLFVwithGravity.hh
+    OperatorElectromagnetics.hh
+    OperatorElectromagneticsMHD.hh
     OperatorAccumulation.hh
     OperatorAdvection.hh
     TreeOperator.hh
@@ -106,7 +107,6 @@ add_amanzi_library(operators
                           Operator_ConsistentFace.cc
                           Operator_Node.cc
                           Operator_Edge.cc
-                          OperatorCurlCurl.cc
                           OperatorDiffusionMFD.cc
                           OperatorDiffusionMFDwithGravity.cc
                           OperatorDiffusionFV.cc
@@ -114,6 +114,8 @@ add_amanzi_library(operators
                           OperatorDiffusionNLFV.cc
                           OperatorDiffusionNLFVwithGravity.cc
                           OperatorDiffusionFactory.cc                   
+                          OperatorElectromagnetics.cc
+                          OperatorElectromagneticsMHD.cc
                           OperatorAccumulation.cc
                           OperatorAdvection.cc  
                           TreeOperator.cc
@@ -138,6 +140,13 @@ if ( BUILD_TESTS )
     set(amanzi_libs geometry atk mesh mesh_factory mesh_logical data_structures operators whetstone output atk)
 
     # Test: operators for various PDEs
+    add_amanzi_test(operators_utils operators_utils
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_utils.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    
+
     if ( ENABLE_INDIVIDUAL_TESTS_OPERATORS OR ENABLE_INDIVIDUAL_TESTS )
         add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
                         KIND unit
@@ -174,6 +183,7 @@ if ( BUILD_TESTS )
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion.cc
                                         test/operator_diffusion_nodal.cc
+                                        test/operator_diffusion_edges.cc
                                         test/operator_diffusion_divk.cc
                                         test/operator_diffusion_nonsymmetric.cc
                                         test/operator_diffusion_nlfv.cc
@@ -206,9 +216,10 @@ if ( BUILD_TESTS )
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: operators on 
-    add_amanzi_test(operators_mhd operators_mhd
+    add_amanzi_test(operators_electromagnetics operators_electromagnetics
                     KIND unit
-                    SOURCE test/Main.cc test/operator_mhd.cc
+                    SOURCE test/Main.cc test/operator_electromagnetics.cc 
+                                        test/operator_electromagnetics_mhd.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: utils
@@ -227,14 +238,18 @@ if ( BUILD_TESTS )
 
     add_amanzi_test(operators_stability_2pe operators_stability NPROCS 2 KIND unit)
 
-    # correctness of tree operator
-    add_amanzi_test(operators_tree operators_tree
+    # converge rates
+    add_amanzi_test(operators_diffusion_convergence operators_diffusion_convergence
                     KIND unit
-                    SOURCE test/Main.cc test/operator_tree.cc
+                    SOURCE test/Main.cc test/operator_diffusion_convergence.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(operators_coupled_diffusion operators_coupled_diffusion
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_coupled_diffusion.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(operators_coupled_diffusion_2pe operators_coupled_diffusion NPROCS 2 KIND unit)
 
-    add_amanzi_test(operators_tree_2pe operators_tree NPROCS 2 KIND unit)
-
+    
     # Test: diffusion with gravity
     add_amanzi_test(operators_gravity operators_gravity
                     KIND unit

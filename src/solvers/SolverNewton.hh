@@ -276,9 +276,9 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
 template<class Vector, class VectorSpace>
 int SolverNewton<Vector, VectorSpace>::Newton_ErrorControl_(double error, 
                                                             double previous_error, 
-							    double l2_error, 
-							    double previous_du_norm, 
-							    double du_norm)
+                                                            double l2_error, 
+                                                            double previous_du_norm, 
+                                                            double du_norm)
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
     *vo_->os() << num_itrs_ << ": error=" << error << "  L2-error=" << l2_error 

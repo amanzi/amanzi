@@ -43,7 +43,7 @@ Unstructured_observations::Unstructured_observations(
   units_.Init(*units_list);
 
   Teuchos::ParameterList tmp_list;
-  tmp_list.set<std::string>("Verbosity Level", "high");
+  tmp_list.set<std::string>("verbosity level", "high");
   vo_ = new VerboseObject("Observations", tmp_list);
 
   // loop over the sublists and create an observation for each
@@ -123,10 +123,10 @@ int Unstructured_observations::MakeObservations(State& S)
       num_obs++; 
       
       // for now we can only observe Integrals and Values
-      if ((i->second).functional != "Observation Data: Integral"  &&
-          (i->second).functional != "Observation Data: Point" )  {
-        msg << "Unstructured_observations: can only handle Functional == Observation Data:"
-            << " Integral, or Functional == Observation Data: Point";
+      if ((i->second).functional != "observation data: integral"  &&
+          (i->second).functional != "observation data: point" )  {
+        msg << "Unstructured_observations: can only handle Functional == observation data:"
+            << " integral, or functional == observation data: point";
         Exceptions::amanzi_throw(msg);
       }
       
@@ -179,7 +179,9 @@ int Unstructured_observations::MakeObservations(State& S)
       bool obs_boundary(false);
       unsigned int mesh_block_size(0);
       AmanziMesh::Entity_ID_List entity_ids;
+      std::vector<double> vofs;
       std::string solute_var;
+
       if (obs_solute) solute_var = comp_names_[tcc_index] + " volumetric flow rate";
       if (var == "aqueous mass flow rate" || 
           var == "aqueous volumetric flow rate" ||
@@ -188,14 +190,14 @@ int Unstructured_observations::MakeObservations(State& S)
                                                     Amanzi::AmanziMesh::FACE,
                                                     Amanzi::AmanziMesh::OWNED);
         entity_ids.resize(mesh_block_size);
-        S.GetMesh()->get_set_entities((i->second).region, 
-                                      Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED,
-                                      &entity_ids);
+        S.GetMesh()->get_set_entities_and_vofs((i->second).region,
+                                               AmanziMesh::FACE, AmanziMesh::OWNED,
+                                               &entity_ids, &vofs);
         obs_boundary = true;
         for (int i = 0; i != mesh_block_size; ++i) {
           int f = entity_ids[i];
           Amanzi::AmanziMesh::Entity_ID_List cells;
-          S.GetMesh()->face_get_cells(f, Amanzi::AmanziMesh::USED, &cells);
+          S.GetMesh()->face_get_cells(f, AmanziMesh::USED, &cells);
           if (cells.size() == 2) {
             obs_boundary = false;
             break;
@@ -203,12 +205,11 @@ int Unstructured_observations::MakeObservations(State& S)
         }
       } else { // all others need cells
         mesh_block_size = S.GetMesh()->get_set_size((i->second).region,
-                                                    Amanzi::AmanziMesh::CELL,
-                                                    Amanzi::AmanziMesh::OWNED);    
+                                                    AmanziMesh::CELL, AmanziMesh::OWNED);    
         entity_ids.resize(mesh_block_size);
-        S.GetMesh()->get_set_entities((i->second).region,
-                                      Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-                                      &entity_ids);
+        S.GetMesh()->get_set_entities_and_vofs((i->second).region,
+                                               AmanziMesh::CELL, AmanziMesh::OWNED,
+                                               &entity_ids, &vofs);
       }
       
       // find global meshblocksize
@@ -428,9 +429,9 @@ int Unstructured_observations::MakeObservations(State& S)
       double vresult;
       S.GetMesh()->get_comm()->SumAll(&volume, &vresult, 1);
  
-      if ((i->second).functional == "Observation Data: Integral") {  
+      if ((i->second).functional == "observation data: integral") {  
         data_triplet.value = result;  
-      } else if ((i->second).functional == "Observation Data: Point") {
+      } else if ((i->second).functional == "observation data: point") {
         data_triplet.value = result / vresult;
       }
       

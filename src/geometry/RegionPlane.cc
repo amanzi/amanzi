@@ -25,7 +25,7 @@ namespace AmanziGeometry {
 // -------------------------------------------------------------
 // RegionPlane:: constructors / destructor
 // -------------------------------------------------------------
-RegionPlane::RegionPlane(const std::string& name,
+RegionPlane::RegionPlane(const std::string& name, 
                          const Set_ID id,
                          const Point& p,
                          const Point& normal,
@@ -52,7 +52,8 @@ RegionPlane::inside(const Point& p) const
 #ifdef ENABLE_DBC
   if (p_.dim() != n_.dim()) {
     Errors::Message mesg;
-    mesg << "\nMismatch in point and normal dimensions of RegionPlane " << Region::name() << "Perhaps the region is improperly defined?\n";
+    mesg << "Mismatch in point dimension of RegionPlane \""
+         << Region::name() << "\" and query point.";
     Exceptions::amanzi_throw(mesg);
   }
 #endif

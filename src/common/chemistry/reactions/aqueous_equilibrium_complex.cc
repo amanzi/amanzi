@@ -68,7 +68,7 @@ void AqueousEquilibriumComplex::AddContributionToDTotal(
   // taking derivative of contribution to residual in row i with respect
   // to species in column j
 
-  // TODO(bandre): because of memory layout, c loops should be for(i){for(j)}...?
+  // TODO(bandre): because of memory layout, c loops should be for(i) {for(j)}...?
 
   // column loop
   for (int j = 0; j < ncomp(); j++) {

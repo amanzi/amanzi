@@ -51,13 +51,13 @@ TEST(POLYGON_REGION2)
 
   Teuchos::ParameterList::ConstIterator j = reg_params.begin();
   Teuchos::ParameterList poly_params = reg_params.sublist(reg_params.name(j));
-  numpoints = poly_params.get<int>("Number of points");
-  in_xyz = poly_params.get< Teuchos::Array<double> >("Points");
+  numpoints = poly_params.get<int>("number of points");
+  in_xyz = poly_params.get< Teuchos::Array<double> >("points");
 
   double tolerance = 1.0e-08;
-  // if (poly_params.isSublist("Expert Parameters")) {
-  //   Teuchos::ParameterList expert_params = poly_params.sublist("Expert Parameters");
-  //   tolerance = expert_params.get<double>("Tolerance");
+  // if (poly_params.isSublist("expert parameters")) {
+  //   Teuchos::ParameterList expert_params = poly_params.sublist("expert parameters");
+  //   tolerance = expert_params.get<double>("tolerance");
   // }
   
   // Make sure that the region type is a Plane
@@ -144,8 +144,8 @@ TEST(POLYGON_REGION3)
 
   Teuchos::ParameterList::ConstIterator j = reg_params.begin();
   Teuchos::ParameterList poly_params = reg_params.sublist(reg_params.name(j));
-  numpoints = poly_params.get<int>("Number of points");
-  in_xyz = poly_params.get< Teuchos::Array<double> >("Points");
+  numpoints = poly_params.get<int>("number of points");
+  in_xyz = poly_params.get< Teuchos::Array<double> >("points");
  
   // Make sure that the region type is a Plane
   CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::POLYGON);

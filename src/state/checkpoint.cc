@@ -63,7 +63,7 @@ void Checkpoint::CreateFile(const int cycle) {
   checkpoint_output_->createDataFile(oss.str());
   checkpoint_output_->open_h5file();
 
-  if (final_){ 
+  if (final_) { 
     std::string ch_file = oss.str() + ".h5";
 
     std::stringstream oss_final;

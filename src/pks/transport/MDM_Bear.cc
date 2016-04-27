@@ -26,8 +26,8 @@ namespace Transport {
 ****************************************************************** */
 MDM_Bear::MDM_Bear(Teuchos::ParameterList& plist)
 {
-  alphaL_ = plist.get<double>("alphaL");
-  alphaT_ = plist.get<double>("alphaT");
+  alphaL_ = plist.get<double>("alpha_l");
+  alphaT_ = plist.get<double>("alpha_t");
 }
 
 

@@ -38,8 +38,8 @@ class SolverJFNK : public Solver<Vector, VectorSpace> {
       plist_(plist) {}
 
   SolverJFNK(Teuchos::ParameterList& plist,
-	     const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-	     const VectorSpace& map) :
+             const Teuchos::RCP<SolverFnBase<Vector> >& fn,
+             const VectorSpace& map) :
       plist_(plist) {
     Init(fn, map);
   }

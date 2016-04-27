@@ -261,7 +261,8 @@ void Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> 
     using_sorption_isotherms_ = true;
   }
 
-  if (state_list->sublist("initial conditions").isSublist("sorption_sites")) {
+  //if (state_list->sublist("initial conditions").isSublist("sorption_sites")) {
+  if (state_list->sublist("initial conditions").isSublist("surface_complexation")) {
     using_sorption_ = true;
   }
 
@@ -282,6 +283,9 @@ void Chemistry_PK::ErrorAnalysis(int ierr, std::string& internal_msg)
   mesh_->get_comm()->MaxAll(tmp_in, tmp_out, 2);
 
   if (tmp_out[0] != 0) {
+    // update time control parameters
+    num_successful_steps_ = 0;
+
     // get at least one error message
     int n = tmp_out[1];
     int msg_out[n + 1], msg_in[n + 1], m(mesh_->get_comm()->MyPID());

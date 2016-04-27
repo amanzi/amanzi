@@ -7,9 +7,9 @@
 #include "SolverFnBase.hh"
 
 // ODE: f(u) = ... = 0
-class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vector> {
+class NonlinearProblem6 : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vector> {
  public:
-  NonlinearProblem(double atol, double rtol, bool exact_jacobian) :
+  NonlinearProblem6(double atol, double rtol, bool exact_jacobian) :
     rtol_(rtol), atol_(atol), exact_jacobian_(exact_jacobian) {}
 
   void Residual(const Teuchos::RCP<Epetra_Vector>& u,
@@ -18,6 +18,7 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vecto
       double x = (*u)[c];
       (*f)[c] = x < 0 ? -pow(fabs(x), 0.2) : pow(fabs(x), 0.2);
     }
+    std::cout << "  Evaluating: f(u=" << (*u)[0] << "," << (*u)[1] << ") = " << (*f)[0] << "," << (*f)[1] << std::endl;
   }
 
   int ApplyPreconditioner(const Teuchos::RCP<const Epetra_Vector>& u,
@@ -30,7 +31,9 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vecto
     double norm_du, norm_u;
     du->NormInf(&norm_du);
     u->NormInf(&norm_u);
-    return norm_du / (atol_ + rtol_ * norm_u);
+    double error = norm_du / atol_;
+    std::cout << " : error = " << error << std::endl;
+    return error;
   }
 
   void UpdatePreconditioner(const Teuchos::RCP<const Epetra_Vector>& up) {

@@ -48,7 +48,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* create a MSTK mesh framework */
-  ParameterList regions_list = plist->get<Teuchos::ParameterList>("Regions");
+  ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, &comm));
 
@@ -63,11 +63,11 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   RCP<const Mesh> mesh = meshfactory("test/dual2D.exo", gm);
 
   // create a state and populate it
-  Teuchos::ParameterList state_list = plist->sublist("State");
+  Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "Flow", S));
+  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S));
   DPK->Setup(S.ptr());
   S->Setup();
   S->InitializeFields();

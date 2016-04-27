@@ -33,7 +33,7 @@ TEST(FIELD_INITIALIZATION) {
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
   // create geometric model
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, &comm));
 
@@ -46,7 +46,7 @@ TEST(FIELD_INITIALIZATION) {
   meshfactory.preference(pref);
   Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory("test/cube3x3x3.exo", gm);
 
-  Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("State");
+  Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("state");
   Teuchos::Ptr<State> S = Teuchos::ptr(new State(state_list));
 
   S->RegisterMesh("domain", mesh);

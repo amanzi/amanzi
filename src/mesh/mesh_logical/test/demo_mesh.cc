@@ -468,8 +468,7 @@ demoMeshLogicalYEmbedded() {
   Teuchos::RCP<Mesh_MSTK> m_bg =
     Teuchos::rcp(new Mesh_MSTK(X0[0], X0[1],X0[2], X1[0], X1[1], X1[2],
 			       nx, ny, nz, &comm_,
-            m_log->geometric_model(), Teuchos::null, true, false));
-
+                               m_log->geometric_model(), Teuchos::null, true, false));
 
   // make the new connections, 1 per logical cell
   int ncells_log = m_log->num_entities(CELL, USED);

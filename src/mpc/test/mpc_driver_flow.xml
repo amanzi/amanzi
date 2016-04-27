@@ -1,113 +1,110 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
-  <Parameter isUsed="true" name="input file name" type="string" value="dvz_3layer_2D_short.xml"/>
-  <Parameter name="new mpc driver" type="bool" value="true"/>
 
-  <ParameterList name="Checkpoint Data">
+  <ParameterList name="checkpoint data">
     <Parameter name="file name base" type="string" value="chkpoint"/>
     <Parameter name="file name digits" type="int" value="5"/>
 <!--    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/> -->
     <Parameter name="times" type="Array(double)" value="{71.0, 72.0, 85.0}"/>
     <Parameter name="times start period stop" type="Array(double)" value="{60., 10., 120.}"/>
   </ParameterList>
-  <ParameterList name="Visualization Data">
+  <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
   </ParameterList>
 
-  <ParameterList name="Regions">
+  <ParameterList name="regions">
     <ParameterList name="Bottom Surface Outside All">
-      <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000e+02, 0.0e+00}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
+      <ParameterList name="region: box">
+        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 0.0e+00}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Retion Bottom">
-      <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000e+02, 4.0e+01}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
+      <ParameterList name="region: box">
+        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 4.0e+01}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Region Middle">
-      <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000e+02, 8.0e+01}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0e+00, 4.0e+01}"/>
+      <ParameterList name="region: box">
+        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 8.0e+01}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 4.0e+01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Region Top">
-      <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0e+00, 8.0e+01}"/>
+      <ParameterList name="region: box">
+        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 8.0e+01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface Outside Recharge_Boundary_westOfCribs">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0e+00, 1.20000e+02}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{7.20000e+01, 1.20000e+02}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 1.20000e+02}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{7.20000e+01, 1.20000e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface Outside Crib_216-B-17">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{7.20000e+01, 1.20000e+02}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{8.0e+01, 1.20000e+02}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{7.20000e+01, 1.20000e+02}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{8.0e+01, 1.20000e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface Outside Recharge_Boundary_btwnCribs">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{8.0e+01, 1.20000e+02}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.36000e+02, 1.20000e+02}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{8.0e+01, 1.20000e+02}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.36000e+02, 1.20000e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface Outside Crib_216-B-18">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{1.36000e+02, 1.20000e+02}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.48000e+02, 1.20000e+02}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{1.36000e+02, 1.20000e+02}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.48000e+02, 1.20000e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top Surface Outside Recharge_Boundary_eastOfCribs">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{1.48000e+02, 1.20000e+02}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{1.48000e+02, 1.20000e+02}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Well">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{1.08000e+02, 4.0e+01}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{1.12000e+02, 6.0e+01}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{1.08000e+02, 4.0e+01}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.12000e+02, 6.0e+01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="All">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{-9.99999999999999967e+98, -9.99999999999999967e+98}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{9.99999999999999967e+98, 9.99999999999999967e+98}"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{-9.99999999999999967e+98, -9.99999999999999967e+98}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{9.99999999999999967e+98, 9.99999999999999967e+98}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
-  <ParameterList name="Mesh">
-    <ParameterList name="Unstructured">
-      <ParameterList name="Generate Mesh">
-        <Parameter name="Number of Cells" type="Array(int)" value="{54, 60}"/>
-        <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
-        <Parameter name="Domain High Coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured">
+      <ParameterList name="generate mesh">
+        <Parameter name="number of cells" type="Array(int)" value="{54, 60}"/>
+        <Parameter name="domain low coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
       </ParameterList>
-      <ParameterList name="Expert">
-        <Parameter name="Framework" type="string" value="MSTK"/>
+      <ParameterList name="expert">
+        <Parameter name="framework" type="string" value="MSTK"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Domain">
-    <Parameter isUsed="true" name="Spatial Dimension" type="int" value="2"/>
+  <ParameterList name="domain">
+    <Parameter name="spatial dimension" type="int" value="2"/>
   </ParameterList>
 
-  <ParameterList name="Cycle Driver">
+  <ParameterList name="cycle driver">
     <Parameter name="start time" type="double" value="0"/>
     <Parameter name="end time" type="double" value="100"/>
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
-	<ParameterList name="PK Tree">
-	  <ParameterList name="Flow">
+	<ParameterList name="PK tree">
+	  <ParameterList name="flow">
 	    <Parameter name="PK type" type="string" value="richards"/>
 	  </ParameterList>
 	</ParameterList>
@@ -123,7 +120,7 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="State">
+  <ParameterList name="state">
     <ParameterList name="field evaluators">
       <ParameterList name="viscosity_liquid">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
@@ -296,7 +293,7 @@
   </ParameterList>
 
   <ParameterList name="PKs">
-    <ParameterList name="Flow">
+    <ParameterList name="flow">
       <ParameterList name="Richards problem">
       <ParameterList name="relative permeability">
         <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
@@ -305,8 +302,8 @@
           <Parameter name="tolerance" type="double" value="1e-12"/>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="VerboseObject">
-	<Parameter name="Verbosity Level" type="string" value="high"/>
+      <ParameterList name="verbose object">
+	<Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
       <ParameterList name="water retention models">
       	<ParameterList name="Water Retention Model for Region Middle">
@@ -478,7 +475,7 @@
    </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Preconditioners">
+  <ParameterList name="preconditioners">
     <ParameterList name="Trilinos ML">
       <Parameter name="preconditioner type" type="string" value="ml"/>
       <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
@@ -528,15 +525,15 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Solvers">
+  <ParameterList name="solvers">
     <ParameterList name="AztecOO">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -546,8 +543,8 @@
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

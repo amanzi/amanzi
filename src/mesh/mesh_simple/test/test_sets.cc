@@ -85,7 +85,7 @@ TEST(SETS) {
 
     std::string shape = reg_params.name(j);
 
-    if (shape == "Region: Plane") {
+    if (shape == "region: plane") {
 
       if (reg_name == "ZLO FACE Plane") {
 
@@ -147,11 +147,11 @@ TEST(SETS) {
       }
 
     }
-    else if (shape == "Region: Box") {
+    else if (shape == "region: box") {
 
       Teuchos::ParameterList box_params = reg_params.sublist(shape);
-      Teuchos::Array<double> pmin = box_params.get< Teuchos::Array<double> >("Low Coordinate");
-      Teuchos::Array<double> pmax = box_params.get< Teuchos::Array<double> >("High Coordinate");
+      Teuchos::Array<double> pmin = box_params.get< Teuchos::Array<double> >("low coordinate");
+      Teuchos::Array<double> pmax = box_params.get< Teuchos::Array<double> >("high coordinate");
 
       if (pmin[0] == pmax[0] || pmin[1] == pmax[1] || pmin[2] == pmax[2])
 	{
@@ -244,7 +244,7 @@ TEST(SETS) {
 	  CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
 	}
     }
-    else if (shape == "Region: Point") {
+    else if (shape == "region: point") {
 
       // Do we have a valid set by this name
       
@@ -273,15 +273,14 @@ TEST(SETS) {
       CHECK_ARRAY_EQUAL(expnsetnodes[j],setents,set_size);	  
                         
     }
-    else if (shape == "Region: Labeled Set") {
+    else if (shape == "region: labeled set") {
 
       std::cerr << "Mesh framework cannot do labeled sets" << std::endl;
 
       CHECK(false); 
 
     }
-    else if (shape == "Region: Color Function") {
-
+    else if (shape == "region: color function") {
 
       // Do we have a valid set by this name
             
@@ -308,9 +307,7 @@ TEST(SETS) {
       mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED,&setents);
             
       CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);	  
-                        
     }
   }
-
 }
 }

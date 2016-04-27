@@ -23,9 +23,9 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
                              const Teuchos::RCP<Teuchos::ParameterList>& glist,
                              const Teuchos::RCP<State>& S,
                              const Teuchos::RCP<TreeVector>& soln) :
-  glist_(glist),
-  Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
-  Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
+    glist_(glist),
+    Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
+    Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
 {
   Teuchos::ParameterList vlist;
   vo_ =  Teuchos::rcp(new VerboseObject("FlowEnergy_PK", vlist)); 
@@ -112,7 +112,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
     elist.sublist("molar_density_liquid").sublist("EOS parameters")
          .set<std::string>("eos type", "liquid water");
     elist.sublist("molar_density_liquid")
-         .sublist("VerboseObject").set<std::string>("Verbosity Level", "medium");
+         .sublist("verbose object").set<std::string>("verbosity level", "medium");
 
     S->RequireField("molar_density_liquid", "molar_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -127,7 +127,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
          .sublist("viscosity model parameters")
          .set<std::string>("viscosity relation type", "liquid water");
     elist.sublist("viscosity_liquid")
-         .sublist("VerboseObject").set<std::string>("Verbosity Level", "high");
+         .sublist("verbose object").set<std::string>("verbosity level", "high");
 
     S->RequireField("viscosity_liquid", "viscosity_liquid")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -147,14 +147,14 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // inform other PKs about strong coupling
   // -- flow
-  Teuchos::ParameterList& flow = glist_->sublist("PKs").sublist("Flow")
+  Teuchos::ParameterList& flow = glist_->sublist("PKs").sublist("flow")
                                         .sublist("Richards problem")
                                         .sublist("physical models and assumptions");
   flow.set("vapor diffusion", true);
   flow.set<std::string>("water content model", "generic");
 
   // -- energy
-  Teuchos::ParameterList& energy = glist_->sublist("PKs").sublist("Energy")
+  Teuchos::ParameterList& energy = glist_->sublist("PKs").sublist("energy")
                                           .sublist("physical models and assumptions");
   energy.set("vapor diffusion", true);
 

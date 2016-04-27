@@ -47,7 +47,7 @@ TEST(FLOW_POROSITY_MODELS) {
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a mesh framework
-  Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("Regions");
+  Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, &comm));
 
@@ -62,12 +62,12 @@ TEST(FLOW_POROSITY_MODELS) {
   Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, -2.0, 1.0, 0.0, 18, 18, gm);
 
   // create a simple state and populate it
-  Teuchos::ParameterList state_list = plist->sublist("State");
+  Teuchos::ParameterList state_list = plist->sublist("state");
   Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
   S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(plist, "Flow", S, soln));
+  Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(plist, "flow", S, soln));
 
   RPK->Setup(S.ptr());
   S->Setup();
@@ -134,7 +134,7 @@ TEST(FLOW_POROSITY_MODELS) {
   phi.MaxValue(&pmax);
   CHECK(pmin + 0.02 < pmax);
 
-  Teuchos::ParameterList& tmp = plist->sublist("PKs").sublist("Flow")
+  Teuchos::ParameterList& tmp = plist->sublist("PKs").sublist("flow")
                                       .sublist("Richards problem").sublist("porosity models")
                                       .sublist("POM for Material 2");
   std::cout << "Mat2: ref pressure:" << tmp.get<double>("reference pressure") << std::endl;

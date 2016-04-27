@@ -33,8 +33,8 @@ namespace AmanziInput {
 
 // Amanzi version
 #define AMANZI_SPEC_VERSION_MAJOR 2
-#define AMANZI_SPEC_VERSION_MINOR 2
-#define AMANZI_SPEC_VERSION_MICRO 1
+#define AMANZI_SPEC_VERSION_MINOR 3
+#define AMANZI_SPEC_VERSION_MICRO 0
 
 // constants
 const std::string TYPE_TIME = "time";

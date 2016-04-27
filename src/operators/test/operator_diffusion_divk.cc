@@ -153,11 +153,11 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   global_op->AssembleMatrix();
 
   // create preconditoner using the base operator class
-  Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+  Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem
-  Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+  Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
   AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create("AztecOO CG", lop_list, global_op);
@@ -318,11 +318,11 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   global_op->AssembleMatrix();
 
   // create preconditoner using the base operator class
-  Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("Preconditioners");
+  Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem
-  Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("Solvers");
+  Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
   AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create("AztecOO CG", lop_list, global_op);

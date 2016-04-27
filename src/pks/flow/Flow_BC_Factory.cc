@@ -31,7 +31,7 @@ FlowBCFactory::FlowBCFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 {
   // create verbosity object
   Teuchos::ParameterList vlist;
-  // vlist.set("Verbosity Level", "medium");
+  // vlist.set("verbosity level", "medium");
   vo_ =  Teuchos::rcp(new VerboseObject("FlowBCFactory", vlist)); 
 }
 
@@ -146,7 +146,7 @@ void FlowBCFactory::ProcessPressureList(
         ProcessPressureSpec(spec, submodel, bc);
       } catch (Errors::Message& msg) {
         Errors::Message m;
-        m << "in sublist \"" << spec.name().c_str() << "\": " << msg.what();
+        m << "in sublist \"" << spec.name().c_str() << "\":\n" << msg.what();
         Exceptions::amanzi_throw(m);
       }
     } else {
@@ -295,7 +295,7 @@ void FlowBCFactory::ProcessStaticHeadList(
         ProcessStaticHeadSpec(p0, density, gravity, spec, submodel, bc);
       } catch (Errors::Message& msg) {
         Errors::Message m;
-        m << "in sublist \"" << spec.name().c_str() << "\": " << msg.what();
+        m << "in sublist \"" << spec.name().c_str() << "\":\n" << msg.what();
         Exceptions::amanzi_throw(m);
       }
     } else {

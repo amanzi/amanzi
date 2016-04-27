@@ -1,4 +1,4 @@
-<amanzi_input type="unstructured" version="2.2.1">
+<amanzi_input type="unstructured" version="2.3.0">
   <model_description name="Flow and Transport w/ calcite dissolution">
     <units>
       <length_unit>m</length_unit>
@@ -46,7 +46,7 @@
     </liquid_phase>
     <solid_phase name="rock">
       <minerals>
-        <mineral name="Calcite"/>
+        <mineral>Calcite</mineral>
       </minerals>     
     </solid_phase>
   </phases>
@@ -86,8 +86,9 @@
         <activity_model>debye-huckel</activity_model>
         <tolerance>1.5e-12</tolerance>
         <maximum_newton_terations>150</maximum_newton_terations>
-        <max_time_step>15778463.0</max_time_step>
-        <initial_time_step>157784.63</initial_time_step>
+        <max_time_step>0.2</max_time_step>
+        <time_step_cut_threshold>20</time_step_cut_threshold>
+        <initial_time_step>0.2</initial_time_step>
         <time_step_control_method>simple</time_step_control_method>
       </unstr_chemistry_controls>
 

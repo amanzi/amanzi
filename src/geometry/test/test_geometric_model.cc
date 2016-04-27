@@ -59,7 +59,7 @@ TEST(GEOMETRIC_MODEL)
 
     std::string shape = reg_params.name(j);
 
-    if (shape == "Region: Plane") {
+    if (shape == "region: plane") {
       // Make sure that the region type is a Plane
       CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::PLANE);
 
@@ -67,8 +67,8 @@ TEST(GEOMETRIC_MODEL)
       Teuchos::Array<double> in_xyz, in_nrm;
 
       Teuchos::ParameterList plane_params = reg_params.sublist(reg_params.name(j));
-      in_xyz = plane_params.get< Teuchos::Array<double> >("Location");
-      in_nrm = plane_params.get< Teuchos::Array<double> >("Direction");  
+      in_xyz = plane_params.get< Teuchos::Array<double> >("point");
+      in_nrm = plane_params.get< Teuchos::Array<double> >("normal");  
  
       Amanzi::AmanziGeometry::Point p, n;
       Teuchos::RCP<const Amanzi::AmanziGeometry::RegionPlane> plane =
@@ -89,7 +89,7 @@ TEST(GEOMETRIC_MODEL)
       if (p.dim() == 3)
 	CHECK_EQUAL(n.z(),in_nrm[2]/len);
       
-    } else if (shape == "Region: Box") {
+    } else if (shape == "region: box") {
       // Make sure that the region type is a BOX
       CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::BOX);
 
@@ -97,8 +97,8 @@ TEST(GEOMETRIC_MODEL)
       Teuchos::Array<double> in_min_xyz, in_max_xyz;
 
       Teuchos::ParameterList box_params = reg_params.sublist(reg_params.name(j));
-      in_min_xyz = box_params.get< Teuchos::Array<double> >("Low Coordinate");
-      in_max_xyz = box_params.get< Teuchos::Array<double> >("High Coordinate");
+      in_min_xyz = box_params.get< Teuchos::Array<double> >("low coordinate");
+      in_max_xyz = box_params.get< Teuchos::Array<double> >("high coordinate");
  
       // Make sure that the region dimension is equal to the topological
       // dimension of the box
@@ -127,9 +127,9 @@ TEST(GEOMETRIC_MODEL)
 	CHECK_EQUAL(pmax.z(),in_max_xyz[2]);
       }
 
-    } else if (shape == "Region: Labeled Set") {
+    } else if (shape == "region: labeled set") {
       Teuchos::ParameterList labset_params = reg_params.sublist(reg_params.name(j));
-      std::string in_entity_str = labset_params.get< std::string >("Entity");
+      std::string in_entity_str = labset_params.get< std::string >("entity");
 
       // Make sure that the region type is a Labeled Set
       CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::LABELEDSET);

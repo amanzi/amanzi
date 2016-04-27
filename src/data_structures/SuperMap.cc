@@ -193,8 +193,8 @@ getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
                             Teuchos::rcpFromRef(mesh.node_map(true)));
 
     case AmanziMesh::BOUNDARY_FACE:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.exterior_face_map()),
-                            Teuchos::rcpFromRef(mesh.exterior_face_map()));
+      return std::make_pair(Teuchos::rcpFromRef(mesh.exterior_face_map(false)),
+                            Teuchos::rcpFromRef(mesh.exterior_face_map(false)));
     default:
       ASSERT(false);
       return std::make_pair(Teuchos::null, Teuchos::null);
