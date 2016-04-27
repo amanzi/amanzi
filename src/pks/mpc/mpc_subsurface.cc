@@ -31,7 +31,7 @@ with freezing.
 namespace Amanzi {
 
 // -- Initialize owned (dependent) variables.
-void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
+void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
   // set up keys
   domain_name_ = plist_->get<std::string>("domain name", "domain");
   temp_key_ = getKey(domain_name_, "temperature");
@@ -66,7 +66,7 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   }
   
   // set up the sub-pks
-  StrongMPC<PKPhysicalBDFBase>::setup(S);
+  StrongMPC<PK_PhysicalBDF_Default>::Setup(S);
   mesh_ = S->GetMesh(domain_name_);
 
   // set up debugger
@@ -286,8 +286,8 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   }    
 }
 
-void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
-  StrongMPC<PKPhysicalBDFBase>::initialize(S);
+void MPCSubsurface::Initialize(const Teuchos::Ptr<State>& S) {
+  StrongMPC<PK_PhysicalBDF_Default>::Initialize(S);
   if (ewc_ != Teuchos::null) ewc_->initialize(S);
 
   // initialize offdiagonal operators
@@ -341,12 +341,14 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
 void MPCSubsurface::set_states(const Teuchos::RCP<const State>& S,
         const Teuchos::RCP<State>& S_inter,
         const Teuchos::RCP<State>& S_next) {
-  StrongMPC<PKPhysicalBDFBase>::set_states(S,S_inter,S_next);
+  StrongMPC<PK_PhysicalBDF_Default>::set_states(S,S_inter,S_next);
   if (ewc_ != Teuchos::null) ewc_->set_states(S,S_inter,S_next);
 }
 
-void MPCSubsurface::commit_state(double dt, const Teuchos::RCP<State>& S) {
-  StrongMPC<PKPhysicalBDFBase>::commit_state(dt,S);
+void MPCSubsurface::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
+
+  double dt = t_new - t_old;
+  StrongMPC<PK_PhysicalBDF_Default>::CommitStep(t_old, t_new, S);
   if (ewc_ != Teuchos::null) ewc_->commit_state(dt,S);
 }
 
@@ -360,7 +362,7 @@ bool MPCSubsurface::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> up0
   }
 
   // potentially update faces
-  modified |= StrongMPC<PKPhysicalBDFBase>::ModifyPredictor(h, up0, up);
+  modified |= StrongMPC<PK_PhysicalBDF_Default>::ModifyPredictor(h, up0, up);
   return modified;
 }
 
