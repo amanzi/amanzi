@@ -1524,7 +1524,7 @@ Again, constant functions can be replaced by any of the available functions.
   source Q over the specified regions. The available options are `"volume`",
   `"none`", and `"permeability`". For option `"none`", the source term Q is measured
   in [kg/m^3/s]. For the other options, it is measured in [kg/s]. When the source function
-  is defined over a few regions, Q is distributed independently over each region.
+  is defined over a few regions, Q is distributed over their union.
   Default is `"none`".
 
 * `"submodel`" [string] refines definition of the source. Available options are `"rate`"
@@ -2203,52 +2203,51 @@ Note that the source values are set up separately for each component.
    * `"regions`" [Array(string)] defines a list of domain regions where a source term
      must be applied.
 
+   * `"spatial distribution method`" [string] identifies a method for distributing
+     source Q over the specified regions. The available options are `"volume`",
+     `"none`", and `"permeability`". For option `"none`" the source term Q is measured
+     in [mol/L/s] (if units for concetration is mol/L) or [mol/m^3/s] (othrwise). 
+     For the other options, it is measured in [mol/s]. When the source function
+     is defined over a few regions, Q will be distributed independently over each region.
+     Default value is `"none`".
+
+   * `"submodel`" [string] refines definition of source. Available options are `"rate`"
+     and `"integrand`". The first option defines rate of change `q`, the second one 
+     defines integrand `Q` of a rate `Q = dq/dt`. Default is `"rate`".
+
    * `"sink`" [list] is a function for calculating a source term.
      The function specification is described in subsection Functions.
 
-    * `"spatial distribution method`" [string] identifies a method for distributing
-      source Q over the specified regions. The available options are `"volume`",
-      `"none`", and `"permeability`". For option `"none`" the source term Q is measured
-      in [mol/L/s] (if units for concetration is mol/L) or [mol/m^3/s] (othrwise). 
-      For the other options, it is measured in [mol/s]. When the source function
-      is defined over a few regions, Q will be distributed independently over each region.
-      Default value is `"none`".
-
-    * `"submodel`" [string] refines definition of source. Available options are `"rate`"
-      and `"integrand`". The first option defines rate of change `q`, the second one 
-      defines integrand `Q` of a rate `Q = dq/dt`. Default is `"rate`".
 
 This example defines one well and one sink.
 
 .. code-block:: xml
 
-   <ParameterList name="transport">  <!-- parent list -->
-     <ParameterList name="source terms">
-       <ParameterList name="concentration">
-         <ParameterList name="H+"> 
-           <ParameterList name="SOURCE: EAST WELL">   <!-- user defined name -->
-	     <Parameter name="regions" type="Array(string)" value="{EAST_WELL}"/>
-             <Parameter name="spatial distribution method" type="string" value="volume"/>
-             <Parameter name="submodel" type="string" value="rate"/>
-             <ParameterList name="sink">   <!-- keyword, do not change -->
-               <ParameterList name="function-constant">
-                 <Parameter name="value" type="double" value="-0.01"/>
-               </ParameterList>
+   <ParameterList name="source terms"> <!-- parent list -->
+     <ParameterList name="concentration">
+       <ParameterList name="H+"> 
+         <ParameterList name="SOURCE: EAST WELL">   <!-- user defined name -->
+           <Parameter name="regions" type="Array(string)" value="{EAST_WELL}"/>
+           <Parameter name="spatial distribution method" type="string" value="volume"/>
+           <Parameter name="submodel" type="string" value="rate"/>
+           <ParameterList name="sink">   <!-- keyword, do not change -->
+             <ParameterList name="function-constant">
+               <Parameter name="value" type="double" value="-0.01"/>
              </ParameterList>
            </ParameterList>
-           <ParameterList name="source for west well">
-              ...
-           </ParameterList>
          </ParameterList>
+         <ParameterList name="source for west well">
+            ...
+         </ParameterList>
+       </ParameterList>
      
-         <ParameterList name="CO2(g)">   <!-- next component, a gas -->
-           <ParameterList name="SOURCE: WEST WELL">   <!-- user defined name -->
-             <Parameter name="regions" type="Array(string)" value="{WEST_WELL}"/>
-             <Parameter name="spatial distribution method" type="string" value="permeability"/>
-             <ParameterList name="sink">  
-               <ParameterList name="function-constant">
-                 <Parameter name="value" type="double" value="0.02"/>
-               </ParameterList>
+       <ParameterList name="CO2(g)">   <!-- next component, a gas -->
+         <ParameterList name="SOURCE: WEST WELL">   <!-- user defined name -->
+           <Parameter name="regions" type="Array(string)" value="{WEST_WELL}"/>
+           <Parameter name="spatial distribution method" type="string" value="permeability"/>
+           <ParameterList name="sink">  
+             <ParameterList name="function-constant">
+               <Parameter name="value" type="double" value="0.02"/>
              </ParameterList>
            </ParameterList>
          </ParameterList>

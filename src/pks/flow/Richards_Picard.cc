@@ -47,7 +47,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 
   // update steady state source conditons
   for (int i = 0; i < srcs.size(); ++i) {
-    srcs[i]->Compute(time, time, Kxy); 
+    srcs[i]->Compute(time, time); 
   }
 
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");

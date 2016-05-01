@@ -27,6 +27,7 @@
 #include "CompositeVectorSpace.hh"
 #include "independent_variable_field_evaluator_fromfunction.hh"
 #include "PK.hh"
+#include "PK_DomainFunction.hh"
 #include "PK_PhysicalBDF.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "Tensor.hh"
@@ -34,10 +35,8 @@
 
 // Flow
 #include "Flow_BC_Factory.hh"
-#include "Flow_SourceFactory.hh"
 #include "FlowBoundaryFunction.hh"
 #include "FlowDefs.hh"
-#include "FlowDomainFunction.hh"
 #include "FlowTypeDefs.hh"
 
 namespace Amanzi {
@@ -166,7 +165,7 @@ class Flow_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Epetra_Vector> shift_water_table_;
 
   // water balance
-  std::vector<FlowDomainFunction*> srcs;
+  std::vector<Teuchos::RCP<PK_DomainFunction> > srcs;
   mutable double mass_bc, seepage_mass_, mass_initial;
 
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)

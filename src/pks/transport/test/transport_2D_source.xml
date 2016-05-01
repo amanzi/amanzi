@@ -87,7 +87,7 @@
               <Parameter name="spatial distribution method" type="string" value="permeability"/>
               <ParameterList name="sink">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.1"/>
+                  <Parameter name="value" type="double" value="1e-4"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>

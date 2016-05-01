@@ -19,6 +19,8 @@
 #include "Mesh.hh"
 #include "mfd3d.hh"
 #include "OperatorDefs.hh"
+#include "PK_DomainFunctionFactory.hh"
+#include "PK_Utils.hh"
 #include "State.hh"
 
 #include "Flow_PK.hh"
@@ -287,9 +289,17 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 
   // Create the source object if any
   if (plist.isSublist("source terms")) {
-    Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(plist.sublist("source terms", true));
-    FlowSourceFactory factory(mesh_, src_list);
-    factory.Create(srcs);
+    PK_DomainFunctionFactory<PK_DomainFunction> factory(mesh_);
+    PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
+
+    Teuchos::ParameterList& src_list = plist.sublist("source terms");
+    for (Teuchos::ParameterList::ConstIterator it = src_list.begin(); it != src_list.end(); ++it) {
+      std::string name = it->first;
+      if (src_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = src_list.sublist(name);
+        srcs.push_back(factory.Create(spec, Kxy));
+      }
+    }
   }
 }
 
@@ -505,7 +515,7 @@ void Flow_PK::AddSourceTerms(CompositeVector& rhs)
   Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
 
   for (int i = 0; i < srcs.size(); ++i) {
-    for (FlowDomainFunction::Iterator it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
+    for (PK_DomainFunction::Iterator it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
       int c = it->first;
       rhs_cell[0][c] += mesh_->cell_volume(c) * it->second;
     }

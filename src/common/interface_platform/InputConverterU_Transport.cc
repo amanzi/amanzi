@@ -585,6 +585,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
       GetSameChildNodes_(node_list->item(0), srctype_flow, flag, true);
       weight = (srctype_flow == "volume_weighted") ? "volume" : "permeability";
     } else if (strcmp(text, "diffusion_dominated_release") == 0) {
+      weight = "volume";
       classical = false;
     } else {
       ThrowErrorIllformed_("sources", "element", text);
@@ -642,6 +643,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
       Teuchos::ParameterList& src_list = out_list.sublist("concentration");
       Teuchos::ParameterList& src = src_list.sublist(solute_name).sublist(srcname);
       src.set<Teuchos::Array<std::string> >("regions", regions);
+      src.set<std::string>("spatial distribution method", weight);
 
       std::vector<double> values(2, 0.0);
       std::vector<std::string> forms(1, "SQRT");

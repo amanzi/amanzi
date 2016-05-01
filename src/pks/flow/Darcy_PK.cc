@@ -21,12 +21,10 @@
 #include "LinearOperatorFactory.hh"
 #include "mfd3d_diffusion.hh"
 #include "OperatorDiffusionFactory.hh"
-#include "PK_Utils.hh"
 #include "Tensor.hh"
 
 #include "Darcy_PK.hh"
 #include "FlowDefs.hh"
-#include "Flow_SourceFactory.hh"
 
 #include "DarcyVelocityEvaluator.hh"
 #include "primary_variable_field_evaluator.hh"
@@ -96,9 +94,6 @@ Darcy_PK::~Darcy_PK()
   if (bc_flux != NULL) delete bc_flux;
   if (bc_seepage != NULL) delete bc_seepage;
 
-  for (int i = 0; i < srcs.size(); i++) {
-    if (srcs[i] != NULL) delete srcs[i]; 
-  }
   if (vo_ != Teuchos::null) vo_ = Teuchos::null;
 }
 
@@ -339,11 +334,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   
   // initialize well models
   for (int i =0; i < srcs.size(); i++) {
-    int type = srcs[i]->CollectActionsList();
-    if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      PKUtils_CalculatePermeabilityFactorInWell(S, Kxy);
-    }
-    srcs[i]->Compute(t_old, t_new, Kxy); 
+    srcs[i]->Compute(t_old, t_new); 
     VV_PrintSourceExtrema();
   }
   
@@ -436,7 +427,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     bc_head->ComputeShift(t_new, shift_water_table_->Values());
 
   for (int i = 0; i < srcs.size(); ++i) {
-    srcs[i]->Compute(t_old, t_new, Kxy); 
+    srcs[i]->Compute(t_old, t_new); 
   }
 
   ComputeBCs(*solution);

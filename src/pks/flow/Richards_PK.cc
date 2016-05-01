@@ -120,9 +120,6 @@ Richards_PK::~Richards_PK()
   if (bc_head != NULL) delete bc_head;
   if (bc_seepage != NULL) delete bc_seepage;
 
-  for (int i = 0; i < srcs.size(); i++) {
-    if (srcs[i] != NULL) delete srcs[i]; 
-  }
   if (vo_ != Teuchos::null) vo_ = Teuchos::null;
 }
 
@@ -523,11 +520,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // initialize well modeling
   for (int i = 0; i < srcs.size(); ++i) {
-    int type = srcs[i]->CollectActionsList();
-    if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      PKUtils_CalculatePermeabilityFactorInWell(S, Kxy);
-    }
-    srcs[i]->Compute(t_old, t_new, Kxy); 
+    srcs[i]->Compute(t_old, t_new); 
     VV_PrintSourceExtrema();
   }
 
@@ -958,7 +951,7 @@ void Richards_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<Stat
 void Richards_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u)
 {
   for (int i = 0; i < srcs.size(); ++i) {
-    srcs[i]->Compute(t_old, t_new, Kxy); 
+    srcs[i]->Compute(t_old, t_new); 
   }
 
   bc_pressure->Compute(t_new);

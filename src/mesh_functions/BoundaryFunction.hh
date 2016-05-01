@@ -32,15 +32,15 @@ namespace Functions {
 class BoundaryFunction : public UniqueMeshFunction {
 
 public:
-  BoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh) :
+  BoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       UniqueMeshFunction(mesh),
-      finalized_(false) {}
+      finalized_(false) {};
 
-  void Define(const std::vector<std::string> &regions,
-              const Teuchos::RCP<const MultiFunction> &f);
+  void Define(const std::vector<std::string>& regions,
+              const Teuchos::RCP<const MultiFunction>& f);
 
-  void Define(std::string region,
-              const Teuchos::RCP<const MultiFunction> &f);
+  void Define(std::string& region,
+              const Teuchos::RCP<const MultiFunction>& f);
 
   void Compute(double time);
 
