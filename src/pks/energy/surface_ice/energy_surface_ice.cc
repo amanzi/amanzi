@@ -33,11 +33,11 @@ namespace Energy {
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------
-EnergySurfaceIce::EnergySurfaceIce(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  EnergySurfaceIce::EnergySurfaceIce(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, FElist, solution),
-    EnergyBase(plist, FElist, solution),
+    PKDefaultBase(S, plist, FElist, solution),
+    EnergyBase(S, plist, FElist, solution),
     standalone_mode_(false),
     is_energy_source_term_(false),
     is_mass_source_term_(false),
@@ -171,7 +171,22 @@ void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
       // mark as initialized
       S->GetField(key_,name_)->set_initialized();
     } 
-
+    else if (ic_plist.get<bool>("initialize surface_star temperature from surface cells",false)) {
+      
+      assert(domain_ == "surface_star");
+      Epetra_MultiVector& surf_temp = *S->GetFieldData(key_, name_)->ViewComponent("cell",false);
+      
+      unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+     
+      for (unsigned int c=0; c!=ncells_surface; ++c) {
+        int id = mesh_->cell_map(false).GID(c);
+        std::stringstream name;
+        name << "column_"<< id << "_surface";
+        const Epetra_MultiVector& temp = *S->GetFieldData(getKey(name.str(),"temperature"))->ViewComponent("cell",false);
+        surf_temp[0][c] = temp[0][0];
+      }
+      S->GetField(key_,name_)->set_initialized();
+    }
   }
 
   // For the boundary conditions, we currently hack in the enthalpy to

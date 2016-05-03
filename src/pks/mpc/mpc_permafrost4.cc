@@ -15,11 +15,11 @@
 
 namespace Amanzi {
 
-MPCPermafrost4::MPCPermafrost4(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  MPCPermafrost4::MPCPermafrost4(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& soln) :
-    PKDefaultBase(plist, FElist, soln),
-    MPCSubsurface(plist, FElist, soln) {}
+    PKDefaultBase(S, plist, FElist, soln),
+    MPCSubsurface(S, plist, FElist, soln) {}
 
 
 void

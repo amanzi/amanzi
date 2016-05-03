@@ -21,12 +21,12 @@
 namespace Amanzi {
 namespace SurfaceBalance {
 
-SurfaceBalanceImplicit::SurfaceBalanceImplicit(
+  SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::Ptr<State> S,
            const Teuchos::RCP<Teuchos::ParameterList>& plist,
            Teuchos::ParameterList& FElist,
            const Teuchos::RCP<TreeVector>& solution) :
-    PKPhysicalBDFBase(plist, FElist, solution),
-    PKDefaultBase(plist, FElist, solution),
+    PKPhysicalBDFBase(S, plist, FElist, solution),
+    PKDefaultBase(S, plist, FElist, solution),
     modify_predictor_advance_(false)
 {
   // set up additional primary variables -- this is very hacky...

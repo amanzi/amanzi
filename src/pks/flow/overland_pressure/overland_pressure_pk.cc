@@ -45,11 +45,11 @@ namespace Flow {
 #define DEBUG_FLAG 1
 #define DEBUG_RES_FLAG 0
 
-OverlandPressureFlow::OverlandPressureFlow(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  OverlandPressureFlow::OverlandPressureFlow(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, FElist, solution),
-    PKPhysicalBDFBase(plist, FElist, solution),
+    PKDefaultBase(S, plist, FElist, solution),
+    PKPhysicalBDFBase(S, plist, FElist, solution),
     standalone_mode_(false),
     is_source_term_(false),
     coupled_to_subsurface_via_head_(false),
@@ -393,7 +393,11 @@ void OverlandPressureFlow::initialize(const Teuchos::Ptr<State>& S) {
   }
   // Initialize BDF stuff and physical domain stuff.
   PKPhysicalBDFBase::initialize(S);
- 
+  int rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  
+  
   if (!S->GetField(key_)->initialized()) {
     // -- set the cell initial condition if it is taken from the subsurface
     Teuchos::ParameterList ic_plist = plist_->sublist("initial condition");
@@ -419,6 +423,31 @@ void OverlandPressureFlow::initialize(const Teuchos::Ptr<State>& S) {
       if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
         S->GetField(key_,name_)->set_initialized();
       }
+    } 
+    else if (ic_plist.get<bool>("initialize surface_star head from surface cells",false)) {
+      assert(domain_ == "surface_star");
+      Epetra_MultiVector& head = *head_cv->ViewComponent("cell",false);
+      
+      unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+      
+      for (unsigned int c=0; c!=ncells_surface; ++c) {
+        int id = mesh_->cell_map(false).GID(c);
+        
+        std::stringstream name;
+        name << "column_"<< id << "_surface";
+        
+        const Epetra_MultiVector& pres = *S->GetFieldData(getKey(name.str(),"pressure"))->ViewComponent("cell",false);
+      
+        // -- get the surface cell's equivalent subsurface face and neighboring cell
+        if (pres[0][0] > 101325.)
+          head[0][c] = pres[0][0];
+        else
+          head[0][c] = 101325.0;
+      }
+     
+      // mark as initialized
+      S->GetField(key_,name_)->set_initialized();
+
     }
 
   }

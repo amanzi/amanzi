@@ -28,11 +28,11 @@ namespace Flow {
 
 #define DEBUG_FLAG 1
 
-SnowDistribution::SnowDistribution(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  SnowDistribution::SnowDistribution(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, FElist, solution),
-    PKPhysicalBDFBase(plist, FElist, solution),
+    PKDefaultBase(S, plist, FElist, solution),
+    PKPhysicalBDFBase(S, plist, FElist, solution),
     full_jacobian_(false) {
   plist_->set("primary variable key", "precipitation_snow");
   plist_->set("domain name", "surface");

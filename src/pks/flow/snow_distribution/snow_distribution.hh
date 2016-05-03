@@ -26,7 +26,7 @@ namespace Flow {
 class SnowDistribution : public PKPhysicalBDFBase {
 
 public:
-  SnowDistribution(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  SnowDistribution(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                Teuchos::ParameterList& FElist,
                    const Teuchos::RCP<TreeVector>& solution);
   

@@ -16,7 +16,7 @@ EnergyTest::EnergyTest(Teuchos::RCP<Teuchos::ParameterList> plist_,
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
 
   // create the PK
-  EPK = Teuchos::rcp(new Energy::AdvectionDiffusion(energy_plist, S0->FEList(), soln));
+  EPK = Teuchos::rcp(new Energy::AdvectionDiffusion(S0.ptr(), energy_plist, S0->FEList(), soln));
   EPK->setup(S0.ptr());
   S0->Setup();
 }

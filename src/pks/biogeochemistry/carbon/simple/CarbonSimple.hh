@@ -23,7 +23,7 @@ class CarbonSimple : public PKPhysicalExplicitBase {
 
  public:
 
-  CarbonSimple(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  CarbonSimple(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                Teuchos::ParameterList& FElist,
                const Teuchos::RCP<TreeVector>& solution);
 

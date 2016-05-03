@@ -39,7 +39,7 @@ template <class PK_t>
 class MPC : virtual public PKDefaultBase {
 
 public:
-  MPC(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  MPC(Teuchos::Ptr<State> S,const Teuchos::RCP<Teuchos::ParameterList>& plist,
       Teuchos::ParameterList& FElist,
       const Teuchos::RCP<TreeVector>& soln);
   
@@ -70,7 +70,7 @@ public:
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
 
-  virtual void init_(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  virtual void init_(Teuchos::Ptr<State> S,const Teuchos::RCP<Teuchos::ParameterList>& plist,
                      Teuchos::ParameterList& FElist,
                      const Teuchos::RCP<TreeVector>& soln);
  protected: // data
@@ -86,10 +86,10 @@ public:
 // Setup of PK hierarchy from PList
 // -----------------------------------------------------------------------------
 template <class PK_t>
-MPC<PK_t>::MPC(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+MPC<PK_t>::MPC(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                Teuchos::ParameterList& FElist,
                const Teuchos::RCP<TreeVector>& soln) :
-    PKDefaultBase(plist, FElist, soln) {
+  PKDefaultBase(S, plist, FElist, soln) {
 
   // loop over sub-PKs in the PK sublist, constructing the hierarchy recursively
   Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(plist_, "PKs");
@@ -109,7 +109,7 @@ MPC<PK_t>::MPC(const Teuchos::RCP<Teuchos::ParameterList>& plist,
       std::string name_i = pk_order[i];
       Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list,name_i);
       pk_list->set("PK name", name_i);
-      Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_list, FElist, pk_soln);
+      Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(S,pk_list, FElist, pk_soln);
       Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
       sub_pks_.push_back(pk);
     }
@@ -129,7 +129,7 @@ MPC<PK_t>::MPC(const Teuchos::RCP<Teuchos::ParameterList>& plist,
         // create the PK
         Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list,name_i);
         pk_list->set("PK name", name_i);
-        Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_list, FElist, pk_soln);
+        Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(S,pk_list, FElist, pk_soln);
         Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
         sub_pks_.push_back(pk);
       }
@@ -143,7 +143,7 @@ MPC<PK_t>::MPC(const Teuchos::RCP<Teuchos::ParameterList>& plist,
 // Initialize PKs for column version from local PList
 // -----------------------------------------------------------------------------
 template <class PK_t>
-void MPC<PK_t>::init_(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+void MPC<PK_t>::init_(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                Teuchos::ParameterList& FElist,
                const Teuchos::RCP<TreeVector>& soln) {
   plist_ = plist;
@@ -166,7 +166,7 @@ void MPC<PK_t>::init_(const Teuchos::RCP<Teuchos::ParameterList>& plist,
       Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list,name_i);
     
       pk_list->set("PK name", name_i);
-      Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_list, FElist, pk_soln);
+      Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(S,pk_list, FElist, pk_soln);
       Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
       sub_pks_.push_back(pk);
     }
@@ -186,7 +186,7 @@ void MPC<PK_t>::init_(const Teuchos::RCP<Teuchos::ParameterList>& plist,
         // create the PK
         Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list,name_i);
         pk_list->set("PK name", name_i);
-        Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_list, FElist, pk_soln);
+        Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(S,pk_list, FElist, pk_soln);
         Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
         sub_pks_.push_back(pk);
       }

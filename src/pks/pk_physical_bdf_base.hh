@@ -25,12 +25,12 @@ namespace Amanzi {
 class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
 
  public:
-  PKPhysicalBDFBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  PKPhysicalBDFBase(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                     Teuchos::ParameterList& FElist,
                     const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, FElist, solution),
-      PKPhysicalBase(plist, FElist, solution),
-      PKBDFBase(plist, FElist, solution) {}
+    PKDefaultBase(S, plist, FElist, solution),
+    PKPhysicalBase(S, plist, FElist, solution),
+    PKBDFBase(S, plist, FElist, solution) {}
 
   virtual void setup(const Teuchos::Ptr<State>& S);
 

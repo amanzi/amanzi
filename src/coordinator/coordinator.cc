@@ -70,13 +70,27 @@ void Coordinator::coordinator_init() {
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list, pk_name);
   pk_list->set("PK name", pk_name);
  
-  pk_ = pk_factory.CreatePK(pk_list, S_->FEList(), soln_);
+  pk_ = pk_factory.CreatePK(S_.ptr(), pk_list, S_->FEList(), soln_);
   pk_->setup(S_.ptr());
 
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  std::stringstream check;
+  if (MPI_COMM_WORLD != MPI_COMM_SELF)
+    check << "checkpoint " << rank;
+  else
+    check << "checkpoint";
+  
   // create the checkpointing
-  Teuchos::ParameterList& chkp_plist = parameter_list_->sublist("checkpoint");
-  checkpoint_ = Teuchos::rcp(new Checkpoint(chkp_plist, comm_));
-
+  Teuchos::ParameterList& chkp_plist = parameter_list_->sublist(check.str());
+  if (MPI_COMM_WORLD != MPI_COMM_SELF){
+    MPI_Comm mpi_comm_self(MPI_COMM_SELF);
+    Epetra_MpiComm *comm_self = new Epetra_MpiComm(mpi_comm_self);
+    checkpoint_ = Teuchos::rcp(new Checkpoint(chkp_plist, comm_self));
+  }
+  else
+    checkpoint_ = Teuchos::rcp(new Checkpoint(chkp_plist, comm_));
+  
   // create the observations
   Teuchos::ParameterList& observation_plist = parameter_list_->sublist("observations");
   observations_ = Teuchos::rcp(new UnstructuredObservations(observation_plist,
@@ -162,8 +176,9 @@ void Coordinator::initialize() {
 */    
     Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist, comm_));
     vis->set_mesh(surface_3d);
-    vis->CreateFiles();
+    //vis->CreateFiles();
     vis->set_mesh(surface);
+    vis->CreateFiles();
     visualization_.push_back(vis);
     surface_done = true;
 

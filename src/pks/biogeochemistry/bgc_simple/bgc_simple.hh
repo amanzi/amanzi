@@ -33,7 +33,7 @@ namespace BGC {
 class BGCSimple : public PKPhysicalBase {
 
  public:
-  BGCSimple(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  BGCSimple(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
             Teuchos::ParameterList& FElist,
             const Teuchos::RCP<TreeVector>& solution);
 

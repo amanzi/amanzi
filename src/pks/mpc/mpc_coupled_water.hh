@@ -15,7 +15,7 @@ namespace Amanzi {
 class MPCCoupledWater : public StrongMPC<PKPhysicalBDFBase> {
  public:
 
-  MPCCoupledWater(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  MPCCoupledWater(Teuchos::Ptr<State> S,const Teuchos::RCP<Teuchos::ParameterList>& plist,
                  Teuchos::ParameterList& FElist,
                  const Teuchos::RCP<TreeVector>& soln);
 

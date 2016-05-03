@@ -10,15 +10,15 @@ namespace Amanzi {
   
 class WeakMPCSemiCoupled : public MPC<PK> {
 public:
-  WeakMPCSemiCoupled(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  WeakMPCSemiCoupled(Teuchos::Ptr<State> S,const Teuchos::RCP<Teuchos::ParameterList>& plist,
 		     Teuchos::ParameterList& FElist,
 		     const Teuchos::RCP<TreeVector>& soln) :
-    PKDefaultBase(plist, FElist, soln),MPC<PK>(),FElist_loc(FElist){
+    PKDefaultBase(S, plist, FElist, soln),MPC<PK>(),FElist_loc(FElist){
     
     plist_ = plist;
-    
+    S_loc = S;
     generalize_inputspec();
-    MPC<PK>::init_(plist_,FElist_loc, soln);
+    MPC<PK>::init_(S,plist_,FElist_loc, soln);
     
   };
 
@@ -27,6 +27,8 @@ public:
   virtual bool valid_step();
   virtual bool advance (double dt);
   virtual void setup(const Teuchos::Ptr<State>& S);
+  virtual void initialize(const Teuchos::Ptr<State>& S);
+
   void generalize_inputspec();
   bool CoupledSurfSubsurf3D(double dt);
 
@@ -38,6 +40,7 @@ private :
   unsigned numPKs_;
   Key coupling_key_ ;
   Teuchos::ParameterList& FElist_loc;
+  Teuchos::Ptr<State> S_loc;
 };
 
   

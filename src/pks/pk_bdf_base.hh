@@ -26,10 +26,10 @@ class PKBDFBase : public virtual PKDefaultBase,
 
  public:
 
-  PKBDFBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  PKBDFBase(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
             Teuchos::ParameterList& FElist,
             const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, FElist, solution) {}
+    PKDefaultBase(S, plist, FElist, solution) {}
   
   // Virtual destructor
   virtual ~PKBDFBase() {}

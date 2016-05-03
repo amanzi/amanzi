@@ -29,11 +29,11 @@ class AdvectionDiffusion : public PKPhysicalBDFBase {
 
 public:
 
-  AdvectionDiffusion(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  AdvectionDiffusion(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                      Teuchos::ParameterList& FElist,
                      const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, FElist, solution),
-      PKPhysicalBDFBase(plist, FElist, solution) {}
+    PKDefaultBase(S, plist, FElist, solution),
+    PKPhysicalBDFBase(S, plist, FElist, solution) {}
 
   // Virtual destructor
   virtual ~AdvectionDiffusion() {}

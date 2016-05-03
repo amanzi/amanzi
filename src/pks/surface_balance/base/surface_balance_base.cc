@@ -19,12 +19,12 @@
 namespace Amanzi {
 namespace SurfaceBalance {
 
-SurfaceBalanceBase::SurfaceBalanceBase(
+  SurfaceBalanceBase::SurfaceBalanceBase(Teuchos::Ptr<State> S,
            const Teuchos::RCP<Teuchos::ParameterList>& plist,
            Teuchos::ParameterList& FElist,
            const Teuchos::RCP<TreeVector>& solution) :
-    PKPhysicalBDFBase(plist, FElist, solution),
-    PKDefaultBase(plist, FElist, solution)
+    PKPhysicalBDFBase(S, plist, FElist, solution),
+    PKDefaultBase(S, plist, FElist, solution)
 {
   // name the layer
   layer_ = plist->get<std::string>("layer name", name_);

@@ -23,11 +23,11 @@ namespace Amanzi {
 class WeakMPC : public MPC<PK> {
 
 public:
-  WeakMPC(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  WeakMPC(Teuchos::Ptr<State> S,const Teuchos::RCP<Teuchos::ParameterList>& plist,
           Teuchos::ParameterList& FElist,
           const Teuchos::RCP<TreeVector>& soln) :
-      PKDefaultBase(plist, FElist, soln),
-      MPC<PK>(plist, FElist, soln) {};
+    PKDefaultBase(S, plist, FElist, soln),
+    MPC<PK>(S,plist, FElist, soln) {};
 
   // Virtual destructor
   virtual ~WeakMPC() {}

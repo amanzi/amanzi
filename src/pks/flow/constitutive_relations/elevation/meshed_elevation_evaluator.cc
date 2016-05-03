@@ -35,27 +35,22 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
   Epetra_MultiVector& slope_c = *slope->ViewComponent("cell", false);
   
   // Get the elevation and slope values from the domain mesh.
-  Key key=plist_.get<std::string>("elevation key");
+  Key key=plist_.get<std::string>("elevation key", "surface");
   Key domain = getDomain(key);
-  Key domain_ss = " ";
+  Key domain_ss;
   if(domain.substr(0,6) =="column")
     domain_ss = domain.substr(0,domain.size()-8);
   
   Teuchos::RCP<const AmanziMesh::Mesh_MSTK> domain_mesh;
-  if (domain_ss == " ")
+  if (domain_ss.empty())
     domain_mesh = Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh());
   else
      domain_mesh = Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh(domain_ss));
 
-  /* 
-  Teuchos::RCP<const AmanziMesh::Mesh_MSTK> domain_mesh =
-    Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh(domain_ss));
-  */
   // Note that static cast is safe here because we have
   // already ensured it was MSTK.
   
-  //--  Key key=plist_.get<std::string>("elevation key");
-  //--Key domain = getDomain(key);
+
   Teuchos::RCP<const AmanziMesh::Mesh_MSTK> surface_mesh =
     Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh(domain));
   // Note that static cast is safe here because we have
@@ -70,10 +65,7 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
     for (int c=0; c!=ncells; ++c) {
       // Note that a surface cell is a volume mesh's face
       AmanziMesh::Entity_ID domain_face;
-//--      if(domain.substr(0,6) =="column")
- //--       domain_face = domain_mesh->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
- //--     else
-        domain_face = surface_mesh->entity_get_parent(AmanziMesh::CELL, c);
+      domain_face = surface_mesh->entity_get_parent(AmanziMesh::CELL, c);
       
       // First elevation.
       AmanziGeometry::Point x = domain_mesh->face_centroid(domain_face);

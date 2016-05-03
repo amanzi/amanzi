@@ -33,7 +33,7 @@ class StrongMPC : public MPC<PK_t>,
                   public PKBDFBase {
 
 public:
-  StrongMPC(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  StrongMPC(Teuchos::Ptr<State> S,const Teuchos::RCP<Teuchos::ParameterList>& plist,
             Teuchos::ParameterList& FElist,
             const Teuchos::RCP<TreeVector>& soln);
 
@@ -99,12 +99,12 @@ private:
 // Constructor
 // -----------------------------------------------------------------------------
 template<class PK_t>
-StrongMPC<PK_t>::StrongMPC(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+StrongMPC<PK_t>::StrongMPC(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                            Teuchos::ParameterList& FElist,
                            const Teuchos::RCP<TreeVector>& soln) :
-    PKDefaultBase(plist, FElist, soln),
-    MPC<PK_t>(plist, FElist, soln),
-    PKBDFBase(plist, FElist, soln) {}
+  PKDefaultBase(S, plist, FElist, soln),
+  MPC<PK_t>(S, plist, FElist, soln),
+  PKBDFBase(S, plist, FElist, soln) {}
 
 
 // -----------------------------------------------------------------------------

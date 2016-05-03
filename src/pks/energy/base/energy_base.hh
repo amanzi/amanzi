@@ -36,7 +36,7 @@ namespace Energy {
 class EnergyBase : public PKPhysicalBDFBase {
 
 public:
-  EnergyBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  EnergyBase(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
              Teuchos::ParameterList& FElist,
              const Teuchos::RCP<TreeVector>& solution);
   

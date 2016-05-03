@@ -41,11 +41,11 @@ namespace Flow {
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------
-Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  Richards::Richards(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                    Teuchos::ParameterList& FElist,
                    const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, FElist, solution),
-    PKPhysicalBDFBase(plist, FElist, solution),
+    PKDefaultBase(S, plist, FElist, solution),
+    PKPhysicalBDFBase(S, plist, FElist, solution),
     coupled_to_surface_via_head_(false),
     coupled_to_surface_via_flux_(false),
     infiltrate_only_if_unfrozen_(false),

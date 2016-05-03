@@ -26,7 +26,7 @@ namespace SurfaceBalance {
 class SurfaceBalanceExplicit : public PKPhysicalBase {
 
 public:
-  SurfaceBalanceExplicit(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  SurfaceBalanceExplicit(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                          Teuchos::ParameterList& FElist,
                          const Teuchos::RCP<TreeVector>& solution);
 

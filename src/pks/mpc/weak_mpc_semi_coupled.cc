@@ -56,7 +56,18 @@ WeakMPCSemiCoupled::setup(const Teuchos::Ptr<State>& S) {
   ASSERT(!(coupling_key_ == " "));
 };
 
+void 
+WeakMPCSemiCoupled::initialize(const Teuchos::Ptr<State>& S){
 
+  MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
+  ++pk;
+  for (pk; pk!=sub_pks_.end(); ++pk){
+    (*pk)->initialize(S);
+  }
+  
+  MPC<PK>::initialize(S);
+
+}
 //-------------------------------------------------------------------------------------
 // Semi coupled thermal hydrology
 bool WeakMPCSemiCoupled::advance(double dt) {
@@ -88,8 +99,6 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
   unsigned int size_t = surfstar_pres.MyLength();
 
   ASSERT(size_t == numPKs_ -1); // check if the subsurface columns are equal to the surface cells
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   
   
   //copying pressure
@@ -142,7 +151,7 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
  
   // advance surface-pressure from t_n to t_(n+1)
   ++pk;
-  int k=0;
+  
   int nfailed = 0;
   for (pk; pk!=sub_pks_.end(); ++pk){
     bool c_fail = (*pk)->advance(dt);
@@ -259,112 +268,181 @@ bool WeakMPCSemiCoupled::CoupledSurfSubsurf3D(double dt) {
 
 void 
 WeakMPCSemiCoupled::generalize_inputspec(){
-
- 
-  Teuchos::Array<std::string> pk_order = plist_->get<Teuchos::Array<std::string> >("PKs order"); // top PKs <PKG1 PKG2 >
   
-  Teuchos::Array<int> pk_proc = plist_->get<Teuchos::Array<int> >("PKs process index");
+  Teuchos::Array<std::string> pks_order = plist_->get<Teuchos::Array<std::string> >("PKs order");
+  Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_loc = S_loc->GetMesh("surface");
+  int ncell = mesh_loc->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int pk_start = mesh_loc->cell_map(false).GID(0);
+  int pk_end = mesh_loc->cell_map(false).GID(ncell-1) + 1;
+  
+  Teuchos::Array<std::string> pks_list_loc;
+  pks_list_loc.push_back(pks_order[0]);
+  pks_list_loc.push_back(pks_order[1]);
+  for (int i = pk_start; i <pk_end; i++){
+    std::stringstream name;
+    name << "PK" << i;
+    pks_list_loc.push_back(name.str());
+    
+  }
+  plist_->set("PKs order", pks_list_loc);
+  
+  
+  Teuchos::Array<std::string> pk_order = plist_->get<Teuchos::Array<std::string> >("PKs order"); // sublist of PK that correspond to each processor
+  
+  Teuchos::ParameterList pks_list_main = plist_->sublist("PKs");
+  
+    
+  Teuchos::Array<std::string> pk2_order = pks_list_main.sublist(pk_order[1]).get<Teuchos::Array<std::string> >("PKs order"); // SEB PSS
+  
+    
+  int len = pk_order.length();
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   
-  Teuchos::Array<std::string> loc_list;
-  int pk_start, pk_end;
- 
-  pk_start = pk_proc[rank];
-  pk_end = pk_proc[rank+1];
-  
-  loc_list.push_back("PKG1");
-  for(int i=pk_start; i<pk_end; i++){
-    std::stringstream name;
-    name << "PK" << i;
-    loc_list.push_back(name.str());
-  }
-  
-  plist_->set("PKs order", loc_list);
-
- 
-  Teuchos::ParameterList pks_list_main = plist_->sublist("PKs");
-  
-
-  Teuchos::Array<std::string> pk_order_pkg2 = pks_list_main.sublist(pk_order[1]).get<Teuchos::Array<std::string> >("PKs order"); // SEB PSS
-  
-
-  int l=1;
-  for(int i=pk_start; i<pk_end;i++){
-    Teuchos::ParameterList pks_list = pks_list_main.sublist(pk_order[1]); //PKG2
+ // Generalizing PKs
+  for(int i=2; i<len;i++){
+    Teuchos::ParameterList pks_list = pks_list_main.sublist(pk_order[1]);
+   
+    pks_list.setName(pk_order[i]);
     
-    pks_list.setName(loc_list[l]);
-    
-    
-    std::string names_seb = pk_order_pkg2[0];
-    Teuchos::Array<std::string> names = pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).get<Teuchos::Array<std::string> >("PKs order");
+    std::string names_seb = pk2_order[0];
+    Teuchos::Array<std::string> names = pks_list.sublist("PKs")
+      .sublist(pk2_order[1]).get<Teuchos::Array<std::string> >("PKs order");
 
-
+    std::string d_num = pk_order[i].substr(2,pk_order[i].size()-1);
+    
+    std::string domain_surf= "column_" + d_num + "_surface";
+    std::string domain_ss = "column_"+ d_num;
     
 
-    //SEB parameters
-    std::stringstream domain_surf1, domain_ss1;
-    domain_surf1 << "column_" << i << "_" << "surface";
-    domain_ss1 << "column_" << i;
-    std::string domain_surf=domain_surf1.str();
-    std::string domain_ss = domain_ss1.str();
-    
-    pks_list.sublist("PKs").sublist(names_seb).set("primary variable",getKey(domain_surf,"snow_depth"));
-    pks_list.sublist("PKs").sublist(names_seb).set("conserved quantity key",getKey(domain_surf,"snow_depth"));
-    pks_list.sublist("PKs").sublist(names_seb).set("domain name",domain_surf);
+    pks_list.sublist("PKs").sublist(names_seb)
+      .set("primary variable",getKey(domain_surf,"snow_depth"));
+    pks_list.sublist("PKs").sublist(names_seb)
+      .set("conserved quantity key",getKey(domain_surf,"snow_depth"));
+    pks_list.sublist("PKs").sublist(names_seb)
+      .set("domain name",domain_surf);
     
 
     //PSS parameters
     
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("ewc delegate").set("domain name",domain_ss);
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("surface ewc delegate").set("domain name",domain_surf);
+    pks_list.sublist("PKs").sublist(pk2_order[1])
+      .sublist("ewc delegate").set("domain name",domain_ss);
+    pks_list.sublist("PKs").sublist(pk2_order[1])
+      .sublist("surface ewc delegate").set("domain name",domain_surf);
    
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[0]).set("primary variable",getKey(domain_ss, "pressure"));
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[0]).set("domain name",domain_ss);
- 
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[0]).sublist("water retention evaluator").set("rel perm key",getKey(domain_ss,"relative_permeability"));
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[0]).sublist("water retention evaluator").set("liquid saturation key",getKey(domain_ss,"saturation_liquid"));
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[0]).sublist("water retention evaluator").set("ice saturation key",getKey(domain_ss,"saturation_ice"));
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[0]).sublist("water retention evaluator").set("gas saturation key",getKey(domain_ss,"saturation_gas"));
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[0]).sublist("water retention evaluator").set("surface rel perm key",getKey(domain_surf,"relative_permeability"));
+    Teuchos::ParameterList& pk2_list = pks_list.sublist("PKs").sublist(pk2_order[1]).sublist("PKs");
 
-
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[1]).set("primary variable",getKey(domain_ss, "temperature"));
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[1]).set("domain name",domain_ss);
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[1]).sublist("thermal conductivity evaluator").set("thermal conductivity key",getKey(domain_ss,"thermal_conductivity"));
-
-
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[2]).set("primary variable",getKey(domain_surf, "pressure"));
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[2]).set("domain name",domain_surf);
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[2]).sublist("elevation evaluator").set("elevation key",getKey(domain_surf,"elevation"));
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[2]).sublist("potential evaluator").set("potential key",getKey(domain_surf,"pres_elev"));
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[2]).sublist("overland water content evaluator").set("domain name",domain_surf);
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[2]).sublist("overland conductivity evaluator").set("overland conductivity key",getKey(domain_surf,"overland_conductivity"));
-
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[3]).set("primary variable",getKey(domain_surf, "temperature"));
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[3]).set("domain name",domain_surf);
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[3]).set("flux key",getKey(domain_surf, "mass_flux")); 
-    pks_list.sublist("PKs").sublist(pk_order_pkg2[1]).sublist("PKs").sublist(names[3]).sublist("thermal conductivity evaluator").set("thermal conductivity key",getKey(domain_surf,"thermal_conductivity"));
-
-
-    plist_->sublist("PKs").set(loc_list[l], pks_list);
+    pk2_list.sublist(names[0])
+      .set("primary variable",getKey(domain_ss, "pressure"));
+    pk2_list.sublist(names[0]).set("domain name",domain_ss);
     
-    l++;
+    // if restarting from local checkpoint files
+    
+    if (pk2_list.sublist(names[0]).sublist("initial condition").isParameter("restart file")){
+      std::string ic_st = pk2_list.sublist(names[0]).sublist("initial condition").get<std::string>("restart file");
+      int strt = ic_st.rfind("checkpoint");
+      std::string ch_name = ic_st.substr(strt,ic_st.size());
+      int c1 = ch_name.find("_");
+      int c2 = ch_name.rfind("_");
+      int c = c2 - c1-1;
+
+      std::stringstream file_name;
+      /*      
+      file_name << "checkpoint_column_" << rank << "_";
+      ic_st.replace(strt,10, file_name.str());
+      pk2_list.sublist(names[0]).sublist("initial condition").set("restart file", ic_st);
+      //      pk2_list.sublist(names[0]).sublist("initial condition").remove("restart files");
+      */
+      file_name << "checkpoint_" << rank << "_";
+      ic_st.replace(strt,12 + c, file_name.str());
+      
+      pk2_list.sublist(names[0]).sublist("initial condition").set("restart file", ic_st);
+      //      pk2_list.sublist(names[0]).sublist("initial condition").remove("restart files");
+    }
+    
+   
+    
+    pk2_list.sublist(names[0]).sublist("water retention evaluator")
+      .set("rel perm key",getKey(domain_ss,"relative_permeability"));
+    pk2_list.sublist(names[0]).sublist("water retention evaluator")
+      .set("liquid saturation key",getKey(domain_ss,"saturation_liquid"));
+    pk2_list.sublist(names[0]).sublist("water retention evaluator")
+      .set("ice saturation key",getKey(domain_ss,"saturation_ice"));
+    pk2_list.sublist(names[0]).sublist("water retention evaluator")
+      .set("gas saturation key",getKey(domain_ss,"saturation_gas"));
+    pk2_list.sublist(names[0]).sublist("water retention evaluator")
+      .set("surface rel perm key",getKey(domain_surf,"relative_permeability"));
+    
+    
+    pk2_list.sublist(names[1])
+      .set("primary variable",getKey(domain_ss, "temperature"));
+    pk2_list.sublist(names[1]).set("domain name",domain_ss);
+    pk2_list.sublist(names[1]).sublist("thermal conductivity evaluator")
+      .set("thermal conductivity key",getKey(domain_ss,"thermal_conductivity"));
+    
+
+    if (pk2_list.sublist(names[1]).sublist("initial condition").isParameter("restart file")){
+      
+      std::string ic_st = pk2_list.sublist(names[1]).sublist("initial condition").get<std::string>("restart file");
+      int strt = ic_st.rfind("checkpoint");
+
+      std::string ch_name = ic_st.substr(strt,ic_st.size());
+      int c1 = ch_name.find("_");
+      int c2 = ch_name.rfind("_");
+      int c = c2 - c1-1;
+      std::stringstream file_name;
+
+      //      file_name << "checkpoint_column_" << rank << "_";
+      file_name << "checkpoint_" << rank << "_";
+      //      ic_st.replace(strt,10, file_name.str());
+      ic_st.replace(strt,12 + c, file_name.str());
+      pk2_list.sublist(names[1]).sublist("initial condition").set("restart file", ic_st);
+      // pk2_list.sublist(names[1]).sublist("initial condition").remove("restart files");
+
+    }
+
+
+    pk2_list.sublist(names[2])
+      .set("primary variable",getKey(domain_surf, "pressure"));
+    pk2_list.sublist(names[2])
+      .set("domain name",domain_surf);
+    pk2_list.sublist(names[2])
+      .sublist("elevation evaluator").set("elevation key",getKey(domain_surf,"elevation"));
+    pk2_list.sublist(names[2])
+      .sublist("potential evaluator").set("potential key",getKey(domain_surf,"pres_elev"));
+    pk2_list.sublist(names[2])
+      .sublist("overland water content evaluator").set("domain name",domain_surf);
+    pk2_list.sublist(names[2]).sublist("overland conductivity evaluator")
+      .set("overland conductivity key",getKey(domain_surf,"overland_conductivity"));
+
+    pk2_list.sublist(names[3])
+      .set("primary variable",getKey(domain_surf, "temperature"));
+    pk2_list.sublist(names[3])
+      .set("domain name",domain_surf);
+    pk2_list.sublist(names[3])
+      .set("flux key",getKey(domain_surf, "mass_flux")); 
+    pk2_list.sublist(names[3]).sublist("thermal conductivity evaluator")
+      .set("thermal conductivity key",getKey(domain_surf,"thermal_conductivity"));
+
+
+    plist_->sublist("PKs").set(pk_order[i], pks_list);
+    
   }
+
+
+  pk_order.remove(1); // we are done generalizing PKs (making multiple copies of 2nd PK in the inputspec with different domain names.) Lets delete it now
+  plist_->set("PKs order", pk_order);
+
 
   Teuchos::ParameterList state_list =  FElist_loc;
   
   //Generalize state
-  for(int i=pk_start; i<pk_end;i++){
-  
-    
-    std::stringstream domain_surf1, domain_ss1;
-    domain_surf1 << "column_" << i << "_" << "surface";
-    domain_ss1 << "column_" << i;
-    std::string domain_surf=domain_surf1.str();
-    std::string domain_ss = domain_ss1.str();
+  for(int i=1; i<len-1;i++){
 
-    
+    std::string d_num = pk_order[i].substr(2,pk_order[i].size()-1);
+    std::string domain_surf= "column_" + d_num + "_surface";
+    std::string domain_ss = "column_"+ d_num;
+        
     Teuchos::ParameterList surf_wc = state_list.sublist("surface-water_content");
     surf_wc.setName(getKey(domain_surf,"water_content"));
     FElist_loc.set(surf_wc.name(), surf_wc);
@@ -598,7 +676,7 @@ WeakMPCSemiCoupled::generalize_inputspec(){
     FElist_loc.set(ss_ep.name(), ss_ep);
     
   }
-  
+ 
   
 }
   

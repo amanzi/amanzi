@@ -40,11 +40,11 @@ class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
 
  public:
 
-  MPCSubsurface(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  MPCSubsurface(Teuchos::Ptr<State> S,const Teuchos::RCP<Teuchos::ParameterList>& plist,
                 Teuchos::ParameterList& FElist,
                 const Teuchos::RCP<TreeVector>& soln) :
-      PKDefaultBase(plist, FElist, soln),
-      StrongMPC<PKPhysicalBDFBase>(plist, FElist, soln) {
+    PKDefaultBase(S, plist, FElist, soln),
+    StrongMPC<PKPhysicalBDFBase>(S, plist, FElist, soln) {
     dump_ = plist->get<bool>("dump preconditioner", false);
   }
 

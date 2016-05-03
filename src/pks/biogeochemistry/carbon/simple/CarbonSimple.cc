@@ -14,11 +14,11 @@ Process kernel for energy equation for Richard's flow.
 namespace Amanzi {
 namespace BGC {
 
-CarbonSimple::CarbonSimple(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  CarbonSimple::CarbonSimple(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                            Teuchos::ParameterList& FElist,
                            const Teuchos::RCP<TreeVector>& solution) :
-    Amanzi::PKDefaultBase(plist, FElist, solution),
-    Amanzi::PKPhysicalExplicitBase(plist, FElist, solution),
+    Amanzi::PKDefaultBase(S, plist, FElist, solution),
+    Amanzi::PKPhysicalExplicitBase(S, plist, FElist, solution),
     is_diffusion_(false),
     is_source_(false),
     is_decomp_(false),

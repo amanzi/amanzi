@@ -13,10 +13,10 @@
 namespace Amanzi {
 
 
-PKPhysicalBase::PKPhysicalBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  PKPhysicalBase::PKPhysicalBase(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist,FElist,solution) {
+    PKDefaultBase(S, plist,FElist,solution) {
 
   // domain -- default is the entire mesh, no prefix
   if (domain_.empty()) {

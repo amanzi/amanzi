@@ -23,7 +23,7 @@ namespace Flow {
 class RichardsSteadyState : public Richards {
 public:
   // Constructors.
-  RichardsSteadyState(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  RichardsSteadyState(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                       Teuchos::ParameterList& FElist,
                       const Teuchos::RCP<TreeVector>& solution);
 

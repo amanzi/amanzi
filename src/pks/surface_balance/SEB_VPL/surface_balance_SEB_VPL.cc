@@ -40,11 +40,11 @@
 namespace Amanzi {
 namespace SurfaceBalance {
 
-SurfaceBalanceSEBVPL::SurfaceBalanceSEBVPL(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  SurfaceBalanceSEBVPL::SurfaceBalanceSEBVPL(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution)  :
-    PKPhysicalBase(plist,FElist,solution),
-    PKDefaultBase(plist,FElist,solution) {
+    PKPhysicalBase(S, plist,FElist,solution),
+    PKDefaultBase(S, plist,FElist,solution) {
 
   // set up additional primary variables
   // -- surface energy source

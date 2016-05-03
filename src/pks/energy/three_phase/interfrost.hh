@@ -24,11 +24,11 @@ namespace Energy {
 class Interfrost : public ThreePhase {
 
 public:
-  Interfrost(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  Interfrost(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
              Teuchos::ParameterList& FElist,
              const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, FElist, solution),
-      ThreePhase(plist, FElist, solution) {}
+    PKDefaultBase(S, plist, FElist, solution),
+    ThreePhase(S, plist, FElist, solution) {}
 
   // Virtual destructor
   virtual ~Interfrost() {}

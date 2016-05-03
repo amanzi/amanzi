@@ -13,7 +13,7 @@ namespace Amanzi {
 class MPCPermafrost4 : public MPCSubsurface {
  public:
 
-  MPCPermafrost4(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  MPCPermafrost4(Teuchos::Ptr<State> S,const Teuchos::RCP<Teuchos::ParameterList>& plist,
                  Teuchos::ParameterList& FElist,
                  const Teuchos::RCP<TreeVector>& soln);
 

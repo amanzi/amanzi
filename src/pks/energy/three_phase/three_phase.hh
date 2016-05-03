@@ -24,11 +24,11 @@ namespace Energy {
 class ThreePhase : public TwoPhase {
 
 public:
-  ThreePhase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  ThreePhase(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
              Teuchos::ParameterList& FElist,
              const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, FElist, solution),
-      TwoPhase(plist, FElist, solution) {}
+    PKDefaultBase(S, plist, FElist, solution),
+    TwoPhase(S, plist, FElist, solution) {}
 
   // Virtual destructor
   virtual ~ThreePhase() {}

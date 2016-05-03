@@ -39,11 +39,11 @@ namespace Flow {
 #define DEBUG_FLAG 1
 #define DEBUG_RES_FLAG 0
 
-OverlandFlow::OverlandFlow(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  OverlandFlow::OverlandFlow(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, FElist, solution),
-    PKPhysicalBDFBase(plist, FElist, solution),
+    PKDefaultBase(S, plist, FElist, solution),
+    PKPhysicalBDFBase(S, plist, FElist, solution),
     standalone_mode_(false),
     is_source_term_(false),
     niter_(0)

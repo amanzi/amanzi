@@ -31,11 +31,11 @@ namespace Amanzi {
 namespace Energy {
 
 
-EnergyBase::EnergyBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  EnergyBase::EnergyBase(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                        Teuchos::ParameterList& FElist,
                        const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, FElist, solution),
-    PKPhysicalBDFBase(plist, FElist, solution),
+    PKDefaultBase(S, plist, FElist, solution),
+    PKPhysicalBDFBase(S, plist, FElist, solution),
     modify_predictor_with_consistent_faces_(false),
     modify_predictor_for_freezing_(false),
     coupled_to_subsurface_via_temp_(false),
