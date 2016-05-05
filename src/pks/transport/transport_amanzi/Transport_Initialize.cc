@@ -146,19 +146,6 @@ void Transport_PK_ATS::InitializeAll_()
     }
   }
 
-  // Create the source object if any
-  srcs.clear();
-
-  if (tp_list_->isSublist("source terms")) {
-    Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(tp_list_->sublist("source terms", true));
-    TransportSourceFactory src_factory(mesh_, src_list);
-    src_factory.Create(srcs);
-
-    for (int m = 0; m < srcs.size(); m++) {
-      srcs[m]->set_tcc_index(FindComponentNumber(srcs[m]->tcc_name()));
-      int distribution = srcs[m]->CollectActionsList();
-    }
-  }
 }
 
 

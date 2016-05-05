@@ -45,6 +45,7 @@ add_library(mpc
   mpc_subsurface.cc
 ##  mpc_permafrost3.cc
   mpc_permafrost4.cc
+  mpc_coupled_transport.cc
 )
 
 install(TARGETS mpc DESTINATION lib)
@@ -76,20 +77,20 @@ register_evaluator_with_factory(
   LISTNAME   MPC_PK_FAC
   )
     
-#register_evaluator_with_factory(
-#  HEADERFILE mpc_subsurface_reg.hh
-#  LISTNAME   MPC_PK_FAC
-#  )
+register_evaluator_with_factory(
+  HEADERFILE mpc_subsurface_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
 
-#register_evaluator_with_factory(
-#  HEADERFILE mpc_permafrost_reg.hh
-#  LISTNAME   MPC_PK_FAC
-#  )
+register_evaluator_with_factory(
+  HEADERFILE mpc_permafrost_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
 
-#register_evaluator_with_factory(
-#  HEADERFILE mpc_coupled_water_reg.hh
-#  LISTNAME   MPC_PK_FAC
-#  )
+register_evaluator_with_factory(
+  HEADERFILE mpc_coupled_water_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
 
 
 generate_evaluators_registration_header(

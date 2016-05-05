@@ -7,6 +7,8 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Derived class for transport sources and sinks.
 */
 
 #ifndef AMANZI_TRANSPORT_DOMAIN_FUNCTION_HH_
@@ -26,22 +28,12 @@ namespace Transport {
 
 class TransportDomainFunction : public PK_DomainFunction {
  public:
-  TransportDomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : 
-      PK_DomainFunction(mesh) {};
-  
-  void Define(const std::vector<std::string>& regions,
-              const Teuchos::RCP<const MultiFunction>& f,
-              int action, int submodel,
-              const std::string& name);
+  TransportDomainFunction() {};
 
-  void Define(const std::string& region,
-              const Teuchos::RCP<const MultiFunction>& f,
-              int action, int submodel,
-              const std::string& name);
-  
   // access
   const std::string& tcc_name() { return tcc_name_; }
   int tcc_index() { return tcc_index_; }
+  void set_tcc_name(const std::string& name) { tcc_name_ = name; }
   void set_tcc_index(int i) { tcc_index_ = i; }
 
  private:
@@ -49,8 +41,7 @@ class TransportDomainFunction : public PK_DomainFunction {
   int tcc_index_; // index the global list of components
 };
 
-
 }  // namespace Transport
 }  // namespace Amanzi
 
-#endif  // AMANZI_TRANSPORT_DOMAIN_FUNCTION_HH_
+#endif
