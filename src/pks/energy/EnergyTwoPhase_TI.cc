@@ -14,7 +14,6 @@
 #include <boost/math/special_functions/fpclassify.hpp>
 #include <boost/test/floating_point_comparison.hpp>
 
-#include "BoundaryFunction.hh"
 #include "FieldEvaluator.hh"
 #include "EnergyTwoPhase_PK.hh"
 

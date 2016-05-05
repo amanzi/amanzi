@@ -7,15 +7,14 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "BoundaryFunction.hh"
+#include "ConstantFunction.hh"
+#include "FunctionFactory.hh"
+#include "LinearFunction.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "boundary_function.hh"
-#include "ConstantFunction.hh"
 #include "PolynomialFunction.hh"
-#include "LinearFunction.hh"
 #include "SeparableFunction.hh"
-#include "FunctionFactory.hh"
-#include "composite_function.hh"
 #include "errors.hh"
 
 using namespace Amanzi;
@@ -25,34 +24,29 @@ using namespace Amanzi::Functions;
 
 int main (int argc, char *argv[])
 {
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  return UnitTest::RunAllTests ();
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  return UnitTest::RunAllTests();
 }
+
 
 struct reference_mesh
 {
   Epetra_MpiComm *comm;
   Teuchos::RCP<Mesh> mesh;
-  GeometricModel *gm;
-  std::string LEFT;
-  std::string RIGHT;
-  std::string FRONT;
-  std::string BACK;
-  std::string BOTTOM;
-  std::string TOP;
-  std::string INVALID;
+  std::string LEFT, RIGHT, FRONT, BACK, BOTTOM, TOP, INVALID;
 
   reference_mesh()
   {
-    LEFT   = "LEFT";
-    RIGHT  = "RIGHT";
-    FRONT  = "FRONT";
-    BACK   = "BACK";
+    LEFT = "LEFT";
+    RIGHT = "RIGHT";
+    FRONT = "FRONT";
+    BACK = "BACK";
     BOTTOM = "BOTTOM";
-    TOP    = "TOP";
+    TOP = "TOP";
     INVALID = "INVALID";
 
     comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
     // Brick domain corners and outward normals to sides
     Teuchos::Array<double> corner_min(Teuchos::tuple(0.0, 0.0, 0.0));
     Teuchos::Array<double> corner_max(Teuchos::tuple(4.0, 4.0, 4.0));
@@ -62,6 +56,7 @@ struct reference_mesh
     Teuchos::Array<double> back(Teuchos::tuple(0.0, 1.0, 0.0));
     Teuchos::Array<double> bottom(Teuchos::tuple(0.0, 0.0, -1.0));
     Teuchos::Array<double> top(Teuchos::tuple(0.0, 0.0, 1.0));
+
     // Create the geometric model
     Teuchos::ParameterList regions;
     regions.sublist("LEFT").sublist("region: plane").
@@ -76,12 +71,14 @@ struct reference_mesh
         set("point",corner_max).set("normal",back);
     regions.sublist("TOP").sublist("region: plane").
         set("point",corner_max).set("normal",top);
-    gm = new GeometricModel(3,regions,comm);
+    Teuchos::RCP<AmanziGeometry::GeometricModel> 
+        gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, regions, comm));
     // Create the mesh
     MeshFactory mesh_fact(comm);
     mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2, gm);
   }
 };
+
 
 TEST_FIXTURE(reference_mesh, empty)
 {
@@ -89,15 +86,11 @@ TEST_FIXTURE(reference_mesh, empty)
   CHECK_EQUAL(0, bf.size());
 }
 
+
 TEST_FIXTURE(reference_mesh, basic)
 {
   BoundaryFunction bf(mesh);
-  Teuchos::RCP<CompositeFunction> f1 =
-    Teuchos::rcp(new CompositeFunction(Teuchos::rcp(new ConstantFunction(1.0))));
-  Teuchos::RCP<CompositeFunction> f2 =
-    Teuchos::rcp(new CompositeFunction(Teuchos::rcp(new ConstantFunction(2.0))));
-  Teuchos::RCP<CompositeFunction> f3 =
-    Teuchos::rcp(new CompositeFunction(Teuchos::rcp(new ConstantFunction(3.0))));
+  Teuchos::RCP<MultiFunction> f1 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new ConstantFunction(1.0))));
   // Add a definition for a single side.
   bf.Define(RIGHT, f1);
   // Add a definition for a couple other sides
@@ -111,32 +104,36 @@ TEST_FIXTURE(reference_mesh, basic)
   CHECK_EQUAL(16,bf.size());
 }
 
+
 TEST_FIXTURE(reference_mesh, values1)
 {
   BoundaryFunction bf(mesh);
-  Teuchos::RCP<CompositeFunction> f1 =
-    Teuchos::rcp(new CompositeFunction(Teuchos::rcp(new ConstantFunction(1.0))));
-  Teuchos::RCP<CompositeFunction> f2 =
-    Teuchos::rcp(new CompositeFunction(Teuchos::rcp(new ConstantFunction(2.0))));
-  Teuchos::RCP<CompositeFunction> f3 =
-    Teuchos::rcp(new CompositeFunction(Teuchos::rcp(new ConstantFunction(3.0))));
+  Teuchos::RCP<MultiFunction> f1 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new ConstantFunction(1.0))));
+  Teuchos::RCP<MultiFunction> f2 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new ConstantFunction(2.0))));
+  Teuchos::RCP<MultiFunction> f3 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new ConstantFunction(3.0))));
+
   bf.Define(RIGHT, f1);
   bf.Define(FRONT, f2);
   bf.Define(BACK,  f3);
   bf.Finalize();
+
   CHECK_EQUAL(12, bf.size());
   bf.Compute(0.0);
+
   Entity_ID_List face_list;
   mesh->get_set_entities(RIGHT, FACE, USED, &face_list);
   for (Entity_ID_List::iterator f = face_list.begin(); f != face_list.end(); ++f)
     CHECK_EQUAL(1.0, bf.find(*f)->second);
+
   mesh->get_set_entities(FRONT, FACE, USED, &face_list);
   for (Entity_ID_List::iterator f = face_list.begin(); f != face_list.end(); ++f)
     CHECK_EQUAL(2.0, bf.find(*f)->second);
+
   mesh->get_set_entities(BACK, FACE, USED, &face_list);
   for (Entity_ID_List::iterator f = face_list.begin(); f != face_list.end(); ++f)
     CHECK_EQUAL(3.0, bf.find(*f)->second);
 }
+
 
 TEST_FIXTURE(reference_mesh, values2)
 {
@@ -147,18 +144,20 @@ TEST_FIXTURE(reference_mesh, values2)
   double g[3] = {1.0, 2.0, 3.0};
   std::vector<double> grad(g, g+3);
   std::auto_ptr<Function> f2(new LinearFunction(0.0, grad));
-  Teuchos::RCP<CompositeFunction> f3 =
-    Teuchos::rcp(new CompositeFunction(Teuchos::rcp(new SeparableFunction(f1,f2))));
+
   // Create the boundary function
+  Teuchos::RCP<MultiFunction> f3 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new SeparableFunction(f1,f2))));
   BoundaryFunction bf(mesh);
   std::vector<std::string> regions(2); regions[0] = RIGHT; regions[1] = BACK;
   bf.Define(regions, f3);
+
   // Check values at t=1
   bf.Compute(1.0);
   for (BoundaryFunction::Iterator i = bf.begin(); i != bf.end(); ++i) {
     AmanziGeometry::Point p = mesh->face_centroid(i->first);
     CHECK_EQUAL(p.x()+2*p.y()+3*p.z(), i->second);
   }
+
   // Check values at t=2
   bf.Compute(2.0);
   for (BoundaryFunction::Iterator i = bf.begin(); i != bf.end(); ++i) {
@@ -167,13 +166,14 @@ TEST_FIXTURE(reference_mesh, values2)
   }
 }
 
+
 TEST_FIXTURE(reference_mesh, bad_input)
 {
-  Teuchos::RCP<CompositeFunction> f =
-    Teuchos::rcp(new CompositeFunction(Teuchos::rcp(new ConstantFunction(1.0))));
+  Teuchos::RCP<MultiFunction> f = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new ConstantFunction(1.0))));
   BoundaryFunction bf(mesh);
   //bf.Define(INVALID, f); // no such face set
   CHECK_THROW(bf.Define(INVALID, f), Errors::Message);
+
   bf.Define(RIGHT, f);
   //bf.Define(RIGHT, f); // overlapping definition
   CHECK_THROW(bf.Define(RIGHT, f), Errors::Message);

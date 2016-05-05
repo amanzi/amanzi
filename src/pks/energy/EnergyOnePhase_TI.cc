@@ -9,7 +9,6 @@
   Author: Konstantin Lipnikov
 */
 
-#include "BoundaryFunction.hh"
 #include "FieldEvaluator.hh"
 
 #include "EnergyOnePhase_PK.hh"

@@ -30,13 +30,7 @@ struct another_reference_mesh
   Epetra_MpiComm *comm;
   Teuchos::RCP<Mesh> mesh;
   Teuchos::RCP<GeometricModel> gm;
-  std::string LEFT;
-  std::string RIGHT;
-  std::string FRONT;
-  std::string BACK;
-  std::string BOTTOM;
-  std::string TOP;
-  std::string INVALID;
+  std::string LEFT, RIGHT, FRONT, BACK, BOTTOM, TOP, INVALID;
 
   another_reference_mesh()
   {
@@ -82,9 +76,9 @@ struct another_reference_mesh
   }
 };
 
+
 TEST_FIXTURE(another_reference_mesh, cv_function)
 {
-
   // make the mesh function
   Teuchos::RCP<const Function> constant_func = Teuchos::rcp(new ConstantFunction(1.0));
   std::vector<Teuchos::RCP<const Function> > constant_funcs(1,constant_func);

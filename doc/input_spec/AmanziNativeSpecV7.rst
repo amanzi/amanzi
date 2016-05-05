@@ -2208,7 +2208,7 @@ Note that the source values are set up separately for each component.
      `"none`", and `"permeability`". For option `"none`" the source term Q is measured
      in [mol/L/s] (if units for concetration is mol/L) or [mol/m^3/s] (othrwise). 
      For the other options, it is measured in [mol/s]. When the source function
-     is defined over a few regions, Q will be distributed independently over each region.
+     is defined over a few regions, Q will be distributed over their union.
      Default value is `"none`".
 
    * `"submodel`" [string] refines definition of source. Available options are `"rate`"
