@@ -40,12 +40,13 @@ def find_name_value(xml,name,value):
 def replace_by_value(xml,oldvalue,newvalue):
     """Replace all matches of a given 'value'='oldvalue' with 'newvalue'"""
     for r in findall_value(xml, oldvalue):
-        r.set('value', str(newvalue))
+        r.setValue(newvalue)
+
 
 def replace_by_name(xml,name,value):
     """Replace all matches of a given 'name' with 'newvalue'"""
     for r in findall_name(xml, name):
-        r.set('value', str(value))
+        r.setValue(value)
 
 #
 # parent map functionality

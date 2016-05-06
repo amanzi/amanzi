@@ -1,7 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/*
-  A region defined by a set of mesh entities in a mesh file
+//! RegionLabeledSet: A region defined by a set of mesh entities in a mesh file
 
+/*!
   Strictly speaking, we should tie this region class to a particular
   mesh or mesh file but that cause a circular dependency of meshes
   on regions and of labeled set regions on meshes. We will rely on the 
@@ -17,6 +17,14 @@
   The region will consist of all mesh elements for which the indicator
   function is a particular value at their centroids
 
+  <ul>Native Spec Example</>
+    <ParameterList name="region: labeled set" type="ParameterList">
+      <Parameter name="label" type="string" value="10000" />
+      <Parameter name="file" type="string" value="mesh_fsets.exo" />
+      <Parameter name="format" type="string" value="Exodus II" />
+      <Parameter name="entity" type="string" value="cell" />
+    </ParameterList>
+  
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
