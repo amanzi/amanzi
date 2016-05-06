@@ -37,10 +37,10 @@ class MaterialMeshFunction : public MeshFunction {
  protected:
   typedef std::map<AmanziMesh::Entity_ID, double> MaterialMesh;
 
-  typedef std::pair<Teuchos::RCP<Spec>, Teuchos::RCP<MaterialMesh> > UniqueSpec;
-  typedef std::vector<Teuchos::RCP<UniqueSpec> > UniqueSpecList;
+  typedef std::pair<Teuchos::RCP<Spec>, Teuchos::RCP<MaterialMesh> > MaterialSpec;
+  typedef std::vector<Teuchos::RCP<MaterialSpec> > MaterialSpecList;
 
-  std::map<AmanziMesh::Entity_kind, Teuchos::RCP<UniqueSpecList> > unique_specs_;
+  std::map<AmanziMesh::Entity_kind, Teuchos::RCP<MaterialSpecList> > material_specs_;
 };
 
 }  // namespace Functions

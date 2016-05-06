@@ -41,7 +41,6 @@ void MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
       mesh_->get_set_entities_and_vofs(*region, kind, AmanziMesh::USED, &ids, &vofs);
 
       for (int i = 0; i < ids.size(); ++i) {
-std::cout << ids[i] << " " << vofs[i] << std::endl;
         AmanziMesh::Entity_ID id = ids[i];
         it = mat_mesh->find(id);
         if (it == mat_mesh->end()) {
@@ -59,12 +58,12 @@ std::cout << ids[i] << " " << vofs[i] << std::endl;
 
   // Compare the list of ids in this Spec to all previous Specs to ensure
   // uniqueness.
-  Teuchos::RCP<UniqueSpecList> other_specs = unique_specs_[kind];
+  Teuchos::RCP<MaterialSpecList> other_specs = material_specs_[kind];
   if (other_specs == Teuchos::null) {
-    other_specs = Teuchos::rcp(new UniqueSpecList());
-    unique_specs_[kind] = other_specs;
+    other_specs = Teuchos::rcp(new MaterialSpecList());
+    material_specs_[kind] = other_specs;
   } else {
-    for (UniqueSpecList::const_iterator us = other_specs->begin(); us != other_specs->end(); ++us) {
+    for (MaterialSpecList::const_iterator us = other_specs->begin(); us != other_specs->end(); ++us) {
 
       const MaterialMesh& tmp = *(*us)->second;
 
@@ -79,7 +78,7 @@ std::cout << ids[i] << " " << vofs[i] << std::endl;
   }
   // If we've gotten this far, things are OK.  Add the spec to the lists.
   spec_list_.push_back(spec);
-  other_specs->push_back(Teuchos::rcp(new UniqueSpec(spec, mat_mesh)));
+  other_specs->push_back(Teuchos::rcp(new MaterialSpec(spec, mat_mesh)));
 };
 
 }  // namespace Functions

@@ -35,12 +35,6 @@ void Mesh::get_set_entities_box_vofs_(
     std::vector<double>* volume_fractions) const
 {
   ASSERT(volume_fractions != NULL);
-  /*
-  std::cout << "region=" << region << std::endl;
-  std::cout << "kind=" << kind << std::endl;
-  std::cout << "ptype=" << ptype << std::endl;
-  std::cout << "data=" << setents << std::endl;
-  */
 
   setents->clear();
   volume_fractions->clear();
@@ -66,7 +60,7 @@ void Mesh::get_set_entities_box_vofs_(
         cell_get_coordinates(c, &polytope);
         if ((volume = region->intersect(polytope)) > 0.0) {
           setents->push_back(c);
-          volume_fractions->push_back(volume);
+          volume_fractions->push_back(volume /cell_volume(c));
         }
       }
 
@@ -93,7 +87,7 @@ void Mesh::get_set_entities_box_vofs_(
         face_get_coordinates(f, &polygon);
         if ((area = region->intersect(polygon)) > 0.0) {
           setents->push_back(f);
-          volume_fractions->push_back(area);
+          volume_fractions->push_back(area / face_area(f));
         }
       }
 

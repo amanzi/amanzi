@@ -138,10 +138,11 @@ double RegionBoxVolumeFractions::intersect(
     box.push_back(Point(0.0, 1.0));
 
     // project manifold on a plane
+    Point p3d(3), p2d(2);
+    std::vector<Point> nodes;
+
     if (degeneracy_ >= 0) {
       double eps(1.0e-6);
-      Point p3d(3), p2d(2);
-      std::vector<Point> nodes;
 
       for (int n = 0; n < polytope.size(); ++n) {
         p3d = N_ * (polytope[n] - p0_);
@@ -153,8 +154,13 @@ double RegionBoxVolumeFractions::intersect(
       }
       IntersectConvexPolygons(nodes, box, result_xy);
     } else {
-      IntersectConvexPolygons(polytope, box, result_xy);
+      for (int n = 0; n < polytope.size(); ++n) {
+        p2d = N_ * (polytope[n] - p0_);
+        nodes.push_back(p2d);
+      }
     }
+
+    IntersectConvexPolygons(nodes, box, result_xy);
 
     int nnodes = result_xy.size(); 
     if (nnodes > 0) {
