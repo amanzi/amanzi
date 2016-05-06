@@ -338,26 +338,20 @@ WeakMPCSemiCoupled::generalize_inputspec(){
     
     // if restarting from local checkpoint files
     
-    if (pk2_list.sublist(names[0]).sublist("initial condition").isParameter("restart file")){
-      std::string ic_st = pk2_list.sublist(names[0]).sublist("initial condition").get<std::string>("restart file");
-      int strt = ic_st.rfind("checkpoint");
-      std::string ch_name = ic_st.substr(strt,ic_st.size());
-      int c1 = ch_name.find("_");
-      int c2 = ch_name.rfind("_");
-      int c = c2 - c1-1;
+    if (pk2_list.sublist(names[0]).sublist("initial condition").isParameter("restart files, checkpoint cycles")){
+   
+      Teuchos::Array<std::string> restart = pk2_list.sublist(names[0]).sublist("initial condition").get<Teuchos::Array<std::string> >("restart files, checkpoint cycles");
 
-      std::stringstream file_name;
-      /*      
-      file_name << "checkpoint_column_" << rank << "_";
-      ic_st.replace(strt,10, file_name.str());
-      pk2_list.sublist(names[0]).sublist("initial condition").set("restart file", ic_st);
-      //      pk2_list.sublist(names[0]).sublist("initial condition").remove("restart files");
-      */
-      file_name << "checkpoint_" << rank << "_";
-      ic_st.replace(strt,12 + c, file_name.str());
+      std::stringstream res_file;
+
+      if(restart[0].rfind("/") == restart[0].size()-1){}
+      else
+	restart[0] += "/";
       
-      pk2_list.sublist(names[0]).sublist("initial condition").set("restart file", ic_st);
-      //      pk2_list.sublist(names[0]).sublist("initial condition").remove("restart files");
+      res_file << restart[0] << "checkpoint_" << rank << "_" << restart[1] << ".h5";
+    
+      pk2_list.sublist(names[0]).sublist("initial condition").set("restart file", res_file.str());
+    
     }
     
    
@@ -381,25 +375,23 @@ WeakMPCSemiCoupled::generalize_inputspec(){
       .set("thermal conductivity key",getKey(domain_ss,"thermal_conductivity"));
     
 
-    if (pk2_list.sublist(names[1]).sublist("initial condition").isParameter("restart file")){
+    
+      if (pk2_list.sublist(names[1]).sublist("initial condition").isParameter("restart files, checkpoint cycles")){
+   
+      Teuchos::Array<std::string> restart = pk2_list.sublist(names[1]).sublist("initial condition").get<Teuchos::Array<std::string> >("restart files, checkpoint cycles");
+
+      std::stringstream res_file;
+
+      if(restart[0].rfind("/") == restart[0].size()-1){}
+      else
+	restart[0] += "/";
       
-      std::string ic_st = pk2_list.sublist(names[1]).sublist("initial condition").get<std::string>("restart file");
-      int strt = ic_st.rfind("checkpoint");
-
-      std::string ch_name = ic_st.substr(strt,ic_st.size());
-      int c1 = ch_name.find("_");
-      int c2 = ch_name.rfind("_");
-      int c = c2 - c1-1;
-      std::stringstream file_name;
-
-      //      file_name << "checkpoint_column_" << rank << "_";
-      file_name << "checkpoint_" << rank << "_";
-      //      ic_st.replace(strt,10, file_name.str());
-      ic_st.replace(strt,12 + c, file_name.str());
-      pk2_list.sublist(names[1]).sublist("initial condition").set("restart file", ic_st);
-      // pk2_list.sublist(names[1]).sublist("initial condition").remove("restart files");
-
+      res_file << restart[0] << "checkpoint_" << rank << "_" << restart[1] << ".h5";
+    
+      pk2_list.sublist(names[1]).sublist("initial condition").set("restart file", res_file.str());
+    
     }
+    
 
 
     pk2_list.sublist(names[2])
