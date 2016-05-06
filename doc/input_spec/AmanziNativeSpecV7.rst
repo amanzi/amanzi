@@ -143,8 +143,8 @@ code development and its daily usage in reasearch.
   * The Hilbert spaces *L2* and *H1*. Note that *L2* and *l2* are different spaces and shouldbe used
     appropriately.
 
-  * Trilinos *VerbosityObject* for historical reasons. There are a few other camel-case parameters that
-    go directly to Trilinos and therefore outside of our control.
+  * Trilinos parameters. There are a few camel-case parameters that
+    go directly to Trilinos functions and therefore outside of our control, e.g. *ML output*.
 
 
 Verbose output
@@ -154,12 +154,24 @@ Output of all components of Amanzi is controlled by a standard verbose
 object list. This list can be inserted in almost any significant
 component of this spec to produce a verbose output, see the embedded examples.
 If this list is not specified, the default verbosity value is used.
-The name *Verbosity Level* is reserved by Trilinos.
+
+* `"verbosity level`" [string] Available options are *none*, *low*, *medium*, *high*, and *extreme*.
+  Option *extreme is used by the developers only. For communication between users and developers, 
+  the recommended option is *high*. 
+
+* `"hide line prefix`" [bool] defines prefix for output messages. Defualt value is *true*.
+
+* `"name`" [string] is the name of the prefix.
+
+* `"write on rank`" [int] is processor rank on which the output is performed. Default is 0.
 
 .. code-block:: xml
 
-   <ParameterList name="VerboseObject">
-     <Parameter name="Verbosity Level" type="string" value="high"/>
+   <ParameterList name="verbose object">
+     <Parameter name="verbosity level" type="string" value="medium"/>
+     <Parameter name="name" type="string" value="my header"/>
+     <Parameter name="hide line prefix" type="bool" value="false"/>
+     <Parameter name="write on rank" type="int" value="0"/>
    </ParameterList>
 
 
@@ -448,8 +460,8 @@ The evaluator has the following fields.
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="extreme"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="extreme"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -505,8 +517,8 @@ as custom parameters (see the examples).
       <ParameterList name="EOS parameters">
         <Parameter name="eos type" type="string" value="liquid water"/>
       </ParameterList>
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="extreme"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="extreme"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -528,8 +540,8 @@ The *eos* evaluator requires one-parameter list to select the proper model for e
         <Parameter name="iem type" type="string" value="linear"/>
         <Parameter name="heat capacity [J/kg-K]" type="double" value="620.0"/>
       </ParameterList>
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="extreme"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="extreme"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -1267,6 +1279,26 @@ This list is optional.
    </ParameterList>
 
 
+Absolute permeability
+.....................
+
+* `"coordinate system`" [string] defines coordinate system
+  for calculating absolute permeability. The available options are `"cartesian`"
+  and `"layer`".
+
+* `"off-diagonal components`" [int] defines additional (typically off-diagonal) 
+  components of the absolute permeability. Deafult is 0.
+
+.. code-block:: xml
+
+   <ParameterList name="Richards problem">  <!-- parent list -->
+     <ParameterList name="absolute permeability">
+       <Parameter name="coordinate system" type="string" value="cartesian"/>
+       <Parameter name="off-diagonal components" type="int" value="0"/>
+     </ParameterList>
+   </ParameterList>
+
+
 Relative permeability
 .....................
 
@@ -1357,7 +1389,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
           <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
           <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-          <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+          <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -1492,7 +1524,7 @@ Again, constant functions can be replaced by any of the available functions.
   source Q over the specified regions. The available options are `"volume`",
   `"none`", and `"permeability`". For option `"none`", the source term Q is measured
   in [kg/m^3/s]. For the other options, it is measured in [kg/s]. When the source function
-  is defined over a few regions, Q is distributed independently over each region.
+  is defined over a few regions, Q is distributed over their union.
   Default is `"none`".
 
 * `"submodel`" [string] refines definition of the source. Available options are `"rate`"
@@ -1716,8 +1748,8 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
            <Parameter name="max divergent iterations" type="int" value="3"/>
            <Parameter name="max nka vectors" type="int" value="10"/>
            <Parameter name="modify correction" type="bool" value="false"/>
-           <ParameterList name="VerboseObject">
-             <Parameter name="Verbosity Level" type="string" value="high"/>
+           <ParameterList name="verbose object">
+             <Parameter name="verbosity level" type="string" value="high"/>
            </ParameterList>
          </ParameterList>
 
@@ -1747,33 +1779,10 @@ between 11 and 15.
 The time step will be cut twice if the number of nonlinear iterations exceeds 15.
 
 
-Developer parameters
-````````````````````
-
-The remaining parameters in the time integrator sublist include 
-those needed for unit tests, and future code development. 
-
-.. code-block:: xml
-
-   <ParameterList name="time integrator">
-     <ParameterList name="obsolete parameters">
-       <Parameter name="start time" type="double" value="0.0"/>
-       <Parameter name="end time" type="double" value="100.0"/>
-       <Parameter name="maximum number of iterations" type="int" value="400"/>
-       <Parameter name="error abs tol" type="double" value="1"/>
-       <Parameter name="error rel tol" type="double" value="0"/>
-     </ParameterList>
-   </ParameterList>
-
-
 Other parameters
 ................
 
 The remaining *flow* parameters are
-
-* `"absolute permeability coordinate system`" [string] defines coordinate system
-  for calculating absolute permeability. The available options are `"cartesian`"
-  and `"layer`".
 
 * `"clipping parameters`" [list] defines how solution increment calculated by a nonlinear 
   solver is modified e.g., clipped.
@@ -1936,8 +1945,8 @@ and temporal accuracy, and verbosity:
         <Parameter name="limiter extension for transport" type="bool" value="true"/>
       </ParameterList>
 
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="high"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>  
   </ParameterList>  
@@ -2194,52 +2203,51 @@ Note that the source values are set up separately for each component.
    * `"regions`" [Array(string)] defines a list of domain regions where a source term
      must be applied.
 
+   * `"spatial distribution method`" [string] identifies a method for distributing
+     source Q over the specified regions. The available options are `"volume`",
+     `"none`", and `"permeability`". For option `"none`" the source term Q is measured
+     in [mol/L/s] (if units for concetration is mol/L) or [mol/m^3/s] (othrwise). 
+     For the other options, it is measured in [mol/s]. When the source function
+     is defined over a few regions, Q will be distributed over their union.
+     Default value is `"none`".
+
+   * `"submodel`" [string] refines definition of source. Available options are `"rate`"
+     and `"integrand`". The first option defines rate of change `q`, the second one 
+     defines integrand `Q` of a rate `Q = dq/dt`. Default is `"rate`".
+
    * `"sink`" [list] is a function for calculating a source term.
      The function specification is described in subsection Functions.
 
-    * `"spatial distribution method`" [string] identifies a method for distributing
-      source Q over the specified regions. The available options are `"volume`",
-      `"none`", and `"permeability`". For option `"none`" the source term Q is measured
-      in [mol/L/s] (if units for concetration is mol/L) or [mol/m^3/s] (othrwise). 
-      For the other options, it is measured in [mol/s]. When the source function
-      is defined over a few regions, Q will be distributed independently over each region.
-      Default value is `"none`".
-
-    * `"submodel`" [string] refines definition of source. Available options are `"rate`"
-      and `"integrand`". The first option defines rate of change `q`, the second one 
-      defines integrand `Q` of a rate `Q = dq/dt`. Default is `"rate`".
 
 This example defines one well and one sink.
 
 .. code-block:: xml
 
-   <ParameterList name="transport">  <!-- parent list -->
-     <ParameterList name="source terms">
-       <ParameterList name="concentration">
-         <ParameterList name="H+"> 
-           <ParameterList name="SOURCE: EAST WELL">   <!-- user defined name -->
-	     <Parameter name="regions" type="Array(string)" value="{EAST_WELL}"/>
-             <Parameter name="spatial distribution method" type="string" value="volume"/>
-             <Parameter name="submodel" type="string" value="rate"/>
-             <ParameterList name="sink">   <!-- keyword, do not change -->
-               <ParameterList name="function-constant">
-                 <Parameter name="value" type="double" value="-0.01"/>
-               </ParameterList>
+   <ParameterList name="source terms"> <!-- parent list -->
+     <ParameterList name="concentration">
+       <ParameterList name="H+"> 
+         <ParameterList name="SOURCE: EAST WELL">   <!-- user defined name -->
+           <Parameter name="regions" type="Array(string)" value="{EAST_WELL}"/>
+           <Parameter name="spatial distribution method" type="string" value="volume"/>
+           <Parameter name="submodel" type="string" value="rate"/>
+           <ParameterList name="sink">   <!-- keyword, do not change -->
+             <ParameterList name="function-constant">
+               <Parameter name="value" type="double" value="-0.01"/>
              </ParameterList>
            </ParameterList>
-           <ParameterList name="source for west well">
-              ...
-           </ParameterList>
          </ParameterList>
+         <ParameterList name="source for west well">
+            ...
+         </ParameterList>
+       </ParameterList>
      
-         <ParameterList name="CO2(g)">   <!-- next component, a gas -->
-           <ParameterList name="SOURCE: WEST WELL">   <!-- user defined name -->
-             <Parameter name="regions" type="Array(string)" value="{WEST_WELL}"/>
-             <Parameter name="spatial distribution method" type="string" value="permeability"/>
-             <ParameterList name="sink">  
-               <ParameterList name="function-constant">
-                 <Parameter name="value" type="double" value="0.02"/>
-               </ParameterList>
+       <ParameterList name="CO2(g)">   <!-- next component, a gas -->
+         <ParameterList name="SOURCE: WEST WELL">   <!-- user defined name -->
+           <Parameter name="regions" type="Array(string)" value="{WEST_WELL}"/>
+           <Parameter name="spatial distribution method" type="string" value="permeability"/>
+           <ParameterList name="sink">  
+             <ParameterList name="function-constant">
+               <Parameter name="value" type="double" value="0.02"/>
              </ParameterList>
            </ParameterList>
          </ParameterList>
@@ -2355,8 +2363,8 @@ Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
 
   <ParameterList>  <!-- parent list -->
     <ParameterList name="chemistry">
-      <Parameter name="Engine" type="string" value="PFloTran"/>
-      <Parameter name="Engine Input File" type="string" value="1d-tritium-trim.in"/>
+      <Parameter name="engine" type="string" value="PFloTran"/>
+      <Parameter name="engine input file" type="string" value="1d-tritium-trim.in"/>
       <Parameter name="minerals" type="Array(string)" value="{quartz, kaolinite, goethite, opal}"/>
       <Parameter name="min time step (s)" type="double" value="1.5778463e-07"/>
       <Parameter name="max time step (s)" type="double" value="1.5778463e+07"/>
@@ -2394,6 +2402,20 @@ The Amanzi chemistry process kernel uses the following parameters.
 
 * `"maximum Newton iterations`" [int] is the maximum number of iteration the chemistry 
   library can take.
+
+* `"max time step (s)`" [double] is the maximum time step that chemistry will allow the MPC to take.
+
+* `"initial time step (s)`" [double] is the initial time step that chemistry will ask the MPC to take.
+
+* `"time step cut threshold`" [int] is the number of Newton iterations that if exceeded
+  will trigger a time step cut. Default is 8.
+
+* `"time step cut factor`" [double] is the factor by which the time step is cut. Default is 2.0
+
+* `"time step increase threshold`" [int] is the number of consecutive successful time steps that
+  will trigger a time step increase. Default is 4.
+
+* `"time step increase factor`" [double] is the factor by which the time step is increased. Default is 1.2
 
 * `"auxiliary data`" [Array(string)] defines additional chemistry related data that the user 
   can request be saved to vis files. Currently `"pH`" is the only variable supported.
@@ -2905,8 +2927,8 @@ in a variety of regimes, e.g. with or without gas phase.
        <Parameter name="energy key" type="string" value="energy"/>
        <Parameter name="evaluator type" type="string" value="constant liquid density"/>
        <Parameter name="vapor diffusion" type="bool" value="true"/>
-       <ParameterList name="VerboseObject">
-         <Parameter name="Verbosity Level" type="string" value="high"/>
+       <ParameterList name="verbose object">
+         <Parameter name="verbosity level" type="string" value="high"/>
        </ParameterList>
      </ParameterList>
    </ParameterList>
@@ -3050,7 +3072,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
            <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
            <Parameter name="gravity" type="bool" value="true"/>
-           <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+           <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
            <Parameter name="upwind method" type="string" value="standard: cell"/>
          </ParameterList>
        </ParameterList>
@@ -3223,7 +3245,7 @@ Diffusion operator
        <Parameter name="exclude primary terms" type="bool" value="false"/>
        <Parameter name="scaled constraint equation" type="bool" value="false"/>
        <Parameter name="gravity" type="bool" value="false"/>
-       <Parameter name="newton correction" type="string" value="none"/>
+       <Parameter name="Newton correction" type="string" value="none"/>
      </ParameterList>
    </ParameterList>
    </ParameterList>
@@ -3291,9 +3313,9 @@ Diffusion operator
     and derives gravity discretization by the reserve shifting.
     The second option is based on the divergence formula.
 
-  * `"newton correction`" [string] specifies a model for non-physical terms 
+  * `"Newton correction`" [string] specifies a model for non-physical terms 
     that must be added to the matrix. These terms represent Jacobian and are needed 
-    for the preconditioner. Available options are `"true jacobian`" and `"approximate jacobian`".
+    for the preconditioner. Available options are `"true Jacobian`" and `"approximate Jacobian`".
     The FV scheme accepts only the first options. The othre schemes accept only the second option.
 
   * `"scaled constraint equation`" [bool] rescales flux continuity equations on mesh faces.
@@ -3323,7 +3345,7 @@ Diffusion operator
       <Parameter name="gravity" type="bool" value="true"/>
       <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
       <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
-      <Parameter name="newton correction" type="string" value="true jacobian"/>
+      <Parameter name="Newton correction" type="string" value="true Jacobian"/>
 
       <ParameterList name="consistent faces">
         <ParameterList name="linear solver">
@@ -3817,8 +3839,8 @@ Internal parameters for GMRES include
        <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
        <Parameter name="maximum size of deflation space" type="int" value="0"/>
 
-       <ParameterList name="VerboseObject">
-         <Parameter name="Verbosity Level" type="string" value="high"/>
+       <ParameterList name="verbose object">
+         <Parameter name="verbosity level" type="string" value="high"/>
        </ParameterList>
      </ParameterList>
    </ParameterList>
@@ -3850,8 +3872,8 @@ Internal parameters for PCG include
       <Parameter name="convergence criteria" type="Array(string)" value="{relative residual,make one iteration}"/>
       <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
 
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="high"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -3893,8 +3915,8 @@ Internal parameters for NKA include
       <Parameter name="max nka vectors" type="int" value="10"/>
       <Parameter name="nka vector tolerance" type="double" value="0.05"/>
 
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="high"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -3985,8 +4007,8 @@ Newton-Krylov acceleration (NKA)
       <Parameter name="modify correction" type="bool" value="false"/>
       <Parameter name="lag iterations" type="int" value="0"/>
 
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="high"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -4124,7 +4146,7 @@ Here is the list of selected parameters for the Newton-Picard solver.
          <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
          <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
          <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-         <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+         <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
        </ParameterList>
      </ParameterList>
    </ParameterList>
@@ -5179,8 +5201,8 @@ This list contains data collected by the input parser of a higher-level spec.
        <Parameter name="used boundary condition regions" type="Array(string)" value="{region1,region2}"/>
        <Parameter name="used source and sink regions" type="Array(string)" value="{region3,region4}"/>
        <Parameter name="used observation regions" type="Array(string)" value="{region5}"/>
-       <ParameterList name="VerboseObject">
-         <Parameter name="Verbosity Level" type="string" value="high"/>
+       <ParameterList name="verbose object">
+         <Parameter name="verbosity level" type="string" value="high"/>
        </ParameterList>
      </ParameterList>
    </ParameterList>

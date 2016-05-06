@@ -47,7 +47,7 @@ TEST_FIXTURE(test_data, CONT_SOLVER_EXACT_JACOBIAN) {
   plist.set("max du growth factor", 1e5);
   plist.set("max divergent iterations", 3);
   plist.set("max nka vectors", 1);
-  plist.sublist("VerboseObject").set("Verbosity Level", "extreme");
+  plist.sublist("verbose object").set("verbosity level", "extreme");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverContinuation<Epetra_Vector, Epetra_BlockMap> > cont =
@@ -85,7 +85,7 @@ TEST_FIXTURE(test_data, CONT_SOLVER_INEXACT_JACOBIAN) {
   plist.set("max du growth factor", 1e5);
   plist.set("max divergent iterations", 3);
   plist.set("max nka vectors", 2);
-  plist.sublist("VerboseObject").set("Verbosity Level", "high");
+  plist.sublist("verbose object").set("verbosity level", "high");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverContinuation<Epetra_Vector, Epetra_BlockMap> > cont =

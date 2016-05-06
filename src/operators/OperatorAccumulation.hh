@@ -19,6 +19,7 @@
 #include "exceptions.hh"
 #include "CompositeVector.hh"
 
+#include "BCs.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 
@@ -103,6 +104,7 @@ class OperatorAccumulation {
   // -- update method for just adding to PC
   void AddAccumulationTerm(const Epetra_MultiVector& du);
   void AddAccumulationTerm(const Epetra_MultiVector& du, double dT);
+  void AddAccumulationTerm(const CompositeVector& du, double dT, const std::string& name);
 
   // -- linearized update methods with storage terms
   void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& s0, 
@@ -111,6 +113,9 @@ class OperatorAccumulation {
                            double dT, const std::string& name);
   void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& ss,
                            const std::string& name);
+
+  // -- operator modification
+  void ApplyBCs(const Teuchos::RCP<BCs>& bc);
 
   // access (for developers only)
   int schema_dofs() { return local_op_schema_; }
@@ -122,6 +127,7 @@ class OperatorAccumulation {
   Teuchos::RCP<Op> local_matrices() { return local_op_; }
 
  protected:
+  void CalculateEntitylVolume_(CompositeVector& entity_volume, const std::string& name);
   void InitAccumulation_(AmanziMesh::Entity_kind entity, bool surface=false);
 
  protected:

@@ -75,8 +75,8 @@
           </ParameterList>
         </ParameterList>
 
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
 
         <ParameterList name="operators">
@@ -94,7 +94,7 @@
               <Parameter name="schema" type="Array(string)" value="{cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
               <Parameter name="gravity" type="bool" value="true"/>
-              <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+              <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -134,8 +134,8 @@
               <Parameter name="max divergent iterations" type="int" value="3"/>
               <Parameter name="max nka vectors" type="int" value="10"/>
               <Parameter name="modify correction" type="bool" value="false"/>
-              <ParameterList name="VerboseObject">
-                <Parameter name="Verbosity Level" type="string" value="low"/>
+              <ParameterList name="verbose object">
+                <Parameter name="verbosity level" type="string" value="low"/>
               </ParameterList>
             </ParameterList>
             <Parameter name="extrapolate initial guess" type="bool" value="true"/>
@@ -195,8 +195,8 @@
       <ParameterList name="gmres parameters">
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <Parameter name="error tolerance" type="double" value="1e-14"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="none"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="none"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

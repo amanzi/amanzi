@@ -1,7 +1,7 @@
 /*
   Mesh Functions
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -32,15 +32,15 @@ namespace Functions {
 class BoundaryFunction : public UniqueMeshFunction {
 
 public:
-  BoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh) :
+  BoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       UniqueMeshFunction(mesh),
-      finalized_(false) {}
+      finalized_(false) {};
 
-  void Define(const std::vector<std::string> &regions,
-              const Teuchos::RCP<const MultiFunction> &f);
+  void Define(const std::vector<std::string>& regions,
+              const Teuchos::RCP<const MultiFunction>& f);
 
-  void Define(std::string region,
-              const Teuchos::RCP<const MultiFunction> &f);
+  void Define(std::string& region,
+              const Teuchos::RCP<const MultiFunction>& f);
 
   void Compute(double time);
 

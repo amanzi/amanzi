@@ -78,27 +78,6 @@ TEST(FLOW_3D_RICHARDS) {
 
   // modify the default state for the problem at hand
   std::string passwd("flow"); 
-  Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
-  
-  AmanziMesh::Entity_ID_List block;
-  std::vector<double> vofs;
-
-  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K[0][c] = 0.1;
-    K[1][c] = 0.1;
-    K[2][c] = 2.0;
-  }
-
-  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
-  for (int i = 0; i != block.size(); ++i) {
-    int c = block[i];
-    K[0][c] = 0.5;
-    K[1][c] = 0.5;
-    K[2][c] = 0.5;
-  }
-  S->GetField("permeability", passwd)->set_initialized();
 
   *S->GetScalarData("fluid_density", passwd) = 1.0;
   S->GetFieldData("viscosity_liquid", passwd)->PutScalar(1.0);

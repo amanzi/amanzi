@@ -31,6 +31,7 @@
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorDiffusion.hh"
 #include "OperatorAccumulation.hh"
+#include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
 
 #include "MultiscaleTransportPorosityFactory.hh"
@@ -105,6 +106,10 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   linear_solver_list_ = Teuchos::sublist(glist, "solvers");
   nonlinear_solver_list_ = Teuchos::sublist(glist, "nonlinear solvers");
 
+  // initialize io
+  Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
+  units_.Init(*units_list);
+
   vo_ = Teuchos::null;
 }
 
@@ -120,9 +125,6 @@ Transport_PK::~Transport_PK()
   }
   for (int i = 0; i < bcs.size(); i++) {
     if (bcs[i] != NULL) delete bcs[i]; 
-  }
-  for (int i = 0; i < srcs.size(); i++) {
-    if (srcs[i] != NULL) delete srcs[i]; 
   }
 }
 
@@ -252,7 +254,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Create verbosity object.
   Teuchos::ParameterList vlist;
-  vlist.sublist("VerboseObject") = tp_list_->sublist("VerboseObject");
+  vlist.sublist("verbose object") = tp_list_->sublist("verbose object");
   vo_ =  Teuchos::rcp(new VerboseObject("TransportPK", vlist)); 
 
   MyPID = mesh_->get_comm()->MyPID();
@@ -330,12 +332,25 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   VV_CheckInfluxBC();
 
-  // source term initialization
-  for (int i =0; i < srcs.size(); i++) {
-    int type = srcs[i]->CollectActionsList();
-    if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      PKUtils_CalculatePermeabilityFactorInWell(S, Kxy);
-      break;
+  // source term initialization: so far only "concentration" is available.
+  if (tp_list_->isSublist("source terms")) {
+    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
+    PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
+
+    Teuchos::ParameterList& clist = tp_list_->sublist("source terms").sublist("concentration");
+    for (Teuchos::ParameterList::ConstIterator it = clist.begin(); it != clist.end(); ++it) {
+      std::string name = it->first;
+      if (clist.isSublist(name)) {
+        Teuchos::ParameterList& src_list = clist.sublist(name);
+        for (Teuchos::ParameterList::ConstIterator it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
+          std::string specname = it1->first;
+          Teuchos::ParameterList& spec = src_list.sublist(specname);
+          Teuchos::RCP<TransportDomainFunction> src = factory.Create(spec, Kxy);
+          src->set_tcc_name(name);
+          src->set_tcc_index(FindComponentNumber(name));
+          srcs.push_back(src);
+        }
+      }
     }
   }
 
@@ -757,7 +772,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       PopulateBoundaryData(bc_model, bc_value, i);
 
       Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
-      ComputeAddSourceTerms(t_new, 1.0, srcs, rhs_cell, i, i);
+      ComputeAddSourceTerms(t_new, 1.0, rhs_cell, i, i);
       op1->ApplyBCs(true, true);
 
       // add accumulation term
@@ -969,7 +984,7 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
   // process external sources
   if (srcs.size() != 0) {
     double time = t_physics_;
-    ComputeAddSourceTerms(time, dt_, srcs, tcc_next, 0, num_advect - 1);
+    ComputeAddSourceTerms(time, dt_, tcc_next, 0, num_advect - 1);
   }
 
   // recover concentration from new conservative state
@@ -1146,11 +1161,10 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dt_cycle)
 
 /* ******************************************************************
 * Computes source and sink terms and adds them to vector tcc.
-* Return mass rate for the tracer.
+* Returns mass rate for the tracer.
 * The routine treats two cases of tcc with one and all components.
 ****************************************************************** */
 void Transport_PK::ComputeAddSourceTerms(double tp, double dtp, 
-                                         std::vector<TransportDomainFunction*>& srcs, 
                                          Epetra_MultiVector& tcc, int n0, int n1)
 {
   int num_vectors = tcc.NumVectors();
@@ -1164,15 +1178,13 @@ void Transport_PK::ComputeAddSourceTerms(double tp, double dtp,
     if (num_vectors == 1) imap = 0;
 
     double t0 = tp - dtp;
-    srcs[m]->Compute(t0, tp, Kxy); 
+    srcs[m]->Compute(t0, tp); 
 
-    int type = srcs[m]->CollectActionsList();
     for (TransportDomainFunction::Iterator it = srcs[m]->begin(); it != srcs[m]->end(); ++it) {
       int c = it->first;
       double value = mesh_->cell_volume(c) * it->second;
 
-      if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_VOLUME ||
-         (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY))
+      if (srcs[m]->name() == "volume" || srcs[m]->name() == "weight")
           value *= units_.concentration_factor();
 
       tcc[imap][c] += dtp * value;

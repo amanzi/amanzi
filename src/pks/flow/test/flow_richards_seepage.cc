@@ -48,8 +48,8 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE) {
 
   // create a mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, &comm));
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new AmanziGeometry::GeometricModel(2, regions_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();

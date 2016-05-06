@@ -39,8 +39,8 @@
       <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
       <!-- end of developers parameters -->
 
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="medium"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="medium"/>
       </ParameterList>
 
       <ParameterList name="boundary conditions">

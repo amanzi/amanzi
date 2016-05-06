@@ -37,8 +37,8 @@
         <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, make one iteration}"/>
         <Parameter name="size of Krylov space" type="int" value="5"/>
 
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -63,7 +63,7 @@
         <Parameter name="aqueous names" type="Array(string)" value="{Component 0}"/>
         <Parameter name="aqueous values" type="Array(double)" value="{1e-3}"/>
         <Parameter name="gaseous names" type="Array(string)" value="{Component 1}"/>
-        <Parameter name="gaseous values" type="Array(double)" value="{1e-3}"/>
+        <Parameter name="gaseous values" type="Array(double)" value="{1e-2}"/>
       </ParameterList>
 
       <ParameterList name="operators">
@@ -88,8 +88,8 @@
         <Parameter name="limiter extension for transport" type="bool" value="true"/>
       </ParameterList>
 
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="high"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
 
       <ParameterList name="boundary conditions">
@@ -171,8 +171,8 @@
   <ParameterList name="state">
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">

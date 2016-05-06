@@ -39,7 +39,10 @@ class RegionBoxVolumeFractions : public Region {
 
   // Calculate intersection volume of polytope object with the box. The operation
   // is well defined when the polytope and box have same dimensionality.
-  double intersect(const std::vector<Point>& polytope) const;
+  //
+  // Polyhedron with counter clockwise ordered faces (wrt normals)
+  double intersect(const std::vector<Point>& polytope, 
+                   const std::vector<std::vector<int> >& faces) const;
 
  protected:
   const Point p0_, p1_; // two corners of the box
@@ -60,10 +63,10 @@ void IntersectConvexPolygons(const std::vector<Point>& xy1,
 
 // -- intersection of a convex polyhedra, one is defined by a set of half-spaces
 void IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
-                              const std::vector<std::vector<int> > faces1,
+                              const std::vector<std::vector<int> >& faces1,
                               const std::vector<std::pair<Point, Point> >& xyz2,
                               std::vector<Point>& xyz3,
-                              std::vector<std::vector<int> > faces3);
+                              std::vector<std::vector<int> >& faces3);
 
 }  // namespace AmanziGeometry
 }  // namespace Amanzi

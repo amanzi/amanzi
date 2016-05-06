@@ -326,7 +326,7 @@ TEST(GAS_DIFFUSION) {
   dt0 = TPK.CalculateTransportDt();
 
   int i, k, iter = 0;
-  double t_old(0.0), t_new(0.0), dt, T1(1.0);
+  double t_old(0.0), t_new(0.0), dt, T1(0.99);
   while (t_new < T1) {
     dt = std::min(TPK.CalculateTransportDt(), T1 - t_old);
     dt = std::min(dt, dt0);
@@ -345,6 +345,13 @@ TEST(GAS_DIFFUSION) {
   // check symmetry of diffusion
   CHECK_CLOSE(tcc[1][199], tcc[1][241], 1e-12);
   CHECK_CLOSE(tcc[1][218], tcc[1][222], 1e-12);
+
+  // check for bounds
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c = 0; c < ncells_owned; ++c) {
+    CHECK(tcc[0][c] >= 0.0 && tcc[0][c] <= 1.0);
+    CHECK(tcc[1][c] >= 0.0 && tcc[1][c] <= 1.0);
+  }
  
   GMV::open_data_file(*mesh, (std::string)"transport.gmv");
   GMV::start_data();

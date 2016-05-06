@@ -89,6 +89,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             if (DOMNode::ELEMENT_NODE == jnode->getNodeType()) {
               text = mm.transcode(jnode->getTextContent());
               times.push_back(TimeStringToValue_(TrimString_(text)));
+std::cout << times[0] << std::endl;
             }
           }
           tm_parameter.set<Teuchos::Array<double> >("values", times);

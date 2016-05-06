@@ -69,8 +69,8 @@ void OperatorDiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
 
   // Newton correction terms
   newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
-  std::string jacobian = plist.get<std::string>("newton correction", "none");
-  if (jacobian == "approximate jacobian") {
+  std::string jacobian = plist.get<std::string>("Newton correction", "none");
+  if (jacobian == "approximate Jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
 
     std::string name = "Diffusion: FACE_CELL Jacobian terms";

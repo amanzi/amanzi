@@ -307,7 +307,7 @@ std::pair<double,double> RunInverseProblem(const std::string& discretization,
 
   Teuchos::ParameterList lin_list;
   lin_list.set("iterative method", "gmres");
-  lin_list.sublist("gmres parameters").sublist("VerboseObject").set("Verbosity Level", "low");
+  lin_list.sublist("gmres parameters").sublist("verbose object").set("verbosity level", "low");
   AmanziSolvers::LinearOperatorFactory<Operator,CompositeVector,CompositeVectorSpace> fac_linop;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator,CompositeVector,CompositeVectorSpace> > lin_op =
       fac_linop.Create(lin_list, op->global_operator());

@@ -716,11 +716,11 @@ Mesh_STK::exterior_face_importer (void) const
 // Mesh_STK::get_set_entities  (by std::string setname)
 // -------------------------------------------------------------
 void 
-Mesh_STK::get_set_entities(const std::string setname,
-                           const Entity_kind kind, 
-                           const Parallel_type ptype, 
-                           Entity_ID_List *entids,
-                           std::vector<double> *vofs) const
+Mesh_STK::get_set_entities_and_vofs(const std::string setname,
+                                    const Entity_kind kind, 
+                                    const Parallel_type ptype, 
+                                    Entity_ID_List *entids,
+                                    std::vector<double> *vofs) const
 {
   ASSERT (entity_valid_ptype(ptype));
   stk::mesh::EntityRank rank(mesh_->kind_to_rank(kind));

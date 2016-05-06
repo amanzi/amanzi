@@ -77,10 +77,10 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     std::string file_location;
 
     if (engine == "pflotran") {
-      out_list.set<std::string>("Engine", "PFloTran");
+      out_list.set<std::string>("engine", "PFloTran");
       file_location = "process_kernels, chemistry";
     } else if (engine == "crunchflow") {
-      out_list.set<std::string>("Engine", "CrunchFlow");
+      out_list.set<std::string>("engine", "CrunchFlow");
       file_location = "process_kernels, chemistry";
     } else {
       valid_engine = false;
@@ -96,10 +96,10 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
         element = static_cast<DOMElement*>(node);
 	if (element->hasAttribute(mm.transcode("input_filename"))) {
             std::string inpfilename = GetAttributeValueS_(element, "input_filename");
-            out_list.set<std::string>("Engine Input File", inpfilename);
+            out_list.set<std::string>("engine input file", inpfilename);
 	} else {
 	    std::string inpfilename = CreateINFile(xmlfilename_);
-            out_list.set<std::string>("Engine Input File", inpfilename);
+            out_list.set<std::string>("engine input file", inpfilename);
 	}
       } else {
         Errors::Message msg;
@@ -344,7 +344,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   // miscalleneous
   out_list.set<int>("number of component concentrations", comp_names_all_.size());
 
-  out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
+  out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;
 }
 
@@ -521,6 +521,7 @@ std::string InputConverterU::CreateINFile(std::string& filename)
       if (rate > 0.0) {
         mineral_kinetics << "    " << name << "\n";
         mineral_kinetics << "      RATE_CONSTANT " << rate << "\n";
+        //mineral_kinetics << "      RATE_CONSTANT " << rate << " mol/cm^2-sec\n";
         mineral_kinetics << "    /\n";
       }
     }
@@ -601,24 +602,35 @@ std::string InputConverterU::CreateINFile(std::string& filename)
   //  std::string name = GetTextContentS_(node, mineral_list.str().c_str());
   //  complexes << "      MINERAL " << name << "\n";
   //}
-  node = GetUniqueElementByTagsString_("materials, material, surface_complexation, site", flag);
+  node = GetUniqueElementByTagsString_("materials, material, surface_complexation", flag);
   if (flag) {
-    std::string name = mm.transcode(node->getTextContent());
-    complexes << "      SITE >" << name;
-  }
-  node = GetUniqueElementByTagsString_("materials, material, surface_complexation, density", flag);
-  if (flag) {
-    std::string name = mm.transcode(node->getTextContent());
-    complexes << " " << name << "\n";
-  }
-  node = GetUniqueElementByTagsString_("materials, material, surface_complexation, complexes", flag);
-  if (flag) {
-    complexes << "      COMPLEXES\n";
-    std::vector<std::string> complexe_names = CharToStrings_(mm.transcode(node->getTextContent()));
-    for (std::vector<std::string>::const_iterator it = complexe_names.begin(); it != complexe_names.end(); it++) {
-      complexes << "        >" << *it << "\n";
+    
+    std::string name;
+    std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
+    for (int i = 0; i < children.size(); ++i) {
+      DOMNode* inode = children[i];
+      element = static_cast<DOMElement*>(inode);
+      name = GetAttributeValueS_(element, "name");
+      double density = GetAttributeValueD_(element, "density");
+      complexes << "    SURFACE_COMPLEXATION_RXN\n";
+      complexes << "      EQUILIBRIUM\n";
+      complexes << "      SITE " << name << " " << density << "\n";
+      
+      //DOMNode* cnode = GetUniqueElementByTagsString_("materials, material, surface_complexation, complexes", flag);
+      std::vector<DOMNode*> kids = GetChildren_(inode, "complexes", flag);
+      if (flag) {
+        complexes << "      COMPLEXES\n";
+        for (int j = 0; j < kids.size(); ++j) {
+          DOMNode* jnode = kids[j];
+          std::vector<std::string> complexe_names = CharToStrings_(mm.transcode(jnode->getTextContent()));
+          for (std::vector<std::string>::const_iterator it = complexe_names.begin(); it != complexe_names.end(); it++) {
+            complexes << "        " << *it << "\n";
+          }
+        }
+        complexes << "      /\n";
+        complexes << "    /\n";
+      }
     }
-    complexes << "      /\n";
   }
 
   // constraints
@@ -679,7 +691,8 @@ std::string InputConverterU::CreateINFile(std::string& filename)
 	  std::string constname = GetAttributeValueS_(element, "name");
 	  double constvf = GetAttributeValueD_(element, "volume_fraction");
 	  double constsa = GetAttributeValueD_(element, "specific_surface_area");
-	  mineral << "    " << constname << " " << constvf << " " << constsa << "\n";
+          mineral << "    " << constname << " " << constvf << " " << constsa << "\n";
+          //mineral << "    " << constname << " " << constvf << " " << constsa << " cm^2/cm^3\n";
 	}
       }
 
@@ -776,10 +789,7 @@ std::string InputConverterU::CreateINFile(std::string& filename)
           in_file << "    /\n";
         }
         if (!complexes.str().empty()) {
-          in_file << "    SURFACE_COMPLEXATION_RXN\n";
-          in_file << "      EQUILIBRIUM\n";
           in_file << complexes.str();
-          in_file << "    /\n";
         }
         if (!cations.str().empty()) {
           in_file << "    ION_EXCHANGE_RXN\n";

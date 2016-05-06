@@ -82,7 +82,7 @@ class MeshSurfaceCell : public Mesh {
         // label pulled from parent
         Entity_ID_List faces_in_set;
         std::vector<double> vofs;
-        inmesh.get_set_entities((*r)->name(), FACE, OWNED, &faces_in_set, &vofs);
+        inmesh.get_set_entities_and_vofs((*r)->name(), FACE, OWNED, &faces_in_set, &vofs);
         sets_[(*r)->id()] = std::find(faces_in_set.begin(), faces_in_set.end(),
                 parent_face_) != faces_in_set.end();
 
@@ -427,11 +427,11 @@ class MeshSurfaceCell : public Mesh {
   }
 
   virtual
-  void get_set_entities(const std::string setname,
-                        const Entity_kind kind,
-                        const Parallel_type ptype,
-                        Entity_ID_List *entids,
-                        std::vector<double> *vofs) const {
+  void get_set_entities_and_vofs(const std::string setname,
+                                 const Entity_kind kind,
+                                 const Parallel_type ptype,
+                                 Entity_ID_List *entids,
+                                 std::vector<double> *vofs) const {
     return get_set_entities(geometric_model()->FindRegion(setname)->id(),
                             kind, ptype, entids);
   }

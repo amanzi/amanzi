@@ -124,7 +124,7 @@ CONSTRAINT initial
   /
 END
 
-CONSTRAINT west
+CONSTRAINT west_constraint
   CONCENTRATIONS
     Tracer  1.d-3      T
   /

@@ -88,6 +88,9 @@ class Chemistry_PK : public PK_Physical {
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
 #endif
 
+  // time control
+  int num_iterations_, num_successful_steps_;
+
   // verbosity object thatis not shared with common chemistry
   Teuchos::RCP<VerboseObject> vo_;
 };

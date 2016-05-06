@@ -213,9 +213,11 @@ if __name__ == "__main__":
               x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
               pH_amanzi_native[i] = -np.log10(c_amanzi_native)
 
+	native = True
+
     except:
         
-        pass
+        native = False
 
 # Amanzi-Alquimia-PFlotran --->
     try:  
@@ -399,12 +401,13 @@ if __name__ == "__main__":
     px.plot(y_crunchflow, pH_crunchflow[i],'m*',linestyle='None',linewidth=2,label='CrunchFlow')
 
 # amanzi-native
-    for j, comp in enumerate(components):
+    if native :
+        for j, comp in enumerate(components):
 
-           ax[j].plot(x_amanzi_native, u_amanzi_native[i][j],color='b',linestyle='None',marker='x',linewidth=2)
-           bx[j].plot(x_amanzi_native, v_amanzi_native[i][j],color='b',linestyle='None',marker='x',linewidth=2,label='AmanziU Native Chemistry')
+            ax[j].plot(x_amanzi_native, u_amanzi_native[i][j],color='b',linestyle='None',marker='x',linewidth=2)
+            bx[j].plot(x_amanzi_native, v_amanzi_native[i][j],color='b',linestyle='None',marker='x',linewidth=2,label='AmanziU Native Chemistry')
 
-    px.plot(x_amanzi_native, pH_amanzi_native[i],color='b',linestyle='None',marker='x',linewidth=2,label='AmanziU Native Chemistry')
+        px.plot(x_amanzi_native, pH_amanzi_native[i],color='b',linestyle='None',marker='x',linewidth=2,label='AmanziU Native Chemistry')
 
 # amanzi-unstructured-alquimia-pflotran
     if alq:

@@ -37,8 +37,8 @@ TEST(VERBOSE_OBJECT_GLOBAL) {
 TEST(VERBOSE_OBJECT_LOCAL) 
 {
   Teuchos::ParameterList plist;
-  Teuchos::ParameterList& vo_plist = plist.sublist("VerboseObject");
-  vo_plist.set("Verbosity Level", "high");
+  Teuchos::ParameterList& vo_plist = plist.sublist("verbose object");
+  vo_plist.set("verbosity level", "high");
 
   Amanzi::VerboseObject vo("my verb object", plist);
   CHECK_EQUAL(true, vo.os_OK(Teuchos::VERB_HIGH));
@@ -54,8 +54,8 @@ TEST(VERBOSE_OBJECT_LOCAL)
 TEST(VERBOSE_OBJECT_GET_VERBOSITY) 
 {
   Teuchos::ParameterList plist;
-  Teuchos::ParameterList& vo_plist = plist.sublist("VerboseObject");
-  vo_plist.set("Verbosity Level", "extreme");
+  Teuchos::ParameterList& vo_plist = plist.sublist("verbose object");
+  vo_plist.set("verbosity level", "extreme");
 
   Amanzi::VerboseObject vo("my verb object", plist);
   CHECK_EQUAL(Teuchos::VERB_EXTREME, vo.getVerbLevel());

@@ -324,7 +324,7 @@ class make_state {
     S->RegisterDomainMesh(mesh);
 
     Teuchos::ParameterList es_list, ep_list;
-    es_list.sublist("VerboseObject").set<std::string>("Verbosity Level", "extreme");
+    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
     // Secondary fields
     // -- Field A and its evaluator

@@ -1,6 +1,5 @@
 /*
-  A rectangular region in space, defined by two corner points and
-  normals to its side.
+  Geometry
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -9,6 +8,8 @@
 
   Authors: Lipnikov Konstantin (lipnikov@lanl.gov)
            Rao Garimella (rao@lanl.gov)
+
+  A box region defined by two corner points and normals to its side.
 */
 
 #include <vector>
@@ -118,26 +119,30 @@ bool RegionBoxVolumeFractions::inside(const Point& p) const
 // Implementation of a virtual member function.
 // We have to analyze 
 // -------------------------------------------------------------------
-double RegionBoxVolumeFractions::intersect(const std::vector<Point>& polytope) const
+double RegionBoxVolumeFractions::intersect(
+    const std::vector<Point>& polytope,
+    const std::vector<std::vector<int> >& faces) const
 {
-  double volume(-1.0);
+  double volume(0.0);
   int mdim, sdim;
-  std::vector<Point> box, result;
 
   mdim = manifold_dimension();
   sdim = polytope[0].dim();
    
   if ((sdim == 2 && degeneracy_ < 0) || (sdim == 3 && degeneracy_ >= 0)) {
+    std::vector<Point> box, result_xy;
+
     box.push_back(Point(0.0, 0.0));
     box.push_back(Point(1.0, 0.0)); 
     box.push_back(Point(1.0, 1.0));
     box.push_back(Point(0.0, 1.0));
 
     // project manifold on a plane
+    Point p3d(3), p2d(2);
+    std::vector<Point> nodes;
+
     if (degeneracy_ >= 0) {
       double eps(1.0e-6);
-      Point p3d(3), p2d(2);
-      std::vector<Point> nodes;
 
       for (int n = 0; n < polytope.size(); ++n) {
         p3d = N_ * (polytope[n] - p0_);
@@ -147,24 +152,59 @@ double RegionBoxVolumeFractions::intersect(const std::vector<Point>& polytope) c
         for (int k = 0; k < sdim; ++k) p2d[i++] = p3d[k];
         nodes.push_back(p2d);
       }
-      IntersectConvexPolygons(nodes, box, result);
+      IntersectConvexPolygons(nodes, box, result_xy);
     } else {
-      IntersectConvexPolygons(polytope, box, result);
+      for (int n = 0; n < polytope.size(); ++n) {
+        p2d = N_ * (polytope[n] - p0_);
+        nodes.push_back(p2d);
+      }
     }
 
-    int nnodes = result.size(); 
+    IntersectConvexPolygons(nodes, box, result_xy);
+
+    int nnodes = result_xy.size(); 
     if (nnodes > 0) {
-      volume = 0.0;
       for (int i = 0; i < nnodes; ++i) {
         int j = (i + 1) % nnodes;
 
-        const Point& p1 = result[i];
-        const Point& p2 = result[j];
+        const Point& p1 = result_xy[i];
+        const Point& p2 = result_xy[j];
         volume += (p1[0] + p2[0]) * (p2[1] - p1[1]) / 2;
       }
-
       volume *= jacobian_;
     }
+  }
+
+  else if (sdim == 3 && degeneracy_ < 0) {
+    std::vector<std::vector<int> > result_faces;
+    std::vector<Point> result_xyz;
+    std::vector<std::pair<Point, Point> > box;
+
+    box.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(-1.0, 0.0, 0.0)));
+    box.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(0.0, -1.0, 0.0)));
+    box.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(0.0, 0.0, -1.0)));
+
+    box.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(1.0, 0.0, 0.0)));
+    box.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 1.0, 0.0)));
+    box.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 0.0, 1.0)));
+
+    IntersectConvexPolyhedra(polytope, faces, box, result_xyz, result_faces);
+
+    int nfaces = result_faces.size(); 
+    if (nfaces > 3) {
+      for (int i = 0; i < nfaces; ++i) {
+        int nnodes = result_faces[i].size();
+        for (int k = 0; k < nnodes - 2; ++k) {
+          const Point& p0 = result_xyz[result_faces[i][k]];
+          const Point& p1 = result_xyz[result_faces[i][k + 1]];
+          const Point& p2 = result_xyz[result_faces[i][k + 2]];
+          volume += ((p1 - p0)^(p2 - p0)) * p0;
+        }
+      }
+      volume *= jacobian_ / 6;
+    }
+  } else {
+    ASSERT(0);
   }
 
   return volume;
@@ -255,10 +295,10 @@ void IntersectConvexPolygons(const std::vector<Point>& xy1,
 // polyhedron P3 ordered similar to P1.
 // -------------------------------------------------------------------
 void IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
-                              const std::vector<std::vector<int> > faces1,
+                              const std::vector<std::vector<int> >& faces1,
                               const std::vector<std::pair<Point, Point> >& xyz2,
                               std::vector<Point>& xyz3,
-                              std::vector<std::vector<int> > faces3)
+                              std::vector<std::vector<int> >& faces3)
 {
   // initialize result with the first polyhedron
   int nfaces1 = faces1.size();
@@ -331,7 +371,7 @@ std::cout << "plane=" << p << " normal=" << normal << std::endl;
           } else {
             result_xyz.push_back(std::make_pair(0.0, v1));
             result_faces[m].insert(it_next, nxyz);
-std::cout << "  face=" << m << " add " << v1 << std::endl;
+std::cout << "  add " << v1 << std::endl;
             nxyz++;
           }
         }
@@ -342,6 +382,7 @@ std::cout << "  face=" << m << " add " << v1 << std::endl;
       while (it != result_faces[m].end()) {
         if (result_xyz[*it].first > 0.0) {
           it = result_faces[m].erase(it);
+if (result_faces[m].size() == 2) std::cout << "  removing face, m=" << m << std::endl;
           if (result_faces[m].size() == 2) break;
 
           it_next = it;
@@ -361,37 +402,78 @@ std::cout << "  new edge:" << *it_prev << " " << *it_next << "   p1="
     } 
 
     // forming a new face
-    std::sort(new_edges.begin(), new_edges.end());
+    int n1, n2, n3, n4(-1);
     std::list<int> new_face;
 
     for (int m = 0; m < nfaces3; ++m) {
-      int p1 = new_edges[m].first;
-      int p2 = new_edges[m].second;
-      if (p1 >= 0) new_face.push_back(p2);
+      n1 = new_edges[m].second;
+      n2 = new_edges[m].first;
+      if (n1 >= 0) {
+        new_face.push_back(n1);
+        break;
+      }
+    }
+
+    while(n4 != n1) {
+      for (int m = 0; m < nfaces3; ++m) {
+        n3 = new_edges[m].second;
+        n4 = new_edges[m].first;
+        if (n2 == n3) {
+          new_face.push_back(n3);
+          n2 = n4;
+          break;
+        }
+      }
     }
 
     if (new_face.size() > 2) {
-std::cout << "  adding new face" << std::endl;
+      std::cout << "  adding new face:" << std::endl;
       result_faces.push_back(new_face);
     }
   }
 
   // output of the result
-  int mfaces3(0), nfaces3(result_faces.size());
+  int n(0), nfaces3(result_faces.size());
+  int nxyz3(result_xyz.size());
+  std::vector<int> map(nxyz3, -1);
 
+  // -- count true faces
   for (int i = 0; i < nfaces3; ++i) {
-    if (result_faces[i].size() > 2) mfaces3++;
+    if (result_faces[i].size() > 2) n++;
   }
-  faces3.resize(mfaces3);
+  faces3.resize(n);
 
-std::cout << "Total number of faces: " << mfaces3 << " out of " << nfaces3 << std::endl;
+  n = 0;
   for (int i = 0; i < nfaces3; ++i) {
     if (result_faces[i].size() > 2) {
+      faces3[n].clear();
       for (it = result_faces[i].begin(); it != result_faces[i].end(); ++it) {
-        faces3[i].push_back(*it);
-std::cout << *it << " ";
+        faces3[n].push_back(*it);
+        map[*it] = 0;
       }
-std::cout << std::endl;
+      n++;
+    }
+  }
+
+  int m(0);
+  for (int i = 0; i < nxyz3; ++i) {
+    if (map[i] == 0) map[i] = m++;
+  }
+
+  // -- count true vertices
+  xyz3.clear();
+  if (n > 3) { 
+    for (int i = 0; i < nxyz3; ++i) {
+      if (map[i] >= 0) xyz3.push_back(result_xyz[i].second);
+    }
+  }
+
+std::cout << "updating map" << std::endl;
+  // -- update face-to-nodes maps
+  for (int i = 0; i < n; ++i) {
+    int nnodes = faces3[i].size();
+    for (int k = 0; k < nnodes; ++k) {
+      faces3[i][k] = map[faces3[i][k]];
     }
   }
 }

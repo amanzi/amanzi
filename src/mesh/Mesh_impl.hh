@@ -94,7 +94,7 @@ Mesh::get_set_entities(const std::string setname,
                        Entity_ID_List *entids) const
 {
   std::vector<double> vofs;
-  get_set_entities(setname, kind, ptype, entids, &vofs);
+  get_set_entities_and_vofs(setname, kind, ptype, entids, &vofs);
 }
 
 

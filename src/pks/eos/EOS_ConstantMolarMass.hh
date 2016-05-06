@@ -1,15 +1,15 @@
 /*
-  This is the EOS component of the ATS and Amanzi codes.
+  EOS
    
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Author: Ethan Coon (ecoon@lanl.gov)
 
-  EOS_ConstantMolarMass -- intermediate class for default implementations of
-  EOS with constant molar masses.
+  EOS_ConstantMolarMass -- intermediate class for default implementations
+  of EOS with constant molar masses.
 
   Note, while instantiating this class does work, it should not be done.
   Instead, this class is intended to be inherited and either the Molar or Mass

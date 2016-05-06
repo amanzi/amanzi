@@ -15,7 +15,7 @@ namespace Amanzi {
         struct GlobalData {
             static std::map<std::string,std::string> AMR_to_Amanzi_label_map;
         };
-        static std::map<std::string,std::string>& AMRToAmanziLabelMap() {
+        inline static std::map<std::string,std::string>& AMRToAmanziLabelMap() {
             return GlobalData::AMR_to_Amanzi_label_map;
         }
     }

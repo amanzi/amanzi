@@ -27,7 +27,7 @@
       <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
       <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
-      <Parameter name="newton correction" type="string" value="none"/>
+      <Parameter name="Newton correction" type="string" value="none"/>
     </ParameterList>
 
     <ParameterList name="diffusion operator Newton-Picard">
@@ -36,7 +36,7 @@
       <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
-      <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+      <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
     </ParameterList>
 
     <ParameterList name="diffusion operator JFNK">
@@ -45,7 +45,7 @@
       <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
-      <Parameter name="newton correction" type="string" value="none"/>
+      <Parameter name="Newton correction" type="string" value="none"/>
     </ParameterList>
 
     <ParameterList name="upwind">
@@ -66,8 +66,8 @@
       <Parameter name="max nka vectors" type="int" value="10"/>
       <Parameter name="limit iterations" type="int" value="20"/>
       <Parameter name="modify correction" type="bool" value="true"/>
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="high"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -82,8 +82,8 @@
       <Parameter name="max nka vectors" type="int" value="10"/>
       <Parameter name="limit iterations" type="int" value="20"/>
       <Parameter name="modify correction" type="bool" value="false"/>
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="extreme"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="extreme"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -100,8 +100,8 @@
           <Parameter name="max divergent iterations" type="int" value="3"/>
           <Parameter name="max nka vectors" type="int" value="10"/>
           <Parameter name="limit iterations" type="int" value="20"/>
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="high"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -121,8 +121,8 @@
       <Parameter name="nonlinear tolerance" type="double" value="1.0e-08"/>
       <Parameter name="max divergent iterations" type="int" value="3"/>
       <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="extreme"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="extreme"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -135,8 +135,8 @@
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="1e-16"/>
         <Parameter name="maximum number of iterations" type="int" value="200"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="medium"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="medium"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -146,8 +146,8 @@
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="1e-16"/>
         <Parameter name="maximum number of iterations" type="int" value="200"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="low"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

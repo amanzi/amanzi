@@ -28,8 +28,8 @@
       <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
       <!-- end of developers parameters -->
 
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="medium"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="medium"/>
       </ParameterList>
 
       <ParameterList name="boundary conditions">
@@ -66,8 +66,8 @@
   <ParameterList name="state">
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">

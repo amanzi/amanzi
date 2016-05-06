@@ -249,11 +249,11 @@ class Mesh_MOAB : public Mesh {
   //----------------------------
     
   // Get list of entities of type 'category' in set
-  void get_set_entities(const std::string setname, 
-                        const Entity_kind kind, 
-                        const Parallel_type ptype, 
-                        std::vector<Entity_ID> *entids,
-                        std::vector<double> *vofs) const;
+  void get_set_entities_vofs(const std::string setname, 
+                             const Entity_kind kind, 
+                             const Parallel_type ptype, 
+                             std::vector<Entity_ID> *entids,
+                             std::vector<double> *vofs) const;
 
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If

@@ -817,11 +817,11 @@ const Epetra_Import& Mesh_simple::exterior_face_importer(void) const
 }
 
 
-void Mesh_simple::get_set_entities(const std::string setname, 
-                                   const AmanziMesh::Entity_kind kind, 
-                                   const AmanziMesh::Parallel_type ptype, 
-                                   AmanziMesh::Entity_ID_List *setents,
-                                   std::vector<double> *vofs) const
+void Mesh_simple::get_set_entities_and_vofs(const std::string setname, 
+                                            const AmanziMesh::Entity_kind kind, 
+                                            const AmanziMesh::Parallel_type ptype, 
+                                            AmanziMesh::Entity_ID_List *setents,
+                                            std::vector<double> *vofs) const
 {
   // we ignore ptype since this is a serial implementation
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();

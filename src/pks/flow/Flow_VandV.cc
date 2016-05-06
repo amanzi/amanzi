@@ -222,7 +222,7 @@ void Flow_PK::VV_PrintSourceExtrema() const
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     double smin(0.0), smax(0.0);
     for (int i = 0; i < srcs.size(); ++i) {
-      for (FlowDomainFunction::Iterator it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
+      for (PK_DomainFunction::Iterator it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
         int c = it->first;
         smin = std::min(smin, it->second);
         smax = std::max(smax, it->second);

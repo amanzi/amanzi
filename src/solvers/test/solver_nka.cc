@@ -52,7 +52,7 @@ TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN) {
   plist.set("max du growth factor", 1e5);
   plist.set("max divergent iterations", 3);
   plist.set("max nka vectors", 1);
-  plist.sublist("VerboseObject").set("Verbosity Level", "extreme");
+  plist.sublist("verbose object").set("verbosity level", "extreme");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap> > nka =
@@ -86,7 +86,7 @@ TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN_GLOBALIZED) {
   plist.set("max du growth factor", 1e5);
   plist.set("max divergent iterations", 3);
   plist.set("max nka vectors", 1);
-  plist.sublist("VerboseObject").set("Verbosity Level", "extreme");
+  plist.sublist("verbose object").set("verbosity level", "extreme");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap> > nka =
@@ -120,7 +120,7 @@ TEST_FIXTURE(test_data, NKA_SOLVER_INEXACT_JACOBIAN) {
   plist.set("max du growth factor", 1e5);
   plist.set("max divergent iterations", 3);
   plist.set("max nka vectors", 2);
-  plist.sublist("VerboseObject").set("Verbosity Level", "high");
+  plist.sublist("verbose object").set("verbosity level", "high");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap> > nka =
@@ -154,7 +154,7 @@ TEST_FIXTURE(test_data, NKA_SOLVER_INEXACT_JACOBIAN_GLOBALIZED) {
   plist.set("max du growth factor", 1e5);
   plist.set("max divergent iterations", 3);
   plist.set("max nka vectors", 2);
-  plist.sublist("VerboseObject").set("Verbosity Level", "high");
+  plist.sublist("verbose object").set("verbosity level", "high");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap> > nka =
@@ -187,7 +187,7 @@ TEST_FIXTURE(test_data, NEWTON_SOLVER) {
   plist.set("limit iterations", 15);
   plist.set("max du growth factor", 1e5);
   plist.set("max divergent iterations", 3);
-  plist.sublist("VerboseObject").set("Verbosity Level", "high");
+  plist.sublist("verbose object").set("verbosity level", "high");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap> > newton =
@@ -216,8 +216,8 @@ TEST_FIXTURE(test_data, JFNK_SOLVER_LEFT_PC) {
   // create the SolverState
   Teuchos::ParameterList plist;
   plist.sublist("nonlinear solver").set("solver type", "Newton");
-  plist.sublist("nonlinear solver").sublist("Newton parameters").sublist("VerboseObject")
-      .set("Verbosity Level", "extreme");
+  plist.sublist("nonlinear solver").sublist("Newton parameters").sublist("verbose object")
+      .set("verbosity level", "extreme");
   plist.sublist("nonlinear solver").sublist("Newton parameters")
       .set("nonlinear tolerance", 1e-6)
       .set("diverged tolerance", 1e10)
@@ -227,7 +227,7 @@ TEST_FIXTURE(test_data, JFNK_SOLVER_LEFT_PC) {
   plist.sublist("JF matrix parameters");
   plist.sublist("linear operator").set("iterative method", "gmres");
   plist.sublist("linear operator").sublist("gmres parameters").set("size of Krylov space", 2);
-  plist.sublist("linear operator").sublist("VerboseObject").set("Verbosity Level", "extreme");
+  plist.sublist("linear operator").sublist("verbose object").set("verbosity level", "extreme");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverJFNK<Epetra_Vector, Epetra_BlockMap> > jfnk =
@@ -256,8 +256,8 @@ TEST_FIXTURE(test_data, JFNK_SOLVER_RIGHT_PC) {
   // create the SolverState
   Teuchos::ParameterList plist;
   plist.sublist("nonlinear solver").set("solver type", "Newton");
-  plist.sublist("nonlinear solver").sublist("Newton parameters").sublist("VerboseObject")
-      .set("Verbosity Level", "extreme");
+  plist.sublist("nonlinear solver").sublist("Newton parameters").sublist("verbose object")
+      .set("verbosity level", "extreme");
   plist.sublist("nonlinear solver").sublist("Newton parameters")
       .set("nonlinear tolerance", 1e-6)
       .set("diverged tolerance", 1e10)
@@ -269,7 +269,7 @@ TEST_FIXTURE(test_data, JFNK_SOLVER_RIGHT_PC) {
   plist.sublist("linear operator").sublist("gmres parameters")
       .set("size of Krylov space", 2)
       .set("preconditioning strategy", "right");
-  plist.sublist("linear operator").sublist("VerboseObject").set("Verbosity Level", "extreme");
+  plist.sublist("linear operator").sublist("verbose object").set("verbosity level", "extreme");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverJFNK<Epetra_Vector, Epetra_BlockMap> > jfnk =
@@ -302,7 +302,7 @@ TEST_FIXTURE(test_data, NKA_LS_SOLVER) {
   plist.set("limit iterations", 15);
   plist.set("max du growth factor", 1e5);
   plist.set("max divergent iterations", 3);
-  plist.sublist("VerboseObject").set("Verbosity Level", "high");
+  plist.sublist("verbose object").set("verbosity level", "high");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverNKA_LS<Epetra_Vector, Epetra_BlockMap> > nka_bt =
@@ -334,7 +334,7 @@ TEST_FIXTURE(test_data, NKA_LS_SOLVER_GLOBALIZATION) {
   plist.set("limit iterations", 15);
   plist.set("max du growth factor", 1e5);
   plist.set("max divergent iterations", 3);
-  plist.sublist("VerboseObject").set("Verbosity Level", "high");
+  plist.sublist("verbose object").set("verbosity level", "high");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverNKA_LS<Epetra_Vector, Epetra_BlockMap> > nka_bt =
@@ -367,7 +367,7 @@ TEST_FIXTURE(test_data, NKA_BT_ATS_SOLVER) {
   plist.set("limit iterations", 15);
   plist.set("max du growth factor", 1e5);
   plist.set("max divergent iterations", 3);
-  plist.sublist("VerboseObject").set("Verbosity Level", "high");
+  plist.sublist("verbose object").set("verbosity level", "high");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverNKA_BT_ATS<Epetra_Vector, Epetra_BlockMap> > nka_bt =
@@ -403,7 +403,7 @@ TEST_FIXTURE(test_data, NKA_BT_ATS_SOLVER_GLOBALIZED) {
   plist.set("limit iterations", 15);
   plist.set("max du growth factor", 1e5);
   plist.set("max divergent iterations", 3);
-  plist.sublist("VerboseObject").set("Verbosity Level", "high");
+  plist.sublist("verbose object").set("verbosity level", "high");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverNKA_BT_ATS<Epetra_Vector, Epetra_BlockMap> > nka_bt =
@@ -439,7 +439,7 @@ TEST_FIXTURE(test_data, NKA_LS_ATS_SOLVER) {
   plist.set("limit iterations", 15);
   plist.set("max du growth factor", 1e5);
   plist.set("max divergent iterations", 3);
-  plist.sublist("VerboseObject").set("Verbosity Level", "high");
+  plist.sublist("verbose object").set("verbosity level", "high");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverNKA_LS_ATS<Epetra_Vector, Epetra_BlockMap> > nka_bt =
@@ -475,7 +475,7 @@ TEST_FIXTURE(test_data, NKA_LS_ATS_SOLVER_GLOBALIZED) {
   plist.set("limit iterations", 15);
   plist.set("max du growth factor", 1e5);
   plist.set("max divergent iterations", 3);
-  plist.sublist("VerboseObject").set("Verbosity Level", "high");
+  plist.sublist("verbose object").set("verbosity level", "high");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverNKA_LS_ATS<Epetra_Vector, Epetra_BlockMap> > nka_bt =
@@ -513,7 +513,7 @@ TEST_FIXTURE(test_data, BT_LS_SOLVER) {
   plist.set("limit iterations", 15);
   plist.set("max du growth factor", 1e5);
   plist.set("max divergent iterations", 3);
-  plist.sublist("VerboseObject").set("Verbosity Level", "high");
+  plist.sublist("verbose object").set("verbosity level", "high");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverBT<Epetra_Vector, Epetra_BlockMap> > nka_bt =
@@ -548,7 +548,7 @@ TEST_FIXTURE(test_data, BT_LS_SOLVER_GLOBALIZED) {
   plist.set("limit iterations", 15);
   plist.set("max du growth factor", 1e5);
   plist.set("max divergent iterations", 3);
-  plist.sublist("VerboseObject").set("Verbosity Level", "high");
+  plist.sublist("verbose object").set("verbosity level", "high");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverBT<Epetra_Vector, Epetra_BlockMap> > nka_bt =
@@ -584,7 +584,7 @@ TEST_FIXTURE(test_data, AA_SOLVER) {
   plist.set("max divergent iterations", 3);
   plist.set("max aa vectors", 4);
   plist.set("relaxation parameter", 1.);
-  plist.sublist("VerboseObject").set("Verbosity Level", "high");
+  plist.sublist("verbose object").set("verbosity level", "high");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverAA<Epetra_Vector, Epetra_BlockMap> > aa  =
@@ -621,7 +621,7 @@ TEST_FIXTURE(test_data, AA_SOLVER_GLOBALIZED) {
   plist.set("max divergent iterations", 3);
   plist.set("max aa vectors", 4);
   plist.set("relaxation parameter", 1.);
-  plist.sublist("VerboseObject").set("Verbosity Level", "high");
+  plist.sublist("verbose object").set("verbosity level", "high");
 
   // create the Solver
   Teuchos::RCP<AmanziSolvers::SolverAA<Epetra_Vector, Epetra_BlockMap> > aa  =

@@ -470,9 +470,9 @@ struct Problem {
     }
     if (jac_ondiag) {
       if (discretization == "fv: default") {
-        op_list00.set("newton correction", "true jacobian");
+        op_list00.set("Newton correction", "true Jacobian");
       } else {
-        op_list00.set("newton correction", "approximate jacobian");
+        op_list00.set("Newton correction", "approximate Jacobian");
       }
     }
     pc00 = fac.Create(op_list00, mesh_c);
@@ -488,9 +488,9 @@ struct Problem {
     }
     if (jac_ondiag) {
       if (discretization == "fv: default") {
-        op_list11.set("newton correction", "true jacobian");
+        op_list11.set("Newton correction", "true Jacobian");
       } else {
-        op_list11.set("newton correction", "approximate jacobian");
+        op_list11.set("Newton correction", "approximate Jacobian");
       }
     }
     pc11 = fac.Create(op_list11, mesh_c);
@@ -508,9 +508,9 @@ struct Problem {
       }
       op_list01.set("exclude primary terms", true);
       if (discretization == "fv: default") {
-        op_list01.set("newton correction", "true jacobian");
+        op_list01.set("Newton correction", "true Jacobian");
       } else {
-        op_list01.set("newton correction", "approximate jacobian");
+        op_list01.set("Newton correction", "approximate Jacobian");
       }
       pc01 = fac.Create(op_list01, mesh_c);
       pc01->SetBCs(bc0,bc1);
@@ -525,9 +525,9 @@ struct Problem {
       }
       op_list10.set("exclude primary terms", true);
       if (discretization == "fv: default") {
-        op_list10.set("newton correction", "true jacobian");
+        op_list10.set("Newton correction", "true Jacobian");
       } else {
-        op_list10.set("newton correction", "approximate jacobian");
+        op_list10.set("Newton correction", "approximate Jacobian");
       }
       pc10 = fac.Create(op_list10, mesh_c);
       pc10->SetBCs(bc1,bc0);
@@ -945,7 +945,7 @@ std::pair<double,double> RunInverseProblem(
 
   Teuchos::ParameterList lin_list;
   lin_list.set("iterative method", "nka");
-  lin_list.sublist("nka parameters").sublist("VerboseObject").set("Verbosity Level", "low");
+  lin_list.sublist("nka parameters").sublist("verbose object").set("verbosity level", "low");
   AmanziSolvers::LinearOperatorFactory<TreeOperator,TreeVector,TreeVectorSpace> fac;
   Teuchos::RCP<AmanziSolvers::LinearOperator<TreeOperator,TreeVector,TreeVectorSpace> > lin_op =
       fac.Create(lin_list, problem->op);
@@ -1168,7 +1168,7 @@ std::pair<double,double> RunNonlinearProblem(
 
     Teuchos::ParameterList lin_list;
     lin_list.set("iterative method", "gmres");
-    lin_list.sublist("gmres parameters").sublist("VerboseObject").set("Verbosity Level", "low");
+    lin_list.sublist("gmres parameters").sublist("verbose object").set("verbosity level", "low");
     AmanziSolvers::LinearOperatorFactory<TreeOperator,TreeVector,TreeVectorSpace> fac;
     Teuchos::RCP<AmanziSolvers::LinearOperator<TreeOperator,TreeVector,TreeVectorSpace> > lin_op =
         fac.Create(lin_list, problem->pc);
@@ -1293,7 +1293,7 @@ std::pair<double,double> RunInverseProblem_Diag(
   
   Teuchos::ParameterList lin_list;
   lin_list.set("iterative method", "gmres");
-  lin_list.sublist("gmres parameters").sublist("VerboseObject").set("Verbosity Level", "low");
+  lin_list.sublist("gmres parameters").sublist("verbose object").set("verbosity level", "low");
   AmanziSolvers::LinearOperatorFactory<Operator,CompositeVector,CompositeVectorSpace> fac;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator,CompositeVector,CompositeVectorSpace> > lin_op =
       fac.Create(lin_list, problem->op00->global_operator());
@@ -1301,7 +1301,7 @@ std::pair<double,double> RunInverseProblem_Diag(
 
   Teuchos::ParameterList lin_list11;
   lin_list11.set("iterative method", "gmres");
-  lin_list11.sublist("gmres parameters").sublist("VerboseObject").set("Verbosity Level", "low");
+  lin_list11.sublist("gmres parameters").sublist("verbose object").set("verbosity level", "low");
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator,CompositeVector,CompositeVectorSpace> > lin_op11 =
       fac.Create(lin_list, problem->op11->global_operator());
   

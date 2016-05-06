@@ -92,9 +92,7 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   Epetra_MultiVector& K1 = *S1->GetFieldData("permeability", passwd)->ViewComponent("cell"); 
 
   AmanziMesh::Entity_ID_List block;
-  std::vector<double> vofs;
-
-  mesh1->get_set_entities("All", AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
+  mesh1->get_set_entities("All", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K1[0][c] = 1e-9;
@@ -104,7 +102,7 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   S1->GetField("permeability", "flow")->set_initialized();
 
   Epetra_MultiVector& K2 = *S2->GetFieldData("permeability", passwd)->ViewComponent("cell");  
-  mesh2->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
+  mesh2->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K2[0][c] = 1e-9;

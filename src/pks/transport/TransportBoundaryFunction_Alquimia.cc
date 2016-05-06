@@ -77,8 +77,7 @@ void TransportBoundaryFunction_Alquimia::Define(const std::vector<std::string> &
     unsigned int num_faces = mesh_->get_set_size(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED);
 
     AmanziMesh::Entity_ID_List face_indices;
-    std::vector<double> vofs;
-    mesh_->get_set_entities(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED, &face_indices, &vofs);
+    mesh_->get_set_entities(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED, &face_indices);
 
     // Now get the cells that are attached to these faces.
     faces_.resize(face_indices.size());

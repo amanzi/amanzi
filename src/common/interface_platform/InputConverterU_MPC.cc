@@ -192,7 +192,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
       node = GetUniqueElementByTagsString_(
           "numerical_controls, unstructured_controls, unstr_steady-state_controls, unstr_initialization", flag);
       if (!flag) {
-        msg << "Constant flow must have an initialization list, unless state=off.\n";
+        msg << "Constant flow must have unstr_steady-state_controls->unstr_initialization list, unless state=off.\n";
         Exceptions::amanzi_throw(msg);
       }
     }
@@ -221,6 +221,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
       break;
     case 3:
       {
+        submodel = (pk_model_["chemistry"] == "amanzi") ? "chemistry amanzi" : "chemistry alquimia";
         Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("reactive transport");
         tmp_list.set<std::string>("PK type", "reactive transport");
         tmp_list.sublist("transport").set<std::string>("PK type", "transport");
@@ -287,7 +288,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     restart_ = true;
     out_list.sublist("restart").set<std::string>("file name", filename);
   }
-  out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
+  out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
 
   return out_list;
 }
@@ -522,7 +523,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
   if (filename.size() > 0) {
     out_list.sublist("restart").set<std::string>("file name", filename);
   }
-  out_list.sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
+  out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
 
   return out_list;
 }
@@ -747,7 +748,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
               "pressure, temperature", "nka", false,
               "unstructured_controls, unstr_thermal_richards_controls",
               TI_TS_REDUCTION_FACTOR, TI_TS_INCREASE_FACTOR);  
-          out_list.sublist(it->first).sublist("VerboseObject") = verb_list_.sublist("VerboseObject");
+          out_list.sublist(it->first).sublist("verbose object") = verb_list_.sublist("verbose object");
         }
       }
     }

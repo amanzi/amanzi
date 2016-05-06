@@ -26,7 +26,7 @@
   </definitions>
 
   <process_kernels>
-    <flow model="saturated" state="on" />
+    <flow model="constant" state="on"/>
     <transport state="on" />
     <chemistry engine="pflotran" process_model="none" state="on" input_filename="calcite_pflotran.in"/>
   </process_kernels>
@@ -45,7 +45,7 @@
     </liquid_phase>
     <solid_phase name="rock">
       <minerals>
-        <mineral name="Calcite"/>
+        <mineral>Calcite</mineral>
       </minerals>     
     </solid_phase>
   </phases>
@@ -68,7 +68,7 @@
         <cfl>1</cfl>
       </unstr_transport_controls>
 
-      <unstr_transient_controls>
+      <unstr_steady-state_controls>
         <min_iterations>10</min_iterations>
         <max_iterations>15</max_iterations>
         <limit_iterations>20</limit_iterations>
@@ -77,7 +77,8 @@
         <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
         <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
         <max_divergent_iterations>3</max_divergent_iterations>
-      </unstr_transient_controls>
+        <unstr_initialization method="darcy" />
+      </unstr_steady-state_controls>
 
       <unstr_chemistry_controls>
         <Parameter name="Verbosity" type="Array(string)" value="{verbose}" />
@@ -89,7 +90,6 @@
         <initial_time_step>15778463.0</initial_time_step>
         <time_step_control_method>fixed</time_step_control_method>
       </unstr_chemistry_controls>
-
 
       <unstr_linear_solver>
         <max_iterations>100</max_iterations>
@@ -148,9 +148,9 @@
         <liquid_component name="water">
           <uniform_pressure name="IC1" value="101325.0" />
         </liquid_component>
-        <geochemistry>
+        <geochemistry_component>
           <constraint name="initial"/>
-        </geochemistry>
+        </geochemistry_component>
       </liquid_phase>
     </initial_condition>
   </initial_conditions>
@@ -163,9 +163,9 @@
           <inward_mass_flux function="uniform" start="0.0" value="0.50e+1"/>
         </liquid_component>
       </liquid_phase>
-      <geochemistry>
+      <geochemistry_component>
         <constraint name="top" function="constant" start="0.0"/>
-      </geochemistry>
+      </geochemistry_component>
    </boundary_condition>
 
     <boundary_condition name="BC For Left Bottom">
@@ -174,9 +174,9 @@
         <liquid_component name="water">
           <inward_mass_flux function="uniform" start="0.0" value="0.26e+1"/>
         </liquid_component>
-        <geochemistry>
+        <geochemistry_component>
           <constraint name="bottom" function="constant" start="0.0"/>
-        </geochemistry>
+        </geochemistry_component>
       </liquid_phase>
     </boundary_condition>
 

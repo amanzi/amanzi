@@ -1,0 +1,85 @@
+#include <map>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "UnitTest++.h"
+
+#include "errors.hh"
+#include "ConstantFunction.hh"
+#include "Mesh.hh"
+#include "MeshFactory.hh"
+
+#include "MaterialMeshFunction.hh"
+
+using namespace Amanzi;
+using namespace Amanzi::AmanziMesh;
+using namespace Amanzi::AmanziGeometry;
+using namespace Amanzi::Functions;
+
+int main (int argc, char *argv[])
+{
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  return UnitTest::RunAllTests();
+}
+
+
+// a test class to access data
+class DomainFunction : public MaterialMeshFunction {
+ public:
+  DomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      MaterialMeshFunction(mesh) {};
+  ~DomainFunction() {};
+
+  // access specs
+  const std::map<AmanziMesh::Entity_ID, double> get_ids(const AmanziMesh::Entity_kind& kind) { 
+    std::vector<Teuchos::RCP<MaterialSpec> >& ms_list = *material_specs_[kind];
+    Teuchos::RCP<MaterialSpec>& ms = *ms_list.begin();
+    return *ms->second;
+  }
+};
+
+
+TEST(MESH2D)
+{
+  Epetra_MpiComm *comm;
+  comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  Teuchos::Array<double> corner_min(Teuchos::tuple(0.0, 0.0));
+  Teuchos::Array<double> corner_max(Teuchos::tuple(0.3, 0.3));
+  Teuchos::Array<double> normals(Teuchos::tuple(1.0, 0.0, 0.0, 1.0));
+
+  Teuchos::ParameterList regions;
+  regions.sublist("LEFT").sublist("region: box volume fractions")
+      .set("corner coordinate", corner_min)
+      .set("opposite corner coordinate", corner_max)
+      .set("normals", normals);
+
+  Teuchos::RCP<AmanziGeometry::GeometricModel> 
+      gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, regions, comm));
+  MeshFactory factory(comm);
+  Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 4, 4, gm);
+
+  std::vector<std::string> rgns;
+  rgns.push_back("LEFT");
+  AmanziMesh::Entity_kind kind = AmanziMesh::CELL;  
+
+  Teuchos::RCP<MultiFunction> f = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new ConstantFunction(1.0))));
+  Teuchos::RCP<MeshFunction::Domain> domain = Teuchos::rcp(new MeshFunction::Domain(rgns, kind));
+  Teuchos::RCP<MeshFunction::Spec> spec = Teuchos::rcp(new MeshFunction::Spec(domain, f));
+
+  DomainFunction df(mesh);
+  df.AddSpec(spec);
+  const std::map<AmanziMesh::Entity_ID, double>& ids = df.get_ids(kind); 
+
+  double vofs[4] = {1.0, 0.2, 0.2, 0.04};
+  int n(0);
+  for (std::map<AmanziMesh::Entity_ID, double>::const_iterator it = ids.begin(); it != ids.end(); ++it) {
+    CHECK_CLOSE(it->second, vofs[n++], 1e-10);
+  }
+
+  delete comm;
+}
+

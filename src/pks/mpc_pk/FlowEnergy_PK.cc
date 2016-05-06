@@ -112,7 +112,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
     elist.sublist("molar_density_liquid").sublist("EOS parameters")
          .set<std::string>("eos type", "liquid water");
     elist.sublist("molar_density_liquid")
-         .sublist("VerboseObject").set<std::string>("Verbosity Level", "medium");
+         .sublist("verbose object").set<std::string>("verbosity level", "medium");
 
     S->RequireField("molar_density_liquid", "molar_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -127,7 +127,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
          .sublist("viscosity model parameters")
          .set<std::string>("viscosity relation type", "liquid water");
     elist.sublist("viscosity_liquid")
-         .sublist("VerboseObject").set<std::string>("Verbosity Level", "high");
+         .sublist("verbose object").set<std::string>("verbosity level", "high");
 
     S->RequireField("viscosity_liquid", "viscosity_liquid")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);

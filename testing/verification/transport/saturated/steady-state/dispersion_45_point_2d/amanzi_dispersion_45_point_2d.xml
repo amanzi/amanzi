@@ -163,7 +163,7 @@
       <assigned_regions>Well</assigned_regions>
       <liquid_phase name = "water">
         <solute_component name="group1">
-          <volume_weighted name="Tc-99" value="8.1483e-08" function="constant" start="0.0"/>
+          <volume_weighted name="Tc-99" value="8.1483e-11" function="constant" start="0.0"/>
         </solute_component> 
       </liquid_phase>
     </source>

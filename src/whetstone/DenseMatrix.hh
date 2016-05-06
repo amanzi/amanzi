@@ -134,6 +134,10 @@ class DenseMatrix {
     return a;
   }
 
+  void Scale(double value) {
+    for (int i = 0; i < m_ * n_; i++) data_[i] *= value;
+  }
+
   // Second level routines
   // -- inversion is applicable for square matrices only
   int Inverse();

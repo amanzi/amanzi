@@ -105,8 +105,8 @@
       <Parameter name="maximum time step" type="Array(double)" value="{4.3234e+17, 4.3234e+17}"/>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{}"/>
-    <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="high"/>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
 
@@ -333,8 +333,8 @@
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -344,8 +344,8 @@
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -387,29 +387,29 @@
           <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
           <Parameter name="restart tolerance relaxation factor" type="double" value="10.0"/>
           <Parameter name="restart tolerance relaxation factor damping" type="double" value="0.9"/>
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="high"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="extreme"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="energy">
       <ParameterList name="Two-phase problem">
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
         <ParameterList name="energy evaluator">
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="high"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="enthalpy evaluator">
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="high"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="thermal conductivity evaluator">
@@ -438,7 +438,7 @@
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="gravity" type="bool" value="false"/>
-              <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+              <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
             </ParameterList>
           </ParameterList>
           <ParameterList name="advection operator">
@@ -497,8 +497,8 @@
             <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
             <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
           </ParameterList>
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="high"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -513,8 +513,8 @@
             <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
           </ParameterList>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
         <ParameterList name="water retention models">
           <ParameterList name="WRM for RegionMiddle">
@@ -563,7 +563,7 @@
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="gravity" type="bool" value="true"/>
-              <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+              <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
             </ParameterList>
             <ParameterList name="vapor matrix">
               <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -573,7 +573,7 @@
               <Parameter name="exclude primary terms" type="bool" value="false"/>
               <Parameter name="scaled constraint equation" type="bool" value="false"/>
               <Parameter name="gravity" type="bool" value="false"/>
-              <Parameter name="newton correction" type="string" value="none"/>
+              <Parameter name="Newton correction" type="string" value="none"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -653,8 +653,8 @@
             <Parameter name="restart tolerance relaxation factor" type="double" value="1.0e+00"/>
             <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0e+00"/>
           </ParameterList>
-          <ParameterList name="VerboseObject">
-            <Parameter name="Verbosity Level" type="string" value="high"/>
+          <ParameterList name="verbose object">
+            <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>

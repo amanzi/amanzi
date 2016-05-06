@@ -45,7 +45,7 @@ class Amanzi_PK : public Chemistry_PK {
   virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   virtual void set_dt(double dt) {};
-  virtual double get_dt() { return this->max_time_step_; }
+  virtual double get_dt() { return dt_next_; }
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
@@ -81,9 +81,9 @@ class Amanzi_PK : public Chemistry_PK {
   Beaker::BeakerComponents beaker_components_;
   Beaker::BeakerComponents beaker_components_copy_;
 
-  double max_time_step_;
-  double current_time_;
-  double saved_time_;
+  double current_time_, saved_time_;
+  double dt_max_, dt_next_, dt_cut_factor_, dt_increase_factor_;
+  int dt_cut_threshold_, dt_increase_threshold_;
 
   std::vector<std::string> aux_names_;
   std::vector<int> aux_index_;

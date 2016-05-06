@@ -46,9 +46,9 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 
         // make a verbose object for each case
         Teuchos::ParameterList vo_plist;
-        vo_plist.sublist("VerboseObject");
-        vo_plist.sublist("VerboseObject") = plist.sublist("VerboseObject");
-        vo_plist.sublist("VerboseObject").set("Write On Rank", mesh->get_comm()->MyPID());
+        vo_plist.sublist("verbose object");
+        vo_plist.sublist("verbose object") = plist.sublist("verbose object");
+        vo_plist.sublist("verbose object").set("write on rank", mesh->get_comm()->MyPID());
         dcvo_.push_back(Teuchos::rcp(new VerboseObject(mesh_->get_comm(), name, vo_plist)));
       }
     }
@@ -73,9 +73,9 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 
           // make a verbose object for each case
           Teuchos::ParameterList vo_plist;
-          vo_plist.sublist("VerboseObject");
-          vo_plist.sublist("VerboseObject") = plist.sublist("VerboseObject");
-          vo_plist.sublist("VerboseObject").set("Write On Rank", mesh->get_comm()->MyPID());
+          vo_plist.sublist("verbose object");
+          vo_plist.sublist("verbose object") = plist.sublist("verbose object");
+          vo_plist.sublist("verbose object").set("write on rank", mesh->get_comm()->MyPID());
           dcvo_.push_back(Teuchos::rcp(new VerboseObject(mesh_->get_comm(), name, vo_plist)));
         }
       }

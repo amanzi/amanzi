@@ -133,8 +133,8 @@
       <Parameter name="initial time step" type="Array(double)" value="{1.0e+01, 1.0e+01, 1.0e+01, 1.0}"/>
       <Parameter name="maximum time step" type="Array(double)" value="{4.32340e+17, 4.32340e+17, 4.32340e+17, 4.32340e+17}"/>
     </ParameterList>
-    <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="high"/>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="state">
@@ -300,8 +300,8 @@
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -311,8 +311,8 @@
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="1.0e-16"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -322,6 +322,9 @@
       <ParameterList name="Richards problem">
         <ParameterList name="physical models and assumptions">
           <Parameter name="water content model" type="string" value="constant density"/>
+        </ParameterList>
+        <ParameterList name="absolute permeability">
+          <Parameter name="coordinate system" type="string" value="cartesian"/>
         </ParameterList>
         <ParameterList name="relative permeability">
           <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
@@ -333,8 +336,8 @@
             <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
           </ParameterList>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
         <ParameterList name="water retention models">
           <ParameterList name="WRM for RegionMiddle">
@@ -395,7 +398,7 @@
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="gravity" type="bool" value="true"/>
-              <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+              <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
             </ParameterList>
             <ParameterList name="vapor matrix">
               <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -406,7 +409,7 @@
               <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
               <Parameter name="exclude primary terms" type="bool" value="false"/>
               <Parameter name="scaled constraint equation" type="bool" value="false"/>
-              <Parameter name="newton correction" type="string" value="none"/>
+              <Parameter name="Newton correction" type="string" value="none"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -495,8 +498,8 @@
             <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
             <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
             <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
-            <ParameterList name="VerboseObject">
-              <Parameter name="Verbosity Level" type="string" value="high"/>
+            <ParameterList name="verbose object">
+              <Parameter name="verbosity level" type="string" value="high"/>
             </ParameterList>
           </ParameterList>
           <ParameterList name="initialization">
@@ -519,8 +522,8 @@
       <Parameter name="cfl" type="double" value="1.0"/>
       <Parameter name="flow mode" type="string" value="transient"/>
       <Parameter name="solver" type="string" value="PCG with Hypre AMG"/>
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="high"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
       <Parameter name="enable internal tests" type="string" value="no"/>
       <Parameter name="transport subcycling" type="bool" value="true"/>
@@ -603,6 +606,9 @@
         <ParameterList name="physical models and assumptions">
           <Parameter name="water content model" type="string" value="constant density"/>
         </ParameterList>
+        <ParameterList name="absolute permeability">
+          <Parameter name="coordinate system" type="string" value="cartesian"/>
+        </ParameterList>
         <ParameterList name="relative permeability">
           <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
           <Parameter name="upwind frequency" type="string" value="every timestep"/>
@@ -672,7 +678,7 @@
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="gravity" type="bool" value="true"/>
-              <Parameter name="newton correction" type="string" value="approximate jacobian"/>
+              <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
             </ParameterList>
             <ParameterList name="vapor matrix">
               <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -683,7 +689,7 @@
               <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
               <Parameter name="exclude primary terms" type="bool" value="false"/>
               <Parameter name="scaled constraint equation" type="bool" value="false"/>
-              <Parameter name="newton correction" type="string" value="none"/>
+              <Parameter name="Newton correction" type="string" value="none"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -772,13 +778,13 @@
             <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
             <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
             <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
-            <ParameterList name="VerboseObject">
-              <Parameter name="Verbosity Level" type="string" value="high"/>
+            <ParameterList name="verbose object">
+              <Parameter name="verbosity level" type="string" value="high"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="high"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -787,8 +793,8 @@
     <Parameter name="used boundary condition regions" type="Array(string)" value="{Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_WestOfCribs, Recharge_Boundary_btwnCribs, Recharge_Boundary_EastOfCribs, Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_WestOfCribs, Recharge_Boundary_btwnCribs, Recharge_Boundary_EastOfCribs, Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_WestOfCribs, Recharge_Boundary_btwnCribs, Recharge_Boundary_EastOfCribs}"/>
     <Parameter name="used source regions" type="Array(string)" value="{}"/>
     <Parameter name="used observation regions" type="Array(string)" value="{}"/>
-    <ParameterList name="VerboseObject">
-      <Parameter name="Verbosity Level" type="string" value="high"/>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
 

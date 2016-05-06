@@ -80,6 +80,9 @@ void OperatorElectromagneticsMHD::ModifyMatrices(
   AmanziMesh::Entity_ID_List faces, edges;
 
   for (int c = 0; c < ncells_owned; ++c) {
+    WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
+    Acell.Scale(dt / 2);
+
     const WhetStone::DenseMatrix& Mcell = mass_op_[c];
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
 
@@ -93,7 +96,7 @@ void OperatorElectromagneticsMHD::ModifyMatrices(
 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
-      v1(n) = Bf[0][f] * dirs[n] * mesh_->face_area(f) / dt;
+      v1(n) = Bf[0][f] * dirs[n] * mesh_->face_area(f);
     }
 
     Mcell.Multiply(v1, v2, false);
@@ -101,7 +104,7 @@ void OperatorElectromagneticsMHD::ModifyMatrices(
 
     for (int n = 0; n < nedges; ++n) {
       int e = edges[n];
-      rhs_e[0][e] += v3(n);
+      rhs_e[0][e] += v3(n) / 2;
     }
   }
 }

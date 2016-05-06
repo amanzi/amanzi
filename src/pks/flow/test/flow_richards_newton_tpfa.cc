@@ -82,9 +82,7 @@ TEST(FLOW_3D_RICHARDS) {
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
   
   AmanziMesh::Entity_ID_List block;
-  std::vector<double> vofs;
-
-  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
+  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K[0][c] = 0.1;
@@ -92,7 +90,7 @@ TEST(FLOW_3D_RICHARDS) {
     K[2][c] = 2.0;
   }
 
-  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
+  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K[0][c] = 0.5;

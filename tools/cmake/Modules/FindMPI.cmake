@@ -582,7 +582,7 @@ foreach (lang C CXX Fortran)
   if (CMAKE_${lang}_COMPILER_WORKS)
     # If the user supplies a compiler *name* instead of an absolute path, assume that we need to find THAT compiler.
     if (MPI_${lang}_COMPILER)
-      is_file_executable(MPI_${lang}_COMPILER MPI_COMPILER_IS_EXECUTABLE)
+      is_file_executable(${MPI_${lang}_COMPILER} MPI_COMPILER_IS_EXECUTABLE)
       if (NOT MPI_COMPILER_IS_EXECUTABLE)
         # Get rid of our default list of names and just search for the name the user wants.
         set(_MPI_${lang}_COMPILER_NAMES ${MPI_${lang}_COMPILER})

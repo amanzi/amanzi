@@ -193,8 +193,8 @@
       <Parameter name="atmospheric pressure" type="double" value="0.0"/>
       <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
 
-      <ParameterList name="VerboseObject">
-        <Parameter name="Verbosity Level" type="string" value="medium"/>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="medium"/>
       </ParameterList>
 
       <ParameterList name="operators">
