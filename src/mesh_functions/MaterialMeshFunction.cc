@@ -40,13 +40,16 @@ void MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
       std::vector<double> vofs;
       mesh_->get_set_entities_and_vofs(*region, kind, AmanziMesh::USED, &ids, &vofs);
 
+      // populating default volume fractions (move this to mesh framework?)
+      if (vofs.size() == 0) vofs.resize(ids.size(), 1);
+
       for (int i = 0; i < ids.size(); ++i) {
         AmanziMesh::Entity_ID id = ids[i];
         it = mat_mesh->find(id);
         if (it == mat_mesh->end()) {
           (*mat_mesh)[id] = vofs[i];
         } else {
-          it->second += vofs[i];
+          it->second = std::max(it->second + vofs[i], 1.0);
         }
       }
     } else {

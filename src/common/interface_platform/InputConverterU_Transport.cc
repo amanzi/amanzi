@@ -1,5 +1,5 @@
 /*
-  This is the input component of the Amanzi code. 
+  Input Converter
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -575,6 +575,8 @@ void InputConverterU::TranslateTransportSourcesGroup_(
     char* text = mm.transcode(same_list[0]->getNodeName());
     if (strcmp(text, "volume_weighted") == 0) {
       weight = "volume";
+    } else if (srctype == "volume_weighted_nonmatching") {
+      weight = "volume fraction";
     } else if (strcmp(text, "perm_weighted") == 0) {
       weight = "permeability";
     } else if (strcmp(text, "uniform_conc") == 0) {

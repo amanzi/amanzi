@@ -47,6 +47,9 @@ class PK_DomainFunctionSimple : public FunctionBase,
 };
 
 
+/* ******************************************************************
+* Initialization adds a single function to the list of unique specs.
+****************************************************************** */
 template <class FunctionBase>
 void PK_DomainFunctionSimple<FunctionBase>::Init(const Teuchos::ParameterList& plist)
 {
@@ -108,7 +111,7 @@ void PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
 
         value_[*c] -= (*(*uspec)->first->second)(args)[0];
         value_[*c] *= dt;
-       }
+      }
     }
   }
 }

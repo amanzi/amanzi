@@ -66,6 +66,7 @@ set(pks_inc_files
   PK_DomainFunctionFactory.hh
   PK_DomainFunctionSimple.hh
   PK_DomainFunctionVolume.hh
+  PK_DomainFunctionVolumeFraction.hh
   PK_DomainFunctionWeight.hh
   PK_Factory.hh
   PK_Utils.hh)

@@ -8,8 +8,12 @@
 
   Author: Konstantin Lipnikov
 
-  Function applied to a mesh component defined on a material region
-  with at most one function application per entity.
+  This is a generalization of a mesh function: the function domain 
+  does not match a mesh and volume fraction are introduced. 
+
+  Known issues: if function domain is defined by a set of overlapping
+  regions, the volume fractions are summed up which is correct only
+  for special configurations.
 */
 
 #ifndef AMANZI_MATERIAL_MESH_FUNCTION_HH_

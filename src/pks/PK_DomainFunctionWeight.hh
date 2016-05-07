@@ -7,6 +7,12 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  The total source Q is given for each domain. A weighted source 
+  distribution model is employed. The cell-based source density is 
+  calculated as (Q / W_D) * weight, where W_D is the weighted 
+  domain volume. The weight is defined globally, for the whole 
+  computational domain.
 */
 
 #ifndef AMANZI_PK_DOMAIN_FUNCTION_WEIGHT_HH_
@@ -47,7 +53,10 @@ class PK_DomainFunctionWeight : public FunctionBase,
   Teuchos::RCP<const Epetra_Vector> weight_;
 };
 
-
+ 
+/* ******************************************************************
+* Initialization adds a single function to the list of unique specs.
+****************************************************************** */
 template <class FunctionBase>
 void PK_DomainFunctionWeight<FunctionBase>::Init(
     const Teuchos::ParameterList& plist, Teuchos::RCP<const Epetra_Vector> weight)
@@ -95,26 +104,26 @@ void PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
     double domain_volume = 0.0;
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
 
-    for (MeshIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
-      if (*id < ncells_owned) domain_volume += mesh_->cell_volume(*id) * (*weight_)[*id];
+    for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
+      if (*c < ncells_owned) domain_volume += mesh_->cell_volume(*c) * (*weight_)[*c];
     }
     double volume_tmp = domain_volume;
     mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
 
     args[0] = t1;
-    for (MeshIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
-      const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
+    for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
+      const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-      value_[*id] = (*(*uspec)->first->second)(args)[0] * (*weight_)[*id] / domain_volume;
+      value_[*c] = (*(*uspec)->first->second)(args)[0] * (*weight_)[*c] / domain_volume;
     }      
 
     if (submodel_ == "integrated source") {
       args[0] = t0;
-      for (MeshIDs::const_iterator id = ids->begin(); id != ids->end(); ++id) {
-        const AmanziGeometry::Point& xc = mesh_->cell_centroid(*id);
+      for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
+        const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-        value_[*id] -= (*(*uspec)->first->second)(args)[0] * (*weight_)[*id] / domain_volume;
-        value_[*id] *= dt;
+        value_[*c] -= (*(*uspec)->first->second)(args)[0] * (*weight_)[*c] / domain_volume;
+        value_[*c] *= dt;
       }
     }
   }

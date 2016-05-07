@@ -712,6 +712,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
     std::string weight;
     if (srctype == "volume_weighted") {
       weight = "volume";
+    } else if (srctype == "volume_weighted_nonmatching") {
+      weight = "volume fraction";
     } else if (srctype == "perm_weighted") {
       weight = "permeability";
     } else if (srctype == "uniform") {

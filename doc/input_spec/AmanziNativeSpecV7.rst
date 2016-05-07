@@ -1522,9 +1522,11 @@ Again, constant functions can be replaced by any of the available functions.
 
 * `"spatial distribution method`" [string] is the method for distributing
   source Q over the specified regions. The available options are `"volume`",
-  `"none`", and `"permeability`". For option `"none`", the source term Q is measured
-  in [kg/m^3/s]. For the other options, it is measured in [kg/s]. When the source function
-  is defined over a few regions, Q is distributed over their union.
+  `"volume fraction`", `"none`", and `"permeability`". For option `"none`", the source 
+  term Q is measured in [kg/m^3/s]. For the other options, it is measured in [kg/s]. 
+  Option `"volume fraction`" can be used when the region geometric model support volume
+  fractions.
+  When the source function is defined over a few regions, Q is distributed over their union.
   Default is `"none`".
 
 * `"submodel`" [string] refines definition of the source. Available options are `"rate`"
