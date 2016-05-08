@@ -59,7 +59,7 @@ TEST(FLOW_2D_DARCY_WELL) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  RCP<const Mesh> mesh = meshfactory(-10.0, -5.0, 10.0, 0.0, 200, 50, gm);
+  RCP<const Mesh> mesh = meshfactory(-10.0, -5.0, 10.0, 0.0, 101, 50, gm);
 
   // create a simple state and populate it
   Amanzi::VerboseObject::hide_line_prefix = true;

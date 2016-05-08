@@ -221,13 +221,17 @@ void Flow_PK::VV_PrintSourceExtrema() const
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     double smin(0.0), smax(0.0);
+    std::vector<double> volumes;
+
     for (int i = 0; i < srcs.size(); ++i) {
       for (PK_DomainFunction::Iterator it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
         int c = it->first;
         smin = std::min(smin, it->second);
         smax = std::max(smax, it->second);
       }
+      volumes.push_back(srcs[i]->domain_volume());
     }
+
     double tmp(smin);
     mesh_->get_comm()->MinAll(&tmp, &smin, 1);
     tmp = smax;
@@ -235,7 +239,11 @@ void Flow_PK::VV_PrintSourceExtrema() const
 
     if (MyPID == 0) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "sources: min=" << smin << " max=" << smax << std::endl;
+      *vo_->os() << "sources: min=" << smin << " max=" << smax << "  volumes: ";
+      for (int i = 0; i < std::min(5, (int)srcs.size()); ++i) {
+        *vo_->os() << volumes[i] << " ";
+      }
+      *vo_->os() << std::endl;
     }
   }
 }

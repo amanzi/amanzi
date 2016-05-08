@@ -47,6 +47,7 @@ class PK_DomainFunctionWeight : public FunctionBase,
 
  protected:
   using FunctionBase::value_;
+  using FunctionBase::domain_volume_;
 
  private:
   std::string submodel_;
@@ -101,20 +102,27 @@ void PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
   for (UniqueSpecList::const_iterator uspec = unique_specs_[AmanziMesh::CELL]->begin();
        uspec != unique_specs_[AmanziMesh::CELL]->end(); ++uspec) {
 
-    double domain_volume = 0.0;
+    domain_volume_ = 0.0;
+    double vol, weight_volume = 0.0;
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
 
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
-      if (*c < ncells_owned) domain_volume += mesh_->cell_volume(*c) * (*weight_)[*c];
+      if (*c < ncells_owned) {
+        vol = mesh_->cell_volume(*c);
+        domain_volume_ += vol;
+        weight_volume += vol * (*weight_)[*c];
+      }
     }
-    double volume_tmp = domain_volume;
-    mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
+    double result[2], tmp[2] = {domain_volume_, weight_volume};
+    mesh_->get_comm()->SumAll(tmp, result, 2);
+    domain_volume_ = result[0];
+    weight_volume = result[1];
 
     args[0] = t1;
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-      value_[*c] = (*(*uspec)->first->second)(args)[0] * (*weight_)[*c] / domain_volume;
+      value_[*c] = (*(*uspec)->first->second)(args)[0] * (*weight_)[*c] / weight_volume;
     }      
 
     if (submodel_ == "integrated source") {
@@ -122,7 +130,8 @@ void PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
       for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-        value_[*c] -= (*(*uspec)->first->second)(args)[0] * (*weight_)[*c] / domain_volume;
+
+        value_[*c] -= (*(*uspec)->first->second)(args)[0] * (*weight_)[*c] / weight_volume;
         value_[*c] *= dt;
       }
     }

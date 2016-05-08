@@ -44,6 +44,7 @@ class PK_DomainFunctionVolume : public FunctionBase,
 
  protected:
   using FunctionBase::value_;
+  using FunctionBase::domain_volume_;
 
  private:
   std::string submodel_;
@@ -94,15 +95,15 @@ void PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
   for (UniqueSpecList::const_iterator uspec = unique_specs_[AmanziMesh::CELL]->begin();
        uspec != unique_specs_[AmanziMesh::CELL]->end(); ++uspec) {
 
-    double domain_volume = 0.0;
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
 
     // calculate physical volume of region defined by domain. 
+    domain_volume_ = 0.0;
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
-      if (*c < ncells_owned) domain_volume += mesh_->cell_volume(*c);
+      if (*c < ncells_owned) domain_volume_ += mesh_->cell_volume(*c);
     }
-    double volume_tmp = domain_volume;
-    mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
+    double tmp(domain_volume_);
+    mesh_->get_comm()->SumAll(&tmp, &domain_volume_, 1);
 
     args[0] = t1;
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
@@ -110,7 +111,7 @@ void PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
-      value_[*c] = (*(*uspec)->first->second)(args)[0] / domain_volume;
+      value_[*c] = (*(*uspec)->first->second)(args)[0] / domain_volume_;
     }
 
     if (submodel_ == "integrated source") {
@@ -122,7 +123,7 @@ void PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
-        value_[*c] -= (*(*uspec)->first->second)(args)[0] / domain_volume;
+        value_[*c] -= (*(*uspec)->first->second)(args)[0] / domain_volume_;
         value_[*c] *= dt;
       }
     }

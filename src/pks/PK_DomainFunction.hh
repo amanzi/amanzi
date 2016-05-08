@@ -25,7 +25,8 @@ namespace Amanzi {
 
 class PK_DomainFunction {
  public:
-  PK_DomainFunction() {};
+  PK_DomainFunction()
+    : domain_volume_(-1.0) {};
   virtual ~PK_DomainFunction() {};
 
   // source term on time interval (t0, t1]
@@ -33,6 +34,9 @@ class PK_DomainFunction {
 
   // model name
   virtual std::string name() { return "undefined"; } 
+
+  // access
+  double domain_volume() { return domain_volume_; }
 
   // iterator methods
   typedef std::map<int, double>::const_iterator Iterator;
@@ -42,6 +46,7 @@ class PK_DomainFunction {
 
  protected:
   std::map<int, double> value_;
+  double domain_volume_;
 };
 
 }  // namespace Amanzi

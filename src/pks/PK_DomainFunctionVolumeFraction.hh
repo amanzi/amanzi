@@ -45,6 +45,7 @@ class PK_DomainFunctionVolumeFraction : public FunctionBase,
 
  protected:
   using FunctionBase::value_;
+  using FunctionBase::domain_volume_;
 
  private:
   std::string submodel_;
@@ -94,17 +95,17 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1
   for (MaterialSpecList::const_iterator mspec = material_specs_[AmanziMesh::CELL]->begin();
        mspec != material_specs_[AmanziMesh::CELL]->end(); ++mspec) {
 
-    double domain_volume = 0.0;
     Teuchos::RCP<MaterialMesh> ids = (*mspec)->second;
 
     // calculate physical volume of region.
+    domain_volume_ = 0.0;
     for (MaterialMesh::const_iterator it = ids->begin(); it != ids->end(); ++it) {
       int c = it->first;
       double vofs = it->second;
-      if (c < ncells_owned) domain_volume += mesh_->cell_volume(c) * vofs;
+      if (c < ncells_owned) domain_volume_ += mesh_->cell_volume(c) * vofs;
     }
-    double volume_tmp = domain_volume;
-    mesh_->get_comm()->SumAll(&volume_tmp, &domain_volume, 1);
+    double tmp = domain_volume_;
+    mesh_->get_comm()->SumAll(&tmp, &domain_volume_, 1);
 
     args[0] = t1;
     for (MaterialMesh::const_iterator it = ids->begin(); it != ids->end(); ++it) {
@@ -115,7 +116,8 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
       // mspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
-      value_[c] = (*(*mspec)->first->second)(args)[0] * vofs / domain_volume;
+      // std::cout << xc << " " << vofs << std::endl;
+      value_[c] = (*(*mspec)->first->second)(args)[0] * vofs / domain_volume_;
     }
 
     if (submodel_ == "integrated source") {
@@ -130,7 +132,7 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
-        value_[c] -= (*(*mspec)->first->second)(args)[0] * vofs / domain_volume;
+        value_[c] -= (*(*mspec)->first->second)(args)[0] * vofs / domain_volume_;
         value_[c] *= dt;
       }
     }
