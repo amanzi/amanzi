@@ -96,6 +96,11 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/solver_linear_jfnk.cc
                     LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+                    
+    add_amanzi_test(solver_linear_nox_jfnk solver_linear_nox_jfnk
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_linear_nox_jfnk.cc
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
     add_amanzi_test(solver_nka solver_nka
                     KIND unit

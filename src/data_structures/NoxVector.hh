@@ -8,21 +8,23 @@
 #ifndef SRC_SOLVERS_NOXVECTOR_HH_
 #define SRC_SOLVERS_NOXVECTOR_HH_
 
+#include "Epetra_Vector.h"
 #include <NOX_Abstract_Vector.H>
+#include <data_structures_types.hh>
 
 namespace Amanzi {
 
-template<class Vector>
+template<class VectorClass>
 class NoxVector : public NOX::Abstract::Vector
 {
 public:
-  NoxVector(const Teuchos::RCP<Vector>& vec) :
+  NoxVector(const Teuchos::RCP<VectorClass>& vec) :
       vec_(vec) {}
 
   NoxVector(const NoxVector& other, NOX::CopyType type=NOX::DeepCopy);
 
-  Teuchos::RCP<Vector> get_vector() { return vec_; }
-  Teuchos::RCP<const Vector> get_vector() const { return vec_; }
+  Teuchos::RCP<VectorClass> get_vector() { return vec_; }
+  Teuchos::RCP<const VectorClass> get_vector() const { return vec_; }
   
   NOX::size_type length() const {
     return vec_->GlobalLength();
@@ -32,54 +34,54 @@ public:
     vec_->Print(stream);
   }
     
-  NoxVector& init(double gamma) {
+  NOX::Abstract::Vector& init(double gamma) {
     vec_->PutScalar(gamma);
     return *this;
   }
 
-  NoxVector& random(bool useSeed=false, int seed=1) {
+  NOX::Abstract::Vector& random(bool useSeed=false, int seed=1) {
     vec_->Random();
     return *this;
   }
     
-  NoxVector& abs(const NoxVector& y) {
+  NOX::Abstract::Vector& abs(const NOX::Abstract::Vector& y) {
     vec_->Abs(*vec_);
     return *this;
   }
 
-  NoxVector& operator=(const NoxVector& y) {
-    *vec_ = *y.vec_;
+  NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y) {
+    *vec_ = *(dynamic_cast<const NoxVector&>(y).vec_);
     return *this;
   }
 
-  NoxVector& reciprocal(const NoxVector& y) {
+  NOX::Abstract::Vector& reciprocal(const NOX::Abstract::Vector& y) {
     vec_->Reciprocal(*vec_);
     return *this;
   }
   
-  NoxVector& scale(double gamma) {
+  NOX::Abstract::Vector& scale(double gamma) {
     vec_->Scale(gamma);
     return *this;
   }
 
-  NoxVector& scale(const NoxVector& a) {
-    vec_->Multiply(1., *vec_, *a.vec_, 0.);
+  NOX::Abstract::Vector& scale(const NOX::Abstract::Vector& a) {
+    vec_->Multiply(1., *vec_, *(dynamic_cast<const NoxVector&>(a).vec_), 0.);
     return *this;
   }    
 
-  NoxVector& update(double alpha, const NoxVector& a, double gamma=0.0) {
-    vec_->Update(alpha, *a.vec_, gamma);
+  NOX::Abstract::Vector& update(double alpha, const NOX::Abstract::Vector& a, double gamma=0.0) {
+    vec_->Update(alpha, *(dynamic_cast<const NoxVector&>(a).vec_), gamma);
     return *this;
   }
 
-  NoxVector& update(double alpha, const NoxVector& a, double beta,
-                    const NoxVector& b, double gamma=0.0) {
-    vec_->Update(alpha, *a.vec_, beta, *b.vec_, gamma);
+  NOX::Abstract::Vector& update(double alpha, const NOX::Abstract::Vector& a, double beta,
+                    const NOX::Abstract::Vector& b, double gamma=0.0) {
+    vec_->Update(alpha, *(dynamic_cast<const NoxVector&>(a).vec_), beta, *(dynamic_cast<const NoxVector&>(b).vec_), gamma);
     return *this;
   }
 
-  Teuchos::RCP<NoxVector> clone(NOX::CopyType type=NOX::DeepCopy) const {
-    return Teuchos::rcp(new NoxVector<Vector>(*this, type));
+  Teuchos::RCP<NOX::Abstract::Vector> clone(NOX::CopyType type=NOX::DeepCopy) const {
+    return Teuchos::rcp(new NoxVector<VectorClass>(*this, type));
   }
 
   double norm(NOX::Abstract::Vector::NormType type=NOX::Abstract::Vector::TwoNorm) const {
@@ -95,65 +97,29 @@ public:
         vec_->NormInf(&result);
         break;
       default:
-        ASSERT(0);
+        assert(0);
         break;
     }
     return result;    
   }
 
-  double norm(const NoxVector &weights) const {
-    Vector v_tmp(*vec_);
-    v_tmp->Multiply(1., *weights.vec_, *vec_, 0.);
+  double norm(const NOX::Abstract::Vector &weights) const {
+    VectorClass v_tmp(*vec_);
+    v_tmp.Multiply(1., *(dynamic_cast<const NoxVector&>(weights).vec_), *vec_, 0.);
     double result;
-    v_tmp->Dot(*vec_, &result);
+    v_tmp.Dot(*vec_, &result);
     return std::sqrt(result);
   }
 
-  double innerProduct(const NoxVector& y) const {
+  double innerProduct(const NOX::Abstract::Vector& y) const {
     double result;
-    vec_->Dot(*y.vec_, &result);
+    vec_->Dot(*(dynamic_cast<const NoxVector&>(y).vec_), &result);
     return result;
   }
 
  private:
-  Teuchos::RCP<Vector> vec_;
+  Teuchos::RCP<VectorClass> vec_;
 };
-
-
-template<Vector>
-NoxVector::NoxVector<Vector>(const NoxVector& other,
-                             NOX::CopyType type=NOX::DeepCopy) {
-  switch (type) {
-    case NOX::DeepCopy:
-      vec_ = Teuchos::rcp(new Vector(*other.vec_, INIT_MODE_COPY));
-      break;
-    case NOX::ShapeCopy:
-      vec_ = Teuchos::rcp(new Vector(*other.vec_, INIT_MODE_NONE));
-      break;
-    default:
-      vec_ = Teuchos::rcp(new Vector(*other.vec_, INIT_MODE_NONE));
-      break;
-  }
-}
-
-
-template<Vector>
-NoxVector::NoxVector<Vector>(const NoxVector& other,
-                             NOX::CopyType type=NOX::DeepCopy) {
-  switch (type) {
-    case NOX::DeepCopy:
-      vec_ = Teuchos::rcp(new Vector(*other.vec_, INIT_MODE_COPY));
-    case NOX::ShapeCopy:
-      vec_ = Teuchos::rcp(new Vector(*other.vec_, INIT_MODE_NONE));
-    default:
-      vec_ = Teuchos::rcp(new Vector(*other.vec_, INIT_MODE_NONE));
-  }
-}
-
-template<>
-NoxVector::NoxVector<Epetra_Vector>(const NoxVector& other,
-        NOX::CopyType type=NOX::DeepCopy) :
-  vec_(other.vec_) {}
 
 
 } // namespace
