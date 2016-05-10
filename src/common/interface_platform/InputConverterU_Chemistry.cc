@@ -62,10 +62,11 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
     if (flag) {
       element = static_cast<DOMElement*>(node);
-      bgdfilename = GetAttributeValueS_(element, "input_filename");
-      format = GetAttributeValueS_(element, "format", TYPE_NONE, false, format);
-    } else {
+      bgdfilename = GetAttributeValueS_(element, "input_filename", TYPE_NONE, false, "");
+      if (bgdfilename == "") {
         bgdfilename = CreateBGDFile(xmlfilename_);
+      }
+      format = GetAttributeValueS_(element, "format", TYPE_NONE, false, format);
     }
 
     Teuchos::ParameterList& bgd_list = out_list.sublist("Thermodynamic Database");

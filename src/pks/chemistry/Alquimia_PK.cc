@@ -563,10 +563,10 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
     const AlquimiaState& state,
     const AlquimiaAuxiliaryData& aux_data,
     const AlquimiaAuxiliaryOutputData& aux_output,
-    Teuchos::RCP<Epetra_MultiVector> aquesous_components)
+    Teuchos::RCP<Epetra_MultiVector> aqueous_components)
 {
   CopyFromAlquimia(cell_id, mat_props, state, aux_data, aux_output, 
-                   aquesous_components);
+                   aqueous_components);
 
   // Auxiliary output.
   if (aux_output_ != Teuchos::null) {
@@ -651,7 +651,7 @@ void Alquimia_PK::CopyFromAlquimia(const int cell_id,
                                    const AlquimiaState& state,
                                    const AlquimiaAuxiliaryData& aux_data,
                                    const AlquimiaAuxiliaryOutputData& aux_output,
-                                   Teuchos::RCP<const Epetra_MultiVector> aqueous_components)
+                                   Teuchos::RCP<Epetra_MultiVector> aqueous_components)
 {
   // If the chemistry has modified the porosity and/or density, it needs to 
   // be updated here.
@@ -858,7 +858,7 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // now publish auxiliary data to state
   if (aux_output_ != Teuchos::null) {
-    for (int i=0; i<aux_output_->NumVectors(); ++i) {
+    for (int i = 0; i < aux_output_->NumVectors(); ++i) {
       Epetra_MultiVector& aux_state = *S_->GetFieldData(aux_names_[i], passwd_)->ViewComponent("cell", true);
       aux_state[0] = (*aux_output_)[i];
     }
