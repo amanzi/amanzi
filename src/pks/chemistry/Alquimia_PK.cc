@@ -178,6 +178,11 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Initialize the data structures that we will use to traffic data between 
   // Amanzi and Alquimia.
   chem_engine_->InitState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
+  if (using_sorption_ && alq_state_.total_immobile.data == NULL) {
+    Errors::Message msg("Alquimia's state has no memory for total_immobile.");
+    Exceptions::amanzi_throw(msg); 
+  }
+
 
   // Now loop through all the regions and initialize.
   int ierr = 0;
