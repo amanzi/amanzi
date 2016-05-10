@@ -56,10 +56,14 @@ class RegionBoxVolumeFractions : public Region {
 
 
 struct ClippedFace {
-  ClippedFace() { new_edge = std::make_pair(-1, -1); }
+  ClippedFace() { 
+    new_edge = std::make_pair(-1, -1);
+    edge_flag = 0; 
+  }
 
   std::list<int> nodes;
   std::pair<int, int> new_edge;
+  int edge_flag;
 };
 
 

@@ -50,7 +50,7 @@
             </ParameterList>
           </ParameterList>
           <ParameterList name="SRC 1">
-            <Parameter name="regions" type="Array(string)" value="{WellRight}"/>
+            <Parameter name="regions" type="Array(string)" value="{WellRightRotated}"/>
             <Parameter name="spatial distribution method" type="string" value="volume fraction"/>
             <ParameterList name="sink">
               <ParameterList name="function-constant">

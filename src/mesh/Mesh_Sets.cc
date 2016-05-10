@@ -59,7 +59,6 @@ void Mesh::get_set_entities_box_vofs_(
       std::vector<AmanziGeometry::Point> polytope_nodes;
       std::vector<std::vector<int> > polytope_faces;
 
-      // int c0 = (space_dimension() == 2) ? 0 : 17340;
       for (int c = 0; c < ncells; ++c) {
         cell_get_coordinates(c, &polytope_nodes);
 

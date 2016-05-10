@@ -329,7 +329,7 @@ void IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
 
   // clip polyhedron using the second polyhedron.
   int nfaces2 = xyz2.size();
-  double d1, d2, tmp, eps(1e-6);
+  double d1, d2, tmp, eps(1e-7);
   Point v1(xyz1[0]);
   std::list<int>::iterator itv, itv_prev, itv_next, itv2;
 
@@ -354,6 +354,7 @@ std::cout << "plane=" << p << " normal=" << normal << std::endl;
 
     for (itf = result.begin(); itf != result.end(); ++itf) {
       itf->new_edge = std::make_pair(-1, -1);
+      itf->edge_flag = 0;
     }
 
     for (itf = result.begin(); itf != result.end(); ++itf) {
@@ -390,6 +391,11 @@ std::cout << "  add " << v1 << std::endl;
             nxyz++;
           }
         }
+        // this edge may be nedeed for building new face 
+        else if (d1 == 0.0 && d2 == 0.0) {
+          itf->new_edge = std::make_pair(*itv, *itv_next);
+          itf->edge_flag = 0;
+        }
       }
 
       // removing cut-out edges for each face separately
@@ -398,7 +404,11 @@ std::cout << "  add " << v1 << std::endl;
         if (result_xyz[*itv].first > 0.0) {
           itv = itf->nodes.erase(itv);
 #ifdef VERBOSE
-if (itf->nodes.size() == 2) std::cout << "  removing face" << std::endl;
+if (itf->nodes.size() == 2) {
+std::cout << "  removing face: ";
+for (std::list<int>::iterator itt = itf->nodes.begin(); itt != itf->nodes.end(); ++itt) std::cout << *itt << " ";
+std::cout << std::endl;
+}
 #endif
           if (itf->nodes.size() == 2) {
             itf = result.erase(itf);
@@ -414,10 +424,11 @@ if (itf->nodes.size() == 2) std::cout << "  removing face" << std::endl;
           else itv_prev--;
 
           itf->new_edge = std::make_pair(*itv_prev, *itv_next);
+          itf->edge_flag = 1;
 #ifdef VERBOSE
 std::cout << "  new edge:" << *itv_prev << " " << *itv_next << "   p1=" 
           << result_xyz[*itv_prev].second << "  p2=" << result_xyz[*itv_next].second 
-          << " d=" << result_xyz[*itv].first << std::endl;
+          << " d=" << result_xyz[*itv_prev].first << " " << result_xyz[*itv_next].first << std::endl;
 #endif
         } else {
           itv++;
@@ -427,35 +438,51 @@ std::cout << "  new edge:" << *itv_prev << " " << *itv_next << "   p1="
     if (result.size() < 4) continue;
 
     // forming a new face
-    int n1, n2, n3, n4(-1);
-    ClippedFace new_face;
-
+    // -- we have enough new edges
+    int nedges(0), edge_flag(0);
     for (itf = result.begin(); itf != result.end(); ++itf) {
-      n1 = itf->new_edge.second;
-      n2 = itf->new_edge.first;
-      if (n1 >= 0) {
-        new_face.nodes.push_back(n1);
-        break;
-      }
+      if (itf->new_edge.second >= 0) nedges++;
+      edge_flag = std::max(edge_flag, itf->edge_flag);
     }
 
-    while(n4 != n1) {
+    // -- starting point for the new face
+    if (nedges > 2 && edge_flag == 1) {
+#ifdef VERBOSE
+std::cout << "  enough edges to build new face: " << nedges << std::endl;
+#endif
+      int n1, n2, n3, n4(-1);
+      ClippedFace new_face;
+
       for (itf = result.begin(); itf != result.end(); ++itf) {
-        n3 = itf->new_edge.second;
-        n4 = itf->new_edge.first;
-        if (n2 == n3) {
-          new_face.nodes.push_back(n3);
-          n2 = n4;
+        n1 = itf->new_edge.second;
+        n2 = itf->new_edge.first;
+        if (n1 >= 0) {
+          new_face.nodes.push_back(n1);
           break;
         }
       }
-    }
 
-    if (new_face.nodes.size() > 2) {
+      // -- the remaining points of the new face
+      while(n4 != n1) {
+        for (itf = result.begin(); itf != result.end(); ++itf) {
+          n3 = itf->new_edge.second;
+          n4 = itf->new_edge.first;
+          if (n2 == n3) {
+            new_face.nodes.push_back(n3);
+            n2 = n4;
+            break;
+          }
+        }
+      }
+
+      if (new_face.nodes.size() > 2) {
 #ifdef VERBOSE
-std::cout << "  adding new face: nodes=" << " " << new_face.nodes.size() << std::endl;
+std::cout << "  adding new face nodes: ";
+for (itv = new_face.nodes.begin(); itv != new_face.nodes.end(); ++itv) std::cout << *itv << " ";
+std::cout << std::endl;
 #endif
-      result.push_back(new_face);
+        result.push_back(new_face);
+      }
     }
   }
 

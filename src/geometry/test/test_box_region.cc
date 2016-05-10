@@ -261,6 +261,8 @@ TEST(BOXREGION_VOFS_3D_INTERSECTION)
 {
   using namespace Amanzi::AmanziGeometry;
 
+  std::cout << "\nIntersection of a moving tet with the unit box\n\n";
+
   Point v1(3), vv(3);
   std::vector<Point> xyz1, xyz3;
   std::vector<std::vector<int> > faces1(4), faces3;
@@ -320,6 +322,8 @@ TEST(BOXREGION_VOFS_3D_INTERSECTION)
 TEST(BOXREGION_VOFS_3D_VOLUME)
 {
   using namespace Amanzi::AmanziGeometry;
+
+  std::cout << "\nVolume of intersection of a moving tet with the unit box\n\n";
 
   Epetra_MpiComm ecomm(MPI_COMM_WORLD);
 
