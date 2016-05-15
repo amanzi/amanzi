@@ -27,10 +27,12 @@ template <class FunctionBase>
 class PK_DomainFunctionFactory : public FunctionBase {
  public:
   PK_DomainFunctionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : mesh_(mesh) {};
+      : mesh_(mesh) {};
   ~PK_DomainFunctionFactory() {};
 
   Teuchos::RCP<FunctionBase> Create(const Teuchos::ParameterList& plist,
+                                    const std::string& keyword,
+                                    AmanziMesh::Entity_kind kind,
                                     Teuchos::RCP<const Epetra_Vector> weight);
 
  protected:
@@ -41,6 +43,8 @@ class PK_DomainFunctionFactory : public FunctionBase {
 template <class FunctionBase>
 Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
     const Teuchos::ParameterList& plist,
+    const std::string& keyword,
+    AmanziMesh::Entity_kind kind,
     Teuchos::RCP<const Epetra_Vector> weight)
 {
   // verify completeness of the list
@@ -51,13 +55,16 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
     Exceptions::amanzi_throw(msg);
   }
 
-  if (!plist.isSublist("sink")) {
-    msg << "required parameter \"sink\" is not a sublist";
+  if (!plist.isSublist(keyword)) {
+    msg << "required parameter \"" << keyword << "\" is not a sublist";
     Exceptions::amanzi_throw(msg);
   }
 
   // select model for the source function
-  std::string model = plist.get<std::string>("spatial distribution method");
+  std::string model("none");
+  if (plist.isParameter("spatial distribution method")) {
+    model = plist.get<std::string>("spatial distribution method");
+  }
 
   if (model == "volume") {
     Teuchos::RCP<PK_DomainFunctionVolume<FunctionBase> >
@@ -79,8 +86,8 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
   }
   else {
     Teuchos::RCP<PK_DomainFunctionSimple<FunctionBase> >
-        func = Teuchos::rcp(new PK_DomainFunctionSimple<FunctionBase>(mesh_));
-    func->Init(plist);
+        func = Teuchos::rcp(new PK_DomainFunctionSimple<FunctionBase>(mesh_, plist, kind));
+    func->Init(plist, keyword);
     return func; 
   }
 

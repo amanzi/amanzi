@@ -126,7 +126,7 @@ set(transport_inc_files
   TransportBoundaryFunction_Tracer.hh
   TransportBoundaryFunction_Alquimia.hh
   TransportDefs.hh
-  TransportDomainFunction.hh
+  TransportSourceFunction.hh
   Transport_PK.hh)
 
 set(transport_src_files Transport_PK.cc Transport_TI.cc 

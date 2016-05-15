@@ -119,7 +119,7 @@ generate_evaluators_registration_header(
 # Library: flow
 #
 set(flow_src_files Flow_PK.cc 
-                   Flow_BC_Factory.cc Flow_BC_Actions.cc Flow_SeepageFace.cc
+                   Flow_SeepageFace.cc
                    Flow_VandV.cc Flow_Walkabout.cc 
                    FlowBoundaryFunction.cc
                    Darcy_PK.cc Darcy_TI.cc Darcy_LinearOperator.cc
@@ -149,7 +149,6 @@ add_amanzi_library(flow SOURCE ${flow_src_files}
 #
 set(flow_inc_files 
   Darcy_PK.hh
-  Flow_BC_Factory.hh
   FlowDefs.hh
   FlowBoundaryFunction.hh
   Flow_PK.hh

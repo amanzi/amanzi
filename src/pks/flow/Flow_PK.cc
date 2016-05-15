@@ -36,24 +36,13 @@ Flow_PK::Flow_PK(Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<State>& S,
                  const Teuchos::RCP<TreeVector>& soln) :
   PK_PhysicalBDF(pk_tree, glist, S, soln),
-  bc_pressure(NULL),
-  bc_flux(NULL),
-  bc_head(NULL),
-  bc_seepage(NULL),
   vo_(Teuchos::null),
-  passwd_("flow")
-{
-}
+  passwd_("flow") {};
+
 
 Flow_PK::Flow_PK() :
-  bc_pressure(NULL),
-  bc_flux(NULL),
-  bc_head(NULL),
-  bc_seepage(NULL),
   vo_(Teuchos::null),
-  passwd_("flow")
-{
-}
+  passwd_("flow") {};
 
 
 /* ******************************************************************
@@ -268,24 +257,76 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   // Process main one-line options (not sublists)
   atm_pressure_ = *S_->GetScalarData("atmospheric_pressure");
 
-  // Create the BC objects.
+  // Create the BC objects
+  // -- memory
   bc_model.resize(nfaces_wghost, 0);
-  bc_submodel.resize(nfaces_wghost, 0);
   bc_value.resize(nfaces_wghost, 0.0);
   bc_mixed.resize(nfaces_wghost, 0.0);
-  rainfall_factor.resize(nfaces_wghost, 1.0);
 
   Teuchos::RCP<Teuchos::ParameterList>
       bc_list = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("boundary conditions", true)));
-  FlowBCFactory bc_factory(mesh_, bc_list);
 
-  bc_pressure = bc_factory.CreatePressure(bc_submodel);
-  bc_head = bc_factory.CreateStaticHead(atm_pressure_, rho_, gravity_, bc_submodel);
-  bc_flux = bc_factory.CreateMassFlux(bc_submodel);
-  bc_seepage = bc_factory.CreateSeepageFace(atm_pressure_, bc_submodel);
+  // -- pressure 
+  if (bc_list->isSublist("pressure")) {
+    PK_DomainFunctionFactory<PK_DomainFunction> bc_factory(mesh_);
+
+    Teuchos::ParameterList& tmp_list = bc_list->sublist("pressure");
+    for (Teuchos::ParameterList::ConstIterator it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+        bc_pressure_.push_back(bc_factory.Create(
+            spec, "boundary pressure", AmanziMesh::FACE, Teuchos::null));
+      }
+    }
+  }
+
+  // -- hydraulic head
+  if (bc_list->isSublist("static head")) {
+    PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_);
+
+    Teuchos::ParameterList& tmp_list = bc_list->sublist("static head");
+    for (Teuchos::ParameterList::ConstIterator it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+        bc_head_.push_back(bc_factory.Create(
+            spec, "static head", AmanziMesh::FACE, Teuchos::null));
+      }
+    }
+  }
+
+  // -- Darcy velocity
+  if (bc_list->isSublist("mass flux")) {
+    PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_);
+
+    Teuchos::ParameterList& tmp_list = bc_list->sublist("mass flux");
+    for (Teuchos::ParameterList::ConstIterator it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+        bc_flux_.push_back(bc_factory.Create(
+            spec, "outward mass flux", AmanziMesh::FACE, Teuchos::null));
+      }
+    }
+  }
+
+  // -- seepage face
+  if (bc_list->isSublist("seepage face")) {
+    PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_);
+
+    Teuchos::ParameterList& tmp_list = bc_list->sublist("seepage face");
+    for (Teuchos::ParameterList::ConstIterator it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+        bc_seepage_.push_back(bc_factory.Create(
+            spec, "outward mass flux", AmanziMesh::FACE, Teuchos::null));
+      }
+    }
+  }
 
   VV_ValidateBCs();
-  ProcessBCs();
 
   // Create the source object if any
   if (plist.isSublist("source terms")) {
@@ -297,22 +338,8 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
       std::string name = it->first;
       if (src_list.isSublist(name)) {
         Teuchos::ParameterList& spec = src_list.sublist(name);
-        srcs.push_back(factory.Create(spec, Kxy));
+        srcs.push_back(factory.Create(spec, "sink", AmanziMesh::CELL, Kxy));
       }
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Populate data needed by submodels.
-****************************************************************** */
-void Flow_PK::ProcessBCs()
-{
-  for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_submodel[f] & FLOW_BC_SUBMODEL_RAINFALL) {
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      rainfall_factor[f] = fabs(normal[dim - 1]) / norm(normal);
     }
   }
 }
@@ -333,45 +360,48 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
     bc_mixed[n] = 0.0;
   }
 
-  FlowBoundaryFunction::Iterator bc;
-  for (bc = bc_pressure->begin(); bc != bc_pressure->end(); ++bc) {
-    int f = bc->first;
-    bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-    bc_value[f] = bc->second;
-  }
-
-  for (bc = bc_head->begin(); bc != bc_head->end(); ++bc) {
-    int f = bc->first;
-    if (bc_submodel[f] & FLOW_BC_SUBMODEL_NOFLOW_ABOVE_WATER_TABLE) {
-      if (bc->second < atm_pressure_) {
-        bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_value[f] = 0.0;
-        continue;
-      }
+  for (int i = 0; i < bc_pressure_.size(); ++i) {
+    for (PK_DomainFunction::Iterator it = bc_pressure_[i]->begin(); it != bc_pressure_[i]->end(); ++it) {
+      int f = it->first;
+      bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_value[f] = it->second;
     }
-    bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-    bc_value[f] = bc->second;
   }
 
-  for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) {
-    int f = bc->first;
-    bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-    bc_value[f] = bc->second * rainfall_factor[f] * flux_units_;
+  for (int i = 0; i < bc_head_.size(); ++i) {
+    for (PK_DomainFunction::Iterator it = bc_head_[i]->begin(); it != bc_head_[i]->end(); ++it) {
+      int f = it->first;
+      if (bc_head_[i]->no_flow_above_water_table()) {
+        if (it->second < atm_pressure_) {
+          bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
+          bc_value[f] = 0.0;
+          continue;
+        }
+      }
+      bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_value[f] = it->second;
+    }
+  }
+
+  for (int i = 0; i < bc_flux_.size(); ++i) {
+    for (PK_DomainFunction::Iterator it = bc_flux_[i]->begin(); it != bc_flux_[i]->end(); ++it) {
+      int f = it->first;
+      bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
+      bc_value[f] = it->second * flux_units_;
+    }
   }
 
   // Seepage face BC is implemented for p-lambda discretization only.
   int nseepage_add, nseepage = 0;
   double area_add, area_seepage = 0.0;
 
-  bool done = SeepageFacePFloTran(u, &nseepage_add, &area_add);
+  SeepageFacePFloTran(u, &nseepage_add, &area_add);
   nseepage += nseepage_add;
   area_seepage += area_add;
 
-  if (!done) {
-    done = SeepageFaceFACT(u, &nseepage_add, &area_add);
-    nseepage += nseepage_add;
-    area_seepage += area_add;
-  }
+  SeepageFaceFACT(u, &nseepage_add, &area_add);
+  nseepage += nseepage_add;
+  area_seepage += area_add;
 
   // mark missing boundary conditions as zero flux conditions
   AmanziMesh::Entity_ID_List cells;

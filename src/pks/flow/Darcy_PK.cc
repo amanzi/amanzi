@@ -89,11 +89,6 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 ****************************************************************** */
 Darcy_PK::~Darcy_PK()
 {
-  if (bc_pressure != NULL) delete bc_pressure;
-  if (bc_head != NULL) delete bc_head;
-  if (bc_flux != NULL) delete bc_flux;
-  if (bc_seepage != NULL) delete bc_seepage;
-
   if (vo_ != Teuchos::null) vo_ = Teuchos::null;
 }
 
@@ -229,7 +224,6 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   dt_history_.clear();
 
   // Initialize defaults
-  bc_seepage = NULL; 
   initialize_with_darcy_ = true;
   num_itrs_ = 0;
 
@@ -258,15 +252,24 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   
   // Initialize boundary condtions. 
   flux_units_ = 1.0;
-  ProcessShiftWaterTableList(*dp_list_);
 
-  bc_pressure->Compute(t_new);
-  bc_flux->Compute(t_new);
-  bc_seepage->Compute(t_new);
-  if (shift_water_table_.getRawPtr() == NULL) {
-    bc_head->Compute(t_new);
-  } else {
-    bc_head->ComputeShift(t_new, shift_water_table_->Values());
+  for (int i =0; i < bc_pressure_.size(); i++) {
+    bc_pressure_[i]->Compute(t_old, t_new);
+  }
+
+  for (int i =0; i < bc_flux_.size(); i++) {
+    bc_flux_[i]->Compute(t_old, t_new);
+    bc_flux_[i]->ComputeSubmodel(mesh_);
+  }
+
+  for (int i =0; i < bc_head_.size(); i++) {
+    bc_head_[i]->Compute(t_old, t_new);
+    bc_head_[i]->ComputeSubmodel(mesh_);
+  }
+
+  for (int i =0; i < bc_seepage_.size(); i++) {
+    bc_seepage_[i]->Compute(t_old, t_new);
+    bc_seepage_[i]->ComputeSubmodel(mesh_);
   }
 
   CompositeVector& pressure = *S->GetFieldData("pressure", passwd_);
@@ -417,15 +420,27 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   dt_ = t_new - t_old;
   double dt_MPC(dt_);
 
-  // update boundary conditions and source terms at new time.
-  bc_pressure->Compute(t_new);
-  bc_flux->Compute(t_new);
-  bc_seepage->Compute(t_new);
-  if (shift_water_table_.getRawPtr() == NULL)
-    bc_head->Compute(t_new);
-  else
-    bc_head->ComputeShift(t_new, shift_water_table_->Values());
+  // compute boundary conditions at new time
+  for (int i =0; i < bc_pressure_.size(); i++) {
+    bc_pressure_[i]->Compute(t_old, t_new);
+  }
 
+  for (int i =0; i < bc_flux_.size(); i++) {
+    bc_flux_[i]->Compute(t_old, t_new);
+    bc_flux_[i]->ComputeSubmodel(mesh_);
+  }
+
+  for (int i =0; i < bc_head_.size(); i++) {
+    bc_head_[i]->Compute(t_old, t_new);
+    bc_head_[i]->ComputeSubmodel(mesh_);
+  }
+
+  for (int i =0; i < bc_seepage_.size(); i++) {
+    bc_seepage_[i]->Compute(t_old, t_new);
+    bc_seepage_[i]->ComputeSubmodel(mesh_);
+  }
+
+  // compute source terms at new time
   for (int i = 0; i < srcs.size(); ++i) {
     srcs[i]->Compute(t_old, t_new); 
   }

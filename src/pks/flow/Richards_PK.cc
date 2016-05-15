@@ -21,6 +21,7 @@
 
 // Amanzi
 #include "BoundaryFlux.hh"
+#include "CommonDefs.hh"
 #include "dbc.hh"
 #include "exceptions.hh"
 #include "independent_variable_field_evaluator_fromfunction.hh"
@@ -36,7 +37,6 @@
 
 // Flow
 #include "DarcyVelocityEvaluator.hh"
-#include "Flow_BC_Factory.hh"
 #include "PorosityModelEvaluator.hh"
 #include "RelPermEvaluator.hh"
 #include "Richards_PK.hh"
@@ -115,11 +115,6 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 ****************************************************************** */
 Richards_PK::~Richards_PK()
 {
-  if (bc_pressure != NULL) delete bc_pressure;
-  if (bc_flux != NULL) delete bc_flux;
-  if (bc_head != NULL) delete bc_head;
-  if (bc_seepage != NULL) delete bc_seepage;
-
   if (vo_ != Teuchos::null) vo_ = Teuchos::null;
 }
 
@@ -410,15 +405,24 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Initialize actions on boundary condtions. 
   flux_units_ = molar_rho_ / rho_;
 
-  ProcessShiftWaterTableList(*rp_list_);
+  for (int i =0; i < bc_pressure_.size(); i++) {
+    bc_pressure_[i]->Compute(t_old, t_new);
+  }
 
-  bc_pressure->Compute(t_new);
-  bc_flux->Compute(t_new);
-  bc_seepage->Compute(t_new);
-  if (shift_water_table_.getRawPtr() == NULL)
-    bc_head->Compute(t_new);
-  else
-    bc_head->ComputeShift(t_new, shift_water_table_->Values());
+  for (int i =0; i < bc_flux_.size(); i++) {
+    bc_flux_[i]->Compute(t_old, t_new);
+    bc_flux_[i]->ComputeSubmodel(mesh_);
+  }
+
+  for (int i =0; i < bc_head_.size(); i++) {
+    bc_head_[i]->Compute(t_old, t_new);
+    bc_head_[i]->ComputeSubmodel(mesh_);
+  }
+
+  for (int i =0; i < bc_seepage_.size(); i++) {
+    bc_seepage_[i]->Compute(t_old, t_new);
+    bc_seepage_[i]->ComputeSubmodel(mesh_);
+  }
 
   // Process other fundamental structures.
   SetAbsolutePermeabilityTensor();
@@ -954,13 +958,24 @@ void Richards_PK::UpdateSourceBoundaryData(double t_old, double t_new, const Com
     srcs[i]->Compute(t_old, t_new); 
   }
 
-  bc_pressure->Compute(t_new);
-  bc_flux->Compute(t_new);
-  bc_seepage->Compute(t_new);
-  if (shift_water_table_.getRawPtr() == NULL)
-    bc_head->Compute(t_new);
-  else
-    bc_head->ComputeShift(t_new, shift_water_table_->Values());
+  for (int i =0; i < bc_pressure_.size(); i++) {
+    bc_pressure_[i]->Compute(t_old, t_new);
+  }
+
+  for (int i =0; i < bc_flux_.size(); i++) {
+    bc_flux_[i]->Compute(t_old, t_new);
+    bc_flux_[i]->ComputeSubmodel(mesh_);
+  }
+
+  for (int i =0; i < bc_head_.size(); i++) {
+    bc_head_[i]->Compute(t_old, t_new);
+    bc_head_[i]->ComputeSubmodel(mesh_);
+  }
+
+  for (int i =0; i < bc_seepage_.size(); i++) {
+    bc_seepage_[i]->Compute(t_old, t_new);
+    bc_seepage_[i]->ComputeSubmodel(mesh_);
+  }
 
   ComputeBCs(u);
 }

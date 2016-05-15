@@ -15,6 +15,8 @@
 #ifndef AMANZI_FLOW_PK_HH_
 #define AMANZI_FLOW_PK_HH_
 
+#include <vector>
+
 // TPLs
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
@@ -34,7 +36,6 @@
 #include "VerboseObject.hh"
 
 // Flow
-#include "Flow_BC_Factory.hh"
 #include "FlowBoundaryFunction.hh"
 #include "FlowDefs.hh"
 #include "FlowTypeDefs.hh"
@@ -60,18 +61,14 @@ class Flow_PK : public PK_PhysicalBDF {
   void UpdateLocalFields_(const Teuchos::Ptr<State>& S);
 
   // --- management of boundary and source terms
-  void ProcessBCs();
   void ComputeBCs(const CompositeVector& pressure);
-  bool SeepageFacePFloTran(const CompositeVector& u, int* nseepage, double* area_seepage);
-  bool SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* area_seepage);
+  void SeepageFacePFloTran(const CompositeVector& u, int* nseepage, double* area_seepage);
+  void SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* area_seepage);
 
   void AddSourceTerms(CompositeVector& rhs);
 
   // -- absolute permeability and derived quantities.
   void SetAbsolutePermeabilityTensor();
-
-  void ProcessShiftWaterTableList(const Teuchos::ParameterList& list);
-  void CalculateShiftWaterTable(const std::string region);
 
   // -- miscallenous members
   void DeriveFaceValuesFromCellValues(const Epetra_MultiVector& ucells, Epetra_MultiVector& ufaces);
@@ -104,10 +101,6 @@ class Flow_PK : public PK_PhysicalBDF {
   int BoundaryFaceGetCell(int f) const;  // of AmanziMesh
   void VerticalNormals(int c, AmanziGeometry::Point& n1, AmanziGeometry::Point& n2);
   virtual double BoundaryFaceValue(int f, const CompositeVector& u);
-
-  void set_intersection(const std::vector<AmanziMesh::Entity_ID>& v1,  // of std
-                        const std::vector<AmanziMesh::Entity_ID>& v2, 
-                        std::vector<AmanziMesh::Entity_ID>* vv);
 
   // -- support of unit tests
   double rho() { return rho_; }
@@ -151,18 +144,15 @@ class Flow_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Epetra_Vector> Kxy;
   std::string coordinate_system_;
 
-  // boundary conditons
-  FlowBoundaryFunction* bc_pressure; 
-  FlowBoundaryFunction* bc_head;
-  FlowBoundaryFunction* bc_flux;
-  FlowBoundaryFunction* bc_seepage;
+  // boundary conditions: we need a vector here to allow for different models
+  std::vector<Teuchos::RCP<PK_DomainFunction> > bc_pressure_; 
+  std::vector<Teuchos::RCP<FlowBoundaryFunction> > bc_flux_; 
+  std::vector<Teuchos::RCP<FlowBoundaryFunction> > bc_head_; 
+  std::vector<Teuchos::RCP<FlowBoundaryFunction> > bc_seepage_; 
   int nseepage_prev;
 
-  std::vector<int> bc_model, bc_submodel; 
+  std::vector<int> bc_model; 
   std::vector<double> bc_value, bc_mixed;
-
-  std::vector<double> rainfall_factor;
-  Teuchos::RCP<Epetra_Vector> shift_water_table_;
 
   // water balance
   std::vector<Teuchos::RCP<PK_DomainFunction> > srcs;

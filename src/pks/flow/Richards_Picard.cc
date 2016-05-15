@@ -38,14 +38,21 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 
   // update steady state boundary conditions
   double time = S_->time();
-  bc_pressure->Compute(time);
-  bc_flux->Compute(time);
-  if (shift_water_table_.getRawPtr() == NULL)
-    bc_head->Compute(time);
-  else
-    bc_head->ComputeShift(time, shift_water_table_->Values());
+  for (int i =0; i < bc_pressure_.size(); i++) {
+    bc_pressure_[i]->Compute(time, time);
+  }
 
-  // update steady state source conditons
+  for (int i =0; i < bc_flux_.size(); i++) {
+    bc_flux_[i]->Compute(time, time);
+    bc_flux_[i]->ComputeSubmodel(mesh_);
+  }
+
+  for (int i =0; i < bc_head_.size(); i++) {
+    bc_head_[i]->Compute(time, time);
+    bc_head_[i]->ComputeSubmodel(mesh_);
+  }
+
+  // update steady state source conditions
   for (int i = 0; i < srcs.size(); ++i) {
     srcs[i]->Compute(time, time); 
   }
@@ -60,7 +67,10 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 
   while (L2error > residual_tol_nonlinear && itrs < max_itrs_nonlinear) {
     // update dynamic boundary conditions
-    bc_seepage->Compute(time);
+    for (int i =0; i < bc_seepage_.size(); i++) {
+      bc_seepage_[i]->Compute(time, time);
+      bc_seepage_[i]->ComputeSubmodel(mesh_);
+    }
     ComputeBCs(*solution);
 
     // update permeabilities

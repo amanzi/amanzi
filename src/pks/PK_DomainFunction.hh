@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "Epetra_Vector.h"
+#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
 namespace Amanzi {
@@ -27,7 +28,11 @@ class PK_DomainFunction {
  public:
   PK_DomainFunction()
     : domain_volume_(-1.0) {};
-  virtual ~PK_DomainFunction() {};
+
+  PK_DomainFunction(const Teuchos::ParameterList& plist)
+    : domain_volume_(-1.0) {};
+
+  ~PK_DomainFunction() {};
 
   // source term on time interval (t0, t1]
   virtual void Compute(double t0, double t1) { ASSERT(false); }
@@ -39,9 +44,9 @@ class PK_DomainFunction {
   double domain_volume() { return domain_volume_; }
 
   // iterator methods
-  typedef std::map<int, double>::const_iterator Iterator;
-  Iterator begin() const { return value_.begin(); }
-  Iterator end() const { return value_.end(); }
+  typedef std::map<int, double>::iterator Iterator;
+  Iterator begin() { return value_.begin(); }
+  Iterator end() { return value_.end(); }
   std::map<int, double>::size_type size() { return value_.size(); }
 
  protected:

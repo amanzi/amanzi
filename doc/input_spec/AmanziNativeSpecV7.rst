@@ -1449,7 +1449,7 @@ This modification is referred to as a submodel and requires additional parameter
     discontinuous change of the boundary condition type from the infiltration to pressure. 
     The second option is described in the document on mathematical models. 
     It employs a smooth transition from the infiltration 
-    to mixed boundary condition. Default is `"PFloTran`".
+    to mixed boundary condition. The recommended value is `"PFloTran`".
 
 .. code-block:: xml
 
@@ -1482,20 +1482,28 @@ This modification is referred to as a submodel and requires additional parameter
          <ParameterList name="BC 2">
            <Parameter name="regions" type="Array(string)" value="{EAST_SIDE}"/>
            <Parameter name="relative to top" type="bool" value="true"/>
-           <ParameterList name="water table elevation">
-             <ParameterList name="function-constant">
-               <Parameter name="value" type="double" value="10.0"/>
+           <ParameterList name="static head">
+             <ParameterList name="function-static-head">
+               <Parameter name="p0" type="double" value="101325.0"/>
+               <Parameter name="density" type="double" value="1000.0"/>
+               <Parameter name="gravity" type="double" value="9.8"/>
+               <Parameter name="space dimension" type="int" value="3"/>
+               <ParameterList name="water table elevation">
+                 <ParameterList name="function-constant">
+                   <Parameter name="value" type="double" value="10.0"/>
+                 </ParameterList>
+               </ParameterList>
              </ParameterList>
            </ParameterList>
          </ParameterList>
        </ParameterList>
 
        <ParameterList name="seepage face">
-         <Parameter name="reference pressure" type="double" value="101325.0"/>
          <ParameterList name="BC 3">
            <Parameter name="regions" type="Array(string)" value="{EAST_SIDE_BOTTOM}"/>
            <Parameter name="rainfall" type="bool" value="true"/>
            <Parameter name="submodel" type="string" value="PFloTran"/>
+           <Parameter name="reference pressure" type="double" value="101325.0"/>
            <ParameterList name="outward mass flux">
              <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="1.0"/>
@@ -3729,6 +3737,26 @@ This function requires two sublists *function1* and *function2*.
   </ParameterList>
 
 This example defines function `srqt(t) * sin(t)`.
+
+
+Static head function
+....................
+
+This function requires a few parameters as well as one of the standard math functions.
+
+.. code-block:: xml
+
+  <ParameterList name="function-static-head">
+    <Parameter name="p0" type="double" value="101325.0"/>
+    <Parameter name="density" type="double" value="1000.0"/>
+    <Parameter name="gravity" type="double" value="9.8"/>
+    <Parameter name="space dimension" type="int" value="3"/>
+    <ParameterList name="water table elevation">
+      <ParameterList name="function-constant">
+        <Parameter name="value" type="double" value="1.0"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
 
 
 Time functions

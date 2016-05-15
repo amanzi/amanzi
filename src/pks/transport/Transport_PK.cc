@@ -334,7 +334,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // source term initialization: so far only "concentration" is available.
   if (tp_list_->isSublist("source terms")) {
-    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
+    PK_DomainFunctionFactory<TransportSourceFunction> factory(mesh_);
     PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
 
     Teuchos::ParameterList& clist = tp_list_->sublist("source terms").sublist("concentration");
@@ -345,7 +345,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
         for (Teuchos::ParameterList::ConstIterator it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
           std::string specname = it1->first;
           Teuchos::ParameterList& spec = src_list.sublist(specname);
-          Teuchos::RCP<TransportDomainFunction> src = factory.Create(spec, Kxy);
+          Teuchos::RCP<TransportSourceFunction> src = factory.Create(spec, "sink", AmanziMesh::CELL, Kxy);
           src->set_tcc_name(name);
           src->set_tcc_index(FindComponentNumber(name));
           srcs.push_back(src);
@@ -1180,7 +1180,7 @@ void Transport_PK::ComputeAddSourceTerms(double tp, double dtp,
     double t0 = tp - dtp;
     srcs[m]->Compute(t0, tp); 
 
-    for (TransportDomainFunction::Iterator it = srcs[m]->begin(); it != srcs[m]->end(); ++it) {
+    for (TransportSourceFunction::Iterator it = srcs[m]->begin(); it != srcs[m]->end(); ++it) {
       int c = it->first;
       double value = mesh_->cell_volume(c) * it->second;
 

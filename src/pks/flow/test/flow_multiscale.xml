@@ -378,9 +378,17 @@
           <ParameterList name="static head">
             <ParameterList name="BC 0">
               <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
-              <ParameterList name="water table elevation">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
+              <ParameterList name="static head">
+                <ParameterList name="function-static-head">
+                  <Parameter name="p0" type="double" value="101325.0"/>
+                  <Parameter name="density" type="double" value="9.982e+2"/>
+                  <Parameter name="gravity" type="double" value="9.80665"/>
+                  <Parameter name="space dimension" type="int" value="2"/>
+                  <ParameterList name="water table elevation">
+                    <ParameterList name="function-constant">
+                      <Parameter name="value" type="double" value="0.0"/>
+                    </ParameterList>
+                  </ParameterList>
                 </ParameterList>
               </ParameterList>
               <Parameter name="relative to top" type="bool" value="false"/>

@@ -28,12 +28,22 @@ template <class FunctionBase>
 class PK_DomainFunctionSimple : public FunctionBase,
                                 public Functions::UniqueMeshFunction {
  public:
-  PK_DomainFunctionSimple(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      UniqueMeshFunction(mesh) {};
+  PK_DomainFunctionSimple(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                          AmanziMesh::Entity_kind kind) :
+      UniqueMeshFunction(mesh),
+      kind_(kind) {};
+
+  PK_DomainFunctionSimple(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                          const Teuchos::ParameterList& plist,
+                          AmanziMesh::Entity_kind kind) :
+      UniqueMeshFunction(mesh),
+      FunctionBase(plist),
+      kind_(kind) {};
+
   ~PK_DomainFunctionSimple() {};
 
   // member functions
-  void Init(const Teuchos::ParameterList& plist);
+  void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
 
   // required member functions
   virtual void Compute(double t0, double t1);
@@ -44,6 +54,7 @@ class PK_DomainFunctionSimple : public FunctionBase,
 
  private:
   std::string submodel_;
+  AmanziMesh::Entity_kind kind_;
 };
 
 
@@ -51,7 +62,8 @@ class PK_DomainFunctionSimple : public FunctionBase,
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionSimple<FunctionBase>::Init(const Teuchos::ParameterList& plist)
+void PK_DomainFunctionSimple<FunctionBase>::Init(
+    const Teuchos::ParameterList& plist, const std::string& keyword)
 {
   submodel_ = "rate";
   if (plist.isParameter("submodel"))
@@ -60,7 +72,7 @@ void PK_DomainFunctionSimple<FunctionBase>::Init(const Teuchos::ParameterList& p
 
   Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
-    Teuchos::ParameterList flist = plist.sublist("sink");
+    Teuchos::ParameterList flist = plist.sublist(keyword);
     f = Teuchos::rcp(new MultiFunction(flist));
   } catch (Errors::Message& msg) {
     Errors::Message m;
@@ -69,7 +81,7 @@ void PK_DomainFunctionSimple<FunctionBase>::Init(const Teuchos::ParameterList& p
   }
 
   // Add this source specification to the domain function.
-  Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, AmanziMesh::CELL));
+  Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, kind_));
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
 }
 
@@ -86,16 +98,17 @@ void PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
   int dim = mesh_->space_dimension();
   std::vector<double> args(1 + dim);
 
-  for (UniqueSpecList::const_iterator uspec = unique_specs_[AmanziMesh::CELL]->begin();
-       uspec != unique_specs_[AmanziMesh::CELL]->end(); ++uspec) {
+  for (UniqueSpecList::const_iterator uspec = unique_specs_[kind_]->begin();
+       uspec != unique_specs_[kind_]->end(); ++uspec) {
 
     args[0] = t1;
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
 
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
-      const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
-      for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
+      const AmanziGeometry::Point& xc = (kind_ == AmanziMesh::CELL) ?
+          mesh_->cell_centroid(*c) : mesh_->face_centroid(*c);
 
+      for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
       value_[*c] = (*(*uspec)->first->second)(args)[0];
     }
@@ -106,9 +119,10 @@ void PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
  
       args[0] = t0;
       for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
-        const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
-        for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
+        const AmanziGeometry::Point& xc = (kind_ == AmanziMesh::CELL) ?
+            mesh_->cell_centroid(*c) : mesh_->face_centroid(*c);
 
+        for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
         value_[*c] -= (*(*uspec)->first->second)(args)[0];
         value_[*c] *= dt;
       }

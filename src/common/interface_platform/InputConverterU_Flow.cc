@@ -643,13 +643,26 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
           .set<Teuchos::Array<std::string> >("forms", forms);
     }
 
-    // special cases
+    // special cases and parameters without default values
     if (bctype == "mass flux") {
       bc.set<bool>("rainfall", false);
-    } else if (bctype == "static head") {
+    }
+    else if (bctype == "seepage face") {
+      bc.set<bool>("rainfall", false)
+        .set<std::string>("submodel", "PFloTran");
+    }
+    else if (bctype == "static head") {
       std::string tmp = GetAttributeValueS_(
           static_cast<DOMElement*>(same_list[0]), "coordinate_system", TYPE_NONE, false, "absolute");
       bc.set<bool>("relative to top", (tmp == "relative to mesh top"));
+
+      Teuchos::ParameterList& bc_tmp = bc.sublist("static head").sublist("function-static-head");
+      bc_tmp.set<int>("space dimension", dim_)
+            .set<double>("density", rho_)
+            .set<double>("gravity", GRAVITY_MAGNITUDE)
+            .set<double>("p0", ATMOSPHERIC_PRESSURE);
+      bc_tmp.sublist(bcname) = bcfn;
+      bc.remove(bcname);
     }
   }
 

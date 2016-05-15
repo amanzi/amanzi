@@ -27,10 +27,24 @@ void Flow_PK::VV_ValidateBCs() const
 {
   // Create sets of the face indices belonging to each BC type.
   std::set<int> pressure_faces, head_faces, flux_faces;
-  FlowBoundaryFunction::Iterator bc;
-  for (bc = bc_pressure->begin(); bc != bc_pressure->end(); ++bc) pressure_faces.insert(bc->first);
-  for (bc = bc_head->begin(); bc != bc_head->end(); ++bc) head_faces.insert(bc->first);
-  for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) flux_faces.insert(bc->first);
+
+  for (int i =0; i < bc_pressure_.size(); i++) {
+    for (PK_DomainFunction::Iterator it = bc_pressure_[i]->begin(); it != bc_pressure_[i]->end(); ++it) {
+      pressure_faces.insert(it->first);
+    }
+  }
+
+  for (int i =0; i < bc_flux_.size(); i++) {
+    for (PK_DomainFunction::Iterator it = bc_flux_[i]->begin(); it != bc_flux_[i]->end(); ++it) {
+      flux_faces.insert(it->first);
+    }
+  }
+
+  for (int i =0; i < bc_head_.size(); i++) {
+    for (PK_DomainFunction::Iterator it = bc_head_[i]->begin(); it != bc_head_[i]->end(); ++it) {
+      head_faces.insert(it->first);
+    }
+  }
 
   std::set<int> overlap;
   std::set<int>::iterator overlap_end;
@@ -131,15 +145,16 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
 
   int dir, f, c;
   double tmp, outflow(0.0);
-  FlowBoundaryFunction::Iterator bc;
 
-  for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
-    f = bc->first;
-    if (f < nfaces_owned) {
-      c = BoundaryFaceGetCell(f);
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
-      tmp = flux[0][f] * dir;
-      if (tmp > 0.0) outflow += tmp;
+  for (int i = 0; i < bc_seepage_.size(); ++i) {
+    for (PK_DomainFunction::Iterator it = bc_seepage_[i]->begin(); it != bc_seepage_[i]->end(); ++it) {
+      f = it->first;
+      if (f < nfaces_owned) {
+        c = BoundaryFaceGetCell(f);
+        const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+        tmp = flux[0][f] * dir;
+        if (tmp > 0.0) outflow += tmp;
+      }
     }
   }
 
@@ -149,7 +164,7 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
   outflow *= rho_;
   seepage_mass_ += outflow * dt_;
 
-  if (MyPID == 0 && bc_seepage->global_size() > 0) {
+  if (MyPID == 0 && bc_seepage_.size() > 0) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "seepage face: flow=" << outflow << " [kg/s]," 
                << " total=" << seepage_mass_ << " [kg]" << std::endl;

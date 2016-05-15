@@ -11,8 +11,8 @@
   Derived class for transport sources and sinks.
 */
 
-#ifndef AMANZI_TRANSPORT_DOMAIN_FUNCTION_HH_
-#define AMANZI_TRANSPORT_DOMAIN_FUNCTION_HH_
+#ifndef AMANZI_TRANSPORT_SOURCE_FUNCTION_HH_
+#define AMANZI_TRANSPORT_SOURCE_FUNCTION_HH_
 
 #include <vector>
 #include <string>
@@ -26,9 +26,10 @@
 namespace Amanzi {
 namespace Transport {
 
-class TransportDomainFunction : public PK_DomainFunction {
+class TransportSourceFunction : public PK_DomainFunction {
  public:
-  TransportDomainFunction() {};
+  TransportSourceFunction() {};
+  TransportSourceFunction(const Teuchos::ParameterList& plist) {};
 
   // access
   const std::string& tcc_name() { return tcc_name_; }

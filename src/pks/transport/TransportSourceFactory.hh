@@ -19,7 +19,7 @@
 
 #include "Point.hh"
 #include "Mesh.hh"
-#include "TransportDomainFunction.hh"
+#include "TransportSourceFunction.hh"
 
 namespace Amanzi {
 namespace Transport {
@@ -31,12 +31,12 @@ class TransportSourceFactory {
      : mesh_(mesh), plist_(plist) {};
   ~TransportSourceFactory() {};
   
-  void Create(std::vector<TransportDomainFunction*>& srcs);
+  void Create(std::vector<TransportSourceFunction*>& srcs);
 
  private:
   void ProcessSourceSpec(Teuchos::ParameterList& list, 
                          const std::string& name, 
-                         TransportDomainFunction* src) const;
+                         TransportSourceFunction* src) const;
   void ProcessStringActions(const std::string& name, int* method) const;
      
  private:
