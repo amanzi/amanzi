@@ -396,7 +396,7 @@ DOMElement* InputConverter::GetUniqueChildByAttribute_(
 * Extracts children of the given node with the given name,
 ****************************************************************** */
 std::vector<xercesc::DOMNode*> InputConverter::GetChildren_(
-    xercesc::DOMNode* node, const std::string& name, bool& flag, bool exception)
+    DOMNode* node, const std::string& name, bool& flag, bool exception)
 {
   flag = false;
 
@@ -417,7 +417,7 @@ std::vector<xercesc::DOMNode*> InputConverter::GetChildren_(
   }
 
   // exception
-  if (!flag and exception) {
+  if (!flag && exception) {
     char* tagname = mm.transcode(node->getNodeName());
     Errors::Message msg;
     msg << "Amanzi::InputConverter: node \"" << tagname << "\" must have same elements\n";
@@ -429,7 +429,11 @@ std::vector<xercesc::DOMNode*> InputConverter::GetChildren_(
   return namedChildren;
 }
 
-xercesc::DOMElement* InputConverter::GetChildByName_(
+
+/* ******************************************************************
+* Returns child with the given name.
+****************************************************************** */
+DOMElement* InputConverter::GetChildByName_(
     xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception)
 {
   flag = false;
@@ -452,16 +456,17 @@ xercesc::DOMElement* InputConverter::GetChildByName_(
   }
 
   // exception
-  if (!flag and exception) {
+  if (!flag && exception) {
     Errors::Message msg;
     char* nodeName = mm.transcode(node->getNodeName());
-    msg << "Amanzi::InputConverter: child node \"" << childName << "\" was not found for node \"" << nodeName << "\".\n";
+    msg << "Amanzi::InputConverter: child node \"" << childName 
+        << "\" was not found for node \"" << nodeName << "\".\n";
     Exceptions::amanzi_throw(msg);
   }
 
   return static_cast<DOMElement*>(child);
-
 }
+
 
 /* ******************************************************************
 * Extracts children and verifies that their have the common tagname.

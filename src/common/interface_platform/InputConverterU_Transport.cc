@@ -418,6 +418,9 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
     }
   }
 
+  // backward compatibility: translate constraints for native chemistry
+  TranslateTransportBCsAmanziGeochemistry_(out_list);
+
   return out_list;
 }
 
@@ -485,6 +488,56 @@ void InputConverterU::TranslateTransportBCsGroup_(
           .set<Teuchos::Array<double> >("y values", values)
           .set<Teuchos::Array<std::string> >("forms", forms);
     }
+  }
+}
+
+
+/* ******************************************************************
+* Create list of transport BCs for native chemistry. byrparticular group of solutes.
+* Solutes may have only one element, see schema for details.
+****************************************************************** */
+void InputConverterU::TranslateTransportBCsAmanziGeochemistry_(
+    Teuchos::ParameterList& out_list)
+{
+  if (out_list.isSublist("geochemical conditions") &&
+      pk_model_["chemistry"] == "amanzi") {
+
+    bool flag;
+    std::string name, bc_name;
+    DOMNode* node;
+    DOMElement* element;
+
+    node = GetUniqueElementByTagsString_("geochemistry, constraints", flag);
+
+    Teuchos::ParameterList& bc_new = out_list.sublist("concentration");
+    Teuchos::ParameterList& bc_old = out_list.sublist("geochemical conditions");
+
+    for (Teuchos::ParameterList::ConstIterator it = bc_old.begin(); it != bc_old.end(); ++it) {
+      name = it->first;
+      bc_name = bc_old.sublist(name).begin()->first;  
+ 
+      Teuchos::ParameterList& bco = bc_old.sublist(name).sublist(bc_name);
+      Teuchos::ParameterList& bcn = bc_new.sublist(name).sublist(bc_name);
+      Teuchos::ParameterList& fnc = bcn.sublist("boundary concentration").sublist("function-tabular");
+
+      bcn.set("regions", bco.get<Teuchos::Array<std::string> >("regions"));
+      fnc.set("x values", bco.get<Teuchos::Array<double> >("times"));
+      fnc.set("forms", bco.get<Teuchos::Array<std::string> >("time functions"));
+      
+      // convert constraints to values
+      Teuchos::Array<double> values;
+      std::vector<std::string> constraints = 
+          bco.get<Teuchos::Array<std::string> >("geochemical conditions").toVector();
+
+      for (int i = 0; i < constraints.size(); ++i) {
+        element = GetUniqueChildByAttribute_(node, "name", constraints[i], flag, true);
+        element = GetUniqueChildByAttribute_(element, "name", name, flag, true);
+        values.push_back(GetAttributeValueD_(element, "value"));
+      }
+      fnc.set("y values", values);
+    }
+
+    out_list.remove("geochemical conditions");
   }
 }
 

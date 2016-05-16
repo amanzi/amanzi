@@ -42,9 +42,8 @@
 #include "MDMPartition.hh"
 #include "MultiscaleTransportPorosityPartition.hh"
 #include "TransportBoundaryFunction.hh"
-#include "TransportSourceFunction.hh"
 #include "TransportDefs.hh"
-#include "TransportSourceFactory.hh"
+#include "TransportSourceFunction.hh"
 
 /* ******************************************************************
 The transport PK receives a reduced (optional) copy of a physical 

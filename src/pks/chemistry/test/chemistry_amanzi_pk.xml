@@ -88,7 +88,7 @@
     <Parameter name="minerals" type="Array(string)" value="{Kaolinite, Quartz, (UO2)3(PO4)2.4H2O}"/>
     <Parameter name="sorption sites" type="Array(string)" value="{>FeOH, >AlOH, >SiOH}"/>
 
-    <ParameterList name="Thermodynamic Database">
+    <ParameterList name="thermodynamic database">
       <Parameter name="format" type="string" value="simple"/>
       <Parameter name="file" type="string" value="test/chemistry_amanzi_pk.bgd"/>
     </ParameterList>

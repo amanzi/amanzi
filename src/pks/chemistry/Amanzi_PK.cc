@@ -223,8 +223,8 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
 void Amanzi_PK::XMLParameters()
 {
   // thermo file name and format, then create the database!
-  if (cp_list_->isSublist("Thermodynamic Database")) {
-    Teuchos::ParameterList& tdb_list_ = cp_list_->sublist("Thermodynamic Database");
+  if (cp_list_->isSublist("thermodynamic database")) {
+    Teuchos::ParameterList& tdb_list_ = cp_list_->sublist("thermodynamic database");
 
     // currently we only support the simple format.
     if (tdb_list_.isParameter("format")) {
@@ -236,7 +236,7 @@ void Amanzi_PK::XMLParameters()
         std::ostringstream msg;
         msg << ChemistryException::kChemistryError;
         msg << "Amanzi_PK::XMLParameters(): \n";
-        msg << "  In sublist 'Thermodynamic Database', the parameter 'format' must be 'simple'.\n";
+        msg << "  In sublist 'thermodynamic database', the parameter 'format' must be 'simple'.\n";
         Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));  
       }
     } else {
@@ -244,7 +244,7 @@ void Amanzi_PK::XMLParameters()
       std::ostringstream msg;
       msg << ChemistryException::kChemistryError;
       msg << "Amanzi_PK::XMLParameters(): \n";
-      msg << "  In sublist 'Thermodynamic Database', the parameter 'format' must be specified.\n";
+      msg << "  In sublist 'thermodynamic database', the parameter 'format' must be specified.\n";
       Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));
     }
 
@@ -257,14 +257,14 @@ void Amanzi_PK::XMLParameters()
       std::ostringstream msg;
       msg << ChemistryException::kChemistryError;
       msg << "Amanzi_PK::XMLParameters(): \n";
-      msg << "  Input parameter 'file' in 'Thermodynamic Database' sublist must be specified.\n";
+      msg << "  Input parameter 'file' in 'thermodynamic database' sublist must be specified.\n";
       Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));         
     }
   } else {
     std::ostringstream msg;
     msg << ChemistryException::kChemistryError;
     msg << "Amanzi_PK::XMLParameters(): \n";
-    msg << "  'Thermodynamic Database' sublist must be specified.\n";
+    msg << "  'thermodynamic database' sublist must be specified.\n";
     Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));    
   }
 

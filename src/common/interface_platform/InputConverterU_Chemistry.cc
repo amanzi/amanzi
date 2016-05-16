@@ -69,7 +69,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       format = GetAttributeValueS_(element, "format", TYPE_NONE, false, format);
     }
 
-    Teuchos::ParameterList& bgd_list = out_list.sublist("Thermodynamic Database");
+    Teuchos::ParameterList& bgd_list = out_list.sublist("thermodynamic database");
     bgd_list.set<std::string>("file", bgdfilename);
     bgd_list.set<std::string>("format", format);
 

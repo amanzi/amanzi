@@ -202,7 +202,7 @@
     <ParameterList name="chemistry">
       <Parameter name="PK type" type="string" value="chemistry pk"/>
       <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
-      <ParameterList name="Thermodynamic Database">
+      <ParameterList name="thermodynamic database">
 	<Parameter name="format" type="string" value="simple"/>
 	<Parameter name="file" type="string" value="test/mpc_driver_reactive_transport.bgd"/>
       </ParameterList>

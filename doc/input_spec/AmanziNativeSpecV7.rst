@@ -2393,7 +2393,7 @@ Amanzi
 
 The Amanzi chemistry process kernel uses the following parameters.
 
-* `"Thermodynamic Database`" [list] 
+* `"thermodynamic database`" [list] 
 
   * `"file`" [string] is the name of the chemistry database file, relative to the execution directory.
 
@@ -2434,7 +2434,7 @@ The Amanzi chemistry process kernel uses the following parameters.
 
   <ParameterList>  <!-- parent list -->
     <ParameterList name="chemistry">
-      <ParameterList name="Thermodynamic Database">
+      <ParameterList name="thermodynamic database">
         <Parameter name="file" type="string" value="tritium.bgd"/>
         <Parameter name="format" type="string" value="simple"/>
       </ParameterList>
