@@ -276,8 +276,10 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   ComputeBCs(pressure);
 
   // pressures (lambda is not important when solver is very accurate)
-  DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
-                                 *pressure.ViewComponent("face"));
+  if (pressure.HasComponent("face")) {
+    DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
+                                   *pressure.ViewComponent("face"));
+  }
 
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
   ASSERT(ti_method_name == "BDF1");
