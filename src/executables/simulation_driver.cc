@@ -359,7 +359,7 @@ int SimulationDriver::Run(
 
 
   //generalize checkpoint files for columns
-  if (plist.isSublist("checkpoint columns")) {
+  if ((plist.isSublist("checkpoint columns") || MPI_COMM_WORLD != MPI_COMM_SELF) && !(plist.isSublist("checkpoint")) ) {
     Teuchos::ParameterList& checkpoint_plist = plist.sublist("checkpoint columns");
     std::stringstream name_check;
    
