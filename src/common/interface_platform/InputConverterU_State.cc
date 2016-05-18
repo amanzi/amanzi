@@ -192,10 +192,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .sublist("function");
         aux_list.set<int>("number of dofs", dim_)
             .set<std::string>("function type", "composite function");
-        aux_list.sublist("DoF 1 Function").sublist("function-constant").set<double>("value", kx);
-        aux_list.sublist("DoF 2 Function").sublist("function-constant").set<double>("value", ky);
+        aux_list.sublist("dof 1 function").sublist("function-constant").set<double>("value", kx);
+        aux_list.sublist("dof 2 function").sublist("function-constant").set<double>("value", ky);
         if (dim_ == 3) {
-          aux_list.sublist("DoF 3 Function").sublist("function-constant").set<double>("value", kz);
+          aux_list.sublist("dof 3 function").sublist("function-constant").set<double>("value", kz);
         } else {
           kz = 0.0;
         }
@@ -355,7 +355,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
         for (int k = 0; k != dim_; ++k) {
           std::stringstream dof_str;
-          dof_str << "DoF " << k+1 << " Function";
+          dof_str << "dof " << k+1 << " function";
           tmp_list.sublist(dof_str.str()).sublist("function-constant")
                                          .set<double>("value", velocity[k]);
         }
@@ -393,7 +393,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         for (int k = 0; k < ncomp_l; k++) {
           std::string name = phases_["water"][k];
           std::stringstream dof_str;
-          dof_str << "DoF " << k + 1 << " Function";
+          dof_str << "dof " << k + 1 << " function";
           dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", vals[k]);
         }
       }
@@ -420,7 +420,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         for (int k = 0; k < ncomp_g; k++) {
           std::string name = phases_["air"][k];
           std::stringstream dof_str;
-          dof_str << "DoF " << ncomp_l + k + 1 << " Function";
+          dof_str << "dof " << ncomp_l + k + 1 << " function";
           dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", vals[k]);
         }
       }

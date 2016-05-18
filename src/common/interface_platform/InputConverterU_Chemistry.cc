@@ -163,7 +163,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
         for (int j = 0; j < minerals.size(); ++j) {
           std::stringstream ss;
-          ss << "DoF " << j + 1 << " Function";
+          ss << "dof " << j + 1 << " function";
  
           node = GetUniqueElementByTagsString_(inode, "minerals", flag);
           double mvf(0.0), msa(0.0);
@@ -229,7 +229,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
           }
 
           std::stringstream ss;
-          ss << "DoF " << j + 1 << " Function";
+          ss << "dof " << j + 1 << " function";
 
           double val = (!flag) ? 0.0 : GetAttributeValueD_(element, "kd", TYPE_NUMERICAL, false, 0.0);
           aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", val);
@@ -270,7 +270,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
           sorption_sites.push_back(GetAttributeValueS_(element, "name", TYPE_NONE));
 
           std::stringstream dof_str;
-          dof_str << "DoF " << k+1 << " Function";
+          dof_str << "dof " << k+1 << " function";
           tmp_list.sublist(dof_str.str()).sublist("function-constant")
                                          .set<double>("value", val);
         }
@@ -292,7 +292,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
           std::string solute_name = phases_["water"][j];
 
           std::stringstream ss;
-          ss << "DoF " << j + 1 << " Function";
+          ss << "dof " << j + 1 << " function";
 
           aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", 1e-9);
         }

@@ -12,13 +12,13 @@ The expected plist is of the form:
 <ParameterList name="constuctor plist">
   <Parameter name="number of dofs">
 
-  <ParameterList name="DoF 1 Function">
+  <ParameterList name="dof 1 function">
     <ParameterList name="function-constant">
       ...
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="DoF 2 Function">
+  <ParameterList name="dof 2 function">
     <ParameterList name="function-linear">
       ...
     </ParameterList>
@@ -62,9 +62,9 @@ MultiFunction::MultiFunction(Teuchos::ParameterList& plist) {
         ASSERT(0);
       }
 
-      for (int lcv=1; lcv!=(ndofs+1); ++lcv) {
+      for (int lcv = 1; lcv != (ndofs+1); ++lcv) {
         std::stringstream sublist_name;
-        sublist_name << "DoF " << lcv << " Function";
+        sublist_name << "dof " << lcv << " function";
         functions_.push_back(Teuchos::rcp(factory.Create(plist.sublist(sublist_name.str()))));
       }
     } else {

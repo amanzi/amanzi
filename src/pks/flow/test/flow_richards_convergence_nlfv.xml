@@ -351,19 +351,19 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <Parameter name="number of dofs" type="int" value="3"/>
 
-              <ParameterList name="DoF 1 Function">
+              <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.5"/>
                 </ParameterList>
               </ParameterList>
 
-              <ParameterList name="DoF 2 Function">
+              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.5"/>
                 </ParameterList>
               </ParameterList>
 
-              <ParameterList name="DoF 3 Function">
+              <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.5"/>
                 </ParameterList>
@@ -379,19 +379,19 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <Parameter name="number of dofs" type="int" value="3"/>
 
-              <ParameterList name="DoF 1 Function">
+              <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.0"/>
                 </ParameterList>
               </ParameterList>
 
-              <ParameterList name="DoF 2 Function">
+              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.0"/>
                 </ParameterList>
               </ParameterList>
 
-              <ParameterList name="DoF 3 Function">
+              <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.0"/>
                 </ParameterList>

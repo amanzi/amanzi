@@ -670,12 +670,12 @@ checkpoints of vis files. Default values are *true*.
            <ParameterList name="function">
              <Parameter name="number of dofs" type="int" value="2"/>
              <Parameter name="function type" type="string" value="composite function"/>
-             <ParameterList name="DoF 1 Function">
+             <ParameterList name="dof 1 function">
                <ParameterList name="function-constant">
                  <Parameter name="value" type="double" value="0.002"/>
                </ParameterList>
              </ParameterList>
-             <ParameterList name="DoF 2 Function">
+             <ParameterList name="dof 2 function">
                <ParameterList name="function-constant">
                  <Parameter name="value" type="double" value="0.001"/>
                </ParameterList>
@@ -812,12 +812,12 @@ The field *permeability* is the piecewise constant diagonal tensor.
             <ParameterList name="function">
               <Parameter name="function type" type="string" value="composite function"/>
               <Parameter name="number of dofs" type="int" value="2"/>
-              <ParameterList name="DoF 1 Function">
+              <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1e-12"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 2 Function">
+              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1e-13"/>
                 </ParameterList>
@@ -830,12 +830,12 @@ The field *permeability* is the piecewise constant diagonal tensor.
             <ParameterList name="function">
               <Parameter name="function type" type="string" value="composite function"/>
               <Parameter name="number of dofs" type="int" value="2"/>
-              <ParameterList name="DoF 1 Function">
+              <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2e-13"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 2 Function">
+              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2e-14"/>
                 </ParameterList>
