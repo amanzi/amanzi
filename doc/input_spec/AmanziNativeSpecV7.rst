@@ -2182,13 +2182,12 @@ and geochemical conditions.
   <ParameterList name="transport">  <!-- parent list -->
     <ParameterList name="boundary conditions">
       <ParameterList name="geochemical conditions">
-        <ParameterList name="H+"> 
-          <ParameterList name="EAST CRIB">   <!-- user defined name -->
-            <Parameter name="times" type="Array(double)" value="{0.0, 100.0}"/>
-            <Parameter name="geochemical conditions" type="Array(string)" value="{cond1, cond2}"/>
-            <Parameter name="time functions" type="Array(string)" value="{constant}"/>
-            <Parameter name="regions" type="Array(string)" value="{CRIB1}"/>
-          </ParameterList>
+        <ParameterList name="EAST CRIB">   <!-- user defined name -->
+          <Parameter name="solutes" type="Array(string)" value={H+,HCO3-,Ca++}"/>
+          <Parameter name="times" type="Array(double)" value="{0.0, 100.0}"/>
+          <Parameter name="geochemical conditions" type="Array(string)" value="{cond1, cond2}"/>
+          <Parameter name="time functions" type="Array(string)" value="{constant}"/>
+          <Parameter name="regions" type="Array(string)" value="{CRIB1}"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

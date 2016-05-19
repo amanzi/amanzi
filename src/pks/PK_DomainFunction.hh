@@ -8,8 +8,9 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Base class for computing source terms. PK's classes for source
-  terms should inherit from this class.
+  Prototype class for computing boundary and source terms. PK's classes 
+  for source and boundary terms may inherit from this class or mimic
+  its functionality.
 */
 
 #ifndef AMANZI_PK_DOMAIN_FUNCTION_HH_

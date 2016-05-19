@@ -1,7 +1,18 @@
-// TODO: This is very tentative.  I'm thinking it might be preferable
-// to clone the constructor functions rather than hand off pointers
-// to them, but cloning the polymorphic objects requires some changes
-// to the base class and all the implementations.
+/*
+  Functions
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ethan Coon
+
+  TODO: This is very tentative.  I'm thinking it might be preferable
+  to clone the constructor functions rather than hand off pointers
+  to them, but cloning the polymorphic objects requires some changes
+ to the base class and all the implementations.
+*/
 
 #ifndef AMANZI_ADDITIVE_FUNCTION_HH_
 #define AMANZI_ADDITIVE_FUNCTION_HH_
@@ -31,4 +42,4 @@ class AdditiveFunction : public Function {
 
 } // namespace Amanzi
 
-#endif  // AMANZI_ADDITIVE_FUNCTION_HH_
+#endif 

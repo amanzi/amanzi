@@ -408,13 +408,16 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
 
       // save in the XML files  
       Teuchos::ParameterList& tbc_list = out_list.sublist("geochemical conditions");
+      Teuchos::Array<std::string> solute_names;
       for (int i = 0; i < phases_["water"].size(); ++i) {
-        Teuchos::ParameterList& bc = tbc_list.sublist(phases_["water"][i]).sublist(bcname);
-        bc.set<Teuchos::Array<std::string> >("regions", regions);
-        bc.set<Teuchos::Array<double> >("times", times);
-        bc.set<Teuchos::Array<std::string> >("geochemical conditions", values);
-        bc.set<Teuchos::Array<std::string> >("time functions", forms);
+        solute_names.push_back(phases_["water"][i]);
       }
+      Teuchos::ParameterList& bc = tbc_list.sublist(bcname);
+      bc.set<Teuchos::Array<std::string> >("regions", regions);
+      bc.set<Teuchos::Array<std::string> >("solutes", solute_names);
+      bc.set<Teuchos::Array<double> >("times", times);
+      bc.set<Teuchos::Array<std::string> >("geochemical conditions", values);
+      bc.set<Teuchos::Array<std::string> >("time functions", forms);
     }
   }
 
@@ -493,7 +496,7 @@ void InputConverterU::TranslateTransportBCsGroup_(
 
 
 /* ******************************************************************
-* Create list of transport BCs for native chemistry. byrparticular group of solutes.
+* Create list of transport BCs for native chemistry.
 * Solutes may have only one element, see schema for details.
 ****************************************************************** */
 void InputConverterU::TranslateTransportBCsAmanziGeochemistry_(
@@ -514,27 +517,30 @@ void InputConverterU::TranslateTransportBCsAmanziGeochemistry_(
 
     for (Teuchos::ParameterList::ConstIterator it = bc_old.begin(); it != bc_old.end(); ++it) {
       name = it->first;
-      bc_name = bc_old.sublist(name).begin()->first;  
  
-      Teuchos::ParameterList& bco = bc_old.sublist(name).sublist(bc_name);
-      Teuchos::ParameterList& bcn = bc_new.sublist(name).sublist(bc_name);
-      Teuchos::ParameterList& fnc = bcn.sublist("boundary concentration").sublist("function-tabular");
+      Teuchos::ParameterList& bco = bc_old.sublist(name);
+      std::vector<std::string> solutes = bco.get<Teuchos::Array<std::string> >("solutes").toVector();
 
-      bcn.set("regions", bco.get<Teuchos::Array<std::string> >("regions"));
-      fnc.set("x values", bco.get<Teuchos::Array<double> >("times"));
-      fnc.set("forms", bco.get<Teuchos::Array<std::string> >("time functions"));
+      for (int n = 0; n < solutes.size(); ++n) {
+        Teuchos::ParameterList& bcn = bc_new.sublist(solutes[n]).sublist(name);
+        Teuchos::ParameterList& fnc = bcn.sublist("boundary concentration").sublist("function-tabular");
+
+        bcn.set("regions", bco.get<Teuchos::Array<std::string> >("regions"));
+        fnc.set("x values", bco.get<Teuchos::Array<double> >("times"));
+        fnc.set("forms", bco.get<Teuchos::Array<std::string> >("time functions"));
       
-      // convert constraints to values
-      Teuchos::Array<double> values;
-      std::vector<std::string> constraints = 
-          bco.get<Teuchos::Array<std::string> >("geochemical conditions").toVector();
+        // convert constraints to values
+        Teuchos::Array<double> values;
+        std::vector<std::string> constraints = 
+            bco.get<Teuchos::Array<std::string> >("geochemical conditions").toVector();
 
-      for (int i = 0; i < constraints.size(); ++i) {
-        element = GetUniqueChildByAttribute_(node, "name", constraints[i], flag, true);
-        element = GetUniqueChildByAttribute_(element, "name", name, flag, true);
-        values.push_back(GetAttributeValueD_(element, "value"));
+        for (int i = 0; i < constraints.size(); ++i) {
+          element = GetUniqueChildByAttribute_(node, "name", constraints[i], flag, true);
+          element = GetUniqueChildByAttribute_(element, "name", solutes[n], flag, true);
+          values.push_back(GetAttributeValueD_(element, "value"));
+        }
+        fnc.set("y values", values);
       }
-      fnc.set("y values", values);
     }
 
     out_list.remove("geochemical conditions");

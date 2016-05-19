@@ -11,6 +11,8 @@
 
   Function applied to a mesh component with at most one function 
   application per entity.
+ 
+  Aamanzi is no longer using this function!
 */
 
 #ifndef AMANZI_BOUNDARY_FUNCTION_HH_

@@ -175,34 +175,28 @@ void Transport_PK::VV_CheckInfluxBC() const
   for (int i = 0; i < number_components; i++) {
     influx_face.assign(nfaces_wghost, 0);
 
-    for (int m = 0; m < bcs.size(); m++) {
-      std::vector<int>& tcc_index = bcs[m]->tcc_index();
+    for (int m = 0; m < bcs_.size(); m++) {
+      std::vector<int>& tcc_index = bcs_[m]->tcc_index();
       int ncomp = tcc_index.size();
 
       for (int k = 0; k < ncomp; k++) {
         if (i == tcc_index[k]) {
-          std::vector<int>& faces = bcs[m]->faces();
-          int nbfaces = faces.size();
-
-          for (int n = 0; n < nbfaces; ++n) {
-            int f = faces[n];
+          for (TransportBoundaryFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+            int f = it->first;
             influx_face[f] = 1;
           }
         }
       }
     }
 
-    for (int m = 0; m < bcs.size(); m++) {
-      std::vector<int>& tcc_index = bcs[m]->tcc_index();
+    for (int m = 0; m < bcs_.size(); m++) {
+      std::vector<int>& tcc_index = bcs_[m]->tcc_index();
       int ncomp = tcc_index.size();
 
       for (int k = 0; k < ncomp; k++) {
         if (i == tcc_index[k]) {
-          std::vector<int>& faces = bcs[m]->faces();
-          int nbfaces = faces.size();
-
-          for (int n = 0; n < nbfaces; ++n) {
-            int f = faces[n];
+          for (TransportBoundaryFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+            int f = it->first;
             if ((*darcy_flux)[0][f] < 0 && influx_face[f] == 0) {
               char component[3];
               std::sprintf(component, "%3d", i);
@@ -288,23 +282,21 @@ double Transport_PK::VV_SoluteVolumeChangePerSecond(int idx_tracer)
 {
   double volume = 0.0;
 
-  for (int m = 0; m < bcs.size(); m++) {
-    std::vector<int>& tcc_index = bcs[m]->tcc_index();
+  for (int m = 0; m < bcs_.size(); m++) {
+    std::vector<int>& tcc_index = bcs_[m]->tcc_index();
     int ncomp = tcc_index.size();
 
     for (int i = 0; i < ncomp; i++) {
       if (tcc_index[i] == idx_tracer) {
-        std::vector<int>& faces = bcs[m]->faces();
-        std::vector<std::vector<double> >& values = bcs[m]->values();
-        int nbfaces = faces.size();
+        for (TransportBoundaryFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+          int f = it->first;
+          WhetStone::DenseVector& values = it->second;
 
-        for (int n = 0; n < nbfaces; ++n) {
-          int f = faces[n];
           int c2 = (*downwind_cell_)[f];
 
           if (f < nfaces_owned && c2 >= 0) {
             double u = fabs((*darcy_flux)[0][f]);
-            volume += u * values[n][i];
+            volume += u * values(i);
           }
         }
       }

@@ -98,7 +98,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
 
   int iter = 0;
   bool flag = true;
-  while (t_new < 0.3) {
+  while (t_new < 0.25) {
     dt = TPK.CalculateTransportDt();
     t_new = t_old + dt;
 

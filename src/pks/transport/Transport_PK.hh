@@ -220,8 +220,8 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   int current_component_;  // data for lifting
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;
 
-  std::vector<Teuchos::RCP<TransportSourceFunction> > srcs;  // Source or sink for components
-  std::vector<TransportBoundaryFunction*> bcs;  // influx BC for components
+  std::vector<Teuchos::RCP<TransportSourceFunction> > srcs_;  // Source or sink for components
+  std::vector<Teuchos::RCP<TransportBoundaryFunction> > bcs_;  // BC for concentration
   double bc_scaling;
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 

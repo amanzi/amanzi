@@ -31,17 +31,16 @@ namespace Transport {
 
 class TransportBoundaryFunction_Alquimia : public TransportBoundaryFunction {
  public:
-  TransportBoundaryFunction_Alquimia(const std::vector<double>& times,
-                                     const std::vector<std::string>& cond_names, 
-                                     const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
+  TransportBoundaryFunction_Alquimia(const Teuchos::ParameterList& plist,
+                                     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                      Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
                                      Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
   ~TransportBoundaryFunction_Alquimia();
   
-  void Compute(double time);
+  void Compute(double t_old, double t_new);
 
-  void Define(const std::vector<std::string> &regions);
-  void Define(std::string region);
+ private:
+  void Init_(const std::vector<std::string> &regions);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
