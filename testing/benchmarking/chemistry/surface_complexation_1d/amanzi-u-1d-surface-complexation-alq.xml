@@ -156,11 +156,11 @@
       <assigned_regions>All</assigned_regions>
 
       <surface_complexation>
-        <site density="1.908e-3" name="FeOH_s">
-          <complexes>FeOHZn+_s, FeOH2+_s, FeO-_s</complexes>
-        </site>
         <site density="7.6355e-2" name="FeOH_w">
           <complexes>FeOHZn+_w, FeO-_w, FeOH2+_w</complexes>
+        </site>
+        <site density="1.908e-3" name="FeOH_s">
+          <complexes>FeOHZn+_s, FeOH2+_s, FeO-_s</complexes>
         </site>
       </surface_complexation>
     </material>
