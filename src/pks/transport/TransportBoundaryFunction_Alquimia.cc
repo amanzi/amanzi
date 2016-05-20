@@ -61,7 +61,7 @@ TransportBoundaryFunction_Alquimia::~TransportBoundaryFunction_Alquimia()
 /* ******************************************************************
 * Internal subroutine that defines a boundary function.
 ****************************************************************** */
-void TransportBoundaryFunction_Alquimia::Init_(const std::vector<std::string> &regions)
+void TransportBoundaryFunction_Alquimia::Init_(const std::vector<std::string>& regions)
 {
   for (int i = 0; i < regions.size(); ++i) {
     // Get the faces that belong to this region (since boundary conditions
@@ -78,7 +78,7 @@ void TransportBoundaryFunction_Alquimia::Init_(const std::vector<std::string> &r
       value_[f] = WhetStone::DenseVector(chem_engine_->NumPrimarySpecies());
 
       AmanziMesh::Entity_ID_List cells_for_face;
-      mesh_->face_get_cells(face_indices[f], AmanziMesh::OWNED, &cells_for_face);
+      mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells_for_face);
 
       cell_for_face_[f] = cells_for_face[0];
     }
