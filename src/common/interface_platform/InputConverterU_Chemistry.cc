@@ -255,7 +255,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
        
         sorption_sites.clear();
 
-        Teuchos::ParameterList& complexation = ic_list.sublist("surface_complexation");
+        Teuchos::ParameterList& complexation = ic_list.sublist("sorption_sites");
         Teuchos::ParameterList& tmp_list = complexation.sublist("function")
             .sublist(site_str.str())
             .set<Teuchos::Array<std::string> >("regions", regions)
