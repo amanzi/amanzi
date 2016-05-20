@@ -587,7 +587,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   double time = S_->intermediate_time();
   if (time >= 0.0) { 
     t_physics_ = time;
-    dt_shift = S_->initial_time() - time;
+    dt_shift = time - S_->initial_time();
     dt_global = S_->final_time() - S_->initial_time();
   }
 
