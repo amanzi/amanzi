@@ -112,6 +112,9 @@ class InputConverterU : public InputConverter {
 
   // -- backward compatibility
   void TranslateTransportBCsAmanziGeochemistry_(Teuchos::ParameterList& out_list);
+  void TranslateStateICsAmanziGeochemistry_(Teuchos::ParameterList& out_list,
+                                            std::string& constraint,
+                                            std::vector<std::string>& regions);
 
   // -- chemistry and energy
   Teuchos::ParameterList TranslateChemistry_();
