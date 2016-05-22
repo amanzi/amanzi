@@ -506,6 +506,11 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
     Teuchos::ParameterList& out_list, std::string& constraint,
     std::vector<std::string>& regions)
 {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Compatibility mode: translating ICs for native chemistry" << std::endl;
+  }
+
   bool flag;
   DOMNode* node;
   DOMElement* element;
@@ -518,6 +523,12 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
     std::string name;
     element = GetUniqueChildByAttribute_(node, "name", constraint, flag, true);
     std::vector<DOMNode*> children = GetSameChildNodes_(element, name, flag);
+    if (children.size() != phases_["water"].size()) {
+      Errors::Message msg;
+      msg << "Constraint \"" << constraint << "\" is not backward compatible: "
+          << " check the number of components.";
+      Exceptions::amanzi_throw(msg);
+    }
 
     Teuchos::ParameterList& ic_list = out_list.sublist("total_component_concentration")
         .sublist("function").sublist("All");
@@ -532,7 +543,7 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
     for (int i = 0; i < children.size(); ++i) {
       element = static_cast<DOMElement*>(children[i]);
       std::string species = GetAttributeValueS_(element, "name");
-      double val = GetAttributeValueD_(element, "value");
+      double val = GetAttributeValueD_(element, "value", TYPE_NUMERICAL);
 
       // find position of species in the list of component names
       int k(-1);

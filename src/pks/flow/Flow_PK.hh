@@ -152,8 +152,6 @@ class Flow_PK : public PK_PhysicalBDF {
   std::vector<Teuchos::RCP<FlowBoundaryFunction> > bc_seepage_; 
   int nseepage_prev;
 
-  std::vector<int> bc_model_; 
-  std::vector<double> bc_value_, bc_mixed_;
   Teuchos::RCP<Operators::BCs> op_bc_;
 
   // water balance
@@ -164,8 +162,11 @@ class Flow_PK : public PK_PhysicalBDF {
   Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_, pressure_matrix_eval_;
 
- // protected:
   Teuchos::RCP<VerboseObject> vo_;
+
+ private:
+  std::vector<int> bc_model_; 
+  std::vector<double> bc_value_, bc_mixed_;
 };
 
 }  // namespace Flow
