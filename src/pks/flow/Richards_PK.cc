@@ -370,7 +370,6 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Initialize BCs and source terms.
   InitializeBCsSources_(*rp_list_);
-  op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // relative permeability
   // -- create basic fields, factories and control variables

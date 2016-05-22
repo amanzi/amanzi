@@ -97,6 +97,9 @@ void Richards_PK::SolveFullySaturatedProblem(
 ****************************************************************** */
 void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector> u)
 {
+  std::vector<int>& bc_model = op_bc_->bc_model();
+  std::vector<double>& bc_value = op_bc_->bc_value();
+
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
 
   UpdateSourceBoundaryData(t_new, t_new, *u);
@@ -111,13 +114,13 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
 
   relperm_->Compute(u, krel_);
   RelPermUpwindFn func1 = &RelPerm::Compute;
-  upwind_->Compute(*darcy_flux_copy, *u, bc_model, bc_value, *krel_, *krel_, func1);
+  upwind_->Compute(*darcy_flux_copy, *u, bc_model, bc_value, *krel_, func1);
   Operators::CellToFace_ScaleInverse(mu, krel_);
   krel_->ScaleMasterAndGhosted(molar_rho_);
 
   relperm_->ComputeDerivative(u, dKdP_);
   RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
-  upwind_->Compute(*darcy_flux_copy, *u, bc_model, bc_value, *dKdP_, *dKdP_, func2);
+  upwind_->Compute(*darcy_flux_copy, *u, bc_model, bc_value, *dKdP_, func2);
   Operators::CellToFace_ScaleInverse(mu, dKdP_);
   dKdP_->ScaleMasterAndGhosted(molar_rho_);
 
@@ -176,6 +179,9 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
 ****************************************************************** */
 void Richards_PK::UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u)
 {
+  std::vector<int>& bc_model = op_bc_->bc_model();
+  std::vector<double>& bc_value = op_bc_->bc_value();
+
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
   const Epetra_MultiVector& mu_cell = *mu->ViewComponent("cell");
 
@@ -212,6 +218,9 @@ void Richards_PK::UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u)
 ****************************************************************** */
 void Richards_PK::UpwindInflowBoundary_New(Teuchos::RCP<const CompositeVector> u)
 {
+  std::vector<int>& bc_model = op_bc_->bc_model();
+  std::vector<double>& bc_value = op_bc_->bc_value();
+
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
   const Epetra_MultiVector& mu_cell = *mu->ViewComponent("cell");
 

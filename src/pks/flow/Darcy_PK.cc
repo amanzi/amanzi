@@ -241,7 +241,6 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Initialize BCs and source terms.
   InitializeBCsSources_(*dp_list_);
-  op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // Create solution and auxiliary data for time history.
   solution = S->GetFieldData("pressure", passwd_);

@@ -34,6 +34,10 @@ void Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
   const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
   const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
 
+  std::vector<int>& bc_model = op_bc_->bc_model();
+  std::vector<double>& bc_value = op_bc_->bc_value();
+  std::vector<double>& bc_mixed = op_bc_->bc_mixed();
+
   for (int i = 0; i < bc_seepage_.size(); ++i) {
     if (bc_seepage_[i]->seepage_model() == "PFloTran") {
       double ref_pressure = bc_seepage_[i]->ref_pressure();
@@ -86,6 +90,10 @@ void Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
 void Flow_PK::SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* area_seepage)
 {
   const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
+
+  std::vector<int>& bc_model = op_bc_->bc_model();
+  std::vector<double>& bc_value = op_bc_->bc_value();
+  std::vector<double>& bc_mixed = op_bc_->bc_mixed();
 
   *nseepage = 0;
   *area_seepage = 0.0;

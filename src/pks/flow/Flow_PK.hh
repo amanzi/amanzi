@@ -24,6 +24,7 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
+#include "BCs.hh"
 #include "BDFFnBase.hh"
 #include "checkpoint.hh"
 #include "CompositeVectorSpace.hh"
@@ -151,8 +152,9 @@ class Flow_PK : public PK_PhysicalBDF {
   std::vector<Teuchos::RCP<FlowBoundaryFunction> > bc_seepage_; 
   int nseepage_prev;
 
-  std::vector<int> bc_model; 
-  std::vector<double> bc_value, bc_mixed;
+  std::vector<int> bc_model_; 
+  std::vector<double> bc_value_, bc_mixed_;
+  Teuchos::RCP<Operators::BCs> op_bc_;
 
   // water balance
   std::vector<Teuchos::RCP<PK_DomainFunction> > srcs;

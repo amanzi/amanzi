@@ -111,6 +111,7 @@ void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
   const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
   const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
 
+  std::vector<int>& bc_model = op_bc_->bc_model();
   double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho_ * dt_;
 
   double mass_amanzi = 0.0;
@@ -177,6 +178,9 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
 ******************************************************************* */
 void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
 {
+  std::vector<int>& bc_model = op_bc_->bc_model();
+  std::vector<double>& bc_value = op_bc_->bc_value();
+
   double hmin(1.4e+9), hmax(-1.4e+9);  // diameter of the Sun
   double rho_g = rho_ * fabs(gravity_[dim - 1]);
   for (int f = 0; f < nfaces_owned; f++) {

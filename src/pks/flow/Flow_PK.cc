@@ -259,9 +259,10 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 
   // Create the BC objects
   // -- memory
-  bc_model.resize(nfaces_wghost, 0);
-  bc_value.resize(nfaces_wghost, 0.0);
-  bc_mixed.resize(nfaces_wghost, 0.0);
+  bc_model_.resize(nfaces_wghost, 0);
+  bc_value_.resize(nfaces_wghost, 0.0);
+  bc_mixed_.resize(nfaces_wghost, 0.0);
+  op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_, bc_mixed_));
 
   Teuchos::RCP<Teuchos::ParameterList>
       bc_list = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("boundary conditions", true)));
@@ -353,7 +354,11 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 void Flow_PK::ComputeBCs(const CompositeVector& u)
 {
   const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
-  
+
+  std::vector<int>& bc_model = op_bc_->bc_model();
+  std::vector<double>& bc_value = op_bc_->bc_value();
+  std::vector<double>& bc_mixed = op_bc_->bc_mixed();
+
   for (int n = 0; n < bc_model.size(); n++) {
     bc_model[n] = Operators::OPERATOR_BC_NONE;
     bc_value[n] = 0.0;
