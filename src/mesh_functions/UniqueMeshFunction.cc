@@ -9,7 +9,8 @@
   Author: Ethan Coon
 
   Function applied to a mesh component with at most one function
-  application per entity.
+  application per entity. Domains of functions in different specs
+  should not overlap.
 */
 
 #include "errors.hh"
@@ -21,8 +22,8 @@ namespace Functions {
 
 // Overload the AddSpec method to check uniqueness.
 void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
-  // Ensure uniqueness of the spec and create the set of IDs contained in the
-  // Domain of the spec.
+  // Ensure uniqueness of the spec and create the set of IDs contained in 
+  // the domain of the spec.
   
   Teuchos::RCP<Domain> domain = spec->first;
   AmanziMesh::Entity_kind kind = domain->second;
@@ -53,11 +54,12 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
     unique_specs_[kind] = other_specs;
   } else {
     for (UniqueSpecList::const_iterator uspec = other_specs->begin();
-         uspec!=other_specs->end(); ++uspec) {
+         uspec != other_specs->end(); ++uspec) {
 
       MeshIDs overlap;
       MeshIDs::iterator overlap_end;
       const MeshIDs& prev_spec_ids = *(*uspec)->second;
+
       std::set_intersection(prev_spec_ids.begin(), prev_spec_ids.end(),
                             this_spec_ids->begin(), this_spec_ids->end(),
                             std::inserter(overlap, overlap.end()));
@@ -68,7 +70,8 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
       }
     }
   }
-  // If we've gotten this far, things are OK.  Add the spec to the lists.
+
+  // If we've gotten this far, things are OK. Add the spec to the lists.
   spec_list_.push_back(spec);
   other_specs->push_back(Teuchos::rcp(new UniqueSpec(spec, this_spec_ids)));
 };

@@ -110,6 +110,12 @@ class InputConverterU : public InputConverter {
       std::string& srcname, std::vector<std::string>& regions,
       xercesc::DOMNodeList* solutes, xercesc::DOMNode* phase_l, Teuchos::ParameterList& out_list);
 
+  // -- backward compatibility
+  void TranslateTransportBCsAmanziGeochemistry_(Teuchos::ParameterList& out_list);
+  void TranslateStateICsAmanziGeochemistry_(Teuchos::ParameterList& out_list,
+                                            std::string& constraint,
+                                            std::vector<std::string>& regions);
+
   // -- chemistry and energy
   Teuchos::ParameterList TranslateChemistry_();
   Teuchos::ParameterList TranslateEnergy_();

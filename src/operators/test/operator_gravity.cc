@@ -115,7 +115,7 @@ void RunTestGravity(std::string op_list_name) {
 
   knc->UpdateValues(*flux);  // argument is not used
   ModelUpwindFn func = &HeatConduction::Conduction;
-  upwind.Compute(*flux, u, bc_model, bc_value, *knc->values(), *knc->values(), func);
+  upwind.Compute(*flux, u, bc_model, bc_value, *knc->values(), func);
 
   // create first diffusion operator using constant density
   Operators::OperatorDiffusionFactory opfactory;

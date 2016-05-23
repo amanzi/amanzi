@@ -32,11 +32,11 @@ TEST(factory_test) {
 
   list.set("number of dofs", 2);
 
-  Teuchos::ParameterList &sublist1 = list.sublist("DoF 1 Function");
+  Teuchos::ParameterList &sublist1 = list.sublist("dof 1 function");
   Teuchos::ParameterList &sublist1A = sublist1.sublist("function-constant");
   sublist1A.set("value", 1.0);
 
-  Teuchos::ParameterList &sublist2 = list.sublist("DoF 2 Function");
+  Teuchos::ParameterList &sublist2 = list.sublist("dof 2 function");
   Teuchos::ParameterList &sublist2A = sublist2.sublist("function-constant");
   sublist2A.set("value", 2.0);
 

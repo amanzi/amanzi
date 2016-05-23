@@ -316,8 +316,8 @@ void HeatConduction::UpdateValues(const CompositeVector& u)
     dkdT_c[0][c] = ConductionDerivative(c, u);
   }
 
-  upwind_->Compute(*flux_, u, bc_model, bc_value, *k, *k, &HeatConduction::Conduction);
-  upwind_->Compute(*flux_, u, bc_model, bc_value, *dkdT, *dkdT, &HeatConduction::ConductionDerivative);
+  upwind_->Compute(*flux_, u, bc_model, bc_value, *k, &HeatConduction::Conduction);
+  upwind_->Compute(*flux_, u, bc_model, bc_value, *dkdT, &HeatConduction::ConductionDerivative);
 }
 
 }  // namespace Amanzi

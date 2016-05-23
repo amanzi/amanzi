@@ -88,7 +88,7 @@
     <Parameter name="minerals" type="Array(string)" value="{Kaolinite, Quartz, (UO2)3(PO4)2.4H2O}"/>
     <Parameter name="sorption sites" type="Array(string)" value="{>FeOH, >AlOH, >SiOH}"/>
 
-    <ParameterList name="Thermodynamic Database">
+    <ParameterList name="thermodynamic database">
       <Parameter name="format" type="string" value="simple"/>
       <Parameter name="file" type="string" value="test/chemistry_amanzi_pk.bgd"/>
     </ParameterList>
@@ -191,12 +191,12 @@
             <ParameterList name="function">
               <Parameter name="number of dofs" type="int" value="2"/>
               <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
+              <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.94000000000000006e-13"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 2 Function">
+              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.94000000000000006e-13"/>
                 </ParameterList>
@@ -228,27 +228,27 @@
             <ParameterList name="function">
               <Parameter name="number of dofs" type="int" value="5"/>
               <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
+              <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="4.36475999999999975e-16"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 2 Function">
+              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="3.16771999999999973e-08"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 3 Function">
+              <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="9.99999999999999955e-07"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 4 Function">
+              <ParameterList name="dof 4 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.86999999999999992e-04"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 5 Function">
+              <ParameterList name="dof 5 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.84374000000000001e-20"/>
                 </ParameterList>
@@ -266,17 +266,17 @@
             <ParameterList name="function">
               <Parameter name="number of dofs" type="int" value="3"/>
               <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
+              <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="5.000e-02"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 2 Function">
+              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.000e-01"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 3 Function">
+              <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="7.50e-01"/>
                 </ParameterList>
@@ -294,17 +294,17 @@
             <ParameterList name="function">
               <Parameter name="number of dofs" type="int" value="3"/>
               <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
+              <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.00000000000000010e-04"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 2 Function">
+              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.00000000000000005e-04"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 3 Function">
+              <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.99999999999999989e-01"/>
                 </ParameterList>
@@ -322,17 +322,17 @@
             <ParameterList name="function">
               <Parameter name="number of dofs" type="int" value="3"/>
               <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
+              <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="5.36000000000000018e-03"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 2 Function">
+              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="6.36000000000000020e-03"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 3 Function">
+              <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="4.36000000000000016e-03"/>
                 </ParameterList>
@@ -350,27 +350,27 @@
             <ParameterList name="function">
               <Parameter name="number of dofs" type="int" value="5"/>
               <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
+              <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="9.99999999999999979e-17"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 2 Function">
+              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="9.99999999999999979e-17"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 3 Function">
+              <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="9.99999999999999979e-17"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 4 Function">
+              <ParameterList name="dof 4 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="9.99999999999999979e-17"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 5 Function">
+              <ParameterList name="dof 5 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="9.99999999999999979e-17"/>
                 </ParameterList>

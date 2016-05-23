@@ -128,7 +128,7 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
 
   knc->UpdateValues(*flux);  // argument is not used
   ModelUpwindFn func = &HeatConduction::Conduction;
-  upwind.Compute(*flux, solution, bc_model, bc_value, *knc->values(), *knc->values(), func);
+  upwind.Compute(*flux, solution, bc_model, bc_value, *knc->values(), func);
 
   if (upwind_list == "upwind second-order") knc->UpdateValuesPostUpwind();
 
@@ -295,7 +295,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   knc->UpdateValues(*flux);  // argument is not used
   ModelUpwindFn func = &HeatConduction::Conduction;
-  upwind.Compute(*flux, solution, bc_model, bc_value, *knc->values(), *knc->values(), func);
+  upwind.Compute(*flux, solution, bc_model, bc_value, *knc->values(), func);
 
   // create source 
   CompositeVector source(cvs);

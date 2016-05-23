@@ -192,10 +192,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .sublist("function");
         aux_list.set<int>("number of dofs", dim_)
             .set<std::string>("function type", "composite function");
-        aux_list.sublist("DoF 1 Function").sublist("function-constant").set<double>("value", kx);
-        aux_list.sublist("DoF 2 Function").sublist("function-constant").set<double>("value", ky);
+        aux_list.sublist("dof 1 function").sublist("function-constant").set<double>("value", kx);
+        aux_list.sublist("dof 2 function").sublist("function-constant").set<double>("value", ky);
         if (dim_ == 3) {
-          aux_list.sublist("DoF 3 Function").sublist("function-constant").set<double>("value", kz);
+          aux_list.sublist("dof 3 function").sublist("function-constant").set<double>("value", kz);
         } else {
           kz = 0.0;
         }
@@ -355,7 +355,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
         for (int k = 0; k != dim_; ++k) {
           std::stringstream dof_str;
-          dof_str << "DoF " << k+1 << " Function";
+          dof_str << "dof " << k+1 << " function";
           tmp_list.sublist(dof_str.str()).sublist("function-constant")
                                          .set<double>("value", velocity[k]);
         }
@@ -393,7 +393,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         for (int k = 0; k < ncomp_l; k++) {
           std::string name = phases_["water"][k];
           std::stringstream dof_str;
-          dof_str << "DoF " << k + 1 << " Function";
+          dof_str << "dof " << k + 1 << " function";
           dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", vals[k]);
         }
       }
@@ -420,7 +420,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         for (int k = 0; k < ncomp_g; k++) {
           std::string name = phases_["air"][k];
           std::stringstream dof_str;
-          dof_str << "DoF " << ncomp_l + k + 1 << " Function";
+          dof_str << "dof " << ncomp_l + k + 1 << " function";
           dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", vals[k]);
         }
       }
@@ -445,6 +445,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
         out_ic.sublist("geochemical conditions").sublist(name)
             .set<Teuchos::Array<std::string> >("regions", regions);
+
+        TranslateStateICsAmanziGeochemistry_(out_ic, name, regions);
       }
     }
   }
@@ -493,6 +495,71 @@ Teuchos::ParameterList InputConverterU::TranslateMaterialsPartition_()
   tmp_list.set<Teuchos::Array<std::string> >("region list", regions);
   
   return out_list;
+}
+
+
+/* ******************************************************************
+* Create initialization list for concentration. This routine is called
+* when geochemistry list exists for initial conditions.
+****************************************************************** */
+void InputConverterU::TranslateStateICsAmanziGeochemistry_(
+    Teuchos::ParameterList& out_list, std::string& constraint,
+    std::vector<std::string>& regions)
+{
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Compatibility mode: translating ICs for native chemistry" << std::endl;
+  }
+
+  bool flag;
+  DOMNode* node;
+  DOMElement* element;
+
+  node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
+  std::string engine = GetAttributeValueS_(static_cast<DOMElement*>(node), "engine");
+
+  node = GetUniqueElementByTagsString_("geochemistry, constraints", flag);
+  if (flag && engine == "amanzi") {
+    std::string name;
+    element = GetUniqueChildByAttribute_(node, "name", constraint, flag, true);
+    std::vector<DOMNode*> children = GetSameChildNodes_(element, name, flag);
+    if (children.size() != phases_["water"].size()) {
+      Errors::Message msg;
+      msg << "Constraint \"" << constraint << "\" is not backward compatible: "
+          << " check the number of components.";
+      Exceptions::amanzi_throw(msg);
+    }
+
+    Teuchos::ParameterList& ic_list = out_list.sublist("total_component_concentration")
+        .sublist("function").sublist("All");
+
+    ic_list.set<Teuchos::Array<std::string> >("regions", regions)
+        .set<std::string>("component", "cell");
+
+    Teuchos::ParameterList& tmp_list = ic_list.sublist("function")
+        .set<int>("number of dofs", children.size())
+        .set<std::string>("function type", "composite function");
+
+    for (int i = 0; i < children.size(); ++i) {
+      element = static_cast<DOMElement*>(children[i]);
+      std::string species = GetAttributeValueS_(element, "name");
+      double val = GetAttributeValueD_(element, "value", TYPE_NUMERICAL);
+
+      // find position of species in the list of component names
+      int k(-1);
+      for (int n = 0; n < comp_names_all_.size(); ++n) {
+        if (comp_names_all_[n] == species) {
+          k = n;
+          break;
+        }
+      }
+
+      std::stringstream dof_str;
+      dof_str << "dof " << k+1 << " function";
+      tmp_list.sublist(dof_str.str()).sublist("function-constant")
+                                     .set<double>("value", val);
+    }
+  }
 }
 
 }  // namespace AmanziInput

@@ -36,6 +36,8 @@
 
 #include "MultiscaleTransportPorosityFactory.hh"
 #include "Transport_PK.hh"
+#include "TransportBoundaryFunction.hh"
+#include "TransportBoundaryFunction_Alquimia.hh"
 
 namespace Amanzi {
 namespace Transport {
@@ -120,12 +122,7 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 ****************************************************************** */
 Transport_PK::~Transport_PK()
 { 
-  if (vo_ != Teuchos::null) {
-    vo_ = Teuchos::null;
-  }
-  for (int i = 0; i < bcs.size(); i++) {
-    if (bcs[i] != NULL) delete bcs[i]; 
-  }
+  if (vo_ != Teuchos::null) vo_ = Teuchos::null;
 }
 
 
@@ -324,17 +321,70 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
     if (flag_dispersion_) CalculateAxiSymmetryDirection();
   }
 
-  // boundary conditions initialization
+  // create boundary conditions
+  if (tp_list_->isSublist("boundary conditions")) {
+    // -- try tracer-type conditions
+    PK_DomainFunctionFactory<TransportBoundaryFunction> factory(mesh_);
+    Teuchos::ParameterList& clist = tp_list_->sublist("boundary conditions").sublist("concentration");
+
+    for (Teuchos::ParameterList::ConstIterator it = clist.begin(); it != clist.end(); ++it) {
+      std::string name = it->first;
+      if (clist.isSublist(name)) {
+        Teuchos::ParameterList& bc_list = clist.sublist(name);
+        for (Teuchos::ParameterList::ConstIterator it1 = bc_list.begin(); it1 != bc_list.end(); ++it1) {
+          std::string specname = it1->first;
+          Teuchos::ParameterList& spec = bc_list.sublist(specname);
+          Teuchos::RCP<TransportBoundaryFunction> 
+              bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
+
+          std::vector<int>& tcc_index = bc->tcc_index();
+          std::vector<std::string>& tcc_names = bc->tcc_names();
+
+          tcc_names.push_back(name);
+          tcc_index.push_back(FindComponentNumber(name));
+
+          bcs_.push_back(bc);
+        }
+      }
+    }
+#ifdef ALQUIMIA_ENABLED
+    // -- try geochemical conditions
+    Teuchos::ParameterList& glist = tp_list_->sublist("boundary conditions").sublist("geochemical conditions");
+
+    for (Teuchos::ParameterList::ConstIterator it = glist.begin(); it != glist.end(); ++it) {
+      std::string specname = it->first;
+      Teuchos::ParameterList& spec = glist.sublist(specname);
+
+      Teuchos::RCP<TransportBoundaryFunction_Alquimia> 
+          bc = Teuchos::rcp(new TransportBoundaryFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
+
+      std::vector<int>& tcc_index = bc->tcc_index();
+      std::vector<std::string>& tcc_names = bc->tcc_names();
+
+      for (int i = 0; i < tcc_names.size(); i++) {
+        tcc_index.push_back(FindComponentNumber(tcc_names[i]));
+      }
+
+      bcs_.push_back(bc);
+    }
+#endif
+  } else {
+    if (vo_->getVerbLevel() > Teuchos::VERB_NONE) {
+      *vo_->os() << vo_->color("yellow") << "No BCs were specified." << vo_->reset() << std::endl;
+    }
+  }
+
+  // -- initialization
   time = t_physics_;
-  for (int i = 0; i < bcs.size(); i++) {
-    bcs[i]->Compute(time);
+  for (int i = 0; i < bcs_.size(); i++) {
+    bcs_[i]->Compute(time, time);
   }
 
   VV_CheckInfluxBC();
 
   // source term initialization: so far only "concentration" is available.
   if (tp_list_->isSublist("source terms")) {
-    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
+    PK_DomainFunctionFactory<TransportSourceFunction> factory(mesh_);
     PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
 
     Teuchos::ParameterList& clist = tp_list_->sublist("source terms").sublist("concentration");
@@ -345,10 +395,10 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
         for (Teuchos::ParameterList::ConstIterator it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
           std::string specname = it1->first;
           Teuchos::ParameterList& spec = src_list.sublist(specname);
-          Teuchos::RCP<TransportDomainFunction> src = factory.Create(spec, Kxy);
+          Teuchos::RCP<TransportSourceFunction> src = factory.Create(spec, "sink", AmanziMesh::CELL, Kxy);
           src->set_tcc_name(name);
           src->set_tcc_index(FindComponentNumber(name));
-          srcs.push_back(src);
+          srcs_.push_back(src);
         }
       }
     }
@@ -537,7 +587,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   double time = S_->intermediate_time();
   if (time >= 0.0) { 
     t_physics_ = time;
-    dt_shift = S_->initial_time() - time;
+    dt_shift = time - S_->initial_time();
     dt_global = S_->final_time() - S_->initial_time();
   }
 
@@ -561,7 +611,9 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   while (dt_sum < dt_MPC) {
     // update boundary conditions
     time = t_physics_ + dt_cycle / 2;
-    for (int i = 0; i < bcs.size(); i++) bcs[i]->Compute(time);
+    for (int i = 0; i < bcs_.size(); i++) {
+      bcs_[i]->Compute(time, time);
+    }
     
     double dt_try = dt_MPC - dt_sum;
     double tol = 1e-14 * (dt_try + dt_original); 
@@ -957,23 +1009,21 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
   }
 
   // loop over exterior boundary sets
-  for (int m = 0; m < bcs.size(); m++) {
-    std::vector<int>& tcc_index = bcs[m]->tcc_index();
-    std::vector<int>& faces = bcs[m]->faces();
-    std::vector<std::vector<double> >& values = bcs[m]->values();
-
+  for (int m = 0; m < bcs_.size(); m++) {
+    std::vector<int>& tcc_index = bcs_[m]->tcc_index();
     int ncomp = tcc_index.size();
-    int nbfaces = faces.size();
-    for (int n = 0; n < nbfaces; n++) {
-      int f = faces[n];
-      int c2 = (*downwind_cell_)[f];
 
+    for (TransportBoundaryFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+      int f = it->first;
+      WhetStone::DenseVector& values = it->second;
+
+      int c2 = (*downwind_cell_)[f];
       if (c2 >= 0) {
         double u = fabs((*darcy_flux)[0][f]);
         for (int i = 0; i < ncomp; i++) {
           int k = tcc_index[i];
           if (k < num_advect) {
-            tcc_flux = dt_ * u * values[n][i];
+            tcc_flux = dt_ * u * values(i);
             tcc_next[k][c2] += tcc_flux;
           }
         }
@@ -982,7 +1032,7 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
   }
 
   // process external sources
-  if (srcs.size() != 0) {
+  if (srcs_.size() != 0) {
     double time = t_physics_;
     ComputeAddSourceTerms(time, dt_, tcc_next, 0, num_advect - 1);
   }
@@ -1168,23 +1218,23 @@ void Transport_PK::ComputeAddSourceTerms(double tp, double dtp,
                                          Epetra_MultiVector& tcc, int n0, int n1)
 {
   int num_vectors = tcc.NumVectors();
-  int nsrcs = srcs.size();
+  int nsrcs = srcs_.size();
 
   for (int m = 0; m < nsrcs; m++) {
-    int i = srcs[m]->tcc_index();
+    int i = srcs_[m]->tcc_index();
     if (i < n0 || i > n1) continue;
 
     int imap = i;
     if (num_vectors == 1) imap = 0;
 
     double t0 = tp - dtp;
-    srcs[m]->Compute(t0, tp); 
+    srcs_[m]->Compute(t0, tp); 
 
-    for (TransportDomainFunction::Iterator it = srcs[m]->begin(); it != srcs[m]->end(); ++it) {
+    for (TransportSourceFunction::Iterator it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
       int c = it->first;
       double value = mesh_->cell_volume(c) * it->second;
 
-      if (srcs[m]->name() == "volume" || srcs[m]->name() == "weight")
+      if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "weight")
           value *= units_.concentration_factor();
 
       tcc[imap][c] += dtp * value;
@@ -1214,21 +1264,19 @@ bool Transport_PK::PopulateBoundaryData(
     if (cells.size() == 1) bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
   }
 
-  for (int m = 0; m < bcs.size(); m++) {
-    std::vector<int>& tcc_index = bcs[m]->tcc_index();
-    std::vector<int>& faces = bcs[m]->faces();
-    std::vector<std::vector<double> >& values = bcs[m]->values();
-
+  for (int m = 0; m < bcs_.size(); m++) {
+    std::vector<int>& tcc_index = bcs_[m]->tcc_index();
     int ncomp = tcc_index.size();
-    int nbfaces = faces.size();
-    for (int n = 0; n < nbfaces; n++) {
-      int f = faces[n];
+
+    for (TransportBoundaryFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+      int f = it->first;
+      WhetStone::DenseVector& values = it->second;
 
       for (int i = 0; i < ncomp; i++) {
         int k = tcc_index[i];
         if (k == component) {
           bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-          bc_value[f] = values[n][i];
+          bc_value[f] = values(i);
           flag = true;
         }
       }

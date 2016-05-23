@@ -1,5 +1,5 @@
 /*
-  This is the input component of the Amanzi code. 
+  Input Converter
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -62,13 +62,14 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
     if (flag) {
       element = static_cast<DOMElement*>(node);
-      bgdfilename = GetAttributeValueS_(element, "input_filename");
-      format = GetAttributeValueS_(element, "format", TYPE_NONE, false, format);
-    } else {
+      bgdfilename = GetAttributeValueS_(element, "input_filename", TYPE_NONE, false, "");
+      if (bgdfilename == "") {
         bgdfilename = CreateBGDFile(xmlfilename_);
+      }
+      format = GetAttributeValueS_(element, "format", TYPE_NONE, false, format);
     }
 
-    Teuchos::ParameterList& bgd_list = out_list.sublist("Thermodynamic Database");
+    Teuchos::ParameterList& bgd_list = out_list.sublist("thermodynamic database");
     bgd_list.set<std::string>("file", bgdfilename);
     bgd_list.set<std::string>("format", format);
 
@@ -162,7 +163,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
         for (int j = 0; j < minerals.size(); ++j) {
           std::stringstream ss;
-          ss << "DoF " << j + 1 << " Function";
+          ss << "dof " << j + 1 << " function";
  
           node = GetUniqueElementByTagsString_(inode, "minerals", flag);
           double mvf(0.0), msa(0.0);
@@ -228,7 +229,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
           }
 
           std::stringstream ss;
-          ss << "DoF " << j + 1 << " Function";
+          ss << "dof " << j + 1 << " function";
 
           double val = (!flag) ? 0.0 : GetAttributeValueD_(element, "kd", TYPE_NUMERICAL, false, 0.0);
           aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", val);
@@ -245,19 +246,34 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     // surface complexation
     node = GetUniqueElementByTagsString_(inode, "surface_complexation", flag);
     if (flag) {
-      // sorption_sites.push_back("siteA");  // no translation rules so far
-      Teuchos::ParameterList& complexation = ic_list.sublist("surface_complexation");
+      std::string name;
+      std::vector<DOMNode*> sites = GetSameChildNodes_(node, name, flag);
 
-      //double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "density");
-      DOMNode* dnode = GetUniqueElementByTagsString_(node, "density", flag);
-      double val = strtod(mm.transcode(dnode->getTextContent()), NULL);;
+      if (flag) {
+        std::stringstream site_str;
+        site_str << "MESH BLOCK " << i+1;
+       
+        sorption_sites.clear();
 
-      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
-        complexation.sublist("function").sublist(*it)
-            .set<std::string>("region", *it)
+        Teuchos::ParameterList& complexation = ic_list.sublist("sorption_sites");
+        Teuchos::ParameterList& tmp_list = complexation.sublist("function")
+            .sublist(site_str.str())
+            .set<Teuchos::Array<std::string> >("regions", regions)
             .set<std::string>("component", "cell")
-            .sublist("function").sublist("function-constant")
-            .set<double>("value", val);
+            .sublist("function")
+            .set<int>("number of dofs", sites.size())
+            .set<std::string>("function type", "composite function");
+
+        for (int k = 0; k < sites.size(); ++k) {
+          element = static_cast<DOMElement*>(sites[k]);
+          double val = GetAttributeValueD_(element, "density", TYPE_NUMERICAL);
+          sorption_sites.push_back(GetAttributeValueS_(element, "name", TYPE_NONE));
+
+          std::stringstream dof_str;
+          dof_str << "dof " << k+1 << " function";
+          tmp_list.sublist(dof_str.str()).sublist("function-constant")
+                                         .set<double>("value", val);
+        }
       }
     }
 
@@ -276,7 +292,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
           std::string solute_name = phases_["water"][j];
 
           std::stringstream ss;
-          ss << "DoF " << j + 1 << " Function";
+          ss << "dof " << j + 1 << " function";
 
           aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", 1e-9);
         }
@@ -425,6 +441,7 @@ std::string InputConverterU::CreateBGDFile(std::string& filename)
 
   return bgdfilename;
 }
+
 
 /* ******************************************************************
 * Adds kd values to a bgd file (using the first material).
@@ -604,13 +621,13 @@ std::string InputConverterU::CreateINFile(std::string& filename)
   //}
   node = GetUniqueElementByTagsString_("materials, material, surface_complexation", flag);
   if (flag) {
-    
     std::string name;
     std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
+    
     for (int i = 0; i < children.size(); ++i) {
       DOMNode* inode = children[i];
       element = static_cast<DOMElement*>(inode);
-      name = GetAttributeValueS_(element, "name");
+      name = GetAttributeValueS_(element, "name", TYPE_NONE);
       double density = GetAttributeValueD_(element, "density");
       complexes << "    SURFACE_COMPLEXATION_RXN\n";
       complexes << "      EQUILIBRIUM\n";

@@ -53,7 +53,7 @@ void ReactiveTransport_PK::Initialize(const Teuchos::Ptr<State>& S) {
   if (S->HasField("total_component_concentration")) {
     total_component_concentration_stor = 
        Teuchos::rcp(new Epetra_MultiVector(*S->GetFieldData("total_component_concentration")
-                                              ->ViewComponent("cell", true)));
+                                             ->ViewComponent("cell", true)));
     storage_created = true;
   }
 }

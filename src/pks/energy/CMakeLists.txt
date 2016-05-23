@@ -101,7 +101,6 @@ generate_evaluators_registration_header(
 set(energy_src_files Energy_PK.cc
                      EnergyOnePhase_PK.cc EnergyOnePhase_TI.cc
                      EnergyTwoPhase_PK.cc EnergyTwoPhase_TI.cc
-                     Energy_BC_Factory.cc
                      Energy_VandV.cc
                      IEM_Linear.cc
                      IEM_WaterVapor.cc 
@@ -127,11 +126,9 @@ add_amanzi_library(energy SOURCE ${energy_src_files}
 #
 set(flow_inc_files 
   Energy_PK.hh
-  EnergyBoundaryFunction.hh
   EnergyDefs.hh
   EnergyOnePhase_PK.hh
   EnergyTwoPhase_PK.hh
-  Energy_BC_Factory.hh
   pks_energy_registration.hh
   IEM.hh
   IEM_Linear.hh

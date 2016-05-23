@@ -1,5 +1,5 @@
 /*
-  This is the input component of the Amanzi code. 
+  Input Converter
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -408,15 +408,21 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
 
       // save in the XML files  
       Teuchos::ParameterList& tbc_list = out_list.sublist("geochemical conditions");
+      Teuchos::Array<std::string> solute_names;
       for (int i = 0; i < phases_["water"].size(); ++i) {
-        Teuchos::ParameterList& bc = tbc_list.sublist(phases_["water"][i]).sublist(bcname);
-        bc.set<Teuchos::Array<std::string> >("regions", regions);
-        bc.set<Teuchos::Array<double> >("times", times);
-        bc.set<Teuchos::Array<std::string> >("geochemical conditions", values);
-        bc.set<Teuchos::Array<std::string> >("time functions", forms);
+        solute_names.push_back(phases_["water"][i]);
       }
+      Teuchos::ParameterList& bc = tbc_list.sublist(bcname);
+      bc.set<Teuchos::Array<std::string> >("regions", regions);
+      bc.set<Teuchos::Array<std::string> >("solutes", solute_names);
+      bc.set<Teuchos::Array<double> >("times", times);
+      bc.set<Teuchos::Array<std::string> >("geochemical conditions", values);
+      bc.set<Teuchos::Array<std::string> >("time functions", forms);
     }
   }
+
+  // backward compatibility: translate constraints for native chemistry
+  TranslateTransportBCsAmanziGeochemistry_(out_list);
 
   return out_list;
 }
@@ -485,6 +491,59 @@ void InputConverterU::TranslateTransportBCsGroup_(
           .set<Teuchos::Array<double> >("y values", values)
           .set<Teuchos::Array<std::string> >("forms", forms);
     }
+  }
+}
+
+
+/* ******************************************************************
+* Create list of transport BCs for native chemistry.
+* Solutes may have only one element, see schema for details.
+****************************************************************** */
+void InputConverterU::TranslateTransportBCsAmanziGeochemistry_(
+    Teuchos::ParameterList& out_list)
+{
+  if (out_list.isSublist("geochemical conditions") &&
+      pk_model_["chemistry"] == "amanzi") {
+
+    bool flag;
+    std::string name, bc_name;
+    DOMNode* node;
+    DOMElement* element;
+
+    node = GetUniqueElementByTagsString_("geochemistry, constraints", flag);
+
+    Teuchos::ParameterList& bc_new = out_list.sublist("concentration");
+    Teuchos::ParameterList& bc_old = out_list.sublist("geochemical conditions");
+
+    for (Teuchos::ParameterList::ConstIterator it = bc_old.begin(); it != bc_old.end(); ++it) {
+      name = it->first;
+ 
+      Teuchos::ParameterList& bco = bc_old.sublist(name);
+      std::vector<std::string> solutes = bco.get<Teuchos::Array<std::string> >("solutes").toVector();
+
+      for (int n = 0; n < solutes.size(); ++n) {
+        Teuchos::ParameterList& bcn = bc_new.sublist(solutes[n]).sublist(name);
+        Teuchos::ParameterList& fnc = bcn.sublist("boundary concentration").sublist("function-tabular");
+
+        bcn.set("regions", bco.get<Teuchos::Array<std::string> >("regions"));
+        fnc.set("x values", bco.get<Teuchos::Array<double> >("times"));
+        fnc.set("forms", bco.get<Teuchos::Array<std::string> >("time functions"));
+      
+        // convert constraints to values
+        Teuchos::Array<double> values;
+        std::vector<std::string> constraints = 
+            bco.get<Teuchos::Array<std::string> >("geochemical conditions").toVector();
+
+        for (int i = 0; i < constraints.size(); ++i) {
+          element = GetUniqueChildByAttribute_(node, "name", constraints[i], flag, true);
+          element = GetUniqueChildByAttribute_(element, "name", solutes[n], flag, true);
+          values.push_back(GetAttributeValueD_(element, "value"));
+        }
+        fnc.set("y values", values);
+      }
+    }
+
+    out_list.remove("geochemical conditions");
   }
 }
 
@@ -575,6 +634,8 @@ void InputConverterU::TranslateTransportSourcesGroup_(
     char* text = mm.transcode(same_list[0]->getNodeName());
     if (strcmp(text, "volume_weighted") == 0) {
       weight = "volume";
+    } else if (srctype == "volume_weighted_nonmatching") {
+      weight = "volume fraction";
     } else if (strcmp(text, "perm_weighted") == 0) {
       weight = "permeability";
     } else if (strcmp(text, "uniform_conc") == 0) {

@@ -32,7 +32,7 @@ class DenseVector {
     data_ = NULL;
   }
 
-  DenseVector(int mrow) {
+  explicit DenseVector(int mrow) {
     m_ = mrow;
     data_ = new double[m_];
   }
@@ -45,9 +45,12 @@ class DenseVector {
 
   DenseVector(const DenseVector& B) {
     m_ = B.NumRows();
-    data_ = new double[m_];
-    const double* dataB = B.Values();
-    for (int i = 0; i < m_; i++) data_[i] = dataB[i];
+    data_ = NULL;
+    if (m_ > 0) {
+      data_ = new double[m_];
+      const double* dataB = B.Values();
+      for (int i = 0; i < m_; i++) data_[i] = dataB[i];
+    }
   }
 
   ~DenseVector() { if (data_ != NULL) { delete[] data_; } }
@@ -94,6 +97,26 @@ class DenseVector {
     double s = 0.0; 
     for (int i = 0; i < A.NumRows(); i++ ) s += A(i) * B(i);
     return s;
+  }
+
+  // -- scalar type behaviour
+  DenseVector& operator*=(double val) {
+    for (int i = 0; i < m_; ++i) data_[i] *= val;
+    return *this;
+  }
+
+  DenseVector& operator-=(double val) {
+    for (int i = 0; i < m_; ++i) data_[i] -= val;
+    return *this;
+  }
+
+  DenseVector& operator=(double val) {
+    if (data_ == NULL) {
+      m_ = 1;
+      data_ = new double[1];
+    }
+    for (int i = 0; i < m_; ++i) data_[i] = val;
+    return *this;
   }
 
   // access to private data

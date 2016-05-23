@@ -125,9 +125,19 @@ class DarcyProblem {
     Teuchos::ParameterList& bc_sublist = type_list.sublist(bc_x);
     bc_sublist.set("regions", regions);
 
-    Teuchos::ParameterList& bc_sublist_named = bc_sublist.sublist(func_list_name);
-    Teuchos::ParameterList& function_list = bc_sublist_named.sublist("function-constant");
-    function_list.set("value", value);
+    if (!strcmp(type, "static head")) {
+      Teuchos::ParameterList& bc_sublist_named = bc_sublist.sublist("static head")
+          .sublist("function-static-head")
+          .set("p0", 1.0).set("density", 2.0)
+          .set("gravity", 2.0).set("space dimension", 3)
+          .sublist(func_list_name);
+      Teuchos::ParameterList& function_list = bc_sublist_named.sublist("function-constant");
+      function_list.set("value", value);
+    } else {
+      Teuchos::ParameterList& bc_sublist_named = bc_sublist.sublist(func_list_name);
+      Teuchos::ParameterList& function_list = bc_sublist_named.sublist("function-constant");
+      function_list.set("value", value);
+    }
   }
 
   double calculatePressureCellError(double p0, AmanziGeometry::Point& pressure_gradient) {

@@ -42,7 +42,7 @@ class UpwindDivK : public Upwind<Model> {
 
   void Compute(const CompositeVector& flux, const CompositeVector& solution,
                const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-               const CompositeVector& field, CompositeVector& field_upwind,
+               CompositeVector& field,
                double (Model::*Value)(int, double) const);
 
  private:
@@ -75,20 +75,20 @@ template<class Model>
 void UpwindDivK<Model>::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-    const CompositeVector& field, CompositeVector& field_upwind,
+    CompositeVector& field,
     double (Model::*Value)(int, double) const)
 {
   ASSERT(field.HasComponent("cell"));
-  ASSERT(field_upwind.HasComponent(face_comp_));
+  ASSERT(field.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
   flux.ScatterMasterToGhosted("face");
 
   const Epetra_MultiVector& flx_face = *flux.ViewComponent("face", true);
-  const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
   const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
-  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent(face_comp_, true);
+  Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
+  Epetra_MultiVector& upw_face = *field.ViewComponent(face_comp_, true);
   upw_face.PutScalar(0.0);
 
   double flxmin, flxmax;

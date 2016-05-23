@@ -261,6 +261,8 @@ TEST(BOXREGION_VOFS_3D_INTERSECTION)
 {
   using namespace Amanzi::AmanziGeometry;
 
+  std::cout << "\nIntersection of a moving tet with the unit box\n\n";
+
   Point v1(3), vv(3);
   std::vector<Point> xyz1, xyz3;
   std::vector<std::vector<int> > faces1(4), faces3;
@@ -274,8 +276,8 @@ TEST(BOXREGION_VOFS_3D_INTERSECTION)
   xyz2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 1.0, 0.0)));
   xyz2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 0.0, 1.0)));
 
-  int n(0), sizes[6] = {4, 7, 7, 7, 6, 0};
-  for (double d = 0.0; d <= 1.01; d += 0.2) {
+  int n(0), sizes[7] = {4, 7, 7, 7, 6, 0, 0};
+  for (double d = 0.0; d <= 1.21; d += 0.2) {
     vv.set(d, d, d);
     std::cout << "\nShift: " << vv << std::endl;
     xyz1.clear();
@@ -320,6 +322,8 @@ TEST(BOXREGION_VOFS_3D_INTERSECTION)
 TEST(BOXREGION_VOFS_3D_VOLUME)
 {
   using namespace Amanzi::AmanziGeometry;
+
+  std::cout << "\nVolume of intersection of a moving tet with the unit box\n\n";
 
   Epetra_MpiComm ecomm(MPI_COMM_WORLD);
 
@@ -368,7 +372,7 @@ TEST(BOXREGION_VOFS_3D_VOLUME)
     faces[3].push_back(3);
 
     double volume = reg->intersect(xyz, faces);
-std::cout << "volume=" << volume << std::endl;
+    std::cout << "volume=" << volume << std::endl;
   }
 }
 

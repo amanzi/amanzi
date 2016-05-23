@@ -670,12 +670,12 @@ checkpoints of vis files. Default values are *true*.
            <ParameterList name="function">
              <Parameter name="number of dofs" type="int" value="2"/>
              <Parameter name="function type" type="string" value="composite function"/>
-             <ParameterList name="DoF 1 Function">
+             <ParameterList name="dof 1 function">
                <ParameterList name="function-constant">
                  <Parameter name="value" type="double" value="0.002"/>
                </ParameterList>
              </ParameterList>
-             <ParameterList name="DoF 2 Function">
+             <ParameterList name="dof 2 function">
                <ParameterList name="function-constant">
                  <Parameter name="value" type="double" value="0.001"/>
                </ParameterList>
@@ -812,12 +812,12 @@ The field *permeability* is the piecewise constant diagonal tensor.
             <ParameterList name="function">
               <Parameter name="function type" type="string" value="composite function"/>
               <Parameter name="number of dofs" type="int" value="2"/>
-              <ParameterList name="DoF 1 Function">
+              <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1e-12"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 2 Function">
+              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1e-13"/>
                 </ParameterList>
@@ -830,12 +830,12 @@ The field *permeability* is the piecewise constant diagonal tensor.
             <ParameterList name="function">
               <Parameter name="function type" type="string" value="composite function"/>
               <Parameter name="number of dofs" type="int" value="2"/>
-              <ParameterList name="DoF 1 Function">
+              <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2e-13"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 2 Function">
+              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2e-14"/>
                 </ParameterList>
@@ -1449,7 +1449,7 @@ This modification is referred to as a submodel and requires additional parameter
     discontinuous change of the boundary condition type from the infiltration to pressure. 
     The second option is described in the document on mathematical models. 
     It employs a smooth transition from the infiltration 
-    to mixed boundary condition. Default is `"PFloTran`".
+    to mixed boundary condition. The recommended value is `"PFloTran`".
 
 .. code-block:: xml
 
@@ -1482,20 +1482,28 @@ This modification is referred to as a submodel and requires additional parameter
          <ParameterList name="BC 2">
            <Parameter name="regions" type="Array(string)" value="{EAST_SIDE}"/>
            <Parameter name="relative to top" type="bool" value="true"/>
-           <ParameterList name="water table elevation">
-             <ParameterList name="function-constant">
-               <Parameter name="value" type="double" value="10.0"/>
+           <ParameterList name="static head">
+             <ParameterList name="function-static-head">
+               <Parameter name="p0" type="double" value="101325.0"/>
+               <Parameter name="density" type="double" value="1000.0"/>
+               <Parameter name="gravity" type="double" value="9.8"/>
+               <Parameter name="space dimension" type="int" value="3"/>
+               <ParameterList name="water table elevation">
+                 <ParameterList name="function-constant">
+                   <Parameter name="value" type="double" value="10.0"/>
+                 </ParameterList>
+               </ParameterList>
              </ParameterList>
            </ParameterList>
          </ParameterList>
        </ParameterList>
 
        <ParameterList name="seepage face">
-         <Parameter name="reference pressure" type="double" value="101325.0"/>
          <ParameterList name="BC 3">
            <Parameter name="regions" type="Array(string)" value="{EAST_SIDE_BOTTOM}"/>
            <Parameter name="rainfall" type="bool" value="true"/>
            <Parameter name="submodel" type="string" value="PFloTran"/>
+           <Parameter name="reference pressure" type="double" value="101325.0"/>
            <ParameterList name="outward mass flux">
              <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="1.0"/>
@@ -1522,9 +1530,11 @@ Again, constant functions can be replaced by any of the available functions.
 
 * `"spatial distribution method`" [string] is the method for distributing
   source Q over the specified regions. The available options are `"volume`",
-  `"none`", and `"permeability`". For option `"none`", the source term Q is measured
-  in [kg/m^3/s]. For the other options, it is measured in [kg/s]. When the source function
-  is defined over a few regions, Q is distributed over their union.
+  `"volume fraction`", `"none`", and `"permeability`". For option `"none`", the source 
+  term Q is measured in [kg/m^3/s]. For the other options, it is measured in [kg/s]. 
+  Option `"volume fraction`" can be used when the region geometric model support volume
+  fractions.
+  When the source function is defined over a few regions, Q is distributed over their union.
   Default is `"none`".
 
 * `"submodel`" [string] refines definition of the source. Available options are `"rate`"
@@ -2172,13 +2182,12 @@ and geochemical conditions.
   <ParameterList name="transport">  <!-- parent list -->
     <ParameterList name="boundary conditions">
       <ParameterList name="geochemical conditions">
-        <ParameterList name="H+"> 
-          <ParameterList name="EAST CRIB">   <!-- user defined name -->
-            <Parameter name="times" type="Array(double)" value="{0.0, 100.0}"/>
-            <Parameter name="geochemical conditions" type="Array(string)" value="{cond1, cond2}"/>
-            <Parameter name="time functions" type="Array(string)" value="{constant}"/>
-            <Parameter name="regions" type="Array(string)" value="{CRIB1}"/>
-          </ParameterList>
+        <ParameterList name="EAST CRIB">   <!-- user defined name -->
+          <Parameter name="solutes" type="Array(string)" value={H+,HCO3-,Ca++}"/>
+          <Parameter name="times" type="Array(double)" value="{0.0, 100.0}"/>
+          <Parameter name="geochemical conditions" type="Array(string)" value="{cond1, cond2}"/>
+          <Parameter name="time functions" type="Array(string)" value="{constant}"/>
+          <Parameter name="regions" type="Array(string)" value="{CRIB1}"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -2383,7 +2392,7 @@ Amanzi
 
 The Amanzi chemistry process kernel uses the following parameters.
 
-* `"Thermodynamic Database`" [list] 
+* `"thermodynamic database`" [list] 
 
   * `"file`" [string] is the name of the chemistry database file, relative to the execution directory.
 
@@ -2424,7 +2433,7 @@ The Amanzi chemistry process kernel uses the following parameters.
 
   <ParameterList>  <!-- parent list -->
     <ParameterList name="chemistry">
-      <ParameterList name="Thermodynamic Database">
+      <ParameterList name="thermodynamic database">
         <Parameter name="file" type="string" value="tritium.bgd"/>
         <Parameter name="format" type="string" value="simple"/>
       </ParameterList>
@@ -3727,6 +3736,26 @@ This function requires two sublists *function1* and *function2*.
   </ParameterList>
 
 This example defines function `srqt(t) * sin(t)`.
+
+
+Static head function
+....................
+
+This function requires a few parameters as well as one of the standard math functions.
+
+.. code-block:: xml
+
+  <ParameterList name="function-static-head">
+    <Parameter name="p0" type="double" value="101325.0"/>
+    <Parameter name="density" type="double" value="1000.0"/>
+    <Parameter name="gravity" type="double" value="9.8"/>
+    <Parameter name="space dimension" type="int" value="3"/>
+    <ParameterList name="water table elevation">
+      <ParameterList name="function-constant">
+        <Parameter name="value" type="double" value="1.0"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
 
 
 Time functions

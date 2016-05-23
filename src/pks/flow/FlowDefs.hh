@@ -15,13 +15,7 @@
 namespace Amanzi {
 namespace Flow {
 
-// special bits for submodels
-const int FLOW_BC_SUBMODEL_RAINFALL = 1;  // should be 2^n
-const int FLOW_BC_SUBMODEL_SEEPAGE_PFLOTRAN = 2;
-const int FLOW_BC_SUBMODEL_SEEPAGE_FACT = 4;
-const int FLOW_BC_SUBMODEL_HEAD_RELATIVE = 16;
-const int FLOW_BC_SUBMODEL_NOFLOW_ABOVE_WATER_TABLE = 32;
-
+// default parameters for some seepage face models
 const double FLOW_BC_SEEPAGE_FACE_IMPEDANCE = 1e-10;  // [sec / m]
 const double FLOW_BC_SEEPAGE_FACE_REGULARIZATION = 5000.0;  // [Pa] 
 

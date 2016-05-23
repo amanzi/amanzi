@@ -22,36 +22,48 @@
 
 #include "CommonDefs.hh"
 #include "Mesh.hh"
-#include "UniqueMeshFunction.hh"
+#include "DenseVector.hh"
 
 namespace Amanzi {
 namespace Transport {
 
-class TransportBoundaryFunction : public Functions::UniqueMeshFunction {
+class TransportBoundaryFunction {
  public:
-  TransportBoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh) :
-      UniqueMeshFunction(mesh) {};
-  virtual ~TransportBoundaryFunction() {};
-  
-  virtual void Compute(double time) = 0;
+  TransportBoundaryFunction()
+    : domain_volume_(-1.0) {};
+
+  TransportBoundaryFunction(const Teuchos::ParameterList& plist)
+    : domain_volume_(-1.0) {};
+
+  ~TransportBoundaryFunction() {};
+
+  // source term on time interval (t0, t1]
+  virtual void Compute(double t0, double t1) { ASSERT(false); }
+
+  // model name
+  virtual std::string name() { return "undefined"; } 
 
   // access
+  double domain_volume() { return domain_volume_; }
+
   std::vector<std::string>& tcc_names() { return tcc_names_; }
   std::vector<int>& tcc_index() { return tcc_index_; }
 
-  std::vector<int>& faces() { return faces_; }
-  std::vector<std::vector<double> >& values() { return values_; }
+  // iterator methods
+  typedef std::map<int, WhetStone::DenseVector>::iterator Iterator;
+  Iterator begin() { return value_.begin(); }
+  Iterator end() { return value_.end(); }
+  std::map<int, double>::size_type size() { return value_.size(); }
 
  protected:
+  double domain_volume_;
+  std::map<int, WhetStone::DenseVector> value_;  // tcc values on boundary faces
+
   std::vector<std::string> tcc_names_;  // list of component names
   std::vector<int> tcc_index_;  // index of component in the global list
-
-  std::vector<int> faces_;  // list of boundary faces 
-  std::vector<std::vector<double> > values_;  // component values on boundary faces
 };
 
 }  // namespace Transport
 }  // namespace Amanzi
-
 
 #endif

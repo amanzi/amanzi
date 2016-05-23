@@ -17,32 +17,56 @@
 #ifndef AMANZI_FLOW_BOUNDARY_FUNCTION_HH_
 #define AMANZI_FLOW_BOUNDARY_FUNCTION_HH_
 
-#include <map>
 #include <string>
 #include <vector>
 
+#include "Epetra_Vector.h"
+#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
-#include "CommonDefs.hh"
 #include "Mesh.hh"
-#include "PK_BoundaryFunction.hh"
+
+#include "PK_DomainFunction.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class FlowBoundaryFunction : public PK_BoundaryFunction {
+class FlowBoundaryFunction : public PK_DomainFunction {
  public:
-  FlowBoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-                       PK_BoundaryFunction(mesh) {};
+  FlowBoundaryFunction()
+      : rainfall_(false),
+        relative_to_top_(false),
+        no_flow_above_water_table_(false),
+        seepage_model_("") {};
+  FlowBoundaryFunction(const Teuchos::ParameterList& plist);
   
-  void ComputeShift(double T, double* shift);
+  void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
-  // access / set
-  double reference_pressure() { return reference_pressure_; }
-  void set_reference_pressure(double p0) { reference_pressure_ = p0; }
+  // access
+  bool no_flow_above_water_table() const { return no_flow_above_water_table_; }
+  std::string seepage_model() const { return seepage_model_; }
+  double ref_pressure() const { return ref_pressure_; }
 
  private:
-  double reference_pressure_;
+  void CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                 const std::string& region);
+
+  void set_intersection_(const std::vector<AmanziMesh::Entity_ID>& v1,
+                         const std::vector<AmanziMesh::Entity_ID>& v2, 
+                         std::vector<AmanziMesh::Entity_ID>* vv);
+
+ private:
+  bool rainfall_;
+  bool relative_to_top_;
+  bool no_flow_above_water_table_;
+
+  double rho_, g_;
+  double ref_pressure_;
+  std::string seepage_model_;
+
+  std::vector<std::string> regions_;
+
+  Teuchos::RCP<Epetra_Vector> shift_water_table_;
 };
 
 }  // namespace Flow

@@ -1,0 +1,58 @@
+:Description: trimmed input for use with Alquimia interface to Amanzi
+:             for calcite dissolution
+
+:=========================== chemistry ========================================
+CHEMISTRY
+  PRIMARY_SPECIES
+    H+
+    HCO3-
+    Ca++
+  /
+  SECONDARY_SPECIES
+    OH-
+    CO3--
+    CO2(aq)
+    CaOH+
+    CaHCO3+
+    CaCO3(aq)
+  /
+  MINERALS
+    Calcite
+  /
+  GAS_SPECIES
+    CO2(g)
+  /
+  MINERAL_KINETICS
+    Calcite
+      RATE_CONSTANT 1.d-13 mol/cm^2-sec
+    /
+  /
+  DATABASE ./calcite.dat
+  LOG_FORMULATION
+  ACTIVITY_COEFFICIENTS TIMESTEP
+  OUTPUT
+    All
+    TOTAL
+  /
+  MAX_RESIDUAL_TOLERANCE 1.d-18
+END
+
+:=========================== constraints ======================================
+CONSTRAINT initial
+  CONCENTRATIONS
+    H+     1.d-8      F
+    HCO3-  1.d-3      G  CO2(g)
+    Ca++   5.d-4      M  Calcite
+  /
+  MINERALS
+    Calcite 1.d-5 2.0d0 cm^2/cm^3
+  /
+END
+
+CONSTRAINT west
+  CONCENTRATIONS
+    H+     5.         P
+    HCO3-  1.d-3      T 
+    Ca++   1.d-6      Z 
+  /
+END

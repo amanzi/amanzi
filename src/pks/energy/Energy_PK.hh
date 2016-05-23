@@ -20,20 +20,19 @@
 
 // Amanzi
 #include "CompositeVector.hh"
-#include "PK_BDF.hh"
 #include "Operator.hh"
 #include "OperatorAccumulation.hh"
 #include "OperatorAdvection.hh"
 #include "OperatorDiffusion.hh"
 #include "PK.hh"
+#include "PK_BDF.hh"
+#include "PK_DomainFunction.hh"
 #include "PK_PhysicalBDF.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "Tensor.hh"
 #include "TreeVector.hh"
 #include "VerboseObject.hh"
 
-// Energy
-#include "EnergyBoundaryFunction.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -126,10 +125,10 @@ class Energy_PK : public PK_PhysicalBDF {
   std::vector<WhetStone::Tensor> K; 
 
   // boundary conditons
-  EnergyBoundaryFunction* bc_temperature; 
-  EnergyBoundaryFunction* bc_flux; 
+  std::vector<Teuchos::RCP<PK_DomainFunction> > bc_temperature_; 
+  std::vector<Teuchos::RCP<PK_DomainFunction> > bc_flux_; 
 
-  std::vector<int> bc_model_, bc_submodel_; 
+  std::vector<int> bc_model_; 
   std::vector<double> bc_value_, bc_mixed_; 
   int dirichlet_bc_faces_;
 

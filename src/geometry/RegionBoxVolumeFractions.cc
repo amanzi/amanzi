@@ -188,7 +188,14 @@ double RegionBoxVolumeFractions::intersect(
     box.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 1.0, 0.0)));
     box.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 0.0, 1.0)));
 
-    IntersectConvexPolyhedra(polytope, faces, box, result_xyz, result_faces);
+    std::vector<Point> nodes;
+    Point p3d(3);
+
+    for (int n = 0; n < polytope.size(); ++n) {
+      p3d = N_ * (polytope[n] - p0_);
+      nodes.push_back(p3d);
+    }
+    IntersectConvexPolyhedra(nodes, faces, box, result_xyz, result_faces);
 
     int nfaces = result_faces.size(); 
     if (nfaces > 3) {
@@ -294,38 +301,44 @@ void IntersectConvexPolygons(const std::vector<Point>& xy1,
 // set of half-spaces (point and exterior normal). The result is
 // polyhedron P3 ordered similar to P1.
 // -------------------------------------------------------------------
+// #define VERBOSE
 void IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
                               const std::vector<std::vector<int> >& faces1,
                               const std::vector<std::pair<Point, Point> >& xyz2,
                               std::vector<Point>& xyz3,
                               std::vector<std::vector<int> >& faces3)
 {
-  // initialize result with the first polyhedron
+  // initialize dynamic polyhedron structure with the first polyhedron
   int nfaces1 = faces1.size();
   std::vector<std::pair<double, Point> > result_xyz;
-  std::vector<std::list<int> > result_faces(nfaces1);
-  std::vector<std::pair<int, int> > new_edges;
+  std::list<ClippedFace> result(nfaces1);
 
   int nxyz = xyz1.size();
-  for (int i = 0; i < nxyz; ++i)
+  for (int i = 0; i < nxyz; ++i) {
     result_xyz.push_back(std::make_pair(0.0, xyz1[i]));
+  }
 
-  for (int i = 0; i < nfaces1; ++i) {
-    for (int n = 0; n < faces1[i].size(); ++n) {
-      result_faces[i].push_back(faces1[i][n]);
+  int k(0);
+  std::list<ClippedFace>::iterator itf;
+
+  for (itf = result.begin(); itf != result.end(); ++itf, ++k) {
+    for (int n = 0; n < faces1[k].size(); ++n) {
+      itf->nodes.push_back(faces1[k][n]);
     }
   }
 
   // clip polyhedron using the second polyhedron.
   int nfaces2 = xyz2.size();
-  double d1, d2, tmp, eps(1e-6);
+  double d1, d2, tmp, eps(1e-7);
   Point v1(xyz1[0]);
-  std::list<int>::iterator it, it_prev, it_next, it2;
+  std::list<int>::iterator itv, itv_prev, itv_next, itv2;
 
   for (int n = 0; n < nfaces2; ++n) {
     const Point& p = xyz2[n].first;
     const Point& normal = xyz2[n].second;
+#ifdef VERBOSE
 std::cout << "plane=" << p << " normal=" << normal << std::endl;
+#endif
 
     // location of nodes relative to the n-th plane
     for (int i = 0; i < nxyz; ++i) {
@@ -336,20 +349,21 @@ std::cout << "plane=" << p << " normal=" << normal << std::endl;
       }
     }
 
-    // clip each face of the resulting polyhedron
-    int nfaces3 = result_faces.size();
-    new_edges.clear();
-    new_edges.resize(nfaces3, std::make_pair(-1, -1));
+    // clip each face of the clipped polyhedron "result"
+    if (result.size() == 0) continue;
 
-    for (int m = 0; m < nfaces3; ++m) {
-      if (result_faces[m].size() <= 2) continue;
+    for (itf = result.begin(); itf != result.end(); ++itf) {
+      itf->new_edge = std::make_pair(-1, -1);
+      itf->edge_flag = 0;
+    }
 
-      for (it = result_faces[m].begin(); it != result_faces[m].end(); ++it) {
-        it_next = it;
-        if (++it_next == result_faces[m].end()) it_next = result_faces[m].begin();
+    for (itf = result.begin(); itf != result.end(); ++itf) {
+      for (itv = itf->nodes.begin(); itv != itf->nodes.end(); ++itv) {
+        itv_next = itv;
+        if (++itv_next == itf->nodes.end()) itv_next = itf->nodes.begin();
 
-        std::pair<double, Point>& p1 = result_xyz[*it];
-        std::pair<double, Point>& p2 = result_xyz[*it_next];
+        std::pair<double, Point>& p1 = result_xyz[*itv];
+        std::pair<double, Point>& p2 = result_xyz[*itv_next];
 
         d1 = p1.first;
         d2 = p2.first;
@@ -367,113 +381,148 @@ std::cout << "plane=" << p << " normal=" << normal << std::endl;
           }
 
           if (idx >= 0) {
-            result_faces[m].insert(it_next, idx);
+            itf->nodes.insert(itv_next, idx);
           } else {
             result_xyz.push_back(std::make_pair(0.0, v1));
-            result_faces[m].insert(it_next, nxyz);
+            itf->nodes.insert(itv_next, nxyz);
+#ifdef VERBOSE
 std::cout << "  add " << v1 << std::endl;
+#endif
             nxyz++;
+          }
+        }
+        // this edge may be nedeed for building new face 
+        else if (d1 == 0.0 && d2 == 0.0) {
+          itf->new_edge = std::make_pair(*itv, *itv_next);
+          itf->edge_flag = 0;
+        }
+      }
+
+      // removing cut-out edges for each face separately
+      itv = itf->nodes.begin();
+      while (itv != itf->nodes.end()) {
+        if (result_xyz[*itv].first > 0.0) {
+          itv = itf->nodes.erase(itv);
+#ifdef VERBOSE
+if (itf->nodes.size() == 2) {
+std::cout << "  removing face: ";
+for (std::list<int>::iterator itt = itf->nodes.begin(); itt != itf->nodes.end(); ++itt) std::cout << *itt << " ";
+std::cout << std::endl;
+}
+#endif
+          if (itf->nodes.size() == 2) {
+            itf = result.erase(itf);
+            itf--;
+            break;
+          }
+
+          itv_next = itv;
+          if (itv_next == itf->nodes.end()) itv_next = itf->nodes.begin();
+
+          itv_prev = itv;
+          if (itv_prev == itf->nodes.begin()) itv_prev = itf->nodes.end();
+          else itv_prev--;
+
+          itf->new_edge = std::make_pair(*itv_prev, *itv_next);
+          itf->edge_flag = 1;
+#ifdef VERBOSE
+std::cout << "  new edge:" << *itv_prev << " " << *itv_next << "   p1=" 
+          << result_xyz[*itv_prev].second << "  p2=" << result_xyz[*itv_next].second 
+          << " d=" << result_xyz[*itv_prev].first << " " << result_xyz[*itv_next].first << std::endl;
+#endif
+        } else {
+          itv++;
+        }
+      }
+    } 
+    if (result.size() < 4) continue;
+
+    // forming a new face
+    // -- we have enough new edges
+    int nedges(0), edge_flag(0);
+    for (itf = result.begin(); itf != result.end(); ++itf) {
+      if (itf->new_edge.second >= 0) nedges++;
+      edge_flag = std::max(edge_flag, itf->edge_flag);
+    }
+
+    // -- starting point for the new face
+    if (nedges > 2 && edge_flag == 1) {
+#ifdef VERBOSE
+std::cout << "  enough edges to build new face: " << nedges << std::endl;
+#endif
+      int n1, n2, n3, n4(-1);
+      ClippedFace new_face;
+
+      for (itf = result.begin(); itf != result.end(); ++itf) {
+        n1 = itf->new_edge.second;
+        n2 = itf->new_edge.first;
+        if (n1 >= 0) {
+          new_face.nodes.push_back(n1);
+          break;
+        }
+      }
+
+      // -- the remaining points of the new face
+      while(n4 != n1) {
+        for (itf = result.begin(); itf != result.end(); ++itf) {
+          n3 = itf->new_edge.second;
+          n4 = itf->new_edge.first;
+          if (n2 == n3) {
+            new_face.nodes.push_back(n3);
+            n2 = n4;
+            break;
           }
         }
       }
 
-      // removing cut-out edges
-      it = result_faces[m].begin();
-      while (it != result_faces[m].end()) {
-        if (result_xyz[*it].first > 0.0) {
-          it = result_faces[m].erase(it);
-if (result_faces[m].size() == 2) std::cout << "  removing face, m=" << m << std::endl;
-          if (result_faces[m].size() == 2) break;
-
-          it_next = it;
-          if (it_next == result_faces[m].end()) it_next = result_faces[m].begin();
-
-          it_prev = it;
-          if (it_prev == result_faces[m].begin()) it_prev = result_faces[m].end();
-          else it_prev--;
-
-          new_edges[m] = std::make_pair(*it_prev, *it_next);
-std::cout << "  new edge:" << *it_prev << " " << *it_next << "   p1=" 
-          << result_xyz[*it_prev].second << "  p2=" << result_xyz[*it_next].second << std::endl;
-        } else {
-          it++;
-        }
+      if (new_face.nodes.size() > 2) {
+#ifdef VERBOSE
+std::cout << "  adding new face nodes: ";
+for (itv = new_face.nodes.begin(); itv != new_face.nodes.end(); ++itv) std::cout << *itv << " ";
+std::cout << std::endl;
+#endif
+        result.push_back(new_face);
       }
-    } 
-
-    // forming a new face
-    int n1, n2, n3, n4(-1);
-    std::list<int> new_face;
-
-    for (int m = 0; m < nfaces3; ++m) {
-      n1 = new_edges[m].second;
-      n2 = new_edges[m].first;
-      if (n1 >= 0) {
-        new_face.push_back(n1);
-        break;
-      }
-    }
-
-    while(n4 != n1) {
-      for (int m = 0; m < nfaces3; ++m) {
-        n3 = new_edges[m].second;
-        n4 = new_edges[m].first;
-        if (n2 == n3) {
-          new_face.push_back(n3);
-          n2 = n4;
-          break;
-        }
-      }
-    }
-
-    if (new_face.size() > 2) {
-      std::cout << "  adding new face:" << std::endl;
-      result_faces.push_back(new_face);
     }
   }
 
   // output of the result
-  int n(0), nfaces3(result_faces.size());
-  int nxyz3(result_xyz.size());
-  std::vector<int> map(nxyz3, -1);
-
-  // -- count true faces
-  for (int i = 0; i < nfaces3; ++i) {
-    if (result_faces[i].size() > 2) n++;
-  }
-  faces3.resize(n);
-
-  n = 0;
-  for (int i = 0; i < nfaces3; ++i) {
-    if (result_faces[i].size() > 2) {
-      faces3[n].clear();
-      for (it = result_faces[i].begin(); it != result_faces[i].end(); ++it) {
-        faces3[n].push_back(*it);
-        map[*it] = 0;
-      }
-      n++;
-    }
-  }
-
-  int m(0);
-  for (int i = 0; i < nxyz3; ++i) {
-    if (map[i] == 0) map[i] = m++;
-  }
-
-  // -- count true vertices
   xyz3.clear();
-  if (n > 3) { 
+  faces3.clear();
+
+  if (result.size() > 3) { 
+    int nxyz3(result_xyz.size());
+    std::vector<int> map(nxyz3, -1);
+
+    faces3.resize(result.size());
+
+    k = 0;
+    for (itf = result.begin(); itf != result.end(); ++itf, ++k) {
+      for (itv = itf->nodes.begin(); itv != itf->nodes.end(); ++itv) {
+        faces3[k].push_back(*itv);
+        map[*itv] = 0;
+      }
+    }
+
+    int m(0);
+    for (int i = 0; i < nxyz3; ++i) {
+      if (map[i] == 0) map[i] = m++;
+    }
+
+    // -- count true vertices
     for (int i = 0; i < nxyz3; ++i) {
       if (map[i] >= 0) xyz3.push_back(result_xyz[i].second);
     }
-  }
 
+#ifdef VERBOSE
 std::cout << "updating map" << std::endl;
-  // -- update face-to-nodes maps
-  for (int i = 0; i < n; ++i) {
-    int nnodes = faces3[i].size();
-    for (int k = 0; k < nnodes; ++k) {
-      faces3[i][k] = map[faces3[i][k]];
+#endif
+    // -- update face-to-nodes maps
+    for (int i = 0; i < result.size(); ++i) {
+      int nnodes = faces3[i].size();
+      for (int k = 0; k < nnodes; ++k) {
+        faces3[i][k] = map[faces3[i][k]];
+      }
     }
   }
 }

@@ -72,9 +72,9 @@ class BCs {
   }
 
   // access
-  const std::vector<int>& bc_model() { return *bc_model_; }
-  const std::vector<double>& bc_value() { return *bc_value_; }
-  const std::vector<double>& bc_mixed() { return *bc_mixed_; }
+  std::vector<int>& bc_model() { return *bc_model_; }
+  std::vector<double>& bc_value() { return *bc_value_; }
+  std::vector<double>& bc_mixed() { return *bc_mixed_; }
   int type() { return type_; }
 
  private:
