@@ -9,13 +9,11 @@ except:
     print "Error: Unable to locate amanzi xml_functions module"
     print "Add $AMANZI_SRC_DIR/tools/amanzi_xml to your PYTHONPATH environment variable"
     sys.exit()
-from copy import deepcopy
 from xml.dom import minidom
 import re
 import sys
 import numpy
-from glob import glob
-from subprocess import call
+import subprocess
 
 class ATSXML(object):
     def __init__(self,filename=None,xml_string=None):
@@ -265,7 +263,7 @@ def run(xml, nproc=1, mpiexec='mpiexec', run_file_name='run.xml',stdout=None,std
         outfile = open(stdout,'w')
         if not stderr is None:
             errfile = open(stderr,'w')
-        ierr = call([mpiexec,'-n',str(nproc),executable,"--xml_file="+run_file_name],stdout=outfile,stderr=errfile)
+        ierr = subprocess.call([mpiexec,'-n',str(nproc),executable,"--xml_file="+run_file_name],stdout=outfile,stderr=errfile)
         print ierr
     except:
         print "Error: ATS simulation failed"
