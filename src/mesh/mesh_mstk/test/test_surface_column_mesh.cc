@@ -80,10 +80,17 @@ TEST(SURFACE_COLUMN_MESH_3D)
   // Extract the surface from this column
   Amanzi::AmanziMesh::MeshSurfaceCell col_surf(colmesh, "surface");
 
+  // -- check basic mesh structure
   CHECK_EQUAL(1, col_surf.num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED));
   CHECK_EQUAL(4, col_surf.num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED));
   CHECK_EQUAL(4, col_surf.num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED));
 
+  // -- check flattened
+  Amanzi::AmanziGeometry::Point node;
+  col_surf.node_get_coordinates(0, &node);
+  CHECK_EQUAL(2, node.dim());
+
+  // -- check sets
   Amanzi::AmanziMesh::Entity_ID_List cells_in_surf;
   col_surf.get_set_entities_and_vofs("surface", Amanzi::AmanziMesh::CELL,
                                      Amanzi::AmanziMesh::OWNED,
@@ -98,7 +105,7 @@ TEST(SURFACE_COLUMN_MESH_3D)
   CHECK_EQUAL(1, cells_in_surf.size());
   CHECK_EQUAL(0, cells_in_surf[0]);
 
-  
+  // -- check volumes  
   CHECK_CLOSE(1.0, col_surf.cell_volume(0), 1.e-9);
   CHECK_CLOSE(1.0, col_surf.face_area(3), 1.e-9);
   

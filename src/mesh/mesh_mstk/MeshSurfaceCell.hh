@@ -57,8 +57,19 @@ class MeshSurfaceCell : public Mesh {
     Entity_ID_List my_nodes;
     inmesh.face_get_nodes(parent_face_, &my_nodes);
     nodes_.resize(my_nodes.size());
-    for (int i=0; i!=my_nodes.size(); ++i) {
-      inmesh.node_get_coordinates(my_nodes[i], &nodes_[i]);
+    if (flatten) {
+      for (int i=0; i!=my_nodes.size(); ++i) {
+        AmanziGeometry::Point parent_node;
+        inmesh.node_get_coordinates(my_nodes[i], &parent_node);
+        AmanziGeometry::Point child_node(2);
+        child_node[0] = parent_node[0];
+        child_node[1] = parent_node[1];
+        nodes_[i] = child_node;
+      }
+    } else {
+      for (int i=0; i!=my_nodes.size(); ++i) {
+        inmesh.node_get_coordinates(my_nodes[i], &nodes_[i]);
+      }
     }
 
     // set the maps
