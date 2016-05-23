@@ -125,9 +125,9 @@ void Transport_PK_ATS::InitializeAll_()
     Teuchos::RCP<Teuchos::ParameterList> bcs_list =
         Teuchos::rcp(new Teuchos::ParameterList(tp_list_->get<Teuchos::ParameterList>("boundary conditions")));
 #ifdef ALQUIMIA_ENABLED
-    TransportBCFactory bc_factory(mesh_, bcs_list, chem_pk_, chem_engine_);
+    TransportBCFactory bc_factory(S_, mesh_, bcs_list, chem_pk_, chem_engine_);
 #else
-    TransportBCFactory bc_factory(mesh_, bcs_list);
+    TransportBCFactory bc_factory(S_, mesh_, bcs_list);
 #endif
     bc_factory.Create(bcs);
 

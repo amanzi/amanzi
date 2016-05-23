@@ -35,10 +35,12 @@ class TransportDomainFunction : public PK_DomainFunction {
   int tcc_index() { return tcc_index_; }
   void set_tcc_name(const std::string& name) { tcc_name_ = name; }
   void set_tcc_index(int i) { tcc_index_ = i; }
+  virtual void set_state(const Teuchos::RCP<State>& S) {S_=S;}
 
  private:
   std::string tcc_name_;
   int tcc_index_; // index the global list of components
+  Teuchos::RCP<const State> S_;
 };
 
 }  // namespace Transport

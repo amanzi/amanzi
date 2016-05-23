@@ -21,6 +21,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "CommonDefs.hh"
+#include "State.hh"
 #include "Mesh.hh"
 #include "UniqueMeshFunction.hh"
 
@@ -29,8 +30,10 @@ namespace Transport {
 
 class TransportBoundaryFunction : public Functions::UniqueMeshFunction {
  public:
-  TransportBoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh) :
-      UniqueMeshFunction(mesh) {};
+  TransportBoundaryFunction(const Teuchos::RCP<const State>& S,
+                            const Teuchos::RCP<const AmanziMesh::Mesh> &mesh) :
+    S_(S),
+    UniqueMeshFunction(mesh) {};
   virtual ~TransportBoundaryFunction() {};
   
   virtual void Compute(double time) = 0;
@@ -43,6 +46,7 @@ class TransportBoundaryFunction : public Functions::UniqueMeshFunction {
   std::vector<std::vector<double> >& values() { return values_; }
 
  protected:
+  const Teuchos::RCP<const State> S_;
   std::vector<std::string> tcc_names_;  // list of component names
   std::vector<int> tcc_index_;  // index of component in the global list
 

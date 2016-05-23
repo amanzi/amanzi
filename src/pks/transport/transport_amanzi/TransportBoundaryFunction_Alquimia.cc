@@ -22,15 +22,17 @@ namespace Transport {
 TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(
     const std::vector<double>& times,
     const std::vector<std::string>& cond_names,
+    const Teuchos::RCP<const State>& S,
     const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
     Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
     Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine) :
-    TransportBoundaryFunction(mesh),
-    mesh_(mesh),
-    times_(times),
-    cond_names_(cond_names),
-    chem_pk_(chem_pk),
-    chem_engine_(chem_engine)
+  TransportBoundaryFunction(S,mesh),
+  S_(S),
+  mesh_(mesh),
+  times_(times),
+  cond_names_(cond_names),
+  chem_pk_(chem_pk),
+  chem_engine_(chem_engine)
 {
   // Check arguments.
   // NOTE: The times are always sorted in ascending order.

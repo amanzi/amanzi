@@ -46,7 +46,7 @@ add_library(mpc
   mpc_subsurface.cc
 ##  mpc_permafrost3.cc
   mpc_permafrost4.cc
-#  mpc_coupled_transport.cc
+  mpc_coupled_transport.cc
 )
 
 install(TARGETS mpc DESTINATION lib)
@@ -94,8 +94,8 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
-   HEADERFILE coupled_transport/mpc_coupled_transport_reg.hh
-   LISTNAME   MPC_PK_FAC
+  HEADERFILE mpc_coupled_transport_reg.hh
+  LISTNAME   MPC_PK_FAC
   )
 
 
@@ -143,7 +143,6 @@ if ( BUILD_TESTS )
     pk_energy_base
     pk_flow_permafrost pk_flow_richards
     pk_transport
-    pk_coupled_transport
     pk_bases
     energy_relations_thermal_conductivity energy_relations_internal_energy
     energy_relations_enthalpy energy_relations_source_terms

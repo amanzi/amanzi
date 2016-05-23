@@ -121,7 +121,6 @@ MPC<PK_t>::MPC(Teuchos::ParameterList& FElist,
       //std::cout << *pk_list<<"\n";
       pk_list->set("PK name", name_i);
       const std::string &pk_origin = pk_list -> get<std::string>("PK origin", "ATS");
-      //      std::cout<<*pk_list<<"\n";
       if (pk_origin == "ATS"){
         Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(FElist, pk_list, S, pk_soln);
         Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);

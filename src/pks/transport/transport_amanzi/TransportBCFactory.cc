@@ -34,6 +34,50 @@ void TransportBCFactory::Create(std::vector<TransportBoundaryFunction*>& bcs) co
     msg << "Transport PK: BC sublist has not been recognized\n";
     Exceptions::amanzi_throw(msg);  
   }
+
+  if (list_->isSublist("domain coupling") ) {
+    ProcessCouplingConditionList_(bcs);
+  }
+
+}
+
+void TransportBCFactory::ProcessCouplingConditionList_(std::vector<TransportBoundaryFunction*>& bcs) const
+{
+  Errors::Message msg;
+  Teuchos::ParameterList& clist = list_->get<Teuchos::ParameterList>("domain coupling");
+
+  for (Teuchos::ParameterList::ConstIterator it = clist.begin(); it != clist.end(); ++it) {
+    std::string name = it->first;
+    if (clist.isSublist(name)) {
+      Teuchos::ParameterList& bclist = clist.sublist(name);
+      for (Teuchos::ParameterList::ConstIterator it1 = bclist.begin(); it1 != bclist.end(); ++it1) {
+        std::string specname = it1->first;
+
+        if (bclist.isSublist(specname)) {
+          Teuchos::ParameterList& spec = bclist.sublist(specname);
+          try {
+            TransportBoundaryFunction_Coupler* bc = new TransportBoundaryFunction_Coupler(S_, mesh_);
+            std::cout << "TransportBoundaryFunction_Coupler created\n";
+            ProcessCouplerSpec_(spec, bc);
+            bc->tcc_names().push_back(name);
+
+            TransportBoundaryFunction* bc_base = bc;
+            bcs.push_back(bc_base);
+          } catch (Errors::Message& m) {
+            msg << "in sublist \"" << specname.c_str() << "\": " << m.what();
+            Exceptions::amanzi_throw(msg);
+          }
+        } else {
+          msg << "parameter \"" << specname.c_str() << "\" is not a sublist.\n";
+          Exceptions::amanzi_throw(msg);
+        }
+      }
+    } else {
+      msg << "parameter \"" << name.c_str() << "\" is not a sublist.\n";
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+
 }
 
 
@@ -55,7 +99,7 @@ void TransportBCFactory::ProcessTracerList_(std::vector<TransportBoundaryFunctio
         if (bclist.isSublist(specname)) {
           Teuchos::ParameterList& spec = bclist.sublist(specname);
           try {
-            TransportBoundaryFunction_Tracer* bc = new TransportBoundaryFunction_Tracer(mesh_);
+            TransportBoundaryFunction_Tracer* bc = new TransportBoundaryFunction_Tracer(S_, mesh_);
             ProcessTracerSpec_(spec, bc);
             bc->tcc_names().push_back(name);
 
@@ -120,6 +164,32 @@ void TransportBCFactory::ProcessTracerSpec_(
   bc->Define(regions, f); // , Amanzi::BOUNDARY_FUNCTION_ACTION_NONE); // needs to be fixed
 }
 
+/* ******************************************************************
+* Process Dirichet BC (concentration), step 3.
+****************************************************************** */
+void TransportBCFactory::ProcessCouplerSpec_(
+    Teuchos::ParameterList& spec, TransportBoundaryFunction_Coupler* bc) const
+{
+  Errors::Message msg;
+  std::vector<std::string> regions;
+
+  if (spec.isParameter("regions")) {
+    if (spec.isType<Teuchos::Array<std::string> >("regions")) {
+      regions = spec.get<Teuchos::Array<std::string> >("regions").toVector();
+    } else {
+      msg << "parameter \"regions\" is not of type \"Array string\"";
+      Exceptions::amanzi_throw(msg);
+    }
+  } else {
+    msg << "parameter \"regions\" is missing";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  bc->Define(regions);
+
+}
+
+
 
 /* ******************************************************************
 * Process Dirichet BC (concentration), step 1.
@@ -169,7 +239,7 @@ void TransportBCFactory::ProcessGeochemicalConditionList_(
 
         // Construct the Alquimia-savvy BC.
         TransportBoundaryFunction_Alquimia* bc = 
-            new TransportBoundaryFunction_Alquimia(times, cond_names, mesh_, chem_pk_, chem_engine_);
+          new TransportBoundaryFunction_Alquimia(times, cond_names, S_, mesh_, chem_pk_, chem_engine_);
 
         // Associate it with the given regions.
         bc->Define(regions);

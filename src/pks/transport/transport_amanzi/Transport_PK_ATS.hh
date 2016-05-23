@@ -118,6 +118,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   void VV_CheckInfluxBC() const;
   void VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, double dT_MPC);
   double VV_SoluteVolumeChangePerSecond(int idx_solute);
+  double ComputeSolute(const Epetra_MultiVector& tcc_next, int idx);
 
   void CalculateLpErrors(AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2);
 

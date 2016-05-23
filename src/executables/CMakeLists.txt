@@ -20,6 +20,7 @@ endif ()
 #
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 include_directories(${ATS_SOURCE_DIR}/src/pks/mpc)
+include_directories(${ATS_SOURCE_DIR}/src/pks/coupled_transport)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
@@ -91,6 +92,7 @@ set(ATS_LIBS
                       pk_flow_overland_pressure
                       pk_flow_icy_overland
                       pk_transport
+                      pk_coupled_transport
                       pk_chemistry
 	              # pk_prescribed_deformation
 #                      pk_prescribed_volumetric_deformation
