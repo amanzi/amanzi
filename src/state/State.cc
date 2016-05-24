@@ -525,6 +525,89 @@ State::RequireField(Key fieldname, Key owner,
   return field_factories_[fieldname];
 };
 
+
+void State::RequireTimeTag(Key timetag){
+
+  for (int i=0; i<copy_tag_.size(); ++i){
+    if (copy_tag_[i] == timetag) return;
+  }
+  copy_tag_.push_back(timetag);
+}
+
+bool State::HasTimeTag(Key timetag){ 
+
+  for (int i=0; i<copy_tag_.size(); ++i){
+    if (copy_tag_[i] == timetag) return true;
+  }
+  return false;
+
+}
+
+bool State::HasFieldCopy(Key key, Key timetag){
+
+  Teuchos::RCP<const Field> field = GetField_(key);
+  if (field == Teuchos::null) return false;
+  if (HasTimeTag(timetag)) return field->HasCopy(timetag);
+  else return false;
+
+}
+
+Teuchos::RCP<Field> State::GetFieldCopy(Key fieldname, Key timetag, Key pk_name){
+
+  Key field_owner = GetField(fieldname)->owner();
+  Teuchos::RCP<Field> field = GetField(fieldname, field_owner);
+  return field->GetCopy(timetag, pk_name);
+
+}
+
+Teuchos::RCP<const Field> State::GetFieldCopy(Key fieldname, Key timetag) const{
+
+  Teuchos::RCP<const Field> field = GetField(fieldname);
+  return field->GetCopy(timetag);
+
+}
+
+void State::SetFieldCopy(Key fieldname, Key timetag, Key pk_name, const Teuchos::RCP<Field>& fieldcopy){
+
+   Teuchos::RCP<Field> field = GetField(fieldname, pk_name);
+   return field->SetCopy(timetag, fieldcopy);
+
+}
+
+
+void State::RequireFieldCopy(Key fieldname, Key timetag, Key pk_name){
+
+  Teuchos::RCP<Field> field = GetField(fieldname, pk_name);
+  field->RequireCopy(timetag);
+
+}
+
+void State::CopyField(Key fieldname, Key timetag, Key pk_name){
+
+  Key field_owner = GetField(fieldname)->owner();
+  Teuchos::RCP<Field> field = GetField(fieldname, field_owner);
+  Teuchos::RCP<Field> field_copy = field->GetCopy(timetag, pk_name);
+
+  *field_copy->GetFieldData() = *field->GetFieldData();
+
+}
+
+
+Teuchos::RCP<const CompositeVector> State::GetFieldCopyData(Key fieldname, Key tag) const{
+  return GetField(fieldname)->GetCopy(tag)->GetFieldData();
+}
+
+Teuchos::RCP<CompositeVector> State::GetFieldCopyData(Key fieldname, Key tag, Key pk_name) {
+
+  Key field_owner = GetField(fieldname)->owner();
+  Teuchos::RCP<Field> field = GetField(fieldname, field_owner);
+
+  return field->GetCopy(tag, pk_name)->GetFieldData();
+}
+
+
+
+
 void State::RequireGravity() {
   int dim = 3;
   Key fieldname("gravity");

@@ -267,6 +267,23 @@ class State {
   //
   Teuchos::RCP<const Functions::MeshPartition> GetMeshPartition(Key);
 
+  // -----------------------------------------------------------------------------
+  // Time tags and vector copies
+  // -----------------------------------------------------------------------------
+  // Some fields may have additional copies which corresponds to different times and
+  // marked with a timetag
+  void RequireTimeTag(Key timetag);
+  bool HasTimeTag(Key timetag);
+   // Field accessor
+  bool HasFieldCopy(Key key, Key timetag);
+  Teuchos::RCP<Field> GetFieldCopy(Key fieldname, Key timetag, Key pk_name);
+  Teuchos::RCP<const Field> GetFieldCopy(Key fieldname, Key timetag) const;
+  void SetFieldCopy(Key fieldname, Key timetag, Key pk_name, const Teuchos::RCP<Field>& field);
+  void RequireFieldCopy(Key fieldname, Key pk_name, Key timetag);
+  void CopyField(Key fieldname, Key pk_name, Key timetag);
+  Teuchos::RCP<const CompositeVector> GetFieldCopyData(Key fieldname, Key tag) const;
+  Teuchos::RCP<CompositeVector> GetFieldCopyData(Key fieldname, Key tag, Key pk_name);
+
   // Time accessor and mutators.
   double time() const { return time_; }
   void set_time(double new_time);  // note this also evaluates state-owned functions
@@ -317,6 +334,8 @@ class State {
   double intermediate_time_;
   double last_time_;
   double initial_time_;
+  std::vector<Key> copy_tag_;
+
 
   int cycle_;
   int position_in_tp_;

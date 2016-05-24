@@ -30,6 +30,12 @@
 namespace Amanzi {
 
 class Field {
+
+ private: 
+
+  typedef std::map<Key, Teuchos::RCP<Field> > FieldMap;
+  typedef std::string Units;
+
  public:
   // virtual destructor
   virtual ~Field() {};
@@ -54,6 +60,16 @@ class Field {
   void set_io_checkpoint(bool io_checkpoint=true) { io_checkpoint_ = io_checkpoint; }
   void set_io_vis(bool io_vis=true) { io_vis_ = io_vis; }
   void set_initialized(bool initialized=true) { initialized_ = initialized; }
+
+  void RequireCopy(Key tag);
+  void RequireCopy(Key tag, Key new_owner);
+  Teuchos::RCP<const Field> GetCopy(Key tag) const;
+  Teuchos::RCP<Field> GetCopy(Key tag, Key pk_name);
+  void SwitchCopies(Key tag1, Key tag2);
+  bool HasCopy(Key tag) const;
+  bool DeleteCopy(Key tag) const;
+  void SetCopy(Key tag, const Teuchos::RCP<Field>& field);
+
 
   // Creation of the actual data (data is created lazily, allowing empty fields).
   virtual void CreateData() = 0;
@@ -133,6 +149,13 @@ class Field {
 
   virtual long int GetLocalElementCount() { return 0L; };
 
+// Iterate over field_copies.
+  typedef FieldMap::const_iterator copy_iterator;
+  copy_iterator copy_begin() const { return field_copy_.begin(); }
+  copy_iterator copy_end() const { return field_copy_.end(); }
+  FieldMap::size_type copy_count() { return field_copy_.size(); }
+
+
  protected:
   // constructors protected, should only be called by derived classes
   Field(std::string fieldname, std::string owner="state");
@@ -143,6 +166,9 @@ class Field {
   void assert_type_or_die_(FieldType type) const;
   void not_implemented_error_() const;
 
+  Teuchos::RCP<const Field> GetCopy_(Key tag) const;
+  Teuchos::RCP<Field> GetCopy_(Key tag);
+
   FieldType type_;
   std::string fieldname_;
   std::string owner_;
@@ -151,6 +177,11 @@ class Field {
   bool io_checkpoint_;
   bool io_vis_;
   bool initialized_;
+
+  FieldMap field_copy_;
+
+  Units units_;
+  
 
 private:
   // operator= disabled
