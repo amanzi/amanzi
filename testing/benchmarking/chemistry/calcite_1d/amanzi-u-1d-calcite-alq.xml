@@ -54,7 +54,8 @@
     </liquid_phase>
     <solid_phase>
       <minerals>
-        <mineral rate_constant="1.0e-13">Calcite</mineral>
+        <mineral rate_constant="1.0e-9">Calcite</mineral>
+	<!-- EIB: note existing IN file show 1.0e-13 mol/cm^2-sec, but default units are mol/m^2-sec; hence value change -->
       </minerals>
     </solid_phase>
     <gas_phase>
@@ -75,59 +76,50 @@
   <numerical_controls>
     <unstructured_controls>
 
+      <unstr_flow_controls>
+          <preconditioning_strategy>diffusion_operator</preconditioning_strategy>
+      </unstr_flow_controls>
+
+      <unstr_transport_controls>
+          <algorithm>explicit second-order</algorithm>
+          <cfl>1</cfl>
+      </unstr_transport_controls>
+
       <unstr_steady-state_controls>
-        <min_iterations>10</min_iterations>
-        <max_iterations>15</max_iterations>
-        <limit_iterations>20</limit_iterations>
-        <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
-        <nonlinear_tolerance>1.0e-12</nonlinear_tolerance>
-        <!--
-                <pseudo_time_integrator>
-                       <method>picard</method>
-                    <preconditioner>hypre_amg</preconditioner>
-                    <linear_solver>aztec00</linear_solver>
-                    <control_options>pressure</control_options>
-                    <clipping_saturation>0.95</clipping_saturation>
-                    <convergence_tolerance>0.95</convergence_tolerance>
-                    <initialize_with_darcy>true</initialize_with_darcy>
-                </pseudo_time_integrator>
-         -->
+          <min_iterations>10</min_iterations>
+          <max_iterations>15</max_iterations>
+          <limit_iterations>20</limit_iterations>
+          <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
+          <nonlinear_tolerance>1.0e-12</nonlinear_tolerance>
+          <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
+          <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+          <max_divergent_iterations>3</max_divergent_iterations>
       </unstr_steady-state_controls>
 
       <unstr_transient_controls>
-        <comments>Comments section.</comments>
-	<bdf1_integration_method>
-	    <min_iterations>10</min_iterations>
-	    <max_iterations>15</max_iterations>
-	    <limit_iterations>20</limit_iterations>
-	    <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
-	    <nonlinear_tolerance>1e-12</nonlinear_tolerance>
-        </bdf1_integration_method>
-        <preconditioner>trilinos_ml</preconditioner>
+          <min_iterations>10</min_iterations>
+          <max_iterations>15</max_iterations>
+          <limit_iterations>20</limit_iterations>
+          <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
+          <nonlinear_tolerance>1.0e-12</nonlinear_tolerance>
+          <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
+          <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+          <max_divergent_iterations>3</max_divergent_iterations>
       </unstr_transient_controls>
 
-      <unstr_linear_solver>
-        <comments>Comment section.</comments>
-        <!--
-        <method>gmres</method>
-        <max_iterations>20</max_iterations>
-        -->
-        <tolerance>1.0e-22</tolerance>
-        <preconditioner>trilinos_ml</preconditioner>
-      </unstr_linear_solver>
-
-      <unstr_flow_controls/>
-
-      <unstr_transport_controls>
-	  <sub_cycling>on</sub_cycling>
-	  <algorithm>explicit first-order</algorithm>
-      </unstr_transport_controls>
-
       <unstr_chemistry_controls>
-	  <process_model>implicit operator split</process_model>
-          <chem_tolerance>1e-12</chem_tolerance>
-          <chem_max_newton_iterations>250</chem_max_newton_iterations>
+	  <max_residual_tolerance>1.0e-18</max_residual_tolerance>
       </unstr_chemistry_controls>
+
+      <unstr_linear_solver>
+          <max_iterations>100</max_iterations>
+          <tolerance>1e-20</tolerance>
+      </unstr_linear_solver>
+      <unstr_preconditioners>
+          <hypre_amg />
+          <trilinos_ml />
+        <block_ilu />
+      </unstr_preconditioners>
     </unstructured_controls>
   </numerical_controls>
 
@@ -190,7 +182,7 @@
           <inward_mass_flux value="7.91317859e-6" start="0" function="constant"/>
         </liquid_component>
         <geochemistry_component>
-          <constraint name="west" start = "0.0"/>
+          <constraint name="west" start = "0.0" function="constant"/>
         </geochemistry_component>
       </liquid_phase>
     </boundary_condition>
@@ -227,7 +219,8 @@
         <primary mineral="Calcite" name="Ca++" type="mineral" value="5.0e-4"/>
         <primary name="HCO3-" type="gas" value="1.0e-3" gas="CO2(g)"/>
         <primary name="H+" type="free_ion" value="1.0e-8"/>
-	<mineral name="Calcite"     volume_fraction="1.0e-5" specific_surface_area="2.0"/>
+	<mineral name="Calcite"     volume_fraction="1.0e-5" specific_surface_area="200.0"/>
+	<!-- EIB: note existing IN file show 2.0 cm^2/cm^3, but default units are m^2/m^3; hence value change -->
       </constraint>
       <constraint name="west">
         <primary name="Ca++" type="charge" value="1e-6"/>

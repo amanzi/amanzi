@@ -193,8 +193,8 @@ if __name__ == "__main__":
 
         input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "amanzi-native-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=[root+".bgd"])
-
+        #run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=[root+".bgd"])
+        
         u_amanzi_native = [[[] for x in range(len(amanzi_totc))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_totc):
@@ -216,7 +216,7 @@ if __name__ == "__main__":
 	native = True
 
     except:
-        
+      
         native = False
 
 # Amanzi-Alquimia-PFlotran --->
@@ -228,10 +228,10 @@ if __name__ == "__main__":
 
         u_amanzi_alquimia = [[[] for x in range(len(amanzi_totc))] for x in range(len(times))]
         for i, time in enumerate(times):
-           for j, comp in enumerate(amanzi_totc):
+            for j, comp in enumerate(amanzi_totc):
                 x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
                 u_amanzi_alquimia[i][j] = c_amanzi_alquimia
-              
+
         v_amanzi_alquimia = [[[] for x in range(len(amanzi_sorb))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_sorb):

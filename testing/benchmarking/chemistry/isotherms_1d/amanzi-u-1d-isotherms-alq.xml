@@ -34,8 +34,8 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry state="on" engine="pflotran" database="isotherms.dat" />
-    <!--chemistry state="on" engine="pflotran" input_filename="1d-isotherms-trim.in" database="isotherms.dat" /-->
+    <!--chemistry state="on" engine="pflotran" database="isotherms.dat" /-->
+    <chemistry state="on" engine="pflotran" input_filename="1d-isotherms-trim.in" database="isotherms.dat" />
   </process_kernels>
 
   <phases>
@@ -45,9 +45,9 @@
       <density>998.2</density>
       <dissolved_components>
         <primaries>
-          <primary backward_rate="0.0" coefficient_of_diffusion="1.0000E-29" forward_rate="0.0">A</primary>
-          <primary backward_rate="0.0" coefficient_of_diffusion="1.0000E-29" forward_rate="0.0">B</primary>
-          <primary backward_rate="0.0" coefficient_of_diffusion="1.0000E-29" forward_rate="0.0">C</primary>
+          <primary>A</primary>
+          <primary>B</primary>
+          <primary>C</primary>
         </primaries>
       </dissolved_components>
     </liquid_phase>
@@ -138,7 +138,7 @@
           <kd_model model = "langmuir" kd = "30.0" b = "0.1"/>
         </primary>
         <primary name = "C">
-          <kd_model model = "freundlich" kd = "1.5" n = "1.25"/>
+          <kd_model model = "freundlich" kd = "1.5" n = "0.8"/>
         </primary>
       </sorption_isotherms>
       <!-- End proposed isotherm section -->

@@ -66,7 +66,9 @@
 	  <algorithm>explicit second-order</algorithm>
       </unstr_transport_controls>
 
-      <unstr_chemistry_controls/>
+      <unstr_chemistry_controls>
+	  <activity_coefficients>off</activity_coefficients>
+      </unstr_chemistry_controls>
 
       <unstr_steady-state_controls>
         <min_iterations>10</min_iterations>

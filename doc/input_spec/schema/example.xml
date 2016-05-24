@@ -158,6 +158,10 @@
 		<maximum_newton_iterations> int </maximum_newton_iterations> <!-- default: 1e-12 -->
 		<auxiliary_data> pH </auxiliary_data> 
               <!-- Pflotran chemistry -->
+                <activity_coefficients> timestep | off </activity_coefficients>
+                <max_relative_change_tolerance> exp </max_relative_change_tolerance> <!-- suggested 1.0e-16 -->
+                <max_residual_tolerance> exp </max_residual_tolerance> <!-- suggested 1.0e-16 -->
+                
 		<min_time_step> exp </min_time_step> <!-- default: 1e+10 -->
 		<max_time_step> exp </max_time_step> <!-- default: 1e+10 -->
 		<initial_time_step> exp </initial_time_step> <!-- default: 1e+7 -->

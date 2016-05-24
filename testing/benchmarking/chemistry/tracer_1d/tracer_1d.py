@@ -131,10 +131,23 @@ if __name__ == "__main__":
     CWD = os.getcwd()
     local_path = "" 
 
-    # amanziU
+    # amanziU - native
 
     try:
-        comp = 'total_component_concentration.cell.Tracer conc'
+      comp = 'total_component_concentration.cell.tracer conc'
+      input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
+      path_to_amanzi = "amanzi-u-native-output"
+      run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanzi)
+      x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,root,comp)
+      native = len(x_amanzi_native)
+  
+    except:
+      native = 0
+
+    # amanziU - alquimia pflotran
+
+    try:
+        comp = 'total_component_concentration.cell.tracer conc'
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-pflo.xml")
         path_to_amanzi = "amanzi-u-alq-pflo-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+".in",root+".dat"], path_to_amanzi)
@@ -168,6 +181,10 @@ if __name__ == "__main__":
 # crunchflow
     ax.plot(x_crunchflow, c_crunchflow,'m--',label='CrunchFlow GIMRT',linewidth=2)
     ax.plot(x_crunchOS3D, c_crunchOS3D,'m*',label='CrunchFlow OS3D',linewidth=2) 
+
+# unstruct amanzi native
+    if native>0:
+        ax.plot(x_amanzi_native, c_amanzi_native,'rx',label='AmanziU+Native',linewidth=2)
 
 # unstruct amanzi alquimia + pflotran
     if alq>0:
