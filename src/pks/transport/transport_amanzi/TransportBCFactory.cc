@@ -57,7 +57,7 @@ void TransportBCFactory::ProcessCouplingConditionList_(std::vector<TransportBoun
           Teuchos::ParameterList& spec = bclist.sublist(specname);
           try {
             TransportBoundaryFunction_Coupler* bc = new TransportBoundaryFunction_Coupler(S_, mesh_);
-            std::cout << "TransportBoundaryFunction_Coupler created\n";
+            //std::cout << "TransportBoundaryFunction_Coupler created\n";
             ProcessCouplerSpec_(spec, bc);
             bc->tcc_names().push_back(name);
 
@@ -185,7 +185,7 @@ void TransportBCFactory::ProcessCouplerSpec_(
     Exceptions::amanzi_throw(msg);
   }
 
-  bc->Define(regions);
+  bc->Define(regions, spec);
 
 }
 

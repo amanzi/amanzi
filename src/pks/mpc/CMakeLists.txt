@@ -125,8 +125,8 @@ include_evaluators_directories(LISTNAME MPC_PK_FAC_INCLUDES)
 
 add_subdirectory(coupled_transport)
 
-if ( BUILD_TESTS )
-#if (0)
+#if ( BUILD_TESTS )
+if (0)
   # Add UnitTest includes
   set(amanzi_libs atk geometry mesh mesh_audit simple_mesh state whetstone mesh_functions)
 

@@ -25,6 +25,10 @@ FlowReactiveTransport_PK_ATS::FlowReactiveTransport_PK_ATS(
     const Teuchos::RCP<TreeVector>& soln) :
     PK_MPCSubcycled_ATS(pk_tree, global_list, S, soln) { 
 
+    Teuchos::ParameterList vlist;
+    vlist.sublist("verbose object") = global_list -> sublist("verbose object");
+    vo_ =  Teuchos::rcp(new VerboseObject("FlowandTransportPK", vlist)); 
+
 }
 
 
@@ -110,6 +114,7 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
     done = (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) || // finished the step
         (dt_next  < min_dt_); // failed
   }
+  
 
   if (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) {
     // done, success

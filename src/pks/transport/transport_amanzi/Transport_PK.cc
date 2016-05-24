@@ -288,7 +288,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
   // Create verbosity object.
   Teuchos::ParameterList vlist;
-  vlist.sublist("VerboseObject") = tp_list_->sublist("VerboseObject");
+  vlist.sublist("verbose object") = tp_list_->sublist("verbose object");
   vo_ =  Teuchos::rcp(new VerboseObject("TransportPK", vlist)); 
 
   
@@ -299,11 +299,9 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   InitializeFields_(S);
 
   //create copies
-  std::cout<<"tcc "<<tcc_key_<<"\n";
   S->GetField(tcc_key_, passwd_)->RequireCopy("subcycling");
   tcc_tmp = S->GetField(tcc_key_, passwd_)->GetCopy("subcycling")->GetFieldData();
 
-  std::cout<<"saturation "<<saturation_key_<<"\n";
   S->GetField(saturation_key_, saturation_key_)->RequireCopy("subcycle_start");
   ws_subcycle_start = S->GetFieldCopyData(saturation_key_, "subcycle_start", saturation_key_)
     ->ViewComponent("cell");
@@ -545,6 +543,9 @@ double Transport_PK_ATS::CalculateTransportDt()
     int c = (*upwind_cell_)[f];
     if (c >= 0) total_outflux[c] += fabs((*darcy_flux)[0][f]);
   }
+
+  Sinks2TotalOutFlux(tcc_prev, total_outflux);
+
 
   // modify estimate for other models
   if (multiscale_porosity_) {
@@ -1097,7 +1098,6 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
 
     int ncomp = tcc_index.size();
     int nbfaces = faces.size();
-    std::cout<<"Mass "<<mass_solutes_exact_[0]<<" "<< mass_solutes_source_[0]<<"\n";
     for (int n = 0; n < nbfaces; n++) {
       int f = faces[n];
       int c2 = (*downwind_cell_)[f];
@@ -1108,20 +1108,19 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
           int k = tcc_index[i];
           if (k < num_advect) {
             tcc_flux = dt_ * u * values[n][i];
-            std::cout<<"from BC cell "<<c2<<" flux "<< u<<" dt "<<dt_<<" + "<<tcc_flux<<"\n";
+            //std::cout<<"from BC cell "<<c2<<" flux "<< u<<" dt "<<dt_<<" + "<<tcc_flux<<"\n";
             tcc_next[k][c2] += tcc_flux;
             mass_solutes_source_[k] += u * values[n][i];
           }
         }
       }
     }
-    std::cout<<"Mass "<<mass_solutes_exact_[0]<<" "<< mass_solutes_source_[0]<<"\n";
   }
 
-  if (domain_name_ == "surface"){
-    std::cout<<"Before ComputeAddSourceTerms\n";
-     std::cout<<tcc_next<<"\n";
-  }
+  // if (domain_name_ == "surface"){
+  //   std::cout<<"Before ComputeAddSourceTerms\n";
+  //    std::cout<<tcc_next<<"\n";
+  // }
 
   // process external sources
   if (srcs.size() != 0) {
@@ -1137,9 +1136,6 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
 
   // recover concentration from new conservative state
   for (int c = 0; c < ncells_owned; c++) {
-    if (domain_name_ == "surface"){
-      std::cout<<(*ws_prev)[0][c]<<" "<<(*ws_start)[0][c] <<" "<<(*ws_end)[0][c]<<" "<<(*ws)[0][c]<<"\n";
-    }
     vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_end)[0][c];
     for (int i = 0; i < num_advect; i++) {
       if (vol_phi_ws > 0 ) tcc_next[i][c] /= vol_phi_ws;
@@ -1147,7 +1143,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     }
   }
 
-  if (domain_name_ == "surface") std::cout<<"tcc_next\n"<<tcc_next<<"\n";
+  //if (domain_name_ == "surface") std::cout<<"tcc_next\n"<<tcc_next<<"\n";
 
 
   // update mass balance
@@ -1350,41 +1346,51 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
           value *= units_.concentration_factor();
     
       tcc[imap][c] += dtp * value;
-      std::cout<<"from Source cell "<<c<<" dt "<<dtp<<"  + "<<dtp * value<<"\n";
+      //std::cout<<"from Source cell "<<c<<" dt "<<dtp<<"  + "<<dtp * value<<"\n";
       mass_solutes_source_[i] += value;
     }
-    std::cout<<"*********\n";
+    //std::cout<<"*********\n";
   }
 }
 
-// void Transport_PK_ATS::Sinks2TotalOutFlux(std::vector<double>& total_outflux){
+void Transport_PK_ATS::Sinks2TotalOutFlux(Epetra_MultiVector& tcc,
+                                          std::vector<double>& total_outflux){
 
-//   for (int m = 0; m < nsrcs; m++) {
-//     int i = srcs[m]->tcc_index();
-//     if (i < n0 || i > n1) continue;
+  std::vector<double> sink_add(ncells_wghost, 0.0);
+  //Assumption that there is only one sink per component per cell
+  double t0 = S_->initial_time();
+  double tp = S_->final_time() - S_->initial_time();
+  int num_vectors = tcc.NumVectors();
+  int nsrcs = srcs.size();
 
-//     int imap = i;
-//     if (num_vectors == 1) imap = 0;
+  for (int m = 0; m < nsrcs; m++) {
+    int i = srcs[m]->tcc_index();
+ 
+    int imap = i;
+    if (num_vectors == 1) imap = 0;
 
-//     double t0 = tp - dtp;
-//     srcs[m]->Compute(t0, tp); 
+    srcs[m]->Compute(t0, tp); 
 
-//     for (TransportDomainFunction::Iterator it = srcs[m]->begin(); it != srcs[m]->end(); ++it) {
-//       int c = it->first;
-//       double value = mesh_->cell_volume(c) * it->second;
+    for (TransportDomainFunction::Iterator it = srcs[m]->begin(); it != srcs[m]->end(); ++it) {
+      int c = it->first;
+      double value = mesh_->cell_volume(c) * it->second;
 
-//       if ( (value < 0)&&(tcc_prev[0][c]>0) ){
+      //std::cout<<"sink "<<fabs(value)<<" "<<tcc[imap][c] <<"\n";
+      if ( (value < 0)&&(tcc[imap][c]>0) ){
 
-//         if (srcs[m]->name() == "volume" || srcs[m]->name() == "weight")
-//           value *= units_.concentration_factor();
+        if (srcs[m]->name() == "volume" || srcs[m]->name() == "weight")
+          value *= units_.concentration_factor();
     
-//         total_outflux[c] += fabs(value)/tcc_prev[0][c];
-//       }
-        
-//     }
-//   }
+        sink_add[c] = std::max(sink_add[c], fabs(value)/tcc[imap][c]);
 
-// }
+      }
+        
+    }
+  }
+
+  for (int c=0;c<ncells_wghost; c++) total_outflux[c] += sink_add[c];
+
+}
 
 
 

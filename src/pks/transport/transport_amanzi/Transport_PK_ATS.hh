@@ -96,6 +96,8 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   // main transport members
   // -- calculation of a stable time step needs saturations and darcy flux
   double CalculateTransportDt();
+  void Sinks2TotalOutFlux(Epetra_MultiVector& tcc,
+                          std::vector<double>& total_outflux);
 
   // coupling with chemistry
 #ifdef ALQUIMIA_ENABLED

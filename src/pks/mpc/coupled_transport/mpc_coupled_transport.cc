@@ -33,7 +33,7 @@ namespace Amanzi {
     subsurface_transport_list_ = Teuchos::sublist(Teuchos::sublist(plist_,"PKs"), pk_order[master_]);
     surface_transport_list_ = Teuchos::sublist(Teuchos::sublist(plist_,"PKs"), pk_order[slave_]);
 
-    Teuchos::OSTab tab = vo_->getOSTab();
+
 
   }
 
@@ -42,13 +42,14 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 double CoupledTransport_PK::get_dt() {
   //double dt = Amanzi::PK_MPCSubcycled_ATS::get_dt();
+  ComputeVolumeDarcyFlux(S_next_.ptr());
   master_dt_ = sub_pks_[master_]->get_dt();
   slave_dt_ = sub_pks_[slave_]->get_dt();
 
-  std::cout<<"master dt = "<<master_dt_<<"\n";
-  std::cout<<"slave_dt_ ="<<slave_dt_<<"\n";
+  // std::cout<<"master dt = "<<master_dt_<<"\n";
+  // std::cout<<"slave_dt_ ="<<slave_dt_<<"\n";
 
-  double dt = std::min(sub_pks_[master_]->get_dt(), sub_pks_[slave_]->get_dt());
+  double dt = std::min(master_dt_, slave_dt_);
 
   set_dt(dt);
   return dt;
@@ -90,7 +91,6 @@ void CoupledTransport_PK::Setup(const Teuchos::Ptr<State>& S){
   surf_mesh_ = S->GetMesh(surface_name_);
 
   if (!S->HasField(vol_darcy_key_)){
-    std::cout << "vol_darcy_key_ "<<vol_darcy_key_<<"\n";
     S->RequireField(vol_darcy_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
 
@@ -120,11 +120,10 @@ void CoupledTransport_PK::ComputeVolumeDarcyFlux(const Teuchos::Ptr<State>& S){
 
   int  nfaces_owned;
 
-
-  Teuchos::RCP<const Epetra_MultiVector> mass_flux = 
+  Teuchos::RCP<const Epetra_MultiVector> darcy_flux = 
     S->GetFieldData(getKey(subsurface_name_,"darcy_flux"))->ViewComponent("face");
 
-  Teuchos::RCP<const Epetra_MultiVector> surf_mass_flux =
+  Teuchos::RCP<const Epetra_MultiVector> surf_darcy_flux =
     S->GetFieldData(getKey(surface_name_,"flux"))->ViewComponent("face");
 
   Key molar_den_key = getKey(subsurface_name_, "molar_density_liquid");
@@ -153,7 +152,7 @@ void CoupledTransport_PK::ComputeVolumeDarcyFlux(const Teuchos::Ptr<State>& S){
     double n_liq=0.;
     for (int c=0; c<cells.size();c++) n_liq += (*molar_density)[0][c];
     n_liq /= cells.size();
-    if (n_liq > 0) (*vol_darcy)[0][f] = (*mass_flux)[0][f]/n_liq;
+    if (n_liq > 0) (*vol_darcy)[0][f] = (*darcy_flux)[0][f]/n_liq;
     else (*vol_darcy)[0][f] = 0.;
   }
   S->GetField(vol_darcy_key_, passwd_)->set_initialized();  
@@ -165,14 +164,11 @@ void CoupledTransport_PK::ComputeVolumeDarcyFlux(const Teuchos::Ptr<State>& S){
     double n_liq=0.;
     for (int c=0; c<cells.size();c++) n_liq += (*surf_molar_density)[0][c];
     n_liq /= cells.size();
-    if (n_liq > 0) (*surf_vol_darcy)[0][f] = (*surf_mass_flux)[0][f]/n_liq;
+    if (n_liq > 0) (*surf_vol_darcy)[0][f] = (*surf_darcy_flux)[0][f]/n_liq;
     else (*surf_vol_darcy)[0][f] = 0.;
   }
   S->GetField(surf_vol_darcy_key_, passwd_)->set_initialized();
     
-
-  std::cout<<"vol_flux\n";
-  std::cout<<(*surf_vol_darcy)<<"\n";
 
 }
 
@@ -189,39 +185,6 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
 
   double dt_MPC = S_->final_time() - S_->initial_time();
 
-
-
-  Teuchos::RCP<const CompositeVector> pond_prev = S_->GetFieldData("prev_ponded_depth");
-  Teuchos::RCP<const CompositeVector> pond = S_next_->GetFieldData("ponded_depth");
-  Teuchos::RCP<CompositeVector> pond_start  = S_->GetFieldCopyData("ponded_depth", "subcycle_start", "ponded_depth");
-  if ((t_old > S_->initial_time())||(t_new < S_->final_time())) {
-    InterpolateCellVector(*pond_prev->ViewComponent("cell"),
-                          *pond->ViewComponent("cell"),
-                          S_->initial_time() - t_old,
-                          dt_MPC,
-                          *pond_start->ViewComponent("cell"));
-  }else{
-    *pond_start = *pond_prev;   
-    //S_->CopyField("ponded_depth", "subcycle_end", "ponded_depth");
-  }
-
-  Teuchos::RCP<const CompositeVector> sat_prev = S_->GetFieldData("prev_saturation_liquid");
-  Teuchos::RCP<const CompositeVector> sat = S_next_->GetFieldData("saturation_liquid");
-  Teuchos::RCP<CompositeVector> sat_start  = S_->GetFieldCopyData("saturation_liquid", "subcycle_start", "saturation_liquid");
-
-  if ((t_old > S_->initial_time())||(t_new < S_->final_time())) {
-    InterpolateCellVector(*sat_prev->ViewComponent("cell"),
-                          *sat->ViewComponent("cell"),
-                          S_->initial_time() - t_old,
-                          dt_MPC,
-                          *sat_start->ViewComponent("cell"));
-  }else{
-    *sat_start->ViewComponent("cell") = *sat_prev->ViewComponent("cell");
-    //S_->CopyField("saturation_liquid","subcycle_end","saturation_liquid");
-  }
-
-  ComputeVolumeDarcyFlux(S_next_.ptr());
-
   Teuchos::RCP<const CompositeVector> next_darcy = S_next_->GetFieldData(vol_darcy_key_);
   Key flux_owner = S_next_->GetField(vol_darcy_key_)->owner();
   Teuchos::RCP<CompositeVector>  next_darcy_copy = S_->GetFieldCopyData(vol_darcy_key_, "next_timestep", flux_owner);
@@ -233,26 +196,27 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   *next_sur_flux_copy = *next_sur_flux;
 
 
-
-
   sub_pks_[master_]->AdvanceStep(t_old, t_new, reinit);
   sub_pks_[slave_]->AdvanceStep(t_old, t_new, reinit);
 
 
-  // const Epetra_MultiVector& surf_tcc = *S_->GetFieldCopyData("surface-total_component_concentration", "subcycling")->ViewComponent("cell",false);  
-  // const Epetra_MultiVector& tcc = *S_->GetFieldCopyData("total_component_concentration", "subcycling")->ViewComponent("cell",false);
+  const Epetra_MultiVector& surf_tcc = *S_->GetFieldCopyData("surface-total_component_concentration", "subcycling")->ViewComponent("cell",false);  
+  const Epetra_MultiVector& tcc = *S_->GetFieldCopyData("total_component_concentration", "subcycling")->ViewComponent("cell",false);
 
-  // int num_components = 1;
-  // std::vector<double> mass_subsurface(num_components, 0.), mass_surface(num_components, 0.);
+  int num_components = 1;
+  std::vector<double> mass_subsurface(num_components, 0.), mass_surface(num_components, 0.);
 
-  // for (int i=0; i<num_components; i++){
-  //   mass_subsurface[i] = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[master_])->ComputeSolute(tcc, i);
-  //   mass_surface[i] = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[slave_])->ComputeSolute(surf_tcc, i);
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM){
+    for (int i=0; i<num_components; i++){
+      mass_subsurface[i] = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[master_])->ComputeSolute(tcc, i);
+      mass_surface[i] = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[slave_])->ComputeSolute(surf_tcc, i);
+      Teuchos::OSTab tab = vo_->getOSTab();
 
-  //   *vo_->os() <<", subsurface =" << mass_subsurface[i] << " mol";
-  //   *vo_->os() <<", surface =" << mass_surface[i]<< " mol";
-  //   *vo_->os() <<", ToTaL =" << mass_surface[i]+mass_subsurface[i]<< " mol" <<std::endl;
-  //}
+      *vo_->os() <<"subsurface =" << mass_subsurface[i] << " mol";
+      *vo_->os() <<", surface =" << mass_surface[i]<< " mol";
+      *vo_->os() <<", ToTaL =" << mass_surface[i]+mass_subsurface[i]<< " mol" <<std::endl;
+    }
+  }
   
   return fail;
 
