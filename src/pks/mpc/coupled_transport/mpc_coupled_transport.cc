@@ -28,6 +28,11 @@ namespace Amanzi {
     vlist.sublist("verbose object") = global_list -> sublist("verbose object");
     vo_ =  Teuchos::rcp(new VerboseObject("Coupled TransportPK", vlist)); 
 
+    Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
+
+    subsurface_transport_list_ = Teuchos::sublist(Teuchos::sublist(plist_,"PKs"), pk_order[master_]);
+    surface_transport_list_ = Teuchos::sublist(Teuchos::sublist(plist_,"PKs"), pk_order[slave_]);
+
     Teuchos::OSTab tab = vo_->getOSTab();
 
   }
@@ -68,6 +73,114 @@ void CoupledTransport_PK::CommitStep(double t_old, double t_new, const Teuchos::
 }
 
 
+
+void CoupledTransport_PK::Setup(const Teuchos::Ptr<State>& S){
+
+  passwd_ = "state";  // owner's password
+
+  surface_name_ = surface_transport_list_->get<std::string>("domain name", "surface");
+  subsurface_name_ = subsurface_transport_list_->get<std::string>("domain name", "domain");
+
+
+  vol_darcy_key_ = getKey(subsurface_name_, "vol_darcy_flux");
+  surf_vol_darcy_key_ = getKey(surface_name_, "vol_darcy_flux");
+
+
+  mesh_ = S->GetMesh(subsurface_name_);
+  surf_mesh_ = S->GetMesh(surface_name_);
+
+  if (!S->HasField(vol_darcy_key_)){
+    std::cout << "vol_darcy_key_ "<<vol_darcy_key_<<"\n";
+    S->RequireField(vol_darcy_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("face", AmanziMesh::FACE, 1);
+
+  }
+
+  if (!S->HasField(surf_vol_darcy_key_)){
+    S->RequireField(surf_vol_darcy_key_, passwd_)->SetMesh(surf_mesh_)->SetGhosted(true)
+      ->SetComponent("face", AmanziMesh::FACE, 1);
+  }
+
+  PK_MPCSubcycled_ATS::Setup(S);
+
+
+
+}
+
+
+void CoupledTransport_PK::Initialize(const Teuchos::Ptr<State>& S){
+
+  PK_MPCSubcycled_ATS::Initialize(S);
+
+  ComputeVolumeDarcyFlux(S); 
+  
+}
+
+void CoupledTransport_PK::ComputeVolumeDarcyFlux(const Teuchos::Ptr<State>& S){
+
+  int  nfaces_owned;
+
+
+  Teuchos::RCP<const Epetra_MultiVector> mass_flux = 
+    S->GetFieldData(getKey(subsurface_name_,"darcy_flux"))->ViewComponent("face");
+
+  Teuchos::RCP<const Epetra_MultiVector> surf_mass_flux =
+    S->GetFieldData(getKey(surface_name_,"flux"))->ViewComponent("face");
+
+  Key molar_den_key = getKey(subsurface_name_, "molar_density_liquid");
+  //S->GetFieldEvaluator(molar_den_key)->HasFieldChanged(S.ptr());
+  Teuchos::RCP<const Epetra_MultiVector> molar_density = 
+    S->GetFieldData(molar_den_key)->ViewComponent("cell", true);
+
+  Key surf_molar_den_key = getKey(surface_name_, "molar_density_liquid");
+  //S->GetFieldEvaluator(surf_molar_den_key)->HasFieldChanged(S);
+  Teuchos::RCP<const Epetra_MultiVector> surf_molar_density = 
+    S->GetFieldData(surf_molar_den_key)->ViewComponent("cell", true);
+
+  Teuchos::RCP<Epetra_MultiVector> vol_darcy = 
+    S->GetFieldData(vol_darcy_key_, passwd_)->ViewComponent("face");
+
+  Teuchos::RCP<Epetra_MultiVector> surf_vol_darcy = 
+    S->GetFieldData(surf_vol_darcy_key_, passwd_)->ViewComponent("face");
+
+
+  // subsurface
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  AmanziMesh::Entity_ID_List cells;
+  
+  for (int f = 0; f < nfaces_owned; f++){
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    double n_liq=0.;
+    for (int c=0; c<cells.size();c++) n_liq += (*molar_density)[0][c];
+    n_liq /= cells.size();
+    if (n_liq > 0) (*vol_darcy)[0][f] = (*mass_flux)[0][f]/n_liq;
+    else (*vol_darcy)[0][f] = 0.;
+  }
+  S->GetField(vol_darcy_key_, passwd_)->set_initialized();  
+
+  // surface
+  nfaces_owned = surf_mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f = 0; f < nfaces_owned; f++){
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    double n_liq=0.;
+    for (int c=0; c<cells.size();c++) n_liq += (*surf_molar_density)[0][c];
+    n_liq /= cells.size();
+    if (n_liq > 0) (*surf_vol_darcy)[0][f] = (*surf_mass_flux)[0][f]/n_liq;
+    else (*surf_vol_darcy)[0][f] = 0.;
+  }
+  S->GetField(surf_vol_darcy_key_, passwd_)->set_initialized();
+    
+
+  std::cout<<"vol_flux\n";
+  std::cout<<(*surf_vol_darcy)<<"\n";
+
+}
+
+
+
+
+
+
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
@@ -75,6 +188,8 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   bool fail = false;
 
   double dt_MPC = S_->final_time() - S_->initial_time();
+
+
 
   Teuchos::RCP<const CompositeVector> pond_prev = S_->GetFieldData("prev_ponded_depth");
   Teuchos::RCP<const CompositeVector> pond = S_next_->GetFieldData("ponded_depth");
@@ -105,16 +220,20 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
     //S_->CopyField("saturation_liquid","subcycle_end","saturation_liquid");
   }
 
+  ComputeVolumeDarcyFlux(S_next_.ptr());
 
-  Teuchos::RCP<const CompositeVector> next_darcy = S_next_->GetFieldData("darcy_flux");
-  Key flux_owner = S_next_->GetField("darcy_flux")->owner();
-  Teuchos::RCP<CompositeVector>  next_darcy_copy = S_->GetFieldCopyData("darcy_flux", "next_timestep", flux_owner);
+  Teuchos::RCP<const CompositeVector> next_darcy = S_next_->GetFieldData(vol_darcy_key_);
+  Key flux_owner = S_next_->GetField(vol_darcy_key_)->owner();
+  Teuchos::RCP<CompositeVector>  next_darcy_copy = S_->GetFieldCopyData(vol_darcy_key_, "next_timestep", flux_owner);
   *next_darcy_copy = *next_darcy;
 
-  Teuchos::RCP<const CompositeVector> next_sur_flux = S_next_->GetFieldData("surface-flux");
-  flux_owner = S_next_->GetField("surface-flux")->owner();
-  Teuchos::RCP<CompositeVector>  next_sur_flux_copy = S_->GetFieldCopyData("surface-flux", "next_timestep", flux_owner);
+  Teuchos::RCP<const CompositeVector> next_sur_flux = S_next_->GetFieldData(surf_vol_darcy_key_);
+  flux_owner = S_next_->GetField(surf_vol_darcy_key_)->owner();
+  Teuchos::RCP<CompositeVector>  next_sur_flux_copy = S_->GetFieldCopyData(surf_vol_darcy_key_, "next_timestep", flux_owner);
   *next_sur_flux_copy = *next_sur_flux;
+
+
+
 
   sub_pks_[master_]->AdvanceStep(t_old, t_new, reinit);
   sub_pks_[slave_]->AdvanceStep(t_old, t_new, reinit);
@@ -153,5 +272,7 @@ void CoupledTransport_PK::InterpolateCellVector(
   double b = 1.0 - a;
   v_int.Update(b, v0, a, v1, 0.);
 }
+
+
 
 }  // namespace Amanzi

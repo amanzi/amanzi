@@ -192,7 +192,7 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
                                                getKey(domain_name_, "total_component_concentraion_matrix"));
 
 
-  molar_density_key_ = tp_list_->get<std::string>("molar_density_key_", getKey(domain_name_, "molar_density")); 
+  // molar_density_key_ = tp_list_->get<std::string>("molar_density_key_", getKey(domain_name_, "molar_density")); 
 
   mesh_ = S->GetMesh(domain_name_);
   dim = mesh_->space_dimension();

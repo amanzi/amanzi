@@ -34,6 +34,8 @@ namespace Amanzi {
     // -- dt is the minimum of the sub pks
     virtual double get_dt();
     virtual void set_dt(double dt);
+    virtual void Setup(const Teuchos::Ptr<State>& S);
+    virtual void Initialize(const Teuchos::Ptr<State>& S);
 
     // -- advance each sub pk from t_old to t_new.
     virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
@@ -47,7 +49,19 @@ namespace Amanzi {
     void InterpolateCellVector(const Epetra_MultiVector& v0, const Epetra_MultiVector& v1, 
                                double dt_int, double dt, Epetra_MultiVector& v_int) ;
 
+    void ComputeVolumeDarcyFlux(const Teuchos::Ptr<State>& S); 
 
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh_, surf_mesh_;
+    std::string passwd_;
+
+    Teuchos::RCP<Teuchos::ParameterList> surface_transport_list_;
+    Teuchos::RCP<Teuchos::ParameterList> subsurface_transport_list_;
+
+
+    Key vol_darcy_key_, surf_vol_darcy_key_;
+    Key surface_name_, subsurface_name_;
+    
+    
     // factory registration
     static RegisteredPKFactory<CoupledTransport_PK> reg_;
 };
