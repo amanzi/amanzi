@@ -67,17 +67,32 @@ void OperatorDiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
   //   Exceptions::amanzi_throw(msg);
   }
 
+  // DEPRECATED INPUT -- remove this error eventually --etc
+  if (plist.isParameter("newton correction")) {
+    msg << "OperatorDiffusionNLFV: DEPRECATED: \"newton correction\" has been removed in favor of \"Newton correction\"";
+    Exceptions::amanzi_throw(msg);
+  }
+
   // Newton correction terms
-  newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
   std::string jacobian = plist.get<std::string>("Newton correction", "none");
-  if (jacobian == "approximate Jacobian") {
+  if (jacobian == "none") {
+    newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
+  } else if (jacobian == "approximate Jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
 
     std::string name = "Diffusion: FACE_CELL Jacobian terms";
     jac_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
 
     global_op_->OpPushBack(jac_op_);
+  } else if (jacobian == "true Jacobian") {
+    newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
+    Errors::Message msg("OperatorDiffusionNLFV: \"true Jacobian\" not supported -- maybe you mean \"approximate Jacobian\"?");
+    Exceptions::amanzi_throw(msg);
+  } else {
+    msg << "OperatorDiffusionNLFV: invalid parameter \"" << jacobian << "\" for option \"Newton correction\" -- valid are: \"none\", \"approximate Jacobian\"";
+    Exceptions::amanzi_throw(msg);
   }
+
 
   // mesh info
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
