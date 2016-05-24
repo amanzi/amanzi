@@ -10,10 +10,10 @@ Overview
 The Amanzi simulator will continue to expand the available features and enhance current functionality.  This progress will result in modifications and additions to the XML input specification.  Specific versions of the XML input specification will only work with the corresponding Amanzi release version.  The following is a description of the changes made to the XML input specification and the Amanzi release version(s) that accept the input version.
 
 
-Version 2.3 (Amanzi Release - devel - #### )
+Version 2.3 (Amanzi Release - devel - 9089:0bab76c51dee )
 ==================================================
 
-Changeset ####
+Changeset 9089
 
 NERSC build on  May 24, 2016.
 
@@ -29,9 +29,6 @@ Unstr_Chemistry_Controls
   * max_relative_change_tolerance: no default is set.  If this is not present no default will be written to the PFloTran input file.
 
   * max_residual_tolerance: no default is set.  If this is not present no default will be written to the PFloTran input file.
-
-
-
 
 
 
