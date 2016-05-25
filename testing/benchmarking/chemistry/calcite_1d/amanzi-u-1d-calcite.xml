@@ -139,7 +139,7 @@
       <permeability x="1.E-12" y="1.E-12" z="1.E-12" />
       <assigned_regions>Entire Domain</assigned_regions>
       <minerals>
-        <mineral name="Calcite" volume_fraction="1.0e-5" specific_surface_area="110.0"/>
+        <mineral name="Calcite" volume_fraction="1.0e-5" specific_surface_area="100.0"/>
       </minerals>
     </material>
   </materials>
