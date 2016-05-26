@@ -66,6 +66,8 @@
 #   0.92.22      - added optional Silo package
 #   0.92.23      - Patched ASCEM-IO to allocate space for sprintf() correctly.
 #   0.92.24      - update MSTK to version 2.2.5 (updates to meshconvert, exoatt)
+#
+#   0.93.0       - updates to Trilinos, ...., for ideas
 
 include(CMakeParseArguments)
 
@@ -114,8 +116,8 @@ endmacro(amanzi_tpl_version_write)
 
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
-set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 24)
+set (AMANZI_TPLS_VERSION_MINOR 93)
+set (AMANZI_TPLS_VERSION_PATCH 0)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -350,23 +352,23 @@ set(PETSc_MD5_SUM        ad170802b3b058b5deb9cd1f968e7e13)
 # TPL: Trilinos
 #
 set(Trilinos_VERSION_MAJOR 12)
-set(Trilinos_VERSION_MINOR 2)
-set(Trilinos_VERSION_PATCH 1)
-set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}.${Trilinos_VERSION_MINOR}.${Trilinos_VERSION_PATCH})
+set(Trilinos_VERSION_MINOR 6)
+set(Trilinos_VERSION_PATCH 3)
+set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(Trilinos_ARCHIVE_FILE   trilinos-${Trilinos_VERSION}-Source.tar.bz2)
-set(Trilinos_MD5_SUM        760f14cbce482b4b9a41d1c18297b531)
+set(Trilinos_ARCHIVE_FILE   Trilinos-trilinos-${Trilinos_VERSION}.tar.gz)
+set(Trilinos_MD5_SUM        8de5cc00981a0ca0defea6199b2fe4c1)
 
 #
 # TPL: SEACAS
 #  SEACAS is available in Trilinos 10.8 and above
 set(SEACAS_VERSION_MAJOR 12)
-set(SEACAS_VERSION_MINOR 2)
-set(SEACAS_VERSION_PATCH 1)
-set(SEACAS_VERSION ${SEACAS_VERSION_MAJOR}.${SEACAS_VERSION_MINOR}.${SEACAS_VERSION_PATCH})
+set(SEACAS_VERSION_MINOR 6)
+set(SEACAS_VERSION_PATCH 3)
+set(SEACAS_VERSION ${SEACAS_VERSION_MAJOR}-${SEACAS_VERSION_MINOR}-${SEACAS_VERSION_PATCH})
 set(SEACAS_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(SEACAS_ARCHIVE_FILE   trilinos-${SEACAS_VERSION}-Source.tar.bz2)
-set(SEACAS_MD5_SUM        760f14cbce482b4b9a41d1c18297b531)
+set(SEACAS_ARCHIVE_FILE   Trilinos-trilinos-${SEACAS_VERSION}.tar.gz)
+set(SEACAS_MD5_SUM        8de5cc00981a0ca0defea6199b2fe4c1)
 
 #
 # TPL: PFlotran
