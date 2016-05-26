@@ -99,6 +99,8 @@ bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool rein
       dt_done += dt_next;
     }
 
+    dt_next = sub_pks_[slave_]->get_dt();
+
     // check for done condition
     done = (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) || // finished the step
         (dt_next  < min_dt_); // failed
