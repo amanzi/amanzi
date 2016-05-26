@@ -43,8 +43,11 @@ function(DEFINE_COMPILER_VERSION)
          elseif (${_compiler_id_uc} STREQUAL "CRAY" )
            set(_version_cmd_opt "-V")
            set(_regexp_pattern ".*Cray[ ]+C[ ]+:[ ]+Version ([0-9]+\\.[0-9]+\\.[0-9]+).*")
+         elseif (${_compiler_id_uc} STREQUAL "CLANG" )
+           set(_version_cmd_opt "-v")
+           set(_regexp_pattern ".*\(clang-\)[ ]+([0-9]+\\.[0-9]+\\.[0-9]+).*")
          else()
-           message(WARNING "Unknown compiler ID type ${_lang_id_var}")
+           message(WARNING "Unknown compiler ID type ${_compiler_id_uc}")
          endif()
 
          # Execute the command if the option was set
