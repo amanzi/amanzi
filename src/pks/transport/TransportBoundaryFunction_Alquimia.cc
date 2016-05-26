@@ -120,7 +120,6 @@ void TransportBoundaryFunction_Alquimia::Compute(double t_old, double t_new)
   }
 }
 
-
 }  // namespace Transport
 }  // namespace Amanzi
 
