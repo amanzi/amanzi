@@ -34,7 +34,7 @@ CHEMISTRY
     All
     TOTAL
   /
-  MAX_RESIDUAL_TOLERANCE 1.d-18
+  MAX_RESIDUAL_TOLERANCE 1.d-12
 END
 
 :=========================== constraints ======================================
