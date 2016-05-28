@@ -89,7 +89,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   // -- calculation of a stable time step needs saturations and darcy flux
   double CalculateTransportDt();
 
-  // coupling with chemistry
+  // -- coupling with chemistry
 #ifdef ALQUIMIA_ENABLED
   void SetupAlquimia(Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
                      Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);

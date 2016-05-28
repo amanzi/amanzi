@@ -45,9 +45,8 @@ void TabularStringFunction::CheckArgs_(
 }
 
 
-std::string TabularStringFunction::operator()(const std::vector<double>& x) const
+std::string TabularStringFunction::operator()(double xv) const
 {
-  double xv(x[0]);
   int n = x_.size();
   std::string y;
 

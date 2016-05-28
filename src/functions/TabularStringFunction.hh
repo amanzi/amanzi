@@ -24,7 +24,7 @@ class TabularStringFunction {
   TabularStringFunction(const std::vector<double>& x, const std::vector<std::string>& y);
   ~TabularStringFunction() {};
 
-  std::string operator()(const std::vector<double>& x) const;
+  std::string operator()(double xv) const;
 
  private:
   std::vector<double> x_;

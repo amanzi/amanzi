@@ -38,13 +38,15 @@ TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(
     Exceptions::amanzi_throw(msg); 
   }
 
-  // Get the regions assigned to this geochemical condition. If these regions have 
-  // already been covered, we don't add a new condition.
+  // Get the regions assigned to this geochemical condition. We do not
+  // check for region overlaps here, since a better way is to derive from 
+  // the generic mesh function.
   std::vector<std::string> regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();
-  cond_names_ = plist.get<Teuchos::Array<std::string> >("geochemical conditions").toVector();
-  times_ = plist.get<Teuchos::Array<double> >("times").toVector();
+  std::vector<double> times = plist.get<Teuchos::Array<double> >("times").toVector();
+  std::vector<std::string> conditions = plist.get<Teuchos::Array<std::string> >("geochemical conditions").toVector();
 
-  // Associate it with the given regions.
+  // Function of geochemical conditions and the associates regions.
+  f_ = Teuchos::rcp(new TabularStringFunction(times, conditions));
   Init_(regions);
 }
 
@@ -67,20 +69,20 @@ void TransportBoundaryFunction_Alquimia::Init_(const std::vector<std::string>& r
     // Get the faces that belong to this region (since boundary conditions
     // are applied on faces).
     assert(mesh_->valid_set_name(regions[i], AmanziMesh::FACE));
-    unsigned int num_faces = mesh_->get_set_size(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED);
 
-    AmanziMesh::Entity_ID_List face_indices;
-    mesh_->get_set_entities(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED, &face_indices);
+    AmanziMesh::Entity_ID_List block;
+    mesh_->get_set_entities(regions[i], AmanziMesh::FACE, AmanziMesh::USED, &block);
+    int nblock = block.size();
 
     // Now get the cells that are attached to these faces.
-    for (int n = 0; n < num_faces; ++n) {
-      int f = face_indices[n];
+    AmanziMesh::Entity_ID_List cells;
+    for (int n = 0; n < nblock; ++n) {
+      int f = block[n];
       value_[f] = WhetStone::DenseVector(chem_engine_->NumPrimarySpecies());
 
-      AmanziMesh::Entity_ID_List cells_for_face;
-      mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells_for_face);
+      mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
 
-      cell_for_face_[f] = cells_for_face[0];
+      cell_for_face_[f] = cells[0];
     }
   }
 }
@@ -91,14 +93,7 @@ void TransportBoundaryFunction_Alquimia::Init_(const std::vector<std::string>& r
 ****************************************************************** */
 void TransportBoundaryFunction_Alquimia::Compute(double t_old, double t_new) 
 {
-  // Find the condition that corresponds to the given time.
-  int time_index = 0;
-  while (time_index < (times_.size()-1)) {
-    if (times_.at(time_index+1) > t_new)
-      break;
-    ++time_index;
-  }
-  std::string cond_name = cond_names_.at(time_index);
+  std::string cond_name = (*f_)(t_new);
 
   // Loop over sides and evaluate values.
   for (TransportBoundaryFunction::Iterator it = begin(); it != end(); ++it) {
