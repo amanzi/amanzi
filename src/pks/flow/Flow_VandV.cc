@@ -28,21 +28,23 @@ void Flow_PK::VV_ValidateBCs() const
   // Create sets of the face indices belonging to each BC type.
   std::set<int> pressure_faces, head_faces, flux_faces;
 
-  for (int i =0; i < bc_pressure_.size(); i++) {
-    for (PK_DomainFunction::Iterator it = bc_pressure_[i]->begin(); it != bc_pressure_[i]->end(); ++it) {
-      pressure_faces.insert(it->first);
+  for (int i =0; i < bcs_.size(); i++) {
+    if (bcs_[i]->bc_name() == "pressure") {
+      for (PK_DomainFunction::Iterator it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        pressure_faces.insert(it->first);
+      }  
     }
-  }
 
-  for (int i =0; i < bc_flux_.size(); i++) {
-    for (PK_DomainFunction::Iterator it = bc_flux_[i]->begin(); it != bc_flux_[i]->end(); ++it) {
-      flux_faces.insert(it->first);
+    if (bcs_[i]->bc_name() == "flux") {
+      for (PK_DomainFunction::Iterator it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        flux_faces.insert(it->first);
+      }
     }
-  }
 
-  for (int i =0; i < bc_head_.size(); i++) {
-    for (PK_DomainFunction::Iterator it = bc_head_[i]->begin(); it != bc_head_[i]->end(); ++it) {
-      head_faces.insert(it->first);
+    if (bcs_[i]->bc_name() == "head") {
+      for (PK_DomainFunction::Iterator it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        head_faces.insert(it->first);
+      }
     }
   }
 
@@ -144,17 +146,20 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
 {
   const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face");
 
-  int dir, f, c;
+  int dir, f, c, nbcs(0);
   double tmp, outflow(0.0);
 
-  for (int i = 0; i < bc_seepage_.size(); ++i) {
-    for (PK_DomainFunction::Iterator it = bc_seepage_[i]->begin(); it != bc_seepage_[i]->end(); ++it) {
-      f = it->first;
-      if (f < nfaces_owned) {
-        c = BoundaryFaceGetCell(f);
-        const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
-        tmp = flux[0][f] * dir;
-        if (tmp > 0.0) outflow += tmp;
+  for (int i = 0; i < bcs_.size(); ++i) {
+    if (bcs_[i]->bc_name() == "seepage") {
+      nbcs++;
+      for (PK_DomainFunction::Iterator it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        f = it->first;
+        if (f < nfaces_owned) {
+          c = BoundaryFaceGetCell(f);
+          const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+          tmp = flux[0][f] * dir;
+          if (tmp > 0.0) outflow += tmp;
+        }
       }
     }
   }
@@ -165,7 +170,7 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
   outflow *= rho_;
   seepage_mass_ += outflow * dt_;
 
-  if (MyPID == 0 && bc_seepage_.size() > 0) {
+  if (MyPID == 0 && nbcs > 0) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "seepage face: flow=" << outflow << " [kg/s]," 
                << " total=" << seepage_mass_ << " [kg]" << std::endl;

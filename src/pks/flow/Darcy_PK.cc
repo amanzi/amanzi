@@ -215,10 +215,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
 void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // times
-  double t_old = ti_list_->get<double>("start interval time", 0.0);
-  dt_ = ti_list_->get<double>("initial time step", 1.0);
-  double t_new = t_old + dt_;
-
+  double t_ini = S->time(); 
   dt_next_ = dt_;
   dt_desirable_ = dt_;  // The minimum desirable time step from now on.
   dt_history_.clear();
@@ -249,30 +246,10 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap));
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
   
-  // Initialize boundary condtions. 
+  // Initialize boundary conditions and source terms. 
   flux_units_ = 1.0;
-
-  for (int i =0; i < bc_pressure_.size(); i++) {
-    bc_pressure_[i]->Compute(t_old, t_new);
-  }
-
-  for (int i =0; i < bc_flux_.size(); i++) {
-    bc_flux_[i]->Compute(t_old, t_new);
-    bc_flux_[i]->ComputeSubmodel(mesh_);
-  }
-
-  for (int i =0; i < bc_head_.size(); i++) {
-    bc_head_[i]->Compute(t_old, t_new);
-    bc_head_[i]->ComputeSubmodel(mesh_);
-  }
-
-  for (int i =0; i < bc_seepage_.size(); i++) {
-    bc_seepage_[i]->Compute(t_old, t_new);
-    bc_seepage_[i]->ComputeSubmodel(mesh_);
-  }
-
   CompositeVector& pressure = *S->GetFieldData("pressure", passwd_);
-  ComputeBCs(pressure);
+  UpdateSourceBoundaryData(t_ini, t_ini, pressure);
 
   // pressures (lambda is not important when solver is very accurate)
   if (pressure.HasComponent("face")) {
@@ -336,12 +313,6 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
   ASSERT(preconditioner_list_->isSublist(preconditioner_name_));
   
-  // initialize well models
-  for (int i =0; i < srcs.size(); i++) {
-    srcs[i]->Compute(t_old, t_new); 
-    VV_PrintSourceExtrema();
-  }
-  
   // Optional step: calculate hydrostatic solution consistent with BCs.
   // We have to do it only once per time period.
   bool init_darcy(false);
@@ -372,6 +343,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
     }
 
     VV_PrintHeadExtrema(*solution);
+    VV_PrintSourceExtrema();
 
     *vo_->os() << vo_->color("green") << "Initalization of PK is complete." 
                << vo_->reset() << std::endl << std::endl;
@@ -421,32 +393,8 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   dt_ = t_new - t_old;
   double dt_MPC(dt_);
 
-  // compute boundary conditions at new time
-  for (int i =0; i < bc_pressure_.size(); i++) {
-    bc_pressure_[i]->Compute(t_old, t_new);
-  }
-
-  for (int i =0; i < bc_flux_.size(); i++) {
-    bc_flux_[i]->Compute(t_old, t_new);
-    bc_flux_[i]->ComputeSubmodel(mesh_);
-  }
-
-  for (int i =0; i < bc_head_.size(); i++) {
-    bc_head_[i]->Compute(t_old, t_new);
-    bc_head_[i]->ComputeSubmodel(mesh_);
-  }
-
-  for (int i =0; i < bc_seepage_.size(); i++) {
-    bc_seepage_[i]->Compute(t_old, t_new);
-    bc_seepage_[i]->ComputeSubmodel(mesh_);
-  }
-
-  // compute source terms at new time
-  for (int i = 0; i < srcs.size(); ++i) {
-    srcs[i]->Compute(t_old, t_new); 
-  }
-
-  ComputeBCs(*solution);
+  // refresh data
+  UpdateSourceBoundaryData(t_old, t_new, *solution);
 
   // calculate and assemble elemental stiffness matrices
   double factor = 1.0 / g_;

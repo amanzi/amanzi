@@ -47,7 +47,7 @@ class PK_DomainFunctionSimple : public FunctionBase,
 
   // required member functions
   virtual void Compute(double t0, double t1);
-  virtual std::string name() { return "simple"; }
+  virtual std::string name() const { return "simple"; }
 
  protected:
   using FunctionBase::value_;

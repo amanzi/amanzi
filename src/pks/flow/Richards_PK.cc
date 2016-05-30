@@ -346,10 +346,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
 void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // times, initialization could be done on any non-zero interval.
-  double t_old = S->time(); 
-  dt_ = ti_list_->get<double>("initial time step", 1.0);
-  double t_new = t_old + dt_;
-
+  double t_ini = S->time(); 
   dt_desirable_ = dt_;
   dt_next_ = dt_;
 
@@ -394,34 +391,14 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   dKdP_->PutScalarMasterAndGhosted(0.0);
 
   // models and assumptions
+  flux_units_ = molar_rho_ / rho_;
+
   // -- coupling with other physical PKs
   Teuchos::RCP<Teuchos::ParameterList> physical_models = 
       Teuchos::sublist(rp_list_, "physical models and assumptions");
   vapor_diffusion_ = physical_models->get<bool>("vapor diffusion", false);
   multiscale_porosity_ = (physical_models->get<std::string>(
       "multiscale model", "single porosity") != "single porosity");
-
-  // Initialize actions on boundary condtions. 
-  flux_units_ = molar_rho_ / rho_;
-
-  for (int i =0; i < bc_pressure_.size(); i++) {
-    bc_pressure_[i]->Compute(t_old, t_new);
-  }
-
-  for (int i =0; i < bc_flux_.size(); i++) {
-    bc_flux_[i]->Compute(t_old, t_new);
-    bc_flux_[i]->ComputeSubmodel(mesh_);
-  }
-
-  for (int i =0; i < bc_head_.size(); i++) {
-    bc_head_[i]->Compute(t_old, t_new);
-    bc_head_[i]->ComputeSubmodel(mesh_);
-  }
-
-  for (int i =0; i < bc_seepage_.size(); i++) {
-    bc_seepage_[i]->Compute(t_old, t_new);
-    bc_seepage_[i]->ComputeSubmodel(mesh_);
-  }
 
   // Process other fundamental structures.
   SetAbsolutePermeabilityTensor();
@@ -521,11 +498,9 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   bdf1_dae = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
 
-  // initialize well modeling
-  for (int i = 0; i < srcs.size(); ++i) {
-    srcs[i]->Compute(t_old, t_new); 
-    VV_PrintSourceExtrema();
-  }
+  // Initialize boundary condtions ans source terms
+  UpdateSourceBoundaryData(t_ini, t_ini, pressure);
+VV_PrintSourceExtrema();
 
   // initialize matrix and preconditioner operators.
   // -- setup phase
@@ -540,8 +515,6 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_preconditioner_diff_->Setup(Kptr, krel_, dKdP_);
 
   // -- assemble phase
-  UpdateSourceBoundaryData(t_old, t_new, pressure);
-
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
   op_matrix_diff_->ApplyBCs(true, true);
 
@@ -587,7 +560,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     std::string solver_name_ini = ini_list.get<std::string>("method", "none");
     if (solver_name_ini == "saturated solver") {
       std::string name = ini_list.get<std::string>("linear solver");
-      SolveFullySaturatedProblem(t_old, *solution, name);
+      SolveFullySaturatedProblem(t_ini, *solution, name);
 
       bool clip(false);
       double clip_saturation = ini_list.get<double>("clipping saturation value", -1.0);
@@ -659,7 +632,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     solver_name_constraint_ = ti_list_->sublist("pressure-lambda constraints").get<std::string>("linear solver");
 
     if (S->position() == Amanzi::TIME_PERIOD_START) {
-      EnforceConstraints(t_new, solution);
+      EnforceConstraints(t_ini, solution);
       pressure_eval_->SetFieldAsChanged(S.ptr());
 
       // update mass flux
@@ -807,6 +780,7 @@ void Richards_PK::InitializeStatistics_()
     *vo_->os() << "default (no-flow) BC assigned to " << missed_bc_faces_ << " faces" << std::endl << std::endl;
 
     VV_PrintHeadExtrema(*solution);
+    VV_PrintSourceExtrema();
 
     *vo_->os() << vo_->color("green") << "Initalization of PK is complete, T=" 
                << S_->time() << " dT=" << dt_ << vo_->reset() << std::endl << std::endl;
@@ -945,38 +919,6 @@ void Richards_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<Stat
   *pdot_cells_prev = *pdot_cells;
 
   dt_ = dt_next_;
-}
-
-
-/* ******************************************************************
-* A wrapper for updating boundary conditions.
-****************************************************************** */
-void Richards_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u)
-{
-  for (int i = 0; i < srcs.size(); ++i) {
-    srcs[i]->Compute(t_old, t_new); 
-  }
-
-  for (int i =0; i < bc_pressure_.size(); i++) {
-    bc_pressure_[i]->Compute(t_old, t_new);
-  }
-
-  for (int i =0; i < bc_flux_.size(); i++) {
-    bc_flux_[i]->Compute(t_old, t_new);
-    bc_flux_[i]->ComputeSubmodel(mesh_);
-  }
-
-  for (int i =0; i < bc_head_.size(); i++) {
-    bc_head_[i]->Compute(t_old, t_new);
-    bc_head_[i]->ComputeSubmodel(mesh_);
-  }
-
-  for (int i =0; i < bc_seepage_.size(); i++) {
-    bc_seepage_[i]->Compute(t_old, t_new);
-    bc_seepage_[i]->ComputeSubmodel(mesh_);
-  }
-
-  ComputeBCs(u);
 }
 
 

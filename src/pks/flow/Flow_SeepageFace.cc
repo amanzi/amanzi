@@ -38,12 +38,13 @@ void Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
   std::vector<double>& bc_value = op_bc_->bc_value();
   std::vector<double>& bc_mixed = op_bc_->bc_mixed();
 
-  for (int i = 0; i < bc_seepage_.size(); ++i) {
-    if (bc_seepage_[i]->seepage_model() == "PFloTran") {
-      double ref_pressure = bc_seepage_[i]->ref_pressure();
+  for (int i = 0; i < bcs_.size(); ++i) {
+    if (bcs_[i]->bc_name() == "seepage" && 
+        bcs_[i]->seepage_model() == "PFloTran") {
+      double ref_pressure = bcs_[i]->ref_pressure();
       double tol = ref_pressure * 1e-14;
 
-      for (PK_DomainFunction::Iterator it = bc_seepage_[i]->begin(); it != bc_seepage_[i]->end(); ++it) {
+      for (PK_DomainFunction::Iterator it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         double face_value = BoundaryFaceValue(f, u);
 
@@ -72,12 +73,14 @@ void Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
   *nseepage = 0;
   *area_seepage = 0.0;
 
-  for (int i = 0; i < bc_seepage_.size(); ++i) {
-    for (PK_DomainFunction::Iterator it = bc_seepage_[i]->begin(); it != bc_seepage_[i]->end(); ++it) {
-      int f = it->first;
-      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-        (*nseepage)++;
-        (*area_seepage) += mesh_->face_area(f);
+  for (int i = 0; i < bcs_.size(); ++i) {
+    if (bcs_[i]->bc_name() == "seepage") {
+      for (PK_DomainFunction::Iterator it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+          (*nseepage)++;
+          (*area_seepage) += mesh_->face_area(f);
+        }
       }
     }
   }
@@ -98,11 +101,12 @@ void Flow_PK::SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* a
   *nseepage = 0;
   *area_seepage = 0.0;
 
-  for (int i = 0; i < bc_seepage_.size(); ++i) {
-    if (bc_seepage_[i]->seepage_model() == "FACT") {
-      double ref_pressure = bc_seepage_[i]->ref_pressure();
+  for (int i = 0; i < bcs_.size(); ++i) {
+    if (bcs_[i]->bc_name() == "seepage" && 
+        bcs_[i]->seepage_model() == "FACT") {
+      double ref_pressure = bcs_[i]->ref_pressure();
 
-      for (PK_DomainFunction::Iterator it = bc_seepage_[i]->begin(); it != bc_seepage_[i]->end(); ++it) {
+      for (PK_DomainFunction::Iterator it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         double face_value = BoundaryFaceValue(f, u);
 

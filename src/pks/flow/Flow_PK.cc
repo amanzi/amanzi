@@ -264,20 +264,24 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   bc_mixed_.resize(nfaces_wghost, 0.0);
   op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_, bc_mixed_));
 
+  Teuchos::RCP<FlowBoundaryFunction> bc;
   Teuchos::RCP<Teuchos::ParameterList>
       bc_list = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("boundary conditions", true)));
 
+  bcs_.clear();
+
   // -- pressure 
   if (bc_list->isSublist("pressure")) {
-    PK_DomainFunctionFactory<PK_DomainFunction> bc_factory(mesh_);
+    PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("pressure");
     for (Teuchos::ParameterList::ConstIterator it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
-        bc_pressure_.push_back(bc_factory.Create(
-            spec, "boundary pressure", AmanziMesh::FACE, Teuchos::null));
+        bc = bc_factory.Create(spec, "boundary pressure", AmanziMesh::FACE, Teuchos::null);
+        bc->set_bc_name("pressure");
+        bcs_.push_back(bc);
       }
     }
   }
@@ -291,8 +295,9 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
-        bc_head_.push_back(bc_factory.Create(
-            spec, "static head", AmanziMesh::FACE, Teuchos::null));
+        bc = bc_factory.Create(spec, "static head", AmanziMesh::FACE, Teuchos::null);
+        bc->set_bc_name("head");
+        bcs_.push_back(bc);
       }
     }
   }
@@ -306,8 +311,9 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
-        bc_flux_.push_back(bc_factory.Create(
-            spec, "outward mass flux", AmanziMesh::FACE, Teuchos::null));
+        bc = bc_factory.Create(spec, "outward mass flux", AmanziMesh::FACE, Teuchos::null);
+        bc->set_bc_name("flux");
+        bcs_.push_back(bc);
       }
     }
   }
@@ -321,8 +327,9 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
-        bc_seepage_.push_back(bc_factory.Create(
-            spec, "outward mass flux", AmanziMesh::FACE, Teuchos::null));
+        bc = bc_factory.Create(spec, "outward mass flux", AmanziMesh::FACE, Teuchos::null);
+        bc->set_bc_name("seepage");
+        bcs_.push_back(bc);
       }
     }
   }
@@ -330,6 +337,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   VV_ValidateBCs();
 
   // Create the source object if any
+  srcs.clear();
   if (plist.isSublist("source terms")) {
     PK_DomainFunctionFactory<PK_DomainFunction> factory(mesh_);
     PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
@@ -347,11 +355,29 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
+* A wrapper for updating boundary conditions.
+****************************************************************** */
+void Flow_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u)
+{
+  for (int i = 0; i < srcs.size(); ++i) {
+    srcs[i]->Compute(t_old, t_new); 
+  }
+
+  for (int i = 0; i < bcs_.size(); i++) {
+    bcs_[i]->Compute(t_old, t_new);
+    bcs_[i]->ComputeSubmodel(mesh_);
+  }
+
+  ComputeOperatorBCs(u);
+}
+
+
+/* ******************************************************************
 * Add a boundary marker to used faces.
 * WARNING: we can skip update of ghost boundary faces, b/c they 
 * should be always owned. 
 ****************************************************************** */
-void Flow_PK::ComputeBCs(const CompositeVector& u)
+void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
 {
   const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
 
@@ -365,34 +391,36 @@ void Flow_PK::ComputeBCs(const CompositeVector& u)
     bc_mixed[n] = 0.0;
   }
 
-  for (int i = 0; i < bc_pressure_.size(); ++i) {
-    for (PK_DomainFunction::Iterator it = bc_pressure_[i]->begin(); it != bc_pressure_[i]->end(); ++it) {
-      int f = it->first;
-      bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value[f] = it->second;
-    }
-  }
-
-  for (int i = 0; i < bc_head_.size(); ++i) {
-    for (PK_DomainFunction::Iterator it = bc_head_[i]->begin(); it != bc_head_[i]->end(); ++it) {
-      int f = it->first;
-      if (bc_head_[i]->no_flow_above_water_table()) {
-        if (it->second < atm_pressure_) {
-          bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-          bc_value[f] = 0.0;
-          continue;
-        }
+  for (int i = 0; i < bcs_.size(); ++i) {
+    if (bcs_[i]->bc_name() == "pressure") {
+      for (PK_DomainFunction::Iterator it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value[f] = it->second;
       }
-      bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value[f] = it->second;
     }
-  }
 
-  for (int i = 0; i < bc_flux_.size(); ++i) {
-    for (PK_DomainFunction::Iterator it = bc_flux_[i]->begin(); it != bc_flux_[i]->end(); ++it) {
-      int f = it->first;
-      bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-      bc_value[f] = it->second * flux_units_;
+    if (bcs_[i]->bc_name() == "head") {
+      for (PK_DomainFunction::Iterator it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        if (bcs_[i]->no_flow_above_water_table()) {
+          if (it->second < atm_pressure_) {
+            bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
+            bc_value[f] = 0.0;
+            continue;
+          }
+        }
+        bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value[f] = it->second;
+      }
+    }
+
+    if (bcs_[i]->bc_name() == "flux") {
+      for (PK_DomainFunction::Iterator it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_value[f] = it->second * flux_units_;
+      }
     }
   }
 

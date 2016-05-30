@@ -56,7 +56,7 @@ FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist)
 
 
 /* ****************************************************************
-* 
+* Process additional parameters for BC submodels. 
 **************************************************************** */
 void FlowBoundaryFunction::ComputeSubmodel(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
