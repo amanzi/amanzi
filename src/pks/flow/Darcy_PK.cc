@@ -210,34 +210,32 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
 
 
 /* ******************************************************************
-* Extract information from Diffusion problem parameter list.
+* Extract information from parameter list and initialize data.
 ****************************************************************** */
 void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
-  // times
+  // Initialize miscalleneous defaults.
+  // -- times
   double t_ini = S->time(); 
   dt_next_ = dt_;
   dt_desirable_ = dt_;  // The minimum desirable time step from now on.
   dt_history_.clear();
 
-  // Initialize defaults
+  // -- others
   initialize_with_darcy_ = true;
   num_itrs_ = 0;
 
-  // create verbosity object
+  // Create verbosity object to print out initialization statisticsr.,
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = dp_list_->sublist("verbose object");
   vo_ =  Teuchos::rcp(new VerboseObject("FlowPK::Darcy", vlist)); 
 
-  // Initilize various common data depending on mesh and state.
+  // Initilize various base class data.
   Flow_PK::Initialize(S);
 
-  // Create local evaluators. Initialize local fields.
+  // Initialize local fields and evaluators. 
   InitializeFields_();
   UpdateLocalFields_(S);
-
-  // Initialize BCs and source terms.
-  InitializeBCsSources_(*dp_list_);
 
   // Create solution and auxiliary data for time history.
   solution = S->GetFieldData("pressure", passwd_);
@@ -246,17 +244,6 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap));
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
   
-  // Initialize boundary conditions and source terms. 
-  flux_units_ = 1.0;
-  CompositeVector& pressure = *S->GetFieldData("pressure", passwd_);
-  UpdateSourceBoundaryData(t_ini, t_ini, pressure);
-
-  // pressures (lambda is not important when solver is very accurate)
-  if (pressure.HasComponent("face")) {
-    DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
-                                   *pressure.ViewComponent("face"));
-  }
-
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
   ASSERT(ti_method_name == "BDF1");
   Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
@@ -274,14 +261,28 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
   dt_max_ = dtlist.get<double>("max time step", Flow::FLOW_MAXIMUM_DT);
 
-  // initialize error control
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;  // usually 1e-4;
 
-  // initialize specific yield
+  // Initialize specific yield
   specific_yield_copy_ = Teuchos::null;
   UpdateSpecificYield_();
 
-  // initialize diffusion operator
+  // Initialize lambdas. It may be used by boundary conditions.
+  CompositeVector& pressure = *S->GetFieldData("pressure", passwd_);
+
+  if (pressure.HasComponent("face")) {
+    Epetra_MultiVector& p = *solution->ViewComponent("cell");
+    Epetra_MultiVector& lambda = *solution->ViewComponent("face");
+
+    DeriveFaceValuesFromCellValues(p, lambda);
+  }
+
+  // Create and initialize boundary conditions and source terms.
+  flux_units_ = 1.0;
+  InitializeBCsSources_(*dp_list_);
+  UpdateSourceBoundaryData(t_ini, t_ini, pressure);
+
+  // Initialize diffusion operator and solver.
   // -- instead of scaling K, we scale the elemental mass matrices 
   double mu = *S->GetScalarData("fluid_viscosity");
   SetAbsolutePermeabilityTensor();
@@ -298,17 +299,17 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op_ = op_diff_->global_operator();
 
-  // initialize accumulation operator
+  // -- accumulation operator.
   op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_));
 
   op_->SymbolicAssembleMatrix();
   op_->CreateCheckPoint();
 
-  // generic linear solver
+  // -- generic linear solver.
   ASSERT(ti_list_->isParameter("linear solver"));
   solver_name_ = ti_list_->get<std::string>("linear solver");
 
-  // preconditioner. There is no need to enhance it for Darcy
+  // -- preconditioner. There is no need to enhance it for Darcy
   ASSERT(ti_list_->isParameter("preconditioner"));
   preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
   ASSERT(preconditioner_list_->isSublist(preconditioner_name_));
@@ -318,18 +319,14 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   bool init_darcy(false);
   if (ti_list_->isSublist("initialization") && initialize_with_darcy_) {
     initialize_with_darcy_ = false;
-    Epetra_MultiVector& p = *solution->ViewComponent("cell");
-    Epetra_MultiVector& lambda = *solution->ViewComponent("face");
-    DeriveFaceValuesFromCellValues(p, lambda);
-
     SolveFullySaturatedProblem(*solution);
     init_darcy = true;
   }
 
-  // print initialization head for this time period
+  // Print initialization head for this time period
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "TI:\"" << ti_method_name.c_str() << "\""
+    *vo_->os() << "\nTI:\"" << ti_method_name.c_str() << "\""
                << " dt:" << dt_method_name
                << " LS:\"" << solver_name_.c_str() << "\""
                << " PC:\"" << preconditioner_name_.c_str() << "\"" << std::endl
@@ -337,7 +334,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
     *vo_->os() << "constant viscosity model, mu=" << mu << std::endl;
 
     if (init_darcy) {
-      *vo_->os() << "initial pressure guess: \"saturated solution\"\n" << std::endl;
+      *vo_->os() << "initial pressure guess: \"from saturated solver\"\n" << std::endl;
     } else {
       *vo_->os() << "initial pressure guess: \"from State\"\n" << std::endl;
     }

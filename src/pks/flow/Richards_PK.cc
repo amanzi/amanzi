@@ -339,33 +339,40 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
 
 
 /* ******************************************************************
-* This is long but simple subroutine. It goes through time integrator
-* list and initializes various objects created during setup step.
-* Some local objects needs to the most 
+* This is a long but simple routine. It goes through flow parameter
+* list and initializes various objects including those created during 
+* the setup step.
 ****************************************************************** */
 void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
-  // times, initialization could be done on any non-zero interval.
+  // Initialize miscalleneous defaults.
+  // -- times
   double t_ini = S->time(); 
   dt_desirable_ = dt_;
   dt_next_ = dt_;
 
-  // Initialize miscalleneous default parameters.
+  // -- others
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;
 
-  // create verbosity object
+  mass_bc = 0.0;
+  seepage_mass_ = 0.0;
+  mass_initial = 0.0;
+  initialize_with_darcy_ = true;
+  num_itrs_ = 0;
+
+  // Create verbosity object to print out initialiation statistics.
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = rp_list_->sublist("verbose object");
   vo_ =  Teuchos::rcp(new VerboseObject("FlowPK::Richards", vlist)); 
 
-  // Initilize various common data depending on mesh and state.
+  // Initilize various base class data.
   Flow_PK::Initialize(S);
 
-  // Create local evaluators. Initialize local fields.
+  // Initialize local fields and evaluators.
   InitializeFields_();
   UpdateLocalFields_(S);
 
-  // Initialize BCs and source terms.
+  // Create BCs and source terms.
   InitializeBCsSources_(*rp_list_);
 
   // relative permeability
@@ -390,7 +397,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   krel_->PutScalarMasterAndGhosted(1.0);
   dKdP_->PutScalarMasterAndGhosted(0.0);
 
-  // models and assumptions
+  // Process models and assumptions.
   flux_units_ = molar_rho_ / rho_;
 
   // -- coupling with other physical PKs
@@ -451,13 +458,6 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Initialize flux copy for the upwind operator.
   darcy_flux_copy = Teuchos::rcp(new CompositeVector(*S->GetFieldData("darcy_flux", passwd_)));
 
-  // Other quantatities: injected water mass
-  mass_bc = 0.0;
-  seepage_mass_ = 0.0;
-  mass_initial = 0.0;
-  initialize_with_darcy_ = true;
-  num_itrs_ = 0;
-  
   // Conditional initialization of lambdas from pressures.
   CompositeVector& pressure = *S->GetFieldData("pressure", passwd_);
 
@@ -498,11 +498,10 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   bdf1_dae = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
 
-  // Initialize boundary condtions ans source terms
+  // Initialize boundary conditions and source terms.
   UpdateSourceBoundaryData(t_ini, t_ini, pressure);
-VV_PrintSourceExtrema();
 
-  // initialize matrix and preconditioner operators.
+  // Initialize matrix and preconditioner operators.
   // -- setup phase
   // -- molar density requires to rescale gravity later.
   op_matrix_->Init();
@@ -528,11 +527,11 @@ VV_PrintSourceExtrema();
     op_vapor_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
   }
 
-  // generic linear solver for all cases except for a few
+  // -- generic linear solver for maost cases
   ASSERT(ti_list_->isParameter("linear solver"));
   solver_name_ = ti_list_->get<std::string>("linear solver");
 
-  // preconditioner or encapsulated preconditioner
+  // -- preconditioner or encapsulated preconditioner
   ASSERT(ti_list_->isParameter("preconditioner"));
   preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
   ASSERT(preconditioner_list_->isSublist(preconditioner_name_));
@@ -617,7 +616,7 @@ VV_PrintSourceExtrema();
   // Trigger update of secondary fields depending on the primary pressure.
   pressure_eval_->SetFieldAsChanged(S.ptr());
 
-  // derive mass flux (state may not have it at time 0)
+  // Derive mass flux (state may not have it at time 0)
   double tmp;
   darcy_flux_copy->Norm2(&tmp);
   if (tmp == 0.0) {
@@ -627,7 +626,7 @@ VV_PrintSourceExtrema();
     for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
   }
 
-  // subspace entering: re-initialize lambdas.
+  // Subspace entering: re-initialize lambdas.
   if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")) {
     solver_name_constraint_ = ti_list_->sublist("pressure-lambda constraints").get<std::string>("linear solver");
 
@@ -646,7 +645,7 @@ VV_PrintSourceExtrema();
     }
   }
 
-  // miscalleneous
+  // Development: miscalleneous
   algebraic_water_content_balance_ = rp_list_->get<bool>("algebraic water content balance", false);
   if (algebraic_water_content_balance_) {
     CompositeVectorSpace cvs; 
@@ -656,7 +655,7 @@ VV_PrintSourceExtrema();
     cnls_limiter_ = Teuchos::rcp(new CompositeVector(cvs));
   }
 
-  // verbose output
+  // Verbose output of initialization statistics.
   InitializeStatistics_();
 }
 
