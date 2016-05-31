@@ -236,6 +236,7 @@ void Richards_PK::UpwindInflowBoundary_New(Teuchos::RCP<const CompositeVector> u
       double value = DeriveBoundaryFaceValue(f, *u, wrm_->second[(*wrm_->first)[c]]);
       double kr = relperm_->Compute(c, value);
       k_face[0][f] = kr * (molar_rho_ / mu_cell[0][c]);
+      // (*u->ViewComponent("face"))[0][f] = value;
     } 
   }
 
