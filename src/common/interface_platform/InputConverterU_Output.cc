@@ -306,6 +306,8 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             obPL.set<std::string>("variable", "material id");
           } else if (strcmp(obs_type, "hydraulic_head") == 0) {
             obPL.set<std::string>("variable", "hydraulic head");
+          } else if (strcmp(obs_type, "perm_weighted_hydraulic_head") == 0) {
+            obPL.set<std::string>("variable", "permeability-weighted hydraulic head");
           } else if (strcmp(obs_type, "aqueous_mass_flow_rate") == 0) {
             obPL.set<std::string>("variable", "aqueous mass flow rate");
           } else if (strcmp(obs_type, "aqueous_volumetric_flow_rate") == 0) {

@@ -22,14 +22,14 @@
 #include "Units.hh"
 
 // MPC
-#include "Unstructured_observations.hh"
+#include "FlexibleObservations.hh"
 
 namespace Amanzi {
 
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-Unstructured_observations::Unstructured_observations(
+FlexibleObservations::FlexibleObservations(
     Teuchos::RCP<Teuchos::ParameterList> obs_list,
     Teuchos::RCP<Teuchos::ParameterList> units_list,
     Amanzi::ObservationData& observation_data,
@@ -112,10 +112,11 @@ Unstructured_observations::Unstructured_observations(
 /* ******************************************************************
 * Process data to extract observations.
 ****************************************************************** */
-int Unstructured_observations::MakeObservations(State& S)
+int FlexibleObservations::MakeObservations(State& S)
 {
   Errors::Message msg;
   int num_obs(0);
+  int dim = S.GetMesh()->space_dimension();
 
   // loop over all observables
   for (std::map<std::string, Observable>::iterator i = observations.begin(); i != observations.end(); i++) {
@@ -125,7 +126,7 @@ int Unstructured_observations::MakeObservations(State& S)
       // for now we can only observe Integrals and Values
       if ((i->second).functional != "observation data: integral"  &&
           (i->second).functional != "observation data: point" )  {
-        msg << "Unstructured_observations: can only handle Functional == observation data:"
+        msg << "FlexibleObservations: can only handle Functional == observation data:"
             << " integral, or functional == observation data: point";
         Exceptions::amanzi_throw(msg);
       }
@@ -350,6 +351,17 @@ int Unstructured_observations::MakeObservations(State& S)
           }    
         } else if (var == "hydraulic head") {
           const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
+          const Epetra_MultiVector& perm = *S.GetFieldData("permeability")->ViewComponent("cell");
+  
+          for (int i = 0; i < mesh_block_size; ++i) {
+            int c = entity_ids[i];
+            double vol = S.GetMesh()->cell_volume(c);
+            double kxy = (dim == 2) ? perm[1][c] : std::pow(perm[1][c] * perm[2][c], 0.5);
+            volume += vol * kxy;
+            value += hydraulic_head[0][c] * vol * kxy;
+          }
+        } else if (var == "permeability-weighted hydraulic head") {
+          const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
   
           for (int i = 0; i < mesh_block_size; ++i) {
             int c = entity_ids[i];
@@ -458,7 +470,7 @@ int Unstructured_observations::MakeObservations(State& S)
 /* ******************************************************************
 * Auxiliary routine: calculate maximum water table in a region.
 ****************************************************************** */
-double Unstructured_observations::CalculateWaterTable_(
+double FlexibleObservations::CalculateWaterTable_(
     State& S, AmanziMesh::Entity_ID_List& ids)
 {
   Teuchos::RCP<const Epetra_MultiVector> pressure = S.GetFieldData("pressure")->ViewComponent("cell", true);
@@ -534,7 +546,7 @@ double Unstructured_observations::CalculateWaterTable_(
 /* ******************************************************************
 * Save observation based on time or cycle.
 ****************************************************************** */
-bool Unstructured_observations::DumpRequested(const double time) {
+bool FlexibleObservations::DumpRequested(const double time) {
   bool result = false;
   for (std::map<std::string, Observable>::iterator i = observations.begin(); i != observations.end(); i++) {
     result = result || (i->second).DumpRequested(time);
@@ -543,7 +555,7 @@ bool Unstructured_observations::DumpRequested(const double time) {
 }
 
 
-bool Unstructured_observations::DumpRequested(const int cycle) {
+bool FlexibleObservations::DumpRequested(const int cycle) {
   bool result = false;
   for (std::map<std::string, Observable>::iterator i = observations.begin(); i != observations.end(); i++) {
     result = result || (i->second).DumpRequested(cycle);
@@ -552,7 +564,7 @@ bool Unstructured_observations::DumpRequested(const int cycle) {
 }
 
 
-bool Unstructured_observations::DumpRequested(const int cycle, const double time) {
+bool FlexibleObservations::DumpRequested(const int cycle, const double time) {
   return DumpRequested(time) || DumpRequested(cycle);
 }
 
@@ -561,7 +573,7 @@ bool Unstructured_observations::DumpRequested(const int cycle, const double time
 * Loop over all observations and register each of them with the time 
 * step manager.
 ****************************************************************** */
-void Unstructured_observations::RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm) {
+void FlexibleObservations::RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm) {
   for (std::map<std::string, Observable>::iterator i = observations.begin(); i != observations.end(); i++) {
     (i->second).RegisterWithTimeStepManager(tsm);
   }  
@@ -571,7 +583,7 @@ void Unstructured_observations::RegisterWithTimeStepManager(const Teuchos::Ptr<T
 /* ******************************************************************
 * Write observatins to a file. Clsoe the file to flush data.
 ****************************************************************** */
-void Unstructured_observations::FlushObservations()
+void FlexibleObservations::FlushObservations()
 {
   if (obs_list_->isParameter("observation output filename")) {
     std::string obs_file = obs_list_->get<std::string>("observation output filename");

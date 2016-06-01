@@ -409,7 +409,7 @@ Primary and derived fields
 
   * saturation [-]
   * hydraulic_head [m]
-  * darcy_flux [m/s]
+  * darcy_flux (more precisely, volumetric flow rate) [m^3/s] 
 
 
 Field evaluators
@@ -4920,6 +4920,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * aqueous saturation [-] (volume water / volume pore space)
       * aqueous pressure [Pa]
       * hydraulic head [m] 
+      * permeability-weighted hydraulic head [m] 
       * drawdown [m] 
       * volumetric water content [-]
       * gravimetric water content [-]

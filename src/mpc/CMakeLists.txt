@@ -69,12 +69,12 @@ list(REVERSE mpc_tpl_libs)
 
 set(mpc_inc_files
   CycleDriver.hh
-  Unstructured_observations.hh
-  Walkabout_observations.hh
+  FlexibleObservations.hh
+  WalkaboutCheckpoint.hh
 )
 
 add_amanzi_library(mpc 
-                   SOURCE CycleDriver.cc Unstructured_observations.cc Walkabout_observations.cc
+                   SOURCE CycleDriver.cc FlexibleObservations.cc WalkaboutCheckpoint.cc
                    HEADERS ${mpc_inc_files}
                    LINK_LIBS time_integration solvers output mpc_tree state mesh dbg ${mpc_tpl_libs})
 
