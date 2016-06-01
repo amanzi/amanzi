@@ -46,7 +46,7 @@ class UpwindSecondOrder : public Upwind<Model> {
   // -- not all input parameters are use by some algorithms
   void Compute(const CompositeVector& flux, const CompositeVector& solution,
                const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-               const CompositeVector& field, CompositeVector& field_upwind,
+               CompositeVector& field,
                double (Model::*Value)(int, double) const);
 
   // -- returns combined map for the original and upwinded fields.
@@ -90,22 +90,22 @@ template<class Model>
 void UpwindSecondOrder<Model>::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-    const CompositeVector& field, CompositeVector& field_upwind,
+    CompositeVector& field,
     double (Model::*Value)(int, double) const)
 {
   ASSERT(field.HasComponent("cell"));
   ASSERT(field.HasComponent("grad"));
-  ASSERT(field_upwind.HasComponent(face_comp_));
+  ASSERT(field.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
   flux.ScatterMasterToGhosted("face");
 
   const Epetra_MultiVector& flx_face = *flux.ViewComponent("face", true);
-  const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
-  const Epetra_MultiVector& fld_grad = *field.ViewComponent("grad", true);
   const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
-  Epetra_MultiVector& upw_face = *field_upwind.ViewComponent(face_comp_, true);
+  Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
+  Epetra_MultiVector& fld_grad = *field.ViewComponent("grad", true);
+  Epetra_MultiVector& upw_face = *field.ViewComponent(face_comp_, true);
   upw_face.PutScalar(0.0);
 
   double flxmin, flxmax;

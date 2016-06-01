@@ -21,7 +21,6 @@
 
 #include "Mesh.hh"
 #include "Transport_PK.hh"
-#include "TransportBCFactory.hh"
 
 namespace Amanzi {
 namespace Transport {
@@ -116,49 +115,6 @@ void Transport_PK::InitializeAll_()
   internal_tests = tp_list_->get<std::string>("enable internal tests", "no") == "yes";
   tests_tolerance = tp_list_->get<double>("internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT);
   dt_debug_ = tp_list_->get<double>("maximum time step", TRANSPORT_LARGE_TIME_STEP);
-
-  // populate the list of boundary influx functions
-  bcs.clear();
-
-  if (tp_list_->isSublist("boundary conditions")) {  // New flexible format.
-    std::vector<std::string> bcs_tcc_name;
-    Teuchos::RCP<Teuchos::ParameterList> bcs_list =
-        Teuchos::rcp(new Teuchos::ParameterList(tp_list_->get<Teuchos::ParameterList>("boundary conditions")));
-#ifdef ALQUIMIA_ENABLED
-    TransportBCFactory bc_factory(mesh_, bcs_list, chem_pk_, chem_engine_);
-#else
-    TransportBCFactory bc_factory(mesh_, bcs_list);
-#endif
-    bc_factory.Create(bcs);
-
-    for (int m = 0; m < bcs.size(); m++) {
-      std::vector<int>& tcc_index = bcs[m]->tcc_index();
-      std::vector<std::string>& tcc_names = bcs[m]->tcc_names();
-      int ncomp = tcc_names.size();
-
-      for (int i = 0; i < ncomp; i++) {
-        tcc_index.push_back(FindComponentNumber(tcc_names[i]));
-      }
-    }
-  } else {
-    if (vo_->getVerbLevel() > Teuchos::VERB_NONE) {
-      *vo_->os() << vo_->color("yellow") << "No BCs were specified." << vo_->reset() << std::endl;
-    }
-  }
-
-  // Create the source object if any
-  srcs.clear();
-
-  if (tp_list_->isSublist("source terms")) {
-    Teuchos::RCP<Teuchos::ParameterList> src_list = Teuchos::rcpFromRef(tp_list_->sublist("source terms", true));
-    TransportSourceFactory src_factory(mesh_, src_list);
-    src_factory.Create(srcs);
-
-    for (int m = 0; m < srcs.size(); m++) {
-      srcs[m]->set_tcc_index(FindComponentNumber(srcs[m]->tcc_name()));
-      int distribution = srcs[m]->CollectActionsList();
-    }
-  }
 }
 
 

@@ -22,16 +22,13 @@
 #include "State.hh"
 
 
-TEST(MPC_DRIVER_REACTIVE_TRANSPORT) {
-
+void RunTestReactiveTransport(const std::string& xmlInFileName) {
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   
-  std::string xmlInFileName = "test/mpc_driver_reactive_transport.xml";
-
   // read the main parameter list
   Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
@@ -61,3 +58,10 @@ using namespace Amanzi::AmanziGeometry;
 }
 
 
+TEST(MPC_DRIVER_REACTIVE_TRANSPORT_NATIVE) {
+  RunTestReactiveTransport("test/mpc_driver_reactive_transport.xml");
+}
+
+TEST(MPC_DRIVER_REACTIVE_TRANSPORT_ALQUIMIA) {
+  RunTestReactiveTransport("test/mpc_driver_alquimia_transport.xml");
+}

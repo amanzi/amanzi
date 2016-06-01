@@ -76,22 +76,22 @@ class Alquimia_PK: public Chemistry_PK {
 
   // Copy the data in the given Alquimia containers to the given cell state.
   // The aqueous components are placed into the given multivector.
-  void CopyFromAlquimia(const int cell_id,
+  void CopyFromAlquimia(const int cell,
                         const AlquimiaMaterialProperties& mat_props,
                         const AlquimiaState& state,
                         const AlquimiaAuxiliaryData& aux_data,
                         const AlquimiaAuxiliaryOutputData& aux_output,
-                        Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
+                        Teuchos::RCP<Epetra_MultiVector> aqueous_components);
 
-  int InitializeSingleCell(int cell_index, const std::string& condition);
-  int AdvanceSingleCell(double dt, Teuchos::RCP<Epetra_MultiVector> aquesous_components,
-                        int cell_index);
+  int InitializeSingleCell(int cell, const std::string& condition);
+  int AdvanceSingleCell(double dt, Teuchos::RCP<Epetra_MultiVector>& aquesous_components,
+                        int cell);
 
   void ParseChemicalConditionRegions(const Teuchos::ParameterList& param_list,
                                      std::map<std::string, std::string>& conditions);
   void XMLParameters();
 
-  void CopyAlquimiaStateToAmanzi(const int cell_id,
+  void CopyAlquimiaStateToAmanzi(const int cell,
                                  const AlquimiaMaterialProperties& mat_props,
                                  const AlquimiaState& state,
                                  const AlquimiaAuxiliaryData& aux_data,

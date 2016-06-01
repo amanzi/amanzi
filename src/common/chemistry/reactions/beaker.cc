@@ -93,6 +93,7 @@ Beaker::Beaker()
   total_sorbed_.clear();
 }  // end Beaker() constructor
 
+
 Beaker::~Beaker() {
   delete activity_model_;
 
@@ -114,7 +115,8 @@ Beaker::~Beaker() {
 #ifdef GLENN
   delete solver;
 #endif
-}  // end ~Beaker()
+}
+
 
 /*******************************************************************************
  **
@@ -135,7 +137,8 @@ void Beaker::Setup(const Beaker::BeakerComponents& components,
                      parameters.pitzer_database, parameters.jfunction_pitzer);
   ResizeInternalMemory(static_cast<int>(primary_species().size()));
   VerifyComponentSizes(components);
-}  // end Setup()
+}
+
 
 Beaker::BeakerParameters Beaker::GetDefaultParameters(void) const {
   Beaker::BeakerParameters parameters;
@@ -154,7 +157,8 @@ Beaker::BeakerParameters Beaker::GetDefaultParameters(void) const {
   parameters.volume = volume_default_;  // m^3
 
   return parameters;
-}  // end GetDefaultParameters()
+}
+
 
 Beaker::BeakerParameters Beaker::GetCurrentParameters(void) const {
   // Extract data from the various chemistry objects and store them
@@ -178,7 +182,8 @@ Beaker::BeakerParameters Beaker::GetCurrentParameters(void) const {
   parameters.volume = volume();  // m^3
 
   return parameters;
-}  // end GetCurrentParameters()
+}
+
 
 void Beaker::SetParameters(const Beaker::BeakerParameters& parameters) {
   // Take a parameters object that was created by the driver, and map
@@ -192,8 +197,8 @@ void Beaker::SetParameters(const Beaker::BeakerParameters& parameters) {
   volume(parameters.volume);  // vol = [m^3]
   update_accumulation_coefficients();
   update_por_sat_den_vol();
+}
 
-}  // end SetParameters()
 
 //
 // public "computation engine" routines
@@ -331,7 +336,8 @@ int Beaker::Speciate(Beaker::BeakerComponents* components,
     chem_out->Write(Teuchos::VERB_HIGH, message);
   }
   return num_iterations;
-}  // end Speciate()
+}
+
 
 int Beaker::ReactionStep(Beaker::BeakerComponents* components,
                          const Beaker::BeakerParameters& parameters,
@@ -489,7 +495,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   ValidateSolution();
 
   return num_iterations;
-}  // end ReactionStep()
+}
 
 
 void Beaker::CopyBeakerToComponents(Beaker::BeakerComponents* components) {
@@ -623,13 +629,15 @@ void Beaker::CopyBeakerToComponents(Beaker::BeakerComponents* components) {
       }
     }
   }
-}  // end CopyBeakerToComponents()
+}
+
 
 void Beaker::CopyComponents(const Beaker::BeakerComponents& from,
                             Beaker::BeakerComponents* to) {
   // this function doesn't really do anything...
   *to = from;
-}  // end Beaker::CopyComponents()
+}
+
 
 void Beaker::GetPrimaryNames(std::vector<std::string>* names) const {
   names->clear();
@@ -637,7 +645,8 @@ void Beaker::GetPrimaryNames(std::vector<std::string>* names) const {
        primary != primary_species().end(); primary++) {
     names->push_back(primary->name());
   }
-}  // end GetPrimaryNames()
+}
+
 
 int Beaker::GetPrimaryIndex(const std::string& name) const {
   int index = -1;
@@ -648,7 +657,8 @@ int Beaker::GetPrimaryIndex(const std::string& name) const {
     }
   }
   return index;
-}  // end GetPrimaryIndex()
+}
+
 
 //
 // public output
@@ -681,7 +691,8 @@ void Beaker::Display(void) const {
   DisplaySorptionIsotherms();
 
   chem_out->Write(Teuchos::VERB_HIGH, "------------------------------------------------ Beaker description --\n");
-}  // end Display()
+}
+
 
 void Beaker::DisplayComponents(const Beaker::BeakerComponents& components) const {
   std::stringstream message;
@@ -727,7 +738,8 @@ void Beaker::DisplayComponents(const Beaker::BeakerComponents& components) const
   message << "------------------------------------------------- Input Components ---"
           << std::endl;
   chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end DisplayComponents
+}
+
 
 void Beaker::DisplayResults(void) const {
   std::stringstream message;
@@ -806,7 +818,8 @@ void Beaker::DisplayResults(void) const {
   }
 
   chem_out->Write(Teuchos::VERB_HIGH, "---------------------------------------------------------- Solution --\n\n");
-}  // end DisplayResults()
+}
+
 
 void Beaker::DisplayTotalColumnHeaders(const bool display_free) const {
   std::stringstream message;
@@ -834,7 +847,8 @@ void Beaker::DisplayTotalColumnHeaders(const bool display_free) const {
   }
   message << std::endl;
   chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end DisplayTotalColumnHeaders()
+}
+
 
 void Beaker::DisplayTotalColumns(const double time,
                                  const BeakerComponents& components,
@@ -862,9 +876,7 @@ void Beaker::DisplayTotalColumns(const double time,
   }
   message << std::endl;
   chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end DisplayTotalColumns()
-
-
+}
 
 
 /*******************************************************************************
@@ -895,8 +907,7 @@ void Beaker::ResizeInternalMemory(const int size) {
   jacobian_.Resize(ncomp());
   rhs_.resize(ncomp());
   lu_solver_.Initialize(ncomp());
-}  // end ResizeInternalMemry()
-
+}
 
 
 void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components) const {
@@ -963,7 +974,8 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components) co
   if (error) {
     Exceptions::amanzi_throw(ChemistryMemorySizeError(error_stream.str()));
   }
-}  // end VerifyComponentSizes()
+}
+
 
 void Beaker::CopyComponentsToBeaker(const Beaker::BeakerComponents& components) {
   // NOTE: Do not copy total and total_sorbed here!
@@ -1108,7 +1120,8 @@ void Beaker::CopyComponentsToBeaker(const Beaker::BeakerComponents& components) 
       sorption_isotherm_rxns_.at(r).SetIsothermParameters(sorption_isotherm_params_);
     }
   }
-}  // end CopyComponentsToBeaker()
+} 
+
 
 void Beaker::SetupActivityModel(std::string model,
                                 std::string pitzer_database,
@@ -1131,31 +1144,38 @@ void Beaker::SetupActivityModel(std::string model,
   if (debug()) {
     activity_model_->Display();
   }
-}  // end SetupActivityModel()
+}
+
 
 void Beaker::AddPrimarySpecies(const Species& s) {
   primary_species_.push_back(s);
-}  // end AddPrimarySpecies()
+}
+
 
 void Beaker::AddIonExchangeRxn(const IonExchangeRxn& ionx_rxn) {
   ion_exchange_rxns_.push_back(ionx_rxn);
-}  // end AddIonExchangeRxn()
+}
+
 
 void Beaker::AddIonExchangeComplex(const int irxn, const IonExchangeComplex& ionx_complex) {
   ion_exchange_rxns_[irxn].AddIonExchangeComplex(ionx_complex);
-}  // end AddIonExchangeRxn()
+}
+
 
 void Beaker::AddAqueousEquilibriumComplex(const AqueousEquilibriumComplex& c) {
   aqComplexRxns_.push_back(c);
-}  // end AddAqueousEquilibriumComplex()
+}
+
 
 void Beaker::AddMineral(const Mineral& m) {
   minerals_.push_back(m);
-}  // end AddMineral()
+}
+
 
 void Beaker::AddMineralKineticRate(KineticRate* rate) {
   mineral_rates_.push_back(rate);
-}  // end AddMineralKineticRate()
+}
+
 
 bool Beaker::HaveKinetics(void) const {
   bool have_kinetics = false;
@@ -1165,24 +1185,27 @@ bool Beaker::HaveKinetics(void) const {
   // add other kinetic processes here....
 
   return have_kinetics;
-}  // end HaveKinetics()
+}
+
 
 void Beaker::AddGeneralRxn(const GeneralRxn& r) {
   generalKineticRxns_.push_back(r);
-}  // end AddGeneralRxn()
+}
+
 
 void Beaker::AddRadioactiveDecayRxn(const RadioactiveDecay& r) {
   radioactive_decay_rxns_.push_back(r);
-}  // end AddRadioactiveDecayRxn()
+}
+
 
 void Beaker::AddSurfaceComplexationRxn(const SurfaceComplexationRxn& r) {
   surfaceComplexationRxns_.push_back(r);
-}  // end AddSurfaceComplexationRxn()
+}
+
 
 void Beaker::AddSorptionIsothermRxn(const SorptionIsothermRxn& r) {
   sorption_isotherm_rxns_.push_back(r);
-}  // end AddSorptionIsothermRxn()
-
+}
 
 
 /*******************************************************************************
@@ -1194,7 +1217,8 @@ void Beaker::UpdateParameters(const Beaker::BeakerParameters& parameters,
                               double delta_t) {
   dt(delta_t);  // delta time = [sec]
   SetParameters(parameters);
-}  // end UpdateParameters()
+} 
+
 
 void Beaker::ResetStatus(void) {
   status_.num_rhs_evaluations = 0;
@@ -1203,14 +1227,16 @@ void Beaker::ResetStatus(void) {
   status_.converged = false;
 }
 
+
 void Beaker::update_accumulation_coefficients(void) {
   aqueous_accumulation_coef(porosity() * saturation() * volume() * 1000.0 / dt());
   sorbed_accumulation_coef(volume() / dt());
-}  // end update_accumulation_coefficients
+} 
+
 
 void Beaker::update_por_sat_den_vol(void) {
   por_sat_den_vol(porosity() * saturation() * water_density_kg_m3() * volume());
-}  // end update_por_sat_den_vol()
+}
 
 
 void Beaker::UpdateActivityCoefficients(void) {
@@ -1223,7 +1249,8 @@ void Beaker::UpdateActivityCoefficients(void) {
        i != primary_species_.end(); i++) {
     i->update();
   }
-}  // end UpdateActivityCoefficients
+}
+
 
 void Beaker::UpdateKineticMinerals(void) {
 
@@ -1242,15 +1269,16 @@ void Beaker::UpdateKineticMinerals(void) {
     minerals_.at(i).UpdateVolumeFraction(kinetic_rate, dt());
     minerals_.at(i).UpdateSpecificSurfaceArea();
   }
+}
 
-}  // end UpdateKineticMinerals()
 
 void Beaker::InitializeMolalities(double initial_molality) {
   for (std::vector<Species>::iterator i = primary_species_.begin();
        i != primary_species_.end(); i++) {
     i->update(initial_molality);
   }
-}  // end InitializeMolalities
+}
+
 
 void Beaker::InitializeMolalities(const std::vector<double>& initial_molalities) {
   if (initial_molalities.size() != primary_species().size()) {
@@ -1266,7 +1294,8 @@ void Beaker::InitializeMolalities(const std::vector<double>& initial_molalities)
   for (unsigned int i = 0; i < primary_species().size(); i++) {
     primary_species_.at(i).update(initial_molalities.at(i));
   }
-}  // end InitializeMolalities()
+}
+
 
 void Beaker::UpdateEquilibriumChemistry(void) {
   //    calculateActivityCoefficients(-1);
@@ -1308,7 +1337,8 @@ void Beaker::UpdateEquilibriumChemistry(void) {
 
   // calculate total component concentrations
   CalculateTotal();
-}  // end UpdateEquilibriumChemistry()
+}
+
 
 void Beaker::CalculateTotal(void) {
   // add in primaries
@@ -1348,8 +1378,8 @@ void Beaker::CalculateTotal(void) {
        ier != ion_exchange_rxns_.end(); ier++) {
     ier->AddContributionToTotal(&total_sorbed_);
   }
+}
 
-}  // end CalculateTotal()
 
 void Beaker::CalculateDTotal(void) {
   dtotal_.Zero();
@@ -1385,7 +1415,8 @@ void Beaker::CalculateDTotal(void) {
       ier->AddContributionToDTotal(primary_species(), &dtotal_sorbed_);
     }
   }
-}  // end CalculateDTotal()
+}
+
 
 void Beaker::UpdateKineticChemistry(void) {
   // loop over general kinetic reactions and update effective rates
@@ -1409,7 +1440,8 @@ void Beaker::UpdateKineticChemistry(void) {
   }
   // add multirate kinetic surface complexation reaction quotient calculations
   // here
-}  // end UpdateKineticChemistry()
+} 
+
 
 void Beaker::AddKineticChemistryToResidual(void) {
   // loop over general kinetic reactions and add rates
@@ -1431,7 +1463,8 @@ void Beaker::AddKineticChemistryToResidual(void) {
   }
 
   // add multirate kinetic surface complexation contribution to residual here.
-}  // end AddKineticChemistryToResidual()
+}
+
 
 void Beaker::AddKineticChemistryToJacobian(void) {
   // loop over general kinetic reactions and add rates
@@ -1455,8 +1488,7 @@ void Beaker::AddKineticChemistryToJacobian(void) {
   }
 
   // add multirate kinetic surface complexation contribution to Jacobian here.
-}  // end AddKineticChemistryToJacobian()
-
+}
 
 
 void Beaker::AddAccumulation(const std::vector<double>& total,
@@ -1479,7 +1511,8 @@ void Beaker::AddAccumulation(const std::vector<double>& total,
   for (unsigned int i = 0; i < total_sorbed.size(); i++) {
     residual->at(i) += sorbed_accumulation_coef() * total_sorbed.at(i);
   }
-}  // end AddAccumulation()
+}
+
 
 void Beaker::AddAccumulationDerivative(MatrixBlock* J,
                                        MatrixBlock* dtotal,
@@ -1497,7 +1530,8 @@ void Beaker::AddAccumulationDerivative(MatrixBlock* J,
   if (total_sorbed_.size()) {
     J->AddValues(dtotal_sorbed, sorbed_accumulation_coef());
   }
-}  // end AddAccumulationDerivative()
+}
+
 
 void Beaker::CalculateFixedAccumulation(const std::vector<double>& total,
                                         const std::vector<double>& total_sorbed,
@@ -1506,7 +1540,8 @@ void Beaker::CalculateFixedAccumulation(const std::vector<double>& total,
     fixed_accumulation->at(i) = 0.0;
   }
   AddAccumulation(total, total_sorbed, fixed_accumulation);
-}  // end CalculateFixedAccumulation()
+}
+
 
 void Beaker::CalculateResidual(void) {
   status_.num_rhs_evaluations++;
@@ -1520,8 +1555,8 @@ void Beaker::CalculateResidual(void) {
 
   // kinetic reaction contribution to residual
   AddKineticChemistryToResidual();
+}
 
-}  // end CalculateResidual()
 
 void Beaker::CalculateJacobian(void) {
   status_.num_jacobian_evaluations++;
@@ -1535,7 +1570,8 @@ void Beaker::CalculateJacobian(void) {
 
   // add in derivatives for kinetic chemistry
   AddKineticChemistryToJacobian();
-}  // end CalculateJacobian()
+}
+
 
 void Beaker::ScaleRHSAndJacobian(void) {
   for (int i = 0; i < jacobian_.size(); i++) {
@@ -1546,7 +1582,8 @@ void Beaker::ScaleRHSAndJacobian(void) {
       jacobian_.ScaleRow(i, scale);
     }
   }
-}  // end ScaleRHSAndJacobian()
+}
+
 
 void Beaker::UpdateMolalitiesWithTruncation(const double max_ln_change) {
   double max_linear_change = std::pow(10.0, max_ln_change); // log10 vs ln... close enough
@@ -1596,8 +1633,9 @@ void Beaker::UpdateMolalitiesWithTruncation(const double max_ln_change) {
       molality = prev_molal_.at(i) - rhs_.at(i);
     }
     primary_species_.at(i).update(molality);
-  } // for (i)
-}  // end UpdateMolalitiesWithTruncation()
+  }
+}
+
 
 void Beaker::CalculateMaxRelChangeInMolality(double* max_rel_change, int* max_rel_index) {
   *max_rel_change = 0.0;
@@ -1610,7 +1648,7 @@ void Beaker::CalculateMaxRelChangeInMolality(double* max_rel_change, int* max_re
       *max_rel_index = i;
     }
   }
-}  // end CalculateMaxRelChangeInMolality()
+} 
 
 
 void Beaker::CheckChargeBalance(const std::vector<double>& aqueous_totals) const {
@@ -1625,7 +1663,7 @@ void Beaker::CheckChargeBalance(const std::vector<double>& aqueous_totals) const
             << charge_balance << std::fixed << std::endl;
     chem_out->WriteWarning(Teuchos::VERB_EXTREME, message);
   }
-}  // end CheckChargeBalance()
+}
 
 
 void Beaker::ValidateSolution() {
@@ -1648,9 +1686,7 @@ void Beaker::ValidateSolution() {
       Exceptions::amanzi_throw(ChemistryInvalidSolution(error_stream.str()));
     }
   }
-}  // end ValidateSolution()
-
-
+}
 
 
 /*******************************************************************************
@@ -1706,7 +1742,8 @@ void Beaker::DisplayPrimary(void) const {
     primary->Display();
   }
   chem_out->Write(Teuchos::VERB_HIGH, "\n");
-}  // end DisplayPrimary()
+}
+
 
 void Beaker::DisplayAqueousEquilibriumComplexes(void) const {
   std::stringstream message;
@@ -1723,7 +1760,8 @@ void Beaker::DisplayAqueousEquilibriumComplexes(void) const {
     aec->Display();
   }
   chem_out->Write(Teuchos::VERB_HIGH, "\n");
-}  // end DisplayAqueousEquilibriumComplexes()
+}
+
 
 void Beaker::DisplayGeneralKinetics(void) const {
   if (generalKineticRxns_.size() > 0) {
@@ -1737,7 +1775,8 @@ void Beaker::DisplayGeneralKinetics(void) const {
     }
     chem_out->Write(Teuchos::VERB_HIGH, "\n");
   }
-}  // end DisplayGeneralKinetics()
+}
+
 
 void Beaker::DisplayRadioactiveDecayRxns(void) const {
   if (radioactive_decay_rxns_.size() > 0) {
@@ -1752,7 +1791,8 @@ void Beaker::DisplayRadioactiveDecayRxns(void) const {
     }
     chem_out->Write(Teuchos::VERB_HIGH, "\n");
   }
-}  // end DisplayRadioactiveDecayRxns()
+}
+
 
 void Beaker::DisplayMinerals(void) const {
   if (minerals_.size() > 0) {
@@ -1779,7 +1819,8 @@ void Beaker::DisplayMinerals(void) const {
     }
     chem_out->Write(Teuchos::VERB_HIGH, "\n");
   }
-}  // end DisplayMinerals()
+} 
+
 
 void Beaker::DisplayMineralKinetics(void) const {
   if (mineral_rates_.size() > 0) {
@@ -1791,7 +1832,8 @@ void Beaker::DisplayMineralKinetics(void) const {
     }
     chem_out->Write(Teuchos::VERB_HIGH, "\n");
   }
-}  // end DisplayMineralKinetics()
+} 
+
 
 void Beaker::DisplayIonExchangeSites(void) const {
   if (ion_exchange_rxns_.size() > 0) {
@@ -1810,7 +1852,8 @@ void Beaker::DisplayIonExchangeSites(void) const {
     }
     chem_out->Write(Teuchos::VERB_HIGH, "\n");
   }
-}  // end DisplayIonExchangeSites()
+}
+
 
 void Beaker::DisplayIonExchangeComplexes(void) const {
   if (ion_exchange_rxns_.size() > 0) {
@@ -1827,7 +1870,8 @@ void Beaker::DisplayIonExchangeComplexes(void) const {
     }
     chem_out->Write(Teuchos::VERB_HIGH, "\n");
   }
-}  // end DisplayIonExchangeComplexes()
+}
+
 
 void Beaker::DisplaySurfaceSites(void) const {
   if (surfaceComplexationRxns_.size() > 0) {
@@ -1847,7 +1891,8 @@ void Beaker::DisplaySurfaceSites(void) const {
     }
     chem_out->Write(Teuchos::VERB_HIGH, "\n");
   }
-}  // end DisplaySurfaceSites()
+}
+
 
 void Beaker::DisplaySurfaceComplexes(void) const {
   if (surfaceComplexationRxns_.size() > 0) {
@@ -1865,7 +1910,8 @@ void Beaker::DisplaySurfaceComplexes(void) const {
     }
     chem_out->Write(Teuchos::VERB_HIGH, "\n");
   }
-}  // end DisplaySurfaceComplexes()
+}
+
 
 void Beaker::DisplaySorptionIsotherms(void) const {
   if (sorption_isotherm_rxns_.size() > 0) {
@@ -1883,7 +1929,7 @@ void Beaker::DisplaySorptionIsotherms(void) const {
     }
     chem_out->Write(Teuchos::VERB_HIGH, "\n");
   }
-}  // end DisplaySurfaceComplexes()
+}
 
 
 void Beaker::print_results(void) const {
@@ -1909,7 +1955,8 @@ void Beaker::print_results(void) const {
   }
   message << "-------------------------------------\n";
   message << std::endl;
-}  // end print_results()
+}
+
 
 void Beaker::print_results(double time) const {
   std::stringstream message;
@@ -1928,7 +1975,8 @@ void Beaker::print_results(double time) const {
     message << primary_species().at(i).molality() << "\t";
   }
   message << std::endl;
-}  // end print_results()
+} 
+
 
 void Beaker::print_linear_system(const std::string& s, 
                                  const MatrixBlock& A,
@@ -1940,7 +1988,8 @@ void Beaker::print_linear_system(const std::string& s,
   }
   chem_out->Write(Teuchos::VERB_HIGH,message);
   A.Print_ij();
-}  // end print_linear_system()
+}
+
 
 void Beaker::print_linear_system(const std::string& s, 
                                  const std::vector<double>& vector) const {
@@ -1950,7 +1999,7 @@ void Beaker::print_linear_system(const std::string& s,
     message << "RHS: " << primary_species().at(i).name() << " " << vector.at(i) << std::endl;
   }
   chem_out->Write(Teuchos::VERB_HIGH,message);
-}  // end print_linear_system()
+} 
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

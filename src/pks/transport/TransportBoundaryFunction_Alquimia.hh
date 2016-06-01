@@ -19,7 +19,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
-#include "MultiFunction.hh"
+#include "TabularStringFunction.hh"
 #include "TransportBoundaryFunction.hh"
 
 #ifdef ALQUIMIA_ENABLED
@@ -31,24 +31,22 @@ namespace Transport {
 
 class TransportBoundaryFunction_Alquimia : public TransportBoundaryFunction {
  public:
-  TransportBoundaryFunction_Alquimia(const std::vector<double>& times,
-                                     const std::vector<std::string>& cond_names, 
-                                     const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
+  TransportBoundaryFunction_Alquimia(const Teuchos::ParameterList& plist,
+                                     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                      Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
                                      Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
   ~TransportBoundaryFunction_Alquimia();
   
-  void Compute(double time);
+  void Compute(double t_old, double t_new);
 
-  void Define(const std::vector<std::string> &regions);
-  void Define(std::string region);
+ private:
+  void Init_(const std::vector<std::string> &regions);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
-  // The geochemical conditions we are enforcing, and the times we are enforcing them at.
-  std::vector<double> times_;
-  std::vector<std::string> cond_names_;
+  // string function of geochemical conditions
+  Teuchos::RCP<TabularStringFunction> f_;
 
   // Chemistry state and engine.
   Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk_;

@@ -87,7 +87,7 @@
               <Parameter name="spatial distribution method" type="string" value="permeability"/>
               <ParameterList name="sink">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.1"/>
+                  <Parameter name="value" type="double" value="1e-4"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -138,12 +138,12 @@
             <ParameterList name="function">
               <Parameter name="function type" type="string" value="composite function"/>
               <Parameter name="number of dofs" type="int" value="2"/>
-              <ParameterList name="DoF 1 Function">
+              <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.5"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 2 Function">
+              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.5"/>
                 </ParameterList>

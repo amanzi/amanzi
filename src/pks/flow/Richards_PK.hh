@@ -21,7 +21,6 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
-#include "BCs.hh"
 #include "BDF1_TI.hh"
 #include "OperatorDiffusion.hh"
 #include "OperatorAccumulation.hh"
@@ -181,7 +180,6 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_diff_, op_preconditioner_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
   Teuchos::RCP<Operators::Upwind<RelPerm> > upwind_;
-  Teuchos::RCP<Operators::BCs> op_bc_;
   std::string preconditioner_name_, solver_name_, solver_name_constraint_;
 
   // coupling with energy

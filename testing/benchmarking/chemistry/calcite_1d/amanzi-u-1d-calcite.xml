@@ -92,11 +92,12 @@
 
       <unstr_chemistry_controls>
         <activity_model>debye-huckel</activity_model>
-        <tolerance>1.5e-12</tolerance>
-        <maximum_newton_terations>150</maximum_newton_terations>
+        <tolerance>1.0e-12</tolerance>
+        <maximum_newton_terations>50</maximum_newton_terations>
         <auxiliary_data>pH</auxiliary_data>
-        <max_time_step>15778463.0</max_time_step>
-        <time_step_cut_threshold>12</time_step_cut_threshold>
+        <initial_time_step>220000.0</initial_time_step>
+        <max_time_step>220000.0</max_time_step>
+        <time_step_cut_threshold>10</time_step_cut_threshold>
       </unstr_chemistry_controls>
 
       <unstr_linear_solver>
@@ -139,7 +140,7 @@
       <permeability x="1.E-12" y="1.E-12" z="1.E-12" />
       <assigned_regions>Entire Domain</assigned_regions>
       <minerals>
-        <mineral name="Calcite" volume_fraction="1.0e-5" specific_surface_area="110.0"/>
+        <mineral name="Calcite" volume_fraction="1.0e-5" specific_surface_area="100.0"/>
       </minerals>
     </material>
   </materials>
@@ -152,9 +153,9 @@
           <uniform_pressure name="IC1" value="201325.0" />
         </liquid_component>
         <solute_component name="solute">
-          <uniform_conc name="H+" value="1.6290737950863135E-05" />
-          <uniform_conc name="HCO3-" value="1.7348824177512681E-03" />
-          <uniform_conc name="Ca++" value="5.2312130065730166E-04" />
+          <uniform_conc name="H+" value="1.6288E-05" />
+          <uniform_conc name="HCO3-" value="1.7384E-03" />
+          <uniform_conc name="Ca++" value="5.2258E-04" />
         </solute_component>
         <geochemistry>
           <constraint name="initial" start="0.0"/>
@@ -171,9 +172,9 @@
           <inward_mass_flux function="uniform" start="0.0" value="7.91317859e-6"/>
         </liquid_component>
         <solute_component name="solute">
-          <aqueous_conc name="H+" value="9.6641473107457617E-04" function="constant" start="0.0"/>
-          <aqueous_conc name="HCO3-" value="9.9999999902971649E-04" function="constant" start="0.0"/>
-          <aqueous_conc name="Ca++" value="1.6792633971909330E-05" function="constant" start="0.0"/>
+          <aqueous_conc name="H+" value="9.6643E-04" function="constant" start="0.0"/>
+          <aqueous_conc name="HCO3-" value="1.0000E-03" function="constant" start="0.0"/>
+          <aqueous_conc name="Ca++" value="1.6787E-05" function="constant" start="0.0"/>
         </solute_component> 
         <!--geochemistry>
           <constraint name="west" function="uniform" start="0.0"/>

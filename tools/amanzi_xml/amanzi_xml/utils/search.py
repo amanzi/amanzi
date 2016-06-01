@@ -58,12 +58,13 @@ def find_by_path(xml,names):
 def replace_by_value(xml,oldvalue,newvalue):
     """Replace all matches of a given 'value'='oldvalue' with 'newvalue'"""
     for r in findall_value(xml, oldvalue):
-        r.set('value', str(newvalue))
+        r.setValue(newvalue)
+
 
 def replace_by_name(xml,name,value):
     """Replace all matches of a given 'name' with 'newvalue'"""
     for r in findall_name(xml, name):
-        r.set('value', str(value))
+        r.setValue(value)
 
 def replace_by_path(xml,names,value):
     """Replace value at end of path defined by list of name strings in decending hierarchical order."""

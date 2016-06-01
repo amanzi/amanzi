@@ -21,12 +21,10 @@
 #include "LinearOperatorFactory.hh"
 #include "mfd3d_diffusion.hh"
 #include "OperatorDiffusionFactory.hh"
-#include "PK_Utils.hh"
 #include "Tensor.hh"
 
 #include "Darcy_PK.hh"
 #include "FlowDefs.hh"
-#include "Flow_SourceFactory.hh"
 
 #include "DarcyVelocityEvaluator.hh"
 #include "primary_variable_field_evaluator.hh"
@@ -91,14 +89,6 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 ****************************************************************** */
 Darcy_PK::~Darcy_PK()
 {
-  if (bc_pressure != NULL) delete bc_pressure;
-  if (bc_head != NULL) delete bc_head;
-  if (bc_flux != NULL) delete bc_flux;
-  if (bc_seepage != NULL) delete bc_seepage;
-
-  for (int i = 0; i < srcs.size(); i++) {
-    if (srcs[i] != NULL) delete srcs[i]; 
-  }
   if (vo_ != Teuchos::null) vo_ = Teuchos::null;
 }
 
@@ -234,7 +224,6 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   dt_history_.clear();
 
   // Initialize defaults
-  bc_seepage = NULL; 
   initialize_with_darcy_ = true;
   num_itrs_ = 0;
 
@@ -252,7 +241,6 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Initialize BCs and source terms.
   InitializeBCsSources_(*dp_list_);
-  op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // Create solution and auxiliary data for time history.
   solution = S->GetFieldData("pressure", passwd_);
@@ -263,23 +251,34 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   
   // Initialize boundary condtions. 
   flux_units_ = 1.0;
-  ProcessShiftWaterTableList(*dp_list_);
 
-  bc_pressure->Compute(t_new);
-  bc_flux->Compute(t_new);
-  bc_seepage->Compute(t_new);
-  if (shift_water_table_.getRawPtr() == NULL) {
-    bc_head->Compute(t_new);
-  } else {
-    bc_head->ComputeShift(t_new, shift_water_table_->Values());
+  for (int i =0; i < bc_pressure_.size(); i++) {
+    bc_pressure_[i]->Compute(t_old, t_new);
+  }
+
+  for (int i =0; i < bc_flux_.size(); i++) {
+    bc_flux_[i]->Compute(t_old, t_new);
+    bc_flux_[i]->ComputeSubmodel(mesh_);
+  }
+
+  for (int i =0; i < bc_head_.size(); i++) {
+    bc_head_[i]->Compute(t_old, t_new);
+    bc_head_[i]->ComputeSubmodel(mesh_);
+  }
+
+  for (int i =0; i < bc_seepage_.size(); i++) {
+    bc_seepage_[i]->Compute(t_old, t_new);
+    bc_seepage_[i]->ComputeSubmodel(mesh_);
   }
 
   CompositeVector& pressure = *S->GetFieldData("pressure", passwd_);
   ComputeBCs(pressure);
 
   // pressures (lambda is not important when solver is very accurate)
-  DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
-                                 *pressure.ViewComponent("face"));
+  if (pressure.HasComponent("face")) {
+    DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
+                                   *pressure.ViewComponent("face"));
+  }
 
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
   ASSERT(ti_method_name == "BDF1");
@@ -339,11 +338,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   
   // initialize well models
   for (int i =0; i < srcs.size(); i++) {
-    int type = srcs[i]->CollectActionsList();
-    if (type & CommonDefs::DOMAIN_FUNCTION_ACTION_DISTRIBUTE_PERMEABILITY) {
-      PKUtils_CalculatePermeabilityFactorInWell(S, Kxy);
-    }
-    srcs[i]->Compute(t_old, t_new, Kxy); 
+    srcs[i]->Compute(t_old, t_new); 
     VV_PrintSourceExtrema();
   }
   
@@ -426,17 +421,29 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   dt_ = t_new - t_old;
   double dt_MPC(dt_);
 
-  // update boundary conditions and source terms at new time.
-  bc_pressure->Compute(t_new);
-  bc_flux->Compute(t_new);
-  bc_seepage->Compute(t_new);
-  if (shift_water_table_.getRawPtr() == NULL)
-    bc_head->Compute(t_new);
-  else
-    bc_head->ComputeShift(t_new, shift_water_table_->Values());
+  // compute boundary conditions at new time
+  for (int i =0; i < bc_pressure_.size(); i++) {
+    bc_pressure_[i]->Compute(t_old, t_new);
+  }
 
+  for (int i =0; i < bc_flux_.size(); i++) {
+    bc_flux_[i]->Compute(t_old, t_new);
+    bc_flux_[i]->ComputeSubmodel(mesh_);
+  }
+
+  for (int i =0; i < bc_head_.size(); i++) {
+    bc_head_[i]->Compute(t_old, t_new);
+    bc_head_[i]->ComputeSubmodel(mesh_);
+  }
+
+  for (int i =0; i < bc_seepage_.size(); i++) {
+    bc_seepage_[i]->Compute(t_old, t_new);
+    bc_seepage_[i]->ComputeSubmodel(mesh_);
+  }
+
+  // compute source terms at new time
   for (int i = 0; i < srcs.size(); ++i) {
-    srcs[i]->Compute(t_old, t_new, Kxy); 
+    srcs[i]->Compute(t_old, t_new); 
   }
 
   ComputeBCs(*solution);

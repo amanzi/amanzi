@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 
 # ----------- AMANZI + ALQUIMIA -----------------------------------------------------------------
 
-def GetXY_Amanzi(path,root,time,comp):
+def GetXY_Amanzi(path,root,comp):
 
     # open amanzi concentration and mesh files
     dataname = os.path.join(path,root+"_data.h5")
@@ -29,6 +29,7 @@ def GetXY_Amanzi(path,root,time,comp):
     x_amanzi_alquimia  = np.diff(y)/2+y[0:-1]
 
     # extract concentration array
+    time = max(amanzi_file[comp].keys())
     c_amanzi_alquimia = np.array(amanzi_file[comp][time])
     amanzi_file.close()
     amanzi_mesh.close()
@@ -230,10 +231,6 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(3,sharex=True,figsize=(8,10))
     
     try:
-        # hardwired for 1d-calcite: Ca = component 2, last time = '72'
-        # times = ['31','41','51','61','71']
-        times = ['71']
-
         # Amanzi native chemistry
         input_filename = os.path.join("amanzi-u-1d-calcite.xml")
         path_to_amanzi = "amanzi-native-output"
@@ -242,19 +239,19 @@ if __name__ == "__main__":
         comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_native = []
         for i, time in enumerate(times):
-           x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+           x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
            Ca_amanzi_native = Ca_amanzi_native +[c_amanzi_native]
 
         comp = 'free_ion_species.cell.H+'
         pH_amanzi_native = []
         for i, time in enumerate(times):
-           x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+           x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
            pH_amanzi_native = pH_amanzi_native +[-np.log10(c_amanzi_native)]
 
         comp = 'mineral_volume_fractions.cell.Calcite vol frac'
         VF_amanzi_native = []
         for i, time in enumerate(times):
-           x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+           x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
            VF_amanzi_native = VF_amanzi_native +[c_amanzi_native]
 
         native = True
@@ -273,19 +270,19 @@ if __name__ == "__main__":
         comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_alquimia = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
            Ca_amanzi_alquimia = Ca_amanzi_alquimia +[c_amanzi_alquimia]
 
         comp = 'free_ion_species.cell.H+'
         pH_amanzi_alquimia = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
            pH_amanzi_alquimia = pH_amanzi_alquimia +[-np.log10(c_amanzi_alquimia)]
 
         comp = 'mineral_volume_fractions.cell.Calcite vol frac'
         VF_amanzi_alquimia = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
            VF_amanzi_alquimia = VF_amanzi_alquimia +[c_amanzi_alquimia]
 
         alq = True
@@ -303,19 +300,19 @@ if __name__ == "__main__":
         comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_alquimia_crunch = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
            Ca_amanzi_alquimia_crunch = Ca_amanzi_alquimia_crunch +[c_amanzi_alquimia_crunch]
 
         comp = 'free_ion_species.cell.H+'
         pH_amanzi_alquimia_crunch = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
            pH_amanzi_alquimia_crunch = pH_amanzi_alquimia_crunch +[-np.log10(c_amanzi_alquimia_crunch)]
 
         comp = 'mineral_volume_fractions.cell.Calcite vol frac'
         VF_amanzi_alquimia_crunch = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
            VF_amanzi_alquimia_crunch = VF_amanzi_alquimia_crunch +[c_amanzi_alquimia_crunch]
 
         alq_crunch = True

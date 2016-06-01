@@ -673,6 +673,12 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
     <xs:element name="auxiliary_data" type="xs:string" minOccurs="0" maxOccurs="1"/>
 
     <!-- Alqumia - PFlotran chemistry -->
+    
+    <xs:element name="activity_coefficients" type="xs:string" default="timestep" minOccurs="0" maxOccurs="1"/>
+    <xs:element name="max_relative_change_tolerance" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
+    <xs:element name="max_residual_tolerance" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
+    
+    
     <xs:element name="min_time_step" type="typedef_exponential" default="1e+10" minOccurs="0" maxOccurs="1"/>
     <xs:element name="max_time_step" type="typedef_exponential" default="1e+10" minOccurs="0" maxOccurs="1"/>
     <xs:element name="initial_time_step" type="typedef_exponential" default="1e+7" minOccurs="0" maxOccurs="1"/>
@@ -691,7 +697,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 
     <xs:assert  test="not(exists(process_model)) or process_model = ('implicit operator split','none')"/>	
     <xs:assert  test="not(exists(activity_model)) or activity_model = ('unit','debye-huckel')"/>	
-    <xs:assert  test="not(exists(auxiliary_data)) or auxiliary_data = ('pH')"/>	
+    <xs:assert  test="not(exists(auxiliary_data)) or auxiliary_data = ('pH')"/>
+    <xs:assert  test="not(exists(activity_coefficients)) or activity_coefficients = ('timestep','off')"/>
     <xs:assert  test="not(exists(time_step_control_method)) or time_step_control_method = ('fixed','simple')"/>	
     <xs:assert  test="not(exists(log_formulation)) or log_formulation = ('on','off')"/>
 </xs:complexType>

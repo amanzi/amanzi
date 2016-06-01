@@ -27,10 +27,24 @@ void Flow_PK::VV_ValidateBCs() const
 {
   // Create sets of the face indices belonging to each BC type.
   std::set<int> pressure_faces, head_faces, flux_faces;
-  FlowBoundaryFunction::Iterator bc;
-  for (bc = bc_pressure->begin(); bc != bc_pressure->end(); ++bc) pressure_faces.insert(bc->first);
-  for (bc = bc_head->begin(); bc != bc_head->end(); ++bc) head_faces.insert(bc->first);
-  for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) flux_faces.insert(bc->first);
+
+  for (int i =0; i < bc_pressure_.size(); i++) {
+    for (PK_DomainFunction::Iterator it = bc_pressure_[i]->begin(); it != bc_pressure_[i]->end(); ++it) {
+      pressure_faces.insert(it->first);
+    }
+  }
+
+  for (int i =0; i < bc_flux_.size(); i++) {
+    for (PK_DomainFunction::Iterator it = bc_flux_[i]->begin(); it != bc_flux_[i]->end(); ++it) {
+      flux_faces.insert(it->first);
+    }
+  }
+
+  for (int i =0; i < bc_head_.size(); i++) {
+    for (PK_DomainFunction::Iterator it = bc_head_[i]->begin(); it != bc_head_[i]->end(); ++it) {
+      head_faces.insert(it->first);
+    }
+  }
 
   std::set<int> overlap;
   std::set<int>::iterator overlap_end;
@@ -97,6 +111,7 @@ void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
   const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
   const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
 
+  std::vector<int>& bc_model = op_bc_->bc_model();
   double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho_ * dt_;
 
   double mass_amanzi = 0.0;
@@ -131,15 +146,16 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
 
   int dir, f, c;
   double tmp, outflow(0.0);
-  FlowBoundaryFunction::Iterator bc;
 
-  for (bc = bc_seepage->begin(); bc != bc_seepage->end(); ++bc) {
-    f = bc->first;
-    if (f < nfaces_owned) {
-      c = BoundaryFaceGetCell(f);
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
-      tmp = flux[0][f] * dir;
-      if (tmp > 0.0) outflow += tmp;
+  for (int i = 0; i < bc_seepage_.size(); ++i) {
+    for (PK_DomainFunction::Iterator it = bc_seepage_[i]->begin(); it != bc_seepage_[i]->end(); ++it) {
+      f = it->first;
+      if (f < nfaces_owned) {
+        c = BoundaryFaceGetCell(f);
+        const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+        tmp = flux[0][f] * dir;
+        if (tmp > 0.0) outflow += tmp;
+      }
     }
   }
 
@@ -149,7 +165,7 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
   outflow *= rho_;
   seepage_mass_ += outflow * dt_;
 
-  if (MyPID == 0 && bc_seepage->global_size() > 0) {
+  if (MyPID == 0 && bc_seepage_.size() > 0) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "seepage face: flow=" << outflow << " [kg/s]," 
                << " total=" << seepage_mass_ << " [kg]" << std::endl;
@@ -162,6 +178,9 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
 ******************************************************************* */
 void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
 {
+  std::vector<int>& bc_model = op_bc_->bc_model();
+  std::vector<double>& bc_value = op_bc_->bc_value();
+
   double hmin(1.4e+9), hmax(-1.4e+9);  // diameter of the Sun
   double rho_g = rho_ * fabs(gravity_[dim - 1]);
   for (int f = 0; f < nfaces_owned; f++) {
@@ -221,13 +240,17 @@ void Flow_PK::VV_PrintSourceExtrema() const
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     double smin(0.0), smax(0.0);
+    std::vector<double> volumes;
+
     for (int i = 0; i < srcs.size(); ++i) {
-      for (FlowDomainFunction::Iterator it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
+      for (PK_DomainFunction::Iterator it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
         int c = it->first;
         smin = std::min(smin, it->second);
         smax = std::max(smax, it->second);
       }
+      volumes.push_back(srcs[i]->domain_volume());
     }
+
     double tmp(smin);
     mesh_->get_comm()->MinAll(&tmp, &smin, 1);
     tmp = smax;
@@ -235,7 +258,11 @@ void Flow_PK::VV_PrintSourceExtrema() const
 
     if (MyPID == 0) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "sources: min=" << smin << " max=" << smax << std::endl;
+      *vo_->os() << "sources: min=" << smin << " max=" << smax << "  volumes: ";
+      for (int i = 0; i < std::min(5, (int)srcs.size()); ++i) {
+        *vo_->os() << volumes[i] << " ";
+      }
+      *vo_->os() << std::endl;
     }
   }
 }

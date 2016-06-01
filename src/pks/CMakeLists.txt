@@ -38,14 +38,9 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 # Library: pks
 #
 set(pks_src_files PK_Factory.cc
-                  PK_BoundaryFunction.cc
-                  PK_DomainFunction.cc
                   PK_Utils.cc
-#                  PK_Default.cc
-#                  PK_BDF.cc
                   PK_Physical.cc
-#                  PK_PhysicalBDF.cc
-#                  PK_PhysicalBDF_ATS.cc
+                  # PK_PhysicalBDF_ATS.cc
    )
 
 add_amanzi_library(pks
@@ -65,8 +60,12 @@ set(pks_inc_files
   PK_PhysicalExplicit.hh
   PK_PhysicalBDF.hh
   PK_PhysicalBDF_ATS.hh
-  PK_BoundaryFunction.hh
   PK_DomainFunction.hh
+  PK_DomainFunctionFactory.hh
+  PK_DomainFunctionSimple.hh
+  PK_DomainFunctionVolume.hh
+  PK_DomainFunctionVolumeFraction.hh
+  PK_DomainFunctionWeight.hh
   PK_Factory.hh
   PK_Utils.hh)
 

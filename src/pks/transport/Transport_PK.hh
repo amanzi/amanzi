@@ -42,9 +42,8 @@
 #include "MDMPartition.hh"
 #include "MultiscaleTransportPorosityPartition.hh"
 #include "TransportBoundaryFunction.hh"
-#include "TransportDomainFunction.hh"
 #include "TransportDefs.hh"
-#include "TransportSourceFactory.hh"
+#include "TransportSourceFunction.hh"
 
 /* ******************************************************************
 The transport PK receives a reduced (optional) copy of a physical 
@@ -90,7 +89,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   // -- calculation of a stable time step needs saturations and darcy flux
   double CalculateTransportDt();
 
-  // coupling with chemistry
+  // -- coupling with chemistry
 #ifdef ALQUIMIA_ENABLED
   void SetupAlquimia(Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
                      Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
@@ -116,7 +115,6 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   // -- sources and sinks for components from n0 to n1 including
   void ComputeAddSourceTerms(double tp, double dtp, 
-                             std::vector<TransportDomainFunction*>& src_sink, 
                              Epetra_MultiVector& tcc, int n0, int n1);
 
   bool PopulateBoundaryData(std::vector<int>& bc_model,
@@ -222,8 +220,8 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   int current_component_;  // data for lifting
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;
 
-  std::vector<TransportDomainFunction*> srcs;  // Source or sink for components
-  std::vector<TransportBoundaryFunction*> bcs;  // influx BC for components
+  std::vector<Teuchos::RCP<TransportSourceFunction> > srcs_;  // Source or sink for components
+  std::vector<Teuchos::RCP<TransportBoundaryFunction> > bcs_;  // BC for concentration
   double bc_scaling;
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 

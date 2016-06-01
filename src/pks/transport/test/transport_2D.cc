@@ -99,7 +99,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
       tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
 
   iter = 0;
-  while (t_new < 1.0) {
+  while (t_new < 0.5) {
     dt = TPK.CalculateTransportDt();
     t_new = t_old + dt;
 

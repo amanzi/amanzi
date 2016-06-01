@@ -149,6 +149,19 @@ if __name__ == "__main__":
         struct = 0
 
 
+
+    # amanziU
+
+    try:
+        comp = 'total_component_concentration.cell.Tritium conc'
+        input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
+        path_to_amanzi = "amanzi-u-native-output"
+        run_amanzi_standard.run_amanzi(input_filename, 1, [root+".bgd"], path_to_amanzi)
+        x_amanziU_native, c_amanziU_native = GetXY_AmanziU(path_to_amanzi,root,comp)
+        native = len(x_amanziU_native)
+    except:
+        native = 0
+
     # amanziU
 
     try:
@@ -162,6 +175,9 @@ if __name__ == "__main__":
         unstruct = 0
 
     # Do plot
+    if (native > 0):
+        nat = ax.plot(x_amanziU_native, c_amanziU_native,'rx',label='AmanziU(2nd-Order)+Native',linewidth=2)
+
     if (unstruct > 0):
         alq = ax.plot(x_amanziU, c_amanziU,'r-',label='AmanziU(2nd-Order)+Alquimia(PFloTran)',linewidth=2)
 
@@ -190,6 +206,8 @@ if __name__ == "__main__":
     a = plt.axes([.65, .25, .3, .35])
     a.set_xlim(43,57)
     a.set_ylim(0,.0001)
+    if (native > 0):
+        nats = a.plot(x_amanziU_native, c_amanziU_native,'rx',label='Amanzi+Alquimia(PFloTran) - 1st Order',linewidth=2)
     if (unstruct > 0):
         alqs = a.plot(x_amanziU, c_amanziU,'r-',label='Amanzi+Alquimia(PFloTran) - 1st Order',linewidth=2)
     if (struct>0):

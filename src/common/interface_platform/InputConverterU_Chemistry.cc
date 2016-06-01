@@ -1,5 +1,5 @@
 /*
-  This is the input component of the Amanzi code. 
+  Input Converter
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -62,13 +62,14 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
     if (flag) {
       element = static_cast<DOMElement*>(node);
-      bgdfilename = GetAttributeValueS_(element, "input_filename");
-      format = GetAttributeValueS_(element, "format", TYPE_NONE, false, format);
-    } else {
+      bgdfilename = GetAttributeValueS_(element, "input_filename", TYPE_NONE, false, "");
+      if (bgdfilename == "") {
         bgdfilename = CreateBGDFile(xmlfilename_);
+      }
+      format = GetAttributeValueS_(element, "format", TYPE_NONE, false, format);
     }
 
-    Teuchos::ParameterList& bgd_list = out_list.sublist("Thermodynamic Database");
+    Teuchos::ParameterList& bgd_list = out_list.sublist("thermodynamic database");
     bgd_list.set<std::string>("file", bgdfilename);
     bgd_list.set<std::string>("format", format);
 
@@ -162,7 +163,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
         for (int j = 0; j < minerals.size(); ++j) {
           std::stringstream ss;
-          ss << "DoF " << j + 1 << " Function";
+          ss << "dof " << j + 1 << " function";
  
           node = GetUniqueElementByTagsString_(inode, "minerals", flag);
           double mvf(0.0), msa(0.0);
@@ -228,7 +229,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
           }
 
           std::stringstream ss;
-          ss << "DoF " << j + 1 << " Function";
+          ss << "dof " << j + 1 << " function";
 
           double val = (!flag) ? 0.0 : GetAttributeValueD_(element, "kd", TYPE_NUMERICAL, false, 0.0);
           aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", val);
@@ -245,19 +246,34 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     // surface complexation
     node = GetUniqueElementByTagsString_(inode, "surface_complexation", flag);
     if (flag) {
-      // sorption_sites.push_back("siteA");  // no translation rules so far
-      Teuchos::ParameterList& complexation = ic_list.sublist("surface_complexation");
+      std::string name;
+      std::vector<DOMNode*> sites = GetSameChildNodes_(node, name, flag);
 
-      //double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "density");
-      DOMNode* dnode = GetUniqueElementByTagsString_(node, "density", flag);
-      double val = strtod(mm.transcode(dnode->getTextContent()), NULL);;
+      if (flag) {
+        std::stringstream site_str;
+        site_str << "MESH BLOCK " << i+1;
+       
+        sorption_sites.clear();
 
-      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
-        complexation.sublist("function").sublist(*it)
-            .set<std::string>("region", *it)
+        Teuchos::ParameterList& complexation = ic_list.sublist("sorption_sites");
+        Teuchos::ParameterList& tmp_list = complexation.sublist("function")
+            .sublist(site_str.str())
+            .set<Teuchos::Array<std::string> >("regions", regions)
             .set<std::string>("component", "cell")
-            .sublist("function").sublist("function-constant")
-            .set<double>("value", val);
+            .sublist("function")
+            .set<int>("number of dofs", sites.size())
+            .set<std::string>("function type", "composite function");
+
+        for (int k = 0; k < sites.size(); ++k) {
+          element = static_cast<DOMElement*>(sites[k]);
+          double val = GetAttributeValueD_(element, "density", TYPE_NUMERICAL);
+          sorption_sites.push_back(GetAttributeValueS_(element, "name", TYPE_NONE));
+
+          std::stringstream dof_str;
+          dof_str << "dof " << k+1 << " function";
+          tmp_list.sublist(dof_str.str()).sublist("function-constant")
+                                         .set<double>("value", val);
+        }
       }
     }
 
@@ -276,7 +292,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
           std::string solute_name = phases_["water"][j];
 
           std::stringstream ss;
-          ss << "DoF " << j + 1 << " Function";
+          ss << "dof " << j + 1 << " function";
 
           aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", 1e-9);
         }
@@ -361,36 +377,107 @@ std::string InputConverterU::CreateBGDFile(std::string& filename)
   std::ofstream bgd_file;
   std::stringstream species;
   std::stringstream isotherms;
+  MemoryManager mm;
 
+  // get and write list of primaries/solutes
   bool flag;
-  node = GetUniqueElementByTagsString_("materials, material, sorption_isotherms", flag);
+  node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, primaries", flag);
   if (flag) {
     std::string name;
+    bool flag2;
     std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
     for (int i = 0; i < children.size(); ++i) {
       DOMNode* inode = children[i];
-      element = static_cast<DOMElement*>(inode);
-      name = GetAttributeValueS_(element, "name");
+      name = mm.transcode(inode->getTextContent());
       species << name << " ;   0.00 ;   0.00 ;   1.00 \n";
+    }
+  } else {
+    node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, solutes", flag);
 
-      DOMNode* knode = GetUniqueElementByTagsString_(inode, "kd_model", flag);
-      element = static_cast<DOMElement*>(knode);
-      if (flag) {
-        double kd = GetAttributeValueD_(element, "kd");
-        std::string model = GetAttributeValueS_(element, "model");
-        if (model == "langmuir") {
-          double b = GetAttributeValueD_(element, "b");
-          isotherms << name << " ; langmuir ; " << kd << " " << b << std::endl;
-        } else if (model == "freundlich") {
-          double n = GetAttributeValueD_(element, "n");
-          isotherms << name << " ; freundlich ; " << kd << " " << n << std::endl;
-        } else {
-          isotherms << name << " ; linear ; " << kd << std::endl;
-        }
+    if (flag) {
+      std::string name;
+      bool flag2;
+      std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
+      for (int i = 0; i < children.size(); ++i) {
+        DOMNode* inode = children[i];
+        name = mm.transcode(inode->getTextContent());
+        species << name << " ;   0.00 ;   0.00 ;   1.00 \n";
       }
     }
   }
   
+  // loop over materials to get kd information
+  node = GetUniqueElementByTagsString_("materials", flag);
+  if (flag ) {
+    
+    // get kd information from all materials
+    Teuchos::ParameterList IsothermsPL;
+    std::string name;
+    std::vector<DOMNode*> mat_list = GetSameChildNodes_(node, name, flag, false);
+    for (int i = 0; i < mat_list.size(); ++i) {
+      bool flag2;
+      DOMElement* child_elem;
+      
+      DOMNode* inode = mat_list[i];
+      element = static_cast<DOMElement*>(inode);
+      name = GetAttributeValueS_(element, "name");
+      
+      // look for sorption_isotherms
+      child_elem = GetChildByName_(inode, "sorption_isotherms", flag2, false);
+      if (flag2) {
+        
+        // loop over sublist of primaries to get Kd information
+        std::vector<DOMNode*> primary_list = GetSameChildNodes_(static_cast<DOMNode*>(child_elem), name, flag2, false);
+        if (flag2) {
+          
+          for (int j = 0; j < primary_list.size(); ++j) {
+            DOMNode* jnode = primary_list[j];
+            std::string primary_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
+            DOMNode* kd_node = GetUniqueElementByTagsString_(jnode, "kd_model", flag2);
+            DOMElement* kd_elem = static_cast<DOMElement*>(kd_node);
+            
+            if (flag2) {
+              Teuchos::ParameterList kd_list;
+              double kd = GetAttributeValueD_(kd_elem, "kd");
+              std::string model = GetAttributeValueS_(kd_elem, "model");
+              kd_list.set<std::string>("model",model);
+              kd_list.set<double>("kd",kd);
+              
+              if (model == "langmuir") {
+                double b = GetAttributeValueD_(kd_elem, "b");
+                kd_list.set<double>("b",b);
+              } else if (model == "freundlich") {
+                double n = GetAttributeValueD_(kd_elem, "n");
+                kd_list.set<double>("n",n);
+              }
+              
+              IsothermsPL.sublist(primary_name) = kd_list;
+            }
+          }
+        }
+      }
+    }
+    
+    // create text for kds
+    for (Teuchos::ParameterList::ConstIterator iter = IsothermsPL.begin(); iter != IsothermsPL.end(); ++iter) {
+      
+      std::string primary = IsothermsPL.name(iter);
+      Teuchos::ParameterList& curprimary = IsothermsPL.sublist(primary);
+      std::string model = curprimary.get<std::string>("model");
+      double kd = curprimary.get<double>("kd");
+      
+      if (model == "langmuir") {
+        double b = curprimary.get<double>("b");
+        isotherms << primary << " ; langmuir ; " << kd << " " << b << std::endl;
+      } else if (model == "freundlich") {
+        double n = curprimary.get<double>("n");
+        isotherms << primary << " ; freundlich ; " << kd << " " << n << std::endl;
+      } else {
+        isotherms << primary << " ; linear ; " << kd << std::endl;
+      }
+    }
+  }
+
   // build bgd filename
   std::string bgdfilename(filename);
   std::string new_extension(".bgd");
@@ -449,26 +536,64 @@ std::string InputConverterU::CreateINFile(std::string& filename)
   std::stringstream constraints;
   std::stringstream reactionrates;
   std::stringstream decayrates;
+  std::stringstream controls;
 
-  // database filename
+  // database filename and controls
   bool flag;
   node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
   element = static_cast<DOMElement*>(node);
   std::string datfilename = GetAttributeValueS_(element, "database", TYPE_NONE, true, "");
+  
+  controls << "  DATABASE " << datfilename.c_str() << "\n";
 
+  node = GetUniqueElementByTagsString_("numerical_controls, unstructured_controls, unstr_chemistry_controls, activity_coefficients", flag);
+  std::string tmp("  ACTIVITY_COEFFICIENTS TIMESTEP");
+  if (flag) {
+    std::string value = TrimString_(mm.transcode(node->getTextContent()));
+    if (value == "off") {
+      tmp =  "  ACTIVITY_COEFFICIENTS OFF";
+    }
+  }
+  controls << tmp << "\n";
+  node = GetUniqueElementByTagsString_("numerical_controls, unstructured_controls, unstr_chemistry_controls, log_formulation", flag);
+  if (flag) {
+    std::string value = TrimString_(mm.transcode(node->getTextContent()));
+    if (value == "on") {
+      controls << "  LOG_FORMULATION \n";
+    }
+  } else {
+    controls << "  LOG_FORMULATION \n";
+  }
+  node = GetUniqueElementByTagsString_("numerical_controls, unstructured_controls, unstr_chemistry_controls, max_relative_change_tolerance", flag);
+  if (flag) {
+    std::string value = TrimString_(mm.transcode(node->getTextContent()));
+    controls << "  MAX_RELATIVE_CHANGE_TOLERANCE " << value << "\n";
+  }
+  node = GetUniqueElementByTagsString_("numerical_controls, unstructured_controls, unstr_chemistry_controls, max_residual_tolerance", flag);
+  if (flag) {
+    std::string value = TrimString_(mm.transcode(node->getTextContent()));
+    controls << "  MAX_RESIDUAL_TOLERANCE " << value << "\n";
+  }
+
+  // set up Chemistry Options ParameterList
+  Teuchos::ParameterList ChemOptions;
+  ChemOptions.sublist("isotherms");
+  ChemOptions.sublist("ion_exchange");
+  ChemOptions.sublist("surface_complexation");
+  
   // get species names
   int nsolutes = phases_["water"].size();
   for (int i = 0; i < nsolutes; ++i) {
     std::string name = phases_["water"][i];
     primaries << "    " << name << "\n";
   }
-
+  
   // check for forward/backward rates on primaries (for solutes/non-reactive primaries only)
   node = GetUniqueElementByTagsString_("liquid_phase, dissolved_components, primaries", flag);
   if (flag) {
     std::string primary;
     std::vector<DOMNode*> children = GetSameChildNodes_(node, primary, flag, false);
-
+    
     for (int i = 0; i < children.size(); ++i) {
       DOMNode* inode = children[i];
       element = static_cast<DOMElement*>(inode);
@@ -488,151 +613,230 @@ std::string InputConverterU::CreateINFile(std::string& filename)
       }
     }
   }
-
-
+  
+  // get secondaries
   node = GetUniqueElementByTagsString_("liquid_phase, dissolved_components, secondaries", flag);
   if (flag) {
-    //std::vector<DOMNode*> children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode("secondary"));
     std::string secondary;
     std::vector<DOMNode*> children = GetSameChildNodes_(node, secondary, flag, false);
-
+    
     for (int i = 0; i < children.size(); ++i) {
       DOMNode* inode = children[i];
       std::string name = TrimString_(mm.transcode(inode->getTextContent()));
       secondaries << "    " << name << "\n";
     }
   }
-
-
+  
+  // get minerals and mineral kinetics
   node = GetUniqueElementByTagsString_("phases, solid_phase, minerals", flag);
   if (flag) {
-    //std::vector<DOMNode*> children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode("mineral"));
     std::string mineral;
     std::vector<DOMNode*> children = GetSameChildNodes_(node, mineral, flag, false);
-
+    
     for (int i = 0; i < children.size(); ++i) {
       DOMNode* inode = children[i];
       std::string name = TrimString_(mm.transcode(inode->getTextContent()));
       minerals << "    " << name << "\n";
       mineral_list << name << ", ";
-
+      
       element = static_cast<DOMElement*>(inode);
       double rate = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, false, 0.0);
       if (rate > 0.0) {
         mineral_kinetics << "    " << name << "\n";
         mineral_kinetics << "      RATE_CONSTANT " << rate << "\n";
-        //mineral_kinetics << "      RATE_CONSTANT " << rate << " mol/cm^2-sec\n";
         mineral_kinetics << "    /\n";
       }
     }
   }
-
+  
+  // get gases
   node = GetUniqueElementByTagsString_("phases, gas_phase, gases", flag);
   if (flag) {
-    //std::vector<DOMNode*> children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode("gas"));
     std::string gas;
     std::vector<DOMNode*> children = GetSameChildNodes_(node, gas, flag, false);
-
+    
     for (int i = 0; i < children.size(); ++i) {
       DOMNode* inode = children[i];
       std::string name = TrimString_(mm.transcode(inode->getTextContent()));
       gases << "    " << name << "\n";
     }
   }
-
-  // soprtion isotherms
-  node = GetUniqueElementByTagsString_("materials, material, sorption_isotherms", flag);
-  if (flag) {
+  
+  // gather material specific chemistry options and put into ParameterList
+  node = GetUniqueElementByTagsString_("materials", flag);
+  if (flag ) {
+    
+    // loop over materials to grab Kd, cations, and surface complexation
     std::string name;
-    std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
-    for (int i = 0; i < children.size(); ++i) {
-      DOMNode* inode = children[i];
+    std::vector<DOMNode*> mat_list = GetSameChildNodes_(node, name, flag, false);
+    for (int i = 0; i < mat_list.size(); ++i) {
+      bool flag2;
+      DOMElement* child_elem;
+      
+      DOMNode* inode = mat_list[i];
       element = static_cast<DOMElement*>(inode);
       name = GetAttributeValueS_(element, "name");
-
-      DOMNode* knode = GetUniqueElementByTagsString_(inode, "kd_model", flag);
-      element = static_cast<DOMElement*>(knode);
-      if (flag) {
-        double kd = GetAttributeValueD_(element, "kd");
-        std::string model = GetAttributeValueS_(element, "model");
-        if (model == "linear") {
-	  isotherms << "      " << name << "\n";
-	  isotherms << "        TYPE LINEAR\n";
-	  isotherms << "        DISTRIBUTION_COEFFICIENT " << kd << "\n";
-	} else if (model == "langmuir") {
-	  isotherms << "      " << name << "\n";
-	  isotherms << "        TYPE LANGMUIR\n";
-	  isotherms << "        DISTRIBUTION_COEFFICIENT " << kd << "\n";
-          double b = GetAttributeValueD_(element, "b");
-          isotherms << "        LANGMUIR_B " << b << "\n";
-        } else if (model == "freundlich") {
-	  isotherms << "      " << name << "\n";
-	  isotherms << "        TYPE FREUNDLICH\n";
-	  isotherms << "        DISTRIBUTION_COEFFICIENT " << kd << "\n";
-          double n = GetAttributeValueD_(element, "n");
-          isotherms << "        FREUNDLICH_N " << n << "\n";
+      
+      // look for sorption_isotherms
+      child_elem = GetChildByName_(inode, "sorption_isotherms", flag2, false);
+      if (flag2) {
+        
+        // loop over sublist of primaries to get Kd information
+        std::vector<DOMNode*> primary_list = GetSameChildNodes_(static_cast<DOMNode*>(child_elem), name, flag2, false);
+        if (flag2) {
+          
+          for (int j = 0; j < primary_list.size(); ++j) {
+            DOMNode* jnode = primary_list[j];
+            std::string primary_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
+            DOMNode* kd_node = GetUniqueElementByTagsString_(jnode, "kd_model", flag2);
+            DOMElement* kd_elem = static_cast<DOMElement*>(kd_node);
+              
+            if (flag2) {
+              Teuchos::ParameterList kd_list;
+              double kd = GetAttributeValueD_(kd_elem, "kd");
+              std::string model = GetAttributeValueS_(kd_elem, "model");
+              kd_list.set<std::string>("model",model);
+              kd_list.set<double>("kd",kd);
+              
+              if (model == "langmuir") {
+                double b = GetAttributeValueD_(kd_elem, "b");
+                kd_list.set<double>("b",b);
+              } else if (model == "freundlich") {
+                double n = GetAttributeValueD_(kd_elem, "n");
+                kd_list.set<double>("n",n);
+              }
+              
+              ChemOptions.sublist("isotherms").sublist(primary_name) = kd_list;
+            }
+          }
         }
-	isotherms << "      /\n";
+      }
+      
+      // look for ion exchange
+      child_elem = GetChildByName_(inode, "ion_exchange", flag2, false);
+      if (flag2) {
+        
+        // loop over sublist of cations to get information
+        std::vector<DOMNode*> mineral_list = GetSameChildNodes_(static_cast<DOMNode*>(child_elem), name, flag2, false);
+        if (flag2) {
+          for (int j = 0; j < mineral_list.size(); ++j) {
+            DOMNode* jnode = mineral_list[j];
+            Teuchos::ParameterList ion_list;
+            double cec = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "cec");
+            ion_list.set<double>("cec",cec);
+            
+            // loop over list of cation names/selectivity pairs
+            std::vector<DOMNode*> cations_list = GetSameChildNodes_(jnode, name, flag2, false);
+            if (flag2) {
+              std::vector<std::string> cation_names;
+              std::vector<double> cation_selectivity;
+             
+              for (int k = 0; k < cations_list.size(); ++k) {
+                DOMNode* knode = cations_list[k];
+                DOMElement* kelement = static_cast<DOMElement*>(knode);
+                cation_names.push_back(GetAttributeValueS_(kelement, "name"));
+                cation_selectivity.push_back(GetAttributeValueD_(kelement, "value"));
+              }
+              
+              ion_list.set<Teuchos::Array<std::string> >("cations",cation_names);
+              ion_list.set<Teuchos::Array<double> >("values",cation_selectivity);
+            }
+            
+            ChemOptions.sublist("ion_exchange").sublist("bulk") = ion_list;
+          }
+        }
+      }
+      
+      // look for surface complexation
+      child_elem = GetChildByName_(inode, "surface_complexation", flag2, false);
+      if (flag2) {
+        
+        // loop over sublist of cations to get information
+        std::vector<DOMNode*> site_list = GetSameChildNodes_(static_cast<DOMNode*>(child_elem), name, flag2, false);
+        if (flag2) {
+          for (int j = 0; j < site_list.size(); ++j) {
+            DOMNode* jnode = site_list[j];
+            Teuchos::ParameterList surface_list;
+            std::string site = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
+            double density = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "density");
+            surface_list.set<double>("density",density);
+            
+            std::string name2;
+            std::vector<DOMNode*> children = GetSameChildNodes_(jnode, name2, flag2, false);
+            Teuchos::Array<std::string> complexe_names = CharToStrings_(mm.transcode(children[0]->getTextContent()));
+            surface_list.set<Teuchos::Array<std::string> >("complexes",complexe_names);
+            
+            ChemOptions.sublist("surface_complexation").sublist(site) = surface_list;
+          }
+        }
       }
     }
   }
   
-  // soprtion ion exchange
-  node = GetUniqueElementByTagsString_("materials, material, ion_exchange, cations", flag);
-  if (flag) {
-    element = static_cast<DOMElement*>(node);
-    double cec = GetAttributeValueD_(element, "cec");
+  // create text for chemistry options - isotherms
+  Teuchos::ParameterList& iso = ChemOptions.sublist("isotherms");
+  for (Teuchos::ParameterList::ConstIterator iter = iso.begin(); iter != iso.end(); ++iter) {
+    
+    std::string primary = iso.name(iter);
+    Teuchos::ParameterList& curprimary = iso.sublist(primary);
+    std::string model = curprimary.get<std::string>("model");
+    double kd = curprimary.get<double>("kd");
+    
+    if (model == "linear") {
+      isotherms << "      " << primary << "\n";
+      isotherms << "        TYPE LINEAR\n";
+      isotherms << "        DISTRIBUTION_COEFFICIENT " << kd << "\n";
+    } else if (model == "langmuir") {
+      isotherms << "      " << primary << "\n";
+      isotherms << "        TYPE LANGMUIR\n";
+      isotherms << "        DISTRIBUTION_COEFFICIENT " << kd << "\n";
+      double b = curprimary.get<double>("b");
+      isotherms << "        LANGMUIR_B " << b << "\n";
+    } else if (model == "freundlich") {
+      isotherms << "      " << primary << "\n";
+      isotherms << "        TYPE FREUNDLICH\n";
+      isotherms << "        DISTRIBUTION_COEFFICIENT " << kd << "\n";
+      double n = curprimary.get<double>("n");
+      isotherms << "        FREUNDLICH_N " << n << "\n";
+    }
+    isotherms << "      /\n";
+  }
+
+  // create text for chemistry options - ion exchange
+  Teuchos::ParameterList& ion = ChemOptions.sublist("ion_exchange");
+  for (Teuchos::ParameterList::ConstIterator iter = ion.begin(); iter != ion.end(); ++iter) {
+    
+    std::string mineral = ion.name(iter);
+    Teuchos::ParameterList& curmineral = ion.sublist(mineral);
+    double cec = curmineral.get<double>("cec");
+    Teuchos::Array<std::string> names = curmineral.get<Teuchos::Array<std::string> >("cations");
+    Teuchos::Array<double> values = curmineral.get<Teuchos::Array<double> >("values");
+    
     cations << "      CEC " << cec << "\n";
     cations << "      CATIONS\n";
-
-    std::string name;
-    std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
-    for (int i = 0; i < children.size(); ++i) {
-      DOMNode* inode = children[i];
-      element = static_cast<DOMElement*>(inode);
-      name = GetAttributeValueS_(element, "name");
-      double value = GetAttributeValueD_(element, "value");
-      cations << "        " << name << " " << value << "\n";
+    for (int i = 0; i < names.size(); i++) {
+      cations << "        " << names[i] << " " << values[i] << "\n";
     }
   }
 
-  // soprtion surface complexation
-  //node = GetUniqueElementByTagsString_("materials, material, surface_complexation, mineral", flag);
-  //if (flag) {
-  //  std::string name = GetTextContentS_(node, mineral_list.str().c_str());
-  //  complexes << "      MINERAL " << name << "\n";
-  //}
-  node = GetUniqueElementByTagsString_("materials, material, surface_complexation", flag);
-  if (flag) {
-    
-    std::string name;
-    std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
-    for (int i = 0; i < children.size(); ++i) {
-      DOMNode* inode = children[i];
-      element = static_cast<DOMElement*>(inode);
-      name = GetAttributeValueS_(element, "name");
-      double density = GetAttributeValueD_(element, "density");
-      complexes << "    SURFACE_COMPLEXATION_RXN\n";
-      complexes << "      EQUILIBRIUM\n";
-      complexes << "      SITE " << name << " " << density << "\n";
-      
-      //DOMNode* cnode = GetUniqueElementByTagsString_("materials, material, surface_complexation, complexes", flag);
-      std::vector<DOMNode*> kids = GetChildren_(inode, "complexes", flag);
-      if (flag) {
-        complexes << "      COMPLEXES\n";
-        for (int j = 0; j < kids.size(); ++j) {
-          DOMNode* jnode = kids[j];
-          std::vector<std::string> complexe_names = CharToStrings_(mm.transcode(jnode->getTextContent()));
-          for (std::vector<std::string>::const_iterator it = complexe_names.begin(); it != complexe_names.end(); it++) {
-            complexes << "        " << *it << "\n";
-          }
-        }
-        complexes << "      /\n";
-        complexes << "    /\n";
-      }
+  // create text for chemistry options - surface complexation
+  Teuchos::ParameterList& surf = ChemOptions.sublist("surface_complexation");
+  for (Teuchos::ParameterList::ConstIterator iter = surf.begin(); iter != surf.end(); ++iter) {
+    std::string site = surf.name(iter);
+    Teuchos::ParameterList& cursite = surf.sublist(site);
+    Teuchos::Array<std::string> complexe_names = cursite.get<Teuchos::Array<std::string> >("complexes");
+    double density = cursite.get<double>("density");
+    complexes << "    SURFACE_COMPLEXATION_RXN\n";
+    complexes << "      EQUILIBRIUM\n";
+    complexes << "      SITE " << site << " " << density << "\n";
+    complexes << "      COMPLEXES\n";
+    for (Teuchos::Array<std::string>::iterator it = complexe_names.begin(); it != complexe_names.end(); it++) {
+      complexes << "        " << *it << "\n";
     }
+    complexes << "      /\n";
+    complexes << "    /\n";
   }
-
+  
   // constraints
   node = GetUniqueElementByTagsString_("geochemistry, constraints", flag);
   if (flag) {
@@ -733,10 +937,16 @@ std::string InputConverterU::CreateINFile(std::string& filename)
     if (!status) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "File \"" << infilename.c_str() 
+        *vo_->os() << "File \"" << infilename.c_str()
                    << "\" exists, skipping its creation." << std::endl;
       }
     } else {
+      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "Writing PFloTran partial input file \"" <<
+            infilename.c_str() << "\"" << std::endl;
+      }
+      
       in_file.open(infilename.c_str());
 
       in_file << "CHEMISTRY\n";
@@ -801,9 +1011,7 @@ std::string InputConverterU::CreateINFile(std::string& filename)
       }
 
       // Chemistry - Controls
-      in_file << "  DATABASE " << datfilename.c_str() << "\n";
-      in_file << "  LOG_FORMULATION\n";
-      in_file << "  ACTIVITY_COEFFICIENTS TIMESTEP\n";
+      in_file << controls.str();
       in_file << "END\n";
 
       // Constraints

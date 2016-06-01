@@ -66,6 +66,8 @@ bool PK_MPCSubcycled::AdvanceStep(double t_old, double t_new, bool reinit) {
   master_dt_ = t_new - t_old;
   if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
 
+  slave_dt_ = sub_pks_[slave_]->get_dt();
+
   // --etc: unclear if state should be commited?
   sub_pks_[master_]->CommitStep(t_old, t_new, S_);
 
@@ -96,6 +98,8 @@ bool PK_MPCSubcycled::AdvanceStep(double t_old, double t_new, bool reinit) {
       sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, S_);
       dt_done += dt_next;
     }
+
+    dt_next = sub_pks_[slave_]->get_dt();
 
     // check for done condition
     done = (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) || // finished the step

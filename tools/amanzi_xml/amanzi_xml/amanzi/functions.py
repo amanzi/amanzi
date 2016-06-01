@@ -18,17 +18,17 @@ def createConstantFunction(value):
     search.replace_by_name(e, "value", value)
     return e
 
-def createFunctionSpec(spec_name, region, entity, func):
-    """Create a Function spec on a 'region' and 'entity'"""
+def createFunctionSpec(spec_name, region, component, func):
+    """Create a Function spec on a 'region' and 'component'"""
     if type(region) is str:
         region_p = parameter.StringParameter("region", region)
     else:
         region_p = parameter.ArrayStringParameter("regions", region)
 
-    if type(entity) is str:
-        entity_p = parameter.StringParameter("entity", mesh_entity.valid_mesh_entity(entity))
+    if type(component) is str:
+        component_p = parameter.StringParameter("component", component)
     else:
-        entity_p = parameter.ArrayStringParameter("entities", [mesh_entity.valid_mesh_entity(an_ent) for an_ent in entity])
+        component_p = parameter.ArrayStringParameter("components", component)
 
     pl = parameter_list.ParameterList(spec_name)
     pl.append(region_p)

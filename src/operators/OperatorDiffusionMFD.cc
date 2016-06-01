@@ -1379,22 +1379,32 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
            little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN);
   }
 
+  // DEPRECATED INPUT -- remove this error eventually --etc
+  if (plist.isParameter("newton correction")) {
+    Errors::Message msg;
+    msg << "OperatorDiffusionMFD: DEPRECATED: \"newton correction\" has been removed in favor of \"Newton correction\"";
+    Exceptions::amanzi_throw(msg);
+  }
+  
   // Do we need to calculate Newton correction terms?
-  newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
   std::string jacobian = plist.get<std::string>("Newton correction", "none");
-  if (jacobian == "true Jacobian") {
+  if (jacobian == "none") {
+    newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
+  } else if (jacobian == "true Jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
     Errors::Message msg("OperatorDiffusionMFD: \"true Jacobian\" not supported -- maybe you mean \"approximate Jacobian\"?");
     Exceptions::amanzi_throw(msg);
-
   } else if (jacobian == "approximate Jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
-
     // create a local op
     jac_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
     std::string name("Jacobian FACE_CELL");
     jac_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
     global_op_->OpPushBack(jac_op_);
+  } else {
+    Errors::Message msg;
+    msg << "OperatorDiffusionFV: invalid parameter \"" << jacobian << "\" for option \"Newton correction\" -- valid are: \"none\", \"approximate Jacobian\"";
+    Exceptions::amanzi_throw(msg);
   }
 
   // mesh info

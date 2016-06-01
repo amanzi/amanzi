@@ -7,6 +7,10 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Prototype class for computing boundary and source terms. PK's classes 
+  for source and boundary terms may inherit from this class or mimic
+  its functionality.
 */
 
 #ifndef AMANZI_PK_DOMAIN_FUNCTION_HH_
@@ -16,55 +20,39 @@
 #include <vector>
 
 #include "Epetra_Vector.h"
+#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-
-#include "CommonDefs.hh"
-#include "Mesh.hh"
-#include "MultiFunction.hh"
-#include "UniqueMeshFunction.hh"
 
 namespace Amanzi {
 
-class PK_DomainFunction : public Functions::UniqueMeshFunction {
+class PK_DomainFunction {
  public:
-  PK_DomainFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : 
-      UniqueMeshFunction(mesh),
-      finalized_(false) {};
+  PK_DomainFunction()
+    : domain_volume_(-1.0) {};
 
-  virtual void Define(const std::vector<std::string>& regions,
-                      const Teuchos::RCP<const MultiFunction>& f,
-                      int action, int submodel);
+  PK_DomainFunction(const Teuchos::ParameterList& plist)
+    : domain_volume_(-1.0) {};
 
-  virtual void Define(const std::string& region,
-                      const Teuchos::RCP<const MultiFunction>& f,
-                      int action, int submodel);
+  ~PK_DomainFunction() {};
 
   // source term on time interval (t0, t1]
-  virtual void Compute(double t0, double t1, Teuchos::RCP<const Epetra_Vector> weight);
+  virtual void Compute(double t0, double t1) { ASSERT(false); }
 
-  // a place keeper
-  void Finalize() {};
- 
+  // model name
+  virtual std::string name() { return "undefined"; } 
+
+  // access
+  double domain_volume() { return domain_volume_; }
+
   // iterator methods
-  typedef std::map<int, double>::const_iterator Iterator;
-  Iterator begin() const { return value_.begin(); }
-  Iterator end() const { return value_.end(); }
+  typedef std::map<int, double>::iterator Iterator;
+  Iterator begin() { return value_.begin(); }
+  Iterator end() { return value_.end(); }
   std::map<int, double>::size_type size() { return value_.size(); }
 
-  // extract internal information
-  int CollectActionsList();
-
- private:
-  void ComputeDensity_(double t0, double t1);
-  void ComputeIntegral_(double t0, double t1);
-  void ComputeIntegral_(double t0, double t1, double* weight);
-  
  protected:
   std::map<int, double> value_;
-  bool finalized_;
-
-  std::vector<int> actions_;
-  std::vector<int> submodel_;
+  double domain_volume_;
 };
 
 }  // namespace Amanzi

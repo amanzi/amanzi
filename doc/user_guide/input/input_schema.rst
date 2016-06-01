@@ -354,103 +354,113 @@ The ``unstructured_controls`` sections is divided in the subsections: ``unstr_st
 
   <unstructured_controls>
 
-    <comments>Numerical controls comments here</comments>
-
     <unstr_flow_controls>
       <discretization_method> fv-default | fv-monotone | fv-multi_point_flux_approximation | fv-extended_to_boundary_edges | mfd-default | mfd-optimized_for_sparsity | mfd-support_operator | mfd-optimized_for_monotonicity | mfd-two_point_flux_approximation </discretization_method>
-      <rel_perm_method> upwind-darcy_velocity (default) | upwind-gravity |  upwind-amanzi |  other-arithmetic_average |  other-harmonic_average </rel_perm_method>
-      <preconditioning_strategy> linearized_operator(default) | diffusion_operator </preconditioning_strategy>
+      <rel_perm_method> upwind-darcy_velocity (default) | upwind-gravity | upwind-amanzi | other-arithmetic_average | other-harmonic_average </rel_perm_method>
+      <preconditioning_strategy> diffusion_operator | linearized_operator (default) </preconditioning_strategy>
+      <atmospheric_pressure> exp </atmospheric_pressure>
     </unstr_flow_controls>
 
     <unstr_transport_controls>
-      <algorithm> explicit first-order(default) | explicit second-order | implicit upwind </algorithm>
-      <sub_cycling> off(default) | on </sub_cycling>
+      <algorithm> explicit first-order (default) | explicit second-order | implicit upwind </algorithm> 
+      <sub_cycling> on (defulat) | off </sub_cycling> 
       <cfl> exp </cfl>
     </unstr_transport_controls>
 
+    <unstr_chemistry_controls>
+      <process_model> implicit operator split | none </process_model>
+
+      <!-- Amanzi native chemistry -->
+      <activity_model> unit (default) | debye-huckel </activity_model> 
+      <tolerance> exp </tolerance> <!-- default: 100 -->
+      <maximum_newton_iterations> int </maximum_newton_iterations> <!-- default: 1e-12 -->
+      <auxiliary_data> pH </auxiliary_data> 
+
+      <!-- Pflotran chemistry -->
+      <activity_coefficients> timestep (default) | off </activity_coefficients>
+      <max_relative_change_tolerance> exp </max_relative_change_tolerance> <!-- suggested 1.0e-16 -->
+      <max_residual_tolerance> exp </max_residual_tolerance> <!-- suggested 1.0e-16 -->
+      <log_formulation> on (default) | off </log_formulation>
+    </unstr_chemistry_controls>
+
     <unstr_steady-state_controls>
-      <comments>Comment text here</comments>
-      <min_iterations> Integer </min_iterations>
-      <limit_iterations> Integer </limit_iterations>
-      <max_iterations> Integer </max_iterations>
-      <max_preconditioner_lag_iterations> Integer </max_preconditioner_lag_iterations>
-      <nonlinear_tolerance> Exponential </nonlinear_tolerance>
-      <initialize_with_darcy>true | false</initialize_with_darcy>
+      <min_iterations> int </min_iterations> 
+      <max_iterations> int </max_iterations>
+      <limit_iterations> int </limit_iterations>
+      <nonlinear_tolerance> exp </nonlinear_tolerance> 
+      <error_control_options> pressure (default) | residual </error_control_options> 
+      <nonlinear_iteration_damping_factor> exp </nonlinear_iteration_damping_factor>
+      <max_preconditioner_lag_iterations> int </max_preconditioner_lag_iterations> 
+      <max_divergent_iterations> int </max_divergent_iterations> 
+      <nonlinear_iteration_divergence_factor> exp </nonlinear_iteration_divergence_factor> 
+      <restart_tolerance_relaxation_factor> exp </restart_tolerance_relaxation_factor> 
+      <restart_tolerance_relaxation_factor_damping> exp </restart_tolerance_relaxation_factor_damping> 
+      <preconditioner> hypre_amg (default) | trilinos_ml | block_ilu </preconditioner> 
+      <nonlinear_iteration_initial_guess_extrapolation_order> int </nonlinear_iteration_initial_guess_extrapolation_order> 
       <unstr_initialization>
-        <clipping_saturation> Exponential </clipping_saturation>
-        <clipping_pressure> Exponential </clipping_pressure>
-        <method>picard | darcy_solver</method>
-        <preconditioner> trilinos_ml | hypre_amg | block_ilu </preconditioner>
-        <linear_solver>aztec00</linear_solver>
-        <control_options> pressure | residual </control_options>
-        <convergence_tolerance> Exponential </convergence_tolerance>
-        <max_iterations> Integer </max_iterations>
+	<!-- NOTE: including an empty section here turns intialization on with default values
+	     To deactive intialization, remove section completely -->
+        <clipping_saturation> exp </clipping_saturation> 
+        <clipping_pressure> exp </clipping_pressure> 
+        <method> picard (default) | darcy_solver </method> 
+        <preconditioner> hypre_amg (default) | trilinos_ml | block_ilu </preconditioner> 
+        <linear_solver>aztec00 | aztecoo | AztecOO</linear_solver>
+        <error_control_options> pressure (default) | residual </error_control_options>
+        <convergence_tolerance> exp </convergence_tolerance>
+        <max_iterations> int </max_iterations>
       </unstr_initialization>
-      <limit_iterations> Integer </limit_iterations>
-      <nonlinear_iteration_damping_factor> Exponential </nonlinear_iteration_damping_factor>
-      <nonlinear_iteration_divergence_factor> Exponential </nonlinear_iteration_divergence_factor>
-      <restart_tolerance_factor> Exponential </restart_tolerance_factor>
-      <restart_tolerance_relaxation_factor> Exponential </restart_tolerance_relaxation_factor>
-      <max_divergent_iterations> Integer </max_divergent_iterations>
     </unstr_steady-state_controls>
 
     <unstr_transient_controls>
-      <comments>Comment text here</comments>
-      <bdf1_integration_method> 
-        <min_iterations> Integer </min_iterations>
-        <max_iterations> Integer </max_iterations>
-        <limit_iterations> Integer </limit_iterations>
-        <nonlinear_tolerance> Exponential </nonlinear_tolerance>
-        <nonlinear_iteration_damping_factor> Exponential </nonlinear_iteration_damping_factor>
-        <max_preconditioner_lag_iterations> Integer </max_preconditioner_lag_iterations>
-        <max_divergent_iterations> Integer </max_divergent_iterations>
-        <nonlinear_iteration_divergence_factor> Exponential </nonlinear_iteration_divergence_factor>
-        <restart_tolerance_factor> Exponential </restart_tolerance_factor>
-        <restart_tolerance_relaxation_factor> Exponential </restart_tolerance_relaxation_factor>
-        <initialize_with_darcy> true | false </initialize_with_darcy>
-      <bdf1_integration_method> 
-      <preconditioner> trilinos_ml | hypre_amg | block_ilu </preconditioner>
-      <initialize_with_darcy>true | false</initialize_with_darcy>
-      <nonlinear_iteration_initial_guess_extrapolation_order>int</nonlinear_iteration_initial_guess_extrapolation_order>
+      <min_iterations> int </min_iterations>
+      <max_iterations> int </max_iterations>
+      <limit_iterations> int </limit_iterations>
+      <nonlinear_tolerance> exp </nonlinear_tolerance>
+      <nonlinear_iteration_damping_factor> exp </nonlinear_iteration_damping_factor>
+      <max_preconditioner_lag_iterations> int </max_preconditioner_lag_iterations>
+      <max_divergent_iterations> int </max_divergent_iterations>
+      <nonlinear_iteration_divergence_factor> exp </nonlinear_iteration_divergence_factor>
+      <restart_tolerance_relaxation_factor> exp </restart_tolerance_relaxation_factor> 
+      <restart_tolerance_relaxation_factor_damping> exp </restart_tolerance_relaxation_factor_damping>
+      <error_control_options> pressure,residual (default) </error_control_options>
+      <preconditioner> hypre_amg (default) | trilinos_ml | block_ilu </preconditioner> 
+      <initialize_with_darcy> true | false (default) </initialize_with_darcy>
+      <nonlinear_iteration_initial_guess_extrapolation_order>int</nonlinear_iteration_initial_guess_extrapolation_order> 
     </unstr_transient_controls>
 
     <unstr_linear_solver>
-      <comments>Comment text here</comments>
-      <method> gmres </method>
-      <max_iterations> Integer </max_iterations>
-      <tolerance> Exponential </tolerance>
-      <preconditioner> trilinos_ml | hypre_amg | block_ilu </preconditioner>
+      <method> gmres (default) | pcg </method>
+      <max_iterations>int </max_iterations> 
+      <tolerance> exp </tolerance> 
+      <preconditioner> hypre_amg (default) | trilinos_ml | block_ilu </preconditioner> 
     </unstr_linear_solver>
 
-    <unstr_nonlinear_solver name="nka | newton | inexact newton" />
-
-    <unstr_chemistry_controls>
-      <chem_tolerance> Exponential </chem_tolerance>
-      <chem_max_newton_iterations> Integer </chem_max_newton_iterations>
-    </unstr_chemistry_controls>
+    <unstr_nonlinear_solver name="nka | newton | jfnk | newton_picard" >
+      <modify_correction> true | false (default) </modify_correction>
+      <update_upwind_frequency> every_timestep (default) | every_nonlinear_iteration </update_upwind_frequency> 
+    </unstr_nonlinear_solver>
 
     <unstr_preconditioners>
       <hypre_amg>
-        <hypre_cycle_applications>int</hypre_cycle_applications>
-        <hypre_smoother_sweeps>int</hypre_smoother_sweeps
-        <hypre_tolerance>exp</hypre_tolerance>
-        <hypre_strong_threshold>exp</hypre_strong_threshold>
+        <hypre_cycle_applications> int </hypre_cycle_applications> <!-- default: 5 suggested range: 1-5 -->
+        <hypre_smoother_sweeps> int </hypre_smoother_sweeps> <!-- default: 3 suggested range: 1-5 -->
+        <hypre_tolerance> exp </hypre_tolerance> <!-- default: 0.0 suggested range: 0.0-0.1 -->
+        <hypre_strong_threshold> exp </hypre_strong_threshold> <!-- default: 0.5 suggested range: 0.2-0.8 -->
       </hypre_amg>
       <trilinos_ml>
-        <trilinos_cycle_applications>int</trilinos_cycle_applications>
-        <trilinos_smoother_sweeps>int</trilinos_smoother_sweeps>
-        <trilinos_threshold>exp</trilinos_threshold>
-        <trilinos_smoother_type>jacobi | gauss_seidel | ilu</trilinos_smoother_type>
+        <trilinos_cycle_applications> int </trilinos_cycle_applications> 
+        <trilinos_smoother_sweeps> int </trilinos_smoother_sweeps> 
+        <trilinos_threshold> exp </trilinos_threshold>  
+        <trilinos_smoother_type> jacobi (default) | gauss_seidel | ilu </trilinos_smoother_type> 
       </trilinos_ml>
       <block_ilu>
-        <ilu_overlap>int</ilu_overlap>
-        <ilu_relax>exp</ilu_relax>
-        <ilu_rel_threshold>exp</ilu_rel_threshold>
-        <ilu_abs_threshold>exp</ilu_abs_threshold>
-        <ilu_level_of_fill>int</ilu_level_of_fill>
+        <ilu_overlap> int </ilu_overlap> 
+        <ilu_relax> exp </ilu_relax> 
+        <ilu_rel_threshold> exp </ilu_rel_threshold> 
+        <ilu_abs_threshold> exp </ilu_abs_threshold> 
+        <ilu_level_of_fill> int </ilu_level_of_fill> 
       </block_ilu>
     </unstr_preconditioners>
-
   </unstructured_controls>
 
 Here is an overall example for the ``unstructured_controls`` element.

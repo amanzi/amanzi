@@ -125,10 +125,6 @@ void RunTestUpwind(std::string method) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       fcells[0][c] = model->Value(c, xc[0]); 
     }
-    for (int f = 0; f < nfaces_wghost; f++) {
-      const AmanziGeometry::Point& xf = mesh->face_centroid(f);
-      ffaces[0][f] = model->Value(0, xf[0]); 
-    }
 
     // create and initialize face-based flux field
     cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -136,7 +132,7 @@ void RunTestUpwind(std::string method) {
     cvs->SetGhosted(true);
     cvs->SetComponent("face", AmanziMesh::FACE, 1);
 
-    CompositeVector flux(*cvs), solution(*cvs), upw_field(*cvs);
+    CompositeVector flux(*cvs), solution(*cvs);
     Epetra_MultiVector& u = *flux.ViewComponent("face", true);
   
     Point vel(1.0, 2.0, 3.0);
@@ -151,19 +147,17 @@ void RunTestUpwind(std::string method) {
     upwind.Init(ulist);
 
     ModelUpwindFn func = &Model::Value;
-    upwind.Compute(flux, solution, bc_model, bc_value, field, upw_field, func);
+    upwind.Compute(flux, solution, bc_model, bc_value, field, func);
 
     // calculate errors
-    Epetra_MultiVector& upw = *upw_field.ViewComponent("face");
-
     double error(0.0);
     for (int f = 0; f < nfaces_owned; f++) {
       const Point& xf = mesh->face_centroid(f);
       double exact = model->analytic(xf[0]);
 
-      error += pow(exact - upw[0][f], 2.0);
+      error += pow(exact - ffaces[0][f], 2.0);
 
-      CHECK(upw[0][f] >= 0.0);
+      CHECK(ffaces[0][f] >= 0.0);
     }
 #ifdef HAVE_MPI
     double tmp = error;

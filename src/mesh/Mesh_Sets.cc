@@ -35,12 +35,6 @@ void Mesh::get_set_entities_box_vofs_(
     std::vector<double>* volume_fractions) const
 {
   ASSERT(volume_fractions != NULL);
-  /*
-  std::cout << "region=" << region << std::endl;
-  std::cout << "kind=" << kind << std::endl;
-  std::cout << "ptype=" << ptype << std::endl;
-  std::cout << "data=" << setents << std::endl;
-  */
 
   setents->clear();
   volume_fractions->clear();
@@ -60,13 +54,35 @@ void Mesh::get_set_entities_box_vofs_(
       int ncells = num_entities(CELL, ptype);  
       double volume;
 
-      std::vector<AmanziGeometry::Point> polytope;
+      Entity_ID_List faces, cnodes, fnodes;
+      std::vector<int> dirs;
+      std::vector<AmanziGeometry::Point> polytope_nodes;
+      std::vector<std::vector<int> > polytope_faces;
 
       for (int c = 0; c < ncells; ++c) {
-        cell_get_coordinates(c, &polytope);
-        if ((volume = region->intersect(polytope)) > 0.0) {
+        cell_get_coordinates(c, &polytope_nodes);
+
+        if (space_dimension() == 3) { 
+          cell_get_nodes(c, &cnodes);
+          cell_get_faces_and_dirs(c, &faces, &dirs);
+          int nfaces = faces.size();
+
+          polytope_faces.clear();
+          polytope_faces.resize(nfaces);
+          for (int n = 0; n < nfaces; ++n) {
+            face_get_nodes(faces[n], &fnodes);
+            int nnodes = fnodes.size();
+
+            for (int i = 0; i < nnodes; ++i) {
+              int j = (dirs[n] > 0) ? i : nnodes - i - 1; 
+              polytope_faces[n].push_back(FindPosition_(fnodes[j], cnodes));
+            }
+          }
+        }
+
+        if ((volume = region->intersect(polytope_nodes, polytope_faces)) > 0.0) {
           setents->push_back(c);
-          volume_fractions->push_back(volume);
+          volume_fractions->push_back(volume /cell_volume(c));
         }
       }
 
@@ -93,7 +109,7 @@ void Mesh::get_set_entities_box_vofs_(
         face_get_coordinates(f, &polygon);
         if ((area = region->intersect(polygon)) > 0.0) {
           setents->push_back(f);
-          volume_fractions->push_back(area);
+          volume_fractions->push_back(area / face_area(f));
         }
       }
 
@@ -182,6 +198,15 @@ void Mesh::get_set_entities(const Set_ID setid,
   std::vector<double> vofs;
   std::string setname = geometric_model()->FindRegion(setid)->name();
   get_set_entities_and_vofs(setname, kind, ptype, entids, &vofs);
+}
+
+
+int Mesh::FindPosition_(Entity_ID v, Entity_ID_List nodes) const
+{
+  for (int i = 0; i < nodes.size(); i++) {
+    if (nodes[i] == v) return i;
+  }
+  return -1;
 }
 
 }  // namespace AmanziMesh

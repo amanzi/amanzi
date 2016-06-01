@@ -46,7 +46,7 @@ namespace Operators {
 *           when the input field has physical (not numerical) 
 *           discontinuous, e.g. different permeability curves.
 *
-* Amanzi combines the input and outfield in one variable.
+* Amanzi combines the input and output field in one variable.
 ****************************************************************** */ 
 
 template<class Model>
@@ -68,7 +68,7 @@ class Upwind {
   // -- not all input parameters are use by some algorithms
   virtual void Compute(const CompositeVector& flux, const CompositeVector& solution,
                        const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-                       const CompositeVector& field, CompositeVector& field_upwind,
+                       CompositeVector& field, 
                        double (Model::*Value)(int, double) const) = 0;
 
   // -- returns combined map for the original and upwinded fields.

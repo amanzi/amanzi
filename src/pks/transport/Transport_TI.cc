@@ -36,20 +36,18 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<double> bc_value(nfaces_wghost);
 
-  for (int m = 0; m < bcs.size(); m++) {
-    std::vector<int>& tcc_index = bcs[m]->tcc_index();
+  for (int m = 0; m < bcs_.size(); m++) {
+    std::vector<int>& tcc_index = bcs_[m]->tcc_index();
     int ncomp = tcc_index.size();
 
     for (int i = 0; i < ncomp; i++) {
       if (current_component_ == tcc_index[i]) {
-        std::vector<int>& faces = bcs[m]->faces();
-        std::vector<std::vector<double> >& values = bcs[m]->values();
-        int nbfaces = faces.size();
+        for (TransportBoundaryFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+          int f = it->first;
+          WhetStone::DenseVector& values = it->second;
 
-        for (int n = 0; n < nbfaces; ++n) {
-          int f = faces[n];
           bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-          bc_value[f] = values[n][i];
+          bc_value[f] = values(i);
         }
       }
     }
@@ -109,8 +107,8 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
   }
 
   // process external sources
-  if (srcs.size() != 0) {
-    ComputeAddSourceTerms(t, 1.0, srcs, f_component, current_component_, current_component_);
+  if (srcs_.size() != 0) {
+    ComputeAddSourceTerms(t, 1.0, f_component, current_component_, current_component_);
   }
 
   for (int c = 0; c < ncells_owned; c++) {  // calculate conservative quantatity
@@ -119,24 +117,22 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
   }
 
   // BOUNDARY CONDITIONS for ADVECTION
-  for (int m = 0; m < bcs.size(); m++) {
-    std::vector<int>& tcc_index = bcs[m]->tcc_index();
+  for (int m = 0; m < bcs_.size(); m++) {
+    std::vector<int>& tcc_index = bcs_[m]->tcc_index();
     int ncomp = tcc_index.size();
 
     for (int i = 0; i < ncomp; i++) {
       if (current_component_ == tcc_index[i]) {
-        std::vector<int>& faces = bcs[m]->faces();
-        std::vector<std::vector<double> >& values = bcs[m]->values();
-        int nbfaces = faces.size();
+        for (TransportBoundaryFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+          int f = it->first;
+          WhetStone::DenseVector& values = it->second;
 
-        for (int n = 0; n < nbfaces; ++n) {
-          f = faces[n];
           c2 = (*downwind_cell_)[f];
 
           if (c2 >= 0 && f < nfaces_owned) {
             u = fabs((*darcy_flux)[0][f]);
             double vol_phi_ws = mesh_->cell_volume(c2) * (*phi)[0][c2] * (*ws_start)[0][c2];
-            tcc_flux = u * values[n][i];
+            tcc_flux = u * values(i);
             f_component[c2] += tcc_flux / vol_phi_ws;
           }
         }

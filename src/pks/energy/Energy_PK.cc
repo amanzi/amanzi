@@ -17,10 +17,10 @@
 #include "GMVMesh.hh"
 #include "Mesh.hh"
 #include "mfd3d.hh"
+#include "PK_DomainFunctionFactory.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "State.hh"
 
-#include "Energy_BC_Factory.hh"
 #include "Energy_PK.hh"
 
 namespace Amanzi {
@@ -108,18 +108,44 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::RCP<Teuchos::ParameterList> tmp = Teuchos::sublist(pk_list, "energy", true);
   Teuchos::RCP<Teuchos::ParameterList> ep_list = Teuchos::sublist(tmp, tmp->begin()->first, true);
 
-  // Create BCs objects.
+  // Create BCs objects
+  // -- memory
   bc_model_.resize(nfaces_wghost, 0);
-  bc_submodel_.resize(nfaces_wghost, 0);
   bc_value_.resize(nfaces_wghost, 0.0);
   bc_mixed_.resize(nfaces_wghost, 0.0);
 
   Teuchos::RCP<Teuchos::ParameterList>
       bc_list = Teuchos::rcp(new Teuchos::ParameterList(ep_list->sublist("boundary conditions", true)));
-  EnergyBCFactory bc_factory(mesh_, bc_list);
 
-  bc_temperature = bc_factory.CreateTemperature(bc_submodel_);
-  bc_flux = bc_factory.CreateEnergyFlux(bc_submodel_);
+  // -- temperature
+  if (bc_list->isSublist("temperature")) {
+    PK_DomainFunctionFactory<PK_DomainFunction> bc_factory(mesh_);
+
+    Teuchos::ParameterList& tmp_list = bc_list->sublist("temperature");
+    for (Teuchos::ParameterList::ConstIterator it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+        bc_temperature_.push_back(bc_factory.Create(
+            spec, "boundary temperature", AmanziMesh::FACE, Teuchos::null));
+      }
+    }
+  }
+
+  // -- energy flux
+  if (bc_list->isSublist("energy flux")) {
+    PK_DomainFunctionFactory<PK_DomainFunction> bc_factory(mesh_);
+
+    Teuchos::ParameterList& tmp_list = bc_list->sublist("energy flux");
+    for (Teuchos::ParameterList::ConstIterator it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+        bc_flux_.push_back(bc_factory.Create(
+            spec, "outward energy flux", AmanziMesh::FACE, Teuchos::null));
+      }
+    }
+  }
 
   op_bc_ = Teuchos::rcp(new Operators:: BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_, bc_mixed_));
 
@@ -185,8 +211,13 @@ bool Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)
 ****************************************************************** */
 void Energy_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u)
 {
-  bc_temperature->Compute(t_new);
-  bc_flux->Compute(t_new);
+  for (int i = 0; i < bc_temperature_.size(); ++i) {
+    bc_temperature_[i]->Compute(t_old, t_new);
+  }
+
+  for (int i = 0; i < bc_flux_.size(); ++i) {
+    bc_flux_[i]->Compute(t_old, t_new);
+  }
 
   ComputeBCs(u);
 }
@@ -207,17 +238,20 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
     bc_mixed_[n] = 0.0;
   }
 
-  EnergyBoundaryFunction::Iterator bc;
-  for (bc = bc_temperature->begin(); bc != bc_temperature->end(); ++bc) {
-    int f = bc->first;
-    bc_model_[f] = Operators::OPERATOR_BC_DIRICHLET;
-    bc_value_[f] = bc->second;
+  for (int i = 0; i < bc_temperature_.size(); ++i) {
+    for (PK_DomainFunction::Iterator it = bc_temperature_[i]->begin(); it != bc_temperature_[i]->end(); ++it) {
+      int f = it->first;
+      bc_model_[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_value_[f] = it->second;
+    }
   }
 
-  for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) {
-    int f = bc->first;
-    bc_model_[f] = Operators::OPERATOR_BC_NEUMANN;
-    bc_value_[f] = bc->second;
+  for (int i = 0; i < bc_flux_.size(); ++i) {
+    for (PK_DomainFunction::Iterator it = bc_flux_[i]->begin(); it != bc_flux_[i]->end(); ++it) {
+      int f = it->first;
+      bc_model_[f] = Operators::OPERATOR_BC_NEUMANN;
+      bc_value_[f] = it->second;
+    }
   }
 
   dirichlet_bc_faces_ = 0;

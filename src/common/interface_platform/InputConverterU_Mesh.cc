@@ -1,5 +1,5 @@
 /*
-  This is the input component of the Amanzi code. 
+  Input Converter
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -381,16 +381,16 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
             // deal with operation
             if (strcmp(node_name, "operation") == 0) {
               text_content2 = mm.transcode(jnode->getTextContent());
-              if (strcmp(text_content2,"union") == 0) {
+              if (strcmp(text_content2, "union") == 0) {
                 out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation", "union");
               }
-              else if (strcmp(text_content2,"intersection") == 0) {
+              else if (strcmp(text_content2, "intersection") == 0) {
                 out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation", "intersect");
               }
-              else if (strcmp(text_content2,"subtraction") == 0) {
+              else if (strcmp(text_content2, "subtraction") == 0) {
                 out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation","subtract");
               }
-              else if (strcmp(text_content2,"complement") == 0) {
+              else if (strcmp(text_content2, "complement") == 0) {
                 out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation", "complement");
               }
               else {

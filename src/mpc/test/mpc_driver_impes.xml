@@ -362,12 +362,12 @@
               <ParameterList name="function">
                 <Parameter name="number of dofs" type="int" value="2"/>
                 <Parameter name="function type" type="string" value="composite function"/>
-                <ParameterList name="DoF 1 Function">
+                <ParameterList name="dof 1 function">
                   <ParameterList name="function-constant">
                     <Parameter name="value" type="double" value="1.0"/>
                   </ParameterList>
                 </ParameterList>
-                <ParameterList name="DoF 2 Function">
+                <ParameterList name="dof 2 function">
                   <ParameterList name="function-constant">
                     <Parameter name="value" type="double" value="1.0"/>
                   </ParameterList>

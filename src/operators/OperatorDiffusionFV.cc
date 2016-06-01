@@ -87,14 +87,27 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
 
   // Do we need to calculate Newton correction terms?
   newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
+
+  // DEPRECATED INPUT -- remove this error eventually --etc
+  if (plist.isParameter("newton correction")) {
+    msg << "OperatorDiffusionFV: DEPRECATED: \"newton correction\" has been removed in favor of \"Newton correction\"";
+    Exceptions::amanzi_throw(msg);
+  }
+
   std::string jacobian = plist.get<std::string>("Newton correction", "none");
-  if (jacobian == "true Jacobian") {
+  if (jacobian == "none") {
+    newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
+  } else if (jacobian == "true Jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
   } else if (jacobian == "approximate Jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
     msg << "OperatorDiffusionFV: \"approximate Jacobian\" not supported, use \"true Jacobian\".";
     Exceptions::amanzi_throw(msg);
+  } else {
+    msg << "OperatorDiffusionFV: invalid parameter \"" << jacobian << "\" for option \"Newton correction\" -- valid are: \"none\", \"true Jacobian\"";
+    Exceptions::amanzi_throw(msg);
   }
+    
 
   if (newton_correction_ != OPERATOR_DIFFUSION_JACOBIAN_NONE) {
     if (plist.get<bool>("surface operator", false)) {

@@ -56,4 +56,133 @@ void Field::not_implemented_error_() const {
   Exceptions::amanzi_throw(message);
 };
 
+bool Field::HasCopy(Key timetag) const{
+
+  return GetCopy_(timetag) != Teuchos::null;
+
+}
+
+Teuchos::RCP<const Field> Field::GetCopy_(Key timetag) const{
+
+  FieldMap::const_iterator lb = field_copy_.lower_bound(timetag);
+  if (lb != field_copy_.end() && !(field_copy_.key_comp()(timetag, lb->first))) {
+    return lb->second;
+  } else {
+    return Teuchos::null;
+  }  
+  
+}
+
+Teuchos::RCP<Field> Field::GetCopy_(Key timetag){
+
+  FieldMap::iterator lb = field_copy_.lower_bound(timetag);
+  if (lb != field_copy_.end() && !(field_copy_.key_comp()(timetag, lb->first))) {
+    return lb->second;
+  } else {
+  return Teuchos::null;
+  }  
+  
+}
+
+
+Teuchos::RCP<Field> Field::GetCopy(Key timetag, Key pk_name){
+
+  Teuchos::RCP<Field> record = GetCopy_(timetag);
+
+  if (record == Teuchos::null) {
+    std::stringstream messagestream;
+    messagestream << "Field " << fieldname_ << " does not have copy tagged " << timetag;
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  } else if (record->owner() != pk_name) {
+    std::stringstream messagestream;
+    messagestream << "PK \"" << pk_name
+                  << "\" is attempting write access to copy \"" <<timetag
+                  << "\" which is owned by \"" << GetCopy_(timetag)->owner() <<"\"";
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+
+  return record;
+
+}
+
+Teuchos::RCP<const Field>  Field::GetCopy(Key timetag) const{
+
+  Teuchos::RCP<const Field> record = GetCopy_(timetag);
+  
+  if (record == Teuchos::null) {
+    std::stringstream messagestream;
+    messagestream << "Field " << fieldname_ << " does not have copy tagged " << timetag;
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+
+  return record;
+
+}
+
+//  No data movement on pointer switch
+void Field::SwitchCopies(Key timetag1, Key timetag2){
+
+
+  if (!HasCopy(timetag1)){
+    std::stringstream messagestream;
+    messagestream << "Field " << fieldname_ << " does not have copy tagged " << timetag1;
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+
+  if (!HasCopy(timetag2)){
+    std::stringstream messagestream;
+    messagestream << "Field " << fieldname_ << " does not have copy tagged " << timetag2;
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+
+
+  FieldMap::iterator lb1 = field_copy_.lower_bound(timetag1);
+  FieldMap::iterator lb2 = field_copy_.lower_bound(timetag2);
+  Teuchos::RCP<Field> record = lb1 ->second;
+  lb1->second = lb2->second;
+  lb2->second = record;
+
+}
+
+// set data by pointer -- does not copy
+void Field::SetCopy(Key timetag, const Teuchos::RCP<Field>& field){
+
+  assert_type_or_die_(field->type());
+
+  if (!HasCopy(timetag)){
+    std::stringstream messagestream;
+    messagestream << "Field " << fieldname_ << " does not have copy tagged " << timetag;
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+
+  FieldMap::iterator lb = field_copy_.lower_bound(timetag);
+
+  lb->second = field;
+
+}
+
+void Field::RequireCopy(Key tag){
+
+  if (!HasCopy(tag)){
+    Teuchos::RCP<Field> copy = Clone(fieldname_, owner_);
+    field_copy_[tag] = copy;
+  }
+}
+
+  void Field::RequireCopy(Key tag, Key new_owner){
+
+  if (!HasCopy(tag)){
+    Teuchos::RCP<Field> copy = Clone(fieldname_, new_owner);
+    field_copy_[tag] = copy;
+  }
+
+}
+
+
 } // namespace

@@ -41,12 +41,14 @@ add_amanzi_library(mesh_functions
                           UniqueMeshFunction.cc
                           BoundaryFunction.cc
                           MeshPartition.cc
+                          MaterialMeshFunction.cc
                    HEADERS BoundaryFunction.hh
                            CompositeVectorFunction.hh
                            CompositeVectorFunctionFactory.hh
                            MeshPartition.hh
                            MeshFunction.hh
                            UniqueMeshFunction.hh
+                           MaterialMeshFunction.hh
                    LINK_LIBS error_handling functions mesh ${Teuchos_LIBRARIES})
 
 # Define all tests at the of the file. BUILD_TESTS gates test building.
@@ -67,18 +69,21 @@ if (BUILD_TESTS)
   endif()
 
 # these are currently broken
-#  add_amanzi_test(boundary_function_test boundary_function_test
-#                  KIND unit
-#                  SOURCE test/boundary-function-test.cc
-#                  LINK_LIBS mesh_functions mesh_factory ${UnitTest_LIBRARIES})
-
-  add_amanzi_test(cv_function cv_function_test 
+  add_amanzi_test(boundary_function boundary_function
                   KIND unit
-                  SOURCE test/composite_vector_function_test.cc
+                  SOURCE test/boundary_function.cc
+                  LINK_LIBS mesh_functions mesh_factory ${UnitTest_LIBRARIES})
+
+  add_amanzi_test(material_function material_function
+                  KIND unit
+                  SOURCE test/material_function.cc
+                  LINK_LIBS mesh_functions mesh_factory ${UnitTest_LIBRARIES})
+
+  add_amanzi_test(cv_function cv_function
+                  KIND unit
+                  SOURCE test/composite_vector_function.cc
                   LINK_LIBS  mesh_functions mesh_factory data_structures 
                              ${UnitTest_LIBRARIES} ${Boost_LIBRARIES} 
                              ${MSTK_LIBRARIES})
-
-
 
 endif()

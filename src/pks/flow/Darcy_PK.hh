@@ -18,7 +18,6 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
-#include "BCs.hh"
 #include "FnBaseDefs.hh"
 #include "Operator.hh"
 #include "OperatorDiffusion.hh"
@@ -110,7 +109,6 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Operators::Operator> op_;
   Teuchos::RCP<Operators::OperatorDiffusion> op_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
-  Teuchos::RCP<Operators::BCs> op_bc_;
 
   int error_control_;
   double dt_desirable_, dt_max_, dt_factor_;

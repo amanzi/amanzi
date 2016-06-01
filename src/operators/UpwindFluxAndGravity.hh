@@ -53,7 +53,7 @@ class UpwindFluxAndGravity : public Upwind<Model> {
   // -- Currently, composite vector cannot be extended on a fly. 
   void Compute(const CompositeVector& flux, const CompositeVector& solution,
                const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-               const CompositeVector& field, CompositeVector& field_upwind,
+               CompositeVector& field,
                double (Model::*Value)(int, double) const);
 
   // -- returns combined map for the original and upwinded fields.
@@ -93,21 +93,21 @@ void UpwindFluxAndGravity<Model>::Init(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
-* Upwind field using flux and place the result in field_upwind.
+* Upwind field is placed in component "face" of field.
 * Upwinded field must be calculated on all faces of the owned cells.
 ****************************************************************** */
 template<class Model>
 void UpwindFluxAndGravity<Model>::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-    const CompositeVector& field, CompositeVector& field_upwind,
+    CompositeVector& field,
     double (Model::*Value)(int, double) const)
 {
   upwind_flux_.set_face_comp("face");
-  upwind_flux_.Compute(flux, solution, bc_model, bc_value, field, field_upwind, Value);
+  upwind_flux_.Compute(flux, solution, bc_model, bc_value, field, Value);
 
   upwind_gravity_.set_face_comp("grav");
-  upwind_gravity_.Compute(flux, solution, bc_model, bc_value, field, field_upwind, Value);
+  upwind_gravity_.Compute(flux, solution, bc_model, bc_value, field, Value);
 }
 
 }  // namespace Operators
