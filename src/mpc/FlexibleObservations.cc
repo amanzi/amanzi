@@ -351,6 +351,15 @@ int FlexibleObservations::MakeObservations(State& S)
           }    
         } else if (var == "hydraulic head") {
           const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
+  
+          for (int i = 0; i < mesh_block_size; ++i) {
+            int c = entity_ids[i];
+            double vol = S.GetMesh()->cell_volume(c);
+            volume += vol;
+            value += hydraulic_head[0][c] * vol;
+          }
+        } else if (var == "permeability-weighted hydraulic head") {
+          const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
           const Epetra_MultiVector& perm = *S.GetFieldData("permeability")->ViewComponent("cell");
   
           for (int i = 0; i < mesh_block_size; ++i) {
@@ -360,15 +369,6 @@ int FlexibleObservations::MakeObservations(State& S)
             volume += vol * kxy;
             value += hydraulic_head[0][c] * vol * kxy;
           }
-        } else if (var == "permeability-weighted hydraulic head") {
-          const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
-  
-          for (int i = 0; i < mesh_block_size; ++i) {
-            int c = entity_ids[i];
-            double vol = S.GetMesh()->cell_volume(c);
-            volume += vol;
-            value += hydraulic_head[0][c] * vol;
-          }
         } else if (var == "drawdown") {
           const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
   
@@ -377,6 +377,22 @@ int FlexibleObservations::MakeObservations(State& S)
             double vol = S.GetMesh()->cell_volume(c);
             volume += vol;
             value += hydraulic_head[0][c] * vol;
+          }
+
+          // zero drawdown at time = t0 wil be written directly to the file.
+          if (od.size() > 0) { 
+            value = od.begin()->value * volume - value;
+          }
+        } else if (var == "permeability-weighted drawdown") {
+          const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
+          const Epetra_MultiVector& perm = *S.GetFieldData("permeability")->ViewComponent("cell");
+  
+          for (int i = 0; i < mesh_block_size; ++i) {
+            int c = entity_ids[i];
+            double vol = S.GetMesh()->cell_volume(c);
+            double kxy = (dim == 2) ? perm[1][c] : std::pow(perm[1][c] * perm[2][c], 0.5);
+            volume += vol * kxy;
+            value += hydraulic_head[0][c] * vol * kxy;
           }
 
           // zero drawdown at time = t0 wil be written directly to the file.
@@ -617,7 +633,8 @@ void FlexibleObservations::FlushObservations()
                   << ind_obs_list.get<std::string>("functional") << ", "
                   << var << ", "
                   << od[j].time << ", "
-                  << ((var == "drawdown" && !j) ? 0.0 : od[j].value) << '\n';
+                  << (((var == "permeability-weighted drawdown" || 
+                        var == "drawdown") && !j) ? 0.0 : od[j].value) << '\n';
               if (!out.good()) {
                 std::cout << "PROBLEM AFTER" << std::endl;
               }
