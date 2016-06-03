@@ -86,13 +86,11 @@ CHEMISTRY
 
   MINERAL_KINETICS
     Quartz
-      :RATE_CONSTANT 4.51856e-14
       RATE_CONSTANT -13.345 mol/cm^2-sec
     /
     Kaolinite
       RATE_CONSTANT -12.967 mol/cm^2-sec
-      PREFACTOR
-      : acid
+      PREFACTOR : acid
         RATE_CONSTANT -12.967 mol/cm^2-sec
         PREFACTOR_SPECIES H+
           ALPHA 0.777
@@ -102,8 +100,7 @@ CHEMISTRY
     Goethite
       RATE_CONSTANT -7.94 mol/cm^2-sec
     /
-    Schoepite
-      : equilibrium => fast rate
+    Schoepite : equilibrium => fast rate
       RATE_CONSTANT 2.0 mol/cm^2-sec
     /
     Gibbsite
@@ -115,23 +112,20 @@ CHEMISTRY
     Basaluminite
       RATE_CONSTANT -8.0 mol/cm^2-sec
     /
-    Opal
-      : dissolution
+    Opal : dissolution
       RATE_CONSTANT -12.135 mol/cm^2-sec
     /
   /
 
   SORPTION
     SURFACE_COMPLEXATION_RXN
-      EQUILIBRIUM
-      :MINERAL bulk sediment
+      EQUILIBRIUM :MINERAL bulk sediment
       SITE >davis_OH 1.56199E-01  : [mol/m^3 bulk]
       COMPLEXES
         (>davis_O)UO2+
       /
     /
-    ION_EXCHANGE_RXN
-      :MINERAL Kaolinite
+    ION_EXCHANGE_RXN :MINERAL Kaolinite
       CEC 2.75  : [mol/m^3 bulk]
       CATIONS
         Na+   1.0
@@ -140,7 +134,7 @@ CHEMISTRY
         H+    0.0251188643151
       /
     /
-  END :sorption
+  / :sorption
 
 
   DATABASE ascem-2012-farea-full.dat
@@ -150,8 +144,7 @@ CHEMISTRY
 END
 
 :=========================== constraints ======================================
-CONSTRAINT background
-  : initial condition
+CONSTRAINT background : initial condition
   CONCENTRATIONS  : total aqueous [moles/kg_h2o]
     H+       5.4        P
     Al+++    3.09d-8    M Kaolinite
@@ -182,8 +175,7 @@ CONSTRAINT background
 
 END
 
-CONSTRAINT seepage
-  : west BC
+CONSTRAINT seepage : west BC
   CONCENTRATIONS  : total aqueous [moles/kg_h2o]
     H+       2.05       P
     Al+++    1.00d-8    T

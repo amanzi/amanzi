@@ -526,6 +526,7 @@ std::string InputConverterU::CreateINFile(std::string& filename)
   std::ofstream in_file;
   std::stringstream primaries;
   std::stringstream secondaries;
+  std::stringstream redoxes;
   std::stringstream minerals;
   std::stringstream mineral_list;
   std::stringstream gases;
@@ -537,6 +538,8 @@ std::string InputConverterU::CreateINFile(std::string& filename)
   std::stringstream reactionrates;
   std::stringstream decayrates;
   std::stringstream controls;
+  
+  double first_cation;
 
   // database filename and controls
   bool flag;
@@ -627,6 +630,19 @@ std::string InputConverterU::CreateINFile(std::string& filename)
     }
   }
   
+  // get redox species
+  node = GetUniqueElementByTagsString_("liquid_phase, dissolved_components, redox", flag);
+  if (flag) {
+    std::string redox;
+    std::vector<DOMNode*> children = GetSameChildNodes_(node, redox, flag, false);
+    
+    for (int i = 0; i < children.size(); ++i) {
+      DOMNode* inode = children[i];
+      std::string name = TrimString_(mm.transcode(inode->getTextContent()));
+      redoxes << "    " << name << "\n";
+    }
+  }
+  
   // get minerals and mineral kinetics
   node = GetUniqueElementByTagsString_("phases, solid_phase, minerals", flag);
   if (flag) {
@@ -641,11 +657,9 @@ std::string InputConverterU::CreateINFile(std::string& filename)
       
       element = static_cast<DOMElement*>(inode);
       double rate = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, false, 0.0);
-      if (rate > 0.0) {
-        mineral_kinetics << "    " << name << "\n";
-        mineral_kinetics << "      RATE_CONSTANT " << rate << "\n";
-        mineral_kinetics << "    /\n";
-      }
+      mineral_kinetics << "    " << name << "\n";
+      mineral_kinetics << "      RATE_CONSTANT " << rate << "\n";
+      mineral_kinetics << "    /\n";
     }
   }
   
@@ -735,7 +749,11 @@ std::string InputConverterU::CreateINFile(std::string& filename)
                 DOMNode* knode = cations_list[k];
                 DOMElement* kelement = static_cast<DOMElement*>(knode);
                 cation_names.push_back(GetAttributeValueS_(kelement, "name"));
-                cation_selectivity.push_back(GetAttributeValueD_(kelement, "value"));
+                double value = GetAttributeValueD_(kelement, "value");
+                cation_selectivity.push_back(value);
+                if (value == 1.0) {
+                  first_cation = k;
+                }
               }
               
               ion_list.set<Teuchos::Array<std::string> >("cations",cation_names);
@@ -767,6 +785,27 @@ std::string InputConverterU::CreateINFile(std::string& filename)
             surface_list.set<Teuchos::Array<std::string> >("complexes",complexe_names);
             
             ChemOptions.sublist("surface_complexation").sublist(site) = surface_list;
+          }
+        }
+      }
+      
+      // look for minerals
+      child_elem = GetChildByName_(inode, "minerals", flag2, false);
+      if (flag2) {
+        
+        // loop over sublist of minerals to get information
+        std::vector<DOMNode*> minerals_list = GetSameChildNodes_(static_cast<DOMNode*>(child_elem), name, flag2, false);
+        if (flag2) {
+          for (int j = 0; j < minerals_list.size(); ++j) {
+            DOMNode* jnode = minerals_list[j];
+            Teuchos::ParameterList mineral_list;
+            std::string mineral_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
+            double volume_fraction = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "volume_fraction");
+            double specific_surface_area = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "specific_surface_area");
+            mineral_list.set<double>("volume_fraction",volume_fraction);
+            mineral_list.set<double>("specific_surface_area",specific_surface_area);
+            
+            ChemOptions.sublist("minerals").sublist(mineral_name) = mineral_list;
           }
         }
       }
@@ -814,8 +853,10 @@ std::string InputConverterU::CreateINFile(std::string& filename)
     
     cations << "      CEC " << cec << "\n";
     cations << "      CATIONS\n";
+    // print primary cation first (this matters to pflotran)
+    cations << "        " << names[first_cation] << " " << values[first_cation] << "\n";
     for (int i = 0; i < names.size(); i++) {
-      cations << "        " << names[i] << " " << values[i] << "\n";
+      if (i != first_cation)  cations << "        " << names[i] << " " << values[i] << "\n";
     }
   }
 
@@ -837,6 +878,17 @@ std::string InputConverterU::CreateINFile(std::string& filename)
     complexes << "    /\n";
   }
   
+  // create text for minerals (read from materials section and written out to constraints section
+  std::stringstream mineral;
+  Teuchos::ParameterList& mins = ChemOptions.sublist("minerals");
+  for (Teuchos::ParameterList::ConstIterator iter = mins.begin(); iter != mins.end(); ++iter) {
+    std::string mineral_name = mins.name(iter);
+    Teuchos::ParameterList& curmineral = mins.sublist(mineral_name);
+    double constvf = curmineral.get<double>("volume_fraction");
+    double constsa = curmineral.get<double>("specific_surface_area");
+    mineral << "    " << mineral_name << " " << constvf << " " << constsa << "\n";
+  }
+  
   // constraints
   node = GetUniqueElementByTagsString_("geochemistry, constraints", flag);
   if (flag) {
@@ -846,7 +898,6 @@ std::string InputConverterU::CreateINFile(std::string& filename)
     std::vector<DOMNode*> constraint_list = GetSameChildNodes_(node, name, flag, false);
     for (int i = 0; i < constraint_list.size(); ++i) {
       std::stringstream primary;
-      std::stringstream mineral;
       std::stringstream gas;
 
       DOMNode* inode = constraint_list[i];
@@ -969,9 +1020,11 @@ std::string InputConverterU::CreateINFile(std::string& filename)
         in_file << secondaries.str();
         in_file << "  /\n";
       }
-      //in_file << "  REDOX_SPECIES\n";
-      //in_file << species.str();
-      //in_file << "  /\n";
+      if (!redoxes.str().empty()) {
+        in_file << "  REDOX_SPECIES\n";
+        in_file << redoxes.str();
+        in_file << "  /\n";
+      }
       if (!gases.str().empty()) {
         in_file << "  GAS_SPECIES\n";
         in_file << gases.str();
