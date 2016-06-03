@@ -24,9 +24,9 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Walkabout_observations.hh"
+#include "FlexibleObservations.hh"
 #include "ObservationData.hh"
-#include "Unstructured_observations.hh"
+#include "WalkaboutCheckpoint.hh"
 #include "VerboseObject.hh"
 
 namespace Amanzi {
@@ -96,7 +96,7 @@ class CycleDriver {
 
   // observations
   Amanzi::ObservationData& observations_data_;
-  Teuchos::RCP<Amanzi::Unstructured_observations> observations_;
+  Teuchos::RCP<FlexibleObservations> observations_;
 
   // vis and checkpointing
   std::vector<Teuchos::RCP<Visualization> > visualization_;
@@ -114,7 +114,7 @@ class CycleDriver {
   // Teuchos::RCP<Amanzi::Checkpoint> restart_;
  
   // walkabout
-  Teuchos::RCP<Amanzi::Walkabout_observations> walkabout_;  
+  Teuchos::RCP<Amanzi::WalkaboutCheckpoint> walkabout_;  
 
   // fancy OS
   Teuchos::RCP<VerboseObject> vo_;

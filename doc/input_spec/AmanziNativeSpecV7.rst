@@ -409,7 +409,7 @@ Primary and derived fields
 
   * saturation [-]
   * hydraulic_head [m]
-  * darcy_flux [m/s]
+  * darcy_flux (more precisely, volumetric flow rate) [m^3/s] 
 
 
 Field evaluators
@@ -4920,7 +4920,9 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * aqueous saturation [-] (volume water / volume pore space)
       * aqueous pressure [Pa]
       * hydraulic head [m] 
+      * permeability-weighted hydraulic head [m] 
       * drawdown [m] 
+      * permeability-weighted drawdown [m] 
       * volumetric water content [-]
       * gravimetric water content [-]
       * water table [m]
@@ -4932,8 +4934,8 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * aqueous volumetric flow rate [m^3/s] (when functional="integral")
       * SOLUTE volumetric flow rate [mol/s] (when functional="integral")
 
-    Observation *drawdown* is calculated with respect to the value registered at the first time
-    it was requested.
+    Observations *drawdown* and *permeability-weighted* are calculated with respect to the value 
+    registered at the first time it was requested.
 
     The following observations are point-type obervations: "water table", "drawdown".
 

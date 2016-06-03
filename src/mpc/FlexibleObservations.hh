@@ -1,5 +1,16 @@
-#ifndef _UNSTRUCTURED_OBSERVATIONS_HH_
-#define _UNSTRUCTURED_OBSERVATIONS_HH_
+/*
+  MPC
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Flexible unstructured observations.
+*/
+
+#ifndef AMANZI_FLEXIBLE_OBSERVATIONS_HH_
+#define AMANZI_FLEXIBLE_OBSERVATIONS_HH_
 
 #include <map>
 
@@ -18,7 +29,7 @@
 
 namespace Amanzi {
 
-class Unstructured_observations {
+class FlexibleObservations {
  public:
   struct Observable : public IOEvent {
     Observable(std::string variable_,
@@ -40,12 +51,12 @@ class Unstructured_observations {
   };
 
   // constructor and destructor
-  Unstructured_observations(Teuchos::RCP<Teuchos::ParameterList> obs_list,
-                            Teuchos::RCP<Teuchos::ParameterList> units_list,
-                            Amanzi::ObservationData& observation_data,
-                            Epetra_MpiComm* comm);
+  FlexibleObservations(Teuchos::RCP<Teuchos::ParameterList> obs_list,
+                       Teuchos::RCP<Teuchos::ParameterList> units_list,
+                       Amanzi::ObservationData& observation_data,
+                       Epetra_MpiComm* comm);
 
-  ~Unstructured_observations() {
+  ~FlexibleObservations() {
     if (vo_ != NULL) delete vo_;
   }
   

@@ -6,21 +6,21 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Walkabout
+  Checkpointing Walkabout data.
 */
 
-#include "Walkabout_observations.hh"
-#include "Epetra_MpiComm.h"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 
+#include "Epetra_MpiComm.h"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 #include "DenseMatrix.hh"
 #include "Mesh.hh"
 #include "Tensor.hh"
+#include "WalkaboutCheckpoint.hh"
 
 namespace Amanzi {
 
@@ -28,9 +28,10 @@ namespace Amanzi {
 * Calculating an extended vector of Darcy velocities. The velocity
 * is evaluated at cell-center and at boundary points.
 ****************************************************************** */
-void Walkabout_observations::CalculateDarcyVelocity(Teuchos::RCP<State>& S,
-                                     std::vector<AmanziGeometry::Point>& xyz, 
-                                     std::vector<AmanziGeometry::Point>& velocity)
+void WalkaboutCheckpoint::CalculateDarcyVelocity(
+    Teuchos::RCP<State>& S,
+    std::vector<AmanziGeometry::Point>& xyz, 
+    std::vector<AmanziGeometry::Point>& velocity)
 {
   xyz.clear();
   velocity.clear();
@@ -151,7 +152,7 @@ void Walkabout_observations::CalculateDarcyVelocity(Teuchos::RCP<State>& S,
 * Calculating an extended vector of Darcy velocities. The velocity
 * is evaluated at cell-center and at boundary points.
 ****************************************************************** */
-void Walkabout_observations::CalculatePoreVelocity(
+void WalkaboutCheckpoint::CalculatePoreVelocity(
     Teuchos::RCP<State>& S,
     std::vector<AmanziGeometry::Point>& xyz, 
     std::vector<AmanziGeometry::Point>& velocity,
@@ -255,7 +256,7 @@ void Walkabout_observations::CalculatePoreVelocity(
 /* ******************************************************************
 * Write walkabout data
 ****************************************************************** */
-void Walkabout_observations::WriteWalkabout(Teuchos::RCP<State>& S)
+void WalkaboutCheckpoint::WriteWalkabout(Teuchos::RCP<State>& S)
 {
   if (!is_disabled()) {
     CreateFile(S->cycle());
@@ -338,5 +339,4 @@ void Walkabout_observations::WriteWalkabout(Teuchos::RCP<State>& S)
   }
 }
 
-
-} // namespace
+} // namespace Amanzi

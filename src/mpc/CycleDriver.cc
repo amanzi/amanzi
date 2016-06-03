@@ -43,7 +43,7 @@
 
 // MPC
 #include "CycleDriver.hh"
-#include "Unstructured_observations.hh"
+#include "FlexibleObservations.hh"
 
 #define DEBUG_MODE 1
 
@@ -148,7 +148,7 @@ void CycleDriver::Setup() {
   if (glist_->isSublist("observation data")) {
     Teuchos::RCP<Teuchos::ParameterList> obs_list = Teuchos::sublist(glist_, "observation data");
     Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist_, "units");
-    observations_ = Teuchos::rcp(new Amanzi::Unstructured_observations(obs_list, units_list, observations_data_, comm_));
+    observations_ = Teuchos::rcp(new Amanzi::FlexibleObservations(obs_list, units_list, observations_data_, comm_));
 
     if (coordinator_list_->isParameter("component names")) {
       Teuchos::Array<std::string> comp_names = coordinator_list_->get<Teuchos::Array<std::string> >("component names");
@@ -169,10 +169,10 @@ void CycleDriver::Setup() {
   // create the walkabout
   if (glist_->isSublist("walkabout data")) {
     Teuchos::ParameterList& walk_plist = glist_->sublist("walkabout data");
-    walkabout_ = Teuchos::rcp(new Amanzi::Walkabout_observations(walk_plist, comm_));
+    walkabout_ = Teuchos::rcp(new Amanzi::WalkaboutCheckpoint(walk_plist, comm_));
   }
   else {
-    walkabout_ = Teuchos::rcp(new Amanzi::Walkabout_observations());
+    walkabout_ = Teuchos::rcp(new Amanzi::WalkaboutCheckpoint());
   }
 
   // vis successful steps
