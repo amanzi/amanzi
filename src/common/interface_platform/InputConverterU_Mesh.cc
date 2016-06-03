@@ -372,39 +372,37 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
        
         bool haveOp(false), haveRL(false);
         Teuchos::Array<Teuchos::Array<double> > points;
-        DOMNodeList* gkids = reg_elem->getChildNodes();
+        DOMNamedNodeMap* gkids = reg_elem->getAttributes();
 
         for (int j = 0; j < gkids->getLength(); j++) {
           DOMNode* jnode = gkids->item(j);
-          if (DOMNode::ELEMENT_NODE == jnode->getNodeType()) {
-            node_name = mm.transcode(jnode->getNodeName());
-            // deal with operation
-            if (strcmp(node_name, "operation") == 0) {
-              text_content2 = mm.transcode(jnode->getTextContent());
-              if (strcmp(text_content2, "union") == 0) {
-                out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation", "union");
-              }
-              else if (strcmp(text_content2, "intersection") == 0) {
-                out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation", "intersect");
-              }
-              else if (strcmp(text_content2, "subtraction") == 0) {
-                out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation","subtract");
-              }
-              else if (strcmp(text_content2, "complement") == 0) {
-                out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation", "complement");
-              }
-              else {
-                ThrowErrorIllformed_("regions", "element", "operation", "union, intersect, subtract, or complement");
-              }
-              haveOp = true;
+          node_name = mm.transcode(jnode->getNodeName());
+          // deal with operation
+          if (strcmp(node_name, "operation") == 0) {
+            text_content2 = mm.transcode(jnode->getTextContent());
+            if (strcmp(text_content2, "union") == 0) {
+              out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation", "union");
             }
-            // deal with region list
-            else if (strcmp(node_name, "region_list") == 0) {
-              text_content2 = mm.transcode(jnode->getTextContent());
-              Teuchos::Array<std::string> regs = CharToStrings_(text_content2);
-              out_list.sublist(reg_name).sublist("region: logical").set<Teuchos::Array<std::string> >("regions", regs);
-              haveRL = true;
+            else if (strcmp(text_content2, "intersection") == 0) {
+              out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation", "intersect");
             }
+            else if (strcmp(text_content2, "subtraction") == 0) {
+              out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation","subtract");
+            }
+            else if (strcmp(text_content2, "complement") == 0) {
+              out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation", "complement");
+            }
+            else {
+              ThrowErrorIllformed_("regions", "element", "operation", "union, intersect, subtract, or complement");
+            }
+            haveOp = true;
+          }
+          // deal with region list
+          else if (strcmp(node_name, "region_list") == 0) {
+            text_content2 = mm.transcode(jnode->getTextContent());
+            Teuchos::Array<std::string> regs = CharToStrings_(text_content2);
+            out_list.sublist(reg_name).sublist("region: logical").set<Teuchos::Array<std::string> >("regions", regs);
+            haveRL = true;
           }
         }
         if (!haveOp) {

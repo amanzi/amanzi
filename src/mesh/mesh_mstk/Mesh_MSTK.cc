@@ -2880,7 +2880,9 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       std::string entity_type = lsrgn->entity_str();
 
       if (entity_type != "CELL") {
-        Errors::Message mesg("Entity type of labeled set region and build_set request do not match");
+        Errors::Message mesg;
+        mesg << "Entity type of labeled set region \"" << region->name() 
+             << "\" and build_set request (cell) do not match";
         amanzi_throw(mesg);
       }
 
@@ -2979,7 +2981,9 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       std::string entity_type = lsrgn->entity_str();
 
       if (entity_type != "FACE") {
-        Errors::Message mesg("Entity type of labeled set region and build_set request do not match");
+        Errors::Message mesg;
+        mesg << "Entity type of labeled set region \"" << region->name() 
+             << "\" and build_set request (face) do not match";
         amanzi_throw(mesg);
       }
 
@@ -3050,7 +3054,9 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       std::string entity_type = lsrgn->entity_str();
 
       if (entity_type != "FACE") {
-        Errors::Message mesg("Entity type of labeled set region and build_set request do not match");
+        Errors::Message mesg;
+        mesg << "Entity type of labeled set region \"" << region->name() 
+             << "\" and build_set request (face) do not match";
         amanzi_throw(mesg);
       }
 
