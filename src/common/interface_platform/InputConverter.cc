@@ -383,7 +383,8 @@ DOMElement* InputConverter::GetUniqueChildByAttribute_(
   if (!flag && exception) {
     Errors::Message msg;
     char* node_name = mm.transcode(node->getNodeName());
-    msg << "Node \"" << node_name << "\" has no unique child with attribute \""
+    char* parname = mm.transcode(node->getParentNode()->getNodeName());
+    msg << "Node \"" << parname << "->" << node_name << "\" has no unique child with attribute \""
         << attr_name << "\" = \"" << attr_value << "\"\n";
     Exceptions::amanzi_throw(msg);
   }
@@ -419,8 +420,9 @@ std::vector<xercesc::DOMNode*> InputConverter::GetChildren_(
   // exception
   if (!flag && exception) {
     char* tagname = mm.transcode(node->getNodeName());
+    char* parname = mm.transcode(node->getParentNode()->getNodeName());
     Errors::Message msg;
-    msg << "Amanzi::InputConverter: node \"" << tagname << "\" must have same elements\n";
+    msg << "Node \"" << parname << "->" << tagname << "\" must have same elements\n";
     if (n) msg << "  The first element is \"" << name << "\".\n";
     msg << "  Please correct and try again.\n";
     Exceptions::amanzi_throw(msg);
@@ -458,9 +460,10 @@ DOMElement* InputConverter::GetChildByName_(
   // exception
   if (!flag && exception) {
     Errors::Message msg;
-    char* nodeName = mm.transcode(node->getNodeName());
-    msg << "Amanzi::InputConverter: child node \"" << childName 
-        << "\" was not found for node \"" << nodeName << "\".\n";
+    char* node_name = mm.transcode(node->getNodeName());
+    char* parname = mm.transcode(node->getParentNode()->getNodeName());
+    msg << "Child node \"" << childName << "\" was not found for node \"" 
+        << parname << "->" << node_name << "\".\n";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -499,8 +502,9 @@ std::vector<DOMNode*> InputConverter::GetSameChildNodes_(
   // exception
   if (!flag && exception) {
     char* tagname = mm.transcode(node->getNodeName());
+    char* parname = mm.transcode(node->getParentNode()->getNodeName());
     Errors::Message msg;
-    msg << "Node \"" << tagname << "\" must have similar elements.\n";
+    msg << "Node \"" << parname << "->" << tagname << "\" must have similar elements.\n";
     if (n) msg << "The first element is \"" << name << "\".\n";
     msg << "Please correct and try again.\n";
     Exceptions::amanzi_throw(msg);
@@ -652,10 +656,12 @@ std::vector<double> InputConverter::GetAttributeVector_(
   return val;
 }
 
+
 /* ******************************************************************
 * Extract attribute of type vector<string>.
 ****************************************************************** */
-std::vector<std::string> InputConverter::GetAttributeVectorS_(DOMElement* elem, const char* attr_name, bool exception)
+std::vector<std::string> InputConverter::GetAttributeVectorS_(
+    DOMElement* elem, const char* attr_name, bool exception)
 {
   std::vector<std::string> val;
   MemoryManager mm;
@@ -671,8 +677,12 @@ std::vector<std::string> InputConverter::GetAttributeVectorS_(DOMElement* elem, 
   return val;
 }
 
+
+/* ******************************************************************
+* Returns string value of <node> -> <childName>value</childName>.
+****************************************************************** */
 std::string InputConverter::GetChildValueS_(
-    xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception)
+    DOMNode* node, const std::string& childName, bool& flag, bool exception)
 {
   MemoryManager mm;
 
@@ -680,20 +690,17 @@ std::string InputConverter::GetChildValueS_(
   flag = false;
 
   DOMNodeList* children = node->getChildNodes();
-  for (int i = 0; i < children->getLength(); ++i) 
-  {
+  for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     char* tagname = mm.transcode(inode->getNodeName());   
-    if (childName == tagname)
-    {
+    if (childName == tagname) {
       val = mm.transcode(inode->getTextContent());
       flag = true;
       break;
     }
   }
 
-  if (!flag and exception)
-  {
+  if (!flag and exception) {
     char* nodeName = mm.transcode(node->getNodeName());
     ThrowErrorMisschild_(nodeName, childName, nodeName);
   }
@@ -701,8 +708,12 @@ std::string InputConverter::GetChildValueS_(
   return val;
 }
 
+
+/* ******************************************************************
+* Returns array of values in <node> -> <childName>val1,val2,val3</childName>
+****************************************************************** */
 std::vector<std::string> InputConverter::GetChildVectorS_(
-    xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception)
+    DOMNode* node, const std::string& childName, bool& flag, bool exception)
 {
   MemoryManager mm;
 
@@ -710,26 +721,24 @@ std::vector<std::string> InputConverter::GetChildVectorS_(
   flag = false;
 
   DOMNodeList* children = node->getChildNodes();
-  for (int i = 0; i < children->getLength(); ++i) 
-  {
+  for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     char* tagname = mm.transcode(inode->getNodeName());   
-    if (childName == tagname)
-    {
+    if (childName == tagname) {
       val = CharToStrings_(mm.transcode(inode->getTextContent()));
       flag = true;
       break;
     }
   }
 
-  if (!flag and exception)
-  {
+  if (!flag and exception) {
     char* nodeName = mm.transcode(node->getNodeName());
     ThrowErrorMisschild_(nodeName, childName, nodeName);
   }
 
   return val;
 }
+
 
 /* ******************************************************************
 * Extract atribute of type std::string.

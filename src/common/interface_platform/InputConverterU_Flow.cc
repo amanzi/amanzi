@@ -544,6 +544,13 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
     std::string bctype_in;
     std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype_in, flag, true);
 
+    // -- exceptions
+    if (bctype_in == "no_flow") {
+      Errors::Message msg;
+      msg << "\"no-flow\" is the default BC. Use \"inward_mass_flux\" to bypass this error.\n";
+      Exceptions::amanzi_throw(msg);
+    }
+
     // -- identify global BC that do not require forms
     bool global_bc(false);
     if (bctype_in == "linear_pressure" || bctype_in == "linear_hydrostatic") {
