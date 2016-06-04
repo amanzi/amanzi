@@ -426,12 +426,12 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         std::vector<double> high = GetAttributeVector_(reg_elem, "opposite_corner_coordinates");
         std::vector<double> normals = GetAttributeVector_(reg_elem, "normals", false);
 
-        out_list.sublist(reg_name).sublist("region: box Volume Fractions")
+        out_list.sublist(reg_name).sublist("region: box volume fractions")
            .set<Teuchos::Array<double> >("corner coordinate", low)
            .set<Teuchos::Array<double> >("opposite corner coordinate", high);
 
         if (normals.size() > 0) 
-          out_list.sublist(reg_name).sublist("region: box Volume Fractions")
+          out_list.sublist(reg_name).sublist("region: box volume fractions")
              .set<Teuchos::Array<double> >("normals", normals);
       }
     }
