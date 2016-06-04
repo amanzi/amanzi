@@ -323,28 +323,8 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
     init_darcy = true;
   }
 
-  // Print initialization head for this time period
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "\nTI:\"" << ti_method_name.c_str() << "\""
-               << " dt:" << dt_method_name
-               << " LS:\"" << solver_name_.c_str() << "\""
-               << " PC:\"" << preconditioner_name_.c_str() << "\"" << std::endl
-               << "matrix: " << op_->PrintDiagnostics() << std::endl;
-    *vo_->os() << "constant viscosity model, mu=" << mu << std::endl;
-
-    if (init_darcy) {
-      *vo_->os() << "initial pressure guess: \"from saturated solver\"\n" << std::endl;
-    } else {
-      *vo_->os() << "initial pressure guess: \"from State\"\n" << std::endl;
-    }
-
-    VV_PrintHeadExtrema(*solution);
-    VV_PrintSourceExtrema();
-
-    *vo_->os() << vo_->color("green") << "Initalization of PK is complete." 
-               << vo_->reset() << std::endl << std::endl;
-  }
+  // Verbose output of initialization statistics.
+  InitializeStatistics_(dt_method_name, init_darcy);
 }
 
 
@@ -377,6 +357,48 @@ void Darcy_PK::InitializeFields_()
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
           *vo_->os() << "initilized prev_saturation_liquid to default value 1.0" << std::endl;  
     }
+  }
+}
+
+
+/* ******************************************************************
+* Print the header for new time period.
+****************************************************************** */
+void Darcy_PK::InitializeStatistics_(const std::string& dt_method_name, bool init_darcy)
+{
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    double mu = *S_->GetScalarData("fluid_viscosity");
+    std::string ti_method_name = ti_list_->get<std::string>("time integration method");
+
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "\nTI:\"" << ti_method_name.c_str() << "\""
+               << " dt:" << dt_method_name
+               << " LS:\"" << solver_name_.c_str() << "\""
+               << " PC:\"" << preconditioner_name_.c_str() << "\"" << std::endl
+               << "matrix: " << op_->PrintDiagnostics() << std::endl;
+    *vo_->os() << "constant viscosity model, mu=" << mu << std::endl;
+
+    if (init_darcy) {
+      *vo_->os() << "initial pressure guess: \"from saturated solver\"\n" << std::endl;
+    } else {
+      *vo_->os() << "initial pressure guess: \"from State\"\n" << std::endl;
+    }
+
+    int missed_tmp = missed_bc_faces_;
+    int dirichlet_tmp = dirichlet_bc_faces_;
+#ifdef HAVE_MPI
+    mesh_->get_comm()->SumAll(&missed_tmp, &missed_bc_faces_, 1);
+    mesh_->get_comm()->SumAll(&dirichlet_tmp, &dirichlet_bc_faces_, 1);
+#endif
+
+    *vo_->os() << "pressure BC assigned to " << dirichlet_bc_faces_ << " faces" << std::endl;
+    *vo_->os() << "default (no-flow) BC assigned to " << missed_bc_faces_ << " faces" << std::endl << std::endl;
+
+    VV_PrintHeadExtrema(*solution);
+    VV_PrintSourceExtrema();
+
+    *vo_->os() << vo_->color("green") << "Initalization of PK is complete, T=" 
+               << S_->time() << " dT=" << dt_ << vo_->reset() << std::endl << std::endl;
   }
 }
 
