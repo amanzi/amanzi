@@ -34,10 +34,9 @@ namespace AmanziMesh {
 MeshFactory::MeshFactory(const Epetra_MpiComm *comm_unicator,
                          const Teuchos::RCP<const VerboseObject>& vo)
   : my_comm_(comm_unicator),
-    verbosity_obj(vo),
+    vo_(vo),
     my_preference(default_preference())
 {
-  
 }
 
 MeshFactory::~MeshFactory(void)
@@ -111,7 +110,7 @@ MeshFactory::create(const std::string& filename,
        i != my_preference.end(); i++) {
     if (framework_reads(*i, fmt, my_comm_->NumProc() > 1)) {
       try {
-        result = framework_read(my_comm_, *i, filename, gm, verbosity_obj,
+        result = framework_read(my_comm_, *i, filename, gm, vo_,
                                 request_faces, request_edges);
         return result;
       } catch (const Message& msg) {
@@ -190,7 +189,7 @@ MeshFactory::create(double x0, double y0, double z0,
         result = framework_generate(my_comm_, *i, 
                                     x0, y0, z0, x1, y1, z1, 
                                     nx, ny, nz,
-                                    gm, verbosity_obj,
+                                    gm, vo_,
                                     request_faces, request_edges);
         return result;
       } catch (const Message& msg) {
@@ -265,7 +264,7 @@ MeshFactory::create(double x0, double y0,
         result = framework_generate(my_comm_, *i, 
                                     x0, y0, x1, y1,
                                     nx, ny,
-                                    gm, verbosity_obj,
+                                    gm, vo_,
                                     request_faces, request_edges);
         return result;
       } catch (const Message& msg) {
@@ -312,8 +311,7 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list,
        i != my_preference.end(); i++) {
     if (framework_generates(*i, my_comm_->NumProc() > 1, dim)) {
       try {
-        result = framework_generate(my_comm_, *i, parameter_list, gm, 
-                                    verbosity_obj,
+        result = framework_generate(my_comm_, *i, parameter_list, gm, vo_,
                                     request_faces, request_edges);
         return result;
       } catch (const Message& msg) {

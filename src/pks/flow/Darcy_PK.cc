@@ -228,7 +228,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Create verbosity object to print out initialization statisticsr.,
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = dp_list_->sublist("verbose object");
-  vo_ =  Teuchos::rcp(new VerboseObject("FlowPK::Darcy", vlist)); 
+  vo_ = Teuchos::rcp(new VerboseObject("FlowPK::Darcy", vlist)); 
 
   // Initilize various base class data.
   Flow_PK::Initialize(S);

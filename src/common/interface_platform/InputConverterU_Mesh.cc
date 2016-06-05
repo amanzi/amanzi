@@ -212,6 +212,7 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
     Exceptions::amanzi_throw(msg);
   }
 
+  out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;
 }
 

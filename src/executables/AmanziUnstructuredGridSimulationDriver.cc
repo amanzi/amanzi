@@ -77,10 +77,9 @@ Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
                                             Amanzi::ObservationData& observations_data)
 {
-  using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+  // Teuchos::OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(mpi_comm);
@@ -93,12 +92,8 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   MPI_Comm_size(mpi_comm,&size);
 
   //------------ DOMAIN, GEOMETRIC MODEL, ETC ----------------------------
-  // Create a VerboseObject to pass to the geometric model class 
-  Teuchos::RCP<Amanzi::VerboseObject> gmverbobj =
-      Teuchos::rcp(new Amanzi::VerboseObject("Geometric Model", *plist_));
-
   // Create the simulation domain
-  Amanzi::timer_manager.add("Geometric Model creation",Amanzi::Timer::ONCE);
+  Amanzi::timer_manager.add("Geometric Model creation", Amanzi::Timer::ONCE);
   Amanzi::timer_manager.start("Geometric Model creation");
 
   Teuchos::ParameterList domain_params = plist_->sublist("domain");
@@ -132,21 +127,21 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   Amanzi::timer_manager.add("Mesh creation",Amanzi::Timer::ONCE);
   Amanzi::timer_manager.start("Mesh creation");
 
-  // Create a Verbose object to pass to the mesh_factory and mesh
-  Teuchos::RCP<Amanzi::VerboseObject> meshverbobj =
-      Teuchos::rcp(new Amanzi::VerboseObject("mesh", *plist_));
+  // Create a verbose object to pass to the mesh_factory and mesh
+  Teuchos::ParameterList mesh_params = plist_->sublist("mesh");
+
+  Teuchos::RCP<Amanzi::VerboseObject> mesh_vo =
+      Teuchos::rcp(new Amanzi::VerboseObject("Mesh", mesh_params));
+  Teuchos::OSTab tab = mesh_vo->getOSTab();
 
   // Create a mesh factory for this geometric model
-  Amanzi::AmanziMesh::MeshFactory factory(comm, meshverbobj) ;
+  Amanzi::AmanziMesh::MeshFactory factory(comm, mesh_vo);
 
   // Prepare to read/create the mesh specification
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
-  // get the Mesh sublist
-  ierr = 0;
-  Teuchos::ParameterList mesh_params = plist_->sublist("mesh");
-
   // Make sure the unstructured mesh option was chosen
+  ierr = 0;
   bool unstructured_option = mesh_params.isSublist("unstructured");
 
   if (!unstructured_option) {

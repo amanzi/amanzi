@@ -1,19 +1,13 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-// -------------------------------------------------------------
-/**
- * @file   FrameworkTraits.cc
- * @author William A. Perkins
- * @date Tue Oct  4 06:14:05 2011
- * 
- * @brief  
- * 
- * 
- */
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created March 14, 2011 by William A. Perkins
-// Last Change: Tue Oct  4 06:14:05 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
+/*
+  Mesh Factory
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: William A. Perkins
+*/
 
 #include <boost/format.hpp>
 
@@ -40,7 +34,6 @@ namespace mpl = boost::mpl;
 
 #include "FrameworkTraits.hh"
 
-
 #include "MeshFramework.hh"
 #include "MeshFileType.hh"
 #include "MeshException.hh"
@@ -64,18 +57,20 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
   /// Default constructor.
   bogus_mesh(const char *filename, const Epetra_MpiComm *c,
              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-             const Teuchos::RCP<const VerboseObject>& verbobj,
+             const Teuchos::RCP<const VerboseObject>& vo,
              const bool request_faces, const bool request_edges) 
-    : Mesh(verbobj,request_faces,request_edges), bogus_map_(NULL) 
+    : Mesh(vo, request_faces, request_edges),
+      bogus_map_(NULL) 
   {
     Exceptions::amanzi_throw(Errors::Message("reading not supported"));
   }
   
   bogus_mesh(const char *filename, const Epetra_MpiComm *c, int dim,
              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-             const Teuchos::RCP<const VerboseObject>& verbobj,
+             const Teuchos::RCP<const VerboseObject>& vo,
              const bool request_faces, const bool request_edges) 
-    : Mesh(verbobj,request_faces,request_edges), bogus_map_(NULL) 
+    : Mesh(vo, request_faces, request_edges),
+      bogus_map_(NULL) 
   {
     Exceptions::amanzi_throw(Errors::Message("reading not supported"));
   }
@@ -85,9 +80,10 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
 	     int nx, int ny, int nz, 
 	     const Epetra_MpiComm *comm_unicator,
              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-             const Teuchos::RCP<const VerboseObject>& verbobj,
+             const Teuchos::RCP<const VerboseObject>& vo,
              const bool request_faces, const bool request_edges)
-    : Mesh(verbobj,request_faces,request_edges), bogus_map_(NULL) 
+    : Mesh(vo, request_faces, request_edges),
+      bogus_map_(NULL) 
   {
     Exceptions::amanzi_throw(Errors::Message("generation not supported"));
   }
@@ -97,9 +93,10 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
 	     int nx, int ny,
 	     const Epetra_MpiComm *comm_unicator,
              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-             const Teuchos::RCP<const VerboseObject>& verbobj,
+             const Teuchos::RCP<const VerboseObject>& vo,
              const bool request_faces, const bool request_edges)
-    : Mesh(verbobj,request_faces,request_edges), bogus_map_(NULL) 
+    : Mesh(vo, request_faces, request_edges),
+      bogus_map_(NULL) 
   {
     Exceptions::amanzi_throw(Errors::Message("generation not supported"));
   }
@@ -107,9 +104,10 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
   bogus_mesh(const Amanzi::AmanziMesh::GenerationSpec& gspec, 
              const Epetra_MpiComm *comm_unicator,
              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-             const Teuchos::RCP<const VerboseObject>& verbobj,
+             const Teuchos::RCP<const VerboseObject>& vo,
              const bool request_faces, const bool request_edges)
-    : Mesh(verbobj,request_faces,request_edges), bogus_map_(NULL) 
+    : Mesh(vo, request_faces, request_edges),
+      bogus_map_(NULL) 
   {
     Exceptions::amanzi_throw(Errors::Message("generation not supported"));
   }
@@ -485,13 +483,13 @@ struct FrameworkTraits {
   static Teuchos::RCP<Mesh>
   read(const Epetra_MpiComm *comm_, const std::string& fname,
        const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-       const Teuchos::RCP<const VerboseObject>& verbobj,
+       const Teuchos::RCP<const VerboseObject>& vo,
        const bool request_faces, 
        const bool request_edges)
   {
     Teuchos::RCP<Mesh> 
       result(new typename read_mesh::type(fname.c_str(), comm_,
-                                          gm, verbobj, 
+                                          gm, vo, 
                                           request_faces, request_edges));
     return result;
   }
@@ -534,14 +532,14 @@ struct FrameworkTraits {
            const unsigned int& nx, const unsigned int& ny, const unsigned int& nz, 
            const Epetra_MpiComm *comm_,
            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-           const Teuchos::RCP<const VerboseObject>& verbobj,
+           const Teuchos::RCP<const VerboseObject>& vo,
            const bool request_faces, 
            const bool request_edges)
   {
     Teuchos::RCP<Mesh> 
       result(new typename generate_mesh::type(x0, y0, z0, x1, y1, z1, 
                                               nx, ny, nz, comm_,
-                                              gm, verbobj, 
+                                              gm, vo, 
                                               request_faces, request_edges));
     return result;
   }
@@ -553,13 +551,13 @@ struct FrameworkTraits {
            const unsigned int& nx, const unsigned int& ny,
            const Epetra_MpiComm *comm_,
            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-           const Teuchos::RCP<const VerboseObject>& verbobj,
+           const Teuchos::RCP<const VerboseObject>& vo,
            const bool request_faces, 
            const bool request_edges)
   {
     Teuchos::RCP<Mesh> 
       result(new typename generate_mesh::type(x0, y0, x1, y1, nx, ny, comm_,
-                                              gm, verbobj, 
+                                              gm, vo, 
                                               request_faces, request_edges));
     return result;
   }
@@ -568,13 +566,13 @@ struct FrameworkTraits {
   static Teuchos::RCP<Mesh>
   generate(Teuchos::ParameterList &parameter_list, const Epetra_MpiComm *comm_,
            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-           const Teuchos::RCP<const VerboseObject>& verbobj,
+           const Teuchos::RCP<const VerboseObject>& vo,
            const bool request_faces, const bool request_edges)
   {
     GenerationSpec gspec(parameter_list);
     Teuchos::RCP<Mesh> 
       result(new typename generate_mesh::type(gspec, comm_,
-                                              gm, verbobj, 
+                                              gm, vo, 
                                               request_faces, request_edges));
     return result;
   }
@@ -661,8 +659,8 @@ struct FrameworkTraits {
                                              request_edges));
     return result;
   }
-
 };
+
 
 // -------------------------------------------------------------
 // framework_available
@@ -694,6 +692,7 @@ framework_available(const Framework& f)
   return result;
 }
 
+
 // -------------------------------------------------------------
 // parallel_test
 // -------------------------------------------------------------
@@ -710,10 +709,10 @@ parallel_test(const bool& isp)
   return result;
 }
 
+
 // -------------------------------------------------------------
 // framework_reads
 // -------------------------------------------------------------
-
 template < int F >
 static bool 
 framework_reads(const Format& fmt, const bool& parallel)
@@ -735,6 +734,7 @@ framework_reads(const Format& fmt, const bool& parallel)
   }
   return result;
 }
+
 
 bool
 framework_reads(const Framework& f, const Format& fmt, const bool& parallel)
@@ -763,6 +763,7 @@ framework_reads(const Framework& f, const Format& fmt, const bool& parallel)
   return result;
 }
 
+
 // -------------------------------------------------------------
 // framework_read
 // -------------------------------------------------------------
@@ -770,53 +771,53 @@ Teuchos::RCP<Mesh>
 framework_read(const Epetra_MpiComm *comm_, const Framework& f, 
                const std::string& fname,
                const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-               const Teuchos::RCP<const VerboseObject>& verbobj,
+               const Teuchos::RCP<const VerboseObject>& vo,
                const bool request_faces, const bool request_edges)
 {
   Teuchos::RCP<Mesh> result;
   switch (f) {
   case Simple:
-    if (comm_->MyPID() == 0)
-      std::cout << "Using SimpleMesh framework to read mesh" << std::endl;
+    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
+      *vo->os() << "\nUsing SimpleMesh framework to read mesh\n\n";
     result = FrameworkTraits<Simple>::read(comm_, fname, 
-                                           gm, verbobj, 
+                                           gm, vo, 
                                            request_faces, request_edges);
     break;
   case STKMESH:
-    if (comm_->MyPID() == 0)
-      std::cout << "Using STKmesh framework to read mesh" << std::endl;
+    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
+      *vo->os() << "\nUsing STK mesh framework to read mesh\n\n";
     result = FrameworkTraits<STKMESH>::read(comm_, fname,
-                                            gm, verbobj, 
+                                            gm, vo, 
                                             request_faces, request_edges);
     break;
   case MOAB:
-    if (comm_->MyPID() == 0)
-      std::cout << "Using MOAB framework to read mesh" << std::endl;
+    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
+      *vo->os() << "\nUsing MOAB framework to read mesh\n\n";
     result = FrameworkTraits<MOAB>::read(comm_, fname,
-                                         gm, verbobj, 
+                                         gm, vo, 
                                          request_faces, request_edges);
     break;
   case MSTK:
-    if (comm_->MyPID() == 0)
-      std::cout << "Using MSTK framework to read mesh" << std::endl;
+    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
+      *vo->os() << "\nUsing MSTK framework to read mesh\n\n";
     result = FrameworkTraits<MSTK>::read(comm_, fname,
-                                         gm, verbobj, 
+                                         gm, vo, 
                                          request_faces, request_edges);
     break;
   default:
     {
       std::string msg = 
-        boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
+        boost::str(boost::format("Unknown mesh framework: %d") % static_cast<int>(f));
       Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
     }
   }
   return result;
 }
 
+
 // -------------------------------------------------------------
 // framework_generates
 // -------------------------------------------------------------
-
 template < int F >
 static bool 
 framework_generates(const bool& parallel, const unsigned int& dimension)
@@ -865,6 +866,7 @@ framework_generates(const Framework& f, const bool& parallel, const unsigned int
   return result;
 }
 
+
 // -------------------------------------------------------------
 // framework_generate
 // -------------------------------------------------------------
@@ -875,41 +877,41 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
                    const unsigned int& nx, const unsigned int& ny, 
                    const unsigned int& nz,
                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-                   const Teuchos::RCP<const VerboseObject>& verbobj,
+                   const Teuchos::RCP<const VerboseObject>& vo,
                    const bool request_faces, const bool request_edges)
 {
   Teuchos::RCP<Mesh> result;
   switch (f) {
   case Simple:
-    if (comm_->MyPID() == 0)
-      std::cout << "Using SimpleMesh framework to generate mesh" << std::endl;
+    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
+      *vo->os() << "\nUsing SimpleMesh framework to generate mesh\n";
     result = FrameworkTraits<Simple>::generate(x0, y0, z0, x1, y1, z1, 
                                                nx, ny, nz, comm_,
-                                               gm, verbobj, 
+                                               gm, vo, 
                                                request_faces, request_edges);
     break;
   case STKMESH:
-    if (comm_->MyPID() == 0)
-      std::cout << "Using STKmesh framework to generate mesh" << std::endl;
+    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
+      *vo->os() << "\nUsing STKmesh framework to generate mesh\n";
     result = FrameworkTraits<STKMESH>::generate(x0, y0, z0, x1, y1, z1, 
                                                 nx, ny, nz, comm_,
-                                                gm, verbobj, 
+                                                gm, vo, 
                                                 request_faces, request_edges);
     break;
   case MOAB:
-    if (comm_->MyPID() == 0)
-      std::cout << "Using MOAB framework to generate mesh" << std::endl;
+    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
+      *vo->os() << "\nUsing MOAB framework to generate mesh\n";
     result = FrameworkTraits<MOAB>::generate(x0, y0, z0, x1, y1, z1, 
                                              nx, ny, nz, comm_,
-                                             gm, verbobj, 
+                                             gm, vo, 
                                              request_faces, request_edges);
     break;
   case MSTK:
-    if (verbobj.get() && verbobj->getVerbLevel() >= Teuchos::VERB_LOW)
-      *verbobj->os() << "Using MSTK framework to generate mesh" << std::endl;
+    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
+      *vo->os() << "\nUsing MSTK framework to generate mesh\n";
     result = FrameworkTraits<MSTK>::generate(x0, y0, z0, x1, y1, z1, 
                                              nx, ny, nz, comm_,
-                                             gm, verbobj, 
+                                             gm, vo, 
                                              request_faces, request_edges);
     break;
   default:
@@ -921,6 +923,7 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
   }
   return result;
 }
+
 
 // -------------------------------------------------------------
 // framework_generate
@@ -931,37 +934,37 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
                    const double& x1, const double& y1,
                    const unsigned int& nx, const unsigned int& ny,
                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-                   const Teuchos::RCP<const VerboseObject>& verbobj,
+                   const Teuchos::RCP<const VerboseObject>& vo,
                    const bool request_faces, const bool request_edges)
 {
   Teuchos::RCP<Mesh> result;
   switch (f) {
   case Simple:
-    if (comm_->MyPID() == 0)
-      std::cout << "Using SimpleMesh framework to generate mesh" << std::endl;
+    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
+      *vo->os() << "\nUsing SimpleMesh framework to generate mesh\n";
     result = FrameworkTraits<Simple>::generate(x0, y0, x1, y1, nx, ny, comm_,
-                                               gm, verbobj,
+                                               gm, vo,
                                                request_faces, request_edges);
     break;
   case STKMESH:
-    if (comm_->MyPID() == 0)
-      std::cout << "Using STKmesh framework to generate mesh" << std::endl;
+    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
+      *vo->os() << "\nUsing STKmesh framework to generate mesh\n";
     result = FrameworkTraits<STKMESH>::generate(x0, y0, x1, y1, nx, ny, comm_,
-                                                gm, verbobj, 
+                                                gm, vo, 
                                                 request_faces, request_edges);
     break;
   case MOAB:
-    if (comm_->MyPID() == 0)
-      std::cout << "Using MOAB framework to generate mesh" << std::endl;
+    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
+      *vo->os() << "\nUsing MOAB framework to generate mesh\n";
     result = FrameworkTraits<MOAB>::generate(x0, y0, x1, y1, nx, ny, comm_,
-                                             gm, verbobj, 
+                                             gm, vo, 
                                              request_faces, request_edges);
     break;
   case MSTK:
-    if (comm_->MyPID() == 0)
-      std::cout << "Using MSTK framework to generate mesh" << std::endl;
+    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW)
+      *vo->os() << "\nUsing MSTK framework to generate mesh\n";
     result = FrameworkTraits<MSTK>::generate(x0, y0, x1, y1, nx, ny, comm_,
-                                             gm, verbobj, 
+                                             gm, vo, 
                                              request_faces, request_edges);
     break;
   default:
@@ -973,42 +976,43 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
   }
   return result;
 }
+
 
 Teuchos::RCP<Mesh> 
 framework_generate(const Epetra_MpiComm *comm_, const Framework& f, 
                    Teuchos::ParameterList &parameter_list,
                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-                   const Teuchos::RCP<const VerboseObject>& verbobj,
+                   const Teuchos::RCP<const VerboseObject>& vo,
                    const bool request_faces, const bool request_edges)
 {
   Teuchos::RCP<Mesh> result;
   switch (f) {
   case Simple:
-    if (comm_->MyPID() == 0)
-      std::cout << "Using SimpleMesh framework to generate mesh" << std::endl;
+    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
+      *vo->os() << "\nUsing SimpleMesh framework to generate mesh\n";
     result = FrameworkTraits<Simple>::generate(parameter_list, comm_,
-                                               gm, verbobj, 
+                                               gm, vo, 
                                                request_faces, request_edges);
     break;
   case STKMESH:
-    if (comm_->MyPID() == 0)
-      std::cout << "Using STKmesh framework to generate mesh" << std::endl;
+    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
+      *vo->os() << "\nUsing STKmesh framework to generate mesh\n";
     result = FrameworkTraits<STKMESH>::generate(parameter_list, comm_,
-                                                gm, verbobj, 
+                                                gm, vo, 
                                                 request_faces, request_edges);
     break;
   case MOAB:
-    if (comm_->MyPID() == 0)
-      std::cout << "Using MOAB framework to generate mesh" << std::endl;
+    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
+      *vo->os() << "\nUsing MOAB framework to generate mesh\n";
     result = FrameworkTraits<MOAB>::generate(parameter_list, comm_,
-                                             gm, verbobj, 
+                                             gm, vo, 
                                              request_faces, request_edges);
     break;
   case MSTK:
-    if (comm_->MyPID() == 0)
-      std::cout << "Using MSTK framework to generate mesh" << std::endl;
+    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
+      *vo->os() << "\nUsing MSTK framework to generate mesh\n";
     result = FrameworkTraits<MSTK>::generate(parameter_list, comm_,
-                                             gm, verbobj, 
+                                             gm, vo, 
                                              request_faces, request_edges);
     break;
   default:
@@ -1020,7 +1024,6 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
   }
   return result;
 }
-
 
 
 // -------------------------------------------------------------
@@ -1074,10 +1077,10 @@ framework_extracts(const Framework& f, const bool& parallel, const unsigned int&
   return result;
 }
 
+
 // -------------------------------------------------------------
 // framework_extract
 // -------------------------------------------------------------
-
 Teuchos::RCP<Mesh> 
 framework_extract(const Epetra_MpiComm *comm_, const Framework& f, 
                   const Mesh *inmesh, 
@@ -1126,6 +1129,7 @@ framework_extract(const Epetra_MpiComm *comm_, const Framework& f,
   return result;
 }
 
+
 Teuchos::RCP<Mesh> 
 framework_extract(const Epetra_MpiComm *comm_, const Framework& f, 
                   const Mesh& inmesh, 
@@ -1173,6 +1177,7 @@ framework_extract(const Epetra_MpiComm *comm_, const Framework& f,
   }
   return result;
 }
+
 
 Teuchos::RCP<Mesh> 
 framework_extract(const Epetra_MpiComm *comm_, const Framework& f, 
@@ -1225,7 +1230,6 @@ framework_extract(const Epetra_MpiComm *comm_, const Framework& f,
   }
   return result;
 }
-  
 
 } // namespace AmanziMesh
 } // namespace Amanzi
