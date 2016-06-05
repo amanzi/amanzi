@@ -1568,5 +1568,16 @@ Mesh::cell_type_to_name(const Cell_type type)
   }
 }
 
+
+void Mesh::PrintMeshStatistics() const
+{
+  if (vo_.get() && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+    int ncells = num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int nfaces = num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+
+    *vo_->os() << ncells << " cells\n" << nfaces << " faces\n\n";
+  }
+}
+
 }  // namespace AmanziMesh
 }  // namespace Amanzi

@@ -792,14 +792,14 @@ framework_read(const Epetra_MpiComm *comm_, const Framework& f,
     break;
   case MOAB:
     if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
-      *vo->os() << "\nUsing MOAB framework to read mesh\n\n";
+      *vo->os() << "\nUsing MOAB framework to read mesh\n";
     result = FrameworkTraits<MOAB>::read(comm_, fname,
                                          gm, vo, 
                                          request_faces, request_edges);
     break;
   case MSTK:
     if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
-      *vo->os() << "\nUsing MSTK framework to read mesh\n\n";
+      *vo->os() << "\nUsing MSTK framework to read mesh\n";
     result = FrameworkTraits<MSTK>::read(comm_, fname,
                                          gm, vo, 
                                          request_faces, request_edges);
@@ -811,6 +811,9 @@ framework_read(const Epetra_MpiComm *comm_, const Framework& f,
       Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
     }
   }
+
+  result->PrintMeshStatistics();
+
   return result;
 }
 
@@ -921,6 +924,9 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
       Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
     }
   }
+
+  result->PrintMeshStatistics();
+
   return result;
 }
 
@@ -974,6 +980,9 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
       Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
     }
   }
+
+  result->PrintMeshStatistics();
+
   return result;
 }
 
@@ -1022,6 +1031,9 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
       Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
     }
   }
+
+  result->PrintMeshStatistics();
+
   return result;
 }
 
