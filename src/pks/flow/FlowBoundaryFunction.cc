@@ -206,7 +206,7 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
 
   // calculate head shift
   double edge_length, tol_edge, a, b;
-  double rho_g = -rho_ * g_;
+  double rho_g = rho_ * g_;
 
   for (int i = 0; i < n; i++) {
     int f = ss_faces[i];
