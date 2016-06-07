@@ -1,9 +1,8 @@
 #include "HDF5Mesh.hh"
 
-namespace Amanzi
-{
+namespace Amanzi {
 
-  void HDF5::createMeshFile(AmanziMesh::Mesh &mesh_maps, std::string filename) {
+void HDF5::createMeshFile(AmanziMesh::Mesh &mesh_maps, std::string filename) {
 
   hid_t file, group, dataspace, dataset;
   herr_t status;

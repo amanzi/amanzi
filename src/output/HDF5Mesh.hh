@@ -1,5 +1,5 @@
-#ifndef HDF5_MESH_HH_
-#define HDF5_MESH_HH_
+#ifndef AMANZI_HDF5_MESH_HH_
+#define AMANZI_HDF5_MESH_HH_
 
 #include <string>
 
@@ -17,14 +17,10 @@ extern "C" {
 #include "hdf5.h"
 };
 
-namespace Amanzi
-{
+namespace Amanzi {
 
 class HDF5 {
-
-
  public:
-
   bool TrackXdmf() { return TrackXdmf_; }
   void setTrackXdmf(bool TrackXdmf) { TrackXdmf_ = TrackXdmf; }
 
@@ -128,6 +124,6 @@ class HDF5 {
   static std::string xdmfHeader_;
 };
 
-} // close namespace HDF5
+} // namespace HDF5
 
-#endif  // HDF5_MESH_HH_
+#endif
