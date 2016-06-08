@@ -12,7 +12,6 @@ from matplotlib import pyplot as plt
 
 
 # ----------- AMANZI + ALQUIMIA -----------------------------------------------------------------
-
 def GetXY_Amanzi(path,root,comp):
 
     # open amanzi concentration and mesh files
@@ -56,8 +55,8 @@ def GetXY_AmanziS(path,root,time,comp):
     
     return (x, y)
 
-# ----------- PFLOTRAN STANDALONE ------------------------------------------------------------
 
+# ----------- PFLOTRAN STANDALONE ------------------------------------------------------------
 def GetXY_PFloTran(path,root,time,comp):
 
     # read pflotran data
@@ -74,6 +73,7 @@ def GetXY_PFloTran(path,root,time,comp):
     pfdata.close()
 
     return (x_pflotran, c_pflotran)
+
 
 # ------------- CRUNCHFLOW ------------------------------------------------------------------
 def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
@@ -188,9 +188,9 @@ if __name__ == "__main__":
     except: 
         crunch = False
 
+
 # Amanzi native chemistry --->
     try:
-
         input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "amanzi-native-output"
         run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=[root+".bgd"])
@@ -216,14 +216,13 @@ if __name__ == "__main__":
 	native = True
 
     except:
-      
         native = False
+
 
 # Amanzi-Alquimia-PFlotran --->
     try:  
-
-        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
-        path_to_amanzi = "amanzi-alquimia-output"
+        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-pflotran.xml")
+        path_to_amanzi = "amanzi-alquimia-pflotran-output"
         run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+".in",root+".dat"])
 
         u_amanzi_alquimia = [[[] for x in range(len(amanzi_totc))] for x in range(len(times))]
@@ -247,8 +246,8 @@ if __name__ == "__main__":
         alq = True
 
     except:
-
         alq = False
+
 
 # Amanzi-Alquimia-Crunch --->
     try:
@@ -277,7 +276,6 @@ if __name__ == "__main__":
         alq_crunch = True
 
     except:
-        
         alq_crunch = False
 
 
@@ -285,8 +283,8 @@ if __name__ == "__main__":
     
     # +pflotran
     try:
-        input_filename = os.path.join("amanzi-s-1d-surface-complexation-alq.xml")
-        path_to_amanziS = "struct_amanzi-output-pflo"
+        input_filename = os.path.join("amanzi-s-1d-surface-complexation-alq-pflotran.xml")
+        path_to_amanziS = "struct_amanzi-pflotran-output"
         run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
         root_amanziS = "plt00501"
 
@@ -318,7 +316,7 @@ if __name__ == "__main__":
     # +crunchflow
     try:
         input_filename = os.path.join("amanzi-s-1d-surface-complexation-alq-crunch.xml")
-        path_to_amanziS = "struct_amanzi-output-crunch"
+        path_to_amanziS = "struct_amanzi-crunch-output"
 #        import pdb; pdb.set_trace()
         run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
         root_amanziS = "plt00501"

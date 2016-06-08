@@ -398,7 +398,7 @@ for name in verification['index']['index_list']:
     for key in verification[name]['index']['index_list']:
         cwd = os.getcwd()
         run_directory= os.path.join(cwd, 'verification/' + name + '/' + key)
-        print("TEST: " + run_directory)
+        print("\nTEST: " + run_directory)
         os.chdir(run_directory)
 
         for s in suffices:
@@ -421,7 +421,7 @@ for name in benchmark['index']['index_list']:
     for key in benchmark[name]['index']['index_list']:
         cwd = os.getcwd()
         run_directory= os.path.join(cwd, 'benchmarking/' + name + '/' + key)
-        print("TEST: " + run_directory)
+        print("\nTEST: " + run_directory)
         os.chdir(run_directory)
 
         for s in suffices:
