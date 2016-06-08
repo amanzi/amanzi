@@ -221,6 +221,7 @@ benchmark['chemistry'] = {
                                'calcite_1d',
                                'isotherms_1d',
                                'ion_exchange_1d',
+                               'surface_complexation_1d',
                                'farea_1d',
                              ]
             },
@@ -248,6 +249,11 @@ benchmark['chemistry'] = {
     'from_dir' : 'testing/benchmarking/chemistry/ion_exchange_1d',
     'dest_dir' : 'doc/user_guide/benchmarking/chemistry/ion_exchange_1d',
     'index_entry' : 'ion_exchange_1d/amanzi_u-1d-ion-exchange.rst'
+  },
+  'surface_complexation_1d': {
+    'from_dir' : 'testing/benchmarking/chemistry/surface_complexation_1d',
+    'dest_dir' : 'doc/user_guide/benchmarking/chemistry/surface_complexation_1d',
+    'index_entry' : 'surface_complexation_1d/amanzi_u-1d-farea.rst'
   },
   'farea_1d': {
     'from_dir' : 'testing/benchmarking/chemistry/farea_1d',

@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 
 # ----------- AMANZI + ALQUIMIA -----------------------------------------------------------------
 
-def GetXY_Amanzi(path,root,time,comp):
+def GetXY_Amanzi(path,root,comp):
 
     # open amanzi concentration and mesh files
     dataname = os.path.join(path,root+"_data.h5")
@@ -23,12 +23,12 @@ def GetXY_Amanzi(path,root,time,comp):
 
     # extract cell coordinates
     y = np.array(amanzi_mesh['0']['Mesh']["Nodes"][0:len(amanzi_mesh['0']['Mesh']["Nodes"])/4,0])
-    # y = np.array(amanzi_mesh['Mesh']["Nodes"][0:len(amanzi_mesh['Mesh']["Nodes"])/4,0]) # old style
 
     # center of cell
-    x_amanzi_alquimia  = np.diff(y)/2+y[0:-1]
+    x_amanzi_alquimia = np.diff(y)/2+y[0:-1]
 
     # extract concentration array
+    time = max(amanzi_file[comp].keys())
     c_amanzi_alquimia = np.array(amanzi_file[comp][time]).flatten()
     amanzi_file.close()
     amanzi_mesh.close()
@@ -193,24 +193,24 @@ if __name__ == "__main__":
 
         input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "amanzi-native-output"
-        #run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=[root+".bgd"])
+        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=[root+".bgd"])
         
         u_amanzi_native = [[[] for x in range(len(amanzi_totc))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_totc):
-              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
               u_amanzi_native[i][j] = c_amanzi_native
 
         v_amanzi_native = [[[] for x in range(len(amanzi_sorb))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_sorb):
-              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
               v_amanzi_native[i][j] = c_amanzi_native
 
         pH_amanzi_native = [ [] for x in range(len(times)) ]
         comp = 'free_ion_species.cell.H+'
         for i, time in enumerate(times):
-              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
               pH_amanzi_native[i] = -np.log10(c_amanzi_native)
 
 	native = True
@@ -229,19 +229,19 @@ if __name__ == "__main__":
         u_amanzi_alquimia = [[[] for x in range(len(amanzi_totc))] for x in range(len(times))]
         for i, time in enumerate(times):
             for j, comp in enumerate(amanzi_totc):
-                x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+                x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
                 u_amanzi_alquimia[i][j] = c_amanzi_alquimia
 
         v_amanzi_alquimia = [[[] for x in range(len(amanzi_sorb))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_sorb):
-              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
               v_amanzi_alquimia[i][j] = c_amanzi_alquimia
 
         pH_amanzi_alquimia = [ [] for x in range(len(times)) ]
         comp = 'pH.cell.0'
         for i, time in enumerate(times):
-              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
               pH_amanzi_alquimia[i] = c_amanzi_alquimia ## -np.log10(c_amanzi_native)
 
         alq = True
@@ -259,19 +259,19 @@ if __name__ == "__main__":
         u_amanzi_alquimia_crunch = [[[] for x in range(len(amanzi_totc))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_totc):
-                x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+                x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
                 u_amanzi_alquimia_crunch[i][j] = c_amanzi_alquimia_crunch
               
         v_amanzi_alquimia_crunch = [[[] for x in range(len(amanzi_sorb))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_sorb):
-              x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+              x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
               v_amanzi_alquimia_crunch[i][j] = c_amanzi_alquimia_crunch
 
         pH_amanzi_alquimia_crunch = [ [] for x in range(len(times)) ]
         comp = 'pH.cell.0'
         for i, time in enumerate(times):
-              x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+              x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
               pH_amanzi_alquimia_crunch[i] = c_amanzi_alquimia_crunch ## -np.log10(c_amanzi_native)
 
         alq_crunch = True

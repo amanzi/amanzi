@@ -5,7 +5,7 @@
       <length_unit>m</length_unit>
       <time_unit>y</time_unit>
       <mass_unit>kg</mass_unit>
-      <conc_unit>molar</conc_unit>
+      <conc_unit>mol/m^3</conc_unit>
     </units>
   </model_description>
   
@@ -73,7 +73,13 @@
       </unstr_transport_controls>
       
       <unstr_chemistry_controls>
-        <auxiliary_data> pH </auxiliary_data>
+        <auxiliary_data>pH</auxiliary_data>
+        <time_step_control_method>simple</time_step_control_method>
+        <maximum_newton_iterations>250</maximum_newton_iterations>
+        <tolerance>1.5e-12</tolerance>
+        <max_time_step>1700000.0</max_time_step>
+        <initial_time_step>10000.0</initial_time_step>
+        <time_step_cut_threshold>20</time_step_cut_threshold>
       </unstr_chemistry_controls>
       
       <unstr_steady-state_controls>
@@ -95,8 +101,8 @@
       </unstr_transient_controls>
       
       <unstr_linear_solver>
-        <tolerance>1.0e-22</tolerance>
-        <preconditioner>trilinos_ml</preconditioner>
+        <tolerance>1.0e-16</tolerance>
+        <preconditioner>hypre_amg</preconditioner>
       </unstr_linear_solver>
     </unstructured_controls>
   </numerical_controls>
@@ -133,11 +139,11 @@
       <assigned_regions>All</assigned_regions>
       
       <surface_complexation>
-        <site density="1.908e-3" name=">FeOH_s">
-          <complexes>>FeOHZn+_s, >FeOH2+_s, >FeO-_s</complexes>
-        </site>
         <site density="7.6355e-2" name=">FeOH_w">
           <complexes>>FeOHZn+_w, >FeO-_w, >FeOH2+_w</complexes>
+        </site>
+        <site density="1.908e-3" name=">FeOH_s">
+          <complexes>>FeOHZn+_s, >FeOH2+_s, >FeO-_s</complexes>
         </site>
       </surface_complexation>
     </material>

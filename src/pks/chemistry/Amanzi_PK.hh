@@ -81,6 +81,7 @@ class Amanzi_PK : public Chemistry_PK {
   Beaker::BeakerComponents beaker_components_;
   Beaker::BeakerComponents beaker_components_copy_;
 
+  std::string dt_control_method_;
   double current_time_, saved_time_;
   double dt_max_, dt_next_, dt_cut_factor_, dt_increase_factor_;
   int dt_cut_threshold_, dt_increase_threshold_;

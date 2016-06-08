@@ -2416,6 +2416,12 @@ The Amanzi chemistry process kernel uses the following parameters.
 
 * `"initial time step (s)`" [double] is the initial time step that chemistry will ask the MPC to take.
 
+* `"time step control method`" [string] specifies time step control method for chemistry subcycling. 
+  Choose either "fixed" (default) or "simple".  For option "fixed", time step is fixed.
+  For option "simple", the time step is adjusted in response to stiffness of system of equations 
+  based on a simple scheme. This option require the following parameters: `"time step cut threshold`",
+  `"time step cut factor`", `"time step increase threshold`", and `"time step increase factor`".
+
 * `"time step cut threshold`" [int] is the number of Newton iterations that if exceeded
   will trigger a time step cut. Default is 8.
 
