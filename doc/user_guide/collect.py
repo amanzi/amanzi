@@ -253,7 +253,7 @@ benchmark['chemistry'] = {
   'surface_complexation_1d': {
     'from_dir' : 'testing/benchmarking/chemistry/surface_complexation_1d',
     'dest_dir' : 'doc/user_guide/benchmarking/chemistry/surface_complexation_1d',
-    'index_entry' : 'surface_complexation_1d/amanzi_u-1d-farea.rst'
+    'index_entry' : 'surface_complexation_1d/amanzi_u-1d-surface_complexation.rst'
   },
   'farea_1d': {
     'from_dir' : 'testing/benchmarking/chemistry/farea_1d',
