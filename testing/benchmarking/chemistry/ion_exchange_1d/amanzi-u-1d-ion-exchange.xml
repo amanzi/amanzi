@@ -128,7 +128,7 @@
       <assigned_regions>All</assigned_regions>
 
       <ion_exchange>
-	<cations cec="750.0"/>
+	<cations cec="750.0">
 	    <cation name="Na+" value="1.0"/>
 	    <cation name="Ca++" value="0.2953"/>
 	    <cation name="Mg++" value="0.1666"/>

@@ -5,7 +5,7 @@ project(CHEMISTRY_1D_FAREA_FULL_TEST)
         execute_process(COMMAND ${CMAKE_COMMAND} -E 
           copy ${CHEMISTRY_1D_FAREA_FULL_TEST_SOURCE_DIR}/amanzi-u-1d-farea-full.xml ${CHEMISTRY_1D_FAREA_FULL_TEST_BINARY_DIR}/amanzi-u-1d-farea-full.xml) 
         execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy ${CHEMISTRY_1D_FAREA_FULL_TEST_SOURCE_DIR}/ascem-2012-farea.bgd ${CHEMISTRY_1D_FAREA_FULL_TEST_BINARY_DIR}/ascem-2012-farea.bgd) 
+          copy ${CHEMISTRY_1D_FAREA_FULL_TEST_SOURCE_DIR}/farea-full.bgd ${CHEMISTRY_1D_FAREA_FULL_TEST_BINARY_DIR}/farea-full.bgd) 
     endif()
 
     add_amanzi_test(examples-phase2-chemistry-1d-farea-full-slow amanzi "--xml_file=amanzi-u-1d-farea-full.xml" KIND int)

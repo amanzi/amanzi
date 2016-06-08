@@ -564,9 +564,9 @@ def surface_complexation(bgd_file):
     return surface_complexation_xml
 
 if __name__ == "__main__":
-    bgd_file = 'ascem-2012-farea.bgd'
-    ic_cfg_file = "ascem-2012-farea-background.cfg"
-    bc_cfg_file = "ascem-2012-farea-seepage.cfg"
+    bgd_file = 'farea-full.bgd'
+    ic_cfg_file = "farea-background.cfg"
+    bc_cfg_file = "farea-seepage.cfg"
     output_file = "amanzi-u-1d-farea-full.xml"
     output_background_bc = 'farea-full-background-bc.xml'
 

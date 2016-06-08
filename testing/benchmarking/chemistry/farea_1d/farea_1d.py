@@ -39,7 +39,7 @@ def GetXY_Amanzi(path,root,time,comp):
 def GetXY_PFloTran(path,root,time,comp):
 
     # read pflotran data
-    filename = os.path.join(path,"ascem-2012-1d-"+root+".h5")
+    filename = os.path.join(path, "ascem-2012-1d-"+root+".h5")
     pfdata = h5py.File(filename,'r')
 
     # extract coordinates
@@ -139,7 +139,7 @@ if __name__ == "__main__":
         # Amanzi native chemistry
         input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "amanzi-native-output"
-        run_amanzi_standard.run_amanzi(input_filename, 1, ["ascem-2012-"+root+".bgd"], path_to_amanzi)
+        run_amanzi_standard.run_amanzi(input_filename, 1, [root+".bgd"], path_to_amanzi)
 
         # tot conc
         u_amanzi_native = [[[] for x in range(len(totcama))] for x in range(len(timesama))]
@@ -162,8 +162,10 @@ if __name__ == "__main__":
               x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,'farea-1d',time,vf)
               w_amanzi_native[i][j] = c_amanzi_native
 
+        native = True
+
     except:
-        pass
+        native = False
 
 
     try:  
@@ -171,7 +173,7 @@ if __name__ == "__main__":
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
         path_to_amanzi = "amanzi-alquimia-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, 
-                                       ["ascem-2012-1d-"+root+"-trim.in", "ascem-2012-"+root+".dat"],
+                                       ["1d-"+root+"-trim.in", root+".dat"],
                                        path_to_amanzi)
 
         # tot concentration
@@ -220,13 +222,15 @@ if __name__ == "__main__":
     for j, comp in enumerate(search):
  
             if alq:
-                   ax[0].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2)
-            ax[0].plot(x_amanzi_native, u_amanzi_native[i][j],color=colors[j],marker=styles[1],linestyle='None',linewidth=2,label=comp)
+                ax[0].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2)
+            if native:
+                ax[0].plot(x_amanzi_native, u_amanzi_native[i][j],color=colors[j],marker=styles[1],linestyle='None',linewidth=2,label=comp)
             ax[0].plot(x_pflotran, u_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2)
  
             if alq:
-                   ax[1].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label=codes[j*len(styles)])
-            ax[1].plot(x_amanzi_native, v_amanzi_native[i][j],color=colors[j],marker=styles[1],linestyle='None',linewidth=2,label=codes[j*len(styles)+1]) #label=comp)
+                ax[1].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label=codes[j*len(styles)])
+            if native:
+                ax[1].plot(x_amanzi_native, v_amanzi_native[i][j],color=colors[j],marker=styles[1],linestyle='None',linewidth=2,label=codes[j*len(styles)+1]) #label=comp)
             ax[1].plot(x_pflotran, v_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2,label=codes[j*len(styles)+2])
 
     # ax[2],b[2] ---> Mineral Volume Fractions
@@ -236,8 +240,9 @@ if __name__ == "__main__":
     for j, vf in enumerate(searchm):
 
             if alq:
-                   ax[2].plot(x_amanzi_alquimia, w_amanzi_alquimia[i][j],color=colors2[j],linestyle=styles[0],linewidth=2) #label=codes[j*len(styles)])
-            ax[2].plot(x_amanzi_native, w_amanzi_native[i][j],color=colors2[j],marker=styles[1],linestyle='None',linewidth=2,label=vf) #label=codes[j*len(styles)+1])
+                ax[2].plot(x_amanzi_alquimia, w_amanzi_alquimia[i][j],color=colors2[j],linestyle=styles[0],linewidth=2) #label=codes[j*len(styles)])
+            if native:
+                ax[2].plot(x_amanzi_native, w_amanzi_native[i][j],color=colors2[j],marker=styles[1],linestyle='None',linewidth=2,label=vf) #label=codes[j*len(styles)+1])
             ax[2].plot(x_pflotran, w_pflotran[i][j],color=colors2[j],linestyle='None',marker=styles[2],linewidth=2) #label=codes[j*len(styles)+2])
 
     # axes
@@ -253,9 +258,9 @@ if __name__ == "__main__":
     ax[1].legend(loc='center right',fontsize=15)
     ax[2].legend(loc='center right',fontsize=15)
 
-#    ax[2].set_ylim(bottom=-0.01)
-#    bx[2].set_ylim(bottom=-2.0e-6)
-
+    # ax[2].set_ylim(bottom=-0.01)
+    # bx[2].set_ylim(bottom=-2.0e-6)
+ 
     plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
     plt.tick_params(axis='both', which='major', labelsize=15)
 

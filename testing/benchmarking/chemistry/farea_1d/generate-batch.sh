@@ -5,16 +5,16 @@
 #
 
 PFLOTRAN=pflotran
-PFLOTRAN_FILE=ascem-2012-1d-farea-full.in
+PFLOTRAN_FILE=1d-farea-full.in
 
 PFLOTRAN_BACKGROUND=pflotran-background.txt
-BATCHCHEM_BACKGROUND=ascem-2012-farea-background.cfg
+BATCHCHEM_BACKGROUND=farea-background.cfg
 
 PFLOTRAN_SEEPAGE=pflotran-seepage.txt
-BATCHCHEM_SEEPAGE=ascem-2012-farea-seepage.cfg
+BATCHCHEM_SEEPAGE=farea-seepage.cfg
 
 PFLOTRAN_BGD=pflotran.bgd
-AMANZI_BGD=ascem-2012-farea.bgd
+AMANZI_BGD=farea-full.bgd
 
 #
 # run pflotran to process the constrains
@@ -34,7 +34,7 @@ verbosity = verbose
 comparison_model = pflotran
 
 database_type = simple
-database_file = ascem-2012-farea.bgd
+database_file = farea-full.bgd
 activity_model = debye-huckel
 porosity = 0.5
 saturation = 1.0
@@ -62,7 +62,7 @@ verbosity = verbose
 comparison_model = pflotran
 
 database_type = simple
-database_file = ascem-2012-farea.bgd
+database_file = farea-full.bgd
 activity_model = debye-huckel
 porosity = 0.5
 saturation = 1.0

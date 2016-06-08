@@ -1,4 +1,5 @@
-:Description: ASCEM 2012 F-Area benchmark problem, 1-d fixed velocity flow w/ full chemistry
+:Description: trimmed input for use with Alquimia interface to Amanzi
+:             for ASCEM 2012 F-Area benchmark problem w/ full chemistry
 
 :=========================== chemistry ========================================
 CHEMISTRY
@@ -85,13 +86,11 @@ CHEMISTRY
 
   MINERAL_KINETICS
     Quartz
-      :RATE_CONSTANT 4.51856e-14
       RATE_CONSTANT -13.345 mol/cm^2-sec
     /
     Kaolinite
       RATE_CONSTANT -12.967 mol/cm^2-sec
-      PREFACTOR
-      : acid
+      PREFACTOR : acid
         RATE_CONSTANT -12.967 mol/cm^2-sec
         PREFACTOR_SPECIES H+
           ALPHA 0.777
@@ -101,8 +100,7 @@ CHEMISTRY
     Goethite
       RATE_CONSTANT -7.94 mol/cm^2-sec
     /
-    Schoepite
-      : equilibrium => fast rate
+    Schoepite : equilibrium => fast rate
       RATE_CONSTANT 2.0 mol/cm^2-sec
     /
     Gibbsite
@@ -114,23 +112,20 @@ CHEMISTRY
     Basaluminite
       RATE_CONSTANT -8.0 mol/cm^2-sec
     /
-    Opal
-      : dissolution
+    Opal : dissolution
       RATE_CONSTANT -12.135 mol/cm^2-sec
     /
   /
 
   SORPTION
     SURFACE_COMPLEXATION_RXN
-      EQUILIBRIUM
-      :MINERAL bulk sediment
+      EQUILIBRIUM :MINERAL bulk sediment
       SITE >davis_OH 1.56199E-01  : [mol/m^3 bulk]
       COMPLEXES
         (>davis_O)UO2+
       /
     /
-    ION_EXCHANGE_RXN
-      :MINERAL Kaolinite
+    ION_EXCHANGE_RXN :MINERAL Kaolinite
       CEC 2.75  : [mol/m^3 bulk]
       CATIONS
         Na+   1.0
@@ -139,127 +134,17 @@ CHEMISTRY
         H+    0.0251188643151
       /
     /
-  END :sorption
+  / :sorption
 
 
-  DATABASE ascem-2012-farea-full.dat
+  DATABASE farea-full.dat
   LOG_FORMULATION
   ACTIVITY_COEFFICIENTS TIMESTEP
 
-  OUTPUT
-    primary_species
-    total_sorbed
-    Quartz
-    Goethite
-    Kaolinite
-    Schoepite
-    Gibbsite
-    Jurbanite
-    Basaluminite
-    Opal
-  /
-
-END
-
-:=========================== solver options ===================================
-TIMESTEPPER
-  TS_ACCELERATION 8
-/
-
-:=========================== discretization ===================================
-GRID
-  TYPE structured
-  ORIGIN 0.d0 0.d0 0.d0
-  NXYZ 100 1 1
-  BOUNDS
-    0.d0 100.d0
-    0.d0 1.d0
-    0.d0 1.d0
-  /
-END
-
-:=========================== flow =============================================
-UNIFORM_VELOCITY 7.9274479960d-9 0.d0 0.d0
-
-:=========================== fluid properties =================================
-FLUID_PROPERTY 
-  DIFFUSION_COEFFICIENT 1.d-9
-/
-
-:=========================== material properties ==============================
-MATERIAL_PROPERTY soil1
-  ID 1
-  POROSITY 0.25d0
-/
-
-:=========================== observation points ===============================
-OBSERVATION
-  REGION all
-  AT_CELL_CENTER
-/
-
-:=========================== output options ===================================
-OUTPUT
-  FORMAT HDF5
-  PERIODIC TIME 1 y
-/
-
-:=========================== times ============================================
-TIME
-  FINAL_TIME 50.d0 y
-  INITIAL_TIMESTEP_SIZE 1.d-6 y
-  MAXIMUM_TIMESTEP_SIZE 1.d-1 y
-/
-
-:=========================== regions ==========================================
-REGION all
-  COORDINATES
-    0.d0 0.d0 0.d0
-    100.d0 1.d0 1.d0
-  /
-END
-
-REGION west
-  FACE WEST
-  COORDINATES
-    0.d0 0.d0 0.d0
-    0.d0 1.d0 1.d0
-  /
-END
-
-REGION east
-  FACE EAST
-  COORDINATES
-    100.d0 0.d0 0.d0
-    100.d0 1.d0 1.d0
-  /
-END
-
-:=========================== transport conditions =============================
-TRANSPORT_CONDITION initial
-  TYPE dirichlet
-  CONSTRAINT_LIST
-    0.d0 background
-  /
-END
-
-TRANSPORT_CONDITION west
-  TYPE dirichlet
-  CONSTRAINT_LIST
-    0.d0 seepage
-  /
-END
-
-TRANSPORT_CONDITION east
-  TYPE dirichlet_zero_gradient
-  CONSTRAINT_LIST
-    0.d0 background
-  /
 END
 
 :=========================== constraints ======================================
-CONSTRAINT background
-  : initial condition
+CONSTRAINT background : initial condition
   CONCENTRATIONS  : total aqueous [moles/kg_h2o]
     H+       5.4        P
     Al+++    3.09d-8    M Kaolinite
@@ -290,8 +175,7 @@ CONSTRAINT background
 
 END
 
-CONSTRAINT seepage
-  : west BC
+CONSTRAINT seepage : west BC
   CONCENTRATIONS  : total aqueous [moles/kg_h2o]
     H+       2.05       P
     Al+++    1.00d-8    T
@@ -320,30 +204,3 @@ CONSTRAINT seepage
   /
 
 END
-
-:=========================== condition couplers ===============================
-: initial condition
-INITIAL_CONDITION
-  TRANSPORT_CONDITION initial
-  REGION all
-END
-
-: west boundary condition
-BOUNDARY_CONDITION
-  TRANSPORT_CONDITION west
-  REGION west
-END
-
-: east boundary condition
-BOUNDARY_CONDITION
-  TRANSPORT_CONDITION east
-  REGION east
-END
-
-:=========================== stratigraphy couplers ============================
-STRATA
-  REGION all
-  MATERIAL soil1
-END
-
-

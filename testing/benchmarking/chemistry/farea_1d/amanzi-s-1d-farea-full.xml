@@ -481,7 +481,7 @@
   <ParameterList name="Chemistry">
     <ParameterList name="Thermodynamic Database">
       <Parameter name="Format" type="string" value="simple" />
-      <Parameter name="File" type="string" value="ascem-2012-farea-full.bgd" />
+      <Parameter name="File" type="string" value="farea-full.bgd" />
     </ParameterList>
     <Parameter name="Engine" type="string" value="Amanzi"/>
     <Parameter name="Verbosity" type="string" value="verbose" />
