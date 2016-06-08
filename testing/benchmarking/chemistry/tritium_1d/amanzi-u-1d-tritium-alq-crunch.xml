@@ -29,7 +29,7 @@
     <flow state="on" model="saturated"/>
     <transport state="on" />
     <!-- <chemistry engine="pflotran" state="on" database="tritium.dat" /> -->
-    <chemistry engine="crunchflow" state="on" input_filename="1d-tritium-crunch.in" database="tritium.dat" />
+    <chemistry engine="crunchflow" state="on" input_filename="1d-tritium-crunch.in" database="tritium.dbs" />
   </process_kernels>
 
   <phases>
