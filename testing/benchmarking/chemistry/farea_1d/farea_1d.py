@@ -15,17 +15,16 @@ from matplotlib import pyplot as plt
 def GetXY_Amanzi(path,root,time,comp):
 
     # open amanzi concentration and mesh files
-    dataname = os.path.join(path,root+"_data.h5")
+    dataname = os.path.join(path, "plot_data.h5")
     amanzi_file = h5py.File(dataname,'r')
-    meshname = os.path.join(path,root+"_mesh.h5")
+    meshname = os.path.join(path, "plot_mesh.h5")
     amanzi_mesh = h5py.File(meshname,'r')
 
     # extract cell coordinates
     y = np.array(amanzi_mesh['0']['Mesh']["Nodes"][0:len(amanzi_mesh['0']['Mesh']["Nodes"])/4,0])
-    # y = np.array(amanzi_mesh['Mesh']["Nodes"][0:len(amanzi_mesh['Mesh']["Nodes"])/4,0]) # old style
 
     # center of cell
-    x_amanzi_alquimia  = np.diff(y)/2+y[0:-1]
+    x_amanzi_alquimia = np.diff(y)/2+y[0:-1]
 
     # extract concentration array
     c_amanzi_alquimia = np.array(amanzi_file[comp][time]).flatten()
@@ -88,7 +87,7 @@ if __name__ == "__main__":
 
     # hardwired time / add or remove here
     timespflo = ['Time:  5.00000E+01 y']
-    timesama  = ['72']
+    timesama  = ['71']
     
     # hardwired selected components / add or remove here
     search = ['Ca++','Mg++','K+','Cl-'] # ['UO2++'] # ['Ca++','Mg++','K+','Cl-'] # ['Ca++', 'Mg++','SiO2(aq)']
