@@ -65,14 +65,13 @@ set(transport_inc_files
   MultiscaleTransportPorosityFactory.hh
   MultiscaleTransportPorosityPartition.hh
   MultiscaleTransportPorosity_DPM.hh
-  TransportBCFactory.hh
+#  TransportBCFactory.hh
   TransportBoundaryFunction.hh
-  TransportBoundaryFunction_Tracer.hh
+#  TransportBoundaryFunction_Tracer.hh
   TransportBoundaryFunction_Alquimia.hh
   TransportDefs.hh
-  TransportDomainFunction.hh
-  Transport_PK_ATS.hh
-  TransportSourceFactory.hh)
+  TransportSourceFunction.hh
+  Transport_PK_ATS.hh)
 
 set(transport_src_files Transport_PK.cc Transport_TI.cc 
                         Transport_VandV.cc Transport_Initialize.cc 
@@ -81,9 +80,10 @@ set(transport_src_files Transport_PK.cc Transport_TI.cc
                         MDMPartition.cc MDMFactory.cc
                         MultiscaleTransportPorosityFactory.cc MultiscaleTransportPorosity_DPM.cc
                         MultiscaleTransportPorosityPartition.cc
-                        TransportBCFactory.cc #TransportSourceFactory.cc
-                        TransportBoundaryFunction_Tracer.cc TransportBoundaryFunction_Alquimia.cc
-                        TransportBoundaryFunction_Coupler.cc)
+                        TransportBoundaryFunction_Alquimia.cc)
+#                        TransportBCFactory.cc #TransportSourceFactory.cc
+#                        TransportBoundaryFunction_Tracer.cc TransportBoundaryFunction_Alquimia.cc
+#                        TransportBoundaryFunction_Coupler.cc)
 
 if (ENABLE_ALQUIMIA)
   set(geochem_lib geochemistry)

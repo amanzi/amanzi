@@ -43,9 +43,9 @@
 #include "MDMPartition.hh"
 #include "MultiscaleTransportPorosityPartition.hh"
 #include "TransportBoundaryFunction.hh"
-#include "TransportDomainFunction.hh"
+#include "TransportSourceFunction.hh"
 #include "TransportDefs.hh"
-#include "TransportSourceFactory.hh"
+
 
 /* ******************************************************************
 The transport PK receives a reduced (optional) copy of a physical 
@@ -198,6 +198,10 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
     //   PK_
     // };
 
+    void ComputeVolumeDarcyFlux(Teuchos::RCP<const Epetra_MultiVector> flux,
+                                Teuchos::RCP<const Epetra_MultiVector> mol_den,
+                                Teuchos::RCP<Epetra_MultiVector>& vol_darcy_flux);
+
  public:
     Teuchos::RCP<Teuchos::ParameterList> tp_list_;
     Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
@@ -219,10 +223,12 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
     Key saturation_key_;
     Key prev_saturation_key_;
     Key flux_key_;
+    Key darcy_flux_key_;
     Key permeability_key_;
     Key tcc_key_;
     Key porosity_key_;
     Key tcc_matrix_key_;
+    Key molar_density_key_;
 
   
  
@@ -234,10 +240,12 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   bool subcycling_;
   int dim;
   int saturation_name_;
+  bool vol_flux_conversion_;
 
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
-  Teuchos::RCP<const Epetra_MultiVector> darcy_flux;
+  Teuchos::RCP<Epetra_MultiVector> vol_flux;
+  Teuchos::RCP<const Epetra_MultiVector> flux;
   Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi;
   
 #ifdef ALQUIMIA_ENABLED
@@ -254,8 +262,8 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   int current_component_;  // data for lifting
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;
 
-  std::vector<Teuchos::RCP<TransportDomainFunction> > srcs;  // Source or sink for components
-  std::vector<TransportBoundaryFunction*> bcs;  // influx BC for components
+  std::vector<Teuchos::RCP<TransportSourceFunction> > srcs_;  // Source or sink for components
+  std::vector<Teuchos::RCP<TransportBoundaryFunction> > bcs_;  // influx BC for components
   double bc_scaling;
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
