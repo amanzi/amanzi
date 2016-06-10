@@ -171,6 +171,20 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
     chem_->Setup(beaker_components_, beaker_parameters_);
     chem_->Display();
 
+    // check names of primary species
+    int nprimary = chem_->primary_species().size(); 
+    if (nprimary == comp_names_.size()) {
+      for (int i = 0; i < nprimary; ++i) {
+        std::string species_name = chem_->primary_species().at(i).name();
+        if (comp_names_[i] != species_name) {
+          Errors::Message msg;
+          msg << "Amanzi PK: mismatch of name: \"" << comp_names_[i] << "\" and \"" 
+              << species_name << "\". Compare XML and BGD lists.";
+          Exceptions::amanzi_throw(msg);
+        }
+      }
+    }
+
     // solve for initial free-ion concentrations
     vo_->Write(Teuchos::VERB_HIGH, "Initial speciation calculations in cell 0...\n");
     chem_->Speciate(&beaker_components_, beaker_parameters_);

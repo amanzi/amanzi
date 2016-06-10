@@ -72,7 +72,7 @@
   </ParameterList>
 
   <ParameterList name="cycle driver">
-    <Parameter name="component names" type="Array(string)" value="{Al+++, H+, HPO4-, SiO2(aq), UO2++}"/>
+    <Parameter name="component names" type="Array(string)" value="{Al+++, H+, HPO4--, SiO2(aq), UO2++}"/>
   </ParameterList>
 
   <ParameterList name="PK tree">
@@ -84,7 +84,7 @@
   <ParameterList name="PKs">
   <ParameterList name="chemistry">
     <Parameter name="number of component concentrations" type="int" value="5"/>
-    <Parameter name="Component Solutes" type="Array(string)" value="{Al+++, H+, HPO4-, SiO2(aq), UO2++}"/>
+    <Parameter name="Component Solutes" type="Array(string)" value="{Al+++, H+, HPO4--, SiO2(aq), UO2++}"/>
     <Parameter name="minerals" type="Array(string)" value="{Kaolinite, Quartz, (UO2)3(PO4)2.4H2O}"/>
     <Parameter name="sorption sites" type="Array(string)" value="{>FeOH, >AlOH, >SiOH}"/>
 
@@ -133,8 +133,8 @@
         <Parameter name="time functions" type="Array(string)" value="{Constant}"/>
         <Parameter name="regions" type="Array(string)" value="{ZHIGH}"/>
       </ParameterList>
-      <ParameterList name="BC upper HPO4-">
-        <Parameter name="HPO4-" type="Array(double)" value="{1.00e+00}"/>
+      <ParameterList name="BC upper HPO4--">
+        <Parameter name="HPO4--" type="Array(double)" value="{1.00e+00}"/>
         <Parameter name="times" type="Array(double)" value="{0.00e+00}"/>
         <Parameter name="time functions" type="Array(string)" value="{Constant}"/>
         <Parameter name="regions" type="Array(string)" value="{ZHIGH}"/>
