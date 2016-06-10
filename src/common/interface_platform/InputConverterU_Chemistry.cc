@@ -276,33 +276,15 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
         }
       }
     }
-
-    // free ion
-    {
-      Teuchos::ParameterList& free_ion = ic_list.sublist("free_ion_species");
-
-      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
-        Teuchos::ParameterList& aux1_list = free_ion.sublist("function").sublist(*it)
-            .set<std::string>("region", *it)
-            .set<std::string>("component", "cell")
-            .sublist("function");
-        aux1_list.set<int>("number of dofs", nsolutes).set("function type", "composite function");
-
-        for (int j = 0; j < nsolutes; ++j) {
-          std::string solute_name = phases_["water"][j];
-
-          std::stringstream ss;
-          ss << "dof " << j + 1 << " function";
-
-          aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", 1e-9);
-        }
-      }
-    }
   }
 
   // general parameters
   int max_itrs(100), cut_threshold(8), increase_threshold(4);
   double tol(1e-12), dt_max(1e+10), dt_min(1e+10), dt_init(1e+7), dt_cut(2.0), dt_increase(1.2);
+
+  double ion_value;
+  bool ion_guess(false);
+
   std::string activity_model("unit"), dt_method("fixed");
   std::vector<std::string> aux_data;
 
@@ -338,6 +320,9 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
         dt_increase = strtod(mm.transcode(inode->getTextContent()), NULL);
       } else if (strcmp(text, "auxiliary_data") == 0) {
         aux_data = CharToStrings_(mm.transcode(inode->getTextContent()));
+      } else if (strcmp(text, "free_ion_guess") == 0) {
+        ion_guess = true;
+        ion_value = strtod(mm.transcode(inode->getTextContent()), NULL);
       }
     }
   }
@@ -356,6 +341,28 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       out_list.set<Teuchos::Array<std::string> >("auxiliary data", aux_data);
   if (sorption_sites.size() > 0)
       out_list.set<Teuchos::Array<std::string> >("sorption sites", sorption_sites);
+
+  // free ion has optional initialization. Default initialization is tight
+  // to the valus of the initial value of the total component concentration.
+  if (ion_guess) {
+    int nsolutes = phases_["water"].size();
+    Teuchos::ParameterList& free_ion = ic_list.sublist("free_ion_species");
+
+    Teuchos::ParameterList& aux1_list = free_ion.sublist("function").sublist("All")
+        .set<std::string>("region", "All")
+        .set<std::string>("component", "cell")
+        .sublist("function");
+    aux1_list.set<int>("number of dofs", nsolutes).set("function type", "composite function");
+
+    for (int j = 0; j < nsolutes; ++j) {
+      std::string solute_name = phases_["water"][j];
+
+      std::stringstream ss;
+      ss << "dof " << j + 1 << " function";
+
+      aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", ion_value);
+    }
+  }
 
   // miscalleneous
   out_list.set<int>("number of component concentrations", comp_names_all_.size());

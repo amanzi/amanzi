@@ -164,8 +164,24 @@ void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
     if (!S->GetField("total_component_concentration", passwd_)->initialized()) {
       InitializeField_("total_component_concentration", 0.0);
     }
-    InitializeField_("free_ion_species", 0.0);
     InitializeField_("primary_activity_coeff", 1.0);
+
+    // special initialization of free ion concentration
+    if (S_->HasField("free_ion_species")) {
+      if (!S_->GetField("free_ion_species")->initialized()) {
+        CompositeVector& ion = *S_->GetFieldData("free_ion_species", passwd_);
+        const CompositeVector& tcc = *S_->GetFieldData("total_component_concentration");
+
+        ion.Update(0.1, tcc, 0.0);
+        S_->GetField("free_ion_species", passwd_)->set_initialized();
+
+        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+          Teuchos::OSTab tab = vo_->getOSTab();
+          *vo_->os() << "initilized \"free_ion_species\" to 10% of \"total_component_concentration\"\n";  
+        }
+      }
+    }
+    // InitializeField_("free_ion_species", 0.0);
 
     // Sorption sites: all will have a site density, but we can default to zero
     if (using_sorption_) {
@@ -211,7 +227,7 @@ void Chemistry_PK::InitializeField_(std::string fieldname, double default_val)
       S_->GetFieldData(fieldname, passwd_)->PutScalar(default_val);
       S_->GetField(fieldname, passwd_)->set_initialized();
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-         *vo_->os() << "initilized " << fieldname << " to value " << default_val << std::endl;  
+         *vo_->os() << "initilized \"" << fieldname << "\" to value " << default_val << std::endl;  
     }
   }
 }

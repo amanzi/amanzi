@@ -24,7 +24,6 @@
             <density>998.2</density>
             <dissolved_components>
                 <primaries>
-                    <primary backward_rate="0.0" coefficient_of_diffusion="1.0E-9" forward_rate="1.78577e-09 ">Tritium</primary>
                     <primary coefficient_of_diffusion="1.0E-9">H+</primary>
                     <primary coefficient_of_diffusion="1.0E-9">Al+++</primary>
                     <primary coefficient_of_diffusion="1.0E-9">Ca++</primary>
@@ -36,6 +35,7 @@
                     <primary coefficient_of_diffusion="1.0E-9">Na+</primary>
                     <primary coefficient_of_diffusion="1.0E-9">SiO2(aq)</primary>
                     <primary coefficient_of_diffusion="1.0E-9">SO4--</primary>
+                    <primary backward_rate="0.0" coefficient_of_diffusion="1.0E-9" forward_rate="1.78577e-09 ">Tritium</primary>
                     <primary coefficient_of_diffusion="1.0E-9">NO3-</primary>
                     <primary coefficient_of_diffusion="1.0E-9">UO2++</primary>
                 </primaries>
@@ -121,7 +121,7 @@
             </unstr_transport_controls>
 	    <unstr_chemistry_controls>
 		<activity_coefficients>timestep</activity_coefficients>
-                <!--activity_model>debye-huckel</activity_model-->
+                <activity_model>debye-huckel</activity_model>
 		<log_formulation>on</log_formulation>
 	    </unstr_chemistry_controls>
             <unstr_steady-state_controls>

@@ -2331,26 +2331,10 @@ Geochemical engines
 
 Here we specify either the default or the third-party geochemical engine. 
 
+Common parameters
+`````````````````
 
-Alquimia
-````````
-
-The Alquimia chemistry process kernel only requires the *Engine* and *Engine Input File*
-entries, but will also accept and respect the value given for *max time step (s)*. 
-Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
-
-* `"minerals`" [Array(string)] is the list of mineral names.
-
-* `"sorption sites`" [Array(string)] 
-
-* `"auxiliary data`" [Array(string)] defines additional chemistry related data that the user 
-  can request be saved to vis files. 
-
-* `"max time step (s)`" [double] is the maximum time step that chemistry will allow the MPC to take.
-
-* `"min time step (s)`" [double] is the minimum time step that chemistry will allow the MPC to take.
-
-* `"initial time step (s)`" [double] is the initial time step that chemistry will ask the MPC to take.
+The following parameters are common for all supported engines.
 
 * `"time step control method`" [string] specifies time step control method for chemistry subcycling. 
   Choose either "fixed" (default) or "simple".  For option "fixed", time step is fixed.
@@ -2361,12 +2345,37 @@ Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
 * `"time step cut threshold`" [int] is the number of Newton iterations that if exceeded
   will trigger a time step cut. Default is 8.
 
+* `"max time step (s)`" [double] is the maximum time step that chemistry will allow the MPC to take.
+
+* `"initial time step (s)`" [double] is the initial time step that chemistry will ask the MPC to take.
+
 * `"time step cut factor`" [double] is the factor by which the time step is cut. Default is 2.0
 
 * `"time step increase threshold`" [int] is the number of consecutive successful time steps that
   will trigger a time step increase. Default is 4.
 
 * `"time step increase factor`" [double] is the factor by which the time step is increased. Default is 1.2
+
+* `"free ion initial guess`" [double] provides an estimate of the free ion concentration for solutes.
+  It used to help convergence of the initial solution of the chemistry. If this parameter is absent, 
+  a fraction (10%) of the total component concentration is used.
+
+
+Alquimia
+````````
+
+The Alquimia chemistry process kernel only requires the *Engine* and *Engine Input File*
+entries, but will also accept and respect the value given for *max time step (s)*. 
+Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
+
+* `"minerals`" [Array(string)] is the list of mineral names.
+
+* `"sorption sites`" [Array(string)] is the list of sorption sites.
+
+* `"auxiliary data`" [Array(string)] defines additional chemistry related data that the user 
+  can request be saved to vis files. 
+
+* `"min time step (s)`" [double] is the minimum time step that chemistry will allow the MPC to take.
 
 .. code-block:: xml
 
@@ -2402,7 +2411,7 @@ The Amanzi chemistry process kernel uses the following parameters.
 
 * `"minerals`" [Array(string)] is the list of mineral names.
 
-* `"sorption sites`" [Array(string)] 
+* `"sorption sites`" [Array(string)] is the list of sorption sites.
 
 * `"activity model`" [string] is the type of model used for activity corrections. 
   Valid options are `"unit`", `"debye-huckel`", and `"pitzer-hwm`",
@@ -2411,26 +2420,6 @@ The Amanzi chemistry process kernel uses the following parameters.
 
 * `"maximum Newton iterations`" [int] is the maximum number of iteration the chemistry 
   library can take.
-
-* `"max time step (s)`" [double] is the maximum time step that chemistry will allow the MPC to take.
-
-* `"initial time step (s)`" [double] is the initial time step that chemistry will ask the MPC to take.
-
-* `"time step control method`" [string] specifies time step control method for chemistry subcycling. 
-  Choose either "fixed" (default) or "simple".  For option "fixed", time step is fixed.
-  For option "simple", the time step is adjusted in response to stiffness of system of equations 
-  based on a simple scheme. This option require the following parameters: `"time step cut threshold`",
-  `"time step cut factor`", `"time step increase threshold`", and `"time step increase factor`".
-
-* `"time step cut threshold`" [int] is the number of Newton iterations that if exceeded
-  will trigger a time step cut. Default is 8.
-
-* `"time step cut factor`" [double] is the factor by which the time step is cut. Default is 2.0
-
-* `"time step increase threshold`" [int] is the number of consecutive successful time steps that
-  will trigger a time step increase. Default is 4.
-
-* `"time step increase factor`" [double] is the factor by which the time step is increased. Default is 1.2
 
 * `"auxiliary data`" [Array(string)] defines additional chemistry related data that the user 
   can request be saved to vis files. Currently `"pH`" is the only variable supported.
@@ -2449,6 +2438,7 @@ The Amanzi chemistry process kernel uses the following parameters.
       <Parameter name="max time step (s)" type="double" value="1.5e+07"/>
       <Parameter name="auxiliary data" type="Array(string)" value="{pH}"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
+      <Parameter name="time step control method" type="string" value="simple"/>
     </ParameterList>
   </ParameterList>
 
