@@ -202,6 +202,9 @@ class InputConverter {
   void ThrowErrorMisschild_(
     const std::string& section, const std::string& missing, const std::string& name = std::string());
 
+  // -- Pflotran input file writer
+  std::string CreateINFile_(std::string& filename, int rank);
+
  protected:
   // various constants defined by the users
   // consistency check is performed for all but constants_
