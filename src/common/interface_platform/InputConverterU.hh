@@ -129,7 +129,6 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList CreateAnalysis_();
   Teuchos::ParameterList CreateRegionAll_();
   std::string CreateBGDFile(std::string& filename);
-  std::string CreateINFile(std::string& filename);
 
   void FilterEmptySublists_(Teuchos::ParameterList& plist);
   void MergeInitialConditionsLists_(Teuchos::ParameterList& plist);
