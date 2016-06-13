@@ -415,6 +415,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
           std::vector<int>& tcc_index = bc->tcc_index();
           std::vector<std::string>& tcc_names = bc->tcc_names();
+          bc->set_state(S_);
 
           tcc_names.push_back(name);
           tcc_index.push_back(FindComponentNumber(name));
@@ -452,10 +453,10 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
 
   // boundary conditions initialization
-  time = t_physics_;
-  for (int i = 0; i < bcs_.size(); i++) {
-    bcs_[i]->Compute(time, time);
-  }
+  // time = t_physics_;
+  // for (int i = 0; i < bcs_.size(); i++) {
+  //   bcs_[i]->Compute(time, time);
+  // }
 
   VV_CheckInfluxBC();
 
@@ -1201,6 +1202,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     for (TransportBoundaryFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
       int f = it->first;
       WhetStone::DenseVector& values = it->second;
+      //std::cout<<f<<" "<<values<<"\n";
 
       int c2 = (*downwind_cell_)[f];
       if (c2 >= 0) {
@@ -1209,7 +1211,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
           int k = tcc_index[i];
           if (k < num_advect) {
             tcc_flux = dt_ * u * values(i);
-            std::cout<<"from BC cell "<<c2<<" flux "<< u<<" dt "<<dt_<<" + "<<tcc_flux<<"\n";
+            //std::cout<<"from BC cell "<<c2<<" flux "<< u<<" dt "<<dt_<<" + "<<tcc_flux<<"\n";
             tcc_next[k][c2] += tcc_flux;
           }
         }
@@ -1447,7 +1449,7 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
           value *= units_.concentration_factor();
     
       tcc[imap][c] += dtp * value;
-      std::cout<<"from Source cell "<<c<<" dt "<<dtp<<"  + "<<dtp * value<<"\n";
+      //std::cout<<"Source number "<<m<<" from Source cell "<<c<<" dt "<<dtp<<"  + "<<dtp * value<<"\n";
       mass_solutes_source_[i] += value;
     }
     //std::cout<<"*********\n";
