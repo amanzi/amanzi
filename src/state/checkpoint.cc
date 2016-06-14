@@ -70,6 +70,8 @@ void Checkpoint::CreateFile(const int cycle) {
     oss_final << filebasename_<<"_final.h5";       
     std::string ch_final =  oss_final.str();
 
+    if (boost::filesystem::is_regular_file(ch_final.data()))
+      boost::filesystem::remove(ch_final.data());
     boost::filesystem::create_hard_link(ch_file.data(), ch_final.data());
   }
 };
