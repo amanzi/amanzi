@@ -37,7 +37,7 @@ class AmanziGroup : public NOX::Abstract::Group {
     return *this;
   }
 
-  void setX(const NOX::Abstract::Vector &y) {
+  void setX(const NOX::Abstract::Vector &y) override {
     fn_->ChangedSolution();
     x_ = Teuchos::rcp_dynamic_cast<NoxVector<VectorClass> >(y.clone());
     is_f_ = false;
@@ -46,7 +46,7 @@ class AmanziGroup : public NOX::Abstract::Group {
   }
 
   // Compute x = grp.x + step * d
-  void computeX(const NOX::Abstract::Group &grp, const NOX::Abstract::Vector &d, double step)
+  void computeX(const NOX::Abstract::Group &grp, const NOX::Abstract::Vector &d, double step) override
   {
     const AmanziGroup<VectorClass>& sourceGroup = dynamic_cast<const AmanziGroup<VectorClass>&>(grp);
     assert(Teuchos::nonnull(x_));
@@ -72,7 +72,7 @@ class AmanziGroup : public NOX::Abstract::Group {
   }
 
   NOX::Abstract::Group::ReturnType
-  computeJacobian() {
+  computeJacobian() override {
     assert(Teuchos::nonnull(x_));
     fn_->UpdatePreconditioner(x_->get_vector());
     is_jac_ = true;
@@ -82,7 +82,7 @@ class AmanziGroup : public NOX::Abstract::Group {
   // NOTE: Room for improvement for things like Eisenstat-Walker for tuning
   // tols by passing these params into a PK's linear operator
   NOX::Abstract::Group::ReturnType
-  computeNewton(Teuchos::ParameterList& params) {
+  computeNewton(Teuchos::ParameterList& params) override {
     assert(Teuchos::nonnull(f_));
     if(Teuchos::is_null(dx_)) {
       dx_ = Teuchos::rcp_dynamic_cast<NoxVector<VectorClass> >(x_->clone(NOX::ShapeCopy));
@@ -103,15 +103,15 @@ class AmanziGroup : public NOX::Abstract::Group {
   NOX::Abstract::Group::ReturnType
   applyJacobianInverse(Teuchos::ParameterList& params,
                        const NOX::Abstract::Vector& input,
-                       NOX::Abstract::Vector& result) {
+                       NOX::Abstract::Vector& result) const override {
     assert(0);
     const NoxVector<VectorClass>* input_a =
-        dynamic_cast<NoxVector<VectorClass>*>(&input);
-    const NoxVector<VectorClass>* result_a =
+        dynamic_cast<const NoxVector<VectorClass>*>(&input);
+    NoxVector<VectorClass>* result_a =
         dynamic_cast<NoxVector<VectorClass>*>(&result);
 
-    int ierr = fn_->ApplyPreconditioner(input_a.get_vector(), result_a.get_vector());
-    dx_->Scale(-1.);
+    int ierr = fn_->ApplyPreconditioner(input_a->get_vector(), result_a->get_vector());
+    dx_->scale(-1.);
     if (ierr > 0) {
       return NOX::Abstract::Group::Ok;
     } else {
@@ -119,15 +119,15 @@ class AmanziGroup : public NOX::Abstract::Group {
     }
   }
   
-  bool isF() const { return is_f_; }
-  bool isJacobian() const { return is_jac_; }
+  bool isF() const override { return is_f_; }
+  bool isJacobian() const override { return is_jac_; }
 
-  const NOX::Abstract::Vector& getX() const { assert(Teuchos::nonnull(x_)); return *x_; }
-  const NOX::Abstract::Vector& getF() const { assert(Teuchos::nonnull(f_)); return *f_; }
-  double getNormF() const { assert(Teuchos::nonnull(f_)); return f_->norm(); }
-  const NOX::Abstract::Vector& getGradient() const { assert(0); }
-  const NOX::Abstract::Vector& getNewton() const { assert(Teuchos::nonnull(dx_)); return *dx_; }
-  Teuchos::RCP<NOX::Abstract::Group> clone(NOX::CopyType type=NOX::DeepCopy) const
+  const NOX::Abstract::Vector& getX() const override { assert(Teuchos::nonnull(x_)); return *x_; }
+  const NOX::Abstract::Vector& getF() const override { assert(Teuchos::nonnull(f_)); return *f_; }
+  double getNormF() const override { assert(Teuchos::nonnull(f_)); return f_->norm(); }
+  const NOX::Abstract::Vector& getGradient() const override { assert(0); }
+  const NOX::Abstract::Vector& getNewton() const override { assert(Teuchos::nonnull(dx_)); return *dx_; }
+  Teuchos::RCP<NOX::Abstract::Group> clone(NOX::CopyType type=NOX::DeepCopy) const override
   {
     Teuchos::RCP<AmanziGroup<VectorClass> > cloneGroup = Teuchos::rcp(new AmanziGroup<VectorClass>(fn_));
     cloneGroup->fn_ = fn_;

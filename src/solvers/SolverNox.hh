@@ -93,7 +93,7 @@ class SolverNox : public Solver<VectorClass,VectorSpace> {
   // access 
   double tolerance() { return tol_; }
   double residual() { assert(0); }
-  int num_itrs() { solver_->getNumIterations(); }
+  int num_itrs() { return solver_->getNumIterations(); }
   int returned_code() { assert(0); }
   int pc_calls() { assert(0); }
   int pc_updates() { assert(0); }
