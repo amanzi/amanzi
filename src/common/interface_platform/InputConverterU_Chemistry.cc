@@ -214,7 +214,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
             .sublist("function");
         aux2_list.set<int>("number of dofs", nsolutes).set("function type", "composite function");
 
-        Teuchos::ParameterList& aux3_list = isotherm_freundlich_n.sublist("function").sublist(*it)
+        Teuchos::ParameterList& aux3_list = freundlich_n.sublist("function").sublist(*it)
             .set<std::string>("region", *it)
             .set<std::string>("component", "cell")
             .sublist("function");
