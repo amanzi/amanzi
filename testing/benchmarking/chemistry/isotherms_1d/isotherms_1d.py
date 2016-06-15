@@ -118,7 +118,8 @@ if __name__ == "__main__":
     compcrunch = ['A']
 
     # times
-    timespfl = ['Time:  0.00000E+00 y', 'Time:  5.00000E+01 y',]
+#    timespfl = ['Time:  0.00000E+00 y', 'Time:  5.00000E+01 y',
+    timespfl = ['Time:  5.00000E+01 y',]
     timesama  = ['71']
     timesama2 = ['71']
 

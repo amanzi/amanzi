@@ -152,13 +152,13 @@
     <constraints>
       <constraint name="initial">
         <primary name="A" type="total" value="1.0e-20"/>
-        <primary name="C" type="total" value="1.0e-20"/>
         <primary name="B" type="total" value="1.0e-20"/>
+        <primary name="C" type="total" value="1.0e-20"/>
       </constraint>
       <constraint name="west">
         <primary name="A" type="total" value="1e-3"/>
-        <primary name="C" type="total" value="1e-3"/>
         <primary name="B" type="total" value="1e-3"/>
+        <primary name="C" type="total" value="1e-3"/>
       </constraint>
     </constraints>
   </geochemistry>
