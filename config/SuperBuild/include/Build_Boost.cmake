@@ -24,6 +24,9 @@ set(Boost_toolset)
 string(TOLOWER ${CMAKE_C_COMPILER_ID} compiler_id_lc)
 if (compiler_id_lc)
   if (APPLE)
+    message(STATUS "BOOST: CMAKE_SYSTEM         = ${CMAKE_SYSTEM}")
+    message(STATUS "BOOST: CMAKE_SYSTEM_VERSION = ${CMAKE_SYSTEM_VERSION}")
+    message(STATUS "BOOST: compiler_id_lc       = ${compiler_id_lc}")
     # CMAKE_SYSTEM of the form Darwin-12.5.0
     # CMAKE_SYSTEM_VERSION is 12.5.0 corresponds to OSX 10.8.5
     STRING(REGEX REPLACE "\\..*" "" OS_VERSION_MAJOR ${CMAKE_SYSTEM_VERSION})
@@ -37,13 +40,60 @@ if (compiler_id_lc)
     if (${compiler_id_lc} STREQUAL "gnu")
       # On Mac OS 10.9, Clang has switched from using libstdc++ to libc++, so 
       # we need to tell it to do the opposite.
-      if ( ${OS_VERSION_MAJOR} GREATER 12 ) # OSX 10.9.x -> Darwin-13.x.y
+      if ( ${OS_VERSION_MAJOR} EQUAL 13 ) # OSX 10.9.x -> Darwin-13.x.y
         execute_process(COMMAND g++ -v ERROR_VARIABLE GXX_IS_CLANG)
         string(FIND ${GXX_IS_CLANG} "LLVM" LLVM_INDEX)
         if (NOT ${LLVM_INDEX} EQUAL -1)
           message (STATUS "BOOST: build and linking with Clang using -stdlib=libstdc++ ")
           set(Boost_bootstrap_args "cxxflags=\"-arch i386 -arch x86_84\" address-model=32_64")
           set(Boost_bjam_args "cxxflags=\"-stdlib=libstdc++\" linkflags=\"-stdlib=libstdc++\"")
+        endif()
+      endif()
+      # On Mac OS 10.10, we don't know what to do yet
+      if ( ${OS_VERSION_MAJOR} GREATER 13 ) # OSX 10.9.x -> Darwin-13.x.y
+        message (STATUS "BOOST: CMAKE_CXX_COMPILER   = ${CMAKE_CXX_COMPILER}")
+        # Check if it looks like an mpi wrapper
+	if ( CMAKE_CXX_COMPILER MATCHES "mpi" )
+          execute_process(
+            COMMAND ${CMAKE_CXX_COMPILER} -show
+            OUTPUT_VARIABLE  COMPILE_CMDLINE OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_VARIABLE   COMPILE_CMDLINE ERROR_STRIP_TRAILING_WHITESPACE
+            RESULT_VARIABLE  COMPILER_RETURN
+            )
+            # Extract the name of the compiler
+	    if ( COMPILER_RETURN EQUAL 0)
+	        string(REPLACE " " ";" COMPILE_CMDLINE_LIST ${COMPILE_CMDLINE})
+	        list(GET COMPILE_CMDLINE_LIST 0 RAW_CXX_COMPILER)
+		message (STATUS "BOOST: RAW_CXX_COMPILER     = ${RAW_CXX_COMPILER}")
+	    else()
+	        message (FATAL_ERROR "BOOST: Unable to determine the compiler command")
+            endif()
+	else()
+          set(RAW_CXX_COMPILER ${CMAKE_CXX_COMPILER})
+        endif()
+
+        # Extract the version of the compiler
+	execute_process(
+	  COMMAND ${RAW_CXX_COMPILER} --version 
+	  OUTPUT_VARIABLE  _version_string OUTPUT_STRIP_TRAILING_WHITESPACE
+	  ERROR_VARIABLE   _version_string_error ERROR_STRIP_TRAILING_WHITESPACE
+	  RESULT_VARIABLE  _version_return
+        )
+
+        # Test to see if it is macports or clang
+        if ( _version_string MATCHES "MacPorts" )
+          message (STATUS "BOOST: compiler is MacPorts" )
+          message (STATUS "BOOST: compiler version     = ${CMAKE_CXX_COMPILER_VERSION}")
+          set(BOOST_user_jam "/Users/ftuser/user-config.jam")
+          set(BOOST_using "using gcc : ${CMAKE_CXX_COMPILER_VERSION} : ${RAW_CXX_COMPILER} \;")
+          message (STATUS "BOOST: ${BOOST_using}")
+	  message (STATUS "BOOST: Boost_build_dir = ${Boost_build_dir}" )
+          file (MAKE_DIRECTORY ${Boost_build_dir})
+	  file (WRITE ${Boost_build_dir}/user-config.jam ${BOOST_using} \n )
+          set(Boost_bootstrap_args )
+          set(Boost_bjam_args "toolset=gcc-${CMAKE_CXX_COMPILER_VERSION} link=static" )
+        elseif( _version_string MATCHES "LLVM" )
+	  message (STATUS "BOOST: compiler is Clang" )
         endif()
       endif()
     endif()
