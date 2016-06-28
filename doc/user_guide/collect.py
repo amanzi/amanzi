@@ -215,6 +215,7 @@ benchmark['index'] = {
 benchmark['chemistry'] = {
   'index_entry' : 'chemistry/index.rst',
   'index' : { 'index_title' : 'Chemistry',
+              'index_label' : 'sec-benchmarks-chemistry',
               'index_file' : 'doc/user_guide/benchmarking/chemistry/index.rst',
               'index_list' : [ 'tracer_1d',
                                'tritium_1d',

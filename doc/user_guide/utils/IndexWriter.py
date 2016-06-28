@@ -59,6 +59,12 @@ def IndexCreate(amanzi_home,data,logfile):
     f=open(amanzi_home+os.sep+index_data['index_file'],"w")
     
     #
+    # Reference
+    #
+    if ( 'index_label' in index_data ):
+        f.write('.. _%s:\n\n' % (index_data['index_label']))
+
+    #
     # Title
     #
     f.write('%s\n' % (index_data['index_title']))
