@@ -90,7 +90,7 @@ copyright = u'2013, Amanzi Development Team'
 #
 amanzi_branch=subprocess.check_output('hg id --branch',shell=True).rstrip()
 amanzi_global_id=subprocess.check_output('hg id',shell=True).rstrip()
-amanzi_latest_tag=subprocess.check_output('hg head '+amanzi_branch+' --template "{latesttag}\n"', shell=True)
+amanzi_latest_tag=subprocess.check_output('hg head '+amanzi_branch+' --template "{latesttag(\'re:^amanzi-.*\')}\n"', shell=True)
 amanzi_latest_tag_ver=amanzi_latest_tag.replace('amanzi-','').rstrip()
 
 # The short X.Y version.
