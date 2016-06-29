@@ -1,3 +1,7 @@
+.. raw:: latex
+	 
+   \clearpage
+
 1D F-Area Full Geochemistry
 ===========================
 
