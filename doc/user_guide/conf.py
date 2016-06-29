@@ -82,7 +82,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Amanzi'
-copyright = u'2013, Amanzi Development Team'
+copyright = u'2016, Amanzi Development Team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -235,7 +235,7 @@ latex_elements = {
 'pointsize': '11pt',
 
 # Additional stuff for the LaTeX preamble.
-'preamble': '\usepackage[version=3]{mhchem}\n\usepackage{amssymb,grffile}',
+'preamble': '\usepackage[version=3]{mhchem}\n\usepackage{amssymb,grffile}\n',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
