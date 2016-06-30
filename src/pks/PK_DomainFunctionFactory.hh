@@ -51,9 +51,6 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
   // verify completeness of the list
   Errors::Message msg;
 
-  std::cout<<plist<<"\n";
-  
-
   if (!plist.isParameter("regions")) {
     msg << "required parameter \"regions\" is missing";
     Exceptions::amanzi_throw(msg);

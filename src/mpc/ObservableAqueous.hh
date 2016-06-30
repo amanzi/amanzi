@@ -1,0 +1,337 @@
+#ifndef AMANZI_OBSERVABLEAQUEOUS_HH
+#define AMANZI_OBSERVABLEAQUEOUS_HH
+
+
+#include "Observable.hh"
+#include "RegionPlane.hh"
+#include "RegionPolygon.hh"
+#include "ReconstructionCell.hh"
+#include "Units.hh"
+
+namespace Amanzi{
+
+
+  class ObservableAqueous : public Observable{
+  public:
+    ObservableAqueous(std::string variable,
+                      std::string region,
+                      std::string functional,
+                      Teuchos::ParameterList& plist,
+                      Teuchos::ParameterList& units_plist,
+                      Teuchos::RCP<AmanziMesh::Mesh> mesh);
+
+    virtual void ComputeObservation(State& S, double* value, double* volume);
+    virtual int ComputeRegionSize();
+
+  protected:
+
+    double CalculateWaterTable_(State& S, AmanziMesh::Entity_ID_List& ids);
+
+    bool obs_boundary_, obs_planar_;
+    std::vector<double> vofs_;
+    AmanziGeometry::Point reg_normal_;
+
+  };
+
+  ObservableAqueous::ObservableAqueous(std::string variable,
+ 				       std::string region,
+				       std::string functional,
+				       Teuchos::ParameterList& plist,
+                                       Teuchos::ParameterList& units_plist,
+				       Teuchos::RCP<AmanziMesh::Mesh> mesh):
+    Observable(variable, region, functional, plist, units_plist, mesh){};
+
+
+  int ObservableAqueous::ComputeRegionSize(){
+
+    //int mesh_block_size;
+
+    // check if observation is planar
+    obs_planar_ = false;
+
+    Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh_ -> geometric_model();
+    Teuchos::RCP<const AmanziGeometry::Region> reg_ptr = gm_ptr->FindRegion(region_);
+
+    if (reg_ptr->type() == AmanziGeometry::POLYGON) {
+      Teuchos::RCP<const AmanziGeometry::RegionPolygon> poly_reg =
+	Teuchos::rcp_static_cast<const AmanziGeometry::RegionPolygon>(reg_ptr);
+      reg_normal_ = poly_reg->normal();
+      obs_planar_ = true;
+    } else if (reg_ptr->type() == AmanziGeometry::PLANE) {
+      Teuchos::RCP<const AmanziGeometry::RegionPlane> plane_reg =
+	Teuchos::rcp_static_cast<const AmanziGeometry::RegionPlane>(reg_ptr);
+      reg_normal_ = plane_reg->normal();
+      obs_planar_ = true;
+    }
+
+
+    if (variable_ == "aqueous mass flow rate" || variable_ == "aqueous volumetric flow rate") {  // flux needs faces
+      region_size_ = mesh_->get_set_size(region_,
+                                         Amanzi::AmanziMesh::FACE,
+                                         Amanzi::AmanziMesh::OWNED);
+      entity_ids_.resize(region_size_);
+      mesh_->get_set_entities_and_vofs(region_,
+                                       AmanziMesh::FACE, AmanziMesh::OWNED,
+                                       &entity_ids_, 
+                                       &vofs_);
+      obs_boundary_ = true;
+      for (int i = 0; i != region_size_; ++i) {
+        int f = entity_ids_[i];
+        Amanzi::AmanziMesh::Entity_ID_List cells;
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        if (cells.size() == 2) {
+          obs_boundary_ = false;
+          break;
+        }
+      }
+    } else { // all others need cells
+      region_size_ = mesh_->get_set_size(region_,
+                                            AmanziMesh::CELL, AmanziMesh::OWNED);    
+      entity_ids_.resize(region_size_);
+      mesh_->get_set_entities_and_vofs(region_,
+                                       AmanziMesh::CELL, AmanziMesh::OWNED,
+                                       &entity_ids_, &vofs_);
+    }
+    for (int i=0; i<region_size_; i++){
+      std::cout<<"entities "<<entity_ids_[i]<<"\n";
+    }
+         
+    // find global meshblocksize
+    int dummy = region_size_; 
+    int global_mesh_block_size(0);
+    mesh_->get_comm()->SumAll(&dummy, &global_mesh_block_size, 1);
+      
+    
+    return global_mesh_block_size;
+
+  }
+
+
+  void ObservableAqueous::ComputeObservation(State& S, double* value, double* volume){
+
+    //double volume, value;
+    Errors::Message msg;
+    int dim = mesh_ -> space_dimension();
+    double rho = *S.GetScalarData("fluid_density");
+    const Epetra_MultiVector& porosity = *S.GetFieldData("porosity")->ViewComponent("cell");    
+    const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
+    const Epetra_MultiVector& pressure = *S.GetFieldData("pressure")->ViewComponent("cell");
+  
+    if ( variable_ == "volumetric water content") {
+      for (int i = 0; i < region_size_; i++) {
+	int c = entity_ids_[i];
+	double vol = mesh_->cell_volume(c);
+	*volume += vol;
+	*value  += porosity[0][c] * ws[0][c] * vol;
+      }
+    } else if (variable_ == "gravimetric water content") {
+      if (!S.HasField("particle_density")) {
+	msg << "Observation \""  << variable_ << "\" requires field \"particle_density\".\n";
+	Exceptions::amanzi_throw(msg);
+      }
+      const Epetra_MultiVector& pd = *S.GetFieldData("particle_density")->ViewComponent("cell");    
+  
+      for (int i = 0; i < region_size_; i++) {
+	int c = entity_ids_[i];
+	double vol = mesh_->cell_volume(c);
+	*volume += vol;
+	*value  += porosity[0][c] * ws[0][c] * rho / (pd[0][c] * (1.0 - porosity[0][c])) * vol;
+      }    
+    } else if (variable_ == "aqueous pressure") {
+      for (int i = 0; i < region_size_; i++) {
+	int c = entity_ids_[i];
+	double vol = mesh_->cell_volume(c);
+	*volume += vol;
+	*value  += pressure[0][c] * vol;
+      }
+    } else if (variable_ == "water table") {
+      *value = CalculateWaterTable_(S, entity_ids_);
+      *volume = 1.0;
+    } else if (variable_ == "aqueous saturation") {
+      for (int i = 0; i < region_size_; i++) {
+	int c = entity_ids_[i];
+	double vol = mesh_->cell_volume(c);
+	*volume += vol;
+	*value  += ws[0][c] * vol;
+      }    
+    } else if (variable_ == "hydraulic head") {
+      const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
+  
+      for (int i = 0; i < region_size_; ++i) {
+	int c = entity_ids_[i];
+	double vol = mesh_->cell_volume(c);
+	*volume += vol;
+	*value  += hydraulic_head[0][c] * vol;
+      }
+    } else if (variable_ == "permeability-weighted hydraulic head") {
+      const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
+      const Epetra_MultiVector& perm = *S.GetFieldData("permeability")->ViewComponent("cell");
+  
+      for (int i = 0; i < region_size_; ++i) {
+	int c = entity_ids_[i];
+	double vol = mesh_->cell_volume(c);
+	double kxy = (dim == 2) ? perm[1][c] : std::pow(perm[1][c] * perm[2][c], 0.5);
+	*volume += vol * kxy;
+	*value  += hydraulic_head[0][c] * vol * kxy;
+      }
+    } else if (variable_ == "drawdown") {
+      const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
+  
+      for (int i = 0; i < region_size_; ++i) {
+	int c = entity_ids_[i];
+	double vol = mesh_->cell_volume(c);
+	*volume += vol;
+	*value  += hydraulic_head[0][c] * vol;
+      }
+
+      // zero drawdown at time = t0 will be written directly to the file.
+      // if (od.size() > 0) { 
+      // 	*value = od.begin()->(*value) * (*volume) - (*value);
+      // }
+    } else if (variable_ == "permeability-weighted drawdown") {
+      const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
+      const Epetra_MultiVector& perm = *S.GetFieldData("permeability")->ViewComponent("cell");
+  
+      for (int i = 0; i < region_size_; ++i) {
+	int c = entity_ids_[i];
+	double vol = mesh_->cell_volume(c);
+	double kxy = (dim == 2) ? perm[1][c] : std::pow(perm[1][c] * perm[2][c], 0.5);
+	*volume += vol * kxy;
+	*value += hydraulic_head[0][c] * vol * kxy;
+      }
+
+      // zero drawdown at time = t0 wil be written directly to the file.
+      // if (od.size() > 0) { 
+      // 	*value = od.begin()->(*value) * (*volume) - (*value);
+      // }
+    } else if (variable_ == "aqueous mass flow rate" || 
+	       variable_ == "aqueous volumetric flow rate") {
+      double density(1.0);
+      if (variable_ == "aqueous mass flow rate") density = rho;
+      const Epetra_MultiVector& darcy_flux = *S.GetFieldData("darcy_flux")->ViewComponent("face");
+  
+      if (obs_boundary_) { // observation is on a boundary set
+	Amanzi::AmanziMesh::Entity_ID_List cells;
+
+	for (int i = 0; i != region_size_; ++i) {
+	  int f = entity_ids_[i];
+	  mesh_->face_get_cells(f, Amanzi::AmanziMesh::USED, &cells);
+
+	  int sign, c = cells[0];
+	  const AmanziGeometry::Point& face_normal = mesh_->face_normal(f, false, c, &sign);
+	  double area = mesh_->face_area(f);
+
+	  *value  += sign * darcy_flux[0][f] * density;
+	  *volume += area;
+	}
+      } else if (obs_planar_) {  // observation is on an interior planar set
+	for (int i = 0; i != region_size_; ++i) {
+	  int f = entity_ids_[i];
+	  const AmanziGeometry::Point& face_normal = mesh_->face_normal(f);
+	  double area = mesh_->face_area(f);
+	  double sign = reg_normal_ * face_normal / area;
+    
+	  *value  += sign * darcy_flux[0][f] * density;
+	  *volume += area;
+	}
+      } else {
+	msg << "Observations of \"aqueous mass flow rate\" and \"aqueous volumetric flow rate\""
+	    << " are only possible for Polygon, Plane and Boundary side sets";
+	Exceptions::amanzi_throw(msg);
+      }
+
+    } else if (variable_ == "pH") {
+      const Epetra_MultiVector& pH = *S.GetFieldData("pH")->ViewComponent("cell");
+  
+      for (int i = 0; i < region_size_; ++i) {
+	int c = entity_ids_[i];
+	double vol = mesh_->cell_volume(c);
+	*volume += vol;
+	*value  += pH[0][c] * vol;
+      }
+    } else {
+      msg << "Cannot make an observation for aqueous variable \"" << variable_ << "\"";
+      Exceptions::amanzi_throw(msg);
+    }
+
+  }
+
+  /* ******************************************************************
+   * Auxiliary routine: calculate maximum water table in a region.
+   ****************************************************************** */
+  double ObservableAqueous::CalculateWaterTable_(State& S, 
+                                                 AmanziMesh::Entity_ID_List& ids)
+  {
+    Teuchos::RCP<const Epetra_MultiVector> pressure = S.GetFieldData("pressure")->ViewComponent("cell", true);
+    double patm = *S.GetScalarData("atmospheric_pressure");
+
+    // initilize and apply the reconstruction operator
+    Teuchos::ParameterList plist;
+    Operators::ReconstructionCell lifting(S.GetMesh());
+    std::vector<AmanziGeometry::Point> gradient; 
+
+    lifting.Init(pressure, plist);
+    lifting.ComputeGradient(ids, gradient);
+
+    // set up extreme values for water table
+    int dim = S.GetMesh()->space_dimension();
+    double zmin(1e+99), zmax(-1e+99), pref(-1e+99), value(-1e+99);
+
+    // estimate water table
+    AmanziMesh::Entity_ID_List faces;
+    std::vector<int> dirs;
+
+    int found(0);
+    for (int i = 0; i < ids.size(); i++) {
+      int c = ids[i];
+      const AmanziGeometry::Point& xc = S.GetMesh()->cell_centroid(c);
+      double pf, pc = (*pressure)[0][c];
+      pref = pc;
+
+      S.GetMesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+      for (int n = 0; n < faces.size(); ++n) {
+        const AmanziGeometry::Point& xf = S.GetMesh()->face_centroid(faces[n]);
+        zmin = std::min(zmin, xf[dim - 1]);
+        zmax = std::max(zmax, xf[dim - 1]);
+
+        double dp = gradient[i] * (xf - xc);
+        pf = pc + dp;
+
+        if ((pf - patm) * (pc - patm) <= 0.0) {
+          if (fabs(dp) > 1e-8) {
+            double a = (patm - pc) / dp;
+            value = xc[dim - 1] + (xf[dim - 1] - xc[dim - 1]) * a;
+            found = 1;
+            break;
+          }
+        }
+      }
+    }
+
+    // parallel update
+    double tmp_loc[3] = {value, pref, zmax};
+    double tmp_glb[3];
+    S.GetMesh()->get_comm()->MaxAll(tmp_loc, tmp_glb, 3);
+    value = tmp_glb[0];
+    pref = tmp_glb[1];
+    zmax = tmp_glb[2];
+
+    double zmin_tmp(zmin);
+    S.GetMesh()->get_comm()->MinAll(&zmin_tmp, &zmin, 1);
+
+    int found_tmp = found;
+    S.GetMesh()->get_comm()->MaxAll(&found_tmp, &found, 1);
+
+    // process fully saturated and dry cases
+    if (found == 0) {
+      if (pref < patm) value = zmin;
+      if (pref > patm) value = zmax;
+    }
+
+    return value;
+  }
+
+
+}
+
+#endif

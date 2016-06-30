@@ -124,8 +124,6 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(const Teuchos::ParameterList&
     }
   }
 
-  std::cout<<entity_ids_<<"\n";
-
 }
 
 

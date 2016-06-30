@@ -30,6 +30,7 @@ typedef enum {
   ENUMERATED,
   BOUNDARY,
   BOX_VOF,
+  LINE_SEGMENT,
   ALL
 } RegionType;
 

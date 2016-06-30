@@ -25,36 +25,40 @@
 #include "TimeStepManager.hh"
 #include "Units.hh"
 #include "VerboseObject.hh"
+#include "Observable.hh"
 
 
 namespace Amanzi {
 
+  //class Observable;
+
 class FlexibleObservations {
  public:
-  struct Observable : public IOEvent {
-    Observable(std::string variable_,
-               std::string region_,
-               std::string functional_,
-               Teuchos::ParameterList& plist,
-               Epetra_MpiComm* comm):
-        variable(variable_), region(region_),
-        functional(functional_), plist_(plist),
-        IOEvent(plist)
-    {
-      ReadParameters_();
-    }
+  // struct Observable_tmp : public IOEvent {
+  //   Observable_tmp(std::string variable_,
+  //              std::string region_,
+  //              std::string functional_,
+  //              Teuchos::ParameterList& plist,
+  //              Epetra_MpiComm* comm):
+  //       variable(variable_), region(region_),
+  //       functional(functional_), plist_(plist),
+  //       IOEvent(plist)
+  //   {
+  //     ReadParameters_();
+  //   }
 
-    std::string variable;
-    std::string region;
-    std::string functional;
-    const Teuchos::ParameterList& plist_;
-  };
+  //   std::string variable;
+  //   std::string region;
+  //   std::string functional;
+  //   const Teuchos::ParameterList& plist_;
+  // };
 
   // constructor and destructor
-  FlexibleObservations(Teuchos::RCP<Teuchos::ParameterList> obs_list,
+  FlexibleObservations( Teuchos::RCP<Teuchos::ParameterList> coordinator_list,
+		       Teuchos::RCP<Teuchos::ParameterList> obs_list,
                        Teuchos::RCP<Teuchos::ParameterList> units_list,
                        Amanzi::ObservationData& observation_data,
-                       Epetra_MpiComm* comm);
+                       Teuchos::RCP<AmanziMesh::Mesh> mesh);
 
   ~FlexibleObservations() {
     if (vo_ != NULL) delete vo_;
@@ -84,8 +88,9 @@ class FlexibleObservations {
  private:
   int rank_;
   Teuchos::RCP<Teuchos::ParameterList> obs_list_;
+  Teuchos::RCP<Teuchos::ParameterList> coordinator_list_;
   Amanzi::ObservationData& observation_data_;
-  std::map<std::string, Observable> observations;
+  std::map<std::string, Teuchos::RCP<Observable> > observations;
 
   std::vector<std::string> comp_names_;
   int num_liquid_;

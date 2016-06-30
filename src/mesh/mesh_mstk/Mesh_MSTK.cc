@@ -3349,7 +3349,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
       }
     }
 
-  else if (rgn->type() == AmanziGeometry::BOX_VOF) 
+  else if ((rgn->type() == AmanziGeometry::BOX_VOF)||(rgn->type() == AmanziGeometry::LINE_SEGMENT))
     {
       // Call routine from the base class and exit.
       Mesh::get_set_entities_box_vofs_(rgn, kind, ptype, setents, vofs);

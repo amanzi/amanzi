@@ -148,7 +148,7 @@ void CycleDriver::Setup() {
   if (glist_->isSublist("observation data")) {
     Teuchos::RCP<Teuchos::ParameterList> obs_list = Teuchos::sublist(glist_, "observation data");
     Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist_, "units");
-    observations_ = Teuchos::rcp(new Amanzi::FlexibleObservations(obs_list, units_list, observations_data_, comm_));
+    observations_ = Teuchos::rcp(new Amanzi::FlexibleObservations(coordinator_list_, obs_list, units_list, observations_data_, mesh_));
 
     if (coordinator_list_->isParameter("component names")) {
       Teuchos::Array<std::string> comp_names = coordinator_list_->get<Teuchos::Array<std::string> >("component names");
