@@ -28,6 +28,7 @@
 #include "ObservableFactory.hh"
 #include "ObservableAqueous.hh"
 #include "ObservableSolute.hh"
+#include "ObservableLineSegment.hh"
 
 namespace Amanzi {
 
@@ -66,12 +67,19 @@ Teuchos::RCP<Observable>  CreateObservable(
   }
 
   bool obs_solute = obs_solute_liquid || obs_solute_gas;
+ 
 
   if (obs_solute){
     observe = Teuchos::rcp(new ObservableSolute(var, region, func, observable_plist, units_plist, mesh));
     Teuchos::rcp_dynamic_cast<ObservableSolute>(observe)->RegisterComponentNames(comp_names.toVector(), num_liquid, tcc_index);
   }else if (obs_aqueous){
-    observe = Teuchos::rcp(new ObservableAqueous(var, region, func, observable_plist, units_plist, mesh));
+    Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh -> geometric_model();
+    Teuchos::RCP<const AmanziGeometry::Region> reg_ptr = gm_ptr->FindRegion(region);
+    if (reg_ptr->type()==AmanziGeometry::LINE_SEGMENT){
+      observe = Teuchos::rcp(new ObservableLineSegment(var, region, func, observable_plist, units_plist, mesh));
+    }else{
+      observe = Teuchos::rcp(new ObservableAqueous(var, region, func, observable_plist, units_plist, mesh));
+    }
   }
 
   observe->ComputeRegionSize();

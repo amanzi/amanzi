@@ -1,0 +1,228 @@
+#ifndef AMANZI_OBSERVABLELINESEGMENT_HH
+#define AMANZI_OBSERVABLELINESEGMENT_HH
+
+
+#include "Observable.hh"
+#include "RegionPlane.hh"
+#include "RegionPolygon.hh"
+#include "RegionLineSegment.hh"
+#include "ReconstructionCell.hh"
+#include "Units.hh"
+
+namespace Amanzi{
+
+  class ObservableLineSegment : public Observable{
+  public:
+    ObservableLineSegment(std::string variable,
+                          std::string region,
+                          std::string functional,
+                          Teuchos::ParameterList& plist,
+                          Teuchos::ParameterList& units_plist,
+                          Teuchos::RCP<AmanziMesh::Mesh> mesh);
+
+    virtual void ComputeObservation(State& S, double* value, double* volume);
+    virtual int ComputeRegionSize();
+    void InterpolatedValues(State& S,
+                           std::string var,
+                           std::string interpolation,
+                           AmanziMesh::Entity_ID_List& ids,
+                           std::vector<AmanziGeometry::Point>& line_pnts,
+                           std::vector<double>& values);
+    void ComputeInterpolationPoints(Teuchos::RCP<const AmanziGeometry::Region> reg_ptr);
+
+  protected:
+
+    std::vector<double> lofs_;
+    std::string interpolation_;   
+    std::string weighting_;   
+    std::vector<AmanziGeometry::Point> line_points_;
+
+
+  };
+
+  ObservableLineSegment::ObservableLineSegment(std::string variable,
+                                               std::string region,
+                                               std::string functional,
+                                               Teuchos::ParameterList& plist,
+                                               Teuchos::ParameterList& units_plist,
+                                               Teuchos::RCP<AmanziMesh::Mesh> mesh):
+    Observable(variable, region, functional, plist, units_plist, mesh){
+    
+    interpolation_ = plist.get<std::string>("interpolation", "linear");
+    weighting_ = plist.get<std::string>("weighting", "none");
+
+  };
+
+
+  int ObservableLineSegment::ComputeRegionSize(){
+
+    //int mesh_block_size;
+    Errors::Message msg;
+
+    Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh_ -> geometric_model();
+    Teuchos::RCP<const AmanziGeometry::Region> reg_ptr = gm_ptr->FindRegion(region_);
+
+    if (reg_ptr->type() != AmanziGeometry::LINE_SEGMENT){
+      msg << "ObservableLineSegment works only with LineSegment region";
+      Exceptions::amanzi_throw(msg);
+    }
+      
+
+    // all others need cells
+    region_size_ = mesh_->get_set_size(region_,
+                                       AmanziMesh::CELL, 
+                                       AmanziMesh::OWNED);    
+    entity_ids_.resize(region_size_);
+    mesh_->get_set_entities_and_vofs(region_,
+                                     AmanziMesh::CELL, AmanziMesh::OWNED,
+                                     &entity_ids_, &lofs_);
+
+    // double sum=0.;
+    // for (int i=0;i<lofs_.size();i++){
+    //   std::cout<<lofs_[i]<<"\n";
+    //   sum += lofs_[i];
+    // }
+    // std::cout<<"Total "<<sum<<"\n";
+
+
+
+    ComputeInterpolationPoints(reg_ptr);
+         
+    // find global meshblocksize
+    int dummy = region_size_; 
+    int global_mesh_block_size(0);
+    mesh_->get_comm()->SumAll(&dummy, &global_mesh_block_size, 1);
+      
+  
+    return global_mesh_block_size;
+
+  }
+
+
+  void ObservableLineSegment::ComputeObservation(State& S, double* value, double* volume){
+
+    //double volume, value;
+    Errors::Message msg;
+    int dim = mesh_ -> space_dimension();
+    // double rho = *S.GetScalarData("fluid_density");
+    // const Epetra_MultiVector& porosity = *S.GetFieldData("porosity")->ViewComponent("cell");    
+    // const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
+    // const Epetra_MultiVector& pressure = *S.GetFieldData("pressure")->ViewComponent("cell");
+  
+    std::vector<double> values(region_size_);
+
+    InterpolatedValues(S, variable_, interpolation_, entity_ids_, line_points_, values);
+
+    *value = 0.;
+    *volume = 0.;
+
+    if (weighting_=="none"){
+      for (int i=0; i<region_size_; i++){
+        *value += values[i]*lofs_[i];
+        *volume += lofs_[i];
+      }
+    } else if (weighting_=="flux norm"){
+      if (S.HasField("darcy_velocity")){
+        const Epetra_MultiVector& darcy_vel =  *S.GetFieldData("darcy_velocity")->ViewComponent("cell");
+        for (int i=0; i<region_size_; i++){
+          int c = entity_ids_[i];
+          double norm = 0.;
+          for (int j=0; j<dim;j++) norm += darcy_vel[j][c]*darcy_vel[j][c];
+          norm = sqrt(norm);
+          *value += values[i]*lofs_[i]*norm;
+          *volume += lofs_[i];
+        }
+      }
+    }
+
+
+  }
+
+
+  void ObservableLineSegment::InterpolatedValues(State& S,
+                                                std::string var,
+                                                std::string interpolation,
+                                                AmanziMesh::Entity_ID_List& ids,
+                                                std::vector<AmanziGeometry::Point>& line_pnts,
+                                                std::vector<double>& values){
+
+    if (!S.HasField(var)){
+      Errors::Message msg;
+      msg <<"InterpolatedValue: field "<<var<<" doesn't exist in state";
+      Exceptions::amanzi_throw(msg);
+    }
+
+    Teuchos::RCP<const Epetra_MultiVector> vector = S.GetFieldData(var)->ViewComponent("cell", true);
+
+    Teuchos::ParameterList plist;
+    Operators::ReconstructionCell lifting(mesh_);
+    std::vector<AmanziGeometry::Point> gradient; 
+
+    lifting.Init(vector, plist);
+    lifting.ComputeGradient(ids, gradient);
+
+    for (int i = 0; i < ids.size(); i++) {
+      int c = ids[i];
+      values[i] = lifting.getValue( gradient[i], c, line_pnts[i]);
+    }
+
+  }
+
+  void ObservableLineSegment::ComputeInterpolationPoints(Teuchos::RCP<const AmanziGeometry::Region> reg_ptr){
+
+    AmanziGeometry::Entity_ID_List faces, cnodes, fnodes;
+    std::vector<int> dirs;
+    std::vector<AmanziGeometry::Point> polytope_nodes;
+    std::vector<std::vector<int> > polytope_faces;
+
+    line_points_.resize(entity_ids_.size());
+
+    Teuchos::RCP<const AmanziGeometry::RegionLineSegment> line_segment_ptr = 
+      Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionLineSegment>(reg_ptr);
+
+    double sum = 0.;
+
+    for (int k=0; k<entity_ids_.size(); k++){
+      int c = entity_ids_[k];
+      mesh_->cell_get_coordinates(c, &polytope_nodes);
+
+      if (mesh_->space_dimension() == 3) { 
+        mesh_->cell_get_nodes(c, &cnodes);
+        mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+        int nfaces = faces.size();
+        
+        polytope_faces.clear();
+        polytope_faces.resize(nfaces);
+        for (int n = 0; n < nfaces; ++n) {
+          mesh_->face_get_nodes(faces[n], &fnodes);
+          int nnodes = fnodes.size();
+
+          for (int i = 0; i < nnodes; ++i) {
+            int j = (dirs[n] > 0) ? i : nnodes - i - 1; 
+            // Find node position of fnodes[j]
+            int node_pos = -1;
+            for (int m = 0; m < cnodes.size(); m++) {
+              if (cnodes[m] == fnodes[j]) {
+                node_pos = m;
+                break;
+              }
+            }
+            polytope_faces[n].push_back(node_pos);
+          }
+        }
+        
+        line_segment_ptr->ComputeInterLinePoints(polytope_nodes, polytope_faces, line_points_[k]);
+        // std::cout<<"seg: "<<lofs_[k]<<" line_pnt "<<line_points_[k]<<"\n";
+        // sum += lofs_[k];
+      }
+
+    }
+
+    // std::cout<<"Total Length "<<sum<<"\n";
+
+  }
+
+
+}
+
+#endif

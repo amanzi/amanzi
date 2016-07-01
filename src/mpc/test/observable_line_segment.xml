@@ -1,0 +1,28 @@
+<ParameterList name="Main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+
+  <!-- REGIONS -->
+  <ParameterList name="regions">
+    <ParameterList name="All">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{10.0,10.0,10.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Well3012">
+      <ParameterList name="region: line segment">
+        <Parameter name="end coordinate" type="Array(double)" value="{2.60, 2.60, 0.0e+00}"/>
+        <Parameter name="opposite end coordinate" type="Array(double)" value="{5.60, 6.60, 9.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+
+  <!--  STATE  -->
+  <ParameterList name="state">
+
+  </ParameterList>
+
+
+</ParameterList>
+

@@ -134,6 +134,12 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_driver_dummy_pk.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+    # Test: observable_line_segment
+    add_amanzi_test(observable_line_segment observable_line_segment
+                    KIND      int
+                    SOURCE    test/Main.cc test/observable_line_segment.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
 #    add_executable(test_vis test/Main.cc test/test_vis.cpp)
 #    target_link_libraries(test_vis state mpc stk_mesh ${UnitTest_LIBRARIES})
 #    add_amanzi_test(vis test_vis KIND int)

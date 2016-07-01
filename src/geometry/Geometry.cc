@@ -294,6 +294,7 @@ bool point_in_polygon(const Point testpnt, const std::vector<Point> coords)
   double y = testpnt.y();
 
   for (i = 0, c = 0; i < np; i++) {
+    //    std::cout<<"coords "<<coords[i]<<"\n";
     ip1 = (i+1)%np;
     if (((coords[i].y() > y && coords[ip1].y() <= y) ||
          (coords[ip1].y() > y && coords[i].y() <= y)) &&

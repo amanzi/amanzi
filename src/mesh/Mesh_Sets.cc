@@ -82,7 +82,8 @@ void Mesh::get_set_entities_box_vofs_(
 
         if ((volume = region->intersect(polytope_nodes, polytope_faces)) > 0.0) {
           setents->push_back(c);
-          volume_fractions->push_back(volume /cell_volume(c));
+          if (region->type()==AmanziGeometry::LINE_SEGMENT) volume_fractions->push_back(volume);
+          else volume_fractions->push_back(volume /cell_volume(c));
         }
       }
 

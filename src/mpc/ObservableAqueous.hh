@@ -267,14 +267,14 @@ namespace Amanzi{
 
     // initilize and apply the reconstruction operator
     Teuchos::ParameterList plist;
-    Operators::ReconstructionCell lifting(S.GetMesh());
+    Operators::ReconstructionCell lifting(mesh_);
     std::vector<AmanziGeometry::Point> gradient; 
 
     lifting.Init(pressure, plist);
     lifting.ComputeGradient(ids, gradient);
 
     // set up extreme values for water table
-    int dim = S.GetMesh()->space_dimension();
+    int dim = mesh_->space_dimension();
     double zmin(1e+99), zmax(-1e+99), pref(-1e+99), value(-1e+99);
 
     // estimate water table
@@ -284,13 +284,13 @@ namespace Amanzi{
     int found(0);
     for (int i = 0; i < ids.size(); i++) {
       int c = ids[i];
-      const AmanziGeometry::Point& xc = S.GetMesh()->cell_centroid(c);
+      const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
       double pf, pc = (*pressure)[0][c];
       pref = pc;
 
-      S.GetMesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       for (int n = 0; n < faces.size(); ++n) {
-        const AmanziGeometry::Point& xf = S.GetMesh()->face_centroid(faces[n]);
+        const AmanziGeometry::Point& xf = mesh_->face_centroid(faces[n]);
         zmin = std::min(zmin, xf[dim - 1]);
         zmax = std::max(zmax, xf[dim - 1]);
 
@@ -311,16 +311,16 @@ namespace Amanzi{
     // parallel update
     double tmp_loc[3] = {value, pref, zmax};
     double tmp_glb[3];
-    S.GetMesh()->get_comm()->MaxAll(tmp_loc, tmp_glb, 3);
+    mesh_->get_comm()->MaxAll(tmp_loc, tmp_glb, 3);
     value = tmp_glb[0];
     pref = tmp_glb[1];
     zmax = tmp_glb[2];
 
     double zmin_tmp(zmin);
-    S.GetMesh()->get_comm()->MinAll(&zmin_tmp, &zmin, 1);
+    mesh_->get_comm()->MinAll(&zmin_tmp, &zmin, 1);
 
     int found_tmp = found;
-    S.GetMesh()->get_comm()->MaxAll(&found_tmp, &found, 1);
+    mesh_->get_comm()->MaxAll(&found_tmp, &found, 1);
 
     // process fully saturated and dry cases
     if (found == 0) {

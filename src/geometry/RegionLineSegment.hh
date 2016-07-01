@@ -43,11 +43,18 @@ namespace AmanziGeometry {
   double intersect(const std::vector<Point>& polytope, 
                    const std::vector<std::vector<int> >& faces) const;
 
+  void ComputeInterLinePoints(const std::vector<Point>& polytope,
+                              const std::vector<std::vector<int> >& faces,
+                              Point& res_point) const;
+
  protected:
+
+
+
     const Point p0_, p1_; // two end points of the line.
-    std::vector<Point> line_points_;
-    std::vector<double> line_frac_;
-    std::vector<int> reg_entities_;
+    //std::vector<Point> line_points_;
+    //std::vector<double> line_frac_;
+    //std::vector<int> reg_entities_;
 
   };
 
