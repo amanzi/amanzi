@@ -212,11 +212,6 @@ void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
     InitializeField_("sorption_sites", 1.0);
     InitializeField_("surface_complex_free_site_conc", 1.0);
   }
-
-  // experiment
-  CompositeVector& fis = *S_->GetFieldData("free_ion_species", passwd_);
-  CompositeVector& tcc = *S_->GetFieldData("total_component_concentration", passwd_);
-  // fis.Update(0.1, tcc, 0.0);
 }
 
 
