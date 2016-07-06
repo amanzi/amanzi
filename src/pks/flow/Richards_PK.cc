@@ -761,7 +761,7 @@ void Richards_PK::InitializeStatistics_()
     std::string ti_method_name = ti_list_->get<std::string>("time integration method");
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os()<< "EC:" << error_control_ 
+    *vo_->os()<< "\nEC:" << error_control_ 
               << " Upwind:" << op_matrix_diff_->little_k()
               << " PC:\"" << preconditioner_name_.c_str() << "\"" 
               << " TI:\"" << ti_method_name.c_str() << "\"" << std::endl
