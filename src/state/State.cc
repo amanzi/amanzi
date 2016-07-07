@@ -526,33 +526,31 @@ State::RequireField(Key fieldname, Key owner,
 };
 
 
-void State::RequireTimeTag(Key timetag){
+void State::RequireTimeTag(Key timetag) {
 
-  for (int i=0; i<copy_tag_.size(); ++i){
+  for (int i=0; i<copy_tag_.size(); ++i) {
     if (copy_tag_[i] == timetag) return;
   }
   copy_tag_.push_back(timetag);
 }
 
-bool State::HasTimeTag(Key timetag){ 
+bool State::HasTimeTag(Key timetag) { 
 
-  for (int i=0; i<copy_tag_.size(); ++i){
+  for (int i=0; i<copy_tag_.size(); ++i) {
     if (copy_tag_[i] == timetag) return true;
   }
   return false;
-
 }
 
-bool State::HasFieldCopy(Key key, Key timetag){
+bool State::HasFieldCopy(Key key, Key timetag) {
 
   Teuchos::RCP<const Field> field = GetField_(key);
   if (field == Teuchos::null) return false;
   if (HasTimeTag(timetag)) return field->HasCopy(timetag);
   else return false;
-
 }
 
-Teuchos::RCP<Field> State::GetFieldCopy(Key fieldname, Key timetag, Key pk_name){
+Teuchos::RCP<Field> State::GetFieldCopy(Key fieldname, Key timetag, Key pk_name) {
 
   Key field_owner = GetField(fieldname)->owner();
   Teuchos::RCP<Field> field = GetField(fieldname, field_owner);
@@ -567,7 +565,7 @@ Teuchos::RCP<const Field> State::GetFieldCopy(Key fieldname, Key timetag) const{
 
 }
 
-void State::SetFieldCopy(Key fieldname, Key timetag, Key pk_name, const Teuchos::RCP<Field>& fieldcopy){
+void State::SetFieldCopy(Key fieldname, Key timetag, Key pk_name, const Teuchos::RCP<Field>& fieldcopy) {
 
    Teuchos::RCP<Field> field = GetField(fieldname, pk_name);
    return field->SetCopy(timetag, fieldcopy);
@@ -575,23 +573,21 @@ void State::SetFieldCopy(Key fieldname, Key timetag, Key pk_name, const Teuchos:
 }
 
 
-void State::RequireFieldCopy(Key fieldname, Key timetag, Key copy_owner){
+void State::RequireFieldCopy(Key fieldname, Key timetag, Key copy_owner) {
 
   Key field_owner = GetField(fieldname)->owner();
   Teuchos::RCP<Field> field = GetField(fieldname, field_owner);
   field->RequireCopy(timetag, copy_owner);
-
-
 }
 
-void State::CopyField(Key fieldname, Key timetag, Key pk_name){
+
+void State::CopyField(Key fieldname, Key timetag, Key pk_name) {
 
   Key field_owner = GetField(fieldname)->owner();
   Teuchos::RCP<Field> field = GetField(fieldname, field_owner);
   Teuchos::RCP<Field> field_copy = field->GetCopy(timetag, pk_name);
 
   *field_copy->GetFieldData() = *field->GetFieldData();
-
 }
 
 
@@ -602,20 +598,19 @@ Teuchos::RCP<const CompositeVector> State::GetFieldCopyData(Key fieldname, Key t
     return GetField(fieldname)->GetCopy(tag)->GetFieldData();
 }
 
+
 Teuchos::RCP<CompositeVector> State::GetFieldCopyData(Key fieldname, Key tag, Key pk_name) {
 
   if (tag=="default") {
     Teuchos::RCP<Field> field = GetField(fieldname, pk_name);
     return field->GetFieldData();
   }
-  else{
-      Key field_owner = GetField(fieldname)->owner();
-      Teuchos::RCP<Field> field = GetField(fieldname, field_owner);
-      return field->GetCopy(tag, pk_name)->GetFieldData();
+  else {
+    Key field_owner = GetField(fieldname)->owner();
+    Teuchos::RCP<Field> field = GetField(fieldname, field_owner);
+    return field->GetCopy(tag, pk_name)->GetFieldData();
   }
 }
-
-
 
 
 void State::RequireGravity() {

@@ -32,7 +32,7 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.hg/) AND (MERCURIAL_FOUND) )
   mercurial_global_id(AMANZI_HG_GLOBAL_HASH)
   mercurial_local_id(AMANZI_HG_LOCAL_ID)
 
-  set(MERCURIAL_ARGS head ${AMANZI_HG_BRANCH} --template {latesttag}\n)
+  set(MERCURIAL_ARGS head ${AMANZI_HG_BRANCH} --template "{latesttag('re:^amanzi-.*')}\n")
   execute_process(COMMAND  ${MERCURIAL_EXECUTABLE} ${MERCURIAL_ARGS}
 	          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                   RESULT_VARIABLE err_occurred 

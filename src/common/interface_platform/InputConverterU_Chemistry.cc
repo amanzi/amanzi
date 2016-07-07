@@ -73,6 +73,8 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     bgd_list.set<std::string>("file", bgdfilename);
     bgd_list.set<std::string>("format", format);
 
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+      *vo_->os() << " using file:" << bgdfilename << std::endl;
   } else {
     bool valid_engine(true);
     std::string file_location;
@@ -94,14 +96,18 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       // Find the name of the engine-specific input file.
       node = GetUniqueElementByTagsString_(file_location, flag);
       if (flag) {
+        std::string inpfilename;
         element = static_cast<DOMElement*>(node);
 	if (element->hasAttribute(mm.transcode("input_filename"))) {
-            std::string inpfilename = GetAttributeValueS_(element, "input_filename");
-            out_list.set<std::string>("engine input file", inpfilename);
+          inpfilename = GetAttributeValueS_(element, "input_filename");
+          out_list.set<std::string>("engine input file", inpfilename);
 	} else {
-	    std::string inpfilename = CreateINFile_(xmlfilename_, rank_);
-            out_list.set<std::string>("engine input file", inpfilename);
-	}
+	  inpfilename = CreateINFile_(xmlfilename_, rank_);
+          out_list.set<std::string>("engine input file", inpfilename);
+	} 
+
+        if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+          *vo_->os() << " using file:" << inpfilename << std::endl;
       } else {
         Errors::Message msg;
         msg << "Unique tag string \"" << file_location << "\" must exists.\n";
@@ -214,7 +220,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
             .sublist("function");
         aux2_list.set<int>("number of dofs", nsolutes).set("function type", "composite function");
 
-        Teuchos::ParameterList& aux3_list = langmuir_b.sublist("function").sublist(*it)
+        Teuchos::ParameterList& aux3_list = freundlich_n.sublist("function").sublist(*it)
             .set<std::string>("region", *it)
             .set<std::string>("component", "cell")
             .sublist("function");
@@ -416,11 +422,11 @@ std::string InputConverterU::CreateBGDFile(std::string& filename)
   // loop over materials to get kd information
   node = GetUniqueElementByTagsString_("materials", flag);
   if (flag ) {
-    
     // get kd information from all materials
     Teuchos::ParameterList IsothermsPL;
     std::string name;
     std::vector<DOMNode*> mat_list = GetSameChildNodes_(node, name, flag, false);
+
     for (int i = 0; i < mat_list.size(); ++i) {
       bool flag2;
       DOMElement* child_elem;

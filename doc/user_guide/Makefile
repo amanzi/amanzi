@@ -76,7 +76,8 @@ clean:
 	echo "Removing the generated ./index.rst"   ;\
 	rm -f ./index.rst
 
-run_tests: 
+run_tests:
+	@echo "Setting up guide indexes, and running any tests for this build ..."
 	python collect.py $(AMANZI_SECTION_OPTIONS) 
 	@echo "TESTs finished."
 	@echo

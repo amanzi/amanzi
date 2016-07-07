@@ -2,22 +2,21 @@
 <amanzi_input type="unstructured" version="2.3.0">
     <echo_translated_input format="unstructured_native"/>
     <model_description name="farea_1d">
-        <comments>farea_1d	Fri Apr 22 14:01:40 PDT 2016</comments>
+        <comments>farea_1d	Thu Jun 23 15:00:31 PDT 2016</comments>
     </model_description>
     <definitions>
         <macros>
-	    <time_macro name="Every_year">
-		<start>0</start>
-		<timestep_interval>31556926.0</timestep_interval>
-		<stop>-1</stop>
-	    </time_macro>
-	</macros>
+            <time_macro name="Every_year">
+                <start>0 y</start>
+                <timestep_interval>31556926 s</timestep_interval>
+                <stop>50 y</stop>
+            </time_macro>
+        </macros>
     </definitions>
     <process_kernels>
         <flow model="saturated" state="on"/>
         <transport state="on"/>
-	<chemistry database="farea-full.dat" engine="pflotran" state="on" />
-	<!--chemistry database="farea-full.dat" engine="pflotran" state="on" input_filename="1d-farea-full-trim.in"/-->
+        <chemistry database="farea-full.dat" engine="pflotran" state="on"/>
     </process_kernels>
     <phases>
         <liquid_phase name="water">
@@ -41,56 +40,55 @@
                     <primary coefficient_of_diffusion="1.0E-9">UO2++</primary>
                 </primaries>
                 <secondaries>
-                    <secondary>OH-</secondary>
-                    <secondary>HCO3-</secondary>
-                    <secondary>CO3--</secondary>
-                    <secondary>NaHCO3(aq)</secondary>
-                    <secondary>NaCO3-</secondary>
-                    <secondary>NaOH(aq)</secondary>
-		    <secondary>AlOH++</secondary>
-                    <secondary>Al(OH)2+</secondary>
-                    <secondary>Al(OH)3(aq)</secondary>
-                    <secondary>Al(OH)4-</secondary>
-		    <secondary>CaOH+</secondary>
-                    <secondary>CaHCO3+</secondary>
-                    <secondary>CaCO3(aq)</secondary>
-                    <secondary>MgOH+</secondary>
-                    <secondary>MgHCO3+</secondary>
-                    <secondary>MgCO3(aq)</secondary>
-		    <secondary>(UO2)2(OH)2++</secondary>
+                    <secondary>(UO2)2(OH)2++</secondary>
                     <secondary>(UO2)2CO3(OH)3-</secondary>
                     <secondary>(UO2)2OH+++</secondary>
                     <secondary>(UO2)3(CO3)6(6-)</secondary>
                     <secondary>(UO2)3(OH)4++</secondary>
-                    <secondary>UO2(OH)4--</secondary>
                     <secondary>(UO2)3(OH)5+</secondary>
                     <secondary>(UO2)3(OH)7-</secondary>
                     <secondary>(UO2)3O(OH)2(HCO3)+</secondary>
                     <secondary>(UO2)4(OH)7+</secondary>
-                    <secondary>UO2NO3+</secondary>
-                    <secondary>UO2OH+</secondary>
-                    <secondary>UO2(OH)2(aq)</secondary>
-                    <secondary>UO2(OH)3-</secondary>
-                    <secondary>UO2CO3(aq)</secondary>
+                    <secondary>Al(OH)2+</secondary>
+                    <secondary>Al(OH)3(aq)</secondary>
+                    <secondary>Al(OH)4-</secondary>
+                    <secondary>AlOH++</secondary>
+                    <secondary>CO3--</secondary>
+                    <secondary>Ca2UO2(CO3)3(aq)</secondary>
+                    <secondary>CaCO3(aq)</secondary>
+                    <secondary>CaHCO3+</secondary>
+                    <secondary>CaOH+</secondary>
+                    <secondary>CaUO2(CO3)3--</secondary>
+                    <secondary>MgCO3(aq)</secondary>
+                    <secondary>MgHCO3+</secondary>
+                    <secondary>MgOH+</secondary>
+                    <secondary>MgUO2(CO3)3--</secondary>
+                    <secondary>NaCO3-</secondary>
+                    <secondary>NaOH(aq)</secondary>
+                    <secondary>NaHCO3(aq)</secondary>
+                    <secondary>OH-</secondary>
                     <secondary>UO2(CO3)2--</secondary>
                     <secondary>UO2(CO3)3----</secondary>
-                    <secondary>CaUO2(CO3)3--</secondary>
-                    <secondary>Ca2UO2(CO3)3(aq)</secondary>
-                    <secondary>MgUO2(CO3)3--</secondary>
+                    <secondary>UO2(OH)2(aq)</secondary>
+                    <secondary>UO2(OH)3-</secondary>
+                    <secondary>UO2(OH)4--</secondary>
+                    <secondary>UO2CO3(aq)</secondary>
+                    <secondary>UO2NO3+</secondary>
+                    <secondary>UO2OH+</secondary>
                     <secondary>UO2OSi(OH)3+</secondary>
+                    <secondary>HCO3-</secondary>
                 </secondaries>
-		<redox>
-		    <primary>Fe+++</primary>
-		</redox>
+                <redox>
+                    <redox>Fe+++</redox>
+                </redox>
             </dissolved_components>
         </liquid_phase>
         <solid_phase>
             <minerals>
-		<!-- includes conversion from mol/cm^2-s to mol/m^2-s -->
                 <mineral rate_constant="-13.345e+4">Quartz</mineral>
                 <mineral rate_constant="-7.94e+4">Goethite</mineral>
-                <mineral rate_constant="-12.967e+4">Kaolinite</mineral>
-                <mineral rate_constant="2.0e+4">Schoepite</mineral>
+                <mineral alpha="0.777" prefactor_species="H+" rate_constant="-12.967e+4">Kaolinite</mineral>
+                <mineral rate_constant="2.e+4">Schoepite</mineral>
                 <mineral rate_constant="-11.5e+4">Gibbsite</mineral>
                 <mineral rate_constant="-8.0e+4">Jurbanite</mineral>
                 <mineral rate_constant="-8.0e+4">Basaluminite</mineral>
@@ -106,8 +104,8 @@
     <execution_controls>
         <verbosity level="high"/>
         <execution_control_defaults increase_factor="1.25" init_dt="1 s" max_dt="100 y" method="bdf1" mode="transient" reduction_factor="0.8"/>
-        <execution_control end="50 y" init_dt="1.5768e+5" max_dt="1 y" method="bdf1" mode="transient" start="0.0 y"/>
-        <execution_control end="0 y" nit_dt="1.5768e+5" max_dt="6.0e+10" method="bdf1" mode="steady" start="0.0 y"/>
+        <execution_control end="50 y" init_dt="1.5768e+5 s" max_dt="1 y" method="bdf1" mode="transient" start="0 y"/>
+        <execution_control end="0 y" mode="steady" start="0 y"/>
     </execution_controls>
     <numerical_controls>
         <common_controls/>
@@ -120,10 +118,12 @@
                 <sub_cycling>on</sub_cycling>
                 <cfl>1</cfl>
             </unstr_transport_controls>
-	    <unstr_chemistry_controls>
-		<activity_coefficients>timestep</activity_coefficients>
-		<log_formulation>on</log_formulation>
-	    </unstr_chemistry_controls>
+            <unstr_chemistry_controls>
+                <log_formulation>on</log_formulation>
+                <activity_coefficients>timestep</activity_coefficients>
+                <max_time_step>1e+10</max_time_step>
+                <initial_time_step>1e+7</initial_time_step>
+            </unstr_chemistry_controls>
             <unstr_steady-state_controls>
                 <min_iterations>10</min_iterations>
                 <max_iterations>15</max_iterations>
@@ -186,85 +186,82 @@
         <box high_coordinates="(0.0, 1.0, 1.0)" low_coordinates="(0.0, 0.0, 0.0)" name="-X_Boundary"/>
         <box high_coordinates="(100.0, 1.0, 1.0)" low_coordinates="(0.0, 0.0, 0.0)" name="Region_between_surface0_and_1"/>
         <box high_coordinates="(100.0, 1.0, 1.0)" low_coordinates="(0.0, 0.0, 0.0)" name="All"/>
-	<point coordinate="(10.0,0.5,0.5)" name="Obs1"/>
     </regions>
     <materials>
         <material name="Soil">
             <mechanical_properties>
                 <porosity value="0.25"/>
-                <particle_density value="2.65"/>
                 <specific_storage value="0.001"/>
                 <dispersion_tensor alpha_l="0.0" alpha_t="0.0" type="uniform_isotropic"/>
             </mechanical_properties>
             <minerals>
-                <mineral name="Gibbsite" specific_surface_area="0.1e+2" volume_fraction="0.0"/>
-                <mineral name="Quartz" specific_surface_area="3262.3e+2" volume_fraction="0.88"/>
-                <mineral name="Opal" specific_surface_area="0.1e+2" volume_fraction="0.0"/>
-                <mineral name="Jurbanite" specific_surface_area="0.1e+2" volume_fraction="0.0"/>
-                <mineral name="Basaluminite" specific_surface_area="0.1e+2" volume_fraction="0.0"/>
-                <mineral name="Kaolinite" specific_surface_area="59093.9e+2" volume_fraction="0.11"/>
-                <mineral name="Schoepite" specific_surface_area="0.1e+2" volume_fraction="0.0"/>
-                <mineral name="Goethite" specific_surface_area="11076.3e+2" volume_fraction="0.016"/>
+                <mineral name="Goethite" specific_surface_area="1107630.0" volume_fraction="0.016"/>
+                <mineral name="Gibbsite" specific_surface_area="10.0" volume_fraction="0"/>
+                <mineral name="Jurbanite" specific_surface_area="10.0" volume_fraction="0"/>
+                <mineral name="Basaluminite" specific_surface_area="10.0" volume_fraction="0"/>
+                <mineral name="Schoepite" specific_surface_area="10.0" volume_fraction="0"/>
+                <mineral name="Opal" specific_surface_area="10.0" volume_fraction="0"/>
+                <mineral name="Quartz" specific_surface_area="326230.0" volume_fraction="0.88"/>
+                <mineral name="Kaolinite" specific_surface_area="5909390.0" volume_fraction="0.11"/>
             </minerals>
             <surface_complexation>
-		<site density="0.156199" name=">davis_OH">
-		    <complexes>(>davis_O)UO2+</complexes>
+                <site density="0.156199" name="&gt;davis_OH">
+                    <complexes>(&gt;davis_O)UO2+</complexes>
                 </site>
             </surface_complexation>
             <ion_exchange>
-		<cations cec="2.75">
-		    <cation name="Na+" value="1.0"/>
-		    <cation name="Ca++" value="0.316227766017"/>
-		    <cation name="Al+++" value="1.71132830416"/>
-		    <cation name="H+" value="0.0251188643151"/>
-		</cations>
-	    </ion_exchange>
+                <cations cec="2.75">
+                    <cation name="Al+++" value="1.71132830416"/>
+                    <cation name="Na+" value="1"/>
+                    <cation name="H+" value="0.0251188643151"/>
+                    <cation name="Ca++" value="0.316227766017"/>
+                </cations>
+            </ion_exchange>
             <permeability x="1.0000E-12" y="1.0000E-12" z="1.0000E-12"/>
             <cap_pressure model="none"/>
             <rel_perm model="none"/>
-            <assigned_regions>Region_between_surface0_and_1</assigned_regions>
+            <assigned_regions>All</assigned_regions>
         </material>
     </materials>
     <geochemistry>
         <verbosity>silent</verbosity>
         <constraints>
             <constraint name="background">
-                <primary name="H+"       type="pH"      value="5.4"/>
-                <primary name="Al+++"    type="mineral" value="3.09e-08" mineral="Kaolinite" />
-                <primary name="Ca++"     type="total"   value="1.00e-05"/>
-                <primary name="Cl-"      type="charge"  value="9.98e-03"/>
-                <primary name="Fe+++"    type="mineral" value="2.92e-16" mineral="Goethite" />
-                <primary name="CO2(aq)"  type="gas"     value="-3.5"     gas="CO2(g)" />
-                <primary name="K+"       type="total"   value="3.32e-05"/>
-                <primary name="Mg++"     type="total"   value="5.35e-03"/>
-                <primary name="Na+"      type="total"   value="2.78e-04"/>
-                <primary name="SiO2(aq)" type="mineral" value="1.77e-04" mineral="Quartz" />
-                <primary name="SO4--"    type="total"   value="2.25e-05"/>
-                <primary name="Tritium"  type="total"   value="1.e-15"/>
-                <primary name="NO3-"     type="total"   value="1.0e-3"/>
-                <primary name="UO2++"    type="total"   value="1.25e-10"/>
-
+                <primary name="H+" type="pH" value="5.4"/>
+                <primary mineral="Kaolinite" name="Al+++" type="mineral" value="3.09e-8"/>
+                <primary name="Tritium" type="total" value="1.0e-15"/>
+                <primary name="NO3-" type="total" value="1.0e-3"/>
+                <primary name="SO4--" type="total" value="2.25e-5"/>
+                <primary name="Na+" type="total" value="2.78e-4"/>
+                <primary mineral="Goethite" name="Fe+++" type="mineral" value="2.92e-16"/>
+                <primary name="Mg++" type="total" value="5.35e-3"/>
+                <primary gas="CO2(g)" mineral="Kaolinite" name="CO2(aq)" type="gas" value="-3.5"/>
+                <primary name="Cl-" type="charge" value="9.98e-3"/>
+                <primary name="UO2++" type="total" value="1.25e-10"/>
+                <primary name="Ca++" type="total" value="1.0e-5"/>
+                <primary mineral="Quartz" name="SiO2(aq)" type="mineral" value="1.77e-4"/>
+                <primary name="K+" type="total" value="3.32e-5"/>
             </constraint>
             <constraint name="seepage">
-                <primary name="Ca++"     type="total"   value="1.00e-05"/>
-                <primary name="H+"       type="pH"      value="2.05"/>
-                <primary name="Fe+++"    type="mineral" value="2.75e-06" mineral="Goethite" />
-                <primary name="UO2++"    type="total"   value="3.01e-05"/>
-                <primary name="Mg++"     type="total"   value="2.47e-06"/>
-                <primary name="CO2(aq)"  type="gas"     value="-3.5"     gas="CO2(g)" />
-                <primary name="K+"       type="total"   value="1.72e-06"/>
-                <primary name="Al+++"    type="total"   value="1.0e-08" />
-                <primary name="SiO2(aq)" type="mineral" value="1.18e-04" mineral="Quartz" />
-                <primary name="Na+"      type="charge"  value="6.82e-05"/>
-                <primary name="Tritium"  type="total"   value="2.17e-09"/>
-                <primary name="SO4--"    type="total"   value="4.80e-05"/>
-                <primary name="Cl-"      type="total"   value="3.39e-05"/>
-                <primary name="NO3-"     type="total"   value="1.0e-2"/>
+                <primary name="H+" type="pH" value="2.05"/>
+                <primary mineral="Kaolinite" name="Al+++" type="total" value="1.0e-8"/>
+                <primary name="Tritium" type="total" value="2.17e-9"/>
+                <primary name="NO3-" type="total" value="1.0e-2"/>
+                <primary name="SO4--" type="total" value="4.80e-5"/>
+                <primary name="Na+" type="charge" value="6.82e-5"/>
+                <primary mineral="Goethite" name="Fe+++" type="mineral" value="2.75e-6"/>
+                <primary name="Mg++" type="total" value="2.47e-6"/>
+                <primary gas="CO2(g)" name="CO2(aq)" type="gas" value="-3.5"/>
+                <primary name="Cl-" type="total" value="3.39e-5"/>
+                <primary name="UO2++" type="total" value="3.01e-5"/>
+                <primary name="Ca++" type="total" value="1.0e-5"/>
+                <primary mineral="Quartz" name="SiO2(aq)" type="total" value="1.18e-4"/>
+                <primary name="K+" type="total" value="1.72e-6"/>
             </constraint>
         </constraints>
     </geochemistry>
     <initial_conditions>
-        <initial_condition name="Entire Domain">
+        <initial_condition name="Initial Condition">
             <assigned_regions>All</assigned_regions>
             <liquid_phase name="water">
                 <liquid_component name="water">
@@ -281,12 +278,10 @@
             <assigned_regions>-X_Boundary</assigned_regions>
             <liquid_phase name="water">
                 <liquid_component name="water">
-                    <inward_mass_flux function="constant" start="0.0 s" value="7.91317859E-6"/>
-                    <inward_mass_flux function="constant" start="1.5778463e9 s" value="7.91317859E-6"/>
+                    <inward_mass_flux function="constant" start="0.0 y" value="7.91317859E-6"/>
                 </liquid_component>
                 <geochemistry_component>
-                    <constraint function="constant" name="seepage" start="0.0 s"/>
-                    <constraint function="constant" name="seepage" start="1.5778463e9 s"/>
+                    <constraint function="constant" name="seepage" start="0.0 y"/>
                 </geochemistry_component>
             </liquid_phase>
         </boundary_condition>
@@ -294,21 +289,19 @@
             <assigned_regions>+X_Boundary</assigned_regions>
             <liquid_phase name="water">
                 <liquid_component name="water">
-                    <uniform_pressure function="constant" start="0.0 s" value="201325.0"/>
-                    <uniform_pressure function="constant" start="1.5778463e9 s" value="201325.0"/>
+                    <uniform_pressure function="constant" start="0.0 y" value="201325.0"/>
                 </liquid_component>
                 <geochemistry_component>
-                    <constraint function="constant" name="background" start="0.0 s"/>
-                    <constraint function="constant" name="background" start="1.5778463e9 s"/>
+                    <constraint function="constant" name="background" start="0.0 y"/>
                 </geochemistry_component>
             </liquid_phase>
         </boundary_condition>
     </boundary_conditions>
     <output>
         <vis>
-	    <base_filename>plot</base_filename>
+            <base_filename>plot</base_filename>
             <num_digits>5</num_digits>
-	    <time_macros>Every_year</time_macros>
+            <time_macros>Every_year</time_macros>
         </vis>
     </output>
 </amanzi_input>
