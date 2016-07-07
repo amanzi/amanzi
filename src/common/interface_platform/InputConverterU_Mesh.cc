@@ -435,6 +435,15 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
           out_list.sublist(reg_name).sublist("region: box volume fractions")
              .set<Teuchos::Array<double> >("normals", normals);
       }
+      else if (strcmp(node_name, "line_segment") == 0) {
+        tree_["regions"].push_back(reg_name); 
+        std::vector<double> p1 = GetAttributeVector_(reg_elem, "end_coordinates");
+        std::vector<double> p2 = GetAttributeVector_(reg_elem, "opposite_end_coordinates");
+        out_list.sublist(reg_name).sublist("region: line segment")
+          .set<Teuchos::Array<double> >("end coordinate", p1)
+          .set<Teuchos::Array<double> >("opposite end coordinate", p2);
+      }
+          
     }
   }
 

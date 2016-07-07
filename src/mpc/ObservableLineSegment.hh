@@ -54,7 +54,7 @@ namespace Amanzi{
   };
 
 
-  int ObservableLineSegment::ComputeRegionSize(){
+  int ObservableLineSegment::ComputeRegionSize() {
 
     //int mesh_block_size;
     Errors::Message msg;
@@ -62,7 +62,7 @@ namespace Amanzi{
     Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh_ -> geometric_model();
     Teuchos::RCP<const AmanziGeometry::Region> reg_ptr = gm_ptr->FindRegion(region_);
 
-    if (reg_ptr->type() != AmanziGeometry::LINE_SEGMENT){
+    if (reg_ptr->type() != AmanziGeometry::LINE_SEGMENT) {
       msg << "ObservableLineSegment works only with LineSegment region";
       Exceptions::amanzi_throw(msg);
     }
@@ -116,13 +116,13 @@ namespace Amanzi{
     *value = 0.;
     *volume = 0.;
 
-    if (weighting_=="none"){
+    if (weighting_=="none") {
       for (int i=0; i<region_size_; i++){
         *value += values[i]*lofs_[i];
         *volume += lofs_[i];
       }
-    } else if (weighting_=="flux norm"){
-      if (S.HasField("darcy_velocity")){
+    } else if (weighting_=="flux norm") {
+      if (S.HasField("darcy_velocity")) {
         const Epetra_MultiVector& darcy_vel =  *S.GetFieldData("darcy_velocity")->ViewComponent("cell");
         for (int i=0; i<region_size_; i++){
           int c = entity_ids_[i];
@@ -146,29 +146,44 @@ namespace Amanzi{
                                                 std::vector<AmanziGeometry::Point>& line_pnts,
                                                 std::vector<double>& values){
 
-    if (!S.HasField(var)){
-      Errors::Message msg;
-      msg <<"InterpolatedValue: field "<<var<<" doesn't exist in state";
+    // if (!S.HasField(var)) {
+    //   Errors::Message msg;
+    //   msg <<"InterpolatedValue: field "<<var<<" doesn't exist in state";
+    //   Exceptions::amanzi_throw(msg);
+    // }
+
+    Teuchos::RCP<const Epetra_MultiVector> vector;
+    if (var == "hydraulic head"){
+      vector = S.GetFieldData("hydraulic_head")->ViewComponent("cell", true);
+    }else{
+      vector = S.GetFieldData(var)->ViewComponent("cell", true);
+    }
+
+    if (interpolation == "linear") {
+      Teuchos::ParameterList plist;
+      Operators::ReconstructionCell lifting(mesh_);
+      std::vector<AmanziGeometry::Point> gradient; 
+
+      lifting.Init(vector, plist);
+      lifting.ComputeGradient(ids, gradient);
+
+      for (int i = 0; i < ids.size(); i++) {
+        int c = ids[i];
+        values[i] = lifting.getValue( gradient[i], c, line_pnts[i]);
+      }
+    } else if (interpolation == "constant") {    
+      for (int i = 0; i < ids.size(); i++) {
+        int c = ids[i];
+        values[i] = (*vector)[0][c];
+      }
+    } else {
+       Errors::Message msg;
+      msg <<"InterpolatedValue: unknown interpolation method "<<interpolation;
       Exceptions::amanzi_throw(msg);
     }
-
-    Teuchos::RCP<const Epetra_MultiVector> vector = S.GetFieldData(var)->ViewComponent("cell", true);
-
-    Teuchos::ParameterList plist;
-    Operators::ReconstructionCell lifting(mesh_);
-    std::vector<AmanziGeometry::Point> gradient; 
-
-    lifting.Init(vector, plist);
-    lifting.ComputeGradient(ids, gradient);
-
-    for (int i = 0; i < ids.size(); i++) {
-      int c = ids[i];
-      values[i] = lifting.getValue( gradient[i], c, line_pnts[i]);
-    }
-
   }
 
-  void ObservableLineSegment::ComputeInterpolationPoints(Teuchos::RCP<const AmanziGeometry::Region> reg_ptr){
+  void ObservableLineSegment::ComputeInterpolationPoints(Teuchos::RCP<const AmanziGeometry::Region> reg_ptr) {
 
     AmanziGeometry::Entity_ID_List faces, cnodes, fnodes;
     std::vector<int> dirs;

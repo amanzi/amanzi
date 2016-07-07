@@ -124,8 +124,8 @@ TEST(OBSERVABLE_LINE_SEGMENT){
 
   double exact_val = A*xyzc[0] + B*xyzc[1] + C*xyzc[2] + D;
 
-  std::cout<<value<<" "<<volume<<"\n";
-  std::cout<<exact_val*len<<" "<<len<<"\n";
+  // std::cout<<value<<" "<<volume<<"\n";
+  // std::cout<<exact_val*len<<" "<<len<<"\n";
 
   CHECK(std::abs(exact_val*len - value) < 1e-10);
 

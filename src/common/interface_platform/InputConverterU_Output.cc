@@ -352,6 +352,18 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
                 } else if (strcmp(value, "mean") == 0) {
                   obPL.set<std::string>("functional", "observation data: mean");
                 }
+              } else if (strcmp(elem, "interpolation") == 0) {
+                if (strcmp(value, "constant") == 0) {
+                  obPL.set<std::string>("interpolation", "constant");
+                } else if (strcmp(value, "linear")==0) {
+                  obPL.set<std::string>("interpolation", "linear");
+                }
+              } else if (strcmp(elem, "weighting") == 0) {
+                if (strcmp(value, "none") == 0) {
+                  obPL.set<std::string>("weighting", "none");
+                } else if (strcmp(value, "flux_norm")==0) {
+                  obPL.set<std::string>("weighting", "flux norm");
+                }
               // Keeping singular macro around to help users. This will go away
               } else if (strcmp(elem, "time_macros") == 0 ||
                          strcmp(elem, "time_macro") == 0) {
