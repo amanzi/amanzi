@@ -32,7 +32,8 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.hg/) AND (MERCURIAL_FOUND) )
   mercurial_global_id(AMANZI_HG_GLOBAL_HASH)
   mercurial_local_id(AMANZI_HG_LOCAL_ID)
 
-  set(MERCURIAL_ARGS head ${AMANZI_HG_BRANCH} --template "{latesttag('re:^amanzi-.*')}\n")
+# set(MERCURIAL_ARGS head ${AMANZI_HG_BRANCH} --template "{latesttag('re:^amanzi-.*')}\n")
+  set(MERCURIAL_ARGS log --rev "branch\(default\) and tag()" --template "{tags}\n" )
   execute_process(COMMAND  ${MERCURIAL_EXECUTABLE} ${MERCURIAL_ARGS}
 	          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                   RESULT_VARIABLE err_occurred 
@@ -41,10 +42,18 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.hg/) AND (MERCURIAL_FOUND) )
                   OUTPUT_STRIP_TRAILING_WHITESPACE
                   ERROR_STRIP_TRAILING_WHITESPACE)
 
+   # MESSAGE(STATUS ">>>> JDM: MERCURIAL_EXEC       = ${MERCURIAL_EXECUTABLE}")
+   # MESSAGE(STATUS ">>>> JDM: MERCURIAL_ARGS       = ${MERCURIAL_ARGS}")
+   # MESSAGE(STATUS ">>>> JDM: RESULT_VARIABLE      = ${err_occurred}")
 
-   # If AMANZI_HG_LATEST_TAG has a newline in it, chop it at the newline.
-   STRING(FIND ${AMANZI_HG_LATEST_TAG} "\n" NEWLINE_INDEX)
-   STRING(SUBSTRING ${AMANZI_HG_LATEST_TAG} 0 ${NEWLINE_INDEX} AMANZI_HG_LATEST_TAG)
+   # Put the tags in a list
+   STRING(REPLACE "\n" ";" AMANZI_HG_LATEST_TAG_LIST ${AMANZI_HG_LATEST_TAG})
+   # Extract the lastest tag of the form amanzi-*
+   FOREACH(atag ${AMANZI_HG_LATEST_TAG_LIST})
+     IF ( ${atag} MATCHES "^amanzi-.*" )
+       set ( AMANZI_HG_LATEST_TAG ${atag} )
+     ENDIF()
+   ENDFOREACH()
 
    STRING(REGEX REPLACE "amanzi-" "" AMANZI_HG_LATEST_TAG_VER ${AMANZI_HG_LATEST_TAG})	
    STRING(REGEX REPLACE "\\..*" "" AMANZI_HG_LATEST_TAG_MAJOR ${AMANZI_HG_LATEST_TAG_VER})	
