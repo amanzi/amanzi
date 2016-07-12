@@ -774,32 +774,30 @@ framework_read(const Epetra_MpiComm *comm_, const Framework& f,
                const Teuchos::RCP<const VerboseObject>& vo,
                const bool request_faces, const bool request_edges)
 {
+  if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) {
+    std::string frameworks[5] = {"None", "SimpleMesh", "MOAB", "STKmesh", "MSTK"};
+    Teuchos::OSTab tab = vo->getOSTab();
+    *vo->os() << "\nUsing " << frameworks[f] << " framework to generate mesh\n";
+  }
+
   Teuchos::RCP<Mesh> result;
   switch (f) {
   case Simple:
-    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
-      *vo->os() << "\nUsing SimpleMesh framework to read mesh\n\n";
     result = FrameworkTraits<Simple>::read(comm_, fname, 
                                            gm, vo, 
                                            request_faces, request_edges);
     break;
   case STKMESH:
-    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
-      *vo->os() << "\nUsing STK mesh framework to read mesh\n\n";
     result = FrameworkTraits<STKMESH>::read(comm_, fname,
                                             gm, vo, 
                                             request_faces, request_edges);
     break;
   case MOAB:
-    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
-      *vo->os() << "\nUsing MOAB framework to read mesh\n";
     result = FrameworkTraits<MOAB>::read(comm_, fname,
                                          gm, vo, 
                                          request_faces, request_edges);
     break;
   case MSTK:
-    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
-      *vo->os() << "\nUsing MSTK framework to read mesh\n";
     result = FrameworkTraits<MSTK>::read(comm_, fname,
                                          gm, vo, 
                                          request_faces, request_edges);
@@ -883,35 +881,33 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
                    const Teuchos::RCP<const VerboseObject>& vo,
                    const bool request_faces, const bool request_edges)
 {
+  if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) {
+    std::string frameworks[5] = {"None", "SimpleMesh", "MOAB", "STKmesh", "MSTK"};
+    Teuchos::OSTab tab = vo->getOSTab();
+    *vo->os() << "\nUsing " << frameworks[f] << " framework to generate mesh\n";
+  }
+
   Teuchos::RCP<Mesh> result;
   switch (f) {
   case Simple:
-    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
-      *vo->os() << "\nUsing SimpleMesh framework to generate mesh\n";
     result = FrameworkTraits<Simple>::generate(x0, y0, z0, x1, y1, z1, 
                                                nx, ny, nz, comm_,
                                                gm, vo, 
                                                request_faces, request_edges);
     break;
   case STKMESH:
-    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
-      *vo->os() << "\nUsing STKmesh framework to generate mesh\n";
     result = FrameworkTraits<STKMESH>::generate(x0, y0, z0, x1, y1, z1, 
                                                 nx, ny, nz, comm_,
                                                 gm, vo, 
                                                 request_faces, request_edges);
     break;
   case MOAB:
-    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
-      *vo->os() << "\nUsing MOAB framework to generate mesh\n";
     result = FrameworkTraits<MOAB>::generate(x0, y0, z0, x1, y1, z1, 
                                              nx, ny, nz, comm_,
                                              gm, vo, 
                                              request_faces, request_edges);
     break;
   case MSTK:
-    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
-      *vo->os() << "\nUsing MSTK framework to generate mesh\n";
     result = FrameworkTraits<MSTK>::generate(x0, y0, z0, x1, y1, z1, 
                                              nx, ny, nz, comm_,
                                              gm, vo, 
@@ -943,32 +939,30 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
                    const Teuchos::RCP<const VerboseObject>& vo,
                    const bool request_faces, const bool request_edges)
 {
+  if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) {
+    std::string frameworks[5] = {"None", "SimpleMesh", "MOAB", "STKmesh", "MSTK"};
+    Teuchos::OSTab tab = vo->getOSTab();
+    *vo->os() << "\nUsing " << frameworks[f] << " framework to generate mesh\n";
+  }
+
   Teuchos::RCP<Mesh> result;
   switch (f) {
   case Simple:
-    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
-      *vo->os() << "\nUsing SimpleMesh framework to generate mesh\n";
     result = FrameworkTraits<Simple>::generate(x0, y0, x1, y1, nx, ny, comm_,
                                                gm, vo,
                                                request_faces, request_edges);
     break;
   case STKMESH:
-    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
-      *vo->os() << "\nUsing STKmesh framework to generate mesh\n";
     result = FrameworkTraits<STKMESH>::generate(x0, y0, x1, y1, nx, ny, comm_,
                                                 gm, vo, 
                                                 request_faces, request_edges);
     break;
   case MOAB:
-    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
-      *vo->os() << "\nUsing MOAB framework to generate mesh\n";
     result = FrameworkTraits<MOAB>::generate(x0, y0, x1, y1, nx, ny, comm_,
                                              gm, vo, 
                                              request_faces, request_edges);
     break;
   case MSTK:
-    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW)
-      *vo->os() << "\nUsing MSTK framework to generate mesh\n";
     result = FrameworkTraits<MSTK>::generate(x0, y0, x1, y1, nx, ny, comm_,
                                              gm, vo, 
                                              request_faces, request_edges);
@@ -994,32 +988,30 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
                    const Teuchos::RCP<const VerboseObject>& vo,
                    const bool request_faces, const bool request_edges)
 {
+  if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) {
+    std::string frameworks[5] = {"None", "SimpleMesh", "MOAB", "STKmesh", "MSTK"};
+    Teuchos::OSTab tab = vo->getOSTab();
+    *vo->os() << "\nUsing " << frameworks[f] << " framework to generate mesh\n";
+  }
+
   Teuchos::RCP<Mesh> result;
   switch (f) {
   case Simple:
-    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
-      *vo->os() << "\nUsing SimpleMesh framework to generate mesh\n";
     result = FrameworkTraits<Simple>::generate(parameter_list, comm_,
                                                gm, vo, 
                                                request_faces, request_edges);
     break;
   case STKMESH:
-    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
-      *vo->os() << "\nUsing STKmesh framework to generate mesh\n";
     result = FrameworkTraits<STKMESH>::generate(parameter_list, comm_,
                                                 gm, vo, 
                                                 request_faces, request_edges);
     break;
   case MOAB:
-    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
-      *vo->os() << "\nUsing MOAB framework to generate mesh\n";
     result = FrameworkTraits<MOAB>::generate(parameter_list, comm_,
                                              gm, vo, 
                                              request_faces, request_edges);
     break;
   case MSTK:
-    if (vo.get() && vo->getVerbLevel() >= Teuchos::VERB_LOW) 
-      *vo->os() << "\nUsing MSTK framework to generate mesh\n";
     result = FrameworkTraits<MSTK>::generate(parameter_list, comm_,
                                              gm, vo, 
                                              request_faces, request_edges);

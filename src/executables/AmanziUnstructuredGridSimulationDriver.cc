@@ -38,26 +38,15 @@
 #include "pks_energy_registration.hh"
 #include "wrm_flow_registration.hh"
 
-using namespace std;
-
 // v1 spec constructor -- delete when we get rid of v1.2 spec.
-/*
-AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const string& xmlInFileName)
+AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName)
 {
-  string spec;
-  Teuchos::ParameterList driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName, spec);
-  if (driver_parameter_list.numParams() == 0) // empty list, must be native spec.
-  {
-    Teuchos::RCP<Teuchos::ParameterList> native = Teuchos::getParametersFromXmlFile(xmlInFileName);
-    plist_ = new Teuchos::ParameterList(*native);
-  }
-  else
-    plist_ = new Teuchos::ParameterList(Amanzi::AmanziNewInput::translate(xmlInFileName, spec));
+  Teuchos::RCP<Teuchos::ParameterList> native = Teuchos::getParametersFromXmlFile(xmlInFileName);
+  plist_ = new Teuchos::ParameterList(*native);
 }
-*/
 
 
-AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const string& xmlInFileName,
+AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName,
                                                                                xercesc::DOMDocument* input)
 {
   int rank = Teuchos::GlobalMPISession::getRank();
@@ -133,7 +122,6 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   Teuchos::RCP<Amanzi::VerboseObject> mesh_vo =
       Teuchos::rcp(new Amanzi::VerboseObject("Mesh", mesh_params));
-  Teuchos::OSTab tab = mesh_vo->getOSTab();
 
   // Create a mesh factory for this geometric model
   Amanzi::AmanziMesh::MeshFactory factory(comm, mesh_vo);
@@ -181,9 +169,9 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::MOAB);
 	// } else if (framework == "") {
 	} else {
-	  std::string s(framework);
-	  s += ": specified mesh framework preference not understood";
-	  amanzi_throw(Errors::Message(s));
+          std::string s(framework);
+          s += ": specified mesh framework preference not understood";
+          amanzi_throw(Errors::Message(s));
 	}
       }   
     }

@@ -38,6 +38,7 @@ class InputConverterU : public InputConverter {
       compressibility_(false),
       mesh_rectangular_(false),
       transport_permeability_(false),
+      use_transport_porosity_(false),
       restart_(false) {}
 
   explicit InputConverterU(const std::string& input_filename, 
@@ -156,7 +157,7 @@ class InputConverterU : public InputConverter {
   bool mesh_rectangular_;
 
   // global transport and chemistry constants
-  bool transport_permeability_;
+  bool transport_permeability_, use_transport_porosity_;
   std::vector<std::string> comp_names_all_;
 
   // global state parameters

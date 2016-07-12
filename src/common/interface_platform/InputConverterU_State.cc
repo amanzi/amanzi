@@ -125,6 +125,25 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         porosity_ev.set<std::string>("field evaluator type", "independent variable");
       }
 
+      // -- transport porosity 
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, transport_porosity", flag);
+      if (flag) {
+        use_transport_porosity_ = true;
+        double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+
+        Teuchos::ParameterList& porosity_ev = out_ev.sublist("transport_porosity");
+        porosity_ev.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
+            .sublist("function").sublist("function-constant")
+            .set<double>("value", val);
+        porosity_ev.set<std::string>("field evaluator type", "independent variable");
+      } 
+      else if (use_transport_porosity_) {
+        msg << "Transport porosity element must be specified for all materials or none.";
+        Exceptions::amanzi_throw(msg);
+      }
+
       // -- permeability.
       double perm_x, perm_y, perm_z;
       bool perm_init_from_file(false), conductivity(false);

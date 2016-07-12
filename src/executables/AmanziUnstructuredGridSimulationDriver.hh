@@ -10,10 +10,10 @@ struct AmanziUnstructuredGridSimulationDriver
       public Teuchos::VerboseObject<AmanziUnstructuredGridSimulationDriver>
 {
  public:
-  // v1 constructor
-  // explicit AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName);
+  // constructor for native XML
+  explicit AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName);
 
-  // v2 constructor
+  // constructor for v2 XML
   AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName,
                                          xercesc::DOMDocument* input);
 

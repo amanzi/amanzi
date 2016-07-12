@@ -167,6 +167,7 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
       Teuchos::sublist(tp_list_, "physical models and assumptions");
   bool abs_perm = physical_models->get<bool>("permeability field is required", false);
   std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single porosity");
+  use_transport_porosity_ = physical_models->get<bool>("effective transport porosity", false);
 
   // require state fields when Flow PK is off
   if (!S->HasField("permeability") && abs_perm) {
@@ -204,11 +205,19 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
   }
 
-  // testing evaluators
+  // porosity evaluators
   if (!S->HasField("porosity")) {
     S->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator("porosity");
+  }
+
+  if (use_transport_porosity_) {
+    if (!S->HasField("transport_porosity")) {
+      S->RequireField("transport_porosity", "transport_porosity")->SetMesh(mesh_)
+        ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+      S->RequireFieldEvaluator("transport_porosity");
+    }
   }
 
   // require multiscale fields
@@ -273,20 +282,19 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   // extract control parameters
   InitializeAll_();
  
-  // state pre-prosessing
-  Teuchos::RCP<const CompositeVector> cv;
+  // pointers to state variables (move in subroutines for consistency)
   S->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
-  cv = S->GetFieldData("darcy_flux");
-  darcy_flux = cv->ViewComponent("face", true);
 
-  cv = S->GetFieldData("saturation_liquid");
-  ws = cv->ViewComponent("cell", false);
+  darcy_flux = S->GetFieldData("darcy_flux")->ViewComponent("face", true);
+  ws = S->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
+  ws_prev = S->GetFieldData("prev_saturation_liquid")->ViewComponent("cell", false);
+  phi = S->GetFieldData("porosity")->ViewComponent("cell", false);
 
-  cv = S->GetFieldData("prev_saturation_liquid");
-  ws_prev = cv->ViewComponent("cell", false);
-
-  cv = S->GetFieldData("porosity");
-  phi = cv->ViewComponent("cell", false);
+  if (use_transport_porosity_) {
+    transport_phi = S->GetFieldData("transport_porosity")->ViewComponent("cell", false);
+  } else {
+    transport_phi = phi;
+  }
 
   tcc = S->GetFieldData("total_component_concentration", passwd_);
 
@@ -411,7 +419,8 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Number of components: " << tcc->size() << std::endl
                << "cfl=" << cfl_ << " spatial/temporal discretization: " 
-               << spatial_disc_order << " " << temporal_disc_order << std::endl;
+               << spatial_disc_order << " " << temporal_disc_order << std::endl
+               << "using transport porosity: " << use_transport_porosity_ << std::endl;
     *vo_->os() << vo_->color("green") << "Initalization of PK is complete." 
                << vo_->reset() << std::endl << std::endl;
   }
@@ -723,7 +732,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     // populate the dispersion operator (if any)
     if (flag_dispersion_) {
-      CalculateDispersionTensor_(*darcy_flux, *phi, *ws);
+      CalculateDispersionTensor_(*darcy_flux, *transport_phi, *ws);
     }
 
     int phase, num_itrs(0);
@@ -737,11 +746,11 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       md_old = md_new;
 
       if (md_change != 0.0) {
-        CalculateDiffusionTensor_(md_change, phase, *phi, *ws);
+        CalculateDiffusionTensor_(md_change, phase, *transport_phi, *ws);
         flag_op1 = true;
       }
 
-      // set initial guess
+      // set the initial guess
       Epetra_MultiVector& sol_cell = *sol.ViewComponent("cell");
       for (int c = 0; c < ncells_owned; c++) {
         sol_cell[0][c] = tcc_next[i][c];
@@ -803,7 +812,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       md_old = md_new;
 
       if (md_change != 0.0 || i == num_aqueous) {
-        CalculateDiffusionTensor_(md_change, phase, *phi, *ws);
+        CalculateDiffusionTensor_(md_change, phase, *transport_phi, *ws);
       }
 
       // set initial guess

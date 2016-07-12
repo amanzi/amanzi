@@ -88,7 +88,10 @@ Simulator* Create(const std::string& input_filename)
   } 
   else if (type == "unstructured") {
 #ifdef ENABLE_Unstructured
-    simulator = new AmanziUnstructuredGridSimulationDriver(input_filename, doc);
+    if (version == "v2")
+      simulator = new AmanziUnstructuredGridSimulationDriver(input_filename, doc);
+    else
+      simulator = new AmanziUnstructuredGridSimulationDriver(input_filename);
 #else
     amanzi_throw(Errors::Message("Unstructured not supported in current build"));
 #endif

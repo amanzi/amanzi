@@ -1575,12 +1575,14 @@ void Mesh::PrintMeshStatistics() const
     int ncells = num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     int nfaces = num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
-    int min_out[2], sum_out[2], tmp_in[2] = {ncells, nfaces};
+    int min_out[2], max_out[2], sum_out[2], tmp_in[2] = {ncells, nfaces};
     get_comm()->MinAll(tmp_in, min_out, 2);
+    get_comm()->MaxAll(tmp_in, max_out, 2);
     get_comm()->SumAll(tmp_in, sum_out, 2);
 
-    *vo_->os() << "cells, tot/min: " << sum_out[0] << "/" << min_out[0] << "\n";
-    *vo_->os() << "faces, tot/min: " << sum_out[1] << "/" << min_out[1] << "\n\n";
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "cells, tot/min/max: " << sum_out[0] << "/" << min_out[0] << "/" << max_out[0] << "\n";
+    *vo_->os() << "faces, tot/min/max: " << sum_out[1] << "/" << min_out[1] << "/" << max_out[1] << "\n\n";
   }
 }
 
