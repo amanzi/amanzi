@@ -410,6 +410,12 @@ Primary and derived fields
   * saturation [-]
   * hydraulic_head [m]
   * darcy_flux (more precisely, volumetric flow rate) [m^3/s] 
+  * porosity [-]
+  * transport_porosity [-] 
+
+* Static fields
+
+  * permeability [m^2]
 
 
 Field evaluators
@@ -1862,7 +1868,7 @@ The conceptual PDE model for the fully saturated flow is
   + \boldsymbol{\nabla} \cdot (\phi s_l (\boldsymbol{D}_l + \tau \boldsymbol{M}_l) \boldsymbol{\nabla} C_l) + Q,
 
 where 
-:math:`\phi` is porosity,
+:math:`\phi` is total porosity,
 :math:`s_l` is liquid saturation, 
 :math:`Q` is source or sink term,
 :math:`\boldsymbol{q}_l` is the Darcy velocity,
@@ -1876,12 +1882,15 @@ tensor has the following form:
   \boldsymbol{D}_l 
   = \alpha_t \|\boldsymbol{v}\| \boldsymbol{I} 
   + \left(\alpha_l-\alpha_t \right) 
-    \frac{\boldsymbol{v} \boldsymbol{v}}{\|\boldsymbol{v}\|},
+    \frac{\boldsymbol{v} \boldsymbol{v}}{\|\boldsymbol{v}\|}, \qquad
+  \boldsymbol{v} = \frac{\boldsymbol{q}}{\phi_{eff}}
 
 where
 :math:`\alpha_l` is longitudinal dispersivity,
 :math:`\alpha_t` is  transverse dispersivity,
-and :math:`\boldsymbol{v}` is average pore velocity.
+:math:`\boldsymbol{v}` is average pore velocity, 
+and :math:`\phi_{eff}` is effective transport porosity.
+Amanzi supports two additional models for dispersivity with 3 and 4 parameters.
 
 
 Physical models and assumptions

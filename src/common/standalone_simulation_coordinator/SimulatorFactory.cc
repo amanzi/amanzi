@@ -1,5 +1,20 @@
+/*
+  Simulator 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Daniil Svyatskiy (original version)
+*/
+
+#include "xercesc/util/PlatformUtils.hpp"
+
 #include "errors.hh"
 #include "exceptions.hh"
+#include "InputConverter.hh"
+#include "SimulatorFactory.hh"
 
 #ifdef ENABLE_Unstructured
 #include "AmanziUnstructuredGridSimulationDriver.hh"
@@ -8,18 +23,11 @@
 #include "amanzi_structured_grid_simulation_driver.H"
 #endif
 
-#include "xercesc/util/PlatformUtils.hpp"
-#include "InputConverter.hh"
-#include "SimulatorFactory.hh"
-
 using namespace std;
 XERCES_CPP_NAMESPACE_USE
 
-namespace Amanzi
-{
-
-namespace SimulatorFactory
-{
+namespace Amanzi {
+namespace SimulatorFactory {
 
 Simulator* Create(const std::string& input_filename)
 {
@@ -33,10 +41,9 @@ Simulator* Create(const std::string& input_filename)
   DOMElement* element = doc->getDocumentElement();
   XMLString::transcode(element->getTagName(), str, 99);
   string version;
-  if (strcmp(str, "amanzi_input") == 0)
+  if (strcmp(str, "amanzi_input") == 0) {
     version = "v2";
-  else
-  {
+  } else {
     if (strcmp(str, "ParameterList") == 0)
       version = "v1";
     else
@@ -45,30 +52,24 @@ Simulator* Create(const std::string& input_filename)
 
   // Figure out the type of input (structured, unstructured).
   string type;
-  if (version == "v2")
-  {
+  if (version == "v2") {
     XMLString::transcode("type", xstr, 99);
     if (not element->hasAttribute(xstr)) 
       Exceptions::amanzi_throw(Errors::Message("Invalid input file (no 'type' attribute in amanzi_input)."));
     XMLString::transcode(element->getAttribute(xstr), str, 99);
     type = str;
-  }
-  else
-  {
+  } else {
     // We check the parameter lists for the Structured tag. If we don't 
     // find this, we assume it to be unstructured.
     type = "unstructured";
     XMLString::transcode("ParameterList", xstr, 99);
     DOMNodeList* nodes = doc->getElementsByTagName(xstr);
-    for (int i = 0; i < nodes->getLength(); ++i)
-    {
+    for (int i = 0; i < nodes->getLength(); ++i) {
       DOMElement* element = static_cast<DOMElement*>(nodes->item(i));
-      if (element != NULL)
-      {
+      if (element != NULL) {
         XMLString::transcode("name", xstr, 99);
         XMLString::transcode(element->getAttribute(xstr), str, 99);
-        if (strcmp(str, "Structured") == 0)
-        {
+        if (strcmp(str, "Structured") == 0) {
           type = "structured";
           break;
         }
@@ -78,25 +79,16 @@ Simulator* Create(const std::string& input_filename)
 
   // Create the appropriate simulator.
   Simulator* simulator = NULL;
-  if (type == "structured")
-  {
+  if (type == "structured") {
 #ifdef ENABLE_Structured
-    // Uncomment the following lines when the new v2 -> PP translator works.
-    if (version == "v2")
-      simulator = new AmanziStructuredGridSimulationDriver(input_filename, doc);
-    else 
-      amanzi_throw(Errors::Message("Input spec v1 is no longer supported by Amanzi-S."));
+    simulator = new AmanziStructuredGridSimulationDriver(input_filename, doc);
 #else
     amanzi_throw(Errors::Message("Structured not supported in current build"));
 #endif
-  }
-  else if (type == "unstructured")
-  {
+  } 
+  else if (type == "unstructured") {
 #ifdef ENABLE_Unstructured
-    if (version == "v2")
-      simulator = new AmanziUnstructuredGridSimulationDriver(input_filename, doc);
-    else // v1 or native.
-      simulator = new AmanziUnstructuredGridSimulationDriver(input_filename);
+    simulator = new AmanziUnstructuredGridSimulationDriver(input_filename, doc);
 #else
     amanzi_throw(Errors::Message("Unstructured not supported in current build"));
 #endif
@@ -109,6 +101,6 @@ Simulator* Create(const std::string& input_filename)
   return simulator;
 }
 
-} // end namespace SimulatorFactory
-} // end namespace amanzi
+} // namespace SimulatorFactory
+} // namespace Amanzi
 

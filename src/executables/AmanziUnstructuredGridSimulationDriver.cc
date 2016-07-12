@@ -13,7 +13,6 @@
 #include "CycleDriver.hh"
 #include "Domain.hh"
 #include "GeometricModel.hh"
-#include "InputTranslator.hh"
 #include "InputConverterU.hh"
 #include "InputAnalysis.hh"
 #include "MeshAudit.hh"
@@ -42,6 +41,7 @@
 using namespace std;
 
 // v1 spec constructor -- delete when we get rid of v1.2 spec.
+/*
 AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const string& xmlInFileName)
 {
   string spec;
@@ -54,6 +54,7 @@ AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(c
   else
     plist_ = new Teuchos::ParameterList(Amanzi::AmanziNewInput::translate(xmlInFileName, spec));
 }
+*/
 
 
 AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const string& xmlInFileName,
