@@ -29,10 +29,12 @@ namespace Operators {
 * Initialization of basic parameters.
 * NOTE: we assume that ghost values of field were already populated.
 ****************************************************************** */
-void ReconstructionCell::Init(
-    Teuchos::RCP<const Epetra_MultiVector> field, Teuchos::ParameterList& plist)
+void ReconstructionCell::Init(Teuchos::RCP<const Epetra_MultiVector> field, 
+                              Teuchos::ParameterList& plist,
+                              int component)
 {
   field_ = field;
+  component_ = component;
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -95,7 +97,7 @@ void ReconstructionCell::Compute()
       const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(cells[n]);
       for (int i = 0; i < dim; i++) xcc[i] = xc2[i] - xc[i];
 
-      double value = (*field_)[0][cells[n]] - (*field_)[0][c];
+      double value = (*field_)[component_][cells[n]] - (*field_)[component_][c];
       PopulateLeastSquareSystem(xcc, value, matrix, rhs);
     }
 
@@ -152,7 +154,7 @@ void ReconstructionCell::ComputeGradient(
       const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(cells[n]);
       for (int i = 0; i < dim; i++) xcc[i] = xc2[i] - xc[i];
 
-      double value = (*field_)[0][cells[n]] - (*field_)[0][c];
+      double value = (*field_)[component_][cells[n]] - (*field_)[component_][c];
       PopulateLeastSquareSystem(xcc, value, matrix, rhs);
     }
 
@@ -216,7 +218,7 @@ double ReconstructionCell::getValue(int cell, const AmanziGeometry::Point& p)
   Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(cell);
 
-  double value = (*field_)[0][cell];
+  double value = (*field_)[component_][cell];
   for (int i = 0; i < dim; i++) value += (*grad)[i][cell] * (p[i] - xc[i]);
 
   return value;
@@ -231,7 +233,7 @@ double ReconstructionCell::getValue(
 {
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(cell);
 
-  double value = (*field_)[0][cell];
+  double value = (*field_)[component_][cell];
   for (int i = 0; i < dim; i++) value += gradient[i] * (p[i] - xc[i]);
 
   return value;

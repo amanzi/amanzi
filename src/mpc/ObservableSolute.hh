@@ -7,7 +7,7 @@
 namespace Amanzi{
 
 
-  class ObservableSolute : public Observable{
+  class ObservableSolute : public virtual Observable{
   public:
     ObservableSolute(std::string variable,
                      std::string region,
