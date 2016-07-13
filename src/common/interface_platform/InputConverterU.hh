@@ -49,6 +49,7 @@ class InputConverterU : public InputConverter {
       compressibility_(false),
       mesh_rectangular_(false),
       transport_permeability_(false),
+      use_transport_porosity_(false),
       restart_(false) {}
 
   ~InputConverterU() { if (vo_ != NULL) delete vo_; }

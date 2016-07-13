@@ -14,8 +14,7 @@
 namespace Amanzi{
 
 class Observable : public IOEvent{
-public:
-  
+ public:
   Observable(std::string variable,
 	     std::string region,
 	     std::string functional,
@@ -42,11 +41,11 @@ public:
   }
 
 
-  virtual void ComputeObservation(State& S, double* value, double* volume){ assert(false);};
+  virtual void ComputeObservation(State& S, double* value, double* volume) { assert(false); }
 
   virtual int ComputeRegionSize(){return region_size_;};
 
-  //protected:    
+  // protected:    
 
   std::string variable_;
   std::string region_;
@@ -57,10 +56,8 @@ public:
   int region_size_;
   AmanziMesh::Entity_ID_List entity_ids_;
   Utils::Units units_;
-
 };
 
-  
-}
+} // namespace Amanzi
 
 #endif
