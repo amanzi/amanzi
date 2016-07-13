@@ -159,7 +159,7 @@ If this list is not specified, the default verbosity value is used.
   Option *extreme is used by the developers only. For communication between users and developers, 
   the recommended option is *high*. 
 
-* `"hide line prefix`" [bool] defines prefix for output messages. Defualt value is *true*.
+* `"hide line prefix`" [bool] defines prefix for output messages. Default value is *true*.
 
 * `"name`" [string] is the name of the prefix.
 
@@ -3307,7 +3307,7 @@ Diffusion operator
     that is used when the primary selection fails to satisfy all a priori conditions.
 
   * `"diffusion tensor`" [string] allows us to solve problems with symmetric and non-symmetric 
-    (but positive definite) tensors. Available options are *symmetric* (defualt) and *nonsymmetric*.
+    (but positive definite) tensors. Available options are *symmetric* (default) and *nonsymmetric*.
 
   * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
     coefficient, if any. Available options are `"upwind: face`", `"divk: cell-face`" (default),
@@ -3566,26 +3566,24 @@ Here is an example:
   </ParameterList>
 
 
-Polynomial function
-...................
+Distance function
+..................
 
-A generic polynomial function is given by the following expression:
+A distance function calculates distance from reference point :math:`x_0`
+using by the following expression:
 
 .. math::
-  f(x) = \sum_{j=0}^n c_j (x - x_0)^{p_j}
+  f(x) = \sum_{j=0}^{n} (x_j - x_{0,j})^2
 
-where :math:`c_j` are coefficients of monomials,
-:math:`p_j` are integer exponents, and :math:`x_0` is the reference point.
-Here is an example of a quartic polynomial:
+Note that the first parameter in :math:`x` can be time.
+Here is an example of a distance function:
 
 .. code-block:: xml
 
-  <ParameterList name="function-polynomial">
-    <Parameter name="coefficients" type="Array(double)" value="{1.0, 1.0}"/>
-    <Parameter name="exponents" type="Array(int)" value="{2, 4}"/>
-    <Parameter name="reference point" type="double" value="0.0"/>
+  <ParameterList name="function-distance">
+    <Parameter name="x0" type="Array(double)" value="{1.0, 3.0, 0.0}"/>
   </ParameterList>
-  
+
 
 Multi-variable linear function
 ..............................
@@ -3609,6 +3607,49 @@ Here is an example:
     <Parameter name="x0" type="Array(double)" value="{2.0, 3.0, 1.0}"/>
   </ParameterList>
   
+
+Polynomial function
+...................
+
+A generic polynomial function of one argument is given by the following expression:
+
+.. math::
+  f(x) = \sum_{j=0}^n c_j (x - x_0)^{p_j}
+
+where :math:`c_j` are coefficients of monomials,
+:math:`p_j` are integer exponents, and :math:`x_0` is the reference point.
+Here is an example of a quartic polynomial:
+
+.. code-block:: xml
+
+  <ParameterList name="function-polynomial">
+    <Parameter name="coefficients" type="Array(double)" value="{1.0, 1.0}"/>
+    <Parameter name="exponents" type="Array(int)" value="{2, 4}"/>
+    <Parameter name="reference point" type="double" value="0.0"/>
+  </ParameterList>
+  
+
+Multi-variable monomial function
+................................
+
+A multi-variable monomial function is given by the following expression:
+
+.. math::
+  f(x) = c \prod_{j=0}^{n} (x_j - x_{0,j})^{p_j}
+
+with the constant factor :math:`c`, the reference point :math:`x_0`, and
+integer exponents :math:`p_j`. 
+Note that the first parameter in :math:`x` can be time.
+Here is an example of monomial of degree 6 in three variables:
+
+.. code-block:: xml
+
+  <ParameterList name="function-monomial">
+    <Parameter name="c" type="double" value="1.0"/>
+    <Parameter name="x0" type="Array(double)" value="{1.0, 3.0, 0.0}"/>
+    <Parameter name="exponents" type="Array(int)" value="{2, 3, 1}"/>
+  </ParameterList>
+
 
 Separable function
 ..................
@@ -3652,7 +3693,7 @@ analysis tests.
 
 * `"parameter`" [double] specifies additional parameter `p` for math functions 
   with two arguments. These functions are `"a pow(x[0], p)`" and `"a mod(x[0], p)`".
-  Defualt value is 0.
+  Default value is 0.
 
 * `"shift`" [double] specifies shift of the function argument. Default is 0.
 
