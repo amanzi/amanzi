@@ -11,7 +11,7 @@
 
 namespace Amanzi{
 
-  class ObservableLineSegment : public Observable{
+  class ObservableLineSegment : public virtual Observable{
   public:
     ObservableLineSegment(std::string variable,
                           std::string region,
@@ -22,12 +22,6 @@ namespace Amanzi{
 
     virtual void ComputeObservation(State& S, double* value, double* volume);
     virtual int ComputeRegionSize();
-    void InterpolatedValues(State& S,
-                           std::string var,
-                           std::string interpolation,
-                           AmanziMesh::Entity_ID_List& ids,
-                           std::vector<AmanziGeometry::Point>& line_pnts,
-                           std::vector<double>& values);
     void ComputeInterpolationPoints(Teuchos::RCP<const AmanziGeometry::Region> reg_ptr);
 
   protected:
@@ -77,15 +71,6 @@ namespace Amanzi{
                                      AmanziMesh::CELL, AmanziMesh::OWNED,
                                      &entity_ids_, &lofs_);
 
-    // double sum=0.;
-    // for (int i=0;i<lofs_.size();i++){
-    //   std::cout<<lofs_[i]<<"\n";
-    //   sum += lofs_[i];
-    // }
-    // std::cout<<"Total "<<sum<<"\n";
-
-
-
     ComputeInterpolationPoints(reg_ptr);
          
     // find global meshblocksize
@@ -100,88 +85,13 @@ namespace Amanzi{
 
 
   void ObservableLineSegment::ComputeObservation(State& S, double* value, double* volume){
-
-    //double volume, value;
     Errors::Message msg;
-    int dim = mesh_ -> space_dimension();
-    // double rho = *S.GetScalarData("fluid_density");
-    // const Epetra_MultiVector& porosity = *S.GetFieldData("porosity")->ViewComponent("cell");    
-    // const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
-    // const Epetra_MultiVector& pressure = *S.GetFieldData("pressure")->ViewComponent("cell");
-  
-    std::vector<double> values(region_size_);
-
-    InterpolatedValues(S, variable_, interpolation_, entity_ids_, line_points_, values);
-
-    *value = 0.;
-    *volume = 0.;
-
-    if (weighting_=="none") {
-      for (int i=0; i<region_size_; i++){
-        *value += values[i]*lofs_[i];
-        *volume += lofs_[i];
-      }
-    } else if (weighting_=="flux norm") {
-      if (S.HasField("darcy_velocity")) {
-        const Epetra_MultiVector& darcy_vel =  *S.GetFieldData("darcy_velocity")->ViewComponent("cell");
-        for (int i=0; i<region_size_; i++){
-          int c = entity_ids_[i];
-          double norm = 0.;
-          for (int j=0; j<dim;j++) norm += darcy_vel[j][c]*darcy_vel[j][c];
-          norm = sqrt(norm);
-          *value += values[i]*lofs_[i]*norm;
-          *volume += lofs_[i];
-        }
-      }
-    }
-
+    
+    msg << "Observation should be computed in classes inheritated from ObservableLineSegment\n";
+    Exceptions::amanzi_throw(msg);
 
   }
 
-
-  void ObservableLineSegment::InterpolatedValues(State& S,
-                                                std::string var,
-                                                std::string interpolation,
-                                                AmanziMesh::Entity_ID_List& ids,
-                                                std::vector<AmanziGeometry::Point>& line_pnts,
-                                                std::vector<double>& values){
-
-    // if (!S.HasField(var)) {
-    //   Errors::Message msg;
-    //   msg <<"InterpolatedValue: field "<<var<<" doesn't exist in state";
-    //   Exceptions::amanzi_throw(msg);
-    // }
-
-    Teuchos::RCP<const Epetra_MultiVector> vector;
-    if (var == "hydraulic head"){
-      vector = S.GetFieldData("hydraulic_head")->ViewComponent("cell", true);
-    }else{
-      vector = S.GetFieldData(var)->ViewComponent("cell", true);
-    }
-
-    if (interpolation == "linear") {
-      Teuchos::ParameterList plist;
-      Operators::ReconstructionCell lifting(mesh_);
-      std::vector<AmanziGeometry::Point> gradient; 
-
-      lifting.Init(vector, plist);
-      lifting.ComputeGradient(ids, gradient);
-
-      for (int i = 0; i < ids.size(); i++) {
-        int c = ids[i];
-        values[i] = lifting.getValue( gradient[i], c, line_pnts[i]);
-      }
-    } else if (interpolation == "constant") {    
-      for (int i = 0; i < ids.size(); i++) {
-        int c = ids[i];
-        values[i] = (*vector)[0][c];
-      }
-    } else {
-       Errors::Message msg;
-      msg <<"InterpolatedValue: unknown interpolation method "<<interpolation;
-      Exceptions::amanzi_throw(msg);
-    }
-  }
 
   void ObservableLineSegment::ComputeInterpolationPoints(Teuchos::RCP<const AmanziGeometry::Region> reg_ptr) {
 

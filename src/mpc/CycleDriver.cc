@@ -853,7 +853,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
         dt = Advance(dt);
         //dt = get_dt(fail);
-
+        //S_->WriteStatistics(vo_);
       }  // while not finished
 
 

@@ -38,7 +38,7 @@ class ReconstructionCell : public Reconstruction {
 
   // main members for base class
   // -- save pointer to the already distributed field.
-  void Init(Teuchos::RCP<const Epetra_MultiVector> field, Teuchos::ParameterList& plist);
+  void Init(Teuchos::RCP<const Epetra_MultiVector> field, Teuchos::ParameterList& plist, int component = 0);
 
   // -- compute gradient and keep it internally.
   void Compute();

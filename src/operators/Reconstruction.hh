@@ -27,11 +27,12 @@ namespace Operators {
 class Reconstruction {  
  public:
   Reconstruction() {};
-  Reconstruction(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh), field_(Teuchos::null) {};
+  Reconstruction(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh), field_(Teuchos::null), component_(0) {};
   ~Reconstruction() {};
 
   // main members
   virtual void Init(Teuchos::RCP<const Epetra_MultiVector> field, Teuchos::ParameterList& plist) { field_ = field; }
+  virtual void Init(Teuchos::RCP<const Epetra_MultiVector> field, Teuchos::ParameterList& plist, int component) { field_ = field; component_ = component;}
   virtual void Compute() = 0;
 
   // apply internal or extrnal limiter.
@@ -43,6 +44,7 @@ class Reconstruction {
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<const Epetra_MultiVector> field_;
+  int component_;
 };
 
 }  // namespace Operators

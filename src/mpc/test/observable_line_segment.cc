@@ -25,8 +25,7 @@
 #include "MeshAudit.hh"
 #include "State.hh"
 
-#include "ObservableLineSegment.hh"
-
+#include "ObservableLineSegmentAqueous.hh"
 
 
 TEST(OBSERVABLE_LINE_SEGMENT){
@@ -107,7 +106,7 @@ TEST(OBSERVABLE_LINE_SEGMENT){
 
     
   Teuchos::RCP<ObservableLineSegment> observe = 
-    Teuchos::rcp(new ObservableLineSegment(var, region, func, obs_plist, units_plist, mesh));
+    Teuchos::rcp(new ObservableLineSegmentAqueous(var, region, func, obs_plist, units_plist, mesh));
 
   double value, volume;
   observe->ComputeRegionSize();

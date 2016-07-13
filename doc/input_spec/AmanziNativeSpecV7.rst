@@ -4558,7 +4558,8 @@ User-defined regions are constructed using the following syntax
 
    * Shape [list] Geometric model primitive, choose exactly one of the following: 
      `"region: point`", `"region: box`", `"region: plane`", `"region: labeled set`", 
-     `"region: layer`", `"region: surface`", `"region: boundary`", or `"region: box volume fractions`".
+     `"region: layer`", `"region: surface`", `"region: boundary`",
+     `"region: box volume fractions`", or `"region: line segment"`.
 
 Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex 
 definitions based on triangulated surface files.  
@@ -4821,6 +4822,30 @@ they are equivalent to rectangles on a plane or segments on a line.
    </ParameterList>
 
 This example defines a degenerate box, a square on a surface *z=1*.
+
+Line Segment
+....................
+
+List *region: line segment* desribes a region defined by a line
+segment. This region is a set of cells which intersect with a line
+segment.  The line segment is allowed to intersect with one or more cells. Zero length
+line segments are allowed. The line segment is defined by its ends
+points.
+
+* `"end coordinate"` [Array(double)] Location of one end of a line
+  segment.
+
+* `"opposite end coordinate`" [Array(double)] Location of the opposite
+  end of a line segment.
+
+.. code-block:: xml
+
+   <ParameterList name="WELL"> <!-- parent list -->
+      <ParameterList name="region: line segment">
+        <Parameter name="end coordinate" type="Array(double)" value="{497542.44, 5393755.77, 0.0}"/>
+        <Parameter name="opposite end coordinate" type="Array(double)" value="{497542.44, 5393755.77, 100.0}"/>
+      </ParameterList>
+    </ParameterList>     
 
 
 Notes and example

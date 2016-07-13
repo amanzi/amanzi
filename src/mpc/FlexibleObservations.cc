@@ -163,7 +163,7 @@ int FlexibleObservations::MakeObservations(State& S)
       if ((i->second)->functional_ == "observation data: integral") {  
         data_triplet.value = result;  
       } else if ((i->second)->functional_ == "observation data: point") {
-        data_triplet.value = result / vresult;
+        data_triplet.value = result / vresult;        
       }
       
       data_triplet.is_valid = true;
