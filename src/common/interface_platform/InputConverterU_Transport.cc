@@ -265,6 +265,9 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   out_list.set<int>("number of aqueous components", phases_["water"].size());
   out_list.set<int>("number of gaseous components", phases_["air"].size());
 
+  out_list.sublist("physical models and assumptions")
+      .set<bool>("effective transport porosity", use_transport_porosity_);
+
   // cross coupling of PKs
   out_list.sublist("physical models and assumptions")
       .set<bool>("permeability field is required", transport_permeability_);

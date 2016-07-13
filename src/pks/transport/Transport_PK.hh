@@ -198,13 +198,13 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   Teuchos::RCP<State> S_;
   std::string passwd_;
 
-  bool subcycling_;
+  bool subcycling_, use_transport_porosity_;
   int dim;
 
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
   Teuchos::RCP<const Epetra_MultiVector> darcy_flux;
-  Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi;
+  Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi, transport_phi;
   
 #ifdef ALQUIMIA_ENABLED
   Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk_;

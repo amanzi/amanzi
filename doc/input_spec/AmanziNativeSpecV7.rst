@@ -410,6 +410,12 @@ Primary and derived fields
   * saturation [-]
   * hydraulic_head [m]
   * darcy_flux (more precisely, volumetric flow rate) [m^3/s] 
+  * porosity [-]
+  * transport_porosity [-] 
+
+* Static fields
+
+  * permeability [m^2]
 
 
 Field evaluators
@@ -1859,10 +1865,11 @@ The conceptual PDE model for the fully saturated flow is
   \frac{\partial (\phi s_l C_l)}{\partial t} 
   =
   - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C_l) 
-  + \boldsymbol{\nabla} \cdot (\phi s_l (\boldsymbol{D}_l + \tau \boldsymbol{M}_l) \boldsymbol{\nabla} C_l) + Q,
+  + \boldsymbol{\nabla} \cdot (\phi_e s_l (\boldsymbol{D}_l + \tau \boldsymbol{M}_l) \boldsymbol{\nabla} C_l) + Q,
 
 where 
-:math:`\phi` is porosity,
+:math:`\phi` is total porosity,
+:math:`\phi_e` is effective transport porosity,
 :math:`s_l` is liquid saturation, 
 :math:`Q` is source or sink term,
 :math:`\boldsymbol{q}_l` is the Darcy velocity,
@@ -1876,12 +1883,14 @@ tensor has the following form:
   \boldsymbol{D}_l 
   = \alpha_t \|\boldsymbol{v}\| \boldsymbol{I} 
   + \left(\alpha_l-\alpha_t \right) 
-    \frac{\boldsymbol{v} \boldsymbol{v}}{\|\boldsymbol{v}\|},
+    \frac{\boldsymbol{v} \boldsymbol{v}}{\|\boldsymbol{v}\|}, \qquad
+  \boldsymbol{v} = \frac{\boldsymbol{q}}{\phi_e}
 
 where
 :math:`\alpha_l` is longitudinal dispersivity,
 :math:`\alpha_t` is  transverse dispersivity,
 and :math:`\boldsymbol{v}` is average pore velocity.
+Amanzi supports two additional models for dispersivity with 3 and 4 parameters.
 
 
 Physical models and assumptions
@@ -1900,6 +1909,10 @@ This list is often generated or extended by a high-level MPC PK.
 * `"multiscale model`" [string] specifies a multiscale model.
   Available options are `"single porosity`" (default) and `"dual porosity`".
 
+* `"effective transport porosity`" [bool] If *true*, effective transport porosity
+  will be used by dispersive-diffusive fluxes instead of total porosity. 
+  Default is *false*.
+
 .. code-block:: xml
 
    <ParameterList name="transport">  <!-- parent list -->
@@ -1907,6 +1920,7 @@ This list is often generated or extended by a high-level MPC PK.
        <Parameter name="gas diffusion" type="bool" value="false"/>
        <Parameter name="permeability field is required" type="bool" value="false"/>
        <Parameter name="multiscale model" type="string" value="single porosity"/>
+       <Parameter name="effective transport porosity" type="bool" value="false"/>
      </ParameterList>
    </ParameterList>
 

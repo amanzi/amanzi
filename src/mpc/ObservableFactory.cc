@@ -32,17 +32,16 @@
 
 namespace Amanzi {
 
-Teuchos::RCP<Observable>  CreateObservable(
-	           Teuchos::ParameterList& coord_plist,
-                   Teuchos::ParameterList& observable_plist,
-                   Teuchos::ParameterList& units_plist,
-		   Teuchos::RCP<AmanziMesh::Mesh> mesh){
+Teuchos::RCP<Observable> CreateObservable(
+    Teuchos::ParameterList& coord_plist,
+    Teuchos::ParameterList& observable_plist,
+    Teuchos::ParameterList& units_plist,
+    Teuchos::RCP<AmanziMesh::Mesh> mesh) {
 
   Teuchos::RCP<Observable> observe;
   std::string var = observable_plist.get<std::string>("variable");
   std::string func = observable_plist.get<std::string>("functional");
   std::string region = observable_plist.get<std::string>("region");
-
 
   Teuchos::Array<std::string> comp_names;
   int num_liquid;
@@ -65,16 +64,15 @@ Teuchos::RCP<Observable>  CreateObservable(
 
   bool obs_solute = obs_solute_liquid || obs_solute_gas;
  
-
-  if (obs_solute){
+  if (obs_solute) {
     observe = Teuchos::rcp(new ObservableSolute(var, region, func, observable_plist, units_plist, mesh));
     Teuchos::rcp_dynamic_cast<ObservableSolute>(observe)->RegisterComponentNames(comp_names.toVector(), num_liquid, tcc_index);
-  }else if (obs_aqueous){
+  } else if (obs_aqueous) {
     Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh -> geometric_model();
     Teuchos::RCP<const AmanziGeometry::Region> reg_ptr = gm_ptr->FindRegion(region);
-    if (reg_ptr->type()==AmanziGeometry::LINE_SEGMENT){
+    if (reg_ptr->type()==AmanziGeometry::LINE_SEGMENT) {
       observe = Teuchos::rcp(new ObservableLineSegment(var, region, func, observable_plist, units_plist, mesh));
-    }else{
+    } else {
       observe = Teuchos::rcp(new ObservableAqueous(var, region, func, observable_plist, units_plist, mesh));
     }
   }
@@ -82,8 +80,7 @@ Teuchos::RCP<Observable>  CreateObservable(
   observe->ComputeRegionSize();
 
   return observe;
-
 }
 
+} // namespace Amanzi
 
-}
