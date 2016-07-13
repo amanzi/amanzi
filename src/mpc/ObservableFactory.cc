@@ -51,9 +51,6 @@ Teuchos::RCP<Observable>  CreateObservable(
 
   num_liquid = coord_plist.get<int>("number of liquid components", comp_names.size());
 
-
-
-
   // check if observation of solute was requested
   bool obs_solute_liquid(false), obs_solute_gas(false), obs_aqueous(true);     
   int tcc_index(-1);

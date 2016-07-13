@@ -77,15 +77,6 @@ namespace Amanzi{
                                      AmanziMesh::CELL, AmanziMesh::OWNED,
                                      &entity_ids_, &lofs_);
 
-    // double sum=0.;
-    // for (int i=0;i<lofs_.size();i++){
-    //   std::cout<<lofs_[i]<<"\n";
-    //   sum += lofs_[i];
-    // }
-    // std::cout<<"Total "<<sum<<"\n";
-
-
-
     ComputeInterpolationPoints(reg_ptr);
          
     // find global meshblocksize
@@ -110,6 +101,7 @@ namespace Amanzi{
     // const Epetra_MultiVector& pressure = *S.GetFieldData("pressure")->ViewComponent("cell");
   
     std::vector<double> values(region_size_);
+    double weight_corr = 1e-15;
 
     InterpolatedValues(S, variable_, interpolation_, entity_ids_, line_points_, values);
 
@@ -127,13 +119,18 @@ namespace Amanzi{
         for (int i=0; i<region_size_; i++){
           int c = entity_ids_[i];
           double norm = 0.;
+          //std::cout<<"vel "<<darcy_vel[0][c]<<" "<<darcy_vel[1][c]<<" "<<darcy_vel[2][c]<<"\n";
           for (int j=0; j<dim;j++) norm += darcy_vel[j][c]*darcy_vel[j][c];
-          norm = sqrt(norm);
+          norm = sqrt(norm) + weight_corr;
           *value += values[i]*lofs_[i]*norm;
-          *volume += lofs_[i];
+          *volume += lofs_[i]*norm;
+          //std::cout<<" val "<<values[i]<<" weight "<<lofs_[i]<<" "<<norm<<"\n";
         }
+        //std::cout<<"value "<<*value<<" vol "<<*volume<<"\n";
       }
     }
+
+
 
 
   }
@@ -153,16 +150,33 @@ namespace Amanzi{
     // }
 
     Teuchos::RCP<const Epetra_MultiVector> vector;
+    Teuchos::RCP<const CompositeVector> cv;
+    
     if (var == "hydraulic head"){
-      vector = S.GetFieldData("hydraulic_head")->ViewComponent("cell", true);
+      if (!S.HasField("hydraulic_head")) {
+        Errors::Message msg;
+        msg <<"InterpolatedValue: field hydraulic_head doesn't exist in state";
+        Exceptions::amanzi_throw(msg);
+      }
+      cv = S.GetFieldData("hydraulic_head");
+      vector = cv->ViewComponent("cell", true);
+    // }else if (var==){     
     }else{
-      vector = S.GetFieldData(var)->ViewComponent("cell", true);
+      if (!S.HasField(var)) {
+        Errors::Message msg;
+        msg <<"InterpolatedValue: field "<<var<<" doesn't exist in state";
+        Exceptions::amanzi_throw(msg);
+      }
+      cv = S.GetFieldData(var);
+      vector = cv->ViewComponent("cell", true);
     }
 
     if (interpolation == "linear") {
       Teuchos::ParameterList plist;
       Operators::ReconstructionCell lifting(mesh_);
       std::vector<AmanziGeometry::Point> gradient; 
+      
+      cv->ScatterMasterToGhosted();
 
       lifting.Init(vector, plist);
       lifting.ComputeGradient(ids, gradient);
