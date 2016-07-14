@@ -20,7 +20,7 @@ namespace Amanzi {
 
 class MonomialFunction : public Function {
  public:
-  MonomialFunction(double c, const std::vector<double> &x0, const std::vector<int> &p);
+  MonomialFunction(double c, const std::vector<double>& x0, const std::vector<int>& p);
   ~MonomialFunction() {}
   MonomialFunction* Clone() const { return new MonomialFunction(*this); }
   double operator()(const std::vector<double>& x) const;

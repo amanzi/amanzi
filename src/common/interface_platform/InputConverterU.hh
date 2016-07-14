@@ -132,6 +132,9 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList CreateRegionAll_();
   std::string CreateBGDFile(std::string& filename);
 
+  // -- complex functions
+  void TranslateFunctionGaussian_(const std::vector<double>& data, Teuchos::ParameterList& bcfn);
+
   void FilterEmptySublists_(Teuchos::ParameterList& plist);
   void MergeInitialConditionsLists_(Teuchos::ParameterList& plist);
 

@@ -576,8 +576,8 @@ SUITE(static_head_factory) {
     CHECK_THROW(Function *f = factory.Create(list), Errors::Message);
     Teuchos::ParameterList &sublist = list.sublist("function-static-head");
     //sublist.set("p0", 1.0);
-    sublist.set("density", 4.0);
-    sublist.set("gravity", 0.5);
+    sublist.set("density", 4.0)
+           .set("gravity", 0.5);
     sublist.sublist("water table elevation").sublist("function-constant").set("value",3.0);
     //Function *f = factory.Create(list);
     CHECK_THROW(Function *f = factory.Create(list), Errors::Message);
@@ -604,10 +604,13 @@ SUITE(distance_factory) {
   {
     Teuchos::ParameterList list;
     Teuchos::ParameterList& sublist = list.sublist("function-distance");
-    Teuchos::Array<double> x0(2);
+    Teuchos::Array<double> x0(2), metric(2);
     x0[0] = 1.0;
     x0[1] = 0.0;
-    sublist.set<Teuchos::Array<double> >("x0", x0);
+    metric[0] = 1.0;
+    metric[1] = 1.0;
+    sublist.set<Teuchos::Array<double> >("x0", x0)
+           .set<Teuchos::Array<double> >("metric", metric);
     FunctionFactory fact;
     Function *f = fact.Create(list);
     std::vector<double> x(2, 2.0);

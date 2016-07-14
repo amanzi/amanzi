@@ -470,6 +470,16 @@ void InputConverterU::TranslateTransportBCsGroup_(
       } 
     }
 
+    // check for spatially dependent BCs. Only one is allowed (FIXME)
+    bool space_bc(false);
+    std::vector<double> data;
+    element = static_cast<DOMElement*>(same_list[0]);
+    std::string space_bc_name = GetAttributeValueS_(element, "space_function", TYPE_NONE, false);
+    if (space_bc_name == "gaussian") {
+      space_bc = true;
+      data = GetAttributeVector_(element, "space_data");
+    }
+
     // create vectors of values and forms
     std::vector<double> times, values;
     std::vector<std::string> forms;
@@ -486,7 +496,9 @@ void InputConverterU::TranslateTransportBCsGroup_(
     bc.set<Teuchos::Array<std::string> >("regions", regions);
 
     Teuchos::ParameterList& bcfn = bc.sublist("boundary concentration");
-    if (times.size() == 1) {
+    if (space_bc) {
+      TranslateFunctionGaussian_(data, bcfn);
+    } else if (times.size() == 1) {
       bcfn.sublist("function-constant").set<double>("value", values[0]);
     } else {
       bcfn.sublist("function-tabular")

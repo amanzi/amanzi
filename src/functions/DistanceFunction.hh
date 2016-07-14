@@ -20,13 +20,13 @@ namespace Amanzi {
 
 class DistanceFunction : public Function {
  public:
-  DistanceFunction(const std::vector<double> &x0);
+  DistanceFunction(const std::vector<double>& x0, const std::vector<double>& metric);
   ~DistanceFunction() {}
   DistanceFunction* Clone() const { return new DistanceFunction(*this); }
   double operator()(const std::vector<double>& x) const;
 
  private:
-  std::vector<double> x0_;
+  std::vector<double> x0_, metric_;
 };
 
 } // namespace Amanzi

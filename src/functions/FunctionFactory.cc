@@ -534,7 +534,8 @@ Function* FunctionFactory::create_distance(Teuchos::ParameterList& params) const
   Function *f;
   try {
     std::vector<double> x0(params.get<Teuchos::Array<double> >("x0").toVector());
-    f = new DistanceFunction(x0);
+    std::vector<double> metric(params.get<Teuchos::Array<double> >("metric").toVector());
+    f = new DistanceFunction(x0, metric);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-distance parameter error: " << msg.what();

@@ -520,6 +520,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
   node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
   if (!node_list) return out_list;
 
+  std::set<std::string> active_bcs;  // for statistics
+
   int ibc(0);
   children = node_list->item(0)->getChildNodes();
 
@@ -551,19 +553,32 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
       Exceptions::amanzi_throw(msg);
     }
 
-    // -- identify global BC that do not require forms
+    // -- identify a BC that do not require forms (the global BC)
     bool global_bc(false);
     if (bctype_in == "linear_pressure" || bctype_in == "linear_hydrostatic") {
       global_bc = true;
     }
 
+    // -- identify a hard-coded BC that uses spatially dependent functions
+    //    temporarily, we assume that it is also the global BC.
+    bool space_bc(false);
+    element = static_cast<DOMElement*>(same_list[0]);
+    std::string space_bc_name = GetAttributeValueS_(element, "space_function", TYPE_NONE, false);
+    if (space_bc_name == "gaussian") {
+      global_bc = true;
+      space_bc = true;
+    }
+
     // -- process global and local BC separately
     double refv;
-    std::vector<double> grad, refc;
+    std::vector<double> grad, refc, data;
     std::vector<double> times, values, fluxes;
     std::vector<std::string> forms;
 
-    if (global_bc) {
+    if (space_bc) {
+      element = static_cast<DOMElement*>(same_list[0]);
+      data = GetAttributeVector_(element, "space_data");
+    } else if (global_bc) {
       element = static_cast<DOMElement*>(same_list[0]);
       refv = GetAttributeValueD_(element, "reference_value");
       grad = GetAttributeVector_(element, "gradient_value");
@@ -623,6 +638,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
     std::stringstream ss;
     ss << "BC " << ibc++;
 
+    active_bcs.insert(bctype);
+
     // save in the XML files  
     Teuchos::ParameterList& tbc_list = out_list.sublist(bctype);
     Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
@@ -633,7 +650,9 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
         transport_diagnostics_.insert(transport_diagnostics_.end(), regions.begin(), regions.end());
 
     Teuchos::ParameterList& bcfn = bc.sublist(bcname);
-    if (global_bc) {
+    if (space_bc_name == "gaussian") {
+      TranslateFunctionGaussian_(data, bcfn);
+    } else if (global_bc) {
       grad.insert(grad.begin(), 0.0);
       refc.insert(refc.begin(), 0.0);
 
@@ -671,6 +690,16 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
       bc_tmp.sublist(bcname) = bcfn;
       bc.remove(bcname);
     }
+  }
+
+  // output statistics
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "active BCs: ";
+    for (std::set<std::string>::iterator it = active_bcs.begin(); it != active_bcs.end(); ++it) {
+      *vo_->os() << *it << ", ";
+    }
+    *vo_->os() << "no flow (default)" << std::endl;
   }
 
   return out_list;
@@ -769,6 +798,44 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
   }
 
   return out_list;
+}
+
+
+/* ******************************************************************
+* Translate function Gaussian.
+* Data format: d0 exp(-|x-d1|^2 / (2 d4^2)) where d1 is space vector.
+****************************************************************** */
+void InputConverterU::TranslateFunctionGaussian_(
+    const std::vector<double>& data, Teuchos::ParameterList& bcfn)
+{
+  if (data.size() != dim_ + 2) {
+    Errors::Message msg;
+    msg << "Gaussian function requires " << dim_ + 2 << " parameters.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  std::vector<double> data_tmp(data);
+
+  bcfn.sublist("function-composition")
+      .sublist("function1").sublist("function-standard-math")
+      .set<std::string>("operator", "exp")
+      .set<double>("amplitude", data_tmp[0]);
+
+  double sigma = data_tmp[dim_ + 1];
+  double factor = -0.5 / sigma / sigma;  
+  data_tmp.pop_back();
+
+  Teuchos::ParameterList& bc_tmp = bcfn.sublist("function-composition")
+     .sublist("function2").sublist("function-multiplicative");
+    
+  std::vector<double> metric(data_tmp.size(), 1.0);
+  metric[0] = 0.0;  // ignore time distance
+  data_tmp[0] = 0.0;
+  bc_tmp.sublist("function1").sublist("function-distance")
+      .set<Teuchos::Array<double> >("x0", data_tmp)
+      .set<Teuchos::Array<double> >("metric", metric);
+  bc_tmp.sublist("function2").sublist("function-constant")
+      .set<double>("value", factor);
 }
 
 }  // namespace AmanziInput

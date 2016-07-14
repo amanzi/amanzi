@@ -14,9 +14,15 @@
 
 namespace Amanzi {
 
-DistanceFunction::DistanceFunction(const std::vector<double>& x0)
+DistanceFunction::DistanceFunction(const std::vector<double>& x0, const std::vector<double>& metric)
 {
+  if (x0.size() != metric.size()) {
+    Errors::Message m;
+    m << "Mismatch of metric and point dimensions.";
+    Exceptions::amanzi_throw(m);
+  }
   x0_ = x0;
+  metric_ = metric;
 }
 
 
@@ -30,7 +36,7 @@ double DistanceFunction::operator()(const std::vector<double>& x) const
   }    
   for (int j = 0; j < x0_.size(); ++j) {
     tmp = x[j] - x0_[j];
-    y += tmp * tmp;
+    y += metric_[j] * tmp * tmp;
   }
   return y;
 }
