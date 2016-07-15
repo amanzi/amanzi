@@ -230,6 +230,7 @@ void FlexibleObservations::FlushObservations()
 {
   if (obs_list_->isParameter("observation output filename")) {
     std::string obs_file = obs_list_->get<std::string>("observation output filename");
+    std::string utime = obs_list_->get<std::string>("time unit", "s");
     int precision = obs_list_->get<int>("precision", 16);
 
     if (rank_ == 0) {
@@ -239,8 +240,8 @@ void FlexibleObservations::FlushObservations()
       out.precision(precision);
       out.setf(std::ios::scientific);
 
-      out << "Observation Name, Region, Functional, Variable, Time, Value\n";
-      out << "===========================================================\n";
+      out << "Observation Name, Region, Functional, Variable, Time [" << utime <<"], Value\n";
+      out << "===============================================================\n";
 
       for (Teuchos::ParameterList::ConstIterator i = obs_list_->begin(); i != obs_list_->end(); ++i) {
         std::string label = obs_list_->name(i);
@@ -259,7 +260,7 @@ void FlexibleObservations::FlushObservations()
                   << ind_obs_list.get<std::string>("region") << ", "
                   << ind_obs_list.get<std::string>("functional") << ", "
                   << var << ", "
-                  << od[j].time << ", "
+                  << units_.convert_time(od[j].time, utime) << ", "
                   << (((var == "permeability-weighted drawdown" || 
                         var == "drawdown") && !j) ? 0.0 : od[j].value) << '\n';
               if (!out.good()) {

@@ -12,6 +12,8 @@
 */
 
 #include "ObservableSolute.hh"
+#include "RegionPlane.hh"
+#include "RegionPolygon.hh"
 
 namespace Amanzi {
 

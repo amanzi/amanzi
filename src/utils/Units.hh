@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov
+  Author: Konstantin Lipnikov
 */
 
 #ifndef AMANZI_UNITS_HH_
@@ -78,6 +78,9 @@ class Units {
   inline void Init(Teuchos::ParameterList& plist) {
     Init(plist.get<std::string>("concentration", "molar"));
   }
+
+ // conversion of units
+ double convert_time(double t, const std::string& unit); 
 
  private:
   double pressure_factor_, tcc_factor_;

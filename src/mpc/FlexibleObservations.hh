@@ -30,7 +30,7 @@
 
 namespace Amanzi {
 
-  //class Observable;
+// class Observable;
 
 class FlexibleObservations {
  public:
