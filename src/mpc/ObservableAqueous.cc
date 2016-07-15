@@ -7,6 +7,8 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Markus Berndt  
+           Konstantin Lipnikov
+           Daniil Svyatsky
 */
 
 #include <map>

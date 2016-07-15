@@ -105,7 +105,7 @@ FlexibleObservations::FlexibleObservations(
       std::string var = observable_plist.get<std::string>("variable");
       observations.insert(std::pair<std::string, Teuchos::RCP<Observable> >(
           obs_list_->name(i), 
-	  CreateObservable(*coordinator_list,  observable_plist, *units_list, mesh)));
+	  CreateObservable(*coordinator_list, observable_plist, *units_list, mesh)));
           // Observable(var, observable_plist.get<std::string>("region"),
           //            observable_plist.get<std::string>("functional"),
           //            observable_plist, comm)));

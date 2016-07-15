@@ -6,7 +6,9 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Markus Berndt  
+  Authors: Markus Berndt
+           Konstantin Lipnikov
+           Daniil Svyatsky
 */
 
 #ifndef AMANZI_OBSERVABLE_AQUEOUS_HH
