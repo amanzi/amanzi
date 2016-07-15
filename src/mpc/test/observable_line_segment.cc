@@ -57,6 +57,11 @@ TEST(OBSERVABLE_LINE_SEGMENT){
   Teuchos::Array<double> xyz0 = well_list.get<Teuchos::Array<double> >("end coordinate"); 
   Teuchos::Array<double> xyz1 = well_list.get<Teuchos::Array<double> >("opposite end coordinate"); 
 
+  Teuchos::ParameterList well_list_2 = regions_list.get<Teuchos::ParameterList>("Well3013").get<Teuchos::ParameterList>("region: line segment");
+
+  Teuchos::Array<double> xyz0_2 = well_list_2.get<Teuchos::Array<double> >("end coordinate"); 
+  Teuchos::Array<double> xyz1_2 = well_list_2.get<Teuchos::Array<double> >("opposite end coordinate"); 
+
 
   FrameworkPreference pref;
   pref.clear();
@@ -97,19 +102,18 @@ TEST(OBSERVABLE_LINE_SEGMENT){
   std::string var="test_field";
   std::string func="observation data: point";
   std::string region="Well3012";
-
   obs_plist.set<std::string>("interpolation", "linear");
   obs_plist.set<std::string>("weighting", "none");
   obs_plist.set<std::string>("region", region);
   obs_plist.set<std::string>("variable", var);
   obs_plist.set<std::string>("functional", func);
 
-    
+  /******************************* Region  Well3012 *************/   
   Teuchos::RCP<ObservableLineSegment> observe = 
     Teuchos::rcp(new ObservableLineSegmentAqueous(var, region, func, obs_plist, units_plist, mesh));
 
   double value, volume;
-  observe->ComputeRegionSize();
+  observe -> ComputeRegionSize();
   observe -> ComputeObservation(*S, &value, &volume);
 
   Teuchos::Array<double> xyzc(3);
@@ -120,12 +124,31 @@ TEST(OBSERVABLE_LINE_SEGMENT){
     len += (xyz0[i] - xyz1[i])*(xyz0[i] - xyz1[i]);
   }
   len = sqrt(len);
-
   double exact_val = A*xyzc[0] + B*xyzc[1] + C*xyzc[2] + D;
 
-  // std::cout<<value<<" "<<volume<<"\n";
-  // std::cout<<exact_val*len<<" "<<len<<"\n";
+  /******************************* Region  Well3013 *************/   
+  /*** One cell region ****/
 
-  CHECK(std::abs(exact_val*len - value) < 1e-10);
+  region="Well3013";
+
+  Teuchos::RCP<ObservableLineSegment> observe2 = 
+    Teuchos::rcp(new ObservableLineSegmentAqueous(var, region, func, obs_plist, units_plist, mesh));
+
+  double value2, volume2;
+  observe2 -> ComputeRegionSize();
+  observe2 -> ComputeObservation(*S, &value2, &volume2);
+  double len2 = 0.;
+  for (int i=0;i<3;i++){
+    xyzc[i] = 0.5*(xyz0_2[i] + xyz1_2[i]);
+    len2 += (xyz0_2[i] - xyz1_2[i])*(xyz0_2[i] - xyz1_2[i]);
+    std::cout<<xyzc[i]<<" "<<xyz0_2[i]<<" "<<xyz1_2[i]<<"\n";
+  }
+  len2 = sqrt(len2);
+  double exact_val2 = A*xyzc[0] + B*xyzc[1] + C*xyzc[2] + D;
+
+  std::cout<<value2<<" "<<volume2<<"\n";
+  std::cout<<exact_val2*len2<<" "<<len2<<"\n";
+
+  CHECK((std::abs(exact_val*len - value) < 1e-10) && (std::abs(exact_val2*len2 - value2) < 1e-10));
 
 }

@@ -77,14 +77,16 @@ double RegionLineSegment::intersect(
     line[0] = p0_;
     line[1] = p1_;
     std::vector<Point> inter_pnts(2);
-    Point v1(p0_.dim()), vp(p0_.dim());    
+    Point v1(p0_.dim()), vp(p0_.dim());  
+    double tau[2]={0., 0.};
     int num_int = 0;
+    int num_line_int = 0;
     for (int i=0; i<faces.size(); i++){
       intersct = false;
       std::vector<Point> plane(faces[i].size());
       for (int j=0;j<plane.size();j++) plane[j] = polytope[faces[i][j]];
       double t = PlaneLineIntersection(plane, line);
-      if ((t<0)||(t>1)) continue;
+      //      if ((t<0)||(t>1)) continue;
 
       v1 = p0_ + t*(p1_ - p0_);
       //      std::cout<<"v1 "<<v1<<"\n";
@@ -112,13 +114,25 @@ double RegionLineSegment::intersect(
 
       if (intersct){
         //        std::cout << "intersection "<<v1<<"\n";
-        inter_pnts[num_int] = v1;
-        num_int++;
+        tau[num_line_int] = t;
+        num_line_int++;
+        if ((t>=0)&&(t<=1)){
+          inter_pnts[num_int] = v1;
+          num_int++;
+        }
       }
     }
     double len;
-    if (num_int == 0) 
+    if (num_int == 0) {
+      if (num_line_int==2){
+        //std::cout<<tau[0]<<" "<<tau[1]<<"\n";
+        if (tau[0]*tau[1]<0){
+          len = norm(p1_ - p0_);
+          return len;
+        }       
+      }
       return 0.;
+    }
     else if (num_int == 1){
       double t = norm(inter_pnts[0] - p0_)/norm(p1_ - p0_);
       if (t>=0.5){
@@ -203,8 +217,11 @@ void RegionLineSegment::ComputeInterLinePoints(const std::vector<Point>& polytop
     }
     double len;
     if (num_int == 0) {
-      Errors::Message mesg("No intersection points in RegionLineSegment"); 
-      Exceptions::amanzi_throw(mesg);
+      res_point = 0.5*(p1_ + p0_);
+      //std::cout<<"res_point "<<res_point<<"\n";
+      return;
+      //Errors::Message mesg("No intersection points in RegionLineSegment"); 
+      //Exceptions::amanzi_throw(mesg);
     }
     else if (num_int == 1){
       double t = norm(inter_pnts[0] - p0_)/norm(p1_ - p0_);
