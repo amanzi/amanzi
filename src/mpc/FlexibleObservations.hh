@@ -1,5 +1,5 @@
 /*
-  MPC
+  Multi-Process Coordinator
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 

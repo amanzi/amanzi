@@ -1,5 +1,3 @@
-
-
 #ifndef AMANZI_OBSERVABLE_HH
 #define AMANZI_OBSERVABLE_HH
 
@@ -43,7 +41,7 @@ class Observable : public IOEvent{
 
   virtual void ComputeObservation(State& S, double* value, double* volume) { assert(false); }
 
-  virtual int ComputeRegionSize(){return region_size_;};
+  virtual int ComputeRegionSize() {return region_size_;};
 
   // protected:    
 

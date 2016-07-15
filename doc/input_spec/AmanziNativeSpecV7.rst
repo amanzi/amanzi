@@ -4985,7 +4985,9 @@ for its evaluation.  The observations are evaluated during the simulation and re
   * `"observation output filename`" [string] user-defined name for the file that the observations are written to.
     The file name can contain relative or absolute path to an *existing* directory only. 
 
-  * `"precision`" [int] defined the number of significant digits. Default is 16.
+  * `"time unit`" [string] defines time unit for output data. Default is seconds.
+
+  * `"precision`" [int] defines the number of significant digits. Default is 16.
 
   * OBSERVATION [list] user-defined label, can accept values for `"variables`", `"functional`",
     `"region`", `"times`", and TSPS (see below).

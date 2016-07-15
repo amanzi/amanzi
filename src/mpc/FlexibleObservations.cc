@@ -1,5 +1,5 @@
 /*
-  This is the flow component of the Amanzi code. 
+  Multi-Process Coordinator
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -145,9 +145,9 @@ int FlexibleObservations::MakeObservations(State& S)
 
       double value(0.0), volume(0.0);
 
-      (i->second) -> ComputeObservation(S, &value, &volume);
+      (i->second)->ComputeObservation(S, &value, &volume);
 
-      if (var == "drawdown" || var=="permeability-weighted drawdown"){
+      if (var == "drawdown" || var=="permeability-weighted drawdown") {
         if (od.size() > 0) { 
           value = od.begin()->value * volume - value;
         }

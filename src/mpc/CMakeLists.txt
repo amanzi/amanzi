@@ -73,10 +73,18 @@ set(mpc_inc_files
   WalkaboutCheckpoint.hh
   Observable.hh
   ObservableFactory.hh
+  ObservableAqueous.hh 
+  ObservableLineSegment.hh
+  ObservableSolute.hh
+  ObservableLineSegmentAqueous.hh
+  ObservableLineSegmentSolute.hh
 )
 
 add_amanzi_library(mpc 
-                   SOURCE CycleDriver.cc FlexibleObservations.cc WalkaboutCheckpoint.cc ObservableFactory.cc
+                   SOURCE CycleDriver.cc 
+                          FlexibleObservations.cc WalkaboutCheckpoint.cc 
+                          ObservableFactory.cc
+                          ObservableAqueous.cc
                    HEADERS ${mpc_inc_files}
                    LINK_LIBS time_integration solvers output mpc_tree state mesh dbg ${mpc_tpl_libs})
 

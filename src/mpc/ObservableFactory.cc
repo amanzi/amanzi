@@ -27,10 +27,10 @@
 
 #include "ObservableFactory.hh"
 #include "ObservableAqueous.hh"
-#include "ObservableSolute.hh"
 #include "ObservableLineSegment.hh"
 #include "ObservableLineSegmentAqueous.hh"
 #include "ObservableLineSegmentSolute.hh"
+#include "ObservableSolute.hh"
 
 namespace Amanzi {
 

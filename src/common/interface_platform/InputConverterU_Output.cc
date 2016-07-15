@@ -257,7 +257,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
     out_list.sublist("walkabout data") = chkPL;
   }
 
-  // get output->observations node - this node must exist ONCE
+  // get output->observations node - only one node is allowed
   int nobs_liquid(0), nobs_gas(0);
   node = GetUniqueElementByTagsString_("output, observations", flag);
 
@@ -276,6 +276,13 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
 
       if (strcmp(tagname, "filename") == 0) {
         obsPL.set<std::string>("observation output filename", TrimString_(text));
+
+      } else if (strcmp(tagname, "units") == 0) {
+        node = inode->getAttributes()->getNamedItem(mm.transcode("time"));
+        if (node) {
+          char* unit = mm.transcode(node->getTextContent());
+          obsPL.set<std::string>("time unit", TrimString_(unit));
+        }
 
       } else if (strcmp(tagname, "liquid_phase") == 0) {
         node = inode->getAttributes()->getNamedItem(mm.transcode("name"));
