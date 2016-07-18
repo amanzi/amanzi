@@ -45,10 +45,11 @@ Teuchos::RCP<Observable> CreateObservable(Teuchos::ParameterList& coord_plist,
   std::string region = observable_plist.get<std::string>("region");
 
   Teuchos::Array<std::string> comp_names;
-  int num_liquid;
+  int num_liquid = 0;
 
-  comp_names = coord_plist.get<Teuchos::Array<std::string> >("component names");
-
+  if (coord_plist.isParameter("component names")){
+    comp_names = coord_plist.get<Teuchos::Array<std::string> >("component names");
+  }
   num_liquid = coord_plist.get<int>("number of liquid components", comp_names.size());
 
   // check if observation of solute was requested
