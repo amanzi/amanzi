@@ -7,9 +7,10 @@
 #include "weak_mpc_semi_coupled.hh"
 
 
+
 namespace Amanzi {
 
-
+  unsigned WeakMPCSemiCoupled::flag_star = 0;
 // -----------------------------------------------------------------------------
 // loop over sub-PKs, calling their valid_step() method
 // -----------------------------------------------------------------------------
@@ -72,7 +73,7 @@ WeakMPCSemiCoupled::initialize(const Teuchos::Ptr<State>& S){
 // Semi coupled thermal hydrology
 bool WeakMPCSemiCoupled::advance(double dt) {
   bool fail = false;
- 
+  
   if (coupling_key_ == "surface subsurface system: columns"){
     fail = CoupledSurfSubsurfColumns(dt);
   }
@@ -88,6 +89,15 @@ bool
 WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
   bool fail = false;
   MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
+  
+  //ensure the star solution is marked as changed when the subsurface columns fail
+  if (flag_star){
+    flag_star = 0;
+    Teuchos::RCP<PKBDFBase> pk_sfstar =
+      Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[0]);
+    ASSERT(pk_sfstar.get());
+    pk_sfstar->ChangedSolution();
+  }
   
   // advance surface_star-pressure from t_n to t_(n+1)
   fail = (*pk)->advance(dt);
@@ -145,7 +155,7 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
     ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
     pk_domain->ChangedSolution(S_inter_.ptr());
   }
-  if(fail) return fail;  
+  // if(fail) return fail;  
   
  
  
@@ -159,34 +169,34 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
   }
   int nfailed_local = nfailed;
   S_->GetMesh("surface")->get_comm()->SumAll(&nfailed_local, &nfailed, 1);
-  if (nfailed > 0) return true;
  
-  
-  Epetra_MultiVector& surfstar_p = *S_next_->GetFieldData("surface_star-pressure",
-							  S_inter_->GetField("surface_star-pressure")->owner())->ViewComponent("cell", false);
-  Epetra_MultiVector& surfstar_t = *S_next_->GetFieldData("surface_star-temperature",
-							  S_inter_->GetField("surface_star-temperature")->owner())->ViewComponent("cell", false);
-  
-  for (unsigned c=0; c<size_t; c++){
-    std::stringstream name;
-    int id = S_->GetMesh("surface")->cell_map(false).GID(c);
-    name << "column_" << id <<"_surface";
-    const Epetra_MultiVector& surf_p = *S_next_->GetFieldData(getKey(name.str(),"pressure"))->ViewComponent("cell", false);
-    if(surf_p[0][0] > 101325.00)
-      surfstar_p[0][c] = surf_p[0][0];
-    else 
-      surfstar_p[0][c]=101325.00;
+ 
+  if (nfailed ==0){ 
+    Epetra_MultiVector& surfstar_p = *S_next_->GetFieldData("surface_star-pressure",
+							    S_inter_->GetField("surface_star-pressure")->owner())->ViewComponent("cell", false);
+    Epetra_MultiVector& surfstar_t = *S_next_->GetFieldData("surface_star-temperature",
+							    S_inter_->GetField("surface_star-temperature")->owner())->ViewComponent("cell", false);
+    
+    for (unsigned c=0; c<size_t; c++){
+      std::stringstream name;
+      int id = S_->GetMesh("surface")->cell_map(false).GID(c);
+      name << "column_" << id <<"_surface";
+      const Epetra_MultiVector& surf_p = *S_next_->GetFieldData(getKey(name.str(),"pressure"))->ViewComponent("cell", false);
+      if(surf_p[0][0] > 101325.00)
+	surfstar_p[0][c] = surf_p[0][0];
+      else 
+	surfstar_p[0][c]=101325.00;
+      
+    }
+    
+    for (unsigned c=0; c<size_t; c++){
+      std::stringstream name;
+      int id = S_->GetMesh("surface")->cell_map(false).GID(c);
+      name << "column_" << id <<"_surface";
+      const Epetra_MultiVector& surf_t = *S_next_->GetFieldData(getKey(name.str(),"temperature"))->ViewComponent("cell", false);
+      surfstar_t[0][c] = surf_t[0][0];
+    }
 
-  }
-  
-  for (unsigned c=0; c<size_t; c++){
-    std::stringstream name;
-    int id = S_->GetMesh("surface")->cell_map(false).GID(c);
-    name << "column_" << id <<"_surface";
-    const Epetra_MultiVector& surf_t = *S_next_->GetFieldData(getKey(name.str(),"temperature"))->ViewComponent("cell", false);
-    surfstar_t[0][c] = surf_t[0][0];
-  }
-  
   
   // Mark surface_star-pressure evaluator as changed.
   // NOTE: later do it in the setup --aj
@@ -194,8 +204,14 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
     Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[0]);
   ASSERT(pk_surf.get());
   pk_surf->ChangedSolution();
- 
-  return false;
+  
+  }
+  if (nfailed > 0){
+    flag_star = 1;
+    return true;
+  }
+  else
+    return false;
 }
   
 

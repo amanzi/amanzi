@@ -73,19 +73,18 @@ void Coordinator::coordinator_init() {
   pk_ = pk_factory.CreatePK(S_.ptr(), pk_list, S_->FEList(), soln_);
   pk_->setup(S_.ptr());
 
-  int rank, size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-
+  int rank = comm_->MyPID();
+  int size = comm_->NumProc();
   std::stringstream check;
-  if ((MPI_COMM_WORLD != MPI_COMM_SELF) && !(parameter_list_->isSublist("checkpoint")) )
+  
+  if (pks_list->sublist("top level MPC").isParameter("coupling key"))
     check << "checkpoint " << rank;
   else
     check << "checkpoint";
   
   // create the checkpointing
   Teuchos::ParameterList& chkp_plist = parameter_list_->sublist(check.str());
-  if ((MPI_COMM_WORLD != MPI_COMM_SELF) && size >1){
+  if (pks_list->sublist("top level MPC").isParameter("coupling key") && size >1){
     MPI_Comm mpi_comm_self(MPI_COMM_SELF);
     Epetra_MpiComm *comm_self = new Epetra_MpiComm(mpi_comm_self);
     checkpoint_ = Teuchos::rcp(new Checkpoint(chkp_plist, comm_self));

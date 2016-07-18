@@ -359,16 +359,19 @@ int SimulationDriver::Run(
 
 
   //generalize checkpoint files for columns
-  if ((plist.isSublist("checkpoint columns") || MPI_COMM_WORLD != MPI_COMM_SELF) && !(plist.isSublist("checkpoint")) ) {
+  
+  if (mesh_plist.isSublist("column meshes")) {
     Teuchos::ParameterList& checkpoint_plist = plist.sublist("checkpoint columns");
     std::stringstream name_check;
-   
     name_check << rank;
-    checkpoint_plist.set("file name base", "checkpoint_"+name_check.str() + "_");
+    if (plist.isSublist("checkpoint columns"))
+      checkpoint_plist.set("file name base", "checkpoint_"+name_check.str() + "_");
+    else
+      checkpoint_plist.set("file name base", "checkpoint");
     plist.set("checkpoint " +name_check.str(), checkpoint_plist);
     plist.remove("checkpoint columns");
   }
-  
+
 
   Teuchos::TimeMonitor::summarize();
   Teuchos::TimeMonitor::zeroOutTimers();
