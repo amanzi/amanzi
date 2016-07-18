@@ -260,7 +260,7 @@ void FlexibleObservations::FlushObservations()
                   << ind_obs_list.get<std::string>("region") << ", "
                   << ind_obs_list.get<std::string>("functional") << ", "
                   << var << ", "
-                  << units_.convert_time(od[j].time, utime) << ", "
+                  << units_.ConvertTime(od[j].time, utime) << ", "
                   << (((var == "permeability-weighted drawdown" || 
                         var == "drawdown") && !j) ? 0.0 : od[j].value) << '\n';
               if (!out.good()) {

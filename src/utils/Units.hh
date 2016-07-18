@@ -72,14 +72,26 @@ class Units {
     Init(plist.get<std::string>("concentration", "molar"));
   }
 
- // conversion of units
- double convert_time(double t, const std::string& unit); 
+  // conversion of units
+  // -- deprecated
+  double ConvertTime(double val, const std::string& unit); 
 
- public:
-  std::map<std::string, boost::units::quantity<boost::units::si::length> > length_;
+  // -- new
+  double ConvertTime(double val, const std::string& in_unit,
+                     const std::string& out_unit, bool& flag);
+
+  double ConvertLength(double val, const std::string& in_unit,
+                       const std::string& out_unit, bool& flag);
+
+  double ConvertConcentration(double val, const std::string& in_unit,
+                              const std::string& out_unit, double molar_mass, bool& flag);
 
  private:
   double pressure_factor_, tcc_factor_;
+
+  std::map<std::string, boost::units::quantity<boost::units::si::time> > time_;
+  std::map<std::string, boost::units::quantity<boost::units::si::length> > length_;
+  std::map<std::string, boost::units::quantity<concentration> > concentration_;
 };
 
 }  // namespace Utils
