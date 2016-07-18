@@ -241,7 +241,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   
   //    If using approximate Jacobian for the preconditioner, we also need derivative information.
   //    For now this means upwinding the derivative.
-  jacobian_ = mfd_pc_plist.get<std::string>("newton correction", "none") != "none";
+  jacobian_ = mfd_pc_plist.get<std::string>("Newton correction", "none") != "none";
   if (jacobian_) {
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // MFD -- upwind required

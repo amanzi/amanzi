@@ -143,20 +143,22 @@ class Mesh2D(object):
             self._edges = collections.Counter(self.edge_hash(f[i], f[(i+1)%len(f)]) for f in self.conn for i in range(len(f)))
         return self._edges
 
-    def plot(self):
-        import colors
-        cm = colors.cm_mapper(0,self.num_cells()-1)
-        colors = [cm(i) for i in range(self.num_cells())]
+    def plot(self, color=None, ax=None):
+        if color is None:
+            import colors
+            cm = colors.cm_mapper(0,self.num_cells()-1)
+            colors = [cm(i) for i in range(self.num_cells())]
+        else:
+            colors = color
 
         verts = [[self.coords[i,0:2] for i in f] for f in self.conn]
         from matplotlib import collections
         gons = collections.PolyCollection(verts, facecolors=colors)
         from matplotlib import pyplot as plt
-        fig,ax = plt.subplots(1,1)
+        if ax is None:
+            fig,ax = plt.subplots(1,1)
         ax.add_collection(gons)
         ax.autoscale_view()
-        plt.show()
-        
 
 
     @classmethod
@@ -167,8 +169,14 @@ class Mesh2D(object):
                 line = fid.readline()
             ncoords = int(line.strip().split()[1])
             coords = np.zeros([ncoords,3],'d')
-            for i in range(ncoords):
-                coords[i,:] = np.array([float(p) for p in fid.readline().strip().split()])
+            i = 0
+            while i < ncoords:
+                coord_dat = np.array([float(p) for p in fid.readline().strip().split()])
+                assert len(coord_dat) % 3 == 0
+                ncoords_this_line = len(coord_dat) / 3
+                for j in range(ncoords_this_line):
+                    coords[i,:] = coord_dat[3*j:3*(j+1)]
+                    i += 1
 
             line = fid.readline()
             while not line.startswith("POLYGONS"):

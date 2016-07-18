@@ -136,8 +136,8 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
 
       // set up the operator
       Teuchos::ParameterList divq_plist(plist_->sublist("PKs").sublist(pk_order[0]).sublist("Diffusion PC"));
-      if (is_fv_) divq_plist.set("newton correction", "true jacobian");
-      else divq_plist.set("newton correction", "approximate jacobian");
+      if (is_fv_) divq_plist.set("Newton correction", "true Jacobian");
+      else divq_plist.set("Newton correction", "approximate Jacobian");
       divq_plist.set("exclude primary terms", true);
       Operators::OperatorDiffusionFactory opfactory;
       ddivq_dT_ = opfactory.CreateWithGravity(divq_plist, mesh_);
@@ -172,8 +172,8 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
 
       // set up the operator
       Teuchos::ParameterList ddivKgT_dp_plist(plist_->sublist("PKs").sublist(pk_order[1]).sublist("Diffusion PC"));
-      if (is_fv_) ddivKgT_dp_plist.set("newton correction", "true jacobian");
-      else ddivKgT_dp_plist.set("newton correction", "approximate jacobian");
+      if (is_fv_) ddivKgT_dp_plist.set("Newton correction", "true Jacobian");
+      else ddivKgT_dp_plist.set("Newton correction", "approximate Jacobian");
 
       ddivKgT_dp_plist.set("exclude primary terms", true);
       Operators::OperatorDiffusionFactory opfactory;
@@ -191,8 +191,8 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
     if (!plist_->get<bool>("supress Jacobian terms: div hq / dp,T", false)) {
       // derivative with respect to pressure
       Teuchos::ParameterList divhq_dp_plist(plist_->sublist("PKs").sublist(pk_order[0]).sublist("Diffusion PC"));
-      if (is_fv_) divhq_dp_plist.set("newton correction", "true jacobian");
-      else divhq_dp_plist.set("newton correction", "approximate jacobian");
+      if (is_fv_) divhq_dp_plist.set("Newton correction", "true Jacobian");
+      else divhq_dp_plist.set("Newton correction", "approximate Jacobian");
 
       Operators::OperatorDiffusionFactory opfactory;
       if (dE_dp_block_ == Teuchos::null) {
@@ -205,8 +205,8 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       // derivative with respect to temperature
       Teuchos::ParameterList divhq_dT_plist(plist_->sublist("PKs").sublist(pk_order[0]).sublist("Diffusion PC"));
       divhq_dT_plist.set("exclude primary terms", true);
-      if (is_fv_) divhq_dT_plist.set("newton correction", "true jacobian");
-      else divhq_dT_plist.set("newton correction", "approximate jacobian");
+      if (is_fv_) divhq_dT_plist.set("Newton correction", "true Jacobian");
+      else divhq_dT_plist.set("Newton correction", "approximate Jacobian");
 
       ddivhq_dT_ = opfactory.CreateWithGravity(divhq_dT_plist, pcB);
 

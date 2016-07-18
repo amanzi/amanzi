@@ -201,7 +201,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   preconditioner_ = preconditioner_diff_->global_operator();
 
   // If using approximate Jacobian for the preconditioner, we also need derivative information.
-  jacobian_ = (mfd_pc_plist.get<std::string>("newton correction", "none") != "none");
+  jacobian_ = (mfd_pc_plist.get<std::string>("Newton correction", "none") != "none");
   if (jacobian_) {
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // MFD -- upwind required

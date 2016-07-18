@@ -1,19 +1,19 @@
+import os,sys
 try:
     import xml.etree.cElementTree as ET
 except:
     import xml.etree.ElementTree as ET
 try:
-    import xml_functions as xf
+    from amanzi_xml.utils.search import *
 except:
     print "Error: Unable to locate amanzi xml_functions module"
     print "Add $AMANZI_SRC_DIR/tools/amanzi_xml to your PYTHONPATH environment variable"
     sys.exit()
-from copy import deepcopy
 from xml.dom import minidom
 import re
 import sys
 import numpy
-from glob import glob
+import subprocess
 
 class ATSXML(object):
     def __init__(self,filename=None,xml_string=None):
@@ -36,19 +36,7 @@ class ATSXML(object):
         return self.root.findall('ParameterList/[@name="Regions"]/ParameterList')
     @property
     def parent_map(self):
-        return xf.create_parent_map(self)
-    # In amanzi_xml mesh.py
-    #@property
-    #def simulated_times(self):
-    #    base_name = self.find_name('visualization').find('.//*/[@name="file name base"]').attrib['value']
-    #    # Assume base_name+'_data*' will get the times ok, should work unless things change in ATS output
-    #    base_name += '_data'
-    #    ts = []
-    #    for fn in glob(base_name+'.h5.*.xmf'):
-    #        t = ET.parse(fn)
-    #        r = t.getroot()
-    #        ts.append(float(r.find('.//*/Time').attrib['Value']))
-    #    return numpy.array(ts)
+        return create_parent_map(self)
     def replace_regions(self,fromatsxml,mapping=None):
         ''' 
         Replace regions in xml with regions in another xml
@@ -61,13 +49,13 @@ class ATSXML(object):
         replace_regions(self,fromatsxml,mapping=mapping)
     def replace_by_value(self,oldvalue,newvalue):
         """Replace all matches of a given 'value'='oldvalue' with 'newvalue'"""
-        xf.replace_by_value(self.root,oldvalue,newvalue)
+        replace_by_value(self.root,oldvalue,newvalue)
     def replace_by_name(self,name,value):
         """Replace all matches of a given 'name' with 'newvalue'"""
-        xf.replace_by_name(self.root,name,value)
+        replace_by_name(self.root,name,value)
     def replace_file(self,newfilename,oldfilename=None):
-        if oldfilename is not None: xf.replace_by_value(self.root,oldfilename,newfilename)
-        else: xf.replace_by_name(self.root,'file',newfilename)
+        if oldfilename is not None: replace_by_value(self.root,oldfilename,newfilename)
+        else: replace_by_name(self.root,'file',newfilename)
     def replace_mesh_file(self,newfilename):
         for e in self.root.findall('.//ParameterList/[@name="Region: Labeled Set"]'):
             e2 = e.find('.//Parameter/[@name="file"]')
@@ -81,26 +69,10 @@ class ATSXML(object):
             e2 = e.find('.//Parameter/[@name="File"]')
             if e2 is not None: e2.set('value',newfilename)
     def replace_restart_file(self,filename):
-        xf.replace_by_name(self.root,'restart file', filename)
-    #def replace_elems(self,fromatsxml,element_names):
-    #    for nm in element_names:
-    #        e = fromatsxml.root.findall(".//ParameterList[@name='"+nm+"']")[0]
-    #        self.root.remove(self.root.findall(".//ParameterList[@name='"+nm+"']")[0])
-    #        self.root.append(e)        
+        replace_by_name(self.root,'restart file', filename)
     def replace_elem(self,elem_sink,elem_src):
         """Replace the element 'sink' with the element 'src' in the hierarchy 'xml'"""
-        xf.replace_elem(self.root,elem_sink,elem_src)
-        #pm = self.parent_map
-        #p_elem_sink = pm[elem_sink]
-        #p_elem_sink.remove(elem_sink)
-        #p_elem_sink.append(elem_src)
-    # Now in xml_functions
-    #def getvalue(self,name):
-    #    out = []
-    #    for r in self.root.findall('.//Parameter/[@name="'+str(name)+'"]'):
-    #        out.append(r.attrib['value'])
-    #    if len(out) > 1: return out
-    #    else: return out[0]
+        replace_elem(self.root,elem_sink,elem_src)
     # Potentially not needed anymore, xml's written directly with write look ok now
     def write(self,filename):
         #self.tree.write(filename)
@@ -174,7 +146,7 @@ class ATSXML(object):
         print "remove_elem deprecated, it has been replaced with remove"
     def remove(self,elem):
         """Removes the xml 'elem' wherever it is locaed in 'xml'"""
-        xf.remove(self.root,elem)
+        remove(self.root,elem)
     def set_verbosity(self,value):
         '''
         Set verbosity level to value in all available Verbose Objects
@@ -182,9 +154,9 @@ class ATSXML(object):
         :param value: Verbosity level: high,low
         :type value: str
         '''
-        for e in xf.findall_name(self.root,'Verbosity Level'):
+        for e in findall_name(self.root,'Verbosity Level'):
             e.set('value',value)
-    # Now in xml_functions
+    # Now in amanzi_xml.utils.search
     #def add_Parameter(self,name,value,vtype,elem=None):
     #    if elem is None: ET.SubElement(self.root,'Parameter',{'name':name,'type':vtype,'value':str(value)})
     #    else: ET.SubElement(elem,'Parameter',{'name':name,'type':vtype,'value':str(value)})
@@ -192,7 +164,6 @@ class ATSXML(object):
     #    if elem is None: ET.SubElement(self.root,'ParameterList',{'name':name,'type':'ParameterList'})
     #    else: ET.SubElement(elem,'ParameterList',{'name':name,'type':'ParameterList'})
 
-# Doesn't seem to get used anymore
 #class Region(object):
 #    def __init__(self,element):
 #        self.element = element
@@ -216,11 +187,6 @@ def get_root(filename=None,xml_string=None):
     elif xml_string is not None: 
         r = ET.fromstring(xml_string)
     return r
-    #def read_xml(self,filename):
-    #    t = ET.parse(filename)
-    #    r = t.getroot()
-    #def fromstring(self,xml_string):
-    #    r = ET.fromstring(xml_string)
 
 def get_regions(xml):
     return xml.findall('ParameterList/[@name="Regions"]/ParameterList')
@@ -271,12 +237,36 @@ def replace_regions(toatsxml,fromatsxml,mapping=None):
     for r in toatsxml.findall('.//Parameter/[@name="domain name"]'):
         r.set('value',m[r.attrib['value']])
     # Replace Mesh and Regions blocks
-    xf.replace_elem(toatsxml,toatsxml.find('./ParameterList/[@name="Regions"]'),fromatsxml.find('./ParameterList/[@name="Regions"]'))
-    xf.replace_elem(toatsxml,xf.find_name(toatsxml,'Mesh'),xf.find_name(fromatsxml,'Mesh'))
-    newinput = xf.get_value(toatsxml,'Native Unstructured Input')
-    xf.replace_by_name(toatsxml,'Native Unstructured Input',newinput)
-    newgridoption = xf.get_value(toatsxml,'grid_option')
-    xf.replace_by_name(toatsxml,'grid_option',newgridoption)
+    replace_elem(toatsxml,toatsxml.find('./ParameterList/[@name="Regions"]'),fromatsxml.find('./ParameterList/[@name="Regions"]'))
+    replace_elem(toatsxml,find_name(toatsxml,'Mesh'),find_name(fromatsxml,'Mesh'))
+    newinput = get_value(toatsxml,'Native Unstructured Input')
+    replace_by_name(toatsxml,'Native Unstructured Input',newinput)
+    newgridoption = get_value(toatsxml,'grid_option')
+    replace_by_name(toatsxml,'grid_option',newgridoption)
+
+def run(xml, nproc=1, mpiexec='mpiexec', run_file_name='run.xml',stdout=None,stderr=None,hostname=None,processor=None):
+    ''' Run ats model based on tpl_xml_file using parameters defined in pars dictionary '''
+
+    # ensure that ATS's executable exists and that it's module is loaded
+    try:
+        path = os.path.join(os.environ['ATS_DIR'],'bin')
+    except KeyError:
+        raise RuntimeError("Missing ATS installation, please set the ATS_DIR environmental variable.")
+    executable = os.path.join(path, "ats")
+    if not os.path.isfile(executable):
+        raise RuntimeError("Missing ATS installation, please build and install ATS.")
+
+    write_xml(xml,run_file_name)
+    
+    try:
+        #print ' '.join([mpiexec,'-n',str(nproc),executable,"--xml_file="+run_file_name])
+        outfile = open(stdout,'w')
+        if not stderr is None:
+            errfile = open(stderr,'w')
+        ierr = subprocess.call([mpiexec,'-n',str(nproc),executable,"--xml_file="+run_file_name],stdout=outfile,stderr=errfile)
+        print ierr
+    except:
+        print "Error: ATS simulation failed"
 
 
 

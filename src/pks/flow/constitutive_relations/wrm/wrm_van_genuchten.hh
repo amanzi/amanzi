@@ -1,14 +1,21 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+//! WRMVanGenuchten : water retention model using van Genuchten's parameterization
 
-/*
-  Amanzi needs to fix its WRM interface... the current lack of factory or
-  common interface is stupid.
+/*!
+  <ul>Native Spec Example</>
+    <ParameterList name="moss" type="ParameterList">
+      <Parameter name="region" type="string" value="moss" />
+      <Parameter name="WRM Type" type="string" value="van Genuchten" />
+      <Parameter name="van Genuchten alpha" type="double" value="0.002" />
+      <Parameter name="van Genuchten m" type="double" value="0.2" />
+      <Parameter name="residual saturation" type="double" value="0.0" />
+      <Parameter name="smoothing interval width" type="double" value="100.0" />
+    </ParameterList>
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef _FLOWRELATIONS_WRM_VAN_GENUCHTEN_
-#define _FLOWRELATIONS_WRM_VAN_GENUCHTEN_
+#ifndef ATS_FLOWRELATIONS_WRM_VAN_GENUCHTEN_
+#define ATS_FLOWRELATIONS_WRM_VAN_GENUCHTEN_
 
 #include "Teuchos_ParameterList.hpp"
 #include "wrm.hh"
