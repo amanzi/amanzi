@@ -141,13 +141,13 @@ TEST(OBSERVABLE_LINE_SEGMENT){
   for (int i=0;i<3;i++){
     xyzc[i] = 0.5*(xyz0_2[i] + xyz1_2[i]);
     len2 += (xyz0_2[i] - xyz1_2[i])*(xyz0_2[i] - xyz1_2[i]);
-    std::cout<<xyzc[i]<<" "<<xyz0_2[i]<<" "<<xyz1_2[i]<<"\n";
+    //std::cout<<xyzc[i]<<" "<<xyz0_2[i]<<" "<<xyz1_2[i]<<"\n";
   }
   len2 = sqrt(len2);
   double exact_val2 = A*xyzc[0] + B*xyzc[1] + C*xyzc[2] + D;
 
-  std::cout<<value2<<" "<<volume2<<"\n";
-  std::cout<<exact_val2*len2<<" "<<len2<<"\n";
+  // std::cout<<value2<<" "<<volume2<<"\n";
+  // std::cout<<exact_val2*len2<<" "<<len2<<"\n";
 
   CHECK((std::abs(exact_val*len - value) < 1e-10) && (std::abs(exact_val2*len2 - value2) < 1e-10));
 

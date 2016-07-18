@@ -17,7 +17,7 @@
     </ParameterList>
     <ParameterList name="Well3013">
       <ParameterList name="region: line segment">
-        <Parameter name="end coordinate" type="Array(double)" value="{4.60, 4.60, 5.0e+00}"/>
+        <Parameter name="end coordinate" type="Array(double)" value="{4.60, 4.60, 4.0e+00}"/>
         <Parameter name="opposite end coordinate" type="Array(double)" value="{4.10, 4.90, 5.1}"/>
       </ParameterList>
     </ParameterList>

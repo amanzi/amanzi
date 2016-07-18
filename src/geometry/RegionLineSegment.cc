@@ -35,6 +35,7 @@ namespace AmanziGeometry {
     p1_(p1)
 {
 
+  set_manifold_dimension(3);
   //line_points_.clear();
   //line_frac_.clear();
   
@@ -44,6 +45,14 @@ namespace AmanziGeometry {
         << Region::name() << "\"";
     Exceptions::amanzi_throw(msg);
   }
+
+  double eps = 1e-15;
+  if (norm(p0_ - p1_) < eps){
+    //std::cout<< p0_<<" "<<p1_<<"\n";
+    msg <<" Zero length line segment \""<< Region::name() <<"\" is NOT allowed."; 
+    Exceptions::amanzi_throw(msg);
+  }
+
 }
 
 // -------------------------------------------------------------------
@@ -86,10 +95,8 @@ double RegionLineSegment::intersect(
       std::vector<Point> plane(faces[i].size());
       for (int j=0;j<plane.size();j++) plane[j] = polytope[faces[i][j]];
       double t = PlaneLineIntersection(plane, line);
-      //      if ((t<0)||(t>1)) continue;
 
       v1 = p0_ + t*(p1_ - p0_);
-      //      std::cout<<"v1 "<<v1<<"\n";
       double diff_x = 0., diff_y = 0.;
       for (int j=0; j<plane.size(); j++){
         diff_x += abs(plane[j].x() - v1.x());
@@ -113,7 +120,8 @@ double RegionLineSegment::intersect(
       intersct = point_in_polygon(vp, plane);
 
       if (intersct){
-        //        std::cout << "intersection "<<v1<<"\n";
+        if (std::abs(t) < eps) t = 0;
+        //std::cout << "intersection "<<v1<<" *** "<<t<<"\n";
         tau[num_line_int] = t;
         num_line_int++;
         if ((t>=0)&&(t<=1)){
@@ -134,23 +142,19 @@ double RegionLineSegment::intersect(
       return 0.;
     }
     else if (num_int == 1){
-      double t = norm(inter_pnts[0] - p0_)/norm(p1_ - p0_);
-      if (t>=0.5){
+      //std::cout<<tau[0]<<" "<<tau[1]<<"\n";
+      len = 0.;
+      if ((tau[0]<0)||(tau[1]<0)){
+        // v1 = 0.5*(p0_ + inter_pnts[0]);
+        len = norm(p0_ - inter_pnts[0]);        
+      }else if ((tau[0]>=0) && (tau[1]>=0)){
         //v1 = 0.5*(p1_ + inter_pnts[0]);
         len = norm(p1_ - inter_pnts[0]);
-      }else{
-        // v1 = 0.5*(p0_ + inter_pnts[0]);
-        len = norm(p0_ - inter_pnts[0]);
       }
-      //line_points_.push_back(v1);
-      //line_frac_.push_back(len);
+      //std::cout<<"len "<<len<<"\n";
       return len;
     }else if (num_int == 2){
-      //v1 =0.5*(inter_pnts[1] + inter_pnts[0]); 
-      //line_points_.push_back(v1);
-      //line_frac_.push_back(norm(inter_pnts[1] - inter_pnts[0]));
       len = norm(inter_pnts[1] - inter_pnts[0]);
-      //std::cout<<"len "<<len<<" - "<<inter_pnts[0]<<" * "<<inter_pnts[1]<<"\n";
       return len;
     }else {
       Errors::Message mesg("More than two intersection points in RegionLineSegment intersect function"); 
@@ -180,12 +184,16 @@ void RegionLineSegment::ComputeInterLinePoints(const std::vector<Point>& polytop
     std::vector<Point> inter_pnts(2);
     Point v1(p0_.dim()), vp(p0_.dim());    
     int num_int = 0;
+    double tau[2]={0., 0.};
+    int num_line_int = 0;    
+
+
     for (int i=0; i<faces.size(); i++){
       intersct = false;
       std::vector<Point> plane(faces[i].size());
       for (int j=0;j<plane.size();j++) plane[j] = polytope[faces[i][j]];
       double t = PlaneLineIntersection(plane, line);
-      if ((t<0)||(t>1)) continue;
+      //if ((t<0)||(t>1)) continue;
 
       v1 = p0_ + t*(p1_ - p0_);
       double diff_x = 0., diff_y = 0.;
@@ -211,8 +219,13 @@ void RegionLineSegment::ComputeInterLinePoints(const std::vector<Point>& polytop
       intersct = point_in_polygon(vp, plane);
 
       if (intersct){
-        inter_pnts[num_int] = v1;
-        num_int++;
+        if (std::abs(t) < eps) t = 0;
+        tau[num_line_int] = t;
+        num_line_int++;
+        if ((t>=0)&&(t<=1)){
+          inter_pnts[num_int] = v1;
+          num_int++;
+        }
       }
     }
     double len;
@@ -224,11 +237,10 @@ void RegionLineSegment::ComputeInterLinePoints(const std::vector<Point>& polytop
       //Exceptions::amanzi_throw(mesg);
     }
     else if (num_int == 1){
-      double t = norm(inter_pnts[0] - p0_)/norm(p1_ - p0_);
-      if (t>=0.5){
-        res_point = 0.5*(p1_ + inter_pnts[0]);
-      }else{
+      if ((tau[0]<0)||(tau[1]<0)){
         res_point = 0.5*(p0_ + inter_pnts[0]);
+      }else if((tau[0]>=0) && (tau[1]>=0)){
+        res_point = 0.5*(p1_ + inter_pnts[0]);
       }
       return;
     }else if (num_int == 2){

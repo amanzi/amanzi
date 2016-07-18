@@ -55,6 +55,7 @@ namespace AmanziGeometry {
     //std::vector<Point> line_points_;
     //std::vector<double> line_frac_;
     //std::vector<int> reg_entities_;
+    //bool complete_;
 
   };
 
