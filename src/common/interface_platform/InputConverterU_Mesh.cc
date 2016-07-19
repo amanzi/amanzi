@@ -124,7 +124,7 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
         element = static_cast<DOMElement*>(node);
 
         std::string tmp = GetAttributeValueS_(element, "low_coordinates");
-        std::vector<double> low = MakeCoordinates_(tmp);
+        std::vector<double> low = MakeVector_(tmp);
         if (low.size() != dim_)
             ThrowErrorIllformed_("mesh", "low_coordinates", "generate");
 
@@ -271,8 +271,6 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       } else {
         // else set the current element as region element
         reg_elem = static_cast<DOMElement*>(inode);
-        reg_name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
-        have_name = true;
       }
       
       // get reg_elem type
@@ -289,8 +287,8 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       if (strcmp(node_name, "box") == 0) {
         tree_["regions"].push_back(reg_name);
         
-        std::vector<double> low = GetAttributeVector_(reg_elem, "low_coordinates");
-        std::vector<double> high = GetAttributeVector_(reg_elem, "high_coordinates");
+        std::vector<double> low = GetAttributeVectorD_(reg_elem, "low_coordinates");
+        std::vector<double> high = GetAttributeVectorD_(reg_elem, "high_coordinates");
         out_list.sublist(reg_name).sublist("region: box")
             .set<Teuchos::Array<double> >("low coordinate", low)
             .set<Teuchos::Array<double> >("high coordinate", high);
@@ -341,7 +339,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
 
       else if (strcmp(node_name, "point") == 0) {
         tree_["regions"].push_back(reg_name);
-        std::vector<double> coord = GetAttributeVector_(reg_elem, "coordinate");
+        std::vector<double> coord = GetAttributeVectorD_(reg_elem, "coordinate");
         out_list.sublist(reg_name).sublist("region: point").set<Teuchos::Array<double> >("coordinate", coord);
       }
 
@@ -376,7 +374,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         bool haveOp(false), haveRL(false);
         Teuchos::Array<Teuchos::Array<double> > points;
 
-	DOMNodeList* kids = inode->getChildNodes();
+        DOMNodeList* kids = inode->getChildNodes();
 	for (int j = 0; j < kids->getLength(); j++) {
           DOMNode* jnode = kids->item(j);
 
@@ -411,7 +409,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
             }
           }
         }
-	
+         
         if (!haveOp) {
           ThrowErrorMissattr_("regions", "element", "operation", "logical");
         }
@@ -429,9 +427,9 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       else if (strcmp(node_name, "box_volume_fractions") == 0) {
         tree_["regions"].push_back(reg_name);
         
-        std::vector<double> low = GetAttributeVector_(reg_elem, "corner_coordinates");
-        std::vector<double> high = GetAttributeVector_(reg_elem, "opposite_corner_coordinates");
-        std::vector<double> normals = GetAttributeVector_(reg_elem, "normals", false);
+        std::vector<double> low = GetAttributeVectorD_(reg_elem, "corner_coordinates");
+        std::vector<double> high = GetAttributeVectorD_(reg_elem, "opposite_corner_coordinates");
+        std::vector<double> normals = GetAttributeVectorD_(reg_elem, "normals", false);
 
         out_list.sublist(reg_name).sublist("region: box volume fractions")
            .set<Teuchos::Array<double> >("corner coordinate", low)
@@ -443,8 +441,8 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       }
       else if (strcmp(node_name, "line_segment") == 0) {
         tree_["regions"].push_back(reg_name); 
-        std::vector<double> p1 = GetAttributeVector_(reg_elem, "end_coordinates");
-        std::vector<double> p2 = GetAttributeVector_(reg_elem, "opposite_end_coordinates");
+        std::vector<double> p1 = GetAttributeVectorD_(reg_elem, "end_coordinates");
+        std::vector<double> p2 = GetAttributeVectorD_(reg_elem, "opposite_end_coordinates");
         out_list.sublist(reg_name).sublist("region: line segment")
           .set<Teuchos::Array<double> >("end coordinate", p1)
           .set<Teuchos::Array<double> >("opposite end coordinate", p2);
