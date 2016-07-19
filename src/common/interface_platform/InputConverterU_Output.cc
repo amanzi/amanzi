@@ -88,7 +88,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             DOMNode* jnode = multi_list[j];
             if (DOMNode::ELEMENT_NODE == jnode->getNodeType()) {
               text = mm.transcode(jnode->getTextContent());
-              times.push_back(TimeStringToValue_(TrimString_(text)));
+              times.push_back(ConvertUnits_(TrimString_(text)));
             }
           }
           tm_parameter.set<Teuchos::Array<double> >("values", times);

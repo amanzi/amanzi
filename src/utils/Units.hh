@@ -49,8 +49,16 @@ typedef boost::units::make_scaled_unit<
 
 class Units {
  public:
-  Units() {};
-  Units(const std::string& conc_units) { Init(conc_units); }
+  Units()
+    : time_unit_("s"), 
+      length_unit_("m"),
+      mass_unit_("kg"),
+      concentration_unit_("molar") {};
+  Units(const std::string& concentration_unit) 
+    : time_unit_("s"), 
+      length_unit_("m"),
+      mass_unit_("kg"),
+      concentration_unit_(concentration_unit) { Init(); }
   ~Units() {};
 
   // conversion factors
@@ -66,10 +74,11 @@ class Units {
     return ss.str();
   }
 
-  void Init(const std::string& conc_units);
+  void Init();
 
   void Init(Teuchos::ParameterList& plist) {
-    Init(plist.get<std::string>("concentration", "molar"));
+    concentration_unit_ = plist.get<std::string>("concentration", "molar");
+    Init();
   }
 
   // conversion of units
@@ -86,12 +95,24 @@ class Units {
   double ConvertConcentration(double val, const std::string& in_unit,
                               const std::string& out_unit, double molar_mass, bool& flag);
 
+  // access
+  std::string time_unit() { return time_unit_; }
+  std::string length_unit() { return length_unit_; }
+  std::string mass_unit() { return mass_unit_; }
+  std::string concentration_unit() { return concentration_unit_; }
+
  private:
   double pressure_factor_, tcc_factor_;
 
   std::map<std::string, boost::units::quantity<boost::units::si::time> > time_;
   std::map<std::string, boost::units::quantity<boost::units::si::length> > length_;
   std::map<std::string, boost::units::quantity<concentration> > concentration_;
+
+  // dafault units
+  std::string time_unit_;
+  std::string length_unit_;
+  std::string mass_unit_;
+  std::string concentration_unit_;
 };
 
 }  // namespace Utils

@@ -6,11 +6,13 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_INPUT_CONVERTER_HH_
 #define AMANZI_INPUT_CONVERTER_HH_
+
+#include <set>
 
 #include "boost/lambda/lambda.hpp"
 #include "boost/bind.hpp"
@@ -26,6 +28,7 @@
 #include "xercesc/parsers/XercesDOMParser.hpp"
 
 // Amanzi's
+#include "Units.hh"
 #include "VerboseObject.hh"
 
 namespace Amanzi {
@@ -80,6 +83,7 @@ class MemoryManager {
   std::vector<XMLCh*> xchar;
 };
 
+
 //------------------------------------------------------------------------
 // XML helper methods for parsing outside of an InputConverter:
 
@@ -93,9 +97,9 @@ DOMDocument* OpenXMLInput(XercesDOMParser* parser,
                           const std::string& xml_input);
 //------------------------------------------------------------------------
 
+
 class InputConverter {
  public:
-
   // This constructor opens up the file with the given name, sets up a parser,
   // and parses the file.
   explicit InputConverter(const std::string& input_filename);
@@ -135,18 +139,19 @@ class InputConverter {
       xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception = false);
 
   // -- extract and verify children
-  // -- extract existing attribute value
+  // -- extract existing attribute value.
   int GetAttributeValueL_(
       xercesc::DOMElement* elem, const char* attr_name,
       const std::string& type = TYPE_NUMERICAL, bool exception = true, int val = 0);
-  double GetAttributeValueD_(
+  double GetAttributeValueD_(  // supports units
       xercesc::DOMElement* elem, const char* attr_name,
       const std::string& type = TYPE_NUMERICAL, bool exception = true, double val = 0.0);
   std::string GetAttributeValueS_(
       xercesc::DOMElement* elem, const char* attr_name,
       const std::string& type = TYPE_NUMERICAL, bool exception = true, std::string val = "");
-  std::vector<double> GetAttributeVector_(
-      xercesc::DOMElement* elem, const char* attr_name, bool exception = true);
+  std::vector<double> GetAttributeVectorD_(  // supports units
+      xercesc::DOMElement* elem, const char* attr_name, bool exception = true,
+      double mol_mass = -1.0);
   std::vector<std::string> GetAttributeVectorS_(
       xercesc::DOMElement* elem, const char* attr_name, bool exception = true);
  
@@ -173,13 +178,17 @@ class InputConverter {
       xercesc::DOMNode* node, const char* options, bool exception = true);
 
   // data streaming/trimming/converting
+  // -- units. Molar mass is required for converting ppm and ppb units.
+  double ConvertUnits_(const std::string& val, double mol_mass = -1.0);
+
   // -- times
-  double TimeStringToValue_(const std::string& time_value);
   double TimeCharToValue_(const char* time_value);
   std::string GetConstantType_(const std::string& val, std::string& parsed_val);
 
-  // -- coordinates
+  // -- coordinates and vectors.
   std::vector<double> MakeCoordinates_(const std::string& array);
+  std::vector<double> MakeVector_(
+      const std::string& array, double mol_mass = -1.0);  // supports units
 
   // -- string modifications
   std::vector<std::string> CharToStrings_(const char* namelist);
@@ -213,15 +222,20 @@ class InputConverter {
   std::map<std::string, std::string> constants_area_mass_flux_; 
   std::map<std::string, std::string> constants_;  // no check
 
+  Utils::Units units_;
+
   std::string xmlfilename_;
   DOMDocument* doc_;
   XercesDOMParser* parser_;
 
  private:
-
   // Disallowed deep-copy-related methods.
   InputConverter(const InputConverter&);
   InputConverter& operator=(const InputConverter&);
+
+ protected:
+  // statistics
+  std::set<std::string> found_units_;
 };
 
 }  // namespace AmanziInput

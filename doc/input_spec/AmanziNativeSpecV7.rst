@@ -4985,8 +4985,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
   * `"observation output filename`" [string] user-defined name for the file that the observations are written to.
     The file name can contain relative or absolute path to an *existing* directory only. 
 
-  * `"time unit`" [string] defines time unit for output data. Available options are `"s`", `"h`", `"hour`", `"d`", `"day`", `m`",
-    `"month`", `"y`", `"yr`", and `"year`". Camel case writing is allowed. Default is `"s`".
+  * `"time unit`" [string] defines time unit for output data. Available options are `"s`", `"h`", `"d`", and `"y`". Default is `"s`".
 
   * `"precision`" [int] defines the number of significant digits. Default is 16.
 

@@ -138,6 +138,9 @@ class InputConverterU : public InputConverter {
   void FilterEmptySublists_(Teuchos::ParameterList& plist);
   void MergeInitialConditionsLists_(Teuchos::ParameterList& plist);
 
+  // -- miscalleneous
+  void PrintStatistics_();
+
  private:
   int dim_;
   int rank_, num_proc_;
@@ -163,6 +166,7 @@ class InputConverterU : public InputConverter {
   // global transport and chemistry constants
   bool transport_permeability_, use_transport_porosity_;
   std::vector<std::string> comp_names_all_;
+  std::map<std::string, double> solute_molar_mass_;
 
   // global state parameters
   // -- initialization filename, different from restart
@@ -179,6 +183,7 @@ class InputConverterU : public InputConverter {
   std::vector<std::string> vv_src_regions_;
   std::vector<std::string> vv_obs_regions_;
 
+  // for statistics
   Teuchos::ParameterList verb_list_;
   VerboseObject* vo_;
 };

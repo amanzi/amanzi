@@ -177,7 +177,7 @@ void ObservableAqueous::ComputeObservation(State& S, double* value, double* volu
 
     // zero drawdown at time = t0 will be written directly to the file.
     // if (od.size() > 0) { 
-    //         *value = od.begin()->(*value) * (*volume) - (*value);
+    //   *value = od.begin()->(*value) * (*volume) - (*value);
     // }
   } else if (variable_ == "permeability-weighted drawdown") {
     const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
@@ -193,7 +193,7 @@ void ObservableAqueous::ComputeObservation(State& S, double* value, double* volu
 
     // zero drawdown at time = t0 wil be written directly to the file.
     // if (od.size() > 0) { 
-    //         *value = od.begin()->(*value) * (*volume) - (*value);
+    //   *value = od.begin()->(*value) * (*volume) - (*value);
     // }
   } else if (variable_ == "aqueous mass flow rate" || 
              variable_ == "aqueous volumetric flow rate") {

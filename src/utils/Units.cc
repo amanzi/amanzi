@@ -42,10 +42,10 @@ namespace bu = boost::units;
 /* ******************************************************************
 * Constructor creates known units.
 ****************************************************************** */
-void Units::Init(const std::string& conc_units)
+void Units::Init()
 {
   pressure_factor_ = 1.0;
-  if (conc_units == "molar") {
+  if (concentration_unit_ == "molar") {
     concentration_mol_liter = true;
     tcc_factor_ = conversion_factor(bu::si::amount() / liter(), concentration());
   } else {
@@ -55,7 +55,6 @@ void Units::Init(const std::string& conc_units)
 
   // supported units of time (extendable list)
   time_["y"] = 365.25 * 24.0 * 3600.0 * bu::si::second;
-  time_["m"] = 365.25 * 2.0 * 3600.0 * bu::si::second;
   time_["d"] = 24.0 * 3600.0 * bu::si::second;
   time_["h"] = 3600.0 * bu::si::second;
   time_["s"] = 1.0 * bu::si::second;
@@ -88,8 +87,6 @@ double Units::ConvertTime(double t, const std::string& unit)
     val /= (365.25 * 24.0 * 3600.0); 
   } else if (u == "d" || u == "day") {
     val /= (24.0 * 3600.0); 
-  } else if (u == "m" || u == "month") {
-    val /= (365.25 * 2.0 * 3600.0); 
   } else if (u == "h" || u == "hour") {
     val /= 3600.0; 
   }
@@ -146,7 +143,7 @@ double Units::ConvertLength(double val,
 double Units::ConvertConcentration(double val,
                                    const std::string& in_unit,
                                    const std::string& out_unit,
-                                   double molar_mass,
+                                   double mol_mass,
                                    bool& flag)
 { 
   flag = true;
@@ -156,12 +153,17 @@ double Units::ConvertConcentration(double val,
     return val;
   }
 
+  if (mol_mass <= 0.0) {
+    flag = false;
+    return val;
+  }
+
   double tmp(val);
   tmp *= concentration_[in_unit].value() / concentration_[out_unit].value();
 
   // It is not clear how to deal properly with dimentionless units.
-  if (in_unit == "ppm" || in_unit == "ppb") tmp /= molar_mass;
-  if (out_unit == "ppm" || out_unit == "ppb") tmp *= molar_mass;
+  if (in_unit == "ppm" || in_unit == "ppb") tmp /= mol_mass;
+  if (out_unit == "ppm" || out_unit == "ppb") tmp *= mol_mass;
 
   return tmp;
 }

@@ -90,7 +90,10 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
         .set<Teuchos::Array<std::string> >("runtime diagnostics: regions", transport_diagnostics_);
   }
 
-  // save the translate file
+  // -- final I/O
+  PrintStatistics_();
+
+  // sava the translate file
   if (rank_ == 0) SaveXMLFile(out_list, xmlfilename_);
 
   return out_list;
@@ -131,6 +134,7 @@ void InputConverterU::ParseSolutes_()
 
   DOMNode* node;
   DOMNode* knode = doc_->getElementsByTagName(mm.transcode("phases"))->item(0);
+  DOMElement* element;
 
   // liquid phase (try solutes, then primaries)
   std::string species("solute");
@@ -144,10 +148,14 @@ void InputConverterU::ParseSolutes_()
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     tagname = mm.transcode(inode->getNodeName());
-    text_content = mm.transcode(inode->getTextContent());
+    std::string name = TrimString_(mm.transcode(inode->getTextContent()));
 
     if (species == tagname) {
-      phases_["water"].push_back(TrimString_(text_content));
+      phases_["water"].push_back(name);
+
+      DOMElement* element = static_cast<DOMElement*>(inode);
+      double mol_mass = GetAttributeValueD_(element, "molar_mass", TYPE_NUMERICAL, false);
+      solute_molar_mass_[name] = mol_mass;
     }
   }
   
@@ -402,6 +410,26 @@ void InputConverterU::SaveXMLFile(
   std::ofstream xmlfile;
   xmlfile.open(filename.c_str());
   xmlfile << XMLobj;
+}
+
+
+/* ******************************************************************
+* Print final comments
+****************************************************************** */
+void InputConverterU::PrintStatistics_()
+{
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    *vo_->os() << "Final comments:\n found units: ";
+    int n(0);
+    for (std::set<std::string>::iterator it = found_units_.begin(); it != found_units_.end(); ++it) {
+      *vo_->os() << *it << " ";
+      if (++n > 10) {
+        n = 0;
+        *vo_->os() << " continue:    ";
+      }
+    }
+    *vo_->os() << std::endl;
+  }
 }
 
 }  // namespace AmanziInput

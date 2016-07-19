@@ -577,12 +577,12 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
 
     if (space_bc) {
       element = static_cast<DOMElement*>(same_list[0]);
-      data = GetAttributeVector_(element, "space_data");
+      data = GetAttributeVectorD_(element, "space_data");
     } else if (global_bc) {
       element = static_cast<DOMElement*>(same_list[0]);
       refv = GetAttributeValueD_(element, "reference_value");
-      grad = GetAttributeVector_(element, "gradient_value");
-      refc = GetAttributeVector_(element, "reference_point");
+      grad = GetAttributeVectorD_(element, "gradient_value");
+      refc = GetAttributeVectorD_(element, "reference_point");
     } else {
       std::map<double, double> tp_values, tp_fluxes;
       std::map<double, std::string> tp_forms;
