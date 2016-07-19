@@ -174,19 +174,19 @@
         <dimension>3</dimension>
         <generate>
             <number_of_cells nx="100" ny="1" nz="1"/>
-            <box high_coordinates="(100.0, 1.0, 1.0)" low_coordinates="(0.0, 0.0, 0.0)"/>
+            <box high_coordinates="100.0, 1.0, 1.0" low_coordinates="0.0, 0.0, 0.0"/>
         </generate>
     </mesh>
     <regions>
-        <box high_coordinates="(100.0, 1.0, 1.0)" low_coordinates="(0.0, 0.0, 1.0)" name="+Z_Boundary"/>
-        <box high_coordinates="(100.0, 1.0, 0.0)" low_coordinates="(0.0, 0.0, 0.0)" name="-Z_Boundary"/>
-        <box high_coordinates="(100.0, 1.0, 1.0)" low_coordinates="(0.0, 1.0, 0.0)" name="+Y_Boundary"/>
-        <box high_coordinates="(100.0, 0.0, 1.0)" low_coordinates="(0.0, 0.0, 0.0)" name="-Y_Boundary"/>
-        <box high_coordinates="(100.0, 1.0, 1.0)" low_coordinates="(100.0, 0.0, 0.0)" name="+X_Boundary"/>
-        <box high_coordinates="(0.0, 1.0, 1.0)" low_coordinates="(0.0, 0.0, 0.0)" name="-X_Boundary"/>
-        <box high_coordinates="(100.0, 1.0, 1.0)" low_coordinates="(0.0, 0.0, 0.0)" name="Region_between_surface0_and_1"/>
-        <box high_coordinates="(100.0, 1.0, 1.0)" low_coordinates="(0.0, 0.0, 0.0)" name="All"/>
-	<point coordinate="(10.0,0.5,0.5)" name="Obs1"/>
+        <box high_coordinates="100.0, 1.0, 1.0" low_coordinates="0.0, 0.0, 1.0" name="+Z_Boundary"/>
+        <box high_coordinates="100.0, 1.0, 0.0" low_coordinates="0.0, 0.0, 0.0" name="-Z_Boundary"/>
+        <box high_coordinates="100.0, 1.0, 1.0" low_coordinates="0.0, 1.0, 0.0" name="+Y_Boundary"/>
+        <box high_coordinates="100.0, 0.0, 1.0" low_coordinates="0.0, 0.0, 0.0" name="-Y_Boundary"/>
+        <box high_coordinates="100.0, 1.0, 1.0" low_coordinates="100.0, 0.0, 0.0" name="+X_Boundary"/>
+        <box high_coordinates="0.0, 1.0, 1.0" low_coordinates="0.0, 0.0, 0.0" name="-X_Boundary"/>
+        <box high_coordinates="100.0, 1.0, 1.0" low_coordinates="0.0, 0.0, 0.0" name="Region_between_surface0_and_1"/>
+        <box high_coordinates="100.0, 1.0, 1.0" low_coordinates="0.0, 0.0, 0.0" name="All"/>
+	<point coordinate="10.0,0.5,0.5" name="Obs1"/>
     </regions>
     <materials>
         <material name="Soil">
