@@ -124,7 +124,7 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
         element = static_cast<DOMElement*>(node);
 
         std::string tmp = GetAttributeValueS_(element, "low_coordinates");
-        std::vector<double> low = MakeVector_(tmp);
+        std::vector<double> low = MakeCoordinates_(tmp);
         if (low.size() != dim_)
             ThrowErrorIllformed_("mesh", "low_coordinates", "generate");
 
@@ -271,6 +271,8 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       } else {
         // else set the current element as region element
         reg_elem = static_cast<DOMElement*>(inode);
+        reg_name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
+        have_name = true;
       }
       
       // get reg_elem type
@@ -287,8 +289,8 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       if (strcmp(node_name, "box") == 0) {
         tree_["regions"].push_back(reg_name);
         
-        std::vector<double> low = GetAttributeVectorD_(reg_elem, "low_coordinates");
-        std::vector<double> high = GetAttributeVectorD_(reg_elem, "high_coordinates");
+        std::vector<double> low = GetAttributeVector_(reg_elem, "low_coordinates");
+        std::vector<double> high = GetAttributeVector_(reg_elem, "high_coordinates");
         out_list.sublist(reg_name).sublist("region: box")
             .set<Teuchos::Array<double> >("low coordinate", low)
             .set<Teuchos::Array<double> >("high coordinate", high);
@@ -339,7 +341,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
 
       else if (strcmp(node_name, "point") == 0) {
         tree_["regions"].push_back(reg_name);
-        std::vector<double> coord = GetAttributeVectorD_(reg_elem, "coordinate");
+        std::vector<double> coord = GetAttributeVector_(reg_elem, "coordinate");
         out_list.sublist(reg_name).sublist("region: point").set<Teuchos::Array<double> >("coordinate", coord);
       }
 
@@ -373,39 +375,43 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
        
         bool haveOp(false), haveRL(false);
         Teuchos::Array<Teuchos::Array<double> > points;
-        DOMNamedNodeMap* gkids = reg_elem->getAttributes();
 
-        for (int j = 0; j < gkids->getLength(); j++) {
-          DOMNode* jnode = gkids->item(j);
-          node_name = mm.transcode(jnode->getNodeName());
-          // deal with operation
-          if (strcmp(node_name, "operation") == 0) {
-            text_content2 = mm.transcode(jnode->getTextContent());
-            if (strcmp(text_content2, "union") == 0) {
-              out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation", "union");
+	DOMNodeList* kids = inode->getChildNodes();
+	for (int j = 0; j < kids->getLength(); j++) {
+          DOMNode* jnode = kids->item(j);
+
+          if (DOMNode::ELEMENT_NODE == jnode->getNodeType()) {
+	    char *elem_name = mm.transcode(jnode->getNodeName());
+            // deal with operation
+            if (strcmp(elem_name, "operation") == 0) {
+              text_content2 = mm.transcode(jnode->getTextContent());
+              if (strcmp(text_content2, "union") == 0) {
+                out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation", "union");
+              }
+              else if (strcmp(text_content2, "intersection") == 0) {
+                out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation", "intersect");
+              }
+              else if (strcmp(text_content2, "subtraction") == 0) {
+                out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation","subtract");
+              }
+              else if (strcmp(text_content2, "complement") == 0) {
+                out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation", "complement");
+              }
+              else {
+                ThrowErrorIllformed_("regions", "element", "operation", "union, intersect, subtract, or complement");
+              }
+              haveOp = true;
             }
-            else if (strcmp(text_content2, "intersection") == 0) {
-              out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation", "intersect");
+            // deal with region list
+            else if (strcmp(elem_name, "region_list") == 0) {
+              text_content2 = mm.transcode(jnode->getTextContent());
+              Teuchos::Array<std::string> regs = CharToStrings_(text_content2);
+              out_list.sublist(reg_name).sublist("region: logical").set<Teuchos::Array<std::string> >("regions", regs);
+              haveRL = true;
             }
-            else if (strcmp(text_content2, "subtraction") == 0) {
-              out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation","subtract");
-            }
-            else if (strcmp(text_content2, "complement") == 0) {
-              out_list.sublist(reg_name).sublist("region: logical").set<std::string>("operation", "complement");
-            }
-            else {
-              ThrowErrorIllformed_("regions", "element", "operation", "union, intersect, subtract, or complement");
-            }
-            haveOp = true;
-          }
-          // deal with region list
-          else if (strcmp(node_name, "region_list") == 0) {
-            text_content2 = mm.transcode(jnode->getTextContent());
-            Teuchos::Array<std::string> regs = CharToStrings_(text_content2);
-            out_list.sublist(reg_name).sublist("region: logical").set<Teuchos::Array<std::string> >("regions", regs);
-            haveRL = true;
           }
         }
+	
         if (!haveOp) {
           ThrowErrorMissattr_("regions", "element", "operation", "logical");
         }
@@ -423,9 +429,9 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       else if (strcmp(node_name, "box_volume_fractions") == 0) {
         tree_["regions"].push_back(reg_name);
         
-        std::vector<double> low = GetAttributeVectorD_(reg_elem, "corner_coordinates");
-        std::vector<double> high = GetAttributeVectorD_(reg_elem, "opposite_corner_coordinates");
-        std::vector<double> normals = GetAttributeVectorD_(reg_elem, "normals", false);
+        std::vector<double> low = GetAttributeVector_(reg_elem, "corner_coordinates");
+        std::vector<double> high = GetAttributeVector_(reg_elem, "opposite_corner_coordinates");
+        std::vector<double> normals = GetAttributeVector_(reg_elem, "normals", false);
 
         out_list.sublist(reg_name).sublist("region: box volume fractions")
            .set<Teuchos::Array<double> >("corner coordinate", low)
@@ -437,8 +443,8 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       }
       else if (strcmp(node_name, "line_segment") == 0) {
         tree_["regions"].push_back(reg_name); 
-        std::vector<double> p1 = GetAttributeVectorD_(reg_elem, "end_coordinates");
-        std::vector<double> p2 = GetAttributeVectorD_(reg_elem, "opposite_end_coordinates");
+        std::vector<double> p1 = GetAttributeVector_(reg_elem, "end_coordinates");
+        std::vector<double> p2 = GetAttributeVector_(reg_elem, "opposite_end_coordinates");
         out_list.sublist(reg_name).sublist("region: line segment")
           .set<Teuchos::Array<double> >("end coordinate", p1)
           .set<Teuchos::Array<double> >("opposite end coordinate", p2);
