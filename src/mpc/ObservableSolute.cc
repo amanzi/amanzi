@@ -101,7 +101,6 @@ void ObservableSolute::ComputeObservation(State& S, double* value, double* volum
   int dim = mesh_ -> space_dimension();
 
   if (!S.HasField("total_component_concentration")) {  // bail out if this field is not yet created
-    //Teuchos::OSTab tab = vo_->getOSTab();
     msg << "Field \"total_component_concentration\" does not exist, skipping it.";
     Exceptions::amanzi_throw(msg);
   }

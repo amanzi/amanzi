@@ -85,14 +85,14 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 
     t0 = GetAttributeValueD_(element, "start", TYPE_TIME);
     t1 = GetAttributeValueD_(element, "end", TYPE_TIME, false, t0 - 10.0);
-    dt0 = TimeStringToValue_(GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, dt0_d));
-    dt_max = TimeStringToValue_(GetAttributeValueS_(element, "max_dt", TYPE_TIME, false, dt_max_d));
+    dt0 = ConvertUnits_(GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, dt0_d));
+    dt_max = ConvertUnits_(GetAttributeValueS_(element, "max_dt", TYPE_TIME, false, dt_max_d));
     max_cycles = GetAttributeValueL_(element, "max_cycles", TYPE_NUMERICAL, false, -1);
     std::string mode = GetAttributeValueS_(element, "mode", TYPE_NONE, false, mode_d);
 
-    dt_cut_[mode] = TimeStringToValue_(GetAttributeValueS_(
+    dt_cut_[mode] = ConvertUnits_(GetAttributeValueS_(
         element, "reduction_factor", TYPE_TIME, false, dt_cut_d));
-    dt_inc_[mode] = TimeStringToValue_(GetAttributeValueS_(
+    dt_inc_[mode] = ConvertUnits_(GetAttributeValueS_(
         element, "increase_factor", TYPE_TIME, false, dt_inc_d));
 
     if (mode == "steady") {
@@ -352,8 +352,8 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
     if (strcmp(tagname, "execution_control") == 0) {
       t0 = GetAttributeValueD_(element, "start", TYPE_TIME);
       t1 = GetAttributeValueD_(element, "end", TYPE_TIME);
-      dt0 = TimeStringToValue_(GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, dt0_d));
-      dt_max = TimeStringToValue_(GetAttributeValueS_(element, "max_dt", TYPE_TIME, false, dt_max_d));
+      dt0 = ConvertUnits_(GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, dt0_d));
+      dt_max = ConvertUnits_(GetAttributeValueS_(element, "max_dt", TYPE_TIME, false, dt_max_d));
       std::string mode = GetAttributeValueS_(element, "mode", TYPE_NONE, false, mode_d);
 
       tp_t0[mode] = t0;
@@ -361,9 +361,9 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       tp_dt0[mode] = dt0;
       tp_max_dt[mode] = dt_max;
       tp_max_cycles[mode] = GetAttributeValueL_(element, "max_cycles", TYPE_NUMERICAL, false, -1);
-      dt_cut_[mode] = TimeStringToValue_(GetAttributeValueS_(
+      dt_cut_[mode] = ConvertUnits_(GetAttributeValueS_(
           element, "reduction_factor", TYPE_TIME, false, dt_cut_d));
-      dt_inc_[mode] = TimeStringToValue_(GetAttributeValueS_(
+      dt_inc_[mode] = ConvertUnits_(GetAttributeValueS_(
           element, "increase_factor", TYPE_TIME, false, dt_inc_d));
 
       filename = GetAttributeValueS_(element, "restart", TYPE_NONE, false, "");

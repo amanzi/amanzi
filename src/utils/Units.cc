@@ -42,10 +42,10 @@ namespace bu = boost::units;
 /* ******************************************************************
 * Constructor creates known units.
 ****************************************************************** */
-void Units::Init(const std::string& conc_units)
+void Units::Init()
 {
   pressure_factor_ = 1.0;
-  if (conc_units == "molar") {
+  if (concentration_unit_ == "molar") {
     concentration_mol_liter = true;
     tcc_factor_ = conversion_factor(bu::si::amount() / liter(), concentration());
   } else {
@@ -55,7 +55,6 @@ void Units::Init(const std::string& conc_units)
 
   // supported units of time (extendable list)
   time_["y"] = 365.25 * 24.0 * 3600.0 * bu::si::second;
-  time_["m"] = 365.25 * 2.0 * 3600.0 * bu::si::second;
   time_["d"] = 24.0 * 3600.0 * bu::si::second;
   time_["h"] = 3600.0 * bu::si::second;
   time_["s"] = 1.0 * bu::si::second;
@@ -88,8 +87,6 @@ double Units::ConvertTime(double t, const std::string& unit)
     val /= (365.25 * 24.0 * 3600.0); 
   } else if (u == "d" || u == "day") {
     val /= (24.0 * 3600.0); 
-  } else if (u == "m" || u == "month") {
-    val /= (365.25 * 2.0 * 3600.0); 
   } else if (u == "h" || u == "hour") {
     val /= 3600.0; 
   }
@@ -152,6 +149,11 @@ double Units::ConvertConcentration(double val,
   flag = true;
   if (concentration_.find(in_unit) == concentration_.end() ||
       concentration_.find(out_unit) == concentration_.end()) {
+    flag = false;
+    return val;
+  }
+
+  if (molar_mass <= 0.0) {
     flag = false;
     return val;
   }

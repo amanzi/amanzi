@@ -20,9 +20,9 @@ TEST(UNITS_TIME)
   std::cout << "1 d = " << t << " s, flag=" << flag << std::endl;
   CHECK_CLOSE(t, 86400.0, 0.1);
 
-  t = units.ConvertTime(1.0, "s", "m", flag);
-  std::cout << "1 s = " << t << " m, flag=" << flag << std::endl;
-  CHECK_CLOSE(t, 3.8026e-07, 1e-11);
+  t = units.ConvertTime(1.0, "y", "d", flag);
+  std::cout << "1 y = " << t << " d, flag=" << flag << std::endl;
+  CHECK_CLOSE(t, 365.25, 1e-3);
 }
 
 

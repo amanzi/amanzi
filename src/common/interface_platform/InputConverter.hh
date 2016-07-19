@@ -26,6 +26,7 @@
 #include "xercesc/parsers/XercesDOMParser.hpp"
 
 // Amanzi's
+#include "Units.hh"
 #include "VerboseObject.hh"
 
 namespace Amanzi {
@@ -80,6 +81,7 @@ class MemoryManager {
   std::vector<XMLCh*> xchar;
 };
 
+
 //------------------------------------------------------------------------
 // XML helper methods for parsing outside of an InputConverter:
 
@@ -93,9 +95,9 @@ DOMDocument* OpenXMLInput(XercesDOMParser* parser,
                           const std::string& xml_input);
 //------------------------------------------------------------------------
 
+
 class InputConverter {
  public:
-
   // This constructor opens up the file with the given name, sets up a parser,
   // and parses the file.
   explicit InputConverter(const std::string& input_filename);
@@ -173,8 +175,10 @@ class InputConverter {
       xercesc::DOMNode* node, const char* options, bool exception = true);
 
   // data streaming/trimming/converting
+  // -- units. More data is required for converting ppm and ppb units.
+  double ConvertUnits_(const std::string& val, double molar_mass = -1.0);
+
   // -- times
-  double TimeStringToValue_(const std::string& time_value);
   double TimeCharToValue_(const char* time_value);
   std::string GetConstantType_(const std::string& val, std::string& parsed_val);
 
@@ -213,12 +217,13 @@ class InputConverter {
   std::map<std::string, std::string> constants_area_mass_flux_; 
   std::map<std::string, std::string> constants_;  // no check
 
+  Utils::Units units_;
+
   std::string xmlfilename_;
   DOMDocument* doc_;
   XercesDOMParser* parser_;
 
  private:
-
   // Disallowed deep-copy-related methods.
   InputConverter(const InputConverter&);
   InputConverter& operator=(const InputConverter&);

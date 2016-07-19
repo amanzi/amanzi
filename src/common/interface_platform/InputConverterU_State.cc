@@ -397,7 +397,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           if (strcmp(tagname, "uniform_conc") == 0) {
             std::string text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
             int m = GetPosition_(phases_["water"], text);
-            vals[m] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "value");
+            DOMElement* element = static_cast<DOMElement*>(jnode);
+            vals[m] = ConvertUnits_(GetAttributeValueS_(element, "value"), solute_molar_mass_[text]);
           }
         }
 

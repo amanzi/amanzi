@@ -131,6 +131,7 @@ void InputConverterU::ParseSolutes_()
 
   DOMNode* node;
   DOMNode* knode = doc_->getElementsByTagName(mm.transcode("phases"))->item(0);
+  DOMElement* element;
 
   // liquid phase (try solutes, then primaries)
   std::string species("solute");
@@ -144,10 +145,14 @@ void InputConverterU::ParseSolutes_()
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     tagname = mm.transcode(inode->getNodeName());
-    text_content = mm.transcode(inode->getTextContent());
+    std::string name = TrimString_(mm.transcode(inode->getTextContent()));
 
     if (species == tagname) {
-      phases_["water"].push_back(TrimString_(text_content));
+      phases_["water"].push_back(name);
+
+      DOMElement* element = static_cast<DOMElement*>(inode);
+      double mol_mass = GetAttributeValueD_(element, "molar_mass", TYPE_NUMERICAL, false);
+      solute_molar_mass_[name] = mol_mass;
     }
   }
   

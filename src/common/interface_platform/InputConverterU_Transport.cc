@@ -463,7 +463,7 @@ void InputConverterU::TranslateTransportBCsGroup_(
       if (tmp_name == solute_name) {
         double t0 = GetAttributeValueD_(element, "start");
         tp_forms[t0] = GetAttributeValueS_(element, "function");
-        tp_values[t0] = GetAttributeValueD_(element, "value");
+        tp_values[t0] = ConvertUnits_(GetAttributeValueS_(element, "value"), solute_molar_mass_[solute_name]);
 
         same_list.erase(it);
         it--;
@@ -477,7 +477,11 @@ void InputConverterU::TranslateTransportBCsGroup_(
     std::string space_bc_name = GetAttributeValueS_(element, "space_function", TYPE_NONE, false);
     if (space_bc_name == "gaussian") {
       space_bc = true;
-      data = GetAttributeVector_(element, "space_data");
+      std::vector<std::string> tmp;
+      tmp = GetAttributeVectorS_(element, "space_data");
+      for (int i = 0; i < tmp.size(); ++i) {
+        data.push_back(ConvertUnits_(tmp[i], solute_molar_mass_[solute_name]));
+      }
     }
 
     // create vectors of values and forms

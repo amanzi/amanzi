@@ -126,25 +126,18 @@ int FlexibleObservations::MakeObservations(State& S)
   // loop over all observables
   for (std::map<std::string, Teuchos::RCP<Observable> >::iterator i = observations.begin(); i != observations.end(); i++) {
     if ((i->second)->DumpRequested(S.time()) || (i->second)->DumpRequested(S.cycle())) {
-
       num_obs++;          
       
-      std::string label = i->first;
-      
-      //we need to make an observation for each variable in the observable
+      // we need to make an observation for each variable in the observable
       std::string var = (i->second)->variable_;
       
       // data structure to store the observation
       Amanzi::ObservationData::DataTriple data_triplet;
-      
-      // build the name of the observation
-      std::stringstream ss;
-      ss << label << ", " << var;
-      
+
+      std::string label = i->first;
       std::vector<Amanzi::ObservationData::DataTriple>& od = observation_data_[label]; 
 
       double value(0.0), volume(0.0);
-
       (i->second)->ComputeObservation(S, &value, &volume);
 
       if (var == "drawdown" || var=="permeability-weighted drawdown") {
@@ -154,16 +147,13 @@ int FlexibleObservations::MakeObservations(State& S)
       }
     
       // syncronize the result across processors
-      double result;
-      S.GetMesh()->get_comm()->SumAll(&value, &result, 1);
-      
-      double vresult;
-      S.GetMesh()->get_comm()->SumAll(&volume, &vresult, 1);
+      double data_out[2], data_in[2] = {value, volume};
+      S.GetMesh()->get_comm()->SumAll(data_in, data_out, 2);
  
       if ((i->second)->functional_ == "observation data: integral") {  
-        data_triplet.value = result;  
+        data_triplet.value = data_out[0];  
       } else if ((i->second)->functional_ == "observation data: point") {
-        data_triplet.value = result / vresult;        
+        data_triplet.value = data_out[0] / data_out[1];        
       }
       
       data_triplet.is_valid = true;

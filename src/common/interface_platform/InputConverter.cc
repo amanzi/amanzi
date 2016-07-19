@@ -98,7 +98,8 @@ xercesc::DOMDocument* OpenXMLInput(XercesDOMParser* parser,
 InputConverter::InputConverter(const std::string& input_filename):
     xmlfilename_(input_filename),
     doc_(NULL),
-    parser_(NULL)
+    parser_(NULL),
+    units_("molar")
 {
   parser_ = CreateXMLParser();
   doc_ = OpenXMLInput(parser_, input_filename);
@@ -109,7 +110,8 @@ InputConverter::InputConverter(const std::string& input_filename,
                                xercesc::DOMDocument* input_doc):
     xmlfilename_(input_filename),
     doc_(input_doc),
-    parser_(NULL)
+    parser_(NULL),
+    units_("molar")
 {
   FilterNodes(doc_, "comments");
 }
@@ -535,9 +537,9 @@ double InputConverter::GetAttributeValueD_(
       Exceptions::amanzi_throw(msg);
     }
 
-    // process constants
+    // process constants and known units
     found_type = GetConstantType_(text, parsed);
-    val = TimeStringToValue_(parsed);
+    val = ConvertUnits_(parsed);
 
     // no checks for two types
     if (found_type == TYPE_NONE ||
@@ -664,12 +666,17 @@ std::vector<double> InputConverter::GetAttributeVector_(
 std::vector<std::string> InputConverter::GetAttributeVectorS_(
     DOMElement* elem, const char* attr_name, bool exception)
 {
-  std::vector<std::string> val;
+  std::vector<std::string> val, tmp;
   MemoryManager mm;
 
   if (elem->hasAttribute(mm.transcode(attr_name))) {
     char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
-    val = CharToStrings_(text_content);
+    tmp = CharToStrings_(text_content);
+    for (int i = 0; i < tmp.size(); ++i) {
+      std::string parsed_val;
+      GetConstantType_(tmp[i], parsed_val);
+      val.push_back(parsed_val);
+    }
   } else if (exception) {
     char* tagname = mm.transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
@@ -796,7 +803,7 @@ std::string InputConverter::GetTextContentS_(
 
 
 /* ******************************************************************
-* Find positing in the array.
+* Parse input string using lists of available constants.
 ****************************************************************** */
 std::string InputConverter::GetConstantType_(
     const std::string& val, std::string& parsed_val)
@@ -870,21 +877,39 @@ std::vector<std::string> InputConverter::CharToStrings_(const char* namelist)
 
 
 /* ******************************************************************
-* Empty
+* Extract unit and convert values. We usse that units are unique.
 ****************************************************************** */
-double InputConverter::TimeStringToValue_(const std::string& time_value)
+double InputConverter::ConvertUnits_(const std::string& val, double molar_mass)
 {
-  double time;
-  char* tmp = strcpy(new char[time_value.size() + 1], time_value.c_str());
-  time = TimeCharToValue_(tmp);
-  delete[] tmp;
+  char* copy = strcpy(new char[val.size()], val.c_str());
+  char* data = strtok(copy, ";, ");
 
-  return time;
+  double out = std::strtod(data, NULL);
+  data = strtok(NULL, ";,");
+
+  // if units were found
+  bool flag;
+  if (data != NULL) {
+    out = units_.ConvertTime(out, std::string(data), "s", flag);
+    if (!flag) 
+      out = units_.ConvertLength(out, std::string(data), "m", flag);
+    if (!flag) 
+      out = units_.ConvertConcentration(
+          out, std::string(data), units_.concentration_unit(), molar_mass, flag);
+    if (!flag) {
+      Errors::Message msg;
+      msg << "Unknown unit \"" << data << "\".\n";
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+
+  delete[] copy;
+  return out;
 }
 
 
 /* ******************************************************************
-* Get default time unit from units, convert plain time values if not seconds.
+* Extract unit and convert time values to seconds.
 ****************************************************************** */
 double InputConverter::TimeCharToValue_(const char* time_value)
 {
@@ -895,6 +920,7 @@ double InputConverter::TimeCharToValue_(const char* time_value)
   time = std::strtod(tmp2, NULL);
   tmp2 = strtok(NULL, ";,");
 
+  // if units were found
   if (tmp2 != NULL) {
     if (strcmp(tmp2, "y") == 0) { 
       time *= 365.25 * 24.0 * 3600.0;
@@ -919,7 +945,7 @@ std::vector<double> InputConverter::MakeCoordinates_(const std::string& array)
 {
   std::vector<double> coords;
   char* tmp1 = strcpy(new char[array.size() + 1], array.c_str());
-  char* tmp2 = strtok(tmp1, "(, ");
+  char* tmp2 = strtok(tmp1, "(,;");
 
   while (tmp2 != NULL) {
     std::string str(tmp2), parsed_str;
@@ -934,8 +960,9 @@ std::vector<double> InputConverter::MakeCoordinates_(const std::string& array)
   return coords;
 }
 
+
 /* ******************************************************************
-* Empty
+* Remove white spaces from both sides.
 ****************************************************************** */
 std::string InputConverter::TrimString_(char* tmp)
 {
@@ -943,6 +970,7 @@ std::string InputConverter::TrimString_(char* tmp)
   boost::algorithm::trim(str);
   return str;
 }
+
 
 /* *******************************************************************
 * Generate error message when list is empty.
