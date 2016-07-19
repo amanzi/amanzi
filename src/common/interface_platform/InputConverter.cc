@@ -7,6 +7,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+           Erin Barker (Erin.Barker@pnnl.gov)
 */
 
 #include <sstream>
@@ -642,15 +643,15 @@ std::string InputConverter::GetAttributeValueS_(
 /* ******************************************************************
 * Extract attribute of type vector<double>.
 ****************************************************************** */
-std::vector<double> InputConverter::GetAttributeVector_(
-    DOMElement* elem, const char* attr_name, bool exception)
+std::vector<double> InputConverter::GetAttributeVectorD_(
+    DOMElement* elem, const char* attr_name, bool exception, double mol_mass)
 {
   std::vector<double> val;
   MemoryManager mm;
 
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
     char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
-    val = MakeCoordinates_(text_content);
+    val = MakeVector_(text_content, mol_mass);
   } else if (exception) {
     char* tagname = mm.transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
@@ -879,7 +880,7 @@ std::vector<std::string> InputConverter::CharToStrings_(const char* namelist)
 /* ******************************************************************
 * Extract unit and convert values. We usse that units are unique.
 ****************************************************************** */
-double InputConverter::ConvertUnits_(const std::string& val, double molar_mass)
+double InputConverter::ConvertUnits_(const std::string& val, double mol_mass)
 {
   char* copy = strcpy(new char[val.size()], val.c_str());
   char* data = strtok(copy, ";, ");
@@ -890,12 +891,14 @@ double InputConverter::ConvertUnits_(const std::string& val, double molar_mass)
   // if units were found
   bool flag;
   if (data != NULL) {
+    found_units_.insert(data);
+
     out = units_.ConvertTime(out, std::string(data), "s", flag);
     if (!flag) 
       out = units_.ConvertLength(out, std::string(data), "m", flag);
     if (!flag) 
       out = units_.ConvertConcentration(
-          out, std::string(data), units_.concentration_unit(), molar_mass, flag);
+          out, std::string(data), units_.concentration_unit(), mol_mass, flag);
     if (!flag) {
       Errors::Message msg;
       msg << "Unknown unit \"" << data << "\".\n";
@@ -958,6 +961,27 @@ std::vector<double> InputConverter::MakeCoordinates_(const std::string& array)
 
   delete[] tmp1;
   return coords;
+}
+
+
+/* ******************************************************************
+* Converts string of data to real numbers using units.
+****************************************************************** */
+std::vector<double> InputConverter::MakeVector_(const std::string& array,
+                                                double mol_mass)
+{
+  std::vector<double> data;
+  std::vector<std::string> tmp;
+
+  tmp = CharToStrings_(array.c_str());
+
+  for (int i = 0; i < tmp.size(); ++i) {
+    std::string parsed_str;
+    GetConstantType_(tmp[i], parsed_str);
+    data.push_back(ConvertUnits_(parsed_str, mol_mass));
+  }
+
+  return data;
 }
 
 

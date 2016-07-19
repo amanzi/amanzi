@@ -90,7 +90,10 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
         .set<Teuchos::Array<std::string> >("runtime diagnostics: regions", transport_diagnostics_);
   }
 
-  // save the translate file
+  // -- final I/O
+  PrintStatistics_();
+
+  // sava the translate file
   if (rank_ == 0) SaveXMLFile(out_list, xmlfilename_);
 
   return out_list;
@@ -407,6 +410,26 @@ void InputConverterU::SaveXMLFile(
   std::ofstream xmlfile;
   xmlfile.open(filename.c_str());
   xmlfile << XMLobj;
+}
+
+
+/* ******************************************************************
+* Print final comments
+****************************************************************** */
+void InputConverterU::PrintStatistics_()
+{
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    *vo_->os() << "Final comments:\n found units: ";
+    int n(0);
+    for (std::set<std::string>::iterator it = found_units_.begin(); it != found_units_.end(); ++it) {
+      *vo_->os() << *it << " ";
+      if (++n > 10) {
+        n = 0;
+        *vo_->os() << " continue:    ";
+      }
+    }
+    *vo_->os() << std::endl;
+  }
 }
 
 }  // namespace AmanziInput

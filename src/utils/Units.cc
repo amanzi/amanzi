@@ -143,7 +143,7 @@ double Units::ConvertLength(double val,
 double Units::ConvertConcentration(double val,
                                    const std::string& in_unit,
                                    const std::string& out_unit,
-                                   double molar_mass,
+                                   double mol_mass,
                                    bool& flag)
 { 
   flag = true;
@@ -153,7 +153,7 @@ double Units::ConvertConcentration(double val,
     return val;
   }
 
-  if (molar_mass <= 0.0) {
+  if (mol_mass <= 0.0) {
     flag = false;
     return val;
   }
@@ -162,8 +162,8 @@ double Units::ConvertConcentration(double val,
   tmp *= concentration_[in_unit].value() / concentration_[out_unit].value();
 
   // It is not clear how to deal properly with dimentionless units.
-  if (in_unit == "ppm" || in_unit == "ppb") tmp /= molar_mass;
-  if (out_unit == "ppm" || out_unit == "ppb") tmp *= molar_mass;
+  if (in_unit == "ppm" || in_unit == "ppb") tmp /= mol_mass;
+  if (out_unit == "ppm" || out_unit == "ppb") tmp *= mol_mass;
 
   return tmp;
 }

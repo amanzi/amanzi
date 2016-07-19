@@ -138,6 +138,9 @@ class InputConverterU : public InputConverter {
   void FilterEmptySublists_(Teuchos::ParameterList& plist);
   void MergeInitialConditionsLists_(Teuchos::ParameterList& plist);
 
+  // -- miscalleneous
+  void PrintStatistics_();
+
  private:
   int dim_;
   int rank_, num_proc_;
@@ -180,6 +183,7 @@ class InputConverterU : public InputConverter {
   std::vector<std::string> vv_src_regions_;
   std::vector<std::string> vv_obs_regions_;
 
+  // for statistics
   Teuchos::ParameterList verb_list_;
   VerboseObject* vo_;
 };

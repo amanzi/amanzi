@@ -67,8 +67,8 @@
     </ParameterList>
     <ParameterList name="Well">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{1.080e+02, 4.0e+01}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.120e+02, 6.0e+01}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{3.29183999999999983e+01, 4.00000000000000000e+01}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{3.41375999999999920e+01, 6.00000000000000000e+01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="All">
