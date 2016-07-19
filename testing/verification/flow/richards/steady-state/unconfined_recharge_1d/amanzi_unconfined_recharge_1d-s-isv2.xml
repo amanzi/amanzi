@@ -76,35 +76,35 @@
         <dimension>2</dimension>
         <generate>
             <number_of_cells nx="164" ny="120"/>
-            <box high_coordinates="(499.872, 73.152)" low_coordinates="(0.0, 0.0)"/>
+            <box high_coordinates="499.872, 73.152" low_coordinates="0.0, 0.0"/>
         </generate>
     </mesh>
     <regions>
-        <box high_coordinates="(1.0, 73.152)" low_coordinates="(0.0, 0.0)" name="Region_between_surface_0_and__1"/>
-        <box high_coordinates="(499.872, 73.152)" low_coordinates="(1.0, 0.0)" name="Region_between_surface_1_and__2"/>
-        <box high_coordinates="(499.872, 73.152)" low_coordinates="(0.0, 0.0)" name="All"/>
-        <box high_coordinates="(499.872, 73.152)" low_coordinates="(499.872, 0.0)" name="+X_Boundary"/>
-        <box high_coordinates="(499.872, 73.152)" low_coordinates="(0.0, 73.152)" name="+Y_Boundary"/>
-        <box high_coordinates="(499.872, 0.0)" low_coordinates="(0.0, 0.0)" name="-Y_Boundary"/>
-        <box high_coordinates="(0.0, 73.152)" low_coordinates="(0.0, 0.0)" name="-X_Boundary"/>
-        <point coordinate="(92.964, 0.3048)" name="Point305ft"/>
-        <point coordinate="(458.724, 0.3048)" name="Point1505ft"/>
-        <point coordinate="(1.524, 0.3048)" name="Point5ft"/>
-        <point coordinate="(184.404, 0.3048)" name="Point605ft"/>
-        <point coordinate="(214.884, 0.3048)" name="Point705ft"/>
-        <point coordinate="(498.348, 0.3048)" name="Point1635ft"/>
-        <point coordinate="(153.924, 0.3048)" name="Point505ft"/>
-        <point coordinate="(32.004, 0.3048)" name="Point105ft"/>
-        <point coordinate="(428.244, 0.3048)" name="Point1405ft"/>
-        <point coordinate="(489.204, 0.3048)" name="Point1605ft"/>
-        <point coordinate="(245.364, 0.3048)" name="Point805ft"/>
-        <point coordinate="(123.444, 0.3048)" name="Point405ft"/>
-        <point coordinate="(397.764, 0.3048)" name="Point1305ft"/>
-        <point coordinate="(62.484, 0.3048)" name="Point205ft"/>
-        <point coordinate="(367.284, 0.3048)" name="Point1205ft"/>
-        <point coordinate="(275.844, 0.3048)" name="Point905ft"/>
-        <point coordinate="(303.276, 0.3048)" name="Point1005ft"/>
-        <point coordinate="(336.804, 0.3048)" name="Point1105ft"/>
+        <box high_coordinates="1.0, 73.152" low_coordinates="0.0, 0.0" name="Region_between_surface_0_and__1"/>
+        <box high_coordinates="499.872, 73.152" low_coordinates="1.0, 0.0" name="Region_between_surface_1_and__2"/>
+        <box high_coordinates="499.872, 73.152" low_coordinates="0.0, 0.0" name="All"/>
+        <box high_coordinates="499.872, 73.152" low_coordinates="499.872, 0.0" name="+X_Boundary"/>
+        <box high_coordinates="499.872, 73.152" low_coordinates="0.0, 73.152" name="+Y_Boundary"/>
+        <box high_coordinates="499.872, 0.0" low_coordinates="0.0, 0.0" name="-Y_Boundary"/>
+        <box high_coordinates="0.0, 73.152" low_coordinates="0.0, 0.0" name="-X_Boundary"/>
+        <point coordinate="92.964, 0.3048" name="Point305ft"/>
+        <point coordinate="458.724, 0.3048" name="Point1505ft"/>
+        <point coordinate="1.524, 0.3048" name="Point5ft"/>
+        <point coordinate="184.404, 0.3048" name="Point605ft"/>
+        <point coordinate="214.884, 0.3048" name="Point705ft"/>
+        <point coordinate="498.348, 0.3048" name="Point1635ft"/>
+        <point coordinate="153.924, 0.3048" name="Point505ft"/>
+        <point coordinate="32.004, 0.3048" name="Point105ft"/>
+        <point coordinate="428.244, 0.3048" name="Point1405ft"/>
+        <point coordinate="489.204, 0.3048" name="Point1605ft"/>
+        <point coordinate="245.364, 0.3048" name="Point805ft"/>
+        <point coordinate="123.444, 0.3048" name="Point405ft"/>
+        <point coordinate="397.764, 0.3048" name="Point1305ft"/>
+        <point coordinate="62.484, 0.3048" name="Point205ft"/>
+        <point coordinate="367.284, 0.3048" name="Point1205ft"/>
+        <point coordinate="275.844, 0.3048" name="Point905ft"/>
+        <point coordinate="303.276, 0.3048" name="Point1005ft"/>
+        <point coordinate="336.804, 0.3048" name="Point1105ft"/>
     </regions>
     <materials>
         <material name="Aquifer">

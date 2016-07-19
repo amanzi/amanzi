@@ -61,13 +61,13 @@
         <comments>Right boundary</comments>
         <box high_coordinates="100.0, 4.0" low_coordinates="100.0, 0.0"/>
       </region>
-      <point coordinate="(  0.0, 5.0)" name="LeftBoundary"/>
-      <point coordinate="(100.0, 5.0)" name="RightBoundary"/>
-      <point coordinate="( 50.0, 5.0)" name="Midpoint"/>
-      <point coordinate="(  2.5, 5.0)" name="LeftmostCell"/>
-      <point coordinate="( 97.5, 5.0)" name="RightmostCell"/>
-      <point coordinate="( 47.5, 5.0)" name="LeftMidpointCell"/>
-      <point coordinate="( 52.5, 5.0)" name="RightMidpointCell"/>
+      <point coordinate="  0.0, 5.0" name="LeftBoundary"/>
+      <point coordinate="100.0, 5.0" name="RightBoundary"/>
+      <point coordinate=" 50.0, 5.0" name="Midpoint"/>
+      <point coordinate="  2.5, 5.0" name="LeftmostCell"/>
+      <point coordinate=" 97.5, 5.0" name="RightmostCell"/>
+      <point coordinate=" 47.5, 5.0" name="LeftMidpointCell"/>
+      <point coordinate=" 52.5, 5.0" name="RightMidpointCell"/>
     </regions>
     <materials>
       <material name="Soil">
@@ -85,7 +85,7 @@
         <assigned_regions>Entire Domain</assigned_regions>
         <liquid_phase name="water">
           <liquid_component name="water">
-            <linear_pressure gradient="(-97.893474, -9789.3474)" reference_coord="(100, 4)" value="0"/>
+            <linear_pressure gradient="-97.893474, -9789.3474" reference_coord="100, 4" value="0"/>
           </liquid_component>
         </liquid_phase>
       </initial_condition>
