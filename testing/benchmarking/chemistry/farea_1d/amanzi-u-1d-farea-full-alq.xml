@@ -16,7 +16,8 @@
     <process_kernels>
         <flow model="saturated" state="on"/>
         <transport state="on"/>
-        <chemistry database="farea-full.dat" engine="pflotran" state="on"/>
+        <!--chemistry database="farea-full.dat" engine="pflotran" state="on" input_filename="1d-farea-full-trim.in"/-->
+	<chemistry database="farea-full.dat" engine="pflotran" state="on"/>
     </process_kernels>
     <phases>
         <liquid_phase name="water">
@@ -24,7 +25,6 @@
             <density>998.2</density>
             <dissolved_components>
                 <primaries>
-                    <primary backward_rate="0.0" coefficient_of_diffusion="1.0E-9" forward_rate="1.78577e-09 ">Tritium</primary>
                     <primary coefficient_of_diffusion="1.0E-9">H+</primary>
                     <primary coefficient_of_diffusion="1.0E-9">Al+++</primary>
                     <primary coefficient_of_diffusion="1.0E-9">Ca++</primary>
@@ -36,6 +36,7 @@
                     <primary coefficient_of_diffusion="1.0E-9">Na+</primary>
                     <primary coefficient_of_diffusion="1.0E-9">SiO2(aq)</primary>
                     <primary coefficient_of_diffusion="1.0E-9">SO4--</primary>
+                    <primary backward_rate="0.0" coefficient_of_diffusion="1.0E-9" forward_rate="1.78577e-09 ">Tritium</primary>
                     <primary coefficient_of_diffusion="1.0E-9">NO3-</primary>
                     <primary coefficient_of_diffusion="1.0E-9">UO2++</primary>
                 </primaries>

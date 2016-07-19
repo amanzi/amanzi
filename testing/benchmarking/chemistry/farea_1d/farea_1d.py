@@ -109,27 +109,25 @@ if __name__ == "__main__":
 
     # start with pflotran results
     path_to_pflotran = "pflotran"
+    time = timespflo[0]
 
     # tot concentration
-    u_pflotran = [[[] for x in range(len(totcpflo))] for x in range(len(timespflo))]
-    for i, time in enumerate(timespflo):
-       for j, comp in enumerate(totcpflo):          
+    u_pflotran = [[] for x in range(len(totcpflo))]
+    for j, comp in enumerate(totcpflo):          
           x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,comp)
-          u_pflotran[i][j] = c_pflotran
+          u_pflotran[j] = c_pflotran
 
     # sorbed concentration    
-    v_pflotran = [[[] for x in range(len(sorbpflo))] for x in range(len(timespflo))]
-    for i, time in enumerate(timespflo):
-       for j, sorb in enumerate(sorbpflo):
+    v_pflotran = [[] for x in range(len(sorbpflo))]
+    for j, sorb in enumerate(sorbpflo):
           x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,sorb)
-          v_pflotran[i][j] = c_pflotran
+          v_pflotran[j] = c_pflotran
 
     # mineral volume fraction
-    w_pflotran = [[[] for x in range(len(vfpflo))] for x in range(len(timespflo))]
-    for i, time in enumerate(timespflo):
-       for j, vf in enumerate(vfpflo):
+    w_pflotran = [[] for x in range(len(vfpflo))]
+    for j, vf in enumerate(vfpflo):
           x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,vf)
-          w_pflotran[i][j] = c_pflotran
+          w_pflotran[j] = c_pflotran
 
     CWD = os.getcwd()
     local_path = "" 
@@ -140,26 +138,25 @@ if __name__ == "__main__":
         path_to_amanzi = "amanzi-native-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, [root+".bgd"], path_to_amanzi)
 
+        time = timesama[0]
+
         # tot conc
-        u_amanzi_native = [[[] for x in range(len(totcama))] for x in range(len(timesama))]
-        for i, time in enumerate(timesama):
-           for j, comp in enumerate(totcama):
+        u_amanzi_native = [[] for x in range(len(totcama))]
+        for j, comp in enumerate(totcama):
               x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,'farea-1d',time,comp)
-              u_amanzi_native[i][j] = c_amanzi_native
+              u_amanzi_native[j] = c_amanzi_native
 
         # sorb conc
-        v_amanzi_native = [[[] for x in range(len(sorbama))] for x in range(len(timesama))]
-        for i, time in enumerate(timesama):
-           for j, sorb in enumerate(sorbama):
+        v_amanzi_native = [[] for x in range(len(sorbama))]
+        for j, sorb in enumerate(sorbama):
               x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,'farea-1d',time,sorb)
-              v_amanzi_native[i][j] = c_amanzi_native
+              v_amanzi_native[j] = c_amanzi_native
 
         # mineral volume fraction
-        w_amanzi_native = [[[] for x in range(len(vfama))] for x in range(len(timesama))]
-        for i, time in enumerate(timesama):
-           for j, vf in enumerate(vfama):
+        w_amanzi_native = [[] for x in range(len(vfama))]
+        for j, vf in enumerate(vfama):
               x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,'farea-1d',time,vf)
-              w_amanzi_native[i][j] = c_amanzi_native
+              w_amanzi_native[j] = c_amanzi_native
 
         native = True
 
@@ -175,26 +172,25 @@ if __name__ == "__main__":
                                        ["1d-"+root+"-trim.in", root+".dat"],
                                        path_to_amanzi)
 
+        time = timesama[0]
+
         # tot concentration
-        u_amanzi_alquimia = [[[] for x in range(len(totcama))] for x in range(len(timesama))]
-        for i, time in enumerate(timesama):
-           for j, comp in enumerate(totcama):
+        u_amanzi_alquimia = [[] for x in range(len(totcama))]
+        for j, comp in enumerate(totcama):
               x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,"farea-1d",time,comp)
-              u_amanzi_alquimia[i][j] = c_amanzi_alquimia  
+              u_amanzi_alquimia[j] = c_amanzi_alquimia  
 
         # sorbed concentration
-        v_amanzi_alquimia = [[[] for x in range(len(sorbama))] for x in range(len(timesama))]
-        for i, time in enumerate(timesama):
-           for j, sorb in enumerate(sorbama):
+        v_amanzi_alquimia = [[] for x in range(len(sorbama))]
+        for j, sorb in enumerate(sorbama):
               x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,"farea-1d",time,sorb)
-              v_amanzi_alquimia[i][j] = c_amanzi_alquimia
+              v_amanzi_alquimia[j] = c_amanzi_alquimia
 
         # mineral volume fraction
-        w_amanzi_alquimia = [[[] for x in range(len(vfama))] for x in range(len(timesama))]
-        for i, time in enumerate(timesama):
-           for j, vf in enumerate(vfama):
+        w_amanzi_alquimia = [[] for x in range(len(vfama))]
+        for j, vf in enumerate(vfama):
               x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,"farea-1d",time,vf)
-              w_amanzi_alquimia[i][j] = c_amanzi_alquimia
+              w_amanzi_alquimia[j] = c_amanzi_alquimia
 
         alq = True
 
@@ -216,33 +212,29 @@ if __name__ == "__main__":
     # ax[0],b[0] ---> Aqueous concentrations
     # ax[1],b[1] ---> Sorbed concentrations
 
-    # for i, time in enumerate(times):
-    i = 0
     for j, comp in enumerate(search):
  
             if alq:
-                ax[0].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2)
+                ax[0].plot(x_amanzi_alquimia, u_amanzi_alquimia[j],color=colors[j],linestyle=styles[0],linewidth=2)
             if native:
-                ax[0].plot(x_amanzi_native, u_amanzi_native[i][j],color=colors[j],marker=styles[1],linestyle='None',linewidth=2,label=comp)
-            ax[0].plot(x_pflotran, u_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2)
+                ax[0].plot(x_amanzi_native, u_amanzi_native[j],color=colors[j],marker=styles[1],linestyle='None',linewidth=2,label=comp)
+            ax[0].plot(x_pflotran, u_pflotran[j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2)
  
             if alq:
-                ax[1].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color=colors[j],linestyle=styles[0],linewidth=2,label=codes[j*len(styles)])
+                ax[1].plot(x_amanzi_alquimia, v_amanzi_alquimia[j],color=colors[j],linestyle=styles[0],linewidth=2,label=codes[j*len(styles)])
             if native:
-                ax[1].plot(x_amanzi_native, v_amanzi_native[i][j],color=colors[j],marker=styles[1],linestyle='None',linewidth=2,label=codes[j*len(styles)+1]) #label=comp)
-            ax[1].plot(x_pflotran, v_pflotran[i][j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2,label=codes[j*len(styles)+2])
+                ax[1].plot(x_amanzi_native, v_amanzi_native[j],color=colors[j],marker=styles[1],linestyle='None',linewidth=2,label=codes[j*len(styles)+1]) #label=comp)
+            ax[1].plot(x_pflotran, v_pflotran[j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2,label=codes[j*len(styles)+2])
 
     # ax[2],b[2] ---> Mineral Volume Fractions
 
-    # for i, time in enumerate(times):
-    i = 0
     for j, vf in enumerate(searchm):
 
             if alq:
-                ax[2].plot(x_amanzi_alquimia, w_amanzi_alquimia[i][j],color=colors2[j],linestyle=styles[0],linewidth=2) #label=codes[j*len(styles)])
+                ax[2].plot(x_amanzi_alquimia, w_amanzi_alquimia[j],color=colors2[j],linestyle=styles[0],linewidth=2) #label=codes[j*len(styles)])
             if native:
-                ax[2].plot(x_amanzi_native, w_amanzi_native[i][j],color=colors2[j],marker=styles[1],linestyle='None',linewidth=2,label=vf) #label=codes[j*len(styles)+1])
-            ax[2].plot(x_pflotran, w_pflotran[i][j],color=colors2[j],linestyle='None',marker=styles[2],linewidth=2) #label=codes[j*len(styles)+2])
+                ax[2].plot(x_amanzi_native, w_amanzi_native[j],color=colors2[j],marker=styles[1],linestyle='None',linewidth=2,label=vf) #label=codes[j*len(styles)+1])
+            ax[2].plot(x_pflotran, w_pflotran[j],color=colors2[j],linestyle='None',marker=styles[2],linewidth=2) #label=codes[j*len(styles)+2])
 
     # axes
     ax[2].set_xlabel("Distance (m)",fontsize=15)
