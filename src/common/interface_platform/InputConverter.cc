@@ -882,7 +882,7 @@ std::vector<std::string> InputConverter::CharToStrings_(const char* namelist)
 ****************************************************************** */
 double InputConverter::ConvertUnits_(const std::string& val, double mol_mass)
 {
-  char* copy = strcpy(new char[val.size()], val.c_str());
+  char* copy = strcpy(new char[val.size() + 1], val.c_str());
   char* data = strtok(copy, ";, ");
 
   double out = std::strtod(data, NULL);

@@ -47,6 +47,9 @@ typedef boost::units::unit<
 typedef boost::units::make_scaled_unit<
     concentration, boost::units::scale<10, boost::units::static_rational<3> > >::type concentration_amanzi;
 
+// atomic representation of a derived unit
+typedef std::map<std::string, int> AtomicUnitForm;
+
 class Units {
  public:
   Units()
@@ -101,6 +104,8 @@ class Units {
   std::string mass_unit() { return mass_unit_; }
   std::string concentration_unit() { return concentration_unit_; }
 
+  AtomicUnitForm ComputeAtomicUnitForm_(const std::string& unit, bool* flag);
+
  private:
   double pressure_factor_, tcc_factor_;
 
@@ -108,7 +113,7 @@ class Units {
   std::map<std::string, boost::units::quantity<boost::units::si::length> > length_;
   std::map<std::string, boost::units::quantity<concentration> > concentration_;
 
-  // dafault units
+  // default units
   std::string time_unit_;
   std::string length_unit_;
   std::string mass_unit_;

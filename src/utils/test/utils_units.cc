@@ -68,4 +68,16 @@ TEST(UNITS_CONCENTRATION)
 }
 
 
+TEST(UNITS_DERIVED) 
+{
+  Units units("molar");
+  bool flag;
+
+  std::string derived("m/s");
+  AtomicUnitForm form = units.ComputeAtomicUnitForm_(derived, &flag);
+ 
+  for (AtomicUnitForm::iterator it = form.begin(); it != form.end(); ++it) {
+    std::cout << "unit: " << it->first << " degree: " << it->second << std::endl;
+  }
+}
 

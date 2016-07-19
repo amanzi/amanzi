@@ -168,6 +168,61 @@ double Units::ConvertConcentration(double val,
   return tmp;
 }
 
+
+/* ******************************************************************
+* Convert any derived input unit to compatible iutput unit.
+****************************************************************** */
+/*
+double Units::ConvertDerivedUnit(double val,
+                                 const std::string& in_unit,
+                                 const std::string& out_unit,
+                                 double mol_mass,
+                                 bool& flag)
+{
+}
+*/
+
+
+/* ******************************************************************
+* Parse unit
+****************************************************************** */
+AtomicUnitForm Units::ComputeAtomicUnitForm_(const std::string& unit, bool* flag)
+{
+  *flag = true;
+
+  const char* copy = unit.c_str();
+  char* tmp1 = strcpy(new char[unit.size()], unit.c_str());
+  char* tmp2 = strtok(tmp1, "^/*");
+  char separator;
+
+  AtomicUnitForm form;
+  AtomicUnitForm::iterator it;
+  std::pair<AtomicUnitForm::iterator, bool> status;
+
+  separator = ' ';
+  while (tmp2 != NULL) {
+    std::string atomic_unit(tmp2);
+
+    status = form.insert(std::pair<std::string, int>(atomic_unit, 0)); 
+    it = status.first;
+      
+    if (separator == ' ') {
+      (it->second)++;
+    } else if (separator == '*') {
+      (it->second)++;
+    } else if (separator == '/') {
+      (it->second)--;
+    }
+
+    separator = copy[tmp2 - tmp1 + strlen(tmp2)];
+    tmp2 = strtok(NULL, "^/*");
+  }
+
+  delete[] tmp1;
+  return form;
+}
+
+
 }  // namespace Utils
 }  // namespace Amanzi
 
