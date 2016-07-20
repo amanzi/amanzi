@@ -363,7 +363,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Create verbosity object to print out initialiation statistics.
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = rp_list_->sublist("verbose object");
-  vo_ =  Teuchos::rcp(new VerboseObject("FlowPK::Richards", vlist)); 
+  vo_ = Teuchos::rcp(new VerboseObject("FlowPK::Richards", vlist)); 
 
   // Initilize various base class data.
   Flow_PK::Initialize(S);

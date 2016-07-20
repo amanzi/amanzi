@@ -36,6 +36,10 @@ FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist)
   if (plist.isParameter("relative to top"))
     relative_to_top_ = plist.get<bool>("relative to top");
 
+  relative_to_bottom_ = false;
+  if (plist.isParameter("relative to bottom"))
+    relative_to_bottom_ = plist.get<bool>("relative to bottom");
+
   no_flow_above_water_table_ = false;
   if (plist.isParameter("no flow above water table"))
     no_flow_above_water_table_ = plist.get<bool>("no flow above water table");
@@ -43,7 +47,7 @@ FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist)
   if (plist.isParameter("submodel"))
     seepage_model_ = plist.get<std::string>("submodel");
 
-  if (relative_to_top_) {
+  if (relative_to_top_ || relative_to_bottom_) {
     regions_ = plist.get<Teuchos::Array<std::string> >("regions").toVector();
     rho_ = plist.sublist("static head").sublist("function-static-head").get<double>("density");
     g_ = plist.sublist("static head").sublist("function-static-head").get<double>("gravity");
@@ -52,6 +56,9 @@ FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist)
   ref_pressure_ = FLOW_PRESSURE_ATMOSPHERIC;
   if (plist.isParameter("reference pressure"))
     ref_pressure_ = plist.get<double>("reference pressure");
+
+  // for screen output
+  nedges_ = 0;
 }
 
 
@@ -71,7 +78,12 @@ void FlowBoundaryFunction::ComputeSubmodel(
     }
   }
 
-  if (relative_to_top_) {
+  if (relative_to_top_ || relative_to_bottom_) {
+    Teuchos::ParameterList vlist;
+    vlist.sublist("verbose object");
+    Teuchos::RCP<VerboseObject> vo = Teuchos::rcp(new VerboseObject("FlowBoundaryFunction", vlist)); 
+    Teuchos::OSTab tab = vo->getOSTab();
+
     // lazy allocation of memory
     if (shift_water_table_ == Teuchos::null) {
       const Epetra_BlockMap& fmap = mesh->face_map(true);
@@ -79,6 +91,11 @@ void FlowBoundaryFunction::ComputeSubmodel(
 
       for (int i = 0; i < regions_.size(); ++i) {
         CalculateShiftWaterTable_(mesh, regions_[i]);
+
+        if (vo->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+          *vo->os() << "found " << nedges_ << " top/bottom boundary edges for \"" 
+                    << regions_[i] << "\"" << std::endl;
+        }
       }
     }
 
@@ -212,6 +229,7 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
     int f = ss_faces[i];
     const AmanziGeometry::Point& xf = mesh->face_centroid(f);
 
+    // fast algorithm for flat faces
     int flag = 0;
     for (int j = 0; j < nedges; j += 2) {
       p1 = edges[j + 1] - edges[j];
@@ -226,13 +244,15 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
       if (b < tol_edge && a > -0.01 && a < 1.01) {
         double z = edges[j][2] + a * p1[2];
         (*shift_water_table_)[f] = z * rho_g;
-        if (z > xf[2]) {
+        if (z > xf[2] && relative_to_top_ || 
+            z < xf[2] && relative_to_bottom_) {
           flag = 1;
           break;
         }
       }
     }
 
+    // slow full search 
     if (flag == 0) {
       // msg << "Flow PK: The boundary region \"" << region.c_str() << "\" is not piecewise flat.";
       // Exceptions::amanzi_throw(msg);
@@ -241,7 +261,8 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
       for (int j = 0; j < nedges; j += 2) {
         p1 = (edges[j] + edges[j + 1]) / 2;
         d = L22(p1 - xf);
-        if (p1[2] > xf[2] && d < dmin) {
+        if ((p1[2] > xf[2] && relative_to_top_ || 
+             p1[2] < xf[2] && relative_to_bottom_) && d < dmin) {
           dmin = d;
           z = p1[2];
         }
@@ -257,10 +278,7 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
   if (sendbuf != NULL) delete [] sendbuf;
 #endif
 
-  // if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-  //   Teuchos::OSTab tab = vo_->getOSTab();
-  //   *vo_->os() << "found " << nedges/2 << " boundary edges for side set " << region.c_str() << std::endl;
-  // }
+  nedges_ = nedges / 2;
 }
 
 

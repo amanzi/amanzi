@@ -1436,6 +1436,10 @@ This modification is referred to as a submodel and requires additional parameter
     to the top boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
     Default value is `"false`". 
 
+  * `"relative to bottom`" [bool] indicates the submodel where the static head is defined with respect
+    to the bottom boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
+    Default value is `"false`". 
+
   * `"no flow above water table`" [bool] indicates the submodel where the no-flow boundary condition 
     has to be used above the water table. This switch uses the pressure value at a face
     centroid. Default is `"false`".
@@ -1488,6 +1492,7 @@ This modification is referred to as a submodel and requires additional parameter
          <ParameterList name="BC 2">
            <Parameter name="regions" type="Array(string)" value="{EAST_SIDE}"/>
            <Parameter name="relative to top" type="bool" value="true"/>
+           <Parameter name="relative to bottom" type="bool" value="true"/>
            <ParameterList name="static head">
              <ParameterList name="function-static-head">
                <Parameter name="p0" type="double" value="101325.0"/>

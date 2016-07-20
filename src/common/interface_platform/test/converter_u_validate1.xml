@@ -421,6 +421,8 @@
             <ParameterList name="BC 0">
               <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
               <Parameter name="relative to top" type="bool" value="false"/>
+              <Parameter name="relative to bottom" type="bool" value="false"/>
+              <Parameter name="no flow above water table" type="bool" value="false"/>
               <ParameterList name="static head">
                 <ParameterList name="function-static-head">
                   <Parameter name="p0" type="double" value="101325.0"/>
@@ -710,6 +712,8 @@
             <ParameterList name="BC 0">
               <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
               <Parameter name="relative to top" type="bool" value="false"/>
+              <Parameter name="relative to bottom" type="bool" value="false"/>
+              <Parameter name="no flow above water table" type="bool" value="false"/>
               <ParameterList name="static head">
                 <ParameterList name="function-static-head">
                   <Parameter name="p0" type="double" value="101325.0"/>

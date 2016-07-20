@@ -682,6 +682,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
       std::string tmp = GetAttributeValueS_(
           element, "coordinate_system", TYPE_NONE, false, "absolute");
       bc.set<bool>("relative to top", (tmp == "relative to mesh top"));
+      bc.set<bool>("relative to bottom", (tmp == "relative to mesh bottom"));
 
       Teuchos::ParameterList& bc_tmp = bc.sublist("static head").sublist("function-static-head");
       bc_tmp.set<int>("space dimension", dim_)

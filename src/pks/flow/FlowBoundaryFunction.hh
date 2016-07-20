@@ -36,6 +36,7 @@ class FlowBoundaryFunction : public PK_DomainFunction {
   FlowBoundaryFunction()
       : rainfall_(false),
         relative_to_top_(false),
+        relative_to_bottom_(false),
         no_flow_above_water_table_(false),
         bc_name_("underfined"),
         seepage_model_("") {};
@@ -61,7 +62,7 @@ class FlowBoundaryFunction : public PK_DomainFunction {
 
  private:
   bool rainfall_;
-  bool relative_to_top_;
+  bool relative_to_top_, relative_to_bottom_;
   bool no_flow_above_water_table_;
 
   double rho_, g_;
@@ -71,6 +72,7 @@ class FlowBoundaryFunction : public PK_DomainFunction {
   std::vector<std::string> regions_;
 
   Teuchos::RCP<Epetra_Vector> shift_water_table_;
+  int nedges_;
 };
 
 }  // namespace Flow
