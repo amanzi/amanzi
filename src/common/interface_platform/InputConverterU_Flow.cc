@@ -678,8 +678,9 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
         .set<std::string>("submodel", "PFloTran");
     }
     else if (bctype == "static head") {
+      element = static_cast<DOMElement*>(same_list[0]);
       std::string tmp = GetAttributeValueS_(
-          static_cast<DOMElement*>(same_list[0]), "coordinate_system", TYPE_NONE, false, "absolute");
+          element, "coordinate_system", TYPE_NONE, false, "absolute");
       bc.set<bool>("relative to top", (tmp == "relative to mesh top"));
 
       Teuchos::ParameterList& bc_tmp = bc.sublist("static head").sublist("function-static-head");
@@ -689,6 +690,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
             .set<double>("p0", ATMOSPHERIC_PRESSURE);
       bc_tmp.sublist(bcname) = bcfn;
       bc.remove(bcname);
+
+      tmp = GetAttributeValueS_(
+          element, "submodel", TYPE_NONE, false, "none");
+      bc.set<bool>("no flow above water table", (tmp == "no_flow_above_water_table"));
     }
   }
 
