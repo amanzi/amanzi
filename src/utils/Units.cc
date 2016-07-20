@@ -170,17 +170,52 @@ double Units::ConvertConcentration(double val,
 
 
 /* ******************************************************************
-* Convert any derived input unit to compatible iutput unit.
+* Convert any derived input unit to compatible output unit.
 ****************************************************************** */
-/*
 double Units::ConvertDerivedUnit(double val,
                                  const std::string& in_unit,
                                  const std::string& out_unit,
                                  double mol_mass,
                                  bool& flag)
 {
+  // convert to default (SI) units
+  AtomicUnitForm form = ComputeAtomicUnitForm_(in_unit, &flag);
+
+  int nlength(0), ntime(0);
+  double tmp(val);
+  for (AtomicUnitForm::iterator it = form.begin(); it != form.end(); ++it) {
+    if (length_.find(it->first) != length_.end()) {
+      tmp *= std::pow(length_[it->first].value(), it->second);
+      nlength += it->second;
+    }
+    else if (time_.find(it->first) != time_.end()) {
+      tmp *= std::pow(time_[it->first].value(), it->second);
+      ntime += it->second;
+    }
+  }
+
+  // convert from default (SI) units
+  form = ComputeAtomicUnitForm_(out_unit, &flag);
+
+  for (AtomicUnitForm::iterator it = form.begin(); it != form.end(); ++it) {
+    if (length_.find(it->first) != length_.end()) {
+      tmp /= std::pow(length_[it->first].value(), it->second);
+      nlength -= it->second;
+    }
+    else if (time_.find(it->first) != time_.end()) {
+      tmp /= std::pow(time_[it->first].value(), it->second);
+      ntime -= it->second;
+    }
+  }
+
+  // consistency of units
+  if (nlength || ntime) {
+    flag = false;
+    return val;
+  }
+
+  return tmp;
 }
-*/
 
 
 /* ******************************************************************
@@ -221,7 +256,6 @@ AtomicUnitForm Units::ComputeAtomicUnitForm_(const std::string& unit, bool* flag
   delete[] tmp1;
   return form;
 }
-
 
 }  // namespace Utils
 }  // namespace Amanzi

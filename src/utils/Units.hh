@@ -96,7 +96,10 @@ class Units {
                        const std::string& out_unit, bool& flag);
 
   double ConvertConcentration(double val, const std::string& in_unit,
-                              const std::string& out_unit, double molar_mass, bool& flag);
+                              const std::string& out_unit, double mol_mass, bool& flag);
+
+  double ConvertDerivedUnit(double val, const std::string& in_unit,
+                            const std::string& out_unit, double mol_mass, bool& flag);
 
   // access
   std::string time_unit() { return time_unit_; }
@@ -104,6 +107,7 @@ class Units {
   std::string mass_unit() { return mass_unit_; }
   std::string concentration_unit() { return concentration_unit_; }
 
+ private:
   AtomicUnitForm ComputeAtomicUnitForm_(const std::string& unit, bool* flag);
 
  private:
