@@ -85,11 +85,10 @@ class Units {
   }
 
   // conversion of units
-  // -- deprecated
-  double ConvertTime(double val, const std::string& unit); 
-
-  // -- new
   double ConvertTime(double val, const std::string& in_unit,
+                     const std::string& out_unit, bool& flag);
+
+  double ConvertMass(double val, const std::string& in_unit,
                      const std::string& out_unit, bool& flag);
 
   double ConvertLength(double val, const std::string& in_unit,
@@ -114,8 +113,12 @@ class Units {
   double pressure_factor_, tcc_factor_;
 
   std::map<std::string, boost::units::quantity<boost::units::si::time> > time_;
+  std::map<std::string, boost::units::quantity<boost::units::si::mass> > mass_;
   std::map<std::string, boost::units::quantity<boost::units::si::length> > length_;
+  std::map<std::string, boost::units::quantity<boost::units::si::volume> > volume_;
   std::map<std::string, boost::units::quantity<concentration> > concentration_;
+
+  std::map<std::string, std::string> derived_;
 
   // default units
   std::string time_unit_;

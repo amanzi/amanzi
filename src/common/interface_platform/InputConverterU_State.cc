@@ -64,8 +64,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
   // --- constant density
   node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag);
-  text_content = mm.transcode(node->getTextContent());
-  rho_ = std::strtod(text_content, NULL);
+  rho_ = GetTextContentD_(node);
   out_ic.sublist("fluid_density").set<double>("value", rho_);
 
   out_ic.sublist("mass_density_liquid").sublist("function").sublist("All")

@@ -119,7 +119,6 @@ FlexibleObservations::FlexibleObservations(
 ****************************************************************** */
 int FlexibleObservations::MakeObservations(State& S)
 {
-  Errors::Message msg;
   int num_obs(0);
   int dim = S.GetMesh()->space_dimension();
 
@@ -218,6 +217,8 @@ void FlexibleObservations::RegisterWithTimeStepManager(const Teuchos::Ptr<TimeSt
 ****************************************************************** */
 void FlexibleObservations::FlushObservations()
 {
+  bool flag;
+
   if (obs_list_->isParameter("observation output filename")) {
     std::string obs_file = obs_list_->get<std::string>("observation output filename");
     std::string utime = obs_list_->get<std::string>("time unit", "s");
@@ -242,19 +243,18 @@ void FlexibleObservations::FlushObservations()
 
           for (int j = 0; j < od.size(); j++) {
             if (od[j].is_valid) {
-              if (!out.good()) {
-                std::cout << "PROBLEM BEFORE" << std::endl;
-              }
               std::string var = ind_obs_list.get<std::string>("variable");
               out << label << ", "
                   << ind_obs_list.get<std::string>("region") << ", "
                   << ind_obs_list.get<std::string>("functional") << ", "
                   << var << ", "
-                  << units_.ConvertTime(od[j].time, utime) << ", "
+                  << units_.ConvertTime(od[j].time, "s", utime, flag) << ", "
                   << (((var == "permeability-weighted drawdown" || 
                         var == "drawdown") && !j) ? 0.0 : od[j].value) << '\n';
-              if (!out.good()) {
-                std::cout << "PROBLEM AFTER" << std::endl;
+              if (!flag) {
+                Errors::Message msg;
+                msg << "Conversion of time units in observations has failed\n.";
+                Exceptions::amanzi_throw(msg);
               }
             }
           }

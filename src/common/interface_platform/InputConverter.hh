@@ -173,7 +173,9 @@ class InputConverter {
   std::vector<xercesc::DOMNode*> GetSameChildNodes_(
       xercesc::DOMNode* node, std::string& name, bool& flag, bool exception = false);
 
-  // -- extract text content and verify it
+  // -- extract text content and verify it against list of options
+  double GetTextContentD_(  // supports units
+      xercesc::DOMNode* node, bool exception = false, double val = 0.0);
   std::string GetTextContentS_(
       xercesc::DOMNode* node, const char* options, bool exception = true);
 

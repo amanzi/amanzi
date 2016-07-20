@@ -81,5 +81,17 @@ TEST(UNITS_DERIVED)
   out_unit = "ft/y/m";
   tmp = units.ConvertDerivedUnit(1.0, in_unit, out_unit, 51.9961e-3, flag);
   CHECK(!flag);
+
+  in_unit = "g*m/s^2";
+  out_unit = "kg*in/h^2";
+  tmp = units.ConvertDerivedUnit(1.0, in_unit, out_unit, 51.9961e-3, flag);
+  std::cout << "  1 g*m/s^2 = " << tmp << " kg*in/h^2, flag=" << flag << std::endl;
+  CHECK_CLOSE(tmp, 5.10236e+05, 1.0);
+
+  in_unit = "g*s/m^3";
+  out_unit = "kg*h/L";
+  tmp = units.ConvertDerivedUnit(1.0, in_unit, out_unit, 51.9961e-3, flag);
+  std::cout << "  1 g*s/m^3 = " << tmp << " kg*h/L, flag=" << flag << std::endl;
+  CHECK_CLOSE(tmp, 2.77778e-10, 1.0e-15);
 }
 

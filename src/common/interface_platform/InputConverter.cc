@@ -777,7 +777,33 @@ std::string InputConverter::GetAttributeValueS_(
 
 
 /* ******************************************************************
-* Extract text content and verify it .
+* Extract text content and convert it for double
+****************************************************************** */
+double InputConverter::GetTextContentD_(
+    DOMNode* node, bool exception, double default_val)
+{
+  double val;
+  std::string text, parsed_text;
+
+  MemoryManager mm;
+
+  if (node != NULL) {
+    std::string text = TrimString_(mm.transcode(node->getTextContent()));
+    GetConstantType_(text, parsed_text);
+    val = ConvertUnits_(parsed_text);
+  } else if (!exception) {
+    val = default_val;
+  } else {
+    char* tagname = mm.transcode(node->getNodeName());
+    ThrowErrorMisschild_("unknown", tagname, "unknwon");
+  }
+
+  return val;
+}
+
+
+/* ******************************************************************
+* Extract text content and verify it against list of options.
 ****************************************************************** */
 std::string InputConverter::GetTextContentS_(
     DOMNode* node, const char* options, bool exception)
@@ -893,15 +919,15 @@ double InputConverter::ConvertUnits_(const std::string& val, double mol_mass)
   if (data != NULL) {
     found_units_.insert(data);
 
-    out = units_.ConvertTime(out, std::string(data), "s", flag);
-    if (!flag) 
-      out = units_.ConvertLength(out, std::string(data), "m", flag);
+    out = units_.ConvertDerivedUnit(out, std::string(data), "SI", mol_mass, flag);
     if (!flag) 
       out = units_.ConvertConcentration(
           out, std::string(data), units_.concentration_unit(), mol_mass, flag);
     if (!flag) {
       Errors::Message msg;
-      msg << "Unknown unit \"" << data << "\".\n";
+      msg << "\nPrototype code for units of measurement cannot parse unit \"" << data <<"\"."
+          << "\n  (1) Try to convert a derived unit to atomic units, e.g. Pa=kg/m/s^2."
+          << "\n  (2) Fix possible format errors, e.g. no spaces is allowed.\n";
       Exceptions::amanzi_throw(msg);
     }
   }
