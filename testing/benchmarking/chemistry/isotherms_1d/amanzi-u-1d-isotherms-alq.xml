@@ -105,21 +105,21 @@
     <dimension>3</dimension>
     <generate>
       <number_of_cells nx = "100"  ny = "1"  nz = "1"/>
-      <box  low_coordinates = "(0.0,0.0,0.0)" high_coordinates = "(100.0,1.0,1.0)"/>
+      <box  low_coordinates = "0.0,0.0,0.0" high_coordinates = "100.0,1.0,1.0"/>
     </generate>
   </mesh>
 
   <regions>
     <region name ="All">
-      <box low_coordinates= "(0.0,0.0,0.0)"     high_coordinates="(100.0,1.0,1.0)"/>
+      <box low_coordinates= "0.0,0.0,0.0"     high_coordinates="100.0,1.0,1.0"/>
     </region>
 
     <region name ="west">
-      <box low_coordinates= "(0.0,0.0,0.0)"     high_coordinates="(0.0,1.0,1.0)"/>
+      <box low_coordinates= "0.0,0.0,0.0"     high_coordinates="0.0,1.0,1.0"/>
     </region>
 
     <region name ="east">
-      <box low_coordinates= "(100.0,0.0,0.0)"   high_coordinates="(100.0,1.0,1.0)"/>
+      <box low_coordinates= "100.0,0.0,0.0"   high_coordinates="100.0,1.0,1.0"/>
     </region>
   </regions>
 
@@ -152,13 +152,13 @@
     <constraints>
       <constraint name="initial">
         <primary name="A" type="total" value="1.0e-20"/>
-        <primary name="C" type="total" value="1.0e-20"/>
         <primary name="B" type="total" value="1.0e-20"/>
+        <primary name="C" type="total" value="1.0e-20"/>
       </constraint>
       <constraint name="west">
         <primary name="A" type="total" value="1e-3"/>
-        <primary name="C" type="total" value="1e-3"/>
         <primary name="B" type="total" value="1e-3"/>
+        <primary name="C" type="total" value="1e-3"/>
       </constraint>
     </constraints>
   </geochemistry>

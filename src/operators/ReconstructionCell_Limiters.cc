@@ -65,10 +65,10 @@ void ReconstructionCell::LimiterTensorial_(
         int c2 = downwind_cell_[f];
 
         if (c1 >= 0 && c2 >= 0) {
-          u1 = (*field_)[0][c];
-          u2 = (*field_)[0][c1 + c2 - c];
+          u1 = (*field_)[component_][c];
+          u2 = (*field_)[component_][c1 + c2 - c];
         } else if (c1 == c) {
-          u1 = u2 = (*field_)[0][c];
+          u1 = u2 = (*field_)[component_][c];
         } else {  // limiting on upwind face is done separately.
           continue;
         }
@@ -112,10 +112,10 @@ void ReconstructionCell::LimiterTensorial_(
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
-    field_local_min[c] = field_local_max[c] = (*field_)[0][c];
+    field_local_min[c] = field_local_max[c] = (*field_)[component_][c];
 
     for (int i = 0; i < cells.size(); i++) {
-      double value = (*field_)[0][cells[i]];
+      double value = (*field_)[component_][cells[i]];
       field_local_min[c] = std::min(field_local_min[c], value);
       field_local_max[c] = std::max(field_local_max[c], value);
     }
@@ -128,7 +128,7 @@ void ReconstructionCell::LimiterTensorial_(
       int c2 = downwind_cell_[f];
 
       if (c2 >= 0 && c2 < ncells_owned) {
-        u2 = (*field_)[0][c2];
+        u2 = (*field_)[component_][c2];
         u1 = bc_value[f];
         umin = std::min(u1, u2);
         umax = std::max(u1, u2);
@@ -192,7 +192,7 @@ void ReconstructionCell::LimiterExtensionTransportTensorial_(
       if (c == c1) {
         const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
         u1f = getValue(c, xcf);
-        u1 = (*field_)[0][c];
+        u1 = (*field_)[component_][c];
 
         a = u1f - u1;
         if (fabs(a) > OPERATOR_LIMITER_TOLERANCE * (fabs(u1f) + fabs(u1))) {
@@ -246,8 +246,8 @@ void ReconstructionCell::LimiterBarthJespersen_(
     c2 = downwind_cell_[f];
     if (c1 < 0 || c2 < 0) continue;
 
-    u1 = (*field_)[0][c1];
-    u2 = (*field_)[0][c2];
+    u1 = (*field_)[component_][c1];
+    u2 = (*field_)[component_][c2];
     umin = std::min(u1, u2);
     umax = std::max(u1, u2);
     double tol = sqrt(OPERATOR_LIMITER_TOLERANCE) * (fabs(u1) + fabs(u2));
@@ -284,10 +284,10 @@ void ReconstructionCell::LimiterBarthJespersen_(
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
-    field_local_min[c] = field_local_max[c] = (*field_)[0][c];
+    field_local_min[c] = field_local_max[c] = (*field_)[component_][c];
 
     for (int i = 0; i < cells.size(); i++) {
-      double value = (*field_)[0][cells[i]];
+      double value = (*field_)[component_][cells[i]];
       field_local_min[c] = std::min(field_local_min[c], value);
       field_local_max[c] = std::max(field_local_max[c], value);
     }
@@ -299,7 +299,7 @@ void ReconstructionCell::LimiterBarthJespersen_(
       int c2 = downwind_cell_[f];
 
       if (c2 >= 0) {
-        u2 = (*field_)[0][c2];
+        u2 = (*field_)[component_][c2];
         u1 = bc_value[f];
         umin = std::min(u1, u2);
         umax = std::max(u1, u2);
@@ -361,7 +361,7 @@ void ReconstructionCell::LimiterExtensionTransportBarthJespersen_(
 
       if (c == c1) {
         const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
-        u1 = (*field_)[0][c];
+        u1 = (*field_)[component_][c];
         for (int i = 0; i < dim; i++) gradient_c1[i] = (*grad)[i][c1];
         u1f = u1 + gradient_c1 * (xcf - xc);
 
@@ -413,7 +413,7 @@ void ReconstructionCell::LimiterKuzmin_(
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_nodes(c, &nodes);
 
-    double value = (*field_)[0][c];
+    double value = (*field_)[component_][c];
     for (int i = 0; i < nodes.size(); i++) {
       int v = nodes[i];
       field_node_min[v] = std::min(field_node_min[v], value);
@@ -454,7 +454,7 @@ void ReconstructionCell::LimiterKuzmin_(
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
 
-    u1 = (*field_)[0][c];
+    u1 = (*field_)[component_][c];
 
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     for (int i = 0; i < dim; i++) gradient_c[i] = (*grad)[i][c];
@@ -502,7 +502,7 @@ void ReconstructionCell::LimiterKuzmin_(
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_nodes(c, &nodes);
-    field_local_min[c] = field_local_max[c] = (*field_)[0][c];
+    field_local_min[c] = field_local_max[c] = (*field_)[component_][c];
 
     for (int i = 0; i < nodes.size(); i++) {
       int v = nodes[i];
@@ -552,7 +552,7 @@ void ReconstructionCell::LimiterExtensionTransportKuzmin_(
           int v = nodes[j];
           mesh_->node_get_coordinates(v, &xp);
           up = getValue(c, xp);
-          u1 = (*field_)[0][c];
+          u1 = (*field_)[component_][c];
 
           a = up - u1;
           if (fabs(a) > OPERATOR_LIMITER_TOLERANCE * (fabs(up) + fabs(u1))) {

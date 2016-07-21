@@ -159,7 +159,7 @@ If this list is not specified, the default verbosity value is used.
   Option *extreme is used by the developers only. For communication between users and developers, 
   the recommended option is *high*. 
 
-* `"hide line prefix`" [bool] defines prefix for output messages. Defualt value is *true*.
+* `"hide line prefix`" [bool] defines prefix for output messages. Default value is *true*.
 
 * `"name`" [string] is the name of the prefix.
 
@@ -409,7 +409,13 @@ Primary and derived fields
 
   * saturation [-]
   * hydraulic_head [m]
-  * darcy_flux [m/s]
+  * darcy_flux (more precisely, volumetric flow rate) [m^3/s] 
+  * porosity [-]
+  * transport_porosity [-] 
+
+* Static fields
+
+  * permeability [m^2]
 
 
 Field evaluators
@@ -1430,6 +1436,10 @@ This modification is referred to as a submodel and requires additional parameter
     to the top boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
     Default value is `"false`". 
 
+  * `"relative to bottom`" [bool] indicates the submodel where the static head is defined with respect
+    to the bottom boundary (a curve in 3D) of the specified regions. Support of 2D is turned off.
+    Default value is `"false`". 
+
   * `"no flow above water table`" [bool] indicates the submodel where the no-flow boundary condition 
     has to be used above the water table. This switch uses the pressure value at a face
     centroid. Default is `"false`".
@@ -1482,6 +1492,7 @@ This modification is referred to as a submodel and requires additional parameter
          <ParameterList name="BC 2">
            <Parameter name="regions" type="Array(string)" value="{EAST_SIDE}"/>
            <Parameter name="relative to top" type="bool" value="true"/>
+           <Parameter name="relative to bottom" type="bool" value="true"/>
            <ParameterList name="static head">
              <ParameterList name="function-static-head">
                <Parameter name="p0" type="double" value="101325.0"/>
@@ -1859,10 +1870,11 @@ The conceptual PDE model for the fully saturated flow is
   \frac{\partial (\phi s_l C_l)}{\partial t} 
   =
   - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C_l) 
-  + \boldsymbol{\nabla} \cdot (\phi s_l (\boldsymbol{D}_l + \tau \boldsymbol{M}_l) \boldsymbol{\nabla} C_l) + Q,
+  + \boldsymbol{\nabla} \cdot (\phi_e s_l (\boldsymbol{D}_l + \tau \boldsymbol{M}_l) \boldsymbol{\nabla} C_l) + Q,
 
 where 
-:math:`\phi` is porosity,
+:math:`\phi` is total porosity,
+:math:`\phi_e` is effective transport porosity,
 :math:`s_l` is liquid saturation, 
 :math:`Q` is source or sink term,
 :math:`\boldsymbol{q}_l` is the Darcy velocity,
@@ -1876,12 +1888,14 @@ tensor has the following form:
   \boldsymbol{D}_l 
   = \alpha_t \|\boldsymbol{v}\| \boldsymbol{I} 
   + \left(\alpha_l-\alpha_t \right) 
-    \frac{\boldsymbol{v} \boldsymbol{v}}{\|\boldsymbol{v}\|},
+    \frac{\boldsymbol{v} \boldsymbol{v}}{\|\boldsymbol{v}\|}, \qquad
+  \boldsymbol{v} = \frac{\boldsymbol{q}}{\phi_e}
 
 where
 :math:`\alpha_l` is longitudinal dispersivity,
 :math:`\alpha_t` is  transverse dispersivity,
 and :math:`\boldsymbol{v}` is average pore velocity.
+Amanzi supports two additional models for dispersivity with 3 and 4 parameters.
 
 
 Physical models and assumptions
@@ -1900,6 +1914,10 @@ This list is often generated or extended by a high-level MPC PK.
 * `"multiscale model`" [string] specifies a multiscale model.
   Available options are `"single porosity`" (default) and `"dual porosity`".
 
+* `"effective transport porosity`" [bool] If *true*, effective transport porosity
+  will be used by dispersive-diffusive fluxes instead of total porosity. 
+  Default is *false*.
+
 .. code-block:: xml
 
    <ParameterList name="transport">  <!-- parent list -->
@@ -1907,6 +1925,7 @@ This list is often generated or extended by a high-level MPC PK.
        <Parameter name="gas diffusion" type="bool" value="false"/>
        <Parameter name="permeability field is required" type="bool" value="false"/>
        <Parameter name="multiscale model" type="string" value="single porosity"/>
+       <Parameter name="effective transport porosity" type="bool" value="false"/>
      </ParameterList>
    </ParameterList>
 
@@ -2331,26 +2350,10 @@ Geochemical engines
 
 Here we specify either the default or the third-party geochemical engine. 
 
+Common parameters
+`````````````````
 
-Alquimia
-````````
-
-The Alquimia chemistry process kernel only requires the *Engine* and *Engine Input File*
-entries, but will also accept and respect the value given for *max time step (s)*. 
-Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
-
-* `"minerals`" [Array(string)] is the list of mineral names.
-
-* `"sorption sites`" [Array(string)] 
-
-* `"auxiliary data`" [Array(string)] defines additional chemistry related data that the user 
-  can request be saved to vis files. 
-
-* `"max time step (s)`" [double] is the maximum time step that chemistry will allow the MPC to take.
-
-* `"min time step (s)`" [double] is the minimum time step that chemistry will allow the MPC to take.
-
-* `"initial time step (s)`" [double] is the initial time step that chemistry will ask the MPC to take.
+The following parameters are common for all supported engines.
 
 * `"time step control method`" [string] specifies time step control method for chemistry subcycling. 
   Choose either "fixed" (default) or "simple".  For option "fixed", time step is fixed.
@@ -2361,12 +2364,37 @@ Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
 * `"time step cut threshold`" [int] is the number of Newton iterations that if exceeded
   will trigger a time step cut. Default is 8.
 
+* `"max time step (s)`" [double] is the maximum time step that chemistry will allow the MPC to take.
+
+* `"initial time step (s)`" [double] is the initial time step that chemistry will ask the MPC to take.
+
 * `"time step cut factor`" [double] is the factor by which the time step is cut. Default is 2.0
 
 * `"time step increase threshold`" [int] is the number of consecutive successful time steps that
   will trigger a time step increase. Default is 4.
 
 * `"time step increase factor`" [double] is the factor by which the time step is increased. Default is 1.2
+
+* `"free ion initial guess`" [double] provides an estimate of the free ion concentration for solutes.
+  It used to help convergence of the initial solution of the chemistry. If this parameter is absent, 
+  a fraction (10%) of the total component concentration is used.
+
+
+Alquimia
+````````
+
+The Alquimia chemistry process kernel only requires the *Engine* and *Engine Input File*
+entries, but will also accept and respect the value given for *max time step (s)*. 
+Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
+
+* `"minerals`" [Array(string)] is the list of mineral names.
+
+* `"sorption sites`" [Array(string)] is the list of sorption sites.
+
+* `"auxiliary data`" [Array(string)] defines additional chemistry related data that the user 
+  can request be saved to vis files. 
+
+* `"min time step (s)`" [double] is the minimum time step that chemistry will allow the MPC to take.
 
 .. code-block:: xml
 
@@ -2402,7 +2430,7 @@ The Amanzi chemistry process kernel uses the following parameters.
 
 * `"minerals`" [Array(string)] is the list of mineral names.
 
-* `"sorption sites`" [Array(string)] 
+* `"sorption sites`" [Array(string)] is the list of sorption sites.
 
 * `"activity model`" [string] is the type of model used for activity corrections. 
   Valid options are `"unit`", `"debye-huckel`", and `"pitzer-hwm`",
@@ -2411,20 +2439,6 @@ The Amanzi chemistry process kernel uses the following parameters.
 
 * `"maximum Newton iterations`" [int] is the maximum number of iteration the chemistry 
   library can take.
-
-* `"max time step (s)`" [double] is the maximum time step that chemistry will allow the MPC to take.
-
-* `"initial time step (s)`" [double] is the initial time step that chemistry will ask the MPC to take.
-
-* `"time step cut threshold`" [int] is the number of Newton iterations that if exceeded
-  will trigger a time step cut. Default is 8.
-
-* `"time step cut factor`" [double] is the factor by which the time step is cut. Default is 2.0
-
-* `"time step increase threshold`" [int] is the number of consecutive successful time steps that
-  will trigger a time step increase. Default is 4.
-
-* `"time step increase factor`" [double] is the factor by which the time step is increased. Default is 1.2
 
 * `"auxiliary data`" [Array(string)] defines additional chemistry related data that the user 
   can request be saved to vis files. Currently `"pH`" is the only variable supported.
@@ -2443,6 +2457,7 @@ The Amanzi chemistry process kernel uses the following parameters.
       <Parameter name="max time step (s)" type="double" value="1.5e+07"/>
       <Parameter name="auxiliary data" type="Array(string)" value="{pH}"/>
       <Parameter name="number of component concentrations" type="int" value="1"/>
+      <Parameter name="time step control method" type="string" value="simple"/>
     </ParameterList>
   </ParameterList>
 
@@ -3297,7 +3312,7 @@ Diffusion operator
     that is used when the primary selection fails to satisfy all a priori conditions.
 
   * `"diffusion tensor`" [string] allows us to solve problems with symmetric and non-symmetric 
-    (but positive definite) tensors. Available options are *symmetric* (defualt) and *nonsymmetric*.
+    (but positive definite) tensors. Available options are *symmetric* (default) and *nonsymmetric*.
 
   * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
     coefficient, if any. Available options are `"upwind: face`", `"divk: cell-face`" (default),
@@ -3556,26 +3571,25 @@ Here is an example:
   </ParameterList>
 
 
-Polynomial function
-...................
+Distance function
+..................
 
-A generic polynomial function is given by the following expression:
+A distance function calculates distance from reference point :math:`x_0`
+using by the following expression:
 
 .. math::
-  f(x) = \sum_{j=0}^n c_j (x - x_0)^{p_j}
+  f(x) = \sum_{j=0}^{n} m_j (x_j - x_{0,j})^2
 
-where :math:`c_j` are coefficients of monomials,
-:math:`p_j` are integer exponents, and :math:`x_0` is the reference point.
-Here is an example of a quartic polynomial:
+Note that the first parameter in :math:`x` can be time.
+Here is an example of a distance function using isotropic metric:
 
 .. code-block:: xml
 
-  <ParameterList name="function-polynomial">
-    <Parameter name="coefficients" type="Array(double)" value="{1.0, 1.0}"/>
-    <Parameter name="exponents" type="Array(int)" value="{2, 4}"/>
-    <Parameter name="reference point" type="double" value="0.0"/>
+  <ParameterList name="function-distance">
+    <Parameter name="x0" type="Array(double)" value="{1.0, 3.0, 0.0}"/>
+    <Parameter name="metric" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
   </ParameterList>
-  
+
 
 Multi-variable linear function
 ..............................
@@ -3599,6 +3613,49 @@ Here is an example:
     <Parameter name="x0" type="Array(double)" value="{2.0, 3.0, 1.0}"/>
   </ParameterList>
   
+
+Polynomial function
+...................
+
+A generic polynomial function of one argument is given by the following expression:
+
+.. math::
+  f(x) = \sum_{j=0}^n c_j (x - x_0)^{p_j}
+
+where :math:`c_j` are coefficients of monomials,
+:math:`p_j` are integer exponents, and :math:`x_0` is the reference point.
+Here is an example of a quartic polynomial:
+
+.. code-block:: xml
+
+  <ParameterList name="function-polynomial">
+    <Parameter name="coefficients" type="Array(double)" value="{1.0, 1.0}"/>
+    <Parameter name="exponents" type="Array(int)" value="{2, 4}"/>
+    <Parameter name="reference point" type="double" value="0.0"/>
+  </ParameterList>
+  
+
+Multi-variable monomial function
+................................
+
+A multi-variable monomial function is given by the following expression:
+
+.. math::
+  f(x) = c \prod_{j=0}^{n} (x_j - x_{0,j})^{p_j}
+
+with the constant factor :math:`c`, the reference point :math:`x_0`, and
+integer exponents :math:`p_j`. 
+Note that the first parameter in :math:`x` can be time.
+Here is an example of monomial of degree 6 in three variables:
+
+.. code-block:: xml
+
+  <ParameterList name="function-monomial">
+    <Parameter name="c" type="double" value="1.0"/>
+    <Parameter name="x0" type="Array(double)" value="{1.0, 3.0, 0.0}"/>
+    <Parameter name="exponents" type="Array(int)" value="{2, 3, 1}"/>
+  </ParameterList>
+
 
 Separable function
 ..................
@@ -3642,7 +3699,7 @@ analysis tests.
 
 * `"parameter`" [double] specifies additional parameter `p` for math functions 
   with two arguments. These functions are `"a pow(x[0], p)`" and `"a mod(x[0], p)`".
-  Defualt value is 0.
+  Default value is 0.
 
 * `"shift`" [double] specifies shift of the function argument. Default is 0.
 
@@ -4548,7 +4605,8 @@ User-defined regions are constructed using the following syntax
 
    * Shape [list] Geometric model primitive, choose exactly one of the following: 
      `"region: point`", `"region: box`", `"region: plane`", `"region: labeled set`", 
-     `"region: layer`", `"region: surface`", `"region: boundary`", or `"region: box volume fractions`".
+     `"region: layer`", `"region: surface`", `"region: boundary`",
+     `"region: box volume fractions`", or `"region: line segment"`.
 
 Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex 
 definitions based on triangulated surface files.  
@@ -4812,6 +4870,30 @@ they are equivalent to rectangles on a plane or segments on a line.
 
 This example defines a degenerate box, a square on a surface *z=1*.
 
+Line Segment
+....................
+
+List *region: line segment* desribes a region defined by a line
+segment. This region is a set of cells which intersect with a line
+segment.  The line segment is allowed to intersect with one or more cells. Zero length
+line segments are allowed. The line segment is defined by its ends
+points.
+
+* `"end coordinate"` [Array(double)] Location of one end of a line
+  segment.
+
+* `"opposite end coordinate`" [Array(double)] Location of the opposite
+  end of a line segment.
+
+.. code-block:: xml
+
+   <ParameterList name="WELL"> <!-- parent list -->
+      <ParameterList name="region: line segment">
+        <Parameter name="end coordinate" type="Array(double)" value="{497542.44, 5393755.77, 0.0}"/>
+        <Parameter name="opposite end coordinate" type="Array(double)" value="{497542.44, 5393755.77, 100.0}"/>
+      </ParameterList>
+    </ParameterList>     
+
 
 Notes and example
 -----------------
@@ -4908,7 +4990,9 @@ for its evaluation.  The observations are evaluated during the simulation and re
   * `"observation output filename`" [string] user-defined name for the file that the observations are written to.
     The file name can contain relative or absolute path to an *existing* directory only. 
 
-  * `"precision`" [int] defined the number of significant digits. Default is 16.
+  * `"time unit`" [string] defines time unit for output data. Available options are `"s`", `"h`", `"d`", and `"y`". Default is `"s`".
+
+  * `"precision`" [int] defines the number of significant digits. Default is 16.
 
   * OBSERVATION [list] user-defined label, can accept values for `"variables`", `"functional`",
     `"region`", `"times`", and TSPS (see below).
@@ -4920,7 +5004,9 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * aqueous saturation [-] (volume water / volume pore space)
       * aqueous pressure [Pa]
       * hydraulic head [m] 
+      * permeability-weighted hydraulic head [m] 
       * drawdown [m] 
+      * permeability-weighted drawdown [m] 
       * volumetric water content [-]
       * gravimetric water content [-]
       * water table [m]
@@ -4932,8 +5018,8 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * aqueous volumetric flow rate [m^3/s] (when functional="integral")
       * SOLUTE volumetric flow rate [mol/s] (when functional="integral")
 
-    Observation *drawdown* is calculated with respect to the value registered at the first time
-    it was requested.
+    Observations *drawdown* and *permeability-weighted* are calculated with respect to the value 
+    registered at the first time it was requested.
 
     The following observations are point-type obervations: "water table", "drawdown".
 

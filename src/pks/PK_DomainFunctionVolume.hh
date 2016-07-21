@@ -40,7 +40,7 @@ class PK_DomainFunctionVolume : public FunctionBase,
 
   // required member functions
   virtual void Compute(double t0, double t1);
-  virtual std::string name() { return "volume"; }
+  virtual std::string name() const { return "volume"; }
 
  protected:
   using FunctionBase::value_;

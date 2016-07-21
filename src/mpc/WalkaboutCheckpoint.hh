@@ -6,11 +6,11 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Walkabout
+  Checkpointing Walkabout data.
 */
 
-#ifndef AMANZI_WALKABOUT_OBSERVATIONS_HH_
-#define AMANZI_WALKABOUT_OBSERVATIONS_HH_
+#ifndef AMANZI_WALKABOUT_CHECKPOINT_HH_
+#define AMANZI_WALKABOUT_CHECKPOINT_HH_
 
 #include <map>
 
@@ -27,12 +27,12 @@
 
 namespace Amanzi {
 
-class Walkabout_observations : public Checkpoint {
+class WalkaboutCheckpoint : public Checkpoint {
 
 public:
 
-  Walkabout_observations(Teuchos::ParameterList& plist, Epetra_MpiComm *comm): Checkpoint (plist, comm) {};
-  Walkabout_observations() : Checkpoint() {};
+  WalkaboutCheckpoint(Teuchos::ParameterList& plist, Epetra_MpiComm *comm): Checkpoint (plist, comm) {};
+  WalkaboutCheckpoint() : Checkpoint() {};
 
   void WriteWalkabout(Teuchos::RCP<State>& S);
   void CalculateDarcyVelocity(Teuchos::RCP<State>& S,

@@ -20,6 +20,7 @@
 #include "PK_DomainFunctionVolume.hh"
 #include "PK_DomainFunctionVolumeFraction.hh"
 #include "PK_DomainFunctionWeight.hh"
+#include "PK_DomainFunctionCoupling.hh"
 
 namespace Amanzi {
 
@@ -80,9 +81,15 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
   }
   else if (model == "volume fraction") {
     Teuchos::RCP<PK_DomainFunctionVolumeFraction<FunctionBase> >
-        func = Teuchos::rcp(new PK_DomainFunctionVolumeFraction<FunctionBase>(mesh_));
+      func = Teuchos::rcp(new PK_DomainFunctionVolumeFraction<FunctionBase>(mesh_));
     func->Init(plist);
     return func; 
+  }
+  else if (model == "domain coupling") {
+    Teuchos::RCP<PK_DomainFunctionCoupling<FunctionBase> >
+      func = Teuchos::rcp(new PK_DomainFunctionCoupling<FunctionBase>(mesh_));
+    func->Init(plist, kind);
+    return func;
   }
   else {
     Teuchos::RCP<PK_DomainFunctionSimple<FunctionBase> >

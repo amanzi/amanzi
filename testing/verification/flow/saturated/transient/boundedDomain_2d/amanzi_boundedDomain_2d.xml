@@ -115,8 +115,8 @@
       <plane location="1200.0,-1200.0,0.0" name="yz2" normal="1.0,0.0,0.0" />
       <plane location="-1200.0,-1200.0,0.0" name="xz1" normal="0.0,-1.0,0.0" />
       <plane location="-1200.0,1200.0,0.0" name="xz2" normal="0.0,1.0,0.0" />
-      <point coordinate="(24.0,0.0,1.0)" name="Obs_r24" />
-      <point coordinate="(100.0,0.0,1.0)" name="Obs_r100" />
+      <point coordinate="24.0,0.0,1.0" name="Obs_r24" />
+      <point coordinate="100.0,0.0,1.0" name="Obs_r100" />
     </regions>
     <phases>
       <liquid_phase name="water">
@@ -160,7 +160,7 @@
         <assigned_regions>Entire Domain</assigned_regions>
         <liquid_phase name="water">
           <liquid_component name="water">
-            <linear_pressure gradient="(0.0,0.0,0)" reference_coord="(1200.0,1200.0,10.0)" value="1.07785e6" />
+            <linear_pressure gradient="0.0,0.0,0" reference_coord="1200.0,1200.0,10.0" value="1.07785e6" />
           </liquid_component>
         </liquid_phase>
       </initial_condition>

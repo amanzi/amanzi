@@ -129,7 +129,6 @@ class Richards_PK : public Flow_PK {
   void VV_ReportMultiscale();
 
   // -- miscaleneous methods
-  void UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u);
   double ErrorNormSTOMP(const CompositeVector& u, const CompositeVector& du);
 
   // -- access methods

@@ -76,27 +76,27 @@
       <dimension>3</dimension>
       <generate>
         <number_of_cells nx="1" ny="1" nz="200" />
-        <box high_coordinates="(1.0, 1.0, 2.0)" low_coordinates="(0.0, 0.0, 0.0)" />
+        <box high_coordinates="1.0, 1.0, 2.0" low_coordinates="0.0, 0.0, 0.0" />
       </generate>
     </mesh>
     <regions>
-      <box high_coordinates="(1.0, 1.0, 2.0)" low_coordinates="(0.0, 0.0, 0.0)" name="All" />
-      <box high_coordinates="(1.0, 1.0, 2.0)" low_coordinates="(0.0, 0.0, 2.0)" name="Top Surface" />
-      <box high_coordinates="(1.0, 1.0, 0.0)" low_coordinates="(0.0, 0.0, 0.0)" name="Bottom Surface" />
-      <box high_coordinates="(1.0, 1.0, 2.0)" low_coordinates="(0.0, 0.0, 1.5)" name="Top Region" />
-      <box high_coordinates="(1.0, 1.0, 1.5)" low_coordinates="(0.0, 0.0, 0.0)" name="Bottom Region" />
-      <point coordinate="(0.5,0.5,0.0)" name="Obs_0" />
-      <point coordinate="(0.5,0.5,1.50)" name="Obs_150" />
-      <point coordinate="(0.5,0.5,1.55)" name="Obs_155" />
-      <point coordinate="(0.5,0.5,1.60)" name="Obs_160" />
-      <point coordinate="(0.5,0.5,1.65)" name="Obs_165" />
-      <point coordinate="(0.5,0.5,1.70)" name="Obs_170" />
-      <point coordinate="(0.5,0.5,1.75)" name="Obs_175" />
-      <point coordinate="(0.5,0.5,1.80)" name="Obs_180" />
-      <point coordinate="(0.5,0.5,1.85)" name="Obs_185" />
-      <point coordinate="(0.5,0.5,1.90)" name="Obs_190" />
-      <point coordinate="(0.5,0.5,1.95)" name="Obs_195" />
-      <point coordinate="(0.5,0.5,2.0)" name="Obs_200" />
+      <box high_coordinates="1.0, 1.0, 2.0" low_coordinates="0.0, 0.0, 0.0" name="All" />
+      <box high_coordinates="1.0, 1.0, 2.0" low_coordinates="0.0, 0.0, 2.0" name="Top Surface" />
+      <box high_coordinates="1.0, 1.0, 0.0" low_coordinates="0.0, 0.0, 0.0" name="Bottom Surface" />
+      <box high_coordinates="1.0, 1.0, 2.0" low_coordinates="0.0, 0.0, 1.5" name="Top Region" />
+      <box high_coordinates="1.0, 1.0, 1.5" low_coordinates="0.0, 0.0, 0.0" name="Bottom Region" />
+      <point coordinate="0.5,0.5,0.0" name="Obs_0" />
+      <point coordinate="0.5,0.5,1.50" name="Obs_150" />
+      <point coordinate="0.5,0.5,1.55" name="Obs_155" />
+      <point coordinate="0.5,0.5,1.60" name="Obs_160" />
+      <point coordinate="0.5,0.5,1.65" name="Obs_165" />
+      <point coordinate="0.5,0.5,1.70" name="Obs_170" />
+      <point coordinate="0.5,0.5,1.75" name="Obs_175" />
+      <point coordinate="0.5,0.5,1.80" name="Obs_180" />
+      <point coordinate="0.5,0.5,1.85" name="Obs_185" />
+      <point coordinate="0.5,0.5,1.90" name="Obs_190" />
+      <point coordinate="0.5,0.5,1.95" name="Obs_195" />
+      <point coordinate="0.5,0.5,2.0" name="Obs_200" />
     </regions>
     <materials>
       <material name="clay">

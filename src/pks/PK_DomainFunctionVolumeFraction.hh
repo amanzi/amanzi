@@ -41,7 +41,7 @@ class PK_DomainFunctionVolumeFraction : public FunctionBase,
 
   // required member functions
   virtual void Compute(double t0, double t1);
-  virtual std::string name() { return "volume fraction"; }
+  virtual std::string name() const { return "volume fraction"; }
 
  protected:
   using FunctionBase::value_;

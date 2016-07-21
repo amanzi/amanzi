@@ -17,6 +17,9 @@
         <Parameter name="domain high coordinate" type="Array(double)" value="{2.160e+02, 1.200e+02}"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
   </ParameterList>
   <ParameterList name="domain">
     <Parameter name="spatial dimension" type="int" value="2"/>
@@ -469,6 +472,7 @@
           <ParameterList name="static head">
             <ParameterList name="BC 0">
               <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
+              <Parameter name="no flow above water table" type="bool" value="false"/>
               <ParameterList name="static head">
                 <ParameterList name="function-static-head">
                   <Parameter name="p0" type="double" value="101325.0"/>
@@ -483,6 +487,7 @@
                 </ParameterList>
               </ParameterList>
               <Parameter name="relative to top" type="bool" value="false"/>
+              <Parameter name="relative to bottom" type="bool" value="false"/>
             </ParameterList>
           </ParameterList>
           <ParameterList name="mass flux">

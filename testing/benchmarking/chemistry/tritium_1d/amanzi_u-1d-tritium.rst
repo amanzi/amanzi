@@ -1,3 +1,7 @@
+.. raw:: latex
+	 
+   \clearpage
+
 1D Tritium first-order decay
 ============================
 

@@ -43,7 +43,7 @@ class PK_DomainFunctionWeight : public FunctionBase,
 
   // required member functions
   virtual void Compute(double t0, double t1);
-  virtual std::string name() { return "weight"; }
+  virtual std::string name() const { return "weight"; }
 
  protected:
   using FunctionBase::value_;

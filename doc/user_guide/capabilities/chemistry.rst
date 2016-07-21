@@ -95,14 +95,15 @@ where :math:`k` and :math:`\lambda` are rate constants; :math:`A_s` is the react
 
 The reaction network is specified through a its own geochemical database file (typically with extension .bgd) that is specific to the problem at hand. The total concentrations of all components (:math:`U_i`) are specified in the Amanzi input file.  
 
-The reader is kindly directed to the chemistry benchmarking tests for examples (see :doc:`../benchmarking/chemistry/index`).
+The reader is kindly directed to the :ref:`Benchmark Testing/Chemistry <sec-benchmarks-chemistry>` section for examples.
+
 
 Alquimia API
 ~~~~~~~~~~~~
 
 Alquimia is an Application Programming Interface (API) that exposes the functionality of a geochemical engine to Amanzi. Alquimia does not perform any geochemical calculations itself. The geochemical engine is responsible for all geochemical calculations, and must provide a wrapper library that exactly conforms to the Alquimia API. Thus, the geochemical capabilities of Amanzi when using the Alquimia interface will depend on the geochemical engine of choice. That means that they can provide Amanzi with those capabilities or specific formulation not available in the native geochemical engine. 
 
-Currently, the geochemical capabilities of the reactive transport code PFloTran (http://ees.lanl.gov/pflotran/ and https://bitbucket.org/pflotran/pflotran-dev/wiki/Home) are available within Amanzi through the Alquimia interface. These capabilities are described in the PFloTran's documentation. Some examples are available in the Amanzi documentation (see :doc:`../benchmarking/chemistry/index`).
+Currently, the geochemical capabilities of the reactive transport code PFloTran (http://ees.lanl.gov/pflotran/ and https://bitbucket.org/pflotran/pflotran-dev/wiki/Home) are available within Amanzi through the Alquimia interface. These capabilities are described in the PFloTran's documentation. Some examples are available in the Amanzi documentation (:ref:`Benchmark Testing/Chemistry <sec-benchmarks-chemistry>`).
 
 References
 ~~~~~~~~~~

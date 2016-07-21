@@ -279,7 +279,7 @@ class State {
   Teuchos::RCP<Field> GetFieldCopy(Key fieldname, Key timetag, Key pk_name);
   Teuchos::RCP<const Field> GetFieldCopy(Key fieldname, Key timetag) const;
   void SetFieldCopy(Key fieldname, Key timetag, Key pk_name, const Teuchos::RCP<Field>& field);
-  void RequireFieldCopy(Key fieldname, Key pk_name, Key timetag);
+  void RequireFieldCopy(Key fieldname,  Key tag, Key copy_owner);
   void CopyField(Key fieldname, Key pk_name, Key timetag);
   Teuchos::RCP<const CompositeVector> GetFieldCopyData(Key fieldname, Key tag) const;
   Teuchos::RCP<CompositeVector> GetFieldCopyData(Key fieldname, Key tag, Key pk_name);

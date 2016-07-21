@@ -64,8 +64,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
   // --- constant density
   node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag);
-  text_content = mm.transcode(node->getTextContent());
-  rho_ = std::strtod(text_content, NULL);
+  rho_ = GetTextContentD_(node);
   out_ic.sublist("fluid_density").set<double>("value", rho_);
 
   out_ic.sublist("mass_density_liquid").sublist("function").sublist("All")
@@ -123,6 +122,25 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .sublist("function").sublist("function-constant")
             .set<double>("value", porosity);
         porosity_ev.set<std::string>("field evaluator type", "independent variable");
+      }
+
+      // -- transport porosity 
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, transport_porosity", flag);
+      if (flag) {
+        use_transport_porosity_ = true;
+        double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+
+        Teuchos::ParameterList& porosity_ev = out_ev.sublist("transport_porosity");
+        porosity_ev.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
+            .sublist("function").sublist("function-constant")
+            .set<double>("value", val);
+        porosity_ev.set<std::string>("field evaluator type", "independent variable");
+      } 
+      else if (use_transport_porosity_) {
+        msg << "Transport porosity element must be specified for all materials or none.";
+        Exceptions::amanzi_throw(msg);
       }
 
       // -- permeability.
@@ -286,8 +304,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_pressure", flag);
       if (flag) {
         double p = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
-        std::vector<double> grad = GetAttributeVector_(static_cast<DOMElement*>(node), "gradient");
-        std::vector<double> refc = GetAttributeVector_(static_cast<DOMElement*>(node), "reference_coord");
+        std::vector<double> grad = GetAttributeVectorD_(static_cast<DOMElement*>(node), "gradient");
+        std::vector<double> refc = GetAttributeVectorD_(static_cast<DOMElement*>(node), "reference_coord");
 
         grad.insert(grad.begin(), 0.0);
         refc.insert(refc.begin(), 0.0);
@@ -319,8 +337,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_saturation", flag);
       if (flag) {
         double s = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
-        std::vector<double> grad = GetAttributeVector_(static_cast<DOMElement*>(node), "gradient");
-        std::vector<double> refc = GetAttributeVector_(static_cast<DOMElement*>(node), "reference_coord");
+        std::vector<double> grad = GetAttributeVectorD_(static_cast<DOMElement*>(node), "gradient");
+        std::vector<double> refc = GetAttributeVectorD_(static_cast<DOMElement*>(node), "reference_coord");
 
         grad.insert(grad.begin(), 0.0);
         refc.insert(refc.begin(), 0.0);
@@ -378,7 +396,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           if (strcmp(tagname, "uniform_conc") == 0) {
             std::string text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
             int m = GetPosition_(phases_["water"], text);
-            vals[m] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "value");
+            DOMElement* element = static_cast<DOMElement*>(jnode);
+            vals[m] = ConvertUnits_(GetAttributeValueS_(element, "value"), solute_molar_mass_[text]);
           }
         }
 

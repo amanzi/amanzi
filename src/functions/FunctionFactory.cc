@@ -1,22 +1,24 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_SerialDenseMatrix.h"
 
+#include "errors.hh"
 #include "HDF5Reader.hh"
 
-#include "FunctionFactory.hh"
-#include "ConstantFunction.hh"
-#include "TabularFunction.hh"
-#include "SmoothStepFunction.hh"
-#include "PolynomialFunction.hh"
-#include "LinearFunction.hh"
-#include "SeparableFunction.hh"
 #include "AdditiveFunction.hh"
-#include "MultiplicativeFunction.hh"
-#include "CompositionFunction.hh"
-#include "StaticHeadFunction.hh"
-#include "StandardMathFunction.hh"
 #include "BilinearFunction.hh"
-#include "errors.hh"
+#include "CompositionFunction.hh"
+#include "ConstantFunction.hh"
+#include "DistanceFunction.hh"
+#include "FunctionFactory.hh"
+#include "LinearFunction.hh"
+#include "MonomialFunction.hh"
+#include "MultiplicativeFunction.hh"
+#include "PolynomialFunction.hh"
+#include "SeparableFunction.hh"
+#include "SmoothStepFunction.hh"
+#include "StandardMathFunction.hh"
+#include "StaticHeadFunction.hh"
+#include "TabularFunction.hh"
 
 namespace Amanzi {
 
@@ -41,6 +43,8 @@ Function* FunctionFactory::Create(Teuchos::ParameterList& list) const
         f = create_tabular(function_params);
       else if (function_type == "function-polynomial")
         f = create_polynomial(function_params);
+      else if (function_type == "function-monomial")
+        f = create_monomial(function_params);
       else if (function_type == "function-smooth-step")
         f = create_smooth_step(function_params);
       else if (function_type == "function-linear")
@@ -59,6 +63,8 @@ Function* FunctionFactory::Create(Teuchos::ParameterList& list) const
         f = create_standard_math(function_params);
       else if (function_type == "function-bilinear")
         f = create_bilinear(function_params);
+      else if (function_type == "function-distance")
+        f = create_distance(function_params);
       else {  // I don't recognize this function type
         if (f) delete f;
         Errors::Message m;
@@ -250,6 +256,27 @@ Function* FunctionFactory::create_polynomial(Teuchos::ParameterList& params) con
   catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-polynomial parameter error: " << msg.what();
+    Exceptions::amanzi_throw(m);
+  }
+  return f;
+}
+
+Function* FunctionFactory::create_monomial(Teuchos::ParameterList& params) const
+{
+  Function *f;
+  try {
+    double c = params.get<double>("c");
+    std::vector<double> x0(params.get<Teuchos::Array<double> >("x0").toVector());
+    std::vector<int> p(params.get<Teuchos::Array<int> >("exponents").toVector());
+    f = new MonomialFunction(c, x0, p);
+  } catch (Teuchos::Exceptions::InvalidParameter& msg) {
+    Errors::Message m;
+    m << "FunctionFactory: function-monomial parameter error: " << msg.what();
+    Exceptions::amanzi_throw(m);
+  }
+  catch (Errors::Message& msg) {
+    Errors::Message m;
+    m << "FunctionFactory: function-monomial parameter error: " << msg.what();
     Exceptions::amanzi_throw(m);
   }
   return f;
@@ -502,4 +529,23 @@ Function* FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
   return f;
 }
 
+Function* FunctionFactory::create_distance(Teuchos::ParameterList& params) const
+{
+  Function *f;
+  try {
+    std::vector<double> x0(params.get<Teuchos::Array<double> >("x0").toVector());
+    std::vector<double> metric(params.get<Teuchos::Array<double> >("metric").toVector());
+    f = new DistanceFunction(x0, metric);
+  } catch (Teuchos::Exceptions::InvalidParameter& msg) {
+    Errors::Message m;
+    m << "FunctionFactory: function-distance parameter error: " << msg.what();
+    Exceptions::amanzi_throw(m);
+  }
+  catch (Errors::Message& msg) {
+    Errors::Message m;
+    m << "FunctionFactory: function-distance parameter error: " << msg.what();
+    Exceptions::amanzi_throw(m);
+  }
+  return f;
+}
 }  // namespace Amanzi

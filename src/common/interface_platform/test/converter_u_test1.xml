@@ -3,15 +3,16 @@
 
   <model_description name="DVZ 3layer 2D">
     <author>Konstantin Lipnikov</author>
+    <!-- defualt SI units -->
     <units>
       <length_unit>m</length_unit>
       <time_unit>s</time_unit>
       <mass_unit>kg</mass_unit>
-      <conc_unit>molar</conc_unit>
+      <conc_unit>mol/m^3</conc_unit>
     </units>
     <constants>
-      <time_constant name="START" value="1956,y"/>
-      <constant name="END" type="time" value="3000,y"/>
+      <time_constant name="START" value="1956 y"/>
+      <constant name="END" type="time" value="3000 y"/>
       <numerical_constant name="vG_M" value="0.3006"/>
       <constant name="PC" type="none" value="linearized_operator"/>
     </constants>
@@ -20,12 +21,12 @@
   <definitions>
     <macros>
       <time_macro name="Observation Times">
-        <time>1.2096E+10</time>
+        <time>1.2096E+10 s</time>
       </time_macro>
       <time_macro name="EveryMonth">
         <start>START</start>
-        <timestep_interval>1,m</timestep_interval>
-        <stop>1988,y</stop>
+        <timestep_interval>1 m</timestep_interval>
+        <stop>1988 y</stop>
       </time_macro>
       <cycle_macro name="Every100Cycles">
         <start>0</start>
@@ -114,22 +115,22 @@
     <dimension>2</dimension>
     <generate>
       <number_of_cells nx="54" nz="60" />
-      <box high_coordinates="216.0,120.0" low_coordinates="0.0, 0.0" />
+      <box high_coordinates="216.0 m, 120.0 m" low_coordinates="0.0, 0.0" />
     </generate>
   </mesh>
 
   <regions>
     <region name="All">
-      <box high_coordinates="216.0, 120.0" low_coordinates="0.0, 0.0" />
+      <box high_coordinates="216.0 m, 120.0 m" low_coordinates="0.0, 0.0" />
     </region>
     <region name="Bottom Surface">
-      <box high_coordinates="216.0, 0.0" low_coordinates="0.0, 0.0" />
+      <box high_coordinates="216.0 m, 0.0" low_coordinates="0.0, 0.0" />
     </region>
     <region name="RegionBottom">
-      <box high_coordinates="216.0, 40.0" low_coordinates="0.0, 0.0" />
+      <box high_coordinates="216.0 m, 40.0" low_coordinates="0.0, 0.0" />
     </region>
     <region name="RegionMiddle">
-      <box high_coordinates="216.0, 80.0" low_coordinates="0.0, 40.0" />
+      <box high_coordinates="216.0 m, 80.0 m" low_coordinates="0.0, 40.0e+2 cm" />
     </region>
     <region name="RegionTop">
       <box high_coordinates="216.0, 120.0" low_coordinates="0.0, 80.0" />
@@ -150,7 +151,7 @@
       <box high_coordinates="216.0, 120.0" low_coordinates="148.0, 120.0" />
     </region>
     <region name="Well">
-      <box high_coordinates="112.0, 60.0" low_coordinates="108.0, 40.0" />
+      <box high_coordinates="112.0 ft, 60.0" low_coordinates="108.0 ft, 40.0" />
     </region>
   </regions>
 

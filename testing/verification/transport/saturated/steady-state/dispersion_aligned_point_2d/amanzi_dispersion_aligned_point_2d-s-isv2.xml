@@ -81,13 +81,13 @@
         <dimension>2</dimension>
         <generate>
             <number_of_cells nx="128" ny="64"/>
-            <box high_coordinates="(930.0, 300.0)" low_coordinates="(-270.0, -300.0)"/>
+            <box high_coordinates="930.0, 300.0" low_coordinates="-270.0, -300.0"/>
         </generate>
     </mesh>
     <regions>
-        <box high_coordinates="(930.0, 300.0)" low_coordinates="(-270.0, -300.0)" name="Region_between_surface0_and_1"/>
-        <point coordinate="(0.0, 0.0)" name="Well"/>
-        <point coordinate="-210.0,0.0" name="Upwind210" />
+      <box high_coordinates="930.0, 300.0" low_coordinates="-270.0, -300.0" name="Region_between_surface0_and_1"/>
+      <point coordinate="0.0, 0.0" name="Well"/>
+      <point coordinate="-210.0,0.0" name="Upwind210" />
       <point coordinate="-150.0,0.0" name="Upwind150" />
       <point coordinate="-90.0,0.0" name="Upwind090" />
       <point coordinate="-30.0,0.0" name="Upwind030" />

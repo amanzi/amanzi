@@ -215,12 +215,14 @@ benchmark['index'] = {
 benchmark['chemistry'] = {
   'index_entry' : 'chemistry/index.rst',
   'index' : { 'index_title' : 'Chemistry',
+              'index_label' : 'sec-benchmarks-chemistry',
               'index_file' : 'doc/user_guide/benchmarking/chemistry/index.rst',
               'index_list' : [ 'tracer_1d',
                                'tritium_1d',
                                'calcite_1d',
                                'isotherms_1d',
                                'ion_exchange_1d',
+                               'surface_complexation_1d',
                                'farea_1d',
                              ]
             },
@@ -248,6 +250,11 @@ benchmark['chemistry'] = {
     'from_dir' : 'testing/benchmarking/chemistry/ion_exchange_1d',
     'dest_dir' : 'doc/user_guide/benchmarking/chemistry/ion_exchange_1d',
     'index_entry' : 'ion_exchange_1d/amanzi_u-1d-ion-exchange.rst'
+  },
+  'surface_complexation_1d': {
+    'from_dir' : 'testing/benchmarking/chemistry/surface_complexation_1d',
+    'dest_dir' : 'doc/user_guide/benchmarking/chemistry/surface_complexation_1d',
+    'index_entry' : 'surface_complexation_1d/amanzi_u-1d-surface_complexation.rst'
   },
   'farea_1d': {
     'from_dir' : 'testing/benchmarking/chemistry/farea_1d',
@@ -388,48 +395,52 @@ print
 
 suffices = {"", "-a", "-b", "-c"}
 
-for name in verification['index']['index_list']:
-    for key in verification[name]['index']['index_list']:
-        cwd = os.getcwd()
-        run_directory= os.path.join(cwd, 'verification/' + name + '/' + key)
-        print("TEST: " + run_directory)
-        os.chdir(run_directory)
+if ( opts.verification or opts.full_guide ):
 
-        for s in suffices:
-            filename = "amanzi_" + key + s + ".py"
-            if os.path.isfile(filename):
-               stdout_file = open("collect.log", "w")
-               print("   script: " + filename)
-               subprocess.call(["python", filename], stdout=stdout_file, stderr=subprocess.STDOUT)
+    for name in verification['index']['index_list']:
+        for key in verification[name]['index']['index_list']:
+            cwd = os.getcwd()
+            run_directory= os.path.join(cwd, 'verification/' + name + '/' + key)
+            print("\nTEST: " + run_directory)
+            os.chdir(run_directory)
 
-               for el in find("stdout.out", run_directory):
-                   el2 = el[el.find("verification"):]
-                   print("   file: " + el2)
-                   if ("Amanzi::SIMULATION_SUCCESSFUL" in open(el).read()):
-                      print("   result: SIMULATION_SUCCESSFUL")
-                   else:
-                      print("   ERROR: " + el)
-        os.chdir(cwd)
+            for s in suffices:
+                filename = "amanzi_" + key + s + ".py"
+                if os.path.isfile(filename):
+                    stdout_file = open("collect.log", "w")
+                    print("   script: " + filename)
+                    subprocess.call(["python", filename], stdout=stdout_file, stderr=subprocess.STDOUT)
+                    
+                    for el in find("stdout.out", run_directory):
+                        el2 = el[el.find("verification"):]
+                        print("   file: " + el2)
+                        if ("Amanzi::SIMULATION_SUCCESSFUL" in open(el).read()):
+                            print("   result: SIMULATION_SUCCESSFUL")
+                        else:
+                            print("   ERROR: " + el)
+            os.chdir(cwd)
 
-for name in benchmark['index']['index_list']:
-    for key in benchmark[name]['index']['index_list']:
-        cwd = os.getcwd()
-        run_directory= os.path.join(cwd, 'benchmarking/' + name + '/' + key)
-        print("TEST: " + run_directory)
-        os.chdir(run_directory)
+if ( opts.benchmarking or opts.full_guide ):
+            
+    for name in benchmark['index']['index_list']:
+        for key in benchmark[name]['index']['index_list']:
+            cwd = os.getcwd()
+            run_directory= os.path.join(cwd, 'benchmarking/' + name + '/' + key)
+            print("\nTEST: " + run_directory)
+            os.chdir(run_directory)
 
-        for s in suffices:
-            filename = key + s + ".py"
-            if os.path.isfile(filename):
-               stdout_file = open("collect.log", "w")
-               print("   script: " + filename)
-               subprocess.call(["python", filename], stdout=stdout_file, stderr=subprocess.STDOUT)
-
-               for el in find("stdout.out", run_directory):
-                   el2 = el[el.find("benchmarking"):]
-                   print("   file: " + el2)
-                   if ("Amanzi::SIMULATION_SUCCESSFUL" in open(el).read()):
-                      print("   result: SIMULATION_SUCCESSFUL")
-                   else:
-                      print("   ERROR:" + open(el).readline())
-        os.chdir(cwd)
+            for s in suffices:
+                filename = key + s + ".py"
+                if os.path.isfile(filename):
+                    stdout_file = open("collect.log", "w")
+                    print("   script: " + filename)
+                    subprocess.call(["python", filename], stdout=stdout_file, stderr=subprocess.STDOUT)
+                    
+                    for el in find("stdout.out", run_directory):
+                        el2 = el[el.find("benchmarking"):]
+                        print("   file: " + el2)
+                        if ("Amanzi::SIMULATION_SUCCESSFUL" in open(el).read()):
+                            print("   result: SIMULATION_SUCCESSFUL")
+                        else:
+                            print("   ERROR:" + open(el).readline())
+            os.chdir(cwd)

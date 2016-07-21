@@ -22,4 +22,4 @@ class LinearFunction : public Function {
 
 } // namespace Amanzi
 
-#endif  // AMANZI_LINEAR_FUNCTION_HH_
+#endif

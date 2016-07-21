@@ -1,6 +1,6 @@
 # pflotran database preprocessing :
-#        date : 20120727   1   173758.836
-#       input : ascem-2012-1d-farea-full.in
+#       date : 20120727   1   173758.836
+#       input : 1d-farea-full.in (ASCEM 2012)
 
 <Primary Species
 H+  ;   9.00 ;   1.00 ;   1.01

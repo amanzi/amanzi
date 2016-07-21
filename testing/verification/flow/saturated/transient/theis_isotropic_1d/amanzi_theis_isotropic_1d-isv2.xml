@@ -126,7 +126,7 @@
         <assigned_regions>Entire Domain</assigned_regions>
         <liquid_phase name="water">
           <liquid_component name="water">
-            <linear_pressure gradient="(0.0,0.0,-9806.65)" reference_coord="(1200.0,1200.0,20.0)" value="101325" />
+            <linear_pressure gradient="0.0,0.0,-9806.65" reference_coord="1200.0,1200.0,20.0" value="101325" />
           </liquid_component>
         </liquid_phase>
       </initial_condition>

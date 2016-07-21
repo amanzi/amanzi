@@ -1382,7 +1382,7 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
   // DEPRECATED INPUT -- remove this error eventually --etc
   if (plist.isParameter("newton correction")) {
     Errors::Message msg;
-    msg << "OperatorDiffusionMFD: DEPRECATED: \"newton correction\" has been removed in favor of \"Newton correction\"";
+    msg << "DEPRECATED 05.24.16AD: \"newton correction\" has been removed in favor of \"Newton correction\"";
     Exceptions::amanzi_throw(msg);
   }
   

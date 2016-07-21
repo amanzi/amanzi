@@ -2,11 +2,11 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
   <ParameterList name="visualization data">
-    <Parameter name="file name base" type="string" value="plot"/>
+    <Parameter name="file name base" type="string" value="plot_frt"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/>
   </ParameterList>
   <ParameterList name="checkpoint data">
-    <Parameter name="file name base" type="string" value="chkpoint"/>
+    <Parameter name="file name base" type="string" value="chkpoint_frt"/>
     <Parameter name="file name digits" type="int" value="5"/>
     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 5, -1}" />
   </ParameterList>  
@@ -772,7 +772,44 @@
       <Parameter name="variable" type="string" value="drawdown"/>
       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
     </ParameterList>
+    <ParameterList name="OBS-3">
+      <Parameter name="region" type="string" value="Soil_2"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="Cl- aqueous concentration"/>
+      <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
+    </ParameterList>
+    <ParameterList name="OBS-4">
+      <Parameter name="region" type="string" value="Soil_1"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="Na+ gaseous concentration"/>
+      <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
+    </ParameterList>
+    <ParameterList name="OBS-5">
+      <Parameter name="region" type="string" value="West"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="Na+ volumetric flow rate"/>
+      <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
+    </ParameterList>
+    <ParameterList name="OBS-6">
+      <Parameter name="region" type="string" value="Soil_1"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="water table"/>
+      <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
+    </ParameterList>
+    <ParameterList name="OBS-7">
+      <Parameter name="region" type="string" value="Soil_1"/>
+      <Parameter name="functional" type="string" value="observation data: integral"/>
+      <Parameter name="variable" type="string" value="permeability-weighted hydraulic head"/>
+      <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
+    </ParameterList>
+    <ParameterList name="OBS-8">
+      <Parameter name="region" type="string" value="West"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="aqueous volumetric flow rate"/>
+      <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
+    </ParameterList>
   </ParameterList>
+
 
   <ParameterList name="analysis">
     <Parameter name="used boundary condition regions" type="Array(string)" value="{West, East, West, East}"/>

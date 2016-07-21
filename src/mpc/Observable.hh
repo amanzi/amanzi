@@ -1,0 +1,78 @@
+/*
+  Multi-Process Coordinator
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Markus Berndt
+           Ethan Coon
+           Konstantin Lipnikov
+           Daniil Svyatsky
+*/
+
+#ifndef AMANZI_OBSERVABLE_HH
+#define AMANZI_OBSERVABLE_HH
+
+#include "Teuchos_Array.hpp"
+#include "Teuchos_ParameterList.hpp"
+
+#include "IOEvent.hh"
+#include "GeometryDefs.hh"
+#include "State.hh"
+#include "Units.hh"
+
+namespace Amanzi{
+
+class Observable : public IOEvent {
+ public:
+  Observable(std::string variable,
+	     std::string region,
+	     std::string functional,
+	     Teuchos::ParameterList& plist,
+	     Teuchos::ParameterList& units_plist,
+	     Teuchos::RCP<AmanziMesh::Mesh> mesh)
+    : variable_(variable),
+      region_(region),
+      functional_(functional),
+      plist_(plist),
+      mesh_(mesh),
+      IOEvent(plist)
+  {
+    ReadParameters_();
+    
+    units_.Init(units_plist);
+
+    // for now we can only observe Integrals and Values
+    if (functional_ != "observation data: integral"  &&
+        functional_ != "observation data: point" )  {
+      Errors::Message msg;
+      msg << "FlexibleObservations: can only handle Functional == observation data:"
+          << " integral, or functional == observation data: point";
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+
+  virtual void ComputeObservation(State& S, double* value, double* volume) { assert(false); }
+
+  virtual int ComputeRegionSize() {return region_size_; }
+
+ // protected:    
+  const Teuchos::ParameterList& plist_;
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+
+  AmanziMesh::Entity_ID_List entity_ids_;
+  int region_size_;
+
+  std::string variable_;
+  std::string region_;
+  std::string functional_;
+  double volume_;
+
+  Utils::Units units_;
+};
+
+} // namespace Amanzi
+
+#endif

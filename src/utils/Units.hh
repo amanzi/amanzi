@@ -1,10 +1,12 @@
 /*
+  Utils
+
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov
+  Author: Konstantin Lipnikov
 */
 
 #ifndef AMANZI_UNITS_HH_
@@ -45,18 +47,29 @@ typedef boost::units::unit<
 typedef boost::units::make_scaled_unit<
     concentration, boost::units::scale<10, boost::units::static_rational<3> > >::type concentration_amanzi;
 
+// atomic representation of a derived unit
+typedef std::map<std::string, int> AtomicUnitForm;
+
 class Units {
  public:
-  Units() {};
-  Units(const std::string& conc_units) { Init(conc_units); }
+  Units()
+    : time_unit_("s"), 
+      length_unit_("m"),
+      mass_unit_("kg"),
+      concentration_unit_("molar") {};
+  Units(const std::string& concentration_unit) 
+    : time_unit_("s"), 
+      length_unit_("m"),
+      mass_unit_("kg"),
+      concentration_unit_(concentration_unit) { Init(); }
   ~Units() {};
 
   // conversion factors
-  inline double pressure_factor() { return pressure_factor_; } 
-  inline double concentration_factor() { return tcc_factor_; } 
+  double pressure_factor() { return pressure_factor_; } 
+  double concentration_factor() { return tcc_factor_; } 
 
   // output
-  inline std::string print_tcc(double val, const std::string& system = "amanzi") {
+  std::string print_tcc(double val, const std::string& system = "amanzi") {
     boost::units::quantity<concentration_amanzi> qval = val * concentration_amanzi();
     boost::units::quantity<concentration> qval_si(qval);
     std::stringstream ss;
@@ -64,23 +77,54 @@ class Units {
     return ss.str();
   }
 
-  void Init(const std::string& conc_units) {
-    pressure_factor_ = 1.0;
-    if (conc_units == "molar") {
-      concentration_mol_liter = true;
-      tcc_factor_ = conversion_factor(boost::units::si::amount() / liter(), concentration());
-    } else {
-      concentration_mol_liter = false;
-      tcc_factor_ = 1.0;
-    }
+  void Init();
+
+  void Init(Teuchos::ParameterList& plist) {
+    concentration_unit_ = plist.get<std::string>("concentration", "molar");
+    Init();
   }
 
-  inline void Init(Teuchos::ParameterList& plist) {
-    Init(plist.get<std::string>("concentration", "molar"));
-  }
+  // conversion of units
+  double ConvertTime(double val, const std::string& in_unit,
+                     const std::string& out_unit, bool& flag);
+
+  double ConvertMass(double val, const std::string& in_unit,
+                     const std::string& out_unit, bool& flag);
+
+  double ConvertLength(double val, const std::string& in_unit,
+                       const std::string& out_unit, bool& flag);
+
+  double ConvertConcentration(double val, const std::string& in_unit,
+                              const std::string& out_unit, double mol_mass, bool& flag);
+
+  double ConvertDerivedUnit(double val, const std::string& in_unit,
+                            const std::string& out_unit, double mol_mass, bool& flag);
+
+  // access
+  std::string time_unit() { return time_unit_; }
+  std::string length_unit() { return length_unit_; }
+  std::string mass_unit() { return mass_unit_; }
+  std::string concentration_unit() { return concentration_unit_; }
+
+ private:
+  AtomicUnitForm ComputeAtomicUnitForm_(const std::string& unit, bool* flag);
 
  private:
   double pressure_factor_, tcc_factor_;
+
+  std::map<std::string, boost::units::quantity<boost::units::si::time> > time_;
+  std::map<std::string, boost::units::quantity<boost::units::si::mass> > mass_;
+  std::map<std::string, boost::units::quantity<boost::units::si::length> > length_;
+  std::map<std::string, boost::units::quantity<boost::units::si::volume> > volume_;
+  std::map<std::string, boost::units::quantity<concentration> > concentration_;
+
+  std::map<std::string, std::string> derived_;
+
+  // default units
+  std::string time_unit_;
+  std::string length_unit_;
+  std::string mass_unit_;
+  std::string concentration_unit_;
 };
 
 }  // namespace Utils

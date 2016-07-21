@@ -88,7 +88,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             DOMNode* jnode = multi_list[j];
             if (DOMNode::ELEMENT_NODE == jnode->getNodeType()) {
               text = mm.transcode(jnode->getTextContent());
-              times.push_back(TimeStringToValue_(TrimString_(text)));
+              times.push_back(ConvertUnits_(TrimString_(text)));
             }
           }
           tm_parameter.set<Teuchos::Array<double> >("values", times);
@@ -257,7 +257,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
     out_list.sublist("walkabout data") = chkPL;
   }
 
-  // get output->observations node - this node must exist ONCE
+  // get output->observations node - only one node is allowed
   int nobs_liquid(0), nobs_gas(0);
   node = GetUniqueElementByTagsString_("output, observations", flag);
 
@@ -276,6 +276,13 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
 
       if (strcmp(tagname, "filename") == 0) {
         obsPL.set<std::string>("observation output filename", TrimString_(text));
+
+      } else if (strcmp(tagname, "units") == 0) {
+        node = inode->getAttributes()->getNamedItem(mm.transcode("time"));
+        if (node) {
+          char* unit = mm.transcode(node->getTextContent());
+          obsPL.set<std::string>("time unit", TrimString_(unit));
+        }
 
       } else if (strcmp(tagname, "liquid_phase") == 0) {
         node = inode->getAttributes()->getNamedItem(mm.transcode("name"));
@@ -306,6 +313,8 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             obPL.set<std::string>("variable", "material id");
           } else if (strcmp(obs_type, "hydraulic_head") == 0) {
             obPL.set<std::string>("variable", "hydraulic head");
+          } else if (strcmp(obs_type, "perm_weighted_hydraulic_head") == 0) {
+            obPL.set<std::string>("variable", "permeability-weighted hydraulic head");
           } else if (strcmp(obs_type, "aqueous_mass_flow_rate") == 0) {
             obPL.set<std::string>("variable", "aqueous mass flow rate");
           } else if (strcmp(obs_type, "aqueous_volumetric_flow_rate") == 0) {
@@ -321,6 +330,8 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             obPL.set<std::string>("variable", name.str());
           } else if (strcmp(obs_type, "drawdown") == 0) {
             obPL.set<std::string>("variable", "drawdown");
+          } else if (strcmp(obs_type, "perm_weighted_drawdown") == 0) {
+            obPL.set<std::string>("variable", "permeability-weighted drawdown");
           } else if (strcmp(obs_type, "water_table") == 0) {
             obPL.set<std::string>("variable", "water table");
           } else if (strcmp(obs_type, "solute_volumetric_flow_rate") == 0) {
@@ -347,6 +358,18 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
                   obPL.set<std::string>("functional", "observation data: integral");
                 } else if (strcmp(value, "mean") == 0) {
                   obPL.set<std::string>("functional", "observation data: mean");
+                }
+              } else if (strcmp(elem, "interpolation") == 0) {
+                if (strcmp(value, "constant") == 0) {
+                  obPL.set<std::string>("interpolation", "constant");
+                } else if (strcmp(value, "linear")==0) {
+                  obPL.set<std::string>("interpolation", "linear");
+                }
+              } else if (strcmp(elem, "weighting") == 0) {
+                if (strcmp(value, "none") == 0) {
+                  obPL.set<std::string>("weighting", "none");
+                } else if (strcmp(value, "flux_norm")==0) {
+                  obPL.set<std::string>("weighting", "flux norm");
                 }
               // Keeping singular macro around to help users. This will go away
               } else if (strcmp(elem, "time_macros") == 0 ||

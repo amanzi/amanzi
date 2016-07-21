@@ -65,7 +65,7 @@ void Visualization::ReadParameters_() {
   }
   write_partition_ = plist_.get<bool>("write partitions", false);
 
-  dynamic_mesh_ = plist_.get<bool>("dynamic mesh",false);
+  dynamic_mesh_ = plist_.get<bool>("dynamic mesh", false);
 }
 
 

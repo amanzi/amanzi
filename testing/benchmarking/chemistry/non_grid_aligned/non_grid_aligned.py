@@ -69,7 +69,7 @@ if __name__ == "__main__":
         # Amanzi native chemistry
         input_filename = os.path.join("non_grid_aligned-u.xml")
         path_to_amanzi = "amanzi-native-output"
-        run_amanzi_standard.run_amanzi(input_filename, 8, ["calcite_dbs.bgd"], path_to_amanzi)
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["calcite_dbs.bgd"], path_to_amanzi)
         
         comp = 'mineral_volume_fractions.cell.Calcite vol frac'
         x_native, y_native, z_native = GetXYZ_Amanzi(path_to_amanzi,root,comp,nodesx=nodesx,nodesy=nodesy)

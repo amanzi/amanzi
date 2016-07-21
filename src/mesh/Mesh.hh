@@ -763,6 +763,9 @@ class Mesh {
  private:
   int FindPosition_(Entity_ID v, Entity_ID_List nodes) const;
 
+ public:
+  void PrintMeshStatistics() const;
+
  protected:
   const Epetra_MpiComm *comm_;
   Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model_;

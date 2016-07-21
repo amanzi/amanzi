@@ -100,6 +100,7 @@ class Darcy_PK : public Flow_PK {
   void InitializeFields_();
   void UpdateSpecificYield_();
   double ErrorEstimate_(double* dTfactor);
+  void InitializeStatistics_(const std::string& dt_method_name, bool init_darcy);
 
  protected:
   Teuchos::RCP<TreeVector> soln_;

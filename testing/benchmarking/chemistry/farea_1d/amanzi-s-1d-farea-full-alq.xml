@@ -466,7 +466,7 @@
 
   <ParameterList name="Chemistry">
     <Parameter name="Engine" type="string" value="PFloTran"/>
-    <Parameter name="Engine Input File" type="string" value="ascem-2012-1d-farea-full-trim.in"/>
+    <Parameter name="Engine Input File" type="string" value="1d-farea-full-trim.in"/>
     <Parameter name="Max Time Step (s)" type="double" value="31556926.0"/> 
   </ParameterList> <!-- Chemistry -->
 

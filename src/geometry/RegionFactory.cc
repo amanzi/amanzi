@@ -35,6 +35,7 @@
 #include "RegionAll.hh"
 #include "RegionBoundary.hh"
 #include "RegionBoxVolumeFractions.hh"
+#include "RegionLineSegment.hh"
 
 #include "RegionFactory.hh"
 
@@ -251,6 +252,20 @@ createRegion(const std::string reg_name,
 
     region = Teuchos::rcp(new RegionBoxVolumeFractions(
         reg_name, reg_id, p0, p1, normals, lifecycle));
+
+  } else if (shape == "region: line segment"){
+    Teuchos::ParameterList& reg_params = reg_spec.sublist(shape);
+
+    Teuchos::Array<double> p0_vec = reg_params.get<Teuchos::Array<double> >("end coordinate");
+    Teuchos::Array<double> p1_vec = reg_params.get<Teuchos::Array<double> >("opposite end coordinate");
+
+    int dim = p0_vec.size();
+
+    Point p0, p1;
+    p0.set(dim,&(p0_vec[0]));
+    p1.set(dim,&(p1_vec[0]));
+
+    region = Teuchos::rcp(new RegionLineSegment(reg_name, reg_id, p0, p1, lifecycle));
 
   } else {
     Errors::Message mesg;

@@ -76,22 +76,22 @@
         <dimension>2</dimension>
         <generate>
             <number_of_cells nx="100" ny="60"/>
-            <box high_coordinates="(30.48, 18.288)" low_coordinates="(0.0, 0.0)"/>
+            <box high_coordinates="30.48, 18.288" low_coordinates="0.0, 0.0"/>
         </generate>
     </mesh>
     <regions>
-        <box high_coordinates="(30.48, 18.288)" low_coordinates="(0.0, 0.0)" name="Region_between_surface_0_and__1"/>
-        <point coordinate="(0.1524, 0.1524)" name="Point0"/>
-        <point coordinate="(3.2004, 0.1524)" name="Point10"/>
-        <point coordinate="(24.5364, 0.1524)" name="Point80"/>
-        <point coordinate="(21.4884, 0.1524)" name="Point70"/>
-        <point coordinate="(18.4404, 0.1524)" name="Point60"/>
-        <point coordinate="(27.5844, 0.1524)" name="Point90"/>
-        <point coordinate="(9.2964, 0.1524)" name="Point30"/>
-        <point coordinate="(30.3276, 0.1524)" name="Point100"/>
-        <point coordinate="(15.3924, 0.1524)" name="Point50"/>
-        <point coordinate="(12.3444, 0.1524)" name="Point40"/>
-        <point coordinate="(6.2484, 0.1524)" name="Point20"/>
+        <box high_coordinates="30.48, 18.288" low_coordinates="0.0, 0.0" name="Region_between_surface_0_and__1"/>
+        <point coordinate="0.1524, 0.1524" name="Point0"/>
+        <point coordinate="3.2004, 0.1524" name="Point10"/>
+        <point coordinate="24.5364, 0.1524" name="Point80"/>
+        <point coordinate="21.4884, 0.1524" name="Point70"/>
+        <point coordinate="18.4404, 0.1524" name="Point60"/>
+        <point coordinate="27.5844, 0.1524" name="Point90"/>
+        <point coordinate="9.2964, 0.1524" name="Point30"/>
+        <point coordinate="30.3276, 0.1524" name="Point100"/>
+        <point coordinate="15.3924, 0.1524" name="Point50"/>
+        <point coordinate="12.3444, 0.1524" name="Point40"/>
+        <point coordinate="6.2484, 0.1524" name="Point20"/>
     </regions>
     <materials>
         <material name="Aquifer">

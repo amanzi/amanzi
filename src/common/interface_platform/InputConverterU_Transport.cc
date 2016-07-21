@@ -265,6 +265,9 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   out_list.set<int>("number of aqueous components", phases_["water"].size());
   out_list.set<int>("number of gaseous components", phases_["air"].size());
 
+  out_list.sublist("physical models and assumptions")
+      .set<bool>("effective transport porosity", use_transport_porosity_);
+
   // cross coupling of PKs
   out_list.sublist("physical models and assumptions")
       .set<bool>("permeability field is required", transport_permeability_);
@@ -460,11 +463,25 @@ void InputConverterU::TranslateTransportBCsGroup_(
       if (tmp_name == solute_name) {
         double t0 = GetAttributeValueD_(element, "start");
         tp_forms[t0] = GetAttributeValueS_(element, "function");
-        tp_values[t0] = GetAttributeValueD_(element, "value");
+        tp_values[t0] = ConvertUnits_(GetAttributeValueS_(element, "value"), solute_molar_mass_[solute_name]);
 
         same_list.erase(it);
         it--;
       } 
+    }
+
+    // check for spatially dependent BCs. Only one is allowed (FIXME)
+    bool space_bc(false);
+    std::vector<double> data;
+    element = static_cast<DOMElement*>(same_list[0]);
+    std::string space_bc_name = GetAttributeValueS_(element, "space_function", TYPE_NONE, false);
+    if (space_bc_name == "gaussian") {
+      space_bc = true;
+      std::vector<std::string> tmp;
+      tmp = GetAttributeVectorS_(element, "space_data");
+      for (int i = 0; i < tmp.size(); ++i) {
+        data.push_back(ConvertUnits_(tmp[i], solute_molar_mass_[solute_name]));
+      }
     }
 
     // create vectors of values and forms
@@ -483,7 +500,9 @@ void InputConverterU::TranslateTransportBCsGroup_(
     bc.set<Teuchos::Array<std::string> >("regions", regions);
 
     Teuchos::ParameterList& bcfn = bc.sublist("boundary concentration");
-    if (times.size() == 1) {
+    if (space_bc) {
+      TranslateFunctionGaussian_(data, bcfn);
+    } else if (times.size() == 1) {
       bcfn.sublist("function-constant").set<double>("value", values[0]);
     } else {
       bcfn.sublist("function-tabular")

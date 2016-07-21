@@ -41,18 +41,9 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 
   // update steady state boundary conditions
   double time = S_->time();
-  for (int i =0; i < bc_pressure_.size(); i++) {
-    bc_pressure_[i]->Compute(time, time);
-  }
-
-  for (int i =0; i < bc_flux_.size(); i++) {
-    bc_flux_[i]->Compute(time, time);
-    bc_flux_[i]->ComputeSubmodel(mesh_);
-  }
-
-  for (int i =0; i < bc_head_.size(); i++) {
-    bc_head_[i]->Compute(time, time);
-    bc_head_[i]->ComputeSubmodel(mesh_);
+  for (int i = 0; i < bcs_.size(); i++) {
+    bcs_[i]->Compute(time, time);
+    bcs_[i]->ComputeSubmodel(mesh_);
   }
 
   // update steady state source conditions
@@ -70,11 +61,13 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 
   while (L2error > residual_tol_nonlinear && itrs < max_itrs_nonlinear) {
     // update dynamic boundary conditions
-    for (int i =0; i < bc_seepage_.size(); i++) {
-      bc_seepage_[i]->Compute(time, time);
-      bc_seepage_[i]->ComputeSubmodel(mesh_);
+    for (int i = 0; i < bcs_.size(); i++) {
+      if (bcs_[i]->bc_name() == "seepage") {
+        bcs_[i]->Compute(time, time);
+        bcs_[i]->ComputeSubmodel(mesh_);
+      }
     }
-    ComputeBCs(*solution);
+    ComputeOperatorBCs(*solution);
 
     // update permeabilities
     darcy_flux_copy->ScatterMasterToGhosted("face");

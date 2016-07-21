@@ -54,7 +54,7 @@ class MeshFactory {
   /// Object encoding the level of verbosity and output stream for
   /// diagnostic messages
 
-  Teuchos::RCP<const VerboseObject> verbosity_obj;
+  Teuchos::RCP<const VerboseObject> vo_;
 
  public:
 

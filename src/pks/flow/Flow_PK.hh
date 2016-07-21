@@ -62,7 +62,8 @@ class Flow_PK : public PK_PhysicalBDF {
   void UpdateLocalFields_(const Teuchos::Ptr<State>& S);
 
   // --- management of boundary and source terms
-  void ComputeBCs(const CompositeVector& pressure);
+  void UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u);
+  void ComputeOperatorBCs(const CompositeVector& u);
   void SeepageFacePFloTran(const CompositeVector& u, int* nseepage, double* area_seepage);
   void SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* area_seepage);
 
@@ -145,16 +146,13 @@ class Flow_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Epetra_Vector> Kxy;
   std::string coordinate_system_;
 
-  // boundary conditions: we need a vector here to allow for different models
-  std::vector<Teuchos::RCP<PK_DomainFunction> > bc_pressure_; 
-  std::vector<Teuchos::RCP<FlowBoundaryFunction> > bc_flux_; 
-  std::vector<Teuchos::RCP<FlowBoundaryFunction> > bc_head_; 
-  std::vector<Teuchos::RCP<FlowBoundaryFunction> > bc_seepage_; 
+  // boundary conditions
+  std::vector<Teuchos::RCP<FlowBoundaryFunction> > bcs_; 
   int nseepage_prev;
 
   Teuchos::RCP<Operators::BCs> op_bc_;
 
-  // water balance
+  // source terms and liquid balance
   std::vector<Teuchos::RCP<PK_DomainFunction> > srcs;
   mutable double mass_bc, seepage_mass_, mass_initial;
 

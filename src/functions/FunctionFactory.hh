@@ -18,6 +18,7 @@ class FunctionFactory {
   Function* create_tabular(Teuchos::ParameterList&) const;
   Function* create_smooth_step(Teuchos::ParameterList&) const;
   Function* create_polynomial(Teuchos::ParameterList&) const;
+  Function* create_monomial(Teuchos::ParameterList&) const;
   Function* create_linear(Teuchos::ParameterList&) const;
   Function* create_separable(Teuchos::ParameterList&) const;
   Function* create_additive(Teuchos::ParameterList&) const;
@@ -26,6 +27,7 @@ class FunctionFactory {
   Function* create_static_head(Teuchos::ParameterList&) const;
   Function* create_standard_math(Teuchos::ParameterList&) const;
   Function* create_bilinear(Teuchos::ParameterList&) const;
+  Function* create_distance(Teuchos::ParameterList&) const;
 };
 
 } // namespace Amanzi

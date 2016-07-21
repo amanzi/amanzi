@@ -171,6 +171,20 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
     chem_->Setup(beaker_components_, beaker_parameters_);
     chem_->Display();
 
+    // check names of primary species
+    int nprimary = chem_->primary_species().size(); 
+    if (nprimary == comp_names_.size()) {
+      for (int i = 0; i < nprimary; ++i) {
+        std::string species_name = chem_->primary_species().at(i).name();
+        if (comp_names_[i] != species_name) {
+          Errors::Message msg;
+          msg << "Amanzi PK: mismatch of name: \"" << comp_names_[i] << "\" and \"" 
+              << species_name << "\". Compare XML and BGD lists.";
+          Exceptions::amanzi_throw(msg);
+        }
+      }
+    }
+
     // solve for initial free-ion concentrations
     vo_->Write(Teuchos::VERB_HIGH, "Initial speciation calculations in cell 0...\n");
     chem_->Speciate(&beaker_components_, beaker_parameters_);
@@ -305,6 +319,7 @@ void Amanzi_PK::XMLParameters()
   }
 
   // misc other chemistry flags
+  dt_control_method_ = cp_list_->get<std::string>("time step control method", "fixed");
   dt_max_ = cp_list_->get<double>("max time step (s)", 9.9e+9);
   dt_next_ = cp_list_->get<double>("initial time step (s)", dt_max_);
   dt_cut_factor_ = cp_list_->get<double>("time step cut factor", 2.0);
@@ -695,20 +710,22 @@ void Amanzi_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>
 {
   saved_time_ = t_new;
 
-  if ((num_successful_steps_ == 0) || (num_iterations_ >= dt_cut_threshold_)) {
-    dt_next_ /= dt_cut_factor_;
-  }
-  else if (num_successful_steps_ >= dt_increase_threshold_) {
-    dt_next_ *= dt_increase_factor_;
-    num_successful_steps_ = 0;
-  }
+  if (dt_control_method_ == "simple") {
+    if ((num_successful_steps_ == 0) || (num_iterations_ >= dt_cut_threshold_)) {
+      dt_next_ /= dt_cut_factor_;
+    }
+    else if (num_successful_steps_ >= dt_increase_threshold_) {
+      dt_next_ *= dt_increase_factor_;
+      num_successful_steps_ = 0;
+    }
 
-  dt_next_ = std::min(dt_next_, dt_max_);
+    dt_next_ = std::min(dt_next_, dt_max_);
 
-  // synchronize processors since update of control parameters was 
-  // made in many places.
-  double tmp(dt_next_);
-  mesh_->get_comm()->MinAll(&tmp, &dt_next_, 1);
+    // synchronize processors since update of control parameters was 
+    // made in many places.
+    double tmp(dt_next_);
+    mesh_->get_comm()->MinAll(&tmp, &dt_next_, 1);
+  }
 
   // debug output
   // chem_->Speciate(&beaker_components_, beaker_parameters_);

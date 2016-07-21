@@ -39,7 +39,7 @@ class PK_DomainFunction {
   virtual void Compute(double t0, double t1) { ASSERT(false); }
 
   // model name
-  virtual std::string name() { return "undefined"; } 
+  virtual std::string name() const { return "undefined"; } 
 
   // access
   double domain_volume() { return domain_volume_; }

@@ -13,7 +13,6 @@
 #include "CycleDriver.hh"
 #include "Domain.hh"
 #include "GeometricModel.hh"
-#include "InputTranslator.hh"
 #include "InputConverterU.hh"
 #include "InputAnalysis.hh"
 #include "MeshAudit.hh"
@@ -39,24 +38,15 @@
 #include "pks_energy_registration.hh"
 #include "wrm_flow_registration.hh"
 
-using namespace std;
-
 // v1 spec constructor -- delete when we get rid of v1.2 spec.
-AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const string& xmlInFileName)
+AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName)
 {
-  string spec;
-  Teuchos::ParameterList driver_parameter_list = Amanzi::AmanziNewInput::translate(xmlInFileName, spec);
-  if (driver_parameter_list.numParams() == 0) // empty list, must be native spec.
-  {
-    Teuchos::RCP<Teuchos::ParameterList> native = Teuchos::getParametersFromXmlFile(xmlInFileName);
-    plist_ = new Teuchos::ParameterList(*native);
-  }
-  else
-    plist_ = new Teuchos::ParameterList(Amanzi::AmanziNewInput::translate(xmlInFileName, spec));
+  Teuchos::RCP<Teuchos::ParameterList> native = Teuchos::getParametersFromXmlFile(xmlInFileName);
+  plist_ = new Teuchos::ParameterList(*native);
 }
 
 
-AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const string& xmlInFileName,
+AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName,
                                                                                xercesc::DOMDocument* input)
 {
   int rank = Teuchos::GlobalMPISession::getRank();
@@ -77,10 +67,9 @@ Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
                                             Amanzi::ObservationData& observations_data)
 {
-  using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+  // Teuchos::OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(mpi_comm);
@@ -93,12 +82,8 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   MPI_Comm_size(mpi_comm,&size);
 
   //------------ DOMAIN, GEOMETRIC MODEL, ETC ----------------------------
-  // Create a VerboseObject to pass to the geometric model class 
-  Teuchos::RCP<Amanzi::VerboseObject> gmverbobj =
-      Teuchos::rcp(new Amanzi::VerboseObject("Geometric Model", *plist_));
-
   // Create the simulation domain
-  Amanzi::timer_manager.add("Geometric Model creation",Amanzi::Timer::ONCE);
+  Amanzi::timer_manager.add("Geometric Model creation", Amanzi::Timer::ONCE);
   Amanzi::timer_manager.start("Geometric Model creation");
 
   Teuchos::ParameterList domain_params = plist_->sublist("domain");
@@ -132,21 +117,20 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   Amanzi::timer_manager.add("Mesh creation",Amanzi::Timer::ONCE);
   Amanzi::timer_manager.start("Mesh creation");
 
-  // Create a Verbose object to pass to the mesh_factory and mesh
-  Teuchos::RCP<Amanzi::VerboseObject> meshverbobj =
-      Teuchos::rcp(new Amanzi::VerboseObject("mesh", *plist_));
+  // Create a verbose object to pass to the mesh_factory and mesh
+  Teuchos::ParameterList mesh_params = plist_->sublist("mesh");
+
+  Teuchos::RCP<Amanzi::VerboseObject> mesh_vo =
+      Teuchos::rcp(new Amanzi::VerboseObject("Mesh", mesh_params));
 
   // Create a mesh factory for this geometric model
-  Amanzi::AmanziMesh::MeshFactory factory(comm, meshverbobj) ;
+  Amanzi::AmanziMesh::MeshFactory factory(comm, mesh_vo);
 
   // Prepare to read/create the mesh specification
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
-  // get the Mesh sublist
-  ierr = 0;
-  Teuchos::ParameterList mesh_params = plist_->sublist("mesh");
-
   // Make sure the unstructured mesh option was chosen
+  ierr = 0;
   bool unstructured_option = mesh_params.isSublist("unstructured");
 
   if (!unstructured_option) {
@@ -185,9 +169,9 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::MOAB);
 	// } else if (framework == "") {
 	} else {
-	  std::string s(framework);
-	  s += ": specified mesh framework preference not understood";
-	  amanzi_throw(Errors::Message(s));
+          std::string s(framework);
+          s += ": specified mesh framework preference not understood";
+          amanzi_throw(Errors::Message(s));
 	}
       }   
     }

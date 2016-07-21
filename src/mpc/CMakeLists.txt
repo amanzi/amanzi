@@ -69,12 +69,22 @@ list(REVERSE mpc_tpl_libs)
 
 set(mpc_inc_files
   CycleDriver.hh
-  Unstructured_observations.hh
-  Walkabout_observations.hh
+  FlexibleObservations.hh
+  WalkaboutCheckpoint.hh
+  Observable.hh
+  ObservableFactory.hh
+  ObservableAqueous.hh 
+  ObservableLineSegment.hh
+  ObservableSolute.hh
+  ObservableLineSegmentAqueous.hh
+  ObservableLineSegmentSolute.hh
 )
 
 add_amanzi_library(mpc 
-                   SOURCE CycleDriver.cc Unstructured_observations.cc Walkabout_observations.cc
+                   SOURCE CycleDriver.cc 
+                          FlexibleObservations.cc WalkaboutCheckpoint.cc 
+                          ObservableFactory.cc
+                          ObservableAqueous.cc ObservableSolute.cc
                    HEADERS ${mpc_inc_files}
                    LINK_LIBS time_integration solvers output mpc_tree state mesh dbg ${mpc_tpl_libs})
 
@@ -130,6 +140,12 @@ if (BUILD_TESTS)
     add_amanzi_test(mpc_driver_dummy mpc_driver_dummy
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_dummy_pk.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: observable_line_segment
+    add_amanzi_test(observable_line_segment observable_line_segment
+                    KIND      int
+                    SOURCE    test/Main.cc test/observable_line_segment.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
 #    add_executable(test_vis test/Main.cc test/test_vis.cpp)

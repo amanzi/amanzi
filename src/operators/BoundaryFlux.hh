@@ -144,19 +144,22 @@ double BoundaryFaceSolver<Model>::SolveBisection(double face_val,
   double res = func(face_val);
   double left(0.0), right(0.0), lres(0.0), rres(0.0);
 
+#if DEBUG_FLAG
+std::cout << "STaRT interval: (" << min_val << " " << max_val << "),  fval=" << face_val << "\n";
+#endif
   if (res > 0.0) {
     left = face_val;
     lres = res;
     right = std::max(face_val, max_val);
     rres = func(right);
 #if DEBUG_FLAG
-  std::cout << "---set right:      " << left << " (" << lres << "), " << right << " (" << rres << ")\n";
+std::cout << "---set right:      " << left << " (" << lres << "), " << right << " (" << rres << ")\n";
 #endif
     while (rres > 0.0) {
-      right += fabs(right);
+      right += std::max(fabs(right), 100.0);
       rres = func(right);
 #if DEBUG_FLAG
-  std::cout << "   change right:   " << right << " (" << rres << ")\n";
+std::cout << "   change right:   " << right << " (" << rres << ")\n";
 #endif
     }
   } else {
@@ -165,18 +168,18 @@ double BoundaryFaceSolver<Model>::SolveBisection(double face_val,
     left = std::min(min_val, face_val);
     lres = func(left);
 #if DEBUG_FLAG
-  std::cout << "---set left:       " << left << " (" << lres << "), " << right << " (" << rres << ")\n";
+std::cout << "---set left:       " << left << " (" << lres << "), " << right << " (" << rres << ")\n";
 #endif
     while (lres < 0.0) {
-      left -= fabs(left);
+      left -= std::max(fabs(left), 100.0);
       lres = func(left);
 #if DEBUG_FLAG
-  std::cout << "   change left:    " << left << " (" << lres << ")\n";
+std::cout << "   change left:    " << left << " (" << lres << ")\n";
 #endif
     }
   }
 #if DEBUG_FLAG
-  std::cout << "+++bracket (func): " << left << " (" << lres << "), " << right << " (" << rres << ")\n";
+std::cout << "+++bracket (func): " << left << " (" << lres << "), " << right << " (" << rres << ")\n";
 #endif
 
   if (tol(left, right)) {
@@ -192,7 +195,7 @@ double BoundaryFaceSolver<Model>::SolveBisection(double face_val,
   }
 
 #if DEBUG_FLAG
-  std::cout << "   solution = " << face_val << " itrs = " << actual_it << "\n";
+std::cout << "   solution = " << face_val << " itrs = " << actual_it << "\n";
 #endif
   return face_val;
 }

@@ -43,31 +43,44 @@ void InputAnalysis::RegionAnalysis()
       std::vector<double> vofs;
       mesh_->get_set_entities_and_vofs(regions[i], AmanziMesh::CELL, AmanziMesh::OWNED, &block, &vofs);
       int nblock = block.size();
+      int nvofs = vofs.size();
 
-      double volume(0.0);
+      double volume(0.0), frac;
       for (int n = 0; n < nblock; n++) {
-        volume += mesh_->cell_volume(block[n]);
+        frac = (nvofs == 0) ? 1.0 : vofs[n];
+        volume += mesh_->cell_volume(block[n]) * frac;
       }
+
+      double vofs_min(1.0), vofs_max(0.0);
+      for (int n = 0; n < nvofs; ++n) {
+        vofs_min = std::min(vofs_min, vofs[n]);
+        vofs_max = std::max(vofs_max, vofs[n]);
+      }
+      if (nvofs == 0) vofs_max = 1.0;
 #ifdef HAVE_MPI
-      int nblock_tmp = nblock;
-      double volume_tmp = volume;
+      int nblock_tmp(nblock), nvofs_tmp(nvofs);
+      double volume_tmp(volume), vofs_min_tmp(vofs_min), vofs_max_tmp(vofs_max);
+
       mesh_->get_comm()->SumAll(&nblock_tmp, &nblock, 1);
+      mesh_->get_comm()->SumAll(&nvofs_tmp, &nvofs, 1);
       mesh_->get_comm()->SumAll(&volume_tmp, &volume, 1);
+      mesh_->get_comm()->MinAll(&vofs_min_tmp, &vofs_min, 1);
+      mesh_->get_comm()->MaxAll(&vofs_max_tmp, &vofs_max, 1);
 #endif
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
         std::string name(regions[i]);
         name.resize(std::min(40, (int)name.size()));
         *vo_->os() << "src: \"" << name << "\" has " << nblock << " cells" 
-                   << " of " << volume << " [m^3]" << std::endl;
+                   << " of " << volume << " [m^3]";
+        if (nvofs > 0) *vo_->os() << ", vol.fractions: " << vofs_min << "/" << vofs_max;
+        *vo_->os() << std::endl;
       }
 
       if (nblock == 0) {
         msg << "Used source region is empty.";
         Exceptions::amanzi_throw(msg);
       } 
-      // AmanziMesh::Entity_ID_List::iterator i;
-      // for (i = block.begin(); i != block.end(); i++) {};
     }
   }
 
@@ -77,27 +90,39 @@ void InputAnalysis::RegionAnalysis()
 
     for (int i = 0; i < regions.size(); i++) {
       AmanziMesh::Entity_ID_List block;
-      std::vector<double> volume_fractions;
-
-      mesh_->get_set_entities_and_vofs(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED,
-                                       &block, &volume_fractions);
+      std::vector<double> vofs;
+      mesh_->get_set_entities_and_vofs(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED, &block, &vofs);
       int nblock = block.size();
+      int nvofs = vofs.size();
 
-      double area(0.0);
+      double frac, area(0.0);
       for (int n = 0; n < nblock; n++) {
-        area += mesh_->face_area(block[n]);
+        frac = (nvofs == 0) ? 1.0 : vofs[n];
+        area += mesh_->face_area(block[n]) * frac;
+      }
+
+      double vofs_min(1.0), vofs_max(0.0);
+      for (int n = 0; n < nvofs; ++n) {
+        vofs_min = std::min(vofs_min, vofs[n]);
+        vofs_max = std::max(vofs_max, vofs[n]);
       }
 #ifdef HAVE_MPI
-      int nblock_tmp = nblock;
-      double area_tmp = area;
+      int nblock_tmp(nblock), nvofs_tmp(nvofs);
+      double area_tmp(area), vofs_min_tmp(vofs_min), vofs_max_tmp(vofs_max);
+
       mesh_->get_comm()->SumAll(&nblock_tmp, &nblock, 1);
+      mesh_->get_comm()->SumAll(&nvofs_tmp, &nvofs, 1);
       mesh_->get_comm()->SumAll(&area_tmp, &area, 1);
+      mesh_->get_comm()->MinAll(&vofs_min_tmp, &vofs_min, 1);
+      mesh_->get_comm()->MaxAll(&vofs_max_tmp, &vofs_max, 1);
 #endif
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
         std::string name(regions[i]);
         name.resize(std::min(40, (int)name.size()));
         *vo_->os() << "bc: \"" << name << "\" has " << nblock << " faces"
-                   << " of " << area << " [m^2]" << std::endl;
+                   << " of " << area << " [m^2]";
+        if (nvofs > 0) *vo_->os() << ", vol.fractions: " << vofs_min << "/" << vofs_max;
+        *vo_->os() << std::endl;
       }
 
       if (nblock == 0) {

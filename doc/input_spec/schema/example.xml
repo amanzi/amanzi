@@ -85,7 +85,10 @@
                 <secondaries>
                     <secondary>secondary_name_string</secondary>
                     <!-- secondary name must match the name in the engine database file -->
-                </secondaries> 
+                </secondaries>
+                <redox>
+                    <primary> string </primary>
+                </redox>
             </dissolved_components>
         </liquid_phase>
 

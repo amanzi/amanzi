@@ -22,7 +22,7 @@ Some of the salient features of *Amanzi* are listed below:
    refinement) or unstructured meshes (including polyhedral elements).
 2. It can internally generate a mesh or read a previously generated
    unstructured mesh in the `Exodus II <http://sourceforge.net/projects/exodusii/>`_ format.
-3. Simulations can be performed in 2 and 3 dimensions.
+3. Simulations can be performed representing the mesh cells in 2 and 3 dimensions.
 4. *Amanzi* can run on a single processor on a laptop or thousands of cores on
    large supercomputers
 5. Users can specify simulation input to *Amanzi* in a simple
@@ -47,4 +47,4 @@ Some of the salient features of *Amanzi* are listed below:
     of *Amanzi* are detailed in the section called
     :ref:`Amanzi Process Capabilities <Amanzi-Process-Models>`.
 
-.. _Akuna : http://esd.lbl.gov/research/projects/ascem/thrusts/platform/
+.. _Akuna : http://akuna.labworks.org

@@ -38,6 +38,7 @@ class InputConverterU : public InputConverter {
       compressibility_(false),
       mesh_rectangular_(false),
       transport_permeability_(false),
+      use_transport_porosity_(false),
       restart_(false) {}
 
   explicit InputConverterU(const std::string& input_filename, 
@@ -48,6 +49,7 @@ class InputConverterU : public InputConverter {
       compressibility_(false),
       mesh_rectangular_(false),
       transport_permeability_(false),
+      use_transport_porosity_(false),
       restart_(false) {}
 
   ~InputConverterU() { if (vo_ != NULL) delete vo_; }
@@ -129,10 +131,15 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList CreateAnalysis_();
   Teuchos::ParameterList CreateRegionAll_();
   std::string CreateBGDFile(std::string& filename);
-  std::string CreateINFile(std::string& filename);
+
+  // -- complex functions
+  void TranslateFunctionGaussian_(const std::vector<double>& data, Teuchos::ParameterList& bcfn);
 
   void FilterEmptySublists_(Teuchos::ParameterList& plist);
   void MergeInitialConditionsLists_(Teuchos::ParameterList& plist);
+
+  // -- miscalleneous
+  void PrintStatistics_();
 
  private:
   int dim_;
@@ -157,8 +164,9 @@ class InputConverterU : public InputConverter {
   bool mesh_rectangular_;
 
   // global transport and chemistry constants
-  bool transport_permeability_;
+  bool transport_permeability_, use_transport_porosity_;
   std::vector<std::string> comp_names_all_;
+  std::map<std::string, double> solute_molar_mass_;
 
   // global state parameters
   // -- initialization filename, different from restart
@@ -175,6 +183,7 @@ class InputConverterU : public InputConverter {
   std::vector<std::string> vv_src_regions_;
   std::vector<std::string> vv_obs_regions_;
 
+  // for statistics
   Teuchos::ParameterList verb_list_;
   VerboseObject* vo_;
 };

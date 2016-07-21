@@ -36,13 +36,18 @@ class FlowBoundaryFunction : public PK_DomainFunction {
   FlowBoundaryFunction()
       : rainfall_(false),
         relative_to_top_(false),
+        relative_to_bottom_(false),
         no_flow_above_water_table_(false),
+        bc_name_("underfined"),
         seepage_model_("") {};
   FlowBoundaryFunction(const Teuchos::ParameterList& plist);
   
   void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
-  // access
+  // modifiers and access
+  void set_bc_name(const std::string& name) { bc_name_ = name; }
+  std::string bc_name() { return bc_name_; }
+
   bool no_flow_above_water_table() const { return no_flow_above_water_table_; }
   std::string seepage_model() const { return seepage_model_; }
   double ref_pressure() const { return ref_pressure_; }
@@ -57,16 +62,17 @@ class FlowBoundaryFunction : public PK_DomainFunction {
 
  private:
   bool rainfall_;
-  bool relative_to_top_;
+  bool relative_to_top_, relative_to_bottom_;
   bool no_flow_above_water_table_;
 
   double rho_, g_;
   double ref_pressure_;
-  std::string seepage_model_;
+  std::string bc_name_, seepage_model_;
 
   std::vector<std::string> regions_;
 
   Teuchos::RCP<Epetra_Vector> shift_water_table_;
+  int nedges_;
 };
 
 }  // namespace Flow

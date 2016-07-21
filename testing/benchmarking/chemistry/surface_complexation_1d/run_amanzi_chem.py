@@ -11,7 +11,7 @@ def run_amanzi_chem(xml_input_file, run_path=None, chemfiles=None, directory=Non
 
     # run directory: provided or guessed
     if run_path is None:
-        run_directory= os.path.join(CWD,"amanzi-output")
+        run_directory= os.path.join(CWD, "amanzi-output")
     else:
         run_directory= os.path.join(CWD,run_path)
 

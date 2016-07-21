@@ -571,7 +571,7 @@ Mesh_MSTK::Mesh_MSTK(const Mesh *inmesh,
       int idx = 0;
       MEntity_ptr ment;
       while ((ment = (MEntity_ptr) MSet_Next_Entry(mset,&idx))) {
-        if (!MEnt_IsMarked(ment,mkid) && MEnt_PType(ment) != PGHOST) {
+        if (!MEnt_IsMarked(ment,mkid) && MEnt_PType(ment) != PGHOST && MEnt_Dim(ment) != MDELETED) {
           List_Add(src_ents,ment);
           MEnt_Mark(ment,mkid);
         }
@@ -627,7 +627,7 @@ Mesh_MSTK::Mesh_MSTK(const Mesh& inmesh,
       int idx = 0;
       MEntity_ptr ment;
       while ((ment = (MEntity_ptr) MSet_Next_Entry(mset,&idx))) {
-        if (!MEnt_IsMarked(ment,mkid) && MEnt_PType(ment) != PGHOST) {
+        if (!MEnt_IsMarked(ment,mkid) && MEnt_PType(ment) != PGHOST && MEnt_Dim(ment) != MDELETED) {
           List_Add(src_ents,ment);
           MEnt_Mark(ment,mkid);
         }
@@ -2824,7 +2824,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         if (dist2 < mindist2) {
           mindist2 = dist2;
           minnode = inode;
-          if (mindist2 <= 1.0e-32)
+          if (mindist2 <= 1.0e-14)
             break;
         }
       }
@@ -2880,7 +2880,9 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       std::string entity_type = lsrgn->entity_str();
 
       if (entity_type != "CELL") {
-        Errors::Message mesg("Entity type of labeled set region and build_set request do not match");
+        Errors::Message mesg;
+        mesg << "Entity type of labeled set region \"" << region->name() 
+             << "\" and build_set request (cell) do not match";
         amanzi_throw(mesg);
       }
 
@@ -2976,7 +2978,9 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       std::string entity_type = lsrgn->entity_str();
 
       if (entity_type != "FACE") {
-        Errors::Message mesg("Entity type of labeled set region and build_set request do not match");
+        Errors::Message mesg;
+        mesg << "Entity type of labeled set region \"" << region->name() 
+             << "\" and build_set request (face) do not match";
         amanzi_throw(mesg);
       }
 
@@ -3044,7 +3048,9 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       std::string entity_type = lsrgn->entity_str();
 
       if (entity_type != "FACE") {
-        Errors::Message mesg("Entity type of labeled set region and build_set request do not match");
+        Errors::Message mesg;
+        mesg << "Entity type of labeled set region \"" << region->name() 
+             << "\" and build_set request (face) do not match";
         amanzi_throw(mesg);
       }
 
@@ -3334,7 +3340,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
       }
     }
 
-  else if (rgn->type() == AmanziGeometry::BOX_VOF) 
+  else if ((rgn->type() == AmanziGeometry::BOX_VOF)||(rgn->type() == AmanziGeometry::LINE_SEGMENT))
     {
       // Call routine from the base class and exit.
       Mesh::get_set_entities_box_vofs_(rgn, kind, ptype, setents, vofs);
@@ -4567,6 +4573,16 @@ void Mesh_MSTK::init_set_info()
 
       if (mset) {
         if (entities_deleted) {
+          int idx = 0;
+          MEntity_ptr ent;
+          while ((ent = MSet_Next_Entry(mset,&idx))) {
+            if (MEnt_Dim(ent) == MDELETED)
+              MSet_Rem(mset, ent);
+          }
+  
+//        Deleted entities all have MEnt_dim == MDELETED, hence we will never enter any of
+//        the switch cases below
+/*
           entdim = MSet_EntDim(mset);
           int idx=0;
           switch (entdim) {
@@ -4591,6 +4607,7 @@ void Mesh_MSTK::init_set_info()
               MSet_Rem(mset,vertex);
             break;
           }
+*/
         }
       }
     }
@@ -4608,6 +4625,16 @@ void Mesh_MSTK::init_set_info()
 
         if (mset) {
           if (entities_deleted) {
+            int idx = 0;
+            MEntity_ptr ent;
+            while ((ent = MSet_Next_Entry(mset,&idx))) {
+              if (MEnt_Dim(ent) == MDELETED)
+                MSet_Rem(mset, ent);
+            }
+            
+//          Deleted entities all have MEnt_dim == MDELETED, hence we will never enter any of
+//          the switch cases below
+/*
             entdim = MSet_EntDim(mset);
             int idx=0;
             switch (entdim) {
@@ -4632,6 +4659,7 @@ void Mesh_MSTK::init_set_info()
                 MSet_Rem(mset,vertex);
               break;
             }
+*/
           }
         }
       }
@@ -4659,7 +4687,7 @@ void Mesh_MSTK::collapse_degen_edges()
 
     len2 = ME_LenSqr(edge);
 
-    if (len2 <= 1.0e-32) {
+    if (len2 <= 1.0e-14) {
 
       /* Degenerate edge  - must collapse */
 
@@ -4718,6 +4746,8 @@ void Mesh_MSTK::collapse_degen_edges()
       
       MEntity_ptr ent;
       int idx1 = 0;
+      //Loop/switch below will generate empty lists: all deleted entities
+      //have MEnt_Dim(ent) == MDELETED
       while ((ent = List_Next_Entry(deleted_ents,&idx1))) {
         switch (MEnt_Dim(ent)) {
         case MREGION:
@@ -4823,7 +4853,10 @@ Cell_type Mesh_MSTK::MRegion_Celltype(MRegion_ptr region)
   
   switch (nrf) {
   case 4:
-    return TET;
+    if (nrv == 4)
+      return TET;
+    else
+      return POLYHED;
     break;
   case 5:
     
@@ -5526,7 +5559,8 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt)
       MEntity_ptr ent;
       idx = 0;
       while ((ent = MSet_Next_Entry(mset_parent,&idx))) {
-
+        if (MEnt_Dim(ent) == MDELETED)
+          continue;
         MEntity_ptr copyent;
         int ival;
         double rval;

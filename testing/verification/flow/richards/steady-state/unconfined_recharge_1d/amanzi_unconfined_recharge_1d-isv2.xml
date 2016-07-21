@@ -112,15 +112,15 @@
         <box high_coordinates="499.872, 73.152" low_coordinates="0.0, 0.0" />
       </region>
       <region name="Left">
-        <box high_coordinates="(0.0, 49.9872)" low_coordinates="(0.0, 0.0)" name="-X_Boundary" />
+        <box high_coordinates="0.0, 49.9872" low_coordinates="0.0, 0.0" name="-X_Boundary" />
         <comments>Left boundary</comments>
       </region>
       <region name="Right">
-        <box high_coordinates="(499.872, 73.152)" low_coordinates="(499.872, 0.0)" name="+X_Boundary" />
+        <box high_coordinates="499.872, 73.152" low_coordinates="499.872, 0.0" name="+X_Boundary" />
         <comments>Right boundary</comments>
       </region>
       <region name="Top">
-        <box high_coordinates="(499.872, 73.152)" low_coordinates="(0.0, 73.152)" name="+Y_Boundary" />
+        <box high_coordinates="499.872, 73.152" low_coordinates="0.0, 73.152" name="+Y_Boundary" />
         <comments>Top boundary</comments>
       </region>
       <point coordinate="1.5240, 0.3048" name="Point5ft" />

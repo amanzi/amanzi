@@ -677,11 +677,11 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
     <xs:element name="activity_coefficients" type="xs:string" default="timestep" minOccurs="0" maxOccurs="1"/>
     <xs:element name="max_relative_change_tolerance" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
     <xs:element name="max_residual_tolerance" type="typedef_exponential" minOccurs="0" maxOccurs="1"/>
+    <xs:element name="max_time_step" type="typedef_exponential" default="1e+10" minOccurs="0" maxOccurs="1"/>
+    <xs:element name="initial_time_step" type="typedef_exponential" default="1e+7" minOccurs="0" maxOccurs="1"/>
     
     
     <xs:element name="min_time_step" type="typedef_exponential" default="1e+10" minOccurs="0" maxOccurs="1"/>
-    <xs:element name="max_time_step" type="typedef_exponential" default="1e+10" minOccurs="0" maxOccurs="1"/>
-    <xs:element name="initial_time_step" type="typedef_exponential" default="1e+7" minOccurs="0" maxOccurs="1"/>
     <xs:element name="time_step_control_method" type="xs:string" default="fixed" minOccurs="0" maxOccurs="1"/>
     <!-- the following 4 options are only valid if time_step_control_method=simple -->
     <xs:element name="time_step_cut_threshold" type="xs:integer" default="8" minOccurs="0" maxOccurs="1"/>
@@ -1543,7 +1543,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
 <xs:complexType name="typedef_dissolved_components">
 	<xs:all minOccurs = "0" maxOccurs = "1">
 			<xs:element name="primaries" type="typedef_primaries" minOccurs="0" maxOccurs="1"/>
-			<xs:element name="secondaries" type="typedef_secondaries" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="secondaries" type="typedef_secondaries" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="redox" type="typedef_primaries" minOccurs="0" maxOccurs="1"/>
 	</xs:all>
 </xs:complexType>
 
@@ -1586,6 +1587,8 @@ TODO Can we do validation on known names plus allow unrecognised ones.  Well I t
   <xs:simpleContent>
   <xs:extension base="xs:string">
       <xs:attribute name="rate_constant" type="typedef_exponential"/>
+      <xs:attribute name="prefactor_species" type="xs:string"/>
+      <xs:attribute name="alpha" type="typedef_exponential"/>
   </xs:extension>
   </xs:simpleContent>
 </xs:complexType>

@@ -1,15 +1,16 @@
-#include "UnitTest++.h"
 #include "TestReporterStdout.h"
-
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "UnitTest++.h"
 
-#include "FunctionFactory.hh"
+#include "errors.hh"
+
 #include "ConstantFunction.hh"
+#include "DistanceFunction.hh"
+#include "FunctionFactory.hh"
+#include "PolynomialFunction.hh"
 #include "SmoothStepFunction.hh"
 #include "TabularFunction.hh"
-#include "PolynomialFunction.hh"
-#include "errors.hh"
 
 using namespace Amanzi;
 
@@ -79,60 +80,60 @@ SUITE(constant_factory) {
 }
 
 SUITE(tabular_factory) {
- TEST(create)
- {
-   Teuchos::ParameterList list;
-   Teuchos::ParameterList &sublist = list.sublist("function-tabular");
-   Teuchos::Array<double> x(2);
-   Teuchos::Array<double> y(2);
-   x[0] = 0.0;
-   x[1] = 1.0;
-   y[0] = 2.0;
-   y[1] = 3.0;
-   sublist.set("x values", x);
-   sublist.set("y values", y);
-   FunctionFactory fact;
-   Function *f = fact.Create(list);
-   std::vector<double> t(1,0.5);
-   CHECK_EQUAL((*f)(t), 2.5);
- }
- TEST(create_with_row_coordinate)
- {
-   Teuchos::ParameterList list;
-   Teuchos::ParameterList &sublist = list.sublist("function-tabular");
-   Teuchos::Array<double> x(2);
-   Teuchos::Array<double> y(2);
-   x[0] = 0.0;
-   x[1] = 1.0;
-   y[0] = 2.0;
-   y[1] = 3.0;
-   sublist.set("x values", x);
-   sublist.set("x coordinate", "t");
-   sublist.set("y values", y);
-   FunctionFactory fact;
-   Function *f = fact.Create(list);
-   std::vector<double> t(1,0.5);
-   CHECK_EQUAL((*f)(t), 2.5);
- }
- TEST(create_with_form)
- {
-   Teuchos::ParameterList list;
-   Teuchos::ParameterList &sublist = list.sublist("function-tabular");
-   Teuchos::Array<double> x(2);
-   Teuchos::Array<double> y(2);
-   x[0] = 0.0;
-   x[1] = 1.0;
-   y[0] = 2.0;
-   y[1] = 3.0;
-   sublist.set("x values", x);
-   sublist.set("y values", y);
-   Teuchos::Array<std::string> forms(1,"constant");
-   sublist.set("forms", forms);
-   FunctionFactory fact;
-   Function *f = fact.Create(list);
-   std::vector<double> t(1,0.5);
-   CHECK_EQUAL(2.0, (*f)(t));
- }
+  TEST(create)
+  {
+    Teuchos::ParameterList list;
+    Teuchos::ParameterList &sublist = list.sublist("function-tabular");
+    Teuchos::Array<double> x(2);
+    Teuchos::Array<double> y(2);
+    x[0] = 0.0;
+    x[1] = 1.0;
+    y[0] = 2.0;
+    y[1] = 3.0;
+    sublist.set("x values", x);
+    sublist.set("y values", y);
+    FunctionFactory fact;
+    Function *f = fact.Create(list);
+    std::vector<double> t(1,0.5);
+    CHECK_EQUAL((*f)(t), 2.5);
+  }
+  TEST(create_with_row_coordinate)
+  {
+    Teuchos::ParameterList list;
+    Teuchos::ParameterList &sublist = list.sublist("function-tabular");
+    Teuchos::Array<double> x(2);
+    Teuchos::Array<double> y(2);
+    x[0] = 0.0;
+    x[1] = 1.0;
+    y[0] = 2.0;
+    y[1] = 3.0;
+    sublist.set("x values", x);
+    sublist.set("x coordinate", "t");
+    sublist.set("y values", y);
+    FunctionFactory fact;
+    Function *f = fact.Create(list);
+    std::vector<double> t(1,0.5);
+    CHECK_EQUAL((*f)(t), 2.5);
+  }
+  TEST(create_with_form)
+  {
+    Teuchos::ParameterList list;
+    Teuchos::ParameterList &sublist = list.sublist("function-tabular");
+    Teuchos::Array<double> x(2);
+    Teuchos::Array<double> y(2);
+    x[0] = 0.0;
+    x[1] = 1.0;
+    y[0] = 2.0;
+    y[1] = 3.0;
+    sublist.set("x values", x);
+    sublist.set("y values", y);
+    Teuchos::Array<std::string> forms(1,"constant");
+    sublist.set("forms", forms);
+    FunctionFactory fact;
+    Function *f = fact.Create(list);
+    std::vector<double> t(1,0.5);
+    CHECK_EQUAL(2.0, (*f)(t));
+  }
   TEST(missing_parameter)
   {
     Teuchos::ParameterList list;
@@ -575,8 +576,8 @@ SUITE(static_head_factory) {
     CHECK_THROW(Function *f = factory.Create(list), Errors::Message);
     Teuchos::ParameterList &sublist = list.sublist("function-static-head");
     //sublist.set("p0", 1.0);
-    sublist.set("density", 4.0);
-    sublist.set("gravity", 0.5);
+    sublist.set("density", 4.0)
+           .set("gravity", 0.5);
     sublist.sublist("water table elevation").sublist("function-constant").set("value",3.0);
     //Function *f = factory.Create(list);
     CHECK_THROW(Function *f = factory.Create(list), Errors::Message);
@@ -597,3 +598,30 @@ SUITE(static_head_factory) {
     CHECK_THROW(Function *f = factory.Create(list), Errors::Message);
   }
 }
+
+SUITE(distance_factory) {
+  TEST(create)
+  {
+    Teuchos::ParameterList list;
+    Teuchos::ParameterList& sublist = list.sublist("function-distance");
+    Teuchos::Array<double> x0(2), metric(2);
+    x0[0] = 1.0;
+    x0[1] = 0.0;
+    metric[0] = 1.0;
+    metric[1] = 1.0;
+    sublist.set<Teuchos::Array<double> >("x0", x0)
+           .set<Teuchos::Array<double> >("metric", metric);
+    FunctionFactory fact;
+    Function *f = fact.Create(list);
+    std::vector<double> x(2, 2.0);
+    CHECK_EQUAL((*f)(x), 5.0);
+  }
+  TEST(missing_parameter)
+  {
+    Teuchos::ParameterList list;
+    Teuchos::ParameterList& sublist = list.sublist("function-double");
+    FunctionFactory fact;
+    CHECK_THROW(Function *f = fact.Create(list), Errors::Message);
+  }
+}
+

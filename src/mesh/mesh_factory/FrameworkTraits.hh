@@ -1,21 +1,16 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-// -------------------------------------------------------------
-/**
- * @file   FrameworkTraits.hh
- * @author William A. Perkins
- * @date Mon Aug  1 13:47:02 2011
- * 
- * @brief  
- * 
- * 
- */
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created March 10, 2011 by William A. Perkins
-// Last Change: Mon Aug  1 13:47:02 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
-#ifndef _FrameworkTraits_hh_
-#define _FrameworkTraits_hh_
+/*
+  Mesh Factory
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: William A. Perkins
+*/
+
+#ifndef AMANZI_FRAMEWORK_TRAITS_HH_
+#define AMANZI_FRAMEWORK_TRAITS_HH_
 
 #include <Epetra_MpiComm.h>
 #include <Teuchos_RCP.hpp>
@@ -45,7 +40,7 @@ extern Teuchos::RCP<Mesh>
 framework_read(const Epetra_MpiComm *comm_, const Framework& f, 
                const std::string& fname,
                const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm =  Teuchos::null,
-               const Teuchos::RCP<const VerboseObject>& verbobj = Teuchos::null,
+               const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
                const bool request_faces = true,
                const bool request_edges = false);
 
@@ -63,7 +58,7 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
                    const unsigned int& nx, const unsigned int& ny, 
                    const unsigned int& nz,
                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
-                   const Teuchos::RCP<const VerboseObject>& verbobj = Teuchos::null,
+                   const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
                    const bool request_faces = true,
                    const bool request_edges = false);
 
@@ -74,7 +69,7 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
                    const double& x1, const double& y1,
                    const unsigned int& nx, const unsigned int& ny,
                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
-                   const Teuchos::RCP<const VerboseObject>& verbobj = Teuchos::null,
+                   const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
                    const bool request_faces = true,
                    const bool request_edges = false);
 
@@ -82,7 +77,7 @@ extern Teuchos::RCP<Mesh>
 framework_generate(const Epetra_MpiComm *comm_, const Framework& f, 
                    Teuchos::ParameterList &parameter_list,
                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
-                   const Teuchos::RCP<const VerboseObject>& verbobj = Teuchos::null,
+                   const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
                    const bool request_faces = true,
                    const bool request_edges = false);
 
