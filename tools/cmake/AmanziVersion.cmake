@@ -3,7 +3,7 @@
 #
 # Amanzi Version Information:
 # 
-# Information about the current source is extracted from the mercurial repository and used to 
+# Information about the current source is extracted from the git repository and used to 
 # create the version string (AMANZI_VERSION).  
 #
 # NOTE: this information won't be accessible without the full repository.
@@ -19,7 +19,6 @@
 #   install amanzi_version.hh
 #
 
-include(MercurialMacros)
 include(PrintVariable)
 include(InstallManager)
 
