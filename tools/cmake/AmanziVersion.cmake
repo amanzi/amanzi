@@ -25,48 +25,78 @@ include(InstallManager)
 
 message(STATUS ">>>>>>>> AmanziVersion.cmake")
 
-find_package(Mercurial)
-if ( (EXISTS ${CMAKE_SOURCE_DIR}/.hg/) AND (MERCURIAL_FOUND) ) 
+find_package(Git)
 
-  mercurial_branch(AMANZI_HG_BRANCH)
-  mercurial_global_id(AMANZI_HG_GLOBAL_HASH)
-  mercurial_local_id(AMANZI_HG_LOCAL_ID)
+if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) ) 
 
-# set(MERCURIAL_ARGS head ${AMANZI_HG_BRANCH} --template "{latesttag('re:^amanzi-.*')}\n")
-  set(MERCURIAL_ARGS log --rev "branch\(default\) and tag()" --template "{tags}\n" )
-  execute_process(COMMAND  ${MERCURIAL_EXECUTABLE} ${MERCURIAL_ARGS}
+  # Get the name of the current branch.
+  set(GIT_ARGS symbolic-ref --short HEAD )
+  execute_process(COMMAND ${GIT_EXECUTABLE} ${GIT_ARGS}
 	          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                   RESULT_VARIABLE err_occurred 
-                  OUTPUT_VARIABLE AMANZI_HG_LATEST_TAG
+                  OUTPUT_VARIABLE AMANZI_GIT_BRANCH
+                  ERROR_VARIABLE err
+                  OUTPUT_STRIP_TRAILING_WHITESPACE
+                  ERROR_STRIP_TRAILING_WHITESPACE)
+  if(err_occurred)
+    message(WARNING "Error executing git:\n ${cmd}\n${err}")
+    set(cmd_output cmd_output-NOTFOUND)
+    exit()
+  endif()
+
+  # message(STATUS ">>>> JDM: AMANZI_GIT_BRANCH:      ${AMANZI_GIT_BRANCH}")
+
+  set(GIT_ARGS rev-parse --short HEAD)
+  execute_process(COMMAND  ${GIT_EXECUTABLE} ${GIT_ARGS}
+	          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                  RESULT_VARIABLE err_occurred 
+                  OUTPUT_VARIABLE AMANZI_GIT_GLOBAL_HASH
+                  ERROR_VARIABLE err
+                  OUTPUT_STRIP_TRAILING_WHITESPACE
+                  ERROR_STRIP_TRAILING_WHITESPACE)
+  if(err_occurred)
+    message(WARNING "Error executing git:\n ${cmd}\n${err}")
+    set(cmd_output cmd_output-NOTFOUND)
+    exit()
+  endif()
+
+  # message(STATUS ">>>> JDM: AMANZI_GIT_GLOBAL_HASH: ${AMANZI_GIT_GLOBAL_HASH}")
+
+  set(GIT_ARGS tag -l amanzi-*)
+  execute_process(COMMAND  ${GIT_EXECUTABLE} ${GIT_ARGS}
+	          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                  RESULT_VARIABLE err_occurred 
+                  OUTPUT_VARIABLE AMANZI_GIT_LATEST_TAG
                   ERROR_VARIABLE err
                   OUTPUT_STRIP_TRAILING_WHITESPACE
                   ERROR_STRIP_TRAILING_WHITESPACE)
 
-   # MESSAGE(STATUS ">>>> JDM: MERCURIAL_EXEC       = ${MERCURIAL_EXECUTABLE}")
-   # MESSAGE(STATUS ">>>> JDM: MERCURIAL_ARGS       = ${MERCURIAL_ARGS}")
-   # MESSAGE(STATUS ">>>> JDM: RESULT_VARIABLE      = ${err_occurred}")
+   # MESSAGE(STATUS ">>>> JDM: GIT_EXEC        = ${GIT_EXECUTABLE}")
+   # MESSAGE(STATUS ">>>> JDM: GIT_ARGS        = ${GIT_ARGS}")
+   # MESSAGE(STATUS ">>>> JDM: RESULT_VARIABLE = ${err_occurred}")
+   # MESSAGE(STATUS ">>>> JDM: AMANZI_GIT_LATEST_TAG = ${AMANZI_GIT_LATEST_TAG}")
 
    # Put the tags in a list
-   STRING(REPLACE "\n" ";" AMANZI_HG_LATEST_TAG_LIST ${AMANZI_HG_LATEST_TAG})
+   STRING(REPLACE "\n" ";" AMANZI_GIT_LATEST_TAG_LIST ${AMANZI_GIT_LATEST_TAG})
    # Extract the lastest tag of the form amanzi-*
-   FOREACH(atag ${AMANZI_HG_LATEST_TAG_LIST})
+   FOREACH(atag ${AMANZI_GIT_LATEST_TAG_LIST})
      IF ( ${atag} MATCHES "^amanzi-.*" )
-       set ( AMANZI_HG_LATEST_TAG ${atag} )
+       set ( AMANZI_GIT_LATEST_TAG ${atag} )
      ENDIF()
    ENDFOREACH()
 
-   STRING(REGEX REPLACE "amanzi-" "" AMANZI_HG_LATEST_TAG_VER ${AMANZI_HG_LATEST_TAG})	
-   STRING(REGEX REPLACE "\\..*" "" AMANZI_HG_LATEST_TAG_MAJOR ${AMANZI_HG_LATEST_TAG_VER})	
-   STRING(REGEX MATCH "\\.[0-9][0-9][\\.,-]" AMANZI_HG_LATEST_TAG_MINOR ${AMANZI_HG_LATEST_TAG_VER})	
-   STRING(REGEX REPLACE "[\\.,-]" "" AMANZI_HG_LATEST_TAG_MINOR ${AMANZI_HG_LATEST_TAG_MINOR} )	
+   STRING(REGEX REPLACE "amanzi-" "" AMANZI_GIT_LATEST_TAG_VER ${AMANZI_GIT_LATEST_TAG})	
+   STRING(REGEX REPLACE "\\..*" "" AMANZI_GIT_LATEST_TAG_MAJOR ${AMANZI_GIT_LATEST_TAG_VER})	
+   STRING(REGEX MATCH "\\.[0-9][0-9][\\.,-]" AMANZI_GIT_LATEST_TAG_MINOR ${AMANZI_GIT_LATEST_TAG_VER})	
+   STRING(REGEX REPLACE "[\\.,-]" "" AMANZI_GIT_LATEST_TAG_MINOR ${AMANZI_GIT_LATEST_TAG_MINOR} )	
 
-   set(AMANZI_VERSION_MAJOR ${AMANZI_HG_LATEST_TAG_MAJOR})
-   set(AMANZI_VERSION_MINOR ${AMANZI_HG_LATEST_TAG_MINOR})
+   set(AMANZI_VERSION_MAJOR ${AMANZI_GIT_LATEST_TAG_MAJOR})
+   set(AMANZI_VERSION_MINOR ${AMANZI_GIT_LATEST_TAG_MINOR})
 
    #
    # Amanzi version
    #
-   set(AMANZI_VERSION ${AMANZI_HG_LATEST_TAG_VER}_${AMANZI_HG_GLOBAL_HASH})
+   set(AMANZI_VERSION ${AMANZI_GIT_LATEST_TAG_VER}_${AMANZI_GIT_GLOBAL_HASH})
 
    STRING(REGEX REPLACE ".*\\.[0-9][0-9][\\.,-]" "" AMANZI_VERSION_PATCH ${AMANZI_VERSION})
    STRING(REGEX REPLACE ".*_" "" AMANZI_VERSION_HASH ${AMANZI_VERSION_PATCH})
@@ -75,24 +105,23 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.hg/) AND (MERCURIAL_FOUND) )
 else()
 
   message(STATUS "  >>>>>>>> Using static version information to create amanzi_version.hh")
-  if ( NOT MERCURIAL_FOUND ) 
-    message(STATUS "    >>>>>> Could not locate Mercurial executable.")
+  if ( NOT GIT_FOUND ) 
+    message(STATUS "    >>>>>> Could not locate Git executable.")
   endif()
-  if ( NOT EXISTS ${CMAKE_SOURCE_DIR}/.hg/ )
-    message(STATUS "    >>>>>> Release or snapshot, no .hg directory found.")
+  if ( NOT EXISTS ${CMAKE_SOURCE_DIR}/.git/ )
+    message(STATUS "    >>>>>> Release or snapshot, no .git directory found.")
   endif()
 
   #
   # For releases and snapshots, set static information before creating the tarball.
   #
-  set(AMANZI_HG_BRANCH default )
-  set(AMANZI_HG_GLOBAL_HASH )
-  set(AMANZI_HG_LOCAL_ID )
+  set(AMANZI_GIT_BRANCH master )
+  set(AMANZI_GIT_GLOBAL_HASH )
 
   set(AMANZI_VERSION_MAJOR 0)
-  set(AMANZI_VERSION_MINOR 85)
+  set(AMANZI_VERSION_MINOR 86)
   set(AMANZI_VERSION_PATCH dev)
-  set(AMANZI_VERSION_HASH ${AMANZI_HG_GLOBAL_HASH})
+  set(AMANZI_VERSION_HASH ${AMANZI_GIT_GLOBAL_HASH})
 
   #
   # Amanzi version

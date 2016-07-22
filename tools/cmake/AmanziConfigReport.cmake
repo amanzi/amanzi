@@ -110,9 +110,8 @@ _write_blank_line()
 _write_blank_line()
 _write_to_log("Repository Information")
 _write_to_log("\tSource Directory:    ${AMANZI_SOURCE_DIR}")
-_write_to_log("\tMercurial Branch:    ${AMANZI_HG_BRANCH}")
-_write_to_log("\tMercurial Global ID: ${AMANZI_HG_GLOBAL_HASH}")
-_write_to_log("\tMercurial Local ID:  ${AMANZI_HG_LOCAL_ID}")
+_write_to_log("\tGit Branch:          ${AMANZI_GIT_BRANCH}")
+_write_to_log("\tGit Global ID:       ${AMANZI_GIT_GLOBAL_HASH}")
 _write_blank_line()
 
 # Write Package Information
