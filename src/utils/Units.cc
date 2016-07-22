@@ -16,6 +16,7 @@
 #include <boost/units/base_units/imperial/inch.hpp>
 #include <boost/units/base_units/imperial/pound.hpp>
 #include <boost/units/base_units/imperial/yard.hpp>
+#include <boost/units/base_units/imperial/gallon.hpp>
 
 #include "Units.hh"
 
@@ -59,6 +60,7 @@ void Units::Init()
   time_["y"] = 365.25 * 24.0 * 3600.0 * bu::si::second;
   time_["d"] = 24.0 * 3600.0 * bu::si::second;
   time_["h"] = 3600.0 * bu::si::second;
+  time_["min"] = 60.0 * bu::si::second;
   time_["s"] = 1.0 * bu::si::second;
 
   // supported units of mass (extendable list)
@@ -76,6 +78,7 @@ void Units::Init()
 
   // supported units of volume (extendable list)
   volume_["m3"] = 1.0 * bu::si::volume();
+  volume_["gal"] = conversion_factor(bu::imperial::gallon_base_unit::unit_type(), bu::si::volume()) * bu::si::volume();
   volume_["L"] = conversion_factor(liter(), bu::si::volume()) * bu::si::volume();
 
   // supported units of concentration (extendable list)
