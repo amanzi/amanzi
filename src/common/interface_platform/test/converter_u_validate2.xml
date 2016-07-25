@@ -759,8 +759,4 @@
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
   </ParameterList>
-
-  <ParameterList name="Miscalleneous">
-    <Parameter isDefault="true" isUsed="true" name="output precision" type="int" value="0"/>
-  </ParameterList>
 </ParameterList>
