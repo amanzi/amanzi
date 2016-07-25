@@ -15,7 +15,7 @@ If you instead expect to do new development, please use the developer version an
 
 ```
 git clone http://github.com/amanzi/ats-dev
-'''
+```
 
 NOTE: there is also an ats repository that is currently simply a placeholder for better project pages to come.  Cloning that repository will do you no good!
 
