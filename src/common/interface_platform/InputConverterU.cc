@@ -53,7 +53,6 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
 
   out_list.set<bool>("Native Unstructured Input", "true");
 
-  out_list.sublist("Miscalleneous") = TranslateMisc_();  
   out_list.sublist("units") = TranslateUnits_();  
   out_list.sublist("mesh") = TranslateMesh_();
   out_list.sublist("domain").set<int>("spatial dimension", dim_);
@@ -302,32 +301,6 @@ Teuchos::ParameterList InputConverterU::TranslateUnits_()
 
 
 /* ******************************************************************
-* Miscalleneous commands
-****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateMisc_()
-{
-  Teuchos::ParameterList out_list;
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os() << "Translating miscalleneous commands" << std::endl;
-
-  MemoryManager mm;  
-  DOMNode* node;
-  DOMElement* element;
-
-  bool flag;
-  node = GetUniqueElementByTagsString_("misc, echo_translated_input", flag);
-  if (flag) {
-    element = static_cast<DOMElement*>(node);
-    std::string filename = GetAttributeValueS_(element, "file_name", TYPE_NONE, false, "native_v7.xml");
-
-    out_list.set<std::string>("file name", filename);
-  }
-
-  return out_list;
-}
-
-
-/* ******************************************************************
 * Analysis list can used by special tools.
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::CreateAnalysis_()
@@ -392,24 +365,38 @@ void InputConverterU::FilterEmptySublists_(Teuchos::ParameterList& plist)
 void InputConverterU::SaveXMLFile(
     Teuchos::ParameterList& out_list, std::string& xmlfilename)
 {
-  std::string filename(xmlfilename);
-  std::string new_extension("_native_v7.xml");
-  size_t pos = filename.find(".xml");
-  filename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)14);
+  bool flag;
+  int precision;
+  std::string filename("");
 
-  int precision = out_list.sublist("Miscalleneous").get<int>("output precision", 0);
-  if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Writing the translated XML to " << filename.c_str() << std::endl;;
+  DOMNode* node = GetUniqueElementByTagsString_("misc, echo_translated_input", flag);
+  if (flag) {
+    DOMElement* element = static_cast<DOMElement*>(node);
+    filename = GetAttributeValueS_(element, "file_name", TYPE_NONE, false, "skip");
+    precision = GetAttributeValueL_(element, "output_precision", TYPE_NONE, false, 0);
   }
 
-  Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
-  if (precision > 0) XMLWriter.set_precision(precision);
-  Teuchos::XMLObject XMLobj = XMLWriter.toXML(out_list);
+  if (filename == "") {
+    filename = xmlfilename;
+    std::string new_extension("_native_v7.xml");
+    size_t pos = filename.find(".xml");
+    filename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)14);
+  }
 
-  std::ofstream xmlfile;
-  xmlfile.open(filename.c_str());
-  xmlfile << XMLobj;
+  if (filename != "skip") {
+    if (vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "Writing the translated XML to " << filename.c_str() << std::endl;;
+    }
+
+    Teuchos::Amanzi_XMLParameterListWriter XMLWriter;
+    if (precision > 0) XMLWriter.set_precision(precision);
+    Teuchos::XMLObject XMLobj = XMLWriter.toXML(out_list);
+
+    std::ofstream xmlfile;
+    xmlfile.open(filename.c_str());
+    xmlfile << XMLobj;
+  }
 }
 
 

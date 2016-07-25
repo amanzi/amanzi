@@ -1853,13 +1853,12 @@ This section includes a collection of miscellaneous global options, specified as
 
 .. code-block:: xml
 
-  <echo_translated_input format="some tag" file_name="some name"/>
+  <echo_translated_input file_name="some name"/>
 
-* Write the input data after internal translation.  There are two specifiable attributes, ``format`` and ``file_name``.  If this parameter is omitted, no translated files are written.
-
-  * ``format`` is a specific format tag, and can be `"v1`" (DEFAULT) or `"native`".  The actual format created for the `"native`" tag will depend on the value of the ``type`` specified under ``amanzi_input`` (see above).
-
-  * ``file_name`` is the name of the translated output file.  If ``format`` = `"v1`", then ``file_name`` defaults to `"XXX_oldspec.xml`", where `"XXX.xml`" is the name of the original Amanzi input file.  If ``format`` = `"native`", then ``file_name`` defaults to `"translated_inpus.xml`".
+* Write the input data after internal translation. If this parameter is missing, the default XML
+  file `"XXX_native_v7.xml`" is written, where `"XXX.xml`" is the name of the original Amanzi input file.
+  If this parameter is present but attribute ``file_name`` is either omitted of empty string, no 
+  translated file is written.
 
 
 Full Example
