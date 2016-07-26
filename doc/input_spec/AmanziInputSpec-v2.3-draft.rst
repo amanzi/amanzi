@@ -71,7 +71,7 @@ Acceptable values for each unit are as follows:
 +----------------+----------------+
 | mass_unit      | kg             |
 +----------------+----------------+
-| conc_unit      | molar, mol/m^3 |
+| conc_unit      | molar, SI      |
 +----------------+----------------+
 
 Note, currently mol/m^3 concentration unit is only available for unstructured.  The input converter for unstructured will convert the concentration internally as needed.

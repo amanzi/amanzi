@@ -680,7 +680,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
         element = static_cast<DOMElement*>(same_list[j]);
         double t0 = GetAttributeValueD_(element, "start");
         tp_forms[t0] = GetAttributeValueS_(element, "function");
-        tp_values[t0] = GetAttributeValueD_(element, "value");
+        tp_values[t0] = ConvertUnits_(GetAttributeValueS_(element, "value"), solute_molar_mass_[solute_name]);
       }
 
       // create vectors of values and forms

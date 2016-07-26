@@ -279,8 +279,19 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   }
 
   if (transient_model & 2 || transient_model & 1) {
+    // names
     out_list.set<Teuchos::Array<std::string> >("component names", comp_names_all_);
     out_list.set<int>("number of liquid components", phases_["water"].size());
+
+    // available molar masses
+    std::string name;
+    std::vector<double> tmp(comp_names_all_.size(), 1.0);
+
+    for (int i = 0; i < comp_names_all_.size(); ++i) {
+      name = comp_names_all_[i];
+      if (solute_molar_mass_.find(name) != solute_molar_mass_.end()) tmp[i] = solute_molar_mass_[name];
+    }
+    out_list.set<Teuchos::Array<double> >("component molar masses", tmp);
   }
 
   out_list.sublist("time period control") = TranslateTimePeriodControls_();

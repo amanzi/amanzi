@@ -904,7 +904,7 @@ std::vector<std::string> InputConverter::CharToStrings_(const char* namelist)
 
 
 /* ******************************************************************
-* Extract unit and convert values. We usse that units are unique.
+* Extract unit and convert values. We assume that units are unique.
 ****************************************************************** */
 double InputConverter::ConvertUnits_(const std::string& val, double mol_mass)
 {
@@ -920,9 +920,6 @@ double InputConverter::ConvertUnits_(const std::string& val, double mol_mass)
     found_units_.insert(data);
 
     out = units_.ConvertUnitD(out, std::string(data), "SI", mol_mass, flag);
-    if (!flag) 
-      out = units_.ConvertConcentration(
-          out, std::string(data), units_.system().concentration, mol_mass, flag);
     if (!flag) {
       Errors::Message msg;
       msg << "\nPrototype code for units of measurement cannot parse unit \"" << data <<"\"."

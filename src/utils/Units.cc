@@ -47,7 +47,6 @@ namespace bu = boost::units;
 ****************************************************************** */
 void Units::Init()
 {
-  pressure_factor_ = 1.0;
   if (system_.concentration == "molar") {
     concentration_mol_liter = true;
     tcc_factor_ = conversion_factor(bu::si::amount() / liter(), concentration());
@@ -82,7 +81,7 @@ void Units::Init()
   volume_["L"] = conversion_factor(liter(), bu::si::volume()) * bu::si::volume();
 
   // supported units of concentration (extendable list)
-  concentration_["mol/m^3"] = 1.0 * concentration();
+  concentration_["SI"] = 1.0 * concentration();
   concentration_["molar"] = conversion_factor(bu::si::volume(), liter()) * concentration();
   concentration_["ppm"] = 1.0e-3 * concentration();
   concentration_["ppb"] = 1.0e-6 * concentration();
@@ -205,7 +204,7 @@ double Units::ConvertUnitD(double val,
     aut.replace(it->first, it->second); 
   }
 
-  int ntime(0), nmass(0), nlength(0);
+  int ntime(0), nmass(0), nlength(0), nconcentration(0);
   double tmp(val);
   const UnitData& in_data = aut.data();
 
@@ -226,6 +225,12 @@ double Units::ConvertUnitD(double val,
     else if (volume_.find(it->first) != volume_.end()) {
       tmp *= std::pow(volume_[it->first].value(), it->second);
       nlength += 3 * it->second;
+    }
+    else if (concentration_.find(it->first) != concentration_.end()) {
+      tmp *= std::pow(concentration_[it->first].value(), it->second);
+      if (it->first == "ppm" || it->first == "ppb") tmp /= mol_mass;
+      tmp /= tcc_factor_;  // for non-SI unit "molar"
+      nconcentration += it->second;
     } else {
       flag = false;
       return val;
@@ -255,6 +260,12 @@ double Units::ConvertUnitD(double val,
     else if (volume_.find(it->first) != volume_.end()) {
       tmp /= std::pow(volume_[it->first].value(), it->second);
       nlength -= 3 * it->second;
+    }
+    else if (concentration_.find(it->first) != concentration_.end()) {
+      tmp /= std::pow(concentration_[it->first].value(), it->second);
+      if (it->first == "ppm" || it->first == "ppb") tmp *= mol_mass;
+      tmp *= tcc_factor_;
+      nconcentration -= it->second;
     } else {
       flag = false;
       return val;

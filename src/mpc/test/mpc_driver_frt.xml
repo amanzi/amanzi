@@ -69,6 +69,7 @@
     <Parameter name="start time" type="double" value="0"/>
     <Parameter name="end time" type="double" value="1.0e+4"/>
     <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
+    <Parameter name="component molar masses" type="Array(double)" value="{23.0e-3, 40.0e-3, 24.3e-3, 35.5e-3}"/>
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
 	<ParameterList name="PK tree">

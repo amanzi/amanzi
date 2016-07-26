@@ -143,13 +143,13 @@ class InputConverter {
   int GetAttributeValueL_(
       xercesc::DOMElement* elem, const char* attr_name,
       const std::string& type = TYPE_NUMERICAL, bool exception = true, int val = 0);
-  double GetAttributeValueD_(  // supports units
+  double GetAttributeValueD_(  // supports units except ppbm
       xercesc::DOMElement* elem, const char* attr_name,
       const std::string& type = TYPE_NUMERICAL, bool exception = true, double val = 0.0);
   std::string GetAttributeValueS_(
       xercesc::DOMElement* elem, const char* attr_name,
       const std::string& type = TYPE_NUMERICAL, bool exception = true, std::string val = "");
-  std::vector<double> GetAttributeVectorD_(  // supports units
+  std::vector<double> GetAttributeVectorD_(  // supports units except ppbm
       xercesc::DOMElement* elem, const char* attr_name, bool exception = true,
       double mol_mass = -1.0);
   std::vector<std::string> GetAttributeVectorS_(

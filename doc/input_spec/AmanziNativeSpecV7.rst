@@ -216,7 +216,7 @@ Units
 Amanzi's internal default units are SI units except for the concentration.
 
 * `"concentration`" [string] defines units for concentration. Available options
-  are `"molar`" (default) which is `"mol/L`" and `"mol/m^3`". 
+  are `"molar`" (default) which is `"mol/L`" and `"SI`" which is `"mol/m^3`". 
 
 .. code-block:: xml
 
@@ -238,6 +238,10 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
 
 * `"component names`" [Array(string)] provides the list of species names.
   It is required for reactive transport.
+
+* `"component molar masses`" [Array(string)] provides the list of 
+  molar masses of species. It is required for proper conversion to and from 
+  dimensionless units. Default is 1. 
 
 * `"number of liquid components`" [int] is the number of liquid components. 
    
@@ -273,6 +277,7 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
   <ParameterList>  <!-- parent list -->
     <ParameterList name="cycle driver">
       <Parameter name="component names" type="Array(string)" value="{H+, Na+, NO3-, Zn++}"/>
+      <Parameter name="component molar masses" type="Array(double)" value="{1.0e-3, 23.0e-3, 62.0e-3, 65.4e-3}"/>
       <Parameter name="number of liquid components" type="int" value="4"/>
       <ParameterList name="time periods">
         <ParameterList name="TP 0">
@@ -4998,6 +5003,9 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
   * `"length unit`" [string] defines length unit for output data.
      Available options are `"cm`", `"in`", `"ft`", `"yd`" , `"m`", and `"km`". Default is `"m`".
+
+  * `"concentration unit`" [string] defines concentration unit for output data.
+     Available options are `"molar`", and `"SI`". Default is `"molar`".
 
   * `"precision`" [int] defines the number of significant digits. Default is 16.
 
