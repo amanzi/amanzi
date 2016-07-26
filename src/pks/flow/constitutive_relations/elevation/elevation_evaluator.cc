@@ -16,8 +16,12 @@ ElevationEvaluator::ElevationEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist),
     updated_once_(false), 
     dynamic_mesh_(false) {
-  Key domain = getDomain(plist.get<std::string>("elevation key"));
-  
+  Key domain;
+  if (plist.isParameter("elevation key"))
+    domain = getDomain(plist.get<std::string>("elevation key"));
+  else
+    domain = "surface";
+        
   my_keys_.push_back(plist_.get<std::string>("elevation key", getKey(domain,"elevation")));
   my_keys_.push_back(plist_.get<std::string>("slope magnitude key", getKey(domain,"slope_magnitude")));
   

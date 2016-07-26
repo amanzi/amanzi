@@ -19,12 +19,13 @@ namespace FlowRelations {
 OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 
-  my_key_=  plist_.get<std::string>("overland conductivity key");
-  if (my_key_.empty()) {
-    my_key_ = plist_.get<std::string>("overland conductivity key", "overland_conductivity");
-  }
+  if (plist.isParameter("overland conductivity key"))
+    my_key_=  plist_.get<std::string>("overland conductivity key");
+  else
+    my_key_ = "surface-overland_conductivity";
+  
   Key domain = getDomain(my_key_);
-
+  
   depth_key_ = plist_.get<std::string>("height key", getKey(domain,"ponded_depth"));
   dependencies_.insert(depth_key_);
 

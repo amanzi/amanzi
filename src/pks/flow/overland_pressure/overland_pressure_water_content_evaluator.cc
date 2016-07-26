@@ -25,7 +25,7 @@ OverlandPressureWaterContentEvaluator::OverlandPressureWaterContentEvaluator(Teu
     domain = getDomain(my_key_);
 
   if (my_key_.empty()) {
-    domain = plist.get<std::string>("domain name");
+    domain = plist.get<std::string>("domain name", "surface");
     my_key_ = getKey(domain, "water_content");
     if (bar_) my_key_ += std::string("_bar");
     my_key_ = plist_.get<std::string>("water content key", my_key_);
@@ -34,7 +34,7 @@ OverlandPressureWaterContentEvaluator::OverlandPressureWaterContentEvaluator(Teu
   // my dependencies
   pres_key_ = plist_.get<std::string>("pressure key", getKey(domain, "pressure"));
   dependencies_.insert(pres_key_);
-cv_key_ = plist_.get<std::string>("cell volume key", getKey(domain, "cell_volume"));
+  cv_key_ = plist_.get<std::string>("cell volume key", getKey(domain, "cell_volume"));
   dependencies_.insert(cv_key_);
 }
 
