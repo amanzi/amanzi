@@ -5069,6 +5069,17 @@ for its evaluation.  The observations are evaluated during the simulation and re
     * `"delimiter`" [string] the string used to delimit columns in the observation file
       output, default is `",`".
 
+    * `"interpolation`" [string] the string which defines
+      the interpolation method to compute observation. Works ONLY with
+      Line Segment region at the moment. Available options `"linear`"
+      and `"constant`". Default is `"linear`" 
+
+    * `"weighting`"  [string] the string defined the weighting
+      function applied to compute observation. Works ONLY with
+      Line Segment region at the moment. Available options `"flux norm`"
+      and `"none`". Default is `"none`". `"flux norm`" is the absolute
+      value of the darcy flux in a cell.
+
 The following observation functionals are currently supported.
 All of them operate on the variables identified.
 
