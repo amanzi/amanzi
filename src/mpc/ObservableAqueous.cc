@@ -143,6 +143,7 @@ void ObservableAqueous::ComputeObservation(
   } else if (variable_ == "water table") {
     *value = CalculateWaterTable_(S, entity_ids_);
     *volume = 1.0;
+    unit = "m";
   } else if (variable_ == "aqueous saturation") {
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
@@ -171,6 +172,7 @@ void ObservableAqueous::ComputeObservation(
       *volume += vol * kxy;
       *value  += hydraulic_head[0][c] * vol * kxy;
     }
+    unit = "m";
   } else if (variable_ == "drawdown") {
     const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
 
@@ -180,6 +182,7 @@ void ObservableAqueous::ComputeObservation(
       *volume += vol;
       *value  += hydraulic_head[0][c] * vol;
     }
+    unit = "m";
 
     // zero drawdown at time = t0 will be written directly to the file.
     // if (od.size() > 0) { 
@@ -196,6 +199,7 @@ void ObservableAqueous::ComputeObservation(
       *volume += vol * kxy;
       *value += hydraulic_head[0][c] * vol * kxy;
     }
+    unit = "m";
 
     // zero drawdown at time = t0 wil be written directly to the file.
     // if (od.size() > 0) { 
@@ -236,6 +240,7 @@ void ObservableAqueous::ComputeObservation(
           << " are only possible for Polygon, Plane and Boundary side sets";
       Exceptions::amanzi_throw(msg);
     }
+    unit = "kg/s";
 
   } else if (variable_ == "pH") {
     const Epetra_MultiVector& pH = *S.GetFieldData("pH")->ViewComponent("cell");

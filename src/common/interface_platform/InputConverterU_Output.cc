@@ -278,11 +278,16 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
         obsPL.set<std::string>("observation output filename", TrimString_(text));
 
       } else if (strcmp(tagname, "units") == 0) {
-        node = inode->getAttributes()->getNamedItem(mm.transcode("time"));
-        if (node) {
-          char* unit = mm.transcode(node->getTextContent());
-          obsPL.set<std::string>("time unit", TrimString_(unit));
-        }
+        std::string unit;
+        DOMElement* element = static_cast<DOMElement*>(inode);
+        unit = GetAttributeValueS_(element, "time", TYPE_NONE, false, units_.system().time);
+        obsPL.set<std::string>("time unit", unit);
+
+        unit = GetAttributeValueS_(element, "mass", TYPE_NONE, false, units_.system().mass);
+        obsPL.set<std::string>("mass unit", unit);
+
+        unit = GetAttributeValueS_(element, "length", TYPE_NONE, false, units_.system().length);
+        obsPL.set<std::string>("length unit", unit);
 
       } else if (strcmp(tagname, "liquid_phase") == 0) {
         node = inode->getAttributes()->getNamedItem(mm.transcode("name"));

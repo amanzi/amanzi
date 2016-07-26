@@ -4990,7 +4990,14 @@ for its evaluation.  The observations are evaluated during the simulation and re
   * `"observation output filename`" [string] user-defined name for the file that the observations are written to.
     The file name can contain relative or absolute path to an *existing* directory only. 
 
-  * `"time unit`" [string] defines time unit for output data. Available options are `"s`", `"h`", `"d`", and `"y`". Default is `"s`".
+  * `"time unit`" [string] defines time unit for output data.
+    Available options are `"s`", `"h`", `"d`", and `"y`". Default is `"s`".
+
+  * `"mass unit`" [string] defines mass unit for output data. 
+    Available options are `"g`", `"lb`", and `"lb`". Default is `"kg`".
+
+  * `"length unit`" [string] defines length unit for output data.
+     Available options are `"cm`", `"in`", `"ft`", `"yd`" , `"m`", and `"km`". Default is `"m`".
 
   * `"precision`" [int] defines the number of significant digits. Default is 16.
 

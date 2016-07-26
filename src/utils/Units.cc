@@ -361,7 +361,7 @@ AtomicUnitForm Units::ComputeAtomicUnitForm_(const std::string& unit, bool* flag
     if (separator_suff == '^') {
       int i = std::strtol(tmp2, NULL, 10);
 
-      if (separator_pref == '*') {
+      if (separator_pref == '*' || separator_pref == ' ') {
         it->second += i - 1;
       } else if (separator_pref == '/') {
         it->second -= i - 1;

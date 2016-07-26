@@ -6,7 +6,8 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Markus Berndt  
+  Authors: Markus Berndt (berndt@lanl.gov)
+           Daniil Svyatskiy
 */
 
 #include <map>
@@ -152,12 +153,14 @@ int FlexibleObservations::MakeObservations(State& S)
  
       if ((i->second)->functional_ == "observation data: integral") {  
         data_quad.value = data_out[0];  
+        unit.append("*m^3");
       } else if ((i->second)->functional_ == "observation data: point") {
         data_quad.value = data_out[0] / data_out[1];        
       }
       
       data_quad.is_valid = true;
       data_quad.time = S.time();
+      data_quad.unit = unit;
 
       bool time_exist = false;
       for (std::vector<Amanzi::ObservationData::DataQuadruple>::iterator it = od.begin(); it != od.end(); ++it) {
@@ -218,14 +221,16 @@ void FlexibleObservations::RegisterWithTimeStepManager(const Teuchos::Ptr<TimeSt
 ****************************************************************** */
 void FlexibleObservations::FlushObservations()
 {
-  bool flag, flag_tmp;
+  bool flag1, flag2;
 
   if (obs_list_->isParameter("observation output filename")) {
     std::string obs_file = obs_list_->get<std::string>("observation output filename");
     int precision = obs_list_->get<int>("precision", 16);
 
     Utils::UnitsSystem system = units_.system();
-    system.time = obs_list_->get<std::string>("time unit", "s");
+    system.time = obs_list_->get<std::string>("time unit", system.time);
+    system.mass = obs_list_->get<std::string>("mass unit", system.mass);
+    system.length = obs_list_->get<std::string>("length unit", system.length);
 
     if (rank_ == 0) {
       std::ofstream out;
@@ -234,8 +239,9 @@ void FlexibleObservations::FlushObservations()
       out.precision(precision);
       out.setf(std::ios::scientific);
 
-      out << "Observation Name, Region, Functional, Variable, Time [" << system.time <<"], Value\n";
-      out << "===============================================================\n";
+      out << "Observation Name, Region, Functional, Variable, Time [" << system.time 
+          << "], Value [" << system.mass << " " << system.length << " " << system.concentration << "]\n";
+      out << "============================================================================\n";
 
       for (Teuchos::ParameterList::ConstIterator i = obs_list_->begin(); i != obs_list_->end(); ++i) {
         std::string label = obs_list_->name(i);
@@ -247,19 +253,20 @@ void FlexibleObservations::FlushObservations()
           for (int j = 0; j < od.size(); j++) {
             if (od[j].is_valid) {
               std::string out_unit = units_.ConvertUnitS(od[j].unit, system);
-              double out_value = units_.ConvertUnitD(od[j].value, od[j].unit, out_unit, 1.0, flag_tmp);
+              double out_value = units_.ConvertUnitD(od[j].value, od[j].unit, out_unit, 1.0, flag1);
+std::cout << od[j].unit << " "<< out_unit << " " << flag1 << std::endl;
 
               std::string var = ind_obs_list.get<std::string>("variable");
               out << label << ", "
                   << ind_obs_list.get<std::string>("region") << ", "
                   << ind_obs_list.get<std::string>("functional") << ", "
                   << var << ", "
-                  << units_.ConvertTime(od[j].time, "s", system.time, flag) << ", "
+                  << units_.ConvertTime(od[j].time, "s", system.time, flag2) << ", "
                   << (((var == "permeability-weighted drawdown" || 
-                        var == "drawdown") && !j) ? 0.0 : od[j].value) << '\n';
-              if (!flag) {
+                        var == "drawdown") && !j) ? 0.0 : out_value) << '\n';
+              if (!flag1 || !flag2) {
                 Errors::Message msg;
-                msg << "Conversion of time units in observations has failed\n.";
+                msg << "Conversion of units in observations has failed\n.";
                 Exceptions::amanzi_throw(msg);
               }
             }

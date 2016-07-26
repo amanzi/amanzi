@@ -21,8 +21,8 @@ class ObservableLineSegmentAqueous : public ObservableAqueous,
   virtual void ComputeObservation(State& S, double* value, double* volume, std::string& unit);
   virtual int ComputeRegionSize();
   void InterpolatedValues(State& S,
-                          std::string var,
-                          std::string interpolation,
+                          std::string& var,
+                          std::string& interpolation,
                           AmanziMesh::Entity_ID_List& ids,
                           std::vector<AmanziGeometry::Point>& line_pnts,
                           std::vector<double>& values);
@@ -49,10 +49,6 @@ void ObservableLineSegmentAqueous::ComputeObservation(
     State& S, double* value, double* volume, std::string& unit) {
   Errors::Message msg;
   int dim = mesh_ -> space_dimension();
-  // double rho = *S.GetScalarData("fluid_density");
-  // const Epetra_MultiVector& porosity = *S.GetFieldData("porosity")->ViewComponent("cell");    
-  // const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
-  // const Epetra_MultiVector& pressure = *S.GetFieldData("pressure")->ViewComponent("cell");
   
   std::vector<double> values(region_size_);
   double weight_corr = 1e-15;
@@ -61,7 +57,7 @@ void ObservableLineSegmentAqueous::ComputeObservation(
 
   *value = 0.0;
   *volume = 0.0;
-  unit = "";
+  unit = "m";
 
   if (weighting_ == "none") {
     for (int i = 0; i < region_size_; i++){
@@ -73,23 +69,22 @@ void ObservableLineSegmentAqueous::ComputeObservation(
       const Epetra_MultiVector& darcy_vel = *S.GetFieldData("darcy_velocity")->ViewComponent("cell");
       for (int i = 0; i < region_size_; i++) {
         int c = entity_ids_[i];
+
         double norm = 0.0;
-        //std::cout<<"vel "<<darcy_vel[0][c]<<" "<<darcy_vel[1][c]<<" "<<darcy_vel[2][c]<<"\n";
         for (int j = 0; j < dim; j++) norm += darcy_vel[j][c] * darcy_vel[j][c];
         norm = sqrt(norm) + weight_corr;
-        *value += values[i] * lofs_[i]*norm;
+
+        *value += values[i] * lofs_[i] * norm;
         *volume += lofs_[i] * norm;
-        //std::cout<<" val "<<values[i]<<" weight "<<lofs_[i]<<" "<<norm<<"\n";
       }
-      //std::cout<<"value "<<*value<<" vol "<<*volume<<"\n";
     }
   }
 }
 
 
 void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
-                                                      std::string var,
-                                                      std::string interpolation,
+                                                      std::string& var,
+                                                      std::string& interpolation,
                                                       AmanziMesh::Entity_ID_List& ids,
                                                       std::vector<AmanziGeometry::Point>& line_pnts,
                                                       std::vector<double>& values) {
@@ -101,8 +96,8 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
 
   Teuchos::RCP<const Epetra_MultiVector> vector;
   Teuchos::RCP<const CompositeVector> cv;
-    
-  if (var == "hydraulic head"){
+
+  if (var == "hydraulic head") {
     if (!S.HasField("hydraulic_head")) {
       Errors::Message msg;
       msg <<"InterpolatedValue: field hydraulic_head doesn't exist in state";

@@ -366,7 +366,7 @@ void InputConverterU::SaveXMLFile(
     Teuchos::ParameterList& out_list, std::string& xmlfilename)
 {
   bool flag;
-  int precision;
+  int precision(0);
   std::string filename("");
 
   DOMNode* node = GetUniqueElementByTagsString_("misc, echo_translated_input", flag);
