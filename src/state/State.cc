@@ -1242,15 +1242,15 @@ void ReadCheckpointObservations(Epetra_MpiComm* comm,
 
   // populated observations
   int m(0);
-  Amanzi::ObservationData::DataTriple data_triplet;
+  Amanzi::ObservationData::DataQuadruple data_quad;
 
   for (int i = 0; i < nlabels; ++i) {
-    std::vector<ObservationData::DataTriple>& od = obs_data[tmp_labels[i]];
+    std::vector<ObservationData::DataQuadruple>& od = obs_data[tmp_labels[i]];
     for (int k = 0; k < nobs[i]; ++k) {
-      data_triplet.time = tmp_data[m++];
-      data_triplet.value = tmp_data[m++];
-      data_triplet.is_valid = true;
-      od.push_back(data_triplet);
+      data_quad.time = tmp_data[m++];
+      data_quad.value = tmp_data[m++];
+      data_quad.is_valid = true;
+      od.push_back(data_quad);
     }
   }
 

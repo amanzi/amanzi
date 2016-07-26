@@ -100,7 +100,7 @@ std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
   iter = 0;
   bool flag = true;
   while (t_new < 0.3) {
-    dt = TPK.CalculateTransportDt();
+    dt = TPK.StableTimeStep();
     t_new = t_old + dt;
 
     TPK.AdvanceStep(t_old, t_new);

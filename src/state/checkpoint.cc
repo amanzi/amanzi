@@ -150,7 +150,7 @@ void Checkpoint::WriteObservations(ObservationData* obs_data)
     double *tmp_data = (double*)malloc(2 * ndata * sizeof(double));
     int m(0);
     for (int i = 0; i < nlabels; ++i) {
-      std::vector<ObservationData::DataTriple> tmp = (*obs_data)[labels[i]];
+      std::vector<ObservationData::DataQuadruple> tmp = (*obs_data)[labels[i]];
       for (int k = 0; k < tmp.size(); ++k) {
         tmp_data[m++] = tmp[k].time;
         tmp_data[m++] = tmp[k].value;

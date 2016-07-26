@@ -103,14 +103,14 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
 
   /* advance the state */
   double t_old(0.0), t_new, dt;
-  dt = TPK.CalculateTransportDt();
+  dt = TPK.StableTimeStep();
   t_new = t_old + dt;
   TPK.AdvanceStep(t_old, t_new);
 
   /* print cell concentrations */
   int iter = 0;
   while(t_new < 1.0) {
-    dt = TPK.CalculateTransportDt();
+    dt = TPK.StableTimeStep();
     t_new = t_old + dt;
 
     TPK.AdvanceStep(t_old, t_new);

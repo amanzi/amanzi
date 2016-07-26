@@ -59,7 +59,7 @@ using namespace Amanzi::AmanziGeometry;
   cycle_driver.Go();
 
   std::vector<std::string> labels = obs_data.observationLabels();
-  std::vector<ObservationData::DataTriple> tmp = obs_data[labels[0]];
+  std::vector<ObservationData::DataQuadruple> tmp = obs_data[labels[0]];
   for (int k = 1; k < tmp.size(); ++k) {
     CHECK_CLOSE(tmp[k].value, -0.0006, 1.0e-5);
   }

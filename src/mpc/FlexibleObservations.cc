@@ -121,6 +121,7 @@ int FlexibleObservations::MakeObservations(State& S)
 {
   int num_obs(0);
   int dim = S.GetMesh()->space_dimension();
+  std::string unit;
 
   // loop over all observables
   for (std::map<std::string, Teuchos::RCP<Observable> >::iterator i = observations.begin(); i != observations.end(); i++) {
@@ -131,13 +132,13 @@ int FlexibleObservations::MakeObservations(State& S)
       std::string var = (i->second)->variable_;
       
       // data structure to store the observation
-      Amanzi::ObservationData::DataTriple data_triplet;
+      Amanzi::ObservationData::DataQuadruple data_quad;
 
       std::string label = i->first;
-      std::vector<Amanzi::ObservationData::DataTriple>& od = observation_data_[label]; 
+      std::vector<Amanzi::ObservationData::DataQuadruple>& od = observation_data_[label]; 
 
       double value(0.0), volume(0.0);
-      (i->second)->ComputeObservation(S, &value, &volume);
+      (i->second)->ComputeObservation(S, &value, &volume, unit);
 
       if (var == "drawdown" || var=="permeability-weighted drawdown") {
         if (od.size() > 0) { 
@@ -150,23 +151,23 @@ int FlexibleObservations::MakeObservations(State& S)
       S.GetMesh()->get_comm()->SumAll(data_in, data_out, 2);
  
       if ((i->second)->functional_ == "observation data: integral") {  
-        data_triplet.value = data_out[0];  
+        data_quad.value = data_out[0];  
       } else if ((i->second)->functional_ == "observation data: point") {
-        data_triplet.value = data_out[0] / data_out[1];        
+        data_quad.value = data_out[0] / data_out[1];        
       }
       
-      data_triplet.is_valid = true;
-      data_triplet.time = S.time();
+      data_quad.is_valid = true;
+      data_quad.time = S.time();
 
       bool time_exist = false;
-      for (std::vector<Amanzi::ObservationData::DataTriple>::iterator it = od.begin(); it != od.end(); ++it) {
-        if (it->time == data_triplet.time) {
+      for (std::vector<Amanzi::ObservationData::DataQuadruple>::iterator it = od.begin(); it != od.end(); ++it) {
+        if (it->time == data_quad.time) {
           time_exist = true;
           break;
         }
       }
             
-      if (!time_exist) od.push_back(data_triplet);
+      if (!time_exist) od.push_back(data_quad);
     }
   }
 
@@ -217,12 +218,14 @@ void FlexibleObservations::RegisterWithTimeStepManager(const Teuchos::Ptr<TimeSt
 ****************************************************************** */
 void FlexibleObservations::FlushObservations()
 {
-  bool flag;
+  bool flag, flag_tmp;
 
   if (obs_list_->isParameter("observation output filename")) {
     std::string obs_file = obs_list_->get<std::string>("observation output filename");
-    std::string utime = obs_list_->get<std::string>("time unit", "s");
     int precision = obs_list_->get<int>("precision", 16);
+
+    Utils::UnitsSystem system = units_.system();
+    system.time = obs_list_->get<std::string>("time unit", "s");
 
     if (rank_ == 0) {
       std::ofstream out;
@@ -231,7 +234,7 @@ void FlexibleObservations::FlushObservations()
       out.precision(precision);
       out.setf(std::ios::scientific);
 
-      out << "Observation Name, Region, Functional, Variable, Time [" << utime <<"], Value\n";
+      out << "Observation Name, Region, Functional, Variable, Time [" << system.time <<"], Value\n";
       out << "===============================================================\n";
 
       for (Teuchos::ParameterList::ConstIterator i = obs_list_->begin(); i != obs_list_->end(); ++i) {
@@ -239,16 +242,19 @@ void FlexibleObservations::FlushObservations()
         const Teuchos::ParameterEntry& entry = obs_list_->getEntry(label);
         if (entry.isList()) {
           const Teuchos::ParameterList& ind_obs_list = obs_list_->sublist(label);
-          std::vector<Amanzi::ObservationData::DataTriple>& od = observation_data_[label]; 
+          std::vector<Amanzi::ObservationData::DataQuadruple>& od = observation_data_[label]; 
 
           for (int j = 0; j < od.size(); j++) {
             if (od[j].is_valid) {
+              std::string out_unit = units_.ConvertUnitS(od[j].unit, system);
+              double out_value = units_.ConvertUnitD(od[j].value, od[j].unit, out_unit, 1.0, flag_tmp);
+
               std::string var = ind_obs_list.get<std::string>("variable");
               out << label << ", "
                   << ind_obs_list.get<std::string>("region") << ", "
                   << ind_obs_list.get<std::string>("functional") << ", "
                   << var << ", "
-                  << units_.ConvertTime(od[j].time, "s", utime, flag) << ", "
+                  << units_.ConvertTime(od[j].time, "s", system.time, flag) << ", "
                   << (((var == "permeability-weighted drawdown" || 
                         var == "drawdown") && !j) ? 0.0 : od[j].value) << '\n';
               if (!flag) {

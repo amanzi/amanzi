@@ -68,30 +68,58 @@ TEST(UNITS_CONCENTRATION)
 }
 
 
-TEST(UNITS_DERIVED) 
+TEST(UNITS_DERIVED_DOUBLE) 
 {
   Units units("molar");
   bool flag;
 
   std::string in_unit("m/d"), out_unit("ft/y");
-  double tmp = units.ConvertDerivedUnit(1.0, in_unit, out_unit, 51.9961e-3, flag);
+  double tmp = units.ConvertUnitD(1.0, in_unit, out_unit, 51.9961e-3, flag);
   std::cout << "Derived tests:\n  1 m/d = " << tmp << " ft/y, flag=" << flag << std::endl;
   CHECK_CLOSE(tmp, 1198.326, 1e-3);
 
   out_unit = "ft/y/m";
-  tmp = units.ConvertDerivedUnit(1.0, in_unit, out_unit, 51.9961e-3, flag);
+  tmp = units.ConvertUnitD(1.0, in_unit, out_unit, 51.9961e-3, flag);
   CHECK(!flag);
 
   in_unit = "g*m/s^2";
   out_unit = "kg*in/h^2";
-  tmp = units.ConvertDerivedUnit(1.0, in_unit, out_unit, 51.9961e-3, flag);
+  tmp = units.ConvertUnitD(1.0, in_unit, out_unit, 51.9961e-3, flag);
   std::cout << "  1 g*m/s^2 = " << tmp << " kg*in/h^2, flag=" << flag << std::endl;
   CHECK_CLOSE(tmp, 5.10236e+05, 1.0);
 
   in_unit = "g*s/m^3";
   out_unit = "kg*h/L";
-  tmp = units.ConvertDerivedUnit(1.0, in_unit, out_unit, 51.9961e-3, flag);
+  tmp = units.ConvertUnitD(1.0, in_unit, out_unit, 51.9961e-3, flag);
   std::cout << "  1 g*s/m^3 = " << tmp << " kg*h/L, flag=" << flag << std::endl;
   CHECK_CLOSE(tmp, 2.77778e-10, 1.0e-15);
+
+  in_unit = "Pa/s";
+  out_unit = "kg/m/s^3";
+  tmp = units.ConvertUnitD(2.0, in_unit, out_unit, 51.9961e-3, flag);
+  std::cout << "  2 Pa/s = " << tmp << " kg/m/s^3, flag=" << flag << std::endl;
+  CHECK_CLOSE(tmp, 2.0, 1.0e-10);
 }
 
+
+TEST(UNITS_DERIVED_STRING) 
+{
+  Units units("molar");
+  std::string out_unit;
+
+  {
+    UnitsSystem system("h", "kg", "m", "molar");
+    std::string in_unit = "g/s";
+    out_unit = units.ConvertUnitS(in_unit, system);
+    std::cout << "Derived tests:\n  g/s -> " << out_unit << std::endl;
+    CHECK(out_unit == "h^-1*kg");
+  }
+
+  {
+    UnitsSystem system("s", "kg", "m", "molar");
+    std::string in_unit = "Pa/s";
+    out_unit = units.ConvertUnitS(in_unit, system);
+    std::cout << "  Pa/s -> " << out_unit << std::endl;
+    CHECK(out_unit == "kg*m^-1*s^-3");
+  }
+}

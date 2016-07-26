@@ -40,13 +40,13 @@ class Observable : public IOEvent {
 
   // DO NOT OVERRIDE -- instead, use the virtual, protected version.
   void Update(const State& S,
-              Amanzi::ObservationData::DataTriple& data_triplet);
+              Amanzi::ObservationData::DataQuadruple& data_quad);
 
   void Flush();
 
  protected:
   virtual void Update_(const State& S,
-                       Amanzi::ObservationData::DataTriple& data_triplet);
+                       Amanzi::ObservationData::DataQuadruple& data_quad);
 
   virtual void WriteHeader_();
 

@@ -242,9 +242,9 @@ void Transport_PK::VV_CheckGEDproperty(Epetra_MultiVector& tracer) const
 }
 
 
-/* *******************************************************************
- * Check that the tracer is between 0 and 1.                        
- ****************************************************************** */
+/* ******************************************************************
+* Check that the tracer is between 0 and 1.                        
+****************************************************************** */
 void Transport_PK::VV_CheckTracerBounds(Epetra_MultiVector& tracer,
                                         int component,
                                         double lower_bound,

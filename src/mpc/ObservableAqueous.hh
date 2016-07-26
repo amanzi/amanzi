@@ -28,7 +28,7 @@ class ObservableAqueous : public virtual Observable {
                     Teuchos::ParameterList& units_plist,
                     Teuchos::RCP<AmanziMesh::Mesh> mesh);
 
-  virtual void ComputeObservation(State& S, double* value, double* volume);
+  virtual void ComputeObservation(State& S, double* value, double* volume, std::string& unit);
   virtual int ComputeRegionSize();
 
  protected:

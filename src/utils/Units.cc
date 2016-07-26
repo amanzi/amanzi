@@ -48,7 +48,7 @@ namespace bu = boost::units;
 void Units::Init()
 {
   pressure_factor_ = 1.0;
-  if (concentration_unit_ == "molar") {
+  if (system_.concentration == "molar") {
     concentration_mol_liter = true;
     tcc_factor_ = conversion_factor(bu::si::amount() / liter(), concentration());
   } else {
@@ -88,7 +88,8 @@ void Units::Init()
   concentration_["ppb"] = 1.0e-6 * concentration();
 
   // supported derived units (simple map is suffient)
-  derived_["Pa"] = "kg*m/s^2";
+  AtomicUnitForm form("kg", 1, "m", -1, "s", -2);
+  derived_["Pa"] = form;
 }
 
 
@@ -191,22 +192,25 @@ double Units::ConvertConcentration(double val,
 * Convert any derived input unit to compatible output unit.
 * Special case, out_unit="SI", leads to simple conversion.
 ****************************************************************** */
-double Units::ConvertDerivedUnit(double val,
-                                 const std::string& in_unit,
-                                 const std::string& out_unit,
-                                 double mol_mass,
-                                 bool& flag)
+double Units::ConvertUnitD(double val,
+                           const std::string& in_unit,
+                           const std::string& out_unit,
+                           double mol_mass,
+                           bool& flag)
 {
-  // convert to default (SI) units
-  std::string in_tmp(in_unit);
-  std::map<std::string, std::string>::iterator it;
-
-  if ((it = derived_.find(in_tmp)) != derived_.end()) in_tmp = it->second;
-  AtomicUnitForm form = ComputeAtomicUnitForm_(in_tmp, &flag);
+  // replace known complex/derived units
+  AtomicUnitForm aut = ComputeAtomicUnitForm_(in_unit, &flag);
+ 
+  for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin(); it != derived_.end(); ++it) {
+    aut.replace(it->first, it->second); 
+  }
 
   int ntime(0), nmass(0), nlength(0);
   double tmp(val);
-  for (AtomicUnitForm::iterator it = form.begin(); it != form.end(); ++it) {
+  const UnitData& in_data = aut.data();
+
+  UnitData::const_iterator it;
+  for (it = in_data.begin(); it != in_data.end(); ++it) {
     if (time_.find(it->first) != time_.end()) {
       tmp *= std::pow(time_[it->first].value(), it->second);
       ntime += it->second;
@@ -232,9 +236,10 @@ double Units::ConvertDerivedUnit(double val,
   if (out_unit == "SI") return tmp;
 
   // convert from default (SI) units
-  form = ComputeAtomicUnitForm_(out_unit, &flag);
+  aut = ComputeAtomicUnitForm_(out_unit, &flag);
+  const UnitData& out_data = aut.data();
 
-  for (AtomicUnitForm::iterator it = form.begin(); it != form.end(); ++it) {
+  for (it = out_data.begin(); it != out_data.end(); ++it) {
     if (time_.find(it->first) != time_.end()) {
       tmp /= std::pow(time_[it->first].value(), it->second);
       ntime -= it->second;
@@ -266,6 +271,56 @@ double Units::ConvertDerivedUnit(double val,
 }
 
 
+
+/* ******************************************************************
+* Convert unit string
+****************************************************************** */
+std::string Units::ConvertUnitS(const std::string& in_unit,
+                                const UnitsSystem& system)
+{
+  // parse the input string
+  bool flag;
+  AtomicUnitForm aut = ComputeAtomicUnitForm_(in_unit, &flag);
+
+  for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin(); it != derived_.end(); ++it) {
+    aut.replace(it->first, it->second); 
+  }
+  UnitData in_data = aut.data();
+
+  // replace units
+  UnitData out_data;
+  for (UnitData::iterator it = in_data.begin(); it != in_data.end(); ++it) {
+    if (time_.find(it->first) != time_.end()) {
+      out_data[system.time] = it->second;
+    }
+    else if (mass_.find(it->first) != mass_.end()) {
+      out_data[system.mass] = it->second;
+    }
+    else if (length_.find(it->first) != length_.end()) {
+      out_data[system.length] = it->second;
+    }
+    else if (concentration_.find(it->first) != concentration_.end()) {
+      out_data[system.concentration] = it->second;
+    }
+  }
+
+  // create string
+  std::string separator("");
+  std::stringstream ss;
+  for (UnitData::iterator it = out_data.begin(); it != out_data.end(); ++it) {
+    ss << separator << it->first;
+
+    int i = it->second;
+    if (i != 1) {
+      ss << "^" << i;
+    }
+    separator = "*";
+  }
+
+  return ss.str();
+}
+
+
 /* ******************************************************************
 * Parse unit
 ****************************************************************** */
@@ -279,15 +334,15 @@ AtomicUnitForm Units::ComputeAtomicUnitForm_(const std::string& unit, bool* flag
   char separator_pref, separator_suff;
 
   AtomicUnitForm form;
-  AtomicUnitForm::iterator it;
-  std::pair<AtomicUnitForm::iterator, bool> status;
+  UnitData& data = form.data(); 
+  std::pair<UnitData::iterator, bool> status;
 
   separator_pref = ' ';
   while (tmp2 != NULL) {
     std::string atomic_unit(tmp2);
 
-    status = form.insert(std::pair<std::string, int>(atomic_unit, 0)); 
-    it = status.first;
+    status = data.insert(std::pair<std::string, int>(atomic_unit, 0)); 
+    UnitData::iterator it = status.first;
       
     if (separator_pref == ' ') {
       (it->second)++;

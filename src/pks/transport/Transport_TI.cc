@@ -108,7 +108,7 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
 
   // process external sources
   if (srcs_.size() != 0) {
-    ComputeAddSourceTerms(t, 1.0, f_component, current_component_, current_component_);
+    ComputeSources_(t, 1.0, f_component, current_component_, current_component_);
   }
 
   for (int c = 0; c < ncells_owned; c++) {  // calculate conservative quantatity

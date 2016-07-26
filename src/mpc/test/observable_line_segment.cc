@@ -28,13 +28,11 @@
 #include "ObservableLineSegmentAqueous.hh"
 
 
-TEST(OBSERVABLE_LINE_SEGMENT){
-
+TEST(OBSERVABLE_LINE_SEGMENT) {
 
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
@@ -113,8 +111,9 @@ TEST(OBSERVABLE_LINE_SEGMENT){
     Teuchos::rcp(new ObservableLineSegmentAqueous(var, region, func, obs_plist, units_plist, mesh));
 
   double value, volume;
+  std::string unit; 
   observe -> ComputeRegionSize();
-  observe -> ComputeObservation(*S, &value, &volume);
+  observe -> ComputeObservation(*S, &value, &volume, unit);
 
   Teuchos::Array<double> xyzc(3);
   double len = 0.;
@@ -135,8 +134,9 @@ TEST(OBSERVABLE_LINE_SEGMENT){
     Teuchos::rcp(new ObservableLineSegmentAqueous(var, region, func, obs_plist, units_plist, mesh));
 
   double value2, volume2;
+  std::string unit2;
   observe2 -> ComputeRegionSize();
-  observe2 -> ComputeObservation(*S, &value2, &volume2);
+  observe2 -> ComputeObservation(*S, &value2, &volume2, unit2);
   double len2 = 0.;
   for (int i=0;i<3;i++){
     xyzc[i] = 0.5*(xyz0_2[i] + xyz1_2[i]);

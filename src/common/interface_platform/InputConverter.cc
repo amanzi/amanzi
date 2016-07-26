@@ -919,10 +919,10 @@ double InputConverter::ConvertUnits_(const std::string& val, double mol_mass)
   if (data != NULL) {
     found_units_.insert(data);
 
-    out = units_.ConvertDerivedUnit(out, std::string(data), "SI", mol_mass, flag);
+    out = units_.ConvertUnitD(out, std::string(data), "SI", mol_mass, flag);
     if (!flag) 
       out = units_.ConvertConcentration(
-          out, std::string(data), units_.concentration_unit(), mol_mass, flag);
+          out, std::string(data), units_.system().concentration, mol_mass, flag);
     if (!flag) {
       Errors::Message msg;
       msg << "\nPrototype code for units of measurement cannot parse unit \"" << data <<"\"."

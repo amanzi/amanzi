@@ -54,7 +54,9 @@ class Observable : public IOEvent {
     }
   }
 
-  virtual void ComputeObservation(State& S, double* value, double* volume) { assert(false); }
+  virtual void ComputeObservation(State& S, double* value, double* volume, std::string& unit) {
+    assert(false);
+  }
 
   virtual int ComputeRegionSize() {return region_size_; }
 

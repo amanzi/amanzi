@@ -1,31 +1,43 @@
-#ifndef OBSERVATIONDATA_H
-#define OBSERVATIONDATA_H
+/*
+  Utils
 
-#include "list"
-#include "vector"
-#include "map"
-#include "ostream"
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+*/
+
+#ifndef AMANZI_OBSERVATION_DATA_HH
+#define AMANZI_OBSERVATION_DATA_HH
+
+#include <list>
+#include <map>
+#include <ostream>
+#include <string>
+#include <vector>
 
 namespace Amanzi {
 
 class ObservationData {
  public:
-  struct DataTriple {
-    DataTriple() : time(-1), value(-1), is_valid(false) {}
+  struct DataQuadruple {
+    DataQuadruple() : time(-1), value(-1), is_valid(false), unit("") {};
     void print(std::ostream &os) const { 
-      os << "is_valid = " << is_valid << ", time = " << time << ", data = " << value << std::endl;
+      os << "is_valid=" << is_valid << ", time=" << time 
+         << ", data=" << value << ", unit=" << unit << std::endl;
     }
     double time, value;
     bool is_valid;
+    std::string unit;
   };
     
-  ObservationData() {}
+  ObservationData() {};
     
-  std::vector<ObservationData::DataTriple> operator[](const std::string& label) const {
+  std::vector<ObservationData::DataQuadruple> operator[](const std::string& label) const {
     // If label not found, returns zero-length vector
-    std::map<std::string, std::vector<DataTriple> >::const_iterator it = data.find(label);
+    std::map<std::string, std::vector<DataQuadruple> >::const_iterator it = data.find(label);
     if (it == data.end()) {
-      return std::vector<DataTriple>();
+      return std::vector<DataQuadruple>();
     } else {
       return it->second;
     }
@@ -34,16 +46,16 @@ class ObservationData {
   std::vector<std::string> observationLabels() const {
     std::vector<std::string> result(data.size());
     int cnt=0;
-    for (std::map<std::string, std::vector<DataTriple> >::const_iterator it = data.begin(); it!=data.end(); ++it) {
+    for (std::map<std::string, std::vector<DataQuadruple> >::const_iterator it = data.begin(); it!=data.end(); ++it) {
       result[cnt++] = it->first;
     }
     return result;
   }
     
-  std::vector<ObservationData::DataTriple>& operator[](const std::string& label) {
-    std::map<std::string, std::vector<DataTriple> >::const_iterator it = data.find(label);
+  std::vector<ObservationData::DataQuadruple>& operator[](const std::string& label) {
+    std::map<std::string, std::vector<DataQuadruple> >::const_iterator it = data.find(label);
     if (it == data.end()) {
-      std::vector<DataTriple> dt;
+      std::vector<DataQuadruple> dt;
       data[label] = dt;
       return data[label];
     } else {
@@ -54,24 +66,24 @@ class ObservationData {
   std::vector<std::string> observationLabels() {
     std::vector<std::string> result(data.size());
     int cnt=0;
-    for (std::map<std::string, std::vector<DataTriple> >::const_iterator it = data.begin(); it!=data.end(); ++it) {
+    for (std::map<std::string, std::vector<DataQuadruple> >::const_iterator it = data.begin(); it!=data.end(); ++it) {
       result[cnt++] = it->first;
     }
     return result;
   }
     
   void print (std::ostream& os) const {
-    for (std::map<std::string, std::vector<DataTriple> >::const_iterator it = data.begin();
+    for (std::map<std::string, std::vector<DataQuadruple> >::const_iterator it = data.begin();
          it != data.end(); it++) {
       os << it->first << std::endl;
   
-      for (std::vector<DataTriple>::const_iterator jt = it->second.begin(); jt != it->second.end(); jt++)
+      for (std::vector<DataQuadruple>::const_iterator jt = it->second.begin(); jt != it->second.end(); jt++)
         jt->print(os);
     }          
   }
 
  private:
-  std::map<std::string, std::vector<DataTriple> > data;
+  std::map<std::string, std::vector<DataQuadruple> > data;
 };
 
 } // namespace Amanzi

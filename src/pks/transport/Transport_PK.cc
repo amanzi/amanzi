@@ -488,7 +488,7 @@ void Transport_PK::InitializeFieldFromField_(
 * takes into account sinks and sources but preserves only positivity
 * of an advected mass.
 * ***************************************************************** */
-double Transport_PK::CalculateTransportDt()
+double Transport_PK::StableTimeStep()
 {
   S_->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
 
@@ -529,7 +529,11 @@ double Transport_PK::CalculateTransportDt()
       cmin_dt = c;
     }
   }
+
+  // correct time step for high-order schemes
   if (spatial_disc_order == 2) dt_ /= 2;
+
+  // no CFL update forsinks, since their are flow dependent.
 
   // communicate global time step
   double dt_tmp = dt_;
@@ -571,7 +575,7 @@ double Transport_PK::get_dt()
   if (subcycling_) {
     return 1e+99;
   } else {
-    CalculateTransportDt();
+    StableTimeStep();
     return dt_;
   }
 }
@@ -600,7 +604,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     dt_global = S_->final_time() - S_->initial_time();
   }
 
-  CalculateTransportDt();
+  StableTimeStep();
   double dt_original = dt_;  // advance routines override dt_
   int interpolate_ws = (dt_ < dt_global) ? 1 : 0;
 
@@ -707,7 +711,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
     std::vector<double> bc_value(nfaces_wghost, 0.0);
     std::vector<double> bc_mixed;
-    PopulateBoundaryData(bc_model, bc_value, -1);
+    ComputeBCs_(bc_model, bc_value, -1);
 
     Teuchos::RCP<Operators::BCs> bc_dummy = 
         Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
@@ -830,10 +834,10 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
       // add boundary conditions and sources for gaseous components
-      PopulateBoundaryData(bc_model, bc_value, i);
+      ComputeBCs_(bc_model, bc_value, i);
 
       Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
-      ComputeAddSourceTerms(t_new, 1.0, rhs_cell, i, i);
+      ComputeSources_(t_new, 1.0, rhs_cell, i, i);
       op1->ApplyBCs(true, true);
 
       // add accumulation term
@@ -1043,7 +1047,7 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
   // process external sources
   if (srcs_.size() != 0) {
     double time = t_physics_;
-    ComputeAddSourceTerms(time, dt_, tcc_next, 0, num_advect - 1);
+    ComputeSources_(time, dt_, tcc_next, 0, num_advect - 1);
   }
 
   // recover concentration from new conservative state
@@ -1223,8 +1227,8 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dt_cycle)
 * Returns mass rate for the tracer.
 * The routine treats two cases of tcc with one and all components.
 ****************************************************************** */
-void Transport_PK::ComputeAddSourceTerms(double tp, double dtp, 
-                                         Epetra_MultiVector& tcc, int n0, int n1)
+void Transport_PK::ComputeSources_(double tp, double dtp, 
+                                   Epetra_MultiVector& tcc, int n0, int n1)
 {
   int num_vectors = tcc.NumVectors();
   int nsrcs = srcs_.size();
@@ -1257,7 +1261,7 @@ void Transport_PK::ComputeAddSourceTerms(double tp, double dtp,
 * Populates operators' boundary data for given component.
 * Returns true if at least one face was populated.
 ******************************************************************* */
-bool Transport_PK::PopulateBoundaryData(
+bool Transport_PK::ComputeBCs_(
     std::vector<int>& bc_model, std::vector<double>& bc_value, int component)
 {
   bool flag = false;

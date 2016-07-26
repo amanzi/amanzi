@@ -95,7 +95,8 @@ int ObservableSolute::ComputeRegionSize()
 /* ******************************************************************
 * Data calculation
 ****************************************************************** */
-void ObservableSolute::ComputeObservation(State& S, double* value, double* volume)
+void ObservableSolute::ComputeObservation(
+    State& S, double* value, double* volume, std::string& unit)
 {
   Errors::Message msg;
   int dim = mesh_ -> space_dimension();
@@ -108,6 +109,8 @@ void ObservableSolute::ComputeObservation(State& S, double* value, double* volum
   const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
   const Epetra_MultiVector& tcc = *S.GetFieldData("total_component_concentration")->ViewComponent("cell");
   const Epetra_MultiVector& porosity = *S.GetFieldData("porosity")->ViewComponent("cell");    
+
+  unit = "";
 
   if (variable_ == comp_names_[tcc_index_] + " aqueous concentration") { 
     for (int i = 0; i < region_size_; i++) {

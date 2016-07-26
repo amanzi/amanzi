@@ -101,7 +101,7 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
   int iter = 0;
   while (t_new < 1.0) {
     // imitation of a small time step relative to flow time step
-    dt = TPK.CalculateTransportDt();  
+    dt = TPK.StableTimeStep();  
     double dt_MPC = dt * 7.7;
     t_new = t_old + dt_MPC;
 

@@ -47,21 +47,98 @@ typedef boost::units::unit<
 typedef boost::units::make_scaled_unit<
     concentration, boost::units::scale<10, boost::units::static_rational<3> > >::type concentration_amanzi;
 
-// atomic representation of a derived unit
-typedef std::map<std::string, int> AtomicUnitForm;
+
+// ------------------------------------------------------------------
+// Auxiliary class: atomic representation of a derived unit. 
+// It may contain other derived units.
+// ------------------------------------------------------------------
+typedef std::map<std::string, int> UnitData;
+
+class AtomicUnitForm {
+ public:
+  AtomicUnitForm() {};
+  AtomicUnitForm(const std::string& key1, int i1) {
+    data_[key1] = i1;
+  }
+  AtomicUnitForm(const std::string& key1, int i1,
+                 const std::string& key2, int i2) {
+    data_[key1] = i1;
+    data_[key2] = i2;
+  }
+  AtomicUnitForm(const std::string& key1, int i1,
+                 const std::string& key2, int i2,
+                 const std::string& key3, int i3) {
+    data_[key1] = i1;
+    data_[key2] = i2;
+    data_[key3] = i3;
+  }
+  ~AtomicUnitForm() {};
+
+  // elementary operations with reduced representations
+  // -- optional replacement of a key
+  AtomicUnitForm& replace(const std::string& key, const AtomicUnitForm& aut) {
+    const UnitData& data = aut.data();
+
+    UnitData::iterator it1;
+    UnitData::const_iterator it2;
+
+    if ((it1 = data_.find(key)) != data_.end()) {
+      int i = it1->second;
+      data_.erase(it1);
+      
+      for (it2 = data.begin(); it2 != data.end(); ++it2) {
+        if ((it1 = data_.find(it2->first)) != data_.end()) {
+          it1->second += i * it2->second;
+        } else {
+          data_[it2->first] = i * it2->second;
+        }
+      }
+    } 
+    return *this;
+  }
+
+  // access
+  const UnitData& data() const { return data_; }
+  UnitData& data() { return data_; }
+
+  // development
+  void print() {
+    std::cout << "AtomicUnitForm:" << std::endl;
+    for (UnitData::iterator it = data_.begin(); it != data_.end(); ++it) {
+      std::cout << "  " << it->first << " " << it->second << std::endl; 
+    }
+  }
+
+
+ private:
+  UnitData data_;
+};
+
+
+// ------------------------------------------------------------------
+// Base class for converting units.
+// ------------------------------------------------------------------
+struct UnitsSystem {
+  UnitsSystem(const std::string& time_,
+              const std::string& mass_, 
+              const std::string& length_,
+              const std::string& concentration_) :
+      time(time_),
+      mass(mass_),
+      length(length_),
+      concentration(concentration_) {};
+
+  std::string time;
+  std::string mass;
+  std::string length;
+  std::string concentration;
+};
+
 
 class Units {
  public:
-  Units()
-    : time_unit_("s"), 
-      length_unit_("m"),
-      mass_unit_("kg"),
-      concentration_unit_("molar") {};
-  Units(const std::string& concentration_unit) 
-    : time_unit_("s"), 
-      length_unit_("m"),
-      mass_unit_("kg"),
-      concentration_unit_(concentration_unit) { Init(); }
+  Units() : system_("s", "kg", "m", "molar") {};
+  Units(const std::string& concentration_unit) : system_("s", "kg", "m", "molar") { Init(); }
   ~Units() {};
 
   // conversion factors
@@ -80,11 +157,12 @@ class Units {
   void Init();
 
   void Init(Teuchos::ParameterList& plist) {
-    concentration_unit_ = plist.get<std::string>("concentration", "molar");
+    system_.concentration = plist.get<std::string>("concentration", "molar");
     Init();
   }
 
   // conversion of units
+  // -- data
   double ConvertTime(double val, const std::string& in_unit,
                      const std::string& out_unit, bool& flag);
 
@@ -97,14 +175,14 @@ class Units {
   double ConvertConcentration(double val, const std::string& in_unit,
                               const std::string& out_unit, double mol_mass, bool& flag);
 
-  double ConvertDerivedUnit(double val, const std::string& in_unit,
-                            const std::string& out_unit, double mol_mass, bool& flag);
+  double ConvertUnitD(double val, const std::string& in_unit,
+                      const std::string& out_unit, double mol_mass, bool& flag);
+
+  // -- strings
+  std::string ConvertUnitS(const std::string& in_unit, const UnitsSystem& system);
 
   // access
-  std::string time_unit() { return time_unit_; }
-  std::string length_unit() { return length_unit_; }
-  std::string mass_unit() { return mass_unit_; }
-  std::string concentration_unit() { return concentration_unit_; }
+  const UnitsSystem& system() const { return system_; }
 
  private:
   AtomicUnitForm ComputeAtomicUnitForm_(const std::string& unit, bool* flag);
@@ -118,13 +196,10 @@ class Units {
   std::map<std::string, boost::units::quantity<boost::units::si::volume> > volume_;
   std::map<std::string, boost::units::quantity<concentration> > concentration_;
 
-  std::map<std::string, std::string> derived_;
+  std::map<std::string, AtomicUnitForm> derived_;
 
-  // default units
-  std::string time_unit_;
-  std::string length_unit_;
-  std::string mass_unit_;
-  std::string concentration_unit_;
+  // default Amanzi's units
+  UnitsSystem system_;
 };
 
 }  // namespace Utils

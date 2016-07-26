@@ -56,16 +56,16 @@ void UnstructuredObservations::MakeObservations(const State& S) {
 
     if (lcv->second->DumpRequested(S.cycle(), S.time())) {
       // data structure to store the observation
-      Amanzi::ObservationData::DataTriple data_triplet;
+      Amanzi::ObservationData::DataQuadruple data_quad;
 
       // make the observation
-      lcv->second->Update(S, data_triplet);
+      lcv->second->Update(S, data_quad);
 
       // push back into observation_data
       if (observation_data_ != Teuchos::null) {
-        std::vector<Amanzi::ObservationData::DataTriple> &od =
+        std::vector<Amanzi::ObservationData::DataQuadruple> &od =
           (*observation_data_)[lcv->first];
-        od.push_back(data_triplet);
+        od.push_back(data_quad);
       }
     }
   }

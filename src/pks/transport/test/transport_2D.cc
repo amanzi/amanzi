@@ -100,7 +100,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 
   iter = 0;
   while (t_new < 0.5) {
-    dt = TPK.CalculateTransportDt();
+    dt = TPK.StableTimeStep();
     t_new = t_old + dt;
 
     TPK.AdvanceStep(t_old, t_new);

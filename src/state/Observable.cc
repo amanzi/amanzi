@@ -84,7 +84,7 @@ Observable::Observable(Teuchos::ParameterList& plist, Epetra_MpiComm *comm) :
 }
 
 void Observable::Update(const State& S,
-                        Amanzi::ObservationData::DataTriple& data) {
+                        Amanzi::ObservationData::DataQuadruple& data) {
   if (count_ == 0) WriteHeader_();
 
   ++count_;
@@ -120,7 +120,7 @@ void Observable::WriteHeader_() {
 }
 
 void Observable::Update_(const State& S,
-                          Amanzi::ObservationData::DataTriple& data) {
+                         Amanzi::ObservationData::DataQuadruple& data) {
   data.time = S.time();
 
   Teuchos::RCP<const Field> field = S.GetField(variable_);

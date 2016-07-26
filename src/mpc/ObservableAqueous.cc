@@ -96,9 +96,11 @@ int ObservableAqueous::ComputeRegionSize()
 
 
 /* ******************************************************************
-* Defines  
+* Computes aqueous observations. 
+* Units should be taken from fields (FIXME).
 ****************************************************************** */
-void ObservableAqueous::ComputeObservation(State& S, double* value, double* volume)
+void ObservableAqueous::ComputeObservation(
+   State& S, double* value, double* volume, std::string& unit)
 {
   //double volume, value;
   Errors::Message msg;
@@ -108,6 +110,8 @@ void ObservableAqueous::ComputeObservation(State& S, double* value, double* volu
   const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
   const Epetra_MultiVector& pressure = *S.GetFieldData("pressure")->ViewComponent("cell");
   
+  unit = "";
+
   if ( variable_ == "volumetric water content") {
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
@@ -134,7 +138,8 @@ void ObservableAqueous::ComputeObservation(State& S, double* value, double* volu
       double vol = mesh_->cell_volume(c);
       *volume += vol;
       *value  += pressure[0][c] * vol;
-    }
+    } 
+    unit = "Pa";
   } else if (variable_ == "water table") {
     *value = CalculateWaterTable_(S, entity_ids_);
     *volume = 1.0;
@@ -154,6 +159,7 @@ void ObservableAqueous::ComputeObservation(State& S, double* value, double* volu
       *volume += vol;
       *value  += hydraulic_head[0][c] * vol;
     }
+    unit = "m";
   } else if (variable_ == "permeability-weighted hydraulic head") {
     const Epetra_MultiVector& hydraulic_head = *S.GetFieldData("hydraulic_head")->ViewComponent("cell");
     const Epetra_MultiVector& perm = *S.GetFieldData("permeability")->ViewComponent("cell");

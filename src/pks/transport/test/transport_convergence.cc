@@ -125,7 +125,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     int iter = 0;
     double t_old(0.0), t_new, dt, T1(1.0);
     while (t_old < T1) {
-      dt = std::min(TPK.CalculateTransportDt(), T1 - t_old);
+      dt = std::min(TPK.StableTimeStep(), T1 - t_old);
       t_new = t_old + dt;
 
       TPK.AdvanceStep(t_old, t_new);
@@ -240,7 +240,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     int ncycles = 0, iter = 0;
     double t_old(0.0), t_new, dt, T1(1.0);
     while (t_old < T1) {
-      dt = std::min(TPK.CalculateTransportDt(), T1 - t_old);
+      dt = std::min(TPK.StableTimeStep(), T1 - t_old);
       dt = dt * 7.7;
       t_new = t_old + dt;
 
@@ -355,13 +355,13 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     TPK.spatial_disc_order = TPK.temporal_disc_order = 2;
  
     /* advance the state */
-    if (nx == 20) dt0 = TPK.CalculateTransportDt();
+    if (nx == 20) dt0 = TPK.StableTimeStep();
     else dt0 /= 2;
 
     int iter = 0;
     double t_old(0.0), t_new(0.0), dt, T1(2.0);
     while (t_new < T1) {
-      dt = std::min(TPK.CalculateTransportDt(), T1 - t_old);
+      dt = std::min(TPK.StableTimeStep(), T1 - t_old);
       dt = std::min(dt, dt0);
       t_new = t_old + dt;
 
@@ -488,7 +488,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
     int iter = 0;
     double t_old(0.0), t_new, dt, T1(0.2);
     while (t_old < T1) {
-      dt = std::min(TPK.CalculateTransportDt(), T1 - t_old);
+      dt = std::min(TPK.StableTimeStep(), T1 - t_old);
       t_new = t_old + dt;
 
       TPK.AdvanceStep(t_old, t_new);
@@ -612,7 +612,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
     int iter = 0;
     double t_old(0.0), t_new, dt, T1(0.2);
     while (t_old < T1) {
-      dt = std::min(TPK.CalculateTransportDt(), T1 - t_old);
+      dt = std::min(TPK.StableTimeStep(), T1 - t_old);
       t_new = t_old + dt;
 
       TPK.AdvanceStep(t_old, t_new);

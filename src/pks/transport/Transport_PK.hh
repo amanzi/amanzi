@@ -87,7 +87,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   // main transport members
   // -- calculation of a stable time step needs saturations and darcy flux
-  double CalculateTransportDt();
+  double StableTimeStep();
 
   // -- coupling with chemistry
 #ifdef ALQUIMIA_ENABLED
@@ -113,13 +113,6 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   void CalculateLpErrors(AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2);
 
-  // -- sources and sinks for components from n0 to n1 including
-  void ComputeAddSourceTerms(double tp, double dtp, 
-                             Epetra_MultiVector& tcc, int n0, int n1);
-
-  bool PopulateBoundaryData(std::vector<int>& bc_model,
-                            std::vector<double>& bc_value, int component);
-
   // -- limiters 
   void LimiterBarthJespersen(const int component,
                              Teuchos::RCP<const Epetra_Vector> scalar_field, 
@@ -128,6 +121,10 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
  private:
   void InitializeFields_();
+
+  // sources and sinks for components from n0 to n1 including
+  void ComputeSources_(double tp, double dtp, Epetra_MultiVector& tcc, int n0, int n1);
+  bool ComputeBCs_(std::vector<int>& bc_model, std::vector<double>& bc_value, int component);
 
   // advection members
   void AdvanceDonorUpwind(double dT);
