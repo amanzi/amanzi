@@ -410,7 +410,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
       }
 
       // save in the XML files  
-      Teuchos::ParameterList& tbc_list = out_list.sublist("geochemical conditions");
+      Teuchos::ParameterList& tbc_list = out_list.sublist("geochemical");
       Teuchos::Array<std::string> solute_names;
       for (int i = 0; i < phases_["water"].size(); ++i) {
         solute_names.push_back(phases_["water"][i]);
@@ -521,7 +521,7 @@ void InputConverterU::TranslateTransportBCsGroup_(
 void InputConverterU::TranslateTransportBCsAmanziGeochemistry_(
     Teuchos::ParameterList& out_list)
 {
-  if (out_list.isSublist("geochemical conditions") &&
+  if (out_list.isSublist("geochemical") &&
       pk_model_["chemistry"] == "amanzi") {
 
     bool flag;
@@ -532,7 +532,7 @@ void InputConverterU::TranslateTransportBCsAmanziGeochemistry_(
     node = GetUniqueElementByTagsString_("geochemistry, constraints", flag);
 
     Teuchos::ParameterList& bc_new = out_list.sublist("concentration");
-    Teuchos::ParameterList& bc_old = out_list.sublist("geochemical conditions");
+    Teuchos::ParameterList& bc_old = out_list.sublist("geochemical");
 
     for (Teuchos::ParameterList::ConstIterator it = bc_old.begin(); it != bc_old.end(); ++it) {
       name = it->first;
@@ -562,7 +562,7 @@ void InputConverterU::TranslateTransportBCsAmanziGeochemistry_(
       }
     }
 
-    out_list.remove("geochemical conditions");
+    out_list.remove("geochemical");
   }
 }
 

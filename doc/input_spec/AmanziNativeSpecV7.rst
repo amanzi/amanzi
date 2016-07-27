@@ -2196,23 +2196,21 @@ The example below sets constant boundary condition 1e-5 for the duration of tran
   </ParameterList>
 
 
-Geochemical boundary conditions are concentration-type boundary conditions
-but require special treatment. 
-Note that the number of *forms* below is one less than the number of times
+Geochemical boundary conditions are Dirichlet boundary conditions
+which require calculation of geochemical balance.
+Note that the number of *time functions* below is one less than the number of times
 and geochemical conditions.
 
 .. code-block:: xml
 
-  <ParameterList name="transport">  <!-- parent list -->
-    <ParameterList name="boundary conditions">
-      <ParameterList name="geochemical conditions">
-        <ParameterList name="EAST CRIB">   <!-- user defined name -->
-          <Parameter name="solutes" type="Array(string)" value={H+,HCO3-,Ca++}"/>
-          <Parameter name="times" type="Array(double)" value="{0.0, 100.0}"/>
-          <Parameter name="geochemical conditions" type="Array(string)" value="{cond1, cond2}"/>
-          <Parameter name="time functions" type="Array(string)" value="{constant}"/>
-          <Parameter name="regions" type="Array(string)" value="{CRIB1}"/>
-        </ParameterList>
+  <ParameterList name="boundary conditions">  <!-- parent list -->
+    <ParameterList name="geochemical">
+      <ParameterList name="EAST CRIB">   <!-- user defined name -->
+        <Parameter name="solutes" type="Array(string)" value={H+,HCO3-,Ca++}"/>
+        <Parameter name="times" type="Array(double)" value="{0.0, 100.0}"/>
+        <Parameter name="geochemical conditions" type="Array(string)" value="{cond1, cond2}"/>
+        <Parameter name="time functions" type="Array(string)" value="{constant}"/>
+        <Parameter name="regions" type="Array(string)" value="{CRIB1}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

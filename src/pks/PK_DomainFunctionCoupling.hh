@@ -25,8 +25,7 @@
 namespace Amanzi {
 
 template <class FunctionBase>
-class PK_DomainFunctionCoupling : public FunctionBase{
-
+class PK_DomainFunctionCoupling : public FunctionBase {
  public:
   PK_DomainFunctionCoupling(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       mesh_(mesh) {};
@@ -42,7 +41,7 @@ class PK_DomainFunctionCoupling : public FunctionBase{
   // required member functions
   virtual void Compute(double t0, double t1);
   virtual std::string name() { return "domain coupling"; }
-  virtual void set_state(const Teuchos::RCP<State>& S){S_=S;}
+  virtual void set_state(const Teuchos::RCP<State>& S) { S_ = S; }
 
  protected:
   using FunctionBase::value_;
@@ -59,12 +58,12 @@ class PK_DomainFunctionCoupling : public FunctionBase{
 
 
 template <class FunctionBase>
-void PK_DomainFunctionCoupling<FunctionBase>::Init(const Teuchos::ParameterList& plist, AmanziMesh::Entity_kind region_kind)
+void PK_DomainFunctionCoupling<FunctionBase>::Init(const Teuchos::ParameterList& plist,
+                                                   AmanziMesh::Entity_kind region_kind)
 {
-
-  if (plist.isParameter("submodel")){
+  if (plist.isParameter("submodel")) {
     submodel_ = plist.get<std::string>("submodel");
-  }else{
+  } else {
     Errors::Message m;
     m << "domain coupling requires submodel parameter";
     Exceptions::amanzi_throw(m);
@@ -87,7 +86,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(const Teuchos::ParameterList&
       m << "error in domain coupling sublist : " << msg.what();
       Exceptions::amanzi_throw(m);
     }
-  }else if (submodel_=="field") {
+  } else if (submodel_=="field") {
     try {
       Teuchos::ParameterList blist = plist.sublist("boundary concentration");
       if (blist.isParameter("field_out_key"))
@@ -123,7 +122,6 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(const Teuchos::ParameterList&
       Exceptions::amanzi_throw(message);
     }
   }
-
 }
 
 
@@ -134,24 +132,19 @@ template <class FunctionBase>
 void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 {
   // create the input tuple (time + space)
-  
-  if (submodel_ == "rate"){
-
+  if (submodel_ == "rate") {
     const Epetra_MultiVector& flux = 
-      *S_->GetFieldCopyData(flux_key_, copy_flux_key_)->ViewComponent("face", true);
+        *S_->GetFieldCopyData(flux_key_, copy_flux_key_)->ViewComponent("face", true);
 
     const Epetra_MultiVector& field_out = 
-      // *S_->GetFieldCopyData(field_key_, "subcycling")->ViewComponent("cell", true);
-      *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
+        // *S_->GetFieldCopyData(field_key_, "subcycling")->ViewComponent("cell", true);
+        *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
 
     const Epetra_MultiVector& field_in = 
-      //*S_->GetFieldCopyData(field_surf_key_, "subcycling")->ViewComponent("cell", true);
-      *S_->GetFieldCopyData(field_in_key_, copy_field_in_key_)->ViewComponent("cell", true);
+        //*S_->GetFieldCopyData(field_surf_key_, "subcycling")->ViewComponent("cell", true);
+        *S_->GetFieldCopyData(field_in_key_, copy_field_in_key_)->ViewComponent("cell", true);
 
-    //std::cout<<"field_in\n"<<field_in<<"\n";
-
-
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh_out =  S_->GetFieldData(field_out_key_)->Mesh();
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh_out = S_->GetFieldData(field_out_key_)->Mesh();
 
     AmanziMesh::Entity_ID_List cells, faces;
     std::vector<int> dirs;
@@ -160,40 +153,36 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 
       AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, *c);
 
-      mesh_out -> face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_out->face_get_cells(f, AmanziMesh::USED, &cells);
     
-      if (cells.size() > 1){
+      if (cells.size() > 1) {
         std::stringstream m;
         m << "Internal cell on the interface between coupled domains: cell_ids\"" << cells[0] << "\"";
         Errors::Message message(m.str());
         Exceptions::amanzi_throw(message);
       }
-      mesh_out -> cell_get_faces_and_dirs(cells[0], &faces, &dirs);
-      for (int i = 0; i < faces.size(); i++) {
-        if (f == faces[i]){
-          double tmp = flux[0][f]*dirs[i];
-          if (tmp > 0){        
-            value_[*c] = field_out[0][cells[0]]  * tmp;
-          }
-          else if (tmp < 0){       
-            //std::cout<<"Flux "<<tmp<<" field "<<field_in[0][*c]<<"\n";
-            value_[*c] = field_in[0][*c] * tmp; 
 
+      mesh_out->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
+
+      for (int i = 0; i < faces.size(); i++) {
+        if (f == faces[i]) {
+          double tmp = flux[0][f]*dirs[i];
+          if (tmp > 0) {        
+            value_[*c] = field_out[0][cells[0]]  * tmp;
+          } else if (tmp < 0) {       
+            value_[*c] = field_in[0][*c] * tmp; 
           }
           break;
         }
       }
-
     }
-  }else if (submodel_ == "field"){
+  } else if (submodel_ == "field") {
     const Epetra_MultiVector& field_out = 
-      *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
+        *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
 
-    //std::cout<<"field_out\n"<<field_out<<"\n";
-
-    int i=0;
+    int i(0);
     for (MeshIDs::const_iterator c = entity_ids_->begin(); c != entity_ids_->end(); ++c){
-      //for (unsigned int sc=0; sc!=field_out.MyLength(); ++sc) {
+      // for (unsigned int sc=0; sc!=field_out.MyLength(); ++sc) {
       value_[*c] = field_out[0][i];            
       i++;
     }

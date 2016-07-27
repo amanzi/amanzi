@@ -260,8 +260,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   // io
   Utils::Units units_;
-    //VerboseObject* vo_;
-    Teuchos::RCP<VerboseObject> vo_;
+  Teuchos::RCP<VerboseObject> vo_;
 
   // Forbidden.
   Transport_PK(const Transport_PK&);

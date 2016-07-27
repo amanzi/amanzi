@@ -297,7 +297,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="boundary conditions">
-        <ParameterList name="geochemical conditions">
+        <ParameterList name="geochemical">
           <ParameterList name="H+">
             <ParameterList name="west_bc">
               <Parameter name="regions" type="Array(string)" value="{west}"/>

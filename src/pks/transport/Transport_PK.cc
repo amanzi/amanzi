@@ -357,7 +357,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
     }
 #ifdef ALQUIMIA_ENABLED
     // -- try geochemical conditions
-    Teuchos::ParameterList& glist = tp_list_->sublist("boundary conditions").sublist("geochemical conditions");
+    Teuchos::ParameterList& glist = tp_list_->sublist("boundary conditions").sublist("geochemical");
 
     for (Teuchos::ParameterList::ConstIterator it = glist.begin(); it != glist.end(); ++it) {
       std::string specname = it->first;
