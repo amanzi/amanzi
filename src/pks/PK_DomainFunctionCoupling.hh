@@ -36,7 +36,8 @@ class PK_DomainFunctionCoupling : public FunctionBase {
   typedef std::set<AmanziMesh::Entity_ID> MeshIDs;
 
   // member functions
-  void Init(const Teuchos::ParameterList& plist, AmanziMesh::Entity_kind kind);
+  void Init(const Teuchos::ParameterList& plist, const std::string& keyword,
+            AmanziMesh::Entity_kind kind);
 
   // required member functions
   virtual void Compute(double t0, double t1);
@@ -57,9 +58,13 @@ class PK_DomainFunctionCoupling : public FunctionBase {
 };
 
 
+/* ******************************************************************
+* Initialization adds a single function to the list of unique specs.
+****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionCoupling<FunctionBase>::Init(const Teuchos::ParameterList& plist,
-                                                   AmanziMesh::Entity_kind region_kind)
+void PK_DomainFunctionCoupling<FunctionBase>::Init(
+    const Teuchos::ParameterList& plist, const std::string& keyword,
+    AmanziMesh::Entity_kind region_kind)
 {
   if (plist.isParameter("submodel")) {
     submodel_ = plist.get<std::string>("submodel");
@@ -69,9 +74,9 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(const Teuchos::ParameterList&
     Exceptions::amanzi_throw(m);
   }
 
-  if (submodel_=="rate"){
+  if (submodel_ == "rate") {
     try {
-      Teuchos::ParameterList slist = plist.sublist("sink");
+      Teuchos::ParameterList slist = plist.sublist("keyword");
       if (slist.isParameter("field_in_key"))
         field_in_key_ = slist.get<std::string>("field_in_key");
       copy_field_in_key_ = slist.get<std::string>("copy_field_in_key", "default");
@@ -86,7 +91,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(const Teuchos::ParameterList&
       m << "error in domain coupling sublist : " << msg.what();
       Exceptions::amanzi_throw(m);
     }
-  } else if (submodel_=="field") {
+  } else if (submodel_ == "field") {
     try {
       Teuchos::ParameterList blist = plist.sublist("boundary concentration");
       if (blist.isParameter("field_out_key"))

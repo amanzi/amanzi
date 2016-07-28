@@ -57,6 +57,8 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
   MemoryManager mm;
 
   char *tagname, *text;
+  std::string unit;
+
   DOMNamedNodeMap* attr_map;
   DOMNodeList *node_list, *children;
   DOMNode* node;
@@ -88,7 +90,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             DOMNode* jnode = multi_list[j];
             if (DOMNode::ELEMENT_NODE == jnode->getNodeType()) {
               text = mm.transcode(jnode->getTextContent());
-              times.push_back(ConvertUnits_(TrimString_(text)));
+              times.push_back(ConvertUnits_(TrimString_(text), unit));
             }
           }
           tm_parameter.set<Teuchos::Array<double> >("values", times);

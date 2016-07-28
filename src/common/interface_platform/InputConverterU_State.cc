@@ -394,10 +394,11 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           tagname = mm.transcode(jnode->getNodeName());
 
           if (strcmp(tagname, "uniform_conc") == 0) {
-            std::string text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
+            std::string unit, text;
+            text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
             int m = GetPosition_(phases_["water"], text);
             DOMElement* element = static_cast<DOMElement*>(jnode);
-            vals[m] = ConvertUnits_(GetAttributeValueS_(element, "value"), solute_molar_mass_[text]);
+            vals[m] = ConvertUnits_(GetAttributeValueS_(element, "value"), unit, solute_molar_mass_[text]);
           }
         }
 

@@ -134,6 +134,7 @@ set(transport_src_files Transport_PK.cc Transport_TI.cc
                         MDMPartition.cc MDMFactory.cc
                         MultiscaleTransportPorosityFactory.cc MultiscaleTransportPorosity_DPM.cc
                         MultiscaleTransportPorosityPartition.cc
+                        TransportBoundaryFunction.cc
                         TransportBoundaryFunction_Alquimia.cc)
 
 if (ENABLE_ALQUIMIA)

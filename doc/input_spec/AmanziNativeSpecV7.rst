@@ -2174,7 +2174,7 @@ The example below sets constant boundary condition 1e-5 for the duration of tran
   <ParameterList name="transport">  <!-- parent list -->
     <ParameterList name="boundary conditions">
       <ParameterList name="concentration">
-        <ParameterList name="H+"> 
+        <ParameterList name="NO3-"> 
           <ParameterList name="EAST CRIB">   <!-- user defined name -->
             <Parameter name="regions" type="Array(string)" value="{TOP, LEFT}"/>
             <ParameterList name="boundary concentration">
@@ -2195,9 +2195,8 @@ The example below sets constant boundary condition 1e-5 for the duration of tran
     </ParameterList>
   </ParameterList>
 
-
-Geochemical boundary conditions are Dirichlet boundary conditions
-which require calculation of geochemical balance.
+Geochemical boundary condition is the Dirichlet boundary condition
+which requires calculation of a geochemical balance.
 Note that the number of *time functions* below is one less than the number of times
 and geochemical conditions.
 
@@ -2211,6 +2210,31 @@ and geochemical conditions.
         <Parameter name="geochemical conditions" type="Array(string)" value="{cond1, cond2}"/>
         <Parameter name="time functions" type="Array(string)" value="{constant}"/>
         <Parameter name="regions" type="Array(string)" value="{CRIB1}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+Flow weighted boundary condition is the Dirichlet boundary condition which
+uses the Darcy mass flux to calculate moles of injected solute.
+Typically, the boundary fuction returns dimentionless value, such as ppm
+or ppb. Molar mass of the solute should be specied to convert ppbm units
+to *mol/L* or *mol/m^3*.
+ 
+.. code-block:: xml
+
+  <ParameterList name="boundary conditions">  <!-- parent list -->
+    <ParameterList name="flow weighted">
+      <ParameterList name="NO3-"> 
+        <ParameterList name="EAST CRIB">   <!-- user defined name -->
+          <Parameter name="regions" type="Array(string)" value="{TOP}"/>
+          <Parameter name="molar mass" type="double" value="62.0e-3"/>
+          <Parameter name="spatial distribution method" type="string" value="volume"/>
+          <ParameterList name="boundary mass ratio">
+            <ParameterList name="function-constant">  <!-- any time function -->
+              <Parameter name="value" type="double" value="1e-5"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>

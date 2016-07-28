@@ -181,7 +181,7 @@ class InputConverter {
 
   // data streaming/trimming/converting
   // -- units. Molar mass is required for converting ppm and ppb units.
-  double ConvertUnits_(const std::string& val, double mol_mass = -1.0);
+  double ConvertUnits_(const std::string& val, std::string& unit, double mol_mass = -1.0);
 
   // -- times
   double TimeCharToValue_(const char* time_value);

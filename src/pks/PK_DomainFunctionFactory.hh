@@ -69,26 +69,26 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
 
   if (model == "volume") {
     Teuchos::RCP<PK_DomainFunctionVolume<FunctionBase> >
-        func = Teuchos::rcp(new PK_DomainFunctionVolume<FunctionBase>(mesh_));
-    func->Init(plist);
+        func = Teuchos::rcp(new PK_DomainFunctionVolume<FunctionBase>(mesh_, kind));
+    func->Init(plist, keyword);
     return func; 
   }
   else if (model == "permeability") {
     Teuchos::RCP<PK_DomainFunctionWeight<FunctionBase> >
         func = Teuchos::rcp(new PK_DomainFunctionWeight<FunctionBase>(mesh_));
-    func->Init(plist, weight);
+    func->Init(plist, keyword, weight);
     return func; 
   }
   else if (model == "volume fraction") {
     Teuchos::RCP<PK_DomainFunctionVolumeFraction<FunctionBase> >
       func = Teuchos::rcp(new PK_DomainFunctionVolumeFraction<FunctionBase>(mesh_));
-    func->Init(plist);
+    func->Init(plist, keyword);
     return func; 
   }
   else if (model == "domain coupling") {
     Teuchos::RCP<PK_DomainFunctionCoupling<FunctionBase> >
       func = Teuchos::rcp(new PK_DomainFunctionCoupling<FunctionBase>(mesh_));
-    func->Init(plist, kind);
+    func->Init(plist, keyword, kind);
     return func;
   }
   else {

@@ -331,7 +331,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // create boundary conditions
   if (tp_list_->isSublist("boundary conditions")) {
-    // -- try tracer-type conditions
+    // -- try simple Dirichlet conditions for species
     PK_DomainFunctionFactory<TransportBoundaryFunction> factory(mesh_);
     Teuchos::ParameterList& clist = tp_list_->sublist("boundary conditions").sublist("concentration");
 
@@ -345,16 +345,35 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
           Teuchos::RCP<TransportBoundaryFunction> 
               bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
 
-          std::vector<int>& tcc_index = bc->tcc_index();
-          std::vector<std::string>& tcc_names = bc->tcc_names();
-
-          tcc_names.push_back(name);
-          tcc_index.push_back(FindComponentNumber(name));
+          bc->tcc_names().push_back(name);
+          bc->tcc_index().push_back(FindComponentNumber(name));
 
           bcs_.push_back(bc);
         }
       }
     }
+
+    // -- try flow weighted conditions for species
+    Teuchos::ParameterList& flist = tp_list_->sublist("boundary conditions").sublist("flow weighted");
+
+    for (Teuchos::ParameterList::ConstIterator it = flist.begin(); it != flist.end(); ++it) {
+      std::string name = it->first;
+      if (flist.isSublist(name)) {
+        Teuchos::ParameterList& bc_list = flist.sublist(name);
+        for (Teuchos::ParameterList::ConstIterator it1 = bc_list.begin(); it1 != bc_list.end(); ++it1) {
+          std::string specname = it1->first;
+          Teuchos::ParameterList& spec = bc_list.sublist(specname);
+          Teuchos::RCP<TransportBoundaryFunction> 
+              bc = factory.Create(spec, "boundary mass ratio", AmanziMesh::FACE, Kxy);
+
+          bc->tcc_names().push_back(name);
+          bc->tcc_index().push_back(FindComponentNumber(name));
+
+          bcs_.push_back(bc);
+        }
+      }
+    }
+
 #ifdef ALQUIMIA_ENABLED
     // -- try geochemical conditions
     Teuchos::ParameterList& glist = tp_list_->sublist("boundary conditions").sublist("geochemical");
@@ -386,6 +405,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   time = t_physics_;
   for (int i = 0; i < bcs_.size(); i++) {
     bcs_[i]->Compute(time, time);
+    bcs_[i]->ComputeSubmodel(mesh_, darcy_flux);
   }
 
   VV_CheckInfluxBC();
@@ -626,6 +646,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     time = t_physics_ + dt_cycle / 2;
     for (int i = 0; i < bcs_.size(); i++) {
       bcs_[i]->Compute(time, time);
+      bcs_[i]->ComputeSubmodel(mesh_, darcy_flux);
     }
     
     double dt_try = dt_MPC - dt_sum;

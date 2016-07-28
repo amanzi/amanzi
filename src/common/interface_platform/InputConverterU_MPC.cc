@@ -72,6 +72,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   dt_inc_d = GetAttributeValueS_(element, "increase_factor", TYPE_TIME, false, "1.2");
 
   // parse execution_control
+  std::string unit;
   std::map<double, std::string> tp_mode;
   std::map<double, double> tp_dt0, tp_t1, tp_dt_max;
   std::map<double, int> tp_max_cycles;
@@ -85,15 +86,15 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
 
     t0 = GetAttributeValueD_(element, "start", TYPE_TIME);
     t1 = GetAttributeValueD_(element, "end", TYPE_TIME, false, t0 - 10.0);
-    dt0 = ConvertUnits_(GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, dt0_d));
-    dt_max = ConvertUnits_(GetAttributeValueS_(element, "max_dt", TYPE_TIME, false, dt_max_d));
+    dt0 = ConvertUnits_(GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, dt0_d), unit);
+    dt_max = ConvertUnits_(GetAttributeValueS_(element, "max_dt", TYPE_TIME, false, dt_max_d), unit);
     max_cycles = GetAttributeValueL_(element, "max_cycles", TYPE_NUMERICAL, false, -1);
     std::string mode = GetAttributeValueS_(element, "mode", TYPE_NONE, false, mode_d);
 
     dt_cut_[mode] = ConvertUnits_(GetAttributeValueS_(
-        element, "reduction_factor", TYPE_TIME, false, dt_cut_d));
+        element, "reduction_factor", TYPE_TIME, false, dt_cut_d), unit);
     dt_inc_[mode] = ConvertUnits_(GetAttributeValueS_(
-        element, "increase_factor", TYPE_TIME, false, dt_inc_d));
+        element, "increase_factor", TYPE_TIME, false, dt_inc_d), unit);
 
     if (mode == "steady") {
       t0_steady = t0;
@@ -349,6 +350,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
   dt_inc_["transient"] = 1.2;
 
   // parse execution_control
+  std::string unit;
   std::map<std::string, double> tp_t0, tp_t1, tp_dt0;
   std::map<std::string, int> tp_max_cycles;
   std::map<std::string, double> tp_max_dt;
@@ -363,8 +365,8 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
     if (strcmp(tagname, "execution_control") == 0) {
       t0 = GetAttributeValueD_(element, "start", TYPE_TIME);
       t1 = GetAttributeValueD_(element, "end", TYPE_TIME);
-      dt0 = ConvertUnits_(GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, dt0_d));
-      dt_max = ConvertUnits_(GetAttributeValueS_(element, "max_dt", TYPE_TIME, false, dt_max_d));
+      dt0 = ConvertUnits_(GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, dt0_d), unit);
+      dt_max = ConvertUnits_(GetAttributeValueS_(element, "max_dt", TYPE_TIME, false, dt_max_d), unit);
       std::string mode = GetAttributeValueS_(element, "mode", TYPE_NONE, false, mode_d);
 
       tp_t0[mode] = t0;
@@ -373,9 +375,9 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       tp_max_dt[mode] = dt_max;
       tp_max_cycles[mode] = GetAttributeValueL_(element, "max_cycles", TYPE_NUMERICAL, false, -1);
       dt_cut_[mode] = ConvertUnits_(GetAttributeValueS_(
-          element, "reduction_factor", TYPE_TIME, false, dt_cut_d));
+          element, "reduction_factor", TYPE_TIME, false, dt_cut_d), unit);
       dt_inc_[mode] = ConvertUnits_(GetAttributeValueS_(
-          element, "increase_factor", TYPE_TIME, false, dt_inc_d));
+          element, "increase_factor", TYPE_TIME, false, dt_inc_d), unit);
 
       filename = GetAttributeValueS_(element, "restart", TYPE_NONE, false, "");
     }
