@@ -57,6 +57,8 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
   MemoryManager mm;
 
   char *tagname, *text;
+  std::string unit;
+
   DOMNamedNodeMap* attr_map;
   DOMNodeList *node_list, *children;
   DOMNode* node;
@@ -88,7 +90,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             DOMNode* jnode = multi_list[j];
             if (DOMNode::ELEMENT_NODE == jnode->getNodeType()) {
               text = mm.transcode(jnode->getTextContent());
-              times.push_back(ConvertUnits_(TrimString_(text)));
+              times.push_back(ConvertUnits_(TrimString_(text), unit));
             }
           }
           tm_parameter.set<Teuchos::Array<double> >("values", times);
@@ -288,6 +290,9 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
 
         unit = GetAttributeValueS_(element, "length", TYPE_NONE, false, units_.system().length);
         obsPL.set<std::string>("length unit", unit);
+
+        unit = GetAttributeValueS_(element, "concentration", TYPE_NONE, false, units_.system().concentration);
+        obsPL.set<std::string>("concentration unit", unit);
 
       } else if (strcmp(tagname, "liquid_phase") == 0) {
         node = inode->getAttributes()->getNamedItem(mm.transcode("name"));

@@ -110,7 +110,7 @@ void ObservableSolute::ComputeObservation(
   const Epetra_MultiVector& tcc = *S.GetFieldData("total_component_concentration")->ViewComponent("cell");
   const Epetra_MultiVector& porosity = *S.GetFieldData("porosity")->ViewComponent("cell");    
 
-  unit = "";
+  unit = units_.system().concentration;
 
   if (variable_ == comp_names_[tcc_index_] + " aqueous concentration") { 
     for (int i = 0; i < region_size_; i++) {

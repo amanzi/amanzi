@@ -62,7 +62,7 @@ void ObservableLineSegmentSolute::ComputeObservation(
   *value = 0.0;
   *volume = 0.0;
 
-  unit = "";
+  unit = units_.system().concentration;
 
   if (weighting_ == "none") {
     for (int i = 0; i < region_size_; i++){

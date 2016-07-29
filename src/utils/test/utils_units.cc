@@ -50,15 +50,15 @@ TEST(UNITS_CONCENTRATION)
   Units units("molar");
   bool flag;
 
-  double conc = units.ConvertConcentration(1.0, "mol/m^3", "molar", 1.0, flag);
+  double conc = units.ConvertConcentration(1.0, "SI", "molar", 1.0, flag);
   std::cout << "Concentration tests:\n  1 mol/m^3 = " << conc << " molar, flag=" << flag << std::endl;
   CHECK_CLOSE(conc, 1e-3, 1e-4);
 
-  conc = units.ConvertConcentration(1.0, "molar", "mol/m^3", 1.0, flag);
+  conc = units.ConvertConcentration(1.0, "molar", "SI", 1.0, flag);
   std::cout << "  1 molar = " << conc << " mol/m^3, flag=" << flag << std::endl;
   CHECK_CLOSE(conc, 1e+3, 1e-4);
 
-  conc = units.ConvertConcentration(1.0, "ppm", "mol/m^3", 51.9961e-3, flag);
+  conc = units.ConvertConcentration(1.0, "ppm", "SI", 51.9961e-3, flag);
   std::cout << "  1 ppm = " << conc << " mol/m^3, flag=" << flag << std::endl;
   // CHECK_CLOSE(conc, 1e+3, 1e-4);
 

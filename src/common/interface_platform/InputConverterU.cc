@@ -153,7 +153,7 @@ void InputConverterU::ParseSolutes_()
       phases_["water"].push_back(name);
 
       DOMElement* element = static_cast<DOMElement*>(inode);
-      double mol_mass = GetAttributeValueD_(element, "molar_mass", TYPE_NUMERICAL, false);
+      double mol_mass = GetAttributeValueD_(element, "molar_mass", TYPE_NUMERICAL, false, 1.0);
       solute_molar_mass_[name] = mol_mass;
     }
   }
@@ -291,6 +291,10 @@ Teuchos::ParameterList InputConverterU::TranslateUnits_()
   out_list.set<std::string>("time", time);
   out_list.set<std::string>("mass", mass);
   out_list.set<std::string>("concentration", concentration);
+  
+  // update default system units
+  units_.system().concentration = concentration;
+  units_.Init();
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "Translating units: " << length << " " << time << " " 

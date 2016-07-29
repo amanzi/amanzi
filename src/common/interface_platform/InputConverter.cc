@@ -529,7 +529,7 @@ double InputConverter::GetAttributeValueD_(
   MemoryManager mm;
 
   Errors::Message msg;
-  std::string text, parsed, found_type;
+  std::string text, parsed, found_type, unit;
 
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
     text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
@@ -540,7 +540,7 @@ double InputConverter::GetAttributeValueD_(
 
     // process constants and known units
     found_type = GetConstantType_(text, parsed);
-    val = ConvertUnits_(parsed);
+    val = ConvertUnits_(parsed, unit);
 
     // no checks for two types
     if (found_type == TYPE_NONE ||
@@ -783,14 +783,14 @@ double InputConverter::GetTextContentD_(
     DOMNode* node, bool exception, double default_val)
 {
   double val;
-  std::string text, parsed_text;
+  std::string text, parsed_text, unit;
 
   MemoryManager mm;
 
   if (node != NULL) {
     std::string text = TrimString_(mm.transcode(node->getTextContent()));
     GetConstantType_(text, parsed_text);
-    val = ConvertUnits_(parsed_text);
+    val = ConvertUnits_(parsed_text, unit);
   } else if (!exception) {
     val = default_val;
   } else {
@@ -904,9 +904,11 @@ std::vector<std::string> InputConverter::CharToStrings_(const char* namelist)
 
 
 /* ******************************************************************
-* Extract unit and convert values. We usse that units are unique.
+* Extract unit and convert values. We assume that units are unique.
+* If note unit specified, returned unit is the empty string.
 ****************************************************************** */
-double InputConverter::ConvertUnits_(const std::string& val, double mol_mass)
+double InputConverter::ConvertUnits_(
+    const std::string& val, std::string& unit, double mol_mass)
 {
   char* copy = strcpy(new char[val.size() + 1], val.c_str());
   char* data = strtok(copy, ";, ");
@@ -916,13 +918,11 @@ double InputConverter::ConvertUnits_(const std::string& val, double mol_mass)
 
   // if units were found
   bool flag;
+  unit = "";
   if (data != NULL) {
-    found_units_.insert(data);
+    unit = std::string(data);
+    out = units_.ConvertUnitD(out, unit, "SI", mol_mass, flag);
 
-    out = units_.ConvertUnitD(out, std::string(data), "SI", mol_mass, flag);
-    if (!flag) 
-      out = units_.ConvertConcentration(
-          out, std::string(data), units_.system().concentration, mol_mass, flag);
     if (!flag) {
       Errors::Message msg;
       msg << "\nPrototype code for units of measurement cannot parse unit \"" << data <<"\"."
@@ -930,6 +930,7 @@ double InputConverter::ConvertUnits_(const std::string& val, double mol_mass)
           << "\n  (2) Fix possible format errors, e.g. no spaces is allowed.\n";
       Exceptions::amanzi_throw(msg);
     }
+    found_units_.insert(data);
   }
 
   delete[] copy;
@@ -1002,9 +1003,9 @@ std::vector<double> InputConverter::MakeVector_(const std::string& array,
   tmp = CharToStrings_(array.c_str());
 
   for (int i = 0; i < tmp.size(); ++i) {
-    std::string parsed_str;
+    std::string parsed_str, unit;
     GetConstantType_(tmp[i], parsed_str);
-    data.push_back(ConvertUnits_(parsed_str, mol_mass));
+    data.push_back(ConvertUnits_(parsed_str, unit, mol_mass));
   }
 
   return data;

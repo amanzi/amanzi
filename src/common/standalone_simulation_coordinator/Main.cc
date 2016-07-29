@@ -216,15 +216,16 @@ int main(int argc, char *argv[]) {
       if (rank == 0) {
         std::cout << "ERROR: No xml input file was specified. Use the command line option --xml_file to specify one." << std::endl;
       }      
-      throw std::string("amanzi not run");      
+      throw std::string("Amanzi not run");      
     }
 
     // check if the input file actually exists
     if (!exists(xmlInFileName)) {
       if (rank == 0) {
-        std::cout << "ERROR: The xml input file " << xmlInFileName << " that was specified using the command line option --xml_file does not exist." << std::endl;
+        std::cout << "ERROR: The xml input file " << xmlInFileName 
+                  << " specified with the command line option --xml_file does not exist." << std::endl;
       }
-      throw std::string("amanzi not run");
+      throw std::string("Amanzi not run");
     }
 
     // Create a simulator that corresponds to our input file.

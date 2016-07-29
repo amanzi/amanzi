@@ -39,7 +39,8 @@ class PK_DomainFunctionWeight : public FunctionBase,
   ~PK_DomainFunctionWeight() {};
 
   // member functions
-  void Init(const Teuchos::ParameterList& plist, Teuchos::RCP<const Epetra_Vector> weight);
+  void Init(const Teuchos::ParameterList& plist, const std::string& keyword,
+            Teuchos::RCP<const Epetra_Vector> weight);
 
   // required member functions
   virtual void Compute(double t0, double t1);
@@ -60,7 +61,8 @@ class PK_DomainFunctionWeight : public FunctionBase,
 ****************************************************************** */
 template <class FunctionBase>
 void PK_DomainFunctionWeight<FunctionBase>::Init(
-    const Teuchos::ParameterList& plist, Teuchos::RCP<const Epetra_Vector> weight)
+    const Teuchos::ParameterList& plist, const std::string& keyword,
+    Teuchos::RCP<const Epetra_Vector> weight)
 {
   ASSERT(weight != Teuchos::null);
 
@@ -68,7 +70,7 @@ void PK_DomainFunctionWeight<FunctionBase>::Init(
 
   Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
-    Teuchos::ParameterList flist = plist.sublist("sink");
+    Teuchos::ParameterList flist = plist.sublist(keyword);
     f = Teuchos::rcp(new MultiFunction(flist));
   } catch (Errors::Message& msg) {
     Errors::Message m;

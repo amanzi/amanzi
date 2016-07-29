@@ -216,7 +216,7 @@ Units
 Amanzi's internal default units are SI units except for the concentration.
 
 * `"concentration`" [string] defines units for concentration. Available options
-  are `"molar`" (default) which is `"mol/L`" and `"mol/m^3`". 
+  are `"molar`" (default) which is `"mol/L`" and `"SI`" which is `"mol/m^3`". 
 
 .. code-block:: xml
 
@@ -238,6 +238,10 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
 
 * `"component names`" [Array(string)] provides the list of species names.
   It is required for reactive transport.
+
+* `"component molar masses`" [Array(string)] provides the list of 
+  molar masses of species. It is required for proper conversion to and from 
+  dimensionless units. Default is 1. 
 
 * `"number of liquid components`" [int] is the number of liquid components. 
    
@@ -273,6 +277,7 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
   <ParameterList>  <!-- parent list -->
     <ParameterList name="cycle driver">
       <Parameter name="component names" type="Array(string)" value="{H+, Na+, NO3-, Zn++}"/>
+      <Parameter name="component molar masses" type="Array(double)" value="{1.0e-3, 23.0e-3, 62.0e-3, 65.4e-3}"/>
       <Parameter name="number of liquid components" type="int" value="4"/>
       <ParameterList name="time periods">
         <ParameterList name="TP 0">
@@ -2169,7 +2174,7 @@ The example below sets constant boundary condition 1e-5 for the duration of tran
   <ParameterList name="transport">  <!-- parent list -->
     <ParameterList name="boundary conditions">
       <ParameterList name="concentration">
-        <ParameterList name="H+"> 
+        <ParameterList name="NO3-"> 
           <ParameterList name="EAST CRIB">   <!-- user defined name -->
             <Parameter name="regions" type="Array(string)" value="{TOP, LEFT}"/>
             <ParameterList name="boundary concentration">
@@ -2190,23 +2195,45 @@ The example below sets constant boundary condition 1e-5 for the duration of tran
     </ParameterList>
   </ParameterList>
 
-
-Geochemical boundary conditions are concentration-type boundary conditions
-but require special treatment. 
-Note that the number of *forms* below is one less than the number of times
+Geochemical boundary condition is the Dirichlet boundary condition
+which requires calculation of a geochemical balance.
+Note that the number of *time functions* below is one less than the number of times
 and geochemical conditions.
 
 .. code-block:: xml
 
-  <ParameterList name="transport">  <!-- parent list -->
-    <ParameterList name="boundary conditions">
-      <ParameterList name="geochemical conditions">
+  <ParameterList name="boundary conditions">  <!-- parent list -->
+    <ParameterList name="geochemical">
+      <ParameterList name="EAST CRIB">   <!-- user defined name -->
+        <Parameter name="solutes" type="Array(string)" value={H+,HCO3-,Ca++}"/>
+        <Parameter name="times" type="Array(double)" value="{0.0, 100.0}"/>
+        <Parameter name="geochemical conditions" type="Array(string)" value="{cond1, cond2}"/>
+        <Parameter name="time functions" type="Array(string)" value="{constant}"/>
+        <Parameter name="regions" type="Array(string)" value="{CRIB1}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+Flow weighted boundary condition is the Dirichlet boundary condition which
+uses the Darcy mass flux to calculate moles of injected solute.
+Typically, the boundary fuction returns dimentionless value, such as ppm
+or ppb. Molar mass of the solute should be specied to convert ppbm units
+to *mol/L* or *mol/m^3*.
+ 
+.. code-block:: xml
+
+  <ParameterList name="boundary conditions">  <!-- parent list -->
+    <ParameterList name="flow weighted">
+      <ParameterList name="NO3-"> 
         <ParameterList name="EAST CRIB">   <!-- user defined name -->
-          <Parameter name="solutes" type="Array(string)" value={H+,HCO3-,Ca++}"/>
-          <Parameter name="times" type="Array(double)" value="{0.0, 100.0}"/>
-          <Parameter name="geochemical conditions" type="Array(string)" value="{cond1, cond2}"/>
-          <Parameter name="time functions" type="Array(string)" value="{constant}"/>
-          <Parameter name="regions" type="Array(string)" value="{CRIB1}"/>
+          <Parameter name="regions" type="Array(string)" value="{TOP}"/>
+          <Parameter name="molar mass" type="double" value="62.0e-3"/>
+          <Parameter name="spatial distribution method" type="string" value="volume"/>
+          <ParameterList name="boundary mass ratio">
+            <ParameterList name="function-constant">  <!-- any time function -->
+              <Parameter name="value" type="double" value="1e-5"/>
+            </ParameterList>
+          </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -4998,6 +5025,9 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
   * `"length unit`" [string] defines length unit for output data.
      Available options are `"cm`", `"in`", `"ft`", `"yd`" , `"m`", and `"km`". Default is `"m`".
+
+  * `"concentration unit`" [string] defines concentration unit for output data.
+     Available options are `"molar`", and `"SI`". Default is `"molar`".
 
   * `"precision`" [int] defines the number of significant digits. Default is 16.
 

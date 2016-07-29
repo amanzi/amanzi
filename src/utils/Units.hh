@@ -138,11 +138,13 @@ struct UnitsSystem {
 class Units {
  public:
   Units() : system_("s", "kg", "m", "molar") {};
-  Units(const std::string& concentration_unit) : system_("s", "kg", "m", "molar") { Init(); }
+  Units(const std::string& concentration_unit) : system_("s", "kg", "m", "molar") { 
+    system_.concentration = concentration_unit;
+    Init();
+  }
   ~Units() {};
 
   // conversion factors
-  double pressure_factor() { return pressure_factor_; } 
   double concentration_factor() { return tcc_factor_; } 
 
   // output
@@ -182,13 +184,13 @@ class Units {
   std::string ConvertUnitS(const std::string& in_unit, const UnitsSystem& system);
 
   // access
-  const UnitsSystem& system() const { return system_; }
+  UnitsSystem& system() { return system_; }
 
  private:
   AtomicUnitForm ComputeAtomicUnitForm_(const std::string& unit, bool* flag);
 
  private:
-  double pressure_factor_, tcc_factor_;
+  double tcc_factor_;
 
   std::map<std::string, boost::units::quantity<boost::units::si::time> > time_;
   std::map<std::string, boost::units::quantity<boost::units::si::mass> > mass_;

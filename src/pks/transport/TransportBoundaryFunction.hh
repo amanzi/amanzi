@@ -18,6 +18,7 @@
 #include <map>
 #include <string>
 
+#include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 
 #include "CommonDefs.hh"
@@ -30,15 +31,16 @@ namespace Transport {
 class TransportBoundaryFunction {
  public:
   TransportBoundaryFunction()
-    : domain_volume_(-1.0) {};
+    : domain_volume_(-1.0),
+      mass_ratio_(false) {};
 
-  TransportBoundaryFunction(const Teuchos::ParameterList& plist)
-    : domain_volume_(-1.0) {};
-
+  TransportBoundaryFunction(const Teuchos::ParameterList& plist);
   ~TransportBoundaryFunction() {};
 
   // source term on time interval (t0, t1]
   virtual void Compute(double t0, double t1) { ASSERT(false); }
+  void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                       Teuchos::RCP<const Epetra_MultiVector>& field);
 
   // model name
   virtual std::string name() { return "undefined"; } 
@@ -61,6 +63,10 @@ class TransportBoundaryFunction {
 
   std::vector<std::string> tcc_names_;  // list of component names
   std::vector<int> tcc_index_;  // index of component in the global list
+
+  // submodels
+  bool mass_ratio_;
+  double molar_mass_;
 };
 
 }  // namespace Transport

@@ -410,7 +410,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
       }
 
       // save in the XML files  
-      Teuchos::ParameterList& tbc_list = out_list.sublist("geochemical conditions");
+      Teuchos::ParameterList& tbc_list = out_list.sublist("geochemical");
       Teuchos::Array<std::string> solute_names;
       for (int i = 0; i < phases_["water"].size(); ++i) {
         solute_names.push_back(phases_["water"][i]);
@@ -446,7 +446,7 @@ void InputConverterU::TranslateTransportBCsGroup_(
 
   // get child nodes with the same tagname
   bool flag;
-  std::string bctype, solute_name, tmp_name;
+  std::string bctype, solute_name, tmp_name, unit;
   std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
 
   while (same_list.size() > 0) {
@@ -463,16 +463,20 @@ void InputConverterU::TranslateTransportBCsGroup_(
       if (tmp_name == solute_name) {
         double t0 = GetAttributeValueD_(element, "start");
         tp_forms[t0] = GetAttributeValueS_(element, "function");
-        tp_values[t0] = ConvertUnits_(GetAttributeValueS_(element, "value"), solute_molar_mass_[solute_name]);
+        tp_values[t0] = ConvertUnits_(GetAttributeValueS_(element, "value"), unit, solute_molar_mass_[solute_name]);
 
         same_list.erase(it);
         it--;
       } 
     }
 
-    // check for spatially dependent BCs. Only one is allowed (FIXME)
+    // Check for spatially dependent BCs. Only one is allowed (FIXME
+    // We extract both data and unit strings.
     bool space_bc(false);
+    std::string bcgroup("concentration"), func_name("boundary concentration"), weight("none");
     std::vector<double> data;
+    std::vector<std::string> unit;
+
     element = static_cast<DOMElement*>(same_list[0]);
     std::string space_bc_name = GetAttributeValueS_(element, "space_function", TYPE_NONE, false);
     if (space_bc_name == "gaussian") {
@@ -480,8 +484,15 @@ void InputConverterU::TranslateTransportBCsGroup_(
       std::vector<std::string> tmp;
       tmp = GetAttributeVectorS_(element, "space_data");
       for (int i = 0; i < tmp.size(); ++i) {
-        data.push_back(ConvertUnits_(tmp[i], solute_molar_mass_[solute_name]));
+        std::string tmp_unit;
+        data.push_back(ConvertUnits_(tmp[i], tmp_unit, solute_molar_mass_[solute_name]));
+        unit.push_back(tmp_unit);
       }
+      if (unit[0] == "ppm" || unit[0] == "ppb") {
+        bcgroup = "flow weighted";
+        func_name = "boundary mass ratio";
+        weight = "volume";
+      } 
     }
 
     // create vectors of values and forms
@@ -495,11 +506,16 @@ void InputConverterU::TranslateTransportBCsGroup_(
     forms.pop_back();
      
     // save in the XML files  
-    Teuchos::ParameterList& tbc_list = out_list.sublist("concentration");
+    Teuchos::ParameterList& tbc_list = out_list.sublist(bcgroup);
     Teuchos::ParameterList& bc = tbc_list.sublist(solute_name).sublist(bcname);
-    bc.set<Teuchos::Array<std::string> >("regions", regions);
+    bc.set<Teuchos::Array<std::string> >("regions", regions)
+      .set<std::string>("spatial distribution method", weight);
 
-    Teuchos::ParameterList& bcfn = bc.sublist("boundary concentration");
+    if (solute_molar_mass_.find(solute_name) != solute_molar_mass_.end()) {
+      bc.set<double>("molar mass", solute_molar_mass_[solute_name]);
+    }
+
+    Teuchos::ParameterList& bcfn = bc.sublist(func_name);
     if (space_bc) {
       TranslateFunctionGaussian_(data, bcfn);
     } else if (times.size() == 1) {
@@ -521,7 +537,7 @@ void InputConverterU::TranslateTransportBCsGroup_(
 void InputConverterU::TranslateTransportBCsAmanziGeochemistry_(
     Teuchos::ParameterList& out_list)
 {
-  if (out_list.isSublist("geochemical conditions") &&
+  if (out_list.isSublist("geochemical") &&
       pk_model_["chemistry"] == "amanzi") {
 
     bool flag;
@@ -532,7 +548,7 @@ void InputConverterU::TranslateTransportBCsAmanziGeochemistry_(
     node = GetUniqueElementByTagsString_("geochemistry, constraints", flag);
 
     Teuchos::ParameterList& bc_new = out_list.sublist("concentration");
-    Teuchos::ParameterList& bc_old = out_list.sublist("geochemical conditions");
+    Teuchos::ParameterList& bc_old = out_list.sublist("geochemical");
 
     for (Teuchos::ParameterList::ConstIterator it = bc_old.begin(); it != bc_old.end(); ++it) {
       name = it->first;
@@ -562,7 +578,7 @@ void InputConverterU::TranslateTransportBCsAmanziGeochemistry_(
       }
     }
 
-    out_list.remove("geochemical conditions");
+    out_list.remove("geochemical");
   }
 }
 
@@ -643,7 +659,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
 
     // get a group of similar elements defined by the first element
     bool flag;
-    std::string srctype, solute_name, weight, srctype_flow;
+    std::string srctype, solute_name, weight, srctype_flow, unit;
 
     std::vector<DOMNode*> same_list = GetSameChildNodes_(node, srctype, flag, true);
     solute_name = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "name");
@@ -680,7 +696,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
         element = static_cast<DOMElement*>(same_list[j]);
         double t0 = GetAttributeValueD_(element, "start");
         tp_forms[t0] = GetAttributeValueS_(element, "function");
-        tp_values[t0] = GetAttributeValueD_(element, "value");
+        tp_values[t0] = ConvertUnits_(GetAttributeValueS_(element, "value"), unit, solute_molar_mass_[solute_name]);
       }
 
       // create vectors of values and forms

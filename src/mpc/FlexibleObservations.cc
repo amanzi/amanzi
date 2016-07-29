@@ -221,7 +221,7 @@ void FlexibleObservations::RegisterWithTimeStepManager(const Teuchos::Ptr<TimeSt
 ****************************************************************** */
 void FlexibleObservations::FlushObservations()
 {
-  bool flag1, flag2;
+  bool flag1, flag2(true);
 
   if (obs_list_->isParameter("observation output filename")) {
     std::string obs_file = obs_list_->get<std::string>("observation output filename");
@@ -231,6 +231,7 @@ void FlexibleObservations::FlushObservations()
     system.time = obs_list_->get<std::string>("time unit", system.time);
     system.mass = obs_list_->get<std::string>("mass unit", system.mass);
     system.length = obs_list_->get<std::string>("length unit", system.length);
+    system.concentration = obs_list_->get<std::string>("concentration unit", system.concentration);
 
     if (rank_ == 0) {
       std::ofstream out;
@@ -252,29 +253,45 @@ void FlexibleObservations::FlushObservations()
 
           for (int j = 0; j < od.size(); j++) {
             if (od[j].is_valid) {
-              std::string out_unit = units_.ConvertUnitS(od[j].unit, system);
-              double out_value = units_.ConvertUnitD(od[j].value, od[j].unit, out_unit, 1.0, flag1);
-              //std::cout << od[j].unit << " "<< out_unit << " " << flag1 << std::endl;
+              std::string var, name, out_unit;
+              double out_value, mol_mass(1.0);
 
-              std::string var = ind_obs_list.get<std::string>("variable");
+              // ugly way to extract molar mass of a specie
+              var = ind_obs_list.get<std::string>("variable");
+              std::stringstream ss(var);
+              ss >> name;
+              for (int i = 0; i < comp_names_.size(); ++i) {
+                if (comp_names_[i] == name) {
+                  mol_mass = comp_mol_masses_[i];
+                  break;
+                }
+              }
+
+              out_unit = units_.ConvertUnitS(od[j].unit, system);
+              out_value = units_.ConvertUnitD(od[j].value, od[j].unit, out_unit, mol_mass, flag1);
+              flag2 &= flag1;
+>>>>>>> cb96102caa4a54f1078740347b31beb94b6b4f88
+
               out << label << ", "
                   << ind_obs_list.get<std::string>("region") << ", "
                   << ind_obs_list.get<std::string>("functional") << ", "
                   << var << ", "
-                  << units_.ConvertTime(od[j].time, "s", system.time, flag2) << ", "
+                  << units_.ConvertTime(od[j].time, "s", system.time, flag1) << ", "
                   << (((var == "permeability-weighted drawdown" || 
                         var == "drawdown") && !j) ? 0.0 : out_value) << '\n';
-              if (!flag1 || !flag2) {
-                Errors::Message msg;
-                msg << "Conversion of units in observations has failed\n.";
-                Exceptions::amanzi_throw(msg);
-              }
+              flag2 &= flag1;
             }
           }
         }
       }
       out.close();
     }
+  }
+
+  if (!flag2) {
+    Errors::Message msg;
+    msg << "Conversion of units in observations has failed.\n";
+    Exceptions::amanzi_throw(msg);
   }
 }
 

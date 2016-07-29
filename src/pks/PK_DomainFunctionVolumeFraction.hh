@@ -37,7 +37,7 @@ class PK_DomainFunctionVolumeFraction : public FunctionBase,
   ~PK_DomainFunctionVolumeFraction() {};
 
   // member functions
-  void Init(const Teuchos::ParameterList& plist);
+  void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
 
   // required member functions
   virtual void Compute(double t0, double t1);
@@ -56,7 +56,8 @@ class PK_DomainFunctionVolumeFraction : public FunctionBase,
 * Initialization adds a single function to the list of specs.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionVolumeFraction<FunctionBase>::Init(const Teuchos::ParameterList& plist)
+void PK_DomainFunctionVolumeFraction<FunctionBase>::Init(
+    const Teuchos::ParameterList& plist, const std::string& keyword)
 {
   submodel_ = "rate";
   if (plist.isParameter("submodel"))
@@ -66,7 +67,7 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Init(const Teuchos::Paramete
 
   Teuchos::RCP<Amanzi::MultiFunction> f;
   try {
-    Teuchos::ParameterList flist = plist.sublist("sink");
+    Teuchos::ParameterList flist = plist.sublist(keyword);
     f = Teuchos::rcp(new MultiFunction(flist));
   } catch (Errors::Message& msg) {
     Errors::Message m;

@@ -64,8 +64,10 @@ class FlexibleObservations {
     if (vo_ != NULL) delete vo_;
   }
   
-  void RegisterComponentNames(std::vector<std::string> comp_names, int num_liquid) {
+  void RegisterComponentNames(std::vector<std::string>& comp_names,
+                              std::vector<double>& comp_mol_masses, int num_liquid) {
     comp_names_ = comp_names;
+    comp_mol_masses_ = comp_mol_masses;
     num_liquid_ = num_liquid;
   }
 
@@ -93,6 +95,7 @@ class FlexibleObservations {
   std::map<std::string, Teuchos::RCP<Observable> > observations;
 
   std::vector<std::string> comp_names_;
+  std::vector<double> comp_mol_masses_;
   int num_liquid_;
 
   Utils::Units units_;
