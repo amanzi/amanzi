@@ -122,8 +122,25 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
       
     cv->ScatterMasterToGhosted();
 
+    if (limiter_){ // At the moment only Kuzmin limiter is implemented for observ.
+      plist.set<std::string>("limiter", "Kuzmin");
+    }
+    
     lifting.Init(vector, plist);
     lifting.ComputeGradient(ids, gradient);
+
+    if (limiter_) {
+      // if (!S.HasField("darcy_velocity")){
+      //   Errors::Message msg;
+      //   msg <<"Limiter can't be apllied without darcy_velocity";
+      //   Exceptions::amanzi_throw(msg);
+      // }
+      
+      // Teuchos::RCP<const Epetra_MultiVector> flux =  S.GetFieldData("darcy_velocity")->ViewComponent("cell");
+      // // Apply limiter
+      // lifting.InitLimiter(flux);
+      lifting.ApplyLimiter(ids, gradient);
+    }
 
     for (int i = 0; i < ids.size(); i++) {
       int c = ids[i];

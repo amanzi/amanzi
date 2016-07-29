@@ -447,77 +447,152 @@ void ReconstructionCell::LimiterKuzmin_(
 
   double L22normal_new;
   AmanziGeometry::Point gradient_c(dim), p(dim), normal_new(dim), direction(dim);
+  std::vector<double> field_min_cell(OPERATOR_MAX_NODES), field_max_cell(OPERATOR_MAX_NODES);
 
   std::vector<AmanziGeometry::Point> normals;
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
-
-    u1 = (*field_)[component_][c];
-
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    for (int i = 0; i < dim; i++) gradient_c[i] = (*grad)[i][c];
-
-    normals.clear();  // normals to planes the define the feasiable set
-    for (int loop = 0; loop < 2; loop++) {
-      for (int i = 0; i < nnodes; i++) {
-        int v = nodes[i];
-        double umin = field_node_min[v];
-        double umax = field_node_max[v];
-
-        mesh_->node_get_coordinates(v, &xp);
-        up = getValue(gradient_c, c, xp);
-
-        // check if umin <= up <= umax
-        if (up < umin) {
-          normal_new = xp - xc;
-          CalculateDescentDirection_(normals, normal_new, L22normal_new, direction);
-
-          // p = ((umin - u1) / sqrt(L22normal_new)) * direction;
-          p = ((umin - u1) / sqrt(L22normal_new)) * normal_new;
-          ApplyDirectionalLimiter_(normal_new, p, direction, gradient_c);
-        } else if (up > umax) {
-          normal_new = xp - xc;
-          CalculateDescentDirection_(normals, normal_new, L22normal_new, direction);
-
-          // p = ((umax - u1) / sqrt(L22normal_new)) * direction;
-          p = ((umax - u1) / sqrt(L22normal_new)) * normal_new;
-          ApplyDirectionalLimiter_(normal_new, p, direction, gradient_c);
-        }
-      }
-      if (normals.size() == 0) break;  // No limiters were imposed.
+    for (int i = 0; i < nnodes; i++) {
+      int v = nodes[i];
+      field_min_cell[i] = field_node_min[v];
+      field_max_cell[i] = field_node_max[v];
     }
 
-    double grad_norm = norm(gradient_c);
-    if (grad_norm < OPERATOR_LIMITER_TOLERANCE * bc_scaling_) gradient_c.set(0.0);
+    for (int i = 0; i < dim; i++) gradient_c[i] = (*grad)[i][c];
+
+    LimiterKuzminCell_(c, gradient_c, field_min_cell, field_max_cell);
 
     for (int i = 0; i < dim; i++) (*grad)[i][c] = gradient_c[i];
   }
 
-  // Step 3: extrema are calculated for cells.
-  AmanziMesh::Entity_ID_List cells;
-  std::vector<double> field_local_min(ncells_wghost);
-  std::vector<double> field_local_max(ncells_wghost);
-
-  for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_nodes(c, &nodes);
-    field_local_min[c] = field_local_max[c] = (*field_)[component_][c];
-
-    for (int i = 0; i < nodes.size(); i++) {
-      int v = nodes[i];
-      field_local_min[c] = std::min(field_local_min[c], field_node_min[v]);
-      field_local_max[c] = std::max(field_local_max[c], field_node_max[v]);
-    }
-  }
-
-  // Step 4: enforcing a priori time step estimate (division of dT by 2).
-  // Experimental version is limited to 2D (lipnikov@lanl.gov).
   if (limiter_correction_) {
+    // Step 3: extrema are calculated for cells.
+    AmanziMesh::Entity_ID_List cells;
+    std::vector<double> field_local_min(ncells_wghost);
+    std::vector<double> field_local_max(ncells_wghost);
+
+    for (int c = 0; c < ncells_owned; c++) {
+      mesh_->cell_get_nodes(c, &nodes);
+      field_local_min[c] = field_local_max[c] = (*field_)[component_][c];
+
+      for (int i = 0; i < nodes.size(); i++) {
+        int v = nodes[i];
+        field_local_min[c] = std::min(field_local_min[c], field_node_min[v]);
+        field_local_max[c] = std::max(field_local_max[c], field_node_max[v]);
+      }
+    }
+
+    // Step 4: enforcing a priori time step estimate (division of dT by 2).
+    // Experimental version is limited to 2D (lipnikov@lanl.gov).
     LimiterExtensionTransportKuzmin_(field_local_min, field_local_max);
   }    
 
   gradient_->ScatterMasterToGhosted("cell");
+}
+
+
+
+void ReconstructionCell::LimiterKuzminonSet_(AmanziMesh::Entity_ID_List& ids,
+                                             std::vector<AmanziGeometry::Point>& gradient){
+
+  // Step 1: local extrema are calculated here at nodes and updated later
+  std::vector<double> field_node_min(nnodes_wghost);
+  std::vector<double> field_node_max(nnodes_wghost);
+  std::vector<double> field_min_cell(OPERATOR_MAX_NODES), field_max_cell(OPERATOR_MAX_NODES);
+
+  AmanziMesh::Entity_ID_List nodes;
+
+  field_node_min.assign(nnodes_wghost,  OPERATOR_LIMITER_INFINITY);
+  field_node_max.assign(nnodes_wghost, -OPERATOR_LIMITER_INFINITY);
+  bc_scaling_ = 1.0;
+
+  for (int c = 0; c < ncells_wghost; c++) {
+    mesh_->cell_get_nodes(c, &nodes);
+    double value = (*field_)[component_][c];
+    for (int i = 0; i < nodes.size(); i++) {
+      int v = nodes[i];
+      field_node_min[v] = std::min(field_node_min[v], value);
+      field_node_max[v] = std::max(field_node_max[v], value);
+    }
+  }
+
+  for (int k=0; k<ids.size(); k++){
+    int c = ids[k];
+    mesh_->cell_get_nodes(c, &nodes);
+    int nnodes = nodes.size();
+    for (int i = 0; i < nnodes; i++) {
+      int v = nodes[i];
+      field_min_cell[i] = field_node_min[v];
+      field_max_cell[i] = field_node_max[v];
+    }
+    LimiterKuzminCell_(c, gradient[k], field_min_cell, field_max_cell);
+  }
+
+}
+
+
+
+/* *******************************************************************
+* Kuzmin's limiter use all neighbors of a computational cell and limit 
+* gradient on one cell only.  
+******************************************************************* */
+ void ReconstructionCell::LimiterKuzminCell_(int cell,
+                                             AmanziGeometry::Point& gradient_c,
+                                             const std::vector<double>& field_node_min_c,
+                                             const std::vector<double>& field_node_max_c)
+{
+  
+  // Step 2: limit reconstructed gradients at cell nodes
+  double umin, umax, up, u1;
+  AmanziGeometry::Point xp(dim);
+
+  double L22normal_new;
+  AmanziGeometry::Point p(dim), normal_new(dim), direction(dim);
+  AmanziMesh::Entity_ID_List nodes;
+  std::vector<AmanziGeometry::Point> normals;
+
+  mesh_->cell_get_nodes(cell, &nodes);
+  int nnodes = nodes.size();
+
+  u1 = (*field_)[component_][cell];
+
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(cell);
+
+  normals.clear();  // normals to planes the define the feasiable set
+  for (int loop = 0; loop < 2; loop++) {
+    for (int i = 0; i < nnodes; i++) {
+      int v = nodes[i];
+      double umin = field_node_min_c[i];
+      double umax = field_node_max_c[i];
+
+      mesh_->node_get_coordinates(v, &xp);
+      up = getValue(gradient_c, cell, xp);
+
+      // check if umin <= up <= umax
+      if (up < umin) {
+        normal_new = xp - xc;
+        CalculateDescentDirection_(normals, normal_new, L22normal_new, direction);
+
+        // p = ((umin - u1) / sqrt(L22normal_new)) * direction;
+        p = ((umin - u1) / sqrt(L22normal_new)) * normal_new;
+        ApplyDirectionalLimiter_(normal_new, p, direction, gradient_c);
+      } else if (up > umax) {
+        normal_new = xp - xc;
+        CalculateDescentDirection_(normals, normal_new, L22normal_new, direction);
+
+        // p = ((umax - u1) / sqrt(L22normal_new)) * direction;
+        p = ((umax - u1) / sqrt(L22normal_new)) * normal_new;
+        ApplyDirectionalLimiter_(normal_new, p, direction, gradient_c);
+      }
+    }
+    if (normals.size() == 0) break;  // No limiters were imposed.
+  
+    double grad_norm = norm(gradient_c);
+    if (grad_norm < OPERATOR_LIMITER_TOLERANCE * bc_scaling_) gradient_c.set(0.0);
+  }
+
 }
 
 

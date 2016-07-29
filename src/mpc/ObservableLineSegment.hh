@@ -28,6 +28,7 @@ class ObservableLineSegment : public virtual Observable {
   std::string interpolation_;   
   std::string weighting_;   
   std::vector<AmanziGeometry::Point> line_points_;
+  bool limiter_;
 };
 
 
@@ -40,6 +41,7 @@ ObservableLineSegment::ObservableLineSegment(std::string variable,
     Observable(variable, region, functional, plist, units_plist, mesh) {
   interpolation_ = plist.get<std::string>("interpolation", "linear");
   weighting_ = plist.get<std::string>("weighting", "none");
+  limiter_ = plist.get<bool>("limiter", true);
 };
 
 

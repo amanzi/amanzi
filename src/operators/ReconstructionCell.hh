@@ -51,6 +51,8 @@ class ReconstructionCell : public Reconstruction {
   void InitLimiter(Teuchos::RCP<const Epetra_MultiVector> flux);
   void ApplyLimiter(const std::vector<int>& bc_model, const std::vector<double>& bc_value);
   void ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter);
+  void ApplyLimiter(AmanziMesh::Entity_ID_List& ids,
+                    std::vector<AmanziGeometry::Point>& gradient);
 
   // estimate value of a reconstructed piece-wise smooth function
   double getValue(int cell, const AmanziGeometry::Point& p);
@@ -80,6 +82,15 @@ class ReconstructionCell : public Reconstruction {
 
   void LimiterKuzmin_(
       const std::vector<int>& bc_model, const std::vector<double>& bc_value);
+
+  void LimiterKuzminCell_(int cell,
+                          AmanziGeometry::Point& gradient_c,
+                          const std::vector<double>& field_node_min_c,
+                          const std::vector<double>& field_node_max_c);
+
+  void LimiterKuzminonSet_(AmanziMesh::Entity_ID_List& ids,
+                           std::vector<AmanziGeometry::Point>& gradient);
+
 
   void CalculateDescentDirection_(std::vector<AmanziGeometry::Point>& normals,
                                   AmanziGeometry::Point& normal_new,

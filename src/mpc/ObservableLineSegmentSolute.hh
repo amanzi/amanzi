@@ -107,7 +107,7 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
     const Epetra_MultiVector& tcc = *S.GetFieldData("total_component_concentration")->ViewComponent("cell");
     cv = S.GetFieldData("total_component_concentration");
     vector = cv->ViewComponent("cell", true);
-  } else {
+  }else{
     if (!S.HasField(var)) {
       Errors::Message msg;
       msg <<"InterpolatedValue: field "<<var<<" doesn't exist in state";
@@ -124,13 +124,32 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
       
     cv->ScatterMasterToGhosted();
 
+    if (limiter_){ // At the moment only Kuzmin limiter is implemented for observ.
+      plist.set<std::string>("limiter", "Kuzmin");
+    }
+
     lifting.Init(vector, plist, tcc_index_);
     lifting.ComputeGradient(ids, gradient);
+
+    if (limiter_) {
+      // if (!S.HasField("darcy_velocity")){
+      //   Errors::Message msg;
+      //   msg <<"Limiter can't be apllied without darcy_velocity";
+      //   Exceptions::amanzi_throw(msg);
+      // }
+      
+      // Teuchos::RCP<const Epetra_MultiVector> flux =  S.GetFieldData("darcy_velocity")->ViewComponent("cell");
+      // // Apply limiter
+      // lifting.InitLimiter(flux);
+      lifting.ApplyLimiter(ids, gradient);
+    }
+    
 
     for (int i = 0; i < ids.size(); i++) {
       int c = ids[i];
       values[i] = lifting.getValue( gradient[i], c, line_pnts[i]);
     }
+
   } else if (interpolation == "constant") {    
     for (int i = 0; i < ids.size(); i++) {
       int c = ids[i];
