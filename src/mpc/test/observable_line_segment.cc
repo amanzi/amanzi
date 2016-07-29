@@ -146,9 +146,6 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
   len2 = sqrt(len2);
   double exact_val2 = A*xyzc[0] + B*xyzc[1] + C*xyzc[2] + D;
 
-  // std::cout<<value2<<" "<<volume2<<"\n";
-  // std::cout<<exact_val2*len2<<" "<<len2<<"\n";
-
-  CHECK((std::abs(exact_val*len - value) < 1e-10) && (std::abs(exact_val2*len2 - value2) < 1e-10));
-
+  CHECK_CLOSE(exact_val*len, value, 1e-10);
+  CHECK_CLOSE(exact_val2*len2, value2, 1e-10);
 }
