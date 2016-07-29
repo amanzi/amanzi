@@ -62,6 +62,9 @@ void Units::Init()
   concentration_["ppm"] = 1.0e-3 * concentration();
   concentration_["ppb"] = 1.0e-6 * concentration();
 
+  // supported units of amount of substance (extendable list)
+  amount_["mol"] = 1.0 * bu::si::amount();
+
   // supported derived units (simple map is suffient)
   AtomicUnitForm form("kg", 1, "m", -1, "s", -2);
   derived_["Pa"] = form;
@@ -184,7 +187,7 @@ double Units::ConvertUnitD(double val,
     aut.replace(it->first, it->second); 
   }
 
-  int ntime(0), nmass(0), nlength(0), nconcentration(0);
+  int ntime(0), nmass(0), nlength(0), nconcentration(0), namount(0);
   double tmp(val);
   const UnitData& in_data = aut.data();
 
@@ -211,6 +214,9 @@ double Units::ConvertUnitD(double val,
       if (it->first == "ppm" || it->first == "ppb") tmp /= mol_mass;
       tmp /= concentration_factor_;  // for non-SI unit "molar"
       nconcentration += it->second;
+    } 
+    else if (amount_.find(it->first) != amount_.end()) {
+      namount += it->second;
     } else {
       flag = false;
       return val;
@@ -246,6 +252,9 @@ double Units::ConvertUnitD(double val,
       if (it->first == "ppm" || it->first == "ppb") tmp *= mol_mass;
       tmp *= concentration_factor_;
       nconcentration -= it->second;
+    } 
+    else if (amount_.find(it->first) != amount_.end()) {
+      namount -= it->second;
     } else {
       flag = false;
       return val;
@@ -253,14 +262,13 @@ double Units::ConvertUnitD(double val,
   }
 
   // consistency of units
-  if (ntime || nmass || nlength) {
+  if (ntime || nmass || nlength || namount) {
     flag = false;
     return val;
   }
 
   return tmp;
 }
-
 
 
 /* ******************************************************************

@@ -183,6 +183,7 @@ class Units {
   std::map<std::string, boost::units::quantity<boost::units::si::length> > length_;
   std::map<std::string, boost::units::quantity<boost::units::si::volume> > volume_;
   std::map<std::string, boost::units::quantity<concentration> > concentration_;
+  std::map<std::string, boost::units::quantity<boost::units::si::amount> > amount_;
 
   std::map<std::string, AtomicUnitForm> derived_;
 
