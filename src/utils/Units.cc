@@ -17,25 +17,9 @@
 #include <boost/units/base_units/imperial/pound.hpp>
 #include <boost/units/base_units/imperial/yard.hpp>
 #include <boost/units/base_units/imperial/gallon.hpp>
+#include <boost/units/base_units/metric/liter.hpp>
 
 #include "Units.hh"
-
-extern bool Amanzi::Utils::concentration_mol_liter = true;
-
-namespace boost {
-namespace units {
-
-std::string symbol_string(const Amanzi::Utils::concentration_amanzi&) {
-  return (Amanzi::Utils::concentration_mol_liter) ? "mol/L" : "mol/m^3";
-}
-
-std::string name_string(const Amanzi::Utils::concentration_amanzi&) {
-  return "concentration";
-}
-
-}  // namespace units
-}  // namespace boost
-
 
 namespace Amanzi {
 namespace Utils {
@@ -47,14 +31,6 @@ namespace bu = boost::units;
 ****************************************************************** */
 void Units::Init()
 {
-  if (system_.concentration == "molar") {
-    concentration_mol_liter = true;
-    tcc_factor_ = conversion_factor(bu::si::amount() / liter(), concentration());
-  } else {
-    concentration_mol_liter = false;
-    tcc_factor_ = 1.0;
-  }
-
   // supported units of time (extendable list)
   time_["y"] = 365.25 * 24.0 * 3600.0 * bu::si::second;
   time_["d"] = 24.0 * 3600.0 * bu::si::second;
@@ -78,17 +54,21 @@ void Units::Init()
   // supported units of volume (extendable list)
   volume_["m3"] = 1.0 * bu::si::volume();
   volume_["gal"] = conversion_factor(bu::imperial::gallon_base_unit::unit_type(), bu::si::volume()) * bu::si::volume();
-  volume_["L"] = conversion_factor(liter(), bu::si::volume()) * bu::si::volume();
+  volume_["L"] = conversion_factor(bu::metric::liter_base_unit::unit_type(), bu::si::volume()) * bu::si::volume();
 
   // supported units of concentration (extendable list)
   concentration_["SI"] = 1.0 * concentration();
-  concentration_["molar"] = conversion_factor(bu::si::volume(), liter()) * concentration();
+  concentration_["molar"] = conversion_factor(bu::si::volume(), bu::metric::liter_base_unit::unit_type()) * concentration();
   concentration_["ppm"] = 1.0e-3 * concentration();
   concentration_["ppb"] = 1.0e-6 * concentration();
 
   // supported derived units (simple map is suffient)
   AtomicUnitForm form("kg", 1, "m", -1, "s", -2);
   derived_["Pa"] = form;
+
+  concentration_factor_ = 1.0;
+  if (system_.concentration == "molar") 
+     concentration_factor_ = conversion_factor(bu::si::volume(), bu::metric::liter_base_unit::unit_type());
 }
 
 
@@ -229,7 +209,7 @@ double Units::ConvertUnitD(double val,
     else if (concentration_.find(it->first) != concentration_.end()) {
       tmp *= std::pow(concentration_[it->first].value(), it->second);
       if (it->first == "ppm" || it->first == "ppb") tmp /= mol_mass;
-      tmp /= tcc_factor_;  // for non-SI unit "molar"
+      tmp /= concentration_factor_;  // for non-SI unit "molar"
       nconcentration += it->second;
     } else {
       flag = false;
@@ -264,7 +244,7 @@ double Units::ConvertUnitD(double val,
     else if (concentration_.find(it->first) != concentration_.end()) {
       tmp /= std::pow(concentration_[it->first].value(), it->second);
       if (it->first == "ppm" || it->first == "ppb") tmp *= mol_mass;
-      tmp *= tcc_factor_;
+      tmp *= concentration_factor_;
       nconcentration -= it->second;
     } else {
       flag = false;
@@ -415,6 +395,20 @@ std::string Units::OutputTime(double val)
 
   std::stringstream ss;
   ss << out << " " << unit;
+  return ss.str();
+}
+
+
+/* ******************************************************************
+* Fancy output of concentration
+****************************************************************** */
+std::string Units::OutputConcentration(double val)
+{
+  std::string unit;
+  unit = (system_.concentration == "molar") ? "mol/L" : "mol/m^3";
+
+  std::stringstream ss;
+  ss << val << " " << unit;
   return ss.str();
 }
 

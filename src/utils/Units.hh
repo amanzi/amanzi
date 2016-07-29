@@ -30,22 +30,12 @@
 namespace Amanzi {
 namespace Utils {
 
-extern bool concentration_mol_liter;
-
-// units for liter
-typedef boost::units::make_scaled_unit<
-    boost::units::si::volume, boost::units::scale<10, boost::units::static_rational<-3> > >::type liter;
-
-// units for concentration
 typedef boost::units::derived_dimension<
     boost::units::amount_base_dimension, 1,
     boost::units::length_base_dimension, -3>::type concentration_dimension;
 
 typedef boost::units::unit<
     concentration_dimension, boost::units::si::system> concentration;
-
-typedef boost::units::make_scaled_unit<
-    concentration, boost::units::scale<10, boost::units::static_rational<3> > >::type concentration_amanzi;
 
 
 // ------------------------------------------------------------------
@@ -137,31 +127,23 @@ struct UnitsSystem {
 
 class Units {
  public:
-  Units() : system_("s", "kg", "m", "molar") {};
+  Units() : system_("s", "kg", "m", "molar") { Init(); }
   Units(const std::string& concentration_unit) : system_("s", "kg", "m", "molar") { 
     system_.concentration = concentration_unit;
     Init();
   }
   ~Units() {};
 
-  // conversion factors
-  double concentration_factor() { return tcc_factor_; } 
-
-  // output
-  std::string print_tcc(double val, const std::string& system = "amanzi") {
-    boost::units::quantity<concentration_amanzi> qval = val * concentration_amanzi();
-    boost::units::quantity<concentration> qval_si(qval);
-    std::stringstream ss;
-    (system == "si") ? ss << qval_si : ss << qval;
-    return ss.str();
-  }
-
+  // main members
   void Init();
 
   void Init(Teuchos::ParameterList& plist) {
     system_.concentration = plist.get<std::string>("concentration", "molar");
     Init();
   }
+
+  // conversion factors
+  double concentration_factor() { return concentration_factor_; } 
 
   // conversion of units
   // -- data
@@ -185,6 +167,7 @@ class Units {
 
   // -- fancy output
   std::string OutputTime(double val);
+  std::string OutputConcentration(double val);
 
   // access
   UnitsSystem& system() { return system_; }
@@ -193,7 +176,7 @@ class Units {
   AtomicUnitForm ComputeAtomicUnitForm_(const std::string& unit, bool* flag);
 
  private:
-  double tcc_factor_;
+  double concentration_factor_;
 
   std::map<std::string, boost::units::quantity<boost::units::si::time> > time_;
   std::map<std::string, boost::units::quantity<boost::units::si::mass> > mass_;
@@ -209,15 +192,5 @@ class Units {
 
 }  // namespace Utils
 }  // namespace Amanzi
-
-
-namespace boost {
-namespace units {
-
-std::string symbol_string(const Amanzi::Utils::concentration_amanzi&);
-std::string name_string(const Amanzi::Utils::concentration_amanzi&);
-
-}  // namespace units
-}  // namespace boost
 
 #endif
