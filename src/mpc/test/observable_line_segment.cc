@@ -105,6 +105,7 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
   obs_plist.set<std::string>("region", region);
   obs_plist.set<std::string>("variable", var);
   obs_plist.set<std::string>("functional", func);
+  obs_plist.set<bool>("limiter", false);
 
   /******************************* Region  Well3012 *************/   
   Teuchos::RCP<ObservableLineSegment> observe = 
@@ -129,6 +130,7 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
   /*** One cell region ****/
 
   region="Well3013";
+  obs_plist.set<std::string>("region", region);
 
   Teuchos::RCP<ObservableLineSegment> observe2 = 
     Teuchos::rcp(new ObservableLineSegmentAqueous(var, region, func, obs_plist, units_plist, mesh));
