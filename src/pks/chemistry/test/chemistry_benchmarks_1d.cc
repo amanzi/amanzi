@@ -124,13 +124,13 @@ SUITE(ChemistryBenchmarkTests) {
     double conc_L2 = ComputeL2Error(output, "total_component_concentration.cell.Ca++ conc",
                                     reference, "Total_Ca++ [M]", 71, 9.0);
     std::cout << "Ca++ concentration L2 norm: " << conc_L2 << std::endl;
-    CHECK(conc_L2 < 0.023);
+    CHECK(conc_L2 < 0.025);
 
     // Compute the L2 error norm for the Calcite volume fraction.
     double VF_L2 = ComputeL2Error(output, "mineral_volume_fractions.cell.Calcite vol frac",
                                   reference, "Calcite_VF", 71, 9.0);
     std::cout << "Ca++ volume fraction L2 norm: " << VF_L2 << std::endl;
-    CHECK(VF_L2 < 0.00019);
+    CHECK(VF_L2 < 0.0002);
 
     // Close the files.
     H5Fclose(output);

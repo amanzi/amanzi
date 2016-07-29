@@ -138,6 +138,7 @@ class InputConverterU : public InputConverter {
   void MergeInitialConditionsLists_(Teuchos::ParameterList& plist);
 
   // -- miscalleneous
+  std::string WeightVolumeSubmodel_(const std::vector<std::string>& regions);
   void PrintStatistics_();
 
  private:
@@ -161,6 +162,7 @@ class InputConverterU : public InputConverter {
 
   // global mesh data
   bool mesh_rectangular_;
+  std::map<std::string, int> region_type_;  // flag for vofs
 
   // global transport and chemistry constants
   bool transport_permeability_, use_transport_porosity_;

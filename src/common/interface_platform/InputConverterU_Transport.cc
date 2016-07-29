@@ -439,93 +439,79 @@ void InputConverterU::TranslateTransportBCsGroup_(
     std::string& bcname, std::vector<std::string>& regions,
     DOMNodeList* solutes, Teuchos::ParameterList& out_list)
 {
-  DOMElement* element;
+  MemoryManager mm;
+
   if (solutes->getLength() == 0) return;
  
   DOMNode* node = solutes->item(0);
+  DOMElement* element;
 
   // get child nodes with the same tagname
   bool flag;
   std::string bctype, solute_name, tmp_name, unit;
+
+  // process a group of elements named after the 0-th element
   std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
+  solute_name = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "name");
 
-  while (same_list.size() > 0) {
-    // process a group of elements named after the 0-th element
-    solute_name = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "name");
+  std::map<double, double> tp_values;
+  std::map<double, std::string> tp_forms;
 
-    std::map<double, double> tp_values;
-    std::map<double, std::string> tp_forms;
+  for (std::vector<DOMNode*>::iterator it = same_list.begin(); it != same_list.end(); ++it) {
+    element = static_cast<DOMElement*>(*it);
+    tmp_name = GetAttributeValueS_(element, "name");
 
-    for (std::vector<DOMNode*>::iterator it = same_list.begin(); it != same_list.end(); ++it) {
-      element = static_cast<DOMElement*>(*it);
-      tmp_name = GetAttributeValueS_(element, "name");
+    if (tmp_name == solute_name) {
+      double t0 = GetAttributeValueD_(element, "start");
+      tp_forms[t0] = GetAttributeValueS_(element, "function");
+      tp_values[t0] = ConvertUnits_(GetAttributeValueS_(element, "value"), unit, solute_molar_mass_[solute_name]);
 
-      if (tmp_name == solute_name) {
-        double t0 = GetAttributeValueD_(element, "start");
-        tp_forms[t0] = GetAttributeValueS_(element, "function");
-        tp_values[t0] = ConvertUnits_(GetAttributeValueS_(element, "value"), unit, solute_molar_mass_[solute_name]);
+      same_list.erase(it);
+      it--;
+    } 
+  }
 
-        same_list.erase(it);
-        it--;
-      } 
+  // Check for spatially dependent BCs. Only one is allowed (FIXME
+  // We extract both data and unit strings.
+  bool space_bc(false);
+  std::vector<double> data;
+
+  element = static_cast<DOMElement*>(same_list[0]);
+  std::string space_bc_name = GetAttributeValueS_(element, "space_function", TYPE_NONE, false);
+  if (space_bc_name == "gaussian") {
+    space_bc = true;
+    std::vector<std::string> tmp;
+    tmp = GetAttributeVectorS_(element, "space_data");
+    for (int i = 0; i < tmp.size(); ++i) {
+      data.push_back(ConvertUnits_(tmp[i], unit, solute_molar_mass_[solute_name]));
     }
+  }
 
-    // Check for spatially dependent BCs. Only one is allowed (FIXME
-    // We extract both data and unit strings.
-    bool space_bc(false);
-    std::string bcgroup("concentration"), func_name("boundary concentration"), weight("none");
-    std::vector<double> data;
-    std::vector<std::string> unit;
-
-    element = static_cast<DOMElement*>(same_list[0]);
-    std::string space_bc_name = GetAttributeValueS_(element, "space_function", TYPE_NONE, false);
-    if (space_bc_name == "gaussian") {
-      space_bc = true;
-      std::vector<std::string> tmp;
-      tmp = GetAttributeVectorS_(element, "space_data");
-      for (int i = 0; i < tmp.size(); ++i) {
-        std::string tmp_unit;
-        data.push_back(ConvertUnits_(tmp[i], tmp_unit, solute_molar_mass_[solute_name]));
-        unit.push_back(tmp_unit);
-      }
-      if (unit[0] == "ppm" || unit[0] == "ppb") {
-        bcgroup = "flow weighted";
-        func_name = "boundary mass ratio";
-        weight = "volume";
-      } 
-    }
-
-    // create vectors of values and forms
-    std::vector<double> times, values;
-    std::vector<std::string> forms;
-    for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
-      times.push_back(it->first);
-      values.push_back(it->second);
-      forms.push_back(tp_forms[it->first]);
-    }
-    forms.pop_back();
+  // create vectors of values and forms
+  std::vector<double> times, values;
+  std::vector<std::string> forms;
+  for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
+    times.push_back(it->first);
+    values.push_back(it->second);
+    forms.push_back(tp_forms[it->first]);
+  }
+  forms.pop_back();
      
-    // save in the XML files  
-    Teuchos::ParameterList& tbc_list = out_list.sublist(bcgroup);
-    Teuchos::ParameterList& bc = tbc_list.sublist(solute_name).sublist(bcname);
-    bc.set<Teuchos::Array<std::string> >("regions", regions)
-      .set<std::string>("spatial distribution method", weight);
+  // save in the XML files  
+  Teuchos::ParameterList& tbc_list = out_list.sublist("concentration");
+  Teuchos::ParameterList& bc = tbc_list.sublist(solute_name).sublist(bcname);
+  bc.set<Teuchos::Array<std::string> >("regions", regions);
 
-    if (solute_molar_mass_.find(solute_name) != solute_molar_mass_.end()) {
-      bc.set<double>("molar mass", solute_molar_mass_[solute_name]);
-    }
-
-    Teuchos::ParameterList& bcfn = bc.sublist(func_name);
-    if (space_bc) {
-      TranslateFunctionGaussian_(data, bcfn);
-    } else if (times.size() == 1) {
-      bcfn.sublist("function-constant").set<double>("value", values[0]);
-    } else {
-      bcfn.sublist("function-tabular")
-          .set<Teuchos::Array<double> >("x values", times)
-          .set<Teuchos::Array<double> >("y values", values)
-          .set<Teuchos::Array<std::string> >("forms", forms);
-    }
+  Teuchos::ParameterList& bcfn = bc.sublist("boundary concentration");
+  if (space_bc) {
+    TranslateFunctionGaussian_(data, bcfn);
+  } else if (times.size() == 1) {
+    bcfn.sublist("function-constant").set<double>("value", values[0]);
+  } else {
+    bcfn.sublist("function-tabular")
+        .set<Teuchos::Array<double> >("x values", times)
+        .set<Teuchos::Array<double> >("y values", values)
+        .set<Teuchos::Array<std::string> >("forms", forms);
   }
 }
 
@@ -665,12 +651,10 @@ void InputConverterU::TranslateTransportSourcesGroup_(
     solute_name = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "name");
 
     // weighting method
-    bool classical(true);
+    bool classical(true), mass_fraction(false);
     char* text = mm.transcode(same_list[0]->getNodeName());
     if (strcmp(text, "volume_weighted") == 0) {
-      weight = "volume";
-    } else if (srctype == "volume_weighted_nonmatching") {
-      weight = "volume fraction";
+      weight = WeightVolumeSubmodel_(regions);
     } else if (strcmp(text, "perm_weighted") == 0) {
       weight = "permeability";
     } else if (strcmp(text, "uniform_conc") == 0) {
@@ -680,11 +664,14 @@ void InputConverterU::TranslateTransportSourcesGroup_(
       node_list = element->getElementsByTagName(mm.transcode("liquid_component")); 
       GetSameChildNodes_(node_list->item(0), srctype_flow, flag, true);
       weight = (srctype_flow == "volume_weighted") ? "volume" : "permeability";
+    } else if (strcmp(text, "flow_mass_fraction_conc") == 0) {
+      weight = WeightVolumeSubmodel_(regions);
+      mass_fraction = true;
     } else if (strcmp(text, "diffusion_dominated_release") == 0) {
       weight = "volume";
       classical = false;
     } else {
-      ThrowErrorIllformed_("sources", "element", text);
+      ThrowErrorIllformed_(srcname, "element", text);
     } 
     if (weight == "permeability") transport_permeability_ = true;
 
@@ -697,6 +684,19 @@ void InputConverterU::TranslateTransportSourcesGroup_(
         double t0 = GetAttributeValueD_(element, "start");
         tp_forms[t0] = GetAttributeValueS_(element, "function");
         tp_values[t0] = ConvertUnits_(GetAttributeValueS_(element, "value"), unit, solute_molar_mass_[solute_name]);
+
+        // ugly correction when liquid/solute lists match
+        if (mass_fraction) {
+          element = static_cast<DOMElement*>(phase_l);
+          node_list = element->getElementsByTagName(mm.transcode("liquid_component")); 
+          std::vector<DOMNode*> tmp_list = GetSameChildNodes_(node_list->item(0), srctype_flow, flag, true);
+
+          if (tmp_list.size() != same_list.size())
+            ThrowErrorIllformed_(srcname, "liquid_component", text);
+
+          element = static_cast<DOMElement*>(tmp_list[j]);
+          tp_values[t0] *= GetAttributeValueD_(element, "value") / solute_molar_mass_[solute_name];
+        }
       }
 
       // create vectors of values and forms
@@ -757,6 +757,19 @@ void InputConverterU::TranslateTransportSourcesGroup_(
           .set<double>("shift", times[0]);
     }
   }
+}
+
+
+/* ******************************************************************
+* Create list of transport sources.
+****************************************************************** */
+std::string InputConverterU::WeightVolumeSubmodel_(const std::vector<std::string>& regions)
+{
+  std::string weight("volume");
+  for (int k = 0; k < regions.size(); ++k) {
+    if (region_type_[regions[k]] == 1) weight = "volume fraction";
+  }
+  return weight;
 }
 
 }  // namespace AmanziInput

@@ -69,7 +69,7 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
 
   if (model == "volume") {
     Teuchos::RCP<PK_DomainFunctionVolume<FunctionBase> >
-        func = Teuchos::rcp(new PK_DomainFunctionVolume<FunctionBase>(mesh_, kind));
+        func = Teuchos::rcp(new PK_DomainFunctionVolume<FunctionBase>(mesh_, plist, kind));
     func->Init(plist, keyword);
     return func; 
   }

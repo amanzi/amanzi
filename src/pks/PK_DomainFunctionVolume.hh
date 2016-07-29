@@ -35,6 +35,14 @@ class PK_DomainFunctionVolume : public FunctionBase,
                           AmanziMesh::Entity_kind kind) :
       UniqueMeshFunction(mesh),
       kind_(kind) {};
+
+  PK_DomainFunctionVolume(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                          const Teuchos::ParameterList& plist,
+                          AmanziMesh::Entity_kind kind) :
+      UniqueMeshFunction(mesh),
+      FunctionBase(plist),
+      kind_(kind) {};
+
   ~PK_DomainFunctionVolume() {};
 
   // member functions
@@ -51,7 +59,7 @@ class PK_DomainFunctionVolume : public FunctionBase,
  private:
   std::string submodel_;
   AmanziMesh::Entity_kind kind_;
-  std::map<AmanziMesh::Entity_kind, std::vector<double> > measuare_;
+  std::map<AmanziMesh::Entity_kind, std::vector<double> > measure_;
 };
 
 

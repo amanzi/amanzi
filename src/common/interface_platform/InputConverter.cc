@@ -477,7 +477,7 @@ DOMElement* InputConverter::GetChildByName_(
 
 /* ******************************************************************
 * Extracts children and verifies that their have the common tagname.
-* The name is the name of the first element.
+* Returned name is the tagname of the first element.
 ****************************************************************** */
 std::vector<DOMNode*> InputConverter::GetSameChildNodes_(
     DOMNode* node, std::string& name, bool& flag, bool exception)
@@ -488,6 +488,7 @@ std::vector<DOMNode*> InputConverter::GetSameChildNodes_(
   int n(0), m(0);
   std::vector<DOMNode*> same;
 
+  name = "";
   DOMNodeList* children = node->getChildNodes();
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
@@ -501,7 +502,7 @@ std::vector<DOMNode*> InputConverter::GetSameChildNodes_(
     } 
     m++;
   }
-  if (n == m) flag = true;
+  if (n == m && n > 0) flag = true;
 
   // exception
   if (!flag && exception) {

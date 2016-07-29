@@ -41,7 +41,7 @@ void MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
       mesh_->get_set_entities_and_vofs(*region, kind, AmanziMesh::USED, &ids, &vofs);
 
       // populating default volume fractions (move this to mesh framework?)
-      if (vofs.size() == 0) vofs.resize(ids.size(), 1);
+      if (vofs.size() == 0) vofs.resize(ids.size(), 1.0);
 
       for (int i = 0; i < ids.size(); ++i) {
         AmanziMesh::Entity_ID id = ids[i];
