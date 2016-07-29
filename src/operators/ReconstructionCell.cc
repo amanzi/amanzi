@@ -209,6 +209,14 @@ void ReconstructionCell::ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter)
   }
 }
 
+void ReconstructionCell::ApplyLimiter(AmanziMesh::Entity_ID_List& ids,
+                                      std::vector<AmanziGeometry::Point>& gradient){
+
+  if (limiter_id_ == OPERATOR_LIMITER_KUZMIN) {
+    LimiterKuzminonSet_(ids, gradient);   
+  }
+
+}
 
 /* ******************************************************************
 * Calculates reconstructed value at point p.

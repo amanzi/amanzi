@@ -254,7 +254,7 @@ void FlexibleObservations::FlushObservations()
             if (od[j].is_valid) {
               std::string out_unit = units_.ConvertUnitS(od[j].unit, system);
               double out_value = units_.ConvertUnitD(od[j].value, od[j].unit, out_unit, 1.0, flag1);
-std::cout << od[j].unit << " "<< out_unit << " " << flag1 << std::endl;
+              //std::cout << od[j].unit << " "<< out_unit << " " << flag1 << std::endl;
 
               std::string var = ind_obs_list.get<std::string>("variable");
               out << label << ", "
