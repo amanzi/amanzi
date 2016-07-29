@@ -270,7 +270,6 @@ void FlexibleObservations::FlushObservations()
               out_unit = units_.ConvertUnitS(od[j].unit, system);
               out_value = units_.ConvertUnitD(od[j].value, od[j].unit, out_unit, mol_mass, flag1);
               flag2 &= flag1;
->>>>>>> cb96102caa4a54f1078740347b31beb94b6b4f88
 
               out << label << ", "
                   << ind_obs_list.get<std::string>("region") << ", "
