@@ -30,6 +30,7 @@ class TransportSourceFunction : public PK_DomainFunction {
  public:
   TransportSourceFunction() {};
   TransportSourceFunction(const Teuchos::ParameterList& plist) {};
+  ~TransportSourceFunction() {};
 
   // access
   const std::string& tcc_name() { return tcc_name_; }

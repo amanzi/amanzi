@@ -695,7 +695,12 @@ void InputConverterU::TranslateTransportSourcesGroup_(
             ThrowErrorIllformed_(srcname, "liquid_component", text);
 
           element = static_cast<DOMElement*>(tmp_list[j]);
-          tp_values[t0] *= GetAttributeValueD_(element, "value") / solute_molar_mass_[solute_name];
+          double val = GetAttributeValueD_(element, "value");
+          if (val > 0) {
+            tp_values[t0] *= val / solute_molar_mass_[solute_name];
+          } else {
+            tp_values[t0] = val / rho_;
+          }
         }
       }
 

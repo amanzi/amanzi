@@ -1244,7 +1244,12 @@ void Transport_PK::ComputeSources_(double tp, double dtp,
       int c = it->first;
       double value = mesh_->cell_volume(c) * it->second;
 
-      if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "weight")
+      // correction for an extraction well
+      if (value < 0) value *= tcc[imap][c];
+
+      // correction for non-SI concentration units
+      if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "volume fraction" ||
+          srcs_[m]->name() == "weight")
           value *= units_.concentration_factor();
 
       tcc[imap][c] += dtp * value;
