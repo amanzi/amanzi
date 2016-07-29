@@ -587,8 +587,10 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   std::map<double, double> dt_init_map, dt_max_map;
 
   std::vector<std::string> bc_names;
-  bc_names.push_back("hydrostatic");
   bc_names.push_back("uniform_pressure");
+  bc_names.push_back("linear_pressure");
+  bc_names.push_back("hydrostatic");
+  bc_names.push_back("linear_hydrostatic");
   bc_names.push_back("inward_mass_flux");
   bc_names.push_back("outward_mass_flux");
   bc_names.push_back("inward_volumetric_flux");
@@ -597,7 +599,6 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   bc_names.push_back("aqueous_conc");
   bc_names.push_back("uniform_conc");
   bc_names.push_back("constraint");
-  bc_names.push_back("diffusion_dominated_release");
   bc_names.push_back("uniform_temperature");
 
   node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
@@ -625,10 +626,12 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
 
   // add start times of all sources to the list
   std::vector<std::string> src_names;
-  src_names.push_back("volume_weighted");
   src_names.push_back("perm_weighted");
-  src_names.push_back("uniform");
+  src_names.push_back("volume_weighted");
+  src_names.push_back("uniform_conc");
   src_names.push_back("flow_weighted_conc");
+  src_names.push_back("flow_mass_fraction_conc");
+  src_names.push_back("diffusion_dominated_release");
 
   node_list = doc_->getElementsByTagName(mm.transcode("sources"));
   if (node_list->getLength() > 0) {

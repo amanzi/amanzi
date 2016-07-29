@@ -48,7 +48,6 @@ namespace AmanziInput {
 
 XERCES_CPP_NAMESPACE_USE
 
-
 /* ******************************************************************
 * Translate unstructured mesh. Introduces global parameter dim_.
 ****************************************************************** */
@@ -275,6 +274,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       
       // get reg_elem type
       node_name = mm.transcode(reg_elem->getNodeName());
+      region_type_[reg_name] = 0;
       
       // get name if needed
       if (!have_name) {
@@ -426,6 +426,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
 
       else if (strcmp(node_name, "box_volume_fractions") == 0) {
         tree_["regions"].push_back(reg_name);
+        region_type_[reg_name] = 1;
         
         std::vector<double> low = GetAttributeVectorD_(reg_elem, "corner_coordinates");
         std::vector<double> high = GetAttributeVectorD_(reg_elem, "opposite_corner_coordinates");

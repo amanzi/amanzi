@@ -123,3 +123,14 @@ TEST(UNITS_DERIVED_STRING)
     CHECK(out_unit == "kg*m^-1*s^-3");
   }
 }
+
+
+TEST(UNITS_FANCY_OUTPUT) 
+{
+  Units units("molar");
+
+  for (double val = 1e-3; val < 1e+8; val*=4) {
+    std::cout << val << " res=" << units.OutputTime(val) << std::endl;
+  }
+}
+

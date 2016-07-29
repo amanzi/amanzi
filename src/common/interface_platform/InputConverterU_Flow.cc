@@ -634,6 +634,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
       bcname = "outward mass flux";
       values = fluxes;
       for (int k = 0; k < values.size(); k++) values[k] *= -1;
+    } else {
+      ThrowErrorIllformed_("boundary_conditions", "element", bctype_in);
     }
     std::stringstream ss;
     ss << "BC " << ibc++;
@@ -766,9 +768,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
 
     std::string weight;
     if (srctype == "volume_weighted") {
-      weight = "volume";
-    } else if (srctype == "volume_weighted_nonmatching") {
-      weight = "volume fraction";
+      weight = WeightVolumeSubmodel_(regions);
     } else if (srctype == "perm_weighted") {
       weight = "permeability";
     } else if (srctype == "uniform") {

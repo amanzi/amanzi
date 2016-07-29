@@ -117,7 +117,6 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
       // mspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
-      // std::cout << xc << " " << vofs << std::endl;
       value_[c] = (*(*mspec)->first->second)(args)[0] * vofs / domain_volume_;
     }
 

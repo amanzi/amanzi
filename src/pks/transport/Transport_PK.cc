@@ -352,28 +352,6 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
         }
       }
     }
-
-    // -- try flow weighted conditions for species
-    Teuchos::ParameterList& flist = tp_list_->sublist("boundary conditions").sublist("flow weighted");
-
-    for (Teuchos::ParameterList::ConstIterator it = flist.begin(); it != flist.end(); ++it) {
-      std::string name = it->first;
-      if (flist.isSublist(name)) {
-        Teuchos::ParameterList& bc_list = flist.sublist(name);
-        for (Teuchos::ParameterList::ConstIterator it1 = bc_list.begin(); it1 != bc_list.end(); ++it1) {
-          std::string specname = it1->first;
-          Teuchos::ParameterList& spec = bc_list.sublist(specname);
-          Teuchos::RCP<TransportBoundaryFunction> 
-              bc = factory.Create(spec, "boundary mass ratio", AmanziMesh::FACE, Kxy);
-
-          bc->tcc_names().push_back(name);
-          bc->tcc_index().push_back(FindComponentNumber(name));
-
-          bcs_.push_back(bc);
-        }
-      }
-    }
-
 #ifdef ALQUIMIA_ENABLED
     // -- try geochemical conditions
     Teuchos::ParameterList& glist = tp_list_->sublist("boundary conditions").sublist("geochemical");
@@ -405,7 +383,6 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   time = t_physics_;
   for (int i = 0; i < bcs_.size(); i++) {
     bcs_[i]->Compute(time, time);
-    bcs_[i]->ComputeSubmodel(mesh_, darcy_flux);
   }
 
   VV_CheckInfluxBC();
@@ -514,12 +491,27 @@ double Transport_PK::StableTimeStep()
 
   IdentifyUpwindCells();
 
-  // loop over faces and accumulate upwinding fluxes
+  // Accumulate upwinding fluxes.
   std::vector<double> total_outflux(ncells_wghost, 0.0);
 
   for (int f = 0; f < nfaces_wghost; f++) {
     int c = (*upwind_cell_)[f];
     if (c >= 0) total_outflux[c] += fabs((*darcy_flux)[0][f]);
+  }
+
+  // Account for extraction of solute is production wells.
+  // We assume one well per cell (FIXME).
+  double t_old = S_->intermediate_time();
+  for (int m = 0; m < srcs_.size(); m++) {
+    srcs_[m]->Compute(t_old, t_old); 
+
+    for (TransportSourceFunction::Iterator it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
+      if (it->second < 0.0) {
+        int c = it->first;
+        double value = mesh_->cell_volume(c) * it->second;
+        total_outflux[c] = std::max(total_outflux[c], value);
+      }
+    }
   }
 
   // modify estimate for other models
@@ -646,7 +638,6 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     time = t_physics_ + dt_cycle / 2;
     for (int i = 0; i < bcs_.size(); i++) {
       bcs_[i]->Compute(time, time);
-      bcs_[i]->ComputeSubmodel(mesh_, darcy_flux);
     }
     
     double dt_try = dt_MPC - dt_sum;
@@ -858,7 +849,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       ComputeBCs_(bc_model, bc_value, i);
 
       Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
-      ComputeSources_(t_new, 1.0, rhs_cell, i, i);
+      ComputeSources_(t_new, 1.0, rhs_cell, tcc_prev, i, i);
       op1->ApplyBCs(true, true);
 
       // add accumulation term
@@ -1068,7 +1059,7 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
   // process external sources
   if (srcs_.size() != 0) {
     double time = t_physics_;
-    ComputeSources_(time, dt_, tcc_next, 0, num_advect - 1);
+    ComputeSources_(time, dt_, tcc_next, tcc_prev, 0, num_advect - 1);
   }
 
   // recover concentration from new conservative state
@@ -1244,12 +1235,13 @@ void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dt_cycle)
 
 
 /* ******************************************************************
-* Computes source and sink terms and adds them to vector tcc.
-* Returns mass rate for the tracer.
+* Adss source terms to conservative quantity tcc [mol]. Producers
+* use the initial concentration vector tcc_prev. 
 * The routine treats two cases of tcc with one and all components.
 ****************************************************************** */
-void Transport_PK::ComputeSources_(double tp, double dtp, 
-                                   Epetra_MultiVector& tcc, int n0, int n1)
+void Transport_PK::ComputeSources_(
+    double tp, double dtp, Epetra_MultiVector& tcc,
+    const Epetra_MultiVector& tcc_prev, int n0, int n1)
 {
   int num_vectors = tcc.NumVectors();
   int nsrcs = srcs_.size();
@@ -1268,8 +1260,15 @@ void Transport_PK::ComputeSources_(double tp, double dtp,
       int c = it->first;
       double value = mesh_->cell_volume(c) * it->second;
 
-      if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "weight")
-          value *= units_.concentration_factor();
+      if (value < 0) {
+        // correction for an extraction well
+        value *= tcc_prev[imap][c];
+      } else {
+        // correction for non-SI concentration units
+        if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "volume fraction" ||
+            srcs_[m]->name() == "weight")
+            value *= units_.concentration_factor();
+      }
 
       tcc[imap][c] += dtp * value;
       mass_solutes_source_[i] += value;

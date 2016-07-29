@@ -123,7 +123,8 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   void InitializeFields_();
 
   // sources and sinks for components from n0 to n1 including
-  void ComputeSources_(double tp, double dtp, Epetra_MultiVector& tcc, int n0, int n1);
+  void ComputeSources_(double tp, double dtp, Epetra_MultiVector& tcc,
+                       const Epetra_MultiVector& tcc_prev, int n0, int n1);
   bool ComputeBCs_(std::vector<int>& bc_model, std::vector<double>& bc_value, int component);
 
   // advection members

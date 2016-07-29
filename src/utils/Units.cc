@@ -388,6 +388,36 @@ AtomicUnitForm Units::ComputeAtomicUnitForm_(const std::string& unit, bool* flag
   return form;
 }
 
+
+/* ******************************************************************
+* Fancy output of time given in second
+****************************************************************** */
+std::string Units::OutputTime(double val)
+{
+  double out, dmin, dtry, tmp;
+  std::string unit("s");
+
+  out = val;
+  if (val == 0) return std::string("0 s");
+
+  dmin = fabs(log10(val));
+ 
+  std::map<std::string, bu::quantity<bu::si::time> >::const_iterator it;
+  for (it = time_.begin(); it != time_.end(); ++it) { 
+    tmp = val / it->second.value();
+    dtry = fabs(log10(tmp));
+    if (dtry < dmin) {
+      dmin = dtry;
+      out = tmp;
+      unit = it->first;
+    }
+  }
+
+  std::stringstream ss;
+  ss << out << " " << unit;
+  return ss.str();
+}
+
 }  // namespace Utils
 }  // namespace Amanzi
 

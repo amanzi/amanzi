@@ -2214,31 +2214,6 @@ and geochemical conditions.
     </ParameterList>
   </ParameterList>
 
-Flow weighted boundary condition is the Dirichlet boundary condition which
-uses the Darcy mass flux to calculate moles of injected solute.
-Typically, the boundary fuction returns dimentionless value, such as ppm
-or ppb. Molar mass of the solute should be specied to convert ppbm units
-to *mol/L* or *mol/m^3*.
- 
-.. code-block:: xml
-
-  <ParameterList name="boundary conditions">  <!-- parent list -->
-    <ParameterList name="flow weighted">
-      <ParameterList name="NO3-"> 
-        <ParameterList name="EAST CRIB">   <!-- user defined name -->
-          <Parameter name="regions" type="Array(string)" value="{TOP}"/>
-          <Parameter name="molar mass" type="double" value="62.0e-3"/>
-          <Parameter name="spatial distribution method" type="string" value="volume"/>
-          <ParameterList name="boundary mass ratio">
-            <ParameterList name="function-constant">  <!-- any time function -->
-              <Parameter name="value" type="double" value="1e-5"/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-
 
 Sources and sinks
 .................

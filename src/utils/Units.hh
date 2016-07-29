@@ -183,6 +183,9 @@ class Units {
   // -- strings
   std::string ConvertUnitS(const std::string& in_unit, const UnitsSystem& system);
 
+  // -- fancy output
+  std::string OutputTime(double val);
+
   // access
   UnitsSystem& system() { return system_; }
 

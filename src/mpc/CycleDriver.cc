@@ -629,8 +629,8 @@ double CycleDriver::Advance(double dt) {
     // Amanzi::timer_manager.start("I/O");
 
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      *vo_->os() << "New time = "<< S_->time() / (60*60*24*365.25) << " y";
-      *vo_->os() << std::endl;
+      Utils::Units units("molar");
+      *vo_->os() << "New time = " << units.OutputTime(S_->time()) << std::endl;
     }
   } else {
     dt_new = get_dt(fail);
@@ -842,10 +842,11 @@ Teuchos::RCP<State> CycleDriver::Go() {
               (S_->cycle() - start_cycle_num < tp_max_cycle_[time_period_id_])))
       {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+          Utils::Units units("molar");
           Teuchos::OSTab tab = vo_->getOSTab();
           *vo_->os() << "\nCycle " << S_->cycle()
-                     << ": time = " << S_->time() / (60*60*24*365.25) << " y"
-                     << ", dt = " << dt / (60*60*24*365.25) << " y\n";
+                     << ": time = " << units.OutputTime(S_->time())
+                     << ", dt = " << units.OutputTime(dt) << "\n";
         }
         *S_->GetScalarData("dt", "coordinator") = dt;
         S_->set_initial_time(S_->time());
