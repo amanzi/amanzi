@@ -167,6 +167,7 @@ class Units {
 
   // -- fancy output
   std::string OutputTime(double val);
+  std::string OutputMass(double val) const;
   std::string OutputConcentration(double val);
 
   // access

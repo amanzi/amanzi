@@ -901,8 +901,8 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   nsubcycles = ncycles;
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << ncycles << " sub-cycles, dt_stable=" << dt_original 
-               << " [sec]  dt_MPC=" << dt_MPC << " [sec]" << std::endl;
+    *vo_->os() << ncycles << " sub-cycles, dt_stable=" << units_.OutputTime(dt_original) 
+               << ", dt_MPC=" << units_.OutputTime(dt_MPC) << std::endl;
 
     VV_PrintSoluteExtrema(tcc_next, dt_MPC);
   }

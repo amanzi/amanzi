@@ -34,6 +34,7 @@
 #include "PK_PhysicalBDF.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "Tensor.hh"
+#include "Units.hh"
 #include "VerboseObject.hh"
 
 // Flow
@@ -160,6 +161,8 @@ class Flow_PK : public PK_PhysicalBDF {
   Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_, pressure_matrix_eval_;
 
+  // io
+  Utils::Units units_;
   Teuchos::RCP<VerboseObject> vo_;
 
  private:

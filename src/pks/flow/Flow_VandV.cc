@@ -128,8 +128,8 @@ void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
   mass_bc += mass_bc_dT;
 
   Teuchos::OSTab tab = vo_->getOSTab();
-  *vo_->os() << "reservoir water mass=" << mass_amanzi 
-             << " [kg], total influx=" << mass_bc << " [kg]" << std::endl;
+  *vo_->os() << "reservoir water mass=" << units_.OutputMass(mass_amanzi)
+             << ", total influx=" << units_.OutputMass(mass_bc) << std::endl;
 
   // if (report_water_balance) {
   //  if (mass_initial == 0.0) mass_initial = mass_amanzi;

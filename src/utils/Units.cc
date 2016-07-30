@@ -39,6 +39,7 @@ void Units::Init()
   time_["s"] = 1.0 * bu::si::second;
 
   // supported units of mass (extendable list)
+  mass_["ton"] = 1000.0 * bu::si::kilogram;
   mass_["kg"] = 1.0 * bu::si::kilogram;
   mass_["g"] = 0.001 * bu::si::kilogram;
   mass_["lb"] = conversion_factor(bu::imperial::pound_base_unit::unit_type(), bu::si::kilogram) * bu::si::kilogram;
@@ -398,6 +399,38 @@ std::string Units::OutputTime(double val)
       dmin = dtry;
       out = tmp;
       unit = it->first;
+    }
+  }
+
+  std::stringstream ss;
+  ss << out << " " << unit;
+  return ss.str();
+}
+
+
+/* ******************************************************************
+* Fancy output of mass given in kilograms
+****************************************************************** */
+std::string Units::OutputMass(double val) const
+{
+  double out, dmin, dtry, tmp;
+  std::string unit("kg");
+
+  out = val;
+  if (val == 0) return std::string("0 kg");
+
+  if (val > 0.0) {
+    dmin = fabs(log10(val));
+ 
+    std::map<std::string, bu::quantity<bu::si::mass> >::const_iterator it;
+    for (it = mass_.begin(); it != mass_.end(); ++it) {
+      tmp = val / it->second.value();
+      dtry = fabs(log10(tmp));
+      if (dtry < dmin) {
+        dmin = dtry;
+        out = tmp;
+        unit = it->first;
+      }
     }
   }
 

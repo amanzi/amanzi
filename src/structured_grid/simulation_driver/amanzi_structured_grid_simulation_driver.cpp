@@ -50,7 +50,7 @@ Structured_observations(const PArray<Observation>& observation_array,
     {
       std::string label = AMR_to_Amanzi_label_map[observation_array[i].name];
       int ntimes = observation_array[i].times.size();
-      std::vector<Amanzi::ObservationData::DataTriple> dt(ntimes);
+      std::vector<Amanzi::ObservationData::DataQuadruple> dt(ntimes);
       const std::map<int, Real> vals = observation_array[i].vals;
       for (std::map<int, Real>::const_iterator it = vals.begin();
            it != vals.end(); ++it) {

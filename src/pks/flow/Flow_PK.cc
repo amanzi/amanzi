@@ -37,7 +37,11 @@ Flow_PK::Flow_PK(Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<TreeVector>& soln) :
   PK_PhysicalBDF(pk_tree, glist, S, soln),
   vo_(Teuchos::null),
-  passwd_("flow") {};
+  passwd_("flow")
+{
+  Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
+  units_.Init(*units_list);
+};
 
 
 Flow_PK::Flow_PK() :
