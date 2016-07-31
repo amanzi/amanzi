@@ -121,10 +121,9 @@ int main(int argc, char *argv[]) {
     // check for verbose option
     if (print_version) {
       if (rank == 0) {
-        std::cout << "Amanzi Version " << XSTR(AMANZI_VERSION) << std::endl;
-        std::cout << "HG branch      " << XSTR(AMANZI_HG_BRANCH) << std::endl;
-        std::cout << "HG global hash " << XSTR(AMANZI_HG_GLOBAL_HASH) << std::endl;
-        std::cout << "HG local id    " << XSTR(AMANZI_HG_LOCAL_ID) << std::endl;
+        std::cout << "Amanzi Version  " << XSTR(AMANZI_VERSION) << std::endl;
+        std::cout << "GIT branch      " << XSTR(AMANZI_GIT_BRANCH) << std::endl;
+        std::cout << "GIT global hash " << XSTR(AMANZI_GIT_GLOBAL_HASH) << std::endl;
       }
     }
 

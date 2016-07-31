@@ -45,6 +45,7 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
 
   # message(STATUS ">>>> JDM: AMANZI_GIT_BRANCH:      ${AMANZI_GIT_BRANCH}")
 
+  # Get the hash of the current version
   set(GIT_ARGS rev-parse --short HEAD)
   execute_process(COMMAND  ${GIT_EXECUTABLE} ${GIT_ARGS}
 	          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -61,6 +62,7 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
 
   # message(STATUS ">>>> JDM: AMANZI_GIT_GLOBAL_HASH: ${AMANZI_GIT_GLOBAL_HASH}")
 
+  # Get the latest amanzi-* version number tag
   set(GIT_ARGS tag -l amanzi-*)
   execute_process(COMMAND  ${GIT_EXECUTABLE} ${GIT_ARGS}
 	          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -129,7 +131,7 @@ else()
 
 endif()
 
-# Write the version header filed
+# Write the version header file
 set(version_template ${AMANZI_SOURCE_TOOLS_DIR}/cmake/amanzi_version.hh.in)
 configure_file(${version_template}
                ${CMAKE_CURRENT_BINARY_DIR}/amanzi_version.hh
