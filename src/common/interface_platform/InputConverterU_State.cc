@@ -462,7 +462,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       if (flag) {
         std::string name = GetAttributeValueS_(static_cast<DOMElement*>(node), "name");
 
-        out_ic.sublist("geochemical").sublist(name)
+        out_ic.sublist("geochemical conditions").sublist(name)
             .set<Teuchos::Array<std::string> >("regions", regions);
 
         TranslateStateICsAmanziGeochemistry_(out_ic, name, regions);
