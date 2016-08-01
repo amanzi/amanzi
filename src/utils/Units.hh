@@ -112,23 +112,29 @@ struct UnitsSystem {
   UnitsSystem(const std::string& time_,
               const std::string& mass_, 
               const std::string& length_,
-              const std::string& concentration_) :
+              const std::string& concentration_,
+              const std::string& amount_,
+              const std::string& temperature_) :
       time(time_),
       mass(mass_),
       length(length_),
-      concentration(concentration_) {};
+      concentration(concentration_),
+      amount(amount_),
+      temperature(temperature_) {};
 
   std::string time;
   std::string mass;
   std::string length;
   std::string concentration;
+  std::string amount;
+  std::string temperature;
 };
 
 
 class Units {
  public:
-  Units() : system_("s", "kg", "m", "molar") { Init(); }
-  Units(const std::string& concentration_unit) : system_("s", "kg", "m", "molar") { 
+  Units() : system_("s", "kg", "m", "molar", "mol", "K") { Init(); }
+  Units(const std::string& concentration_unit) : system_("s", "kg", "m", "molar", "mol", "K") { 
     system_.concentration = concentration_unit;
     Init();
   }
@@ -165,7 +171,7 @@ class Units {
   // -- strings
   std::string ConvertUnitS(const std::string& in_unit, const UnitsSystem& system);
 
-  // -- fancy output
+  // fancy output
   std::string OutputTime(double val);
   std::string OutputMass(double val) const;
   std::string OutputConcentration(double val);
@@ -175,6 +181,7 @@ class Units {
 
  private:
   AtomicUnitForm ComputeAtomicUnitForm_(const std::string& unit, bool* flag);
+  bool CompareAtomicUnitForms_(const AtomicUnitForm& auf1, const AtomicUnitForm& auf2);
 
  private:
   double concentration_factor_;
@@ -185,6 +192,7 @@ class Units {
   std::map<std::string, boost::units::quantity<boost::units::si::volume> > volume_;
   std::map<std::string, boost::units::quantity<concentration> > concentration_;
   std::map<std::string, boost::units::quantity<boost::units::si::amount> > amount_;
+  std::map<std::string, boost::units::quantity<boost::units::si::temperature> > temperature_;
 
   std::map<std::string, AtomicUnitForm> derived_;
 

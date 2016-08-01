@@ -96,8 +96,8 @@ int ObservableAqueous::ComputeRegionSize()
 
 
 /* ******************************************************************
-* Computes aqueous observations. 
-* Units should be taken from fields (FIXME).
+* Computes aqueous observations. Units should be taken from fields 
+* but fields do not populate them yet (FIXME).
 ****************************************************************** */
 void ObservableAqueous::ComputeObservation(
    State& S, double* value, double* volume, std::string& unit)

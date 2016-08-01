@@ -83,7 +83,7 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
     out_list.sublist("state").set<std::string>("initialization filename", init_filename_);
   }
 
-  // -- additional transport diagnostics (FIXME)
+  // -- additional transport diagnostics
   if (transport_diagnostics_.size() > 0) {
     out_list.sublist("PKs").sublist("transport")
         .set<Teuchos::Array<std::string> >("runtime diagnostics: regions", transport_diagnostics_);

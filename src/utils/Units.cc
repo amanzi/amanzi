@@ -66,9 +66,14 @@ void Units::Init()
   // supported units of amount of substance (extendable list)
   amount_["mol"] = 1.0 * bu::si::amount();
 
+  // supported units of temperature (extendable list)
+  temperature_["K"] = 1.0 * bu::si::temperature();
+  temperature_["C"] = 1.0 * bu::si::temperature();
+  temperature_["F"] = 1.0 * bu::si::temperature();
+
   // supported derived units (simple map is suffient)
-  AtomicUnitForm form("kg", 1, "m", -1, "s", -2);
-  derived_["Pa"] = form;
+  derived_["Pa"] = AtomicUnitForm("kg", 1, "m", -1, "s", -2);
+  derived_["J"] = AtomicUnitForm("m", 2, "kg", 1, "s", -2);
 
   concentration_factor_ = 1.0;
   if (system_.concentration == "molar") 
@@ -173,7 +178,7 @@ double Units::ConvertConcentration(double val,
 
 /* ******************************************************************
 * Convert any derived input unit to compatible output unit.
-* Special case, out_unit="SI", leads to simple conversion.
+* Special case, out_unit="SI", leads to conversion to SI units.
 ****************************************************************** */
 double Units::ConvertUnitD(double val,
                            const std::string& in_unit,
@@ -188,7 +193,14 @@ double Units::ConvertUnitD(double val,
     aut.replace(it->first, it->second); 
   }
 
-  int ntime(0), nmass(0), nlength(0), nconcentration(0), namount(0);
+  // replace known atomic units
+  if (CompareAtomicUnitForms_(aut, AtomicUnitForm("mol", 1, "L", -1))) {
+    aut = AtomicUnitForm("molar", 1);
+  } else if (CompareAtomicUnitForms_(aut, AtomicUnitForm("mol", 1, "m", -3))) {
+    aut = AtomicUnitForm("SI", 1);
+  }
+
+  int ntime(0), nmass(0), nlength(0), nconcentration(0), namount(0), ntemperature(0);
   double tmp(val);
   const UnitData& in_data = aut.data();
 
@@ -218,6 +230,11 @@ double Units::ConvertUnitD(double val,
     } 
     else if (amount_.find(it->first) != amount_.end()) {
       namount += it->second;
+    } 
+    else if (temperature_.find(it->first) != temperature_.end() && in_data.size() == 1) {
+      if (it->first == "C") tmp += 273.15;
+      if (it->first == "F") tmp = (tmp + 459.67) * 5.0 / 9;
+      ntemperature += it->second;
     } else {
       flag = false;
       return val;
@@ -256,6 +273,11 @@ double Units::ConvertUnitD(double val,
     } 
     else if (amount_.find(it->first) != amount_.end()) {
       namount -= it->second;
+    } 
+    else if (temperature_.find(it->first) != temperature_.end() && out_data.size() == 1) {
+      if (it->first == "C") tmp -= 273.15;
+      if (it->first == "F") tmp = tmp * 1.8 - 459.67;
+      ntemperature -= it->second;
     } else {
       flag = false;
       return val;
@@ -263,7 +285,7 @@ double Units::ConvertUnitD(double val,
   }
 
   // consistency of units
-  if (ntime || nmass || nlength || namount) {
+  if (ntime || nmass || nlength || namount || nconcentration || ntemperature) {
     flag = false;
     return val;
   }
@@ -301,6 +323,12 @@ std::string Units::ConvertUnitS(const std::string& in_unit,
     }
     else if (concentration_.find(it->first) != concentration_.end()) {
       out_data[system.concentration] = it->second;
+    }
+    else if (amount_.find(it->first) != amount_.end()) {
+      out_data[system.amount] = it->second;
+    }
+    else if (temperature_.find(it->first) != temperature_.end()) {
+      out_data[system.temperature] = it->second;
     }
   }
 
@@ -379,6 +407,39 @@ AtomicUnitForm Units::ComputeAtomicUnitForm_(const std::string& unit, bool* flag
 
 
 /* ******************************************************************
+* Do two atomic units desribe the same physical quantity?
+****************************************************************** */
+bool Units::CompareAtomicUnitForms_(const AtomicUnitForm& auf1, const AtomicUnitForm& auf2)
+{
+  const UnitData& data1 = auf1.data();
+  const UnitData& data2 = auf2.data();
+
+  int ntime(0), nmass(0), nlength(0), nconcentration(0), namount(0), ntemperature;
+  UnitData::const_iterator it;
+
+  for (it = data1.begin(); it != data1.end(); ++it) {
+    if (time_.find(it->first) != time_.end()) ntime++;
+    if (mass_.find(it->first) != mass_.end()) nmass++;
+    if (length_.find(it->first) != length_.end()) nlength++;
+    if (concentration_.find(it->first) != concentration_.end()) nconcentration++;
+    if (amount_.find(it->first) != amount_.end()) namount++;
+    if (temperature_.find(it->first) != temperature_.end()) ntemperature++;
+  }
+
+  for (it = data2.begin(); it != data2.end(); ++it) {
+    if (time_.find(it->first) != time_.end()) ntime--;
+    if (mass_.find(it->first) != mass_.end()) nmass--;
+    if (length_.find(it->first) != length_.end()) nlength--;
+    if (concentration_.find(it->first) != concentration_.end()) nconcentration--;
+    if (amount_.find(it->first) != amount_.end()) namount--;
+    if (temperature_.find(it->first) != temperature_.end()) ntemperature--;
+  }
+
+  return !(ntime || nmass || nlength || namount || nconcentration || ntemperature);
+}
+
+
+/* ******************************************************************
 * Fancy output of time given in second
 ****************************************************************** */
 std::string Units::OutputTime(double val)
@@ -389,16 +450,18 @@ std::string Units::OutputTime(double val)
   out = val;
   if (val == 0) return std::string("0 s");
 
-  dmin = fabs(log10(val));
+  if (val > 0.0) {
+    dmin = fabs(log10(val));
  
-  std::map<std::string, bu::quantity<bu::si::time> >::const_iterator it;
-  for (it = time_.begin(); it != time_.end(); ++it) { 
-    tmp = val / it->second.value();
-    dtry = fabs(log10(tmp));
-    if (dtry < dmin) {
-      dmin = dtry;
-      out = tmp;
-      unit = it->first;
+    std::map<std::string, bu::quantity<bu::si::time> >::const_iterator it;
+    for (it = time_.begin(); it != time_.end(); ++it) { 
+      tmp = val / it->second.value();
+      dtry = fabs(log10(tmp));
+      if (dtry < dmin) {
+        dmin = dtry;
+        out = tmp;
+        unit = it->first;
+      }
     }
   }
 

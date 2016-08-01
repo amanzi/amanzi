@@ -32,7 +32,6 @@ namespace Amanzi {
 class Field {
 
  private: 
-
   typedef std::map<Key, Teuchos::RCP<Field> > FieldMap;
   typedef std::string Units;
 
@@ -149,7 +148,7 @@ class Field {
 
   virtual long int GetLocalElementCount() { return 0L; };
 
-// Iterate over field_copies.
+  // Iterate over field_copies.
   typedef FieldMap::const_iterator copy_iterator;
   copy_iterator copy_begin() const { return field_copy_.begin(); }
   copy_iterator copy_end() const { return field_copy_.end(); }

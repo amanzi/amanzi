@@ -99,6 +99,12 @@ TEST(UNITS_DERIVED_DOUBLE)
   tmp = units.ConvertUnitD(2.0, in_unit, out_unit, 51.9961e-3, flag);
   std::cout << "  2 Pa/s = " << tmp << " kg/m/s^3, flag=" << flag << std::endl;
   CHECK_CLOSE(tmp, 2.0, 1.0e-10);
+
+  in_unit = "J/s";
+  out_unit = "kg*m^2/s^3";
+  tmp = units.ConvertUnitD(3.0, in_unit, out_unit, 1.0, flag);
+  std::cout << "  3 J/s = " << tmp << " kg*m^2/s^3, flag=" << flag << std::endl;
+  CHECK_CLOSE(tmp, 3.0, 1.0e-10);
 }
 
 
@@ -108,7 +114,7 @@ TEST(UNITS_DERIVED_STRING)
   std::string out_unit;
 
   {
-    UnitsSystem system("h", "kg", "m", "molar");
+    UnitsSystem system("h", "kg", "m", "molar", "mol", "K");
     std::string in_unit = "g/s";
     out_unit = units.ConvertUnitS(in_unit, system);
     std::cout << "Derived tests:\n  g/s -> " << out_unit << std::endl;
@@ -116,7 +122,7 @@ TEST(UNITS_DERIVED_STRING)
   }
 
   {
-    UnitsSystem system("s", "kg", "m", "molar");
+    UnitsSystem system("s", "kg", "m", "molar", "mol", "K");
     std::string in_unit = "Pa/s";
     out_unit = units.ConvertUnitS(in_unit, system);
     std::cout << "  Pa/s -> " << out_unit << std::endl;
