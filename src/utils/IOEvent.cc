@@ -1,18 +1,20 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-Amanzi
+/*
+  Utils
 
-License:
-Author: Markus Berndt
-        Ethan Coon (ecoon@lanl.gov)
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-IO event -- base class for reading or writing data.  Mostly just manages when
-to do the I/O.
-------------------------------------------------------------------------- */
+  Authors: Markus Berndt
+           Ethan Coon (ecoon@lanl.gov)
 
-#include "TimeStepManager.hh"
+  IO event -- base class for reading or writing data.  Mostly just manages when
+  to do the I/O.
+*/
 
 #include "IOEvent.hh"
+#include "TimeStepManager.hh"
 
 namespace Amanzi {
 
@@ -28,7 +30,7 @@ IOEvent::IOEvent(Teuchos::ParameterList& plist) :
 // -----------------------------------------------------------------------------
 // Constructor for a disabled Event.
 // -----------------------------------------------------------------------------
-IOEvent::IOEvent(): disabled_(true) {}
+IOEvent::IOEvent(): disabled_(true) {};
 
 
 bool IOEvent::is_disabled() const { return disabled_; }
@@ -150,4 +152,4 @@ void IOEvent::ReadParameters_() {
   }
 }
 
-} // namespace
+} // namespace Amanzi

@@ -1,48 +1,50 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
+/*
 
-License: see $AMANZI_DIR/COPYRIGHT
-Author: Ethan Coon
+  Utils
 
-Basic VerboseObject for use by Amanzi code.  Trilinos's VerboseObject is
-templated with the class (for no reason) and then requests that the
-VerboseObject be inserted as a base class to the using class.  This is serious
-code smell (composition over inheritance, especially for code reuse).
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-I would prefer to get rid of the call to getOSTab(), but I can't figure out
-how to do it.
+  Author: Ethan Coon
 
-Usage:
+  Basic VerboseObject for use by Amanzi code.  Trilinos's VerboseObject is
+  templated with the class (for no reason) and then requests that the
+  VerboseObject be inserted as a base class to the using class.  This is serious
+  code smell (composition over inheritance, especially for code reuse).
 
-class MyClass {
- public:
-  MyClass(Teuchos::ParameterList& plist) {
-    vo = Teuchos::rcp(new VerboseObject("my_class", plist);
-    Teuchos::OSTab tab = vo.getOSTab();
+  I would prefer to get rid of the call to getOSTab(), but I can't figure out
+  how to do it.
 
-    if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
-      *vo.os() << "my string to print" << std::endl;
+  Usage:
+
+  class MyClass {
+   public:
+    MyClass(Teuchos::ParameterList& plist) {
+      vo = Teuchos::rcp(new VerboseObject("my_class", plist);
+      Teuchos::OSTab tab = vo.getOSTab();
+
+      if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
+        *vo.os() << "my string to print" << std::endl;
+      }
     }
+
+   protected:
+    Teuchos::RCP<VerboseObject> vo;
   }
 
- protected:
-  Teuchos::RCP<VerboseObject> vo;
-}
+  Parameters:
 
-
-Parameters:
-
-<ParameterList name="my class">
-  <ParameterList name="verbose object">
-    <Parameter name="verbosity level" type="string" value="medium"/>
-    <Parameter name="name" type="string" value="my header"/>
-    <Parameter name="hide line prefix" type="bool" value="false"/>
-    <Parameter name="write on rank" type="int" value="0"/>
+  <ParameterList name="my class">
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="medium"/>
+      <Parameter name="name" type="string" value="my header"/>
+      <Parameter name="hide line prefix" type="bool" value="false"/>
+      <Parameter name="write on rank" type="int" value="0"/>
+    </ParameterList>
   </ParameterList>
-</ParameterList>
-
-
-------------------------------------------------------------------------- */
+*/
 
 #ifndef AMANZI_VERBOSE_OBJECT_HH_
 #define AMANZI_VERBOSE_OBJECT_HH_
@@ -98,7 +100,6 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
  protected:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   const Epetra_MpiComm* const comm_;
-
 };
 
 

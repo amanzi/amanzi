@@ -151,7 +151,7 @@ class Units {
   // conversion factors
   double concentration_factor() { return concentration_factor_; } 
 
-  // conversion of units
+  // conversion/comparison of units
   // -- data
   double ConvertTime(double val, const std::string& in_unit,
                      const std::string& out_unit, bool& flag);
@@ -170,6 +170,7 @@ class Units {
 
   // -- strings
   std::string ConvertUnitS(const std::string& in_unit, const UnitsSystem& system);
+  bool CompareUnits(const std::string& unit1, const std::string& unit2);
 
   // fancy output
   std::string OutputTime(double val);

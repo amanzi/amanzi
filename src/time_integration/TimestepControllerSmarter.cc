@@ -1,13 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Time Integration
 
-/* -------------------------------------------------------------------------
-ATS
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  Author: Ethan Coon
 
-Slightly smarter timestep control based upon a history of previous timesteps.
-------------------------------------------------------------------------- */
+  Slightly smarter timestep control based upon a history of previous timesteps.
+*/
 
 #include "errors.hh"
 #include "dbc.hh"
@@ -118,5 +120,4 @@ TimestepControllerSmarter::get_timestep(double dt, int iterations) {
   return dt_next;
 }
 
-
-} // namespace
+} // namespace Amanzi

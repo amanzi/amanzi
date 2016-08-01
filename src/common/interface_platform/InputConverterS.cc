@@ -2609,7 +2609,7 @@ std::string InputConverterS::CreateINFile(std::string& filename)
       mineral_list << name << ", ";
 
       element = static_cast<DOMElement*>(inode);
-      double rate = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, false, 0.0);
+      double rate = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, "", false, 0.0);
       if (rate > 0.0) {
         mineral_kinetics << "    " << name << "\n";
         mineral_kinetics << "      RATE_CONSTANT " << rate << "\n";

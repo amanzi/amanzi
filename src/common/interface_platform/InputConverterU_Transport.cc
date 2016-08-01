@@ -130,17 +130,19 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
         if (strcmp(model.c_str(), "uniform_isotropic") == 0) { 
           tmp_list.set<std::string>("model", "Bear");
 
-          al = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_l");
-          at = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_t");
+          element = static_cast<DOMElement*>(node);
+          al = GetAttributeValueD_(element, "alpha_l", TYPE_NUMERICAL, "m");
+          at = GetAttributeValueD_(element, "alpha_t", TYPE_NUMERICAL, "m");
 
           tmp_list.sublist("parameters for Bear").set<double>("alpha_l", al)
                                                  .set<double>("alpha_t", at);
         } else if (strcmp(model.c_str(), "burnett_frind") == 0) {
           tmp_list.set<std::string>("model", "Burnett-Frind");
 
-          al = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_l");
-          ath = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_th");
-          atv = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_tv");
+          element = static_cast<DOMElement*>(node);
+          al = GetAttributeValueD_(element, "alpha_l", TYPE_NUMERICAL, "m");
+          ath = GetAttributeValueD_(element, "alpha_th", TYPE_NUMERICAL, "m");
+          atv = GetAttributeValueD_(element, "alpha_tv", TYPE_NUMERICAL, "m");
 
           tmp_list.sublist("parameters for Burnett-Frind")
               .set<double>("alpha_l", al).set<double>("alpha_th", ath)
@@ -150,10 +152,11 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
         } else if (strcmp(model.c_str(), "lichtner_kelkar_robinson") == 0) {
           tmp_list.set<std::string>("model", "Lichtner-Kelkar-Robinson");
 
-          alh = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_lh");
-          alv = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_lv");
-          ath = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_th");
-          ath = GetAttributeValueD_(static_cast<DOMElement*>(node), "alpha_tv");
+          element = static_cast<DOMElement*>(node);
+          alh = GetAttributeValueD_(element, "alpha_lh", TYPE_NUMERICAL, "m");
+          alv = GetAttributeValueD_(element, "alpha_lv", TYPE_NUMERICAL, "m");
+          ath = GetAttributeValueD_(element, "alpha_th", TYPE_NUMERICAL, "m");
+          ath = GetAttributeValueD_(element, "alpha_tv", TYPE_NUMERICAL, "m");
 
           tmp_list.sublist("parameters for Lichtner-Kelkar-Robinson")
               .set<double>("alpha_lh", alh).set<double>("alpha_lv", alv)
@@ -195,7 +198,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "solute") != 0) continue;
 
-      double val = GetAttributeValueD_(element, "coefficient_of_diffusion", TYPE_NUMERICAL, false);
+      double val = GetAttributeValueD_(element, "coefficient_of_diffusion", TYPE_NUMERICAL, "", false);
       text = mm.transcode(inode->getTextContent());
 
       aqueous_names.push_back(TrimString_(text));
@@ -223,7 +226,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "solute") != 0) continue;
 
-      double val = GetAttributeValueD_(element, "coefficient_of_diffusion", TYPE_NUMERICAL, false);
+      double val = GetAttributeValueD_(element, "coefficient_of_diffusion", TYPE_NUMERICAL, "", false);
       double kh = GetAttributeValueD_(element, "kh");
       text = mm.transcode(inode->getTextContent());
 
@@ -387,7 +390,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
 
       for (int j = 0; j < same_list.size(); ++j) {
         element = static_cast<DOMElement*>(same_list[j]);
-        double t0 = GetAttributeValueD_(element, "start");
+        double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, "s");
         tp_values[t0] = GetAttributeValueS_(element, "name");
         tp_forms[t0] = GetAttributeValueS_(element, "function", TYPE_NONE, false, "constant");
         // no form -> use geochemistry engine
@@ -461,7 +464,7 @@ void InputConverterU::TranslateTransportBCsGroup_(
       tmp_name = GetAttributeValueS_(element, "name");
 
       if (tmp_name == solute_name) {
-        double t0 = GetAttributeValueD_(element, "start");
+        double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, "s");
         tp_forms[t0] = GetAttributeValueS_(element, "function");
         tp_values[t0] = ConvertUnits_(GetAttributeValueS_(element, "value"), unit, solute_molar_mass_[solute_name]);
 
@@ -681,7 +684,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
 
       for (int j = 0; j < same_list.size(); ++j) {
         element = static_cast<DOMElement*>(same_list[j]);
-        double t0 = GetAttributeValueD_(element, "start");
+        double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, "s");
         tp_forms[t0] = GetAttributeValueS_(element, "function");
         tp_values[t0] = ConvertUnits_(GetAttributeValueS_(element, "value"), unit, solute_molar_mass_[solute_name]);
 
@@ -731,14 +734,14 @@ void InputConverterU::TranslateTransportSourcesGroup_(
       }
     } else {
       element = static_cast<DOMElement*>(same_list[0]);
-      double total = GetAttributeValueD_(element, "total_inventory");
+      double total = GetAttributeValueD_(element, "total_inventory", "mol");
       double diff = GetAttributeValueD_(element, "effective_diffusion_coefficient");
-      double length = GetAttributeValueD_(element, "mixing_length");
+      double length = GetAttributeValueD_(element, "mixing_length", "m");
       std::vector<double> times;
-      times.push_back(GetAttributeValueD_(element, "start"));
+      times.push_back(GetAttributeValueD_(element, "start", TYPE_TIME, "s"));
 
       element = static_cast<DOMElement*>(same_list[1]);
-      times.push_back(GetAttributeValueD_(element, "start"));
+      times.push_back(GetAttributeValueD_(element, "start", TYPE_TIME, "s"));
 
       // save data in the XML
       Teuchos::ParameterList& src_list = out_list.sublist("concentration");

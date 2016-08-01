@@ -153,7 +153,7 @@ void InputConverterU::ParseSolutes_()
       phases_["water"].push_back(name);
 
       DOMElement* element = static_cast<DOMElement*>(inode);
-      double mol_mass = GetAttributeValueD_(element, "molar_mass", TYPE_NUMERICAL, false, 1.0);
+      double mol_mass = GetAttributeValueD_(element, "molar_mass", TYPE_NUMERICAL, "kg/mol", false, 1.0);
       solute_molar_mass_[name] = mol_mass;
     }
   }

@@ -1,45 +1,49 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
+  Utils
 
-   ATS
-   Author: Ethan Coon
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-   Base factory for self-registering classes of a given base type.
+  Author: Ethan Coon
 
-   In many cases in Amanzi/ATS, we may have multiple options that inherit a
-   common (likely purely) virtual class.  For instance, many implementations
-   of the equations of state class will provide a basic method for rho(T,p),
-   including both real "fits" to data, analytic expressions, and fake EOS
-   classes for testing which may be constant.  We would like to be able to:
+  Base factory for self-registering classes of a given base type.
+
+  In many cases in Amanzi/ATS, we may have multiple options that inherit a
+  common (likely purely) virtual class.  For instance, many implementations
+  of the equations of state class will provide a basic method for rho(T,p),
+  including both real "fits" to data, analytic expressions, and fake EOS
+  classes for testing which may be constant.  We would like to be able to:
 
    1. choose the implementation at run time
    2. easily add new implementations
 
-   To do #1, we use a factory design pattern.  Like most factories, an
-   implementation must be "registered" with the factory.  To do #2, this
-   registration must NOT be done in the factory's source code itself.
+  To do #1, we use a factory design pattern.  Like most factories, an
+  implementation must be "registered" with the factory.  To do #2, this
+  registration must NOT be done in the factory's source code itself.
 
-   This is made a little easier by the fact that nearly all of these things
-   will be constructed using a single interface for the constructor, which
-   (explicitly) takes a single argument -- a Teuchos::ParameterList -- and
-   parses that list for its actual parameters.  While it is usually a good
-   idea to have a factory take the input list, do the parsing, and call the
-   model's constructor with the parameters, that would require every model
-   implementation to have its own factory.  To simply things for scientists
-   writing these models, we choose to do the parsing within the
-   constructor/initialization.
+  This is made a little easier by the fact that nearly all of these things
+  will be constructed using a single interface for the constructor, which
+  (explicitly) takes a single argument -- a Teuchos::ParameterList -- and
+  parses that list for its actual parameters.  While it is usually a good
+  idea to have a factory take the input list, do the parsing, and call the
+  model's constructor with the parameters, that would require every model
+  implementation to have its own factory.  To simply things for scientists
+  writing these models, we choose to do the parsing within the
+  constructor/initialization.
 
-   The obvious exception to this is the model type parameter, which must get
-   read by a factory and mapped to an implementation's constructor.
+  The obvious exception to this is the model type parameter, which must get
+  read by a factory and mapped to an implementation's constructor.
 
-   This factory is a general purpose factory which is templated to take a
-   single base class.  Implementations of that base class then "register"
-   themselves with the factory instance (which is stored statically since we
-   cannot correctly manage the cleanup).  This factory assumes all
-   constructors for all implementations of all base classes take a single
-   Teuchos::ParameterList as an argument.
+  This factory is a general purpose factory which is templated to take a
+  single base class.  Implementations of that base class then "register"
+  themselves with the factory instance (which is stored statically since we
+  cannot correctly manage the cleanup).  This factory assumes all
+  constructors for all implementations of all base classes take a single
+  Teuchos::ParameterList as an argument.
 
-   Simplest usage (for our EOS example):
+  Simplest usage (for our EOS example):
 
    // eos_factory.cc  (no .hh file necessary)
    #include "eos.hh" // header for class EOS, a purely virtual base class
@@ -68,13 +72,12 @@
      my_eos_ = eos_factory.CreateInstance("my_eos_type", eos_plist);
      ...
 
+  You're not supposed to understand this, just find another example that uses
+  it and copy it.
+*/
 
-   You're not supposed to understand this, just find another example that uses
-   it and copy it.
-   ------------------------------------------------------------------------- */
-
-#ifndef _ATS_FACTORY_HH_
-#define _ATS_FACTORY_HH_
+#ifndef AMANZI_FACTORY_HH_
+#define AMANZI_FACTORY_HH_
 
 #include <iostream>
 #include <map>
@@ -138,7 +141,7 @@ public:
   }
 };
 
-} // namespace
-} // namespace
+}  // namespace Utils
+}  // namespace Amanzi
 
 #endif

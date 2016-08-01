@@ -187,22 +187,22 @@ double Units::ConvertUnitD(double val,
                            bool& flag)
 {
   // replace known complex/derived units
-  AtomicUnitForm aut = ComputeAtomicUnitForm_(in_unit, &flag);
+  AtomicUnitForm auf = ComputeAtomicUnitForm_(in_unit, &flag);
  
   for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin(); it != derived_.end(); ++it) {
-    aut.replace(it->first, it->second); 
+    auf.replace(it->first, it->second); 
   }
 
   // replace known atomic units
-  if (CompareAtomicUnitForms_(aut, AtomicUnitForm("mol", 1, "L", -1))) {
-    aut = AtomicUnitForm("molar", 1);
-  } else if (CompareAtomicUnitForms_(aut, AtomicUnitForm("mol", 1, "m", -3))) {
-    aut = AtomicUnitForm("SI", 1);
+  if (CompareAtomicUnitForms_(auf, AtomicUnitForm("mol", 1, "L", -1))) {
+    auf = AtomicUnitForm("molar", 1);
+  } else if (CompareAtomicUnitForms_(auf, AtomicUnitForm("mol", 1, "m", -3))) {
+    auf = AtomicUnitForm("SI", 1);
   }
 
   int ntime(0), nmass(0), nlength(0), nconcentration(0), namount(0), ntemperature(0);
   double tmp(val);
-  const UnitData& in_data = aut.data();
+  const UnitData& in_data = auf.data();
 
   UnitData::const_iterator it;
   for (it = in_data.begin(); it != in_data.end(); ++it) {
@@ -245,8 +245,8 @@ double Units::ConvertUnitD(double val,
   if (out_unit == "SI") return tmp;
 
   // convert from default (SI) units
-  aut = ComputeAtomicUnitForm_(out_unit, &flag);
-  const UnitData& out_data = aut.data();
+  auf = ComputeAtomicUnitForm_(out_unit, &flag);
+  const UnitData& out_data = auf.data();
 
   for (it = out_data.begin(); it != out_data.end(); ++it) {
     if (time_.find(it->first) != time_.end()) {
@@ -302,12 +302,12 @@ std::string Units::ConvertUnitS(const std::string& in_unit,
 {
   // parse the input string
   bool flag;
-  AtomicUnitForm aut = ComputeAtomicUnitForm_(in_unit, &flag);
+  AtomicUnitForm auf = ComputeAtomicUnitForm_(in_unit, &flag);
 
   for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin(); it != derived_.end(); ++it) {
-    aut.replace(it->first, it->second); 
+    auf.replace(it->first, it->second); 
   }
-  UnitData in_data = aut.data();
+  UnitData in_data = auf.data();
 
   // replace units
   UnitData out_data;
@@ -414,28 +414,47 @@ bool Units::CompareAtomicUnitForms_(const AtomicUnitForm& auf1, const AtomicUnit
   const UnitData& data1 = auf1.data();
   const UnitData& data2 = auf2.data();
 
-  int ntime(0), nmass(0), nlength(0), nconcentration(0), namount(0), ntemperature;
+  int ntime(0), nmass(0), nlength(0), nconcentration(0), namount(0), ntemperature(0);
   UnitData::const_iterator it;
 
   for (it = data1.begin(); it != data1.end(); ++it) {
-    if (time_.find(it->first) != time_.end()) ntime++;
-    if (mass_.find(it->first) != mass_.end()) nmass++;
-    if (length_.find(it->first) != length_.end()) nlength++;
-    if (concentration_.find(it->first) != concentration_.end()) nconcentration++;
-    if (amount_.find(it->first) != amount_.end()) namount++;
-    if (temperature_.find(it->first) != temperature_.end()) ntemperature++;
+    if (time_.find(it->first) != time_.end()) ntime += it->second;
+    if (mass_.find(it->first) != mass_.end()) nmass += it->second;
+    if (length_.find(it->first) != length_.end()) nlength += it->second;
+    if (concentration_.find(it->first) != concentration_.end()) nconcentration += it->second;
+    if (amount_.find(it->first) != amount_.end()) namount += it->second;
+    if (temperature_.find(it->first) != temperature_.end()) ntemperature += it->second;
   }
 
   for (it = data2.begin(); it != data2.end(); ++it) {
-    if (time_.find(it->first) != time_.end()) ntime--;
-    if (mass_.find(it->first) != mass_.end()) nmass--;
-    if (length_.find(it->first) != length_.end()) nlength--;
-    if (concentration_.find(it->first) != concentration_.end()) nconcentration--;
-    if (amount_.find(it->first) != amount_.end()) namount--;
-    if (temperature_.find(it->first) != temperature_.end()) ntemperature--;
+    if (time_.find(it->first) != time_.end()) ntime -= it->second;
+    if (mass_.find(it->first) != mass_.end()) nmass -= it->second;
+    if (length_.find(it->first) != length_.end()) nlength -= it->second;
+    if (concentration_.find(it->first) != concentration_.end()) nconcentration -= it->second;
+    if (amount_.find(it->first) != amount_.end()) namount -= it->second;
+    if (temperature_.find(it->first) != temperature_.end()) ntemperature -= it->second;
   }
 
   return !(ntime || nmass || nlength || namount || nconcentration || ntemperature);
+}
+
+
+/* ******************************************************************
+* Do two unit strings desribe the same physical quantity?
+****************************************************************** */
+bool Units::CompareUnits(const std::string& unit1, const std::string& unit2)
+{
+  bool flag1, flag2;
+  AtomicUnitForm auf1 = ComputeAtomicUnitForm_(unit1, &flag1);
+  AtomicUnitForm auf2 = ComputeAtomicUnitForm_(unit2, &flag2);
+
+  for (std::map<std::string, AtomicUnitForm>::iterator it = derived_.begin(); it != derived_.end(); ++it) {
+    auf1.replace(it->first, it->second); 
+    auf2.replace(it->first, it->second); 
+  }
+
+  if (!flag1 || !flag2) return false;
+  return CompareAtomicUnitForms_(auf1, auf2);
 }
 
 

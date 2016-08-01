@@ -1,19 +1,18 @@
-/* -------------------------------------------------------------------------
-  OutputSilo
+/*
+  Output
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
-  See $ATS_DIR/COPYRIGHT
 
   Author: Ethan Coon
 
   Silo implementation of an Output object.
-------------------------------------------------------------------------- */
+*/
 
-#ifndef OUTPUT_SILO_HH_
-#define OUTPUT_SILO_HH_
+#ifndef AMANZI_OUTPUT_SILO_HH_
+#define AMANZI_OUTPUT_SILO_HH_
 
 #include <string>
 #include <vector>
@@ -98,9 +97,8 @@ class OutputSilo : public Output {
   
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   DBfile* fid_;
-  
 };
   
-} // close namespace Amanzi
+} // namespace Amanzi
 
-#endif  // OUTPUT_SILO_HH_
+#endif

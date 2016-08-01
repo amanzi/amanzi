@@ -1,15 +1,18 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-Amanzi
+/*
+  Utils
 
-License: see COPYRIGHT
-Author: Ethan Coon
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Interface for grabbing vectors of data from HDF5 files for use with i/o.
-------------------------------------------------------------------------- */
+  Author: Ethan Coon
 
-#ifndef HDF5_READER_HH_
-#define HDF5_READER_HH_
+  Interface for grabbing vectors of data from HDF5 files for use with i/o.
+*/
+
+#ifndef AMANZI_HDF5_READER_HH_
+#define AMANZI_HDF5_READER_HH_
 
 #include <vector>
 
@@ -77,6 +80,6 @@ struct HDF5Reader {
   hid_t file_;
 };
 
-} // namespace
+} // namespace Amanzi
 
 #endif

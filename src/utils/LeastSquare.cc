@@ -1,5 +1,5 @@
 /*
-  This is the utils component of the Amanzi code. 
+  Utils
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 

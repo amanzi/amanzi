@@ -1,22 +1,19 @@
-/* -------------------------------------------------------------------------
+/*
   Output
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
-  See $ATS_DIR/COPYRIGHT
 
   Author: Ethan Coon
 
   Interface for Output wrappers.
-
   Defines an interface for vis and checkpoint read and writing.
-------------------------------------------------------------------------- */
+*/
 
-
-#ifndef OUTPUT_HH_
-#define OUTPUT_HH_
+#ifndef AMANZI_OUTPUT_HH_
+#define AMANZI_OUTPUT_HH_
 
 #include <string>
 #include <vector>
@@ -56,9 +53,8 @@ class Output {
   virtual void ReadAttribute(double& val, const std::string& name) const = 0;
   virtual void ReadAttribute(int& val, const std::string& name) const = 0;
   virtual void ReadAttribute(std::string& val, const std::string& name) const = 0;
-  
 };
   
-} // close namespace Amanzi
+} // namespace Amanzi
 
-#endif  // OUTPUT_HH_
+#endif

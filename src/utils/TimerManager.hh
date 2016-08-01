@@ -1,7 +1,16 @@
-#ifndef TimerManager_h
-#define TimerManager_h
+/*
+  Utils
 
-// C includes
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Nathan Barnett
+*/
+
+#ifndef AMANZI_TIMER_MANAGER_HH_
+#define AMANZI_TIMER_MANAGER_HH_
 
 // C++ includes
 #include <iostream>
@@ -11,9 +20,8 @@
 #include <boost/shared_ptr.hpp>
 
 // Our includes
-#include "Timer.hh"
-
 #include "mpi.h"
+#include "Timer.hh"
 
 namespace Amanzi {
 
@@ -25,6 +33,7 @@ namespace Amanzi {
  * \author Nathan Barnett
  * \date   April 13, 2012
  */
+
 class TimerManager {
 public:
   friend std::ostream& operator <<(std::ostream&, TimerManager&);
@@ -50,10 +59,11 @@ private:
   TimerManager& operator=(const TimerManager&);
 };
 
+
 // Declare a global instance. Messy, but beats modding all functions to take another parameter
 extern TimerManager timer_manager;
 
-} //end of namespace Amanzi
+}  // namespace Amanzi
 
-#endif // TimerManager_h
+#endif
 

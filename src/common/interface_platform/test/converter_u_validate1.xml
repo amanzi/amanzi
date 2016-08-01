@@ -71,6 +71,12 @@
         <Parameter name="high coordinate" type="Array(double)" value="{3.41375999999999920e+01, 6.00000000000000000e+01}"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="Well2">
+      <ParameterList name="region: line segment">
+        <Parameter name="end coordinate" type="Array(double)" value="{3.29183999999999983e+01, 3.04799999999999960e-01}"/>
+        <Parameter name="opposite end coordinate" type="Array(double)" value="{3.29183999999999983e+01, 3.38632799999999934e+00}"/>
+      </ParameterList>
+    </ParameterList>
     <ParameterList name="All">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{-9.99999999999999967e+98, -9.99999999999999967e+98}"/>

@@ -139,13 +139,13 @@ class InputConverter {
       xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception = false);
 
   // -- extract and verify children
-  // -- extract existing attribute value.
+  // -- extract existing attribute value and verify it optionally against expected unit
   int GetAttributeValueL_(
       xercesc::DOMElement* elem, const char* attr_name,
       const std::string& type = TYPE_NUMERICAL, bool exception = true, int val = 0);
   double GetAttributeValueD_(  // supports units except ppbm
-      xercesc::DOMElement* elem, const char* attr_name,
-      const std::string& type = TYPE_NUMERICAL, bool exception = true, double val = 0.0);
+      xercesc::DOMElement* elem, const char* attr_name, const std::string& type = TYPE_NUMERICAL,
+      std::string unit = "", bool exception = true, double val = 0.0);
   std::string GetAttributeValueS_(
       xercesc::DOMElement* elem, const char* attr_name,
       const std::string& type = TYPE_NUMERICAL, bool exception = true, std::string val = "");

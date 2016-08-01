@@ -523,14 +523,14 @@ std::vector<DOMNode*> InputConverter::GetSameChildNodes_(
 * Extract attribute of type double.
 ****************************************************************** */
 double InputConverter::GetAttributeValueD_(
-    DOMElement* elem, const char* attr_name,
-    const std::string& type, bool exception, double default_val)
+    DOMElement* elem, const char* attr_name, const std::string& type,
+    std::string unit, bool exception, double default_val)
 {
   double val;
   MemoryManager mm;
 
   Errors::Message msg;
-  std::string text, parsed, found_type, unit;
+  std::string text, parsed, found_type, unit_in;
 
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
     text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
@@ -541,7 +541,7 @@ double InputConverter::GetAttributeValueD_(
 
     // process constants and known units
     found_type = GetConstantType_(text, parsed);
-    val = ConvertUnits_(parsed, unit);
+    val = ConvertUnits_(parsed, unit_in);
 
     // no checks for two types
     if (found_type == TYPE_NONE ||
@@ -551,6 +551,14 @@ double InputConverter::GetAttributeValueD_(
       msg << "Usage of constant \"" << text << "\" of type=" << found_type 
           << ". Expect type=" << type << ".\n";
       Exceptions::amanzi_throw(msg);
+    }
+ 
+    if (unit != "" && unit_in != "") {
+      if (!units_.CompareUnits(unit, unit_in)) {
+        msg << "Input unit [" << unit_in << "] for attribute \"" << attr_name 
+            << "\" does not match the expected unit [" << unit << "].\n";
+        Exceptions::amanzi_throw(msg);
+      }
     }
   } else if (!exception) {
     val = default_val;
@@ -1240,7 +1248,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       mineral_list << name << ", ";
       
       element = static_cast<DOMElement*>(inode);
-      double rate = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, false, 0.0);
+      double rate = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, "", false, 0.0);
       mineral_kinetics << "    " << name << "\n";
       mineral_kinetics << "      RATE_CONSTANT " << rate << "\n";
 

@@ -1,19 +1,18 @@
-/* -------------------------------------------------------------------------
-  OutputXDMF
+/*
+  Output
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
-  See $ATS_DIR/COPYRIGHT
 
   Author: Ethan Coon
 
   XDMF implementation of an Output object.
-------------------------------------------------------------------------- */
+*/
 
-#ifndef OUTPUT_XDMF_HH_
-#define OUTPUT_XDMF_HH_
+#ifndef AMANZI_OUTPUT_XDMF_HH_
+#define AMANZI_OUTPUT_XDMF_HH_
 
 #include <string>
 #include <vector>
@@ -35,7 +34,6 @@ class HDF5_MPI;
 class OutputXDMF : public Output {
 
  public:
-
   OutputXDMF(Teuchos::ParameterList& plist,
 	     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 	     bool is_vis,
@@ -70,16 +68,14 @@ class OutputXDMF : public Output {
   void Init_(Teuchos::ParameterList& plist);
 
  protected:
-
   bool is_vis_;
   bool is_dynamic_;
   bool mesh_written_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<HDF5_MPI> io_;
-  
 };
   
-} // close namespace Amanzi
+} // namespace Amanzi
 
 #endif  // OUTPUT_XDMF_HH_

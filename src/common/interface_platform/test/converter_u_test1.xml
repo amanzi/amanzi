@@ -3,18 +3,22 @@
 
   <model_description name="DVZ 3layer 2D">
     <author>Konstantin Lipnikov</author>
-    <!-- defualt SI units -->
+    <!-- default SI units -->
     <units>
       <length_unit>m</length_unit>
       <time_unit>s</time_unit>
       <mass_unit>kg</mass_unit>
       <conc_unit>SI</conc_unit>
     </units>
+
     <constants>
       <time_constant name="START" value="1956 y"/>
       <constant name="END" type="time" value="3000 y"/>
-      <numerical_constant name="vG_M" value="0.3006"/>
       <constant name="PC" type="none" value="linearized_operator"/>
+
+      <numerical_constant name="vG_M" value="0.3006"/>
+      <numerical_constant name="Y0" value="1.0 ft"/>
+      <numerical_constant name="Y1" value="11.11 ft"/>
     </constants>
   </model_description>
 
@@ -152,6 +156,10 @@
     </region>
     <region name="Well">
       <box high_coordinates="112.0 ft, 60.0" low_coordinates="108.0 ft, 40.0" />
+    </region>
+    <region name="Well2">
+      <line_segment end_coordinates="108.0 ft, Y0" 
+           opposite_end_coordinates="108.0 ft, Y1" />
     </region>
   </regions>
 

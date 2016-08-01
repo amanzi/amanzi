@@ -1,3 +1,14 @@
+/*
+  Utils
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Nathan Barnett
+*/
+
 #include "TimerManager.hh"
 
 namespace Amanzi {
@@ -17,6 +28,7 @@ void TimerManager::add(std::string name, Timer::Type type) {
       std::make_pair<std::string, boost::shared_ptr<Timer> >(name, boost::shared_ptr<Timer>(new Timer(name, type))));
 }
 
+
 /**
  * \fn         stop
  * \brief      Stops the pecified timer
@@ -30,6 +42,7 @@ void TimerManager::stop(std::string timerName) {
   else
     throw "Unkown timer";
 }
+
 
 /**
  * \fn         start
@@ -45,6 +58,7 @@ void TimerManager::start(std::string timerName) {
     throw "Unkown timer";
 }
 
+
 /**
  * \fn         stop
  * \brief      Stops all timers being managed
@@ -54,6 +68,7 @@ void TimerManager::stop() {
   for (std::map<std::string, boost::shared_ptr<Timer> >::iterator it=_timer.begin(); it!=_timer.end(); ++it)
     it->second->stop();
 }
+
 
 /**
  * \fn         start
@@ -65,6 +80,7 @@ void TimerManager::start() {
     it->second->stop();
 }
 
+
 /**
  * \fn         getNumTimers
  * \brief      Returns the number of timers currently managed
@@ -74,6 +90,7 @@ void TimerManager::start() {
 size_t TimerManager::size() {
   return _timer.size();
 }
+
 
 /**
  * \fn         operator()
@@ -88,6 +105,7 @@ Timer& TimerManager::operator()(std::string timerName) {
     throw "Unkown timer";
   return *(it->second);
 }
+
 
 /**
  * \fn         ostream << operator

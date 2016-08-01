@@ -175,8 +175,8 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
           double mvf(0.0), msa(0.0);
           if (flag) {
             element = GetUniqueChildByAttribute_(node, "name", minerals[j], flag, true);
-            mvf = GetAttributeValueD_(element, "volume_fraction", TYPE_NUMERICAL, false, 0.0);
-            msa = GetAttributeValueD_(element, "specific_surface_area", TYPE_NUMERICAL, false, 0.0);
+            mvf = GetAttributeValueD_(element, "volume_fraction", TYPE_NUMERICAL, "", false, 0.0);
+            msa = GetAttributeValueD_(element, "specific_surface_area", TYPE_NUMERICAL, "", false, 0.0);
           }
           aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", mvf);
           aux2_list.sublist(ss.str()).sublist("function-constant").set<double>("value", msa);
@@ -188,7 +188,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     node = GetUniqueElementByTagsString_(inode, "ion_exchange, cations", flag);
     if (flag) {
       Teuchos::ParameterList& sites = ic_list.sublist("ion_exchange_sites");
-      double cec = GetAttributeValueD_(static_cast<DOMElement*>(node), "cec");
+      double cec = GetAttributeValueD_(static_cast<DOMElement*>(node), "cec", "mol/m^3");
 
       for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
         sites.sublist("function").sublist(*it)
@@ -237,13 +237,13 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
           std::stringstream ss;
           ss << "dof " << j + 1 << " function";
 
-          double val = (!flag) ? 0.0 : GetAttributeValueD_(element, "kd", TYPE_NUMERICAL, false, 0.0);
+          double val = (!flag) ? 0.0 : GetAttributeValueD_(element, "kd", TYPE_NUMERICAL, "", false, 0.0);
           aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", val);
 
-          val = (!flag) ? 0.0 : GetAttributeValueD_(element, "b", TYPE_NUMERICAL, false, 0.0);
+          val = (!flag) ? 0.0 : GetAttributeValueD_(element, "b", TYPE_NUMERICAL, "", false, 0.0);
           aux2_list.sublist(ss.str()).sublist("function-constant").set<double>("value", val);
 
-          val = (!flag) ? 0.0 : GetAttributeValueD_(element, "n", TYPE_NUMERICAL, false, 0.0);
+          val = (!flag) ? 0.0 : GetAttributeValueD_(element, "n", TYPE_NUMERICAL, "", false, 0.0);
           aux3_list.sublist(ss.str()).sublist("function-constant").set<double>("value", val);
         }
       }
@@ -438,7 +438,6 @@ std::string InputConverterU::CreateBGDFile(std::string& filename)
       // look for sorption_isotherms
       child_elem = GetChildByName_(inode, "sorption_isotherms", flag2, false);
       if (flag2) {
-        
         // loop over sublist of primaries to get Kd information
         std::vector<DOMNode*> primary_list = GetSameChildNodes_(static_cast<DOMNode*>(child_elem), name, flag2, false);
         if (flag2) {
@@ -453,15 +452,15 @@ std::string InputConverterU::CreateBGDFile(std::string& filename)
               Teuchos::ParameterList kd_list;
               double kd = GetAttributeValueD_(kd_elem, "kd");
               std::string model = GetAttributeValueS_(kd_elem, "model");
-              kd_list.set<std::string>("model",model);
-              kd_list.set<double>("kd",kd);
+              kd_list.set<std::string>("model", model);
+              kd_list.set<double>("kd", kd);
               
               if (model == "langmuir") {
                 double b = GetAttributeValueD_(kd_elem, "b");
-                kd_list.set<double>("b",b);
+                kd_list.set<double>("b", b);
               } else if (model == "freundlich") {
                 double n = GetAttributeValueD_(kd_elem, "n");
-                kd_list.set<double>("n",n);
+                kd_list.set<double>("n", n);
               }
               
               IsothermsPL.sublist(primary_name) = kd_list;
