@@ -790,17 +790,29 @@ std::string InputConverter::GetAttributeValueS_(
 * Extract text content and convert it for double
 ****************************************************************** */
 double InputConverter::GetTextContentD_(
-    DOMNode* node, bool exception, double default_val)
+    DOMNode* node, std::string unit, bool exception, double default_val)
 {
   double val;
-  std::string text, parsed_text, unit;
+  std::string text, parsed_text, unit_in;
 
   MemoryManager mm;
 
   if (node != NULL) {
     std::string text = TrimString_(mm.transcode(node->getTextContent()));
     GetConstantType_(text, parsed_text);
-    val = ConvertUnits_(parsed_text, unit);
+    val = ConvertUnits_(parsed_text, unit_in);
+std::cout << parsed_text << " " << val << std::endl;
+ 
+    if ((unit != "" && unit_in != "") ||
+        (unit == "-" && unit_in != "")) {
+      if (!units_.CompareUnits(unit, unit_in)) {
+        char* tagname = mm.transcode(node->getNodeName());
+        Errors::Message msg;
+        msg << "Input unit [" << unit_in << "] for element \"" << tagname
+            << "\" does not match the expected unit [" << unit << "].\n";
+        Exceptions::amanzi_throw(msg);
+      }
+    }
   } else if (!exception) {
     val = default_val;
   } else {

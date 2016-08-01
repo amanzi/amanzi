@@ -58,13 +58,12 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   // --- viscosity
   bool flag;
   DOMNode* node = GetUniqueElementByTagsString_("phases, liquid_phase, viscosity", flag);
-  text_content = mm.transcode(node->getTextContent());
-  double viscosity = std::strtod(text_content, NULL);
+  double viscosity = GetTextContentD_(node, "Pa*s");
   out_ic.sublist("fluid_viscosity").set<double>("value", viscosity);
 
   // --- constant density
   node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag);
-  rho_ = GetTextContentD_(node);
+  rho_ = GetTextContentD_(node, "kg/m^3");
   out_ic.sublist("fluid_density").set<double>("value", rho_);
 
   out_ic.sublist("mass_density_liquid").sublist("function").sublist("All")
