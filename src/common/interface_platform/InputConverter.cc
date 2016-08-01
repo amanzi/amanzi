@@ -553,7 +553,8 @@ double InputConverter::GetAttributeValueD_(
       Exceptions::amanzi_throw(msg);
     }
  
-    if (unit != "" && unit_in != "") {
+    if ((unit != "" && unit_in != "") ||
+        (unit == "-" && unit_in != "")) {
       if (!units_.CompareUnits(unit, unit_in)) {
         msg << "Input unit [" << unit_in << "] for attribute \"" << attr_name 
             << "\" does not match the expected unit [" << unit << "].\n";

@@ -466,6 +466,7 @@ void InputConverterU::TranslateTransportBCsGroup_(
       if (tmp_name == solute_name) {
         double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, "s");
         tp_forms[t0] = GetAttributeValueS_(element, "function");
+        GetAttributeValueD_(element, "value", TYPE_NUMERICAL, "molar");  // just a check
         tp_values[t0] = ConvertUnits_(GetAttributeValueS_(element, "value"), unit, solute_molar_mass_[solute_name]);
 
         same_list.erase(it);
@@ -648,7 +649,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
 
     // get a group of similar elements defined by the first element
     bool flag;
-    std::string srctype, solute_name, weight, srctype_flow, unit;
+    std::string srctype, solute_name, weight, srctype_flow, unit("mol/s"), unit_in;
 
     std::vector<DOMNode*> same_list = GetSameChildNodes_(node, srctype, flag, true);
     solute_name = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "name");
@@ -662,6 +663,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
       weight = "permeability";
     } else if (strcmp(text, "uniform_conc") == 0) {
       weight = "none";
+      unit = "mol/s/m^3";
     } else if (strcmp(text, "flow_weighted_conc") == 0) {
       element = static_cast<DOMElement*>(phase_l);
       node_list = element->getElementsByTagName(mm.transcode("liquid_component")); 
@@ -670,6 +672,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
     } else if (strcmp(text, "flow_mass_fraction_conc") == 0) {
       weight = WeightVolumeSubmodel_(regions);
       mass_fraction = true;
+      unit = "-";
     } else if (strcmp(text, "diffusion_dominated_release") == 0) {
       weight = "volume";
       classical = false;
@@ -686,7 +689,9 @@ void InputConverterU::TranslateTransportSourcesGroup_(
         element = static_cast<DOMElement*>(same_list[j]);
         double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, "s");
         tp_forms[t0] = GetAttributeValueS_(element, "function");
-        tp_values[t0] = ConvertUnits_(GetAttributeValueS_(element, "value"), unit, solute_molar_mass_[solute_name]);
+        tp_values[t0] = ConvertUnits_(GetAttributeValueS_(element, "value"),
+                                      unit_in, solute_molar_mass_[solute_name]);
+        GetAttributeValueD_(element, "value", TYPE_NUMERICAL, unit);  // unit check
 
         // ugly correction when liquid/solute lists match
         if (mass_fraction) {

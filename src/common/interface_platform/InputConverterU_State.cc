@@ -110,7 +110,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         double porosity;
         node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
         if (flag) {
-          porosity = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+          porosity = GetAttributeValueD_(static_cast<DOMElement*>(node), "value", TYPE_NUMERICAL, "-");
         } else {
           msg << "Porosity element must be specified under mechanical_properties";
           Exceptions::amanzi_throw(msg);
@@ -128,7 +128,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, transport_porosity", flag);
       if (flag) {
         use_transport_porosity_ = true;
-        double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+        double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "value", TYPE_NUMERICAL, "-");
 
         Teuchos::ParameterList& porosity_ev = out_ev.sublist("transport_porosity");
         porosity_ev.sublist("function").sublist(reg_str)

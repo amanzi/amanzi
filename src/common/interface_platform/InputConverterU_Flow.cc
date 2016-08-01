@@ -569,6 +569,17 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
       space_bc = true;
     }
 
+    // -- define the expected unit
+    std::string unit("kg/s/m^2");
+    if (bctype_in == "outward_volumetric_flux" || 
+        bctype_in == "inward_volumetric_flux") {
+      unit = "m/s";
+    } else if (bctype_in == "uniform_pressure" || bctype_in == "linear_pressure") {
+      unit = "Pa";
+    } else if (bctype_in == "hydrostatic" || bctype_in == "linear_hydrostatic") {
+      unit = "m";
+    }
+
     // -- process global and local BC separately
     double refv;
     std::vector<double> grad, refc, data;
@@ -592,8 +603,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
         double t0 = GetAttributeValueD_(element, "start");
 
         tp_forms[t0] = GetAttributeValueS_(element, "function");
-        tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, "", false, 0.0);
-        tp_fluxes[t0] = GetAttributeValueD_(element, "inward_mass_flux", TYPE_NUMERICAL, "", false, 0.0);
+        tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, unit, false, 0.0);
+        tp_fluxes[t0] = GetAttributeValueD_(element, "inward_mass_flux", TYPE_NUMERICAL, unit, false, 0.0);
       }
 
       // create vectors of values and forms
@@ -606,7 +617,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
       forms.pop_back();
     }
 
-    // create names, modify data
+    // -- create BC names, modify input data
     std::string bcname, bctype(bctype_in);
     if (bctype_in == "inward_mass_flux") {
       bctype = "mass flux";
@@ -637,12 +648,12 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
     } else {
       ThrowErrorIllformed_("boundary_conditions", "element", bctype_in);
     }
-    std::stringstream ss;
-    ss << "BC " << ibc++;
-
     active_bcs.insert(bctype);
 
     // save in the XML files  
+    std::stringstream ss;
+    ss << "BC " << ibc++;
+
     Teuchos::ParameterList& tbc_list = out_list.sublist(bctype);
     Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
     bc.set<Teuchos::Array<std::string> >("regions", regions);
