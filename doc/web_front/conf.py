@@ -58,16 +58,16 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Amanzi'
-copyright = u'2015, Amanzi Development Team'
+copyright = u'2016, Amanzi Development Team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
-amanzi_branch=subprocess.check_output('hg id --branch',shell=True).rstrip()
-amanzi_global_id=subprocess.check_output('hg id',shell=True).rstrip()
-amanzi_latest_tag=subprocess.check_output('hg head '+amanzi_branch+' --template "{latesttag}\n"', shell=True)
-amanzi_latest_tag_ver=amanzi_latest_tag.replace('amanzi-','').rstrip()
+amanzi_branch=subprocess.check_output('git symbolic-ref --short HEAD',shell=True).rstrip()
+amanzi_global_id=subprocess.check_output('git rev-parse --short HEAD',shell=True).rstrip()
+amanzi_latest_tag=subprocess.check_output('git tag -l amanzi-*', shell=True).split()[-1].rstrip()
+amanzi_latest_tag_ver=amanzi_latest_tag.replace('amanzi-','')
 
 # The short X.Y version.
 version = amanzi_latest_tag_ver
