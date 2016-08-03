@@ -93,6 +93,7 @@ class Mesh {
     face2edge_info_cached_(false),
     parent_(Teuchos::null),
     geometric_model_(Teuchos::null),
+    logical_(false),
     vo_(vo),
     comm_(NULL) {};
 
@@ -160,6 +161,7 @@ class Mesh {
     return mesh_type_;
   }
 
+  bool is_logical() const { return logical_; }
 
   //
   // General mesh information
@@ -774,6 +776,7 @@ class Mesh {
   Mesh_type mesh_type_;
   unsigned int manifold_dim_, space_dim_;
 
+  bool logical_;
   Teuchos::RCP<const Mesh> parent_;
   
   // the cache

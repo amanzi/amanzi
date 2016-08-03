@@ -39,7 +39,7 @@ public:
   bool inside(const Point& p) const;
   
 protected:
-  const std::string entity_str_; // what kind of entities make up this set
+  std::string entity_str_; // what kind of entities make up this set
   const std::vector<Entity_ID> entities_; // list of those included
 };
 

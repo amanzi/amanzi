@@ -33,7 +33,9 @@ include_directories(${Boost_INCLUDE_DIRS})
 #
 set(mesh_logical_src MeshLogical.cc
 		     MeshLogicalFactory.cc
-		     MeshEmbeddedLogical.cc)
+		     MeshEmbeddedLogical.cc
+             plant_1D_mesh.cc 
+             )
 
 add_amanzi_library(mesh_logical SOURCE ${mesh_logical_src}
 				LINK_LIBS mesh geometry ${Epetra_LIBRARIES})
@@ -83,5 +85,10 @@ if (BUILD_TESTS)
 		SOURCE ${test_src_files}
 		LINK_LIBS ${test_link_libs})
 
+   add_amanzi_test(mesh_plant test_mesh_plant
+                KIND unit
+		        SOURCE test/Main.cc test/test_plant_1D_mesh.cc
+		        LINK_LIBS ${test_link_libs})
+      
 endif()
   

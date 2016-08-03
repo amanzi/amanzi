@@ -73,6 +73,7 @@ class HDF5_MPI {
   void createMeshFile(Teuchos::RCP<const AmanziMesh::Mesh> mesh, std::string filename);
   //void createMeshFile(Mesh_maps_base &mesh_Maps, std::string filename);
   void writeMesh(const double time, const int iteration);
+  void writeDualMesh(const double time, const int iteration);
 
   // Create h5 file for data output, create accompanying Xdmf files for Visit
   void createDataFile(std::string data_filename);

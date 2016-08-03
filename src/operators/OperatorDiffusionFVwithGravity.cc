@@ -196,7 +196,7 @@ void OperatorDiffusionFVwithGravity::ComputeJacobianLocal_(
 void OperatorDiffusionFVwithGravity::ComputeTransmissibility_(
    Teuchos::RCP<CompositeVector> g_cv)
 {
-  const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
+  Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
 
   // Compute auxiliary structure. Note that first components of both 
   // fields are used symmetrically (no specific order).

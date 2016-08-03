@@ -21,6 +21,7 @@ class MeshLogicalFactory {
 
   enum LogicalTip_t {
     TIP_BOUNDARY, // tip is a root boundary, i.e. face.  add cell and face.
+    TIP_DEFERRED, // tip included, but face will be added later
     TIP_JUNCTION, // tip is a root junction cell.  add cell.
     TIP_BRANCH // tip branches from a junction.  add neither cell nor face.
   };
@@ -75,6 +76,19 @@ class MeshLogicalFactory {
              double* cell_length);
 
 
+  // Add a segment totally generically
+  void
+  AddSegment(const AmanziGeometry::Point& begin,
+             const AmanziGeometry::Point& end,
+             std::vector<double> lengths,
+             std::vector<double> areas,
+             std::vector<double> vols,
+             MeshLogicalFactory::LogicalTip_t first_tip,
+             MeshLogicalFactory::LogicalTip_t last_tip,
+             const std::string& set_name,
+             std::vector<Entity_ID>* cells,
+             std::vector<Entity_ID>* faces);
+             
 
   // Manually add a connection, returning the face id.
   int
@@ -85,7 +99,7 @@ class MeshLogicalFactory {
 
   int
   AddSet(const std::string& set_name,
-         Entity_kind ent,
+         const std::string& ent,
          const Entity_ID_List& ents);
   
   Teuchos::RCP<MeshLogical>

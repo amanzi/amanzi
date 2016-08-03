@@ -30,6 +30,8 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
                          const Teuchos::RCP<const VerboseObject>& verbosity_obj)
 : Mesh(verbosity_obj, true, false) {
 
+  logical_ = true;
+  
   ASSERT(face_cell_ids.size() == face_cell_lengths.size());
   ASSERT(face_cell_ids.size() == face_area_normals.size());
 

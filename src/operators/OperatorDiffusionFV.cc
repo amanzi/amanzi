@@ -471,7 +471,7 @@ void OperatorDiffusionFV::ComputeJacobianLocal_(
 ****************************************************************** */
 void OperatorDiffusionFV::ComputeTransmissibility_()
 {
-  const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
+  Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
 
   // Compute auxiliary structure. Note that first components of both 
   // fields are used symmetrically (no specific order).

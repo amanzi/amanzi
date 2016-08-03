@@ -4,6 +4,8 @@
 #include "RegionEnumerated.hh"
 #include "MeshLogicalFactory.hh"
 
+#include "plant_1D_mesh.hh"
+
 namespace Amanzi {
 namespace AmanziMesh {
 
@@ -30,10 +32,12 @@ MeshLogicalFactory::AddSegment(int n_cells,
   int n_halflengths;
   int n_halflengths_before_my_first_cell;
   
-  if (first_tip == MeshLogicalFactory::TIP_BOUNDARY) {
+  if (first_tip == MeshLogicalFactory::TIP_BOUNDARY
+      || first_tip == MeshLogicalFactory::TIP_DEFERRED) {
     n_halflengths_before_my_first_cell = 1;
 
-    if (last_tip == MeshLogicalFactory::TIP_BOUNDARY) {
+    if (last_tip == MeshLogicalFactory::TIP_BOUNDARY
+        || last_tip == MeshLogicalFactory::TIP_DEFERRED) {
       // face-to-face:
       n_halflengths = n_cells*2;
     } else if (last_tip == MeshLogicalFactory::TIP_JUNCTION) {
@@ -47,7 +51,8 @@ MeshLogicalFactory::AddSegment(int n_cells,
   } else if (first_tip == MeshLogicalFactory::TIP_JUNCTION) {
     n_halflengths_before_my_first_cell = 0;
 
-    if (last_tip == MeshLogicalFactory::TIP_BOUNDARY) {
+    if (last_tip == MeshLogicalFactory::TIP_BOUNDARY
+        || last_tip == MeshLogicalFactory::TIP_DEFERRED) {
       // cell-to-face
       n_halflengths = n_cells*2 - 1;
     } else if (last_tip == MeshLogicalFactory::TIP_JUNCTION) {
@@ -61,7 +66,8 @@ MeshLogicalFactory::AddSegment(int n_cells,
   } else {
     n_halflengths_before_my_first_cell = 2;
 
-    if (last_tip == MeshLogicalFactory::TIP_BOUNDARY) {
+    if (last_tip == MeshLogicalFactory::TIP_BOUNDARY
+        || last_tip == MeshLogicalFactory::TIP_DEFERRED) {
       // cell-to-face
       n_halflengths = n_cells*2 + 1;
     } else if (last_tip == MeshLogicalFactory::TIP_JUNCTION) {
@@ -95,10 +101,14 @@ MeshLogicalFactory::AddSegment(int n_cells,
   
   // extend cell volumes
   std::vector<double> vols(n_cells, 2 * ds_halflength * cross_section_area);
-  if (first_tip != MeshLogicalFactory::TIP_BOUNDARY)
+  if (first_tip != MeshLogicalFactory::TIP_BOUNDARY
+      && first_tip != MeshLogicalFactory::TIP_DEFERRED) {
     vols[0] -= ds_halflength * cross_section_area;
-  if (last_tip != MeshLogicalFactory::TIP_BOUNDARY)
+  }
+  if (last_tip != MeshLogicalFactory::TIP_BOUNDARY
+      && last_tip != MeshLogicalFactory::TIP_DEFERRED) {
     vols[vols.size()-1] -= ds_halflength * cross_section_area;
+  }
   cell_volume_.insert(cell_volume_.end(), vols.begin(), vols.end());
 
   // extend face_cell_list
@@ -165,15 +175,15 @@ MeshLogicalFactory::AddSegment(int n_cells,
 // Add a segment of uniform size.
 void
 MeshLogicalFactory::AddSegment(int n_cells,
-			       const AmanziGeometry::Point& begin,
-			       const AmanziGeometry::Point& end,
-			       double cross_section_area,
-                               MeshLogicalFactory::LogicalTip_t first_tip,
-                               MeshLogicalFactory::LogicalTip_t last_tip,
-			       const std::string& set_name,
-			       std::vector<Entity_ID>* cells,
-			       std::vector<Entity_ID>* faces,
-                               double* cell_length) {
+        const AmanziGeometry::Point& begin,
+        const AmanziGeometry::Point& end,
+        double cross_section_area,
+        MeshLogicalFactory::LogicalTip_t first_tip,
+        MeshLogicalFactory::LogicalTip_t last_tip,
+        const std::string& set_name,
+        std::vector<Entity_ID>* cells,
+        std::vector<Entity_ID>* faces,
+        double* cell_length) {
   if (faces) faces->clear();
   if (cells) cells->clear();
   if (n_cells == 0) return;
@@ -185,10 +195,12 @@ MeshLogicalFactory::AddSegment(int n_cells,
   int n_halflengths;
   int n_halflengths_before_my_first_cell;
   
-  if (first_tip == MeshLogicalFactory::TIP_BOUNDARY) {
+  if (first_tip == MeshLogicalFactory::TIP_BOUNDARY
+      || first_tip == MeshLogicalFactory::TIP_DEFERRED) {
     n_halflengths_before_my_first_cell = 1;
 
-    if (last_tip == MeshLogicalFactory::TIP_BOUNDARY) {
+    if (last_tip == MeshLogicalFactory::TIP_BOUNDARY
+        || last_tip == MeshLogicalFactory::TIP_DEFERRED) {
       // face-to-face:
       n_halflengths = n_cells*2;
     } else if (last_tip == MeshLogicalFactory::TIP_JUNCTION) {
@@ -202,7 +214,8 @@ MeshLogicalFactory::AddSegment(int n_cells,
   } else if (first_tip == MeshLogicalFactory::TIP_JUNCTION) {
     n_halflengths_before_my_first_cell = 0;
 
-    if (last_tip == MeshLogicalFactory::TIP_BOUNDARY) {
+    if (last_tip == MeshLogicalFactory::TIP_BOUNDARY
+        || last_tip == MeshLogicalFactory::TIP_DEFERRED) {
       // cell-to-face
       n_halflengths = n_cells*2 - 1;
     } else if (last_tip == MeshLogicalFactory::TIP_JUNCTION) {
@@ -216,7 +229,8 @@ MeshLogicalFactory::AddSegment(int n_cells,
   } else {
     n_halflengths_before_my_first_cell = 2;
 
-    if (last_tip == MeshLogicalFactory::TIP_BOUNDARY) {
+    if (last_tip == MeshLogicalFactory::TIP_BOUNDARY
+      || last_tip == MeshLogicalFactory::TIP_DEFERRED) {
       // cell-to-face
       n_halflengths = n_cells*2 + 1;
     } else if (last_tip == MeshLogicalFactory::TIP_JUNCTION) {
@@ -245,10 +259,14 @@ MeshLogicalFactory::AddSegment(int n_cells,
   
   // extend cell volumes
   std::vector<double> vols(n_cells, 2 * ds_halflength * cross_section_area);
-  if (first_tip != MeshLogicalFactory::TIP_BOUNDARY)
+  if (first_tip != MeshLogicalFactory::TIP_BOUNDARY
+      && first_tip != MeshLogicalFactory::TIP_DEFERRED) {
     vols[0] -= ds_halflength * cross_section_area;
-  if (last_tip != MeshLogicalFactory::TIP_BOUNDARY)
+  }
+  if (last_tip != MeshLogicalFactory::TIP_BOUNDARY
+      && last_tip != MeshLogicalFactory::TIP_DEFERRED) {
     vols[vols.size()-1] -= ds_halflength * cross_section_area;
+  }
   cell_volume_.insert(cell_volume_.end(), vols.begin(), vols.end());
 
   // extend face_cell_list
@@ -297,6 +315,111 @@ MeshLogicalFactory::AddSegment(int n_cells,
 }
 
 
+// Add a segment of uniform size.
+void
+MeshLogicalFactory::AddSegment(const AmanziGeometry::Point& begin,
+        const AmanziGeometry::Point& end,
+        std::vector<double> lengths,
+        std::vector<double> areas,
+        std::vector<double> vols,
+        MeshLogicalFactory::LogicalTip_t first_tip,
+        MeshLogicalFactory::LogicalTip_t last_tip,
+        const std::string& set_name,
+        std::vector<Entity_ID>* cells,
+        std::vector<Entity_ID>* faces) {
+  if (faces) faces->clear();
+  if (cells) cells->clear();
+  int n_cells = vols.size();
+  if (n_cells == 0) return;
+
+  ASSERT(lengths.size() == vols.size());
+  ASSERT(vols.size()-1 <= areas.size() <= vols.size() + 1);
+  ASSERT(std::abs(std::accumulate(lengths.begin(), lengths.end(), 0.0) - 
+                  AmanziGeometry::norm(end-begin)) < 1.e-10);
+
+  int cell_first = cell_volume_.size();
+  int cell_last = cell_first + n_cells;
+
+  AmanziGeometry::Point normal(end-begin);
+  normal *= 1. / AmanziGeometry::norm(normal);  
+
+  // set cell ids
+  std::vector<Entity_ID> new_cells(n_cells);
+  for (int i=0; i!=n_cells; ++i) {
+    new_cells[i] = cell_first + i;
+  }
+  if (cells) *cells = new_cells;
+  
+  // extend cell volumes
+  cell_volume_.insert(cell_volume_.end(), vols.begin(), vols.end());
+
+  // extend face_cell_list
+  // - first face
+  int f_index = 0;
+  int c_index = 0;
+  if (first_tip == MeshLogicalFactory::TIP_BOUNDARY) {
+    if (faces) faces->push_back(face_cell_list_.size());
+    Entity_ID_List my_cells(1,cell_first);
+    std::vector<double> my_lengths(1, lengths[c_index]/2.0);
+    AmanziGeometry::Point my_normal = -std::abs(areas[f_index]) * normal; // negate as it must be outward normal
+
+    face_cell_list_.push_back(my_cells);
+    face_cell_lengths_.push_back(my_lengths);
+    face_cell_normals_.push_back(my_normal);
+    f_index++;
+  }
+
+  // - internal faces
+  for (int i=cell_first; i!=cell_last-1; ++i) {
+    if (faces) faces->push_back(face_cell_list_.size());
+    Entity_ID_List my_cells(2);
+    my_cells[0] = i; my_cells[1] = i+1;
+    std::vector<double> my_lengths(2);
+    my_lengths[0] = lengths[c_index]/2.; my_lengths[0] = lengths[c_index+1]/2.;
+    AmanziGeometry::Point my_normal = -std::abs(areas[f_index]) * normal; // negate as it must be outward normal
+
+    face_cell_list_.push_back(my_cells);
+    face_cell_lengths_.push_back(my_lengths);
+    face_cell_normals_.push_back(my_normal);
+
+    c_index++;
+    f_index++;
+  }
+
+  // -last face
+  if (last_tip == MeshLogicalFactory::TIP_BOUNDARY) {
+
+    if (faces) faces->push_back(face_cell_list_.size());
+    Entity_ID_List my_cells(1, cell_last-1);
+    std::vector<double> my_lengths(1);
+    my_lengths[0] = lengths[c_index]/2.;
+    AmanziGeometry::Point my_normal = -std::abs(areas[f_index]) * normal; // negate as it must be outward normal
+
+    face_cell_list_.push_back(my_cells);
+    face_cell_lengths_.push_back(my_lengths);
+    face_cell_normals_.push_back(my_normal);
+  }
+
+  // cell centroids
+  AmanziGeometry::Point centroid(begin);
+  centroid += normal * lengths[0]/2.;
+  for (int i=0; i!=n_cells; ++i) {
+    cell_centroids_.push_back(centroid);
+    if (i != n_cells-1) {
+      centroid += normal * (lengths[i]/2. + lengths[i+1]/2.);
+    }
+  }
+
+  // create the region
+  // - these are destroyed when the gm is destroyed
+  Teuchos::RCP<AmanziGeometry::RegionEnumerated> enum_rgn =
+      Teuchos::rcp(new AmanziGeometry::RegionEnumerated(set_name, gm_->RegionSize(),
+              "CELL", new_cells));
+  gm_->AddRegion(enum_rgn);
+  return;
+}
+
+
 // Manually add a connection, returning the face id.
 int
 MeshLogicalFactory::AddConnection(const Entity_ID_List& cells,
@@ -321,14 +444,14 @@ MeshLogicalFactory::AddConnection(const Entity_ID_List& cells,
 
 int
 MeshLogicalFactory::AddSet(const std::string& set_name,
-       Entity_kind ent,
-       const Entity_ID_List& ents) {
+                           const std::string& ent,
+                           const Entity_ID_List& ents) {
 
   // create the region
   // - these are destroyed when the gm is destroyed
   Teuchos::RCP<AmanziGeometry::RegionEnumerated> enum_rgn = 
       Teuchos::rcp(new AmanziGeometry::RegionEnumerated(set_name, gm_->RegionSize(),
-              "CELL", ents));
+              ent, ents));
   gm_->AddRegion(enum_rgn);
   return gm_->RegionSize() - 1;
 }
@@ -337,6 +460,15 @@ MeshLogicalFactory::AddSet(const std::string& set_name,
 // One-stop shop -- create the whole thing from PList  
 Teuchos::RCP<MeshLogical>
 MeshLogicalFactory::Create(Teuchos::ParameterList& plist) {
+  // check for compiled meshes
+  if (plist.isParameter("plant mesh")) {
+    std::string meshname = plist.get<std::string>("plant mesh");
+    if (meshname == "1D test mesh") {
+      return Testing::plantMesh(comm_, gm_, true);
+    }
+  }
+  
+
   // Create each segment
   // - map to store metadata about previously inserted segments
   std::map<std::string, Entity_ID_List> seg_cells;
@@ -522,7 +654,7 @@ MeshLogicalFactory::Create(Teuchos::ParameterList& plist) {
 
       set_ents.insert(set_ents.end(), seg_cell->second.begin(), seg_cell->second.end());
     }
-    AddSet(set_name, CELL, set_ents);
+    AddSet(set_name, "cell", set_ents);
   }
 
   return Create();

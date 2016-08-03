@@ -400,7 +400,7 @@ demoMeshLogicalY() {
   fine_c1.insert(fine_c1.end(), fine_c2.begin(), fine_c2.end());
   fine_c1.insert(fine_c1.end(), fine_c3.begin(), fine_c3.end());
   fine_c1.insert(fine_c1.end(), fine_c4.begin(), fine_c4.end());
-  fac.AddSet("fine_root", CELL, fine_c1);
+  fac.AddSet("fine_root", "cell", fine_c1);
 
   Teuchos::RCP<MeshLogical> mesh = fac.Create();
   return mesh;
