@@ -24,6 +24,7 @@ project(ATK)
 
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${DBC_SOURCE_DIR})
 
 
 add_amanzi_library(atk
@@ -35,6 +36,7 @@ add_amanzi_library(atk
                           LeastSquare.cc 
                           VerboseObject.cc
                           IOEvent.cc
+                          Spline.cc
                    HEADERS HDF5Reader.hh
                            Utils.hh
                            Units.hh
@@ -51,6 +53,7 @@ add_amanzi_library(atk
                            factory_with_state.hh
                            LeastSquare.hh
                            ObservationData.hh
+                           Spline.hh
                    )
 
 if (BUILD_TESTS)
@@ -82,6 +85,11 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/utils_units.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
 
+    ADD_AMANZI_TEST(utils_spline utils_spline
+                    KIND unit
+                    SOURCE test/Main.cc test/utils_spline.cc
+                    LINK_LIBS error_handling atk ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
+                  
 endif()
 
 
