@@ -180,7 +180,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             file_name = text_content;
           } else if (strcmp(tagname, "attribute") == 0) {
             file++;
-            attr_names.push_back(text_content);
+            attr_names = CharToStrings_(text_content);
           }
         }
       }

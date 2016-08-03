@@ -190,7 +190,7 @@ About
 
 * Input Files:
 
-  * amanzi_dispersion_aligned_point_2d-isv2.xml 
+  * amanzi_dispersion_aligned_point_2d-u.xml 
 
     * Spec Version 2.2, unstructured mesh framework
     * mesh:  amanzi_dispersion_aligned_point_2d.exo

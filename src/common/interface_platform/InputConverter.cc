@@ -801,7 +801,6 @@ double InputConverter::GetTextContentD_(
     std::string text = TrimString_(mm.transcode(node->getTextContent()));
     GetConstantType_(text, parsed_text);
     val = ConvertUnits_(parsed_text, unit_in);
-std::cout << parsed_text << " " << val << std::endl;
  
     if ((unit != "" && unit_in != "") ||
         (unit == "-" && unit_in != "")) {

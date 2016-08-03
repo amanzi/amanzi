@@ -75,9 +75,8 @@ void Units::Init()
   derived_["Pa"] = AtomicUnitForm("kg", 1, "m", -1, "s", -2);
   derived_["J"] = AtomicUnitForm("m", 2, "kg", 1, "s", -2);
 
-  concentration_factor_ = 1.0;
-  if (system_.concentration == "molar") 
-     concentration_factor_ = conversion_factor(bu::si::volume(), bu::metric::liter_base_unit::unit_type());
+  // static convertion factor
+  concentration_factor_ = concentration_[system_.concentration].value() / concentration_["SI"].value();
 }
 
 
