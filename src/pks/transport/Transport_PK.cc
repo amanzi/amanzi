@@ -375,6 +375,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 #endif
   } else {
     if (vo_->getVerbLevel() > Teuchos::VERB_NONE) {
+      Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << vo_->color("yellow") << "No BCs were specified." << vo_->reset() << std::endl;
     }
   }
