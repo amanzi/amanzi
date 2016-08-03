@@ -43,4 +43,31 @@ endforeach(lcv)
 # make the library
 add_library(flow_relations ${sources})
 
-    
+if (BUILD_TESTS)
+    include_directories(./wrm)
+
+    # Add UnitTest includes
+    include_directories(${Amanzi_TPL_UnitTest_INCLUDE_DIRS})
+
+    add_executable(wrm_vanGenuchten
+      wrm/models/test/main.cc
+      wrm/models/test/test_vanGenuchten.cc)
+    target_link_libraries(wrm_vanGenuchten
+      flow_relations
+      amanzi_error_handling
+      amanzi_state
+      ${Amanzi_TPL_UnitTest_LIBRARIES}                                                                                                                                                      
+      ${Amanzi_TPL_Trilinos_LIBRARIES})
+
+    add_executable(wrm_plantChristoffersen
+      wrm/models/test/main.cc
+      wrm/models/test/test_plantChristoffersen.cc)
+    target_link_libraries(wrm_plantChristoffersen
+      flow_relations
+      amanzi_error_handling
+      amanzi_state
+      ${Amanzi_TPL_UnitTest_LIBRARIES}                                                                                                                                                      
+      ${Amanzi_TPL_Trilinos_LIBRARIES})
+
+
+endif()
