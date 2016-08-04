@@ -128,7 +128,7 @@ plantMesh(const Epetra_MpiComm* comm,
     top.set(0.);
     bottom.set(0.);
     bottom[2] = -soil_depth;
-    double soil_area = 2*PI*std::pow(1,2); // 1m cylinder
+    double soil_area = PI*std::pow(1,2); // 1m cylinder
     double soil_length;
     fac.AddSegment(n_soil, top, bottom, soil_area,
                    MeshLogicalFactory::TIP_BOUNDARY,
@@ -139,7 +139,7 @@ plantMesh(const Epetra_MpiComm* comm,
     AmanziMesh::Entity_ID_List soil_bc;
     soil_bc.push_back(soil_faces[0]);
     fac.AddSet("soil surface", "face", soil_bc);
-    soil_bc[0] = soil_faces[n_soil-1];
+    soil_bc[0] = soil_faces[soil_faces.size()-1];
     fac.AddSet("soil bottom", "face", soil_bc);
   }
   
