@@ -4,7 +4,9 @@
     <Parameter name="length" type="string" value="m"/>
     <Parameter name="time" type="string" value="s"/>
     <Parameter name="mass" type="string" value="kg"/>
-    <Parameter name="concentration" type="string" value="molar"/>
+    <Parameter name="amount" type="string" value="mol"/>
+    <Parameter name="concentration" type="string" value="SI"/>
+    <Parameter name="temperature" type="string" value="K"/>
   </ParameterList>
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot"/>
@@ -140,7 +142,7 @@
     <Parameter name="number of liquid components" type="int" value="1"/>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{6.1729344e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
-      <Parameter name="initial time step" type="Array(double)" value="{1.0e+01, 1.0e+01, 1.0e+01, 1.0}"/>
+      <Parameter name="initial time step" type="Array(double)" value="{1.0, 1.0, 1.0, 1.0}"/>
       <Parameter name="maximum time step" type="Array(double)" value="{4.32340e+17, 4.32340e+17, 4.32340e+17, 4.32340e+17}"/>
     </ParameterList>
     <ParameterList name="verbose object">
@@ -306,7 +308,7 @@
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
-        <Parameter name="error tolerance" type="double" value="1.0e-16"/>
+        <Parameter name="error tolerance" type="double" value="1.0e-20"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
@@ -319,7 +321,7 @@
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
-        <Parameter name="error tolerance" type="double" value="1.0e-16"/>
+        <Parameter name="error tolerance" type="double" value="1.0e-20"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
@@ -452,7 +454,7 @@
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 6.1729344e+10, 9.4672798e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -2.54022e-03, -1.48666e-06, -1.48666e-06}"/>
+                  <Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -2.535647604e-03, -1.483984012e-06, -1.483984012e-06}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant, constant, constant}"/>
                 </ParameterList>
               </ParameterList>
@@ -463,7 +465,7 @@
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -3.30423e-03, -1.48666e-06, -1.48666e-06}"/>
+                  <Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -1.483984012e-06, -3.298282386e-03, -1.483984012e-06, -1.483984012e-06}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant, constant, constant, constant}"/>
                 </ParameterList>
               </ParameterList>
@@ -473,9 +475,9 @@
               <Parameter name="rainfall" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10, 9.4672798e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
-                  <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.00000000000000000e+00, 6.17266656000000000e+10}"/>
+                  <Parameter name="y values" type="Array(double)" value="{-1.10510722000000000e-07, -1.48398401199999992e-06}"/>
+                  <Parameter name="forms" type="Array(string)" value="{constant}"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -497,10 +499,10 @@
             <ParameterList name="timestep controller standard parameters">
               <Parameter name="max iterations" type="int" value="15"/>
               <Parameter name="min iterations" type="int" value="10"/>
-              <Parameter name="time step increase factor" type="double" value="1.250e+00"/>
+              <Parameter name="time step increase factor" type="double" value="1.2"/>
               <Parameter name="time step reduction factor" type="double" value="0.8"/>
               <Parameter name="max time step" type="double" value="4.32340e+17"/>
-              <Parameter name="min time step" type="double" value="1.0e-20"/>
+              <Parameter name="min time step" type="double" value="1.0e-6"/>
             </ParameterList>
             <Parameter name="solver type" type="string" value="nka"/>
             <ParameterList name="nka parameters">
@@ -512,7 +514,7 @@
               <Parameter name="limit iterations" type="int" value="20"/>
               <Parameter name="modify correction" type="bool" value="false"/>
             </ParameterList>
-            <Parameter name="max preconditioner lag iterations" type="int" value="20"/>
+            <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
             <Parameter name="extrapolate initial guess" type="bool" value="true"/>
             <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
             <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
@@ -530,7 +532,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="flow and transport">
-      <Parameter name="PKs order" type="Array(string)" value="{Flow, Transport}"/>
+      <Parameter name="PKs order" type="Array(string)" value="{flow, transport}"/>
       <Parameter name="master PK index" type="int" value="0"/>
     </ParameterList>
     <ParameterList name="transport">
@@ -554,8 +556,8 @@
         <Parameter name="limiter extension for transport" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="molecular diffusion">
-        <Parameter name="aqueous names" type="Array(string)" value="{}"/>
-        <Parameter name="aqueous values" type="Array(double)" value="{}"/>
+        <Parameter name="aqueous names" type="Array(string)" value="{Tc-99}"/>
+        <Parameter name="aqueous values" type="Array(double)" value="{1.00000000000000006e-09}"/>
       </ParameterList>
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
@@ -592,9 +594,9 @@
               <Parameter name="regions" type="Array(string)" value="{Crib_216-B-17}"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-tabular">
-                  <Parameter name="y values" type="Array(double)" value="{0.0, 1.881389e-06, 0.0, 0.0}"/>
-                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 6.1729344e+10, 9.4672798e+10}"/>
-                  <Parameter name="forms" type="Array(string)" value="{constant, constant, constant}"/>
+                  <Parameter name="y values" type="Array(double)" value="{0.0, 1.881389e-06, 0.0}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 6.1729344e+10}"/>
+                  <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -602,9 +604,9 @@
               <Parameter name="regions" type="Array(string)" value="{Crib_216-B-18}"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-tabular">
-                  <Parameter name="y values" type="Array(double)" value="{0.0, 0.0, 2.266885e-06, 0.0, 0.0}"/>
-                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
-                  <Parameter name="forms" type="Array(string)" value="{constant, constant, constant, constant}"/>
+                  <Parameter name="y values" type="Array(double)" value="{0.0, 2.266885e-06, 0.0}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.173178481e+10, 6.173705521e+10}"/>
+                  <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -743,7 +745,7 @@
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 6.1729344e+10, 9.4672798e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -2.54022e-03, -1.48666e-06, -1.48666e-06}"/>
+                  <Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -2.535647604e-03, -1.483984012e-06, -1.483984012e-06}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant, constant, constant}"/>
                 </ParameterList>
               </ParameterList>
@@ -754,7 +756,7 @@
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -3.30423e-03, -1.48666e-06, -1.48666e-06}"/>
+                  <Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -1.483984012e-06, -3.298282386e-03, -1.483984012e-06, -1.483984012e-06}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant, constant, constant, constant}"/>
                 </ParameterList>
               </ParameterList>
@@ -764,9 +766,9 @@
               <Parameter name="rainfall" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
-                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 9.4672798e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -1.48666e-06, -1.48666e-06}"/>
-                  <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
+                  <Parameter name="x values" type="Array(double)" value="{0.00000000000000000e+00, 6.17266656000000000e+10}"/>
+                  <Parameter name="y values" type="Array(double)" value="{-1.10510722000000000e-07, -1.48398401199999992e-06}"/>
+                  <Parameter name="forms" type="Array(string)" value="{constant}"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -788,10 +790,10 @@
             <ParameterList name="timestep controller standard parameters">
               <Parameter name="max iterations" type="int" value="15"/>
               <Parameter name="min iterations" type="int" value="10"/>
-              <Parameter name="time step increase factor" type="double" value="1.25"/>
+              <Parameter name="time step increase factor" type="double" value="1.2"/>
               <Parameter name="time step reduction factor" type="double" value="0.8"/>
               <Parameter name="max time step" type="double" value="4.32340e+17"/>
-              <Parameter name="min time step" type="double" value="1.0e-20"/>
+              <Parameter name="min time step" type="double" value="1.0e-6"/>
             </ParameterList>
             <Parameter name="solver type" type="string" value="nka"/>
             <ParameterList name="nka parameters">
@@ -803,7 +805,7 @@
               <Parameter name="limit iterations" type="int" value="20"/>
               <Parameter name="modify correction" type="bool" value="false"/>
             </ParameterList>
-            <Parameter name="max preconditioner lag iterations" type="int" value="20"/>
+            <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
             <Parameter name="extrapolate initial guess" type="bool" value="true"/>
             <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
             <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>

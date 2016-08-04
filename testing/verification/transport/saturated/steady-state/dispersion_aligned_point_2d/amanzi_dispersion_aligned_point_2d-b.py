@@ -7,7 +7,7 @@ import utils_dispersion_aligned_point_2d
 #
 # Amanzi Input File:
 #
-input_filename = "amanzi_dispersion_aligned_point_2d-isv2.xml"
+input_filename = "amanzi_dispersion_aligned_point_2d-u.xml"
     
 #
 # Overwrite:  True|False
