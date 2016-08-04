@@ -1,5 +1,6 @@
 #include <cmath>
 #include "boost/math/constants/constants.hpp"
+#include "boost/math/special_functions/round.hpp"
 
 #include "MeshLogicalFactory.hh"
 
@@ -123,7 +124,7 @@ plantMesh(const Epetra_MpiComm* comm,
   if (include_soil) {
     // add the soil columns
     double dz_soil = dz_root;
-    int n_soil = (int)std::round(soil_depth / dz_soil);
+    int n_soil = (int)boost::math::round(soil_depth / dz_soil);
     ASSERT(std::abs(n_soil * dz_soil - soil_depth) < 1.e-8);
     top.set(0.);
     bottom.set(0.);
