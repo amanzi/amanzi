@@ -1,7 +1,6 @@
 /*
-The transport component of the Amanzi code, serial unit tests.
-License: BSD
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Transport PK
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cstdlib>
@@ -24,8 +23,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 
 /* **************************************************************** 
- * Test Init() procedure in the constructor.
- * ************************************************************* */
+* Test Init() procedure in the constructor.
+**************************************************************** */
 TEST(CONSTRUCTOR) {
   using namespace Teuchos;
   using namespace Amanzi;
