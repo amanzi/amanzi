@@ -2920,7 +2920,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
       if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
-        *(verbobj->os()) << tempstr;
+        *(verbobj->os()) << tempstr.str();
       }
     }
       
@@ -3014,7 +3014,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
       if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
-        *(verbobj->os()) << tempstr;
+        *(verbobj->os()) << tempstr.str();
       }
     }
     break;
@@ -3075,7 +3075,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
       if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
-        *(verbobj->os()) << tempstr;
+        *(verbobj->os()) << tempstr.str();
       }
     }
       
