@@ -728,7 +728,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
       src.set<Teuchos::Array<std::string> >("regions", regions);
       src.set<std::string>("spatial distribution method", weight);
 
-      Teuchos::ParameterList& srcfn = src.sublist("sink");
+      Teuchos::ParameterList& srcfn = src.sublist("well");
       if (times.size() == 1) {
         srcfn.sublist("function-constant").set<double>("value", values[0]);
       } else {
@@ -758,7 +758,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
       std::vector<std::string> forms(1, "SQRT");
       double amplitude = 2 * total / length * std::pow(diff / M_PI, 0.5); 
 
-      Teuchos::ParameterList& srcfn = src.sublist("sink").sublist("function-tabular");
+      Teuchos::ParameterList& srcfn = src.sublist("well").sublist("function-tabular");
       srcfn.set<Teuchos::Array<double> >("x values", times)
            .set<Teuchos::Array<double> >("y values", values)
            .set<Teuchos::Array<std::string> >("forms", forms);

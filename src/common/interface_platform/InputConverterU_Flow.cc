@@ -803,7 +803,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
     src.set<Teuchos::Array<std::string> >("regions", regions);
     src.set<std::string>("spatial distribution method", weight);
 
-    Teuchos::ParameterList& srcfn = src.sublist("sink");
+    Teuchos::ParameterList& srcfn = src.sublist("well");
     if (times.size() == 1) {
       srcfn.sublist("function-constant").set<double>("value", values[0]);
     } else {

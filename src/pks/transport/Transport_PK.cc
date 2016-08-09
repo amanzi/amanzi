@@ -401,7 +401,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
         for (Teuchos::ParameterList::ConstIterator it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
           std::string specname = it1->first;
           Teuchos::ParameterList& spec = src_list.sublist(specname);
-          Teuchos::RCP<TransportSourceFunction> src = factory.Create(spec, "sink", AmanziMesh::CELL, Kxy);
+          Teuchos::RCP<TransportSourceFunction> src = factory.Create(spec, "well", AmanziMesh::CELL, Kxy);
           src->set_tcc_name(name);
           src->set_tcc_index(FindComponentNumber(name));
           srcs_.push_back(src);

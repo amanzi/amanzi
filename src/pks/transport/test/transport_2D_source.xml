@@ -85,7 +85,7 @@
             <ParameterList name="SRC 0">
               <Parameter name="regions" type="Array(string)" value="{Well}"/>
               <Parameter name="spatial distribution method" type="string" value="permeability"/>
-              <ParameterList name="sink">
+              <ParameterList name="well">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1e-4"/>
                 </ParameterList>
@@ -96,7 +96,7 @@
             <ParameterList name="SRC 0">
               <Parameter name="regions" type="Array(string)" value="{Well}"/>
               <Parameter name="spatial distribution method" type="string" value="volume"/>
-              <ParameterList name="sink">
+              <ParameterList name="well">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.2"/>
                 </ParameterList>

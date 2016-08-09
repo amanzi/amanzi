@@ -1566,7 +1566,7 @@ Again, constant functions can be replaced by any of the available functions.
          <Parameter name="regions" type="Array(string)" value="{WELL_EAST}"/>
          <Parameter name="spatial distribution method" type="string" value="volume"/>
          <Parameter name="submodel" type="string" value="rate"/>
-         <ParameterList name="sink">
+         <ParameterList name="well">
            <ParameterList name="function-constant">
              <Parameter name="value" type="double" value="-0.1"/>
            </ParameterList>
@@ -1576,7 +1576,7 @@ Again, constant functions can be replaced by any of the available functions.
        <ParameterList name="SRC 1">
          <Parameter name="regions" type="Array(string)" value="{WELL_WEST}"/>
          <Parameter name="spatial distribution method" type="string" value="permeability"/>
-         <ParameterList name="sink">
+         <ParameterList name="well">
            <ParameterList name="function-constant">
              <Parameter name="value" type="double" value="-0.2"/>
            </ParameterList>
@@ -2260,7 +2260,7 @@ This example defines one well and one sink.
            <Parameter name="regions" type="Array(string)" value="{EAST_WELL}"/>
            <Parameter name="spatial distribution method" type="string" value="volume"/>
            <Parameter name="submodel" type="string" value="rate"/>
-           <ParameterList name="sink">   <!-- keyword, do not change -->
+           <ParameterList name="well">   <!-- keyword, do not change -->
              <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="-0.01"/>
              </ParameterList>
@@ -2275,7 +2275,7 @@ This example defines one well and one sink.
          <ParameterList name="SOURCE: WEST WELL">   <!-- user defined name -->
            <Parameter name="regions" type="Array(string)" value="{WEST_WELL}"/>
            <Parameter name="spatial distribution method" type="string" value="permeability"/>
-           <ParameterList name="sink">  
+           <ParameterList name="well">  
              <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="0.02"/>
              </ParameterList>

@@ -351,7 +351,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
       std::string name = it->first;
       if (src_list.isSublist(name)) {
         Teuchos::ParameterList& spec = src_list.sublist(name);
-        srcs.push_back(factory.Create(spec, "sink", AmanziMesh::CELL, Kxy));
+        srcs.push_back(factory.Create(spec, "well", AmanziMesh::CELL, Kxy));
       }
     }
   }
