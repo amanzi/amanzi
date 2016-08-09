@@ -11,10 +11,9 @@ int main() {
 
   std::vector<int> soil_type;
   std::vector<int> bedrock_type;
-  std::vector<int> veg_type;
   std::vector<double> depths;
 
-  Mesh2D m = readFile(mesh_in, soil_type, veg_type, bedrock_type, depths);
+  Mesh2D m = readFile(mesh_in, soil_type, bedrock_type, depths);
   ASSERT(m.coords.size() == 4);
   ASSERT(m.cell2node.size() == 2);
   

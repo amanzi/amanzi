@@ -11,11 +11,17 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 struct Mesh2D {
-  Mesh2D(std::vector<Point> coords_,
-         std::vector<std::vector<int> > cell2node_) :
+  Mesh2D(std::vector<Point>&& coords_,
+         std::vector<std::vector<int> >&& cell2node_,
+         std::vector<std::vector<int> >&& cell_sets_) :
       coords(std::move(coords_)),
-      cell2node(std::move(cell2node_))
+      cell2node(std::move(cell2node_)),
+      cell_sets(std::move(cell_sets_))
   {
+    for (auto& set : cell_sets) {
+      ASSERT(set.size() == cell2node.size());
+    }
+
     for (auto& c : cell2node) {
       Point v1(2), v2(2);
       v1.set(coords[c[1]][0] - coords[c[0]][0], coords[c[1]][1] - coords[c[0]][1]);
@@ -29,6 +35,7 @@ struct Mesh2D {
   
   std::vector<Point> coords;
   std::vector<std::vector<int> > cell2node;
+  std::vector<std::vector<int> > cell_sets;
 };
 
 
@@ -78,7 +85,7 @@ struct Mesh3D {
 
   std::vector<Point> coords;
   std::vector<std::vector<int> > cell2face;
-  std::vector<int> cell_sets;
+  std::vector<int> block_ids;
   std::vector<std::vector<int> > face2node;
   std::vector<std::vector<int> > face2node_sorted;
   std::vector<int> side_face_counts;
@@ -86,6 +93,7 @@ struct Mesh3D {
   std::vector<int> face_cell_when_created;
 
   std::vector<std::pair<std::vector<int>, std::vector<int> > > face_sets;
+  std::vector<int> face_sets_id;
 
 
   int current_layer;

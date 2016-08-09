@@ -27,7 +27,6 @@ struct PointFactory {
 
 Mesh2D readFile(const std::string& filename,
                 std::vector<int>& soil_type,
-                std::vector<int>& veg_type,
                 std::vector<int>& bedrock_type,
                 std::vector<double>& depth_to_bedrock);
 

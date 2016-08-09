@@ -23,9 +23,10 @@ writeExodus(const Mesh3D& m, const std::string& filename) {
   }
   
   // make the blocks by set
-  std::set<int> set_ids(m.cell_sets.begin(), m.cell_sets.end());
+  std::set<int> set_ids(m.block_ids.begin(), m.block_ids.end());
   std::vector<std::vector<int> > blocks;
   std::vector<int> blocks_ncells;
+  std::vector<int> blocks_id;
   std::vector<std::vector<int> > block_face_counts;
   
   for (auto sid : set_ids) {
@@ -35,7 +36,7 @@ writeExodus(const Mesh3D& m, const std::string& filename) {
     int ncells = 0;
 
     for (int i=0; i!=m.cell2face.size(); ++i) {
-      if (m.cell_sets[i] == sid) {
+      if (m.block_ids[i] == sid) {
         ncells++;
         block.insert(block.end(), m.cell2face[i].begin(), m.cell2face[i].end());
         face_counts.push_back(m.cell2face[i].size());
@@ -45,6 +46,7 @@ writeExodus(const Mesh3D& m, const std::string& filename) {
 
     blocks.emplace_back(block);
     blocks_ncells.push_back(ncells);
+    blocks_id.push_back(sid);
     block_face_counts.emplace_back(face_counts);
   }
 
@@ -118,29 +120,29 @@ writeExodus(const Mesh3D& m, const std::string& filename) {
   
 
   // put in the element blocks
-  for (int bid=0; bid!=blocks.size(); ++bid) {
-    ierr |= ex_put_block(fid, EX_ELEM_BLOCK, (bid+1)*100, "NFACED",
-                         blocks_ncells[bid], 0, 0, blocks[bid].size(),0);
+  for (int lcvb=0; lcvb!=blocks.size(); ++lcvb) {
+    ierr |= ex_put_block(fid, EX_ELEM_BLOCK, blocks_id[lcvb], "NFACED",
+                         blocks_ncells[lcvb], 0, 0, blocks[lcvb].size(),0);
     ASSERT(!ierr);
 
-    ierr |= ex_put_entity_count_per_polyhedra(fid, EX_ELEM_BLOCK, (bid+1)*100,
-            &block_face_counts[bid][0]);
+    ierr |= ex_put_entity_count_per_polyhedra(fid, EX_ELEM_BLOCK, blocks_id[lcvb],
+            &block_face_counts[lcvb][0]);
     ASSERT(!ierr);
 
-    for (auto&e : blocks[bid]) e++;
-    ierr |= ex_put_conn(fid, EX_ELEM_BLOCK, (bid+1)*100, NULL, NULL, &blocks[bid][0]);
+    for (auto&e : blocks[lcvb]) e++;
+    ierr |= ex_put_conn(fid, EX_ELEM_BLOCK, blocks_id[lcvb], NULL, NULL, &blocks[lcvb][0]);
     ASSERT(!ierr);
   }
 
   // add the side sets
-  int face_id = 0;
-  for (auto& s : m.face_sets) {
+  for (int lcvs=0; lcvs!=m.face_sets.size(); ++lcvs) {
+    auto& s = m.face_sets[lcvs];
     auto elems_copy(s.first);
     auto faces_copy(s.second);
     for (auto& e : elems_copy) e++;
     for (auto& e : faces_copy) e++;
-    ierr |= ex_put_side_set(fid, face_id+1, &s.first[0], &s.second[0]);
-    face_id++;
+    ierr |= ex_put_side_set_param(fid, m.face_sets_id[lcvs], elems_copy.size(), 0);
+    ierr |= ex_put_side_set(fid, m.face_sets_id[lcvs], &elems_copy[0], &faces_copy[0]);
   }
 
 

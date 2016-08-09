@@ -10,11 +10,9 @@ namespace AmanziGeometry {
 Mesh2D
 readFile(const std::string& filename,
                  std::vector<int>& soil_types,
-                 std::vector<int>& veg_types,
                  std::vector<int>& bedrock_types,
                  std::vector<double>& depths_to_bedrock) {
   std::ifstream fin(filename);
-  veg_types.clear();
   bedrock_types.clear();
   soil_types.clear();
   depths_to_bedrock.clear();
@@ -23,6 +21,7 @@ readFile(const std::string& filename,
   Point p1(3),p2(3),p3(3), c(2);
   std::vector<double> depths(3);
   int tri_index;
+  std::vector<int> veg_types;
   int veg_type, bedrock_type, soil_type;
   double depth_to_bedrock;
 
@@ -58,7 +57,9 @@ readFile(const std::string& filename,
     conn.emplace_back(tri_conn);
   }
 
-  Mesh2D m(fac.points, conn);
+  std::vector<std::vector<int> > sets(1);
+  sets[0] = std::move(veg_types);
+  Mesh2D m(std::move(fac.points), std::move(conn), std::move(sets));
   return m;
 }
 

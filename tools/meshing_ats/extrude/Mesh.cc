@@ -1,3 +1,4 @@
+#include <set>
 #include "Mesh.hh"
 
 namespace Amanzi {
@@ -52,17 +53,15 @@ Mesh3D::face_constructor(const std::vector<int>& nodes,
   
 void
 Mesh3D::extrude(const std::vector<double>& dz,
-                const std::vector<int>& cell_set) {
+                const std::vector<int>& block_ids_) {
   std::cout << "PRE-Extruding: currently " << cell2face.size() << " cells and " << face2node.size() << " faces." << std::endl;
 
   if (current_layer == 0) {
-    // surface set
-    std::vector<int> surface_c(m.cell2node.size(), -1);
-
     // copy the top layer of coords
     std::copy(m.coords.begin(), m.coords.end(), coords.begin());
-    
+
     // create the top layer of faces
+    std::vector<int> surface_c(m.cell2node.size(), -1);
     for (int c=0; c!=m.cell2node.size(); ++c) {
       int f = face_constructor(m.cell2node[c], 0, c, true);
       cell2face[c][0] = f;
@@ -70,7 +69,27 @@ Mesh3D::extrude(const std::vector<double>& dz,
     }
 
     std::vector<int> surface_f(surface_c.size(), 0);
-    face_sets.emplace_back(std::make_pair(surface_c, surface_f));
+    face_sets.emplace_back(std::make_pair(std::move(surface_c), std::move(surface_f)));
+    face_sets_id.push_back(1);
+
+    // move the 2d cell sets to face sets on the surface
+    std::set<int> set_ids;
+    for (auto& part : m.cell_sets) {
+      set_ids.insert(part.begin(), part.end());
+    }
+    for (int sid : set_ids) {
+      std::vector<int> set_cells;
+      for (auto& part : m.cell_sets) {
+        for (int c=0; c!=part.size(); ++c) {
+          if (part[c] == sid) {
+            set_cells.push_back(c);
+          }
+        }
+      }
+      std::vector<int> set_faces(set_cells.size(), 0);
+      face_sets.emplace_back(std::make_pair(std::move(set_cells), std::move(set_faces)));
+      face_sets_id.push_back(sid);
+    }
   }
 
   // shift the coordinates
@@ -114,10 +133,11 @@ Mesh3D::extrude(const std::vector<double>& dz,
   if (current_layer == total_layers - 1) {
     std::vector<int> bottom_f(bottom.size(), 1);
     face_sets.emplace_back(std::make_pair(bottom,bottom_f));
+    face_sets_id.push_back(2);
   }
 
   // copy over the cell sets
-  cell_sets.insert(cell_sets.end(), cell_set.begin(), cell_set.end());
+  block_ids.insert(block_ids.end(), block_ids_.begin(), block_ids_.end());
 
   // increment
   current_layer++;
@@ -138,6 +158,7 @@ Mesh3D::finish_sets() {
     }
   }
   face_sets.emplace_back(std::make_pair(sides_c, sides_f));
+  face_sets_id.push_back(3);
 }
 
 
