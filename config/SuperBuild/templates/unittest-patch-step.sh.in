@@ -20,5 +20,6 @@ echo "Patching file ${make_file}"
 # http://comments.gmane.org/gmane.comp.lang.c%2B%2B.unittest%2B%2B.devel/394
 # We copy a fixed version into place before building unittest++.
 cp @SuperBuild_TEMPLATE_FILES_DIR@/unittest-TestTestRunner.cpp @UnitTest_source_dir@/src/tests/TestTestRunner.cpp
+cp @SuperBuild_TEMPLATE_FILES_DIR@/unittest-TestTestMacros.cpp @UnitTest_source_dir@/src/tests/TestTestMacros.cpp
 
 exit $?

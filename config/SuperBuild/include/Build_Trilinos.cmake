@@ -56,6 +56,9 @@ if ( ENABLE_STK_Mesh )
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DSTK_ENABLE_SEACASNemesis:STRING=OFF")
 endif()
 
+# Disable Pamgen ( doesn't compile with gnu++14 standard )
+list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_Pamgen:STRING=OFF")
+
 #  - Trilinos TPL Configuration
 
 set(Trilinos_CMAKE_TPL_ARGS)
@@ -169,7 +172,7 @@ set(Trilinos_CMAKE_LANG_ARGS
 # Trilinos patches
 set(ENABLE_Trilinos_Patch ON)
 if (ENABLE_Trilinos_Patch)
-  set(Trilinos_patch_file trilinos-ifpack-hypre.patch trilinos-duplicate-parameters.patch)
+  set(Trilinos_patch_file trilinos-ifpack-hypre.patch trilinos-duplicate-parameters.patch trilinos-std-gnu++14.patch)
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
                  ${Trilinos_prefix_dir}/trilinos-patch-step.sh
                  @ONLY)
