@@ -1466,6 +1466,24 @@ This modification is referred to as a submodel and requires additional parameter
     It employs a smooth transition from the infiltration 
     to mixed boundary condition. The recommended value is `"PFloTran`".
 
+Each boundary condition accepts three parameters: `"regions`", 
+`"use area fractions`", and `"spatial distribution method`". Parameter `"regions`"
+specifies the list of regions where the boundary condition is defined. 
+The boolen parameter `"use area fractions`" instructs the code to use all available volume fractions. 
+Default value is *false*, it corresponds to :math:`f=1` in the formulas below.
+Parameter `"spatial distribution method`" defines the method for distributing
+data (e.g. the total mass flux) over the specified regions. The available options 
+are `"area`" and `"none`" (default).
+For instance, for a given boundary function :math:`g(x)`, these options correspond to 
+different boundary conditions for the Darcy velocity in the original PDE:
+
+.. math::
+  {\boldsymbol q} \cdot {\boldsymbol n} = g(x)\, f\, \frac{1}{|B|},\quad\mbox{and}\quad
+  {\boldsymbol q} \cdot {\boldsymbol n} = g(x)\, f,
+
+where :math:`f` is the folume fraction function, and :math:`|B|` is the area of the
+specified regions calculated using the folume fraction function.
+
 .. code-block:: xml
 
    <ParameterList name="Richards problem">  <!-- parent list -->
