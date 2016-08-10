@@ -516,6 +516,10 @@ void InputConverterU::TranslateTransportBCsGroup_(
           .set<Teuchos::Array<double> >("y values", values)
           .set<Teuchos::Array<std::string> >("forms", forms);
     }
+
+    // data distribution method
+    bc.set<std::string>("spatial distribution method", "none");
+    bc.set<bool>("use area fractions", WeightVolumeSubmodel_(regions));
   }
 }
 
@@ -649,17 +653,17 @@ void InputConverterU::TranslateTransportSourcesGroup_(
 
     // get a group of similar elements defined by the first element
     bool flag;
-    std::string srctype, solute_name, weight, srctype_flow, unit("mol/s"), unit_in;
+    std::string srctype, solute_name, srctype_flow, unit("mol/s"), unit_in;
 
     std::vector<DOMNode*> same_list = GetSameChildNodes_(node, srctype, flag, true);
     solute_name = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "name");
 
     // weighting method
     bool classical(true), mass_fraction(false);
+    std::string weight("volume");
+
     char* text = mm.transcode(same_list[0]->getNodeName());
-    if (strcmp(text, "volume_weighted") == 0) {
-      weight = WeightVolumeSubmodel_(regions);
-    } else if (strcmp(text, "perm_weighted") == 0) {
+    if (strcmp(text, "perm_weighted") == 0) {
       weight = "permeability";
     } else if (strcmp(text, "uniform_conc") == 0) {
       weight = "none";
@@ -670,11 +674,9 @@ void InputConverterU::TranslateTransportSourcesGroup_(
       GetSameChildNodes_(node_list->item(0), srctype_flow, flag, true);
       weight = (srctype_flow == "volume_weighted") ? "volume" : "permeability";
     } else if (strcmp(text, "flow_mass_fraction_conc") == 0) {
-      weight = WeightVolumeSubmodel_(regions);
       mass_fraction = true;
       unit = "-";
     } else if (strcmp(text, "diffusion_dominated_release") == 0) {
-      weight = "volume";
       classical = false;
     } else {
       ThrowErrorIllformed_(srcname, "element", text);
@@ -727,6 +729,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
       Teuchos::ParameterList& src = src_list.sublist(solute_name).sublist(srcname);
       src.set<Teuchos::Array<std::string> >("regions", regions);
       src.set<std::string>("spatial distribution method", weight);
+      src.set<bool>("use volume fractions", WeightVolumeSubmodel_(regions));
 
       Teuchos::ParameterList& srcfn = src.sublist("well");
       if (times.size() == 1) {
@@ -753,6 +756,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
       Teuchos::ParameterList& src = src_list.sublist(solute_name).sublist(srcname);
       src.set<Teuchos::Array<std::string> >("regions", regions);
       src.set<std::string>("spatial distribution method", weight);
+      src.set<bool>("use volume fractions", WeightVolumeSubmodel_(regions));
 
       std::vector<double> values(2, 0.0);
       std::vector<std::string> forms(1, "SQRT");
@@ -776,13 +780,13 @@ void InputConverterU::TranslateTransportSourcesGroup_(
 /* ******************************************************************
 * Create list of transport sources.
 ****************************************************************** */
-std::string InputConverterU::WeightVolumeSubmodel_(const std::vector<std::string>& regions)
+bool InputConverterU::WeightVolumeSubmodel_(const std::vector<std::string>& regions)
 {
-  std::string weight("volume");
+  bool flag(false);
   for (int k = 0; k < regions.size(); ++k) {
-    if (region_type_[regions[k]] == 1) weight = "volume fraction";
+    if (region_type_[regions[k]] == 1) flag = true;
   }
-  return weight;
+  return flag;
 }
 
 }  // namespace AmanziInput

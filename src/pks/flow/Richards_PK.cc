@@ -781,6 +781,9 @@ void Richards_PK::InitializeStatistics_()
     VV_PrintHeadExtrema(*solution);
     VV_PrintSourceExtrema();
 
+    *vo_->os() << "\nPrinting WRM files..." << std::endl;
+    relperm_->PlotWRMcurves();
+
     *vo_->os() << vo_->color("green") << "Initalization of PK is complete, T=" 
                << S_->time() << " dT=" << dt_ << vo_->reset() << std::endl << std::endl;
   }

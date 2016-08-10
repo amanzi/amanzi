@@ -1266,8 +1266,7 @@ void Transport_PK::ComputeSources_(
         value *= tcc_prev[imap][c];
       } else {
         // correction for non-SI concentration units
-        if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "volume fraction" ||
-            srcs_[m]->name() == "weight")
+        if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "weight")
             value /= units_.concentration_factor();
       }
 

@@ -51,7 +51,8 @@
           </ParameterList>
           <ParameterList name="SRC 1">
             <Parameter name="regions" type="Array(string)" value="{WellRightRotated}"/>
-            <Parameter name="spatial distribution method" type="string" value="volume fraction"/>
+            <Parameter name="spatial distribution method" type="string" value="volume"/>
+            <Parameter name="use volume fractions" type="bool" value="true"/>
             <ParameterList name="well">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="-2.0"/>

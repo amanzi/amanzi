@@ -683,6 +683,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
           .set<Teuchos::Array<std::string> >("forms", forms);
     }
 
+    // data distribution method
+    bc.set<std::string>("spatial distribution method", "none");
+    bc.set<bool>("use area fractions", WeightVolumeSubmodel_(regions));
+
     // special cases and parameters without default values
     if (bctype == "mass flux") {
       bc.set<bool>("rainfall", false);
@@ -780,7 +784,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
 
     std::string weight;
     if (srctype == "volume_weighted") {
-      weight = WeightVolumeSubmodel_(regions);
+      weight = "volume";
     } else if (srctype == "perm_weighted") {
       weight = "permeability";
     } else if (srctype == "uniform") {
@@ -803,6 +807,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
     Teuchos::ParameterList& src = out_list.sublist(srcname);
     src.set<Teuchos::Array<std::string> >("regions", regions);
     src.set<std::string>("spatial distribution method", weight);
+    src.set<bool>("use volume fractions", WeightVolumeSubmodel_(regions));
 
     Teuchos::ParameterList& srcfn = src.sublist("well");
     if (times.size() == 1) {

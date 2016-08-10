@@ -65,6 +65,8 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
   bool use_vofs(false);
   if (plist.isParameter("use area fractions")) {
     use_vofs = plist.get<bool>("use area fractions");
+  } else if (plist.isParameter("use volume fractions")) {
+    use_vofs = plist.get<bool>("use volume fractions");
   }
 
   // select model for data distribution
@@ -73,7 +75,13 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
     model = plist.get<std::string>("spatial distribution method");
   }
 
-  if (model == "volume") {
+  if (use_vofs) {
+    Teuchos::RCP<PK_DomainFunctionVolumeFraction<FunctionBase> >
+      func = Teuchos::rcp(new PK_DomainFunctionVolumeFraction<FunctionBase>(mesh_));
+    func->Init(plist, keyword);
+    return func; 
+  }
+  else if (model == "volume") {
     Teuchos::RCP<PK_DomainFunctionVolume<FunctionBase> >
         func = Teuchos::rcp(new PK_DomainFunctionVolume<FunctionBase>(mesh_, plist, kind));
     func->Init(plist, keyword);
@@ -83,12 +91,6 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
     Teuchos::RCP<PK_DomainFunctionWeight<FunctionBase> >
         func = Teuchos::rcp(new PK_DomainFunctionWeight<FunctionBase>(mesh_));
     func->Init(plist, keyword, weight);
-    return func; 
-  }
-  else if (model == "volume fraction") {
-    Teuchos::RCP<PK_DomainFunctionVolumeFraction<FunctionBase> >
-      func = Teuchos::rcp(new PK_DomainFunctionVolumeFraction<FunctionBase>(mesh_));
-    func->Init(plist, keyword);
     return func; 
   }
   else if (model == "domain coupling") {

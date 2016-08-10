@@ -138,7 +138,7 @@ class InputConverterU : public InputConverter {
   void MergeInitialConditionsLists_(Teuchos::ParameterList& plist);
 
   // -- miscalleneous
-  std::string WeightVolumeSubmodel_(const std::vector<std::string>& regions);
+  bool WeightVolumeSubmodel_(const std::vector<std::string>& regions);
   void PrintStatistics_();
 
  private:
