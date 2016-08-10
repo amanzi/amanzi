@@ -156,7 +156,7 @@ Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_()
       double t0 = GetAttributeValueD_(element, "start", "y");
 
       tp_forms[t0] = GetAttributeValueS_(element, "function");
-      tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, "", false, 0.0);
+      tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, "K", false, 0.0);
     }
 
     // create vectors of values and forms

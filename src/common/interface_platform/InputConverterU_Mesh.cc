@@ -122,13 +122,11 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
             ThrowErrorIllformed_("mesh", "box", "generate");
         element = static_cast<DOMElement*>(node);
 
-        std::string tmp = GetAttributeValueS_(element, "low_coordinates");
-        std::vector<double> low = MakeVector_(tmp);
+        std::vector<double> low = GetAttributeVectorD_(element, "low_coordinates", "m");
         if (low.size() != dim_)
             ThrowErrorIllformed_("mesh", "low_coordinates", "generate");
 
-        tmp = GetAttributeValueS_(element, "high_coordinates");
-        std::vector<double> high = MakeCoordinates_(tmp);
+        std::vector<double> high = GetAttributeVectorD_(element, "high_coordinates", "m");
         if (high.size() != dim_)
             ThrowErrorIllformed_("mesh", "high_coordinates", "generate");
 
@@ -287,8 +285,8 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       if (strcmp(node_name, "box") == 0) {
         tree_["regions"].push_back(reg_name);
         
-        std::vector<double> low = GetAttributeVectorD_(reg_elem, "low_coordinates");
-        std::vector<double> high = GetAttributeVectorD_(reg_elem, "high_coordinates");
+        std::vector<double> low = GetAttributeVectorD_(reg_elem, "low_coordinates", "m");
+        std::vector<double> high = GetAttributeVectorD_(reg_elem, "high_coordinates", "m");
         out_list.sublist(reg_name).sublist("region: box")
             .set<Teuchos::Array<double> >("low coordinate", low)
             .set<Teuchos::Array<double> >("high coordinate", high);
@@ -297,11 +295,8 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       else if (strcmp(node_name, "plane") == 0) {
         tree_["regions"].push_back(reg_name);
         
-        text = GetAttributeValueS_(reg_elem, "location");
-        std::vector<double> loc = MakeCoordinates_(text);
-
-        text = GetAttributeValueS_(reg_elem, "normal");
-        std::vector<double> dir = MakeCoordinates_(text);
+        std::vector<double> loc = GetAttributeVectorD_(reg_elem, "location", "m");
+        std::vector<double> dir = GetAttributeVectorD_(reg_elem, "normal", "m");
 
         out_list.sublist(reg_name).sublist("region: plane")
            .set<Teuchos::Array<double> >("point", loc)
@@ -339,7 +334,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
 
       else if (strcmp(node_name, "point") == 0) {
         tree_["regions"].push_back(reg_name);
-        std::vector<double> coord = GetAttributeVectorD_(reg_elem, "coordinate");
+        std::vector<double> coord = GetAttributeVectorD_(reg_elem, "coordinate", "m");
         out_list.sublist(reg_name).sublist("region: point").set<Teuchos::Array<double> >("coordinate", coord);
       }
 
@@ -428,9 +423,9 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         tree_["regions"].push_back(reg_name);
         region_type_[reg_name] = 1;
         
-        std::vector<double> low = GetAttributeVectorD_(reg_elem, "corner_coordinates");
-        std::vector<double> high = GetAttributeVectorD_(reg_elem, "opposite_corner_coordinates");
-        std::vector<double> normals = GetAttributeVectorD_(reg_elem, "normals", false);
+        std::vector<double> low = GetAttributeVectorD_(reg_elem, "corner_coordinates", "m");
+        std::vector<double> high = GetAttributeVectorD_(reg_elem, "opposite_corner_coordinates", "m");
+        std::vector<double> normals = GetAttributeVectorD_(reg_elem, "normals", "", false);
 
         out_list.sublist(reg_name).sublist("region: box volume fractions")
            .set<Teuchos::Array<double> >("corner coordinate", low)
@@ -442,8 +437,8 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       }
       else if (strcmp(node_name, "line_segment") == 0) {
         tree_["regions"].push_back(reg_name); 
-        std::vector<double> p1 = GetAttributeVectorD_(reg_elem, "end_coordinates");
-        std::vector<double> p2 = GetAttributeVectorD_(reg_elem, "opposite_end_coordinates");
+        std::vector<double> p1 = GetAttributeVectorD_(reg_elem, "end_coordinates", "m");
+        std::vector<double> p2 = GetAttributeVectorD_(reg_elem, "opposite_end_coordinates", "m");
         out_list.sublist(reg_name).sublist("region: line segment")
           .set<Teuchos::Array<double> >("end coordinate", p1)
           .set<Teuchos::Array<double> >("opposite end coordinate", p2);

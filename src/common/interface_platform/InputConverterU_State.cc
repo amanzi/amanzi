@@ -302,9 +302,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- linear pressure
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_pressure", flag);
       if (flag) {
-        double p = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
-        std::vector<double> grad = GetAttributeVectorD_(static_cast<DOMElement*>(node), "gradient");
-        std::vector<double> refc = GetAttributeVectorD_(static_cast<DOMElement*>(node), "reference_coord");
+        DOMElement* element = static_cast<DOMElement*>(node);
+        double p = GetAttributeValueD_(element, "value", "Pa");
+        std::vector<double> grad = GetAttributeVectorD_(element, "gradient", "Pa/m");
+        std::vector<double> refc = GetAttributeVectorD_(element, "reference_coord", "m");
 
         grad.insert(grad.begin(), 0.0);
         refc.insert(refc.begin(), 0.0);
@@ -322,7 +323,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- uniform saturation
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, uniform_saturation", flag);
       if (flag) {
-        double s = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+        double s = GetAttributeValueD_(static_cast<DOMElement*>(node), "value", TYPE_NUMERICAL, "-");
 
         Teuchos::ParameterList& saturation_ic = out_ic.sublist("saturation_liquid");
         saturation_ic.sublist("function").sublist(reg_str)
@@ -335,9 +336,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- linear saturation
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_saturation", flag);
       if (flag) {
-        double s = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
-        std::vector<double> grad = GetAttributeVectorD_(static_cast<DOMElement*>(node), "gradient");
-        std::vector<double> refc = GetAttributeVectorD_(static_cast<DOMElement*>(node), "reference_coord");
+        DOMElement* element = static_cast<DOMElement*>(node);
+        double s = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, "-");
+        std::vector<double> grad = GetAttributeVectorD_(element, "gradient", "m^-1");
+        std::vector<double> refc = GetAttributeVectorD_(element, "reference_coord", "m");
 
         grad.insert(grad.begin(), 0.0);
         refc.insert(refc.begin(), 0.0);

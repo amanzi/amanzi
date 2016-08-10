@@ -143,15 +143,15 @@ class InputConverter {
   int GetAttributeValueL_(
       xercesc::DOMElement* elem, const char* attr_name,
       const std::string& type = TYPE_NUMERICAL, bool exception = true, int val = 0);
-  double GetAttributeValueD_(  // supports units except ppbm
+  double GetAttributeValueD_(  // supports units except for ppbm
       xercesc::DOMElement* elem, const char* attr_name, const std::string& type = TYPE_NUMERICAL,
       std::string unit = "", bool exception = true, double val = 0.0);
   std::string GetAttributeValueS_(
       xercesc::DOMElement* elem, const char* attr_name,
       const std::string& type = TYPE_NUMERICAL, bool exception = true, std::string val = "");
   std::vector<double> GetAttributeVectorD_(  // supports units except ppbm
-      xercesc::DOMElement* elem, const char* attr_name, bool exception = true,
-      double mol_mass = -1.0);
+      xercesc::DOMElement* elem, const char* attr_name,
+      std::string unit = "", bool exception = true, double mol_mass = -1.0);
   std::vector<std::string> GetAttributeVectorS_(
       xercesc::DOMElement* elem, const char* attr_name, bool exception = true);
  
@@ -190,7 +190,7 @@ class InputConverter {
   // -- coordinates and vectors.
   std::vector<double> MakeCoordinates_(const std::string& array);
   std::vector<double> MakeVector_(
-      const std::string& array, double mol_mass = -1.0);  // supports units
+      const std::string& array, std::string& unit, double mol_mass = -1.0);  // supports units
 
   // -- string modifications
   std::vector<std::string> CharToStrings_(const char* namelist);
