@@ -80,7 +80,7 @@ void TransportBoundaryFunction_Alquimia::Init_(const std::vector<std::string>& r
       int f = block[n];
       value_[f] = WhetStone::DenseVector(chem_engine_->NumPrimarySpecies());
 
-      mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
 
       cell_for_face_[f] = cells[0];
     }

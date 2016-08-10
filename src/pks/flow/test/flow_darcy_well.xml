@@ -43,7 +43,7 @@
           <ParameterList name="SRC 0">
             <Parameter name="regions" type="Array(string)" value="{WellLeft}"/>
             <Parameter name="spatial distribution method" type="string" value="volume"/>
-            <ParameterList name="sink">
+            <ParameterList name="well">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="-2.0"/>
               </ParameterList>
@@ -52,7 +52,7 @@
           <ParameterList name="SRC 1">
             <Parameter name="regions" type="Array(string)" value="{WellRightRotated}"/>
             <Parameter name="spatial distribution method" type="string" value="volume fraction"/>
-            <ParameterList name="sink">
+            <ParameterList name="well">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="-2.0"/>
               </ParameterList>

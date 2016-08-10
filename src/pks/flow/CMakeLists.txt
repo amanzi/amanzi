@@ -9,7 +9,6 @@
 include(PrintVariable)
 include(TestManager)
 
-#
 # Define a project name
 # After this command the following varaibles are defined
 #   FLOW_SOURCE_DIR
@@ -170,8 +169,8 @@ set(flow_inc_files
   WRMFactory.hh
   WRMPartition.hh)
 
-
 add_install_include_file(${flow_inc_files})
+
 
 if (BUILD_TESTS) 
     # Add UnitTest include directory

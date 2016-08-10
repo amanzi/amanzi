@@ -9,7 +9,6 @@
 include(PrintVariable)
 include(TestManager)
 
-#
 # Define a project name
 # After this command the following varaibles are defined
 #   TRANSPORT_SOURCE_DIR
@@ -144,8 +143,8 @@ add_amanzi_library(transport
                    LINK_LIBS geometry mesh error_handling state data_structures 
                              ${geochem_lib} chemistry_pk time_integration ${Epetra_LIBRARIES})
 
-if ( BUILD_TESTS )
 
+if ( BUILD_TESTS )
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
 

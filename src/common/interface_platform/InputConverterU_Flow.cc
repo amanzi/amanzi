@@ -590,17 +590,18 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
       element = static_cast<DOMElement*>(same_list[0]);
       data = GetAttributeVectorD_(element, "space_data");
     } else if (global_bc) {
+      std::string unit_grad = unit + "/m";
       element = static_cast<DOMElement*>(same_list[0]);
-      refv = GetAttributeValueD_(element, "reference_value");
-      grad = GetAttributeVectorD_(element, "gradient_value");
-      refc = GetAttributeVectorD_(element, "reference_point");
+      refv = GetAttributeValueD_(element, "reference_value", TYPE_NUMERICAL, unit);
+      grad = GetAttributeVectorD_(element, "gradient_value", unit_grad);
+      refc = GetAttributeVectorD_(element, "reference_point", "m");
     } else {
       std::map<double, double> tp_values, tp_fluxes;
       std::map<double, std::string> tp_forms;
 
       for (int j = 0; j < same_list.size(); ++j) {
         element = static_cast<DOMElement*>(same_list[j]);
-        double t0 = GetAttributeValueD_(element, "start");
+        double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, "s");
 
         tp_forms[t0] = GetAttributeValueS_(element, "function");
         tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, unit, false, 0.0);
@@ -803,7 +804,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
     src.set<Teuchos::Array<std::string> >("regions", regions);
     src.set<std::string>("spatial distribution method", weight);
 
-    Teuchos::ParameterList& srcfn = src.sublist("sink");
+    Teuchos::ParameterList& srcfn = src.sublist("well");
     if (times.size() == 1) {
       srcfn.sublist("function-constant").set<double>("value", values[0]);
     } else {

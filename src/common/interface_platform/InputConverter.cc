@@ -651,17 +651,30 @@ std::string InputConverter::GetAttributeValueS_(
 
 
 /* ******************************************************************
-* Extract attribute of type vector<double>.
+* Extract attribute of type vector<double>. Unit of each component 
+* must match the expected unit. 
 ****************************************************************** */
 std::vector<double> InputConverter::GetAttributeVectorD_(
-    DOMElement* elem, const char* attr_name, bool exception, double mol_mass)
+    DOMElement* elem, const char* attr_name, 
+    std::string unit, bool exception, double mol_mass)
 {
   std::vector<double> val;
   MemoryManager mm;
 
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
+    std::string unit_in;
     char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
-    val = MakeVector_(text_content, mol_mass);
+    val = MakeVector_(text_content, unit_in, mol_mass);
+
+    if ((unit != "" && unit_in != "") ||
+        (unit == "-" && unit_in != "")) {
+      if (!units_.CompareUnits(unit, unit_in)) {
+        Errors::Message msg;
+        msg << "Input unit [" << unit_in << "] for attribute \"" << attr_name 
+            << "\" does not match the expected unit [" << unit << "].\n";
+        Exceptions::amanzi_throw(msg);
+      }
+    }
   } else if (exception) {
     char* tagname = mm.transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
@@ -1015,8 +1028,8 @@ std::vector<double> InputConverter::MakeCoordinates_(const std::string& array)
 /* ******************************************************************
 * Converts string of data to real numbers using units.
 ****************************************************************** */
-std::vector<double> InputConverter::MakeVector_(const std::string& array,
-                                                double mol_mass)
+std::vector<double> InputConverter::MakeVector_(
+    const std::string& array, std::string& unit, double mol_mass)
 {
   std::vector<double> data;
   std::vector<std::string> tmp;
@@ -1024,7 +1037,7 @@ std::vector<double> InputConverter::MakeVector_(const std::string& array,
   tmp = CharToStrings_(array.c_str());
 
   for (int i = 0; i < tmp.size(); ++i) {
-    std::string parsed_str, unit;
+    std::string parsed_str;
     GetConstantType_(tmp[i], parsed_str);
     data.push_back(ConvertUnits_(parsed_str, unit, mol_mass));
   }

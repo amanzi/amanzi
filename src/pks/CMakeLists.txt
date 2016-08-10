@@ -5,7 +5,6 @@
 #    PK class
 #
 
-#
 # Define a project name
 # After this command the following varaibles are defined
 #   PKS_SOURCE_DIR
@@ -72,6 +71,9 @@ set(pks_inc_files
 
 add_install_include_file(${pks_inc_files})
 
+#
+# No tests so far
+#
 if (BUILD_TESTS) 
 endif()
 
@@ -83,10 +85,5 @@ add_subdirectory(transport)
 add_subdirectory(energy)
 add_subdirectory(dummy)
 add_subdirectory(mpc_pk)
-
-
-
-
-
 
 

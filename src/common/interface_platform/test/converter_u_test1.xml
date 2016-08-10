@@ -52,7 +52,7 @@
       <density>998.2</density>
       <dissolved_components>
         <solutes>
-          <solute coefficient_of_diffusion="1.0e-9">Tc-99</solute>
+          <solute coefficient_of_diffusion="1.0e-9" molar_mass="98.906255e-3">Tc-99</solute>
         </solutes>
       </dissolved_components>
     </liquid_phase>

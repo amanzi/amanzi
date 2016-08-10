@@ -61,7 +61,13 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
     Exceptions::amanzi_throw(msg);
   }
 
-  // select model for the source function
+  // should we use available volume fractions
+  bool use_vofs(false);
+  if (plist.isParameter("use area fractions")) {
+    use_vofs = plist.get<bool>("use area fractions");
+  }
+
+  // select model for data distribution
   std::string model("none");
   if (plist.isParameter("spatial distribution method")) {
     model = plist.get<std::string>("spatial distribution method");

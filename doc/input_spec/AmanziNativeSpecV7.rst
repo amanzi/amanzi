@@ -1466,6 +1466,24 @@ This modification is referred to as a submodel and requires additional parameter
     It employs a smooth transition from the infiltration 
     to mixed boundary condition. The recommended value is `"PFloTran`".
 
+Each boundary condition accepts three parameters: `"regions`", 
+`"use area fractions`", and `"spatial distribution method`". Parameter `"regions`"
+specifies the list of regions where the boundary condition is defined. 
+The boolen parameter `"use area fractions`" instructs the code to use all available volume fractions. 
+Default value is *false*, it corresponds to :math:`f=1` in the formulas below.
+Parameter `"spatial distribution method`" defines the method for distributing
+data (e.g. the total mass flux) over the specified regions. The available options 
+are `"area`" and `"none`" (default).
+For instance, for a given boundary function :math:`g(x)`, these options correspond to 
+different boundary conditions for the Darcy velocity in the original PDE:
+
+.. math::
+  {\boldsymbol q} \cdot {\boldsymbol n} = g(x)\, f\, \frac{1}{|B|},\quad\mbox{and}\quad
+  {\boldsymbol q} \cdot {\boldsymbol n} = g(x)\, f,
+
+where :math:`f` is the folume fraction function, and :math:`|B|` is the area of the
+specified regions calculated using the folume fraction function.
+
 .. code-block:: xml
 
    <ParameterList name="Richards problem">  <!-- parent list -->
@@ -1566,7 +1584,7 @@ Again, constant functions can be replaced by any of the available functions.
          <Parameter name="regions" type="Array(string)" value="{WELL_EAST}"/>
          <Parameter name="spatial distribution method" type="string" value="volume"/>
          <Parameter name="submodel" type="string" value="rate"/>
-         <ParameterList name="sink">
+         <ParameterList name="well">
            <ParameterList name="function-constant">
              <Parameter name="value" type="double" value="-0.1"/>
            </ParameterList>
@@ -1576,7 +1594,7 @@ Again, constant functions can be replaced by any of the available functions.
        <ParameterList name="SRC 1">
          <Parameter name="regions" type="Array(string)" value="{WELL_WEST}"/>
          <Parameter name="spatial distribution method" type="string" value="permeability"/>
-         <ParameterList name="sink">
+         <ParameterList name="well">
            <ParameterList name="function-constant">
              <Parameter name="value" type="double" value="-0.2"/>
            </ParameterList>
@@ -2260,7 +2278,7 @@ This example defines one well and one sink.
            <Parameter name="regions" type="Array(string)" value="{EAST_WELL}"/>
            <Parameter name="spatial distribution method" type="string" value="volume"/>
            <Parameter name="submodel" type="string" value="rate"/>
-           <ParameterList name="sink">   <!-- keyword, do not change -->
+           <ParameterList name="well">   <!-- keyword, do not change -->
              <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="-0.01"/>
              </ParameterList>
@@ -2275,7 +2293,7 @@ This example defines one well and one sink.
          <ParameterList name="SOURCE: WEST WELL">   <!-- user defined name -->
            <Parameter name="regions" type="Array(string)" value="{WEST_WELL}"/>
            <Parameter name="spatial distribution method" type="string" value="permeability"/>
-           <ParameterList name="sink">  
+           <ParameterList name="well">  
              <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="0.02"/>
              </ParameterList>
