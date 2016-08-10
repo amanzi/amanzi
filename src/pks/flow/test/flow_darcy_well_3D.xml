@@ -51,7 +51,8 @@
           </ParameterList>
           <ParameterList name="SRC 1">
             <Parameter name="regions" type="Array(string)" value="{WellRightRotated}"/>
-            <Parameter name="spatial distribution method" type="string" value="volume fraction"/>
+            <Parameter name="spatial distribution method" type="string" value="volume"/>
+            <Parameter name="use volume fractions" type="bool" value="true"/>
             <ParameterList name="well">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="-2.0"/>
@@ -73,7 +74,7 @@
           </ParameterList>
           <ParameterList name="static head">
             <ParameterList name="BC 1">
-              <Parameter name="regions" type="Array(string)" value="{Left side, Right side}"/>
+              <Parameter name="regions" type="Array(string)" value="{Right side}"/>
               <ParameterList name="static head">
                 <ParameterList name="function-static-head">
                   <Parameter name="p0" type="double" value="0.0"/>
@@ -83,6 +84,24 @@
                   <ParameterList name="water table elevation">
                     <ParameterList name="function-constant">
                       <Parameter name="value" type="double" value="1.0"/>
+                    </ParameterList>
+                  </ParameterList>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+            <ParameterList name="BC 2">
+              <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+              <Parameter name="relative to top" type="bool" value="false"/>
+              <Parameter name="relative to bottom" type="bool" value="true"/>
+              <ParameterList name="static head">
+                <ParameterList name="function-static-head">
+                  <Parameter name="p0" type="double" value="0.0"/>
+                  <Parameter name="density" type="double" value="1.0"/>
+                  <Parameter name="gravity" type="double" value="1.0"/>
+                  <Parameter name="space dimension" type="int" value="3"/>
+                  <ParameterList name="water table elevation">
+                    <ParameterList name="function-constant">
+                      <Parameter name="value" type="double" value="6.0"/>
                     </ParameterList>
                   </ParameterList>
                 </ParameterList>
