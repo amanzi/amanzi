@@ -2,13 +2,13 @@
 #include <sstream>
 
 #include "Point.hh"
-#include "read_Mesh2D.hh"
+#include "readMesh2D.hh"
 
 namespace Amanzi {
 namespace AmanziGeometry {
 
 Mesh2D
-readFile(const std::string& filename,
+readMesh2D_text(const std::string& filename,
                  std::vector<int>& soil_types,
                  std::vector<int>& bedrock_types,
                  std::vector<double>& depths_to_bedrock) {

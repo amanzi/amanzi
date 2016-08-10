@@ -7,7 +7,7 @@
 namespace Amanzi {
 namespace AmanziGeometry {
 
-void writeExodus(const Mesh3D& m, const std::string& filename);
+void writeMesh3D_exodus(const Mesh3D& m, const std::string& filename);
 
 }
 }

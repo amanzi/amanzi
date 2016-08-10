@@ -1,6 +1,6 @@
 #include "Mesh.hh"
-#include "write_Mesh.hh"
-#include "read_Mesh2d.hh"
+#include "writeMesh3D.hh"
+#include "readMesh2D.hh"
 
 
 int main() {
@@ -13,7 +13,7 @@ int main() {
   std::vector<int> bedrock_type;
   std::vector<double> depths;
 
-  Mesh2D m = readFile(mesh_in, soil_type, bedrock_type, depths);
+  Mesh2D m = readMesh2D_text(mesh_in, soil_type, bedrock_type, depths);
   ASSERT(m.coords.size() == 4);
   ASSERT(m.cell2node.size() == 2);
   
@@ -29,6 +29,6 @@ int main() {
   ASSERT(m3.face2node.size() == 5*3+2*4);
   
   
-  writeExodus(m3, mesh_out);
+  writeMesh3D_exodus(m3, mesh_out);
   return 0;
 }

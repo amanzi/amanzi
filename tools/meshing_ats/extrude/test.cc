@@ -1,6 +1,6 @@
 #include "Mesh.hh"
-#include "write_Mesh.hh"
-#include "read_Mesh2d.hh"
+#include "writeMesh3D.hh"
+#include "readMesh2D.hh"
 
 
 int main() {
@@ -14,13 +14,13 @@ int main() {
   std::vector<int> veg_type;
   std::vector<double> depths;
 
-  Mesh2D m = readFile(mesh_in, soil_type, veg_type, bedrock_type, depths);
+  Mesh2D m = readMesh2D_text(mesh_in, soil_type, veg_type, bedrock_type, depths);
 
   Mesh3D m3(m, 3);
   m3.extrude(depths, soil_type);
   m3.extrude(10, 1000);
   m3.extrude(10, 1000);
   
-  writeExodus(m3, mesh_out);
+  writeMesh3D_exodus(m3, mesh_out);
   return 0;
 }

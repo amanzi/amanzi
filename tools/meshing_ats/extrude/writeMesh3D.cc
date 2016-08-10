@@ -5,14 +5,14 @@
 
 #include "dbc.hh"
 
-#include "write_Mesh.hh"
+#include "writeMesh3D.hh"
 
 
 namespace Amanzi {
 namespace AmanziGeometry {
 
 void
-writeExodus(const Mesh3D& m, const std::string& filename) {
+writeMesh3D_exodus(const Mesh3D& m, const std::string& filename) {
   // create the exodus file
   int CPU_word_size = sizeof(float);
   int IO_Word_size = 8;
@@ -115,7 +115,7 @@ writeExodus(const Mesh3D& m, const std::string& filename) {
   ASSERT(!ierr);
 
   for (auto& e : facenodes) e++;
-  ierr |= ex_put_conn(fid, EX_FACE_BLOCK, 1, NULL, NULL, &facenodes[0]);
+  ierr |= ex_put_conn(fid, EX_FACE_BLOCK, 1, &facenodes[0], NULL, NULL);
   ASSERT(!ierr);
   
 

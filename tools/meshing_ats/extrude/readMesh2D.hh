@@ -25,7 +25,7 @@ struct PointFactory {
   std::vector<Point> points;
 };
 
-Mesh2D readFile(const std::string& filename,
+Mesh2D readMesh2D_text(const std::string& filename,
                 std::vector<int>& soil_type,
                 std::vector<int>& bedrock_type,
                 std::vector<double>& depth_to_bedrock);
