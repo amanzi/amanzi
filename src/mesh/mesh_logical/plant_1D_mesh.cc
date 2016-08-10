@@ -26,8 +26,9 @@ plantMesh(const Epetra_MpiComm* comm,
   double tree_height = 3.;
   int n_root = 10;
   double root_depth = 2.;
-  double stem_cap_radius = 0.01; // effective cappillary radius
-  double root_cap_radius = 0.01; // effective cappillary radius
+  double stem_cap_radius = 0.001; // effective cappillary radius
+  double root_cap_radius = 0.001; // effective cappillary radius
+  double n_cap = 100;
   double root_radius = 0.1; // physical root radius
   double soil_depth = 10.;
 
@@ -45,7 +46,7 @@ plantMesh(const Epetra_MpiComm* comm,
   top[2] = tree_height + 0.1;
   bottom[1] = top[1];
   bottom[2] = tree_height;
-  double leaf_area = PI * std::pow(stem_cap_radius,2);
+  double leaf_area = PI * std::pow(stem_cap_radius,2) * n_cap;
   
   std::vector<AmanziMesh::Entity_ID> leaf_cells, leaf_faces;
   double leaf_length;
@@ -65,7 +66,7 @@ plantMesh(const Epetra_MpiComm* comm,
   double dz_stem = tree_height / n_stem;
   top[2] = tree_height;
   bottom[2] = 0.0;
-  double stem_area = PI * std::pow(stem_cap_radius, 2);
+  double stem_area = PI * std::pow(stem_cap_radius, 2) * n_cap;
 
   std::vector<AmanziMesh::Entity_ID> stem_cells, stem_faces;
   double stem_length;
@@ -79,7 +80,7 @@ plantMesh(const Epetra_MpiComm* comm,
   double dz_root = root_depth / n_root;
   top[2] = 0.0;
   bottom[2] = -root_depth;
-  double troot_area = PI * std::pow(root_cap_radius, 2);
+  double troot_area = PI * std::pow(root_cap_radius, 2) * n_cap;
 
   std::vector<AmanziMesh::Entity_ID> troot_cells, troot_faces;
   double troot_length;
