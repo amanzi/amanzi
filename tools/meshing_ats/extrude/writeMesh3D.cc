@@ -68,6 +68,9 @@ writeMesh3D_exodus(const Mesh3D& m, const std::string& filename) {
   params.num_elem_maps = 0;
   params.num_side_sets = m.face_sets.size();
   params.num_elem_sets = 0;
+  params.num_node_sets = 0;
+  params.num_face_sets = 0;
+  params.num_edge_sets = 0;
 
   int ierr = ex_put_init_ext(fid, &params);
   ASSERT(!ierr);

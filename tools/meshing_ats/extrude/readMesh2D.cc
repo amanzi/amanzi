@@ -34,7 +34,7 @@ readMesh2D_text(const std::string& filename,
   
   while (std::getline(fin, line)) {
     std::istringstream ss(line);
-    ss >> c[0] >> c[1]
+    ss >> tri_index >> c[0] >> c[1]
        >> p1[0] >> p1[1] >> p1[2] >> depths[0]
        >> p2[0] >> p2[1] >> p2[2] >> depths[1]
        >> p3[0] >> p3[1] >> p3[2] >> depths[2]
@@ -59,6 +59,11 @@ readMesh2D_text(const std::string& filename,
 
   std::vector<std::vector<int> > sets(1);
   sets[0] = std::move(veg_types);
+
+  for (auto& p : fac.points) {
+    std::cout << "p = " << p[0] << ",\t\t" << p[1] << ",\t\t" << p[2] << std::endl;
+  }
+
   Mesh2D m(std::move(fac.points), std::move(conn), std::move(sets));
   return m;
 }
