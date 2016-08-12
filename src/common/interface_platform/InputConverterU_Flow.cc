@@ -612,7 +612,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
       for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
         times.push_back(it->first);
         values.push_back(it->second);
-        fluxes.push_back(tp_fluxes[it->second]);
+        fluxes.push_back(tp_fluxes[it->first]);
         forms.push_back(tp_forms[it->first]);
       }
       forms.pop_back();
