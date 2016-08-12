@@ -356,7 +356,7 @@ AtomicUnitForm Units::ComputeAtomicUnitForm_(const std::string& unit, bool* flag
   *flag = true;
 
   const char* copy = unit.c_str();
-  char* tmp1 = strcpy(new char[unit.size()], unit.c_str());
+  char* tmp1 = strcpy(new char[unit.size() + 1], unit.c_str());
   char* tmp2 = strtok(tmp1, "^/*");
   char separator_pref, separator_suff;
 
@@ -420,6 +420,7 @@ bool Units::CompareAtomicUnitForms_(const AtomicUnitForm& auf1, const AtomicUnit
     if (time_.find(it->first) != time_.end()) ntime += it->second;
     if (mass_.find(it->first) != mass_.end()) nmass += it->second;
     if (length_.find(it->first) != length_.end()) nlength += it->second;
+    if (volume_.find(it->first) != volume_.end()) nlength += 3 * it->second;
     if (concentration_.find(it->first) != concentration_.end()) nconcentration += it->second;
     if (amount_.find(it->first) != amount_.end()) namount += it->second;
     if (temperature_.find(it->first) != temperature_.end()) ntemperature += it->second;
@@ -429,6 +430,7 @@ bool Units::CompareAtomicUnitForms_(const AtomicUnitForm& auf1, const AtomicUnit
     if (time_.find(it->first) != time_.end()) ntime -= it->second;
     if (mass_.find(it->first) != mass_.end()) nmass -= it->second;
     if (length_.find(it->first) != length_.end()) nlength -= it->second;
+    if (volume_.find(it->first) != volume_.end()) nlength -= 3 * it->second;
     if (concentration_.find(it->first) != concentration_.end()) nconcentration -= it->second;
     if (amount_.find(it->first) != amount_.end()) namount -= it->second;
     if (temperature_.find(it->first) != temperature_.end()) ntemperature -= it->second;
