@@ -768,30 +768,32 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
     if (!flag) continue;
 
     // process a group of similar elements defined by the first element
-    std::string srctype;
+    std::string srctype, weight, unit;
     std::vector<DOMNode*> same_list = GetSameChildNodes_(phase, srctype, flag, true);
     if (!flag || same_list.size() == 0) continue;
+
+    if (srctype == "volume_weighted") {
+      weight = "volume";
+      unit = "kg/s";
+    } else if (srctype == "perm_weighted") {
+      weight = "permeability";
+      unit = "kg/s";
+    } else if (srctype == "uniform") {
+      weight = "none";
+      unit = "kg/m^3/s";
+    } else {
+      ThrowErrorIllformed_("sources", "element", srctype);
+    } 
 
     std::map<double, double> tp_values;
     std::map<double, std::string> tp_forms;
  
     for (int j = 0; j < same_list.size(); ++j) {
        element = static_cast<DOMElement*>(same_list[j]);
-       double t0 = GetAttributeValueD_(element, "start");
+       double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, "s");
        tp_forms[t0] = GetAttributeValueS_(element, "function");
-       tp_values[t0] = GetAttributeValueD_(element, "value");
+       tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, unit);
     }
-
-    std::string weight;
-    if (srctype == "volume_weighted") {
-      weight = "volume";
-    } else if (srctype == "perm_weighted") {
-      weight = "permeability";
-    } else if (srctype == "uniform") {
-      weight = "none";
-    } else {
-      ThrowErrorIllformed_("sources", "element", srctype);
-    } 
 
     // create vectors of values and forms
     std::vector<double> times, values;

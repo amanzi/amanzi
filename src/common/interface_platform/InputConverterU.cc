@@ -421,7 +421,7 @@ void InputConverterU::PrintStatistics_()
       *vo_->os() << *it << " ";
       if (++n > 10) {
         n = 0;
-        *vo_->os() << " continue:    ";
+        *vo_->os() << "\n continue:    ";
       }
     }
     *vo_->os() << std::endl;
