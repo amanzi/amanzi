@@ -123,7 +123,8 @@ class DarcyProblem {
     Teuchos::ParameterList& type_list = bc_list.get<Teuchos::ParameterList>(type);
 
     Teuchos::ParameterList& bc_sublist = type_list.sublist(bc_x);
-    bc_sublist.set("regions", regions);
+    bc_sublist.set("regions", regions)
+              .set("spatial distribution method", "none");
 
     if (!strcmp(type, "static head")) {
       Teuchos::ParameterList& bc_sublist_named = bc_sublist.sublist("static head")
@@ -221,10 +222,10 @@ TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
     if (ierr == 1) continue;
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = std::string("Top side");
+    regions[0] = std::string("Top");
     createBClist("pressure", "BC 1", regions, 0.0);
 
-    regions[0] = std::string("Bottom side");
+    regions[0] = std::string("Bottom");
     createBClist("pressure", "BC 2", regions, 1.0);
     // DPK->ResetParameterList(dp_list);
  
@@ -260,10 +261,10 @@ TEST_FIXTURE(DarcyProblem, DirichletNeumann) {
     if (ierr == 1) continue;
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = std::string("Top side");
+    regions[0] = std::string("Top");
     createBClist("mass flux", "BC 1", regions, -20.0);
 
-    regions[0] = std::string("Bottom side");
+    regions[0] = std::string("Bottom");
     createBClist("pressure", "BC 2", regions, 1.0);
 
     DPK->Initialize(S.ptr());
@@ -298,10 +299,10 @@ TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet) {
     if (ierr == 1) continue;
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = std::string("Top side");
+    regions[0] = std::string("Top");
     createBClist("pressure", "BC 1", regions, 1.0);
 
-    regions[0] = std::string("Bottom side");
+    regions[0] = std::string("Bottom");
     createBClist("static head", "BC 2", regions, 0.25);
     // DPK->ResetParameterList(dp_list);
 
@@ -339,10 +340,10 @@ TEST_FIXTURE(DarcyProblem, DDprisms) {
     if (ierr == 1) continue;
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = std::string("Top side");
+    regions[0] = std::string("Top");
     createBClist("pressure", "BC 1", regions, 0.0);
 
-    regions[0] = std::string("Bottom side");
+    regions[0] = std::string("Bottom");
     createBClist("pressure", "BC 2", regions, 1.0);
     // DPK->ResetParameterList(dp_list);
 
@@ -381,10 +382,10 @@ TEST_FIXTURE(DarcyProblem, DNtetrahedra) {
     if (ierr == 1) continue;
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = std::string("Top side");
+    regions[0] = std::string("Top");
     createBClist("mass flux", "BC 1", regions, -20.0);
 
-    regions[0] = std::string("Bottom side");
+    regions[0] = std::string("Bottom");
     createBClist("pressure", "BC 2", regions, 1.0);
     // DPK->ResetParameterList(dp_list);
 
@@ -423,10 +424,10 @@ TEST_FIXTURE(DarcyProblem, DDmixed) {
     if (ierr == 1) continue;
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = std::string("Top side");
+    regions[0] = std::string("Top");
     createBClist("pressure", "BC 1", regions, 0.0);
 
-    regions[0] = std::string("Bottom side");
+    regions[0] = std::string("Bottom");
     createBClist("pressure", "BC 2", regions, 1.0);
     // DPK->ResetParameterList(dp_list);
 

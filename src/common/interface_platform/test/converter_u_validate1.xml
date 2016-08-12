@@ -432,6 +432,8 @@
               <Parameter name="relative to top" type="bool" value="false"/>
               <Parameter name="relative to bottom" type="bool" value="false"/>
               <Parameter name="no flow above water table" type="bool" value="false"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <Parameter name="use area fractions" type="bool" value="false"/>
               <ParameterList name="static head">
                 <ParameterList name="function-static-head">
                   <Parameter name="p0" type="double" value="101325.0"/>
@@ -451,6 +453,8 @@
             <ParameterList name="BC 1">
               <Parameter name="regions" type="Array(string)" value="{Crib_216-B-17}"/>
               <Parameter name="rainfall" type="bool" value="false"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <Parameter name="use area fractions" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 6.1729344e+10, 9.4672798e+10}"/>
@@ -462,6 +466,8 @@
             <ParameterList name="BC 2">
               <Parameter name="regions" type="Array(string)" value="{Crib_216-B-18}"/>
               <Parameter name="rainfall" type="bool" value="false"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <Parameter name="use area fractions" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
@@ -473,6 +479,8 @@
             <ParameterList name="BC 3">
               <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCribs, Recharge_Boundary_btwnCribs, Recharge_Boundary_EastOfCribs}"/>
               <Parameter name="rainfall" type="bool" value="false"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <Parameter name="use area fractions" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.00000000000000000e+00, 6.17266656000000000e+10}"/>
@@ -582,6 +590,8 @@
           <ParameterList name="Tc-99">
             <ParameterList name="BC For Bottom Surface">
               <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <Parameter name="use area fractions" type="bool" value="false"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-tabular">
                   <Parameter name="y values" type="Array(double)" value="{0.0, 0.0}"/>
@@ -592,6 +602,8 @@
             </ParameterList>
             <ParameterList name="BC For Crib_216-B-17">
               <Parameter name="regions" type="Array(string)" value="{Crib_216-B-17}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <Parameter name="use area fractions" type="bool" value="false"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-tabular">
                   <Parameter name="y values" type="Array(double)" value="{0.0, 1.881389e-06, 0.0}"/>
@@ -602,6 +614,8 @@
             </ParameterList>
             <ParameterList name="BC For Crib_216-B-18">
               <Parameter name="regions" type="Array(string)" value="{Crib_216-B-18}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <Parameter name="use area fractions" type="bool" value="false"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-tabular">
                   <Parameter name="y values" type="Array(double)" value="{0.0, 2.266885e-06, 0.0}"/>
@@ -612,6 +626,8 @@
             </ParameterList>
             <ParameterList name="BC Rest">
               <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCribs,Recharge_Boundary_btwnCribs,Recharge_Boundary_EastOfCribs}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <Parameter name="use area fractions" type="bool" value="false"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.0"/>
@@ -723,6 +739,8 @@
               <Parameter name="relative to top" type="bool" value="false"/>
               <Parameter name="relative to bottom" type="bool" value="false"/>
               <Parameter name="no flow above water table" type="bool" value="false"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <Parameter name="use area fractions" type="bool" value="false"/>
               <ParameterList name="static head">
                 <ParameterList name="function-static-head">
                   <Parameter name="p0" type="double" value="101325.0"/>
@@ -742,6 +760,8 @@
             <ParameterList name="BC 1">
               <Parameter name="regions" type="Array(string)" value="{Crib_216-B-17}"/>
               <Parameter name="rainfall" type="bool" value="false"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <Parameter name="use area fractions" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 6.1729344e+10, 9.4672798e+10}"/>
@@ -753,6 +773,8 @@
             <ParameterList name="BC 2">
               <Parameter name="regions" type="Array(string)" value="{Crib_216-B-18}"/>
               <Parameter name="rainfall" type="bool" value="false"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <Parameter name="use area fractions" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
@@ -764,6 +786,8 @@
             <ParameterList name="BC 3">
               <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCribs, Recharge_Boundary_btwnCribs, Recharge_Boundary_EastOfCribs}"/>
               <Parameter name="rainfall" type="bool" value="false"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <Parameter name="use area fractions" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.00000000000000000e+00, 6.17266656000000000e+10}"/>

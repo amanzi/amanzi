@@ -1473,7 +1473,7 @@ The boolen parameter `"use area fractions`" instructs the code to use all availa
 Default value is *false*, it corresponds to :math:`f=1` in the formulas below.
 Parameter `"spatial distribution method`" defines the method for distributing
 data (e.g. the total mass flux) over the specified regions. The available options 
-are `"area`" and `"none`" (default).
+are `"area`" or `"none`". 
 For instance, for a given boundary function :math:`g(x)`, these options correspond to 
 different boundary conditions for the Darcy velocity in the original PDE:
 
@@ -1491,6 +1491,7 @@ specified regions calculated using the folume fraction function.
        <ParameterList name="pressure">
          <ParameterList name="BC 0">
            <Parameter name="regions" type="Array(string)" value="{WEST_SIDE}"/>
+           <Parameter name="spatial distribution method" type="string" value="none"/>
            <ParameterList name="boundary pressure">
              <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="101325.0"/>
@@ -1502,6 +1503,7 @@ specified regions calculated using the folume fraction function.
        <ParameterList name="mass flux">
          <ParameterList name="BC 1">
            <Parameter name="regions" type="Array(string)" value="{NORTH_SIDE, SOUTH_SIDE}"/>
+           <Parameter name="spatial distribution method" type="string" value="area"/>
            <Parameter name="rainfall" type="bool" value="false"/>
            <ParameterList name="outward mass flux">
              <ParameterList name="function-constant">
@@ -1514,6 +1516,7 @@ specified regions calculated using the folume fraction function.
        <ParameterList name="static head">
          <ParameterList name="BC 2">
            <Parameter name="regions" type="Array(string)" value="{EAST_SIDE}"/>
+           <Parameter name="spatial distribution method" type="string" value="none"/>
            <Parameter name="relative to top" type="bool" value="true"/>
            <Parameter name="relative to bottom" type="bool" value="true"/>
            <ParameterList name="static head">
@@ -1535,6 +1538,7 @@ specified regions calculated using the folume fraction function.
        <ParameterList name="seepage face">
          <ParameterList name="BC 3">
            <Parameter name="regions" type="Array(string)" value="{EAST_SIDE_BOTTOM}"/>
+           <Parameter name="spatial distribution method" type="string" value="none"/>
            <Parameter name="rainfall" type="bool" value="true"/>
            <Parameter name="submodel" type="string" value="PFloTran"/>
            <Parameter name="reference pressure" type="double" value="101325.0"/>
@@ -1566,10 +1570,8 @@ Again, constant functions can be replaced by any of the available functions.
   source Q over the specified regions. The available options are `"volume`",
   `"none`", and `"permeability`". For option `"none`", the source 
   term Q is measured in [kg/m^3/s]. For the other options, it is measured in [kg/s]. 
-  Option `"volume fraction`" can be used when the region geometric model support volume
-  fractions.
+  Option `"volume fraction`" can be used when the region geometric model support volume fractions.
   When the source function is defined over a few regions, Q is distributed over their union.
-  Default is `"none`".
 
 * `"use volume fractions`" instructs the code to use all available volume fractions. 
   Note that the region geometric model supports volume fractions only for a few regions.
@@ -2177,14 +2179,16 @@ allows us to define spatially variable boundary conditions.
 
   * `"concentration`" [list] This is a reserved keyword.
    
-    * "COMP" [list] contains a few sublists (e.g. BC_1, BC_2) for boundary conditions.
+    * "COMP" [list] contains a few sublists (e.g. BC1, BC2) for boundary conditions.
       The name *COMP* must be the name in the list of solutes.
  
-      * "BC_1" [list] defines boundary conditions using arrays of boundary regions and attached
+      * "BC1" [list] defines boundary conditions using arrays of boundary regions and attached
         functions.
    
       * `"regions`" [Array(string)] defines a list of boundary regions where a boundary condition
         must be applied.
+      * `"spatial distribution method`" [string] defines the method for distributing
+        data  over the specified regions. The available options are `"area`" or `"none`". 
       * `"boundary concentration`" [list] defines a function for calculating boundary conditions.
         The function specification is described in subsection Functions.
 
@@ -2198,6 +2202,7 @@ The example below sets constant boundary condition 1e-5 for the duration of tran
         <ParameterList name="NO3-"> 
           <ParameterList name="EAST CRIB">   <!-- user defined name -->
             <Parameter name="regions" type="Array(string)" value="{TOP, LEFT}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="boundary concentration">
               <ParameterList name="function-constant">  <!-- any time function -->
                 <Parameter name="value" type="double" value="1e-5"/>
@@ -2260,7 +2265,6 @@ Note that the source values are set up separately for each component.
      in [mol/L/s] (if units for concetration is mol/L) or [mol/m^3/s] (othrwise). 
      For the other options, it is measured in [mol/s]. When the source function
      is defined over a few regions, Q will be distributed over their union.
-     Default value is `"none`".
 
    * `"submodel`" [string] refines definition of source. Available options are `"rate`"
      and `"integrand`". The first option defines rate of change `q`, the second one 

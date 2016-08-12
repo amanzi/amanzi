@@ -22,37 +22,37 @@
         <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Left side">
+    <ParameterList name="Left">
       <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.0,0.5,0.5}"/>
         <Parameter name="normal" type="Array(double)" value="{-1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Right side">
+    <ParameterList name="Right">
       <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{1.0,0.5,0.5}"/>
         <Parameter name="normal" type="Array(double)" value="{1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Front side">
+    <ParameterList name="Front">
       <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.5,0.0,0.5}"/>
         <Parameter name="normal" type="Array(double)" value="{0.0,-1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Back side">
+    <ParameterList name="Back">
       <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.5,1.0,0.5}"/>
         <Parameter name="normal" type="Array(double)" value="{0.0,1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Bottom side">
+    <ParameterList name="Bottom">
       <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.5,0.5,0.0}"/>
         <Parameter name="normal" type="Array(double)" value="{0.0,0.0,-1.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Top side">
+    <ParameterList name="Top">
       <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.5,0.5,1.0}"/>
         <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
@@ -101,7 +101,8 @@
         <ParameterList name="boundary conditions">
           <ParameterList name="mass flux">
             <ParameterList name="BC 0">
-              <Parameter name="regions" type="Array(string)" value="{Left side, Right side, Front side, Back side}"/>
+              <Parameter name="regions" type="Array(string)" value="{Left, Right, Front, Back}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="forms" type="Array(string)" value="{constant}"/>

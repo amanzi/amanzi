@@ -159,6 +159,7 @@
           <ParameterList name="pressure">
             <ParameterList name="BC 1">
               <Parameter name="regions" type="Array(string)" value="{Top side}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="boundary pressure">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.0"/>
@@ -167,6 +168,7 @@
             </ParameterList>
             <ParameterList name="BC 2">
               <Parameter name="regions" type="Array(string)" value="{Bottom side}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="boundary pressure">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.0"/>

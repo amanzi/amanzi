@@ -14,7 +14,7 @@
         <Parameter name="entity" type="string" value="cell"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Left side">
+    <ParameterList name="Left">
       <ParameterList name="region: labeled set">
         <Parameter name="label" type="string" value="3"/>
         <Parameter name="file" type="string" value="rect2D_10x10_ss.exo"/>
@@ -22,7 +22,7 @@
         <Parameter name="entity" type="string" value="face"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Bottom side">
+    <ParameterList name="Bottom">
       <ParameterList name="region: labeled set">
         <Parameter name="label" type="string" value="2"/>
         <Parameter name="file" type="string" value="rect2D_10x10_ss.exo"/>
@@ -54,8 +54,9 @@
       <ParameterList name="boundary conditions">
         <ParameterList name="concentration">
           <ParameterList name="Component 0">
-            <ParameterList name="BC for bottom and left side">
-              <Parameter name="regions" type="Array(string)" value="{Bottom side, Left side}"/>
+            <ParameterList name="BC for bottom and left">
+              <Parameter name="regions" type="Array(string)" value="{Bottom, Left}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-tabular">
                   <Parameter name="forms" type="Array(string)" value="{constant}"/>
@@ -67,7 +68,8 @@
           </ParameterList>
           <ParameterList name="Component 1">
             <ParameterList name="BC for bottom">
-              <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+              <Parameter name="regions" type="Array(string)" value="{Left}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-tabular">
                   <Parameter name="forms" type="Array(string)" value="{constant}"/>
@@ -77,7 +79,8 @@
               </ParameterList>
             </ParameterList>
             <ParameterList name="BC for left">
-              <Parameter name="regions" type="Array(string)" value="{Bottom side}"/>
+              <Parameter name="regions" type="Array(string)" value="{Bottom}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-tabular">
                   <Parameter name="forms" type="Array(string)" value="{constant}"/>

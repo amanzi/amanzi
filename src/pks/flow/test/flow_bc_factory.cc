@@ -104,6 +104,7 @@ TEST_FIXTURE(bits_and_pieces, bad_region)
 
   CHECK_THROW(bc_fact.Create(plist, "boundary pressure", AmanziMesh::FACE, Teuchos::null), Errors::Message);
 
+  foo.set("spatial distribution method", "none");
   foo.set("regions", 0.0);  // wrong -- type should be Array<std::string>
   CHECK_THROW(bc_fact.Create(plist, "boundary pressure", AmanziMesh::FACE, Teuchos::null), Errors::Message);
 }
@@ -114,6 +115,7 @@ TEST_FIXTURE(bits_and_pieces, bad_function)
   Teuchos::ParameterList plist;
   Teuchos::ParameterList& foo = plist.sublist("pressure").sublist("foo");
   Teuchos::Array<std::string> foo_reg(Teuchos::tuple(std::string("LEFT"), std::string("RIGHT")));
+  foo.set("spatial distribution method", "none");
   foo.set("regions", foo_reg);
   // wrong - missing boundary pressure list
   
@@ -135,6 +137,7 @@ TEST_FIXTURE(bits_and_pieces, pressure)
 
   Teuchos::Array<std::string> regs(Teuchos::tuple(std::string("LEFT"), std::string("RIGHT")));
   plist.set("regions", regs)
+       .set("spatial distribution method", "none")
        .sublist("boundary pressure")
        .sublist("function-constant").set("value", 1.0);
 
@@ -162,12 +165,14 @@ TEST_FIXTURE(bits_and_pieces, static_head)
   Teuchos::Array<std::string> foo_reg(Teuchos::tuple(std::string("LEFT"), std::string("RIGHT")));
   Teuchos::Array<std::string> bar_reg(Teuchos::tuple(std::string("TOP")));
   foo.set("regions", foo_reg)
+     .set("spatial distribution method", "none")
      .sublist("static head").sublist("function-static-head")
      .set("p0", 0.0).set("density", 1.0)
      .set("gravity", 2.0).set("space dimension", 3)
      .sublist("water table elevation").sublist("function-constant")
      .set("value", 1.0);
   bar.set("regions", bar_reg)
+     .set("spatial distribution method", "none")
      .sublist("static head").sublist("function-static-head")
      .set("p0", 1.0).set("density", 1.0)
      .set("gravity", 2.0).set("space dimension", 3)

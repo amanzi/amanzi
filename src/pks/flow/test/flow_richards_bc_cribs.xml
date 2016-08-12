@@ -140,16 +140,19 @@
         <ParameterList name="boundary conditions">
           <ParameterList name="mass flux">
             <ParameterList name="BC 0">
+              <Parameter name="regions" type="Array(string)" value="{Top Surface Region}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="-1.1076e-07"/>
                 </ParameterList>
               </ParameterList>
-              <Parameter name="regions" type="Array(string)" value="{Top Surface Region}"/>
             </ParameterList>
           </ParameterList>
           <ParameterList name="pressure">
             <ParameterList name="BC 1">
+              <Parameter name="regions" type="Array(string)" value="{Bottom Surface Region}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="boundary pressure">
                 <ParameterList name="function-tabular">
                   <Parameter name="forms" type="Array(string)" value="{linear}"/>
@@ -157,7 +160,6 @@
                   <Parameter name="y values" type="Array(double)" value="{101325.0, 101325.0}"/>
                 </ParameterList>
               </ParameterList>
-              <Parameter name="regions" type="Array(string)" value="{Bottom Surface Region}"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>

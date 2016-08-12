@@ -359,6 +359,7 @@
       	<ParameterList name="pressure">
       	  <ParameterList name="BC 0">
       	    <Parameter name="regions" type="Array(string)" value="{Bottom Surface Outside All}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
       	    <ParameterList name="boundary pressure">
       	      <ParameterList name="function-tabular">
       		<Parameter name="x values" type="Array(double)" value="{0.0e+00, 9.467279800e+10}"/>
@@ -371,6 +372,7 @@
       	<ParameterList name="mass flux">
       	  <ParameterList name="BC 1">
       	    <Parameter name="regions" type="Array(string)" value="{Top Surface Outside Crib_216-B-17}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
       	    <Parameter name="rainfall" type="bool" value="false"/>
       	    <ParameterList name="outward mass flux">
       	      <ParameterList name="function-tabular">
@@ -382,6 +384,7 @@
       	  </ParameterList>
       	  <ParameterList name="BC 2">
       	    <Parameter name="regions" type="Array(string)" value="{Top Surface Outside Crib_216-B-18}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
       	    <Parameter name="rainfall" type="bool" value="false"/>
       	    <ParameterList name="outward mass flux">
       	      <ParameterList name="function-tabular">
@@ -393,6 +396,7 @@
       	  </ParameterList>
       	  <ParameterList name="BC 3">
       	    <Parameter name="regions" type="Array(string)" value="{Top Surface Outside Recharge_Boundary_westOfCribs}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
       	    <Parameter name="rainfall" type="bool" value="false"/>
       	    <ParameterList name="outward mass flux">
       	      <ParameterList name="function-tabular">
@@ -404,6 +408,7 @@
       	  </ParameterList>
       	  <ParameterList name="BC 4">
       	    <Parameter name="regions" type="Array(string)" value="{Top Surface Outside Recharge_Boundary_btwnCribs}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
       	    <Parameter name="rainfall" type="bool" value="false"/>
       	    <ParameterList name="outward mass flux">
       	      <ParameterList name="function-tabular">
@@ -415,6 +420,7 @@
       	  </ParameterList>
       	  <ParameterList name="BC 5">
       	    <Parameter name="regions" type="Array(string)" value="{Top Surface Outside Recharge_Boundary_eastOfCribs}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
       	    <Parameter name="rainfall" type="bool" value="false"/>
       	    <ParameterList name="outward mass flux">
       	      <ParameterList name="function-tabular">

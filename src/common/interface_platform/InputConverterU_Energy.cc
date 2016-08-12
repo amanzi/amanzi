@@ -181,7 +181,8 @@ Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_()
     // save in the XML files  
     Teuchos::ParameterList& tbc_list = out_list.sublist(bctype);
     Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
-    bc.set<Teuchos::Array<std::string> >("regions", regions);
+    bc.set<Teuchos::Array<std::string> >("regions", regions)
+      .set<std::string>("spatial distribution method", "none");
 
     Teuchos::ParameterList& bcfn = bc.sublist(bcname);
     if (times.size() == 1) {

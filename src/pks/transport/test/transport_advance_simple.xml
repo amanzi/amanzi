@@ -46,6 +46,7 @@
           <ParameterList name="Component 0">
             <ParameterList name="BC for left side">
               <Parameter name="regions" type="Array(string)" value="{Left side, Bottom side}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-tabular">
                   <Parameter name="forms" type="Array(string)" value="{constant}"/>

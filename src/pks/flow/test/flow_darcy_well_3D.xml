@@ -65,6 +65,7 @@
           <ParameterList name="mass flux">
             <ParameterList name="BC 0">
               <Parameter name="regions" type="Array(string)" value="{Top side, Bottom side}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.0"/>
@@ -75,6 +76,7 @@
           <ParameterList name="static head">
             <ParameterList name="BC 1">
               <Parameter name="regions" type="Array(string)" value="{Right side}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="static head">
                 <ParameterList name="function-static-head">
                   <Parameter name="p0" type="double" value="0.0"/>
@@ -91,6 +93,7 @@
             </ParameterList>
             <ParameterList name="BC 2">
               <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
               <Parameter name="relative to top" type="bool" value="false"/>
               <Parameter name="relative to bottom" type="bool" value="true"/>
               <ParameterList name="static head">
