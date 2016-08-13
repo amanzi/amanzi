@@ -561,13 +561,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
 
     // -- identify a hard-coded BC that uses spatially dependent functions
     //    temporarily, we assume that it is also the global BC.
-    bool space_bc(false);
-    element = static_cast<DOMElement*>(same_list[0]);
-    std::string space_bc_name = GetAttributeValueS_(element, "space_function", TYPE_NONE, false);
-    if (space_bc_name == "gaussian") {
-      global_bc = true;
-      space_bc = true;
-    }
+    bool space_bc, time_bc;
+    DOMNode* knode = GetUniqueElementByTagsString_(same_list[0], "space", space_bc);
+    DOMNode* lnode = GetUniqueElementByTagsString_(same_list[0], "time", time_bc);
+    global_bc = space_bc;
 
     // -- define the expected unit
     std::string unit("kg/s/m^2");
@@ -582,13 +579,21 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
 
     // -- process global and local BC separately
     double refv;
-    std::vector<double> grad, refc, data;
+    std::vector<double> grad, refc, data, data_tmp;
     std::vector<double> times, values, fluxes;
     std::vector<std::string> forms;
 
     if (space_bc) {
-      element = static_cast<DOMElement*>(same_list[0]);
-      data = GetAttributeVectorD_(element, "space_data");
+      element = static_cast<DOMElement*>(knode);
+      data.push_back(GetAttributeValueD_(element, "amplitude", TYPE_NUMERICAL, "kg/m^3/s"));
+      data_tmp = GetAttributeVectorD_(element, "center", "m");
+      data.insert(data.end(), data_tmp.begin(), data_tmp.end());
+      data.push_back(GetAttributeValueD_(element, "standard_deviation", TYPE_NUMERICAL, "m"));
+
+      if (time_bc) {
+        element = static_cast<DOMElement*>(lnode);
+        data[0] *= GetAttributeValueD_(element, "data", TYPE_NUMERICAL, "");
+      }
     } else if (global_bc) {
       std::string unit_grad = unit + "/m";
       element = static_cast<DOMElement*>(same_list[0]);
@@ -664,7 +669,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
         transport_diagnostics_.insert(transport_diagnostics_.end(), regions.begin(), regions.end());
 
     Teuchos::ParameterList& bcfn = bc.sublist(bcname);
-    if (space_bc_name == "gaussian") {
+    if (space_bc) {  // only one use case so far
       TranslateFunctionGaussian_(data, bcfn);
     } else if (global_bc) {
       grad.insert(grad.begin(), 0.0);
