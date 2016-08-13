@@ -189,8 +189,8 @@ class InputConverter {
 
   // -- coordinates and vectors.
   std::vector<double> MakeCoordinates_(const std::string& array);
-  std::vector<double> MakeVector_(
-      const std::string& array, std::string& unit, double mol_mass = -1.0);  // supports units
+  std::vector<double> MakeVector_(  // support units
+      const std::string& array, std::vector<std::string>& unit, double mol_mass = -1.0);
 
   // -- string modifications
   std::vector<std::string> CharToStrings_(const char* namelist);
