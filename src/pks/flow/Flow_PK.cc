@@ -184,6 +184,9 @@ void Flow_PK::InitializeFields_()
     if (!S_->GetField("specific_storage", passwd_)->initialized()) {
       S_->GetFieldData("specific_storage", passwd_)->PutScalar(0.0);
       S_->GetField("specific_storage", passwd_)->set_initialized();
+
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+          *vo_->os() << "initilized specific_storage to default value 0.0" << std::endl;  
     }
   }
 
@@ -193,7 +196,7 @@ void Flow_PK::InitializeFields_()
       S_->GetField("specific_yield", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized specific_yield to default value 1.0" << std::endl;  
+          *vo_->os() << "initilized specific_yield to default value 0.0" << std::endl;  
     }
   }
 

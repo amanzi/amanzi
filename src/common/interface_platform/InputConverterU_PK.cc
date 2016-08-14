@@ -69,8 +69,13 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
   Teuchos::ParameterList& bdf1 = out_list.sublist("BDF1");
 
   // use standard timestep controller type
-  bdf1.set<std::string>("timestep controller type", TI_TIMESTEP_CONTROLLER);
-  Teuchos::ParameterList& controller = bdf1.sublist("timestep controller standard parameters");
+  bool flag;
+  std::string name(TI_TIMESTEP_CONTROLLER);
+  node = GetUniqueElementByTagsString_(unstr_controls + ", timestep_controller", flag);
+  if (flag) name = mm.transcode(node->getTextContent());
+
+  bdf1.set<std::string>("timestep controller type", name);
+  Teuchos::ParameterList& controller = bdf1.sublist("timestep controller " + name + " parameters");
   controller.set<int>("max iterations", TI_MAX_ITERATIONS)
       .set<int>("min iterations", TI_MIN_ITERATIONS)
       .set<double>("time step increase factor", dt_inc_default)
@@ -148,7 +153,6 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
   bdf1.set<double>("restart tolerance relaxation factor damping", TI_TOL_RELAX_FACTOR_DAMPING);
   bdf1.set<int>("nonlinear iteration initial guess extrapolation order", 1);
 
-  bool flag;
   node = GetUniqueElementByTagsString_(unstr_controls + ", max_iterations", flag);
   if (flag) controller.set<int>("max iterations",
       strtol(mm.transcode(node->getTextContent()), NULL, 10));
