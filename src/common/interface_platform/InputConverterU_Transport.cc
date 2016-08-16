@@ -562,7 +562,10 @@ void InputConverterU::TranslateTransportBCsAmanziGeochemistry_(
         Teuchos::ParameterList& bcn = bc_new.sublist(solutes[n]).sublist(name);
         Teuchos::ParameterList& fnc = bcn.sublist("boundary concentration").sublist("function-tabular");
 
-        bcn.set("regions", bco.get<Teuchos::Array<std::string> >("regions"));
+
+        bcn.set("regions", bco.get<Teuchos::Array<std::string> >("regions"))
+           .set<std::string>("spatial distribution method", "none")
+           .set<bool>("use volume fractions", false);
         fnc.set("x values", bco.get<Teuchos::Array<double> >("times"));
         fnc.set("forms", bco.get<Teuchos::Array<std::string> >("time functions"));
       
