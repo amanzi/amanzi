@@ -147,7 +147,7 @@ if __name__ == "__main__":
         path_to_amanzi = "amanzi-native-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, [root+".bgd"], path_to_amanzi)
 
-        time = timesama
+        time = timesama[0]
 
         # tot conc
         u_amanzi_native = [[] for x in range(len(totcama))]
