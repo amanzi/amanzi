@@ -58,23 +58,25 @@ int
 Mesh2D::face_constructor(const std::vector<int>& nodes,
                          int index_in_cell,
                          int cell) {
-  std::vector<int> nodes_sorted(nodes);
-  std::sort(nodes_sorted.begin(), nodes_sorted.end());
+  
+  auto h = nodes[0] > nodes[1] ? hash(nodes[1], nodes[0]) :
+      hash(nodes[0],nodes[1]);
 
-  for (int f=0; f!=face2node.size(); ++f) {
-    if (nodes_sorted == face2node_sorted[f]) {
-      side_face_counts[f]++;
-      return f;
-    }
+  auto match = faces_sorted.find(h);
+  if (match != faces_sorted.end()) {
+    int f = match->second;
+    side_face_counts[f]++;
+    return f;
   }
 
   // not already created
+  int f = face2node.size();
+  faces_sorted[h] = f;
   face2node.emplace_back(nodes);
-  face2node_sorted.emplace_back(std::move(nodes_sorted));
   face_in_cell_when_created.push_back(index_in_cell);
   face_cell_when_created.push_back(cell);
   side_face_counts.push_back(1);
-  return face2node.size()-1;
+  return f;
 }
 
 

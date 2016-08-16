@@ -4,6 +4,7 @@
 #include <vector>
 #include <utility>
 #include <algorithm>
+#include <map>
 
 #include "Point.hh"
 
@@ -19,6 +20,10 @@ struct Mesh2D {
                        int face_in_cell,
                        int cell);
 
+  long long int hash(int i, int j) {
+    return (nnodes+1)*i + j;
+  }
+  
   std::vector<Point> coords;
   std::vector<std::vector<int> > cell2node;
   std::vector<std::vector<int> > cell2face;
@@ -28,7 +33,7 @@ struct Mesh2D {
   std::pair<std::vector<int>,
             std::vector<int> > boundary_faces;
   
-  std::vector<std::vector<int> > face2node_sorted;
+  std::map<long int, int> faces_sorted;
   std::vector<int> side_face_counts;
   std::vector<int> face_in_cell_when_created;
   std::vector<int> face_cell_when_created;
