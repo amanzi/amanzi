@@ -101,6 +101,7 @@
         <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
         <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
         <max_divergent_iterations>3</max_divergent_iterations>
+        <timestep_controller>adaptive</timestep_controller>
       </unstr_transient_controls>
 
       <unstr_linear_solver>

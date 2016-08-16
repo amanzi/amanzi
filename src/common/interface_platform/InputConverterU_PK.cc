@@ -82,6 +82,9 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
       .set<double>("time step reduction factor", dt_cut_default)
       .set<double>("max time step", MAXIMUM_TIMESTEP)
       .set<double>("min time step", MINIMUM_TIMESTEP);
+   if (name == "adaptive") 
+     controller.set<double>("relative tolerance", 1e-4)
+               .set<double>("absolute tolerance", 10.0);
 
   // nonlinear solver
   Teuchos::ParameterList* solver;
