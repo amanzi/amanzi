@@ -39,8 +39,9 @@ else()
   build_whitespace_string(hdf5_ldflags -L${TPL_INSTALL_PREFIX}/lib ${CMAKE_EXE_LINKER_FLAGS} )
 endif()  
 
-# --- Set the name of the patch
-set(HDF5_patch_file hdf5-1.8.8-comment.patch)
+# --- Set the name of the patch 
+set(HDF5_patch_file hdf5-1.8.8-comment.patch hdf5-1.8.8-disable-getpwuid.patch)
+#set(HDF5_patch_file hdf5-1.8.8-comment.patch)
 # --- Configure the bash patch script
 set(HDF5_sh_patch ${HDF5_prefix_dir}/hdf5-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hdf5-patch-step.sh.in
