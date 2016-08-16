@@ -1,11 +1,15 @@
-/* -------------------------------------------------------------------------
-  AMANZI
+/*
+  Time Integration
 
-  Author: Ethan Coon
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Author: Konstantin Lipnikov
 
   Adaptive timestep control based upon previous iteration count.
-------------------------------------------------------------------------- */
+*/
 
 #ifndef AMANZI_ADAPTIVE_TIMESTEP_CONTROLLER_HH_
 #define AMANZI_ADAPTIVE_TIMESTEP_CONTROLLER_HH_
@@ -28,8 +32,10 @@ class TimestepControllerAdaptive : public TimestepController {
                              Teuchos::RCP<Vector> udot, Teuchos::RCP<Vector> udot_prev);
 
   // single method for timestep control
-  double get_timestep_old(double dt, int iterations);
   double get_timestep(double dt, int iterations);
+
+ private:
+  double get_timestep_base_(double dt, const Epetra_MultiVector& u0, const Epetra_MultiVector& u1);
 
  protected:
   Teuchos::ParameterList plist_;
@@ -43,6 +49,7 @@ class TimestepControllerAdaptive : public TimestepController {
 
  private:
   Teuchos::RCP<Vector> udot_prev_, udot_;  // for error estimate 
+  double atol_, rtol_, p_;  // error parameters
 };
 
 
@@ -69,63 +76,27 @@ TimestepControllerAdaptive<Vector>::TimestepControllerAdaptive(
 
   max_dt_ = plist_.get<double>("max time step");
   min_dt_ = plist_.get<double>("min time step");
+
+  // default value are fitted to atmospheric pressure.
+  p_ = plist_.get<double>("reference value", 101325.0);
+  rtol_ = plist_.get<double>("relative tolerance", 1.0e-4);
+  atol_ = plist_.get<double>("absolute tolerance", 10.0);
 }
 
 
 /* ******************************************************************
-* Estimate new time step.
-****************************************************************** */
-template<class Vector>
-double TimestepControllerAdaptive<Vector>::get_timestep_old(double dt, int iterations)
-{
-  double dt_next(dt);
-
-  // iterations < 0 implies failed timestep
-  if (iterations < 0 || iterations > max_its_) {
-    dt_next = dt * reduction_factor_;
-  } else if (iterations < min_its_) {
-    dt_next = dt * increase_factor_;
-  }
-
-  // check max step size
-  if (dt_next > max_dt_) dt_next = max_dt_;
-
-  // check min step size
-  if (dt_next < min_dt_) {
-    if (iterations < 0) {
-      std::string msg = "dT is too small, terminating...";
-      Errors::Message m(msg);
-      Exceptions::amanzi_throw(m);
-    } else {
-      dt_next = min_dt_;
-    }
-  }
-
-  // check that if we have failed, our step size has decreased.
-  if (iterations < 0) {
-    if (dt - dt_next < 1.0e-10) {
-      std::string msg = "dT change is too small, terminating...";
-      Errors::Message m(msg);
-      Exceptions::amanzi_throw(m);
-    }
-  }
-
-  return dt_next;
-}
-
-
-/* ******************************************************************
-* Estimate dT increase factor by comparing the 1st and 2nd order
-* time approximations. 
+* Estimate new time step by comparing the 1st and 2nd order time 
+* approximations. 
 ****************************************************************** */
 template<class Vector>
 double TimestepControllerAdaptive<Vector>::get_timestep(double dt, int iterations)
 {
-  std::string msg = "TimestepControllerAdaptive is implemented for a limited set of vectors.";
+  std::string msg("TimestepControllerAdaptive is implemented for a limited set of vectors.");
   Errors::Message m(msg);
   Exceptions::amanzi_throw(m);
   return 0.0;
 }
+
 
 template<> inline
 double TimestepControllerAdaptive<Epetra_MultiVector>::get_timestep(double dt, int iterations)
@@ -134,36 +105,9 @@ double TimestepControllerAdaptive<Epetra_MultiVector>::get_timestep(double dt, i
     return dt * reduction_factor_;
   }
     
-  double rtol(1.0), atol(1e-5), p(101325.0);
-  double tol, error, error_max = 0.0;
-  double dTfactor(100.0), dTfactor_cell;
-
   Epetra_MultiVector& u1 = *udot_;
   Epetra_MultiVector& u0 = *udot_prev_;
-  int ncells_owned = u1.MyLength();
-
-  for (int c = 0; c < ncells_owned; c++) {
-    error = fabs(u1[0][c] - u0[0][c]) * dt / 2;
-    tol = rtol * p + atol;
-
-    dTfactor_cell = sqrt(tol / std::max(error, DT_CONTROLLER_ADAPTIVE_ERROR_TOLERANCE));
-    dTfactor = std::min(dTfactor, dTfactor_cell);
-
-    error_max = std::max(error_max, error - tol);
-  }
-
-  dTfactor *= DT_CONTROLLER_ADAPTIVE_SAFETY_FACTOR;
-  dTfactor = std::min(dTfactor, DT_CONTROLLER_ADAPTIVE_INCREASE);
-  dTfactor = std::max(dTfactor, DT_CONTROLLER_ADAPTIVE_REDUCTION);
-
-#ifdef HAVE_MPI
-  double dT_tmp = dTfactor;
-  udot_->Comm().MinAll(&dT_tmp, &dTfactor, 1);  // find the global minimum
- 
-  double error_tmp = error_max;
-  udot_->Comm().MaxAll(&error_tmp, &error_max, 1);  // find the global maximum
-#endif
-  return dt * dTfactor;
+  return get_timestep_base_(dt, u0, u1);
 }
 
 
@@ -174,17 +118,23 @@ double TimestepControllerAdaptive<CompositeVector>::get_timestep(double dt, int 
     return dt * reduction_factor_;
   }
     
-  double rtol(1.0), atol(1e-5), p(101325.0);
+  Epetra_MultiVector& u1 = *udot_->ViewComponent("cell");
+  Epetra_MultiVector& u0 = *udot_prev_->ViewComponent("cell");
+  return get_timestep_base_(dt, u0, u1);
+}
+
+
+template<class Vector>
+double TimestepControllerAdaptive<Vector>::get_timestep_base_(
+    double dt, const Epetra_MultiVector& u0, const Epetra_MultiVector& u1)
+{
   double tol, error, error_max = 0.0;
   double dTfactor(100.0), dTfactor_cell;
 
-  Epetra_MultiVector& u1 = *udot_->ViewComponent("cell");
-  Epetra_MultiVector& u0 = *udot_prev_->ViewComponent("cell");
   int ncells_owned = u1.MyLength();
-
   for (int c = 0; c < ncells_owned; c++) {
     error = fabs(u1[0][c] - u0[0][c]) * dt / 2;
-    tol = rtol * p + atol;
+    tol = rtol_ * p_ + atol_;
 
     dTfactor_cell = sqrt(tol / std::max(error, DT_CONTROLLER_ADAPTIVE_ERROR_TOLERANCE));
     dTfactor = std::min(dTfactor, dTfactor_cell);
@@ -203,29 +153,9 @@ double TimestepControllerAdaptive<CompositeVector>::get_timestep(double dt, int 
   double error_tmp = error_max;
   udot_->Comm().MaxAll(&error_tmp, &error_max, 1);  // find the global maximum
 #endif
-  return dt * dTfactor;
+  return std::min(dt * dTfactor, max_dt_);
 }
 
-
-/*
-  // Calculate time derivative and 2nd-order solution approximation.
-  // Estimate of a time step multiplier overrides the above estimate.
-  if (ti_specs->dT_method == DT_CONTROLLER_ADAPTIVE) {
-    const Epetra_MultiVector& pressure = *S_->GetFieldData("pressure")->ViewComponent("face");
-    Epetra_MultiVector& p = *solution->ViewComponent("face");
-
-    for (int c = 0; c < ncells_owned; c++) {
-      (*pdot_cells)[c] = (p[0][c] - pressure[0][c]) / dT; 
-      p[0][c] = pressure[0][c] + ((*pdot_cells_prev)[c] + (*pdot_cells)[c]) * dT / 2;
-    }
-
-    double err, dTfactor;
-    err = AdaptiveTimeStepEstimate(&dTfactor);
-    if (err > 0.0) throw 1000;  // fix (lipnikov@lan.gov)
-    dTnext = std::min(dT_MPC * dTfactor, ti_specs->dTmax);
-  }
-*/
-
-} // namespace Amanzi
+}  // namespace Amanzi
 
 #endif

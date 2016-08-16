@@ -1,5 +1,12 @@
 /*
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Time Integration
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ethan Coon (ecoon@lanl.gov)
 
   Interface that wraps a BDF_FnBase providing the interface for Solver_FnBase
   as used by the BDF1 time integrator.
@@ -22,7 +29,7 @@ class BDF1_SolverFnBase : public AmanziSolvers::SolverFnBase<Vector> {
   BDF1_SolverFnBase(Teuchos::ParameterList& plist,
                     const Teuchos::RCP<BDFFnBase<Vector> >& bdf_fn) :
       plist_(plist),
-      bdf_fn_(bdf_fn) {}
+      bdf_fn_(bdf_fn) {};
 
   // SolverFnBase interface
   // ---------------------------

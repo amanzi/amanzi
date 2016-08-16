@@ -20,6 +20,7 @@
 #include <boost/lambda/lambda.hpp>
 #include <boost/bind.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -29,7 +30,6 @@
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 #include "boost/format.hpp"
-#include "boost/lexical_cast.hpp"
 
 #include "xercesc/dom/DOM.hpp"
 #include "xercesc/util/XMLString.hpp"
@@ -662,17 +662,19 @@ std::vector<double> InputConverter::GetAttributeVectorD_(
   MemoryManager mm;
 
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
-    std::string unit_in;
+    std::vector<std::string> unit_in;
     char* text_content = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
     val = MakeVector_(text_content, unit_in, mol_mass);
 
-    if ((unit != "" && unit_in != "") ||
-        (unit == "-" && unit_in != "")) {
-      if (!units_.CompareUnits(unit, unit_in)) {
-        Errors::Message msg;
-        msg << "Input unit [" << unit_in << "] for attribute \"" << attr_name 
-            << "\" does not match the expected unit [" << unit << "].\n";
-        Exceptions::amanzi_throw(msg);
+    for (int i = 0; i < unit_in.size(); ++i) {
+      if ((unit != "" && unit_in[i] != "") ||
+          (unit == "-" && unit_in[i] != "")) {
+        if (!units_.CompareUnits(unit, unit_in[i])) {
+          Errors::Message msg;
+          msg << "Input unit [" << unit_in[i] << "] for attribute \"" << attr_name 
+              << "\" does not match the expected unit [" << unit << "].\n";
+          Exceptions::amanzi_throw(msg);
+        }
       }
     }
   } else if (exception) {
@@ -947,7 +949,15 @@ double InputConverter::ConvertUnits_(
   char* copy = strcpy(new char[val.size() + 1], val.c_str());
   char* data = strtok(copy, ";, ");
 
-  double out = std::strtod(data, NULL);
+  double out;
+  try {
+    out = boost::lexical_cast<double>(data);
+  } catch (boost::bad_lexical_cast&) {
+    Errors::Message msg;
+    msg << "\nInput string \"" << val <<"\" cannot be converted to double + optional unit."
+        << "\nThe string was parsed as \"" << data <<"\".\n";
+    Exceptions::amanzi_throw(msg);
+  }
   data = strtok(NULL, ";,");
 
   // if units were found
@@ -1029,17 +1039,19 @@ std::vector<double> InputConverter::MakeCoordinates_(const std::string& array)
 * Converts string of data to real numbers using units.
 ****************************************************************** */
 std::vector<double> InputConverter::MakeVector_(
-    const std::string& array, std::string& unit, double mol_mass)
+    const std::string& array, std::vector<std::string>& unit, double mol_mass)
 {
   std::vector<double> data;
   std::vector<std::string> tmp;
 
   tmp = CharToStrings_(array.c_str());
 
+  unit.clear();
   for (int i = 0; i < tmp.size(); ++i) {
-    std::string parsed_str;
+    std::string parsed_str, unit_in;
     GetConstantType_(tmp[i], parsed_str);
-    data.push_back(ConvertUnits_(parsed_str, unit, mol_mass));
+    data.push_back(ConvertUnits_(parsed_str, unit_in, mol_mass));
+    unit.push_back(unit_in);
   }
 
   return data;

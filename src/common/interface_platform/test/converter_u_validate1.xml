@@ -477,7 +477,38 @@
               </ParameterList>
             </ParameterList>
             <ParameterList name="BC 3">
-              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCribs, Recharge_Boundary_btwnCribs, Recharge_Boundary_EastOfCribs}"/>
+              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_btwnCribs}"/>
+              <ParameterList name="outward mass flux">
+                <ParameterList name="function-composition">
+                  <ParameterList name="function1">
+                    <ParameterList name="function-standard-math">
+                      <Parameter name="operator" type="string" value="exp"/>
+                      <Parameter name="amplitude" type="double" value="-3.10000000000000014e-05"/>
+                    </ParameterList>
+                  </ParameterList>
+                  <ParameterList name="function2">
+                    <ParameterList name="function-multiplicative">
+                      <ParameterList name="function1">
+                        <ParameterList name="function-distance">
+                          <Parameter name="x0" type="Array(double)" value="{0.00000000000000000e+00, 1.08000000000000000e+02, 3.38632799999999934e+00}"/>
+                          <Parameter name="metric" type="Array(double)" value="{0.00000000000000000e+00, 1.00000000000000000e+00, 1.00000000000000000e+00}"/>
+                        </ParameterList>
+                      </ParameterList>
+                      <ParameterList name="function2">
+                        <ParameterList name="function-constant">
+                          <Parameter name="value" type="double" value="-5.00000000000000010e-03"/>
+                        </ParameterList>
+                      </ParameterList>
+                    </ParameterList>
+                  </ParameterList>
+                </ParameterList>
+              </ParameterList>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <Parameter name="use area fractions" type="bool" value="false"/>
+              <Parameter name="rainfall" type="bool" value="false"/>
+            </ParameterList>
+            <ParameterList name="BC 4">
+              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCribs, Recharge_Boundary_EastOfCribs}"/>
               <Parameter name="rainfall" type="bool" value="false"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
               <Parameter name="use area fractions" type="bool" value="false"/>
@@ -625,7 +656,7 @@
               </ParameterList>
             </ParameterList>
             <ParameterList name="BC Rest">
-              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCribs,Recharge_Boundary_btwnCribs,Recharge_Boundary_EastOfCribs}"/>
+              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCribs,Recharge_Boundary_EastOfCribs}"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
               <Parameter name="use area fractions" type="bool" value="false"/>
               <ParameterList name="boundary concentration">
@@ -784,7 +815,38 @@
               </ParameterList>
             </ParameterList>
             <ParameterList name="BC 3">
-              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCribs, Recharge_Boundary_btwnCribs, Recharge_Boundary_EastOfCribs}"/>
+              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_btwnCribs}"/>
+              <ParameterList name="outward mass flux">
+                <ParameterList name="function-composition">
+                  <ParameterList name="function1">
+                    <ParameterList name="function-standard-math">
+                      <Parameter name="operator" type="string" value="exp"/>
+                      <Parameter name="amplitude" type="double" value="-3.10000000000000014e-05"/>
+                    </ParameterList>
+                  </ParameterList>
+                  <ParameterList name="function2">
+                    <ParameterList name="function-multiplicative">
+                      <ParameterList name="function1">
+                        <ParameterList name="function-distance">
+                          <Parameter name="x0" type="Array(double)" value="{0.00000000000000000e+00, 1.08000000000000000e+02, 3.38632799999999934e+00}"/>
+                          <Parameter name="metric" type="Array(double)" value="{0.00000000000000000e+00, 1.00000000000000000e+00, 1.00000000000000000e+00}"/>
+                        </ParameterList>
+                      </ParameterList>
+                      <ParameterList name="function2">
+                        <ParameterList name="function-constant">
+                          <Parameter name="value" type="double" value="-5.00000000000000010e-03"/>
+                        </ParameterList>
+                      </ParameterList>
+                    </ParameterList>
+                  </ParameterList>
+                </ParameterList>
+              </ParameterList>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <Parameter name="use area fractions" type="bool" value="false"/>
+              <Parameter name="rainfall" type="bool" value="false"/>
+            </ParameterList>
+            <ParameterList name="BC 4">
+              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCribs, Recharge_Boundary_EastOfCribs}"/>
               <Parameter name="rainfall" type="bool" value="false"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
               <Parameter name="use area fractions" type="bool" value="false"/>
@@ -810,14 +872,16 @@
           </ParameterList>
           <Parameter name="time integration method" type="string" value="BDF1"/>
           <ParameterList name="BDF1">
-            <Parameter name="timestep controller type" type="string" value="standard"/>
-            <ParameterList name="timestep controller standard parameters">
+            <Parameter name="timestep controller type" type="string" value="adaptive"/>
+            <ParameterList name="timestep controller adaptive parameters">
               <Parameter name="max iterations" type="int" value="15"/>
               <Parameter name="min iterations" type="int" value="10"/>
               <Parameter name="time step increase factor" type="double" value="1.2"/>
               <Parameter name="time step reduction factor" type="double" value="0.8"/>
               <Parameter name="max time step" type="double" value="4.32340e+17"/>
               <Parameter name="min time step" type="double" value="1.0e-6"/>
+              <Parameter name="relative tolerance" type="double" value="1.0e-04"/>
+              <Parameter name="absolute tolerance" type="double" value="10.0"/>
             </ParameterList>
             <Parameter name="solver type" type="string" value="nka"/>
             <ParameterList name="nka parameters">
@@ -847,7 +911,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="analysis">
-    <Parameter name="used boundary condition regions" type="Array(string)" value="{Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_WestOfCribs, Recharge_Boundary_btwnCribs, Recharge_Boundary_EastOfCribs, Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_WestOfCribs, Recharge_Boundary_btwnCribs, Recharge_Boundary_EastOfCribs, Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_WestOfCribs, Recharge_Boundary_btwnCribs, Recharge_Boundary_EastOfCribs}"/>
+    <Parameter name="used boundary condition regions" type="Array(string)" value="{Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_btwnCribs, Recharge_Boundary_WestOfCribs, Recharge_Boundary_EastOfCribs, Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_btwnCribs, Recharge_Boundary_WestOfCribs, Recharge_Boundary_EastOfCribs, Bottom Surface, Crib_216-B-17, Crib_216-B-18, Recharge_Boundary_btwnCribs, Recharge_Boundary_WestOfCribs, Recharge_Boundary_EastOfCribs}"/>
     <Parameter name="used source regions" type="Array(string)" value="{}"/>
     <Parameter name="used observation regions" type="Array(string)" value="{}"/>
     <ParameterList name="verbose object">

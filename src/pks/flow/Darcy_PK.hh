@@ -23,6 +23,7 @@
 #include "OperatorDiffusion.hh"
 #include "OperatorAccumulation.hh"
 #include "PK_Factory.hh"
+#include "TimestepController.hh"
 #include "TreeVector.hh"
 
 // Flow
@@ -100,7 +101,7 @@ class Darcy_PK : public Flow_PK {
   void InitializeFields_();
   void UpdateSpecificYield_();
   double ErrorEstimate_(double* dTfactor);
-  void InitializeStatistics_(const std::string& dt_method_name, bool init_darcy);
+  void InitializeStatistics_(bool init_darcy);
 
  protected:
   Teuchos::RCP<TreeVector> soln_;
@@ -112,7 +113,7 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
 
   int error_control_;
-  double dt_desirable_, dt_max_, dt_factor_;
+  double dt_desirable_, dt_factor_;
   std::vector<std::pair<double, double> > dt_history_;  // statistics
 
   std::string preconditioner_name_, solver_name_;
@@ -122,6 +123,7 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<CompositeVector> solution;  // next pressure state
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;
+  Teuchos::RCP<TimestepController> ts_control_;
 
   Teuchos::RCP<CompositeVector> specific_yield_copy_;
 

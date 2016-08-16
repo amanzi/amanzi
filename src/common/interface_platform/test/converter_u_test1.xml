@@ -101,6 +101,7 @@
         <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
         <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
         <max_divergent_iterations>3</max_divergent_iterations>
+        <timestep_controller>adaptive</timestep_controller>
       </unstr_transient_controls>
 
       <unstr_linear_solver>
@@ -266,9 +267,20 @@
       </liquid_phase>
     </boundary_condition>
 
+    <boundary_condition name="BC Between">
+      <assigned_regions>Recharge_Boundary_btwnCribs</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <inward_mass_flux start="0.0">
+            <time function="constant" data="1.0"/>
+            <space function="gaussian" amplitude="-3.1e-5" center="108.0,Y1" standard_deviation="10.0"/>
+          </inward_mass_flux>
+        </liquid_component>
+      </liquid_phase>
+    </boundary_condition>
+
     <boundary_condition name="BC Rest">
       <assigned_regions>Recharge_Boundary_WestOfCribs,
-                        Recharge_Boundary_btwnCribs,
                         Recharge_Boundary_EastOfCribs</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
