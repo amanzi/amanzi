@@ -1,6 +1,8 @@
 #ifndef MESH_READER_HH_
 #define MESH_READER_HH_
 
+#include <map>
+
 #include "Mesh.hh"
 
 namespace Amanzi {
@@ -11,17 +13,23 @@ struct PointFactory {
   PointFactory() {}
 
   bool addPoint(const Point& p, int& id) {
-    auto loc = std::find(points.begin(), points.end(), p);
-    if (loc == points.end()) {
-      id = points.size();
-      points.push_back(p);
-      return true;
-    } else {
-      id = loc - points.begin();
-      return false;
+    double key = norm(p);
+    auto range = points_sorted.equal_range(key);
+    for (auto sp=range.first; sp!=range.second; ++sp) {
+      if (sp->second.second == p) {
+        id = sp->second.first;
+        return false;
+      }
     }
+
+    id = points.size();
+    points.push_back(p);
+    points_sorted.insert(std::make_pair(key,
+            std::make_pair(id, p)));
+    return true;
   }
 
+  std::multimap<double,std::pair<int,Point> > points_sorted;
   std::vector<Point> points;
 };
 
