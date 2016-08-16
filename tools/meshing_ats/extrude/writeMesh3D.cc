@@ -145,12 +145,30 @@ writeMesh3D_exodus(const Mesh3D& m, const std::string& filename) {
     for (auto& e : elems_copy) e++;
     for (auto& e : faces_copy) e++;
     ierr |= ex_put_side_set_param(fid, m.face_sets_id[lcvs], elems_copy.size(), 0);
+    ASSERT(!ierr);
     ierr |= ex_put_side_set(fid, m.face_sets_id[lcvs], &elems_copy[0], &faces_copy[0]);
+    ASSERT(!ierr);
   }
 
-
   ierr |= ex_close(fid);
+  ASSERT(!ierr);
 
+  std::cout << "Wrote 3D Mesh:" << std::endl
+            << "  ncells = " << m.cell2face.size() << std::endl
+            << "  nfaces = " << m.face2node.size() << std::endl
+            << "  nnodes = " << m.coords.size() << std::endl
+            << std::endl
+            << "  side sets = " << std::endl;
+  for (int i=0; i!=m.face_sets.size(); ++i)
+    std::cout << "    " << m.face_sets_id[i] << " ("
+              << m.face_sets[i].first.size() << " faces)" << std::endl;
+  std::cout << std::endl
+            << "  block ids = " << std::endl;
+  for (int i=0; i!=blocks_id.size(); ++i)
+    std::cout << "    " << blocks_id[i] << " ("
+              << blocks[i].size() << " cells)" << std::endl;
+  std::cout << std::endl;
+  
 }
 
 }

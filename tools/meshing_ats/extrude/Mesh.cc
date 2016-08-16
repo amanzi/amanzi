@@ -4,37 +4,67 @@
 namespace Amanzi {
 namespace AmanziGeometry {
 
-Mesh3D::Mesh3D(const Mesh2D& m_, int n_layers) :
-    m(m_),
-    current_layer(0),
-    total_layers(n_layers) {
-  int n_coords_2d = m.coords.size();
-  
-  Point d(3);
-  coords.resize(n_coords_2d*(n_layers+1), d);
-
-  cell2face.resize(n_layers * m.cell2node.size());
-  for (int i=0; i!=cell2face.size(); ++i) {
-    cell2face[i].resize(5,-1);
+Mesh2D::Mesh2D(std::vector<Point>&& coords_,
+               std::vector<std::vector<int> >&& cell2node_,
+               std::vector<std::vector<int> >&& cell_sets_) :
+    coords(std::move(coords_)),
+    cell2node(std::move(cell2node_)),
+    cell_sets(std::move(cell_sets_))
+{
+  for (auto& set : cell_sets) {
+    ASSERT(set.size() == cell2node.size());
   }
+
+  for (auto& c : cell2node) {
+    Point v1(2), v2(2);
+    v1.set(coords[c[1]][0] - coords[c[0]][0], coords[c[1]][1] - coords[c[0]][1]);
+    v2.set(coords[c[2]][0] - coords[c[0]][0], coords[c[2]][1] - coords[c[0]][1]);
+    Point cross = v1^v2;
+    if (cross[0] < 0) {
+      std::reverse(c.begin(), c.end());
+    }
+  }
+
+  for (int c=0; c!=cell2node.size(); ++c) {
+    std::vector<int> c2f(3);
+    
+    std::vector<int> f1 = {cell2node[c][0], cell2node[c][1]};
+    c2f[0] = face_constructor(f1, 0, c);
+    std::vector<int> f2 = {cell2node[c][1], cell2node[c][2]};
+    c2f[1] = face_constructor(f2, 1, c);
+    std::vector<int> f3 = {cell2node[c][2], cell2node[c][0]};
+    c2f[2] = face_constructor(f3, 2, c);      
+    cell2face.emplace_back(c2f);
+  }
+
+  // set sizes
+  nfaces = face2node.size();
+  nnodes = coords.size();
+  ncells = cell2face.size();
+
+  // set boundaries
+  std::vector<int> boundary_c, boundary_f;
+  for (int lcv=0; lcv!=side_face_counts.size(); ++lcv) {
+    if (side_face_counts[lcv] == 1) {
+      boundary_c.push_back(face_cell_when_created[lcv]);
+      boundary_f.push_back(face_in_cell_when_created[lcv]);
+    }
+  }
+  boundary_faces = std::make_pair(std::move(boundary_c),
+          std::move(boundary_f));
 }
 
-
 int
-Mesh3D::face_constructor(const std::vector<int>& nodes,
+Mesh2D::face_constructor(const std::vector<int>& nodes,
                          int index_in_cell,
-                         int cell,
-                         bool guaranteed_new) {
-
+                         int cell) {
   std::vector<int> nodes_sorted(nodes);
   std::sort(nodes_sorted.begin(), nodes_sorted.end());
 
-  if (!guaranteed_new) {
-    for (int f=0; f!=face2node.size(); ++f) {
-      if (equal(nodes_sorted, face2node_sorted[f])) {
-        side_face_counts[f]++;
-        return f;
-      }
+  for (int f=0; f!=face2node.size(); ++f) {
+    if (nodes_sorted == face2node_sorted[f]) {
+      side_face_counts[f]++;
+      return f;
     }
   }
 
@@ -43,54 +73,68 @@ Mesh3D::face_constructor(const std::vector<int>& nodes,
   face2node_sorted.emplace_back(std::move(nodes_sorted));
   face_in_cell_when_created.push_back(index_in_cell);
   face_cell_when_created.push_back(cell);
-  if (guaranteed_new) {
-    side_face_counts.push_back(0);
-  } else {
-    side_face_counts.push_back(1);
-  }
+  side_face_counts.push_back(1);
   return face2node.size()-1;
 }
-  
+
+
+Mesh3D::Mesh3D(const Mesh2D& m_, int n_layers) :
+    m(m_),
+    current_layer(0),
+    total_layers(n_layers) {
+
+  // reserve/allocate space
+  Point d(3);
+  int n_nodes = m.nnodes*(n_layers+1);
+  coords.resize(n_nodes, d);
+
+  int n_cells = n_layers * m.ncells;
+  cell2face.reserve(n_cells);
+
+  int n_faces = n_layers * m.nfaces
+      + (n_layers+1)*m.ncells;
+  face2node.reserve(n_faces);
+
+  // copy the top surface coords
+  std::copy(m.coords.begin(), m.coords.end(), coords.begin());
+
+  // create the top layer of faces
+  face2node.insert(face2node.end(), m.cell2node.begin(),
+                   m.cell2node.end());
+
+  std::vector<int> top_c(m.ncells, -1);
+  std::vector<int> top_f(m.ncells, 0);
+  for (int i=0; i!=m.ncells; ++i)
+    top_c[i] = i;
+  face_sets.emplace_back(std::make_pair(std::move(top_c),
+          std::move(top_f)));
+  face_sets_id.push_back(1);
+
+  // move the 2d cell sets to face sets on the surface
+  std::set<int> set_ids;
+  for (auto& part : m.cell_sets) {
+    set_ids.insert(part.begin(), part.end());
+  }
+  for (int sid : set_ids) {
+    std::vector<int> set_cells;
+    for (auto& part : m.cell_sets) {
+      for (int c=0; c!=part.size(); ++c) {
+        if (part[c] == sid) {
+          set_cells.push_back(c);
+        }
+      }
+    }
+    std::vector<int> set_faces(set_cells.size(), 0);
+    face_sets.emplace_back(std::make_pair(std::move(set_cells),
+            std::move(set_faces)));
+    face_sets_id.push_back(sid);
+  }
+}
+
+
 void
 Mesh3D::extrude(const std::vector<double>& dz,
                 const std::vector<int>& block_ids_) {
-  std::cout << "PRE-Extruding: currently " << cell2face.size() << " cells and " << face2node.size() << " faces." << std::endl;
-
-  if (current_layer == 0) {
-    // copy the top layer of coords
-    std::copy(m.coords.begin(), m.coords.end(), coords.begin());
-
-    // create the top layer of faces
-    std::vector<int> surface_c(m.cell2node.size(), -1);
-    for (int c=0; c!=m.cell2node.size(); ++c) {
-      int f = face_constructor(m.cell2node[c], 0, c, true);
-      cell2face[c][0] = f;
-      surface_c[c] = c;
-    }
-
-    std::vector<int> surface_f(surface_c.size(), 0);
-    face_sets.emplace_back(std::make_pair(std::move(surface_c), std::move(surface_f)));
-    face_sets_id.push_back(1);
-
-    // move the 2d cell sets to face sets on the surface
-    std::set<int> set_ids;
-    for (auto& part : m.cell_sets) {
-      set_ids.insert(part.begin(), part.end());
-    }
-    for (int sid : set_ids) {
-      std::vector<int> set_cells;
-      for (auto& part : m.cell_sets) {
-        for (int c=0; c!=part.size(); ++c) {
-          if (part[c] == sid) {
-            set_cells.push_back(c);
-          }
-        }
-      }
-      std::vector<int> set_faces(set_cells.size(), 0);
-      face_sets.emplace_back(std::make_pair(std::move(set_cells), std::move(set_faces)));
-      face_sets_id.push_back(sid);
-    }
-  }
 
   // shift the coordinates
   for (int n=0; n!=m.coords.size(); ++n) {
@@ -99,41 +143,43 @@ Mesh3D::extrude(const std::vector<double>& dz,
     coords[node_structure(n,current_layer+1)][2] -= dz[n];
   }
 
-  // potentially the list of bottom faces
-  std::vector<int> bottom(m.cell2node.size(), -1);
-    
-  for (int c=0; c!=m.cell2node.size(); ++c) {
-    int c3 = cell_structure(c, current_layer);
-    
-    std::vector<int> top_nodes(3,-1), bottom_nodes(3,-1);
-    for (int n=0; n!=3; ++n) {
-      top_nodes[n] = node_structure(m.cell2node[c][n], current_layer);
-      bottom_nodes[n] = node_structure(m.cell2node[c][n], current_layer+1);
-    }
-    
-    // add the bottom face
-    int f = face_constructor(bottom_nodes, 1, c3, true);
-    cell2face[c3][1] = f;
-    if (current_layer != total_layers-1) {
-      cell2face[cell_structure(c, current_layer+1)][0] = f;
-    } else {
-      bottom[c] = c3;
-    }
-    
-    // add the side faces
-    for (int n=0; n!=3; ++n) {
-      std::vector<int> nodes = {top_nodes[n], top_nodes[(n+1)%3],
-                                bottom_nodes[(n+1)%3], bottom_nodes[n]};
-      int f = face_constructor(nodes, n+2, c3);
-      cell2face[c3][n+2] = f;
-    }
+  // add side faces
+  int nc = cell2face.size();
+  int nf = face2node.size();
+
+  // add the side faces
+  for (int f=0; f!=m.nfaces; ++f) {
+    std::vector<int> nodes =
+        { node_structure(m.face2node[f][0],current_layer),
+          node_structure(m.face2node[f][1],current_layer),
+          node_structure(m.face2node[f][1],current_layer+1),
+          node_structure(m.face2node[f][0],current_layer+1)
+        };
+    face2node.emplace_back(std::move(nodes));
   }
 
-  // create the bottom set
-  if (current_layer == total_layers - 1) {
-    std::vector<int> bottom_f(bottom.size(), 1);
-    face_sets.emplace_back(std::make_pair(bottom,bottom_f));
-    face_sets_id.push_back(2);
+  // add the bottom faces
+  for (int c=0; c!=m.ncells; ++c) {
+    std::vector<int> nodes =
+        { node_structure(m.cell2node[c][0],current_layer+1),
+          node_structure(m.cell2node[c][1],current_layer+1),
+          node_structure(m.cell2node[c][2],current_layer+1)
+        };
+    face2node.emplace_back(std::move(nodes));
+  }
+
+  // add the cell
+  for (int c=0; c!=m.ncells; ++c) {
+    // cell2face
+    std::vector<int> c2f =
+        {
+          nf - m.ncells + c,
+          nf + m.nfaces + c,
+          nf + m.cell2face[c][0],
+          nf + m.cell2face[c][1],
+          nf + m.cell2face[c][2]
+        };
+    cell2face.emplace_back(c2f);
   }
 
   // copy over the cell sets
@@ -148,16 +194,32 @@ Mesh3D::extrude(const std::vector<double>& dz,
 
 void
 Mesh3D::finish_sets() {
-  std::vector<int> sides_c;
-  std::vector<int> sides_f;
+  // create the bottom set
+  std::vector<int> bottom_c(m.ncells);
+  int bottom_c_begin = cell2face.size() - m.ncells;
+  for (int i=0; i!=m.ncells; ++i) bottom_c[i] = i + bottom_c_begin;
+                                      
+  std::vector<int> bottom_f(bottom_c.size(), 1);
+  face_sets.emplace_back(std::make_pair(std::move(bottom_c),
+          std::move(bottom_f)));
+  face_sets_id.push_back(2);
   
-  for (int f=0; f!=side_face_counts.size(); ++f) {
-    if (side_face_counts[f] == 1) {
-      sides_c.push_back(face_cell_when_created[f]);
-      sides_f.push_back(face_in_cell_when_created[f]);
-    }
+  // side sets
+  int n_boundary_faces = total_layers * m.boundary_faces.first.size();
+  std::vector<int> sides_c, sides_f;
+  sides_c.reserve(n_boundary_faces);
+  sides_f.reserve(n_boundary_faces);
+  for (int layer=0; layer!=total_layers; ++layer) {
+    int c_start = layer*m.ncells;
+    for (auto c : m.boundary_faces.first)
+      sides_c.push_back(c_start + c);
+    sides_f.insert(sides_f.begin(),
+                   m.boundary_faces.second.begin(),
+                   m.boundary_faces.second.end());
   }
-  face_sets.emplace_back(std::make_pair(sides_c, sides_f));
+  
+  face_sets.emplace_back(std::make_pair(std::move(sides_c),
+          std::move(sides_f)));
   face_sets_id.push_back(3);
 }
 
