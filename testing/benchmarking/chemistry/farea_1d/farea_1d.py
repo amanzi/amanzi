@@ -14,6 +14,8 @@ from matplotlib import pyplot as plt
 
 def GetXY_Amanzi(path,root,time,comp):
 
+#    import pdb; pdb.set_trace()
+
     # open amanzi concentration and mesh files
     dataname = os.path.join(path, "plot_data.h5")
     amanzi_file = h5py.File(dataname,'r')
@@ -87,7 +89,7 @@ if __name__ == "__main__":
 
     # hardwired time / add or remove here
     timespflo = ['Time:  5.00000E+01 y']
-    timesama  = ['71']
+    timesama  = ['132']
     
     # hardwired selected components / add or remove here
     search = ['Ca++','Mg++','K+','Cl-'] # ['UO2++'] # ['Ca++','Mg++','K+','Cl-'] # ['Ca++', 'Mg++','SiO2(aq)']
@@ -171,6 +173,8 @@ if __name__ == "__main__":
         run_amanzi_standard.run_amanzi(input_filename, 1, 
                                        ["1d-"+root+"-trim.in", root+".dat"],
                                        path_to_amanzi)
+
+#        import pdb; pdb.set_trace()
 
         time = timesama[0]
 
