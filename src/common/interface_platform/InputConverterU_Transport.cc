@@ -676,6 +676,8 @@ void InputConverterU::TranslateTransportSourcesGroup_(
     char* text = mm.transcode(same_list[0]->getNodeName());
     if (strcmp(text, "perm_weighted") == 0) {
       weight = "permeability";
+    } else if (strcmp(text, "volume_weighted") == 0) {
+      weight = "volume";
     } else if (strcmp(text, "uniform_conc") == 0) {
       weight = "none";
       unit = "mol/s/m^3";
