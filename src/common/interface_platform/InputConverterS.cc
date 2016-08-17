@@ -2483,9 +2483,8 @@ void InputConverterS::ParseOutput_()
   if (found)
   {
     bool found;
-    string filename = GetChildValueS_(checkpoint, "filename", found, true);
-//    string num_digits = GetChildValueS_(checkpoint, "liquid_phase", found, true);
-
+    string filename = GetChildValueS_(observations, "filename", found, true);
+    // string num_digits = GetChildValueS_(checkpoint, "liquid_phase", found, true);
     // FIXME
   }
 
