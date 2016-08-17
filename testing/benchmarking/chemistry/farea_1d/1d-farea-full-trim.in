@@ -129,9 +129,9 @@ CHEMISTRY
       CEC 2.75  : [mol/m^3 bulk]
       CATIONS
         Na+   1.0
-        Ca++  0.316227766017
         Al+++ 1.71132830416
         H+    0.0251188643151
+	Ca++  0.316227766017
       /
     /
   / :sorption
