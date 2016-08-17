@@ -125,7 +125,7 @@ if __name__ == "__main__":
     import os
     import run_amanzi_standard
 
-    input_filename = "amanzi_linear_materials_parallel_1d-isv2.xml"
+    input_filename = "amanzi_linear_materials_parallel_1d_u.xml"
     try: 
         run_amanzi_standard.run_amanzi(input_filename, 2)
         obs_xml=loadInputXML(input_filename)
