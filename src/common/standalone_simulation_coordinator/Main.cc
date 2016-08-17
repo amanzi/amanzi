@@ -257,6 +257,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Amanzi::SIMULATION_DID_NOT_RUN\n";
       } 
     }
+    return 1;
   }
   catch (std::exception& e) {
     if (rank == 0) {
@@ -267,6 +268,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Amanzi::SIMULATION_FAILED\n";
       }
     }
+    return 1;
   }
   catch (int& ierr) {
     if (rank == 0) {
@@ -274,6 +276,7 @@ int main(int argc, char *argv[]) {
         << ". Known sources: Epetra_MultiVector::AllocateForCopy" << std::endl;
       std::cout << "Amanzi::SIMULATION_FAILED\n";
     }
+    return 1;
   }
 
   // catch all
@@ -282,6 +285,9 @@ int main(int argc, char *argv[]) {
       std::cout << "Unknown exception" << std::endl;
       std::cout << "Amanzi::SIMULATION_FAILED\n";
     }
+    return 1;
   }
+
+  return 0;
 }
 
