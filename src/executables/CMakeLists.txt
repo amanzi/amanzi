@@ -81,11 +81,11 @@ set(ATS_LIBS
                      #  pk_test_pks
                       # pk_energy_constant_temperature
                       pk_energy_advection_diffusion
-		              pk_energy_two_phase
+		      pk_energy_two_phase
                       pk_energy_three_phase
                       pk_energy_surface_ice
                       pk_energy_base
-		              pk_flow_permafrost
+		      pk_flow_permafrost
                       pk_flow_richards
                       pk_flow_snow_distribution
                       pk_flow_overland
@@ -93,7 +93,8 @@ set(ATS_LIBS
                       pk_flow_icy_overland
                       pk_transport
                       pk_coupled_transport
-                      pk_chemistry
+#                      pk_chemistry
+#                      chemistry_pk
 	              # pk_prescribed_deformation
 #                      pk_prescribed_volumetric_deformation
 #                      pk_volumetric_deformation
@@ -137,7 +138,16 @@ set(AMANZI_LIBS
                       amanzi_geochemistry
 )
 
-target_link_libraries(ats ${ATS_LIBS} ${AMANZI_LIBS})
+set(GEOCHEM_LIBS 
+                 /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libchemistry_pk.a 
+                 /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libgeochembase.a 
+                 /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libgeochemsolvers.a 
+                 /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libgeochemutil.a 
+                 /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libmpc_tree.a 
+                 /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libtransport.a
+)
+
+target_link_libraries(ats ${ATS_LIBS} ${AMANZI_LIBS} ${GEOCHEM_LIBS})
 
 
 install(TARGETS ats DESTINATION bin)

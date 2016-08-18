@@ -16,12 +16,12 @@
 #include "Chemistry_PK_ATS.hh"
 
 namespace Amanzi {
-namespace ATSChemistry {
+namespace AmanziChemistry {
 
 /* ******************************************************************
 * Default constructor that initializes all pointers to NULL
 ****************************************************************** */
-Chemistry_PK::Chemistry_PK() :
+Chemistry_PK_ATS::Chemistry_PK_ATS() :
     passwd_("state"),
     number_minerals_(0),
     number_ion_exchange_sites_(0),
@@ -33,7 +33,7 @@ Chemistry_PK::Chemistry_PK() :
 /* ******************************************************************
 * Register fields and evaluators with the State
 ******************************************************************* */
-void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
+void Chemistry_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
 {
   // Require data from flow
   if (!S->HasField("porosity")) {
@@ -157,15 +157,31 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
 * can be derived from other initialized quantities, they are initialized
 * here, where we can manage that logic.
 ******************************************************************* */
-void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
+void Chemistry_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
 {
   // Aqueous species 
   if (number_aqueous_components_ > 0) {
     if (!S->GetField("total_component_concentration", passwd_)->initialized()) {
       InitializeField_("total_component_concentration", 0.0);
     }
-    InitializeField_("free_ion_species", 0.0);
     InitializeField_("primary_activity_coeff", 1.0);
+
+    // special initialization of free ion concentration
+    if (S_->HasField("free_ion_species")) {
+      if (!S_->GetField("free_ion_species")->initialized()) {
+        CompositeVector& ion = *S_->GetFieldData("free_ion_species", passwd_);
+        const CompositeVector& tcc = *S_->GetFieldData("total_component_concentration");
+
+        ion.Update(0.1, tcc, 0.0);
+        S_->GetField("free_ion_species", passwd_)->set_initialized();
+
+        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+          Teuchos::OSTab tab = vo_->getOSTab();
+          *vo_->os() << "initilized \"free_ion_species\" to 10% of \"total_component_concentration\"\n";  
+        }
+      }
+    }
+    // InitializeField_("free_ion_species", 0.0);
 
     // Sorption sites: all will have a site density, but we can default to zero
     if (using_sorption_) {
@@ -202,7 +218,7 @@ void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
 /* ******************************************************************
 * Process names of materials 
 ******************************************************************* */
-void Chemistry_PK::InitializeField_(std::string fieldname, double default_val)
+void Chemistry_PK_ATS::InitializeField_(std::string fieldname, double default_val)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
@@ -211,7 +227,7 @@ void Chemistry_PK::InitializeField_(std::string fieldname, double default_val)
       S_->GetFieldData(fieldname, passwd_)->PutScalar(default_val);
       S_->GetField(fieldname, passwd_)->set_initialized();
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-         *vo_->os() << "initilized " << fieldname << " to value " << default_val << std::endl;  
+         *vo_->os() << "initilized \"" << fieldname << "\" to value " << default_val << std::endl;  
     }
   }
 }
@@ -220,7 +236,7 @@ void Chemistry_PK::InitializeField_(std::string fieldname, double default_val)
 /* ******************************************************************
 * Process names of materials 
 ******************************************************************* */
-void Chemistry_PK::InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist)
+void Chemistry_PK_ATS::InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist)
 {
   mineral_names_.clear();
   if (plist->isParameter("minerals")) {
@@ -235,7 +251,7 @@ void Chemistry_PK::InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist
 * Process names of sorption sites
 * NOTE: Do we need to worry about sorption sites?
 ******************************************************************* */
-void Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
+void Chemistry_PK_ATS::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
                                            Teuchos::RCP<Teuchos::ParameterList> state_list)
 {
   sorption_site_names_.clear();
@@ -276,12 +292,15 @@ void Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> 
 /* *******************************************************************
 * I/O or error messages
 ******************************************************************* */
-void Chemistry_PK::ErrorAnalysis(int ierr, std::string& internal_msg)
+void Chemistry_PK_ATS::ErrorAnalysis(int ierr, std::string& internal_msg)
 {
-  int tmp_out[2], tmp_in[2] = {ierr, internal_msg.size()};
+  int tmp_out[2], tmp_in[2] = {ierr, (int) internal_msg.size()};
   mesh_->get_comm()->MaxAll(tmp_in, tmp_out, 2);
 
   if (tmp_out[0] != 0) {
+    // update time control parameters
+    num_successful_steps_ = 0;
+
     // get at least one error message
     int n = tmp_out[1];
     int msg_out[n + 1], msg_in[n + 1], m(mesh_->get_comm()->MyPID());
@@ -298,5 +317,5 @@ void Chemistry_PK::ErrorAnalysis(int ierr, std::string& internal_msg)
   }  
 }
 
-}  // namespace ATSChemistry
+}  // namespace AmanziChemistry
 }  // namespace Amanzi

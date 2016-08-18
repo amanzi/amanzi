@@ -18,7 +18,7 @@ BDF.
 #include "BDFFnBase.hh"
 #include "BDF1_TI.hh"
 #include "PK_BDF.hh"
-#include "pk_default_base.hh"
+
 
 
 namespace Amanzi {
@@ -30,12 +30,12 @@ namespace Amanzi {
   // PK_BDF_Default(const Teuchos::RCP<Teuchos::ParameterList>& plist,
   //                Teuchos::ParameterList& FElist,
   //                const Teuchos::RCP<TreeVector>& solution);
-  //  :      PKDefaultBase(plist, FElist, solution) {}
-  PK_BDF_Default(Teuchos::ParameterList& FElist,
-                 const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  //  :      PKDefaultBase(plist, pk_tree, solution) {}
+  PK_BDF_Default(Teuchos::ParameterList& pk_tree,
+                 const Teuchos::RCP<Teuchos::ParameterList>& glist,
                  const Teuchos::RCP<State>& S,
                  const Teuchos::RCP<TreeVector>& solution) :
-    PK(FElist, plist, S, solution){}
+    PK(pk_tree, glist, S, solution){}
   
   // Virtual destructor
   virtual ~PK_BDF_Default() {}

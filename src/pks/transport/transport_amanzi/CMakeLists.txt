@@ -19,7 +19,7 @@
 ##project(TRANSPORT)
 
 # Get the includes directory for chemistry (needed for BCs).
-##get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
+get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
 
 # External (TPL) include directories
 ##include_directories(${Epetra_INCLUDE_DIRS})

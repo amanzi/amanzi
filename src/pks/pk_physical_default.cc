@@ -13,12 +13,13 @@
 
 namespace Amanzi {
 
-PK_Physical_Default::PK_Physical_Default(Teuchos::ParameterList& FElist,
-                                         const Teuchos::RCP<Teuchos::ParameterList>& plist,
+PK_Physical_Default::PK_Physical_Default(Teuchos::ParameterList& pk_tree,
+                                         const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                          const Teuchos::RCP<State>& S,
-                                         const Teuchos::RCP<TreeVector>& solution) {
-  plist_ = plist;
-  solution_ = solution;
+                                         const Teuchos::RCP<TreeVector>& solution):
+  PK(pk_tree, glist, S, solution),
+  PK_Physical(pk_tree, glist, S, solution)
+ {
 
   // domain -- default is the entire mesh, no prefix
   if (domain_.empty()) {
@@ -29,6 +30,7 @@ PK_Physical_Default::PK_Physical_Default(Teuchos::ParameterList& FElist,
     key_ = plist_->get<std::string>("primary variable");
   }
 
+  Teuchos::ParameterList& FElist = S->FEList();
   // set up the primary variable solution, and its evaluator
   Teuchos::ParameterList& pv_sublist = FElist.sublist(key_);
   pv_sublist.set("evaluator name", key_);
@@ -44,8 +46,6 @@ PK_Physical_Default::PK_Physical_Default(Teuchos::ParameterList& FElist,
 // -----------------------------------------------------------------------------
 void PK_Physical_Default::Setup(const Teuchos::Ptr<State>& S) {
   //PKDefaultBase::setup(S);
-  // THIS MAY BE CALLED MORE THAN ONCE!
-  name_ = plist_->get<std::string>("PK name");
 
   // set up the VerboseObject
   vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));

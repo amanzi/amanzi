@@ -89,7 +89,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   virtual void set_states(const Teuchos::RCP<const State>& S,
                           const Teuchos::RCP<State>& S_inter,
-                          const Teuchos::RCP<State>& S_next) ;
+                          const Teuchos::RCP<State>& S_next);
 
   virtual std::string name() { return passwd_; }
 

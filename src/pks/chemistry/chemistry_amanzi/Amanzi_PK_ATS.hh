@@ -7,8 +7,8 @@
   provided in the top-level COPYRIGHT file.
 */
  
-#ifndef CHEMISTRY_AMANZI_PK_HH_
-#define CHEMISTRY_AMANZI_PK_HH_
+#ifndef CHEMISTRY_AMANZI_ATS_PK_HH_
+#define CHEMISTRY_AMANZI_ATS_PK_HH_
 
 #include <string>
 #include <vector>
@@ -28,24 +28,24 @@
 #include "TreeVector.hh"
 
 namespace Amanzi {
-namespace ATSChemistry {
+namespace AmanziChemistry {
 
 // Trilinos based chemistry process kernel for the unstructured mesh
-class Amanzi_PK : public Chemistry_PK {
+class Amanzi_PK_ATS : public Chemistry_PK_ATS {
  public:
-  Amanzi_PK(Teuchos::ParameterList& pk_tree,
-            const Teuchos::RCP<Teuchos::ParameterList>& glist,
-            const Teuchos::RCP<State>& S,
-            const Teuchos::RCP<TreeVector>& soln);
+  Amanzi_PK_ATS(Teuchos::ParameterList& pk_tree,
+                const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                const Teuchos::RCP<State>& S,
+                const Teuchos::RCP<TreeVector>& soln);
 
-  ~Amanzi_PK();
+  ~Amanzi_PK_ATS();
 
   // members required by PK interface
   virtual void Setup(const Teuchos::Ptr<State>& S);
   virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   virtual void set_dt(double dt) {};
-  virtual double get_dt() { return this->max_time_step_; }
+  virtual double get_dt() { return dt_next_; }
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
@@ -59,8 +59,8 @@ class Amanzi_PK : public Chemistry_PK {
   void set_chemistry_output_names(std::vector<std::string>* names);
 
  private:
-  void AllocateAdditionalChemistryStorage_(const AmanziChemistry::Beaker::BeakerComponents& components);
 
+  void AllocateAdditionalChemistryStorage_(const AmanziChemistry::Beaker::BeakerComponents& components);
   void XMLParameters();
   void SetupAuxiliaryOutput();
   void SizeBeakerStructures_();
@@ -81,9 +81,11 @@ class Amanzi_PK : public Chemistry_PK {
   AmanziChemistry::Beaker::BeakerComponents beaker_components_;
   AmanziChemistry::Beaker::BeakerComponents beaker_components_copy_;
 
-  double max_time_step_;
-  double current_time_;
-  double saved_time_;
+  std::string dt_control_method_;
+  double current_time_, saved_time_;
+  double dt_max_, dt_next_, dt_cut_factor_, dt_increase_factor_;
+  int dt_cut_threshold_, dt_increase_threshold_;
+
 
   std::vector<std::string> aux_names_;
   std::vector<int> aux_index_;
@@ -91,7 +93,7 @@ class Amanzi_PK : public Chemistry_PK {
 
  private:
   // factory registration
-  static RegisteredPKFactory<Amanzi_PK> reg_;
+  static RegisteredPKFactory<Amanzi_PK_ATS> reg_;
 };
 
 }  // namespace AmanziChemistry

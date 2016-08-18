@@ -56,36 +56,41 @@ Coordinator::Coordinator(Teuchos::ParameterList& parameter_list,
 };
 
 void Coordinator::coordinator_init() {
-  coordinator_list_ = Teuchos::sublist(parameter_list_, "coordinator");
+  coordinator_list_ = Teuchos::sublist(parameter_list_, "cycle driver");
   read_parameter_list();
 
   // create the top level PK
   Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(parameter_list_, "PKs");
-  Teuchos::ParameterList::ConstIterator pk_item = pks_list->begin();
-  const std::string &pk_name = pks_list->name(pk_item);
+  Teuchos::ParameterList pk_tree_list = coordinator_list_->sublist("PK tree");
+  if (pk_tree_list.numParams() != 1) {
+    Errors::Message message("CycleDriver: PK tree list should contain exactly one root node list");
+    Exceptions::amanzi_throw(message);
+  }
+  Teuchos::ParameterList::ConstIterator pk_item = pk_tree_list.begin();
+  const std::string &pk_name = pk_tree_list.name(pk_item);
   
   // create the solution
   soln_ = Teuchos::rcp(new TreeVector());
 
   // create the pk
-  //  PKFactory_ATS pk_factory_ats;
   PKFactory pk_factory;
 
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list, pk_name);
   pk_list->set("PK name", pk_name);
   const std::string &pk_origin = pk_list -> get<std::string>("PK origin", "ATS");
+ 
+  pk_ = pk_factory.CreatePK(pk_tree_list.sublist(pk_name), parameter_list_, S_, soln_);
 
-
-  if (pk_origin == "ATS"){
-    // Teuchos::RCP<PK_ATS> pk_tmp = pk_factory_ats.CreatePK(pk_list, S_->FEList(), soln_);
-    // pk_ = Teuchos::rcp_dynamic_cast<PK> (pk_tmp);
-    pk_ = pk_factory.CreatePK(S_->FEList(), pk_list, S_, soln_);
-  }else if (pk_origin == "Amanzi"){
-    pk_ = pk_factory.CreatePK(*pk_list, parameter_list_, S_, soln_);
-  }else{
-    Errors::Message message("Coordinator: invalid PK origin");
-    Exceptions::amanzi_throw(message);
-  }
+  // if (pk_origin == "ATS"){
+  //   // Teuchos::RCP<PK_ATS> pk_tmp = pk_factory_ats.CreatePK(pk_list, S_->FEList(), soln_);
+  //   // pk_ = Teuchos::rcp_dynamic_cast<PK> (pk_tmp);
+  //   pk_ = pk_factory.CreatePK(S_->FEList(), pk_list, S_, soln_);
+  // }else if (pk_origin == "Amanzi"){
+  //   pk_ = pk_factory.CreatePK(*pk_list, parameter_list_, S_, soln_);
+  // }else{
+  //   Errors::Message message("Coordinator: invalid PK origin");
+  //   Exceptions::amanzi_throw(message);
+  // }
   
   pk_->Setup(S_.ptr());
 
@@ -148,14 +153,23 @@ void Coordinator::initialize() {
     DeformCheckpointMesh(S_.ptr());
   }
 
-  // Initialize the process kernels (initializes all independent variables)
-  pk_->Initialize(S_.ptr());
+
+  // Initialize the state (initializes all dependent variables).
+  //S_->Initialize();
   *S_->GetScalarData("dt", "coordinator") = 0.;
   S_->GetField("dt","coordinator")->set_initialized();
 
+  S_->InitializeFields();
+  S_->InitializeEvaluators();
 
-  // Initialize the state (initializes all dependent variables).
-  S_->Initialize();
+  // Initialize the process kernels (initializes all independent variables)
+  pk_->Initialize(S_.ptr());
+
+ // Final checks.
+  S_->CheckNotEvaluatedFieldsInitialized();
+  S_->CheckAllFieldsInitialized();
+
+  S_->WriteStatistics(vo_);
 
 
   // commit the initial conditions.

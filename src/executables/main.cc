@@ -33,7 +33,10 @@
 #include "multiscale_transport_registration.hh"
 #include "mdm_transport_registration.hh"
 
-#include "chemistry_amanzi_registration.hh"
+//#include "chemistry_amanzi_registration.hh"
+#include "pks_chemistry_registration.hh"
+#include "mpc_pks_registration.hh"
+#include "mpc_registration.hh"
 
 //#include "deform_constitutive_relations_porosity_registration.hh"
 //#include "deform_prescribed_deformation_registration.hh"
@@ -52,8 +55,6 @@
 //#include "BGC_registration.hh"
 
 // #include "test_pks_registration.hh"
-
-#include "mpc_registration.hh"
 
 
 

@@ -21,16 +21,16 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 // Constructor
 // -----------------------------------------------------------------------------
-PK_MPCSubcycled_ATS::PK_MPCSubcycled_ATS(Teuchos::ParameterList& pk_tree_or_fe_list,
+PK_MPCSubcycled_ATS::PK_MPCSubcycled_ATS(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln) :
-  MPC<PK>(pk_tree_or_fe_list, global_list, S, soln) {
+  MPC<PK>(pk_tree, global_list, S, soln) {
 
   S_ = S;
 
   // Master PK is the PK whose time step size sets the size, the slave is subcycled.
-  master_ = my_list_->get<int>("master PK index", 0);
+  master_ = plist_->get<int>("master PK index", 0);
   slave_ = master_ == 1 ? 0 : 1;
 
   if (sub_pks_.size() != 2 || master_ > 1) {
@@ -39,7 +39,7 @@ PK_MPCSubcycled_ATS::PK_MPCSubcycled_ATS(Teuchos::ParameterList& pk_tree_or_fe_l
   }
 
   // min dt allowed in subcycling
-  min_dt_ = my_list_->get<double>("mininum subcycled relative dt", 1.e-5);
+  min_dt_ = plist_->get<double>("mininum subcycled relative dt", 1.e-5);
 }
   
 

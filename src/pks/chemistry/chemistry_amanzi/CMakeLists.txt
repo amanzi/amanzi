@@ -66,8 +66,8 @@ include_directories(${Amanzi_TPL_MSTK_INCLUDE_DIRS})
 # Install Targets
 #
 set(chem_inc_files 
-                   Alquimia_PK.hh
-                   Amanzi_PK.hh
+#                   Alquimia_PK_ATS.hh
+                   Amanzi_PK_ATS.hh
                    Chemistry_PK_ATS.hh
 )
 
@@ -77,9 +77,9 @@ set(chem_inc_files
 set(chem_src_files) # Chemistry_PK.cc)
 
 list(APPEND chem_src_files Chemistry_PK.cc Amanzi_PK.cc)
-#if (ENABLE_ALQUIMIA)
-#  list(APPEND chem_src_files Alquimia_PK.cc)
-#endif()
+if (ENABLE_ALQUIMIA)
+   list(APPEND chem_src_files Alquimia_PK.cc)
+endif()
 
 # #add_install_include_file(${chem_inc_files})
 

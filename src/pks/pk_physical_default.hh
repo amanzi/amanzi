@@ -21,7 +21,6 @@ Default base with default implementations of methods for a physical PK.
 
 #include "primary_variable_field_evaluator.hh"
 #include "PK.hh"
-//#include "pk_default_base.hh"
 #include "PK_Physical.hh"
 
 
@@ -30,8 +29,8 @@ namespace Amanzi {
   class PK_Physical_Default :   public PK_Physical {
 
   public:
-    PK_Physical_Default(Teuchos::ParameterList& FElist,
-                        const Teuchos::RCP<Teuchos::ParameterList>& plist,
+    PK_Physical_Default(Teuchos::ParameterList& pk_tree,
+                        const Teuchos::RCP<Teuchos::ParameterList>& glist,
                         const Teuchos::RCP<State>& S,
                         const Teuchos::RCP<TreeVector>& solution);
 

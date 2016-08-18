@@ -13,6 +13,7 @@ BDF.
 #include "Teuchos_TimeMonitor.hpp"
 #include "BDF1_TI.hh"
 #include "pk_bdf_default.hh"
+#include "State.hh"
 
 namespace Amanzi {
 
@@ -22,9 +23,6 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 void PK_BDF_Default::Setup(const Teuchos::Ptr<State>& S) {
   
-  // THIS MAY BE CALLED MORE THAN ONCE!
-  name_ = plist_->get<std::string>("PK name");
-
   // set up the VerboseObject
   vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));
 

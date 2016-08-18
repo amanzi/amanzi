@@ -36,6 +36,8 @@
 
 #include "MultiscaleTransportPorosityFactory.hh"
 #include "Transport_PK_ATS.hh"
+#include "TransportBoundaryFunction.hh"
+#include "TransportBoundaryFunction_Alquimia.hh"
 
 namespace Amanzi {
 namespace Transport {
@@ -81,9 +83,6 @@ Transport_PK_ATS::Transport_PK_ATS(Teuchos::ParameterList& pk_tree,
     Exceptions::amanzi_throw(msg);
   }
   
-
-  
-
   preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners");
   linear_solver_list_ = Teuchos::sublist(glist, "Solvers");
   nonlinear_solver_list_ = Teuchos::sublist(glist, "Nonlinear solvers");
@@ -433,11 +432,11 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
       Teuchos::ParameterList& spec = glist.sublist(specname);
 
       Teuchos::RCP<TransportBoundaryFunction_Alquimia> 
-          bc = Teuchos::rcp(new TransportBoundaryFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
+        bc = Teuchos::rcp(new TransportBoundaryFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
 
       std::vector<int>& tcc_index = bc->tcc_index();
       std::vector<std::string>& tcc_names = bc->tcc_names();
-
+      
       for (int i = 0; i < tcc_names.size(); i++) {
         tcc_index.push_back(FindComponentNumber(tcc_names[i]));
       }
@@ -734,10 +733,9 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
 
  
   if (vol_flux_conversion_){
-    vol_flux = S_next_->GetFieldData(flux_key_, passwd_)->ViewComponent("face", true);
+      vol_flux = S_next_->GetFieldData(flux_key_, passwd_)->ViewComponent("face", true);
     ComputeVolumeDarcyFlux(S_next_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true),
-                           S_next_->GetFieldData(molar_density_key_)->ViewComponent("cell", true),
-                           vol_flux);
+                           S_next_->GetFieldData(molar_density_key_)->ViewComponent("cell", true), vol_flux);
   }
 
   flux = S_next_->GetFieldData(flux_key_)->ViewComponent("face", true);

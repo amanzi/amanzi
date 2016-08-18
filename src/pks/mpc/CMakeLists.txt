@@ -37,6 +37,7 @@ add_library(mpc
   mpc_coupled_cells.cc
   pk_mpcsubcycled.cc
   mpc_flowreactivetransport_pk.cc
+  mpc_reactivetransport_pk.cc
   mpc_surface_subsurface_helpers.cc
   mpc_delegate_ewc.cc
 ##  mpc_delegate_ewc_surface.cc
@@ -77,6 +78,12 @@ register_evaluator_with_factory(
   HEADERFILE mpc_flowreactivetransport_pk_reg.hh
   LISTNAME   MPC_PK_FAC
   )
+
+register_evaluator_with_factory(
+  HEADERFILE mpc_reactivetransport_pk_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
     
 register_evaluator_with_factory(
   HEADERFILE mpc_subsurface_reg.hh

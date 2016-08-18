@@ -25,9 +25,9 @@ namespace Amanzi {
 class FlowReactiveTransport_PK_ATS : public PK_MPCSubcycled_ATS {
  public:
   FlowReactiveTransport_PK_ATS(Teuchos::ParameterList& pk_tree_or_fe_list,
-                           const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-                           const Teuchos::RCP<State>& S,
-                           const Teuchos::RCP<TreeVector>& soln);
+                               const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                               const Teuchos::RCP<State>& S,
+                               const Teuchos::RCP<TreeVector>& soln);
 
   ~FlowReactiveTransport_PK_ATS() {
   }

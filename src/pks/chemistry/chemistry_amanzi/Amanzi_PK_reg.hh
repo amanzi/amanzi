@@ -12,9 +12,9 @@
 #include "Amanzi_PK_ATS.hh"
 
 namespace Amanzi {
-namespace ATSChemistry {
+namespace AmanziChemistry {
 
-RegisteredPKFactory<Amanzi_PK> Amanzi_PK::reg_("chemistry amanzi");
+RegisteredPKFactory<Amanzi_PK_ATS> Amanzi_PK_ATS::reg_("chemistry amanzi");
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

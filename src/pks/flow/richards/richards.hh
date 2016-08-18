@@ -55,8 +55,6 @@ public:
 
   // virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {CalculateDiagnostics(S);};
 
-
-
   // -- Setup data.
   virtual void Setup(const Teuchos::Ptr<State>& S);
 

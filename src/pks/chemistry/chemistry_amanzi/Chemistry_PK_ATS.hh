@@ -10,8 +10,8 @@
   instantiated.
 */
  
-#ifndef AMANZI_CHEMISTRY_PK_HH_
-#define AMANZI_CHEMISTRY_PK_HH_
+#ifndef AMANZI_CHEMISTRY_PK_ATS_HH_
+#define AMANZI_CHEMISTRY_PK_ATS_HH_
 
 #include <vector>
 
@@ -30,12 +30,12 @@
 #include "State.hh"
 
 namespace Amanzi {
-namespace ATSChemistry {
+namespace AmanziChemistry {
 
-class Chemistry_PK : public PK_Physical {
+class Chemistry_PK_ATS : public PK_Physical {
  public:
-  Chemistry_PK();
-  virtual ~Chemistry_PK() {};
+  Chemistry_PK_ATS();
+  virtual ~Chemistry_PK_ATS() {};
 
   // required members for PK interface
   virtual void Setup(const Teuchos::Ptr<State>& S);
@@ -87,6 +87,9 @@ class Chemistry_PK : public PK_Physical {
 #ifdef ALQUIMIA_ENABLED
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
 #endif
+
+  // time control
+  int num_iterations_, num_successful_steps_;
 
   // verbosity object thatis not shared with common chemistry
   Teuchos::RCP<VerboseObject> vo_;

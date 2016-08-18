@@ -14,7 +14,6 @@ domains/meshes of PKPhysicalBase and BDF methods of PKBDFBase.
 #define ATS_PK_PHYSICAL_BDF_BASE_HH_
 
 #include "errors.hh"
-#include "pk_default_base.hh"
 #include "pk_bdf_default.hh"
 #include "pk_physical_default.hh"
 
@@ -25,12 +24,12 @@ namespace Amanzi {
 class PK_PhysicalBDF_Default : virtual public PK_BDF_Default, public PK_Physical_Default {
 
  public:
-  PK_PhysicalBDF_Default(Teuchos::ParameterList& FElist,
-                          const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  PK_PhysicalBDF_Default(Teuchos::ParameterList& pk_tree,
+                          const Teuchos::RCP<Teuchos::ParameterList>& glist,
                           const Teuchos::RCP<State>& S,
                           const Teuchos::RCP<TreeVector>& solution):
-    PK_BDF_Default(FElist, plist, S, solution),
-    PK_Physical_Default(FElist, plist, S, solution){}
+    PK_BDF_Default(pk_tree, glist, S, solution),
+    PK_Physical_Default(pk_tree, glist, S, solution){}
 
 
   virtual void set_states(const Teuchos::RCP<const State>& S,

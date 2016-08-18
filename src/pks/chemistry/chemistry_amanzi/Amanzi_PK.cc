@@ -41,20 +41,20 @@
 #include "Amanzi_PK_ATS.hh"
 
 namespace Amanzi {
-namespace ATSChemistry {
+namespace AmanziChemistry {
 
 // This should go away
-extern VerboseObject*  chem_out;
+extern VerboseObject* chem_out;
 
 /* ******************************************************************
 * Constructor
 ******************************************************************* */
-Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
+Amanzi_PK_ATS::Amanzi_PK_ATS(Teuchos::ParameterList& pk_tree,
                      const Teuchos::RCP<Teuchos::ParameterList>& glist,
                      const Teuchos::RCP<State>& S,
                      const Teuchos::RCP<TreeVector>& soln) :
     soln_(soln),
-    max_time_step_(9.9e9),
+    dt_max_(9.9e9),
     chem_(NULL),
     current_time_(0.0),
     saved_time_(0.0)
@@ -92,14 +92,14 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
 
   // verbosity object
   vo_ = Teuchos::rcp(new VerboseObject("Chem::Amanzi", *cp_list_)); 
-  AmanziChemistry::chem_out = &*vo_;
+  chem_out = &*vo_;
 }
 
 
 /* *******************************************************************
 * Destructor
 ******************************************************************* */
-Amanzi_PK::~Amanzi_PK() {
+Amanzi_PK_ATS::~Amanzi_PK_ATS() {
   delete chem_;
 }
 
@@ -107,10 +107,10 @@ Amanzi_PK::~Amanzi_PK() {
 /* ******************************************************************
 * Register fields and evaluators with the State
 ******************************************************************* */
-void Amanzi_PK::Setup(const Teuchos::Ptr<State>& S)
+void Amanzi_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
 {
   // use common registration steps
-  Chemistry_PK::Setup(S);
+  Chemistry_PK_ATS::Setup(S);
 
   // no additional steps to be done.
 }
@@ -119,7 +119,7 @@ void Amanzi_PK::Setup(const Teuchos::Ptr<State>& S)
 /* ******************************************************************
 * Can this be done during Setup phase?
 ******************************************************************* */
-void Amanzi_PK::AllocateAdditionalChemistryStorage_(
+void Amanzi_PK_ATS::AllocateAdditionalChemistryStorage_(
     const AmanziChemistry::Beaker::BeakerComponents& components)
 {
   int n_secondary_comps = components.secondary_activity_coeff.size();
@@ -140,10 +140,10 @@ void Amanzi_PK::AllocateAdditionalChemistryStorage_(
 /* *******************************************************************
 * Initialization
 ******************************************************************* */
-void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
+void Amanzi_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
 {
   // initialization using base class
-  Chemistry_PK::Initialize(S);
+  Chemistry_PK_ATS::Initialize(S);
 
   Teuchos::RCP<Epetra_MultiVector> tcc = 
       S->GetFieldData("total_component_concentration", passwd_)->ViewComponent("cell", true);
@@ -170,6 +170,20 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
     vo_->Write(Teuchos::VERB_HIGH, "Initializing chemistry in cell 0...\n");
     chem_->Setup(beaker_components_, beaker_parameters_);
     chem_->Display();
+
+    // check names of primary species
+    int nprimary = chem_->primary_species().size(); 
+    if (nprimary == comp_names_.size()) {
+      for (int i = 0; i < nprimary; ++i) {
+        std::string species_name = chem_->primary_species().at(i).name();
+        if (comp_names_[i] != species_name) {
+          Errors::Message msg;
+          msg << "Amanzi PK: mismatch of name: \"" << comp_names_[i] << "\" and \"" 
+              << species_name << "\". Compare XML and BGD lists.";
+          Exceptions::amanzi_throw(msg);
+        }
+      }
+    }
 
     // solve for initial free-ion concentrations
     vo_->Write(Teuchos::VERB_HIGH, "Initial speciation calculations in cell 0...\n");
@@ -220,11 +234,11 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
 /* *******************************************************************
 * Initialization helper functions
 ******************************************************************* */
-void Amanzi_PK::XMLParameters()
+void Amanzi_PK_ATS::XMLParameters()
 {
   // thermo file name and format, then create the database!
-  if (cp_list_->isSublist("Thermodynamic Database")) {
-    Teuchos::ParameterList& tdb_list_ = cp_list_->sublist("Thermodynamic Database");
+  if (cp_list_->isSublist("thermodynamic database")) {
+    Teuchos::ParameterList& tdb_list_ = cp_list_->sublist("thermodynamic database");
 
     // currently we only support the simple format.
     if (tdb_list_.isParameter("format")) {
@@ -236,7 +250,7 @@ void Amanzi_PK::XMLParameters()
         std::ostringstream msg;
         msg << AmanziChemistry::ChemistryException::kChemistryError;
         msg << "Amanzi_PK::XMLParameters(): \n";
-        msg << "  In sublist 'Thermodynamic Database', the parameter 'format' must be 'simple'.\n";
+        msg << "  In sublist 'thermodynamic database', the parameter 'format' must be 'simple'.\n";
         Exceptions::amanzi_throw(AmanziChemistry::ChemistryInvalidInput(msg.str()));  
       }
     } else {
@@ -244,7 +258,7 @@ void Amanzi_PK::XMLParameters()
       std::ostringstream msg;
       msg << AmanziChemistry::ChemistryException::kChemistryError;
       msg << "Amanzi_PK::XMLParameters(): \n";
-      msg << "  In sublist 'Thermodynamic Database', the parameter 'format' must be specified.\n";
+      msg << "  In sublist 'thermodynamic database', the parameter 'format' must be specified.\n";
       Exceptions::amanzi_throw(AmanziChemistry::ChemistryInvalidInput(msg.str()));
     }
 
@@ -257,14 +271,14 @@ void Amanzi_PK::XMLParameters()
       std::ostringstream msg;
       msg << AmanziChemistry::ChemistryException::kChemistryError;
       msg << "Amanzi_PK::XMLParameters(): \n";
-      msg << "  Input parameter 'file' in 'Thermodynamic Database' sublist must be specified.\n";
+      msg << "  Input parameter 'file' in 'thermodynamic database' sublist must be specified.\n";
       Exceptions::amanzi_throw(AmanziChemistry::ChemistryInvalidInput(msg.str()));         
     }
   } else {
     std::ostringstream msg;
     msg << AmanziChemistry::ChemistryException::kChemistryError;
     msg << "Amanzi_PK::XMLParameters(): \n";
-    msg << "  'Thermodynamic Database' sublist must be specified.\n";
+    msg << "  'thermodynamic database' sublist must be specified.\n";
     Exceptions::amanzi_throw(AmanziChemistry::ChemistryInvalidInput(msg.str()));    
   }
 
@@ -305,14 +319,23 @@ void Amanzi_PK::XMLParameters()
   }
 
   // misc other chemistry flags
-  max_time_step_ = cp_list_->get<double>("max time step (s)", 9.9e+9);
+  dt_control_method_ = cp_list_->get<std::string>("time step control method", "fixed");
+  dt_max_ = cp_list_->get<double>("max time step (s)", 9.9e+9);
+  dt_next_ = cp_list_->get<double>("initial time step (s)", dt_max_);
+  dt_cut_factor_ = cp_list_->get<double>("time step cut factor", 2.0);
+  dt_increase_factor_ = cp_list_->get<double>("time step increase factor", 1.2);
+
+  dt_cut_threshold_ = cp_list_->get<int>("time step cut threshold", 8);
+  dt_increase_threshold_ = cp_list_->get<int>("time step increase threshold", 4);
+
+  num_successful_steps_ = 0;
 }
 
 
 /* *******************************************************************
 * Requires that Beaker::Setup() has already been called!
 ******************************************************************* */
-void Amanzi_PK::SetupAuxiliaryOutput()
+void Amanzi_PK_ATS::SetupAuxiliaryOutput()
 {
   // TODO: this indexing scheme will not be appropriate when
   // additional types of aux data are requested, e.g. mineral SI.....
@@ -351,7 +374,7 @@ void Amanzi_PK::SetupAuxiliaryOutput()
 /* *******************************************************************
 * Initialize the beaker component data structure
 ******************************************************************* */
-void Amanzi_PK::SizeBeakerStructures_()
+void Amanzi_PK_ATS::SizeBeakerStructures_()
 {
   // NOTE: The beaker already has data for site density, sorption
   // isotherms, ssa. If we want to use that single global value, then
@@ -403,7 +426,7 @@ void Amanzi_PK::SizeBeakerStructures_()
 * We must use the aqueous totals value calculated from transport
 * (aqueous_components), not the value stored in state!
 ******************************************************************* */
-void Amanzi_PK::CopyCellStateToBeakerStructures(
+void Amanzi_PK_ATS::CopyCellStateToBeakerStructures(
     int cell_id, Teuchos::RCP<Epetra_MultiVector> aqueous_components)
 {
   for (unsigned int i = 0; i < number_aqueous_components_; i++) {
@@ -512,7 +535,7 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
 /* *******************************************************************
 * Copy data from the beaker back into the state arrays.
 ******************************************************************* */
-void Amanzi_PK::CopyBeakerStructuresToCellState(
+void Amanzi_PK_ATS::CopyBeakerStructuresToCellState(
     int cell_id, Teuchos::RCP<Epetra_MultiVector> aqueous_components)
 {
   for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
@@ -615,7 +638,7 @@ void Amanzi_PK::CopyBeakerStructuresToCellState(
 * be set up using routine set_aqueous_components(). Tipically, it 
 * contains values advected by the transport PK.
 ******************************************************************* */
-bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+bool Amanzi_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   bool failed(false);
   std::string internal_msg;
@@ -657,6 +680,9 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   ErrorAnalysis(ierr, internal_msg);
   
+  int tmp(max_itrs);
+  mesh_->get_comm()->MaxAll(&tmp, &max_itrs, 1);
+
   std::stringstream ss;
   ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/" 
      << avg_itrs / num_cells << ", maximum in gid=" << mesh_->GID(cmax, AmanziMesh::CELL) << std::endl;
@@ -667,6 +693,10 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // chem_->DisplayTotalColumnHeaders(true);
   // chem_->DisplayTotalColumns(current_time_, beaker_components_, true);
 
+  // update time control parameters
+  num_successful_steps_++;
+  num_iterations_ = max_itrs;
+
   return failed;
 }
 
@@ -676,9 +706,26 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 * that it has accepted the state update, thus, the PK should update
 * possible auxilary state variables here
 ******************************************************************* */
-void Amanzi_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
+void Amanzi_PK_ATS::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   saved_time_ = t_new;
+
+  if (dt_control_method_ == "simple") {
+    if ((num_successful_steps_ == 0) || (num_iterations_ >= dt_cut_threshold_)) {
+      dt_next_ /= dt_cut_factor_;
+    }
+    else if (num_successful_steps_ >= dt_increase_threshold_) {
+      dt_next_ *= dt_increase_factor_;
+      num_successful_steps_ = 0;
+    }
+
+    dt_next_ = std::min(dt_next_, dt_max_);
+
+    // synchronize processors since update of control parameters was 
+    // made in many places.
+    double tmp(dt_next_);
+    mesh_->get_comm()->MinAll(&tmp, &dt_next_, 1);
+  }
 
   // debug output
   // chem_->Speciate(&beaker_components_, beaker_parameters_);
@@ -691,7 +738,7 @@ void Amanzi_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>
 /* ******************************************************************
 *
 ******************************************************************* */
-Teuchos::RCP<Epetra_MultiVector> Amanzi_PK::extra_chemistry_output_data() {
+Teuchos::RCP<Epetra_MultiVector> Amanzi_PK_ATS::extra_chemistry_output_data() {
   if (aux_data_ != Teuchos::null) {
     const Epetra_MultiVector& free_ion = *S_->GetFieldData("free_ion_species")->ViewComponent("cell", true);
     const Epetra_MultiVector& activity = *S_->GetFieldData("primary_activity_coeff")->ViewComponent("cell", true);
@@ -719,7 +766,7 @@ Teuchos::RCP<Epetra_MultiVector> Amanzi_PK::extra_chemistry_output_data() {
 /* ******************************************************************
 *
 ******************************************************************* */
-void Amanzi_PK::set_chemistry_output_names(std::vector<std::string>* names) {
+void Amanzi_PK_ATS::set_chemistry_output_names(std::vector<std::string>* names) {
   names->clear();
   for (std::vector<std::string>::const_iterator name = aux_names_.begin();
        name != aux_names_.end(); name++) {
