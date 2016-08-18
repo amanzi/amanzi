@@ -31,8 +31,10 @@
 #include "Darcy_PK.hh"
 
 
-/* **************************************************************** */
-TEST(FLOW_2D_DARCY_WELL) {
+/* *********************************************************************
+* Two tests with different time step controllers.
+********************************************************************* */
+void RunTestMarshak(std::string controller) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -41,10 +43,10 @@ TEST(FLOW_2D_DARCY_WELL) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) std::cout << "Test: 2D well model" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: 2D well model: " << controller << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/flow_darcy_well.xml";
+  std::string xmlFileName = controller;
   Teuchos::RCP<ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create an MSTK mesh framework
@@ -115,12 +117,23 @@ TEST(FLOW_2D_DARCY_WELL) {
 
     if (MyPID == 0) {
       const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
-      GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+      GMV::open_data_file(*mesh, (std::string)"flow2D.gmv");
       GMV::start_data();
       GMV::write_cell_data(p, 0, "pressure");
       GMV::close_data_file();
     }
+
+    dt = DPK->get_dt();
   }
+}
+
+
+TEST(FLOW_2D_DARCY_WELL_STANDARD) {
+  RunTestMarshak("test/flow_darcy_well.xml");
+}
+
+TEST(FLOW_2D_DARCY_WELL_ADAPRIVE) {
+ RunTestMarshak("test/flow_darcy_well_adaptive.xml");
 }
 
 
@@ -209,7 +222,7 @@ TEST(FLOW_3D_DARCY_WELL) {
 
     if (MyPID == 0) {
       const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
-      GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+      GMV::open_data_file(*mesh, (std::string)"flow3D.gmv");
       GMV::start_data();
       GMV::write_cell_data(p, 0, "pressure");
       GMV::close_data_file();

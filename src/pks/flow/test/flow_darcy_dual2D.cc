@@ -30,7 +30,9 @@
 // Flow
 #include "Darcy_PK.hh"
 
-/* **************************************************************** */
+/* *********************************************************************
+* Test of Darcy flow on polygonal mesh
+********************************************************************* */
 TEST(FLOW_2D_TRANSIENT_DARCY) {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -43,15 +45,14 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   if (MyPID == 0) std::cout << "Test: 2D transient Darcy, polygonal mesh" << std::endl;
 
-  /* read parameter list */
+  // read parameter list
   std::string xmlFileName = "test/flow_darcy_dual2D.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-  /* create a MSTK mesh framework */
+  // create a MSTK mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, &comm));
-
 
   FrameworkPreference pref;
   pref.clear();

@@ -10,8 +10,8 @@
 #       So for releases we need to extract this and set it as part of the tarball creation.
 #
 #   * if amanzi_version.hh does not exist create it
-#       * if mercurial is found
-#            use mercurial to create version strings 
+#       * if git is found
+#            use git to create version strings 
 #       * else
 #            use statically defined version strings
 #       * endif
@@ -29,11 +29,11 @@ find_package(Git)
 if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) ) 
 
   # Get the name of the current branch.
-  set(GIT_ARGS symbolic-ref --short HEAD )
+  set(GIT_ARGS status)
   execute_process(COMMAND ${GIT_EXECUTABLE} ${GIT_ARGS}
 	          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                   RESULT_VARIABLE err_occurred 
-                  OUTPUT_VARIABLE AMANZI_GIT_BRANCH
+                  OUTPUT_VARIABLE AMANZI_GIT_STATUS
                   ERROR_VARIABLE err
                   OUTPUT_STRIP_TRAILING_WHITESPACE
                   ERROR_STRIP_TRAILING_WHITESPACE)
@@ -43,7 +43,23 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
     exit()
   endif()
 
-  # message(STATUS ">>>> JDM: AMANZI_GIT_BRANCH:      ${AMANZI_GIT_BRANCH}")
+  # message(STATUS ">>>> JDM: AMANZI_GIT_STATUS:      ${AMANZI_GIT_STATUS}")
+
+  # Put the status in a list
+  STRING(REPLACE "\n" ";" AMANZI_GIT_STATUS_LIST ${AMANZI_GIT_STATUS})
+  # Extract the first entry - reuse the AMANZI_GIT_STATUS variable
+  LIST(GET AMANZI_GIT_STATUS_LIST 0 AMANZI_GIT_STATUS)
+  if (${AMANZI_GIT_STATUS} MATCHES "(D|d)etached") 
+    # For now just set branch to detached - we could add a lookup for tags later
+    set(AMANZI_GIT_BRANCH detached)
+  elseif(${AMANZI_GIT_STATUS} MATCHES "On branch")
+    # Extract the branch name
+    STRING(REPLACE "On branch " "" AMANZI_GIT_BRANCH ${AMANZI_GIT_STATUS})
+  endif()
+
+  # message(STATUS ">>>> JDM: AMANZI_GIT_BRANCH = ${AMANZI_GIT_BRANCH}")
+
+  # Extract the lastest tag of the form amanzi-*
 
   # Get the hash of the current version
   set(GIT_ARGS rev-parse --short HEAD)

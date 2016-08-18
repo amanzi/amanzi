@@ -155,35 +155,21 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
       // First we get either permeability value or the file name
       int file(0);
-      std::string file_name;
+      std::string file_name, type;
       std::vector<std::string> attr_names;
-      double kx(-1.0), ky(-1.0), kz(-1.0);
+      double kx, ky, kz;
 
-      DOMNamedNodeMap* attr_tmp = node->getAttributes();
-      for (int k=0; k < attr_tmp->getLength(); k++) {
-        DOMNode* knode = attr_tmp->item(k);
+      DOMElement* element = static_cast<DOMElement*>(node);
+      kx = GetAttributeValueD_(element, "x", TYPE_NUMERICAL, "m^2", false, -1.0);
+      ky = GetAttributeValueD_(element, "y", TYPE_NUMERICAL, "m^2", false, -1.0);
+      kz = GetAttributeValueD_(element, "z", TYPE_NUMERICAL, "m^2", false, -1.0);
 
-        if (DOMNode::ATTRIBUTE_NODE == knode->getNodeType()) {
-          tagname = mm.transcode(knode->getNodeName());
-          text_content = mm.transcode(knode->getTextContent());
-
-          if (strcmp(tagname, "x") == 0) {
-            kx = std::strtod(text_content, NULL);
-          } else if (strcmp(tagname, "y") == 0) {
-            ky = std::strtod(text_content, NULL);
-          } else if (strcmp(tagname, "z") == 0) {
-            kz = std::strtod(text_content, NULL);
-          } else if (strcmp(tagname, "type") == 0) {
-            if (strcmp(text_content, "file") == 0) file++;
-          } else if (strcmp(tagname, "filename") == 0) {
-            file++;
-            file_name = text_content;
-          } else if (strcmp(tagname, "attribute") == 0) {
-            file++;
-            attr_names = CharToStrings_(text_content);
-          }
-        }
-      }
+      type = GetAttributeValueS_(element, "type", TYPE_NONE, false, "");
+      if (type == "file") file++;
+      file_name = GetAttributeValueS_(element, "filename", TYPE_NONE, false, "");
+      if (file_name != "") file++;
+      attr_names = GetAttributeVectorS_(element, "attribute", false);
+      if (attr_names.size() > 0) file++;
 
       if (conductivity) {
         kx *= viscosity / (rho_ * GRAVITY_MAGNITUDE);

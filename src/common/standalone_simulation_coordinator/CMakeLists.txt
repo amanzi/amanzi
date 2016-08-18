@@ -81,14 +81,14 @@ include_directories(${XERCES_INCLUDE_DIRS})
 #
 # More unstructured grid pieces
 #
-if ( ENABLE_Unstructured )
+if (ENABLE_Unstructured)
 endif()
 
 
 #
 # Binary: amanzi-demo-driver
 #
-if ( ENABLE_Unstructured )
+if (ENABLE_Unstructured)
   set(ssc_unstructured_grid_libs udriv mpc state transport flow energy pks eos operators whetstone chemistry_pk)
 else()
   set(ssc_unstructured_grid_libs)
@@ -137,7 +137,7 @@ add_amanzi_executable(amanzi
                       OUTPUT_NAME amanzi
                       OUTPUT_DIRECTORY ${SSC_BINARY_DIR})
 
-if (BUILD_TESTS AND ENABLE_Structured) 
+if (BUILD_TESTS) 
 
     # Copy test directory files if an out of source build
     if (NOT (${SSC_SOURCE_DIR} EQUAL ${SSC_BINARY_DIR}) )
@@ -145,8 +145,13 @@ if (BUILD_TESTS AND ENABLE_Structured)
           copy_directory ${SSC_SOURCE_DIR}/test ${SSC_BINARY_DIR}/test) 
     endif()
 
-    add_amanzi_test(ssc-structured-transport-0 amanzi "--xml_file=test/t0-structured.xml" KIND unit)
-    add_amanzi_test(ssc-structured-flow-1 amanzi "--xml_file=test/t1-structured.xml" KIND unit)
+    if (ENABLE_Structured)
+        add_amanzi_test(ssc-structured-transport-0 amanzi "--xml_file=test/t0-structured-isv2.xml" KIND unit)
+        add_amanzi_test(ssc-structured-flow-1 amanzi "--xml_file=test/t1-structured-isv2.xml" KIND unit)
+    endif()
 
+    if (ENABLE_Unstructured)
+        add_amanzi_test(ssc_chemistry_amanzi amanzi "--xml_file=test/ssc_chemistry_amanzi.xml" KIND unit)
+    endif()
 endif()
 

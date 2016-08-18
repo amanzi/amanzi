@@ -70,10 +70,7 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
   }
 
   // select model for data distribution
-  std::string model("none");
-  if (plist.isParameter("spatial distribution method")) {
-    model = plist.get<std::string>("spatial distribution method");
-  }
+  std::string model = plist.get<std::string>("spatial distribution method");
 
   if (use_vofs) {
     Teuchos::RCP<PK_DomainFunctionVolumeFraction<FunctionBase> >

@@ -9,8 +9,8 @@
   Author: Jeffrey Johnson <jnjohnson@lbl.gov>
 */
 
-#ifndef AMANZI_SIMULATOR_FACTORY_H
-#define AMANZI_SIMULATOR_FACTORY_H
+#ifndef AMANZI_SIMULATOR_FACTORY_HH_
+#define AMANZI_SIMULATOR_FACTORY_HH_
 
 #include "Simulator.hh"
 

@@ -378,6 +378,7 @@
           <ParameterList name="static head">
             <ParameterList name="BC 0">
               <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="static head">
                 <ParameterList name="function-static-head">
                   <Parameter name="p0" type="double" value="101325.0"/>
@@ -397,6 +398,7 @@
           <ParameterList name="mass flux">
             <ParameterList name="BC 1">
               <Parameter name="regions" type="Array(string)" value="{Top Surface}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.0, 6.17e+10}"/>

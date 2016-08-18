@@ -475,6 +475,8 @@
             <ParameterList name="BC 0">
               <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
               <Parameter name="no flow above water table" type="bool" value="false"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <Parameter name="use area fractions" type="bool" value="false"/>
               <ParameterList name="static head">
                 <ParameterList name="function-static-head">
                   <Parameter name="p0" type="double" value="101325.0"/>
@@ -495,6 +497,9 @@
           <ParameterList name="mass flux">
             <ParameterList name="BC 1">
               <Parameter name="regions" type="Array(string)" value="{Crib_216-B-17}"/>
+              <Parameter name="rainfall" type="bool" value="false"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <Parameter name="use area fractions" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 6.1729344e+10, 9.4672798e+10}"/>
@@ -502,10 +507,12 @@
                   <Parameter name="forms" type="Array(string)" value="{constant, constant, constant}"/>
                 </ParameterList>
               </ParameterList>
-              <Parameter name="rainfall" type="bool" value="false"/>
             </ParameterList>
             <ParameterList name="BC 2">
               <Parameter name="regions" type="Array(string)" value="{Crib_216-B-18}"/>
+              <Parameter name="rainfall" type="bool" value="false"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <Parameter name="use area fractions" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
@@ -513,10 +520,12 @@
                   <Parameter name="forms" type="Array(string)" value="{constant, constant, constant, constant}"/>
                 </ParameterList>
               </ParameterList>
-              <Parameter name="rainfall" type="bool" value="false"/>
             </ParameterList>
             <ParameterList name="BC 3">
               <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCribs, Recharge_Boundary_btwnCribs, Recharge_Boundary_EastOfCribs}"/>
+              <Parameter name="rainfall" type="bool" value="false"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <Parameter name="use area fractions" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10}"/>
@@ -524,7 +533,6 @@
                   <Parameter name="forms" type="Array(string)" value="{constant}"/>
                 </ParameterList>
               </ParameterList>
-              <Parameter name="rainfall" type="bool" value="false"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -657,6 +665,7 @@
           <ParameterList name="temperature">
             <ParameterList name="BC 0">
               <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="boundary temperature">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.980e+02"/>

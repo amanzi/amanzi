@@ -22,13 +22,14 @@ double Darcy_PK::ErrorEstimate_(double* dt_factor)
 {
   Epetra_MultiVector& p_cell = *solution->ViewComponent("cell");
 
-  double tol, atol(1.0), rtol(1e-5), error, error_max(0.0);
+  double tol, atol(1.0), rtol(1e-5), error, error_max(0.0), p(101325.0);
   double dt_factor_cell;
 
   *dt_factor = 100.0;
   for (int c = 0; c < ncells_owned; c++) {
     error = fabs((*pdot_cells)[c] - (*pdot_cells_prev)[c]) * dt_ / 2;
-    tol = rtol * fabs(p_cell[0][c]) + atol;
+    // tol = rtol * fabs(p_cell[0][c]) + atol;
+    tol = rtol * p + atol;
 
     dt_factor_cell = sqrt(tol / std::max(error, FLOW_DT_ADAPTIVE_ERROR_TOLERANCE));
     *dt_factor = std::min(*dt_factor, dt_factor_cell);

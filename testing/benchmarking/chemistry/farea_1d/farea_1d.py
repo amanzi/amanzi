@@ -12,13 +12,22 @@ from matplotlib import pyplot as plt
 
 # ----------- AMANZI + ALQUIMIA -----------------------------------------------------------------
 
-def GetXY_Amanzi(path,root,time,comp):
+def GetXY_Amanzi(path,root,time,comp,last=False):
 
+#    import pdb; pdb.set_trace()
+   
     # open amanzi concentration and mesh files
     dataname = os.path.join(path, "plot_data.h5")
     amanzi_file = h5py.File(dataname,'r')
     meshname = os.path.join(path, "plot_mesh.h5")
     amanzi_mesh = h5py.File(meshname,'r')
+
+    # if last = True, overwrite time with last time in file
+    if last:
+        alltimes=[int(n) for n in amanzi_file[comp].keys()]
+        time_ = amanzi_file[comp].keys()[alltimes.index(max(alltimes))]
+    else:
+        time_=time
 
     # extract cell coordinates
     y = np.array(amanzi_mesh['0']['Mesh']["Nodes"][0:len(amanzi_mesh['0']['Mesh']["Nodes"])/4,0])
@@ -27,7 +36,7 @@ def GetXY_Amanzi(path,root,time,comp):
     x_amanzi_alquimia = np.diff(y)/2+y[0:-1]
 
     # extract concentration array
-    c_amanzi_alquimia = np.array(amanzi_file[comp][time]).flatten()
+    c_amanzi_alquimia = np.array(amanzi_file[comp][time_]).flatten()
     amanzi_file.close()
     amanzi_mesh.close()
     
@@ -143,19 +152,19 @@ if __name__ == "__main__":
         # tot conc
         u_amanzi_native = [[] for x in range(len(totcama))]
         for j, comp in enumerate(totcama):
-              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,'farea-1d',time,comp)
+              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,'farea-1d',time,comp,last=True)
               u_amanzi_native[j] = c_amanzi_native
 
         # sorb conc
         v_amanzi_native = [[] for x in range(len(sorbama))]
         for j, sorb in enumerate(sorbama):
-              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,'farea-1d',time,sorb)
+              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,'farea-1d',time,sorb,last=True)
               v_amanzi_native[j] = c_amanzi_native
 
         # mineral volume fraction
         w_amanzi_native = [[] for x in range(len(vfama))]
         for j, vf in enumerate(vfama):
-              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,'farea-1d',time,vf)
+              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,'farea-1d',time,vf,last=True)
               w_amanzi_native[j] = c_amanzi_native
 
         native = True
@@ -172,24 +181,26 @@ if __name__ == "__main__":
                                        ["1d-"+root+"-trim.in", root+".dat"],
                                        path_to_amanzi)
 
+#        import pdb; pdb.set_trace()
+
         time = timesama[0]
 
         # tot concentration
         u_amanzi_alquimia = [[] for x in range(len(totcama))]
         for j, comp in enumerate(totcama):
-              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,"farea-1d",time,comp)
+              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,"farea-1d",time,comp,last=True)
               u_amanzi_alquimia[j] = c_amanzi_alquimia  
 
         # sorbed concentration
         v_amanzi_alquimia = [[] for x in range(len(sorbama))]
         for j, sorb in enumerate(sorbama):
-              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,"farea-1d",time,sorb)
+              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,"farea-1d",time,sorb,last=True)
               v_amanzi_alquimia[j] = c_amanzi_alquimia
 
         # mineral volume fraction
         w_amanzi_alquimia = [[] for x in range(len(vfama))]
         for j, vf in enumerate(vfama):
-              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,"farea-1d",time,vf)
+              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,"farea-1d",time,vf,last=True)
               w_amanzi_alquimia[j] = c_amanzi_alquimia
 
         alq = True

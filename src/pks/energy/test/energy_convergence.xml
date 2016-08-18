@@ -148,6 +148,7 @@
           <ParameterList name="temperature">
             <ParameterList name="BC 1">
               <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="boundary temperature">
                 <ParameterList name="function-composition">
                   <ParameterList name="function1">
@@ -177,6 +178,7 @@
             </ParameterList>
             <ParameterList name="BC 2">
               <Parameter name="regions" type="Array(string)" value="{Right side}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="boundary temperature">
                 <ParameterList name="function-composition">
                   <ParameterList name="function1">

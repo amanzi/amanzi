@@ -91,6 +91,7 @@
           <ParameterList name="energy flux">
             <ParameterList name="BC 0">
               <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="outward energy flux">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.0"/>
@@ -101,6 +102,7 @@
           <ParameterList name="temperature">
             <ParameterList name="BC 1">
               <Parameter name="regions" type="Array(string)" value="{Top side}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="boundary temperature">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="273.0"/>

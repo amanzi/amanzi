@@ -561,13 +561,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
 
     // -- identify a hard-coded BC that uses spatially dependent functions
     //    temporarily, we assume that it is also the global BC.
-    bool space_bc(false);
-    element = static_cast<DOMElement*>(same_list[0]);
-    std::string space_bc_name = GetAttributeValueS_(element, "space_function", TYPE_NONE, false);
-    if (space_bc_name == "gaussian") {
-      global_bc = true;
-      space_bc = true;
-    }
+    bool space_bc, time_bc;
+    DOMNode* knode = GetUniqueElementByTagsString_(same_list[0], "space", space_bc);
+    DOMNode* lnode = GetUniqueElementByTagsString_(same_list[0], "time", time_bc);
+    global_bc = space_bc;
 
     // -- define the expected unit
     std::string unit("kg/s/m^2");
@@ -582,13 +579,21 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
 
     // -- process global and local BC separately
     double refv;
-    std::vector<double> grad, refc, data;
+    std::vector<double> grad, refc, data, data_tmp;
     std::vector<double> times, values, fluxes;
     std::vector<std::string> forms;
 
     if (space_bc) {
-      element = static_cast<DOMElement*>(same_list[0]);
-      data = GetAttributeVectorD_(element, "space_data");
+      element = static_cast<DOMElement*>(knode);
+      data.push_back(GetAttributeValueD_(element, "amplitude", TYPE_NUMERICAL, "kg/m^3/s"));
+      data_tmp = GetAttributeVectorD_(element, "center", "m");
+      data.insert(data.end(), data_tmp.begin(), data_tmp.end());
+      data.push_back(GetAttributeValueD_(element, "standard_deviation", TYPE_NUMERICAL, "m"));
+
+      if (time_bc) {
+        element = static_cast<DOMElement*>(lnode);
+        data[0] *= GetAttributeValueD_(element, "data", TYPE_NUMERICAL, "");
+      }
     } else if (global_bc) {
       std::string unit_grad = unit + "/m";
       element = static_cast<DOMElement*>(same_list[0]);
@@ -612,7 +617,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
       for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
         times.push_back(it->first);
         values.push_back(it->second);
-        fluxes.push_back(tp_fluxes[it->second]);
+        fluxes.push_back(tp_fluxes[it->first]);
         forms.push_back(tp_forms[it->first]);
       }
       forms.pop_back();
@@ -664,7 +669,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
         transport_diagnostics_.insert(transport_diagnostics_.end(), regions.begin(), regions.end());
 
     Teuchos::ParameterList& bcfn = bc.sublist(bcname);
-    if (space_bc_name == "gaussian") {
+    if (space_bc) {  // only one use case so far
       TranslateFunctionGaussian_(data, bcfn);
     } else if (global_bc) {
       grad.insert(grad.begin(), 0.0);
@@ -768,30 +773,32 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
     if (!flag) continue;
 
     // process a group of similar elements defined by the first element
-    std::string srctype;
+    std::string srctype, weight, unit;
     std::vector<DOMNode*> same_list = GetSameChildNodes_(phase, srctype, flag, true);
     if (!flag || same_list.size() == 0) continue;
+
+    if (srctype == "volume_weighted") {
+      weight = "volume";
+      unit = "kg/s";
+    } else if (srctype == "perm_weighted") {
+      weight = "permeability";
+      unit = "kg/s";
+    } else if (srctype == "uniform") {
+      weight = "none";
+      unit = "kg/m^3/s";
+    } else {
+      ThrowErrorIllformed_("sources", "element", srctype);
+    } 
 
     std::map<double, double> tp_values;
     std::map<double, std::string> tp_forms;
  
     for (int j = 0; j < same_list.size(); ++j) {
        element = static_cast<DOMElement*>(same_list[j]);
-       double t0 = GetAttributeValueD_(element, "start");
+       double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, "s");
        tp_forms[t0] = GetAttributeValueS_(element, "function");
-       tp_values[t0] = GetAttributeValueD_(element, "value");
+       tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, unit);
     }
-
-    std::string weight;
-    if (srctype == "volume_weighted") {
-      weight = "volume";
-    } else if (srctype == "perm_weighted") {
-      weight = "permeability";
-    } else if (srctype == "uniform") {
-      weight = "none";
-    } else {
-      ThrowErrorIllformed_("sources", "element", srctype);
-    } 
 
     // create vectors of values and forms
     std::vector<double> times, values;

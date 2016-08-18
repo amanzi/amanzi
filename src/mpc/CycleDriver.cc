@@ -528,7 +528,7 @@ double CycleDriver::get_dt(bool after_failure) {
   if (dt > max_dt_) {
     dt = max_dt_;   
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Time step is larger than maximum allowed "<<dt<<" [sec]. dT = "<<dt<<" [sec].\n";
+    *vo_->os() << "Resetting time step to the maximum allowed of " << dt << " s.\n";
   }
 
   return dt;

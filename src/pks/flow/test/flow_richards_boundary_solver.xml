@@ -131,6 +131,7 @@
         <ParameterList name="mass flux">
           <ParameterList name="BC 0">
             <Parameter name="regions" type="Array(string)" value="{Top side}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="outward mass flux">
             <ParameterList name="function-constant">
               <Parameter name="value" type="double" value="-1e-5"/>
@@ -141,6 +142,7 @@
         <ParameterList name="pressure">
           <ParameterList name="BC 1">
             <Parameter name="regions" type="Array(string)" value="{Bottom side}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="boundary pressure">
             <ParameterList name="function-constant">
               <Parameter name="value" type="double" value="101325."/>

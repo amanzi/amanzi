@@ -1,4 +1,12 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry PK
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+*/
+
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
@@ -14,17 +22,17 @@
 #include "Epetra_SerialComm.h"
 #include "XMLParameterListWriter.hh"
 
-#include "MeshFactory.hh"
+#include "dbc.hh"
+#include "errors.hh"
+#include "exceptions.hh"
 #include "GenerationSpec.hh"
+#include "MeshFactory.hh"
 #include "State.hh"
 
 #include "Amanzi_PK.hh"
 #include "species.hh"
 #include "chemistry_exception.hh"
 
-#include "dbc.hh"
-#include "errors.hh"
-#include "exceptions.hh"
 
 /*****************************************************************************
  **
@@ -60,6 +68,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     Epetra_SerialComm* comm_;
     Teuchos::RCP<ag::GeometricModel> gm_;
   };  // end class SpeciationTest
+
 
   ChemistryPKTest::ChemistryPKTest() {
     // assume that no errors or exceptions will occur in the
@@ -112,8 +121,8 @@ SUITE(GeochemistryTestsChemistryPK) {
     delete comm_;
   }
 
-  void ChemistryPKTest::RunTest(const std::string name, double * gamma) {
-  }  // end ChemistryPKTest::RunTest()
+  void ChemistryPKTest::RunTest(const std::string name, double * gamma) {};
+
 
   /*****************************************************************************
    **

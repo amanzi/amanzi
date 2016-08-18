@@ -17,7 +17,7 @@ include_directories(${CCSE_INCLUDE_DIRS})
 
 include_directories(${CHEM_INCLUDES_DIR})
 include_directories(${PMAMR_INCLUDE_DIRS})
-include_directories(../../common/interface_platform) # havent yet visited these folders
+include_directories(${PLATFORM_INTERFACE_SOURCE_DIR}) # havent yet visited these folders
 include_directories(${ATK_SOURCE_DIR})
 
 # External (TPL) include directories

@@ -21,6 +21,7 @@
 #include "LinearOperatorFactory.hh"
 #include "mfd3d_diffusion.hh"
 #include "OperatorDiffusionFactory.hh"
+#include "TimestepControllerFactory.hh"
 #include "Tensor.hh"
 
 #include "Darcy_PK.hh"
@@ -248,20 +249,11 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   ASSERT(ti_method_name == "BDF1");
   Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
 
-  std::string dt_method_name = bdf1_list.get<std::string>("timestep controller type");
-  Teuchos::ParameterList dtlist;
-  if (dt_method_name == "standard") {
-    dtlist = bdf1_list.sublist("timestep controller standard parameters");
-    dt_factor_ = dtlist.get<double>("time step increase factor");
-  } else if (dt_method_name == "fixed") {
-    dtlist = bdf1_list.sublist("timestep controller fixed parameters");
-    dt_factor_ = dtlist.get<double>("time step increase factor");
-  } else if (dt_method_name == "adaptive") {
-    dtlist = bdf1_list.sublist("timestep controller adaptive parameters");
-  }
-  dt_max_ = dtlist.get<double>("max time step", Flow::FLOW_MAXIMUM_DT);
-
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;  // usually 1e-4;
+
+  // time step controller
+  TimestepControllerFactory<Epetra_MultiVector> fac;
+  ts_control_ = fac.Create(bdf1_list, pdot_cells, pdot_cells_prev);
 
   // Initialize specific yield
   specific_yield_copy_ = Teuchos::null;
@@ -324,7 +316,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // Verbose output of initialization statistics.
-  InitializeStatistics_(dt_method_name, init_darcy);
+  InitializeStatistics_(init_darcy);
 }
 
 
@@ -364,11 +356,12 @@ void Darcy_PK::InitializeFields_()
 /* ******************************************************************
 * Print the header for new time period.
 ****************************************************************** */
-void Darcy_PK::InitializeStatistics_(const std::string& dt_method_name, bool init_darcy)
+void Darcy_PK::InitializeStatistics_(bool init_darcy)
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     double mu = *S_->GetScalarData("fluid_viscosity");
     std::string ti_method_name = ti_list_->get<std::string>("time integration method");
+    std::string dt_method_name = ti_list_->sublist("BDF1").get<std::string>("timestep controller type");
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "\nTI:\"" << ti_method_name.c_str() << "\""
@@ -436,7 +429,14 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   CompositeVector& rhs = *op_->rhs();
   AddSourceTerms(rhs);
 
-  // create linear solver
+  // save pressure at time t^n.
+  std::string dt_control = ti_list_->sublist("BDF1").get<std::string>("timestep controller type");
+  Teuchos::RCP<Epetra_MultiVector> p_old;
+  if (dt_control == "adaptive") {
+    p_old = Teuchos::rcp(new Epetra_MultiVector(*solution->ViewComponent("cell")));
+  }
+
+  // create linear solver and calculate new pressure
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
      solver = factory.Create(solver_name_, *linear_operator_list_, op_);
@@ -444,7 +444,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
   solver->ApplyInverse(rhs, *solution);
 
-  // make one time step
+  // statistics
   num_itrs_++;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -458,29 +458,19 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // calculate time derivative and 2nd-order solution approximation
-  std::string dt_method_name = ti_list_->sublist("BDF1").get<std::string>("timestep controller type");
-
-  if (dt_method_name == "adaptive") {
-    const Epetra_MultiVector& p = *S_->GetFieldData("pressure")->ViewComponent("cell");  // pressure at t^n
-    Epetra_MultiVector& p_cell = *solution->ViewComponent("cell");  // pressure at t^{n+1}
+  if (dt_control == "adaptive") {
+    Epetra_MultiVector& p_new = *solution->ViewComponent("cell");  // pressure at t^{n+1}
 
     for (int c = 0; c < ncells_owned; c++) {
-      (*pdot_cells)[c] = (p_cell[0][c] - p[0][c]) / dt_; 
-      p_cell[0][c] = p[0][c] + ((*pdot_cells_prev)[c] + (*pdot_cells)[c]) * dt_ / 2;
+      (*pdot_cells)[c] = (p_new[0][c] - (*p_old)[0][c]) / dt_; 
+      p_new[0][c] = (*p_old)[0][c] + ((*pdot_cells_prev)[c] + (*pdot_cells)[c]) * dt_ / 2;
     }
   }
 
   // estimate time multiplier
-  if (dt_method_name == "adaptive") {
-    double err, dt_factor;
-    err = ErrorEstimate_(&dt_factor);
-    if (err > 0.0) throw 1000;  // fix (lipnikov@lan.gov)
-    dt_desirable_ = std::min(dt_MPC * dt_factor_, dt_max_);
-  } else {
-    dt_desirable_ = std::min(dt_desirable_ * dt_factor_, dt_max_);
-  }
+  dt_desirable_ = ts_control_->get_timestep(dt_MPC, 1);
 
-  // Darcy_PK always takes suggested time step and cannot fail
+  // Darcy_PK always takes the suggested time step and cannot fail
   dt_tuple times(t_new, dt_MPC);
   dt_history_.push_back(times);
 
@@ -494,9 +484,6 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 ****************************************************************** */
 void Darcy_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
-  CompositeVector& p = *S->GetFieldData("pressure", passwd_);
-  p = *solution;
-
   // calculate darcy mass flux
   CompositeVector& darcy_flux = *S->GetFieldData("darcy_flux", passwd_);
   op_diff_->UpdateFlux(*solution, darcy_flux);

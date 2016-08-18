@@ -198,7 +198,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "solute") != 0) continue;
 
-      double val = GetAttributeValueD_(element, "coefficient_of_diffusion", TYPE_NUMERICAL, "", false);
+      double val = GetAttributeValueD_(element, "coefficient_of_diffusion", TYPE_NUMERICAL, "m^2/s", false);
       text = mm.transcode(inode->getTextContent());
 
       aqueous_names.push_back(TrimString_(text));
@@ -449,56 +449,64 @@ void InputConverterU::TranslateTransportBCsGroup_(
 
   // get child nodes with the same tagname
   bool flag;
-  std::string bctype, solute_name, tmp_name, unit;
+  std::string bctype, solute_name, tmp_name, unit("molar");
   std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
 
   while (same_list.size() > 0) {
     // process a group of elements named after the 0-th element
     solute_name = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "name");
 
-    std::map<double, double> tp_values;
-    std::map<double, std::string> tp_forms;
-
-    for (std::vector<DOMNode*>::iterator it = same_list.begin(); it != same_list.end(); ++it) {
-      element = static_cast<DOMElement*>(*it);
-      tmp_name = GetAttributeValueS_(element, "name");
-
-      if (tmp_name == solute_name) {
-        double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, "s");
-        tp_forms[t0] = GetAttributeValueS_(element, "function");
-        GetAttributeValueD_(element, "value", TYPE_NUMERICAL, "molar");  // just a check
-        tp_values[t0] = ConvertUnits_(GetAttributeValueS_(element, "value"), unit, solute_molar_mass_[solute_name]);
-
-        same_list.erase(it);
-        it--;
-      } 
-    }
-
     // Check for spatially dependent BCs. Only one is allowed (FIXME)
-    // We extract both data and unit strings.
-    bool space_bc(false);
-    std::vector<double> data;
+    bool space_bc, time_bc;
+    DOMNode* knode = GetUniqueElementByTagsString_(same_list[0], "space", space_bc);
+    DOMNode* lnode = GetUniqueElementByTagsString_(same_list[0], "time", time_bc);
 
-    element = static_cast<DOMElement*>(same_list[0]);
-    std::string space_bc_name = GetAttributeValueS_(element, "space_function", TYPE_NONE, false);
-    if (space_bc_name == "gaussian") {
-      space_bc = true;
-      std::vector<std::string> tmp;
-      tmp = GetAttributeVectorS_(element, "space_data");
-      for (int i = 0; i < tmp.size(); ++i) {
-        data.push_back(ConvertUnits_(tmp[i], unit, solute_molar_mass_[solute_name]));
-      }
-    }
-
-    // create vectors of values and forms
     std::vector<double> times, values;
+    std::vector<double> data, data_tmp;
     std::vector<std::string> forms;
-    for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
-      times.push_back(it->first);
-      values.push_back(it->second);
-      forms.push_back(tp_forms[it->first]);
+
+    if (space_bc) {
+      element = static_cast<DOMElement*>(knode);
+      std::string tmp = GetAttributeValueS_(element, "amplitude");
+      data.push_back(ConvertUnits_(tmp, unit, solute_molar_mass_[solute_name]));
+
+      data_tmp = GetAttributeVectorD_(element, "center", "m");
+      data.insert(data.end(), data_tmp.begin(), data_tmp.end());
+      data.push_back(GetAttributeValueD_(element, "standard_deviation", TYPE_NUMERICAL, "m"));
+
+      if (time_bc) {
+        element = static_cast<DOMElement*>(lnode);
+        data[0] *= GetAttributeValueD_(element, "data", TYPE_NUMERICAL, "");
+      }
+
+      same_list.erase(same_list.begin());
+    } else {
+      std::map<double, double> tp_values;
+      std::map<double, std::string> tp_forms;
+
+      for (std::vector<DOMNode*>::iterator it = same_list.begin(); it != same_list.end(); ++it) {
+        element = static_cast<DOMElement*>(*it);
+        tmp_name = GetAttributeValueS_(element, "name");
+
+        if (tmp_name == solute_name) {
+          double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, "s");
+          tp_forms[t0] = GetAttributeValueS_(element, "function");
+          GetAttributeValueD_(element, "value", TYPE_NUMERICAL, "molar");  // just a check
+          tp_values[t0] = ConvertUnits_(GetAttributeValueS_(element, "value"), unit, solute_molar_mass_[solute_name]);
+
+          same_list.erase(it);
+          it--;
+        } 
+      }
+
+      // create vectors of values and forms
+      for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
+        times.push_back(it->first);
+        values.push_back(it->second);
+        forms.push_back(tp_forms[it->first]);
+      }
+      forms.pop_back();
     }
-    forms.pop_back();
      
     // save in the XML files  
     Teuchos::ParameterList& tbc_list = out_list.sublist("concentration");
@@ -554,7 +562,10 @@ void InputConverterU::TranslateTransportBCsAmanziGeochemistry_(
         Teuchos::ParameterList& bcn = bc_new.sublist(solutes[n]).sublist(name);
         Teuchos::ParameterList& fnc = bcn.sublist("boundary concentration").sublist("function-tabular");
 
-        bcn.set("regions", bco.get<Teuchos::Array<std::string> >("regions"));
+
+        bcn.set("regions", bco.get<Teuchos::Array<std::string> >("regions"))
+           .set<std::string>("spatial distribution method", "none")
+           .set<bool>("use volume fractions", false);
         fnc.set("x values", bco.get<Teuchos::Array<double> >("times"));
         fnc.set("forms", bco.get<Teuchos::Array<std::string> >("time functions"));
       
@@ -665,6 +676,8 @@ void InputConverterU::TranslateTransportSourcesGroup_(
     char* text = mm.transcode(same_list[0]->getNodeName());
     if (strcmp(text, "perm_weighted") == 0) {
       weight = "permeability";
+    } else if (strcmp(text, "volume_weighted") == 0) {
+      weight = "volume";
     } else if (strcmp(text, "uniform_conc") == 0) {
       weight = "none";
       unit = "mol/s/m^3";

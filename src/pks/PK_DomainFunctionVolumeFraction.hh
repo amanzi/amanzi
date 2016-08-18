@@ -65,9 +65,7 @@ template <class FunctionBase>
 void PK_DomainFunctionVolumeFraction<FunctionBase>::Init(
     const Teuchos::ParameterList& plist, const std::string& keyword)
 {
-  model_ = "none";
-  if (plist.isParameter("spatial distribution method"))
-      model_ = plist.get<std::string>("spatial distribution method");
+  model_ = plist.get<std::string>("spatial distribution method");
 
   submodel_ = "rate";
   if (plist.isParameter("submodel"))
