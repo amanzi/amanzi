@@ -54,7 +54,6 @@ if (ENABLE_Unstructured)
 
   # Build State
   add_subdirectory(state)
-
 endif()
 
 add_subdirectory(common/interface_platform)
@@ -65,7 +64,7 @@ if (ENABLE_Unstructured AND ENABLE_Physics)
   # Multiprocess coordinator
   add_subdirectory(mpc)
 
-  # unstructured grid simualtion driver, and Amanzi binaries
+  # unstructured grid simulation driver, and Amanzi binaries
   add_subdirectory(executables)
 endif()
 
