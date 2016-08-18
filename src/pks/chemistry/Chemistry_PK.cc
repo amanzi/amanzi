@@ -43,7 +43,8 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
 
   if (!S->HasField("saturation_liquid")) {
     S->RequireField("saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      //->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
   
   if (!S->HasField("fluid_density")) {

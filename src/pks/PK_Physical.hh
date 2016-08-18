@@ -12,7 +12,7 @@ Default base with a few methods implemented in standard ways.
 #define AMANZI_PK_PHYSICAL_BASE_HH_
 
 #include "Teuchos_ParameterList.hpp"
-
+#include "boost/algorithm/string.hpp"
 #include "VerboseObject.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "PK.hh"
@@ -28,7 +28,15 @@ class PK_Physical : public virtual PK {
               const Teuchos::RCP<Teuchos::ParameterList>& glist,
               const Teuchos::RCP<State>& S,
               const Teuchos::RCP<TreeVector>& soln):
-    PK(pk_tree, glist, S, soln) {};
+    PK(pk_tree, glist, S, soln) {
+
+      // name the PK
+    name_ = pk_tree.name();
+    boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->");
+    if (res.end() - name_.end() != 0) boost::algorithm::erase_head(name_, res.end() - name_.begin());
+
+    plist_ = Teuchos::sublist(Teuchos::sublist(glist, "PKs"), name_);
+  };
 
 
   // Virtual destructor
