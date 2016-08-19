@@ -52,8 +52,12 @@ class OperatorElectromagneticsMHD : public OperatorElectromagnetics {
   // -- after solving the problem
   virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt);
 
-  // magnetic energy
+  // physical quantities
+  // -- magnetic energy
   double CalculateMagneticEnergy(const CompositeVector& B);
+
+  // -- divergence
+  double CalculateDivergence(int c, const CompositeVector& B);
 
  private:
   void InitElectromagneticsMHD_();
