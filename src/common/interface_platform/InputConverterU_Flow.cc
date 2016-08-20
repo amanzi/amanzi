@@ -585,7 +585,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
 
     if (space_bc) {
       element = static_cast<DOMElement*>(knode);
-      data.push_back(GetAttributeValueD_(element, "amplitude", TYPE_NUMERICAL, "kg/m^3/s"));
+      data.push_back(GetAttributeValueD_(element, "amplitude", TYPE_NUMERICAL, "kg/m^2/s"));
       data_tmp = GetAttributeVectorD_(element, "center", "m");
       data.insert(data.end(), data_tmp.begin(), data_tmp.end());
       data.push_back(GetAttributeValueD_(element, "standard_deviation", TYPE_NUMERICAL, "m"));
