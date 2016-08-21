@@ -169,7 +169,7 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
   // Epetra_MultiVector& B0f = *B0.ViewComponent("face");
 
   int cycle(0);
-  double energy0(1e+99);
+  double energy0(1e+99), divB0(0.0);
   while (told < tend) {
     // set up the diffusion operator
     global_op->Init();
@@ -246,6 +246,9 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
       avgB += std::fabs(sol[0][c]);
       divB += tmp * tmp * vol; 
     }
+
+    if (cycle == 1) divB0 = divB;
+    CHECK_CLOSE(divB0, divB, 1e-8);
 
     if (MyPID == 0) {
       std::cout << "time: " << told << "  ||r||=" << solver->residual() 

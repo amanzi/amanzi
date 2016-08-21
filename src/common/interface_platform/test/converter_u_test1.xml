@@ -172,7 +172,7 @@
       <!--permeability x="1.9976E-12" z="1.9976E-13" /-->
       <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
       <cap_pressure model="van_genuchten">
-        <parameters alpha="1.9467E-04" m="0.2294" sr="0.0"/>
+        <parameters alpha="1.9467E-04 Pa^-1" m="0.2294" sr="0.0"/>
       </cap_pressure>
       <rel_perm model="mualem"/>
       <assigned_regions>RegionMiddle</assigned_regions>
@@ -185,7 +185,7 @@
       <!--permeability x="6.9365E-11" z="6.9365E-12" /-->
       <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
       <cap_pressure model="van_genuchten">
-        <parameters alpha="2.0260E-03" m="0.2136" sr="0.0"/>
+        <parameters alpha="2.0260E-03 Pa^-1" m="0.2136" sr="0.0"/>
       </cap_pressure>
       <rel_perm model="mualem"/>
       <assigned_regions>RegionBottom</assigned_regions>
@@ -198,7 +198,7 @@
       <!--permeability x="2.0706E-09" z="2.0706E-10" /-->
       <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
       <cap_pressure model="van_genuchten">
-        <parameters alpha="2.0674E-03" m="vG_M" sr="0.0"/>
+        <parameters alpha="2.0674E-03 Pa^-1" m="vG_M" sr="0.0"/>
       </cap_pressure>
       <rel_perm model="mualem"/>
       <assigned_regions>RegionTop</assigned_regions>
@@ -210,9 +210,11 @@
       <assigned_regions>All</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <linear_pressure name="IC1" value="101325.0" reference_coord="0.0, 0.0" gradient="0,-9793.5192" />
+          <linear_pressure name="IC1" value="101325.0 Pa" reference_coord="0.0, 0.0" gradient="0,-9793.5192 Pa/m" />
         </liquid_component>
-        <solute_component function="uniform" name="Tc-99" value="0.0" />
+        <solute_component>
+          <uniform_conc function="uniform" name="Tc-99" start="0.0" value="0.0 mol/L" />
+        </solute_component>
       </liquid_phase>
     </initial_condition>
   </initial_conditions>
@@ -243,7 +245,7 @@
         </liquid_component>
         <solute_component>
           <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>
-          <aqueous_conc name="Tc-99" value="1.881389E-06" function="constant" start="6.17266656e+10"/>
+          <aqueous_conc name="Tc-99" value="1.881389E-06 SI" function="constant" start="6.17266656e+10"/>
           <aqueous_conc name="Tc-99" value="0.0" function="constant" start="6.1729344E10"/>
        </solute_component> 
       </liquid_phase>
@@ -256,7 +258,7 @@
           <inward_volumetric_flux value="1.1071E-10" function="constant" start="0.0" />
           <inward_volumetric_flux value="1.48666E-9" function="constant" start="6.17266656e+10" />
           <inward_volumetric_flux value="0.00330423e-3" function="constant" start="6.173178481E10" />
-          <inward_volumetric_flux value="1.48666E-9" function="constant" start="6.173705521E10" />
+          <inward_volumetric_flux value="1.48666E-9 m/s" function="constant" start="6.173705521E10" />
           <inward_volumetric_flux value="1.48666E-9" function="constant" start="9.4672798E10" />
         </liquid_component>
         <solute_component>
@@ -273,7 +275,7 @@
         <liquid_component name="water">
           <inward_mass_flux start="0.0">
             <time function="constant" data="1.0"/>
-            <space function="gaussian" amplitude="-3.1e-5" center="108.0,Y1" standard_deviation="10.0"/>
+            <space function="gaussian" amplitude="-3.1e-5 kg/m^2/s" center="108.0,Y1" standard_deviation="10.0 m"/>
           </inward_mass_flux>
         </liquid_component>
       </liquid_phase>
@@ -285,7 +287,7 @@
       <liquid_phase name="water">
         <liquid_component name="water">
           <inward_volumetric_flux value="1.1071E-10" function="constant" start="0.0" />
-          <inward_volumetric_flux value="1.48666E-9" function="constant" start="6.17266656e+10" />
+          <inward_volumetric_flux value="1.48666E-9 m/s" function="constant" start="6.17266656e+10" />
         </liquid_component>
         <solute_component>
           <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>

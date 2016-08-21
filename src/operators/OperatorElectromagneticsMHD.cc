@@ -116,11 +116,15 @@ void OperatorElectromagneticsMHD::ModifyMatrices(
 void OperatorElectromagneticsMHD::ModifyFields(
    CompositeVector& E, CompositeVector& B, double dt)
 {
+  B.ScatterMasterToGhosted("face");
+
   Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
   Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
   
   std::vector<int> dirs;
   AmanziMesh::Entity_ID_List faces, edges;
+
+  std::vector<bool> fflag(nedges_wghost, false);
 
   for (int c = 0; c < ncells_owned; ++c) {
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
@@ -142,7 +146,10 @@ void OperatorElectromagneticsMHD::ModifyFields(
 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
-      Bf[0][f] -= dt * v2(n) * dirs[n] / mesh_->face_area(f);
+      if (!fflag[f]) {
+        Bf[0][f] -= dt * v2(n) * dirs[n] / mesh_->face_area(f);
+        fflag[f] = true;
+      }
     }
   }
 }
@@ -177,6 +184,31 @@ double OperatorElectromagneticsMHD::CalculateMagneticEnergy(const CompositeVecto
   }
 
   return energy / 2;
+}
+
+
+/* ******************************************************************
+* Useful tools
+* **************************************************************** */
+double OperatorElectromagneticsMHD::CalculateDivergence(
+    int c, const CompositeVector& B)
+{
+  const Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
+  
+  std::vector<int> dirs;
+  AmanziMesh::Entity_ID_List faces;
+
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
+
+  double div(0.0);
+  for (int n = 0; n < nfaces; ++n) {
+    int f = faces[n];
+    div += Bf[0][f] * dirs[n] * mesh_->face_area(f);
+  }
+  div /= mesh_->cell_volume(c);
+
+  return div;
 }
 
 

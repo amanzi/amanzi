@@ -145,12 +145,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- permeability.
       double perm_x, perm_y, perm_z;
       bool perm_init_from_file(false), conductivity(false);
-      std::string perm_file, perm_attribute, perm_format;
+      std::string perm_file, perm_attribute, perm_format, unit("m^2");
 
       node = GetUniqueElementByTagsString_(inode, "permeability", flag);
       if (!flag) {
         conductivity = true;
         node = GetUniqueElementByTagsString_(inode, "hydraulic_conductivity", flag);
+        unit = "m/s"; 
       }
 
       // First we get either permeability value or the file name
@@ -160,9 +161,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       double kx, ky, kz;
 
       DOMElement* element = static_cast<DOMElement*>(node);
-      kx = GetAttributeValueD_(element, "x", TYPE_NUMERICAL, "m^2", false, -1.0);
-      ky = GetAttributeValueD_(element, "y", TYPE_NUMERICAL, "m^2", false, -1.0);
-      kz = GetAttributeValueD_(element, "z", TYPE_NUMERICAL, "m^2", false, -1.0);
+      kx = GetAttributeValueD_(element, "x", TYPE_NUMERICAL, unit, false, -1.0);
+      ky = GetAttributeValueD_(element, "y", TYPE_NUMERICAL, unit, false, -1.0);
+      kz = GetAttributeValueD_(element, "z", TYPE_NUMERICAL, unit, false, -1.0);
 
       type = GetAttributeValueS_(element, "type", TYPE_NONE, false, "");
       if (type == "file") file++;
@@ -203,10 +204,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           kz = 0.0;
         }
       } else {
-        ThrowErrorIllformed_("materials", "permeability/hydraulic conductivity", "file/filename/attribute");
+        ThrowErrorIllformed_("materials", "permeability/hydraulic_conductivity", "file/filename/x/y/z");
       }
       if (kx < 0.0 || ky < 0.0 || kz < 0.0) {
-        ThrowErrorIllformed_("materials", "permeability/hydraulic conductivity", "file/filename/attribute");
+        ThrowErrorIllformed_("materials", "permeability/hydraulic_conductivity", "file/filename/x/y/z");
       }
 
       // -- specific_yield
@@ -385,6 +386,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
             int m = GetPosition_(phases_["water"], text);
             DOMElement* element = static_cast<DOMElement*>(jnode);
+            GetAttributeValueD_(element, "value", TYPE_NUMERICAL, "mol/L");  // just a check
             vals[m] = ConvertUnits_(GetAttributeValueS_(element, "value"), unit, solute_molar_mass_[text]);
           }
         }

@@ -27,6 +27,11 @@
         <timestep_interval>100</timestep_interval>
       </cycle_macro>
     </macros>
+
+    <constants>
+      <numerical_constant name="X1" value="216.0 m"/>
+      <numerical_constant name="Y1" value="120.0 m"/>
+    </constants>
   </definitions>
 
   <process_kernels>
@@ -113,44 +118,35 @@
     <dimension>2</dimension>
     <generate>
       <number_of_cells nx="54" nz="60" />
-      <box high_coordinates="216.0,120.0" low_coordinates="0.0, 0.0" />
+      <box high_coordinates="X1, Y1" low_coordinates="0.0, 0.0" />
     </generate>
   </mesh>
 
   <regions>
-    <region name="All">
-      <box high_coordinates="216.0, 120.0" low_coordinates="0.0, 0.0" />
-    </region>
     <region name="Bottom Surface">
-      <box high_coordinates="216.0, 0.0" low_coordinates="0.0, 0.0" />
+      <box high_coordinates="X1, 0.0" low_coordinates="0.0, 0.0" />
     </region>
     <region name="RegionBottom">
-      <box high_coordinates="216.0, 40.0" low_coordinates="0.0, 0.0" />
+      <box high_coordinates="X1, 40.0" low_coordinates="0.0, 0.0" />
     </region>
     <region name="RegionMiddle">
-      <box high_coordinates="216.0, 80.0" low_coordinates="0.0, 40.0" />
+      <box high_coordinates="X1, 80.0" low_coordinates="0.0, 40.0" />
     </region>
     <region name="RegionTop">
-      <box high_coordinates="216.0, 120.0" low_coordinates="0.0, 80.0" />
+      <box high_coordinates="X1, Y1" low_coordinates="0.0, 80.0" />
     </region>
     <region name="Recharge_Boundary_WestOfCribs">
-      <box high_coordinates="72.0, 120.0" low_coordinates="0.0, 120.0" />
-    </region>
-    <region name="Crib_216-B-17">
-      <box high_coordinates="80.0, 120.0" low_coordinates="72.0, 120.0" />
+      <box high_coordinates="72.0, Y1" low_coordinates="0.0, Y1" />
     </region>
     <region name="Recharge_Boundary_btwnCribs">
-      <box high_coordinates="136.0, 120.0" low_coordinates="80.0, 120.0" />
-    </region>
-    <region name="Crib_216-B-18">
-      <box high_coordinates="148.0, 120.0" low_coordinates="136.0, 120.0" />
+      <box high_coordinates="136.0, Y1" low_coordinates="80.0, Y1" />
     </region>
     <region name="Recharge_Boundary_EastOfCribs">
-      <box high_coordinates="216.0, 120.0" low_coordinates="148.0, 120.0" />
+      <box high_coordinates="216.0, Y1" low_coordinates="148.0, Y1" />
     </region>
-    <region name="Well">
-      <box high_coordinates="112.0, 60.0" low_coordinates="108.0, 40.0" />
-    </region>
+    <box name="Crib_17" high_coordinates="80.0, Y1" low_coordinates="72.0, Y1" />
+    <box name="Crib_18" high_coordinates="148.0, Y1" low_coordinates="136.0, Y1" />
+    <box name="Well" high_coordinates="112.0, 60.0" low_coordinates="108.0, 40.0" />
   </regions>
 
   <materials>
@@ -159,9 +155,9 @@
         <porosity value="0.4082"/>
         <particle_density value="2600.0"/>
       </mechanical_properties>
-      <permeability x="1.9976E-12" z="1.9976E-13" />
+      <hydraulic_conductivity x="1.9976E-5 m/s" y="1.9976E-6 m/s" />
       <cap_pressure model="van_genuchten">
-        <parameters alpha="1.9467E-04" m="0.2294" sr="0.0"/>
+        <parameters alpha="1.9467E-04 Pa^-1" m="0.2294" sr="0.0"/>
       </cap_pressure>
       <rel_perm model="mualem"/>
       <assigned_regions>RegionMiddle</assigned_regions>
@@ -171,9 +167,9 @@
       <mechanical_properties>
         <porosity value="0.2206"/>
       </mechanical_properties>
-      <permeability x="6.9365E-11" z="6.9365E-12" />
+      <permeability x="6.9365E-11 m^2" z="6.9365E-12 m^2" />
       <cap_pressure model="van_genuchten">
-        <parameters alpha="2.0260E-03" m="0.2136" sr="0.0"/>
+        <parameters alpha="2.0260E-03 m*s^2/kg" m="0.2136" sr="0.0"/>
       </cap_pressure>
       <rel_perm model="mualem"/>
       <assigned_regions>RegionBottom</assigned_regions>
@@ -183,7 +179,7 @@
       <mechanical_properties>
         <porosity value="0.2340"/>
       </mechanical_properties>
-      <permeability x="2.0706E-09" z="2.0706E-10" />
+      <permeability x="2.0706E-09 m^2" z="2.0706E-10 m^2" />
       <cap_pressure model="van_genuchten">
         <parameters alpha="2.0674E-03" m="0.3006" sr="0.0"/>
       </cap_pressure>
@@ -197,11 +193,11 @@
       <assigned_regions>All</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <linear_pressure name="IC1" value="101325.0" reference_coord="0.0, 0.0" gradient="0,-9793.5192" />
+          <linear_pressure name="IC1" value="101325.0 Pa" reference_coord="0.0 m, 0.0" gradient="0,-9793.5192 Pa/m" />
         </liquid_component>
-        <solute_component function="uniform" name="Tc-99" value="0.0" />
+        <solute_component/> 
       </liquid_phase>
-      <uniform_temperature function="uniform" value="298.0"/>
+      <uniform_temperature function="uniform" value="298.0 K"/>
     </initial_condition>
   </initial_conditions>
 
@@ -211,50 +207,39 @@
       <assigned_regions>Bottom Surface</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <hydrostatic function="uniform" start="0.0" value="0.0"/>
+          <hydrostatic function="uniform" start="0.0" value="0.0 m"/>
         </liquid_component>
-        <solute_component>
-          <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>
-          <aqueous_conc name="Tc-99" value="0.0" function="constant" start="9.4672798E10"/>
-        </solute_component> 
+        <solute_component/>
       </liquid_phase>
       <thermal_component>
-        <uniform_temperature function="uniform" start="0.0" value="298.0"/>
+        <uniform_temperature function="uniform" start="0.0" value="298.0 K"/>
       </thermal_component>
     </boundary_condition>
 
-    <boundary_condition name="BC For Crib_216-B-17">
-      <assigned_regions>Crib_216-B-17</assigned_regions>
+    <boundary_condition name="BC For Crib_17">
+      <assigned_regions>Crib_17</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
           <inward_volumetric_flux value="1.1071e-10" function="constant" start="0.0" />
-          <inward_volumetric_flux value="0.00254022e-3" function="constant" start="6.17266656e+10" />
-          <inward_volumetric_flux value="1.48666E-9" function="constant" start="6.1729344E10" />
-          <inward_volumetric_flux value="1.48666E-9" function="constant" start="9.4672798E10" />
+          <inward_volumetric_flux value="0.00254022e-3 m/s" function="constant" start="6.17266656e+10" />
+          <inward_volumetric_flux value="1.48666E-9 m/s" function="constant" start="6.1729344E10 s" />
+          <inward_volumetric_flux value="1.48666E-7 cm/s" function="constant" start="9.4672798E10" />
         </liquid_component>
-        <solute_component>
-          <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>
-          <aqueous_conc name="Tc-99" value="1.881389E-06" function="constant" start="6.17266656e+10"/>
-          <aqueous_conc name="Tc-99" value="0.0" function="constant" start="6.1729344E10"/>
-       </solute_component> 
+        <solute_component/>
       </liquid_phase>
     </boundary_condition>
 
-    <boundary_condition name="BC For Crib_216-B-18">
-      <assigned_regions>Crib_216-B-18</assigned_regions>
+    <boundary_condition name="BC For Crib_18">
+      <assigned_regions>Crib_18</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
           <inward_volumetric_flux value="1.1071E-10" function="constant" start="0.0" />
           <inward_volumetric_flux value="1.48666E-9" function="constant" start="6.17266656e+10" />
           <inward_volumetric_flux value="0.00330423e-3" function="constant" start="6.173178481E10" />
           <inward_volumetric_flux value="1.48666E-9" function="constant" start="6.173705521E10" />
-          <inward_volumetric_flux value="1.48666E-9" function="constant" start="9.4672798E10" />
+          <inward_volumetric_flux value="1.48666E-9" function="constant" start="9.4672798E10 s" />
         </liquid_component>
-        <solute_component>
-          <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>
-          <aqueous_conc name="Tc-99" value="2.266885E-06" function="constant" start="6.173178481E10"/>
-          <aqueous_conc name="Tc-99" value="0.0" function="constant" start="6.173705521E10"/>
-       </solute_component> 
+        <solute_component/>
       </liquid_phase>
     </boundary_condition>
 
@@ -267,9 +252,7 @@
           <inward_volumetric_flux value="1.1071E-10" function="constant" start="0.0" />
           <inward_volumetric_flux value="1.48666E-9" function="constant" start="6.17266656e+10" />
         </liquid_component>
-        <solute_component>
-          <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>
-       </solute_component> 
+        <solute_component/>
       </liquid_phase>
     </boundary_condition>
   </boundary_conditions>

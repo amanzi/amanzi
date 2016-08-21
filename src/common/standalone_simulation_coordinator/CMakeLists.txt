@@ -146,7 +146,7 @@ if (BUILD_TESTS)
     endif()
 
     if (ENABLE_Structured)
-        add_amanzi_test(ssc-structured-transport-0 amanzi "--xml_file=test/t0-structured-isv2.xml" KIND unit)
+        # add_amanzi_test(ssc-structured-transport-0 amanzi "--xml_file=test/t0-structured-isv2.xml" KIND unit)
         add_amanzi_test(ssc-structured-flow-1 amanzi "--xml_file=test/t1-structured-isv2.xml" KIND unit)
     endif()
 
