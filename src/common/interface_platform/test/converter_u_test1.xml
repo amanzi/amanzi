@@ -213,7 +213,7 @@
           <linear_pressure name="IC1" value="101325.0 Pa" reference_coord="0.0, 0.0" gradient="0,-9793.5192 Pa/m" />
         </liquid_component>
         <solute_component>
-          <uniform_conc function="uniform" name="Tc-99" start="0.0" value="0.0 mol/L" />
+          <uniform_conc function="uniform" name="Tc-99" start="0.0" value="0.0" />
         </solute_component>
       </liquid_phase>
     </initial_condition>

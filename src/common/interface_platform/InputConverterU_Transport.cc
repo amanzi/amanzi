@@ -130,19 +130,17 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
         if (strcmp(model.c_str(), "uniform_isotropic") == 0) { 
           tmp_list.set<std::string>("model", "Bear");
 
-          element = static_cast<DOMElement*>(node);
-          al = GetAttributeValueD_(element, "alpha_l", TYPE_NUMERICAL, "m");
-          at = GetAttributeValueD_(element, "alpha_t", TYPE_NUMERICAL, "m");
+          al = GetAttributeValueD_(node, "alpha_l", TYPE_NUMERICAL, "m");
+          at = GetAttributeValueD_(node, "alpha_t", TYPE_NUMERICAL, "m");
 
           tmp_list.sublist("parameters for Bear").set<double>("alpha_l", al)
                                                  .set<double>("alpha_t", at);
         } else if (strcmp(model.c_str(), "burnett_frind") == 0) {
           tmp_list.set<std::string>("model", "Burnett-Frind");
 
-          element = static_cast<DOMElement*>(node);
-          al = GetAttributeValueD_(element, "alpha_l", TYPE_NUMERICAL, "m");
-          ath = GetAttributeValueD_(element, "alpha_th", TYPE_NUMERICAL, "m");
-          atv = GetAttributeValueD_(element, "alpha_tv", TYPE_NUMERICAL, "m");
+          al = GetAttributeValueD_(node, "alpha_l", TYPE_NUMERICAL, "m");
+          ath = GetAttributeValueD_(node, "alpha_th", TYPE_NUMERICAL, "m");
+          atv = GetAttributeValueD_(node, "alpha_tv", TYPE_NUMERICAL, "m");
 
           tmp_list.sublist("parameters for Burnett-Frind")
               .set<double>("alpha_l", al).set<double>("alpha_th", ath)
@@ -152,11 +150,10 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
         } else if (strcmp(model.c_str(), "lichtner_kelkar_robinson") == 0) {
           tmp_list.set<std::string>("model", "Lichtner-Kelkar-Robinson");
 
-          element = static_cast<DOMElement*>(node);
-          alh = GetAttributeValueD_(element, "alpha_lh", TYPE_NUMERICAL, "m");
-          alv = GetAttributeValueD_(element, "alpha_lv", TYPE_NUMERICAL, "m");
-          ath = GetAttributeValueD_(element, "alpha_th", TYPE_NUMERICAL, "m");
-          ath = GetAttributeValueD_(element, "alpha_tv", TYPE_NUMERICAL, "m");
+          alh = GetAttributeValueD_(node, "alpha_lh", TYPE_NUMERICAL, "m");
+          alv = GetAttributeValueD_(node, "alpha_lv", TYPE_NUMERICAL, "m");
+          ath = GetAttributeValueD_(node, "alpha_th", TYPE_NUMERICAL, "m");
+          ath = GetAttributeValueD_(node, "alpha_tv", TYPE_NUMERICAL, "m");
 
           tmp_list.sublist("parameters for Lichtner-Kelkar-Robinson")
               .set<double>("alpha_lh", alh).set<double>("alpha_lv", alv)
@@ -192,13 +189,12 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
     children = node->getChildNodes();
     for (int i = 0; i < children->getLength(); ++i) {
       DOMNode* inode = children->item(i);
-      element = static_cast<DOMElement*>(inode);  
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "solute") != 0) continue;
 
-      double val = GetAttributeValueD_(element, "coefficient_of_diffusion", TYPE_NUMERICAL, "m^2/s", false);
+      double val = GetAttributeValueD_(inode, "coefficient_of_diffusion", TYPE_NUMERICAL, "m^2/s", false);
       text = mm.transcode(inode->getTextContent());
 
       aqueous_names.push_back(TrimString_(text));
@@ -220,14 +216,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
     children = node->getChildNodes();
     for (int i = 0; i < children->getLength(); ++i) {
       DOMNode* inode = children->item(i);
-      element = static_cast<DOMElement*>(inode);  
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "solute") != 0) continue;
 
-      double val = GetAttributeValueD_(element, "coefficient_of_diffusion", TYPE_NUMERICAL, "", false);
-      double kh = GetAttributeValueD_(element, "kh");
+      double val = GetAttributeValueD_(inode, "coefficient_of_diffusion", TYPE_NUMERICAL, "", false);
+      double kh = GetAttributeValueD_(inode, "kh");
       text = mm.transcode(inode->getTextContent());
 
       gaseous_names.push_back(TrimString_(text));
@@ -466,17 +461,15 @@ void InputConverterU::TranslateTransportBCsGroup_(
     std::vector<std::string> forms;
 
     if (space_bc) {
-      element = static_cast<DOMElement*>(knode);
-      std::string tmp = GetAttributeValueS_(element, "amplitude");
+      std::string tmp = GetAttributeValueS_(knode, "amplitude");
       data.push_back(ConvertUnits_(tmp, unit, solute_molar_mass_[solute_name]));
 
-      data_tmp = GetAttributeVectorD_(element, "center", "m");
+      data_tmp = GetAttributeVectorD_(knode, "center", "m");
       data.insert(data.end(), data_tmp.begin(), data_tmp.end());
-      data.push_back(GetAttributeValueD_(element, "standard_deviation", TYPE_NUMERICAL, "m"));
+      data.push_back(GetAttributeValueD_(knode, "standard_deviation", TYPE_NUMERICAL, "m"));
 
       if (time_bc) {
-        element = static_cast<DOMElement*>(lnode);
-        data[0] *= GetAttributeValueD_(element, "data", TYPE_NUMERICAL, "");
+        data[0] *= GetAttributeValueD_(lnode, "data", TYPE_NUMERICAL, "");
       }
 
       same_list.erase(same_list.begin());
@@ -485,14 +478,13 @@ void InputConverterU::TranslateTransportBCsGroup_(
       std::map<double, std::string> tp_forms;
 
       for (std::vector<DOMNode*>::iterator it = same_list.begin(); it != same_list.end(); ++it) {
-        element = static_cast<DOMElement*>(*it);
-        tmp_name = GetAttributeValueS_(element, "name");
+        tmp_name = GetAttributeValueS_(*it, "name");
 
         if (tmp_name == solute_name) {
-          double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, "s");
-          tp_forms[t0] = GetAttributeValueS_(element, "function");
-          GetAttributeValueD_(element, "value", TYPE_NUMERICAL, "molar");  // just a check
-          tp_values[t0] = ConvertUnits_(GetAttributeValueS_(element, "value"), unit, solute_molar_mass_[solute_name]);
+          double t0 = GetAttributeValueD_(*it, "start", TYPE_TIME, "s");
+          tp_forms[t0] = GetAttributeValueS_(*it, "function");
+          GetAttributeValueD_(*it, "value", TYPE_NUMERICAL, "molar");  // just a check
+          tp_values[t0] = ConvertUnits_(GetAttributeValueS_(*it, "value"), unit, solute_molar_mass_[solute_name]);
 
           same_list.erase(it);
           it--;

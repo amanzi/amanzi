@@ -276,19 +276,19 @@ Teuchos::ParameterList InputConverterU::TranslateUnits_()
   std::string length("m"), time("s"), mass("kg"), concentration("molar"), temperature("K");
 
   node = GetUniqueElementByTagsString_("model_description, units, length_unit", flag);
-  if (flag) length = TrimString_(mm.transcode(node->getTextContent()));
+  if (flag) length = GetTextContentS_(node, "cm, in, ft, yd, m, km");
 
   node = GetUniqueElementByTagsString_("model_description, units, time_unit", flag);
-  if (flag) time = TrimString_(mm.transcode(node->getTextContent()));
+  if (flag) time = GetTextContentS_(node, "s, min, h, d, y");
 
   node = GetUniqueElementByTagsString_("model_description, units, mass_unit", flag);
-  if (flag) mass = TrimString_(mm.transcode(node->getTextContent()));
+  if (flag) mass = GetTextContentS_(node, "g, lb, kg, ton");
 
   node = GetUniqueElementByTagsString_("model_description, units, conc_unit", flag);
-  if (flag) concentration = TrimString_(mm.transcode(node->getTextContent()));
+  if (flag) concentration = GetTextContentS_(node, "molar, SI, ppm, ppb");
 
   node = GetUniqueElementByTagsString_("model_description, units, temperature_unit", flag);
-  if (flag) temperature = TrimString_(mm.transcode(node->getTextContent()));
+  if (flag) temperature = GetTextContentS_(node, "K, C, F");
 
   out_list.set<std::string>("length", length);
   out_list.set<std::string>("time", time);
@@ -298,8 +298,8 @@ Teuchos::ParameterList InputConverterU::TranslateUnits_()
   out_list.set<std::string>("temperature", temperature);
   
   // update default system units
-  units_.system().concentration = concentration;
-  units_.Init();
+  // units_.system().concentration = concentration;
+  units_.Init(out_list);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "Translating units: " << length << " " << time << " " 

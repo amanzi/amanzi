@@ -154,6 +154,37 @@ class InputConverter {
       std::string unit = "", bool exception = true, double mol_mass = -1.0);
   std::vector<std::string> GetAttributeVectorS_(
       xercesc::DOMElement* elem, const char* attr_name, bool exception = true);
+
+  // -- node is used uch more often
+  int GetAttributeValueL_(
+      xercesc::DOMNode* node, const char* attr_name,
+      const std::string& type = TYPE_NUMERICAL, bool exception = true, int val = 0) {
+    xercesc::DOMElement* element = static_cast<xercesc::DOMElement*>(node);
+    return GetAttributeValueL_(element, attr_name, type, exception, val);
+  }
+  double GetAttributeValueD_(  // supports units except for ppbm
+      xercesc::DOMNode* node, const char* attr_name, const std::string& type = TYPE_NUMERICAL,
+      std::string unit = "", bool exception = true, double val = 0.0) {
+    xercesc::DOMElement* element = static_cast<xercesc::DOMElement*>(node);
+    return GetAttributeValueD_(element, attr_name, type, unit, exception, val);
+  }
+  std::string GetAttributeValueS_(
+      xercesc::DOMNode* node, const char* attr_name,
+      const std::string& type = TYPE_NUMERICAL, bool exception = true, std::string val = "") {
+    xercesc::DOMElement* element = static_cast<xercesc::DOMElement*>(node);
+    return GetAttributeValueS_(element, attr_name, type, exception, val);
+  }
+  std::vector<double> GetAttributeVectorD_(  // supports units except ppbm
+      xercesc::DOMNode* node, const char* attr_name,
+      std::string unit = "", bool exception = true, double mol_mass = -1.0) {
+    xercesc::DOMElement* element = static_cast<xercesc::DOMElement*>(node);
+    return GetAttributeVectorD_(element, attr_name, unit, exception, mol_mass);
+  }
+  std::vector<std::string> GetAttributeVectorS_(
+      xercesc::DOMNode* node, const char* attr_name, bool exception = true) {
+    xercesc::DOMElement* element = static_cast<xercesc::DOMElement*>(node);
+    return GetAttributeVectorS_(element, attr_name, exception);
+  }
  
   // -- extract the text content of the child of the given node with the given name.
   std::string GetChildValueS_(

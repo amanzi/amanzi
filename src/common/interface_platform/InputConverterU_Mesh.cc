@@ -75,8 +75,7 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
       ThrowErrorIllformed_("mesh", "element", "framework");
 
   DOMNode* inode = node_list->item(0);
-  element = static_cast<DOMElement*>(inode);
-  framework = GetAttributeValueS_(element, "framework");
+  framework = GetAttributeValueS_(inode, "framework");
 
   // Define global parameter dim_ = the space dimension.
   node = GetUniqueElementByTagsString_(inode, "dimension", flag);
@@ -103,14 +102,13 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
         node = GetUniqueElementByTagsString_(inode, "number_of_cells", flag);
         if (!flag) 
             ThrowErrorIllformed_("mesh", "number_of_cells", "generate");
-        element = static_cast<DOMElement*>(node);
 
         std::vector<int> ncells; 
-        int nx = GetAttributeValueL_(element, "nx");
+        int nx = GetAttributeValueL_(node, "nx");
         if (nx > 0) ncells.push_back(nx);
-        int ny = GetAttributeValueL_(element, "ny", TYPE_NUMERICAL, false, 0);
+        int ny = GetAttributeValueL_(node, "ny", TYPE_NUMERICAL, false, 0);
         if (ny > 0) ncells.push_back(ny); 
-        int nz = GetAttributeValueL_(element, "nz", TYPE_NUMERICAL, false, 0);
+        int nz = GetAttributeValueL_(node, "nz", TYPE_NUMERICAL, false, 0);
         if (nz > 0) ncells.push_back(nz); 
 
         if (ncells.size() != dim_) 
@@ -120,13 +118,12 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
         node = GetUniqueElementByTagsString_(inode, "box", flag);
         if (!flag) 
             ThrowErrorIllformed_("mesh", "box", "generate");
-        element = static_cast<DOMElement*>(node);
 
-        std::vector<double> low = GetAttributeVectorD_(element, "low_coordinates", "m");
+        std::vector<double> low = GetAttributeVectorD_(node, "low_coordinates", "m");
         if (low.size() != dim_)
             ThrowErrorIllformed_("mesh", "low_coordinates", "generate");
 
-        std::vector<double> high = GetAttributeVectorD_(element, "high_coordinates", "m");
+        std::vector<double> high = GetAttributeVectorD_(node, "high_coordinates", "m");
         if (high.size() != dim_)
             ThrowErrorIllformed_("mesh", "high_coordinates", "generate");
 

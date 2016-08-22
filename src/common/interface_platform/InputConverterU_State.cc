@@ -160,16 +160,15 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       std::vector<std::string> attr_names;
       double kx, ky, kz;
 
-      DOMElement* element = static_cast<DOMElement*>(node);
-      kx = GetAttributeValueD_(element, "x", TYPE_NUMERICAL, unit, false, -1.0);
-      ky = GetAttributeValueD_(element, "y", TYPE_NUMERICAL, unit, false, -1.0);
-      kz = GetAttributeValueD_(element, "z", TYPE_NUMERICAL, unit, false, -1.0);
+      kx = GetAttributeValueD_(node, "x", TYPE_NUMERICAL, unit, false, -1.0);
+      ky = GetAttributeValueD_(node, "y", TYPE_NUMERICAL, unit, false, -1.0);
+      kz = GetAttributeValueD_(node, "z", TYPE_NUMERICAL, unit, false, -1.0);
 
-      type = GetAttributeValueS_(element, "type", TYPE_NONE, false, "");
+      type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
       if (type == "file") file++;
-      file_name = GetAttributeValueS_(element, "filename", TYPE_NONE, false, "");
+      file_name = GetAttributeValueS_(node, "filename", TYPE_NONE, false, "");
       if (file_name != "") file++;
-      attr_names = GetAttributeVectorS_(element, "attribute", false);
+      attr_names = GetAttributeVectorS_(node, "attribute", false);
       if (attr_names.size() > 0) file++;
 
       if (conductivity) {
@@ -289,10 +288,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- linear pressure
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_pressure", flag);
       if (flag) {
-        DOMElement* element = static_cast<DOMElement*>(node);
-        double p = GetAttributeValueD_(element, "value", "Pa");
-        std::vector<double> grad = GetAttributeVectorD_(element, "gradient", "Pa/m");
-        std::vector<double> refc = GetAttributeVectorD_(element, "reference_coord", "m");
+        double p = GetAttributeValueD_(node, "value", "Pa");
+        std::vector<double> grad = GetAttributeVectorD_(node, "gradient", "Pa/m");
+        std::vector<double> refc = GetAttributeVectorD_(node, "reference_coord", "m");
 
         grad.insert(grad.begin(), 0.0);
         refc.insert(refc.begin(), 0.0);
@@ -323,10 +321,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- linear saturation
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_saturation", flag);
       if (flag) {
-        DOMElement* element = static_cast<DOMElement*>(node);
-        double s = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, "-");
-        std::vector<double> grad = GetAttributeVectorD_(element, "gradient", "m^-1");
-        std::vector<double> refc = GetAttributeVectorD_(element, "reference_coord", "m");
+        double s = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, "-");
+        std::vector<double> grad = GetAttributeVectorD_(node, "gradient", "m^-1");
+        std::vector<double> refc = GetAttributeVectorD_(node, "reference_coord", "m");
 
         grad.insert(grad.begin(), 0.0);
         refc.insert(refc.begin(), 0.0);
@@ -385,9 +382,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             std::string unit, text;
             text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
             int m = GetPosition_(phases_["water"], text);
-            DOMElement* element = static_cast<DOMElement*>(jnode);
-            GetAttributeValueD_(element, "value", TYPE_NUMERICAL, "mol/L");  // just a check
-            vals[m] = ConvertUnits_(GetAttributeValueS_(element, "value"), unit, solute_molar_mass_[text]);
+            GetAttributeValueD_(jnode, "value", TYPE_NUMERICAL, "molar");  // just a check
+            vals[m] = ConvertUnits_(GetAttributeValueS_(jnode, "value"), unit, solute_molar_mass_[text]);
           }
         }
 
@@ -550,9 +546,8 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
         .set<std::string>("function type", "composite function");
 
     for (int i = 0; i < children.size(); ++i) {
-      element = static_cast<DOMElement*>(children[i]);
-      std::string species = GetAttributeValueS_(element, "name");
-      double val = GetAttributeValueD_(element, "value", TYPE_NUMERICAL);
+      std::string species = GetAttributeValueS_(children[i], "name");
+      double val = GetAttributeValueD_(children[i], "value", TYPE_NUMERICAL);
 
       // find position of species in the list of component names
       int k(-1);

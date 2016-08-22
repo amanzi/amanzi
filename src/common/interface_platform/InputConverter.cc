@@ -540,8 +540,16 @@ double InputConverter::GetAttributeValueD_(
     }
 
     // process constants and known units
+    // -- extract units
     found_type = GetConstantType_(text, parsed);
     val = ConvertUnits_(parsed, unit_in);
+
+    // -- replace empty input unit by the default unit 
+    if (unit_in == "") {
+      bool flag;
+      unit_in = units_.ConvertUnitS(unit, units_.system());
+      val = units_.ConvertUnitD(val, unit_in, "SI", -1.0, flag);
+    }
 
     // no checks for two types
     if (found_type == TYPE_NONE ||
@@ -817,6 +825,13 @@ double InputConverter::GetTextContentD_(
     GetConstantType_(text, parsed_text);
     val = ConvertUnits_(parsed_text, unit_in);
  
+    // replace empty input unit by the default unit 
+    if (unit_in == "") {
+      bool flag;
+      unit_in = units_.ConvertUnitS(unit, units_.system());
+      val = units_.ConvertUnitD(val, unit_in, "SI", -1.0, flag);
+    }
+
     if ((unit != "" && unit_in != "") ||
         (unit == "-" && unit_in != "")) {
       if (!units_.CompareUnits(unit, unit_in)) {
@@ -941,7 +956,7 @@ std::vector<std::string> InputConverter::CharToStrings_(const char* namelist)
 
 /* ******************************************************************
 * Extract unit and convert values. We assume that units are unique.
-* If note unit specified, returned unit is the empty string.
+* If no unit specified, returned unit is the empty string.
 ****************************************************************** */
 double InputConverter::ConvertUnits_(
     const std::string& val, std::string& unit, double mol_mass)
