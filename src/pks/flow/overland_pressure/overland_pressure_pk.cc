@@ -312,10 +312,12 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
         ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(mass_source_key_);
 
-    // density of incoming water [mol/m^3]
-    S->RequireField("surface-source_molar_density")->SetMesh(mesh_)
-        ->AddComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator("surface-source_molar_density");
+    if (source_in_meters_) {
+      // density of incoming water [mol/m^3]
+      S->RequireField("surface-source_molar_density")->SetMesh(mesh_)
+          ->AddComponent("cell", AmanziMesh::CELL, 1);
+      S->RequireFieldEvaluator("surface-source_molar_density");
+    }
   }
 
   // -- water content bar (can be negative)
