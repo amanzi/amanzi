@@ -832,16 +832,16 @@ Teuchos::RCP<State> CycleDriver::Go() {
 #if !DEBUG_MODE
   try {
 #endif
-    //bool fail = false;
 
     while (time_period_id_ < num_time_periods_) {
       int start_cycle_num = S_->cycle();
-      //      do 
+      //  do 
       while ((S_->time() < tp_end_[time_period_id_]) && 
              ((tp_max_cycle_[time_period_id_] == -1) || 
               (S_->cycle() - start_cycle_num < tp_max_cycle_[time_period_id_])))
       {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+          if (S_->cycle() % 100 == 0) S_->WriteStatistics(vo_);
           Utils::Units units("molar");
           Teuchos::OSTab tab = vo_->getOSTab();
           *vo_->os() << "\nCycle " << S_->cycle()
@@ -855,8 +855,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
         S_->set_position(TIME_PERIOD_INSIDE);
 
         dt = Advance(dt);
-        //dt = get_dt(fail);
-        //S_->WriteStatistics(vo_);
+        // dt = get_dt(fail);
       }  // while not finished
 
 

@@ -158,7 +158,7 @@ void InputConverter::ParseVersion_()
   
   DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("amanzi_input"));
   if (node_list->getLength() > 0) {
-    std::string version = GetAttributeValueS_(static_cast<DOMElement*>(node_list->item(0)), "version");
+    std::string version = GetAttributeValueS_(node_list->item(0), "version");
     
     int major, minor, micro;
     
@@ -786,10 +786,12 @@ std::vector<std::string> InputConverter::GetChildVectorS_(
 * Extract atribute of type std::string.
 ****************************************************************** */
 std::string InputConverter::GetAttributeValueS_(
-    DOMElement* elem, const char* attr_name, const char* options)
+    DOMNode* node, const char* attr_name, const char* options)
 {
+  DOMElement* element = static_cast<DOMElement*>(node);
+
   std::string val;
-  val = GetAttributeValueS_(elem, attr_name);
+  val = GetAttributeValueS_(element, attr_name);
 
   std::vector<std::string> names = CharToStrings_(options);
   for (std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it) {
@@ -797,7 +799,7 @@ std::string InputConverter::GetAttributeValueS_(
   }
 
   MemoryManager mm;
-  char* tagname = mm.transcode(elem->getNodeName());
+  char* tagname = mm.transcode(element->getNodeName());
   Errors::Message msg;
   msg << "Validation of attribute \"" << attr_name << "\""
       << " for element \"" << tagname << "\" failed.\n";

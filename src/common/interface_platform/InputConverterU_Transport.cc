@@ -113,7 +113,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "material") != 0) continue;
 
-      std::string mat_name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
+      std::string mat_name = GetAttributeValueS_(inode, "name");
 
       // -- regions
       node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
@@ -126,7 +126,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, dispersion_tensor", flag);
       if (flag) {
         double al, alh, alv, at, ath, atv;
-        std::string model = GetAttributeValueS_(static_cast<DOMElement*>(node), "type");
+        std::string model = GetAttributeValueS_(node, "type", "uniform_isotropic,burnett_frind,lichtner_kelkar_robinson");
         if (strcmp(model.c_str(), "uniform_isotropic") == 0) { 
           tmp_list.set<std::string>("model", "Bear");
 

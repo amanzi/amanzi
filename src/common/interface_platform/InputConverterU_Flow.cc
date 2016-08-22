@@ -206,12 +206,12 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_()
     DOMNode* inode = children->item(i); 
 
     node = GetUniqueElementByTagsString_(inode, "cap_pressure", flag);
-    model = GetAttributeValueS_(static_cast<DOMElement*>(node), "model", "van_genuchten, brooks_corey");
+    model = GetAttributeValueS_(node, "model", "van_genuchten, brooks_corey");
     DOMNode* nnode = GetUniqueElementByTagsString_(node, "parameters", flag);
     DOMElement* element_cp = static_cast<DOMElement*>(nnode);
 
     node = GetUniqueElementByTagsString_(inode, "rel_perm", flag);
-    rel_perm = GetAttributeValueS_(static_cast<DOMElement*>(node), "model", "mualem, burdine");
+    rel_perm = GetAttributeValueS_(node, "model", "mualem, burdine");
     DOMNode* mnode = GetUniqueElementByTagsString_(node, "exp", flag);
     DOMElement* element_rp = (flag) ? static_cast<DOMElement*>(mnode) : NULL;
 
@@ -398,12 +398,12 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
     node = GetUniqueElementByTagsString_(inode, "multiscale_structure, cap_pressure", flag);
     if (!flag) continue;
 
-    model = GetAttributeValueS_(static_cast<DOMElement*>(node), "model", "van_genuchten, brooks_corey");
+    model = GetAttributeValueS_(node, "model", "van_genuchten, brooks_corey");
     DOMNode* nnode = GetUniqueElementByTagsString_(node, "parameters", flag);
     DOMElement* element_cp = static_cast<DOMElement*>(nnode);
 
     node = GetUniqueElementByTagsString_(inode, "multiscale_structure, rel_perm", flag);
-    rel_perm = GetAttributeValueS_(static_cast<DOMElement*>(node), "model", "mualem, burdine");
+    rel_perm = GetAttributeValueS_(node, "model", "mualem, burdine");
     DOMNode* mnode = GetUniqueElementByTagsString_(node, "exp", flag);
     DOMElement* element_rp = (flag) ? static_cast<DOMElement*>(mnode) : NULL;
 
