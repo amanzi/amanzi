@@ -15,6 +15,9 @@ Mesh2D::Mesh2D(std::vector<Point>&& coords_,
     ASSERT(set.size() == cell2node.size());
   }
 
+  nnodes = coords.size();
+  ncells = cell2node.size();
+  
   for (auto& c : cell2node) {
     Point v1(2), v2(2);
     v1.set(coords[c[1]][0] - coords[c[0]][0], coords[c[1]][1] - coords[c[0]][1]);
@@ -39,8 +42,7 @@ Mesh2D::Mesh2D(std::vector<Point>&& coords_,
 
   // set sizes
   nfaces = face2node.size();
-  nnodes = coords.size();
-  ncells = cell2face.size();
+  ASSERT(ncells == cell2face.size());
 
   // set boundaries
   std::vector<int> boundary_c, boundary_f;
@@ -152,10 +154,10 @@ Mesh3D::extrude(const std::vector<double>& dz,
   // add the side faces
   for (int f=0; f!=m.nfaces; ++f) {
     std::vector<int> nodes =
-        { node_structure(m.face2node[f][0],current_layer),
-          node_structure(m.face2node[f][1],current_layer),
-          node_structure(m.face2node[f][1],current_layer+1),
-          node_structure(m.face2node[f][0],current_layer+1)
+        { node_structure(m.face2node[f][1],current_layer),
+          node_structure(m.face2node[f][0],current_layer),
+          node_structure(m.face2node[f][0],current_layer+1),
+          node_structure(m.face2node[f][1],current_layer+1)
         };
     face2node.emplace_back(std::move(nodes));
   }
@@ -183,7 +185,7 @@ Mesh3D::extrude(const std::vector<double>& dz,
         };
     cell2face.emplace_back(c2f);
   }
-
+  
   // copy over the cell sets
   block_ids.insert(block_ids.end(), block_ids_.begin(), block_ids_.end());
 
@@ -211,13 +213,16 @@ Mesh3D::finish_sets() {
   std::vector<int> sides_c, sides_f;
   sides_c.reserve(n_boundary_faces);
   sides_f.reserve(n_boundary_faces);
+  auto prism_boundary_f(m.boundary_faces.second);
+  for (auto& f: prism_boundary_f) f += 2;
   for (int layer=0; layer!=total_layers; ++layer) {
     int c_start = layer*m.ncells;
     for (auto c : m.boundary_faces.first)
       sides_c.push_back(c_start + c);
+
     sides_f.insert(sides_f.begin(),
-                   m.boundary_faces.second.begin(),
-                   m.boundary_faces.second.end());
+                   prism_boundary_f.begin(),
+                   prism_boundary_f.end());
   }
   
   face_sets.emplace_back(std::make_pair(std::move(sides_c),

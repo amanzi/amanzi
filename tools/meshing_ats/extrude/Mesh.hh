@@ -7,6 +7,7 @@
 #include <map>
 
 #include "Point.hh"
+#include <stdint.h>
 
 namespace Amanzi {
 namespace AmanziGeometry {
@@ -20,8 +21,8 @@ struct Mesh2D {
                        int face_in_cell,
                        int cell);
 
-  long long int hash(int i, int j) {
-    return (nnodes+1)*i + j;
+  int64_t hash(int i, int j) {
+    return ((int64_t) (nnodes+1))*((int64_t) i) + (int64_t) j;
   }
   
   std::vector<Point> coords;
@@ -33,7 +34,7 @@ struct Mesh2D {
   std::pair<std::vector<int>,
             std::vector<int> > boundary_faces;
   
-  std::map<long int, int> faces_sorted;
+  std::map<int64_t, int> faces_sorted;
   std::vector<int> side_face_counts;
   std::vector<int> face_in_cell_when_created;
   std::vector<int> face_cell_when_created;
@@ -51,19 +52,19 @@ struct Mesh3D {
   }
 
   void extrude(const std::vector<double>& dzs, int my_cell_set) {
-    std::vector<int> cell_set(m.coords.size(), my_cell_set);
+    std::vector<int> cell_set(m.ncells, my_cell_set);
     extrude(dzs, cell_set);
   }
 
   void extrude(double dz, int my_cell_set) {
     std::vector<double> dzs(m.coords.size(), dz);
-    std::vector<int> cell_set(m.coords.size(), my_cell_set);
+    std::vector<int> cell_set(m.ncells, my_cell_set);
     extrude(dzs, cell_set);
   }
 
   int node_structure(int n_2d, int layer) {
     return n_2d + layer*m.coords.size();
-  }
+}
 
   int cell_structure(int c_2d, int layer) {
     return c_2d + layer*m.cell2node.size();
