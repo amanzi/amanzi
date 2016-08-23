@@ -71,17 +71,17 @@ EvaporativeFluxRelaxationEvaluator::InitializeFromPlist_()
   // - pull Keys from plist
   // dependency: litter_water_content
   wc_key_ = plist_.get<std::string>("litter water content key",
-          domain_name+std::string("litter_water_content"));
+          domain_name+std::string("water_content"));
   dependencies_.insert(wc_key_);
 
   // dependency: surface_molar_density_liquid
-  rho_key_ = plist_.get<std::string>("surface molar density liquid key",
-          domain_name+std::string("surface_molar_density_liquid"));
+  rho_key_ = plist_.get<std::string>("molar density liquid key",
+          domain_name+std::string("molar_density_liquid"));
   dependencies_.insert(rho_key_);
 
   // dependency: litter_thickness
   L_key_ = plist_.get<std::string>("litter thickness key",
-          domain_name+std::string("litter_thickness"));
+          domain_name+std::string("thickness"));
   dependencies_.insert(L_key_);
 }
 
