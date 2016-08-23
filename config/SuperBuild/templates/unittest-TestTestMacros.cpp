@@ -164,7 +164,7 @@ TEST(FixturesWithThrowingCtorsAreFailures)
 
 struct FixtureDtorThrows
 {
-      ~FixtureDtorThrows() _NOEXCEPT_OP(false) {
+      ~FixtureDtorThrows() {
          throw "exception";
       }
 };
