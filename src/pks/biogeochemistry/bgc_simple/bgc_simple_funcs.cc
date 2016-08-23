@@ -79,14 +79,6 @@ namespace BGC {
   // determine the thaw depth
   double thawD = PermafrostDepth(SoilTArr,SoilThicknessArr,273.15);
 
-  //---------------------------------------------------------------------------------
-  //calculate shaded radiations for soil
-  double radi = met.qSWin;
-  for (std::vector<Teuchos::RCP<PFT> >::iterator pft_iter=pftarr.begin();
-       pft_iter!=pftarr.end(); ++pft_iter) {
-        radi *= std::exp(-(*pft_iter)->LER * (*pft_iter)->lai);
-   }
-  sw_shaded = radi;
   //----------------------------------------------------------------------
   //go through the PFT array
   
@@ -689,6 +681,17 @@ namespace BGC {
     } //biomass check
   } // loop for different PFTs
 
+  //---------------------------------------------------------------------------------
+  //calculate shaded radiations for soil
+  double radi = met.qSWin;
+  for (std::vector<Teuchos::RCP<PFT> >::iterator pft_iter=pftarr.begin();
+       pft_iter!=pftarr.end(); ++pft_iter) {
+    std::cout << "wtf: (" << (*pft_iter)->pft_type << ") " << (*pft_iter)->LER << ", " << (*pft_iter)->lai << ", " << radi << std::endl;
+    radi *= std::exp(-(*pft_iter)->LER * (*pft_iter)->lai);
+   }
+  sw_shaded = radi;
+
+      
  //=========================================================================
   // do soil decomposition
   for (int k=0; k!=ncells; ++k) {
