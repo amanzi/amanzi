@@ -9,11 +9,10 @@ trilinos_src_dir=@Trilinos_source_dir@
 OIFS=$IFS
 IFS=";"
 patch_files="@Trilinos_patch_file@"
-patch_files_array=(${patch_files})
 
-for ((i=0; i<${#patch_files_array[@]}; ++i));
-do
- patch_file=@SuperBuild_SOURCE_DIR@/templates/${patch_files_array[$i]}
+for i in ${patch_files}; do
+
+ patch_file=@SuperBuild_SOURCE_DIR@/templates/${i}
 
  if [ ! -e "${patch_file}" ] ; then
   echo "Patch file ${patch_file} does not exist"
@@ -21,7 +20,9 @@ do
  fi
 
  (cd ${trilinos_src_dir}; patch -p1 < ${patch_file})
+
 done
+
 IFS=$OIFS
 
 exit $?
