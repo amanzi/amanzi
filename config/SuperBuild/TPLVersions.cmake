@@ -58,14 +58,15 @@
 #   0.92.14      - update Hypre to v2.10.0b (and added patch for to ensure tol>0)
 #   0.92.15      - updated Alquimia to v0.2 (backward compatible)
 #   0.92.16      - update CCSE to version 1.3.0 
-#   0.92.17      - update MSTK to version 2.2.3 (adds element set capabilities)
+#   0.92.17      - update MSTK to version 2.23 (adds element set capabilities)
 #   0.92.18      - update Boost to version 1.58.0 
 #   0.92.19      - update CCSE to version 1.3.2
 #   0.92.20      - update CCSE to version 1.3.4 (fix issue with fsnapshot)
 #   0.92.21      - update Alquimia to version 0.3.1 (CrunchFlow integration)
 #   0.92.22      - added optional Silo package
 #   0.92.23      - Patched ASCEM-IO to allocate space for sprintf() correctly.
-#   0.92.24      - update MSTK to version 2.2.5 (updates to meshconvert, exoatt)
+#   0.92.24      - update MSTK to version 2.25 (updates to meshconvert, exoatt)
+#   0.92.25      - update MSTK to version 2.26rc2 (adds fixes for pinchouts)
 
 include(CMakeParseArguments)
 
@@ -115,7 +116,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 24)
+set (AMANZI_TPLS_VERSION_PATCH 25)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
