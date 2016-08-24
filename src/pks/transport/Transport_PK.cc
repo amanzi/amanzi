@@ -536,7 +536,6 @@ double Transport_PK::StableTimeStep()
         if (values(i) < 0.0) {
           double value = fabs(values(i)) * mesh_->cell_volume(c);
           total_outflux[c] = std::max(total_outflux[c], value);
-std::cout << c << " " << i << " " << values(i) << std::endl;
         }
       }
     }
