@@ -409,6 +409,27 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
         }
       }
     }
+#ifdef ALQUIMIA_ENABLED
+    // -- try geochemical conditions
+    Teuchos::ParameterList& glist = tp_list_->sublist("source terms").sublist("geochemical");
+
+    for (Teuchos::ParameterList::ConstIterator it = glist.begin(); it != glist.end(); ++it) {
+      std::string specname = it->first;
+      Teuchos::ParameterList& spec = glist.sublist(specname);
+
+      Teuchos::RCP<TransportSourceFunction_Alquimia> 
+          src = Teuchos::rcp(new TransportSourceFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
+
+      std::vector<int>& tcc_index = src->tcc_index();
+      std::vector<std::string>& tcc_names = src->tcc_names();
+
+      for (int i = 0; i < tcc_names.size(); i++) {
+        tcc_index.push_back(FindComponentNumber(tcc_names[i]));
+      }
+
+      srcs_.push_back(src);
+    }
+#endif
   }
 
   // Temporarily Transport hosts Henry law.
@@ -515,6 +536,7 @@ double Transport_PK::StableTimeStep()
         if (values(i) < 0.0) {
           double value = fabs(values(i)) * mesh_->cell_volume(c);
           total_outflux[c] = std::max(total_outflux[c], value);
+std::cout << c << " " << i << " " << values(i) << std::endl;
         }
       }
     }

@@ -39,6 +39,9 @@ class TransportSourceFunction_Alquimia : public TransportDomainFunction {
   
   void Compute(double t_old, double t_new);
 
+  // require by the case class
+  virtual std::string name() const { return "volume"; } 
+
  private:
   void Init_(const std::vector<std::string> &regions);
 
