@@ -101,9 +101,11 @@ void ObservableSolute::ComputeObservation(
   Errors::Message msg;
   int dim = mesh_ -> space_dimension();
 
-  if (!S.HasField("total_component_concentration")) {  // bail out if this field is not yet created
-    msg << "Field \"total_component_concentration\" does not exist, skipping it.";
-    Exceptions::amanzi_throw(msg);
+  if (!S.HasField("total_component_concentration")) {
+    // bail out with default values if this field is not yet created
+    *value = 0.0;
+    *volume = 1.0;
+    return;
   }
 
   const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
