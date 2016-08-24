@@ -11,8 +11,8 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_TRANSPORT_BOUNDARY_FUNCTION_HH_
-#define AMANZI_TRANSPORT_BOUNDARY_FUNCTION_HH_
+#ifndef AMANZI_TRANSPORT_DOMAIN_FUNCTION_HH_
+#define AMANZI_TRANSPORT_DOMAIN_FUNCTION_HH_
 
 #include <vector>
 #include <map>
@@ -28,17 +28,17 @@
 namespace Amanzi {
 namespace Transport {
 
-class TransportBoundaryFunction {
+class TransportDomainFunction {
  public:
-  TransportBoundaryFunction() : domain_volume_(-1.0) {};
-  TransportBoundaryFunction(const Teuchos::ParameterList& plist) : domain_volume_(-1.0) {};
-  ~TransportBoundaryFunction() {};
+  TransportDomainFunction() : domain_volume_(-1.0) {};
+  TransportDomainFunction(const Teuchos::ParameterList& plist) : domain_volume_(-1.0) {};
+  ~TransportDomainFunction() {};
 
   // source term on time interval (t0, t1]
   virtual void Compute(double t0, double t1) { ASSERT(false); }
 
   // model name
-  virtual std::string name() { return "undefined"; } 
+  virtual std::string name() const { return "undefined"; } 
 
   // access
   double domain_volume() { return domain_volume_; }
