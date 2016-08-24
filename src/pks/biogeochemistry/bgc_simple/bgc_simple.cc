@@ -470,8 +470,8 @@ bool BGCSimple::advance(double dt) {
       // and integrate the decomp
       co2_decomp[0][col_iter[i]] += co2_decomp_c[i];
 
-      // and pull in the transpiration
-      trans[0][col_iter[i]] = trans_c[i];
+      // and pull in the transpiration, converting to mol/m^3/s, as a sink
+      trans[0][col_iter[i]] = -trans_c[i]/ .01801528;  
       sw[0][col] = sw_c;
     }
 
@@ -480,7 +480,7 @@ bool BGCSimple::advance(double dt) {
       leafbiomass[lcv_pft][col] = pfts_[col][lcv_pft]->Bleaf;
       csink[lcv_pft][col] = pfts_[col][lcv_pft]->CSinkLimit;
       lai[lcv_pft][col] = pfts_[col][lcv_pft]->lai;
-      veg_total_transpiration[lcv_pft][col] = pfts_[col][lcv_pft]->ET;
+      veg_total_transpiration[lcv_pft][col] = pfts_[col][lcv_pft]->ET / 0.01801528;
       total_lai[0][col] += pfts_[col][lcv_pft]->lai;
     }
 
