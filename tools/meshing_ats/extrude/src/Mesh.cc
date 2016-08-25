@@ -164,8 +164,8 @@ Mesh3D::Mesh3D(const Mesh2D& m_, int n_layers) :
 void
 Mesh3D::extrude(const std::vector<double>& dz,
                 const std::vector<int>& block_ids_) {
-  ASSERT(dz.size() == coords.size());
-  ASSERT(block_ids_.size() == coords.size());
+  ASSERT(dz.size() == m.coords.size());
+  ASSERT(block_ids_.size() == m.cell2node.size());
 
   // shift the coordinates
   for (int n=0; n!=m.coords.size(); ++n) {
