@@ -36,8 +36,9 @@
 
 #include "MultiscaleTransportPorosityFactory.hh"
 #include "Transport_PK.hh"
-#include "TransportBoundaryFunction.hh"
 #include "TransportBoundaryFunction_Alquimia.hh"
+#include "TransportDomainFunction.hh"
+#include "TransportSourceFunction_Alquimia.hh"
 
 namespace Amanzi {
 namespace Transport {
@@ -256,8 +257,6 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   internal_tests = 0;
   tests_tolerance = TRANSPORT_CONCENTRATION_OVERSHOOT;
 
-  bc_scaling = 0.0;
-
   // Create verbosity object.
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = tp_list_->sublist("verbose object");
@@ -332,7 +331,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   // create boundary conditions
   if (tp_list_->isSublist("boundary conditions")) {
     // -- try simple Dirichlet conditions for species
-    PK_DomainFunctionFactory<TransportBoundaryFunction> factory(mesh_);
+    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
     Teuchos::ParameterList& clist = tp_list_->sublist("boundary conditions").sublist("concentration");
 
     for (Teuchos::ParameterList::ConstIterator it = clist.begin(); it != clist.end(); ++it) {
@@ -342,7 +341,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
         for (Teuchos::ParameterList::ConstIterator it1 = bc_list.begin(); it1 != bc_list.end(); ++it1) {
           std::string specname = it1->first;
           Teuchos::ParameterList& spec = bc_list.sublist(specname);
-          Teuchos::RCP<TransportBoundaryFunction> 
+          Teuchos::RCP<TransportDomainFunction> 
               bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
 
           bc->tcc_names().push_back(name);
@@ -390,7 +389,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // source term initialization: so far only "concentration" is available.
   if (tp_list_->isSublist("source terms")) {
-    PK_DomainFunctionFactory<TransportSourceFunction> factory(mesh_);
+    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
     PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
 
     Teuchos::ParameterList& clist = tp_list_->sublist("source terms").sublist("concentration");
@@ -401,13 +400,36 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
         for (Teuchos::ParameterList::ConstIterator it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
           std::string specname = it1->first;
           Teuchos::ParameterList& spec = src_list.sublist(specname);
-          Teuchos::RCP<TransportSourceFunction> src = factory.Create(spec, "well", AmanziMesh::CELL, Kxy);
-          src->set_tcc_name(name);
-          src->set_tcc_index(FindComponentNumber(name));
+          Teuchos::RCP<TransportDomainFunction> src = factory.Create(spec, "well", AmanziMesh::CELL, Kxy);
+
+          src->tcc_names().push_back(name);
+          src->tcc_index().push_back(FindComponentNumber(name));
+
           srcs_.push_back(src);
         }
       }
     }
+#ifdef ALQUIMIA_ENABLED
+    // -- try geochemical conditions
+    Teuchos::ParameterList& glist = tp_list_->sublist("source terms").sublist("geochemical");
+
+    for (Teuchos::ParameterList::ConstIterator it = glist.begin(); it != glist.end(); ++it) {
+      std::string specname = it->first;
+      Teuchos::ParameterList& spec = glist.sublist(specname);
+
+      Teuchos::RCP<TransportSourceFunction_Alquimia> 
+          src = Teuchos::rcp(new TransportSourceFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
+
+      std::vector<int>& tcc_index = src->tcc_index();
+      std::vector<std::string>& tcc_names = src->tcc_names();
+
+      for (int i = 0; i < tcc_names.size(); i++) {
+        tcc_index.push_back(FindComponentNumber(tcc_names[i]));
+      }
+
+      srcs_.push_back(src);
+    }
+#endif
   }
 
   // Temporarily Transport hosts Henry law.
@@ -506,11 +528,15 @@ double Transport_PK::StableTimeStep()
   for (int m = 0; m < srcs_.size(); m++) {
     srcs_[m]->Compute(t_old, t_old); 
 
-    for (TransportSourceFunction::Iterator it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
-      if (it->second < 0.0) {
-        int c = it->first;
-        double value = mesh_->cell_volume(c) * it->second;
-        total_outflux[c] = std::max(total_outflux[c], value);
+    for (TransportDomainFunction::Iterator it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
+      int c = it->first;
+      WhetStone::DenseVector& values = it->second;
+
+      for (int i = 0; i < values.NumRows(); ++i) {
+        if (values(i) < 0.0) {
+          double value = fabs(values(i)) * mesh_->cell_volume(c);
+          total_outflux[c] = std::max(total_outflux[c], value);
+        }
       }
     }
   }
@@ -1039,7 +1065,7 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
     std::vector<int>& tcc_index = bcs_[m]->tcc_index();
     int ncomp = tcc_index.size();
 
-    for (TransportBoundaryFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+    for (TransportDomainFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
       int f = it->first;
       WhetStone::DenseVector& values = it->second;
 
@@ -1248,30 +1274,34 @@ void Transport_PK::ComputeSources_(
   int nsrcs = srcs_.size();
 
   for (int m = 0; m < nsrcs; m++) {
-    int i = srcs_[m]->tcc_index();
-    if (i < n0 || i > n1) continue;
-
-    int imap = i;
-    if (num_vectors == 1) imap = 0;
-
     double t0 = tp - dtp;
     srcs_[m]->Compute(t0, tp); 
 
-    for (TransportSourceFunction::Iterator it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
+    std::vector<int> index = srcs_[m]->tcc_index();
+    for (TransportDomainFunction::Iterator it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
       int c = it->first;
-      double value = mesh_->cell_volume(c) * it->second;
+      WhetStone::DenseVector& values = it->second;
 
-      if (value < 0) {
-        // correction for an extraction well
-        value *= tcc_prev[imap][c];
-      } else {
-        // correction for non-SI concentration units
-        if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "weight")
-            value /= units_.concentration_factor();
+      for (int k = 0; k < index.size(); ++k) {
+        int i = index[k];
+        if (i < n0 || i > n1) continue;
+
+        int imap = i;
+        if (num_vectors == 1) imap = 0;
+
+        double value = mesh_->cell_volume(c) * values(k);
+        if (value < 0) {
+          // correction for an extraction well
+          value *= tcc_prev[imap][c];
+        } else {
+          // correction for non-SI concentration units
+          if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "weight")
+              value /= units_.concentration_factor();
+        }
+
+        tcc[imap][c] += dtp * value;
+        mass_solutes_source_[i] += value;
       }
-
-      tcc[imap][c] += dtp * value;
-      mass_solutes_source_[i] += value;
     }
   }
 }
@@ -1301,7 +1331,7 @@ bool Transport_PK::ComputeBCs_(
     std::vector<int>& tcc_index = bcs_[m]->tcc_index();
     int ncomp = tcc_index.size();
 
-    for (TransportBoundaryFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+    for (TransportDomainFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
       int f = it->first;
       WhetStone::DenseVector& values = it->second;
 

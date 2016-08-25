@@ -110,6 +110,9 @@ class InputConverterU : public InputConverter {
   void TranslateTransportSourcesGroup_(
       std::string& srcname, std::vector<std::string>& regions,
       xercesc::DOMNodeList* solutes, xercesc::DOMNode* phase_l, Teuchos::ParameterList& out_list);
+  void TranslateTransportGeochemistry_(
+      DOMNode* node, std::string& bcname, std::vector<std::string>& regions,
+      Teuchos::ParameterList& out_list);
 
   // -- backward compatibility
   void TranslateTransportBCsAmanziGeochemistry_(Teuchos::ParameterList& out_list);

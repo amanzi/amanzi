@@ -41,9 +41,8 @@
 // Transport
 #include "MDMPartition.hh"
 #include "MultiscaleTransportPorosityPartition.hh"
-#include "TransportBoundaryFunction.hh"
 #include "TransportDefs.hh"
-#include "TransportSourceFunction.hh"
+#include "TransportDomainFunction.hh"
 
 /* ******************************************************************
 The transport PK receives a reduced (optional) copy of a physical 
@@ -218,9 +217,8 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   int current_component_;  // data for lifting
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;
 
-  std::vector<Teuchos::RCP<TransportSourceFunction> > srcs_;  // Source or sink for components
-  std::vector<Teuchos::RCP<TransportBoundaryFunction> > bcs_;  // BC for concentration
-  double bc_scaling;
+  std::vector<Teuchos::RCP<TransportDomainFunction> > srcs_;  // Sources and sinks
+  std::vector<Teuchos::RCP<TransportDomainFunction> > bcs_;
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
