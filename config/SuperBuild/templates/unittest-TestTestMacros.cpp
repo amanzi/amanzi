@@ -12,13 +12,9 @@ using namespace std;
 /* test for c++11 support */
 #ifndef _MSC_VER
 
-   /* Test for clang >= 3.3 */
+   /* We aren't supporting C++11 yet, and not likely with this set of TPLs, so this is forcing old standard */
    #ifdef __clang__
-      #if (__clang__ == 1) && (__clang_major__ > 3 || (__clang_major__ == 3 && (__clang_minor__ > 2 )))
-         #define _NOEXCEPT_OP(x) noexcept(x)
-      #else
-         #define _NOEXCEPT_OP(x)
-      #endif
+      #define _NOEXCEPT_OP(x)
    #endif
 
    #ifndef __clang__
@@ -164,7 +160,7 @@ TEST(FixturesWithThrowingCtorsAreFailures)
 
 struct FixtureDtorThrows
 {
-      ~FixtureDtorThrows() {
+      ~FixtureDtorThrows() _NOEXCEPT_OP(false) {
          throw "exception";
       }
 };
