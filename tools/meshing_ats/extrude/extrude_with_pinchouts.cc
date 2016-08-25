@@ -30,7 +30,7 @@ int main() {
   std::vector<double> dzs(nsnodes, 0.0);
   std::vector<double> rem_soil = depths;
   
-  Mesh3D m3(m, nsoil_lay + nbedrock_lay);
+  Mesh3D m3(&m, nsoil_lay + nbedrock_lay);
   
   for (int ilay = 0; ilay < nsoil_lay; ilay++) {
     for (int inode = 0; inode < nsnodes; inode++) {

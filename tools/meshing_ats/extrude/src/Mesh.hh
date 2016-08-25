@@ -13,9 +13,9 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 struct Mesh2D {
-  Mesh2D(std::vector<Point>&& coords_,
-         std::vector<std::vector<int> >&& cell2node_,
-         std::vector<std::vector<int> >&& cell_sets_);
+  Mesh2D(std::vector<Point>& coords_,
+         std::vector<std::vector<int> >& cell2node_,
+         std::vector<std::vector<int> >& cell_sets_);
   
   int face_constructor(const std::vector<int>& nodes,
                        int face_in_cell,
@@ -46,37 +46,37 @@ struct Mesh2D {
 
 
 struct Mesh3D {
-  Mesh3D(const Mesh2D& m_, int n_layers);
+  Mesh3D(const Mesh2D * const m_, int n_layers);
 
   void extrude(double dz, const std::vector<int>& cell_set) {
-    std::vector<double> dzs(m.coords.size(), dz);
+    std::vector<double> dzs(m->coords.size(), dz);
     extrude(dzs, cell_set);
   }
 
   void extrude(const std::vector<double>& dzs, int my_cell_set) {
-    std::vector<int> cell_set(m.ncells, my_cell_set);
+    std::vector<int> cell_set(m->ncells, my_cell_set);
     extrude(dzs, cell_set);
   }
 
   void extrude(double dz, int my_cell_set) {
-    std::vector<double> dzs(m.coords.size(), dz);
-    std::vector<int> cell_set(m.ncells, my_cell_set);
+    std::vector<double> dzs(m->coords.size(), dz);
+    std::vector<int> cell_set(m->ncells, my_cell_set);
     extrude(dzs, cell_set);
   }
 
   int node_structure(int n_2d, int layer) {
-    return n_2d + layer*m.coords.size();
+    return n_2d + layer*m->coords.size();
 }
 
   int cell_structure(int c_2d, int layer) {
-    return c_2d + layer*m.cell2node.size();
+    return c_2d + layer*m->cell2node.size();
   }
 
   void extrude(const std::vector<double>& dz,
                const std::vector<int>& cell_set);
   void finish_sets(); 
 
-  const Mesh2D& m;
+  const Mesh2D * const m;
 
   std::vector<Point> coords;
   std::vector<std::vector<int> > cell2face;
@@ -85,8 +85,6 @@ struct Mesh3D {
   std::vector<int> block_ids;
   
   std::vector<int> side_face_counts;
-  std::vector<int> face_in_cell_when_created;
-  std::vector<int> face_cell_when_created;
 
   std::vector<std::pair<std::vector<int>,
                         std::vector<int> > > face_sets;

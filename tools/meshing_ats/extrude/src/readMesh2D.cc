@@ -58,9 +58,9 @@ readMesh2D_text(const std::string& filename,
   }
 
   std::vector<std::vector<int> > sets(1);
-  sets[0] = std::move(veg_types);
+  sets[0] = veg_types;
 
-  Mesh2D m(std::move(fac.points), std::move(conn), std::move(sets));
+  Mesh2D m(fac.points, conn, sets);
 
   std::cout << "Read 2D Mesh:" << std::endl
             << "    ncells = " << m.cell2face.size() << std::endl

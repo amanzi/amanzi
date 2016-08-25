@@ -12,21 +12,20 @@ TPLS_LIBS = -lexodus -lnetcdf -lhdf5 -lhdf5_hl -lz
 
 all: extrude_one_layer extrude_uniform extrude_homogeneous_uniform extrude_with_pinchouts
 
-extrude_one_layer: extrude_one_layer.o
-	make -C src
+extrude_one_layer: extrude_one_layer.o extrude.a
 	mpicxx -std=c++11 ${CXX_FLAGS} -L${TPLS_LIB} ${TPLS_LIBS} src/extrude.a extrude_one_layer.o -o extrude_one_layer
 
-extrude_uniform: extrude_uniform.o
-	make -C src
+extrude_uniform: extrude_uniform.o extrude.a
 	mpicxx -std=c++11 ${CXX_FLAGS} -L${TPLS_LIB} ${TPLS_LIBS} src/extrude.a extrude_uniform.o -o extrude_uniform
 
-extrude_homogeneous_uniform: extrude_homogeneous_uniform.o
-	make -C src
+extrude_homogeneous_uniform: extrude_homogeneous_uniform.o extrude.a
 	mpicxx -std=c++11 ${CXX_FLAGS} -L${TPLS_LIB} ${TPLS_LIBS} src/extrude.a extrude_homogeneous_uniform.o -o extrude_homogeneous_uniform
 
-extrude_with_pinchouts: extrude_with_pinchouts.o
-	make -C src
+extrude_with_pinchouts: extrude_with_pinchouts.o extrude.a
 	mpicxx -std=c++11 ${CXX_FLAGS} -L${TPLS_LIB} ${TPLS_LIBS} src/extrude.a extrude_with_pinchouts.o -o extrude_with_pinchouts
+
+extrude.a:
+	make -C src extrude.a
 
 clean:
 	rm -f ./*.o

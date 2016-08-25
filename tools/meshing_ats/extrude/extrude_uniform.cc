@@ -25,7 +25,7 @@ int main() {
 
   int nsnodes = m.coords.size();
   
-  Mesh3D m3(m, nsoil_lay + nbedrock_lay);
+  Mesh3D m3(&m, nsoil_lay + nbedrock_lay);
   for (int ilay=0; ilay!=nsoil_lay; ++ilay) {
     m3.extrude(ref_soil_mlay_dz[ilay], soil_type);
   }
