@@ -27,10 +27,10 @@ int main() {
   
   Mesh3D m3(m, nsoil_lay + nbedrock_lay);
   for (int ilay=0; ilay!=nsoil_lay; ++ilay) {
-    m3.extrude(ref_soil_mlay_dz, soil_type);
+    m3.extrude(ref_soil_mlay_dz[ilay], soil_type);
   }
   for (int ilay=0; ilay!=nbedrock_lay; ++ilay) {
-    m3.extrude(ref_bedrock_mlay_dz, bedrock_type);
+    m3.extrude(ref_bedrock_mlay_dz[ilay], bedrock_type);
   }
   
   m3.finish_sets();
