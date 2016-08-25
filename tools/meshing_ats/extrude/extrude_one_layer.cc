@@ -7,7 +7,7 @@ int main() {
   using namespace Amanzi::AmanziGeometry;
 
   std::string mesh_in = "Mesh.txt";
-  std::string mesh_out = "Mesh3D.exo";
+  std::string mesh_out = "Mesh3D_OneLayer.exo";
   
   std::cout << "Extruding: " << mesh_in << " and writing to: " << mesh_out << std::endl;
 

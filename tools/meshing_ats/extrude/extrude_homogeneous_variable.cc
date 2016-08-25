@@ -7,7 +7,7 @@ int main() {
   using namespace Amanzi::AmanziGeometry;
 
   std::string mesh_in = "Mesh.txt";
-  std::string mesh_out = "Mesh3D.exo";
+  std::string mesh_out = "Mesh3D_HomogenousVariableSoil.exo";
   
   std::vector<double> ref_soil_mlay_dz = {1.0e-2, 2.0e-2, 5.0e-2, 1.2e-1, 2.5e-1, 5.0e-1, 1.0e1};
   std::vector<double> ref_bedrock_mlay_dz = {1.0e1, 1.0e1};
