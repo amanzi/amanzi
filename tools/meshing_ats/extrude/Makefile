@@ -1,5 +1,8 @@
-CXX_FLAGS = -g -O2 -DENABLE_DBC
-#CXX_FLAGS = -O3
+ifeq (${ATS_BUILD_TYPE},Debug)
+	CXX_FLAGS = -g -O2 -DENABLE_DBC
+else
+	CXX_FLAGS = -g -O3
+endif
 
 CXX_FLAGS +=  -std=c++11
 
@@ -8,26 +11,19 @@ TPLS_INCLUDE = ${AMANZI_TPLS_DIR}/include
 TPLS_LIBS = -lexodus -lnetcdf -lhdf5 -lhdf5_hl -lz
 
 
-SRCS = dbc.cc exceptions.cc Mesh.cc readMesh2D.cc writeMesh3D.cc main.cc
-
-OBJS=$(SRCS:%.cc=%.o)
-DEPS=$(OBJS:%.o=%.d)
-
-extrude: $(DEPS) $(OBJS)
-	mpicxx -std=c++11 ${CXX_FLAGS} -L${TPLS_LIB} ${TPLS_LIBS} -o extrude ${OBJS}
+extrude: main.o
+	make -C src
+	mpicxx -std=c++11 ${CXX_FLAGS} -L${TPLS_LIB} ${TPLS_LIBS} src/extrude.a main.o -o extrude
 
 clean:
 	rm -f ./*.o
-	rm -f extrude
+	rm -f extrude_*
 	rm -f .depend
-
-%.d: %.cc
-	mpicxx -std=c++11 $(CXX_FLAGS) -I $(TPLS_INCLUDE) -MM -MF $(patsubst %.o,%.d,$@) -o $@ $<
+	rm -f ./*.d
 
 %.o: %.cc
-	mpicxx -std=c++11 $(CXX_FLAGS) -I $(TPLS_INCLUDE) -c $< -o $@
+	mpicxx -std=c++11 $(CXX_FLAGS) -I src -I $(TPLS_INCLUDE) -c $< -o $@
 
--include $(DEPS)
 
 
 
