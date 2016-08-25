@@ -40,6 +40,8 @@ struct Mesh2D {
   std::vector<int> face_cell_when_created;
 
   int nnodes, ncells, nfaces;
+
+  Point datum;
 };
 
 
@@ -93,7 +95,7 @@ struct Mesh3D {
 
   int current_layer;
   int total_layers;
-
+  Point datum;
 };
 
 }

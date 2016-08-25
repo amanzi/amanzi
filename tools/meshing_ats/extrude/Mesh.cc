@@ -9,8 +9,11 @@ Mesh2D::Mesh2D(std::vector<Point>&& coords_,
                std::vector<std::vector<int> >&& cell_sets_) :
     coords(std::move(coords_)),
     cell2node(std::move(cell2node_)),
-    cell_sets(std::move(cell_sets_))
+    cell_sets(std::move(cell_sets_)),
+    datum(2)
 {
+  double area_eps = 1.e-6;
+  
   for (auto& set : cell_sets) {
     ASSERT(set.size() == cell2node.size());
   }
@@ -25,6 +28,13 @@ Mesh2D::Mesh2D(std::vector<Point>&& coords_,
     Point cross = v1^v2;
     if (cross[0] < 0) {
       std::reverse(c.begin(), c.end());
+    }
+    if (std::abs(cross[0]) < area_eps) {
+      std::cout << "Zero area triangle:" << std::endl
+                << " " << coords[c[0]] << std::endl
+                << " " << coords[c[1]] << std::endl
+                << " " << coords[c[2]] << std::endl;
+      ASSERT(false);
     }
   }
 
@@ -54,6 +64,19 @@ Mesh2D::Mesh2D(std::vector<Point>&& coords_,
   }
   boundary_faces = std::make_pair(std::move(boundary_c),
           std::move(boundary_f));
+
+  // normalize the nodes
+  int64_t x=0., y=0.;
+  for (auto& p : coords) {
+    x += p[0];
+    y += p[1];
+  }
+  datum[0] = x / coords.size();
+  datum[1] = y / coords.size();
+  for (auto& p : coords) {
+    p[0] -= datum[0];
+    p[1] -= datum[1];
+  }
 }
 
 int
@@ -85,7 +108,9 @@ Mesh2D::face_constructor(const std::vector<int>& nodes,
 Mesh3D::Mesh3D(const Mesh2D& m_, int n_layers) :
     m(m_),
     current_layer(0),
-    total_layers(n_layers) {
+    total_layers(n_layers),
+    datum(m_.datum)
+{
 
   // reserve/allocate space
   Point d(3);
@@ -169,6 +194,12 @@ Mesh3D::extrude(const std::vector<double>& dz,
           node_structure(m.cell2node[c][1],current_layer+1),
           node_structure(m.cell2node[c][2],current_layer+1)
         };
+    if (current_layer+1 == total_layers) {
+      nodes = { node_structure(m.cell2node[c][2],current_layer+1),
+          node_structure(m.cell2node[c][1],current_layer+1),
+          node_structure(m.cell2node[c][0],current_layer+1)
+        };
+    }
     face2node.emplace_back(std::move(nodes));
   }
 

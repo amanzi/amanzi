@@ -60,19 +60,14 @@ readMesh2D_text(const std::string& filename,
   std::vector<std::vector<int> > sets(1);
   sets[0] = std::move(veg_types);
 
-  // for (auto& p : fac.points) {
-  //   std::cout << "p = " << p[0] << ",\t\t" << p[1] << ",\t\t" << p[2] << std::endl;
-  // }
-
   Mesh2D m(std::move(fac.points), std::move(conn), std::move(sets));
 
   std::cout << "Read 2D Mesh:" << std::endl
-            << "  ncells = " << m.cell2face.size() << std::endl
-            << "  nfaces = " << m.face2node.size() << std::endl
-            << "  nnodes = " << m.coords.size() << std::endl
+            << "    ncells = " << m.cell2face.size() << std::endl
+            << "    nfaces = " << m.face2node.size() << std::endl
+            << "    nnodes = " << m.coords.size() << std::endl
+            << "  Normalized to: " << m.datum << std::endl
             << std::endl;
-
-      
 
   return m;
 }
