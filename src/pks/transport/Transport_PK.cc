@@ -400,7 +400,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
         for (Teuchos::ParameterList::ConstIterator it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
           std::string specname = it1->first;
           Teuchos::ParameterList& spec = src_list.sublist(specname);
-          Teuchos::RCP<TransportDomainFunction> src = factory.Create(spec, "well", AmanziMesh::CELL, Kxy);
+          Teuchos::RCP<TransportDomainFunction> src = factory.Create(spec, AmanziMesh::CELL, Kxy);
 
           src->tcc_names().push_back(name);
           src->tcc_index().push_back(FindComponentNumber(name));
@@ -526,14 +526,14 @@ double Transport_PK::StableTimeStep()
   // We assume one well per cell (FIXME).
   double t_old = S_->intermediate_time();
   for (int m = 0; m < srcs_.size(); m++) {
-    srcs_[m]->Compute(t_old, t_old); 
+    if (srcs_[m]->keyword() == "producer") {
+      srcs_[m]->Compute(t_old, t_old); 
 
-    for (TransportDomainFunction::Iterator it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
-      int c = it->first;
-      WhetStone::DenseVector& values = it->second;
+      for (TransportDomainFunction::Iterator it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
+        int c = it->first;
+        WhetStone::DenseVector& values = it->second;
 
-      for (int i = 0; i < values.NumRows(); ++i) {
-        if (values(i) < 0.0) {
+        for (int i = 0; i < values.NumRows(); ++i) {
           double value = fabs(values(i)) * mesh_->cell_volume(c);
           total_outflux[c] = std::max(total_outflux[c], value);
         }
@@ -1290,7 +1290,7 @@ void Transport_PK::ComputeSources_(
         if (num_vectors == 1) imap = 0;
 
         double value = mesh_->cell_volume(c) * values(k);
-        if (value < 0) {
+        if (srcs_[m]->keyword() == "producer") {
           // correction for an extraction well
           value *= tcc_prev[imap][c];
         } else {

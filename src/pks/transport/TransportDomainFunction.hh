@@ -41,7 +41,10 @@ class TransportDomainFunction {
   virtual std::string name() const { return "undefined"; } 
 
   // access
+  // -- volume of the regions
   double domain_volume() { return domain_volume_; }
+  // -- nick-name of the function
+  std::string keyword() { return keyword_; }
 
   std::vector<std::string>& tcc_names() { return tcc_names_; }
   std::vector<int>& tcc_index() { return tcc_index_; }
@@ -55,6 +58,7 @@ class TransportDomainFunction {
  protected:
   double domain_volume_;
   std::map<int, WhetStone::DenseVector> value_;  // tcc values on boundary faces
+  std::string keyword_;
 
   std::vector<std::string> tcc_names_;  // list of component names
   std::vector<int> tcc_index_;  // index of component in the global list

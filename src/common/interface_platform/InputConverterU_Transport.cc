@@ -7,6 +7,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Markus Berndt
+           Erin Barker
            Jeffrey Johnson
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
@@ -727,8 +728,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
           if (tmp_list.size() != same_list.size())
             ThrowErrorIllformed_(srcname, "liquid_component", text);
 
-          element = static_cast<DOMElement*>(tmp_list[j]);
-          double val = GetAttributeValueD_(element, "value");
+          double val = GetAttributeValueD_(tmp_list[j], "value");
           if (val > 0) {
             tp_values[t0] *= val / solute_molar_mass_[solute_name];
           } else {
@@ -746,7 +746,19 @@ void InputConverterU::TranslateTransportSourcesGroup_(
         forms.push_back(tp_forms[it->first]);
       }
       forms.pop_back();
-     
+
+      // producer or injector?
+      int well(0);
+      for (int j = 0; j < values.size(); ++j) {
+        if (values[j] < 0) well |= 1;
+        if (values[j] > 0) well |= 2;
+      }
+      if (well == 3) {
+        Errors::Message msg;
+        msg << "Source \"" << srcname << "\" changes sign.\n";
+        Exceptions::amanzi_throw(msg);
+      }
+
       // save in the XML files  
       Teuchos::ParameterList& src_list = out_list.sublist("concentration");
       Teuchos::ParameterList& src = src_list.sublist(solute_name).sublist(srcname);
@@ -754,7 +766,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
       src.set<std::string>("spatial distribution method", weight);
       src.set<bool>("use volume fractions", WeightVolumeSubmodel_(regions));
 
-      Teuchos::ParameterList& srcfn = src.sublist("well");
+      Teuchos::ParameterList& srcfn = src.sublist((well == 1) ? "producer" : "injector");
       if (times.size() == 1) {
         srcfn.sublist("function-constant").set<double>("value", values[0]);
       } else {

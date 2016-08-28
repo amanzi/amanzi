@@ -44,14 +44,6 @@
 #include "TransportDefs.hh"
 #include "TransportDomainFunction.hh"
 
-/* ******************************************************************
-The transport PK receives a reduced (optional) copy of a physical 
-state at time n and returns a different state at time n+1. 
-
-Unmodified physical quantaties in the returned state are the smart 
-pointers to the original variables.
-****************************************************************** */
-
 namespace Amanzi {
 namespace Transport {
 

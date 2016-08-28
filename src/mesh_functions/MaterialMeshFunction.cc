@@ -54,7 +54,7 @@ void MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
       }
     } else {
       Errors::Message msg;
-      msg << "Unknown region in processing mesh function spec: \"" << *region << "\"";
+      msg << "Unknown region in processing mesh function spec: \"" << *region << "\", kind=" << kind;
       Exceptions::amanzi_throw(msg);
     }
   }

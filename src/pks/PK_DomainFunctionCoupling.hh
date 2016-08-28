@@ -46,6 +46,8 @@ class PK_DomainFunctionCoupling : public FunctionBase {
 
  protected:
   using FunctionBase::value_;
+  using FunctionBase::keyword_;
+
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<const State> S_;
 
@@ -66,11 +68,13 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
     const Teuchos::ParameterList& plist, const std::string& keyword,
     AmanziMesh::Entity_kind region_kind)
 {
+  keyword_ = keyword;
+
   if (plist.isParameter("submodel")) {
     submodel_ = plist.get<std::string>("submodel");
   } else {
     Errors::Message m;
-    m << "domain coupling requires submodel parameter";
+    m << "Domain coupling requires parameter \"submodel\"";
     Exceptions::amanzi_throw(m);
   }
 
