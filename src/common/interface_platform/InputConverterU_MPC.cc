@@ -56,7 +56,6 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   // parse defaults of execution_controls 
   node_list = doc_->getElementsByTagName(mm.transcode("execution_controls"));
   node = GetUniqueElementByTagsString_(node_list->item(0), "execution_control_defaults", flag);
-  element = static_cast<DOMElement*>(node);
 
   int max_cycles, max_cycles_steady;
   double t0, t1, dt0, t0_steady, t1_steady, dt0_steady, dt_max, dt_max_steady;
@@ -64,12 +63,12 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   bool flag_steady(false); 
   std::string mode_d, method_d, dt0_d, dt_cut_d, dt_inc_d, filename, dt_max_d;
 
-  mode_d = GetAttributeValueS_(element, "mode", TYPE_NONE, false, "");
-  method_d = GetAttributeValueS_(element, "method", TYPE_NONE, false, "");
-  dt0_d = GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, "0.0");
-  dt_max_d = GetAttributeValueS_(element, "max_dt", TYPE_TIME, false, "1.0e+99");
-  dt_cut_d = GetAttributeValueS_(element, "reduction_factor", TYPE_TIME, false, "0.8");
-  dt_inc_d = GetAttributeValueS_(element, "increase_factor", TYPE_TIME, false, "1.2");
+  mode_d = GetAttributeValueS_(node, "mode", TYPE_NONE, false, "");
+  method_d = GetAttributeValueS_(node, "method", TYPE_NONE, false, "");
+  dt0_d = GetAttributeValueS_(node, "init_dt", TYPE_TIME, false, "0.0");
+  dt_max_d = GetAttributeValueS_(node, "max_dt", TYPE_TIME, false, "1.0e+99");
+  dt_cut_d = GetAttributeValueS_(node, "reduction_factor", TYPE_TIME, false, "0.8");
+  dt_inc_d = GetAttributeValueS_(node, "increase_factor", TYPE_TIME, false, "1.2");
 
   // parse execution_control
   std::string unit;
@@ -82,19 +81,18 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-    element = static_cast<DOMElement*>(inode);
 
-    t0 = GetAttributeValueD_(element, "start", TYPE_TIME, "s");
-    t1 = GetAttributeValueD_(element, "end", TYPE_TIME, "s", false, t0 - 10.0);
-    dt0 = ConvertUnits_(GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, dt0_d), unit);
-    dt_max = ConvertUnits_(GetAttributeValueS_(element, "max_dt", TYPE_TIME, false, dt_max_d), unit);
-    max_cycles = GetAttributeValueL_(element, "max_cycles", TYPE_NUMERICAL, false, -1);
-    std::string mode = GetAttributeValueS_(element, "mode", TYPE_NONE, false, mode_d);
+    t0 = GetAttributeValueD_(inode, "start", TYPE_TIME, "s");
+    t1 = GetAttributeValueD_(inode, "end", TYPE_TIME, "s", false, t0 - 10.0);
+    dt0 = ConvertUnits_(GetAttributeValueS_(inode, "init_dt", TYPE_TIME, false, dt0_d), unit);
+    dt_max = ConvertUnits_(GetAttributeValueS_(inode, "max_dt", TYPE_TIME, false, dt_max_d), unit);
+    max_cycles = GetAttributeValueL_(inode, "max_cycles", TYPE_NUMERICAL, false, -1);
+    std::string mode = GetAttributeValueS_(inode, "mode", TYPE_NONE, false, mode_d);
 
     dt_cut_[mode] = ConvertUnits_(GetAttributeValueS_(
-        element, "reduction_factor", TYPE_TIME, false, dt_cut_d), unit);
+        inode, "reduction_factor", TYPE_TIME, false, dt_cut_d), unit);
     dt_inc_[mode] = ConvertUnits_(GetAttributeValueS_(
-        element, "increase_factor", TYPE_TIME, false, dt_inc_d), unit);
+        inode, "increase_factor", TYPE_TIME, false, dt_inc_d), unit);
 
     if (mode == "steady") {
       t0_steady = t0;
@@ -115,11 +113,11 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
       tp_dt_max[t0] = dt_max;
       tp_max_cycles[t0] = max_cycles;
 
-      filename = GetAttributeValueS_(element, "restart", TYPE_NONE, false, "");
+      filename = GetAttributeValueS_(inode, "restart", TYPE_NONE, false, "");
     }
 
     if (init_filename_.size() == 0)
-        init_filename_ = GetAttributeValueS_(element, "initialize", TYPE_NONE, false, "");
+        init_filename_ = GetAttributeValueS_(inode, "initialize", TYPE_NONE, false, "");
   }
 
   // populate optional end-times 
@@ -163,15 +161,14 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     std::string state = GetAttributeValueS_(static_cast<DOMElement*>(inode), "state");
     pk_state[tagname] = (strcmp(state.c_str(), "on") == 0);
 
-    element = static_cast<DOMElement*>(inode);
     if (strcmp(tagname, "flow") == 0) {
-      flow_model_ = GetAttributeValueS_(element, "model", "richards, saturated, constant");
+      flow_model_ = GetAttributeValueS_(inode, "model", "richards, saturated, constant");
       pk_model_["flow"] = (flow_model_ == "richards") ? "richards" : "darcy";
       pk_master_["flow"] = true;
       if (flow_model_ != "constant") transient_model += 4 * pk_state[tagname];
 
     } else if (strcmp(tagname, "chemistry") == 0) {
-      std::string model = GetAttributeValueS_(element, "engine", TYPE_NONE, false, "none");
+      std::string model = GetAttributeValueS_(inode, "engine", TYPE_NONE, false, "none");
       pk_model_["chemistry"] = model;
       transient_model += pk_state[tagname];
 
@@ -327,19 +324,18 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
   bool flag;
   node_list = doc_->getElementsByTagName(mm.transcode("execution_controls"));
   node = GetUniqueElementByTagsString_(node_list->item(0), "execution_control_defaults", flag);
-  element = static_cast<DOMElement*>(node);
 
   double t0, t1, dt0, dt_max;
   char *method, *tagname;
   bool flag_steady(false); 
   std::string method_d, dt0_d, dt_max_d, mode_d, dt_cut_d, dt_inc_d, filename;
 
-  method_d = GetAttributeValueS_(element, "method", TYPE_NONE, false, "");
-  dt0_d = GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, "0.0");
-  dt_max_d = GetAttributeValueS_(element, "max_dt", TYPE_TIME, false, "1.0e+99");
-  mode_d = GetAttributeValueS_(element, "mode", TYPE_NONE, false, "");
-  dt_cut_d = GetAttributeValueS_(element, "reduction_factor", TYPE_TIME, false, "0.8");
-  dt_inc_d = GetAttributeValueS_(element, "increase_factor", TYPE_TIME, false, "1.2");
+  method_d = GetAttributeValueS_(node, "method", TYPE_NONE, false, "");
+  dt0_d = GetAttributeValueS_(node, "init_dt", TYPE_TIME, false, "0.0");
+  dt_max_d = GetAttributeValueS_(node, "max_dt", TYPE_TIME, false, "1.0e+99");
+  mode_d = GetAttributeValueS_(node, "mode", TYPE_NONE, false, "");
+  dt_cut_d = GetAttributeValueS_(node, "reduction_factor", TYPE_TIME, false, "0.8");
+  dt_inc_d = GetAttributeValueS_(node, "increase_factor", TYPE_TIME, false, "1.2");
 
   // Logic behind attribute "mode" in the new PK struncture is not clear yet, 
   // so that we set up some defaults.
@@ -359,27 +355,26 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-    element = static_cast<DOMElement*>(inode);
 
     tagname = mm.transcode(inode->getNodeName());
     if (strcmp(tagname, "execution_control") == 0) {
-      t0 = GetAttributeValueD_(element, "start", TYPE_TIME, "s");
-      t1 = GetAttributeValueD_(element, "end", TYPE_TIME, "s");
-      dt0 = ConvertUnits_(GetAttributeValueS_(element, "init_dt", TYPE_TIME, false, dt0_d), unit);
-      dt_max = ConvertUnits_(GetAttributeValueS_(element, "max_dt", TYPE_TIME, false, dt_max_d), unit);
-      std::string mode = GetAttributeValueS_(element, "mode", TYPE_NONE, false, mode_d);
+      t0 = GetAttributeValueD_(inode, "start", TYPE_TIME, "s");
+      t1 = GetAttributeValueD_(inode, "end", TYPE_TIME, "s");
+      dt0 = ConvertUnits_(GetAttributeValueS_(inode, "init_dt", TYPE_TIME, false, dt0_d), unit);
+      dt_max = ConvertUnits_(GetAttributeValueS_(inode, "max_dt", TYPE_TIME, false, dt_max_d), unit);
+      std::string mode = GetAttributeValueS_(inode, "mode", TYPE_NONE, false, mode_d);
 
       tp_t0[mode] = t0;
       tp_t1[mode] = t1;
       tp_dt0[mode] = dt0;
       tp_max_dt[mode] = dt_max;
-      tp_max_cycles[mode] = GetAttributeValueL_(element, "max_cycles", TYPE_NUMERICAL, false, -1);
+      tp_max_cycles[mode] = GetAttributeValueL_(inode, "max_cycles", TYPE_NUMERICAL, false, -1);
       dt_cut_[mode] = ConvertUnits_(GetAttributeValueS_(
-          element, "reduction_factor", TYPE_TIME, false, dt_cut_d), unit);
+          inode, "reduction_factor", TYPE_TIME, false, dt_cut_d), unit);
       dt_inc_[mode] = ConvertUnits_(GetAttributeValueS_(
-          element, "increase_factor", TYPE_TIME, false, dt_inc_d), unit);
+          inode, "increase_factor", TYPE_TIME, false, dt_inc_d), unit);
 
-      filename = GetAttributeValueS_(element, "restart", TYPE_NONE, false, "");
+      filename = GetAttributeValueS_(inode, "restart", TYPE_NONE, false, "");
     }
   }
 
@@ -410,30 +405,29 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       if (jnode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
       tagname = mm.transcode(jnode->getNodeName());
 
-      element = static_cast<DOMElement*>(jnode);
       if (strcmp(tagname, "flow") == 0) {
-        flow_model_ = GetAttributeValueS_(element, "model", "richards, saturated, constant");
+        flow_model_ = GetAttributeValueS_(jnode, "model", "richards, saturated, constant");
         pk_model_["flow"] = (flow_model_ == "richards") ? "richards" : "darcy";
         pk_master_["flow"] = true;
-        state = GetAttributeValueS_(element, "state");
+        state = GetAttributeValueS_(jnode, "state");
         pk_state["flow"] = (strcmp(state.c_str(), "on") == 0);
         transient_model += 4;
       
       } else if (strcmp(tagname, "chemistry") == 0) {
-        model = GetAttributeValueS_(element, "engine");
+        model = GetAttributeValueS_(jnode, "engine");
         pk_model_["chemistry"] = model;
-        GetAttributeValueS_(element, "state", "on");
+        GetAttributeValueS_(jnode, "state", "on");
         transient_model += 1;
 
       } else if (strcmp(tagname, "transport") == 0) {
-        GetAttributeValueS_(element, "state", "on");
+        GetAttributeValueS_(jnode, "state", "on");
         transient_model += 2;
 
       } else if (strcmp(tagname, "energy") == 0) {
-        model = GetAttributeValueS_(element, "model");
+        model = GetAttributeValueS_(jnode, "model");
         pk_model_["energy"] = model;
         pk_master_["energy"] = true;
-        GetAttributeValueS_(element, "state", "on");
+        GetAttributeValueS_(jnode, "state", "on");
         transient_model += 8;
       } 
     }
@@ -566,19 +560,17 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   double t, dt_init_d, dt_max_d;
   std::map<double, double> init_dt, max_dt;
 
-  element = static_cast<DOMElement*>(node);
-  dt_init_d = GetAttributeValueD_(element, "init_dt", TYPE_TIME, "s", false, RESTART_TIMESTEP);
-  dt_max_d = GetAttributeValueD_(element, "max_dt", TYPE_TIME, "s", false, MAXIMUM_TIMESTEP);
+  dt_init_d = GetAttributeValueD_(node, "init_dt", TYPE_TIME, "s", false, RESTART_TIMESTEP);
+  dt_max_d = GetAttributeValueD_(node, "max_dt", TYPE_TIME, "s", false, MAXIMUM_TIMESTEP);
 
   children = doc_->getElementsByTagName(mm.transcode("execution_control"));
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-    element = static_cast<DOMElement*>(inode);
 
-    t = GetAttributeValueD_(element, "start", TYPE_TIME, "s");
-    double dt_init = GetAttributeValueD_(element, "init_dt", TYPE_TIME, "s", false, dt_init_d);
-    double dt_max = GetAttributeValueD_(element, "max_dt", TYPE_TIME, "s", false, dt_max_d);
+    t = GetAttributeValueD_(inode, "start", TYPE_TIME, "s");
+    double dt_init = GetAttributeValueD_(inode, "init_dt", TYPE_TIME, "s", false, dt_init_d);
+    double dt_max = GetAttributeValueD_(inode, "max_dt", TYPE_TIME, "s", false, dt_max_d);
     init_dt[t] = dt_init;
     max_dt[t] = dt_max;
   }

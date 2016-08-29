@@ -1395,6 +1395,11 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     Errors::Message msg("OperatorDiffusionMFD: \"true Jacobian\" not supported -- maybe you mean \"approximate Jacobian\"?");
     Exceptions::amanzi_throw(msg);
   } else if (jacobian == "approximate Jacobian") {
+    // cannot do jacobian terms without cells
+    if (!(schema_prec_dofs & OPERATOR_SCHEMA_DOFS_CELL)) {
+      Errors::Message msg("OperatorDiffusionMFD: incompatible options.  \"approximate Jacobian\" terms require CELL quantities, and the requested preconditioner schema does not include CELL.");
+      Exceptions::amanzi_throw(msg);
+    }
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
     // create a local op
     jac_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
@@ -1403,7 +1408,7 @@ void OperatorDiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     global_op_->OpPushBack(jac_op_);
   } else {
     Errors::Message msg;
-    msg << "OperatorDiffusionFV: invalid parameter \"" << jacobian << "\" for option \"Newton correction\" -- valid are: \"none\", \"approximate Jacobian\"";
+    msg << "OperatorDiffusionMFD: invalid parameter \"" << jacobian << "\" for option \"Newton correction\" -- valid are: \"none\", \"approximate Jacobian\"";
     Exceptions::amanzi_throw(msg);
   }
 

@@ -406,11 +406,11 @@ void State::WriteDependencyGraph() const {
 void State::WriteStatistics(Teuchos::RCP<VerboseObject>& vo) const {
   if (vo->os_OK(Teuchos::VERB_HIGH)) {
     Teuchos::OSTab tab = vo->getOSTab();
-    *vo->os() << "\nField                          Min/Max/Avg" << std::endl;
+    *vo->os() << "\nField                               Min/Max/Avg" << std::endl;
 
     for (FieldMap::const_iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
       std::string name(f_it->first);
-      name.resize(30, '.');
+      name.resize(35, '.');
 
       double vmin, vmax, vavg;
       if (f_it->second->type() == COMPOSITE_VECTOR_FIELD) {

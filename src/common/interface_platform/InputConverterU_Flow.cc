@@ -44,11 +44,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
 
   MemoryManager mm;
   DOMNode* node;
-  DOMElement* element;
 
   // set up default values for some expert parameters
   double atm_pres(ATMOSPHERIC_PRESSURE);
-  std::string rel_perm("upwind-amanzi"), rel_perm_out;
+  std::string rel_perm("upwind-darcy_velocity"), rel_perm_out;
   std::string update_upwind("every timestep");
 
   // process expert parameters
@@ -110,8 +109,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
 
   std::string nonlinear_solver("nka");
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver", flag);
-  element = static_cast<DOMElement*>(node);
-  if (flag) nonlinear_solver = GetAttributeValueS_(element, "name", TYPE_NONE, false, "nka"); 
+  if (flag) nonlinear_solver = GetAttributeValueS_(node, "name", TYPE_NONE, false, "nka"); 
 
   bool modify_correction(false);
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
@@ -208,12 +206,12 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_()
     DOMNode* inode = children->item(i); 
 
     node = GetUniqueElementByTagsString_(inode, "cap_pressure", flag);
-    model = GetAttributeValueS_(static_cast<DOMElement*>(node), "model", "van_genuchten, brooks_corey");
+    model = GetAttributeValueS_(node, "model", "van_genuchten, brooks_corey");
     DOMNode* nnode = GetUniqueElementByTagsString_(node, "parameters", flag);
     DOMElement* element_cp = static_cast<DOMElement*>(nnode);
 
     node = GetUniqueElementByTagsString_(inode, "rel_perm", flag);
-    rel_perm = GetAttributeValueS_(static_cast<DOMElement*>(node), "model", "mualem, burdine");
+    rel_perm = GetAttributeValueS_(node, "model", "mualem, burdine");
     DOMNode* mnode = GetUniqueElementByTagsString_(node, "exp", flag);
     DOMElement* element_rp = (flag) ? static_cast<DOMElement*>(mnode) : NULL;
 
@@ -337,9 +335,8 @@ Teuchos::ParameterList InputConverterU::TranslatePOM_()
 
     // get optional complessibility
     node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
-    element = static_cast<DOMElement*>(node);
-    double phi = GetAttributeValueD_(element, "value");
-    double compres = GetAttributeValueD_(element, "compressibility", TYPE_NUMERICAL, "Pa^-1", false, 0.0);
+    double phi = GetAttributeValueD_(node, "value");
+    double compres = GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, "Pa^-1", false, 0.0);
 
     for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
       std::stringstream ss;
@@ -401,12 +398,12 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
     node = GetUniqueElementByTagsString_(inode, "multiscale_structure, cap_pressure", flag);
     if (!flag) continue;
 
-    model = GetAttributeValueS_(static_cast<DOMElement*>(node), "model", "van_genuchten, brooks_corey");
+    model = GetAttributeValueS_(node, "model", "van_genuchten, brooks_corey");
     DOMNode* nnode = GetUniqueElementByTagsString_(node, "parameters", flag);
     DOMElement* element_cp = static_cast<DOMElement*>(nnode);
 
     node = GetUniqueElementByTagsString_(inode, "multiscale_structure, rel_perm", flag);
-    rel_perm = GetAttributeValueS_(static_cast<DOMElement*>(node), "model", "mualem, burdine");
+    rel_perm = GetAttributeValueS_(node, "model", "mualem, burdine");
     DOMNode* mnode = GetUniqueElementByTagsString_(node, "exp", flag);
     DOMElement* element_rp = (flag) ? static_cast<DOMElement*>(mnode) : NULL;
 
@@ -430,9 +427,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
 
     // -- porosity models
     node = GetUniqueElementByTagsString_(inode, "multiscale_structure, porosity", flag);
-    element = static_cast<DOMElement*>(node);
-    double phi = GetAttributeValueD_(element, "value");
-    double compres = GetAttributeValueD_(element, "compressibility", TYPE_NUMERICAL, "Pa^-1", false, 0.0);
+    double phi = GetAttributeValueD_(node, "value");
+    double compres = GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, "Pa^-1", false, 0.0);
 
     for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
       std::stringstream ss;
@@ -584,15 +580,13 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
     std::vector<std::string> forms;
 
     if (space_bc) {
-      element = static_cast<DOMElement*>(knode);
-      data.push_back(GetAttributeValueD_(element, "amplitude", TYPE_NUMERICAL, "kg/m^2/s"));
-      data_tmp = GetAttributeVectorD_(element, "center", "m");
+      data.push_back(GetAttributeValueD_(knode, "amplitude", TYPE_NUMERICAL, "kg/m^2/s"));
+      data_tmp = GetAttributeVectorD_(knode, "center", "m");
       data.insert(data.end(), data_tmp.begin(), data_tmp.end());
-      data.push_back(GetAttributeValueD_(element, "standard_deviation", TYPE_NUMERICAL, "m"));
+      data.push_back(GetAttributeValueD_(knode, "standard_deviation", TYPE_NUMERICAL, "m"));
 
       if (time_bc) {
-        element = static_cast<DOMElement*>(lnode);
-        data[0] *= GetAttributeValueD_(element, "data", TYPE_NUMERICAL, "");
+        data[0] *= GetAttributeValueD_(lnode, "data", TYPE_NUMERICAL, "");
       }
     } else if (global_bc) {
       std::string unit_grad = unit + "/m";

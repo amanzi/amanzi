@@ -22,21 +22,6 @@ build_whitespace_string(mstk_cflags ${mstk_cflags_list})
 set(mstk_ldflags_list -L${TPL_INSTALL_PREFIX}/lib ${MPI_C_LIBRARIES})
 build_whitespace_string(mstk_ldflags ${mstk_ldflags_list})
 
-# --- Set the name of the patch
-set(MSTK_patch_file mstk-2.25-missing-stddef.patch)
-# --- Configure the bash patch script
-set(MSTK_sh_patch ${MSTK_prefix_dir}/mstk-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/mstk-patch-step.sh.in
-               ${MSTK_sh_patch}
-               @ONLY)
-# --- Configure the CMake patch step
-set(MSTK_cmake_patch ${MSTK_prefix_dir}/mstk-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/mstk-patch-step.cmake.in
-               ${MSTK_cmake_patch}
-               @ONLY)
-# --- Set the patch command
-set(MSTK_PATCH_COMMAND ${CMAKE_COMMAND} -P ${MSTK_cmake_patch})     
-
 message(STATUS "JDM ----> PREFER_STATIC_LIBRARIES = ${PREFER_STATIC_LIBRARIES}")
 
 # The CMake cache args

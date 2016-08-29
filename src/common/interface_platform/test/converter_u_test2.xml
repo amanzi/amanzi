@@ -144,6 +144,9 @@
     <region name="Recharge_Boundary_EastOfCribs">
       <box high_coordinates="216.0, Y1" low_coordinates="148.0, Y1" />
     </region>
+    <region name="ColorRegion">
+      <region_file name="color.txt" type="color" entity="cell" label="1" />
+    </region>
     <box name="Crib_17" high_coordinates="80.0, Y1" low_coordinates="72.0, Y1" />
     <box name="Crib_18" high_coordinates="148.0, Y1" low_coordinates="136.0, Y1" />
     <box name="Well" high_coordinates="112.0, 60.0" low_coordinates="108.0, 40.0" />

@@ -51,6 +51,7 @@ class PK_DomainFunctionSimple : public FunctionBase,
 
  protected:
   using FunctionBase::value_;
+  using FunctionBase::keyword_;
 
  private:
   std::string submodel_;
@@ -65,6 +66,8 @@ template <class FunctionBase>
 void PK_DomainFunctionSimple<FunctionBase>::Init(
     const Teuchos::ParameterList& plist, const std::string& keyword)
 {
+  keyword_ = keyword;
+
   submodel_ = "rate";
   if (plist.isParameter("submodel"))
     submodel_ = plist.get<std::string>("submodel");

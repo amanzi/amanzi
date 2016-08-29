@@ -195,9 +195,8 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           DOMNode* knode = kids->item(k);
           if (knode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-          DOMElement* element = static_cast<DOMElement*>(knode);
-          std::string name = GetAttributeValueS_(element, "name");
-          std::string regs = GetAttributeValueS_(element, "regions");
+          std::string name = GetAttributeValueS_(knode, "name");
+          std::string regs = GetAttributeValueS_(knode, "regions");
           std::vector<std::string> regions = CharToStrings_(regs.c_str());
           visPL.sublist("write regions").set<Teuchos::Array<std::string> >(name, regions);
         }
@@ -281,17 +280,16 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
 
       } else if (strcmp(tagname, "units") == 0) {
         std::string unit;
-        DOMElement* element = static_cast<DOMElement*>(inode);
-        unit = GetAttributeValueS_(element, "time", TYPE_NONE, false, units_.system().time);
+        unit = GetAttributeValueS_(inode, "time", TYPE_NONE, false, units_.system().time);
         obsPL.set<std::string>("time unit", unit);
 
-        unit = GetAttributeValueS_(element, "mass", TYPE_NONE, false, units_.system().mass);
+        unit = GetAttributeValueS_(inode, "mass", TYPE_NONE, false, units_.system().mass);
         obsPL.set<std::string>("mass unit", unit);
 
-        unit = GetAttributeValueS_(element, "length", TYPE_NONE, false, units_.system().length);
+        unit = GetAttributeValueS_(inode, "length", TYPE_NONE, false, units_.system().length);
         obsPL.set<std::string>("length unit", unit);
 
-        unit = GetAttributeValueS_(element, "concentration", TYPE_NONE, false, units_.system().concentration);
+        unit = GetAttributeValueS_(inode, "concentration", TYPE_NONE, false, units_.system().concentration);
         obsPL.set<std::string>("concentration unit", unit);
 
       } else if (strcmp(tagname, "liquid_phase") == 0) {

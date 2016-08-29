@@ -158,7 +158,7 @@ void InputConverter::ParseVersion_()
   
   DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("amanzi_input"));
   if (node_list->getLength() > 0) {
-    std::string version = GetAttributeValueS_(static_cast<DOMElement*>(node_list->item(0)), "version");
+    std::string version = GetAttributeValueS_(node_list->item(0), "version");
     
     int major, minor, micro;
     
@@ -540,8 +540,16 @@ double InputConverter::GetAttributeValueD_(
     }
 
     // process constants and known units
+    // -- extract units
     found_type = GetConstantType_(text, parsed);
     val = ConvertUnits_(parsed, unit_in);
+
+    // -- replace empty input unit by the default unit 
+    if (unit_in == "") {
+      bool flag;
+      unit_in = units_.ConvertUnitS(unit, units_.system());
+      val = units_.ConvertUnitD(val, unit_in, "SI", -1.0, flag);
+    }
 
     // no checks for two types
     if (found_type == TYPE_NONE ||
@@ -778,10 +786,12 @@ std::vector<std::string> InputConverter::GetChildVectorS_(
 * Extract atribute of type std::string.
 ****************************************************************** */
 std::string InputConverter::GetAttributeValueS_(
-    DOMElement* elem, const char* attr_name, const char* options)
+    DOMNode* node, const char* attr_name, const char* options)
 {
+  DOMElement* element = static_cast<DOMElement*>(node);
+
   std::string val;
-  val = GetAttributeValueS_(elem, attr_name);
+  val = GetAttributeValueS_(element, attr_name);
 
   std::vector<std::string> names = CharToStrings_(options);
   for (std::vector<std::string>::iterator it = names.begin(); it != names.end(); ++it) {
@@ -789,7 +799,7 @@ std::string InputConverter::GetAttributeValueS_(
   }
 
   MemoryManager mm;
-  char* tagname = mm.transcode(elem->getNodeName());
+  char* tagname = mm.transcode(element->getNodeName());
   Errors::Message msg;
   msg << "Validation of attribute \"" << attr_name << "\""
       << " for element \"" << tagname << "\" failed.\n";
@@ -817,6 +827,13 @@ double InputConverter::GetTextContentD_(
     GetConstantType_(text, parsed_text);
     val = ConvertUnits_(parsed_text, unit_in);
  
+    // replace empty input unit by the default unit 
+    if (unit_in == "") {
+      bool flag;
+      unit_in = units_.ConvertUnitS(unit, units_.system());
+      val = units_.ConvertUnitD(val, unit_in, "SI", -1.0, flag);
+    }
+
     if ((unit != "" && unit_in != "") ||
         (unit == "-" && unit_in != "")) {
       if (!units_.CompareUnits(unit, unit_in)) {
@@ -941,7 +958,7 @@ std::vector<std::string> InputConverter::CharToStrings_(const char* namelist)
 
 /* ******************************************************************
 * Extract unit and convert values. We assume that units are unique.
-* If note unit specified, returned unit is the empty string.
+* If no unit specified, returned unit is the empty string.
 ****************************************************************** */
 double InputConverter::ConvertUnits_(
     const std::string& val, std::string& unit, double mol_mass)

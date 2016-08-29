@@ -99,7 +99,6 @@ class AtomicUnitForm {
     }
   }
 
-
  private:
   UnitData data_;
 };
@@ -144,7 +143,11 @@ class Units {
   void Init();
 
   void Init(Teuchos::ParameterList& plist) {
+    system_.time = plist.get<std::string>("time", "s");
+    system_.mass = plist.get<std::string>("mass", "kg");
+    system_.length = plist.get<std::string>("length", "m");
     system_.concentration = plist.get<std::string>("concentration", "molar");
+    system_.temperature = plist.get<std::string>("temperature", "K");
     Init();
   }
 

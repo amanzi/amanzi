@@ -42,7 +42,10 @@ class PK_DomainFunction {
   virtual std::string name() const { return "undefined"; } 
 
   // access
+  // -- volume of the regions
   double domain_volume() { return domain_volume_; }
+  // -- nick-name of the function
+  std::string keyword() { return keyword_; }
 
   // iterator methods
   typedef std::map<int, double>::iterator Iterator;
@@ -53,6 +56,7 @@ class PK_DomainFunction {
  protected:
   std::map<int, double> value_;
   double domain_volume_;
+  std::string keyword_;
 };
 
 }  // namespace Amanzi

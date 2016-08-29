@@ -93,6 +93,12 @@
         <Parameter name="high coordinate" type="Array(double)" value="{1.120e+02, 6.000e+01}"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="ColorRegion">
+      <ParameterList name="region: color function">
+        <Parameter name="file" type="string" value="color.txt"/>
+        <Parameter name="value" type="int" value="1"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot"/>
@@ -345,7 +351,7 @@
           <Parameter name="coordinate system" type="string" value="cartesian"/>
         </ParameterList>
         <ParameterList name="relative permeability">
-          <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
+          <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
           <Parameter name="upwind frequency" type="string" value="every timestep"/>
           <ParameterList name="upwind parameters">
             <Parameter name="tolerance" type="double" value="1.0e-12"/>

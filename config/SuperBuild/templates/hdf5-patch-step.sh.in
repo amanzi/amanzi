@@ -10,18 +10,19 @@ OIFS=$IFS
 IFS=";"
 
 patch_files="@HDF5_patch_file@"
-patch_files_array=(${patch_files})
 
-for ((i=0; i<${#patch_files_array[@]}; ++i)); do
- patch_file=@SuperBuild_SOURCE_DIR@/templates/${patch_files_array[$i]}
- echo "HDF5 patch file = ${patch_file}"
+for i in $patch_files; do
 
- if [ ! -e "${patch_file}" ] ; then
-  echo "Patch file ${patch_file} does not exist"
-  exit 10
- fi
+    patch_file=@SuperBuild_SOURCE_DIR@/templates/${i}
+    echo "HDF5 patch file = ${patch_file}"
 
- (cd ${hdf5_src_dir}; patch -p1 < ${patch_file})
+    if [ ! -e "${patch_file}" ] ; then
+	echo "Patch file ${patch_file} does not exist"
+	exit 10
+    fi
+
+    (cd ${hdf5_src_dir}; patch -p1 < ${patch_file})
+
 done
 
 IFS=$OIFS

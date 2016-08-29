@@ -32,6 +32,10 @@ class PK_DomainFunctionFactory : public FunctionBase {
   ~PK_DomainFunctionFactory() {};
 
   Teuchos::RCP<FunctionBase> Create(const Teuchos::ParameterList& plist,
+                                    AmanziMesh::Entity_kind kind,
+                                    Teuchos::RCP<const Epetra_Vector> weight);
+
+  Teuchos::RCP<FunctionBase> Create(const Teuchos::ParameterList& plist,
                                     const std::string& keyword,
                                     AmanziMesh::Entity_kind kind,
                                     Teuchos::RCP<const Epetra_Vector> weight);
@@ -74,7 +78,7 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
 
   if (use_vofs) {
     Teuchos::RCP<PK_DomainFunctionVolumeFraction<FunctionBase> >
-      func = Teuchos::rcp(new PK_DomainFunctionVolumeFraction<FunctionBase>(mesh_));
+      func = Teuchos::rcp(new PK_DomainFunctionVolumeFraction<FunctionBase>(mesh_, kind));
     func->Init(plist, keyword);
     return func; 
   }
@@ -104,6 +108,30 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
   }
 
   return Teuchos::null;
+}
+
+
+template <class FunctionBase>
+Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
+    const Teuchos::ParameterList& plist,
+    AmanziMesh::Entity_kind kind,
+    Teuchos::RCP<const Epetra_Vector> weight)
+{
+  int n(0);
+  std::string keyword;
+  for (Teuchos::ParameterList::ConstIterator it = plist.begin(); it != plist.end(); ++it) {
+    if (plist.isSublist(it->first)) {
+      n++;
+      keyword = it->first;
+    }
+  }
+  if (keyword.size() == 0 || n > 1) {
+    Errors::Message msg;
+    msg << "Domain function should have exactly one sublist";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return Create(plist, keyword, kind, weight);
 }
 
 }  // namespace Amanzi
