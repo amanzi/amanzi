@@ -53,6 +53,9 @@ endif()
 #     add_definitions("-DHAVE_FATAL_MESSAGES:BOOL=TRUE")
 # endif()
 
+# Trilinos 12 kills STK?
+set(ENABLE_STK_Mesh OFF)
+
 # Testing
 # We do not have a consistent way to activate the unit and other tests
 # should have a single switch for this. -- lpritch

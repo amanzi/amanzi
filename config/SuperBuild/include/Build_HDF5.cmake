@@ -41,7 +41,13 @@ endif()
 
 # --- Set the name of the patch 
 set(HDF5_patch_file hdf5-1.8.8-comment.patch hdf5-1.8.8-disable-getpwuid.patch)
-#set(HDF5_patch_file hdf5-1.8.8-comment.patch)
+
+# share libraries -- disabled by default
+set(hdf5_shared_opt --disable-shared) 
+if (BUILD_SHARED_LIBS)
+  set(hdf5_shared_opt --enable-shared)
+endif()
+
 # --- Configure the bash patch script
 set(HDF5_sh_patch ${HDF5_prefix_dir}/hdf5-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hdf5-patch-step.sh.in
@@ -71,6 +77,7 @@ ExternalProject_Add(${HDF5_BUILD_TARGET}
                     CONFIGURE_COMMAND
                                      <SOURCE_DIR>/configure
                                                  --prefix=<INSTALL_DIR>
+                                                 ${hdf5_shared_opt}
                                                  --disable-fortran
                                                  --disable-cxx
                                                  --enable-production

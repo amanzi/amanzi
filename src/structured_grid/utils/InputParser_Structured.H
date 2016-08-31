@@ -1,7 +1,6 @@
 #ifndef Input_Parser_Structured_H_
 #define Input_Parser_Structured_H_
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_MPISession.hpp"
 
 namespace Amanzi {
   namespace AmanziInput {

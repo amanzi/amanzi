@@ -59,6 +59,12 @@ else()
   set(NetCDF_netcdf4_opts --disable-netcdf-4)
 endif() 
 
+# share libraries -- disabled by default
+set(NetCDF_shared_opt --disable-shared) 
+if (BUILD_SHARED_LIBS)
+  set(NetCDF_shared_opt --enable-shared)
+endif()
+
 # Build compiler flag strings for C, C++ and Fortran
 include(BuildWhitespaceString)
 build_whitespace_string(netcdf_cflags 
@@ -69,8 +75,8 @@ build_whitespace_string(netcdf_cxxflags
 
 set(cpp_flags_list
     -I${TPL_INSTALL_PREFIX}/include
-    ${Amanzi_COMMON_CFLAGS}
-    ${Amanzi_COMMON_CXXFLAGS})
+    ${Amanzi_COMMON_CFLAGS})
+#    ${Amanzi_COMMON_CXXFLAGS})
 list(REMOVE_DUPLICATES cpp_flags_list)
 build_whitespace_string(netcdf_cppflags ${cpp_flags_list})
 
@@ -104,7 +110,7 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
                                                 --disable-examples
                                                 ${NetCDF_netcdf4_opts} 
                                                 --disable-dap
-                                                --disable-shared
+                                                ${NetCDF_shared_opt}
                                                 --disable-fortran
                                                 --disable-f90
                                                 --disable-f77

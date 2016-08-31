@@ -9,6 +9,8 @@
   Author: Nathan Barnett
 */
 
+#include <utility>
+
 #include "TimerManager.hh"
 
 namespace Amanzi {
@@ -99,7 +101,7 @@ size_t TimerManager::size() {
  * \returns    Reference to requested timer
  * \author     Nathan Barnett
  */
-Timer& TimerManager::operator()(std::string timerName) {
+Timer& TimerManager::operator()(std::string& timerName) {
   std::map<std::string, boost::shared_ptr<Timer> >::iterator it = _timer.find(timerName);
   if (it==_timer.end())
     throw "Unkown timer";

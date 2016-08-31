@@ -12,6 +12,7 @@ ldflags='-L@TPL_INSTALL_PREFIX@/lib @CMAKE_CXX_LINK_FLAGS@'
 make_file=@UnitTest_source_dir@/Makefile
 
 echo "Patching file ${make_file}"
+@PERL_EXECUTABLE@ -p -i -e 's/\r\n$/\n/g' ${make_file}
 @PERL_EXECUTABLE@ -w -i -p -e "s:^CXX[\s]{0,}=.*:CXX = ${cxx_compiler}:" ${make_file}
 @PERL_EXECUTABLE@ -w -i -p -e "s:^CXXFLAGS[\s]{0,}\?=.*:CXXFLAGS ?= ${cxx_flags}:" ${make_file}
 @PERL_EXECUTABLE@ -w -i -p -e "s:^LDFLAGS[\s]{0,}\?=.*:LDFLAGS ?= ${ldflags}:" ${make_file}

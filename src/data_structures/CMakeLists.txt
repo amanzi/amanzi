@@ -47,6 +47,7 @@ add_definitions("-DMSTK_HAVE_MPI")
 set(data_structures_src_files BlockVector.cc
                               CompositeVectorSpace.cc
                               CompositeVector.cc
+                              NoxVector.cc
                               TreeVectorSpace.cc
                               TreeVector.cc
                               ParallelCommunication.cc

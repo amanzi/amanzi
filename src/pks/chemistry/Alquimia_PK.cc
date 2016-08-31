@@ -15,13 +15,13 @@
 */
 
 #include <algorithm>
+#include <regex>
 #include <set>
 #include <string>
 
 // TPLs
 #include "boost/mpi.hpp"
 #include "boost/algorithm/string.hpp"
-#include "boost/regex.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_SerialDenseVector.h"
@@ -139,11 +139,10 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
        ->SetComponent("cell", AmanziMesh::CELL, 1);
 
       bool io_block(false);
-      // waiting for a fix (TPLs or C++11)...
-      // for (int m = 0; m < blacklist.size(); ++m) {
-      //   boost::regex pattern(blacklist[m]);
-      //  io_block |= boost::regex_match(aux_names[i], pattern);
-      // }
+      for (int m = 0; m < blacklist.size(); ++m) {
+        std::regex pattern(blacklist[m]);
+        io_block |= std::regex_match(aux_names[i], pattern);
+      }
       S->GetField(aux_names[i], passwd_)->set_io_vis(!io_block);
 
       if (io_block) {

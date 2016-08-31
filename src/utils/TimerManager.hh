@@ -47,7 +47,7 @@ public:
   void    start(std::string);
   void    stop();
   void    stop(std::string);
-  Timer&  operator()(std::string name);
+  Timer&  operator()(std::string& name);
   void    parSync(MPI_Comm comm);
   void    print();
 

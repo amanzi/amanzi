@@ -792,6 +792,7 @@ function build_trilinos {
                   -D Trilinos_ENABLE_STK:BOOL=ON \
                   -D Trilinos_ENABLE_TEUCHOS:BOOL=ON \
                   -D Trilinos_ENABLE_EPETRA:BOOL=ON \
+                  -D Trilinos_ENABLE_BELOS:BOOL=ON \
                   -D Trilinos_ENABLE_NOX:BOOL=ON \
                   -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
                   -D TPL_ENABLE_MPI:BOOL=ON \
