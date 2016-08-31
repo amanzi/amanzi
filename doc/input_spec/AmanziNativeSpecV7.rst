@@ -5260,6 +5260,10 @@ time step values or intervals corresponding to the cycle number; writes are cont
   * `"write partitions`" [bool] (false) if this parameter is true, then write an array into 
     the visualization file that contains the rank number of the processor that owns a mesh cell. 
 
+  * `"blacklist`" [Array(string)] list of fields that should not be written to the visualization file.
+    Standard regular expressuion rules can be used, e.g. `"(secondary_)(.*)`" skips all fields 
+    those names start with `"secondary_`".
+
 .. code-block:: xml
 
    <ParameterList>  <!-- parent list -->
