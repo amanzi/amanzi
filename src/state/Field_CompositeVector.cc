@@ -12,7 +12,6 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 
 #include <string>
 
-#include <boost/regex.hpp>
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>

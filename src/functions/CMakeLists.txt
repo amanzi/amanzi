@@ -60,22 +60,22 @@ if (BUILD_TESTS)
         copy_directory ${FUNCS_SOURCE_DIR}/test ${FUNCS_BINARY_DIR}/test) 
   endif()
 
-  add_amanzi_test(concrete-functions all-function-test
+  add_amanzi_test(function_all function_all
                   KIND unit
                   SOURCE test/AllFunctionTest.cc
                   LINK_LIBS functions ${UnitTest_LIBRARIES})
 
-  add_amanzi_test(function-factory function-factory-test
+  add_amanzi_test(function_factory function_factory
                   KIND unit
                   SOURCE test/FunctionFactoryTest.cc
                   LINK_LIBS functions ${UnitTest_LIBRARIES})
  
-  add_amanzi_test(concrete-color-function all-color-function-test
+  add_amanzi_test(function_concrete_color function_concrete_color
                   KIND unit
                   SOURCE test/AllColorFunctionTest.cc
                   LINK_LIBS functions ${UnitTest_LIBRARIES})
 
-  add_amanzi_test(color-function-factory color-function-factory-test
+  add_amanzi_test(function_color_factory function_color_factory
                   KIND unit
                   SOURCE test/ColorFunctionFactoryTest.cc
                   LINK_LIBS 
@@ -84,7 +84,7 @@ if (BUILD_TESTS)
                          ${Teuchos_LIBRARIES}
                          ${Epetra_LIBRARIES})
 
-  add_amanzi_test(composite-function composite-function-test
+  add_amanzi_test(function_composite function_composite
                   KIND unit
                   SOURCE test/CompositeFunctionTest.cc
 		  LINK_LIBS functions ${UnitTest_LIBRARIES})

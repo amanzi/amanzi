@@ -112,9 +112,9 @@ TEST_FIXTURE(reference_mesh, values1)
   Teuchos::RCP<MultiFunction> f2 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new ConstantFunction(2.0))));
   Teuchos::RCP<MultiFunction> f3 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new ConstantFunction(3.0))));
 
-  bf.Define(RIGHT, f1);
-  bf.Define(FRONT, f2);
-  bf.Define(BACK,  f3);
+  bf.Define(RIGHT, std::move(f1));
+  bf.Define(FRONT, std::move(f2));
+  bf.Define(BACK,  std::move(f3));
   bf.Finalize();
 
   CHECK_EQUAL(12, bf.size());
@@ -140,13 +140,13 @@ TEST_FIXTURE(reference_mesh, values2)
   // Create the function f(t,x,y,z) = t * (x + 2y + 3z)
   std::vector<double> c(1,1.0);
   std::vector<int> p(1,1);
-  std::auto_ptr<Function> f1(new PolynomialFunction(c, p));
+  std::unique_ptr<Function> f1(new PolynomialFunction(c, p));
   double g[3] = {1.0, 2.0, 3.0};
   std::vector<double> grad(g, g+3);
-  std::auto_ptr<Function> f2(new LinearFunction(0.0, grad));
+  std::unique_ptr<Function> f2(new LinearFunction(0.0, grad));
 
   // Create the boundary function
-  Teuchos::RCP<MultiFunction> f3 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new SeparableFunction(f1,f2))));
+  Teuchos::RCP<MultiFunction> f3 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new SeparableFunction(std::move(f1), std::move(f2)))));
   BoundaryFunction bf(mesh);
   std::vector<std::string> regions(2); regions[0] = RIGHT; regions[1] = BACK;
   bf.Define(regions, f3);

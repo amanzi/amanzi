@@ -68,7 +68,7 @@
 #   0.92.24      - update MSTK to version 2.25 (updates to meshconvert, exoatt)
 #   0.92.25      - update MSTK to version 2.26rc2 (adds fixes for pinchouts)
 #
-#   0.93.0       - updates to Trilinos, ...., for ideas
+#   0.93.0       - defaulted to C++11, update Trilinos to 12.6.1
 
 include(CMakeParseArguments)
 

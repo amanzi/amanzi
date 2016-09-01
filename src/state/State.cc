@@ -814,10 +814,8 @@ void State::Initialize() {
   WriteDependencyGraph();
 };
 
+
 void State::Initialize(Teuchos::RCP<State> S) {
-
-
-
   for (FieldMap::iterator f_it = fields_.begin();
        f_it != fields_.end(); ++f_it) {
     Teuchos::RCP<Field> field = f_it->second;
@@ -864,6 +862,7 @@ void State::Initialize(Teuchos::RCP<State> S) {
   // Write dependency graph.
   WriteDependencyGraph();
 };
+
 
 void State::InitializeEvaluators() {
   for (evaluator_iterator f_it = field_evaluator_begin();

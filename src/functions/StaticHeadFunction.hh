@@ -9,8 +9,8 @@ namespace Amanzi {
 
 class StaticHeadFunction : public Function {
  public:
-  StaticHeadFunction(double patm, double rho, double g, std::auto_ptr<Function> h, int dim)
-      : patm_(patm), rho_g_(rho*g), h_(h), dim_(dim) {}
+  StaticHeadFunction(double patm, double rho, double g, std::unique_ptr<Function> h, int dim)
+      : patm_(patm), rho_g_(rho*g), h_(std::move(h)), dim_(dim) {}
   StaticHeadFunction(double patm, double rho, double g, const Function& h, int dim)
       : patm_(patm), rho_g_(rho*g), h_(h.Clone()), dim_(dim) {}
   StaticHeadFunction(const StaticHeadFunction& src)
@@ -23,7 +23,7 @@ class StaticHeadFunction : public Function {
  private:
   int dim_;
   double patm_, rho_g_;
-  std::auto_ptr<Function> h_;
+  std::unique_ptr<Function> h_;
 };
 
 } // namespace Amanzi

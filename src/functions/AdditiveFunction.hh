@@ -25,18 +25,18 @@ namespace Amanzi {
 
 class AdditiveFunction : public Function {
  public:
-  AdditiveFunction(std::auto_ptr<Function> f1, std::auto_ptr<Function> f2)
-     : f1_(f1), f2_(f2) {};
+  AdditiveFunction(std::unique_ptr<Function> f1, std::unique_ptr<Function> f2)
+     : f1_(std::move(f1)), f2_(std::move(f2)) {};
   AdditiveFunction(const Function& f1, const Function& f2)
      : f1_(f1.Clone()), f2_(f2.Clone()) {}
   AdditiveFunction(const AdditiveFunction& source)
      : f1_(source.f1_->Clone()), f2_(source.f2_->Clone()) {}
-  ~AdditiveFunction() {} //{ if (f1_) delete f1_; if (f2_) delete f2_; }
+  ~AdditiveFunction() {};
   AdditiveFunction* Clone() const { return new AdditiveFunction(*this); }
   double operator()(const std::vector<double>& x) const { return (*f1_)(x) + (*f2_)(x); }
 
  private:
-  std::auto_ptr<Function> f1_, f2_;
+  std::unique_ptr<Function> f1_, f2_;
   //Function *f1_, *f2_;
 };
 
