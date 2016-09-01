@@ -41,17 +41,8 @@
 // Transport
 #include "MDMPartition.hh"
 #include "MultiscaleTransportPorosityPartition.hh"
-#include "TransportBoundaryFunction.hh"
 #include "TransportDefs.hh"
-#include "TransportSourceFunction.hh"
-
-/* ******************************************************************
-The transport PK receives a reduced (optional) copy of a physical 
-state at time n and returns a different state at time n+1. 
-
-Unmodified physical quantaties in the returned state are the smart 
-pointers to the original variables.
-****************************************************************** */
+#include "TransportDomainFunction.hh"
 
 namespace Amanzi {
 namespace Transport {
@@ -218,9 +209,8 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   int current_component_;  // data for lifting
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;
 
-  std::vector<Teuchos::RCP<TransportSourceFunction> > srcs_;  // Source or sink for components
-  std::vector<Teuchos::RCP<TransportBoundaryFunction> > bcs_;  // BC for concentration
-  double bc_scaling;
+  std::vector<Teuchos::RCP<TransportDomainFunction> > srcs_;  // Sources and sinks
+  std::vector<Teuchos::RCP<TransportDomainFunction> > bcs_;
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators

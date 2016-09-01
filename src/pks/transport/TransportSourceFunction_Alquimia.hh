@@ -6,11 +6,11 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Author: Jeffrey Johnson (jnjohnson@lbl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_TRANSPORT_BOUNDARY_FUNCTION_ALQUIMIA_HH_
-#define AMANZI_TRANSPORT_BOUNDARY_FUNCTION_ALQUIMIA_HH_
+#ifndef AMANZI_TRANSPORT_SOURCE_FUNCTION_ALQUIMIA_HH_
+#define AMANZI_TRANSPORT_SOURCE_FUNCTION_ALQUIMIA_HH_
 
 #include <vector>
 #include <map>
@@ -29,15 +29,18 @@
 namespace Amanzi {
 namespace Transport {
 
-class TransportBoundaryFunction_Alquimia : public TransportDomainFunction {
+class TransportSourceFunction_Alquimia : public TransportDomainFunction {
  public:
-  TransportBoundaryFunction_Alquimia(const Teuchos::ParameterList& plist,
-                                     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                                     Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
-                                     Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
-  ~TransportBoundaryFunction_Alquimia();
+  TransportSourceFunction_Alquimia(const Teuchos::ParameterList& plist,
+                                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                   Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
+                                   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
+  ~TransportSourceFunction_Alquimia();
   
   void Compute(double t_old, double t_new);
+
+  // require by the case class
+  virtual std::string name() const { return "volume"; } 
 
  private:
   void Init_(const std::vector<std::string> &regions);
@@ -57,9 +60,6 @@ class TransportBoundaryFunction_Alquimia : public TransportDomainFunction {
   AlquimiaMaterialProperties alq_mat_props_;
   AlquimiaAuxiliaryData alq_aux_data_;
   AlquimiaAuxiliaryOutputData alq_aux_output_;
-
-  // A mapping of boundary face indices to interior cells.
-  std::map<int, int> cell_for_face_;
 };
 
 }  // namespace Transport

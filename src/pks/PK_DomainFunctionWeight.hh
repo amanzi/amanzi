@@ -49,6 +49,7 @@ class PK_DomainFunctionWeight : public FunctionBase,
  protected:
   using FunctionBase::value_;
   using FunctionBase::domain_volume_;
+  using FunctionBase::keyword_;
 
  private:
   std::string submodel_;
@@ -65,6 +66,8 @@ void PK_DomainFunctionWeight<FunctionBase>::Init(
     Teuchos::RCP<const Epetra_Vector> weight)
 {
   ASSERT(weight != Teuchos::null);
+
+  keyword_ = keyword;
 
   std::vector<std::string> regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();
 

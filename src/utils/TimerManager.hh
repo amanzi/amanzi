@@ -15,9 +15,7 @@
 // C++ includes
 #include <iostream>
 #include <map>
-
-// TPL includes
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 // Our includes
 #include "mpi.h"
@@ -47,12 +45,12 @@ public:
   void    start(std::string);
   void    stop();
   void    stop(std::string);
-  Timer&  operator()(std::string name);
+  Timer&  operator()(std::string& name);
   void    parSync(MPI_Comm comm);
   void    print();
 
 protected:
-  std::map<std::string, boost::shared_ptr<Timer> > _timer;
+  std::map<std::string, std::shared_ptr<Timer> > _timer;
   
 private:
   TimerManager(const TimerManager&);

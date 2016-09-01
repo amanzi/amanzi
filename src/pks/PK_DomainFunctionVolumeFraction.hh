@@ -38,8 +38,10 @@ template <class FunctionBase>
 class PK_DomainFunctionVolumeFraction : public FunctionBase,
                                         public Functions::MaterialMeshFunction {
  public:
-  PK_DomainFunctionVolumeFraction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      MaterialMeshFunction(mesh) {};
+  PK_DomainFunctionVolumeFraction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                  AmanziMesh::Entity_kind kind) :
+      MaterialMeshFunction(mesh),
+      kind_(kind) {};
   ~PK_DomainFunctionVolumeFraction() {};
 
   // member functions
@@ -52,9 +54,11 @@ class PK_DomainFunctionVolumeFraction : public FunctionBase,
  protected:
   using FunctionBase::value_;
   using FunctionBase::domain_volume_;
+  using FunctionBase::keyword_;
 
  private:
   std::string model_, submodel_;
+  AmanziMesh::Entity_kind kind_;
 };
 
 
@@ -65,6 +69,8 @@ template <class FunctionBase>
 void PK_DomainFunctionVolumeFraction<FunctionBase>::Init(
     const Teuchos::ParameterList& plist, const std::string& keyword)
 {
+  keyword_ = keyword;
+
   model_ = plist.get<std::string>("spatial distribution method");
 
   submodel_ = "rate";
@@ -84,7 +90,7 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Init(
   }
 
   // Add this source specification to the domain function.
-  Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, AmanziMesh::CELL));
+  Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, kind_));
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
 }
 
@@ -101,8 +107,8 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
-  for (MaterialSpecList::const_iterator mspec = material_specs_[AmanziMesh::CELL]->begin();
-       mspec != material_specs_[AmanziMesh::CELL]->end(); ++mspec) {
+  for (MaterialSpecList::const_iterator mspec = material_specs_[kind_]->begin();
+       mspec != material_specs_[kind_]->end(); ++mspec) {
 
     Teuchos::RCP<MaterialMesh> ids = (*mspec)->second;
 
@@ -112,7 +118,8 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1
       for (MaterialMesh::const_iterator it = ids->begin(); it != ids->end(); ++it) {
         int c = it->first;
         double vofs = it->second;
-        if (c < ncells_owned) domain_volume_ += mesh_->cell_volume(c) * vofs;
+        if (c < ncells_owned) domain_volume_ += 
+          ((kind_ == AmanziMesh::CELL) ? mesh_->cell_volume(c) : mesh_->face_area(c)) * vofs;
       }
       double tmp = domain_volume_;
       mesh_->get_comm()->SumAll(&tmp, &domain_volume_, 1);
@@ -125,7 +132,8 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1
       int c = it->first;
       double vofs = it->second;
 
-      const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+      const AmanziGeometry::Point& xc = (kind_ == AmanziMesh::CELL) ?
+          mesh_->cell_centroid(c) : mesh_->face_centroid(c);
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
       // mspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
@@ -141,7 +149,8 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1
         int c = it->first;
         double vofs = it->second;
 
-        const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+        const AmanziGeometry::Point& xc = (kind_ == AmanziMesh::CELL) ?
+            mesh_->cell_centroid(c) : mesh_->face_centroid(c);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
         value_[c] -= (*(*mspec)->first->second)(args)[0] * vofs / domain_volume_;

@@ -10,15 +10,15 @@ Overview
 
 This is a continuously evolving specification format used by the code developers. 
 Its main purpose is to develop and test new capabilities without disruption of end-users.
-Parameters labeled by [WIP] (Work-In-Progress) are under development.
-Parameters labeled by [O] (Obsolete) are old capabilities and will be removed soon.
 
 
 Changes V6 -> V7
 ================
 
-* Many lists follows now the lower-case naming convention for parameters.
-* Added dual porosity model to flow and transport.
+* Lower-case naming convention for parameters.
+* Dual porosity model to flow and transport.
+* Support of units in output of observations.
+* New regions.
 
 
 ParameterList XML
@@ -1336,7 +1336,7 @@ relative permeability, density and viscosity.
     * `"tolerance`" [double] specifies relative tolerance for almost zero local flux. In such
       a case the flow is assumed to be parallel to a mesh face. Default value is 1e-12.
 
-    * [WIP] `"method`" [string] specifies a reconstruction method. Available option is
+    * `"method`" [string] specifies a reconstruction method. Available option is
       `"cell-based`" (default).
 
     * `"polynomial order`" [int] defines the polynomial order of a reconstructed function. Default is 1.
@@ -1560,18 +1560,21 @@ of the other available functions.
 Sources and sinks
 .................
 
-The sources and sinks are typically associated with pumping wells. The structure
-of list *source terms* mimics that of list *boundary conditions*. 
+The sources and sinks are typically associated with wells. 
+Negative source means a producing well. 
+Positive source means an injecting well. 
+The structure of list *source terms* mimics that of list *boundary conditions*. 
 Again, constant functions can be replaced by any of the available functions.
 
 * `"regions`" [Array(string)] is the list of regions where the source is defined.
 
 * `"spatial distribution method`" [string] is the method for distributing
   source Q over the specified regions. The available options are `"volume`",
-  `"none`", and `"permeability`". For option `"none`", the source 
-  term Q is measured in [kg/m^3/s]. For the other options, it is measured in [kg/s]. 
-  Option `"volume fraction`" can be used when the region geometric model support volume fractions.
+  `"none`", and `"permeability`".
+  For option `"none`", the source term function Q is measured in [kg/m^3/s]. 
+  For the other options, it is measured in [kg/s]. 
   When the source function is defined over a few regions, Q is distributed over their union.
+  Option `"volume fraction`" can be used when the region geometric model support volume fractions.
 
 * `"use volume fractions`" instructs the code to use all available volume fractions. 
   Note that the region geometric model supports volume fractions only for a few regions.
@@ -1983,7 +1986,7 @@ and temporal accuracy, and verbosity:
 * `"number of aqueous components`" [int] The total number of aqueous components. 
   Default value is the total number of components.
 
-* [WIP] `"number of gaseous components`" [int] The total number of gaseous components. 
+* `"number of gaseous components`" [int] The total number of gaseous components. 
   Default value is 0.
    
 .. code-block:: xml
@@ -2244,14 +2247,18 @@ and geochemical conditions.
 Sources and sinks
 .................
 
-The external sources are typically located at pumping wells. The structure
-of list *source terms* includes only sublists named after components. 
+The sources and sinks are typically located at wells. 
+Stability condition requires to distinguish between injecting and producing wells.
+A source function used for an injecting well specifies concentration of solute.
+A source function used for a producing well specifies volumetric flow rate [m^3/s] of water. 
+
+The structure of list *source terms* includes only sublists named after components. 
 Again, constant functions can be replaced by any available time-function.
 Note that the source values are set up separately for each component.
 
 * `"concentration`" [list] This is a reserved keyword.
 
- * "COMP" [list] contains a few sublists (e.g. SRC_1, SRC_2) for multiple sources and sinks.
+ * "COMP" [list] contains a few sublists (e.g. SRC_1, SRC_2) for various sources and sinks.
 
   * "SRC_1" [list] defines a source using arrays of domain regions, a function, and 
     a distribution method.
@@ -2262,7 +2269,7 @@ Note that the source values are set up separately for each component.
    * `"spatial distribution method`" [string] identifies a method for distributing
      source Q over the specified regions. The available options are `"volume`",
      `"none`", and `"permeability`". For option `"none`" the source term Q is measured
-     in [mol/L/s] (if units for concetration is mol/L) or [mol/m^3/s] (othrwise). 
+     in [mol/L/s] (if units for concetration is mol/L) or [mol/m^3/s] (otherwise). 
      For the other options, it is measured in [mol/s]. When the source function
      is defined over a few regions, Q will be distributed over their union.
 
@@ -2285,9 +2292,9 @@ This example defines one well and one sink.
            <Parameter name="regions" type="Array(string)" value="{EAST_WELL}"/>
            <Parameter name="spatial distribution method" type="string" value="volume"/>
            <Parameter name="submodel" type="string" value="rate"/>
-           <ParameterList name="well">   <!-- keyword, do not change -->
+           <ParameterList name="injector">   <!-- keyword, do not change -->
              <ParameterList name="function-constant">
-               <Parameter name="value" type="double" value="-0.01"/>
+               <Parameter name="value" type="double" value="0.01"/>
              </ParameterList>
            </ParameterList>
          </ParameterList>
@@ -2300,7 +2307,7 @@ This example defines one well and one sink.
          <ParameterList name="SOURCE: WEST WELL">   <!-- user defined name -->
            <Parameter name="regions" type="Array(string)" value="{WEST_WELL}"/>
            <Parameter name="spatial distribution method" type="string" value="permeability"/>
-           <ParameterList name="well">  
+           <ParameterList name="injector">  
              <ParameterList name="function-constant">
                <Parameter name="value" type="double" value="0.02"/>
              </ParameterList>
@@ -3422,9 +3429,9 @@ This section is under construction.
 
 * `"OPERATOR_NAME`" [list] a PK specific name for the advection operator.
 
-  * [WIP] `"discretization primary`" defines a discretization method. The only available option is `"upwind`".
+  * `"discretization primary`" defines a discretization method. The only available option is `"upwind`".
 
-  * [WIP] `"reconstruction order`" defines accuracy of this discrete operator.
+  * `"reconstruction order`" defines accuracy of this discrete operator.
 
 .. code-block:: xml
 
@@ -3444,10 +3451,10 @@ and their extensions for various PKs.
 
 * `"reconstruction`" [list] describes parameters used by reconstruction algorithms.
 
- * [WIP] `"method`" [string] specifies a reconstruction method. Available option is
+ * `"method`" [string] specifies a reconstruction method. Available option is
    `"cell-based`" (default).
 
- * [WIP] `"polynomial order`" [int] defines the polynomial order of a reconstructed function. 
+ * `"polynomial order`" [int] defines the polynomial order of a reconstructed function. 
    Default is 1.
 
  * `"limiter`" [string] specifies limiting method. Available options are 
@@ -5252,6 +5259,10 @@ time step values or intervals corresponding to the cycle number; writes are cont
 
   * `"write partitions`" [bool] (false) if this parameter is true, then write an array into 
     the visualization file that contains the rank number of the processor that owns a mesh cell. 
+
+  * `"blacklist`" [Array(string)] list of fields that should not be written to the visualization file.
+    Standard regular expressuion rules can be used, e.g. `"(secondary_)(.*)`" skips all fields 
+    those names start with `"secondary_`".
 
 .. code-block:: xml
 

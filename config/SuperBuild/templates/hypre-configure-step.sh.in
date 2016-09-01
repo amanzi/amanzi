@@ -15,6 +15,7 @@ export FFLAGS='@Amanzi_COMMON_FCFLAGS@'
 
 cd @HYPRE_source_dir@/src
 ./configure  @hypre_openmp_opt@ @hypre_blas_opt@ @hypre_lapack_opt@ \
-        @hypre_fortran_opt@ --prefix=@TPL_INSTALL_PREFIX@  --with-MPI @hypre_superlu_opt@
+        @hypre_fortran_opt@ --prefix=@TPL_INSTALL_PREFIX@  --with-MPI \
+        @hypre_superlu_opt@ @hypre_shared_opt@
 
 exit $?

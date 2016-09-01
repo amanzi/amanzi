@@ -33,7 +33,7 @@
     <execution_controls>
       <verbosity level="high" />
       <execution_control_defaults init_dt="1" max_dt="1000 y" method="bdf1" mode="steady" />
-      <execution_control end="9.46728e+10" init_dt="1" method="bdf1" mode="steady" start="0.0" />
+      <execution_control end="9.46728e+10" init_dt="1 h" method="bdf1" mode="steady" start="0.0" />
     </execution_controls>
     <numerical_controls>
       <unstructured_controls>
@@ -44,19 +44,12 @@
         <unstr_steady-state_controls>
           <initialize_with_darcy>true</initialize_with_darcy>
         </unstr_steady-state_controls>
+        <unstr_flow_controls>
+          <rel_perm_method>upwind-darcy_velocity</rel_perm_method>
+        </unstr_flow_controls>
         <unstr_transport_controls>
           <algorithm>none</algorithm>
         </unstr_transport_controls>
-        <unstr_preconditioners>
-          <hypre_amg />
-          <trilinos_ml />
-          <block_ilu />
-        </unstr_preconditioners>
-        <unstr_preconditioners>
-          <hypre_amg />
-          <trilinos_ml />
-          <block_ilu />
-        </unstr_preconditioners>
       </unstructured_controls>
     </numerical_controls>
     <mesh framework="mstk">
@@ -109,11 +102,9 @@
         </mechanical_properties>
         <permeability x="3.6098e-13" y="3.6098e-13" />
         <cap_pressure model="van_genuchten">
-          <parameters alpha="1.0212e-04" m="0.09090" sr="0.25" />
+          <parameters alpha="1.0212e-04" m="0.09090" sr="0.25" optional_krel_smoothing_interval="100"/>
         </cap_pressure>
-        <rel_perm model="mualem">
-          <optional_krel_smoothing_interval>100</optional_krel_smoothing_interval>
-        </rel_perm>
+        <rel_perm model="mualem"/>
         <assigned_regions>Aquifer</assigned_regions>
       </material>
     </materials>

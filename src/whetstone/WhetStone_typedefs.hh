@@ -14,7 +14,6 @@
 #define AMANZI_WHETSTONE_TYPEDEFS_HH_
 
 #include <vector>
-#include <boost/array.hpp>
 
 #define AMANZI_CODE
 

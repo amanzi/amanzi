@@ -3,15 +3,15 @@
 #
 # Amanzi SuperBuild
 #       Amanzi TPL Build Targets
-cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 3.2)
 
-if ("${CMAKE_PATCH_VERSION}" GREATER 3)
-  set(ADJUST_POLICY "True")
-endif()
+# cmake_policy(SET CMP0017 NEW)
+# cmake_policy(SET CMP0022 NEW)
+# cmake_policy(SET CMP0037 OLD)
+# cmake_policy(SET CMP0048 OLD)
 
-if (${ADJUST_POLICY})
-  cmake_policy(SET CMP0017 NEW)
-endif()
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ############################################################################ #
 # Compiler Definition Warnings
@@ -136,7 +136,6 @@ option(ENABLE_MOAB_Mesh "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
 
 # Amanzi output formats
 option(ENABLE_Silo "Enable the Silo output specification for visualization" FALSE)
-message("Silo? ${ENABLE_Silo}")
 
 # OpenMP Search - ENABLED ONLY WHEN STRUCTURED IS ON BECAUSE
 # WE SUSPECT THAT IT MAY NOT BE WORKING WELL WITH HYPRE ON
@@ -418,6 +417,8 @@ set(Amanzi_CMAKE_Fortran_COMPILER_ARGS
 set(Amanzi_CMAKE_LINKER_ARGS
      -DCMAKE_EXE_LINKER_FLAGS:STRING=${CMAKE_EXE_LINKER_FLAGS}
      -DCMAKE_SHARED_LINKER_FLAGS:STRING=${CMAKE_SHARED_LINKER_FLAGS})
+
+message("AMANZI: SHARED LINKER FLAGS = ${Amanzi_CMAKE_LINKER_ARGS}")
 
 # GNU configure static/shared
 if(BUILD_SHARED_LIBS)
@@ -733,44 +734,43 @@ if ( BUILD_Amanzi )
   endif()
   message(STATUS "Will build Amanzi source located in ${Amanzi_SOURCE_DIR}")
 
-
   # Now add amanzi to the build stack
   include(ExternalProject)
 
   set(Amanzi_DEPENDS 
-                  ${ExodusII_BUILD_TARGET}
-		          ${HDF5_BUILD_TARGET}
-		          ${ASCEMIO_BUILD_TARGET}
-			      ${XERCES_BUILD_TARGET}
-		          ${UnitTest_BUILD_TARGET}
-		          ${Boost_BUILD_TARGET}
-		          ${MSTK_BUILD_TARGET}
-		          ${MOAB_BUILD_TARGET}
-		          ${CCSE_BUILD_TARGET}
-		          ${Trilinos_BUILD_TARGET})
+    ${ExodusII_BUILD_TARGET}
+	${HDF5_BUILD_TARGET}
+	${ASCEMIO_BUILD_TARGET}
+	${XERCES_BUILD_TARGET}
+	${UnitTest_BUILD_TARGET}
+	${Boost_BUILD_TARGET}
+	${Trilinos_BUILD_TARGET})
 
+  if ( ENABLE_Unstructured )
+    list(APPEND Amanzi_DEPENDS ${MSTK_BUILD_TARGET} ${MOAB_BUILD_TARGET})
+  endif()
+  
   if ( ENABLE_Structured )
     list(APPEND Amanzi_DEPENDS ${CCSE_BUILD_TARGET})
-  endif()
+  endif()  
 
   if ( ENABLE_Silo )
     list(APPEND Amanzi_DEPENDS ${Silo_BUILD_TARGET})
   endif()
 
   ExternalProject_Add(amanzi
-                      DEPENDS ${Amanzi_DEPENDS}
-		      PREFIX ${CMAKE_BINARY_DIR}/Amanzi
-                      SOURCE_DIR ${Amanzi_SOURCE_DIR}
-                      DOWNLOAD_COMMAND ""
-                      UPDATE_COMMAND ""
-                      CMAKE_ARGS
-		                ${Amanzi_CMAKE_ARGS}
-			        ${Amanzi_CMAKE_C_COMPILER_ARGS}
-                                -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
-			       	${Amanzi_CMAKE_CXX_COMPILER_ARGS}
-                                -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE}
-			        ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
-                                -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
-                       INSTALL_DIR ${Amanzi_INSTALL_PREFIX} )
+    DEPENDS ${Amanzi_DEPENDS}
+	PREFIX ${CMAKE_BINARY_DIR}/Amanzi
+    SOURCE_DIR ${Amanzi_SOURCE_DIR}
+    DOWNLOAD_COMMAND ""
+    UPDATE_COMMAND ""
+    CMAKE_ARGS	${Amanzi_CMAKE_ARGS}
+                ${Amanzi_CMAKE_C_COMPILER_ARGS}
+                -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
+			    ${Amanzi_CMAKE_CXX_COMPILER_ARGS}
+                -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE}
+			    ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
+                -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
+    INSTALL_DIR ${Amanzi_INSTALL_PREFIX} )
 endif()        
                

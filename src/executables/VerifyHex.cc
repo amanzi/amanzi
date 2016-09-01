@@ -26,7 +26,6 @@ namespace po = boost::program_options;
 
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Epetra_Vector.h>
-#include <Isorropia_EpetraPartitioner.hpp>
 #include <Epetra_MpiComm.h>
 
 #include "Teuchos_ParameterXMLFileReader.hpp"

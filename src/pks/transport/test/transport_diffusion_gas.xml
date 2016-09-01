@@ -116,7 +116,7 @@
             <ParameterList name="SRC 1">
               <Parameter name="regions" type="Array(string)" value="{Well}"/>
               <Parameter name="spatial distribution method" type="string" value="volume"/>
-              <ParameterList name="well">
+              <ParameterList name="injector">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.000000e+00, 1.000000e+09}"/>
                   <Parameter name="y values" type="Array(double)" value="{8.148300e-08, 8.148300e-08}"/>

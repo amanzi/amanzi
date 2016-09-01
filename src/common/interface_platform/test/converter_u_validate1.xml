@@ -339,7 +339,7 @@
           <Parameter name="coordinate system" type="string" value="cartesian"/>
         </ParameterList>
         <ParameterList name="relative permeability">
-          <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
+          <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
           <Parameter name="upwind frequency" type="string" value="every timestep"/>
           <ParameterList name="upwind parameters">
             <Parameter name="tolerance" type="double" value="1.0e-12"/>
@@ -680,7 +680,7 @@
           <Parameter name="coordinate system" type="string" value="cartesian"/>
         </ParameterList>
         <ParameterList name="relative permeability">
-          <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
+          <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
           <Parameter name="upwind frequency" type="string" value="every timestep"/>
           <ParameterList name="upwind parameters">
             <Parameter name="tolerance" type="double" value="1.0e-12"/>

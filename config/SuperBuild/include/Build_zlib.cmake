@@ -39,6 +39,7 @@ ExternalProject_Add(${ZLIB_BUILD_TARGET}
                     CMAKE_CACHE_ARGS ${ZLIB_CMAKE_CACHE_ARGS}         # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
                                      ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
                                      -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                     -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
                     # -- Build
                     BINARY_DIR        ${ZLIB_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make

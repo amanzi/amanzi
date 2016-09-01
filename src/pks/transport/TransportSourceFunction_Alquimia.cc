@@ -6,10 +6,10 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Author: Jeffrey Johnson (jnjohnson@lbl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#include "TransportBoundaryFunction_Alquimia.hh"
+#include "TransportSourceFunction_Alquimia.hh"
 
 #ifdef ALQUIMIA_ENABLED
 
@@ -19,7 +19,7 @@ namespace Transport {
 /* ******************************************************************
 * Constructor of BCs for Alquimia.
 ****************************************************************** */
-TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(
+TransportSourceFunction_Alquimia::TransportSourceFunction_Alquimia(
     const Teuchos::ParameterList& plist,
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
@@ -54,7 +54,7 @@ TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(
 /* ******************************************************************
 * Delegating destructor.
 ****************************************************************** */
-TransportBoundaryFunction_Alquimia::~TransportBoundaryFunction_Alquimia()
+TransportSourceFunction_Alquimia::~TransportSourceFunction_Alquimia()
 {
   chem_engine_->FreeState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
 }
@@ -63,26 +63,17 @@ TransportBoundaryFunction_Alquimia::~TransportBoundaryFunction_Alquimia()
 /* ******************************************************************
 * Internal subroutine that defines a boundary function.
 ****************************************************************** */
-void TransportBoundaryFunction_Alquimia::Init_(const std::vector<std::string>& regions)
+void TransportSourceFunction_Alquimia::Init_(const std::vector<std::string>& regions)
 {
   for (int i = 0; i < regions.size(); ++i) {
-    // Get the faces that belong to this region (since boundary conditions
-    // are applied on faces).
-    assert(mesh_->valid_set_name(regions[i], AmanziMesh::FACE));
-
     AmanziMesh::Entity_ID_List block;
-    mesh_->get_set_entities(regions[i], AmanziMesh::FACE, AmanziMesh::USED, &block);
+    mesh_->get_set_entities(regions[i], AmanziMesh::CELL, AmanziMesh::USED, &block);
     int nblock = block.size();
 
     // Now get the cells that are attached to these faces.
-    AmanziMesh::Entity_ID_List cells;
     for (int n = 0; n < nblock; ++n) {
-      int f = block[n];
-      value_[f] = WhetStone::DenseVector(chem_engine_->NumPrimarySpecies());
-
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-
-      cell_for_face_[f] = cells[0];
+      int c = block[n];
+      value_[c] = WhetStone::DenseVector(chem_engine_->NumPrimarySpecies());
     }
   }
 }
@@ -91,15 +82,13 @@ void TransportBoundaryFunction_Alquimia::Init_(const std::vector<std::string>& r
 /* ******************************************************************
 * Evaluate values at time.
 ****************************************************************** */
-void TransportBoundaryFunction_Alquimia::Compute(double t_old, double t_new) 
+void TransportSourceFunction_Alquimia::Compute(double t_old, double t_new) 
 {
   std::string cond_name = (*f_)(t_new);
 
   // Loop over sides and evaluate values.
   for (TransportDomainFunction::Iterator it = begin(); it != end(); ++it) {
-    int f = it->first; 
-    // Find the index of the cell we're in.
-    int cell = cell_for_face_[f];
+    int cell = it->first; 
 
     // Dump the contents of the chemistry state into our Alquimia containers.
     chem_pk_->CopyToAlquimia(cell, alq_mat_props_, alq_state_, alq_aux_data_);
@@ -110,7 +99,7 @@ void TransportBoundaryFunction_Alquimia::Compute(double t_old, double t_new)
     // Move the concentrations into place.
     WhetStone::DenseVector& values = it->second;
     for (int i = 0; i < values.NumRows(); i++) {
-      values(i) = alq_state_.total_mobile.data[i];
+      values(i) = alq_state_.total_mobile.data[i] / domain_volume_;
     }
   }
 }
