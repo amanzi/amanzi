@@ -37,7 +37,6 @@
 #endif
 #endif
 
-
 #ifdef ENABLE_Unstructured
 #include "state_evaluators_registration.hh"
 #endif
@@ -49,14 +48,13 @@
 using namespace boost::filesystem;
 
 
-
-struct RunLog
-    : public std::ostream
+struct RunLog : public std::ostream
 {
   RunLog(std::ostream& _os);
  protected:
   int rank;
 };
+
 
 int main(int argc, char *argv[]) {
 
