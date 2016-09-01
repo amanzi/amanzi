@@ -1,7 +1,7 @@
 #include "Mesh.hh"
 #include "writeMesh3D.hh"
 #include "readMesh2D.hh"
-
+#include <cfloat>
 
 int main() {
   using namespace Amanzi::AmanziGeometry;
@@ -9,8 +9,8 @@ int main() {
   std::string mesh_in = "Mesh.txt";
   std::string mesh_out = "Mesh3D_VariableSoil.exo";
   
-  std::vector<double> ref_soil_mlay_dz = {1.0e-2, 2.0e-2, 5.0e-2, 1.2e-1, 2.5e-1, 5.0e-1, 1.0e1};
-  std::vector<double> ref_bedrock_mlay_dz = {1.0e1, 1.0e1};
+  std::vector<double> ref_soil_mlay_dz = {2.0e-2, 6.0e-2, 1.2e-1, 2.5e-1, 5.5e-1, 0.5e1};
+  std::vector<double> ref_bedrock_mlay_dz = {0.5e1, 1.5e1};
   double eps_dz = 1.0e-3;
   
   int nsoil_lay = ref_soil_mlay_dz.size();
@@ -25,6 +25,15 @@ int main() {
   Mesh2D m = readMesh2D_text(mesh_in, soil_type, bedrock_type, depths);
 
   int nsnodes = m.coords.size();
+  double min_depth = DBL_MAX, max_depth = 0.0;
+  for (int inode = 0; inode < nsnodes; inode++) {
+    if (depths[inode] < min_depth)
+      min_depth = depths[inode];
+    if (depths[inode] > max_depth)
+      max_depth = depths[inode];
+  }
+  std::cout << "Min soil depth -> " << min_depth << ", max soil depth -> " << max_depth << std::endl;
+
   std::vector<double> dzs(nsnodes, 0.0);
   std::vector<double> rem_soil = depths;
   

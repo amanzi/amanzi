@@ -8,24 +8,24 @@ CXX_FLAGS +=  -std=c++11
 
 TPLS_LIB = ${AMANZI_TPLS_DIR}/lib
 TPLS_INCLUDE = ${AMANZI_TPLS_DIR}/include
-TPLS_LIBS = -lexodus -lnetcdf -lhdf5 -lhdf5_hl -lz
+TPLS_LIBS = -lexodus -lnetcdf -lhdf5_hl -lhdf5 -lz
 
 all: extrude_one_layer extrude_uniform extrude_homogeneous_uniform extrude_variable extrude_homogeneous_variable
 
 extrude_one_layer: extrude_one_layer.o extrude.a
-	mpicxx -std=c++11 ${CXX_FLAGS} -L${TPLS_LIB} ${TPLS_LIBS} src/extrude.a extrude_one_layer.o -o extrude_one_layer
+	mpicxx -std=c++11 ${CXX_FLAGS} extrude_one_layer.o src/extrude.a -L${TPLS_LIB} ${TPLS_LIBS} -o extrude_one_layer
 
 extrude_uniform: extrude_uniform.o extrude.a
-	mpicxx -std=c++11 ${CXX_FLAGS} -L${TPLS_LIB} ${TPLS_LIBS} src/extrude.a extrude_uniform.o -o extrude_uniform
+	mpicxx -std=c++11 ${CXX_FLAGS} extrude_uniform.o src/extrude.a -L${TPLS_LIB} ${TPLS_LIBS} -o extrude_uniform
 
 extrude_homogeneous_uniform: extrude_homogeneous_uniform.o extrude.a
-	mpicxx -std=c++11 ${CXX_FLAGS} -L${TPLS_LIB} ${TPLS_LIBS} src/extrude.a extrude_homogeneous_uniform.o -o extrude_homogeneous_uniform
+	mpicxx -std=c++11 ${CXX_FLAGS} extrude_homogeneous_uniform.o src/extrude.a -L${TPLS_LIB} ${TPLS_LIBS} -o extrude_homogeneous_uniform
 
 extrude_homogeneous_variable: extrude_homogeneous_variable.o extrude.a
-	mpicxx -std=c++11 ${CXX_FLAGS} -L${TPLS_LIB} ${TPLS_LIBS} src/extrude.a extrude_homogeneous_variable.o -o extrude_homogeneous_variable
+	mpicxx -std=c++11 ${CXX_FLAGS} extrude_homogeneous_variable.o src/extrude.a -L${TPLS_LIB} ${TPLS_LIBS} -o extrude_homogeneous_variable
 
-extrude_variable: extrude_variable.o extrude.a
-	mpicxx -std=c++11 ${CXX_FLAGS} -L${TPLS_LIB} ${TPLS_LIBS} src/extrude.a extrude_variable.o -o extrude_variable
+extrude_variable: extrude.a extrude_variable.o
+	mpicxx -std=c++11 ${CXX_FLAGS} extrude_variable.o src/extrude.a -L${TPLS_LIB} ${TPLS_LIBS} -o extrude_variable
 
 extrude.a:
 	make -C src extrude.a
