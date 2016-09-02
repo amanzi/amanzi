@@ -28,7 +28,9 @@ writeMesh3D_exodus(const Mesh3D& m, const std::string& filename) {
   std::vector<int> blocks_ncells;
   std::vector<int> blocks_id;
   std::vector<std::vector<int> > block_face_counts;
-  
+
+  int new_id = 0;
+  std::vector<int> cell_map(m.cell2face.size(), -1);
   for (auto sid : set_ids) {
     std::vector<int> block;
     std::vector<int> face_counts;
@@ -40,9 +42,10 @@ writeMesh3D_exodus(const Mesh3D& m, const std::string& filename) {
         ncells++;
         block.insert(block.end(), m.cell2face[i].begin(), m.cell2face[i].end());
         face_counts.push_back(m.cell2face[i].size());
+        cell_map[i] = new_id;
+        new_id++;
       }
     }
-    
 
     blocks.emplace_back(block);
     blocks_ncells.push_back(ncells);
@@ -137,12 +140,14 @@ writeMesh3D_exodus(const Mesh3D& m, const std::string& filename) {
     ASSERT(!ierr);
   }
 
-  // add the side sets
+  // add the side sets, mapping elems to the new ids
   for (int lcvs=0; lcvs!=m.face_sets.size(); ++lcvs) {
     auto& s = m.face_sets[lcvs];
-    auto elems_copy(s.first);
+    std::vector<int> elems_copy(s.first.size(), -1);
     auto faces_copy(s.second);
-    for (auto& e : elems_copy) e++;
+    for (int i=0; i!=elems_copy.size(); ++i) {
+      elems_copy[i] = cell_map[s.first[i]] + 1;
+    }
     for (auto& e : faces_copy) e++;
     ierr |= ex_put_side_set_param(fid, m.face_sets_id[lcvs], elems_copy.size(), 0);
     ASSERT(!ierr);
