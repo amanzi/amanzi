@@ -15,7 +15,6 @@
 */
 
 #include <algorithm>
-#include <regex>
 #include <set>
 #include <string>
 
@@ -121,10 +120,6 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   Chemistry_PK::Setup(S);
  
-  Teuchos::Array<std::string> empty;
-  std::vector<std::string> blacklist = glist_->sublist("visualization data")
-      .get<Teuchos::Array<std::string> >("blacklist", empty).toVector();
-
   // Set up auxiliary chemistry data using the ChemistryEngine.
   std::vector<std::string> aux_names;
   chem_engine_->GetAuxiliaryOutputNames(aux_names);
@@ -137,20 +132,6 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
       S->RequireField(aux_names[i], passwd_, subname)
        ->SetMesh(mesh_)->SetGhosted(false)
        ->SetComponent("cell", AmanziMesh::CELL, 1);
-
-      bool io_block(false);
-      for (int m = 0; m < blacklist.size(); ++m) {
-        std::regex pattern(blacklist[m]);
-        io_block |= std::regex_match(aux_names[i], pattern);
-      }
-      S->GetField(aux_names[i], passwd_)->set_io_vis(!io_block);
-
-      if (io_block) {
-        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-          Teuchos::OSTab tab = vo_->getOSTab();
-          *vo_->os() << "removed \"" << aux_names[i] << "\" from vis output\n";
-        }  
-      }
     }
   }
 

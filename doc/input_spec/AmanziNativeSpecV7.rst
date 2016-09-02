@@ -764,6 +764,23 @@ For a parallel run, it must be *.par*.
    </ParameterList>
 
 
+Data IO control
+---------------
+
+Two parameters below allow us to control fields that will go into a visuzalization file.
+First, we remove all fields matching the patterns specified by *blacklist*.
+Second, we add all fields matching the patterns specified by *whitelist*.
+Both parameters are optional.
+
+* `"blacklist`" [Array(string)] list of fields that should *not* be written to the visualization file.
+  Standard regular expressuion rules can be used, e.g. `"(secondary_)(.*)`" skips all fields 
+  those names start with `"secondary_`".
+
+* `"whitelist`" [Array(string)] list of fields that should *be* written to the visualization file.
+  Standard regular expressuion rules can be used, e.g. `"(primary_)(.*)`" adds all fields 
+  those names start with `"primary_`".
+
+
 Example
 -------
 
@@ -5259,10 +5276,6 @@ time step values or intervals corresponding to the cycle number; writes are cont
 
   * `"write partitions`" [bool] (false) if this parameter is true, then write an array into 
     the visualization file that contains the rank number of the processor that owns a mesh cell. 
-
-  * `"blacklist`" [Array(string)] list of fields that should not be written to the visualization file.
-    Standard regular expressuion rules can be used, e.g. `"(secondary_)(.*)`" skips all fields 
-    those names start with `"secondary_`".
 
 .. code-block:: xml
 

@@ -15,6 +15,7 @@ initialized (as independent variables are owned by state, not by any PK).
 
 #include <iostream>
 #include <ostream>
+#include <regex>
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_Vector.h"
@@ -812,6 +813,9 @@ void State::Initialize() {
 
   // Write dependency graph.
   WriteDependencyGraph();
+
+  // Reset io_vis flags using blacklist and whitelist
+  InitializeIOFlags_();
 };
 
 
@@ -851,7 +855,7 @@ void State::Initialize(Teuchos::RCP<State> S) {
   InitializeFields();
 
   // Ensure that non-evaluator-based fields are initialized.
-  //  CheckNotEvaluatedFieldsInitialized();
+  // CheckNotEvaluatedFieldsInitialized();
 
   // Initialize other field evaluators.
   InitializeEvaluators();
@@ -861,6 +865,9 @@ void State::Initialize(Teuchos::RCP<State> S) {
 
   // Write dependency graph.
   WriteDependencyGraph();
+
+  // Reset io_vis flags using blacklist and whitelist
+  InitializeIOFlags_();
 };
 
 
@@ -1098,6 +1105,38 @@ void State::set_time( double new_time ) {
 }
 
 
+// Utility for setting vis flags
+void State::InitializeIOFlags_() {
+  Teuchos::Array<std::string> empty;
+
+  // removing fields from vis dump
+  std::vector<std::string> blacklist = 
+      state_plist_.get<Teuchos::Array<std::string> >("blacklist", empty).toVector();
+
+  for (State::field_iterator field=field_begin(); field!=field_end(); ++field) {
+    bool io_block(false);
+    for (int m = 0; m < blacklist.size(); ++m) {
+      std::regex pattern(blacklist[m]);
+      io_block |= std::regex_match(field->first, pattern);
+    }
+    field->second->set_io_vis(!io_block);
+  }
+
+  // adding fields to vis dump
+  std::vector<std::string> whitelist =
+      state_plist_.get<Teuchos::Array<std::string> >("whitelist", empty).toVector();
+
+  for (State::field_iterator field=field_begin(); field!=field_end(); ++field) {
+    bool io_allow(false);
+    for (int m = 0; m < whitelist.size(); ++m) {
+      std::regex pattern(whitelist[m]);
+      io_allow |= std::regex_match(field->first, pattern);
+    }
+    if (io_allow) field->second->set_io_vis(true);
+  }
+}
+
+
 // Non-member function for vis.
 void WriteVis(const Teuchos::Ptr<Visualization>& vis,
               const Teuchos::Ptr<State>& S) {
@@ -1292,5 +1331,4 @@ void DeformCheckpointMesh(const Teuchos::Ptr<State>& S) {
   }
 }
 
-
-} // namespace amanzi
+} // namespace Amanzi

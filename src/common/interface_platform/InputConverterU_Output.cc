@@ -200,9 +200,6 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           std::vector<std::string> regions = CharToStrings_(regs.c_str());
           visPL.sublist("write regions").set<Teuchos::Array<std::string> >(name, regions);
         }
-      } else if (strcmp(tagname, "blacklist") == 0) {
-        text = mm.transcode(jnode->getTextContent());
-        visPL.set<Teuchos::Array<std::string> >("blacklist", CharToStrings_(text));
       }
     }
     out_list.sublist("visualization data") = visPL;
