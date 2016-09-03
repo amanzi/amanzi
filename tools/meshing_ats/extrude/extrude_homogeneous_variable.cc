@@ -1,4 +1,4 @@
-#include "Mesh.hh"
+#include "Mesh3D.hh"
 #include "writeMesh3D.hh"
 #include "readMesh2D.hh"
 
@@ -9,8 +9,8 @@ int main() {
   std::string mesh_in = "Mesh.txt";
   std::string mesh_out = "Mesh3D_HomogeneousVariableSoil.exo";
   
-  std::vector<double> ref_soil_mlay_dz = {1.0e-2, 2.0e-2, 5.0e-2, 1.2e-1, 2.5e-1, 5.0e-1, 1.0e1};
-  std::vector<double> ref_bedrock_mlay_dz = {1.0e1, 1.0e1};
+  std::vector<double> ref_soil_mlay_dz = {2.0e-2, 6.0e-2, 1.2e-1, 2.5e-1, 5.5e-1, 0.5e1};
+  std::vector<double> ref_bedrock_mlay_dz = {0.5e1, 1.5e1};
   double eps_dz = 1.0e-3;
   int hmg_soil_type = 1000;
   int hmg_bedrock_type = 100;
@@ -24,7 +24,7 @@ int main() {
   std::vector<int> bedrock_type;
   std::vector<double> depths;
 
-  Mesh2D m = readMesh2D_text(mesh_in, soil_type, bedrock_type, depths);
+  auto m = readMesh2D_text(mesh_in, soil_type, bedrock_type, depths);
 
   int nsnodes = m.coords.size();
   std::vector<double> dzs(nsnodes, 0.0);
@@ -55,7 +55,7 @@ int main() {
   for (int ilay = 0; ilay < nbedrock_lay; ilay++)
     m3.extrude(ref_bedrock_mlay_dz[ilay], hmg_bedrock_type);
   
-  m3.finish_sets();
+  m3.finish();
 
   std::cout << "NNodes on the surf = " << m.coords.size() << std::endl;
   std::cout << "Ncells on the surf = " << m.cell2node.size() << std::endl;

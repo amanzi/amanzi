@@ -69,7 +69,7 @@ writeMesh3D_exodus(const Mesh3D& m, const std::string& filename) {
   params.num_edge_maps = 0;
   params.num_face_maps = 0;
   params.num_elem_maps = 0;
-  params.num_side_sets = m.face_sets.size();
+  params.num_side_sets = m.side_sets.size();
   params.num_elem_sets = 0;
   params.num_node_sets = 0;
   params.num_face_sets = 0;
@@ -104,6 +104,7 @@ writeMesh3D_exodus(const Mesh3D& m, const std::string& filename) {
   ierr |= ex_put_coord(fid, &coords[0][0], &coords[1][0], &coords[2][0]);
   ASSERT(!ierr);
 
+  
   // put in the face block
   std::vector<int> facenodes;
   std::vector<int> facenodes_counts;
@@ -114,7 +115,6 @@ writeMesh3D_exodus(const Mesh3D& m, const std::string& filename) {
   ierr |= ex_put_block(fid, EX_FACE_BLOCK, 1, "NSIDED",
                        m.face2node.size(), facenodes.size(), 0,0,0);
   ASSERT(!ierr);
-
 
   ierr |= ex_put_entity_count_per_polyhedra(fid, EX_FACE_BLOCK, 1,
           &facenodes_counts[0]);
@@ -140,38 +140,41 @@ writeMesh3D_exodus(const Mesh3D& m, const std::string& filename) {
     ASSERT(!ierr);
   }
 
+  
   // add the side sets, mapping elems to the new ids
-  for (int lcvs=0; lcvs!=m.face_sets.size(); ++lcvs) {
-    auto& s = m.face_sets[lcvs];
+  for (int lcvs=0; lcvs!=m.side_sets.size(); ++lcvs) {
+    auto& s = m.side_sets[lcvs];
     std::vector<int> elems_copy(s.first.size(), -1);
     auto faces_copy(s.second);
     for (int i=0; i!=elems_copy.size(); ++i) {
       elems_copy[i] = cell_map[s.first[i]] + 1;
     }
     for (auto& e : faces_copy) e++;
-    ierr |= ex_put_side_set_param(fid, m.face_sets_id[lcvs], elems_copy.size(), 0);
+    ierr |= ex_put_side_set_param(fid, m.side_sets_id[lcvs], elems_copy.size(), 0);
     ASSERT(!ierr);
-    ierr |= ex_put_side_set(fid, m.face_sets_id[lcvs], &elems_copy[0], &faces_copy[0]);
+    ierr |= ex_put_side_set(fid, m.side_sets_id[lcvs], &elems_copy[0], &faces_copy[0]);
     ASSERT(!ierr);
   }
 
   ierr |= ex_close(fid);
   ASSERT(!ierr);
 
+
+  // debugging/nice output
   std::cout << "Wrote 3D Mesh:" << std::endl
             << "  ncells = " << m.cell2face.size() << std::endl
             << "  nfaces = " << m.face2node.size() << std::endl
             << "  nnodes = " << m.coords.size() << std::endl
             << std::endl
             << "  side sets = " << std::endl;
-  for (int i=0; i!=m.face_sets.size(); ++i)
-    std::cout << "    " << m.face_sets_id[i] << " ("
-              << m.face_sets[i].first.size() << " faces)" << std::endl;
+  for (int i=0; i!=m.side_sets.size(); ++i)
+    std::cout << "    " << m.side_sets_id[i] << " ("
+              << m.side_sets[i].first.size() << " faces)" << std::endl;
   std::cout << std::endl
             << "  block ids = " << std::endl;
   for (int i=0; i!=blocks_id.size(); ++i)
     std::cout << "    " << blocks_id[i] << " ("
-              << blocks[i].size() << " cells)" << std::endl;
+              << blocks_ncells[i] << " cells)" << std::endl;
   std::cout << std::endl;
   
 }

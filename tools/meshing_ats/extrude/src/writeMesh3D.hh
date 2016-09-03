@@ -1,7 +1,7 @@
 #ifndef MESH_WRITER_HH_
 #define MESH_WRITER_HH_
 
-#include "Mesh.hh"
+#include "Mesh3D.hh"
 
 
 namespace Amanzi {

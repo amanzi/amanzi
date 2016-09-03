@@ -11,7 +11,7 @@ TPLS_INCLUDE = ${AMANZI_TPLS_DIR}/include
 TPLS_LIBS = -lexodus -lnetcdf -lhdf5 -lhdf5_hl -lz
 
 
-SRCS = dbc.cc exceptions.cc Mesh.cc readMesh2D.cc writeMesh3D.cc
+SRCS = dbc.cc exceptions.cc Mesh2D.cc Mesh3D.cc readMesh2D.cc writeMesh3D.cc
 
 OBJS=$(SRCS:%.cc=%.o)
 DEPS=$(OBJS:%.o=%.d)

@@ -1,4 +1,4 @@
-#include "Mesh.hh"
+#include "Mesh3D.hh"
 #include "writeMesh3D.hh"
 #include "readMesh2D.hh"
 #include <cfloat>
@@ -22,7 +22,7 @@ int main() {
   std::vector<int> bedrock_type;
   std::vector<double> depths;
 
-  Mesh2D m = readMesh2D_text(mesh_in, soil_type, bedrock_type, depths);
+  auto m = readMesh2D_text(mesh_in, soil_type, bedrock_type, depths);
 
   int nsnodes = m.coords.size();
   double min_depth = DBL_MAX, max_depth = 0.0;
@@ -62,7 +62,7 @@ int main() {
   for (int ilay = 0; ilay < nbedrock_lay; ilay++)
     m3.extrude(ref_bedrock_mlay_dz[ilay], bedrock_type);
   
-  m3.finish_sets();
+  m3.finish();
 
   std::cout << "NNodes on the surf = " << m.coords.size() << std::endl;
   std::cout << "Ncells on the surf = " << m.cell2node.size() << std::endl;

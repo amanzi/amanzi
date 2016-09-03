@@ -1,4 +1,4 @@
-#include "Mesh.hh"
+#include "Mesh3D.hh"
 #include "writeMesh3D.hh"
 #include "readMesh2D.hh"
 
@@ -15,12 +15,12 @@ int main() {
   std::vector<int> bedrock_type;
   std::vector<double> depths;
 
-  Mesh2D m = readMesh2D_text(mesh_in, soil_type, bedrock_type, depths);
+  auto m = readMesh2D_text(mesh_in, soil_type, bedrock_type, depths);
   int nsnodes = m.coords.size();
   
   Mesh3D m3(&m, 1);
   m3.extrude(0.02, 100);
-  m3.finish_sets();
+  m3.finish();
 
   std::cout << "NNodes on the surf = " << m.coords.size() << std::endl;
   std::cout << "Ncells on the surf = " << m.cell2node.size() << std::endl;

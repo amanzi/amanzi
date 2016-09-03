@@ -3,7 +3,7 @@
 
 #include <map>
 
-#include "Mesh.hh"
+#include "Mesh2D.hh"
 
 namespace Amanzi {
 namespace AmanziGeometry {
