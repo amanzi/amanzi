@@ -69,6 +69,7 @@
 #   0.92.25      - update MSTK to version 2.26rc2 (adds fixes for pinchouts)
 #
 #   0.93.0       - defaulted to C++11, update Trilinos to 12.6.1
+#   0.93.1       - update Boost to version 1.61.0
 
 include(CMakeParseArguments)
 
@@ -118,7 +119,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 93)
-set (AMANZI_TPLS_VERSION_PATCH 0)
+set (AMANZI_TPLS_VERSION_PATCH 1)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -203,13 +204,13 @@ set(UnitTest_MD5_SUM      6f6e05fa07eeb2d44e5b11bd1f38865d)
 # TPL: Boost
 #
 set(Boost_VERSION_MAJOR 1)
-set(Boost_VERSION_MINOR 58)
+set(Boost_VERSION_MINOR 61)
 set(Boost_VERSION_PATCH 0)
 set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH})
 set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
 set(Boost_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.bz2)
-set(Boost_MD5_SUM        b8839650e61e9c1c0a89f371dd475546)
+set(Boost_MD5_SUM        6095876341956f65f9d35939ccea1a9f)
 
 #
 # TPL: BoostCmake

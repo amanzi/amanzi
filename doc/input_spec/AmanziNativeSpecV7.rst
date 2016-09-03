@@ -3936,6 +3936,7 @@ Generalized minimal residuals (GMRES)
 .....................................
 
 Not all scientists know that idea of GMRES method was formulated first in 1968.
+We support two implementations (Amanzi and Tilinos). 
 Internal parameters for GMRES include
 
 * `"error tolerance`" [double] is used in the convergence test. The default value is 1e-6.
@@ -3975,11 +3976,21 @@ Internal parameters for GMRES include
        <Parameter name="size of Krylov space" type="int" value="10"/>
        <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
        <Parameter name="maximum size of deflation space" type="int" value="0"/>
+       <Parameter name="preconditioning strategy`" type="string" value="left"/>
 
        <ParameterList name="verbose object">
          <Parameter name="verbosity level" type="string" value="high"/>
        </ParameterList>
      </ParameterList>
+
+     <!-- Alternative implementation
+     <ParameterList name="belos gmres parameters">
+       <Parameter name="error tolerance" type="double" value="1e-12"/>
+       <Parameter name="maximum number of iterations" type="int" value="400"/>
+       <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
+       <Parameter name="size of Krylov space" type="int" value="10"/>
+       <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
+     </ParameterList-->
    </ParameterList>
 
 

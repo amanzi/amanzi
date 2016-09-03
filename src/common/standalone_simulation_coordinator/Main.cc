@@ -182,6 +182,9 @@ int main(int argc, char *argv[]) {
 #ifdef SEACAS_MAJOR
         std::cout << "  SEACAS         " << XSTR(SEACAS_MAJOR) << "." << XSTR(SEACAS_MINOR) << "." << XSTR(SEACAS_PATCH) << std::endl;
 #endif
+#ifdef Silo_MAJOR
+        std::cout << "  Silo           " << XSTR(Silo_MAJOR) << "." << XSTR(Silo_MINOR) << "." << XSTR(Silo_PATCH) << std::endl;
+#endif
 #ifdef SuperLU_MAJOR
         std::cout << "  SuperLU        " << XSTR(SuperLU_MAJOR) << "." << XSTR(SuperLU_MINOR) << "." << XSTR(SuperLU_PATCH) << std::endl;
 #endif
