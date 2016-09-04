@@ -29,7 +29,7 @@ Teuchos::RCP<MultiscaleFlowPorosityPartition> CreateMultiscaleFlowPorosityPartit
   std::vector<Teuchos::RCP<MultiscaleFlowPorosity> > msp_list;
   std::vector<std::string> region_list;
 
-  for (Teuchos::ParameterList::ConstIterator lcv = plist->begin(); lcv != plist->end(); ++lcv) {
+  for (auto lcv = plist->begin(); lcv != plist->end(); ++lcv) {
     std::string name = lcv->first;
     if (plist->isSublist(name)) {
       Teuchos::ParameterList sublist = plist->sublist(name);

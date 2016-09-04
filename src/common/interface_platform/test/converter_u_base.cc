@@ -29,8 +29,7 @@
 bool ComparePLists(const Teuchos::ParameterList& plist1,
                    const Teuchos::ParameterList& plist2, std::string& name) 
 {
-  Teuchos::ParameterList::ConstIterator it;
-  for (it = plist1.begin(); it != plist1.end(); ++it) {
+  for (auto it = plist1.begin(); it != plist1.end(); ++it) {
     name = plist1.name(it);
     if (plist1.isSublist(name)) {
       if (!plist2.isSublist(name)) return false;

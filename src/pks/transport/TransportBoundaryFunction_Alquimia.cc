@@ -96,9 +96,9 @@ void TransportBoundaryFunction_Alquimia::Compute(double t_old, double t_new)
   std::string cond_name = (*f_)(t_new);
 
   // Loop over sides and evaluate values.
-  for (TransportDomainFunction::Iterator it = begin(); it != end(); ++it) {
-    int f = it->first; 
+  for (auto it = begin(); it != end(); ++it) {
     // Find the index of the cell we're in.
+    int f = it->first; 
     int cell = cell_for_face_[f];
 
     // Dump the contents of the chemistry state into our Alquimia containers.

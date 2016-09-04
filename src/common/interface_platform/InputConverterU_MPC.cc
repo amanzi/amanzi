@@ -578,20 +578,14 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   // add start times of all boundary conditions to the list
   std::map<double, double> dt_init_map, dt_max_map;
 
-  std::vector<std::string> bc_names;
-  bc_names.push_back("uniform_pressure");
-  bc_names.push_back("linear_pressure");
-  bc_names.push_back("hydrostatic");
-  bc_names.push_back("linear_hydrostatic");
-  bc_names.push_back("inward_mass_flux");
-  bc_names.push_back("outward_mass_flux");
-  bc_names.push_back("inward_volumetric_flux");
-  bc_names.push_back("outward_volumetric_flux");
-  bc_names.push_back("seepage_face");
-  bc_names.push_back("aqueous_conc");
-  bc_names.push_back("uniform_conc");
-  bc_names.push_back("constraint");
-  bc_names.push_back("uniform_temperature");
+  std::vector<std::string> bc_names = {
+      "uniform_pressure", "linear_pressure",
+      "hydrostatic", "linear_hydrostatic",
+      "inward_mass_flux", "outward_mass_flux",
+      "inward_volumetric_flux", "outward_volumetric_flux",
+      "seepage_face", "aqueous_conc",
+      "uniform_conc", "constraint",
+      "uniform_temperature"};
 
   node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
   if (node_list->getLength() > 0) {
@@ -685,7 +679,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
   // create PKs list
   Teuchos::ParameterList tp_list = cd_list.sublist("time periods");
 
-  for (Teuchos::ParameterList::ConstIterator it = tp_list.begin(); it !=tp_list.end(); ++it) {
+  for (auto it = tp_list.begin(); it != tp_list.end(); ++it) {
     if ((it->second).isList()) {
       Teuchos::ParameterList& pk_tree = tp_list.sublist(it->first).sublist("PK tree");
       RegisterPKsList_(pk_tree, out_list);
@@ -699,7 +693,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
   }
 
   // parse list of supported PKs
-  for (Teuchos::ParameterList::ConstIterator it = out_list.begin(); it != out_list.end(); ++it) {
+  for (auto it = out_list.begin(); it != out_list.end(); ++it) {
     if ((it->second).isList()) {
       if (it->first == "Flow Steady") {
         out_list.sublist(it->first) = TranslateFlow_("steady");
@@ -772,7 +766,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
 void InputConverterU::RegisterPKsList_(
     Teuchos::ParameterList& pk_tree, Teuchos::ParameterList& pks_list)
 {
-  for (Teuchos::ParameterList::ConstIterator it = pk_tree.begin(); it !=pk_tree.end();++it) {
+  for (auto it = pk_tree.begin(); it !=pk_tree.end();++it) {
     if ((it->second).isList()) {
       pks_list.sublist(it->first);
       RegisterPKsList_(pk_tree.sublist(it->first), pks_list);

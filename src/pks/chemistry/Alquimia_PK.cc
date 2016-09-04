@@ -263,10 +263,9 @@ void Alquimia_PK::ParseChemicalConditionRegions(const Teuchos::ParameterList& pa
   Errors::Message msg;
 
   // Go through the sublist containing the chemical conditions.
-  for (Teuchos::ParameterList::ConstIterator iter = param_list.begin();
-       iter != param_list.end(); ++iter) {
+  for (auto it = param_list.begin(); it != param_list.end(); ++it) {
     // This parameter list contains sublists, each corresponding to a condition. 
-    std::string cond_name = param_list.name(iter);
+    std::string cond_name = param_list.name(it);
     assert(param_list.isSublist(cond_name));
     const Teuchos::ParameterList& cond_sublist = param_list.sublist(cond_name);
  
@@ -312,11 +311,10 @@ void Alquimia_PK::XMLParameters()
   // Add any geochemical conditions we find in the Chemistry section of the file.
   if (cp_list_->isParameter("geochemical conditions")) {
     Teuchos::ParameterList conditions = cp_list_->sublist("geochemical conditions");
-    for (Teuchos::ParameterList::ConstIterator iter = conditions.begin();
-         iter != conditions.end(); ++iter) {
+    for (auto it = conditions.begin(); it != conditions.end(); ++it) {
       // This parameter list contains sublists, each corresponding to a
       // geochemical condition. 
-      std::string cond_name = conditions.name(iter);
+      std::string cond_name = conditions.name(it);
       assert(conditions.isSublist(cond_name));
       const Teuchos::ParameterList& cond_sublist = conditions.sublist(cond_name);
 
@@ -325,9 +323,8 @@ void Alquimia_PK::XMLParameters()
       chem_engine_->CreateCondition(cond_name);
 
       // Now mine the entry for details.
-      for (Teuchos::ParameterList::ConstIterator iter2 = cond_sublist.begin();
-           iter2 != cond_sublist.end(); ++iter2) {
-        std::string species_name = cond_sublist.name(iter2);
+      for (auto it2 = cond_sublist.begin(); it2 != cond_sublist.end(); ++it2) {
+        std::string species_name = cond_sublist.name(it2);
         assert(cond_sublist.isSublist(species_name));
         const Teuchos::ParameterList& aqueous_constraint = cond_sublist.sublist(species_name);
         

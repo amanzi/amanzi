@@ -29,7 +29,7 @@ Teuchos::RCP<MultiscaleTransportPorosityPartition> CreateMultiscaleTransportPoro
   std::vector<Teuchos::RCP<MultiscaleTransportPorosity> > msp;
   std::vector<std::vector<std::string> > regions;
 
-  for (Teuchos::ParameterList::ConstIterator it = plist->begin(); it != plist->end(); ++it) {
+  for (auto it = plist->begin(); it != plist->end(); ++it) {
     if (plist->isSublist(it->first)) {
       Teuchos::ParameterList sublist = plist->sublist(it->first);
       regions.push_back(sublist.get<Teuchos::Array<std::string> >("regions").toVector());

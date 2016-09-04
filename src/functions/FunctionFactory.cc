@@ -28,7 +28,7 @@ Function* FunctionFactory::Create(Teuchos::ParameterList& list) const
   // one, a sublist, whose name matches one of the known function types.
   // Anything else is a syntax error and we throw an exception.
   Function *f = 0;
-  for (Teuchos::ParameterList::ConstIterator it = list.begin(); it != list.end(); ++it) {
+  for (auto it = list.begin(); it != list.end(); ++it) {
     std::string function_type = list.name(it);
     if (list.isSublist(function_type)) { // process the function sublist
       if (f) { // error: already processed a function sublist

@@ -30,19 +30,19 @@ void Flow_PK::VV_ValidateBCs() const
 
   for (int i =0; i < bcs_.size(); i++) {
     if (bcs_[i]->bc_name() == "pressure") {
-      for (PK_DomainFunction::Iterator it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         pressure_faces.insert(it->first);
       }  
     }
 
     if (bcs_[i]->bc_name() == "flux") {
-      for (PK_DomainFunction::Iterator it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         flux_faces.insert(it->first);
       }
     }
 
     if (bcs_[i]->bc_name() == "head") {
-      for (PK_DomainFunction::Iterator it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         head_faces.insert(it->first);
       }
     }
@@ -152,7 +152,7 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
   for (int i = 0; i < bcs_.size(); ++i) {
     if (bcs_[i]->bc_name() == "seepage") {
       nbcs++;
-      for (PK_DomainFunction::Iterator it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         f = it->first;
         if (f < nfaces_owned) {
           c = BoundaryFaceGetCell(f);
@@ -248,7 +248,7 @@ void Flow_PK::VV_PrintSourceExtrema() const
     std::vector<double> volumes;
 
     for (int i = 0; i < srcs.size(); ++i) {
-      for (PK_DomainFunction::Iterator it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
+      for (auto it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
         int c = it->first;
         smin = std::min(smin, it->second);
         smax = std::max(smax, it->second);

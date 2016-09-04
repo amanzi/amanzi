@@ -282,7 +282,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
     PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("pressure");
-    for (Teuchos::ParameterList::ConstIterator it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
@@ -298,7 +298,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
     PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("static head");
-    for (Teuchos::ParameterList::ConstIterator it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
@@ -314,7 +314,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
     PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("mass flux");
-    for (Teuchos::ParameterList::ConstIterator it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
@@ -330,7 +330,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
     PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("seepage face");
-    for (Teuchos::ParameterList::ConstIterator it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
@@ -350,7 +350,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
     PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
 
     Teuchos::ParameterList& src_list = plist.sublist("source terms");
-    for (Teuchos::ParameterList::ConstIterator it = src_list.begin(); it != src_list.end(); ++it) {
+    for (auto it = src_list.begin(); it != src_list.end(); ++it) {
       std::string name = it->first;
       if (src_list.isSublist(name)) {
         Teuchos::ParameterList& spec = src_list.sublist(name);
@@ -400,7 +400,7 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
 
   for (int i = 0; i < bcs_.size(); ++i) {
     if (bcs_[i]->bc_name() == "pressure") {
-      for (PK_DomainFunction::Iterator it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_value[f] = it->second;
@@ -408,7 +408,7 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
     }
 
     if (bcs_[i]->bc_name() == "head") {
-      for (PK_DomainFunction::Iterator it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         if (bcs_[i]->no_flow_above_water_table()) {
           if (it->second < atm_pressure_) {
@@ -423,7 +423,7 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
     }
 
     if (bcs_[i]->bc_name() == "flux") {
-      for (PK_DomainFunction::Iterator it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value[f] = it->second * flux_units_;
@@ -585,7 +585,7 @@ void Flow_PK::AddSourceTerms(CompositeVector& rhs)
   Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
 
   for (int i = 0; i < srcs.size(); ++i) {
-    for (PK_DomainFunction::Iterator it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
+    for (auto it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
       int c = it->first;
       rhs_cell[0][c] += mesh_->cell_volume(c) * it->second;
     }

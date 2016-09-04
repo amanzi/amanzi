@@ -42,7 +42,7 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
 
     for (int i = 0; i < ncomp; i++) {
       if (current_component_ == tcc_index[i]) {
-        for (TransportDomainFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+        for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
           int f = it->first;
           WhetStone::DenseVector& values = it->second;
 
@@ -124,7 +124,7 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
 
     for (int i = 0; i < ncomp; i++) {
       if (current_component_ == tcc_index[i]) {
-        for (TransportDomainFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+        for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
           int f = it->first;
           WhetStone::DenseVector& values = it->second;
 

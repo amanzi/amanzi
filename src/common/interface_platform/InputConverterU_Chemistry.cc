@@ -470,7 +470,7 @@ std::string InputConverterU::CreateBGDFile(std::string& filename)
     }
     
     // create text for kds
-    for (Teuchos::ParameterList::ConstIterator iter = IsothermsPL.begin(); iter != IsothermsPL.end(); ++iter) {
+    for (auto iter = IsothermsPL.begin(); iter != IsothermsPL.end(); ++iter) {
       
       std::string primary = IsothermsPL.name(iter);
       Teuchos::ParameterList& curprimary = IsothermsPL.sublist(primary);

@@ -211,7 +211,7 @@ void InputAnalysis::OutputBCs()
       Teuchos::ParameterList mass_flux_list, pressure_list, seepage_list, head_list;
       if (bc_list.isSublist("mass flux")) {
         mass_flux_list = bc_list.sublist("mass flux");
-        for (Teuchos::ParameterList::ConstIterator i = mass_flux_list.begin(); i != mass_flux_list.end(); i++) {
+        for (auto i = mass_flux_list.begin(); i != mass_flux_list.end(); i++) {
 
           if (mass_flux_list.isSublist(mass_flux_list.name(i))) {
             Teuchos::ParameterList& bc = mass_flux_list.sublist(mass_flux_list.name(i));
@@ -264,7 +264,7 @@ void InputAnalysis::OutputBCs()
       }
       if (bc_list.isSublist("pressure")) {
         pressure_list = bc_list.sublist("pressure");
-        for (Teuchos::ParameterList::ConstIterator i = pressure_list.begin(); i != pressure_list.end(); i++) {
+        for (auto i = pressure_list.begin(); i != pressure_list.end(); i++) {
 
           if (pressure_list.isSublist(pressure_list.name(i))) {
             Teuchos::ParameterList& bc = pressure_list.sublist(pressure_list.name(i));
@@ -318,7 +318,7 @@ void InputAnalysis::OutputBCs()
 
       if (bc_list.isSublist("seepage face")) {
         seepage_list = bc_list.sublist("seepage face");
-        for (Teuchos::ParameterList::ConstIterator i = seepage_list.begin(); i != seepage_list.end(); i++) {
+        for (auto i = seepage_list.begin(); i != seepage_list.end(); i++) {
 
           if (seepage_list.isSublist(seepage_list.name(i))) {
             Teuchos::ParameterList& bc = seepage_list.sublist(seepage_list.name(i));
@@ -371,7 +371,7 @@ void InputAnalysis::OutputBCs()
 
       if (bc_list.isSublist("static head")) {
         head_list = bc_list.sublist("static head");
-        for (Teuchos::ParameterList::ConstIterator i = head_list.begin(); i != head_list.end(); i++) {
+        for (auto i = head_list.begin(); i != head_list.end(); i++) {
 
           if (head_list.isSublist(head_list.name(i))) {
             Teuchos::ParameterList& bc = head_list.sublist(head_list.name(i));

@@ -31,7 +31,7 @@ Teuchos::RCP<PorosityModelPartition> CreatePorosityModelPartition(
   std::vector<Teuchos::RCP<PorosityModel> > pom_list;
   std::vector<std::string> region_list;
 
-  for (Teuchos::ParameterList::ConstIterator lcv = plist->begin(); lcv != plist->end(); ++lcv) {
+  for (auto lcv = plist->begin(); lcv != plist->end(); ++lcv) {
     std::string name = lcv->first;
     if (plist->isSublist(name)) {
       Teuchos::ParameterList sublist = plist->sublist(name);

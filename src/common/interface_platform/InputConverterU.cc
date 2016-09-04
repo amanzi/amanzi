@@ -59,7 +59,7 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   out_list.sublist("regions") = TranslateRegions_();
 
   const Teuchos::ParameterList& tmp = TranslateOutput_();
-  for (Teuchos::ParameterList::ConstIterator it = tmp.begin(); it != tmp.end(); ++it)
+  for (auto it = tmp.begin(); it != tmp.end(); ++it)
     out_list.sublist(it->first) = tmp.sublist(it->first);
 
   out_list.sublist("state") = TranslateState_();
@@ -336,7 +336,7 @@ void InputConverterU::MergeInitialConditionsLists_(Teuchos::ParameterList& plist
     Teuchos::ParameterList& icc = plist.sublist("PKs").sublist("chemistry")
                                        .sublist("initial conditions");
 
-    for (Teuchos::ParameterList::ConstIterator it = icc.begin(); it != icc.end(); ++it) {
+    for (auto it = icc.begin(); it != icc.end(); ++it) {
       if (icc.isSublist(it->first)) {
         Teuchos::ParameterList& slist = icc.sublist(it->first);
         if (slist.isSublist("function")) {
@@ -354,7 +354,7 @@ void InputConverterU::MergeInitialConditionsLists_(Teuchos::ParameterList& plist
 ****************************************************************** */
 void InputConverterU::FilterEmptySublists_(Teuchos::ParameterList& plist)
 {
-  for (Teuchos::ParameterList::ConstIterator it = plist.begin(); it != plist.end(); ++it) {
+  for (auto it = plist.begin(); it != plist.end(); ++it) {
     if (plist.isSublist(it->first)) {
       Teuchos::ParameterList& slist = plist.sublist(it->first);
       if (slist.numParams() == 0) {
