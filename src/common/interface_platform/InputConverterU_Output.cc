@@ -227,6 +227,9 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
       } else if (strcmp(tagname, "cycle_macros") == 0 ||
                  strcmp(tagname, "cycle_macro") == 0) {
         ProcessMacros_("cycles", text, cmPL, chkPL);
+      } else if (strcmp(tagname, "time_macros") == 0 ||
+                 strcmp(tagname, "time_macro") == 0) {
+        ProcessMacros_("times", text, tmPL, chkPL);
       }
     }
     out_list.sublist("checkpoint data") = chkPL;

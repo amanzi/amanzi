@@ -168,7 +168,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
     aux_names.insert(aux_names.end(), names.begin(), names.end());
   }
 
-  for (std::vector<std::string>::const_iterator it = aux_names.begin(); it != aux_names.end(); ++it) {
+  for (auto it = aux_names.begin(); it != aux_names.end(); ++it) {
     S->GetFieldData(*it, passwd_)->PutScalar(0.0);
     S->GetField(*it, passwd_)->set_initialized();
   }
@@ -187,10 +187,9 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Now loop through all the regions and initialize.
   int ierr = 0;
-  for (std::map<std::string, std::string>::const_iterator cond_iter = chem_initial_conditions_.begin(); 
-       cond_iter != chem_initial_conditions_.end(); ++cond_iter) {
-    std::string region_name = cond_iter->first;
-    std::string condition = cond_iter->second;
+  for (auto it = chem_initial_conditions_.begin(); it != chem_initial_conditions_.end(); ++it) {
+    std::string region_name = it->first;
+    std::string condition = it->second;
 
     // Get the cells that belong to this region.
     unsigned int num_cells = mesh_->get_set_size(region_name, AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -394,31 +393,12 @@ void Alquimia_PK::XMLParameters()
   max_time_step_ = cp_list_->get<double>("max time step (s)", 9.9e9);
   min_time_step_ = cp_list_->get<double>("min time step (s)", 9.9e9);
   prev_time_step_ = cp_list_->get<double>("initial time step (s)", std::min(min_time_step_, max_time_step_));
-  /*
-  if ((min_time_step_ == 9.9e9) && (prev_time_step_ < 9.9e9))
-    min_time_step_ = prev_time_step_;
-  else if ((min_time_step_ == 9.9e9) && (max_time_step_ < 9.9e9))
-    min_time_step_ = max_time_step_;
-  else if (min_time_step_ > max_time_step_) {
-    msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  Min Time Step exceeds Max Time Step!\n";
-    Exceptions::amanzi_throw(msg);
-  }
-  if ((min_time_step_ < max_time_step_) && (prev_time_step_ == max_time_step_))
-    prev_time_step_ = min_time_step_;
-  */
+
   if (prev_time_step_ > max_time_step_) {
     msg << "Alquimia_PK::XMLParameters(): \n";
     msg << "  Initial Time Step exceeds Max Time Step!\n";
     Exceptions::amanzi_throw(msg);
   }
-  /*
-   if (prev_time_step_ < min_time_step_) {
-    msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  Initial Time Step is smaller than Min Time Step!\n";
-    Exceptions::amanzi_throw(msg);
-    }
-  */
 
   time_step_ = prev_time_step_;
   time_step_control_method_ = cp_list_->get<std::string>("time step control method", "fixed");
