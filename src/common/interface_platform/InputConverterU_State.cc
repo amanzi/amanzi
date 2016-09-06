@@ -84,6 +84,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       std::string mat_name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
 
+      std::cout <<"mat_name "<<i<<mat_name<<"\n";
+
       node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
@@ -104,23 +106,27 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         reg_str = reg_str + *it;
       }
 
+      std::cout << reg_str <<"\n";
+
       // -- porosity: skip if compressibility model was already provided.
       if (!compressibility_) {
         double porosity;
         node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
         if (flag) {
           porosity = GetAttributeValueD_(static_cast<DOMElement*>(node), "value", TYPE_NUMERICAL, "-");
-        } else {
-          msg << "Porosity element must be specified under mechanical_properties";
-          Exceptions::amanzi_throw(msg);
-        }
-        Teuchos::ParameterList& porosity_ev = out_ev.sublist("porosity");
-        porosity_ev.sublist("function").sublist(reg_str)
+
+          Teuchos::ParameterList& porosity_ev = out_ev.sublist("porosity");
+          porosity_ev.sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions", regions)
             .set<std::string>("component", "cell")
             .sublist("function").sublist("function-constant")
             .set<double>("value", porosity);
-        porosity_ev.set<std::string>("field evaluator type", "independent variable");
+          porosity_ev.set<std::string>("field evaluator type", "independent variable");
+
+        } else {
+          msg << "Porosity element must be specified under mechanical_properties";
+          Exceptions::amanzi_throw(msg);
+        }
       }
 
       // -- transport porosity 
@@ -156,7 +162,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
       // First we get either permeability value or the file name
       int file(0);
-      std::string file_name, type;
+      std::string file_name, type, format;
       std::vector<std::string> attr_names;
       double kx, ky, kz;
 
@@ -166,6 +172,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
       type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
       if (type == "file") file++;
+      // format = GetAttributeValueS_(node, "format", TYPE_NONE, false, "");
+      // if (format !="") file++;
       file_name = GetAttributeValueS_(node, "filename", TYPE_NONE, false, "");
       if (file_name != "") file++;
       attr_names = GetAttributeVectorS_(node, "attribute", false);
@@ -182,7 +190,11 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       Teuchos::ParameterList& permeability_ic = out_ic.sublist("permeability");
       permeability_ic.set<bool>("write checkpoint", false);
 
-      if (file == 3) {
+      if (file == 2){
+        permeability_ic.set<std::string>("restart file", file_name);
+        kx = ky = kz = 1.0;
+      }
+      else if (file == 3) {
         permeability_ic.sublist("exodus file initialization")
             .set<std::string>("file", file_name)
             .set<Teuchos::Array<std::string> >("attributes", attr_names);
@@ -212,27 +224,45 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- specific_yield
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_yield", flag);
       if (flag) {
-        double specific_yield = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+          if (static_cast<DOMElement*>(node)->hasAttribute(XMLString::transcode("type"))){
+            char* type =  XMLString::transcode(static_cast<DOMElement*>(node)->getAttribute(XMLString::transcode("type")));
+            if (std::string(type) == "file"){
+              std::string specific_yield_file = GetAttributeValueS_(static_cast<DOMElement*>(node), "filename");
+              Teuchos::ParameterList& specific_yield_ic = out_ic.sublist("specific_yield");
+              specific_yield_ic.set<std::string>("restart file", specific_yield_file);
+            }
+          }else{
+            double specific_yield = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
 
-        Teuchos::ParameterList& spec_yield_ic = out_ic.sublist("specific_yield");
-        spec_yield_ic.sublist("function").sublist(reg_str)
-            .set<Teuchos::Array<std::string> >("regions",regions)
-            .set<std::string>("component", "cell")
-            .sublist("function").sublist("function-constant")
-            .set<double>("value", specific_yield);
+            Teuchos::ParameterList& spec_yield_ic = out_ic.sublist("specific_yield");
+            spec_yield_ic.sublist("function").sublist(reg_str)
+              .set<Teuchos::Array<std::string> >("regions",regions)
+              .set<std::string>("component", "cell")
+              .sublist("function").sublist("function-constant")
+              .set<double>("value", specific_yield);
+          }
       }
 
       // -- specific storage
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_storage", flag);
       if (flag) {
-        double specific_storage = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+        if (static_cast<DOMElement*>(node)->hasAttribute(XMLString::transcode("type"))){
+          char* type =  XMLString::transcode(static_cast<DOMElement*>(node)->getAttribute(XMLString::transcode("type")));
+          if (std::string(type) == "file"){
+            std::string specific_storage_file = GetAttributeValueS_(static_cast<DOMElement*>(node), "filename");
+            Teuchos::ParameterList& specific_storage_ic = out_ic.sublist("specific_storage");
+            specific_storage_ic.set<std::string>("restart file", specific_storage_file);
+          }
+        }else{
+          double specific_storage = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
 
-        Teuchos::ParameterList& spec_yield_ic = out_ic.sublist("specific_storage");
-        spec_yield_ic.sublist("function").sublist(reg_str)
+          Teuchos::ParameterList& specific_storage_ic = out_ic.sublist("specific_storage");
+          specific_storage_ic.sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions",regions)
             .set<std::string>("component", "cell")
             .sublist("function").sublist("function-constant")
             .set<double>("value", specific_storage);
+        }
       }
 
       // -- particle density
@@ -461,6 +491,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
   // add mesh partitions to the state list
   out_list.sublist("mesh partitions") = TranslateMaterialsPartition_();
+
 
   return out_list;
 }

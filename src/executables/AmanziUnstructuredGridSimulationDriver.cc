@@ -314,14 +314,17 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     }
   }  // If expert_params_specified
 
+
   // -------------- ANALYSIS --------------------------------------------
   Amanzi::InputAnalysis analysis(mesh);
   analysis.Init(*plist_);
   analysis.RegionAnalysis();
   analysis.OutputBCs();
 
+
   Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(*plist_));
   Amanzi::CycleDriver cycle_driver(glist, mesh, comm, observations_data);
+
 
   cycle_driver.Go();
 
