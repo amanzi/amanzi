@@ -73,7 +73,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   InitializeMinerals(cp_list_);
   InitializeSorptionSites(cp_list_, state_list);
 
-  // create chemistry engine. (should we do it later in Initialize()?)
+  // create chemistry engine. (should we do it later in Setup()?)
   if (!cp_list_->isParameter("engine")) {
     Errors::Message msg;
     msg << "No 'engine' parameter found in the parameter list for 'Chemistry'.\n";
@@ -384,17 +384,14 @@ void Alquimia_PK::XMLParameters()
   }
   Teuchos::ParameterList& state_list = glist_->sublist("state");
   Teuchos::ParameterList& initial_conditions = state_list.sublist("initial conditions");
-  if (!initial_conditions.isSublist("geochemical conditions")) {
-    msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  No 'geochemical conditions' list was found in 'State->initial conditions'!\n";
-    Exceptions::amanzi_throw(msg);
-  }
-  Teuchos::ParameterList geochem_conditions = initial_conditions.sublist("geochemical conditions");
-  ParseChemicalConditionRegions(geochem_conditions, chem_initial_conditions_);
-  if (chem_initial_conditions_.empty()) {
-    msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  No geochemical conditions were found in 'State->initial conditions->geochemical conditions'!\n";
-    Exceptions::amanzi_throw(msg);
+  if (initial_conditions.isSublist("geochemical conditions")) {
+    Teuchos::ParameterList geochem_conditions = initial_conditions.sublist("geochemical conditions");
+    ParseChemicalConditionRegions(geochem_conditions, chem_initial_conditions_);
+    if (chem_initial_conditions_.empty()) {
+      msg << "Alquimia_PK::XMLParameters(): \n";
+      msg << "  No geochemical conditions were found in 'State->initial conditions->geochemical conditions'!\n";
+      Exceptions::amanzi_throw(msg);
+    }
   }
 
   // Other settings.
