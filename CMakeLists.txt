@@ -5,18 +5,15 @@
 #       Root CMakeLists.txt file
 #
 
-# Require cmake 2.8.8 or higher
-cmake_minimum_required(VERSION 2.8.8)
-set(CMAKE_CTEST_COMMAND ${CMAKE_CTEST_COMMAND})  
+# Require cmake 3.1.3 or higher for c++11 support
+cmake_minimum_required(VERSION 3.1.3)
 
-if ("${CMAKE_PATCH_VERSION}" GREATER 11)
-  cmake_policy(SET CMP0022 NEW)
-endif()
+# cmake_policy(SET CMP0017 NEW)
+# cmake_policy(SET CMP0022 NEW)
+# cmake_policy(SET CMP0037 OLD)
+# cmake_policy(SET CMP0048 OLD)
 
-if ("${CMAKE_MAJOR_VERSION}" GREATER 2)
-  cmake_policy(SET CMP0037 OLD)
-  cmake_policy(SET CMP0048 OLD)
-endif()
+set(CMAKE_CXX_STANDARD 11)
 
 # Enable testing, ctest needs this
 # all add_test commands are ignored unless this is called!

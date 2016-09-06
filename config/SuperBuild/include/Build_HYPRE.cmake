@@ -67,6 +67,12 @@ if (ENABLE_PETSC)
   set(hypre_superlu_opt --without-superlu)
 endif()
 
+# shared/static libraries
+set(hypre_shared_opt)
+if (BUILD_SHARED_LIBS)
+  set(hypre_shared_opt --enable-shared)
+endif()
+
 # Build the configure script
 set(HYPRE_sh_configure ${HYPRE_prefix_dir}/hypre-configure-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-configure-step.sh.in

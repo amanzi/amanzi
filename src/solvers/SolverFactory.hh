@@ -43,6 +43,7 @@ struct SolverFactory {
 #include "SolverNKA_BT_ATS.hh"
 #include "SolverNKA_LS_ATS.hh"
 #include "SolverNewton.hh"
+#include "SolverNox.hh"
 #include "SolverJFNK.hh"
 #include "SolverContinuation.hh"
 #include "SolverBT.hh"
@@ -160,6 +161,16 @@ SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
       Teuchos::ParameterList ls_list = slist.sublist("line search parameters");
       Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
           Teuchos::rcp(new SolverBT<Vector,VectorSpace>(ls_list));
+      return solver;
+    }
+    else if (type == "nox") {
+      if (!slist.isSublist("nox parameters")) {
+        Errors::Message msg("SolverFactory: missing sublist \"nox parameters\"");
+        Exceptions::amanzi_throw(msg);
+      }
+      Teuchos::ParameterList ls_list = slist.sublist("nox parameters");
+      Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
+          Teuchos::rcp(new SolverNox<Vector,VectorSpace>(ls_list));
       return solver;
     } else {
       Errors::Message msg("SolverFactory: wrong value of parameter `\"solver type`\"");

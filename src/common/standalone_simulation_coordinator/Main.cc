@@ -37,7 +37,6 @@
 #endif
 #endif
 
-
 #ifdef ENABLE_Unstructured
 #include "state_evaluators_registration.hh"
 #endif
@@ -49,14 +48,13 @@
 using namespace boost::filesystem;
 
 
-
-struct RunLog
-    : public std::ostream
+struct RunLog : public std::ostream
 {
   RunLog(std::ostream& _os);
  protected:
   int rank;
 };
+
 
 int main(int argc, char *argv[]) {
 
@@ -183,6 +181,9 @@ int main(int argc, char *argv[]) {
 #endif
 #ifdef SEACAS_MAJOR
         std::cout << "  SEACAS         " << XSTR(SEACAS_MAJOR) << "." << XSTR(SEACAS_MINOR) << "." << XSTR(SEACAS_PATCH) << std::endl;
+#endif
+#ifdef Silo_MAJOR
+        std::cout << "  Silo           " << XSTR(Silo_MAJOR) << "." << XSTR(Silo_MINOR) << "." << XSTR(Silo_PATCH) << std::endl;
 #endif
 #ifdef SuperLU_MAJOR
         std::cout << "  SuperLU        " << XSTR(SuperLU_MAJOR) << "." << XSTR(SuperLU_MINOR) << "." << XSTR(SuperLU_PATCH) << std::endl;

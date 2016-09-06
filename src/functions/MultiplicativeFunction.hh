@@ -14,8 +14,8 @@ namespace Amanzi {
 
 class MultiplicativeFunction : public Function {
  public:
-  MultiplicativeFunction(std::auto_ptr<Function> f1, std::auto_ptr<Function> f2)
-     : f1_(f1), f2_(f2) {};
+  MultiplicativeFunction(std::unique_ptr<Function> f1, std::unique_ptr<Function> f2)
+     : f1_(std::move(f1)), f2_(std::move(f2)) {};
   MultiplicativeFunction(const Function& f1, const Function& f2)
      : f1_(f1.Clone()), f2_(f2.Clone()) {}
   MultiplicativeFunction(const MultiplicativeFunction& source)
@@ -25,7 +25,7 @@ class MultiplicativeFunction : public Function {
   double operator()(const std::vector<double>& x) const { return (*f1_)(x) * (*f2_)(x); }
 
  private:
-  std::auto_ptr<Function> f1_, f2_;
+  std::unique_ptr<Function> f1_, f2_;
   //Function *f1_, *f2_;
 };
 

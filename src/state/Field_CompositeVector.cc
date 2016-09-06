@@ -12,7 +12,6 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 
 #include <string>
 
-#include <boost/regex.hpp>
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
@@ -212,7 +211,7 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
 
   // ------ Set face values by interpolation -----
   if ((data_->HasComponent("face") || data_->HasComponent("boundary_face"))  && data_->HasComponent("cell") &&
-      plist.get<bool>("initialize faces from cells", false) && initialized()) {
+      plist.get<bool>("initialize faces from cells", false)) {
     DeriveFaceValuesFromCellValues(*data_);
   }
 

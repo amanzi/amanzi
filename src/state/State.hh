@@ -321,6 +321,9 @@ class State {
   Teuchos::RCP<Field> CheckConsistent_or_die_(Key fieldname,
           FieldType type, Key owner);
 
+  // Utility for setting vis flags using blacklist and whitelist
+  void InitializeIOFlags_();
+
   // Containers
   MeshMap meshes_;
   FieldMap fields_;

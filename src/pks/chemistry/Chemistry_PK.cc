@@ -213,6 +213,9 @@ void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
     InitializeField_("sorption_sites", 1.0);
     InitializeField_("surface_complex_free_site_conc", 1.0);
   }
+
+  // auxiliary fields
+  InitializeField_("alquimia_aux_data", 0.0);
 }
 
 

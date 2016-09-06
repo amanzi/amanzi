@@ -38,7 +38,7 @@ SUITE (HexMeshGenerator)
     // FIXME: do some checks on mesh
 
     try {
-      std::auto_ptr<Epetra_Map> cmap(gen.cellmap(true));
+      std::unique_ptr<Epetra_Map> cmap(gen.cellmap(true));
       CHECK_EQUAL(cmap->NumGlobalElements(), (size*size)*size*size);
       CHECK_EQUAL(cmap->NumGlobalElements(), gen.cells());
       CHECK_EQUAL(cmap->NumMyElements(), gen.mycells());
@@ -54,7 +54,7 @@ SUITE (HexMeshGenerator)
     }
 
     try {
-      std::auto_ptr<Epetra_Map> cmap(gen.vertexmap(true));
+      std::unique_ptr<Epetra_Map> cmap(gen.vertexmap(true));
       CHECK_EQUAL(cmap->MaxAllGID(), (size*size+1)*(size+1)*(size+1));
       CHECK_EQUAL(cmap->MinAllGID(), 1);
       CHECK_EQUAL(cmap->NumMyElements(), gen.myvertexes());

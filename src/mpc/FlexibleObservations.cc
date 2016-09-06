@@ -52,7 +52,7 @@ FlexibleObservations::FlexibleObservations(
   vo_ = new VerboseObject("Observations", tmp_list);
 
   // loop over the sublists and create an observation for each
-  for (Teuchos::ParameterList::ConstIterator i = obs_list_->begin(); i != obs_list_->end(); i++) {
+  for (auto i = obs_list_->begin(); i != obs_list_->end(); i++) {
 
     if (obs_list_->isSublist(obs_list_->name(i))) {
       Teuchos::ParameterList observable_plist = obs_list_->sublist(obs_list_->name(i));
@@ -63,7 +63,7 @@ FlexibleObservations::FlexibleObservations(
       // get the observation times
       if (observable_plist.isSublist("time start period stop")) {
         Teuchos::ParameterList& tsps_list = observable_plist.sublist("time start period stop");
-        for (Teuchos::ParameterList::ConstIterator it = tsps_list.begin(); it != tsps_list.end(); ++it) {
+        for (auto it = tsps_list.begin(); it != tsps_list.end(); ++it) {
           std::string name = it->first;
           if (tsps_list.isSublist(name)) {
             Teuchos::ParameterList& itlist = tsps_list.sublist(name);
@@ -85,7 +85,7 @@ FlexibleObservations::FlexibleObservations(
       // get the observation cycles
       if (observable_plist.isSublist("cycle start period stop")) {
         Teuchos::ParameterList& csps_list = observable_plist.sublist("cycle start period stop");
-        for (Teuchos::ParameterList::ConstIterator it = csps_list.begin(); it != csps_list.end(); ++it) {
+        for (auto it = csps_list.begin(); it != csps_list.end(); ++it) {
           std::string name = it->first;
           if (csps_list.isSublist(name)) {
             Teuchos::ParameterList& itlist = csps_list.sublist(name);
@@ -244,7 +244,7 @@ void FlexibleObservations::FlushObservations()
           << "], Value [" << system.mass << " " << system.length << " " << system.concentration << "]\n";
       out << "============================================================================\n";
 
-      for (Teuchos::ParameterList::ConstIterator i = obs_list_->begin(); i != obs_list_->end(); ++i) {
+      for (auto i = obs_list_->begin(); i != obs_list_->end(); ++i) {
         std::string label = obs_list_->name(i);
         const Teuchos::ParameterEntry& entry = obs_list_->getEntry(label);
         if (entry.isList()) {

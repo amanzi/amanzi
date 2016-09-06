@@ -9,8 +9,6 @@
  *
  */
 
-using namespace std;
-
 #include <string>
 #include <vector>
 #include <iostream>
@@ -21,8 +19,8 @@ using namespace std;
 
 #define FALSE 0
 
-std::vector<string> datasetList;
-std::vector<string> groupList;
+std::vector<std::string> datasetList;
+std::vector<std::string> groupList;
 int num_nodes;
 int num_elems;
 
@@ -375,14 +373,14 @@ int main (int argc, char *argv[])
       }
       std::cout << std::endl;
       for (int i=0; i<groupList.size(); ++i) {
-        stringstream group_name;
+        std::stringstream group_name;
         group_name << "/" << groupList[i];
         std::cout << "E>> creating " << group_name.str() << std::endl;
         hid_t group = H5Gcreate(new_file, group_name.str().c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         datasetList.erase(datasetList.begin(), datasetList.end());
         H5Giterate(data_file, group_name.str().c_str(), NULL, dataset_info, NULL);
         for (int j=0; j<datasetList.size(); j++) {
-          stringstream ds_name;
+          std::stringstream ds_name;
           ds_name << group_name.str() << "/" << datasetList[j];
           std::cout << "  E>> unpermute " << ds_name.str() << std::endl;
           status = unpermute(ds_name.str().c_str(), data_file, new_file, nodemap, elemmap);

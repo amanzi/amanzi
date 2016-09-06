@@ -31,7 +31,7 @@ Teuchos::RCP<MDMPartition> CreateMDMPartition(
   std::vector<std::vector<std::string> > regions;
 
   flag = false;
-  for (Teuchos::ParameterList::ConstIterator lcv = plist->begin(); lcv != plist->end(); ++lcv) {
+  for (auto lcv = plist->begin(); lcv != plist->end(); ++lcv) {
     std::string name = lcv->first;
     if (plist->isSublist(name)) {
       Teuchos::ParameterList sublist = plist->sublist(name);

@@ -9,6 +9,8 @@
   Author: Nathan Barnett
 */
 
+// #include <utility>
+
 #include "TimerManager.hh"
 
 namespace Amanzi {
@@ -25,7 +27,7 @@ TimerManager timer_manager;
  */
 void TimerManager::add(std::string name, Timer::Type type) {
   _timer.insert(
-      std::make_pair(name, boost::shared_ptr<Timer>(new Timer(name, type))));
+      std::make_pair(name, std::shared_ptr<Timer>(new Timer(name, type))));
 }
 
 
@@ -36,7 +38,7 @@ void TimerManager::add(std::string name, Timer::Type type) {
  * \author     Nathan Barnett
  */
 void TimerManager::stop(std::string timerName) {
-  std::map<std::string, boost::shared_ptr<Timer> >::iterator it = _timer.find(timerName);
+  std::map<std::string, std::shared_ptr<Timer> >::iterator it = _timer.find(timerName);
   if (it!=_timer.end())
     it->second->stop();
   else
@@ -51,7 +53,7 @@ void TimerManager::stop(std::string timerName) {
  * \author     Nathan Barnett
  */
 void TimerManager::start(std::string timerName) {
-  std::map<std::string, boost::shared_ptr<Timer> >::iterator it = _timer.find(timerName);
+  std::map<std::string, std::shared_ptr<Timer> >::iterator it = _timer.find(timerName);
   if (it!=_timer.end())
     it->second->start();
   else
@@ -65,7 +67,7 @@ void TimerManager::start(std::string timerName) {
  * \author     Nathan Barnett
  */
 void TimerManager::stop() {
-  for (std::map<std::string, boost::shared_ptr<Timer> >::iterator it=_timer.begin(); it!=_timer.end(); ++it)
+  for (std::map<std::string, std::shared_ptr<Timer> >::iterator it=_timer.begin(); it!=_timer.end(); ++it)
     it->second->stop();
 }
 
@@ -76,7 +78,7 @@ void TimerManager::stop() {
  * \author     Nathan Barnett
  */
 void TimerManager::start() {
-  for (std::map<std::string, boost::shared_ptr<Timer> >::iterator it=_timer.begin(); it!=_timer.end(); ++it)
+  for (std::map<std::string, std::shared_ptr<Timer> >::iterator it=_timer.begin(); it!=_timer.end(); ++it)
     it->second->stop();
 }
 
@@ -99,8 +101,8 @@ size_t TimerManager::size() {
  * \returns    Reference to requested timer
  * \author     Nathan Barnett
  */
-Timer& TimerManager::operator()(std::string timerName) {
-  std::map<std::string, boost::shared_ptr<Timer> >::iterator it = _timer.find(timerName);
+Timer& TimerManager::operator()(std::string& timerName) {
+  std::map<std::string, std::shared_ptr<Timer> >::iterator it = _timer.find(timerName);
   if (it==_timer.end())
     throw "Unkown timer";
   return *(it->second);
@@ -121,7 +123,7 @@ std::ostream& operator <<(std::ostream& os, TimerManager& tm) {
   os << "**********************************************************\n\n";
 
   // Print info for each of the timers
-  for (std::map<std::string, boost::shared_ptr<Timer> >::iterator it=tm._timer.begin(); it!=tm._timer.end(); ++it) {
+  for (std::map<std::string, std::shared_ptr<Timer> >::iterator it=tm._timer.begin(); it!=tm._timer.end(); ++it) {
     os.width(30);
     os.fill('.');
     os << *(it->second) << std::endl;
@@ -137,7 +139,7 @@ std::ostream& operator <<(std::ostream& os, TimerManager& tm) {
  * \param[in]  std::ostream&
  */
 void TimerManager::print() {
-  for (std::map<std::string, boost::shared_ptr<Timer> >::iterator it=_timer.begin(); it!=_timer.end(); ++it) {
+  for (std::map<std::string, std::shared_ptr<Timer> >::iterator it=_timer.begin(); it!=_timer.end(); ++it) {
     std::cout << "   ";
     std::cout.width(30);
     std::cout.fill('.');
@@ -150,7 +152,7 @@ void TimerManager::print() {
  * \fn         to be written
  */
 void TimerManager::parSync(MPI_Comm comm) {
- for (std::map<std::string, boost::shared_ptr<Timer> >::iterator it=_timer.begin(); it!=_timer.end(); ++it)
+ for (std::map<std::string, std::shared_ptr<Timer> >::iterator it=_timer.begin(); it!=_timer.end(); ++it)
    (it->second)->parSync(comm);
 }
 

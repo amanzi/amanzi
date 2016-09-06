@@ -138,7 +138,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
   AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO GMRES", lop_list, global_op);
+     solver = factory.Create("Belos GMRES", lop_list, global_op);
 
   CompositeVector& rhs = *global_op->rhs();
   int ierr = solver->ApplyInverse(rhs, solution);

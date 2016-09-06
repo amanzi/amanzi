@@ -1472,7 +1472,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
   
   // create text for chemistry options - isotherms
   Teuchos::ParameterList& iso = ChemOptions.sublist("isotherms");
-  for (Teuchos::ParameterList::ConstIterator iter = iso.begin(); iter != iso.end(); ++iter) {
+  for (auto iter = iso.begin(); iter != iso.end(); ++iter) {
     
     std::string primary = iso.name(iter);
     Teuchos::ParameterList& curprimary = iso.sublist(primary);
@@ -1501,7 +1501,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
 
   // create text for chemistry options - ion exchange
   Teuchos::ParameterList& ion = ChemOptions.sublist("ion_exchange");
-  for (Teuchos::ParameterList::ConstIterator iter = ion.begin(); iter != ion.end(); ++iter) {
+  for (auto iter = ion.begin(); iter != ion.end(); ++iter) {
     
     std::string mineral = ion.name(iter);
     Teuchos::ParameterList& curmineral = ion.sublist(mineral);
@@ -1520,7 +1520,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
 
   // create text for chemistry options - surface complexation
   Teuchos::ParameterList& surf = ChemOptions.sublist("surface_complexation");
-  for (Teuchos::ParameterList::ConstIterator iter = surf.begin(); iter != surf.end(); ++iter) {
+  for (auto iter = surf.begin(); iter != surf.end(); ++iter) {
     std::string site = surf.name(iter);
     Teuchos::ParameterList& cursite = surf.sublist(site);
     Teuchos::Array<std::string> complexe_names = cursite.get<Teuchos::Array<std::string> >("complexes");
@@ -1539,7 +1539,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
   // create text for minerals (read from materials section and written out to constraints section
   std::stringstream mineral;
   Teuchos::ParameterList& mins = ChemOptions.sublist("minerals");
-  for (Teuchos::ParameterList::ConstIterator iter = mins.begin(); iter != mins.end(); ++iter) {
+  for (auto iter = mins.begin(); iter != mins.end(); ++iter) {
     std::string mineral_name = mins.name(iter);
     Teuchos::ParameterList& curmineral = mins.sublist(mineral_name);
     double constvf = curmineral.get<double>("volume_fraction");

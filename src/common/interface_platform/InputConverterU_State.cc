@@ -492,6 +492,19 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   // add mesh partitions to the state list
   out_list.sublist("mesh partitions") = TranslateMaterialsPartition_();
 
+  // visualization blacklist and whitelist
+  node = GetUniqueElementByTagsString_("output, vis, blacklist", flag);
+  if (flag) {
+    text_content = mm.transcode(node->getTextContent());
+    out_list.set<Teuchos::Array<std::string> >("blacklist", CharToStrings_(text_content));
+  }
+
+  node = GetUniqueElementByTagsString_("output, vis, whitelist", flag);
+  if (flag) {
+    text_content = mm.transcode(node->getTextContent());
+    out_list.set<Teuchos::Array<std::string> >("whitelist", CharToStrings_(text_content));
+  }
+
 
   return out_list;
 }

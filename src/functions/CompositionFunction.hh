@@ -14,8 +14,8 @@ namespace Amanzi {
 
 class CompositionFunction : public Function {
  public:
-  CompositionFunction(std::auto_ptr<Function> f1, std::auto_ptr<Function> f2)
-     : f1_(f1), f2_(f2) {};
+  CompositionFunction(std::unique_ptr<Function> f1, std::unique_ptr<Function> f2)
+     : f1_(std::move(f1)), f2_(std::move(f2)) {};
   CompositionFunction(const Function& f1, const Function& f2)
      : f1_(f1.Clone()), f2_(f2.Clone()) {}
   CompositionFunction(const CompositionFunction& source)
@@ -29,7 +29,7 @@ class CompositionFunction : public Function {
   }
 
  private:
-  std::auto_ptr<Function> f1_, f2_;
+  std::unique_ptr<Function> f1_, f2_;
   //Function *f1_, *f2_;
 };
 

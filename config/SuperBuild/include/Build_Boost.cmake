@@ -15,13 +15,19 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 # -- Define build definitions
 
 # We only build what we need, this is NOT a full Boost install
-set(Boost_projects "system,filesystem,program_options,regex")
+set(Boost_projects "system,filesystem,program_options,regex,graph")
 
 # --- Define the configure command
+message("  etc: BOOST FLAGS ISSUES")
+set(Boost_bjam_args "cxxflags=${Amanzi_COMMON_CXXFLAGS}")
+string(REPLACE " " "\\ " Boost_bjam_args ${Boost_bjam_args})
+message("  etc: bjam args escape spaces not quote them: ${Boost_bjam_args}")
+
 
 # Determine toolset type
 set(Boost_toolset)
 string(TOLOWER ${CMAKE_C_COMPILER_ID} compiler_id_lc)
+
 if (compiler_id_lc)
   if (APPLE)
     message(STATUS "BOOST: CMAKE_SYSTEM         = ${CMAKE_SYSTEM}")
@@ -34,7 +40,7 @@ if (compiler_id_lc)
     if ( ${compiler_id_lc} STREQUAL "intel" )
       set(Boost_toolset intel-darwin)
     else()  
-      set(Boost_toolset darwin)
+      set(Boost_toolset clang)
     endif()  
     # some extra hints.
     if (${compiler_id_lc} STREQUAL "gnu")
@@ -97,6 +103,7 @@ if (compiler_id_lc)
         endif()
       endif()
     endif()
+
   elseif(UNIX)
     if ( ${compiler_id_lc} STREQUAL "gnu" )
         set(Boost_toolset gcc)
@@ -106,6 +113,8 @@ if (compiler_id_lc)
         set(Boost_toolset pgi)
     elseif(${compiler_id_lc} STREQUAL "pathscale")
         set(Boost_toolset pathscale)
+    elseif(${compiler_id_lc} STREQUAL "clang")
+        set(Boost_toolset clang)
     endif()
   endif()
 endif()

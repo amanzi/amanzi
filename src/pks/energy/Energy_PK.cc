@@ -122,7 +122,7 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
     PK_DomainFunctionFactory<PK_DomainFunction> bc_factory(mesh_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("temperature");
-    for (Teuchos::ParameterList::ConstIterator it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
@@ -137,7 +137,7 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
     PK_DomainFunctionFactory<PK_DomainFunction> bc_factory(mesh_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("energy flux");
-    for (Teuchos::ParameterList::ConstIterator it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
@@ -239,7 +239,7 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
   }
 
   for (int i = 0; i < bc_temperature_.size(); ++i) {
-    for (PK_DomainFunction::Iterator it = bc_temperature_[i]->begin(); it != bc_temperature_[i]->end(); ++it) {
+    for (auto it = bc_temperature_[i]->begin(); it != bc_temperature_[i]->end(); ++it) {
       int f = it->first;
       bc_model_[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value_[f] = it->second;
@@ -247,7 +247,7 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
   }
 
   for (int i = 0; i < bc_flux_.size(); ++i) {
-    for (PK_DomainFunction::Iterator it = bc_flux_[i]->begin(); it != bc_flux_[i]->end(); ++it) {
+    for (auto it = bc_flux_[i]->begin(); it != bc_flux_[i]->end(); ++it) {
       int f = it->first;
       bc_model_[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_value_[f] = it->second;

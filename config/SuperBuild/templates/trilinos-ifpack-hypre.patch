@@ -1,6 +1,5 @@
-diff -rupN trilinos-11.6.1-source/packages/ifpack/src/Ifpack_Hypre.cpp trilinos-11.6.1-source-patch/packages/ifpack/src/Ifpack_Hypre.cpp
---- trilinos-11.6.1-source/packages/ifpack/src/Ifpack_Hypre.cpp	2014-01-29 16:05:21.000000000 -0700
-+++ trilinos-11.6.1-source-patch/packages/ifpack/src/Ifpack_Hypre.cpp	2014-02-06 11:08:43.727635000 -0700
+--- Trilinos/packages/ifpack/src/Ifpack_Hypre.cpp	2016-06-08 15:02:24.872980345 -0600
++++ Trilinos/packages/ifpack/src/Ifpack_Hypre.cpp_patch	2016-06-08 12:56:24.264222820 -0600
 @@ -81,7 +81,7 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMat
    MPI_Comm comm = GetMpiComm();
    int ilower = A_->RowMatrixRowMap().MinMyGID();
@@ -10,7 +9,7 @@ diff -rupN trilinos-11.6.1-source/packages/ifpack/src/Ifpack_Hypre.cpp trilinos-
    std::vector<int> ilowers; ilowers.resize(Comm().NumProc());
    std::vector<int> iuppers; iuppers.resize(Comm().NumProc());
    int myLower[1]; myLower[0] = ilower;
-@@ -91,13 +91,35 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMat
+@@ -91,14 +91,36 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMat
    for(int i = 0; i < Comm().NumProc()-1; i++){
      NiceRowMap_ = (NiceRowMap_ && iuppers[i]+1 == ilowers[i+1]);
    }
@@ -20,7 +19,6 @@ diff -rupN trilinos-11.6.1-source/packages/ifpack/src/Ifpack_Hypre.cpp trilinos-
 -    if(Comm().MyPID() == Comm().NumProc()-1){
 -      iupper = A_-> NumGlobalRows()-1;
 -    }
--  }
 +
 +  if (!NiceRowMap_) {
 +    // Must create simple ColumnMap to map indices via LID.
@@ -45,27 +43,27 @@ diff -rupN trilinos-11.6.1-source/packages/ifpack/src/Ifpack_Hypre.cpp trilinos-
 +  } else {
 +    MySimpleMap_ = rcp(new Epetra_Map(A_->RowMatrixRowMap()));
 +    MySimpleColumnMap_ = rcp(new Epetra_Map(A_->RowMatrixColMap()));
-+  }
-+
+   }
+ 
 +  // ilower and iupper are now valid for either NiceRowMap_ or not
 +  ilower = MySimpleMap_->GID(0);
 +  iupper = MySimpleMap_->GID(A_->RowMatrixRowMap().NumMyElements()-1);
- 
++
    // Next create vectors that will be used when ApplyInverse() is called
    IFPACK_CHK_ERRV(HYPRE_IJVectorCreate(comm, ilower, iupper, &XHypre_));
-@@ -117,11 +139,6 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMat
+   IFPACK_CHK_ERRV(HYPRE_IJVectorSetObjectType(XHypre_, HYPRE_PARCSR));
+@@ -117,10 +139,6 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMat
  
    YVec_ = (hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) YHypre_));
    YLocal_ = hypre_ParVectorLocalVector(YVec_);
--  std::vector<int> rows; rows.resize(iupper - ilower +1);
--  for(int i = ilower; i <= iupper; i++){
--    rows[i-ilower] = i;
--  }
--  MySimpleMap_ = rcp(new Epetra_Map(-1, iupper-ilower+1, &rows[0], 0, Comm()));
+-
+-  // amk November 24, 2015: This previously created a map that Epetra does not consider
+-  // to be contiguous.  hypre doesn't like that, so I changed it.
+-  MySimpleMap_ = rcp(new Epetra_Map(A_->NumGlobalRows(), iupper-ilower+1, 0, Comm()));
  } //Constructor
  
  //==============================================================================
-@@ -158,10 +175,10 @@ int Ifpack_Hypre::Initialize(){
+@@ -157,11 +175,11 @@ int Ifpack_Hypre::Initialize(){
      int numEntries;
      IFPACK_CHK_ERR(A_->ExtractMyRowCopy(i, numElements, numEntries, &values[0], &indices[0]));
      for(int j = 0; j < numEntries; j++){
@@ -74,13 +72,44 @@ diff -rupN trilinos-11.6.1-source/packages/ifpack/src/Ifpack_Hypre.cpp trilinos-
      }
      int GlobalRow[1];
 -    GlobalRow[0] = A_->RowMatrixRowMap().GID(i);
+-    IFPACK_CHK_ERR(HYPRE_IJMatrixAddToValues(HypreA_, 1, &numEntries, GlobalRow, &indices[0], &values[0]));
 +    GlobalRow[0] = MySimpleMap_->GID(i);
-     IFPACK_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, &indices[0], &values[0]));
++    IFPACK_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, &indices[0], &values[0]));
    }
    IFPACK_CHK_ERR(HYPRE_IJMatrixAssemble(HypreA_));
-diff -rupN trilinos-11.6.1-source/packages/ifpack/src/Ifpack_Hypre.h trilinos-11.6.1-source-patch/packages/ifpack/src/Ifpack_Hypre.h
---- trilinos-11.6.1-source/packages/ifpack/src/Ifpack_Hypre.h	2014-01-29 16:05:21.000000000 -0700
-+++ trilinos-11.6.1-source-patch/packages/ifpack/src/Ifpack_Hypre.h	2014-02-06 11:08:47.392424000 -0700
+   IFPACK_CHK_ERR(HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_));
+@@ -294,21 +312,6 @@ int Ifpack_Hypre::ApplyInverse(const Epe
+   if(IsComputed() == false){
+     IFPACK_CHK_ERR(-1);
+   }
+-  // These are hypre requirements
+-  // hypre needs A, X, and Y to have the same contiguous distribution
+-  // NOTE: Maps are only considered to be contiguous if they were generated using a
+-  // particular constructor.  Otherwise, LinearMap() will not detect whether they are
+-  // actually contiguous.
+-  if(!X.Map().LinearMap() || !Y.Map().LinearMap()) {
+-    std::cerr << "ERROR: X and Y must have contiguous maps.\n";
+-    IFPACK_CHK_ERR(-1);
+-  }
+-  if(!X.Map().PointSameAs(*MySimpleMap_) ||
+-     !Y.Map().PointSameAs(*MySimpleMap_)) {
+-    std::cerr << "ERROR: X, Y, and A must have the same distribution.\n";
+-    IFPACK_CHK_ERR(-1);
+-  }
+-
+   Time_.ResetStartTime();
+   bool SameVectors = false;
+   int NumVectors = X.NumVectors();
+@@ -318,7 +321,6 @@ int Ifpack_Hypre::ApplyInverse(const Epe
+   }
+   for(int VecNum = 0; VecNum < NumVectors; VecNum++) {
+     //Get values for current vector in multivector.
+-    // FIXME amk Nov 23, 2015: This will not work for funky data layouts
+     double * XValues;
+     IFPACK_CHK_ERR((*X(VecNum)).ExtractView(&XValues));
+     double * YValues;
+--- trilinos-11.6.1-source/packages/ifpack/src/Ifpack_Hypre.h   2014-01-29 16:05:21.000000000 -0700
++++ trilinos-11.6.1-source-patch/packages/ifpack/src/Ifpack_Hypre.h     2014-02-06 11:08:47.392424000 -0700
 @@ -661,6 +661,8 @@ private:
    Hypre_Chooser SolveOrPrec_;
    //! This is a linear map used the way it is in Hypre

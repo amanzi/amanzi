@@ -7,12 +7,14 @@ Author: Markus Berndt
 
 Checkpointing for state.
 ------------------------------------------------------------------------- */
+#include <iostream>
+#include <iomanip>
+
+#include "boost/filesystem.hpp"
 
 #include "checkpoint.hh"
 #include "Epetra_MpiComm.h"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include <iostream>
-#include <iomanip>
 
 
 namespace Amanzi {
@@ -68,7 +70,9 @@ void Checkpoint::CreateFile(const int cycle) {
     oss_final << filebasename_<<"_final.h5";       
     std::string ch_final =  oss_final.str();
 
-    link(ch_file.data(), ch_final.data());
+    if (boost::filesystem::is_regular_file(ch_final.data()))
+      boost::filesystem::remove(ch_final.data());
+    boost::filesystem::create_hard_link(ch_file.data(), ch_final.data());
   }
 };
 
