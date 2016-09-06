@@ -84,8 +84,6 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       std::string mat_name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
 
-      std::cout <<"mat_name "<<i<<mat_name<<"\n";
-
       node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
@@ -105,8 +103,6 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
         reg_str = reg_str + *it;
       }
-
-      std::cout << reg_str <<"\n";
 
       // -- porosity: skip if compressibility model was already provided.
       if (!compressibility_) {
