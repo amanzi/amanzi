@@ -18,7 +18,12 @@ Changes V6 -> V7
 * Lower-case naming convention for parameters.
 * Dual porosity model to flow and transport.
 * Support of units in output of observations.
-* New regions.
+* New regions: with volume fractions and line segments.
+* Finer control of IO of state fields. 
+* New functions: distance and monomial.
+* Support of Trilinos solvers: Belos GMRES and NOX.
+* Simple back-tracking and continuation algorithms.
+* More submodels for boundary conditions.
 
 
 ParameterList XML
@@ -3178,11 +3183,35 @@ Coupling of process kernels requires additional parameters for PK
 described above.
 
 
-Flow and Reactive transport
----------------------------
+Reactive transport PK
+---------------------
+
+Reactive transport can be setup using a steady-state flow.
+The two PKs are executed consequitively. 
+The input spec requires new keyword *reactive transport*.
+
+.. code-block:: xml
+
+   <ParameterList name="PK tree">  <!-- parent list -->
+     <ParameterList name="REACTIVE TRANSPORT">
+       <Parameter name="PK type" type="string" value="reactive transport"/>
+       <ParameterList name="TRANSPORT">
+         <Parameter name="PK type" type="string" value="transport"/>
+       </ParameterList>
+       <ParameterList name="CHEMISTRY">
+         <Parameter name="PK type" type="string" value="chemistry amanzi"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
+
+Flow and Reactive transport PK
+------------------------------
 
 Amanzi uses operator splitting approach for coupled physical kernels.
-The coupling of PKs is described in as a tree of ParameterList. 
+The coupling of PKs is described as a tree where flow and reactive 
+transport are executed consequitively.
+The input spec requires new keyword *flow reactive transport*.
 
 .. code-block:: xml
 
@@ -4309,6 +4338,7 @@ Here is the list of selected parameters for the Newton-Picard solver.
      <Parameter name="modify correction" type="bool" value="false"/>
    </ParameterList>
 
+
 Jacobian-free Newton-Krylov (JFNK)
 ..................................
 
@@ -4334,6 +4364,39 @@ We describe parameters of the second sublist only.
 
    <Parameter name="solver type" type="string" value="JFNK"/>
      <ParameterList name="JFNK parameters">
+       <Parameter name="typical solution value" type="double" value="1.0"/>
+
+       <ParameterList name="JF matrix parameters">
+         <Parameter name="finite difference epsilon" type="double" value="1.0e-8"/>
+         <Parameter name="method for epsilon" type="string" value="Knoll-Keyes L2"/>
+       </ParameterList>
+
+       <ParameterList name="nonlinear solver">
+         <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+         <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+         <Parameter name="limit iterations" type="int" value="20"/>
+         <Parameter name="max divergent iterations" type="int" value="3"/>
+       </ParameterList>
+
+       <ParameterList name="linear operator">
+         <Parameter name="iterative method" type="string" value="gmres"/>
+         <ParameterList name="gmres parameters">
+           ...
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
+
+Nonlinear Object-Oriented Solution (NOX)
+........................................
+
+The interface to Trilinos NOX solver is as follows:
+
+.. code-block:: xml
+
+   <Parameter name="solver type" type="string" value="nox"/>
+     <ParameterList name="nox parameters">
        <Parameter name="typical solution value" type="double" value="1.0"/>
 
        <ParameterList name="JF matrix parameters">
