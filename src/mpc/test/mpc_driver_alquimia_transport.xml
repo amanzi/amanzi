@@ -42,7 +42,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="visualization data">
-    <Parameter name="file name base" type="string" value="calcite"/>
+    <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="times start period stop 0" type="Array(double)" value="{0.00000000000000000e+00, 3.15569260000000000e+07, -1.00000000000000000e+00}"/>
   </ParameterList>
   <ParameterList name="state">

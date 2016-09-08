@@ -2,11 +2,11 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
   <ParameterList name="visualization data">
-    <Parameter name="file name base" type="string" value="plot_frt"/>
+    <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/>
   </ParameterList>
   <ParameterList name="checkpoint data">
-    <Parameter name="file name base" type="string" value="chkpoint_frt"/>
+    <Parameter name="file name base" type="string" value="chkpoint"/>
     <Parameter name="file name digits" type="int" value="5"/>
     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 5, -1}" />
   </ParameterList>  

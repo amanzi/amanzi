@@ -50,15 +50,34 @@ using namespace Amanzi::AmanziGeometry;
   ASSERT(!mesh.is_null());
 
   // create dummy observation data object
+  double avg1, avg2;
   Amanzi::ObservationData obs_data;    
   Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(plist));
-
-  Amanzi::CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
-  try {
-    cycle_driver.Go();
-  } catch (...) {
-    CHECK(false);
+ 
+  {
+    Amanzi::CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
+    try {
+      auto S = cycle_driver.Go();
+      S->GetFieldData("total_component_concentration")->MeanValue(&avg1);
+    } catch (...) {
+      CHECK(false);
+    }
   }
+
+  // restart simulation and compare results
+  glist->sublist("cycle driver").sublist("restart").set<std::string>("file name", "chkpoint00005.h5");
+
+  {
+    Amanzi::CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
+    try {
+      auto S = cycle_driver.Go();
+      S->GetFieldData("total_component_concentration")->MeanValue(&avg2);
+    } catch (...) {
+      CHECK(false);
+    }
+  }
+
+  CHECK_CLOSE(avg1, avg2, 1e-5 * avg1);
 }
 
 

@@ -2,14 +2,13 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
   <ParameterList name="checkpoint data">
-    <Parameter name="file name base" type="string" value="chkpoint_flow"/>
+    <Parameter name="file name base" type="string" value="chkpoint"/>
     <Parameter name="file name digits" type="int" value="5"/>
-<!--    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/> -->
     <Parameter name="times" type="Array(double)" value="{71.0, 72.0, 85.0}"/>
     <Parameter name="times start period stop" type="Array(double)" value="{60., 10., 120.}"/>
   </ParameterList>
   <ParameterList name="visualization data">
-    <Parameter name="file name base" type="string" value="plot_flow"/>
+    <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
   </ParameterList>
 
@@ -110,11 +109,11 @@
 	</ParameterList>
 	<Parameter name="start period time" type="double" value="0.0e+00"/>
 	<Parameter name="end period time" type="double" value="2.0e+02"/>
-	<Parameter name="initial time step" type="double" value="1.0e+01"/>
+	<Parameter name="initial time step" type="double" value="10.0"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="time period control">
-      <Parameter name="start times" type="Array(double)" value="{10., 20., 30.}"/>
+      <Parameter name="start times" type="Array(double)" value="{10.0, 20.0, 30.0}"/>
       <Parameter name="initial time step" type="Array(double)" value="{0.1, 0.2, 0.3}"/>
       <Parameter name="maximum time step" type="Array(double)" value="{5., 25., 15.}"/>		 
     </ParameterList>
@@ -377,7 +376,7 @@
       	    <ParameterList name="outward mass flux">
       	      <ParameterList name="function-tabular">
             		<Parameter name="x values" type="Array(double)" value="{0.0e+00, 6.172666560e+10, 6.172934400e+10, 9.467279800e+10}"/>
-            		<Parameter name="y values" type="Array(double)" value="{-1.10710000000000003e-07, -2.54022000000000015e-03, -1.48666000000000005e-06, -1.48666000000000005e-06}"/>
+            		<Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -2.54022e-03, -1.48666e-06, -1.48666e-06}"/>
             		<Parameter name="forms" type="Array(string)" value="{constant, constant, constant}"/>
       	      </ParameterList>
       	    </ParameterList>
@@ -450,10 +449,10 @@
       	  <ParameterList name="timestep controller standard parameters">
       	    <Parameter name="max iterations" type="int" value="15"/>
       	    <Parameter name="min iterations" type="int" value="10"/>
-      	    <Parameter name="time step increase factor" type="double" value="1.25000e+00"/>
-      	    <Parameter name="time step reduction factor" type="double" value="8.000e-01"/>
+      	    <Parameter name="time step increase factor" type="double" value="1.5"/>
+      	    <Parameter name="time step reduction factor" type="double" value="0.8"/>
       	    <Parameter name="max time step" type="double" value="6.0e+10"/>
-      	    <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
+      	    <Parameter name="min time step" type="double" value="1e-20"/>
       	  </ParameterList>
       	  <Parameter name="solver type" type="string" value="nka"/>
       	  <ParameterList name="nka parameters">

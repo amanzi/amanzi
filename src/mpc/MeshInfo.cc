@@ -9,14 +9,14 @@
 
 namespace Amanzi {
 
-  void MeshInfo::WriteMeshCentroids( const AmanziMesh::Mesh& mesh ){
+void MeshInfo::WriteMeshCentroids(const AmanziMesh::Mesh& mesh) {
 
   std::string filename = plist_.get<std::string>("filename", "meshinfo");
 
   checkpoint_output_->createDataFile(filename);
   checkpoint_output_->open_h5file();
 
-  int ncells_owned  = mesh.num_entities(AmanziMesh::CELL,  AmanziMesh::OWNED);
+  int ncells_owned = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int n_glob;
   mesh.get_comm()->SumAll(&ncells_owned, &n_glob, 1);
 
@@ -33,7 +33,7 @@ namespace Amanzi {
   if (dim > 2) name.push_back("z");
    
 
-  for (int n=0; n < ncells_owned; n++){
+  for (int n = 0; n < ncells_owned; n++){
     const AmanziGeometry::Point& xc = mesh.cell_centroid(n);
     for (int i = 0; i < dim; i++) {
       (*(*aux)(i))[n] = xc[i];
@@ -44,7 +44,6 @@ namespace Amanzi {
 
 
   checkpoint_output_->close_h5file(); 
-
 }
 
 } // namespace Amanzi
