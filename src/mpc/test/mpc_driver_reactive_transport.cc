@@ -54,7 +54,11 @@ using namespace Amanzi::AmanziGeometry;
   Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(plist));
 
   Amanzi::CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
-  cycle_driver.Go();
+  try {
+    cycle_driver.Go();
+  } catch (...) {
+    CHECK(false);
+  }
 }
 
 

@@ -150,6 +150,7 @@
 	  <ParameterList name="Na+">
 	    <ParameterList name="West BC">
 	      <Parameter name="regions" type="Array(string)" value="{West}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
 	      <ParameterList name="boundary concentration">
 		<ParameterList name="function-tabular">
 		  <Parameter name="y values" type="Array(double)" value="{9.42676899999999977e-03, 9.42676899999999977e-03}"/>
@@ -162,6 +163,7 @@
 	  <ParameterList name="Ca++">
 	    <ParameterList name="West BC">
 	      <Parameter name="regions" type="Array(string)" value="{West}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
 	      <ParameterList name="boundary concentration">
 		<ParameterList name="function-tabular">
 		  <Parameter name="y values" type="Array(double)" value="{5.01423899999999955e-04, 5.01423899999999955e-04}"/>
@@ -174,6 +176,7 @@
 	  <ParameterList name="Mg++">
 	    <ParameterList name="West BC">
 	      <Parameter name="regions" type="Array(string)" value="{West}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
 	      <ParameterList name="boundary concentration">
 		<ParameterList name="function-tabular">
 		  <Parameter name="y values" type="Array(double)" value="{2.13606599999999983e-03, 2.13606599999999983e-03}"/>
@@ -186,6 +189,7 @@
 	  <ParameterList name="Cl-">
 	    <ParameterList name="West BC">
 	      <Parameter name="regions" type="Array(string)" value="{West}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
 	      <ParameterList name="boundary concentration">
 		<ParameterList name="function-tabular">
 		  <Parameter name="y values" type="Array(double)" value="{1.47017488000000009e-02, 1.47017488000000009e-02}"/>

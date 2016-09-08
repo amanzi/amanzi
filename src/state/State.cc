@@ -912,7 +912,6 @@ void State::InitializeFields() {
       }
     }
   }
-
 };
 
 

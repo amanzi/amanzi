@@ -305,8 +305,7 @@ void Amanzi_PK::XMLParameters()
   aux_names_.clear();
   if (cp_list_->isParameter("auxiliary data")) {
     Teuchos::Array<std::string> names = cp_list_->get<Teuchos::Array<std::string> >("auxiliary data");
-    for (Teuchos::Array<std::string>::const_iterator name = names.begin();
-         name != names.end(); ++name) {
+    for (auto name = names.begin(); name != names.end(); ++name) {
       if (*name == "pH") {
         aux_names_.push_back(*name);
       } else {

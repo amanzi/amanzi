@@ -168,7 +168,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
   // initilaization using the base class
   Chemistry_PK::Initialize(S);
 
-  // initialize auxiliary fields
+  // initialize auxiliary fields as needed
   std::vector<std::string> aux_names;
   chem_engine_->GetAuxiliaryOutputNames(aux_names);
 
@@ -178,8 +178,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   for (auto it = aux_names.begin(); it != aux_names.end(); ++it) {
-    S->GetFieldData(*it, passwd_)->PutScalar(0.0);
-    S->GetField(*it, passwd_)->set_initialized();
+    InitializeField_(*it, 0.0);
   }
 
   // Read XML parameters from our input file.

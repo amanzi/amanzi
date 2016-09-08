@@ -63,7 +63,7 @@ class Chemistry_PK : public PK_Physical {
   // -- output of error messages.
   void ErrorAnalysis(int ierr, std::string& internal_msg);
 
- private:
+ protected:
   void InitializeField_(std::string fieldname, double default_val);
 
  protected:

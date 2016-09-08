@@ -89,9 +89,9 @@ void Checkpoint::WriteVector(const Epetra_MultiVector& vec,
     Exceptions::amanzi_throw(m);
   }
   for (int i=0; i< vec.NumVectors(); i++) {
-    checkpoint_output_->writeCellDataReal( *vec(i), names[i] );
+    checkpoint_output_->writeCellDataReal(*vec(i), names[i]);
   }
-};
+}
 
 
 // -----------------------------------------------------------------------------
