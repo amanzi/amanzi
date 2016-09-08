@@ -52,21 +52,44 @@ using namespace Amanzi::AmanziGeometry;
   ASSERT(!mesh.is_null());
 
   // create dummy observation data object
+  double avg1, avg2;
   Amanzi::ObservationData obs_data;    
-  Teuchos::RCP<Teuchos::ParameterList> glist_rcp = Teuchos::rcp(new Teuchos::ParameterList(plist));
+  Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(plist));
 
-  Amanzi::CycleDriver cycle_driver(glist_rcp, mesh, &comm, obs_data);
-  cycle_driver.Go();
+  {
+    Amanzi::CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
+    try {
+      auto S = cycle_driver.Go();
+      S->GetFieldData("pressure")->MeanValue(&avg1);
+    } catch (...) {
+      CHECK(false);
+    }
 
-  std::vector<std::string> labels = obs_data.observationLabels();
-  std::vector<ObservationData::DataQuadruple> tmp = obs_data[labels[0]];
-  for (int k = 1; k < tmp.size(); ++k) {
-    CHECK_CLOSE(tmp[k].value, -0.0006, 1.0e-5);
+    // check observations
+    std::vector<std::string> labels = obs_data.observationLabels();
+    std::vector<ObservationData::DataQuadruple> tmp = obs_data[labels[0]];
+    for (int k = 1; k < tmp.size(); ++k) {
+      CHECK_CLOSE(tmp[k].value, -0.0006, 1.0e-5);
+    }
+    tmp = obs_data[labels[1]];
+    for (int k = 1; k < tmp.size(); ++k) {
+      CHECK_CLOSE(tmp[k].value, -0.0002, 1.0e-5);
+    }
   }
-  tmp = obs_data[labels[1]];
-  for (int k = 1; k < tmp.size(); ++k) {
-    CHECK_CLOSE(tmp[k].value, -0.0002, 1.0e-5);
+
+  // restart simulation and compare results
+  glist->sublist("cycle driver").sublist("restart").set<std::string>("file name", "chk_frt00005.h5");
+
+  {
+    Amanzi::CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
+    try {
+      auto S = cycle_driver.Go();
+      S->GetFieldData("pressure")->MeanValue(&avg2);
+    } catch (...) {
+      CHECK(false);
+    }
   }
+
+  CHECK_CLOSE(avg1, avg2, 1e-5 * avg1);
 }
-
 

@@ -36,15 +36,21 @@
     </ParameterList>
     <ParameterList name="east">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{1.00000000000000000e+02, 0.00000000000000000e+00, 0.00000000000000000e+00}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.00000000000000000e+02, 1.00000000000000000e+00, 1.00000000000000000e+00}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{1.0e+02, 0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0e+02, 1.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
   <ParameterList name="visualization data">
-    <Parameter name="file name base" type="string" value="plot"/>
-    <Parameter name="times start period stop 0" type="Array(double)" value="{0.00000000000000000e+00, 3.15569260000000000e+07, -1.00000000000000000e+00}"/>
+    <Parameter name="file name base" type="string" value="plot_rt"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 3.1556926e+07, -1.0}"/>
   </ParameterList>
+  <ParameterList name="checkpoint data">
+    <Parameter name="file name base" type="string" value="chk_rt"/>
+    <Parameter name="file name digits" type="int" value="5"/>
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
+  </ParameterList>  
+
   <ParameterList name="state">
     <ParameterList name="field evaluators">
     </ParameterList>

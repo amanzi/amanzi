@@ -2,13 +2,13 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
   <ParameterList name="checkpoint data">
-    <Parameter name="file name base" type="string" value="chkpoint"/>
+    <Parameter name="file name base" type="string" value="chk_flow"/>
     <Parameter name="file name digits" type="int" value="5"/>
     <Parameter name="times" type="Array(double)" value="{71.0, 72.0, 85.0}"/>
     <Parameter name="times start period stop" type="Array(double)" value="{60., 10., 120.}"/>
   </ParameterList>
   <ParameterList name="visualization data">
-    <Parameter name="file name base" type="string" value="plot"/>
+    <Parameter name="file name base" type="string" value="plot_flow"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
   </ParameterList>
 
@@ -83,9 +83,9 @@
   <ParameterList name="mesh">
     <ParameterList name="unstructured">
       <ParameterList name="generate mesh">
-        <Parameter name="number of cells" type="Array(int)" value="{54, 60}"/>
-        <Parameter name="domain low coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
-        <Parameter name="domain high coordinate" type="Array(double)" value="{2.16000e+02, 1.20000e+02}"/>
+        <Parameter name="number of cells" type="Array(int)" value="{54, 30}"/>
+        <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{216.0, 120.0}"/>
       </ParameterList>
       <ParameterList name="expert">
         <Parameter name="framework" type="string" value="MSTK"/>
@@ -107,15 +107,15 @@
 	    <Parameter name="PK type" type="string" value="richards"/>
 	  </ParameterList>
 	</ParameterList>
-	<Parameter name="start period time" type="double" value="0.0e+00"/>
-	<Parameter name="end period time" type="double" value="2.0e+02"/>
+	<Parameter name="start period time" type="double" value="0.0"/>
+	<Parameter name="end period time" type="double" value="100.0"/>
 	<Parameter name="initial time step" type="double" value="10.0"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{10.0, 20.0, 30.0}"/>
-      <Parameter name="initial time step" type="Array(double)" value="{0.1, 0.2, 0.3}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{5., 25., 15.}"/>		 
+      <Parameter name="initial time step" type="Array(double)" value="{0.2, 0.4, 0.6}"/>
+      <Parameter name="maximum time step" type="Array(double)" value="{5.0, 25.0, 15.0}"/>		 
     </ParameterList>
   </ParameterList>
 
@@ -360,10 +360,8 @@
       	    <Parameter name="regions" type="Array(string)" value="{Bottom Surface Outside All}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
       	    <ParameterList name="boundary pressure">
-      	      <ParameterList name="function-tabular">
-      		<Parameter name="x values" type="Array(double)" value="{0.0e+00, 9.467279800e+10}"/>
-      		<Parameter name="y values" type="Array(double)" value="{1.013250000e+05, 1.013250000e+05}"/>
-      		<Parameter name="forms" type="Array(string)" value="{constant}"/>
+      	      <ParameterList name="function-constant">
+      		<Parameter name="value" type="double" value="101325.0"/>
       	      </ParameterList>
       	    </ParameterList>
       	  </ParameterList>
@@ -374,10 +372,8 @@
             <Parameter name="spatial distribution method" type="string" value="none"/>
       	    <Parameter name="rainfall" type="bool" value="false"/>
       	    <ParameterList name="outward mass flux">
-      	      <ParameterList name="function-tabular">
-            		<Parameter name="x values" type="Array(double)" value="{0.0e+00, 6.172666560e+10, 6.172934400e+10, 9.467279800e+10}"/>
-            		<Parameter name="y values" type="Array(double)" value="{-1.1071e-07, -2.54022e-03, -1.48666e-06, -1.48666e-06}"/>
-            		<Parameter name="forms" type="Array(string)" value="{constant, constant, constant}"/>
+      	      <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="-1.1071e-07"/>
       	      </ParameterList>
       	    </ParameterList>
       	  </ParameterList>
@@ -386,10 +382,8 @@
             <Parameter name="spatial distribution method" type="string" value="none"/>
       	    <Parameter name="rainfall" type="bool" value="false"/>
       	    <ParameterList name="outward mass flux">
-      	      <ParameterList name="function-tabular">
-            	<Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10, 6.1731784810e+10, 6.1737055210e+10, 9.46727980e+10}"/>
-            	<Parameter name="y values" type="Array(double)" value="{-1.10710e-07, -1.486660e-06, -3.304230e-03, -1.486660e-06, -1.486660e-06}"/>
-            	<Parameter name="forms" type="Array(string)" value="{constant, constant, constant, constant}"/>
+      	      <ParameterList name="function-constant">
+            	<Parameter name="value" type="double" value="-1.10710e-07"/>
       	      </ParameterList>
       	    </ParameterList>
       	  </ParameterList>
@@ -398,10 +392,8 @@
             <Parameter name="spatial distribution method" type="string" value="none"/>
       	    <Parameter name="rainfall" type="bool" value="false"/>
       	    <ParameterList name="outward mass flux">
-      	      <ParameterList name="function-tabular">
-            	<Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10, 9.467279800e+10}"/>
-            	<Parameter name="y values" type="Array(double)" value="{-1.10710e-07, -1.486660e-06, -1.486660e-06}"/>
-            	<Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
+      	      <ParameterList name="function-constant">
+            	<Parameter name="value" type="double" value="-1.10710e-07"/>
       	      </ParameterList>
       	    </ParameterList>
       	  </ParameterList>
@@ -410,10 +402,8 @@
             <Parameter name="spatial distribution method" type="string" value="none"/>
       	    <Parameter name="rainfall" type="bool" value="false"/>
       	    <ParameterList name="outward mass flux">
-      	      <ParameterList name="function-tabular">
-                <Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10, 9.467279800e+10}"/>
-                <Parameter name="y values" type="Array(double)" value="{-1.10710e-07, -1.486660e-06, -1.486660e-06}"/>
-            	<Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
+      	      <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="-1.10710e-07"/>
       	      </ParameterList>
       	    </ParameterList>
       	  </ParameterList>
@@ -422,10 +412,8 @@
             <Parameter name="spatial distribution method" type="string" value="none"/>
       	    <Parameter name="rainfall" type="bool" value="false"/>
       	    <ParameterList name="outward mass flux">
-      	      <ParameterList name="function-tabular">
-            	<Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10, 9.467279800e+10}"/>
-            	<Parameter name="y values" type="Array(double)" value="{-1.10710e-07, -1.486660e-06, -1.486660e-06}"/>
-            	<Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
+      	      <ParameterList name="function-constant">
+            	<Parameter name="value" type="double" value="-1.10710e-07"/>
       	      </ParameterList>
       	    </ParameterList>
       	  </ParameterList>

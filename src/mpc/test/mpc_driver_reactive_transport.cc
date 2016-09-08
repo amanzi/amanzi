@@ -65,7 +65,8 @@ using namespace Amanzi::AmanziGeometry;
   }
 
   // restart simulation and compare results
-  glist->sublist("cycle driver").sublist("restart").set<std::string>("file name", "chkpoint00005.h5");
+  glist->sublist("cycle driver").sublist("restart").set<std::string>("file name", "chk_rt00005.h5");
+  glist->sublist("state").sublist("initial conditions").remove("geochemical conditions", false);
 
   {
     Amanzi::CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
