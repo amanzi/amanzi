@@ -30,13 +30,12 @@ class Checkpoint : public IOEvent {
 
   // public interface for coordinator clients
   void CreateFile(int cycle);
+  void CreateFinalFile(int cycle);
   void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const;
   void WriteAttributes(double time, double dt, int cycle, int pos) const;
   void WriteAttributes(double time, double dt, int cycle) const;
   void WriteAttributes(double time, int cycle) const;
   void WriteObservations(ObservationData* obs_data);
-  void SetFinal(bool fnl) { final_ = fnl; }
-  bool IsFinal() { return final_; }
   void Finalize();
 
   void set_filebasename(std::string base) { filebasename_ = base; }
@@ -47,7 +46,6 @@ class Checkpoint : public IOEvent {
   std::string filebasename_;
   int filenamedigits_;
   int restart_cycle_;
-  bool final_;
 
   // the Epetra communicator
   const Epetra_MpiComm *comm_;
@@ -55,5 +53,5 @@ class Checkpoint : public IOEvent {
   Teuchos::RCP<Amanzi::HDF5_MPI> checkpoint_output_;
 };
 
-}
+}  // namespace Amanzi
 #endif

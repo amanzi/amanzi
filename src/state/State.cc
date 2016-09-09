@@ -1166,9 +1166,11 @@ void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk,
                      bool final,
                      Amanzi::ObservationData* obs_data) {
   if ( !chk->is_disabled() ) {
-
-    chk->SetFinal(final);
     chk->CreateFile(S->cycle());
+
+    // create hard link to the final file
+    if (final && S->GetMesh()->get_comm()->MyPID() == 0)
+      chk->CreateFinalFile(S->cycle());
 
     for (State::field_iterator field=S->field_begin(); field!=S->field_end(); ++field) {
       field->second->WriteCheckpoint(chk);
