@@ -86,6 +86,6 @@ TEST(MPC_DRIVER_REACTIVE_TRANSPORT_NATIVE) {
   RunTestReactiveTransport("test/mpc_driver_reactive_transport.xml");
 }
 
-TEST(MPC_DRIVER_REACTIVE_TRANSPORT_ALQUIMIA) {
-  RunTestReactiveTransport("test/mpc_driver_alquimia_transport.xml");
-}
+//TEST(MPC_DRIVER_REACTIVE_TRANSPORT_ALQUIMIA) {
+//  RunTestReactiveTransport("test/mpc_driver_alquimia_transport.xml");
+//}
