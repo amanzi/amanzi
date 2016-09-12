@@ -22,7 +22,7 @@ int main() {
   std::vector<int> bedrock_type;
   std::vector<double> depths;
 
-  auto m = readMesh2D_text(mesh_in, soil_type, bedrock_type, depths);
+  auto m = readMesh2D_text(mesh_in, soil_type, bedrock_type, depths, 706520., 4.08107e+06);
 
   int nsnodes = m.coords.size();
   double min_depth = DBL_MAX, max_depth = 0.0;

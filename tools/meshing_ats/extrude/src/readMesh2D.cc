@@ -9,9 +9,11 @@ namespace AmanziGeometry {
 
 Mesh2D
 readMesh2D_text(const std::string& filename,
-                 std::vector<int>& soil_types,
-                 std::vector<int>& bedrock_types,
-                 std::vector<double>& depths_to_bedrock) {
+                std::vector<int>& soil_types,
+                std::vector<int>& bedrock_types,
+                std::vector<double>& depths_to_bedrock,
+                double x_max,
+                double y_max) {
   std::ifstream fin(filename);
   bedrock_types.clear();
   soil_types.clear();
@@ -40,21 +42,23 @@ readMesh2D_text(const std::string& filename,
        >> p3[0] >> p3[1] >> p3[2] >> depths[2]
        >> veg_type >> soil_type >> bedrock_type;
 
-    veg_types.push_back(veg_type);
-    soil_types.push_back(soil_type);
-    bedrock_types.push_back(bedrock_type);
+    if (c[0] < x_max && c[1] < y_max) {
+      veg_types.push_back(veg_type);
+      soil_types.push_back(soil_type);
+      bedrock_types.push_back(bedrock_type);
 
-    std::vector<int> tri_conn(3);
-    bool isnew = fac.addPoint(p1, tri_conn[0]);
-    if (isnew) depths_to_bedrock.push_back(depths[0]);
+      std::vector<int> tri_conn(3);
+      bool isnew = fac.addPoint(p1, tri_conn[0]);
+      if (isnew) depths_to_bedrock.push_back(depths[0]);
 
-    isnew = fac.addPoint(p2, tri_conn[1]);
-    if (isnew) depths_to_bedrock.push_back(depths[1]);
+      isnew = fac.addPoint(p2, tri_conn[1]);
+      if (isnew) depths_to_bedrock.push_back(depths[1]);
 
-    isnew = fac.addPoint(p3, tri_conn[2]);
-    if (isnew) depths_to_bedrock.push_back(depths[2]);
+      isnew = fac.addPoint(p3, tri_conn[2]);
+      if (isnew) depths_to_bedrock.push_back(depths[2]);
 
-    conn.emplace_back(tri_conn);
+      conn.emplace_back(tri_conn);
+    }
   }
 
   std::vector<std::vector<int> > sets(1);
