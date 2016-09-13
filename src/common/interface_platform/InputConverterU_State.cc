@@ -291,15 +291,27 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- particle density
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, particle_density", flag);
       if (flag) {
-        double particle_density = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+        if (static_cast<DOMElement*>(node)->hasAttribute(XMLString::transcode("type"))){
+          char* type =  XMLString::transcode(static_cast<DOMElement*>(node)->getAttribute(XMLString::transcode("type")));
+          if (std::string(type) == "file"){
+            std::string part_dens_file = GetAttributeValueS_(static_cast<DOMElement*>(node), "filename");
+            Teuchos::ParameterList& part_dens_ic = out_ic.sublist("particle_density");
+            part_dens_ic.set<std::string>("restart file", part_dens_file);
 
-        Teuchos::ParameterList& part_dens_ev = out_ev.sublist("particle_density");
-        part_dens_ev.sublist("function").sublist(reg_str)
+            Teuchos::ParameterList& part_dens_ev = out_ev.sublist("particle_density");
+            part_dens_ev.set<std::string>("field evaluator type", "constant variable");
+          }
+        }else{
+          double particle_density = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+
+          Teuchos::ParameterList& part_dens_ev = out_ev.sublist("particle_density");
+          part_dens_ev.sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions", regions)
             .set<std::string>("component", "cell")
             .sublist("function").sublist("function-constant")
             .set<double>("value", particle_density);
-        part_dens_ev.set<std::string>("field evaluator type", "independent variable");
+          part_dens_ev.set<std::string>("field evaluator type", "independent variable");
+        }
       }
     }
   }
