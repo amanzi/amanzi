@@ -70,6 +70,7 @@ class Chemistry_PK : public PK_Physical {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<State> S_;
   std::string passwd_;
+  Teuchos::RCP<Teuchos::ParameterList> glist_, cp_list_;
 
   int number_aqueous_components_;
   std::vector<std::string> comp_names_;
@@ -88,8 +89,9 @@ class Chemistry_PK : public PK_Physical {
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
 #endif
 
-  // time control
+  // time controls
   int num_iterations_, num_successful_steps_;
+  double initial_conditions_time_;
 
   // verbosity object thatis not shared with common chemistry
   Teuchos::RCP<VerboseObject> vo_;

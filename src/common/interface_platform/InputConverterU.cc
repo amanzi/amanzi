@@ -83,12 +83,6 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
     out_list.sublist("state").set<std::string>("initialization filename", init_filename_);
   }
 
-  // -- restart tweaks
-  if (restart_) {
-    out_list.sublist("state").sublist("initial conditions")
-            .remove("geochemical conditions", false);
-  }
-
   // -- additional transport diagnostics
   if (transport_diagnostics_.size() > 0) {
     out_list.sublist("PKs").sublist("transport")

@@ -2435,6 +2435,8 @@ The following parameters are common for all supported engines.
   It used to help convergence of the initial solution of the chemistry. If this parameter is absent, 
   a fraction (10%) of the total component concentration is used.
 
+* `"initial conditions time`" [double] specifies time for applying initial conditions. This parameter
+  is useful for simulation restart. Default value is the state time when chemistry PK is instantiated. 
 
 Alquimia
 ````````

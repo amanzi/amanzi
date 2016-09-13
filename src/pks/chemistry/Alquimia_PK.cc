@@ -48,7 +48,6 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
                          const Teuchos::RCP<Teuchos::ParameterList>& glist,
                          const Teuchos::RCP<State>& S,
                          const Teuchos::RCP<TreeVector>& soln) :
-    glist_(glist),
     soln_(soln),
     max_time_step_(9.9e9),
     chem_initialized_(false),
@@ -57,6 +56,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
 {
   S_ = S;
   mesh_ = S_->GetMesh();
+  glist_ = glist;
 
   // extract pk name
   std::string pk_name = pk_tree.name();
@@ -192,21 +192,29 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
     Exceptions::amanzi_throw(msg); 
   }
 
-  // Now loop through all the regions and initialize.
+  // Do we need to initialize chemsitry?
   int ierr = 0;
-  for (auto it = chem_initial_conditions_.begin(); it != chem_initial_conditions_.end(); ++it) {
-    std::string region_name = it->first;
-    std::string condition = it->second;
+  if (fabs(initial_conditions_time_ - S->time()) < 1e-8 * fabs(S->time())) {
+    for (auto it = chem_initial_conditions_.begin(); it != chem_initial_conditions_.end(); ++it) {
+      std::string region = it->first;
+      std::string condition = it->second;
 
-    // Get the cells that belong to this region.
-    unsigned int num_cells = mesh_->get_set_size(region_name, AmanziMesh::CELL, AmanziMesh::OWNED);
-    AmanziMesh::Entity_ID_List cell_indices;
-    mesh_->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::OWNED, &cell_indices);
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "enforcing geochemical condition \"" << condition 
+                   << "\" in region \"" << region << "\"\n";
+      }
+
+      // Get the cells that belong to this region.
+      unsigned int num_cells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
+      AmanziMesh::Entity_ID_List cell_indices;
+      mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &cell_indices);
   
-    // Loop over the cells.
-    for (unsigned int i = 0; i < num_cells; ++i) {
-      int cell = cell_indices[i];
-      ierr = InitializeSingleCell(cell, condition);
+      // Loop over the cells.
+      for (unsigned int i = 0; i < num_cells; ++i) {
+        int cell = cell_indices[i];
+        ierr = InitializeSingleCell(cell, condition);
+      }
     }
   }
 
@@ -819,7 +827,7 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Advanced after maximum of " << num_iterations_
-               << " Newton iterations in cell " << imax << "." << std::endl;
+               << " Newton iterations in cell " << imax << std::endl;
   }
 
   // now publish auxiliary data to state
