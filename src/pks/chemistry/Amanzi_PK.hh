@@ -74,8 +74,6 @@ class Amanzi_PK : public Chemistry_PK {
   Teuchos::RCP<TreeVector> soln_;
 
  private:
-  Teuchos::RCP<Teuchos::ParameterList> cp_list_;
-
   Beaker* chem_;
   Beaker::BeakerParameters beaker_parameters_;
   Beaker::BeakerComponents beaker_components_;

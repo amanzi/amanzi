@@ -2,7 +2,7 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
   <ParameterList name="checkpoint data">
-    <Parameter name="file name base" type="string" value="chkpoint_transport"/>
+    <Parameter name="file name base" type="string" value="chk_transport"/>
     <Parameter name="file name digits" type="int" value="5"/>
     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
   </ParameterList>

@@ -104,8 +104,6 @@ class Alquimia_PK: public Chemistry_PK {
   Teuchos::RCP<TreeVector> soln_;
 
  private:
-  Teuchos::RCP<Teuchos::ParameterList> glist_, cp_list_;
-
   // Time stepping controls. Some parameters are defined in the base class
   double time_step_, max_time_step_, min_time_step_, prev_time_step_;
   std::string time_step_control_method_;

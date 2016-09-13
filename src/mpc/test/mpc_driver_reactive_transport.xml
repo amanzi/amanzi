@@ -2,11 +2,11 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
   <ParameterList name="visualization data">
-    <Parameter name="file name base" type="string" value="plot_react_trans"/>
+    <Parameter name="file name base" type="string" value="plot_rt"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/>
   </ParameterList>
   <ParameterList name="checkpoint data">
-    <Parameter name="file name base" type="string" value="chkpoint_react_trans"/>
+    <Parameter name="file name base" type="string" value="chk_rt"/>
     <Parameter name="file name digits" type="int" value="5"/>
     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
   </ParameterList>  
@@ -73,7 +73,7 @@
       <ParameterList name="TP 0">
 	<Parameter name="physical model" type="string" value="PK tree"/>
 	<Parameter name="start period time" type="double" value="0.0e+00"/>
-	<Parameter name="end period time" type="double" value="1.0e+02"/>
+	<Parameter name="end period time" type="double" value="200.0"/>
         <ParameterList name="PK tree">
           <ParameterList name="reactive transport">
             <Parameter name="PK type" type="string" value="reactive transport"/>
@@ -99,6 +99,7 @@
     <ParameterList name="chemistry">
       <Parameter name="PK type" type="string" value="chemistry pk"/>
       <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
+      <Parameter name="initial time step (s)" type="double" value="20.0"/>
       <ParameterList name="thermodynamic database">
 	<Parameter name="format" type="string" value="simple"/>
 	<Parameter name="file" type="string" value="test/mpc_driver_reactive_transport.bgd"/>
@@ -150,6 +151,7 @@
 	  <ParameterList name="Na+">
 	    <ParameterList name="West BC">
 	      <Parameter name="regions" type="Array(string)" value="{West}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
 	      <ParameterList name="boundary concentration">
 		<ParameterList name="function-tabular">
 		  <Parameter name="y values" type="Array(double)" value="{9.42676899999999977e-03, 9.42676899999999977e-03}"/>
@@ -162,6 +164,7 @@
 	  <ParameterList name="Ca++">
 	    <ParameterList name="West BC">
 	      <Parameter name="regions" type="Array(string)" value="{West}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
 	      <ParameterList name="boundary concentration">
 		<ParameterList name="function-tabular">
 		  <Parameter name="y values" type="Array(double)" value="{5.01423899999999955e-04, 5.01423899999999955e-04}"/>
@@ -174,6 +177,7 @@
 	  <ParameterList name="Mg++">
 	    <ParameterList name="West BC">
 	      <Parameter name="regions" type="Array(string)" value="{West}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
 	      <ParameterList name="boundary concentration">
 		<ParameterList name="function-tabular">
 		  <Parameter name="y values" type="Array(double)" value="{2.13606599999999983e-03, 2.13606599999999983e-03}"/>
@@ -186,6 +190,7 @@
 	  <ParameterList name="Cl-">
 	    <ParameterList name="West BC">
 	      <Parameter name="regions" type="Array(string)" value="{West}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
 	      <ParameterList name="boundary concentration">
 		<ParameterList name="function-tabular">
 		  <Parameter name="y values" type="Array(double)" value="{1.47017488000000009e-02, 1.47017488000000009e-02}"/>

@@ -2,7 +2,7 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
   <ParameterList name="checkpoint data">
-    <Parameter name="file name base" type="string" value="chkpoint_thermal"/>
+    <Parameter name="file name base" type="string" value="chk_thermal"/>
     <Parameter name="file name digits" type="int" value="5"/>
     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1000, -1}"/>
   </ParameterList>
@@ -377,7 +377,7 @@
     </ParameterList>
 
     <ParameterList name="energy">
-      <ParameterList name="Two-phase problem">
+      <ParameterList name="two-phase problem">
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>

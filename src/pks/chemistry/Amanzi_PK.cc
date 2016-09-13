@@ -61,6 +61,7 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
 {
   S_ = S;
   mesh_ = S_->GetMesh();
+  glist_ = glist;
 
   // extract pk name
   std::string pk_name = pk_tree.name();
@@ -207,16 +208,23 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   // solve for initial free-ion concentrations
   int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   ierr = 0;
-  for (int c = 0; c < num_cells; ++c) {
-    CopyCellStateToBeakerStructures(c, tcc);
+  if (fabs(initial_conditions_time_ - S->time()) <= 1e-8 * fabs(S->time())) {
+    for (int c = 0; c < num_cells; ++c) {
+      CopyCellStateToBeakerStructures(c, tcc);
 
-    try {
-      chem_->Speciate(&beaker_components_, beaker_parameters_);
-      CopyBeakerStructuresToCellState(c, tcc);
-
-    } catch (ChemistryException& geochem_err) {
-      ierr = 1;
-      internal_msg = geochem_err.message_;
+      try {
+        chem_->Speciate(&beaker_components_, beaker_parameters_);
+        CopyBeakerStructuresToCellState(c, tcc);
+      } 
+      catch (ChemistryException& geochem_err) {
+        ierr = 1;
+        internal_msg = geochem_err.message_;
+      }
+    }
+  } else {
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "no data initialization due to time mismatch: " << S->time() << std::endl;
     }
   }
 
@@ -305,8 +313,7 @@ void Amanzi_PK::XMLParameters()
   aux_names_.clear();
   if (cp_list_->isParameter("auxiliary data")) {
     Teuchos::Array<std::string> names = cp_list_->get<Teuchos::Array<std::string> >("auxiliary data");
-    for (Teuchos::Array<std::string>::const_iterator name = names.begin();
-         name != names.end(); ++name) {
+    for (auto name = names.begin(); name != names.end(); ++name) {
       if (*name == "pH") {
         aux_names_.push_back(*name);
       } else {

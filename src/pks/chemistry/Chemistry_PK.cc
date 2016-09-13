@@ -29,7 +29,6 @@ Chemistry_PK::Chemistry_PK() :
     using_sorption_(false),
     using_sorption_isotherms_(false) {};
 
-
 /* ******************************************************************
 * Register fields and evaluators with the State
 ******************************************************************* */
@@ -216,6 +215,9 @@ void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // auxiliary fields
   InitializeField_("alquimia_aux_data", 0.0);
+
+  // miscaleneous controls
+  initial_conditions_time_ = cp_list_->get<double>("initial conditions time", S->time());
 }
 
 
