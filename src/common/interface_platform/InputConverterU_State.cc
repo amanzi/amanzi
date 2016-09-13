@@ -109,15 +109,30 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         double porosity;
         node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
         if (flag) {
-          porosity = GetAttributeValueD_(static_cast<DOMElement*>(node), "value", TYPE_NUMERICAL, "-");
+          if (static_cast<DOMElement*>(node)->hasAttribute(XMLString::transcode("type"))){
 
-          Teuchos::ParameterList& porosity_ev = out_ev.sublist("porosity");
-          porosity_ev.sublist("function").sublist(reg_str)
-            .set<Teuchos::Array<std::string> >("regions", regions)
-            .set<std::string>("component", "cell")
-            .sublist("function").sublist("function-constant")
-            .set<double>("value", porosity);
-          porosity_ev.set<std::string>("field evaluator type", "independent variable");
+            char* type =  XMLString::transcode(static_cast<DOMElement*>(node)->getAttribute(XMLString::transcode("type")));
+            if (std::string(type) == "file"){
+              std::string porosity_file = GetAttributeValueS_(static_cast<DOMElement*>(node), "filename");
+              Teuchos::ParameterList& porosity_ic = out_ic.sublist("porosity");
+              porosity_ic.set<std::string>("restart file", porosity_file);
+
+              Teuchos::ParameterList& porosity_ev = out_ev.sublist("porosity");
+              porosity_ev.set<std::string>("field evaluator type", "constant variable");
+            }
+
+          }else{
+
+            porosity = GetAttributeValueD_(static_cast<DOMElement*>(node), "value", TYPE_NUMERICAL, "-");
+            Teuchos::ParameterList& porosity_ev = out_ev.sublist("porosity");
+            porosity_ev.sublist("function").sublist(reg_str)
+              .set<Teuchos::Array<std::string> >("regions", regions)
+              .set<std::string>("component", "cell")
+              .sublist("function").sublist("function-constant")
+              .set<double>("value", porosity);
+            porosity_ev.set<std::string>("field evaluator type", "independent variable");
+
+          }
 
         } else {
           msg << "Porosity element must be specified under mechanical_properties";
@@ -129,15 +144,27 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, transport_porosity", flag);
       if (flag) {
         use_transport_porosity_ = true;
-        double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "value", TYPE_NUMERICAL, "-");
+        if (static_cast<DOMElement*>(node)->hasAttribute(XMLString::transcode("type"))){
+          char* type =  XMLString::transcode(static_cast<DOMElement*>(node)->getAttribute(XMLString::transcode("type")));
+          if (std::string(type) == "file"){
+            std::string trans_porosity_file = GetAttributeValueS_(static_cast<DOMElement*>(node), "filename");
+            Teuchos::ParameterList& trans_porosity_ic = out_ic.sublist("transport_porosity");
+            trans_porosity_ic.set<std::string>("restart file", trans_porosity_file);
 
-        Teuchos::ParameterList& porosity_ev = out_ev.sublist("transport_porosity");
-        porosity_ev.sublist("function").sublist(reg_str)
+            Teuchos::ParameterList& trans_porosity_ev = out_ev.sublist("transport_porosity");
+            trans_porosity_ev.set<std::string>("field evaluator type", "constant variable");
+          }
+        }else{
+          double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "value", TYPE_NUMERICAL, "-");
+
+          Teuchos::ParameterList& porosity_ev = out_ev.sublist("transport_porosity");
+          porosity_ev.sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions", regions)
             .set<std::string>("component", "cell")
             .sublist("function").sublist("function-constant")
             .set<double>("value", val);
-        porosity_ev.set<std::string>("field evaluator type", "independent variable");
+          porosity_ev.set<std::string>("field evaluator type", "independent variable");
+        }
       } 
       else if (use_transport_porosity_) {
         msg << "Transport porosity element must be specified for all materials or none.";
