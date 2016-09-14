@@ -36,15 +36,21 @@
     </ParameterList>
     <ParameterList name="east">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{1.00000000000000000e+02, 0.00000000000000000e+00, 0.00000000000000000e+00}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{1.00000000000000000e+02, 1.00000000000000000e+00, 1.00000000000000000e+00}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{1.0e+02, 0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0e+02, 1.0, 1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
   <ParameterList name="visualization data">
-    <Parameter name="file name base" type="string" value="calcite"/>
-    <Parameter name="times start period stop 0" type="Array(double)" value="{0.00000000000000000e+00, 3.15569260000000000e+07, -1.00000000000000000e+00}"/>
+    <Parameter name="file name base" type="string" value="plot_rt"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 3.1556926e+07, -1.0}"/>
   </ParameterList>
+  <ParameterList name="checkpoint data">
+    <Parameter name="file name base" type="string" value="chk_rt"/>
+    <Parameter name="file name digits" type="int" value="5"/>
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
+  </ParameterList>  
+
   <ParameterList name="state">
     <ParameterList name="field evaluators">
     </ParameterList>
@@ -84,6 +90,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="darcy_flux">
         <Parameter name="dot with normal" type="bool" value="true"/>
         <ParameterList name="function">
@@ -93,17 +100,17 @@
             <ParameterList name="function">
               <Parameter name="number of dofs" type="int" value="3"/>
               <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
+              <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 2 Function">
+              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 3 Function">
+              <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.86340000000000002e-06"/>
                 </ParameterList>
@@ -121,17 +128,17 @@
             <ParameterList name="function">
               <Parameter name="number of dofs" type="int" value="3"/>
               <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
+              <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="9.99999999999999980e-13"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 2 Function">
+              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="9.99999999999999980e-13"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 3 Function">
+              <ParameterList name="fof 3 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="9.99999999999999980e-13"/>
                 </ParameterList>
@@ -169,7 +176,7 @@
             <ParameterList name="function">
               <Parameter name="number of dofs" type="int" value="1"/>
               <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
+              <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.00000000000000008e-05"/>
                 </ParameterList>
@@ -186,7 +193,7 @@
             <ParameterList name="function">
               <Parameter name="number of dofs" type="int" value="1"/>
               <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
+              <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.00000000000000000e+00"/>
                 </ParameterList>
@@ -203,17 +210,17 @@
             <ParameterList name="function">
               <Parameter name="number of dofs" type="int" value="3"/>
               <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="DoF 1 Function">
+              <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.00000000000000006e-09"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 2 Function">
+              <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.00000000000000006e-09"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="DoF 3 Function">
+              <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="1.00000000000000006e-09"/>
                 </ParameterList>
@@ -244,7 +251,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.00000000000000000e+00"/>
-        <Parameter name="end period time" type="double" value="1.57784630000000000e+09"/>
+        <Parameter name="end period time" type="double" value="1.57784630000000000e+06"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
         <Parameter name="initial time step" type="double" value="1.57680000000000000e+05"/>
         <Parameter name="maximum time step" type="double" value="6.00000000000000000e+10"/>
@@ -298,29 +305,12 @@
       </ParameterList>
       <ParameterList name="boundary conditions">
         <ParameterList name="geochemical">
-          <ParameterList name="H+">
-            <ParameterList name="west_bc">
-              <Parameter name="regions" type="Array(string)" value="{west}"/>
-              <Parameter name="times" type="Array(double)" value="{0.00000000000000000e+00, 1.00000000000000000e+20}"/>
-              <Parameter name="geochemical conditions" type="Array(string)" value="{west, west}"/>
-              <Parameter name="time functions" type="Array(string)" value="{constant}"/>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="HCO3-">
-            <ParameterList name="west_bc">
-              <Parameter name="regions" type="Array(string)" value="{west}"/>
-              <Parameter name="times" type="Array(double)" value="{0.00000000000000000e+00, 1.00000000000000000e+20}"/>
-              <Parameter name="geochemical conditions" type="Array(string)" value="{west, west}"/>
-              <Parameter name="time functions" type="Array(string)" value="{constant}"/>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="Ca++">
-            <ParameterList name="west_bc">
-              <Parameter name="regions" type="Array(string)" value="{west}"/>
-              <Parameter name="times" type="Array(double)" value="{0.00000000000000000e+00, 1.00000000000000000e+20}"/>
-              <Parameter name="geochemical conditions" type="Array(string)" value="{west, west}"/>
-              <Parameter name="time functions" type="Array(string)" value="{constant}"/>
-            </ParameterList>
+          <ParameterList name="west_bc">
+            <Parameter name="regions" type="Array(string)" value="{west}"/>
+            <Parameter name="solutes" type="Array(string)" value="{H+, HCO3-, Ca++}"/>
+            <Parameter name="times" type="Array(double)" value="{0.00000000000000000e+00, 1.00000000000000000e+20}"/>
+            <Parameter name="geochemical conditions" type="Array(string)" value="{west, west}"/>
+            <Parameter name="time functions" type="Array(string)" value="{constant}"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -352,9 +342,9 @@
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
       <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
-      <Parameter name="max time step (s)" type="double" value="1.00000000000000000e+10"/>
-      <Parameter name="min time step (s)" type="double" value="1.00000000000000000e+10"/>
-      <Parameter name="initial time step (s)" type="double" value="1.00000000000000000e+07"/>
+      <Parameter name="max time step (s)" type="double" value="1.0e+10"/>
+      <Parameter name="min time step (s)" type="double" value="1.0e+10"/>
+      <Parameter name="initial time step (s)" type="double" value="1.0e+05"/>
       <Parameter name="time step cut threshold" type="int" value="8"/>
       <Parameter name="time step cut factor" type="double" value="2.00000000000000000e+00"/>
       <Parameter name="time step increase threshold" type="int" value="4"/>

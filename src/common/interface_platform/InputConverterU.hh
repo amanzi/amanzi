@@ -39,7 +39,9 @@ class InputConverterU : public InputConverter {
       mesh_rectangular_(false),
       transport_permeability_(false),
       use_transport_porosity_(false),
-      restart_(false) {}
+      restart_(false),
+      ic_time_(0.0),
+      ic_time_flow_(0.0) {};
 
   explicit InputConverterU(const std::string& input_filename, 
                            xercesc::DOMDocument* input_doc) :
@@ -50,7 +52,9 @@ class InputConverterU : public InputConverter {
       mesh_rectangular_(false),
       transport_permeability_(false),
       use_transport_porosity_(false),
-      restart_(false) {}
+      restart_(false),
+      ic_time_(0.0),
+      ic_time_flow_(0.0) {};
 
   ~InputConverterU() { if (vo_ != NULL) delete vo_; }
 
@@ -90,6 +94,12 @@ class InputConverterU : public InputConverter {
       double dt_cut_default, double dt_inc_default);
   Teuchos::ParameterList TranslateInitialization_(
       const std::string& unstr_controls);
+
+  // -- state
+  void TranslateFieldEvaluator_(
+      DOMNode* node, std::string field, std::string unit,
+      const std::string& reg_str, const std::vector<std::string>& regions,
+      Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev);
 
   // -- flow
   Teuchos::ParameterList TranslateFlow_(const std::string& mode);
@@ -176,6 +186,7 @@ class InputConverterU : public InputConverter {
   // -- initialization filename, different from restart
   bool restart_;
   std::string init_filename_;
+  double ic_time_flow_, ic_time_;
 
   // global solvers
   std::vector<std::pair<std::string, double> > gmres_solvers_;

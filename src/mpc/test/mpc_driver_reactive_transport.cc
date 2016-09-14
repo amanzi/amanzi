@@ -50,11 +50,35 @@ using namespace Amanzi::AmanziGeometry;
   ASSERT(!mesh.is_null());
 
   // create dummy observation data object
+  double avg1, avg2;
   Amanzi::ObservationData obs_data;    
   Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(plist));
+ 
+  {
+    Amanzi::CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
+    try {
+      auto S = cycle_driver.Go();
+      S->GetFieldData("total_component_concentration")->MeanValue(&avg1);
+    } catch (...) {
+      CHECK(false);
+    }
+  }
 
-  Amanzi::CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
-  cycle_driver.Go();
+  // restart simulation and compare results
+  glist->sublist("cycle driver").sublist("restart").set<std::string>("file name", "chk_rt00005.h5");
+  glist->sublist("state").sublist("initial conditions").remove("geochemical conditions", false);
+
+  {
+    Amanzi::CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
+    try {
+      auto S = cycle_driver.Go();
+      S->GetFieldData("total_component_concentration")->MeanValue(&avg2);
+    } catch (...) {
+      CHECK(false);
+    }
+  }
+
+  CHECK_CLOSE(avg1, avg2, 1e-5 * avg1);
 }
 
 
@@ -62,6 +86,6 @@ TEST(MPC_DRIVER_REACTIVE_TRANSPORT_NATIVE) {
   RunTestReactiveTransport("test/mpc_driver_reactive_transport.xml");
 }
 
-TEST(MPC_DRIVER_REACTIVE_TRANSPORT_ALQUIMIA) {
-  RunTestReactiveTransport("test/mpc_driver_alquimia_transport.xml");
-}
+//TEST(MPC_DRIVER_REACTIVE_TRANSPORT_ALQUIMIA) {
+//  RunTestReactiveTransport("test/mpc_driver_alquimia_transport.xml");
+//}

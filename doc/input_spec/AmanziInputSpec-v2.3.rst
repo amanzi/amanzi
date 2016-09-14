@@ -1187,19 +1187,20 @@ Mechanical_properties
 .. code-block:: xml
 
   <mechanical_properties>
-      Required Elements: porosity (FILE OPTION NOT IMPLEMENTED) 
-      Optional Elements: particle_density, specific_storage, specific_yield, dispersion_tensor, tortuosity
+      Required Elements: porosity 
+      Optional Elements: particle_density, specific_storage,
+      specific_yield, dispersion_tensor, tortuosity, transport_porosity
   </mechanical_properties>
 
 * ``mechanical_properties`` has six elements that can be either values or specified as files.  It has the following requirements.
 
     * ``porosity`` is defined in-line using attributes.  It is specified in one of three ways: as a value between 0 and 1 using value="<value>", through a file using type="file" and filename="<filename>", or as a gslib file using type="gslib", parameter_file="<filename>", value="<value>" and (optionally) data_file="<filename>" (defaults to ``porosity_data``.  NOTE - FILE OPTION NOT IMPLEMENTED YET.
 
-    * ``particle_density`` is defined in-line using attributes.  Either it is specified as a value greater than 0 using ``value`` or it specified through a file using ``filename`` and ``type``.  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+    * ``particle_density`` is defined in-line using attributes.  Either it is specified as a value greater than 0 using ``value`` or it specified through a file using ``filename`` and ``type``.  
 
-    * ``specific_storage`` is defined in-line using attributes.  Either it is specified as a value greater than 0 using ``value`` or it specified through a file using ``filename`` and ``type``.  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+    * ``specific_storage`` is defined in-line using attributes.  Either it is specified as a value greater than 0 using ``value`` or it specified through a file using ``filename`` and ``type``.  
 
-    * ``specific_yield`` is defined in-line using attributes.  Either it is specified as a value using ``value`` or it specified through a file using ``filename`` and ``type``.  NOTE - FILE OPTION NOT IMPLEMENTED YET.
+    * ``specific_yield`` is defined in-line using attributes.  Either it is specified as a value using ``value`` or it specified through a file using ``filename`` and ``type``.  
 
     * ``dispersion_tensor`` is defined in-line using attributes.  The attribute ``type`` is used to specify either the model to utilize of that a file is to be read.  The ``type`` options are: uniform_isotropic, burnett_frind, lichtner_kelkar_robinson, or file.  For ``uniform_isotropic`` values are specified using the attributes ``alpha_l`` and ``alpha_t``.  For ``burnett_frind`` values are specified using the attributes ``alpha_l``, ``alpha_th``, and ``alpha_tv``. For ``lichtner_kelkar_robinson`` values are specified using the attributes ``alpha_l`h", ``alpha_lv``, ``alpha_th``, and ``alpha_tv``.  For ``file`` the file name is specified using ``filename``.  NOTE - FILE OPTION NOT IMPLEMENTED YET.
 

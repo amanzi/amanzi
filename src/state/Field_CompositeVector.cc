@@ -132,6 +132,8 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
     ASSERT(!initialized());
     std::string filename = plist.get<std::string>("cells from file");
     ReadCellsFromCheckpoint_(filename);
+    set_initialized();
+    return;
   }
 
   // ------ Set values using a constant -----

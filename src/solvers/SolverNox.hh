@@ -68,7 +68,7 @@ class SolverNox : public Solver<VectorClass,VectorSpace> {
 
   // still needs tests!
   void Init(const Teuchos::RCP<SolverFnBase<VectorClass> >& fn,
-                    const VectorSpace& map)
+            const VectorSpace& map)
   {
     // wrap the base fn in a JF fn
     jf_fnbase_ = Teuchos::rcp(new SolverFnBaseJF<VectorClass,VectorSpace>(*plist_, fn, map));

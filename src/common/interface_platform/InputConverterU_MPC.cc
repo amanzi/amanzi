@@ -120,6 +120,16 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
         init_filename_ = GetAttributeValueS_(inode, "initialize", TYPE_NONE, false, "");
   }
 
+  // time for initial conditions
+  if (flag_steady) {
+    ic_time_flow_ = t0_steady;
+    ic_time_ = t0_steady;
+    if (tp_mode.size() > 0) ic_time_ = tp_mode.begin()->first;
+  } else {
+    ic_time_flow_ = tp_mode.begin()->first;
+    ic_time_ = ic_time_flow_;
+  }
+
   // populate optional end-times 
   flag = true;
   std::map<double, double>::iterator it1, it2;

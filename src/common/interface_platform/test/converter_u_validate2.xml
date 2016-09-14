@@ -596,7 +596,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="energy">
-      <ParameterList name="Two-phase problem">
+      <ParameterList name="two-phase problem">
         <ParameterList name="operators">
           <ParameterList name="diffusion operator">
             <ParameterList name="matrix">
