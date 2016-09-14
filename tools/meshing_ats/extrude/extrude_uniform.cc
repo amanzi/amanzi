@@ -21,7 +21,8 @@ int main() {
   std::vector<int> bedrock_type;
   std::vector<double> depths;
 
-  auto m = readMesh2D_text(mesh_in, soil_type, bedrock_type, depths);
+  //  auto m = readMesh2D_text(mesh_in, soil_type, bedrock_type, depths);
+  auto m = readMesh2D_text(mesh_in, soil_type, bedrock_type, depths, 630497, 4.04083e+06);
 
   int nsnodes = m.coords.size();
   

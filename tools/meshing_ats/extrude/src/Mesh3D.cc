@@ -40,9 +40,9 @@ Mesh3D::Mesh3D(const Mesh2D * const m_, int n_layers) :
   dn_faces = up_faces;
 
   // create the "bottom" sideset
-  std::vector<int> bottom_c(m->ncells, -1);
-  std::vector<int> bottom_f(m->ncells, 1);
-  side_sets.emplace_back(std::make_pair(bottom_c,bottom_f));
+  side_sets.emplace_back(std::piecewise_construct,
+                         std::forward_as_tuple(m->ncells, -1),
+                         std::forward_as_tuple(m->ncells, 1));
   side_sets_id.push_back(1);
   
   // create the "surface" sideset

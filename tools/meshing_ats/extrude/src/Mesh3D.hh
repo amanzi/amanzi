@@ -34,14 +34,6 @@ struct Mesh3D {
     extrude(dzs, cell_set);
   }
 
-  int node_structure(int n_2d, int layer) {
-    return n_2d + layer*m->coords.size();
-}
-
-  int cell_structure(int c_2d, int layer) {
-    return c_2d + layer*m->cell2node.size();
-  }
-
   void extrude(const std::vector<double>& dz,
                const std::vector<int>& cell_set);
   void finish(); 
