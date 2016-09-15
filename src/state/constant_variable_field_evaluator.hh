@@ -62,8 +62,8 @@ public:
   
  private:
   static Utils::RegisteredFactory<FieldEvaluator,ConstantVariableFieldEvaluator> fac_;
-
 };
-}
+
+}  // namespace Amanzi
 
 #endif
