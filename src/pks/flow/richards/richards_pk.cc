@@ -794,8 +794,16 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
   // Dirichlet boundary conditions
   Functions::BoundaryFunction::Iterator bc;
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "    Set " << bc_pressure_->size() << " Dirichlet faces." << std::endl;
   for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
     int f = bc->first;
+#ifdef ENABLE_DBC
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    ASSERT(cells.size() == 1);
+#endif
+    
     bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
     bc_values_[f] = bc->second;
   }
@@ -805,8 +813,15 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
   if (!infiltrate_only_if_unfrozen_) {
     // Standard Neuman boundary conditions
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "    Set " << bc_flux_->size() << " Neumann faces." << std::endl;
     for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
       int f = bc->first;
+#ifdef ENABLE_DBC
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    ASSERT(cells.size() == 1);
+#endif
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_values_[f] = bc->second;
       if (!kr && rel_perm[0][f] > 0.) bc_values_[f] /= rel_perm[0][f];
@@ -815,8 +830,15 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     // Neumann boundary conditions that turn off if temp < freezing
 
     const Epetra_MultiVector& temp = *S->GetFieldData(getKey(domain_,"temperature"))->ViewComponent("face");
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "    Set " << bc_flux_->size() << " Neumann faces." << std::endl;
     for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
       int f = bc->first;
+#ifdef ENABLE_DBC
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    ASSERT(cells.size() == 1);
+#endif
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       if (temp[0][f] > 273.15) {
         bc_values_[f] = bc->second;
@@ -835,8 +857,15 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   Teuchos::RCP<const CompositeVector> u = S->GetFieldData(key_);
   double seepage_tol = p_atm * 1e-14;
 
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "    Set " << bc_seepage_->size() << " seepage faces." << std::endl;
   for (bc=bc_seepage_->begin(); bc!=bc_seepage_->end(); ++bc) {
     int f = bc->first;
+#ifdef ENABLE_DBC
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    ASSERT(cells.size() == 1);
+#endif
     double boundary_pressure = BoundaryValue(u, f);
     double boundary_flux = flux[0][f]*BoundaryDirection(f);
     if (boundary_pressure < bc->second - seepage_tol) {
@@ -852,8 +881,15 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   }
 
   // seepage face -- pressure <= p_atm, outward mass flux is specified
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "    Set " << bc_seepage_infilt_->size() << " seepage/infiltration faces." << std::endl;
   for (bc=bc_seepage_infilt_->begin(); bc!=bc_seepage_infilt_->end(); ++bc) {
     int f = bc->first;
+#ifdef ENABLE_DBC
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    ASSERT(cells.size() == 1);
+#endif
     double flux_seepage_tol = std::abs(bc->second) * .001;
     
     double boundary_pressure = BoundaryValue(u, f);
@@ -906,6 +942,11 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
       // -- get the surface cell's equivalent subsurface face
       AmanziMesh::Entity_ID f =
         surface->entity_get_parent(AmanziMesh::CELL, c);
+#ifdef ENABLE_DBC
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      ASSERT(cells.size() == 1);
+#endif
 
       // -- set that value to dirichlet
       bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -925,6 +966,11 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
       // -- get the surface cell's equivalent subsurface face
       AmanziMesh::Entity_ID f =
         surface->entity_get_parent(AmanziMesh::CELL, c);
+#ifdef ENABLE_DBC
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      ASSERT(cells.size() == 1);
+#endif
 
       // -- set that value to Neumann
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
