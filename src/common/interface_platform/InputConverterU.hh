@@ -103,6 +103,10 @@ class InputConverterU : public InputConverter {
       DOMNode* node, std::string field, std::string unit,
       const std::string& reg_str, const std::vector<std::string>& regions,
       Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev);
+  void TranslateFieldIC_(
+      DOMNode* node, std::string field, std::string unit,
+      const std::string& reg_str, const std::vector<std::string>& regions,
+      Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev);
 
   // -- flow
   Teuchos::ParameterList TranslateFlow_(const std::string& mode);
