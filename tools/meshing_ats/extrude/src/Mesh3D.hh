@@ -56,6 +56,7 @@ struct Mesh3D {
   std::vector<int> dn_faces;
   std::vector<int> up_nodes;
   std::vector<int> dn_nodes;
+  std::vector<int> cells_in_col;
 
   // other meta-data
   int current_layer;

@@ -1,6 +1,7 @@
 #include <set>
 #include <algorithm>
 #include <numeric>
+#include <fstream>
 
 #include "Mesh2D.hh"
 #include "Mesh3D.hh"
@@ -12,7 +13,8 @@ Mesh3D::Mesh3D(const Mesh2D * const m_, int n_layers) :
     m(m_),
     current_layer(0),
     total_layers(n_layers),
-    datum(m_->datum)
+    datum(m_->datum),
+    cells_in_col(m->ncells, 0)    
 {
   // reserve/allocate space
   Point d(3);
@@ -80,6 +82,8 @@ Mesh3D::extrude(const std::vector<double>& dz,
   for (int c=0; c!=m->ncells; ++c) {
     if (std::any_of(m->cell2node[c].begin(), m->cell2node[c].end(),
                     node_differs)) {
+      cells_in_col[c]++;
+      
       // add the bottom face
       std::vector<int> dn_face;
       for (auto n : m->cell2node[c]) dn_face.emplace_back(dn_nodes[n]);
@@ -105,10 +109,10 @@ Mesh3D::extrude(const std::vector<double>& dz,
           if (my_f < 0) {
             // may need to create the face
             my_f = face2node.size();
-            auto side_nodes = std::vector<int>{ up_nodes[m->face2node[sf][0]], 
-                                                up_nodes[m->face2node[sf][1]] };
-            if (node_differs(m->face2node[sf][1])) side_nodes.push_back(dn_nodes[m->face2node[sf][1]]);
+            auto side_nodes = std::vector<int>{ up_nodes[m->face2node[sf][1]], 
+                                                up_nodes[m->face2node[sf][0]] };
             if (node_differs(m->face2node[sf][0])) side_nodes.push_back(dn_nodes[m->face2node[sf][0]]);
+            if (node_differs(m->face2node[sf][1])) side_nodes.push_back(dn_nodes[m->face2node[sf][1]]);
             face2node.emplace_back(std::move(side_nodes));
             cell_faces.push_back(my_f);
             this_layer_sides[sf] = my_f;
@@ -187,6 +191,11 @@ Mesh3D::finish() {
       }
     }
   }
+
+  std::ofstream fid;
+  fid.open("col_counts.txt");
+  for (auto c : cells_in_col) fid << c << std::endl;
+  fid.close();
 }
 
 
