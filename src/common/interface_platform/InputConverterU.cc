@@ -276,19 +276,23 @@ Teuchos::ParameterList InputConverterU::TranslateUnits_()
   std::string length("m"), time("s"), mass("kg"), concentration("molar"), temperature("K");
 
   node = GetUniqueElementByTagsString_("model_description, units, length_unit", flag);
-  if (flag) length = GetTextContentS_(node, "cm, in, ft, yd, m, km");
+  // if (flag) length = GetTextContentS_(node, "cm, in, ft, yd, m, km");
+  if (flag) length = GetTextContentS_(node, "m");
 
   node = GetUniqueElementByTagsString_("model_description, units, time_unit", flag);
-  if (flag) time = GetTextContentS_(node, "s, min, h, d, y");
+  // if (flag) time = GetTextContentS_(node, "s, min, h, d, y");
+  if (flag) time = GetTextContentS_(node, "s");
 
   node = GetUniqueElementByTagsString_("model_description, units, mass_unit", flag);
-  if (flag) mass = GetTextContentS_(node, "g, lb, kg, ton");
+  // if (flag) mass = GetTextContentS_(node, "g, lb, kg, ton");
+  if (flag) mass = GetTextContentS_(node, "kg");
 
   node = GetUniqueElementByTagsString_("model_description, units, conc_unit", flag);
   if (flag) concentration = GetTextContentS_(node, "molar, SI, ppm, ppb");
 
   node = GetUniqueElementByTagsString_("model_description, units, temperature_unit", flag);
-  if (flag) temperature = GetTextContentS_(node, "K, C, F");
+  // if (flag) temperature = GetTextContentS_(node, "K, C, F");
+  if (flag) temperature = GetTextContentS_(node, "K");
 
   out_list.set<std::string>("length", length);
   out_list.set<std::string>("time", time);

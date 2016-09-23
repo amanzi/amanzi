@@ -5,9 +5,6 @@
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
-
-
-
 */
 
 #include "CompositeVectorFunctionFactory.hh"
@@ -34,12 +31,14 @@ ConstantVariableFieldEvaluator::ConstantVariableFieldEvaluator(const ConstantVar
     my_key_(other.my_key_)
 {}
 
+
 // ---------------------------------------------------------------------------
 // Virtual Copy constructor
 // ---------------------------------------------------------------------------
 Teuchos::RCP<FieldEvaluator> ConstantVariableFieldEvaluator::Clone() const {
   return Teuchos::rcp(new ConstantVariableFieldEvaluator(*this));
 }
+
 
 // ---------------------------------------------------------------------------
 // Operator=
@@ -70,8 +69,8 @@ void ConstantVariableFieldEvaluator::EnsureCompatibility(const Teuchos::Ptr<Stat
   S->GetField(my_key_, my_key_)->set_io_vis(io_my_key);
   bool checkpoint_my_key = plist_.get<bool>(std::string("checkpoint ")+my_key_, false);
   S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
-  
 }
+
 
 // ---------------------------------------------------------------------------
 // Answers the question, has this Field changed since it was last requested
@@ -81,7 +80,6 @@ bool ConstantVariableFieldEvaluator::HasFieldChanged(const Teuchos::Ptr<State>& 
   Teuchos::OSTab tab = vo_->getOSTab();
 
   return false;
-
 }
 
 
@@ -108,6 +106,7 @@ bool ConstantVariableFieldEvaluator::IsDependency(const Teuchos::Ptr<State>& S, 
   return false;
 }
 
+
 inline
 bool ConstantVariableFieldEvaluator::ProvidesKey(Key key) const { return key == my_key_; }
 
@@ -124,4 +123,4 @@ ConstantVariableFieldEvaluator::WriteToString() const {
   return result.str();
 }
 
-}
+} // namespace Amanzi

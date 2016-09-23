@@ -110,7 +110,9 @@ bool ConfirmFileExists(const std::string& name) {
   return ok;
 }
 
-AmanziStructuredGridSimulationDriver::AmanziStructuredGridSimulationDriver(const std::string& input_file, xercesc::DOMDocument* input)
+AmanziStructuredGridSimulationDriver::AmanziStructuredGridSimulationDriver(const std::string& input_file,
+                                                                           xercesc::DOMDocument* input,
+                                                                           const std::string& ouput_prefix)
 {
   int argc = 0;
   char** argv = NULL;
