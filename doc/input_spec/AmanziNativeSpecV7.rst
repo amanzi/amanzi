@@ -389,7 +389,15 @@ The initialization sublist of *State* is named *initial conditions*.
   file. The initialization sequence is as follows. First, we try to initialize a
   field using the provided checkpoint file. Second, regardless of the outcome of the
   previous step, we try to initialize the field using the sublist `"initial conditions`".
-  By design, the second step allows us to overwrite only part for the field.
+  By design, the second step allows us to overwrite only part for the
+  field. There are several options available to initialize field using
+  the sublist `"initial conditions`": `"restart file`" - read field
+  from existing hdf5 file, `"exodus file initialization`" - read field
+  from existing exodus file, `"cells from file`" - read cell
+  components from hdf5 file, `"constant`" - set field values to constant, `"initialize
+  from 1D column`" - initialize 1D column from file and `"function`" -
+  field is initialized by function.
+
 
 .. code-block:: xml
 
@@ -401,9 +409,9 @@ The initialization sublist of *State* is named *initial conditions*.
       </ParameterList>
       <ParameterList name="initial conditions">
          ... initialization of fields
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
 
 
 Primary and derived fields
@@ -721,30 +729,9 @@ We can define geochemical contraint as follows:
      </ParameterList>
    </ParameterList>
 
-Mesh partitioning
------------------
 
-Amanzi's state has a number of tools to verify completeness of initial data.
-This is done using list *mesh partitions*. 
-Each sublist there must have parameter *region list* specifying
-regions that define unique partition of the mesh.
-
-.. code-block:: xml
-
-   <ParameterList name="state">  <!-- parent list -->
-     <ParameterList name="mesh partitions">
-       <ParameterList name="MATERIALS">
-         <Parameter name="region list" type="Array(string)" value="{region1,region2,region3}"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
-
-In this example, we verify that three mesh regions cover completely the mesh without overlaps.
-If so, all material fields, such as *porosity*, will be initialized properly.
-
-
-Initialization from a file
---------------------------
+Initialization from Exodus II file
+-------------------------------------
 
 Some fields can be initialized from Exodus II files. 
 For each field, an additional sublist has to be added to the
@@ -767,6 +754,68 @@ For a parallel run, it must be *.par*.
        </ParameterList>
      </ParameterList>
    </ParameterList>
+
+
+Initialization from HDF5 file
+-------------------------------
+
+Some field can be initialized from HDF5 file. The field has to written
+to HDF5 file as 2D array (number_elements, number_of_components) and
+has to name as field_name.entity.component, e.g
+transport_porosity.cell.0. Parameter `"cell from file`" initializes
+only cell part of the field.
+
+.. code-block:: xml
+
+     <ParameterList name="initial conditions">  <!-- parent list -->
+         <ParameterList name="transport_porosity">
+           <Parameter name="restart file" type="string" value="test1.h5"/>
+         </ParameterList>
+         <ParameterList name="porosity">
+           <Parameter name="cells from file" type="string" value="test3.h5"/>
+         </ParameterList>
+    </ParameterList>
+
+Initialization of 1D column
+-----------------------------
+
+It is possible to initialize only 1D column portion of a particular field.
+
+.. code-block:: xml
+
+     <ParameterList name="initial conditions">  <!-- parent list -->
+         <ParameterList name="field_name5">
+            <ParameterList name="initialize from 1D column" type="ParameterList">
+               <Parameter name="file" type="string" value="column_data.h5" />
+               <Parameter name="z header" type="string" value="/z" />
+               <Parameter name="f header" type="string" value="/temperature" />
+               <Parameter name="coordinate orientation" type="string" value="depth" />
+               <Parameter name="surface sideset" type="string" value="surface" />
+            </ParameterList>
+         </ParameterList>
+    </ParameterList>
+
+
+Mesh partitioning
+-----------------
+
+Amanzi's state has a number of tools to verify completeness of initial data.
+This is done using list *mesh partitions*. 
+Each sublist there must have parameter *region list* specifying
+regions that define unique partition of the mesh.
+
+.. code-block:: xml
+
+   <ParameterList name="state">  <!-- parent list -->
+     <ParameterList name="mesh partitions">
+       <ParameterList name="MATERIALS">
+         <Parameter name="region list" type="Array(string)" value="{region1,region2,region3}"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
+In this example, we verify that three mesh regions cover completely the mesh without overlaps.
+If so, all material fields, such as *porosity*, will be initialized properly.
 
 
 Data IO control
