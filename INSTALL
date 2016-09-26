@@ -45,6 +45,8 @@ All instructions assume you use bash.  Alter as needed for other shells.
     ```
     On Mac, Instructions on how to install lapack  
     https://pheiter.wordpress.com/2012/09/04/howto-installing-lapack-and-blas-on-mac-os/
+    Follow instruction to install the BLAS. LAPACK requies to extra steps that is not in the instrcutions. 
+    Before compiling lapack package go to BLAS/SRC, LAPACKE and CBLAS folders run make for each of them. This will producce three .a files required make.inc. Note, the make.inc in the lapack has to be modified accordingly. To successfully pass all test copy librefblas.a to all TESTING folder. 
 
 1. Set up your directory structure.  Life gets much easier if you get this right first.
   a. I use the following:
