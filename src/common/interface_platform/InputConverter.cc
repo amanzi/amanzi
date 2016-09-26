@@ -982,6 +982,7 @@ double InputConverter::ConvertUnits_(
   unit = "";
   if (data != NULL) {
     unit = std::string(data);
+    boost::algorithm::trim(unit);
     out = units_.ConvertUnitD(out, unit, "SI", mol_mass, flag);
 
     if (!flag) {

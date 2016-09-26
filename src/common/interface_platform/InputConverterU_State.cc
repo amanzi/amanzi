@@ -202,19 +202,19 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- specific_yield
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_yield", flag);
       if (flag) {
-        TranslateFieldEvaluator_(node, "specific_yield", "-", reg_str, regions, out_ic, out_ev);
+        TranslateFieldIC_(node, "specific_yield", "-", reg_str, regions, out_ic, out_ev);
       }
 
       // -- specific storage
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, specific_storage", flag);
       if (flag) {
-        TranslateFieldEvaluator_(node, "specific_storage", "m^-1", reg_str, regions, out_ic, out_ev);
+        TranslateFieldIC_(node, "specific_storage", "m^-1", reg_str, regions, out_ic, out_ev);
       }
 
       // -- particle density
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, particle_density", flag);
       if (flag) {
-        TranslateFieldEvaluator_(node, "particle_density", "kg*m^-3", reg_str, regions, out_ic, out_ev);
+        TranslateFieldIC_(node, "particle_density", "kg*m^-3", reg_str, regions, out_ic, out_ev);
       }
     }
   }
@@ -474,6 +474,32 @@ void InputConverterU::TranslateFieldEvaluator_(
         .sublist("function").sublist("function-constant")
         .set<double>("value", val);
     field_ev.set<std::string>("field evaluator type", "independent variable");
+  }
+}
+
+
+/* ******************************************************************
+* Select proper IC based on the list of input parameters.
+****************************************************************** */
+void InputConverterU::TranslateFieldIC_(
+    DOMNode* node, std::string field, std::string unit,
+    const std::string& reg_str, const std::vector<std::string>& regions,
+    Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev)
+{
+  std::string type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
+  if (type == "file") {
+    std::string filename = GetAttributeValueS_(node, "filename");
+    Teuchos::ParameterList& field_ic = out_ic.sublist(field);
+    field_ic.set<std::string>("restart file", filename);
+  } else {
+    double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, unit);
+
+    Teuchos::ParameterList& field_ic = out_ic.sublist(field);
+    field_ic.sublist("function").sublist(reg_str)
+        .set<Teuchos::Array<std::string> >("regions", regions)
+        .set<std::string>("component", "cell")
+        .sublist("function").sublist("function-constant")
+        .set<double>("value", val);
   }
 }
 

@@ -218,6 +218,22 @@
           <Parameter name="attributes" type="Array(string)" value="{permx,permy}"/>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="specific_storage">
+        <ParameterList name="function">
+          <ParameterList name="RegionMiddle">
+            <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.00000000000000010e-04"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="particle_density">
+        <Parameter name="restart file" type="string" value="particle_density.h5"/>
+      </ParameterList>
       <ParameterList name="pressure">
         <ParameterList name="function">
           <ParameterList name="All">
