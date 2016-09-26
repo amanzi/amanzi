@@ -245,7 +245,7 @@ endif()
 # Restrict the search to HDF5_ROOT if user does not want other
 # directories searched.
 if ( HDF5_NO_SYSTEM_PATHS )
-  set(_hdf5_FIND_OPTIONS NO_CMAKE_SYSTEM_PATH)
+  set(_hdf5_FIND_OPTIONS NO_CMAKE_SYSTEM_PATH NO_SYSTEM_ENVIRONMENT_PATH)
 endif()
 
 # A list of valid components
