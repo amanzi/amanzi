@@ -59,9 +59,10 @@
 
   <execution_controls>
     <verbosity level="high" />
+    <restart>chk00168.h5</restart>
     <execution_control_defaults init_dt="1.0" method="picard" mode="steady" />
     <execution_control end="1956,y" mode="steady" start="0.0" init_dt="1000.0"/>
-    <execution_control end="3000,y" mode="transient" start="1956,y" restart="chk00168.h5"/>
+    <execution_control end="3000,y" mode="transient" start="1956,y"/>
   </execution_controls>
 
   <numerical_controls>
