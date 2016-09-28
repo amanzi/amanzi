@@ -303,6 +303,7 @@
             <base_filename>plot</base_filename>
             <num_digits>5</num_digits>
             <time_macros>Every_year</time_macros>
+            <blacklist>alquimia_aux.*,free_ion.*,primary.*,secondary.*,ion_exchange_ref.*,mineral_reaction.*,mineral_specific.*</blacklist>
         </vis>
     </output>
 </amanzi_input>
