@@ -26,30 +26,21 @@ include(FindPackageHandleStandardArgs)
 include(PrintVariable)
 include(AddPackageDependency)
 
-if ( PFLOTRAN_LIBRARIES AND PFLOTRAN_INCLUDE_DIRS )
+if (PFLOTRAN_LIBRARIES)
 
     # Do nothing. Variables are set. No need to search again
 
-else(PFLOTRAN_LIBRARIES AND PFLOTRAN_INCLUDE_DIRS)
+else()
 
     # Cache variables
     if(PFLOTRAN_DIR)
       set(PFLOTRAN_DIR "${PFLOTRAN_DIR}" CACHE PATH "Path to search for PFLOTRAN include and library files")
     endif()
 
-    if(PFLOTRAN_INCLUDE_DIR)
-      set(PFLOTRAN_INCLUDE_DIR "${PFLOTRAN_INCLUDE_DIR}" CACHE PATH "Path to search for PFLOTRAN include files")
-    else()
-      find_path(PFLOTRAN_INCLUDE_DIR pflotran_alquimia_interface.h ${PFLOTRAN_DIR}/include)
-      if ( NOT PFLOTRAN_INCLUDE_DIR )
-        message(SEND_ERROR "Cannot locate PFLOTRAN include directory")
-      endif()
-    endif()
-
     if(PFLOTRAN_LIBRARY_DIR)
         set(PFLOTRAN_LIBRARY_DIR "${PFLOTRAN_LIBRARY_DIR}" CACHE PATH "Path to search for PFLOTRAN library files")
     else()
-      find_path(PFLOTRAN_LIBRARY_DIR NAMES libpflotranchem.a PATHS ${PFLOTRAN_DIR}/lib)
+      find_path(PFLOTRAN_LIBRARY_DIR NAMES libpflotranchem.a PATHS ${PFLOTRAN_DIR}/src/pflotran)
       if ( NOT PFLOTRAN_LIBRARY_DIR )
         message(SEND_ERROR "Cannot locate PFLTORAN library directory")
       endif()
@@ -76,11 +67,9 @@ else(PFLOTRAN_LIBRARIES AND PFLOTRAN_INCLUDE_DIRS)
     
    
     # Define the LIBRARIES and INCLUDE_DIRS
-
-    set(PFLOTRAN_INCLUDE_DIRS ${PFLOTRAN_INCLUDE_DIR})
     set(PFLOTRAN_LIBRARIES    ${PFLOTRAN_LIBRARY})
 
-endif(PFLOTRAN_LIBRARIES AND PFLOTRAN_INCLUDE_DIRS )    
+endif()    
 
 # Send useful message if everything is found
 find_package_handle_standard_args(PFLOTRAN DEFAULT_MSG
@@ -88,16 +77,13 @@ find_package_handle_standard_args(PFLOTRAN DEFAULT_MSG
 					   PFLOTRAN_LIBRARIES)
 
 # find_package)handle)standard_args should set PFLOTRAN_FOUND but it does not!
-if ( PFLOTRAN_LIBRARIES AND PFLOTRAN_INCLUDE_DIRS)
+if (PFLOTRAN_LIBRARIES)
     set(PFLOTRAN_FOUND TRUE)
 else()
     set(PFLOTRAN_FOUND FALSE)
 endif()
 
 mark_as_advanced(
-  PFLOTRAN_INCLUDE_DIR
-  PFLOTRAN_INCLUDE_DIRS
-  PFLOTRAN_LIBRARY
   PFLOTRAN_LIBRARIES
   PFLOTRAN_LIBRARY_DIR
 )

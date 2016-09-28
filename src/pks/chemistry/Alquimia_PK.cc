@@ -445,7 +445,7 @@ void Alquimia_PK::XMLParameters()
 *
 ******************************************************************* */
 void Alquimia_PK::CopyToAlquimia(int cell,
-                                 AlquimiaMaterialProperties& mat_props,
+                                 AlquimiaProperties& mat_props,
                                  AlquimiaState& state,
                                  AlquimiaAuxiliaryData& aux_data)
 {
@@ -460,7 +460,7 @@ void Alquimia_PK::CopyToAlquimia(int cell,
 ******************************************************************* */
 void Alquimia_PK::CopyToAlquimia(int cell,
                                  Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
-                                 AlquimiaMaterialProperties& mat_props,
+                                 AlquimiaProperties& mat_props,
                                  AlquimiaState& state,
                                  AlquimiaAuxiliaryData& aux_data)
 {
@@ -554,7 +554,7 @@ void Alquimia_PK::CopyToAlquimia(int cell,
 ******************************************************************* */
 void Alquimia_PK::CopyAlquimiaStateToAmanzi(
     const int cell,
-    const AlquimiaMaterialProperties& mat_props,
+    const AlquimiaProperties& mat_props,
     const AlquimiaState& state,
     const AlquimiaAuxiliaryData& aux_data,
     const AlquimiaAuxiliaryOutputData& aux_output,
@@ -642,7 +642,7 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
 x * 
 ******************************************************************* */
 void Alquimia_PK::CopyFromAlquimia(const int cell,
-                                   const AlquimiaMaterialProperties& mat_props,
+                                   const AlquimiaProperties& mat_props,
                                    const AlquimiaState& state,
                                    const AlquimiaAuxiliaryData& aux_data,
                                    const AlquimiaAuxiliaryOutputData& aux_output,
@@ -733,7 +733,7 @@ int Alquimia_PK::AdvanceSingleCell(
     double dt, Teuchos::RCP<Epetra_MultiVector>& aqueous_components,
     int cell)
 {
-  // Copy the state and material information from Amanzi's state within 
+  // Copy the state and property information from Amanzi's state within 
   // this cell to Alquimia.
   CopyToAlquimia(cell, aqueous_components, 
                  alq_mat_props_, alq_state_, alq_aux_data_);
