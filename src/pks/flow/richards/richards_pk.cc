@@ -792,10 +792,13 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     bc_values_[n] = 0.0;
   }
 
+  std::vector<int> bc_counts;
+  std::vector<std::string> bc_names;
+
   // Dirichlet boundary conditions
   Functions::BoundaryFunction::Iterator bc;
-  if (vo_->os_OK(Teuchos::VERB_EXTREME))
-    *vo_->os() << "    Set " << bc_pressure_->size() << " Dirichlet faces." << std::endl;
+  bc_counts.push_back(bc_pressure_->size());
+  bc_names.push_back("pressure");
   for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
     int f = bc->first;
 #ifdef ENABLE_DBC
@@ -811,10 +814,10 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   const Epetra_MultiVector& rel_perm = 
     *S->GetFieldData(uw_coef_key_)->ViewComponent("face",false);
 
+  bc_counts.push_back(bc_flux_->size());
+  bc_names.push_back("flux");
   if (!infiltrate_only_if_unfrozen_) {
     // Standard Neuman boundary conditions
-    if (vo_->os_OK(Teuchos::VERB_EXTREME))
-      *vo_->os() << "    Set " << bc_flux_->size() << " Neumann faces." << std::endl;
     for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
       int f = bc->first;
 #ifdef ENABLE_DBC
@@ -828,10 +831,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     }
   } else {
     // Neumann boundary conditions that turn off if temp < freezing
-
     const Epetra_MultiVector& temp = *S->GetFieldData(getKey(domain_,"temperature"))->ViewComponent("face");
-    if (vo_->os_OK(Teuchos::VERB_EXTREME))
-      *vo_->os() << "    Set " << bc_flux_->size() << " Neumann faces." << std::endl;
     for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
       int f = bc->first;
 #ifdef ENABLE_DBC
@@ -857,8 +857,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   Teuchos::RCP<const CompositeVector> u = S->GetFieldData(key_);
   double seepage_tol = p_atm * 1e-14;
 
-  if (vo_->os_OK(Teuchos::VERB_EXTREME))
-    *vo_->os() << "    Set " << bc_seepage_->size() << " seepage faces." << std::endl;
+  bc_counts.push_back(bc_seepage_->size());
+  bc_names.push_back("standard seepage");
   for (bc=bc_seepage_->begin(); bc!=bc_seepage_->end(); ++bc) {
     int f = bc->first;
 #ifdef ENABLE_DBC
@@ -881,8 +881,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   }
 
   // seepage face -- pressure <= p_atm, outward mass flux is specified
-  if (vo_->os_OK(Teuchos::VERB_EXTREME))
-    *vo_->os() << "    Set " << bc_seepage_infilt_->size() << " seepage/infiltration faces." << std::endl;
+  bc_counts.push_back(bc_seepage_infilt_->size());
+  bc_names.push_back("seepage with infiltration");
   for (bc=bc_seepage_infilt_->begin(); bc!=bc_seepage_infilt_->end(); ++bc) {
     int f = bc->first;
 #ifdef ENABLE_DBC
@@ -908,7 +908,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
       // max pressure condition violated
       bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_values_[f] = p_atm;
-      //      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in DIRICHLET pressure " << p_atm << std::endl;
+      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in DIRICHLET pressure " << p_atm << std::endl;
 
     } else if (boundary_flux < bc->second - flux_seepage_tol &&
         boundary_pressure <= p_atm + seepage_tol) {
@@ -931,6 +931,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   }
 
   // surface coupling
+  bc_counts.push_back(0);
+  bc_names.push_back("surface coupling (head)");
   if (coupled_to_surface_via_head_) {
     // Face is Dirichlet with value of surface head
     Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
@@ -938,6 +940,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
         ->ViewComponent("cell",false);
 
     unsigned int ncells_surface = head.MyLength();
+    bc_counts[bc_counts.size()-1] = ncells_surface;
     for (unsigned int c=0; c!=ncells_surface; ++c) {
       // -- get the surface cell's equivalent subsurface face
       AmanziMesh::Entity_ID f =
@@ -955,6 +958,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   }
 
   // surface coupling
+  bc_counts.push_back(0);
+  bc_names.push_back("surface coupling (flux)");
   if (coupled_to_surface_via_flux_) {
     // Face is Neumann with value of surface residual
     Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
@@ -962,6 +967,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
         ->ViewComponent("cell",false);
 
     unsigned int ncells_surface = flux.MyLength();
+    bc_counts[bc_counts.size()-1] = ncells_surface;
     for (unsigned int c=0; c!=ncells_surface; ++c) {
       // -- get the surface cell's equivalent subsurface face
       AmanziMesh::Entity_ID f =
@@ -990,6 +996,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
   // mark all remaining boundary conditions as zero flux conditions
   AmanziMesh::Entity_ID_List cells;
+  int n_default = 0;
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_markers_[f] == Operators::OPERATOR_BC_NONE) {
@@ -997,12 +1004,37 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
       int ncells = cells.size();
 
       if (ncells == 1) {
+        n_default++;
         bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_values_[f] = 0.0;
+
+        // BEGIN DEBUG CRUFT        
+        /*
+        AmanziGeometry::Point normal = mesh_->face_normal(f);
+        normal /= AmanziGeometry::norm(normal);
+        if (std::abs(normal[2]) > 0.0001) {
+          std::cout << "bottom face: " << f << std::endl;
+        }
+        */
+
+        // ENDDEBUG CRUFT        
       }
     }
   }
+  bc_names.push_back("default (zero flux)");
+  bc_counts.push_back(n_default);
 
+  // report on counts
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    std::vector<int> bc_counts_global(bc_counts.size(), 0);
+    mesh_->get_comm()->SumAll(&bc_counts[0], &bc_counts_global[0], bc_counts.size());
+
+    *vo_->os() << "  BCs applied:" << std::endl;
+
+    for (int i=0; i!=bc_counts_global.size(); ++i) {
+      *vo_->os() << "    " << bc_names[i] << ": " << bc_counts_global[i] << std::endl;
+    }
+  }
 };
 
 
