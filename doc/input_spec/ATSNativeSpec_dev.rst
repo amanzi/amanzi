@@ -192,8 +192,7 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well
 as more complex definitions based on triangulated surface files.
 
 
-Notes
------
+**Notes:**
 
 * Surface files contain labeled triangulated face sets.  The user is
   responsible for ensuring that the intersections with other surfaces
@@ -208,8 +207,8 @@ Notes
 
 * Region names must NOT be repeated.
 
-Example
--------
+Example:
+
 .. code-block:: xml
 
    <ParameterList>  <!-- parent list -->
@@ -276,15 +275,15 @@ region defined by the value 25 in color function file.
 
 
 Point
-.....
+-----
 
 List *region: point* defines a point in space. 
 This region consists of cells containing this point.
 
 * `"coordinate`" ``[Array(double)]`` Location of point in space.
 
-Example
--------
+Example:
+
 .. code-block:: xml
 
    <ParameterList name="DOWN_WIND150"> <!-- parent list defining the name -->
@@ -297,7 +296,7 @@ Example
 
 
 Box
-.....
+------
 
 
 List *region: box* defines a region bounded by coordinate-aligned
@@ -308,8 +307,8 @@ direction in which case they are equivalent to planes.
 
 * `"high coordinate`" ``[Array(double)]`` Location of the boundary points with the highest coordinates.
 
-Example
--------
+Example:
+
 .. code-block:: xml
 
    <ParameterList name="WELL">  <!-- parent list -->
@@ -323,7 +322,7 @@ Example
 
 
 Plane
-.....
+------
 
 List *region: plane* defines a plane using a point lying on the plane and normal to the plane.
 
@@ -331,8 +330,8 @@ List *region: plane* defines a plane using a point lying on the plane and normal
 
 * `"point`" ``[Array(double)]`` Point in space.
 
-Example
--------
+Example:
+
 .. code-block:: xml
 
    <ParameterList name="TOP_SECTION"> <!-- parent list -->
@@ -349,7 +348,7 @@ Example
 
 
 Labeled Set
-...........
+-------------
 
 The list *region: labeled set* defines a named set of mesh entities
 existing in an input mesh file. This is the same file that contains
@@ -375,8 +374,8 @@ associated with the entities in the indicated set.
 
 * `"entity`" ``[string]`` Type of the mesh object (cell, face, etc).
 
-Example
---------
+Example:
+
 .. code-block:: xml
 
    <ParameterList name="AQUIFER">
@@ -392,7 +391,7 @@ Example
 
 
 Color Function
-..............
+--------------
 
 
 The list *region: color function* defines a region based a specified
@@ -414,8 +413,8 @@ function file.
 
 * `"value`" ``[int]`` Color that defines the set in a tabulated function file.
 
-Example
--------
+Example:
+
 .. code-block:: xml
 
    <ParameterList name="SOIL_TOP">

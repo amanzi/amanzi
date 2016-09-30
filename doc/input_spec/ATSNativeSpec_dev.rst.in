@@ -173,23 +173,23 @@ Region
 
 
 Point
-.....
+-----
 { RegionPoint }
 
 Box
-.....
+------
 { RegionBox }
 
 Plane
-.....
+------
 { RegionPlane }
 
 Labeled Set
-...........
+-------------
 { RegionLabeledSet }
 
 Color Function
-..............
+--------------
 { RegionColorFunction }
 
 

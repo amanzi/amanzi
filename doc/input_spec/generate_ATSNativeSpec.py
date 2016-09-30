@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """Generates the native spec documentation by sucking in .hh file documentation into a template"""
 
 import sys,os
@@ -93,5 +95,5 @@ def parseTemplate(filename):
         
 
 if __name__ == "__main__":
-    parseTemplate("ATSNativeSpec_dev.rst")
+    parseTemplate(sys.argv[-1].strip(".in"))
 
