@@ -23,7 +23,7 @@ NOTE: there is also an ats repository that is currently simply a placeholder for
 Installation
 ------------
 
-Please see the [INSTALL](https://github.com/amanzi/ats-dev/blob/master/INSTALL) file included in the top level directory of your ATS download, or the [ats-dev wiki](https://github.com/amanzi/ats-dev/wiki).
+Please see the [INSTALL](https://github.com/amanzi/ats-dev/blob/master/INSTALL.md) file included in the top level directory of your ATS download, or the [ats-dev wiki](https://github.com/amanzi/ats-dev/wiki).
 
 
 License and Copyright
