@@ -1,7 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! RegionBox : a rectangular region in space, defined by two points
+//! RegionBox: a rectangular region in space, defined by two points
 
-/*!
+/*
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -11,11 +11,29 @@
            Rao Garimella
            Ethan Coon (ecoon@lanl.gov)
 
-  <ul>Native Spec Example</>
-    <ParameterList name="region: box" >
-      <Parameter name="low coordinate" type="Array(double)" value="{-1.0,-1.0,-5.0}" />
-      <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,0.0}" />
-    </ParameterList>
+*/
+
+/*!
+
+List *region: box* defines a region bounded by coordinate-aligned
+planes. Boxes are allowed to be of zero thickness in only one
+direction in which case they are equivalent to planes.
+
+* `"low coordinate`" ``[Array(double)]`` Location of the boundary point with the lowest coordinates.
+
+* `"high coordinate`" ``[Array(double)]`` Location of the boundary points with the highest coordinates.
+
+Example
+-------
+.. code-block:: xml
+
+   <ParameterList name="WELL">  <!-- parent list -->
+     <ParameterList name="region: box">
+       <Parameter name="low coordinate" type="Array(double)" value="{-5.0,-5.0, -5.0}"/>
+       <Parameter name="high coordinate" type="Array(double)" value="{5.0, 5.0,  5.0}"/>
+     </ParameterList>
+   </ParameterList>
+  
 */
 
 

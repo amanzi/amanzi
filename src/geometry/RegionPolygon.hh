@@ -1,13 +1,53 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/*
-  A closed polygonal segment of a plane.
+//! RegionPolygon: A closed polygonal segment of a plane.
 
+/*
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella
+*/
+
+/*!
+
+The list *region: polygon* defines a polygonal region on which mesh faces and
+nodes can be queried. NOTE that one cannot ask for cells in a polygonal surface
+region. In 2D, the polygonal region is a line and is specified by 2 points.
+In 3D, the polygonal region is specified by an arbitrary number of points.
+In both cases the point coordinates are given as a linear array. The polygon
+can be non-convex.
+
+This provides a set of faces with a normal for computing flux.
+
+The polygonal surface region can be queried for a normal. In 2D, the normal is
+defined as [Vy,-Vx] where [Vx,Vy] is the vector from point 1 to point 2.
+In 3D, the normal of the polygon is defined by the order in which points 
+are specified.
+
+* `"number of points`" ``[int]`` Number of polygon points.
+
+* `"points`" ``[Array(double)]`` Point coordinates in a linear array. 
+
+Example
+--------
+.. code-block:: xml
+
+   <ParameterList name="XY_PENTAGON">
+     <ParameterList name="region: polygon">
+       <Parameter name="number of points" type="int" value="5"/>
+       <Parameter name="points" type="Array(double)" value="{-0.5, -0.5, -0.5, 
+                                                              0.5, -0.5, -0.5,
+                                                              0.8, 0.0, 0.0,
+                                                              0.5,  0.5, 0.5,
+                                                             -0.5, 0.5, 0.5}"/>
+       <ParameterList name="expert parameters">
+         <Parameter name="tolerance" type="double" value="1.0e-3"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
 */
 
 #ifndef AMANZI_REGION_POLYGON_HH_

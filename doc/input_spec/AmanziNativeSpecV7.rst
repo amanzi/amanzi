@@ -4991,6 +4991,8 @@ Boundary
 List *region: boundary* defines a set of all boundary faces. 
 Using this definition, faces located on the domain boundary are extracted.
 
+* `"entity`" [string] Type of the mesh object.  
+
 .. code-block:: xml
 
    <ParameterList name="DOMAIN_BOUNDARY"> <!-- parent list -->
@@ -5006,6 +5008,9 @@ Enumerated set
 List *region: enumerated set* defines a set of mesh entities via the list 
 of input global ids..
 
+* `"entity`" ``[string]`` Type of the mesh object.  Valid are *cell*, *face*, *edge*, *node*
+* `"entity gids`" ``[Array(int)]`` List of the global IDs of the entities.
+  
 .. code-block:: xml
 
    <ParameterList name="WELL"> <!-- parent list -->
