@@ -23,7 +23,7 @@ CompressiblePorosityEvaluator::CompressiblePorosityEvaluator(Teuchos::ParameterL
   dependencies_.insert(poro_key_);
 
   if (my_key_ == std::string("")) {
-    my_key_ = plist_.get<std::string>("compressed porosity key",
+    my_key_ = plist_.get<std::string>("porosity key",
                                       getKey(domain_name, "porosity"));
   }
 
