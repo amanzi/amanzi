@@ -65,6 +65,8 @@ Mesh3D::extrude(const std::vector<double>& dz,
 
   auto this_layer_sides = std::vector<int>(m->face2node.size(), -1);
   auto node_differs = [this](int n) {return this->dn_nodes[n] != this->up_nodes[n];};
+  auto node_same_horiz = [this](int n) {return coords[this->dn_nodes[n]][0] == coords[this->up_nodes[n]][0]
+                                        && coords[this->dn_nodes[n]][1] == coords[this->up_nodes[n]][1];};
   
   // shift the up-node coordinates by dz
   for (int n=0; n!=dz.size(); ++n) {
@@ -100,6 +102,9 @@ Mesh3D::extrude(const std::vector<double>& dz,
       for (auto sf : m->cell2face[c]) {
         int my_f = this_layer_sides[sf];
 
+        ASSERT(node_same_horiz(m->face2node[sf][0]));
+        ASSERT(node_same_horiz(m->face2node[sf][1]));
+        
         if (std::any_of(m->face2node[sf].begin(), m->face2node[sf].end(),
                         node_differs)) {
           if (my_f < 0) {
