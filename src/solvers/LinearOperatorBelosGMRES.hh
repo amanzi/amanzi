@@ -1,11 +1,16 @@
 /*
+  Solvers
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   num_itrs_accumulated_ = 0;
-  This is the Linear Solver component of the Amanzi code.
-  License: BSD
+
   Authors: Alicia Klinvex (amklinv@sandia.gov)
 
   Generalized minimum residual method (Yu.Kuznetsov, 1968; Y.Saad, 1986)
-  Usage:
 */
 
 #ifndef  AMANZI_BELOS_GMRES_OPERATOR_HH_
@@ -121,7 +126,6 @@ void LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::Init(Teuchos::Parame
 template<class Matrix, class Vector, class VectorSpace>
 int LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector& v, Vector& hv) const
 {
-  std::cout << "Using Belos GMRES\n";
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -134,7 +138,7 @@ int LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::ApplyInverse(const Ve
   }
 
   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList());
-  pl->set("Num Blocks",krylov_dim_);
+  pl->set("Num Blocks", krylov_dim_);
   pl->set("Maximum Iterations", max_itrs_);
   pl->set("Maximum Restarts", 2*krylov_dim_*max_itrs_);
   pl->set("Convergence Tolerance", tol_);

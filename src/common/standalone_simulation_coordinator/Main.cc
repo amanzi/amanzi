@@ -48,14 +48,6 @@
 using namespace boost::filesystem;
 
 
-struct RunLog : public std::ostream
-{
-  RunLog(std::ostream& _os);
- protected:
-  int rank;
-};
-
-
 int main(int argc, char *argv[]) {
 
 #ifdef AMANZI_USE_FENV
@@ -76,7 +68,10 @@ int main(int argc, char *argv[]) {
     CLP.setOption("xml_file", &xmlInFileName, "XML options file");
 
     std::string xmlSchema = ""; 
-    CLP.setOption("xml_schema", &xmlSchema, "XML Schema File"); 
+    CLP.setOption("xml_schema", &xmlSchema, "XML schema file"); 
+
+    std::string outputPrefix = "";
+    CLP.setOption("output_prefix", &outputPrefix, "Path to output data");
 
     bool print_version(false);
     CLP.setOption("print_version", "no_print_version", &print_version, "Print version number and exit.");
@@ -128,7 +123,7 @@ int main(int argc, char *argv[]) {
     if (print_tpl_versions) {
       if (rank == 0) {
 #ifdef AMANZI_MAJOR
-        std::cout << "Amanzi TPL collection version "<<  XSTR(AMANZI_MAJOR) << "." << XSTR(AMANZI_MINOR) << "." << XSTR(AMANZI_PATCH) << std::endl;
+        std::cout << "Amanzi TPL collection version "<< XSTR(AMANZI_MAJOR) << "." << XSTR(AMANZI_MINOR) << "." << XSTR(AMANZI_PATCH) << std::endl;
 #endif
         std::cout << "Third party libraries that this amanzi binary is linked against:" << std::endl;
 #ifdef ALQUIMIA_MAJOR
@@ -182,6 +177,9 @@ int main(int argc, char *argv[]) {
 #ifdef SEACAS_MAJOR
         std::cout << "  SEACAS         " << XSTR(SEACAS_MAJOR) << "." << XSTR(SEACAS_MINOR) << "." << XSTR(SEACAS_PATCH) << std::endl;
 #endif
+#ifdef Silo_MAJOR
+        std::cout << "  Silo           " << XSTR(Silo_MAJOR) << "." << XSTR(Silo_MINOR) << "." << XSTR(Silo_PATCH) << std::endl;
+#endif
 #ifdef SuperLU_MAJOR
         std::cout << "  SuperLU        " << XSTR(SuperLU_MAJOR) << "." << XSTR(SuperLU_MINOR) << "." << XSTR(SuperLU_PATCH) << std::endl;
 #endif
@@ -219,14 +217,14 @@ int main(int argc, char *argv[]) {
     // check if the input file actually exists
     if (!exists(xmlInFileName)) {
       if (rank == 0) {
-        std::cout << "ERROR: The xml input file " << xmlInFileName 
-                  << " specified with the command line option --xml_file does not exist." << std::endl;
+        std::cout << "ERROR: The xml input file \"" << xmlInFileName 
+                  << "\" specified with the command line option --xml_file does not exist." << std::endl;
       }
       throw std::string("Amanzi not run");
     }
 
     // Create a simulator that corresponds to our input file.
-    Amanzi::Simulator* simulator = Amanzi::SimulatorFactory::Create(xmlInFileName);
+    Amanzi::Simulator* simulator = Amanzi::SimulatorFactory::Create(xmlInFileName, outputPrefix);
 
     // Start timers.
     Amanzi::timer_manager.add("Full Simulation", Amanzi::Timer::ONCE);
@@ -251,7 +249,7 @@ int main(int argc, char *argv[]) {
   }
   catch (std::string& s) {
     if (rank == 0) {
-      if (s == "amanzi not run") {
+      if (s == "Amanzi not run") {
         std::cout << "Amanzi::SIMULATION_DID_NOT_RUN\n";
       } 
     }
@@ -259,7 +257,7 @@ int main(int argc, char *argv[]) {
   }
   catch (std::exception& e) {
     if (rank == 0) {
-      if (! strcmp(e.what(), "amanzi not run")) {
+      if (! strcmp(e.what(), "Amanzi not run")) {
         std::cout << "Amanzi::SIMULATION_DID_NOT_RUN\n";
       } else {
         std::cout << e.what() << std::endl;

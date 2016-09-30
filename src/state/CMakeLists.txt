@@ -60,6 +60,7 @@ set(state_inc_files
   independent_variable_field_evaluator.hh
   independent_variable_field_evaluator_fromfunction.hh
   independent_variable_field_evaluator_fromfile.hh
+  constant_variable_field_evaluator.hh
   deforming_cell_volume_evaluator.hh
   deforming_cell_volume_evaluator_reg.hh
   checkpoint.hh
@@ -99,6 +100,7 @@ add_amanzi_library(state
                           independent_variable_field_evaluator.cc
                           independent_variable_field_evaluator_fromfunction.cc
                           independent_variable_field_evaluator_fromfile.cc
+                          constant_variable_field_evaluator.cc
                           deforming_cell_volume_evaluator.cc
                           UnstructuredObservations.cc
                           Visualization.cc
@@ -118,6 +120,7 @@ register_evaluator_with_factory(HEADERFILE rank_evaluator_reg.hh          LISTNA
 register_evaluator_with_factory(HEADERFILE primary_variable_field_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE independent_variable_field_evaluator_fromfunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE independent_variable_field_evaluator_fromfile_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE constant_variable_field_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE deforming_cell_volume_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 
 generate_evaluators_registration_header(HEADERFILE state_evaluators_registration.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS  INSTALL True)

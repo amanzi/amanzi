@@ -222,6 +222,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       *vo_->os() << "Translating regions" << std::endl;
 
   MemoryManager mm;
+
   DOMNodeList* node_list;
   DOMNode *node, *node_attr;
   DOMElement* element;
@@ -350,7 +351,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
           }
         }
         // get expert parameters
-        if (reg_elem->hasAttribute(XMLString::transcode("tolerance"))) {
+        if (reg_elem->hasAttribute(mm.transcode("tolerance"))) {
           text_content2 = mm.transcode(reg_elem->getAttribute(mm.transcode("tolerance")));
           out_list.sublist(reg_name).sublist("region: polygon").sublist("expert parameters")
               .set<double>("tolerance", std::strtod(text_content2, NULL));

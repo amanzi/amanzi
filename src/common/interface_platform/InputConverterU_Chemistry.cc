@@ -370,6 +370,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   }
 
   // miscalleneous
+  out_list.set<double>("initial conditions time", ic_time_);
   out_list.set<int>("number of component concentrations", comp_names_all_.size());
 
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
@@ -470,7 +471,7 @@ std::string InputConverterU::CreateBGDFile(std::string& filename)
     }
     
     // create text for kds
-    for (Teuchos::ParameterList::ConstIterator iter = IsothermsPL.begin(); iter != IsothermsPL.end(); ++iter) {
+    for (auto iter = IsothermsPL.begin(); iter != IsothermsPL.end(); ++iter) {
       
       std::string primary = IsothermsPL.name(iter);
       Teuchos::ParameterList& curprimary = IsothermsPL.sublist(primary);

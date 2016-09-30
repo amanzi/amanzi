@@ -71,7 +71,7 @@ void TransportBoundaryFunction_Alquimia::Init_(const std::vector<std::string>& r
     assert(mesh_->valid_set_name(regions[i], AmanziMesh::FACE));
 
     AmanziMesh::Entity_ID_List block;
-    mesh_->get_set_entities(regions[i], AmanziMesh::FACE, AmanziMesh::USED, &block);
+    mesh_->get_set_entities(regions[i], AmanziMesh::FACE, AmanziMesh::OWNED, &block);
     int nblock = block.size();
 
     // Now get the cells that are attached to these faces.
@@ -80,7 +80,7 @@ void TransportBoundaryFunction_Alquimia::Init_(const std::vector<std::string>& r
       int f = block[n];
       value_[f] = WhetStone::DenseVector(chem_engine_->NumPrimarySpecies());
 
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
 
       cell_for_face_[f] = cells[0];
     }
@@ -96,9 +96,9 @@ void TransportBoundaryFunction_Alquimia::Compute(double t_old, double t_new)
   std::string cond_name = (*f_)(t_new);
 
   // Loop over sides and evaluate values.
-  for (TransportDomainFunction::Iterator it = begin(); it != end(); ++it) {
-    int f = it->first; 
+  for (auto it = begin(); it != end(); ++it) {
     // Find the index of the cell we're in.
+    int f = it->first; 
     int cell = cell_for_face_[f];
 
     // Dump the contents of the chemistry state into our Alquimia containers.

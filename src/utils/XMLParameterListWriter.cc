@@ -24,7 +24,7 @@ XMLObject Amanzi_XMLParameterListWriter::toXML(const ParameterList& p) const
 {
   XMLObject rtn("ParameterList");
   
-  for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i) {
+  for (auto i = p.begin(); i != p.end(); ++i) {
     const ParameterEntry& val = p.entry(i);
     const std::string& name = p.name(i);
     XMLObject child = toXML(val);

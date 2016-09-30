@@ -87,7 +87,7 @@ void TransportSourceFunction_Alquimia::Compute(double t_old, double t_new)
   std::string cond_name = (*f_)(t_new);
 
   // Loop over sides and evaluate values.
-  for (TransportDomainFunction::Iterator it = begin(); it != end(); ++it) {
+  for (auto it = begin(); it != end(); ++it) {
     int cell = it->first; 
 
     // Dump the contents of the chemistry state into our Alquimia containers.

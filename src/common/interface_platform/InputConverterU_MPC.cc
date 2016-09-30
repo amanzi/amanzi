@@ -61,7 +61,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   double t0, t1, dt0, t0_steady, t1_steady, dt0_steady, dt_max, dt_max_steady;
   char *method, *tagname;
   bool flag_steady(false); 
-  std::string mode_d, method_d, dt0_d, dt_cut_d, dt_inc_d, filename, dt_max_d;
+  std::string mode_d, method_d, dt0_d, dt_cut_d, dt_inc_d, dt_max_d;
 
   mode_d = GetAttributeValueS_(node, "mode", TYPE_NONE, false, "");
   method_d = GetAttributeValueS_(node, "method", TYPE_NONE, false, "");
@@ -112,12 +112,30 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
       tp_dt0[t0] = dt0;
       tp_dt_max[t0] = dt_max;
       tp_max_cycles[t0] = max_cycles;
-
-      filename = GetAttributeValueS_(inode, "restart", TYPE_NONE, false, "");
     }
+  }
 
-    if (init_filename_.size() == 0)
-        init_filename_ = GetAttributeValueS_(inode, "initialize", TYPE_NONE, false, "");
+  std::string filename;
+  node = GetUniqueElementByTagsString_("execution_controls, restart", flag);
+  if (flag) {
+    filename = GetTextContentS_(node, "", false);
+    if (filename.size() == 0) ThrowErrorIllformed_("execution_controls", "restart", "filename");
+  }
+
+  node = GetUniqueElementByTagsString_("execution_controls, initialize", flag);
+  if (flag) {
+    init_filename_ = GetTextContentS_(node, "", false);
+    if (init_filename_.size() == 0) ThrowErrorIllformed_("execution_controls", "initialize", "filename");
+  }
+
+  // time for initial conditions
+  if (flag_steady) {
+    ic_time_flow_ = t0_steady;
+    ic_time_ = t0_steady;
+    if (tp_mode.size() > 0) ic_time_ = tp_mode.begin()->first;
+  } else {
+    ic_time_flow_ = tp_mode.begin()->first;
+    ic_time_ = ic_time_flow_;
   }
 
   // populate optional end-times 
@@ -328,7 +346,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
   double t0, t1, dt0, dt_max;
   char *method, *tagname;
   bool flag_steady(false); 
-  std::string method_d, dt0_d, dt_max_d, mode_d, dt_cut_d, dt_inc_d, filename;
+  std::string method_d, dt0_d, dt_max_d, mode_d, dt_cut_d, dt_inc_d;
 
   method_d = GetAttributeValueS_(node, "method", TYPE_NONE, false, "");
   dt0_d = GetAttributeValueS_(node, "init_dt", TYPE_TIME, false, "0.0");
@@ -373,9 +391,20 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
           inode, "reduction_factor", TYPE_TIME, false, dt_cut_d), unit);
       dt_inc_[mode] = ConvertUnits_(GetAttributeValueS_(
           inode, "increase_factor", TYPE_TIME, false, dt_inc_d), unit);
-
-      filename = GetAttributeValueS_(inode, "restart", TYPE_NONE, false, "");
     }
+  }
+
+  std::string filename;
+  node = GetUniqueElementByTagsString_("execution_controls, restart", flag);
+  if (flag) {
+    filename = GetTextContentS_(node, "", false);
+    if (filename.size() == 0) ThrowErrorIllformed_("execution_controls", "restart", "filename");
+  }
+
+  node = GetUniqueElementByTagsString_("execution_controls, initialize", flag);
+  if (flag) {
+    init_filename_ = GetTextContentS_(node, "", false);
+    if (init_filename_.size() == 0) ThrowErrorIllformed_("execution_controls", "initialize", "filename");
   }
 
   // new version of process_kernels
@@ -578,20 +607,14 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   // add start times of all boundary conditions to the list
   std::map<double, double> dt_init_map, dt_max_map;
 
-  std::vector<std::string> bc_names;
-  bc_names.push_back("uniform_pressure");
-  bc_names.push_back("linear_pressure");
-  bc_names.push_back("hydrostatic");
-  bc_names.push_back("linear_hydrostatic");
-  bc_names.push_back("inward_mass_flux");
-  bc_names.push_back("outward_mass_flux");
-  bc_names.push_back("inward_volumetric_flux");
-  bc_names.push_back("outward_volumetric_flux");
-  bc_names.push_back("seepage_face");
-  bc_names.push_back("aqueous_conc");
-  bc_names.push_back("uniform_conc");
-  bc_names.push_back("constraint");
-  bc_names.push_back("uniform_temperature");
+  std::vector<std::string> bc_names = {
+      "uniform_pressure", "linear_pressure",
+      "hydrostatic", "linear_hydrostatic",
+      "inward_mass_flux", "outward_mass_flux",
+      "inward_volumetric_flux", "outward_volumetric_flux",
+      "seepage_face", "aqueous_conc",
+      "uniform_conc", "constraint",
+      "uniform_temperature"};
 
   node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
   if (node_list->getLength() > 0) {
@@ -685,7 +708,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
   // create PKs list
   Teuchos::ParameterList tp_list = cd_list.sublist("time periods");
 
-  for (Teuchos::ParameterList::ConstIterator it = tp_list.begin(); it !=tp_list.end(); ++it) {
+  for (auto it = tp_list.begin(); it != tp_list.end(); ++it) {
     if ((it->second).isList()) {
       Teuchos::ParameterList& pk_tree = tp_list.sublist(it->first).sublist("PK tree");
       RegisterPKsList_(pk_tree, out_list);
@@ -699,7 +722,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
   }
 
   // parse list of supported PKs
-  for (Teuchos::ParameterList::ConstIterator it = out_list.begin(); it != out_list.end(); ++it) {
+  for (auto it = out_list.begin(); it != out_list.end(); ++it) {
     if ((it->second).isList()) {
       if (it->first == "Flow Steady") {
         out_list.sublist(it->first) = TranslateFlow_("steady");
@@ -772,7 +795,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
 void InputConverterU::RegisterPKsList_(
     Teuchos::ParameterList& pk_tree, Teuchos::ParameterList& pks_list)
 {
-  for (Teuchos::ParameterList::ConstIterator it = pk_tree.begin(); it !=pk_tree.end();++it) {
+  for (auto it = pk_tree.begin(); it !=pk_tree.end();++it) {
     if ((it->second).isList()) {
       pks_list.sublist(it->first);
       RegisterPKsList_(pk_tree.sublist(it->first), pks_list);

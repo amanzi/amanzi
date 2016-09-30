@@ -29,7 +29,7 @@ XERCES_CPP_NAMESPACE_USE
 namespace Amanzi {
 namespace SimulatorFactory {
 
-Simulator* Create(const std::string& input_filename)
+Simulator* Create(const std::string& input_filename, const std::string& output_prefix)
 {
   XercesDOMParser* parser = Amanzi::AmanziInput::CreateXMLParser();
   DOMDocument* doc = Amanzi::AmanziInput::OpenXMLInput(parser, input_filename);
@@ -82,7 +82,7 @@ Simulator* Create(const std::string& input_filename)
   if (type == "structured") {
 #ifdef ENABLE_Structured
     if (version == "v2")
-      simulator = new AmanziStructuredGridSimulationDriver(input_filename, doc);
+      simulator = new AmanziStructuredGridSimulationDriver(input_filename, doc, output_prefix);
     else 
       amanzi_throw(Errors::Message("Input spec v1 is no longer supported by Amanzi-S."));
 #else
@@ -92,7 +92,7 @@ Simulator* Create(const std::string& input_filename)
   else if (type == "unstructured") {
 #ifdef ENABLE_Unstructured
     if (version == "v2")
-      simulator = new AmanziUnstructuredGridSimulationDriver(input_filename, doc);
+      simulator = new AmanziUnstructuredGridSimulationDriver(input_filename, doc, output_prefix);
     else
       simulator = new AmanziUnstructuredGridSimulationDriver(input_filename);
 #else

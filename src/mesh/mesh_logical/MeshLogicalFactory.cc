@@ -476,8 +476,7 @@ MeshLogicalFactory::Create(Teuchos::ParameterList& plist) {
   std::map<std::string, double> seg_ds;
 
   Teuchos::ParameterList& segments = plist.sublist("segments");
-  for (Teuchos::ParameterList::ConstIterator segment_it=segments.begin();
-       segment_it!=segments.end(); ++segment_it) {
+  for (auto segment_it=segments.begin(); segment_it!=segments.end(); ++segment_it) {
     std::string seg_name = segment_it->first;
     if (!segments.isSublist(seg_name)) {
       Errors::Message msg("MeshLogicalFactory: Malformed \"segments\" list, all items must be sublists.");
@@ -635,8 +634,7 @@ MeshLogicalFactory::Create(Teuchos::ParameterList& plist) {
   // add sets
   Teuchos::ParameterList& sets = plist.sublist("sets");
   
-  for (Teuchos::ParameterList::ConstIterator set_it=sets.begin();
-       set_it!=sets.end(); ++set_it) {
+  for (auto set_it=sets.begin(); set_it!=sets.end(); ++set_it) {
     std::string set_name = set_it->first;
     Teuchos::Array<std::string> set_list =
       sets.get<Teuchos::Array<std::string> >(set_name);

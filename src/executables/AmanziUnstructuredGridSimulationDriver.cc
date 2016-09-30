@@ -1,3 +1,14 @@
+/*
+  Simulator
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Markus Brendt (brendt@lanl.gov)
+*/
+
 #include <iostream>
 #include <fstream>
 
@@ -11,6 +22,7 @@
 
 #include "AmanziUnstructuredGridSimulationDriver.hh"
 #include "CycleDriver.hh"
+#include "MeshInfo.hh"
 #include "Domain.hh"
 #include "GeometricModel.hh"
 #include "InputConverterU.hh"
@@ -47,12 +59,13 @@ AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(c
 
 
 AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName,
-                                                                               xercesc::DOMDocument* input)
+                                                                               xercesc::DOMDocument* input,
+                                                                               const std::string& output_prefix)
 {
   int rank = Teuchos::GlobalMPISession::getRank();
   int num_proc = Teuchos::GlobalMPISession::getNProc();
 
-  Amanzi::AmanziInput::InputConverterU converter(xmlInFileName, input);
+  Amanzi::AmanziInput::InputConverterU converter(xmlInFileName, input, output_prefix);
   plist_ = new Teuchos::ParameterList(converter.Translate(rank, num_proc));
 }
 
@@ -306,7 +319,13 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
         }
       }  // if verify
     }  // if verify_mesh_param
+    if (expert_mesh_params.isSublist("mesh info")){
+      Teuchos::ParameterList mesh_info_list = expert_mesh_params.sublist("mesh info");
+      Teuchos::RCP<Amanzi::MeshInfo> mesh_info = Teuchos::rcp(new Amanzi::MeshInfo(mesh_info_list, comm));
+      mesh_info->WriteMeshCentroids(*mesh);
+    }
   }  // If expert_params_specified
+
 
   // -------------- ANALYSIS --------------------------------------------
   Amanzi::InputAnalysis analysis(mesh);
@@ -314,8 +333,10 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   analysis.RegionAnalysis();
   analysis.OutputBCs();
 
+
   Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(*plist_));
   Amanzi::CycleDriver cycle_driver(glist, mesh, comm, observations_data);
+
 
   cycle_driver.Go();
 

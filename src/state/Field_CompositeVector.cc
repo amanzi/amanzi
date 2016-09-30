@@ -12,7 +12,6 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 
 #include <string>
 
-#include <boost/regex.hpp>
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
@@ -133,6 +132,8 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
     ASSERT(!initialized());
     std::string filename = plist.get<std::string>("cells from file");
     ReadCellsFromCheckpoint_(filename);
+    set_initialized();
+    return;
   }
 
   // ------ Set values using a constant -----

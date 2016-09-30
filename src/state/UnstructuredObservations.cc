@@ -31,9 +31,9 @@ UnstructuredObservations::UnstructuredObservations(
 
   // interpret paramerter list
   // loop over the sublists and create an observation for each
-  for (Teuchos::ParameterList::ConstIterator i = plist.begin(); i != plist.end(); i++) {
-    if (plist.isSublist(plist.name(i))) {
-      Teuchos::ParameterList sublist = plist.sublist(plist.name(i));
+  for (auto it = plist.begin(); it != plist.end(); it++) {
+    if (plist.isSublist(plist.name(it))) {
+      Teuchos::ParameterList sublist = plist.sublist(plist.name(it));
       Teuchos::RCP<Observable> obs = Teuchos::rcp(new Observable(sublist, comm));
 
       observations_.insert(std::make_pair(sublist.name(), obs));

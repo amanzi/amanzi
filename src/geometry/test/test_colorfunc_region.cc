@@ -31,9 +31,7 @@ TEST(COLORFUNCTION_REGION)
 
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
-  for (Teuchos::ParameterList::ConstIterator i = reg_spec.begin(); 
-       i != reg_spec.end(); i++) {
-
+  for (auto i = reg_spec.begin(); i != reg_spec.end(); i++) {
     const std::string reg_name = reg_spec.name(i);     
     const unsigned int reg_id = 9959;                   // something arbitrary
 
@@ -45,7 +43,7 @@ TEST(COLORFUNCTION_REGION)
 					   reg_params, &ecomm);
   
     // See if we retrieved the name and id correctly
-      CHECK_EQUAL(reg->name(),reg_name);
+    CHECK_EQUAL(reg->name(),reg_name);
     CHECK_EQUAL(reg->id(),reg_id);
   
     // Make sure that the region type is an Indicator Function

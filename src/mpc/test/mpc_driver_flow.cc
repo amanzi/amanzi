@@ -44,14 +44,38 @@ using namespace Amanzi::AmanziGeometry;
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = meshfactory(0.0, 0.0, 216.0, 120.0, 54, 60, gm);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = meshfactory(0.0, 0.0, 216.0, 120.0, 54, 30, gm);
   ASSERT(!mesh.is_null());
 
   // create dummy observation data object
+  double avg1, avg2;
   Amanzi::ObservationData obs_data;    
-  Teuchos::RCP<Teuchos::ParameterList> glist_rcp = Teuchos::rcp(new Teuchos::ParameterList(plist));
-  Amanzi::CycleDriver cycle_driver(glist_rcp, mesh, &comm, obs_data);
-  cycle_driver.Go();
+  Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(plist));
+
+  {
+  Amanzi::CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
+    try {
+      auto S = cycle_driver.Go();
+      S->GetFieldData("saturation_liquid")->MeanValue(&avg1);
+    } catch (...) {
+      CHECK(false);
+    }
+  }
+
+  // restart simulation and compare results
+  glist->sublist("cycle driver").sublist("restart").set<std::string>("file name", "chk_flow00030.h5");
+
+  {
+    Amanzi::CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
+    try {
+      auto S = cycle_driver.Go();
+      S->GetFieldData("saturation_liquid")->MeanValue(&avg2);
+    } catch (...) {
+      CHECK(false);
+    }
+  }
+
+  CHECK_CLOSE(avg1, avg2, 1e-5 * avg1);
 }
 
 

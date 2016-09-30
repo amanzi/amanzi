@@ -59,7 +59,7 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   out_list.sublist("regions") = TranslateRegions_();
 
   const Teuchos::ParameterList& tmp = TranslateOutput_();
-  for (Teuchos::ParameterList::ConstIterator it = tmp.begin(); it != tmp.end(); ++it)
+  for (auto it = tmp.begin(); it != tmp.end(); ++it)
     out_list.sublist(it->first) = tmp.sublist(it->first);
 
   out_list.sublist("state") = TranslateState_();
@@ -276,19 +276,23 @@ Teuchos::ParameterList InputConverterU::TranslateUnits_()
   std::string length("m"), time("s"), mass("kg"), concentration("molar"), temperature("K");
 
   node = GetUniqueElementByTagsString_("model_description, units, length_unit", flag);
-  if (flag) length = GetTextContentS_(node, "cm, in, ft, yd, m, km");
+  // if (flag) length = GetTextContentS_(node, "cm, in, ft, yd, m, km");
+  if (flag) length = GetTextContentS_(node, "m");
 
   node = GetUniqueElementByTagsString_("model_description, units, time_unit", flag);
-  if (flag) time = GetTextContentS_(node, "s, min, h, d, y");
+  // if (flag) time = GetTextContentS_(node, "s, min, h, d, y");
+  if (flag) time = GetTextContentS_(node, "s");
 
   node = GetUniqueElementByTagsString_("model_description, units, mass_unit", flag);
-  if (flag) mass = GetTextContentS_(node, "g, lb, kg, ton");
+  // if (flag) mass = GetTextContentS_(node, "g, lb, kg, ton");
+  if (flag) mass = GetTextContentS_(node, "kg");
 
   node = GetUniqueElementByTagsString_("model_description, units, conc_unit", flag);
   if (flag) concentration = GetTextContentS_(node, "molar, SI, ppm, ppb");
 
   node = GetUniqueElementByTagsString_("model_description, units, temperature_unit", flag);
-  if (flag) temperature = GetTextContentS_(node, "K, C, F");
+  // if (flag) temperature = GetTextContentS_(node, "K, C, F");
+  if (flag) temperature = GetTextContentS_(node, "K");
 
   out_list.set<std::string>("length", length);
   out_list.set<std::string>("time", time);
@@ -336,7 +340,7 @@ void InputConverterU::MergeInitialConditionsLists_(Teuchos::ParameterList& plist
     Teuchos::ParameterList& icc = plist.sublist("PKs").sublist("chemistry")
                                        .sublist("initial conditions");
 
-    for (Teuchos::ParameterList::ConstIterator it = icc.begin(); it != icc.end(); ++it) {
+    for (auto it = icc.begin(); it != icc.end(); ++it) {
       if (icc.isSublist(it->first)) {
         Teuchos::ParameterList& slist = icc.sublist(it->first);
         if (slist.isSublist("function")) {
@@ -354,7 +358,7 @@ void InputConverterU::MergeInitialConditionsLists_(Teuchos::ParameterList& plist
 ****************************************************************** */
 void InputConverterU::FilterEmptySublists_(Teuchos::ParameterList& plist)
 {
-  for (Teuchos::ParameterList::ConstIterator it = plist.begin(); it != plist.end(); ++it) {
+  for (auto it = plist.begin(); it != plist.end(); ++it) {
     if (plist.isSublist(it->first)) {
       Teuchos::ParameterList& slist = plist.sublist(it->first);
       if (slist.numParams() == 0) {

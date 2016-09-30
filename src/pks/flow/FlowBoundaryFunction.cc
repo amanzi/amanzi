@@ -71,7 +71,7 @@ void FlowBoundaryFunction::ComputeSubmodel(
   int dim = mesh->space_dimension();
 
   if (rainfall_) {
-    for (PK_DomainFunction::Iterator it = begin(); it != end(); ++it) {
+    for (auto it = begin(); it != end(); ++it) {
       int f = it->first;
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       it->second *= fabs(normal[dim - 1]) / norm(normal);
@@ -99,7 +99,7 @@ void FlowBoundaryFunction::ComputeSubmodel(
       }
     }
 
-    for (PK_DomainFunction::Iterator it = begin(); it != end(); ++it) {
+    for (auto it = begin(); it != end(); ++it) {
       int f = it->first;
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       it->second += (*shift_water_table_)[f];

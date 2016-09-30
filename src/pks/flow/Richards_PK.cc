@@ -365,6 +365,11 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   vlist.sublist("verbose object") = rp_list_->sublist("verbose object");
   vo_ = Teuchos::rcp(new VerboseObject("FlowPK::Richards", vlist)); 
 
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os()<< "\nPK initialization started...\n";
+  }
+
   // Initilize various base class data.
   Flow_PK::Initialize(S);
 
@@ -785,7 +790,7 @@ void Richards_PK::InitializeStatistics_()
     relperm_->PlotWRMcurves();
 
     *vo_->os() << vo_->color("green") << "Initalization of PK is complete, T=" 
-               << S_->time() << " dT=" << dt_ << vo_->reset() << std::endl << std::endl;
+               << units_.OutputTime(S_->time()) << vo_->reset() << std::endl << std::endl;
   }
 }
 

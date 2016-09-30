@@ -70,7 +70,7 @@ class OperatorDiffusionMFD : public virtual OperatorDiffusion {
   // -- To calculate elemetal matrices, we can use input parameters flux 
   //    and u from the previous nonlinear iteration. Otherwise, use null-pointers.
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-                              const Teuchos::Ptr<const CompositeVector>& u);
+                              const Teuchos::Ptr<const CompositeVector>& u) override;
 
   // -- Approximation of the Jacobian requires non-null flux from the 
   //    previous nonlinear iteration. The second parameter, u, so far is a

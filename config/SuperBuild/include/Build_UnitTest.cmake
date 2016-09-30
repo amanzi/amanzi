@@ -14,7 +14,7 @@ define_external_project_args(UnitTest
 amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX UnitTest
   VERSION ${UnitTest_VERSION_MAJOR} ${UnitTest_VERSION_MINOR} ${UnitTest_VERSION_PATCH})
-  
+
 # --- define the configuration parameters
 
 set(Unittest_CMAKE_PACKAGE_ARGS "")
@@ -74,7 +74,7 @@ ExternalProject_add(${UnitTest_BUILD_TARGET}
 		    # -- Configure
 		    SOURCE_DIR          ${UnitTest_source_dir}        # Defining forces CMake to mkdir SOURCE_DIR
 		    CMAKE_ARGS          ${Unittest_Config_File_ARGS}
-                    CMAKE_CACHE_ARGS    ${Trilinos_CMAKE_ARGS}
+                    CMAKE_CACHE_ARGS    ${Unittest_CMAKE_ARGS}
                                         -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
 		    # -- Build
 		    BUILD_COMMAND       $(MAKE)                       # Run make in build directory $(MAKE) enables parallel build

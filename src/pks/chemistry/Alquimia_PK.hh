@@ -104,8 +104,6 @@ class Alquimia_PK: public Chemistry_PK {
   Teuchos::RCP<TreeVector> soln_;
 
  private:
-  Teuchos::RCP<Teuchos::ParameterList> glist_, cp_list_;
-
   // Time stepping controls. Some parameters are defined in the base class
   double time_step_, max_time_step_, min_time_step_, prev_time_step_;
   std::string time_step_control_method_;
@@ -131,8 +129,6 @@ class Alquimia_PK: public Chemistry_PK {
   // Auxiliary output data, requested by and stored within Amanzi.
   std::vector<std::string> aux_names_;
   Teuchos::RCP<Epetra_MultiVector> aux_output_;
-
-  int num_aux_data_;
   Teuchos::RCP<Epetra_MultiVector> aux_data_;
 
  private:

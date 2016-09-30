@@ -177,7 +177,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
 
       if (strcmp(tagname, "base_filename") == 0) {
         text = mm.transcode(jnode->getTextContent());
-        visPL.set<std::string>("file name base", TrimString_(text));
+        visPL.set<std::string>("file name base", output_prefix_ + TrimString_(text));
       } else if (strcmp(tagname, "file_format") == 0) {
         text = mm.transcode(jnode->getTextContent());
         visPL.set<std::string>("file format", TrimString_(text));
@@ -200,9 +200,6 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           std::vector<std::string> regions = CharToStrings_(regs.c_str());
           visPL.sublist("write regions").set<Teuchos::Array<std::string> >(name, regions);
         }
-      } else if (strcmp(tagname, "blacklist") == 0) {
-        text = mm.transcode(jnode->getTextContent());
-        visPL.set<Teuchos::Array<std::string> >("blacklist", CharToStrings_(text));
       }
     }
     out_list.sublist("visualization data") = visPL;
@@ -223,13 +220,16 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
       text = mm.transcode(jnode->getTextContent());
 
       if (strcmp(tagname, "base_filename") == 0) {
-        chkPL.set<std::string>("file name base", TrimString_(text));
+        chkPL.set<std::string>("file name base", output_prefix_ + TrimString_(text));
       }
       else if (strcmp(tagname, "num_digits") == 0) {
         chkPL.set<int>("file name digits", std::strtol(text, NULL, 10));
       } else if (strcmp(tagname, "cycle_macros") == 0 ||
                  strcmp(tagname, "cycle_macro") == 0) {
         ProcessMacros_("cycles", text, cmPL, chkPL);
+      } else if (strcmp(tagname, "time_macros") == 0 ||
+                 strcmp(tagname, "time_macro") == 0) {
+        ProcessMacros_("times", text, tmPL, chkPL);
       }
     }
     out_list.sublist("checkpoint data") = chkPL;
@@ -250,7 +250,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
       text = mm.transcode(jnode->getTextContent());
 
       if (strcmp(tagname, "base_filename") == 0) {
-        chkPL.set<std::string>("file name base", TrimString_(text));
+        chkPL.set<std::string>("file name base", output_prefix_ + TrimString_(text));
       } else if (strcmp(tagname, "num_digits") == 0) {
         chkPL.set<int>("file name digits", std::strtol(text, NULL, 10));
       } else if (strcmp(tagname, "cycle_macros") == 0 ||
@@ -279,7 +279,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
       text = mm.transcode(inode->getTextContent());
 
       if (strcmp(tagname, "filename") == 0) {
-        obsPL.set<std::string>("observation output filename", TrimString_(text));
+        obsPL.set<std::string>("observation output filename", output_prefix_ + TrimString_(text));
 
       } else if (strcmp(tagname, "units") == 0) {
         std::string unit;

@@ -133,8 +133,8 @@ void PK_MPCStrong<PK_Base>::Setup(const Teuchos::Ptr<State>& S)
   // Tweak the sub-PK parameter lists. This allows the PK to
   // potentially not assemble things.
   Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(global_list_, "PKs");
-  for (Teuchos::ParameterList::ConstIterator param = pk_tree_.begin();
-       param != pk_tree_.end(); ++param) {
+
+  for (auto param = pk_tree_.begin(); param != pk_tree_.end(); ++param) {
     std::string pname = param->first;
     if (pks_list->isSublist(pname)) {
       pks_list->sublist(pname).set("strongly coupled PK", true);

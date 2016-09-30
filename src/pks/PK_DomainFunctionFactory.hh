@@ -119,7 +119,7 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
 {
   int n(0);
   std::string keyword;
-  for (Teuchos::ParameterList::ConstIterator it = plist.begin(); it != plist.end(); ++it) {
+  for (auto it = plist.begin(); it != plist.end(); ++it) {
     if (plist.isSublist(it->first)) {
       n++;
       keyword = it->first;
