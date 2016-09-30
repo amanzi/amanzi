@@ -21,11 +21,12 @@
 #include "Mesh.hh"
 #include "MultiFunction.hh"
 #include "TransportBoundaryFunction.hh"
+#include "TrnasportDomainFunction.hh"
 
 namespace Amanzi {
 namespace Transport {
 
-class TransportBoundaryFunction_Coupler : public TransportBoundaryFunction {
+class TransportBoundaryFunction_Coupler : public TransportDomainFunction {
  public:
   TransportBoundaryFunction_Coupler(const Teuchos::RCP<const State>& S, 
                                     const Teuchos::RCP<const AmanziMesh::Mesh> &mesh) :

@@ -36,7 +36,7 @@
 
 #include "MultiscaleTransportPorosityFactory.hh"
 #include "Transport_PK_ATS.hh"
-#include "TransportBoundaryFunction.hh"
+#include "TransportDomainFunction.hh"
 #include "TransportBoundaryFunction_Alquimia.hh"
 
 namespace Amanzi {
@@ -399,7 +399,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   // create boundary conditions
   if (tp_list_->isSublist("boundary conditions")) {
     // -- try tracer-type conditions
-    PK_DomainFunctionFactory<TransportBoundaryFunction> factory(mesh_);
+    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
     Teuchos::ParameterList& clist = tp_list_->sublist("boundary conditions").sublist("concentration");
 
     for (Teuchos::ParameterList::ConstIterator it = clist.begin(); it != clist.end(); ++it) {
@@ -409,7 +409,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
         for (Teuchos::ParameterList::ConstIterator it1 = bc_list.begin(); it1 != bc_list.end(); ++it1) {
           std::string specname = it1->first;
           Teuchos::ParameterList& spec = bc_list.sublist(specname);
-          Teuchos::RCP<TransportBoundaryFunction> 
+          Teuchos::RCP<TransportDomainFunction> 
               bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
 
           std::vector<int>& tcc_index = bc->tcc_index();

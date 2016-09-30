@@ -181,7 +181,7 @@ void Transport_PK_ATS::VV_CheckInfluxBC() const
 
       for (int k = 0; k < ncomp; k++) {
         if (i == tcc_index[k]) {
-          for (TransportBoundaryFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+          for (TransportDomainFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
             int f = it->first;
             influx_face[f] = 1;
           }
@@ -195,7 +195,7 @@ void Transport_PK_ATS::VV_CheckInfluxBC() const
 
       for (int k = 0; k < ncomp; k++) {
         if (i == tcc_index[k]) {
-          for (TransportBoundaryFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+          for (TransportDomainFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
             int f = it->first;
             if ((*flux)[0][f] < 0 && influx_face[f] == 0) {
               char component[3];
@@ -288,7 +288,7 @@ double Transport_PK_ATS::VV_SoluteVolumeChangePerSecond(int idx_tracer)
 
     for (int i = 0; i < ncomp; i++) {
       if (tcc_index[i] == idx_tracer) {
-        for (TransportBoundaryFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+        for (TransportDomainFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
           int f = it->first;
           WhetStone::DenseVector& values = it->second;
 

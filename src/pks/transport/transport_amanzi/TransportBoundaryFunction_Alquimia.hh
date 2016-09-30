@@ -21,6 +21,7 @@
 #include "Mesh.hh"
 #include "TabularStringFunction.hh"
 #include "TransportBoundaryFunction.hh"
+#include "TransportDomainFunction.hh"
 
 #ifdef ALQUIMIA_ENABLED
 #include "Alquimia_PK.hh"
@@ -29,7 +30,7 @@
 namespace Amanzi {
 namespace Transport {
 
-class TransportBoundaryFunction_Alquimia : public TransportBoundaryFunction {
+class TransportBoundaryFunction_Alquimia : public TransportDomainFunction {
  public:
   TransportBoundaryFunction_Alquimia(const Teuchos::ParameterList& plist,
                                      const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,

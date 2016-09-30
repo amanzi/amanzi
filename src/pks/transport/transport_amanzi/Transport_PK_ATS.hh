@@ -42,7 +42,7 @@
 // Transport
 #include "MDMPartition.hh"
 #include "MultiscaleTransportPorosityPartition.hh"
-#include "TransportBoundaryFunction.hh"
+#include "TransportDomainFunction.hh"
 #include "TransportSourceFunction.hh"
 #include "TransportDefs.hh"
 
@@ -263,7 +263,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;
 
   std::vector<Teuchos::RCP<TransportSourceFunction> > srcs_;  // Source or sink for components
-  std::vector<Teuchos::RCP<TransportBoundaryFunction> > bcs_;  // influx BC for components
+  std::vector<Teuchos::RCP<TransportDomainFunction> > bcs_;  // influx BC for components
   double bc_scaling;
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
