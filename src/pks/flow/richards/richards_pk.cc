@@ -830,6 +830,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   }
 
   // seepage face -- pressure <= p_atm, outward mass flux >= 0
+  S->GetFieldData(flux_key_)->ScatterMasterToGhosted("face");
   const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)->ViewComponent("face", true);
   const double& p_atm = *S->GetScalarData("atmospheric_pressure");
   Teuchos::RCP<const CompositeVector> u = S->GetFieldData(key_);
