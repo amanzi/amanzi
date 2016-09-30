@@ -1,11 +1,17 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! CompressiblePorosityModel : a simple model for allowing porosity to vary with pressure
+//! A simple model for allowing porosity to vary with pressure.
 
 /*
+  ATS is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
+
 /*!
+
 Based on a linear increase, i.e.
 
 $$ \phi = \phi_{base} + H(p - p_{atm}) * \alpha $$
