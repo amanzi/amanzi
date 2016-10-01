@@ -17,8 +17,8 @@ This region consists of cells containing this point.
 
 * `"coordinate`" ``[Array(double)]`` Location of point in space.
 
-Example
--------
+Example:
+
 .. code-block:: xml
 
    <ParameterList name="DOWN_WIND150"> <!-- parent list defining the name -->

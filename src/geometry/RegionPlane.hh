@@ -18,8 +18,8 @@ List *region: plane* defines a plane using a point lying on the plane and normal
 
 * `"point`" ``[Array(double)]`` Point in space.
 
-Example
--------
+Example:
+
 .. code-block:: xml
 
    <ParameterList name="TOP_SECTION"> <!-- parent list -->

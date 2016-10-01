@@ -30,8 +30,8 @@ are specified.
 
 * `"points`" ``[Array(double)]`` Point coordinates in a linear array. 
 
-Example
---------
+Example:
+
 .. code-block:: xml
 
    <ParameterList name="XY_PENTAGON">

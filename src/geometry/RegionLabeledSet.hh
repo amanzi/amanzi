@@ -36,8 +36,8 @@ associated with the entities in the indicated set.
 
 * `"entity`" ``[string]`` Type of the mesh object (cell, face, etc).
 
-Example
---------
+Example:
+
 .. code-block:: xml
 
    <ParameterList name="AQUIFER">

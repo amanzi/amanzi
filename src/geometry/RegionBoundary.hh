@@ -18,8 +18,8 @@ Using this definition, faces located on the domain boundary are extracted.
 * `"entity`" ``[string]`` Type of the mesh object.  Unclear whether this is
           used or can be other things than "face"?
 
-Example
---------
+Example:
+
 .. code-block:: xml
 
    <ParameterList name="DOMAIN_BOUNDARY"> <!-- parent list names the region -->

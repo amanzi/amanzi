@@ -26,8 +26,8 @@ supported in the same expression.
 
 * `"regions`" ``[Array(string)]`` specifies the list of involved regions.
 
-Example
---------
+Example:
+
 .. code-block:: xml
 
   <ParameterList name="LOWER_LAYERs">

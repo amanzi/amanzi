@@ -37,34 +37,34 @@ double StandardMathFunction::operator()(const std::vector<double>& x) const
 {
   double x0 = x[0] - shift_;
   if (op_ == "cos") {
-    return amplitude_ * cos(x0);
+    return amplitude_ * cos(parameter_ * x0);
   } else if (op_ == "sin") {
-    return amplitude_ * sin(x0);
+    return amplitude_ * sin(parameter_ * x0);
   } else if (op_ == "tan") {
-    return amplitude_ * tan(x0);
+    return amplitude_ * tan(parameter_ * x0);
   } else if (op_ == "acos") {
-    return amplitude_ * acos(x0);
+    return amplitude_ * acos(parameter_ * x0);
   } else if (op_ == "asin") {
-    return amplitude_ * asin(x0);
+    return amplitude_ * asin(parameter_ * x0);
   } else if (op_ == "atan") {
-    return amplitude_ * atan(x0);
+    return amplitude_ * atan(parameter_ * x0);
   } else if (op_ == "cosh") {
-    return amplitude_ * cosh(x0);
+    return amplitude_ * cosh(parameter_ * x0);
   } else if (op_ == "sinh") {
-    return amplitude_ * sinh(x0);
+    return amplitude_ * sinh(parameter_ * x0);
   } else if (op_ == "tanh") {
-    return amplitude_ * tanh(x0);
+    return amplitude_ * tanh(parameter_ * x0);
   } else if (op_ == "exp") {
-    return amplitude_ * exp(x0);
+    return amplitude_ * exp(parameter_ * x0);
   } else if (op_ == "log") {
     if (x0 <= 0) InvalidDomainError_(x[0]);
-    return amplitude_ * log(x0);
+    return amplitude_ * log(parameter_ * x0);
   } else if (op_ == "log10") {
     if (x0 <= 0) InvalidDomainError_(x[0]);
-    return amplitude_ * log10(x0);
+    return amplitude_ * log10(parameter_ * x0);
   } else if (op_ == "sqrt") {
     if (x0 < 0) InvalidDomainError_(x[0]);
-    return amplitude_ * sqrt(x0);
+    return amplitude_ * sqrt(parameter_ * x0);
   } else if (op_ == "ceil") {
     return amplitude_ * ceil(x0);
   } else if (op_ == "fabs") {

@@ -1,19 +1,37 @@
-/*
-  Functions
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+//! AdditiveFunction: f(x,y) = f1(x,y) + f2(x,y)
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+/*
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
-
-  TODO: This is very tentative.  I'm thinking it might be preferable
-  to clone the constructor functions rather than hand off pointers
-  to them, but cloning the polymorphic objects requires some changes
- to the base class and all the implementations.
+  Author: Ethan Coon (ecoon _at_ lanl.gov)
 */
 
+/*!
+
+An additive function simply adds two other function results together.
+
+.. math::
+  f(x) = f_1(x) + f_2(x)
+
+where :math:`f_1` is defined by the `"function1`" sublist, and 
+:math:`f_2` by the `"function2`" sublist:
+
+.. code-block:: xml
+
+  <ParameterList name="function-additive">
+    <ParameterList name="function1">
+      function-specification
+    </ParameterList>
+    <ParameterList name="function2">
+      function-specification
+    </ParameterList>
+  </ParameterList>
+*/
+  
 #ifndef AMANZI_ADDITIVE_FUNCTION_HH_
 #define AMANZI_ADDITIVE_FUNCTION_HH_
 

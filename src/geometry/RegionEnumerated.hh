@@ -20,8 +20,8 @@ of input global ids..
 * `"entity gids`" ``[Array(int)]`` List of the global IDs of the entities.
   
 
-Example
---------
+Example:
+
 .. code-block:: xml
 
    <ParameterList name="WELL"> <!-- parent list -->

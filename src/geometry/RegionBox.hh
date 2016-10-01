@@ -23,8 +23,8 @@ direction in which case they are equivalent to planes.
 
 * `"high coordinate`" ``[Array(double)]`` Location of the boundary points with the highest coordinates.
 
-Example
--------
+Example:
+
 .. code-block:: xml
 
    <ParameterList name="WELL">  <!-- parent list -->

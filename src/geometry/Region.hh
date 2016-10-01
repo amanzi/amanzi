@@ -34,8 +34,7 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well
 as more complex definitions based on triangulated surface files.
 
 
-Notes
------
+**Notes:**
 
 * Surface files contain labeled triangulated face sets.  The user is
   responsible for ensuring that the intersections with other surfaces
@@ -50,8 +49,8 @@ Notes
 
 * Region names must NOT be repeated.
 
-Example
--------
+Example:
+
 .. code-block:: xml
 
    <ParameterList>  <!-- parent list -->

@@ -26,8 +26,8 @@ they are equivalent to rectangles on a plane or segments on a line.
   the identity matrix. The normals may be scaled arbitrarily but must be orthogonal to
   one another and form the right coordinate frame.
 
-Example
---------
+Example:
+
 .. code-block:: xml
 
    <ParameterList name="BASIN">  <!-- parent list -->

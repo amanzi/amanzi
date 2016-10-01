@@ -31,8 +31,8 @@ function file.
 
 * `"value`" ``[int]`` Color that defines the set in a tabulated function file.
 
-Example
--------
+Example:
+
 .. code-block:: xml
 
    <ParameterList name="SOIL_TOP">
