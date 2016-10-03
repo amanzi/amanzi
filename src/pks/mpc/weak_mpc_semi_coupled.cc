@@ -11,6 +11,7 @@
 namespace Amanzi {
 
   unsigned WeakMPCSemiCoupled::flag_star = 0;
+  unsigned WeakMPCSemiCoupled::flag_star_surf = 0;
 // -----------------------------------------------------------------------------
 // loop over sub-PKs, calling their valid_step() method
 // -----------------------------------------------------------------------------
@@ -23,21 +24,55 @@ bool WeakMPCSemiCoupled::valid_step() {
 };
 
 
-
+  /*
 // -----------------------------------------------------------------------------
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
 double WeakMPCSemiCoupled::get_dt() {
   double dt = 1.0e99;
+  
+  std::vector<double> time_steps;
   for (MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
-    dt = std::min<double>(dt, (*pk)->get_dt());
+    time_steps.push_back((*pk)->get_dt());
+    dt = std::min<double>(dt,(*pk)->get_dt());
   }
+  min_dt_ = dt;
+  --  double dt_col = 0.0;
+  for (int i=1; i<time_steps.size(); i++){
+    dt_col = std::min(dt_col, time_steps[i]);
+      }
+      min_dt_ = *min_element(time_steps.begin(), time_steps.end());
+    //dt = std::min(time_steps[0],col_dt);
+   
+  if (time_steps[0] < sync_time_)
+    dt = time_steps[0];
+  else if  (sync_time_ < min_dt_) 
+    dt =  min_dt_;
+  else
+    dt = sync_time_;
+    
+  surf_dt_ = dt;
   double dt_local = dt;
   S_->GetMesh("surface")->get_comm()->MinAll(&dt_local, &dt, 1);
   return dt;
 };
+  */
 
+double WeakMPCSemiCoupled::get_dt() {
+  double dt = 1.0e99;
+  for (MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
+       pk != sub_pks_.end(); ++pk) {
+    dt = std::min<double>(dt,(*pk)->get_dt());
+  }
+  
+  double dt_local = dt;
+  S_->GetMesh("surface")->get_comm()->MinAll(&dt_local, &dt, 1);
+  
+  return dt;
+
+}
+  
 // -----------------------------------------------------------------------------
 // Set up each PK
 // -----------------------------------------------------------------------------
@@ -54,6 +89,8 @@ WeakMPCSemiCoupled::setup(const Teuchos::Ptr<State>& S) {
   numPKs_ = names.size();  
   
   coupling_key_ = plist_->get<std::string>("coupling key"," ");
+  subcycle_key_ =  plist_->get<bool>("subcycle",false);
+  //  sync_time_ = plist_->get<double>("sync time"); //provide default value later!!
   ASSERT(!(coupling_key_ == " "));
 };
 
@@ -90,18 +127,30 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
   bool fail = false;
   MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
   
+  // advance surface_star-pressure from t_n to t_(n+1)
+
   //ensure the star solution is marked as changed when the subsurface columns fail
-  if (flag_star){
+  if (flag_star || flag_star_surf){
     flag_star = 0;
+    flag_star_surf=0;
     Teuchos::RCP<PKBDFBase> pk_sfstar =
       Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[0]);
     ASSERT(pk_sfstar.get());
     pk_sfstar->ChangedSolution();
   }
   
-  // advance surface_star-pressure from t_n to t_(n+1)
   fail = (*pk)->advance(dt);
+  int nfailed_surf = 0;
+  if (fail)
+    nfailed_surf++;
   
+  int nfailed_local_sf = nfailed_surf;
+  S_->GetMesh("surface")->get_comm()->SumAll(&nfailed_local_sf, &nfailed_surf, 1);
+ 
+  if(nfailed_surf > 0){
+    flag_star_surf=1;
+    return true;
+  }
   //copying surface_star (2D) data (pressures/temperatures) to column surface (1D-cells)[all the surf column cells get updates]
   const Epetra_MultiVector& surfstar_pres = *S_next_->GetFieldData("surface_star-pressure")->ViewComponent("cell", false);
   const Epetra_MultiVector& surfstar_temp = *S_next_->GetFieldData("surface_star-temperature")->ViewComponent("cell", false);
@@ -155,7 +204,7 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
     ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
     pk_domain->ChangedSolution(S_inter_.ptr());
   }
-  // if(fail) return fail;  
+
   
  
  
@@ -163,10 +212,271 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
   ++pk;
   
   int nfailed = 0;
+  int count=0;
+  double t0 = S_inter_->time();
+  double t1 = S_next_->time();
+
+    
   for (pk; pk!=sub_pks_.end(); ++pk){
-    bool c_fail = (*pk)->advance(dt);
-    if (c_fail) nfailed++;
+
+    if(!subcycle_key_){  
+      bool c_fail = (*pk)->advance(dt);
+      if (c_fail) nfailed++;
+    }
+    else
+      {
+      std::stringstream name, name_ss;
+      int id = S_->GetMesh("surface")->cell_map(false).GID(count);
+      name << "column_" << id <<"_surface";
+      name_ss << "column_" << id;
+      
+      double loc_dt = dt;      
+          
+      bool done = false;
+      double t = 0;
+      bool cyc_flag  = false;
+      //      S_inter_->set_time(t0+t);
+      //S_next_->set_time(t0 + t + loc_dt);
+
+      while(!done){
+	bool fail_pk = (*pk)->advance(loc_dt);
+	//fail_pk |= !(*pk)->valid_step();
+		
+	if(!fail_pk){
+
+	  (*pk)->commit_state(loc_dt, S_next_);
+	  t = t + loc_dt;
+	  double loc_dt_old = loc_dt;
+
+	  double loc_dt_new = (*pk)->get_dt();
+	  if (dt - (t+loc_dt_new) < 1.)
+	    loc_dt_new = dt -t;
+	  else if ( t + loc_dt_new < dt && (t+2*loc_dt_new > dt ) )
+	    loc_dt_new = 0.5*(dt - t);
+
+	  loc_dt = std::min<double>(loc_dt_new, dt - t);
+	  
+	  if (loc_dt <= 1.e-10){
+	    done = true;
+	    if (cyc_flag)
+	      S_inter_->set_time(t0);
+	    }
+	  else{
+
+	  *S_inter_->GetFieldData(getKey(name_ss.str(),"pressure"), S_inter_->GetField(getKey(name_ss.str(),"pressure"))->owner()) = 
+	    *S_next_->GetFieldData(getKey(name_ss.str(),"pressure"));
+					     
+	  
+	  *S_inter_->GetFieldData(getKey(name_ss.str(),"temperature"), S_inter_->GetField(getKey(name_ss.str(),"temperature"))->owner()) = 
+	    *S_next_->GetFieldData(getKey(name_ss.str(),"temperature")); 
+	  
+	  *S_inter_->GetFieldData(getKey(name.str(),"pressure"), S_inter_->GetField(getKey(name.str(),"pressure"))->owner()) = 
+	    *S_next_->GetFieldData(getKey(name.str(),"pressure"));
+					     
+	  
+	  *S_inter_->GetFieldData(getKey(name.str(),"temperature"), S_inter_->GetField(getKey(name.str(),"temperature"))->owner()) = 
+	    *S_next_->GetFieldData(getKey(name.str(),"temperature"));
+	  
+	  *S_inter_->GetFieldData(getKey(name.str(),"snow_depth"), S_inter_->GetField(getKey(name.str(),"snow_depth"))->owner()) = 
+	    *S_next_->GetFieldData(getKey(name.str(),"snow_depth"));
+
+	   *S_inter_->GetFieldData(getKey(name.str(),"conducted_energy_source"), 
+				   S_inter_->GetField(getKey(name.str(),"conducted_energy_source"))->owner()) = 
+	     *S_next_->GetFieldData(getKey(name.str(),"conducted_energy_source"));
+	  
+	   *S_inter_->GetFieldData(getKey(name.str(),"mass_source"), 
+				   S_inter_->GetField(getKey(name.str(),"mass_source"))->owner()) = 
+	     *S_next_->GetFieldData(getKey(name.str(),"mass_source"));
+
+	   *S_inter_->GetFieldData(getKey(name_ss.str(),"mass_source"), 
+				   S_inter_->GetField(getKey(name_ss.str(),"mass_source"))->owner()) = 
+	     *S_next_->GetFieldData(getKey(name_ss.str(),"mass_source"));
+
+	   *S_inter_->GetFieldData(getKey(name.str(),"mass_source_temperature"), 
+				   S_inter_->GetField(getKey(name.str(),"mass_source_temperature"))->owner()) = 
+	    *S_next_->GetFieldData(getKey(name.str(),"mass_source_temperature"));
+
+	    *S_inter_->GetFieldData(getKey(name.str(),"snow_temperature"), 
+				   S_inter_->GetField(getKey(name.str(),"snow_temperature"))->owner()) = 
+	    *S_next_->GetFieldData(getKey(name.str(),"snow_temperature"));
+	  	  
+	    *S_inter_->GetFieldData(getKey(name.str(),"snow_age"), 
+				   S_inter_->GetField(getKey(name.str(),"snow_age"))->owner()) = 
+	    *S_next_->GetFieldData(getKey(name.str(),"snow_age"));
+	    
+	    *S_inter_->GetFieldData(getKey(name.str(),"snow_density"), 
+				   S_inter_->GetField(getKey(name.str(),"snow_density"))->owner()) = 
+	    *S_next_->GetFieldData(getKey(name.str(),"snow_density"));
+
+	    *S_inter_->GetFieldData(getKey(name.str(),"stored_SWE"), 
+				   S_inter_->GetField(getKey(name.str(),"stored_SWE"))->owner()) = 
+	    *S_next_->GetFieldData(getKey(name.str(),"stored_SWE"));
+
+	   *S_inter_->GetFieldData(getKey(name_ss.str(),"surface_subsurface_flux"), 
+				  S_inter_->GetField(getKey(name_ss.str(),"surface_subsurface_flux"))->owner()) = 
+	     *S_next_->GetFieldData(getKey(name_ss.str(),"surface_subsurface_flux"));
+	  
+	   *S_inter_->GetFieldData(getKey(name_ss.str(),"saturation_liquid"), 
+				   S_inter_->GetField(getKey(name_ss.str(),"saturation_liquid"))->owner()) = 
+	     *S_next_->GetFieldData(getKey(name_ss.str(),"saturation_liquid"));
+	   
+	   *S_inter_->GetFieldData(getKey(name.str(),"unfrozen_fraction"), 
+				   S_inter_->GetField(getKey(name.str(),"unfrozen_fraction"))->owner()) = 
+	     *S_next_->GetFieldData(getKey(name.str(),"unfrozen_fraction"));
+	   
+	   *S_inter_->GetFieldData(getKey(name.str(),"porosity"), 
+				   S_inter_->GetField(getKey(name.str(),"porosity"))->owner()) = 
+	     *S_next_->GetFieldData(getKey(name.str(),"porosity"));
+
+	   *S_inter_->GetFieldData(getKey(name.str(),"evaporative_flux"), 
+				   S_inter_->GetField(getKey(name.str(),"evaporative_flux"))->owner()) = 
+	     *S_next_->GetFieldData(getKey(name.str(),"evaporative_flux"));
+	   
+	   Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe1 = 
+	     Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S_inter_->GetFieldEvaluator(getKey(name.str(),"mass_source_temperature")));
+	   
+	   pfe1->SetFieldAsChanged(S_inter_.ptr());
+
+	   Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe2 = 
+	     Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S_inter_->GetFieldEvaluator(getKey(name.str(),"conducted_energy_source")));
+	   
+	   pfe2->SetFieldAsChanged(S_inter_.ptr());
+
+	   Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe3 = 
+	     Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S_inter_->GetFieldEvaluator(getKey(name.str(),"mass_source")));
+	   
+	   pfe3->SetFieldAsChanged(S_inter_.ptr());
+
+	   Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe4 = 
+	     Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S_inter_->GetFieldEvaluator(getKey(name_ss.str(),"mass_source")));
+	   
+	   pfe4->SetFieldAsChanged(S_inter_.ptr());
+	  
+	   Teuchos::RCP<PKBDFBase> pk_domain1 =
+	     Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[count+1]);
+	   ASSERT(pk_domain1.get()); // make sure the pk_domain is not empty
+	   pk_domain1->ChangedSolution(S_inter_.ptr());
+	   
+	   S_inter_->set_time(t0+t);
+	   S_next_->set_time( t0 + t + loc_dt);
+	   
+	  }
+	  
+	}
+	else{
+	  cyc_flag = true;
+	  *S_next_->GetFieldData(getKey(name_ss.str(),"pressure"), S_next_->GetField(getKey(name_ss.str(),"pressure"))->owner()) = 
+	    *S_inter_->GetFieldData(getKey(name_ss.str(),"pressure"));
+					     
+	  
+	  *S_next_->GetFieldData(getKey(name_ss.str(),"temperature"), S_next_->GetField(getKey(name_ss.str(),"temperature"))->owner()) = 
+	    *S_inter_->GetFieldData(getKey(name_ss.str(),"temperature")); 
+	  
+	  *S_next_->GetFieldData(getKey(name.str(),"pressure"), S_next_->GetField(getKey(name.str(),"pressure"))->owner()) = 
+	    *S_inter_->GetFieldData(getKey(name.str(),"pressure"));
+					     
+	  
+	  *S_next_->GetFieldData(getKey(name.str(),"temperature"), S_next_->GetField(getKey(name.str(),"temperature"))->owner()) = 
+	    *S_inter_->GetFieldData(getKey(name.str(),"temperature"));
+	  
+	  *S_next_->GetFieldData(getKey(name.str(),"snow_depth"), S_next_->GetField(getKey(name.str(),"snow_depth"))->owner()) = 
+	    *S_inter_->GetFieldData(getKey(name.str(),"snow_depth"));
+
+	   *S_next_->GetFieldData(getKey(name.str(),"conducted_energy_source"), 
+				   S_next_->GetField(getKey(name.str(),"conducted_energy_source"))->owner()) = 
+	     *S_inter_->GetFieldData(getKey(name.str(),"conducted_energy_source"));
+	  
+	   *S_next_->GetFieldData(getKey(name.str(),"mass_source"), 
+				   S_next_->GetField(getKey(name.str(),"mass_source"))->owner()) = 
+	     *S_inter_->GetFieldData(getKey(name.str(),"mass_source"));
+
+	   *S_next_->GetFieldData(getKey(name_ss.str(),"mass_source"), 
+				   S_next_->GetField(getKey(name_ss.str(),"mass_source"))->owner()) = 
+	     *S_inter_->GetFieldData(getKey(name_ss.str(),"mass_source"));
+
+	   *S_next_->GetFieldData(getKey(name.str(),"mass_source_temperature"), 
+				   S_next_->GetField(getKey(name.str(),"mass_source_temperature"))->owner()) = 
+	    *S_inter_->GetFieldData(getKey(name.str(),"mass_source_temperature"));
+
+	    *S_next_->GetFieldData(getKey(name.str(),"snow_temperature"), 
+				   S_next_->GetField(getKey(name.str(),"snow_temperature"))->owner()) = 
+	    *S_inter_->GetFieldData(getKey(name.str(),"snow_temperature"));
+	  	  
+	    *S_next_->GetFieldData(getKey(name.str(),"snow_age"), 
+				   S_next_->GetField(getKey(name.str(),"snow_age"))->owner()) = 
+	    *S_inter_->GetFieldData(getKey(name.str(),"snow_age"));
+	    
+	    *S_next_->GetFieldData(getKey(name.str(),"snow_density"), 
+				   S_next_->GetField(getKey(name.str(),"snow_density"))->owner()) = 
+	    *S_inter_->GetFieldData(getKey(name.str(),"snow_density"));
+
+	    *S_next_->GetFieldData(getKey(name.str(),"stored_SWE"), 
+				   S_next_->GetField(getKey(name.str(),"stored_SWE"))->owner()) = 
+	    *S_inter_->GetFieldData(getKey(name.str(),"stored_SWE"));
+
+	   *S_next_->GetFieldData(getKey(name_ss.str(),"surface_subsurface_flux"), 
+				  S_next_->GetField(getKey(name_ss.str(),"surface_subsurface_flux"))->owner()) = 
+	     *S_inter_->GetFieldData(getKey(name_ss.str(),"surface_subsurface_flux"));
+	  
+	  
+
+	   *S_next_->GetFieldData(getKey(name_ss.str(),"saturation_liquid"), 
+				  S_next_->GetField(getKey(name_ss.str(),"saturation_liquid"))->owner()) = 
+	     *S_inter_->GetFieldData(getKey(name_ss.str(),"saturation_liquid"));
+
+	   *S_next_->GetFieldData(getKey(name.str(),"unfrozen_fraction"), 
+				   S_next_->GetField(getKey(name.str(),"unfrozen_fraction"))->owner()) = 
+	     *S_inter_->GetFieldData(getKey(name.str(),"unfrozen_fraction"));
+	   
+	   *S_next_->GetFieldData(getKey(name.str(),"porosity"), 
+				   S_next_->GetField(getKey(name.str(),"porosity"))->owner()) = 
+	    *S_inter_->GetFieldData(getKey(name.str(),"porosity"));
+
+	   *S_next_->GetFieldData(getKey(name.str(),"evaporative_flux"), 
+				  S_next_->GetField(getKey(name.str(),"evaporative_flux"))->owner()) = 
+	     *S_inter_->GetFieldData(getKey(name.str(),"evaporative_flux"));
+	   
+	   Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe1 = 
+	     Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S_next_->GetFieldEvaluator(getKey(name.str(),"mass_source_temperature")));
+	   
+	   pfe1->SetFieldAsChanged(S_next_.ptr());
+
+	   Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe2 = 
+	     Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S_next_->GetFieldEvaluator(getKey(name.str(),"conducted_energy_source")));
+	   
+	   pfe2->SetFieldAsChanged(S_next_.ptr());
+
+	   Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe3 = 
+	     Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S_next_->GetFieldEvaluator(getKey(name.str(),"mass_source")));
+	   
+	   pfe3->SetFieldAsChanged(S_next_.ptr());
+
+	   Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe4 = 
+	     Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S_next_->GetFieldEvaluator(getKey(name_ss.str(),"mass_source")));
+	   
+	   pfe4->SetFieldAsChanged(S_next_.ptr());
+
+
+	   Teuchos::RCP<PKBDFBase> pk_domain1 =
+	     Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[count+1]);
+	   ASSERT(pk_domain1.get()); // make sure the pk_domain is not empty
+	   pk_domain1->ChangedSolution(S_next_.ptr());
+	   
+	   loc_dt = (*pk)->get_dt();
+	   S_inter_->set_time(t0+t);
+	   S_next_->set_time(t0 + t + loc_dt);
+	}
+
+      }
+      count++;	
+    }
+    
+   
   }
+  
+
+  MPI_Barrier(MPI_COMM_WORLD);  
+
   int nfailed_local = nfailed;
   S_->GetMesh("surface")->get_comm()->SumAll(&nfailed_local, &nfailed, 1);
  
@@ -204,14 +514,20 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
     Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[0]);
   ASSERT(pk_surf.get());
   pk_surf->ChangedSolution();
-  
+  MPC<PK>::SubPKList::iterator pk1 = sub_pks_.begin();
+
+   if(subcycle_key_)
+     (*pk1)->commit_state(dt,S_next_);
+
   }
   if (nfailed > 0){
     flag_star = 1;
     return true;
   }
-  else
+  else{
+    flag_star = 1;
     return false;
+  }
 }
   
 

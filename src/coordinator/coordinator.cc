@@ -458,8 +458,12 @@ bool Coordinator::advance(double dt) {
 
   if (!fail) {
     // commit the state
-    pk_->commit_state(dt, S_next_);
-    
+    if (coordinator_list_->get<bool>("subcycle"))
+      {}
+    else
+      {
+        pk_->commit_state(dt, S_next_);
+      }
     // make observations, vis, and checkpoints
     observations_->MakeObservations(*S_next_);
     visualize();

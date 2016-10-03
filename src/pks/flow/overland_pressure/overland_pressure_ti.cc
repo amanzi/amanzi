@@ -36,8 +36,8 @@ void OverlandPressureFlow::Functional( double t_old,
 
   // bookkeeping
   double h = t_new - t_old;
-  ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
-  ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
+  //--  ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
+  //--ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
 
   Teuchos::RCP<CompositeVector> u = u_new->Data();
 
@@ -178,7 +178,7 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
     *vo_->os() << "Precon update at t = " << t << std::endl;
 
   // update state with the solution up.
-  ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
+  //-- ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PKDefaultBase::solution_to_state(*up, S_next_);
 
   // calculating the operator is done in 3 steps:

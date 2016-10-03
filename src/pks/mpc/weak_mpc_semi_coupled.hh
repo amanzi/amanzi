@@ -38,11 +38,12 @@ public:
 private :
   static RegisteredPKFactory<WeakMPCSemiCoupled> reg_;
   unsigned numPKs_;
-  static unsigned flag_star;
+  static unsigned flag_star, flag_star_surf;
   Key coupling_key_ ;
+  bool subcycle_key_ ;
   Teuchos::ParameterList& FElist_loc;
   Teuchos::Ptr<State> S_loc;
-
+  double min_dt_, surf_dt_, sync_time_;
 };
 
   

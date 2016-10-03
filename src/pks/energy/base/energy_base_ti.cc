@@ -150,7 +150,7 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     *vo_->os() << "Precon update at t = " << t << std::endl;
 
   // update state with the solution up.
-  ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
+  //--ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PKDefaultBase::solution_to_state(*up, S_next_);
 
   // update boundary conditions
