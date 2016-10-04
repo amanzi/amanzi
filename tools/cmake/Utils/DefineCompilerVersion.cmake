@@ -22,7 +22,7 @@ function(DEFINE_COMPILER_VERSION)
 
        # Check only if the ID is set
        if ( _compiler_id )
-	     string(TOUPPER ${_compiler_id} _compiler_id_uc)
+         string(TOUPPER ${_compiler_id} _compiler_id_uc)
          set(_version_cmd_opt)
          set(_regexp_pattern)
 
@@ -30,7 +30,7 @@ function(DEFINE_COMPILER_VERSION)
          # a compiler group. This may need tweaking in the future.
          if ( ${_compiler_id_uc} STREQUAL "GNU" )
            set(_version_cmd_opt "--version")
-           set(_regexp_pattern ".*\(GCC\)[ ]+([0-9]+\\.[0-9]+\\.[0-9]+).*")
+           set(_regexp_pattern ".*\\(.*\\)[ ]+([0-9]+\\.[0-9]+\\.[0-9]+).*")	
          elseif(${_compiler_id_uc} STREQUAL "PGI" )
            set(_version_cmd_opt "-V")
            set(_regexp_pattern ".*pgcc[ ]+([0-9]+\\.[0-9]+-[0-9]+).*")
@@ -43,8 +43,11 @@ function(DEFINE_COMPILER_VERSION)
          elseif (${_compiler_id_uc} STREQUAL "CRAY" )
            set(_version_cmd_opt "-V")
            set(_regexp_pattern ".*Cray[ ]+C[ ]+:[ ]+Version ([0-9]+\\.[0-9]+\\.[0-9]+).*")
+         elseif (${_compiler_id_uc} STREQUAL "CLANG" )
+           set(_version_cmd_opt "-v")
+           set(_regexp_pattern ".*\(clang-\)[ ]+([0-9]+\\.[0-9]+\\.[0-9]+).*")
          else()
-           message(WARNING "Unknown compiler ID type ${_lang_id_var}")
+           message(WARNING "Unknown compiler ID type ${_compiler_id_uc}")
          endif()
 
          # Execute the command if the option was set
@@ -55,13 +58,15 @@ function(DEFINE_COMPILER_VERSION)
                            ERROR_VARIABLE  output 
                            OUTPUT_STRIP_TRAILING_WHITESPACE
                            ERROR_STRIP_TRAILING_WHITESPACE)
-  
+
            # result > 0 indicates an error return 
            if ( result ) 
              message(SEND_ERROR "${_lang_compiler} ${_version_cmd_opt} failed."
                                 "Ouptut:\n${output}")
            else()
-	     string(REGEX REPLACE "${_regexp_pattern}" "\\1" _version "${output}")
+             # string(REGEX REPLACE "([^\n]+).*" "\\1" first_line "${output}")
+	     # string(REGEX REPLACE "${_regexp_pattern}" "\\1" _version "${first_line}")
+             string(REGEX REPLACE "${_regexp_pattern}" "\\1" _version "${output}")
              # A fix for the PGI case because they use a '-' to separate the patch number. Annoying.
              if ( ${_compiler_id_uc} STREQUAL "PGI")
                set(_tmp ${_version})
@@ -69,8 +74,8 @@ function(DEFINE_COMPILER_VERSION)
              endif()
 	     string(STRIP "${_version}" _version)
            endif()  
-  
-	     endif()
+
+         endif()
 
        else() 
          message(SEND_ERROR "The ${_lang} compiler ID is not defined")
@@ -83,7 +88,7 @@ function(DEFINE_COMPILER_VERSION)
 	   set(CMAKE_${_lang}_COMPILER_VERSION ${_version} PARENT_SCOPE)
 
    endforeach()    
-   
-  
+
+
 endfunction(DEFINE_COMPILER_VERSION) 
-  
+
