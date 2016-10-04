@@ -98,6 +98,7 @@ All instructions assume you use bash.  Alter as needed for other shells.
       -D CMAKE_Fortran_COMPILER=${FC} \
       -D ENABLE_HYPRE:BOOL=ON \
       -D ENABLE_Structured:BOOL=OFF \
+      -D ENABLE_STK_Mesh:BOOL=OFF \
       -D TPL_INSTALL_PREFIX=${AMANZI_TPLS_DIR} \
     ${AMANZI_SRC_DIR}/config/SuperBuild
 
