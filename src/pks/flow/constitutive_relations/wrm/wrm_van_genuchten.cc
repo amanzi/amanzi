@@ -34,8 +34,15 @@ double WRMVanGenuchten::k_relative(double pc) {
     double se = pow(1.0 + pow(alpha_*pc, n_), -m_);
     if (function_ == FLOW_WRM_MUALEM) {
       return pow(se, l_) * pow(1.0 - pow(1.0 - pow(se, 1.0/m_), m_), 2.0);
+<<<<<<< HEAD
     } else {
       return se * se * (1.0 - pow(1.0 - pow(se, 1.0/m_), m_));
+=======
+    } else if (function_ == FLOW_WRM_BURDINE) {
+      return se * se * (1.0 - pow(1.0 - pow(se, 1.0/m_), m_));
+    } else if (function_ == FLOW_WRM_ONE) {
+      return 1.;
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
     }
   } else if (pc <= 0.0) {
     return 1.0;
@@ -62,10 +69,21 @@ double WRMVanGenuchten::d_k_relative(double pc) {
     double dkdse;
     if (function_ == FLOW_WRM_MUALEM)
       dkdse = (1.0 - y) * (l_ * (1.0 - y) + 2 * x * y / (1.0 - x)) * pow(se, l_ - 1.0);
+<<<<<<< HEAD
     else
       dkdse = (2 * (1.0 - y) + x / (1.0 - x)) * se;
 
     return dkdse * dsdp / (1 - sr_);
+=======
+    else if (function_ == FLOW_WRM_BURDINE)
+      dkdse = (2 * (1.0 - y) + x / (1.0 - x)) * se;
+    else if (function_ == FLOW_WRM_ONE)
+      dkdse = 0.;
+
+    double dk = dkdse * dsdp / (1 - sr_);
+    ASSERT(std::abs(dk) < 1.e15);
+    return dk;
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 
   } else if (pc <= 0.0) {
     return 0.0;
@@ -135,6 +153,11 @@ void WRMVanGenuchten::InitializeFromPlist_() {
     function_ = FLOW_WRM_MUALEM;
   } else if (fname == std::string("Burdine")) {
     function_ = FLOW_WRM_BURDINE;
+<<<<<<< HEAD
+=======
+  } else if (fname == std::string("one")) {
+    function_ = FLOW_WRM_ONE;
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   } else {
     ASSERT(0);
   }
@@ -146,14 +169,22 @@ void WRMVanGenuchten::InitializeFromPlist_() {
 
   if (plist_.isParameter("van Genuchten m")) {
     m_ = plist_.get<double>("van Genuchten m");
+<<<<<<< HEAD
     if (function_ == FLOW_WRM_MUALEM) {
+=======
+    if (function_ == FLOW_WRM_MUALEM || function_ == FLOW_WRM_ONE) {
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
       n_ = 1.0 / (1.0 - m_);
     } else {
       n_ = 2.0 / (1.0 - m_);
     }
   } else {
     n_ = plist_.get<double>("van Genuchten n");
+<<<<<<< HEAD
     if (function_ == FLOW_WRM_MUALEM) {
+=======
+    if (function_ == FLOW_WRM_MUALEM || function_ == FLOW_WRM_ONE) {
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
       m_ = 1.0 - 1.0/n_;
     } else {
       m_ = 1.0 - 2.0/n_;

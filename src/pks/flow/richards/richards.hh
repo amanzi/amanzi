@@ -32,7 +32,11 @@ namespace Flow {
 class Richards : public PKPhysicalBDFBase {
 
 public:
+<<<<<<< HEAD
   Richards(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
+=======
+  Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
            Teuchos::ParameterList& FElist,
            const Teuchos::RCP<TreeVector>& solution);
 

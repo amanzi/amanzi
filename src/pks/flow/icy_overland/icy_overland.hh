@@ -27,11 +27,19 @@ namespace FlowRelations { class UnfrozenFractionModel; }
 class IcyOverlandFlow : public OverlandPressureFlow {
 
  public:
+<<<<<<< HEAD
   IcyOverlandFlow(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                   Teuchos::ParameterList& FElist,
                   const Teuchos::RCP<TreeVector>& solution) :
     PKDefaultBase(S, plist, FElist, solution),
     OverlandPressureFlow(S, plist, FElist, solution) {}
+=======
+  IcyOverlandFlow(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                  Teuchos::ParameterList& FElist,
+                  const Teuchos::RCP<TreeVector>& solution) :
+      PKDefaultBase(plist, FElist, solution),
+      OverlandPressureFlow(plist, FElist, solution) {}
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 
   // Virtual destructor
   virtual ~IcyOverlandFlow() {}

@@ -4,7 +4,11 @@
 
 namespace Amanzi {
 
+<<<<<<< HEAD
   MPCDelegateWater::MPCDelegateWater(const Teuchos::RCP<Teuchos::ParameterList>& plist, std::string domain) :
+=======
+MPCDelegateWater::MPCDelegateWater(const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
     plist_(plist),
     i_domain_(-1),
     i_surf_(-1),
@@ -46,8 +50,11 @@ namespace Amanzi {
 
   // create the VO
   vo_ = Teuchos::rcp(new VerboseObject(plist->name(), *plist_));
+<<<<<<< HEAD
 
   domain_ss = domain;
+=======
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 }
 
 // Approach 1: global face limiter on the correction size
@@ -311,6 +318,7 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
         ->ViewComponent("cell",false);
     Epetra_MultiVector& domain_pnew_f = *u->SubVector(i_domain_)->Data()
         ->ViewComponent("face",false);
+<<<<<<< HEAD
     Key key_ss;
     if (domain_ss.substr(0,6) == "column")
       key_ss = getKey(domain_ss,"pressure");
@@ -319,6 +327,10 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
 
     const Epetra_MultiVector& domain_pold_f =
         *S_->GetFieldData(key_ss)->ViewComponent("face",false);
+=======
+    const Epetra_MultiVector& domain_pold_f =
+        *S_->GetFieldData("pressure")->ViewComponent("face",false);
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 
     int rank = surf_mesh->get_comm()->MyPID();
     double damp = 1.;
@@ -349,7 +361,11 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
         *vo_->os() << "  DAMPING THE SPURT!, coef = " << damp << std::endl;
 
       // apply the damping
+<<<<<<< HEAD
       Teuchos::RCP<const CompositeVector> domain_pold = S_->GetFieldData(key_ss);
+=======
+      Teuchos::RCP<const CompositeVector> domain_pold = S_->GetFieldData("pressure");
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
       Teuchos::RCP<CompositeVector> domain_pnew = u->SubVector(i_domain_)->Data();
       db_->WriteVector("p_old", domain_pold.ptr());
       db_->WriteVector("p_new", domain_pnew.ptr());

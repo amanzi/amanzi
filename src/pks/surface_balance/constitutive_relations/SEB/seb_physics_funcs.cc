@@ -424,9 +424,13 @@ void CalculateSurfaceBalance(SEB& seb, bool debug, const Teuchos::RCP<VerboseObj
               << "    Snow Melt:\n"
               << "      old ht   = " << seb.in.snow_old.ht << std::endl
               << "      new ht   = " << seb.out.snow_new.ht << std::endl
+<<<<<<< HEAD
               << "      old age  = " << seb.in.snow_old.age << std::endl
 	      << "      new age  = " << seb.out.snow_new.age << std::endl
 	      << "      old dens = " << seb.in.snow_old.density << std::endl	      
+=======
+              << "      new age  = " << seb.out.snow_new.age << std::endl
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
               << "      new dens = " << seb.out.snow_new.density << std::endl
               << "      SWE      = " << seb.out.snow_new.SWE << std::endl
               << "    Water Balance:\n"

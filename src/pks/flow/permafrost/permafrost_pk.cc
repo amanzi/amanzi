@@ -36,6 +36,16 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField(getKey(domain_,"permeability"))->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(getKey(domain_,"permeability"));
+<<<<<<< HEAD
+=======
+
+  // -- water content, and evaluator
+  /*S->RequireField("water_content")->SetMesh(S->GetMesh())->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator("water_content");
+  */
+  //I_CHANGED -- water content, and evaluator
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   
   S->RequireField(conserved_key_)->SetMesh(mesh_)->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -51,6 +61,12 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   names2[1] = "boundary_face";
 
   // -- rel perm on cells + boundary faces
+<<<<<<< HEAD
+=======
+  //I-COMMENTED
+  //  S->RequireField("relative_permeability")->SetMesh(S->GetMesh())->SetGhosted()
+  //    ->AddComponents(names2,locations2,num_dofs2);
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   S->RequireField(coef_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponents(names2,locations2,num_dofs2);
  

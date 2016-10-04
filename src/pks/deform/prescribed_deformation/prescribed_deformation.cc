@@ -22,11 +22,19 @@ namespace Deform {
 
 using namespace Amanzi::AmanziMesh;
 
+<<<<<<< HEAD
   PrescribedDeformation::PrescribedDeformation(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution):
     PKDefaultBase(S, plist, FElist, solution),
     PKPhysicalBase(S, plist, FElist, solution),
+=======
+PrescribedDeformation::PrescribedDeformation(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+        Teuchos::ParameterList& FElist,
+        const Teuchos::RCP<TreeVector>& solution):
+    PKDefaultBase(plist, FElist, solution),
+    PKPhysicalBase(plist, FElist, solution),
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
     prescribed_deformation_case_(1)
 {
   prescribed_deformation_case_ = plist_->get<int>("deformation function",1);

@@ -13,10 +13,17 @@
 namespace Amanzi {
 
 
+<<<<<<< HEAD
   PKPhysicalBase::PKPhysicalBase(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution) :
     PKDefaultBase(S, plist,FElist,solution) {
+=======
+PKPhysicalBase::PKPhysicalBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+        Teuchos::ParameterList& FElist,
+        const Teuchos::RCP<TreeVector>& solution) :
+    PKDefaultBase(plist,FElist,solution) {
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 
   // domain -- default is the entire mesh, no prefix
   if (domain_.empty()) {
@@ -46,7 +53,10 @@ void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
   // get the mesh
   mesh_ = S->GetMesh(domain_);
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   // set up the debugger
   db_ = Teuchos::rcp(new Debugger(mesh_, name_, *plist_));
 
@@ -147,6 +157,10 @@ void PKPhysicalBase::initialize(const Teuchos::Ptr<State>& S) {
     // -- Calculate the IC.
     Teuchos::ParameterList ic_plist = plist_->sublist("initial condition");
     field->Initialize(ic_plist);
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
     // -- Update faces from cells if needed.
     // if (ic_plist.get<bool>("initialize faces from cells", false)) {
     //   DeriveFaceValuesFromCellValues_(field->GetFieldData().ptr());

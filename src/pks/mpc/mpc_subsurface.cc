@@ -33,9 +33,13 @@ namespace Amanzi {
 // -- Initialize owned (dependent) variables.
 void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   // set up keys
+<<<<<<< HEAD
   Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
   // domain_name_ = plist_->get<std::string>("domain name", "domain");
   domain_name_ =  plist_->sublist("PKs").sublist(pk_order[1]).get<std::string>("domain name", "domain");
+=======
+  domain_name_ = plist_->get<std::string>("domain name", "domain");
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   temp_key_ = getKey(domain_name_, "temperature");
   pres_key_ = getKey(domain_name_, "pressure");
   e_key_ = getKey(domain_name_, "energy");
@@ -53,7 +57,11 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   rho_key_ = getKey(domain_name_, "mass_density_liquid");
 
   // supress energy's vision of advective terms as we can do better
+<<<<<<< HEAD
   //  Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
+=======
+  Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   if (plist_->isParameter("supress Jacobian terms: div hq / dp")) {
     Errors::Message message("MPC Incorrect input: parameter \"supress Jacobian terms: div hq / dp\" changed to \"supress Jacobian terms: div hq / dp,T\" for clarity.");
     Exceptions::amanzi_throw(message);

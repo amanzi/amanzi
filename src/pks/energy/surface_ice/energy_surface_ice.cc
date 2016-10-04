@@ -33,41 +33,66 @@ namespace Energy {
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------
+<<<<<<< HEAD
   EnergySurfaceIce::EnergySurfaceIce(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution) :
     PKDefaultBase(S, plist, FElist, solution),
     EnergyBase(S, plist, FElist, solution),
+=======
+EnergySurfaceIce::EnergySurfaceIce(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+        Teuchos::ParameterList& FElist,
+        const Teuchos::RCP<TreeVector>& solution) :
+    PKDefaultBase(plist, FElist, solution),
+    EnergyBase(plist, FElist, solution),
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
     standalone_mode_(false),
     is_energy_source_term_(false),
     is_mass_source_term_(false),
     is_air_conductivity_(false) {
+<<<<<<< HEAD
   if(!plist_->isParameter("conserved quanity suffix"))
     plist_->set("conserved quantity suffix", "energy");
 
   //plist_->set("primary variable key", "surface-temperature");
   //plist_->set("domain name", "surface");
   plist_->set("conserved quantity key", getKey(domain_,"energy"));
+=======
+  plist_->set("primary variable key", "surface-temperature");
+  plist_->set("domain name", "surface");
+  plist_->set("conserved quantity key", "surface-energy");
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 }
 
 
 void EnergySurfaceIce::setup(const Teuchos::Ptr<State>& S) {
   // set up the meshes
+<<<<<<< HEAD
   if (S->HasMesh("surface_star") && domain_=="surface_star")
     standalone_mode_ = false;
   else if(domain_.substr(0,6) == "column")
     standalone_mode_ = false;
 
   if (!S->HasMesh("surface") && standalone_mode_ == false) {
+=======
+  if (!S->HasMesh("surface")) {
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
     Teuchos::RCP<const AmanziMesh::Mesh> domain = S->GetMesh();
     ASSERT(domain->space_dimension() == 2);
     standalone_mode_ = true;
     S->AliasMesh("domain", "surface");
+<<<<<<< HEAD
   } 
   /*else {
     standalone_mode_ = false;
   }
   */
+=======
+  } else {
+    standalone_mode_ = false;
+  }
+
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   EnergyBase::setup(S);
 }
 
@@ -76,7 +101,11 @@ void EnergySurfaceIce::setup(const Teuchos::Ptr<State>& S) {
 // conductivity, and any sources.
 // -------------------------------------------------------------
 void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
+<<<<<<< HEAD
   standalone_mode_ = S->GetMesh() == S->GetMesh(domain_);
+=======
+  standalone_mode_ = S->GetMesh() == S->GetMesh("surface");
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 
   // Get data and evaluators needed by the PK
   // -- energy, the conserved quantity
@@ -102,12 +131,16 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_ ) {
     // -- ensure mass source from subsurface exists
+<<<<<<< HEAD
     Key key_ss = " ";
     if (domain_.substr(0,6) == "column")
       key_ss = getKey(domain_.substr(0,domain_.size()-8),"surface_subsurface_flux");
     else
       key_ss = "surface_subsurface_flux";
     S->RequireField(key_ss)
+=======
+    S->RequireField("surface_subsurface_flux")
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
         ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 
@@ -147,12 +180,16 @@ void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
     if (ic_plist.get<bool>("initialize surface temperature from subsurface",false)) {
       Teuchos::RCP<CompositeVector> surf_temp_cv = S->GetFieldData(key_, name_);
       Epetra_MultiVector& surf_temp = *surf_temp_cv->ViewComponent("cell",false);
+<<<<<<< HEAD
       std::string key_ss;
       if (domain_.substr(0,6) == "column")
         key_ss = getKey(domain_.substr(0,domain_.size()-8),"temperature");
       else
         key_ss = "temperature";
       const Epetra_MultiVector& temp = *S->GetFieldData(key_ss)
+=======
+      const Epetra_MultiVector& temp = *S->GetFieldData("temperature")
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
         ->ViewComponent("face",false);
 
       unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
@@ -170,6 +207,7 @@ void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
 
       // mark as initialized
       S->GetField(key_,name_)->set_initialized();
+<<<<<<< HEAD
     } 
     else if (ic_plist.get<bool>("initialize surface_star temperature from surface cells",false)) {
       
@@ -186,6 +224,8 @@ void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
         surf_temp[0][c] = temp[0][0];
       }
       S->GetField(key_,name_)->set_initialized();
+=======
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
     }
   }
 
@@ -195,14 +235,22 @@ void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
   // require a model based on p,T.
   // This will be removed once boundary faces are implemented.
   Teuchos::RCP<FieldEvaluator> eos_fe =
+<<<<<<< HEAD
     S->GetFieldEvaluator(getKey(domain_,"molar_density_liquid"));
+=======
+      S->GetFieldEvaluator("surface-molar_density_liquid");
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   Teuchos::RCP<Relations::EOSEvaluator> eos_eval =
     Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(eos_fe);
   ASSERT(eos_eval != Teuchos::null);
   eos_liquid_ = eos_eval->get_EOS();
 
   Teuchos::RCP<FieldEvaluator> iem_fe =
+<<<<<<< HEAD
     S->GetFieldEvaluator(getKey(domain_,"internal_energy_liquid"));
+=======
+      S->GetFieldEvaluator("surface-internal_energy_liquid");
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   Teuchos::RCP<EnergyRelations::IEMEvaluator> iem_eval =
     Teuchos::rcp_dynamic_cast<EnergyRelations::IEMEvaluator>(iem_fe);
   ASSERT(iem_eval != Teuchos::null);
@@ -262,6 +310,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
   // -- two parts -- conduction and advection
   // -- advection source
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
+<<<<<<< HEAD
     S->GetFieldEvaluator(getKey(domain_,"enthalpy"))->HasFieldChanged(S.ptr(), name_);
     S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
     // -- advection source
@@ -281,12 +330,29 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
 
     unsigned int ncells = g_c.MyLength();
 
+=======
+    S->GetFieldEvaluator("enthalpy")->HasFieldChanged(S.ptr(), name_);
+    S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
+
+    // -- advection source
+    const Epetra_MultiVector& source1 =
+        *S->GetFieldData("surface_subsurface_flux")->ViewComponent("cell",false);
+    const Epetra_MultiVector& enth_surf =
+        *S->GetFieldData(enthalpy_key_)->ViewComponent("cell",false);
+    const Epetra_MultiVector& enth_subsurf =
+        *S->GetFieldData("enthalpy")->ViewComponent("cell",false);
+
+    AmanziMesh::Entity_ID_List cells;
+
+    unsigned int ncells = g_c.MyLength();
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
     for (unsigned int c=0; c!=ncells; ++c) {
       double flux = source1[0][c];
 
       // upwind the enthalpy
       if (flux > 0.) { // exfiltration
         // get the subsurface's enthalpy
+<<<<<<< HEAD
        
         AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
         if (domain_.substr(0,6) == "column")
@@ -294,6 +360,10 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
         else
           S->GetMesh()->face_get_cells(f, AmanziMesh::USED, &cells);
       
+=======
+        AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+        S->GetMesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
         ASSERT(cells.size() == 1);
 
         g_c[0][c] -= flux * enth_subsurf[0][cells[0]];
@@ -332,9 +402,15 @@ void EnergySurfaceIce::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double 
   // implemented correctly, as they are part of a PK (surface energy
   // balance!)
   if (is_source_term_ && 
+<<<<<<< HEAD
       S->HasFieldEvaluator(getKey(domain_,"conducted_energy_source")) &&
       !S->GetFieldEvaluator(getKey(domain_,"conducted_energy_source"))->IsDependency(S, key_) &&
       S->HasField(getDerivKey(getKey(domain_,"conducted_energy_source"), getKey(domain_,"temperature")))) {
+=======
+      S->HasFieldEvaluator("surface-conducted_energy_source") &&
+      !S->GetFieldEvaluator("surface-conducted_energy_source")->IsDependency(S, key_) &&
+      S->HasField("dsurface-conducted_energy_source_dsurface-temperature")) {
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
     // This checks if 1, there is a source, and, 2, there is a
     // conducted component to that source, and 4, someone, somewhere
     // (i.e. SEB PK) has defined a dsource_dT, but 3, the source
@@ -343,7 +419,11 @@ void EnergySurfaceIce::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double 
     std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
 
     const Epetra_MultiVector& dsource_dT =
+<<<<<<< HEAD
       *S->GetFieldData(getDerivKey(getKey(domain_,"conducted_energy_source"), getKey(domain_,"temperature")))->ViewComponent("cell",false);
+=======
+        *S->GetFieldData("dsurface-conducted_energy_source_dsurface-temperature")->ViewComponent("cell",false);
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
     const Epetra_MultiVector& cell_vol = *S->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
     unsigned int ncells = dsource_dT.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
@@ -352,7 +432,11 @@ void EnergySurfaceIce::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double 
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
       *vo_->os() << "Adding hacked source to PC:" << std::endl;
+<<<<<<< HEAD
       db_->WriteVector("de_src_dT", S->GetFieldData(getDerivKey(getKey(domain_,"conducted_energy_source"), getKey(domain_,"temperature"))).ptr(), false);
+=======
+      db_->WriteVector("de_src_dT", S->GetFieldData("dsurface-conducted_energy_source_dsurface-temperature").ptr(), false);
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
     }
 
   }

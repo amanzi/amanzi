@@ -43,11 +43,19 @@ namespace Operators { class TreeOperator; }
 
 class MPCCoupledCells : public StrongMPC<PKPhysicalBDFBase> {
  public:
+<<<<<<< HEAD
   MPCCoupledCells(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                   Teuchos::ParameterList& FElist,
                   const Teuchos::RCP<TreeVector>& soln) :
     PKDefaultBase(S, plist, FElist, soln),
       StrongMPC<PKPhysicalBDFBase>(S,plist, FElist, soln),
+=======
+  MPCCoupledCells(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                  Teuchos::ParameterList& FElist,
+                  const Teuchos::RCP<TreeVector>& soln) :
+      PKDefaultBase(plist, FElist, soln),
+      StrongMPC<PKPhysicalBDFBase>(plist, FElist, soln),
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
       decoupled_(false) {}
 
   virtual void setup(const Teuchos::Ptr<State>& S);

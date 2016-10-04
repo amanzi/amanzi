@@ -35,7 +35,10 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "MeshFactory.hh"
 #include "MeshLogicalFactory.hh"
 #include "MeshColumn.hh"
+<<<<<<< HEAD
 #include "MeshSurfaceCell.hh"
+=======
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 #include "Domain.hh"
 #include "GeometricModel.hh"
 #include "coordinator.hh"
@@ -317,6 +320,7 @@ int SimulationDriver::Run(
 
   // column meshes
   std::vector<Teuchos::RCP<Amanzi::AmanziMesh::Mesh> > col_meshes;
+<<<<<<< HEAD
   std::vector<Teuchos::RCP<Amanzi::AmanziMesh::Mesh> > col_surf_meshes;
 
   int nc = mesh->num_columns();
@@ -373,6 +377,16 @@ int SimulationDriver::Run(
   }
 
 
+=======
+  if (mesh_plist.isSublist("column meshes")) {
+    int nc = mesh->num_columns();
+    col_meshes.resize(nc, Teuchos::null);
+    for (int c=0; c!=nc; ++c) {
+      col_meshes[c] = Teuchos::rcp(new Amanzi::AmanziMesh::MeshColumn(*mesh, c));
+    }
+  }  
+  
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   Teuchos::TimeMonitor::summarize();
   Teuchos::TimeMonitor::zeroOutTimers();
 
@@ -388,6 +402,7 @@ int SimulationDriver::Run(
   if (surface_mesh != Teuchos::null)
     S->RegisterMesh("surface", surface_mesh, deformable);
 
+<<<<<<< HEAD
     if (col_meshes.size() > 0) {
     for (int c=0; c!=col_meshes.size(); ++c) {
       std::stringstream name_ss, name_surf;
@@ -401,6 +416,15 @@ int SimulationDriver::Run(
   }
 
   
+=======
+  if (col_meshes.size() > 0) {
+    for (int c=0; c!=col_meshes.size(); ++c) {
+      std::stringstream namestream;
+      namestream << "column_" << c;
+      S->RegisterMesh(namestream.str(), col_meshes[c], deformable);
+    }
+  }
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   
   // create the top level Coordinator
   Amanzi::Coordinator coordinator(plist, S, comm.get());

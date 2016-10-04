@@ -55,8 +55,15 @@ void RelPermEvaluator::InitializeFromPlist_() {
   if (my_key_ == std::string("")) {
     my_key_ = plist_.get<std::string>("rel perm key", "relative_permeability");
   }
+<<<<<<< HEAD
   // dependencies
   Key domain_name = getDomain(my_key_);
+=======
+
+  // dependencies
+  Key domain_name = getDomain(my_key_);
+  
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   // -- saturation liquid
   sat_key_ = plist_.get<std::string>("saturation key",
           getKey(domain_name, "saturation_liquid"));
@@ -80,11 +87,15 @@ void RelPermEvaluator::InitializeFromPlist_() {
             "surface-relative_permeability");
     dependencies_.insert(surf_rel_perm_key_);
 
+<<<<<<< HEAD
     Key domain_surf = getDomain(surf_rel_perm_key_);
     if(domain_surf.substr(0,6) == "column")
       surf_mesh_key_ = plist_.get<std::string>("surface mesh key", domain_surf);
     else
       surf_mesh_key_ = plist_.get<std::string>("surface mesh key", "surface");
+=======
+    surf_mesh_key_ = plist_.get<std::string>("surface mesh key", "surface");
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   }
   
   // cutoff above 0?
@@ -95,7 +106,10 @@ void RelPermEvaluator::InitializeFromPlist_() {
 
 // Special purpose EnsureCompatibility required because of surface rel perm.
 void RelPermEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
+<<<<<<< HEAD
 
+=======
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   if (!is_surf_) {
     SecondaryVariableFieldEvaluator::EnsureCompatibility(S);
   } else {
@@ -134,11 +148,17 @@ void RelPermEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
       }
 
       // Check the dependency for surf rel perm
+<<<<<<< HEAD
       Key domain = getDomain(surf_rel_perm_key_);
       S->RequireField(surf_rel_perm_key_)
           ->SetMesh(S->GetMesh(domain))
           ->AddComponent("cell",AmanziMesh::CELL,1);
      
+=======
+      S->RequireField(surf_rel_perm_key_)
+          ->SetMesh(S->GetMesh("surface"))
+          ->AddComponent("cell",AmanziMesh::CELL,1);
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
       S->RequireFieldEvaluator(surf_rel_perm_key_)->EnsureCompatibility(S);
       
     }

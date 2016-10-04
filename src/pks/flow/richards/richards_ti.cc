@@ -32,8 +32,13 @@ void Richards::Functional(double t_old,
   Teuchos::OSTab tab = vo_->getOSTab();
 
   double h = t_new - t_old;
+<<<<<<< HEAD
   //--  ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
   //-- ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
+=======
+  ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
+  ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 
   // pointer-copy temperature into state and update any auxilary data
   solution_to_state(*u_new, S_next_);
@@ -149,7 +154,11 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   }
 
   // update state with the solution up.
+<<<<<<< HEAD
   //--ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
+=======
+  ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   PKDefaultBase::solution_to_state(*up, S_next_);
 
   // update the rel perm according to the scheme of choice, also upwind derivatives of rel perm

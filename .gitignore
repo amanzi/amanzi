@@ -1,0 +1,15 @@
+build*
+install*
+*.orig
+*_registration.hh
+*_registration.hh.in
+.DS_Store
+*.pyc
+*.o
+*.d
+tools/meshing_ats/*/*/*/*.log
+tools/meshing_ats/*/*/*/*.exo
+tools/meshing_ats/*/*/*/*.ncdump
+tools/meshing_ats/*/*/*.exo
+tools/meshing_ats/*/*/*.ncdump
+

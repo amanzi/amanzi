@@ -21,12 +21,21 @@
 namespace Amanzi {
 namespace SurfaceBalance {
 
+<<<<<<< HEAD
   SurfaceBalanceExplicit::SurfaceBalanceExplicit(Teuchos::Ptr<State> S,
            const Teuchos::RCP<Teuchos::ParameterList>& plist,
            Teuchos::ParameterList& FElist,
            const Teuchos::RCP<TreeVector>& solution) :
     PKPhysicalBase(S, plist, FElist, solution),
     PKDefaultBase(S, plist, FElist, solution) {
+=======
+SurfaceBalanceExplicit::SurfaceBalanceExplicit(
+           const Teuchos::RCP<Teuchos::ParameterList>& plist,
+           Teuchos::ParameterList& FElist,
+           const Teuchos::RCP<TreeVector>& solution) :
+    PKPhysicalBase(plist, FElist, solution),
+    PKDefaultBase(plist, FElist, solution) {
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   // set up additional primary variables -- this is very hacky...
   // -- surface energy source
   Teuchos::ParameterList& esource_sublist =

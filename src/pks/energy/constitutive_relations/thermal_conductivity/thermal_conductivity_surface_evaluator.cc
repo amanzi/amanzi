@@ -21,11 +21,18 @@ ThermalConductivitySurfaceEvaluator::ThermalConductivitySurfaceEvaluator(
             "surface-thermal_conductivity");
   }
 
+<<<<<<< HEAD
   Key domain = getDomain(my_key_);
   uf_key_ = plist_.get<std::string>("unfrozen fraction key", getKey(domain,"unfrozen_fraction"));
   dependencies_.insert(uf_key_);
 
   height_key_ = plist_.get<std::string>("height key", getKey(domain, "ponded_depth"));
+=======
+  uf_key_ = plist_.get<std::string>("unfrozen fraction key", "unfrozen_fraction");
+  dependencies_.insert(uf_key_);
+
+  height_key_ = plist_.get<std::string>("height key", "ponded_depth");
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   dependencies_.insert(height_key_);
 
   ASSERT(plist_.isSublist("thermal conductivity parameters"));

@@ -19,6 +19,7 @@ namespace FlowRelations {
 OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 
+<<<<<<< HEAD
   if (plist.isParameter("overland conductivity key"))
     my_key_=  plist_.get<std::string>("overland conductivity key");
   else
@@ -35,6 +36,17 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
   coef_key_ = plist_.get<std::string>("coefficient key", getKey(domain,"manning_coefficient"));
   dependencies_.insert(coef_key_);
  
+=======
+  depth_key_ = plist_.get<std::string>("height key", "ponded_depth");
+  dependencies_.insert(depth_key_);
+
+  slope_key_ = plist_.get<std::string>("slope key", "slope_magnitude");
+  dependencies_.insert(slope_key_);
+
+  coef_key_ = plist_.get<std::string>("coefficient key", "manning_coefficient");
+  dependencies_.insert(coef_key_);
+
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   dt_ = plist_.get<bool>("include dt factor", false);
   if (dt_) {
     factor_ = plist_.get<double>("dt factor");
@@ -42,15 +54,25 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
   dens_ = plist_.get<bool>("include density factor", true);
 
   if (dens_) {
+<<<<<<< HEAD
     dens_key_ = plist_.get<std::string>("density key", getKey(domain, "molar_density_liquid"));
     dependencies_.insert(dens_key_);
   }
   /*
+=======
+    dens_key_ = plist_.get<std::string>("density key", "surface-molar_density_liquid");
+    dependencies_.insert(dens_key_);
+  }
+  
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   if (my_key_ == std::string("")) {
     my_key_ = plist_.get<std::string>("overland conductivity key",
             "overland_conductivity");
   }
+<<<<<<< HEAD
   */
+=======
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 
   // create the model
   ASSERT(plist_.isSublist("overland conductivity model"));
@@ -114,7 +136,11 @@ void OverlandConductivityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
       }
     }
+<<<<<<< HEAD
   
+=======
+
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
     if (dens_) {
       const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(*comp,false);
       for (int i=0; i!=ncomp; ++i) {

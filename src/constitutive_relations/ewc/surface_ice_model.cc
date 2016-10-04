@@ -31,7 +31,11 @@ SurfaceIceModel::InitializeModel(const Teuchos::Ptr<State>& S) {
   // these are not yet initialized
   gz_ = -1.e12;
   p_atm_ = -1.e12;
+<<<<<<< HEAD
   std::cout<<"=== SURF ICE MODEL: ====== \n";
+=======
+
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   // Grab the models.
   // -- liquid EOS
   Teuchos::RCP<FieldEvaluator> me = S->GetFieldEvaluator("surface_molar_density_liquid");

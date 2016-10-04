@@ -26,10 +26,17 @@ class PKBDFBase : public virtual PKDefaultBase,
 
  public:
 
+<<<<<<< HEAD
   PKBDFBase(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
             Teuchos::ParameterList& FElist,
             const Teuchos::RCP<TreeVector>& solution) :
     PKDefaultBase(S, plist, FElist, solution) {}
+=======
+  PKBDFBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+            Teuchos::ParameterList& FElist,
+            const Teuchos::RCP<TreeVector>& solution) :
+      PKDefaultBase(plist, FElist, solution) {}
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   
   // Virtual destructor
   virtual ~PKBDFBase() {}
@@ -69,6 +76,7 @@ class PKBDFBase : public virtual PKDefaultBase,
     return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
 
+<<<<<<< HEAD
   // experimental approach -- calling this indicates that the time
   // integration scheme is changing the value of the solution in
   // state.
@@ -76,6 +84,8 @@ class PKBDFBase : public virtual PKDefaultBase,
   virtual void ChangedSolution(const Teuchos::Ptr<State>& S) = 0;
 
   
+=======
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
  protected: // data
   // preconditioner assembly control
   bool assemble_preconditioner_;

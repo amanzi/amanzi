@@ -33,7 +33,11 @@ class StrongMPC : public MPC<PK_t>,
                   public PKBDFBase {
 
 public:
+<<<<<<< HEAD
   StrongMPC(Teuchos::Ptr<State> S,const Teuchos::RCP<Teuchos::ParameterList>& plist,
+=======
+  StrongMPC(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
             Teuchos::ParameterList& FElist,
             const Teuchos::RCP<TreeVector>& soln);
 
@@ -70,7 +74,10 @@ public:
   // -- Experimental approach -- calling this indicates that the time
   //    integration scheme is changing the value of the solution in
   //    state.
+<<<<<<< HEAD
   virtual void ChangedSolution(const Teuchos::Ptr<State>& S);
+=======
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   virtual void ChangedSolution();
 
   // -- Admissibility of the solution.
@@ -99,12 +106,21 @@ private:
 // Constructor
 // -----------------------------------------------------------------------------
 template<class PK_t>
+<<<<<<< HEAD
 StrongMPC<PK_t>::StrongMPC(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                            Teuchos::ParameterList& FElist,
                            const Teuchos::RCP<TreeVector>& soln) :
   PKDefaultBase(S, plist, FElist, soln),
   MPC<PK_t>(S, plist, FElist, soln),
   PKBDFBase(S, plist, FElist, soln) {}
+=======
+StrongMPC<PK_t>::StrongMPC(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                           Teuchos::ParameterList& FElist,
+                           const Teuchos::RCP<TreeVector>& soln) :
+    PKDefaultBase(plist, FElist, soln),
+    MPC<PK_t>(plist, FElist, soln),
+    PKBDFBase(plist, FElist, soln) {}
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 
 
 // -----------------------------------------------------------------------------
@@ -290,6 +306,7 @@ void StrongMPC<PK_t>::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVect
 // scheme is changing the value of the solution in state.
 // -----------------------------------------------------------------------------
 template<class PK_t>
+<<<<<<< HEAD
 void StrongMPC<PK_t>::ChangedSolution(const Teuchos::Ptr<State>& S) {
   // loop over sub-PKs
   for (typename MPC<PK_t>::SubPKList::iterator pk = MPC<PK_t>::sub_pks_.begin();
@@ -304,6 +321,8 @@ void StrongMPC<PK_t>::ChangedSolution(const Teuchos::Ptr<State>& S) {
 // the value of the solution in state.
 // -----------------------------------------------------------------------------
 template<class PK_t>
+=======
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 void StrongMPC<PK_t>::ChangedSolution() {
   // loop over sub-PKs
   for (typename MPC<PK_t>::SubPKList::iterator pk = MPC<PK_t>::sub_pks_.begin();
@@ -312,7 +331,10 @@ void StrongMPC<PK_t>::ChangedSolution() {
   }
 };
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 // -----------------------------------------------------------------------------
 // Check admissibility of each sub-pk
 // -----------------------------------------------------------------------------

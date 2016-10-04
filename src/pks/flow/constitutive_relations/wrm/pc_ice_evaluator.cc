@@ -22,7 +22,11 @@ PCIceEvaluator::PCIceEvaluator(Teuchos::ParameterList& plist) :
     my_key_ = plist_.get<std::string>("capillary pressure of ice-water key",
             "capillary_pressure_liq_ice");
   }
+<<<<<<< HEAD
   Key domain_name = getDomain(my_key_);
+=======
+Key domain_name = getDomain(my_key_);
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   // -- temperature
  
  temp_key_ = plist_.get<std::string>("temperature key", getKey(domain_name,"temperature"));

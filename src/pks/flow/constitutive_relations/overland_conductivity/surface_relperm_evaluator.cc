@@ -18,6 +18,7 @@ SurfaceRelPermEvaluator::SurfaceRelPermEvaluator(Teuchos::ParameterList& plist) 
   // create the model
   SurfaceRelPermModelFactory fac;
   model_ = fac.createModel(plist_.sublist("surface rel perm model"));
+<<<<<<< HEAD
  
   Key domain;
   if (my_key_.empty()){
@@ -29,15 +30,31 @@ SurfaceRelPermEvaluator::SurfaceRelPermEvaluator(Teuchos::ParameterList& plist) 
 
   // set up the height dependency
   h_key_ = plist_.get<std::string>("ponded depth key", getKey(domain,"ponded_depth"));
+=======
+
+  // set up the height dependency
+  h_key_ = plist_.get<std::string>("ponded depth key", "ponded_depth");
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   dependencies_.insert(h_key_);
 
   // set up the temperature dependency
   is_temp_ = model_->TemperatureDependent();
   if (is_temp_) {
+<<<<<<< HEAD
     uf_key_ = plist_.get<std::string>("unfrozen fraction key", getKey(domain, "unfrozen_fraction"));
     dependencies_.insert(uf_key_);
   }
 
+=======
+    uf_key_ = plist_.get<std::string>("unfrozen fraction key", "unfrozen_fraction");
+    dependencies_.insert(uf_key_);
+  }
+
+  // set up my key
+  if (my_key_ == std::string("")) {
+    my_key_ = "surface-relative_permeability";
+  }
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 }
 
 

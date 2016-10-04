@@ -33,7 +33,10 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 
 add_library(mpc
   weak_mpc.cc
+<<<<<<< HEAD
   weak_mpc_semi_coupled.cc
+=======
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   mpc_coupled_cells.cc
   mpc_surface_subsurface_helpers.cc
   mpc_delegate_ewc.cc
@@ -75,10 +78,13 @@ register_evaluator_with_factory(
   LISTNAME   MPC_PK_FAC
   )
 
+<<<<<<< HEAD
 register_evaluator_with_factory(
   HEADERFILE weak_mpc_semi_coupled_reg.hh
   LISTNAME   MPC_PK_FAC
   )
+=======
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 
 generate_evaluators_registration_header(
   HEADERFILE mpc_registration.hh

@@ -34,12 +34,20 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
   std::string name = plist_->get<std::string>("PK name")+std::string(" EWC");
 
   // Get the mesh
+<<<<<<< HEAD
   Key domain = plist_->get<std::string>("domain name", "");
+=======
+  Key domain = plist_->get<std::string>("domain key", "");
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   if (domain.size() != 0) {
     mesh_ = S->GetMesh(domain);
   } else {
     mesh_ = S->GetMesh("domain");
   }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   // set up a debugger
   db_ = Teuchos::rcp(new Debugger(mesh_, name, *plist_));
 

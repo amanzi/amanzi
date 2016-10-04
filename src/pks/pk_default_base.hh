@@ -24,11 +24,19 @@ class PKDefaultBase : public PK {
 
  public:
 
+<<<<<<< HEAD
   PKDefaultBase(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                 Teuchos::ParameterList& FElist,
                 const Teuchos::RCP<TreeVector>& solution) :
       plist_(plist), solution_(solution) {}
   PKDefaultBase(){}
+=======
+  PKDefaultBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                Teuchos::ParameterList& FElist,
+                const Teuchos::RCP<TreeVector>& solution) :
+      plist_(plist), solution_(solution) {}
+
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   // Virtual destructor
   virtual ~PKDefaultBase() {}
 

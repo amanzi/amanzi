@@ -19,6 +19,7 @@ OverlandPressureWaterContentEvaluator::OverlandPressureWaterContentEvaluator(Teu
   bar_ = plist_.get<bool>("water content bar", false);
   rollover_ = plist_.get<double>("water content rollover", 0.);
 
+<<<<<<< HEAD
   Key domain;
 
   if(!my_key_.empty())
@@ -27,15 +28,26 @@ OverlandPressureWaterContentEvaluator::OverlandPressureWaterContentEvaluator(Teu
   if (my_key_.empty()) {
     domain = plist.get<std::string>("domain name", "surface");
     my_key_ = getKey(domain, "water_content");
+=======
+  if (my_key_.empty()) {
+    my_key_ = "surface-water_content";
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
     if (bar_) my_key_ += std::string("_bar");
     my_key_ = plist_.get<std::string>("water content key", my_key_);
   }
 
   // my dependencies
+<<<<<<< HEAD
   pres_key_ = plist_.get<std::string>("pressure key", getKey(domain, "pressure"));
   dependencies_.insert(pres_key_);
   cv_key_ = plist_.get<std::string>("cell volume key", getKey(domain, "cell_volume"));
   dependencies_.insert(cv_key_);
+=======
+  pres_key_ = plist_.get<std::string>("pressure key", "surface-pressure");
+  dependencies_.insert(pres_key_);
+
+  //  dependencies_.insert(std::string("surface-cell_volume"));
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 }
 
 
@@ -44,8 +56,12 @@ OverlandPressureWaterContentEvaluator::OverlandPressureWaterContentEvaluator(con
     pres_key_(other.pres_key_),
     M_(other.M_),
     bar_(other.bar_),
+<<<<<<< HEAD
     rollover_(other.rollover_),
     cv_key_(other.cv_key_)
+=======
+    rollover_(other.rollover_)
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 {}
 
 
@@ -61,7 +77,11 @@ void OverlandPressureWaterContentEvaluator::EvaluateField_(const Teuchos::Ptr<St
   Epetra_MultiVector& res = *result->ViewComponent("cell",false);
   const Epetra_MultiVector& pres = *S->GetFieldData(pres_key_)
       ->ViewComponent("cell",false);
+<<<<<<< HEAD
   const Epetra_MultiVector& cv = *S->GetFieldData(cv_key_)
+=======
+  const Epetra_MultiVector& cv = *S->GetFieldData("surface-cell_volume")
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
       ->ViewComponent("cell",false);
 
   const double& p_atm = *S->GetScalarData("atmospheric_pressure");
@@ -98,7 +118,11 @@ void OverlandPressureWaterContentEvaluator::EvaluateFieldPartialDerivative_(cons
   Epetra_MultiVector& res = *result->ViewComponent("cell",false);
   const Epetra_MultiVector& pres = *S->GetFieldData(pres_key_)
       ->ViewComponent("cell",false);
+<<<<<<< HEAD
   const Epetra_MultiVector& cv = *S->GetFieldData(cv_key_)
+=======
+  const Epetra_MultiVector& cv = *S->GetFieldData("surface-cell_volume")
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
       ->ViewComponent("cell",false);
 
   const double& p_atm = *S->GetScalarData("atmospheric_pressure");

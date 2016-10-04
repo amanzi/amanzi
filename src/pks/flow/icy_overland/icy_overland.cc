@@ -29,10 +29,16 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // ensure that the overland conductivity uses the unfrozen ponded depth
   // -- set the height key to be eta * h, not just h, for the frozen case.
   ASSERT(plist_->isSublist("overland conductivity evaluator"));
+<<<<<<< HEAD
 
   if (!plist_->sublist("overland conductivity evaluator").isParameter("height key"))
     plist_->sublist("overland conductivity evaluator").set("height key", getKey(domain_,"unfrozen_effective_depth"));
   ASSERT(plist_->sublist("overland conductivity evaluator").get<std::string>("height key") != getKey(domain_,"ponded_depth"));
+=======
+  if (!plist_->sublist("overland conductivity evaluator").isParameter("height key"))
+    plist_->sublist("overland conductivity evaluator").set("height key", "unfrozen_effective_depth");
+  ASSERT(plist_->sublist("overland conductivity evaluator").get<std::string>("height key") != "ponded_depth");
+>>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 
   // Now continue as usual for overland head
   OverlandPressureFlow::SetupPhysicalEvaluators_(S);
