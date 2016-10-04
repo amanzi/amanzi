@@ -15,7 +15,8 @@ namespace FlowRelations {
 SnowSkinPotentialEvaluator::SnowSkinPotentialEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 
-  my_key_ = plist_.get<std::string>("potential key", "snow_skin_potential");
+  if (my_key_.empty()) 
+    my_key_ = plist_.get<std::string>("potential key", "snow_skin_potential");
 
   pd_key_ = plist_.get<std::string>("ponded depth key", "ponded_depth");
   dependencies_.insert(pd_key_);

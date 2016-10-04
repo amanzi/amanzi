@@ -34,7 +34,7 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 
 #define DEBUG_MODE 1
 
-namespace Amanzi {
+namespace ATS {
 
 Coordinator::Coordinator(Teuchos::ParameterList& parameter_list,
                          Teuchos::RCP<State>& S,

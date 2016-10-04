@@ -1,9 +1,32 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+//! PresElevEvaluator: evaluates h + z
 
 /*
-  The elevation evaluator gets the surface elevation, slope, and updates pres + elev.
+  ATS is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*!
+Evaluator type: ""
+
+.. math::
+  h + z
+
+* `"my key`" ``[string]`` **pres_elev** Names the surface water potential variable, h + z [m]
+* `"height key`" ``[string]`` **ponded_depth** Names the height variable. [m]
+* `"elevation key`" ``[string]`` **elevation** Names the elevation variable. [m]
+
+
+NOTE: This is a legacy evaluator, and is not in the factory, so need not be in
+the input spec.  However, we include it here because this could easily be
+abstracted for new potential surfaces, kinematic wave, etc, at which point it
+would need to be added to the factory and the input spec.
+
+NOTE: This could easily be replaced by a generic AdditiveEvaluator_
+
 */
 
 #ifndef AMANZI_FLOWRELATIONS_PRES_ELEV_EVALUATOR_

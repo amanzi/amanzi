@@ -1,9 +1,31 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+//! MeshedElevationEvaluator: evaluates the elevation (z-coordinate) and slope magnitude of a mesh.
 
 /*
-  An elevation evaluator getting values from the volumetric mesh.
+  ATS is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*!
+Evaluator type: `"meshed elevation`"
+
+Evaluates the z-coordinate and the magnitude of the slope :math:``|\nambla_h z|``
+
+* `"elevation key`" ``[string]`` **elevation** Name the elevation variable. [m]
+* `"slope magnitude key`" ``[string]`` **slope_magnitude** Name the elevation variable. [-]
+* `"dynamic mesh`" ``[bool]`` **false** Lets the evaluator know that the elevation changes in time, and adds the `"deformation`" dependency.
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="elevation">
+    <Parameter name="evaluator type" type="string" value="meshed elevation"/>
+  </ParameterList>
+
 */
 
 #ifndef AMANZI_FLOWRELATIONS_MESHED_ELEVATION_EVALUATOR_
