@@ -70,6 +70,7 @@
 #
 #   0.93.0       - defaulted to C++11, update Trilinos to 12.6.1
 #   0.93.1       - update Boost to version 1.61.0
+#   0.93.2       - update Alquimia
 
 include(CMakeParseArguments)
 
@@ -119,7 +120,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 93)
-set (AMANZI_TPLS_VERSION_PATCH 1)
+set (AMANZI_TPLS_VERSION_PATCH 2)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 

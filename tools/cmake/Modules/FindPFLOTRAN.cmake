@@ -26,29 +26,35 @@ include(FindPackageHandleStandardArgs)
 include(PrintVariable)
 include(AddPackageDependency)
 
+message(STATUS "--- JDM: PFLOTRAN >>> In FindPFLOTRAN")
+
 if (PFLOTRAN_LIBRARIES)
 
     # Do nothing. Variables are set. No need to search again
 
 else()
 
+    message(STATUS "--- JDM: PFLOTRAN >>> PFLOTRAN_LIBRARIES not defined")
+
     # Cache variables
     if(PFLOTRAN_DIR)
       set(PFLOTRAN_DIR "${PFLOTRAN_DIR}" CACHE PATH "Path to search for PFLOTRAN include and library files")
+      message(STATUS "--- JDM: PFLOTRAN >>> PFLOTRAN_DIR = ${PFLOTRAN_DIR}")
     endif()
 
     if(PFLOTRAN_LIBRARY_DIR)
         set(PFLOTRAN_LIBRARY_DIR "${PFLOTRAN_LIBRARY_DIR}" CACHE PATH "Path to search for PFLOTRAN library files")
     else()
-      find_path(PFLOTRAN_LIBRARY_DIR NAMES libpflotranchem.a PATHS ${PFLOTRAN_DIR}/src/pflotran)
+      #find_path(PFLOTRAN_LIBRARY_DIR NAMES libpflotranchem.a PATHS ${PFLOTRAN_DIR}/pflotran/src/pflotran)
+      find_path(PFLOTRAN_LIBRARY_DIR NAMES libpflotranchem.a PATHS ${PFLOTRAN_DIR}/lib )
       if ( NOT PFLOTRAN_LIBRARY_DIR )
-        message(SEND_ERROR "Cannot locate PFLTORAN library directory")
+        message(SEND_ERROR "Cannot locate PFLOTRAN library directory")
       endif()
     endif()
 
     # Search for libraries 
     
-    set( PFLOTRAN_TARGET pflotranchem )
+    set( PFLOTRAN_TARGET pflotranchem.a )
 
     find_library(_PFLOTRAN_LIBRARY
                  NAMES pflotranchem
@@ -73,7 +79,6 @@ endif()
 
 # Send useful message if everything is found
 find_package_handle_standard_args(PFLOTRAN DEFAULT_MSG
-                                           PFLOTRAN_INCLUDE_DIRS
 					   PFLOTRAN_LIBRARIES)
 
 # find_package)handle)standard_args should set PFLOTRAN_FOUND but it does not!
