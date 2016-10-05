@@ -47,11 +47,8 @@ void SnowDistribution::Functional( double t_old,
 #endif
 
   // unnecessary here if not debeugging, but doesn't hurt either
-<<<<<<< HEAD
+
   S_next_->GetFieldEvaluator(getKey(domain_,"snow_skin_potential"))->HasFieldChanged(S_next_.ptr(), name_);
-=======
-  S_next_->GetFieldEvaluator("snow_skin_potential")->HasFieldChanged(S_next_.ptr(), name_);
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 
 #if DEBUG_FLAG
   // dump u_old, u_new
@@ -62,11 +59,8 @@ void SnowDistribution::Functional( double t_old,
 
   std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
   vecs.push_back(u.ptr());
-<<<<<<< HEAD
+
   vecs.push_back(S_next_->GetFieldData(getKey(domain_,"snow_skin_potential")).ptr());
-=======
-  vecs.push_back(S_next_->GetFieldData("snow_skin_potential").ptr());
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 
   db_->WriteVectors(vnames, vecs, true);
 #endif
@@ -78,11 +72,8 @@ void SnowDistribution::Functional( double t_old,
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
 #if DEBUG_FLAG
-<<<<<<< HEAD
+
   db_->WriteVector("k_s", S_next_->GetFieldData(getKey(domain_,"upwind_snow_conductivity")).ptr(), true);
-=======
-  db_->WriteVector("k_s", S_next_->GetFieldData("upwind_snow_conductivity").ptr(), true);
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   db_->WriteVector("res (post diffusion)", res.ptr(), true);
 #endif
 
@@ -139,11 +130,8 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   UpdatePermeabilityData_(S_next_.ptr());
   
   Teuchos::RCP<const CompositeVector> cond =
-<<<<<<< HEAD
     S_next_->GetFieldData(getKey(domain_,"upwind_snow_conductivity"));
-=======
-    S_next_->GetFieldData("upwind_snow_conductivity");
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
   Teuchos::RCP<CompositeVector> cond_times_factor = Teuchos::rcp(new CompositeVector(*cond));
   *cond_times_factor = *cond;
   cond_times_factor->Scale(864000);
@@ -165,11 +153,9 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   
   // 2.b Update local matrices diagonal with the accumulation terms.
   // -- update the accumulation derivatives
-<<<<<<< HEAD
+
   const Epetra_MultiVector& cell_volume = *S_next_->GetFieldData("surface-cell_volume")
-=======
-  const Epetra_MultiVector& cell_volume = *S_next_->GetFieldData("surface_cell_volume")
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
       ->ViewComponent("cell",false);
   std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
 
@@ -191,11 +177,9 @@ double SnowDistribution::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   Teuchos::RCP<const CompositeVector> res = du->Data();
   const Epetra_MultiVector& res_c = *res->ViewComponent("cell",false);
   const Epetra_MultiVector& precip_c = *u->Data()->ViewComponent("cell",false);
-<<<<<<< HEAD
+
   const Epetra_MultiVector& cv = *S_next_->GetFieldData("surface-cell_volume")
-=======
-  const Epetra_MultiVector& cv = *S_next_->GetFieldData("surface_cell_volume")
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
       ->ViewComponent("cell",false);
   double dt = S_next_->time() - S_inter_->time();
   std::vector<double> time(1, S_next_->time());

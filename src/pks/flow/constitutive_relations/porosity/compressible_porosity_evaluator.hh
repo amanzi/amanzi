@@ -3,14 +3,10 @@
 /*
   Evaluates the porosity, given a small compressibility of rock.
 
-<<<<<<< HEAD
-=======
   Compressible grains are both physically realistic (based on bulk modulus)
   and a simple way to provide a non-elliptic, diagonal term for helping
   solvers to converge.
 
-
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 

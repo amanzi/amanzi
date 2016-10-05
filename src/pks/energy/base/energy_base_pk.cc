@@ -31,19 +31,12 @@ namespace Amanzi {
 namespace Energy {
 
 
-<<<<<<< HEAD
+
   EnergyBase::EnergyBase(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                        Teuchos::ParameterList& FElist,
                        const Teuchos::RCP<TreeVector>& solution) :
     PKDefaultBase(S, plist, FElist, solution),
     PKPhysicalBDFBase(S, plist, FElist, solution),
-=======
-EnergyBase::EnergyBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                       Teuchos::ParameterList& FElist,
-                       const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, FElist, solution),
-    PKPhysicalBDFBase(plist, FElist, solution),
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
     modify_predictor_with_consistent_faces_(false),
     modify_predictor_for_freezing_(false),
     coupled_to_subsurface_via_temp_(false),
@@ -61,11 +54,8 @@ EnergyBase::EnergyBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
 
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance")) {
-<<<<<<< HEAD
+
     if (domain_ == "surface" || domain_ == "surface_star" || (boost::ends_with(domain_, "surface"))) {
-=======
-    if (domain_ == "surface") {
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
       // h * nl * u at 1C in MJ/mol
       plist_->set("absolute error tolerance", .01 * 55000. * 76.e-6);
     } else if ((domain_ == "domain") || (boost::starts_with(domain_, "column"))) {
@@ -305,7 +295,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
       ss_flux_key_ = plist_->get<std::string>("surface-subsurface energy flux key",
               getKey(domain_, "surface_subsurface_energy_flux"));
     }
-<<<<<<< HEAD
+
     std::string domain_surf;
     if (boost::starts_with(domain_, "column"))
       domain_surf = domain_ + "_surface";
@@ -314,10 +304,6 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     
     S->RequireField(ss_flux_key_)
         ->SetMesh(S->GetMesh(domain_surf))
-=======
-    S->RequireField(ss_flux_key_)
-        ->SetMesh(S->GetMesh("surface"))
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
         ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 
@@ -568,7 +554,7 @@ void EnergyBase::UpdateBoundaryConditions_(
   if (coupled_to_surface_via_flux_) {
     // Diffusive fluxes are given by the residual of the surface equation.
     // Advective fluxes are given by the surface temperature and whatever flux we have.
-<<<<<<< HEAD
+
     Key domain_surf;
     if(domain_.substr(0,6) == "column")
       domain_surf = domain_ + "_surface";
@@ -578,11 +564,6 @@ void EnergyBase::UpdateBoundaryConditions_(
     Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh(domain_surf);
     const Epetra_MultiVector& flux =
       *S->GetFieldData(getKey(domain_,"surface_subsurface_energy_flux"))
-=======
-    Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
-    const Epetra_MultiVector& flux =
-        *S->GetFieldData("surface_subsurface_energy_flux")
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
         ->ViewComponent("cell",false);
 
     int ncells_surface = flux.MyLength();
@@ -694,7 +675,6 @@ bool EnergyBase::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
       local_maxT_c.value = maxT_c;
       local_maxT_c.gid = temp_c.Map().GID(max_c);
 
-<<<<<<< HEAD
       if (domain_.substr(0,6) == "column"){
         MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_SELF);
         MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_SELF);
@@ -706,11 +686,6 @@ bool EnergyBase::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
         }
 
         *vo_->os() << "   cells (min/max): [" << global_minT_c.gid << "] " << global_minT_c.value
-=======
-      MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
-      MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-      *vo_->os() << "   cells (min/max): [" << global_minT_c.gid << "] " << global_minT_c.value
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
                  << ", [" << global_maxT_c.gid << "] " << global_maxT_c.value << std::endl;
 
       if (temp->HasComponent("face")) {
@@ -723,7 +698,7 @@ bool EnergyBase::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
         local_maxT_f.value = maxT_f;
         local_maxT_f.gid = temp_f.Map().GID(max_f);
         
-<<<<<<< HEAD
+
         if (domain_.substr(0,6) == "column"){
           MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_SELF);
           MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_SELF);
@@ -732,10 +707,7 @@ bool EnergyBase::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
           MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
           MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
         }
-=======
-        MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
-        MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
         *vo_->os() << "   cells (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value
                    << ", [" << global_maxT_f.gid << "] " << global_maxT_f.value << std::endl;
       }

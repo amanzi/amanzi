@@ -43,9 +43,7 @@ endforeach(lcv)
 # make the library
 add_library(flow_relations ${sources})
 
-<<<<<<< HEAD
-    
-=======
+	
 if (BUILD_TESTS)
     include_directories(./wrm)
 
@@ -74,4 +72,4 @@ if (BUILD_TESTS)
 
 
 endif()
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+

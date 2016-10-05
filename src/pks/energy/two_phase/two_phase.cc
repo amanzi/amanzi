@@ -24,19 +24,12 @@ namespace Energy {
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------
-<<<<<<< HEAD
+
   TwoPhase::TwoPhase(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                    Teuchos::ParameterList& FElist,
                    const Teuchos::RCP<TreeVector>& solution) :
     PKDefaultBase(S, plist, FElist, solution),
     EnergyBase(S, plist, FElist, solution) {}
-=======
-TwoPhase::TwoPhase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                   Teuchos::ParameterList& FElist,
-                   const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, FElist, solution),
-    EnergyBase(plist, FElist, solution) {}
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 
 // -------------------------------------------------------------
 // Create the physical evaluators for energy, enthalpy, thermal

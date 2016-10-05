@@ -150,11 +150,9 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     *vo_->os() << "Precon update at t = " << t << std::endl;
 
   // update state with the solution up.
-<<<<<<< HEAD
+
   //--ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
-=======
-  ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
   PKDefaultBase::solution_to_state(*up, S_next_);
 
   // update boundary conditions
@@ -211,12 +209,7 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
     // do not add in de/dT if the height is 0
-<<<<<<< HEAD
-    
     const Epetra_MultiVector& pres = *S_next_->GetFieldData(getKey(domain_,"pressure"))
-=======
-    const Epetra_MultiVector& pres = *S_next_->GetFieldData("surface-pressure")
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
         ->ViewComponent("cell",false);
     const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
     for (unsigned int c=0; c!=ncells; ++c) {

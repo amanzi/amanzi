@@ -19,27 +19,20 @@ HeightEvaluator::HeightEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   bar_ = plist_.get<bool>("ponded depth bar", false);
 
-<<<<<<< HEAD
+
   Key domain = getDomain(my_key_);
   my_key_ = getKey(domain, "ponded_depth");
-=======
-  my_key_ = "ponded_depth";
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
   if (bar_) my_key_ += std::string("_bar");
   my_key_ = plist_.get<std::string>("height key", my_key_);
 
   // my dependencies
-<<<<<<< HEAD
+
   dens_key_ = plist_.get<std::string>("mass density key", getKey(domain, "mass_density_liquid"));
   dependencies_.insert(dens_key_);
 
   pres_key_ = plist_.get<std::string>("pressure key", getKey(domain, "pressure"));
-=======
-  dens_key_ = plist_.get<std::string>("mass density key", "surface-mass_density_liquid");
-  dependencies_.insert(dens_key_);
 
-  pres_key_ = plist_.get<std::string>("head key", "surface-pressure");
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   dependencies_.insert(pres_key_);
 
   gravity_key_ = plist_.get<std::string>("gravity key", "gravity");
@@ -48,10 +41,6 @@ HeightEvaluator::HeightEvaluator(Teuchos::ParameterList& plist) :
   // model
   Teuchos::ParameterList model_plist = plist_.sublist("height model parameters");
   model_ = Teuchos::rcp(new HeightModel(model_plist));
-<<<<<<< HEAD
-  
-=======
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 }
 
 
@@ -109,10 +98,6 @@ void HeightEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
     }
   }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 }
 
 
@@ -125,12 +110,9 @@ void HeightEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
 // ---------------------------------------------------------------------------
 void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key) {
-<<<<<<< HEAD
+
   Key dmy_key = getDerivKey(my_key_,wrt_key);
  
-=======
-  Key dmy_key = std::string("d")+my_key_+std::string("_d")+wrt_key;
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   Teuchos::RCP<CompositeVector> dmy;
   if (S->HasField(dmy_key)) {
     // Get the field...
@@ -156,11 +138,7 @@ void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
   for (KeySet::const_iterator dep=dependencies_.begin();
        dep!=dependencies_.end(); ++dep) {
     Teuchos::RCP<CompositeVector> tmp = Teuchos::rcp(new CompositeVector(*dmy));
-<<<<<<< HEAD
-    Key ddep_key11 = getDerivKey(*dep,wrt_key);
-=======
 
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
     if (wrt_key == *dep) {
       // partial F / partial x
       EvaluateFieldPartialDerivative_(S, wrt_key, tmp.ptr());
@@ -174,11 +152,9 @@ void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
     } else if (S->GetFieldEvaluator(*dep)->IsDependency(S, wrt_key)) {
       // partial F / partial dep * ddep/dx
       // -- ddep/dx
-<<<<<<< HEAD
+
       Key ddep_key = getDerivKey(*dep,wrt_key);
-=======
-      Key ddep_key = std::string("d")+*dep+std::string("_d")+wrt_key;
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
       Teuchos::RCP<const CompositeVector> ddep = S->GetFieldData(ddep_key);
       // -- partial F / partial dep
       EvaluateFieldPartialDerivative_(S, *dep, tmp.ptr());
@@ -219,11 +195,7 @@ void HeightEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const double& p_atm = *S->GetScalarData(patm_key_);
   const Epetra_Vector& gravity = *S->GetConstantVectorData(gravity_key_);
   double gz = -gravity[2];  // check this
-<<<<<<< HEAD
-    
-=======
 
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   int ncells = res_c.MyLength();
   if (bar_) {
     for (int c=0; c!=ncells; ++c) {
@@ -251,11 +223,7 @@ void HeightEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>&
   const double& p_atm = *S->GetScalarData(patm_key_);
   const Epetra_Vector& gravity = *S->GetConstantVectorData(gravity_key_);
   double gz = -gravity[2];  // check this
-<<<<<<< HEAD
-  
-=======
 
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   if (wrt_key == pres_key_) {
     int ncells = res_c.MyLength();
     if (bar_) {

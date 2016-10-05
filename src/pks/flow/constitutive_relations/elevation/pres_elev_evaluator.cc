@@ -15,7 +15,7 @@ namespace FlowRelations {
 PresElevEvaluator::PresElevEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 
-<<<<<<< HEAD
+
   Key domain;
   if (plist.isParameter("potential key"))
     domain = getDomain(plist.get<std::string>("potential key"));
@@ -26,13 +26,7 @@ PresElevEvaluator::PresElevEvaluator(Teuchos::ParameterList& plist) :
   pres_key_ = plist_.get<std::string>("height key", getKey(domain,"ponded_depth"));
   dependencies_.insert(pres_key_);
   elev_key_ = plist_.get<std::string>("elevation key", getKey(domain,"elevation"));
-=======
-  my_key_ = plist_.get<std::string>("potential key", "pres_elev");
 
-  pres_key_ = plist_.get<std::string>("height key", "ponded_depth");
-  dependencies_.insert(pres_key_);
-  elev_key_ = plist_.get<std::string>("elevation key", "elevation");
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   dependencies_.insert(elev_key_);
 }
 

@@ -25,22 +25,13 @@ namespace Amanzi {
 class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
 
  public:
-<<<<<<< HEAD
+
   PKPhysicalBDFBase(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                     Teuchos::ParameterList& FElist,
                     const Teuchos::RCP<TreeVector>& solution) :
     PKDefaultBase(S, plist, FElist, solution),
     PKPhysicalBase(S, plist, FElist, solution),
     PKBDFBase(S, plist, FElist, solution) {}
-=======
-  PKPhysicalBDFBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                    Teuchos::ParameterList& FElist,
-                    const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, FElist, solution),
-      PKPhysicalBase(plist, FElist, solution),
-      PKBDFBase(plist, FElist, solution) {}
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
-
   virtual void setup(const Teuchos::Ptr<State>& S);
 
   // initialize.  Note both BDFBase and PhysicalBase have initialize()
@@ -64,10 +55,9 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
   // -- Experimental approach -- calling this indicates that the time
   //    integration scheme is changing the value of the solution in
   //    state.
-<<<<<<< HEAD
+
   virtual void ChangedSolution(const Teuchos::Ptr<State>& S);
-=======
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
   virtual void ChangedSolution();
 
   virtual double BoundaryValue(const Teuchos::RCP<const Amanzi::CompositeVector>& solution, int face_id);

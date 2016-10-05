@@ -60,19 +60,13 @@ TEST(MPC_SUBSURFACE_HYDROLOGY) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(global_list, "PK");
   Teuchos::RCP<Teuchos::ParameterList> fe_list = Teuchos::sublist(state_list, "field evaluators");
-<<<<<<< HEAD
- 
-=======
-  Flow::Permafrost mpc(pk_list, *fe_list, soln);
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 
   Teuchos::RCP<State> S = Teuchos::rcp(new State(*state_list));
   S->RegisterDomainMesh(mesh);
  
-<<<<<<< HEAD
+
   Flow::Permafrost mpc(S.ptr(), pk_list, *fe_list, soln);
-=======
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
   mpc.setup(S.ptr());
 
   Teuchos::ParameterList temp_eval_plist;
@@ -160,20 +154,15 @@ TEST(MPC_SUBSURFACE_ENERGY) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(global_list, "PK");
   Teuchos::RCP<Teuchos::ParameterList> fe_list = Teuchos::sublist(state_list, "field evaluators");
-<<<<<<< HEAD
-  
-=======
-  Energy::ThreePhase mpc(pk_list, *fe_list, soln);
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
 
   Teuchos::RCP<State> S = Teuchos::rcp(new State(*state_list));
   S->RegisterDomainMesh(mesh);
   S->RequireScalar("atmospheric_pressure");
  
-<<<<<<< HEAD
+
   Energy::ThreePhase mpc(S.ptr(), pk_list, *fe_list, soln);
-=======
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
   mpc.setup(S.ptr());
 
   Teuchos::ParameterList pres_eval_plist;
@@ -270,19 +259,13 @@ TEST(MPC_SUBSURFACE_THERMAL_HYDROLOGY) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(global_list, "PK");
   Teuchos::RCP<Teuchos::ParameterList> fe_list = Teuchos::sublist(state_list, "field evaluators");
-<<<<<<< HEAD
- 
-=======
-  MPCSubsurface mpc(pk_list, *fe_list, soln);
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 
   Teuchos::RCP<State> S = Teuchos::rcp(new State(*state_list));
   S->RegisterDomainMesh(mesh);
  
-<<<<<<< HEAD
+
   MPCSubsurface mpc(S.ptr(), pk_list, *fe_list, soln);
-=======
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
   mpc.setup(S.ptr());
   S->Setup();
 

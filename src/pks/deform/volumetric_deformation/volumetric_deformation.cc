@@ -29,19 +29,12 @@ using namespace Amanzi::AmanziMesh;
 
 // RegisteredPKFactory<VolumetricDeformation> VolumetricDeformation::reg_("volumetric deformation");
 
-<<<<<<< HEAD
   VolumetricDeformation::VolumetricDeformation(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution):
     PKDefaultBase(S, plist, FElist, solution),
     PKPhysicalBase(S, plist, FElist, solution) {
-=======
-VolumetricDeformation::VolumetricDeformation(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        Teuchos::ParameterList& FElist,
-        const Teuchos::RCP<TreeVector>& solution):
-  PKDefaultBase(plist, FElist, solution),
-  PKPhysicalBase(plist, FElist, solution) {
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
   poro_key_ = plist_->get<std::string>("porosity key","base_porosity");
   dt_ = plist_->get<double>("initial time step", 1);
   deform_value_ = 0.;

@@ -18,10 +18,9 @@ namespace FlowRelations {
 
 const int FLOW_WRM_MUALEM = 1;
 const int FLOW_WRM_BURDINE = 2;
-<<<<<<< HEAD
-=======
+
 const int FLOW_WRM_ONE = 3;
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
 
 class WRM {
 

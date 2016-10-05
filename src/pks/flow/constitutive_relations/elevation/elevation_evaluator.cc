@@ -16,7 +16,7 @@ ElevationEvaluator::ElevationEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist),
     updated_once_(false), 
     dynamic_mesh_(false) {
-<<<<<<< HEAD
+
   Key domain;
   if (plist.isParameter("elevation key"))
     domain = getDomain(plist.get<std::string>("elevation key"));
@@ -26,11 +26,7 @@ ElevationEvaluator::ElevationEvaluator(Teuchos::ParameterList& plist) :
   my_keys_.push_back(plist_.get<std::string>("elevation key", getKey(domain,"elevation")));
   my_keys_.push_back(plist_.get<std::string>("slope magnitude key", getKey(domain,"slope_magnitude")));
   
-=======
-  my_keys_.push_back(plist_.get<std::string>("elevation key", "elevation"));
-  my_keys_.push_back(plist_.get<std::string>("slope magnitude key", "slope_magnitude"));
 
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   // If the mesh changes dynamically (e.g. due to the presence of a deformation
   // pk, then we must make sure that elevation is recomputed every time the 
   // mesh has been deformed. The indicator for the mesh deformation event is the 

@@ -27,10 +27,7 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
   } else {
     ASSERT(0);
   }
-<<<<<<< HEAD
-=======
 
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   // my keys
   Key key;
   if (mode_ == EOS_MODE_MOLAR || mode_ == EOS_MODE_BOTH) {
@@ -42,12 +39,7 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
     key = plist_.get<std::string>("mass density key");
     my_keys_.push_back(key);
   }
-<<<<<<< HEAD
- 
-  
-=======
 
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   // Set up my dependencies.
   Key domain_name = getDomain(key);
 

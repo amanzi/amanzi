@@ -140,17 +140,14 @@ double PKPhysicalBDFBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       ENorm_t l_err;
       l_err.value = enorm_comp;
       l_err.gid = dvec_v.Map().GID(enorm_loc);
-<<<<<<< HEAD
+
       int ierr;
       if (domain_.substr(0,6) == "column")
         ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_SELF);
       else
         ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
       
-=======
 
-      int ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
       ASSERT(!ierr);
       *vo_->os() << "  ENorm (" << *comp << ") = " << err.value << "[" << err.gid << "] (" << infnorm << ")" << std::endl;
     }
@@ -159,15 +156,13 @@ double PKPhysicalBDFBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   }
 
   double enorm_val_l = enorm_val;
-<<<<<<< HEAD
+
   int ierr;
   if (domain_.substr(0,6) == "column")
     ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_SELF);
   else
     ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-=======
-  int ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
   ASSERT(!ierr);
   return enorm_val;
 };
@@ -240,17 +235,12 @@ int PKPhysicalBDFBase::BoundaryDirection(int face_id) {
   return dirs[std::find(faces.begin(), faces.end(), face_id) - faces.begin()];
 }
 
-
-<<<<<<< HEAD
-=======
-  
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
-// -----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 // Experimental approach -- calling this indicates that the time
 // integration scheme is changing the value of the solution in
 // state.
 // -----------------------------------------------------------------------------
-<<<<<<< HEAD
+
 void PKPhysicalBDFBase::ChangedSolution(const Teuchos::Ptr<State>& S) {
   if (S == Teuchos::null) {
     solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
@@ -275,10 +265,5 @@ void PKPhysicalBDFBase::ChangedSolution() {
   solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
 };
   
-=======
-void PKPhysicalBDFBase::ChangedSolution() {
-  solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
-};
 
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 } // namespace

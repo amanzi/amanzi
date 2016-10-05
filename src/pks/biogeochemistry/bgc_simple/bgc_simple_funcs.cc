@@ -62,45 +62,21 @@ namespace BGC {
   if (doy == 0) doy = 365;
   double daylen = DayLength(met.lat, doy);
 
-<<<<<<< HEAD
-  if (doy == 190) {
-    std::cout << "we are here!" << std::endl;
-  }
-  if (doy == 276) {
-    std::cout << "we are here!" << std::endl;
-  }
-  
+
   for (int k=0; k!=ncells; ++k) {
      TransArr[k] = 0.0 ;
   }
-  
-=======
-  for (int k=0; k!=ncells; ++k) {
-     TransArr[k] = 0.0 ;
-  }
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
 
   double PAR = met.qSWin * 2.3 * 24.0 *60.0 / daylen; // convert to PAR at the daytime
 
   // determine the thaw depth
   double thawD = PermafrostDepth(SoilTArr,SoilThicknessArr,273.15);
 
-<<<<<<< HEAD
-  //---------------------------------------------------------------------------------
-  //calculate shaded radiations for soil
-  double radi = met.qSWin;
-  for (std::vector<Teuchos::RCP<PFT> >::iterator pft_iter=pftarr.begin();
-       pft_iter!=pftarr.end(); ++pft_iter) {
-        radi *= std::exp(-(*pft_iter)->LER * (*pft_iter)->lai);
-   }
-  sw_shaded = radi;
-  //----------------------------------------------------------------------
-  //go through the PFT array
-  
-=======
+
   //----------------------------------------------------------------------
   // loop through the list of PFTs
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
   for (std::vector<Teuchos::RCP<PFT> >::iterator pft_iter=pftarr.begin();
        pft_iter!=pftarr.end(); ++pft_iter) {
 
@@ -309,19 +285,13 @@ namespace BGC {
         rootresp = leafresp / pft.leaf2rootratio * pft.root2leafrespratio;
         stemresp = leafresp / pft.leaf2stemratio * pft.stem2leafrespratio;
         double NPP = - leafresp - rootresp - stemresp;
-<<<<<<< HEAD
-        for (int leaf_layer=0; leaf_layer!=max_leaf_layers; ++leaf_layer){
-    	    relCLNCa = -0.1802 * pft.LER * leaf_layer +1.0; //see Ali et al 2015
-	    relCLNCa = std::max(0.2,relCLNCa);
-	    relCLNCa = std:: min(1.0,relCLNCa);
-            pft.annCBalance[leaf_layer] += NPP *  relCLNCa ;
-=======
+
         for (int leaf_layer=0; leaf_layer!=max_leaf_layers; ++leaf_layer) {
           relCLNCa = -0.1802 * pft.LER * leaf_layer +1.0; //see Ali et al 2015
           relCLNCa = std::max(0.2,relCLNCa);
           relCLNCa = std:: min(1.0,relCLNCa);
           pft.annCBalance[leaf_layer] += NPP *  relCLNCa ;
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
         }
 
         leafresptotal = dt * Cv*leafresp*gridarea;
@@ -672,13 +642,8 @@ namespace BGC {
       //=============================================================================
       //distribution transpirations
       for (int k=0; k!=ncells; ++k) {
-<<<<<<< HEAD
-	rootFrac = pft.Broot > 0. ? pft.BRootSoil[k] / pft.Broot : 0.;
-	TransArr[k] += pft.ET * rootFrac/(gridarea * SoilThicknessArr[k] * dt);  //unit: kg H2O/m3/s
-=======
         rootFrac = pft.Broot > 0. ? pft.BRootSoil[k] / pft.Broot : 0.;
         TransArr[k] += pft.ET * rootFrac/(gridarea * SoilThicknessArr[k] * dt);  //unit: kg H2O/m3/s
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
       }
 
     } else {  //biomass check
@@ -713,8 +678,6 @@ namespace BGC {
     } //biomass check
   } // loop for different PFTs
 
-<<<<<<< HEAD
-=======
   //---------------------------------------------------------------------------------
   //calculate shaded radiations for soil
   double radi = met.qSWin;
@@ -726,7 +689,7 @@ namespace BGC {
   sw_shaded = radi;
 
       
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
  //=========================================================================
   // do soil decomposition
   for (int k=0; k!=ncells; ++k) {

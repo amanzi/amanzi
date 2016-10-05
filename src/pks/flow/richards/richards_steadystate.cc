@@ -7,19 +7,12 @@ namespace Flow {
 #define DEBUG_FLAG 1
 #define DEBUG_RES_FLAG 0
 
-<<<<<<< HEAD
-  RichardsSteadyState::RichardsSteadyState(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
+
+RichardsSteadyState::RichardsSteadyState(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& solution) :
     PKDefaultBase(S, plist, FElist, solution),
     Richards(S, plist, FElist, solution) {}
-=======
-RichardsSteadyState::RichardsSteadyState(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        Teuchos::ParameterList& FElist,
-        const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, FElist, solution),
-    Richards(plist, FElist, solution) {}
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 
 void RichardsSteadyState::setup(const Teuchos::Ptr<State>& S) {
   max_iters_ = plist_->sublist("time integrator").get<int>("max iterations", 10);
@@ -190,7 +183,7 @@ void RichardsSteadyState::Functional(double t_old, double t_new, Teuchos::RCP<Tr
 #if DEBUG_FLAG
   // dump s_old, s_new
   vnames[0] = "sl_old"; vnames[1] = "sl_new";
-<<<<<<< HEAD
+
   vecs[0] = S_inter_->GetFieldData(getKey(domain_,"saturation_liquid")).ptr();
   vecs[1] = S_next_->GetFieldData(getKey(domain_,"saturation_liquid")).ptr();
 
@@ -203,20 +196,7 @@ void RichardsSteadyState::Functional(double t_old, double t_new, Teuchos::RCP<Tr
 
   vnames.push_back("k_rel");
   vecs.push_back(S_next_->GetFieldData(getKey(domain_,"relative_permeability")).ptr());
-=======
-  vecs[0] = S_inter_->GetFieldData("saturation_liquid").ptr();
-  vecs[1] = S_next_->GetFieldData("saturation_liquid").ptr();
 
-  if (S_next_->HasField("saturation_ice")) {
-    vnames.push_back("si_old");
-    vnames.push_back("si_new");
-    vecs.push_back(S_inter_->GetFieldData("saturation_ice").ptr());
-    vecs.push_back(S_next_->GetFieldData("saturation_ice").ptr());
-  }
-
-  vnames.push_back("k_rel");
-  vecs.push_back(S_next_->GetFieldData("relative_permeability").ptr());
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   db_->WriteVectors(vnames,vecs,true);
 
   db_->WriteVector("res (post diffusion)", res.ptr(), true);

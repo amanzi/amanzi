@@ -70,7 +70,6 @@ void Coordinator::coordinator_init() {
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list, pk_name);
   pk_list->set("PK name", pk_name);
  
-<<<<<<< HEAD
   pk_ = pk_factory.CreatePK(S_.ptr(), pk_list, S_->FEList(), soln_);
   pk_->setup(S_.ptr());
 
@@ -93,15 +92,6 @@ void Coordinator::coordinator_init() {
   else
     checkpoint_ = Teuchos::rcp(new Checkpoint(chkp_plist, comm_));
   
-=======
-  pk_ = pk_factory.CreatePK(pk_list, S_->FEList(), soln_);
-  pk_->setup(S_.ptr());
-
-  // create the checkpointing
-  Teuchos::ParameterList& chkp_plist = parameter_list_->sublist("checkpoint");
-  checkpoint_ = Teuchos::rcp(new Checkpoint(chkp_plist, comm_));
-
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   // create the observations
   Teuchos::ParameterList& observation_plist = parameter_list_->sublist("observations");
   observations_ = Teuchos::rcp(new UnstructuredObservations(observation_plist,
@@ -187,14 +177,11 @@ void Coordinator::initialize() {
 */    
     Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist, comm_));
     vis->set_mesh(surface_3d);
-<<<<<<< HEAD
+
     //vis->CreateFiles();
     vis->set_mesh(surface);
     vis->CreateFiles();
-=======
-    vis->CreateFiles();
-    vis->set_mesh(surface);
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
     visualization_.push_back(vis);
     surface_done = true;
 
@@ -473,17 +460,11 @@ bool Coordinator::advance(double dt) {
 
   if (!fail) {
     // commit the state
-<<<<<<< HEAD
-    if (coordinator_list_->get<bool>("subcycle"))
-      {}
-    else
-      {
+    if (coordinator_list_->get<bool>("subcycle", false)){}
+    else{
         pk_->commit_state(dt, S_next_);
       }
-=======
-    pk_->commit_state(dt, S_next_);
-    
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
     // make observations, vis, and checkpoints
     observations_->MakeObservations(*S_next_);
     visualize();

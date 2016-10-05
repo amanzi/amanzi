@@ -23,21 +23,13 @@ namespace Amanzi {
 class PKPhysicalExplicitBase : public PKExplicitBase, public PKPhysicalBase {
 
  public:
-<<<<<<< HEAD
+
   PKPhysicalExplicitBase(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
                     Teuchos::ParameterList& FElist,
                     const Teuchos::RCP<TreeVector>& solution) :
     PKDefaultBase(S, plist, FElist, solution),
     PKPhysicalBase(S, plist, FElist, solution),
     PKExplicitBase(S, plist, FElist, solution) {}
-=======
-  PKPhysicalExplicitBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                    Teuchos::ParameterList& FElist,
-                    const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, FElist, solution),
-      PKPhysicalBase(plist, FElist, solution),
-      PKExplicitBase(plist, FElist, solution) {}
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 
   virtual void setup(const Teuchos::Ptr<State>& S) {
     PKPhysicalBase::setup(S);

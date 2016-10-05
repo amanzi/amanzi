@@ -17,7 +17,6 @@ namespace FlowRelations {
 
 IcyHeightEvaluator::IcyHeightEvaluator(Teuchos::ParameterList& plist) :
     HeightEvaluator(plist) {
-<<<<<<< HEAD
 
   Key domain = getDomain(my_key_);
   // my extra dependencies
@@ -25,22 +24,13 @@ IcyHeightEvaluator::IcyHeightEvaluator(Teuchos::ParameterList& plist) :
   dependencies_.insert(dens_ice_key_);
 
   unfrozen_frac_key_ = plist_.get<std::string>("unfrozen fraction key", getKey(domain,"unfrozen_fraction"));
-=======
-  // my extra dependencies
-  dens_ice_key_ = plist_.get<std::string>("ice mass density key", "surface-mass_density_ice");
-  dependencies_.insert(dens_ice_key_);
 
-  unfrozen_frac_key_ = plist_.get<std::string>("unfrozen fraction key", "unfrozen_fraction");
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   dependencies_.insert(unfrozen_frac_key_);
 
   // model
   Teuchos::ParameterList model_plist = plist_.sublist("height model parameters");
   icy_model_ = Teuchos::rcp(new IcyHeightModel(model_plist));
-<<<<<<< HEAD
-=======
 
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
 }
 
 

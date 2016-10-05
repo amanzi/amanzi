@@ -42,19 +42,12 @@ class PKFactory {
 
 public:
   typedef std::map<std::string,
-<<<<<<< HEAD
+
                    PK* (*)(Teuchos::Ptr<State> S,const Teuchos::RCP<Teuchos::ParameterList>&,
                            Teuchos::ParameterList&,
                            const Teuchos::RCP<TreeVector>&)> map_type;
 
   static Teuchos::RCP<PK> CreatePK(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
-=======
-                   PK* (*)(const Teuchos::RCP<Teuchos::ParameterList>&,
-                           Teuchos::ParameterList&,
-                           const Teuchos::RCP<TreeVector>&)> map_type;
-
-  static Teuchos::RCP<PK> CreatePK(const Teuchos::RCP<Teuchos::ParameterList>& plist,
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
           Teuchos::ParameterList& FElist,
           const Teuchos::RCP<TreeVector>& soln) {
     std::string s = plist->get<std::string>("PK type");
@@ -69,11 +62,9 @@ public:
       Errors::Message message(errmsg.str());
       Exceptions::amanzi_throw(message);
     }
-<<<<<<< HEAD
+
     return Teuchos::rcp(iter->second(S,plist, FElist, soln));
-=======
-    return Teuchos::rcp(iter->second(plist, FElist, soln));
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
   }
 
 protected:
@@ -89,17 +80,12 @@ private:
 };
 
 
-<<<<<<< HEAD
+
   template<typename T> PK* CreateT(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
         Teuchos::ParameterList& FElist,
         const Teuchos::RCP<TreeVector>& soln) {
     return new T(S, plist, FElist, soln);
-=======
-template<typename T> PK* CreateT(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        Teuchos::ParameterList& FElist,
-        const Teuchos::RCP<TreeVector>& soln) {
-  return new T(plist, FElist, soln);
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
+
 }
 
 
@@ -110,11 +96,8 @@ public:
   // case a name s is already in the map? (i.e. two implementations trying to
   // call themselves the same thing) --etc
   RegisteredPKFactory(const std::string& s) {
-<<<<<<< HEAD
+
     GetMap()->insert(std::pair<std::string, PK* (*)(Teuchos::Ptr<State>, const Teuchos::RCP<Teuchos::ParameterList>&,
-=======
-    GetMap()->insert(std::pair<std::string, PK* (*)(const Teuchos::RCP<Teuchos::ParameterList>&,
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
             Teuchos::ParameterList&,
             const Teuchos::RCP<TreeVector>&)>(s, &CreateT<T>));
   }

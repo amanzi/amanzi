@@ -17,11 +17,8 @@ namespace Energy {
 EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   if (my_key_.empty()) {
-<<<<<<< HEAD
+
     my_key_ = plist_.get<std::string>("enthalpy key", "surface-enthalpy_liquid");
-=======
-    my_key_ = plist_.get<std::string>("enthalpy key", "enthalpy_liquid");
->>>>>>> 3712d1ddeb1cfe9f074d84ba39b930e7f970357e
   }
 
   // Set up my dependencies.
