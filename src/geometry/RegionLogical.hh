@@ -1,18 +1,42 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/*
-  A region defined by a logical operation on one or two other regions
- 
-  Operations supported on a single region are only the NOT operation
- 
-  Operations supported on a pair of regions are UNION, SUBTRACT and
-  INTERSECT
+//! RegionLogical: A region defined by a logical operation on one or two other regions
 
+/*
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella
+*/
+
+/*!
+
+The list *region: logical* defines logical operations on regions allow for
+more advanced region definitions. At this time the logical region allows for
+logical operations on a list of regions.  *union* and *intersection* are
+self-evident. In the case of *subtraction*, subtraction is performed from the
+first region in the list.  The *complement* is a special case in that it is
+the only case that operates on single region, and returns the complement to it
+within the domain ENTIRE_DOMAIN.  Currently, multi-region booleans are not
+supported in the same expression.
+
+* `"operation`" ``[string]`` defines operation on the list of regions.
+  Available options are *union*, *intersect*, *subtract*, *complement*
+
+* `"regions`" ``[Array(string)]`` specifies the list of involved regions.
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="LOWER_LAYERs">
+    <ParameterList name="region: logical">
+      <Parameter name="operation" type="string" value="union"/>
+      <Parameter name="regions" type="Array(string)" value="{Middle1, Middle2, Bottom}"/>
+    </ParameterList>
+  </ParameterList>
+
 */
 
 #ifndef AMANZI_REGION_LOGICAL_HH_

@@ -1,16 +1,42 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+//! RegionLineSegment: A line segment, defined by two points in space.
+
 /*
-
- A region is defined by line segment, or in other words by two point in space.
- It includes all cells that intersect with the line segment
-
  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Authors: Daniil Svyatsky (dasvyat@lanl.gov)
-
 */
+
+/*!
+
+List *region: line segment* desribes a region defined by a line
+segment. This region is a set of cells which intersect with a line
+segment.  The line segment is allowed to intersect with one or more cells. Zero length
+line segments are allowed. The line segment is defined by its ends
+points.
+
+* `"end coordinate"` ``[Array(double)]`` Location of one end of a line
+  segment.
+
+* `"opposite end coordinate`" ``[Array(double)]`` Location of the opposite
+  end of a line segment.
+
+Example:
+
+.. code-block:: xml
+
+   <ParameterList name="WELL"> <!-- parent list -->
+      <ParameterList name="region: line segment">
+        <Parameter name="end coordinate" type="Array(double)" value="{497542.44, 5393755.77, 0.0}"/>
+        <Parameter name="opposite end coordinate" type="Array(double)" value="{497542.44, 5393755.77, 100.0}"/>
+      </ParameterList>
+    </ParameterList>     
+
+ */
+
 
 #ifndef AMANZI_LINE_SEGMENT_REGION_HH
 #define AMANZI_LINE_SEGMENT_REGION_HH

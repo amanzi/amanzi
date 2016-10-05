@@ -194,7 +194,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Do we need to initialize chemsitry?
   int ierr = 0;
-  if (fabs(initial_conditions_time_ - S->time()) < 1e-8 * fabs(S->time())) {
+  if (fabs(initial_conditions_time_ - S->time()) < 1e-8 * (1.0 + fabs(S->time()))) {
     for (auto it = chem_initial_conditions_.begin(); it != chem_initial_conditions_.end(); ++it) {
       std::string region = it->first;
       std::string condition = it->second;

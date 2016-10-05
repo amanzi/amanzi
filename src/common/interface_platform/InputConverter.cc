@@ -872,13 +872,16 @@ std::string InputConverter::GetTextContentS_(
     if (val == *it) return val;
   }
 
-  char* tagname = mm.transcode(node->getNodeName());
-  Errors::Message msg;
-  msg << "Validation of content \"" << val << "\" for node \"" << tagname << "\" failed.\n";
-  msg << "Available options: \"" << options << "\".\n";
-  msg << "Please correct and try again.\n";
-  Exceptions::amanzi_throw(msg);
-  return "";
+  if (exception) { 
+    char* tagname = mm.transcode(node->getNodeName());
+    Errors::Message msg;
+    msg << "Validation of content \"" << val << "\" for node \"" << tagname << "\" failed.\n";
+    msg << "Available options: \"" << options << "\".\n";
+    msg << "Please correct and try again.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return val;
 }
 
 

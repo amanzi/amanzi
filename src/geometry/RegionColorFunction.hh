@@ -1,10 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+//! RegionColorFunction: A region defined by the value of an indicator function in a file.
+
 /*
-  A region defined by the value of an indicator function in a file
-
-  The region will consist of all mesh elements for which the indicator
-  function is a particular value at their centroids
-
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -13,6 +10,40 @@
   Authors: Rao Garimella
 */
 
+/*!
+
+The list *region: color function* defines a region based a specified
+integer color, *value*, in a structured color function file,
+*file*. The format of the color function file is given below in
+the "Tabulated function file format" section. As
+shown in the file, the color values may be specified at the nodes or
+cells of the color function grid. A computational cell is assigned
+the 'color' of the data grid cell containing its cell centroid
+(cell-based colors) or the data grid nearest its cell-centroid
+(node-based colors). Computational cells sets are then built from
+all cells with the specified color *Value*.
+
+In order to avoid, gaps and overlaps in specifying materials, it is
+strongly recommended that regions be defined using a single color
+function file. 
+
+* `"file`" ``[string]`` File name.
+
+* `"value`" ``[int]`` Color that defines the set in a tabulated function file.
+
+Example:
+
+.. code-block:: xml
+
+   <ParameterList name="SOIL_TOP">
+     <ParameterList name="region: color function">
+       <Parameter name="file" type="string" value="geology_resamp_2D.tf3"/>
+       <Parameter name="value" type="int" value="1"/>
+     </ParameterList>
+   </ParameterList>
+
+*/
+  
 #ifndef AMANZI_REGION_COLOR_FUNCTION_HH_
 #define AMANZI_REGION_COLOR_FUNCTION_HH_
 
