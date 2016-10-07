@@ -1445,7 +1445,7 @@ void InputConverterS::ParseGeochemistry_()
 	  std::string inpfilename = 
 	    (element->hasAttribute(mm.transcode("input_filename"))
 	     ? GetAttributeValueS_(element, "input_filename")
-	     : CreateINFile(xmlfilename_));
+	     : CreateINFile_(xmlfilename_, rank_));
 	  AddToTable(table, MakePPPrefix("Chemistry", "Engine_Input_File"), MakePPEntry(inpfilename));
 	} else {
 	  Errors::Message msg;
