@@ -61,7 +61,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   double t0, t1, dt0, t0_steady, t1_steady, dt0_steady, dt_max, dt_max_steady;
   char *method, *tagname;
   bool flag_steady(false); 
-  std::string mode_d, method_d, dt0_d, dt_cut_d, dt_inc_d, filename, dt_max_d;
+  std::string mode_d, method_d, dt0_d, dt_cut_d, dt_inc_d, dt_max_d;
 
   mode_d = GetAttributeValueS_(node, "mode", TYPE_NONE, false, "");
   method_d = GetAttributeValueS_(node, "method", TYPE_NONE, false, "");
@@ -112,12 +112,20 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
       tp_dt0[t0] = dt0;
       tp_dt_max[t0] = dt_max;
       tp_max_cycles[t0] = max_cycles;
-
-      filename = GetAttributeValueS_(inode, "restart", TYPE_NONE, false, "");
     }
+  }
 
-    if (init_filename_.size() == 0)
-        init_filename_ = GetAttributeValueS_(inode, "initialize", TYPE_NONE, false, "");
+  std::string filename;
+  node = GetUniqueElementByTagsString_("execution_controls, restart", flag);
+  if (flag) {
+    filename = GetTextContentS_(node, "", false);
+    if (filename.size() == 0) ThrowErrorIllformed_("execution_controls", "restart", "filename");
+  }
+
+  node = GetUniqueElementByTagsString_("execution_controls, initialize", flag);
+  if (flag) {
+    init_filename_ = GetTextContentS_(node, "", false);
+    if (init_filename_.size() == 0) ThrowErrorIllformed_("execution_controls", "initialize", "filename");
   }
 
   // time for initial conditions
@@ -338,7 +346,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
   double t0, t1, dt0, dt_max;
   char *method, *tagname;
   bool flag_steady(false); 
-  std::string method_d, dt0_d, dt_max_d, mode_d, dt_cut_d, dt_inc_d, filename;
+  std::string method_d, dt0_d, dt_max_d, mode_d, dt_cut_d, dt_inc_d;
 
   method_d = GetAttributeValueS_(node, "method", TYPE_NONE, false, "");
   dt0_d = GetAttributeValueS_(node, "init_dt", TYPE_TIME, false, "0.0");
@@ -383,9 +391,20 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
           inode, "reduction_factor", TYPE_TIME, false, dt_cut_d), unit);
       dt_inc_[mode] = ConvertUnits_(GetAttributeValueS_(
           inode, "increase_factor", TYPE_TIME, false, dt_inc_d), unit);
-
-      filename = GetAttributeValueS_(inode, "restart", TYPE_NONE, false, "");
     }
+  }
+
+  std::string filename;
+  node = GetUniqueElementByTagsString_("execution_controls, restart", flag);
+  if (flag) {
+    filename = GetTextContentS_(node, "", false);
+    if (filename.size() == 0) ThrowErrorIllformed_("execution_controls", "restart", "filename");
+  }
+
+  node = GetUniqueElementByTagsString_("execution_controls, initialize", flag);
+  if (flag) {
+    init_filename_ = GetTextContentS_(node, "", false);
+    if (init_filename_.size() == 0) ThrowErrorIllformed_("execution_controls", "initialize", "filename");
   }
 
   // new version of process_kernels

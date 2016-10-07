@@ -34,6 +34,7 @@ set(MSTK_CMAKE_CACHE_ARGS
 		    -DPREFER_STATIC_LIBRARIES:BOOL=${PREFER_STATIC_LIBRARIES}
                     -DENABLE_PARALLEL:BOOL=TRUE
                     -DENABLE_ExodusII:BOOL=TRUE
+                    -DENABLE_EXODUSII:BOOL=TRUE
                     -DENABLE_ZOLTAN:BOOL=TRUE
                     -DENABLE_METIS:BOOL=TRUE
                     -DMETIS_MAJOR_VER:STRING=5

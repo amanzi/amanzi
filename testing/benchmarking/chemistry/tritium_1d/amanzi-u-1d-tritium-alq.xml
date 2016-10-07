@@ -4,7 +4,7 @@
     <author>Sergi Molins</author>
     <units>
       <length_unit>m</length_unit>
-      <time_unit>y</time_unit>
+      <time_unit>s</time_unit>
       <mass_unit>kg</mass_unit>
       <conc_unit>molar</conc_unit>
     </units>
