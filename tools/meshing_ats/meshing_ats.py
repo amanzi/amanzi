@@ -546,7 +546,7 @@ class Mesh3D(object):
 
                 elif layer_type.lower() == 'cell':
                     # interpolate cell thicknesses to node thicknesses
-                    import scipy.interplate
+                    import scipy.interpolate
                     centroids = mesh2D.cell_centroids()
                     interp = scipy.interpolate.interp2d(centroids[:,0], centroids[:,1], layer_datum, kind='linear')
                     layer_bottom[:] = coords[:,cell_layer_start,2] - interp(mesh2D.coords[:,0], mesh2D.coords[:,1])

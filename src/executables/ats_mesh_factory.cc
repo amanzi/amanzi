@@ -28,6 +28,8 @@ createMeshes(Teuchos::ParameterList& mesh_plist,
              const Teuchos::RCP<Epetra_MpiComm>& comm,
              const Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel>& gm,
              Amanzi::State& S) {
+  int num_procs = comm->NumProc();
+  int rank = comm->MyPID();
 
   // create the MSTK factory
   Amanzi::AmanziMesh::MeshFactory factory(comm.get());
@@ -95,38 +97,38 @@ createMeshes(Teuchos::ParameterList& mesh_plist,
   ASSERT(!mesh.is_null());
 
   // mesh verification
-  bool verify = mesh_params.get<bool>("verify mesh", false);
+  bool verify = mesh_plist.get<bool>("verify mesh", false);
   if (verify) {
-    std::cerr << "Verifying mesh with Mesh Audit..." << std::endl;
-    if (size == 1) {
+    if (rank == 0)
+      std::cout << "Verifying mesh with Mesh Audit..." << std::endl;
+    if (num_procs == 1) {
       Amanzi::MeshAudit mesh_auditor(mesh);
       int status = mesh_auditor.Verify();
       if (status == 0) {
         std::cout << "Mesh Audit confirms that mesh is ok" << std::endl;
       } else {
-        std::cout << "Mesh Audit could not verify correctness of mesh" << std::endl;
-        return 1;
+        Errors::Message msg("Mesh Audit could not verify correctness of mesh.");
+        Exceptions::amanzi_throw(msg);
       }
     } else {
       std::ostringstream ofile;
       ofile << "mesh_audit_" << std::setfill('0') << std::setw(4) << rank << ".txt";
       std::ofstream ofs(ofile.str().c_str());
       if (rank == 0)
-        std::cerr << "Writing Mesh Audit output to " << ofile.str() << ", etc." << std::endl;
+        std::cout << "Writing Mesh Audit output to " << ofile.str() << ", etc." << std::endl;
       
-      ierr = 0;
+      int ierr = 0, aerr = 0;
       Amanzi::MeshAudit mesh_auditor(mesh, ofs);
       int status = mesh_auditor.Verify();        // check the mesh
-      if (status != 0) ierr++;
+      if (status != 0) ierr = 1;
       
       comm->SumAll(&ierr, &aerr, 1);
       if (aerr == 0) {
         if (rank == 0)
-          std::cerr << "Mesh Audit confirms that mesh is ok" << std::endl;
+          std::cout << "Mesh Audit confirms that mesh is ok" << std::endl;
       } else {
-        if (rank == 0)
-          std::cerr << "Mesh Audit could not verify correctness of mesh" << std::endl;
-        return 1;
+        Errors::Message msg("Mesh Audit could not verify correctness of mesh.");
+        Exceptions::amanzi_throw(msg);
       }
     }
   }  // if verify
@@ -158,35 +160,35 @@ createMeshes(Teuchos::ParameterList& mesh_plist,
 
     bool surf_verify = surface_plist.get<bool>("verify mesh", false);
     if (surf_verify) {
-      std::cerr << "Verifying surface mesh with Mesh Audit..." << std::endl;
-      if (size == 1) {
+      if (rank == 0)
+        std::cout << "Verifying surface mesh with Mesh Audit..." << std::endl;
+      if (num_procs == 1) {
         Amanzi::MeshAudit surf_mesh_auditor(surface_mesh);
         int status = surf_mesh_auditor.Verify();
         if (status == 0) {
           std::cout << "Mesh Audit confirms that surface mesh is ok" << std::endl;
         } else {
-          std::cout << "Mesh Audit could not verify correctness of surface mesh" << std::endl;
-          return 1;
+          Errors::Message msg("Mesh Audit could not verify correctness of surface mesh.");
+          Exceptions::amanzi_throw(msg);
         }
       } else {
         std::ostringstream ofile;
         ofile << "surf_mesh_audit_" << std::setfill('0') << std::setw(4) << rank << ".txt";
         std::ofstream ofs(ofile.str().c_str());
         if (rank == 0)
-          std::cerr << "Writing Surface Mesh Audit output to " << ofile.str() << ", etc." << std::endl;
+          std::cout << "Writing Surface Mesh Audit output to " << ofile.str() << ", etc." << std::endl;
         
-        ierr = 0;
+        int ierr = 0, aerr = 0;
         Amanzi::MeshAudit surf_mesh_auditor(mesh, ofs);
         int status = surf_mesh_auditor.Verify();        // check the mesh
-        if (status != 0) ierr++;
+        if (status != 0) ierr = 1;
         
         comm->SumAll(&ierr, &aerr, 1);
-        if (aerr == 0) {
-          std::cerr << "Surface Mesh Audit confirms that mesh is ok" << std::endl;
+        if (aerr == 0 && rank == 0) {
+          std::cout << "Mesh Audit confirms that surface mesh is ok" << std::endl;
         } else {
-          if (rank == 0)
-            std::cerr << "Surface Mesh Audit could not verify correctness of mesh" << std::endl;
-          return 1;
+          Errors::Message msg("Mesh Audit could not verify correctness of surface mesh.");
+          Exceptions::amanzi_throw(msg);
         }
       }
     }  // if surf_verify

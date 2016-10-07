@@ -46,6 +46,8 @@ double WRMVanGenuchten::k_relative(double pc) {
     double pc_3 = pc_2 * pc;
     return 1.0 + a_ * pc_2 + b_ * pc_3;
   }
+  ASSERT(0);
+  return 0.;
 }
 
 

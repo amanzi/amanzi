@@ -37,7 +37,7 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 namespace ATS {
 
 Coordinator::Coordinator(Teuchos::ParameterList& parameter_list,
-                         Teuchos::RCP<State>& S,
+                         Teuchos::RCP<Amanzi::State>& S,
                          Epetra_MpiComm* comm ) :
     parameter_list_(Teuchos::rcp(new Teuchos::ParameterList(parameter_list))),
     S_(S),
@@ -50,7 +50,7 @@ Coordinator::Coordinator(Teuchos::ParameterList& parameter_list,
   cycle_timer_ = Teuchos::TimeMonitor::getNewCounter("cycle");
   coordinator_init();
 
-  vo_ = Teuchos::rcp(new VerboseObject("Coordinator", *parameter_list_));
+  vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Coordinator", *parameter_list_));
 };
 
 void Coordinator::coordinator_init() {
@@ -63,10 +63,10 @@ void Coordinator::coordinator_init() {
   const std::string &pk_name = pks_list->name(pk_item);
   
   // create the solution
-  soln_ = Teuchos::rcp(new TreeVector());
+  soln_ = Teuchos::rcp(new Amanzi::TreeVector());
 
   // create the pk
-  PKFactory pk_factory;
+  Amanzi::PKFactory pk_factory;
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list, pk_name);
   pk_list->set("PK name", pk_name);
  
@@ -75,25 +75,25 @@ void Coordinator::coordinator_init() {
 
   // create the checkpointing
   Teuchos::ParameterList& chkp_plist = parameter_list_->sublist("checkpoint");
-  checkpoint_ = Teuchos::rcp(new Checkpoint(chkp_plist, comm_));
+  checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
 
   // create the observations
   Teuchos::ParameterList& observation_plist = parameter_list_->sublist("observations");
-  observations_ = Teuchos::rcp(new UnstructuredObservations(observation_plist,
+  observations_ = Teuchos::rcp(new Amanzi::UnstructuredObservations(observation_plist,
           Teuchos::null, comm_));
 
   // check whether meshes are deformable, and if so require a nodal position
-  for (State::mesh_iterator mesh=S_->mesh_begin();
+  for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
        mesh!=S_->mesh_end(); ++mesh) {
     if (mesh->second.second) { // deformable!
       std::string node_key = std::string("vertex_coordinate_")+mesh->first;
       S_->RequireField(node_key)->SetMesh(mesh->second.first)->SetGhosted()
-          ->AddComponent("node", AmanziMesh::NODE, mesh->second.first->space_dimension());
+          ->AddComponent("node", Amanzi::AmanziMesh::NODE, mesh->second.first->space_dimension());
     }
   }
 
   // create the time step manager
-  tsm_ = Teuchos::rcp(new TimeStepManager());
+  tsm_ = Teuchos::rcp(new Amanzi::TimeStepManager());
   
 }
 
@@ -119,7 +119,7 @@ void Coordinator::initialize() {
   // -- timestep size dt
   // -- BDF history to allow projection to continue correctly.
   if (restart_) {
-    t0_ = ReadCheckpointInitialTime(comm_, restart_filename_);
+    t0_ = Amanzi::ReadCheckpointInitialTime(comm_, restart_filename_);
     S_->set_time(t0_);
   }
 
@@ -147,20 +147,20 @@ void Coordinator::initialize() {
   // HACK to vis with a surrogate surface mesh.  This needs serious re-design. --etc
   bool surface_done = false;
   if (S_->HasMesh("surface") && S_->HasMesh("surface_3d")) {
-    Teuchos::RCP<const AmanziMesh::Mesh> surface_3d = S_->GetMesh("surface_3d");
-    Teuchos::RCP<const AmanziMesh::Mesh> surface = S_->GetMesh("surface");
+    Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> surface_3d = S_->GetMesh("surface_3d");
+    Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> surface = S_->GetMesh("surface");
 
     // vis successful timesteps
     std::string plist_name = "visualization surface";
     Teuchos::ParameterList& vis_plist = parameter_list_->sublist(plist_name);
 /*
-    Teuchos::RCP<Visualization> vis_2d = Teuchos::rcp(new Visualization(vis_plist, comm_));
+    Teuchos::RCP<Amanzi::Visualization> vis_2d = Teuchos::rcp(new Visualization(vis_plist, comm_));
     vis_2d->set_mesh(surface);
     vis_2d->CreateFiles();
     vis_2d->set_mesh(surface);
     visualization_.push_back(vis_2d);
 */    
-    Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist, comm_));
+    Teuchos::RCP<Amanzi::Visualization> vis = Teuchos::rcp(new Amanzi::Visualization(vis_plist, comm_));
     vis->set_mesh(surface_3d);
     vis->CreateFiles();
     vis->set_mesh(surface);
@@ -171,7 +171,7 @@ void Coordinator::initialize() {
     std::string fail_plist_name = "visualization surface failed steps";
     if (parameter_list_->isSublist(fail_plist_name)) {
       Teuchos::ParameterList& fail_vis_plist = parameter_list_->sublist(fail_plist_name);
-      Teuchos::RCP<Visualization> fail_vis = Teuchos::rcp(new Visualization(fail_vis_plist, comm_));
+      Teuchos::RCP<Amanzi::Visualization> fail_vis = Teuchos::rcp(new Amanzi::Visualization(fail_vis_plist, comm_));
       fail_vis->set_mesh(surface_3d);
       fail_vis->CreateFiles();
       fail_vis->set_mesh(surface);
@@ -179,7 +179,7 @@ void Coordinator::initialize() {
     }
   }
 
-  for (State::mesh_iterator mesh=S_->mesh_begin();
+  for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
        mesh!=S_->mesh_end(); ++mesh) {
     if (mesh->first == "surface_3d") {
       // pass
@@ -195,8 +195,8 @@ void Coordinator::initialize() {
 
       if (parameter_list_->isSublist(plist_name)) {
         Teuchos::ParameterList& vis_plist = parameter_list_->sublist(plist_name);
-        Teuchos::RCP<Visualization> vis =
-          Teuchos::rcp(new Visualization(vis_plist, comm_));
+        Teuchos::RCP<Amanzi::Visualization> vis =
+          Teuchos::rcp(new Amanzi::Visualization(vis_plist, comm_));
         vis->set_mesh(mesh->second.first);
         vis->CreateFiles();
         visualization_.push_back(vis);
@@ -211,8 +211,8 @@ void Coordinator::initialize() {
 
       if (parameter_list_->isSublist(fail_plist_name)) {
         Teuchos::ParameterList& fail_vis_plist = parameter_list_->sublist(fail_plist_name);
-        Teuchos::RCP<Visualization> fail_vis =
-          Teuchos::rcp(new Visualization(fail_vis_plist, comm_));
+        Teuchos::RCP<Amanzi::Visualization> fail_vis =
+          Teuchos::rcp(new Amanzi::Visualization(fail_vis_plist, comm_));
         fail_vis->set_mesh(mesh->second.first);
         fail_vis->CreateFiles();
         failed_visualization_.push_back(fail_vis);
@@ -228,7 +228,7 @@ void Coordinator::initialize() {
 
   // set up the TSM
   // -- register visualization times
-  for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
+  for (std::vector<Teuchos::RCP<Amanzi::Visualization> >::iterator vis=visualization_.begin();
        vis!=visualization_.end(); ++vis) {
     (*vis)->RegisterWithTimeStepManager(tsm_.ptr());
   }
@@ -245,15 +245,15 @@ void Coordinator::initialize() {
   // -- register any intermediate requested times
   if (coordinator_list_->isSublist("required times")) {
     Teuchos::ParameterList& sublist = coordinator_list_->sublist("required times");
-    IOEvent pause_times(sublist);
+    Amanzi::IOEvent pause_times(sublist);
     pause_times.RegisterWithTimeStepManager(tsm_.ptr());
   }
 
   // Create an intermediate state that will store the updated solution until
   // we know it has succeeded.
-  S_next_ = Teuchos::rcp(new State(*S_));
+  S_next_ = Teuchos::rcp(new Amanzi::State(*S_));
   *S_next_ = *S_;
-  S_inter_ = Teuchos::rcp(new State(*S_));
+  S_inter_ = Teuchos::rcp(new Amanzi::State(*S_));
   *S_inter_ = *S_;
 
   // set the states in the PKs
@@ -297,7 +297,7 @@ void Coordinator::report_memory() {
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     double global_ncells(0.0);
     double local_ncells(0.0);
-    for (State::mesh_iterator mesh = S_->mesh_begin(); mesh != S_->mesh_end(); ++mesh) {
+    for (Amanzi::State::mesh_iterator mesh = S_->mesh_begin(); mesh != S_->mesh_end(); ++mesh) {
       Epetra_Map cell_map = (mesh->second.first)->cell_map(false);
       global_ncells += cell_map.NumGlobalElements();
       local_ncells += cell_map.NumMyElements();
@@ -340,7 +340,7 @@ void Coordinator::report_memory() {
 
   
   double doubles_count(0.0);
-  for (State::field_iterator field=S_->field_begin(); field!=S_->field_end(); ++field) {
+  for (Amanzi::State::field_iterator field=S_->field_begin(); field!=S_->field_end(); ++field) {
     doubles_count += static_cast<double>(field->second->GetLocalElementCount());
   }
   double global_doubles_count(0.0);
@@ -456,7 +456,7 @@ bool Coordinator::advance(double dt) {
   } else {
     // Failed the timestep.  
     // Potentially write out failed timestep for debugging
-    for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=failed_visualization_.begin();
+    for (std::vector<Teuchos::RCP<Amanzi::Visualization> >::iterator vis=failed_visualization_.begin();
          vis!=failed_visualization_.end(); ++vis) {
       WriteVis((*vis).ptr(), S_next_.ptr());
     }
@@ -471,7 +471,7 @@ void Coordinator::visualize(bool force) {
   // write visualization if requested
   bool dump = force;
   if (!dump) {
-    for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
+    for (std::vector<Teuchos::RCP<Amanzi::Visualization> >::iterator vis=visualization_.begin();
          vis!=visualization_.end(); ++vis) {
       if ((*vis)->DumpRequested(S_next_->cycle(), S_next_->time())) {
         dump = true;
@@ -483,7 +483,7 @@ void Coordinator::visualize(bool force) {
     pk_->calculate_diagnostics(S_next_);
   }
 
-  for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
+  for (std::vector<Teuchos::RCP<Amanzi::Visualization> >::iterator vis=visualization_.begin();
        vis!=visualization_.end(); ++vis) {
     if (force || (*vis)->DumpRequested(S_next_->cycle(), S_next_->time())) {
       WriteVis((*vis).ptr(), S_next_.ptr());
@@ -554,7 +554,7 @@ void Coordinator::cycle_driver() {
 #if !DEBUG_MODE
   }
 
-  catch (Exceptions::Amanzi_exception &e) {
+  catch (Amanzi::Exceptions::Amanzi_exception &e) {
     // write one more vis for help debugging
     S_next_->advance_cycle();
     visualize(true); // force vis

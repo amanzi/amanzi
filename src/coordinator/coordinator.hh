@@ -65,8 +65,7 @@ Example:
 
 #include "VerboseObject.hh"
 
-namespace ATS {
-
+namespace Amanzi {
 class TimeStepManager;
 class Visualization;
 class Checkpoint;
@@ -74,12 +73,16 @@ class State;
 class TreeVector;
 class PK;
 class UnstructuredObservations;
+};
+
+
+namespace ATS {
 
 class Coordinator {
 
 public:
   Coordinator(Teuchos::ParameterList& parameter_list,
-              Teuchos::RCP<State>& S,
+              Teuchos::RCP<Amanzi::State>& S,
               Epetra_MpiComm* comm );
               //              Amanzi::ObservationData& output_observations);
 
@@ -92,7 +95,7 @@ public:
   void visualize(bool force=false);
   void checkpoint(double dt, bool force=false);
   double get_dt(bool after_fail=false);
-  Teuchos::RCP<State> get_next_state() { return S_next_; }
+  Teuchos::RCP<Amanzi::State> get_next_state() { return S_next_; }
 
   // one stop shopping
   void cycle_driver();
@@ -102,16 +105,16 @@ private:
   void read_parameter_list();
 
   // PK container and factory
-  Teuchos::RCP<PK> pk_;
+  Teuchos::RCP<Amanzi::PK> pk_;
 
   // states
-  Teuchos::RCP<State> S_;
-  Teuchos::RCP<State> S_inter_;
-  Teuchos::RCP<State> S_next_;
-  Teuchos::RCP<TreeVector> soln_;
+  Teuchos::RCP<Amanzi::State> S_;
+  Teuchos::RCP<Amanzi::State> S_inter_;
+  Teuchos::RCP<Amanzi::State> S_next_;
+  Teuchos::RCP<Amanzi::TreeVector> soln_;
 
   // time step manager
-  Teuchos::RCP<TimeStepManager> tsm_;
+  Teuchos::RCP<Amanzi::TimeStepManager> tsm_;
 
   // misc setup information
   Teuchos::RCP<Teuchos::ParameterList> parameter_list_;
@@ -129,14 +132,14 @@ private:
   //  Teuchos::RCP<UnstructuredObservations> observations_;
 
   // vis and checkpointing
-  std::vector<Teuchos::RCP<Visualization> > visualization_;
-  std::vector<Teuchos::RCP<Visualization> > failed_visualization_;
-  Teuchos::RCP<Checkpoint> checkpoint_;
+  std::vector<Teuchos::RCP<Amanzi::Visualization> > visualization_;
+  std::vector<Teuchos::RCP<Amanzi::Visualization> > failed_visualization_;
+  Teuchos::RCP<Amanzi::Checkpoint> checkpoint_;
   bool restart_;
   std::string restart_filename_;
 
   // observations
-  Teuchos::RCP<UnstructuredObservations> observations_;
+  Teuchos::RCP<Amanzi::UnstructuredObservations> observations_;
 
   // timers
   Teuchos::RCP<Teuchos::Time> setup_timer_;
@@ -145,7 +148,7 @@ private:
   double duration_;
   
   // fancy OS
-  Teuchos::RCP<VerboseObject> vo_;
+  Teuchos::RCP<Amanzi::VerboseObject> vo_;
 };
 
 } // close namespace ATS
