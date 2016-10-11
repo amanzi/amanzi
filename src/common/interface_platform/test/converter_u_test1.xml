@@ -226,7 +226,7 @@
       <assigned_regions>Bottom Surface</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <hydrostatic function="uniform" start="0.0" value="0.0"/>
+          <linear_pressure function="constant" start="0.0" value="101325.0 Pa" reference_coord="0.0, 0.0" gradient="0.0, -9793.5192 Pa/m"/>
         </liquid_component>
         <solute_component>
           <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>

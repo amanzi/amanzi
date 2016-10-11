@@ -38,7 +38,6 @@ class InputConverterS : public InputConverter {
 
  private:
   std::string CreateBGDFile(std::string& filename);
-  std::string CreateINFile(std::string& filename);
 
   void ParseUnits_();
   void ParseDefinitions_();
