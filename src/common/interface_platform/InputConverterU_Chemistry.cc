@@ -150,6 +150,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       // if (pk_model_["chemistry"] == "amanzi") {
       Teuchos::ParameterList& volfrac = ic_list.sublist("mineral_volume_fractions");
       Teuchos::ParameterList& surfarea = ic_list.sublist("mineral_specific_surface_area");
+      Teuchos::ParameterList& rate = ic_list.sublist("mineral_rate_constant");
 
       for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); it++) {
         Teuchos::ParameterList& aux1_list = volfrac.sublist("function").sublist(*it)
@@ -166,19 +167,28 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
         aux2_list.set<int>("number of dofs", minerals.size())
             .set("function type", "composite function");
 
+        Teuchos::ParameterList& aux3_list = rate.sublist("function").sublist(*it)
+            .set<std::string>("region", *it)
+            .set<std::string>("component", "cell")
+            .sublist("function");
+        aux3_list.set<int>("number of dofs", minerals.size())
+            .set("function type", "composite function");
+
         for (int j = 0; j < minerals.size(); ++j) {
           std::stringstream ss;
           ss << "dof " << j + 1 << " function";
  
           node = GetUniqueElementByTagsString_(inode, "minerals", flag);
-          double mvf(0.0), msa(0.0);
+          double mvf(0.0), msa(0.0), mrc(0.0);
           if (flag) {
             element = GetUniqueChildByAttribute_(node, "name", minerals[j], flag, true);
             mvf = GetAttributeValueD_(element, "volume_fraction", TYPE_NUMERICAL, "", false, 0.0);
             msa = GetAttributeValueD_(element, "specific_surface_area", TYPE_NUMERICAL, "", false, 0.0);
+            mrc = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, "", false, 0.0);
           }
           aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", mvf);
           aux2_list.sublist(ss.str()).sublist("function-constant").set<double>("value", msa);
+          aux3_list.sublist(ss.str()).sublist("function-constant").set<double>("value", mrc);
         }
       }
     }
