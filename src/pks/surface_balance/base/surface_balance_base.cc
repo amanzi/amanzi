@@ -19,20 +19,20 @@
 namespace Amanzi {
 namespace SurfaceBalance {
 
-SurfaceBalanceBase::SurfaceBalanceBase(Teuchos::ParameterList& FElist,
-                                       const Teuchos::RCP<Teuchos::ParameterList>& plist,
+SurfaceBalanceBase::SurfaceBalanceBase(Teuchos::ParameterList& pk_tree,
+                                       const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                                        const Teuchos::RCP<State>& S,
                                        const Teuchos::RCP<TreeVector>& solution):
-    PK(FElist, plist,  S, solution),
-    PK_BDF_Default(FElist, plist,  S, solution),
-    PK_PhysicalBDF_Default(FElist, plist,  S, solution)
+    PK(pk_tree, global_list,  S, solution),
+    PK_BDF_Default(pk_tree, global_list,  S, solution),
+    PK_PhysicalBDF_Default(pk_tree, global_list,  S, solution)
 {
   // name the layer
-  layer_ = plist->get<std::string>("layer name", name_);
+  layer_ = plist_->get<std::string>("layer name", name_);
   source_key_  = getKey(layer_, "source_sink");
-  source_key_ = plist->get<std::string>("source key", source_key_);
+  source_key_ = plist_->get<std::string>("source key", source_key_);
 
-  theta_ = plist->get<double>("time discretization theta", 1.0);
+  theta_ = plist_->get<double>("time discretization theta", 1.0);
   ASSERT(theta_ <= 1.);
   ASSERT(theta_ >= 0.);
 

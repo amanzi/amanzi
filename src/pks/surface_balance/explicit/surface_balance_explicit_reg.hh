@@ -13,7 +13,7 @@
 namespace Amanzi {
 namespace SurfaceBalance {
 
-RegisteredPKFactory_ATS<SurfaceBalanceExplicit>
+RegisteredPKFactory<SurfaceBalanceExplicit>
 SurfaceBalanceExplicit::reg_("surface balance explicit");
 
 } // namespace

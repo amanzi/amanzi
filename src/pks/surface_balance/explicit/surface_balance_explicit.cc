@@ -21,12 +21,17 @@
 namespace Amanzi {
 namespace SurfaceBalance {
 
-SurfaceBalanceExplicit::SurfaceBalanceExplicit(
-           const Teuchos::RCP<Teuchos::ParameterList>& plist,
-           Teuchos::ParameterList& FElist,
-           const Teuchos::RCP<TreeVector>& solution) :
-    PKPhysicalBase(plist, FElist, solution),
-    PKDefaultBase(plist, FElist, solution) {
+SurfaceBalanceExplicit::SurfaceBalanceExplicit(Teuchos::ParameterList& pk_tree,
+                                     const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                                     const Teuchos::RCP<State>& S,
+                                     const Teuchos::RCP<TreeVector>& solution):
+  PK(pk_tree, global_list,  S, solution),
+  PK_Physical_Default(pk_tree, global_list,  S, solution)
+{ 
+
+  Teuchos::ParameterList& FElist = global_list->sublist("field evaluators");
+
+
   // set up additional primary variables -- this is very hacky...
   // -- surface energy source
   Teuchos::ParameterList& esource_sublist =
@@ -70,8 +75,8 @@ SurfaceBalanceExplicit::SurfaceBalanceExplicit(
 // main methods
 // -- Setup data.
 void
-SurfaceBalanceExplicit::setup(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBase::setup(S);
+SurfaceBalanceExplicit::Setup(const Teuchos::Ptr<State>& S) {
+  PK_Physical_Default::Setup(S);
   subsurf_mesh_ = S->GetMesh(); // needed for VPL, which is treated as subsurface source
 
   // requirements: primary variable
@@ -185,8 +190,8 @@ SurfaceBalanceExplicit::setup(const Teuchos::Ptr<State>& S) {
 
 // -- Initialize owned (dependent) variables.
 void
-SurfaceBalanceExplicit::initialize(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBase::initialize(S);
+SurfaceBalanceExplicit::Initialize(const Teuchos::Ptr<State>& S) {
+  PK_Physical_Default::Initialize(S);
 
   // initialize snow density
   S->GetFieldData("snow_density",name_)->PutScalar(100.);
@@ -217,7 +222,9 @@ SurfaceBalanceExplicit::initialize(const Teuchos::Ptr<State>& S) {
 
 // computes the non-linear functional g = g(t,u,udot)
 bool
-SurfaceBalanceExplicit::advance(double dt) {
+SurfaceBalanceExplicit::AdvanceStep(double t_old, double t_new, bool reinit) {
+
+  double dt = t_new - t_old;
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "----------------------------------------------------------------" << std::endl

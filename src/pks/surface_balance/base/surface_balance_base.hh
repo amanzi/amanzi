@@ -28,8 +28,8 @@ namespace SurfaceBalance {
 class SurfaceBalanceBase : public PK_PhysicalBDF_Default {
 
  public:
-  SurfaceBalanceBase(Teuchos::ParameterList& FElist,
-                     const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  SurfaceBalanceBase(Teuchos::ParameterList& pk_tree,
+                     const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                      const Teuchos::RCP<State>& S,
                      const Teuchos::RCP<TreeVector>& solution);
 
@@ -49,6 +49,10 @@ class SurfaceBalanceBase : public PK_PhysicalBDF_Default {
 
   // applies preconditioner to u and returns the result in Pu
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+
+  virtual void set_dt(double dt) {dt_ = dt;}
+
+  virtual std::string name() { return "SurfaceBalanceBase"; }
   
  protected:
 

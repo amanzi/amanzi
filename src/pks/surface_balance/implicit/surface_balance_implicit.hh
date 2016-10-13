@@ -17,25 +17,26 @@
 #ifndef PK_SURFACE_BALANCE_IMPLICIT_HH_
 #define PK_SURFACE_BALANCE_IMPLICIT_HH_
 
-#include "pk_factory_ats.hh"
-#include "pk_physical_bdf_base.hh"
+#include "PK_Factory.hh"
+#include "pk_physical_bdf_default.hh"
 
 namespace Amanzi {
 namespace SurfaceBalance {
 
-class SurfaceBalanceImplicit : public PKPhysicalBDFBase {
+class SurfaceBalanceImplicit : public PK_PhysicalBDF_Default {
 
 public:
-  SurfaceBalanceImplicit(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                         Teuchos::ParameterList& FElist,
+  SurfaceBalanceImplicit(Teuchos::ParameterList& pk_tree,
+                         const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                         const Teuchos::RCP<State>& S,
                          const Teuchos::RCP<TreeVector>& solution);
 
   // main methods
   // -- Setup data.
-  virtual void setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // -- Initialize owned (dependent) variables.
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   // ConstantTemperature is a BDFFnBase
   // computes the non-linear functional g = g(t,u,udot)
@@ -56,11 +57,12 @@ public:
           Teuchos::RCP<TreeVector> u);
 
   // -- Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {}
+  virtual void CommitState(double t_old, double t_new,  const Teuchos::RCP<State>& S) {}
 
   // -- Calculate any diagnostics prior to doing vis
-  virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {}
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {}
 
+  virtual void set_dt(double dt) {dt_ = dt;}
 
  protected:
   // multiple primary variables
@@ -83,7 +85,7 @@ public:
 
  private:
   // factory registration
-  static RegisteredPKFactory_ATS<SurfaceBalanceImplicit> reg_;
+  static RegisteredPKFactory<SurfaceBalanceImplicit> reg_;
 };
 
 }  // namespace AmanziFlow
