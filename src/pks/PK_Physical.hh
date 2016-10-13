@@ -38,9 +38,6 @@ class PK_Physical : public virtual PK {
 
     Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(glist, "PKs");
 
-    std::cout<<*pks_list<<"\n";
-
-
     if (pks_list->isSublist(name_)) {
       plist_ = Teuchos::sublist(pks_list, name_); 
     }else{
