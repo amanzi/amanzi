@@ -80,6 +80,8 @@ public:
   //Teuchos::RCP<Teuchos::ParameterList> my_list_;
   Teuchos::RCP<Teuchos::ParameterList> global_list_;
   Teuchos::ParameterList pk_tree_;
+  Teuchos::RCP<Teuchos::ParameterList> pks_list_;
+
   SubPKList sub_pks_;
 
 };
@@ -90,15 +92,16 @@ public:
 // -----------------------------------------------------------------------------
 template <class PK_t>
 MPC<PK_t>::MPC(Teuchos::ParameterList& pk_tree,
-      const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-      const Teuchos::RCP<State>& S,
-      const Teuchos::RCP<TreeVector>& solution)
-//    PKDefaultBase(plist, FElist, soln)
+               const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+               const Teuchos::RCP<State>& S,
+               const Teuchos::RCP<TreeVector>& solution):
+  PK(pk_tree, global_list, S, solution)
 {
 
   solution_ = solution;
   global_list_ = global_list;
   pk_tree_ = pk_tree;
+  pks_list_ = Teuchos::sublist(global_list_, "PKs");
 
   // name the PK
   name_ = pk_tree.name();
@@ -107,14 +110,14 @@ MPC<PK_t>::MPC(Teuchos::ParameterList& pk_tree,
   if (res.end() - name_.end() != 0) boost::algorithm::erase_head(name_, res.end() - name_.begin());
 
 
-  // loop over sub-PKs in the PK sublist, constructing the hierarchy recursively
-  Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(global_list_, "PKs");
 
   // get my parameter list
-  plist_ = Teuchos::sublist(Teuchos::sublist(global_list_, "PKs"), name_);
+  plist_ = Teuchos::sublist(pks_list_, name_);
 
 
   PKFactory pk_factory;
+
+
 
   if (plist_->isParameter("PKs order")) {
     // ordered
@@ -130,7 +133,9 @@ MPC<PK_t>::MPC(Teuchos::ParameterList& pk_tree,
       Teuchos::ParameterList& pk_sub_tree = pk_tree.sublist(name_i);
 
       Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_sub_tree, global_list_, S, pk_soln);
-      Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype);
+      std::cout<<"name "<<pk_notype -> name()<<"\n";
+      Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype, true); 
+      std::cout<<"name "<<pk -> name()<<"\n";
       sub_pks_.push_back(pk);
 
     }

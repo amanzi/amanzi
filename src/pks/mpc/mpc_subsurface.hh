@@ -40,13 +40,15 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
 
  public:
 
-  MPCSubsurface(Teuchos::ParameterList& FElist,
-                const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  MPCSubsurface(Teuchos::ParameterList& pk_tree_list,
+                const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                 const Teuchos::RCP<State>& S,
                 const Teuchos::RCP<TreeVector>& soln) :
-    PK(FElist, plist, S, soln),
-    StrongMPC<PK_PhysicalBDF_Default>(FElist, plist, S, soln) {
-    dump_ = plist->get<bool>("dump preconditioner", false);
+    PK(pk_tree_list, global_list, S, soln),
+    StrongMPC<PK_PhysicalBDF_Default>(pk_tree_list, global_list, S, soln) {
+    std::cout<<"plist_\n"<<*plist_;
+    dump_ = plist_->get<bool>("dump preconditioner", false);
+
   }
 
   // -- Initialize owned (dependent) variables.
@@ -144,6 +146,8 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
   Key mass_flux_key_;
   Key mass_flux_dir_key_;
   Key rho_key_;
+
+  bool is_fv_;
   
   // EWC delegate
   Teuchos::RCP<MPCDelegateEWCSubsurface> ewc_;

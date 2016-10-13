@@ -20,12 +20,12 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
   Teuchos::Array<std::string> names = plist_->get<Teuchos::Array<std::string> >("PKs order");
 
   // -- turn on coupling
-  plist_->sublist("PKs").sublist(names[0]).set("coupled to surface via flux", true);
-  plist_->sublist("PKs").sublist(names[1]).set("coupled to subsurface via flux", true);
+  pks_list_->sublist(names[0]).set("coupled to surface via flux", true);
+  pks_list_->sublist(names[1]).set("coupled to subsurface via flux", true);
 
   // -- ensure local ops are suface ops
-  plist_->sublist("PKs").sublist(names[1]).sublist("Diffusion PC").set("surface operator", true);
-  plist_->sublist("PKs").sublist(names[1]).sublist("Accumulation PC").set("surface operator", true);
+  pks_list_->sublist(names[1]).sublist("Diffusion PC").set("surface operator", true);
+  pks_list_->sublist(names[1]).sublist("Accumulation PC").set("surface operator", true);
 
   // grab the meshes
   surf_mesh_ = S->GetMesh("surface");

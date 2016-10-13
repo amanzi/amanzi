@@ -29,12 +29,11 @@ namespace Amanzi {
 // PKs, but it also IS a BDF PK itself, in that it implements the BDF
 // interface.
 template <class PK_t>
-class StrongMPC : public MPC<PK_t>,
-                  public PK_BDF_Default {
+class StrongMPC :  public MPC<PK_t>, public PK_BDF_Default {
 
 public:
-  StrongMPC(Teuchos::ParameterList& FElist,
-            const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  StrongMPC(Teuchos::ParameterList& pk_tree,
+            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
             const Teuchos::RCP<State>& S,
             const Teuchos::RCP<TreeVector>& soln);
 
@@ -94,6 +93,9 @@ public:
 
 protected:
   using MPC<PK_t>::sub_pks_;
+  using MPC<PK_t>::global_list_;
+  using MPC<PK_t>::pk_tree_;
+  using MPC<PK_t>::pks_list_;
 
 private:
   // factory registration
@@ -105,13 +107,33 @@ private:
 // Constructor
 // -----------------------------------------------------------------------------
 template<class PK_t>
-StrongMPC<PK_t>::StrongMPC(Teuchos::ParameterList& FElist,
-                           const Teuchos::RCP<Teuchos::ParameterList>& plist,
+StrongMPC<PK_t>::StrongMPC(Teuchos::ParameterList& pk_tree,
+                           const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln):
-  PK(FElist, plist, S, soln),
-  MPC<PK_t>(FElist, plist, S, soln),
-  PK_BDF_Default(FElist, plist, S, soln) {}
+  PK(pk_tree, global_list, S, soln),
+  MPC<PK_t>(pk_tree, global_list, S, soln),
+  PK_BDF_Default(pk_tree, global_list, S, soln) {
+
+  // name the PK
+  name_ = pk_tree.name();
+  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->");
+  if (res.end() - name_.end() != 0) boost::algorithm::erase_head(name_, res.end() - name_.begin());
+
+  Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(global_list, "PKs");
+
+  if (pks_list->isSublist(name_)) {
+    plist_ = Teuchos::sublist(pks_list, name_); 
+  }else{
+    std::stringstream messagestream;
+    messagestream << "There is no sublist for PK "<<name_<<"in PKs list\n";
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+
+  plist_->set("PK name", name_);
+
+}
 
 
 // -----------------------------------------------------------------------------
@@ -120,16 +142,28 @@ StrongMPC<PK_t>::StrongMPC(Teuchos::ParameterList& FElist,
 template<class PK_t>
 void StrongMPC<PK_t>::Setup(const Teuchos::Ptr<State>& S) {
   // tweak the sub-PK parameter lists
-  Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(plist_, "PKs");
-  for (Teuchos::ParameterList::ConstIterator param=pks_list->begin();
-       param!=pks_list->end(); ++param) {
-    std::string pname = param->first;
-    if (pks_list->isSublist(pname)) {
-      pks_list->sublist(pname).set("strongly coupled PK", true);
+  // Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(plist_, "PKs");
+  // for (Teuchos::ParameterList::ConstIterator param=pks_list->begin();
+  //      param!=pks_list->end(); ++param) {
+  //   std::string pname = param->first;
+  //   if (pks_list->isSublist(pname)) {
+  //     pks_list->sublist(pname).set("strongly coupled PK", true);
+  //   } else {
+  //     ASSERT(0);
+  //   }
+  // }
+
+  Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
+  int npks = pk_order.size();
+  for (int i=0; i!=npks; ++i){
+    std::string name_i = pk_order[i];
+    if (pks_list_->isSublist(name_i)){
+      pks_list_->sublist(name_i).set("strongly coupled PK", true);
     } else {
       ASSERT(0);
     }
   }
+
 
   MPC<PK_t>::Setup(S);
   PK_BDF_Default::Setup(S);
