@@ -1,17 +1,6 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+//!  Region: a geometric or discrete subdomain (abstract)
 /*
-  Abstract class for a Region, which is a geometric or discrete
-  subdomain, along with some basic setters/getters.
-
-  A geometric region is just some arbitrary subset of space, that can
-  be specified in a myriad of ways.  At a minimum, there is a need to
-  be able to determine if a point is inside that space.  A disrete
-  region is an enumerated (via input spec or labeled sets inside the
-  mesh file) list of entities, and is specific to a mesh.
-
-  The region class does not use a constructor based on the XML parameter
-  list because it has to create derived region classes based on the shape 
-  parameter of the region specification.
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -19,6 +8,110 @@
 
   Authors: William Perkins
            Ethan Coon (ecoon@lanl.gov)
+*/
+
+
+/*!
+
+Regions are geometrical constructs used in Amanzi to define subsets of
+the computational domain in order to specify the problem to be solved, and the
+output desired. Regions may represents zero-, one-, two- or three-dimensional
+subsets of physical space.  for a three-dimensional problem, the simulation
+domain will be a three-dimensional region bounded by a set of two-dimensional
+regions.  If the simulation domain is N-dimensional, the boundary conditions
+must be specified over a set of regions are (N-1)-dimensional.
+
+Amanzi automatically defines the special region labeled *All*, which is the 
+entire simulation domain. Currently, the unstructured framework does
+not support the *All* region, but it is expected to do so in the
+near future.
+
+ * `"regions`" ``[list]`` can accept a number of uniquely named lists for regions
+
+   * ``[region-spec]`` Geometric model primitive, as described below.
+
+Amanzi supports parameterized forms for a number of analytic shapes, as well
+as more complex definitions based on triangulated surface files.
+
+
+**Notes:**
+
+* Surface files contain labeled triangulated face sets.  The user is
+  responsible for ensuring that the intersections with other surfaces
+  in the problem, including the boundaries, are *exact* (*i.e.* that
+  surface intersections are *watertight* where applicable), and that
+  the surfaces are contained within the computational domain.  If
+  nodes in the surface fall outside the domain, the elements they
+  define are ignored.
+
+  Examples of surface files are given in the *Exodus II* file 
+  format here.
+
+* Region names must NOT be repeated.
+
+Example:
+
+.. code-block:: xml
+
+   <ParameterList>  <!-- parent list -->
+     <ParameterList name="regions">
+       <ParameterList name="TOP SECTION">
+         <ParameterList name="region: box">
+           <Parameter name="low coordinate" type="Array(double)" value="{2, 3, 5}"/>
+           <Parameter name="high coordinate" type="Array(double)" value="{4, 5, 8}"/>
+         </ParameterList>
+       </ParameterList>
+       <ParameterList name="MIDDLE SECTION">
+         <ParameterList name="region: box">
+           <Parameter name="low coordinate" type="Array(double)" value="{2, 3, 3}"/>
+           <Parameter name="high coordinate" type="Array(double)" value="{4, 5, 5}"/>
+         </ParameterList>
+       </ParameterList>
+       <ParameterList name="BOTTOM SECTION">
+         <ParameterList name="region: box">
+           <Parameter name="low coordinate" type="Array(double)" value="{2, 3, 0}"/>
+           <Parameter name="high coordinate" type="Array(double)" value="{4, 5, 3}"/>
+         </ParameterList>
+       </ParameterList>
+       <ParameterList name="INFLOW SURFACE">
+         <ParameterList name="region: labeled set">
+           <Parameter name="label"  type="string" value="sideset_2"/>
+           <Parameter name="file"   type="string" value="F_area_mesh.exo"/>
+           <Parameter name="format" type="string" value="Exodus II"/>
+           <Parameter name="entity" type="string" value="face"/>
+         </ParameterList>
+       </ParameterList>
+       <ParameterList name="OUTFLOW PLANE">
+         <ParameterList name="region: plane">
+           <Parameter name="point" type="Array(double)" value="{0.5, 0.5, 0.5}"/>
+           <Parameter name="normal" type="Array(double)" value="{0, 0, 1}"/>
+         </ParameterList>
+       </ParameterList>
+       <ParameterList name="BLOODY SAND">
+         <ParameterList name="region: color function">
+           <Parameter name="file" type="string" value="F_area_col.txt"/>
+           <Parameter name="value" type="int" value="25"/>
+         </ParameterList>
+       </ParameterList>
+       <ParameterList name="FLUX PLANE">
+         <ParameterList name="region: polygon">
+           <Parameter name="number of points" type="int" value="5"/>
+           <Parameter name="points" type="Array(double)" value="{-0.5, -0.5, -0.5, 
+                                                                  0.5, -0.5, -0.5,
+                                                                  0.8, 0.0, 0.0,
+                                                                  0.5,  0.5, 0.5,
+                                                                 -0.5, 0.5, 0.5}"/>
+          </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
+In this example, *TOP SESCTION*, *MIDDLE SECTION* and *BOTTOM SECTION*
+are three box-shaped volumetric regions. *INFLOW SURFACE* is a
+surface region defined in an Exodus II-formatted labeled set
+file and *OUTFLOW PLANE* is a planar region. *BLOODY SAND* is a volumetric
+region defined by the value 25 in color function file.
+
 */
 
 #ifndef AMANZI_REGION_HH_

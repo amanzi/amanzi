@@ -1,7 +1,37 @@
-// TODO: This is very tentative.  I'm thinking it might be preferable
-// to clone the constructor functions rather than hand off pointers
-// to them, but cloning the polymorphic objects requires some changes
-// to the base class and all the implementations.
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+//! SeparableFunction: f(x,y) = f1(x)*f2(y)
+
+/*
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ethan Coon (ecoon _at_ lanl.gov)
+*/
+
+/*!
+
+A separable function is defined as the product of other functions such as
+
+.. math::
+  f(x_0, x_1,...,x_{{n-1}}) = f_1(x_0)\, f_2(x_1,...,x_{{n-1}})
+
+where :math:`f_1` is defined by the `"function1`" sublist, and 
+:math:`f_2` by the `"function2`" sublist:
+
+.. code-block:: xml
+
+  <ParameterList name="function-separable">
+    <ParameterList name="function1">
+      function-specification
+    </ParameterList>
+    <ParameterList name="function2">
+      function-specification
+    </ParameterList>
+  </ParameterList>
+
+*/  
 
 #ifndef AMANZI_SEPARABLE_FUNCTION_HH_
 #define AMANZI_SEPARABLE_FUNCTION_HH_

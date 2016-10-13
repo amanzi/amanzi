@@ -1,6 +1,7 @@
-/*
-  Utils
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+//! IOEvent: base time/timestep control determing when in time to do something.
 
+/*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -9,9 +10,50 @@
   Authors: Markus Berndt
            Ethan Coon (ecoon@lanl.gov)
 
-  IO event -- base class for reading or writing data. It mostly manages when
-  to do the I/O.
 */
+
+/*!
+
+The IOEvent is used for multiple objects that need to indicate simulation times or cycles on which to do something.
+
+* `"cycles start period stop`" ``[Array(int)]`` 
+
+    The first entry is the start cycle, the second is the cycle
+    period, and the third is the stop cycle or -1, in which case there
+    is no stop cycle. A visualization dump is written at such
+    cycles that satisfy cycle = start + n*period, for n=0,1,2,... and
+    cycle < stop if stop != -1.0.
+
+* `"cycles start period stop N`" ``[Array(int)]`` 
+
+    If multiple cycles start period stop parameters are needed, then
+    use these parameters with N=0,1,2,...
+
+* `"cycles`" ``[Array(int)]`` 
+  
+    An array of discrete cycles that at which a visualization dump is
+    written.
+
+* `"times start period stop`" ``[Array(double)]`` 
+
+    The first entry is the start time, the second is the time period,
+    and the third is the stop time or -1, in which case there is no
+    stop time. A visualization dump is written at such times that
+    satisfy time = start + n*period, for n=0,1,2,... and time < stop
+    if stop != -1.0.  Note that all times units are in seconds.
+
+* `"times start period stop n`" ``[Array(double)]``
+
+    If multiple start period stop parameters are needed, then use this
+    these parameters with n=0,1,2,..., and not the single `"times
+    start period stop`" parameter.  Note that all times units are in
+    seconds.
+
+* `"times`" ``[Array(double)]`` 
+
+    An array of discrete times that at which a visualization dump
+    shall be written.  Note that all times units are in seconds.
+ */
 
 #ifndef AMANZI_STATE_IO_EVENT_HH_
 #define AMANZI_STATE_IO_EVENT_HH_

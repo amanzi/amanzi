@@ -465,7 +465,7 @@ Function* FunctionFactory::create_standard_math(Teuchos::ParameterList& params) 
   try {
     std::string op = params.get<std::string>("operator");
     double amplitude = params.get<double>("amplitude", 1.0);
-    double param = params.get<double>("parameter", 0.0);
+    double param = params.get<double>("parameter", 1.0);
     double shift = params.get<double>("shift", 0.0);
     f = new StandardMathFunction(op, amplitude, param, shift);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {

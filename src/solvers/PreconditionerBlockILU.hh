@@ -1,15 +1,35 @@
-/*
-  Solvers
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+//! PreconditionerBlockILU:   Incomplete LU preconditioner.
 
+/*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Incomplete LU preconditioner.
 */
+
+/*!
+
+The internal parameters for block ILU are as follows:
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="block ilu parameters">
+    <Parameter name="fact: relax value" type="double" value="1.0"/>
+    <Parameter name="fact: absolute threshold" type="double" value="0.0"/>
+    <Parameter name="fact: relative threshold" type="double" value="1.0"/>
+    <Parameter name="fact: level-of-fill" type="int" value="0"/>
+    <Parameter name="overlap" type="int" value="0"/>
+    <Parameter name="schwarz: combine mode" type="string" value="Add"/>
+    </ParameterList>
+  </ParameterList>
+
+*/
+
 
 #ifndef AMANZI_PRECONDITIONER_BLOCK_ILU_HH_
 #define AMANZI_PRECONDITIONER_BLOCK_ILU_HH_
