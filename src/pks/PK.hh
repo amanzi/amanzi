@@ -34,8 +34,7 @@ class PK {
      const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
      const Teuchos::RCP<State>& S,
      const Teuchos::RCP<TreeVector>& solution)
-    : plist_(global_plist),
-      solution_(solution) {};
+    :  solution_(solution) {};
 
   // Virtual destructor
   virtual ~PK() {};
