@@ -1,10 +1,40 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+//! PresElevEvaluator: evaluates h + z
 
 /*
-  The elevation evaluator gets the surface elevation, slope, and updates pres + elev.
+  ATS is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
+
+/*!
+Evaluator type: "snow skin potential"
+
+.. math::
+  h + z + h_{{snow}} + dt * P_{{snow}}
+
+* `"my key`" ``[string]`` **snow_skin_potential** Names the potential variable evaluated [m]
+* `"ponded depth key`" ``[string]`` **ponded_depth** Names the surface water depth variable. [m]
+* `"snow depth key`" ``[string]`` **snow_depth** Names the snow depth variable. [m]
+* `"precipitation snow key`" ``[string]`` **precipitation_snow** Names the snow precipitation key. [m]
+* `"elevation key`" ``[string]`` **elevation** Names the elevation variable. [m]
+* `"dt factor`" ``[double]`` A free-parameter factor for providing a time scale for diffusion of snow precipitation into low-lying areas.  Typically on the order of 1e4-1e7. This timestep times the wave speed of snow provides an approximate length of how far snow precip can travel.  Extremely tunable! [s]
+
+NOTE: This is equivalent to a generic AdditiveEvaluator_
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="snow_skin_potential" type="ParameterList">
+    <Parameter name="field evaluator type" type="string" value="snow skin potential" />
+    <Parameter name="dt factor" type="double" value="864000.0" />
+  </ParameterList>
+
+*/
+
 
 #ifndef AMANZI_FLOWRELATIONS_SNOW_SKIN_POTENTIAL_EVALUATOR_
 #define AMANZI_FLOWRELATIONS_SNOW_SKIN_POTENTIAL_EVALUATOR_

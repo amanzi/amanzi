@@ -21,32 +21,55 @@ $> ats --xml_file=../test1-fv-four-polygon.xml
 
 
 
-Requires building Ethan's hacked exodus python wrappers:
+Requires building the latest version of Exodus
 ------------------------------------------------------------
+git clone https://github.com/gsjaardema/seacas.git 
 
-first, edit $ATS_SRC_DIR/tools/meshing_ats/cmake-script to fit your
-system
+Note this requires, in turn, HDF5 and netCDF.  It is highly
+recommended that you get these through anaconda or a comparable python
+distribution:
 
-then, download exodus-6.09
-unzip/untar
+conda install h5py
+conda install netCDF4
 
-$> cd exodus-6.09
-$> patch -p1 < $ATS_SRC_DIR/tools/meshing_ats/exodus-6.09.patch
+```
+SEACAS_BUILD_DIR=$ATS_HOME/seacas/build-dev
+SEACAS_INSTALL_DIR=$ATS_HOME/seacas/install-dev
+SEACAS_SRC_DIR=$ATS_HOME/seacas/repos/seacas
 
-$> cd exodus
-$> mkdir build
-$> cd build
-$> . $ATS_SRC_DIR/tools/meshing_ats/cmake-script
-$> make
-$> make install
+CC=`which mpicc`
+CXX=`which mpicxx`
+FC=`which mpif90`
 
+cmake  \
+    -D SEACASProj_ENABLE_SEACASExodus:BOOL=ON \
+    -D CMAKE_INSTALL_PREFIX:PATH=${SEACAS_INSTALL_DIR} \
+    -D CMAKE_BUILD_TYPE=Debug \
+    -D BUILD_SHARED_LIBS:BOOL=ON \
+    \
+    -D CMAKE_CXX_COMPILER:FILEPATH=${CXX} \
+    -D CMAKE_C_COMPILER:FILEPATH=${CC} \
+    -D CMAKE_Fortran_COMPILER:FILEPATH=${FC} \
+    -D SEACASProj_SKIP_FORTRANCINTERFACE_VERIFY_TEST:BOOL=ON \
+    -D TPL_ENABLE_Netcdf:BOOL=ON \
+    -D TPL_ENABLE_Matio:BOOL=OFF \
+    -D TPL_ENABLE_MPI=ON \
+    -D TPL_ENABLE_CGNS:BOOL=OFF \
+    \
+    -D NetCDF_DIR:PATH=${ANACONDA_DIR} \
+    -D HDF5_ROOT:PATH=${ANACONDA_DIR} \
+    -D HDF5_NO_SYSTEM_PATHS=ON \
+    ${SEACAS_SRC_DIR}
+```
 
+Excecute the configure script from your SEACAS_BUILD_DIR, then
+```make``` and ```make install```
 """
 
 import sys,os
 import numpy as np
 import collections
-sys.path.append("/Users/ecoon/research/coastal/seacas-git/lib/")
+sys.path.append(os.path.join(os.environ["SEACAS_DIR"],"lib"))
 import exodus
 import argparse
 
@@ -209,9 +232,25 @@ class Mesh2D(object):
 
         return cls(coords, gons)
             
-            
-                
+    @classmethod
+    def from_Transect(cls, x, z):
+        """Creates a 2D surface strip mesh from transect data"""
+        # coordinates
+        y = np.array([0,1])
+        Xc, Yc = np.meshgrid(x, y)
+        Xc = Xc.flatten()
+        Yc = Yc.flatten()
 
+        Zc = np.concatenate([z,z])
+
+        # connectivity
+        nsurf_cells = len(x)-1
+        conn = []
+        for i in range(nsurf_cells):
+            conn.append([i, i+1, nsurf_cells + i + 2, nsurf_cells + i + 1])
+
+        coords = np.array([Xc, Yc, Zc])
+        return cls(coords.transpose(), conn)
     
 
 class Mesh3D(object):
@@ -542,11 +581,11 @@ class Mesh3D(object):
 
                 elif layer_type.lower() == 'node':
                     # layer bottom specifically provided through thickness
-                    layer_bottom[:] = coords[:,cell_layer_start,2] - layar_datum
+                    layer_bottom[:] = coords[:,cell_layer_start,2] - layer_datum
 
                 elif layer_type.lower() == 'cell':
                     # interpolate cell thicknesses to node thicknesses
-                    import scipy.interplate
+                    import scipy.interpolate
                     centroids = mesh2D.cell_centroids()
                     interp = scipy.interpolate.interp2d(centroids[:,0], centroids[:,1], layer_datum, kind='linear')
                     layer_bottom[:] = coords[:,cell_layer_start,2] - interp(mesh2D.coords[:,0], mesh2D.coords[:,1])

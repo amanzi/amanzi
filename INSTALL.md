@@ -63,8 +63,13 @@ All instructions assume you use bash.  Alter as needed for other shells.
     export AMANZI_TPLS_DIR=${ATS_BASE}/amanzi-tpls-install    
     ```    
     You may want to put that line in your ~/.bashrc or similar files (~/.bash_profile on Mac OS X).
-  b. Download and unzip the amanzi source tar at https://github.com/amanzi/ats/, moving the resulting directory to $AMANZI_SRC_DIR
-  c. Download and unzip the ats source tar at https://github.com/amanzi/ats-dev/, moving the resulting directory to $ATS_SRC_DIR
+  b. Download and unzip the amanzi source tar at https://github.com/amanzi/amanzi/, moving the resulting downloaded directory to $AMANZI_SRC_DIR.  Note that most people should use the current release, from https://github.com/amanzi/amanzi/releases called ``ats-amanzi-X.YY.pZ``, **not** to be confused with either the current dev version or the current amanzi-only release.  Numbering of Amanzi and ATS releases are close, but not always identical.
+
+    Currently this is ``ats-amanzi-0.86.p1``
+
+  c. Download and unzip the ats source tar at https://github.com/amanzi/ats-dev/ .  Again, most people want the most current ATS release at https://github.com/amanzi/ats/releases which will be named ats-X.YY.pW  Note specifically that the patch number (Z in Amanzi, W in ATS) need not match, but the major and minor version numbers X and YY **must match**.
+
+    Currently this is ``ats-0.86.p0``
 
 2. Build the Amanzi TPLs.
   a. Set up a directory for configuration scripts and a TPL installation directory.
@@ -93,6 +98,7 @@ All instructions assume you use bash.  Alter as needed for other shells.
       -D CMAKE_Fortran_COMPILER=${FC} \
       -D ENABLE_HYPRE:BOOL=ON \
       -D ENABLE_Structured:BOOL=OFF \
+      -D ENABLE_STK_Mesh:BOOL=OFF \
       -D TPL_INSTALL_PREFIX=${AMANZI_TPLS_DIR} \
     ${AMANZI_SRC_DIR}/config/SuperBuild
 

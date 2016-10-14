@@ -5,19 +5,20 @@
 #       Root CMakeLists.txt file
 #
 
-# Require cmake 2.8 or higher
-cmake_minimum_required(VERSION 2.8.8)
+# Require cmake 3.1.3 or higher for c++11 support
+cmake_minimum_required(VERSION 3.1.3)
+
+set(CMAKE_CXX_STANDARD 11)
 
 # Enable testing, ctest needs this
 # all add_test commands are ignored unless this is called!
-set(BUILD_TESTS true)
+enable_testing()
 
 # Define the project name
 # This command will define
 #     ATS_SOURCE_DIR
 #     ATS_BINARY_DIR
-project(ATS CXX C Fortran)
-message(STATUS "in ats_dir: ATS_SOURCE_DIR=${ATS_SOURCE_DIR}")
+project(ATS)
 
 set(ATS_MODULE_PATH "${ATS_SOURCE_DIR}/tools/cmake")
 set(CMAKE_MODULE_PATH ${ATS_MODULE_PATH})

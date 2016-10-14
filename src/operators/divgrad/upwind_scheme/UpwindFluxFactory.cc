@@ -53,6 +53,7 @@ Teuchos::RCP<Upwinding> UpwindFluxFactory::Create(Teuchos::ParameterList& oplist
     return Teuchos::rcp(new UpwindCellCentered(pkname, cell_coef, face_coef));
   } else {
     ASSERT(0);
+    return Teuchos::null;
   }
 }
   

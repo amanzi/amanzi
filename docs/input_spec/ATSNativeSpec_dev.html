@@ -4,7 +4,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="Docutils 0.12: http://docutils.sourceforge.net/" />
-<title>ATS Native XML Input Specification V1</title>
+<title></title>
 <style type="text/css">
 
 /* Stylesheet for pygments enhanced reStructured Text */
@@ -386,140 +386,154 @@ span.boxed, span.framebox {
 </style>
 </head>
 <body>
-<div class="document" id="ats-native-xml-input-specification-v1">
-<h1 class="title">ATS Native XML Input Specification V1</h1>
+<div class="document">
 
+
+<div class="section" id="ats-native-xml-input-specification-v1">
+<h1><a class="toc-backref" href="#id2">ATS Native XML Input Specification V1</a></h1>
 <div class="contents topic" id="table-of-contents">
 <p class="topic-title first"><strong>Table of Contents</strong></p>
 <ul class="simple">
-<li><a class="reference internal" href="#notes" id="id2">Notes</a></li>
+<li><a class="reference internal" href="#ats-native-xml-input-specification-v1" id="id2">ATS Native XML Input Specification V1</a></li>
 <li><a class="reference internal" href="#syntax-of-the-specification" id="id3">Syntax of the Specification</a></li>
 <li><a class="reference internal" href="#main" id="id4">Main</a></li>
-<li><a class="reference internal" href="#mesh" id="id5">Mesh</a></li>
-<li><a class="reference internal" href="#domain" id="id6">Domain</a></li>
-<li><a class="reference internal" href="#region" id="id7">Region</a><ul>
-<li><a class="reference internal" href="#point" id="id8">Point</a></li>
-<li><a class="reference internal" href="#box" id="id9">Box</a></li>
-<li><a class="reference internal" href="#plane" id="id10">Plane</a></li>
-<li><a class="reference internal" href="#labeled-set" id="id11">Labeled Set</a></li>
-<li><a class="reference internal" href="#color-function" id="id12">Color Function</a></li>
+<li><a class="reference internal" href="#mesh" id="id5">Mesh</a><ul>
+<li><a class="reference internal" href="#generatedmesh" id="id6">GeneratedMesh</a></li>
+<li><a class="reference internal" href="#meshfromfile" id="id7">MeshFromFile</a></li>
+<li><a class="reference internal" href="#logicalmesh" id="id8">LogicalMesh</a></li>
+<li><a class="reference internal" href="#surfacemesh" id="id9">SurfaceMesh</a></li>
+<li><a class="reference internal" href="#columnmeshes" id="id10">ColumnMeshes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#coordinator" id="id13">Coordinator</a></li>
-<li><a class="reference internal" href="#visualization" id="id14">Visualization</a></li>
-<li><a class="reference internal" href="#checkpoint" id="id15">Checkpoint</a></li>
-<li><a class="reference internal" href="#observation" id="id16">Observation</a></li>
-<li><a class="reference internal" href="#pk" id="id17">PK</a><ul>
-<li><a class="reference internal" href="#base-pks" id="id18">Base PKs</a><ul>
-<li><a class="reference internal" href="#pkdefaultbase" id="id19">PKDefaultBase</a></li>
-<li><a class="reference internal" href="#pkphysicalbase" id="id20">PKPhysicalBase</a></li>
-<li><a class="reference internal" href="#pkbdfbase" id="id21">PKBDFBase</a></li>
-<li><a class="reference internal" href="#pkphysicalbdfbase" id="id22">PKPhysicalBDFBase</a></li>
+<li><a class="reference internal" href="#region" id="id11">Region</a><ul>
+<li><a class="reference internal" href="#point" id="id12">Point</a></li>
+<li><a class="reference internal" href="#box" id="id13">Box</a></li>
+<li><a class="reference internal" href="#plane" id="id14">Plane</a></li>
+<li><a class="reference internal" href="#labeled-set" id="id15">Labeled Set</a></li>
+<li><a class="reference internal" href="#color-function" id="id16">Color Function</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#physical-pks" id="id23">Physical PKs</a><ul>
-<li><a class="reference internal" href="#flow-pks" id="id24">Flow PKs</a><ul>
-<li><a class="reference internal" href="#richards-pk" id="id25">Richards PK</a></li>
-<li><a class="reference internal" href="#permafrost-flow-pk" id="id26">Permafrost Flow PK</a></li>
-<li><a class="reference internal" href="#overland-flow-head-primary-variable-pk" id="id27">Overland Flow, head primary variable PK</a></li>
-<li><a class="reference internal" href="#overland-flow-pressure-primary-variable-pk" id="id28">Overland Flow, pressure primary variable, PK</a></li>
-<li><a class="reference internal" href="#snow-distribution-pk" id="id29">Snow Distribution PK</a></li>
+<li><a class="reference internal" href="#coordinator" id="id17">Coordinator</a></li>
+<li><a class="reference internal" href="#visualization" id="id18">Visualization</a></li>
+<li><a class="reference internal" href="#checkpoint" id="id19">Checkpoint</a></li>
+<li><a class="reference internal" href="#observation" id="id20">Observation</a></li>
+<li><a class="reference internal" href="#pk" id="id21">PK</a><ul>
+<li><a class="reference internal" href="#base-pks" id="id22">Base PKs</a><ul>
+<li><a class="reference internal" href="#pkdefaultbase" id="id23">PKDefaultBase</a></li>
+<li><a class="reference internal" href="#pkphysicalbase" id="id24">PKPhysicalBase</a></li>
+<li><a class="reference internal" href="#pkbdfbase" id="id25">PKBDFBase</a></li>
+<li><a class="reference internal" href="#pkphysicalbdfbase" id="id26">PKPhysicalBDFBase</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#energy-pks" id="id30">Energy PKs</a><ul>
-<li><a class="reference internal" href="#advection-diffusion-pk" id="id31">Advection Diffusion PK</a></li>
-<li><a class="reference internal" href="#energy-base-pk" id="id32">Energy Base PK</a></li>
-<li><a class="reference internal" href="#two-phase-subsurface-energy-pk" id="id33">Two-Phase subsurface Energy PK</a></li>
-<li><a class="reference internal" href="#three-phase-subsurface-energy-pk" id="id34">Three-Phase subsurface Energy PK</a></li>
-<li><a class="reference internal" href="#id1" id="id35">Three-Phase subsurface Energy PK</a></li>
-<li><a class="reference internal" href="#surface-ice-energy-pk" id="id36">Surface Ice Energy PK</a></li>
+<li><a class="reference internal" href="#physical-pks" id="id27">Physical PKs</a><ul>
+<li><a class="reference internal" href="#flow-pks" id="id28">Flow PKs</a><ul>
+<li><a class="reference internal" href="#richards-pk" id="id29">Richards PK</a></li>
+<li><a class="reference internal" href="#permafrost-flow-pk" id="id30">Permafrost Flow PK</a></li>
+<li><a class="reference internal" href="#overland-flow-head-primary-variable-pk" id="id31">Overland Flow, head primary variable PK</a></li>
+<li><a class="reference internal" href="#overland-flow-pressure-primary-variable-pk" id="id32">Overland Flow, pressure primary variable, PK</a></li>
+<li><a class="reference internal" href="#snow-distribution-pk" id="id33">Snow Distribution PK</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#surface-energy-balance-pks" id="id37">Surface Energy Balance PKs</a><ul>
-<li><a class="reference internal" href="#surface-energy-balance-snow-monolithic-version" id="id38">Surface Energy Balance / Snow -- Monolithic Version</a></li>
-<li><a class="reference internal" href="#surface-energy-balance-generic-version" id="id39">Surface Energy Balance -- Generic Version</a></li>
+<li><a class="reference internal" href="#energy-pks" id="id34">Energy PKs</a><ul>
+<li><a class="reference internal" href="#advection-diffusion-pk" id="id35">Advection Diffusion PK</a></li>
+<li><a class="reference internal" href="#energy-base-pk" id="id36">Energy Base PK</a></li>
+<li><a class="reference internal" href="#two-phase-subsurface-energy-pk" id="id37">Two-Phase subsurface Energy PK</a></li>
+<li><a class="reference internal" href="#three-phase-subsurface-energy-pk" id="id38">Three-Phase subsurface Energy PK</a></li>
+<li><a class="reference internal" href="#id1" id="id39">Three-Phase subsurface Energy PK</a></li>
+<li><a class="reference internal" href="#surface-ice-energy-pk" id="id40">Surface Ice Energy PK</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#biogeochemistry" id="id40">Biogeochemistry</a><ul>
-<li><a class="reference internal" href="#biogeochemistry-monolithic-version" id="id41">Biogeochemistry -- Monolithic Version</a></li>
+<li><a class="reference internal" href="#surface-energy-balance-pks" id="id41">Surface Energy Balance PKs</a><ul>
+<li><a class="reference internal" href="#surface-energy-balance-snow-monolithic-version" id="id42">Surface Energy Balance / Snow -- Monolithic Version</a></li>
+<li><a class="reference internal" href="#surface-energy-balance-generic-version" id="id43">Surface Energy Balance -- Generic Version</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#deformation" id="id42">Deformation</a><ul>
-<li><a class="reference internal" href="#volumetric-deformation" id="id43">Volumetric Deformation</a></li>
+<li><a class="reference internal" href="#biogeochemistry" id="id44">Biogeochemistry</a><ul>
+<li><a class="reference internal" href="#biogeochemistry-monolithic-version" id="id45">Biogeochemistry -- Monolithic Version</a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li><a class="reference internal" href="#mpcs" id="id44">MPCs</a><ul>
-<li><a class="reference internal" href="#weakmpc" id="id45">WeakMPC</a></li>
-<li><a class="reference internal" href="#strongmpc" id="id46">StrongMPC</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#physical-mpcs" id="id47">Physical MPCs</a><ul>
-<li><a class="reference internal" href="#coupled-water-mpc" id="id48">Coupled Water MPC</a></li>
-<li><a class="reference internal" href="#subsurface-mpc" id="id49">Subsurface MPC</a></li>
-<li><a class="reference internal" href="#permafrost-mpc" id="id50">Permafrost MPC</a></li>
+<li><a class="reference internal" href="#deformation" id="id46">Deformation</a><ul>
+<li><a class="reference internal" href="#volumetric-deformation" id="id47">Volumetric Deformation</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#state" id="id51">State</a><ul>
-<li><a class="reference internal" href="#field-evaluators" id="id52">Field Evaluators</a><ul>
-<li><a class="reference internal" href="#field-evaluator-base-classes" id="id53">Field Evaluator Base Classes</a><ul>
-<li><a class="reference internal" href="#primaryvariableevaluator" id="id54">PrimaryVariableEvaluator</a></li>
-<li><a class="reference internal" href="#secondaryvariableevaluator" id="id55">SecondaryVariableEvaluator</a></li>
-<li><a class="reference internal" href="#secondaryvariablesevaluator" id="id56">SecondaryVariablesEvaluator</a></li>
-<li><a class="reference internal" href="#independentvariableevaluator" id="id57">IndependentVariableEvaluator</a></li>
+<li><a class="reference internal" href="#mpcs" id="id48">MPCs</a><ul>
+<li><a class="reference internal" href="#weakmpc" id="id49">WeakMPC</a></li>
+<li><a class="reference internal" href="#strongmpc" id="id50">StrongMPC</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#physical-mpcs" id="id51">Physical MPCs</a><ul>
+<li><a class="reference internal" href="#coupled-water-mpc" id="id52">Coupled Water MPC</a></li>
+<li><a class="reference internal" href="#subsurface-mpc" id="id53">Subsurface MPC</a></li>
+<li><a class="reference internal" href="#permafrost-mpc" id="id54">Permafrost MPC</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#initialconditions" id="id58">InitialConditions</a><ul>
-<li><a class="reference internal" href="#initialization-of-constant-scalars" id="id59">Initialization of constant scalars</a></li>
-<li><a class="reference internal" href="#initialization-of-constant-vectors" id="id60">Initialization of constant vectors</a></li>
-<li><a class="reference internal" href="#initialization-of-scalar-fields" id="id61">Initialization of scalar fields</a></li>
-<li><a class="reference internal" href="#initialization-of-tensor-fields" id="id62">Initialization of tensor fields</a></li>
-<li><a class="reference internal" href="#initialization-from-a-file" id="id63">Initialization from a file</a></li>
+<li><a class="reference internal" href="#state" id="id55">State</a><ul>
+<li><a class="reference internal" href="#field-evaluators" id="id56">Field Evaluators</a><ul>
+<li><a class="reference internal" href="#field-evaluator-base-classes" id="id57">Field Evaluator Base Classes</a><ul>
+<li><a class="reference internal" href="#primaryvariableevaluator" id="id58">PrimaryVariableEvaluator</a></li>
+<li><a class="reference internal" href="#secondaryvariableevaluator" id="id59">SecondaryVariableEvaluator</a></li>
+<li><a class="reference internal" href="#secondaryvariablesevaluator" id="id60">SecondaryVariablesEvaluator</a></li>
+<li><a class="reference internal" href="#independentvariableevaluator" id="id61">IndependentVariableEvaluator</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#water-content" id="id62">Water Content</a><ul>
+<li><a class="reference internal" href="#richardswatercontentevaluator" id="id63">RichardsWaterContentEvaluator</a></li>
+<li><a class="reference internal" href="#richardswatercontentwithvaporevaluator" id="id64">RichardsWaterContentWithVaporEvaluator</a></li>
+<li><a class="reference internal" href="#permafrostwatercontentevaluator" id="id65">PermafrostWaterContentEvaluator</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#time-integrators-solvers-and-other-mathematical-specs" id="id64">Time integrators, solvers, and other mathematical specs</a><ul>
-<li><a class="reference internal" href="#timeintegrator" id="id65">TimeIntegrator</a></li>
-<li><a class="reference internal" href="#linear-solver-spec" id="id66">Linear Solver Spec</a></li>
-<li><a class="reference internal" href="#preconditioner" id="id67">Preconditioner</a><ul>
-<li><a class="reference internal" href="#hypre-amg" id="id68">Hypre AMG</a></li>
-<li><a class="reference internal" href="#trilinos-ml" id="id69">Trilinos ML</a></li>
-<li><a class="reference internal" href="#block-ilu" id="id70">Block ILU</a></li>
-<li><a class="reference internal" href="#indentity" id="id71">Indentity</a></li>
+<li><a class="reference internal" href="#initialconditions" id="id66">InitialConditions</a><ul>
+<li><a class="reference internal" href="#initialization-of-constant-scalars" id="id67">Initialization of constant scalars</a></li>
+<li><a class="reference internal" href="#initialization-of-constant-vectors" id="id68">Initialization of constant vectors</a></li>
+<li><a class="reference internal" href="#initialization-of-scalar-fields" id="id69">Initialization of scalar fields</a></li>
+<li><a class="reference internal" href="#initialization-of-tensor-fields" id="id70">Initialization of tensor fields</a></li>
+<li><a class="reference internal" href="#initialization-from-a-file" id="id71">Initialization from a file</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#nonlinearsolver" id="id72">NonlinearSolver</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#other-common-specs" id="id73">Other Common Specs</a><ul>
-<li><a class="reference internal" href="#timecontrol" id="id74">TimeControl</a></li>
-<li><a class="reference internal" href="#verboseobject" id="id75">VerboseObject</a></li>
-<li><a class="reference internal" href="#function" id="id76">Function</a><ul>
-<li><a class="reference internal" href="#constant-function" id="id77">Constant function</a></li>
-<li><a class="reference internal" href="#tabular-function" id="id78">Tabular function</a></li>
-<li><a class="reference internal" href="#smooth-step-function" id="id79">Smooth step function</a></li>
-<li><a class="reference internal" href="#polynomial-function" id="id80">Polynomial function</a></li>
-<li><a class="reference internal" href="#multi-variable-linear-function" id="id81">Multi-variable linear function</a></li>
-<li><a class="reference internal" href="#separable-function" id="id82">Separable function</a></li>
+<li><a class="reference internal" href="#time-integrators-solvers-and-other-mathematical-specs" id="id72">Time integrators, solvers, and other mathematical specs</a><ul>
+<li><a class="reference internal" href="#timeintegrator" id="id73">TimeIntegrator</a></li>
+<li><a class="reference internal" href="#linear-solver-spec" id="id74">Linear Solver Spec</a></li>
+<li><a class="reference internal" href="#preconditioner" id="id75">Preconditioner</a><ul>
+<li><a class="reference internal" href="#hypre-s-boomer-amg" id="id76">Hypre's Boomer AMG</a></li>
+<li><a class="reference internal" href="#trilinos-ml" id="id77">Trilinos ML</a></li>
+<li><a class="reference internal" href="#block-ilu" id="id78">Block ILU</a></li>
+<li><a class="reference internal" href="#indentity" id="id79">Indentity</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#nonlinearsolver" id="id80">NonlinearSolver</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#other-common-specs" id="id81">Other Common Specs</a><ul>
+<li><a class="reference internal" href="#ioevent" id="id82">IOEvent</a></li>
+<li><a class="reference internal" href="#verboseobject" id="id83">VerboseObject</a></li>
+<li><a class="reference internal" href="#function" id="id84">Function</a><ul>
+<li><a class="reference internal" href="#constant-function" id="id85">Constant Function</a></li>
+<li><a class="reference internal" href="#tabular-function" id="id86">Tabular Function</a></li>
+<li><a class="reference internal" href="#smooth-step-function" id="id87">Smooth step Function</a></li>
+<li><a class="reference internal" href="#polynomial-function" id="id88">Polynomial Function</a></li>
+<li><a class="reference internal" href="#multi-variable-linear-function" id="id89">Multi-variable linear Function</a></li>
+<li><a class="reference internal" href="#separable-function" id="id90">Separable Function</a></li>
+<li><a class="reference internal" href="#additive-function" id="id91">Additive Function</a></li>
+<li><a class="reference internal" href="#multiplicative-function" id="id92">Multiplicative Function</a></li>
+<li><a class="reference internal" href="#composition-function" id="id93">Composition Function</a></li>
+<li><a class="reference internal" href="#piecewise-bilinear-function" id="id94">Piecewise Bilinear Function</a></li>
+<li><a class="reference internal" href="#distance-function" id="id95">Distance Function</a></li>
+<li><a class="reference internal" href="#monomial-function" id="id96">Monomial Function</a></li>
+<li><a class="reference internal" href="#standard-math-function" id="id97">Standard Math Function</a></li>
 </ul>
 </li>
 </ul>
 </li>
 </ul>
 </div>
-<div class="section" id="notes">
-<h1><a class="toc-backref" href="#id2">Notes</a></h1>
-<ul class="simple">
-<li>ATS's input spec is similar, but not identical, to Amanzi's Native
-input spec.  Much of this document is stolen from Amanzi's Native Spec.</li>
-<li>Note also that nearly <strong>everything</strong> takes a <a class="reference internal" href="#verboseobject">VerboseObject</a> spec.  Assume all specs may take a <a class="reference internal" href="#verboseobject">VerboseObject</a> spec within a sublist named <cite>&quot;VerboseObject</cite>&quot; unless otherwise noted.</li>
-</ul>
 </div>
 <div class="section" id="syntax-of-the-specification">
 <h1><a class="toc-backref" href="#id3">Syntax of the Specification</a></h1>
@@ -573,20 +587,12 @@ is not provided.</li>
 </div>
 <div class="section" id="main">
 <h1><a class="toc-backref" href="#id4">Main</a></h1>
-<p>The main ParameterList frames the entire input spec, and must contain
-one sublist for each of the following sections.  Additionally, for
-compatibility with Amanzi, the following Parameters are typically
-present, and should not be changed, as ATS does not currently support Amanzi-S.</p>
+<p>The <cite>&quot;main</cite>&quot; ParameterList frames the entire input spec, and must contain
+one sublist for each of the following sections.</p>
 <ul>
-<li><p class="first"><cite>&quot;Native Unstructured Input</cite>&quot; <tt class="docutils literal">[bool]</tt>,  Should always be <cite>&quot;true</cite>&quot;</p>
+<li><p class="first"><cite>&quot;mesh</cite>&quot; <tt class="docutils literal"><span class="pre">[mesh-spec]</span></tt>  See the <a class="reference internal" href="#mesh">Mesh</a> spec.</p>
 </li>
-<li><p class="first"><cite>&quot;grid_option</cite>&quot; <tt class="docutils literal">[string]</tt>,  Should always be <cite>&quot;Unstructured</cite>&quot;</p>
-</li>
-<li><p class="first"><cite>&quot;Mesh</cite>&quot; <tt class="docutils literal"><span class="pre">[mesh-spec]</span></tt>  See the <a class="reference internal" href="#mesh">Mesh</a> spec.</p>
-</li>
-<li><p class="first"><cite>&quot;Domain</cite>&quot; <tt class="docutils literal"><span class="pre">[domain-spec]</span></tt>  See the <a class="reference internal" href="#domain">Domain</a> spec.</p>
-</li>
-<li><p class="first"><cite>&quot;Regions</cite>&quot; <tt class="docutils literal">[list]</tt></p>
+<li><p class="first"><cite>&quot;regions</cite>&quot; <tt class="docutils literal">[list]</tt></p>
 <p>List of multiple <a class="reference internal" href="#region">Region</a> specs, each in its own sublist named uniquely by the user.</p>
 </li>
 <li><p class="first"><cite>&quot;coordinator</cite>&quot; <tt class="docutils literal"><span class="pre">[coordinator-spec]</span></tt>  See the <a class="reference internal" href="#coordinator">Coordinator</a> spec.</p>
@@ -609,52 +615,132 @@ present, and should not be changed, as ATS does not currently support Amanzi-S.<
 </div>
 <div class="section" id="mesh">
 <h1><a class="toc-backref" href="#id5">Mesh</a></h1>
-<p>The mesh represents the primary domain of simulation.  Simple,
-structured meshes may be generated on the fly, or complex unstructured
-meshes are provided as <tt class="docutils literal">Exodus II</tt> files.</p>
-<p>Additionally, several other domains may be constructed from the main
-domain specified as the mesh.  These include surface meshes, which are
-ripped from the subsurface mesh.</p>
-<p>Example of a mesh generated internally:</p>
-<div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;Mesh&quot;</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;Unstructured&quot;</span><span class="nt">/&gt;</span>
-    <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;Generate Mesh&quot;</span><span class="nt">/&gt;</span>
-      <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;Uniform Structured&quot;</span><span class="nt">/&gt;</span>
-        <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;Number of Cells&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(int)&quot;</span> <span class="na">value=</span><span class="s">&quot;{100, 1, 100}&quot;</span><span class="nt">/&gt;</span>
-        <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;Domain Low Coordinate&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{0.0, 0.0, 0.0}&quot;</span> <span class="nt">/&gt;</span>
-        <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;Domain High Coordinate&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{103.2, 1.0, 103.2}&quot;</span> <span class="nt">/&gt;</span>
-      <span class="nt">&lt;/ParameterList&gt;</span>
-    <span class="nt">&lt;/ParameterList&gt;</span>
-  <span class="nt">&lt;/ParameterList&gt;</span>
-<span class="nt">&lt;/ParameterList&gt;</span>
-</pre></div>
-<p>Example of a mesh read from an external file, along with a surface mesh:</p>
-<div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;Mesh&quot;</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;Framework&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;MSTK&quot;</span><span class="nt">/&gt;</span>
-  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;Read Mesh File&quot;</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;File&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;mesh_filename.exo&quot;</span><span class="nt">/&gt;</span>
-    <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;Format&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;Exodus II&quot;</span><span class="nt">/&gt;</span>
-  <span class="nt">&lt;/ParameterList&gt;</span>
-  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;Surface Mesh&quot;</span><span class="nt">&gt;</span>
-     <span class="nt">&lt;Parameter</span>  <span class="na">name=</span><span class="s">&quot;surface sideset name&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;surface_region&quot;</span><span class="nt">/&gt;</span>
-  <span class="nt">&lt;/ParameterList&gt;</span>
-<span class="nt">&lt;/ParameterList&gt;</span>
-</pre></div>
-<p>Note that in this case, ATS expects there to also be a <a class="reference internal" href="#region">Region</a> spec
-(in this example named) <cite>&quot;surface_region</cite>&quot; which describes a face set
-of the main mesh.</p>
-</div>
-<div class="section" id="domain">
-<h1><a class="toc-backref" href="#id6">Domain</a></h1>
-<p>The domain simply refers to the geometric model in which a mesh is contained.  Currently it has a single parameter.</p>
-<blockquote>
+<p>All processes are simulated on a domain, which is discretized through a mesh.</p>
+<p>Multiple domains and therefore meshes can be used in a single simulation, and multiple meshes can be constructed on the fly.</p>
+<p>The base mesh represents the primary domain of simulation.  Simple, structured
+meshes may be generated on the fly, or complex unstructured meshes are
+provided as <tt class="docutils literal">Exodus II</tt> files.  The base <em>mesh</em> list includes either a
+<a class="reference internal" href="#generatedmesh">GeneratedMesh</a>,  <a class="reference internal" href="#meshfromfile">MeshFromFile</a>, or <a class="reference internal" href="#logicalmesh">LogicalMesh</a> spec, as described below.</p>
+<p>Additionally, a <a class="reference internal" href="#surfacemesh">SurfaceMesh</a> may be formed by lifting the surface of a
+provided mesh and then flattening that mesh to a 2D surface.  <a class="reference internal" href="#columnmeshes">ColumnMeshes</a>
+which split a base mesh into vertical columns of cells for use in 1D models
+may also be generated automatically.</p>
+<p>Finally, mesh generation is hard and error-prone.  A mesh audit is provided,
+which checks for many common geometric and topologic errors in mesh
+generation.  This is reasonably fast, even for big meshes, and can be done through providing a &quot;verify mesh&quot; option.</p>
 <ul class="simple">
-<li><cite>&quot;Spatial Dimension</cite>&quot; <tt class="docutils literal">[int]</tt> <strong>3</strong></li>
+<li><cite>&quot;verify mesh</cite>&quot; <tt class="docutils literal">[bool]</tt> <strong>false</strong> Perform a mesh audit.</li>
+<li><cite>&quot;deformable mesh</cite>&quot; <tt class="docutils literal">[bool]</tt> <strong>false</strong> Will this mesh be deformed?</li>
 </ul>
-</blockquote>
+<div class="section" id="generatedmesh">
+<h2><a class="toc-backref" href="#id6">GeneratedMesh</a></h2>
+<p>Generated mesh are by definition structured, with uniform dx, dy, and dz.
+Such a mesh is specified by a bounding box high and low coordinate, and a list
+of number of cells in each direction.</p>
+<ul class="simple">
+<li><cite>&quot;generate mesh</cite>&quot; <tt class="docutils literal">[list]</tt><ul>
+<li><cite>&quot;domain low coordinate</cite>&quot; <tt class="docutils literal">[Array(double)]</tt> Location of low corner of domain</li>
+<li><cite>&quot;domain high coordinate</cite>&quot; <tt class="docutils literal">[Array(double)]</tt> Location of high corner of domain</li>
+<li><cite>&quot;number of cells</cite>&quot; <tt class="docutils literal">[Array(int)]</tt> the number of uniform cells in each coordinate direction</li>
+</ul>
+</li>
+</ul>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;mesh&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;generate mesh&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;number of cells&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(int)&quot;</span> <span class="na">value=</span><span class="s">&quot;{{100, 1, 100}}&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;domain low coordinate&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{{0.0, 0.0, 0.0}}&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;domain high coordinate&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{{100.0, 1.0, 10.0}}&quot;</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;/ParameterList&gt;</span>
+<span class="nt">&lt;/ParameterList&gt;</span>
+</pre></div>
+</div>
+<div class="section" id="meshfromfile">
+<h2><a class="toc-backref" href="#id7">MeshFromFile</a></h2>
+<p>Meshes can be pre-generated in a multitude of ways, then written to &quot;Exodus
+II&quot; file format, and loaded in ATS.</p>
+<ul>
+<li><p class="first"><cite>&quot;read mesh file</cite>&quot; <tt class="docutils literal">[list]</tt> accepts name, format of pre-generated mesh file</p>
+<ul>
+<li><dl class="first docutils">
+<dt><cite>&quot;file</cite>&quot; <tt class="docutils literal">[string]</tt> name of pre-generated mesh file. Note that in the case of an</dt>
+<dd><p class="first last">Exodus II mesh file, the suffix of the serial mesh file must be .exo and
+the suffix of the parallel mesh file must be .par.
+When running in serial the code will read this the indicated file directly.
+When running in parallel and the suffix is .par, the code will instead read
+the partitioned files, that have been generated with a Nemesis tool and
+named as filename.par.N.r where N is the number of processors and r is the rank.
+When running in parallel and the suffix is .exo, the code will partition automatically
+the serial file.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first"><cite>&quot;format</cite>&quot; <tt class="docutils literal">[string]</tt> format of pre-generated mesh file (<cite>&quot;MSTK</cite>&quot; or <cite>&quot;Exodus II</cite>&quot;)</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;mesh&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;read mesh file&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;file&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;mesh_filename.exo&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;format&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;Exodus II&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;/ParameterList&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;verify mesh&quot;</span> <span class="na">type=</span><span class="s">&quot;bool&quot;</span> <span class="na">value=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/ParameterList&gt;</span>
+</pre></div>
+</div>
+<div class="section" id="logicalmesh">
+<h2><a class="toc-backref" href="#id8">LogicalMesh</a></h2>
+<p>** Document me! **</p>
+</div>
+<div class="section" id="surfacemesh">
+<h2><a class="toc-backref" href="#id9">SurfaceMesh</a></h2>
+<p>To lift a surface off of the mesh, a side-set specifying all surface faces
+must be given.  These faces are lifted locally, so the partitioning of the
+surface cells will be identical to the partitioning of the subsurface faces
+that correspond to these cells.  All communication and ghost cells are set up.
+The mesh is flattened, so all surface faces must have non-zero area when
+projected in the z-direction.  No checks for holes are performed.  Surface
+meshes may similarly be audited to make sure they are reasonable for
+computation.</p>
+<ul class="simple">
+<li><cite>&quot;surface sideset name</cite>&quot; <tt class="docutils literal">[string]</tt> The <a class="reference internal" href="#region">Region</a> name containing all surface faces.</li>
+<li><cite>&quot;verify mesh</cite>&quot; <tt class="docutils literal">[bool]</tt> <strong>false</strong> Verify validity of surface mesh.</li>
+<li><cite>&quot;export mesh to file</cite>&quot; <tt class="docutils literal">[string]</tt> Export the lifted surface mesh to this filename.</li>
+</ul>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;mesh&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;read mesh file&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;file&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;mesh_filename.exo&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;format&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;Exodus II&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;/ParameterList&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;verify mesh&quot;</span> <span class="na">type=</span><span class="s">&quot;bool&quot;</span> <span class="na">value=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;surface mesh&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;Parameter</span>  <span class="na">name=</span><span class="s">&quot;surface sideset name&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;surface_region&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;verify mesh&quot;</span> <span class="na">type=</span><span class="s">&quot;bool&quot;</span> <span class="na">value=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;export mesh to file&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;surface_mesh.exo&quot;</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;/ParameterList&gt;</span>
+<span class="nt">&lt;/ParameterList&gt;</span>
+</pre></div>
+</div>
+<div class="section" id="columnmeshes">
+<h2><a class="toc-backref" href="#id10">ColumnMeshes</a></h2>
+<p>** Document me! **</p>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;mesh&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;read mesh file&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;file&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;mesh_filename.exo&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;format&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;Exodus II&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;/ParameterList&gt;</span>
+  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;column meshes&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;/ParameterList&gt;</span>
+<span class="nt">&lt;/ParameterList&gt;</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="region">
-<h1><a class="toc-backref" href="#id7">Region</a></h1>
+<h1><a class="toc-backref" href="#id11">Region</a></h1>
 <p>Regions are geometrical constructs used in Amanzi to define subsets of
 the computational domain in order to specify the problem to be solved, and the
 output desired. Regions may represents zero-, one-, two- or three-dimensional
@@ -751,7 +837,7 @@ surface region defined in an Exodus II-formatted labeled set
 file and <em>OUTFLOW PLANE</em> is a planar region. <em>BLOODY SAND</em> is a volumetric
 region defined by the value 25 in color function file.</p>
 <div class="section" id="point">
-<h2><a class="toc-backref" href="#id8">Point</a></h2>
+<h2><a class="toc-backref" href="#id12">Point</a></h2>
 <p>List <em>region: point</em> defines a point in space.
 This region consists of cells containing this point.</p>
 <ul class="simple">
@@ -766,7 +852,7 @@ This region consists of cells containing this point.</p>
 </pre></div>
 </div>
 <div class="section" id="box">
-<h2><a class="toc-backref" href="#id9">Box</a></h2>
+<h2><a class="toc-backref" href="#id13">Box</a></h2>
 <p>List <em>region: box</em> defines a region bounded by coordinate-aligned
 planes. Boxes are allowed to be of zero thickness in only one
 direction in which case they are equivalent to planes.</p>
@@ -784,7 +870,7 @@ direction in which case they are equivalent to planes.</p>
 </pre></div>
 </div>
 <div class="section" id="plane">
-<h2><a class="toc-backref" href="#id10">Plane</a></h2>
+<h2><a class="toc-backref" href="#id14">Plane</a></h2>
 <p>List <em>region: plane</em> defines a plane using a point lying on the plane and normal to the plane.</p>
 <ul class="simple">
 <li><cite>&quot;normal</cite>&quot; <tt class="docutils literal">[Array(double)]</tt> Normal to the plane.</li>
@@ -803,7 +889,7 @@ direction in which case they are equivalent to planes.</p>
 </pre></div>
 </div>
 <div class="section" id="labeled-set">
-<h2><a class="toc-backref" href="#id11">Labeled Set</a></h2>
+<h2><a class="toc-backref" href="#id15">Labeled Set</a></h2>
 <p>The list <em>region: labeled set</em> defines a named set of mesh entities
 existing in an input mesh file. This is the same file that contains
 the computational mesh. The name of the entity set is given
@@ -837,7 +923,7 @@ associated with the entities in the indicated set.</p>
 </pre></div>
 </div>
 <div class="section" id="color-function">
-<h2><a class="toc-backref" href="#id12">Color Function</a></h2>
+<h2><a class="toc-backref" href="#id16">Color Function</a></h2>
 <p>The list <em>region: color function</em> defines a region based a specified
 integer color, <em>value</em>, in a structured color function file,
 <em>file</em>. The format of the color function file is given below in
@@ -866,31 +952,29 @@ function file.</p>
 </div>
 </div>
 <div class="section" id="coordinator">
-<h1><a class="toc-backref" href="#id13">Coordinator</a></h1>
-<p>In the <cite>&quot;coordinator</cite>&quot; sublist the user specifies global control of
+<h1><a class="toc-backref" href="#id17">Coordinator</a></h1>
+<p>In the <cite>&quot;coordinator</cite>&quot; sublist, the user specifies global control of
 the simulation, including starting and ending times and restart options.</p>
 <ul>
-<li><p class="first"><cite>&quot;start time</cite>&quot; <tt class="docutils literal">[double]</tt>, <strong>0.</strong></p>
+<li><p class="first"><cite>&quot;start time</cite>&quot; <tt class="docutils literal">[double]</tt>, <strong>0.</strong> Specifies the start of time in model time.</p>
 </li>
 <li><p class="first"><cite>&quot;start time units</cite>&quot; <tt class="docutils literal">[string]</tt>, <strong>&quot;s&quot;</strong>, <cite>&quot;d</cite>&quot;, <cite>&quot;yr</cite>&quot;</p>
 </li>
-<li><p class="first"><cite>&quot;end time</cite>&quot; <tt class="docutils literal">[double]</tt></p>
+<li><p class="first"><cite>&quot;end time</cite>&quot; <tt class="docutils literal">[double]</tt> Specifies the end of the simulation in model time.</p>
 </li>
 <li><p class="first"><cite>&quot;end time units</cite>&quot; <tt class="docutils literal">[string]</tt>, <strong>&quot;s&quot;</strong>, <cite>&quot;d</cite>&quot;, <cite>&quot;yr</cite>&quot;</p>
 </li>
-<li><p class="first"><cite>&quot;end cycle</cite>&quot; <tt class="docutils literal">[int]</tt></p>
+<li><p class="first"><cite>&quot;end cycle</cite>&quot; <tt class="docutils literal">[int]</tt> If provided, specifies the end of the simulation in timestep cycles.</p>
 </li>
-<li><p class="first"><cite>&quot;restart from checkpoint file</cite>&quot; <tt class="docutils literal">[string]</tt></p>
-<p>requires a path to the checkpoint file.</p>
+<li><p class="first"><cite>&quot;restart from checkpoint file</cite>&quot; <tt class="docutils literal">[string]</tt> If provided, specifies a path to the checkpoint file to continue a stopped simulation.</p>
 </li>
-<li><p class="first"><cite>&quot;wallclock end time</cite>&quot; [double]</p>
-<p>?? This works, but this documentation needs updated.</p>
+<li><p class="first"><cite>&quot;wallclock duration [hrs]</cite>&quot; <tt class="docutils literal">[double]</tt> After this time, the simulation will checkpoint and end.  Not required.</p>
 </li>
 <li><p class="first"><cite>&quot;required times</cite>&quot; <tt class="docutils literal"><span class="pre">[time-control-spec]</span></tt></p>
-<p>A <a class="reference internal" href="#timecontrol">TimeControl</a> spec that sets a collection of times/cycles at which the simulation is guaranteed to hit exactly.  This is useful for situations such as where data is provided at a regular interval, and interpolation error related to that data is to be minimized.</p>
+<p>A <a href="#id98"><span class="problematic" id="id99">TimeControl_</span></a> spec that sets a collection of times/cycles at which the simulation is guaranteed to hit exactly.  This is useful for situations such as where data is provided at a regular interval, and interpolation error related to that data is to be minimized.</p>
 </li>
 </ul>
-<p>Note that either <cite>&quot;end cycle</cite>&quot; or <cite>&quot;end time</cite>&quot; are required, and if
+<p>Note: Either <cite>&quot;end cycle</cite>&quot; or <cite>&quot;end time</cite>&quot; are required, and if
 both are present, the simulation will stop with whichever arrives
 first.  An <cite>&quot;end cycle</cite>&quot; is commonly used to ensure that, in the case
 of a time step crash, we do not continue on forever spewing output.</p>
@@ -905,17 +989,20 @@ of a time step crash, we do not continue on forever spewing output.</p>
   <Parameter  name="end time" type="double" value="1"/>
   <Parameter  name="end time units" type="string" value="yr"/>
   <ParameterList name="required times">
-    ...
+    <Parameter name="start period stop" type="Array(double)" value="{0,-1,86400}" />
   </ParameterList>
 </ParameterList> -->
 </div>
 <div class="section" id="visualization">
-<h1><a class="toc-backref" href="#id14">Visualization</a></h1>
-<p>A user may request periodic writes of field data for the purposes of visualization in the <cite>&quot;visualization</cite>&quot; sublists.
-ATS accepts a visualization list for each domain/mesh -- currently this is up to two (one for the subsurface, and one for the surface).
-These are in separate ParameterLists, entitled <cite>&quot;visualization</cite>&quot; for the main mesh, and <cite>&quot;visualization surface</cite>&quot; on the surface mesh.
-It is expected that, for any addition meshes, each will have a domain name and therefore admit a spec of the form: <cite>&quot;visualization DOMAIN-NAME</cite>&quot;.</p>
-<p>Each list contains all parameters as in a <a class="reference internal" href="#timecontrol">TimeControl</a> spec, and also:</p>
+<h1><a class="toc-backref" href="#id18">Visualization</a></h1>
+<p>A user may request periodic writes of field data for the purposes of
+visualization in the <cite>&quot;visualization</cite>&quot; sublists.  ATS accepts a visualization
+list for each domain/mesh, including surface and column meshes.  These are in
+separate ParameterLists, entitled <cite>&quot;visualization</cite>&quot; for the main mesh, and
+<cite>&quot;visualization surface</cite>&quot; on the surface mesh.  It is expected that, for any
+addition meshes, each will have a domain name and therefore admit a spec of
+the form: <cite>&quot;visualization DOMAIN-NAME</cite>&quot;.</p>
+<p>Each list contains all parameters as in a <a class="reference internal" href="#ioevent">IOEvent</a> spec, and also:</p>
 <ul>
 <li><p class="first"><cite>&quot;file name base</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>&quot;visdump_data&quot;</strong>, <strong>&quot;visdump_surface_data&quot;</strong></p>
 </li>
@@ -923,32 +1010,23 @@ It is expected that, for any addition meshes, each will have a domain name and t
 <p>Write mesh data for every visualization dump, this facilitates visualizing deforming meshes.</p>
 </li>
 </ul>
-<p><strong>Currently not supported...</strong></p>
-<ul>
-<li><p class="first"><cite>&quot;regions</cite>&quot; <tt class="docutils literal">[Array(string)]</tt> <strong>empty array</strong></p>
-<p>Write an array into the visualization file that can be used to identify a region or regions. The first entry in the regions array is marked with the value 1.0 in the array, the second with the value 2.0, and so forth. The code ignores entries in the regions array that are not valid regions that contain cells.</p>
-</li>
-<li><p class="first"><cite>&quot;write partition</cite>&quot; <tt class="docutils literal">[bool]</tt> <strong>false</strong></p>
-<p>If this parameter is true, then write an array into the visualization file that contains the rank number of the processor that owns a mesh cell.</p>
-</li>
-</ul>
 <p>Example:</p>
 <div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;visualization&quot;</span><span class="nt">&gt;</span>
   <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;file name base&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;visdump_data&quot;</span><span class="nt">/&gt;</span>
 
-  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;cycles start period stop&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(int)&quot;</span> <span class="na">value=</span><span class="s">&quot;{0, 100, -1}&quot;</span> <span class="nt">/&gt;</span>
-  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;cycles&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(int)&quot;</span> <span class="na">value=</span><span class="s">&quot;{999, 1001}&quot;</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;cycles start period stop&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(int)&quot;</span> <span class="na">value=</span><span class="s">&quot;{{0, 100, -1}}&quot;</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;cycles&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(int)&quot;</span> <span class="na">value=</span><span class="s">&quot;{{999, 1001}}&quot;</span> <span class="nt">/&gt;</span>
 
-  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;times start period stop 0&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{0.0, 10.0, 100.0}&quot;</span><span class="nt">/&gt;</span>
-  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;times start period stop 1&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{100.0, 25.0, -1.0}&quot;</span><span class="nt">/&gt;</span>
-  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;times&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{101.0, 303.0, 422.0}&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;times start period stop 0&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{{0.0, 10.0, 100.0}}&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;times start period stop 1&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{{100.0, 25.0, -1.0}}&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;times&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{{101.0, 303.0, 422.0}}&quot;</span><span class="nt">/&gt;</span>
 
   <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;dynamic mesh&quot;</span> <span class="na">type=</span><span class="s">&quot;bool&quot;</span> <span class="na">value=</span><span class="s">&quot;false&quot;</span><span class="nt">/&gt;</span>
 <span class="nt">&lt;/ParameterList&gt;</span>
 </pre></div>
 </div>
 <div class="section" id="checkpoint">
-<h1><a class="toc-backref" href="#id15">Checkpoint</a></h1>
+<h1><a class="toc-backref" href="#id19">Checkpoint</a></h1>
 <p>A user may request periodic dumps of ATS Checkpoint Data in the
 <cite>&quot;checkpoint</cite>&quot; sublist.  The user has no explicit control over the
 content of these files, but has the guarantee that the ATS run will be
@@ -958,7 +1036,7 @@ Therefore, output controls for Checkpoint Data are limited to file
 name generation and writing frequency, by numerical cycle number.
 Unlike <cite>&quot;visualization</cite>&quot;, there is only one <cite>&quot;checkpoint</cite>&quot; list for
 all domains/meshes.</p>
-<p>The checkpoint-spec includes all parameters as in a <a class="reference internal" href="#timecontrol">TimeControl</a> spec and additionally:</p>
+<p>The checkpoint-spec includes all parameters as in a <a class="reference internal" href="#ioevent">IOEvent</a> spec and additionally:</p>
 <ul class="simple">
 <li><cite>&quot;file name base</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>&quot;checkpoint&quot;</strong></li>
 <li><cite>&quot;file name digits</cite>&quot; <tt class="docutils literal">[int]</tt> <strong>5</strong></li>
@@ -977,7 +1055,7 @@ a multiple of 100, every 10 seconds for the first 100 seconds, and
 every 25 seconds thereafter, along with times 101, 303, and 422.  Files will be written in the form: <cite>&quot;checkpoint00000.h5</cite>&quot;.</p>
 </div>
 <div class="section" id="observation">
-<h1><a class="toc-backref" href="#id16">Observation</a></h1>
+<h1><a class="toc-backref" href="#id20">Observation</a></h1>
 <p><strong>This is not currently correct!</strong></p>
 <p>A user may request any number of specific observations from ATS.  Each labeled Observation Data quantity involves a field quantity, a model, a region from which it will extract its source data, and a list of discrete times
 for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of ATS arguments.</p>
@@ -987,7 +1065,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
 <blockquote>
 <ul class="simple">
 <li><cite>&quot;Observation Output Filename</cite>&quot; [string] user-defined name for the file that the observations are written to.</li>
-<li>OBSERVATION [list] user-defined label, can accept values for <cite>&quot;Variables</cite>&quot;, <cite>&quot;Functional</cite>&quot;, <cite>&quot;Region</cite>&quot;, and all <a class="reference internal" href="#timecontrol">TimeControl</a> spec options.</li>
+<li>OBSERVATION [list] user-defined label, can accept values for <cite>&quot;Variables</cite>&quot;, <cite>&quot;Functional</cite>&quot;, <cite>&quot;Region</cite>&quot;, and all <a class="reference internal" href="#ioevent">IOEvent</a> spec options.</li>
 </ul>
 <blockquote>
 <ul class="simple">
@@ -1036,7 +1114,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
 </pre></div>
 </div>
 <div class="section" id="pk">
-<h1><a class="toc-backref" href="#id17">PK</a></h1>
+<h1><a class="toc-backref" href="#id21">PK</a></h1>
 <p>The <cite>&quot;PKs</cite>&quot; ParameterList in <a class="reference internal" href="#main">Main</a> is expected to have one and only one sublist, which corresponds to the PK at the top of the PK tree.
 This top level PK is also often an MPC (MPCs are PKs).</p>
 <p>All PKs have the following parameters in their spec:</p>
@@ -1065,15 +1143,15 @@ This top level PK is also often an MPC (MPCs are PKs).</p>
 </pre></div>
 <p>Each PK, which may be named arbitrarily, is one of the following PK specs listed below.</p>
 <div class="section" id="base-pks">
-<h2><a class="toc-backref" href="#id18">Base PKs</a></h2>
+<h2><a class="toc-backref" href="#id22">Base PKs</a></h2>
 <p>There are several types of PKs, and each PK has its own valid input spec.  However, there are three main types of PKs, from which nearly all PKs derive.  Note that none of these are true PKs and cannot stand alone.</p>
 <div class="section" id="pkdefaultbase">
-<h3><a class="toc-backref" href="#id19">PKDefaultBase</a></h3>
+<h3><a class="toc-backref" href="#id23">PKDefaultBase</a></h3>
 <p><tt class="docutils literal">PKDefaultBase</tt> is not a true PK, but is a helper for providing some basic functionality shared by (nearly) all PKs.
 Therefore, (nearly) all PKs inherit from this base class.  No input required.</p>
 </div>
 <div class="section" id="pkphysicalbase">
-<h3><a class="toc-backref" href="#id20">PKPhysicalBase</a></h3>
+<h3><a class="toc-backref" href="#id24">PKPhysicalBase</a></h3>
 <p><tt class="docutils literal">PKPhysicalBase <span class="pre">(v)--&gt;</span></tt> <a class="reference internal" href="#pkdefaultbase">PKDefaultBase</a></p>
 <p><tt class="docutils literal">PKPhysicalBase</tt> is a base class providing some functionality for PKs which are defined on a single mesh, and represent a single process model.
 Typically all leaves of the PK tree will inherit from <tt class="docutils literal">PKPhysicalBase</tt>.</p>
@@ -1099,7 +1177,7 @@ Typically all leaves of the PK tree will inherit from <tt class="docutils litera
 </blockquote>
 </div>
 <div class="section" id="pkbdfbase">
-<h3><a class="toc-backref" href="#id21">PKBDFBase</a></h3>
+<h3><a class="toc-backref" href="#id25">PKBDFBase</a></h3>
 <p><tt class="docutils literal">PKBDFBase&nbsp; <span class="pre">(v)--&gt;</span></tt> <a class="reference internal" href="#pkdefaultbase">PKDefaultBase</a></p>
 <p><tt class="docutils literal">PKBDFBase</tt> is a base class from which PKs that want to use the <tt class="docutils literal">BDF</tt> series of implicit time integrators must derive.  It specifies both the <tt class="docutils literal">BDFFnBase</tt> interface and implements some basic functionality for <tt class="docutils literal">BDF</tt> PKs.</p>
 <ul>
@@ -1121,7 +1199,7 @@ Typically all leaves of the PK tree will inherit from <tt class="docutils litera
 </ul>
 </div>
 <div class="section" id="pkphysicalbdfbase">
-<h3><a class="toc-backref" href="#id22">PKPhysicalBDFBase</a></h3>
+<h3><a class="toc-backref" href="#id26">PKPhysicalBDFBase</a></h3>
 <p><tt class="docutils literal">PKPhysicalBDFBase <span class="pre">--&gt;</span></tt> <a class="reference internal" href="#pkbdfbase">PKBDFBase</a>
 <tt class="docutils literal">PKPhysicalBDFBase <span class="pre">--&gt;</span></tt> <a class="reference internal" href="#pkphysicalbase">PKPhysicalBase</a>
 <tt class="docutils literal">PKPhysicalBDFBase <span class="pre">(v)--&gt;</span></tt> <a class="reference internal" href="#pkdefaultbase">PKDefaultBase</a></p>
@@ -1142,95 +1220,96 @@ Typically all leaves of the PK tree will inherit from <tt class="docutils litera
 </div>
 </div>
 <div class="section" id="physical-pks">
-<h2><a class="toc-backref" href="#id23">Physical PKs</a></h2>
+<h2><a class="toc-backref" href="#id27">Physical PKs</a></h2>
 <p>Physical PKs are the physical capability implemented within ATS.</p>
 <div class="section" id="flow-pks">
-<h3><a class="toc-backref" href="#id24">Flow PKs</a></h3>
+<h3><a class="toc-backref" href="#id28">Flow PKs</a></h3>
 <div class="section" id="richards-pk">
-<h4><a class="toc-backref" href="#id25">Richards PK</a></h4>
+<h4><a class="toc-backref" href="#id29">Richards PK</a></h4>
 </div>
 <div class="section" id="permafrost-flow-pk">
-<h4><a class="toc-backref" href="#id26">Permafrost Flow PK</a></h4>
+<h4><a class="toc-backref" href="#id30">Permafrost Flow PK</a></h4>
 </div>
 <div class="section" id="overland-flow-head-primary-variable-pk">
-<h4><a class="toc-backref" href="#id27">Overland Flow, head primary variable PK</a></h4>
+<h4><a class="toc-backref" href="#id31">Overland Flow, head primary variable PK</a></h4>
 </div>
 <div class="section" id="overland-flow-pressure-primary-variable-pk">
-<h4><a class="toc-backref" href="#id28">Overland Flow, pressure primary variable, PK</a></h4>
+<h4><a class="toc-backref" href="#id32">Overland Flow, pressure primary variable, PK</a></h4>
 </div>
 <div class="section" id="snow-distribution-pk">
-<h4><a class="toc-backref" href="#id29">Snow Distribution PK</a></h4>
+<h4><a class="toc-backref" href="#id33">Snow Distribution PK</a></h4>
 </div>
 </div>
 <div class="section" id="energy-pks">
-<h3><a class="toc-backref" href="#id30">Energy PKs</a></h3>
+<h3><a class="toc-backref" href="#id34">Energy PKs</a></h3>
 <div class="section" id="advection-diffusion-pk">
-<h4><a class="toc-backref" href="#id31">Advection Diffusion PK</a></h4>
+<h4><a class="toc-backref" href="#id35">Advection Diffusion PK</a></h4>
 </div>
 <div class="section" id="energy-base-pk">
-<h4><a class="toc-backref" href="#id32">Energy Base PK</a></h4>
+<h4><a class="toc-backref" href="#id36">Energy Base PK</a></h4>
 </div>
 <div class="section" id="two-phase-subsurface-energy-pk">
-<h4><a class="toc-backref" href="#id33">Two-Phase subsurface Energy PK</a></h4>
+<h4><a class="toc-backref" href="#id37">Two-Phase subsurface Energy PK</a></h4>
 </div>
 <div class="section" id="three-phase-subsurface-energy-pk">
-<h4><a class="toc-backref" href="#id34">Three-Phase subsurface Energy PK</a></h4>
+<h4><a class="toc-backref" href="#id38">Three-Phase subsurface Energy PK</a></h4>
 </div>
 <div class="section" id="id1">
-<h4><a class="toc-backref" href="#id35">Three-Phase subsurface Energy PK</a></h4>
+<h4><a class="toc-backref" href="#id39">Three-Phase subsurface Energy PK</a></h4>
 </div>
 <div class="section" id="surface-ice-energy-pk">
-<h4><a class="toc-backref" href="#id36">Surface Ice Energy PK</a></h4>
+<h4><a class="toc-backref" href="#id40">Surface Ice Energy PK</a></h4>
 </div>
 </div>
 <div class="section" id="surface-energy-balance-pks">
-<h3><a class="toc-backref" href="#id37">Surface Energy Balance PKs</a></h3>
+<h3><a class="toc-backref" href="#id41">Surface Energy Balance PKs</a></h3>
 <div class="section" id="surface-energy-balance-snow-monolithic-version">
-<h4><a class="toc-backref" href="#id38">Surface Energy Balance / Snow -- Monolithic Version</a></h4>
+<h4><a class="toc-backref" href="#id42">Surface Energy Balance / Snow -- Monolithic Version</a></h4>
 </div>
 <div class="section" id="surface-energy-balance-generic-version">
-<h4><a class="toc-backref" href="#id39">Surface Energy Balance -- Generic Version</a></h4>
+<h4><a class="toc-backref" href="#id43">Surface Energy Balance -- Generic Version</a></h4>
 </div>
 </div>
 <div class="section" id="biogeochemistry">
-<h3><a class="toc-backref" href="#id40">Biogeochemistry</a></h3>
+<h3><a class="toc-backref" href="#id44">Biogeochemistry</a></h3>
 <div class="section" id="biogeochemistry-monolithic-version">
-<h4><a class="toc-backref" href="#id41">Biogeochemistry -- Monolithic Version</a></h4>
+<h4><a class="toc-backref" href="#id45">Biogeochemistry -- Monolithic Version</a></h4>
 </div>
 </div>
 <div class="section" id="deformation">
-<h3><a class="toc-backref" href="#id42">Deformation</a></h3>
+<h3><a class="toc-backref" href="#id46">Deformation</a></h3>
 <div class="section" id="volumetric-deformation">
-<h4><a class="toc-backref" href="#id43">Volumetric Deformation</a></h4>
+<h4><a class="toc-backref" href="#id47">Volumetric Deformation</a></h4>
 </div>
 </div>
 </div>
 <div class="section" id="mpcs">
-<h2><a class="toc-backref" href="#id44">MPCs</a></h2>
+<h2><a class="toc-backref" href="#id48">MPCs</a></h2>
 <p>MPCs couple other PKs, and are the non-leaf nodes in the PK tree.</p>
 <div class="section" id="weakmpc">
-<h3><a class="toc-backref" href="#id45">WeakMPC</a></h3>
+<h3><a class="toc-backref" href="#id49">WeakMPC</a></h3>
 </div>
 <div class="section" id="strongmpc">
-<h3><a class="toc-backref" href="#id46">StrongMPC</a></h3>
+<h3><a class="toc-backref" href="#id50">StrongMPC</a></h3>
 </div>
 </div>
 <div class="section" id="physical-mpcs">
-<h2><a class="toc-backref" href="#id47">Physical MPCs</a></h2>
-<p>Often coupling is an art, and requires special off-diagonal work.  Physical MPCs can derive from default MPCs to provide special work.</p>
+<h2><a class="toc-backref" href="#id51">Physical MPCs</a></h2>
+<blockquote>
+coupling is an art, and requires special off-diagonal work.  Physical MPCs can derive from default MPCs to provide special work.</blockquote>
 <div class="section" id="coupled-water-mpc">
-<h3><a class="toc-backref" href="#id48">Coupled Water MPC</a></h3>
+<h3><a class="toc-backref" href="#id52">Coupled Water MPC</a></h3>
 </div>
 <div class="section" id="subsurface-mpc">
-<h3><a class="toc-backref" href="#id49">Subsurface MPC</a></h3>
+<h3><a class="toc-backref" href="#id53">Subsurface MPC</a></h3>
 </div>
 <div class="section" id="permafrost-mpc">
-<h3><a class="toc-backref" href="#id50">Permafrost MPC</a></h3>
+<h3><a class="toc-backref" href="#id54">Permafrost MPC</a></h3>
 </div>
 </div>
 </div>
 <div class="section" id="state">
-<h1><a class="toc-backref" href="#id51">State</a></h1>
+<h1><a class="toc-backref" href="#id55">State</a></h1>
 <p>State consists of two sublists, one for evaluators and the other for
 atomic constants.  The latter is currently called <cite>&quot;initial
 conditions</cite>&quot;, which is a terrible name which must be fixed.</p>
@@ -1245,27 +1324,105 @@ conditions</cite>&quot;, which is a terrible name which must be fixed.</p>
 <span class="nt">&lt;/ParameterList&gt;</span>
 </pre></div>
 <div class="section" id="field-evaluators">
-<h2><a class="toc-backref" href="#id52">Field Evaluators</a></h2>
+<h2><a class="toc-backref" href="#id56">Field Evaluators</a></h2>
 <p>Many field evaluators exist, but most derive from one of four base types.</p>
 <div class="section" id="field-evaluator-base-classes">
-<h3><a class="toc-backref" href="#id53">Field Evaluator Base Classes</a></h3>
+<h3><a class="toc-backref" href="#id57">Field Evaluator Base Classes</a></h3>
 <div class="section" id="primaryvariableevaluator">
-<h4><a class="toc-backref" href="#id54">PrimaryVariableEvaluator</a></h4>
+<h4><a class="toc-backref" href="#id58">PrimaryVariableEvaluator</a></h4>
 </div>
 <div class="section" id="secondaryvariableevaluator">
-<h4><a class="toc-backref" href="#id55">SecondaryVariableEvaluator</a></h4>
+<h4><a class="toc-backref" href="#id59">SecondaryVariableEvaluator</a></h4>
 </div>
 <div class="section" id="secondaryvariablesevaluator">
-<h4><a class="toc-backref" href="#id56">SecondaryVariablesEvaluator</a></h4>
+<h4><a class="toc-backref" href="#id60">SecondaryVariablesEvaluator</a></h4>
 </div>
 <div class="section" id="independentvariableevaluator">
-<h4><a class="toc-backref" href="#id57">IndependentVariableEvaluator</a></h4>
-<p>While these provide base functionality, all of the physics are in the following</p>
+<h4><a class="toc-backref" href="#id61">IndependentVariableEvaluator</a></h4>
+<p>While these provide base functionality, all of the physics are in the
+following derived classes.</p>
+</div>
+</div>
+<div class="section" id="water-content">
+<h3><a class="toc-backref" href="#id62">Water Content</a></h3>
+<p>Water content is the conserved quantity in most flow equations, including
+Richard's equation with and without ice.  A variety of evaluators are provided
+for inclusion of multiple phases.</p>
+<div class="section" id="richardswatercontentevaluator">
+<h4><a class="toc-backref" href="#id63">RichardsWaterContentEvaluator</a></h4>
+<p>Evaluator type: <cite>&quot;richards water content</cite>&quot;</p>
+<p>Evaluates water content in cell E.</p>
+<div class="formula">
+Θ = <i>φ</i><i>n</i><sub><i>liq</i></sub><i>s</i><sub><i>liq</i></sub>|<i>E</i>|
+</div>
+<ul class="simple">
+<li><cite>&quot;my key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_water_content</strong> Set by code, not user. [mol]</li>
+<li><cite>&quot;porosity key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_porosity</strong> Names the porosity variable. [-]</li>
+<li><cite>&quot;saturation liquid key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_saturation_liquid</strong> Names the saturation variable. [-]</li>
+<li><cite>&quot;molar density liquid key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_molar_density_liquid</strong> Names the density variable. [mol m^-3]</li>
+<li><cite>&quot;cell volume key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_cell_volume</strong> Names the cell volume variable. [m^3]</li>
+</ul>
+<p>Note that in the defaults, DOMAIN is determined from the name of the evaluated data, which is set by the name of the list.</p>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;water_content&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;evaluator type&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;richards water content&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/ParameterList&gt;</span>
+</pre></div>
+</div>
+<div class="section" id="richardswatercontentwithvaporevaluator">
+<h4><a class="toc-backref" href="#id64">RichardsWaterContentWithVaporEvaluator</a></h4>
+<p>Evaluator type: <cite>&quot;richards water content with vapor</cite>&quot;</p>
+<p>Evaluates water content in cell E.</p>
+<div class="formula">
+Θ = <i>φ</i>(<i>n</i><sub><i>liq</i></sub><i>s</i><sub><i>liq</i></sub> + <i>n</i><sub><i>gas</i></sub><i>s</i><sub><i>gas</i></sub><i>ω</i>)|<i>E</i>|
+</div>
+<ul class="simple">
+<li><cite>&quot;my key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_water_content</strong> Set by code, not user. [mol]</li>
+<li><cite>&quot;porosity key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_porosity</strong> Names the porosity variable. [-]</li>
+<li><cite>&quot;saturation liquid key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_saturation_liquid</strong> Names the saturation variable. [-]</li>
+<li><cite>&quot;saturation gas key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_saturation_gas</strong> Names the gas saturation variable. [-]</li>
+<li><cite>&quot;molar density liquid key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_molar_density_liquid</strong> Names the density variable. [mol m^-3]</li>
+<li><cite>&quot;molar density gas key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_molar_density_gas</strong> Names the gas density variable. [mol m^-3]</li>
+<li><cite>&quot;mol fraction vapor in gas key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_mol_frac_gas</strong> Names the molar fraction of water vapor in the gas phase variable. [-]</li>
+<li><cite>&quot;cell volume key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_cell_volume</strong> Names the cell volume variable. [m^3]</li>
+</ul>
+<p>Note that in the defaults, DOMAIN is determined from the name of the evaluated data, which is set by the name of the list.</p>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;water_content&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;evaluator type&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;richards water content with vapor&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/ParameterList&gt;</span>
+</pre></div>
+</div>
+<div class="section" id="permafrostwatercontentevaluator">
+<h4><a class="toc-backref" href="#id65">PermafrostWaterContentEvaluator</a></h4>
+<p>Evaluator type: <cite>&quot;permafrost water content</cite>&quot;</p>
+<p>Evaluates water content in cell E.</p>
+<div class="formula">
+Θ = <i>φ</i>(<i>n</i><sub><i>ice</i></sub><i>s</i><sub><i>ice</i></sub> + <i>n</i><sub><i>liq</i></sub><i>s</i><sub><i>liq</i></sub> + <i>n</i><sub><i>gas</i></sub><i>s</i><sub><i>gas</i></sub><i>ω</i>)|<i>E</i>|
+</div>
+<ul class="simple">
+<li><cite>&quot;my key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_water_content</strong> Set by code, not user. [mol]</li>
+<li><cite>&quot;porosity key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_porosity</strong> Names the porosity variable. [-]</li>
+<li><cite>&quot;saturation ice key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_saturation_ice</strong> Names the ice saturation variable. [-]</li>
+<li><cite>&quot;saturation liquid key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_saturation_liquid</strong> Names the liquid saturation variable. [-]</li>
+<li><cite>&quot;saturation gas key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_saturation_gas</strong> Names the gas saturation variable. [-]</li>
+<li><cite>&quot;molar density ice key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_molar_density_ice</strong> Names the ice density variable. [mol m^-3]</li>
+<li><cite>&quot;molar density liquid key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_molar_density_liquid</strong> Names the liquid density variable. [mol m^-3]</li>
+<li><cite>&quot;molar density gas key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_molar_density_gas</strong> Names the gas density variable. [mol m^-3]</li>
+<li><cite>&quot;mol fraction vapor in gas key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_mol_frac_gas</strong> Names the molar fraction of water vapor in the gas phase variable. [-]</li>
+<li><cite>&quot;cell volume key</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>DOMAIN_cell_volume</strong> Names the cell volume variable. [m^3]</li>
+</ul>
+<p>Note that in the defaults, DOMAIN is determined from the name of the evaluated data, which is set by the name of the list.</p>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;water_content&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;evaluator type&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;permafrost water content&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/ParameterList&gt;</span>
+</pre></div>
 </div>
 </div>
 </div>
 <div class="section" id="initialconditions">
-<h2><a class="toc-backref" href="#id58">InitialConditions</a></h2>
+<h2><a class="toc-backref" href="#id66">InitialConditions</a></h2>
 <p>Initial condition specs are used in two places -- in the <a class="reference internal" href="#pk">PK</a> spec
 which describes the initial condition of primary variables, and in the
 initial conditions sublist of state, in which the value of atomic
@@ -1275,7 +1432,7 @@ list (hence the name of this sublist).  In ATS, this sublist is pretty
 much only used for constant scalars and constant vectors.</p>
 <p>This list needs to be renamed -- it has nothing to do with inital conditions anymore.</p>
 <div class="section" id="initialization-of-constant-scalars">
-<h3><a class="toc-backref" href="#id59">Initialization of constant scalars</a></h3>
+<h3><a class="toc-backref" href="#id67">Initialization of constant scalars</a></h3>
 <p>A constant scalar field is the global (with respect to the mesh)
 constant.  At the moment, the set of such fields includes atmospheric
 pressure.  The initialization requires to provide a named sublist with
@@ -1286,7 +1443,7 @@ a single parameter <cite>&quot;value</cite>&quot;.</p>
 </pre></div>
 </div>
 <div class="section" id="initialization-of-constant-vectors">
-<h3><a class="toc-backref" href="#id60">Initialization of constant vectors</a></h3>
+<h3><a class="toc-backref" href="#id68">Initialization of constant vectors</a></h3>
 <p>A constant vector field is the global (with respect to the mesh)
 vector constant.  At the moment, the set of such vector constants
 includes gravity.  The initialization requires to provide a named
@@ -1298,7 +1455,7 @@ is looks like</p>
 </pre></div>
 </div>
 <div class="section" id="initialization-of-scalar-fields">
-<h3><a class="toc-backref" href="#id61">Initialization of scalar fields</a></h3>
+<h3><a class="toc-backref" href="#id69">Initialization of scalar fields</a></h3>
 <p>A variable scalar field is defined by a few functions (labeled for instance,
 <cite>&quot;Mesh Block i</cite>&quot; with non-overlapping ranges.
 The required parameters for each function are <cite>&quot;region</cite>&quot;, <cite>&quot;component</cite>&quot;,
@@ -1322,7 +1479,7 @@ and the function itself.</p>
 </pre></div>
 </div>
 <div class="section" id="initialization-of-tensor-fields">
-<h3><a class="toc-backref" href="#id62">Initialization of tensor fields</a></h3>
+<h3><a class="toc-backref" href="#id70">Initialization of tensor fields</a></h3>
 <p>A variable tensor (or vector) field is defined similarly to a variable
 scalar field.  The difference lies in the definition of the function
 which is now a multi-values function.  The required parameters are
@@ -1344,7 +1501,7 @@ which is now a multi-values function.  The required parameters are
 </pre></div>
 </div>
 <div class="section" id="initialization-from-a-file">
-<h3><a class="toc-backref" href="#id63">Initialization from a file</a></h3>
+<h3><a class="toc-backref" href="#id71">Initialization from a file</a></h3>
 <p>Some data can be initialized from files. Additional sublist has to be
 added to named sublist of the <cite>&quot;state</cite>&quot; list with the file name and
 the name of attribute.  For a serial run, the file extension must be
@@ -1379,13 +1536,13 @@ example:</p>
 </div>
 </div>
 <div class="section" id="time-integrators-solvers-and-other-mathematical-specs">
-<h1><a class="toc-backref" href="#id64">Time integrators, solvers, and other mathematical specs</a></h1>
+<h1><a class="toc-backref" href="#id72">Time integrators, solvers, and other mathematical specs</a></h1>
 <p>Common specs for all solvers and time integrators, used in PKs.</p>
 <div class="section" id="timeintegrator">
-<h2><a class="toc-backref" href="#id65">TimeIntegrator</a></h2>
+<h2><a class="toc-backref" href="#id73">TimeIntegrator</a></h2>
 </div>
 <div class="section" id="linear-solver-spec">
-<h2><a class="toc-backref" href="#id66">Linear Solver Spec</a></h2>
+<h2><a class="toc-backref" href="#id74">Linear Solver Spec</a></h2>
 <p>For each solver, a few parameters are used:</p>
 <ul>
 <li><p class="first"><cite>&quot;iterative method</cite>&quot; <tt class="docutils literal">[string]</tt> <cite>&quot;pcg</cite>&quot;, <cite>&quot;gmres</cite>&quot;, or <cite>&quot;nka</cite>&quot;</p>
@@ -1415,7 +1572,7 @@ may include <cite>&quot;relative residual</cite>&quot;, <cite>&quot;relative rhs
 </pre></div>
 </div>
 <div class="section" id="preconditioner">
-<h2><a class="toc-backref" href="#id67">Preconditioner</a></h2>
+<h2><a class="toc-backref" href="#id75">Preconditioner</a></h2>
 <p>These can be used by a process kernel lists to define a preconditioner.  The only common parameter required by all lists is the type:</p>
 <blockquote>
 <ul class="simple">
@@ -1431,43 +1588,56 @@ may include <cite>&quot;relative residual</cite>&quot;, <cite>&quot;relative rhs
    <span class="nt">&lt;/ParameterList&gt;</span>
 <span class="nt">&lt;/ParameterList&gt;</span>
 </pre></div>
-<div class="section" id="hypre-amg">
-<h3><a class="toc-backref" href="#id68">Hypre AMG</a></h3>
-<p>Internal parameters of Boomer AMG includes</p>
-<blockquote>
+<div class="section" id="hypre-s-boomer-amg">
+<h3><a class="toc-backref" href="#id76">Hypre's Boomer AMG</a></h3>
+<p>Internal parameters for Boomer AMG include</p>
 <ul class="simple">
-<li><cite>&quot;tolerance</cite>&quot; <tt class="docutils literal">[double]</tt> <strong>0.0</strong> if is not zero, the preconditioner is dynamic
+<li><cite>&quot;tolerance</cite>&quot; <tt class="docutils literal">[double]</tt> if is not zero, the preconditioner is dynamic
 and approximate the inverse matrix with the prescribed tolerance (in
-the energy norm?).</li>
-<li><cite>&quot;smoother sweeps</cite>&quot; <tt class="docutils literal">[int]</tt> Number of smoothing iterations at each level on each cycle.</li>
-<li><cite>&quot;cycle applications</cite>&quot; <tt class="docutils literal">[int]</tt> <strong>5</strong> Number of V/W cycles to take.</li>
-<li><cite>&quot;strong threshold</cite>&quot; <tt class="docutils literal">[double]</tt> <strong>0.5</strong> Tolerance for including an off-diagonal when coarsening?  This is a very tunable parameter.</li>
+the energy norm ???).</li>
+<li><cite>&quot;smoother sweeps</cite>&quot; <tt class="docutils literal">[int]</tt> <strong>3</strong> defines the number of smoothing loops. Default is 3.</li>
+<li><cite>&quot;cycle applications</cite>&quot; <tt class="docutils literal">[int]</tt> <strong>5</strong> defines the number of V-cycles.</li>
+<li><cite>&quot;strong threshold</cite>&quot; <tt class="docutils literal">[double]</tt> <strong>0.5</strong> defines the number of V-cycles. Default is 5.</li>
 <li><cite>&quot;relaxation type</cite>&quot; <tt class="docutils literal">[int]</tt> <strong>6</strong> defines the smoother to be used. Default is 6
-which specifies a symmetric hybrid Gauss-Seidel / Jacobi hybrid method.</li>
+which specifies a symmetric hybrid Gauss-Seidel / Jacobi hybrid method. TODO: add others!</li>
+<li><cite>&quot;coarsen type</cite>&quot; <tt class="docutils literal">[int]</tt> <strong>0</strong> defines the coarsening strategy to be used. Default is 0
+which specifies a Falgout method. TODO: add others!</li>
+<li><cite>&quot;max multigrid levels</cite>&quot; <tt class="docutils literal">[int]</tt> optionally defined the maximum number of multigrid levels.</li>
+<li><cite>&quot;number of functions</cite>&quot; <tt class="docutils literal">[int]</tt> <strong>1</strong>  Any value &gt; 1 tells Boomer AMG to use the <cite>&quot;systems
+of PDEs</cite>&quot; code.  Note that, to use this approach, unknowns must be ordered with
+DoF fastest varying (i.e. not the native Epetra_MultiVector order).  By default, it
+uses the <cite>&quot;unknown</cite>&quot; approach in which each equation is coarsened and
+interpolated independently.  <strong>Getting this correct is very helpful!</strong><ul>
+<li><cite>&quot;nodal strength of connection norm</cite>&quot; <tt class="docutils literal">[int]</tt> tells AMG to coarsen such
+that each variable has the same coarse grid - sometimes this is more
+&quot;physical&quot; for a particular problem. The value chosen here for nodal
+determines how strength of connection is determined between the
+coupled system.  I suggest setting nodal = 1, which uses a Frobenius
+norm.  This does NOT tell AMG to use nodal relaxation.
+Default is 0.</li>
 </ul>
-</blockquote>
-<ul class="simple">
-<li><cite>&quot;verbosity</cite>&quot; <tt class="docutils literal">[int]</tt> <strong>0</strong> prints BoomerAMG statistics useful for analysis.</li>
+</li>
+<li><cite>&quot;verbosity</cite>&quot; <tt class="docutils literal">[int]</tt> <strong>0</strong> prints a summary of run time settings and
+timing information to stdout.  <cite>&quot;1</cite>&quot; prints coarsening info, <cite>&quot;2</cite>&quot; prints
+smoothing info, and <cite>&quot;3</cite>'&quot; prints both.</li>
 </ul>
-<blockquote>
-<ul class="simple">
-<li><cite>&quot;number of functions</cite>&quot; <tt class="docutils literal">[int]</tt> <strong>1</strong> Used in systems, this is very important to set correctly if you have two or more seperate variables interleaved.</li>
-</ul>
-</blockquote>
+<p>Example:</p>
 <div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;boomer amg parameters&quot;</span><span class="nt">&gt;</span>
   <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;tolerance&quot;</span> <span class="na">type=</span><span class="s">&quot;double&quot;</span> <span class="na">value=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
   <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;smoother sweeps&quot;</span> <span class="na">type=</span><span class="s">&quot;int&quot;</span> <span class="na">value=</span><span class="s">&quot;3&quot;</span><span class="nt">/&gt;</span>
   <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;cycle applications&quot;</span> <span class="na">type=</span><span class="s">&quot;int&quot;</span> <span class="na">value=</span><span class="s">&quot;5&quot;</span><span class="nt">/&gt;</span>
   <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;strong threshold&quot;</span> <span class="na">type=</span><span class="s">&quot;double&quot;</span> <span class="na">value=</span><span class="s">&quot;0.5&quot;</span><span class="nt">/&gt;</span>
-  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;relaxation type&quot;</span> <span class="na">type=</span><span class="s">&quot;int&quot;</span> <span class="na">value=</span><span class="s">&quot;6&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;coarsen type&quot;</span> <span class="na">type=</span><span class="s">&quot;int&quot;</span> <span class="na">value=</span><span class="s">&quot;0&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;relaxation type&quot;</span> <span class="na">type=</span><span class="s">&quot;int&quot;</span> <span class="na">value=</span><span class="s">&quot;3&quot;</span><span class="nt">/&gt;</span>
   <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;verbosity&quot;</span> <span class="na">type=</span><span class="s">&quot;int&quot;</span> <span class="na">value=</span><span class="s">&quot;0&quot;</span><span class="nt">/&gt;</span>
   <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;number of functions&quot;</span> <span class="na">type=</span><span class="s">&quot;int&quot;</span> <span class="na">value=</span><span class="s">&quot;1&quot;</span><span class="nt">/&gt;</span>
 <span class="nt">&lt;/ParameterList&gt;</span>
 </pre></div>
 </div>
 <div class="section" id="trilinos-ml">
-<h3><a class="toc-backref" href="#id69">Trilinos ML</a></h3>
+<h3><a class="toc-backref" href="#id77">Trilinos ML</a></h3>
 <p>Internal parameters of Trilinos ML includes</p>
+<p>Example:</p>
 <div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;ml parameters&quot;</span><span class="nt">&gt;</span>
   <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;ML output&quot;</span> <span class="na">type=</span><span class="s">&quot;int&quot;</span> <span class="na">value=</span><span class="s">&quot;0&quot;</span><span class="nt">/&gt;</span>
   <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;aggregation: damping factor&quot;</span> <span class="na">type=</span><span class="s">&quot;double&quot;</span> <span class="na">value=</span><span class="s">&quot;1.33&quot;</span><span class="nt">/&gt;</span>
@@ -1490,105 +1660,135 @@ which specifies a symmetric hybrid Gauss-Seidel / Jacobi hybrid method.</li>
 </pre></div>
 </div>
 <div class="section" id="block-ilu">
-<h3><a class="toc-backref" href="#id70">Block ILU</a></h3>
-<p>The internal parameters of the block ILU are as follows:</p>
+<h3><a class="toc-backref" href="#id78">Block ILU</a></h3>
+<p>The internal parameters for block ILU are as follows:</p>
+<p>Example:</p>
 <div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;block ilu parameters&quot;</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;fact: relax value&quot;</span> <span class="na">type=</span><span class="s">&quot;double&quot;</span> <span class="na">value=</span><span class="s">&quot;1.00000000000000000e+00&quot;</span><span class="nt">/&gt;</span>
-  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;fact: absolute threshold&quot;</span> <span class="na">type=</span><span class="s">&quot;double&quot;</span> <span class="na">value=</span><span class="s">&quot;0.00000000000000000e+00&quot;</span><span class="nt">/&gt;</span>
-  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;fact: relative threshold&quot;</span> <span class="na">type=</span><span class="s">&quot;double&quot;</span> <span class="na">value=</span><span class="s">&quot;1.00000000000000000e+00&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;fact: relax value&quot;</span> <span class="na">type=</span><span class="s">&quot;double&quot;</span> <span class="na">value=</span><span class="s">&quot;1.0&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;fact: absolute threshold&quot;</span> <span class="na">type=</span><span class="s">&quot;double&quot;</span> <span class="na">value=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;fact: relative threshold&quot;</span> <span class="na">type=</span><span class="s">&quot;double&quot;</span> <span class="na">value=</span><span class="s">&quot;1.0&quot;</span><span class="nt">/&gt;</span>
   <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;fact: level-of-fill&quot;</span> <span class="na">type=</span><span class="s">&quot;int&quot;</span> <span class="na">value=</span><span class="s">&quot;0&quot;</span><span class="nt">/&gt;</span>
   <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;overlap&quot;</span> <span class="na">type=</span><span class="s">&quot;int&quot;</span> <span class="na">value=</span><span class="s">&quot;0&quot;</span><span class="nt">/&gt;</span>
   <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;schwarz: combine mode&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;Add&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;/ParameterList&gt;</span>
 <span class="nt">&lt;/ParameterList&gt;</span>
 </pre></div>
 </div>
 <div class="section" id="indentity">
-<h3><a class="toc-backref" href="#id71">Indentity</a></h3>
+<h3><a class="toc-backref" href="#id79">Indentity</a></h3>
 <p>The default, no PC applied.</p>
 </div>
 </div>
 <div class="section" id="nonlinearsolver">
-<h2><a class="toc-backref" href="#id72">NonlinearSolver</a></h2>
+<h2><a class="toc-backref" href="#id80">NonlinearSolver</a></h2>
 </div>
 </div>
 <div class="section" id="other-common-specs">
-<h1><a class="toc-backref" href="#id73">Other Common Specs</a></h1>
-<div class="section" id="timecontrol">
-<h2><a class="toc-backref" href="#id74">TimeControl</a></h2>
-<p>The time-control-spec is used for multiple lists that need to indicate simulation times or cycles on which to do something.</p>
-<blockquote>
+<h1><a class="toc-backref" href="#id81">Other Common Specs</a></h1>
+<div class="section" id="ioevent">
+<h2><a class="toc-backref" href="#id82">IOEvent</a></h2>
+<p>The IOEvent is used for multiple objects that need to indicate simulation times or cycles on which to do something.</p>
 <ul>
 <li><p class="first"><cite>&quot;cycles start period stop</cite>&quot; <tt class="docutils literal">[Array(int)]</tt></p>
+<blockquote>
 <p>The first entry is the start cycle, the second is the cycle
 period, and the third is the stop cycle or -1, in which case there
 is no stop cycle. A visualization dump is written at such
 cycles that satisfy cycle = start + n*period, for n=0,1,2,... and
 cycle &lt; stop if stop != -1.0.</p>
+</blockquote>
 </li>
 <li><p class="first"><cite>&quot;cycles start period stop N</cite>&quot; <tt class="docutils literal">[Array(int)]</tt></p>
+<blockquote>
 <p>If multiple cycles start period stop parameters are needed, then
 use these parameters with N=0,1,2,...</p>
+</blockquote>
 </li>
 <li><p class="first"><cite>&quot;cycles</cite>&quot; <tt class="docutils literal">[Array(int)]</tt></p>
+<blockquote>
 <p>An array of discrete cycles that at which a visualization dump is
 written.</p>
+</blockquote>
 </li>
 <li><p class="first"><cite>&quot;times start period stop</cite>&quot; <tt class="docutils literal">[Array(double)]</tt></p>
+<blockquote>
 <p>The first entry is the start time, the second is the time period,
 and the third is the stop time or -1, in which case there is no
 stop time. A visualization dump is written at such times that
 satisfy time = start + n*period, for n=0,1,2,... and time &lt; stop
 if stop != -1.0.  Note that all times units are in seconds.</p>
+</blockquote>
 </li>
 <li><p class="first"><cite>&quot;times start period stop n</cite>&quot; <tt class="docutils literal">[Array(double)]</tt></p>
+<blockquote>
 <p>If multiple start period stop parameters are needed, then use this
 these parameters with n=0,1,2,..., and not the single <cite>&quot;times
 start period stop</cite>&quot; parameter.  Note that all times units are in
 seconds.</p>
+</blockquote>
 </li>
 <li><p class="first"><cite>&quot;times</cite>&quot; <tt class="docutils literal">[Array(double)]</tt></p>
+<blockquote>
 <p>An array of discrete times that at which a visualization dump
 shall be written.  Note that all times units are in seconds.</p>
+</blockquote>
 </li>
 </ul>
-</blockquote>
 </div>
 <div class="section" id="verboseobject">
-<h2><a class="toc-backref" href="#id75">VerboseObject</a></h2>
-<p><tt class="docutils literal"><span class="pre">Teuchos::VerboseObject</span></tt> is a tool for managing code output.  See also the <a class="reference external" href="http://trilinos.org/docs/r11.6/packages/teuchos/doc/html/classTeuchos_1_1VerboseObject.html">Trilinos documentation</a></p>
+<h2><a class="toc-backref" href="#id83">VerboseObject</a></h2>
+<p>This allows control of log-file verbosity for a wide variety of objects
+and physics.</p>
+<ul>
+<li><p class="first"><cite>&quot;verbosity level</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>GLOBAL_VERBOSITY</strong>, <cite>&quot;low</cite>&quot;, <cite>&quot;medium</cite>&quot;, <cite>&quot;high</cite>&quot;, <cite>&quot;extreme</cite>&quot;</p>
 <blockquote>
-<ul class="simple">
-<li><cite>&quot;Verbosity Level</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>GLOBAL_VERBOSITY</strong>, <cite>&quot;low</cite>&quot;, <cite>&quot;medium</cite>&quot;, <cite>&quot;high</cite>&quot;, <cite>&quot;extreme</cite>&quot;  The default is set by the global verbosity spec, (fix me!)  Typically, <cite>&quot;low</cite>&quot; prints out minimal information, <cite>&quot;medium</cite>&quot; prints out errors and overall high level information, <cite>&quot;high</cite>&quot; prints out basic debugging, and <cite>&quot;extreme</cite>&quot; prints out local debugging information.  <cite>&quot;medium</cite>&quot; is the standard.</li>
-</ul>
+<p>The default is set by the global verbosity spec, (fix me!)  Typically,
+<cite>&quot;low</cite>&quot; prints out minimal information, <cite>&quot;medium</cite>&quot; prints out errors and
+overall high level information, <cite>&quot;high</cite>&quot; prints out basic debugging, and
+<cite>&quot;extreme</cite>&quot; prints out local debugging information.</p>
 </blockquote>
-</div>
-<div class="section" id="function">
-<h2><a class="toc-backref" href="#id76">Function</a></h2>
-<p>To set up non-trivial boundary conditions and/or initial fields, ATS supports a few mathematical functions.
-New function types can added easily.
-Each function is defined a list:</p>
-<div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;NAME&quot;</span><span class="nt">&gt;</span>
-  function-specification
+</li>
+</ul>
+<p>Note: while there are other options, users should typically not need them.
+Instead, developers can use them to control output.</p>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;verbose object&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;verbosity level&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;medium&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;name&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;my header&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;hide line prefix&quot;</span> <span class="na">type=</span><span class="s">&quot;bool&quot;</span> <span class="na">value=</span><span class="s">&quot;false&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;write on rank&quot;</span> <span class="na">type=</span><span class="s">&quot;int&quot;</span> <span class="na">value=</span><span class="s">&quot;0&quot;</span><span class="nt">/&gt;</span>
 <span class="nt">&lt;/ParameterList&gt;</span>
 </pre></div>
-<p>The parameter list name string <cite>&quot;NAME</cite>&quot; is arbitrary and meaningful only to the parent parameter list.
-This list is given as input to the ATS::FunctionFactory::Create method which instantiates a new ATS::Function object.
-The function-specification is one of the following parameter lists.</p>
-<p>????? many more are supported... add to the list! ????</p>
+</div>
+<div class="section" id="function">
+<h2><a class="toc-backref" href="#id84">Function</a></h2>
+<p>Analytic, algabraic functions of space and time are used for a variety of
+purposes, including boundary conditions, initial conditions, and independent
+variables.</p>
+<p>For initial conditions, functions are prescribed of space only, i.e.</p>
+<p><span class="formula"><i>u</i> = <i>f</i>(<i>x</i>, <i>y</i>, <i>z</i>)</span></p>
+<p>For boundary conditions and independent variables, functions are also a
+function of time:</p>
+<p><span class="formula"><i>u</i> = <i>f</i>(<i>t</i>, <i>x</i>, <i>y</i>, <i>z</i>)</span></p>
+<p>A <tt class="docutils literal"><span class="pre">[function-spec]</span></tt> is used to prescribe these functions.</p>
+<p>It is straightforward to add new functions as needed.</p>
 <div class="section" id="constant-function">
-<h3><a class="toc-backref" href="#id77">Constant function</a></h3>
-<p>Constant function is defined as <cite>f(x) = a</cite>, for all <cite>x</cite>.
-The specification of this function needs only one parameter.
-For example, when <cite>a = 1</cite>, we have:</p>
+<h3><a class="toc-backref" href="#id85">Constant Function</a></h3>
+<p>Constant function is defined as <span class="formula"><i>f</i>(<i>x</i>) = <i>a</i></span>, for all <span class="formula"><i>x</i></span>.</p>
+<ul class="simple">
+<li><cite>&quot;value</cite>&quot; <tt class="docutils literal">[double]</tt> The constant to be applied.</li>
+</ul>
+<p>Example:</p>
 <div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;function-constant&quot;</span><span class="nt">&gt;</span>
   <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;value&quot;</span> <span class="na">type=</span><span class="s">&quot;double&quot;</span> <span class="na">value=</span><span class="s">&quot;1.0&quot;</span><span class="nt">/&gt;</span>
 <span class="nt">&lt;/ParameterList&gt;</span>
 </pre></div>
 </div>
 <div class="section" id="tabular-function">
-<h3><a class="toc-backref" href="#id78">Tabular function</a></h3>
-<p>Given values <span class="formula"><i>x</i><sub><i>i</i></sub>, <i>y</i><sub><i>i</i></sub>, <i>i</i> = 0, ...<i>n</i> − 1</span>, a tabular function <span class="formula"><i>f</i>(<i>x</i>)</span> is
-defined piecewise:</p>
+<h3><a class="toc-backref" href="#id86">Tabular Function</a></h3>
+<p>A piecewise function of one variable.</p>
+<p>A tabular function is tabulated on a series of intervals; given values
+<span class="formula"><i>x</i><sub><i>i</i></sub>, <i>y</i><sub><i>i</i></sub>, , <i>i</i> = 0, ...<i>n</i> − 1</span> and functional forms <span class="formula"><i>f</i><sub><i>j</i></sub>, , <i>j</i> = 0, ...<i>n</i> − 2</span> a tabular function <span class="formula"><i>f</i>(<i>x</i>)</span> is defined as:</p>
 <div class="formula">
 <span class="array"><span class="arrayrow">
 <span class="arraycell align-c">
@@ -1598,7 +1798,7 @@ defined piecewise:</p>
  = 
 </span>
 <span class="arraycell align-c">
-<i>x</i><sub>0</sub>, 
+<i>y</i><sub>0</sub>, 
 </span>
 <span class="arraycell align-c">
 <i>x</i> ≤ <i>x</i><sub>0</sub>, 
@@ -1628,7 +1828,7 @@ defined piecewise:</p>
  = 
 </span>
 <span class="arraycell align-c">
-<i>f</i>(<i>x</i><sub><i>i</i> − 1</sub>) + (<i>x</i> − <i>x</i><sub><i>i</i> − 1</sub>)<span class="fraction"><span class="ignored">(</span><span class="numerator"><i>f</i>(<i>x</i><sub><i>i</i></sub>) − <i>f</i>(<i>x</i><sub><i>i</i> − 1</sub>)</span><span class="ignored">)/(</span><span class="denominator"><i>x</i><sub><i>i</i></sub> − <i>x</i><sub><i>i</i> − 1</sub></span><span class="ignored">)</span></span>, 
+<i>f</i><sub><i>i</i> − 1</sub>(<i>x</i>)
 </span>
 <span class="arraycell align-c">
 <i>x</i> ∈ (<i>x</i><sub><i>i</i> − 1</sub>, <i>x</i><sub><i>i</i></sub>], 
@@ -1658,7 +1858,7 @@ defined piecewise:</p>
  = 
 </span>
 <span class="arraycell align-c">
-<i>x</i><sub><i>n</i> − 1</sub>, 
+<i>y</i><sub><i>n</i> − 1</sub>, 
 </span>
 <span class="arraycell align-c">
 <i>x</i> &gt; <i>x</i><sub><i>n</i> − 1</sub>.
@@ -1667,29 +1867,62 @@ defined piecewise:</p>
 </span>
 </span>
 </div>
-<p>This function is continuous and linear between two consecutive points.
-This behavior can be changed using parameter <cite>&quot;forms</cite>&quot;.
-This parameter is optional.
-If specified it must be an array of length equal to one less than the length
-of <cite>x values</cite>.
-Each value is either <cite>&quot;linear</cite>&quot; to indicate linear interpolation on that
-interval, or <cite>&quot;constant</cite>&quot; to use the left endpoint value for that interval.
-The example defines function that is zero on interval <span class="formula">( − ∞,  0]</span>,
+<p>The functional forms <span class="formula"><i>f</i><sub><i>j</i></sub></span> may be constant, which uses the left endpoint, i.e.</p>
+<p><span class="formula"><i>f</i><sub><i>i</i></sub>(<i>x</i>) = <i>y</i><sub><i>i</i></sub></span>,</p>
+<p>linear, i.e.</p>
+<p><span class="formula"><i>f</i><sub><i>i</i></sub>(<i>x</i>) = (<i>y</i><sub><i>i</i></sub>*(<i>x</i> − <i>x</i><sub><i>i</i></sub>) + <i>y</i><sub><i>i</i> + 1</sub>*(<i>x</i><sub><i>i</i> + 1</sub> − <i>x</i>)) ⁄ (<i>x</i><sub><i>i</i> + 1</sub> − <i>x</i><sub><i>i</i></sub>)</span></p>
+<p>or arbitrary, in which the <span class="formula"><i>f</i><sub><i>j</i></sub></span> must be provided.</p>
+<p>The <span class="formula"><i>x</i><sub><i>i</i></sub></span> and <span class="formula"><i>y</i><sub><i>i</i></sub></span> may be provided in one of two ways -- explicitly in the input spec or from an HDF5 file.  The length of these must be equal, and the <span class="formula"><i>x</i><sub><i>i</i></sub></span> must be monotonically increasing.  Forms, as defined on intervals, must be of length equal to the length of the <span class="formula"><i>x</i><sub><i>i</i></sub></span> less one.</p>
+<p>Explicitly specifying the data:</p>
+<ul class="simple">
+<li><cite>&quot;x values</cite>&quot; <tt class="docutils literal">[Array(double)]</tt> the <span class="formula"><i>x</i><sub><i>i</i></sub></span></li>
+<li><cite>&quot;y values</cite>&quot; <tt class="docutils literal">[Array(double)]</tt> the <span class="formula"><i>y</i><sub><i>i</i></sub></span></li>
+<li><cite>&quot;forms</cite>&quot; <tt class="docutils literal">[Array(string)]</tt> <strong>linear</strong>, <cite>&quot;constant</cite>&quot;, <cite>&quot;USER_DEFINED</cite>&quot;</li>
+<li><cite>&quot;USER_DEFINED</cite>&quot; <tt class="docutils literal"><span class="pre">[function-spec]</span></tt> user-provided functional forms on the interval</li>
+<li><cite>&quot;x coordinate</cite>&quot; <tt class="docutils literal">[string]</tt> <strong>t</strong>, <cite>&quot;x</cite>&quot;, <cite>&quot;y</cite>&quot;, <cite>&quot;z</cite>&quot; defines which coordinate direction the <span class="formula"><i>x</i><sub><i>i</i></sub></span> are formed, defaulting to time.</li>
+</ul>
+<p>The below example defines a function that is zero on interval <span class="formula">( − ∞,  0]</span>,
 linear on interval <span class="formula">(0,  1]</span>, constant (<cite>f(x)=1</cite>) on interval <span class="formula">(1,  2]</span>,
-and constant (<cite>f(x)=2</cite>) on interval <span class="formula">(2,  ∞]</span>.</p>
+square root of <cite>t</cite> on interval <span class="formula">(2,  3]</span>,
+and constant (<cite>f(x)=2</cite>) on interval <span class="formula">(3,  ∞]</span>.</p>
+<p>Example:</p>
 <div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;function-tabular&quot;</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;x values&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{0.0, 1.0, 2.0}&quot;</span><span class="nt">/&gt;</span>
-  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;y values&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{0.0, 1.0, 2.0}&quot;</span><span class="nt">/&gt;</span>
-  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;forms&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(string)&quot;</span> <span class="na">value=</span><span class="s">&quot;{linear, constant}&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;x values&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{0.0, 1.0, 2.0, 3.0}&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;x coordinate&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;t&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;y values&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{0.0, 1.0, 2.0, 2.0}&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;forms&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(string)&quot;</span> <span class="na">value=</span><span class="s">&quot;{linear, constant, USER_FUNC}&quot;</span><span class="nt">/&gt;</span>
+
+  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;USER_FUNC&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;function-standard-math&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;operator&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;sqrt&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;/ParameterList&gt;</span>
+  <span class="nt">&lt;/ParameterList&gt;</span>
+<span class="nt">&lt;/ParameterList&gt;</span>
+</pre></div>
+<p>Loading table from file (note that <cite>&quot;USER_DEFINED</cite>&quot; is not an option here, but could be made so if requested):</p>
+<ul class="simple">
+<li><cite>&quot;file</cite>&quot; <tt class="docutils literal">[string]</tt> filename of the HDF5 data</li>
+<li><cite>&quot;x header</cite>&quot; <tt class="docutils literal">[string]</tt> name of the dataset for the <span class="formula"><i>x</i><sub><i>i</i></sub></span> in the file</li>
+<li><cite>&quot;y header</cite>&quot; <tt class="docutils literal">[string]</tt> name of the dataset for the <span class="formula"><i>y</i><sub><i>i</i></sub></span> in the file</li>
+<li><cite>&quot;forms</cite>&quot; <tt class="docutils literal">[Array(string)]</tt> <strong>linear</strong>, <cite>&quot;constant</cite>&quot;</li>
+</ul>
+<p>The example below would perform linear-interpolation on the intervals provided by data within the hdf5 file <cite>&quot;my_data.h5</cite>&quot;.</p>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;function-tabular&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;file&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;my_data.h5&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;x coordinate&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;t&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;x header&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;/time&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;y header&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;/data&quot;</span><span class="nt">/&gt;</span>
 <span class="nt">&lt;/ParameterList&gt;</span>
 </pre></div>
 </div>
 <div class="section" id="smooth-step-function">
-<h3><a class="toc-backref" href="#id79">Smooth step function</a></h3>
+<h3><a class="toc-backref" href="#id87">Smooth step Function</a></h3>
 <p>A smooth <span class="formula"><i>C</i><sup>2</sup></span> function <cite>f(x)</cite> on interval <span class="formula">[<i>x</i><sub>0</sub>,  <i>x</i><sub>1</sub>]</span> is
-defined such that <cite>f(x) = y_0</cite> for <cite>x &lt; x0</cite>, <cite>f(x) = y_1</cite> for <cite>x &gt; x_1</cite>,
-and monotonically increasing for <span class="formula"><i>x</i> ∈ [<i>x</i><sub>0</sub>, <i>x</i><sub>1</sub>]</span>.
-Here is an example:</p>
+defined such that <cite>f(x) = y_0</cite> for <cite>x &lt; x0</cite>, <cite>f(x) = y_1</cite> for <cite>x &gt; x_1</cite>, and
+monotonically increasing for <span class="formula"><i>x</i> ∈ [<i>x</i><sub>0</sub>, <i>x</i><sub>1</sub>]</span> through cubic
+interpolation.</p>
+<p>Example:</p>
 <div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;function-smooth-step&quot;</span><span class="nt">&gt;</span>
   <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;x0&quot;</span> <span class="na">type=</span><span class="s">&quot;double&quot;</span> <span class="na">value=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
   <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;y0&quot;</span> <span class="na">type=</span><span class="s">&quot;double&quot;</span> <span class="na">value=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
@@ -1699,23 +1932,23 @@ Here is an example:</p>
 </pre></div>
 </div>
 <div class="section" id="polynomial-function">
-<h3><a class="toc-backref" href="#id80">Polynomial function</a></h3>
+<h3><a class="toc-backref" href="#id88">Polynomial Function</a></h3>
 <p>A generic polynomial function is given by the following expression:</p>
 <div class="formula">
 <i>f</i>(<i>x</i>) = <span class="limits"><sup class="limit"><i>n</i></sup><span class="limit"><span class="symbol">∑</span></span><sub class="limit"><i>j</i> = 0</sub></span><i>c</i><sub><i>j</i></sub>(<i>x</i> − <i>x</i><sub>0</sub>)<sup><i>p</i><sub><i>j</i></sub></sup>
 </div>
 <p>where <span class="formula"><i>c</i><sub><i>j</i></sub></span> are coefficients of monomials,
-<span class="formula"><i>p</i><sub><i>j</i></sub></span> are integer exponents, and <span class="formula"><i>x</i><sub>0</sub></span> is the reference point.
-Here i san example of a quartic polynomial:</p>
+<span class="formula"><i>p</i><sub><i>j</i></sub></span> are integer exponents, and <span class="formula"><i>x</i><sub>0</sub></span> is the reference point.</p>
+<p>Example:</p>
 <div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;function-polynomial&quot;</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;coefficients&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{1.0, 1.0}&quot;</span><span class="nt">/&gt;</span>
-  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;exponents&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(int)&quot;</span> <span class="na">value=</span><span class="s">&quot;{2, 4}&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;coefficients&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{{1.0, 1.0}}&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;exponents&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(int)&quot;</span> <span class="na">value=</span><span class="s">&quot;{{2, 4}}&quot;</span><span class="nt">/&gt;</span>
   <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;reference point&quot;</span> <span class="na">type=</span><span class="s">&quot;double&quot;</span> <span class="na">value=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
 <span class="nt">&lt;/ParameterList&gt;</span>
 </pre></div>
 </div>
 <div class="section" id="multi-variable-linear-function">
-<h3><a class="toc-backref" href="#id81">Multi-variable linear function</a></h3>
+<h3><a class="toc-backref" href="#id89">Multi-variable linear Function</a></h3>
 <p>A multi-variable linear function is formally defined by</p>
 <div class="formula">
 <i>f</i>(<i>x</i>) = <i>y</i><sub>0</sub> + <span class="limits"><sup class="limit"><i>n</i> − 1</sup><span class="limit"><span class="symbol">∑</span></span><sub class="limit"><i>j</i> = 0</sub></span><i>g</i><sub><i>j</i></sub>(<i>x</i><sub><i>j</i></sub> − <i>x</i><sub>0, <i>j</i></sub>)
@@ -1727,13 +1960,13 @@ Note that one of the parameters in a multi-valued linear function can be time.
 Here is an example:</p>
 <div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;function-linear&quot;</span><span class="nt">&gt;</span>
   <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;y0&quot;</span> <span class="na">type=</span><span class="s">&quot;double&quot;</span> <span class="na">value=</span><span class="s">&quot;1.0&quot;</span><span class="nt">/&gt;</span>
-  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;gradient&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{1.0, 2.0, 3.0}&quot;</span><span class="nt">/&gt;</span>
-  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;x0&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{2.0, 3.0, 1.0}&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;gradient&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{{1.0, 2.0, 3.0}}&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;x0&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{{2.0, 3.0, 1.0}}&quot;</span><span class="nt">/&gt;</span>
 <span class="nt">&lt;/ParameterList&gt;</span>
 </pre></div>
 </div>
 <div class="section" id="separable-function">
-<h3><a class="toc-backref" href="#id82">Separable function</a></h3>
+<h3><a class="toc-backref" href="#id90">Separable Function</a></h3>
 <p>A separable function is defined as the product of other functions such as</p>
 <div class="formula">
 <i>f</i>(<i>x</i><sub>0</sub>, <i>x</i><sub>1</sub>, ..., <i>x</i><sub><i>n</i> − 1</sub>) = <i>f</i><sub>1</sub>(<i>x</i><sub>0</sub>) <i>f</i><sub>2</sub>(<i>x</i><sub>1</sub>, ..., <i>x</i><sub><i>n</i> − 1</sub>)
@@ -1750,7 +1983,172 @@ Here is an example:</p>
 <span class="nt">&lt;/ParameterList&gt;</span>
 </pre></div>
 </div>
+<div class="section" id="additive-function">
+<h3><a class="toc-backref" href="#id91">Additive Function</a></h3>
+<p>An additive function simply adds two other function results together.</p>
+<div class="formula">
+<i>f</i>(<i>x</i>) = <i>f</i><sub>1</sub>(<i>x</i>) + <i>f</i><sub>2</sub>(<i>x</i>)
 </div>
+<p>where <span class="formula"><i>f</i><sub>1</sub></span> is defined by the <cite>&quot;function1</cite>&quot; sublist, and
+<span class="formula"><i>f</i><sub>2</sub></span> by the <cite>&quot;function2</cite>&quot; sublist:</p>
+<div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;function-additive&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;function1&quot;</span><span class="nt">&gt;</span>
+    function-specification
+  <span class="nt">&lt;/ParameterList&gt;</span>
+  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;function2&quot;</span><span class="nt">&gt;</span>
+    function-specification
+  <span class="nt">&lt;/ParameterList&gt;</span>
+<span class="nt">&lt;/ParameterList&gt;</span>
+</pre></div>
+</div>
+<div class="section" id="multiplicative-function">
+<h3><a class="toc-backref" href="#id92">Multiplicative Function</a></h3>
+<p>A multiplicative function simply multiplies two other function results together.</p>
+<div class="formula">
+<i>f</i>(<i>x</i>) = <i>f</i><sub>1</sub>(<i>x</i>)*<i>f</i><sub>2</sub>(<i>x</i>)
+</div>
+<p>where <span class="formula"><i>f</i><sub>1</sub></span> is defined by the <cite>&quot;function1</cite>&quot; sublist, and
+<span class="formula"><i>f</i><sub>2</sub></span> by the <cite>&quot;function2</cite>&quot; sublist:</p>
+<div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;function-multiplicative&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;function1&quot;</span><span class="nt">&gt;</span>
+    function-specification
+  <span class="nt">&lt;/ParameterList&gt;</span>
+  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;function2&quot;</span><span class="nt">&gt;</span>
+    function-specification
+  <span class="nt">&lt;/ParameterList&gt;</span>
+<span class="nt">&lt;/ParameterList&gt;</span>
+</pre></div>
+</div>
+<div class="section" id="composition-function">
+<h3><a class="toc-backref" href="#id93">Composition Function</a></h3>
+<p>Function composition simply applies one function to the result of another.</p>
+<div class="formula">
+<i>f</i>(<i>x</i>) = <i>f</i><sub>1</sub>(<i>f</i><sub>2</sub>(<i>x</i>))
+</div>
+<p>where <span class="formula"><i>f</i><sub>1</sub></span> is defined by the <cite>&quot;function1</cite>&quot; sublist, and
+<span class="formula"><i>f</i><sub>2</sub></span> by the <cite>&quot;function2</cite>&quot; sublist:</p>
+<div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;function-composition&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;function1&quot;</span><span class="nt">&gt;</span>
+    function-specification
+  <span class="nt">&lt;/ParameterList&gt;</span>
+  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;function2&quot;</span><span class="nt">&gt;</span>
+    function-specification
+  <span class="nt">&lt;/ParameterList&gt;</span>
+<span class="nt">&lt;/ParameterList&gt;</span>
+</pre></div>
+</div>
+<div class="section" id="piecewise-bilinear-function">
+<h3><a class="toc-backref" href="#id94">Piecewise Bilinear Function</a></h3>
+<p>A piecewise bilinear function extends the linear form of the tabular function to two variables.</p>
+<p>Define <span class="formula"><i>i</i>(<i>x</i>) = <i>i</i>:<i>x</i><sub><i>i</i></sub> &lt; <i>x</i> &lt;  = <i>x</i><sub><i>i</i> + 1</sub></span> and similarly <span class="formula"><i>j</i>(<i>y</i>) = <i>j</i>:<i>y</i><sub><i>j</i></sub> &lt; <i>y</i> &lt;  = <i>y</i><sub><i>j</i> + 1</sub></span> for monotonically increasing <span class="formula"><i>x</i><sub><i>i</i></sub></span> and <span class="formula"><i>y</i><sub><i>j</i></sub></span>.</p>
+<p>Given a two-dimensional array <span class="formula"><i>u</i><sub><i>i</i>, <i>j</i></sub></span>, <span class="formula"><i>f</i></span> is then defined by
+bilinear interpolation on <span class="formula"><i>u</i><sub><i>i</i>(<i>x</i>), <i>j</i>(<i>y</i>)</sub>, <i>u</i><sub><i>i</i>(<i>x</i>) + 1, <i>j</i>(<i>y</i>)</sub>, <i>u</i><sub><i>i</i>(<i>x</i>), <i>j</i>(<i>y</i>) + 1</sub>, <i>u</i><sub><i>i</i>(<i>x</i>) + 1, <i>j</i>(<i>y</i>) + 1</sub>, <i>if</i>:<i>math</i>:</span> is in
+<span class="formula">[<i>x</i><sub>0</sub>, <i>x</i><sub><i>n</i></sub>] × [<i>y</i><sub>0</sub>, <i>y</i><sub><i>m</i></sub>]</span>, linear interpolation if one of <span class="formula"><i>x</i>, <i>y</i></span>
+are out of those bounds, and constant at the corner value if both are out of
+bounds.</p>
+<ul class="simple">
+<li><cite>&quot;file</cite>&quot; <tt class="docutils literal">[string]</tt> HDF5 filename of the data</li>
+<li><cite>&quot;row header</cite>&quot; <tt class="docutils literal">[string]</tt> name of the row dataset, the <span class="formula"><i>x</i><sub><i>i</i></sub></span></li>
+<li><cite>&quot;row coordinate</cite>&quot; <tt class="docutils literal">[string]</tt> one of <cite>&quot;t</cite>&quot;,`&quot;x`&quot;,`&quot;y`&quot;,`&quot;z`&quot;</li>
+<li><cite>&quot;column header</cite>&quot; <tt class="docutils literal">[string]</tt> name of the column dataset, the <span class="formula"><i>y</i><sub><i>i</i></sub></span></li>
+<li><cite>&quot;column coordinate</cite>&quot; <tt class="docutils literal">[string]</tt> one of <cite>&quot;t</cite>&quot;,`&quot;x`&quot;,`&quot;y`&quot;,`&quot;z`&quot;</li>
+<li><cite>&quot;value header</cite>&quot; <tt class="docutils literal">[string]</tt> name of the values dataset, the <span class="formula"><i>u</i><sub><i>i</i>, <i>j</i></sub></span></li>
+</ul>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;function-bilinear&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;file&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;pressure.h5&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;row header&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;/time&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;row coordinate&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;t&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;column header&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;/x&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;column coordinate&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;x&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;value header&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;/pressure&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/ParameterList&gt;</span>
+</pre></div>
+</div>
+<div class="section" id="distance-function">
+<h3><a class="toc-backref" href="#id95">Distance Function</a></h3>
+<p>A distance function calculates distance from reference point <span class="formula"><i>x</i><sub>0</sub></span>
+using by the following expression:</p>
+<div class="formula">
+<i>f</i>(<i>x</i>) = <span class="limits"><sup class="limit"><i>n</i></sup><span class="limit"><span class="symbol">∑</span></span><sub class="limit"><i>j</i> = 0</sub></span><i>m</i><sub><i>j</i></sub>(<i>x</i><sub><i>j</i></sub> − <i>x</i><sub>0, <i>j</i></sub>)<sup>2</sup>
+</div>
+<p>Note that the first parameter in <span class="formula"><i>x</i></span> can be time.
+Here is an example of a distance function using isotropic metric:</p>
+<p>Example:
+.. code-block:: xml</p>
+<blockquote>
+<dl class="docutils">
+<dt>&lt;ParameterList name=&quot;function-distance&quot;&gt;</dt>
+<dd>&lt;Parameter name=&quot;x0&quot; type=&quot;Array(double)&quot; value=&quot;{1.0, 3.0, 0.0}&quot;/&gt;
+&lt;Parameter name=&quot;metric&quot; type=&quot;Array(double)&quot; value=&quot;{1.0, 1.0, 1.0}&quot;/&gt;</dd>
+</dl>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">ATSNativeSpec_dev.rst</tt>, line 1848)</p>
+Definition list ends without a blank line; unexpected unindent.</div>
+<p>&lt;/ParameterList&gt;</p>
+</blockquote>
+</div>
+<div class="section" id="monomial-function">
+<h3><a class="toc-backref" href="#id96">Monomial Function</a></h3>
+<p>A multi-variable monomial function is given by the following expression:</p>
+<div class="formula">
+<i>f</i>(<i>x</i>) = <i>c</i><span class="limits"><sup class="limit"><i>n</i></sup><span class="limit"><span class="symbol">∏</span></span><sub class="limit"><i>j</i> = 0</sub></span>(<i>x</i><sub><i>j</i></sub> − <i>x</i><sub>0, <i>j</i></sub>)<sup><i>p</i><sub><i>j</i></sub></sup>
+</div>
+<p>with the constant factor <span class="formula"><i>c</i></span>, the reference point <span class="formula"><i>x</i><sub>0</sub></span>, and
+integer exponents <span class="formula"><i>p</i><sub><i>j</i></sub></span>.
+Note that the first parameter in <span class="formula"><i>x</i></span> can be time.
+Here is an example of monomial of degree 6 in three variables:</p>
+<div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;function-monomial&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;c&quot;</span> <span class="na">type=</span><span class="s">&quot;double&quot;</span> <span class="na">value=</span><span class="s">&quot;1.0&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;x0&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(double)&quot;</span> <span class="na">value=</span><span class="s">&quot;{1.0, 3.0, 0.0}&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;exponents&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(int)&quot;</span> <span class="na">value=</span><span class="s">&quot;{2, 3, 1}&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/ParameterList&gt;</span>
+</pre></div>
+</div>
+<div class="section" id="standard-math-function">
+<h3><a class="toc-backref" href="#id97">Standard Math Function</a></h3>
+<p>These functions allow to set up non-trivial time-dependent boundary conditions
+which increases a set of analytic solutions that can be used in convergence
+analysis tests.</p>
+<div class="formula">
+<i>f</i>(<i>x</i>) = <i>A</i>*<i>operator</i>(<i>p</i>*(<i>x</i> − <i>s</i>))
+</div>
+<p>or</p>
+<div class="formula">
+<i>f</i>(<i>x</i>) = <i>A</i>*<i>operator</i>(<i>x</i> − <i>s</i>, <i>p</i>)
+</div>
+<p>Note that these operate only on the first coordinate, which is often time.
+Function composition can be used to apply these to other coordinates (or
+better yet a dimension could/should be added upon request).</p>
+<ul class="simple">
+<li><cite>&quot;operator</cite>&quot; <tt class="docutils literal">[string]</tt> specifies the name of a standard mathematical function.
+Available options are <cite>&quot;cos</cite>&quot;, <cite>&quot;sin</cite>&quot;, <cite>&quot;tan</cite>&quot;, <cite>&quot;acos</cite>&quot;, <cite>&quot;asin</cite>&quot;, <cite>&quot;atan</cite>&quot;,
+<cite>&quot;cosh</cite>&quot;, <cite>&quot;sinh</cite>&quot;, <cite>&quot;tanh</cite>&quot;, <cite>&quot;exp</cite>&quot;, <cite>&quot;log</cite>&quot;, <cite>&quot;log10</cite>&quot;, <cite>&quot;sqrt</cite>&quot;, <cite>&quot;ceil</cite>&quot;,
+<cite>&quot;fabs</cite>&quot;, <cite>&quot;floor</cite>&quot;, <cite>&quot;mod</cite>&quot;, and <cite>&quot;pow</cite>&quot;.</li>
+<li><cite>&quot;amplitude</cite>&quot; <tt class="docutils literal">[double]</tt> specifies a multiplication factor <cite>a</cite> in formula <cite>a f(x)</cite>.
+The multiplication factor is ignored by function <cite>mod</cite>. Default value is 1.</li>
+<li><cite>&quot;parameter</cite>&quot; <tt class="docutils literal">[double]</tt> <strong>1.0</strong> specifies additional parameter <cite>p</cite> for
+math functions with two arguments. These functions are <cite>&quot;a pow(x[0], p)</cite>&quot;
+and <cite>&quot;a mod(x[0], p)</cite>&quot;.  Alternative, scales the argument before
+application, for use in changing the period of trig functions.</li>
+<li><cite>&quot;shift</cite>&quot; <tt class="docutils literal">[double]</tt> specifies a shift of the function argument. Default is 0.</li>
+</ul>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;function-standard-math&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;operator&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="na">value=</span><span class="s">&quot;sqrt&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;amplitude&quot;</span> <span class="na">type=</span><span class="s">&quot;double&quot;</span> <span class="na">value=</span><span class="s">&quot;1e-7&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;shift&quot;</span> <span class="na">type=</span><span class="s">&quot;double&quot;</span> <span class="na">value=</span><span class="s">&quot;0.1&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/ParameterList&gt;</span>
+</pre></div>
+<p>This example defines function <cite>1e-7 sqrt(t-0.1)</cite>.</p>
+</div>
+</div>
+</div>
+<div class="system-messages section">
+<h1>Docutils System Messages</h1>
+<div class="system-message" id="id98">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">ATSNativeSpec_dev.rst</tt>, line 528); <em><a href="#id99">backlink</a></em></p>
+Unknown target name: &quot;timecontrol&quot;.</div>
 </div>
 </div>
 </body>

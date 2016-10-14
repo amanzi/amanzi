@@ -4,20 +4,24 @@ import meshing_ats
 
 import numpy as np
 
+
+# set up the surface mesh
 xmax = 100.0
 ymax = 1.0
 slope = 0.05
-
 nsurf_cells = 100
+
+x_c = np.linspace(0.0, xmax, nsurf_cells + 1)
+y_c = np.array([0.0, ymax])
+
+
+
 
 topsoil_max_thickness = 0.1
 topsoil_nmesh_layers = 2
 restsoil_zones_thickness = [0.4, 0.6, 2.0]
 restsoil_nmesh_layers = [4, 3, 2]
 
-# coordinates
-x_c = np.linspace(0.0, xmax, nsurf_cells + 1)
-y_c = np.array([0.0, ymax])
 
 Xc, Yc = np.meshgrid(x_c, y_c)
 Xc = Xc.flatten()

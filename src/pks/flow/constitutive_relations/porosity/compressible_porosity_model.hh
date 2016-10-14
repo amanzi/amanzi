@@ -31,8 +31,10 @@ discontinuous derivatives).
 
   The inflection point above which the function is linear.
 
+Example:
+
 .. code-block::xml  
-  <!-- Native Spec Example -->
+
   <ParameterList name="soil" type="ParameterList">
     <Parameter name="region" type="string" value="soil" />
     <Parameter name="pore compressibility [Pa^-1]" type="double" value="1.e-9" />
