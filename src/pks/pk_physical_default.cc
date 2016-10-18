@@ -21,23 +21,30 @@ PK_Physical_Default::PK_Physical_Default(Teuchos::ParameterList& pk_tree,
   PK_Physical(pk_tree, glist, S, solution)
  {
 
-  // domain -- default is the entire mesh, no prefix
-  if (domain_.empty()) {
-   domain_ = plist_->get<std::string>("domain name", std::string("domain"));
-  }
+      
+   name_ = pk_tree.name();
+   boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->");
+   if (res.end() - name_.end() != 0) boost::algorithm::erase_head(name_, res.end() - name_.begin());
+
+   plist_->set("PK name", name_);
+    
+   // domain -- default is the entire mesh, no prefix
+   if (domain_.empty()) {
+     domain_ = plist_->get<std::string>("domain name", std::string("domain"));
+   }
   
-  if (key_.empty()) {
-    key_ = plist_->get<std::string>("primary variable");
-  }
+   if (key_.empty()) {
+     key_ = plist_->get<std::string>("primary variable");
+   }
 
-  Teuchos::ParameterList& FElist = S->FEList();
-  // set up the primary variable solution, and its evaluator
-  Teuchos::ParameterList& pv_sublist = FElist.sublist(key_);
-  pv_sublist.set("evaluator name", key_);
-  pv_sublist.set("field evaluator type", "primary variable");
+   Teuchos::ParameterList& FElist = S->FEList();
+   // set up the primary variable solution, and its evaluator
+   Teuchos::ParameterList& pv_sublist = FElist.sublist(key_);
+   pv_sublist.set("evaluator name", key_);
+   pv_sublist.set("field evaluator type", "primary variable");
 
-  // primary variable max change
-  max_valid_change_ = plist_->get<double>("max valid change", -1.0);
+   // primary variable max change
+   max_valid_change_ = plist_->get<double>("max valid change", -1.0);
 
 }
 

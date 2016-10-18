@@ -133,9 +133,7 @@ MPC<PK_t>::MPC(Teuchos::ParameterList& pk_tree,
       Teuchos::ParameterList& pk_sub_tree = pk_tree.sublist(name_i);
 
       Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_sub_tree, global_list_, S, pk_soln);
-      std::cout<<"name "<<pk_notype -> name()<<"\n";
       Teuchos::RCP<PK_t> pk = Teuchos::rcp_dynamic_cast<PK_t>(pk_notype, true); 
-      std::cout<<"name "<<pk -> name()<<"\n";
       sub_pks_.push_back(pk);
 
     }

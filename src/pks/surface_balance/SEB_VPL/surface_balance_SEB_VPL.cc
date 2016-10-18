@@ -48,7 +48,7 @@ SurfaceBalanceSEBVPL::SurfaceBalanceSEBVPL(Teuchos::ParameterList& pk_tree,
   PK_Physical_Default(pk_tree, global_list,  S, solution)
  {
 
-   Teuchos::ParameterList& FElist = global_list->sublist("field evaluators");
+   Teuchos::ParameterList& FElist = S->FEList();
 
   // -- surface mass source
   Teuchos::ParameterList& wsource_sublist =

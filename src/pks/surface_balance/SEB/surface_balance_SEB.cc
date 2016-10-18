@@ -54,7 +54,7 @@ SurfaceBalanceSEB::SurfaceBalanceSEB(Teuchos::ParameterList& pk_tree,
   // esource_sublist.set("evaluator name", "surface_conducted_energy_source");
   // esource_sublist.set("field evaluator type", "primary variable");
 
-  Teuchos::ParameterList& FElist = global_list->sublist("field evaluators"); 
+  Teuchos::ParameterList& FElist = S->FEList();
 
   // -- surface mass source
   Teuchos::ParameterList& wsource_sublist =

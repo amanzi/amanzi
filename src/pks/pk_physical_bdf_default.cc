@@ -229,6 +229,16 @@ double PK_PhysicalBDF_Default::BoundaryValue(const Teuchos::RCP<const Amanzi::Co
   }
 
 
+  int PK_PhysicalBDF_Default::BoundaryDirection(int face_id) {
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(face_id, AmanziMesh::USED, &cells);
+    ASSERT(cells.size() == 1);
+    AmanziMesh::Entity_ID_List faces;
+    std::vector<int> dirs;
+    mesh_->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
+    return dirs[std::find(faces.begin(), faces.end(), face_id) - faces.begin()];
+  }
+
   
 // -----------------------------------------------------------------------------
 // Experimental approach -- calling this indicates that the time

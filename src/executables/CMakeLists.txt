@@ -73,7 +73,7 @@ include_evaluators_directories(LISTNAME MPC_PK_FAC_INCLUDES)
   
 
 
-add_executable(ats amanzi_unstructured_grid_simulation_driver.cc main.cc )
+add_executable(ats simulation_driver.cc main.cc )
 
 set(ATS_LIBS
 		     coordinator
@@ -93,13 +93,11 @@ set(ATS_LIBS
                       pk_flow_icy_overland
                       pk_transport
                       pk_coupled_transport
-#                      pk_chemistry
-#                      chemistry_pk
 	              # pk_prescribed_deformation
 #                      pk_prescribed_volumetric_deformation
 #                      pk_volumetric_deformation
-#                      pk_surface_balance_SEB
-#                      pk_BGC
+                      pk_surface_balance_SEB
+                      pk_BGC
                       pk_bases
                       # deform_relations_porosity
                       energy_relations_thermal_conductivity

@@ -73,7 +73,7 @@ class PK_PhysicalBDF_Default : virtual public PK_BDF_Default, public PK_Physical
   virtual double BoundaryValue(const Teuchos::RCP<const Amanzi::CompositeVector>& solution, int face_id);
   virtual void ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& u);
 
-  
+  virtual int BoundaryDirection(int face_id);  
   
   // PC operator access
   Teuchos::RCP<Operators::Operator> preconditioner() { return preconditioner_; }

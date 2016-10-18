@@ -31,7 +31,10 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::ParameterList& pk_tree,
   modify_predictor_advance_(false)
 {
 
-  Teuchos::ParameterList& FElist = global_list->sublist("field evaluators");
+  //Teuchos::ParameterList& FElist = global_list->sublist("state").sublist("field evaluators");
+  Teuchos::ParameterList& FElist = S->FEList();
+
+
 
   // set up additional primary variables -- this is very hacky...
   // -- surface energy source

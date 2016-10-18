@@ -45,13 +45,13 @@ namespace Flow {
 #define DEBUG_FLAG 1
 #define DEBUG_RES_FLAG 0
 
-OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& FElist,
+OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
                                            const Teuchos::RCP<Teuchos::ParameterList>& plist,
                                            const Teuchos::RCP<State>& S,                        
                                            const Teuchos::RCP<TreeVector>& solution) :   
-    PK(FElist, plist, S, solution),
-    PK_BDF_Default(FElist, plist, S, solution),
-    PK_PhysicalBDF_Default(FElist, plist, S, solution),
+    PK(pk_tree, plist, S, solution),
+    PK_BDF_Default(pk_tree, plist, S, solution),
+    PK_PhysicalBDF_Default(pk_tree, plist, S, solution),
     standalone_mode_(false),
     is_source_term_(false),
     coupled_to_subsurface_via_head_(false),
@@ -66,15 +66,19 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& FElist,
   plist_->set("domain name", "surface");
   
   // clone the ponded_depth parameter list for ponded_depth bar
+  Teuchos::ParameterList& FElist = S->FEList();
   Teuchos::ParameterList& pd_list = FElist.sublist("ponded_depth");
   Teuchos::ParameterList pdbar_list(pd_list);
   pdbar_list.set("ponded depth bar", true);
   pdbar_list.set("height key", "ponded_depth_bar");
   FElist.set("ponded_depth_bar", pdbar_list);
+  // std::cout<<FElist<<"\n";
 
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
     plist_->set("absolute error tolerance", 0.01 * 55000.0); // h * nl
+
+
   
 }
 
@@ -196,7 +200,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   preconditioner_ = preconditioner_diff_->global_operator();
 
   // If using approximate Jacobian for the preconditioner, we also need derivative information.
-  jacobian_ = (mfd_pc_plist.get<std::string>("newton correction", "none") != "none");
+  jacobian_ = (mfd_pc_plist.get<std::string>("Newton correction", "none") != "none");
   if (jacobian_) {
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // MFD -- upwind required
@@ -254,8 +258,8 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   // fluxes
   S->RequireField("surface-mass_flux", name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("face", AmanziMesh::FACE, 1);
-  S->RequireField("surface-flux", name_)->SetMesh(mesh_)->SetGhosted()
-      ->SetComponent("face", AmanziMesh::FACE, 1);
+  // S->RequireField("surface-flux", name_)->SetMesh(mesh_)->SetGhosted()
+  //     ->SetComponent("face", AmanziMesh::FACE, 1);
   S->RequireField("surface-velocity", name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("cell", AmanziMesh::CELL, 3);
 
@@ -443,7 +447,7 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
   }
 
   S->GetField("surface-mass_flux", name_)->set_initialized();
-  S->GetField("surface-flux", name_)->set_initialized();
+  //S->GetField("surface-flux", name_)->set_initialized();
   S->GetFieldData("surface-mass_flux_direction", name_)->PutScalar(0.);
   S->GetField("surface-mass_flux_direction", name_)->set_initialized();
   S->GetFieldData("surface-velocity", name_)->PutScalar(0.);
@@ -494,26 +498,26 @@ void OverlandPressureFlow::CommitStep(double t_old, double t_new, const Teuchos:
   // derive the fluxes
   Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
   Teuchos::RCP<CompositeVector> mass_flux = S->GetFieldData("surface-mass_flux", name_);
-  const Epetra_MultiVector& nrho_l = *S->GetFieldData("surface-molar_density_liquid")->ViewComponent("cell");
+  // const Epetra_MultiVector& nrho_l = *S->GetFieldData("surface-molar_density_liquid")->ViewComponent("cell");
   matrix_diff_->UpdateFlux(*potential, *mass_flux);
 
-  const Epetra_MultiVector& mass_flux_v = *mass_flux->ViewComponent("face");
-  const Epetra_MultiVector& mass_flux_dir = *S->GetFieldData("surface-mass_flux_direction")->ViewComponent("face");;
-  Epetra_MultiVector& flux_v =  *S->GetFieldData("surface-flux", name_)->ViewComponent("face");
+  // const Epetra_MultiVector& mass_flux_v = *mass_flux->ViewComponent("face");
+  // const Epetra_MultiVector& mass_flux_dir = *S->GetFieldData("surface-mass_flux_direction")->ViewComponent("face");;
+  // Epetra_MultiVector& flux_v =  *S->GetFieldData("surface-flux", name_)->ViewComponent("face");
 
-  AmanziMesh::Entity_ID_List cells;
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  for (int f=0; f!=nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    if (cells.size() == 1) {
-      int c = cells[0];      
-      flux_v[0][f] = mass_flux_v[0][f]/nrho_l[0][c];
-    }
-    else{
-      double nrho_l_avr=0.5*(nrho_l[0][ cells[0] ] + nrho_l[0][ cells[1] ]);
-      flux_v[0][f] = mass_flux_v[0][f] / nrho_l_avr; 
-    }
-  }
+  // AmanziMesh::Entity_ID_List cells;
+  // int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  // for (int f=0; f!=nfaces_owned; ++f) {
+  //   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  //   if (cells.size() == 1) {
+  //     int c = cells[0];      
+  //     flux_v[0][f] = mass_flux_v[0][f]/nrho_l[0][c];
+  //   }
+  //   else{
+  //     double nrho_l_avr=0.5*(nrho_l[0][ cells[0] ] + nrho_l[0][ cells[1] ]);
+  //     flux_v[0][f] = mass_flux_v[0][f] / nrho_l_avr; 
+  //   }
+  // }
 
 
 };
@@ -776,7 +780,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
         double dz = elevation_cells[0][c] - elevation[0][f];
 
         if (h_cells[0][c] + dz < h0) {
-          bc_markers_[f] = Operators::OPERATOR_BC_NONE;
+          bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
           bc_values_[f] = 0.0;
         } else {
           bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -797,7 +801,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
         double dz = elevation_cells[0][c] - elevation[0][f];
 
         if (h_cells[0][c] + dz < h0) {
-          bc_markers_[f] = Operators::OPERATOR_BC_NONE;
+          bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
           bc_values_[f] = 0.0;
         } else {
           bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -827,19 +831,25 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
     }
   }
 
-  // mark all remaining boundary conditions as zero flux conditions
+
+  // check that there are no internal faces and mark all remaining boundary conditions as zero flux conditions
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_markers_[f] == Operators::OPERATOR_BC_NONE) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      int ncells = cells.size();
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
 
-      if (ncells == 1) {
+    if ((bc_markers_[f] != Operators::OPERATOR_BC_NONE) && (ncells == 2)) {
+      std::stringstream mesg_stream;
+      mesg_stream << "Tried to set a boundary condition on an internal face ";
+      Errors::Message mesg(mesg_stream.str());
+      amanzi_throw(mesg);
+    }
+    if ((bc_markers_[f] == Operators::OPERATOR_BC_NONE) && (ncells == 1)) {
         bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_values_[f] = 0.0;
-      }
     }
-  }
+  } 
+
   
 }
 

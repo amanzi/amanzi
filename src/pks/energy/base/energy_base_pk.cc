@@ -211,7 +211,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   //    If using approximate Jacobian for the preconditioner, we also
   //    need derivative information.  This means upwinding the
   //    derivative.
-  jacobian_ = mfd_pc_plist.get<std::string>("newton correction", "none") != "none";
+  jacobian_ = mfd_pc_plist.get<std::string>("Newton correction", "none") != "none";
   if (jacobian_) {
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // MFD -- upwind required
@@ -471,8 +471,8 @@ bool EnergyBase::UpdateConductivityDerivativeData_(const Teuchos::Ptr<State>& S)
       if (duw_cond->HasComponent("face"))
         duw_cond->ScatterMasterToGhosted("face");
     } else {
-      Teuchos::RCP<CompositeVector> dcond =
-        S->GetFieldData(dconductivity_key_, name_);
+      Teuchos::RCP<const CompositeVector> dcond =
+        S->GetFieldData(dconductivity_key_);
       dcond->ScatterMasterToGhosted("cell");
     }
   }

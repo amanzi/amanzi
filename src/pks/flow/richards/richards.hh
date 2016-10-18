@@ -174,6 +174,8 @@ protected:
   bool explicit_source_;
   bool precon_used_;
   bool clobber_surf_kr_;
+  bool clobber_boundary_flux_dir_;
+
   
   // coupling terms
   bool coupled_to_surface_via_head_; // surface-subsurface Dirichlet coupler
@@ -236,6 +238,11 @@ protected:
   double p_limit_;
   double patm_limit_;
 
+  // valid step controls
+  double sat_change_limit_;
+  double sat_ice_change_limit_;
+
+
   // keys
   Key mass_dens_key_;
   Key molar_dens_key_;
@@ -247,6 +254,9 @@ protected:
   Key velocity_key_;
   Key source_key_;
   Key ss_flux_key_;
+  Key sat_key_;
+  Key sat_ice_key_;
+
 
  private:
   // factory registration

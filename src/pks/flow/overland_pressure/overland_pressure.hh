@@ -35,8 +35,8 @@ namespace FlowRelations {
 class OverlandPressureFlow : public PK_PhysicalBDF_Default {
 
 public:
-  OverlandPressureFlow(Teuchos::ParameterList& FElist,
-                       const Teuchos::RCP<Teuchos::ParameterList>& plist,
+  OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
+                       const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                        const Teuchos::RCP<State>& S,
                        const Teuchos::RCP<TreeVector>& solution);
   

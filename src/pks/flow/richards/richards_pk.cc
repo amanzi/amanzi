@@ -61,6 +61,7 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
     precon_wc_(false),
     dynamic_mesh_(false),
     clobber_surf_kr_(false),
+    clobber_boundary_flux_dir_(false),
     vapor_diffusion_(false),
     perm_scale_(1.)
 {
@@ -128,6 +129,15 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     velocity_key_ = plist_->get<std::string>("darcy velocity key",
             getKey(domain_, "darcy_velocity"));
   }
+  if (sat_key_.empty()) {
+    sat_key_ = plist_->get<std::string>("saturation key",
+            getKey(domain_, "saturation_liquid"));
+  }
+  if (sat_ice_key_.empty()) {
+    sat_ice_key_ = plist_->get<std::string>("saturation ice key",
+            getKey(domain_, "saturation_ice"));
+  }
+
   
   // Get data for special-case entities.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
@@ -166,6 +176,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // -- nonlinear coefficients/upwinding
   Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
   clobber_surf_kr_ = plist_->get<bool>("clobber surface rel perm", false);
+  clobber_boundary_flux_dir_ = plist_->get<bool>("clobber boundary flux direction for upwinding", false);
+
   std::string method_name = plist_->get<std::string>("relative permeability method", "upwind with Darcy flux");
 
   if (method_name == "upwind with gravity") {
@@ -239,7 +251,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   
   //    If using approximate Jacobian for the preconditioner, we also need derivative information.
   //    For now this means upwinding the derivative.
-  jacobian_ = mfd_pc_plist.get<std::string>("newton correction", "none") != "none";
+  jacobian_ = mfd_pc_plist.get<std::string>("Newton correction", "none") != "none";
   if (jacobian_) {
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // MFD -- upwind required
@@ -356,7 +368,11 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // correctors
   p_limit_ = plist_->get<double>("limit correction to pressure change [Pa]", -1.);
   patm_limit_ = plist_->get<double>("limit correction to pressure change when crossing atmospheric [Pa]", -1.);
-  
+
+  // valid step controls
+  sat_change_limit_ = plist_->get<double>("max valid change in saturation in a time step [-]", -1.);
+  sat_ice_change_limit_ = plist_->get<double>("max valid change in ice saturation in a time step [-]", -1.);
+   
   // Require fields and evaluators for those fields.
   // -- primary variables
   S->RequireField(key_, name_)->Update(matrix_->RangeMap())->SetGhosted();
@@ -645,6 +661,25 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
         face_matrix_diff_->ApplyBCs(true, true);
 
       face_matrix_diff_->UpdateFlux(*pres, *flux_dir);
+    
+
+      if (clobber_boundary_flux_dir_) {
+        Epetra_MultiVector& flux_dir_f = *flux_dir->ViewComponent("face",false);
+        for (int f=0; f!=bc_markers_.size(); ++f) {
+          if (bc_markers_[f] == Operators::OPERATOR_BC_NEUMANN) {
+            AmanziMesh::Entity_ID_List cells;
+            mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+            ASSERT(cells.size() == 1);
+            int c = cells[0];
+            AmanziMesh::Entity_ID_List faces;
+            std::vector<int> dirs;
+            mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+            int i = std::find(faces.begin(), faces.end(), f) - faces.begin();
+            
+            flux_dir_f[0][f] = bc_values_[f]*dirs[i];
+          }
+        }
+      } 
     }
 
     update_perm |= update_dir;
@@ -763,52 +798,66 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   }
 
   // seepage face -- pressure <= p_atm, outward mass flux >= 0
+  const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)->ViewComponent("face", true);
+  const double& p_atm = *S->GetScalarData("atmospheric_pressure");
   Teuchos::RCP<const CompositeVector> u = S->GetFieldData(key_);
+
+  double seepage_tol = p_atm * 1e-14;
 
   for (bc=bc_seepage_->begin(); bc!=bc_seepage_->end(); ++bc) {
     int f = bc->first;
-    //    std::cout << "Found seepage face: " << f << " at: " << mesh_->face_centroid(f) << " with normal: " << mesh_->face_normal(f) << std::endl;
-    double bc_pressure = BoundaryValue(u, f);
-    if (bc_pressure < bc->second) {
+    double boundary_pressure = BoundaryValue(u, f);
+    double boundary_flux = flux[0][f]*BoundaryDirection(f);
+    if (boundary_pressure < bc->second - seepage_tol) {
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_values_[f] = 0.;
-      
-    } else {
+    } else if (boundary_flux > 0.) {
       bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_values_[f] = bc->second;
+    } else {
+      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+      bc_values_[f] = 0.;
     }
   }
 
-  // seepage face -- pressure <= p_atm, outward mass flux is specified
-  const double& p_atm = *S->GetScalarData("atmospheric_pressure");
-
-  const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)->ViewComponent("face", true);
-  const Epetra_MultiVector& u_cell = *S->GetFieldData(key_)->ViewComponent("cell");
-  double tol = p_atm * 1e-14;
-
   for (bc=bc_seepage_infilt_->begin(); bc!=bc_seepage_infilt_->end(); ++bc) {
     int f = bc->first;
-    double face_value = BoundaryValue(u, f);
+    double flux_seepage_tol = std::abs(bc->second) * .001;
+    
+    double boundary_pressure = BoundaryValue(u, f);
+    double boundary_flux = flux[0][f]*BoundaryDirection(f);
 
-    if (face_value < p_atm - tol) {
+    std::cout << "BFlux = " << boundary_flux << " with constraint = " << bc->second - flux_seepage_tol << std::endl;
+    if (boundary_flux < bc->second - flux_seepage_tol &&
+        boundary_pressure > p_atm + seepage_tol) {
+      // both constraints are violated, either option should push things in the right direction
+      bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_values_[f] = p_atm;
+      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in DIRICHLET pressure " << p_atm << std::endl;
+
+    } else if (boundary_flux >= bc->second - flux_seepage_tol &&
+               boundary_pressure > p_atm - seepage_tol) {
+      // max pressure condition violated
+      bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_values_[f] = p_atm;
+      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in DIRICHLET pressure " << p_atm << std::endl;
+
+    } else if (boundary_flux < bc->second - flux_seepage_tol &&
+               boundary_pressure <= p_atm + seepage_tol) {
+      // max infiltration violated
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_values_[f] = bc->second;
+      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in NEUMANN flux " << bc->second << std::endl;
+
+    } else if (boundary_flux >= bc->second - flux_seepage_tol &&
+               boundary_pressure <= p_atm - seepage_tol) {
+      // both conditions are valid
+      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+      bc_values_[f] = bc->second;
+      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in NEUMANN flux " << bc->second << std::endl;
+
     } else {
-      AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      ASSERT(cells.size() == 1);
-      int c = cells[0];
-      if (u_cell[0][c] < face_value) {
-        bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_values_[f] = bc->second;
-      } else {
-        bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
-        bc_values_[f] = p_atm;
-      }
-    }
-    if (flux[0][f] < 0.0) {
-      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-      bc_values_[f] = bc->second;
+      ASSERT(0);
     }
   }
 

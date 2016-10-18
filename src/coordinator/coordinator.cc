@@ -78,7 +78,8 @@ void Coordinator::coordinator_init() {
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list, pk_name);
   pk_list->set("PK name", pk_name);
   const std::string &pk_origin = pk_list -> get<std::string>("PK origin", "ATS");
- 
+
+
   pk_ = pk_factory.CreatePK(pk_tree_list.sublist(pk_name), parameter_list_, S_, soln_);
 
   // if (pk_origin == "ATS"){
@@ -92,8 +93,6 @@ void Coordinator::coordinator_init() {
   //   Exceptions::amanzi_throw(message);
   // }
   
-  pk_->Setup(S_.ptr());
-
   // create the checkpointing
   Teuchos::ParameterList& chkp_plist = parameter_list_->sublist("checkpoint");
   checkpoint_ = Teuchos::rcp(new Checkpoint(chkp_plist, comm_));
@@ -123,7 +122,8 @@ void Coordinator::setup() {
   S_->set_time(t0_);
   S_->set_cycle(cycle0_);
   S_->RequireScalar("dt", "coordinator");
-  
+
+  pk_->Setup(S_.ptr());  
   S_->Setup();
 }
 
@@ -153,20 +153,22 @@ void Coordinator::initialize() {
     DeformCheckpointMesh(S_.ptr());
   }
 
-
   // Initialize the state (initializes all dependent variables).
   //S_->Initialize();
   *S_->GetScalarData("dt", "coordinator") = 0.;
   S_->GetField("dt","coordinator")->set_initialized();
 
   S_->InitializeFields();
-  S_->InitializeEvaluators();
 
   // Initialize the process kernels (initializes all independent variables)
   pk_->Initialize(S_.ptr());
 
  // Final checks.
   S_->CheckNotEvaluatedFieldsInitialized();
+
+  S_->InitializeEvaluators();
+
+
   S_->CheckAllFieldsInitialized();
 
   S_->WriteStatistics(vo_);
