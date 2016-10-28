@@ -64,6 +64,9 @@ public:
   // -- Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
 
+ // -- limit changes in a valid time step
+  //virtual bool valid_step();
+
   // -- Update diagnostics for vis.
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
 

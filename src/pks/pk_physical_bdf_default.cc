@@ -72,9 +72,9 @@ void PK_PhysicalBDF_Default::Initialize(const Teuchos::Ptr<State>& S) {
 double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<const TreeVector> du) {
   S_next_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& conserved = *S_next_->GetFieldData(conserved_key_)
+  const Epetra_MultiVector& conserved = *S_->GetFieldData(conserved_key_)
       ->ViewComponent("cell",true);
-  const Epetra_MultiVector& cv = *S_next_->GetFieldData(cell_vol_key_)
+  const Epetra_MultiVector& cv = *S_->GetFieldData(cell_vol_key_)
       ->ViewComponent("cell",true);
 
   // VerboseObject stuff.
@@ -188,25 +188,49 @@ PK_PhysicalBDF_Default::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVec
 double PK_PhysicalBDF_Default::BoundaryValue(const Teuchos::RCP<const Amanzi::CompositeVector>& solution, int face_id){
   double value=0.;
 
+  // if (solution->HasComponent("face")){
+  //   const Epetra_MultiVector& u = *solution -> ViewComponent("face",false);
+  //   value = u[0][face_id];
+  // }
+  // else if  (solution->HasComponent("boundary_face")){
+  //   const Epetra_MultiVector& u = *solution -> ViewComponent("boundary_face",false);
+  //   const Epetra_Map& fb_map = mesh_->exterior_face_map(false);
+  //   const Epetra_Map& f_map = mesh_->face_map(false);
+
+  //   int face_gid = f_map.GID(face_id);
+  //   int face_lbid = fb_map.LID(face_gid);
+
+  //   value =  u[0][face_lbid];
+  // }
+  // else{
+  //   Errors::Message msg("No component is defined for boundary faces\n");
+  //   Exceptions::amanzi_throw(msg);
+  // }
+
+  // return value;
+
   if (solution->HasComponent("face")){
-    const Epetra_MultiVector& u = *solution -> ViewComponent("face",false);
+    const Epetra_MultiVector& u = *solution->ViewComponent("face",false);
     value = u[0][face_id];
-  }
-  else if  (solution->HasComponent("boundary_face")){
-    const Epetra_MultiVector& u = *solution -> ViewComponent("boundary_face",false);
-    const Epetra_Map& fb_map = mesh_->exterior_face_map(false);
-    const Epetra_Map& f_map = mesh_->face_map(false);
+    // } else if  (solution->HasComponent("boundary_face") &&
+    //             bc_markers_[face_id] == Operators::OPERATOR_BC_DIRICHLET){
+  } else if (bc_markers_[face_id] == Operators::OPERATOR_BC_DIRICHLET) {
+    // const Epetra_MultiVector& u = *solution->ViewComponent("boundary_face",false);
+    // const Epetra_Map& fb_map = mesh_->exterior_face_map(false);
+    // const Epetra_Map& f_map = mesh_->face_map(false);
 
-    int face_gid = f_map.GID(face_id);
-    int face_lbid = fb_map.LID(face_gid);
+    // int face_gid = f_map.GID(face_id);
+    // int face_lbid = fb_map.LID(face_gid);
 
-    value =  u[0][face_lbid];
+    // value = u[0][face_lbid];
+    value = bc_values_[face_id];
+  } else {
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(face_id, AmanziMesh::USED, &cells);
+    ASSERT(cells.size() == 1);
+    const Epetra_MultiVector& u = *solution->ViewComponent("cell",false);
+    value = u[0][cells[0]];    
   }
-  else{
-    Errors::Message msg("No component is defined for boundary faces\n");
-    Exceptions::amanzi_throw(msg);
-  }
-
   return value;
 
 }
