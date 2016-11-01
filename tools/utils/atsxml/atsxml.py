@@ -244,7 +244,7 @@ def replace_regions(toatsxml,fromatsxml,mapping=None):
     newgridoption = get_value(toatsxml,'grid_option')
     replace_by_name(toatsxml,'grid_option',newgridoption)
 
-def run(xml, nproc=1, mpiexec='mpiexec', run_file_name='run.xml',stdout=None,stderr=None,hostname=None,processor=None):
+def run(xml, nproc=1, mpiexec='mpiexec', run_file_name='run.xml',stdout=None,stderr=None,hostname=None,cpuset=None):
     ''' Run ats model based on tpl_xml_file using parameters defined in pars dictionary '''
 
     # ensure that ATS's executable exists and that it's module is loaded
@@ -263,7 +263,12 @@ def run(xml, nproc=1, mpiexec='mpiexec', run_file_name='run.xml',stdout=None,std
         outfile = open(stdout,'w')
         if not stderr is None:
             errfile = open(stderr,'w')
-        ierr = subprocess.call([mpiexec,'-n',str(nproc),executable,"--xml_file="+run_file_name],stdout=outfile,stderr=errfile)
+        cmdlst = [mpiexec,'-n',str(nproc)]
+        if cpuset is not None:
+            if isinstance(cpuset,list): ','.join([str(v) for v in cpuset])
+            cmdlst += ['-cpu-set',cpuset]
+        cmdlst += [executable,"--xml_file="+run_file_name]
+        ierr = subprocess.call(cmdlst,stdout=outfile,stderr=errfile)
         print ierr
     except:
         print "Error: ATS simulation failed"
