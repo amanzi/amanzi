@@ -996,19 +996,21 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     // Face is Neumann with value of surface residual
    
     Teuchos::RCP<const AmanziMesh::Mesh> surface = Teuchos::null;
-    Key key_ss = " ";
+    Key key_ss;
     if (domain_.substr(0,6)=="column"){
       surface = S->GetMesh(domain_ + "_surface");
-      key_ss = getKey(domain_,"surface_subsurface_flux");
+      // key_ss = getKey(domain_,"surface_subsurface_flux");
     }
     else {
       surface = S->GetMesh("surface");
-      key_ss = "surface_subsurface_flux";
+      // key_ss = "surface_subsurface_flux";
     }
     
-    const Epetra_MultiVector& flux = *S->GetFieldData(key_ss)->ViewComponent("cell",false);
+    //    const Epetra_MultiVector& flux = *S->GetFieldData(key_ss)->ViewComponent("cell",false);
+    const Epetra_MultiVector& flux = *S->GetFieldData(ss_flux_key_)->ViewComponent("cell",false);
  
     unsigned int ncells_surface = flux.MyLength();
+    bc_counts[bc_counts.size()-1] = ncells_surface;
     for (unsigned int c=0; c!=ncells_surface; ++c) {
       // -- get the surface cell's equivalent subsurface face
 

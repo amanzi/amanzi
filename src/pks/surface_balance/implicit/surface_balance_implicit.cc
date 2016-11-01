@@ -22,7 +22,7 @@ namespace Amanzi {
 namespace SurfaceBalance {
 
 
-  SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::Ptr<State> S,
+SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::Ptr<State> S,
            const Teuchos::RCP<Teuchos::ParameterList>& plist,
            Teuchos::ParameterList& FElist,
            const Teuchos::RCP<TreeVector>& solution) :
@@ -33,7 +33,7 @@ namespace SurfaceBalance {
   // set up additional primary variables -- this is very hacky...
   // -- surface energy source
 
-  domain_surf =  plist_->get<std::string>("domain name", "domain");
+  domain_surf =  plist_->get<std::string>("domain name", "surface");
   if(domain_surf.substr(0,6) == "column")
     domain_ss = domain_.substr(0,domain_surf.size()-8);
   else
@@ -41,15 +41,12 @@ namespace SurfaceBalance {
   Teuchos::ParameterList& esource_sublist =
       FElist.sublist(getKey(domain_surf,"conducted_energy_source"));
   esource_sublist.set("evaluator name", getKey(domain_surf,"conducted_energy_source"));
-
   esource_sublist.set("field evaluator type", "primary variable");
 
   // -- surface mass source
   Teuchos::ParameterList& wsource_sublist =
-
     FElist.sublist(getKey(domain_surf,"mass_source"));
   wsource_sublist.set("evaluator name", getKey(domain_surf,"mass_source"));
-
   wsource_sublist.set("field evaluator type", "primary variable");
 
   // -- subsurface mass source for VaporFlux at cell center
@@ -57,15 +54,12 @@ namespace SurfaceBalance {
 
     FElist.sublist(getKey(domain_ss,"mass_source"));
   w_v_source_sublist.set("evaluator name", getKey(domain_ss,"mass_source"));
-
   w_v_source_sublist.set("field evaluator type", "primary variable");
 
   // -- surface energy temperature
   Teuchos::ParameterList& wtemp_sublist =
-
     FElist.sublist(getKey(domain_surf,"mass_source_temperature"));
   wtemp_sublist.set("evaluator name", getKey(domain_surf,"mass_source_temperature"));
-
   wtemp_sublist.set("field evaluator type", "primary variable");
 
   // Derivatives for PC
@@ -109,7 +103,6 @@ SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
 
   // requirements: other primary variables
   Teuchos::RCP<FieldEvaluator> fm;
-
   S->RequireField(getKey(domain_surf,"conducted_energy_source"), name_)->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(getKey(domain_surf,"conducted_energy_source"));
@@ -246,7 +239,7 @@ SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
   S->RequireField(getKey(domain_surf,"unfrozen_fraction"))->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator(getKey(domain_surf,"porosity")); // was "surface-porosity"
+  S->RequireFieldEvaluator(getKey(domain_surf,"porosity"));
   S->RequireField(getKey(domain_surf,"porosity"))->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 

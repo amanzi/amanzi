@@ -273,20 +273,26 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
   // -- advection source
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
 
-    S->GetFieldEvaluator(getKey(domain_,"enthalpy"))->HasFieldChanged(S.ptr(), name_);
-    S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
-    // -- advection source
-    Key key_ss = " ";
+    Key domain_ss;
     if (domain_.substr(0,6) == "column")
-      key_ss = getKey(domain_.substr(0,domain_.size()-8),"surface_subsurface_flux");
+      domain_ss = domain_.substr(0,domain_.size()-8);
     else
-      key_ss = "surface_subsurface_flux";
+      domain_ss = "domain";
+      S->GetFieldEvaluator(getKey(domain_ss,"enthalpy"))->HasFieldChanged(S.ptr(), name_);
+    
+    S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
+    
+
+    // -- advection source
+
+    Key key_ss = getKey(domain_ss,"surface_subsurface_flux");
+
     const Epetra_MultiVector& source1 =
       *S->GetFieldData(key_ss)->ViewComponent("cell",false);
     const Epetra_MultiVector& enth_surf =
       *S->GetFieldData(enthalpy_key_)->ViewComponent("cell",false);
     const Epetra_MultiVector& enth_subsurf =
-      *S->GetFieldData(getKey(domain_.substr(0,domain_.size()-8),"enthalpy"))->ViewComponent("cell",false);
+      *S->GetFieldData(getKey(domain_ss,"enthalpy"))->ViewComponent("cell",false);
  
     AmanziMesh::Entity_ID_List cells;
 
@@ -301,7 +307,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
        
         AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
         if (domain_.substr(0,6) == "column")
-          S->GetMesh(domain_.substr(0,domain_.size()-8))->face_get_cells(f, AmanziMesh::OWNED, &cells);
+          S->GetMesh(domain_ss)->face_get_cells(f, AmanziMesh::OWNED, &cells);
         else
           S->GetMesh()->face_get_cells(f, AmanziMesh::USED, &cells);
 
