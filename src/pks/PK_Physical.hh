@@ -35,7 +35,19 @@ class PK_Physical : public virtual PK {
     boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->");
     if (res.end() - name_.end() != 0) boost::algorithm::erase_head(name_, res.end() - name_.begin());
 
-    plist_ = Teuchos::sublist(Teuchos::sublist(glist, "PKs"), name_);
+
+    Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(glist, "PKs");
+
+    if (pks_list->isSublist(name_)) {
+      plist_ = Teuchos::sublist(pks_list, name_); 
+    }else{
+      std::stringstream messagestream;
+      messagestream << "There is no sublist for PK "<<name_<<"in PKs list\n";
+      Errors::Message message(messagestream.str());
+      Exceptions::amanzi_throw(message);
+    }
+
+
   };
 
 
