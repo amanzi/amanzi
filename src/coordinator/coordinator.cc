@@ -26,9 +26,11 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "checkpoint.hh"
 #include "UnstructuredObservations.hh"
 #include "State.hh"
+#include "pk.hh"
 #include "PK.hh"
 #include "TreeVector.hh"
-#include "pk_factory.hh"
+#include "PK_Factory.hh"
+//#include "pk_factory_ats.hh"
 
 #include "coordinator.hh"
 
@@ -54,13 +56,18 @@ Coordinator::Coordinator(Teuchos::ParameterList& parameter_list,
 };
 
 void Coordinator::coordinator_init() {
-  coordinator_list_ = Teuchos::sublist(parameter_list_, "coordinator");
+  coordinator_list_ = Teuchos::sublist(parameter_list_, "cycle driver");
   read_parameter_list();
 
   // create the top level PK
   Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(parameter_list_, "PKs");
-  Teuchos::ParameterList::ConstIterator pk_item = pks_list->begin();
-  const std::string &pk_name = pks_list->name(pk_item);
+  Teuchos::ParameterList pk_tree_list = coordinator_list_->sublist("PK tree");
+  if (pk_tree_list.numParams() != 1) {
+    Errors::Message message("CycleDriver: PK tree list should contain exactly one root node list");
+    Exceptions::amanzi_throw(message);
+  }
+  Teuchos::ParameterList::ConstIterator pk_item = pk_tree_list.begin();
+  const std::string &pk_name = pk_tree_list.name(pk_item);
   
   // create the solution
   soln_ = Teuchos::rcp(new Amanzi::TreeVector());
@@ -69,9 +76,10 @@ void Coordinator::coordinator_init() {
   Amanzi::PKFactory pk_factory;
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list, pk_name);
   pk_list->set("PK name", pk_name);
- 
-  pk_ = pk_factory.CreatePK(pk_list, S_->FEList(), soln_);
-  pk_->setup(S_.ptr());
+  const std::string &pk_origin = pk_list -> get<std::string>("PK origin", "ATS");
+
+
+  pk_ = pk_factory.CreatePK(pk_tree_list.sublist(pk_name), parameter_list_, S_, soln_);
 
   // create the checkpointing
   Teuchos::ParameterList& chkp_plist = parameter_list_->sublist("checkpoint");
@@ -102,7 +110,8 @@ void Coordinator::setup() {
   S_->set_time(t0_);
   S_->set_cycle(cycle0_);
   S_->RequireScalar("dt", "coordinator");
-  
+
+  pk_->Setup(S_.ptr());  
   S_->Setup();
 }
 
@@ -132,16 +141,29 @@ void Coordinator::initialize() {
     DeformCheckpointMesh(S_.ptr());
   }
 
-  // Initialize the process kernels (initializes all independent variables)
-  pk_->initialize(S_.ptr());
+  // Initialize the state (initializes all dependent variables).
+  //S_->Initialize();
   *S_->GetScalarData("dt", "coordinator") = 0.;
   S_->GetField("dt","coordinator")->set_initialized();
 
-  // Initialize the state (initializes all dependent variables).
-  S_->Initialize();
+  S_->InitializeFields();
+
+  // Initialize the process kernels (initializes all independent variables)
+  pk_->Initialize(S_.ptr());
+
+ // Final checks.
+  S_->CheckNotEvaluatedFieldsInitialized();
+
+  S_->InitializeEvaluators();
+
+
+  S_->CheckAllFieldsInitialized();
+
+  S_->WriteStatistics(vo_);
+
 
   // commit the initial conditions.
-  pk_->commit_state(0., S_);
+  pk_->CommitStep(0., 0., S_);
 
   // vis for the state
   // HACK to vis with a surrogate surface mesh.  This needs serious re-design. --etc
@@ -267,7 +289,7 @@ void Coordinator::finalize() {
   // the same file twice.
   // This really should be removed, but for now is left to help stupid developers.
   if (!checkpoint_->DumpRequested(S_next_->cycle(), S_next_->time())) {
-    pk_->calculate_diagnostics(S_next_);
+    pk_->CalculateDiagnostics(S_next_);
     WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), 0.0);
   }
 
@@ -432,17 +454,27 @@ double Coordinator::get_dt(bool after_fail) {
 
 
 // This is used by CLM
-bool Coordinator::advance(double dt) {
+  bool Coordinator::advance(double t_old, double t_new) {
+
+    double dt = t_new - t_old;
+
   S_next_->advance_time(dt);
-  bool fail = pk_->advance(dt);
-  fail |= !pk_->valid_step();
+  bool fail = pk_->AdvanceStep(t_old, t_new, false);
+  //  fail |= !pk_->valid_step();
+
+  // std::cout<<"State S **************\n";
+  // S_->WriteStatistics(vo_);  
+  // std::cout<<"State S_next_ **************\n";
+  // S_next_->WriteStatistics(vo_);  
+  // exit(0);
+
 
   // advance the iteration count and timestep size
   S_next_->advance_cycle();
 
   if (!fail) {
     // commit the state
-    pk_->commit_state(dt, S_next_);
+    pk_->CommitStep(t_old, t_new, S_next_);
     
     // make observations, vis, and checkpoints
     observations_->MakeObservations(*S_next_);
@@ -480,7 +512,7 @@ void Coordinator::visualize(bool force) {
   }
 
   if (dump) {
-    pk_->calculate_diagnostics(S_next_);
+    pk_->CalculateDiagnostics(S_next_);
   }
 
   for (std::vector<Teuchos::RCP<Amanzi::Visualization> >::iterator vis=visualization_.begin();
@@ -508,11 +540,12 @@ void Coordinator::cycle_driver() {
   // start at time t = t0 and initialize the state.
   {
     Teuchos::TimeMonitor monitor(*setup_timer_);
-    setup();
-    
+    setup();   
     initialize();
-    
+   
   }
+
+  //  exit(0);
 
   // get the intial timestep -- note, this would have to be fixed for a true restart
   double dt = get_dt(false);
@@ -520,6 +553,8 @@ void Coordinator::cycle_driver() {
   // visualization at IC
   visualize();
   checkpoint(dt);
+
+
 
   // iterate process kernels
   {
@@ -545,7 +580,13 @@ void Coordinator::cycle_driver() {
       *S_->GetScalarData("dt", "coordinator") = dt;
       *S_inter_->GetScalarData("dt", "coordinator") = dt;
       *S_next_->GetScalarData("dt", "coordinator") = dt;
-      fail = advance(dt);
+
+      S_->set_initial_time(S_->time());
+      S_->set_final_time(S_->time() + dt);
+      S_->set_intermediate_time(S_->time());
+
+      fail = advance(S_->time(), S_->time() + dt);
+      //S_->WriteStatistics(vo_);  
       dt = get_dt(fail);
 
     } // while not finished
@@ -572,7 +613,10 @@ void Coordinator::cycle_driver() {
   }
 #endif
   }
-  
+
+
+  // finalizing simulation                                                                                                                                                                                                               
+  S_->WriteStatistics(vo_);  
   report_memory();
   Teuchos::TimeMonitor::summarize(*vo_->os());
 

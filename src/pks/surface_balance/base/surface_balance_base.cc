@@ -19,19 +19,20 @@
 namespace Amanzi {
 namespace SurfaceBalance {
 
-SurfaceBalanceBase::SurfaceBalanceBase(
-           const Teuchos::RCP<Teuchos::ParameterList>& plist,
-           Teuchos::ParameterList& FElist,
-           const Teuchos::RCP<TreeVector>& solution) :
-    PKPhysicalBDFBase(plist, FElist, solution),
-    PKDefaultBase(plist, FElist, solution)
+SurfaceBalanceBase::SurfaceBalanceBase(Teuchos::ParameterList& pk_tree,
+                                       const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                                       const Teuchos::RCP<State>& S,
+                                       const Teuchos::RCP<TreeVector>& solution):
+    PK(pk_tree, global_list,  S, solution),
+    PK_BDF_Default(pk_tree, global_list,  S, solution),
+    PK_PhysicalBDF_Default(pk_tree, global_list,  S, solution)
 {
   // name the layer
-  layer_ = plist->get<std::string>("layer name", name_);
+  layer_ = plist_->get<std::string>("layer name", name_);
   source_key_  = getKey(layer_, "source_sink");
-  source_key_ = plist->get<std::string>("source key", source_key_);
+  source_key_ = plist_->get<std::string>("source key", source_key_);
 
-  theta_ = plist->get<double>("time discretization theta", 1.0);
+  theta_ = plist_->get<double>("time discretization theta", 1.0);
   ASSERT(theta_ <= 1.);
   ASSERT(theta_ >= 0.);
 
@@ -44,8 +45,8 @@ SurfaceBalanceBase::SurfaceBalanceBase(
 // main methods
 // -- Setup data.
 void
-SurfaceBalanceBase::setup(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBDFBase::setup(S);
+SurfaceBalanceBase::Setup(const Teuchos::Ptr<State>& S) {
+  PK_PhysicalBDF_Default::Setup(S);
 
   // requirements: primary variable
   S->RequireField(key_, name_)->SetMesh(mesh_)->
@@ -130,7 +131,7 @@ SurfaceBalanceBase::UpdatePreconditioner(double t,
         Teuchos::RCP<const TreeVector> up, double h) {
   // update state with the solution up.
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
-  PKDefaultBase::solution_to_state(*up, S_next_);
+  PK_Physical_Default::Solution_to_State(*up, S_next_);
 
   if (conserved_quantity_) {
     if (jac_ == Teuchos::null) {

@@ -14,7 +14,7 @@ with freezing.
 #define MPC_SUBSURFACE_HH_
 
 #include "TreeOperator.hh"
-#include "pk_physical_bdf_base.hh"
+#include "pk_physical_bdf_default.hh"
 #include "strong_mpc.hh"
 
 namespace Amanzi {
@@ -36,27 +36,30 @@ namespace Flow {
 class Richards;
 }
 
-class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
+class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
 
  public:
 
-  MPCSubsurface(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                Teuchos::ParameterList& FElist,
+  MPCSubsurface(Teuchos::ParameterList& pk_tree_list,
+                const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                const Teuchos::RCP<State>& S,
                 const Teuchos::RCP<TreeVector>& soln) :
-      PKDefaultBase(plist, FElist, soln),
-      StrongMPC<PKPhysicalBDFBase>(plist, FElist, soln) {
-    dump_ = plist->get<bool>("dump preconditioner", false);
+    PK(pk_tree_list, global_list, S, soln),
+    StrongMPC<PK_PhysicalBDF_Default>(pk_tree_list, global_list, S, soln) {
+    std::cout<<"plist_\n"<<*plist_;
+    dump_ = plist_->get<bool>("dump preconditioner", false);
+
   }
 
   // -- Initialize owned (dependent) variables.
-  virtual void setup(const Teuchos::Ptr<State>& S);
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   virtual void set_states(const Teuchos::RCP<const State>& S,
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
 
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
 
   // update the predictor to be physically consistent
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> up0,
@@ -143,6 +146,8 @@ class MPCSubsurface : public StrongMPC<PKPhysicalBDFBase> {
   Key mass_flux_key_;
   Key mass_flux_dir_key_;
   Key rho_key_;
+
+  bool is_fv_;
   
   bool is_fv_;
   

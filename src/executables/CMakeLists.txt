@@ -20,11 +20,16 @@ endif ()
 #
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 include_directories(${ATS_SOURCE_DIR}/src/pks/mpc)
+include_directories(${ATS_SOURCE_DIR}/src/pks/coupled_transport)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/deformation)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
+include_directories(${ATS_SOURCE_DIR}/src/pks/transport)
+include_directories(${ATS_SOURCE_DIR}/src/pks/transport/transport_amanzi)
+include_directories(${ATS_SOURCE_DIR}/src/pks/chemistry)
+include_directories(${ATS_SOURCE_DIR}/src/pks/chemistry/chemistry_amanzi)
 
 include_directories(${ATS_SOURCE_DIR}/src/coordinator)
 
@@ -76,19 +81,21 @@ set(ATS_LIBS
                      #  pk_test_pks
                       # pk_energy_constant_temperature
                       pk_energy_advection_diffusion
-		              pk_energy_two_phase
+		      pk_energy_two_phase
                       pk_energy_three_phase
                       pk_energy_surface_ice
                       pk_energy_base
-		              pk_flow_permafrost
+		      pk_flow_permafrost
                       pk_flow_richards
                       pk_flow_snow_distribution
                       pk_flow_overland
                       pk_flow_overland_pressure
                       pk_flow_icy_overland
-		              # pk_prescribed_deformation
+                      pk_transport
+                      pk_coupled_transport
+	              # pk_prescribed_deformation
 #                      pk_prescribed_volumetric_deformation
-                      pk_volumetric_deformation
+#                      pk_volumetric_deformation
                       pk_surface_balance_SEB
                       pk_BGC
                       pk_bases
@@ -110,6 +117,7 @@ set(ATS_LIBS
 
 set(AMANZI_LIBS
                       amanzi_operators
+                      amanzi_pks
                       amanzi_state
 	              amanzi_whetstone
                       amanzi_time_integration
@@ -125,9 +133,19 @@ set(AMANZI_LIBS
                       amanzi_output
                       amanzi_mstk_mesh
 		      amanzi_mesh_logical
+                      amanzi_geochemistry
 )
 
-target_link_libraries(ats ${ATS_LIBS} ${AMANZI_LIBS})
+set(GEOCHEM_LIBS 
+                 /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libchemistry_pk.a 
+                 /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libgeochembase.a 
+                 /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libgeochemsolvers.a 
+                 /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libgeochemutil.a 
+                 /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libmpc_tree.a 
+                 /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libtransport.a
+)
+
+target_link_libraries(ats ${ATS_LIBS} ${AMANZI_LIBS} ${GEOCHEM_LIBS})
 
 
 install(TARGETS ats DESTINATION bin)

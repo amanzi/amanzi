@@ -21,7 +21,7 @@ void AdvectionDiffusion::Functional(double t_old, double t_new, Teuchos::RCP<Tre
                  Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
 
   // pointer-copy temperature into states and update any auxilary data
-  solution_to_state(*u_new, S_next_);
+  Solution_to_State(*u_new, S_next_);
 
   bc_temperature_->Compute(t_new);
   bc_flux_->Compute(t_new);
@@ -83,7 +83,7 @@ int AdvectionDiffusion::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Te
 // updates the preconditioner
 void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
-  PKDefaultBase::solution_to_state(*up, S_next_);
+  PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
 
   // update boundary conditions
   bc_temperature_->Compute(S_next_->time());

@@ -69,7 +69,7 @@ InterfrostEnergy::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> 
 
   // update state with the solution up.
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
-  PKDefaultBase::solution_to_state(*up, S_next_);
+  PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
 
   // update boundary conditions
   bc_temperature_->Compute(S_next_->time());

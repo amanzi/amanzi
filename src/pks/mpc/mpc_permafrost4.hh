@@ -13,12 +13,13 @@ namespace Amanzi {
 class MPCPermafrost4 : public MPCSubsurface {
  public:
 
-  MPCPermafrost4(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                 Teuchos::ParameterList& FElist,
+  MPCPermafrost4(Teuchos::ParameterList& FElist,
+                 const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                 const Teuchos::RCP<State>& S,
                  const Teuchos::RCP<TreeVector>& soln);
 
-  virtual void setup(const Teuchos::Ptr<State>& S);
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   virtual void set_states(const Teuchos::RCP<const State>& S,
                           const Teuchos::RCP<State>& S_inter,
@@ -47,10 +48,10 @@ class MPCPermafrost4 : public MPCSubsurface {
 
  protected:
   // sub PKs
-  Teuchos::RCP<PKPhysicalBDFBase> domain_flow_pk_;
-  Teuchos::RCP<PKPhysicalBDFBase> domain_energy_pk_;
-  Teuchos::RCP<PKPhysicalBDFBase> surf_flow_pk_;
-  Teuchos::RCP<PKPhysicalBDFBase> surf_energy_pk_;
+  Teuchos::RCP<PK_PhysicalBDF_Default> domain_flow_pk_;
+  Teuchos::RCP<PK_PhysicalBDF_Default> domain_energy_pk_;
+  Teuchos::RCP<PK_PhysicalBDF_Default> surf_flow_pk_;
+  Teuchos::RCP<PK_PhysicalBDF_Default> surf_energy_pk_;
 
   // sub meshes
   Teuchos::RCP<const AmanziMesh::Mesh> domain_mesh_;

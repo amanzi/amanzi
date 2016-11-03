@@ -90,6 +90,11 @@ generate_evaluators_registration_header(
 # constitutive_relations/surface_subsurface_fluxes/
 
 register_evaluator_with_factory(
+  HEADERFILE surface_subsurface_fluxes/volumetric_darcy_flux_evaluator_reg.hh
+  LISTNAME   CONSTITUTIVE_RELATIONS_SURFACE_SUBSURFACE_FLUXES_EVALUATORS
+  )
+
+register_evaluator_with_factory(
   HEADERFILE surface_subsurface_fluxes/surface_top_cells_evaluator_reg.hh
   LISTNAME   CONSTITUTIVE_RELATIONS_SURFACE_SUBSURFACE_FLUXES_EVALUATORS
   )

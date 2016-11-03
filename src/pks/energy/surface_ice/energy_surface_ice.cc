@@ -33,11 +33,13 @@ namespace Energy {
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------
-EnergySurfaceIce::EnergySurfaceIce(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        Teuchos::ParameterList& FElist,
-        const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, FElist, solution),
-    EnergyBase(plist, FElist, solution),
+EnergySurfaceIce::EnergySurfaceIce(Teuchos::ParameterList& FElist,
+                                   const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                                   const Teuchos::RCP<State>& S,
+                                   const Teuchos::RCP<TreeVector>& solution) :
+  PK(FElist, plist, S,  solution),
+  PK_BDF_Default(FElist, plist, S, solution),
+    EnergyBase(FElist, plist, S,  solution),
     standalone_mode_(false),
     is_energy_source_term_(false),
     is_mass_source_term_(false),
@@ -48,7 +50,7 @@ EnergySurfaceIce::EnergySurfaceIce(const Teuchos::RCP<Teuchos::ParameterList>& p
 }
 
 
-void EnergySurfaceIce::setup(const Teuchos::Ptr<State>& S) {
+void EnergySurfaceIce::Setup(const Teuchos::Ptr<State>& S) {
   // set up the meshes
   if (!S->HasMesh("surface")) {
     Teuchos::RCP<const AmanziMesh::Mesh> domain = S->GetMesh();
@@ -59,7 +61,7 @@ void EnergySurfaceIce::setup(const Teuchos::Ptr<State>& S) {
     standalone_mode_ = false;
   }
 
-  EnergyBase::setup(S);
+  EnergyBase::Setup(S);
 }
 
 // -------------------------------------------------------------
@@ -115,7 +117,7 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // -------------------------------------------------------------
 // Initialize the needed models to plug in enthalpy.
 // -------------------------------------------------------------
-void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
+void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
   // -- set the cell initial condition if it is taken from the subsurface
   if (!plist_->isSublist("initial condition")) {
     std::stringstream messagestream;
@@ -125,7 +127,7 @@ void EnergySurfaceIce::initialize(const Teuchos::Ptr<State>& S) {
   }
 
   // Call the base class's initialize.
-  EnergyBase::initialize(S);
+  EnergyBase::Initialize(S);
 
   // Set the cell initial condition if it is taken from the subsurface
   if (!S->GetField(key_)->initialized()) {

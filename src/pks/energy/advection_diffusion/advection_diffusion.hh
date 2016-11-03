@@ -14,44 +14,47 @@ us to the air-water system.
 #ifndef PKS_ENERGY_DIFFUSION_HH_
 #define PKS_ENERGY_DIFFUSION_HH_
 
-#include "pk_factory.hh"
+#include "PK_Factory.hh"
 #include "advection.hh"
 #include "Operator.hh"
 #include "OperatorDiffusion.hh"
 #include "OperatorAdvection.hh"
 #include "OperatorAccumulation.hh"
-#include "pk_physical_bdf_base.hh"
+//#include "PK_PhysicalBDF_ATS.hh"
+#include "pk_physical_bdf_default.hh"
 
 namespace Amanzi {
 namespace Energy {
 
-class AdvectionDiffusion : public PKPhysicalBDFBase {
+class AdvectionDiffusion : public PK_PhysicalBDF_Default {
 
 public:
 
-  AdvectionDiffusion(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                     Teuchos::ParameterList& FElist,
+  AdvectionDiffusion(Teuchos::ParameterList& FElist,
+                     const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                     const Teuchos::RCP<State>& S,
                      const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, FElist, solution),
-      PKPhysicalBDFBase(plist, FElist, solution) {}
+    PK(FElist, plist, S, solution),
+    PK_BDF_Default(FElist, plist, S, solution),
+    PK_PhysicalBDF_Default(FElist, plist, S, solution) {}
 
   // Virtual destructor
   virtual ~AdvectionDiffusion() {}
 
   // AdvectionDiffusion is a PK
   // -- Setup data.
-  virtual void setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // -- Initialize owned (dependent) variables.
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   // -- Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {
-    PKPhysicalBDFBase::commit_state(dt, S);
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
+    PK_PhysicalBDF_Default::CommitStep(t_old, t_new, S);
   }
 
   // -- Calculate any diagnostics prior to doing vis
-  virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {}
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {}
 
 
   // AdvectionDiffusion is a BDFFnBase

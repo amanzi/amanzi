@@ -25,8 +25,10 @@
 #include "upwinding.hh"
 #include "BoundaryFunction.hh"
 
+// #include "pk.hh"
+// #include "pk_factory_ats.hh"
 #include "PK.hh"
-#include "pk_factory.hh"
+#include "PK_Factory.hh"
 
 #include "richards.hh"
 
@@ -39,11 +41,15 @@ friend class MPCCoupledFlowEnergy;
 
 public:
   // Constructors.
-  Permafrost(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-             Teuchos::ParameterList& FElist,
+  Permafrost(Teuchos::ParameterList& FElist,
+             const Teuchos::RCP<Teuchos::ParameterList>& plist,
+             const Teuchos::RCP<State>& S,
              const Teuchos::RCP<TreeVector>& solution) :
-      PKDefaultBase(plist, FElist, solution),
-      Richards(plist, FElist, solution) {}
+    //PK_Default(plist, FElist, solution),
+    //PKDefaultBase(plist, FElist, solution),
+    PK(FElist, plist, S, solution),
+    PK_BDF_Default(FElist, plist, S, solution),
+    Richards( FElist, plist, S, solution) {}
 
   // Virtual destructor
   virtual ~Permafrost() {}
