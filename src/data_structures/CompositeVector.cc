@@ -242,6 +242,7 @@ void CompositeVector::CreateData_() {
       mastervec_->SetComponent(*name, m_comp);
     }
   }
+  PutScalarMasterAndGhosted(0.);
 };
 
 
