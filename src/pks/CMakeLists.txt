@@ -77,13 +77,22 @@ add_install_include_file(${pks_inc_files})
 if (BUILD_TESTS) 
 endif()
 
-add_subdirectory(eos)
+if (ENABLE_Physics)
+  add_subdirectory(eos)
 
-add_subdirectory(flow)
+  add_subdirectory(flow)
+endif()
+
+# chemistry isn't REALLY physics...
 add_subdirectory(chemistry)
-add_subdirectory(transport)
-add_subdirectory(energy)
-add_subdirectory(dummy)
-add_subdirectory(mpc_pk)
 
+# ok, transport is probably physics but oh well
+add_subdirectory(transport)
+
+if (ENABLE_Physics)
+  add_subdirectory(energy)
+  add_subdirectory(dummy)
+endif()
+
+add_subdirectory(mpc_pk)
 
