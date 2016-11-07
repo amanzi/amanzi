@@ -35,7 +35,8 @@ MatrixFE::MatrixFE(const Teuchos::RCP<const GraphFE>& graph) :
   n_owned_ = graph_->RowMap().NumMyElements();
 
   matrix_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, graph_->Graph()));
-  offproc_matrix_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, graph_->OffProcGraph()));
+  if (graph_->includes_offproc())
+    offproc_matrix_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, graph_->OffProcGraph()));
 }
 
 // zero for summation
@@ -43,7 +44,8 @@ int
 MatrixFE::Zero() {
   int ierr(0);
   ierr = matrix_->PutScalar(0.);
-  ierr |= offproc_matrix_->PutScalar(0.);
+  if (graph_->includes_offproc())
+    ierr |= offproc_matrix_->PutScalar(0.);
   return ierr;
 }
 
@@ -178,17 +180,21 @@ MatrixFE::ExtractMyRowCopy(int row, int size, int& count,
 // finish fill
 int
 MatrixFE::FillComplete() {
-  // fill complete the offproc matrix
-  int ierr = offproc_matrix_->FillComplete(graph_->DomainMap(), graph_->RangeMap());
-  ASSERT(!ierr);
+  int ierr = 0;
 
-  // scatter offproc into onproc
-  ierr |= matrix_->Export(*offproc_matrix_, graph_->Exporter(), Add);
-  ASSERT(!ierr);
+  if (graph_->includes_offproc()) {
+    // fill complete the offproc matrix
+    ierr |= offproc_matrix_->FillComplete(graph_->DomainMap(), graph_->RangeMap());
+    ASSERT(!ierr);
 
-  // zero the offproc in case of multiple stage assembly and multiple calls to FillComplete()
-  ierr |= offproc_matrix_->PutScalar(0.);
-  ASSERT(!ierr);
+    // scatter offproc into onproc
+    ierr |= matrix_->Export(*offproc_matrix_, graph_->Exporter(), Add);
+    ASSERT(!ierr);
+
+    // zero the offproc in case of multiple stage assembly and multiple calls to FillComplete()
+    ierr |= offproc_matrix_->PutScalar(0.);
+    ASSERT(!ierr);
+  }
 
   // fillcomplete the final graph
   ierr |= matrix_->FillComplete(graph_->DomainMap(), graph_->RangeMap());
