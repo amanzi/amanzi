@@ -452,22 +452,12 @@ double Coordinator::get_dt(bool after_fail) {
 }
 
 
-
-// This is used by CLM
-  bool Coordinator::advance(double t_old, double t_new) {
-
-    double dt = t_new - t_old;
+bool Coordinator::advance(double t_old, double t_new) {
+  double dt = t_new - t_old;
 
   S_next_->advance_time(dt);
   bool fail = pk_->AdvanceStep(t_old, t_new, false);
-  //  fail |= !pk_->valid_step();
-
-  // std::cout<<"State S **************\n";
-  // S_->WriteStatistics(vo_);  
-  // std::cout<<"State S_next_ **************\n";
-  // S_next_->WriteStatistics(vo_);  
-  // exit(0);
-
+  fail |= !pk_->ValidStep();
 
   // advance the iteration count and timestep size
   S_next_->advance_cycle();

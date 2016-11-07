@@ -16,7 +16,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "pk_mpcsubcycled.hh"
+#include "pk_mpcsubcycled_ats.hh"
 #include "PK.hh"
 
 namespace Amanzi {

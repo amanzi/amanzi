@@ -132,7 +132,7 @@ bool PK_BDF_Default::AdvanceStep(double t_old, double t_new, bool reinit) {
 
   if (!fail) {
     // check step validity
-    bool valid = valid_step();
+    bool valid = ValidStep();
     if (valid) {
       // update the timestep size
       if (dt_solver < dt_ && dt_solver >= dt) {

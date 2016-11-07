@@ -133,19 +133,24 @@ set(AMANZI_LIBS
                       amanzi_output
                       amanzi_mstk_mesh
 		      amanzi_mesh_logical
-                      amanzi_geochemistry
+		      amanzi_chemistry_pk
+		      amanzi_geochembase
+		      amanzi_geochemsolvers
+		      amanzi_geochemutil
+		      amanzi_mpc_tree
+		      amanzi_transport
 )
 
-set(GEOCHEM_LIBS 
-                 /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libchemistry_pk.a 
-                 /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libgeochembase.a 
-                 /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libgeochemsolvers.a 
-                 /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libgeochemutil.a 
-                 /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libmpc_tree.a 
-                 /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libtransport.a
-)
+# set(GEOCHEM_LIBS 
+#                  /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libchemistry_pk.a 
+#                  /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libgeochembase.a 
+#                  /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libgeochemsolvers.a 
+#                  /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libgeochemutil.a 
+#                  /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libmpc_tree.a 
+#                  /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libtransport.a
+# )
 
-target_link_libraries(ats ${ATS_LIBS} ${AMANZI_LIBS} ${GEOCHEM_LIBS})
+target_link_libraries(ats ${ATS_LIBS} ${AMANZI_LIBS})# ${GEOCHEM_LIBS})
 
 
 install(TARGETS ats DESTINATION bin)

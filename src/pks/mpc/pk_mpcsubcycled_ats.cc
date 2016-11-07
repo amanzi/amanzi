@@ -14,7 +14,7 @@
   See additional documentation in the base class src/pks/mpc_pk/PK_MPC.hh
 */
 
-#include "pk_mpcsubcycled.hh"
+#include "pk_mpcsubcycled_ats.hh"
 
 namespace Amanzi {
 

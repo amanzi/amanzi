@@ -42,17 +42,6 @@ public:
   // Virtual destructor
   virtual ~Richards() {}
 
-  // main methods
-
-  // virtual void setup(const Teuchos::Ptr<State>& S){Setup(S);};
-  // virtual void initialize(const Teuchos::Ptr<State>& S){Initialize(S);};
-  // // virtual void State_to_Solution(const Teuchos::RCP<State>& S,
-  // //                                TreeVector& soln){state_to_solution(S, soln);};
-  // // virtual void Solution_to_State(TreeVector& soln,
-  // //                                const Teuchos::RCP<State>& S){solution_to_state(soln, S);};
-  // virtual bool advance(double dt){ return PKBDFBase::advance(dt);};
-  // virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {CommitStep(0, dt, S);};
-
   // virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {CalculateDiagnostics(S);};
 
   // -- Setup data.
@@ -64,11 +53,8 @@ public:
   // -- Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
 
- // -- limit changes in a valid time step
-  //virtual bool valid_step();
-
   // -- limit changes in a valid time step
-  virtual bool valid_step();
+  virtual bool ValidStep();
 
   // -- Update diagnostics for vis.
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);

@@ -26,7 +26,7 @@ Default base with default implementations of methods for a physical PK.
 
 namespace Amanzi {
 
-  class PK_Physical_Default :   public PK_Physical {
+class PK_Physical_Default : public PK_Physical {
 
   public:
     PK_Physical_Default(Teuchos::ParameterList& pk_tree,
@@ -53,7 +53,7 @@ namespace Amanzi {
           const Teuchos::RCP<State>& S_inter,
           const Teuchos::RCP<State>& S_next);
 
-  virtual bool valid_step();
+  virtual bool ValidStep();
 
   // -- setup
   virtual void Setup(const Teuchos::Ptr<State>& S);
@@ -61,29 +61,14 @@ namespace Amanzi {
   // -- initialize
   virtual void Initialize(const Teuchos::Ptr<State>& S);
 
-  // Accessor for debugger, for use by coupling MPCs
-  Teuchos::RCP<Debugger> debugger() { return db_; }
-
  protected: // methods
 
   void DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<CompositeVector>& cv);
 
  protected: // data
 
-  // Teuchos::RCP<Teuchos::ParameterList> plist_;
-  // Teuchos::RCP<TreeVector> solution_;
-
   // step validity
   double max_valid_change_;
-
-  // solution and evaluator
-    //  std::string key_;
-    //  Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator_;
-  // debugger for dumping vectors
-    //Teuchos::RCP<Debugger> db_;
-  // name of domain, associated mesh
-    //Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-    //std::string domain_;
 
   // ENORM struct
   typedef struct ENorm_t {

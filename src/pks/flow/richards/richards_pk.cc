@@ -44,11 +44,7 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
                    const Teuchos::RCP<Teuchos::ParameterList>& glist,
                    const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& solution) :
-    // PKDefaultBase(glist, pk_tree, solution),
-    // PKPhysicalBDFBase(glist, pk_tree, solution),
-    //PK_Default(glist, pk_tree, solution),
     PK(pk_tree, glist,  S, solution),
-    PK_BDF_Default(pk_tree, glist,  S, solution),
     PK_PhysicalBDF_Default(pk_tree, glist,  S, solution),
     coupled_to_surface_via_head_(false),
     coupled_to_surface_via_flux_(false),
@@ -65,9 +61,6 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
     vapor_diffusion_(false),
     perm_scale_(1.)
 {
-  if (!plist_->isParameter("primary variable key"))
-    plist_->set("primary variable key", "pressure");
-
   if (!plist_->isParameter("conserved quantity suffix"))
     plist_->set("conserved quantity suffix", "water_content");
   
@@ -82,7 +75,6 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
 void Richards::Setup(const Teuchos::Ptr<State>& S) {
   
   PK_PhysicalBDF_Default::Setup(S);
-  //PKPhysicalBDFBase::setup(S);
   
   SetupRichardsFlow_(S);
   SetupPhysicalEvaluators_(S);
@@ -448,7 +440,6 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
 
   // Initialize BDF stuff and physical domain stuff.
   PK_PhysicalBDF_Default::Initialize(S);
-  //PKPhysicalBDFBase::initialize(S);
 
 
   // debugggin cruft
@@ -541,7 +532,6 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
       *vo_->os() << "Commiting state." << std::endl;
 
     PK_PhysicalBDF_Default::CommitStep(t_old, t_new, S);
-    //PKPhysicalBDFBase::commit_state(dt, S);
   
   // update BCs, rel perm
   UpdateBoundaryConditions_(S.ptr());
@@ -600,7 +590,7 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
 // Check for controls on saturation
 // -----------------------------------------------------------------------------
 bool
-Richards::valid_step() {
+Richards::ValidStep() {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Validating time step." << std::endl;
@@ -640,7 +630,7 @@ Richards::valid_step() {
     }
   }
 
-  return PKPhysicalBDFBase::valid_step();
+  return PK_PhysicalBDF_Default::ValidStep();
 }
 
 

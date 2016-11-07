@@ -18,7 +18,7 @@
 
 #include "PK.hh"
 #include "PK_Factory.hh"
-#include "pk_mpcsubcycled.hh"
+#include "pk_mpcsubcycled_ats.hh"
 
 namespace Amanzi {
 

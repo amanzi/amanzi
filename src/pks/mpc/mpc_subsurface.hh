@@ -149,8 +149,6 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
 
   bool is_fv_;
   
-  bool is_fv_;
-  
   // EWC delegate
   Teuchos::RCP<MPCDelegateEWCSubsurface> ewc_;
 

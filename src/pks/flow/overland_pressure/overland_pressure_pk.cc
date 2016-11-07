@@ -49,9 +49,8 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
                                            const Teuchos::RCP<Teuchos::ParameterList>& plist,
                                            const Teuchos::RCP<State>& S,                        
                                            const Teuchos::RCP<TreeVector>& solution) :   
-    PK(pk_tree, plist, S, solution),
-    PK_BDF_Default(pk_tree, plist, S, solution),
     PK_PhysicalBDF_Default(pk_tree, plist, S, solution),
+    PK(pk_tree, plist, S, solution),
     standalone_mode_(false),
     is_source_term_(false),
     coupled_to_subsurface_via_head_(false),
@@ -62,9 +61,6 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
     source_only_if_unfrozen_(false),
     precon_used_(true)
 {
-  plist_->set("conserved quantity key", "surface-water_content");
-  plist_->set("domain name", "surface");
-  
   // clone the ponded_depth parameter list for ponded_depth bar
   Teuchos::ParameterList& FElist = S->FEList();
   Teuchos::ParameterList& pd_list = FElist.sublist("ponded_depth");
@@ -72,8 +68,10 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
   pdbar_list.set("ponded depth bar", true);
   pdbar_list.set("height key", "ponded_depth_bar");
   FElist.set("ponded_depth_bar", pdbar_list);
-  // std::cout<<FElist<<"\n";
 
+  if (!plist_->isParameter("conserved quantity suffix"))
+    plist_->set("conserved quantity suffix", "water_content");
+  
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
     plist_->set("absolute error tolerance", 0.01 * 55000.0); // h * nl

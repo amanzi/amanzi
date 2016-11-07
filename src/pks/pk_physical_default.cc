@@ -16,36 +16,21 @@ namespace Amanzi {
 PK_Physical_Default::PK_Physical_Default(Teuchos::ParameterList& pk_tree,
                                          const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                          const Teuchos::RCP<State>& S,
-                                         const Teuchos::RCP<TreeVector>& solution):
-  PK(pk_tree, glist, S, solution),
-  PK_Physical(pk_tree, glist, S, solution)
- {
+                                         const Teuchos::RCP<TreeVector>& solution) :
+    PK(pk_tree, glist, S, solution),
+    PK_Physical(pk_tree, glist, S, solution)
+{
+  domain_ = plist_->get<std::string>("domain name", std::string("domain"));
+  key_ = plist_->get<std::string>("primary variable");
 
-      
-   name_ = pk_tree.name();
-   boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->");
-   if (res.end() - name_.end() != 0) boost::algorithm::erase_head(name_, res.end() - name_.begin());
+  Teuchos::ParameterList& FElist = S->FEList();
+  // set up the primary variable solution, and its evaluator
+  Teuchos::ParameterList& pv_sublist = FElist.sublist(key_);
+  pv_sublist.set("evaluator name", key_);
+  pv_sublist.set("field evaluator type", "primary variable");
 
-   plist_->set("PK name", name_);
-    
-   // domain -- default is the entire mesh, no prefix
-   if (domain_.empty()) {
-     domain_ = plist_->get<std::string>("domain name", std::string("domain"));
-   }
-  
-   if (key_.empty()) {
-     key_ = plist_->get<std::string>("primary variable");
-   }
-
-   Teuchos::ParameterList& FElist = S->FEList();
-   // set up the primary variable solution, and its evaluator
-   Teuchos::ParameterList& pv_sublist = FElist.sublist(key_);
-   pv_sublist.set("evaluator name", key_);
-   pv_sublist.set("field evaluator type", "primary variable");
-
-   // primary variable max change
-   max_valid_change_ = plist_->get<double>("max valid change", -1.0);
-
+  // primary variable max change
+  max_valid_change_ = plist_->get<double>("max valid change", -1.0);
 }
 
 // -----------------------------------------------------------------------------
@@ -93,9 +78,9 @@ void PK_Physical_Default::Solution_to_State(TreeVector& solution,
 
 void PK_Physical_Default::Solution_to_State(const TreeVector& solution,
         const Teuchos::RCP<State>& S) {
-
-  TreeVector* soln_nc_ptr = const_cast<TreeVector*>(&solution);
-  Solution_to_State(*soln_nc_ptr, S);
+  ASSERT(solution.Data() == S->GetFieldData(key_));
+  //  TreeVector* soln_nc_ptr = const_cast<TreeVector*>(&solution);
+  //  Solution_to_State(*soln_nc_ptr, S);
 };
 
 
@@ -130,7 +115,7 @@ void PK_Physical_Default::set_states(const Teuchos::RCP<const State>& S,
 // -----------------------------------------------------------------------------
 // Ensures the step size is smaller than max_valid_change
 // -----------------------------------------------------------------------------
-bool PK_Physical_Default::valid_step() {
+bool PK_Physical_Default::ValidStep() {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Validating time step." << std::endl;

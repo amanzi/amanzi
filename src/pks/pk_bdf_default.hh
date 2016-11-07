@@ -23,19 +23,16 @@ BDF.
 
 namespace Amanzi {
 
-  class PK_BDF_Default : public PK_BDF {
+class PK_BDF_Default : public PK_BDF {
 
  public:
 
-  // PK_BDF_Default(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-  //                Teuchos::ParameterList& FElist,
-  //                const Teuchos::RCP<TreeVector>& solution);
-  //  :      PKDefaultBase(plist, pk_tree, solution) {}
   PK_BDF_Default(Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
                  const Teuchos::RCP<State>& S,
                  const Teuchos::RCP<TreeVector>& solution) :
-    PK(pk_tree, glist, S, solution){}
+    PK_BDF(pk_tree, glist, S, solution),
+    PK(pk_tree, glist, S, solution) {}
   
   // Virtual destructor
   virtual ~PK_BDF_Default() {}
@@ -66,10 +63,6 @@ namespace Amanzi {
   virtual void set_states(const Teuchos::RCP<const State>& S,
                         const Teuchos::RCP<State>& S_inter,
                         const Teuchos::RCP<State>& S_next);
-
-  // -- ensure a solution is valid
-  virtual bool valid_step() { return true; }
-
 
   // update the continuation parameter
   virtual void UpdateContinuationParameter(double lambda);

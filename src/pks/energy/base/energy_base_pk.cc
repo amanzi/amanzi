@@ -36,7 +36,6 @@ EnergyBase::EnergyBase(Teuchos::ParameterList& FElist,
                        const Teuchos::RCP<State>& S,
                        const Teuchos::RCP<TreeVector>& solution) :
     PK(FElist, plist, S, solution),
-    PK_BDF_Default(FElist, plist, S, solution),
     PK_PhysicalBDF_Default(FElist, plist, S, solution),
     modify_predictor_with_consistent_faces_(false),
     modify_predictor_for_freezing_(false),
@@ -48,8 +47,6 @@ EnergyBase::EnergyBase(Teuchos::ParameterList& FElist,
     flux_exists_(true),
     implicit_advection_(true) {
 
-  if (!plist_->isParameter("primary variable key"))
-    plist_->set("primary variable key", "temperature");
   if (!plist_->isParameter("conserved quantity suffix"))
     plist_->set("conserved quantity suffix", "energy");
 

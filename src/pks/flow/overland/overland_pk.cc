@@ -43,16 +43,15 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& FElist,
                            const Teuchos::RCP<Teuchos::ParameterList>& plist,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& solution) :
-  //PK_Default(plist, FElist, solution),
     PK(FElist, plist, S, solution),
-    PK_BDF_Default(FElist, plist, S, solution),
     PK_PhysicalBDF_Default(FElist, plist, S, solution),
     standalone_mode_(false),
     is_source_term_(false),
     niter_(0)
 {
-  plist_->set("conserved quantity key", "ponded_depth");
-  plist_->set("domain name", "surface");
+  // used for error norm
+  if (!plist_->isParameter("conserved quantity suffix"))
+    plist_->set("conserved quantity suffix", "ponded_depth");
   
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))

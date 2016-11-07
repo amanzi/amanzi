@@ -12,7 +12,7 @@ sub-PKs, calling their advance() methods and returning failure if any fail.
 See additional documentation in the base class src/pks/mpc/MPC.hh
 ------------------------------------------------------------------------- */
 
-#include "pk_mpcsubcycled.hh"
+#include "pk_mpcsubcycled_ats.hh"
 
 namespace Amanzi {
 

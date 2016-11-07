@@ -41,10 +41,7 @@ public:
              const Teuchos::RCP<Teuchos::ParameterList>& plist,
              const Teuchos::RCP<State>& S,
              const Teuchos::RCP<TreeVector>& solution) :
-    //PK_Default(plist, FElist, solution),
-    //PKDefaultBase(plist, FElist, solution),
     PK(FElist, plist, S, solution),
-    PK_BDF_Default(FElist, plist, S, solution),
     Permafrost(FElist, plist, S, solution) {}
 
   // Virtual destructor

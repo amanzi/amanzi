@@ -37,17 +37,16 @@ EnergySurfaceIce::EnergySurfaceIce(Teuchos::ParameterList& FElist,
                                    const Teuchos::RCP<Teuchos::ParameterList>& plist,
                                    const Teuchos::RCP<State>& S,
                                    const Teuchos::RCP<TreeVector>& solution) :
-  PK(FElist, plist, S,  solution),
-  PK_BDF_Default(FElist, plist, S, solution),
+    PK(FElist, plist, S,  solution),
     EnergyBase(FElist, plist, S,  solution),
     standalone_mode_(false),
     is_energy_source_term_(false),
     is_mass_source_term_(false),
     is_air_conductivity_(false) {
-  plist_->set("primary variable key", "surface-temperature");
-  plist_->set("domain name", "surface");
-  plist_->set("conserved quantity key", "surface-energy");
-}
+
+  if (!plist_->isParameter("conserved quantity suffix"))
+    plist_->set("conserved quantity suffix", "energy");
+}  
 
 
 void EnergySurfaceIce::Setup(const Teuchos::Ptr<State>& S) {

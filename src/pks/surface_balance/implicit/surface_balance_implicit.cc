@@ -26,7 +26,6 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::ParameterList& pk_tree,
                                      const Teuchos::RCP<State>& S,
                                      const Teuchos::RCP<TreeVector>& solution):
   PK(pk_tree, global_list,  S, solution),
-  PK_BDF_Default(pk_tree, global_list,  S, solution),
   PK_PhysicalBDF_Default(pk_tree, global_list,  S, solution),
   modify_predictor_advance_(false)
 {

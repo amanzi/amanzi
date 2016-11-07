@@ -10,11 +10,8 @@ namespace Flow {
   RichardsSteadyState::RichardsSteadyState(Teuchos::ParameterList& pk_tree,
                                            const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                            const Teuchos::RCP<State>& S,
-                                           const Teuchos::RCP<TreeVector>& solution):
-    //PK_Default(plist, FElist, solution),
-    //PKDefaultBase(plist, FElist, solution),
+                                           const Teuchos::RCP<TreeVector>& solution) :
     PK(pk_tree, glist, S, solution),
-    PK_BDF_Default(pk_tree, glist, S, solution),
     Richards( pk_tree, glist, S, solution) {}
 
 void RichardsSteadyState::Setup(const Teuchos::Ptr<State>& S) {

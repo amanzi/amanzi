@@ -21,7 +21,8 @@ domains/meshes of PKPhysicalBase and BDF methods of PKBDFBase.
 
 namespace Amanzi {
 
-class PK_PhysicalBDF_Default : virtual public PK_BDF_Default, public PK_Physical_Default {
+class PK_PhysicalBDF_Default : public PK_BDF_Default,
+                               public PK_Physical_Default {
 
  public:
   PK_PhysicalBDF_Default(Teuchos::ParameterList& pk_tree,
@@ -29,21 +30,16 @@ class PK_PhysicalBDF_Default : virtual public PK_BDF_Default, public PK_Physical
                           const Teuchos::RCP<State>& S,
                           const Teuchos::RCP<TreeVector>& solution):
     PK_BDF_Default(pk_tree, glist, S, solution),
-    PK_Physical_Default(pk_tree, glist, S, solution){}
+    PK_Physical_Default(pk_tree, glist, S, solution),
+    PK(pk_tree, glist, S, solution)
+  {}
 
 
   virtual void set_states(const Teuchos::RCP<const State>& S,
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
     
-  // virtual void Solution_to_State(TreeVector& solution,
-  //                                const Teuchos::RCP<State>& S);
-  // virtual void Solution_to_State(const TreeVector& soln,
-  //                                const Teuchos::RCP<State>& S);
-
   virtual void Setup(const Teuchos::Ptr<State>& S);
-
-  virtual std::string name() { return name_; }
 
   virtual void set_dt(double dt) { dt_ = dt; }
 
@@ -65,6 +61,10 @@ class PK_PhysicalBDF_Default : virtual public PK_BDF_Default, public PK_Physical
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du);
 
+  virtual bool ValidStep() {
+    return PK_Physical_Default::ValidStep() && PK_BDF_Default::ValidStep();
+  }
+  
   // -- Experimental approach -- calling this indicates that the time
   //    integration scheme is changing the value of the solution in
   //    state.
@@ -73,8 +73,6 @@ class PK_PhysicalBDF_Default : virtual public PK_BDF_Default, public PK_Physical
   virtual double BoundaryValue(const Teuchos::RCP<const Amanzi::CompositeVector>& solution, int face_id);
   virtual int BoundaryDirection(int face_id);
   virtual void ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& u);
-
-  virtual int BoundaryDirection(int face_id);  
   
   // PC operator access
   Teuchos::RCP<Operators::Operator> preconditioner() { return preconditioner_; }

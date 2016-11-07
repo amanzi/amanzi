@@ -30,10 +30,7 @@ class IcyOverlandFlow : public OverlandPressureFlow {
                   const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                   const Teuchos::RCP<State>& S,
                   const Teuchos::RCP<TreeVector>& solution) :
-    //PKDefaultBase(global_list, pk_tree, solution),
-    //PK_Default(global_list, pk_tree, solution),
     PK(pk_tree, global_list, S, solution),
-    PK_BDF_Default(pk_tree, global_list, S, solution),
     OverlandPressureFlow(pk_tree, global_list, S, solution) {}
 
   // Virtual destructor
