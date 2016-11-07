@@ -1,7 +1,36 @@
-// TODO: This is very tentative.  I'm thinking it might be preferable
-// to clone the constructor functions rather than hand off pointers
-// to them, but cloning the polymorphic objects requires some changes
-// to the base class and all the implementations.
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+//! CompositionFunction: f(x,y) = f1(x,y) * f2(x,y)
+
+/*
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ethan Coon (ecoon _at_ lanl.gov)
+*/
+
+/*!
+
+Function composition simply applies one function to the result of another.
+
+.. math::
+  f(x) = f_1( f_2(x) )
+
+where :math:`f_1` is defined by the `"function1`" sublist, and 
+:math:`f_2` by the `"function2`" sublist:
+
+.. code-block:: xml
+
+  <ParameterList name="function-composition">
+    <ParameterList name="function1">
+      function-specification
+    </ParameterList>
+    <ParameterList name="function2">
+      function-specification
+    </ParameterList>
+  </ParameterList>
+*/
 
 #ifndef AMANZI_COMPOSITION_FUNCTION_HH_
 #define AMANZI_COMPOSITION_FUNCTION_HH_
@@ -14,8 +43,8 @@ namespace Amanzi {
 
 class CompositionFunction : public Function {
  public:
-  CompositionFunction(std::auto_ptr<Function> f1, std::auto_ptr<Function> f2)
-     : f1_(f1), f2_(f2) {};
+  CompositionFunction(std::unique_ptr<Function> f1, std::unique_ptr<Function> f2)
+     : f1_(std::move(f1)), f2_(std::move(f2)) {};
   CompositionFunction(const Function& f1, const Function& f2)
      : f1_(f1.Clone()), f2_(f2.Clone()) {}
   CompositionFunction(const CompositionFunction& source)
@@ -29,7 +58,7 @@ class CompositionFunction : public Function {
   }
 
  private:
-  std::auto_ptr<Function> f1_, f2_;
+  std::unique_ptr<Function> f1_, f2_;
   //Function *f1_, *f2_;
 };
 

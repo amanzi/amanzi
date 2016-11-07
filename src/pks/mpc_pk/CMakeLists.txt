@@ -95,7 +95,7 @@ set(mpc_tree_inc_files
     FlowEnergy_PK.hh
     FlowReactiveTransport_PK.hh)
 
-add_install_include_file(${mpc_tree_inc_files})
+add_install_include_file(${mpc_tree_inc_files} mpc_pks_registration.hh)
 
 if (BUILD_TESTS) 
     # Add UnitTest include directoy

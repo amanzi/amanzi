@@ -1,7 +1,7 @@
-/*
-  A rectangular region in space, defined by two corner points and 
-  normals to sides.
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+//! RegionBoxVolumeFractions: A rectangular region in space, defined by two corner points and normals to sides.
 
+/*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -10,6 +10,39 @@
   Authors: Lipnikov Konstantin (lipnikov@lanl.gov)
            Rao Garimella (rao@lanl.gov)
 */
+
+/*!
+
+List *region: box volume fraction* defines a region bounded by a box *not* 
+aligned with coordinate axes. 
+Boxes are allowed to be of zero thickness in only one direction in which case 
+they are equivalent to rectangles on a plane or segments on a line.
+
+* `"corner coordinate`" [Array(double)] Location of one box corner.
+
+* `"opposite corner coordinate`" [Array(double)] Location of the opposite box corner.
+
+* `"normals`" [Array(double)] Normals to sides in a linear array. Default is columns of
+  the identity matrix. The normals may be scaled arbitrarily but must be orthogonal to
+  one another and form the right coordinate frame.
+
+Example:
+
+.. code-block:: xml
+
+   <ParameterList name="BASIN">  <!-- parent list -->
+     <ParameterList name="region: box volume fractions">
+       <Parameter name="corner coordinate" type="Array(double)" value="{-1.0,-1.0, 1.0}"/>
+       <Parameter name="opposite corner coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
+       <Parameter name="normals" type="Array(double)" value="{1.0, 0.0, 0.0
+                                                              0.0, 2.0, 0.0,
+                                                              0.0, 0.0, 3.0}"/>
+     </ParameterList>
+   </ParameterList>
+
+This example defines a degenerate box, a square on a surface *z=1*.
+
+ */
 
 #ifndef AMANZI_BOX_VOLUME_FRACTIONS_REGION_HH_
 #define AMANZI_BOX_VOLUME_FRACTIONS_REGION_HH_

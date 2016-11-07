@@ -38,7 +38,7 @@
   <!-- ENERGY -->
   <ParameterList name="PKs">
     <ParameterList name="energy">
-      <ParameterList name="Two-phase problem">
+      <ParameterList name="two-phase problem">
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>

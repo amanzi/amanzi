@@ -16,7 +16,7 @@ extern std::string split_file_path(const std::string& fname);
 struct Exodus_file_holder
 {
   Amanzi::Exodus::Exodus_file file;
-  std::auto_ptr<Amanzi::AmanziMesh::Data::Data> data;
+  std::unique_ptr<Amanzi::AmanziMesh::Data::Data> data;
 
   Exodus_file_holder (const char* filename) :
       file (filename),

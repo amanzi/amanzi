@@ -12,8 +12,8 @@ void Data::take_data_from (Parameters* params,
                            std::vector<Side_set*> side_sets,
                            std::vector<Node_set*> node_sets)
 {
-  coords_ = std::auto_ptr<Coordinates<double> >(coords);
-  params_ = std::auto_ptr<Parameters>(params);
+  coords_ = std::unique_ptr<Coordinates<double> >(coords);
+  params_ = std::unique_ptr<Parameters>(params);
   element_blocks_.swap (blocks);
   side_sets_.swap (side_sets);
   node_sets_.swap (node_sets);

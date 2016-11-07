@@ -67,6 +67,9 @@
 #   0.92.23      - Patched ASCEM-IO to allocate space for sprintf() correctly.
 #   0.92.24      - update MSTK to version 2.25 (updates to meshconvert, exoatt)
 #   0.92.25      - update MSTK to version 2.26rc2 (adds fixes for pinchouts)
+#
+#   0.93.0       - defaulted to C++11, update Trilinos to 12.6.1
+#   0.93.1       - update Boost to version 1.61.0
 
 include(CMakeParseArguments)
 
@@ -115,8 +118,8 @@ endmacro(amanzi_tpl_version_write)
 
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
-set (AMANZI_TPLS_VERSION_MINOR 92)
-set (AMANZI_TPLS_VERSION_PATCH 25)
+set (AMANZI_TPLS_VERSION_MINOR 93)
+set (AMANZI_TPLS_VERSION_PATCH 1)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -125,11 +128,11 @@ set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${A
 #
 set(XERCES_VERSION_MAJOR 3)
 set(XERCES_VERSION_MINOR 1)
-set(XERCES_VERSION_PATCH 1)
+set(XERCES_VERSION_PATCH 2)
 set(XERCES_VERSION ${XERCES_VERSION_MAJOR}.${XERCES_VERSION_MINOR}.${XERCES_VERSION_PATCH})
 set(XERCES_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(XERCES_ARCHIVE_FILE   xerces-c-${XERCES_VERSION}.tar.gz)
-set(XERCES_MD5_SUM        6a8ec45d83c8cfb1584c5a5345cb51ae ) 
+set(XERCES_ARCHIVE_FILE   xerces-c-${XERCES_VERSION}.tar.bz2)
+set(XERCES_MD5_SUM        d987b8bb576aea456e92454781fe3615 ) 
 
 #
 # TPL: OpenMPI
@@ -191,23 +194,23 @@ set(CCSE_MD5_SUM        faa52bb553cea8ca9ea436c1a7135b12)
 # TPL: UnitTest
 #
 set(UnitTest_VERSION_MAJOR 1)
-set(UnitTest_VERSION_MINOR 4)
+set(UnitTest_VERSION_MINOR 5)
 set(UnitTest_VERSION ${UnitTest_VERSION_MAJOR}.${UnitTest_VERSION_MINOR})
 set(UnitTest_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(UnitTest_ARCHIVE_FILE   unittest-cpp-${UnitTest_VERSION}.zip)
-set(UnitTest_MD5_SUM       bd373a53403ed51ea1bbb60b1952d7e3) 
+set(UnitTest_MD5_SUM      6f6e05fa07eeb2d44e5b11bd1f38865d) 
 
 #
 # TPL: Boost
 #
 set(Boost_VERSION_MAJOR 1)
-set(Boost_VERSION_MINOR 58)
+set(Boost_VERSION_MINOR 61)
 set(Boost_VERSION_PATCH 0)
 set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH})
 set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
 set(Boost_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.bz2)
-set(Boost_MD5_SUM        b8839650e61e9c1c0a89f371dd475546)
+set(Boost_MD5_SUM        6095876341956f65f9d35939ccea1a9f)
 
 #
 # TPL: BoostCmake
@@ -350,24 +353,24 @@ set(PETSc_MD5_SUM        ad170802b3b058b5deb9cd1f968e7e13)
 #
 # TPL: Trilinos
 #
-set(Trilinos_VERSION_MAJOR 11)
+set(Trilinos_VERSION_MAJOR 12)
 set(Trilinos_VERSION_MINOR 6)
-set(Trilinos_VERSION_PATCH 1)
-set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}.${Trilinos_VERSION_MINOR}.${Trilinos_VERSION_PATCH})
+set(Trilinos_VERSION_PATCH 3)
+set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(Trilinos_ARCHIVE_FILE   trilinos-${Trilinos_VERSION}-Source.tar.bz2)
-set(Trilinos_MD5_SUM        b97d882535fd1856599b1c7338f5b45a)
+set(Trilinos_ARCHIVE_FILE   Trilinos-trilinos-release-${Trilinos_VERSION}.tar.gz)
+set(Trilinos_MD5_SUM        8de5cc00981a0ca0defea6199b2fe4c1)
 
 #
 # TPL: SEACAS
 #  SEACAS is available in Trilinos 10.8 and above
-set(SEACAS_VERSION_MAJOR 11)
+set(SEACAS_VERSION_MAJOR 12)
 set(SEACAS_VERSION_MINOR 6)
-set(SEACAS_VERSION_PATCH 1)
-set(SEACAS_VERSION ${SEACAS_VERSION_MAJOR}.${SEACAS_VERSION_MINOR}.${SEACAS_VERSION_PATCH})
+set(SEACAS_VERSION_PATCH 3)
+set(SEACAS_VERSION ${SEACAS_VERSION_MAJOR}-${SEACAS_VERSION_MINOR}-${SEACAS_VERSION_PATCH})
 set(SEACAS_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(SEACAS_ARCHIVE_FILE   trilinos-${SEACAS_VERSION}-Source.tar.bz2)
-set(SEACAS_MD5_SUM        b97d882535fd1856599b1c7338f5b45a)
+set(SEACAS_ARCHIVE_FILE   Trilinos-trilinos-release-${SEACAS_VERSION}.tar.gz)
+set(SEACAS_MD5_SUM        8de5cc00981a0ca0defea6199b2fe4c1)
 
 #
 # TPL: PFlotran

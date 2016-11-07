@@ -7,12 +7,14 @@ Author: Markus Berndt
 
 Checkpointing for state.
 ------------------------------------------------------------------------- */
+#include <iostream>
+#include <iomanip>
+
+#include "boost/filesystem.hpp"
 
 #include "checkpoint.hh"
 #include "Epetra_MpiComm.h"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include <iostream>
-#include <iomanip>
 
 
 namespace Amanzi {
@@ -33,7 +35,6 @@ Checkpoint::Checkpoint(Teuchos::ParameterList& plist, Epetra_MpiComm* comm) :
   // Set up the HDF5
   checkpoint_output_ = Teuchos::rcp(new HDF5_MPI(*comm));
   checkpoint_output_->setTrackXdmf(false);
-  final_ = false;
 }
 
 
@@ -60,17 +61,24 @@ void Checkpoint::CreateFile(const int cycle) {
   oss << std::right << cycle;
   checkpoint_output_->createDataFile(oss.str());
   checkpoint_output_->open_h5file();
+}
 
-  if (final_) { 
-    std::string ch_file = oss.str() + ".h5";
 
-    std::stringstream oss_final;
-    oss_final << filebasename_<<"_final.h5";       
-    std::string ch_final =  oss_final.str();
+void Checkpoint::CreateFinalFile(const int cycle) {
+  std::stringstream oss;
+  oss.flush();
+  oss << filebasename_;
+  oss.fill('0');
+  oss.width(filenamedigits_);
+  oss << std::right << cycle;
 
-    link(ch_file.data(), ch_final.data());
-  }
-};
+  std::string ch_file = oss.str() + ".h5";
+  std::string ch_final = filebasename_ + "_final.h5";
+
+  if (boost::filesystem::is_regular_file(ch_final.data()))
+    boost::filesystem::remove(ch_final.data());
+  boost::filesystem::create_hard_link(ch_file.data(), ch_final.data());
+}
 
 
 void Checkpoint::Finalize() {
@@ -85,9 +93,9 @@ void Checkpoint::WriteVector(const Epetra_MultiVector& vec,
     Exceptions::amanzi_throw(m);
   }
   for (int i=0; i< vec.NumVectors(); i++) {
-    checkpoint_output_->writeCellDataReal( *vec(i), names[i] );
+    checkpoint_output_->writeCellDataReal(*vec(i), names[i]);
   }
-};
+}
 
 
 // -----------------------------------------------------------------------------

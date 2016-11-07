@@ -557,7 +557,7 @@ void InputConverterU::TranslateTransportBCsAmanziGeochemistry_(
     Teuchos::ParameterList& bc_new = out_list.sublist("concentration");
     Teuchos::ParameterList& bc_old = out_list.sublist("geochemical");
 
-    for (Teuchos::ParameterList::ConstIterator it = bc_old.begin(); it != bc_old.end(); ++it) {
+    for (auto it = bc_old.begin(); it != bc_old.end(); ++it) {
       name = it->first;
  
       Teuchos::ParameterList& bco = bc_old.sublist(name);

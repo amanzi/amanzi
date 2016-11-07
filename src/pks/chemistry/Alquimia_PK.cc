@@ -48,16 +48,15 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
                          const Teuchos::RCP<Teuchos::ParameterList>& glist,
                          const Teuchos::RCP<State>& S,
                          const Teuchos::RCP<TreeVector>& soln) :
-    glist_(glist),
     soln_(soln),
     max_time_step_(9.9e9),
     chem_initialized_(false),
     current_time_(0.0),
-    saved_time_(0.0), 
-    num_aux_data_(-1)
+    saved_time_(0.0)
 {
   S_ = S;
   mesh_ = S_->GetMesh();
+  glist_ = glist;
 
   // extract pk name
   std::string pk_name = pk_tree.name();
@@ -74,7 +73,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   InitializeMinerals(cp_list_);
   InitializeSorptionSites(cp_list_, state_list);
 
-  // create chemistry engine. (should we do it later in Initialize()?)
+  // create chemistry engine. (should we do it later in Setup()?)
   if (!cp_list_->isParameter("engine")) {
     Errors::Message msg;
     msg << "No 'engine' parameter found in the parameter list for 'Chemistry'.\n";
@@ -119,7 +118,7 @@ Alquimia_PK::~Alquimia_PK()
 void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   Chemistry_PK::Setup(S);
-
+ 
   // Set up auxiliary chemistry data using the ChemistryEngine.
   std::vector<std::string> aux_names;
   chem_engine_->GetAuxiliaryOutputNames(aux_names);
@@ -127,10 +126,11 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
   for (size_t i = 0; i < aux_names.size(); ++i) {
     std::vector<std::vector<std::string> > subname(1);
     subname[0].push_back("0");
+
     if (!S->HasField(aux_names[i])) {
       S->RequireField(aux_names[i], passwd_, subname)
-        ->SetMesh(mesh_)->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+       ->SetMesh(mesh_)->SetGhosted(false)
+       ->SetComponent("cell", AmanziMesh::CELL, 1);
     }
   }
 
@@ -147,6 +147,16 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
       }
     }
   }
+
+  // Setup more auxiliary data
+  if (!S->HasField("alquimia_aux_data")) {
+    int num_aux_data = chem_engine_->Sizes().num_aux_integers + chem_engine_->Sizes().num_aux_doubles;
+    S->RequireField("alquimia_aux_data", passwd_)
+      ->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, num_aux_data);
+
+    S->GetField("alquimia_aux_data", passwd_)->set_io_vis(false);
+  }
 }
 
 
@@ -158,7 +168,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
   // initilaization using the base class
   Chemistry_PK::Initialize(S);
 
-  // initialize auxiliary fields
+  // initialize auxiliary fields as needed
   std::vector<std::string> aux_names;
   chem_engine_->GetAuxiliaryOutputNames(aux_names);
 
@@ -167,9 +177,8 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
     aux_names.insert(aux_names.end(), names.begin(), names.end());
   }
 
-  for (std::vector<std::string>::const_iterator it = aux_names.begin(); it != aux_names.end(); ++it) {
-    S->GetFieldData(*it, passwd_)->PutScalar(0.0);
-    S->GetField(*it, passwd_)->set_initialized();
+  for (auto it = aux_names.begin(); it != aux_names.end(); ++it) {
+    InitializeField_(*it, 0.0);
   }
 
   // Read XML parameters from our input file.
@@ -183,23 +192,29 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
     Exceptions::amanzi_throw(msg); 
   }
 
-
-  // Now loop through all the regions and initialize.
+  // Do we need to initialize chemsitry?
   int ierr = 0;
-  for (std::map<std::string, std::string>::const_iterator cond_iter = chem_initial_conditions_.begin(); 
-       cond_iter != chem_initial_conditions_.end(); ++cond_iter) {
-    std::string region_name = cond_iter->first;
-    std::string condition = cond_iter->second;
+  if (fabs(initial_conditions_time_ - S->time()) < 1e-8 * (1.0 + fabs(S->time()))) {
+    for (auto it = chem_initial_conditions_.begin(); it != chem_initial_conditions_.end(); ++it) {
+      std::string region = it->first;
+      std::string condition = it->second;
 
-    // Get the cells that belong to this region.
-    unsigned int num_cells = mesh_->get_set_size(region_name, AmanziMesh::CELL, AmanziMesh::OWNED);
-    AmanziMesh::Entity_ID_List cell_indices;
-    mesh_->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::OWNED, &cell_indices);
+      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "enforcing geochemical condition \"" << condition 
+                   << "\" in region \"" << region << "\"\n";
+      }
+
+      // Get the cells that belong to this region.
+      unsigned int num_cells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
+      AmanziMesh::Entity_ID_List cell_indices;
+      mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &cell_indices);
   
-    // Loop over the cells.
-    for (unsigned int i = 0; i < num_cells; ++i) {
-      int cell = cell_indices[i];
-      ierr = InitializeSingleCell(cell, condition);
+      // Loop over the cells.
+      for (unsigned int i = 0; i < num_cells; ++i) {
+        int cell = cell_indices[i];
+        ierr = InitializeSingleCell(cell, condition);
+      }
     }
   }
 
@@ -262,10 +277,9 @@ void Alquimia_PK::ParseChemicalConditionRegions(const Teuchos::ParameterList& pa
   Errors::Message msg;
 
   // Go through the sublist containing the chemical conditions.
-  for (Teuchos::ParameterList::ConstIterator iter = param_list.begin();
-       iter != param_list.end(); ++iter) {
+  for (auto it = param_list.begin(); it != param_list.end(); ++it) {
     // This parameter list contains sublists, each corresponding to a condition. 
-    std::string cond_name = param_list.name(iter);
+    std::string cond_name = param_list.name(it);
     assert(param_list.isSublist(cond_name));
     const Teuchos::ParameterList& cond_sublist = param_list.sublist(cond_name);
  
@@ -311,11 +325,10 @@ void Alquimia_PK::XMLParameters()
   // Add any geochemical conditions we find in the Chemistry section of the file.
   if (cp_list_->isParameter("geochemical conditions")) {
     Teuchos::ParameterList conditions = cp_list_->sublist("geochemical conditions");
-    for (Teuchos::ParameterList::ConstIterator iter = conditions.begin();
-         iter != conditions.end(); ++iter) {
+    for (auto it = conditions.begin(); it != conditions.end(); ++it) {
       // This parameter list contains sublists, each corresponding to a
       // geochemical condition. 
-      std::string cond_name = conditions.name(iter);
+      std::string cond_name = conditions.name(it);
       assert(conditions.isSublist(cond_name));
       const Teuchos::ParameterList& cond_sublist = conditions.sublist(cond_name);
 
@@ -324,9 +337,8 @@ void Alquimia_PK::XMLParameters()
       chem_engine_->CreateCondition(cond_name);
 
       // Now mine the entry for details.
-      for (Teuchos::ParameterList::ConstIterator iter2 = cond_sublist.begin();
-           iter2 != cond_sublist.end(); ++iter2) {
-        std::string species_name = cond_sublist.name(iter2);
+      for (auto it2 = cond_sublist.begin(); it2 != cond_sublist.end(); ++it2) {
+        std::string species_name = cond_sublist.name(it2);
         assert(cond_sublist.isSublist(species_name));
         const Teuchos::ParameterList& aqueous_constraint = cond_sublist.sublist(species_name);
         
@@ -379,48 +391,26 @@ void Alquimia_PK::XMLParameters()
   }
   Teuchos::ParameterList& state_list = glist_->sublist("state");
   Teuchos::ParameterList& initial_conditions = state_list.sublist("initial conditions");
-  if (!initial_conditions.isSublist("geochemical conditions")) {
-    msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  No 'geochemical conditions' list was found in 'State->initial conditions'!\n";
-    Exceptions::amanzi_throw(msg);
-  }
-  Teuchos::ParameterList geochem_conditions = initial_conditions.sublist("geochemical conditions");
-  ParseChemicalConditionRegions(geochem_conditions, chem_initial_conditions_);
-  if (chem_initial_conditions_.empty()) {
-    msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  No geochemical conditions were found in 'State->initial conditions->geochemical conditions'!\n";
-    Exceptions::amanzi_throw(msg);
+  if (initial_conditions.isSublist("geochemical conditions")) {
+    Teuchos::ParameterList geochem_conditions = initial_conditions.sublist("geochemical conditions");
+    ParseChemicalConditionRegions(geochem_conditions, chem_initial_conditions_);
+    if (chem_initial_conditions_.empty()) {
+      msg << "Alquimia_PK::XMLParameters(): \n";
+      msg << "  No geochemical conditions were found in 'State->initial conditions->geochemical conditions'!\n";
+      Exceptions::amanzi_throw(msg);
+    }
   }
 
   // Other settings.
   max_time_step_ = cp_list_->get<double>("max time step (s)", 9.9e9);
   min_time_step_ = cp_list_->get<double>("min time step (s)", 9.9e9);
   prev_time_step_ = cp_list_->get<double>("initial time step (s)", std::min(min_time_step_, max_time_step_));
-  /*
-  if ((min_time_step_ == 9.9e9) && (prev_time_step_ < 9.9e9))
-    min_time_step_ = prev_time_step_;
-  else if ((min_time_step_ == 9.9e9) && (max_time_step_ < 9.9e9))
-    min_time_step_ = max_time_step_;
-  else if (min_time_step_ > max_time_step_) {
-    msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  Min Time Step exceeds Max Time Step!\n";
-    Exceptions::amanzi_throw(msg);
-  }
-  if ((min_time_step_ < max_time_step_) && (prev_time_step_ == max_time_step_))
-    prev_time_step_ = min_time_step_;
-  */
+
   if (prev_time_step_ > max_time_step_) {
     msg << "Alquimia_PK::XMLParameters(): \n";
     msg << "  Initial Time Step exceeds Max Time Step!\n";
     Exceptions::amanzi_throw(msg);
   }
-  /*
-   if (prev_time_step_ < min_time_step_) {
-    msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  Initial Time Step is smaller than Min Time Step!\n";
-    Exceptions::amanzi_throw(msg);
-    }
-  */
 
   time_step_ = prev_time_step_;
   time_step_control_method_ = cp_list_->get<std::string>("time step control method", "fixed");
@@ -523,12 +513,12 @@ void Alquimia_PK::CopyToAlquimia(int cell,
   }
 
   // Auxiliary data -- block copy.
-  if (S_->HasField("alquimia_aux_data"))
-    aux_data_ = S_->GetField("alquimia_aux_data", passwd_)->GetFieldData()->ViewComponent("cell", true);
+  if (S_->HasField("alquimia_aux_data")) {
+    aux_data_ = S_->GetFieldData("alquimia_aux_data", passwd_)->ViewComponent("cell", true);
 
-  if (num_aux_data_ != -1) {
-    int num_aux_ints = aux_data.aux_ints.size;
-    int num_aux_doubles = aux_data.aux_doubles.size;
+    int num_aux_ints = chem_engine_->Sizes().num_aux_integers;
+    int num_aux_doubles = chem_engine_->Sizes().num_aux_doubles;
+
     for (int i = 0; i < num_aux_ints; i++) {
       double* cell_aux_ints = (*aux_data_)[i];
       aux_data.aux_ints.data[i] = (int)cell_aux_ints[cell];
@@ -704,41 +694,20 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
     }
   }
 
-  // Auxiliary data -- block copy. Correct way to implement this
-  // is to move it to Setup().
-  int num_aux_ints = aux_data.aux_ints.size;
-  int num_aux_doubles = aux_data.aux_doubles.size;
-  if (num_aux_data_ == -1) {
-    // Set things up and register a vector in the State.
-    assert(num_aux_ints >= 0);
-    assert(num_aux_doubles >= 0);
-    num_aux_data_ = num_aux_ints + num_aux_doubles;
-    if (!S_->HasField("alquimia_aux_data")) {
-      Teuchos::RCP<CompositeVectorSpace> fac = S_->RequireField("alquimia_aux_data", passwd_);
-      fac->SetMesh(mesh_);
-      fac->SetGhosted(false);
-      fac->SetComponent("cell", AmanziMesh::CELL, num_aux_data_);
-      Teuchos::RCP<CompositeVector> sac = Teuchos::rcp(new CompositeVector(*fac));
+  if (S_->HasField("alquimia_aux_data")) {
+    aux_data_ = S_->GetFieldData("alquimia_aux_data", passwd_)->ViewComponent("cell", true);
 
-      // Zero the field.
-      Teuchos::RCP<Field> F = S_->GetField("alquimia_aux_data", passwd_);
-      F->SetData(sac);
-      F->CreateData();
-      F->GetFieldData()->PutScalar(0.0);
-      F->set_initialized();
+    int num_aux_ints = chem_engine_->Sizes().num_aux_integers;
+    int num_aux_doubles = chem_engine_->Sizes().num_aux_doubles;
+
+    for (int i = 0; i < num_aux_ints; i++) {
+      double* cell_aux_ints = (*aux_data_)[i];
+      cell_aux_ints[cell] = (double)aux_data.aux_ints.data[i];
     }
-    aux_data_ = S_->GetField("alquimia_aux_data", passwd_)->GetFieldData()->ViewComponent("cell", true);
-  } else {
-    assert(num_aux_data_ == num_aux_ints + num_aux_doubles);
-  }
-
-  for (int i = 0; i < num_aux_ints; i++) {
-    double* cell_aux_ints = (*aux_data_)[i];
-    cell_aux_ints[cell] = (double)aux_data.aux_ints.data[i];
-  }
-  for (int i = 0; i < num_aux_doubles; i++) {
-    double* cell_aux_doubles = (*aux_data_)[i + num_aux_ints];
-    cell_aux_doubles[cell] = aux_data.aux_doubles.data[i];
+    for (int i = 0; i < num_aux_doubles; i++) {
+      double* cell_aux_doubles = (*aux_data_)[i + num_aux_ints];
+      cell_aux_doubles[cell] = aux_data.aux_doubles.data[i];
+    } 
   }
 
   if (using_sorption_isotherms_) {
@@ -858,7 +827,7 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Advanced after maximum of " << num_iterations_
-               << " Newton iterations in cell " << imax << "." << std::endl;
+               << " Newton iterations in cell " << imax << std::endl;
   }
 
   // now publish auxiliary data to state

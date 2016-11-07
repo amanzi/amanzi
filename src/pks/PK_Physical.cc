@@ -33,6 +33,13 @@ namespace Amanzi {
     //  solution_evaluator_->SetFieldAsChanged();
   };
 
+  void PK_Physical::Solution_to_State(const TreeVector& solution,
+                                         const Teuchos::RCP<State>& S) {
+    ASSERT(solution.Data() == S->GetFieldData(key_));
+    //  S->SetData(key_, name_, solution->Data());
+    //  solution_evaluator_->SetFieldAsChanged();
+  };
+  
 
   // -----------------------------------------------------------------------------
   // Experimental approach -- we must pull out S_next_'s solution_evaluator_ to

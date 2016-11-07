@@ -334,11 +334,11 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
     PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
     Teuchos::ParameterList& clist = tp_list_->sublist("boundary conditions").sublist("concentration");
 
-    for (Teuchos::ParameterList::ConstIterator it = clist.begin(); it != clist.end(); ++it) {
+    for (auto it = clist.begin(); it != clist.end(); ++it) {
       std::string name = it->first;
       if (clist.isSublist(name)) {
         Teuchos::ParameterList& bc_list = clist.sublist(name);
-        for (Teuchos::ParameterList::ConstIterator it1 = bc_list.begin(); it1 != bc_list.end(); ++it1) {
+        for (auto it1 = bc_list.begin(); it1 != bc_list.end(); ++it1) {
           std::string specname = it1->first;
           Teuchos::ParameterList& spec = bc_list.sublist(specname);
           Teuchos::RCP<TransportDomainFunction> 
@@ -355,7 +355,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
     // -- try geochemical conditions
     Teuchos::ParameterList& glist = tp_list_->sublist("boundary conditions").sublist("geochemical");
 
-    for (Teuchos::ParameterList::ConstIterator it = glist.begin(); it != glist.end(); ++it) {
+    for (auto it = glist.begin(); it != glist.end(); ++it) {
       std::string specname = it->first;
       Teuchos::ParameterList& spec = glist.sublist(specname);
 
@@ -393,11 +393,11 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
     PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
 
     Teuchos::ParameterList& clist = tp_list_->sublist("source terms").sublist("concentration");
-    for (Teuchos::ParameterList::ConstIterator it = clist.begin(); it != clist.end(); ++it) {
+    for (auto it = clist.begin(); it != clist.end(); ++it) {
       std::string name = it->first;
       if (clist.isSublist(name)) {
         Teuchos::ParameterList& src_list = clist.sublist(name);
-        for (Teuchos::ParameterList::ConstIterator it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
+        for (auto it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
           std::string specname = it1->first;
           Teuchos::ParameterList& spec = src_list.sublist(specname);
           Teuchos::RCP<TransportDomainFunction> src = factory.Create(spec, AmanziMesh::CELL, Kxy);
@@ -413,7 +413,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
     // -- try geochemical conditions
     Teuchos::ParameterList& glist = tp_list_->sublist("source terms").sublist("geochemical");
 
-    for (Teuchos::ParameterList::ConstIterator it = glist.begin(); it != glist.end(); ++it) {
+    for (auto it = glist.begin(); it != glist.end(); ++it) {
       std::string specname = it->first;
       Teuchos::ParameterList& spec = glist.sublist(specname);
 
@@ -529,7 +529,7 @@ double Transport_PK::StableTimeStep()
     if (srcs_[m]->keyword() == "producer") {
       srcs_[m]->Compute(t_old, t_old); 
 
-      for (TransportDomainFunction::Iterator it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
+      for (auto it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
         int c = it->first;
         WhetStone::DenseVector& values = it->second;
 
@@ -1065,7 +1065,7 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
     std::vector<int>& tcc_index = bcs_[m]->tcc_index();
     int ncomp = tcc_index.size();
 
-    for (TransportDomainFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+    for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
       int f = it->first;
       WhetStone::DenseVector& values = it->second;
 
@@ -1278,7 +1278,7 @@ void Transport_PK::ComputeSources_(
     srcs_[m]->Compute(t0, tp); 
 
     std::vector<int> index = srcs_[m]->tcc_index();
-    for (TransportDomainFunction::Iterator it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
+    for (auto it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
       int c = it->first;
       WhetStone::DenseVector& values = it->second;
 
@@ -1331,7 +1331,7 @@ bool Transport_PK::ComputeBCs_(
     std::vector<int>& tcc_index = bcs_[m]->tcc_index();
     int ncomp = tcc_index.size();
 
-    for (TransportDomainFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+    for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
       int f = it->first;
       WhetStone::DenseVector& values = it->second;
 

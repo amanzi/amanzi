@@ -27,7 +27,7 @@ CHEMISTRY
       RATE_CONSTANT 1.d-13 mol/cm^2-sec
     /
   /
-  DATABASE ./calcite.dat
+  DATABASE ./test/mpc_driver_alquimia_transport.dat
   LOG_FORMULATION
   ACTIVITY_COEFFICIENTS TIMESTEP
   OUTPUT

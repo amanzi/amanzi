@@ -143,20 +143,6 @@
         </ParameterList>
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
       </ParameterList>
-      <ParameterList name="particle_density">
-        <ParameterList name="function">
-          <ParameterList name="RegionMiddle">
-            <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.600e+03"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
-      </ParameterList>
     </ParameterList>
     <ParameterList name="initial conditions">
       <ParameterList name="gravity">
@@ -235,6 +221,19 @@
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.0706e-10"/>
                 </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="particle_density">
+        <ParameterList name="function">
+          <ParameterList name="RegionMiddle">
+            <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.600e+03"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -596,7 +595,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="energy">
-      <ParameterList name="Two-phase problem">
+      <ParameterList name="two-phase problem">
         <ParameterList name="operators">
           <ParameterList name="diffusion operator">
             <ParameterList name="matrix">

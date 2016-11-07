@@ -560,7 +560,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
     bool space_bc, time_bc;
     DOMNode* knode = GetUniqueElementByTagsString_(same_list[0], "space", space_bc);
     DOMNode* lnode = GetUniqueElementByTagsString_(same_list[0], "time", time_bc);
-    global_bc = space_bc;
+    if (space_bc) global_bc = true;
 
     // -- define the expected unit
     std::string unit("kg/s/m^2");
@@ -591,9 +591,9 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
     } else if (global_bc) {
       std::string unit_grad = unit + "/m";
       element = static_cast<DOMElement*>(same_list[0]);
-      refv = GetAttributeValueD_(element, "reference_value", TYPE_NUMERICAL, unit);
-      grad = GetAttributeVectorD_(element, "gradient_value", unit_grad);
-      refc = GetAttributeVectorD_(element, "reference_point", "m");
+      refv = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, unit);
+      grad = GetAttributeVectorD_(element, "gradient", unit_grad);
+      refc = GetAttributeVectorD_(element, "reference_coord", "m");
     } else {
       std::map<double, double> tp_values, tp_fluxes;
       std::map<double, std::string> tp_forms;

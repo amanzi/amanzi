@@ -17,8 +17,8 @@ namespace Data {
 
 class Data {
  private:
-  std::auto_ptr<Parameters> params_;
-  std::auto_ptr<Coordinates<double> > coords_;
+  std::unique_ptr<Parameters> params_;
+  std::unique_ptr<Coordinates<double> > coords_;
   std::vector<Element_block*> element_blocks_;
   std::vector<Side_set*> side_sets_;
   std::vector<Node_set*> node_sets_;

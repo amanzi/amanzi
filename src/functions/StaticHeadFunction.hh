@@ -1,3 +1,38 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+//! StaticHeadFunction: f = p0 + rho*g*(z-z0)
+
+
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+/*!
+:math:`f(z) = p0 + rho * g * (z0 - z)`
+
+Note that dimension 0 is usually time.
+
+Example:
+.. code-block:: xml
+
+  <ParameterList name="function-static-head">
+    <Parameter name="p0" type="double" value="101325.0"/>
+    <Parameter name="density" type="double" value="1000.0"/>
+    <Parameter name="gravity" type="double" value="9.8"/>
+    <Parameter name="space dimension" type="int" value="3"/>
+    <ParameterList name="water table elevation">
+      <ParameterList name="function-constant">
+        <Parameter name="value" type="double" value="1.0"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+*/
+
 #ifndef AMANZI_STATIC_HEAD_FUNCTION_HH_
 #define AMANZI_STATIC_HEAD_FUNCTION_HH_
 
@@ -9,8 +44,8 @@ namespace Amanzi {
 
 class StaticHeadFunction : public Function {
  public:
-  StaticHeadFunction(double patm, double rho, double g, std::auto_ptr<Function> h, int dim)
-      : patm_(patm), rho_g_(rho*g), h_(h), dim_(dim) {}
+  StaticHeadFunction(double patm, double rho, double g, std::unique_ptr<Function> h, int dim)
+      : patm_(patm), rho_g_(rho*g), h_(std::move(h)), dim_(dim) {}
   StaticHeadFunction(double patm, double rho, double g, const Function& h, int dim)
       : patm_(patm), rho_g_(rho*g), h_(h.Clone()), dim_(dim) {}
   StaticHeadFunction(const StaticHeadFunction& src)
@@ -23,7 +58,7 @@ class StaticHeadFunction : public Function {
  private:
   int dim_;
   double patm_, rho_g_;
-  std::auto_ptr<Function> h_;
+  std::unique_ptr<Function> h_;
 };
 
 } // namespace Amanzi

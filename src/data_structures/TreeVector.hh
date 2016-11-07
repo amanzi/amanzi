@@ -102,17 +102,26 @@ class TreeVector {
   // this <- scalar
   int PutScalar(double scalar);
 
+  // this <- random
+  int Random();
+
   // n_l <- || this ||_{l}
   int Norm2(double* n2) const;
   int Norm1(double* n1) const;
   int NormInf(double* ninf) const;
 
+  // this <- abs(this)
+  int Abs(const TreeVector& other);
+  
   // this <- value*this
   int Scale(double value);
 
   // this <- this + scalarA
   int Shift(double scalarA);
 
+  // this <- element wise reciprocal(this)
+  int Reciprocal(const TreeVector& other);
+  
   // result <- other \dot this
   int Dot(const TreeVector& other, double* result) const;
 
@@ -133,6 +142,8 @@ class TreeVector {
 
   // non-inherited extras
   void Print(std::ostream &os) const;
+
+  int GlobalLength() { std::cerr << "This method is not yet implemented\n"; return 0; }
 
  private:
   // Init's version of PushBack, which does not add to the space.

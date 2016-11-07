@@ -50,7 +50,7 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_()
 
   // create energy header
   if (pk_model_["energy"] == "two-phase energy") {
-    Teuchos::ParameterList& tmp = out_list.sublist("Two-phase problem");
+    Teuchos::ParameterList& tmp = out_list.sublist("two-phase problem");
     energy_list = &tmp;
   }
 

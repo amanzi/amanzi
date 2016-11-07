@@ -61,7 +61,7 @@
   <execution_controls>
     <verbosity level="high" />
     <execution_control_defaults init_dt="1.0" method="picard" mode="steady" />
-    <execution_control mode="steady" start="0.0" />
+    <execution_control mode="steady" start="0.0  y" />
     <execution_control end="END" mode="transient" start="START" />
   </execution_controls>
 
@@ -168,8 +168,9 @@
     <material name="Facies_1">
       <mechanical_properties>
         <porosity value="0.4082"/>
+        <specific_storage value="0.0002"/>
+        <particle_density type="file" filename="particle_density.h5"/>
       </mechanical_properties>
-      <!--permeability x="1.9976E-12" z="1.9976E-13" /-->
       <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
       <cap_pressure model="van_genuchten">
         <parameters alpha="1.9467E-04 Pa^-1" m="0.2294" sr="0.0"/>
@@ -225,7 +226,7 @@
       <assigned_regions>Bottom Surface</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <hydrostatic function="uniform" start="0.0" value="0.0"/>
+          <linear_pressure function="constant" start="0.0" value="101325.0 Pa" reference_coord="0.0, 0.0" gradient="0.0, -9793.5192 Pa/m"/>
         </liquid_component>
         <solute_component>
           <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>

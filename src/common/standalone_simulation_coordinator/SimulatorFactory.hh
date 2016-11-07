@@ -19,9 +19,9 @@
 namespace Amanzi {
 namespace SimulatorFactory {
 
-Simulator* Create(const std::string& input_filename);
+Simulator* Create(const std::string& input_filename, const std::string& output_prefix);
 
-} // namespace SimulatorFactory
-} // namespace Amanzi
+}  // namespace SimulatorFactory
+}  // namespace Amanzi
 
 #endif

@@ -144,9 +144,9 @@ class Field {
   virtual void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& chk) = 0;
 
   // Compute from a function, if implemented by a subclass
-  virtual void Compute(double time) {  }
+  virtual void Compute(double time) {};
 
-  virtual long int GetLocalElementCount() { return 0L; };
+  virtual long int GetLocalElementCount() { return 0L; }
 
   // Iterate over field_copies.
   typedef FieldMap::const_iterator copy_iterator;

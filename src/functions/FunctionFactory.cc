@@ -28,7 +28,7 @@ Function* FunctionFactory::Create(Teuchos::ParameterList& list) const
   // one, a sublist, whose name matches one of the known function types.
   // Anything else is a syntax error and we throw an exception.
   Function *f = 0;
-  for (Teuchos::ParameterList::ConstIterator it = list.begin(); it != list.end(); ++it) {
+  for (auto it = list.begin(); it != list.end(); ++it) {
     std::string function_type = list.name(it);
     if (list.isSublist(function_type)) { // process the function sublist
       if (f) { // error: already processed a function sublist
@@ -307,12 +307,12 @@ Function* FunctionFactory::create_linear(Teuchos::ParameterList& params) const
 Function* FunctionFactory::create_separable(Teuchos::ParameterList& params) const
 {
   Function *f;
-  std::auto_ptr<Function> f1, f2;
+  std::unique_ptr<Function> f1, f2;
   FunctionFactory factory;
   try {
     if (params.isSublist("function1")) {
       Teuchos::ParameterList& f1_params = params.sublist("function1");
-      f1 = std::auto_ptr<Function>(factory.Create(f1_params));
+      f1 = std::unique_ptr<Function>(factory.Create(f1_params));
     } else {
       Errors::Message m;
       m << "missing sublist function1";
@@ -320,13 +320,13 @@ Function* FunctionFactory::create_separable(Teuchos::ParameterList& params) cons
     }
     if (params.isSublist("function2")) {
       Teuchos::ParameterList& f2_params = params.sublist("function2");
-      f2 = std::auto_ptr<Function>(factory.Create(f2_params));
+      f2 = std::unique_ptr<Function>(factory.Create(f2_params));
     } else {
       Errors::Message m;
       m << "missing sublist function2";
       Exceptions::amanzi_throw(m);
     }
-    f = new SeparableFunction(f1, f2);
+    f = new SeparableFunction(std::move(f1), std::move(f2));
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-separable parameter error: " << msg.what();
@@ -338,12 +338,12 @@ Function* FunctionFactory::create_separable(Teuchos::ParameterList& params) cons
 Function* FunctionFactory::create_additive(Teuchos::ParameterList& params) const
 {
   Function *f;
-  std::auto_ptr<Function> f1, f2;
+  std::unique_ptr<Function> f1, f2;
   FunctionFactory factory;
   try {
     if (params.isSublist("function1")) {
       Teuchos::ParameterList& f1_params = params.sublist("function1");
-      f1 = std::auto_ptr<Function>(factory.Create(f1_params));
+      f1 = std::unique_ptr<Function>(factory.Create(f1_params));
     } else {
       Errors::Message m;
       m << "missing sublist function1";
@@ -351,13 +351,13 @@ Function* FunctionFactory::create_additive(Teuchos::ParameterList& params) const
     }
     if (params.isSublist("function2")) {
       Teuchos::ParameterList& f2_params = params.sublist("function2");
-      f2 = std::auto_ptr<Function>(factory.Create(f2_params));
+      f2 = std::unique_ptr<Function>(factory.Create(f2_params));
     } else {
       Errors::Message m;
       m << "missing sublist function2";
       Exceptions::amanzi_throw(m);
     }
-    f = new AdditiveFunction(f1, f2);
+    f = new AdditiveFunction(std::move(f1), std::move(f2));
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-additive parameter error: " << msg.what();
@@ -369,12 +369,12 @@ Function* FunctionFactory::create_additive(Teuchos::ParameterList& params) const
 Function* FunctionFactory::create_multiplicative(Teuchos::ParameterList& params) const
 {
   Function *f;
-  std::auto_ptr<Function> f1, f2;
+  std::unique_ptr<Function> f1, f2;
   FunctionFactory factory;
   try {
     if (params.isSublist("function1")) {
       Teuchos::ParameterList& f1_params = params.sublist("function1");
-      f1 = std::auto_ptr<Function>(factory.Create(f1_params));
+      f1 = std::unique_ptr<Function>(factory.Create(f1_params));
     } else {
       Errors::Message m;
       m << "missing sublist function1";
@@ -382,13 +382,13 @@ Function* FunctionFactory::create_multiplicative(Teuchos::ParameterList& params)
     }
     if (params.isSublist("function2")) {
       Teuchos::ParameterList& f2_params = params.sublist("function2");
-      f2 = std::auto_ptr<Function>(factory.Create(f2_params));
+      f2 = std::unique_ptr<Function>(factory.Create(f2_params));
     } else {
       Errors::Message m;
       m << "missing sublist function2";
       Exceptions::amanzi_throw(m);
     }
-    f = new MultiplicativeFunction(f1, f2);
+    f = new MultiplicativeFunction(std::move(f1), std::move(f2));
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-multiplicative parameter error: " << msg.what();
@@ -400,12 +400,12 @@ Function* FunctionFactory::create_multiplicative(Teuchos::ParameterList& params)
 Function* FunctionFactory::create_composition(Teuchos::ParameterList& params) const
 {
   Function *f;
-  std::auto_ptr<Function> f1, f2;
+  std::unique_ptr<Function> f1, f2;
   FunctionFactory factory;
   try {
     if (params.isSublist("function1")) {
       Teuchos::ParameterList& f1_params = params.sublist("function1");
-      f1 = std::auto_ptr<Function>(factory.Create(f1_params));
+      f1 = std::unique_ptr<Function>(factory.Create(f1_params));
     } else {
       Errors::Message m;
       m << "missing sublist function1";
@@ -413,13 +413,13 @@ Function* FunctionFactory::create_composition(Teuchos::ParameterList& params) co
     }
     if (params.isSublist("function2")) {
       Teuchos::ParameterList& f2_params = params.sublist("function2");
-      f2 = std::auto_ptr<Function>(factory.Create(f2_params));
+      f2 = std::unique_ptr<Function>(factory.Create(f2_params));
     } else {
       Errors::Message m;
       m << "missing sublist function2";
       Exceptions::amanzi_throw(m);
     }
-    f = new CompositionFunction(f1, f2);
+    f = new CompositionFunction(std::move(f1), std::move(f2));
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-composition parameter error: " << msg.what();
@@ -439,8 +439,8 @@ Function* FunctionFactory::create_static_head(Teuchos::ParameterList& params) co
     int dim = params.get<int>("space dimension");
     if (params.isSublist("water table elevation")) {
       Teuchos::ParameterList& sublist = params.sublist("water table elevation");
-      std::auto_ptr<Function> water_table(factory.Create(sublist));
-      f = new StaticHeadFunction(p0, density, gravity, water_table, dim);
+      std::unique_ptr<Function> water_table(factory.Create(sublist));
+      f = new StaticHeadFunction(p0, density, gravity, std::move(water_table), dim);
     } else {
       Errors::Message m;
       m << "missing sublist \"water table elevation\"";
@@ -465,7 +465,7 @@ Function* FunctionFactory::create_standard_math(Teuchos::ParameterList& params) 
   try {
     std::string op = params.get<std::string>("operator");
     double amplitude = params.get<double>("amplitude", 1.0);
-    double param = params.get<double>("parameter", 0.0);
+    double param = params.get<double>("parameter", 1.0);
     double shift = params.get<double>("shift", 0.0);
     f = new StandardMathFunction(op, amplitude, param, shift);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {

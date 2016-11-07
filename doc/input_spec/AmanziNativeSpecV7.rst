@@ -18,7 +18,12 @@ Changes V6 -> V7
 * Lower-case naming convention for parameters.
 * Dual porosity model to flow and transport.
 * Support of units in output of observations.
-* New regions.
+* New regions: with volume fractions and line segments.
+* Finer control of IO of state fields. 
+* New functions: distance and monomial.
+* Support of Trilinos solvers: Belos GMRES and NOX.
+* Simple back-tracking and continuation algorithms.
+* More submodels for boundary conditions.
 
 
 ParameterList XML
@@ -384,7 +389,15 @@ The initialization sublist of *State* is named *initial conditions*.
   file. The initialization sequence is as follows. First, we try to initialize a
   field using the provided checkpoint file. Second, regardless of the outcome of the
   previous step, we try to initialize the field using the sublist `"initial conditions`".
-  By design, the second step allows us to overwrite only part for the field.
+  By design, the second step allows us to overwrite only part for the
+  field. There are several options available to initialize field using
+  the sublist `"initial conditions`": `"restart file`" - read field
+  from existing hdf5 file, `"exodus file initialization`" - read field
+  from existing exodus file, `"cells from file`" - read cell
+  components from hdf5 file, `"constant`" - set field values to constant, `"initialize
+  from 1D column`" - initialize 1D column from file and `"function`" -
+  field is initialized by function.
+
 
 .. code-block:: xml
 
@@ -396,9 +409,9 @@ The initialization sublist of *State* is named *initial conditions*.
       </ParameterList>
       <ParameterList name="initial conditions">
          ... initialization of fields
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
 
 
 Primary and derived fields
@@ -716,30 +729,9 @@ We can define geochemical contraint as follows:
      </ParameterList>
    </ParameterList>
 
-Mesh partitioning
------------------
 
-Amanzi's state has a number of tools to verify completeness of initial data.
-This is done using list *mesh partitions*. 
-Each sublist there must have parameter *region list* specifying
-regions that define unique partition of the mesh.
-
-.. code-block:: xml
-
-   <ParameterList name="state">  <!-- parent list -->
-     <ParameterList name="mesh partitions">
-       <ParameterList name="MATERIALS">
-         <Parameter name="region list" type="Array(string)" value="{region1,region2,region3}"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
-
-In this example, we verify that three mesh regions cover completely the mesh without overlaps.
-If so, all material fields, such as *porosity*, will be initialized properly.
-
-
-Initialization from a file
---------------------------
+Initialization from Exodus II file
+-------------------------------------
 
 Some fields can be initialized from Exodus II files. 
 For each field, an additional sublist has to be added to the
@@ -762,6 +754,85 @@ For a parallel run, it must be *.par*.
        </ParameterList>
      </ParameterList>
    </ParameterList>
+
+
+Initialization from HDF5 file
+-------------------------------
+
+Some field can be initialized from HDF5 file. The field has to written
+to HDF5 file as 2D array (number_elements, number_of_components) and
+has to name as field_name.entity.component, e.g
+transport_porosity.cell.0. Parameter `"cell from file`" initializes
+only cell part of the field.
+
+.. code-block:: xml
+
+     <ParameterList name="initial conditions">  <!-- parent list -->
+         <ParameterList name="transport_porosity">
+           <Parameter name="restart file" type="string" value="test1.h5"/>
+         </ParameterList>
+         <ParameterList name="porosity">
+           <Parameter name="cells from file" type="string" value="test3.h5"/>
+         </ParameterList>
+    </ParameterList>
+
+Initialization of 1D column
+-----------------------------
+
+It is possible to initialize only 1D column portion of a particular field.
+
+.. code-block:: xml
+
+     <ParameterList name="initial conditions">  <!-- parent list -->
+         <ParameterList name="field_name5">
+            <ParameterList name="initialize from 1D column" type="ParameterList">
+               <Parameter name="file" type="string" value="column_data.h5" />
+               <Parameter name="z header" type="string" value="/z" />
+               <Parameter name="f header" type="string" value="/temperature" />
+               <Parameter name="coordinate orientation" type="string" value="depth" />
+               <Parameter name="surface sideset" type="string" value="surface" />
+            </ParameterList>
+         </ParameterList>
+    </ParameterList>
+
+
+Mesh partitioning
+-----------------
+
+Amanzi's state has a number of tools to verify completeness of initial data.
+This is done using list *mesh partitions*. 
+Each sublist there must have parameter *region list* specifying
+regions that define unique partition of the mesh.
+
+.. code-block:: xml
+
+   <ParameterList name="state">  <!-- parent list -->
+     <ParameterList name="mesh partitions">
+       <ParameterList name="MATERIALS">
+         <Parameter name="region list" type="Array(string)" value="{region1,region2,region3}"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
+In this example, we verify that three mesh regions cover completely the mesh without overlaps.
+If so, all material fields, such as *porosity*, will be initialized properly.
+
+
+Data IO control
+---------------
+
+Two parameters below allow us to control fields that will go into a visuzalization file.
+First, we remove all fields matching the patterns specified by *blacklist*.
+Second, we add all fields matching the patterns specified by *whitelist*.
+Both parameters are optional.
+
+* `"blacklist`" [Array(string)] list of fields that should *not* be written to the visualization file.
+  Standard regular expressuion rules can be used, e.g. `"(secondary_)(.*)`" skips all fields 
+  those names start with `"secondary_`".
+
+* `"whitelist`" [Array(string)] list of fields that should *be* written to the visualization file.
+  Standard regular expressuion rules can be used, e.g. `"(primary_)(.*)`" adds all fields 
+  those names start with `"primary_`".
 
 
 Example
@@ -2413,6 +2484,8 @@ The following parameters are common for all supported engines.
   It used to help convergence of the initial solution of the chemistry. If this parameter is absent, 
   a fraction (10%) of the total component concentration is used.
 
+* `"initial conditions time`" [double] specifies time for applying initial conditions. This parameter
+  is useful for simulation restart. Default value is the state time when chemistry PK is instantiated. 
 
 Alquimia
 ````````
@@ -3161,11 +3234,35 @@ Coupling of process kernels requires additional parameters for PK
 described above.
 
 
-Flow and Reactive transport
----------------------------
+Reactive transport PK
+---------------------
+
+Reactive transport can be setup using a steady-state flow.
+The two PKs are executed consequitively. 
+The input spec requires new keyword *reactive transport*.
+
+.. code-block:: xml
+
+   <ParameterList name="PK tree">  <!-- parent list -->
+     <ParameterList name="REACTIVE TRANSPORT">
+       <Parameter name="PK type" type="string" value="reactive transport"/>
+       <ParameterList name="TRANSPORT">
+         <Parameter name="PK type" type="string" value="transport"/>
+       </ParameterList>
+       <ParameterList name="CHEMISTRY">
+         <Parameter name="PK type" type="string" value="chemistry amanzi"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
+
+Flow and Reactive transport PK
+------------------------------
 
 Amanzi uses operator splitting approach for coupled physical kernels.
-The coupling of PKs is described in as a tree of ParameterList. 
+The coupling of PKs is described as a tree where flow and reactive 
+transport are executed consequitively.
+The input spec requires new keyword *flow reactive transport*.
 
 .. code-block:: xml
 
@@ -3919,6 +4016,7 @@ Generalized minimal residuals (GMRES)
 .....................................
 
 Not all scientists know that idea of GMRES method was formulated first in 1968.
+We support two implementations (Amanzi and Tilinos). 
 Internal parameters for GMRES include
 
 * `"error tolerance`" [double] is used in the convergence test. The default value is 1e-6.
@@ -3958,11 +4056,21 @@ Internal parameters for GMRES include
        <Parameter name="size of Krylov space" type="int" value="10"/>
        <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
        <Parameter name="maximum size of deflation space" type="int" value="0"/>
+       <Parameter name="preconditioning strategy`" type="string" value="left"/>
 
        <ParameterList name="verbose object">
          <Parameter name="verbosity level" type="string" value="high"/>
        </ParameterList>
      </ParameterList>
+
+     <!-- Alternative implementation
+     <ParameterList name="belos gmres parameters">
+       <Parameter name="error tolerance" type="double" value="1e-12"/>
+       <Parameter name="maximum number of iterations" type="int" value="400"/>
+       <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
+       <Parameter name="size of Krylov space" type="int" value="10"/>
+       <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
+     </ParameterList-->
    </ParameterList>
 
 
@@ -4281,6 +4389,7 @@ Here is the list of selected parameters for the Newton-Picard solver.
      <Parameter name="modify correction" type="bool" value="false"/>
    </ParameterList>
 
+
 Jacobian-free Newton-Krylov (JFNK)
 ..................................
 
@@ -4306,6 +4415,39 @@ We describe parameters of the second sublist only.
 
    <Parameter name="solver type" type="string" value="JFNK"/>
      <ParameterList name="JFNK parameters">
+       <Parameter name="typical solution value" type="double" value="1.0"/>
+
+       <ParameterList name="JF matrix parameters">
+         <Parameter name="finite difference epsilon" type="double" value="1.0e-8"/>
+         <Parameter name="method for epsilon" type="string" value="Knoll-Keyes L2"/>
+       </ParameterList>
+
+       <ParameterList name="nonlinear solver">
+         <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+         <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+         <Parameter name="limit iterations" type="int" value="20"/>
+         <Parameter name="max divergent iterations" type="int" value="3"/>
+       </ParameterList>
+
+       <ParameterList name="linear operator">
+         <Parameter name="iterative method" type="string" value="gmres"/>
+         <ParameterList name="gmres parameters">
+           ...
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
+
+Nonlinear Object-Oriented Solution (NOX)
+........................................
+
+The interface to Trilinos NOX solver is as follows:
+
+.. code-block:: xml
+
+   <Parameter name="solver type" type="string" value="nox"/>
+     <ParameterList name="nox parameters">
        <Parameter name="typical solution value" type="double" value="1.0"/>
 
        <ParameterList name="JF matrix parameters">
@@ -4849,6 +4991,8 @@ Boundary
 List *region: boundary* defines a set of all boundary faces. 
 Using this definition, faces located on the domain boundary are extracted.
 
+* `"entity`" [string] Type of the mesh object.  
+
 .. code-block:: xml
 
    <ParameterList name="DOMAIN_BOUNDARY"> <!-- parent list -->
@@ -4864,6 +5008,9 @@ Enumerated set
 List *region: enumerated set* defines a set of mesh entities via the list 
 of input global ids..
 
+* `"entity`" ``[string]`` Type of the mesh object.  Valid are *cell*, *face*, *edge*, *node*
+* `"entity gids`" ``[Array(int)]`` List of the global IDs of the entities.
+  
 .. code-block:: xml
 
    <ParameterList name="WELL"> <!-- parent list -->

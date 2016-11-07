@@ -59,14 +59,14 @@ void Transport_PK::InitializeAll_()
     }
 
     int nblocks = 0; 
-    for (Teuchos::ParameterList::ConstIterator i = dlist.begin(); i != dlist.end(); i++) {
+    for (auto i = dlist.begin(); i != dlist.end(); i++) {
       if (dlist.isSublist(dlist.name(i))) nblocks++;
     }
 
     mat_properties_.resize(nblocks);
 
     int iblock = 0;
-    for (Teuchos::ParameterList::ConstIterator i = dlist.begin(); i != dlist.end(); i++) {
+    for (auto i = dlist.begin(); i != dlist.end(); i++) {
       if (dlist.isSublist(dlist.name(i))) {
         mat_properties_[iblock] = Teuchos::rcp(new MaterialProperties());
 
