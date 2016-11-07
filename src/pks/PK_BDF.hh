@@ -23,8 +23,18 @@
 
 namespace Amanzi {
 
-class TreeVector;
-class PK_BDF : virtual public PK, public Amanzi::BDFFnBase<TreeVector> {};
+class PK_BDF : virtual public PK,
+	       public Amanzi::BDFFnBase<TreeVector> {
+ public:
+  PK_BDF() {}
+    
+  PK_BDF(Teuchos::ParameterList& pk_tree,
+	 const Teuchos::RCP<Teuchos::ParameterList>& glist,
+	 const Teuchos::RCP<State>& S,
+	 const Teuchos::RCP<TreeVector>& soln) :
+    PK(pk_tree, glist, S, soln) {}
+  
+};
 
 }  // namespace Amanzi
 

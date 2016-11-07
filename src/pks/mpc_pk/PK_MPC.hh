@@ -69,6 +69,8 @@ class PK_MPC : virtual public PK {
 
   virtual void Solution_to_State(TreeVector& soln,
                                  const Teuchos::RCP<State>& S) {};
+  virtual void Solution_to_State(const TreeVector& soln,
+                                 const Teuchos::RCP<State>& S) {};
 
   virtual void State_to_Solution(const Teuchos::RCP<State>& S,
                                  TreeVector& soln) {} ;

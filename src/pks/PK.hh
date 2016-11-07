@@ -65,9 +65,9 @@ class PK {
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) = 0;
 
   // Return PK's name
-  virtual std::string name() = 0;
+  virtual std::string name() { return name_; }
 
-  // virtual bool valid_step();
+  virtual bool ValidStep() { return true; }
 
   /////////////////////////////////////////////////////////////////////
 
@@ -79,6 +79,7 @@ class PK {
   // -- transfer operators
   virtual void State_to_Solution(const Teuchos::RCP<State>& S, TreeVector& soln) = 0;
   virtual void Solution_to_State(TreeVector& soln, const Teuchos::RCP<State>& S) = 0;
+  virtual void Solution_to_State(const TreeVector& soln, const Teuchos::RCP<State>& S) = 0;
 
 protected:
   Teuchos::RCP<Teuchos::ParameterList> plist_;
