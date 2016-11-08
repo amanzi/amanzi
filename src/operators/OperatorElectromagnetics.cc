@@ -18,6 +18,7 @@
 #include "errors.hh"
 #include "MatrixFE.hh"
 #include "mfd3d_electromagnetics.hh"
+#include "Point.hh"
 #include "PreconditionerFactory.hh"
 #include "SuperMap.hh"
 #include "WhetStoneDefs.hh"
@@ -102,10 +103,15 @@ void OperatorElectromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
                                               const Teuchos::Ptr<BCs>& bc_e,
                                               bool primary, bool eliminate)
 {
-  AmanziMesh::Entity_ID_List edges, cells;
+  AmanziMesh::Entity_ID_List edges, faces, cells;
+  std::vector<int> edirs, fdirs;
 
   global_op_->rhs()->PutScalarGhosted(0.0);
   Epetra_MultiVector& rhs_edge = *global_op_->rhs()->ViewComponent("edge", true);
+
+  // support of surface integrals
+  int dim = mesh_->space_dimension();
+  WhetStone::MFD3D_Electromagnetics mfd3d(mesh_);
 
   // calculate number of cells for each edge 
   // move to properties of BCs (lipnikov@lanl.gov)
@@ -124,6 +130,52 @@ void OperatorElectromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
     bool flag(true);
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
 
+    // BCs of faces: typically this is magnetic flux
+    if (bc_f != Teuchos::null) {
+      const std::vector<int>& bc_model = bc_f->bc_model();
+      const std::vector<AmanziGeometry::Point>& bc_value = bc_f->bc_value_vector();
+
+      mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+      int nfaces = faces.size();
+
+      for (int n = 0; n != nfaces; ++n) {
+        int f = faces[n];
+        const AmanziGeometry::Point& value = bc_value[f];
+
+        if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+          const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+          double area = mesh_->face_area(f);
+
+          mesh_->face_get_edges_and_dirs(f, &edges, &edirs);
+          int nedges = edges.size();
+
+          // project magnetic flux on mesh edges
+          WhetStone::DenseVector b(nedges), mb(nedges); 
+          for (int i = 0; n != nedges; ++i) {
+            int e = edges[i];
+            const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
+            double len = mesh_->edge_length(e);
+            b(i) = ((value^normal) * tau) / (area * len) * fdirs[n] * edirs[i];
+          }
+
+          // calculate inner product matrix
+          WhetStone::Tensor T(dim, 1);
+          T(0, 0) = 1.0;
+
+          WhetStone::DenseMatrix M(nedges, nedges);
+          mfd3d.MassMatrix(c, T, M);
+          M.Multiply(b, mb, false);
+
+          // assemble data in the right-hand side
+          for (int i = 0; n != nedges; ++i) {
+            int e = edges[i];
+            rhs_edge[0][e] -= mb(i);
+          }
+        }
+      }
+    }
+
+    // BCs of edges: typically this is electric field
     if (bc_e != Teuchos::null) {
       const std::vector<int>& bc_model = bc_e->bc_model();
       const std::vector<double>& bc_value = bc_e->bc_value();

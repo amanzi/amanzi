@@ -14,6 +14,8 @@
 
 #include <vector>
 
+#include "Point.hh"
+
 namespace Amanzi {
 namespace Operators {
 
@@ -74,6 +76,7 @@ class BCs {
   // access
   std::vector<int>& bc_model() { return *bc_model_; }
   std::vector<double>& bc_value() { return *bc_value_; }
+  std::vector<AmanziGeometry::Point>& bc_value_vector() { return *bc_value_vector_; }
   std::vector<double>& bc_mixed() { return *bc_mixed_; }
   int type() { return type_; }
 
@@ -81,6 +84,7 @@ class BCs {
   int type_;
   std::vector<int>* bc_model_;
   std::vector<double>* bc_value_;
+  std::vector<AmanziGeometry::Point>* bc_value_vector_;
   std::vector<double>* bc_mixed_;
 };
 
