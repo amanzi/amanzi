@@ -41,7 +41,7 @@ add_amanzi_library(whetstone
                           mfd3d_diffusion.cc mfd3d_diffusion_surface.cc 
                           mfd3d_diffusion_other.cc 
                           mfd3d_elasticity.cc 
-                          mfd3d_electromagnetics.cc 
+                          mfd3d_electromagnetics.cc mfd3d_electromagnetics_surface.cc 
                           nlfv.cc Tensor.cc DenseMatrix.cc
                    HEADERS DenseMatrix.hh
                            DenseVector.hh

@@ -83,8 +83,7 @@ void OperatorElectromagnetics::ApplyBCs(bool primary, bool eliminate)
   if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                          | OPERATOR_SCHEMA_DOFS_EDGE)) {
     Teuchos::RCP<BCs> bc_f, bc_e;
-    for (std::vector<Teuchos::RCP<BCs> >::iterator bc = bcs_trial_.begin();
-        bc != bcs_trial_.end(); ++bc) {
+    for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
       if ((*bc)->type() == OPERATOR_BC_TYPE_FACE) {
         bc_f = *bc;
       } else if ((*bc)->type() == OPERATOR_BC_TYPE_EDGE) {
@@ -151,11 +150,11 @@ void OperatorElectromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
 
           // project magnetic flux on mesh edges
           WhetStone::DenseVector b(nedges), mb(nedges); 
-          for (int i = 0; n != nedges; ++i) {
+          for (int i = 0; i != nedges; ++i) {
             int e = edges[i];
             const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
             double len = mesh_->edge_length(e);
-            b(i) = ((value^normal) * tau) / (area * len) * fdirs[n] * edirs[i];
+            b(i) = ((value^normal) * tau) / (area * len) * edirs[i];
           }
 
           // calculate inner product matrix
@@ -163,13 +162,13 @@ void OperatorElectromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
           T(0, 0) = 1.0;
 
           WhetStone::DenseMatrix M(nedges, nedges);
-          mfd3d.MassMatrix(c, T, M);
+          mfd3d.MassMatrixBoundary(f, T, M);
           M.Multiply(b, mb, false);
 
           // assemble data in the right-hand side
-          for (int i = 0; n != nedges; ++i) {
+          for (int i = 0; i != nedges; ++i) {
             int e = edges[i];
-            rhs_edge[0][e] -= mb(i);
+            rhs_edge[0][e] -= mb(i) * edirs[i] * fdirs[n];
           }
         }
       }

@@ -77,6 +77,12 @@ class OperatorElectromagnetics {
     bcs_test_.push_back(bc_test);
   }
 
+  virtual void AddBCs(const Teuchos::RCP<BCs>& bc_trial,
+                      const Teuchos::RCP<BCs>& bc_test) {
+    bcs_trial_.push_back(bc_trial);
+    bcs_test_.push_back(bc_test);
+  }
+
   // new virtual members
   // -- before solving the problem
   virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt) {};

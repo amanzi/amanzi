@@ -60,6 +60,10 @@ class MFD3D_Electromagnetics : public MFD3D {
   int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A, DenseMatrix& M, DenseMatrix& C);
   int StiffnessMatrixExperimental(int c, const Tensor& T, DenseMatrix& A);
 
+  // boundary and surface methods
+  int L2consistencyBoundary(int f, const Tensor& K, DenseMatrix& R, DenseMatrix& Mf);
+  int MassMatrixBoundary(int f, const Tensor& K, DenseMatrix& M);
+
  private:
   int L2consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
   int L2consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);

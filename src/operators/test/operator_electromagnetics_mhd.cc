@@ -71,8 +71,8 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
 
   double Xb(4.0), Yb(4.0), Zb(10.0);
   bool request_faces(true), request_edges(true);
-  // RCP<const Mesh> mesh = meshfactory(-Xb, -Yb, -Zb, Xb, Yb, Zb, 8, 8, 20, gm, request_faces, request_edges);
-  RCP<const Mesh> mesh = meshfactory("test/hex_split_faces5.exo", gm, request_faces, request_edges);
+  RCP<const Mesh> mesh = meshfactory(-Xb, -Yb, -Zb, Xb, Yb, Zb, 10, 8, 20, gm, request_faces, request_edges);
+  // RCP<const Mesh> mesh = meshfactory("test/hex_split_faces5.exo", gm, request_faces, request_edges);
   // RCP<const Mesh> mesh = meshfactory("test/isohelix.exo", gm, request_faces, request_edges);
 
   // create resistivity coefficient
@@ -100,16 +100,24 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
   std::vector<double> bc_value(nedges_wghost);
   std::vector<double> bc_mixed;
 
+  std::vector<int> bc_model2(nfaces_wghost, OPERATOR_BC_NONE);
+  std::vector<Point> bc_value2(nfaces_wghost);
+  std::vector<Point> bc_mixed2;
+
   std::vector<int> edirs;
   AmanziMesh::Entity_ID_List cells, edges;
 
   for (int f = 0; f < nfaces_wghost; ++f) {
     const AmanziGeometry::Point& xf = mesh->face_centroid(f);
 
-    if (fabs(xf[0] + Xb) < 1e-6 || fabs(xf[0] - Xb) < 1e-6 ||
-        fabs(xf[1] + Yb) < 1e-6 || fabs(xf[1] - Yb) < 1e-6 ||
-        fabs(xf[2] + Zb) < 1e-6 || fabs(xf[2] - Zb) < 1e-6) {
-
+    if (fabs(xf[0] + Xb) < 1e-6) {
+      bc_model2[f] = OPERATOR_BC_NEUMANN;
+      bc_value2[f] = Point(0.0, 0.0, 1.0);
+    } 
+    else if (fabs(xf[0] - Xb) < 1e-6 ||
+    // if (fabs(xf[0] + Xb) < 1e-6 || fabs(xf[0] - Xb) < 1e-6 ||
+            fabs(xf[1] + Yb) < 1e-6 || fabs(xf[1] - Yb) < 1e-6 ||
+            fabs(xf[2] + Zb) < 1e-6 || fabs(xf[2] - Zb) < 1e-6) {
       mesh->face_get_edges_and_dirs(f, &edges, &edirs);
       int nedges = edges.size();
       for (int i = 0; i < nedges; ++i) {
@@ -123,13 +131,15 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
       }
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_EDGE, bc_model, bc_value, bc_mixed));
+  Teuchos::RCP<BCs> bc1 = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_EDGE, bc_model, bc_value, bc_mixed));
+  Teuchos::RCP<BCs> bc2 = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model2, bc_value2, bc_mixed2));
 
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("electromagnetics operator");
   Teuchos::RCP<OperatorElectromagneticsMHD> op_mhd = Teuchos::rcp(new OperatorElectromagneticsMHD(olist, mesh));
-  op_mhd->SetBCs(bc, bc);
+  op_mhd->SetBCs(bc1, bc1);
+  op_mhd->AddBCs(bc2, bc2);
 
   // create/extract solution maps
   Teuchos::RCP<Operator> global_op = op_mhd->global_operator();
@@ -189,7 +199,7 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
     // BCs, sources, and assemble
     op_mhd->ModifyMatrices(E, B, dt);
     op_mhd->ApplyBCs(true, true);
-    op_acc->ApplyBCs(bc);
+    op_acc->ApplyBCs(bc1);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 
@@ -226,7 +236,7 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
     std::vector<int> dirs;
     AmanziMesh::Entity_ID_List faces;
 
-    double avgB(0.0), divB(0.0);
+    double avgB(0.0), divB(0.0), errB(0.0);
     for (int c = 0; c < ncells_owned; ++c) {
       double vol = mesh->cell_volume(c);
       const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
@@ -245,6 +255,8 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
       }
       avgB += std::fabs(sol[0][c]);
       divB += tmp * tmp * vol; 
+      errB += vol * (std::pow(sol[0][c], 2.0) + std::pow(sol[1][c], 2.0) 
+                   + std::pow(sol[2][c] - 1.0, 2.0));
     }
 
     if (cycle == 1) divB0 = divB;
@@ -254,11 +266,12 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
       std::cout << "time: " << told << "  ||r||=" << solver->residual() 
                 << " itr=" << solver->num_itrs() << "  energy= " << energy 
                 << "  avgB=" << avgB / ncells_owned 
-                << "  divB=" << std::pow(divB, 0.5) << std::endl;
+                << "  divB=" << std::pow(divB, 0.5) 
+                << "  ||B-1||=" << std::pow(errB, 0.5) << std::endl;
     }
 
-    // viaualization
-    if (MyPID == 0 && (cycle % 100 == 0)) {
+    // visualization
+    if (MyPID == 0 && (cycle % 5 == 0)) {
       GMV::open_data_file(*mesh, "operators.gmv");
       GMV::start_data();
       GMV::write_cell_data(sol, 0, "Bx");

@@ -57,9 +57,15 @@ class BCs {
   BCs(int type, std::vector<int>& bc_model, std::vector<double>& bc_value, std::vector<double>& bc_mixed) {
     Init(type, bc_model, bc_value, bc_mixed);
   }
+  BCs(int type, std::vector<int>& bc_model,
+      std::vector<AmanziGeometry::Point>& bc_value_vector,
+      std::vector<AmanziGeometry::Point>& bc_mixed_vector) {
+    Init(type, bc_model, bc_value_vector, bc_mixed_vector);
+  }
   ~BCs() {};
 
   // main members
+  // -- scalar problems
   void Init(int type, std::vector<int>& bc_model, std::vector<double>& bc_value, std::vector<double>& bc_mixed) {
     type_ = type;
     bc_model_ = &bc_model; 
@@ -67,25 +73,40 @@ class BCs {
     bc_mixed_ = &bc_mixed; 
   }
 
-  bool CheckDataConsistency() {
+  // -- vector problems
+  void Init(int type, std::vector<int>& bc_model,
+            std::vector<AmanziGeometry::Point>& bc_value_vector,
+            std::vector<AmanziGeometry::Point>& bc_mixed_vector) {
+    type_ = type;
+    bc_model_ = &bc_model; 
+    bc_value_vector_ = &bc_value_vector; 
+    bc_mixed_vector_ = &bc_mixed_vector; 
+  }
+
+  // -- verify data allocation
+  bool CheckdoubleConsistency() {
     if (bc_value_->size() != bc_model_->size()) return false;
     if (bc_mixed_->size() != 0 && bc_mixed_->size() != bc_model_->size()) return false;
     return true; 
   }
 
   // access
+  int type() { return type_; }
   std::vector<int>& bc_model() { return *bc_model_; }
   std::vector<double>& bc_value() { return *bc_value_; }
-  std::vector<AmanziGeometry::Point>& bc_value_vector() { return *bc_value_vector_; }
   std::vector<double>& bc_mixed() { return *bc_mixed_; }
-  int type() { return type_; }
+
+  std::vector<AmanziGeometry::Point>& bc_value_vector() { return *bc_value_vector_; }
+  std::vector<AmanziGeometry::Point>& bc_mixed_vector() { return *bc_mixed_vector_; }
 
  private:
   int type_;
   std::vector<int>* bc_model_;
   std::vector<double>* bc_value_;
-  std::vector<AmanziGeometry::Point>* bc_value_vector_;
   std::vector<double>* bc_mixed_;
+
+  std::vector<AmanziGeometry::Point>* bc_value_vector_;
+  std::vector<AmanziGeometry::Point>* bc_mixed_vector_;
 };
 
 }  // namespace Operators
