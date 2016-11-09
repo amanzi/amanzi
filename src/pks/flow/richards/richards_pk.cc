@@ -143,6 +143,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList bc_plist = plist_->sublist("boundary conditions", true);
   FlowBCFactory bc_factory(mesh_, bc_plist);
   bc_pressure_ = bc_factory.CreatePressure();
+  bc_head_ = bc_factory.CreateHead();
   bc_flux_ = bc_factory.CreateMassFlux();
   bc_seepage_ = bc_factory.CreateSeepageFacePressure();
   bc_seepage_->Compute(0.); // compute at t=0 to set up
@@ -816,6 +817,21 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     bc_values_[f] = bc->second;
   }
 
+  bc_counts.push_back(bc_head_->size());
+  bc_names.push_back("head");
+  for (bc=bc_head_->begin(); bc!=bc_head_->end(); ++bc) {
+    int f = bc->first;
+#ifdef ENABLE_DBC
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    ASSERT(cells.size() == 1);
+#endif
+    
+    bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
+    bc_values_[f] = bc->second;
+  }
+
+
   const Epetra_MultiVector& rel_perm = 
     *S->GetFieldData(uw_coef_key_)->ViewComponent("face",false);
 
@@ -1052,6 +1068,7 @@ bool Richards::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
 
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
+  bc_head_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_(S_next_.ptr(), false); // without rel perm
   

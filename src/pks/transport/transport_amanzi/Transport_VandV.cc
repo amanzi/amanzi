@@ -143,7 +143,8 @@ void Transport_PK_ATS::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next,
     mesh_->get_comm()->SumAll(&tmp, &solute_flux, 1);
 
     // *vo_->os() << runtime_solutes_[n] << ": min=" << units_.OutputConcentration(tccmin) 
-    //            << " max=" << units_.OutputConcentration(tccmax);
+    //             << " max=" << units_.OutputConcentration(tccmax);
+    *vo_->os() << runtime_solutes_[n] << ": min=" << tccmin  << " max=" << tccmax<<"\n";
     if (flag) *vo_->os() << ", flux=" << solute_flux << " mol/s";
 
     // old capability

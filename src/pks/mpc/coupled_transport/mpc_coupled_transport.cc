@@ -53,7 +53,9 @@ double CoupledTransport_PK::get_dt() {
 
   set_dt(dt);
   return dt;
+
 }
+
 
 
 // -----------------------------------------------------------------------------
@@ -125,7 +127,7 @@ void CoupledTransport_PK::ComputeVolumeDarcyFlux(const Teuchos::Ptr<State>& S){
     S->GetFieldData(getKey(subsurface_name_,"darcy_flux"))->ViewComponent("face");
 
   Teuchos::RCP<const Epetra_MultiVector> surf_darcy_flux =
-    S->GetFieldData(getKey(surface_name_,"flux"))->ViewComponent("face");
+    S->GetFieldData(getKey(surface_name_,"mass_flux"))->ViewComponent("face");
 
   Key molar_den_key = getKey(subsurface_name_, "molar_density_liquid");
   //S->GetFieldEvaluator(molar_den_key)->HasFieldChanged(S.ptr());
@@ -207,25 +209,25 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   sub_pks_[slave_]->AdvanceStep(t_old, t_new, reinit);
 
 
-  // const Epetra_MultiVector& surf_tcc = *S_->GetFieldCopyData("surface-total_component_concentration", "subcycling")->ViewComponent("cell",false);  
-  // const Epetra_MultiVector& tcc = *S_->GetFieldCopyData("total_component_concentration", "subcycling")->ViewComponent("cell",false);
+  const Epetra_MultiVector& surf_tcc = *S_->GetFieldCopyData("surface-total_component_concentration", "subcycling")->ViewComponent("cell",false);  
+  const Epetra_MultiVector& tcc = *S_->GetFieldCopyData("total_component_concentration", "subcycling")->ViewComponent("cell",false);
 
-  // int num_components = 1;
-  // std::vector<double> mass_subsurface(num_components, 0.), mass_surface(num_components, 0.);
+  int num_components = 1;
+  std::vector<double> mass_subsurface(num_components, 0.), mass_surface(num_components, 0.);
 
-  // if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM){
-  //   for (int i=0; i<num_components; i++){
-  //     mass_subsurface[i] = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[master_])
-  //       ->ComputeSolute(tcc, i);
-  //     mass_surface[i] = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[slave_])
-  //       ->ComputeSolute(surf_tcc, i);
-  //     Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM){
+    for (int i=0; i<num_components; i++){
+      mass_subsurface[i] = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[master_])
+        ->ComputeSolute(tcc, i);
+      mass_surface[i] = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[slave_])
+        ->ComputeSolute(surf_tcc, i);
+      Teuchos::OSTab tab = vo_->getOSTab();
 
-  //     *vo_->os() <<"subsurface =" << mass_subsurface[i] << " mol";
-  //     *vo_->os() <<", surface =" << mass_surface[i]<< " mol";
-  //     *vo_->os() <<", ToTaL =" << mass_surface[i]+mass_subsurface[i]<< " mol" <<std::endl;
-  //   }
-  // }
+      *vo_->os() <<"subsurface =" << mass_subsurface[i] << " mol";
+      *vo_->os() <<", surface =" << mass_surface[i]<< " mol";
+      *vo_->os() <<", ToTaL =" << mass_surface[i]+mass_subsurface[i]<< " mol" <<std::endl;
+    }
+  }
   
   return fail;
 

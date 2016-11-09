@@ -97,7 +97,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   // -- calculation of a stable time step needs saturations and darcy flux
   double CalculateTransportDt();
   void Sinks2TotalOutFlux(Epetra_MultiVector& tcc,
-                          std::vector<double>& total_outflux);
+                          std::vector<double>& total_outflux, int n0, int n1);
 
   // coupling with chemistry
 #ifdef ALQUIMIA_ENABLED
@@ -262,7 +262,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   int current_component_;  // data for lifting
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;
 
-  std::vector<Teuchos::RCP<TransportSourceFunction> > srcs_;  // Source or sink for components
+  std::vector<Teuchos::RCP<TransportDomainFunction> > srcs_;  // Source or sink for components
   std::vector<Teuchos::RCP<TransportDomainFunction> > bcs_;  // influx BC for components
   double bc_scaling;
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
