@@ -87,16 +87,15 @@ int MFD3D_Electromagnetics::L2consistencyBoundary(
     }
   }
 
-  // Rows of matrix N are oriented tangent vectors. Since N goes to the
-  // Gramm-Schmidt orthogonalization procedure, we do not need scaling here.
+  // Rows of matrix N are normal vectors in the plane of face f.
   v1 = mesh_->edge_vector(edges[0]) / mesh_->edge_length(edges[0]);
   v2 = v3^v1;
   for (int i = 0; i < nedges; i++) {
     int e = edges[i];
     const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
     double len = mesh_->edge_length(e);
-    N(i, 0) = (tau * v1) * dirs[i] / len; 
-    N(i, 1) = (tau * v2) * dirs[i] / len; 
+    N(i, 0) = -(tau * v2) * dirs[i] / len; 
+    N(i, 1) = (tau * v1) * dirs[i] / len; 
   }
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
