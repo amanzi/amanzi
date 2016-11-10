@@ -74,7 +74,7 @@ int MFD3D_Electromagnetics::L2consistencyBoundary(
   for (int i = 0; i < nedges; i++) {
     int e = edges[i];
     const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
-    double a1 = mesh_->edge_length(f);
+    double a1 = mesh_->edge_length(e);
     v2 = PTP * (xe - xf);
 
     for (int j = i; j < nedges; j++) {
