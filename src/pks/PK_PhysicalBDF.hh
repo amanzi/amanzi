@@ -8,8 +8,8 @@ Author: Ethan Coon
 Default base with a few methods implemented in standard ways.
 ------------------------------------------------------------------------- */
 
-#ifndef AMANZI_PK_PHYSICAL_BDF_BASE_HH_
-#define AMANZI_PK_PHYSICAL_BDF_BASE_HH_
+#ifndef AMANZI_PK_PHYSICAL_BDF_HH_
+#define AMANZI_PK_PHYSICAL_BDF_HH_
 
 #include "PK_BDF.hh"
 #include "PK_Physical.hh"

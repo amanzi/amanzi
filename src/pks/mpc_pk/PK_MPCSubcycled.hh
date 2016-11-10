@@ -14,8 +14,8 @@
   See additional documentation in the base class src/pks/mpc_pk/PK_MPC.hh
 */
 
-#ifndef AMANZI_SUBCYCLED_MPC_HH_
-#define AMANZI_SUBCYCLED_MPC_HH_
+#ifndef AMANZI_PK_MPC_SUBCYCLED_HH_
+#define AMANZI_PK_MPC_SUBCYCLED_HH_
 
 #include "PK_MPC.hh"
 #include "PK.hh"
