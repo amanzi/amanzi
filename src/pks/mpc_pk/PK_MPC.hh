@@ -22,8 +22,8 @@
   respective methods.
 */
 
-#ifndef AMANZI_MPC_HH_
-#define AMANZI_MPC_HH_
+#ifndef AMANZI_PK_MPC_HH_
+#define AMANZI_PK_MPC_HH_
 
 #include <vector>
 #include "boost/algorithm/string.hpp"

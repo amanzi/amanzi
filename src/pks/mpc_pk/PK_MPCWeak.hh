@@ -17,8 +17,8 @@
   See additional documentation in the base class src/pks/mpc_pk/PK_MPC.hh
 */
 
-#ifndef AMANZI_WEAK_MPC_HH_
-#define AMANZI_WEAK_MPC_HH_
+#ifndef AMANZI_PK_MPC_WEAK_HH_
+#define AMANZI_PK_MPC_WEAK_HH_
 
 #include "PK_MPC.hh"
 #include "PK.hh"
