@@ -64,13 +64,20 @@ Symbol Index
 #############
 
 :math:`|E|` | volume of a cell :math:`[m^X]` (where :math:`X` is the dimension of the mesh)
+:math:`g` | gravitational acceleration vector :math:`[m s^-2]`
 :math:`h` | ponded depth, or the water head over the surface :math:`[m]`
 :math:`` | alternative, in context of the subsurface, water head :math:`[m]`
 :math:`h_{{snow}}` | snow depth :math:`[m]`
+:math:`K` | absolute permeability :math:`[m^2]`
+:math:`k_r` | relative permeability :math:`[-]`
 :math:`n_X` | molar density of phase X :math:`[mol m^-3]`
-:math:`P_{{\{s,r\}}}` | precipitation of rain or snow, noting that snow is always a precipitation rate in snow-water-equivalent (SWE) basis.  :math:`[m s^-1]`
+:math:`p` | pressure of the liquid phase :math:`[Pa]`
+:math:`P_{{s,r}}` | precipitation of rain or snow, noting that snow is always a precipitation rate in snow-water-equivalent (SWE) basis.  :math:`[m s^-1]`
+:math:`Q_w` | mass source of water :math:`[mol s^-1]`
 :math:`s_X` | saturation of phase X :math:`[-]`
+:math:`t` | time variable :math:`[s]`
 :math:`z` | elevation :math:`[m]`
+:math:`\nu` | dynamic viscosity of water :math:`[Pa s]`
 :math:`\phi` | porosity of the soil :math:`[-]`
 :math:`\rho` | mass density of a phase :math:`[kg m^-3]`
 :math:`\Theta` | extensive water content of a cell :math:`[mol]`
@@ -176,27 +183,7 @@ name generation and writing frequency, by numerical cycle number.
 Unlike `"visualization`", there is only one `"checkpoint`" list for
 all domains/meshes.
 
-The checkpoint-spec includes all parameters as in a IOEvent_ spec and additionally:
-
-* `"file name base`" ``[string]`` **"checkpoint"**
-  
-* `"file name digits`" ``[int]`` **5**
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="checkpoint">
-    <Parameter name="cycles start period stop" type="Array(int)" value="{{0, 100, -1}}" />
-    <Parameter name="cycles" type="Array(int)" value="{{999, 1001}}" />
-    <Parameter name="times start period stop 0" type="Array(double)" value="{{0.0, 10.0, 100.0}}"/>
-    <Parameter name="times start period stop 1" type="Array(double)" value="{{100.0, 25.0, -1.0}}"/>
-    <Parameter name="times" type="Array(double)" value="{{101.0, 303.0, 422.0}}"/>
-  </ParameterList>
-
-In this example, checkpoint files are written when the cycle number is
-a multiple of 100, every 10 seconds for the first 100 seconds, and
-every 25 seconds thereafter, along with times 101, 303, and 422.  Files will be written in the form: `"checkpoint00000.h5`".
+{ checkpoint }  
 
 
  
@@ -307,87 +294,24 @@ There are several types of PKs, and each PK has its own valid input spec.  Howev
 PKDefaultBase
 ----------------
 
-``PKDefaultBase`` is not a true PK, but is a helper for providing some basic functionality shared by (nearly) all PKs.
-Therefore, (nearly) all PKs inherit from this base class.  No input required.
+{ pk_default_base }
 
 PKPhysicalBase
 ----------------
 
-``PKPhysicalBase (v)-->`` PKDefaultBase_
-
-``PKPhysicalBase`` is a base class providing some functionality for PKs which are defined on a single mesh, and represent a single process model.
-Typically all leaves of the PK tree will inherit from ``PKPhysicalBase``.
-
-* `"domain`" ``[string]`` **""**, e.g. `"surface`".
-
-  Domains and meshes are 1-to-1, and the empty string refers to the main domain or mesh.  PKs defined on other domains must specify which domain/mesh they refer to.
-
-* `"primary variable key`" ``[string]``
-
-  The primary variable associated with this PK, i.e. `"pressure`", `"temperature`", `"surface_pressure`", etc.
-
-* `"initial condition`" ``[initial-condition-spec]``  See InitialConditions_.
-
-  Additionally, the following parameters are supported:
-
- - `"initialize faces from cell`" ``[bool]`` **false**
-
-   Indicates that the primary variable field has both CELL and FACE objects, and the FACE values are calculated as the average of the neighboring cells.
-
- - other, PK-specific additions
+{ pk_physical_base }
 
 
 PKBDFBase
 ----------------
 
-``PKBDFBase  (v)-->`` PKDefaultBase_
-
-``PKBDFBase`` is a base class from which PKs that want to use the ``BDF`` series of implicit time integrators must derive.  It specifies both the ``BDFFnBase`` interface and implements some basic functionality for ``BDF`` PKs.  
-
-* `"initial time step`" ``[double]`` **1.**
-
-  The initial timestep size for the PK, this ensures that the initial timestep will not be **larger** than this value.
-
-* `"assemble preconditioner`" ``[bool]`` **true** 
-
-  A flag for the PK to not assemble its preconditioner if it is not needed by a controlling PK.  This is usually set by the MPC, not by the user.
-
-In the top-most (in the PK tree) PK that is meant to be integrated implicitly, several additional specs are included.  For instance, in a strongly coupled flow and energy problem, these specs are included in the ``StrongMPC`` that couples the flow and energy PKs, not to the flow or energy PK itself.
-  
-* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_.
-
-  Note that this is only provided in the top-most ``PKBDFBase`` in the tree -- this is often a StrongMPC_ or a class deriving from StrongMPC_, not a PKPhysicalBDFBase_.
-
-* `"preconditioner`" ``[preconditioner-spec]`` is a Preconditioner_.
-
-  This spec describes how to form the (approximate) inverse of the preconditioner.
-
+{ pk_bdf_base }
 
 
 PKPhysicalBDFBase
 -------------------
 
-``PKPhysicalBDFBase -->`` PKBDFBase_
-``PKPhysicalBDFBase -->`` PKPhysicalBase_
-``PKPhysicalBDFBase (v)-->`` PKDefaultBase_
-
-A base class for all PKs that are all of the above.
-
-* `"debug cells`" [Array(int)]
-
-  List of global cell IDs for which (if the verbosity is set high enough) more debugging info is printed to the log file.
-
-* `"absolute error tolerance`" [double] **1.0**
-
-  Absolute tolerance, :math:`a_tol` in the equation below.
-
-* `"relative error tolerance`" [double] **1.0**
-
-  Relative tolerance, :math:`r_tol` in the equation below.
-
-By default, the error norm used by solvers is given by:
-:math:`ENORM(u, du) = |du| / ( a_tol + r_tol * |u| )`
-
+{ pk_physical_bdf_base }
 
 Physical PKs
 ===============
@@ -399,6 +323,8 @@ Flow PKs
 
 Richards PK
 ^^^^^^^^^^^^^^^
+
+{ richards }
 
 Permafrost Flow PK
 ^^^^^^^^^^^^^^^^^^^^
@@ -571,7 +497,7 @@ SurfacePotential
 { pres_elev_evaluator }
 
 SnowSurfacePotential
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
 { snow_skin_potential_evaluator }
 
 

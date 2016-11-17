@@ -60,9 +60,6 @@ Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
     vapor_diffusion_(false),
     perm_scale_(1.)
 {
-  if (!plist_->isParameter("primary variable key"))
-    plist_->set("primary variable key", "pressure");
-
   if (!plist_->isParameter("conserved quantity suffix"))
     plist_->set("conserved quantity suffix", "water_content");
   
@@ -909,7 +906,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
       // max pressure condition violated
       bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_values_[f] = p_atm;
-      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in DIRICHLET pressure " << p_atm << std::endl;
+      //      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in DIRICHLET pressure " << p_atm << std::endl;
 
     } else if (boundary_flux < bc->second - flux_seepage_tol &&
         boundary_pressure <= p_atm + seepage_tol) {

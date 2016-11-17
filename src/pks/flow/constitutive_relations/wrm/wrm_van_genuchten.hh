@@ -1,6 +1,14 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 //! WRMVanGenuchten : water retention model using van Genuchten's parameterization
 
+/*
+  ATS is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
 /*!
   <ul>Native Spec Example</>
     <ParameterList name="moss" type="ParameterList">

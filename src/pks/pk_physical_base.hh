@@ -1,13 +1,41 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+//! A base class with default implementations of methods for a leaf of the PK tree (a conservation equation, or similar).
 
-/* -------------------------------------------------------------------------
-ATS
+/*
+  ATS is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
 
-Default base with default implementations of methods for a physical PK.
-------------------------------------------------------------------------- */
+
+/*!
+
+``PKPhysicalBase`` is a base class providing some functionality for PKs which
+are defined on a single mesh, and represent a single process model.  Typically
+all leaves of the PK tree will inherit from ``PKPhysicalBase``.
+
+* `"domain`" ``[string]`` **""**, e.g. `"surface`".
+
+  Domains and meshes are 1-to-1, and the empty string refers to the main domain or mesh.  PKs defined on other domains must specify which domain/mesh they refer to.
+
+* `"primary variable`" ``[string]``
+
+  The primary variable associated with this PK, i.e. `"pressure`", `"temperature`", `"surface_pressure`", etc.
+
+* `"initial condition`" ``[initial-condition-spec]``  See InitialConditions_.
+
+  Additionally, the following parameters are supported:
+
+ - `"initialize faces from cell`" ``[bool]`` **false**
+
+   Indicates that the primary variable field has both CELL and FACE objects, and the FACE values are calculated as the average of the neighboring cells.
+
+
+NOTE: ``PKPhysicalBase (v)-->`` PKDefaultBase_
+
+*/
 
 #ifndef AMANZI_PK_PHYSICAL_BASE_HH_
 #define AMANZI_PK_PHYSICAL_BASE_HH_

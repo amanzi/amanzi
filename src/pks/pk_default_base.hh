@@ -1,13 +1,25 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+//! A base class for PKs
 
-/* -------------------------------------------------------------------------
-ATS
+/*
+  ATS is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
 
-Default base with a few methods implemented in standard ways.
-------------------------------------------------------------------------- */
+
+/*!
+
+``PKDefaultBase`` is not a true PK, but is a helper for providing some basic
+functionality shared by (nearly) all PKs.  Therefore, (nearly) all PKs inherit
+from this base class.
+
+No input spec.
+
+*/
+
 
 #ifndef AMANZI_PK_DEFAULT_BASE_HH_
 #define AMANZI_PK_DEFAULT_BASE_HH_
