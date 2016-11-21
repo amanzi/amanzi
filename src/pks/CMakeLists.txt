@@ -39,7 +39,6 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 set(pks_src_files PK_Factory.cc
                   PK_Utils.cc
                   PK_Physical.cc
-                  # PK_PhysicalBDF_ATS.cc
    )
 
 add_amanzi_library(pks
@@ -58,7 +57,6 @@ set(pks_inc_files
   PK_Physical.hh
   PK_PhysicalExplicit.hh
   PK_PhysicalBDF.hh
-  PK_PhysicalBDF_ATS.hh
   PK_DomainFunction.hh
   PK_DomainFunctionFactory.hh
   PK_DomainFunctionSimple.hh
@@ -77,13 +75,22 @@ add_install_include_file(${pks_inc_files})
 if (BUILD_TESTS) 
 endif()
 
-add_subdirectory(eos)
+if (ENABLE_Physics)
+  add_subdirectory(eos)
 
-add_subdirectory(flow)
+  add_subdirectory(flow)
+endif()
+
+# chemistry isn't REALLY physics...
 add_subdirectory(chemistry)
-add_subdirectory(transport)
-add_subdirectory(energy)
-add_subdirectory(dummy)
-add_subdirectory(mpc_pk)
 
+# ok, transport is probably physics but oh well
+add_subdirectory(transport)
+
+if (ENABLE_Physics)
+  add_subdirectory(energy)
+  add_subdirectory(dummy)
+endif()
+
+add_subdirectory(mpc_pk)
 

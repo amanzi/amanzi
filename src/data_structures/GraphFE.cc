@@ -38,21 +38,32 @@ GraphFE::GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
   // create the offproc maps
   n_used_ = ghosted_row_map_->NumMyElements();
   n_owned_ = row_map_->NumMyElements();
-  
-  std::vector<int> offproc_gids(n_used_ - n_owned_);
-  for (int i=n_owned_; i!=n_used_; ++i)
-    offproc_gids[i-n_owned_] = ghosted_row_map_->GID(i);
-  offproc_row_map_ = Teuchos::rcp(new Epetra_Map(-1, n_used_-n_owned_,
-			&offproc_gids[0], 0, ghosted_row_map_->Comm()));
-  
+
+  if (n_used_ - n_owned_ > 0) {
+    includes_ghosted_ = true;
+  } else {
+    includes_ghosted_ = false;
+  }
+
   // create the graphs
   graph_ = Teuchos::rcp(new Epetra_CrsGraph(Copy, *row_map_, *col_map_,
 					    max_nnz_per_row, false));
-  offproc_graph_ = Teuchos::rcp(new Epetra_CrsGraph(Copy, *offproc_row_map_,
-			*col_map_, max_nnz_per_row, false));
 
-  // create the exporter from offproc to onproc
-  exporter_ = Teuchos::rcp(new Epetra_Export(*offproc_row_map_, *row_map_));
+  // potentially create the offproc graphs
+  if (includes_ghosted_) {
+    std::vector<int> offproc_gids(n_used_ - n_owned_);
+    for (int i=n_owned_; i!=n_used_; ++i)
+      offproc_gids[i-n_owned_] = ghosted_row_map_->GID(i);
+    offproc_row_map_ = Teuchos::rcp(new Epetra_Map(-1, n_used_-n_owned_,
+			   &offproc_gids[0], 0, ghosted_row_map_->Comm()));
+  
+    offproc_graph_ = Teuchos::rcp(new Epetra_CrsGraph(Copy, *offproc_row_map_,
+  			*col_map_, max_nnz_per_row, false));
+    // create the exporter from offproc to onproc
+    exporter_ = Teuchos::rcp(new Epetra_Export(*offproc_row_map_, *row_map_));
+  }
+
+
 }
 
 GraphFE::GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
@@ -69,22 +80,31 @@ GraphFE::GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
   // create the offproc maps
   n_used_ = ghosted_row_map_->NumMyElements();
   n_owned_ = row_map_->NumMyElements();
-  
-  std::vector<int> offproc_gids(n_used_ - n_owned_);
-  for (int i=n_owned_; i!=n_used_; ++i)
-    offproc_gids[i-n_owned_] = ghosted_row_map_->GID(i);
-  offproc_row_map_ = Teuchos::rcp(new Epetra_Map(-1, n_used_-n_owned_,
-			&offproc_gids[0], 0, ghosted_row_map_->Comm()));
-  
+
+
+  if (n_used_ - n_owned_ > 0) {
+    includes_ghosted_ = true;
+  } else {
+    includes_ghosted_ = false;
+  }
+
   // create the graphs
   graph_ = Teuchos::rcp(new Epetra_CrsGraph(Copy, *row_map_, *col_map_,
 					    max_nnz_per_row, false));
-  offproc_graph_ = Teuchos::rcp(new Epetra_CrsGraph(Copy, *offproc_row_map_,
-			*col_map_, max_nnz_per_row+n_owned_, false));
 
-  // create the exporter from offproc to onproc
-  exporter_ = Teuchos::rcp(new Epetra_Export(*offproc_row_map_, *row_map_));
+  if (includes_ghosted_) {
+    std::vector<int> offproc_gids(n_used_ - n_owned_);
+    for (int i=n_owned_; i!=n_used_; ++i)
+      offproc_gids[i-n_owned_] = ghosted_row_map_->GID(i);
+    offproc_row_map_ = Teuchos::rcp(new Epetra_Map(-1, n_used_-n_owned_,
+    			   &offproc_gids[0], 0, ghosted_row_map_->Comm()));
+  
+    offproc_graph_ = Teuchos::rcp(new Epetra_CrsGraph(Copy, *offproc_row_map_,
+			      *col_map_, max_nnz_per_row+n_owned_, false));
 
+    // create the exporter from offproc to onproc
+    exporter_ = Teuchos::rcp(new Epetra_Export(*offproc_row_map_, *row_map_));
+  }
 }
 
 
@@ -151,18 +171,21 @@ GraphFE::InsertGlobalIndices(int row_count, int *row_inds, int count, int *indic
 int
 GraphFE::FillComplete(const Teuchos::RCP<const Epetra_Map>& domain_map,
 		      const Teuchos::RCP<const Epetra_Map>& range_map) {
+  int ierr = 0;
   domain_map_ = domain_map;
   range_map_ = range_map;
 
-  // fill complete the offproc graph
-  int ierr = offproc_graph_->FillComplete(*offproc_row_map_, *range_map_);
-  EPETRA_CHK_ERR(ierr);
-  ASSERT(!ierr);
+  if (includes_ghosted_) {
+    // fill complete the offproc graph
+    ierr = offproc_graph_->FillComplete(*offproc_row_map_, *range_map_);
+    EPETRA_CHK_ERR(ierr);
+    ASSERT(!ierr);
 
-  // scatter offproc into onproc
-  ierr |= graph_->Export(*offproc_graph_, *exporter_, Insert);
-  EPETRA_CHK_ERR(ierr);
-  ASSERT(!ierr);
+    // scatter offproc into onproc
+    ierr |= graph_->Export(*offproc_graph_, *exporter_, Insert);
+    EPETRA_CHK_ERR(ierr);
+    ASSERT(!ierr);
+  }
 
   // fillcomplete the final graph
   ierr |= graph_->FillComplete(*domain_map_, *range_map_);

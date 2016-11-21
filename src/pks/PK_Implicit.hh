@@ -13,8 +13,8 @@
   weak and strongly coupled hierarchies.
 */
 
-#ifndef PK_IMPLICIT_FN_HH_
-#define PK_IMPLICIT_FN_HH_
+#ifndef PK_IMPLICIT_HH_
+#define PK_IMPLICIT_HH_
 
 #include "Teuchos_RCP.hpp"
 

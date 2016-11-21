@@ -104,7 +104,7 @@ void OperatorElectromagneticsMHD::ModifyMatrices(
 
     for (int n = 0; n < nedges; ++n) {
       int e = edges[n];
-      rhs_e[0][e] += v3(n) / 2;
+      rhs_e[0][e] += v3(n);
     }
   }
 }

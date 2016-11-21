@@ -41,6 +41,9 @@ class GraphFE {
 	  const Teuchos::RCP<const Epetra_Map>& col_map,
 	  const int* max_nnz_per_row);
 
+  // does this graph include off-process entries?
+  bool includes_offproc() const { return includes_ghosted_; }
+  
   // accessors to maps
   const Epetra_Map& DomainMap() const {
     return *domain_map_; }
@@ -96,6 +99,7 @@ class GraphFE {
 
   int n_owned_;
   int n_used_;
+  bool includes_ghosted_;
   
 };
 
