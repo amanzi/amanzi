@@ -459,11 +459,10 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
   VV_CheckInfluxBC();
 
-
   // source term initialization: so far only "concentration" is available.
   if (tp_list_->isSublist("source terms")) {
     PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
-    PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
+    if (domain_name_ == "domain")  PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
 
     Teuchos::ParameterList& clist = tp_list_->sublist("source terms").sublist("concentration");
     for (Teuchos::ParameterList::ConstIterator it = clist.begin(); it != clist.end(); ++it) {
@@ -1177,9 +1176,9 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     for (int i = 0; i < num_advect; i++){
       tcc_next[i][c] = tcc_prev[i][c] * vol_phi_ws;
     
-      if ((domain_name_ == "surface")&&(c>40)){
-        std::cout<<c<<" tcc_next "<<tcc_next[i][c] <<" tcc_prev " <<tcc_prev[i][c]<<" ws "<<(*ws_start)[0][c]<<"\n";
-      }
+      // if ((domain_name_ == "surface")&&(c>40)){
+      //   std::cout<<c<<" tcc_next "<<tcc_next[i][c] <<" tcc_prev " <<tcc_prev[i][c]<<" ws "<<(*ws_start)[0][c]<<"\n";
+      // }
     }
   }
 

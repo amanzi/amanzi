@@ -60,6 +60,8 @@ namespace Amanzi {
 
     Key vol_darcy_key_, surf_vol_darcy_key_;
     Key surface_name_, subsurface_name_;
+    Key mass_darcy_key, surf_mass_darcy_key;
+    Key mol_density_key, surf_mol_density_key;
     
     
     // factory registration

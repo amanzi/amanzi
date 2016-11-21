@@ -91,7 +91,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
 
-  virtual std::string name() { return passwd_; }
+  virtual std::string name() { return name_; }
 
   // main transport members
   // -- calculation of a stable time step needs saturations and darcy flux

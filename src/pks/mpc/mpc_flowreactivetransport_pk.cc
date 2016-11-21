@@ -65,10 +65,14 @@ void FlowReactiveTransport_PK_ATS::CommitStep(double t_old, double t_new, const 
 bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit) {
   bool fail = false;
 
-
   // advance the master PK using the full step size
+  
   fail = sub_pks_[master_]->AdvanceStep(t_old, t_new, reinit);
+  fail |= !sub_pks_[master_]->ValidStep();
+  
   if (fail) return fail;
+
+  //return fail;
 
   master_dt_ = t_new - t_old;
 
@@ -87,6 +91,7 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
 
   double dt_next = slave_dt_;
   double dt_done = 0.;
+
   while (!done) {
     // do not overstep
     if (t_old + dt_done + dt_next > t_new) {
@@ -114,7 +119,7 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
     done = (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) || // finished the step
         (dt_next  < min_dt_); // failed
   }
-  
+
 
   if (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) {
     // done, success
