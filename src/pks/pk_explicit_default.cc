@@ -11,16 +11,52 @@ Explicit.
 ------------------------------------------------------------------------- */
 
 #include "Teuchos_TimeMonitor.hpp"
-#include "pk_explicit_base.hh"
+#include "PK.hh"
+#include "State.hh"
+#include "boost/algorithm/string.hpp"
+#include "pk_explicit_default.hh"
 
 namespace Amanzi {
+
+  PK_Explicit_Default::PK_Explicit_Default(Teuchos::ParameterList& pk_tree,
+                                           const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                                           const Teuchos::RCP<State>& S,
+                                           const Teuchos::RCP<TreeVector>& solution):
+    PK(pk_tree, glist, S, solution){
+
+  // name the PK
+  name_ = pk_tree.name();
+  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->");
+  if (res.end() - name_.end() != 0) boost::algorithm::erase_head(name_, res.end() - name_.begin());
+
+
+  Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(glist, "PKs");
+
+  if (pks_list->isSublist(name_)) {
+    plist_ = Teuchos::sublist(pks_list, name_); 
+  }else{
+    std::stringstream messagestream;
+    messagestream << "There is no sublist for PK "<<name_<<"in PKs list\n";
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+
+  // THIS MAY BE CALLED MORE THAN ONCE!
+  //name_ = plist_->get<std::string>("PK name");
+
+  // set up the VerboseObject
+  vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));
+
+
+  }
+
 
 
 // -----------------------------------------------------------------------------
 // Setup
 // -----------------------------------------------------------------------------
-void PKExplicitBase::setup(const Teuchos::Ptr<State>& S) {
-  PKDefaultBase::setup(S);
+void PK_Explicit_Default::Setup(const Teuchos::Ptr<State>& S) {
+
 
   // initial timestep
   dt_ = plist_->get<double>("initial time step", 1.);
@@ -31,7 +67,7 @@ void PKExplicitBase::setup(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 // Initialization of timestepper.
 // -----------------------------------------------------------------------------
-void PKExplicitBase::initialize(const Teuchos::Ptr<State>& S) {
+void PK_Explicit_Default::Initialize(const Teuchos::Ptr<State>& S) {
   // set up the timestepping algorithm
   if (!plist_->get<bool>("strongly coupled PK", false)) {
     // -- instantiate time stepper
@@ -48,13 +84,18 @@ void PKExplicitBase::initialize(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 // Initialization of timestepper.
 // -----------------------------------------------------------------------------
-double PKExplicitBase::get_dt() { return dt_; }
+double PK_Explicit_Default::get_dt() { return dt_; }
+
+void PK_Explicit_Default::set_dt(double dt) { dt_ = dt; }
 
 
 // -----------------------------------------------------------------------------
 // Advance from state S to state S_next at time S.time + dt.
 // -----------------------------------------------------------------------------
-bool PKExplicitBase::advance(double dt) {
+bool PK_Explicit_Default::AdvanceStep(double t_old, double t_new, bool reinit) {
+
+  double dt = t_new - t_old;  
+  
   Teuchos::OSTab out = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "----------------------------------------------------------------" << std::endl
@@ -62,8 +103,8 @@ bool PKExplicitBase::advance(double dt) {
                << " t1 = " << S_next_->time() << " h = " << dt << std::endl
                << "----------------------------------------------------------------" << std::endl;
 
-  state_to_solution(S_inter_, *solution_old_);
-  state_to_solution(S_next_, *solution_);
+  State_to_Solution(S_inter_, *solution_old_);
+  State_to_Solution(S_next_, *solution_);
 
   // take a timestep
   if (true) { // this is here simply to create a context for timer,

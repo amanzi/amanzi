@@ -22,20 +22,21 @@ namespace Deform {
 
 using namespace Amanzi::AmanziMesh;
 
-  PrescribedDeformation::PrescribedDeformation(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        Teuchos::ParameterList& FElist,
-        const Teuchos::RCP<TreeVector>& solution):
-    PKDefaultBase(S, plist, FElist, solution),
-    PKPhysicalBase(S, plist, FElist, solution),
-    prescribed_deformation_case_(1)
+
+PrescribedDeformation::PrescribedDeformation(Teuchos::ParameterList& pk_tree,
+                         const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                         const Teuchos::RCP<State>& S,
+                         const Teuchos::RCP<TreeVector>& solution):
+  PK_Physical_Default(pk_tree, glist, S, solution),
+  prescribed_deformation_case_(1)
 {
   prescribed_deformation_case_ = plist_->get<int>("deformation function",1);
   poro_key_ = plist_->get<std::string>("porosity key","porosity");
 }
 
 // -- Setup data
-void PrescribedDeformation::setup(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBase::setup(S);
+void PrescribedDeformation::Setup(const Teuchos::Ptr<State>& S) {
+  PK_Physical_Default::Setup(S);
 
   std::vector<AmanziMesh::Entity_kind> location(1);
   location[0] = AmanziMesh::CELL;
@@ -72,8 +73,8 @@ void PrescribedDeformation::setup(const Teuchos::Ptr<State>& S) {
 }
 
 // -- Initialize owned (dependent) variables.
-void PrescribedDeformation::initialize(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBase::initialize(S);
+void PrescribedDeformation::Initialize(const Teuchos::Ptr<State>& S) {
+  PK_Physical_Default::Initialize(S);
 
   // the PK's initial condition sets the initial porosity.  From this, we
   // calculate the actual initial condition, which is the rock volume.
@@ -132,7 +133,10 @@ void PrescribedDeformation::initialize(const Teuchos::Ptr<State>& S) {
   }
 }
 
-bool PrescribedDeformation::advance(double dt) {
+bool PrescribedDeformation::AdvanceStep(double t_old, double t_new, bool reinit) {
+
+  double dt = t_new - t_old;
+ 
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "Advancing deformation PK from time " << S_->time() << " to "

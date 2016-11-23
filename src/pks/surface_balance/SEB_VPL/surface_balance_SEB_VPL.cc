@@ -40,19 +40,15 @@
 namespace Amanzi {
 namespace SurfaceBalance {
 
+SurfaceBalanceSEBVPL::SurfaceBalanceSEBVPL(Teuchos::ParameterList& pk_tree,
+                                     const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                                     const Teuchos::RCP<State>& S,
+                                     const Teuchos::RCP<TreeVector>& solution):
+  PK(pk_tree, global_list,  S, solution),
+  PK_Physical_Default(pk_tree, global_list,  S, solution)
+ {
 
-  SurfaceBalanceSEBVPL::SurfaceBalanceSEBVPL(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        Teuchos::ParameterList& FElist,
-        const Teuchos::RCP<TreeVector>& solution)  :
-    PKPhysicalBase(S, plist,FElist,solution),
-    PKDefaultBase(S, plist,FElist,solution) {
-
-  // set up additional primary variables
-  // -- surface energy source
-  // Teuchos::ParameterList& esource_sublist =
-  //     FElist.sublist("surface_conducted_energy_source");
-  // esource_sublist.set("evaluator name", "surface_conducted_energy_source");
-  // esource_sublist.set("field evaluator type", "primary variable");
+   Teuchos::ParameterList& FElist = S->FEList();
 
   // -- surface mass source
   Teuchos::ParameterList& wsource_sublist =
@@ -89,8 +85,8 @@ namespace SurfaceBalance {
 }
 
 
-void SurfaceBalanceSEBVPL::setup(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBase::setup(S);
+void SurfaceBalanceSEBVPL::Setup(const Teuchos::Ptr<State>& S) {
+  PK_Physical_Default::Setup(S);
   subsurf_mesh_ = S->GetMesh(); // needed for VPL, which is treated as subsurface source
 
   // requirements: primary variable
@@ -210,9 +206,9 @@ void SurfaceBalanceSEBVPL::setup(const Teuchos::Ptr<State>& S) {
 };
 
 // initialize ICs
-void SurfaceBalanceSEBVPL::initialize(const Teuchos::Ptr<State>& S) {
+void SurfaceBalanceSEBVPL::Initialize(const Teuchos::Ptr<State>& S) {
   // this call specifies snow depth
-  PKPhysicalBase::initialize(S);
+  PK_Physical_Default::Initialize(S);
 
   // initialize snow density
   S->GetFieldData("snow_density",name_)->PutScalar(100.);
@@ -244,7 +240,10 @@ void SurfaceBalanceSEBVPL::initialize(const Teuchos::Ptr<State>& S) {
 };
 
 
-bool SurfaceBalanceSEBVPL::advance(double dt) {
+  bool SurfaceBalanceSEBVPL::AdvanceStep(double t_old, double t_new, bool reinit) {
+
+    double dt = t_new - t_old;
+
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "----------------------------------------------------------------" << std::endl

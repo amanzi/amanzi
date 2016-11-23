@@ -25,11 +25,13 @@ namespace Energy {
 // Constructor
 // -------------------------------------------------------------
 
-  TwoPhase::TwoPhase(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                   Teuchos::ParameterList& FElist,
+TwoPhase::TwoPhase(Teuchos::ParameterList& FElist,
+                   const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                   const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(S, plist, FElist, solution),
-    EnergyBase(S, plist, FElist, solution) {}
+    PK(FElist, plist, S, solution),
+    EnergyBase(FElist, plist, S, solution) {}
+
 
 // -------------------------------------------------------------
 // Create the physical evaluators for energy, enthalpy, thermal
@@ -61,9 +63,9 @@ void TwoPhase::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // -------------------------------------------------------------
 // Initialize the needed models to plug in enthalpy.
 // -------------------------------------------------------------
-void TwoPhase::initialize(const Teuchos::Ptr<State>& S) {
+void TwoPhase::Initialize(const Teuchos::Ptr<State>& S) {
   // Call the base class's initialize.
-  EnergyBase::initialize(S);
+  EnergyBase::Initialize(S);
 
   // For the boundary conditions, we currently hack in the enthalpy to
   // the boundary faces to correctly advect in a Dirichlet temperature

@@ -45,12 +45,12 @@ namespace Flow {
 #define DEBUG_FLAG 1
 #define DEBUG_RES_FLAG 0
 
-
-  OverlandPressureFlow::OverlandPressureFlow(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        Teuchos::ParameterList& FElist,
-        const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(S, plist, FElist, solution),
-    PKPhysicalBDFBase(S, plist, FElist, solution),
+OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
+                                           const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                                           const Teuchos::RCP<State>& S,                        
+                                           const Teuchos::RCP<TreeVector>& solution) :   
+    PK_PhysicalBDF_Default(pk_tree, plist, S, solution),
+    PK(pk_tree, plist, S, solution),
     standalone_mode_(false),
     is_source_term_(false),
     coupled_to_subsurface_via_head_(false),
@@ -63,10 +63,12 @@ namespace Flow {
 {
 
   if(!plist_->isParameter("conserved quanity suffix"))
-  plist_->set("conserved quantity suffix", "water_content");
+    plist_->set("conserved quantity suffix", "water_content");
 
   // clone the ponded_depth parameter list for ponded_depth bar
+  Teuchos::ParameterList& FElist = S->FEList();
   Teuchos::ParameterList& pd_list = FElist.sublist(getKey(domain_,"ponded_depth"));
+
   Teuchos::ParameterList pdbar_list(pd_list);
   pdbar_list.set("ponded depth bar", true);
   pdbar_list.set("height key", getKey(domain_,"ponded_depth_bar"));
@@ -82,28 +84,30 @@ namespace Flow {
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------
-void OverlandPressureFlow::setup(const Teuchos::Ptr<State>& S) {
+void OverlandPressureFlow::Setup(const Teuchos::Ptr<State>& S) {
   // set up the meshes
 
   if (S->HasMesh("surface_star") && domain_=="surface_star")
-
+    standalone_mode_ = false;
   if(domain_.substr(0,6) =="column")
     standalone_mode_ = false;
   else if (!S->HasMesh("surface") && standalone_mode_==false) {
     Teuchos::RCP<const AmanziMesh::Mesh> domain = S->GetMesh();
     //   ASSERT(domain->space_dimension() == 2);
-
-  standalone_mode_ = true;
-  S->AliasMesh("domain","surface");
-
+    
+    standalone_mode_ = true;
+    S->AliasMesh("domain","surface");
   }
   
   // -- water content
+
   S->RequireField(getKey(domain_,"water_content"))->SetMesh(mesh_)->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(getKey(domain_,"water_content"));
   
-  PKPhysicalBDFBase::setup(S);
+ 
+  PK_PhysicalBDF_Default::Setup(S);
+
   SetupOverlandFlow_(S);
   SetupPhysicalEvaluators_(S);
 }
@@ -261,10 +265,12 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   // primary variable
   S->RequireField(key_, name_)->Update(matrix_->RangeMap())->SetGhosted();
+  S->RequireField(getKey(domain_,"pressure"))->Update(matrix_->RangeMap())->SetGhosted();
 
   // fluxes
   S->RequireField(getKey(domain_,"mass_flux"), name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("face", AmanziMesh::FACE, 1);
+
   S->RequireField(getKey(domain_,"velocity"), name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("cell", AmanziMesh::CELL, 3);
 
@@ -339,8 +345,8 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
 
   // -- water content bar (can be negative)
   S->RequireField(getKey(domain_,"water_content_bar"))->SetMesh(mesh_)->SetGhosted()
-
         ->AddComponent("cell", AmanziMesh::CELL, 1);
+
   Teuchos::ParameterList& wc_plist =
       plist_->sublist("overland water content evaluator");
   Teuchos::ParameterList wcbar_plist(wc_plist);
@@ -384,7 +390,7 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
 // -------------------------------------------------------------
 // Initialize PK
 // -------------------------------------------------------------
-void OverlandPressureFlow::initialize(const Teuchos::Ptr<State>& S) {
+void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
 #if DEBUG_RES_FLAG
   for (int i=1; i!=23; ++i) {
     std::stringstream namestream;
@@ -415,7 +421,7 @@ void OverlandPressureFlow::initialize(const Teuchos::Ptr<State>& S) {
   }
 
   // Initialize BDF stuff and physical domain stuff.
-  PKPhysicalBDFBase::initialize(S);
+  PK_PhysicalBDF_Default::Initialize(S);
 
   if (!S->GetField(key_)->initialized()) {
     // -- set the cell initial condition if it is taken from the subsurface
@@ -508,7 +514,6 @@ void OverlandPressureFlow::initialize(const Teuchos::Ptr<State>& S) {
  };
 
 
-
 // -----------------------------------------------------------------------------
 // Update any secondary (dependent) variables given a solution.
 //
@@ -516,14 +521,16 @@ void OverlandPressureFlow::initialize(const Teuchos::Ptr<State>& S) {
 //   secondary variables have been updated to be consistent with the new
 //   solution.
 // -----------------------------------------------------------------------------
-void OverlandPressureFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
+void OverlandPressureFlow::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
   niter_ = 0;
+
+  double dt = t_new - t_old;
 
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Commiting state." << std::endl;
 
-  PKPhysicalBDFBase::commit_state(dt, S);
+  PK_PhysicalBDF_Default::CommitStep(t_old, t_new, S);
 
   // update boundary conditions
   bc_head_->Compute(S->time());
@@ -556,13 +563,32 @@ void OverlandPressureFlow::commit_state(double dt, const Teuchos::RCP<State>& S)
 
   matrix_diff_->UpdateFlux(*potential, *flux);
 
+  // const Epetra_MultiVector& nrho_l = *S->GetFieldData("surface-molar_density_liquid")->ViewComponent("cell");
+  // const Epetra_MultiVector& mass_flux_v = *mass_flux->ViewComponent("face");
+  // const Epetra_MultiVector& mass_flux_dir = *S->GetFieldData("surface-mass_flux_direction")->ViewComponent("face");;
+  // Epetra_MultiVector& flux_v =  *S->GetFieldData("surface-flux", name_)->ViewComponent("face");
+
+  // AmanziMesh::Entity_ID_List cells;
+  // int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  // for (int f=0; f!=nfaces_owned; ++f) {
+  //   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  //   if (cells.size() == 1) {
+  //     int c = cells[0];      
+  //     flux_v[0][f] = mass_flux_v[0][f]/nrho_l[0][c];
+  //   }
+  //   else{
+  //     double nrho_l_avr=0.5*(nrho_l[0][ cells[0] ] + nrho_l[0][ cells[1] ]);
+  //     flux_v[0][f] = mass_flux_v[0][f] / nrho_l_avr; 
+  //   }
+  // }
+
 };
 
 
 // -----------------------------------------------------------------------------
 // Update diagnostics -- used prior to vis.
 // -----------------------------------------------------------------------------
-void OverlandPressureFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {
+void OverlandPressureFlow::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Calculating diagnostic variables." << std::endl;
@@ -861,10 +887,10 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
 
   // Critical depth boundary condition
   if (bc_critical_depth_->size() > 0) {
-    S->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S.ptr(), name_);
+    S->GetFieldEvaluator(getKey(domain_,"ponded_depth"))->HasFieldChanged(S.ptr(), name_);
     
-    const Epetra_MultiVector& h_c = *S->GetFieldData("ponded_depth")->ViewComponent("cell");
-    const Epetra_MultiVector& nliq_c = *S->GetFieldData("surface-molar_density_liquid")
+    const Epetra_MultiVector& h_c = *S->GetFieldData(getKey(domain_,"ponded_depth"))->ViewComponent("cell");
+    const Epetra_MultiVector& nliq_c = *S->GetFieldData(getKey(domain_,"molar_density_liquid"))
     ->ViewComponent("cell");
     double gz = -(*S->GetConstantVectorData("gravity"))[2];
     

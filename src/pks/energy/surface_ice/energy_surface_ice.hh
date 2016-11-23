@@ -12,7 +12,7 @@ Process kernel for energy equation for Richard's flow.
 #ifndef PKS_ENERGY_SURFACE_ICE_HH_
 #define PKS_ENERGY_SURFACE_ICE_HH_
 
-#include "pk_factory.hh"
+#include "PK_Factory.hh"
 #include "energy_base.hh"
 
 namespace Amanzi {
@@ -28,15 +28,16 @@ class EnergySurfaceIce : public EnergyBase {
 
 public:
 
-  EnergySurfaceIce(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                   Teuchos::ParameterList& FElist,
+  EnergySurfaceIce(Teuchos::ParameterList& FElist,
+                   const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                   const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& solution);
 
   // -- set up data structures
-  virtual void setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // -- Initialize owned (dependent) variables.
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
 protected:
   // -- setup the evaluators

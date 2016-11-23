@@ -42,7 +42,7 @@ PassiveTracer::PassiveTracer(Teuchos::ParameterList& transport_plist,
 };
 
 // initialize ICs
-void PassiveTracer::initialize(const Teuchos::RCP<State>& S) {
+void PassiveTracer::Initialize(const Teuchos::RCP<State>& S) {
   process_parameter_list(S);
 
   // constant initial concentration

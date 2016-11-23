@@ -21,7 +21,7 @@
 #include "CompositeVectorFunction.hh"
 #include "Function.hh"
 
-#include "pk_factory.hh"
+#include "pk_factory_ats.hh"
 #include "pk_default_base.hh"
 #include "pk_physical_base.hh"
 #include "MatrixVolumetricDeformation.hh"
@@ -103,7 +103,7 @@ class VolumetricDeformation : public PKPhysicalBase {
   Teuchos::RCP<Operators::MatrixVolumetricDeformation> def_matrix_;
 
   // factory registration
-  static RegisteredPKFactory<VolumetricDeformation> reg_;
+  static RegisteredPKFactory_ATS<VolumetricDeformation> reg_;
 };
 
 } // namespace

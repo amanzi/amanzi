@@ -1,7 +1,8 @@
 #ifndef WEAK_MPC_SEMI_COUPLED_HH_
 #define WEAK_MPC_SEMI_COUPLED_HH_
 
-#include "pk_physical_bdf_base.hh"
+//#include "pk_physical_bdf_base.hh"
+#include "pk_physical_bdf_default.hh"
 //#include "weak_mpc.hh"
 #include "mpc.hh"
 #include "PK.hh"
@@ -10,29 +11,33 @@ namespace Amanzi {
   
 class WeakMPCSemiCoupled : public MPC<PK> {
 public:
-  WeakMPCSemiCoupled(Teuchos::Ptr<State> S,const Teuchos::RCP<Teuchos::ParameterList>& plist,
-		     Teuchos::ParameterList& FElist,
-		     const Teuchos::RCP<TreeVector>& soln) :
-    PKDefaultBase(S, plist, FElist, soln),MPC<PK>(),FElist_loc(FElist){
+  
+   WeakMPCSemiCoupled(Teuchos::ParameterList& FElist,
+          const Teuchos::RCP<Teuchos::ParameterList>& plist,
+          const Teuchos::RCP<State>& S,
+          const Teuchos::RCP<TreeVector>& solution) :
+    PK(FElist, plist, S, solution),
+    MPC<PK>(FElist, plist, S, solution),FElist_loc(FElist){
     
     plist_ = plist;
-    S_loc = S;
+    S_loc = S.ptr();
     generalize_inputspec();
-    MPC<PK>::init_(S,plist_,FElist_loc, soln);
+    //    MPC<PK>::init_(S,plist_,FElist_loc, soln);
     
   };
 
 
   virtual double get_dt();
-  virtual bool valid_step();
-  virtual bool advance (double dt);
-  virtual void setup(const Teuchos::Ptr<State>& S);
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void set_dt(double dt);
+  // virtual bool valid_step();
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit); //virtual bool advance (double dt);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   void generalize_inputspec();
-  bool CoupledSurfSubsurf3D(double dt);
+  bool CoupledSurfSubsurf3D(double t_old, double t_new, bool reinit);
 
-  bool CoupledSurfSubsurfColumns(double dt);
+  bool CoupledSurfSubsurfColumns(double t_old, double t_new, bool reinit);
   
 
 private :

@@ -31,7 +31,7 @@ with freezing.
 namespace Amanzi {
 
 // -- Initialize owned (dependent) variables.
-void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
+void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
   // set up keys
 
   Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
@@ -60,17 +60,18 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
     Errors::Message message("MPC Incorrect input: parameter \"supress Jacobian terms: div hq / dp\" changed to \"supress Jacobian terms: div hq / dp,T\" for clarity.");
     Exceptions::amanzi_throw(message);
   }
-  if (!plist_->get<bool>("supress Jacobian terms: div hq / dp,T", false)) {
-    if (plist_->sublist("PKs").sublist(pk_order[1]).isParameter("supress advective terms in preconditioner")
-        && !plist_->sublist("PKs").sublist(pk_order[1]).get("supress advective terms in preconditioner",false)) {
-       Errors::Message msg("MPC Incorrect input: options \"supress Jacobian terms: div hq / dp,T\" and subsurface energy PK option \"supress advective terms in preconditioner\" should not both be false, as these include some of the same Jacobian information.\n Recommended: Enable/suppress the latter.");
 
-       Exceptions::amanzi_throw(msg);
+  if (!plist_->get<bool>("supress Jacobian terms: div hq / dp,T", false)) {
+    if (pks_list_->sublist(pk_order[1]).isParameter("supress advective terms in preconditioner")
+        && !pks_list_->sublist(pk_order[1]).get("supress advective terms in preconditioner",false)) {
+      Errors::Message msg("MPC Incorrect input: options \"supress Jacobian terms: div hq / dp,T\" and subsurface energy PK option \"supress advective terms in preconditioner\" should not both be false, as these include some of the same Jacobian information.\n Recommended: Enable/suppress the latter.");
+
+      Exceptions::amanzi_throw(msg);
     }
   }
   
   // set up the sub-pks
-  StrongMPC<PKPhysicalBDFBase>::setup(S);
+  StrongMPC<PK_PhysicalBDF_Default>::Setup(S);
   mesh_ = S->GetMesh(domain_name_);
 
   // set up debugger
@@ -129,7 +130,7 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       if (!is_fv_) {
         Key dkrdT_key = getDerivKey(uw_kr_key_, temp_key_);
         S->RequireField(dkrdT_key, name_)
-            ->SetMesh(mesh_)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
+          ->SetMesh(mesh_)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
         S->GetField(dkrdT_key,name_)->set_io_vis(false);
         upwinding_dkrdT_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
                 getDerivKey(kr_key_, temp_key_),
@@ -137,7 +138,7 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       }
 
       // set up the operator
-      Teuchos::ParameterList divq_plist(plist_->sublist("PKs").sublist(pk_order[0]).sublist("Diffusion PC"));
+      Teuchos::ParameterList divq_plist(pks_list_->sublist(pk_order[0]).sublist("Diffusion PC"));
       if (is_fv_) divq_plist.set("Newton correction", "true Jacobian");
       else divq_plist.set("Newton correction", "approximate Jacobian");
       divq_plist.set("exclude primary terms", true);
@@ -162,7 +163,7 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
         Key uw_dKappa_dp_key = getDerivKey(uw_tc_key_, pres_key_);
         Key dKappa_dp_key = getDerivKey(tc_key_, pres_key_);
         S->RequireField(uw_dKappa_dp_key, name_)
-            ->SetMesh(mesh_)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
+          ->SetMesh(mesh_)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
         S->GetField(uw_dKappa_dp_key,name_)->set_io_vis(false);
 
         upwinding_dKappa_dp_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
@@ -173,7 +174,7 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       }
 
       // set up the operator
-      Teuchos::ParameterList ddivKgT_dp_plist(plist_->sublist("PKs").sublist(pk_order[1]).sublist("Diffusion PC"));
+      Teuchos::ParameterList ddivKgT_dp_plist(pks_list_->sublist(pk_order[1]).sublist("Diffusion PC"));
       if (is_fv_) ddivKgT_dp_plist.set("Newton correction", "true Jacobian");
       else ddivKgT_dp_plist.set("Newton correction", "approximate Jacobian");
 
@@ -192,7 +193,8 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
     // -- derivatives of advection term
     if (!plist_->get<bool>("supress Jacobian terms: div hq / dp,T", false)) {
       // derivative with respect to pressure
-      Teuchos::ParameterList divhq_dp_plist(plist_->sublist("PKs").sublist(pk_order[0]).sublist("Diffusion PC"));
+      Teuchos::ParameterList divhq_dp_plist(pks_list_->sublist(pk_order[0]).sublist("Diffusion PC"));
+
       if (is_fv_) divhq_dp_plist.set("Newton correction", "true Jacobian");
       else divhq_dp_plist.set("Newton correction", "approximate Jacobian");
 
@@ -205,8 +207,9 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
       }
 
       // derivative with respect to temperature
-      Teuchos::ParameterList divhq_dT_plist(plist_->sublist("PKs").sublist(pk_order[0]).sublist("Diffusion PC"));
+      Teuchos::ParameterList divhq_dT_plist(pks_list_->sublist(pk_order[0]).sublist("Diffusion PC"));
       divhq_dT_plist.set("exclude primary terms", true);
+
       if (is_fv_) divhq_dT_plist.set("Newton correction", "true Jacobian");
       else divhq_dT_plist.set("Newton correction", "approximate Jacobian");
 
@@ -234,7 +237,7 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
           ->SetComponent("face", AmanziMesh::FACE, 1);
       S->GetField(uw_hkr_key_,name_)->set_io_vis(false);
 
-      std::string method_name = plist_->sublist("PKs").sublist(pk_order[0])
+      std::string method_name = pks_list_->sublist(pk_order[0])
           .get<std::string>("relative permeability method", "upwind with gravity");
       if (method_name != "upwind with Darcy flux") {
         Errors::Message msg;
@@ -308,8 +311,8 @@ void MPCSubsurface::setup(const Teuchos::Ptr<State>& S) {
   }    
 }
 
-void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
-  StrongMPC<PKPhysicalBDFBase>::initialize(S);
+void MPCSubsurface::Initialize(const Teuchos::Ptr<State>& S) {
+  StrongMPC<PK_PhysicalBDF_Default>::Initialize(S);
   if (ewc_ != Teuchos::null) ewc_->initialize(S);
 
   // initialize offdiagonal operators
@@ -345,6 +348,7 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
 
     S->GetFieldData(uw_hkr_key_, name_)->PutScalar(1.);
     S->GetField(uw_hkr_key_, name_)->set_initialized();
+
     if (!is_fv_) {
       S->GetFieldData(getDerivKey(uw_hkr_key_, pres_key_), name_)->PutScalar(1.);
       S->GetField(getDerivKey(uw_hkr_key_, pres_key_), name_)->set_initialized();
@@ -370,12 +374,14 @@ void MPCSubsurface::initialize(const Teuchos::Ptr<State>& S) {
 void MPCSubsurface::set_states(const Teuchos::RCP<const State>& S,
         const Teuchos::RCP<State>& S_inter,
         const Teuchos::RCP<State>& S_next) {
-  StrongMPC<PKPhysicalBDFBase>::set_states(S,S_inter,S_next);
+  StrongMPC<PK_PhysicalBDF_Default>::set_states(S,S_inter,S_next);
   if (ewc_ != Teuchos::null) ewc_->set_states(S,S_inter,S_next);
 }
 
-void MPCSubsurface::commit_state(double dt, const Teuchos::RCP<State>& S) {
-  StrongMPC<PKPhysicalBDFBase>::commit_state(dt,S);
+void MPCSubsurface::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
+
+  double dt = t_new - t_old;
+  StrongMPC<PK_PhysicalBDF_Default>::CommitStep(t_old, t_new, S);
   if (ewc_ != Teuchos::null) ewc_->commit_state(dt,S);
 }
 
@@ -389,7 +395,7 @@ bool MPCSubsurface::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> up0
   }
 
   // potentially update faces
-  modified |= StrongMPC<PKPhysicalBDFBase>::ModifyPredictor(h, up0, up);
+  modified |= StrongMPC<PK_PhysicalBDF_Default>::ModifyPredictor(h, up0, up);
   return modified;
 }
 
@@ -479,6 +485,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
               up->SubVector(1)->Data().ptr());
       ddivKgT_dp_->ApplyBCs(false, true);
     }
+
 
     // -- d adv / dp   This one is a bit more complicated...
     if (ddivhq_dp_ != Teuchos::null) {
@@ -620,6 +627,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
   if (precon_type_ == PRECON_EWC) {
     ewc_->UpdatePreconditioner(t,up,h);
   }
+
 }
 
 

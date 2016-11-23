@@ -16,30 +16,32 @@
 namespace Amanzi {
 
 
-  MPCPermafrost4::MPCPermafrost4(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        Teuchos::ParameterList& FElist,
-        const Teuchos::RCP<TreeVector>& soln) :
-    PKDefaultBase(S, plist, FElist, soln),
-    MPCSubsurface(S, plist, FElist, soln) {}
+MPCPermafrost4::MPCPermafrost4(Teuchos::ParameterList& FElist,
+                 const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                 const Teuchos::RCP<State>& S,
+                 const Teuchos::RCP<TreeVector>& soln) :
+    PK(FElist, plist, S, soln),
+    MPCSubsurface(FElist, plist, S, soln) {}
+
 
 
 void
-MPCPermafrost4::setup(const Teuchos::Ptr<State>& S) {
+MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
   // tweak the sub-PK parameter lists
   Teuchos::Array<std::string> names = plist_->get<Teuchos::Array<std::string> >("PKs order");
 
   // -- turn on coupling
-  plist_->sublist("PKs").sublist(names[0]).set("coupled to surface via flux", true);
-  plist_->sublist("PKs").sublist(names[1]).set("coupled to surface via flux", true);
-  plist_->sublist("PKs").sublist(names[2]).set("coupled to subsurface via flux", true);
-  plist_->sublist("PKs").sublist(names[3]).set("coupled to subsurface via flux", true);
+  pks_list_->sublist(names[0]).set("coupled to surface via flux", true);
+  pks_list_->sublist(names[1]).set("coupled to surface via flux", true);
+  pks_list_->sublist(names[2]).set("coupled to subsurface via flux", true);
+  pks_list_->sublist(names[3]).set("coupled to subsurface via flux", true);
 
   // -- ensure local ops are suface ops
-  plist_->sublist("PKs").sublist(names[2]).sublist("Diffusion PC").set("surface operator", true);
-  plist_->sublist("PKs").sublist(names[2]).sublist("Accumulation PC").set("surface operator", true);
-  plist_->sublist("PKs").sublist(names[3]).sublist("Diffusion PC").set("surface operator", true);
-  plist_->sublist("PKs").sublist(names[3]).sublist("Advection PC").set("surface operator", true);
-  plist_->sublist("PKs").sublist(names[3]).sublist("Accumulation PC").set("surface operator", true);
+  pks_list_->sublist(names[2]).sublist("Diffusion PC").set("surface operator", true);
+  pks_list_->sublist(names[2]).sublist("Accumulation PC").set("surface operator", true);
+  pks_list_->sublist(names[3]).sublist("Diffusion PC").set("surface operator", true);
+  pks_list_->sublist(names[3]).sublist("Advection PC").set("surface operator", true);
+  pks_list_->sublist(names[3]).sublist("Accumulation PC").set("surface operator", true);
   
 
   domain_surf = plist_->sublist("PKs").sublist(names[2]).get<std::string>("domain name", "surface");
@@ -68,7 +70,7 @@ MPCPermafrost4::setup(const Teuchos::Ptr<State>& S) {
   
   // call the subsurface setup, which calls the sub-pk's setups and sets up
   // the subsurface block operator
-  MPCSubsurface::setup(S);
+  MPCSubsurface::Setup(S);
 
   // require the coupling fields, claim ownership
 
@@ -142,7 +144,7 @@ MPCPermafrost4::setup(const Teuchos::Ptr<State>& S) {
 }
 
 void
-MPCPermafrost4::initialize(const Teuchos::Ptr<State>& S) {
+MPCPermafrost4::Initialize(const Teuchos::Ptr<State>& S) {
   // initialize coupling terms
 
   S->GetFieldData(getKey(domain_ss,"surface_subsurface_flux"), name_)->PutScalar(0.);
@@ -151,7 +153,9 @@ MPCPermafrost4::initialize(const Teuchos::Ptr<State>& S) {
   S->GetField(getKey(domain_ss,"surface_subsurface_energy_flux"), name_)->set_initialized();
 
   // Initialize all sub PKs.
-  MPCSubsurface::initialize(S);
+
+  MPCSubsurface::Initialize(S);
+
   // ensure continuity of ICs... surface takes precedence.
   CopySurfaceToSubsurface(*S->GetFieldData(getKey(domain_surf,"pressure"), surf_flow_pk_->name()),
                           S->GetFieldData(getKey(domain_ss,"pressure"), domain_flow_pk_->name()).ptr());
@@ -174,7 +178,7 @@ void
 MPCPermafrost4::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   // propagate updated info into state
-  solution_to_state(*u_new, S_next_);
+  Solution_to_State(*u_new, S_next_);
 
   // Evaluate the surface flow residual
   surf_flow_pk_->Functional(t_old, t_new, u_old->SubVector(2),
@@ -497,7 +501,7 @@ MPCPermafrost4::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
 
   // apply PK modifications
   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult pk_modified =   
-      StrongMPC<PKPhysicalBDFBase>::ModifyCorrection(h,r,u,du);
+      StrongMPC<PK_PhysicalBDF_Default>::ModifyCorrection(h,r,u,du);
   if (pk_modified) {
     CopySurfaceToSubsurface(*du->SubVector(2)->Data(),
                             du->SubVector(0)->Data().ptr());

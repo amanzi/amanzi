@@ -8,27 +8,23 @@
 
    Default base with default implementations of methods for a physical PK.
    ------------------------------------------------------------------------- */
-#include "pk_physical_base.hh"
+#include "pk_physical_default.hh"
+
+
 
 namespace Amanzi {
 
+PK_Physical_Default::PK_Physical_Default(Teuchos::ParameterList& pk_tree,
+                                         const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                                         const Teuchos::RCP<State>& S,
+                                         const Teuchos::RCP<TreeVector>& solution) :
+    PK(pk_tree, glist, S, solution),
+    PK_Physical(pk_tree, glist, S, solution)
+{
+  domain_ = plist_->get<std::string>("domain name", std::string("domain"));
+  key_ = plist_->get<std::string>("primary variable");
 
-
- PKPhysicalBase::PKPhysicalBase(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        Teuchos::ParameterList& FElist,
-        const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(S, plist,FElist,solution) {
-
-
-  // domain -- default is the entire mesh, no prefix
-  if (domain_.empty()) {
-    domain_ = plist_->get<std::string>("domain name", std::string("domain"));
-  }
-  
-  if (key_.empty()) {
-    key_ = plist_->get<std::string>("primary variable");
-  }
-
+  Teuchos::ParameterList& FElist = S->FEList();
   // set up the primary variable solution, and its evaluator
   Teuchos::ParameterList& pv_sublist = FElist.sublist(key_);
   pv_sublist.set("evaluator name", key_);
@@ -36,14 +32,18 @@ namespace Amanzi {
 
   // primary variable max change
   max_valid_change_ = plist_->get<double>("max valid change", -1.0);
-
 }
 
 // -----------------------------------------------------------------------------
 // Construction of data.
 // -----------------------------------------------------------------------------
-void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
-  PKDefaultBase::setup(S);
+
+void PK_Physical_Default::Setup(const Teuchos::Ptr<State>& S) {
+  //PKDefaultBase::setup(S);
+
+  // set up the VerboseObject
+  vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));
+
   // get the mesh
   mesh_ = S->GetMesh(domain_);
 
@@ -61,7 +61,7 @@ void PKPhysicalBase::setup(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 // Transfer operators -- ONLY COPIES POINTERS
 // -----------------------------------------------------------------------------
-void PKPhysicalBase::state_to_solution(const Teuchos::RCP<State>& S,
+void PK_Physical_Default::State_to_Solution(const Teuchos::RCP<State>& S,
         TreeVector& solution) {
   solution.SetData(S->GetFieldData(key_, name_));
 };
@@ -70,7 +70,7 @@ void PKPhysicalBase::state_to_solution(const Teuchos::RCP<State>& S,
 // -----------------------------------------------------------------------------
 // Transfer operators -- ONLY COPIES POINTERS
 // -----------------------------------------------------------------------------
-void PKPhysicalBase::solution_to_state(TreeVector& solution,
+void PK_Physical_Default::Solution_to_State(TreeVector& solution,
         const Teuchos::RCP<State>& S) {
   ASSERT(solution.Data() == S->GetFieldData(key_));
   //  S->SetData(key_, name_, solution->Data());
@@ -78,14 +78,26 @@ void PKPhysicalBase::solution_to_state(TreeVector& solution,
 };
 
 
+void PK_Physical_Default::Solution_to_State(const TreeVector& solution,
+        const Teuchos::RCP<State>& S) {
+  ASSERT(solution.Data() == S->GetFieldData(key_));
+  //  TreeVector* soln_nc_ptr = const_cast<TreeVector*>(&solution);
+  //  Solution_to_State(*soln_nc_ptr, S);
+};
+
+
 // -----------------------------------------------------------------------------
 // Experimental approach -- we must pull out S_next_'s solution_evaluator_ to
 // stay current for ChangedSolution()
 // -----------------------------------------------------------------------------
-void PKPhysicalBase::set_states(const Teuchos::RCP<const State>& S,
+void PK_Physical_Default::set_states(const Teuchos::RCP<const State>& S,
         const Teuchos::RCP<State>& S_inter,
         const Teuchos::RCP<State>& S_next) {
-  PKDefaultBase::set_states(S, S_inter, S_next);
+  //  PKDefaultBase::set_states(S, S_inter, S_next);
+
+  S_ = S;
+  S_inter_ = S_inter;
+  S_next_ = S_next;
 
   // Get the FE and mark it as changed.
   // Note that this is necessary because we need this to point at the
@@ -105,7 +117,7 @@ void PKPhysicalBase::set_states(const Teuchos::RCP<const State>& S,
 // -----------------------------------------------------------------------------
 // Ensures the step size is smaller than max_valid_change
 // -----------------------------------------------------------------------------
-bool PKPhysicalBase::valid_step() {
+bool PK_Physical_Default::ValidStep() {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Validating time step." << std::endl;
@@ -131,7 +143,7 @@ bool PKPhysicalBase::valid_step() {
 // -----------------------------------------------------------------------------
 // Initialization of the PK data.
 // -----------------------------------------------------------------------------
-void PKPhysicalBase::initialize(const Teuchos::Ptr<State>& S) {
+void PK_Physical_Default::Initialize(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<Field> field = S->GetField(key_, name_);
 
   if (!field->initialized()) {
@@ -166,7 +178,7 @@ void PKPhysicalBase::initialize(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 // Interpolate pressure ICs on cells to ICs for lambda (faces).
 // -----------------------------------------------------------------------------
-void PKPhysicalBase::DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<CompositeVector>& cv) {
+void PK_Physical_Default::DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<CompositeVector>& cv) {
   cv->ScatterMasterToGhosted("cell");
   Teuchos::Ptr<const CompositeVector> cv_const(cv);
   const Epetra_MultiVector& cv_c = *cv_const->ViewComponent("cell",true);

@@ -21,15 +21,20 @@
 namespace Amanzi {
 namespace SurfaceBalance {
 
-
-SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::Ptr<State> S,
-           const Teuchos::RCP<Teuchos::ParameterList>& plist,
-           Teuchos::ParameterList& FElist,
-           const Teuchos::RCP<TreeVector>& solution) :
-    PKPhysicalBDFBase(S, plist, FElist, solution),
-    PKDefaultBase(S, plist, FElist, solution),
-    modify_predictor_advance_(false)
+SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::ParameterList& pk_tree,
+                                     const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                                     const Teuchos::RCP<State>& S,
+                                     const Teuchos::RCP<TreeVector>& solution):
+  PK(pk_tree, global_list,  S, solution),
+  PK_PhysicalBDF_Default(pk_tree, global_list,  S, solution),
+  modify_predictor_advance_(false)
 {
+
+  //Teuchos::ParameterList& FElist = global_list->sublist("state").sublist("field evaluators");
+  Teuchos::ParameterList& FElist = S->FEList();
+
+
+
   // set up additional primary variables -- this is very hacky...
   // -- surface energy source
 
@@ -91,9 +96,8 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::Ptr<State> S,
 // main methods
 // -- Setup data.
 void
-SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBDFBase::setup(S);
-
+SurfaceBalanceImplicit::Setup(const Teuchos::Ptr<State>& S) {
+  PK_PhysicalBDF_Default::Setup(S);
   subsurf_mesh_ = S->GetMesh(domain_ss); // needed for VPL, which is treated as subsurface source
 
   // requirements: primary variable
@@ -247,8 +251,8 @@ SurfaceBalanceImplicit::setup(const Teuchos::Ptr<State>& S) {
 
 // -- Initialize owned (dependent) variables.
 void
-SurfaceBalanceImplicit::initialize(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBDFBase::initialize(S);
+SurfaceBalanceImplicit::Initialize(const Teuchos::Ptr<State>& S) {
+  PK_PhysicalBDF_Default::Initialize(S);
 
   SEBPhysics::SEB seb;
 

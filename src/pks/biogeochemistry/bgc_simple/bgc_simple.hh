@@ -20,8 +20,8 @@
 #include "VerboseObject.hh"
 #include "TreeVector.hh"
 
-#include "pk_factory.hh"
-#include "pk_physical_base.hh"
+#include "PK_Factory.hh"
+#include "pk_physical_default.hh"
 
 #include "SoilCarbonParameters.hh"
 #include "PFT.hh"
@@ -30,34 +30,41 @@
 namespace Amanzi {
 namespace BGC {
 
-class BGCSimple : public PKPhysicalBase {
+class BGCSimple : public PK_Physical_Default {
 
  public:
 
-  BGCSimple(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
-            Teuchos::ParameterList& FElist,
+  BGCSimple(Teuchos::ParameterList& pk_tree,
+            const Teuchos::RCP<Teuchos::ParameterList>& glist,
+            const Teuchos::RCP<State>& S,
+
             const Teuchos::RCP<TreeVector>& solution);
 
   // is a PK
   // -- Setup data
-  virtual void setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // -- Initialize owned (dependent) variables.
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   // -- provide a timestep size
   virtual double get_dt() {
     return dt_;
   }
+  virtual void set_dt(double dt) {
+    dt_ = dt;
+  }
 
   // -- Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
 
   // -- Update diagnostics for vis.
-  virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {}
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {}
 
   // -- advance the model
-  virtual bool advance(double dt);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit);
+
+  virtual std::string name(){return "BGC simple";};
 
  protected:
   void FieldToColumn_(AmanziMesh::Entity_ID col, const Epetra_Vector& vec,

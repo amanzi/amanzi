@@ -26,7 +26,7 @@
 #include "BoundaryFunction.hh"
 
 #include "PK.hh"
-#include "pk_factory.hh"
+#include "PK_Factory.hh"
 
 #include "permafrost.hh"
 
@@ -37,12 +37,12 @@ class Interfrost : public Permafrost {
 
 public:
   // Constructors.
-
-  Interfrost(Teuchos::Ptr<State>& S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
-             Teuchos::ParameterList& FElist,
+  Interfrost(Teuchos::ParameterList& FElist,
+             const Teuchos::RCP<Teuchos::ParameterList>& plist,
+             const Teuchos::RCP<State>& S,
              const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(S, plist, FElist, solution),
-    Permafrost(S, plist, FElist, solution) {}
+    PK(FElist, plist, S, solution),
+    Permafrost(FElist, plist, S, solution) {}
 
   // Virtual destructor
   virtual ~Interfrost() {}

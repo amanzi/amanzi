@@ -244,22 +244,23 @@ def replace_regions(toatsxml,fromatsxml,mapping=None):
     newgridoption = get_value(toatsxml,'grid_option')
     replace_by_name(toatsxml,'grid_option',newgridoption)
 
-def run(xml, nproc=1, mpiexec='mpiexec', run_file_name='run.xml',stdout=None,stderr=None,hostname=None,cpuset=None):
+def run(xml, ats_exe=None, proc=1, mpiexec='mpiexec', run_file_name='run.xml',stdout=None,stderr=None,hostname=None,cpuset=None):
     ''' Run ats model based on tpl_xml_file using parameters defined in pars dictionary '''
 
     # ensure that ATS's executable exists and that it's module is loaded
-    try:
-        path = os.path.join(os.environ['ATS_DIR'],'bin')
-    except KeyError:
-        raise RuntimeError("Missing ATS installation, please set the ATS_DIR environmental variable.")
-    executable = os.path.join(path, "ats")
-    if not os.path.isfile(executable):
-        raise RuntimeError("Missing ATS installation, please build and install ATS.")
+    if ats_exe is None:
+        try:
+            path = os.path.join(os.environ['ATS_DIR'],'bin')
+        except KeyError:
+            raise RuntimeError("Missing ATS installation, please set the ATS_DIR environmental variable.")
+        ats_exe = os.path.join(path, "ats")
+        if not os.path.isfile(ats_exe):
+            raise RuntimeError("Missing ATS installation, please build and install ATS.")
 
     write_xml(xml,run_file_name)
     
     try:
-        #print ' '.join([mpiexec,'-n',str(nproc),executable,"--xml_file="+run_file_name])
+        #print ' '.join([mpiexec,'-n',str(nproc),ats_exe,"--xml_file="+run_file_name])
         outfile = open(stdout,'w')
         if not stderr is None:
             errfile = open(stderr,'w')
@@ -267,7 +268,7 @@ def run(xml, nproc=1, mpiexec='mpiexec', run_file_name='run.xml',stdout=None,std
         if cpuset is not None:
             if isinstance(cpuset,list): ','.join([str(v) for v in cpuset])
             cmdlst += ['-cpu-set',cpuset]
-        cmdlst += [executable,"--xml_file="+run_file_name]
+        cmdlst += [ats_exe,"--xml_file="+run_file_name]
         ierr = subprocess.call(cmdlst,stdout=outfile,stderr=errfile)
         print ierr
     except:

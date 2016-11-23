@@ -32,7 +32,7 @@ DrainageEvaluator::DrainageEvaluator(Teuchos::ParameterList& plist) :
 
   if (is_uptake_) {
     pd_key_ = plist_.get<std::string>("ponded depth key",
-				      "ponded_depth");
+				      "surface-ponded_depth");
     dependencies_.insert(pd_key_);
   }
 

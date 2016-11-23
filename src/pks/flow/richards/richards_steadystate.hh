@@ -12,9 +12,7 @@
 #include "upwinding.hh"
 #include "BoundaryFunction.hh"
 
-#include "PK.hh"
-#include "pk_factory.hh"
-
+#include "PK_Factory.hh"
 #include "richards.hh"
 
 namespace Amanzi {
@@ -24,15 +22,16 @@ class RichardsSteadyState : public Richards {
 public:
   // Constructors.
 
-RichardsSteadyState(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                      Teuchos::ParameterList& FElist,
+  RichardsSteadyState(Teuchos::ParameterList& FElist,
+                      const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                      const Teuchos::RCP<State>& S,
                       const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor
   virtual ~RichardsSteadyState() {}
 
 protected:
-  virtual void setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // ConstantTemperature is a BDFFnBase
   // computes the non-linear functional g = g(t,u,udot)

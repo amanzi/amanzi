@@ -84,7 +84,7 @@ void OverlandPressureFlow::Functional( double t_old,
 #endif
 
   // pointer-copy temperature into state and update any auxilary data
-  solution_to_state(*u_new, S_next_);
+  Solution_to_State(*u_new, S_next_);
 
   // update boundary conditions
   bc_head_->Compute(t_new);
@@ -192,9 +192,9 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
 
   // update state with the solution up.
 
-  //-- ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
+  ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
+  PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
 
-  PKDefaultBase::solution_to_state(*up, S_next_);
 
   // calculating the operator is done in 3 steps:
   // 1. Diffusion components
@@ -257,9 +257,8 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   const Epetra_MultiVector& dwc_dp =
     *S_next_->GetFieldData(getDerivKey(getKey(domain_,"water_content_bar"),key_))
       ->ViewComponent("cell",false);
-
-  db_->WriteVector("    dwc_dp", S_next_->GetFieldData(getDerivKey(getKey(domain_,"water_content_bar"),getKey(domain_,"pressure"))).ptr());
-  db_->WriteVector("    dh_dp", S_next_->GetFieldData(getDerivKey(getKey(domain_,"ponded_depth_bar"),getKey(domain_,"pressure"))).ptr());
+  db_->WriteVector("    dwc_dp", S_next_->GetFieldData(getDerivKey(getKey(domain_,"water_content_bar"),key_)).ptr());
+  db_->WriteVector("    dh_dp", S_next_->GetFieldData(getDerivKey(getKey(domain_,"ponded_depth_bar"),key_)).ptr());
 
 
   // -- pull out other needed data

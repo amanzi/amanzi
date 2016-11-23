@@ -32,21 +32,20 @@
 #ifndef PKS_ENERGY_SEB_VPL_HH_
 #define PKS_ENERGY_SEB_VPL_HH_
 
-#include "pk_factory.hh"
-#include "pk_physical_bdf_base.hh"
+#include "PK_Factory.hh"
+#include "pk_physical_default.hh"
 #include "primary_variable_field_evaluator.hh"
 
 
 namespace Amanzi {
 namespace SurfaceBalance {
 
-class SurfaceBalanceSEBVPL : public PKPhysicalBase {
+class SurfaceBalanceSEBVPL : public PK_Physical_Default {
 
  public:
-
-
-  SurfaceBalanceSEBVPL(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                    Teuchos::ParameterList& FElist,
+  SurfaceBalanceSEBVPL(Teuchos::ParameterList& pk_tree,
+                    const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                    const Teuchos::RCP<State>& S,
                     const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor
@@ -54,24 +53,28 @@ class SurfaceBalanceSEBVPL : public PKPhysicalBase {
 
   // SurfaceBalanceSEBVPL is a PK
   // -- Setup data
-  virtual void setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // -- Initialize owned (dependent) variables.
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   // -- provide a timestep size
   virtual double get_dt() {
     return dt_;
   }
 
+  virtual void set_dt(double dt) {dt_ = dt;}
+
+  virtual std::string name(){ return "SurfaceBalanceSEBVPL";}
+
   // -- Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {}
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {}
 
   // -- Update diagnostics for vis.
-  virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {}
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {}
 
   // -- advance via one of a few methods
-  virtual bool advance(double dt);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit);
 
  protected:
   // A few options for advance

@@ -1,6 +1,6 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "pk_physical_bdf_base.hh"
+//#include "pk_physical_bdf_base.hh"
 #include "mpc_surface_subsurface_helpers.hh"
 #include "strong_mpc.hh"
 
@@ -15,14 +15,14 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 // loop over sub-PKs, calling their valid_step() method
 // -----------------------------------------------------------------------------
-bool WeakMPCSemiCoupled::valid_step() {
+/*bool WeakMPCSemiCoupled::valid_step() {
   bool valid_local = MPC<PK>::valid_step();
   int valid_int_local = valid_local ? 1 : 0;
   int valid_int = 0;
   S_->GetMesh("surface")->get_comm()->MinAll(&valid_int_local, &valid_int, 1);
   return valid_int == 0 ? false : true;
 };
-
+*/
 
   /*
 // -----------------------------------------------------------------------------
@@ -72,7 +72,18 @@ double WeakMPCSemiCoupled::get_dt() {
   return dt;
 
 }
-  
+
+// -----------------------------------------------------------------------------
+// Set timestep for sub PKs 
+// -----------------------------------------------------------------------------
+void WeakMPCSemiCoupled::set_dt(double dt) {
+  for (MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
+       pk != sub_pks_.end(); ++pk) {
+    (*pk)->set_dt(dt);
+  }
+
+};
+
 // -----------------------------------------------------------------------------
 // Set up each PK
 // -----------------------------------------------------------------------------
@@ -80,9 +91,9 @@ double WeakMPCSemiCoupled::get_dt() {
 
 
 void
-WeakMPCSemiCoupled::setup(const Teuchos::Ptr<State>& S) {
+WeakMPCSemiCoupled::Setup(const Teuchos::Ptr<State>& S) {
   S->AliasMesh("surface", "surface_star");
-  MPC<PK>::setup(S);
+  MPC<PK>::Setup(S);
 
 
   Teuchos::Array<std::string> names = plist_->get<Teuchos::Array<std::string> >("PKs order");
@@ -95,27 +106,27 @@ WeakMPCSemiCoupled::setup(const Teuchos::Ptr<State>& S) {
 };
 
 void 
-WeakMPCSemiCoupled::initialize(const Teuchos::Ptr<State>& S){
+WeakMPCSemiCoupled::Initialize(const Teuchos::Ptr<State>& S){
 
   MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
   ++pk;
   for (pk; pk!=sub_pks_.end(); ++pk){
-    (*pk)->initialize(S);
+    (*pk)->Initialize(S);
   }
   
-  MPC<PK>::initialize(S);
+  MPC<PK>::Initialize(S);
 
 }
 //-------------------------------------------------------------------------------------
 // Semi coupled thermal hydrology
-bool WeakMPCSemiCoupled::advance(double dt) {
+  bool WeakMPCSemiCoupled::AdvanceStep(double t_old, double t_new, bool reinit) {
   bool fail = false;
   
   if (coupling_key_ == "surface subsurface system: columns"){
-    fail = CoupledSurfSubsurfColumns(dt);
+    fail = CoupledSurfSubsurfColumns(t_old, t_new, reinit);
   }
   else if(coupling_key_ == "surface subsurface system: 3D"){
-    fail = CoupledSurfSubsurf3D(dt);
+    fail = CoupledSurfSubsurf3D(t_old, t_new, reinit);
   }
   
   return fail;
@@ -123,7 +134,7 @@ bool WeakMPCSemiCoupled::advance(double dt) {
 };
  
 bool
-WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
+WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double t_old, double t_new, bool reinit){
   bool fail = false;
   MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
   
@@ -133,13 +144,13 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
   if (flag_star || flag_star_surf){
     flag_star = 0;
     flag_star_surf=0;
-    Teuchos::RCP<PKBDFBase> pk_sfstar =
-      Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[0]);
+    Teuchos::RCP<PK_PhysicalBDF_Default> pk_sfstar =
+      Teuchos::rcp_dynamic_cast<PK_PhysicalBDF_Default>(sub_pks_[0]);
     ASSERT(pk_sfstar.get());
     pk_sfstar->ChangedSolution();
   }
   
-  fail = (*pk)->advance(dt);
+  fail = (*pk)->AdvanceStep(t_old, t_new, reinit);
   int nfailed_surf = 0;
   if (fail)
     nfailed_surf++;
@@ -199,8 +210,8 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
   
  
   for(int i=1; i<numPKs_; i++){
-    Teuchos::RCP<PKBDFBase> pk_domain =
-      Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[i]);
+    Teuchos::RCP<PK_PhysicalBDF_Default> pk_domain =
+      Teuchos::rcp_dynamic_cast<PK_PhysicalBDF_Default>(sub_pks_[i]);
     ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
     pk_domain->ChangedSolution(S_inter_.ptr());
   }
@@ -220,7 +231,7 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
   for (pk; pk!=sub_pks_.end(); ++pk){
 
     if(!subcycle_key_){  
-      bool c_fail = (*pk)->advance(dt);
+      bool c_fail = (*pk)->AdvanceStep(t_old, t_new, reinit);
       if (c_fail) nfailed++;
     }
     else
@@ -230,21 +241,22 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
       name << "column_" << id <<"_surface";
       name_ss << "column_" << id;
       
-      double loc_dt = dt;      
+      double loc_dt =0;//revisit dt;      
           
       bool done = false;
       double t = 0;
       bool cyc_flag  = false;
       //      S_inter_->set_time(t0+t);
       //S_next_->set_time(t0 + t + loc_dt);
-
+      //lets put dt=0 for a while---revisit
+      double dt =0;
       while(!done){
-	bool fail_pk = (*pk)->advance(loc_dt);
+	bool fail_pk = false; //----revisit= (*pk)->advance(loc_dt);
 	//fail_pk |= !(*pk)->valid_step();
 		
 	if(!fail_pk){
 
-	  (*pk)->commit_state(loc_dt, S_next_);
+	  //--revisit (*pk)->commit_state(loc_dt, S_next_);
 	  t = t + loc_dt;
 	  double loc_dt_old = loc_dt;
 
@@ -352,8 +364,8 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
 	   
 	   pfe4->SetFieldAsChanged(S_inter_.ptr());
 	  
-	   Teuchos::RCP<PKBDFBase> pk_domain1 =
-	     Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[count+1]);
+	   Teuchos::RCP<PK_PhysicalBDF_Default> pk_domain1 =
+	     Teuchos::rcp_dynamic_cast<PK_PhysicalBDF_Default>(sub_pks_[count+1]);
 	   ASSERT(pk_domain1.get()); // make sure the pk_domain is not empty
 	   pk_domain1->ChangedSolution(S_inter_.ptr());
 	   
@@ -457,14 +469,14 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
 	   pfe4->SetFieldAsChanged(S_next_.ptr());
 
 
-	   Teuchos::RCP<PKBDFBase> pk_domain1 =
-	     Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[count+1]);
+	   Teuchos::RCP<PK_PhysicalBDF_Default> pk_domain1 =
+	     Teuchos::rcp_dynamic_cast<PK_PhysicalBDF_Default>(sub_pks_[count+1]);
 	   ASSERT(pk_domain1.get()); // make sure the pk_domain is not empty
 	   pk_domain1->ChangedSolution(S_next_.ptr());
 	   
 	   loc_dt = (*pk)->get_dt();
 	   S_inter_->set_time(t0+t);
-	   S_next_->set_time(t0 + t + loc_dt);
+	   // revisit S_next_->set_time(t0 + t + loc_dt);
 	}
 
       }
@@ -510,14 +522,14 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
   
   // Mark surface_star-pressure evaluator as changed.
   // NOTE: later do it in the setup --aj
-  Teuchos::RCP<PKBDFBase> pk_surf =
-    Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[0]);
+  Teuchos::RCP<PK_PhysicalBDF_Default> pk_surf =
+    Teuchos::rcp_dynamic_cast<PK_PhysicalBDF_Default>(sub_pks_[0]);
   ASSERT(pk_surf.get());
   pk_surf->ChangedSolution();
   MPC<PK>::SubPKList::iterator pk1 = sub_pks_.begin();
 
    if(subcycle_key_)
-     (*pk1)->commit_state(dt,S_next_);
+     (*pk1)->CommitStep(t_old, t_new,S_next_);
 
   }
   if (nfailed > 0){
@@ -531,12 +543,12 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double dt){
 }
   
 
-bool WeakMPCSemiCoupled::CoupledSurfSubsurf3D(double dt) {
+  bool WeakMPCSemiCoupled::CoupledSurfSubsurf3D(double t_old, double t_new, bool reinit) {
   bool fail = false;
   MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
 
   // advance surface_star-pressure from t_n to t_(n+1)
-  fail = (*pk)->advance(dt);
+  fail = (*pk)->AdvanceStep(t_old, t_new, reinit);
   
   Epetra_MultiVector& surf_pr = *S_inter_->GetFieldData("surface-pressure", S_inter_->GetField("surface-pressure")->owner())->ViewComponent("cell", false);
   const Epetra_MultiVector& surfstar_pr = *S_next_->GetFieldData("surface_star-pressure")->ViewComponent("cell", false);
@@ -559,15 +571,15 @@ bool WeakMPCSemiCoupled::CoupledSurfSubsurf3D(double dt) {
   
   // NOTE: later do it in the setup --aj
   
-  Teuchos::RCP<PKBDFBase> pk_domain =
-    Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[1]);
+  Teuchos::RCP<PK_PhysicalBDF_Default> pk_domain =
+    Teuchos::rcp_dynamic_cast<PK_PhysicalBDF_Default>(sub_pks_[1]);
   ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
   pk_domain->ChangedSolution(S_inter_.ptr());
   
   if(fail) return fail;  
   // advance surface-pressure from t_n to t_(n+1)
   ++pk;
-  fail += (*pk)->advance(dt);
+  fail += (*pk)->AdvanceStep(t_old, t_new, reinit);
   if (fail) return fail;
   
   
@@ -588,8 +600,8 @@ bool WeakMPCSemiCoupled::CoupledSurfSubsurf3D(double dt) {
 
   // Mark surface_star-pressure evaluator as changed.
   // NOTE: later do it in the setup --aj
-  Teuchos::RCP<PKBDFBase> pk_surf =
-    Teuchos::rcp_dynamic_cast<PKBDFBase>(sub_pks_[0]);
+  Teuchos::RCP<PK_PhysicalBDF_Default> pk_surf =
+    Teuchos::rcp_dynamic_cast<PK_PhysicalBDF_Default>(sub_pks_[0]);
   ASSERT(pk_surf.get());
   pk_surf->ChangedSolution();
   

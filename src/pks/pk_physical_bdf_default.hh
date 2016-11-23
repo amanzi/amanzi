@@ -10,33 +10,43 @@ Standard base for most diffusion-dominated PKs, this combines both
 domains/meshes of PKPhysicalBase and BDF methods of PKBDFBase.
 ------------------------------------------------------------------------- */
 
-#ifndef AMANZI_PK_PHYSICAL_BDF_BASE_HH_
-#define AMANZI_PK_PHYSICAL_BDF_BASE_HH_
+#ifndef ATS_PK_PHYSICAL_BDF_BASE_HH_
+#define ATS_PK_PHYSICAL_BDF_BASE_HH_
 
 #include "errors.hh"
-#include "pk_default_base.hh"
-#include "pk_bdf_base.hh"
-#include "pk_physical_base.hh"
+#include "pk_bdf_default.hh"
+#include "pk_physical_default.hh"
 
 #include "Operator.hh"
 
 namespace Amanzi {
 
-class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
+class PK_PhysicalBDF_Default : public PK_BDF_Default,
+                               public PK_Physical_Default {
 
  public:
 
-  PKPhysicalBDFBase(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                    Teuchos::ParameterList& FElist,
-                    const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(S, plist, FElist, solution),
-    PKPhysicalBase(S, plist, FElist, solution),
-    PKBDFBase(S, plist, FElist, solution) {}
-  virtual void setup(const Teuchos::Ptr<State>& S);
+  PK_PhysicalBDF_Default(Teuchos::ParameterList& pk_tree,
+                          const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                          const Teuchos::RCP<State>& S,
+                          const Teuchos::RCP<TreeVector>& solution):
+    PK_BDF_Default(pk_tree, glist, S, solution),
+    PK_Physical_Default(pk_tree, glist, S, solution),
+    PK(pk_tree, glist, S, solution)
+  {}
+
+
+  virtual void set_states(const Teuchos::RCP<const State>& S,
+                          const Teuchos::RCP<State>& S_inter,
+                          const Teuchos::RCP<State>& S_next);
+    
+  virtual void Setup(const Teuchos::Ptr<State>& S);
+
+  virtual void set_dt(double dt) { dt_ = dt; }
 
   // initialize.  Note both BDFBase and PhysicalBase have initialize()
   // methods, so we need a unique overrider.
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   // Default preconditioner is Picard
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
@@ -52,6 +62,10 @@ class PKPhysicalBDFBase : public PKBDFBase, public PKPhysicalBase {
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<const TreeVector> du);
 
+  virtual bool ValidStep() {
+    return PK_Physical_Default::ValidStep() && PK_BDF_Default::ValidStep();
+  }
+  
   // -- Experimental approach -- calling this indicates that the time
   //    integration scheme is changing the value of the solution in
   //    state.

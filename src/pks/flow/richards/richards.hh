@@ -17,8 +17,10 @@
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorAccumulation.hh"
 
-#include "pk_factory.hh"
-#include "pk_physical_bdf_base.hh"
+#include "PK_Factory.hh"
+//#include "PK_PhysicalBDF_ATS.hh"
+// #include "pk_factory_ats.hh"
+#include "pk_physical_bdf_default.hh"
 
 namespace Amanzi {
 
@@ -29,32 +31,34 @@ namespace WhetStone { class Tensor; }
 
 namespace Flow {
 
-class Richards : public PKPhysicalBDFBase {
+class Richards : public PK_PhysicalBDF_Default {
 
 public:
 
-  Richards(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
-           Teuchos::ParameterList& FElist,
+  Richards(Teuchos::ParameterList& FElist,
+           const Teuchos::RCP<Teuchos::ParameterList>& plist,
+           const Teuchos::RCP<State>& S,
            const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor
   virtual ~Richards() {}
 
-  // main methods
+  // virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {CalculateDiagnostics(S);};
+
   // -- Setup data.
-  virtual void setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // -- Initialize owned (dependent) variables.
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   // -- Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
 
   // -- limit changes in a valid time step
-  virtual bool valid_step();
+  virtual bool ValidStep();
 
   // -- Update diagnostics for vis.
-  virtual void calculate_diagnostics(const Teuchos::RCP<State>& S);
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
 
   // ConstantTemperature is a BDFFnBase
   // computes the non-linear functional g = g(t,u,udot)
@@ -142,6 +146,13 @@ protected:
       ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                        Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<TreeVector> du);
+
+
+
+
+  
+
+
   
 protected:
   // control switches
@@ -222,7 +233,7 @@ protected:
   // valid step controls
   double sat_change_limit_;
   double sat_ice_change_limit_;
-  
+
   // keys
   Key mass_dens_key_;
   Key molar_dens_key_;

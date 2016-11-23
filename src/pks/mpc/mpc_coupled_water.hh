@@ -6,22 +6,23 @@
 
 #include "Operator.hh"
 #include "mpc_delegate_water.hh"
-#include "pk_physical_bdf_base.hh"
+#include "pk_physical_bdf_default.hh"
 
 #include "strong_mpc.hh"
 
 namespace Amanzi {
 
-class MPCCoupledWater : public StrongMPC<PKPhysicalBDFBase> {
+class MPCCoupledWater : public StrongMPC<PK_PhysicalBDF_Default> {
  public:
 
 
-  MPCCoupledWater(Teuchos::Ptr<State> S,const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                 Teuchos::ParameterList& FElist,
-                 const Teuchos::RCP<TreeVector>& soln);
+  MPCCoupledWater(Teuchos::ParameterList& FElist,
+                  const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                  const Teuchos::RCP<State>& S,
+                  const Teuchos::RCP<TreeVector>& soln);
 
-  virtual void setup(const Teuchos::Ptr<State>& S);
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   virtual void set_states(const Teuchos::RCP<const State>& S,
                           const Teuchos::RCP<State>& S_inter,
@@ -55,8 +56,8 @@ class MPCCoupledWater : public StrongMPC<PKPhysicalBDFBase> {
  protected:
 
   // sub PKs
-  Teuchos::RCP<PKPhysicalBDFBase> domain_flow_pk_;
-  Teuchos::RCP<PKPhysicalBDFBase> surf_flow_pk_;
+  Teuchos::RCP<PK_PhysicalBDF_Default> domain_flow_pk_;
+  Teuchos::RCP<PK_PhysicalBDF_Default> surf_flow_pk_;
 
   // sub meshes
   Teuchos::RCP<const AmanziMesh::Mesh> domain_mesh_;

@@ -21,7 +21,7 @@ See additional documentation in the base class src/pks/mpc/MPC.hh
 #include <vector>
 
 #include "mpc.hh"
-#include "pk_bdf_base.hh"
+#include "pk_bdf_default.hh"
 
 namespace Amanzi {
 
@@ -29,26 +29,30 @@ namespace Amanzi {
 // PKs, but it also IS a BDF PK itself, in that it implements the BDF
 // interface.
 template <class PK_t>
-class StrongMPC : public MPC<PK_t>,
-                  public PKBDFBase {
+class StrongMPC :  public MPC<PK_t>, public PK_BDF_Default {
 
 public:
 
-  StrongMPC(Teuchos::Ptr<State> S,const Teuchos::RCP<Teuchos::ParameterList>& plist,
-            Teuchos::ParameterList& FElist,
+  StrongMPC(Teuchos::ParameterList& pk_tree,
+            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+            const Teuchos::RCP<State>& S,
             const Teuchos::RCP<TreeVector>& soln);
 
   // Virtual destructor
   virtual ~StrongMPC() {}
 
-  virtual void setup(const Teuchos::Ptr<State>& S);
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   // -- Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {
-    PKBDFBase::commit_state(dt,S);
-    MPC<PK_t>::commit_state(dt, S);
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
+    PK_BDF_Default::CommitStep(t_old, t_new, S);
+    MPC<PK_t>::CommitStep(t_old, t_new, S);
   }
+
+  void set_states(const Teuchos::RCP<const State>& S,
+                  const Teuchos::RCP<State>& S_inter,
+                  const Teuchos::RCP<State>& S_next);
   
   // StrongMPC is a BDFFnBase
   // -- computes the non-linear functional g = g(t,u,udot)
@@ -89,8 +93,13 @@ public:
                        Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<TreeVector> du);
 
+  virtual std::string name() {return "strong_mpc";};
+
 protected:
   using MPC<PK_t>::sub_pks_;
+  using MPC<PK_t>::global_list_;
+  using MPC<PK_t>::pk_tree_;
+  using MPC<PK_t>::pks_list_;
 
 private:
   // factory registration
@@ -102,34 +111,66 @@ private:
 // Constructor
 // -----------------------------------------------------------------------------
 template<class PK_t>
+StrongMPC<PK_t>::StrongMPC(Teuchos::ParameterList& pk_tree,
+                           const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                           const Teuchos::RCP<State>& S,
+                           const Teuchos::RCP<TreeVector>& soln):
+  PK(pk_tree, global_list, S, soln),
+  MPC<PK_t>(pk_tree, global_list, S, soln),
+  PK_BDF_Default(pk_tree, global_list, S, soln) {
 
-StrongMPC<PK_t>::StrongMPC(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                           Teuchos::ParameterList& FElist,
-                           const Teuchos::RCP<TreeVector>& soln) :
-  PKDefaultBase(S, plist, FElist, soln),
-  MPC<PK_t>(S, plist, FElist, soln),
-  PKBDFBase(S, plist, FElist, soln) {}
+  // name the PK
+  name_ = pk_tree.name();
+  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->");
+  if (res.end() - name_.end() != 0) boost::algorithm::erase_head(name_, res.end() - name_.begin());
+
+  Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(global_list, "PKs");
+
+  if (pks_list->isSublist(name_)) {
+    plist_ = Teuchos::sublist(pks_list, name_); 
+  }else{
+    std::stringstream messagestream;
+    messagestream << "There is no sublist for PK "<<name_<<"in PKs list\n";
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+
+  plist_->set("PK name", name_);
+
+}
 
 
 // -----------------------------------------------------------------------------
 // Setup
 // -----------------------------------------------------------------------------
 template<class PK_t>
-void StrongMPC<PK_t>::setup(const Teuchos::Ptr<State>& S) {
+void StrongMPC<PK_t>::Setup(const Teuchos::Ptr<State>& S) {
   // tweak the sub-PK parameter lists
-  Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(plist_, "PKs");
-  for (Teuchos::ParameterList::ConstIterator param=pks_list->begin();
-       param!=pks_list->end(); ++param) {
-    std::string pname = param->first;
-    if (pks_list->isSublist(pname)) {
-      pks_list->sublist(pname).set("strongly coupled PK", true);
+  // Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(plist_, "PKs");
+  // for (Teuchos::ParameterList::ConstIterator param=pks_list->begin();
+  //      param!=pks_list->end(); ++param) {
+  //   std::string pname = param->first;
+  //   if (pks_list->isSublist(pname)) {
+  //     pks_list->sublist(pname).set("strongly coupled PK", true);
+  //   } else {
+  //     ASSERT(0);
+  //   }
+  // }
+
+  Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
+  int npks = pk_order.size();
+  for (int i=0; i!=npks; ++i){
+    std::string name_i = pk_order[i];
+    if (pks_list_->isSublist(name_i)){
+      pks_list_->sublist(name_i).set("strongly coupled PK", true);
     } else {
       ASSERT(0);
     }
   }
 
-  MPC<PK_t>::setup(S);
-  PKBDFBase::setup(S);
+
+  MPC<PK_t>::Setup(S);
+  PK_BDF_Default::Setup(S);
 
   // Set the initial timestep as the min of the sub-pk sizes.
   dt_ = 1.0e99;
@@ -146,19 +187,25 @@ void StrongMPC<PK_t>::setup(const Teuchos::Ptr<State>& S) {
 // initialize() methods.
 // -----------------------------------------------------------------------------
 template<class PK_t>
-void StrongMPC<PK_t>::initialize(const Teuchos::Ptr<State>& S) {
+void StrongMPC<PK_t>::Initialize(const Teuchos::Ptr<State>& S) {
   // Just calls both subclass's initialize.  NOTE - order is important here --
   // MPC<PK_t> grabs the primary variables from each sub-PK and stuffs
   // them into the solution, which must be done prior to BDFBase initializing
   // the timestepper.
 
   // Initialize all sub PKs.
-  MPC<PK_t>::initialize(S);
+  MPC<PK_t>::Initialize(S);
 
   // Initialize my timestepper.
-  PKBDFBase::initialize(S);
+  PK_BDF_Default::Initialize(S);
 };
 
+template<class PK_t>
+void StrongMPC<PK_t>::set_states(const Teuchos::RCP<const State>& S,
+                                 const Teuchos::RCP<State>& S_inter,
+                                 const Teuchos::RCP<State>& S_next){
+  MPC<PK_t>::set_states(S,S_inter,S_next);
+} 
 
 // -----------------------------------------------------------------------------
 // Compute the non-linear functional g = g(t,u,udot).
@@ -166,7 +213,8 @@ void StrongMPC<PK_t>::initialize(const Teuchos::Ptr<State>& S) {
 template<class PK_t>
 void StrongMPC<PK_t>::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                     Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
-  solution_to_state(*u_new, S_next_);
+
+  Solution_to_State(*u_new, S_next_);
 
   // loop over sub-PKs
   for (unsigned int i=0; i!=sub_pks_.size(); ++i) {
@@ -272,7 +320,8 @@ double StrongMPC<PK_t>::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 // -----------------------------------------------------------------------------
 template<class PK_t>
 void StrongMPC<PK_t>::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
-  PKDefaultBase::solution_to_state(*up, S_next_);
+  
+  Solution_to_State(*up, S_next_);
 
   // loop over sub-PKs
   for (unsigned int i=0; i!=sub_pks_.size(); ++i) {
@@ -340,7 +389,8 @@ bool StrongMPC<PK_t>::IsAdmissible(Teuchos::RCP<const TreeVector> u) {
   }
 
   // If that worked, check backtracking admissility.
-  return PKBDFBase::IsAdmissible(u);
+  //  return PKBDFBase::IsAdmissible(u);
+  return true;
 };
 
 

@@ -14,6 +14,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 
 #include "FunctionFactory.hh"
 #include "CompositeVectorFunction.hh"
+
 #include "CompositeVectorFunctionFactory.hh"
 #include "independent_variable_field_evaluator.hh"
 
@@ -28,12 +29,12 @@ namespace Flow {
 
 #define DEBUG_FLAG 1
 
-
-  SnowDistribution::SnowDistribution(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        Teuchos::ParameterList& FElist,
-        const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(S, plist, FElist, solution),
-    PKPhysicalBDFBase(S, plist, FElist, solution),
+SnowDistribution::SnowDistribution(Teuchos::ParameterList& FElist,
+                                   const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                                   const Teuchos::RCP<State>& S,
+                                   const Teuchos::RCP<TreeVector>& solution) :
+    PK(FElist, plist, S, solution),
+    PK_PhysicalBDF_Default(FElist, plist, S, solution),
     full_jacobian_(false) {
   plist_->set("primary variable key", "surface-precipitation_snow");
 
@@ -48,8 +49,9 @@ namespace Flow {
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------
-void SnowDistribution::setup(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBDFBase::setup(S);
+void SnowDistribution::Setup(const Teuchos::Ptr<State>& S) {
+  //PKPhysicalBDFBase::setup(S);
+  PK_PhysicalBDF_Default::Setup(S);
   SetupSnowDistribution_(S);
   SetupPhysicalEvaluators_(S);
 }
@@ -154,9 +156,10 @@ void SnowDistribution::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // -------------------------------------------------------------
 // Initialize PK
 // -------------------------------------------------------------
-void SnowDistribution::initialize(const Teuchos::Ptr<State>& S) {
+void SnowDistribution::Initialize(const Teuchos::Ptr<State>& S) {
   // Initialize BDF stuff and physical domain stuff.
-  PKPhysicalBDFBase::initialize(S);
+  //PKPhysicalBDFBase::initialize(S);
+  PK_PhysicalBDF_Default::Initialize(S);
 
   // Set extra fields as initialized -- these don't currently have evaluators.
 

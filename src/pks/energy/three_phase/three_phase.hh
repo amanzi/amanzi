@@ -15,7 +15,6 @@ Inherits TwoPhase instead of EnergyBase to pick up the enthalpy from TwoPhase.
 #ifndef PKS_ENERGY_THREE_PHASE_HH_
 #define PKS_ENERGY_THREE_PHASE_HH_
 
-#include "pk_factory.hh"
 #include "two_phase.hh"
 
 namespace Amanzi {
@@ -25,16 +24,17 @@ class ThreePhase : public TwoPhase {
 
 public:
 
-  ThreePhase(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
-             Teuchos::ParameterList& FElist,
+  ThreePhase(Teuchos::ParameterList& FElist,
+             const Teuchos::RCP<Teuchos::ParameterList>& plist,
+             const Teuchos::RCP<State>& S,
              const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(S, plist, FElist, solution),
-    TwoPhase(S, plist, FElist, solution) {}
+    PK(FElist, plist, S, solution),
+    TwoPhase(FElist, plist, S, solution) {}
 
   // Virtual destructor
   virtual ~ThreePhase() {}
 
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
   
 protected:
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);

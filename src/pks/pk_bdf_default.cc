@@ -12,7 +12,8 @@ BDF.
 
 #include "Teuchos_TimeMonitor.hpp"
 #include "BDF1_TI.hh"
-#include "pk_bdf_base.hh"
+#include "pk_bdf_default.hh"
+#include "State.hh"
 
 namespace Amanzi {
 
@@ -20,8 +21,10 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 // Setup
 // -----------------------------------------------------------------------------
-void PKBDFBase::setup(const Teuchos::Ptr<State>& S) {
-  PKDefaultBase::setup(S);
+void PK_BDF_Default::Setup(const Teuchos::Ptr<State>& S) {
+  
+  // set up the VerboseObject
+  vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));
 
   // initial timestep
   dt_ = plist_->get<double>("initial time step", 1.);
@@ -43,7 +46,7 @@ void PKBDFBase::setup(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 // Initialization of timestepper.
 // -----------------------------------------------------------------------------
-void PKBDFBase::initialize(const Teuchos::Ptr<State>& S) {
+void PK_BDF_Default::Initialize(const Teuchos::Ptr<State>& S) {
   // set up the timestepping algorithm
   if (!plist_->get<bool>("strongly coupled PK", false)) {
     // -- instantiate time stepper
@@ -71,20 +74,44 @@ void PKBDFBase::initialize(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 // Initialization of timestepper.
 // -----------------------------------------------------------------------------
-double PKBDFBase::get_dt() { return dt_; }
+double PK_BDF_Default::get_dt() { return dt_; }
+
+  void PK_BDF_Default::set_dt(double dt) {dt_ = dt;}
 
 
 // -- Commit any secondary (dependent) variables.
-void PKBDFBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
+void PK_BDF_Default::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
+
+  double dt = t_new -t_old;
   if (dt > 0. && time_stepper_ != Teuchos::null)
     time_stepper_->CommitSolution(dt, solution_, true);
 }
+
+void PK_BDF_Default::set_states(const Teuchos::RCP<const State>& S,
+        const Teuchos::RCP<State>& S_inter,
+        const Teuchos::RCP<State>& S_next) {
+  S_ = S;
+  S_inter_ = S_inter;
+  S_next_ = S_next;
+}
+
+
+
+// void PK_BDF_Default::Solution_to_State(TreeVector& solution,
+//         const Teuchos::RCP<State>& S) {
+//   //ASSERT(solution.Data() == S->GetFieldData(key_));
+//   //  S->SetData(key_, name_, solution->Data());
+//   //  solution_evaluator_->SetFieldAsChanged();
+// };
+
+
 
 
 // -----------------------------------------------------------------------------
 // Advance from state S to state S_next at time S.time + dt.
 // -----------------------------------------------------------------------------
-bool PKBDFBase::advance(double dt) {
+bool PK_BDF_Default::AdvanceStep(double t_old, double t_new, bool reinit) {
+  double dt = t_new -t_old;
   Teuchos::OSTab out = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "----------------------------------------------------------------" << std::endl
@@ -92,7 +119,7 @@ bool PKBDFBase::advance(double dt) {
                << " t1 = " << S_next_->time() << " h = " << dt << std::endl
                << "----------------------------------------------------------------" << std::endl;
 
-  state_to_solution(S_next_, *solution_);
+  State_to_Solution(S_next_, *solution_);
 
   // take a bdf timestep
   double dt_solver;
@@ -105,7 +132,7 @@ bool PKBDFBase::advance(double dt) {
 
   if (!fail) {
     // check step validity
-    bool valid = valid_step();
+    bool valid = ValidStep();
     if (valid) {
       // update the timestep size
       if (dt_solver < dt_ && dt_solver >= dt) {
@@ -129,7 +156,7 @@ bool PKBDFBase::advance(double dt) {
 
 
 // update the continuation parameter
-void PKBDFBase::UpdateContinuationParameter(double lambda) {
+void PK_BDF_Default::UpdateContinuationParameter(double lambda) {
   *S_next_->GetScalarData("continuation_parameter", name_) = lambda;
   ChangedSolution();
 }

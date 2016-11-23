@@ -10,47 +10,60 @@ Default base with default implementations of methods for a PK integrated using
 BDF.
 ------------------------------------------------------------------------- */
 
-#ifndef AMANZI_PK_BDF_BASE_HH_
-#define AMANZI_PK_BDF_BASE_HH_
+#ifndef ATS_PK_BDF_BASE_HH_
+#define ATS_PK_BDF_BASE_HH_
 
 #include "Teuchos_TimeMonitor.hpp"
 
 #include "BDFFnBase.hh"
 #include "BDF1_TI.hh"
-#include "pk_default_base.hh"
+#include "PK_BDF.hh"
+
+
 
 namespace Amanzi {
 
-class PKBDFBase : public virtual PKDefaultBase,
-                  public BDFFnBase<TreeVector> {
+class PK_BDF_Default : public PK_BDF {
 
  public:
 
 
-  PKBDFBase(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
-            Teuchos::ParameterList& FElist,
-            const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(S, plist, FElist, solution) {}
-
+  PK_BDF_Default(Teuchos::ParameterList& pk_tree,
+                 const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                 const Teuchos::RCP<State>& S,
+                 const Teuchos::RCP<TreeVector>& solution) :
+    PK_BDF(pk_tree, glist, S, solution),
+    PK(pk_tree, glist, S, solution) {}
   
   // Virtual destructor
-  virtual ~PKBDFBase() {}
+  virtual ~PK_BDF_Default() {}
 
   // Default implementations of PK methods.
-  // -- setup
-  virtual void setup(const Teuchos::Ptr<State>& S);
+  // -- Setup
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
-  // -- initialize
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  // -- Initialize
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   // -- Choose a time step compatible with physics.
   virtual double get_dt();
 
+  virtual void set_dt(double dt_);
+
   // -- Advance from state S0 to state S1 at time S0.time + dt.
-  virtual bool advance(double dt);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit);
 
   // -- Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
+
+  // virtual void Solution_to_State(const TreeVector& soln,
+  //                                const Teuchos::RCP<State>& S);
+  // virtual void Solution_to_State(TreeVector& soln,
+  //                                const Teuchos::RCP<State>& S);
+
+  virtual void set_states(const Teuchos::RCP<const State>& S,
+                        const Teuchos::RCP<State>& S_inter,
+                        const Teuchos::RCP<State>& S_next);
 
   // update the continuation parameter
   virtual void UpdateContinuationParameter(double lambda);
