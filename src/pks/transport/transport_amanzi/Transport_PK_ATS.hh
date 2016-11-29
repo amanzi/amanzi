@@ -245,6 +245,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
   Teuchos::RCP<Epetra_MultiVector> vol_flux;
+  Teuchos::RCP<Epetra_MultiVector> conserve_qty_;
   Teuchos::RCP<const Epetra_MultiVector> flux;
   Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi;
   
@@ -289,10 +290,11 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   // multiscale models
   bool multiscale_porosity_;
   Teuchos::RCP<MultiscaleTransportPorosityPartition> msp_;
- 
+
   double cfl_, dt_, dt_debug_, t_physics_;  
 
   std::vector<double> mass_solutes_exact_, mass_solutes_source_;  // mass for all solutes
+  std::vector<double> mass_solutes_bc_;
   std::vector<std::string> runtime_solutes_;  // names of trached solutes
   std::vector<std::string> runtime_regions_;
 
