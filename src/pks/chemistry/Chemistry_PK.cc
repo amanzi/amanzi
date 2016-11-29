@@ -68,10 +68,12 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
     // -- set the names for vis
     std::vector<std::vector<std::string> > vf_names_cv(1);
     std::vector<std::vector<std::string> > ssa_names_cv(1);
+    std::vector<std::vector<std::string> > mrc_names_cv(1);
 
     for (it = mineral_names_.begin(); it != mineral_names_.end(); ++it) {
       vf_names_cv[0].push_back(*it + std::string(" vol frac"));
       ssa_names_cv[0].push_back(*it + std::string(" spec surf area"));
+      mrc_names_cv[0].push_back(*it + std::string(" min rate cnst"));
     }
 
     // -- register two fields
@@ -80,6 +82,10 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("cell", AmanziMesh::CELL, number_minerals_);
 
     S->RequireField("mineral_specific_surface_area", passwd_, ssa_names_cv)
+      ->SetMesh(mesh_)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, number_minerals_);
+
+    S->RequireField("mineral_rate_constant", passwd_, mrc_names_cv)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_minerals_);
   }

@@ -13,6 +13,7 @@
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
+#include <math.h>       /* pow */
 
 //TPLs
 #include "Teuchos_ParameterList.hpp"
@@ -117,12 +118,18 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   
   // minerals
   std::vector<std::string> minerals;
+  std::vector<double> min_rate_cnst;
   node = GetUniqueElementByTagsString_("phases, solid_phase, minerals", flag);
   if (flag) {
     children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode("mineral"));
 
     for (int i = 0; i < children->getLength(); ++i) {
       DOMNode* inode = children->item(i);
+
+      double mrc(0.0);
+      mrc = GetAttributeValueD_(inode, "rate_constant", TYPE_NUMERICAL, "", false, 0.0);
+      min_rate_cnst.push_back(mrc);
+
       std::string name = TrimString_(mm.transcode(inode->getTextContent()));
       minerals.push_back(name);
     }
@@ -184,11 +191,11 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
             element = GetUniqueChildByAttribute_(node, "name", minerals[j], flag, true);
             mvf = GetAttributeValueD_(element, "volume_fraction", TYPE_NUMERICAL, "", false, 0.0);
             msa = GetAttributeValueD_(element, "specific_surface_area", TYPE_NUMERICAL, "", false, 0.0);
-            mrc = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, "", false, 0.0);
+	    //            mrc = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, "", false, 0.0);
           }
           aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", mvf);
           aux2_list.sublist(ss.str()).sublist("function-constant").set<double>("value", msa);
-          aux3_list.sublist(ss.str()).sublist("function-constant").set<double>("value", mrc);
+          aux3_list.sublist(ss.str()).sublist("function-constant").set<double>("value", pow(10.0,min_rate_cnst[j]));
         }
       }
     }

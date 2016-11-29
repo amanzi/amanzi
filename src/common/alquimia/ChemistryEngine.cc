@@ -1,3 +1,4 @@
+
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 Amanzi Chemistry
@@ -47,6 +48,7 @@ void CopyAlquimiaProperties(AlquimiaProperties* dest, AlquimiaProperties* src)
 {
   dest->volume = src->saturation;
   dest->saturation = src->saturation;
+  memcpy(dest->mineral_rate_cnst.data, src->mineral_rate_cnst.data, sizeof(double) * src->mineral_rate_cnst.size);
   memcpy(dest->isotherm_kd.data, src->isotherm_kd.data, sizeof(double) * src->isotherm_kd.size);
   memcpy(dest->freundlich_n.data, src->freundlich_n.data, sizeof(double) * src->freundlich_n.size);
   memcpy(dest->langmuir_b.data, src->langmuir_b.data, sizeof(double) * src->langmuir_b.size);

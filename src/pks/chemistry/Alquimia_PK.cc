@@ -481,12 +481,15 @@ void Alquimia_PK::CopyToAlquimia(int cell,
   // minerals
   assert(state.mineral_volume_fraction.size == number_minerals_);
   assert(state.mineral_specific_surface_area.size == number_minerals_);
+  assert(mat_props.mineral_rate_cnst.size == number_minerals_);
 
   if (number_minerals_ > 0) {
     const Epetra_MultiVector& mineral_vf = *S_->GetFieldData("mineral_volume_fractions")->ViewComponent("cell", true);
     const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData("mineral_specific_surface_area")->ViewComponent("cell", true);
+    const Epetra_MultiVector& mineral_rate = *S_->GetFieldData("mineral_rate_constant")->ViewComponent("cell", true);
     for (unsigned int i = 0; i < number_minerals_; ++i) {
       state.mineral_volume_fraction.data[i] = mineral_vf[i][cell];
+      mat_props.mineral_rate_cnst.data[i] = mineral_rate[i][cell];
       state.mineral_specific_surface_area.data[i] = mineral_ssa[i][cell];
     }
   }
@@ -670,10 +673,12 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
   if (number_minerals_ > 0) {
     const Epetra_MultiVector& mineral_vf = *S_->GetFieldData("mineral_volume_fractions")->ViewComponent("cell", true);
     const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData("mineral_specific_surface_area")->ViewComponent("cell", true);
+    const Epetra_MultiVector& mineral_rate = *S_->GetFieldData("mineral_rate_constant")->ViewComponent("cell", true);
 
     for (int i = 0; i < number_minerals_; ++i) {
       mineral_vf[i][cell] = state.mineral_volume_fraction.data[i];
       mineral_ssa[i][cell] = state.mineral_specific_surface_area.data[i];
+      mineral_rate[i][cell] = mat_props.mineral_rate_cnst.data[i];
     }
   }
 
