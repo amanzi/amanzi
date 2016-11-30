@@ -71,7 +71,7 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
 
   double Xb(4.0), Yb(4.0), Zb(10.0);
   bool request_faces(true), request_edges(true);
-  RCP<const Mesh> mesh = meshfactory(-Xb, -Yb, -Zb, Xb, Yb, Zb, 10, 8, 20, gm, request_faces, request_edges);
+  RCP<const Mesh> mesh = meshfactory(-Xb, -Yb, -Zb, Xb, Yb, Zb, 10, 8, 22, gm, request_faces, request_edges);
   // RCP<const Mesh> mesh = meshfactory("test/hex_split_faces5.exo", gm, request_faces, request_edges);
   // RCP<const Mesh> mesh = meshfactory("test/isohelix.exo", gm, request_faces, request_edges);
 

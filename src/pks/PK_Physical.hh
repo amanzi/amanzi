@@ -8,8 +8,8 @@ Author: Ethan Coon
 Default base with a few methods implemented in standard ways.
 ------------------------------------------------------------------------- */
 
-#ifndef AMANZI_PK_PHYSICAL_BASE_HH_
-#define AMANZI_PK_PHYSICAL_BASE_HH_
+#ifndef AMANZI_PK_PHYSICAL_HH_
+#define AMANZI_PK_PHYSICAL_HH_
 
 #include "Teuchos_ParameterList.hpp"
 #include "boost/algorithm/string.hpp"

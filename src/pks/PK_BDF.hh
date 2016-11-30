@@ -12,8 +12,8 @@
   time integrators.
 */
 
-#ifndef AMANZI_FN_TIME_INTEGRATOR_PK_HH_
-#define AMANZI_FN_TIME_INTEGRATOR_PK_HH_
+#ifndef AMANZI_PK_BDF_HH_
+#define AMANZI_PK_BDF_HH_
 
 #include "Teuchos_RCP.hpp"
 

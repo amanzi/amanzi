@@ -20,8 +20,8 @@
   See additional documentation in the base class src/pks/mpc_pk/PK_MPC.hh
 */
 
-#ifndef AMANZI_STRONG_MPC_HH_
-#define AMANZI_STRONG_MPC_HH_
+#ifndef AMANZI_PK_MPC_STRONG_HH_
+#define AMANZI_PK_MPC_STRONG_HH_
 
 #include <vector>
 #include "Teuchos_ParameterList.hpp"

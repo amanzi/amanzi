@@ -26,7 +26,7 @@
 namespace Amanzi {
 
 template <class FunctionBase>
-class PK_DomainFunctionCoupling : public FunctionBase{
+class PK_DomainFunctionCoupling : public FunctionBase {
  public:
   PK_DomainFunctionCoupling(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       mesh_(mesh) {};
