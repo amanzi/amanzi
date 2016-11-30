@@ -25,9 +25,20 @@ FlowReactiveTransport_PK_ATS::FlowReactiveTransport_PK_ATS(
     const Teuchos::RCP<TreeVector>& soln) :
     PK_MPCSubcycled_ATS(pk_tree, global_list, S, soln) { 
 
-    Teuchos::ParameterList vlist;
-    vlist.sublist("verbose object") = global_list -> sublist("verbose object");
-    vo_ =  Teuchos::rcp(new VerboseObject("FlowandTransportPK", vlist)); 
+  name_ = pk_tree.name();
+  const char* result = name_.data();
+
+  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->"); 
+  if (res.end() - name_.end() != 0) boost::algorithm::erase_head(name_,  res.end() - name_.begin());
+
+  Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(global_list, "PKs", true);
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list, name_, true);
+
+  vo_ = Teuchos::null;
+  Teuchos::ParameterList vlist;
+  vlist.sublist("verbose object") = pk_list -> sublist("verbose object");
+
+  vo_ =  Teuchos::rcp(new VerboseObject("FlowandTransportPK", vlist)); 
 
 }
 
@@ -77,8 +88,6 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
   master_dt_ = t_new - t_old;
 
   sub_pks_[master_]->CommitStep(t_old, t_new, S_next_);
-
-  //  S_next_->WriteStatistics(vo_);  
 
   slave_dt_ = sub_pks_[slave_]->get_dt();
 

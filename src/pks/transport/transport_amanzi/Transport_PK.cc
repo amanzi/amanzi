@@ -1179,17 +1179,20 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_start)[0][c];
 
     for (int i = 0; i < num_advect; i++){
-      tcc_next[i][c] = tcc_prev[i][c] * vol_phi_ws;
+      (*conserve_qty_)[i][c] = tcc_prev[i][c] * vol_phi_ws;
     
-      mass_start += tcc_next[i][c];
+      mass_start += (*conserve_qty_)[i][c];
       // if ((domain_name_ == "surface")&&(c>40)){
-      //   std::cout<<c<<" tcc_next "<<tcc_next[i][c] <<" tcc_prev " <<tcc_prev[i][c]<<" ws "<<(*ws_start)[0][c]<<"\n";
+      //   std::cout<<c<<" *conserve_qty_ "<<(*conserve_qty_)[i][c] <<" tcc_prev " <<tcc_prev[i][c]<<" ws "<<(*ws_start)[0][c]<<"\n";
       // }
     }
   }
+  mass_start /= units_.concentration_factor();
 
-  if (domain_name_ == "surface") std::cout<<"Overland mass start "<<mass_start<<"\n";
-  else std::cout<<"Subsurface mass start "<<mass_start<<"\n";
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
+    if (domain_name_ == "surface") std::cout<<"Overland mass start "<<mass_start<<"\n";
+    else std::cout<<"Subsurface mass start "<<mass_start<<"\n";
+  }
 
 
   // advance all components at once
@@ -1202,20 +1205,21 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     if (c1 >=0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       for (int i = 0; i < num_advect; i++) {
         tcc_flux = dt_ * u * tcc_prev[i][c1];
-        tcc_next[i][c1] -= tcc_flux;
-        tcc_next[i][c2] += tcc_flux;
+        (*conserve_qty_)[i][c1] -= tcc_flux;
+        (*conserve_qty_)[i][c2] += tcc_flux;
       }
 
     } else if (c1 >=0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
       for (int i = 0; i < num_advect; i++) {
         tcc_flux = dt_ * u * tcc_prev[i][c1];
-        tcc_next[i][c1] -= tcc_flux;
+        (*conserve_qty_)[i][c1] -= tcc_flux;
+        if (c2 < 0) mass_solutes_bc_[i] -= tcc_flux;
       }
 
     } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       for (int i = 0; i < num_advect; i++) {
         tcc_flux = dt_ * u * tcc_prev[i][c1];
-        tcc_next[i][c2] += tcc_flux;
+        (*conserve_qty_)[i][c2] += tcc_flux;
       }
     }
   }
@@ -1235,8 +1239,8 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
           int k = tcc_index[i];
           if (k < num_advect) {
             tcc_flux = dt_ * u * values(i);
-            if (tcc_flux > 0) std::cout<<"from BC cell "<<c2<<" flux "<< u<<" dt "<<dt_<<" value "<<values(i)<<" + "<<tcc_flux<<"\n";
-            tcc_next[k][c2] += tcc_flux;
+            //if (tcc_flux > 0) std::cout<<"from BC cell "<<c2<<" flux "<< u<<" dt "<<dt_<<" value "<<values(i)<<" + "<<tcc_flux<<"\n";
+            (*conserve_qty_)[k][c2] += tcc_flux;
             mass_solutes_bc_[k] += tcc_flux;
           }
         }
@@ -1248,36 +1252,37 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
 
   // if (domain_name_ == "surface"){
   //   std::cout<<"Before ComputeAddSourceTerms\n";
-  //   std::cout<<tcc_next<<"\n";
+  //   std::cout<<(*conserve_qty_)<<"\n";
   // }
 
   // process external sources
   if (srcs_.size() != 0) {
     double time = t_physics_;
-    ComputeAddSourceTerms(time, dt_, tcc_next, 0, num_advect - 1);
+    ComputeAddSourceTerms(time, dt_, *conserve_qty_, 0, num_advect - 1);
   }
 
   // if (domain_name_ == "surface"){
   //   std::cout<<"After ComputeAddSourceTerms\n";
-  //   std::cout<<tcc_next<<"\n";
+  //   std::cout<<*conserve_qty_<<"\n";
   // }
   //if (domain_name_ == "surface") std::cout<<*ws_end<<"\n";
 
   double mass_final = 0;
   for (int c = 0; c < ncells_owned; c++) {
     for (int i = 0; i < num_advect; i++){        
-      mass_final += tcc_next[i][c];
+      mass_final += (*conserve_qty_)[i][c];
     }    
   }
+  mass_final /= units_.concentration_factor();
+  
 
-  if (domain_name_ == "surface") std::cout<<"Overland mass final "<<mass_final<<"\n";
-  else std::cout<<"Subsurface mass final "<<mass_final<<"\n";
+
 
   // recover concentration from new conservative state
   for (int c = 0; c < ncells_owned; c++) {
     vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_end)[0][c];
     for (int i = 0; i < num_advect; i++) {
-      if (vol_phi_ws > 0 ) tcc_next[i][c] /= vol_phi_ws;
+      if (vol_phi_ws > 0 ) tcc_next[i][c] = (*conserve_qty_)[i][c] / vol_phi_ws;
       else  tcc_next[i][c] = 0.;
     }
   }
@@ -1287,17 +1292,25 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   for (int i = 0; i < mass_solutes_exact_.size(); i++) {
     mass_solutes_exact_[i] += mass_solutes_source_[i] * dt_;
 
-    if (domain_name_ == "surface") std::cout<<"Overland mass BC "<<mass_solutes_bc_[i]<<"\n";
-    else std::cout<<"Subsurface mass BC "<<mass_solutes_bc_[i]<<"\n";
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
+      std::cout<<"*****************\n";
+      if (domain_name_ == "surface") std::cout<<"Overland mass BC "<<std::setprecision(14)<<mass_solutes_bc_[i]<<"\n";
+      else std::cout<<"Subsurface mass BC "<<std::setprecision(14)<<mass_solutes_bc_[i]<<"\n";
 
-    if (domain_name_ == "surface") std::cout<<"Overland mass_solutes"<<std::setprecision(14)<<mass_solutes_source_[i]*dt_<<"\n";
-    else std::cout<<"Subsurface mass_solutes"<<std::setprecision(14)<<mass_solutes_source_[i]*dt_<<"\n";
+      if (domain_name_ == "surface") std::cout<<"Overland mass_solutes"<<std::setprecision(14)<<mass_solutes_source_[i]*dt_<<"\n";
+      else std::cout<<"Subsurface mass_solutes"<<std::setprecision(14)<<mass_solutes_source_[i]*dt_<<"\n";
+      std::cout<<"*****************\n";
+    }
   }
 
   if (internal_tests) {
     VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
 
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
+    if (domain_name_ == "surface") std::cout<<"Overland mass final "<<mass_final<<"\n";
+    else std::cout<<"Subsurface mass final "<<mass_final<<"\n";
+  }
   
 }
 
@@ -1497,8 +1510,8 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
         tcc[imap][c] += dtp * value;
         mass_solutes_source_[i] += value;
 
-        if (value != 0) std::cout<<"Source name "<<srcs_[m]->name()<<" from Source cell "<<c
-                                 <<" dt "<<dtp<<"  + "<<dtp * value<<" "<<values(k)<<"\n";
+        // if (value < 0) std::cout<<"Source name "<<srcs_[m]->name()<<" from Source cell "<<c
+        //                        <<" dt "<<dtp<<"  + "<<dtp * value<<" "<<values(k)<<"\n";
       }
     }
   }
