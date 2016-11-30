@@ -42,7 +42,7 @@ class PK_DomainFunctionCoupling : public FunctionBase{
 
   // required member functions
   virtual void Compute(double t0, double t1);
-  virtual std::string name() { return "domain coupling"; }
+  virtual std::string name() const { return "domain coupling"; }
   virtual void set_state(const Teuchos::RCP<State>& S) { S_ = S; }
 
  protected:
@@ -188,9 +188,14 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
         if (f == faces[i]) {
           double fln = flux[0][f]*dirs[i];         
           if (fln >= 0) {        
-            for (int k=0; k<num_vec; ++k) val[k] = field_out[k][cells[0]] * fln;
+            for (int k=0; k<num_vec; ++k) {
+              val[k] = field_out[k][cells[0]] * fln;
+            }
           } else if (fln < 0) {       
-            for (int k=0; k<num_vec; ++k) val[k] = field_in[k][*c] *fln;
+            for (int k=0; k<num_vec; ++k) {
+              val[k] = field_in[k][*c] *fln;
+              //std::cout<<"flux out "<<" conc "<<field_in[k][*c]<<" flux "<<fln<<"\n";
+            }
           }
           value_[*c] = val[0]; 
           break;
