@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 
 # ----------- AMANZI + ALQUIMIA -----------------------------------------------------------------
 
-def GetXY_Amanzi(path,root,time,comp):
+def GetXY_Amanzi(path,root,comp):
 
     # open amanzi concentration and mesh files
     dataname = os.path.join(path,root+"_data.h5")
@@ -29,6 +29,7 @@ def GetXY_Amanzi(path,root,time,comp):
     x_amanzi_alquimia  = np.diff(y)/2+y[0:-1]
 
     # extract concentration array
+    time = max(amanzi_file[comp].keys())
     c_amanzi_alquimia = np.array(amanzi_file[comp][time])
     amanzi_file.close()
     amanzi_mesh.close()
@@ -104,7 +105,7 @@ def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
 if __name__ == "__main__":
 
     import os
-    import run_amanzi_chem
+    import run_amanzi_standard
     import numpy as np
 
     # root name for problem
@@ -190,71 +191,67 @@ if __name__ == "__main__":
     ignore = 4
     for i, time in enumerate(times_CF):
        x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
-#       VF_crunchOS3D = VF_crunchOS3D + [c_crunchflow/100.0]
        VF_crunchOS3D = VF_crunchOS3D + [c_crunchflow]
 
     CWD = os.getcwd()
     local_path = "" 
 
-    # local_path="/home/scratch/smolins/amanzi-fresh/demos/phase2/chemistry/1d-calcite/"
-    # path_to_amanzi="/home/scratch/smolins/amanzi-alquimia/examples/phase2/chemistry/1d-calcite/"
-
     # subplots
     fig, ax = plt.subplots(3,sharex=True,figsize=(8,10))
     
     try:
-        # hardwired for 1d-calcite: Ca = component 2, last time = '72'
-#        times = ['31','41','51','61','71']
-        times = ['71']
-
         # Amanzi native chemistry
-        input_filename = os.path.join("u_calcite.xml")
+        input_filename = os.path.join("amanzi-u-1d-calcite.xml")
         path_to_amanzi = "amanzi-native-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["calcite.bgd"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["calcite.bgd"], path_to_amanzi)
         
         comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_native = []
         for i, time in enumerate(times):
-           x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+           x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
            Ca_amanzi_native = Ca_amanzi_native +[c_amanzi_native]
 
         comp = 'free_ion_species.cell.H+'
         pH_amanzi_native = []
         for i, time in enumerate(times):
-           x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+           x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
            pH_amanzi_native = pH_amanzi_native +[-np.log10(c_amanzi_native)]
 
         comp = 'mineral_volume_fractions.cell.Calcite vol frac'
         VF_amanzi_native = []
         for i, time in enumerate(times):
-           x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+           x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
            VF_amanzi_native = VF_amanzi_native +[c_amanzi_native]
+
+        native = True
+
     except:
+        native = False
 
         pass    
 
     try:
         # Amanzi-Alquimia
-        input_filename = os.path.join("u_calcite_alq_pflo.xml")
+        input_filename = os.path.join("amanzi-u-1d-calcite-het-alq-pflo.xml")
         path_to_amanzi = "amanzi-alquimia-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-calcite.in","calcite.dat"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-calcite.in","calcite.dat"], path_to_amanzi)
 
         comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_alquimia = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
            Ca_amanzi_alquimia = Ca_amanzi_alquimia +[c_amanzi_alquimia]
 
         comp = 'free_ion_species.cell.H+'
         pH_amanzi_alquimia = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
            pH_amanzi_alquimia = pH_amanzi_alquimia +[-np.log10(c_amanzi_alquimia)]
 
         comp = 'mineral_volume_fractions.cell.Calcite vol frac'
         VF_amanzi_alquimia = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
            VF_amanzi_alquimia = VF_amanzi_alquimia +[c_amanzi_alquimia]
 
         alq = True
@@ -265,26 +262,26 @@ if __name__ == "__main__":
 
     try:
         # Amanzi-Alquimia-Crunch
-        input_filename = os.path.join("u_calcite_alq_crunch.xml")
+        input_filename = os.path.join("amanzi-u-1d-calcite-het-alq-crunch.xml")
         path_to_amanzi = "amanzi-alquimia-crunch-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-calcite-crunch.in","calcite.dbs"])
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-calcite-crunch.in","calcite.dbs"], path_to_amanzi)
 
         comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_alquimia_crunch = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
            Ca_amanzi_alquimia_crunch = Ca_amanzi_alquimia_crunch +[c_amanzi_alquimia_crunch]
 
         comp = 'free_ion_species.cell.H+'
         pH_amanzi_alquimia_crunch = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
            pH_amanzi_alquimia_crunch = pH_amanzi_alquimia_crunch +[-np.log10(c_amanzi_alquimia_crunch)]
 
         comp = 'mineral_volume_fractions.cell.Calcite vol frac'
         VF_amanzi_alquimia_crunch = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,time,comp)
+           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
            VF_amanzi_alquimia_crunch = VF_amanzi_alquimia_crunch +[c_amanzi_alquimia_crunch]
 
         alq_crunch = True
@@ -298,9 +295,9 @@ if __name__ == "__main__":
     # +pflotran
     try:
         # import pdb; pdb.set_trace()
-        input_filename = os.path.join("s_calcite_alq_pflo.xml")
+        input_filename = os.path.join("amanzi-s-1d-calcite-het-alq.xml")
         path_to_amanziS = "struct_amanzi-output-pflo"
-        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
         root_amanziS = "plt00501"
         compS = "Ca++_Aqueous_Concentration"
         x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
@@ -316,7 +313,7 @@ if __name__ == "__main__":
     # +crunchflow
     try:
         # import pdb; pdb.set_trace()
-        input_filename = os.path.join("s_calcite_alq_crunch.xml")
+        input_filename = os.path.join("amanzi-s-1d-calcite-het-alq-crunch.xml")
         path_to_amanziS = "struct_amanzi-output-crunch"
         run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
         root_amanziS = "plt00501"
@@ -341,45 +338,49 @@ if __name__ == "__main__":
                  ax[0].plot(x_amanzi_alquimia, Ca_amanzi_alquimia[i],'r-',linewidth=2)
           if alq_crunch:
                  ax[0].plot(x_amanzi_alquimia_crunch, Ca_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=12)
-          ax[0].plot(x_amanzi_native, Ca_amanzi_native[i],'rx')
+          if native:
+                 ax[0].plot(x_amanzi_native, Ca_amanzi_native[i],'rx')
 ##          ax[0].plot(x_pflotran, Ca_pflotran[i],'bx',linewidth=2)
           ax[0].plot(x_pflotran_OS, Ca_pflotran_OS[i],'m-',linewidth=2)
 #          if i>1:
 #                  ax[0].plot(x_crunchflow, Ca_crunchflow[i-1],'y.')
 #                  ax[0].plot(x_crunchflow, Ca_crunchOS3D[i-1],'g.')
 ##          ax[0].plot(x_crunchflow, Ca_crunchflow[i],'y.')
-          ax[0].plot(x_crunchflow, Ca_crunchOS3D[i],'m*') #,markersize=30)
+          ax[0].plot(x_crunchflow, Ca_crunchOS3D[i],'m*')
 
 
           if alq:
                  ax[1].plot(x_amanzi_alquimia, pH_amanzi_alquimia[i],'r-',linewidth=2,label='AmanziU(2nd-O)+Alq(PFT)')
           if alq_crunch:
                  ax[1].plot(x_amanzi_alquimia_crunch, pH_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=12,label='AmanziU(2nd-O)+Alq(CF)')
-          ax[1].plot(x_amanzi_native, pH_amanzi_native[i],'rx',label='AmanziU(2nd-O) Native Chem.')
+          if native:
+                 ax[1].plot(x_amanzi_native, pH_amanzi_native[i],'rx',label='AmanziU(2nd-O) Native Chem.')
 ##          ax[1].plot(x_pflotran, pH_pflotran[i],'bx',linewidth=2)
           ax[1].plot(x_pflotran_OS, pH_pflotran_OS[i],'m-',linewidth=2)
 #          if i>0:
 #                  ax[1].plot(x_crunchflow, pH_crunchflow[i-1],'y.')
 #                  ax[1].plot(x_crunchflow, pH_crunchOS3D[i-1],'g.')
 ##          ax[1].plot(x_crunchflow, pH_crunchflow[i],'y.')
-          ax[1].plot(x_crunchflow, pH_crunchOS3D[i],'m*')#,markersize=30)
+          ax[1].plot(x_crunchflow, pH_crunchOS3D[i],'m*')
 
           if i==0:
             if alq:
                    ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',linewidth=2)
             if alq_crunch:
                    ax[2].plot(x_amanzi_alquimia_crunch, VF_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=12)
-            ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'rx')
+            if native:
+                   ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'rx')
 ##            ax[2].plot(x_pflotran, VF_pflotran[i],'bx',label='PFloTran',linewidth=2)
             ax[2].plot(x_pflotran_OS, VF_pflotran_OS[i],'m-',label='PFloTran OS',linewidth=2)
 ##            ax[2].plot(x_crunchflow, VF_crunchflow[i],'y.',label='CrunchFlow GIMRT')
-            ax[2].plot(x_crunchflow, VF_crunchOS3D[i],'m*',label='CrunchFlow OS3D')#,markersize=30)
+            ax[2].plot(x_crunchflow, VF_crunchOS3D[i],'m*',label='CrunchFlow OS3D',markersize=7)
           else:
             if alq:
                    ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',linewidth=2)
             if alq_crunch:
                    ax[2].plot(x_amanzi_alquimia_crunch, VF_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=12)
-            ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'rx')
+            if native:
+                  ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'rx')
 ##            ax[2].plot(x_pflotran, VF_pflotran[i],'bx',linewidth=2)
             ax[2].plot(x_pflotran_OS, VF_pflotran_OS[i],'m-',linewidth=2)
 #            if i==1:
@@ -401,9 +402,8 @@ if __name__ == "__main__":
         samcVF = ax[2].plot(x_amanziS_crunch, VF_amanziS_crunch,'g*',linewidth=2)     
 
     # set x lim
-#    ax[0].set_xlim((18,32))
-    ax[0].set_xlim((15,75))
- 
+    ax[0].set_xlim((30,65))
+  
     # axes
     ax[2].set_xlabel("Distance (m)",fontsize=20)
     ax[0].set_ylabel("Total Ca concentration [mol/L]",fontsize=15)
@@ -417,14 +417,14 @@ if __name__ == "__main__":
         ax[0].legend(loc='lower right',fontsize=13)
 
     if (alq>0 or alq_crunch>0):
-        ax[1].legend(loc='lower right',fontsize=13) 
+        ax[1].legend(loc='lower right')#,fontsize=13) 
 
-    ax[2].legend(loc='lower right',fontsize=13)
+    ax[2].legend(loc='lower right')#,fontsize=13)
     plt.suptitle("Amanzi 1D Calcite Benchmark",x=0.57,fontsize=20)
     plt.tick_params(axis='x', which='major', labelsize=20)
 
     #pyplot.show()
-    plt.savefig(local_path+"calcite_het.png",format="png")
+    plt.savefig(local_path+"calcite_1d.png",format="png")
     #plt.close()
 
     # set x lim
@@ -432,4 +432,4 @@ if __name__ == "__main__":
 #    plt.savefig(local_path+"calcite_1d_2.png",format="png")
 
     #finally:
-    #    pass 
+    #    pass
