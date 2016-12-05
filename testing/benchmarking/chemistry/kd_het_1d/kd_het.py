@@ -1,18 +1,21 @@
 # plots cation concentration along x at last time step 
 # benchmark: compares to pflotran simulation results
-# author: S.Molins - Apr. 2015
+# author: S.Molins - Nov. 2013
+# modified: E.I.Barker - May 2014
+#           - added native chemistry using v2 input spec
+# S. Molins - for heterogeneous Kd - Dec 2016
 
 import os
 import sys
 import h5py
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
 from matplotlib import pyplot as plt
+
 
 # ----------- AMANZI + ALQUIMIA -----------------------------------------------------------------
 
-def GetXY_Amanzi(path,root,time,comp):
+def GetXY_Amanzi(path,root,comp):
 
     # open amanzi concentration and mesh files
     dataname = os.path.join(path,root+"_data.h5")
@@ -24,16 +27,17 @@ def GetXY_Amanzi(path,root,time,comp):
     y = np.array(amanzi_mesh['0']['Mesh']["Nodes"][0:len(amanzi_mesh['0']['Mesh']["Nodes"])/4,0])
     # y = np.array(amanzi_mesh['Mesh']["Nodes"][0:len(amanzi_mesh['Mesh']["Nodes"])/4,0]) # old style
     # center of cell
-    x_amanzi_alquimia  = np.diff(y)/2+y[0:-1]
+    x_alquimia = np.diff(y)/2+y[0:-1]
 
     # extract concentration array
-    c_amanzi_alquimia = np.array(amanzi_file[comp][time]).flatten()
+    time = max(amanzi_file[comp].keys())
+    c_alquimia = np.array(amanzi_file[comp][time]).flatten()
     amanzi_file.close()
     amanzi_mesh.close()
 
-    return (x_amanzi_alquimia, c_amanzi_alquimia)
+    return (x_alquimia, c_alquimia)
 
-#Amanzi Struct
+# Amanzi Struct
 
 def GetXY_AmanziS(path,root,time,comp):
     try:
@@ -56,6 +60,7 @@ def GetXY_AmanziS(path,root,time,comp):
     
     return (x, y)
 
+
 # ----------- PFLOTRAN STANDALONE ------------------------------------------------------------
 
 def GetXY_PFloTran(path,root,time,comp):
@@ -70,10 +75,11 @@ def GetXY_PFloTran(path,root,time,comp):
 
     # extract concentrations
     c_pflotran = np.array(pfdata[time][comp]).flatten()
-#    c_pflotran = c_pflotran.flatten()
+    # c_pflotran = c_pflotran.flatten()
     pfdata.close()
 
     return (x_pflotran, c_pflotran)
+
 
 # ------------- CRUNCHFLOW ------------------------------------------------------------------
 def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
@@ -100,6 +106,7 @@ def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
 
     return (xv, yv)
 
+
 if __name__ == "__main__":
 
     import os
@@ -107,15 +114,13 @@ if __name__ == "__main__":
     import numpy as np
 
     # root name for problem
-    root = "kd"
-    root2 = "isotherms"
-    root3 = "kd_het"
+    root = "isotherms"
     components = ['A']
     compcrunch = ['A']
 
     # times
-    timespfl = [ 'Time:  5.00000E+01 y',]
-    timesama  = ['142']
+    timespfl = ['Time:  5.00000E+01 y',]
+    timesama  = ['71']
     timesama2 = ['71']
 
     # pflotran output
@@ -134,22 +139,24 @@ if __name__ == "__main__":
     amanzi_sorb = [amanzi_sorb_templ.format(x) for x in range(len(components))]
     amanzi_sorb_crunch = [amanzi_sorb_templ.format(x) for x in range(len(compcrunch))]
 
+
 # pflotran data --->
     path_to_pflotran = "pflotran"
     u_pflotran = [[[] for x in range(len(pflotran_totc))] for x in range(len(timespfl))]
     for i, time in enumerate(timespfl):
        for j, comp in enumerate(pflotran_totc):
-          x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root2,time,comp)
+          x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,comp)
           u_pflotran[i][j] = c_pflotran
     
     v_pflotran = [[[] for x in range(len(pflotran_sorb))] for x in range(len(timespfl))]
     for i, time in enumerate(timespfl):
        for j, sorb in enumerate(pflotran_sorb):
-          x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root2,time,sorb)
+          x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,sorb)
           v_pflotran[i][j] = c_pflotran
 
     CWD = os.getcwd()
     local_path = "" 
+
 
 # CrunchFlow --->
     path_to_crunchflow = "crunchflow"
@@ -159,40 +166,37 @@ if __name__ == "__main__":
         u_crunchflow = []
         ignore = 4
         for i, time in enumerate(times_CF):
-           x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root2,time,comp,ignore)
+           x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
            u_crunchflow = u_crunchflow + [c_crunchflow]
         crunch = True
 
     except: 
         crunch = False    
 
+
 # Amanzi native chemistry --->
     try:
         input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "amanzi-native-output"
-        #run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=[root2+".bgd"])
-	run_amanzi_standard.run_amanzi(input_filename, 1, [root2+".bgd"], path_to_amanzi)
+        run_amanzi_standard.run_amanzi(input_filename, 1, [root+".bgd"], path_to_amanzi)
 
-        u_amanzi_native = [[[] for x in range(len(amanzi_totc))] for x in range(len(timesama))]
+        u_native = [[[] for x in range(len(amanzi_totc))] for x in range(len(timesama))]
         for i, time in enumerate(timesama):
            for j, comp in enumerate(amanzi_totc):
 #              import pdb; pdb.set_trace()
-              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root3,time,comp)
-              u_amanzi_native[i][j] = c_amanzi_native
+              x_native, c_native = GetXY_Amanzi(path_to_amanzi,root,comp)
+              u_native[i][j] = c_native
 
-        v_amanzi_native = [[[] for x in range(len(amanzi_sorb))] for x in range(len(timesama))]
+        v_native = [[[] for x in range(len(amanzi_sorb))] for x in range(len(timesama))]
         for i, time in enumerate(timesama):
            for j, comp in enumerate(amanzi_sorb):
-              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root3,time,comp)
-              v_amanzi_native[i][j] = c_amanzi_native
-       
-        native = len(x_amanzi_native)  
+              x_native, c_native = GetXY_Amanzi(path_to_amanzi,root,comp)
+              v_native[i][j] = c_native
+
+        native = len(x_native)  
 
     except:
-        
         native = 0 
-
-
         pass
 
 
@@ -200,51 +204,47 @@ if __name__ == "__main__":
     try:  
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-pflo.xml")
         path_to_amanzi = "amanzi-alquimia-output"
-        #run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=[root2+".dat"])
-	run_amanzi_standard.run_amanzi(input_filename, 1, [root2+".dat"], path_to_amanzi)
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+".in",root+".dat"], path_to_amanzi)
 
-        u_amanzi_alquimia = [[[] for x in range(len(amanzi_totc))] for x in range(len(timesama))]
+        u_alquimia = [[[] for x in range(len(amanzi_totc))] for x in range(len(timesama))]
         for i, time in enumerate(timesama):
            for j, comp in enumerate(amanzi_totc):
-              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root3,time,comp)
-              u_amanzi_alquimia[i][j] = c_amanzi_alquimia
+              x_alquimia, c_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
+              u_alquimia[i][j] = c_alquimia
               
-        v_amanzi_alquimia = [[[] for x in range(len(amanzi_sorb))] for x in range(len(timesama))]
+        v_alquimia = [[[] for x in range(len(amanzi_sorb))] for x in range(len(timesama))]
         for i, time in enumerate(timesama):
            for j, comp in enumerate(amanzi_sorb):
-              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root3,time,comp)
-              v_amanzi_alquimia[i][j] = c_amanzi_alquimia
+              x_alquimia, c_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
+              v_alquimia[i][j] = c_alquimia
 
         alq = True
 
     except:
-
         alq = False
 
 
 # Amanzi-Alquimia-Crunch --->
     try:  
-        input_filename = os.path.join("u_"+root+"_alq_crunch.xml")
+        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
         path_to_amanzi = "amanzi-alquimia-crunch-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root2+"-crunch.in",root2+".dbs"])
-	run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root2+"-crunch.in",root2+".dbs"], path_to_amanzi)
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+"-crunch.in",root+".dbs"], path_to_amanzi)
 
-        u_amanzi_alquimia_crunch = [[[] for x in range(len(amanzi_totc_crunch))] for x in range(len(timesama))]
+        u_alquimia_crunch = [[[] for x in range(len(amanzi_totc_crunch))] for x in range(len(timesama))]
         for i, time in enumerate(timesama):
            for j, comp in enumerate(amanzi_totc_crunch):
-              x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root2,time,comp)
-              u_amanzi_alquimia_crunch[i][j] = c_amanzi_alquimia_crunch
+              x_alquimia_crunch, c_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
+              u_alquimia_crunch[i][j] = c_alquimia_crunch
               
-        v_amanzi_alquimia_crunch = [[[] for x in range(len(amanzi_sorb_crunch))] for x in range(len(timesama))]
+        v_alquimia_crunch = [[[] for x in range(len(amanzi_sorb_crunch))] for x in range(len(timesama))]
         for i, time in enumerate(timesama):
            for j, comp in enumerate(amanzi_sorb_crunch):
-              x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root2,time,comp)
-              v_amanzi_alquimia_crunch[i][j] = c_amanzi_alquimia_crunch
+              x_alquimia_crunch, c_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
+              v_alquimia_crunch[i][j] = c_alquimia_crunch
 
         alqc = True
 
     except:
-
         alqc = False
 
 
@@ -252,10 +252,9 @@ if __name__ == "__main__":
 
     # +pflotran
     try:
-        input_filename = os.path.join("s_kd_alq_pflo.xml")
+        input_filename = os.path.join("amanzi-s-1d-isotherms-alq-pflo.xml")
         path_to_amanziS = "struct_amanzi-output-pflo"
-        #run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
-	run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
+        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
         root_amanziS = "plt00051"
         c_amanziS = [ [] for x in range(len(amanzi_totc)) ]
         v_amanziS = [ [] for x in range(len(amanzi_totc)) ]
@@ -270,10 +269,9 @@ if __name__ == "__main__":
 
     # +crunchflow
     try:
-        input_filename = os.path.join("s_kd_alq_crunch.xml")
+        input_filename = os.path.join("amanzi-s-1d-isotherms-alq-crunch.xml")
         path_to_amanziS = "struct_amanzi-output-crunch"
-        #run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
-	run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
+        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
         root_amanziS = "plt00051"
         compS = "A_Aqueous_Concentration"
         x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
@@ -286,7 +284,11 @@ if __name__ == "__main__":
 ## plotting ---------------------------------
 
     # subplots
-    fig, ax = plt.subplots(2,sharex=True,figsize=(8,8))
+    fig, ax = plt.subplots(2,sharex=True,figsize=(8,6))
+
+#    colors= ['r'] #,'b','m','g'] # components
+#    styles = ['-','v','o','x'] # codes
+#    codes = ['AmanziU (2nd-Ord.)+Alq(PFT)','AmanziU (2nd-Ord.) Native','PFloTran'] + [None,]*9
 
     # lines on axes
 
@@ -303,32 +305,57 @@ if __name__ == "__main__":
 
 #  pflotran
     ax[0].plot(x_pflotran, u_pflotran[i][0],color='m',linestyle='-',linewidth=2,label='PFloTran')    
-    ax[1].plot(x_pflotran, v_pflotran[i][0],color='m',linestyle='-',linewidth=2)
+#    ax[1].plot(x_pflotran, v_pflotran[i][0],color='m',linestyle='-',linewidth=2)
+
+##    ax[2].plot(x_pflotran, u_pflotran[i][1],color='k',linestyle='-',linewidth=2,label='Langmuir PFloTran ')    
+##    ax[3].plot(x_pflotran, v_pflotran[i][1],color='k',linestyle='-',linewidth=2)
+
+##    ax[2].plot(x_pflotran, u_pflotran[i][2],color='c',linestyle='-',linewidth=2,label='Freundlich PFloTran')    
+##    ax[3].plot(x_pflotran, v_pflotran[i][2],color='c',linestyle='-',linewidth=2)
 
 # crunchflow
     if crunch:
         ax[0].plot(x_crunchflow, u_crunchflow[0],color='m',linestyle='None',marker='*', label='CrunchFlow OS3D')
         # crunchflow does not output sorbed concentrations
  
-# native 2.0
+# native 
     if native:
-        ax[0].plot(x_amanzi_native, u_amanzi_native[i][0],color='b',marker='o',markeredgecolor='b',markerfacecolor='None',linestyle='None')  
-        ax[1].plot(x_amanzi_native, v_amanzi_native[i][0],color='b',linestyle='None',marker='o',markeredgecolor='b',markerfacecolor='None',label='AmanziU (2nd-Ord.) Native(v2)')
+       ax[0].plot(x_native, u_native[i][0],color='b',linestyle='None',marker='x')
+       ax[1].plot(x_native, v_native[i][0],color='b',linestyle='None',marker='x',label='AmanziU (2nd-Ord.) Native')
+
+##       ax[2].plot(x_native, u_native[i][1],color='k',linestyle='None',marker='x')
+##       ax[3].plot(x_native, v_native[i][1],color='k',linestyle='None',marker='x',label='Langmuir AmanziU (2nd-Ord.) Native')
+
+##       ax[2].plot(x_native, u_native[i][2],color='c',linestyle='None',marker='x')
+##       ax[3].plot(x_native, v_native[i][2],color='c',linestyle='None',marker='x',label='Freundlich AmanziU (2nd-Ord.) Native')
+
 
 # unstructured alquimia pflotran
     if alq:
-        ax[0].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][0],color='r',linestyle='-',linewidth=2)
-        ax[1].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][0],color='r',linestyle='-',linewidth=2,label='AmanziU (2nd-Ord.)+Alq(PFT)')
+       ax[0].plot(x_alquimia, u_alquimia[i][0],color='r',linestyle='-',linewidth=2)
+       ax[1].plot(x_alquimia, v_alquimia[i][0],color='r',linestyle='-',linewidth=2,label='AmanziU (2nd-Ord.)+Alq(PFT)')
+
+##       ax[2].plot(x_alquimia, u_alquimia[i][1],color='k',linestyle='--',linewidth=2)
+##       ax[3].plot(x_alquimia, v_alquimia[i][1],color='k',linestyle='--',linewidth=2,label='Langmuir AmanziU (2nd-Ord.)+Alq(PFT)')
+
+##       ax[2].plot(x_alquimia, u_alquimia[i][2],color='c',linestyle='--',linewidth=2)
+##       ax[3].plot(x_alquimia, v_alquimia[i][2],color='c',linestyle='--',linewidth=2,label='Freundlich AmanziU (2nd-Ord.)+Alq(PFT)')
 
 # unstructured alquimia crunch
     if alqc:
-        ax[0].plot(x_amanzi_alquimia_crunch, u_amanzi_alquimia_crunch[i][0],color='r',linestyle='None',marker='*',linewidth=2)
-        ax[1].plot(x_amanzi_alquimia_crunch, v_amanzi_alquimia_crunch[i][0],color='r',linestyle='None',marker='*',linewidth=2,label='AmanziU (2nd-Ord.)+Alq(CF)')
+       ax[0].plot(x_alquimia_crunch, u_alquimia_crunch[i][0],color='r',linestyle='None',marker='*',linewidth=2)
+       ax[1].plot(x_alquimia_crunch, v_alquimia_crunch[i][0],color='r',linestyle='None',marker='*',linewidth=2,label='AmanziU (2nd-Ord.)+Alq(CF)')
 
 # structured alquimia pflotran
     if (struct>0):
         sam = ax[0].plot(x_amanziS, c_amanziS[0],'g-',label='AmanziS+Alq(PFT)',linewidth=2)
         samv = ax[1].plot(x_amanziS, v_amanziS[0],'g-',linewidth=2)
+
+##        sam1 = ax[2].plot(x_amanziS, c_amanziS[1],'k*',label='Langmuir AmanziS+Alq(PFT)',linewidth=2)
+##        samv1 = ax[3].plot(x_amanziS, v_amanziS[1],'k*',linewidth=2)
+
+##        sam2 = ax[2].plot(x_amanziS, c_amanziS[2],'c*',label='Freundlich AmanziS+Alq(PFT)',linewidth=2)
+##        samv2 = ax[3].plot(x_amanziS, v_amanziS[2],'c*',linewidth=2)
 
 # structured alquimia crunch
     if (struct_c>0):
@@ -341,10 +368,20 @@ if __name__ == "__main__":
     ax[0].set_ylabel("Total A \n Concentration \n [mol/L]",fontsize=15)
     ax[1].set_ylabel("Total A \n Sorbed Concent. \n [mol/m3]",fontsize=15)
 
-    ax[0].legend(loc='lower left',fontsize=12)
-    ax[1].legend(loc='lower left',fontsize=12)
-    ax[0].set_xlim(left=00,right=70)
-    ax[1].set_xlim(left=00,right=70)
+##    ax[2].set_title("Langmuir and Freundlich sorption models",fontsize=15)
+##    ax[3].set_xlabel("Distance (m)",fontsize=15)
+##    ax[2].set_ylabel("Total B, C \n Concentration \n [mol/L]",fontsize=15)
+##    ax[3].set_ylabel("Total B, C \n Sorbed Concent. \n [mol/m3]",fontsize=15)
+
+    ax[0].legend(loc='upper right',fontsize=10)
+    ax[1].legend(loc='upper right',fontsize=10)
+##    ax[0].set_xlim(left=30,right=70)
+##    ax[1].set_xlim(left=30,right=70)
+
+##    ax[2].legend(loc='upper right',fontsize=10)
+##    ax[3].legend(loc='upper right',fontsize=8)
+##    ax[2].set_xlim(left=30,right=70)
+##    ax[3].set_xlim(left=30,right=70)
 
     # plot adjustments
     plt.tight_layout() 
@@ -352,9 +389,9 @@ if __name__ == "__main__":
     plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
     plt.tick_params(axis='both', which='major', labelsize=15)
 
-    #pyplot.show()
-    plt.savefig(root+"_het.png",format="png")
-    #plt.close()
+    # pyplot.show()
+    plt.savefig(root+"_1d.png",format="png")
+    # plt.close()
 
-    #finally:
-    #    pass 
+    # finally:
+    #     pass 

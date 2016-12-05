@@ -461,7 +461,12 @@ void ChemistryEngine::EnforceCondition(const std::string& condition_name,
   }
 
   // Copy the constraint's data into place.
-  CopyAlquimiaProperties(&nc_mat_props, &iter->second->mat_props);
+  // Here, condition names are used but Alquimia properties are
+  // given as "Material" zones in Amanzi's inputthus disconnecting them
+  // from "Initial" conditions (i.e. condition names)
+  // For the sake of performance, we avoid here to re-process conditions
+  // but we need to retain materical properties as provided in Amanzi inputs
+  // CopyAlquimiaProperties(&nc_mat_props, &iter->second->mat_props);
   CopyAlquimiaState(&chem_state, &iter->second->chem_state);
   CopyAlquimiaAuxiliaryData(&aux_data, &iter->second->aux_data);
 
