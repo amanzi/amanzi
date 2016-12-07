@@ -17,7 +17,6 @@ energy/water-content space instead of temperature/pressure space.
 #include "Tensor.hh"
 #include "State.hh"
 #include "TreeVector.hh"
-#include "pk_default_base.hh"
 
 namespace Amanzi {
 

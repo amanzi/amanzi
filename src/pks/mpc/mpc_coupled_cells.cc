@@ -43,8 +43,8 @@
 
 namespace Amanzi {
 
-void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
-  StrongMPC<PKPhysicalBDFBase>::setup(S);
+void MPCCoupledCells::Setup(const Teuchos::Ptr<State>& S) {
+  StrongMPC<PK_PhysicalBDF_Default>::Setup(S);
 
   decoupled_ = plist_->get<bool>("decoupled",false);
 
@@ -97,7 +97,7 @@ void MPCCoupledCells::setup(const Teuchos::Ptr<State>& S) {
 // updates the preconditioner
 void MPCCoupledCells::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
         double h) {
-  StrongMPC<PKPhysicalBDFBase>::UpdatePreconditioner(t,up,h);
+  StrongMPC<PK_PhysicalBDF_Default>::UpdatePreconditioner(t,up,h);
 
   // // Update and get the off-diagonal terms.
   // if (!decoupled_) {
@@ -125,7 +125,7 @@ void MPCCoupledCells::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVect
 
 // applies preconditioner to u and returns the result in Pu
 int MPCCoupledCells::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
-  if (decoupled_) return StrongMPC<PKPhysicalBDFBase>::ApplyPreconditioner(u,Pu);
+  if (decoupled_) return StrongMPC<PK_PhysicalBDF_Default>::ApplyPreconditioner(u,Pu);
   int ierr = linsolve_preconditioner_->ApplyInverse(*u, *Pu);
   
   return (ierr > 0) ? 0 : 1;

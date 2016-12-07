@@ -14,11 +14,13 @@ Process kernel for energy equation for Richard's flow.
 namespace Amanzi {
 namespace BGC {
 
-CarbonSimple::CarbonSimple(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                           Teuchos::ParameterList& FElist,
-                           const Teuchos::RCP<TreeVector>& solution) :
-    Amanzi::PKDefaultBase(plist, FElist, solution),
-    Amanzi::PKPhysicalExplicitBase(plist, FElist, solution),
+CarbonSimple::CarbonSimple(Teuchos::ParameterList& pk_tree,
+                            const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                            const Teuchos::RCP<State>& S,
+                            const Teuchos::RCP<TreeVector>& solution):
+    Amanzi::PK(pk_tree, glist, S, solution),
+    Amanzi::PK_Explicit_Default(pk_tree, glist, S, solution),
+    Amanzi::PK_Physical_Explicit_Default(pk_tree, glist, S, solution),
     is_diffusion_(false),
     is_source_(false),
     is_decomp_(false),
@@ -28,8 +30,8 @@ CarbonSimple::CarbonSimple(const Teuchos::RCP<Teuchos::ParameterList>& plist,
 
 // Setup data
 void
-CarbonSimple::setup(const Teuchos::Ptr<State>& S) {
-  PKPhysicalExplicitBase::setup(S);
+CarbonSimple::Setup(const Teuchos::Ptr<State>& S) {
+  PK_Physical_Explicit_Default::Setup(S);
 
   // number of carbon pools
   npools_ = plist_->get<int>("number of carbon pools");
@@ -82,7 +84,7 @@ CarbonSimple::Functional(const double t, const TreeVector& u, TreeVector& f) {
 
   // eventually we need to ditch this multi-state approach --etc
   ASSERT(std::abs(S_inter_->time() - t) < 1.e-4*S_next_->time() - S_inter_->time());
-  PKDefaultBase::solution_to_state(u, S_inter_);
+  PK_Physical_Default::Solution_to_State(u, S_inter_);
 
   // debugging
   if (vo_->os_OK(Teuchos::VERB_HIGH))
@@ -115,7 +117,7 @@ CarbonSimple::Functional(const double t, const TreeVector& u, TreeVector& f) {
 
 // -- Calculate any diagnostics prior to doing vis
 void
-CarbonSimple::calculate_diagnostics(const Teuchos::RCP<State>& S) {
+CarbonSimple::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   // Call the functional.  This ensures that the vis gets updated values,
   // despite the fact that they have not yet been updated.
   TreeVector dudt(*solution_);

@@ -39,17 +39,19 @@ namespace Flow {
 #define DEBUG_FLAG 1
 #define DEBUG_RES_FLAG 0
 
-OverlandFlow::OverlandFlow(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        Teuchos::ParameterList& FElist,
-        const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, FElist, solution),
-    PKPhysicalBDFBase(plist, FElist, solution),
+OverlandFlow::OverlandFlow(Teuchos::ParameterList& FElist,
+                           const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                           const Teuchos::RCP<State>& S,
+                           const Teuchos::RCP<TreeVector>& solution) :
+    PK(FElist, plist, S, solution),
+    PK_PhysicalBDF_Default(FElist, plist, S, solution),
     standalone_mode_(false),
     is_source_term_(false),
     niter_(0)
 {
-  plist_->set("conserved quantity key", "ponded_depth");
-  plist_->set("domain name", "surface");
+  // used for error norm
+  if (!plist_->isParameter("conserved quantity suffix"))
+    plist_->set("conserved quantity suffix", "ponded_depth");
   
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
@@ -61,7 +63,7 @@ OverlandFlow::OverlandFlow(const Teuchos::RCP<Teuchos::ParameterList>& plist,
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------
-void OverlandFlow::setup(const Teuchos::Ptr<State>& S) {
+void OverlandFlow::Setup(const Teuchos::Ptr<State>& S) {
   // set up the meshes
   if (!S->HasMesh("surface")) {
     Teuchos::RCP<const AmanziMesh::Mesh> domain = S->GetMesh();
@@ -72,7 +74,7 @@ void OverlandFlow::setup(const Teuchos::Ptr<State>& S) {
     standalone_mode_ = false;
   }
 
-  PKPhysicalBDFBase::setup(S);
+  PK_PhysicalBDF_Default::Setup(S);
   SetupOverlandFlow_(S);
   SetupPhysicalEvaluators_(S);
 }
@@ -274,9 +276,9 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // -------------------------------------------------------------
 // Initialize PK
 // -------------------------------------------------------------
-void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
+void OverlandFlow::Initialize(const Teuchos::Ptr<State>& S) {
   // Initialize BDF stuff and physical domain stuff.
-  PKPhysicalBDFBase::initialize(S);
+  PK_PhysicalBDF_Default::Initialize(S);
 
   // Initialize BC data structures
   unsigned int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -313,14 +315,15 @@ void OverlandFlow::initialize(const Teuchos::Ptr<State>& S) {
 //   secondary variables have been updated to be consistent with the new
 //   solution.
 // -----------------------------------------------------------------------------
-void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
+  void OverlandFlow::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
   niter_ = 0;
-
+  double dt = t_new - t_old;
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
 *vo_->os() << "Commiting state." << std::endl;
 
-  PKPhysicalBDFBase::commit_state(dt, S);
+  //PKPhysicalBDFBase::commit_state(, S);
+  PK_PhysicalBDF_Default::CommitStep(t_old, t_new, S);
 
   // update boundary conditions
   bc_head_->Compute(S->time());
@@ -353,7 +356,7 @@ void OverlandFlow::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // -----------------------------------------------------------------------------
 // Update diagnostics -- used prior to vis.
 // -----------------------------------------------------------------------------
-void OverlandFlow::calculate_diagnostics(const Teuchos::RCP<State>& S) {};
+void OverlandFlow::CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
 
 
 // -----------------------------------------------------------------------------

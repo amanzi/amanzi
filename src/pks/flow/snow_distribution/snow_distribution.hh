@@ -17,17 +17,19 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "OperatorDiffusion.hh"
 #include "OperatorAccumulation.hh"
 
-#include "pk_factory.hh"
-#include "pk_physical_bdf_base.hh"
+#include "PK_Factory.hh"
+#include "pk_physical_bdf_default.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class SnowDistribution : public PKPhysicalBDFBase {
+//class SnowDistribution : public PKPhysicalBDFBase {
+class SnowDistribution : public PK_PhysicalBDF_Default {
 
 public:
-  SnowDistribution(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-               Teuchos::ParameterList& FElist,
+  SnowDistribution(Teuchos::ParameterList& FElist,
+                   const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                   const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& solution);
   
   // Virtual destructor
@@ -35,18 +37,25 @@ public:
 
   // main methods
   // -- Initialize owned (dependent) variables.
-  virtual void setup(const Teuchos::Ptr<State>& S);
+  //virtual void setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // -- Initialize owned (dependent) variables.
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  //virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   // -- Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {
-    PKPhysicalBDFBase::commit_state(dt,S);
+  // virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {
+  //   PKPhysicalBDFBase::commit_state(dt,S);
+  // }
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S){
+    PK_PhysicalBDF_Default::CommitStep(t_old, t_new, S);
   }
 
+
   // -- Update diagnostics for vis.
-  virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {}
+  //virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {}
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
 
   // ConstantTemperature is a BDFFnBase
   // computes the non-linear functional g = g(t,u,udot)

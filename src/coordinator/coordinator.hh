@@ -72,6 +72,7 @@ class Checkpoint;
 class State;
 class TreeVector;
 class PK;
+class PK_ATS;
 class UnstructuredObservations;
 };
 
@@ -91,7 +92,7 @@ public:
   void initialize();
   void finalize();
   void report_memory();
-  bool advance(double dt);
+  bool advance(double t_old, double t_new);
   void visualize(bool force=false);
   void checkpoint(double dt, bool force=false);
   double get_dt(bool after_fail=false);

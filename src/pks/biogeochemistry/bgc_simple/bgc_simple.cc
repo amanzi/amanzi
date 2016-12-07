@@ -22,12 +22,15 @@
 namespace Amanzi {
 namespace BGC {
 
-BGCSimple::BGCSimple(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                     Teuchos::ParameterList& FElist,
-                     const Teuchos::RCP<TreeVector>& solution) :
-    PKPhysicalBase(plist, FElist, solution),
-    PKDefaultBase(plist, FElist, solution),
-    ncells_per_col_(-1) {
+BGCSimple::BGCSimple(Teuchos::ParameterList& pk_tree,
+                     const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                     const Teuchos::RCP<State>& S,
+                     const Teuchos::RCP<TreeVector>& solution):
+  PK_Physical_Default(pk_tree, global_list, S, solution),
+  PK(pk_tree, global_list, S, solution),
+  ncells_per_col_(-1) {
+
+  Teuchos::ParameterList& FElist = S->FEList();
 
   // set up additional primary variables -- this is very hacky...
   // -- transpiration
@@ -47,13 +50,14 @@ BGCSimple::BGCSimple(const Teuchos::RCP<Teuchos::ParameterList>& plist,
       FElist.sublist("total_leaf_area_index");
   lai_sublist.set("evaluator name", "total_leaf_area_index");
   lai_sublist.set("field evaluator type", "primary variable");
+
   
 }
 
 // is a PK
 // -- Setup data
-void BGCSimple::setup(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBase::setup(S);
+void BGCSimple::Setup(const Teuchos::Ptr<State>& S) {
+  PK_Physical_Default::Setup(S);
 
   // initial timestep
   dt_ = plist_->get<double>("initial time step", 1.);
@@ -221,8 +225,8 @@ void BGCSimple::setup(const Teuchos::Ptr<State>& S) {
 }
 
 // -- Initialize owned (dependent) variables.
-void BGCSimple::initialize(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBase::initialize(S);
+void BGCSimple::Initialize(const Teuchos::Ptr<State>& S) {
+  PK_Physical_Default::Initialize(S);
 
   // diagnostic variable
   S->GetFieldData("co2_decomposition", name_)->PutScalar(0.);
@@ -316,9 +320,11 @@ void BGCSimple::initialize(const Teuchos::Ptr<State>& S) {
 
   
 // -- Commit any secondary (dependent) variables.
-void BGCSimple::commit_state(double dt, const Teuchos::RCP<State>& S) {
+void BGCSimple::CommitStep(double told, double tnew, const Teuchos::RCP<State>& S) {
   // Copy the PFT over, which includes all additional state required, commit
   // the step as succesful.
+  double dt = tnew - told;
+
   int ncols = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int npft = pfts_old_[0].size();
   for (int col=0; col!=ncols; ++col) {
@@ -329,7 +335,10 @@ void BGCSimple::commit_state(double dt, const Teuchos::RCP<State>& S) {
 }
 
 // -- advance the model
-bool BGCSimple::advance(double dt) {
+bool BGCSimple::AdvanceStep(double t_old, double t_new, bool reinit) {
+
+  double dt = t_new - t_old;
+
   Teuchos::OSTab out = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "----------------------------------------------------------------" << std::endl

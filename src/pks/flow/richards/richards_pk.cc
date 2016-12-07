@@ -40,11 +40,12 @@ namespace Flow {
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------
-Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                   Teuchos::ParameterList& FElist,
+Richards::Richards(Teuchos::ParameterList& pk_tree,
+                   const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                   const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, FElist, solution),
-    PKPhysicalBDFBase(plist, FElist, solution),
+    PK(pk_tree, glist,  S, solution),
+    PK_PhysicalBDF_Default(pk_tree, glist,  S, solution),
     coupled_to_surface_via_head_(false),
     coupled_to_surface_via_flux_(false),
     infiltrate_only_if_unfrozen_(false),
@@ -71,8 +72,10 @@ Richards::Richards(const Teuchos::RCP<Teuchos::ParameterList>& plist,
 // -------------------------------------------------------------
 // Setup data
 // -------------------------------------------------------------
-void Richards::setup(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBDFBase::setup(S);
+void Richards::Setup(const Teuchos::Ptr<State>& S) {
+  
+  PK_PhysicalBDF_Default::Setup(S);
+  
   SetupRichardsFlow_(S);
   SetupPhysicalEvaluators_(S);
 
@@ -112,7 +115,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   }
   if (flux_dir_key_.empty()) {
     flux_dir_key_ = plist_->get<std::string>("darcy flux direction key",
-            getKey(domain_, "mass_flux_direction"));
+            getKey(domain_, "mass_flux_direction")); 
   }
   if (velocity_key_.empty()) {
     velocity_key_ = plist_->get<std::string>("darcy velocity key",
@@ -130,6 +133,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // Get data for special-case entities.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
+
   S->RequireFieldEvaluator(cell_vol_key_);
   S->RequireGravity();
   S->RequireScalar("atmospheric_pressure");
@@ -139,6 +143,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList bc_plist = plist_->sublist("boundary conditions", true);
   FlowBCFactory bc_factory(mesh_, bc_plist);
   bc_pressure_ = bc_factory.CreatePressure();
+  bc_head_ = bc_factory.CreateHead();
   bc_flux_ = bc_factory.CreateMassFlux();
   bc_seepage_ = bc_factory.CreateSeepageFacePressure();
   bc_seepage_->Compute(0.); // compute at t=0 to set up
@@ -164,6 +169,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
   clobber_surf_kr_ = plist_->get<bool>("clobber surface rel perm", false);
   clobber_boundary_flux_dir_ = plist_->get<bool>("clobber boundary flux direction for upwinding", false);
+
   std::string method_name = plist_->get<std::string>("relative permeability method", "upwind with Darcy flux");
 
   if (method_name == "upwind with gravity") {
@@ -358,7 +364,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // valid step controls
   sat_change_limit_ = plist_->get<double>("max valid change in saturation in a time step [-]", -1.);
   sat_ice_change_limit_ = plist_->get<double>("max valid change in ice saturation in a time step [-]", -1.);
-  
+
   // Require fields and evaluators for those fields.
   // -- primary variables
   S->RequireField(key_, name_)->Update(matrix_->RangeMap())->SetGhosted();
@@ -431,10 +437,10 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // -------------------------------------------------------------
 // Initialize PK
 // -------------------------------------------------------------
-void Richards::initialize(const Teuchos::Ptr<State>& S) {
+void Richards::Initialize(const Teuchos::Ptr<State>& S) {
 
   // Initialize BDF stuff and physical domain stuff.
-  PKPhysicalBDFBase::initialize(S);
+  PK_PhysicalBDF_Default::Initialize(S);
 
 
   // debugggin cruft
@@ -519,12 +525,14 @@ void Richards::initialize(const Teuchos::Ptr<State>& S) {
 //   secondary variables have been updated to be consistent with the new
 //   solution.
 // -----------------------------------------------------------------------------
-void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
-  Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_EXTREME))
-    *vo_->os() << "Commiting state." << std::endl;
+  void Richards::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
 
-  PKPhysicalBDFBase::commit_state(dt, S);
+    double dt = t_new - t_old;
+    Teuchos::OSTab tab = vo_->getOSTab();
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "Commiting state." << std::endl;
+
+    PK_PhysicalBDF_Default::CommitStep(t_old, t_new, S);
   
   // update BCs, rel perm
   UpdateBoundaryConditions_(S.ptr());
@@ -583,7 +591,7 @@ void Richards::commit_state(double dt, const Teuchos::RCP<State>& S) {
 // Check for controls on saturation
 // -----------------------------------------------------------------------------
 bool
-Richards::valid_step() {
+Richards::ValidStep() {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Validating time step." << std::endl;
@@ -623,14 +631,14 @@ Richards::valid_step() {
     }
   }
 
-  return PKPhysicalBDFBase::valid_step();
+  return PK_PhysicalBDF_Default::ValidStep();
 }
 
 
 // -----------------------------------------------------------------------------
 // Update any diagnostic variables prior to vis (in this case velocity field).
 // -----------------------------------------------------------------------------
-void Richards::calculate_diagnostics(const Teuchos::RCP<State>& S) {
+void Richards::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Calculating diagnostic variables." << std::endl;
@@ -775,6 +783,7 @@ bool Richards::UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& S) {
 
 
 
+
 // -----------------------------------------------------------------------------
 // Evaluate boundary conditions at the current time.
 // -----------------------------------------------------------------------------
@@ -807,6 +816,21 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
     bc_values_[f] = bc->second;
   }
+
+  bc_counts.push_back(bc_head_->size());
+  bc_names.push_back("head");
+  for (bc=bc_head_->begin(); bc!=bc_head_->end(); ++bc) {
+    int f = bc->first;
+#ifdef ENABLE_DBC
+    AmanziMesh::Entity_ID_List cells;
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    ASSERT(cells.size() == 1);
+#endif
+    
+    bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
+    bc_values_[f] = bc->second;
+  }
+
 
   const Epetra_MultiVector& rel_perm = 
     *S->GetFieldData(uw_coef_key_)->ViewComponent("face",false);
@@ -1044,6 +1068,7 @@ bool Richards::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
 
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
+  bc_head_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_(S_next_.ptr(), false); // without rel perm
   

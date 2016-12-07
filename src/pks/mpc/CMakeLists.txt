@@ -28,21 +28,26 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/flow/overland_pressure)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/internal_energy)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/two_phase)
+include_directories(${ATS_SOURCE_DIR}/src/pks/transport/transport_amanzi)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 
 add_library(mpc
   weak_mpc.cc
   mpc_coupled_cells.cc
+  pk_mpcsubcycled_ats.cc
+  mpc_flowreactivetransport_pk.cc
+  mpc_reactivetransport_pk.cc
   mpc_surface_subsurface_helpers.cc
   mpc_delegate_ewc.cc
-#  mpc_delegate_ewc_surface.cc
+##  mpc_delegate_ewc_surface.cc
   mpc_delegate_ewc_subsurface.cc
   mpc_delegate_water.cc
   mpc_coupled_water.cc
   mpc_subsurface.cc
-#  mpc_permafrost3.cc
+##  mpc_permafrost3.cc
   mpc_permafrost4.cc
+#  mpc_coupled_transport.cc
 )
 
 install(TARGETS mpc DESTINATION lib)
@@ -60,6 +65,22 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
+  HEADERFILE pk_mpcsubcycled_ats_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE mpc_flowreactivetransport_pk_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE mpc_reactivetransport_pk_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+    
+register_evaluator_with_factory(
   HEADERFILE mpc_subsurface_reg.hh
   LISTNAME   MPC_PK_FAC
   )
@@ -74,12 +95,17 @@ register_evaluator_with_factory(
   LISTNAME   MPC_PK_FAC
   )
 
+register_evaluator_with_factory(
+   HEADERFILE coupled_transport/mpc_coupled_transport_reg.hh
+   LISTNAME   MPC_PK_FAC
+  )
+
 
 generate_evaluators_registration_header(
   HEADERFILE mpc_registration.hh
   LISTNAME   MPC_PK_FAC
   INSTALL    True
-  )
+)
 
 
 include_evaluators_directories(LISTNAME ATS_POROSITY_EVAL_INCLUDES)
@@ -99,7 +125,10 @@ include_evaluators_directories(LISTNAME ENERGY_THREE_PHASE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME MPC_PK_FAC_INCLUDES)
 
 
-if ( BUILD_TESTS )
+add_subdirectory(coupled_transport)
+
+#if ( BUILD_TESTS )
+if (0)
   # Add UnitTest includes
   set(amanzi_libs atk geometry mesh mesh_audit simple_mesh state whetstone mesh_functions)
 
@@ -110,16 +139,22 @@ if ( BUILD_TESTS )
   # Test: miscaleneous transport routines
   add_executable(test_mpc_subsurface test/Main.cc test/test_mpc_subsurface.cc)
 #  add_executable(test_mpc_subsurface test/Main.cc )
-  target_link_libraries(test_mpc_subsurface mpc pk_energy_two_phase pk_energy_three_phase pk_energy_base
-                                            pk_flow_permafrost pk_flow_richards
-                                            pk_bases
-                                            energy_relations_thermal_conductivity energy_relations_internal_energy
-                                            energy_relations_enthalpy energy_relations_source_terms
-                                            flow_relations
-                                            generic_evaluators relations_eos relations_ewc bc_factory divgrad
-                                            amanzi_solvers amanzi_time_integration amanzi_operators
-                                            amanzi_state amanzi_whetstone amanzi_mesh amanzi_geometry amanzi_mesh_functions amanzi_mesh_factory
-                                            amanzi_output amanzi_data_structures amanzi_atk
-                                            ${Amanzi_TPL_UnitTest_LIBRARIES})
+  target_link_libraries(test_mpc_subsurface 
+    mpc pk_energy_two_phase 
+    pk_energy_three_phase 
+    pk_energy_base
+    pk_flow_permafrost pk_flow_richards
+    pk_transport
+    pk_coupled_transport
+    pk_bases
+    energy_relations_thermal_conductivity energy_relations_internal_energy
+    energy_relations_enthalpy energy_relations_source_terms
+    flow_relations
+    generic_evaluators relations_eos relations_ewc bc_factory divgrad
+    amanzi_solvers amanzi_time_integration amanzi_operators amanzi_pks
+    amanzi_state amanzi_whetstone amanzi_mesh amanzi_geometry 
+    amanzi_mesh_functions amanzi_mesh_factory
+    amanzi_output amanzi_data_structures amanzi_atk
+    ${Amanzi_TPL_UnitTest_LIBRARIES})
 
 endif()

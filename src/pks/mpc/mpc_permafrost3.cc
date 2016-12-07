@@ -27,28 +27,28 @@ MPCPermafrost3::setup(const Teuchos::Ptr<State>& S) {
 
   // -- turn off PC assembly in the subsurface unless we need the forward operator
   if (plist_->isSublist("Coupled Solver")) {
-    plist_->sublist("PKs").sublist(names[0]).set("assemble preconditioner", true);
-    plist_->sublist("PKs").sublist(names[1]).set("assemble preconditioner", true);
+    pks_list_->sublist(names[0]).set("assemble preconditioner", true);
+    pks_list_->sublist(names[1]).set("assemble preconditioner", true);
   } else {
-    plist_->sublist("PKs").sublist(names[0]).set("assemble preconditioner", false);
-    plist_->sublist("PKs").sublist(names[1]).set("assemble preconditioner", false);
+    pks_list_->sublist(names[0]).set("assemble preconditioner", false);
+    pks_list_->sublist(names[1]).set("assemble preconditioner", false);
   }
 
   // -- always use the TPFA forward operator for surface
-  plist_->sublist("PKs").sublist(names[2]).set("assemble preconditioner", true);
-  plist_->sublist("PKs").sublist(names[3]).set("assemble preconditioner", true);
+  pks_list_->sublist(names[2]).set("assemble preconditioner", true);
+  pks_list_->sublist(names[3]).set("assemble preconditioner", true);
 
   // -- turn on coupling
-  plist_->sublist("PKs").sublist(names[0]).set("coupled to surface via flux", true);
-  plist_->sublist("PKs").sublist(names[1]).set("coupled to surface via flux", true);
-  plist_->sublist("PKs").sublist(names[2]).set("coupled to subsurface via flux", true);
-  plist_->sublist("PKs").sublist(names[3]).set("coupled to subsurface via flux", true);
+  pks_list_->sublist(names[0]).set("coupled to surface via flux", true);
+  pks_list_->sublist(names[1]).set("coupled to surface via flux", true);
+  pks_list_->sublist(names[2]).set("coupled to subsurface via flux", true);
+  pks_list_->sublist(names[3]).set("coupled to subsurface via flux", true);
 
   // -- set up PC coupling
-  //  plist_->sublist("PKs").sublist(names[0]).sublist("Diffusion PC").set("coupled to surface", true);
-  //  plist_->sublist("PKs").sublist(names[1]).sublist("Diffusion PC").set("coupled to surface", true);
-  plist_->sublist("PKs").sublist(names[2]).sublist("Diffusion PC").set("TPFA", true);
-  plist_->sublist("PKs").sublist(names[3]).sublist("Diffusion PC").set("TPFA", true);
+  //  pks_list_->sublist(names[0]).sublist("Diffusion PC").set("coupled to surface", true);
+  //  pks_list_->sublist(names[1]).sublist("Diffusion PC").set("coupled to surface", true);
+  pks_list_->sublist(names[2]).sublist("Diffusion PC").set("TPFA", true);
+  pks_list_->sublist(names[3]).sublist("Diffusion PC").set("TPFA", true);
 
   // grab the meshes
   surf_mesh_ = S->GetMesh("surface");

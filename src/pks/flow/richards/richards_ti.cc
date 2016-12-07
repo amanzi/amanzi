@@ -36,7 +36,7 @@ void Richards::Functional(double t_old,
   ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
 
   // pointer-copy temperature into state and update any auxilary data
-  solution_to_state(*u_new, S_next_);
+  Solution_to_State(*u_new, S_next_);
   Teuchos::RCP<CompositeVector> u = u_new->Data();
 
   if (dynamic_mesh_) matrix_diff_->SetTensorCoefficient(K_);
@@ -58,6 +58,7 @@ void Richards::Functional(double t_old,
 
   // update boundary conditions
   bc_pressure_->Compute(t_new);
+  bc_head_->Compute(t_new);
   bc_flux_->Compute(t_new);
   UpdateBoundaryConditions_(S_next_.ptr());
 
@@ -150,7 +151,8 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   // update state with the solution up.
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
-  PKDefaultBase::solution_to_state(*up, S_next_);
+  PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
+
 
   // update the rel perm according to the scheme of choice, also upwind derivatives of rel perm
   UpdatePermeabilityData_(S_next_.ptr());
@@ -158,6 +160,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
+  bc_head_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_(S_next_.ptr());
 

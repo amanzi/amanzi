@@ -40,6 +40,7 @@ else()
   message(FATAL_ERROR "Failed to locate Amanzi")
 endif()
 
+
 # --------------------------------------------------------------------------- #
 #  Define the compilers
 # --------------------------------------------------------------------------- #
@@ -116,6 +117,12 @@ endif()
 if ( Amanzi_TPL_Silo_ENABLED )
   set(ENABLE_Silo ON)
   add_definitions(-DENABLE_Silo)
+endif()
+
+if (ENABLE_ALQUIMIA)
+    # Use Alquimia as a chemistry engine.
+  add_definitions(-DALQUIMIA_ENABLED)
+  #add_subdirectory(common/alquimia)
 endif()
 
 message(STATUS "Silo Enabled?: ${Amanzi_TPL_Silo_ENABLED}")

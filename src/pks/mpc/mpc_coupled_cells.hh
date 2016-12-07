@@ -34,23 +34,24 @@ d_temperature and d_energy / d_pressure.
 #ifndef MPC_COUPLED_CELLS_HH_
 #define MPC_COUPLED_CELLS_HH_
 
-#include "pk_physical_bdf_base.hh"
+#include "pk_physical_bdf_default.hh"
 #include "strong_mpc.hh"
 
 namespace Amanzi {
 
 namespace Operators { class TreeOperator; }
 
-class MPCCoupledCells : public StrongMPC<PKPhysicalBDFBase> {
+class MPCCoupledCells : public StrongMPC<PK_PhysicalBDF_Default> {
  public:
-  MPCCoupledCells(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                  Teuchos::ParameterList& FElist,
-                  const Teuchos::RCP<TreeVector>& soln) :
-      PKDefaultBase(plist, FElist, soln),
-      StrongMPC<PKPhysicalBDFBase>(plist, FElist, soln),
-      decoupled_(false) {}
+  MPCCoupledCells(Teuchos::ParameterList& FElist,
+                  const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                  const Teuchos::RCP<State>& S,
+                  const Teuchos::RCP<TreeVector>& solution):
+    PK(FElist, plist, S, solution),
+    StrongMPC<PK_PhysicalBDF_Default>(FElist, plist, S, solution),
+    decoupled_(false) {}
 
-  virtual void setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // applies preconditioner to u and returns the result in Pu
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);

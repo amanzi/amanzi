@@ -31,11 +31,12 @@ namespace Amanzi {
 namespace Energy {
 
 
-EnergyBase::EnergyBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                       Teuchos::ParameterList& FElist,
+EnergyBase::EnergyBase(Teuchos::ParameterList& FElist,
+                       const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                       const Teuchos::RCP<State>& S,
                        const Teuchos::RCP<TreeVector>& solution) :
-    PKDefaultBase(plist, FElist, solution),
-    PKPhysicalBDFBase(plist, FElist, solution),
+    PK(FElist, plist, S, solution),
+    PK_PhysicalBDF_Default(FElist, plist, S, solution),
     modify_predictor_with_consistent_faces_(false),
     modify_predictor_for_freezing_(false),
     coupled_to_subsurface_via_temp_(false),
@@ -46,8 +47,6 @@ EnergyBase::EnergyBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
     flux_exists_(true),
     implicit_advection_(true) {
 
-  if (!plist_->isParameter("primary variable key"))
-    plist_->set("primary variable key", "temperature");
   if (!plist_->isParameter("conserved quantity suffix"))
     plist_->set("conserved quantity suffix", "energy");
 
@@ -69,10 +68,10 @@ EnergyBase::EnergyBase(const Teuchos::RCP<Teuchos::ParameterList>& plist,
 // -------------------------------------------------------------
 // Setup
 // -------------------------------------------------------------
-void EnergyBase::setup(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBDFBase::setup(S);
-  SetupEnergy_(S);
+void EnergyBase::Setup(const Teuchos::Ptr<State>& S) {
+  PK_PhysicalBDF_Default::Setup(S);
 
+  SetupEnergy_(S);
   SetupPhysicalEvaluators_(S);
 
 };
@@ -345,9 +344,9 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 // -------------------------------------------------------------
 // Initialize PK
 // -------------------------------------------------------------
-void EnergyBase::initialize(const Teuchos::Ptr<State>& S) {
+void EnergyBase::Initialize(const Teuchos::Ptr<State>& S) {
   // initialize BDF stuff and physical domain stuff
-  PKPhysicalBDFBase::initialize(S);
+  PK_PhysicalBDF_Default::Initialize(S);
 
 #if MORE_DEBUG_FLAG
   for (int i=1; i!=23; ++i) {
@@ -391,11 +390,13 @@ void EnergyBase::initialize(const Teuchos::Ptr<State>& S) {
 //   secondary variables have been updated to be consistent with the new
 //   solution.
 // -----------------------------------------------------------------------------
-void EnergyBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
+void EnergyBase::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
+
+  double dt = t_new - t_old;
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Commiting state." << std::endl;
-  PKPhysicalBDFBase::commit_state(dt, S);
+  PK_PhysicalBDF_Default::CommitStep(t_old, t_new, S);
 
   bc_temperature_->Compute(S->time());
   bc_diff_flux_->Compute(S->time());
@@ -432,7 +433,7 @@ void EnergyBase::commit_state(double dt, const Teuchos::RCP<State>& S) {
 
 
 // -- Calculate any diagnostics prior to doing vis
-void EnergyBase::calculate_diagnostics(const Teuchos::RCP<State>& S) {
+void EnergyBase::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
 }
 
 

@@ -12,7 +12,7 @@
 namespace Amanzi {
 namespace TestPKs {
 
-RegisteredPKFactory<DivGradTest> DivGradTest::reg_("div-grad operator test");
+RegisteredPKFactory_ATS<DivGradTest> DivGradTest::reg_("div-grad operator test");
 
 } // namespace
 } // namespace

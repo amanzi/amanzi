@@ -12,39 +12,41 @@ Process kernel for energy equation for Richard's flow.
 #ifndef PKS_CARBON_SIMPLE_HH_
 #define PKS_CARBON_SIMPLE_HH_
 
-#include "pk_factory.hh"
-#include "pk_physical_explicit_base.hh"
+#include "PK_Factory.hh"
+#include "pk_physical_explicit_default.hh"
 #include "PK.hh"
 
 namespace Amanzi {
 namespace BGC {
 
-class CarbonSimple : public PKPhysicalExplicitBase {
+class CarbonSimple : public PK_Physical_Explicit_Default {
 
  public:
 
-  CarbonSimple(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-               Teuchos::ParameterList& FElist,
+  CarbonSimple(Teuchos::ParameterList& pk_tree,
+               const Teuchos::RCP<Teuchos::ParameterList>& glist,
+               const Teuchos::RCP<State>& S,
                const Teuchos::RCP<TreeVector>& solution);
 
   // EnergyBase is a PK
   // -- Setup data
-  virtual void setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // -- Initialize owned (dependent) variables.
   // default ok?
   // virtual void initialize(const Teuchos::Ptr<State>& S);
 
   // -- Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {}
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {};
 
   // -- Calculate any diagnostics prior to doing vis
-  virtual void calculate_diagnostics(const Teuchos::RCP<State>& S);
-
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
 
   // EnergyBase is a BDFFnBase
   // computes the non-linear functional f = f(t,u,udot)
   virtual void Functional(const double t, const TreeVector& u, TreeVector& f);
+
+  virtual std::string name(){return "carbon simple";};
 
  protected:
 

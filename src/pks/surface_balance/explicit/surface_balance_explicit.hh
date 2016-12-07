@@ -17,39 +17,44 @@
 #ifndef PK_SURFACE_BALANCE_EXPLICIT_HH_
 #define PK_SURFACE_BALANCE_EXPLICIT_HH_
 
-#include "pk_factory.hh"
-#include "pk_physical_base.hh"
+#include "PK_Factory.hh"
+#include "pk_physical_default.hh"
 
 namespace Amanzi {
 namespace SurfaceBalance {
 
-class SurfaceBalanceExplicit : public PKPhysicalBase {
+class SurfaceBalanceExplicit : public PK_Physical_Default {
 
 public:
-  SurfaceBalanceExplicit(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                         Teuchos::ParameterList& FElist,
-                         const Teuchos::RCP<TreeVector>& solution);
+  SurfaceBalanceExplicit(Teuchos::ParameterList& pk_tree,
+                    const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                    const Teuchos::RCP<State>& S,
+                    const Teuchos::RCP<TreeVector>& solution);
 
   // main methods
   // -- Setup data.
-  virtual void setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // -- Initialize owned (dependent) variables.
-  virtual void initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   // -- provide a timestep size
   virtual double get_dt() {
     return dt_;
   }
 
+  virtual void set_dt(double dt) {dt_ = dt;}
+
+  virtual std::string name(){ return "SurfaceBalanceExplicit";}
+
   // -- Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {}
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S){};
 
   // -- Calculate any diagnostics prior to doing vis
-  virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {}
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
 
   // -- advance via one of a few methods
-  virtual bool advance(double dt);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit);
 
  protected:
   // multiple primary variables
