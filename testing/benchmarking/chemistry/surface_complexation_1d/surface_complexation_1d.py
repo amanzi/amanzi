@@ -49,6 +49,9 @@ def GetXY_AmanziS(path,root,time,comp):
         x = np.zeros( (nx), dtype=np.float64)
         y = np.zeros( (nx), dtype=np.float64)
         (y, x, npts, err) = fsnapshot.fplotfile_get_data_1d(plotfile, comp, y, x)
+        x = np.array(xrange(100))
+        x = x + 0.5
+
     else:
         x = np.zeros( (0), dtype=np.float64)
         y = np.zeros( (0), dtype=np.float64)
@@ -131,7 +134,7 @@ if __name__ == "__main__":
     amanzi_sorb_crunch = [amanzi_sorb_templ.format(x+1) for x in range(len(compcrunch))]
 
 # amanzi output (structured - alquimia)
-    amanzi_totc_templ = "{0}_Aqueous_Concentration"
+    amanzi_totc_templ = "{0}_water_Concentration"
     amanzi_totcS = [amanzi_totc_templ.format(x) for x in components]
 
     amanzi_sorb_templ = "{0}_Sorbed_Concentration"
@@ -283,10 +286,10 @@ if __name__ == "__main__":
     
     # +pflotran
     try:
-        input_filename = os.path.join("amanzi-s-1d-surface-complexation-alq-pflotran.xml")
+        input_filename = os.path.join("amanzi-s-1d-surface-complexation-alq-pflotran-new.xml")
         path_to_amanziS = "struct_amanzi-pflotran-output"
         run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
-        root_amanziS = "plt00501"
+        root_amanziS = "plt00036"
 
         u_amanziS = [[[] for x in range(len(amanzi_totcS))] for x in range(len(times))]
         for i, time in enumerate(times):
@@ -319,7 +322,7 @@ if __name__ == "__main__":
         path_to_amanziS = "struct_amanzi-crunch-output"
 #        import pdb; pdb.set_trace()
         run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
-        root_amanziS = "plt00501"
+        root_amanziS = "plt00036"
 
         u_amanziS_crunch = [[[] for x in range(len(amanzi_totcS))] for x in range(len(times))]
         for i, time in enumerate(times):

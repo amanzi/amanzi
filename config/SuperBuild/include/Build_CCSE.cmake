@@ -117,4 +117,4 @@ add_custom_command(TARGET ${CCSE_BUILD_TARGET}
 ##                   DEPENDS ${CCSE_BUILD_TARGET}
 ##                   WORKING_DIRECTORY ${CCSE_source_dir}/Tools/C_util/AmrDeriveTecplot)
 
-##endif()
+endif()

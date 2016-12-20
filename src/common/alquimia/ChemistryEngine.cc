@@ -91,7 +91,7 @@ ChemistryEngine::ChemistryEngine(const std::string& engineName,
   // NOTE: the input files from the chemistry engines instead of Amanzi's
   // NOTE: XML files. But to preserve backward compatibility at the moment, we 
   // NOTE: do not make use of it.
-  bool hands_off = false;
+  bool hands_off = true;
   chem_.Setup(chem_engine_inputfile_.c_str(),
               hands_off,
               &engine_state_,
