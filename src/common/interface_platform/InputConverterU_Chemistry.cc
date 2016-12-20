@@ -13,7 +13,6 @@
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
-#include <math.h>       /* pow */
 
 //TPLs
 #include "Teuchos_ParameterList.hpp"
@@ -195,7 +194,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
           }
           aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", mvf);
           aux2_list.sublist(ss.str()).sublist("function-constant").set<double>("value", msa);
-          aux3_list.sublist(ss.str()).sublist("function-constant").set<double>("value", pow(10.0,min_rate_cnst[j]));
+          aux3_list.sublist(ss.str()).sublist("function-constant").set<double>("value", min_rate_cnst[j]);
         }
       }
     }

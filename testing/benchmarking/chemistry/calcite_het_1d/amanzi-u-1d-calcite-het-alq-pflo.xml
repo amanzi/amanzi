@@ -54,7 +54,7 @@
     </liquid_phase>
     <solid_phase>
       <minerals>
-        <mineral rate_constant="-9">Calcite</mineral>
+        <mineral rate_constant="1.0e-9">Calcite</mineral>
 	<!-- EIB: note existing IN file show 1.0e-13 mol/cm^2-sec, but default units are mol/m^2-sec; hence value change -->
       </minerals>
     </solid_phase>
