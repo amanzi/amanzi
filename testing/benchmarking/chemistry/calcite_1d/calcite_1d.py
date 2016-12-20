@@ -48,9 +48,11 @@ def GetXY_AmanziS(path,root,time,comp):
     plotfile = os.path.join(path,root)
     if os.path.isdir(plotfile) & fsnok:
         (nx, ny, nz) = fsnapshot.fplotfile_get_size(plotfile)
-        x = np.zeros( (nx), dtype=np.float64)
+        x = np.zeros( (nx), dtype=np.float64)        
         y = np.zeros( (nx), dtype=np.float64)
         (y, x, npts, err) = fsnapshot.fplotfile_get_data_1d(plotfile, comp, y, x)
+        x = np.array(xrange(100))
+        x = x + 0.5
     else:
         x = np.zeros( (0), dtype=np.float64)
         y = np.zeros( (0), dtype=np.float64)
@@ -326,11 +328,11 @@ if __name__ == "__main__":
     # +pflotran
     try:
         # import pdb; pdb.set_trace()
-        input_filename = os.path.join("amanzi-s-1d-calcite-alq.xml")
+        input_filename = os.path.join("amanzi-s-1d-calcite-alq-pflo.xml")
         path_to_amanziS = "struct_amanzi-output-pflo"
         run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
-        root_amanziS = "plt00501"
-        compS = "Ca++_Aqueous_Concentration"
+        root_amanziS = "plt00036"
+        compS = "Ca++_water_Concentration"
         x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
         struct = len(x_amanziS)
         compS = "H+_Free_Ion_Guess"
@@ -423,7 +425,7 @@ if __name__ == "__main__":
 
     #import pdb; pdb.set_trace()
     if (struct>0):
-        sam = ax[0].plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alq(PFT)',linewidth=2)     
+        sam = ax[0].plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alq(PFT)',linewidth=2)
         sampH = ax[1].plot(x_amanziS, pH_amanziS,'g-',linewidth=2)
         samVF = ax[2].plot(x_amanziS, VF_amanziS,'g-',linewidth=2)
 
@@ -433,7 +435,7 @@ if __name__ == "__main__":
         samcVF = ax[2].plot(x_amanziS_crunch, VF_amanziS_crunch,'g*',linewidth=2)     
 
     # set x lim
-    ax[0].set_xlim((18,32))
+#    ax[0].set_xlim((18,32))
   
     # axes
     ax[2].set_xlabel("Distance (m)",fontsize=20)

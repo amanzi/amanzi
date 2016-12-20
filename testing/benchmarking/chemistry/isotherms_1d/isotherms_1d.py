@@ -252,7 +252,7 @@ if __name__ == "__main__":
 
     # +pflotran
     try:
-        input_filename = os.path.join("amanzi-s-1d-isotherms-alq-pflo.xml")
+        input_filename = os.path.join("amanzi-s-1d-isotherms-alq-pflo-new.xml")
         path_to_amanziS = "struct_amanzi-output-pflo"
         run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
         root_amanziS = "plt00051"

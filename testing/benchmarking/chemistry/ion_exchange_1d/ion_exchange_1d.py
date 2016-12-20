@@ -51,6 +51,10 @@ def GetXY_AmanziS(path,root,time,comp):
         x = np.zeros( (nx), dtype=np.float64)
         y = np.zeros( (nx), dtype=np.float64)
         (y, x, npts, err) = fsnapshot.fplotfile_get_data_1d(plotfile, comp, y, x)
+
+        x = np.array(xrange(100))
+        x = x + 0.5
+
     else:
         x = np.zeros( (0), dtype=np.float64)
         y = np.zeros( (0), dtype=np.float64)
@@ -186,10 +190,19 @@ if __name__ == "__main__":
                          'total_sorbed.cell.2', \
                          'total_sorbed.cell.3']
 
-    amanzi_compS      = ['Na+_Aqueous_Concentration', \
-                         'Ca++_Aqueous_Concentration', \
-                         'Mg++_Aqueous_Concentration', \
-                         'Cl-_Aqueous_Concentration']
+#    amanzi_compS      = ['Na+_Aqueous_Concentration', \
+#                         'Ca++_Aqueous_Concentration', \
+#                         'Mg++_Aqueous_Concentration', \
+#                         'Cl-_Aqueous_Concentration']
+#    amanzi_sorbS      = ['Na+_Sorbed_Concentration', \
+#                         'Ca++_Sorbed_Concentration', \
+#                         'Mg++_Sorbed_Concentration', \
+#                         'Cl-_Sorbed_Concentration']
+
+    amanzi_compS      = ['Na+_water_Concentration', \
+                         'Ca++_water_Concentration', \
+                         'Mg++_water_Concentration', \
+                         'Cl-_water_Concentration']
     amanzi_sorbS      = ['Na+_Sorbed_Concentration', \
                          'Ca++_Sorbed_Concentration', \
                          'Mg++_Sorbed_Concentration', \
@@ -270,10 +283,10 @@ if __name__ == "__main__":
     
     # +pflotran
     try:
-        input_filename = os.path.join("amanzi-s-1d-ion-exchange-alq.xml")
+        input_filename = os.path.join("amanzi-s-1d-ion-exchange-alq-pflo.xml")
         path_to_amanziS = "struct_amanzi-output-pflo"
         run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
-        root_amanziS = "plt00051"
+        root_amanziS = "plt00036"
         #compS = "Na+_Aqueous_Concentration"
         #x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
 
@@ -301,7 +314,7 @@ if __name__ == "__main__":
         input_filename = os.path.join("amanzi-s-1d-ion-exchange-alq-crunch.xml")
         path_to_amanziS = "struct_amanzi-output-crunch"
         run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
-        root_amanziS = "plt00051"
+        root_amanziS = "plt00036"
         #compS = "Na+_Aqueous_Concentration"
         #x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
 

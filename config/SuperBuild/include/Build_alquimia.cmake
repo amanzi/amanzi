@@ -31,6 +31,9 @@ set(ALQUIMIA_CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
                         "-DXSDK_WITH_PFLOTRAN:BOOL=ON" 
                         "-DTPL_PFLOTRAN_LIBRARIES:FILEPATH=${PFLOTRAN_DIR}/src/pflotran/libpflotranchem.a" 
                         "-DTPL_PFLOTRAN_INCLUDE_DIRS:FILEPATH=${PFLOTRAN_INCLUDE_DIRS}")
+#			"-DXSDK_WITH_CRUNCHFLOW:BOOL=ON"
+#			"-DTPL_CRUNCHFLOW_LIBRARIES:FILEPATH=/home/smolins/crunchtope/libcrunchchem.a"
+#			"-DTPL_CRUNCHFLOW_INCLUDE_DIRS:FILEPATH=/home/smolins/crunchtope")
 
 # --- Add external project build and tie to the ALQUIMIA build target
 ExternalProject_Add(${ALQUIMIA_BUILD_TARGET}
@@ -62,3 +65,6 @@ include(BuildLibraryName)
 build_library_name(alquimia_c ALQUIMIA_C_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 build_library_name(alquimia_cutils ALQUIMIA_CUTILS_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 build_library_name(alquimia_fortran ALQUIMIA_F_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+
+#set(_ALQUIMIA_CRUNCH_LIBRARY:FILEPATH /home/smolins/crunchtope/libcrunchchem.a)
+#set(CRUNCH_DIR /home/smolins/crunchtope)
