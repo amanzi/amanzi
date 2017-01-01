@@ -18,7 +18,7 @@
 #include "Operator.hh"
 
 /* ******************************************************************
-Operator whose unknowns are NODE
+Operator whose unknowns are NODEs
 
 NOTE that the only thing really implemented here is the visitor pattern Op
 acceptors.  Everything else should be done in the base class, with the

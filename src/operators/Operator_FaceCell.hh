@@ -18,7 +18,7 @@
 #include "OperatorDefs.hh"
 
 /* ******************************************************************
-Operator whose unknowns are CELL + FACE
+Operator whose unknowns are CELLs + FACEs
 
 NOTE that the only thing really implemented here is the visitor pattern Op
 acceptors.  Everything else should be done in the base class, with the
