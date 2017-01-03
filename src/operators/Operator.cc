@@ -52,7 +52,7 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                    Teuchos::ParameterList& plist,
                    int schema) :
     cvs_(cvs),
-    schema_(schema),
+    schema_new_(schema),
     shift_(0.0)
 {
   mesh_ = cvs_->Mesh();

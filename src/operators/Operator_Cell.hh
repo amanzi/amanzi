@@ -56,12 +56,11 @@ namespace Operators {
 
 class Operator_Cell : public Operator {
  public:
-  // constuctors
   // main constructor
   //   The CVS is the domain and range of the operator
   Operator_Cell(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-                    Teuchos::ParameterList& plist,
-                    int schema) :
+                Teuchos::ParameterList& plist,
+                int schema) :
       Operator(cvs, plist, schema) {
     set_schema_string("CELL");
   }

@@ -1,13 +1,8 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-
 /* -------------------------------------------------------------------------
+  Author: Daniil Svyatsky
 
-
-Author: Daniil Svyatsky
-
-Default base with a few methods implemented for ATS
+  Default base with a few methods implemented for ATS
 ------------------------------------------------------------------------- */
-
 
 #include "PK_PhysicalBDF_ATS.hh"
 #include "State.hh"
@@ -15,14 +10,12 @@ Default base with a few methods implemented for ATS
 
 namespace Amanzi {
 
-
   PK_PhysicalBDF_ATS::PK_PhysicalBDF_ATS(Teuchos::ParameterList& FElist,
                                          const Teuchos::RCP<Teuchos::ParameterList>& plist,
                                          const Teuchos::RCP<State>& S,
                                          const Teuchos::RCP<TreeVector>& solution):
   PK_PhysicalBDF(plist, FElist, solution)
 {
-
   // domain -- default is the entire mesh, no prefix
   if (domain_.empty()) {
     domain_ = plist_->get<std::string>("domain name", std::string("domain"));
@@ -36,18 +29,14 @@ namespace Amanzi {
   Teuchos::ParameterList& pv_sublist = FElist.sublist(key_);
   pv_sublist.set("evaluator name", key_);
   pv_sublist.set("field evaluator type", "primary variable");
-
 }
 
 
-
-
-  PK_PhysicalBDF_ATS::PK_PhysicalBDF_ATS(const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                   Teuchos::ParameterList& FElist,
-                   const Teuchos::RCP<TreeVector>& solution):
+PK_PhysicalBDF_ATS::PK_PhysicalBDF_ATS(const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                                       Teuchos::ParameterList& FElist,
+                                       const Teuchos::RCP<TreeVector>& solution):
   PK_PhysicalBDF(plist, FElist, solution)
 {
-
   // domain -- default is the entire mesh, no prefix
   if (domain_.empty()) {
     domain_ = plist_->get<std::string>("domain name", std::string("domain"));
@@ -61,24 +50,17 @@ namespace Amanzi {
   Teuchos::ParameterList& pv_sublist = FElist.sublist(key_);
   pv_sublist.set("evaluator name", key_);
   pv_sublist.set("field evaluator type", "primary variable");
-
 }
 
 
-void PK_PhysicalBDF_ATS::Setup(const Teuchos::Ptr<State>& S){
-
-  //// PK_Default SETUP
-  /*******************/
- // THIS MAY BE CALLED MORE THAN ONCE!
+void PK_PhysicalBDF_ATS::Setup(const Teuchos::Ptr<State>& S) {
+  // THIS MAY BE CALLED MORE THAN ONCE!
   name_ = plist_->get<std::string>("PK name");
 
   // set up the VerboseObject
   vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));
-  /*******************/
 
-  //// PK_Physical SETUP
-  /*******************/
- // get the mesh
+  // get the mesh
   mesh_ = S->GetMesh(domain_);
 
   // set up the debugger
@@ -89,11 +71,8 @@ void PK_PhysicalBDF_ATS::Setup(const Teuchos::Ptr<State>& S){
   Teuchos::RCP<FieldEvaluator> fm = S->GetFieldEvaluator(key_);
   solution_evaluator_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   ASSERT(solution_evaluator_ != Teuchos::null);
-  /*******************/
 
-  //// PK_BDF
-  /*******************/
- // initial timestep
+  // initial timestep
   dt_ = plist_->get<double>("initial time step", 1.);
 
   // preconditioner assembly
@@ -107,11 +86,7 @@ void PK_PhysicalBDF_ATS::Setup(const Teuchos::Ptr<State>& S){
       S->RequireScalar("continuation_parameter", name_);
     }
   }
-  /*******************/
 
-
-  //// PK_PhysicalBDF
-  /*******************/
   // convergence criteria
   if (conserved_key_.empty()) {
     if (plist_->isParameter("conserved quantity suffix")) {
@@ -136,15 +111,10 @@ void PK_PhysicalBDF_ATS::Setup(const Teuchos::Ptr<State>& S){
   atol_ = plist_->get<double>("absolute error tolerance",1.0);
   rtol_ = plist_->get<double>("relative error tolerance",1.0);
   fluxtol_ = plist_->get<double>("flux error tolerance",1.0);
-  /*******************/
-
 }
 
 
-void PK_PhysicalBDF_ATS::Initialize(const Teuchos::Ptr<State>& S){
-
- //// PK_PhysicalBase
- /*******************/
+void PK_PhysicalBDF_ATS::Initialize(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<Field> field = S->GetField(key_, name_);
 
   if (!field->initialized()) {
@@ -174,11 +144,7 @@ void PK_PhysicalBDF_ATS::Initialize(const Teuchos::Ptr<State>& S){
   // -- Push the data into the solution.
   solution_->SetData(field->GetFieldData());
 
- /*******************/
-
-  ////PK_BDF
- /*******************/
- // set up the timestepping algorithm
+  // set up the timestepping algorithm
   if (!plist_->get<bool>("strongly coupled PK", false)) {
     // -- instantiate time stepper
     Teuchos::ParameterList& bdf_plist = plist_->sublist("time integrator");
@@ -198,9 +164,8 @@ void PK_PhysicalBDF_ATS::Initialize(const Teuchos::Ptr<State>& S){
     // -- set initial state
     time_stepper_->SetInitialState(S->time(), solution_, solution_dot);
   }
- /*******************/
-
 }
+
 
 void PK_PhysicalBDF_ATS::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& u) {
   if (u->HasComponent("face")) {
@@ -224,10 +189,12 @@ void PK_PhysicalBDF_ATS::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVe
       }
     }
   }    
-};
+}
 
-double PK_PhysicalBDF_ATS::BoundaryValue(const Teuchos::RCP<const Amanzi::CompositeVector>& solution, int face_id){
-  double value=0.;
+
+double PK_PhysicalBDF_ATS::BoundaryValue(
+    const Teuchos::RCP<const Amanzi::CompositeVector>& solution, int face_id) {
+  double value = 0.0;
 
   if (solution->HasComponent("face")){
     const Epetra_MultiVector& u = *solution -> ViewComponent("face",false);
@@ -249,15 +216,12 @@ double PK_PhysicalBDF_ATS::BoundaryValue(const Teuchos::RCP<const Amanzi::Compos
   }
 
   return value;
-
-};
+}
 
 
 void PK_PhysicalBDF_ATS::ChangedSolution() {
-  
   solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
-
-};
+}
 
 
 double PK_PhysicalBDF_ATS::ErrorNorm(Teuchos::RCP<const TreeVector> u,
@@ -346,8 +310,8 @@ double PK_PhysicalBDF_ATS::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   int ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
   ASSERT(!ierr);
   return enorm_val;
-
 };
+
 
 // -----------------------------------------------------------------------------
 // Interpolate pressure ICs on cells to ICs for lambda (faces).
@@ -373,8 +337,8 @@ void PK_PhysicalBDF_ATS::DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<Comp
   }
 };
 
-  bool PK_PhysicalBDF_ATS::AdvanceStep(double t_old, double t_new, bool reinit){
 
+bool PK_PhysicalBDF_ATS::AdvanceStep(double t_old, double t_new, bool reinit) {
     double dt = t_new - t_old;
 
     Teuchos::OSTab out = vo_->getOSTab();
@@ -416,7 +380,8 @@ void PK_PhysicalBDF_ATS::DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<Comp
     return fail;
   }
 
-  void PK_PhysicalBDF_ATS::CommitStep (double t_old, double t_new, const Teuchos::RCP<State>& S){
+
+void PK_PhysicalBDF_ATS::CommitStep (double t_old, double t_new, const Teuchos::RCP<State>& S) {
 
     double dt = t_new - t_old;
 
@@ -430,6 +395,5 @@ void PK_PhysicalBDF_ATS::DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<Comp
     *S_next_->GetScalarData("continuation_parameter", name_) = lambda;
     ChangedSolution();
   }
-
-
 }
+

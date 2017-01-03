@@ -24,10 +24,9 @@
 namespace Amanzi {
 namespace Operators {
 
-bool
-Op_Cell_Face::ApplyBC(BCs& bc,
-                          const Teuchos::Ptr<CompositeVector>& rhs,                       
-                          bool bc_previously_applied) {
+bool Op_Cell_Face::ApplyBC(BCs& bc,
+                           const Teuchos::Ptr<CompositeVector>& rhs,                       
+                           bool bc_previously_applied) {
 
   AmanziMesh::Entity_ID_List faces;
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);

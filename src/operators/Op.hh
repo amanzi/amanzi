@@ -18,6 +18,7 @@
 #include "BCs.hh"
 #include "Mesh.hh"
 #include "OperatorDefs.hh"
+#include "Schema.hh"
 
 namespace Amanzi {
 
@@ -36,7 +37,14 @@ class Op {
   Op(int schema_, std::string& schema_string_,
      const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       schema(schema_),
+      schema_new_(schema_),
       schema_string(schema_string_),
+      mesh_(mesh)
+  {};
+
+  Op(Schema schema, const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+      schema_new_(schema),
+      schema_string("UNDEFINED"),
       mesh_(mesh)
   {};
 
@@ -114,6 +122,7 @@ class Op {
 
  public:
   int schema;
+  Schema schema_new_;
   std::string schema_string;
 
   std::vector<double> vals;

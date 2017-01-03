@@ -85,6 +85,7 @@ set(operators_inc_files
     OperatorElectromagneticsMHD.hh
     OperatorAccumulation.hh
     OperatorAdvection.hh
+    Schema.hh
     TreeOperator.hh
     Reconstruction.hh
     ReconstructionCell.hh
@@ -118,6 +119,7 @@ add_amanzi_library(operators
                           OperatorElectromagneticsMHD.cc
                           OperatorAccumulation.cc
                           OperatorAdvection.cc  
+                          Schema.cc
                           TreeOperator.cc
                           ReconstructionCell.cc
                           ReconstructionCell_Limiters.cc

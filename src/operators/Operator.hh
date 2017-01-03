@@ -21,10 +21,11 @@
 #include "EpetraExt_RowMatrixOut.h"
 
 #include "Mesh.hh"
+#include "BCs.hh"
 #include "CompositeVectorSpace.hh"
 #include "CompositeVector.hh"
 #include "OperatorDefs.hh"
-#include "BCs.hh"
+#include "Schema.hh"
 
 /* ******************************************************************
 1. Operator represents a map from linear space X to linear space Y.
@@ -163,7 +164,7 @@ class Operator {
   int CopyShadowToMaster(int iops);
 
   // access
-  int schema() const { return schema_; }
+  int schema() const { return schema_new_.OldSchema(); }
   const std::string& schema_string() const { return schema_string_; }
   void set_schema_string(const std::string& schema_string) { schema_string_ = schema_string; }
 
@@ -201,12 +202,14 @@ class Operator {
       const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_Cell_Cell& op,
       const CompositeVector& X, CompositeVector& Y) const;
+
   virtual int ApplyMatrixFreeOp(const Op_Face_Cell& op,
       const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_Edge_Edge& op,
       const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_Node_Node& op,
       const CompositeVector& X, CompositeVector& Y) const;
+
   virtual int ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
       const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
@@ -302,10 +305,10 @@ class Operator {
 
   Teuchos::RCP<VerboseObject> vo_;
 
-  int schema_;
+  int schema_old_;
+  Schema schema_new_;
   std::string schema_string_;
   double shift_;
-
 
   mutable int apply_calls_;
 

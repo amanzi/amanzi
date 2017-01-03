@@ -60,13 +60,14 @@ namespace Operators {
 
 class Operator_FaceCellSff : public Operator_FaceCell {
  public:
-  // constuctors
   // main constructor
   //   The CVS is the domain and range of the operator
   Operator_FaceCellSff(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                        Teuchos::ParameterList& plist) :
       Operator_FaceCell(cvs, plist) {
-    schema_ = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE;
+    // changing schema for the Schur complement
+    int schema = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE;
+    schema_new_.Init(schema);
     set_schema_string("FACE+CELL Schur to FACE");
   }
 
