@@ -87,11 +87,10 @@ SuperMap::SuperMap(const SuperMap& other) :
     ghosted_offsets_(other.ghosted_offsets_),
     ghosted_counts_(other.ghosted_counts_),
     map_(other.map_),
-    ghosted_map_(other.ghosted_map_) {}
+    ghosted_map_(other.ghosted_map_) {};
 
 
-bool
-SuperMap::HasComponent(const std::string& key) const {
+bool SuperMap::HasComponent(const std::string& key) const {
   std::map<std::string,int>::const_iterator lb = offsets_.lower_bound(key);
   if (lb != offsets_.end() && !(offsets_.key_comp()(key, lb->first))) {
     return true;
@@ -100,7 +99,6 @@ SuperMap::HasComponent(const std::string& key) const {
   }
 }
   
-
 
 const std::vector<int>&
 SuperMap::Indices(const std::string& compname, int dofnum) const {
@@ -111,6 +109,7 @@ SuperMap::Indices(const std::string& compname, int dofnum) const {
   }
   return CreateIndices_(compname, dofnum, false);
 }
+
 
 const std::vector<int>&
 SuperMap::GhostIndices(const std::string& compname, int dofnum) const {
@@ -203,8 +202,7 @@ getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
 
 
 // Nonmember contructors/factories
-Teuchos::RCP<SuperMap>
-createSuperMap(const CompositeVectorSpace& cv) {
+Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv) {
   std::vector<std::string> names;
   std::vector<int> dofnums;
   std::vector<Teuchos::RCP<const Epetra_Map> > maps;
@@ -224,8 +222,8 @@ createSuperMap(const CompositeVectorSpace& cv) {
   return Teuchos::rcp(new SuperMap(cv.Comm(), names, dofnums, maps, ghost_maps));
 }
 
-Teuchos::RCP<SuperMap>
-createSuperMap(const TreeVectorSpace& tv) {
+
+Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& tv) {
   std::vector<std::string> names;
   std::vector<int> dofnums;
   std::vector<Teuchos::RCP<const Epetra_Map> > maps;

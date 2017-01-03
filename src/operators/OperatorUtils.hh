@@ -13,6 +13,7 @@
 #define AMANZI_OPERATORS_UTILS_HH_
 
 #include "Teuchos_RCP.hpp"
+#include "Schema.hh"
 
 class Epetra_Vector;
 
@@ -43,6 +44,7 @@ int AddSuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv, Tre
 
 // supermap factory from CV and schema
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cv, int schema, int n_dofs);
+Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cv, Schema& schema);
 
 // Estimate the max number of unknowns per row. Note this can be an
 // overestimate, but shouldn't be an underestimate.

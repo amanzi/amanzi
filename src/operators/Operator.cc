@@ -46,11 +46,49 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
- * Default constructor.
- ****************************************************************** */
+* Default constructor.
+****************************************************************** */
 Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                    Teuchos::ParameterList& plist,
                    int schema) :
+    cvs_(cvs),
+    schema_new_(schema),
+    shift_(0.0)
+{
+  mesh_ = cvs_->Mesh();
+  rhs_ = Teuchos::rcp(new CompositeVector(*cvs_, true));
+
+  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+
+  if (mesh_->valid_edges()) {
+    nedges_owned = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::OWNED);
+    nedges_wghost = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::USED);
+  } else {
+    nedges_owned = 0;
+    nedges_wghost = 0;
+  }
+
+  Teuchos::ParameterList vo_list = plist.sublist("Verbose Object");
+  vo_ = Teuchos::rcp(new VerboseObject("Operators", vo_list));
+
+  shift_ = plist.get<double>("diagonal shift", 0.0);
+
+  apply_calls_ = 0; 
+}
+
+
+/* ******************************************************************
+* Default constructor.
+****************************************************************** */
+Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
+                   Teuchos::ParameterList& plist,
+                   Schema& schema) :
     cvs_(cvs),
     schema_new_(schema),
     shift_(0.0)

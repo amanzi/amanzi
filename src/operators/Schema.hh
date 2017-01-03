@@ -12,7 +12,10 @@
 #ifndef AMANZI_SCHEMA_HH_
 #define AMANZI_SCHEMA_HH_
 
+#include <string>
 #include <vector>
+
+#include "MeshDefs.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -45,9 +48,17 @@ class Schema {
   void Init(int schema_old);
   int OldSchema() const;
 
+  std::string LocationName(int loc) const;
+  AmanziMesh::Entity_kind LocationMeshID(int loc) const;
+
+  std::string CreateUniqueName() const;
+
+  // access
+  std::vector<SchemaItem>& items() { return items_; } 
+
  private:
   int base_;
-  std::vector<SchemaItem> schema_; 
+  std::vector<SchemaItem> items_; 
 };
 
 }  // namespace Operators

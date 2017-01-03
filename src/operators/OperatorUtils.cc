@@ -177,7 +177,7 @@ int AddSuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
 
 
 /* ******************************************************************
-* Create super map.
+* Create super map: compatibility version
 ****************************************************************** */
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schema, int n_dofs)
 {
@@ -222,6 +222,29 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
     dofnums.push_back(n_dofs);
     std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
         getMaps(*cvs.Mesh(), AmanziMesh::NODE);
+    maps.push_back(meshmaps.first);
+    ghost_maps.push_back(meshmaps.second);
+  }
+
+  return Teuchos::rcp(new SuperMap(cvs.Comm(), compnames, dofnums, maps, ghost_maps));
+}
+
+
+/* ******************************************************************
+* Create super map: general version
+****************************************************************** */
+Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, Schema& schema)
+{
+  std::vector<std::string> compnames;
+  std::vector<int> dofnums;
+  std::vector<Teuchos::RCP<const Epetra_Map> > maps;
+  std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
+
+  for (auto it = schema.items().begin(); it != schema.items().end(); ++it) {
+    compnames.push_back(schema.LocationName(it->location));
+    dofnums.push_back(it->num);
+    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
+        getMaps(*cvs.Mesh(), schema.LocationMeshID(it->location));
     maps.push_back(meshmaps.first);
     ghost_maps.push_back(meshmaps.second);
   }

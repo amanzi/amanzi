@@ -1,13 +1,15 @@
 /*
-Author: Ethan Coon (ecoon@lanl.gov)
+  Data Structures
 
-Takes non-contiguous data structure spaces (CompositeVector, TreeVector) and
-converts them into a single map.
+  Takes non-contiguous data structure spaces (CompositeVector, TreeVector)
+  and converts them into a single map.
 
-DESIGN FLAW: Currently this assumes that component names are unique, and if
-two components share the same name, they share the same map.  This is
-obviously wrong when multple meshes are involved -- for instance a TV of
-surface + subsurface, both with "cell" components, would break miserably.
+  DESIGN FLAW: Currently this assumes that component names are unique, and if
+  two components share the same name, they share the same map.  This is
+  obviously wrong when multple meshes are involved -- for instance a TV of
+  surface + subsurface, both with "cell" components, would break miserably.
+
+  Author: Ethan Coon (ecoon@lanl.gov)
 */
 
 #ifndef AMANZI_OPERATORS_SUPER_MAP_HH_
@@ -28,9 +30,7 @@ class TreeVectorSpace;
 namespace Operators {
 
 class SuperMap {
-
  public:
-
   // Constructor
   SuperMap(const Epetra_MpiComm& comm,
            const std::vector<std::string>& compnames,
@@ -82,7 +82,6 @@ class SuperMap {
   // }
 
  protected:
-
   virtual const std::vector<int>& CreateIndices_(const std::string& compname, int dofnum, bool ghosted) const;
 
  protected:
@@ -106,12 +105,8 @@ std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
 getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location);
 
 // Nonmember contructors/factories
-Teuchos::RCP<SuperMap>
-createSuperMap(const CompositeVectorSpace& cv);
-
-Teuchos::RCP<SuperMap>
-createSuperMap(const TreeVectorSpace& cv);
-
+Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv);
+Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& cv);
 
 } // namespace Operators
 } // namespace Amanzi

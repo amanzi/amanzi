@@ -107,6 +107,9 @@ class Operator {
   Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
            Teuchos::ParameterList& plist,
            int schema);
+  Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
+           Teuchos::ParameterList& plist,
+           Schema& schema);
 
   void Init();
 
