@@ -64,6 +64,7 @@ class Tensor {
   Tensor& operator=(const Tensor& T);
   friend AmanziGeometry::Point operator*(const Tensor& T, const AmanziGeometry::Point& p);
   friend Tensor operator*(const Tensor& T1, const Tensor& T2);
+  friend double DotTensor(const Tensor& T1, const Tensor& T2);
 
   // access members
   double& operator()(int i, int j) { return data_[j * size_ + i]; }

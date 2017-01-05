@@ -34,9 +34,9 @@ class Operator;
 
 class Op {
  public:
-  Op(int schema_, std::string& schema_string_,
+  Op(int schema, std::string& schema_string_,
      const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      schema(schema_),
+      schema_old_(schema_),
       schema_row_(schema_),
       schema_col_(schema_),
       schema_string(schema_string_),
@@ -93,9 +93,9 @@ class Op {
   // Matching rules for schemas.
   virtual bool Matches(int match_schema, int matching_rule) {
     if (matching_rule == OPERATOR_SCHEMA_RULE_EXACT) {
-      if ((match_schema & schema) == schema) return true;
+      if ((match_schema & schema_old_) == schema_old_) return true;
     } else if (matching_rule == OPERATOR_SCHEMA_RULE_SUBSET) {
-      if (match_schema & schema) return true;
+      if (match_schema & schema_old_) return true;
     }
     return false;
   }
@@ -124,8 +124,13 @@ class Op {
   }
 
  public:
+<<<<<<< Updated upstream
   int schema;
   Schema schema_row_, schema_col_;
+=======
+  int schema_old_;
+  Schema schema_new_;
+>>>>>>> Stashed changes
   std::string schema_string;
 
   std::vector<double> vals;

@@ -30,56 +30,141 @@ namespace WhetStone {
 int MFD3D_Diffusion::H1consistencyNodeFace(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
+  int nrows = N.NumRows();
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;
 
   int d = mesh_->space_dimension();
-  AmanziGeometry::Point xv(d), v1(d);
-
-  mesh_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
+  AmanziGeometry::Point xv(d), tau(d), v1(d);
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int nfaces = faces.size();
+  int nnodes, nfaces = faces.size();
+
+  const AmanziGeometry::Point& xm = mesh_->cell_centroid(c);
+  double volume = mesh_->cell_volume(c);
+
+  // convolute tensors for non-zero modes
+  std::vector<Tensor> vT, vKT;
+
+  for (int i = 0; i < d; ++i) {
+    for (int j = i; j < d; ++j) {
+      Tensor T(d, 2);
+      T(i, j) = T(j, i) = 1.0;
+      vT.push_back(T);
+
+      Tensor KT(K * T);
+      vKT.push_back(KT);
+    }
+  }
+
+  // calculate exact integration matrix
+  int modes = d * (d + 1) / 2;
+  DenseMatrix coefM(modes, modes);
+
+  for (int i = 0; i < modes; ++i) {
+    for (int j = i; j < modes; ++j) {
+      coefM(i, j) = DotTensor(vT[i], vKT[j]) * volume;
+      coefM(j, i) = coefM(i, j);
+    }
+  }
 
   // to calculate matrix R, we use temporary matrix N 
   N.PutScalar(0.0);
 
-  Tensor T0(d, 2), T1(d, 2), T2(d, 2);
-  T0(0, 0) = 1.0;
-  T1(0, 1) = T1(1, 0) = 1.0;
-  T2(1, 1) = 1.0;
+  for (int n = 0; n < nfaces; n++) {
+    int f = faces[n];
+    AmanziGeometry::Point normal(mesh_->face_normal(f));
+    double area = mesh_->face_area(f);
+    normal /= area;
 
-  Tensor KT0(K * T0);
-  Tensor KT1(K * T1);
-  Tensor KT2(K * T2);
+    mesh_->face_get_nodes(f, &nodes);
+    nnodes = nodes.size();
 
-  const AmanziGeometry::Point& xm = mesh_->cell_centroid(c);
+    if (d == 2) { 
+      int m = (n + 1) % nnodes;
+      tau[0] = normal[1];
+      tau[1] =-normal[0];
+
+      for (int i = 0; i < modes; i++) {
+        v1 = vKT[i] * normal;
+        double t = (tau * v1) * area / 2;
+        double p = (normal * v1) * area;
+
+        N(2*n, i) += tau[0] * t;  
+        N(2*n + 1, i) += tau[1] * t;
+        N(2*nnodes + n, i) += p;
+
+        N(2*m, i) += tau[0] * t;
+        N(2*m + 1, i) += tau[1] * t;
+      }
+    }
+  }
+
+  // calculate R K R^T / volume
+  DenseVector a1(modes), a2(modes), a3(modes);
+  coefM.Inverse();
+
+  for (int i = 0; i < nrows; i++) { 
+    a1(0) = N(i, 0);  
+    a1(1) = N(i, 1);  
+    a1(2) = N(i, 2); 
+
+    for (int j = i; j < nrows; j++) {
+      a2(0) = N(j, 0);  
+      a2(1) = N(j, 1);  
+      a2(2) = N(j, 2); 
+
+      coefM.Multiply(a2, a3, false);
+      Ac(i, j) = a1 * a3;
+    }
+  }
+
+  // calculate N (common algorihtm for 2D and 3D)
+  N.PutScalar(0.0);
+
+  mesh_->cell_get_nodes(c, &nodes);
+  nnodes = nodes.size();
 
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
-    const AmanziGeometry::Point& xv = mesh_->node_get_coordinates(v, &xv);
+    mesh_->node_get_coordinates(v, &xv);
     xv -= xm;
 
-    j = 2 * n;
-    k = 2 * n + 1;
+    // null mods
+    int col(0);
+    for (int k = 0; k < d; ++k) {
+      N(2*n + k, col) = 1.0;
+      col++;
 
-    a1(j) = 1.0;   a1(k) = 0.0;
-    a2(j) = xv.y;  a2(k) =-xv.x;
-    a3(j) = 0.0;   a3(k) = 1.0;
+      for (int l = k + 1; l < d; ++l) {
+        N(2*n + k, col) = xv[l];  
+        N(2*n + l, col) =-xv[k];
+        col++;
+      }
+    }
 
-    a4(j) = xv.x;  a4(k) = 0.0;
-    a5(j) = xv.y;  a5(k) = xv.x;
-    a6(j) = 0.0;   a6(k) = xv.y;
+    // non-null modes  
+    for (int k = 0; k < d; ++k) {
+      N(2*n + k, col) = xv[k];  
+      col++;
+
+      for (int l = k + 1; l < d; ++l) {
+        N(2*n + k, col) = xv[l];
+        N(2*n + k, col) = xv[k];
+        col++;
+      }
+    }
   }
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
-    xe = f->e_xm(i) - xm;
-    l = 2 * nfaces + i;
+    v1 = xf - xm;
+    int l = d * nnodes + i;
 
+    /*
     a1(l) = normal.x;
     a2(l) = p2D(xe.y, -xe.x) * normal;
     a3(l) = normal.y;
@@ -87,67 +172,7 @@ int MFD3D_Diffusion::H1consistencyNodeFace(
     a4(l) = xe.x * normal.x;
     a5(l) = p2D(xe.y, xe.x) * normal;
     a6(l) = xe.y * normal.y;
-  }
-
-  // calculate R K R^T / volume
-  array2D<real> Mu(3,3);
-
-  coefM(0, 0)               = (T0 % CT0) * area;
-  coefM(0, 1) = coefM(1, 0) = (T0 % CT1) * area;
-  coefM(0, 2) = coefM(2, 0) = (T0 % CT2) * area;
-
-  coefM(1, 1)               = (T1 % CT1) * area; 
-  coefM(1, 2) = coefM(2, 1) = (T1 % CT2) * area;
-  coefM(2, 2)               = (T2 % CT2) * area; 
-
-  coefM.inverse(3);
-
-  for (i=0; i<nx; i++ ) { 
-    v1(0) = b1(i);  
-    v1(1) = b2(i);  
-    v1(2) = b3(i); 
-
-    for( j=i; j<nx; j++ ) {
-      v2(0) = b1(j);  
-      v2(1) = b2(j);  
-      v2(2) = b3(j); 
-
-      AmultB(coefM, v2, v3);
-      localA(i, j) = v1 * v3;
-    }
-  }
-
-  // calculate N
-  b1 = 0;  
-  b2 = 0;  
-  b3 = 0;
-  for (i=0; i<nv; i++ ) {
-    j = (i + 1) % nv;
-
-    lenght = f->e_lenght(i);
-    normal = f->e_normal(i);
-    tau = (f->xv(j) - f->xv(i)) / lenght;
-
-    c = CT0 * normal;
-    t = (tau    * c) * lenght / 2;
-    p = (normal * c) * lenght;
-
-    b1(2*i) += tau.x * t;  b1(2*i + 1) += tau.y * t;  b1(2*nv + i) += p;
-    b1(2*j) += tau.x * t;  b1(2*j + 1) += tau.y * t;
-
-    c = CT1 * normal;
-    t = (tau    * c) * lenght / 2;
-    p = (normal * c) * lenght;
-
-    b2(2*i) += tau.x * t;  b2(2*i + 1) += tau.y * t;  b2(2*nv + i) += p;
-    b2(2*j) += tau.x * t;  b2(2*j + 1) += tau.y * t;
-
-    c = CT2 * normal;
-    t = (tau    * c) * lenght / 2;
-    p = (normal * c) * lenght;
-
-    b3(2*i) += tau.x * t;  b3(2*i + 1) += tau.y * t;  b3(2*nv + i) += p;
-    b3(2*j) += tau.x * t;  b3(2*j + 1) += tau.y * t;
+    */
   }
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;

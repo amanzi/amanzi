@@ -59,8 +59,8 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
   AmanziMesh::Entity_ID_List faces;
 
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    if ((*it)->schema == (OPERATOR_SCHEMA_BASE_CELL |
-                          OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+    if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
+                               OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
       for (int c = 0; c != ncells_owned; c++) {
         mesh_->cell_get_faces(c, &faces);
         int nfaces = faces.size();
@@ -81,8 +81,8 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
   X.ScatterMasterToGhosted("face");
 
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    if ((*it)->schema == (OPERATOR_SCHEMA_BASE_CELL |
-                          OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+    if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
+                               OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
       for (int c = 0; c < ncells_owned; c++) {
         mesh_->cell_get_faces(c, &faces);
         int nfaces = faces.size();
@@ -110,8 +110,8 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
     Yf = Xf;
 
     for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-      if ((*it)->schema == (OPERATOR_SCHEMA_BASE_CELL |
-                            OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+      if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
+                                 OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
         for (int c = 0; c < ncells_owned; c++) {
           mesh_->cell_get_faces(c, &faces);
           int nfaces = faces.size();
@@ -144,7 +144,7 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
   // first check preconditions -- Scc must have exactly one face-based schema (a FACE+CELL)
   int num_with_faces = 0;
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    if ((*it)->schema & OPERATOR_SCHEMA_DOFS_FACE) {
+    if ((*it)->schema_old_ & OPERATOR_SCHEMA_DOFS_FACE) {
       num_with_faces++;
     }
   }
@@ -158,8 +158,8 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
   // FACE_CELL schema, -Acf*(Aff^-1)*Afc.
   int i_schur = 0;
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    if ((*it)->schema == (OPERATOR_SCHEMA_BASE_CELL |
-                          OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+    if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
+                               OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
       ASSERT((*it)->matrices.size() == ncells_owned);
 
       // create or get extra ops, and keep them for future use
