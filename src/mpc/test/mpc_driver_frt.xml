@@ -207,7 +207,7 @@
       <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
       <ParameterList name="thermodynamic database">
 	<Parameter name="format" type="string" value="simple"/>
-	<Parameter name="file" type="string" value="test/mpc_driver_reactive_transport.bgd"/>
+	<Parameter name="file" type="string" value="mpc_driver_reactive_transport.bgd"/>
       </ParameterList>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="50"/>
@@ -494,6 +494,36 @@
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="2.00000e+00"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="mineral_rate_constant">
+        <ParameterList name="function">
+          <ParameterList name="Soil_1">
+            <Parameter name="region" type="string" value="Soil_1"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.00000000000000005e-04"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Soil_2">
+            <Parameter name="region" type="string" value="Soil_2"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="2.00000000000000010e-04"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
