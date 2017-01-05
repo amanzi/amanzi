@@ -16,15 +16,15 @@ public:
           const Teuchos::RCP<Teuchos::ParameterList>& plist,
           const Teuchos::RCP<State>& S,
           const Teuchos::RCP<TreeVector>& solution) :
-    PK(FElist, plist, S, solution),
-    MPC<PK>(FElist, plist, S, solution),FElist_loc(FElist){
+     PK(), MPC<PK>(),FElist_loc(FElist){
+     
+     plist_ = plist;
     
-    plist_ = plist;
-    S_loc = S.ptr();
-    generalize_inputspec();
-    //    MPC<PK>::init_(S,plist_,FElist_loc, soln);
-    
-  };
+     generalize_inputspec(S.ptr());
+     
+     MPC<PK>::init_(FElist_loc,plist_,S, solution);
+     
+   };
 
 
   virtual double get_dt();
@@ -34,7 +34,7 @@ public:
   virtual void Setup(const Teuchos::Ptr<State>& S);
   virtual void Initialize(const Teuchos::Ptr<State>& S);
 
-  void generalize_inputspec();
+  void generalize_inputspec(const Teuchos::Ptr<State>& S);
   bool CoupledSurfSubsurf3D(double t_old, double t_new, bool reinit);
 
   bool CoupledSurfSubsurfColumns(double t_old, double t_new, bool reinit);
@@ -47,7 +47,7 @@ private :
   Key coupling_key_ ;
   bool subcycle_key_ ;
   Teuchos::ParameterList& FElist_loc;
-  Teuchos::Ptr<State> S_loc;
+  
   double min_dt_, surf_dt_, sync_time_;
 };
 

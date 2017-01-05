@@ -30,6 +30,7 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
   // tweak the sub-PK parameter lists
   Teuchos::Array<std::string> names = plist_->get<Teuchos::Array<std::string> >("PKs order");
 
+ 
   // -- turn on coupling
   pks_list_->sublist(names[0]).set("coupled to surface via flux", true);
   pks_list_->sublist(names[1]).set("coupled to surface via flux", true);
@@ -44,8 +45,13 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
   pks_list_->sublist(names[3]).sublist("Accumulation PC").set("surface operator", true);
   
 
-  domain_surf = plist_->sublist("PKs").sublist(names[2]).get<std::string>("domain name", "surface");
-  domain_ss = plist_->sublist("PKs").sublist(names[0]).get<std::string>("domain name","domain");
+  domain_surf = plist_->sublist("surface ewc delegate").get<std::string>("domain name", "surface"); 
+    //plist_->sublist("PKs").sublist(names[2]).get<std::string>("domain name", "surface");
+  domain_ss = plist_->sublist("ewc delegate").get<std::string>("domain name", "domain");  
+    //plist_->sublist("PKs").sublist(names[0]).get<std::string>("domain name","domain");
+  if(names[0] == "SSF0")
+    assert(domain_ss == "column_0");
+
   // grab the meshes
   surf_mesh_ = S->GetMesh(domain_surf);
   domain_mesh_ = S->GetMesh(domain_ss);

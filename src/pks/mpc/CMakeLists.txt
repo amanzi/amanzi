@@ -40,6 +40,7 @@ add_library(mpc
   mpc_flowreactivetransport_pk.cc
   mpc_reactivetransport_pk.cc
   mpc_surface_subsurface_helpers.cc
+  weak_mpc_semi_coupled_helper.cc
   mpc_delegate_ewc.cc
 ##  mpc_delegate_ewc_surface.cc
   mpc_delegate_ewc_subsurface.cc

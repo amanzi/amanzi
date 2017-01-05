@@ -177,13 +177,13 @@ template <class PK_t>
 void MPC<PK_t>::init_(Teuchos::ParameterList& pk_tree,
                const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                const Teuchos::RCP<State>& S,
-               const Teuchos::RCP<TreeVector>& solution) {
+               const Teuchos::RCP<TreeVector>& solution)  {
 
   solution_ = solution;
   global_list_ = global_list;
   pk_tree_ = pk_tree;
   pks_list_ = Teuchos::sublist(global_list_, "PKs");
-
+ 
   // name the PK
   name_ = pk_tree.name();
   boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->");
@@ -194,7 +194,7 @@ void MPC<PK_t>::init_(Teuchos::ParameterList& pk_tree,
   plist_ = Teuchos::sublist(pks_list_, name_);
 
   PKFactory pk_factory;
-
+  
   if (plist_->isParameter("PKs order")) {
     // ordered
     Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
@@ -209,6 +209,7 @@ void MPC<PK_t>::init_(Teuchos::ParameterList& pk_tree,
       std::string name_i = pk_order[i];
 
       Teuchos::ParameterList& pk_sub_tree = pk_tree.sublist(name_i);
+      
       pk_sub_tree.set("PK name", name_i);
       Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_sub_tree, global_list_, S, pk_soln);
 
