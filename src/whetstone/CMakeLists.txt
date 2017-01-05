@@ -74,6 +74,7 @@ if ( BUILD_TESTS )
     add_amanzi_test(whetstone_darcy whetstone_darcy
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_darcy.cc
+                           test/whetstone_diffusion_vector.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for elasticity

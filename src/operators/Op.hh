@@ -36,9 +36,9 @@ class Op {
  public:
   Op(int schema, std::string& schema_string_,
      const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      schema_old_(schema_),
-      schema_row_(schema_),
-      schema_col_(schema_),
+      schema_old_(schema),
+      schema_row_(schema),
+      schema_col_(schema),
       schema_string(schema_string_),
       mesh_(mesh)
   {};
@@ -124,13 +124,8 @@ class Op {
   }
 
  public:
-<<<<<<< Updated upstream
-  int schema;
-  Schema schema_row_, schema_col_;
-=======
   int schema_old_;
-  Schema schema_new_;
->>>>>>> Stashed changes
+  Schema schema_row_, schema_col_;
   std::string schema_string;
 
   std::vector<double> vals;

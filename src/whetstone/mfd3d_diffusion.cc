@@ -372,7 +372,7 @@ int MFD3D_Diffusion::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 
 
 /* ******************************************************************
-* Stiffness matrix: the standard algorithm.
+* Stiffness matrix: the optimized algorithm.
 ****************************************************************** */
 int MFD3D_Diffusion::StiffnessMatrixOptimized(int c, const Tensor& K, DenseMatrix& A)
 {
