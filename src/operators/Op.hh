@@ -37,13 +37,16 @@ class Op {
   Op(int schema_, std::string& schema_string_,
      const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       schema(schema_),
-      schema_new_(schema_),
+      schema_row_(schema_),
+      schema_col_(schema_),
       schema_string(schema_string_),
       mesh_(mesh)
   {};
 
-  Op(Schema schema, const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      schema_new_(schema),
+  Op(const Schema& schema_row, const Schema& schema_col,
+     const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+      schema_row_(schema_row),
+      schema_col_(schema_col),
       schema_string("UNDEFINED"),
       mesh_(mesh)
   {};
@@ -122,7 +125,7 @@ class Op {
 
  public:
   int schema;
-  Schema schema_new_;
+  Schema schema_row_, schema_col_;
   std::string schema_string;
 
   std::vector<double> vals;
