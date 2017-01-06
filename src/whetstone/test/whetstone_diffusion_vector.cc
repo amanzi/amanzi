@@ -86,6 +86,8 @@ TEST(DIFFUSION_STOKES_2D) {
   Point p(d);
 
   DenseVector ax(nrows), ay(nrows);
+  ax.PutScalar(0.0);
+  ay.PutScalar(0.0);
   for (int i = 0; i < nnodes; i++) {
     int v = nodes[i];
     mesh->node_get_coordinates(v, &p);
@@ -102,9 +104,9 @@ TEST(DIFFUSION_STOKES_2D) {
     ay(2*nnodes + i) = xf[1] * normal[1] / area;
   }
 
-  double xi, yi, xj;
-  double vxx(0.0), vxy(0.0), volume(mesh->cell_volume(cell)); 
-  
+  double vxx(0.0), vxy(0.0); 
+  double volume = mesh->cell_volume(cell);
+
   for (int i = 0; i < nrows; i++) {
     for (int j = 0; j < nrows; j++) {
       vxx += A(i, j) * ax(i) * ax(j);

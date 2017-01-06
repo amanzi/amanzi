@@ -8,6 +8,9 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
+
+  Operator whose unknowns are CELL + FACE, but which assembles the 
+  CELL only system and Schur complements the face.
 */
 
 #ifndef AMANZI_OPERATOR_CELLFACE_SFF_HH_
@@ -15,45 +18,6 @@
 
 #include "DenseMatrix.hh"
 #include "Operator_FaceCell.hh"
-
-/* ******************************************************************
-Operator whose unknowns are CELL + FACE, but which assembles the CELL only
-system and Schur complements the face.
-
-This uses special assembly.  Apply is done as if we had the full FACE+CELL
-system.  SymbolicAssembly() is done as if we had the CELL system, but with an
-additional step to get the layout due to the Schur'd system on FACE+CELL.
-Assemble, however, is done using a totally different approach.
-
----------------------------------------------------------------------
-
-1. Operator is a linear operator acting from linear space X to linear
-space Y. These spaces are described by CompositeVectors (CV). A few
-maps X->Y is supported. 
-
-At the moment X = Y. Extension to TreeVectors should not be done in 
-this class.
-
-2. Operator is an un-ordered additive collection of lower-rank (or 
-equal) simple operators. During its construction, an operator can 
-only grow by assimilating more operators. 
-
-At the moment, an operator cannot be split into two operators, but
-there are no desing restriction for doing it in the future.
-
-3. A simple operator (a set of 1 operators) is defined by triple:
-scheme + elemental matrices + diagonal matrix. The schema specifies
-structure of elemental matrices, e.g. cell-based matrices 
-representing interation between face-based unknowns.
-
-4. Operator can be converted to Epetra_FECrsMatrix matrix to generate
-a preconditioner. This operation cannot be applied to a subset of
-defining operators. 
- 
-Note. The operators can be initialized from other operators.
-    Since data are never copied by default, we have to track 
-    down the ownership of data.
-****************************************************************** */ 
 
 namespace Amanzi {
 namespace Operators {
@@ -67,7 +31,8 @@ class Operator_FaceCellSff : public Operator_FaceCell {
       Operator_FaceCell(cvs, plist) {
     // changing schema for the Schur complement
     int schema = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE;
-    schema_new_.Init(schema);
+    schema_col_.Init(schema);
+    schema_row_.Init(schema);
     set_schema_string("FACE+CELL Schur to FACE");
   }
 

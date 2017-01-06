@@ -103,12 +103,14 @@ add_amanzi_library(operators
                    SOURCE OperatorUtils.cc
                           FieldMaps.cc
                           Operator.cc
-                          Operator_Cell.cc Operator_FaceCell.cc
+                          Operator_Node.cc
+                          Operator_Edge.cc
+                          Operator_Cell.cc
+                          Operator_FaceCell.cc
                           Operator_FaceCellScc.cc
                           Operator_FaceCellSff.cc
                           Operator_ConsistentFace.cc
-                          Operator_Node.cc
-                          Operator_Edge.cc
+                          Operator_Schema.cc
                           OperatorDiffusionMFD.cc
                           OperatorDiffusionMFDwithGravity.cc
                           OperatorDiffusionFV.cc

@@ -8,6 +8,8 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
+
+  Operator whose unknowns are NODEs.
 */
 
 #include "DenseMatrix.hh"
@@ -19,12 +21,6 @@
 
 #include "OperatorDefs.hh"
 #include "Operator_Node.hh"
-
-/* ******************************************************************
-Operator whose unknowns are NODE.
-
-See Operator_Node.hh for more detail.
-****************************************************************** */
 
 namespace Amanzi {
 namespace Operators {

@@ -8,6 +8,12 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
+
+  Operator whose unknowns are CELLs.
+
+  The only thing really implemented here is the visitor pattern Op
+  acceptors. Everything else should be done in the base class, with
+  the exception of special assembly issues.
 */
 
 #ifndef AMANZI_OPERATOR_WITH_CELL_HH_
@@ -15,41 +21,6 @@
 
 #include "DenseMatrix.hh"
 #include "Operator.hh"
-
-/* ******************************************************************
-Operator whose unknowns are CELLs
-
-NOTE that the only thing really implemented here is the visitor pattern Op
-acceptors.  Everything else should be done in the base class, with the
-exception of special assembly issues.
-
-1. Operator is a linear operator acting from linear space X to linear
-space Y. These spaces are described by CompositeVectors (CV). A few
-maps X->Y is supported. 
-
-At the moment X = Y. Extension to TreeVectors should not be done in 
-this class.
-
-2. Operator is an un-ordered additive collection of lower-rank (or 
-equal) simple operators. During its construction, an operator can 
-only grow by assimilating more operators. 
-
-At the moment, an operator cannot be split into two operators, but
-there are no desing restriction for doing it in the future.
-
-3. A simple operator (a set of 1 operators) is defined by triple:
-scheme + elemental matrices + diagonal matrix. The schema specifies
-structure of elemental matrices, e.g. cell-based matrices 
-representing interation between face-based unknowns.
-
-4. Operator can be converted to Epetra_FECrsMatrix matrix to generate
-a preconditioner. This operation cannot be applied to a subset of
-defining operators. 
- 
-Note. The operators can be initialized from other operators.
-    Since data are never copied by default, we have to track 
-    down the ownership of data.
-****************************************************************** */ 
 
 namespace Amanzi {
 namespace Operators {

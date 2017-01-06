@@ -8,6 +8,15 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
+
+  Operator whose unknowns are CELL + FACE, but which assembles the
+  CELL only system and Schur complements the face.
+
+  This uses special assembly. Apply is done as if we had the full 
+  FACE+CELL system. SymbolicAssembly() is done as if we had the CELL 
+  system, but with an additional step to get the layout due to the 
+  Schur'd system on FACE+CELL. Assemble, however, is done using a 
+  totally different approach.
 */
 
 #include <vector>
@@ -26,16 +35,6 @@
 #include "Op_Cell_FaceCell.hh"
 #include "Op_Face_Cell.hh"
 #include "Operator_FaceCellScc.hh"
-
-/* ******************************************************************
-Operator whose unknowns are CELL + FACE, but which assembles the CELL only
-system and Schur complements the face.
-
-This uses special assembly.  Apply is done as if we had the full FACE+CELL
-system.  SymbolicAssembly() is done as if we had the CELL system, but with an
-additional step to get the layout due to the Schur'd system on FACE+CELL.
-Assemble, however, is done using a totally different approach.
-****************************************************************** */
 
 namespace Amanzi {
 namespace Operators {
@@ -352,7 +351,7 @@ void Operator_FaceCellScc::SymbolicAssembleMatrix()
 {
   // SuperMap for Sff is face only
   CompositeVectorSpace smap_space;
-  smap_space.SetMesh(cvs_->Mesh())->SetComponent("cell", AmanziMesh::CELL, 1);
+  smap_space.SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
   smap_ = CreateSuperMap(smap_space, schema(), 1);
 
   // create the graph

@@ -8,6 +8,8 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
+
+  Operator whose unknowns are CELL + FACE.
 */
 
 #include "DenseMatrix.hh"
@@ -22,12 +24,6 @@
 
 #include "OperatorDefs.hh"
 #include "Operator_FaceCell.hh"
-
-/* ******************************************************************
-Operator whose unknowns are CELL + FACE
-
-See Operator_FaceCell.hh for mode detail.
-****************************************************************** */
 
 namespace Amanzi {
 namespace Operators {

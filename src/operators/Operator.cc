@@ -51,12 +51,14 @@ namespace Operators {
 Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                    Teuchos::ParameterList& plist,
                    int schema) :
-    cvs_(cvs),
-    schema_new_(schema),
+    cvs_row_(cvs),
+    cvs_col_(cvs),
+    schema_row_(schema),
+    schema_col_(schema),
     shift_(0.0)
 {
-  mesh_ = cvs_->Mesh();
-  rhs_ = Teuchos::rcp(new CompositeVector(*cvs_, true));
+  mesh_ = cvs_col_->Mesh();
+  rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -84,17 +86,21 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
 
 
 /* ******************************************************************
-* Default constructor.
+* New default constructor. Code of two constructors can be optimized.
 ****************************************************************** */
-Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
+Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
+                   const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
                    Teuchos::ParameterList& plist,
-                   Schema& schema) :
-    cvs_(cvs),
-    schema_new_(schema),
+                   const Schema& schema_col,
+                   const Schema& schema_row) :
+    cvs_col_(cvs_col),
+    cvs_row_(cvs_row),
+    schema_col_(schema_col),
+    schema_row_(schema_row),
     shift_(0.0)
 {
-  mesh_ = cvs_->Mesh();
-  rhs_ = Teuchos::rcp(new CompositeVector(*cvs_, true));
+  mesh_ = cvs_col_->Mesh();
+  rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -136,13 +142,13 @@ void Operator::Init()
 
 
 /* ******************************************************************
-* Create structure of a global matrix.
+* Create structure of a global square matrix.
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrix()
 {
   // Create the supermap given a space (set of possible schemas) and a
-  // specific schema (assumed/checked to be consistent with the sapce).
-  smap_ = CreateSuperMap(*cvs_, schema(), 1);
+  // specific schema (assumed/checked to be consistent with the space).
+  smap_ = CreateSuperMap(*cvs_col_, schema(), 1);
 
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema(), 1);

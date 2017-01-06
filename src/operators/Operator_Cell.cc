@@ -8,6 +8,8 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
+
+  Operator whose unknowns are CELLs.
 */
 
 #include "DenseMatrix.hh"
@@ -18,12 +20,6 @@
 #include "GraphFE.hh"
 #include "MatrixFE.hh"
 #include "Operator_Cell.hh"
-
-/* ******************************************************************
-Operator whose unknowns are CELL
-
-See Operator_Cell.hh for more detail.
-****************************************************************** */
 
 namespace Amanzi {
 namespace Operators {

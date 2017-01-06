@@ -24,19 +24,19 @@
 #include "Operator.hh"
 
 /* ******************************************************************
-TreeOperators are the block analogue of Operators -- they provide 
-a linear operator acting on a TreeVectorSpace.  They are currently
-assumed R^n -> R^n, and furthermore each block is currently assumed 
-to be from R^m --> R^m for n = i*m where i is an integer (every 
-block's space is the same).
+  TreeOperators are the block analogue of Operators -- they provide 
+  a linear operator acting on a TreeVectorSpace.  They are currently
+  assumed R^n -> R^n, and furthermore each block is currently assumed 
+  to be from R^m --> R^m for n = i*m where i is an integer (every 
+  block's space is the same).
 
-Note that these are really intended for preconditioners -- it is
-unlikely that these need assembled for the operator itself, and
-therefore no ComputeResidual() methods are provided.  It would be 
-difficult to manage a RHS for these systems.
+  Note that these are really intended for preconditioners -- it is
+  unlikely that these need assembled for the operator itself, and
+  therefore no ComputeResidual() methods are provided.  It would be 
+  difficult to manage a RHS for these systems.
 
-Future work will relax this constraint, but currently this can be
-used for things like multi-phased flow, thermal Richards, etc.
+  Future work will relax this constraint, but currently this can be
+  used for things like multi-phased flow, thermal Richards, etc.
 ****************************************************************** */ 
 
 namespace Amanzi {

@@ -27,16 +27,6 @@
 #include "OperatorUtils.hh"
 #include "TreeOperator.hh"
 
-/* ******************************************************************
-TreeOperators are the block analogue of Operators -- they provide a linear
-operator acting on a TreeVectorSpace.  They are currently assumed R^n -> R^n,
-and furthermore each block is currently assumed to be from R^m --> R^m for n =
-i*m where i is an integer (every block's space is the same).
-
-Future work will relax this constraint, but currently this can be used for
-things like multi-phased flow, thermal+flow, etc.
-****************************************************************** */ 
-
 namespace Amanzi {
 namespace Operators {
 

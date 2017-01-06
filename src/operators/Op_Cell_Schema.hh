@@ -7,6 +7,9 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
+
+  This operator is a container for local rectangular matrices of 
+  length ncells and with dofs given by two schemas.
 */
 
 #ifndef AMANZI_OP_CELL_SCHEMA_HH_
@@ -17,11 +20,6 @@
 #include "Operator.hh"
 #include "Op.hh"
 #include "Schema.hh"
-
-/*
-  This operator is a container for local rectangular matrices.of length 
-  ncells and with dofs given by two schemas.
-*/
 
 namespace Amanzi {
 namespace Operators {

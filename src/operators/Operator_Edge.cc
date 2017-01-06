@@ -8,6 +8,8 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
+
+  Operator whose unknowns are Edge.
 */
 
 #include "DenseMatrix.hh"
@@ -20,12 +22,6 @@
 
 #include "OperatorDefs.hh"
 #include "Operator_Edge.hh"
-
-/* ******************************************************************
-Operator whose unknowns are Edge.
-
-See Operator_Edge.hh for more detail.
-****************************************************************** */
 
 namespace Amanzi {
 namespace Operators {
