@@ -291,6 +291,10 @@ class Operator {
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
 
+  virtual void AssembleMatrixOp(const Op_Cell_Schema& op,
+          const SuperMap& map, MatrixFE& mat,
+          int my_block_row, int my_block_col) const;
+
   // diagnostics
   std::string PrintDiagnostics() const;
 

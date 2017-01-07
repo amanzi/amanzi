@@ -1,8 +1,15 @@
 /*
+  Data Structures
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Author: Ethan Coon (ecoon@lanl.gov)
 
-  Takes non-contiguous data structure spaces (CompositeVector, TreeVector) and
-  converts them into a single map.
+  Takes non-contiguous data structure spaces (CompositeVector, TreeVector) 
+  and converts them into a single map.
 */
 
 
@@ -35,7 +42,7 @@ SuperMap::SuperMap(const Epetra_MpiComm& comm,
     ghosted_counts_[compname] = ghosted_maps[i]->NumMyElements() - counts_[compname];
     offsets_[compname] = offset;
 
-    offset += dofnums[i]*counts_[compnames[i]];
+    offset += dofnums[i]*counts_[compname];
   }
   int n_local = offset;
 

@@ -31,9 +31,9 @@ struct SchemaItem {
   }
 
  public:
-  int location;
-  int type;
-  int num; 
+  int location;  // geometric location of DOF
+  int type;  // scalar, vector component, derivative, etc.
+  int num;  // how many time it is repeated.
 };
 
 
@@ -55,6 +55,8 @@ class Schema {
 
   // access
   std::vector<SchemaItem>& items() { return items_; } 
+  std::vector<SchemaItem>::const_iterator begin() const { return items_.begin(); }
+  std::vector<SchemaItem>::const_iterator end() const { return items_.end(); }
 
  private:
   int base_;

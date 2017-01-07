@@ -42,7 +42,7 @@ int CopySuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv, Tr
 
 int AddSuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv, TreeVector& cv);
 
-// supermap factory from CV and schema
+// Supermap factory from CV and schema
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cv, int schema, int n_dofs);
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cv, Schema& schema);
 
