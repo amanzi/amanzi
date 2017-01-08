@@ -66,6 +66,16 @@ int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
 * Consistency condition for stiffness matrix in mechanics. 
 * Only the upper triangular part of Ac is calculated.
 ****************************************************************** */
+int MFD3D_Elasticity::L2consistencyInverse(
+    int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) {
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Consistency condition for stiffness matrix in mechanics. 
+* Only the upper triangular part of Ac is calculated.
+****************************************************************** */
 int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
                                     DenseMatrix& N, DenseMatrix& Ac)
 {

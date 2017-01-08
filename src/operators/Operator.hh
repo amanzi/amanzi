@@ -172,6 +172,9 @@ class Operator {
 
   // access
   int schema() const { return schema_col_.OldSchema(); }
+  const Schema& schema_col() const { return schema_col_; }
+  const Schema& schema_row() const { return schema_row_; }
+
   const std::string& schema_string() const { return schema_string_; }
   void set_schema_string(const std::string& schema_string) { schema_string_ = schema_string; }
 

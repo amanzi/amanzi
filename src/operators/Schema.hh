@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "Mesh.hh"
 #include "MeshDefs.hh"
 
 namespace Amanzi {
@@ -23,6 +24,10 @@ namespace Operators {
 struct SchemaItem {
  public:
   SchemaItem() : location(0), type(0), num(0) {};
+  SchemaItem(int location_, int type_, int num_) :
+      location(location_),
+      type(type_),
+      num(num_) {};
 
   void set(int location_, int type_, int num_) {
     location = location_;
@@ -46,10 +51,25 @@ class Schema {
 
   // member functions
   void Init(int schema_old);
+
+  void SetBase(int base) { base_ = base; }
+  void AddItem(int location, int type, int num) {
+    SchemaItem item(location, type, num);
+    items_.push_back(item);
+  }
+ 
+  void Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh);
+
+  // local converters operators/strings/mesh
   int OldSchema() const;
 
-  std::string LocationName(int loc) const;
-  AmanziMesh::Entity_kind LocationMeshID(int loc) const;
+  std::string LocationToString(int loc) const;
+  AmanziMesh::Entity_kind LocationToMeshID(int loc) const;
+  int StringToLocation(std::string& loc) const;
+  AmanziMesh::Entity_kind StringToMeshID(std::string& loc) const {
+    int id = StringToLocation(loc);
+    return LocationToMeshID(id);
+  }
 
   std::string CreateUniqueName() const;
 
@@ -61,6 +81,7 @@ class Schema {
  private:
   int base_;
   std::vector<SchemaItem> items_; 
+  std::vector<int> offset_;  // starting position of DOF ids
 };
 
 }  // namespace Operators

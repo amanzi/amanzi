@@ -41,25 +41,25 @@ class MFD3D_Elasticity : public MFD3D {
   explicit MFD3D_Elasticity(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : MFD3D(mesh) {};
   ~MFD3D_Elasticity() {};
 
-  // required implementation of two consistency conditions
+  // Edges DOFs
+  // -- consistency conditions
   int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
-
-  int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) {
-    return WHETSTONE_ELEMENTAL_MATRIX_OK;
-  }
+  int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
 
   int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
 
-  int MassMatrix(int c, const Tensor& T, DenseMatrix& M) { 
-    return WHETSTONE_ELEMENTAL_MATRIX_OK; 
-  } 
-  int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) {
-    return WHETSTONE_ELEMENTAL_MATRIX_OK; 
-  } 
+  int MassMatrix(int c, const Tensor& T, DenseMatrix& M) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
+  int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
 
   int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
   int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);
   int StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A);
+
+  // complex sets of DOFs
+  // -- vectors at nodes, comal components on faces
+  int H1consistencyNode2Face1(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
+
+  int StiffnessMatrixNode2Face1(int c, const Tensor& K, DenseMatrix& A);
 
  private:
   void MatrixMatrixProduct_(

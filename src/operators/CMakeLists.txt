@@ -82,6 +82,7 @@ set(operators_inc_files
     OperatorDiffusionFVwithGravity.hh
     OperatorDiffusionNLFV.hh
     OperatorDiffusionNLFVwithGravity.hh
+    OperatorElasticity.hh
     OperatorElectromagnetics.hh
     OperatorElectromagneticsMHD.hh
     OperatorAccumulation.hh
@@ -118,6 +119,7 @@ add_amanzi_library(operators
                           OperatorDiffusionNLFV.cc
                           OperatorDiffusionNLFVwithGravity.cc
                           OperatorDiffusionFactory.cc                   
+                          OperatorElasticity.cc
                           OperatorElectromagnetics.cc
                           OperatorElectromagneticsMHD.cc
                           OperatorAccumulation.cc

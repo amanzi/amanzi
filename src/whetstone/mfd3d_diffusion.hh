@@ -84,12 +84,6 @@ class MFD3D_Diffusion : public MFD3D {
   int L2consistencyInverseSurface(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);
   int MassMatrixInverseSurface(int c, const Tensor& K, DenseMatrix& W);
 
-  // vector equations
-  // -- stiffness matrix
-  int H1consistencyNodeFace(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
-
-  int StiffnessMatrixNodeFace(int c, const Tensor& K, DenseMatrix& A);
-
   // primary related discetization methods
   int MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W);
   int MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& W);

@@ -38,9 +38,8 @@ include_directories(${Boost_INCLUDE_DIRS})
 #
 add_amanzi_library(whetstone
                    SOURCE mfd3d.cc
-                          mfd3d_diffusion.cc mfd3d_diffusion_surface.cc 
-                          mfd3d_diffusion_vector.cc mfd3d_diffusion_other.cc 
-                          mfd3d_elasticity.cc 
+                          mfd3d_diffusion.cc mfd3d_diffusion_surface.cc mfd3d_diffusion_other.cc 
+                          mfd3d_elasticity.cc mfd3d_elasticity_other.cc
                           mfd3d_electromagnetics.cc 
                           nlfv.cc Tensor.cc DenseMatrix.cc
                    HEADERS DenseMatrix.hh
@@ -74,13 +73,13 @@ if ( BUILD_TESTS )
     add_amanzi_test(whetstone_darcy whetstone_darcy
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_darcy.cc
-                           test/whetstone_diffusion_vector.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for elasticity
     add_amanzi_test(whetstone_elasticity whetstone_elasticity
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_elasticity.cc
+                           test/whetstone_elasticity_other.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for electromagnetics

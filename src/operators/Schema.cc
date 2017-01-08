@@ -48,6 +48,22 @@ void Schema::Init(int i) {
 
 
 /* ******************************************************************
+* Compute offsets (starting position of DOF ids).
+****************************************************************** */
+void Schema::Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+{
+  offset_.clear();
+
+  int m(0);
+  for (auto it = items_.begin(); it != items_.end(); ++it) {
+    offset_.push_back(m);
+    int nent = mesh->num_entities(LocationToMeshID(it->location), AmanziMesh::OWNED);
+    m += nent * it->num;
+  }
+}
+
+
+/* ******************************************************************
 * Compatibility: returns old schema
 ****************************************************************** */
 int Schema::OldSchema() const
@@ -61,7 +77,7 @@ int Schema::OldSchema() const
 /* ******************************************************************
 * Returns standard name for geometric location of DOF.
 ****************************************************************** */
-std::string Schema::LocationName(int loc) const 
+std::string Schema::LocationToString(int loc) const 
 {
   if (loc == OPERATOR_SCHEMA_DOFS_NODE) {
     return "node";
@@ -78,7 +94,7 @@ std::string Schema::LocationName(int loc) const
 /* ******************************************************************
 * Returns standard mesh id for geometric location of DOF.
 ****************************************************************** */
-AmanziMesh::Entity_kind Schema::LocationMeshID(int loc) const 
+AmanziMesh::Entity_kind Schema::LocationToMeshID(int loc) const 
 {
   if (loc == OPERATOR_SCHEMA_DOFS_NODE) {
     return AmanziMesh::NODE;
@@ -93,13 +109,30 @@ AmanziMesh::Entity_kind Schema::LocationMeshID(int loc) const
 
 
 /* ******************************************************************
+* Returns standard mesh id for geometric location of DOF.
+****************************************************************** */
+int Schema::StringToLocation(std::string& loc) const 
+{
+  if (loc == "node") {
+    return OPERATOR_SCHEMA_DOFS_NODE;
+  } else if (loc == "edge") {
+    return OPERATOR_SCHEMA_DOFS_EDGE;
+  } else if (loc == "face") {
+    return OPERATOR_SCHEMA_DOFS_FACE;
+  } else if (loc == "cell") {
+    return OPERATOR_SCHEMA_DOFS_CELL;
+  }
+}
+
+
+/* ******************************************************************
 * Auxiliary routine creates new name.
 ****************************************************************** */
 std::string Schema::CreateUniqueName() const
 {
   std::string name;
   for (auto it = items_.begin(); it != items_.end(); ++it) {
-    name.append(LocationName(it->location)); 
+    name.append(LocationToString(it->location)); 
     name.append("+");
   }
   return name;

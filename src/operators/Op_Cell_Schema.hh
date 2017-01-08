@@ -50,6 +50,9 @@ class Op_Cell_Schema : public Op {
           int my_block_row, int my_block_col) const {
     assembler->AssembleMatrixOp(*this, map, mat, my_block_row, my_block_col);
   }
+
+  // incomplete members
+  virtual void Rescale(const CompositeVector& scaling) { ASSERT(0); } 
 };
 
 }  // namespace Operators

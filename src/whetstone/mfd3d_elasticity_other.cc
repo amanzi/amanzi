@@ -17,7 +17,7 @@
 #include "Point.hh"
 #include "errors.hh"
 
-#include "mfd3d_diffusion.hh"
+#include "mfd3d_elasticity.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -27,7 +27,7 @@ namespace WhetStone {
 * The stable discretization for Stokes: vectors at nodes plus normal
 * components at faces.
 ****************************************************************** */
-int MFD3D_Diffusion::H1consistencyNodeFace(
+int MFD3D_Elasticity::H1consistencyNode2Face1(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
   int nrows = N.NumRows();
@@ -210,14 +210,15 @@ int MFD3D_Diffusion::H1consistencyNodeFace(
 /* ******************************************************************
 * Stiffness matrix: the standard algorithm.
 ****************************************************************** */
-int MFD3D_Diffusion::StiffnessMatrixNodeFace(int c, const Tensor& K, DenseMatrix& A)
+int MFD3D_Elasticity::StiffnessMatrixNode2Face1(
+    int c, const Tensor& K, DenseMatrix& A)
 {
   int d = mesh_->space_dimension();
   int nrows = A.NumRows();
 
   DenseMatrix N(nrows, d * (d + 1));
 
-  int ok = H1consistencyNodeFace(c, K, N, A);
+  int ok = H1consistencyNode2Face1(c, K, N, A);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   StabilityScalar(c, N, A);
