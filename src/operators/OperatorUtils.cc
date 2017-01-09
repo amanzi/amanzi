@@ -282,5 +282,32 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n
   return row_size * n_dofs;
 }    
 
+
+/* ******************************************************************
+* Estimate size of the matrix graph: general version
+****************************************************************** */
+unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema)
+{
+  unsigned int row_size(0);
+  int dim = mesh.space_dimension();
+
+  for (auto it = schema.items().begin(); it != schema.items().end(); ++it) {
+    int ndofs;
+    if (it->kind == AmanziMesh::FACE) {
+      ndofs = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
+    } else if (it->kind == AmanziMesh::CELL) {
+      ndofs = 1;
+    } else if (it->kind == AmanziMesh::NODE) {
+      ndofs = (dim == 2) ? OPERATOR_QUAD_NODES : OPERATOR_HEX_NODES;
+    } else if (it->kind == AmanziMesh::EDGE) {
+      ndofs = (dim == 2) ? OPERATOR_QUAD_EDGES : OPERATOR_HEX_EDGES;
+    }
+
+    row_size += ndofs * it->num;
+  }
+
+  return row_size;
+}    
+
 }  // namespace Operators
 }  // namespace Amanzi

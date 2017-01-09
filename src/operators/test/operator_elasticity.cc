@@ -65,6 +65,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
 
   // modify diffusion coefficient
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
@@ -103,13 +104,14 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   solution.PutScalar(0.0);
 
   // create source 
+  Point xv(2);
   CompositeVector source(cvs);
-  Epetra_MultiVector& src = *source.ViewComponent("cell");
+  Epetra_MultiVector& src = *source.ViewComponent("node");
 
-  for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->cell_centroid(c);
-    Point tmp(ana.source_exact(xc, 0.0));
-    for (int k = 0; k < 2; ++k) src[k][c] = tmp[k];
+  for (int v = 0; v < nnodes; v++) {
+    mesh->node_get_coordinates(v, &xv);
+    Point tmp(ana.source_exact(xv, 0.0));
+    for (int k = 0; k < 2; ++k) src[k][v] = tmp[k];
   }
 
   // populate the elasticity operator
@@ -118,7 +120,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  global_op->UpdateRHS(source, false);
+  global_op->UpdateRHS(source, true);
   op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();

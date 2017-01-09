@@ -19,6 +19,7 @@
 #include "SuperMap.hh"
 
 #include "OperatorDefs.hh"
+#include "OperatorUtils.hh"
 #include "Operator_Schema.hh"
 #include "Op_Cell_Schema.hh"
 
@@ -66,6 +67,33 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
 
 
 /* ******************************************************************
+* Create structure of a global square matrix.
+****************************************************************** */
+void Operator_Schema::SymbolicAssembleMatrix()
+{
+  // Create the supermap given a space (set of possible schemas) and a
+  // specific schema (assumed/checked to be consistent with the space).
+  smap_ = CreateSuperMap(*cvs_col_, schema_col_);
+
+  // create the graph
+  int row_size = MaxRowSize(*mesh_, schema_col_);
+  Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
+          smap_->GhostedMap(), smap_->GhostedMap(), row_size));
+
+  // fill the graph
+  Operator::SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
+
+  // Completing and optimizing the graphs
+  int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
+  ASSERT(!ierr);
+
+  // create global matrix
+  Amat_ = Teuchos::rcp(new MatrixFE(graph));
+  A_ = Amat_->Matrix();
+}
+
+
+/* ******************************************************************
 * Visit methods for symbolic assemble.
 * Apply the local matrices directly as schemas match.
 ****************************************************************** */
@@ -92,8 +120,9 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
           const std::vector<int>& row_inds = map.GhostIndices("node", k);
 
           for (int n = 0; n != nnodes; ++n) {
-            lid_c[m++] = col_inds[nodes[n]];
-            lid_r[m++] = row_inds[nodes[n]];
+            lid_c[m] = col_inds[nodes[n]];
+            lid_r[m] = row_inds[nodes[n]];
+            m++;
           }
         }
       }
@@ -107,8 +136,9 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
           const std::vector<int>& row_inds = map.GhostIndices("face", k);
 
           for (int n = 0; n != nfaces; ++n) {
-            lid_c[m++] = col_inds[faces[n]];
-            lid_r[m++] = row_inds[faces[n]];
+            lid_c[m] = col_inds[faces[n]];
+            lid_r[m] = row_inds[faces[n]];
+            m++;
           }
         }
       }
@@ -149,8 +179,9 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
           const std::vector<int>& row_inds = map.GhostIndices("node", k);
 
           for (int n = 0; n != nnodes; ++n) {
-            lid_c[m++] = col_inds[nodes[n]];
-            lid_r[m++] = row_inds[nodes[n]];
+            lid_c[m] = col_inds[nodes[n]];
+            lid_r[m] = row_inds[nodes[n]];
+            m++;
           }
         }
       }
@@ -164,8 +195,9 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
           const std::vector<int>& row_inds = map.GhostIndices("face", k);
 
           for (int n = 0; n != nfaces; ++n) {
-            lid_c[m++] = col_inds[faces[n]];
-            lid_r[m++] = row_inds[faces[n]];
+            lid_c[m] = col_inds[faces[n]];
+            lid_r[m] = row_inds[faces[n]];
+            m++;
           }
         }
       }

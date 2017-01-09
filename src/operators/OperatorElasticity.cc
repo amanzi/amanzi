@@ -19,7 +19,6 @@
 #include "MatrixFE.hh"
 #include "mfd3d_elasticity.hh"
 #include "PreconditionerFactory.hh"
-#include "SuperMap.hh"
 #include "WhetStoneDefs.hh"
 
 // Operators
