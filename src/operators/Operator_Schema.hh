@@ -19,7 +19,7 @@
 #ifndef AMANZI_OPERATOR_SCHEMA_HH_
 #define AMANZI_OPERATOR_SCHEMA_HH_
 
-#include "DenseMatrix.hh"
+#include "DenseVector.hh"
 #include "Operator.hh"
 #include "Schema.hh"
 
@@ -55,6 +55,12 @@ class Operator_Schema : public Operator {
   virtual void AssembleMatrixOp(const Op_Cell_Schema& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
+
+  // local <-> global communications
+  void ExtractVectorOp(int c, const Schema& schema,
+                       WhetStone::DenseVector& v, const CompositeVector& X) const ;
+  void AssembleVectorOp(int c, const Schema& schema,
+                        const WhetStone::DenseVector& v, CompositeVector& X) const;
 };
 
 }  // namespace Operators

@@ -13,12 +13,10 @@
 */
 
 #include "DenseMatrix.hh"
-#include "Op_Edge_Edge.hh"
-#include "Op_Cell_Edge.hh"
-
-#include "SuperMap.hh"
 #include "GraphFE.hh"
 #include "MatrixFE.hh"
+#include "MeshDefs.hh"
+#include "SuperMap.hh"
 
 #include "OperatorDefs.hh"
 #include "Operator_Schema.hh"
@@ -51,76 +49,15 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
   X.ScatterMasterToGhosted();
   Y.PutScalarGhosted(0.0);
 
-  AmanziMesh::Entity_ID_List nodes, faces;
-  std::vector<int> dirs;
-
   for (int c = 0; c != ncells_owned; ++c) {
     const WhetStone::DenseMatrix& Acell = op.matrices[c];
     int ncols = Acell.NumCols();
     int nrows = Acell.NumRows();
     WhetStone::DenseVector v(ncols), av(nrows);
 
-    // extract local vector
-    int m(0);
-    for (auto it = op.schema_col_.begin(); it != op.schema_col_.end(); ++it) {
-      if (it->location == OPERATOR_SCHEMA_DOFS_NODE) {
-        const Epetra_MultiVector& Xn = *X.ViewComponent("node", true);
-
-        mesh_->cell_get_nodes(c, &nodes);
-        int nnodes = nodes.size();
-
-        for (int n = 0; n != nnodes; ++n) {
-          for (int k = 0; k < it->num; ++k) {
-            v(m++) = Xn[k][nodes[n]];
-          }
-        }
-      }
-
-      if (it->location == OPERATOR_SCHEMA_DOFS_FACE) {
-        const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
-
-        mesh_->cell_get_nodes(c, &faces);
-        int nfaces = faces.size();
-
-        for (int n = 0; n != nfaces; ++n) {
-          for (int k = 0; k < it->num; ++k) {
-            v(m++) = Xf[k][faces[n]];
-          }
-        }
-      }
-    }
-
+    ExtractVectorOp(c, op.schema_col_, v, X);
     Acell.Multiply(v, av, false);
-
-    // assemble the local vector into the global one
-    m = 0;
-    for (auto it = op.schema_row_.begin(); it != op.schema_row_.end(); ++it) {
-      if (it->location == OPERATOR_SCHEMA_DOFS_NODE) {
-        Epetra_MultiVector& Yn = *Y.ViewComponent("node", true);
-
-        mesh_->cell_get_nodes(c, &nodes);
-        int nnodes = nodes.size();
-
-        for (int n = 0; n != nnodes; ++n) {
-          for (int k = 0; k < it->num; ++k) {
-            Yn[k][nodes[n]] += av(m++);
-          }
-        }
-      }
-
-      if (it->location == OPERATOR_SCHEMA_DOFS_FACE) {
-        Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
-
-        mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-        int nfaces = faces.size();
-
-        for (int n = 0; n != nfaces; ++n) {
-          for (int k = 0; k < it->num; ++k) {
-            Yf[k][faces[n]] += av(m++);
-          }
-        }
-      }
-    }
+    AssembleVectorOp(c, op.schema_row_, av, Y);
   }
 
   Y.GatherGhostedToMaster(Add);
@@ -146,7 +83,7 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
   for (int c = 0; c != ncells_owned; ++c) {
     int m(0);
     for (auto it = op.schema_col_.begin(); it != op.schema_col_.end(); ++it) {
-      if (it->location == OPERATOR_SCHEMA_DOFS_NODE) {
+      if (it->kind == AmanziMesh::NODE) {
         mesh_->cell_get_nodes(c, &nodes);
         int nnodes = nodes.size();
 
@@ -161,7 +98,7 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
         }
       }
 
-      if (it->location == OPERATOR_SCHEMA_DOFS_FACE) {
+      if (it->kind == AmanziMesh::FACE) {
         mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
         int nfaces = faces.size();
 
@@ -203,7 +140,7 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
   for (int c = 0; c != ncells_owned; ++c) {
     int m(0);
     for (auto it = op.schema_col_.begin(); it != op.schema_col_.end(); ++it) {
-      if (it->location == OPERATOR_SCHEMA_DOFS_NODE) {
+      if (it->kind == AmanziMesh::NODE) {
         mesh_->cell_get_nodes(c, &nodes);
         int nnodes = nodes.size();
 
@@ -218,7 +155,7 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
         }
       }
 
-      if (it->location == OPERATOR_SCHEMA_DOFS_FACE) {
+      if (it->kind == AmanziMesh::FACE) {
         mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
         int nfaces = faces.size();
 
@@ -237,6 +174,88 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
     ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[c]);
   }
   ASSERT(!ierr);
+}
+
+
+/* ******************************************************************
+* Assemble local vector to the global CV.
+****************************************************************** */
+void Operator_Schema::AssembleVectorOp(
+    int c, const Schema& schema,
+    const WhetStone::DenseVector& v, CompositeVector& X) const
+{
+  AmanziMesh::Entity_ID_List nodes, faces;
+  std::vector<int> dirs;
+
+  int m(0);
+  for (auto it = schema.begin(); it != schema.end(); ++it) {
+    if (it->kind == AmanziMesh::NODE) {
+      Epetra_MultiVector& Xn = *X.ViewComponent("node", true);
+
+      mesh_->cell_get_nodes(c, &nodes);
+      int nnodes = nodes.size();
+
+      for (int n = 0; n != nnodes; ++n) {
+        for (int k = 0; k < it->num; ++k) {
+          Xn[k][nodes[n]] += v(m++);
+        }
+      }
+    }
+
+    if (it->kind == AmanziMesh::FACE) {
+      Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
+
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      int nfaces = faces.size();
+
+      for (int n = 0; n != nfaces; ++n) {
+        for (int k = 0; k < it->num; ++k) {
+          Xf[k][faces[n]] += v(m++);
+        }
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Extract local vector to the global CV.
+****************************************************************** */
+void Operator_Schema::ExtractVectorOp(
+    int c, const Schema& schema,
+    WhetStone::DenseVector& v, const CompositeVector& X) const
+{
+  AmanziMesh::Entity_ID_List nodes, faces;
+  std::vector<int> dirs;
+
+  int m(0);
+  for (auto it = schema.begin(); it != schema.end(); ++it) {
+    if (it->kind == AmanziMesh::NODE) {
+      const Epetra_MultiVector& Xn = *X.ViewComponent("node", true);
+
+      mesh_->cell_get_nodes(c, &nodes);
+      int nnodes = nodes.size();
+
+      for (int n = 0; n != nnodes; ++n) {
+        for (int k = 0; k < it->num; ++k) {
+          v(m++) = Xn[k][nodes[n]];
+        }
+      }
+    }
+
+    if (it->kind == AmanziMesh::FACE) {
+      const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
+
+      mesh_->cell_get_nodes(c, &faces);
+      int nfaces = faces.size();
+
+      for (int n = 0; n != nfaces; ++n) {
+        for (int k = 0; k < it->num; ++k) {
+          v(m++) = Xf[k][faces[n]];
+        }
+      }
+    }
+  }
 }
 
 }  // namespace Operators

@@ -23,22 +23,22 @@ namespace Operators {
 
 struct SchemaItem {
  public:
-  SchemaItem() : location(0), type(0), num(0) {};
-  SchemaItem(int location_, int type_, int num_) :
-      location(location_),
+  SchemaItem() : type(0), num(0) {};
+  SchemaItem(AmanziMesh::Entity_kind kind_, int type_, int num_) :
+      kind(kind_),
       type(type_),
       num(num_) {};
 
-  void set(int location_, int type_, int num_) {
-    location = location_;
+  void set(AmanziMesh::Entity_kind kind_, int type_, int num_) {
+    kind = kind_;
     type = type_;
     num = num_;
   }
 
  public:
-  int location;  // geometric location of DOF
+  AmanziMesh::Entity_kind kind;  // geometric location of DOF
   int type;  // scalar, vector component, derivative, etc.
-  int num;  // how many time it is repeated.
+  int num;  // number of times it is repeated.
 };
 
 
@@ -53,24 +53,22 @@ class Schema {
   void Init(int schema_old);
 
   void SetBase(int base) { base_ = base; }
-  void AddItem(int location, int type, int num) {
-    SchemaItem item(location, type, num);
+  void AddItem(AmanziMesh::Entity_kind kind, int type, int num) {
+    SchemaItem item(kind, type, num);
     items_.push_back(item);
   }
  
   void Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
+  void ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh, std::vector<int>& offset);
+
   // local converters operators/strings/mesh
   int OldSchema() const;
 
-  std::string LocationToString(int loc) const;
-  AmanziMesh::Entity_kind LocationToMeshID(int loc) const;
-  int StringToLocation(std::string& loc) const;
-  AmanziMesh::Entity_kind StringToMeshID(std::string& loc) const {
-    int id = StringToLocation(loc);
-    return LocationToMeshID(id);
-  }
+  std::string KindToString(AmanziMesh::Entity_kind kind) const;
+  AmanziMesh::Entity_kind StringToKind(std::string& name) const;
 
+  // fancy io
   std::string CreateUniqueName() const;
 
   // access

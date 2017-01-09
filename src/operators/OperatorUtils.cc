@@ -241,10 +241,10 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, Schema& s
   std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
 
   for (auto it = schema.items().begin(); it != schema.items().end(); ++it) {
-    compnames.push_back(schema.LocationToString(it->location));
+    compnames.push_back(schema.KindToString(it->kind));
     dofnums.push_back(it->num);
     std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
-        getMaps(*cvs.Mesh(), schema.LocationToMeshID(it->location));
+        getMaps(*cvs.Mesh(), it->kind);
     maps.push_back(meshmaps.first);
     ghost_maps.push_back(meshmaps.second);
   }

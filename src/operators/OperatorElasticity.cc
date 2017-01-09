@@ -97,56 +97,70 @@ void OperatorElasticity::ApplyBCs(bool primary, bool eliminate)
 void OperatorElasticity::ApplyBCs_Face_(const Teuchos::Ptr<BCs>& bc_f,
                                         bool primary, bool eliminate)
 {
+  const std::vector<int>& bc_model = bc_f->bc_model();
+  const std::vector<double>& bc_value = bc_f->bc_value();
+
   AmanziMesh::Entity_ID_List faces, cells;
-  std::vector<int> dirs;
+  std::vector<int> dirs, offset;
 
   global_op_->rhs()->PutScalarGhosted(0.0);
   Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
 
-  int nn(0), nm(0);
   for (int c = 0; c != ncells_owned; ++c) {
-    bool flag(true);
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
+    int ncols = Acell.NumCols();
+    int nrows = Acell.NumRows();
 
-    if (bc_f != Teuchos::null) {
-      const std::vector<int>& bc_model = bc_f->bc_model();
-      const std::vector<double>& bc_value = bc_f->bc_value();
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
 
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-      int nfaces = faces.size();
+    // check for a boundary face
+    bool found(false);
+    for (int n = 0; n != nfaces; ++n) {
+      int f = faces[n];
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) found = true;
+    }
+    if (!found) continue;
 
-      // essential conditions for test functions
-      for (int n = 0; n != nfaces; ++n) {
-        int f = faces[n];
-        if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-          if (flag) {  // make a copy of elemental matrix
-            local_op_->matrices_shadow[c] = Acell;
-            flag = false;
-          }
-          for (int m = 0; m < Acell.NumCols(); m++) Acell(n, m) = 0.0;
-        }
-      }
+    local_op_->schema_row_.ComputeOffset(c, mesh_, offset);
 
-      for (int n = 0; n != nfaces; ++n) {
-        int f = faces[n];
-        double value = bc_value[f];
-
-        if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-          if (flag) {  // make a copy of cell-based matrix
-            local_op_->matrices_shadow[c] = Acell;
-            flag = false;
-          }
-     
-          if (eliminate) {
-            for (int m = 0; m < nfaces; m++) {
-              rhs_face[0][faces[m]] -= Acell(m, n) * value;
-              Acell(m, n) = 0.0;
+    // essential conditions for test functions
+    int item(0);
+    for (auto it = local_op_->schema_row_.begin(); it != local_op_->schema_row_.end(); ++it, ++item) {
+      if (it->kind == AmanziMesh::FACE) {
+        bool flag(true);
+        for (int n = 0; n != nfaces; ++n) {
+          int f = faces[n];
+          if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+            if (flag) {  // make a copy of elemental matrix
+              local_op_->matrices_shadow[c] = Acell;
+              flag = false;
             }
+            for (int m = 0; m < ncols; m++) Acell(n + offset[item], m) = 0.0;
           }
+        }
 
-          if (primary) {
-            rhs_face[0][f] = value;
-            // Acell(n, n) = 1.0 / face_get_cells[f];
+        for (int n = 0; n != nfaces; ++n) {
+          int f = faces[n];
+          double value = bc_value[f];
+
+          if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+            if (flag) {  // make a copy of cell-based matrix
+              local_op_->matrices_shadow[c] = Acell;
+              flag = false;
+            }
+     
+            if (eliminate) {
+              for (int m = 0; m < nrows; m++) {
+                rhs_face[0][f] -= Acell(m, n) * value;
+                Acell(m, n) = 0.0;
+              }
+            }
+
+            if (primary) {
+              rhs_face[0][f] = value;
+              Acell(n, n) = 1.0;
+            }
           }
         }
       }
@@ -196,7 +210,7 @@ void OperatorElasticity::InitElasticity_(Teuchos::ParameterList& plist)
   Schema my_schema;
   my_schema.SetBase(OPERATOR_SCHEMA_BASE_CELL);
   for (int i = 0; i < name.size(); i++) {
-    my_schema.AddItem(my_schema.StringToLocation(name[i]), SCHEMA_DOFS_SCALAR, ndofs[i]);
+    my_schema.AddItem(my_schema.StringToKind(name[i]), SCHEMA_DOFS_SCALAR, ndofs[i]);
   }
   my_schema.Finalize(mesh_);
 
@@ -213,7 +227,7 @@ void OperatorElasticity::InitElasticity_(Teuchos::ParameterList& plist)
     cvs->SetMesh(mesh_)->SetGhosted(true);
 
     for (int i = 0; i < name.size(); i++) {
-      cvs->AddComponent(name[i], my_schema.StringToMeshID(name[i]), ndofs[i]);
+      cvs->AddComponent(name[i], my_schema.StringToKind(name[i]), ndofs[i]);
     }
 
     global_op_ = Teuchos::rcp(new Operator_Schema(cvs, cvs, plist, my_schema, my_schema));

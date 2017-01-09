@@ -29,19 +29,19 @@ void Schema::Init(int i) {
 
   SchemaItem item;
   if (i & OPERATOR_SCHEMA_DOFS_NODE) {
-    item.set(OPERATOR_SCHEMA_DOFS_NODE, SCHEMA_DOFS_SCALAR, 1);
+    item.set(AmanziMesh::NODE, SCHEMA_DOFS_SCALAR, 1);
     items_.push_back(item);
   }
   if (i & OPERATOR_SCHEMA_DOFS_EDGE) {
-    item.set(OPERATOR_SCHEMA_DOFS_EDGE, SCHEMA_DOFS_SCALAR, 1);
+    item.set(AmanziMesh::EDGE, SCHEMA_DOFS_SCALAR, 1);
     items_.push_back(item);
   }
   if (i & OPERATOR_SCHEMA_DOFS_FACE) {
-    item.set(OPERATOR_SCHEMA_DOFS_FACE, SCHEMA_DOFS_SCALAR, 1);
+    item.set(AmanziMesh::FACE, SCHEMA_DOFS_SCALAR, 1);
     items_.push_back(item);
   }
   if (i & OPERATOR_SCHEMA_DOFS_CELL) {
-    item.set(OPERATOR_SCHEMA_DOFS_CELL, SCHEMA_DOFS_SCALAR, 1);
+    item.set(AmanziMesh::CELL, SCHEMA_DOFS_SCALAR, 1);
     items_.push_back(item);
   }
 }
@@ -57,8 +57,41 @@ void Schema::Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
   int m(0);
   for (auto it = items_.begin(); it != items_.end(); ++it) {
     offset_.push_back(m);
-    int nent = mesh->num_entities(LocationToMeshID(it->location), AmanziMesh::OWNED);
+    int nent = mesh->num_entities(it->kind, AmanziMesh::OWNED);
     m += nent * it->num;
+  }
+}
+
+
+/* ******************************************************************
+* Compute local (cell-based) offsets
+****************************************************************** */
+void Schema::ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                           std::vector<int>& offset)
+{
+  AmanziMesh::Entity_ID_List nodes, edges, faces;
+
+  offset.clear();
+  offset.push_back(0);
+
+  int ndofs;
+  for (auto it = items_.begin(); it != items_.end(); ++it) {
+    if (it->kind == AmanziMesh::NODE) {
+      mesh->cell_get_nodes(c, &nodes);
+      ndofs = nodes.size();
+    }
+    else if (it->kind == AmanziMesh::EDGE) {
+      mesh->cell_get_nodes(c, &edges);
+      ndofs = edges.size();
+    }
+    else if (it->kind == AmanziMesh::FACE) {
+      ndofs = mesh->cell_get_num_faces(c);
+    }
+    else if (it->kind == AmanziMesh::CELL) {
+      ndofs = 1;
+    }
+
+    offset.push_back(ndofs * it->num);
   }
 }
 
@@ -69,7 +102,17 @@ void Schema::Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
 int Schema::OldSchema() const
 {
   int i(base_);
-  for (auto it = items_.begin(); it != items_.end(); ++it) i += it->location; 
+  for (auto it = items_.begin(); it != items_.end(); ++it) {
+    if (it->kind == AmanziMesh::NODE) {
+      i += OPERATOR_SCHEMA_DOFS_NODE; 
+    } else if (it->kind == AmanziMesh::EDGE) {
+      i += OPERATOR_SCHEMA_DOFS_EDGE; 
+    } else if (it->kind == AmanziMesh::FACE) {
+      i += OPERATOR_SCHEMA_DOFS_FACE; 
+    } else if (it->kind == AmanziMesh::CELL) {
+      i += OPERATOR_SCHEMA_DOFS_CELL; 
+    }
+  }
   return i;
 }
 
@@ -77,15 +120,15 @@ int Schema::OldSchema() const
 /* ******************************************************************
 * Returns standard name for geometric location of DOF.
 ****************************************************************** */
-std::string Schema::LocationToString(int loc) const 
+std::string Schema::KindToString(AmanziMesh::Entity_kind kind) const 
 {
-  if (loc == OPERATOR_SCHEMA_DOFS_NODE) {
+  if (kind == AmanziMesh::NODE) {
     return "node";
-  } else if (loc == OPERATOR_SCHEMA_DOFS_EDGE) {
+  } else if (kind == AmanziMesh::EDGE) {
     return "edge";
-  } else if (loc == OPERATOR_SCHEMA_DOFS_FACE) {
+  } else if (kind == AmanziMesh::FACE) {
     return "face";
-  } else if (loc == OPERATOR_SCHEMA_DOFS_CELL) {
+  } else if (kind == AmanziMesh::CELL) {
     return "cell";
   }
 }
@@ -94,33 +137,16 @@ std::string Schema::LocationToString(int loc) const
 /* ******************************************************************
 * Returns standard mesh id for geometric location of DOF.
 ****************************************************************** */
-AmanziMesh::Entity_kind Schema::LocationToMeshID(int loc) const 
+AmanziMesh::Entity_kind Schema::StringToKind(std::string& name) const 
 {
-  if (loc == OPERATOR_SCHEMA_DOFS_NODE) {
+  if (name == "node") {
     return AmanziMesh::NODE;
-  } else if (loc == OPERATOR_SCHEMA_DOFS_EDGE) {
+  } else if (name == "edge") {
     return AmanziMesh::EDGE;
-  } else if (loc == OPERATOR_SCHEMA_DOFS_FACE) {
+  } else if (name == "face") {
     return AmanziMesh::FACE;
-  } else if (loc == OPERATOR_SCHEMA_DOFS_CELL) {
+  } else if (name == "cell") {
     return AmanziMesh::CELL;
-  }
-}
-
-
-/* ******************************************************************
-* Returns standard mesh id for geometric location of DOF.
-****************************************************************** */
-int Schema::StringToLocation(std::string& loc) const 
-{
-  if (loc == "node") {
-    return OPERATOR_SCHEMA_DOFS_NODE;
-  } else if (loc == "edge") {
-    return OPERATOR_SCHEMA_DOFS_EDGE;
-  } else if (loc == "face") {
-    return OPERATOR_SCHEMA_DOFS_FACE;
-  } else if (loc == "cell") {
-    return OPERATOR_SCHEMA_DOFS_CELL;
   }
 }
 
@@ -132,7 +158,7 @@ std::string Schema::CreateUniqueName() const
 {
   std::string name;
   for (auto it = items_.begin(); it != items_.end(); ++it) {
-    name.append(LocationToString(it->location)); 
+    name.append(KindToString(it->kind)); 
     name.append("+");
   }
   return name;
