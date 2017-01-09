@@ -30,7 +30,7 @@ namespace Operators {
 class OperatorElasticity {
  public:
   OperatorElasticity(Teuchos::ParameterList& plist,
-                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+                     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       plist_(plist),
       mesh_(mesh),
       K_(Teuchos::null),
@@ -38,11 +38,9 @@ class OperatorElasticity {
       ncells_owned(-1),
       ncells_wghost(-1),
       nfaces_owned(-1),
-      nfaces_wghost(-1),
-      nedges_owned(-1),
-      nedges_wghost(-1)
+      nfaces_wghost(-1)
   {
-    operator_type_ = OPERATOR_DIFFUSION_VECTOR;
+    operator_type_ = OPERATOR_ELASTICITY;
     InitElasticity_(plist);
   }
 
@@ -96,7 +94,6 @@ class OperatorElasticity {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
-  int nedges_owned, nedges_wghost;
 
   // miscaleneous
   Teuchos::ParameterList plist_;

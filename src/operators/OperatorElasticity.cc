@@ -172,6 +172,15 @@ void OperatorElasticity::ApplyBCs_Face_(const Teuchos::Ptr<BCs>& bc_f,
 
 
 /* ******************************************************************
+* Apply BCs on cell operators
+****************************************************************** */
+void OperatorElasticity::ApplyBCs_Node_(const Teuchos::Ptr<BCs>& bc_v,
+                                        bool primary, bool eliminate)
+{
+}
+
+
+/* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
 void OperatorElasticity::InitElasticity_(Teuchos::ParameterList& plist)
@@ -181,7 +190,7 @@ void OperatorElasticity::InitElasticity_(Teuchos::ParameterList& plist)
 
   std::vector<std::string> name;
   if (schema_list.isParameter("location")) {
-    name = plist.get<Teuchos::Array<std::string> > ("location").toVector();
+    name = schema_list.get<Teuchos::Array<std::string> >("location").toVector();
   } else {
     Errors::Message msg;
     msg << "OperatorElasticity: schema->location is missing.";
@@ -189,8 +198,8 @@ void OperatorElasticity::InitElasticity_(Teuchos::ParameterList& plist)
   }
 
   std::vector<std::string> type;
-  if (plist.isParameter("type")) {
-    type = plist.get<Teuchos::Array<std::string> > ("type").toVector();
+  if (schema_list.isParameter("type")) {
+    type = schema_list.get<Teuchos::Array<std::string> >("type").toVector();
   } else {
     Errors::Message msg;
     msg << "OperatorElasticity: schema->type is missing.";
@@ -198,8 +207,8 @@ void OperatorElasticity::InitElasticity_(Teuchos::ParameterList& plist)
   }
 
   std::vector<int> ndofs;
-  if (plist.isParameter("number")) {
-    ndofs = plist.get<Teuchos::Array<int> > ("number").toVector();
+  if (schema_list.isParameter("number")) {
+    ndofs = schema_list.get<Teuchos::Array<int> >("number").toVector();
   } else {
     Errors::Message msg;
     msg << "OperatorElasticity: schema->number is missing.";
@@ -245,11 +254,9 @@ void OperatorElasticity::InitElasticity_(Teuchos::ParameterList& plist)
   // mesh info
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nedges_owned = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::OWNED);
 
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  nedges_wghost = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::USED);
 
   K_ = Teuchos::null;
 }

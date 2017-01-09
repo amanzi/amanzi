@@ -203,7 +203,8 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/operator_diffusion_consistent_face.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(operators_diffusion_consistent_face_3pe operators_diffusion_consistent_face NPROCS 3 KIND unit)
+    add_amanzi_test(operators_diffusion_consistent_face_3pe operators_diffusion_consistent_face 
+                    NPROCS 3 KIND unit)
 
     add_amanzi_test(operators_commute operators_commute
                     KIND unit
@@ -261,6 +262,12 @@ if ( BUILD_TESTS )
     add_amanzi_test(operators_gravity operators_gravity
                     KIND unit
                     SOURCE test/Main.cc test/operator_gravity.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: elasticity-type methods
+    add_amanzi_test(operators_elasticity operators_elasticity
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_elasticity.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # reconstruction tests
