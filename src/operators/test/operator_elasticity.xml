@@ -31,35 +31,14 @@
 
   <!-- SOLVERS -->
   <ParameterList name="solvers">
-    <ParameterList name="AztecOO CG">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-      <Parameter name="iterative method" type="string" value="pcg"/>
-      <ParameterList name="pcg parameters">
-        <Parameter name="maximum number of iterations" type="int" value="100"/>
-        <Parameter name="error tolerance" type="double" value="1e-16"/>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="GMRES">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-      <Parameter name="iterative method" type="string" value="gmres"/>
-      <ParameterList name="gmres parameters">
-        <Parameter name="maximum number of iterations" type="int" value="20"/>
-        <Parameter name="error tolerance" type="double" value="1e-12"/>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="low"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-
     <ParameterList name="PCG">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
         <Parameter name="maximum number of iterations" type="int" value="20"/>
         <Parameter name="error tolerance" type="double" value="1e-12"/>
-        <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="low"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

@@ -12,10 +12,13 @@
   Operator those range is defined by two schemas and respected CVSs.
 */
 
+#include "Epetra_Vector.h"
+
 #include "DenseMatrix.hh"
 #include "GraphFE.hh"
 #include "MatrixFE.hh"
 #include "MeshDefs.hh"
+#include "PreconditionerFactory.hh"
 #include "SuperMap.hh"
 
 #include "OperatorDefs.hh"
@@ -67,7 +70,7 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
 
 
 /* ******************************************************************
-* Parallel matvec product Y = A * X.
+* Parallel preconditioner: Y = P * X.
 ******************************************************************* */
 int Operator_Schema::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
@@ -295,7 +298,7 @@ void Operator_Schema::ExtractVectorOp(
     if (it->kind == AmanziMesh::FACE) {
       const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
 
-      mesh_->cell_get_nodes(c, &faces);
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       int nfaces = faces.size();
 
       for (int n = 0; n != nfaces; ++n) {

@@ -123,18 +123,34 @@ int AddSuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& s
 /* ******************************************************************
 * Copy super vector to composite vector: complex schema version.
 ****************************************************************** */
+int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector& cv,
+                                     Epetra_Vector& sv, const Schema& schema)
+{
+  for (auto it = schema.begin(); it != schema.end(); ++it) {
+    std::string name(schema.KindToString(it->kind));
+
+    for (int k = 0; k < it->num; ++k) {
+      const std::vector<int>& inds = smap.Indices(name, k);
+      const Epetra_MultiVector& data = *cv.ViewComponent(name);
+      for (int n = 0; n != data.MyLength(); ++n) sv[inds[n]] = data[k][n];
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Copy super vector to composite vector: complex schema version
+****************************************************************** */
 int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
                                      CompositeVector& cv, const Schema& schema)
 {
   for (auto it = schema.begin(); it != schema.end(); ++it) {
-    if (it->kind == AmanziMesh::NODE) {
-      int nnodes = nodes.size();
+    std::string name(schema.KindToString(it->kind));
 
-      for (int k = 0; k < it->num; ++k) {
-        const std::vector<int>& node_inds = smap.Indices("node", k);
-        const Epetra_MultiVector& data = *cv.ViewComponent("node");
-        for (int v = 0; v != data.MyLength(); ++v) sv[node_inds[v]] = data[k][v];
-      }
+    for (int k = 0; k < it->num; ++k) {
+      const std::vector<int>& inds = smap.Indices(name, k);
+      Epetra_MultiVector& data = *cv.ViewComponent(name);
+      for (int n = 0; n != data.MyLength(); ++n) data[k][n] = sv[inds[n]];
     }
   }
 }
