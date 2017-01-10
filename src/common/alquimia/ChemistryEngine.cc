@@ -532,6 +532,10 @@ bool ChemistryEngine::Advance(const double delta_time,
   if (chem_status_.error != kAlquimiaNoError)
     return false;
 
+  // Did we converge? 
+  if (!chem_status_.converged)
+    return false;
+  
   // Write down the (maximum) number of Newton iterations.
   num_iterations = chem_status_.num_newton_iterations;
   return true;
