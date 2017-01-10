@@ -57,6 +57,11 @@ elseif ( ALQUIMIA_DIR )
                  NAMES "libcrunchchem.a"
                  PATHS $ENV{CRUNCH_DIR})
 
+    set( ALQUIMIA_CRUNCH_TARGET crunchchem.a )
+	       
+    message(STATUS "--- SM: _ALQUIMIA_CRUNCH_LIBRARY >>> ${_ALQUIMIA_CRUNCH_LIBRARY}")
+    message(STATUS "--- SM: ALQUIMIA_CRUNCH_TARGET >>> ${ALQUIMIA_CRUNCH_TARGET}")
+     
     if ( _ALQUIMIA_CRUNCH_LIBRARY )
         add_imported_library(${ALQUIMIA_CRUNCH_TARGET}
 	                     LOCATION ${_ALQUIMIA_CRUNCH_LIBRARY}
