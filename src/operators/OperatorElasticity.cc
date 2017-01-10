@@ -135,7 +135,8 @@ void OperatorElasticity::ApplyBCs_Face_(const Teuchos::Ptr<BCs>& bc_f,
               local_op_->matrices_shadow[c] = Acell;
               flag = false;
             }
-            for (int m = 0; m < ncols; m++) Acell(n + offset[item], m) = 0.0;
+            int noff(n + offset[item]);
+            for (int m = 0; m < ncols; m++) Acell(noff, m) = 0.0;
           }
         }
 
@@ -149,16 +150,17 @@ void OperatorElasticity::ApplyBCs_Face_(const Teuchos::Ptr<BCs>& bc_f,
               flag = false;
             }
      
+            int noff(n + offset[item]);
             if (eliminate) {
               for (int m = 0; m < nrows; m++) {
-                rhs_face[0][f] -= Acell(m, n) * value;
-                Acell(m, n) = 0.0;
+                rhs_face[0][f] -= Acell(m, noff) * value;
+                Acell(m, noff) = 0.0;
               }
             }
 
             if (primary) {
               rhs_face[0][f] = value;
-              Acell(n, n) = 1.0;
+              Acell(noff, noff) = 1.0;
             }
           }
         }

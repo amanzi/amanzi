@@ -32,7 +32,7 @@ class AnalyticElectromagneticsBase {
   virtual Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // error calculation
-  void ComputeEdgeError(CompositeVector& u, double t, double& unorm, double& l2_err, double& inf_err) {
+  void ComputeEdgeError(Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err) {
     unorm = 0.0;
     l2_err = 0.0;
     inf_err = 0.0;

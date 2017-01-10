@@ -281,8 +281,7 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
 
 /* ******************************************************************
 * Parallel matvec product Y = A * X.
-*
-* This method mainly for debugging!  Matrix-free is likely better here!
+* This method is mainly for debugging! Matrix-free apply could better.
 ******************************************************************* */
 int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar) const
 {

@@ -45,6 +45,7 @@ class Operator_Schema : public Operator {
   // visit methods for Apply
   virtual int ApplyMatrixFreeOp(const Op_Cell_Schema& op,
           const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
   // driver symbolic assemble creates supermap using new schema
   virtual void SymbolicAssembleMatrix();

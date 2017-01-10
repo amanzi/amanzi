@@ -67,6 +67,23 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
 
 
 /* ******************************************************************
+* Parallel matvec product Y = A * X.
+******************************************************************* */
+int Operator_Schema::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
+{
+  Epetra_Vector Xcopy(A_->RowMap());
+  Epetra_Vector Ycopy(A_->RowMap());
+  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, schema_col_);
+
+  ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
+  ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, schema_row_);
+  ASSERT(!ierr);
+
+  return ierr;
+}
+
+
+/* ******************************************************************
 * Create structure of a global square matrix.
 ****************************************************************** */
 void Operator_Schema::SymbolicAssembleMatrix()

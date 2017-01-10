@@ -25,26 +25,35 @@ class TreeVector;
 namespace Operators {
 
 class SuperMap;
+class Schema;
 
 // Nonmember CompositeVector to/from Super-vector
+// -- simple schema version
 int CopyCompositeVectorToSuperVector(const SuperMap& map, const CompositeVector& cv,
                                      Epetra_Vector& sv, int dofnum = 0);
-
 int CopySuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& sv,
                                      CompositeVector& cv, int dofnum = 0);
-
 int AddSuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& sv,
                                     CompositeVector& cv, int dofnum = 0);
 
+// -- complex schema version
+int CopyCompositeVectorToSuperVector(const SuperMap& map, const CompositeVector& cv,
+                                     Epetra_Vector& sv, const Schema& schema);
+int CopySuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& sv,
+                                     CompositeVector& cv, const Schema& schema);
+
+
 // Nonmember TreeVector to/from Super-vector
+// -- simple schema version
 int CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& cv, Epetra_Vector& sv);
 int CopySuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv, TreeVector& cv);
-
 int AddSuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv, TreeVector& cv);
+
 
 // Supermap factory from CV and schema
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cv, int schema, int n_dofs);
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cv, Schema& schema);
+
 
 // Estimate the max number of unknowns per row. Note this can be an
 // overestimate, but shouldn't be an underestimate.

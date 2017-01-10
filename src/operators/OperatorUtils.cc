@@ -14,6 +14,7 @@
 #include "CompositeVector.hh"
 #include "OperatorDefs.hh"
 #include "OperatorUtils.hh"
+#include "Schema.hh"
 #include "SuperMap.hh"
 #include "TreeVector.hh"
 
@@ -120,6 +121,26 @@ int AddSuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& s
 
 
 /* ******************************************************************
+* Copy super vector to composite vector: complex schema version.
+****************************************************************** */
+int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
+                                     CompositeVector& cv, const Schema& schema)
+{
+  for (auto it = schema.begin(); it != schema.end(); ++it) {
+    if (it->kind == AmanziMesh::NODE) {
+      int nnodes = nodes.size();
+
+      for (int k = 0; k < it->num; ++k) {
+        const std::vector<int>& node_inds = smap.Indices("node", k);
+        const Epetra_MultiVector& data = *cv.ViewComponent("node");
+        for (int v = 0; v != data.MyLength(); ++v) sv[node_inds[v]] = data[k][v];
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Nonmember: copy TreeVector to/from Super-vector
 ****************************************************************** */
 int CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& tv,
@@ -128,8 +149,7 @@ int CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& tv,
   ASSERT(tv.Data() == Teuchos::null);
   int ierr(0);
   int my_dof = 0;
-  for (TreeVector::const_iterator it = tv.begin();
-       it != tv.end(); ++it) {
+  for (TreeVector::const_iterator it = tv.begin(); it != tv.end(); ++it) {
     ASSERT((*it)->Data() != Teuchos::null);
     ierr |= CopyCompositeVectorToSuperVector(map, *(*it)->Data(), sv, my_dof);
     my_dof++;            
@@ -145,8 +165,7 @@ int CopySuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
   ASSERT(tv.Data() == Teuchos::null);
   int ierr(0);
   int my_dof = 0;
-  for (TreeVector::iterator it = tv.begin();
-       it != tv.end(); ++it) {
+  for (TreeVector::iterator it = tv.begin(); it != tv.end(); ++it) {
     ASSERT((*it)->Data() != Teuchos::null);
     ierr |= CopySuperVectorToCompositeVector(map, sv, *(*it)->Data(), my_dof);
     my_dof++;            
