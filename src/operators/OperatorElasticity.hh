@@ -65,6 +65,12 @@ class OperatorElasticity {
     bcs_test_.push_back(bc_test);
   }
 
+  virtual void AddBCs(const Teuchos::RCP<BCs>& bc_trial,
+                      const Teuchos::RCP<BCs>& bc_test) {
+    bcs_trial_.push_back(bc_trial);
+    bcs_test_.push_back(bc_test);
+  }
+
   // access
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
   Teuchos::RCP<Operator> global_operator() { return global_op_; }

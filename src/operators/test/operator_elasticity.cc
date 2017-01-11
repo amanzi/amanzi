@@ -31,6 +31,7 @@
 // Operators
 #include "AnalyticElasticity01.hh"
 #include "OperatorElasticity.hh"
+#include "Verification.hh"
 
 
 /* *****************************************************************
@@ -68,6 +69,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
   AnalyticElasticity01 ana(mesh);
 
@@ -79,8 +81,9 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   }
 
   // create boundary data
-  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost, 0.0), bc_mixed(nfaces_wghost, 0.0);
+  // -- on faces
+  std::vector<int> bcf_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<double> bcf_value(nfaces_wghost, 0.0), bcf_mixed(nfaces_wghost, 0.0);
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -88,15 +91,34 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
-      bc_model[f] = OPERATOR_BC_DIRICHLET;
-      bc_value[f] = ana.velocity_exact(xf, 0.0) * normal;
+      bcf_model[f] = OPERATOR_BC_DIRICHLET;
+      bcf_value[f] = ana.velocity_exact(xf, 0.0) * normal;
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
+  Teuchos::RCP<BCs> bcf =
+      Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bcf_model, bcf_value, bcf_mixed));
+
+  // -- at nodes
+  Point xv(2);
+  std::vector<int> bcv_model(nnodes_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<Point> bcv_value(nnodes_wghost);
+
+  for (int v = 0; v < nnodes_wghost; ++v) {
+    mesh->node_get_coordinates(v, &xv);
+
+    if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
+        fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
+      bcv_model[v] = OPERATOR_BC_DIRICHLET;
+      bcv_value[v] = ana.velocity_exact(xv, 0.0);
+    }
+  }
+  Teuchos::RCP<BCs> bcv = 
+      Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_NODE, bcv_model, bcv_value));
 
   // create diffusion operator 
   Teuchos::RCP<OperatorElasticity> op = Teuchos::rcp(new OperatorElasticity(op_list, mesh));
-  op->SetBCs(bc, bc);
+  op->SetBCs(bcf, bcf);
+  op->AddBCs(bcv, bcv);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create and initialize state variables.
@@ -104,7 +126,6 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   solution.PutScalar(0.0);
 
   // create source 
-  Point xv(2);
   CompositeVector source(cvs);
   Epetra_MultiVector& src = *source.ViewComponent("node");
 
@@ -121,13 +142,18 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, true);
-  op->ApplyBCs(true, true);
+  // op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
   // create preconditoner using the base operator class
   Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
+
+  // Test SPD properties of the matrix and preconditioner.
+  Verification ver(global_op);
+  ver.CheckMatrixSPD(true, true);
+  ver.CheckPreconditionerSPD(true, true);
 
   // solve the problem
   Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");

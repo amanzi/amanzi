@@ -77,14 +77,11 @@ void OperatorElasticity::UpdateMatrices()
 ****************************************************************** */
 void OperatorElasticity::ApplyBCs(bool primary, bool eliminate)
 {
-  Teuchos::RCP<BCs> bc_f, bc_v;
   for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
     if ((*bc)->type() == OPERATOR_BC_TYPE_FACE) {
-      bc_f = *bc;
-      ApplyBCs_Face_(bc_f.ptr(), primary, eliminate);
+      ApplyBCs_Face_(bc->ptr(), primary, eliminate);
     } else if ((*bc)->type() == OPERATOR_BC_TYPE_NODE) {
-      bc_v = *bc;
-      ApplyBCs_Node_(bc_v.ptr(), primary, eliminate);
+      ApplyBCs_Node_(bc->ptr(), primary, eliminate);
     }
   }
 }
@@ -93,13 +90,13 @@ void OperatorElasticity::ApplyBCs(bool primary, bool eliminate)
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void OperatorElasticity::ApplyBCs_Face_(const Teuchos::Ptr<BCs>& bc_f,
+void OperatorElasticity::ApplyBCs_Face_(const Teuchos::Ptr<BCs>& bcf,
                                         bool primary, bool eliminate)
 {
-  const std::vector<int>& bc_model = bc_f->bc_model();
-  const std::vector<double>& bc_value = bc_f->bc_value();
+  const std::vector<int>& bc_model = bcf->bc_model();
+  const std::vector<double>& bc_value = bcf->bc_value();
 
-  AmanziMesh::Entity_ID_List faces, cells;
+  AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs, offset;
 
   global_op_->rhs()->PutScalarGhosted(0.0);
@@ -175,9 +172,88 @@ void OperatorElasticity::ApplyBCs_Face_(const Teuchos::Ptr<BCs>& bc_f,
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void OperatorElasticity::ApplyBCs_Node_(const Teuchos::Ptr<BCs>& bc_v,
+void OperatorElasticity::ApplyBCs_Node_(const Teuchos::Ptr<BCs>& bcv,
                                         bool primary, bool eliminate)
 {
+  const std::vector<int>& bc_model = bcv->bc_model();
+  const std::vector<AmanziGeometry::Point>& bc_value = bcv->bc_value_point();
+
+  AmanziMesh::Entity_ID_List nodes;
+  std::vector<int> offset;
+
+  global_op_->rhs()->PutScalarGhosted(0.0);
+  Epetra_MultiVector& rhs_node = *global_op_->rhs()->ViewComponent("node", true);
+
+  int d = mesh_->space_dimension(); 
+
+  for (int c = 0; c != ncells_owned; ++c) {
+    WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
+    int ncols = Acell.NumCols();
+    int nrows = Acell.NumRows();
+
+    mesh_->cell_get_nodes(c, &nodes);
+    int nnodes = nodes.size();
+
+    // check for a boundary face
+    bool found(false);
+    for (int n = 0; n != nnodes; ++n) {
+      int v = nodes[n];
+      if (bc_model[v] == OPERATOR_BC_DIRICHLET) found = true;
+    }
+    if (!found) continue;
+
+    local_op_->schema_row_.ComputeOffset(c, mesh_, offset);
+
+    // essential conditions for test functions
+    int item(0);
+    for (auto it = local_op_->schema_row_.begin(); it != local_op_->schema_row_.end(); ++it, ++item) {
+      if (it->kind == AmanziMesh::NODE) {
+        bool flag(true);
+        for (int n = 0; n != nnodes; ++n) {
+          int v = nodes[n];
+          if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
+            if (flag) {  // make a copy of elemental matrix
+              local_op_->matrices_shadow[c] = Acell;
+              flag = false;
+            }
+            for (int k = 0; k < d; ++k) {
+              int noff(d*n + k + offset[item]);
+              for (int m = 0; m < ncols; m++) Acell(noff, m) = 0.0;
+            }
+          }
+        }
+
+        for (int n = 0; n != nnodes; ++n) {
+          int v = nodes[n];
+          AmanziGeometry::Point value = bc_value[v];
+
+          if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
+            if (flag) {  // make a copy of cell-based matrix
+              local_op_->matrices_shadow[c] = Acell;
+              flag = false;
+            }
+     
+            for (int k = 0; k < d; ++k) {
+              int noff(d*n + k + offset[item]);
+              if (eliminate) {
+                for (int m = 0; m < nrows; m++) {
+                  rhs_node[k][v] -= Acell(m, noff) * value[k];
+                  Acell(m, noff) = 0.0;
+                }
+              }
+
+              if (primary) {
+                rhs_node[k][v] = value[k];
+                Acell(noff, noff) = 1.0;
+              }
+            }
+          }
+        }
+      }
+    }
+  } 
+
+  global_op_->rhs()->GatherGhostedToMaster("node", Add);
 }
 
 

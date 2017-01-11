@@ -111,7 +111,7 @@ int MFD3D_Elasticity::H1consistencyNode2Face1(
     for (int i = 0; i < modes; i++) {
       v1 = vKT[i] * normal;
       double p = (normal * v1) / area;
-      N(d*nnodes + n, i) += p;
+      N(d*nnodes + n, i) += p * dirs[n];
     }
   }
 

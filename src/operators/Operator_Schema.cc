@@ -74,6 +74,8 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
 ******************************************************************* */
 int Operator_Schema::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
+  Y = X;
+  return 0;
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
   int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, schema_col_);

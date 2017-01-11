@@ -49,6 +49,7 @@ class AnalyticElasticityBase {
       for (int i = 0; i < d; ++i) ucalc[i] = u_node[i][v];
 
       l2_err += norm(ucalc - uexact);
+      std::cout << v << " uh=" << ucalc << " ex=" << uexact << std::endl;
       unorm += norm(uexact);
     }
 #ifdef HAVE_MPI
