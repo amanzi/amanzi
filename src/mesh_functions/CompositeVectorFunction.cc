@@ -40,7 +40,16 @@ CompositeVectorFunction::CompositeVectorFunction(
 void CompositeVectorFunction::Compute(double time,
         const Teuchos::Ptr<CompositeVector>& cv) {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = func_->mesh();
-  // cv->PutScalar(0.0);
+
+  cv->PutScalar(0.);
+
+#ifdef ENSURE_INITIALIZED_CVFUNCS  
+  // ensure all components are touched
+  std::map<std::string,bool> done;
+  for (auto compname : *cv) {
+    done[compname] = false;
+  }
+#endif
 
   // create the input tuple
   int dim = mesh->space_dimension();
@@ -51,6 +60,10 @@ void CompositeVectorFunction::Compute(double time,
   for (CompositeVectorSpecList::const_iterator cv_spec=cv_spec_list_.begin();
        cv_spec!=cv_spec_list_.end(); ++cv_spec) {
     std::string compname = (*cv_spec)->first;
+#ifdef ENSURE_INITIALIZED_CVFUNCS  
+    done[compname] = true;
+#endif
+    
     Epetra_MultiVector& compvec = *cv->ViewComponent(compname,false);
     Teuchos::RCP<MeshFunction::Spec> spec = (*cv_spec)->second;
 
@@ -179,15 +192,24 @@ void CompositeVectorFunction::Compute(double time,
               }
             }
           } else {
-            std::stringstream m;
-            m << "CV: unknown region \"" << *region << "\"";
-            Errors::Message message(m.str());
+            Errors::Message message;
+            message << "CV: unknown region \"" << *region << "\"";
             Exceptions::amanzi_throw(message);
           }
         }
       }
     }
   }
+
+#ifdef ENSURE_INITIALIZED_CVFUNCS  
+  for (auto compname : *cv) {
+    if (!done[compname]) {
+      Errors::Message message;
+      message << "CV: component \"" << compname << "\" was not set";
+      Exceptions::amanzi_throw(message);
+    }
+  }
+#endif
 }
 
 } // namespace

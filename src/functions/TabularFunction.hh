@@ -1,3 +1,94 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+//! TabularFunction: Piecewise-defined function.
+
+/*
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+*/
+
+/*!
+
+A piecewise function of one variable.
+
+A tabular function is tabulated on a series of intervals; given values
+:math:`{{x_i}}, {{y_i}},, i=0, ... n-1` and functional forms :math:`{{f_j}},,
+j=0, ... n-2` a tabular function :math:`f(x)` is defined as:
+
+.. math::
+  \begin{matrix}
+  f(x) &=& y_0, & x \le x_0,\\
+  f(x) &=& f_{{i-1}}(x)  & x \in (x_{{i-1}}, x_i],\\
+  f(x) &=& y_{{n-1}}, & x > x_{{n-1}}.
+  \end{matrix}
+
+The functional forms :math:`{f_j}` may be constant, which uses the left endpoint, i.e.
+
+:math:`f_i(x) = y_i`,
+
+linear, i.e.
+
+:math:`f_i(x) = ( y_i * (x - x_i) + y_{{i+1}} * (x_{{i+1}} - x) ) / (x_{{i+1}} - x_i)`
+
+or arbitrary, in which the :math:`f_j` must be provided.
+
+The :math:`x_i` and :math:`y_i` may be provided in one of two ways -- explicitly in the input spec or from an HDF5 file.  The length of these must be equal, and the :math:`x_i` must be monotonically increasing.  Forms, as defined on intervals, must be of length equal to the length of the :math:`x_i` less one.
+
+Explicitly specifying the data:
+
+* `"x values`" ``[Array(double)]`` the :math:`x_i`
+* `"y values`" ``[Array(double)]`` the :math:`y_i`
+* `"forms`" ``[Array(string)]`` **linear**, `"constant`", `"USER_DEFINED`"
+* `"USER_DEFINED`" ``[function-spec]`` user-provided functional forms on the interval
+* `"x coordinate`" ``[string]`` **t**, `"x`", `"y`", `"z`" defines which coordinate direction the :math:`x_i` are formed, defaulting to time.
+
+The below example defines a function that is zero on interval :math:`(-\infty,\,0]`,
+linear on interval :math:`(0,\,1]`, constant (`f(x)=1`) on interval :math:`(1,\,2]`, 
+square root of `t` on interval :math:`(2,\,3]`,
+and constant (`f(x)=2`) on interval :math:`(3,\,\infty]`.
+
+Example:
+
+.. code-block:: xml
+  
+  <ParameterList name="function-tabular">
+    <Parameter name="x values" type="Array(double)" value="{0.0, 1.0, 2.0, 3.0}"/>
+    <Parameter name="x coordinate" type="string" value="t"/>
+    <Parameter name="y values" type="Array(double)" value="{0.0, 1.0, 2.0, 2.0}"/>
+    <Parameter name="forms" type="Array(string)" value="{linear, constant, USER_FUNC}"/>
+
+    <ParameterList name="USER_FUNC">
+      <ParameterList name="function-standard-math">
+        <Parameter name="operator" type="string" value="sqrt"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  
+
+Loading table from file (note that `"USER_DEFINED`" is not an option here, but could be made so if requested):
+
+
+* `"file`" ``[string]`` filename of the HDF5 data
+* `"x header`" ``[string]`` name of the dataset for the :math:`x_i` in the file
+* `"y header`" ``[string]`` name of the dataset for the :math:`y_i` in the file
+* `"forms`" ``[Array(string)]`` **linear**, `"constant`"
+
+The example below would perform linear-interpolation on the intervals provided by data within the hdf5 file `"my_data.h5`".
+
+Example:
+
+.. code-block:: xml
+  
+  <ParameterList name="function-tabular">
+    <Parameter name="file" type="string" value="my_data.h5"/>
+    <Parameter name="x coordinate" type="string" value="t"/>
+    <Parameter name="x header" type="string" value="/time"/>
+    <Parameter name="y header" type="string" value="/data"/>
+  </ParameterList>
+
+*/
+
 #ifndef AMANZI_TABULAR_FUNCTION_HH_
 #define AMANZI_TABULAR_FUNCTION_HH_
 

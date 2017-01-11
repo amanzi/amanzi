@@ -100,20 +100,15 @@ TEST_FIXTURE(another_reference_mesh, cv_function)
 
   Teuchos::RCP<MeshFunction> meshfunc = Teuchos::rcp(new MeshFunction(mesh));
   meshfunc->AddSpec(specC);
-  // meshfunc->AddSpec(specF);
+  meshfunc->AddSpec(specF);
 
   // couple the function to the location names
-  // std::vector<std::string> names(2);
-  // names[0] = "cell";
-  // names[1] = "face";
-  std::vector<std::string> names(1, "cell");
+  std::vector<std::string> names(2);
+  names[0] = "cell";
+  names[1] = "face";
   CompositeVectorFunction cvfunc(meshfunc, names);
 
   // make the CV
-  names.resize(2);
-  names[0] = "cell";
-  names[1] = "face";
-
   std::vector<AmanziMesh::Entity_kind> locations(2);
   locations[0] = AmanziMesh::CELL;
   locations[1] = AmanziMesh::FACE;
@@ -135,6 +130,6 @@ TEST_FIXTURE(another_reference_mesh, cv_function)
 
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f=0; f!=nfaces; ++f) {
-    CHECK_CLOSE(0.0, (*cv)("face", 0, f), 0.0000001);
+    CHECK_CLOSE(1.0, (*cv)("face", 0, f), 0.0000001);
   }
 }

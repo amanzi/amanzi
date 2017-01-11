@@ -35,11 +35,13 @@
         <common_controls/>
         <structured_controls>
             <str_steady-state_controls>
-                <max_pseudo_time>1.0e14</max_pseudo_time>
+                <max_pseudo_time>3.15576e11</max_pseudo_time>
                 <min_iterations>10</min_iterations>
-                <limit_iterations>20</limit_iterations>
+                <max_iterations>20</max_iterations>
+                <limit_iterations>100</limit_iterations>
                 <min_iterations_2>2</min_iterations_2>
-                <time_step_increase_factor>1.6</time_step_increase_factor>
+                <steady_time_step_reduction_factor>0.7</steady_time_step_reduction_factor>
+                <time_step_increase_factor>1.5</time_step_increase_factor>
                 <time_step_increase_factor_2>10.0</time_step_increase_factor_2>
                 <max_consecutive_failures_1>3</max_consecutive_failures_1>
                 <time_step_retry_factor_1>0.8</time_step_retry_factor_1>
@@ -54,7 +56,7 @@
             </str_steady-state_controls>
             <str_transient_controls>
                 <max_ls_iterations>10</max_ls_iterations>
-                <ls_reduction_factor>0.1</ls_reduction_factor>
+                <ls_reduction_factor>2</ls_reduction_factor>
                 <min_ls_factor>1.0e-8</min_ls_factor>
                 <ls_acceptance_factor>1.4</ls_acceptance_factor>
                 <monitor_line_search>0</monitor_line_search>
@@ -65,11 +67,12 @@
                 <upwind_krel>true</upwind_krel>
                 <pressure_maxorder>3</pressure_maxorder>
                 <scale_solution_before_solve>true</scale_solution_before_solve>
-                <semi_analytic_J>false</semi_analytic_J>
+                <semi_analytic_J>true</semi_analytic_J>
                 <cfl>0.8</cfl>
             </str_transient_controls>
             <max_n_subcycle_transport>10</max_n_subcycle_transport>
             <str_amr_controls/>
+	    <!--TODO: EIB - old spec version has AMR options, need to add them here through Akuna -->
         </structured_controls>
     </numerical_controls>
     <mesh>
@@ -125,7 +128,8 @@
             <assigned_regions>All</assigned_regions>
             <liquid_phase name="water">
                 <liquid_component name="water">
-                    <uniform_pressure value="101325.0"/>
+                    <!--uniform_pressure value="101325.0"/-->
+                    <linear_pressure value="101325.0" reference_coord="0,49.9872" gradient="0,-9789.3474"/>
                 </liquid_component>
             </liquid_phase>
         </initial_condition>

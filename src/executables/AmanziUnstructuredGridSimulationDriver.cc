@@ -1,3 +1,14 @@
+/*
+  Simulator
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Markus Brendt (brendt@lanl.gov)
+*/
+
 #include <iostream>
 #include <fstream>
 
@@ -48,12 +59,13 @@ AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(c
 
 
 AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName,
-                                                                               xercesc::DOMDocument* input)
+                                                                               xercesc::DOMDocument* input,
+                                                                               const std::string& output_prefix)
 {
   int rank = Teuchos::GlobalMPISession::getRank();
   int num_proc = Teuchos::GlobalMPISession::getNProc();
 
-  Amanzi::AmanziInput::InputConverterU converter(xmlInFileName, input);
+  Amanzi::AmanziInput::InputConverterU converter(xmlInFileName, input, output_prefix);
   plist_ = new Teuchos::ParameterList(converter.Translate(rank, num_proc));
 }
 

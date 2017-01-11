@@ -22,8 +22,8 @@
   respective methods.
 */
 
-#ifndef AMANZI_MPC_HH_
-#define AMANZI_MPC_HH_
+#ifndef AMANZI_PK_MPC_HH_
+#define AMANZI_PK_MPC_HH_
 
 #include <vector>
 #include "boost/algorithm/string.hpp"
@@ -68,6 +68,8 @@ class PK_MPC : virtual public PK {
                           const Teuchos::RCP<State>& S_next);
 
   virtual void Solution_to_State(TreeVector& soln,
+                                 const Teuchos::RCP<State>& S) {};
+  virtual void Solution_to_State(const TreeVector& soln,
                                  const Teuchos::RCP<State>& S) {};
 
   virtual void State_to_Solution(const Teuchos::RCP<State>& S,

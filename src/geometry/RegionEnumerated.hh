@@ -1,13 +1,36 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/*
-  A region enumerated as a list of IDs.
+//! RegionEnumerated: A region enumerated as a list of IDs.
 
+/*
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*!
+
+List *region: enumerated set* defines a set of mesh entities via the list 
+of input global ids..
+
+* `"entity`" ``[string]`` Type of the mesh object.  Valid are *cell*, *face*, *edge*, *node*
+
+* `"entity gids`" ``[Array(int)]`` List of the global IDs of the entities.
+  
+
+Example:
+
+.. code-block:: xml
+
+   <ParameterList name="WELL"> <!-- parent list -->
+     <ParameterList name="region: enumerated set">
+       <Parameter name="entity" type="string" value="face"/>
+       <Parameter name="entity gids" type="Array(int)" value="{1, 12, 23, 34}"/>
+     </ParameterList>
+   </ParameterList>
+
 */
 
 #ifndef AMANZI_ENUMERATED_REGION_HH_

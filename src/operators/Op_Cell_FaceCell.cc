@@ -24,8 +24,6 @@
 namespace Amanzi {
 namespace Operators {
 
-
-
 }  // namespace Operators
 }  // namespace Amanzi
 

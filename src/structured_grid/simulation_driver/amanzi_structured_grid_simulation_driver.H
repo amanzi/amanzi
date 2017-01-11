@@ -14,7 +14,8 @@ struct AmanziStructuredGridSimulationDriver
  public:
 
   // v2 constructor
-  AmanziStructuredGridSimulationDriver(const std::string& input_file, DOMDocument* input);
+  AmanziStructuredGridSimulationDriver(const std::string& input_file, DOMDocument* input,
+                                       const std::string& ouput_prefix);
 
   // Destructor
   ~AmanziStructuredGridSimulationDriver();

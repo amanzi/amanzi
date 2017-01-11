@@ -872,13 +872,16 @@ std::string InputConverter::GetTextContentS_(
     if (val == *it) return val;
   }
 
-  char* tagname = mm.transcode(node->getNodeName());
-  Errors::Message msg;
-  msg << "Validation of content \"" << val << "\" for node \"" << tagname << "\" failed.\n";
-  msg << "Available options: \"" << options << "\".\n";
-  msg << "Please correct and try again.\n";
-  Exceptions::amanzi_throw(msg);
-  return "";
+  if (exception) { 
+    char* tagname = mm.transcode(node->getNodeName());
+    Errors::Message msg;
+    msg << "Validation of content \"" << val << "\" for node \"" << tagname << "\" failed.\n";
+    msg << "Available options: \"" << options << "\".\n";
+    msg << "Please correct and try again.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return val;
 }
 
 
@@ -982,6 +985,7 @@ double InputConverter::ConvertUnits_(
   unit = "";
   if (data != NULL) {
     unit = std::string(data);
+    boost::algorithm::trim(unit);
     out = units_.ConvertUnitD(out, unit, "SI", mol_mass, flag);
 
     if (!flag) {
@@ -1310,7 +1314,8 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
 	std::string species = GetAttributeValueS_(element, "prefactor_species");
         double alpha = GetAttributeValueD_(element, "alpha");
         mineral_kinetics << "      PREFACTOR\n";
-        mineral_kinetics << "        RATE_CONSTANT " << rate/10000. << "  mol/cm^2-sec\n";
+        //mineral_kinetics << "        RATE_CONSTANT " << rate/10000. << "  mol/cm^2-sec\n";
+        mineral_kinetics << "        RATE_CONSTANT " << rate << "\n";
         mineral_kinetics << "        PREFACTOR_SPECIES " << species << "\n";
         mineral_kinetics << "          ALPHA " << alpha << "\n";
         mineral_kinetics << "        /\n";
@@ -1643,18 +1648,6 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
   if (rank == 0) {
     struct stat buffer;
     int status = stat(infilename.c_str(), &buffer);
-    if (!status) {
-      // TODO EIB - fix this
-      /*
-      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "File \"" << infilename.c_str()
-                   << "\" exists, skipping its creation." << std::endl;
-      }
-      */
-      std::cout << "File " << infilename.c_str() << " exists, skipping its creation." << std::endl;
-     
-    } else {
       // TODO EIB - fix this
       /*
       if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
@@ -1739,7 +1732,6 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       //in_file << "END\n";
 
       in_file.close();
-    }
   }
 
   return infilename;

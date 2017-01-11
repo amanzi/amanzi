@@ -149,7 +149,7 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
     ASSERT(!initialized());
     Teuchos::ParameterList& init_plist = plist.sublist("initialize from 1D column");
     InitializeFromColumn_(init_plist);
-    set_initialized();
+    //    set_initialized();
   }
 
   // ------ Set values using a function -----

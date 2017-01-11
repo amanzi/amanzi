@@ -16,7 +16,8 @@
     <process_kernels>
         <flow model="saturated" state="on"/>
         <transport state="on"/>
-        <!--chemistry database="farea-full.dat" engine="pflotran" state="on" input_filename="1d-farea-full-trim.in"/-->
+	<!--chemistry database="farea-full.dat" engine="pflotran" state="on" input_filename="1d-farea-full-trim.in"/-->
+	<!--chemistry database="farea-full.dat" engine="pflotran" state="on" input_filename="test.in"/-->
 	<chemistry database="farea-full.dat" engine="pflotran" state="on"/>
     </process_kernels>
     <phases>
@@ -86,14 +87,14 @@
         </liquid_phase>
         <solid_phase>
             <minerals>
-                <mineral rate_constant="-13.345e+4">Quartz</mineral>
-                <mineral rate_constant="-7.94e+4">Goethite</mineral>
-                <mineral alpha="0.777" prefactor_species="H+" rate_constant="-12.967e+4">Kaolinite</mineral>
-                <mineral rate_constant="2.e+4">Schoepite</mineral>
-                <mineral rate_constant="-11.5e+4">Gibbsite</mineral>
-                <mineral rate_constant="-8.0e+4">Jurbanite</mineral>
-                <mineral rate_constant="-8.0e+4">Basaluminite</mineral>
-                <mineral rate_constant="-12.135e+4">Opal</mineral>
+                <mineral rate_constant="-13.345">Quartz</mineral>
+                <mineral rate_constant="-7.94">Goethite</mineral>
+                <mineral alpha="0.777" prefactor_species="H+" rate_constant="-12.967">Kaolinite</mineral>
+                <mineral rate_constant="2.0">Schoepite</mineral>
+                <mineral rate_constant="-11.5">Gibbsite</mineral>
+                <mineral rate_constant="-8.0">Jurbanite</mineral>
+                <mineral rate_constant="-8.0">Basaluminite</mineral>
+                <mineral rate_constant="-12.135">Opal</mineral>
             </minerals>
         </solid_phase>
         <gas_phase>
@@ -303,6 +304,7 @@
             <base_filename>plot</base_filename>
             <num_digits>5</num_digits>
             <time_macros>Every_year</time_macros>
+            <blacklist>alquimia_aux.*,free_ion.*,primary.*,secondary.*,ion_exchange_ref.*,mineral_reaction.*,mineral_specific.*</blacklist>
         </vis>
     </output>
 </amanzi_input>
