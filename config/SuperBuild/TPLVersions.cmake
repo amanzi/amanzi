@@ -70,7 +70,8 @@
 #
 #   0.93.0       - defaulted to C++11, update Trilinos to 12.6.1
 #   0.93.1       - update Boost to version 1.61.0
-#   0.93.2       - update Alquimia
+#   0.93.2       - update Alquimia to version 1.0.3
+#   0.93.3       - update Alquimia to version 1.0.4
 
 include(CMakeParseArguments)
 
@@ -120,7 +121,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 93)
-set (AMANZI_TPLS_VERSION_PATCH 2)
+set (AMANZI_TPLS_VERSION_PATCH 3)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -386,10 +387,10 @@ set(PFLOTRAN_MD5_SUM        e18997dd7de5523c9bef8489a0a2dd24)
 #
 set(ALQUIMIA_VERSION_MAJOR 1)
 set(ALQUIMIA_VERSION_MINOR 0)
-set(ALQUIMIA_VERSION_PATCH 3)
+set(ALQUIMIA_VERSION_PATCH 4)
 set(ALQUIMIA_URL_STRING     "http://software.lanl.gov/ascem/tpls")
-set(ALQUIMIA_ARCHIVE_FILE   alquimia-dev-1.0.3.tar.gz)
-set(ALQUIMIA_MD5_SUM        13525a9d44df905fed45da75eca6fedb)
+set(ALQUIMIA_ARCHIVE_FILE   alquimia-dev-1.0.4.tar.gz)
+set(ALQUIMIA_MD5_SUM        4a97a5cfb92977837f3e1d34f0845176)
 
 
 #
