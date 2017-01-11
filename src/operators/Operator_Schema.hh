@@ -65,6 +65,9 @@ class Operator_Schema : public Operator {
                        WhetStone::DenseVector& v, const CompositeVector& X) const ;
   void AssembleVectorOp(int c, const Schema& schema,
                         const WhetStone::DenseVector& v, CompositeVector& X) const;
+
+  // debugging methods
+  int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
 };
 
 }  // namespace Operators

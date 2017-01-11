@@ -74,15 +74,31 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
 ******************************************************************* */
 int Operator_Schema::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
-  Y = X;
-  return 0;
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
-  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, schema_col_);
 
+  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, schema_col_);
   ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
   ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, schema_row_);
-  ASSERT(!ierr);
+
+  return ierr;
+}
+
+
+/* ******************************************************************
+* This method is mainly for debugging.
+******************************************************************* */
+int Operator_Schema::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar) const
+{
+  X.ScatterMasterToGhosted();
+  Y.PutScalarMasterAndGhosted(0.0);
+
+  Epetra_Vector Xcopy(A_->RowMap());
+  Epetra_Vector Ycopy(A_->RowMap());
+
+  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, schema_col_);
+  ierr |= A_->Apply(Xcopy, Ycopy);
+  ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, schema_row_);
 
   return ierr;
 }
@@ -140,8 +156,10 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
         for (int k = 0; k < it->num; ++k) {
           const std::vector<int>& col_inds = map.GhostIndices("node", k);
           const std::vector<int>& row_inds = map.GhostIndices("node", k);
+for (int i=0; i<col_inds.size(); ++i) std::cout << col_inds[i] << " "; std::cout << std::endl;
 
           for (int n = 0; n != nnodes; ++n) {
+std::cout << nodes[n] << std::endl;
             lid_c[m] = col_inds[nodes[n]];
             lid_r[m] = row_inds[nodes[n]];
             m++;
@@ -166,6 +184,7 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
       }
     }
 
+for (int i=0; i<12; ++i) std::cout << lid_c[i] << " "; std::cout << std::endl;
     ierr |= graph.InsertMyIndices(m, lid_r, m, lid_c);
   }
   ASSERT(!ierr);

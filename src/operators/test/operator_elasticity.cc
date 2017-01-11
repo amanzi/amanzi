@@ -62,7 +62,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, Teuchos::null);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1, Teuchos::null);
 
   // modify diffusion coefficient
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -88,11 +88,12 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
     const Point& normal = mesh->face_normal(f);
+    double area = mesh->face_area(f);
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
       bcf_model[f] = OPERATOR_BC_DIRICHLET;
-      bcf_value[f] = ana.velocity_exact(xf, 0.0) * normal;
+      bcf_value[f] = (ana.velocity_exact(xf, 0.0) * normal) / area;
     }
   }
   Teuchos::RCP<BCs> bcf =
@@ -149,6 +150,31 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   // create preconditoner using the base operator class
   Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
+
+// test
+CompositeVector p(cvs), q(cvs);
+Epetra_MultiVector& pv = *p.ViewComponent("node");
+for (int v = 0; v < nnodes; v++) {
+mesh->node_get_coordinates(v, &xv);
+Point tmp(ana.velocity_exact(xv, 0.0));
+for (int k = 0; k < 2; ++k) pv[k][v] = tmp[k];
+}
+Epetra_MultiVector& pf = *p.ViewComponent("face");
+for (int f = 0; f < nfaces; f++) {
+const Point& xf = mesh->face_centroid(f);
+const Point& normal = mesh->face_normal(f);
+double area = mesh->face_area(f);
+pf[0][f]=(ana.velocity_exact(xf, 0.0) * normal) / area;
+}
+// global_op->ApplyAssembled(p, q);
+global_op->Apply(p, q);
+Epetra_MultiVector& qv = *q.ViewComponent("node");
+Epetra_MultiVector& qf = *q.ViewComponent("face");
+// std::cout << *global_op->A() << std::endl;
+// std::cout << qv << std::endl;
+// std::cout << qf << std::endl;
+double a; q.Norm2(&a); std::cout << "NORM=" << a << std::endl;
+// end test
 
   // Test SPD properties of the matrix and preconditioner.
   Verification ver(global_op);
