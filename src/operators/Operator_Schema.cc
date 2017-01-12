@@ -153,15 +153,14 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
         mesh_->cell_get_nodes(c, &nodes);
         int nnodes = nodes.size();
 
-        for (int k = 0; k < it->num; ++k) {
-          const std::vector<int>& col_inds = map.GhostIndices("node", k);
-          const std::vector<int>& row_inds = map.GhostIndices("node", k);
-for (int i=0; i<col_inds.size(); ++i) std::cout << col_inds[i] << " "; std::cout << std::endl;
+        for (int n = 0; n != nnodes; ++n) {
+          int v = nodes[n];
+          for (int k = 0; k < it->num; ++k) {
+            const std::vector<int>& col_inds = map.GhostIndices("node", k);
+            const std::vector<int>& row_inds = map.GhostIndices("node", k);
 
-          for (int n = 0; n != nnodes; ++n) {
-std::cout << nodes[n] << std::endl;
-            lid_c[m] = col_inds[nodes[n]];
-            lid_r[m] = row_inds[nodes[n]];
+            lid_c[m] = col_inds[v];
+            lid_r[m] = row_inds[v];
             m++;
           }
         }
@@ -184,7 +183,6 @@ std::cout << nodes[n] << std::endl;
       }
     }
 
-for (int i=0; i<12; ++i) std::cout << lid_c[i] << " "; std::cout << std::endl;
     ierr |= graph.InsertMyIndices(m, lid_r, m, lid_c);
   }
   ASSERT(!ierr);
@@ -215,11 +213,12 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
         mesh_->cell_get_nodes(c, &nodes);
         int nnodes = nodes.size();
 
-        for (int k = 0; k < it->num; ++k) {
-          const std::vector<int>& col_inds = map.GhostIndices("node", k);
-          const std::vector<int>& row_inds = map.GhostIndices("node", k);
+        for (int n = 0; n != nnodes; ++n) {
+          int v = nodes[n];
+          for (int k = 0; k < it->num; ++k) {
+            const std::vector<int>& col_inds = map.GhostIndices("node", k);
+            const std::vector<int>& row_inds = map.GhostIndices("node", k);
 
-          for (int n = 0; n != nnodes; ++n) {
             lid_c[m] = col_inds[nodes[n]];
             lid_r[m] = row_inds[nodes[n]];
             m++;

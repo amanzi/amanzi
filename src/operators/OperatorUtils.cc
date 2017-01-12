@@ -131,12 +131,10 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector
 
     for (int k = 0; k < it->num; ++k) {
       const std::vector<int>& inds = smap.Indices(name, k);
-for (int i=0; i<inds.size(); ++i) std::cout << inds[i] << " ";
       const Epetra_MultiVector& data = *cv.ViewComponent(name);
       for (int n = 0; n != data.MyLength(); ++n) sv[inds[n]] = data[k][n];
     }
   }
-std::cout << std::endl;
 }
 
 

@@ -132,7 +132,7 @@ void OperatorElectromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
     // BCs of faces: typically this is magnetic flux
     if (bc_f != Teuchos::null) {
       const std::vector<int>& bc_model = bc_f->bc_model();
-      const std::vector<AmanziGeometry::Point>& bc_value = bc_f->bc_value_vector();
+      const std::vector<AmanziGeometry::Point>& bc_value = bc_f->bc_value_point();
 
       mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
       int nfaces = faces.size();
