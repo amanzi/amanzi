@@ -62,7 +62,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, Teuchos::null);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 5, Teuchos::null);
 
   // modify diffusion coefficient
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);

@@ -31,7 +31,7 @@ class AnalyticElasticity01 : public AnalyticElasticityBase {
   Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     double x = p[0];
     double y = p[1];
-    return Amanzi::AmanziGeometry::Point(1.0, 0.0);
+    return Amanzi::AmanziGeometry::Point(x + y, x - 2*y);
   }
 
   double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 

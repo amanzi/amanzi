@@ -61,10 +61,10 @@ class Operator_Schema : public Operator {
           int my_block_row, int my_block_col) const;
 
   // local <-> global communications
-  void ExtractVectorOp(int c, const Schema& schema,
-                       WhetStone::DenseVector& v, const CompositeVector& X) const ;
-  void AssembleVectorOp(int c, const Schema& schema,
-                        const WhetStone::DenseVector& v, CompositeVector& X) const;
+  virtual void ExtractVectorOp(int c, const Schema& schema,
+          WhetStone::DenseVector& v, const CompositeVector& X) const ;
+  virtual void AssembleVectorOp(int c, const Schema& schema,
+          const WhetStone::DenseVector& v, CompositeVector& X) const;
 
   // debugging methods
   int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;

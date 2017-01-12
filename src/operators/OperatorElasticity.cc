@@ -99,8 +99,9 @@ void OperatorElasticity::ApplyBCs_Face_(const Teuchos::Ptr<BCs>& bcf,
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs, offset;
 
-  global_op_->rhs()->PutScalarGhosted(0.0);
-  Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
+  CompositeVector& rhs = *global_op_->rhs();
+  Epetra_MultiVector& rhs_face = *rhs.ViewComponent("face", true);
+  rhs.PutScalarGhosted(0.0);
 
   for (int c = 0; c != ncells_owned; ++c) {
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
@@ -142,23 +143,23 @@ void OperatorElasticity::ApplyBCs_Face_(const Teuchos::Ptr<BCs>& bcf,
           double value = bc_value[f];
 
           if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-            if (flag) {  // make a copy of cell-based matrix
-              local_op_->matrices_shadow[c] = Acell;
-              flag = false;
-            }
-     
             int noff(n + offset[item]);
+            WhetStone::DenseVector rhs_loc(nrows);
+
             if (eliminate) {
               for (int m = 0; m < nrows; m++) {
-                rhs_face[0][f] -= Acell(m, noff) * value;
+                rhs_loc(m) = -Acell(m, noff) * value;
                 Acell(m, noff) = 0.0;
               }
             }
 
             if (primary) {
+              rhs_loc(noff) = 0.0;
               rhs_face[0][f] = value;
               Acell(noff, noff) = 1.0;
             }
+
+            global_op_->AssembleVectorOp(c, global_schema_row_, rhs_loc, rhs);
           }
         }
       }
@@ -178,11 +179,12 @@ void OperatorElasticity::ApplyBCs_Node_(const Teuchos::Ptr<BCs>& bcv,
   const std::vector<int>& bc_model = bcv->bc_model();
   const std::vector<AmanziGeometry::Point>& bc_value = bcv->bc_value_point();
 
-  AmanziMesh::Entity_ID_List nodes;
+  AmanziMesh::Entity_ID_List nodes, cells;
   std::vector<int> offset;
 
-  global_op_->rhs()->PutScalarGhosted(0.0);
-  Epetra_MultiVector& rhs_node = *global_op_->rhs()->ViewComponent("node", true);
+  CompositeVector& rhs = *global_op_->rhs();
+  Epetra_MultiVector& rhs_node = *rhs.ViewComponent("node", true);
+  rhs.PutScalarGhosted(0.0);
 
   int d = mesh_->space_dimension(); 
 
@@ -228,24 +230,25 @@ void OperatorElasticity::ApplyBCs_Node_(const Teuchos::Ptr<BCs>& bcv,
           AmanziGeometry::Point value = bc_value[v];
 
           if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
-            if (flag) {  // make a copy of cell-based matrix
-              local_op_->matrices_shadow[c] = Acell;
-              flag = false;
-            }
-     
             for (int k = 0; k < d; ++k) {
               int noff(d*n + k + offset[item]);
+              WhetStone::DenseVector rhs_loc(nrows);
+
               if (eliminate) {
                 for (int m = 0; m < nrows; m++) {
-                  rhs_node[k][v] -= Acell(m, noff) * value[k];
+                  rhs_loc(m) = -Acell(m, noff) * value[k];
                   Acell(m, noff) = 0.0;
                 }
               }
 
               if (primary) {
+                mesh_->node_get_cells(v, AmanziMesh::USED, &cells);
+                rhs_loc(noff) = 0.0;
                 rhs_node[k][v] = value[k];
-                Acell(noff, noff) = 1.0;
+                Acell(noff, noff) = 1.0 / cells.size();
               }
+
+              global_op_->AssembleVectorOp(c, global_schema_row_, rhs_loc, rhs);
             }
           }
         }

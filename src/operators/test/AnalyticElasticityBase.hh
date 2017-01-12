@@ -15,11 +15,18 @@
 #define AMANZI_OPERATOR_ANALYTIC_ELASTICITY_BASE_HH_
 
 #include "CompositeVector.hh"
+#include "CompositeVectorSpace.hh"
 #include "Mesh.hh"
 
 class AnalyticElasticityBase {
  public:
-  AnalyticElasticityBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
+  AnalyticElasticityBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh) {
+    nnodes_owned = mesh_->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED);
+    ncells_owned = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+
+    nnodes_wghost = mesh_->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::USED);
+    ncells_wghost = mesh_->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::USED);
+  };
   ~AnalyticElasticityBase() {};
 
   // analytic solution for elasticity-type problem
@@ -37,20 +44,43 @@ class AnalyticElasticityBase {
     l2_err = 0.0;
     inf_err = 0.0;
 
+    // calculate nodal volumes
+    Amanzi::AmanziMesh::Entity_ID_List nodes;
+
+    Teuchos::RCP<Amanzi::CompositeVectorSpace> cvs = Teuchos::rcp(new Amanzi::CompositeVectorSpace());
+    cvs->SetMesh(mesh_)->SetGhosted(true)
+       ->AddComponent("node", Amanzi::AmanziMesh::NODE, 1);
+
+    Amanzi::CompositeVector vol(*cvs);
+    Epetra_MultiVector& vol_node = *vol.ViewComponent("node", true);
+    vol.PutScalar(0.0);
+
+    for (int c = 0; c != ncells_owned; ++c) {
+      mesh_->cell_get_nodes(c, &nodes);
+      int nnodes = nodes.size();
+
+      for (int i = 0; i < nnodes; i++) {
+        vol_node[0][nodes[i]] += mesh_->cell_volume(c) / nnodes; 
+      }
+    }
+    vol.GatherGhostedToMaster("node");
+
+    // calculate errors
     int d = mesh_->space_dimension(); 
     Amanzi::AmanziGeometry::Point p(d), ucalc(d);
     Epetra_MultiVector& u_node = *u.ViewComponent("node");
 
-    int nnodes = mesh_->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED);
-    for (int v = 0; v < nnodes; ++v) {
+    for (int v = 0; v < nnodes_owned; ++v) {
       mesh_->node_get_coordinates(v, &p);
 
       const Amanzi::AmanziGeometry::Point& uexact = velocity_exact(p, t);
       for (int i = 0; i < d; ++i) ucalc[i] = u_node[i][v];
 
-      l2_err += norm(ucalc - uexact);
+      double tmp = L22(ucalc - uexact);
+      l2_err += tmp * vol_node[0][v];
+      inf_err = std::max(inf_err, sqrt(tmp));
+      unorm += L22(uexact) * vol_node[0][v];
       // std::cout << v << " uh=" << ucalc << " ex=" << uexact << std::endl;
-      unorm += norm(uexact);
     }
 #ifdef HAVE_MPI
     double tmp = unorm;
@@ -66,6 +96,8 @@ class AnalyticElasticityBase {
 
  protected:
   Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_;
+
+  int nnodes_owned, ncells_owned, nnodes_wghost, ncells_wghost;
 };
 
 #endif

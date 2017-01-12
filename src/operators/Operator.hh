@@ -24,6 +24,7 @@
 #include "BCs.hh"
 #include "CompositeVectorSpace.hh"
 #include "CompositeVector.hh"
+#include "DenseVector.hh"
 #include "OperatorDefs.hh"
 #include "Schema.hh"
 
@@ -297,6 +298,12 @@ class Operator {
   virtual void AssembleMatrixOp(const Op_Cell_Schema& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
+
+  // local <-> global communications
+  virtual void ExtractVectorOp(int c, const Schema& schema,
+          WhetStone::DenseVector& v, const CompositeVector& X) const { ASSERT(false); }
+  virtual void AssembleVectorOp(int c, const Schema& schema,
+          const WhetStone::DenseVector& v, CompositeVector& X) const { ASSERT(false); };
 
   // diagnostics
   std::string PrintDiagnostics() const;
