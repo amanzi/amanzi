@@ -23,26 +23,26 @@
 namespace Amanzi {
 namespace Operators {
 
-class OperatorAdvection {
+class Advection {
  public:
-  OperatorAdvection(Teuchos::ParameterList& plist,
-                    Teuchos::RCP<Operator> global_op) :
+  Advection(Teuchos::ParameterList& plist,
+            Teuchos::RCP<Operator> global_op) :
       global_op_(global_op),
       mesh_(Teuchos::null)
   {
     InitAdvection_(plist);
   }
 
-  OperatorAdvection(Teuchos::ParameterList& plist,
-                    Teuchos::RCP<AmanziMesh::Mesh> mesh) :
+  Advection(Teuchos::ParameterList& plist,
+            Teuchos::RCP<AmanziMesh::Mesh> mesh) :
       global_op_(Teuchos::null),
       mesh_(mesh)
   {
     InitAdvection_(plist);
   }
 
-  OperatorAdvection(Teuchos::ParameterList& plist,
-                    Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+  Advection(Teuchos::ParameterList& plist,
+            Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       global_op_(Teuchos::null),
       mesh_(mesh)
   {
@@ -80,7 +80,6 @@ class OperatorAdvection {
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
   int nnodes_owned, nnodes_wghost;
-  
 };
 
 }  // namespace Operators

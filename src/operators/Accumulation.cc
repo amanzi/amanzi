@@ -10,6 +10,7 @@
            Ethan Coon (ecoon@lanl.gov)
 */
 
+#include "Accumulation.hh"
 #include "Operator_Cell.hh"
 #include "Operator_Edge.hh"
 #include "Operator_Node.hh"
@@ -18,15 +19,13 @@
 #include "Op_Node_Node.hh"
 #include "Op_SurfaceCell_SurfaceCell.hh"
 
-#include "OperatorAccumulation.hh"
-
 namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
 * Update method for just adding to PC.  Op += du.
 ****************************************************************** */
-void OperatorAccumulation::AddAccumulationTerm(const Epetra_MultiVector& du)
+void Accumulation::AddAccumulationTerm(const Epetra_MultiVector& du)
 {
   std::vector<double>& diag = local_op_->vals;
   ASSERT(diag.size() == du.MyLength());
@@ -39,7 +38,7 @@ void OperatorAccumulation::AddAccumulationTerm(const Epetra_MultiVector& du)
 /* ******************************************************************
 * Update method for just adding to PC.  Op += du / dt
 ****************************************************************** */
-void OperatorAccumulation::AddAccumulationTerm(const Epetra_MultiVector& du, double dT)
+void Accumulation::AddAccumulationTerm(const Epetra_MultiVector& du, double dT)
 {
   std::vector<double>& diag = local_op_->vals;
   ASSERT(diag.size() == du.MyLength());
@@ -53,7 +52,7 @@ void OperatorAccumulation::AddAccumulationTerm(const Epetra_MultiVector& du, dou
 * Update method for just adding to PC's component "name".
 * Op += du * vol / dt.
 ****************************************************************** */
-void OperatorAccumulation::AddAccumulationTerm(
+void Accumulation::AddAccumulationTerm(
     const CompositeVector& du, double dT, const std::string& name)
 {
   CompositeVector entity_volume(du);
@@ -76,7 +75,7 @@ void OperatorAccumulation::AddAccumulationTerm(
 * Op  += ss * vol / dt
 * RHS += s0 * vol * u0 / dt
 ****************************************************************** */
-void OperatorAccumulation::AddAccumulationTerm(
+void Accumulation::AddAccumulationTerm(
     const CompositeVector& u0, const CompositeVector& s0, 
     const CompositeVector& ss, double dT, const std::string& name)
 {
@@ -109,7 +108,7 @@ void OperatorAccumulation::AddAccumulationTerm(
 * Op  += ss * vol / dt
 * RHS += ss * vol * u0 / dt
 ****************************************************************** */
-void OperatorAccumulation::AddAccumulationTerm(
+void Accumulation::AddAccumulationTerm(
     const CompositeVector& u0, const CompositeVector& ss,
     double dT, const std::string& name)
 {
@@ -140,7 +139,7 @@ void OperatorAccumulation::AddAccumulationTerm(
 * Op  += ss  / dt
 * RHS += ss * u0 / dt
 ****************************************************************** */
-void OperatorAccumulation::AddAccumulationTerm(
+void Accumulation::AddAccumulationTerm(
     const CompositeVector& u0, const CompositeVector& ss, const std::string& name)
 {
   if (!ss.HasComponent(name)) ASSERT(false);
@@ -163,7 +162,7 @@ void OperatorAccumulation::AddAccumulationTerm(
 /* ******************************************************************
 * Calculate entity volume for component "name" of vector ss.
 ****************************************************************** */
-void OperatorAccumulation::CalculateEntitylVolume_(
+void Accumulation::CalculateEntitylVolume_(
     CompositeVector& entity_volume, const std::string& name)
 {
   AmanziMesh::Entity_ID_List nodes, edges;
@@ -216,7 +215,7 @@ void OperatorAccumulation::CalculateEntitylVolume_(
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-void OperatorAccumulation::InitAccumulation_(AmanziMesh::Entity_kind entity, bool surf)
+void Accumulation::InitAccumulation_(AmanziMesh::Entity_kind entity, bool surf)
 {
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh
@@ -306,7 +305,7 @@ void OperatorAccumulation::InitAccumulation_(AmanziMesh::Entity_kind entity, boo
 /* ******************************************************************
 * Apply boundary conditions to 
 ****************************************************************** */
-void OperatorAccumulation::ApplyBCs(const Teuchos::RCP<BCs>& bc)
+void Accumulation::ApplyBCs(const Teuchos::RCP<BCs>& bc)
 {
   const std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& diag = local_op_->vals;

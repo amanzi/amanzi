@@ -30,13 +30,13 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
+#include "Accumulation.hh"
+#include "Electromagnetics.hh"
+#include "OperatorDefs.hh"
+
 #include "AnalyticElectromagnetics01.hh"
 #include "AnalyticElectromagnetics02.hh"
 #include "AnalyticElectromagnetics03.hh"
-
-#include "OperatorAccumulation.hh"
-#include "OperatorDefs.hh"
-#include "OperatorElectromagnetics.hh"
 #include "Verification.hh"
 
 /* *****************************************************************
@@ -126,7 +126,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("electromagnetics operator");
-  Teuchos::RCP<OperatorElectromagnetics> op_curlcurl = Teuchos::rcp(new OperatorElectromagnetics(olist, mesh));
+  Teuchos::RCP<Electromagnetics> op_curlcurl = Teuchos::rcp(new Electromagnetics(olist, mesh));
   op_curlcurl->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op_curlcurl->global_operator()->DomainMap();
 
@@ -174,8 +174,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   phi.PutScalar(c_t);
 
   Teuchos::RCP<Operator> global_op = op_curlcurl->global_operator();
-  Teuchos::RCP<OperatorAccumulation> op_acc =
-      Teuchos::rcp(new OperatorAccumulation(AmanziMesh::EDGE, global_op));
+  Teuchos::RCP<Accumulation> op_acc = Teuchos::rcp(new Accumulation(AmanziMesh::EDGE, global_op));
 
   double dT = 1.0;
   op_acc->AddAccumulationTerm(solution, phi, dT, "edge");

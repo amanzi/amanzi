@@ -21,9 +21,9 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
+#include "Accumulation.hh"
 #include "BDF1_TI.hh"
 #include "Diffusion.hh"
-#include "OperatorAccumulation.hh"
 #include "PK_Factory.hh"
 #include "TreeVector.hh"
 #include "Upwind.hh"
@@ -35,7 +35,6 @@
 #include "RelPermEvaluator.hh"
 #include "WRMPartition.hh"
 #include "WRM.hh"
-
 
 namespace Amanzi {
 namespace Flow {
@@ -177,7 +176,7 @@ class Richards_PK : public Flow_PK {
   // solvers
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_, op_pc_solver_;
   Teuchos::RCP<Operators::Diffusion> op_matrix_diff_, op_preconditioner_diff_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
+  Teuchos::RCP<Operators::Accumulation> op_acc_;
   Teuchos::RCP<Operators::Upwind<RelPerm> > upwind_;
   std::string preconditioner_name_, solver_name_, solver_name_constraint_;
 

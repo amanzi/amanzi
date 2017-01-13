@@ -26,33 +26,33 @@
 namespace Amanzi {
 namespace Operators {
 
-class OperatorAccumulation {
+class Accumulation {
  public:
-  OperatorAccumulation(AmanziMesh::Entity_kind entity,
-                       Teuchos::RCP<Operator> global_op) :
+  Accumulation(AmanziMesh::Entity_kind entity,
+               Teuchos::RCP<Operator> global_op) :
       global_op_(global_op),
       mesh_(Teuchos::null)
   {
     InitAccumulation_(entity);
   }
 
-  OperatorAccumulation(AmanziMesh::Entity_kind entity,
-                       Teuchos::RCP<AmanziMesh::Mesh> mesh) :
+  Accumulation(AmanziMesh::Entity_kind entity,
+               Teuchos::RCP<AmanziMesh::Mesh> mesh) :
       global_op_(Teuchos::null),
       mesh_(mesh)
   {
     InitAccumulation_(entity);
   }
 
-  OperatorAccumulation(AmanziMesh::Entity_kind entity,
-                       Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+  Accumulation(AmanziMesh::Entity_kind entity,
+               Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       global_op_(Teuchos::null),
       mesh_(mesh)
   {
     InitAccumulation_(entity);
   }
 
-  OperatorAccumulation(Teuchos::ParameterList& plist,
+  Accumulation(Teuchos::ParameterList& plist,
                        Teuchos::RCP<Operator> global_op) :
       global_op_(global_op),
       mesh_(Teuchos::null)
@@ -68,8 +68,8 @@ class OperatorAccumulation {
     InitAccumulation_(entity, plist.get<bool>("surface operator", false));
   }
 
-  OperatorAccumulation(Teuchos::ParameterList& plist,
-                       Teuchos::RCP<AmanziMesh::Mesh> mesh) :
+  Accumulation(Teuchos::ParameterList& plist,
+               Teuchos::RCP<AmanziMesh::Mesh> mesh) :
       global_op_(Teuchos::null),
       mesh_(mesh)
   {
@@ -84,8 +84,8 @@ class OperatorAccumulation {
     InitAccumulation_(entity, plist.get<bool>("surface operator", false));
   }
 
-  OperatorAccumulation(Teuchos::ParameterList& plist,
-                       Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+  Accumulation(Teuchos::ParameterList& plist,
+               Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       global_op_(Teuchos::null),
       mesh_(mesh)
   {

@@ -15,20 +15,21 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
+#include "Accumulation.hh"
+#include "Advection.hh"
+#include "Diffusion.hh"
+#include "DiffusionFactory.hh"
 #include "EnergyTwoPhase_PK.hh"
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
 #include "Operator.hh"
-#include "OperatorDiffusion.hh"
-#include "OperatorAdvection.hh"
-#include "OperatorAccumulation.hh"
-#include "OperatorDiffusionFactory.hh"
 #include "State.hh"
 
 /* **************************************************************** 
@@ -123,8 +124,8 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   Teuchos::ParameterList oplist = elist.sublist("operators")
                                        .sublist("diffusion operator")
                                        .sublist("preconditioner");
-  OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op1 = opfactory.Create(oplist, mesh, bc);
+  DiffusionFactory opfactory;
+  Teuchos::RCP<Diffusion> op1 = opfactory.Create(oplist, mesh, bc);
   op1->SetBCs(bc, bc);
 
   // populate the diffusion operator
@@ -134,7 +135,7 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   Teuchos::RCP<Operator> op = op1->global_operator();
 
   // add accumulation term
-  Teuchos::RCP<OperatorAccumulation> op2 = Teuchos::rcp(new OperatorAccumulation(AmanziMesh::CELL, op));
+  Teuchos::RCP<Accumulation> op2 = Teuchos::rcp(new Accumulation(AmanziMesh::CELL, op));
   double dT = 1.0;
   CompositeVector solution(op->DomainMap());
 
@@ -171,7 +172,7 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   }
 
   Teuchos::ParameterList alist;
-  Teuchos::RCP<OperatorAdvection> op3 = Teuchos::rcp(new OperatorAdvection(alist, op));
+  Teuchos::RCP<Advection> op3 = Teuchos::rcp(new Advection(alist, op));
   op3->Setup(flux);
   op3->UpdateMatrices(flux);
 

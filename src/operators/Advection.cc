@@ -12,11 +12,11 @@
 
 #include <vector>
 
+#include "Advection.hh"
 #include "Operator_Cell.hh"
 #include "Op_Face_Cell.hh"
 #include "Op_SurfaceFace_SurfaceCell.hh"
 #include "OperatorDefs.hh"
-#include "OperatorAdvection.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -24,7 +24,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialize operator from parameter list.
 ****************************************************************** */
-void OperatorAdvection::InitAdvection_(Teuchos::ParameterList& plist)
+void Advection::InitAdvection_(Teuchos::ParameterList& plist)
 {
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh
@@ -81,7 +81,7 @@ void OperatorAdvection::InitAdvection_(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Advection requires a velocity field.
 ****************************************************************** */
-void OperatorAdvection::Setup(const CompositeVector& u)
+void Advection::Setup(const CompositeVector& u)
 {
   IdentifyUpwindCells_(u);
 }
@@ -92,7 +92,7 @@ void OperatorAdvection::Setup(const CompositeVector& u)
 * Advection operator is of the form: div (u C), where u is the given
 * velocity field and C is the advected field.
 ****************************************************************** */
-void OperatorAdvection::UpdateMatrices(const CompositeVector& u)
+void Advection::UpdateMatrices(const CompositeVector& u)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
@@ -133,8 +133,8 @@ void OperatorAdvection::UpdateMatrices(const CompositeVector& u)
 *     h: advected quantity (i.e. enthalpy)
 *     T: primary varaible (i.e. temperature)
 ****************************************************************** */
-void OperatorAdvection::UpdateMatrices(const CompositeVector& u,
-                                       const CompositeVector& dhdT)
+void Advection::UpdateMatrices(const CompositeVector& u,
+                               const CompositeVector& dhdT)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
@@ -173,7 +173,7 @@ void OperatorAdvection::UpdateMatrices(const CompositeVector& u,
 /* *******************************************************************
 * Apply boundary condition to the local matrices
 ******************************************************************* */
-void OperatorAdvection::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
+void Advection::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
@@ -237,9 +237,8 @@ void OperatorAdvection::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
 /* *******************************************************************
 * Identify the advected flux of u
 ******************************************************************* */
-void
-OperatorAdvection::UpdateFlux(const CompositeVector& h, const CompositeVector& u,
-        const Teuchos::RCP<BCs>& bc, CompositeVector& flux) {
+void Advection::UpdateFlux(const CompositeVector& h, const CompositeVector& u,
+                           const Teuchos::RCP<BCs>& bc, CompositeVector& flux) {
   // might need to think more carefully about BCs
   const std::vector<int>& bc_model = bc->bc_model();
   const std::vector<double>& bc_value = bc->bc_value();
@@ -269,7 +268,7 @@ OperatorAdvection::UpdateFlux(const CompositeVector& h, const CompositeVector& u
 * Identify flux direction based on orientation of the face normal 
 * and sign of the  Darcy velocity.                               
 ******************************************************************* */
-void OperatorAdvection::IdentifyUpwindCells_(const CompositeVector& u)
+void Advection::IdentifyUpwindCells_(const CompositeVector& u)
 {
   u.ScatterMasterToGhosted("face");
   const Epetra_MultiVector& uf = *u.ViewComponent("face", true);

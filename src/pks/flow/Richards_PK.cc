@@ -441,7 +441,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_matrix_ = op_matrix_diff_->global_operator();
   op_preconditioner_diff_ = opfactory.Create(oplist_pc, mesh_, op_bc_, rho_, gravity_);
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
-  op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_));
+  op_acc_ = Teuchos::rcp(new Operators::Accumulation(AmanziMesh::CELL, op_preconditioner_));
 
   if (vapor_diffusion_) {
     Teuchos::ParameterList oplist_vapor = tmp_list.sublist("vapor matrix");

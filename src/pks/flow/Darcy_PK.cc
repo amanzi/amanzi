@@ -12,10 +12,12 @@
 
 #include <vector>
 
+// TPLs
 #include "Epetra_Import.h"
 #include "Epetra_Vector.h"
 #include "boost/algorithm/string.hpp"
 
+// Amanzi
 #include "DiffusionFactory.hh"
 #include "errors.hh"
 #include "exceptions.hh"
@@ -24,6 +26,7 @@
 #include "TimestepControllerFactory.hh"
 #include "Tensor.hh"
 
+// Amanzi::Flow
 #include "Darcy_PK.hh"
 #include "FlowDefs.hh"
 
@@ -292,7 +295,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_ = op_diff_->global_operator();
 
   // -- accumulation operator.
-  op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_));
+  op_acc_ = Teuchos::rcp(new Operators::Accumulation(AmanziMesh::CELL, op_));
 
   op_->SymbolicAssembleMatrix();
   op_->CreateCheckPoint();

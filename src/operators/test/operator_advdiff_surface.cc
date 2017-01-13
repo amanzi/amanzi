@@ -30,10 +30,11 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
+#include "Accumulation.hh"
 #include "DiffusionMFD.hh"
-#include "OperatorAdvection.hh"
-#include "OperatorAccumulation.hh"
+#include "Advection.hh"
 #include "OperatorDefs.hh"
+
 #include "Verification.hh"
 
 
@@ -120,7 +121,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
 
   // create an advection operator  
   Teuchos::ParameterList alist;
-  Teuchos::RCP<OperatorAdvection> op_adv = Teuchos::rcp(new OperatorAdvection(alist, global_op));
+  Teuchos::RCP<Advection> op_adv = Teuchos::rcp(new Advection(alist, global_op));
 
   // get a flux field
   CompositeVector u(cvs);
@@ -142,8 +143,8 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   phi.PutScalar(0.2);
 
   double dT = 0.02;
-  Teuchos::RCP<OperatorAccumulation> op_acc =
-      Teuchos::rcp(new OperatorAccumulation(AmanziMesh::CELL, global_op));
+  Teuchos::RCP<Accumulation> op_acc =
+      Teuchos::rcp(new Accumulation(AmanziMesh::CELL, global_op));
   op_acc->AddAccumulationTerm(solution, phi, dT, "cell");
 
   // BCs and assemble

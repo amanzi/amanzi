@@ -9,8 +9,8 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_OPERATOR_ELASTICITY_HH_
-#define AMANZI_OPERATOR_ELASTICITY_HH_
+#ifndef AMANZI_OPERATOR_ELECTROMAGNETICS_HH_
+#define AMANZI_OPERATOR_ELECTROMAGNETICS_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -22,15 +22,25 @@
 #include "BCs.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
-#include "Schema.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class OperatorElasticity {
+class Electromagnetics {
  public:
-  OperatorElasticity(Teuchos::ParameterList& plist,
-                     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+  Electromagnetics(const Teuchos::RCP<Operator>& global_op) :
+      global_op_(global_op),
+      K_(Teuchos::null),
+      ncells_owned(-1),
+      ncells_wghost(-1),
+      nfaces_owned(-1),
+      nfaces_wghost(-1),
+      nedges_owned(-1),
+      nedges_wghost(-1)
+  {};
+
+  Electromagnetics(Teuchos::ParameterList& plist,
+                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       plist_(plist),
       mesh_(mesh),
       K_(Teuchos::null),
@@ -38,10 +48,12 @@ class OperatorElasticity {
       ncells_owned(-1),
       ncells_wghost(-1),
       nfaces_owned(-1),
-      nfaces_wghost(-1)
+      nfaces_wghost(-1),
+      nedges_owned(-1),
+      nedges_wghost(-1)
   {
-    operator_type_ = OPERATOR_ELASTICITY;
-    InitElasticity_(plist);
+    operator_type_ = OPERATOR_ELECTROMAGNETICS;
+    InitElectromagnetics_(plist);
   }
 
   // main virtual members
@@ -71,28 +83,35 @@ class OperatorElasticity {
     bcs_test_.push_back(bc_test);
   }
 
+  // new virtual members
+  // -- before solving the problem
+  virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt) {};
+
+  // -- after solving the problem
+  virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt) {};
+
   // access
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
   Teuchos::RCP<Operator> global_operator() { return global_op_; }
-  const Schema& global_schema_col() { return global_schema_col_; }
-  const Schema& schema_col() { return local_schema_col_; }
-  const Schema& schema_row() { return local_schema_row_; }
+  int schema_prec_dofs() { return global_op_schema_; }
+
+  Teuchos::RCP<const Op> local_matrices() const { return local_op_; }
+  Teuchos::RCP<Op> local_matrices() { return local_op_; }
+  int schema_dofs() { return local_op_schema_; }
 
  protected:
-  void InitElasticity_(Teuchos::ParameterList& plist);
-  void ApplyBCs_Face_(const Teuchos::Ptr<BCs>& bc_f, bool primary, bool eliminate);
-  void ApplyBCs_Node_(const Teuchos::Ptr<BCs>& bc_v, bool primary, bool eliminate);
+  void InitElectromagnetics_(Teuchos::ParameterList& plist);
+  void ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
+                      const Teuchos::Ptr<BCs>& bc_e, bool primary, bool eliminate);
 
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
+  bool K_symmetric_;
 
   // operator
   Teuchos::RCP<Operator> global_op_;
   Teuchos::RCP<Op> local_op_;
-
-  Schema global_schema_col_, global_schema_row_;
-  Schema local_schema_col_, local_schema_row_;
-
+  int global_op_schema_, local_op_schema_;
   std::vector<Teuchos::RCP<BCs> > bcs_trial_, bcs_test_;
   OperatorType operator_type_;
 
@@ -100,9 +119,11 @@ class OperatorElasticity {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
+  int nedges_owned, nedges_wghost;
 
   // miscaleneous
   Teuchos::ParameterList plist_;
+  int mfd_primary_, mfd_secondary_;
 };
 
 }  // namespace Operators

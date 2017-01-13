@@ -18,10 +18,10 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
+#include "Accumulation.hh"
 #include "Diffusion.hh"
 #include "FnBaseDefs.hh"
 #include "Operator.hh"
-#include "OperatorAccumulation.hh"
 #include "PK_Factory.hh"
 #include "TimestepController.hh"
 #include "TreeVector.hh"
@@ -110,7 +110,7 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Teuchos::ParameterList> dp_list_;
   Teuchos::RCP<Operators::Operator> op_;
   Teuchos::RCP<Operators::Diffusion> op_diff_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
+  Teuchos::RCP<Operators::Accumulation> op_acc_;
 
   int error_control_;
   double dt_desirable_, dt_factor_;

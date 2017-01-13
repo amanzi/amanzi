@@ -16,10 +16,10 @@
 #include <vector>
 
 // TPLs
+#include "EpetraExt_RowMatrixOut.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-#include "EpetraExt_RowMatrixOut.h"
 #include "UnitTest++.h"
 
 // Amanzi
@@ -28,11 +28,11 @@
 #include "LinearOperatorFactory.hh"
 #include "Tensor.hh"
 
-// Operators
-#include "AnalyticElasticity01.hh"
-#include "OperatorElasticity.hh"
-#include "Verification.hh"
+// Amanzi::Operators
+#include "Elasticity.hh"
 
+#include "AnalyticElasticity01.hh"
+#include "Verification.hh"
 
 /* *****************************************************************
 * Elasticity model: exactness test.
@@ -117,7 +117,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
       Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_NODE, bcv_model, bcv_value));
 
   // create diffusion operator 
-  Teuchos::RCP<OperatorElasticity> op = Teuchos::rcp(new OperatorElasticity(op_list, mesh));
+  Teuchos::RCP<Elasticity> op = Teuchos::rcp(new Elasticity(op_list, mesh));
   op->SetBCs(bcf, bcf);
   op->AddBCs(bcv, bcv);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();

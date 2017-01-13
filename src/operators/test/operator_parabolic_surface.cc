@@ -30,10 +30,11 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
+#include "Accumulation.hh"
 #include "DiffusionMFD.hh"
 #include "Operator.hh"
-#include "OperatorAccumulation.hh"
 #include "OperatorDefs.hh"
+
 #include "Verification.hh"
 
 
@@ -134,7 +135,7 @@ void RunTest(std::string op_list_name) {
   Teuchos::RCP<Operator> global_op = op.global_operator();
 
   // add accumulation terms
-  OperatorAccumulation op_acc(AmanziMesh::CELL, global_op);
+  Accumulation op_acc(AmanziMesh::CELL, global_op);
   op_acc.AddAccumulationTerm(solution, phi, dT, "cell");
 
   // apply BCs and assemble

@@ -30,12 +30,12 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
-#include "AnalyticElectromagnetics04.hh"
-
+#include "Accumulation.hh"
+#include "ElectromagneticsMHD.hh"
 #include "Operator.hh"
-#include "OperatorAccumulation.hh"
-#include "OperatorElectromagneticsMHD.hh"
 #include "OperatorDefs.hh"
+
+#include "AnalyticElectromagnetics04.hh"
 
 /* *****************************************************************
 * TBW 
@@ -136,7 +136,7 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("electromagnetics operator");
-  Teuchos::RCP<OperatorElectromagneticsMHD> op_mhd = Teuchos::rcp(new OperatorElectromagneticsMHD(olist, mesh));
+  Teuchos::RCP<ElectromagneticsMHD> op_mhd = Teuchos::rcp(new ElectromagneticsMHD(olist, mesh));
   op_mhd->SetBCs(bc1, bc1);
   op_mhd->AddBCs(bc2, bc2);
 
@@ -190,8 +190,8 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
     CompositeVector phi(cvs_e);
     phi.PutScalar(1.0);
 
-    Teuchos::RCP<OperatorAccumulation> op_acc =
-        Teuchos::rcp(new OperatorAccumulation(AmanziMesh::EDGE, global_op));
+    Teuchos::RCP<Accumulation> op_acc =
+        Teuchos::rcp(new Accumulation(AmanziMesh::EDGE, global_op));
 
     op_acc->AddAccumulationTerm(phi, 1.0, "edge");
 

@@ -22,14 +22,13 @@
 #include "SuperMap.hh"
 #include "WhetStoneDefs.hh"
 
-// Operators
+// Amanzi::Operators
+#include "ElectromagneticsMHD.hh"
 #include "Op.hh"
 #include "Op_Cell_Edge.hh"
 #include "Op_Cell_Face.hh"
 #include "OperatorDefs.hh"
 #include "Operator_Edge.hh"
-
-#include "OperatorElectromagneticsMHD.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -37,7 +36,7 @@ namespace Operators {
 /* ******************************************************************
 * Calculate elemental matrices.
 ****************************************************************** */
-void OperatorElectromagneticsMHD::UpdateMatrices()
+void ElectromagneticsMHD::UpdateMatrices()
 {
   std::vector<int> dirs;
   AmanziMesh::Entity_ID_List edges, faces;
@@ -70,7 +69,7 @@ void OperatorElectromagneticsMHD::UpdateMatrices()
 /* ******************************************************************
 * System modification before solving the problem.
 * **************************************************************** */
-void OperatorElectromagneticsMHD::ModifyMatrices(
+void ElectromagneticsMHD::ModifyMatrices(
    CompositeVector& E, CompositeVector& B, double dt)
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
@@ -113,7 +112,7 @@ void OperatorElectromagneticsMHD::ModifyMatrices(
 /* ******************************************************************
 * Solution postprocessing
 * **************************************************************** */
-void OperatorElectromagneticsMHD::ModifyFields(
+void ElectromagneticsMHD::ModifyFields(
    CompositeVector& E, CompositeVector& B, double dt)
 {
   B.ScatterMasterToGhosted("face");
@@ -158,7 +157,7 @@ void OperatorElectromagneticsMHD::ModifyFields(
 /* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-double OperatorElectromagneticsMHD::CalculateMagneticEnergy(const CompositeVector& B)
+double ElectromagneticsMHD::CalculateMagneticEnergy(const CompositeVector& B)
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
 
@@ -190,7 +189,7 @@ double OperatorElectromagneticsMHD::CalculateMagneticEnergy(const CompositeVecto
 /* ******************************************************************
 * Useful tools
 * **************************************************************** */
-double OperatorElectromagneticsMHD::CalculateDivergence(
+double ElectromagneticsMHD::CalculateDivergence(
     int c, const CompositeVector& B)
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
@@ -215,7 +214,7 @@ double OperatorElectromagneticsMHD::CalculateDivergence(
 /* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-void OperatorElectromagneticsMHD::InitElectromagneticsMHD_()
+void ElectromagneticsMHD::InitElectromagneticsMHD_()
 {
   mass_op_.resize(ncells_owned);
   curl_op_.resize(ncells_owned);

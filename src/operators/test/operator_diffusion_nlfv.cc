@@ -28,13 +28,12 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
-#include "Analytic01.hh"
-#include "Analytic02.hh"
-
+#include "Accumulation.hh"
 #include "DiffusionNLFVwithGravity.hh"
-#include "OperatorAccumulation.hh"
 #include "OperatorDefs.hh"
 
+#include "Analytic01.hh"
+#include "Analytic02.hh"
 
 /* *****************************************************************
 * Nonlinear finite volume scheme.

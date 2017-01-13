@@ -15,28 +15,30 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+// Amanzi
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
 #include "exceptions.hh"
 #include "Tensor.hh"
 
+// Amanzi::Operators
 #include "BCs.hh"
+#include "Electromagnetics.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
-#include "OperatorElectromagnetics.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class OperatorElectromagneticsMHD : public OperatorElectromagnetics {
+class ElectromagneticsMHD : public Electromagnetics {
  public:
-  OperatorElectromagneticsMHD(const Teuchos::RCP<Operator>& global_op)
-    : OperatorElectromagnetics(global_op)
+  ElectromagneticsMHD(const Teuchos::RCP<Operator>& global_op)
+    : Electromagnetics(global_op)
   {};
 
-  OperatorElectromagneticsMHD(Teuchos::ParameterList& plist,
-                              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : OperatorElectromagnetics(plist, mesh)
+  ElectromagneticsMHD(Teuchos::ParameterList& plist,
+                      const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : Electromagnetics(plist, mesh)
   {
     operator_type_ = OPERATOR_ELECTROMAGNETICS_MHD;
     InitElectromagneticsMHD_();

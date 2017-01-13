@@ -27,12 +27,12 @@
 #include "LinearOperatorFactory.hh"
 #include "Tensor.hh"
 
-// Operators
-#include "DiffusionMFD.hh"
+// Amanzi::Operators
+#include "Advection.hh"
 #include "DiffusionFV.hh"
 #include "DiffusionFactory.hh"
+#include "DiffusionMFD.hh"
 #include "Operator_FaceCell.hh"
-#include "OperatorAdvection.hh"
 #include "OperatorDefs.hh"
 
 
@@ -118,7 +118,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   
   // create advection operator
   Teuchos::ParameterList alist;
-  Teuchos::RCP<OperatorAdvection> op1 = Teuchos::rcp(new OperatorAdvection(alist, global_op));
+  Teuchos::RCP<Advection> op1 = Teuchos::rcp(new Advection(alist, global_op));
   op1->Setup(u);
   op1->UpdateMatrices(u);
 
@@ -148,7 +148,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   op3->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   Teuchos::ParameterList alist2;
-  Teuchos::RCP<OperatorAdvection> op4 = Teuchos::rcp(new OperatorAdvection(alist2, global_op2));
+  Teuchos::RCP<Advection> op4 = Teuchos::rcp(new Advection(alist2, global_op2));
   op4->Setup(u);
   op4->UpdateMatrices(u);
 
@@ -248,7 +248,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   
   // create advection operator
   Teuchos::ParameterList alist;
-  Teuchos::RCP<OperatorAdvection> op1 = Teuchos::rcp(new OperatorAdvection(alist, global_op));
+  Teuchos::RCP<Advection> op1 = Teuchos::rcp(new Advection(alist, global_op));
   op1->Setup(u);
   op1->UpdateMatrices(u);
 
@@ -278,7 +278,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   op3->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   Teuchos::ParameterList alist2;
-  Teuchos::RCP<OperatorAdvection> op4 = Teuchos::rcp(new OperatorAdvection(alist2, global_op2));
+  Teuchos::RCP<Advection> op4 = Teuchos::rcp(new Advection(alist2, global_op2));
   op4->Setup(u);
   op4->UpdateMatrices(u);
 

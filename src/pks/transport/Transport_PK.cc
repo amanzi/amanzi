@@ -19,6 +19,8 @@
 #include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
 
+// Amanzi
+#include "Accumulation.hh"
 #include "BCs.hh"
 #include "Diffusion.hh"
 #include "DiffusionFactory.hh"
@@ -30,10 +32,10 @@
 #include "LinearOperatorFactory.hh"
 #include "Mesh.hh"
 #include "OperatorDefs.hh"
-#include "OperatorAccumulation.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
 
+// amanzi::Transport
 #include "MultiscaleTransportPorosityFactory.hh"
 #include "Transport_PK.hh"
 #include "TransportBoundaryFunction_Alquimia.hh"
@@ -759,8 +761,8 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     Teuchos::RCP<Operators::Diffusion> op1 = opfactory.Create(op_list, mesh_, bc_dummy);
     op1->SetBCs(bc_dummy, bc_dummy);
     Teuchos::RCP<Operators::Operator> op = op1->global_operator();
-    Teuchos::RCP<Operators::OperatorAccumulation> op2 =
-        Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op));
+    Teuchos::RCP<Operators::Accumulation> op2 =
+        Teuchos::rcp(new Operators::Accumulation(AmanziMesh::CELL, op));
 
     const CompositeVectorSpace& cvs = op1->global_operator()->DomainMap();
     CompositeVector sol(cvs), factor(cvs), factor0(cvs), source(cvs), zero(cvs);

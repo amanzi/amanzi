@@ -21,12 +21,12 @@
 #include "PreconditionerFactory.hh"
 #include "WhetStoneDefs.hh"
 
-// Operators
+// Amanzi::Operators
+#include "Elasticity.hh"
 #include "Op.hh"
 #include "Op_Cell_Schema.hh"
 #include "OperatorDefs.hh"
 #include "Operator_Schema.hh"
-#include "OperatorElasticity.hh"
 #include "Schema.hh"
 
 namespace Amanzi {
@@ -35,7 +35,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialization of the operator, scalar coefficient.
 ****************************************************************** */
-void OperatorElasticity::SetTensorCoefficient(
+void Elasticity::SetTensorCoefficient(
     const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
 {
   K_ = K;
@@ -45,7 +45,7 @@ void OperatorElasticity::SetTensorCoefficient(
 /* ******************************************************************
 * Calculate elemental matrices.
 ****************************************************************** */
-void OperatorElasticity::UpdateMatrices()
+void Elasticity::UpdateMatrices()
 {
   WhetStone::MFD3D_Elasticity mfd(mesh_);
   AmanziMesh::Entity_ID_List nodes;
@@ -75,7 +75,7 @@ void OperatorElasticity::UpdateMatrices()
 * options: (a) eliminate or not, (b) if eliminate, then put 1 on
 * the diagonal or not.
 ****************************************************************** */
-void OperatorElasticity::ApplyBCs(bool primary, bool eliminate)
+void Elasticity::ApplyBCs(bool primary, bool eliminate)
 {
   for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
     if ((*bc)->type() == OPERATOR_BC_TYPE_FACE) {
@@ -90,8 +90,8 @@ void OperatorElasticity::ApplyBCs(bool primary, bool eliminate)
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void OperatorElasticity::ApplyBCs_Face_(const Teuchos::Ptr<BCs>& bcf,
-                                        bool primary, bool eliminate)
+void Elasticity::ApplyBCs_Face_(const Teuchos::Ptr<BCs>& bcf,
+                                bool primary, bool eliminate)
 {
   const std::vector<int>& bc_model = bcf->bc_model();
   const std::vector<double>& bc_value = bcf->bc_value();
@@ -173,8 +173,8 @@ void OperatorElasticity::ApplyBCs_Face_(const Teuchos::Ptr<BCs>& bcf,
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void OperatorElasticity::ApplyBCs_Node_(const Teuchos::Ptr<BCs>& bcv,
-                                        bool primary, bool eliminate)
+void Elasticity::ApplyBCs_Node_(const Teuchos::Ptr<BCs>& bcv,
+                                bool primary, bool eliminate)
 {
   const std::vector<int>& bc_model = bcv->bc_model();
   const std::vector<AmanziGeometry::Point>& bc_value = bcv->bc_value_point();
@@ -263,7 +263,7 @@ void OperatorElasticity::ApplyBCs_Node_(const Teuchos::Ptr<BCs>& bcv,
 /* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-void OperatorElasticity::InitElasticity_(Teuchos::ParameterList& plist)
+void Elasticity::InitElasticity_(Teuchos::ParameterList& plist)
 {
   // Read schema for the mimetic discretization method.
   Teuchos::ParameterList& schema_list = plist.sublist("schema");
@@ -273,7 +273,7 @@ void OperatorElasticity::InitElasticity_(Teuchos::ParameterList& plist)
     name = schema_list.get<Teuchos::Array<std::string> >("location").toVector();
   } else {
     Errors::Message msg;
-    msg << "OperatorElasticity: schema->location is missing.";
+    msg << "Elasticity: schema->location is missing.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -282,7 +282,7 @@ void OperatorElasticity::InitElasticity_(Teuchos::ParameterList& plist)
     type = schema_list.get<Teuchos::Array<std::string> >("type").toVector();
   } else {
     Errors::Message msg;
-    msg << "OperatorElasticity: schema->type is missing.";
+    msg << "Elasticity: schema->type is missing.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -291,7 +291,7 @@ void OperatorElasticity::InitElasticity_(Teuchos::ParameterList& plist)
     ndofs = schema_list.get<Teuchos::Array<int> >("number").toVector();
   } else {
     Errors::Message msg;
-    msg << "OperatorElasticity: schema->number is missing.";
+    msg << "Elasticity: schema->number is missing.";
     Exceptions::amanzi_throw(msg);
   }
 

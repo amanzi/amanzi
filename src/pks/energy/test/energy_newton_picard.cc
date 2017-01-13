@@ -19,17 +19,18 @@
 #include "Epetra_MpiComm.h"
 
 // Amanzi
+#include "Accumulation.hh"
+#include "Advection.hh"
+#include "DiffusionFactory.hh"
+#include "DiffusionMFD.hh"
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "Operator.hh"
-#include "OperatorDiffusionMFD.hh"
-#include "OperatorAdvection.hh"
-#include "OperatorAccumulation.hh"
-#include "OperatorDiffusionFactory.hh"
 #include "SolverFactory.hh"
 #include "SolverFnBase.hh"
 #include "UpwindFlux.hh"
 
+// Amanzi::Energy
 #include "Energy_PK.hh"
 
 const double TemperatureSource = 1.0; 
@@ -80,8 +81,8 @@ class HeatConduction : public AmanziSolvers::SolverFnBase<CompositeVector> {
 
   Teuchos::RCP<CompositeVectorSpace> cvs_;
   Teuchos::RCP<Operators::Operator> op_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op_diff_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
+  Teuchos::RCP<Operators::Diffusion> op_diff_;
+  Teuchos::RCP<Operators::Accumulation> op_acc_;
 
   Teuchos::RCP<Operators::BCs> bc_;  
   std::vector<int> bc_model;
@@ -190,10 +191,10 @@ void HeatConduction::Init(
 
   // create the operators
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_name_);
-  op_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(olist, mesh_));
+  op_diff_ = Teuchos::rcp(new Operators::DiffusionMFD(olist, mesh_));
   op_diff_->SetBCs(bc_, bc_);
   op_ = op_diff_->global_operator();
-  op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_));
+  op_acc_ = Teuchos::rcp(new Operators::Accumulation(AmanziMesh::CELL, op_));
   op_->Init();
 
   // set up the local matrices

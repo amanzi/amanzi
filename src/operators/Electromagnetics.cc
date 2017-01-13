@@ -23,13 +23,12 @@
 #include "SuperMap.hh"
 #include "WhetStoneDefs.hh"
 
-// Operators
+// Amanzi::Operators
+#include "Electromagnetics.hh"
 #include "Op.hh"
 #include "Op_Cell_Edge.hh"
 #include "OperatorDefs.hh"
 #include "Operator_Edge.hh"
-
-#include "OperatorElectromagnetics.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -37,7 +36,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialization of the operator, scalar coefficient.
 ****************************************************************** */
-void OperatorElectromagnetics::SetTensorCoefficient(
+void Electromagnetics::SetTensorCoefficient(
     const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
 {
   K_ = K;
@@ -51,7 +50,7 @@ void OperatorElectromagnetics::SetTensorCoefficient(
 /* ******************************************************************
 * Calculate elemental matrices.
 ****************************************************************** */
-void OperatorElectromagnetics::UpdateMatrices()
+void Electromagnetics::UpdateMatrices()
 {
   AmanziMesh::Entity_ID_List edges;
   WhetStone::MFD3D_Electromagnetics mfd(mesh_);
@@ -78,7 +77,7 @@ void OperatorElectromagnetics::UpdateMatrices()
 * options: (a) eliminate or not, (b) if eliminate, then put 1 on
 * the diagonal or not.
 ****************************************************************** */
-void OperatorElectromagnetics::ApplyBCs(bool primary, bool eliminate)
+void Electromagnetics::ApplyBCs(bool primary, bool eliminate)
 {
   if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                          | OPERATOR_SCHEMA_DOFS_EDGE)) {
@@ -98,9 +97,9 @@ void OperatorElectromagnetics::ApplyBCs(bool primary, bool eliminate)
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void OperatorElectromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
-                                              const Teuchos::Ptr<BCs>& bc_e,
-                                              bool primary, bool eliminate)
+void Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
+                                      const Teuchos::Ptr<BCs>& bc_e,
+                                      bool primary, bool eliminate)
 {
   AmanziMesh::Entity_ID_List edges, faces, cells;
   std::vector<int> edirs, fdirs;
@@ -227,7 +226,7 @@ void OperatorElectromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
 /* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-void OperatorElectromagnetics::InitElectromagnetics_(Teuchos::ParameterList& plist)
+void Electromagnetics::InitElectromagnetics_(Teuchos::ParameterList& plist)
 {
   // Determine discretization
   std::string primary = plist.get<std::string>("discretization primary");
@@ -240,7 +239,7 @@ void OperatorElectromagnetics::InitElectromagnetics_(Teuchos::ParameterList& pli
     mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
   } else {
     Errors::Message msg;
-    msg << "OperatorElectromagnetics: primary discretization method \"" << primary << "\" is not supported.";
+    msg << "Electromagnetics: primary discretization method \"" << primary << "\" is not supported.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -265,7 +264,7 @@ void OperatorElectromagnetics::InitElectromagnetics_(Teuchos::ParameterList& pli
     local_op_schema_ = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_EDGE;
   } else {
     Errors::Message msg;
-    msg << "OperatorElectromagnetics: \"schema\" must be CELL or EDGE";
+    msg << "Electromagnetics: \"schema\" must be CELL or EDGE";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -300,7 +299,7 @@ void OperatorElectromagnetics::InitElectromagnetics_(Teuchos::ParameterList& pli
       global_op_ = Teuchos::rcp(new Operator_Edge(cvs, plist));
     } else {
       Errors::Message msg;
-      msg << "OperatorElectromagnetics: \"preconditioner schema\" must be EDGE";
+      msg << "Electromagnetics: \"preconditioner schema\" must be EDGE";
       Exceptions::amanzi_throw(msg);
     }
 
