@@ -206,22 +206,18 @@ void Coordinator::initialize() {
     visualization_.push_back(vis_2d);
 */    
     Teuchos::RCP<Amanzi::Visualization> vis = Teuchos::rcp(new Amanzi::Visualization(vis_plist, comm_));
-    vis->set_mesh(surface_3d);
+    vis->set_mesh(surface_3d);    
 
-     //should be removed in future -- xmdf does not work for general polyhdera, and 3D silo gives error "3D not tested yet!!"
-    if (parameter_list_->sublist("PKs").sublist("top level MPC").isParameter("coupling key")){
-      //vis->CreateFiles();
+    //should be removed in future -- xmdf does not work for general polyhdera, and 3D silo gives error "3D not tested yet!!"
+    if (parameter_list_->sublist("mesh").isSublist("column meshes")){
       vis->set_mesh(surface);
       vis->CreateFiles();
     }
-     else{
-       vis->CreateFiles();
-       vis->set_mesh(surface);
-     }
+    else{
+      vis->CreateFiles();
+      vis->set_mesh(surface);
+    }
     
-    vis->set_mesh(surface);
-    vis->CreateFiles();
-
     visualization_.push_back(vis);
     surface_done = true;
 
