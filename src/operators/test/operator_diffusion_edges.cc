@@ -29,9 +29,9 @@
 // Operators
 #include "Analytic01.hh"
 
+#include "DiffusionFactory.hh"
+#include "DiffusionMFD.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionFactory.hh"
-#include "OperatorDiffusionMFD.hh"
 
 
 /* *****************************************************************
@@ -99,7 +99,7 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
 
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator edge");
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
+  Teuchos::RCP<Diffusion> op = Teuchos::rcp(new DiffusionMFD(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 

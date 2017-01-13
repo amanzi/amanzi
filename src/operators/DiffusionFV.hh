@@ -9,7 +9,7 @@
   Authors: Daniil Svyatskiy (dasvyat@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  OperatorDiffusionFV implements the OperatorDiffusion interface using
+  DiffusionFV implements the Diffusion interface using
   finite volumes, i.e. the two point flux approximation.
 
 
@@ -47,36 +47,38 @@
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
 #include "Preconditioner.hh"
-#include "OperatorDiffusion.hh"
+
+// Opertors
+#include "Diffusion.hh"
 
 namespace Amanzi {
 namespace Operators {
 
 class BCs;
 
-class OperatorDiffusionFV : public virtual OperatorDiffusion {
+class DiffusionFV : public virtual Diffusion {
  public:
-  OperatorDiffusionFV(Teuchos::ParameterList& plist,
-                      const Teuchos::RCP<Operator>& global_op) :
-      OperatorDiffusion(global_op),
+  DiffusionFV(Teuchos::ParameterList& plist,
+              const Teuchos::RCP<Operator>& global_op) :
+      Diffusion(global_op),
       transmissibility_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV;
     InitDiffusion_(plist);
   }
 
-  OperatorDiffusionFV(Teuchos::ParameterList& plist,
-                      const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      OperatorDiffusion(mesh),
+  DiffusionFV(Teuchos::ParameterList& plist,
+              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      Diffusion(mesh),
       transmissibility_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV;
     InitDiffusion_(plist);
   }
 
-  OperatorDiffusionFV(Teuchos::ParameterList& plist,
-                      const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      OperatorDiffusion(mesh),
+  DiffusionFV(Teuchos::ParameterList& plist,
+              const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+      Diffusion(mesh),
       transmissibility_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV;
@@ -85,7 +87,7 @@ class OperatorDiffusionFV : public virtual OperatorDiffusion {
 
   // main virtual members
   // -- setup
-  using OperatorDiffusion::Setup;
+  using Diffusion::Setup;
   virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp);

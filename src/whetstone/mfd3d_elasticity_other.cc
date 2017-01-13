@@ -25,7 +25,7 @@ namespace WhetStone {
 
 /* ******************************************************************
 * The stable discretization for Stokes: vectors at nodes plus normal
-* components at faces.
+* components at faces. Fixed normal is used for the latter.
 ****************************************************************** */
 int MFD3D_Elasticity::H1consistencyNode2Face1(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
@@ -222,6 +222,33 @@ int MFD3D_Elasticity::StiffnessMatrixNode2Face1(
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   StabilityScalar(c, N, A);
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Divergence matrix: vectors at nodes, normal components on faces.
+* Fixed normal vector is used for the latter.
+****************************************************************** */
+int MFD3D_Elasticity::DivergenceMatrixNode2Face1(int c, DenseMatrix& A)
+{
+  int d = mesh_->space_dimension();
+
+  Entity_ID_List nodes, faces;
+  std::vector<int> dirs;
+
+  mesh_->cell_get_nodes(c, &nodes);
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
+
+  int n1 = d * nodes.size();
+  for (int n = 0; n < n1; ++n) A(0, n) = 0.0;
+
+  for (int n = 0; n < nfaces; ++n) {
+    double area = mesh_->face_area(faces[n]);
+    A(0, n1 + n) = area * dirs[n]; 
+  } 
+
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 

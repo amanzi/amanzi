@@ -14,7 +14,7 @@
 
 // Operators
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionFV.hh"
+#include "DiffusionFV.hh"
 #include "Op.hh"
 #include "Op_SurfaceFace_SurfaceCell.hh"
 #include "Op_Face_Cell.hh"
@@ -26,7 +26,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialization
 ****************************************************************** */
-void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
+void DiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
 {
   // Define stencil for the FV diffusion method.
   local_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
@@ -77,11 +77,11 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
   } else if (uwname == "divk: cell-face" ||
              uwname == "divk: cell-grad-face-twin" ||
              uwname == "standard: cell") {
-    msg << "OperatorDiffusionFV: \"" << uwname << "\" upwinding not supported.";
+    msg << "DiffusionFV: \"" << uwname << "\" upwinding not supported.";
     Exceptions::amanzi_throw(msg);
 
   } else {
-    msg << "OperatorDiffusionFV: unknown upwind scheme specified.";
+    msg << "DiffusionFV: unknown upwind scheme specified.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -90,7 +90,7 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
 
   // DEPRECATED INPUT -- remove this error eventually --etc
   if (plist.isParameter("newton correction")) {
-    msg << "OperatorDiffusionFV: DEPRECATED: \"newton correction\" has been removed in favor of \"Newton correction\"";
+    msg << "DiffusionFV: DEPRECATED: \"newton correction\" has been removed in favor of \"Newton correction\"";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -101,10 +101,10 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
   } else if (jacobian == "approximate Jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
-    msg << "OperatorDiffusionFV: \"approximate Jacobian\" not supported, use \"true Jacobian\".";
+    msg << "DiffusionFV: \"approximate Jacobian\" not supported, use \"true Jacobian\".";
     Exceptions::amanzi_throw(msg);
   } else {
-    msg << "OperatorDiffusionFV: invalid parameter \"" << jacobian << "\" for option \"Newton correction\" -- valid are: \"none\", \"true Jacobian\"";
+    msg << "DiffusionFV: invalid parameter \"" << jacobian << "\" for option \"Newton correction\" -- valid are: \"none\", \"true Jacobian\"";
     Exceptions::amanzi_throw(msg);
   }
     
@@ -140,7 +140,7 @@ void OperatorDiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Setup methods: scalar coefficients
 ****************************************************************** */
-void OperatorDiffusionFV::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
+void DiffusionFV::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
 {
   transmissibility_initialized_ = false;
   K_ = K;
@@ -151,8 +151,8 @@ void OperatorDiffusionFV::SetTensorCoefficient(const Teuchos::RCP<std::vector<Wh
 * Setup methods: krel and deriv -- must be called after calling a
 * setup with K absolute
 ****************************************************************** */
-void OperatorDiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
-                                               const Teuchos::RCP<const CompositeVector>& dkdp)
+void DiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
+                                       const Teuchos::RCP<const CompositeVector>& dkdp)
 {
   transmissibility_initialized_ = false;
   k_ = k;
@@ -179,8 +179,8 @@ void OperatorDiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const Composit
 * Populate face-based 2x2 matrices on interior faces and 1x1 matrices
 * on boundary faces.
 ****************************************************************** */
-void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-                                         const Teuchos::Ptr<const CompositeVector>& u)
+void DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
+                                 const Teuchos::Ptr<const CompositeVector>& u)
 {
   if (!transmissibility_initialized_) ComputeTransmissibility_();
 
@@ -227,7 +227,7 @@ void OperatorDiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
 * Populate face-based 2x2 matrices on interior faces and 1x1 matrices
 * on boundary faces with Newton information
 ****************************************************************** */
-void OperatorDiffusionFV::UpdateMatricesNewtonCorrection(
+void DiffusionFV::UpdateMatricesNewtonCorrection(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u,
     double scalar_limiter)
@@ -242,7 +242,7 @@ void OperatorDiffusionFV::UpdateMatricesNewtonCorrection(
 /* ******************************************************************
 * Special implementation of boundary conditions.
 ****************************************************************** */
-void OperatorDiffusionFV::ApplyBCs(bool primary, bool eliminate)
+void DiffusionFV::ApplyBCs(bool primary, bool eliminate)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
 
@@ -298,7 +298,7 @@ void OperatorDiffusionFV::ApplyBCs(bool primary, bool eliminate)
 /* ******************************************************************
 * Calculate flux from cell-centered data
 ****************************************************************** */
-void OperatorDiffusionFV::UpdateFlux(
+void DiffusionFV::UpdateFlux(
     const CompositeVector& solution, CompositeVector& darcy_mass_flux)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
@@ -365,7 +365,7 @@ void OperatorDiffusionFV::UpdateFlux(
 * of the relative permeability wrt to capillary pressure. They must
 * be added to the existing matrix structure.
 ****************************************************************** */
-void OperatorDiffusionFV::AnalyticJacobian_(const CompositeVector& u)
+void DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
@@ -418,7 +418,7 @@ void OperatorDiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 * Computation of a local submatrix of the analytical Jacobian 
 * (its nonlinear part) on face f.
 ****************************************************************** */
-void OperatorDiffusionFV::ComputeJacobianLocal_(
+void DiffusionFV::ComputeJacobianLocal_(
     int mcells, int f, int face_dir_0to1, int bc_model_f, double bc_value_f,
     double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp)
 {
@@ -469,7 +469,7 @@ void OperatorDiffusionFV::ComputeJacobianLocal_(
 /* ******************************************************************
 * Compute transmissibilities on faces 
 ****************************************************************** */
-void OperatorDiffusionFV::ComputeTransmissibility_()
+void DiffusionFV::ComputeTransmissibility_()
 {
   Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
 
@@ -530,7 +530,7 @@ void OperatorDiffusionFV::ComputeTransmissibility_()
 /* ******************************************************************
 * Return transmissibility value on the given face f.
 ****************************************************************** */
-double OperatorDiffusionFV::ComputeTransmissibility(int f) const
+double DiffusionFV::ComputeTransmissibility(int f) const
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
   return trans_face[0][f];

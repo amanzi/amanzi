@@ -73,15 +73,15 @@ set(operators_inc_files
     Operator_Node.hh
     Operator_Edge.hh
     BoundaryFlux.hh
-    OperatorDiffusion.hh
-    OperatorDiffusionWithGravity.hh
-    OperatorDiffusionFactory.hh
-    OperatorDiffusionMFD.hh
-    OperatorDiffusionMFDwithGravity.hh
-    OperatorDiffusionFV.hh
-    OperatorDiffusionFVwithGravity.hh
-    OperatorDiffusionNLFV.hh
-    OperatorDiffusionNLFVwithGravity.hh
+    Diffusion.hh
+    DiffusionWithGravity.hh
+    DiffusionFactory.hh
+    DiffusionMFD.hh
+    DiffusionMFDwithGravity.hh
+    DiffusionFV.hh
+    DiffusionFVwithGravity.hh
+    DiffusionNLFV.hh
+    DiffusionNLFVwithGravity.hh
     OperatorElasticity.hh
     OperatorElectromagnetics.hh
     OperatorElectromagneticsMHD.hh
@@ -112,13 +112,13 @@ add_amanzi_library(operators
                           Operator_FaceCellSff.cc
                           Operator_ConsistentFace.cc
                           Operator_Schema.cc
-                          OperatorDiffusionMFD.cc
-                          OperatorDiffusionMFDwithGravity.cc
-                          OperatorDiffusionFV.cc
-                          OperatorDiffusionFVwithGravity.cc
-                          OperatorDiffusionNLFV.cc
-                          OperatorDiffusionNLFVwithGravity.cc
-                          OperatorDiffusionFactory.cc                   
+                          DiffusionMFD.cc
+                          DiffusionMFDwithGravity.cc
+                          DiffusionFV.cc
+                          DiffusionFVwithGravity.cc
+                          DiffusionNLFV.cc
+                          DiffusionNLFVwithGravity.cc
+                          DiffusionFactory.cc                   
                           OperatorElasticity.cc
                           OperatorElectromagnetics.cc
                           OperatorElectromagneticsMHD.cc

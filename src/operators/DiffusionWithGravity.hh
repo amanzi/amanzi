@@ -13,23 +13,23 @@
 #ifndef AMANZI_OPERATOR_DIFFUSION_WITH_GRAVITY_HH_
 #define AMANZI_OPERATOR_DIFFUSION_WITH_GRAVITY_HH_
 
-#include "OperatorDiffusion.hh"
+#include "Diffusion.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class OperatorDiffusionWithGravity : public virtual OperatorDiffusion {
+class DiffusionWithGravity : public virtual Diffusion {
  public:
-  OperatorDiffusionWithGravity(const Teuchos::RCP<Operator>& global_op) :
-      OperatorDiffusion(global_op),
+  DiffusionWithGravity(const Teuchos::RCP<Operator>& global_op) :
+      Diffusion(global_op),
       is_scalar_(false) {};
 
-  OperatorDiffusionWithGravity(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      OperatorDiffusion(mesh),
+  DiffusionWithGravity(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      Diffusion(mesh),
       is_scalar_(false) {};
 
-  OperatorDiffusionWithGravity(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      OperatorDiffusion(mesh),
+  DiffusionWithGravity(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+      Diffusion(mesh),
       is_scalar_(false) {};
 
   virtual void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }

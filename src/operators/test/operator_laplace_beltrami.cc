@@ -29,9 +29,9 @@
 #include "mfd3d_diffusion.hh"
 #include "Tensor.hh"
 
-// Operators
+// Amanzi::Operators
+#include "DiffusionMFD.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionMFD.hh"
 #include "Verification.hh"
 
 
@@ -103,7 +103,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   // create diffusion operator 
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator Sff");
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(olist, surfmesh));
+  Teuchos::RCP<Diffusion> op = Teuchos::rcp(new DiffusionMFD(olist, surfmesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
@@ -223,7 +223,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   // create diffusion operator 
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator Scc");
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(olist, surfmesh));
+  Teuchos::RCP<Diffusion> op = Teuchos::rcp(new DiffusionMFD(olist, surfmesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
@@ -343,7 +343,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   // create diffusion operator 
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator");
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(olist, surfmesh));
+  Teuchos::RCP<Diffusion> op = Teuchos::rcp(new DiffusionMFD(olist, surfmesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 

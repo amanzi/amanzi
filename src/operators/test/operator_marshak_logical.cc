@@ -26,17 +26,17 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "LinearOperatorFactory.hh"
 #include "MeshLogicalFactory.hh"
 #include "MeshLogical.hh"
 #include "mfd3d_diffusion.hh"
 #include "Tensor.hh"
 
-// Operators
-#include "LinearOperatorFactory.hh"
+// Amanzi::Operators
+#include "DiffusionFV.hh"
 #include "OperatorDefs.hh"
 #include "Operator.hh"
 #include "OperatorAccumulation.hh"
-#include "OperatorDiffusionFV.hh"
 #include "UpwindFlux.hh"
 
 #include "operator_marshak_testclass.hh"
@@ -160,7 +160,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
     // add diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
-    OperatorDiffusionFV op(olist, mesh);
+    DiffusionFV op(olist, mesh);
     op.SetBCs(bc, bc);
 
     int schema_dofs = op.schema_dofs();

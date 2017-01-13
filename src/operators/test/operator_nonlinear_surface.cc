@@ -29,11 +29,11 @@
 #include "mfd3d_diffusion.hh"
 #include "Tensor.hh"
 
-// Amanzi::Operators
+// Operators
+#include "DiffusionMFD.hh"
 #include "Operator.hh"
 #include "OperatorAccumulation.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionMFD.hh"
 #include "Verification.hh"
 
 namespace Amanzi{
@@ -182,7 +182,7 @@ void RunTest(std::string op_list_name) {
 
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                         .get<Teuchos::ParameterList>(op_list_name);
-    OperatorDiffusionMFD op(olist, surfmesh);
+    DiffusionMFD op(olist, surfmesh);
     op.SetBCs(bc, bc);
 
     // get the global operator

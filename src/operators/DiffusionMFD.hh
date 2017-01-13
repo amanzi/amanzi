@@ -23,18 +23,18 @@
 #include "DenseMatrix.hh"
 
 #include "BCs.hh"
+#include "Diffusion.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusion.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class OperatorDiffusionMFD : public virtual OperatorDiffusion {
+class DiffusionMFD : public virtual Diffusion {
  public:
-  OperatorDiffusionMFD(Teuchos::ParameterList& plist,
-                       const Teuchos::RCP<Operator>& global_op) :
-      OperatorDiffusion(global_op),
+  DiffusionMFD(Teuchos::ParameterList& plist,
+               const Teuchos::RCP<Operator>& global_op) :
+      Diffusion(global_op),
       plist_(plist),
       factor_(1.0)
   {
@@ -42,9 +42,9 @@ class OperatorDiffusionMFD : public virtual OperatorDiffusion {
     InitDiffusion_(plist);
   }
 
-  OperatorDiffusionMFD(Teuchos::ParameterList& plist,
-                       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      OperatorDiffusion(mesh),
+  DiffusionMFD(Teuchos::ParameterList& plist,
+               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      Diffusion(mesh),
       plist_(plist),
       factor_(1.0)
   {
@@ -52,9 +52,9 @@ class OperatorDiffusionMFD : public virtual OperatorDiffusion {
     InitDiffusion_(plist);
   }
 
-  OperatorDiffusionMFD(Teuchos::ParameterList& plist,
-                       const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      OperatorDiffusion(mesh),
+  DiffusionMFD(Teuchos::ParameterList& plist,
+               const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+      Diffusion(mesh),
       plist_(plist),
       factor_(1.0)
   {

@@ -17,8 +17,8 @@
 #include "nlfv.hh"
 #include "ParallelCommunication.hh"
 
+#include "DiffusionNLFV.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionNLFV.hh"
 #include "Op_Face_Cell.hh"
 #include "Operator_Cell.hh"
 
@@ -28,7 +28,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialization
 ****************************************************************** */
-void OperatorDiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
+void DiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
 {
   // Define stencil for the FV diffusion method.
   local_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
@@ -63,13 +63,13 @@ void OperatorDiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
   if (uwname == "none") {
     little_k_ = OPERATOR_LITTLE_K_NONE;
   // } else {
-  //   msg << "OperatorDiffusionNLFV: unknown or not supported upwind scheme specified.";
+  //   msg << "DiffusionNLFV: unknown or not supported upwind scheme specified.";
   //   Exceptions::amanzi_throw(msg);
   }
 
   // DEPRECATED INPUT -- remove this error eventually --etc
   if (plist.isParameter("newton correction")) {
-    msg << "OperatorDiffusionNLFV: DEPRECATED: \"newton correction\" has been removed in favor of \"Newton correction\"";
+    msg << "DiffusionNLFV: DEPRECATED: \"newton correction\" has been removed in favor of \"Newton correction\"";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -86,10 +86,10 @@ void OperatorDiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
     global_op_->OpPushBack(jac_op_);
   } else if (jacobian == "true Jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
-    Errors::Message msg("OperatorDiffusionNLFV: \"true Jacobian\" not supported -- maybe you mean \"approximate Jacobian\"?");
+    Errors::Message msg("DiffusionNLFV: \"true Jacobian\" not supported -- maybe you mean \"approximate Jacobian\"?");
     Exceptions::amanzi_throw(msg);
   } else {
-    msg << "OperatorDiffusionNLFV: invalid parameter \"" << jacobian << "\" for option \"Newton correction\" -- valid are: \"none\", \"approximate Jacobian\"";
+    msg << "DiffusionNLFV: invalid parameter \"" << jacobian << "\" for option \"Newton correction\" -- valid are: \"none\", \"approximate Jacobian\"";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -110,7 +110,7 @@ void OperatorDiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
 * Setup methods: krel and dkdp must be called after calling a
 * setup with K absolute
 ****************************************************************** */
-void OperatorDiffusionNLFV::SetScalarCoefficient(
+void DiffusionNLFV::SetScalarCoefficient(
     const Teuchos::RCP<const CompositeVector>& k,
     const Teuchos::RCP<const CompositeVector>& dkdp)
 {
@@ -133,7 +133,7 @@ void OperatorDiffusionNLFV::SetScalarCoefficient(
 * and the positive decomposition of face conormals. The face-based
 * data from left and right cells are ordered by the global cells ids.
 ****************************************************************** */
-void OperatorDiffusionNLFV::InitStencils_()
+void DiffusionNLFV::InitStencils_()
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
 
@@ -290,7 +290,7 @@ void OperatorDiffusionNLFV::InitStencils_()
 * on boundary faces. We avoid round-off operations since the stencils 
 * already incorporate them.
 ****************************************************************** */
-void OperatorDiffusionNLFV::UpdateMatrices(
+void DiffusionNLFV::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
@@ -418,7 +418,7 @@ void OperatorDiffusionNLFV::UpdateMatrices(
 * Modify operator by adding an upwind approximation of the Newton 
 * correction term.
 ****************************************************************** */
-void OperatorDiffusionNLFV::UpdateMatricesNewtonCorrection(
+void DiffusionNLFV::UpdateMatricesNewtonCorrection(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u, double scalar_limiter)
 {
@@ -476,7 +476,7 @@ void OperatorDiffusionNLFV::UpdateMatricesNewtonCorrection(
 /* ******************************************************************
 * Calculate one-sided fluxes (i0=0) or flux corrections (i0=1).
 ****************************************************************** */
-double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
+double DiffusionNLFV::OneSidedFluxCorrections_(
   int i0, const CompositeVector& u, CompositeVector& flux_cv) 
 {
   // un-rolling composite vectors
@@ -550,7 +550,7 @@ double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
 /* ******************************************************************
 * Matrix-based implementation of boundary conditions.
 ****************************************************************** */
-void OperatorDiffusionNLFV::ApplyBCs(bool primary, bool eliminate)
+void DiffusionNLFV::ApplyBCs(bool primary, bool eliminate)
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
@@ -589,7 +589,7 @@ void OperatorDiffusionNLFV::ApplyBCs(bool primary, bool eliminate)
 /* ******************************************************************
 * Calculate flux using cell-centered data.
 * **************************************************************** */
-void OperatorDiffusionNLFV::UpdateFlux(const CompositeVector& u, CompositeVector& flux) 
+void DiffusionNLFV::UpdateFlux(const CompositeVector& u, CompositeVector& flux) 
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
@@ -629,7 +629,7 @@ void OperatorDiffusionNLFV::UpdateFlux(const CompositeVector& u, CompositeVector
 /* ******************************************************************
 * Order cells by their global ids. Returns 1 if cells were swapped.
 ****************************************************************** */
-int OperatorDiffusionNLFV::OrderCellsByGlobalId_(
+int DiffusionNLFV::OrderCellsByGlobalId_(
     const AmanziMesh::Entity_ID_List& cells, int& c1, int& c2)
 {
   c1 = cells[0];

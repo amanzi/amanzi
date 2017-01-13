@@ -33,17 +33,16 @@
 // Operators
 #include "OperatorDefs.hh"
 #include "BCs.hh"
+#include "DiffusionMFD.hh"
+#include "DiffusionFV.hh"
+#include "DiffusionFactory.hh"
 #include "TreeOperator.hh"
-#include "OperatorDiffusionMFD.hh"
-#include "OperatorDiffusionFV.hh"
-#include "OperatorDiffusionFactory.hh"
 
 // test classes
 #include "AnalyticNonlinearCoupled00.hh"
 #include "AnalyticNonlinearCoupledBase.hh"
 
 using namespace Amanzi;
-
 
 int BoundaryFaceGetCell(const AmanziMesh::Mesh& mesh, int f)
 {
@@ -429,7 +428,7 @@ struct Problem {
   
   
   void CreateBlockOperators(bool upwind) {
-    Operators::OperatorDiffusionFactory fac;
+    Operators::DiffusionFactory fac;
     Teuchos::RCP<const AmanziMesh::Mesh> mesh_c = mesh;
 
     Teuchos::ParameterList op_list00;
@@ -458,7 +457,7 @@ struct Problem {
 
 
   void CreateBlockPCs(bool jac_ondiag, bool jac_offdiag, bool upwind) {
-    Operators::OperatorDiffusionFactory fac;
+    Operators::DiffusionFactory fac;
     Teuchos::RCP<const AmanziMesh::Mesh> mesh_c = mesh;
 
     Teuchos::ParameterList op_list00;
@@ -620,8 +619,6 @@ struct Problem {
     }      
     fid.close();
   }
-
-
   
  public:
   Teuchos::RCP<Operators::BCs> bc0;
@@ -643,13 +640,13 @@ struct Problem {
   Teuchos::RCP<CompositeVector> q0;
   Teuchos::RCP<CompositeVector> q1;
   
-  Teuchos::RCP<Operators::OperatorDiffusion> op00;
-  Teuchos::RCP<Operators::OperatorDiffusion> op11;
+  Teuchos::RCP<Operators::Diffusion> op00;
+  Teuchos::RCP<Operators::Diffusion> op11;
 
-  Teuchos::RCP<Operators::OperatorDiffusion> pc00;
-  Teuchos::RCP<Operators::OperatorDiffusion> pc11;
-  Teuchos::RCP<Operators::OperatorDiffusion> pc01;
-  Teuchos::RCP<Operators::OperatorDiffusion> pc10;
+  Teuchos::RCP<Operators::Diffusion> pc00;
+  Teuchos::RCP<Operators::Diffusion> pc11;
+  Teuchos::RCP<Operators::Diffusion> pc01;
+  Teuchos::RCP<Operators::Diffusion> pc10;
 
   Teuchos::RCP<Operators::TreeOperator> op;
   Teuchos::RCP<Operators::TreeOperator> pc;
@@ -664,10 +661,9 @@ struct Problem {
 };
 
 
-Teuchos::RCP<Problem>
-getProblem(const std::string& discretization,
-               bool upwind,
-               int nx, int ny) {
+Teuchos::RCP<Problem> getProblem(const std::string& discretization,
+                                 bool upwind,
+                                 int nx, int ny) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;

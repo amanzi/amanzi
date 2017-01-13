@@ -3153,13 +3153,13 @@ Operators
 .........
 
 This section contains sublist for diffusion and advection operators.
-It also has one global parameters.
+It also has one global parameter.
 
 * `"operators`" [list] 
-  
+
   * `"include enthalpy in preconditioner`" [bool] allows us to study impact (usually positive) 
     of including enthalpy term in the preconditioner. Default value is *true*.
-
+  
   * `"diagonal shift`" [double] allows for a constant shift to be applied to
     the diagonal of the assembled operator, which can b useful for dealing
     with singular or near-singular matrices.  Default is *0.0*.
@@ -3417,16 +3417,17 @@ Operators
 
 Operators are discrete forms of linearized PDEs operators.
 They form a layer between physical process kernels and solvers
-and include diffusion, advection, and source operators.
+and include diffusion, advection, elasticity, and source operators.
 A PK decides which collection of operators must be used to build a preconditioner.
 
-Operators use a few generic tools that are generic in nature and can be used 
-independently by PKs. 
+Operators use a few tools that are generic in nature and can be used independently by PKs. 
 The list includes reconstruction and limiting algorithms. 
 
 
 Diffusion operator
 ..................
+
+Diffusion is the most frequently used operator.
 
 * `"OPERATOR_NAME`" [list] a PK specific name for the diffusion operator.
 
@@ -3526,9 +3527,9 @@ This section is under construction.
 
 * `"OPERATOR_NAME`" [list] a PK specific name for the advection operator.
 
-  * `"discretization primary`" defines a discretization method. The only available option is `"upwind`".
+  * `"discretization primary`" [string] defines a discretization method. The only available option is `"upwind`".
 
-  * `"reconstruction order`" defines accuracy of this discrete operator.
+  * `"reconstruction order`" [int] defines accuracy of this discrete operator.
 
 .. code-block:: xml
 
@@ -3536,6 +3537,58 @@ This section is under construction.
     <Parameter name="discretization primary" type="string" value="upwind"/>
     <Parameter name="reconstruction order" type="int" value="0"/>
   </ParameterList>
+
+
+Elasticity operator
+...................
+
+Elasticity operator is used for describing soil deformation or fluid flow (Stokes 
+and Navier-Stokes).
+
+* `"schema`" [list] defines a discretization schema.
+
+  * `"location`" [Array(string)] defines geometric location of degrees of freedom.
+
+  * `"type`" [Array(string)] defines type of degrees of freedom. The available options 
+    are `"scalar`" and `"normal component`".
+
+  * `"number`" [Array(int)] indicates how many time this degree of freedom is repeated.
+
+.. code-block:: xml
+
+    <ParameterList name="elasticity operator">
+      <ParameterList name="schema">
+        <Parameter name="location" type="Array(string)" value="{node, face}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+        <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+      </ParameterList>
+    </ParameterList>
+
+
+Divergence operator
+...................
+
+Divergence operator has different domain and range and therefore requires two schemas.
+The structure of the schema is described in the previous section.
+
+* `"schema domain`" [list] defines a discretization schema for the operator domain.
+
+* `"schema range`" [list] defines a discretization schema for the operator range
+
+.. code-block:: xml
+
+    <ParameterList name="elasticity operator">
+      <ParameterList name="schema domain">
+        <Parameter name="location" type="Array(string)" value="{node, face}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+        <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+      </ParameterList>
+      <ParameterList name="schema range">
+        <Parameter name="location" type="Array(string)" value="{cell}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar}"/>
+        <Parameter name="number" type="Array(int)" value="{1}"/>
+      </ParameterList>
+    </ParameterList>
 
 
 Reconstruction and limiters

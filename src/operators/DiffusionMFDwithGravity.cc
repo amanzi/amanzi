@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionMFDwithGravity.hh"
+#include "DiffusionMFDwithGravity.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -20,11 +20,11 @@ namespace Operators {
 /* ******************************************************************
 * Add a gravity term to the diffusion operator.
 ****************************************************************** */
-void OperatorDiffusionMFDwithGravity::UpdateMatrices(
+void DiffusionMFDwithGravity::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
-  OperatorDiffusionMFD::UpdateMatrices(flux, u);
+  DiffusionMFD::UpdateMatrices(flux, u);
 
   ASSERT(little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN_GRAD);
   AddGravityToRHS_();
@@ -34,7 +34,7 @@ void OperatorDiffusionMFDwithGravity::UpdateMatrices(
 /* ******************************************************************
 * Add a gravity term to the RHS of the operator
 ****************************************************************** */
-void OperatorDiffusionMFDwithGravity::AddGravityToRHS_()
+void DiffusionMFDwithGravity::AddGravityToRHS_()
 {
   // vector or scalar rho?
   const Epetra_MultiVector* rho_c = NULL;
@@ -158,11 +158,11 @@ void OperatorDiffusionMFDwithGravity::AddGravityToRHS_()
 * WARNING: Since gravity flux is not continuous, we derive it only once
 * (using flag) and in exactly the same manner as in other routines.
 * **************************************************************** */
-void OperatorDiffusionMFDwithGravity::UpdateFlux(
+void DiffusionMFDwithGravity::UpdateFlux(
     const CompositeVector& u, CompositeVector& flux)
 {
   // Calculate diffusive part of the flux.
-  OperatorDiffusionMFD::UpdateFlux(u, flux);
+  DiffusionMFD::UpdateFlux(u, flux);
 
   // vector or scalar rho?
   const Epetra_MultiVector* rho_c = NULL;
@@ -267,7 +267,7 @@ void OperatorDiffusionMFDwithGravity::UpdateFlux(
 /* ******************************************************************
 * Put here stuff that has to be done in constructor, i.e. only once.
 ****************************************************************** */
-void OperatorDiffusionMFDwithGravity::Init_(Teuchos::ParameterList& plist)
+void DiffusionMFDwithGravity::Init_(Teuchos::ParameterList& plist)
 {
   gravity_special_projection_ = (mfd_primary_ == WhetStone::DIFFUSION_TPFA);
 
@@ -284,7 +284,7 @@ void OperatorDiffusionMFDwithGravity::Init_(Teuchos::ParameterList& plist)
 * Compute non-normalized unsigned direction to the next cell needed
 * to project gravity vector in the MFD-TPFA discretization method.
 ****************************************************************** */
-AmanziGeometry::Point OperatorDiffusionMFDwithGravity::GravitySpecialDirection_(int f) const
+AmanziGeometry::Point DiffusionMFDwithGravity::GravitySpecialDirection_(int f) const
 {
   AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -301,7 +301,7 @@ AmanziGeometry::Point OperatorDiffusionMFDwithGravity::GravitySpecialDirection_(
 /* ******************************************************************
 * Return value of the gravity flux on the given face f.
 ****************************************************************** */
-double OperatorDiffusionMFDwithGravity::ComputeGravityFlux(int f) const
+double DiffusionMFDwithGravity::ComputeGravityFlux(int f) const
 {
   AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);

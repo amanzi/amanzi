@@ -32,8 +32,9 @@
 #include "Analytic01.hh"
 #include "Analytic02.hh"
 #include "BCs.hh"
+#include "DiffusionMFD.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionMFD.hh"
+
 
 /* *****************************************************************
 * This test replaves tensor and boundary conditions by continuous
@@ -130,7 +131,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     // create the local diffusion operator
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
                                         .get<Teuchos::ParameterList>("mixed diffusion");
-    OperatorDiffusionMFD op2(olist, mesh);
+    DiffusionMFD op2(olist, mesh);
     op2.SetBCs(bc, bc);
 
     int schema_dofs = op2.schema_dofs();
@@ -290,7 +291,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     // create the local diffusion operator
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
                                         .get<Teuchos::ParameterList>("nodal diffusion");
-    OperatorDiffusionMFD op2(olist, mesh);
+    DiffusionMFD op2(olist, mesh);
     op2.SetBCs(bc, bc);
 
     int schema_dofs = op2.schema_dofs();

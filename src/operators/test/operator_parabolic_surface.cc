@@ -30,10 +30,10 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
+#include "DiffusionMFD.hh"
 #include "Operator.hh"
 #include "OperatorAccumulation.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionMFD.hh"
 #include "Verification.hh"
 
 
@@ -125,7 +125,7 @@ void RunTest(std::string op_list_name) {
   // add the diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>(op_list_name);
-  OperatorDiffusionMFD op(olist, surfmesh);
+  DiffusionMFD op(olist, surfmesh);
   op.SetBCs(bc, bc);
   op.Setup(K, Teuchos::null, Teuchos::null);
   op.UpdateMatrices(Teuchos::null, Teuchos::null);

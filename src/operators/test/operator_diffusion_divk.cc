@@ -31,8 +31,8 @@
 #include "Analytic03.hh"
 #include "HeatConduction.hh"
 
+#include "DiffusionMFD.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionMFD.hh"
 #include "UpwindSecondOrder.hh"
 #include "UpwindFlux.hh"
 
@@ -101,7 +101,7 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
+  Teuchos::RCP<Diffusion> op = Teuchos::rcp(new DiffusionMFD(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
@@ -268,7 +268,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   // create diffusion operator 
   Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator divk");
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
+  Teuchos::RCP<Diffusion> op = Teuchos::rcp(new DiffusionMFD(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 

@@ -20,10 +20,10 @@
 
 // Amanzi
 #include "CompositeVector.hh"
+#include "Diffusion.hh"
 #include "Operator.hh"
 #include "OperatorAccumulation.hh"
 #include "OperatorAdvection.hh"
-#include "OperatorDiffusion.hh"
 #include "PK.hh"
 #include "PK_BDF.hh"
 #include "PK_DomainFunction.hh"
@@ -133,7 +133,7 @@ class Energy_PK : public PK_PhysicalBDF {
   int dirichlet_bc_faces_;
 
   // operators and solvers
-  Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_diff_, op_preconditioner_diff_;
+  Teuchos::RCP<Operators::Diffusion> op_matrix_diff_, op_preconditioner_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
   Teuchos::RCP<Operators::OperatorAdvection> op_matrix_advection_, op_preconditioner_advection_;
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_, op_advection_;

@@ -30,10 +30,10 @@
 #include "Tensor.hh"
 
 // Operators
+#include "DiffusionFactory.hh"
 #include "Operator.hh"
 #include "OperatorAccumulation.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionFactory.hh"
 #include "UpwindFlux.hh"
 
 #include "operator_marshak_testclass.hh"
@@ -158,8 +158,8 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
     // add diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
-    OperatorDiffusionFactory diff_factory;
-    Teuchos::RCP<OperatorDiffusion> op = diff_factory.Create(olist, mesh, bc);
+    DiffusionFactory diff_factory;
+    Teuchos::RCP<Diffusion> op = diff_factory.Create(olist, mesh, bc);
 
     int schema_dofs = op->schema_dofs();
     int schema_prec_dofs = op->schema_prec_dofs();

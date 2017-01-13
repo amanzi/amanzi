@@ -11,8 +11,8 @@
 
 #include <vector>
 
+#include "Diffusion.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusion.hh"
 
 #include "Darcy_PK.hh"
 #include "LinearOperatorFactory.hh"

@@ -27,13 +27,12 @@
 #include "Tensor.hh"
 
 // Operators
-#include "HeatConduction.hh"
-
+#include "Diffusion.hh"
+#include "DiffusionFactory.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusion.hh"
-#include "OperatorDiffusionFactory.hh"
 #include "UpwindFlux.hh"
 
+#include "HeatConduction.hh"
 
 /* *****************************************************************
 * Comparison of gravity models with constant and vector density.
@@ -118,14 +117,14 @@ void RunTestGravity(std::string op_list_name) {
   upwind.Compute(*flux, u, bc_model, bc_value, *knc->values(), func);
 
   // create first diffusion operator using constant density
-  Operators::OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op1 = opfactory.Create(op_list, mesh, bc, rho, g);
+  Operators::DiffusionFactory opfactory;
+  Teuchos::RCP<Diffusion> op1 = opfactory.Create(op_list, mesh, bc, rho, g);
 
   op1->Setup(K, knc->values(), knc->derivatives());
   op1->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // create and populate the second operator using vector density
-  Teuchos::RCP<OperatorDiffusion> op2 = opfactory.Create(op_list, mesh, bc, rho_cv, g);
+  Teuchos::RCP<Diffusion> op2 = opfactory.Create(op_list, mesh, bc, rho_cv, g);
 
   op2->Setup(K, knc->values(), knc->derivatives());
   op2->UpdateMatrices(flux.ptr(), Teuchos::null);

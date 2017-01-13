@@ -16,8 +16,8 @@
 #include "DenseMatrix.hh"
 
 // Operators
+#include "DiffusionNLFVwithGravity.hh"
 #include "Op_Face_Cell.hh"
-#include "OperatorDiffusionNLFVwithGravity.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -25,7 +25,7 @@ namespace Operators {
 /* ******************************************************************
 * Populate face-based matrices.
 ****************************************************************** */
-void OperatorDiffusionNLFVwithGravity::UpdateMatrices(
+void DiffusionNLFVwithGravity::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
@@ -40,7 +40,7 @@ void OperatorDiffusionNLFVwithGravity::UpdateMatrices(
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
   }
 
-  OperatorDiffusionNLFV::UpdateMatrices(flux, hh.ptr());
+  DiffusionNLFV::UpdateMatrices(flux, hh.ptr());
 
   // add gravity fluxes to the right-hand side.
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
@@ -82,7 +82,7 @@ void OperatorDiffusionNLFVwithGravity::UpdateMatrices(
 /* ******************************************************************
 * Calculate flux using cell-centered data.
 * **************************************************************** */
-void OperatorDiffusionNLFVwithGravity::UpdateFlux(
+void DiffusionNLFVwithGravity::UpdateFlux(
     const CompositeVector& u, CompositeVector& flux) 
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
@@ -99,14 +99,14 @@ void OperatorDiffusionNLFVwithGravity::UpdateFlux(
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
   }
 
-  OperatorDiffusionNLFV::UpdateFlux(hh, flux);
+  DiffusionNLFV::UpdateFlux(hh, flux);
 }
 
 
 /* ******************************************************************
 * BCs are typically given in base system and must be re-mapped.
 * **************************************************************** */
-double OperatorDiffusionNLFVwithGravity::MapBoundaryValue_(int f, double u)
+double DiffusionNLFVwithGravity::MapBoundaryValue_(int f, double u)
 {
   double rho_g = rho_ * fabs(g_[dim_ - 1]); 
   double zf = (mesh_->face_centroid(f))[dim_ - 1];

@@ -31,9 +31,9 @@
 namespace Amanzi {
 namespace Operators {
 
-class OperatorDiffusion {
+class Diffusion {
  public:
-  OperatorDiffusion(const Teuchos::RCP<Operator>& global_op) :
+  Diffusion(const Teuchos::RCP<Operator>& global_op) :
       global_op_(global_op),
       K_(Teuchos::null),
       k_(Teuchos::null),
@@ -46,7 +46,7 @@ class OperatorDiffusion {
       nnodes_wghost(-1)
   {};
 
-  OperatorDiffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+  Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       mesh_(mesh),
       K_(Teuchos::null),
       k_(Teuchos::null),
@@ -59,7 +59,7 @@ class OperatorDiffusion {
       nnodes_wghost(-1)
   {};
 
-  OperatorDiffusion(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+  Diffusion(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
       mesh_(mesh),
       K_(Teuchos::null),
       k_(Teuchos::null),
@@ -138,7 +138,7 @@ class OperatorDiffusion {
 
   // -- working with consistent faces -- may not be implemented
   virtual int UpdateConsistentFaces(CompositeVector& u) {
-    Errors::Message msg("OperatorDiffusion: This diffusion implementation does not support working with consistent faces.");
+    Errors::Message msg("Diffusion: This diffusion implementation does not support working with consistent faces.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }

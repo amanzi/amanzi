@@ -25,35 +25,35 @@
 #include "Preconditioner.hh"
 
 // Operators
-#include "OperatorDiffusionNLFV.hh"
-#include "OperatorDiffusionWithGravity.hh"
+#include "DiffusionNLFV.hh"
+#include "DiffusionWithGravity.hh"
 
 namespace Amanzi {
 namespace Operators {
 
 class BCs;
 
-class OperatorDiffusionNLFVwithGravity : public OperatorDiffusionNLFV,
-                                         public OperatorDiffusionWithGravity {
+class DiffusionNLFVwithGravity : public DiffusionNLFV,
+                                 public DiffusionWithGravity {
  public:
-  OperatorDiffusionNLFVwithGravity(Teuchos::ParameterList& plist,
-                                   const Teuchos::RCP<Operator>& global_op,
-                                   double rho, const AmanziGeometry::Point& g) :
-      OperatorDiffusionNLFV(plist, global_op),
-      OperatorDiffusionWithGravity(global_op),
-      OperatorDiffusion(global_op)
+  DiffusionNLFVwithGravity(Teuchos::ParameterList& plist,
+                           const Teuchos::RCP<Operator>& global_op,
+                           double rho, const AmanziGeometry::Point& g) :
+      DiffusionNLFV(plist, global_op),
+      DiffusionWithGravity(global_op),
+      Diffusion(global_op)
   {
     operator_type_ = OPERATOR_DIFFUSION_NLFV_GRAVITY;
     SetGravity(g);
     SetDensity(rho);
   }
 
-  OperatorDiffusionNLFVwithGravity(Teuchos::ParameterList& plist,
-                                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                                   double rho, const AmanziGeometry::Point& g) :
-      OperatorDiffusionNLFV(plist, mesh),
-      OperatorDiffusionWithGravity(mesh),
-      OperatorDiffusion(mesh)
+  DiffusionNLFVwithGravity(Teuchos::ParameterList& plist,
+                           const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                           double rho, const AmanziGeometry::Point& g) :
+      DiffusionNLFV(plist, mesh),
+      DiffusionWithGravity(mesh),
+      Diffusion(mesh)
   {
     operator_type_ = OPERATOR_DIFFUSION_NLFV_GRAVITY;
     SetGravity(g);

@@ -23,19 +23,19 @@
 #include "BoundaryFlux.hh"
 #include "CommonDefs.hh"
 #include "dbc.hh"
+#include "DiffusionFactory.hh"
 #include "exceptions.hh"
 #include "independent_variable_field_evaluator_fromfunction.hh"
 #include "Mesh.hh"
 #include "mfd3d_diffusion.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionFactory.hh"
 #include "PK_Utils.hh"
 #include "Point.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "UpwindFactory.hh"
 #include "XMLParameterListWriter.hh"
 
-// Flow
+// Amanzi::Flow
 #include "DarcyVelocityEvaluator.hh"
 #include "PorosityModelEvaluator.hh"
 #include "RelPermEvaluator.hh"
@@ -436,7 +436,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   oplist_matrix.set<std::string>("nonlinear coefficient", nonlinear_coef);
   oplist_pc.set<std::string>("nonlinear coefficient", nonlinear_coef);
 
-  Operators::OperatorDiffusionFactory opfactory;
+  Operators::DiffusionFactory opfactory;
   op_matrix_diff_ = opfactory.Create(oplist_matrix, mesh_, op_bc_, rho_, gravity_);
   op_matrix_ = op_matrix_diff_->global_operator();
   op_preconditioner_diff_ = opfactory.Create(oplist_pc, mesh_, op_bc_, rho_, gravity_);

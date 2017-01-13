@@ -55,11 +55,14 @@ class MFD3D_Elasticity : public MFD3D {
   int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);
   int StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A);
 
-  // complex sets of DOFs
+  // complex DOFs
   // -- vectors at nodes, comal components on faces
   int H1consistencyNode2Face1(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
 
   int StiffnessMatrixNode2Face1(int c, const Tensor& K, DenseMatrix& A);
+
+  // divergence operator
+  int DivergenceMatrixNode2Face1(int c, DenseMatrix& A);
 
  private:
   void MatrixMatrixProduct_(

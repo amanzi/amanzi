@@ -16,11 +16,11 @@
 #include "Epetra_Vector.h"
 #include "boost/algorithm/string.hpp"
 
+#include "DiffusionFactory.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 #include "LinearOperatorFactory.hh"
 #include "mfd3d_diffusion.hh"
-#include "OperatorDiffusionFactory.hh"
 #include "TimestepControllerFactory.hh"
 #include "Tensor.hh"
 
@@ -282,7 +282,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList& oplist = dp_list_->sublist("operators")
                                             .sublist("diffusion operator")
                                             .sublist("matrix");
-  Operators::OperatorDiffusionFactory opfactory;
+  Operators::DiffusionFactory opfactory;
   op_diff_ = opfactory.Create(oplist, mesh_, op_bc_, rho_ * rho_ / mu, gravity_);
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
   op_diff_->SetBCs(op_bc_, op_bc_);

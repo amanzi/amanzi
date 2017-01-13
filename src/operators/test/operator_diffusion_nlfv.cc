@@ -27,13 +27,14 @@
 #include "LinearOperatorFactory.hh"
 #include "Tensor.hh"
 
-// Operators
+// Amanzi::Operators
 #include "Analytic01.hh"
 #include "Analytic02.hh"
 
+#include "DiffusionNLFVwithGravity.hh"
 #include "OperatorAccumulation.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionNLFVwithGravity.hh"
+
 
 /* *****************************************************************
 * Nonlinear finite volume scheme.
@@ -105,7 +106,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   // create diffusion operator 
   double rho(1.0);
   AmanziGeometry::Point g(0.0, -gravity);
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionNLFVwithGravity(op_list, mesh, rho, g));
+  Teuchos::RCP<Diffusion> op = Teuchos::rcp(new DiffusionNLFVwithGravity(op_list, mesh, rho, g));
   Teuchos::RCP<Operator> global_op = op->global_operator();
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = global_op->DomainMap();
