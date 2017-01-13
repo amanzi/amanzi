@@ -91,7 +91,7 @@ void Coordinator::coordinator_init() {
   int size = comm_->NumProc();
   std::stringstream check;
   
-  if (pks_list->sublist("top level MPC").isParameter("coupling key"))
+  if(parameter_list_->sublist("mesh").isSublist("column meshes"))  
     check << "checkpoint " << rank;
   else
     check << "checkpoint";
@@ -99,7 +99,7 @@ void Coordinator::coordinator_init() {
   // create the checkpointing
 
   Teuchos::ParameterList& chkp_plist = parameter_list_->sublist(check.str());
-  if (pks_list->sublist("top level MPC").isParameter("coupling key") && size >1){
+  if (parameter_list_->sublist("mesh").isSublist("column meshes") && size >1){
     MPI_Comm mpi_comm_self(MPI_COMM_SELF);
     Epetra_MpiComm *comm_self = new Epetra_MpiComm(mpi_comm_self);
     checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_self));
@@ -208,7 +208,17 @@ void Coordinator::initialize() {
     Teuchos::RCP<Amanzi::Visualization> vis = Teuchos::rcp(new Amanzi::Visualization(vis_plist, comm_));
     vis->set_mesh(surface_3d);
 
-    //vis->CreateFiles();
+     //should be removed in future -- xmdf does not work for general polyhdera, and 3D silo gives error "3D not tested yet!!"
+    if (parameter_list_->sublist("PKs").sublist("top level MPC").isParameter("coupling key")){
+      //vis->CreateFiles();
+      vis->set_mesh(surface);
+      vis->CreateFiles();
+    }
+     else{
+       vis->CreateFiles();
+       vis->set_mesh(surface);
+     }
+    
     vis->set_mesh(surface);
     vis->CreateFiles();
 

@@ -69,6 +69,10 @@ void OverlandPressureFlow::Functional( double t_old,
   vnames.push_back("h_old");
   vnames.push_back("h_new");
   vnames.push_back("h+z");
+  if(plist_->get<bool>("subgrid model", false)){
+    vnames.push_back("pdd");
+    vnames.push_back("frac_cond"); 
+  }
 
   std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
   vecs.push_back(S_inter_->GetFieldData(key_).ptr());
@@ -79,6 +83,10 @@ void OverlandPressureFlow::Functional( double t_old,
   vecs.push_back(S_next_->GetFieldData(getKey(domain_,"ponded_depth")).ptr());
   vecs.push_back(S_next_->GetFieldData(getKey(domain_,"pres_elev")).ptr());
 
+  if(plist_->get<bool>("subgrid model", false)){
+    vecs.push_back(S_next_->GetFieldData(getKey(domain_,"ponded_depression_depth")).ptr());
+    vecs.push_back(S_next_->GetFieldData(getKey(domain_,"fractional_conductance")).ptr());
+  }
 
   db_->WriteVectors(vnames, vecs, true);
 #endif

@@ -100,7 +100,7 @@ void SurfaceIceEnergyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       ->ViewComponent("cell",false);
 
   Epetra_MultiVector& result_v = *result->ViewComponent("cell",false);
-
+ 
   int ncells = result_v.MyLength();
   for (int c=0; c!=ncells; ++c) {
     result_v[0][c] = height[0][c] * ( eta[0][c] * n_l[0][c] * u_l[0][c]

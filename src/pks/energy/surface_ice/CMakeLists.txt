@@ -16,6 +16,7 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 
 add_library(pk_energy_surface_ice
   surface_ice_energy_evaluator.cc
+  surface_subgrid_ice_energy_evaluator.cc
   energy_surface_ice.cc)
 
 install(TARGETS pk_energy_surface_ice DESTINATION lib)

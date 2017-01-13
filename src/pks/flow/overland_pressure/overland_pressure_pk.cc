@@ -30,6 +30,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "overland_conductivity_evaluator.hh"
 #include "overland_conductivity_model.hh"
 #include "overland_pressure_water_content_evaluator.hh"
+#include "overland_subgrid_water_content_evaluator.hh"
 #include "height_model.hh"
 #include "height_evaluator.hh"
 #include "overland_source_from_subsurface_flux_evaluator.hh"
@@ -153,10 +154,10 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   if (coef_location == "upwind: face") {  
 
     S->RequireField(getKey(domain_,"upwind_overland_conductivity"), name_)->SetMesh(mesh_)
-        ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
+      ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
   } else if (coef_location == "standard: cell") {
     S->RequireField(getKey(domain_,"upwind_overland_conductivity"), name_)->SetMesh(mesh_)
-        ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
   } else {
     Errors::Message message("Unknown upwind coefficient location in overland flow.");
     Exceptions::amanzi_throw(message);
@@ -279,6 +280,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   patm_limit_ = plist_->get<double>("limit correction when crossing atmospheric pressure [Pa]", -1.);
 
+  subgrid_model_ =  plist_->get<bool>("subgrid model", false);
   
 };
 
@@ -351,10 +353,17 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
       plist_->sublist("overland water content evaluator");
   Teuchos::ParameterList wcbar_plist(wc_plist);
   wcbar_plist.set<bool>("water content bar", true);
-  Teuchos::RCP<FlowRelations::OverlandPressureWaterContentEvaluator> wc_evaluator =
-      Teuchos::rcp(new FlowRelations::OverlandPressureWaterContentEvaluator(wcbar_plist));
 
-  S->SetFieldEvaluator(getKey(domain_,"water_content_bar"), wc_evaluator);
+  if(!subgrid_model_){
+    Teuchos::RCP<FlowRelations::OverlandPressureWaterContentEvaluator> wc_evaluator =
+      Teuchos::rcp(new FlowRelations::OverlandPressureWaterContentEvaluator(wcbar_plist));
+    S->SetFieldEvaluator(getKey(domain_,"water_content_bar"), wc_evaluator);
+  }
+  else {
+    Teuchos::RCP<FlowRelations::OverlandSubgridWaterContentEvaluator> wc_evaluator =
+      Teuchos::rcp(new FlowRelations::OverlandSubgridWaterContentEvaluator(wcbar_plist));
+    S->SetFieldEvaluator(getKey(domain_,"water_content_bar"), wc_evaluator);
+  }
 
   // -- ponded depth
   S->RequireField(getKey(domain_,"ponded_depth"))->Update(matrix_->RangeMap())->SetGhosted();
@@ -383,6 +392,12 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
       Teuchos::rcp(new FlowRelations::OverlandConductivityEvaluator(cond_plist));
 
   S->SetFieldEvaluator(getKey(domain_,"overland_conductivity"), cond_evaluator);
+
+   if (domain_ == "surface_star"){
+    S->RequireField(getKey(domain_,"mass_density_ice"))->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator(getKey(domain_,"mass_density_ice"));
+  }
 
 }
 

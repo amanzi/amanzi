@@ -26,6 +26,10 @@ public:
 
   virtual double DConductivityDDepth(double depth, double slope, double coef);
 
+  //Added for the subgrid Model
+  virtual double Conductivity(double depth, double slope, double coef, double pd_depth, double frac_cond);  
+  virtual double DConductivityDDepth(double depth, double slope, double coef, double pd_depth, double frac);
+
 protected:
   Teuchos::ParameterList plist_;
 

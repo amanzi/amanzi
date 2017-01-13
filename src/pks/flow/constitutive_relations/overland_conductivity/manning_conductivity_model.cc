@@ -28,12 +28,35 @@ double ManningConductivityModel::Conductivity(double depth, double slope, double
   return std::pow(std::max(depth,0.), exponent) / scaling;
 }
 
+double ManningConductivityModel::Conductivity(double depth, double slope, double coef, double pd_depth, double frac_cond) {
+  if (pd_depth <= 0.) return 0.;
+
+  double exponent = manning_exp_; // 2/3.
+  double scaling = coef * std::sqrt(std::max(slope, slope_regularization_));
+  return depth*frac_cond*std::pow(std::max(pd_depth,0.), exponent) / scaling;
+}
+
 double ManningConductivityModel::DConductivityDDepth(double depth, double slope, double coef) {
   if (depth <= 0.) return 0.;
   double exponent = manning_exp_ + 1.0;
   double scaling = coef * std::sqrt(std::max(slope, slope_regularization_));
   return std::pow(std::max(depth,0.), exponent - 1.) * exponent / scaling;
 }
+
+double ManningConductivityModel::DConductivityDDepth(double depth, double slope, double coef, double pd_depth, double frac_cond) {  
+  if (pd_depth <= 0.) return 0.;
+  //Errors::Message message("Manning Conductivity Model: Derivaritve not implemented for the Subgrid Model."); 
+  // Exceptions::amanzi_throw(message);
+  std::cout<<"Manning Conductivity Model: Derivaritve not implemented for the Subgrid Model.\n"; abort();  
+  double exponent = manning_exp_;
+  double scaling = coef * std::sqrt(std::max(slope, slope_regularization_));
+  double Dpd1 = depth*std::pow(std::max(pd_depth,0.), exponent - 1.)*exponent;
+  double Dpd2 = std::pow(std::max(pd_depth,0.), exponent);
+  return 0;
+  //return  (Dpd1  + Dpd2) / (scaling * hdmax);
+  }
+
+
 
 
 } // namespace

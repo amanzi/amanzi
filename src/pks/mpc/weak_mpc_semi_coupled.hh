@@ -39,6 +39,8 @@ public:
 
   bool CoupledSurfSubsurfColumns(double t_old, double t_new, bool reinit);
   
+  double FindVolumetricHead(double d);
+  double VolumetricHead(double x, double a, double b, double d);
 
 private :
   static RegisteredPKFactory<WeakMPCSemiCoupled> reg_;
@@ -49,6 +51,8 @@ private :
   Teuchos::ParameterList& FElist_loc;
   
   double min_dt_, surf_dt_, sync_time_;
+  double delta_ex_, delta_max_; // subgrid model's parameters
+  bool sg_model_;
 };
 
   

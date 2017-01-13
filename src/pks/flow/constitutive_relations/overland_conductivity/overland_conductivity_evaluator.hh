@@ -40,8 +40,9 @@ private:
   Key slope_key_;
   Key coef_key_;
   Key dens_key_;
-
-  bool dt_;
+  Key pdd_key_; // ponded depression depth
+  Key frac_cond_key_; // fractional conductance
+  bool dt_,sg_model_;
   double factor_;
   bool dens_;
 
