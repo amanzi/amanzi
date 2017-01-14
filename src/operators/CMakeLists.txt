@@ -75,6 +75,7 @@ set(operators_inc_files
     BoundaryFlux.hh
     Accumulation.hh
     Advection.hh
+    AdvectionUpwind.hh
     Diffusion.hh
     DiffusionWithGravity.hh
     DiffusionFactory.hh
@@ -119,7 +120,7 @@ add_amanzi_library(operators
                           Elasticity.cc
                           Electromagnetics.cc ElectromagneticsMHD.cc
                           Accumulation.cc
-                          Advection.cc  
+                          AdvectionUpwind.cc
                           Schema.cc
                           TreeOperator.cc
                           ReconstructionCell.cc

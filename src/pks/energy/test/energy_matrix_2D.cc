@@ -23,7 +23,7 @@
 
 // Amanzi
 #include "Accumulation.hh"
-#include "Advection.hh"
+#include "AdvectionUpwind.hh"
 #include "Diffusion.hh"
 #include "DiffusionFactory.hh"
 #include "EnergyTwoPhase_PK.hh"
@@ -172,7 +172,7 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   }
 
   Teuchos::ParameterList alist;
-  Teuchos::RCP<Advection> op3 = Teuchos::rcp(new Advection(alist, op));
+  Teuchos::RCP<AdvectionUpwind> op3 = Teuchos::rcp(new AdvectionUpwind(alist, op));
   op3->Setup(flux);
   op3->UpdateMatrices(flux);
 

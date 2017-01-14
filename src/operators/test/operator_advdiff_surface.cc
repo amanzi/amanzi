@@ -31,8 +31,8 @@
 
 // Amanzi::Operators
 #include "Accumulation.hh"
+#include "AdvectionUpwind.hh"
 #include "DiffusionMFD.hh"
-#include "Advection.hh"
 #include "OperatorDefs.hh"
 
 #include "Verification.hh"
@@ -121,7 +121,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
 
   // create an advection operator  
   Teuchos::ParameterList alist;
-  Teuchos::RCP<Advection> op_adv = Teuchos::rcp(new Advection(alist, global_op));
+  Teuchos::RCP<AdvectionUpwind> op_adv = Teuchos::rcp(new AdvectionUpwind(alist, global_op));
 
   // get a flux field
   CompositeVector u(cvs);

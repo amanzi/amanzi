@@ -9,7 +9,7 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
 
-  Discrete advection operator of a surface.
+  Base class for advection operators.
 */
 
 #ifndef AMANZI_OPERATOR_ADVECTION_HH_
@@ -19,7 +19,6 @@
 
 #include "Operator.hh"
 
-
 namespace Amanzi {
 namespace Operators {
 
@@ -28,49 +27,32 @@ class Advection {
   Advection(Teuchos::ParameterList& plist,
             Teuchos::RCP<Operator> global_op) :
       global_op_(global_op),
-      mesh_(Teuchos::null)
-  {
-    InitAdvection_(plist);
-  }
-
-  Advection(Teuchos::ParameterList& plist,
-            Teuchos::RCP<AmanziMesh::Mesh> mesh) :
-      global_op_(Teuchos::null),
-      mesh_(mesh)
-  {
-    InitAdvection_(plist);
-  }
+      mesh_(Teuchos::null) {};
 
   Advection(Teuchos::ParameterList& plist,
             Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       global_op_(Teuchos::null),
-      mesh_(mesh)
-  {
-    InitAdvection_(plist);
-  }
+      mesh_(mesh) {};
 
   // main members
-  void Setup(const CompositeVector& u);
-  void UpdateMatrices(const CompositeVector& u);
-  void UpdateMatrices(const CompositeVector& u, const CompositeVector& dhdT);
-  void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary);
+  // -- setup
+  virtual void Setup(const CompositeVector& u) = 0;
+  // -- populate data: arrays of local matrices
+  virtual void UpdateMatrices(const CompositeVector& u) = 0;
+  virtual void UpdateMatrices(const CompositeVector& u, const CompositeVector& dhdT) = 0;
+  // -- boundary conditions
+  virtual void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary) = 0;
 
-  // results -- determine advected flux of u
-  void UpdateFlux(const CompositeVector& h , const CompositeVector& u,
-                  const Teuchos::RCP<BCs>& bc, CompositeVector& flux);
+  // -- results: determine advected flux of u
+  virtual void UpdateFlux(const CompositeVector& h , const CompositeVector& u,
+                          const Teuchos::RCP<BCs>& bc, CompositeVector& flux) = 0;
   
   // access
   Teuchos::RCP<Operator> global_operator() { return global_op_; }
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
 
  protected:
-  void InitAdvection_(Teuchos::ParameterList& plist);
-  void IdentifyUpwindCells_(const CompositeVector& u);
-
- protected:
-  Teuchos::RCP<Epetra_IntVector> upwind_cell_, downwind_cell_;
-
-  // operator
+  // operators and schemas
   Teuchos::RCP<Operator> global_op_;
   Teuchos::RCP<Op> local_op_;
   int global_op_schema_, local_op_schema_;

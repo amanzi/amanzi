@@ -20,7 +20,7 @@
 
 // Amanzi
 #include "Accumulation.hh"
-#include "Advection.hh"
+#include "AdvectionUpwind.hh"
 #include "CompositeVector.hh"
 #include "Diffusion.hh"
 #include "Operator.hh"
@@ -134,7 +134,7 @@ class Energy_PK : public PK_PhysicalBDF {
   // operators and solvers
   Teuchos::RCP<Operators::Diffusion> op_matrix_diff_, op_preconditioner_diff_;
   Teuchos::RCP<Operators::Accumulation> op_acc_;
-  Teuchos::RCP<Operators::Advection> op_matrix_advection_, op_preconditioner_advection_;
+  Teuchos::RCP<Operators::AdvectionUpwind> op_matrix_advection_, op_preconditioner_advection_;
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_, op_advection_;
   Teuchos::RCP<Operators::BCs> op_bc_;
 
