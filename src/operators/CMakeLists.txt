@@ -52,6 +52,7 @@ add_amanzi_library(operators_audit SOURCE OperatorAudit.cc LINK_LIBS ${flow_tpl_
 #
 set(operators_inc_files
     BCs.hh
+    BCsList.hh
     FieldMaps.hh
     OperatorDefs.hh
     OperatorUtils.hh
@@ -76,6 +77,7 @@ set(operators_inc_files
     Accumulation.hh
     Advection.hh
     AdvectionUpwind.hh
+    AdvectionRiemann.hh
     Diffusion.hh
     DiffusionWithGravity.hh
     DiffusionFactory.hh
@@ -88,6 +90,7 @@ set(operators_inc_files
     Elasticity.hh
     Electromagnetics.hh
     ElectromagneticsMHD.hh
+    PDE_Helper.hh
     Schema.hh
     TreeOperator.hh
     Reconstruction.hh
@@ -113,6 +116,7 @@ add_amanzi_library(operators
                           Operator_FaceCellSff.cc
                           Operator_ConsistentFace.cc
                           Operator_Schema.cc
+                          PDE_Helper.cc
                           DiffusionMFD.cc DiffusionMFDwithGravity.cc
                           DiffusionFV.cc DiffusionFVwithGravity.cc
                           DiffusionNLFV.cc DiffusionNLFVwithGravity.cc
@@ -120,7 +124,7 @@ add_amanzi_library(operators
                           Elasticity.cc
                           Electromagnetics.cc ElectromagneticsMHD.cc
                           Accumulation.cc
-                          AdvectionUpwind.cc
+                          AdvectionUpwind.cc AdvectionRiemann.cc
                           Schema.cc
                           TreeOperator.cc
                           ReconstructionCell.cc

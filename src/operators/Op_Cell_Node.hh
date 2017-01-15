@@ -48,13 +48,6 @@ class Op_Cell_Node : public Op {
     assembler->AssembleMatrixOp(*this, map, mat, my_block_row, my_block_col);
   }
   
-  virtual bool ApplyBC(BCs& bc,
-                       const Teuchos::Ptr<CompositeVector>& rhs,                       
-                       bool bc_previously_applied) {
-    ASSERT(0);
-    return false;
-  }
-
   // rescaling columns of local matrices
   virtual void Rescale(const CompositeVector& scaling) {
     if (scaling.HasComponent("node")) {

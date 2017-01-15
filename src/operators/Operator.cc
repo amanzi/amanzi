@@ -89,15 +89,15 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
 /* ******************************************************************
 * New default constructor. Code of two constructors can be optimized.
 ****************************************************************** */
-Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
-                   const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
+Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
+                   const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
                    Teuchos::ParameterList& plist,
-                   const Schema& schema_col,
-                   const Schema& schema_row) :
-    cvs_col_(cvs_col),
+                   const Schema& schema_row,
+                   const Schema& schema_col) :
     cvs_row_(cvs_row),
-    schema_col_(schema_col),
+    cvs_col_(cvs_col),
     schema_row_(schema_row),
+    schema_col_(schema_col),
     shift_(0.0)
 {
   mesh_ = cvs_col_->Mesh();

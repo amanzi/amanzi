@@ -6,10 +6,10 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-           Ethan Coon (ecoon@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Operator those range is defined by two schemas and respected CVSs.
+  Operator those domain and range are defined by two schemas and 
+  respected CVSs.
 */
 
 #include "Epetra_Vector.h"

@@ -9,16 +9,14 @@
 #include <iostream>
 #include <vector>
 
-#include "UnitTest++.h"
-
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
-
-#include "MeshFactory.hh"
-#include "MeshAudit.hh"
+#include "UnitTest++.h"
 
 #include "Mesh.hh"
+#include "MeshFactory.hh"
+#include "MeshAudit.hh"
 #include "Point.hh"
 
 #include "mfd3d_diffusion.hh"

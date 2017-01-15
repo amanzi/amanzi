@@ -6,10 +6,9 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-           Ethan Coon (ecoon@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Operator whose unknowns are defined by general schema.
+  Operator whose unknowns are defined by a general schema.
 
   The only thing really implemented here is the visitor pattern Op
   acceptors. Everything else should be done in the base class, with
@@ -20,6 +19,7 @@
 #define AMANZI_OPERATOR_SCHEMA_HH_
 
 #include "DenseVector.hh"
+
 #include "Operator.hh"
 #include "Schema.hh"
 
@@ -30,39 +30,40 @@ class Operator_Schema : public Operator {
  public:
   // main constructor
   // The input CVS is the domain and range of the operator.
-  Operator_Schema(const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
-                  const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
+  Operator_Schema(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
+                  const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
                   Teuchos::ParameterList& plist,
-                  const Schema& schema_col,
-                  const Schema& schema_row) :
-      Operator(cvs_col, cvs_row, plist, schema_col, schema_row) {
+                  const Schema& schema_row,
+                  const Schema& schema_col) :
+      Operator(cvs_row, cvs_col, plist, schema_row, schema_col) {
     set_schema_string(schema_col.CreateUniqueName());
   }
 
-  // rhs update
-  virtual void UpdateRHS(const CompositeVector& source, bool volume_included);
-
-  // visit methods for Apply
+  // required methods
+  // -- visit methods for Apply
   virtual int ApplyMatrixFreeOp(const Op_Cell_Schema& op,
           const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
-  // driver symbolic assemble creates supermap using new schema
+  // -- symbolic assemble creates supermap using new schema
   virtual void SymbolicAssembleMatrix();
 
-  // visit methods for symbolic assemble
+  // -- visit methods for symbolic assemble
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
   
-  // visit methods for assemble
+  // -- visit methods for assemble
   virtual void AssembleMatrixOp(const Op_Cell_Schema& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
 
-  // local <-> global communications
+  // -- rhs update
+  virtual void UpdateRHS(const CompositeVector& source, bool volume_included);
+
+  // -- local <-> global communications
   virtual void ExtractVectorOp(int c, const Schema& schema,
-          WhetStone::DenseVector& v, const CompositeVector& X) const ;
+          WhetStone::DenseVector& v, const CompositeVector& X) const;
   virtual void AssembleVectorOp(int c, const Schema& schema,
           const WhetStone::DenseVector& v, CompositeVector& X) const;
 

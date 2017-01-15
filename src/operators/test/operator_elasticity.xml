@@ -67,6 +67,21 @@
     <!-- NODE 2, FACE 1 scheme -->
     <ParameterList name="elasticity operator">
       <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="location" type="Array(string)" value="{node, face}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+        <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="advection operator">
+      <ParameterList name="schema domain">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="location" type="Array(string)" value="{node, face}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+        <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+      </ParameterList>
+      <ParameterList name="schema range">
+        <Parameter name="base" type="string" value="cell"/>
         <Parameter name="location" type="Array(string)" value="{node, face}"/>
         <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
         <Parameter name="number" type="Array(int)" value="{2, 1}"/>

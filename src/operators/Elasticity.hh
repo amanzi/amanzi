@@ -19,7 +19,8 @@
 #include "Tensor.hh"
 #include "CompositeVector.hh"
 
-#include "BCs.hh"
+#include "BCsList.hh"
+#include "PDE_Helper.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "Schema.hh"
@@ -27,19 +28,15 @@
 namespace Amanzi {
 namespace Operators {
 
-class Elasticity {
+class Elasticity : public BCsList, public PDE_Helper {
  public:
   Elasticity(Teuchos::ParameterList& plist,
              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      PDE_Helper(mesh),
       plist_(plist),
-      mesh_(mesh),
-      K_(Teuchos::null),
-      global_op_(Teuchos::null),
-      ncells_owned(-1),
-      ncells_wghost(-1),
-      nfaces_owned(-1),
-      nfaces_wghost(-1)
+      K_(Teuchos::null)
   {
+    global_op_ = Teuchos::null;
     operator_type_ = OPERATOR_ELASTICITY;
     InitElasticity_(plist);
   }
@@ -54,23 +51,6 @@ class Elasticity {
   // -- matrix modification
   virtual void ApplyBCs(bool primary, bool eliminate);
 
-  // boundary conditions (BC) require information on test and
-  // trial spaces. For a single PDE, these BCs could be the same.
-  virtual void SetBCs(const Teuchos::RCP<BCs>& bc_trial,
-                      const Teuchos::RCP<BCs>& bc_test) {
-    bcs_trial_.clear();
-    bcs_test_.clear();
-
-    bcs_trial_.push_back(bc_trial);
-    bcs_test_.push_back(bc_test);
-  }
-
-  virtual void AddBCs(const Teuchos::RCP<BCs>& bc_trial,
-                      const Teuchos::RCP<BCs>& bc_test) {
-    bcs_trial_.push_back(bc_trial);
-    bcs_test_.push_back(bc_test);
-  }
-
   // access
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
   Teuchos::RCP<Operator> global_operator() { return global_op_; }
@@ -80,26 +60,15 @@ class Elasticity {
 
  protected:
   void InitElasticity_(Teuchos::ParameterList& plist);
-  void ApplyBCs_Face_(const Teuchos::Ptr<BCs>& bc_f, bool primary, bool eliminate);
-  void ApplyBCs_Node_(const Teuchos::Ptr<BCs>& bc_v, bool primary, bool eliminate);
 
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
 
-  // operator
-  Teuchos::RCP<Operator> global_op_;
-  Teuchos::RCP<Op> local_op_;
-
+  // operator and schemas
   Schema global_schema_col_, global_schema_row_;
   Schema local_schema_col_, local_schema_row_;
 
-  std::vector<Teuchos::RCP<BCs> > bcs_trial_, bcs_test_;
   OperatorType operator_type_;
-
-  // mesh info
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  int ncells_owned, ncells_wghost;
-  int nfaces_owned, nfaces_wghost;
 
   // miscaleneous
   Teuchos::ParameterList plist_;

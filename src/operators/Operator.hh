@@ -21,7 +21,6 @@
 #include "EpetraExt_RowMatrixOut.h"
 
 #include "Mesh.hh"
-#include "BCs.hh"
 #include "CompositeVectorSpace.hh"
 #include "CompositeVector.hh"
 #include "DenseVector.hh"
@@ -85,6 +84,7 @@ class CompositeVector;
 
 namespace Operators {
 
+class BCs;
 class SuperMap;
 class MatrixFE;
 class GraphFE;
@@ -110,11 +110,11 @@ class Operator {
   Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
            Teuchos::ParameterList& plist,
            int schema);
-  Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_col_,
-           const Teuchos::RCP<const CompositeVectorSpace>& cvs_row_,
+  Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row_,
+           const Teuchos::RCP<const CompositeVectorSpace>& cvs_col_,
            Teuchos::ParameterList& plist,
-           const Schema& schema_col_,
-           const Schema& schema_row_);
+           const Schema& schema_row_,
+           const Schema& schema_col_);
 
   void Init();
 

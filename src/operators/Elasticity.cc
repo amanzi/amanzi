@@ -79,184 +79,12 @@ void Elasticity::ApplyBCs(bool primary, bool eliminate)
 {
   for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
     if ((*bc)->type() == OPERATOR_BC_TYPE_FACE) {
-      ApplyBCs_Face_(bc->ptr(), primary, eliminate);
-    } else if ((*bc)->type() == OPERATOR_BC_TYPE_NODE) {
-      ApplyBCs_Node_(bc->ptr(), primary, eliminate);
+      ApplyBCs_Face(bc->ptr(), local_op_, primary, eliminate);
+    } 
+    else if ((*bc)->type() == OPERATOR_BC_TYPE_NODE) {
+      ApplyBCs_Node(bc->ptr(), local_op_, primary, eliminate);
     }
   }
-}
-
-
-/* ******************************************************************
-* Apply BCs on cell operators
-****************************************************************** */
-void Elasticity::ApplyBCs_Face_(const Teuchos::Ptr<BCs>& bcf,
-                                bool primary, bool eliminate)
-{
-  const std::vector<int>& bc_model = bcf->bc_model();
-  const std::vector<double>& bc_value = bcf->bc_value();
-
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs, offset;
-
-  CompositeVector& rhs = *global_op_->rhs();
-  Epetra_MultiVector& rhs_face = *rhs.ViewComponent("face", true);
-  rhs.PutScalarGhosted(0.0);
-
-  for (int c = 0; c != ncells_owned; ++c) {
-    WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
-    int ncols = Acell.NumCols();
-    int nrows = Acell.NumRows();
-
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    // check for a boundary face
-    bool found(false);
-    for (int n = 0; n != nfaces; ++n) {
-      int f = faces[n];
-      if (bc_model[f] == OPERATOR_BC_DIRICHLET) found = true;
-    }
-    if (!found) continue;
-
-    local_op_->schema_row_.ComputeOffset(c, mesh_, offset);
-
-    // essential conditions for test functions
-    int item(0);
-    for (auto it = local_op_->schema_row_.begin(); it != local_op_->schema_row_.end(); ++it, ++item) {
-      if (it->kind == AmanziMesh::FACE) {
-        bool flag(true);
-        for (int n = 0; n != nfaces; ++n) {
-          int f = faces[n];
-          if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-            if (flag) {  // make a copy of elemental matrix
-              local_op_->matrices_shadow[c] = Acell;
-              flag = false;
-            }
-            int noff(n + offset[item]);
-            for (int m = 0; m < ncols; m++) Acell(noff, m) = 0.0;
-          }
-        }
-
-        for (int n = 0; n != nfaces; ++n) {
-          int f = faces[n];
-          double value = bc_value[f];
-
-          if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-            int noff(n + offset[item]);
-            WhetStone::DenseVector rhs_loc(nrows);
-
-            if (eliminate) {
-              for (int m = 0; m < nrows; m++) {
-                rhs_loc(m) = -Acell(m, noff) * value;
-                Acell(m, noff) = 0.0;
-              }
-            }
-
-            if (primary) {
-              rhs_loc(noff) = 0.0;
-              rhs_face[0][f] = value;
-              Acell(noff, noff) = 1.0;
-            }
-
-            global_op_->AssembleVectorOp(c, global_schema_row_, rhs_loc, rhs);
-          }
-        }
-      }
-    }
-  } 
-
-  global_op_->rhs()->GatherGhostedToMaster("face", Add);
-}
-
-
-/* ******************************************************************
-* Apply BCs on cell operators
-****************************************************************** */
-void Elasticity::ApplyBCs_Node_(const Teuchos::Ptr<BCs>& bcv,
-                                bool primary, bool eliminate)
-{
-  const std::vector<int>& bc_model = bcv->bc_model();
-  const std::vector<AmanziGeometry::Point>& bc_value = bcv->bc_value_point();
-
-  AmanziMesh::Entity_ID_List nodes, cells;
-  std::vector<int> offset;
-
-  CompositeVector& rhs = *global_op_->rhs();
-  Epetra_MultiVector& rhs_node = *rhs.ViewComponent("node", true);
-  rhs.PutScalarGhosted(0.0);
-
-  int d = mesh_->space_dimension(); 
-
-  for (int c = 0; c != ncells_owned; ++c) {
-    WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
-    int ncols = Acell.NumCols();
-    int nrows = Acell.NumRows();
-
-    mesh_->cell_get_nodes(c, &nodes);
-    int nnodes = nodes.size();
-
-    // check for a boundary face
-    bool found(false);
-    for (int n = 0; n != nnodes; ++n) {
-      int v = nodes[n];
-      if (bc_model[v] == OPERATOR_BC_DIRICHLET) found = true;
-    }
-    if (!found) continue;
-
-    local_op_->schema_row_.ComputeOffset(c, mesh_, offset);
-
-    // essential conditions for test functions
-    int item(0);
-    for (auto it = local_op_->schema_row_.begin(); it != local_op_->schema_row_.end(); ++it, ++item) {
-      if (it->kind == AmanziMesh::NODE) {
-        bool flag(true);
-        for (int n = 0; n != nnodes; ++n) {
-          int v = nodes[n];
-          if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
-            if (flag) {  // make a copy of elemental matrix
-              local_op_->matrices_shadow[c] = Acell;
-              flag = false;
-            }
-            for (int k = 0; k < d; ++k) {
-              int noff(d*n + k + offset[item]);
-              for (int m = 0; m < ncols; m++) Acell(noff, m) = 0.0;
-            }
-          }
-        }
-
-        for (int n = 0; n != nnodes; ++n) {
-          int v = nodes[n];
-          AmanziGeometry::Point value = bc_value[v];
-
-          if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
-            for (int k = 0; k < d; ++k) {
-              int noff(d*n + k + offset[item]);
-              WhetStone::DenseVector rhs_loc(nrows);
-
-              if (eliminate) {
-                for (int m = 0; m < nrows; m++) {
-                  rhs_loc(m) = -Acell(m, noff) * value[k];
-                  Acell(m, noff) = 0.0;
-                }
-              }
-
-              if (primary) {
-                mesh_->node_get_cells(v, AmanziMesh::USED, &cells);
-                rhs_loc(noff) = 0.0;
-                rhs_node[k][v] = value[k];
-                Acell(noff, noff) = 1.0 / cells.size();
-              }
-
-              global_op_->AssembleVectorOp(c, global_schema_row_, rhs_loc, rhs);
-            }
-          }
-        }
-      }
-    }
-  } 
-
-  global_op_->rhs()->GatherGhostedToMaster("node", Add);
 }
 
 
@@ -266,42 +94,9 @@ void Elasticity::ApplyBCs_Node_(const Teuchos::Ptr<BCs>& bcv,
 void Elasticity::InitElasticity_(Teuchos::ParameterList& plist)
 {
   // Read schema for the mimetic discretization method.
-  Teuchos::ParameterList& schema_list = plist.sublist("schema");
-
-  std::vector<std::string> name;
-  if (schema_list.isParameter("location")) {
-    name = schema_list.get<Teuchos::Array<std::string> >("location").toVector();
-  } else {
-    Errors::Message msg;
-    msg << "Elasticity: schema->location is missing.";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  std::vector<std::string> type;
-  if (schema_list.isParameter("type")) {
-    type = schema_list.get<Teuchos::Array<std::string> >("type").toVector();
-  } else {
-    Errors::Message msg;
-    msg << "Elasticity: schema->type is missing.";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  std::vector<int> ndofs;
-  if (schema_list.isParameter("number")) {
-    ndofs = schema_list.get<Teuchos::Array<int> >("number").toVector();
-  } else {
-    Errors::Message msg;
-    msg << "Elasticity: schema->number is missing.";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  // Create schema and save it.
   Schema my_schema;
-  my_schema.SetBase(OPERATOR_SCHEMA_BASE_CELL);
-  for (int i = 0; i < name.size(); i++) {
-    my_schema.AddItem(my_schema.StringToKind(name[i]), SCHEMA_DOFS_SCALAR, ndofs[i]);
-  }
-  my_schema.Finalize(mesh_);
+  Teuchos::ParameterList& schema_list = plist.sublist("schema");
+  my_schema.Init(schema_list, mesh_);
 
   // create or check the existing Operator
   local_schema_row_ = my_schema;
@@ -315,8 +110,9 @@ void Elasticity::InitElasticity_(Teuchos::ParameterList& plist)
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true);
 
-    for (int i = 0; i < name.size(); i++) {
-      cvs->AddComponent(name[i], my_schema.StringToKind(name[i]), ndofs[i]);
+    for (auto it = my_schema.items().begin(); it != my_schema.items().end(); ++it) {
+      std::string name(my_schema.KindToString(it->kind));
+      cvs->AddComponent(name, it->kind, it->num);
     }
 
     global_op_ = Teuchos::rcp(new Operator_Schema(cvs, cvs, plist, my_schema, my_schema));
@@ -331,13 +127,6 @@ void Elasticity::InitElasticity_(Teuchos::ParameterList& plist)
   local_op_ = Teuchos::rcp(new Op_Cell_Schema(my_schema, my_schema, mesh_));
   global_op_->OpPushBack(local_op_);
   
-  // mesh info
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-
   K_ = Teuchos::null;
 }
 

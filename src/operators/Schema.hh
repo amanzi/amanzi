@@ -45,14 +45,16 @@ struct SchemaItem {
 class Schema {
  public:
   // default and code compatibility constructors
-  Schema() : base_(0) {};
+  Schema() {};
   Schema(int schema_old) { Init(schema_old); }
   ~Schema() {};
 
   // member functions
   void Init(int schema_old);
+  void Init(Teuchos::ParameterList& plist,
+            Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
-  void SetBase(int base) { base_ = base; }
+  void SetBase(AmanziMesh::Entity_kind base) { base_ = base; }
   void AddItem(AmanziMesh::Entity_kind kind, int type, int num) {
     SchemaItem item(kind, type, num);
     items_.push_back(item);
@@ -60,7 +62,7 @@ class Schema {
  
   void Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
-  void ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh, std::vector<int>& offset);
+  void ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh, std::vector<int>& offset) const;
 
   // local converters operators/strings/mesh
   int OldSchema() const;
@@ -77,7 +79,7 @@ class Schema {
   std::vector<SchemaItem>::const_iterator end() const { return items_.end(); }
 
  private:
-  int base_;
+  AmanziMesh::Entity_kind base_;
   std::vector<SchemaItem> items_; 
   std::vector<int> offset_;  // starting position of DOF ids
 };

@@ -28,12 +28,14 @@ void AdvectionUpwind::InitAdvection_(Teuchos::ParameterList& plist)
 {
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh
-    global_op_schema_ = OPERATOR_SCHEMA_DOFS_CELL;
+    global_schema_row_.SetBase(AmanziMesh::FACE);
+    global_schema_row_.AddItem(AmanziMesh::CELL, SCHEMA_DOFS_SCALAR, 1);
+    global_schema_col_ = global_schema_row_;
+
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
-    global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist, global_op_schema_));
+    global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist, global_schema_row_.OldSchema()));
 
-    local_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
     std::string name("FACE_CELL");
 
     if (plist.get<bool>("surface operator", false)) {
@@ -44,16 +46,16 @@ void AdvectionUpwind::InitAdvection_(Teuchos::ParameterList& plist)
 
   } else {
     // constructor was given an Operator
-    global_op_schema_ = global_op_->schema();
-    if (!(global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL)) {
+    global_schema_row_ = global_op_->schema_row();
+    global_schema_col_ = global_op_->schema_col();
+
+    if (!(global_schema_row_.OldSchema() & OPERATOR_SCHEMA_DOFS_CELL)) {
       Errors::Message msg;
-      msg << "Operators: Invalid advection operator schema " << global_op_schema_ << ": must contain CELL dofs.\n";
+      msg << "Operators: global schema for adding advection operator must contain CELL dofs.\n";
       Exceptions::amanzi_throw(msg);
     } else {
-
       mesh_ = global_op_->DomainMap().Mesh();
 
-      local_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
       std::string name("FACE_CELL");
 
       if (plist.get<bool>("surface operator", false)) {
@@ -244,16 +246,15 @@ void AdvectionUpwind::UpdateFlux(
   // might need to think more carefully about BCs
   const std::vector<int>& bc_model = bc->bc_model();
   const std::vector<double>& bc_value = bc->bc_value();
-  flux.PutScalar(0.);
+  flux.PutScalar(0.0);
   
   // apply preconditioner inversion
-  AmanziMesh::Entity_ID_List cells;
   h.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& h_c = *h.ViewComponent("cell", true);
   const Epetra_MultiVector& u_f = *u.ViewComponent("face", false);
   Epetra_MultiVector& flux_f = *flux.ViewComponent("face", false);
 
-  for (int f = 0; f < nfaces_owned; ++f) {  // loop over master and slave faces
+  for (int f = 0; f < nfaces_owned; ++f) {
     int c1 = (*upwind_cell_)[f];
     if (c1 < 0) {
       // boundary enthalpy

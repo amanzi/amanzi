@@ -3523,7 +3523,8 @@ Schur complement.
 Advection operator
 ..................
 
-This section is under construction.
+An advection operator has different domain and range and therefore requires two schemas.
+The structure of the schema is described in the previous section.
 
 * `"OPERATOR_NAME`" [list] a PK specific name for the advection operator.
 
@@ -3531,11 +3532,25 @@ This section is under construction.
 
   * `"reconstruction order`" [int] defines accuracy of this discrete operator.
 
+  * `"schema domain`" [list] defines a discretization schema for the operator domain.
+
+  * `"schema range`" [list] defines a discretization schema for the operator range
+
 .. code-block:: xml
 
   <ParameterList name="OPERATOR_NAME">
     <Parameter name="discretization primary" type="string" value="upwind"/>
     <Parameter name="reconstruction order" type="int" value="0"/>
+    <ParameterList name="schema domain">
+      <Parameter name="location" type="Array(string)" value="{node, face}"/>
+      <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+      <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+    </ParameterList>
+    <ParameterList name="schema range">
+      <Parameter name="location" type="Array(string)" value="{cell}"/>
+      <Parameter name="type" type="Array(string)" value="{scalar}"/>
+      <Parameter name="number" type="Array(int)" value="{1}"/>
+    </ParameterList>
   </ParameterList>
 
 
@@ -3561,32 +3576,6 @@ and Navier-Stokes).
         <Parameter name="location" type="Array(string)" value="{node, face}"/>
         <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
         <Parameter name="number" type="Array(int)" value="{2, 1}"/>
-      </ParameterList>
-    </ParameterList>
-
-
-Divergence operator
-...................
-
-Divergence operator has different domain and range and therefore requires two schemas.
-The structure of the schema is described in the previous section.
-
-* `"schema domain`" [list] defines a discretization schema for the operator domain.
-
-* `"schema range`" [list] defines a discretization schema for the operator range
-
-.. code-block:: xml
-
-    <ParameterList name="elasticity operator">
-      <ParameterList name="schema domain">
-        <Parameter name="location" type="Array(string)" value="{node, face}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
-        <Parameter name="number" type="Array(int)" value="{2, 1}"/>
-      </ParameterList>
-      <ParameterList name="schema range">
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{1}"/>
       </ParameterList>
     </ParameterList>
 

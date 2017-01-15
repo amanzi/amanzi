@@ -24,14 +24,14 @@
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
 
-#include "BCs.hh"
+#include "BCsList.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class Diffusion {
+class Diffusion : public BCsList {
  public:
   Diffusion(const Teuchos::RCP<Operator>& global_op) :
       global_op_(global_op),
@@ -124,18 +124,6 @@ class Diffusion {
     global_op_->SetTestBCs(bc);
   }
 
-  virtual void AddBCs(const Teuchos::RCP<BCs>& bc_trial,
-                      const Teuchos::RCP<BCs>& bc_test) {
-    bcs_trial_.push_back(bc_trial);
-    bcs_test_.push_back(bc_test);
-  }
-  virtual void AddTrialBCs(const Teuchos::RCP<BCs>& bc) {
-    bcs_trial_.push_back(bc);
-  }
-  virtual void AddTestBCs(const Teuchos::RCP<BCs>& bc) {
-    bcs_test_.push_back(bc);
-  }
-
   // -- working with consistent faces -- may not be implemented
   virtual int UpdateConsistentFaces(CompositeVector& u) {
     Errors::Message msg("Diffusion: This diffusion implementation does not support working with consistent faces.");
@@ -175,7 +163,6 @@ class Diffusion {
   Teuchos::RCP<Op> local_op_;
   Teuchos::RCP<Op> jac_op_;
   int global_op_schema_, local_op_schema_, jac_op_schema_;
-  std::vector<Teuchos::RCP<BCs> > bcs_trial_, bcs_test_;
   OperatorType operator_type_;
 
   // mesh info

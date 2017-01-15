@@ -89,9 +89,10 @@ if ( BUILD_TESTS )
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: various operations with tensors 
-    add_amanzi_test(whetstone_tensors whetstone_tensors
+    add_amanzi_test(whetstone_tensors_geometry whetstone_tensors_geometry
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_tensors.cc
+                                        test/whetstone_geometry.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: surface matrices for diffusion

@@ -51,6 +51,7 @@ int BoundaryFaceGetCell(const AmanziMesh::Mesh& mesh, int f)
   return cells[0];
 }
 
+
 double BoundaryFaceGetValue(Operators::BCs& bc, const CompositeVector& u, int f) {
   if (bc.bc_model()[f] == Operators::OPERATOR_BC_DIRICHLET) {
     return bc.bc_value()[f];
@@ -84,12 +85,10 @@ struct Problem {
 
   void Setup() {
     MakeBCs();
-
   }
   
   void FillCoefs(const CompositeVector& u,
                  const CompositeVector& v) {
-
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
     int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -332,7 +331,6 @@ struct Problem {
       WhetStone::Tensor Kc1 = ana->Tensor11(xc, 0.0);
       Kc1 *= ana->ScalarCoefficient11(u,v);
       K11->push_back(Kc1);
-
     }
   }
   
@@ -696,13 +694,12 @@ Teuchos::RCP<Problem> getProblem(const std::string& discretization,
 }
 
 
-//
+// -----------------------------------------------------------------------------
 // Creates the linear operator with the correct coefficients, checks the error
 // in the forward application of the Operator to the true solution relative to
 // the rhs.
 //
 // Returns the l2, linf errors as a pair.
-// 
 // -----------------------------------------------------------------------------
 std::pair<double,double> RunForwardProblem(
     const std::string& discretization,
@@ -777,13 +774,12 @@ std::pair<double,double> RunForwardProblem(
 }
 
 
-//
+// -----------------------------------------------------------------------------
 // Creates the linear operator with the correct coefficients, checks the error
 // in the forward application of the Operator to the true solution relative to
 // the rhs.
 //
 // Returns the l2, linf errors as a pair.
-// 
 // -----------------------------------------------------------------------------
 std::pair<double,double> RunForwardProblem_Assembled(
     const std::string& discretization,
@@ -865,14 +861,12 @@ std::pair<double,double> RunForwardProblem_Assembled(
 }
 
 
-
-//
+// -----------------------------------------------------------------------------
 // Creates the linear operator with the correct coefficients, checks the error
 // in the inverse application of the Operator to the rhs relative to the true
 // solution.
 //
 // Returns the l2, linf errors as a pair.
-// 
 // -----------------------------------------------------------------------------
 std::pair<double,double> RunInverseProblem(
     const std::string& discretization,
@@ -991,12 +985,10 @@ std::pair<double,double> RunInverseProblem(
 }
 
 
-
-//
+// -----------------------------------------------------------------------------
 // Solves the full nonlinear problem->
 //
 // Returns the l2, linf errors as a pair.
-// 
 // -----------------------------------------------------------------------------
 std::pair<double,double> RunNonlinearProblem(
     const std::string& discretization,
@@ -1221,8 +1213,7 @@ std::pair<double,double> RunNonlinearProblem(
 }
 
 
-
-//
+// -----------------------------------------------------------------------------
 // Creates the linear operator with the correct coefficients, checks the error
 // in the inverse application of the Operator to the rhs relative to the true
 // solution.  Uses the block-diagonal operator by inverting each system
@@ -1230,7 +1221,6 @@ std::pair<double,double> RunNonlinearProblem(
 // Solution than an actual test of the Operators class.
 //
 // Returns the l2, linf errors as a pair.
-// 
 // -----------------------------------------------------------------------------
 std::pair<double,double> RunInverseProblem_Diag(
     const std::string& discretization,
@@ -1350,8 +1340,6 @@ std::pair<double,double> RunInverseProblem_Diag(
 
   return std::make_pair(log2(error_l2), log2(error_linf));
 }
-
-
 
 
 void RunForwardTest(const std::string& discretization, bool upwind) {
@@ -1485,6 +1473,7 @@ void RunNonlinearTest(const std::string& discretization, const std::string& jaco
   CHECK(rateinf > 0.8);
 }
 
+// -----------------------------------------------------------------------------
 // Full Suite is the following 12 tests
 // -----------------------------------------------------------------------------
 // TEST(OPERATOR_COUPLED_DIFFUSION_FORWARD_HARMONIC_CONVERGENCE_FV) {

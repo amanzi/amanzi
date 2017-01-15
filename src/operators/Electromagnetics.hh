@@ -19,14 +19,14 @@
 #include "Tensor.hh"
 #include "CompositeVector.hh"
 
-#include "BCs.hh"
+#include "BCsList.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class Electromagnetics {
+class Electromagnetics : public BCsList {
  public:
   Electromagnetics(const Teuchos::RCP<Operator>& global_op) :
       global_op_(global_op),
@@ -66,23 +66,6 @@ class Electromagnetics {
   // -- matrix modification
   virtual void ApplyBCs(bool primary, bool eliminate);
 
-  // boundary conditions (BC) require information on test and
-  // trial spaces. For a single PDE, these BCs could be the same.
-  virtual void SetBCs(const Teuchos::RCP<BCs>& bc_trial,
-                      const Teuchos::RCP<BCs>& bc_test) {
-    bcs_trial_.clear();
-    bcs_test_.clear();
-
-    bcs_trial_.push_back(bc_trial);
-    bcs_test_.push_back(bc_test);
-  }
-
-  virtual void AddBCs(const Teuchos::RCP<BCs>& bc_trial,
-                      const Teuchos::RCP<BCs>& bc_test) {
-    bcs_trial_.push_back(bc_trial);
-    bcs_test_.push_back(bc_test);
-  }
-
   // new virtual members
   // -- before solving the problem
   virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt) {};
@@ -112,7 +95,6 @@ class Electromagnetics {
   Teuchos::RCP<Operator> global_op_;
   Teuchos::RCP<Op> local_op_;
   int global_op_schema_, local_op_schema_;
-  std::vector<Teuchos::RCP<BCs> > bcs_trial_, bcs_test_;
   OperatorType operator_type_;
 
   // mesh info

@@ -64,6 +64,11 @@ class MFD3D {
   double CalculateStabilityScalar(DenseMatrix& Mc);
   void ModifyStabilityScalingFactor(double factor);
 
+  // geometry methods
+  void PolygonCentroidWeights(
+      const Entity_ID_List& nodes, const AmanziGeometry::Point& normal, 
+      double area, std::vector<double>& weights) const;
+
   // access members
   double scaling_factor() { return scaling_factor_; }
   double scalar_stability() { return scalar_stability_; }

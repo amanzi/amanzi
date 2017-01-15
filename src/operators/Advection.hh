@@ -15,24 +15,27 @@
 #ifndef AMANZI_OPERATOR_ADVECTION_HH_
 #define AMANZI_OPERATOR_ADVECTION_HH_
 
-#include "Epetra_IntVector.h"
-
+#include "BCsList.hh"
+#include "PDE_Helper.hh"
 #include "Operator.hh"
+#include "Schema.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class Advection {
+class Advection : public BCsList, public PDE_Helper {
  public:
   Advection(Teuchos::ParameterList& plist,
-            Teuchos::RCP<Operator> global_op) :
-      global_op_(global_op),
-      mesh_(Teuchos::null) {};
+            Teuchos::RCP<Operator> global_op) {
+    mesh_ = Teuchos::null;
+    global_op_ = global_op;
+  }
 
   Advection(Teuchos::ParameterList& plist,
             Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      global_op_(Teuchos::null),
-      mesh_(mesh) {};
+      PDE_Helper(mesh) {
+    global_op_ = Teuchos::null;
+  }
 
   // main members
   // -- setup
@@ -40,8 +43,6 @@ class Advection {
   // -- populate data: arrays of local matrices
   virtual void UpdateMatrices(const CompositeVector& u) = 0;
   virtual void UpdateMatrices(const CompositeVector& u, const CompositeVector& dhdT) = 0;
-  // -- boundary conditions
-  virtual void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary) = 0;
 
   // -- results: determine advected flux of u
   virtual void UpdateFlux(const CompositeVector& h , const CompositeVector& u,
@@ -55,13 +56,8 @@ class Advection {
   // operators and schemas
   Teuchos::RCP<Operator> global_op_;
   Teuchos::RCP<Op> local_op_;
-  int global_op_schema_, local_op_schema_;
-
-  // mesh info
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  int ncells_owned, ncells_wghost;
-  int nfaces_owned, nfaces_wghost;
-  int nnodes_owned, nnodes_wghost;
+  Schema global_schema_row_, global_schema_col_;
+  Schema local_schema_col_, local_schema_row_;
 };
 
 }  // namespace Operators

@@ -21,9 +21,67 @@ namespace Operators {
 /* ******************************************************************
 * Constructor takes the old schema as input.
 ****************************************************************** */
-void Schema::Init(int i) { 
-  base_ = i & (OPERATOR_SCHEMA_BASE_NODE + OPERATOR_SCHEMA_BASE_EDGE 
-             + OPERATOR_SCHEMA_BASE_FACE + OPERATOR_SCHEMA_BASE_CELL);
+void Schema::Init(Teuchos::ParameterList& plist,
+                  Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+{
+  Errors::Message msg;
+
+  if (plist.isParameter("base")) {
+    base_ = StringToKind(plist.get<std::string>("base"));
+  } else {
+    msg << "Parameter schema->base is missing.";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  std::vector<std::string> name;
+  if (plist.isParameter("location")) {
+    name = plist.get<Teuchos::Array<std::string> >("location").toVector();
+  } else {
+    msg << "Parameter schema->location is missing.";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  std::vector<std::string> type;
+  if (plist.isParameter("type")) {
+    type = plist.get<Teuchos::Array<std::string> >("type").toVector();
+  } else {
+    msg << "Parameter schema->type is missing.";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  std::vector<int> ndofs;
+  if (plist.isParameter("number")) {
+    ndofs = plist.get<Teuchos::Array<int> >("number").toVector();
+  } else {
+    msg << "Parameter schema->number is missing.";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  // Populate schema and save it.
+  for (int i = 0; i < name.size(); i++) {
+    AddItem(StringToKind(name[i]), SCHEMA_DOFS_SCALAR, ndofs[i]);
+  }
+
+  Finalize(mesh);
+}
+
+
+/* ******************************************************************
+* Backward compatibility: takes the old schema as input.
+****************************************************************** */
+void Schema::Init(int i)
+{ 
+  base_ = AmanziMesh::CELL;  // default
+
+  if (i & OPERATOR_SCHEMA_BASE_NODE) {
+    base_ = AmanziMesh::NODE;
+  } else if (i & OPERATOR_SCHEMA_BASE_EDGE) {
+    base_ = AmanziMesh::EDGE;
+  } else if (i & OPERATOR_SCHEMA_BASE_FACE) {
+    base_ = AmanziMesh::FACE;
+  } else if (i & OPERATOR_SCHEMA_BASE_CELL) {
+    base_ = AmanziMesh::CELL;
+  }
 
   items_.clear();
 
@@ -67,7 +125,7 @@ void Schema::Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
 * Compute local (cell-based) offsets
 ****************************************************************** */
 void Schema::ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                           std::vector<int>& offset)
+                           std::vector<int>& offset) const
 {
   AmanziMesh::Entity_ID_List nodes, edges, faces;
 
@@ -101,7 +159,19 @@ void Schema::ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
 ****************************************************************** */
 int Schema::OldSchema() const
 {
-  int i(base_);
+  int i(0);
+
+  // convert base
+  if (base_ == AmanziMesh::NODE) {
+    i = OPERATOR_SCHEMA_BASE_NODE;
+  } else if (base_ == AmanziMesh::EDGE) {
+    i = OPERATOR_SCHEMA_BASE_EDGE;
+  } else if (base_ == AmanziMesh::FACE) {
+    i = OPERATOR_SCHEMA_BASE_FACE;
+  } else if (base_ == AmanziMesh::CELL) {
+    i = OPERATOR_SCHEMA_BASE_CELL;
+  }
+
   for (auto it = items_.begin(); it != items_.end(); ++it) {
     if (it->kind == AmanziMesh::NODE) {
       i += OPERATOR_SCHEMA_DOFS_NODE; 

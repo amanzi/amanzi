@@ -606,6 +606,43 @@ void MFD3D::GrammSchmidt(DenseMatrix& N)
 
 
 /* ******************************************************************
+* Return centroid weights for 2D and 3D polygons. We take list of 
+* nodes as input since it is not cached by the mesh.
+****************************************************************** */
+void MFD3D::PolygonCentroidWeights(
+    const Entity_ID_List& nodes, const AmanziGeometry::Point& normal, 
+    double area, std::vector<double>& weights) const
+{
+  int nnodes = nodes.size();
+  int d = mesh_->space_dimension();
+
+  weights.resize(nnodes, 0.0);
+  AmanziGeometry::Point p0(d), p1(d), p2(d), face_normal(normal), edge_normal(d);
+  face_normal /= norm(normal);
+
+  mesh_->node_get_coordinates(nodes[0], &p0);
+  mesh_->node_get_coordinates(nodes[1], &p2);
+
+  for (int i = 2; i < nnodes; ++i) {
+    p1 = p2;
+    int v = nodes[i];
+    mesh_->node_get_coordinates(v, &p2);
+
+    if (d == 2) {
+      edge_normal[0] = p2[1] - p1[1];
+      edge_normal[1] = p1[0] - p2[0];
+    } else {
+      edge_normal = (p2 - p1)^face_normal;
+    }
+
+    double dist = (p2 - p0) * edge_normal;
+    weights[i] += dist / (6 * area);
+    weights[i - 1] += dist / (6 * area);
+  }
+}
+
+
+/* ******************************************************************
 * Extension of Mesh API. 
 ****************************************************************** */
 int MFD3D::cell_get_face_adj_cell(int cell, int face)

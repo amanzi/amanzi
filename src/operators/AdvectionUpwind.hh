@@ -9,7 +9,7 @@
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
 
-  Upwind-based advection operator for a scalr field.
+  Upwind-based advection operator for a scalar field.
 */
 
 #ifndef AMANZI_OPERATOR_ADVECTION_UPWIND_HH_
@@ -44,13 +44,14 @@ class AdvectionUpwind : public Advection {
   // -- data
   virtual void UpdateMatrices(const CompositeVector& u);
   virtual void UpdateMatrices(const CompositeVector& u, const CompositeVector& dhdT);
-  // -- boundary conditions
-  virtual void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary);
 
   // -- results -- determine advected flux of u
   void UpdateFlux(const CompositeVector& h , const CompositeVector& u,
                   const Teuchos::RCP<BCs>& bc, CompositeVector& flux);
   
+  // boundary conditions
+  void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary);
+
  private:
   void InitAdvection_(Teuchos::ParameterList& plist);
   void IdentifyUpwindCells_(const CompositeVector& u);
