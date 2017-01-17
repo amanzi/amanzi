@@ -47,11 +47,12 @@ class MatrixFE;
 
 class TreeOperator {
  public:
-  TreeOperator() {};
+  TreeOperator() : block_diagonal_(false) {};
   TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs);
   ~TreeOperator() {};
 
-  void SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op);
+  // main members
+  void SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op, bool transpose = false);
     
   virtual int Apply(const TreeVector& X, TreeVector& Y) const;
   virtual int ApplyAssembled(const TreeVector& X, TreeVector& Y) const;
@@ -66,6 +67,7 @@ class TreeOperator {
   // preconditioners
   void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
   void InitPreconditioner(Teuchos::ParameterList& plist);
+  void InitBlockDiagonalPreconditioner();
 
   // access
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; } 
@@ -74,12 +76,14 @@ class TreeOperator {
  private:
   Teuchos::RCP<const TreeVectorSpace> tvs_;
   Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Operator> > > blocks_;
+  Teuchos::Array<Teuchos::Array<bool> > transpose_;
   
   Teuchos::RCP<Epetra_CrsMatrix> A_;
   Teuchos::RCP<MatrixFE> Amat_;
   Teuchos::RCP<SuperMap> smap_;
 
   Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
+  bool block_diagonal_;
 
   Teuchos::RCP<VerboseObject> vo_;
 };

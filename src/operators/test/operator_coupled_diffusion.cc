@@ -1006,11 +1006,11 @@ std::pair<double,double> RunNonlinearProblem(
   // test the forward solution
   problem->CreateBlockOperators(upwind);
   if (jacobian == "none") {
-    problem->CreateBlockPCs(false,false,upwind);
+    problem->CreateBlockPCs(false, false, upwind);
   } else if (jacobian == "diagonal") {
-    problem->CreateBlockPCs(true,false,upwind);
+    problem->CreateBlockPCs(true, false, upwind);
   } else if (jacobian == "full") {
-    problem->CreateBlockPCs(true,true,upwind);
+    problem->CreateBlockPCs(true, true, upwind);
   } else {
     ASSERT(0);
   }

@@ -121,6 +121,7 @@ class Operator {
   // main members
   // -- virtual methods potentially altered by the schema
   virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
+  virtual int ApplyTranspose(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
   virtual int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
@@ -223,8 +224,11 @@ class Operator {
       const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
       const CompositeVector& X, CompositeVector& Y) const;
-
   virtual int ApplyMatrixFreeOp(const Op_Cell_Schema& op,
+      const CompositeVector& X, CompositeVector& Y) const;
+
+  // visit methods for ApplyTranspose 
+  virtual int ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
       const CompositeVector& X, CompositeVector& Y) const;
 
   // visit methods for symbolic assemble
@@ -258,7 +262,6 @@ class Operator {
   virtual void SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
-
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
@@ -294,7 +297,6 @@ class Operator {
   virtual void AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
-
   virtual void AssembleMatrixOp(const Op_Cell_Schema& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;

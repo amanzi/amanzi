@@ -25,11 +25,16 @@ class Op_Cell_Cell : public Op {
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       Op(OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL,
          name, mesh) {
-    vals.resize(mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED), 0.);
+    vals.resize(mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED), 0.0);
     vals_shadow = vals;
   }
 
   virtual void ApplyMatrixFreeOp(const Operator* assembler,
+          const CompositeVector& X, CompositeVector& Y) const {
+    assembler->ApplyMatrixFreeOp(*this, X, Y);
+  }
+
+  virtual void ApplyTransposeMatrixFreeOp(const Operator* assembler,
           const CompositeVector& X, CompositeVector& Y) const {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
   }

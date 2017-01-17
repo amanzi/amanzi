@@ -70,7 +70,7 @@ TEST(DIFFUSION_STOKES_2D) {
   int nrows = 2 * nnodes + nfaces;
   DenseMatrix A(nrows, nrows);
 
-  mfd.StiffnessMatrixNode2Face1(cell, T, A);
+  mfd.StiffnessMatrixBernardiRaugel(cell, T, A);
 
   printf("Stiffness matrix for cell %3d\n", cell);
   for (int i=0; i<nrows; i++) {

@@ -57,12 +57,12 @@ class MFD3D_Elasticity : public MFD3D {
 
   // complex DOFs
   // -- vectors at nodes, comal components on faces
-  int H1consistencyNode2Face1(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
+  int H1consistencyBernardiRaugel(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
 
-  int StiffnessMatrixNode2Face1(int c, const Tensor& K, DenseMatrix& A);
+  int StiffnessMatrixBernardiRaugel(int c, const Tensor& K, DenseMatrix& A);
 
   // divergence operator
-  int DivergenceMatrixNode2Face1(int c, DenseMatrix& A);
+  int DivergenceMatrixBernardiRaugel(int c, DenseMatrix& A);
 
  private:
   void MatrixMatrixProduct_(

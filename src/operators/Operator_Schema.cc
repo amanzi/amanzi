@@ -70,6 +70,33 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
 
 
 /* ******************************************************************
+* Apply the local matrices directly as schemas match.
+****************************************************************** */
+int Operator_Schema::ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
+                                                const CompositeVector& X, CompositeVector& Y) const
+{
+  ASSERT(op.matrices.size() == ncells_owned);
+
+  X.ScatterMasterToGhosted();
+  Y.PutScalarGhosted(0.0);
+
+  for (int c = 0; c != ncells_owned; ++c) {
+    const WhetStone::DenseMatrix& Acell = op.matrices[c];
+    int ncols = Acell.NumCols();
+    int nrows = Acell.NumRows();
+    WhetStone::DenseVector v(nrows), av(ncols);
+
+    ExtractVectorOp(c, op.schema_row_, v, X);
+    Acell.Multiply(v, av, true);
+    AssembleVectorOp(c, op.schema_col_, av, Y);
+  }
+
+  Y.GatherGhostedToMaster(Add);
+  return 0;
+}
+
+
+/* ******************************************************************
 * Parallel preconditioner: Y = P * X.
 ******************************************************************* */
 int Operator_Schema::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
@@ -99,6 +126,12 @@ int Operator_Schema::ApplyAssembled(const CompositeVector& X, CompositeVector& Y
   int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, schema_col_);
   ierr |= A_->Apply(Xcopy, Ycopy);
   ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, schema_row_);
+
+  if (ierr) {
+    Errors::Message msg;
+    msg << "Operators: ApplyAssemble failed.\n";
+    Exceptions::amanzi_throw(msg);
+  }
 
   return ierr;
 }
@@ -286,6 +319,14 @@ void Operator_Schema::AssembleVectorOp(
         }
       }
     }
+
+    if (it->kind == AmanziMesh::CELL) {
+      Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
+
+      for (int k = 0; k < it->num; ++k) {
+        Xc[k][c] += v(m++);
+      }
+    }
   }
 }
 
@@ -325,6 +366,14 @@ void Operator_Schema::ExtractVectorOp(
         for (int k = 0; k < it->num; ++k) {
           v(m++) = Xf[k][faces[n]];
         }
+      }
+    }
+
+    if (it->kind == AmanziMesh::CELL) {
+      const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
+
+      for (int k = 0; k < it->num; ++k) {
+        v(m++) = Xc[k][c];
       }
     }
   }

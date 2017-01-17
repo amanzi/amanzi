@@ -74,15 +74,47 @@ class Schema {
   std::string CreateUniqueName() const;
 
   // access
-  std::vector<SchemaItem>& items() { return items_; } 
+  AmanziMesh::Entity_kind base() const { return base_; }
+  const std::vector<SchemaItem>& items() const { return items_; } 
   std::vector<SchemaItem>::const_iterator begin() const { return items_.begin(); }
   std::vector<SchemaItem>::const_iterator end() const { return items_.end(); }
+
+  // output 
+  friend std::ostream& operator << (std::ostream& os, const Schema& s) {
+    os << "base=" << s.KindToString(s.base()) << "\n";
+    for (auto it = s.begin(); it != s.end(); ++it) {
+      os << " item: kind=" << s.KindToString(it->kind) << ", num=" << it->num << "\n";
+    }
+    return os;
+  }
 
  private:
   AmanziMesh::Entity_kind base_;
   std::vector<SchemaItem> items_; 
   std::vector<int> offset_;  // starting position of DOF ids
 };
+
+
+// non-member functions
+// -- comparison operators
+inline bool operator==(const Schema& s1, const Schema& s2) {
+  if (s1.base() != s2.base()) return false;
+  if (s1.items().size() != s2.items().size()) return false;
+
+  const std::vector<SchemaItem>& it1 = s1.items();
+  const std::vector<SchemaItem>& it2 = s2.items();
+
+  for (int i = 0; i < it1.size(); ++i) {
+    if (it1[i].kind != it2[i].kind) return false; 
+    if (it1[i].type != it2[i].type) return false; 
+    if (it1[i].num != it2[i].num) return false; 
+  }
+  return true;
+}
+
+inline bool operator!=(const Schema& s1, const Schema& s2) {
+  return !(s1 == s2);
+}
 
 }  // namespace Operators
 }  // namespace Amanzi

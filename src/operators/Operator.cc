@@ -268,16 +268,41 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
     Y.PutScalarGhosted(0.0);
   }
 
-  int ierr(0);
   apply_calls_++;
 
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     (*it)->ApplyMatrixFreeOp(this, X, Y);
   }
 
-  return ierr;
+  return 0;
 }
 
+
+/* ******************************************************************
+* Parallel matvec product Y = A^T * X.
+******************************************************************* */
+int Operator::ApplyTranspose(const CompositeVector& X, CompositeVector& Y, double scalar) const
+{
+  X.ScatterMasterToGhosted();
+
+  // initialize ghost elements
+  if (scalar == 0.0) {
+    Y.PutScalarMasterAndGhosted(0.0);
+  } else if (scalar == 1.0) {
+    Y.PutScalarGhosted(0.0);
+  } else {
+    Y.Scale(scalar);
+    Y.PutScalarGhosted(0.0);
+  }
+
+  apply_calls_++;
+
+  for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
+    (*it)->ApplyTransposeMatrixFreeOp(this, X, Y);
+  }
+
+  return 0;
+}
 
 /* ******************************************************************
 * Parallel matvec product Y = A * X.
@@ -299,10 +324,17 @@ int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, doubl
 
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
+
   int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
   ierr |= A_->Apply(Xcopy, Ycopy);
   ierr |= AddSuperVectorToCompositeVector(*smap_, Ycopy, Y, 0);
-  ASSERT(!ierr);
+
+  if (ierr) {
+    Errors::Message msg;
+    msg << "Operators: ApplyAssemble failed.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
   apply_calls_++;
 
   return ierr;
@@ -314,11 +346,11 @@ int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, doubl
 ******************************************************************* */
 int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
-  // Y = X;
-  // return 0;
-  Epetra_Vector Xcopy(A_->RowMap());
-  Epetra_Vector Ycopy(A_->RowMap());
-  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
+  int ierr(1);
+
+  Epetra_Vector Xcopy(*smap_->Map());
+  Epetra_Vector Ycopy(*smap_->Map());
+  ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
 
   // dump the schur complement
   // std::stringstream filename_s2;
@@ -327,7 +359,11 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 
   ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
   ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, 0);
-  ASSERT(!ierr);
+
+  if (ierr) {
+    Errors::Message msg("Operator: ApplyInverse failed.\n");
+    Exceptions::amanzi_throw(msg);
+  }
 
   return ierr;
 }
@@ -508,7 +544,7 @@ void Operator::OpExtend(op_iterator begin, op_iterator end)
 int Operator::SchemaMismatch_(const std::string& schema1, const std::string& schema2) const
 {
   std::stringstream err;
-  err << "Scheme mismatch " << schema1 << " |= " << schema2;
+  err << "Scheme mismatch " << schema1 << " != " << schema2;
   Errors::Message message(err.str());
   Exceptions::amanzi_throw(message);
   return 1;
@@ -610,6 +646,16 @@ int Operator::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
 ****************************************************************** */
 int Operator::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
                                 const CompositeVector& X, CompositeVector& Y) const
+{
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+/* ******************************************************************
+* Visit methods for ApplyTranspose: Cell
+****************************************************************** */
+int Operator::ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
+                                         const CompositeVector& X, CompositeVector& Y) const
 {
   return SchemaMismatch_(op.schema_string, schema_string_);
 }

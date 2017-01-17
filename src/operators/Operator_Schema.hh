@@ -40,13 +40,18 @@ class Operator_Schema : public Operator {
   }
 
   // required methods
+  // -- global methods
+  virtual void SymbolicAssembleMatrix();
+  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
+  virtual void UpdateRHS(const CompositeVector& source, bool volume_included);
+
   // -- visit methods for Apply
   virtual int ApplyMatrixFreeOp(const Op_Cell_Schema& op,
           const CompositeVector& X, CompositeVector& Y) const;
-  virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
 
-  // -- symbolic assemble creates supermap using new schema
-  virtual void SymbolicAssembleMatrix();
+  // -- visit methods for ApplyTranspose 
+  virtual int ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
+          const CompositeVector& X, CompositeVector& Y) const;
 
   // -- visit methods for symbolic assemble
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
@@ -57,9 +62,6 @@ class Operator_Schema : public Operator {
   virtual void AssembleMatrixOp(const Op_Cell_Schema& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
-
-  // -- rhs update
-  virtual void UpdateRHS(const CompositeVector& source, bool volume_included);
 
   // -- local <-> global communications
   virtual void ExtractVectorOp(int c, const Schema& schema,

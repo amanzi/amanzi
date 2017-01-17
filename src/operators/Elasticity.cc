@@ -55,16 +55,18 @@ void Elasticity::UpdateMatrices()
   Kc(0, 0) = 1.0;
   
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_nodes(c, &nodes);
-    int nnodes = nodes.size();
-    int nfaces = mesh_->cell_get_num_faces(c);
-    int ndofs = d * nnodes + nfaces;
+    if (method_ == BERNARDI_RAUGEL) {
+      mesh_->cell_get_nodes(c, &nodes);
+      int nnodes = nodes.size();
+      int nfaces = mesh_->cell_get_num_faces(c);
+      int ndofs = d * nnodes + nfaces;
 
-    WhetStone::DenseMatrix Acell(ndofs, ndofs);
-    if (K_.get()) Kc = (*K_)[c];
-    mfd.StiffnessMatrixNode2Face1(c, Kc, Acell);
+      WhetStone::DenseMatrix Acell(ndofs, ndofs);
+      if (K_.get()) Kc = (*K_)[c];
+      mfd.StiffnessMatrixBernardiRaugel(c, Kc, Acell);
 
-    local_op_->matrices[c] = Acell;
+      local_op_->matrices[c] = Acell;
+    }
   }
 }
 
@@ -128,6 +130,18 @@ void Elasticity::InitElasticity_(Teuchos::ParameterList& plist)
   global_op_->OpPushBack(local_op_);
   
   K_ = Teuchos::null;
+
+  // discretization method
+  std::string name = plist.get<std::string>("discretization", "none");
+  if (name == "BernardiRaugel") {
+    method_ = BERNARDI_RAUGEL;
+  } else if (name == "BernardiRaugel" && local_schema_row_ != local_schema_col_) {
+    method_ = BERNARDI_RAUGEL_P0;
+  } else {
+    Errors::Message msg;
+    msg << "Name of the discretization method is missing.";
+    Exceptions::amanzi_throw(msg);
+  }
 }
 
 }  // namespace Operators

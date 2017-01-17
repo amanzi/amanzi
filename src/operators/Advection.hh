@@ -18,6 +18,7 @@
 #include "BCsList.hh"
 #include "PDE_Helper.hh"
 #include "Operator.hh"
+#include "OperatorDefs.hh"
 #include "Schema.hh"
 
 namespace Amanzi {
@@ -54,8 +55,6 @@ class Advection : public BCsList, public PDE_Helper {
 
  protected:
   // operators and schemas
-  Teuchos::RCP<Operator> global_op_;
-  Teuchos::RCP<Op> local_op_;
   Schema global_schema_row_, global_schema_col_;
   Schema local_schema_col_, local_schema_row_;
 };

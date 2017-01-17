@@ -31,6 +31,7 @@ PDE_Helper::PDE_Helper(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
   nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 }
 
+
 /* ******************************************************************
 * Apply BCs is typically called for the global Operator.
 ****************************************************************** */
@@ -44,10 +45,13 @@ void PDE_Helper::ApplyBCs_Face(const Teuchos::Ptr<BCs>& bcf, Teuchos::RCP<Op> op
   std::vector<int> dirs, offset;
 
   CompositeVector& rhs = *global_op_->rhs();
-  Epetra_MultiVector& rhs_face = *rhs.ViewComponent("face", true);
   rhs.PutScalarGhosted(0.0);
 
+  Teuchos::RCP<Epetra_MultiVector> rhs_face;
+  if (primary) rhs_face = rhs.ViewComponent("face", true);
+
   const Schema& schema_row = global_op_->schema_row();
+  const Schema& schema_col = global_op_->schema_col();
 
   for (int c = 0; c != ncells_owned; ++c) {
     WhetStone::DenseMatrix& Acell = op->matrices[c];
@@ -65,13 +69,13 @@ void PDE_Helper::ApplyBCs_Face(const Teuchos::Ptr<BCs>& bcf, Teuchos::RCP<Op> op
     }
     if (!found) continue;
 
+    // essential conditions for test functions
     schema_row.ComputeOffset(c, mesh_, offset);
 
-    // essential conditions for test functions
+    bool flag(true);
     int item(0);
     for (auto it = op->schema_row_.begin(); it != op->schema_row_.end(); ++it, ++item) {
       if (it->kind == AmanziMesh::FACE) {
-        bool flag(true);
         for (int n = 0; n != nfaces; ++n) {
           int f = faces[n];
           if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
@@ -83,12 +87,25 @@ void PDE_Helper::ApplyBCs_Face(const Teuchos::Ptr<BCs>& bcf, Teuchos::RCP<Op> op
             for (int m = 0; m < ncols; m++) Acell(noff, m) = 0.0;
           }
         }
+      }
+    }
 
+    // essential zero conditions for trial functions
+    schema_col.ComputeOffset(c, mesh_, offset);
+
+    item = 0;
+    for (auto it = op->schema_col_.begin(); it != op->schema_col_.end(); ++it, ++item) {
+      if (it->kind == AmanziMesh::FACE) {
         for (int n = 0; n != nfaces; ++n) {
           int f = faces[n];
           double value = bc_value[f];
 
           if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+            if (flag) {  // make a copy of elemental matrix
+              op->matrices_shadow[c] = Acell;
+              flag = false;
+            }
+
             int noff(n + offset[item]);
             WhetStone::DenseVector rhs_loc(nrows);
 
@@ -101,7 +118,7 @@ void PDE_Helper::ApplyBCs_Face(const Teuchos::Ptr<BCs>& bcf, Teuchos::RCP<Op> op
 
             if (primary) {
               rhs_loc(noff) = 0.0;
-              rhs_face[0][f] = value;
+              (*rhs_face)[0][f] = value;
               Acell(noff, noff) = 1.0;
             }
 
@@ -112,7 +129,7 @@ void PDE_Helper::ApplyBCs_Face(const Teuchos::Ptr<BCs>& bcf, Teuchos::RCP<Op> op
     }
   } 
 
-  rhs.GatherGhostedToMaster("face", Add);
+  rhs.GatherGhostedToMaster(Add);
 }
 
 
@@ -129,11 +146,14 @@ void PDE_Helper::ApplyBCs_Node(const Teuchos::Ptr<BCs>& bcv, Teuchos::RCP<Op> op
   std::vector<int> offset;
 
   CompositeVector& rhs = *global_op_->rhs();
-  Epetra_MultiVector& rhs_node = *rhs.ViewComponent("node", true);
   rhs.PutScalarGhosted(0.0);
+
+  Teuchos::RCP<Epetra_MultiVector> rhs_node;
+  if (primary) rhs_node = rhs.ViewComponent("node", true);
 
   int d = mesh_->space_dimension(); 
   const Schema& schema_row = global_op_->schema_row();
+  const Schema& schema_col = global_op_->schema_col();
 
   for (int c = 0; c != ncells_owned; ++c) {
     WhetStone::DenseMatrix& Acell = op->matrices[c];
@@ -151,13 +171,13 @@ void PDE_Helper::ApplyBCs_Node(const Teuchos::Ptr<BCs>& bcv, Teuchos::RCP<Op> op
     }
     if (!found) continue;
 
+    // essential conditions for test functions
     op->schema_row_.ComputeOffset(c, mesh_, offset);
 
-    // essential conditions for test functions
+    bool flag(true);
     int item(0);
     for (auto it = op->schema_row_.begin(); it != op->schema_row_.end(); ++it, ++item) {
       if (it->kind == AmanziMesh::NODE) {
-        bool flag(true);
         for (int n = 0; n != nnodes; ++n) {
           int v = nodes[n];
           if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
@@ -171,12 +191,25 @@ void PDE_Helper::ApplyBCs_Node(const Teuchos::Ptr<BCs>& bcv, Teuchos::RCP<Op> op
             }
           }
         }
+      }
+    }
 
+    // essential zero conditions for trial functions
+    schema_col.ComputeOffset(c, mesh_, offset);
+
+    item = 0;
+    for (auto it = op->schema_col_.begin(); it != op->schema_col_.end(); ++it, ++item) {
+      if (it->kind == AmanziMesh::NODE) {
         for (int n = 0; n != nnodes; ++n) {
           int v = nodes[n];
           AmanziGeometry::Point value = bc_value[v];
 
           if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
+            if (flag) {  // make a copy of elemental matrix
+              op->matrices_shadow[c] = Acell;
+              flag = false;
+            }
+
             for (int k = 0; k < d; ++k) {
               int noff(d*n + k + offset[item]);
               WhetStone::DenseVector rhs_loc(nrows);
@@ -191,7 +224,7 @@ void PDE_Helper::ApplyBCs_Node(const Teuchos::Ptr<BCs>& bcv, Teuchos::RCP<Op> op
               if (primary) {
                 mesh_->node_get_cells(v, AmanziMesh::USED, &cells);
                 rhs_loc(noff) = 0.0;
-                rhs_node[k][v] = value[k];
+                (*rhs_node)[k][v] = value[k];
                 Acell(noff, noff) = 1.0 / cells.size();
               }
 
@@ -203,7 +236,7 @@ void PDE_Helper::ApplyBCs_Node(const Teuchos::Ptr<BCs>& bcv, Teuchos::RCP<Op> op
     }
   } 
 
-  rhs.GatherGhostedToMaster("node", Add);
+  rhs.GatherGhostedToMaster(Add);
 }
 
 }  // namespace Operators

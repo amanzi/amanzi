@@ -31,12 +31,12 @@
 
   <!-- SOLVERS -->
   <ParameterList name="solvers">
-    <ParameterList name="PCG">
+    <ParameterList name="GMRES">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-      <Parameter name="iterative method" type="string" value="pcg"/>
-      <ParameterList name="pcg parameters">
-        <Parameter name="maximum number of iterations" type="int" value="20"/>
-        <Parameter name="error tolerance" type="double" value="1e-12"/>
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="maximum number of iterations" type="int" value="40"/>
+        <Parameter name="error tolerance" type="double" value="1e-8"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
@@ -58,6 +58,10 @@
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="Diagonal">
+      <Parameter name="preconditioner type" type="string" value="diagonal"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
   <!--  OPERATORS  -->
@@ -75,19 +79,19 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="advection operator">
+    <ParameterList name="divergence operator">
       <Parameter name="discretization" type="string" value="BernardiRaugel"/>
       <ParameterList name="schema domain">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{node}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{2}"/>
+        <Parameter name="location" type="Array(string)" value="{node, face}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+        <Parameter name="number" type="Array(int)" value="{2, 1}"/>
       </ParameterList>
       <ParameterList name="schema range">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{node}"/>
+        <Parameter name="location" type="Array(string)" value="{cell}"/>
         <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{2}"/>
+        <Parameter name="number" type="Array(int)" value="{1}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

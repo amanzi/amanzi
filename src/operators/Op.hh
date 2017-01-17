@@ -114,6 +114,9 @@ class Op {
   virtual void ApplyMatrixFreeOp(const Operator* assembler,
           const CompositeVector& X, CompositeVector& Y) const = 0;
 
+  virtual void ApplyTransposeMatrixFreeOp(const Operator* assembler,
+          const CompositeVector& X, CompositeVector& Y) const = 0;
+
   virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const = 0;

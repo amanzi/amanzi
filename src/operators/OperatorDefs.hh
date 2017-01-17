@@ -27,6 +27,9 @@ typedef enum { OPERATOR_DIFFUSION_MFD,
                OPERATOR_ELECTROMAGNETICS,
                OPERATOR_ELECTROMAGNETICS_MHD} OperatorType;
 
+typedef enum { BERNARDI_RAUGEL,
+               BERNARDI_RAUGEL_P0 } MethodName;
+
 // Constants in the next block must powers of 2.
 const int OPERATOR_SCHEMA_DOFS_FACE = 1;
 const int OPERATOR_SCHEMA_DOFS_CELL = 2;
@@ -38,12 +41,14 @@ const int OPERATOR_SCHEMA_BASE_CELL = 32;
 const int OPERATOR_SCHEMA_BASE_NODE = 64;
 const int OPERATOR_SCHEMA_BASE_EDGE = 128;
 
+// schemas
 const int SCHEMA_DOFS_SCALAR = 1;
 const int SCHEMA_BASE_VECTOR = 2;
 
 const int OPERATOR_SCHEMA_RULE_EXACT = 1;
 const int OPERATOR_SCHEMA_RULE_SUBSET = 2;
 
+// boundary conditions
 const int OPERATOR_BC_NONE = 0;
 const int OPERATOR_BC_DIRICHLET = 1;
 const int OPERATOR_BC_NEUMANN = 2;
@@ -53,6 +58,7 @@ const int OPERATOR_BC_TYPE_NODE = 8;
 const int OPERATOR_BC_TYPE_FACE = 16;
 const int OPERATOR_BC_TYPE_EDGE = 32;
 
+// memory allocation
 const int OPERATOR_HEX_FACES = 6;  // Hexahedron is the common element
 const int OPERATOR_HEX_NODES = 8;
 const int OPERATOR_HEX_EDGES = 12;

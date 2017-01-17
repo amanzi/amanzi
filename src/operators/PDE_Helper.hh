@@ -21,6 +21,7 @@
 #include "Mesh.hh"
 #include "Op.hh"
 #include "Operator.hh"
+#include "OperatorDefs.hh"
 #include "Schema.hh"
 
 namespace Amanzi {
@@ -49,6 +50,9 @@ class PDE_Helper {
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
   int nnodes_owned, nnodes_wghost;
+
+  // discretization method
+  MethodName method_;
 };
 
 }  // namespace Operators

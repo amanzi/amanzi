@@ -271,6 +271,11 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/operator_elasticity.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+    add_amanzi_test(operators_stokes operators_stokes
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_stokes.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
     # reconstruction tests
     add_amanzi_test(operators_reconstruction operators_reconstruction
                     KIND unit
