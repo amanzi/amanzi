@@ -69,7 +69,7 @@ All instructions assume you use bash.  Alter as needed for other shells.
 
   c. Download and unzip the ats source tar at https://github.com/amanzi/ats-dev/ .  Again, most people want the most current ATS release at https://github.com/amanzi/ats/releases which will be named ats-X.YY.pW  Note specifically that the patch number (Z in Amanzi, W in ATS) need not match, but the major and minor version numbers X and YY **must match**.
 
-    Currently this is ``ats-0.86.p0``
+    Currently this is ``ats-0.86.p1``
 
 2. Build the Amanzi TPLs.
   a. Set up a directory for configuration scripts and a TPL installation directory.
