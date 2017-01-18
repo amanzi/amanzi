@@ -60,7 +60,6 @@
     </ParameterList>
     <ParameterList name="Diagonal">
       <Parameter name="preconditioner type" type="string" value="diagonal"/>
-      </ParameterList>
     </ParameterList>
   </ParameterList>
 
