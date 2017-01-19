@@ -158,7 +158,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // Test SPD properties of the matrix and preconditioner.
-  Verification ver(global_op);
+  VerificationCV ver(global_op);
   ver.CheckMatrixSPD(false, true);
   ver.CheckPreconditionerSPD(false, true);
 

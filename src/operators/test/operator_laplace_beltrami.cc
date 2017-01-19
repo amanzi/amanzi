@@ -121,7 +121,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // Test SPD properties of the matrix and preconditioner.
-  Verification ver(global_op);
+  VerificationCV ver(global_op);
   ver.CheckMatrixSPD();
   ver.CheckPreconditionerSPD();
 
@@ -241,7 +241,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // Test SPD properties of the matrix and preconditioner.
-  Verification ver(global_op);
+  VerificationCV ver(global_op);
   ver.CheckMatrixSPD();
   ver.CheckPreconditionerSPD();
 
@@ -361,7 +361,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // Test SPD properties of the matrix and preconditioner.
-  Verification ver(global_op);
+  VerificationCV ver(global_op);
   ver.CheckMatrixSPD();
   ver.CheckPreconditionerSPD();
 

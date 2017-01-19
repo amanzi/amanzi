@@ -149,7 +149,7 @@ void RunTest(std::string op_list_name) {
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // Test SPD properties of the matrix and preconditioner.
-  Verification ver(global_op);
+  VerificationCV ver(global_op);
   ver.CheckMatrixSPD();
   ver.CheckPreconditionerSPD();
 

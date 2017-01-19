@@ -210,7 +210,7 @@ void RunTest(std::string op_list_name) {
 
     // Test SPD properties of the matrix and preconditioner.
     if (loop == 2) {
-      Verification ver(global_op);
+      VerificationCV ver(global_op);
       ver.CheckMatrixSPD(true, true);
       ver.CheckPreconditionerSPD(true, true);
     }

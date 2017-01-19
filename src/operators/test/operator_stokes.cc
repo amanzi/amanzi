@@ -35,6 +35,7 @@
 #include "TreeOperator.hh"
 
 #include "AnalyticElasticity01.hh"
+#include "Verification.hh"
 
 /* *****************************************************************
 * Stokes model: exactness test.
@@ -189,6 +190,11 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   pc->SetOperatorBlock(0, 0, op00->global_operator());
   pc->SetOperatorBlock(1, 1, pc11->global_operator());
   pc->InitBlockDiagonalPreconditioner();
+
+  // Test SPD properties of the matrix and preconditioner.
+  VerificationTV ver1(op), ver2(pc);
+  ver1.CheckMatrixSPD();
+  ver2.CheckPreconditionerSPD();
 
   // solve the problem
   Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");

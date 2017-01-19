@@ -153,7 +153,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // Test SPD properties of the matrix and preconditioner.
-  Verification ver(global_op);
+  VerificationCV ver(global_op);
   ver.CheckMatrixSPD(true, true);
   ver.CheckPreconditionerSPD(true, true);
 
@@ -313,7 +313,7 @@ TEST(OPERATOR_ELASTICITY_ADVECTION_EXACTNESS) {
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // Test SPD properties of the matrix and preconditioner.
-  Verification ver(global_op);
+  VerificationCV ver(global_op);
   ver.CheckMatrixSPD(true, true);
   ver.CheckPreconditionerSPD(true, true);
 

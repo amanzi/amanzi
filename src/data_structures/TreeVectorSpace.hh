@@ -21,10 +21,9 @@ namespace Amanzi {
 class CompositeVectorSpace;
 
 class TreeVectorSpace {
-
  public:
-  // Constructor
-  TreeVectorSpace() {}
+  // Constructors
+  TreeVectorSpace() {};
   TreeVectorSpace(const Teuchos::RCP<const CompositeVectorSpace>& cvfac) :
       data_(cvfac) {}
   TreeVectorSpace(const TreeVectorSpace& other);
@@ -35,9 +34,7 @@ class TreeVectorSpace {
 
   // Set/get data space
   Teuchos::RCP<const CompositeVectorSpace> Data() const { return data_; }
-  void SetData(const Teuchos::RCP<const CompositeVectorSpace>& data) {
-    data_ = data; }
-
+  void SetData(const Teuchos::RCP<const CompositeVectorSpace>& data) { data_ = data; }
 
   // Access to SubVectors
   typedef std::vector<Teuchos::RCP<const TreeVectorSpace> > SubVectorsContainer;
@@ -61,9 +58,8 @@ class TreeVectorSpace {
  private:
   Teuchos::RCP<const CompositeVectorSpace> data_;
   std::vector< Teuchos::RCP<const TreeVectorSpace> > subvecs_;
-
 };
 
-} // namespace amanzi
+} // namespace Amanzi
 
 #endif

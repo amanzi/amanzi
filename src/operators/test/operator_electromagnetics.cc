@@ -189,7 +189,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // Test SPD properties of the matrix and preconditioner.
-  Verification ver(global_op);
+  VerificationCV ver(global_op);
   ver.CheckMatrixSPD(true, true);
   ver.CheckPreconditionerSPD(true, true);
 

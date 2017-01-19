@@ -154,7 +154,7 @@ class TreeVector {
   Teuchos::RCP<TreeVectorSpace> map_;
 
   Teuchos::RCP<CompositeVector> data_;
-  std::vector< Teuchos::RCP<TreeVector> > subvecs_;
+  std::vector<Teuchos::RCP<TreeVector> > subvecs_;
   Epetra_MpiComm comm_world_;
 };
 
