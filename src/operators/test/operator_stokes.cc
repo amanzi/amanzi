@@ -34,7 +34,7 @@
 #include "Elasticity.hh"
 #include "TreeOperator.hh"
 
-#include "AnalyticElasticity01.hh"
+#include "AnalyticElasticity02.hh"
 #include "Verification.hh"
 
 /* *****************************************************************
@@ -63,7 +63,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 5, Teuchos::null);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 16, 20, Teuchos::null);
 
   // modify diffusion coefficient
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -72,7 +72,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
-  AnalyticElasticity01 ana(mesh);
+  AnalyticElasticity02 ana(mesh);
 
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells; c++) {
@@ -218,13 +218,17 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   double unorm, ul2_err, uinf_err;
   ana.ComputeNodeError(*solution.SubVector(0)->Data(), 0.0, unorm, ul2_err, uinf_err);
 
+  double pnorm, pl2_err, pinf_err;
+  ana.ComputeCellError(*solution.SubVector(1)->Data(), 0.0, pnorm, pl2_err, pinf_err);
+
   if (MyPID == 0) {
     ul2_err /= unorm;
-    printf("L2(u)=%12.8g  Inf(u)=%12.8g  itr=%3d\n",
-        ul2_err, uinf_err, solver->num_itrs());
+    printf("L2(u)=%12.8g  Inf(u)=%12.8g  L2(p)=%12.8g  Inf(p)=%12.8g  itr=%3d\n",
+        ul2_err, uinf_err, pl2_err, pinf_err, solver->num_itrs());
 
-    CHECK(ul2_err < 0.1);
-    CHECK(solver->num_itrs() < 35);
+    CHECK(ul2_err < 0.01);
+    CHECK(pl2_err < 0.05);
+    CHECK(solver->num_itrs() < 60);
   }
 }
 

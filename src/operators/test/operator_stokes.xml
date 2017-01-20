@@ -35,7 +35,7 @@
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
-        <Parameter name="maximum number of iterations" type="int" value="40"/>
+        <Parameter name="maximum number of iterations" type="int" value="100"/>
         <Parameter name="error tolerance" type="double" value="1e-8"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>

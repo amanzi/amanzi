@@ -8,7 +8,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Base class for testing elasticity-type problems.
+  Base class for testing elasticity and Stokes-type problems.
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_ELASTICITY_BASE_HH_
@@ -39,6 +39,7 @@ class AnalyticElasticityBase {
   virtual Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // error calculation
+  // -- velocity
   void ComputeNodeError(Amanzi::CompositeVector& u, double t, double& unorm, double& l2_err, double& inf_err) {
     unorm = 0.0;
     l2_err = 0.0;
@@ -91,6 +92,38 @@ class AnalyticElasticityBase {
     mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
 #endif
     unorm = sqrt(unorm);
+    l2_err = sqrt(l2_err);
+  }
+
+  // -- pressure
+  void ComputeCellError(Amanzi::CompositeVector& p, double t, double& pnorm, double& l2_err, double& inf_err) {
+    pnorm = 0.0;
+    l2_err = 0.0;
+    inf_err = 0.0;
+
+    Epetra_MultiVector& p_cell = *p.ViewComponent("cell");
+
+    for (int c = 0; c < ncells_owned; ++c) {
+      const Amanzi::AmanziGeometry::Point& xm = mesh_->cell_centroid(c);
+      double area = mesh_->cell_volume(c);
+
+      double pexact = pressure_exact(xm, t);
+      double tmp = fabs(p_cell[0][c] - pexact);
+
+      l2_err += tmp * tmp * area;
+      inf_err = std::max(inf_err, tmp);
+      pnorm += pexact * pexact * area;
+      // std::cout << c << " ph=" << p_cell[0][c] << " ex=" << pexact << std::endl;
+    }
+#ifdef HAVE_MPI
+    double tmp = pnorm;
+    mesh_->get_comm()->SumAll(&tmp, &pnorm, 1);
+    tmp = l2_err;
+    mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
+    tmp = inf_err;
+    mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+#endif
+    pnorm = sqrt(pnorm);
     l2_err = sqrt(l2_err);
   }
 
