@@ -61,11 +61,36 @@
       </ParameterList>
 
       <ParameterList name="operators">
+        <ParameterList name="elasticity operator">
+          <Parameter name="discretization" type="string" value="BernardiRaugel"/>
+          <ParameterList name="schema">
+            <Parameter name="base" type="string" value="cell"/>
+            <Parameter name="location" type="Array(string)" value="{node, face}"/>
+            <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+            <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+          </ParameterList>
+        </ParameterList>
+
+        <ParameterList name="divergence operator">
+          <Parameter name="discretization" type="string" value="BernardiRaugel"/>
+          <ParameterList name="schema domain">
+            <Parameter name="base" type="string" value="cell"/>
+            <Parameter name="location" type="Array(string)" value="{node, face}"/>
+            <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+            <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+          </ParameterList>
+          <ParameterList name="schema range">
+            <Parameter name="base" type="string" value="cell"/>
+            <Parameter name="location" type="Array(string)" value="{cell}"/>
+            <Parameter name="type" type="Array(string)" value="{scalar}"/>
+            <Parameter name="number" type="Array(int)" value="{1}"/>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="time integrator">
         <Parameter name="linear solver" type="string" value="none"/>
-        <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 
         <Parameter name="time integration method" type="string" value="BDF1"/>
@@ -134,6 +159,20 @@
 
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
+    <ParameterList name="Hypre AMG">
+      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
+      <ParameterList name="boomer amg parameters">
+        <Parameter name="tolerance" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="smoother sweeps" type="int" value="3"/>
+        <Parameter name="cycle applications" type="int" value="5"/>
+        <Parameter name="strong threshold" type="double" value="5.00000000000000000e-01"/>
+        <Parameter name="cycle type" type="int" value="1"/>
+        <Parameter name="coarsen type" type="int" value="0"/>
+        <Parameter name="verbosity" type="int" value="0"/>
+        <Parameter name="relaxation type" type="int" value="3"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 </ParameterList>
 

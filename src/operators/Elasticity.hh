@@ -34,7 +34,8 @@ class Elasticity : public BCsList, public PDE_Helper {
              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       PDE_Helper(mesh),
       plist_(plist),
-      K_(Teuchos::null)
+      K_(Teuchos::null),
+      K_default_(1.0)
   {
     global_op_ = Teuchos::null;
     operator_type_ = OPERATOR_ELASTICITY;
@@ -43,7 +44,8 @@ class Elasticity : public BCsList, public PDE_Helper {
 
   // main virtual members
   // -- setup 
-  virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
+  void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
+  void SetTensorCoefficient(double K);
 
   // -- creation of an operator
   virtual void UpdateMatrices();
@@ -63,6 +65,7 @@ class Elasticity : public BCsList, public PDE_Helper {
 
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
+  double K_default_;
 
   // operator and schemas
   Schema global_schema_col_, global_schema_row_;

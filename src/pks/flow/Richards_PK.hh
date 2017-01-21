@@ -61,7 +61,7 @@ class Richards_PK : public Flow_PK {
   virtual void set_dt(double dt) { dt_ = dt; dt_desirable_ = dt_; }
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& Sx);
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
 
   virtual std::string name() { return passwd_; }

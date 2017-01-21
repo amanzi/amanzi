@@ -67,7 +67,7 @@ TEST(NAVIER_STOKES_2D) {
  
   // solve the problem 
   int itrs(0);
-  double T(0.0), T0(0.0), T1(1.0), dT0(0.1), dT;
+  double T(0.0), T0(0.0), T1(1.0), dT0(0.1), dT(0.1), dTnext;
   while (T < T1) {
     if (itrs == 0) {
       Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
@@ -81,5 +81,23 @@ TEST(NAVIER_STOKES_2D) {
       dT = dTnext;
     }
     NSPK->bdf1_dae()->CommitSolution(dT, soln);
+
+    T = NSPK->bdf1_dae()->time();
+    dT = dTnext;
+    itrs++;
+
+    // reset primary fields
+    Teuchos::RCP<PrimaryVariableFieldEvaluator> fluid_velocity_eval =
+       Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator("pressure"));
+    *S->GetFieldData("fluid_velocity", "navier stokes") = *soln->SubVector(0)->Data();
+    fluid_velocity_eval->SetFieldAsChanged(S.ptr());
+
+    Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval =
+       Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator("pressure"));
+    *S->GetFieldData("pressure", "navier stokes") = *soln->SubVector(1)->Data();
+    pressure_eval->SetFieldAsChanged(S.ptr());
+
+    // commit step
+    NSPK->CommitStep(T - dT, T, S);
   }
 }

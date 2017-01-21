@@ -797,7 +797,7 @@ void Richards_PK::InitializeStatistics_()
 
 /* ******************************************************************* 
 * Performs one time step from time t_old to time t_new either for
-* steady-state or transient sumulation. If reinit=true, enforce 
+* steady-state or transient simulation. If reinit=true, enforce 
 * p-lambda constraints.
 ******************************************************************* */
 bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)

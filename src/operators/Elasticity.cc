@@ -36,9 +36,14 @@ namespace Operators {
 * Initialization of the operator, scalar coefficient.
 ****************************************************************** */
 void Elasticity::SetTensorCoefficient(
-    const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
-{
+    const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) {
   K_ = K;
+  K_default_ = 1.0;
+}
+
+void Elasticity::SetTensorCoefficient(double K) {
+  K_ = Teuchos::null;
+  K_default_ = K;
 }
 
 
@@ -52,7 +57,7 @@ void Elasticity::UpdateMatrices()
   int d = mesh_->space_dimension();
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
-  Kc(0, 0) = 1.0;
+  Kc(0, 0) = K_default_;
   
   for (int c = 0; c < ncells_owned; c++) {
     if (method_ == BERNARDI_RAUGEL) {

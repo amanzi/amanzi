@@ -37,6 +37,7 @@
       <ParameterList name="gmres parameters">
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <Parameter name="error tolerance" type="double" value="1e-8"/>
+        <Parameter name="controller training end" type="int" value="100"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>

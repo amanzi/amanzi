@@ -21,20 +21,26 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
+#include "Accumulation.hh"
+#include "AdvectionRiemann.hh"
 #include "BDF1_TI.hh"
+#include "Elasticity.hh"
 #include "PK.hh"
 #include "PK_Factory.hh"
 #include "PK_PhysicalBDF.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "State.hh"
+#include "TreeOperator.hh"
 #include "TreeVector.hh"
 #include "Units.hh"
 #include "VerboseObject.hh"
 
+#include "NavierStokesBoundaryFunction.hh"
+
 namespace Amanzi {
 namespace NavierStokes {
 
-class NavierStokes_PK {
+class NavierStokes_PK : public PK_PhysicalBDF {
  public:
   NavierStokes_PK(Teuchos::ParameterList& pk_tree,
                   const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -55,6 +61,12 @@ class NavierStokes_PK {
   virtual double get_dt() { return dt_; }
   virtual void set_dt(double dt) { dt_ = dt; dt_desirable_ = dt_; }
 
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {};
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
+
+  virtual std::string name() { return passwd_; }
+
   // methods required for time integration interface
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
   void Functional(const double t_old, double t_new, 
@@ -66,9 +78,46 @@ class NavierStokes_PK {
   int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu);
   void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt);
 
+  // -- check the admissibility of a solution
+  //    override with the actual admissibility check
+  bool IsAdmissible(Teuchos::RCP<const TreeVector> up) { return true; }
+
+  // -- possibly modifies the predictor that is going to be used as a
+  //    starting value for the nonlinear solve in the time integrator,
+  //    the time integrator will pass the predictor that is computed
+  //    using extrapolation and the time step that is used to compute
+  //    this predictor this function returns true if the predictor was
+  //    modified, false if not
+  bool ModifyPredictor(double dt, 
+                       Teuchos::RCP<const TreeVector> u0,
+                       Teuchos::RCP<TreeVector> u) { return false; }
+
+  // -- possibly modifies the correction, after the nonlinear solver (NKA)
+  //    has computed it, will return true if it did change the correction,
+  //    so that the nonlinear iteration can store the modified correction
+  //    and pass it to NKA so that the NKA space can be updated
+  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+      ModifyCorrection(double dt,
+                       Teuchos::RCP<const TreeVector> res,
+                       Teuchos::RCP<const TreeVector> u,
+                       Teuchos::RCP<TreeVector> du) {
+    return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+  }
+
+
+  // -- calling this indicates that the time integration
+  //    scheme is changing the value of the solution in state.
+  void ChangedSolution() {
+    pressure_eval_->SetFieldAsChanged(S_.ptr());
+    fluid_velocity_eval_->SetFieldAsChanged(S_.ptr());
+  }
+
   // other methods
   // -- access
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae() { return bdf1_dae_; }
+
+ private:
+  void UpdateSourceBoundaryData_(double t_old, double t_new);
 
  public:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
@@ -84,9 +133,18 @@ class NavierStokes_PK {
   double dt_, dt_next_, dt_desirable_;
 
  protected:
+  // pointers to primary fields and their evaluators
   Teuchos::RCP<TreeVector> soln_;
+  Teuchos::RCP<CompositeVector> soln_p_, soln_u_;
 
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_, fluid_velocity_eval_;
+
+  // solvers
+  Teuchos::RCP<Operators::TreeOperator> op_matrix_, op_preconditioner_, op_pc_solver_;
+  Teuchos::RCP<Operators::Elasticity> op_matrix_elas_, op_preconditioner_elas_;
+  Teuchos::RCP<Operators::Accumulation> op_acc_, op_mass_;
+  Teuchos::RCP<Operators::AdvectionRiemann> op_div_;
+  std::string preconditioner_name_, solver_name_;
  
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -96,6 +154,14 @@ class NavierStokes_PK {
 
   // time integrators
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae_;
+  int num_itrs_;
+
+  // boundary conditions
+  std::vector<Teuchos::RCP<NavierStokesBoundaryFunction> > bcs_; 
+  Teuchos::RCP<Operators::BCs> bcf_, bcv_;
+  std::vector<int> bcf_model_, bcv_model_; 
+  std::vector<double> bcf_value_, bcf_mixed_;
+  std::vector<AmanziGeometry::Point> bcv_value_;
 
   // io
   Utils::Units units_;
