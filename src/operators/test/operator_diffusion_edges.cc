@@ -83,9 +83,9 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
   }
 
   // create boundary data
-  std::vector<int> bc_model(nedges_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nedges_wghost);
-  std::vector<double> bc_mixed;
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int e = 0; e < nedges_wghost; ++e) {
     const Point& xe = mesh->edge_centroid(e);
@@ -95,7 +95,6 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
       bc_value[e] = ana.pressure_exact(xe, 0.0);
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_EDGE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator edge");

@@ -230,19 +230,13 @@ struct Problem {
     int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
     // this is bad memory management but is required by bad design of BCs struct
-    std::vector<int>* bc_model0 =
-        new std::vector<int>(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-    std::vector<double>* bc_value0 =
-        new std::vector<double>(nfaces_wghost, 0.0);
-    std::vector<double>* bc_mixed0 =
-        new std::vector<double>(nfaces_wghost, 0.0);
+    bc0 = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE));
+    std::vector<int>& bc_model0 = bc0->bc_model();
+    std::vector<double>& bc_value0 = bc0->bc_value();
 
-    std::vector<int>* bc_model1 =
-        new std::vector<int>(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-    std::vector<double>* bc_value1 =
-        new std::vector<double>(nfaces_wghost, 0.0);
-    std::vector<double>* bc_mixed1 =
-        new std::vector<double>(nfaces_wghost, 0.0);
+    bc1 = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE));
+    std::vector<int>& bc_model1 = bc1->bc_model();
+    std::vector<double>& bc_value1 = bc1->bc_value();
   
     for (int f = 0; f < nfaces_wghost; f++) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
@@ -250,46 +244,34 @@ struct Problem {
       int dir, c = BoundaryFaceGetCell(*mesh, f);
       const AmanziGeometry::Point& normal = mesh->face_normal(f, false, c, &dir);
 
-      // if (fabs(xf[0]) < 1e-12 || fabs(xf[1]) < 1e-12 || fabs(xf[0] - 1.0) < 1e-12 || fabs(xf[1] - 1.0) < 1e-12) {
-      //   (*bc_model0)[f] = Operators::OPERATOR_BC_DIRICHLET;
-      //   (*bc_value0)[f] = ana->exact0(xf, 0.0);
-      //   (*bc_model1)[f] = Operators::OPERATOR_BC_DIRICHLET;
-      //   (*bc_value1)[f] = ana->exact1(xf, 0.0);      
-      // }
-      
       if (fabs(xf[0]) < 1e-12) {
-        (*bc_model0)[f] = Operators::OPERATOR_BC_NEUMANN;
-        (*bc_value0)[f] = ana->velocity_exact0(xf, 0.0) * normal / area;
-        (*bc_model1)[f] = Operators::OPERATOR_BC_NEUMANN;
-        (*bc_value1)[f] = ana->velocity_exact1(xf, 0.0) * normal / area;
+        bc_model0[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_value0[f] = ana->velocity_exact0(xf, 0.0) * normal / area;
+        bc_model1[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_value1[f] = ana->velocity_exact1(xf, 0.0) * normal / area;
         
       } else if(fabs(xf[1]) < 1e-12) {
         // y = 0 boundary
-        (*bc_model0)[f] = Operators::OPERATOR_BC_DIRICHLET;
-        (*bc_value0)[f] = ana->exact0(xf, 0.0);
-        (*bc_model1)[f] = Operators::OPERATOR_BC_NEUMANN;
-        (*bc_value1)[f] = ana->velocity_exact1(xf, 0.0) * normal / area;
+        bc_model0[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value0[f] = ana->exact0(xf, 0.0);
+        bc_model1[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_value1[f] = ana->velocity_exact1(xf, 0.0) * normal / area;
         
       } else if(fabs(xf[0] - 1.0) < 1e-12) {
         // x = 1 boundary
-        (*bc_model0)[f] = Operators::OPERATOR_BC_NEUMANN;
-        (*bc_value0)[f] = ana->velocity_exact0(xf, 0.0) * normal / area;
-        (*bc_model1)[f] = Operators::OPERATOR_BC_DIRICHLET;
-        (*bc_value1)[f] = ana->exact1(xf, 0.0);
+        bc_model0[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_value0[f] = ana->velocity_exact0(xf, 0.0) * normal / area;
+        bc_model1[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value1[f] = ana->exact1(xf, 0.0);
         
       } else if (fabs(xf[1] - 1.0) < 1e-12) {
         // y = 1 boudaries
-        (*bc_model0)[f] = Operators::OPERATOR_BC_DIRICHLET;
-        (*bc_value0)[f] = ana->exact0(xf, 0.0);
-        (*bc_model1)[f] = Operators::OPERATOR_BC_DIRICHLET;
-        (*bc_value1)[f] = ana->exact1(xf, 0.0);      
+        bc_model0[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value0[f] = ana->exact0(xf, 0.0);
+        bc_model1[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value1[f] = ana->exact1(xf, 0.0);      
       }
     }
-    
-    bc0 = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE,
-            (*bc_model0), (*bc_value0), *bc_mixed0));
-    bc1 = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE,
-            (*bc_model1), (*bc_value1), *bc_mixed1));
   }
     
   void MakeTensorCoefs() {
@@ -575,15 +557,6 @@ struct Problem {
     std::cout << "Kr1 = ";
     kr1->Print(std::cout);
     std::cout << "-------------------------" << std::endl;
-    // std::cout << "BC: face, marker0, val0, marker1, val1:" << std::endl;
-    // for (int f=0; f!=bc0->bc_model().size(); ++f) {
-    //   std::cout << " " << f << " "
-    //             << bc0->bc_model()[f] << " " << bc0->bc_value()[f]
-    //             << " : " 
-    //             << bc0->bc_model()[f] << " " << bc0->bc_value()[f]
-    //             << std::endl;
-    // }
-    // std::cout << "-------------------------" << std::endl;
   }
 
   void ReportError(const std::string& filename,

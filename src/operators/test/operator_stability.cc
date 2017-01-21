@@ -87,13 +87,13 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   double rho(1.0), mu(1.0);
 
   // create boundary data
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
+
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   Point xv(2);
-  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost);
-  std::vector<double> bc_mixed;
-
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
@@ -102,7 +102,6 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create space for diffusion operator 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -250,9 +249,9 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
 
   // create boundary data (no mixed bc)
   Point xv(2);
-  std::vector<int> bc_model(nnodes_wghost);
-  std::vector<double> bc_value(nnodes_wghost);
-  std::vector<double> bc_mixed;
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int v = 0; v < nnodes_wghost; v++) {
     mesh->node_get_coordinates(v, &xv);
@@ -262,7 +261,6 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
       bc_model[v] = Operators::OPERATOR_BC_DIRICHLET;
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_NODE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());

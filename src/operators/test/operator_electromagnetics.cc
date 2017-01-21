@@ -94,9 +94,9 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   int nedges_wghost = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::USED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
-  std::vector<int> bc_model(nedges_wghost, OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nedges_wghost);
-  std::vector<double> bc_mixed;
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   std::vector<int> edirs;
   AmanziMesh::Entity_ID_List cells, edges;
@@ -121,7 +121,6 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
       }
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_EDGE, bc_model, bc_value, bc_mixed));
 
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")

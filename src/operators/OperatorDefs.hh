@@ -54,10 +54,6 @@ const int OPERATOR_BC_DIRICHLET = 1;
 const int OPERATOR_BC_NEUMANN = 2;
 const int OPERATOR_BC_MIXED = 4;
 
-const int OPERATOR_BC_TYPE_NODE = 8;
-const int OPERATOR_BC_TYPE_FACE = 16;
-const int OPERATOR_BC_TYPE_EDGE = 32;
-
 // memory allocation
 const int OPERATOR_HEX_FACES = 6;  // Hexahedron is the common element
 const int OPERATOR_HEX_NODES = 8;

@@ -83,9 +83,9 @@ void Electromagnetics::ApplyBCs(bool primary, bool eliminate)
                          | OPERATOR_SCHEMA_DOFS_EDGE)) {
     Teuchos::RCP<BCs> bc_f, bc_e;
     for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
-      if ((*bc)->type() == OPERATOR_BC_TYPE_FACE) {
+      if ((*bc)->kind() == AmanziMesh::FACE) {
         bc_f = *bc;
-      } else if ((*bc)->type() == OPERATOR_BC_TYPE_EDGE) {
+      } else if ((*bc)->kind() == AmanziMesh::EDGE) {
         bc_e = *bc;
       }
     }

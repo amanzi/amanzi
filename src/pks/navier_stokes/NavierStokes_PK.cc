@@ -175,14 +175,8 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
 
   // Create BC objects.
-  bcf_model_.resize(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  bcf_value_.resize(nfaces_wghost, 0.0);
-  bcf_mixed_.resize(nfaces_wghost, 0.0);
-  bcf_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bcf_model_, bcf_value_, bcf_mixed_));
-
-  bcv_model_.resize(nnodes_wghost, Operators::OPERATOR_BC_NONE);
-  bcv_value_.resize(nnodes_wghost);
-  bcv_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_NODE, bcv_model_, bcv_value_));
+  bcf_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE));
+  bcv_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::NODE));
 
   // Initialize matrix and preconditioner operators.
   // -- create elastic block

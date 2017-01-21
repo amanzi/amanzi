@@ -83,9 +83,9 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   double rho(1.0), mu(1.0);
 
   // create boundary data
-  std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost);
-  std::vector<double> bc_mixed;
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -95,7 +95,6 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
       bc_value[f] = xf[1] * xf[1];
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create the global operator space
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -213,9 +212,9 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   double rho(1.0), mu(1.0);
 
   // create boundary data
-  std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost);
-  std::vector<double> bc_mixed;
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -225,7 +224,6 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
       bc_value[f] = xf[1] * xf[1];
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create the global operator space
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());

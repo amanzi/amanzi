@@ -84,8 +84,6 @@ class HeatConduction : public AmanziSolvers::SolverFnBase<CompositeVector> {
   Teuchos::RCP<Operators::Accumulation> op_acc_;
 
   Teuchos::RCP<Operators::BCs> bc_;  
-  std::vector<int> bc_model;
-  std::vector<double> bc_value, bc_mixed;
 
   std::vector<WhetStone::Tensor> K;
   Teuchos::RCP<CompositeVector> k, dkdT;
@@ -144,8 +142,9 @@ void HeatConduction::Init(
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
-  bc_model.assign(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  bc_value.assign(nfaces_wghost, 0.0);
+  bc_ = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE));
+  std::vector<int>& bc_model = bc_->bc_model();
+  std::vector<double>& bc_value = bc_->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const AmanziGeometry::Point& xf = mesh->face_centroid(f);
@@ -161,7 +160,6 @@ void HeatConduction::Init(
       bc_value[f] = TemperatureFloor;
     }
   }
-  bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // constant accumulation term
   dT = 5e-3;
@@ -316,6 +314,8 @@ void HeatConduction::UpdateValues(const CompositeVector& u)
     dkdT_c[0][c] = ConductionDerivative(c, u);
   }
 
+  std::vector<int>& bc_model = bc_->bc_model();
+  std::vector<double>& bc_value = bc_->bc_value();
   upwind_->Compute(*flux_, u, bc_model, bc_value, *k, &HeatConduction::Conduction);
   upwind_->Compute(*flux_, u, bc_model, bc_value, *dkdT, &HeatConduction::ConductionDerivative);
 }

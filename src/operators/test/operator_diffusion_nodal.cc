@@ -88,9 +88,9 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
   // create boundary data
   Point xv(2);
-  std::vector<int> bc_model(nnodes_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nnodes_wghost);
-  std::vector<double> bc_mixed;
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int v = 0; v < nnodes_wghost; v++) {
     mesh->node_get_coordinates(v, &xv);
@@ -100,7 +100,6 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
       bc_value[v] = ana.pressure_exact(xv, 0.0);
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_NODE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
@@ -267,9 +266,9 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
 
   // create boundary data (no mixed bc)
   Point xv(2);
-  std::vector<int> bc_model_v(nnodes_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value_v(nnodes_wghost, 0.0);
-  std::vector<double> bc_mixed_v;
+  Teuchos::RCP<BCs> bc_v = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE));
+  std::vector<int>& bc_model_v = bc_v->bc_model();
+  std::vector<double>& bc_value_v = bc_v->bc_value();
 
   for (int v = 0; v < nnodes_wghost; v++) {
     mesh->node_get_coordinates(v, &xv);
@@ -278,10 +277,11 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
       bc_value_v[v] = ana.pressure_exact(xv, 0.0);
     }
   }
-  Teuchos::RCP<BCs> bc_v = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_NODE, bc_model_v, bc_value_v, bc_mixed_v));
 
-  std::vector<int> bc_model_f(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value_f(nfaces_wghost, 0.0), bc_mixed_f(nfaces_wghost, 0.0);
+  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE));
+  std::vector<int>& bc_model_f = bc_f->bc_model();
+  std::vector<double>& bc_value_f = bc_f->bc_value();
+  std::vector<double>& bc_mixed_f = bc_f->bc_mixed();
 
   int nn=0; int nm=0;
   for (int f = 0; f < nfaces_wghost; f++) {
@@ -300,7 +300,6 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
       bc_value_f[f] -= bc_mixed_f[f] * tmp;
     }
   }
-  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model_f, bc_value_f, bc_mixed_f));
 
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");

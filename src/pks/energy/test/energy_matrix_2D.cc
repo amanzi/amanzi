@@ -104,9 +104,9 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
 
   // create boundary data
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost);
-  std::vector<double> bc_mixed(nfaces_wghost);
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
   
   for (int f = 0; f < nfaces_wghost; f++) {
     const AmanziGeometry::Point& xf = mesh->face_centroid(f);
@@ -116,7 +116,6 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
       bc_value[f] = 200.0;
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
   
   // create diffusion operator 
   const Teuchos::ParameterList& elist = plist->sublist("PKs").sublist("energy")

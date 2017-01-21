@@ -545,9 +545,9 @@ void DiffusionMFD::ApplyBCs(bool primary, bool eliminate)
       Teuchos::RCP<BCs> bc_f, bc_n;
       for (std::vector<Teuchos::RCP<BCs> >::iterator bc = bcs_trial_.begin();
           bc != bcs_trial_.end(); ++bc) {
-        if ((*bc)->type() == OPERATOR_BC_TYPE_FACE) {
+        if ((*bc)->kind() == AmanziMesh::FACE) {
           bc_f = *bc;
-        } else if ((*bc)->type() == OPERATOR_BC_TYPE_NODE) {
+        } else if ((*bc)->kind() == AmanziMesh::NODE) {
           bc_n = *bc;
         }
       }

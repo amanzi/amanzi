@@ -14,8 +14,16 @@
 
 #include <vector>
 
+#include "Teuchos_RCP.hpp"
+
+#include "Mesh.hh"
+
+#include "OperatorDefs.hh"
+
 namespace Amanzi {
+
 namespace AmanziGeometry { class Point; }
+
 namespace Operators {
 
 /* *******************************************************************
@@ -52,44 +60,56 @@ namespace Operators {
 
 class BCs {
  public:
-  BCs() : type_(0) {};
-  BCs(int type, std::vector<int>& bc_model, std::vector<double>& bc_value, std::vector<double>& bc_mixed) {
-    type_ = type;
-    bc_model_ = &bc_model; 
-    bc_value_ = &bc_value; 
-    bc_mixed_ = &bc_mixed; 
-  }
-  BCs(int type, std::vector<int>& bc_model, std::vector<AmanziGeometry::Point>& bc_value) {
-    type_ = type;
-    bc_model_ = &bc_model; 
-    bc_value_point_ = &bc_value; 
-    bc_mixed_ = NULL;
-  }
+  BCs(Teuchos::RCP<const AmanziMesh::Mesh> mesh, AmanziMesh::Entity_kind kind) : 
+      mesh_(mesh),
+      kind_(kind) {};
   ~BCs() {};
 
-  // main members
-  bool CheckDataConsistency() {
-    if (bc_value_->size() != bc_model_->size()) return false;
-    if (bc_mixed_->size() != 0 && bc_mixed_->size() != bc_model_->size()) return false;
-    return true; 
+  // access
+  AmanziMesh::Entity_kind kind() const { return kind_; }
+
+  std::vector<int>& bc_model() { 
+    if (bc_model_.size() == 0) {
+      int nent = mesh_->num_entities(kind_, AmanziMesh::USED);
+      bc_model_.resize(nent, Operators::OPERATOR_BC_NONE);
+    }
+    return bc_model_; 
   }
 
-  // access
-  int type() { return type_; }
+  std::vector<double>& bc_value() {
+    if (bc_value_.size() == 0) {
+      int nent = mesh_->num_entities(kind_, AmanziMesh::USED);
+      bc_value_.resize(nent, 0.0);
+    }
+    return bc_value_;
+  }
 
-  std::vector<int>& bc_model() { return *bc_model_; }
-  std::vector<double>& bc_value() { return *bc_value_; }
-  std::vector<double>& bc_mixed() { return *bc_mixed_; }
+  std::vector<double>& bc_mixed() {
+    if (bc_mixed_.size() == 0) {
+      int nent = mesh_->num_entities(kind_, AmanziMesh::USED);
+      bc_mixed_.resize(nent, 0.0);
+    }
+    return bc_mixed_;
+  }
 
-  std::vector<AmanziGeometry::Point>& bc_value_point() { return *bc_value_point_; }
+  std::vector<AmanziGeometry::Point>& bc_value_point() {
+    if (bc_value_point_.size() == 0) {
+      AmanziGeometry::Point p(mesh_->space_dimension());
+      int nent = mesh_->num_entities(kind_, AmanziMesh::USED);
+      bc_value_point_.resize(nent, p);
+    }
+    return bc_value_point_;
+  }
 
  private:
-  int type_;
-  std::vector<int>* bc_model_;
-  std::vector<double>* bc_value_;
-  std::vector<double>* bc_mixed_;
+  AmanziMesh::Entity_kind kind_;
 
-  std::vector<AmanziGeometry::Point>* bc_value_point_;
+  std::vector<int> bc_model_;
+  std::vector<double> bc_value_;
+  std::vector<double> bc_mixed_;
+  std::vector<AmanziGeometry::Point> bc_value_point_;
+
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
 }  // namespace Operators

@@ -164,10 +164,6 @@ class Flow_PK : public PK_PhysicalBDF {
   // io
   Utils::Units units_;
   Teuchos::RCP<VerboseObject> vo_;
-
- private:
-  std::vector<int> bc_model_; 
-  std::vector<double> bc_value_, bc_mixed_;
 };
 
 }  // namespace Flow

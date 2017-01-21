@@ -90,9 +90,10 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   }
 
   // create boundary data
-  std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost);
-  std::vector<double> bc_mixed;
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE));
+
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = surfmesh->face_centroid(f);
@@ -102,7 +103,6 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
       bc_value[f] = xf[1] * xf[1];
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
@@ -143,8 +143,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   phi.PutScalar(0.2);
 
   double dT = 0.02;
-  Teuchos::RCP<Accumulation> op_acc =
-      Teuchos::rcp(new Accumulation(AmanziMesh::CELL, global_op));
+  Teuchos::RCP<Accumulation> op_acc = Teuchos::rcp(new Accumulation(AmanziMesh::CELL, global_op));
   op_acc->AddAccumulationTerm(solution, phi, dT, "cell");
 
   // BCs and assemble

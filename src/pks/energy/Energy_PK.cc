@@ -110,9 +110,7 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Create BCs objects
   // -- memory
-  bc_model_.resize(nfaces_wghost, 0);
-  bc_value_.resize(nfaces_wghost, 0.0);
-  bc_mixed_.resize(nfaces_wghost, 0.0);
+  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE));
 
   Teuchos::RCP<Teuchos::ParameterList>
       bc_list = Teuchos::rcp(new Teuchos::ParameterList(ep_list->sublist("boundary conditions", true)));
@@ -146,8 +144,6 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
       }
     }
   }
-
-  op_bc_ = Teuchos::rcp(new Operators:: BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_, bc_mixed_));
 
   // initilized fields
   InitializeFields_();
@@ -232,31 +228,35 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
 {
   const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
   
-  for (int n = 0; n < bc_model_.size(); n++) {
-    bc_model_[n] = Operators::OPERATOR_BC_NONE;
-    bc_value_[n] = 0.0;
-    bc_mixed_[n] = 0.0;
+  std::vector<int>& bc_model = op_bc_->bc_model();
+  std::vector<double>& bc_value = op_bc_->bc_value();
+  std::vector<double>& bc_mixed = op_bc_->bc_mixed();
+
+  for (int n = 0; n < bc_model.size(); n++) {
+    bc_model[n] = Operators::OPERATOR_BC_NONE;
+    bc_value[n] = 0.0;
+    bc_mixed[n] = 0.0;
   }
 
   for (int i = 0; i < bc_temperature_.size(); ++i) {
     for (auto it = bc_temperature_[i]->begin(); it != bc_temperature_[i]->end(); ++it) {
       int f = it->first;
-      bc_model_[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value_[f] = it->second;
+      bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_value[f] = it->second;
     }
   }
 
   for (int i = 0; i < bc_flux_.size(); ++i) {
     for (auto it = bc_flux_[i]->begin(); it != bc_flux_[i]->end(); ++it) {
       int f = it->first;
-      bc_model_[f] = Operators::OPERATOR_BC_NEUMANN;
-      bc_value_[f] = it->second;
+      bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
+      bc_value[f] = it->second;
     }
   }
 
   dirichlet_bc_faces_ = 0;
   for (int f = 0; f < nfaces_owned; ++f) {
-    if (bc_model_[f] == Operators::OPERATOR_BC_DIRICHLET) dirichlet_bc_faces_++;
+    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) dirichlet_bc_faces_++;
   }
   int flag_essential_bc = (dirichlet_bc_faces_ > 0) ? 1 : 0;
 

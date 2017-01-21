@@ -96,12 +96,13 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
-  std::vector<int> bc_model(nedges_wghost, OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nedges_wghost);
-  std::vector<double> bc_mixed;
+  Teuchos::RCP<BCs> bc1 = Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE));
+  std::vector<int>& bc_model = bc1->bc_model();
+  std::vector<double>& bc_value = bc1->bc_value();
 
-  std::vector<int> bc_model2(nfaces_wghost, OPERATOR_BC_NONE);
-  std::vector<Point> bc_value2(nfaces_wghost);
+  Teuchos::RCP<BCs> bc2 = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE));
+  std::vector<int>& bc_model2 = bc2->bc_model();
+  std::vector<Point>& bc_value2 = bc2->bc_value_point();
 
   std::vector<int> edirs;
   AmanziMesh::Entity_ID_List cells, edges;
@@ -130,8 +131,6 @@ void ResistiveMHD(double dt, double tend, bool initial_guess) {
       }
     }
   }
-  Teuchos::RCP<BCs> bc1 = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_EDGE, bc_model, bc_value, bc_mixed));
-  Teuchos::RCP<BCs> bc2 = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model2, bc_value2));
 
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")

@@ -83,8 +83,9 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
 
   // create boundary data
   // -- on faces
-  std::vector<int> bcf_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bcf_value(nfaces_wghost, 0.0), bcf_mixed(nfaces_wghost, 0.0);
+  Teuchos::RCP<BCs> bcf = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE));
+  std::vector<int>& bcf_model = bcf->bc_model();
+  std::vector<double>& bcf_value = bcf->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -97,13 +98,12 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
       bcf_value[f] = (ana.velocity_exact(xf, 0.0) * normal) / area;
     }
   }
-  Teuchos::RCP<BCs> bcf =
-      Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bcf_model, bcf_value, bcf_mixed));
 
   // -- at nodes
   Point xv(2);
-  std::vector<int> bcv_model(nnodes_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<Point> bcv_value(nnodes_wghost);
+  Teuchos::RCP<BCs> bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE));
+  std::vector<int>& bcv_model = bcv->bc_model();
+  std::vector<Point>& bcv_value = bcv->bc_value_point();
 
   for (int v = 0; v < nnodes_wghost; ++v) {
     mesh->node_get_coordinates(v, &xv);
@@ -114,8 +114,6 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
       bcv_value[v] = ana.velocity_exact(xv, 0.0);
     }
   }
-  Teuchos::RCP<BCs> bcv = 
-      Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_NODE, bcv_model, bcv_value));
 
   // create elasticity operator 
   Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("elasticity operator");

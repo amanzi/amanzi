@@ -86,9 +86,9 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   double rho(1.0), mu(1.0);
 
   // create boundary data (no mixed bc)
-  std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost);
-  std::vector<double> bc_mixed;
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = surfmesh->face_centroid(f);
@@ -98,7 +98,6 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
       bc_value[f] = xf[1] * xf[1];
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
@@ -206,9 +205,9 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   double rho(1.0), mu(1.0);
 
   // create boundary data (no mixed bc)
-  std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost);
-  std::vector<double> bc_mixed;
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = surfmesh->face_centroid(f);
@@ -218,7 +217,6 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
       bc_value[f] = xf[1] * xf[1];
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
@@ -326,9 +324,9 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   double rho(1.0), mu(1.0);
 
   // create boundary data (no mixed bc)
-  std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost);
-  std::vector<double> bc_mixed;
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = surfmesh->face_centroid(f);
@@ -338,7 +336,6 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
       bc_value[f] = xf[1] * xf[1];
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")

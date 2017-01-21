@@ -80,8 +80,9 @@ std::pair<double,double> RunForwardProblem(const std::string& discretization,
   }
   
   // create boundary data
-  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost, 0.0), bc_mixed(nfaces_wghost, 0.0);
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -100,7 +101,6 @@ std::pair<double,double> RunForwardProblem(const std::string& discretization,
       bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   ParameterList op_list;
@@ -212,8 +212,9 @@ std::pair<double,double> RunInverseProblem(const std::string& discretization,
   }
   
   // create boundary data
-  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost, 0.0), bc_mixed(nfaces_wghost, 0.0);
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -232,7 +233,6 @@ std::pair<double,double> RunInverseProblem(const std::string& discretization,
       bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   ParameterList op_list;

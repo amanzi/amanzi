@@ -94,8 +94,10 @@ void RunTestDiffusionMixed(double gravity) {
   }
 
   // create boundary data
-  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost, 0.0), bc_mixed(nfaces_wghost, 0.0);
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
+  std::vector<double>& bc_mixed = bc->bc_mixed();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -118,7 +120,6 @@ void RunTestDiffusionMixed(double gravity) {
       bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   double rho(1.0);
@@ -270,8 +271,9 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   AmanziGeometry::Point g(0.0, -1.0);
 
   // create boundary data.
-  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost, 0.0), bc_mixed(nfaces_wghost, 0.0);
+  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE));
+  std::vector<int>& bc_model = bc_f->bc_model();
+  std::vector<double>& bc_value = bc_f->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -295,7 +297,6 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
       bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
-  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator cell");
