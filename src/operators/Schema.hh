@@ -46,11 +46,13 @@ class Schema {
  public:
   // default and code compatibility constructors
   Schema() {};
-  Schema(int schema_old) { Init(schema_old); }
+  Schema(AmanziMesh::Entity_kind kind) { Init(kind); }
+  Schema(int schema_old) { Init(schema_old); }  // old schema must go away FIXME
   ~Schema() {};
 
   // member functions
   void Init(int schema_old);
+  void Init(AmanziMesh::Entity_kind kind);
   void Init(Teuchos::ParameterList& plist,
             Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 

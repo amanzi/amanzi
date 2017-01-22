@@ -12,6 +12,8 @@
 #include <iostream>
 #include <vector>
 
+#include "boost/algorithm/string/case_conv.hpp"
+
 #include "OperatorDefs.hh"
 #include "Schema.hh"
 
@@ -102,6 +104,21 @@ void Schema::Init(int i)
     item.set(AmanziMesh::CELL, SCHEMA_DOFS_SCALAR, 1);
     items_.push_back(item);
   }
+}
+
+
+/* ******************************************************************
+* Backward compatibility: takes kind as input.
+****************************************************************** */
+void Schema::Init(AmanziMesh::Entity_kind kind) 
+{
+  base_ = kind;
+
+  SchemaItem item;
+  item.set(kind, SCHEMA_DOFS_SCALAR, 1);
+
+  items_.clear();
+  items_.push_back(item);
 }
 
 
@@ -228,10 +245,11 @@ std::string Schema::CreateUniqueName() const
 {
   std::string name;
   for (auto it = items_.begin(); it != items_.end(); ++it) {
+    if (it != items_.begin()) name.append("+");
     name.append(KindToString(it->kind)); 
-    name.append("+");
   }
-  return name;
+
+  return boost::to_upper_copy(name);
 }
 
 }  // namespace Operators

@@ -195,7 +195,7 @@ void RunTest(std::string op_list_name) {
 
     // add accumulation terms
     Accumulation op_acc(AmanziMesh::CELL, global_op);
-    op_acc.AddAccumulationTerm(solution, phi, dT, "cell");
+    op_acc.AddAccumulationDelta(solution, phi, dT, "cell");
 
     // apply BCs and assemble
     global_op->UpdateRHS(source, false);

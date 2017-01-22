@@ -136,6 +136,9 @@ class Op {
     }
   }
 
+  // access
+  const Schema& schema_row() const { return schema_row_; }
+
  public:
   int schema_old_;
   Schema schema_row_, schema_col_;

@@ -98,7 +98,7 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
   CompositeVector& dEdT = *S_->GetFieldData("denergy_dtemperature", energy_key_);
 
   if (dt > 0.0) {
-    op_acc_->AddAccumulationTerm(*up->Data().ptr(), dEdT, dt, "cell");
+    op_acc_->AddAccumulationDelta(*up->Data().ptr(), dEdT, dt, "cell");
   }
 
   // add advection term dHdT

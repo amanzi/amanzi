@@ -174,11 +174,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
 
-  // Create BC objects.
-  bcf_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE));
-  bcv_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::NODE));
-
-  // Initialize matrix and preconditioner operators.
+  // Initialize matrix and preconditioner
   // -- create elastic block
   Teuchos::ParameterList& tmp1 = ns_list_->sublist("operators")
                                           .sublist("elasticity operator");
@@ -190,7 +186,11 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
                                           .sublist("divergence operator");
   op_div_ = Teuchos::rcp(new Operators::AdvectionRiemann(tmp2, mesh_));
 
-  // -- create pressure block 
+  // -- create accumulation term (velocity block, only nodal unknowns)
+  Operators::Schema schema(AmanziMesh::NODE);
+  op_acc_ = Teuchos::rcp(new Operators::Accumulation(schema, op_matrix_elas_->global_operator()));
+
+  // -- create pressure block (for preconditioner)
   op_mass_ = Teuchos::rcp(new Operators::Accumulation(AmanziMesh::CELL, mesh_));
 
   // -- matrix and preconditioner
@@ -203,17 +203,27 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_preconditioner_->SetOperatorBlock(0, 0, op_preconditioner_elas_->global_operator());
   op_preconditioner_->SetOperatorBlock(1, 1, op_mass_->global_operator());
 
+  // Populate matrix and preconditioner
   // -- setup phase
   double mu = *S_->GetScalarData("fluid_viscosity", passwd_);
   op_matrix_elas_->global_operator()->Init();
   op_matrix_elas_->SetTensorCoefficient(mu);
-  op_matrix_elas_->SetBCs(bcf_, bcf_);
-  op_matrix_elas_->AddBCs(bcv_, bcv_);
 
   op_preconditioner_elas_->global_operator()->Init();
   op_preconditioner_elas_->SetTensorCoefficient(mu);
-  op_preconditioner_elas_->SetBCs(bcf_, bcf_);
-  op_preconditioner_elas_->AddBCs(bcv_, bcv_);
+
+  // -- boundary conditions
+  for (auto it = schema.begin(); it != schema.end(); ++it) {
+    if (it->kind == AmanziMesh::NODE) {
+      bcv_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::NODE));
+      op_matrix_elas_->AddBCs(bcv_, bcv_);
+      op_preconditioner_elas_->AddBCs(bcv_, bcv_);
+    } else if (it->kind == AmanziMesh::FACE) {
+      bcf_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE));
+      op_matrix_elas_->SetBCs(bcf_, bcf_);
+      op_preconditioner_elas_->SetBCs(bcf_, bcf_);
+    }
+  }
 
   // -- assemble phase
   op_matrix_elas_->UpdateMatrices();

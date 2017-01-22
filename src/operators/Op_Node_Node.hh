@@ -25,7 +25,7 @@ class Op_Node_Node : public Op {
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       Op(OPERATOR_SCHEMA_BASE_NODE |
          OPERATOR_SCHEMA_DOFS_NODE, name, mesh) {
-    vals.resize(mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED), 0.);
+    vals.resize(mesh->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED), 0.);
     vals_shadow = vals;
   }
 

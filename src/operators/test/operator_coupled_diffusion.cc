@@ -227,9 +227,6 @@ struct Problem {
   }
 
   void MakeBCs() {
-    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-
-    // this is bad memory management but is required by bad design of BCs struct
     bc0 = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE));
     std::vector<int>& bc_model0 = bc0->bc_model();
     std::vector<double>& bc_value0 = bc0->bc_value();
@@ -238,6 +235,7 @@ struct Problem {
     std::vector<int>& bc_model1 = bc1->bc_model();
     std::vector<double>& bc_value1 = bc1->bc_value();
   
+    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
     for (int f = 0; f < nfaces_wghost; f++) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
       double area = mesh->face_area(f);

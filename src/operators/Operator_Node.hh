@@ -39,6 +39,9 @@ class Operator_Node : public Operator {
   virtual int ApplyMatrixFreeOp(const Op_Cell_Node& op,
       const CompositeVector& X, CompositeVector& Y) const;
 
+  virtual int ApplyMatrixFreeOp(const Op_Node_Node& op,
+      const CompositeVector& X, CompositeVector& Y) const;
+
   // visit methods for symbolic assemble
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Node& op,
           const SuperMap& map, GraphFE& graph,

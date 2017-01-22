@@ -814,7 +814,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         for (int c = 0; c < ncells_owned; c++) {
           fac[0][c] = (*phi)[0][c] * (*ws)[0][c];
         }
-        op2->AddAccumulationTerm(sol, factor, dt_MPC, "cell");
+        op2->AddAccumulationDelta(sol, factor, dt_MPC, "cell");
  
         op1->ApplyBCs(true, true);
         op->SymbolicAssembleMatrix();
@@ -889,7 +889,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         fac0[0][c] = (*phi)[0][c] * (1.0 - (*ws_prev)[0][c]);
         if ((*ws)[0][c] == 1.0) fac1[0][c] = 1.0;  // hack so far
       }
-      op2->AddAccumulationTerm(sol, factor0, factor, dt_MPC, "cell");
+      op2->AddAccumulationDelta(sol, factor0, factor, dt_MPC, "cell");
  
       op->SymbolicAssembleMatrix();
       op->AssembleMatrix();

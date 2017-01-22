@@ -159,9 +159,6 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   // boundary conditions
   std::vector<Teuchos::RCP<NavierStokesBoundaryFunction> > bcs_; 
   Teuchos::RCP<Operators::BCs> bcf_, bcv_;
-  std::vector<int> bcf_model_, bcv_model_; 
-  std::vector<double> bcf_value_, bcf_mixed_;
-  std::vector<AmanziGeometry::Point> bcv_value_;
 
   // io
   Utils::Units units_;

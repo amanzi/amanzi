@@ -13,12 +13,12 @@
 */
 
 #include "DenseMatrix.hh"
-#include "Op_Cell_Node.hh"
-
-#include "SuperMap.hh"
 #include "GraphFE.hh"
 #include "MatrixFE.hh"
+#include "SuperMap.hh"
 
+#include "Op_Cell_Node.hh"
+#include "Op_Node_Node.hh"
 #include "OperatorDefs.hh"
 #include "Operator_Node.hh"
 
@@ -92,6 +92,24 @@ int Operator_Node::ApplyMatrixFreeOp(const Op_Cell_Node& op,
   return 0;
 }
 
+
+/* ******************************************************************
+* Apply the local matrices directly as schemas match.
+****************************************************************** */
+int Operator_Node::ApplyMatrixFreeOp(const Op_Node_Node& op,
+                                     const CompositeVector& X, CompositeVector& Y) const
+{
+  ASSERT(op.vals.size() == nnodes_owned);
+  const Epetra_MultiVector& Xn = *X.ViewComponent("node");
+  Epetra_MultiVector& Yn = *Y.ViewComponent("node");
+
+  for (int i = 0; i < Xn.NumVectors(); ++i) {
+    for (int v = 0; v != nnodes_owned; ++v) {
+      Yn[i][v] += Xn[i][v] * op.vals[v];
+    }
+  }
+  return 0;
+}
 
 /* ******************************************************************
 * Visit methods for symbolic assemble.

@@ -176,7 +176,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   Teuchos::RCP<Accumulation> op_acc = Teuchos::rcp(new Accumulation(AmanziMesh::EDGE, global_op));
 
   double dT = 1.0;
-  op_acc->AddAccumulationTerm(solution, phi, dT, "edge");
+  op_acc->AddAccumulationDelta(solution, phi, dT, "edge");
 
   // BCs, sources, and assemble
   op_curlcurl->ApplyBCs(true, true);

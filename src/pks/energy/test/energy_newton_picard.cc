@@ -199,7 +199,7 @@ void HeatConduction::Init(
   op_diff_->Setup(Kptr, k, dkdT);
   op_diff_->UpdateMatrices(flux_.ptr(), solution_.ptr());
   op_diff_->UpdateMatricesNewtonCorrection(flux_.ptr(), solution_.ptr(), 1.0);
-  op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
+  op_acc_->AddAccumulationDelta(*solution0_, *phi_, dT, "cell");
 
   // form the global matrix
   op_diff_->ApplyBCs(true, true);
@@ -248,7 +248,7 @@ void HeatConduction::Residual(const Teuchos::RCP<CompositeVector>& u,
   op_->Init();
   UpdateValues(*u);
   op_diff_->UpdateMatrices(Teuchos::null, u.ptr());
-  op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
+  op_acc_->AddAccumulationDelta(*solution0_, *phi_, dT, "cell");
   op_diff_->ApplyBCs(true, true);
   op_->ComputeNegativeResidual(*u, *f);
 }
@@ -266,7 +266,7 @@ void HeatConduction::UpdatePreconditioner(const Teuchos::RCP<const CompositeVect
   op_->Init();
   op_diff_->UpdateMatrices(flux_.ptr(), up.ptr());
   op_diff_->UpdateMatricesNewtonCorrection(flux_.ptr(), up.ptr(), 1.0);
-  op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
+  op_acc_->AddAccumulationDelta(*solution0_, *phi_, dT, "cell");
   op_diff_->ApplyBCs(true, true);
 
   // Assemble matrix and calculate preconditioner.

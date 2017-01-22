@@ -22,6 +22,9 @@ void NavierStokes_PK::Functional(double t_old, double t_new,
                                  Teuchos::RCP<TreeVector> u_new, 
                                  Teuchos::RCP<TreeVector> f)
 { 
+  double dtp = t_new - t_old;
+
+  Teuchos::RCP<CompositeVector> uu = u_old->SubVector(0)->Data();
   Teuchos::RCP<CompositeVector> fu = f->SubVector(0)->Data();
   Teuchos::RCP<CompositeVector> fp = f->SubVector(1)->Data();
 
@@ -32,6 +35,10 @@ void NavierStokes_PK::Functional(double t_old, double t_new,
   op_matrix_elas_->global_operator()->Init();
   op_matrix_elas_->UpdateMatrices();
   op_matrix_elas_->ApplyBCs(true, true);
+
+  CompositeVector one(*uu);
+  one.PutScalar(1.0);  // FIXME
+  op_acc_->AddAccumulationDelta(*uu, one, dtp, "node");
 
   op_div_->UpdateMatrices(*u_old->SubVector(0)->Data());
   op_div_->ApplyBCs(false, true);

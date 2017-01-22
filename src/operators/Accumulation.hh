@@ -22,119 +22,110 @@
 #include "BCs.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
+#include "Schema.hh"
 
 namespace Amanzi {
 namespace Operators {
 
 class Accumulation {
  public:
-  Accumulation(AmanziMesh::Entity_kind entity,
-               Teuchos::RCP<Operator> global_op) :
-      global_op_(global_op),
+  Accumulation(AmanziMesh::Entity_kind entity, Teuchos::RCP<Operator> global_op)
+    : global_op_(global_op),
       mesh_(Teuchos::null)
   {
-    InitAccumulation_(entity);
+    Schema schema(entity);
+    InitAccumulation_(schema);
   }
 
-  Accumulation(AmanziMesh::Entity_kind entity,
-               Teuchos::RCP<AmanziMesh::Mesh> mesh) :
-      global_op_(Teuchos::null),
+  Accumulation(AmanziMesh::Entity_kind entity, Teuchos::RCP<AmanziMesh::Mesh> mesh)
+    : global_op_(Teuchos::null),
       mesh_(mesh)
   {
-    InitAccumulation_(entity);
+    Schema schema(entity);
+    InitAccumulation_(schema);
   }
 
-  Accumulation(AmanziMesh::Entity_kind entity,
-               Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      global_op_(Teuchos::null),
+  Accumulation(AmanziMesh::Entity_kind entity, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : global_op_(Teuchos::null),
       mesh_(mesh)
   {
-    InitAccumulation_(entity);
+    Schema schema(entity);
+    InitAccumulation_(schema);
   }
 
-  Accumulation(Teuchos::ParameterList& plist,
-                       Teuchos::RCP<Operator> global_op) :
-      global_op_(global_op),
+  Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op)
+    : global_op_(global_op),
       mesh_(Teuchos::null)
   {
-    AmanziMesh::Entity_kind entity;
-    if (plist.get<std::string>("entity kind") == "cell") {
-      entity = AmanziMesh::CELL;
-    } else if (plist.get<std::string>("entity kind") == "node") {
-      entity = AmanziMesh::NODE;
-    } else if (plist.get<std::string>("entity kind") == "face") {
-      entity = AmanziMesh::FACE;
-    }
-    InitAccumulation_(entity, plist.get<bool>("surface operator", false));
+    Schema schema;
+    std::string name = plist.get<std::string>("entity kind");
+
+    schema.Init(schema.StringToKind(name));
+    InitAccumulation_(schema, plist.get<bool>("surface operator", false));
   }
 
-  Accumulation(Teuchos::ParameterList& plist,
-               Teuchos::RCP<AmanziMesh::Mesh> mesh) :
-      global_op_(Teuchos::null),
+  Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<AmanziMesh::Mesh> mesh)
+    : global_op_(Teuchos::null),
       mesh_(mesh)
   {
-    AmanziMesh::Entity_kind entity;
-    if (plist.get<std::string>("entity kind") == "cell") {
-      entity = AmanziMesh::CELL;
-    } else if (plist.get<std::string>("entity kind") == "node") {
-      entity = AmanziMesh::NODE;
-    } else if (plist.get<std::string>("entity kind") == "face") {
-      entity = AmanziMesh::FACE;
-    }
-    InitAccumulation_(entity, plist.get<bool>("surface operator", false));
+    Schema schema;
+    std::string name = plist.get<std::string>("entity kind");
+
+    schema.Init(schema.StringToKind(name));
+    InitAccumulation_(schema, plist.get<bool>("surface operator", false));
   }
 
-  Accumulation(Teuchos::ParameterList& plist,
-               Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      global_op_(Teuchos::null),
+  Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : global_op_(Teuchos::null),
       mesh_(mesh)
   {
-    AmanziMesh::Entity_kind entity;
-    if (plist.get<std::string>("entity kind") == "cell") {
-      entity = AmanziMesh::CELL;
-    } else if (plist.get<std::string>("entity kind") == "node") {
-      entity = AmanziMesh::NODE;
-    } else if (plist.get<std::string>("entity kind") == "face") {
-      entity = AmanziMesh::FACE;
-    }
-    InitAccumulation_(entity, plist.get<bool>("surface operator", false));
+    Schema schema;
+    std::string name = plist.get<std::string>("entity kind");
+    bool surface = plist.get<bool>("surface operator", false);
+
+    schema.Init(schema.StringToKind(name));
+    InitAccumulation_(schema, surface);
   }
   
+  Accumulation(const Schema& schema, Teuchos::RCP<Operator> global_op)
+    : global_op_(global_op),
+      mesh_(Teuchos::null)
+  {
+    InitAccumulation_(schema, false);
+  }
+
   // update methods
-  // -- update method for just adding to PC
-  void AddAccumulationTerm(const Epetra_MultiVector& du);
-  void AddAccumulationTerm(const Epetra_MultiVector& du, double dT);
+  // -- modifiers for diogonal operators
   void AddAccumulationTerm(const CompositeVector& du, double dT, const std::string& name);
 
   // -- linearized update methods with storage terms
-  void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& s0, 
-                           const CompositeVector& ss, double dT, const std::string& name);
-  void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& ss, 
-                           double dT, const std::string& name);
-  void AddAccumulationTerm(const CompositeVector& u0, const CompositeVector& ss,
-                           const std::string& name);
+  void AddAccumulationDelta(const CompositeVector& u0, const CompositeVector& s0, 
+                            const CompositeVector& ss,
+                            double dT, const std::string& name);
+  void AddAccumulationDelta(const CompositeVector& u0, const CompositeVector& ss, 
+                            double dT, const std::string& name);
+  void AddAccumulationDeltaNoVolume(const CompositeVector& u0, const CompositeVector& ss,
+                                    const std::string& name);
 
   // -- operator modification
   void ApplyBCs(const Teuchos::RCP<BCs>& bc);
 
   // access (for developers only)
-  int schema_dofs() { return local_op_schema_; }
-  int schema_prec_dofs() { return global_op_schema_; }
+  int schema_dofs() { return local_op_schema_.OldSchema(); }
+  int schema_prec_dofs() { return global_op_schema_.OldSchema(); }
 
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
   Teuchos::RCP<Operator> global_operator() { return global_op_; }
-  Teuchos::RCP<const Op> local_matrices() const { return local_op_; }
-  Teuchos::RCP<Op> local_matrices() { return local_op_; }
 
  protected:
   void CalculateEntitylVolume_(CompositeVector& entity_volume, const std::string& name);
-  void InitAccumulation_(AmanziMesh::Entity_kind entity, bool surface=false);
+  void InitAccumulation_(const Schema& schema, bool surface=false);
 
  protected:
   // operator
   Teuchos::RCP<Operator> global_op_;
-  Teuchos::RCP<Op> local_op_;
-  int global_op_schema_, local_op_schema_;
+  std::vector<Teuchos::RCP<Op> > local_ops_;
+  Schema global_op_schema_, local_op_schema_;
 
   // mesh info
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

@@ -544,7 +544,7 @@ void Operator::OpExtend(op_iterator begin, op_iterator end)
 int Operator::SchemaMismatch_(const std::string& schema1, const std::string& schema2) const
 {
   std::stringstream err;
-  err << "Scheme mismatch " << schema1 << " != " << schema2;
+  err << "Schemas mismatch " << schema1 << " != " << schema2;
   Errors::Message message(err.str());
   Exceptions::amanzi_throw(message);
   return 1;
