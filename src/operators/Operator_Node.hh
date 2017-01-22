@@ -40,7 +40,7 @@ class Operator_Node : public Operator {
       const CompositeVector& X, CompositeVector& Y) const;
 
   virtual int ApplyMatrixFreeOp(const Op_Node_Node& op,
-      const CompositeVector& X, CompositeVector& Y) const;
+      const CompositeVector& X, CompositeVector& Y) const override;
 
   // visit methods for symbolic assemble
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Node& op,

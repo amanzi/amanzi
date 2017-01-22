@@ -39,6 +39,7 @@ void NavierStokes_PK::Functional(double t_old, double t_new,
   CompositeVector one(*uu);
   one.PutScalar(1.0);  // FIXME
   op_acc_->AddAccumulationDelta(*uu, one, dtp, "node");
+  op_acc_->ApplyBCs(bcv_);
 
   op_div_->UpdateMatrices(*u_old->SubVector(0)->Data());
   op_div_->ApplyBCs(false, true);

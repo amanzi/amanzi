@@ -243,10 +243,11 @@ AmanziMesh::Entity_kind Schema::StringToKind(std::string& name) const
 ****************************************************************** */
 std::string Schema::CreateUniqueName() const
 {
-  std::string name;
+  std::string name(KindToString(base_)), c("_");
   for (auto it = items_.begin(); it != items_.end(); ++it) {
-    if (it != items_.begin()) name.append("+");
+    name.append(c);
     name.append(KindToString(it->kind)); 
+    c = "+";
   }
 
   return boost::to_upper_copy(name);

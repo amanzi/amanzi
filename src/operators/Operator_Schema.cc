@@ -72,6 +72,24 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
 /* ******************************************************************
 * Apply the local matrices directly as schemas match.
 ****************************************************************** */
+int Operator_Schema::ApplyMatrixFreeOp(const Op_Node_Node& op,
+                                       const CompositeVector& X, CompositeVector& Y) const
+{
+  const Epetra_MultiVector& Xn = *X.ViewComponent("node");
+  Epetra_MultiVector& Yn = *Y.ViewComponent("node");
+
+  for (int i = 0; i < Xn.NumVectors(); ++i) {
+    for (int v = 0; v != nnodes_owned; ++v) {
+      Yn[i][v] += Xn[i][v] * op.vals[v];
+    }
+  }
+  return 0;
+}
+
+
+/* ******************************************************************
+* Apply the local matrices directly as schemas match.
+****************************************************************** */
 int Operator_Schema::ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
                                                 const CompositeVector& X, CompositeVector& Y) const
 {

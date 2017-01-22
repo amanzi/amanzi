@@ -326,11 +326,17 @@ void Accumulation::InitAccumulation_(const Schema& schema, bool surf)
 void Accumulation::ApplyBCs(const Teuchos::RCP<BCs>& bc)
 {
   const std::vector<int>& bc_model = bc->bc_model();
-  std::vector<double>& diag = local_ops_[0]->vals;
 
-  for (int i = 0; i < diag.size(); i++) {
-    if (bc_model[i] == OPERATOR_BC_DIRICHLET) {
-      diag[i] = 0.0;
+  for (auto it = local_ops_.begin(); it != local_ops_.end(); ++it) {
+    const Schema& schema = (*it)->schema_row();
+    if (schema.base() == bc->kind()) {
+      std::vector<double>& diag = (*it)->vals;
+
+      for (int i = 0; i < diag.size(); i++) {
+        if (bc_model[i] == OPERATOR_BC_DIRICHLET) {
+          diag[i] = 0.0;
+        }
+      }
     }
   }
 }

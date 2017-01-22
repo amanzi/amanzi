@@ -303,5 +303,19 @@ bool NavierStokes_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   return failed;
 }
  
+
+/* ******************************************************************* 
+* Performs one time step from time t_old to time t_new either for
+* steady-state or transient simulation.
+******************************************************************* */
+void NavierStokes_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
+{
+  Teuchos::OSTab tab = vo_->getOSTab();
+  double tmp1, tmp2;
+  soln_u_->Norm2(&tmp1);
+  soln_p_->Norm2(&tmp2);
+  *vo_->os() << "solution norms=" << tmp1 << " " << tmp2 << std::endl;
+}
+
 }  // namespace NavierStokes
 }  // namespace Amanzi

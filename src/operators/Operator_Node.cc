@@ -58,7 +58,7 @@ void Operator_Node::UpdateRHS(const CompositeVector& source, bool volume_include
 * Apply the local matrices directly as schemas match.
 ****************************************************************** */
 int Operator_Node::ApplyMatrixFreeOp(const Op_Cell_Node& op,
-                                     const CompositeVector& X, CompositeVector& Y) const
+                                     const CompositeVector& X, CompositeVector& Y) const 
 {
   ASSERT(op.matrices.size() == ncells_owned);
 
@@ -110,6 +110,7 @@ int Operator_Node::ApplyMatrixFreeOp(const Op_Node_Node& op,
   }
   return 0;
 }
+
 
 /* ******************************************************************
 * Visit methods for symbolic assemble.
