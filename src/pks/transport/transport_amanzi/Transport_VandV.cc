@@ -155,12 +155,20 @@ void Transport_PK_ATS::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next,
       mass_solute += (*ws)[0][c] * (*phi)[0][c] * tcc_next[i][c] * vol;
     }
     mass_solute /= units_.concentration_factor();
+    mass_solutes_stepstart_[i] /= units_.concentration_factor();
+    mass_solutes_bc_[i] /= units_.concentration_factor();
 
     double tmp1 = mass_solute, tmp2 = mass_solutes_exact_[i], mass_exact;
+    double tmp_start = mass_solutes_stepstart_[i];
+    double tmp_bc =  mass_solutes_bc_[i];
     mesh_->get_comm()->SumAll(&tmp1, &mass_solute, 1);
     mesh_->get_comm()->SumAll(&tmp2, &mass_exact, 1);
+    mesh_->get_comm()->SumAll(&tmp_start, &(mass_solutes_stepstart_[i]), 1);
+    mesh_->get_comm()->SumAll(&tmp_bc, &(mass_solutes_bc_[i]), 1);
 
-    *vo_->os() << ", total=" << mass_solute << " mol" << std::endl;
+    *vo_->os() << ", step start total=" << mass_solutes_stepstart_[i] << " mol" << std::endl;
+    *vo_->os() << ", step bc total=" << mass_solutes_bc_[i] << " mol" << std::endl;
+    *vo_->os() << ", step final total=" << mass_solute << " mol" << std::endl;
   }
 }
 

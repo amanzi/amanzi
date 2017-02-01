@@ -294,7 +294,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   double cfl_, dt_, dt_debug_, t_physics_;  
 
   std::vector<double> mass_solutes_exact_, mass_solutes_source_;  // mass for all solutes
-  std::vector<double> mass_solutes_bc_;
+  std::vector<double> mass_solutes_bc_, mass_solutes_stepstart_;
   std::vector<std::string> runtime_solutes_;  // names of trached solutes
   std::vector<std::string> runtime_regions_;
 

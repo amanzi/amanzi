@@ -184,7 +184,7 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
   flux_key_ = tp_list_->get<std::string>("flux_key", 
                                          getKey(domain_name_, "vol_darcy_flux"));
   darcy_flux_key_ = tp_list_->get<std::string>("darcy_flux_key", 
-                                               getKey(domain_name_, "darcy_flux"));
+                                               getKey(domain_name_, "mass_flux"));
   permeability_key_ = tp_list_->get<std::string>("permeability_key", 
                                                  getKey(domain_name_, "permeability"));
   tcc_key_ = tp_list_->get<std::string>("concentration_key", 
@@ -479,7 +479,6 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
           src->tcc_index().push_back(FindComponentNumber(name));
           
           src->set_state(S_);
-          std::cout<<src->name()<<"\n";
           srcs_.push_back(src);
         }
       }
@@ -556,6 +555,13 @@ void Transport_PK_ATS::InitializeFields_(const Teuchos::Ptr<State>& S)
 
   //InitializeFieldFromField_(flux_key_, darcy_flux_key_, S, false, false);
 
+  if (vol_flux_conversion_){
+    vol_flux = S->GetFieldData(flux_key_, passwd_)->ViewComponent("face", true);
+    ComputeVolumeDarcyFlux(S->GetFieldData(darcy_flux_key_)->ViewComponent("face", true),
+                           S->GetFieldData(molar_density_key_)->ViewComponent("cell", true),
+                           vol_flux);
+  }
+
 }
 
 
@@ -624,6 +630,7 @@ double Transport_PK_ATS::CalculateTransportDt()
     ComputeVolumeDarcyFlux(S_next_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true),
                            S_next_->GetFieldData(molar_density_key_)->ViewComponent("cell", true),
                            vol_flux);
+
   }
   
   flux = S_next_->GetFieldData(flux_key_)->ViewComponent("face", true);
@@ -642,6 +649,7 @@ double Transport_PK_ATS::CalculateTransportDt()
   }
 
   Sinks2TotalOutFlux(tcc_prev, total_outflux, 0, num_aqueous - 1);
+
 
 
   // modify estimate for other models
@@ -691,22 +699,22 @@ double Transport_PK_ATS::CalculateTransportDt()
   dt_ *= cfl_;
 
   // print optional diagnostics using maximum cell id as the filter
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    int cmin_dt_unique = (fabs(dt_tmp * cfl_ - dt_) < 1e-6 * dt_) ? cmin_dt : -1;
+ //  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+//     int cmin_dt_unique = (fabs(dt_tmp * cfl_ - dt_) < 1e-6 * dt_) ? cmin_dt : -1;
  
-#ifdef HAVE_MPI
-    int cmin_dt_tmp = cmin_dt_unique;
-    comm.MaxAll(&cmin_dt_tmp, &cmin_dt_unique, 1);
-#endif
-    if (cmin_dt == cmin_dt_unique) {
-      const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dt);
+// #ifdef HAVE_MPI
+//     int cmin_dt_tmp = cmin_dt_unique;
+//     comm.MaxAll(&cmin_dt_tmp, &cmin_dt_unique, 1);
+// #endif
+//     if (cmin_dt == cmin_dt_unique) {
+//       const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dt);
 
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "cell " << cmin_dt << " has smallest dt, (" << p[0] << ", " << p[1];
-      if (p.dim() == 3) *vo_->os() << ", " << p[2];
-      *vo_->os() << ")" << std::endl;
-    }
-  }
+//       Teuchos::OSTab tab = vo_->getOSTab();
+//       *vo_->os() << "cell " << cmin_dt << " has smallest dt, (" << p[0] << ", " << p[1];
+//       if (p.dim() == 3) *vo_->os() << ", " << p[2];
+//       *vo_->os() << ")" << std::endl;
+//     }
+//   }
   return dt_;
 }
 
@@ -735,6 +743,8 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
   bool failed = false;
   double dt_MPC = t_new - t_old;
 
+
+
  
   if (vol_flux_conversion_){
       vol_flux = S_next_->GetFieldData(flux_key_, passwd_)->ViewComponent("face", true);
@@ -749,6 +759,15 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
   // We use original tcc and make a copy of it later if needed.
   tcc = S_->GetFieldData(tcc_key_, passwd_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
+
+
+  for (int c = 0; c < ncells_owned; c++) {
+    double vol_phi_ws;
+    vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_prev)[0][c];
+    for (int i=0; i<num_aqueous + num_gaseous; i++){
+      mass_solutes_stepstart_[i] = tcc_prev[i][c] * vol_phi_ws;
+    }
+  }
 
 
   // calculate stable time step    
@@ -786,7 +805,9 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
   while (dt_sum < dt_MPC) {
     // update boundary conditions
     time = t_physics_ + dt_cycle / 2;
-    for (int i = 0; i < bcs_.size(); i++) bcs_[i]->Compute(time, time);
+    for (int i = 0; i < bcs_.size(); i++){
+      bcs_[i]->Compute(time, time);
+    }
     
     double dt_try = dt_MPC - dt_sum;
     double tol = 1e-14 * (dt_try + dt_original); 
@@ -1173,26 +1194,19 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   // We advect only aqueous components.
   int num_advect = num_aqueous;
 
-  double mass_start = 0.;
-
   for (int c = 0; c < ncells_owned; c++) {
     vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_start)[0][c];
 
     for (int i = 0; i < num_advect; i++){
-      (*conserve_qty_)[i][c] = tcc_prev[i][c] * vol_phi_ws;
-    
-      mass_start += (*conserve_qty_)[i][c];
-      // if ((domain_name_ == "surface")&&(c>40)){
-      //   std::cout<<c<<" *conserve_qty_ "<<(*conserve_qty_)[i][c] <<" tcc_prev " <<tcc_prev[i][c]<<" ws "<<(*ws_start)[0][c]<<"\n";
-      // }
+      (*conserve_qty_)[i][c] = tcc_prev[i][c] * vol_phi_ws;   
     }
   }
-  mass_start /= units_.concentration_factor();
+  //  mass_start /= units_.concentration_factor();
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
-    if (domain_name_ == "surface") std::cout<<"Overland mass start "<<mass_start<<"\n";
-    else std::cout<<"Subsurface mass start "<<mass_start<<"\n";
-  }
+  // if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
+  //   if (domain_name_ == "surface") std::cout<<"Overland mass start "<<mass_start<<"\n";
+  //   else std::cout<<"Subsurface mass start "<<mass_start<<"\n";
+  // }
 
 
   // advance all components at once
@@ -1239,7 +1253,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
           int k = tcc_index[i];
           if (k < num_advect) {
             tcc_flux = dt_ * u * values(i);
-            //if (tcc_flux > 0) std::cout<<"from BC cell "<<c2<<" flux "<< u<<" dt "<<dt_<<" value "<<values(i)<<" + "<<tcc_flux<<"\n";
+            //if (tcc_flux > 0) std::cout <<"from BC cell "<<c2<<" flux "<< u<<" dt "<<dt_<<" value "<<values(i)<<" + "<<tcc_flux<<"\n";
             (*conserve_qty_)[k][c2] += tcc_flux;
             mass_solutes_bc_[k] += tcc_flux;
           }
@@ -1267,13 +1281,6 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   // }
   //if (domain_name_ == "surface") std::cout<<*ws_end<<"\n";
 
-  double mass_final = 0;
-  for (int c = 0; c < ncells_owned; c++) {
-    for (int i = 0; i < num_advect; i++){        
-      mass_final += (*conserve_qty_)[i][c];
-    }    
-  }
-  mass_final /= units_.concentration_factor();
   
 
 
@@ -1283,34 +1290,58 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_end)[0][c];
     for (int i = 0; i < num_advect; i++) {
       if (vol_phi_ws > 0 ) tcc_next[i][c] = (*conserve_qty_)[i][c] / vol_phi_ws;
-      else  tcc_next[i][c] = 0.;
+      else  {
+        tcc_next[i][c] = 0.;
+      }
     }
   }
+
+  double mass_final = 0;
+  for (int c = 0; c < ncells_owned; c++) {
+    vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_end)[0][c];
+    for (int i = 0; i < num_advect; i++){        
+      mass_final += tcc_next[i][c]*vol_phi_ws;
+    }    
+  }
+  //  mass_final /= units_.concentration_factor();
+
+  // double tmp1 = mass_final;
+  // mesh_->get_comm()->SumAll(&tmp1, &mass_final, 1);
+  // tmp1 = mass_start;
+  // mesh_->get_comm()->SumAll(&tmp1, &mass_start, 1);
+
+
+
+  //if (domain_name_ == "surface") std::cout<<tcc_next<<"\n";
 
 
   // update mass balance
   for (int i = 0; i < mass_solutes_exact_.size(); i++) {
     mass_solutes_exact_[i] += mass_solutes_source_[i] * dt_;
-
-    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
-      std::cout<<"*****************\n";
-      if (domain_name_ == "surface") std::cout<<"Overland mass BC "<<std::setprecision(14)<<mass_solutes_bc_[i]<<"\n";
-      else std::cout<<"Subsurface mass BC "<<std::setprecision(14)<<mass_solutes_bc_[i]<<"\n";
-
-      if (domain_name_ == "surface") std::cout<<"Overland mass_solutes"<<std::setprecision(14)<<mass_solutes_source_[i]*dt_<<"\n";
-      else std::cout<<"Subsurface mass_solutes"<<std::setprecision(14)<<mass_solutes_source_[i]*dt_<<"\n";
-      std::cout<<"*****************\n";
-    }
+    // if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
+    //   tmp1 = mass_solutes_bc_[i];
+    //   mesh_->get_comm()->SumAll(&tmp1, &mass_solutes_bc_[i], 1);
+    //   std::cout<<"*****************\n";
+    //   if (domain_name_ == "surface") std::cout<<"Overland mass BC "<<std::setprecision(14)<<mass_solutes_bc_[i]<<"\n";
+    //   else std::cout<<"Subsurface mass BC "<<std::setprecision(14)<<mass_solutes_bc_[i]<<"\n";
+    //   tmp1 = mass_solutes_source_[i];
+    //   mesh_->get_comm()->SumAll(&tmp1, &mass_solutes_source_[i], 1);
+    //   if (domain_name_ == "surface") std::cout<<"Overland mass_solutes"<<std::setprecision(14)<<mass_solutes_source_[i]*dt_<<"\n";
+    //   else std::cout<<"Subsurface mass_solutes"<<std::setprecision(14)<<mass_solutes_source_[i]*dt_<<"\n";
+    //   std::cout<<"*****************\n";
+    // }
   }
 
   if (internal_tests) {
     VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
-    if (domain_name_ == "surface") std::cout<<"Overland mass final "<<mass_final<<"\n";
-    else std::cout<<"Subsurface mass final "<<mass_final<<"\n";
-  }
+  // if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
+  //   if (domain_name_ == "surface") std::cout<<"Overland mass final "<<mass_final<<"\n";
+  //   else std::cout<<"Subsurface mass final "<<mass_final<<"\n";
+  // }
+
+  //if (abs(mass_final - (mass_start + mass_solutes_bc_[0] + mass_solutes_source_[0]*dt_) )/mass_final > 1e-4) exit(-1);
   
 }
 
@@ -1510,8 +1541,8 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
         tcc[imap][c] += dtp * value;
         mass_solutes_source_[i] += value;
 
-        // if (value < 0) std::cout<<"Source name "<<srcs_[m]->name()<<" from Source cell "<<c
-        //                        <<" dt "<<dtp<<"  + "<<dtp * value<<" "<<values(k)<<"\n";
+         if (value != 0) std::cout<<"Source name "<<srcs_[m]->name()<<" from Source cell "<<c
+                                <<" dt "<<dtp<<"  + "<<dtp * value<<" "<<values(k)<<"\n";
       }
     }
   }
