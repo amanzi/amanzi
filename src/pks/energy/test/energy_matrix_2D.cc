@@ -141,7 +141,7 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   S->GetFieldEvaluator("energy")->HasFieldDerivativeChanged(S.ptr(), passwd, "temperature");
   const CompositeVector& dEdT = *S->GetFieldData("denergy_dtemperature");
 
-  op2->AddAccumulationDelta(solution, dEdT, dT, "cell");
+  op2->AddAccumulationDelta(solution, dEdT, dEdT, dT, "cell");
 
   // add advection term: u = q_l n_l c_v
   // we do not upwind n_l c_v  in this test.

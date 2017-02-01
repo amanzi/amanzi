@@ -36,10 +36,8 @@ void NavierStokes_PK::Functional(double t_old, double t_new,
   op_matrix_elas_->UpdateMatrices();
   op_matrix_elas_->ApplyBCs(true, true);
 
-  CompositeVector one(*uu);
-  one.PutScalar(1.0);  // FIXME
-  op_acc_->AddAccumulationDelta(*uu, one, dtp, "node");
-  op_acc_->ApplyBCs(bcv_);
+  op_matrix_acc_->AddAccumulationDelta(*uu, dtp, "node");
+  op_matrix_acc_->ApplyBCs(bcv_);
 
   op_div_->UpdateMatrices(*u_old->SubVector(0)->Data());
   op_div_->ApplyBCs(false, true);
@@ -75,6 +73,7 @@ int NavierStokes_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
 void NavierStokes_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
 {
   double t_old = tp - dtp;
+  Teuchos::RCP<const CompositeVector> uu = u->SubVector(0)->Data();
 
   // refresh data
   UpdateSourceBoundaryData_(t_old, tp);
@@ -84,6 +83,13 @@ void NavierStokes_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVec
   global_op->Init();
   op_preconditioner_elas_->UpdateMatrices();
   op_preconditioner_elas_->ApplyBCs(true, true);
+
+  // add time derivative
+  CompositeVector one(*uu);
+  one.PutScalar(1.0);  // FIXME
+  op_preconditioner_acc_->AddAccumulationTerm(one, dtp, "node");
+  op_preconditioner_acc_->ApplyBCs(bcv_);
+
   global_op->AssembleMatrix();
   global_op->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 
@@ -91,11 +97,6 @@ void NavierStokes_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVec
   global_op = op_mass_->global_operator();
   global_op->AssembleMatrix();
   global_op->InitPreconditioner("Diagonal", *preconditioner_list_);
-
-  // add time derivative
-  if (dtp > 0.0) {
-    // op_acc_->AddAccumulationTerm(*u->Data(), dwc_dp, dtp, "cell");
-  }
 
   // finalize global preconditioner
   op_preconditioner_->InitBlockDiagonalPreconditioner();

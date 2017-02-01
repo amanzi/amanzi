@@ -345,7 +345,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
     S_->GetFieldEvaluator("water_content")->HasFieldDerivativeChanged(S_.ptr(), passwd_, "pressure");
     CompositeVector& dwc_dp = *S_->GetFieldData("dwater_content_dpressure", "water_content");
 
-    op_acc_->AddAccumulationDelta(*u->Data(), dwc_dp, dtp, "cell");
+    op_acc_->AddAccumulationDelta(*u->Data(), dwc_dp, dwc_dp, dtp, "cell");
  
     // estimate CNLS limiters
     if (algebraic_water_content_balance_) {

@@ -96,13 +96,14 @@ class Accumulation {
 
   // update methods
   // -- modifiers for diogonal operators
-  void AddAccumulationTerm(const CompositeVector& du, double dT, const std::string& name);
+  void AddAccumulationTerm(const CompositeVector& du,
+                           double dT, const std::string& name);
 
   // -- linearized update methods with storage terms
-  void AddAccumulationDelta(const CompositeVector& u0, const CompositeVector& s0, 
-                            const CompositeVector& ss,
+  void AddAccumulationDelta(const CompositeVector& u0,
+                            const CompositeVector& s0, const CompositeVector& ss,
                             double dT, const std::string& name);
-  void AddAccumulationDelta(const CompositeVector& u0, const CompositeVector& ss, 
+  void AddAccumulationDelta(const CompositeVector& u0,
                             double dT, const std::string& name);
   void AddAccumulationDeltaNoVolume(const CompositeVector& u0, const CompositeVector& ss,
                                     const std::string& name);
@@ -120,6 +121,7 @@ class Accumulation {
  protected:
   void CalculateEntitylVolume_(CompositeVector& entity_volume, const std::string& name);
   void InitAccumulation_(const Schema& schema, bool surface=false);
+  Teuchos::RCP<Op> FindOp_(const std::string& name) const;
 
  protected:
   // operator

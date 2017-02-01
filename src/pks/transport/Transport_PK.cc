@@ -814,7 +814,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         for (int c = 0; c < ncells_owned; c++) {
           fac[0][c] = (*phi)[0][c] * (*ws)[0][c];
         }
-        op2->AddAccumulationDelta(sol, factor, dt_MPC, "cell");
+        op2->AddAccumulationDelta(sol, factor, factor, dt_MPC, "cell");
  
         op1->ApplyBCs(true, true);
         op->SymbolicAssembleMatrix();

@@ -30,22 +30,19 @@ namespace Operators {
 void Accumulation::AddAccumulationTerm(
     const CompositeVector& du, double dT, const std::string& name)
 {
+  Teuchos::RCP<Op> op = FindOp_(name);
+  std::vector<double>& diag = op->vals;
+
   CompositeVector vol(du);
   CalculateEntitylVolume_(vol, name);
 
-  for (auto it = local_ops_.begin(); it != local_ops_.end(); ++it) {
-    const Schema& schema = (*it)->schema_row();
-    if (schema.KindToString(schema.base()) == name) {
-      std::vector<double>& diag = (*it)->vals;
-      const Epetra_MultiVector& duc = *du.ViewComponent(name);
-      Epetra_MultiVector& volc = *vol.ViewComponent(name); 
+  const Epetra_MultiVector& duc = *du.ViewComponent(name);
+  Epetra_MultiVector& volc = *vol.ViewComponent(name); 
 
-      int n = duc.MyLength();
-      ASSERT(diag.size() == n); 
-      for (int i = 0; i < n; i++) {
-        diag[i] += volc[0][i] * duc[0][i] / dT;
-      }
-    }
+  int n = duc.MyLength();
+  ASSERT(diag.size() == n); 
+  for (int i = 0; i < n; i++) {
+    diag[i] += volc[0][i] * duc[0][i] / dT;
   }
 }
 
@@ -56,10 +53,12 @@ void Accumulation::AddAccumulationTerm(
 * RHS += s0 * vol * u0 / dt
 ****************************************************************** */
 void Accumulation::AddAccumulationDelta(
-    const CompositeVector& u0, const CompositeVector& s0, 
-    const CompositeVector& ss, double dT, const std::string& name)
+    const CompositeVector& u0,
+    const CompositeVector& s0, const CompositeVector& ss,
+    double dT, const std::string& name)
 {
-  AmanziMesh::Entity_ID_List nodes, edges;
+  Teuchos::RCP<Op> op = FindOp_(name);
+  std::vector<double>& diag = op->vals;
 
   CompositeVector vol(ss);
   CalculateEntitylVolume_(vol, name);
@@ -68,61 +67,42 @@ void Accumulation::AddAccumulationDelta(
   const Epetra_MultiVector& s0c = *s0.ViewComponent(name);
   const Epetra_MultiVector& ssc = *ss.ViewComponent(name);
 
-  for (auto it = local_ops_.begin(); it != local_ops_.end(); ++it) {
-    const Schema& schema = (*it)->schema_row();
-    if (schema.KindToString(schema.base()) == name) {
-      std::vector<double>& diag = (*it)->vals;
-      Epetra_MultiVector& volc = *vol.ViewComponent(name); 
-      Epetra_MultiVector& rhs = *global_operator()->rhs()->ViewComponent(name);
+  Epetra_MultiVector& volc = *vol.ViewComponent(name); 
+  Epetra_MultiVector& rhs = *global_operator()->rhs()->ViewComponent(name);
 
-      int n = u0c.MyLength();
-      ASSERT(diag.size() == n);
-      for (int i = 0; i < n; i++) {
-        double factor = volc[0][i] / dT;
-        diag[i] += factor * ssc[0][i];
-        rhs[0][i] += factor * s0c[0][i] * u0c[0][i];
-      }
-    }
+  int n = u0c.MyLength();
+  for (int i = 0; i < n; i++) {
+    double factor = volc[0][i] / dT;
+    diag[i] += factor * ssc[0][i];
+    rhs[0][i] += factor * s0c[0][i] * u0c[0][i];
   }
 }
 
 
 /* ******************************************************************
 * Linearized update methods with storage terms for component "name".
-* Op  += ss * vol / dt
-* RHS += ss * vol * u0 / dt
+* Op  += vol / dt
+* RHS += vol * u0 / dt
 ****************************************************************** */
 void Accumulation::AddAccumulationDelta(
-    const CompositeVector& u0, const CompositeVector& ss,
+    const CompositeVector& u0,
     double dT, const std::string& name)
 {
-  AmanziMesh::Entity_ID_List nodes, edges;
+  Teuchos::RCP<Op> op = FindOp_(name);
+  std::vector<double>& diag = op->vals;
 
-  CompositeVector vol(ss);
+  CompositeVector vol(u0);
   CalculateEntitylVolume_(vol, name);
 
   const Epetra_MultiVector& u0c = *u0.ViewComponent(name);
-  const Epetra_MultiVector& ssc = *ss.ViewComponent(name);
+  Epetra_MultiVector& volc = *vol.ViewComponent(name); 
+  Epetra_MultiVector& rhs = *global_operator()->rhs()->ViewComponent(name);
 
-  for (auto it = local_ops_.begin(); it != local_ops_.end(); ++it) {
-    const Schema& schema = (*it)->schema_row();
-    if (schema.KindToString(schema.base()) == name) {
-      std::vector<double>& diag = (*it)->vals;
-      Epetra_MultiVector& volc = *vol.ViewComponent(name); 
-      Epetra_MultiVector& rhs = *global_operator()->rhs()->ViewComponent(name);
-
-      int n = u0c.MyLength();
-      int m = u0c.NumVectors();
-      ASSERT(diag.size() == n); 
-
-      for (int k = 0; k < m; ++k) {
-        for (int i = 0; i < n; i++) {
-          double factor = volc[0][i] * ssc[k][i] / dT;
-          diag[i] += factor;
-          rhs[k][i] += factor * u0c[k][i];
-        }
-      }
-    }
+  int n = u0c.MyLength();
+  for (int i = 0; i < n; i++) {
+    double factor = volc[0][i] / dT;
+    diag[i] += factor;
+    rhs[0][i] += factor * u0c[0][i];
   }
 }
 
@@ -137,22 +117,19 @@ void Accumulation::AddAccumulationDeltaNoVolume(
 {
   if (!ss.HasComponent(name)) ASSERT(false);
 
+  Teuchos::RCP<Op> op = FindOp_(name);
+  std::vector<double>& diag = op->vals;
+
   const Epetra_MultiVector& u0c = *u0.ViewComponent(name);
   const Epetra_MultiVector& ssc = *ss.ViewComponent(name);
 
-  for (auto it = local_ops_.begin(); it != local_ops_.end(); ++it) {
-    const Schema& schema = (*it)->schema_row();
-    if (schema.KindToString(schema.base()) == name) {
-      std::vector<double>& diag = (*it)->vals;
-      Epetra_MultiVector& rhs = *global_operator()->rhs()->ViewComponent(name);
+  Epetra_MultiVector& rhs = *global_operator()->rhs()->ViewComponent(name);
 
-      int n = u0c.MyLength();
-      ASSERT(diag.size() == n);
-      for (int i = 0; i < n; i++) {
-        diag[i] += ssc[0][i];
-        rhs[0][i] += ssc[0][i] * u0c[0][i];
-      }
-    }
+  int n = u0c.MyLength();
+  ASSERT(diag.size() == n);
+  for (int i = 0; i < n; i++) {
+    diag[i] += ssc[0][i];
+    rhs[0][i] += ssc[0][i] * u0c[0][i];
   }
 }
 
@@ -339,6 +316,20 @@ void Accumulation::ApplyBCs(const Teuchos::RCP<BCs>& bc)
       }
     }
   }
+}
+
+
+/* ******************************************************************
+* Apply boundary conditions to 
+****************************************************************** */
+Teuchos::RCP<Op> Accumulation::FindOp_(const std::string& name) const
+{
+  for (auto it = local_ops_.begin(); it != local_ops_.end(); ++it) {
+    const Schema& schema = (*it)->schema_row();
+    if (schema.KindToString(schema.base()) == name) 
+      return *it;
+  }
+  return Teuchos::null;
 }
 
 }  // namespace Operators

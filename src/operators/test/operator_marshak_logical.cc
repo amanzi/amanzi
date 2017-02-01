@@ -172,7 +172,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
     // add accumulation terms
     Accumulation op_acc(AmanziMesh::CELL, global_op);
-    op_acc.AddAccumulationDelta(solution, heat_capacity, dT, "cell");
+    op_acc.AddAccumulationDelta(solution, heat_capacity, heat_capacity, dT, "cell");
 
     // apply BCs and assemble
     op.ApplyBCs(true, true);

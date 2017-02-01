@@ -422,7 +422,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   sy_g.Scale(factor);
 
   op_->RestoreCheckPoint();
-  op_acc_->AddAccumulationDelta(*solution, ss_g, dt_, "cell");
+  op_acc_->AddAccumulationDelta(*solution, ss_g, ss_g, dt_, "cell");
   op_acc_->AddAccumulationDeltaNoVolume(*solution, sy_g, "cell");
 
   op_diff_->ApplyBCs(true, true);

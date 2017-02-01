@@ -188,7 +188,8 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- create accumulation term (velocity block, only nodal unknowns)
   Operators::Schema schema(AmanziMesh::NODE);
-  op_acc_ = Teuchos::rcp(new Operators::Accumulation(schema, op_matrix_elas_->global_operator()));
+  op_matrix_acc_ = Teuchos::rcp(new Operators::Accumulation(schema, op_matrix_elas_->global_operator()));
+  op_preconditioner_acc_ = Teuchos::rcp(new Operators::Accumulation(schema, op_preconditioner_elas_->global_operator()));
 
   // -- create pressure block (for preconditioner)
   op_mass_ = Teuchos::rcp(new Operators::Accumulation(AmanziMesh::CELL, mesh_));

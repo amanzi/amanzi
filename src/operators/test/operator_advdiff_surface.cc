@@ -144,7 +144,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
 
   double dT = 0.02;
   Teuchos::RCP<Accumulation> op_acc = Teuchos::rcp(new Accumulation(AmanziMesh::CELL, global_op));
-  op_acc->AddAccumulationDelta(solution, phi, dT, "cell");
+  op_acc->AddAccumulationDelta(solution, phi, phi, dT, "cell");
 
   // BCs and assemble
   op_diff->ApplyBCs(true, true);

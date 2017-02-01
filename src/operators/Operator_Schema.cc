@@ -241,6 +241,28 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
 
 
 /* ******************************************************************
+* Visit methods for symbolic assemble.
+* Insert a diagonal matrix on nodes.
+****************************************************************** */
+void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Node_Node& op,
+                                               const SuperMap& map, GraphFE& graph,
+                                               int my_block_row, int my_block_col) const
+{
+  const std::vector<int>& node_row_inds = map.GhostIndices("node", my_block_row);
+  const std::vector<int>& node_col_inds = map.GhostIndices("node", my_block_col);
+
+  int ierr(0);
+  for (int v = 0; v != nnodes_owned; ++v) {
+    int row = node_row_inds[v];
+    int col = node_col_inds[v];
+
+    ierr |= graph.InsertMyIndices(row, 1, &col);
+  }
+  ASSERT(!ierr);
+}
+
+
+/* ******************************************************************
 * Visit methods for assemble
 * Apply the local matrices directly as schemas match.
 ****************************************************************** */
@@ -295,6 +317,32 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
     }
 
     ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[c]);
+  }
+  ASSERT(!ierr);
+}
+
+
+/* ******************************************************************
+* Visit methods for assemble
+* Insert each diagonal values for nodes.
+****************************************************************** */
+void Operator_Schema::AssembleMatrixOp(const Op_Node_Node& op,
+                                       const SuperMap& map, MatrixFE& mat,
+                                       int my_block_row, int my_block_col) const
+{
+  const std::vector<int>& node_row_inds = map.GhostIndices("node", my_block_row);
+  const std::vector<int>& node_col_inds = map.GhostIndices("node", my_block_col);
+
+  int ierr(0);
+  for (int v = 0; v != nnodes_owned; ++v) {
+    int row = node_row_inds[v];
+    int col = node_col_inds[v];
+
+    ierr |= mat.SumIntoMyValues(row, 1, &op.vals[v], &col);
+
+    row++;
+    col++;
+    ierr |= mat.SumIntoMyValues(row, 1, &op.vals[v], &col);
   }
   ASSERT(!ierr);
 }
