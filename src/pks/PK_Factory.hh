@@ -70,8 +70,12 @@ class PKFactory {
       Errors::Message message("PK_Factory: Missing sublist \"PKs\" in global list.");
       Exceptions::amanzi_throw(message);
     }
-   
-       std::string pk_type;
+
+    int rank;// = state->GetMesh()->get_comm()->MyPID();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (rank==0) std::cout<<pk_tree<<"\n";
+
+    std::string pk_type;
     if (pk_tree.isParameter("PK type")) {
       pk_type = pk_tree.get<std::string>("PK type");
     }
@@ -80,7 +84,7 @@ class PKFactory {
     // }
     else{
       std::stringstream errmsg;
-      errmsg << "PK_Factory: Missing PK type item \n";
+      errmsg << "PK_Factory: Missing PK type item \n"<<pk_tree<<"\n";
       Errors::Message message(errmsg.str());
       Exceptions::amanzi_throw(message);
     }

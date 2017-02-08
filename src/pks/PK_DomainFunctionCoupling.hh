@@ -21,12 +21,13 @@
 #include "CommonDefs.hh"
 #include "Mesh.hh"
 #include "State.hh"
+#include "DenseVector.hh"
 
 
 namespace Amanzi {
 
-template <class FunctionBase>
-class PK_DomainFunctionCoupling : public FunctionBase {
+template <class ValueType, template <typename Type> class FunctionBase>
+class PK_DomainFunctionCoupling : public FunctionBase<ValueType> {
  public:
   PK_DomainFunctionCoupling(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       mesh_(mesh) {};
@@ -46,8 +47,8 @@ class PK_DomainFunctionCoupling : public FunctionBase {
   virtual void set_state(const Teuchos::RCP<State>& S) { S_ = S; }
 
  protected:
-  using FunctionBase::value_;
-  using FunctionBase::keyword_;
+  using FunctionBase<ValueType>::value_;
+  using FunctionBase<ValueType>::keyword_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<const State> S_;
@@ -64,8 +65,8 @@ class PK_DomainFunctionCoupling : public FunctionBase {
 /* ******************************************************************
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
-template <class FunctionBase>
-void PK_DomainFunctionCoupling<FunctionBase>::Init(
+template <class ValueType, template <typename Type> class FunctionBase>
+void PK_DomainFunctionCoupling<ValueType, FunctionBase>::Init(
     const Teuchos::ParameterList& plist, const std::string& keyword,
     AmanziMesh::Entity_kind region_kind)
 {
@@ -138,8 +139,8 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
 /* ******************************************************************
 * Compute and distribute the result by Coupling.
 ****************************************************************** */
-template <class FunctionBase>
-void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
+template <class ValueType, template <typename Type> class FunctionBase>
+void PK_DomainFunctionCoupling<ValueType, FunctionBase>::Compute(double t0, double t1)
 {
   // create the input tuple (time + space)
   if (submodel_ == "rate") {
@@ -208,11 +209,23 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 
     int num_vec = field_out.NumVectors();
     std::vector<double> val(num_vec);
+    std::map<int, WhetStone::DenseVector> mymap;    
+    WhetStone::DenseVector val_dens(num_vec);
+
+
     ///////CHECK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!????????????
     int i(0);
     for (MeshIDs::const_iterator c = entity_ids_->begin(); c != entity_ids_->end(); ++c){
       for (int k=0; k<num_vec; ++k) val[k] = field_out[k][i];
-      value_[*c] = val[0];            
+      // value_[*c] = val[0];     
+      //for (int k=0; k<num_vec; ++k) val(k) = field_out[k][i];
+      //for (int k=0; k<num_vec; ++k) val_dens(k) = field_out[k][i];            
+
+      value_[*c] = val[0];
+      //value_.at(*c) = 0;
+      for (auto it1 = value_.begin(); it1 != value_.end(); ++it1) {
+        std::cout<<it1->first<<" => "<<it1->second<<"\n";
+      }
       i++;
     }
   }

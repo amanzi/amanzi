@@ -25,6 +25,7 @@
 
 namespace Amanzi {
 
+template < class ValueType >
 class PK_DomainFunction {
  public:
   PK_DomainFunction()
@@ -49,12 +50,12 @@ class PK_DomainFunction {
 
   // iterator methods
   typedef std::map<int, double>::iterator Iterator;
-  Iterator begin() { return value_.begin(); }
-  Iterator end() { return value_.end(); }
-  std::map<int, double>::size_type size() { return value_.size(); }
+  typename std::map<int, ValueType>::iterator begin() { return value_.begin(); }
+  typename std::map<int, ValueType>::iterator end() { return value_.end(); }
+  typename std::map<int, ValueType>::size_type size() { return value_.size(); }
 
  protected:
-  std::map<int, double> value_;
+  std::map<int, ValueType> value_;
   double domain_volume_;
   std::string keyword_;
 };

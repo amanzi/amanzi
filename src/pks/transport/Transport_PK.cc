@@ -331,7 +331,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   // create boundary conditions
   if (tp_list_->isSublist("boundary conditions")) {
     // -- try simple Dirichlet conditions for species
-    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
+    PK_DomainFunctionFactory<WhetStone::DenseVector, TransportDomainFunction> factory(mesh_);
     Teuchos::ParameterList& clist = tp_list_->sublist("boundary conditions").sublist("concentration");
 
     for (auto it = clist.begin(); it != clist.end(); ++it) {
@@ -341,7 +341,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
         for (auto it1 = bc_list.begin(); it1 != bc_list.end(); ++it1) {
           std::string specname = it1->first;
           Teuchos::ParameterList& spec = bc_list.sublist(specname);
-          Teuchos::RCP<TransportDomainFunction> 
+          Teuchos::RCP<TransportDomainFunction<WhetStone::DenseVector> > 
               bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
 
           bc->tcc_names().push_back(name);
@@ -359,8 +359,9 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
       std::string specname = it->first;
       Teuchos::ParameterList& spec = glist.sublist(specname);
 
-      Teuchos::RCP<TransportBoundaryFunction_Alquimia> 
-          bc = Teuchos::rcp(new TransportBoundaryFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
+      Teuchos::RCP<TransportBoundaryFunction_Alquimia<WhetStone::DenseVector> > 
+          bc = Teuchos::rcp(new TransportBoundaryFunction_Alquimia<WhetStone::DenseVector>
+                            (spec, mesh_, chem_pk_, chem_engine_));
 
       std::vector<int>& tcc_index = bc->tcc_index();
       std::vector<std::string>& tcc_names = bc->tcc_names();
@@ -389,7 +390,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // source term initialization: so far only "concentration" is available.
   if (tp_list_->isSublist("source terms")) {
-    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
+    PK_DomainFunctionFactory<WhetStone::DenseVector, TransportDomainFunction> factory(mesh_);
     PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
 
     Teuchos::ParameterList& clist = tp_list_->sublist("source terms").sublist("concentration");
@@ -400,7 +401,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
         for (auto it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
           std::string specname = it1->first;
           Teuchos::ParameterList& spec = src_list.sublist(specname);
-          Teuchos::RCP<TransportDomainFunction> src = factory.Create(spec, AmanziMesh::CELL, Kxy);
+          Teuchos::RCP<TransportDomainFunction<WhetStone::DenseVector> > src = factory.Create(spec, AmanziMesh::CELL, Kxy);
 
           src->tcc_names().push_back(name);
           src->tcc_index().push_back(FindComponentNumber(name));
@@ -417,8 +418,9 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
       std::string specname = it->first;
       Teuchos::ParameterList& spec = glist.sublist(specname);
 
-      Teuchos::RCP<TransportSourceFunction_Alquimia> 
-          src = Teuchos::rcp(new TransportSourceFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
+      Teuchos::RCP<TransportSourceFunction_Alquimia<WhetStone::DenseVector> > 
+          src = Teuchos::rcp(new TransportSourceFunction_Alquimia<WhetStone::DenseVector>
+                             (spec, mesh_, chem_pk_, chem_engine_));
 
       std::vector<int>& tcc_index = src->tcc_index();
       std::vector<std::string>& tcc_names = src->tcc_names();

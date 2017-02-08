@@ -30,8 +30,8 @@
 
 namespace Amanzi {
 
-template <class FunctionBase>
-class PK_DomainFunctionWeight : public FunctionBase,
+template <class ValueType, template <typename Type> class FunctionBase>
+class PK_DomainFunctionWeight : public FunctionBase<ValueType>,
                                 public Functions::UniqueMeshFunction {
  public:
   PK_DomainFunctionWeight(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
@@ -47,9 +47,9 @@ class PK_DomainFunctionWeight : public FunctionBase,
   virtual std::string name() const { return "weight"; }
 
  protected:
-  using FunctionBase::value_;
-  using FunctionBase::domain_volume_;
-  using FunctionBase::keyword_;
+  using FunctionBase<ValueType>::value_;
+  using FunctionBase<ValueType>::domain_volume_;
+  using FunctionBase<ValueType>::keyword_;
 
  private:
   std::string submodel_;
@@ -60,8 +60,8 @@ class PK_DomainFunctionWeight : public FunctionBase,
 /* ******************************************************************
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
-template <class FunctionBase>
-void PK_DomainFunctionWeight<FunctionBase>::Init(
+template <class ValueType, template <typename Type> class FunctionBase>
+void PK_DomainFunctionWeight<ValueType, FunctionBase>::Init(
     const Teuchos::ParameterList& plist, const std::string& keyword,
     Teuchos::RCP<const Epetra_Vector> weight)
 {
@@ -92,8 +92,8 @@ void PK_DomainFunctionWeight<FunctionBase>::Init(
 /* ******************************************************************
 * Compute and distribute the result by volume.
 ****************************************************************** */
-template <class FunctionBase>
-void PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
+template <class ValueType, template <typename Type> class FunctionBase>
+void PK_DomainFunctionWeight<ValueType, FunctionBase>::Compute(double t0, double t1)
 {
   double dt = t1 - t0;
   if (dt > 0.0) dt = 1.0 / dt;

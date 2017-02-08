@@ -32,6 +32,7 @@
 #include "Units.hh"
 #include "VerboseObject.hh"
 #include "PK_Explicit.hh"
+#include "DenseVector.hh"
 
 #ifdef ALQUIMIA_ENABLED
 #include "Alquimia_PK.hh"
@@ -209,8 +210,8 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   int current_component_;  // data for lifting
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;
 
-  std::vector<Teuchos::RCP<TransportDomainFunction> > srcs_;  // Sources and sinks
-  std::vector<Teuchos::RCP<TransportDomainFunction> > bcs_;
+  std::vector<Teuchos::RCP<TransportDomainFunction<WhetStone::DenseVector> > > srcs_;  // Sources and sinks
+  std::vector<Teuchos::RCP<TransportDomainFunction<WhetStone::DenseVector> > > bcs_;
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators

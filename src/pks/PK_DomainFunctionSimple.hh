@@ -24,8 +24,8 @@
 
 namespace Amanzi {
 
-template <class FunctionBase>
-class PK_DomainFunctionSimple : public FunctionBase,
+template <class ValueType, template <typename Type> class FunctionBase>
+class PK_DomainFunctionSimple : public FunctionBase<ValueType>,
                                 public Functions::UniqueMeshFunction {
  public:
   PK_DomainFunctionSimple(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
@@ -37,8 +37,10 @@ class PK_DomainFunctionSimple : public FunctionBase,
                           const Teuchos::ParameterList& plist,
                           AmanziMesh::Entity_kind kind) :
       UniqueMeshFunction(mesh),
-      FunctionBase(plist),
-      kind_(kind) {};
+      FunctionBase<ValueType>(plist),
+      kind_(kind) {
+    //FunctionBase<ValueType>::FunctionBase<ValueType>
+  };
 
   ~PK_DomainFunctionSimple() {};
 
@@ -50,8 +52,9 @@ class PK_DomainFunctionSimple : public FunctionBase,
   virtual std::string name() const { return "simple"; }
 
  protected:
-  using FunctionBase::value_;
-  using FunctionBase::keyword_;
+  using FunctionBase<ValueType>::value_;
+  using FunctionBase<ValueType>::keyword_;
+
 
  private:
   std::string submodel_;
@@ -62,8 +65,8 @@ class PK_DomainFunctionSimple : public FunctionBase,
 /* ******************************************************************
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
-template <class FunctionBase>
-void PK_DomainFunctionSimple<FunctionBase>::Init(
+template <class ValueType, template <typename Type> class FunctionBase>
+void PK_DomainFunctionSimple<ValueType, FunctionBase>::Init(
     const Teuchos::ParameterList& plist, const std::string& keyword)
 {
   keyword_ = keyword;
@@ -92,8 +95,8 @@ void PK_DomainFunctionSimple<FunctionBase>::Init(
 /* ******************************************************************
 * Compute and distribute the result by Simple.
 ****************************************************************** */
-template <class FunctionBase>
-void PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
+template <class ValueType, template <typename Type> class FunctionBase>
+void PK_DomainFunctionSimple<ValueType, FunctionBase>::Compute(double t0, double t1)
 {
   if (unique_specs_.size() == 0) return;
 
@@ -115,6 +118,8 @@ void PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
       value_[*c] = (*(*uspec)->first->second)(args)[0];
     }
+
+    
    
     if (submodel_ == "integrated source") {
       double dt = t1 - t0;
