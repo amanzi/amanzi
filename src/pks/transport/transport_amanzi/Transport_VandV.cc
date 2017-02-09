@@ -152,7 +152,7 @@ void Transport_PK_ATS::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next,
     double mass_solute(0.0);
     for (int c = 0; c < ncells_owned; c++) {
       double vol = mesh_->cell_volume(c);
-      mass_solute += (*ws)[0][c] * (*phi)[0][c] * tcc_next[i][c] * vol;
+      mass_solute += (*ws)[0][c] * (*phi)[0][c] * tcc_next[i][c] * vol * (*mol_dens)[0][c];
     }
     mass_solute /= units_.concentration_factor();
     mass_solutes_stepstart_[i] /= units_.concentration_factor();
@@ -190,7 +190,7 @@ void Transport_PK_ATS::VV_CheckInfluxBC() const
 
       for (int k = 0; k < ncomp; k++) {
         if (i == tcc_index[k]) {
-          for (TransportDomainFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+          for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
             int f = it->first;
             influx_face[f] = 1;
           }
@@ -204,7 +204,7 @@ void Transport_PK_ATS::VV_CheckInfluxBC() const
 
       for (int k = 0; k < ncomp; k++) {
         if (i == tcc_index[k]) {
-          for (TransportDomainFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+          for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
             int f = it->first;
             if ((*flux)[0][f] < 0 && influx_face[f] == 0) {
               char component[3];
@@ -297,7 +297,7 @@ double Transport_PK_ATS::VV_SoluteVolumeChangePerSecond(int idx_tracer)
 
     for (int i = 0; i < ncomp; i++) {
       if (tcc_index[i] == idx_tracer) {
-        for (TransportDomainFunction::Iterator it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+        for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
           int f = it->first;
           WhetStone::DenseVector& values = it->second;
 
@@ -339,7 +339,7 @@ double Transport_PK_ATS::ComputeSolute(const Epetra_MultiVector& tcc_next, int i
   double mass_solute(0.0);
   for (int c = 0; c < ncells_owned; c++) {
     double vol = mesh_->cell_volume(c);
-    mass_solute += (*ws)[0][c] * (*phi)[0][c] * tcc_next[i][c] * vol;
+    mass_solute += (*ws)[0][c] * (*phi)[0][c] * tcc_next[i][c] * vol * (*mol_dens)[0][c];
   }
   mass_solute /= units_.concentration_factor();
 

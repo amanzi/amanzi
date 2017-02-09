@@ -70,7 +70,7 @@ set(transport_inc_files
 #  TransportBoundaryFunction_Tracer.hh
   TransportBoundaryFunction_Alquimia.hh
   TransportDefs.hh
-  TransportSourceFunction.hh
+#  TransportSourceFunction.hh
   Transport_PK_ATS.hh)
 
 set(transport_src_files Transport_PK.cc Transport_TI.cc 
@@ -79,8 +79,8 @@ set(transport_src_files Transport_PK.cc Transport_TI.cc
                         MDM_Isotropic.cc MDM_Bear.cc MDM_BurnettFrind.cc MDM_LichtnerKelkarRobinson.cc
                         MDMPartition.cc MDMFactory.cc
                         MultiscaleTransportPorosityFactory.cc MultiscaleTransportPorosity_DPM.cc
-                        MultiscaleTransportPorosityPartition.cc
-                        TransportBoundaryFunction_Alquimia.cc)
+                        MultiscaleTransportPorosityPartition.cc)
+#                        TransportBoundaryFunction_Alquimia.cc)
 #                        TransportBCFactory.cc #TransportSourceFactory.cc
 #                        TransportBoundaryFunction_Tracer.cc TransportBoundaryFunction_Alquimia.cc
 #                        TransportBoundaryFunction_Coupler.cc)

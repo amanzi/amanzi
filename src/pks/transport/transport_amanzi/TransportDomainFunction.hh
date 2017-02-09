@@ -28,6 +28,7 @@
 namespace Amanzi {
 namespace Transport {
 
+template <class Value_Type>
 class TransportDomainFunction {
  public:
   TransportDomainFunction() : domain_volume_(-1.0) {};
@@ -48,13 +49,12 @@ class TransportDomainFunction {
 
   std::vector<std::string>& tcc_names() { return tcc_names_; }
   std::vector<int>& tcc_index() { return tcc_index_; }
+  virtual void set_state(const Teuchos::RCP<State>& S) {S_ = S;}
 
-  // iterator methods
-  typedef std::map<int, WhetStone::DenseVector>::iterator Iterator;
-  Iterator begin() { return value_.begin(); }
-  Iterator end() { return value_.end(); }
-  std::map<int, WhetStone::DenseVector>::size_type size() { return value_.size(); }
-  virtual void set_state(const Teuchos::RCP<State>& S) {S_=S;}
+// iterator methods
+  typename std::map<int, Value_Type>::iterator begin() {return value_.begin(); }
+  typename std::map<int, Value_Type>::iterator end() {return value_.end(); }
+  typename std::map<int, Value_Type>::size_type size() {return value_.size(); }
 
  protected:
   double domain_volume_;

@@ -31,6 +31,7 @@
 #include "Units.hh"
 #include "VerboseObject.hh"
 #include "PK_PhysicalExplicit.hh"
+#include "DenseVector.hh"
 
 #include <string>
 
@@ -43,7 +44,6 @@
 #include "MDMPartition.hh"
 #include "MultiscaleTransportPorosityPartition.hh"
 #include "TransportDomainFunction.hh"
-#include "TransportSourceFunction.hh"
 #include "TransportDefs.hh"
 
 
@@ -95,7 +95,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   // main transport members
   // -- calculation of a stable time step needs saturations and darcy flux
-  double CalculateTransportDt();
+  double StableTimeStep();
   void Sinks2TotalOutFlux(Epetra_MultiVector& tcc,
                           std::vector<double>& total_outflux, int n0, int n1);
 
@@ -145,6 +145,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   void AdvanceSecondOrderUpwindGeneric(double dT);
   void AdvanceSecondOrderUpwindRK1(double dT);
   void AdvanceSecondOrderUpwindRK2(double dT);
+  void Advance_Dispersion_Diffusion(double t_old, double t_new);
 
   // time integration members
     void Functional(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
@@ -162,12 +163,12 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   // physical models
   // -- dispersion and diffusion
   void CalculateDispersionTensor_(
-      const Epetra_MultiVector& darcy_flux, 
-      const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
+      const Epetra_MultiVector& darcy_flux, const Epetra_MultiVector& porosity, 
+      const Epetra_MultiVector& saturation, const Epetra_MultiVector& mol_density);
 
   void CalculateDiffusionTensor_(
-      double md, int phase,
-      const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
+      double md, int phase, const Epetra_MultiVector& porosity, 
+      const Epetra_MultiVector& saturation, const Epetra_MultiVector& mol_density);
 
   int FindDiffusionValue(const std::string& tcc_name, double* md, int* phase);
 
@@ -247,7 +248,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   Teuchos::RCP<Epetra_MultiVector> vol_flux;
   Teuchos::RCP<Epetra_MultiVector> conserve_qty_;
   Teuchos::RCP<const Epetra_MultiVector> flux;
-  Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi;
+    Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi, mol_dens;
   
 #ifdef ALQUIMIA_ENABLED
   Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk_;
@@ -263,8 +264,8 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   int current_component_;  // data for lifting
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;
 
-  std::vector<Teuchos::RCP<TransportDomainFunction> > srcs_;  // Source or sink for components
-  std::vector<Teuchos::RCP<TransportDomainFunction> > bcs_;  // influx BC for components
+  std::vector<Teuchos::RCP<TransportDomainFunction<WhetStone::DenseVector> > > srcs_;  // Source or sink for components
+  std::vector<Teuchos::RCP<TransportDomainFunction<WhetStone::DenseVector> > > bcs_;  // influx BC for components
   double bc_scaling;
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
