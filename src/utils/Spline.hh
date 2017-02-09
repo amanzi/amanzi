@@ -20,15 +20,23 @@ namespace Utils {
 class Spline {
 
  public:
-  Spline(double x1, double y1, double dy1,
-         double x2, double y2, double dy2);
+  Spline() {}
 
+  Spline(double x1, double y1, double dy1,
+         double x2, double y2, double dy2) {
+    Setup(x1,y1,dy1, x2,y2,dy2);
+  }
+
+  void Setup(double x1, double y1, double dy1,
+	     double x2, double y2, double dy2);
+  
   double operator()(double x) { return Value(x); }
 
   double Value(double x);
   double Derivative(double x);
 
  private:
+
   double T(double x);
 
   double x1_, x2_, y1_, y2_, dy1_, dy2_;
