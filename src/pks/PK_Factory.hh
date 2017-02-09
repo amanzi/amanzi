@@ -71,9 +71,9 @@ class PKFactory {
       Exceptions::amanzi_throw(message);
     }
 
-    int rank;// = state->GetMesh()->get_comm()->MyPID();
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    if (rank==0) std::cout<<pk_tree<<"\n";
+    // int rank;// = state->GetMesh()->get_comm()->MyPID();
+    // MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    // if (rank==0) std::cout<<pk_tree<<"\n";
 
     std::string pk_type;
     if (pk_tree.isParameter("PK type")) {
