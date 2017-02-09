@@ -17,15 +17,15 @@
 namespace Amanzi {
 namespace Utils {
 
-Spline::Spline(double x1, double y1, double dy1,
-               double x2, double y2, double dy2) :
-    x1_(x1),
-    y1_(y1),
-    dy1_(dy1),
-    x2_(x2),
-    y2_(y2),
-    dy2_(dy2)
-{
+void
+Spline::Setup(double x1, double y1, double dy1,
+               double x2, double y2, double dy2) {
+  x1_ = x1;
+  y1_ = y1;
+  dy1_ = dy1;
+  x2_ = x2;
+  y2_ = y2;
+  dy2_ = dy2;
 
   ASSERT(x1_ < x2_);
   if (y2_ >= y1_) {
