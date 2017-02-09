@@ -30,7 +30,8 @@
 #include "iem_water_vapor.hh"
 #include "compressible_porosity_evaluator.hh"
 #include "compressible_porosity_model.hh"
-
+#include "compressible_porosity_leijnse_evaluator.hh"
+#include "compressible_porosity_leijnse_model.hh"
 #include "permafrost_model.hh"
 
 namespace Amanzi {
@@ -131,11 +132,21 @@ void PermafrostModel::InitializeModel(const Teuchos::Ptr<State>& S,
 
   // -- porosity
 
+  poro_leij_ = plist.get<bool>("porosity leijnse model", false);
   me = S->GetFieldEvaluator(getKey(domain, "porosity"));
-  Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityEvaluator> poro_me =
+  if(!poro_leij_){
+    Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityEvaluator> poro_me =
       Teuchos::rcp_dynamic_cast<Flow::FlowRelations::CompressiblePorosityEvaluator>(me);
-  ASSERT(poro_me != Teuchos::null);
-  poro_models_ = poro_me->get_Models();
+    ASSERT(poro_me != Teuchos::null);
+    poro_models_ = poro_me->get_Models();
+  }
+  else{
+    Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityLeijnseEvaluator> poro_me =
+      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::CompressiblePorosityLeijnseEvaluator>(me);
+    ASSERT(poro_me != Teuchos::null);
+    poro_leij_models_ = poro_me->get_Models();
+  }
+  
 
 }
 
@@ -146,13 +157,20 @@ void PermafrostModel::UpdateModel(const Teuchos::Ptr<State>& S, int c) {
   rho_rock_ = (*S->GetFieldData(getKey(domain,"density_rock"))->ViewComponent("cell"))[0][c];
   poro_ = (*S->GetFieldData(getKey(domain,"base_porosity"))->ViewComponent("cell"))[0][c];
   wrm_ = wrms_->second[(*wrms_->first)[c]];
-  poro_model_ = poro_models_->second[(*poro_models_->first)[c]];
+  if(!poro_leij_)
+    poro_model_ = poro_models_->second[(*poro_models_->first)[c]];
+  else
+    poro_leij_model_ = poro_leij_models_->second[(*poro_leij_models_->first)[c]];
+    
   ASSERT(IsSetUp_());
 }
 
 bool PermafrostModel::IsSetUp_() {
   if (wrm_ == Teuchos::null) return false;
-  if (poro_model_ == Teuchos::null) return false;
+  if(!poro_leij_)
+    if (poro_model_ == Teuchos::null) return false;
+  else
+    if (poro_leij_model_ == Teuchos::null) return false;
   if (liquid_eos_ == Teuchos::null) return false;
   if (gas_eos_ == Teuchos::null) return false;
   if (ice_eos_ == Teuchos::null) return false;
@@ -225,7 +243,12 @@ int PermafrostModel::EvaluateEnergyAndWaterContent_(double T, double p, AmanziGe
   }
   int ierr = 0;
   try {
-    double poro = poro_model_->Porosity(poro_, p, p_atm_);
+    double poro;
+    if (!poro_leij_)
+      poro = poro_model_->Porosity(poro_, p, p_atm_);
+    else
+      poro = poro_leij_model_->Porosity(poro_, p, p_atm_);
+    
     double eff_p = std::max(p_atm_, p);
 
     double rho_l = liquid_eos_->MolarDensity(T,eff_p);

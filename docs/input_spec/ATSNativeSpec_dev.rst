@@ -60,6 +60,23 @@ Conventions:
   is not provided.
 
 
+Symbol Index
+#############
+
+:math:`|E|` | volume of a cell :math:`[m^X]` (where :math:`X` is the dimension of the mesh)
+:math:`h` | ponded depth, or the water head over the surface :math:`[m]`
+:math:`` | alternative, in context of the subsurface, water head :math:`[m]`
+:math:`h_{snow}` | snow depth :math:`[m]`
+:math:`n_X` | molar density of phase X :math:`[mol m^-3]`
+:math:`P_{s,r}` | precipitation of rain or snow, noting that snow is always a precipitation rate in snow-water-equivalent (SWE) basis.  :math:`[m s^-1]`
+:math:`s_X` | saturation of phase X :math:`[-]`
+:math:`z` | elevation :math:`[m]`
+:math:`\phi` | porosity of the soil :math:`[-]`
+:math:`\rho` | mass density of a phase :math:`[kg m^-3]`
+:math:`\Theta` | extensive water content of a cell :math:`[mol]`
+
+   
+
   
 Main
 #######################################
@@ -608,27 +625,34 @@ name generation and writing frequency, by numerical cycle number.
 Unlike `"visualization`", there is only one `"checkpoint`" list for
 all domains/meshes.
 
-The checkpoint-spec includes all parameters as in a IOEvent_ spec and additionally:
+
+
+Each list contains all parameters as in a IOEvent_ spec, and also:
 
 * `"file name base`" ``[string]`` **"checkpoint"**
-  
+
 * `"file name digits`" ``[int]`` **5**
+
+  Write mesh data for every visualization dump, this facilitates visualizing deforming meshes.
 
 Example:
 
 .. code-block:: xml
 
   <ParameterList name="checkpoint">
-    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
-    <Parameter name="cycles" type="Array(int)" value="{999, 1001}" />
-    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
-    <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
-    <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
+    <Parameter name="cycles start period stop" type="Array(int)" value="{{0, 100, -1}}" />
+    <Parameter name="cycles" type="Array(int)" value="{{999, 1001}}" />
+    <Parameter name="times start period stop 0" type="Array(double)" value="{{0.0, 10.0, 100.0}}"/>
+    <Parameter name="times start period stop 1" type="Array(double)" value="{{100.0, 25.0, -1.0}}"/>
+    <Parameter name="times" type="Array(double)" value="{{101.0, 303.0, 422.0}}"/>
   </ParameterList>
 
 In this example, checkpoint files are written when the cycle number is
 a multiple of 100, every 10 seconds for the first 100 seconds, and
 every 25 seconds thereafter, along with times 101, 303, and 422.  Files will be written in the form: `"checkpoint00000.h5`".
+
+
+  
 
 
  
@@ -739,16 +763,25 @@ There are several types of PKs, and each PK has its own valid input spec.  Howev
 PKDefaultBase
 ----------------
 
-``PKDefaultBase`` is not a true PK, but is a helper for providing some basic functionality shared by (nearly) all PKs.
-Therefore, (nearly) all PKs inherit from this base class.  No input required.
+
+
+``PKDefaultBase`` is not a true PK, but is a helper for providing some basic
+functionality shared by (nearly) all PKs.  Therefore, (nearly) all PKs inherit
+from this base class.
+
+No input spec.
+
+
+
 
 PKPhysicalBase
 ----------------
 
-``PKPhysicalBase (v)-->`` PKDefaultBase_
 
-``PKPhysicalBase`` is a base class providing some functionality for PKs which are defined on a single mesh, and represent a single process model.
-Typically all leaves of the PK tree will inherit from ``PKPhysicalBase``.
+
+``PKPhysicalBase`` is a base class providing some functionality for PKs which
+are defined on a single mesh, and represent a single process model.  Typically
+all leaves of the PK tree will inherit from ``PKPhysicalBase``.
 
 * `"domain`" ``[string]`` **""**, e.g. `"surface`".
 
@@ -766,48 +799,62 @@ Typically all leaves of the PK tree will inherit from ``PKPhysicalBase``.
 
    Indicates that the primary variable field has both CELL and FACE objects, and the FACE values are calculated as the average of the neighboring cells.
 
- - other, PK-specific additions
+
+NOTE: ``PKPhysicalBase (v)-->`` PKDefaultBase_
+
+
+
 
 
 PKBDFBase
 ----------------
 
-``PKBDFBase  (v)-->`` PKDefaultBase_
 
-``PKBDFBase`` is a base class from which PKs that want to use the ``BDF`` series of implicit time integrators must derive.  It specifies both the ``BDFFnBase`` interface and implements some basic functionality for ``BDF`` PKs.  
+
+``PKBDFBase`` is a base class from which PKs that want to use the ``BDF``
+series of implicit time integrators must derive.  It specifies both the
+``BDFFnBase`` interface and implements some basic functionality for ``BDF``
+PKs.
 
 * `"initial time step`" ``[double]`` **1.**
 
-  The initial timestep size for the PK, this ensures that the initial timestep will not be **larger** than this value.
+  The initial timestep size for the PK, this ensures that the initial timestep
+  will not be **larger** than this value.
 
 * `"assemble preconditioner`" ``[bool]`` **true** 
 
-  A flag for the PK to not assemble its preconditioner if it is not needed by a controlling PK.  This is usually set by the MPC, not by the user.
+  A flag for the PK to not assemble its preconditioner if it is not needed by
+  a controlling PK.  This is usually set by the MPC, not by the user.
 
-In the top-most (in the PK tree) PK that is meant to be integrated implicitly, several additional specs are included.  For instance, in a strongly coupled flow and energy problem, these specs are included in the ``StrongMPC`` that couples the flow and energy PKs, not to the flow or energy PK itself.
+In the top-most (in the PK tree) PK that is meant to be integrated implicitly,
+several additional specs are included.  For instance, in a strongly coupled
+flow and energy problem, these specs are included in the ``StrongMPC`` that
+couples the flow and energy PKs, not to the flow or energy PK itself.
   
 * `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_.
 
-  Note that this is only provided in the top-most ``PKBDFBase`` in the tree -- this is often a StrongMPC_ or a class deriving from StrongMPC_, not a PKPhysicalBDFBase_.
+  Note that this is only provided in the top-most ``PKBDFBase`` in the tree --
+  this is often a StrongMPC_ or a class deriving from StrongMPC_.
 
 * `"preconditioner`" ``[preconditioner-spec]`` is a Preconditioner_.
 
   This spec describes how to form the (approximate) inverse of the preconditioner.
+  
+NOTE: ``PKBDFBase  (v)-->`` PKDefaultBase_
+
+
 
 
 
 PKPhysicalBDFBase
 -------------------
 
-``PKPhysicalBDFBase -->`` PKBDFBase_
-``PKPhysicalBDFBase -->`` PKPhysicalBase_
-``PKPhysicalBDFBase (v)-->`` PKDefaultBase_
 
-A base class for all PKs that are all of the above.
 
-* `"debug cells`" [Array(int)]
-
-  List of global cell IDs for which (if the verbosity is set high enough) more debugging info is printed to the log file.
+A base class for all PKs that are both physical, in the sense that they
+implement an equation and are not couplers, and support the implicit
+integration interface.  This largely just supplies a default error norm based
+on error in conservation relative to the extent of the conserved quantity.
 
 * `"absolute error tolerance`" [double] **1.0**
 
@@ -818,7 +865,18 @@ A base class for all PKs that are all of the above.
   Relative tolerance, :math:`r_tol` in the equation below.
 
 By default, the error norm used by solvers is given by:
+
 :math:`ENORM(u, du) = |du| / ( a_tol + r_tol * |u| )`
+
+The defaults here are typically good, or else good defaults are set in the
+code, so these need not be supplied.
+
+
+NOTE: ``PKPhysicalBDFBase -->`` PKBDFBase_
+      ``PKPhysicalBDFBase -->`` PKPhysicalBase_
+      ``PKPhysicalBDFBase (v)-->`` PKDefaultBase_
+
+
 
 
 Physical PKs
@@ -831,6 +889,15 @@ Flow PKs
 
 Richards PK
 ^^^^^^^^^^^^^^^
+
+
+Solves:
+
+.. math::
+  \frac{\partial \Theta}{\partial t} = \nabla \frac{k_r \rho}{\mu} K ( \nabla p + \rho g \hat{z} ) = q
+
+ 
+
 
 Permafrost Flow PK
 ^^^^^^^^^^^^^^^^^^^^
@@ -1067,6 +1134,97 @@ Example:
   <ParameterList name="water_content">
     <Parameter name="evaluator type" type="string" value="permafrost water content"/>
   </ParameterList>
+
+
+
+
+
+Surface Water potential surfaces
+---------------------------------
+
+Evaluators for 
+
+SurfaceElevation
+^^^^^^^^^^^^^^^^^^
+
+Evaluator type: `"meshed elevation`"
+
+Evaluates the z-coordinate and the magnitude of the slope :math:``|\nambla_h z|``
+
+* `"elevation key`" ``[string]`` **elevation** Name the elevation variable. [m]
+* `"slope magnitude key`" ``[string]`` **slope_magnitude** Name the elevation variable. [-]
+* `"dynamic mesh`" ``[bool]`` **false** Lets the evaluator know that the elevation changes in time, and adds the `"deformation`" dependency.
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="elevation">
+    <Parameter name="evaluator type" type="string" value="meshed elevation"/>
+  </ParameterList>
+
+
+
+
+SurfacePotential
+^^^^^^^^^^^^^^^^^^^
+
+Evaluator type: ""
+
+.. math::
+  h + z
+
+* `"my key`" ``[string]`` **pres_elev** Names the surface water potential variable, h + z [m]
+* `"height key`" ``[string]`` **ponded_depth** Names the height variable. [m]
+* `"elevation key`" ``[string]`` **elevation** Names the elevation variable. [m]
+
+
+NOTE: This is a legacy evaluator, and is not in the factory, so need not be in
+the input spec.  However, we include it here because this could easily be
+abstracted for new potential surfaces, kinematic wave, etc, at which point it
+would need to be added to the factory and the input spec.
+
+NOTE: This could easily be replaced by a generic AdditiveEvaluator_
+
+
+
+
+SnowSurfacePotential
+^^^^^^^^^^^^^^^^^^^^^^
+
+Evaluator type: "snow skin potential"
+
+.. math::
+  h + z + h_{{snow}} + dt * P_{{snow}}
+
+* `"my key`" ``[string]`` **snow_skin_potential** Names the potential variable evaluated [m]
+* `"ponded depth key`" ``[string]`` **ponded_depth** Names the surface water depth variable. [m]
+* `"snow depth key`" ``[string]`` **snow_depth** Names the snow depth variable. [m]
+* `"precipitation snow key`" ``[string]`` **precipitation_snow** Names the snow precipitation key. [m]
+* `"elevation key`" ``[string]`` **elevation** Names the elevation variable. [m]
+* `"dt factor`" ``[double]`` A free-parameter factor for providing a time scale for diffusion of snow precipitation into low-lying areas.  Typically on the order of 1e4-1e7. This timestep times the wave speed of snow provides an approximate length of how far snow precip can travel.  Extremely tunable! [s]
+
+NOTE: This is equivalent to a generic AdditiveEvaluator_
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="snow_skin_potential" type="ParameterList">
+    <Parameter name="field evaluator type" type="string" value="snow skin potential" />
+    <Parameter name="dt factor" type="double" value="864000.0" />
+  </ParameterList>
+
+
+
+
+
+Generic Evaluators
+---------------------------------
+
+Several generic evaluators are provided.
+
+
 
 
 

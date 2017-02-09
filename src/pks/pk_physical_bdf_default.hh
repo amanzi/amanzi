@@ -1,14 +1,44 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+//! Standard base for most implemented PKs, this combines both domains/meshes of PKPhysicalBase and BDF methods of PKBDFBase.
 
-/* -------------------------------------------------------------------------
-ATS
+/*
+  ATS is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
 
-Standard base for most diffusion-dominated PKs, this combines both
-domains/meshes of PKPhysicalBase and BDF methods of PKBDFBase.
-------------------------------------------------------------------------- */
+
+/*!
+
+A base class for all PKs that are both physical, in the sense that they
+implement an equation and are not couplers, and support the implicit
+integration interface.  This largely just supplies a default error norm based
+on error in conservation relative to the extent of the conserved quantity.
+
+* `"absolute error tolerance`" [double] **1.0**
+
+  Absolute tolerance, :math:`a_tol` in the equation below.
+
+* `"relative error tolerance`" [double] **1.0**
+
+  Relative tolerance, :math:`r_tol` in the equation below.
+
+By default, the error norm used by solvers is given by:
+
+:math:`ENORM(u, du) = |du| / ( a_tol + r_tol * |u| )`
+
+The defaults here are typically good, or else good defaults are set in the
+code, so these need not be supplied.
+
+
+NOTE: ``PKPhysicalBDFBase -->`` PKBDFBase_
+      ``PKPhysicalBDFBase -->`` PKPhysicalBase_
+      ``PKPhysicalBDFBase (v)-->`` PKDefaultBase_
+
+*/
+
 
 #ifndef ATS_PK_PHYSICAL_BDF_BASE_HH_
 #define ATS_PK_PHYSICAL_BDF_BASE_HH_

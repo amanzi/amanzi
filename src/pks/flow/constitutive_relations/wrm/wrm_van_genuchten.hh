@@ -1,6 +1,14 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 //! WRMVanGenuchten : water retention model using van Genuchten's parameterization
 
+/*
+  ATS is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
 /*!
   <ul>Native Spec Example</>
     <ParameterList name="moss" type="ParameterList">
@@ -9,7 +17,7 @@
       <Parameter name="van Genuchten alpha" type="double" value="0.002" />
       <Parameter name="van Genuchten m" type="double" value="0.2" />
       <Parameter name="residual saturation" type="double" value="0.0" />
-      <Parameter name="smoothing interval width" type="double" value="100.0" />
+      <Parameter name="smoothing interval width [saturation]" type="double" value=".05" />
     </ParameterList>
 
 */
@@ -18,6 +26,8 @@
 #define ATS_FLOWRELATIONS_WRM_VAN_GENUCHTEN_
 
 #include "Teuchos_ParameterList.hpp"
+#include "Spline.hh"
+
 #include "wrm.hh"
 #include "factory.hh"
 
@@ -31,8 +41,8 @@ public:
   explicit WRMVanGenuchten(Teuchos::ParameterList& plist);
 
   // required methods from the base class
-  double k_relative(double pc);
-  double d_k_relative(double pc);
+  double k_relative(double saturation);
+  double d_k_relative(double saturation);
   double saturation(double pc);
   double d_saturation(double pc);
   double capillaryPressure(double saturation);
@@ -51,8 +61,9 @@ public:
   double sr_;  // van Genuchten residual saturation
 
   int function_;
-  double pc0_;  // regularization threshold (usually 0 to 500 Pa)
-  double a_, b_, factor_dSdPc_;  // frequently used constant
+  double s0_;  // regularization threshold in saturation
+  Amanzi::Utils::Spline fit_;
+  
 
   static Utils::RegisteredFactory<WRM,WRMVanGenuchten> factory_;
 };

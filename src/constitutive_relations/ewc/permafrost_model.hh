@@ -18,6 +18,7 @@
 
 #include "wrm_partition.hh"
 #include "compressible_porosity_model_partition.hh"
+#include "compressible_porosity_leijnse_model_partition.hh"
 #include "ewc_model_base.hh"
 
 namespace Amanzi {
@@ -67,10 +68,13 @@ class PermafrostModel : public EWCModelBase {
   Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityModelPartition> poro_models_;
   Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityModel> poro_model_;
 
+  Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityLeijnseModelPartition> poro_leij_models_;
+  Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityLeijnseModel> poro_leij_model_;
+
   double p_atm_;
   double poro_;
   double rho_rock_;
-
+  bool poro_leij_;
   Key domain;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
