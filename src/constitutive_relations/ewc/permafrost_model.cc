@@ -167,10 +167,12 @@ void PermafrostModel::UpdateModel(const Teuchos::Ptr<State>& S, int c) {
 
 bool PermafrostModel::IsSetUp_() {
   if (wrm_ == Teuchos::null) return false;
-  if(!poro_leij_)
+  if (!poro_leij_) {
     if (poro_model_ == Teuchos::null) return false;
-  else
+  }
+  else {
     if (poro_leij_model_ == Teuchos::null) return false;
+  }
   if (liquid_eos_ == Teuchos::null) return false;
   if (gas_eos_ == Teuchos::null) return false;
   if (ice_eos_ == Teuchos::null) return false;
