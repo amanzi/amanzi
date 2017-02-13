@@ -25,13 +25,6 @@
 namespace Amanzi {
 
 
-  // Template template class
-  template <class ValueType, template <typename Type> class TemplateType>
-  class Bar : TemplateType<ValueType>
-  {
-    TemplateType<ValueType> m_ints;
-  };
-
 template <class ValueType, template <typename Type> class FunctionBase>
 class PK_DomainFunctionFactory : public FunctionBase<ValueType> {
  public:
@@ -105,7 +98,7 @@ PK_DomainFunctionFactory<ValueType, FunctionBase >::Create(
   }
   else if (model == "domain coupling") {
     Teuchos::RCP<PK_DomainFunctionCoupling<ValueType, FunctionBase> >
-      func = Teuchos::rcp(new PK_DomainFunctionCoupling<ValueType, FunctionBase>(mesh_));
+       func = Teuchos::rcp(new PK_DomainFunctionCoupling<ValueType, FunctionBase>(mesh_));
     func->Init(plist, keyword, kind);
     return func;
   }

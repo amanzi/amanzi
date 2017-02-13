@@ -47,6 +47,7 @@ class PK_DomainFunctionSimple : public FunctionBase<ValueType>,
   // member functions
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
 
+
   // required member functions
   virtual void Compute(double t0, double t1);
   virtual std::string name() const { return "simple"; }
@@ -109,14 +110,30 @@ void PK_DomainFunctionSimple<ValueType, FunctionBase>::Compute(double t0, double
 
     args[0] = t1;
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
+    // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
+    int nfun = (*uspec)->first->second->size();
+    WhetStone::DenseVector val_vec(nfun);  
+
 
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
       const AmanziGeometry::Point& xc = (kind_ == AmanziMesh::CELL) ?
           mesh_->cell_centroid(*c) : mesh_->face_centroid(*c);
 
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
+      
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
-      value_[*c] = (*(*uspec)->first->second)(args)[0];
+      for (int i=0; i<nfun; ++i) val_vec(i) = (*(*uspec)->first->second)(args)[i];
+
+      // if (!std::is_floating_point<ValueType>::value)
+      //   value_[*c] = val_vec;
+      // else
+        value_[*c] = val_vec(0);
+      
+
+      // }
+      // else{
+      //   value_[*c] = (*(*uspec)->first->second)(args);
+      // }
     }
 
     
@@ -132,6 +149,7 @@ void PK_DomainFunctionSimple<ValueType, FunctionBase>::Compute(double t0, double
 
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
         value_[*c] -= (*(*uspec)->first->second)(args)[0];
+        //value_[*c] -= (*(*uspec)->first->second)(args);
         value_[*c] *= dt;
       }
     }

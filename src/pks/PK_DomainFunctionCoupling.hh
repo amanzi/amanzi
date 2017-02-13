@@ -41,8 +41,15 @@ class PK_DomainFunctionCoupling : public FunctionBase<ValueType> {
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword,
             AmanziMesh::Entity_kind kind);
 
+  void assign( double& a, WhetStone::DenseVector b) {a = b(0);};
+  void assign( WhetStone::DenseVector& a, WhetStone::DenseVector b) {
+    a=b;
+  };
+  void assign( WhetStone::DenseVector& a, double b) {a = b;};
+  void assign( double& a, double b) {a=b;};
+
   // required member functions
-  virtual void Compute(double t0, double t1);
+  virtual void Compute(double t0, double t1);  
   virtual std::string name() const { return "domain coupling"; }
   virtual void set_state(const Teuchos::RCP<State>& S) { S_ = S; }
 
@@ -52,7 +59,7 @@ class PK_DomainFunctionCoupling : public FunctionBase<ValueType> {
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<const State> S_;
-
+  
  private:
   std::string submodel_;
   std::string flux_key_, copy_flux_key_;
@@ -163,10 +170,9 @@ void PK_DomainFunctionCoupling<ValueType, FunctionBase>::Compute(double t0, doub
       Exceptions::amanzi_throw(message);
     }
     int num_vec = field_in.NumVectors();
-    std::vector<double> val(num_vec);
+    WhetStone::DenseVector val_vec(num_vec);
 
     Teuchos::RCP<const AmanziMesh::Mesh> mesh_out = S_->GetFieldData(field_out_key_)->Mesh();
-
     AmanziMesh::Entity_ID_List cells, faces;
     std::vector<int> dirs;
 
@@ -190,15 +196,15 @@ void PK_DomainFunctionCoupling<ValueType, FunctionBase>::Compute(double t0, doub
           double fln = flux[0][f]*dirs[i];         
           if (fln >= 0) {        
             for (int k=0; k<num_vec; ++k) {
-              val[k] = field_out[k][cells[0]] * fln;
+              val_vec(k) = field_out[k][cells[0]] * fln;
             }
           } else if (fln < 0) {       
             for (int k=0; k<num_vec; ++k) {
-              val[k] = field_in[k][*c] *fln;
+              val_vec(k) = field_in[k][*c] * fln;
               //std::cout<<"flux out "<<" conc "<<field_in[k][*c]<<" flux "<<fln<<"\n";
             }
           }
-          value_[*c] = val[0]; 
+          assign(value_[*c], val_vec); 
           break;
         }
       }
@@ -208,26 +214,27 @@ void PK_DomainFunctionCoupling<ValueType, FunctionBase>::Compute(double t0, doub
         *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
 
     int num_vec = field_out.NumVectors();
-    std::vector<double> val(num_vec);
-    std::map<int, WhetStone::DenseVector> mymap;    
-    WhetStone::DenseVector val_dens(num_vec);
-
+    // std::vector<double> val(num_vec);
+    // std::map<int, WhetStone::DenseVector> mymap;    
+    WhetStone::DenseVector val_vec(num_vec);   
 
     ///////CHECK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!????????????
     int i(0);
-    for (MeshIDs::const_iterator c = entity_ids_->begin(); c != entity_ids_->end(); ++c){
-      for (int k=0; k<num_vec; ++k) val[k] = field_out[k][i];
-      // value_[*c] = val[0];     
-      //for (int k=0; k<num_vec; ++k) val(k) = field_out[k][i];
-      //for (int k=0; k<num_vec; ++k) val_dens(k) = field_out[k][i];            
+    for (MeshIDs::const_iterator c = entity_ids_->begin(); c != entity_ids_->end(); ++c){      
+      for (int k=0; k<num_vec; ++k) val_vec(k) = field_out[k][i];            
 
-      value_[*c] = val[0];
-      //value_.at(*c) = 0;
-      for (auto it1 = value_.begin(); it1 != value_.end(); ++it1) {
-        std::cout<<it1->first<<" => "<<it1->second<<"\n";
-      }
+      if (!std::is_floating_point<ValueType>::value) 
+        assign( value_[*c], val_vec);
+      else
+        assign( value_[*c], val_vec);
+      
       i++;
     }
+
+    // for (auto it1 = value_.begin(); it1 != value_.end(); ++it1) {
+    //   std::cout<<it1->first<<" => "<<it1->second<<"\n";
+    // }
+
   }
 }
 

@@ -132,9 +132,9 @@ set(transport_src_files Transport_PK.cc Transport_TI.cc
                         MDM_Isotropic.cc MDM_Bear.cc MDM_BurnettFrind.cc MDM_LichtnerKelkarRobinson.cc
                         MDMPartition.cc MDMFactory.cc
                         MultiscaleTransportPorosityFactory.cc MultiscaleTransportPorosity_DPM.cc
-                        MultiscaleTransportPorosityPartition.cc
-                        TransportBoundaryFunction_Alquimia.cc
-                        TransportSourceFunction_Alquimia.cc)
+                        MultiscaleTransportPorosityPartition.cc)
+                        # TransportBoundaryFunction_Alquimia.cc
+                        # TransportSourceFunction_Alquimia.cc)
 
 if (ENABLE_ALQUIMIA)
   set(geochem_lib geochemistry)

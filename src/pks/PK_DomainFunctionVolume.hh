@@ -27,8 +27,8 @@
 
 namespace Amanzi {
 
-template <class Value_Type, template <typename Type> class FunctionBase>
-class PK_DomainFunctionVolume : public FunctionBase<Value_Type>,
+template <class ValueType, template <typename Type> class FunctionBase>
+class PK_DomainFunctionVolume : public FunctionBase<ValueType>,
                                 public Functions::UniqueMeshFunction {
  public:
   PK_DomainFunctionVolume(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
@@ -40,7 +40,7 @@ class PK_DomainFunctionVolume : public FunctionBase<Value_Type>,
                           const Teuchos::ParameterList& plist,
                           AmanziMesh::Entity_kind kind) :
       UniqueMeshFunction(mesh),
-      //FunctionBase<Value_Type>(plist),
+      //FunctionBase<ValueType>(plist),
       kind_(kind) {};
 
   ~PK_DomainFunctionVolume() {};
@@ -53,9 +53,9 @@ class PK_DomainFunctionVolume : public FunctionBase<Value_Type>,
   virtual std::string name() const { return "volume"; }
 
  protected:
-  using FunctionBase<Value_Type>::value_;
-  using FunctionBase<Value_Type>::domain_volume_;
-  using FunctionBase<Value_Type>::keyword_;
+  using FunctionBase<ValueType>::value_;
+  using FunctionBase<ValueType>::domain_volume_;
+  using FunctionBase<ValueType>::keyword_;
 
  private:
   std::string submodel_;
@@ -67,8 +67,8 @@ class PK_DomainFunctionVolume : public FunctionBase<Value_Type>,
 /* ******************************************************************
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
-template <class Value_Type, template <typename Type> class FunctionBase>
-void PK_DomainFunctionVolume<Value_Type, FunctionBase>::Init(
+template <class ValueType, template <typename Type> class FunctionBase>
+void PK_DomainFunctionVolume<ValueType, FunctionBase>::Init(
     const Teuchos::ParameterList& plist, const std::string& keyword)
 {
   keyword_ = keyword;
@@ -98,8 +98,8 @@ void PK_DomainFunctionVolume<Value_Type, FunctionBase>::Init(
 /* ******************************************************************
 * Compute and distribute the result by volume.
 ****************************************************************** */
-template <class Value_Type, template <typename Type> class FunctionBase>
-void PK_DomainFunctionVolume<Value_Type, FunctionBase>::Compute(double t0, double t1)
+template <class ValueType, template <typename Type> class FunctionBase>
+void PK_DomainFunctionVolume<ValueType, FunctionBase>::Compute(double t0, double t1)
 {
    // create the input tuple (time + space)
   int dim = (*mesh_).space_dimension();
