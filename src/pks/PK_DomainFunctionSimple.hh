@@ -21,6 +21,8 @@
 #include "CommonDefs.hh"
 #include "Mesh.hh"
 #include "UniqueMeshFunction.hh"
+#include "DenseVector.hh"
+
 
 namespace Amanzi {
 
