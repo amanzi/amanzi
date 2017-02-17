@@ -1150,20 +1150,21 @@ if [ -z "${tpl_config_file}" ]; then
 
   # Check for Spack
   if [ ! -e "${spack_binary}" ]; then
-    error_message "Spack binary does not exist - Downloading and installing as a TPL"
-    cd ${tpl_download_dir}
-    if [ ! -e spack ]; then
+    error_message "Spack binary does not exist - Will try to locate..."
+    cd ${tpl_install_prefix}
+    if [ ! -e spack/bin/spack ]; then
+	error_message "Could not locate Spack - Downloading and installing as a TPL"
 	git clone https://github.com/LLNL/spack.git
     fi
-    spack_binary=${tpl_download_dir}/spack/bin/spack
+    spack_binary=${tpl_install_prefix}/spack/bin/spack
     cd ${pwd_save}
   fi
   status_message "Spack binary: ${spack_binary}"
 
   ## this is a test of spack and should be deleted or moved somewhere useful
-  cd ${tpl_download_dir}
-  ${spack_binary} install xerces-c
-  status_message "Installed Xerces-C with Spack"
+  #cd ${tpl_download_dir}
+  #${spack_binary} install xerces-c
+  #status_message "Installed Xerces-C with Spack"
 
   # Are we using xSDK?  If so, skip most of the TPL builds
   if [ "${XSDK}" == "TRUE" ]; then 
