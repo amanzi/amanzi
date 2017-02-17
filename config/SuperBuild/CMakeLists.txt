@@ -28,6 +28,10 @@ if ( NOT CMAKE_Fortran_COMPILER )
   message(WARNING "Fortran compiler not specified. CMake will guess!")
 endif()
 
+if ( NOT SPACK )
+  message(WARNING "Spack binary not defined. Disabling spack builds.")
+endif()
+
 # ############################################################################ #
 # Define project name (SuperBuild_SOURCE_DIR and SuperBuild_BINARY_DIR)
 # ############################################################################ #
@@ -534,9 +538,13 @@ append_set(Amanzi_TPL_CMAKE_ARGS
            -DASCEMIO_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
 # XERCES
+if ( SPACK )
+  
+else
 include(${SuperBuild_BUILD_FILES_DIR}/Build_XERCES.cmake) 
 append_set(Amanzi_TPL_CMAKE_ARGS
            -DXERCES_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+endif()
 
 # NetCDF
 include(${SuperBuild_BUILD_FILES_DIR}/Build_NetCDF.cmake) 

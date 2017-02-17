@@ -51,6 +51,9 @@ hg_binary=`which hg`
 # CURL
 curl_binary=`which curl`
 
+# Spack
+spack_binary=`which spack`
+
 # CMake
 cmake_binary=`which cmake`
 ctest_binary=`which ctest`
@@ -77,6 +80,10 @@ build_link_flags=
 mpi_root_dir=
 
 # TPL (Third Party Libraries)
+
+# xSDK installation (optional)
+xsdk_root_dir=
+XSDK=FALSE #default is to not use
 
 # Point to a configuration file
 tpl_config_file=
@@ -316,6 +323,8 @@ Tool definitions:
 
   --with-mpi=DIR             use MPI installed in DIR. Will search for MPI 
                              compiler wrappers under this directory. ['"${mpi_root_dir}"']
+  --with-xsdk=DIR            use libraries already available in xSDK installation in lieu of
+                             downloading and installing them individually. ['"${xsdk_root_dir}"']
 
 
 
@@ -520,6 +529,12 @@ function parse_argv()
                  tmp=`parse_option_with_equal "${opt}" 'with-mpi'`
                  mpi_root_dir=`make_fullpath $tmp`
                  ;;
+
+      --with-xsdk=*)
+                 tmp=`parse_option_with_equal "${opt}" 'with-xsdk'`
+                 xsdk_root_dir=`make_fullpath $tmp`
+                 XSDK=TRUE
+		 ;;
 
       --amanzi-build-dir=*)
                  tmp=`parse_option_with_equal "${opt}" 'amanzi-build-dir'`
@@ -785,6 +800,30 @@ function check_mpi_root
   fi
 }
 
+# xSDK Check
+function check_xsdk_root
+{
+  if [ -z "${xsdk_root_dir}" ]; then
+
+    xsdk_root_env="${XSDKROOT} ${XSDK_ROOT} ${XSDKHOME} ${XSDK_HOME} ${XSDK_PREFIX}"
+    for env_try in ${xsdk_root_env}; do
+      if [ -e "${env_try}" ]; then
+        xsdk_root_dir="${env_try}"
+        status_message "Located xSDK installation in ${xsdk_root_dir}"
+        break
+      fi
+    done
+
+  else
+
+    if [ ! -e "${xsdk_root_dir}" ] ; then
+      error_message "xSDK root directory ${xsdk_root_dir} does not exist"
+      exit_now 30
+    fi
+
+  fi
+}
+
 # Compiler functions
 function define_c_compiler
 {
@@ -978,6 +1017,7 @@ function check_tools
     test_suite=${FALSE}
     reg_tests=${FALSE}
   fi
+
   status_message "CMake binary: ${cmake_binary}"
   status_message "CTest binary: ${ctest_binary}"
 
@@ -1108,75 +1148,151 @@ if [ -z "${tpl_config_file}" ]; then
   # Return to this directory once the TPL build is complete
   pwd_save=`pwd`
 
-
-  # Define the TPL build source directory
-  tpl_build_src_dir=${amanzi_source_dir}/config/SuperBuild
-
-  # Configure the TPL build
-  cd ${tpl_build_dir}
-  ${cmake_binary} \
-      	        -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
-                -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
-                -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
-                -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
-                -DCMAKE_BUILD_TYPE:STRING=${build_type} \
-                -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
-                -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
-                -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
-                -DTPL_INSTALL_PREFIX:STRING=${tpl_install_prefix} \
-                -DENABLE_Structured:BOOL=${structured} \
-                -DENABLE_Unstructured:BOOL=${unstructured} \
-                -DENABLE_CCSE_TOOLS:BOOL=${ccse_tools} \
-                -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
-                -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
-                -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
-                -DENABLE_NetCDF4:BOOL=${netcdf4} \
-                -DENABLE_HYPRE:BOOL=${hypre} \
-                -DENABLE_PETSC:BOOL=${petsc} \
-                -DENABLE_ALQUIMIA:BOOL=${alquimia} \
-                -DENABLE_PFLOTRAN:BOOL=${plotran} \
-                -DENABLE_Silo:BOOL=${silo} \
-                -DBUILD_SHARED_LIBS:BOOL=${shared} \
-                -DCCSE_BL_SPACEDIM:INT=${spacedim} \
-                -DPREFER_STATIC_LIBRARIES:BOOL=${static} \
-                ${nersc_tpl_opts} \
-                ${tpl_build_src_dir}
-
-  if [ $? -ne 0 ]; then
-    error_message "Failed to configure TPL build"
-    exit_now 30
+  # Check for Spack
+  if [ ! -e "${spack_binary}" ]; then
+    error_message "Spack binary does not exist - Downloading and installing as a TPL"
+    cd ${tpl_download_dir}
+    if [ ! -e spack ]; then
+	git clone https://github.com/LLNL/spack.git
+    fi
+    spack_binary=${tpl_download_dir}/spack/bin/spack
+    cd ${pwd_save}
   fi
-  status_message "TPL configure complete"
+  status_message "Spack binary: ${spack_binary}"
 
-  # TPL make 
-  cd ${tpl_build_dir}
-  make -j ${parallel_jobs}
-  if [ $? -ne 0 ]; then
-    error_message "Failed to build TPLs"
-    exit_now 30
+  ## this is a test of spack and should be deleted or moved somewhere useful
+  cd ${tpl_download_dir}
+  ${spack_binary} install xerces-c
+  status_message "Installed Xerces-C with Spack"
+
+  # Are we using xSDK?  If so, skip most of the TPL builds
+  if [ "${XSDK}" == "TRUE" ]; then 
+      check_xsdk_root
+      status_message "Using xSDK libraries"
+
+      #create the grand config file, if needed
+      if [ ! -f "${tpl_install_prefix}/xsdk-config.cmake" ]; then
+
+	  # gather the information in the various .cmake files within xsdk
+	  # First, the ones in /lib/cmake...
+	  status_message "Grabbing .cmake files in ${xsdk_root_dir}/lib/cmake"
+
+	  xsdk_installed_pkgs="Amesos Amesos2 Anasazi AztecOO Belos Epetra
+EpetraExt Galeri GlobiPack Ifpack Ifpack2 Intrepid Intrepid2 Isorropia Kokkos KokkosAlgorithms KokkosContainers KokkosCore ML MueLu NOX OptiPack Pamgen Panzer PanzerCore PanzerDiscFE PanzerDofMgr Phalanx Pike PikeBlackBox PikeImplicit Piro ROL RTOp Rythmos Sacado SEACAS SEACASAlgebra SEACASAprepro SEACASAprepro_lib SEACASAprepro-orig SEACASChaco SEACASConjoin SEACASEjoin SEACASEpu SEACASEx1ex2v2 SEACASEx2ex1v2 SEACASExodiff SEACASExodus SEACASExodus_fo SEACASExo_format SEACASExomatlab SEACASExotxt SEACASGen3D SEACASGenshell SEACASGjoin SEACASGrepos SEACASGrope SEACASIoss SEACASMapvar SEACASMapvar-kd SEACASMapvarlib SEACASNemesis SEACASNemslice SEACASNemspread SEACASNumbers SEACASSupes SEACASSuplib SEACASTxtexo Shards ShyLU ShyLUCore Stokhos Stratimikos Teko Teuchos TeuchosComm TeuchosCore TeuchosKokkosComm TeuchosKokkosCompat TeuchosNumerics TeuchosParameterList TeuchosRemainder Thyra TyraCore ThyraEpetraAdapters ThyraEpetraExtAdapters ThyraTpetraAdapters Tpetra TpetraClassic TpetraCore TpetraKernels TpetraTSQR tribits Trilinos TrilinosCouplings Triutils Xpetra xSDKTrilinos Zoltan Zoltan2"
+	  for pkg_try in ${xsdk_installed_pkgs}; do
+	      if [ -e "${xsdk_root_dir}/lib/cmake/${pkg_try}/${pkg_try}Config.cmake" ]; then
+		  echo "sed -e 's#\${CMAKE_CURRENT_LIST_DIR}#${xsdk_root_dir}/lib/cmake/${pkg_try}#g' ${xsdk_root_dir}/lib/cmake/${pkg_try}/${pkg_try}Config.cmake >> ${tpl_install_prefix}/xsdk-config.cmake" | $SHELL
+		  
+		  status_message "Grabbed .cmake file for ${pkg_try}"
+	      fi
+	  done
+
+	  # Second, the ones in /share/cmake...
+	  if [ -e "${xsdk_root_dir}/share/cmake" ]; then
+	      cat ${xsdk_root_dir}/share/cmake/*.cmake >> ${tpl_install_prefix}/xsdk-config.cmake
+	      
+	      status_message "Grabbed .cmake files in ${xsdk_root_dir}/share/cmake"
+	  fi
+
+	  # Third, the ones in /include...
+	  if [ -e "${xsdk_root_dir}/include" ]; then
+	      cat ${xsdk_root_dir}/include/*.cmake >> ${tpl_install_prefix}/xsdk-config.cmake
+	      
+	      status_message "Grabbed .cmake files in ${xsdk_root_dir}/include"
+	  fi
+
+	  # Fourth, check if alquimia is there...
+	  if [ -e "${xsdk_root_dir}/share/alquimia" ]; then
+	      cat ${xsdk_root_dir}/share/alquimia/*.cmake >> ${tpl_install_prefix}/xsdk-config.cmake
+	      
+	      status_message "Grabbed .cmake files for alquimia"
+	  fi 
+
+	  # Last, check if petsc is there...
+	  if [ -e "${xsdk_root_dir}/lib/petsc/conf" ]; then
+	      cat ${xsdk_root_dir}/lib/petsc/conf/*.cmake >> ${tpl_install_prefix}/xsdk-config.cmake
+	      
+	      status_message "Grabbed .cmake files for PETSc"
+	  fi 
+
+      fi
+
+      tpl_config_file=${tpl_install_prefix}/xsdk-config.cmake
+      
+      cd ${pwd_save}
+      status_message "For future Amanzi builds use ${tpl_config_file}"
+  else
+      
+      # Define the TPL build source directory
+      tpl_build_src_dir=${amanzi_source_dir}/config/SuperBuild
+      
+      # Configure the TPL build
+      cd ${tpl_build_dir}
+      ${cmake_binary} \
+      	  -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
+          -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
+          -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
+          -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
+          -DCMAKE_BUILD_TYPE:STRING=${build_type} \
+          -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
+          -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
+          -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
+          -DTPL_INSTALL_PREFIX:STRING=${tpl_install_prefix} \
+          -DENABLE_Structured:BOOL=${structured} \
+          -DENABLE_Unstructured:BOOL=${unstructured} \
+          -DENABLE_CCSE_TOOLS:BOOL=${ccse_tools} \
+          -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
+          -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
+          -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
+          -DENABLE_NetCDF4:BOOL=${netcdf4} \
+          -DENABLE_HYPRE:BOOL=${hypre} \
+          -DENABLE_PETSC:BOOL=${petsc} \
+          -DENABLE_ALQUIMIA:BOOL=${alquimia} \
+          -DENABLE_PFLOTRAN:BOOL=${pflotran} \
+          -DENABLE_Silo:BOOL=${silo} \
+          -DBUILD_SHARED_LIBS:BOOL=${shared} \
+          -DCCSE_BL_SPACEDIM:INT=${spacedim} \
+          -DPREFER_STATIC_LIBRARIES:BOOL=${static} \
+          -DSPACK:STRING=${spack_binary} \
+          ${nersc_tpl_opts} \
+          ${tpl_build_src_dir}
+      
+      if [ $? -ne 0 ]; then
+	  error_message "Failed to configure TPL build"
+	  exit_now 30
+      fi
+      status_message "TPL configure complete"
+      
+      # TPL make 
+      cd ${tpl_build_dir}
+      make -j ${parallel_jobs}
+      if [ $? -ne 0 ]; then
+	  error_message "Failed to build TPLs"
+	  exit_now 30
+      fi
+      
+      # TPL Install
+      cd ${tpl_build_dir}
+      make install
+      if [ $? -ne 0 ]; then
+	  error_message "Failed to install configure script"
+	  exit_now 30
+      fi
+      
+      tpl_config_file=${tpl_install_prefix}/share/cmake/amanzi-tpl-config.cmake
+      
+      cd ${pwd_save}
+      
+      status_message "TPL build complete"
+      status_message "For future Amanzi builds use ${tpl_config_file}"
   fi
-
-  # TPL Install
-  cd ${tpl_build_dir}
-  make install
-  if [ $? -ne 0 ]; then
-    error_message "Failed to install configure script"
-    exit_now 30
-  fi
-
-  tpl_config_file=${tpl_install_prefix}/share/cmake/amanzi-tpl-config.cmake
-
-  cd ${pwd_save}
-
-  status_message "TPL build complete"
-  status_message "For future Amanzi builds use ${tpl_config_file}"
 
 else 
 
   status_message "Checking configuration file ${tpl_config_file}"
 
   if [ ! -e "${tpl_config_file}" ]; then
-    error_message "Configure file ${amanzi_config_file} does not exist"
+    error_message "Configure file ${tpl_config_file} does not exist"
     exit_now 30
   fi
 
@@ -1220,7 +1336,7 @@ ${cmake_binary} \
               -DENABLE_HYPRE:BOOL=${hypre} \
               -DENABLE_PETSC:BOOL=${petsc} \
               -DENABLE_ALQUIMIA:BOOL=${alquimia} \
-              -DENABLE_PFLOTRAN:BOOL=${plotran} \
+              -DENABLE_PFLOTRAN:BOOL=${pflotran} \
               -DBUILD_SHARED_LIBS:BOOL=${shared} \
               -DCCSE_BL_SPACEDIM:INT=${spacedim} \
 	      -DENABLE_Regression_Tests:BOOL=${reg_tests} \
