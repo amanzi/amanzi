@@ -36,8 +36,8 @@ add_library(mpc
   weak_mpc.cc
   mpc_coupled_cells.cc
   pk_mpcsubcycled_ats.cc
-  mpc_flowreactivetransport_pk.cc
-  mpc_reactivetransport_pk.cc
+#  mpc_flowreactivetransport_pk.cc
+#  mpc_reactivetransport_pk.cc
   mpc_surface_subsurface_helpers.cc
   mpc_delegate_ewc.cc
 ##  mpc_delegate_ewc_surface.cc
@@ -70,12 +70,17 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
-  HEADERFILE mpc_flowreactivetransport_pk_reg.hh
+  HEADERFILE reactive_transport/mpc_flowreactivetransport_pk_reg.hh
   LISTNAME   MPC_PK_FAC
   )
 
 register_evaluator_with_factory(
-  HEADERFILE mpc_reactivetransport_pk_reg.hh
+  HEADERFILE reactive_transport/mpc_reactivetransport_pk_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE reactive_transport/mpc_coupled_reactive_transport_pk_reg.hh
   LISTNAME   MPC_PK_FAC
   )
 
@@ -126,6 +131,7 @@ include_evaluators_directories(LISTNAME MPC_PK_FAC_INCLUDES)
 
 
 add_subdirectory(coupled_transport)
+add_subdirectory(reactive_transport)
 
 #if ( BUILD_TESTS )
 if (0)

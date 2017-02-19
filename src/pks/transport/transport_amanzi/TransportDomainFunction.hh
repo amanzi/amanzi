@@ -61,6 +61,7 @@ class TransportDomainFunction {
   std::map<int, WhetStone::DenseVector> value_;  // tcc values on boundary faces
   std::string keyword_;
   Teuchos::RCP<const State> S_;
+  int component_id_;
 
   std::vector<std::string> tcc_names_;  // list of component names
   std::vector<int> tcc_index_;  // index of component in the global list

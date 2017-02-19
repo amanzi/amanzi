@@ -38,6 +38,7 @@
 #include "Transport_PK_ATS.hh"
 #include "TransportDomainFunction.hh"
 #include "TransportBoundaryFunction_Alquimia.hh"
+#include "TransportSourceFunction_Alquimia.hh"
 
 namespace Amanzi {
 namespace Transport {
@@ -157,14 +158,14 @@ void Transport_PK_ATS::SetupAlquimia(Teuchos::RCP<AmanziChemistry::Alquimia_PK> 
 }
 #endif
 
-  void Transport_PK_ATS::set_states(const Teuchos::RCP<const State>& S,
-                                const Teuchos::RCP<State>& S_inter,
-                                const Teuchos::RCP<State>& S_next) {
+void Transport_PK_ATS::set_states(const Teuchos::RCP<const State>& S,
+                                  const Teuchos::RCP<State>& S_inter,
+                                  const Teuchos::RCP<State>& S_next) {
 
     //S_ = S;
-    S_inter_ = S_inter;
-    S_next_ = S_next;
-  }
+  S_inter_ = S_inter;
+  S_next_ = S_next;
+}
 
 
 /* ******************************************************************
@@ -409,20 +410,39 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
       std::string name = it->first;
       if (clist.isSublist(name)) {
         Teuchos::ParameterList& bc_list = clist.sublist(name);
-        for (Teuchos::ParameterList::ConstIterator it1 = bc_list.begin(); it1 != bc_list.end(); ++it1) {
+        if (name=="coupling") {
+          Teuchos::ParameterList::ConstIterator it1 = bc_list.begin();
           std::string specname = it1->first;
           Teuchos::ParameterList& spec = bc_list.sublist(specname);
           Teuchos::RCP<TransportDomainFunction<WhetStone::DenseVector> > 
+            bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
+
+          for (int i = 0; i < component_names_.size(); i++){
+            bc->tcc_names().push_back(component_names_[i]);
+            bc->tcc_index().push_back(i);
+          }
+          //          std::cout << "tcc_names "<<tcc_names<<"\n";
+          //std::cout << "tcc_index "<<tcc_index<<"\n";
+          
+          bc->set_state(S_);
+          bcs_.push_back(bc);
+
+        }else{
+          for (Teuchos::ParameterList::ConstIterator it1 = bc_list.begin(); it1 != bc_list.end(); ++it1) {
+            std::string specname = it1->first;
+            Teuchos::ParameterList& spec = bc_list.sublist(specname);
+            Teuchos::RCP<TransportDomainFunction<WhetStone::DenseVector> > 
               bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
 
-          std::vector<int>& tcc_index = bc->tcc_index();
-          std::vector<std::string>& tcc_names = bc->tcc_names();
-          bc->set_state(S_);
+            std::vector<int>& tcc_index = bc->tcc_index();
+            std::vector<std::string>& tcc_names = bc->tcc_names();
+            bc->set_state(S_);
 
-          tcc_names.push_back(name);
-          tcc_index.push_back(FindComponentNumber(name));
+            tcc_names.push_back(name);
+            tcc_index.push_back(FindComponentNumber(name));
 
-          bcs_.push_back(bc);
+            bcs_.push_back(bc);          
+          }
         }
       }
     }
@@ -473,42 +493,58 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
       std::string name = it->first;
       if (clist.isSublist(name)) {
         Teuchos::ParameterList& src_list = clist.sublist(name);
-        for (Teuchos::ParameterList::ConstIterator it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
+        if (name=="coupling") {
+          Teuchos::ParameterList::ConstIterator it1 = src_list.begin();
           std::string specname = it1->first;
           Teuchos::ParameterList& spec = src_list.sublist(specname);
           Teuchos::RCP<TransportDomainFunction<WhetStone::DenseVector> > src = 
-            factory.Create(spec, "sink", AmanziMesh::CELL, Kxy);
+              factory.Create(spec, "sink", AmanziMesh::CELL, Kxy);
 
-          src->tcc_names().push_back(name);
-          src->tcc_index().push_back(FindComponentNumber(name));
-          
+          for (int i = 0; i < component_names_.size(); i++){
+            src->tcc_names().push_back(component_names_[i]);
+            src->tcc_index().push_back(i);
+          }
           src->set_state(S_);
           srcs_.push_back(src);
+          
+        }else{
+          for (Teuchos::ParameterList::ConstIterator it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
+            std::string specname = it1->first;
+            Teuchos::ParameterList& spec = src_list.sublist(specname);
+            Teuchos::RCP<TransportDomainFunction<WhetStone::DenseVector> > src = 
+              factory.Create(spec, "sink", AmanziMesh::CELL, Kxy);
+
+            src->tcc_names().push_back(name);
+            src->tcc_index().push_back(FindComponentNumber(name));
+          
+            src->set_state(S_);
+            srcs_.push_back(src);
+          }
         }
       }
     }
-// #ifdef ALQUIMIA_ENABLED
-//     // -- try geochemical conditions
-//     Teuchos::ParameterList& glist = tp_list_->sublist("source terms").sublist("geochemical");
+#ifdef ALQUIMIA_ENABLED
+    // -- try geochemical conditions
+    Teuchos::ParameterList& glist = tp_list_->sublist("source terms").sublist("geochemical");
 
-//     for (auto it = glist.begin(); it != glist.end(); ++it) {
-//       std::string specname = it->first;
-//       Teuchos::ParameterList& spec = glist.sublist(specname);
+    for (auto it = glist.begin(); it != glist.end(); ++it) {
+      std::string specname = it->first;
+      Teuchos::ParameterList& spec = glist.sublist(specname);
 
-//       Teuchos::RCP<TransportSourceFunction_Alquimia<WhetStone::DenseVector> > 
-//           src = Teuchos::rcp(new TransportSourceFunction_Alquimia<WhetStone::DenseVector>
-//                              (spec, mesh_, chem_pk_, chem_engine_));
+      Teuchos::RCP<TransportSourceFunction_Alquimia<WhetStone::DenseVector> > 
+          src = Teuchos::rcp(new TransportSourceFunction_Alquimia<WhetStone::DenseVector>
+                             (spec, mesh_, chem_pk_, chem_engine_));
 
-//       std::vector<int>& tcc_index = src->tcc_index();
-//       std::vector<std::string>& tcc_names = src->tcc_names();
+      std::vector<int>& tcc_index = src->tcc_index();
+      std::vector<std::string>& tcc_names = src->tcc_names();
 
-//       for (int i = 0; i < tcc_names.size(); i++) {
-//         tcc_index.push_back(FindComponentNumber(tcc_names[i]));
-//       }
+      for (int i = 0; i < tcc_names.size(); i++) {
+        tcc_index.push_back(FindComponentNumber(tcc_names[i]));
+      }
 
-//       srcs_.push_back(src);
-//     }
-// #endif
+      srcs_.push_back(src);
+    }
+#endif
   }
 
   // Temporarily Transport hosts Henry law.
@@ -1534,12 +1570,12 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
     double t0 = tp - dtp;
     srcs_[m]->Compute(t0, tp); 
 
-    std::vector<int> index = srcs_[m]->tcc_index();
+    std::vector<int> tcc_index = srcs_[m]->tcc_index();
     for (auto it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
       int c = it->first;
       WhetStone::DenseVector& values = it->second;
-      for (int k = 0; k < index.size(); ++k) {
-        int i = index[k];
+      for (int k = 0; k < tcc_index.size(); ++k) {
+        int i = tcc_index[k];
         if (i < n0 || i > n1) continue;
 
         int imap = i;
