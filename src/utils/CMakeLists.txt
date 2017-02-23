@@ -83,7 +83,7 @@ if (BUILD_TESTS)
     ADD_AMANZI_TEST(utils_spline utils_spline
                     KIND unit
                     SOURCE test/Main.cc test/utils_spline.cc
-                    LINK_LIBS error_handling atk ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
+                    LINK_LIBS atk error_handling ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
                   
 endif()
 
