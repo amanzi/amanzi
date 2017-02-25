@@ -27,8 +27,10 @@
 #include "Electromagnetics.hh"
 #include "Op.hh"
 #include "Op_Cell_Edge.hh"
+#include "Op_Cell_Node.hh"
 #include "OperatorDefs.hh"
 #include "Operator_Edge.hh"
+#include "Operator_Node.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -253,33 +255,39 @@ void Electromagnetics::InitElectromagnetics_(Teuchos::ParameterList& plist)
     plist.set<Teuchos::Array<std::string> >("schema", names);
   }
 
+  int dim = mesh_->space_dimension();
   int schema_dofs = 0;
   for (int i = 0; i < names.size(); i++) {
-    if (names[i] == "edge") {
+    if (names[i] == "edge" && dim == 3) {
       schema_dofs += OPERATOR_SCHEMA_DOFS_EDGE;
+    } else if (names[i] == "node" && dim == 2) {
+      schema_dofs += OPERATOR_SCHEMA_DOFS_NODE;
     }
   }
-
-  if (schema_dofs == OPERATOR_SCHEMA_DOFS_EDGE) {
-    local_op_schema_ = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_EDGE;
-  } else {
+ 
+  if (schema_dofs == 0) {
     Errors::Message msg;
-    msg << "Electromagnetics: \"schema\" must be CELL or EDGE";
+    msg << "Electromagnetics: \"schema\" must be EDGE (in 3D) or NODE (in 2D)";
     Exceptions::amanzi_throw(msg);
   }
+
+  local_op_schema_ = OPERATOR_SCHEMA_BASE_CELL | schema_dofs;
 
   // define stencil for the assembled matrix
   int schema_prec_dofs = 0;
   if (plist.isParameter("preconditioner schema")) {
     names = plist.get<Teuchos::Array<std::string> > ("preconditioner schema").toVector();
     for (int i = 0; i < names.size(); i++) {
-      if (names[i] == "edge") {
+      if (names[i] == "edge" && dim == 3) {
         schema_prec_dofs += OPERATOR_SCHEMA_DOFS_EDGE;
+      } else if (names[i] == "node" && dim == 2) {
+        schema_prec_dofs += OPERATOR_SCHEMA_DOFS_NODE;
       }
     } 
   } else {
     schema_prec_dofs = schema_dofs;
   }
+
 
   // create or check the existing Operator
   int global_op_schema = schema_prec_dofs;  
@@ -290,13 +298,18 @@ void Electromagnetics::InitElectromagnetics_(Teuchos::ParameterList& plist)
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true);
 
-    if (global_op_schema & OPERATOR_SCHEMA_DOFS_EDGE)
+    if (global_op_schema & OPERATOR_SCHEMA_DOFS_EDGE) {
       cvs->AddComponent("edge", AmanziMesh::EDGE, 1);
+    } else if (global_op_schema & OPERATOR_SCHEMA_DOFS_NODE) {
+      cvs->AddComponent("node", AmanziMesh::NODE, 1);
+    }
 
     // choose the Operator from the prec schema
     Teuchos::ParameterList operator_list = plist.sublist("operator");
     if (schema_prec_dofs == OPERATOR_SCHEMA_DOFS_EDGE) {
       global_op_ = Teuchos::rcp(new Operator_Edge(cvs, plist));
+    } else if (schema_prec_dofs == OPERATOR_SCHEMA_DOFS_NODE) {
+      global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist));
     } else {
       Errors::Message msg;
       msg << "Electromagnetics: \"preconditioner schema\" must be EDGE";
@@ -311,8 +324,11 @@ void Electromagnetics::InitElectromagnetics_(Teuchos::ParameterList& plist)
 
   // create the local Op and register it with the global Operator
   if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_EDGE)) {
-      std::string name = "Electromagnetics: CELL_EDGE";
-      local_op_ = Teuchos::rcp(new Op_Cell_Edge(name, mesh_));
+    std::string name = "Electromagnetics: CELL_EDGE";
+    local_op_ = Teuchos::rcp(new Op_Cell_Edge(name, mesh_));
+  } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_NODE)) {
+    std::string name = "Electromagnetics: CELL_NODE";
+    local_op_ = Teuchos::rcp(new Op_Cell_Node(name, mesh_));
   } else {
     ASSERT(0);
   }
