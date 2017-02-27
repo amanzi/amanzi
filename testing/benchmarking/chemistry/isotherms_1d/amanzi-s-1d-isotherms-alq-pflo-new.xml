@@ -1,6 +1,6 @@
 <amanzi_input version="2.3.0" type="structured">
 <!--  <echo_translated_input format="native" file_name="struct_oldspec.xml"/> -->
-
+  <echo_translated_input format="native" file_name="sergi.xml"/>
   <model_description name="1D Flow and Transport w/Kd">
     <units>
       <length_unit>m</length_unit>
