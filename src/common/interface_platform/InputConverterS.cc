@@ -1711,7 +1711,7 @@ void InputConverterS::ParseMaterials_(bool& do_tracer_diffusion)
       {
         // Look for solutes.
         bool found;
-        vector<DOMNode*> solutes = GetChildren_(sorption_isotherms, "solute", found, true);
+        vector<DOMNode*> solutes = GetChildren_(sorption_isotherms, "primary", found, true);
         for (size_t i = 0; i < solutes.size(); ++i)
         {
           DOMElement* solute = static_cast<DOMElement*>(solutes[i]);
