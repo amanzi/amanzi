@@ -289,11 +289,12 @@ if __name__ == "__main__":
         input_filename = os.path.join("amanzi-s-1d-surface-complexation-alq-pflotran-new.xml")
         path_to_amanziS = "struct_amanzi-pflotran-output"
         run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
-        root_amanziS = "plt00036"
+        root_amanziS = "plt00362"
 
         u_amanziS = [[[] for x in range(len(amanzi_totcS))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_totcS):
+                #import pdb; pdb.set_trace()
                 x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,comp)
                 u_amanziS[i][j] = c_amanziS
               
@@ -322,11 +323,12 @@ if __name__ == "__main__":
         path_to_amanziS = "struct_amanzi-crunch-output"
 #        import pdb; pdb.set_trace()
         run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
-        root_amanziS = "plt00036"
+        root_amanziS = "plt00362"
 
         u_amanziS_crunch = [[[] for x in range(len(amanzi_totcS))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_totcS):
+#                import pdb; pdb.set_trace()
                 x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,comp)
                 u_amanziS_crunch[i][j] = c_amanziS_crunch
               
@@ -435,7 +437,7 @@ if __name__ == "__main__":
 
         for j, comp in enumerate(components):
 
-            ax[j].plot(x_amanziS, u_amanziS[i][j],color='g',linestyle='-',linewidth=2)
+            ax[j].plot(x_amanziS, u_amanziS[i][j],color='g',linestyle='-',linewidth=2,label='AmanziS+Alquimia(PFloTran)')
             bx[j].plot(x_amanziS, v_amanziS[i][j],color='g',linestyle='-',linewidth=2,label='AmanziS+Alquimia(PFloTran)')
 
         px.plot(x_amanziS, pH_amanziS[i],color='g',linestyle='-',linewidth=2,label='AmanziS+Alquimia(PFloTran)')
@@ -445,7 +447,7 @@ if __name__ == "__main__":
 
         for j, comp in enumerate(components):
 
-            ax[j].plot(x_amanziS_crunch, u_amanziS_crunch[i][j],color='g',linestyle='None',marker='*',linewidth=2)
+            ax[j].plot(x_amanziS_crunch, u_amanziS_crunch[i][j],color='g',linestyle='None',marker='*',linewidth=2,label='AmanziS+Alquimia(CrunchFlow)')
             bx[j].plot(x_amanziS_crunch, v_amanziS_crunch[i][j],color='g',linestyle='None',marker='*',linewidth=2,label='AmanziS+Alquimia(CrunchFlow)')
 
         px.plot(x_amanziS_crunch, pH_amanziS_crunch[i],color='g',linestyle='None',marker='*',linewidth=2,label='AmanziS+Alquimia(CrunchFlow)')

@@ -255,11 +255,11 @@ if __name__ == "__main__":
         input_filename = os.path.join("amanzi-s-1d-isotherms-alq-pflo-new.xml")
         path_to_amanziS = "struct_amanzi-output-pflo"
         run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
-        root_amanziS = "plt00051"
+        root_amanziS = "plt00036"
         c_amanziS = [ [] for x in range(len(amanzi_totc)) ]
         v_amanziS = [ [] for x in range(len(amanzi_totc)) ]
         for j,comp in enumerate(components):
-           compS = "{0}_Aqueous_Concentration".format(comp)
+           compS = "{0}_water_Concentration".format(comp)
            x_amanziS, c_amanziS[j] = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
            compS = "{0}_Sorbed_Concentration".format(comp)
            x_amanziS, v_amanziS[j] = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
@@ -272,8 +272,8 @@ if __name__ == "__main__":
         input_filename = os.path.join("amanzi-s-1d-isotherms-alq-crunch.xml")
         path_to_amanziS = "struct_amanzi-output-crunch"
         run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
-        root_amanziS = "plt00051"
-        compS = "A_Aqueous_Concentration"
+        root_amanziS = "plt00036"
+        compS = "A_water_Concentration"
         x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
         compS = "A_Sorbed_Concentration"
         x_amanziS_crunch, v_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)        

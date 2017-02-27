@@ -331,7 +331,7 @@ if __name__ == "__main__":
         input_filename = os.path.join("amanzi-s-1d-calcite-alq-pflo.xml")
         path_to_amanziS = "struct_amanzi-output-pflo"
         run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
-        root_amanziS = "plt00036"
+        root_amanziS = "plt00070"
         compS = "Ca++_water_Concentration"
         x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
         struct = len(x_amanziS)
@@ -348,9 +348,9 @@ if __name__ == "__main__":
         # import pdb; pdb.set_trace()
         input_filename = os.path.join("amanzi-s-1d-calcite-alq-crunch.xml")
         path_to_amanziS = "struct_amanzi-output-crunch"
-        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
-        root_amanziS = "plt00501"
-        compS = "Ca++_Aqueous_Concentration"
+        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
+        root_amanziS = "plt00070"
+        compS = "Ca++_water_Concentration"
         x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
         struct_c = len(x_amanziS_crunch)
         compS = "H+_Free_Ion_Guess"

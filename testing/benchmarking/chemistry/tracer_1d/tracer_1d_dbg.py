@@ -134,7 +134,7 @@ if __name__ == "__main__":
     # amanziU
 
     try:
-        comp = 'total_component_concentration.cell.Tracer conc'
+        comp = 'total_component_concentration.cell.tracer conc'
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-pflo.xml")
         path_to_amanzi = "amanzi-u-alq-pflo-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+".in",root+".dat"], path_to_amanzi)

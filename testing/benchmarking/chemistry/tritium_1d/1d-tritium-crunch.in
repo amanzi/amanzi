@@ -10,7 +10,7 @@ time_tolerance  0.01
 correction_max  1.0
 debye-huckel    false
 database        tritium.dbs
-kinetic_database tritium.dbsx
+!!kinetic_database tritium.dbsx
 !!master          H+
 speciate_only   false
 database_sweep  false

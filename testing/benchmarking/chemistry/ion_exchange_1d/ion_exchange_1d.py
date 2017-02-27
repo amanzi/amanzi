@@ -253,8 +253,9 @@ if __name__ == "__main__":
 
     except: 
         alq = False
-  
-    try:
+
+    if(0):
+    ##try:
 
         # Amanzi-Alquimia-Crunch
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
@@ -274,8 +275,8 @@ if __name__ == "__main__":
               v_amanzi_alquimia_crunch[i][j] = c_amanzi_alquimia_crunch
 
         alq_crunch = True
-
-    except: 
+    else:
+    ##except: 
         alq_crunch = False
 
 
@@ -396,13 +397,13 @@ if __name__ == "__main__":
     if (struct>0):
 
         for j in range(len(amanzi_compS)):
-            ax[j].plot(x_amanziS, u_amanziS[j],'g-')
+            ax[j].plot(x_amanziS, u_amanziS[j],'g-')#,label='AmanziS+Alq(PFT)')
             bx[j].plot(x_amanziS, v_amanziS[j],'g-',label='AmanziS+Alq(PFT)')
 
     if (struct_c > 0):
         
         for j in range(len(amanzi_compS)):
-            ax[j].plot(x_amanziS_c, u_amanziS_c[j],'g*')      
+            ax[j].plot(x_amanziS_c, u_amanziS_c[j],'g*')#,label='AmanziS+Alq(CF)')
             bx[j].plot(x_amanziS_c, v_amanziS_c[j],'g*',label='AmanziS+Alq(CF)')
 
     # axes
