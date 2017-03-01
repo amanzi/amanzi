@@ -228,7 +228,7 @@ def fixSolvers(xml):
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Fix a number of changes from ATS input spec 0.9 to 1.0")
+    parser = argparse.ArgumentParser(description="Fix a number of changes from ATS input spec 0.83 to 0.86")
     parser.add_argument("infile", help="input filename")
 
     group = parser.add_mutually_exclusive_group()
