@@ -55,17 +55,17 @@ class TransportBoundaryFunction {
   virtual void set_state(const Teuchos::RCP<State>& S) {S_=S;}
 
 // iterator methods
-  typedef std::map<int, WhetStone::DenseVector>::iterator Iterator;
+  typedef std::map<int, std::vector<double> >::iterator Iterator;
   Iterator begin() { return value_.begin(); }
   Iterator end() { return value_.end(); }
-  std::map<int, WhetStone::DenseVector>::size_type size() { return value_.size(); }
+  std::map<int, std::vector<double> >::size_type size() { return value_.size(); }
 
  protected:
   double domain_volume_;
   Teuchos::RCP<const State> S_;
   std::vector<std::string> tcc_names_;  // list of component names
   std::vector<int> tcc_index_;  // index of component in the global list
-  std::map<int, WhetStone::DenseVector> value_;
+  std::map<int,  std::vector<double> > value_;
 
 
 };

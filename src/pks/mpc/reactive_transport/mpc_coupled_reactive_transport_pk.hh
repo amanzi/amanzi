@@ -2,6 +2,8 @@
 #include "PK_MPCAdditive.hh"
 #include "weak_mpc.hh"
 #include "mpc_coupled_transport.hh"
+#include "Transport_PK_ATS.hh"
+#include "Chemistry_PK.hh"
 
 namespace Amanzi {
 
@@ -18,18 +20,19 @@ public:
   // -- dt is the minimum of the sub pks
   virtual double get_dt();
   // virtual void set_dt(double dt){};
+  virtual void Setup(const Teuchos::Ptr<State>& S);
 
-  // // set States
-  // virtual void set_states(const Teuchos::RCP<const State>& S,
-  //                         const Teuchos::RCP<State>& S_inter,
-  //                         const Teuchos::RCP<State>& S_next){};
+  // set States
+  virtual void set_states(const Teuchos::RCP<const State>& S,
+                          const Teuchos::RCP<State>& S_inter,
+                          const Teuchos::RCP<State>& S_next);
 
   // // -- advance each sub pk dt.
-  // virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false){};
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
 
   // virtual void Initialize(const Teuchos::Ptr<State>& S);
 
-  // virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
 
   std::string name() { return "coupled reactive transport";}
 
@@ -41,6 +44,12 @@ private:
   int transport_pk_index_, chemistry_pk_index_;
   Teuchos::RCP<CoupledTransport_PK> tranport_pk_;
   Teuchos::RCP<WeakMPC> chemistry_pk_;
+  Teuchos::RCP<Transport::Transport_PK_ATS> tranport_pk_overland_;
+  Teuchos::RCP<Transport::Transport_PK_ATS> tranport_pk_subsurface_;
+  Teuchos::RCP<AmanziChemistry::Chemistry_PK> chemistry_pk_overland_;
+  Teuchos::RCP<AmanziChemistry::Chemistry_PK> chemistry_pk_subsurface_;
+
+
   Teuchos::RCP<Teuchos::ParameterList> crt_pk_list_;
 
   // factory registration

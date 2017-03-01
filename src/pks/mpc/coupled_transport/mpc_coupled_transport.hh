@@ -56,12 +56,12 @@ namespace Amanzi {
 
     Teuchos::RCP<Teuchos::ParameterList> surface_transport_list_;
     Teuchos::RCP<Teuchos::ParameterList> subsurface_transport_list_;
-
+    std::vector<std::string> component_names_;  // details of components
 
     Key vol_darcy_key_, surf_vol_darcy_key_;
     Key surface_name_, subsurface_name_;
-    Key mass_darcy_key, surf_mass_darcy_key;
-    Key mol_density_key, surf_mol_density_key;
+    Key mass_darcy_key_, surf_mass_darcy_key_;
+    Key mol_density_key_, surf_mol_density_key_;
     
     
     // factory registration
