@@ -551,24 +551,24 @@ if ( SPACK )
       VERSION ${XERCES_VERSION_MAJOR} ${XERCES_VERSION_MINOR} ${XERCES_VERSION_PATCH})
 
   ExternalProject_Add(${XERCES_BUILD_TARGET} # Xerces
-     # PREFIX ${XERCES_prefix_dir}
 
+      # The following 3 lines are only here because CMake will not allow
+      # a build without at least these three variables defined.
+      # However, they serve no real purpose for this particular build.
       DOWNLOAD_COMMAND ls
       
       CONFIGURE_COMMAND ls
-
+      
       BUILD_COMMAND ls
-
-      #INSTALL_DIR ${XERCES_build_dir}
-      #USES_TERMINAL INSTALL 1
+      
       #INSTALL_COMMAND  ${SPACK} install xerces-c )
-      INSTALL_COMMAND  ${SuperBuild_BUILD_FILES_DIR}/spack_generic_build.sh ${SPACK} xerces-c )
+      INSTALL_COMMAND  ${SuperBuild_BUILD_FILES_DIR}/spack_generic_build.sh ${SPACK} xerces-c ${TPL_INSTALL_PREFIX} )
   
-  #build_library_name(xerces-c XERCES_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-  #set(XERCES_INSTALL_DIR )
   build_library_name(xerces-c XERCES_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+
   set(XERCES_LIBRARIES ${XERCES_LIBRARY})
   set(XERCES_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+  set(XERCES_INSTALL_PREFIX ${TPL_INSTALL_PREFIX})
   append_set(Amanzi_TPL_CMAKE_ARGS
       -DXERCES_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 else ()

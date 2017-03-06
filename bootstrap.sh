@@ -1161,11 +1161,6 @@ if [ -z "${tpl_config_file}" ]; then
   fi
   status_message "Spack binary: ${spack_binary}"
 
-  ## this is a test of spack and should be deleted or moved somewhere useful
-  #cd ${tpl_download_dir}
-  #${spack_binary} install xerces-c
-  #status_message "Installed Xerces-C with Spack"
-
   # Are we using xSDK?  If so, skip most of the TPL builds
   if [ "${XSDK}" == "TRUE" ]; then 
       check_xsdk_root
@@ -1255,7 +1250,7 @@ EpetraExt Galeri GlobiPack Ifpack Ifpack2 Intrepid Intrepid2 Isorropia Kokkos Ko
           -DCCSE_BL_SPACEDIM:INT=${spacedim} \
           -DPREFER_STATIC_LIBRARIES:BOOL=${static} \
           -DSPACK:STRING=${spack_binary} \
-          ${nersc_tpl_opts} \
+	  ${nersc_tpl_opts} \
           ${tpl_build_src_dir}
       
       if [ $? -ne 0 ]; then

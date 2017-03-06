@@ -1,10 +1,19 @@
 #! /bin/bash
 
+# grab the arguments
 spack_binary=$1
 spack_pkg=$2
+install_dir=$3
 
+# install the package
 ${spack_binary} install ${spack_pkg}
-${spack_binary} find -pe ${spack_pkg} >> ${spack_pkg}_install_path.in
-sed -i -e 's#.*${spack_pkg}@.*  ##g' ${spack_pkg}_install_path.in
-pwd
+
+# create symlinks between where spack installs the pkg
+# and where you really want to install it
+${spack_binary} view symlink ${install_dir} ${spack_pkg}
+
+
+#${spack_binary} location -i ${spack_pkg} >> ${spack_pkg}_install_path.in
+#cat ${spack_pkg}_install_path.in | $3
+
  
