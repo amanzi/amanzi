@@ -44,10 +44,10 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
       if (current_component_ == tcc_index[i]) {
         for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
           int f = it->first;
-          WhetStone::DenseVector& values = it->second;
+          std::vector<double>& values = it->second;
 
           bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-          bc_value[f] = values(i);
+          bc_value[f] = values[i];
         }
       }
     }
@@ -126,14 +126,14 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
       if (current_component_ == tcc_index[i]) {
         for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
           int f = it->first;
-          WhetStone::DenseVector& values = it->second;
+          std::vector<double>& values = it->second;
 
           c2 = (*downwind_cell_)[f];
 
           if (c2 >= 0 && f < nfaces_owned) {
             u = fabs((*darcy_flux)[0][f]);
             double vol_phi_ws = mesh_->cell_volume(c2) * (*phi)[0][c2] * (*ws_start)[0][c2];
-            tcc_flux = u * values(i);
+            tcc_flux = u * values[i];
             f_component[c2] += tcc_flux / vol_phi_ws;
           }
         }

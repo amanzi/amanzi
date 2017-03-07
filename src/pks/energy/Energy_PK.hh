@@ -125,8 +125,8 @@ class Energy_PK : public PK_PhysicalBDF {
   std::vector<WhetStone::Tensor> K; 
 
   // boundary conditons
-  std::vector<Teuchos::RCP<PK_DomainFunction<double > > > bc_temperature_; 
-  std::vector<Teuchos::RCP<PK_DomainFunction<double > > > bc_flux_; 
+  std::vector<Teuchos::RCP<PK_DomainFunction > > bc_temperature_; 
+  std::vector<Teuchos::RCP<PK_DomainFunction > > bc_flux_; 
 
   std::vector<int> bc_model_; 
   std::vector<double> bc_value_, bc_mixed_; 

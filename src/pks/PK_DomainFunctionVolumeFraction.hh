@@ -34,8 +34,8 @@
 
 namespace Amanzi {
 
-template <class ValueType, template <typename Type> class FunctionBase>
-class PK_DomainFunctionVolumeFraction : public FunctionBase<ValueType>,
+template <class FunctionBase>
+class PK_DomainFunctionVolumeFraction : public FunctionBase,
                                         public Functions::MaterialMeshFunction {
  public:
   PK_DomainFunctionVolumeFraction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
@@ -52,9 +52,9 @@ class PK_DomainFunctionVolumeFraction : public FunctionBase<ValueType>,
   virtual std::string name() const { return "volume fraction"; }
 
  protected:
-  using FunctionBase<ValueType>::value_;
-  using FunctionBase<ValueType>::domain_volume_;
-  using FunctionBase<ValueType>::keyword_;
+  using FunctionBase::value_;
+  using FunctionBase::domain_volume_;
+  using FunctionBase::keyword_;
 
  private:
   std::string model_, submodel_;
@@ -65,8 +65,8 @@ class PK_DomainFunctionVolumeFraction : public FunctionBase<ValueType>,
 /* ******************************************************************
 * Initialization adds a single function to the list of specs.
 ****************************************************************** */
-template <class ValueType, template <typename Type> class FunctionBase>
-void PK_DomainFunctionVolumeFraction< ValueType, FunctionBase>::Init(
+template <class FunctionBase>
+void PK_DomainFunctionVolumeFraction<FunctionBase>::Init(
     const Teuchos::ParameterList& plist, const std::string& keyword)
 {
   keyword_ = keyword;
@@ -98,8 +98,8 @@ void PK_DomainFunctionVolumeFraction< ValueType, FunctionBase>::Init(
 /* ******************************************************************
 * Compute and distribute the result by volume.
 ****************************************************************** */
-template <class ValueType, template <typename Type> class FunctionBase>
-void PK_DomainFunctionVolumeFraction<ValueType, FunctionBase>::Compute(double t0, double t1)
+template <class FunctionBase>
+void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1)
 {
    // create the input tuple (time + space)
   int dim = (*mesh_).space_dimension();
@@ -127,6 +127,9 @@ void PK_DomainFunctionVolumeFraction<ValueType, FunctionBase>::Compute(double t0
       domain_volume_ = 1.0;
     }
 
+    int nfun = (*mspec)->first->second->size();
+    std::vector<double> val_vec(nfun); 
+
     args[0] = t1;
     for (MaterialMesh::const_iterator it = ids->begin(); it != ids->end(); ++it) {
       int c = it->first;
@@ -137,7 +140,9 @@ void PK_DomainFunctionVolumeFraction<ValueType, FunctionBase>::Compute(double t0
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
       // mspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
-      value_[c] = (*(*mspec)->first->second)(args)[0] * vofs / domain_volume_;
+      // value_[c] = (*(*mspec)->first->second)(args)[0] * vofs / domain_volume_;
+      for (int i=0; i<nfun; ++i) val_vec[i] = (*(*mspec)->first->second)(args)[i] * vofs / domain_volume_;
+      value_[c] = val_vec;
     }
 
     if (submodel_ == "integrated source") {
@@ -153,8 +158,11 @@ void PK_DomainFunctionVolumeFraction<ValueType, FunctionBase>::Compute(double t0
             mesh_->cell_centroid(c) : mesh_->face_centroid(c);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
-        value_[c] -= (*(*mspec)->first->second)(args)[0] * vofs / domain_volume_;
-        value_[c] *= dt;
+        for (int i=0; i<nfun; ++i) {
+          value_[c][i] -= (*(*mspec)->first->second)(args)[i] * vofs / domain_volume_;
+          value_[c][i] *= dt;
+        }
+        //value_[c] *= dt;
       }
     }
   }

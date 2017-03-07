@@ -118,7 +118,7 @@ generate_evaluators_registration_header(
 # Library: flow
 #
 set(flow_src_files Flow_PK.cc 
-                   Flow_SeepageFace.cc
+                   Flow_SeepageFace.cc FlowBoundaryFunction.cc
                    Flow_VandV.cc Flow_Walkabout.cc 
                    Darcy_PK.cc Darcy_TI.cc Darcy_LinearOperator.cc
                    Richards_PK.cc Richards_TI.cc Richards_WRM.cc
