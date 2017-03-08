@@ -397,7 +397,7 @@ set(ALQUIMIA_VERSION_MINOR 0)
 set(ALQUIMIA_VERSION_PATCH 4)
 set(ALQUIMIA_URL_STRING     "http://software.lanl.gov/ascem/tpls")
 set(ALQUIMIA_ARCHIVE_FILE   alquimia-dev-1.0.4.tar.gz)
-set(ALQUIMIA_MD5_SUM        4a97a5cfb92977837f3e1d34f0845176)
+set(ALQUIMIA_MD5_SUM        437e5b0a2f3c7a7dace78344b7218b3c)
 
 #
 # TPL: Silo
