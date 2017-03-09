@@ -27,63 +27,38 @@ Chemistry_PK::Chemistry_PK() :
     number_ion_exchange_sites_(0),
     number_sorption_sites_(0),
     using_sorption_(false),
-    using_sorption_isotherms_(false) 
-{
-};
+    using_sorption_isotherms_(false) {};
 
 /* ******************************************************************
 * Register fields and evaluators with the State
 ******************************************************************* */
 void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
 {
-
-  tcc_key_ = getKey(domain_name_, "total_component_concentration"); 
-  poro_key_ = cp_list_->get<std::string>("porosity key", getKey(domain_name_, "porosity"));
-  saturation_key_ = cp_list_->get<std::string>("saturation key", getKey(domain_name_, "saturation_liquid"));
-  fluid_den_key_ = cp_list_->get<std::string>("fluid density key", getKey(domain_name_, "fluid_density"));
-
-  min_vol_frac_key_ = getKey(domain_name_,"mineral_volume_fractions");
-  min_ssa_key_ = getKey(domain_name_,"mineral_specific_surface_area");
-  sorp_sites_key_ = getKey(domain_name_,"sorption_sites");
-  surf_cfsc_key_ = getKey(domain_name_,"surface_complex_free_site_conc");
-  total_sorbed_key_ = getKey(domain_name_,"total_sorbed");
-  isotherm_kd_key_ = getKey(domain_name_,"isotherm_kd");
-  isotherm_freundlich_n_key_ = getKey(domain_name_,"isotherm_freundlich_n");
-  isotherm_langmuir_b_key_ = getKey(domain_name_,"isotherm_langmuir_b");
-  free_ion_species_key_ = getKey(domain_name_,"free_ion_species");
-  primary_activity_coeff_key_ = getKey(domain_name_,"primary_activity_coeff");
-  ion_exchange_sites_key_ = getKey(domain_name_,"ion_exchange_sites");
-  ion_exchange_ref_cation_conc_key_ = getKey(domain_name_,"ion_exchange_ref_cation_conc");
-  secondary_activity_coeff_key_ = getKey(domain_name_,"secondary_activity_coeff");
-  alquimia_aux_data_key_ = getKey(domain_name_,"alquimia_aux_data");
-
-  mesh_ = S->GetMesh(domain_name_);
-
   // Require data from flow
-  if (!S->HasField(poro_key_)) {
-    S->RequireField(poro_key_, passwd_)->SetMesh(mesh_)->SetGhosted(false)
+  if (!S->HasField("porosity")) {
+    S->RequireField("porosity", passwd_)->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  if (!S->HasField(saturation_key_)) {
-    S->RequireField(saturation_key_, passwd_)->SetMesh(mesh_)->SetGhosted(false)
+  if (!S->HasField("saturation_liquid")) {
+    S->RequireField("saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(false)
       //->SetComponent("cell", AmanziMesh::CELL, 1);
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
   
-  if (!S->HasField(fluid_den_key_)) {
-    S->RequireScalar(fluid_den_key_, passwd_);
+  if (!S->HasField("fluid_density")) {
+    S->RequireScalar("fluid_density", passwd_);
   }
 
   // require transport fields
   std::vector<std::string>::const_iterator it;
-  if (!S->HasField(tcc_key_)) {    
+  if (!S->HasField("total_component_concentration")) {    
     // set the names for vis
     std::vector<std::vector<std::string> > conc_names_cv(1);
     for (it = comp_names_.begin(); it != comp_names_.end(); ++it) {
       conc_names_cv[0].push_back(*it + std::string(" conc"));
     }
-    S->RequireField(tcc_key_, passwd_, conc_names_cv)
+    S->RequireField("total_component_concentration", passwd_, conc_names_cv)
       ->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
   }
@@ -100,11 +75,11 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
     }
 
     // -- register two fields
-    S->RequireField(min_vol_frac_key_, passwd_, vf_names_cv)
+    S->RequireField("mineral_volume_fractions", passwd_, vf_names_cv)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_minerals_);
 
-    S->RequireField(min_ssa_key_, passwd_, ssa_names_cv)
+    S->RequireField("mineral_specific_surface_area", passwd_, ssa_names_cv)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_minerals_);
   }
@@ -120,29 +95,29 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
     }
 
     // -- register two fields
-    S->RequireField(sorp_sites_key_, passwd_, ss_names_cv)
+    S->RequireField("sorption_sites", passwd_, ss_names_cv)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_sorption_sites_);
-    S->RequireField(surf_cfsc_key_, passwd_, scfsc_names_cv)
+    S->RequireField("surface_complex_free_site_conc", passwd_, scfsc_names_cv)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_sorption_sites_);
   }
 
   if (using_sorption_) {
-    S->RequireField(total_sorbed_key_, passwd_)
+    S->RequireField("total_sorbed", passwd_)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
 
     if (using_sorption_isotherms_) {
-      S->RequireField(isotherm_kd_key_, passwd_)
+      S->RequireField("isotherm_kd", passwd_)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
 
-      S->RequireField(isotherm_freundlich_n_key_, passwd_)
+      S->RequireField("isotherm_freundlich_n", passwd_)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
 
-      S->RequireField(isotherm_langmuir_b_key_, passwd_)
+      S->RequireField("isotherm_langmuir_b", passwd_)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
     }
@@ -155,21 +130,21 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
       species_names_cv[0].push_back(*it);
     }
 
-    S->RequireField(free_ion_species_key_, passwd_, species_names_cv)
+    S->RequireField("free_ion_species", passwd_, species_names_cv)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
 
-    S->RequireField(primary_activity_coeff_key_, passwd_, species_names_cv)
+    S->RequireField("primary_activity_coeff", passwd_, species_names_cv)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
   }
 
   if (number_ion_exchange_sites_ > 0) {
-    S->RequireField(ion_exchange_sites_key_, passwd_)
+    S->RequireField("ion_exchange_sites", passwd_)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_ion_exchange_sites_);
 
-    S->RequireField(ion_exchange_ref_cation_conc_key_, passwd_)
+    S->RequireField("ion_exchange_ref_cation_conc", passwd_)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_ion_exchange_sites_);
   }
@@ -186,19 +161,19 @@ void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // Aqueous species 
   if (number_aqueous_components_ > 0) {
-    if (!S->GetField(tcc_key_, passwd_)->initialized()) {
-      InitializeField_(tcc_key_, 0.0);
+    if (!S->GetField("total_component_concentration", passwd_)->initialized()) {
+      InitializeField_("total_component_concentration", 0.0);
     }
-    InitializeField_(primary_activity_coeff_key_, 1.0);
+    InitializeField_("primary_activity_coeff", 1.0);
 
     // special initialization of free ion concentration
-    if (S_->HasField(free_ion_species_key_)) {
-      if (!S_->GetField(free_ion_species_key_)->initialized()) {
-        CompositeVector& ion = *S_->GetFieldData(free_ion_species_key_, passwd_);
-        const CompositeVector& tcc = *S_->GetFieldData(tcc_key_);
+    if (S_->HasField("free_ion_species")) {
+      if (!S_->GetField("free_ion_species")->initialized()) {
+        CompositeVector& ion = *S_->GetFieldData("free_ion_species", passwd_);
+        const CompositeVector& tcc = *S_->GetFieldData("total_component_concentration");
 
         ion.Update(0.1, tcc, 0.0);
-        S_->GetField(free_ion_species_key_, passwd_)->set_initialized();
+        S_->GetField("free_ion_species", passwd_)->set_initialized();
 
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
           Teuchos::OSTab tab = vo_->getOSTab();
@@ -206,40 +181,40 @@ void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
         }
       }
     }
-    // InitializeField_(free_ion_species_key_, 0.0);
+    // InitializeField_("free_ion_species", 0.0);
 
     // Sorption sites: all will have a site density, but we can default to zero
     if (using_sorption_) {
-      InitializeField_(total_sorbed_key_, 0.0);
+      InitializeField_("total_sorbed", 0.0);
     }
 
     // Sorption isotherms: Kd required, Langmuir and Freundlich optional
     if (using_sorption_isotherms_) {
-      InitializeField_(isotherm_kd_key_, -1.0);
-      InitializeField_(isotherm_freundlich_n_key_, 1.0);
-      InitializeField_(isotherm_langmuir_b_key_, 1.0);
+      InitializeField_("isotherm_kd", -1.0);
+      InitializeField_("isotherm_freundlich_n", 1.0);
+      InitializeField_("isotherm_langmuir_b", 1.0);
     }
   }
 
   // Minerals: vol frac and surface areas
   if (number_minerals_ > 0) {
-    InitializeField_(min_vol_frac_key_, 0.0);
-    InitializeField_(min_ssa_key_, 1.0);
+    InitializeField_("mineral_volume_fractions", 0.0);
+    InitializeField_("mineral_specific_surface_area", 1.0);
   }
 
   // Ion exchange sites: default to 1
   if (number_ion_exchange_sites_ > 0) {
-    InitializeField_(ion_exchange_sites_key_, 1.0);
-    InitializeField_(ion_exchange_ref_cation_conc_key_, 1.0);
+    InitializeField_("ion_exchange_sites", 1.0);
+    InitializeField_("ion_exchange_ref_cation_conc", 1.0);
   }
 
   if (number_sorption_sites_ > 0) {
-    InitializeField_(sorp_sites_key_, 1.0);
-    InitializeField_(surf_cfsc_key_, 1.0);
+    InitializeField_("sorption_sites", 1.0);
+    InitializeField_("surface_complex_free_site_conc", 1.0);
   }
 
   // auxiliary fields
-  InitializeField_(alquimia_aux_data_key_, 0.0);
+  InitializeField_("alquimia_aux_data", 0.0);
 
   // miscaleneous controls
   initial_conditions_time_ = cp_list_->get<double>("initial conditions time", S->time());
@@ -297,18 +272,18 @@ void Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> 
   number_ion_exchange_sites_ = 0;
   using_sorption_isotherms_ = false;
 
-  if (state_list->sublist("initial conditions").isSublist(ion_exchange_sites_key_)) {
+  if (state_list->sublist("initial conditions").isSublist("ion_exchange_sites")) {
     // there is currently only at most one site...
     using_sorption_ = true;
     number_ion_exchange_sites_ = 1;
   }
 
-  if (state_list->sublist("initial conditions").isSublist(isotherm_kd_key_)) {
+  if (state_list->sublist("initial conditions").isSublist("isotherm_kd")) {
     using_sorption_ = true;
     using_sorption_isotherms_ = true;
   }
 
-  if (state_list->sublist("initial conditions").isSublist(sorp_sites_key_)) {
+  if (state_list->sublist("initial conditions").isSublist("sorption_sites")) {
     using_sorption_ = true;
   }
 
