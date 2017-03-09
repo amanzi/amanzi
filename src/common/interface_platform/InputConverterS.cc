@@ -1430,6 +1430,13 @@ void InputConverterS::ParseGeochemistry_()
       } else if (engine == "crunchflow") {
 	AddToTable(table, MakePPPrefix("Chemistry", "Engine"), MakePPEntry("CrunchFlow"));
 	file_location = "process_kernels, chemistry";
+      } else if (engine == "pflotran+") {
+	AddToTable(table, MakePPPrefix("Chemistry", "Engine"), MakePPEntry("PFloTran+"));
+	file_location = "process_kernels, chemistry";
+      } else if (engine == "crunchflow+") {
+	AddToTable(table, MakePPPrefix("Chemistry", "Engine"), MakePPEntry("CrunchFlow+"));
+	file_location = "process_kernels, chemistry";
+ 
       } else {
 	valid_engine = false;
       }

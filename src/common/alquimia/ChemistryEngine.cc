@@ -69,10 +69,25 @@ ChemistryEngine::ChemistryEngine(const std::string& engineName,
 {
   Errors::Message msg;
 
+  // NOTE: Alquimia now has a "hands-off" mode in which Alquimia relies on 
+  // NOTE: reaction properties from the engine as opposed to the ones provided
+  // NOTE: in Amanzi's input file. As stop-gap solution hands-off is indicated
+  // NOTE: by the + sign at end of engine name
+  bool hands_off = false;
+  if (chem_engine_name_ == "PFloTran+")
+  {
+    chem_engine_name_ = "PFloTran";
+    hands_off = true;
+  }
+  if (chem_engine_name_ == "CrunchFlow+")
+  {
+    chem_engine_name_ = "CrunchFlow";
+    hands_off = true;
+  }
   if (chem_engine_name_ != "PFloTran" && chem_engine_name_ != "CrunchFlow")
   {
     msg << "ChemistryEngine: Unsupported chemistry engine: '" << chem_engine_name_ << "'\n";
-    msg << "  Options are 'PFlotran'.\n";
+    msg << "  Options are 'PFlotran' or 'CrunchFlow'.\n";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -87,11 +102,6 @@ ChemistryEngine::ChemistryEngine(const std::string& engineName,
   }
 
   // Set up Alquimia, get sizes for data.
-  // NOTE: Alquimia now has a "hands-off" mode that leans heavily on input from
-  // NOTE: the input files from the chemistry engines instead of Amanzi's
-  // NOTE: XML files. But to preserve backward compatibility at the moment, we 
-  // NOTE: do not make use of it.
-  bool hands_off = true;
   chem_.Setup(chem_engine_inputfile_.c_str(),
               hands_off,
               &engine_state_,

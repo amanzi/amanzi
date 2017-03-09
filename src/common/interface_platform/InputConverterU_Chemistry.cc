@@ -84,6 +84,12 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     } else if (engine == "crunchflow") {
       out_list.set<std::string>("engine", "CrunchFlow");
       file_location = "process_kernels, chemistry";
+    } else if (engine == "pflotran+") {
+      out_list.set<std::string>("engine", "PFloTran+");
+      file_location = "process_kernels, chemistry";
+    } else if (engine == "crunchflow+") {
+      out_list.set<std::string>("engine", "CrunchFlow+");
+      file_location = "process_kernels, chemistry";
     } else {
       valid_engine = false;
     }
