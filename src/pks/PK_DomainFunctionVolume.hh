@@ -40,7 +40,7 @@ class PK_DomainFunctionVolume : public FunctionBase,
                           const Teuchos::ParameterList& plist,
                           AmanziMesh::Entity_kind kind) :
       UniqueMeshFunction(mesh),
-      FunctionBase(plist),
+      //FunctionBase<ValueType>(plist),
       kind_(kind) {};
 
   ~PK_DomainFunctionVolume() {};
@@ -118,6 +118,8 @@ void PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
     }
     double tmp(domain_volume_);
     mesh_->get_comm()->SumAll(&tmp, &domain_volume_, 1);
+    int nfun = (*uspec)->first->second->size();
+    std::vector<double> val_vec(nfun);  
 
     args[0] = t1;
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
@@ -127,7 +129,9 @@ void PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
-      value_[*c] = (*(*uspec)->first->second)(args)[0] / domain_volume_;
+      //value_[*c] = (*(*uspec)->first->second)(args)[0] / domain_volume_;
+      for (int i=0; i<nfun; ++i) val_vec[i] = (*(*uspec)->first->second)(args)[i] / domain_volume_;
+      value_[*c] = val_vec;
     }
 
     if (submodel_ == "integrated source") {
@@ -141,8 +145,12 @@ void PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
 
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
-        value_[*c] -= (*(*uspec)->first->second)(args)[0] / domain_volume_;
-        value_[*c] *= dt;
+        //value_[*c] -= (*(*uspec)->first->second)(args)[0] / domain_volume_;
+        for (int i=0; i<nfun; ++i) {
+          value_[*c][i] -= (*(*uspec)->first->second)(args)[i] / domain_volume_;
+          value_[*c][i] *= dt;
+        }
+        //value_[*c] *= dt;
       }
     }
   }

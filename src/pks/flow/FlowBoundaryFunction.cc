@@ -74,7 +74,7 @@ void FlowBoundaryFunction::ComputeSubmodel(
     for (auto it = begin(); it != end(); ++it) {
       int f = it->first;
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
-      it->second *= fabs(normal[dim - 1]) / norm(normal);
+      it->second[0] *= fabs(normal[dim - 1]) / norm(normal);
     }
   }
 
@@ -102,7 +102,7 @@ void FlowBoundaryFunction::ComputeSubmodel(
     for (auto it = begin(); it != end(); ++it) {
       int f = it->first;
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
-      it->second += (*shift_water_table_)[f];
+      it->second[0] += (*shift_water_table_)[f];
     }
   }
 }

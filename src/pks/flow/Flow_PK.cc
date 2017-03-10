@@ -403,7 +403,7 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-        bc_value[f] = it->second;
+        bc_value[f] = it->second[0];
       }
     }
 
@@ -411,14 +411,14 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         if (bcs_[i]->no_flow_above_water_table()) {
-          if (it->second < atm_pressure_) {
+          if (it->second[0] < atm_pressure_) {
             bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
             bc_value[f] = 0.0;
             continue;
           }
         }
         bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-        bc_value[f] = it->second;
+        bc_value[f] = it->second[0];
       }
     }
 
@@ -426,7 +426,7 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_value[f] = it->second * flux_units_;
+        bc_value[f] = it->second[0] * flux_units_;
       }
     }
   }
@@ -587,7 +587,7 @@ void Flow_PK::AddSourceTerms(CompositeVector& rhs)
   for (int i = 0; i < srcs.size(); ++i) {
     for (auto it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
       int c = it->first;
-      rhs_cell[0][c] += mesh_->cell_volume(c) * it->second;
+      rhs_cell[0][c] += mesh_->cell_volume(c) * it->second[0];
     }
   }
 }

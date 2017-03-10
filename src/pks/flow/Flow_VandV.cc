@@ -250,8 +250,8 @@ void Flow_PK::VV_PrintSourceExtrema() const
     for (int i = 0; i < srcs.size(); ++i) {
       for (auto it = srcs[i]->begin(); it != srcs[i]->end(); ++it) {
         int c = it->first;
-        smin = std::min(smin, it->second);
-        smax = std::max(smax, it->second);
+        smin = std::min(smin, it->second[0]);
+        smax = std::max(smax, it->second[0]);
       }
       volumes.push_back(srcs[i]->domain_volume());
     }

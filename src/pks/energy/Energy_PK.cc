@@ -134,7 +134,7 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- energy flux
   if (bc_list->isSublist("energy flux")) {
-    PK_DomainFunctionFactory<PK_DomainFunction> bc_factory(mesh_);
+    PK_DomainFunctionFactory<PK_DomainFunction > bc_factory(mesh_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("energy flux");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
@@ -242,7 +242,7 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
     for (auto it = bc_temperature_[i]->begin(); it != bc_temperature_[i]->end(); ++it) {
       int f = it->first;
       bc_model_[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value_[f] = it->second;
+      bc_value_[f] = it->second[0];
     }
   }
 
@@ -250,7 +250,7 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
     for (auto it = bc_flux_[i]->begin(); it != bc_flux_[i]->end(); ++it) {
       int f = it->first;
       bc_model_[f] = Operators::OPERATOR_BC_NEUMANN;
-      bc_value_[f] = it->second;
+      bc_value_[f] = it->second[0];
     }
   }
 
