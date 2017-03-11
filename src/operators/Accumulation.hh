@@ -95,7 +95,7 @@ class Accumulation {
   }
 
   // update methods
-  // -- modifiers for diogonal operators
+  // -- modifiers for diagonal operators
   void AddAccumulationTerm(const CompositeVector& du,
                            double dT, const std::string& name);
 

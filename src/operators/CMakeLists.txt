@@ -90,6 +90,7 @@ set(operators_inc_files
     Elasticity.hh
     Electromagnetics.hh
     ElectromagneticsMHD.hh
+    ElectromagneticsMHD_TM.hh
     PDE_Helper.hh
     Schema.hh
     TreeOperator.hh
@@ -122,7 +123,7 @@ add_amanzi_library(operators
                           DiffusionNLFV.cc DiffusionNLFVwithGravity.cc
                           DiffusionFactory.cc                   
                           Elasticity.cc
-                          Electromagnetics.cc ElectromagneticsMHD.cc
+                          Electromagnetics.cc ElectromagneticsMHD.cc ElectromagneticsMHD_TM.cc
                           Accumulation.cc
                           AdvectionUpwind.cc AdvectionRiemann.cc
                           Schema.cc

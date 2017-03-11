@@ -32,6 +32,7 @@
 // Amanzi::Operators
 #include "Accumulation.hh"
 #include "ElectromagneticsMHD.hh"
+#include "ElectromagneticsMHD_TM.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 
@@ -52,7 +53,7 @@ void ResistiveMHD2D(double dt, double tend, bool initial_guess) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Resistive MHD, TM mode" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Resistive MHD, TM mode, dt=" << dt << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_electromagnetics_TM.xml";
@@ -115,7 +116,7 @@ void ResistiveMHD2D(double dt, double tend, bool initial_guess) {
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("electromagnetics operator");
-  Teuchos::RCP<ElectromagneticsMHD> op_mhd = Teuchos::rcp(new ElectromagneticsMHD(olist, mesh));
+  Teuchos::RCP<ElectromagneticsMHD_TM> op_mhd = Teuchos::rcp(new ElectromagneticsMHD_TM(olist, mesh));
   op_mhd->SetBCs(bc1, bc1);
 
   // create/extract solution maps
@@ -146,7 +147,7 @@ void ResistiveMHD2D(double dt, double tend, bool initial_guess) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
 
-      Bf[0][f] = (ana.magnetic_exact(xf, told) * normal) / area;
+      Bf[0][f] = (normal * ana.magnetic_exact(xf, told)) / area;
     }
   } 
   // CompositeVector B0(B);
@@ -164,7 +165,6 @@ void ResistiveMHD2D(double dt, double tend, bool initial_guess) {
     // account in the system modification routine.
     CompositeVector phi(cvs_e);
     phi.PutScalar(1.0);
-std::cout << "HERE" << std::endl;
 
     Teuchos::RCP<Accumulation> op_acc =
         Teuchos::rcp(new Accumulation(AmanziMesh::NODE, global_op));
@@ -241,7 +241,7 @@ std::cout << "HERE" << std::endl;
                 << " itr=" << solver->num_itrs() << "  energy= " << energy 
                 << "  avgB=" << avgB / ncells_owned 
                 << "  divB=" << std::pow(divB, 0.5) 
-                << "  ||B-1||=" << std::pow(errB, 0.5) << std::endl;
+                << "  ||B||=" << std::pow(errB, 0.5) << std::endl;
     }
 
     // visualization
@@ -501,7 +501,7 @@ void ResistiveMHD3D(double dt, double tend, bool initial_guess) {
 
 
 TEST(RESISTIVE_MHD2D_LINEAR) {
-  ResistiveMHD2D<AnalyticElectromagnetics04>(0.1, 0.5, true);
+  ResistiveMHD2D<AnalyticElectromagnetics04>(0.2, 1.0, true);
 }
 
 TEST(RESISTIVE_MHD3D_LINEAR) {

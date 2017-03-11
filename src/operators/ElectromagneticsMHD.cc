@@ -16,19 +16,11 @@
 
 // Amanzi
 #include "errors.hh"
-#include "MatrixFE.hh"
 #include "mfd3d_electromagnetics.hh"
-#include "PreconditionerFactory.hh"
-#include "SuperMap.hh"
-#include "WhetStoneDefs.hh"
 
 // Amanzi::Operators
 #include "ElectromagneticsMHD.hh"
 #include "Op.hh"
-#include "Op_Cell_Edge.hh"
-#include "Op_Cell_Face.hh"
-#include "OperatorDefs.hh"
-#include "Operator_Edge.hh"
 
 namespace Amanzi {
 namespace Operators {

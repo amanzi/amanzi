@@ -50,12 +50,13 @@ void Operator_Cell::UpdateRHS(const CompositeVector& source,
 int Operator_Cell::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
                                      const CompositeVector& X, CompositeVector& Y) const
 {
-  ASSERT(op.vals.size() == ncells_owned);
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
   Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
 
-  for (int c = 0; c != ncells_owned; ++c) {
-    Yc[0][c] += Xc[0][c] * op.vals[c];
+  for (int k = 0; k != Xc.NumVectors(); ++k) {
+    for (int c = 0; c != ncells_owned; ++c) {
+      Yc[k][c] += Xc[k][c] * (*op.diag)[k][c];
+    }
   }
   return 0;
 }
@@ -159,7 +160,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
                                      const SuperMap& map, MatrixFE& mat,
                                      int my_block_row, int my_block_col) const
 {
-  ASSERT(op.vals.size() == ncells_owned);
+  ASSERT(op.diag->NumVectors() == 1);
 
   const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
   const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
@@ -169,7 +170,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
     int row = cell_row_inds[c];
     int col = cell_col_inds[c];
 
-    ierr |= mat.SumIntoMyValues(row, 1, &op.vals[c], &col);
+    ierr |= mat.SumIntoMyValues(row, 1, &(*op.diag)[0][c], &col);
   }
   ASSERT(!ierr);
 }

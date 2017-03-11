@@ -35,7 +35,7 @@ class AnalyticElectromagnetics04 : public AnalyticElectromagneticsBase {
   Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     double x = p[0];
     double y = p[1];
-    double z = (p.dim() == 2) ? 0 : p[2];
+    double z = (p.dim() == 2) ? 1.0 : p[2];
 
     double phi = 3.1415926 / 4;
     double tmp = phi * std::exp(-(x * x + y * y) / 2 - z * z / 4);

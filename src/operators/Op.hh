@@ -12,6 +12,7 @@
 #ifndef AMANZI_OP_HH_
 #define AMANZI_OP_HH_
 
+#include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 
 #include "DenseMatrix.hh"
@@ -63,19 +64,15 @@ class Op {
 
   // Clean the operator without destroying memory
   void Init() {
-    if (vals.size() > 0) {
-      for (int i = 0; i != vals.size(); ++i) {
-        vals[i] = 0.0;
-        vals_shadow[i] = 0.0;
-      }
+    if (diag != Teuchos::null) {
+      diag->PutScalar(0.0);
+      diag_shadow->PutScalar(0.0);
     }
 
     WhetStone::DenseMatrix null_mat;
-    if (matrices.size() > 0) {
-      for (int i = 0; i != matrices.size(); ++i) {
-        matrices[i] = 0.0;
-        matrices_shadow[i] = null_mat;
-      }
+    for (int i = 0; i < matrices.size(); ++i) {
+      matrices[i] = 0.0;
+      matrices_shadow[i] = null_mat;
     }
   }
     
@@ -86,7 +83,7 @@ class Op {
         matrices[i] = matrices_shadow[i];
       }
     }
-    vals = vals_shadow;
+    *diag = *diag_shadow;
     return 0;
   }
 
@@ -97,7 +94,7 @@ class Op {
         matrices[i] = matrices_shadow[i];
       }
     }
-    vals = vals_shadow;
+    *diag = *diag_shadow;
   }
 
   // Matching rules for schemas.
@@ -144,8 +141,11 @@ class Op {
   Schema schema_row_, schema_col_;
   std::string schema_string;
 
-  std::vector<double> vals;
-  std::vector<double> vals_shadow;  
+  // diagonal matrix
+  Teuchos::RCP<Epetra_MultiVector> diag;
+  Teuchos::RCP<Epetra_MultiVector> diag_shadow;  
+
+  // collection of local matrices
   std::vector<WhetStone::DenseMatrix> matrices;
   std::vector<WhetStone::DenseMatrix> matrices_shadow;
 

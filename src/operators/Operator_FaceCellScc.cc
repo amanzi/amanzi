@@ -188,17 +188,16 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
       }
 
       // set the size of the local val vectors
-      std::vector<double>& vals = diag_op->vals;
+      Epetra_MultiVector& diag = *diag_op->diag;
 
       // populate the diagonal component
       for (int c = 0; c != ncells_owned; ++c) {
         WhetStone::DenseMatrix& Acell = (*it)->matrices[c];
         int n = Acell.NumCols() - 1;
-        vals[c] = (*it)->matrices[c](n,n);
-        if (vals[c] > 1.e30 || vals[c] < -1.e30) {
+        diag[0][c] = (*it)->matrices[c](n,n);
+        if (diag[0][c] > 1.e30 || diag[0][c] < -1.e30) {
           ASSERT(0);
         }
-        
       }
 
       // populate the schur component

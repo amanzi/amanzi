@@ -102,12 +102,13 @@ int Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
 int Operator_Edge::ApplyMatrixFreeOp(const Op_Edge_Edge& op,
                                      const CompositeVector& X, CompositeVector& Y) const
 {
-  ASSERT(op.vals.size() == nedges_owned);
   const Epetra_MultiVector& Xc = *X.ViewComponent("edge");
   Epetra_MultiVector& Yc = *Y.ViewComponent("edge");
 
-  for (int e = 0; e != nedges_owned; ++e) {
-    Yc[0][e] += Xc[0][e] * op.vals[e];
+  for (int k = 0; k != Xc.NumVectors(); ++k) {
+    for (int e = 0; e != nedges_owned; ++e) {
+      Yc[k][e] += Xc[k][e] * (*op.diag)[k][e];
+    }
   }
   return 0;
 }
@@ -156,7 +157,7 @@ void Operator_Edge::SymbolicAssembleMatrixOp(const Op_Edge_Edge& op,
   const std::vector<int>& edge_col_inds = map.GhostIndices("edge", my_block_col);
 
   int ierr(0);
-  for (int e=0; e!=nedges_owned; ++e) {
+  for (int e = 0; e != nedges_owned; ++e) {
     int row = edge_row_inds[e];
     int col = edge_col_inds[e];
 
@@ -208,17 +209,17 @@ void Operator_Edge::AssembleMatrixOp(const Op_Edge_Edge& op,
                                      const SuperMap& map, MatrixFE& mat,
                                      int my_block_row, int my_block_col) const
 {
-  ASSERT(op.vals.size() == nedges_owned);
+  ASSERT(op.diag->NumVectors() == 1);
 
   const std::vector<int>& edge_row_inds = map.GhostIndices("edge", my_block_row);
   const std::vector<int>& edge_col_inds = map.GhostIndices("edge", my_block_col);
 
   int ierr(0);
-  for (int e=0; e!=nedges_owned; ++e) {
+  for (int e = 0; e != nedges_owned; ++e) {
     int row = edge_row_inds[e];
     int col = edge_col_inds[e];
 
-    ierr |= mat.SumIntoMyValues(row, 1, &op.vals[e], &col);
+    ierr |= mat.SumIntoMyValues(row, 1, &(*op.diag)[0][e], &col);
   }
   ASSERT(!ierr);
 }

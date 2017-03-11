@@ -118,13 +118,13 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
                                          const CompositeVector& X, CompositeVector& Y) const
 {
   int nsurf_cells = op.surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  ASSERT(op.vals.size() == nsurf_cells);
+  ASSERT(op.diag->MyLength() == nsurf_cells);
 
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", false);
   Epetra_MultiVector& Yf = *Y.ViewComponent("face", false);
   for (int sc = 0; sc != nsurf_cells; ++sc) {
     int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);
-    Yf[0][f] += op.vals[sc] * Xf[0][f];
+    Yf[0][f] += (*op.diag)[0][sc] * Xf[0][f];
   } 
   return 0;
 }
@@ -367,7 +367,7 @@ Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
   for (int sc=0; sc!=nsurf_cells; ++sc) {
     int lid_r = face_row_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL,sc)];
     int lid_c = face_col_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL,sc)];
-    ierr |= mat.SumIntoMyValues(lid_r, 1, &op.vals[sc], &lid_c);
+    ierr |= mat.SumIntoMyValues(lid_r, 1, &(*op.diag)[0][sc], &lid_c);
   }
   ASSERT(!ierr);
 }

@@ -31,7 +31,7 @@ void Accumulation::AddAccumulationTerm(
     const CompositeVector& du, double dT, const std::string& name)
 {
   Teuchos::RCP<Op> op = FindOp_(name);
-  std::vector<double>& diag = op->vals;
+  Epetra_MultiVector& diag = *op->diag;
 
   CompositeVector vol(du);
   CalculateEntitylVolume_(vol, name);
@@ -40,9 +40,11 @@ void Accumulation::AddAccumulationTerm(
   Epetra_MultiVector& volc = *vol.ViewComponent(name); 
 
   int n = duc.MyLength();
-  ASSERT(diag.size() == n); 
-  for (int i = 0; i < n; i++) {
-    diag[i] += volc[0][i] * duc[0][i] / dT;
+  int m = duc.NumVectors();
+  for (int k = 0; k < m; k++) {
+    for (int i = 0; i < n; i++) {
+      diag[k][i] += volc[0][i] * duc[k][i] / dT;
+    } 
   }
 }
 
@@ -58,7 +60,7 @@ void Accumulation::AddAccumulationDelta(
     double dT, const std::string& name)
 {
   Teuchos::RCP<Op> op = FindOp_(name);
-  std::vector<double>& diag = op->vals;
+  Epetra_MultiVector& diag = *op->diag;
 
   CompositeVector vol(ss);
   CalculateEntitylVolume_(vol, name);
@@ -71,10 +73,13 @@ void Accumulation::AddAccumulationDelta(
   Epetra_MultiVector& rhs = *global_operator()->rhs()->ViewComponent(name);
 
   int n = u0c.MyLength();
-  for (int i = 0; i < n; i++) {
-    double factor = volc[0][i] / dT;
-    diag[i] += factor * ssc[0][i];
-    rhs[0][i] += factor * s0c[0][i] * u0c[0][i];
+  int m = u0c.NumVectors();
+  for (int k = 0; k < m; ++k) {
+    for (int i = 0; i < n; i++) {
+      double factor = volc[0][i] / dT;
+      diag[k][i] += factor * ssc[k][i];
+      rhs[k][i] += factor * s0c[k][i] * u0c[k][i];
+    }
   }
 }
 
@@ -89,7 +94,7 @@ void Accumulation::AddAccumulationDelta(
     double dT, const std::string& name)
 {
   Teuchos::RCP<Op> op = FindOp_(name);
-  std::vector<double>& diag = op->vals;
+  Epetra_MultiVector& diag = *op->diag;
 
   CompositeVector vol(u0);
   CalculateEntitylVolume_(vol, name);
@@ -99,10 +104,13 @@ void Accumulation::AddAccumulationDelta(
   Epetra_MultiVector& rhs = *global_operator()->rhs()->ViewComponent(name);
 
   int n = u0c.MyLength();
-  for (int i = 0; i < n; i++) {
-    double factor = volc[0][i] / dT;
-    diag[i] += factor;
-    rhs[0][i] += factor * u0c[0][i];
+  int m = u0c.NumVectors();
+  for (int k = 0; k < m; ++k) {
+    for (int i = 0; i < n; i++) {
+      double factor = volc[0][i] / dT;
+      diag[k][i] += factor;
+      rhs[k][i] += factor * u0c[k][i];
+    }
   }
 }
 
@@ -118,7 +126,7 @@ void Accumulation::AddAccumulationDeltaNoVolume(
   if (!ss.HasComponent(name)) ASSERT(false);
 
   Teuchos::RCP<Op> op = FindOp_(name);
-  std::vector<double>& diag = op->vals;
+  Epetra_MultiVector& diag = *op->diag;
 
   const Epetra_MultiVector& u0c = *u0.ViewComponent(name);
   const Epetra_MultiVector& ssc = *ss.ViewComponent(name);
@@ -126,10 +134,12 @@ void Accumulation::AddAccumulationDeltaNoVolume(
   Epetra_MultiVector& rhs = *global_operator()->rhs()->ViewComponent(name);
 
   int n = u0c.MyLength();
-  ASSERT(diag.size() == n);
-  for (int i = 0; i < n; i++) {
-    diag[i] += ssc[0][i];
-    rhs[0][i] += ssc[0][i] * u0c[0][i];
+  int m = u0c.NumVectors();
+  for (int k = 0; k < m; ++k) {
+    for (int i = 0; i < n; i++) {
+      diag[k][i] += ssc[k][i];
+      rhs[k][i] += ssc[k][i] * u0c[k][i];
+    }
   }
 }
 
@@ -307,11 +317,11 @@ void Accumulation::ApplyBCs(const Teuchos::RCP<BCs>& bc)
   for (auto it = local_ops_.begin(); it != local_ops_.end(); ++it) {
     const Schema& schema = (*it)->schema_row();
     if (schema.base() == bc->kind()) {
-      std::vector<double>& diag = (*it)->vals;
+      Epetra_MultiVector& diag = *(*it)->diag;
 
-      for (int i = 0; i < diag.size(); i++) {
+      for (int i = 0; i < diag.MyLength(); i++) {
         if (bc_model[i] == OPERATOR_BC_DIRICHLET) {
-          diag[i] = 0.0;
+          diag[0][i] = 0.0;
         }
       }
     }

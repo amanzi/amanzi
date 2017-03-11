@@ -603,12 +603,13 @@ int MFD3D_Electromagnetics::StiffnessMatrix(
 
 
 /* ******************************************************************
-* Stiffness matrix: the standard algorithm.
+* Stiffness matrix: the standard algorithm. Curl in 2D and 3D is 
+* defined using the exterior face normal.
 ****************************************************************** */
 int MFD3D_Electromagnetics::StiffnessMatrix(
     int c, const Tensor& T, DenseMatrix& A, DenseMatrix& M, DenseMatrix& C)
 {
-  Entity_ID_List faces, edges;
+  Entity_ID_List faces, nodes, fnodes, edges;
   std::vector<int> fdirs, edirs, map;
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
@@ -620,18 +621,37 @@ int MFD3D_Electromagnetics::StiffnessMatrix(
   MFD3D_Diffusion diffusion(mesh_);
   int ok = diffusion.MassMatrix(c, T, M);
 
+  // populate curl matrix
   C.PutScalar(0.0);
-  for (int i = 0; i < nfaces; ++i) {
-    int f = faces[i];
 
-    mesh_->face_to_cell_edge_map(f, c, &map);
-    mesh_->face_get_edges_and_dirs(f, &edges, &edirs);
-    int medges = edges.size();
+  int d = mesh_->space_dimension();
+  if (d == 2) {
+    mesh_->cell_get_nodes(c, &nodes);
 
-    for (int j = 0; j < medges; ++j) {
-      int e = edges[j]; 
-      double len = mesh_->edge_length(e);
-      C(i, map[j]) = len * edirs[j] * fdirs[i];
+    for (int i = 0; i < nfaces; ++i) {
+      int f = faces[i];
+      double len = mesh_->face_area(f);
+
+      mesh_->face_get_nodes(f, &fnodes);
+      int v1 = FindPosition_(fnodes[0], nodes);
+      int v2 = FindPosition_(fnodes[1], nodes);
+
+      C(i, v1) = len * fdirs[i];
+      C(i, v2) = -len * fdirs[i];
+    }
+  } else {
+    for (int i = 0; i < nfaces; ++i) {
+      int f = faces[i];
+
+      mesh_->face_to_cell_edge_map(f, c, &map);
+      mesh_->face_get_edges_and_dirs(f, &edges, &edirs);
+      int medges = edges.size();
+
+      for (int j = 0; j < medges; ++j) {
+        int e = edges[j]; 
+        double len = mesh_->edge_length(e);
+        C(i, map[j]) = len * edirs[j] * fdirs[i];
+      }
     }
   }
 

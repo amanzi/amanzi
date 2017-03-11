@@ -80,7 +80,7 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Node_Node& op,
 
   for (int i = 0; i < Xn.NumVectors(); ++i) {
     for (int v = 0; v != nnodes_owned; ++v) {
-      Yn[i][v] += Xn[i][v] * op.vals[v];
+      Yn[i][v] += Xn[i][v] * (*op.diag)[i][v];
     }
   }
   return 0;
@@ -338,11 +338,11 @@ void Operator_Schema::AssembleMatrixOp(const Op_Node_Node& op,
     int row = node_row_inds[v];
     int col = node_col_inds[v];
 
-    ierr |= mat.SumIntoMyValues(row, 1, &op.vals[v], &col);
-
-    row++;
-    col++;
-    ierr |= mat.SumIntoMyValues(row, 1, &op.vals[v], &col);
+    for (int k = 0; k != op.diag->NumVectors(); ++k) {
+      ierr |= mat.SumIntoMyValues(row, 1, &(*op.diag)[k][v], &col);
+      row++;
+      col++;
+    }
   }
   ASSERT(!ierr);
 }

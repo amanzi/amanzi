@@ -25,8 +25,8 @@ class Op_Node_Node : public Op {
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       Op(OPERATOR_SCHEMA_BASE_NODE |
          OPERATOR_SCHEMA_DOFS_NODE, name, mesh) {
-    vals.resize(mesh->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED), 0.);
-    vals_shadow = vals;
+    diag = Teuchos::rcp(new Epetra_MultiVector(mesh->node_map(false), 1));
+    diag_shadow = Teuchos::rcp(new Epetra_MultiVector(mesh->node_map(false), 1));
   }
 
   virtual void ApplyMatrixFreeOp(const Operator* assembler,
@@ -55,9 +55,11 @@ class Op_Node_Node : public Op {
   
   virtual void Rescale(const CompositeVector& scaling) {
     if (scaling.HasComponent("node")) {
-      const Epetra_MultiVector& s_c = *scaling.ViewComponent("node",false);
-      for (int i = 0; i != vals.size(); ++i) {
-        vals[i] *= s_c[0][i];
+      const Epetra_MultiVector& s_v = *scaling.ViewComponent("node", false);
+      for (int k = 0; k != s_v.NumVectors(); ++k) {
+        for (int i = 0; i != s_v.MyLength(); ++i) {
+          (*diag)[k][i] *= s_v[0][i];
+        }
       }
     }
   }
