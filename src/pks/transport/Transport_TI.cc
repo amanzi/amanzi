@@ -44,6 +44,7 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
       if (current_component_ == tcc_index[i]) {
         for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
           int f = it->first;
+
           std::vector<double>& values = it->second;
 
           bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -126,7 +127,9 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
       if (current_component_ == tcc_index[i]) {
         for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
           int f = it->first;
+
           std::vector<double>& values = it->second;
+
 
           c2 = (*downwind_cell_)[f];
 

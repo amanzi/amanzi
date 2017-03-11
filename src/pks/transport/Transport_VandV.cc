@@ -291,7 +291,10 @@ double Transport_PK::VV_SoluteVolumeChangePerSecond(int idx_tracer)
       if (tcc_index[i] == idx_tracer) {
         for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
           int f = it->first;
-          std::vector<double>& values = it->second;
+
+          //WhetStone::DenseVector& values = it->second;
+          std::vector<double>& values = it->second; 
+
 
           int c2 = (*downwind_cell_)[f];
 

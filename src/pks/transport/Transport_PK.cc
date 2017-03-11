@@ -531,7 +531,8 @@ double Transport_PK::StableTimeStep()
 
       for (auto it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
         int c = it->first;
-        std::vector<double>& values = it->second;
+        //WhetStone::DenseVector& values = it->second;
+        std::vector<double>& values = it->second; 
 
         for (int i = 0; i < values.size(); ++i) {
           double value = fabs(values[i]) * mesh_->cell_volume(c);
@@ -1067,7 +1068,9 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
 
     for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
       int f = it->first;
-      std::vector<double>& values = it->second;
+      //      WhetStone::DenseVector& values = it->second;
+      std::vector<double>& values = it->second; 
+
 
       int c2 = (*downwind_cell_)[f];
       if (c2 >= 0) {
@@ -1280,7 +1283,8 @@ void Transport_PK::ComputeSources_(
     std::vector<int> index = srcs_[m]->tcc_index();
     for (auto it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
       int c = it->first;
-      std::vector<double>& values = it->second;
+      //WhetStone::DenseVector& values = it->second;
+      std::vector<double>& values = it->second; 
 
       for (int k = 0; k < index.size(); ++k) {
         int i = index[k];
@@ -1333,7 +1337,9 @@ bool Transport_PK::ComputeBCs_(
 
     for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
       int f = it->first;
-      std::vector<double>& values = it->second;
+
+      //WhetStone::DenseVector& values = it->second;
+      std::vector<double>& values = it->second; 
 
       for (int i = 0; i < ncomp; i++) {
         int k = tcc_index[i];
