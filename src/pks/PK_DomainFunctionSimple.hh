@@ -21,6 +21,8 @@
 #include "CommonDefs.hh"
 #include "Mesh.hh"
 #include "UniqueMeshFunction.hh"
+#include "DenseVector.hh"
+
 
 namespace Amanzi {
 
@@ -36,14 +38,16 @@ class PK_DomainFunctionSimple : public FunctionBase,
   PK_DomainFunctionSimple(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                           const Teuchos::ParameterList& plist,
                           AmanziMesh::Entity_kind kind) :
-      UniqueMeshFunction(mesh),
-      FunctionBase(plist),
-      kind_(kind) {};
+    UniqueMeshFunction(mesh),
+    FunctionBase(plist),
+    kind_(kind) {
+  };
 
   ~PK_DomainFunctionSimple() {};
 
   // member functions
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
+
 
   // required member functions
   virtual void Compute(double t0, double t1);
@@ -52,6 +56,7 @@ class PK_DomainFunctionSimple : public FunctionBase,
  protected:
   using FunctionBase::value_;
   using FunctionBase::keyword_;
+
 
  private:
   std::string submodel_;
@@ -106,15 +111,25 @@ void PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
 
     args[0] = t1;
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
+    // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
+    int nfun = (*uspec)->first->second->size();
+    std::vector<double> val_vec(nfun);  
+
 
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
       const AmanziGeometry::Point& xc = (kind_ == AmanziMesh::CELL) ?
           mesh_->cell_centroid(*c) : mesh_->face_centroid(*c);
 
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
+      
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
-      value_[*c] = (*(*uspec)->first->second)(args)[0];
+      for (int i=0; i<nfun; ++i) val_vec[i] = (*(*uspec)->first->second)(args)[i];
+
+      value_[*c] = val_vec;
+     
     }
+
+    
    
     if (submodel_ == "integrated source") {
       double dt = t1 - t0;
@@ -126,8 +141,13 @@ void PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
             mesh_->cell_centroid(*c) : mesh_->face_centroid(*c);
 
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-        value_[*c] -= (*(*uspec)->first->second)(args)[0];
-        value_[*c] *= dt;
+        for (int i=0; i<nfun; ++i) {
+          value_[*c][i] -= (*(*uspec)->first->second)(args)[i];
+          value_[*c][i] *= dt;
+        }
+        //value_[*c] -= (*(*uspec)->first->second)(args)[0];
+        //value_[*c] -= (*(*uspec)->first->second)(args);
+        //value_[*c] *= dt;
       }
     }
   }

@@ -62,9 +62,11 @@ class Chemistry_PK : public PK_Physical {
 
   // -- output of error messages.
   void ErrorAnalysis(int ierr, std::string& internal_msg);
+  Key get_domain_name() {return domain_name_;};
 
  protected:
   void InitializeField_(std::string fieldname, double default_val);
+
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -85,6 +87,23 @@ class Chemistry_PK : public PK_Physical {
 
   int number_free_ion_, number_ion_exchange_sites_;
 
+  Key tcc_key_;
+  Key poro_key_;
+  Key saturation_key_;
+  Key fluid_den_key_;
+  Key min_vol_frac_key_;
+  Key min_ssa_key_;
+  Key sorp_sites_key_;
+  Key surf_cfsc_key_;
+  Key total_sorbed_key_;
+  Key isotherm_kd_key_, isotherm_freundlich_n_key_, isotherm_langmuir_b_key_;
+  Key free_ion_species_key_, primary_activity_coeff_key_;
+  Key ion_exchange_sites_key_, ion_exchange_ref_cation_conc_key_;
+  Key secondary_activity_coeff_key_;
+  Key alquimia_aux_data_key_;
+  
+
+
 #ifdef ALQUIMIA_ENABLED
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
 #endif
@@ -92,6 +111,7 @@ class Chemistry_PK : public PK_Physical {
   // time controls
   int num_iterations_, num_successful_steps_;
   double initial_conditions_time_;
+  Key domain_name_;
 
   // verbosity object thatis not shared with common chemistry
   Teuchos::RCP<VerboseObject> vo_;

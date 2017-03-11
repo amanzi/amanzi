@@ -50,12 +50,12 @@ void Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
 
         if (face_value < ref_pressure - tol) {
           bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-          bc_value[f] = it->second * flux_units_;
+          bc_value[f] = it->second[0] * flux_units_;
         } else {
           int c = BoundaryFaceGetCell(f);
           if (u_cell[0][c] < face_value) {
             bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-            bc_value[f] = it->second * flux_units_;
+            bc_value[f] = it->second[0] * flux_units_;
           } else {
             bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
             bc_value[f] = ref_pressure;
@@ -63,7 +63,7 @@ void Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
         }
         if (flux[0][f] < 0.0) {
           bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-          bc_value[f] = it->second * flux_units_;
+          bc_value[f] = it->second[0] * flux_units_;
         }
       }
     }
@@ -111,7 +111,7 @@ void Flow_PK::SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* a
         double face_value = BoundaryFaceValue(f, u);
 
         double pcreg = -FLOW_BC_SEEPAGE_FACE_REGULARIZATION;
-        double influx = it->second * flux_units_;
+        double influx = it->second[0] * flux_units_;
         double pcmin = 3 * pcreg / 2;
         double pcmax = pcreg / 2;
 

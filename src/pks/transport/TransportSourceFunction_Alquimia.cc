@@ -73,7 +73,8 @@ void TransportSourceFunction_Alquimia::Init_(const std::vector<std::string>& reg
     // Now get the cells that are attached to these faces.
     for (int n = 0; n < nblock; ++n) {
       int c = block[n];
-      value_[c] = WhetStone::DenseVector(chem_engine_->NumPrimarySpecies());
+      //value_[c] = WhetStone::DenseVector(chem_engine_->NumPrimarySpecies());
+      value_[c].resize(chem_engine_->NumPrimarySpecies());
     }
   }
 }
@@ -97,9 +98,10 @@ void TransportSourceFunction_Alquimia::Compute(double t_old, double t_new)
     chem_engine_->EnforceCondition(cond_name, t_new, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
 
     // Move the concentrations into place.
-    WhetStone::DenseVector& values = it->second;
-    for (int i = 0; i < values.NumRows(); i++) {
-      values(i) = alq_state_.total_mobile.data[i] / domain_volume_;
+    //WhetStone::DenseVector& values = it->second;
+    std::vector<double>& values = it->second;
+    for (int i = 0; i < values.size(); i++) {
+      values[i] = alq_state_.total_mobile.data[i] / domain_volume_;
     }
   }
 }

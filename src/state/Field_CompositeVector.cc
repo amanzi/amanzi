@@ -106,7 +106,6 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
   // First try all initialization method which set the entire data structure.
   // ------ Try to set values from a restart file -----
   if (plist.isParameter("restart file")) {
-    ASSERT(!initialized());
     std::string filename = plist.get<std::string>("restart file");
     ReadCheckpoint_(filename);
     set_initialized();
@@ -123,22 +122,18 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
     Teuchos::ParameterList file_list = plist.sublist("exodus file initialization");
     ReadVariableFromExodusII_(file_list);
     set_initialized();
-    return;
   }
 
   // Next try all partial initialization methods -- typically cells.
   // ------ Try to set cell values from a restart file -----
   if (plist.isParameter("cells from file")) {
-    ASSERT(!initialized());
     std::string filename = plist.get<std::string>("cells from file");
     ReadCellsFromCheckpoint_(filename);
     set_initialized();
-    return;
   }
 
   // ------ Set values using a constant -----
   if (plist.isParameter("constant")) {
-    ASSERT(!initialized());
     double value = plist.get<double>("constant");
     data_->PutScalar(value);
     set_initialized();
@@ -146,10 +141,9 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
 
   // ------ Set values from 1D solution -----
   if (plist.isSublist("initialize from 1D column")) {
-    ASSERT(!initialized());
     Teuchos::ParameterList& init_plist = plist.sublist("initialize from 1D column");
     InitializeFromColumn_(init_plist);
-    //    set_initialized();
+    set_initialized();
   }
 
   // ------ Set values using a function -----
@@ -198,7 +192,6 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
         dat_f[0][f] = vel * normal; 
       } 
       set_initialized(); 
-      return; 
  
     } else { 
       // no map, just evaluate the function 
