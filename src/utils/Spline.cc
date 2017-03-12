@@ -19,7 +19,7 @@ namespace Utils {
 
 void
 Spline::Setup(double x1, double y1, double dy1,
-               double x2, double y2, double dy2) {
+              double x2, double y2, double dy2) {
   x1_ = x1;
   y1_ = y1;
   dy1_ = dy1;

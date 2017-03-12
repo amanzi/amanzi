@@ -20,6 +20,7 @@
 
 // Amanzi
 #include "CompositeVector.hh"
+#include "DenseVector.hh"
 #include "DiffusionPhase.hh"
 #include "Explicit_TI_FnBase.hh"
 #include "MaterialProperties.hh"
@@ -32,7 +33,6 @@
 #include "Units.hh"
 #include "VerboseObject.hh"
 #include "PK_Explicit.hh"
-#include "DenseVector.hh"
 
 #ifdef ALQUIMIA_ENABLED
 #include "Alquimia_PK.hh"

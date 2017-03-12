@@ -101,8 +101,6 @@ class Chemistry_PK : public PK_Physical {
   Key ion_exchange_sites_key_, ion_exchange_ref_cation_conc_key_;
   Key secondary_activity_coeff_key_;
   Key alquimia_aux_data_key_;
-  
-
 
 #ifdef ALQUIMIA_ENABLED
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;

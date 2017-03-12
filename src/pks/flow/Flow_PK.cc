@@ -278,8 +278,6 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   // -- pressure 
   if (bc_list->isSublist("pressure")) {
     PK_DomainFunctionFactory<FlowBoundaryFunction > bc_factory(mesh_);
-    //PK_DomainFunctionFactory<double, FlowBoundaryFunction > bc_factory(mesh_);
-    //PK_DomainFunctionFactory<double, PK_DomainFunction > bc_factory(mesh_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("pressure");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
@@ -296,7 +294,6 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   // -- hydraulic head
   if (bc_list->isSublist("static head")) {
     PK_DomainFunctionFactory<FlowBoundaryFunction > bc_factory(mesh_);
-    //PK_DomainFunctionFactory<double, PK_DomainFunction > bc_factory(mesh_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("static head");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
@@ -313,7 +310,6 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   // -- Darcy velocity
   if (bc_list->isSublist("mass flux")) {
     PK_DomainFunctionFactory<FlowBoundaryFunction > bc_factory(mesh_);
-    //PK_DomainFunctionFactory<double, PK_DomainFunction > bc_factory(mesh_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("mass flux");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
@@ -330,7 +326,6 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   // -- seepage face
   if (bc_list->isSublist("seepage face")) {
     PK_DomainFunctionFactory<FlowBoundaryFunction > bc_factory(mesh_);
-    //PK_DomainFunctionFactory<double, PK_DomainFunction > bc_factory(mesh_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("seepage face");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
@@ -349,7 +344,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   // Create the source object if any
   srcs.clear();
   if (plist.isSublist("source terms")) {
-    PK_DomainFunctionFactory<PK_DomainFunction > factory(mesh_);
+    PK_DomainFunctionFactory<PK_DomainFunction> factory(mesh_);
     PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
 
     Teuchos::ParameterList& src_list = plist.sublist("source terms");

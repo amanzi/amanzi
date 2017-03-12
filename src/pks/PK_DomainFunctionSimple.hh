@@ -19,9 +19,9 @@
 #include "Teuchos_RCP.hpp"
 
 #include "CommonDefs.hh"
+#include "DenseVector.hh"
 #include "Mesh.hh"
 #include "UniqueMeshFunction.hh"
-#include "DenseVector.hh"
 
 
 namespace Amanzi {
@@ -48,7 +48,6 @@ class PK_DomainFunctionSimple : public FunctionBase,
   // member functions
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
 
-
   // required member functions
   virtual void Compute(double t0, double t1);
   virtual std::string name() const { return "simple"; }
@@ -56,7 +55,6 @@ class PK_DomainFunctionSimple : public FunctionBase,
  protected:
   using FunctionBase::value_;
   using FunctionBase::keyword_;
-
 
  private:
   std::string submodel_;
@@ -126,11 +124,8 @@ void PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
       for (int i=0; i<nfun; ++i) val_vec[i] = (*(*uspec)->first->second)(args)[i];
 
       value_[*c] = val_vec;
-     
     }
 
-    
-   
     if (submodel_ == "integrated source") {
       double dt = t1 - t0;
       if (dt > 0.0) dt = 1.0 / dt;
@@ -141,13 +136,10 @@ void PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
             mesh_->cell_centroid(*c) : mesh_->face_centroid(*c);
 
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-        for (int i=0; i<nfun; ++i) {
+        for (int i = 0; i < nfun; ++i) {
           value_[*c][i] -= (*(*uspec)->first->second)(args)[i];
           value_[*c][i] *= dt;
         }
-        //value_[*c] -= (*(*uspec)->first->second)(args)[0];
-        //value_[*c] -= (*(*uspec)->first->second)(args);
-        //value_[*c] *= dt;
       }
     }
   }

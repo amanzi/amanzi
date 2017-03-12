@@ -71,11 +71,6 @@ class PKFactory {
       Exceptions::amanzi_throw(message);
     }
 
-    // int rank;// = state->GetMesh()->get_comm()->MyPID();
-    // MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    // if (rank==0) 
-    //std::cout<<pk_tree<<"\n";
-
     std::string pk_type;
     if (pk_tree.isParameter("PK type")) {
       pk_type = pk_tree.get<std::string>("PK type");
@@ -83,14 +78,12 @@ class PKFactory {
     // else if (global_list->isParameter("PK type")){
     //   pk_type = global_list->get<std::string>("PK type"); 
     // }
-    else{
+    else {
       std::stringstream errmsg;
       errmsg << "PK_Factory: Missing PK type item \n"<<pk_tree<<"\n";
       Errors::Message message(errmsg.str());
       Exceptions::amanzi_throw(message);
     }
-
-    //std::string s = global_list->sublist("PKs").sublist(pk_name).get<std::string>("PK type");
 
     map_type::iterator iter = GetMap()->find(pk_type);
     if (iter == GetMap()->end()) {
@@ -124,7 +117,6 @@ class PKFactory {
   //   }
   //   return Teuchos::rcp(iter->second(plist, FElist, soln));
   // }
-
 
  private:
   static map_type* map_;

@@ -144,7 +144,6 @@ void Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, dou
 
     *vo_->os() << runtime_solutes_[n] << ": min=" << units_.OutputConcentration(tccmin) 
                << " max=" << units_.OutputConcentration(tccmax);
-    *vo_->os() <<"\n debug "<<std::setprecision(15)<<S_->time()<<" "<<tccmin<<" "<<tccmax<<"\n";
     if (flag) *vo_->os() << ", flux=" << solute_flux << " mol/s";
 
     // old capability
@@ -292,9 +291,7 @@ double Transport_PK::VV_SoluteVolumeChangePerSecond(int idx_tracer)
         for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
           int f = it->first;
 
-          //WhetStone::DenseVector& values = it->second;
           std::vector<double>& values = it->second; 
-
 
           int c2 = (*downwind_cell_)[f];
 

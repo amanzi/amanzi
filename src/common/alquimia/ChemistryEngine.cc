@@ -1,13 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-Amanzi Chemistry
+/*
+  Alqumia
 
-License: see COPYRIGHT
-Author: Jeffrey Johnson
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-This implements the Alquimia chemistry engine.
+  Author: Jeffrey Johnson
 
- ------------------------------------------------------------------------- */
+  This implements the Alquimia chemistry engine.
+*/
 
 #include <iostream>
 #include <cstring>
@@ -58,10 +60,11 @@ void CopyAlquimiaAuxiliaryData(AlquimiaAuxiliaryData* dest, AlquimiaAuxiliaryDat
   memcpy(dest->aux_doubles.data, src->aux_doubles.data, sizeof(double) * src->aux_doubles.size);
 }
 
-}
+} // namespace
+
 
 ChemistryEngine::ChemistryEngine(const std::string& engineName, 
-                                 const std::string& inputFile):
+                                 const std::string& inputFile) :
   chem_engine_name_(engineName),
   chem_engine_inputfile_(inputFile)
 {
@@ -289,7 +292,8 @@ void ChemistryEngine::CreateCondition(const std::string& condition_name)
   chem_conditions_[condition_name] = condition;
 }
 
-  /* Mineral constraints will be discontinued in Alquimia -- see Sergi
+
+/* Mineral constraints will be discontinued in Alquimia -- see Sergi
 
 void ChemistryEngine::AddMineralConstraint(const std::string& condition_name,
                                            const std::string& mineral_name,
@@ -337,6 +341,7 @@ void ChemistryEngine::AddMineralConstraint(const std::string& condition_name,
   }
 }
 Mineral constraints will be discontinued in Alquimia -- see Sergi */
+
 
 void ChemistryEngine::AddAqueousConstraint(const std::string& condition_name,
                                            const std::string& primary_species_name,
@@ -492,17 +497,6 @@ bool ChemistryEngine::Advance(const double delta_time,
   // Disable divide-by-zero floating point exceptions.
   int fpe_mask = fedisableexcept(FE_DIVBYZERO);
 #endif 
-
-  // std::cout<<"mat "<<"vol "<<mat_props.volume<<" sat "<<mat_props.saturation<<"\n";
-  // // std::cout<<"mat "<<mat_props.isotherm_kd.data[0]<<" "<<
-  // //   mat_props.freundlich_n.data[0]<<" "<<
-  // //   mat_props.langmuir_b.data[0]<<"\n";
-  // std::cout<<"state "<<"den "<<chem_state.water_density<<" poro "<<chem_state.porosity
-  //          <<" tcc "<<chem_state.total_mobile.data[0]<<"\n";
-  // std::cout<<"mineral_volume_fraction "<<
-  //   chem_state.mineral_volume_fraction.size<<
-  //   " mineral_volume_fraction "<<chem_state.mineral_specific_surface_area.size<<"\n";
-
 
   // Advance the chemical reaction all operator-split-like.
   chem_.ReactionStepOperatorSplit(&engine_state_,

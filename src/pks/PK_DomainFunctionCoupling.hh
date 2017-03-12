@@ -15,14 +15,15 @@
 #include <string>
 #include <vector>
 
+// TPLs
 #include "Epetra_Vector.h"
 #include "Teuchos_RCP.hpp"
 
+// Amanzi
 #include "CommonDefs.hh"
+#include "DenseVector.hh"
 #include "Mesh.hh"
 #include "State.hh"
-#include "DenseVector.hh"
-
 
 namespace Amanzi {
 
@@ -41,15 +42,8 @@ class PK_DomainFunctionCoupling : public FunctionBase {
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword,
             AmanziMesh::Entity_kind kind);
 
-  // void assign( double& a, WhetStone::DenseVector b) {a = b(0);};
-  // void assign( WhetStone::DenseVector& a, WhetStone::DenseVector b) {
-  //   a=b;
-  // };
-  // void assign( WhetStone::DenseVector& a, double b) {a = b;};
-  // void assign( double& a, double b) {a=b;};
-
   // required member functions
-  virtual void Compute(double t0, double t1);  
+  virtual void Compute(double t0, double t1);
   virtual std::string name() const { return "domain coupling"; }
   virtual void set_state(const Teuchos::RCP<State>& S) { S_ = S; }
 
@@ -154,8 +148,6 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     const Epetra_MultiVector& flux = 
         *S_->GetFieldCopyData(flux_key_, copy_flux_key_)->ViewComponent("face", true);
 
-    //std::cout<<"flux \n"<<flux<<"\n";
-
     const Epetra_MultiVector& field_out = 
         // *S_->GetFieldCopyData(field_key_, "subcycling")->ViewComponent("cell", true);
         *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
@@ -164,7 +156,6 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
         //*S_->GetFieldCopyData(field_surf_key_, "subcycling")->ViewComponent("cell", true);
         *S_->GetFieldCopyData(field_in_key_, copy_field_in_key_)->ViewComponent("cell", true);
 
-    //std::cout<<field_in_key_ <<" "<<copy_field_in_key_<<"\n"<<field_in<<"\n";
     if (field_in.NumVectors() != field_out.NumVectors()){
       std::stringstream m;
       m << "Mismatch of vector sizes in domain couplong function.\n";
@@ -199,12 +190,10 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
           if (fln >= 0) {        
             for (int k=0; k<num_vec; ++k) {
               val[k] = field_out[k][cells[0]] * fln;
-              //std::cout<<*c<<" flux out "<<field_out_key_<<" conc "<<field_out[k][cells[0]]<<" flux "<<fln<<"\n";
             }
           } else if (fln < 0) {       
             for (int k=0; k<num_vec; ++k) {
               val[k] = field_in[k][*c] * fln;
-              //std::cout<<*c<<" flux in "<<field_in_key_<<" conc "<<field_in[k][*c]<<" flux "<<fln<<"\n";
             }
           }
           value_[*c] = val; 
@@ -226,11 +215,6 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
       value_[*c] = val;     
       i++;
     }
-
-    // for (auto it1 = value_.begin(); it1 != value_.end(); ++it1) {
-    //   std::cout<<it1->first<<" => "<<it1->second<<"\n";
-    // }
-
   }
 }
 

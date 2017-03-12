@@ -130,7 +130,6 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
 
           std::vector<double>& values = it->second;
 
-
           c2 = (*downwind_cell_)[f];
 
           if (c2 >= 0 && f < nfaces_owned) {

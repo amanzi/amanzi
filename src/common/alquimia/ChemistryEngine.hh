@@ -1,18 +1,20 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-Amanzi Chemistry
+/*
+  Alqumia
 
-License: see COPYRIGHT
-Author: Jeffrey Johnson
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-This is a point of contact for the chemistry engine exposed by Alquimia to 
-the rest of Amanzi--it provides the ability to enforce geochemical conditions 
-and to integrate reactions given a chemical configuration.
+  Author: Jeffrey Johnson
 
- ------------------------------------------------------------------------- */
+  This is a point of contact for the chemistry engine exposed by Alquimia 
+  to the rest of Amanzi--it provides the ability to enforce geochemical 
+  conditions and to integrate reactions given a chemical configuration.
+*/
 
-#ifndef AMANZI_ChemistryEngine_HH_
-#define AMANZI_ChemistryEngine_HH_
+#ifndef AMANZI_CHEMISTRY_ENGINE_HH_
+#define AMANZI_CHEMISTRY_ENGINE_HH_
 
 #include <string>
 #include <vector>
