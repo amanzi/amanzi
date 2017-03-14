@@ -34,7 +34,7 @@ void Accumulation::AddAccumulationTerm(
   Epetra_MultiVector& diag = *op->diag;
 
   CompositeVector vol(du);
-  CalculateEntitylVolume_(vol, name);
+  CalculateEntityVolume_(vol, name);
 
   const Epetra_MultiVector& duc = *du.ViewComponent(name);
   Epetra_MultiVector& volc = *vol.ViewComponent(name); 
@@ -63,7 +63,7 @@ void Accumulation::AddAccumulationDelta(
   Epetra_MultiVector& diag = *op->diag;
 
   CompositeVector vol(ss);
-  CalculateEntitylVolume_(vol, name);
+  CalculateEntityVolume_(vol, name);
 
   const Epetra_MultiVector& u0c = *u0.ViewComponent(name);
   const Epetra_MultiVector& s0c = *s0.ViewComponent(name);
@@ -97,7 +97,7 @@ void Accumulation::AddAccumulationDelta(
   Epetra_MultiVector& diag = *op->diag;
 
   CompositeVector vol(u0);
-  CalculateEntitylVolume_(vol, name);
+  CalculateEntityVolume_(vol, name);
 
   const Epetra_MultiVector& u0c = *u0.ViewComponent(name);
   Epetra_MultiVector& volc = *vol.ViewComponent(name); 
@@ -147,7 +147,7 @@ void Accumulation::AddAccumulationDeltaNoVolume(
 /* ******************************************************************
 * Calculate entity volume for component "name" of vector ss.
 ****************************************************************** */
-void Accumulation::CalculateEntitylVolume_(
+void Accumulation::CalculateEntityVolume_(
     CompositeVector& volume, const std::string& name)
 {
   AmanziMesh::Entity_ID_List nodes, edges;
@@ -242,7 +242,7 @@ void Accumulation::InitAccumulation_(const Schema& schema, bool surf)
       } else if (it->kind == AmanziMesh::NODE) {
         global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist));
         std::string name("NODE_NODE");
-        op = Teuchos::rcp(new Op_Node_Node(name, mesh_));
+        op = Teuchos::rcp(new Op_Node_Node(name, mesh_, it->num));
 
       } else {
         msg << "Accumulation operator: Unknown kind \"" << schema.KindToString(it->kind) << "\".\n";
@@ -286,7 +286,7 @@ void Accumulation::InitAccumulation_(const Schema& schema, bool surf)
       } else if (it->kind == AmanziMesh::NODE) {
         old_schema = OPERATOR_SCHEMA_BASE_NODE | OPERATOR_SCHEMA_DOFS_NODE;
         std::string name("NODE_NODE");
-        op = Teuchos::rcp(new Op_Node_Node(name, mesh_));
+        op = Teuchos::rcp(new Op_Node_Node(name, mesh_, it->num));
 
       } else {
         msg << "Accumulation operator: Unknown kind \"" << schema.KindToString(it->kind) << "\".\n";
@@ -330,7 +330,7 @@ void Accumulation::ApplyBCs(const Teuchos::RCP<BCs>& bc)
 
 
 /* ******************************************************************
-* Apply boundary conditions to 
+* Return operator with the given base.
 ****************************************************************** */
 Teuchos::RCP<Op> Accumulation::FindOp_(const std::string& name) const
 {

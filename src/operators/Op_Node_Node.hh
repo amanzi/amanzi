@@ -22,11 +22,11 @@ namespace Operators {
 class Op_Node_Node : public Op {
  public:
   Op_Node_Node(std::string& name,
-               const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+               const Teuchos::RCP<const AmanziMesh::Mesh> mesh, int nvec) :
       Op(OPERATOR_SCHEMA_BASE_NODE |
          OPERATOR_SCHEMA_DOFS_NODE, name, mesh) {
-    diag = Teuchos::rcp(new Epetra_MultiVector(mesh->node_map(false), 1));
-    diag_shadow = Teuchos::rcp(new Epetra_MultiVector(mesh->node_map(false), 1));
+    diag = Teuchos::rcp(new Epetra_MultiVector(mesh->node_map(false), nvec));
+    diag_shadow = Teuchos::rcp(new Epetra_MultiVector(mesh->node_map(false), nvec));
   }
 
   virtual void ApplyMatrixFreeOp(const Operator* assembler,

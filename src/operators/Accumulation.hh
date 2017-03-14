@@ -33,7 +33,7 @@ class Accumulation {
     : global_op_(global_op),
       mesh_(Teuchos::null)
   {
-    Schema schema(entity);
+    Schema schema(entity, 1);
     InitAccumulation_(schema);
   }
 
@@ -41,7 +41,7 @@ class Accumulation {
     : global_op_(Teuchos::null),
       mesh_(mesh)
   {
-    Schema schema(entity);
+    Schema schema(entity, 1);
     InitAccumulation_(schema);
   }
 
@@ -49,7 +49,7 @@ class Accumulation {
     : global_op_(Teuchos::null),
       mesh_(mesh)
   {
-    Schema schema(entity);
+    Schema schema(entity, 1);
     InitAccumulation_(schema);
   }
 
@@ -119,7 +119,7 @@ class Accumulation {
   Teuchos::RCP<Operator> global_operator() { return global_op_; }
 
  protected:
-  void CalculateEntitylVolume_(CompositeVector& entity_volume, const std::string& name);
+  void CalculateEntityVolume_(CompositeVector& entity_volume, const std::string& name);
   void InitAccumulation_(const Schema& schema, bool surface=false);
   Teuchos::RCP<Op> FindOp_(const std::string& name) const;
 

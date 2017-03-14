@@ -46,13 +46,13 @@ class Schema {
  public:
   // default and code compatibility constructors
   Schema() {};
-  Schema(AmanziMesh::Entity_kind kind) { Init(kind); }
+  Schema(AmanziMesh::Entity_kind kind, int nvec) { Init(kind, nvec); }
   Schema(int schema_old) { Init(schema_old); }  // old schema must go away FIXME
   ~Schema() {};
 
   // member functions
   void Init(int schema_old);
-  void Init(AmanziMesh::Entity_kind kind);
+  void Init(AmanziMesh::Entity_kind kind, int nvec);
   void Init(Teuchos::ParameterList& plist,
             Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
@@ -94,6 +94,9 @@ class Schema {
   AmanziMesh::Entity_kind base_;
   std::vector<SchemaItem> items_; 
   std::vector<int> offset_;  // starting position of DOF ids
+
+ private:
+  explicit Schema(AmanziMesh::Entity_kind kind);
 };
 
 

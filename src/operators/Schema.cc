@@ -110,12 +110,12 @@ void Schema::Init(int i)
 /* ******************************************************************
 * Backward compatibility: takes kind as input.
 ****************************************************************** */
-void Schema::Init(AmanziMesh::Entity_kind kind) 
+void Schema::Init(AmanziMesh::Entity_kind kind, int nvec) 
 {
   base_ = kind;
 
   SchemaItem item;
-  item.set(kind, SCHEMA_DOFS_SCALAR, 1);
+  item.set(kind, SCHEMA_DOFS_SCALAR, nvec);
 
   items_.clear();
   items_.push_back(item);
