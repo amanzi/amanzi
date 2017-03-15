@@ -1,6 +1,6 @@
 <amanzi_input version="2.3" type="structured">
 
-  <echo_translated_input format="native" file_name="sergi.xml"/>
+  <echo_translated_input format="native" file_name=" amanzi-s-1d-calcite-alq-pflo_native.xml"/>
   <model_description name="1D Flow and Transport w/ calcite dissolution">
     <units>
       <length_unit>m</length_unit>
@@ -28,7 +28,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry state="on" engine="pflotran" input_filename="1d-calcite-trim.in" database="calcite.dat"/>
+    <chemistry state="on" engine="pflotran+" input_filename="1d-calcite-trim.in" database="calcite.dat"/>
   </process_kernels>
 
   <phases>

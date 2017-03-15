@@ -1,5 +1,6 @@
 <amanzi_input version="2.3.0" type="structured">
-  <echo_translated_input file_name="alquimia-structured"/>
+
+  <echo_translated_input file_name="amanzi-s-1d-surface-complexation-alq-crunch_native.xml"/>
   <model_description name="1D Flow and Transport w/ ion exchange">
     <units>
       <length_unit>m</length_unit>
@@ -28,7 +29,7 @@
     <flow state="on" model="saturated"/>
     <transport state="on" />
     <!--chemistry state="on" engine="pflotran" database="surface-complexation.dat" /-->
-    <chemistry state="on" engine="crunchflow" input_filename="1d-surface-complexation-crunch.in" database="surface-complexation.dbs"/>
+    <chemistry state="on" engine="crunchflow+" input_filename="1d-surface-complexation-crunch.in" database="surface-complexation.dbs"/>
   </process_kernels>
 
   <phases>

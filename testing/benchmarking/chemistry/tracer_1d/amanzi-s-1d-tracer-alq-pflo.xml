@@ -1,4 +1,6 @@
 <amanzi_input type="structured" version="2.3">
+
+  <echo_translated_input format="native" file_name=" amanzi-s-1d-tracer-alq-pflo_native.xml"/>
   <model_description name="tracer_1d-str">
     <comments></comments>
   </model_description>
@@ -21,7 +23,7 @@
   <process_kernels>
     <flow model="saturated" state="on"/>
     <transport state="on"/>
-    <chemistry state="on" engine="pflotran" database="tracer.dat" />
+    <chemistry state="on" engine="pflotran+" input_filename="1d-tracer.in" database="tracer.dat" />
   </process_kernels>
 
   <phases>

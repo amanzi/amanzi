@@ -1,13 +1,14 @@
-!:Description: 1-d fixed velocity flow w/ tracer advection
+!:Description: 1-d fixed velocity flow w/ tracer
+advection
 
 !:=========================== chemistry ========================================
 CHEMISTRY
   PRIMARY_SPECIES
-    Tracer
+    tracer
   /
 !:dummy reaction w/zero rate so that pflotran initializes geochem variables
   GENERAL_REACTION
-    REACTION Tracer <-> 
+    REACTION tracer <-> 
     FORWARD_RATE 0.0d0
     BACKWARD_RATE 0.d0
   /
@@ -120,13 +121,13 @@ END
 !:=========================== constraints ======================================
 CONSTRAINT initial
   CONCENTRATIONS
-    Tracer  1.0e-20    T
+    tracer  1.0e-20    T
   /
 END
 
 CONSTRAINT west_constraint
   CONCENTRATIONS
-    Tracer  1.d-3      T
+    tracer  1.d-3      T
   /
 END
 

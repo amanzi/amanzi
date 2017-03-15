@@ -27,8 +27,8 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <!--chemistry state="on" engine="pflotran" database="calcite.dat" /-->
-    <chemistry state="on" engine="pflotran" input_filename="1d-calcite-trim.in" database="calcite.dat"/>
+    <chemistry state="on" engine="pflotran" database="calcite.dat" />
+    <!--chemistry state="on" engine="pflotran" input_filename="1d-calcite-trim.in" database="calcite.dat"/-->
   </process_kernels>
 
   <phases>
@@ -160,7 +160,7 @@
       <permeability x="1.0e-12" y="1.0e-12" z="1.0e-12"/>
       <assigned_regions>All</assigned_regions>
       <minerals>
-        <mineral name="Calcite" volume_fraction="1.0e-5" specific_surface_area="1.0"/>
+        <mineral name="Calcite" volume_fraction="1.0e-5" specific_surface_area="100.0"/> <!-- area= m2/m3 -->
       </minerals>
     </material>
   </materials>
@@ -224,7 +224,7 @@
         <primary mineral="Calcite" name="Ca++" type="mineral" value="5.0e-4"/>
         <primary name="HCO3-" type="gas" value="1.0e-3" gas="CO2(g)"/>
         <primary name="H+" type="free_ion" value="1.0e-8"/>
-	<mineral name="Calcite"     volume_fraction="1.0e-5" specific_surface_area="100.0"/>
+	<!--<mineral name="Calcite"     volume_fraction="1.0e-5" specific_surface_area="100.0"/-->
 	<!-- EIB: note existing IN file show 2.0 cm^2/cm^3, but default units are m^2/m^3; hence value change -->
       </constraint>
       <constraint name="west">

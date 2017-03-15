@@ -1,6 +1,6 @@
 <amanzi_input version="2.3.0" type="structured">
-<!--  <echo_translated_input format="native" file_name="struct_oldspec.xml"/> -->
 
+  <echo_translated_input format="native" file_name="amanzi-s-1d-isotherms-alq-pflo_native.xml"/>
   <model_description name="1D Flow and Transport w/Kd">
     <units>
       <length_unit>m</length_unit>
@@ -29,7 +29,7 @@
     <flow state="on" model="saturated"/>
     <transport state="on" />
     <!--chemistry state="on" engine="pflotran" database="isotherms.dat" /-->
-    <chemistry state="on" engine="crunchflow" input_filename="1d-isotherms-crunch.in" database="isotherms.dbs" />
+    <chemistry state="on" engine="crunchflow+" input_filename="1d-isotherms-crunch.in" database="isotherms.dbs" />
   </process_kernels>
 
   <phases>

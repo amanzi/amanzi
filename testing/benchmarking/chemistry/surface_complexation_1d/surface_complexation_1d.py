@@ -295,7 +295,7 @@ if __name__ == "__main__":
     
     # +pflotran
     try:
-        input_filename = os.path.join("amanzi-s-1d-surface-complexation-alq-pflotran-new.xml")
+        input_filename = os.path.join("amanzi-s-1d-surface-complexation-alq-pflotran.xml")
         path_to_amanziS = "struct_amanzi-pflotran-output"
         run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
         root_amanziS = "plt00362"

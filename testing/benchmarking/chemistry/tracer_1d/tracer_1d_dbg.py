@@ -154,7 +154,7 @@ if __name__ == "__main__":
         alq = 0
 
     try:
-        comp = 'total_component_concentration.cell.Tracer conc'
+        comp = 'total_component_concentration.cell.tracer conc'
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
         path_to_amanzi = "amanzi-u-alq-crunch-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+"-crunch.in",root+".dbs"], path_to_amanzi)
@@ -182,7 +182,7 @@ if __name__ == "__main__":
         path_to_amanziS = "amanzi-s-alq-crunch-output"
         run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+"-crunch.in",root+".dbs"], path_to_amanziS)
         root_amanziS = "plt00051"
-        compS = "Tracer_water_Concentration"
+        compS = "tracer_water_Concentration"
         x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,compS)
         struct_crunch = len(x_amanziS_crunch)
     except:
