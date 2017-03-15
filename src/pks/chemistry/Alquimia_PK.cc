@@ -96,6 +96,9 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   number_free_ion_ = number_aqueous_components_;
   number_total_sorbed_ = number_aqueous_components_;
 
+  chem_engine_->GetAqueousKineticNames(aqueous_kinetics_names_);
+  number_aqueous_kinetics_ = aqueous_kinetics_names_.size();
+  
   // verbosity object
   vo_ = Teuchos::rcp(new VerboseObject("Chem::Alquimia", *cp_list_));
   chem_out = &*vo_;

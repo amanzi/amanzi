@@ -48,6 +48,7 @@ void CopyAlquimiaProperties(AlquimiaProperties* dest, AlquimiaProperties* src)
 {
   dest->volume = src->saturation;
   dest->saturation = src->saturation;
+  memcpy(dest->aqueous_kinetic_rate_cnst.data, src->aqueous_kinetic_rate_cnst.data, sizeof(double) * src->aqueous_kinetic_rate_cnst.size);
   memcpy(dest->mineral_rate_cnst.data, src->mineral_rate_cnst.data, sizeof(double) * src->mineral_rate_cnst.size);
   memcpy(dest->isotherm_kd.data, src->isotherm_kd.data, sizeof(double) * src->isotherm_kd.size);
   memcpy(dest->freundlich_n.data, src->freundlich_n.data, sizeof(double) * src->freundlich_n.size);
@@ -288,6 +289,20 @@ void ChemistryEngine::GetAuxiliaryOutputNames(std::vector<std::string>& aux_name
     std::string activity_coeff = std::string("secondary_activity_coeff_") + std::string(num_str);
     aux_names.push_back(activity_coeff);
   }
+}
+
+int ChemistryEngine::NumAqueousKinetics() const
+{
+  return sizes_.num_aqueous_kinetics;
+}
+
+void ChemistryEngine::GetAqueousKineticNames(std::vector<std::string>& kinetics_names) const
+{
+  const AlquimiaProblemMetaData* metadata = &chem_metadata_;
+  int N = metadata->aqueous_kinetic_names.size;
+  kinetics_names.resize(N);
+  for (int i = 0; i < N; ++i)
+    kinetics_names[i] = std::string(metadata->aqueous_kinetic_names.data[i]);
 }
 
 void ChemistryEngine::CreateCondition(const std::string& condition_name)

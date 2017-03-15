@@ -140,6 +140,25 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     }
   }
 
+  // first-order decay rate
+  std::vector<std::string> aqueous_reactions;
+  std::vector<double> kin_rate_cnst;
+  node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, primaries", flag);
+  if (flag) {
+    children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode("primary"));
+
+    for (int i = 0; i < children->getLength(); ++i) {
+      DOMNode* inode = children->item(i);
+
+      double krate(0.0);
+      krate = GetAttributeValueD_(inode, "first_order_decay_constant", TYPE_NUMERICAL, "", false, 0.0);
+      kin_rate_cnst.push_back(krate);
+
+      std::string name = TrimString_(mm.transcode(inode->getTextContent()));
+      aqueous_reactions.push_back(name);
+    }
+  }
+
   // region specific initial conditions
   std::vector<std::string> sorption_sites;
   Teuchos::ParameterList& ic_list = out_list.sublist("initial conditions");
@@ -155,6 +174,35 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     text = mm.transcode(node->getTextContent());
     std::vector<std::string> regions = CharToStrings_(text);
 
+    // aqueous kinetic reactions (only first order, really)
+    if (aqueous_reactions.size() > 0) {
+      out_list.set<Teuchos::Array<std::string> >("aqueous_reactions", aqueous_reactions);
+
+      Teuchos::ParameterList& rate = ic_list.sublist("first_order_decay_constant");
+
+      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); it++) {
+        Teuchos::ParameterList& aux3_list = rate.sublist("function").sublist(*it)
+            .set<std::string>("region", *it)
+            .set<std::string>("component", "cell")
+            .sublist("function");
+        aux3_list.set<int>("number of dofs", minerals.size())
+            .set("function type", "composite function");
+
+        for (int j = 0; j < aqueous_reactions.size(); ++j) {
+          std::stringstream ss;
+          ss << "dof " << j + 1 << " function";
+ 
+          node = GetUniqueElementByTagsString_(inode, "aqueous_reactions", flag);
+          double arc(0.0);
+          if (flag) {
+            element = GetUniqueChildByAttribute_(node, "name", aqueous_reactions[j], flag, true);
+	    arc = GetAttributeValueD_(element, "first_order_rate_constant", TYPE_NUMERICAL, "", false, 0.0);
+          }
+          aux3_list.sublist(ss.str()).sublist("function-constant").set<double>("value", kin_rate_cnst[j]);
+        }
+      }
+    }
+    
     // mineral volume fraction and specific surface area.
     if (minerals.size() > 0) {
       out_list.set<Teuchos::Array<std::string> >("minerals", minerals);
