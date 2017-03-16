@@ -236,7 +236,7 @@ protected:
                        Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<TreeVector> du);
 
-
+  void  ClipHydrostaticPressure(double pmin, Epetra_MultiVector& p);
 
 
   
