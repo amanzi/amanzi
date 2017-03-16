@@ -57,7 +57,7 @@ public:
   }
 
   Teuchos::RCP<Functions::BoundaryFunction> CreateFixedLevel() const {
-    return CreateWithFunction("head", "fixed level");
+    return CreateWithFunction("head fixed", "fixed level");
   }
   
 };

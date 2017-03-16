@@ -85,6 +85,7 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
 // Constructor
 // -------------------------------------------------------------
 void OverlandPressureFlow::Setup(const Teuchos::Ptr<State>& S) {
+
   // set up the meshes
   if (!S->HasMesh("surface")) {
     Teuchos::RCP<const AmanziMesh::Mesh> domain = S->GetMesh();
@@ -103,6 +104,7 @@ void OverlandPressureFlow::Setup(const Teuchos::Ptr<State>& S) {
   PK_PhysicalBDF_Default::Setup(S);
   SetupOverlandFlow_(S);
   SetupPhysicalEvaluators_(S);
+
 }
 
 
@@ -370,6 +372,9 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
 // Initialize PK
 // -------------------------------------------------------------
 void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
+
+
+
 #if DEBUG_RES_FLAG
   for (int i=1; i!=23; ++i) {
     std::stringstream namestream;
@@ -400,28 +405,28 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
   // Initialize BDF stuff and physical domain stuff.
   PK_PhysicalBDF_Default::Initialize(S);
 
-  if (!S->GetField(key_)->initialized()) {
-    // -- set the cell initial condition if it is taken from the subsurface
-    Teuchos::ParameterList ic_plist = plist_->sublist("initial condition");
+  //if (!S->GetField(key_)->initialized()) {
+  // -- set the cell initial condition if it is taken from the subsurface
+  Teuchos::ParameterList ic_plist = plist_->sublist("initial condition");
+  if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
+    Epetra_MultiVector& pres = *pres_cv->ViewComponent("cell",false);
+    const Epetra_MultiVector& subsurf_pres = *S->GetFieldData("pressure")
+      ->ViewComponent("face",false);
+
+    unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+    for (unsigned int c=0; c!=ncells_surface; ++c) {
+      // -- get the surface cell's equivalent subsurface face and neighboring cell
+      AmanziMesh::Entity_ID f =
+        mesh_->entity_get_parent(AmanziMesh::CELL, c);
+      pres[0][c] = subsurf_pres[0][f];
+    }
+
+    // mark as initialized
     if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
-      Epetra_MultiVector& pres = *pres_cv->ViewComponent("cell",false);
-      const Epetra_MultiVector& subsurf_pres = *S->GetFieldData("pressure")
-        ->ViewComponent("face",false);
-
-      unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
-      for (unsigned int c=0; c!=ncells_surface; ++c) {
-        // -- get the surface cell's equivalent subsurface face and neighboring cell
-        AmanziMesh::Entity_ID f =
-          mesh_->entity_get_parent(AmanziMesh::CELL, c);
-        pres[0][c] = subsurf_pres[0][f];
-      }
-
-      // mark as initialized
-      if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
-        S->GetField(key_,name_)->set_initialized();
-      }
+      S->GetField(key_,name_)->set_initialized();
     }
   }
+  //}
 
   // Initialize BC data structures
   unsigned int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -454,6 +459,8 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
   S->GetField("surface-mass_flux_direction", name_)->set_initialized();
   S->GetFieldData("surface-velocity", name_)->PutScalar(0.);
   S->GetField("surface-velocity", name_)->set_initialized();
+
+
 };
 
 
