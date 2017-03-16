@@ -554,8 +554,15 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
   // copy data from state arrays into the beaker parameters
   const Epetra_MultiVector& porosity = *S_->GetFieldData(poro_key_)->ViewComponent("cell", true);
   const Epetra_MultiVector& water_saturation = *S_->GetFieldData(saturation_key_)->ViewComponent("cell", true);
-  double water_density = *S_->GetScalarData(fluid_den_key_);
 
+  double water_density = 998.2;
+  if (S_->GetField(fluid_den_key_)->type() == Amanzi::CONSTANT_SCALAR){
+    water_density = *S_->GetScalarData(fluid_den_key_);
+  }else if (S_->GetField(fluid_den_key_)->type() == Amanzi::COMPOSITE_VECTOR_FIELD){
+     const Epetra_MultiVector& fl_den = *S_->GetFieldData(fluid_den_key_)->ViewComponent("cell", true);
+     water_density = fl_den[0][cell_id];
+  }
+    
   beaker_parameters_.water_density = water_density;
   beaker_parameters_.porosity = porosity[0][cell_id];
   beaker_parameters_.saturation = water_saturation[0][cell_id];

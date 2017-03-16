@@ -54,6 +54,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
     current_time_(0.0),
     saved_time_(0.0)
 {
+
   S_ = S;
   //mesh_ = S_->GetMesh();
   glist_ = glist;
@@ -124,6 +125,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   // verbosity object
   vo_ = Teuchos::rcp(new VerboseObject("Chem::Alquimia "+domain_name_, *cp_list_));
   chem_out = &*vo_;
+
 }
 
 
@@ -183,6 +185,8 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
 
     S->GetField(alquimia_aux_data_key_, passwd_)->set_io_vis(false);
   }
+
+
 }
 
 
@@ -191,6 +195,7 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
 ******************************************************************* */
 void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S) 
 { 
+
   // initilaization using the base class
   Chemistry_PK::Initialize(S);
 
@@ -270,6 +275,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
     *vo_->os() << vo_->color("green") << "Initalization of PK was successful, T="
         << S->time() << vo_->reset() << std::endl << std::endl;
   }
+
 }
 
 
@@ -284,8 +290,26 @@ int Alquimia_PK::InitializeSingleCell(int cell, const std::string& condition)
 
   CopyToAlquimia(cell, tcc, alq_mat_props_, alq_state_, alq_aux_data_);
 
+  // if (domain_name_ == "surface") {
+  //   std::cout<<"cell "<<cell<<"\n";
+  //   std::cout<<"alq_mat_props: volume "<<alq_mat_props_.volume<<"\n";
+  //   std::cout<<"alq_mat_props: saturation "<<alq_mat_props_.saturation<<"\n";
+  //   std::cout<<"alq_state_.water_density "<<alq_state_.water_density<<"\n";
+  //   std::cout<<"alq_state_.porosity "<<alq_state_.porosity<<"\n";
+  //   std::cout<<"alq_aux_data_.aux_doubles.data "<<alq_aux_data_.aux_doubles.data[0]<<" "<<alq_aux_data_.aux_doubles.data[1]<<"\n";
+  // }
+
   chem_engine_->EnforceCondition(condition, current_time_, alq_mat_props_, 
                                  alq_state_, alq_aux_data_, alq_aux_output_);
+
+  // if (domain_name_ == "surface") {
+  //   std::cout<<"cell "<<cell<<"\n";
+  //   std::cout<<"alq_mat_props: volume "<<alq_mat_props_.volume<<"\n";
+  //   std::cout<<"alq_mat_props: saturation "<<alq_mat_props_.saturation<<"\n";
+  //   std::cout<<"alq_state_.water_density "<<alq_state_.water_density<<"\n";
+  //   std::cout<<"alq_state_.porosity "<<alq_state_.porosity<<"\n";
+  //   std::cout<<"alq_aux_data_.aux_doubles.data "<<alq_aux_data_.aux_doubles.data[0]<<" "<<alq_aux_data_.aux_doubles.data[1]<<"\n";
+  // }
 
   CopyAlquimiaStateToAmanzi(cell, alq_mat_props_, alq_state_, alq_aux_data_,
                             alq_aux_output_, tcc);
@@ -510,8 +534,6 @@ void Alquimia_PK::CopyToAlquimia(int cell,
 
   for (int i = 0; i < number_aqueous_components_; i++) {
     state.total_mobile.data[i] = (*aqueous_components)[i][cell];
-    // if (cell==1149)
-    //    std::cout<<"cell "<<cell<<": "<<(*aqueous_components)[i][cell];
     if (using_sorption_) {
       const Epetra_MultiVector& sorbed = *S_->GetFieldData(total_sorbed_key_)->ViewComponent("cell", true);
       state.total_immobile.data[i] = sorbed[i][cell];
@@ -573,6 +595,7 @@ void Alquimia_PK::CopyToAlquimia(int cell,
 
   mat_props.volume = mesh_->cell_volume(cell);
   mat_props.saturation = water_saturation[0][cell];
+  
 
   // sorption isotherms
   if (using_sorption_isotherms_) {
@@ -777,6 +800,16 @@ int Alquimia_PK::AdvanceSingleCell(
   // this cell to Alquimia.
   CopyToAlquimia(cell, aqueous_components, 
                  alq_mat_props_, alq_state_, alq_aux_data_);
+
+  // if (domain_name_=="surface"){
+  //   std::cout<<"cell "<<cell<<" "<<alq_state_.total_mobile.data[0]<<"\n";
+  //   std::cout<<"alq_mat_props: volume "<<alq_mat_props_.volume<<"\n";
+  //   std::cout<<"alq_mat_props: saturation "<<alq_mat_props_.saturation<<"\n";
+  //   std::cout<<"alq_state_.water_density "<<alq_state_.water_density<<"\n";
+  //   std::cout<<"alq_state_.porosity "<<alq_state_.porosity<<"\n";
+  //   std::cout<<"alq_aux_data_.aux_doubles.data "<<alq_aux_data_.aux_doubles.data[0]<<" "<<alq_aux_data_.aux_doubles.data[1]<<"\n";
+  // }
+
 
   // Do the reaction.
   int num_iterations;
