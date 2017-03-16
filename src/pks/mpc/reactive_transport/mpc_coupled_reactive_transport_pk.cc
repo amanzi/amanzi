@@ -61,10 +61,10 @@ Coupled_ReactiveTransport_PK_ATS::Coupled_ReactiveTransport_PK_ATS(
     Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(chemistry_pk_->get_subpk(1));
   ASSERT(chemistry_pk_overland_!= Teuchos::null);
 
-  std::cout<<tranport_pk_subsurface_->name()<<"\n";
-  std::cout<<tranport_pk_overland_->name()<<"\n";
-  std::cout<<chemistry_pk_subsurface_->name()<<"\n";
-  std::cout<<chemistry_pk_overland_->name()<<"\n";
+  // std::cout<<tranport_pk_subsurface_->name()<<"\n";
+  // std::cout<<tranport_pk_overland_->name()<<"\n";
+  // std::cout<<chemistry_pk_subsurface_->name()<<"\n";
+  // std::cout<<chemistry_pk_overland_->name()<<"\n";
 
 
  }
@@ -147,11 +147,13 @@ bool Coupled_ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, b
     pk_fail = chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
     chem_step_succeeded = true;
 
-    *S_->GetFieldData(tcc_sub_key, "state")->ViewComponent("cell", true) 
-      = *chemistry_pk_subsurface_->aqueous_components();
+    //*S_->GetFieldData(tcc_sub_key, "state")->ViewComponent("cell", true) = *chemistry_pk_subsurface_->aqueous_components();
+    *tcc_sub = *chemistry_pk_subsurface_->aqueous_components();
 
-    *S_->GetFieldData(tcc_over_key, "state")->ViewComponent("cell", true)
-      = *chemistry_pk_overland_->aqueous_components();
+    // *S_->GetFieldData(tcc_over_key, "state")->ViewComponent("cell", true)
+    //   = *chemistry_pk_overland_->aqueous_components();
+    *tcc_over = *chemistry_pk_overland_->aqueous_components();
+    
   }
   catch (const Errors::Message& chem_error) {
         fail = true;
@@ -165,7 +167,10 @@ bool Coupled_ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, b
 // 
 // -----------------------------------------------------------------------------
 void Coupled_ReactiveTransport_PK_ATS::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
+
+  tranport_pk_->CommitStep(t_old, t_new, S);
   chemistry_pk_->CommitStep(t_old, t_new, S);
+
 }
 
    

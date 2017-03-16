@@ -146,18 +146,20 @@ void Coordinator::initialize() {
   S_->GetField("dt","coordinator")->set_initialized();
 
   S_->InitializeFields();
+  //  S_->WriteStatistics(vo_);
+
+  S_->InitializeEvaluators();
+  //S_->WriteStatistics(vo_);
 
   // Initialize the process kernels (initializes all independent variables)
   pk_->Initialize(S_.ptr());
-
  // Final checks.
   S_->CheckNotEvaluatedFieldsInitialized();
+  //S_->WriteStatistics(vo_);
 
-  S_->InitializeEvaluators();
 
 
   S_->CheckAllFieldsInitialized();
-
   S_->WriteStatistics(vo_);
 
 

@@ -28,10 +28,23 @@ ReactiveTransport_PK_ATS::ReactiveTransport_PK_ATS(Teuchos::ParameterList& pk_tr
   storage_created = false;
   chem_step_succeeded = true;
 
-  tranport_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[1]);
+  std::string pk_name = pk_tree.name();
+  
+  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
+  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
+
+// Create miscaleneous lists.
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(global_list, "PKs", true);
+  //std::cout<<*pk_list;
+  rt_pk_list_ = Teuchos::sublist(pk_list, pk_name, true);
+  
+  transport_pk_index_ = rt_pk_list_->get<int>("transport index", 0);
+  chemistry_pk_index_ = rt_pk_list_->get<int>("chemistry index", 1 - transport_pk_index_);
+
+  tranport_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[transport_pk_index_]);
   ASSERT(tranport_pk_ != Teuchos::null);
 
-  chemistry_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(sub_pks_[0]);
+  chemistry_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(sub_pks_[chemistry_pk_index_]);
   ASSERT(chemistry_pk_ != Teuchos::null);
 
   // communicate chemistry engine to transport.
@@ -40,6 +53,10 @@ ReactiveTransport_PK_ATS::ReactiveTransport_PK_ATS(Teuchos::ParameterList& pk_tr
                               chemistry_pk_->chem_engine());
 #endif
 
+  // std::cout<<tranport_pk_->get_domain_name()<<"\n";
+  // std::cout<<chemistry_pk_->get_domain_name()<<"\n";
+
+  // ASSERT(tranport_pk_->get_domain_name() == chemistry_pk_->get_domain_name());
   // master_ = 1;  // Transport;
   // slave_ = 0;  // Chemistry;
 }
@@ -51,12 +68,12 @@ ReactiveTransport_PK_ATS::ReactiveTransport_PK_ATS(Teuchos::ParameterList& pk_tr
 void ReactiveTransport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S) {
   Amanzi::PK_MPCAdditive<PK>::Initialize(S);
 
-  if (S->HasField("total_component_concentration")) {
-    total_component_concentration_stor = 
-       Teuchos::rcp(new Epetra_MultiVector(*S->GetFieldData("total_component_concentration")
-                                             ->ViewComponent("cell", true)));
-    storage_created = true;
-  }
+  // if (S->HasField("total_component_concentration")) {
+  //   total_component_concentration_stor = 
+  //      Teuchos::rcp(new Epetra_MultiVector(*S->GetFieldData("total_component_concentration")
+  //                                            ->ViewComponent("cell", true)));
+  //   storage_created = true;
+  // }
 }
 
 
@@ -111,26 +128,41 @@ bool ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool rein
   bool fail = false;
   chem_step_succeeded = false;
 
+  Key domain_name = tranport_pk_->get_domain_name();
+  Key tcc_key = getKey(domain_name, "total_component_concentration");
+
   // First we do a transport step.
   bool pk_fail = tranport_pk_->AdvanceStep(t_old, t_new, reinit);
 
   // Right now transport step is always succeeded.
-  if (!pk_fail) {
-    *total_component_concentration_stor = *tranport_pk_->total_component_concentration()->ViewComponent("cell", true);
-  } else {
+  // if (!pk_fail) {
+  //   std::cout<< *tranport_pk_->total_component_concentration()->ViewComponent("cell", true)<<"\n";
+  //   std::cout<< *total_component_concentration_stor<<"\n";
+  //   *total_component_concentration_stor = *tranport_pk_->total_component_concentration()->ViewComponent("cell", true);
+  // } else {
+  //   Errors::Message message("MPC: Transport PK returned an unexpected error.");
+  //   Exceptions::amanzi_throw(message);
+  // }
+
+  if (pk_fail){
     Errors::Message message("MPC: Transport PK returned an unexpected error.");
     Exceptions::amanzi_throw(message);
-  }
+  } 
 
   // Second, we do a chemistry step.
   try {
-    chemistry_pk_->set_aqueous_components(total_component_concentration_stor);
+    Teuchos::RCP<Epetra_MultiVector> tcc_copy =
+      S_->GetFieldCopyData(tcc_key,"subcycling","state")->ViewComponent("cell", true);
+
+    std::cout<<*tcc_copy<<"\n";
+
+    chemistry_pk_->set_aqueous_components(tcc_copy);
 
     pk_fail = chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
-    chem_step_succeeded = true;
+    chem_step_succeeded = true;  
  
-    *S_->GetFieldData("total_component_concentration", "state")
-       ->ViewComponent("cell", true) = *chemistry_pk_->aqueous_components();
+    //*S_->GetFieldData(tcc_key,"state")->ViewComponent("cell", true) = *chemistry_pk_->aqueous_components();
+    *tcc_copy = *chemistry_pk_->aqueous_components();
   }
   catch (const Errors::Message& chem_error) {
     fail = true;
@@ -144,6 +176,8 @@ bool ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool rein
 // 
 // -----------------------------------------------------------------------------
 void ReactiveTransport_PK_ATS::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
+
+  tranport_pk_->CommitStep(t_old, t_new, S);
   chemistry_pk_->CommitStep(t_old, t_new, S);
 }
 

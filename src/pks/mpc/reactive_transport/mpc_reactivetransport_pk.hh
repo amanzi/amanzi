@@ -59,6 +59,9 @@ class ReactiveTransport_PK_ATS : public PK_MPCAdditive<PK> {
 
   Teuchos::RCP<Transport::Transport_PK_ATS> tranport_pk_;
   Teuchos::RCP<AmanziChemistry::Chemistry_PK> chemistry_pk_;
+  int transport_pk_index_, chemistry_pk_index_;
+  Teuchos::RCP<Teuchos::ParameterList> rt_pk_list_;
+
   // int master_, slave_;
 
   bool chem_step_succeeded;
