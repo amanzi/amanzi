@@ -103,7 +103,7 @@ def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
 
 if __name__ == "__main__":
 
-    import os
+    import os, sys
     try:
         sys.path.append('../../../../tools/amanzi_xml')
     except:
@@ -115,7 +115,7 @@ if __name__ == "__main__":
         sys.path.append('../../../../MY_TPL_BUILD/ccse/ccse-1.3.4-source/Tools/Py_util')
     except:
         pass
- 
+    
     # root name for problem
     root = "tritium"
 
@@ -157,7 +157,18 @@ if __name__ == "__main__":
     except:
         struct = 0
 
-
+    # amanziS crunch
+    
+    try:
+        input_filename = os.path.join("amanzi-s-1d-"+root+"-alq-crunch.xml")
+        path_to_amanzi = "amanzi-s-alq-crunch-output"
+        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+"-crunch.in",root+".dbs","aqueous.dbs"], path_to_amanzi)
+        root_amanzi = "plt00037"
+        comp = "Tritium_water_Concentration"
+        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanzi,comp)
+        struct_crunch = len(x_amanziS_crunch)
+    except:
+        struct_crunch = 0
 
     # amanziU
 
@@ -183,6 +194,21 @@ if __name__ == "__main__":
     except:
         unstruct = 0
 
+    # amanziU crunch
+
+    try:
+        comp = 'total_component_concentration.cell.Tritium conc'
+        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
+        path_to_amanzi = "amanzi-u-alq-crunch-output"
+        run_amanzi_standard.run_amanzi(input_filename, 1, 
+                                       ["1d-"+root+"-crunch.in",root+".dbs","aqueous"+".dbs"],
+                                       path_to_amanzi)
+        x_amanziU_crunch, c_amanziU_crunch = GetXY_AmanziU(path_to_amanzi,root,comp)
+        unstruct_crunch = len(x_amanziU_crunch)
+
+    except:
+        unstruct_crunch = False
+
     # Do plot
     if (native > 0):
         nat = ax.plot(x_amanziU_native, c_amanziU_native,'rx',label='AmanziU(2nd-Order)+Native',linewidth=2)
@@ -190,12 +216,17 @@ if __name__ == "__main__":
     if (unstruct > 0):
         alq = ax.plot(x_amanziU, c_amanziU,'r-',label='AmanziU(2nd-Order)+Alquimia(PFloTran)',linewidth=2)
 
+    if (unstruct_crunch > 0):
+        alq_crunch = ax.plot(x_amanziU_crunch, c_amanziU_crunch,'r*',label='AmanziU(2nd-Order)+Alquimia(CrunchFlow)',linewidth=2)
+
     if (struct > 0):
         sam = ax.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alquimia(PFloTran)',linewidth=2) 
 
+    if (struct_crunch > 0):
+        sam_crunch = ax.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alquimia(CrunchFlow)',linewidth=2) 
+
     pfl = ax.plot(x_pflotran, c_pflotran,'m-',label='PFloTran',linewidth=2)
     crunch = ax.plot(x_crunchflow, c_crunchflow,'m*',label='CrunchFlow(OS3D)',linewidth=2)
-
 
     # axes
     ax.set_xlabel("Distance (m)",fontsize=20)
@@ -203,7 +234,6 @@ if __name__ == "__main__":
 
     #ax.set_xlim(43,57)
     #ax.set_ylim(0,.0001)
-
 
     # plot adjustments
     plt.subplots_adjust(left=0.20,bottom=0.15,right=0.99,top=0.90)
@@ -216,11 +246,15 @@ if __name__ == "__main__":
     a.set_xlim(43,57)
     a.set_ylim(0,.0001)
     if (native > 0):
-        nats = a.plot(x_amanziU_native, c_amanziU_native,'rx',label='Amanzi+Alquimia(PFloTran) - 1st Order',linewidth=2)
+        nats = a.plot(x_amanziU_native, c_amanziU_native,'rx',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
     if (unstruct > 0):
         alqs = a.plot(x_amanziU, c_amanziU,'r-',label='Amanzi+Alquimia(PFloTran) - 1st Order',linewidth=2)
+    if (unstruct_crunch > 0):
+        alqs_crunch = a.plot(x_amanziU_crunch, c_amanziU_crunch,'r*',label='Amanzi+Alquimia(CrunchFlow)',linewidth=2)
     if (struct>0):
-        sams = a.plot(x_amanziS, c_amanziS,'g-',label='AmanziS',linewidth=2) 
+        sams = a.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alq(PFT)',linewidth=2) 
+    if (struct_crunch>0):
+        sams_crunch = a.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=2) 
 
     pfls = a.plot(x_pflotran, c_pflotran,'m-',label='PFloTran',linewidth=2)
     cfs = a.plot(x_crunchflow, c_crunchflow,'m*',label='CrunchFlow',linewidth=2)
@@ -231,4 +265,4 @@ if __name__ == "__main__":
     #plt.close()
 
     # finally:
-    #    pass 
+    #    pass

@@ -27,7 +27,7 @@ def GetXY_AmanziU(path,root,comp):
     x_amanzi_alquimia  = np.diff(y)/2+y[0:-1]
 
     # extract concentration array
-    time = max(amanzi_file[comp].keys())
+    time = str(max([int(x) for x in amanzi_file[comp].keys()]))
     c_amanzi_alquimia = np.array(amanzi_file[comp][time])
     amanzi_file.close()
     amanzi_mesh.close()
