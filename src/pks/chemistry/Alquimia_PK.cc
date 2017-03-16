@@ -552,6 +552,15 @@ void Alquimia_PK::CopyToAlquimia(int cell,
       mat_props.langmuir_b.data[i] = isotherm_langmuir_b[i][cell];
     }
   }
+  
+  // first order reaction rate cnst
+  if (number_aqueous_kinetics_ > 0) {
+    const Epetra_MultiVector& aqueous_kinetics_rate = *S_->GetFieldData("first_order_decay_constant")->ViewComponent("cell", true);
+    for (unsigned int i = 0; i < number_aqueous_kinetics_; ++i) {
+      mat_props.aqueous_kinetic_rate_cnst.data[i] = aqueous_kinetics_rate[i][cell];
+    }
+  }
+
 }
 
 

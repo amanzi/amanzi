@@ -185,7 +185,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
             .set<std::string>("region", *it)
             .set<std::string>("component", "cell")
             .sublist("function");
-        aux3_list.set<int>("number of dofs", minerals.size())
+        aux3_list.set<int>("number of dofs", aqueous_reactions.size())
             .set("function type", "composite function");
 
         for (int j = 0; j < aqueous_reactions.size(); ++j) {
