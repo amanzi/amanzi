@@ -23,7 +23,9 @@
 
 #include "CommonDefs.hh"
 #include "Mesh.hh"
-#include "DenseVector.hh"
+//#include "DenseVector.hh"
+
+class State;
 
 namespace Amanzi {
 namespace Transport {
@@ -51,14 +53,10 @@ class TransportDomainFunction {
   virtual void set_state(const Teuchos::RCP<State>& S) {S_ = S;}
 
   // iterator methods
-  // typename std::map<int, std:vector<double> >::iterator begin() { return value_.begin(); }
-  // typename std::map<int, std:vector<double> >::iterator end() { return value_.end(); }
-  // typename std::map<int, std:vector<double> >::size_type size() { return value_.size(); }
   typedef std::map<int, std::vector<double> >::iterator Iterator;
   Iterator begin() { return value_.begin(); }
   Iterator end() { return value_.end(); }
   std::map<int, std::vector<double> >::size_type size() { return value_.size(); }
-
   
 
 protected:
@@ -66,7 +64,7 @@ protected:
   double domain_volume_;
   std::map<int, std::vector<double> > value_;  // tcc values on boundary faces
   std::string keyword_;
-  Teuchos::RCP<const State> S_;
+  Teuchos::RCP<const State> S_; 
 
   std::vector<std::string> tcc_names_;  // list of component names
   std::vector<int> tcc_index_;  // index of component in the global list

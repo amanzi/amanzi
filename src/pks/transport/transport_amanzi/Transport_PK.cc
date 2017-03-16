@@ -357,15 +357,6 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
   tcc = S->GetFieldData(tcc_key_, passwd_);
 
-
-  // if (vol_flux_conversion_){
-  //   vol_flux = S_->GetFieldData(flux_key_, passwd_)->ViewComponent("face", true);
-  //   ComputeVolumeDarcyFlux(S_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true),
-  //                          S_->GetFieldData(molar_density_key_)->ViewComponent("cell", true), vol_flux);
-  //   S_->GetField(flux_key_, passwd_)->set_initialized();
-  // }
-
-  S->GetFieldData(flux_key_)->ScatterMasterToGhosted("face");
   flux = S->GetFieldData(flux_key_)->ViewComponent("face", true);
 
   //create vector of conserved quatities
@@ -449,7 +440,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
     }
 #ifdef ALQUIMIA_ENABLED
     // -- try geochemical conditions
-    Teuchos::ParameterList& glist = tp_list_->sublist("boundary conditions").sublist("geochemical conditions");
+    Teuchos::ParameterList& glist = tp_list_->sublist("boundary conditions").sublist("geochemical");
 
     for (Teuchos::ParameterList::ConstIterator it = glist.begin(); it != glist.end(); ++it) {
       std::string specname = it->first;
@@ -476,10 +467,10 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
 
   // boundary conditions initialization
-  // time = t_physics_;
-  // for (int i = 0; i < bcs_.size(); i++) {
-  //   bcs_[i]->Compute(time, time);
-  // }
+  time = t_physics_;
+  for (int i = 0; i < bcs_.size(); i++) {
+    bcs_[i]->Compute(time, time);
+  }
 
   VV_CheckInfluxBC();
 
@@ -584,16 +575,16 @@ void Transport_PK_ATS::InitializeFields_(const Teuchos::Ptr<State>& S)
     else {
       if (S->GetField(prev_saturation_key_)->owner() == passwd_) {
         if (!S->GetField(prev_saturation_key_, passwd_)->initialized()) {
-          S->GetFieldData(prev_saturation_key_, passwd_)->PutScalar(1.0);
-          S->GetField(prev_saturation_key_, passwd_)->set_initialized();
+          // S->GetFieldData(prev_saturation_key_, passwd_)->PutScalar(1.0);
+          // S->GetField(prev_saturation_key_, passwd_)->set_initialized();
           // if (S->HasFieldEvaluator(getKey(domain_,saturation_key_))){
           //   S->GetFieldEvaluator(getKey(domain_,saturation_key_))->HasFieldChanged(S.ptr(), "transport");
           // }
-          // InitializeFieldFromField_(prev_saturation_key_, saturation_key_, false);
-          // S->GetField(prev_saturation_key_, passwd_)->set_initialized();
+          InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S, false, false);
+          S->GetField(prev_saturation_key_, passwd_)->set_initialized();
 
-          // if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          //   *vo_->os() << "initilized prev_saturation_liquid from saturation" << std::endl;
+          if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+            *vo_->os() << "initilized prev_saturation_liquid from saturation" << std::endl;
         }
       }
     }
@@ -1240,6 +1231,9 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
+  //std::cout<<"DonorUpwind start\n"<<tcc_prev<<"\n";
+
+
   // prepare conservative state in master and slave cells
   double vol_phi_ws_den, tcc_flux;
   double mass_start = 0., tmp1;
@@ -1333,7 +1327,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   //   std::cout<<"After ComputeAddSourceTerms\n";
   //   std::cout<<*conserve_qty_<<"\n";
   // }
-  //if (domain_name_ == "surface") std::cout<<*ws_end<<"\n";
+  //  if (domain_name_ == "surface") std::cout<<*ws_end<<"\n";
 
   
 
@@ -1366,7 +1360,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
 
 
 
-  //if (domain_name_ == "surface") std::cout<<tcc_next<<"\n";
+  //if (domain_name_ == "surface") std::cout<<"DonorUpwind end\n"<<tcc_next<<"\n";
 
 
   // update mass balance

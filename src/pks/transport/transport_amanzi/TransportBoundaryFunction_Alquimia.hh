@@ -35,26 +35,15 @@ class TransportBoundaryFunction_Alquimia : public TransportDomainFunction {
                                      const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                      Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
                                      Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
-
-  ~TransportBoundaryFunction_Alquimia()
-  {
-    chem_engine_->FreeState(alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
-  };
-
-  void Compute(double t_old, double t_new);  
+  ~TransportBoundaryFunction_Alquimia();
+  
+  void Compute(double t_old, double t_new);
 
  private:
   void Init_(const std::vector<std::string> &regions);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-
-  // iterator methods
-  typename std::map<int, std::vector<double> >::iterator begin() { return value_.begin(); }
-  typename std::map<int, std::vector<double> >::iterator end() { return value_.end(); }
-  typename std::map<int, std::vector<double> >::size_type size() { return value_.size(); }
-
-  std::map<int, std::vector<double> > value_;
 
   // string function of geochemical conditions
   Teuchos::RCP<TabularStringFunction> f_;
@@ -72,9 +61,6 @@ class TransportBoundaryFunction_Alquimia : public TransportDomainFunction {
   // A mapping of boundary face indices to interior cells.
   std::map<int, int> cell_for_face_;
 };
-
-
-
 
 }  // namespace Transport
 }  // namespace Amanzi
