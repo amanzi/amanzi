@@ -110,6 +110,15 @@ void NavierStokes_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVec
 double NavierStokes_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, 
                                   Teuchos::RCP<const TreeVector> du)
 {
+  const Epetra_MultiVector& uv = *u->SubVector(0)->Data()->ViewComponent("node");
+  const Epetra_MultiVector& duv = *du->SubVector(0)->Data()->ViewComponent("node");
+
+  double error(0.0);
+
+  for (int v = 0; v < nnodes_owned; v++) {
+    double tmp = fabs(duv[0][v]) / (fabs(uv[0][v]) + 1e-6);
+    error = std::max(error, tmp);
+  }
 }
  
 

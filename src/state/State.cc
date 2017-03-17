@@ -939,7 +939,7 @@ bool State::CheckNotEvaluatedFieldsInitialized() {
       } else if (!field->initialized()) {
         // No evaluator, not intialized... FAIL.
         std::stringstream messagestream;
-        messagestream << "Field " << field->fieldname() << " was not initialized. Owner:"<<field->owner();
+        messagestream << "Field " << field->fieldname() << " was not initialized. Owner:" << field->owner();
         Errors::Message message(messagestream.str());
         Exceptions::amanzi_throw(message);
         return false;
@@ -973,7 +973,7 @@ bool State::CheckNotEvaluatedFieldsInitialized(Teuchos::RCP<State> S) {
       } else if (!field->initialized()) {
         // No evaluator, not intialized... FAIL.
         std::stringstream messagestream;
-        messagestream << "Field " << field->fieldname() << " was not initialized. Owner:"<<field->owner();;
+        messagestream << "Field " << field->fieldname() << " was not initialized. Owner:" << field->owner();
         Errors::Message message(messagestream.str());
         Exceptions::amanzi_throw(message);
         return false;
@@ -992,7 +992,7 @@ bool State::CheckAllFieldsInitialized() {
     if (!field->initialized()) {
       // field was not initialized
       std::stringstream messagestream;
-      messagestream << "Field " << field->fieldname() << " was not initialized. Owner:"<<field->owner();
+      messagestream << "Field " << field->fieldname() << " was not initialized. Owner:" << field->owner();
       Errors::Message message(messagestream.str());
       Exceptions::amanzi_throw(message);
       return false;
@@ -1047,7 +1047,7 @@ bool State::CheckAllFieldsInitialized(Teuchos::RCP<State> S) {
     if (!field->initialized()) {
       // field was not initialized
       std::stringstream messagestream;
-      messagestream << "Field " << field->fieldname() << " was not initialized. Owner:"<<field->owner();
+      messagestream << "Field " << field->fieldname() << " was not initialized. Owner:" << field->owner();
       Errors::Message message(messagestream.str());
       Exceptions::amanzi_throw(message);
       return false;
