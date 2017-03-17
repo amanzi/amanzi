@@ -843,9 +843,10 @@ function check_spack
       pwd_save='pwd'
       cd ${tpl_install_prefix}
       git clone https://github.com/LLNL/spack.git
-      #if [ ${xsdk} == ${TRUE} ]; then
-	  git checkout -b barry/xsdk
-      #fi
+      if [ ${xsdk} == ${TRUE} ]; then
+	  cd ${tpl_install_prefix}/spack
+	  git checkout barry/xsdk
+      fi
       cd ${pwd_save}
     fi
 

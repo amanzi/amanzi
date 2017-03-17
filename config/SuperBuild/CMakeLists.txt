@@ -28,9 +28,9 @@ if ( NOT CMAKE_Fortran_COMPILER )
   message(WARNING "Fortran compiler not specified. CMake will guess!")
 endif()
 
-if ( NOT SPACK_BINARY )
-  message(WARNING "Spack binary not defined. Disabling spack builds.")
-endif()
+#if ( NOT SPACK_BINARY )
+#  message(WARNING "Spack binary not defined. Disabling spack builds.")
+#endif()
 
 # ############################################################################ #
 # Define project name (SuperBuild_SOURCE_DIR and SuperBuild_BINARY_DIR)
@@ -177,7 +177,7 @@ option(ENABLE_XSDK "Use xSDK Libraries" FALSE)
 
 # Use Spack package manager
 option(ENABLE_SPACK "Build with the Spack package manager where appropriate" FALSE)
-endif()
+
 
 # ############################################################################ #
 # MPI Configuration 
@@ -490,7 +490,7 @@ set(Amanzi_TPL_CMAKE_ARGS)
 if ( ENABLE_XSDK )
     
     #include(${Amanzi_SOURCE_DIR}/tools/cmake/SpackFunctions.cmake) 
-include(SpackFunctions)
+    #include(SpackFunctions)
 
     # install xsdk with Spack
     define_external_project_args(XSDK
@@ -510,9 +510,9 @@ include(SpackFunctions)
 	
 	CONFIGURE_COMMAND ls
 	
-	BUILD_COMMAND spack_install_package( xsdk )
+	BUILD_COMMAND ${SPACK_BINARY} install xsdk #spack_install_package( xsdk )
 	
-	INSTALL_COMMAND spack_create_symlinks( xsdk ${TPL_INSTALL_PREFIX} )
+	INSTALL_COMMAND ${SPACK_BINARY} view symlink ${TPL_INSTALL_PREFIX} xsdk #spack_create_symlinks( xsdk ${TPL_INSTALL_PREFIX} )
 	#INSTALL_COMMAND  ${SPACK_BINARY} install xsdk )
 	#INSTALL_COMMAND  ${SuperBuild_BUILD_FILES_DIR}/spack_generic_build.sh ${SPACK_BINARY} xsdk ${TPL_INSTALL_PREFIX} )
 	#INSTALL_COMMAND ${CMAKE_COMMAND} -P ${Amanzi_SOURCE_DIR}/tools/cmake/SpackFunctions.cmake
