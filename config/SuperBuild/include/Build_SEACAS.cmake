@@ -29,6 +29,9 @@ build_whitespace_string(seacas_cflags ${seacas_cxxflags_list})
 set(seacas_fcflags_list -I${TPL_INSTALL_PREFIX}/include ${Amanzi_COMMON_FCFLAGS})
 build_whitespace_string(seacas_fcflags ${seacas_fcflags_list})
 
+set(seacas_lflags_list -L${TPL_INSTALL_PREFIX}/lib -ldl)
+build_whitespace_string(seacas_lflags ${seacas_lflags_list})
+
 # Build the NetCDF libraries string
 include(BuildLibraryName)
 build_library_name(netcdf seacas_netcdf_library STATIC APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
@@ -54,7 +57,7 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE}
                     ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
                     -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
-                    -DCMAKE_EXE_LINKER_FLAGS:STRING=-L${TPL_INSTALL_PREFIX}/lib
+                    -DCMAKE_EXE_LINKER_FLAGS:STRING=${seacas_lflags}
                     -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=FALSE
                     -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE
                     -DTrilinos_ENABLE_SEACAS:BOOL=TRUE
@@ -62,6 +65,7 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     -DTPL_ENABLE_Matio:BOOL=FALSE
                     -DTPL_Netcdf_LIBRARIES:STRING=${seacas_netcdf_libraries}
                     -DNetcdf_INCLUDE_DIRS:STRING=${TPL_INSTALL_PREFIX}/include
+                    -DTPL_Netcdf_PARALLEL:BOOL=ON
                     )
 
 # --- Add external project build and tie to the SEACAS build target

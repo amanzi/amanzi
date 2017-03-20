@@ -593,7 +593,7 @@ append_set(Amanzi_TPL_CMAKE_ARGS
            -DTrilinos_INSTALL_PREFIX:PATH=${Trilinos_INSTALL_PREFIX})
 
 # SEACAS
-#include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
+include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
 
 # MSTK
 if ( ENABLE_MSTK_Mesh )
