@@ -570,7 +570,7 @@ void Transport_PK_ATS::InitializeFields_(const Teuchos::Ptr<State>& S)
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
             *vo_->os() << "initilized saturation_liquid to value 1.0" << std::endl;  
       }
-      InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S, false, false);
+      InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S, true, true);
     }
     else {
       if (S->GetField(prev_saturation_key_)->owner() == passwd_) {
@@ -580,7 +580,7 @@ void Transport_PK_ATS::InitializeFields_(const Teuchos::Ptr<State>& S)
           // if (S->HasFieldEvaluator(getKey(domain_,saturation_key_))){
           //   S->GetFieldEvaluator(getKey(domain_,saturation_key_))->HasFieldChanged(S.ptr(), "transport");
           // }
-          InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S, false, false);
+          InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S, true, true);
           S->GetField(prev_saturation_key_, passwd_)->set_initialized();
 
           if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
@@ -1231,7 +1231,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
-  //std::cout<<"DonorUpwind start\n"<<tcc_prev<<"\n";
+  //if (domain_name_=="surface") std::cout<<"DonorUpwind start\n"<<tcc_prev<<"\n";
 
 
   // prepare conservative state in master and slave cells
@@ -1243,12 +1243,14 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
 
   for (int c = 0; c < ncells_owned; c++) {
     vol_phi_ws_den = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_start)[0][c] * (*mol_dens)[0][c];
-
+     // if (domain_name_=="surface") 
+     //   std::cout<<c<<" vol "<<mesh_->cell_volume(c)<<" phi "<<(*phi)[0][c]<<" ws0 "<<(*ws_start)[0][c]<<" ws1 "<< (*ws_end)[0][c]<<" den "<<(*mol_dens)[0][c]<<"\n";
     for (int i = 0; i < num_advect; i++){
       (*conserve_qty_)[i][c] = tcc_prev[i][c] * vol_phi_ws_den;   
       mass_start += (*conserve_qty_)[i][c];
     }
   }
+
   mass_start /= units_.concentration_factor();
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
@@ -1327,7 +1329,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   //   std::cout<<"After ComputeAddSourceTerms\n";
   //   std::cout<<*conserve_qty_<<"\n";
   // }
-  //  if (domain_name_ == "surface") std::cout<<*ws_end<<"\n";
+  //if (domain_name_ == "surface") std::cout<<"ws_end\n"<<*ws_end<<"\n";
 
   
 

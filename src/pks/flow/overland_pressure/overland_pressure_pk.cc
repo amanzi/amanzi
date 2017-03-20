@@ -19,6 +19,8 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "CompositeVectorFunction.hh"
 #include "CompositeVectorFunctionFactory.hh"
 #include "independent_variable_field_evaluator.hh"
+#include "primary_variable_field_evaluator.hh"
+
 
 #include "upwind_potential_difference.hh"
 #include "upwind_cell_centered.hh"
@@ -422,9 +424,10 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
     }
 
     // mark as initialized
-    if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
-      S->GetField(key_,name_)->set_initialized();
-    }
+    S->GetField(key_,name_)->set_initialized();
+    Teuchos::RCP<FieldEvaluator> fe = S->GetFieldEvaluator(key_);
+    Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fe);
+    pfe->SetFieldAsChanged(S);
   }
   //}
 
