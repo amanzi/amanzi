@@ -50,15 +50,6 @@ class Point {
   ~Point() {};
 
   // main members
-
-  // Not necessary - the constructor and set functions do the
-  // equivalent things
-  //
-  //  void init(const int N) {
-  //    d = N;
-  //    xyz[0] = xyz[1] = xyz[2] = 0.0;
-  //  }
-
   void set(const double& val) {
     ASSERT(this);
     ASSERT(d > 0);

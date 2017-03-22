@@ -9,9 +9,17 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+#include "NavierStokesBoundaryFunction.hh"
+
 namespace Amanzi {
 namespace NavierStokes {
 
+/* ****************************************************************
+* Constructor: extract attributes to setup a submodel.
+**************************************************************** */
+NavierStokesBoundaryFunction::NavierStokesBoundaryFunction(const Teuchos::ParameterList& plist)
+{
+}
 
 }  // namespace NavierStokes
 }  // namespace Amanzi

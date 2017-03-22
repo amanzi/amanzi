@@ -113,6 +113,9 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   }
 
   // other methods
+  // --- management of boundary and source terms
+  void ComputeOperatorBCs();
+
   // -- access
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae() { return bdf1_dae_; }
 

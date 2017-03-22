@@ -11,6 +11,8 @@
 
 #include <vector>
 
+#include "PK_DomainFunctionFactory.hh"
+
 // Amanzi::NavierStokes
 #include "NavierStokes_PK.hh"
 
@@ -173,6 +175,29 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
       bdf1_list.sublist("verbose object") = ns_list_->sublist("verbose object");
 
   bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
+
+  // Create BC objects
+  Teuchos::RCP<NavierStokesBoundaryFunction> bc;
+  Teuchos::RCP<Teuchos::ParameterList>
+      bc_list = Teuchos::rcp(new Teuchos::ParameterList(ns_list_->sublist("boundary conditions", true)));
+
+  bcs_.clear();
+
+  // -- pressure 
+  if (bc_list->isSublist("velocity")) {
+    PK_DomainFunctionFactory<NavierStokesBoundaryFunction > bc_factory(mesh_);
+
+    Teuchos::ParameterList& tmp_list = bc_list->sublist("velocity");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+        bc = bc_factory.Create(spec, "no slip", AmanziMesh::NODE, Teuchos::null);
+        bc->set_bc_name("no slip");
+        bcs_.push_back(bc);
+      }
+    }
+  }
 
   // Initialize matrix and preconditioner
   // -- create elastic block

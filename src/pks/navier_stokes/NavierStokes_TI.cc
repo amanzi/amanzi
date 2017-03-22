@@ -119,6 +119,8 @@ double NavierStokes_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     double tmp = fabs(duv[0][v]) / (fabs(uv[0][v]) + 1e-6);
     error = std::max(error, tmp);
   }
+
+  return error;
 }
  
 
@@ -139,9 +141,40 @@ void NavierStokes_PK::UpdateSourceBoundaryData_(double t_old, double t_new)
   }
 
   // populate global arrays with data
-  // ComputeOperatorBCs();
+  ComputeOperatorBCs();
 }
 
+
+/* ******************************************************************
+* Add a boundary marker to used faces.
+* WARNING: we can skip update of ghost boundary faces, b/c they 
+* should be always owned. 
+****************************************************************** */
+void NavierStokes_PK::ComputeOperatorBCs()
+{
+  int d = mesh_->space_dimension();
+
+  std::vector<int>& bc_model = bcv_->bc_model();
+  std::vector<AmanziGeometry::Point>& bc_value = bcv_->bc_value_point();
+
+  for (int n = 0; n < bc_model.size(); n++) {
+    bc_model[n] = Operators::OPERATOR_BC_NONE;
+    bc_value[n] = AmanziGeometry::Point(mesh_->space_dimension());
+  }
+
+  for (int i = 0; i < bcs_.size(); ++i) {
+    if (bcs_[i]->bc_name() == "no slip") {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+        for (int k = 0; k < d; ++k) {
+          bc_value[f][k] = it->second[k];
+        }
+      }
+    }
+  }
+}
+  
 }  // namespace NavierStokes
 }  // namespace Amanzi
  
