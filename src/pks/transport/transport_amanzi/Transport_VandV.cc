@@ -137,14 +137,15 @@ void Transport_PK_ATS::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next,
         }
       }
     }
+
     solute_flux *= units_.concentration_factor();
 
     double tmp = solute_flux;
     mesh_->get_comm()->SumAll(&tmp, &solute_flux, 1);
 
-    // *vo_->os() << runtime_solutes_[n] << ": min=" << units_.OutputConcentration(tccmin) 
-    //             << " max=" << units_.OutputConcentration(tccmax);
-    *vo_->os() << runtime_solutes_[n] << ": min=" << tccmin  << " max=" << tccmax<<"\n";
+    *vo_->os() << runtime_solutes_[n] << ": min=" << units_.OutputConcentration(tccmin) 
+                 << " max=" << units_.OutputConcentration(tccmax);
+    // *vo_->os() << runtime_solutes_[n] << ": min=" << tccmin  << " max=" << tccmax<<"\n";
     if (flag) *vo_->os() << ", flux=" << solute_flux << " mol/s";
 
     // old capability
@@ -299,13 +300,13 @@ double Transport_PK_ATS::VV_SoluteVolumeChangePerSecond(int idx_tracer)
       if (tcc_index[i] == idx_tracer) {
         for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
           int f = it->first;
-          WhetStone::DenseVector& values = it->second;
+          std::vector<double>& values = it->second;
 
           int c2 = (*downwind_cell_)[f];
 
           if (f < nfaces_owned && c2 >= 0) {
             double u = fabs((*flux)[0][f]);
-            volume += u * values(i);
+            volume += u * values[i];
           }
         }
       }
