@@ -840,12 +840,13 @@ function check_spack
 
     if [ ! -e ${tpl_install_prefix}/spack/bin/spack ]; then
       error_message "Could not locate Spack - Downloading and installing as a TPL"
-      pwd_save='pwd'
+      pwd_save=`pwd`
       cd ${tpl_install_prefix}
       git clone https://github.com/LLNL/spack.git
       if [ ${xsdk} == ${TRUE} ]; then
 	  cd ${tpl_install_prefix}/spack
 	  git checkout barry/xsdk
+	  git pull --rebase
       fi
       cd ${pwd_save}
     fi
