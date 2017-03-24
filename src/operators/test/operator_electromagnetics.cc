@@ -216,7 +216,6 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   ana.ComputeEdgeError(E, time, enorm, el2_err, einf_err);
 
   if (MyPID == 0) {
-    el2_err /= enorm; 
     el2_err /= enorm;
     printf("L2(e)=%10.7f  Inf(e)=%9.6f  itr=%3d  size=%d\n", el2_err, einf_err,
             solver->num_itrs(), rhs.GlobalLength());

@@ -8,19 +8,19 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Relaxation of magnetic lines, trivial steady-state solution 
+  Convergence analysis in space and time
 */
 
-#ifndef AMANZI_OPERATOR_ANALYTIC_ELECTROMAGNETICS_04_HH_
-#define AMANZI_OPERATOR_ANALYTIC_ELECTROMAGNETICS_04_HH_
+#ifndef AMANZI_OPERATOR_ANALYTIC_ELECTROMAGNETICS_05_HH_
+#define AMANZI_OPERATOR_ANALYTIC_ELECTROMAGNETICS_05_HH_
 
 #include "AnalyticElectromagneticsBase.hh"
 
-class AnalyticElectromagnetics04 : public AnalyticElectromagneticsBase {
+class AnalyticElectromagnetics05 : public AnalyticElectromagneticsBase {
  public:
-  AnalyticElectromagnetics04(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
+  AnalyticElectromagnetics05(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
       AnalyticElectromagneticsBase(mesh) {};
-  ~AnalyticElectromagnetics04() {};
+  ~AnalyticElectromagnetics05() {};
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
     Amanzi::WhetStone::Tensor K(p.dim(), 1);
@@ -29,20 +29,19 @@ class AnalyticElectromagnetics04 : public AnalyticElectromagneticsBase {
   }
 
   Amanzi::AmanziGeometry::Point electric_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    return Amanzi::AmanziGeometry::Point(0.0, 0.0, 0.0);
+    double x = p[0];
+    double y = p[1];
+
+    double tmp = std::exp(t + 0.6 * x + 0.8 * y);
+    return Amanzi::AmanziGeometry::Point(0.0, 0.0, tmp);
   }
 
   Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    if (t > 0.0) 
-      return Amanzi::AmanziGeometry::Point(0.0, 0.0, 1.0);
-
     double x = p[0];
     double y = p[1];
-    double z = (p.dim() == 2) ? 1.0 : p[2];
 
-    double phi = 3.1415926 / 4;
-    double tmp = phi * std::exp(-(x * x + y * y) / 2 - z * z / 4);
-    return Amanzi::AmanziGeometry::Point(-tmp * y * z, tmp * x * z, 1.0);
+    double tmp = std::exp(t + 0.6 * x + 0.8 * y);
+    return Amanzi::AmanziGeometry::Point(-0.8 * tmp, 0.6 * tmp, 0.0);
   }
 
   Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 

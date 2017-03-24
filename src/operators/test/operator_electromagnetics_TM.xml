@@ -3,24 +3,6 @@
 
   <!--  REGIONS  -->
   <ParameterList name="regions">
-    <ParameterList name="Left side">
-      <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{-4.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Right side">
-      <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{4.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{1.0,0.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Top surface">
-      <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,5.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,1.0}"/>
-      </ParameterList>
-    </ParameterList>
   </ParameterList>
 
   <!--  OPERATORS  -->

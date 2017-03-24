@@ -37,13 +37,14 @@
 #include "OperatorDefs.hh"
 
 #include "AnalyticElectromagnetics04.hh"
+#include "AnalyticElectromagnetics05.hh"
 
 /* *****************************************************************
 * Testing operators for Maxwell-type problems: 2D 
 * Magnetic flux B = (Bx, By, 0), electrif field E = (0, 0, Ez)
 ***************************************************************** */
 template<class Analytic>
-void ResistiveMHD2D(double dt, double tend, bool initial_guess) {
+void ResistiveMHD2D(double dt, double tend, bool initial_guess, double Xb, double Yb) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -71,7 +72,6 @@ void ResistiveMHD2D(double dt, double tend, bool initial_guess) {
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
 
-  double Xb(4.0), Yb(10.0);
   RCP<const Mesh> mesh = meshfactory(-Xb, -Yb, Xb, Yb, 10, 25, gm, true, true);
 
   // create resistivity coefficient
@@ -88,7 +88,7 @@ void ResistiveMHD2D(double dt, double tend, bool initial_guess) {
     K->push_back(Kc);
   }
 
-  // create boundary data
+  // create miscalleneous data
   int nnodes_owned = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
@@ -96,22 +96,6 @@ void ResistiveMHD2D(double dt, double tend, bool initial_guess) {
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   Teuchos::RCP<BCs> bc1 = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE));
-  std::vector<int>& bc_model = bc1->bc_model();
-  std::vector<double>& bc_value = bc1->bc_value();
-
-  std::vector<int> edirs;
-  AmanziMesh::Entity_ID_List cells, faces;
-  AmanziGeometry::Point xv(2);
-
-  for (int v = 0; v < nnodes_wghost; ++v) {
-    mesh->node_get_coordinates(v, &xv);
-
-    if (fabs(xv[0] + Xb) < 1e-6 || fabs(xv[0] - Xb) < 1e-6 ||
-        fabs(xv[1] + Yb) < 1e-6 || fabs(xv[1] - Yb) < 1e-6) {
-      bc_model[v] = OPERATOR_BC_DIRICHLET;
-      bc_value[v] = (ana.electric_exact(xv, tnew))[2];
-    }
-  }
 
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
@@ -132,6 +116,10 @@ void ResistiveMHD2D(double dt, double tend, bool initial_guess) {
   // set up initial guess for a time-dependent problem
   Epetra_MultiVector& Ee = *E.ViewComponent("node");
   Epetra_MultiVector& Bf = *B.ViewComponent("face");
+
+  AmanziGeometry::Point xv(2);
+  std::vector<int> edirs;
+  AmanziMesh::Entity_ID_List cells, faces;
 
   Ee.PutScalar(0.0);
   Bf.PutScalar(0.0);
@@ -171,7 +159,21 @@ void ResistiveMHD2D(double dt, double tend, bool initial_guess) {
 
     op_acc->AddAccumulationTerm(phi, 1.0, "node");
 
-    // BCs, sources, and assemble
+    // update BCs
+    std::vector<int>& bc_model = bc1->bc_model();
+    std::vector<double>& bc_value = bc1->bc_value();
+
+    for (int v = 0; v < nnodes_wghost; ++v) {
+      mesh->node_get_coordinates(v, &xv);
+
+      if (fabs(xv[0] + Xb) < 1e-6 || fabs(xv[0] - Xb) < 1e-6 ||
+          fabs(xv[1] + Yb) < 1e-6 || fabs(xv[1] - Yb) < 1e-6) {
+        bc_model[v] = OPERATOR_BC_DIRICHLET;
+        bc_value[v] = (ana.electric_exact(xv, tnew))[2];
+      }
+    }
+
+    // apply BCs and assemble
     op_mhd->ModifyMatrices(E, B, dt);
     op_mhd->ApplyBCs(true, true);
     op_acc->ApplyBCs(bc1);
@@ -245,7 +247,7 @@ void ResistiveMHD2D(double dt, double tend, bool initial_guess) {
     }
 
     // visualization
-    if (MyPID == 0 && (cycle % 5 == 0)) {
+    if (MyPID == 0) {
       GMV::open_data_file(*mesh, "operators.gmv");
       GMV::start_data();
       GMV::write_cell_data(sol, 0, "Bx");
@@ -253,11 +255,25 @@ void ResistiveMHD2D(double dt, double tend, bool initial_guess) {
       GMV::close_data_file();
     }
   }
+
+  // compute electric and magnetic errors
+  double enorm, el2_err, einf_err;
+  double bnorm, bl2_err, binf_err;
+  ana.ComputeNodeError(Ee, told, enorm, el2_err, einf_err);
+  ana.ComputeFaceError(Bf, told, bnorm, bl2_err, binf_err);
+
+  if (MyPID == 0) {
+    if (enorm != 0.0) el2_err /= enorm; 
+    if (bnorm != 0.0) bl2_err /= bnorm; 
+    printf("L2(e)=%10.7f  Inf(e)=%9.6f  L2(b)=%10.7f  Inf(e)=%9.6f\n",
+        el2_err, einf_err, bl2_err, binf_err);
+    // CHECK(el2_err < tolerance);
+  }
 }
 
 
 /* *****************************************************************
-* Testing operators for Maxwell-type problems: 2D
+* Testing operators for Maxwell-type problems: 3D
 * **************************************************************** */
 template<class Analytic>
 void ResistiveMHD3D(double dt, double tend, bool initial_guess) {
@@ -500,11 +516,15 @@ void ResistiveMHD3D(double dt, double tend, bool initial_guess) {
 }
 
 
-TEST(RESISTIVE_MHD2D_LINEAR) {
-  ResistiveMHD2D<AnalyticElectromagnetics04>(0.2, 1.0, true);
+TEST(RESISTIVE_MHD2D_RELAX) {
+  ResistiveMHD2D<AnalyticElectromagnetics04>(0.7, 5.9, true, 4.0, 10.0);
 }
 
-TEST(RESISTIVE_MHD3D_LINEAR) {
+TEST(RESISTIVE_MHD3D_RELAX) {
   ResistiveMHD3D<AnalyticElectromagnetics04>(0.1, 0.5, true);
+}
+
+TEST(RESISTIVE_MHD2D_CONVERGENCE) {
+  ResistiveMHD2D<AnalyticElectromagnetics05>(0.2, 0.7, true, 1.0, 1.0);
 }
 

@@ -228,7 +228,8 @@ if ( BUILD_TESTS )
     # Test: operators on 
     add_amanzi_test(operators_electromagnetics operators_electromagnetics
                     KIND unit
-                    SOURCE test/Main.cc test/operator_electromagnetics.cc 
+                    SOURCE test/Main.cc test/AnalyticElectromagneticsBase.cc
+                                        test/operator_electromagnetics.cc 
                                         test/operator_electromagnetics_mhd.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
