@@ -1251,7 +1251,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     }
   }
 
-  mass_start /= units_.concentration_factor();
+  //mass_start /= units_.concentration_factor();
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
     if (domain_name_ == "surface") std::cout<<"Overland mass start "<<mass_start<<"\n";
@@ -1353,7 +1353,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
       mass_final += tcc_next[i][c]*vol_phi_ws_den;
     }    
   }
-  mass_final /= units_.concentration_factor();
+  //mass_final /= units_.concentration_factor();
 
   tmp1 = mass_final;
   mesh_->get_comm()->SumAll(&tmp1, &mass_final, 1);
@@ -1587,15 +1587,15 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
         } else {
           value =  mesh_->cell_volume(c) * values[k];
           // correction for non-SI concentration units
-          if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "weight")
-              value /= units_.concentration_factor();
+          // if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "weight")
+          //     value /= units_.concentration_factor();
         }
 
         tcc[imap][c] += dtp * value;
         mass_solutes_source_[i] += value;
 
          // if (value != 0) std::cout<<"Source name "<<srcs_[m]->name()<<" from Source cell "<<c
-         //                        <<" dt "<<dtp<<"  + "<<dtp * value<<" "<<values[k]<<"\n";
+         //                         <<" dt "<<dtp<<"  + "<<dtp * value<<" "<<values[k]<<"\n";
       }
     }
   }
@@ -1631,12 +1631,12 @@ void Transport_PK_ATS::Sinks2TotalOutFlux(Epetra_MultiVector& tcc,
           if (srcs_[m]->name() == "domain coupling") {
             val = std::max(val, fabs(values[k])/tcc[imap][c]);
           }
-          else if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "weight"){
-            val = std::max(val, fabs(values[k])* mesh_->cell_volume(c) * units_.concentration_factor());
-          }
-          else {
-            val = std::max(val, fabs(values[k])* mesh_->cell_volume(c));
-          }
+          // else if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "weight"){
+          //   val = std::max(val, fabs(values[k])* mesh_->cell_volume(c) * units_.concentration_factor());
+          // }
+          // else {
+          //   val = std::max(val, fabs(values[k])* mesh_->cell_volume(c));
+          // }
         }                              
       }
       sink_add[c] = std::max(sink_add[c], val);              

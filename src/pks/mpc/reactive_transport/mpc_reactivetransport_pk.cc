@@ -130,19 +130,10 @@ bool ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool rein
 
   Key domain_name = tranport_pk_->get_domain_name();
   Key tcc_key = getKey(domain_name, "total_component_concentration");
+  Key mol_den_key = getKey(domain_name,  "molar_density_liquid");
 
   // First we do a transport step.
   bool pk_fail = tranport_pk_->AdvanceStep(t_old, t_new, reinit);
-
-  // Right now transport step is always succeeded.
-  // if (!pk_fail) {
-  //   std::cout<< *tranport_pk_->total_component_concentration()->ViewComponent("cell", true)<<"\n";
-  //   std::cout<< *total_component_concentration_stor<<"\n";
-  //   *total_component_concentration_stor = *tranport_pk_->total_component_concentration()->ViewComponent("cell", true);
-  // } else {
-  //   Errors::Message message("MPC: Transport PK returned an unexpected error.");
-  //   Exceptions::amanzi_throw(message);
-  // }
 
   if (pk_fail){
     Errors::Message message("MPC: Transport PK returned an unexpected error.");
@@ -154,15 +145,24 @@ bool ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool rein
     Teuchos::RCP<Epetra_MultiVector> tcc_copy =
       S_->GetFieldCopyData(tcc_key,"subcycling","state")->ViewComponent("cell", true);
 
-    std::cout<<*tcc_copy<<"\n";
+    Teuchos::RCP<const Epetra_MultiVector> mol_dens =
+      S_->GetFieldData(mol_den_key)->ViewComponent("cell", true);
 
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh = S_->GetMesh(domain_name);
+    int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+    // convert from mole fraction[-] to mol/L
+    for (int c=0; c<ncells_owned; c++) (*tcc_copy)[0][c] *= (*mol_dens)[0][c] / 1000.;
+
+    
     chemistry_pk_->set_aqueous_components(tcc_copy);
-
     pk_fail = chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
     chem_step_succeeded = true;  
  
-    //*S_->GetFieldData(tcc_key,"state")->ViewComponent("cell", true) = *chemistry_pk_->aqueous_components();
     *tcc_copy = *chemistry_pk_->aqueous_components();
+    // convert from mol/L fraction to mole fraction[-]
+    for (int c=0; c<ncells_owned; c++) (*tcc_copy)[0][c] /= (*mol_dens)[0][c] / 1000.;
+    
   }
   catch (const Errors::Message& chem_error) {
     fail = true;

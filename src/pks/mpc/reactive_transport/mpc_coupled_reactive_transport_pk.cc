@@ -125,6 +125,8 @@ bool Coupled_ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, b
   Key overland_domain_key = tranport_pk_overland_->get_domain_name();
   Key tcc_sub_key = getKey(subsurface_domain_key, "total_component_concentration");
   Key tcc_over_key = getKey(overland_domain_key, "total_component_concentration");
+  Key sub_mol_den_key = getKey(subsurface_domain_key,  "molar_density_liquid");
+  Key over_mol_den_key = getKey(overland_domain_key,  "molar_density_liquid");
 
   // First we do a transport step.
   bool pk_fail = tranport_pk_->AdvanceStep(t_old, t_new, reinit);
@@ -144,15 +146,31 @@ bool Coupled_ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, b
       S_->GetFieldCopyData(tcc_over_key,"subcycling", "state")->ViewComponent("cell", true);
     chemistry_pk_overland_->set_aqueous_components(tcc_over);
 
+    Teuchos::RCP<const Epetra_MultiVector> mol_dens_sub =
+      S_->GetFieldData(sub_mol_den_key)->ViewComponent("cell", true);
+
+    Teuchos::RCP<const Epetra_MultiVector> mol_dens_over =
+      S_->GetFieldData(over_mol_den_key)->ViewComponent("cell", true);
+
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh_sub = S_->GetMesh(subsurface_domain_key);
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh_over = S_->GetMesh(overland_domain_key);
+    int ncells_owned_sub  = mesh_sub->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int ncells_owned_over = mesh_over->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+    // convert from mole fraction[-] to mol/L
+    for (int c=0; c<ncells_owned_sub; c++) (*tcc_sub)[0][c]  *= (*mol_dens_sub)[0][c] / 1000.;
+    for (int c=0; c<ncells_owned_over; c++) (*tcc_over)[0][c] *= (*mol_dens_over)[0][c] / 1000.;
+
+
     pk_fail = chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
     chem_step_succeeded = true;
 
-    //*S_->GetFieldData(tcc_sub_key, "state")->ViewComponent("cell", true) = *chemistry_pk_subsurface_->aqueous_components();
     *tcc_sub = *chemistry_pk_subsurface_->aqueous_components();
-
-    // *S_->GetFieldData(tcc_over_key, "state")->ViewComponent("cell", true)
-    //   = *chemistry_pk_overland_->aqueous_components();
     *tcc_over = *chemistry_pk_overland_->aqueous_components();
+
+    // convert from mol/L fraction to mole fraction[-]
+    for (int c=0; c<ncells_owned_sub; c++) (*tcc_sub)[0][c]  /= (*mol_dens_sub)[0][c] / 1000.;
+    for (int c=0; c<ncells_owned_over; c++) (*tcc_over)[0][c] /= (*mol_dens_over)[0][c] / 1000.;
     
   }
   catch (const Errors::Message& chem_error) {
