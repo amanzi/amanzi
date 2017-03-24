@@ -36,7 +36,7 @@ class TransportSourceFunction : public PK_DomainFunction {
   int tcc_index() { return tcc_index_; }
   void set_tcc_name(const std::string& name) { tcc_name_ = name; }
   void set_tcc_index(int i) { tcc_index_ = i; }
-  virtual void set_state(const Teuchos::RCP<State>& S) {std::cout<<"TSF\n";S_=S;}
+  virtual void set_state(const Teuchos::RCP<State>& S) {S_=S;}
   virtual std::string name() { return "TransportSourceFunction\n";}
 
  private:

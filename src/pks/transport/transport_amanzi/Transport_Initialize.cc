@@ -109,6 +109,7 @@ void Transport_PK_ATS::InitializeAll_()
   mass_solutes_exact_.assign(num_aqueous + num_gaseous, 0.0);
   mass_solutes_source_.assign(num_aqueous + num_gaseous, 0.0);
   mass_solutes_bc_.assign(num_aqueous + num_gaseous, 0.0);
+  mass_solutes_stepstart_.assign(num_aqueous + num_gaseous, 0.0);
 
   if (tp_list_->isParameter("runtime diagnostics: regions")) {
     runtime_regions_ = tp_list_->get<Teuchos::Array<std::string> >("runtime diagnostics: regions").toVector();
