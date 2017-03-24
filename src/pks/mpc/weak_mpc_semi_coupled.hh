@@ -39,7 +39,7 @@ public:
 
   bool CoupledSurfSubsurfColumns(double t_old, double t_new, bool reinit);
   
-  double FindVolumetricHead(double d);
+  double FindVolumetricHead(double d, double delta_max, double delta_ex);
   double VolumetricHead(double x, double a, double b, double d);
 
 private :

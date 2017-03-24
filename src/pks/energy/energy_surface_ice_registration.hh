@@ -27,7 +27,6 @@ Utils::RegisteredFactory<FieldEvaluator,SurfaceIceEnergyEvaluator> SurfaceIceEne
 
 } //namespace
 } //namespace
-
 #include "surface_subgrid_ice_energy_evaluator.hh"
 
 namespace Amanzi {

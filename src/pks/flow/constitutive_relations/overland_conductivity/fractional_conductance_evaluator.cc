@@ -30,9 +30,15 @@ FractionalConductanceEvaluator::FractionalConductanceEvaluator(Teuchos::Paramete
   pdd_key_ = plist_.get<std::string>("ponded depression depth key", getKey(domain,"ponded_depression_depth"));
   dependencies_.insert(pdd_key_);
   
-  depr_depth_ = plist_.get<double>("depression depth");//, 0.043);
-  delta_max_ = plist_.get<double>("maximum ponded depth");//, 0.483);
-  delta_ex_ = plist_.get<double>("excluded volume");//,0.23);
+  delta_max_key_ = plist_.get<std::string>("maximum ponded depth key", getKey(domain,"maximum_ponded_depth"));
+  dependencies_.insert(delta_max_key_);
+  delta_ex_key_ = plist_.get<std::string>("excluded volume key", getKey(domain,"excluded_volume"));
+  dependencies_.insert(delta_ex_key_);
+  depr_depth_key_ = plist_.get<std::string>("depression depth key", getKey(domain,"depression_depth"));
+  dependencies_.insert(depr_depth_key_);
+  //  depr_depth_ = plist_.get<double>("depression depth");//, 0.043);
+  //delta_max_ = plist_.get<double>("maximum ponded depth");//, 0.483);
+  //delta_ex_ = plist_.get<double>("excluded volume");//,0.23);
 
 }
 
@@ -42,10 +48,9 @@ FractionalConductanceEvaluator::FractionalConductanceEvaluator(const FractionalC
     pdd_key_(other.pdd_key_),
     pd_key_(other.pd_key_),
     vpd_key_(other.vpd_key_),
-    depr_depth_(other.depr_depth_),
-    maxpd_depth_(other.maxpd_depth_),
-    delta_ex_(other.delta_ex_),
-    delta_max_(other.delta_max_)
+    delta_ex_key_(other.delta_ex_key_),
+    delta_max_key_(other.delta_max_key_),
+    depr_depth_key_(other.delta_max_key_)
 {};
 
 Teuchos::RCP<FieldEvaluator>
@@ -62,18 +67,26 @@ void FractionalConductanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S
   const Epetra_MultiVector& depth = *S->GetFieldData(pd_key_)->ViewComponent("cell",false);
   const Epetra_MultiVector& vpd = *S->GetFieldData(vpd_key_)->ViewComponent("cell",false);
   
+  const Epetra_MultiVector& delta_max_v = *S->GetFieldData(delta_max_key_)->ViewComponent("cell", false);
+  const Epetra_MultiVector& delta_ex_v = *S->GetFieldData(delta_ex_key_)->ViewComponent("cell", false);
+  const Epetra_MultiVector& depr_depth_v = *S->GetFieldData(depr_depth_key_)->ViewComponent("cell", false);
 
-
-  const double depr = std::pow(depr_depth_,2)*(2*delta_max_ - 3*delta_ex_)/std::pow(delta_max_,2) + std::pow(depr_depth_,3)*(2*delta_ex_ - delta_max_)/std::pow(delta_max_,3);
-   
+ 
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   int ncells = res.MyLength();
   for (int c=0; c!=ncells; ++c) {
-    if (depth[0][c] <= depr_depth_)
+    double depr_depth = depr_depth_v[0][c];
+    double delta_max = delta_max_v[0][c];
+    double delta_ex = delta_ex_v[0][c];
+    const double fixed_depth = std::pow(depr_depth,2)*(2*delta_max - 3*delta_ex)/std::pow(delta_max,2) + std::pow(depr_depth,3)*(2*delta_ex - delta_max)/std::pow(delta_max,3);
+
+    if (depth[0][c] <= depr_depth)
       res[0][c] = 0;
     else{
       //      double pd = std::pow(depth[0][c],2)*(2*delta_max_ - 3*delta_ex_)/std::pow(delta_max_,2) + std::pow(depth[0][c],3)*(2*delta_ex_ - delta_max_)/std::pow(delta_max_,3);
       // res[0][c] = (pd - depr) / depth[0][c];
-      res[0][c] = (vpd[0][c] - depr) / depth[0][c];
+      res[0][c] = (vpd[0][c] - fixed_depth) / depth[0][c];
     }
   }
 }

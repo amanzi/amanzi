@@ -102,16 +102,21 @@ WeakMPCSemiCoupled::Setup(const Teuchos::Ptr<State>& S) {
   coupling_key_ = plist_->get<std::string>("coupling key"," ");
   subcycle_key_ = plist_->get<bool>("subcycle",false);
 
-  Teuchos::ParameterList en_list = S->FEList().sublist("surface_star-energy");
-  sg_model_ = en_list.get<bool>("subgrid model", false);
+  //Teuchos::ParameterList en_list = S->FEList().isSublist("surface_star-depression_depth");
+  if (S->FEList().isSublist("surface_star-depression_depth"))
+    sg_model_ = true;
+
+
+  //  sg_model_ = en_list.get<bool>("subgrid model", false);
   if (sg_model_){
-    delta_max_ = en_list.get<double>("maximum ponded depth");
-    delta_ex_ = en_list.get<double>("excluded volume");
+    delta_max_ = .4;//en_list.get<double>("maximum ponded depth");
+    delta_ex_ = 0.2;//en_list.get<double>("excluded volume");
   }
   if(sg_model_)
     assert(delta_max_ > 0.0);
   //  sync_time_ = plist_->get<double>("sync time"); //provide default value later!!
-  ASSERT(!(coupling_key_ == " "));
+  ASSERT(!(coupling_key_.empty()));
+
 };
 
 void 
@@ -164,7 +169,7 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double t_old, double t_new, bool r
     ASSERT(pk_sfstar.get());
     pk_sfstar->ChangedSolution();
   }
-  
+
   fail = (*pk)->AdvanceStep(t_old, t_new, reinit);
   int nfailed_surf = 0;
   if (fail)
@@ -177,6 +182,7 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double t_old, double t_new, bool r
     flag_star_surf=1;
     return true;
   }
+
   //copying surface_star (2D) data (pressures/temperatures) to column surface (1D-cells)[all the surf column cells get updates]
 
  
@@ -437,6 +443,13 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double t_old, double t_new, bool r
     }
     else{
       
+      const Epetra_MultiVector& delta_max_v = *S_next_->GetFieldData("surface_star-maximum_ponded_depth")->ViewComponent("cell", false);
+      const Epetra_MultiVector& delta_ex_v = *S_next_->GetFieldData("surface_star-excluded_volume")->ViewComponent("cell", false);
+      //	const Epetra_MultiVector& depr_depth_v = *S->GetFieldData(depr_depth_key_)->ViewComponent("cell", false);
+      const Epetra_Vector& gravity = *S_->GetConstantVectorData("gravity");
+      double gz = -gravity[2];
+      const double& p_atm = *S_->GetScalarData("atmospheric_pressure");
+
       for (unsigned c=0; c<size_t; c++){
 	std::stringstream name;
 	int id = S_->GetMesh("surface")->cell_map(false).GID(c);
@@ -445,24 +458,23 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double t_old, double t_new, bool r
 	const Epetra_MultiVector& surf_wc = *S_next_->GetFieldData(getKey(name.str(),"water_content"))->ViewComponent("cell", false);
 	
 	const Epetra_MultiVector& cv = *S_next_->GetFieldData(getKey(name.str(),"cell_volume"))->ViewComponent("cell", false);
-	const Epetra_Vector& gravity = *S_->GetConstantVectorData("gravity");
-	double gz = -gravity[2];
-	const double& p_atm = *S_->GetScalarData("atmospheric_pressure");
 
 	const Epetra_MultiVector& mdl = *S_next_->GetFieldData(getKey(name.str(),"mass_density_liquid"))->ViewComponent("cell", false);
 	
+	
 	if (pd[0][0] >0){
-	  double delta = FindVolumetricHead(pd[0][0]);
+	  double delta = FindVolumetricHead(pd[0][0], delta_max_v[0][c],delta_ex_v[0][c]);
 	  
 	  double pres = delta*mdl[0][0] *gz + p_atm;
 	  surfstar_p[0][c] = pres; 
 
 	  double vpd = 0;
-	  if (delta <= delta_max_){
-	    vpd = std::pow(delta,2)*(2*delta_max_ - 3*delta_ex_)/std::pow(delta_max_,2) + std::pow(delta,3)*(2*delta_ex_ - delta_max_)/std::pow(delta_max_,3); //later call get the volumetric head given ponded depth to fix this
+	  if (delta <= delta_max_v[0][c]){
+	    vpd = std::pow(delta,2)*(2*delta_max_v[0][c] - 3*delta_ex_v[0][c])/std::pow(delta_max_v[0][c],2) 
+	      + std::pow(delta,3)*(2*delta_ex_v[0][c] - delta_max_v[0][c])/std::pow(delta_max_v[0][c],3); //later call get the volumetric head given ponded depth to fix this
 	  }
 	  else{
-	    vpd = delta - delta_ex_;
+	    vpd = delta - delta_ex_v[0][c];
 	  }
 
 	  double vpd_pres = vpd *mdl[0][0] *gz + p_atm;
@@ -685,6 +697,24 @@ WeakMPCSemiCoupled::generalize_inputspec(const Teuchos::Ptr<State>& S){
     seb_list.set("conserved quantity key",getKey(domain_surf,"snow_depth"));
     seb_list.set("domain name",domain_surf);
     
+
+    if (seb_list.sublist("initial condition").isParameter("restart files, checkpoint cycles")){
+   
+      Teuchos::Array<std::string> restart = seb_list.sublist("initial condition").get<Teuchos::Array<std::string> >("restart files, checkpoint cycles");
+
+      std::stringstream res_file;
+
+      if(restart[0].rfind("/") == restart[0].size()-1){}
+      else
+	restart[0] += "/";
+      
+      res_file << restart[0] << "checkpoint_" << rank << "_" << restart[1] << ".h5";
+    
+      seb_list.sublist("initial condition").set("restart file", res_file.str());
+    
+    }
+
+
     top_pk_list.set(seb_pk, seb_list);
 
     //------------------- PSS
@@ -1068,15 +1098,15 @@ WeakMPCSemiCoupled::generalize_inputspec(const Teuchos::Ptr<State>& S){
 
 
 double 
-WeakMPCSemiCoupled::FindVolumetricHead(double d){
+WeakMPCSemiCoupled::FindVolumetricHead(double d, double delta_max, double delta_ex){
 
-  double a = (2*delta_ex_ - delta_max_) / std::pow(delta_max_,3);
-  double b = (2*delta_max_ - 3*delta_ex_) / std::pow(delta_max_,2);
+  double a = (2*delta_ex - delta_max) / std::pow(delta_max,3);
+  double b = (2*delta_max - 3*delta_ex) / std::pow(delta_max,2);
 
-  double x1=0,x2=delta_max_,x3;
+  double x1=0,x2=delta_max,x3;
   int count=0;
   double tol = 1.0E-15;
-  if (d <= delta_max_){
+  if (d <= delta_max){
     while (count <3000){
       x3 = (x1+x2)*0.5;
       double a1 = VolumetricHead(x1,a,b,d);
@@ -1094,7 +1124,7 @@ WeakMPCSemiCoupled::FindVolumetricHead(double d){
     }
   }
   else
-    return d + delta_ex_;
+    return d + delta_ex;
 
   return x3;
 }

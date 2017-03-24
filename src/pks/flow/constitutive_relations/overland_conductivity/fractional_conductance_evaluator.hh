@@ -58,6 +58,7 @@ class FractionalConductanceEvaluator : public SecondaryVariableFieldEvaluator {
  private:
   double maxpd_depth_, depr_depth_, delta_ex_, delta_max_;
   Key pdd_key_, pd_key_, vpd_key_;
+  Key depr_depth_key_, delta_ex_key_, delta_max_key_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,FractionalConductanceEvaluator> factory_;

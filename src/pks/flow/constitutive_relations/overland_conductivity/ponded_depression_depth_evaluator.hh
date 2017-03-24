@@ -57,7 +57,8 @@ class PondedDepressionDepthEvaluator : public SecondaryVariableFieldEvaluator {
 
  private:
   Key pd_key_;
-  double depr_depth_;
+  //double depr_depth_key_;
+  Key depr_depth_key_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,PondedDepressionDepthEvaluator> factory_;

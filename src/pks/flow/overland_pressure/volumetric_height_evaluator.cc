@@ -29,8 +29,10 @@ VolumetricHeightEvaluator::VolumetricHeightEvaluator(Teuchos::ParameterList& pli
   pd_key_ = plist_.get<std::string>("height key", getKey(domain,"ponded_depth"));
   dependencies_.insert(pd_key_);
 
-  delta_max_ = plist_.get<double>("maximum ponded depth");//,0.483);
-  delta_ex_ = plist_.get<double>("excluded volume");//,0.23);
+  delta_max_key_ = plist_.get<std::string>("maximum ponded depth key", getKey(domain,"maximum_ponded_depth"));
+  dependencies_.insert(delta_max_key_);
+  delta_ex_key_ = plist_.get<std::string>("excluded volume key", getKey(domain,"excluded_volume"));
+  dependencies_.insert(delta_ex_key_);
   // model
   Teuchos::ParameterList model_plist = plist_.sublist("height model parameters");
   vol_model_ = Teuchos::rcp(new VolumetricHeightModel(model_plist));
@@ -41,10 +43,52 @@ VolumetricHeightEvaluator::VolumetricHeightEvaluator(Teuchos::ParameterList& pli
 VolumetricHeightEvaluator::VolumetricHeightEvaluator(const VolumetricHeightEvaluator& other) :
   SecondaryVariableFieldEvaluator(other),
   pd_key_(other.pd_key_),
-  delta_max_(other.delta_max_),
-  delta_ex_(other.delta_ex_),
+  delta_max_key_(other.delta_max_key_),
+  delta_ex_key_(other.delta_ex_key_),
   vol_model_(other.vol_model_) {}
   
+  /*
+void VolumetricHeightEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
+  // Ensure my field exists.  Requirements should be already set.
+  ASSERT(my_key_ != std::string(""));
+  Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
+
+  // check plist for vis or checkpointing control
+  bool io_my_key = plist_.get<bool>(std::string("visualize ")+my_key_, true);
+  S->GetField(my_key_, my_key_)->set_io_vis(io_my_key);
+  bool checkpoint_my_key = plist_.get<bool>(std::string("checkpoint ")+my_key_, true);
+  S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
+
+  // If my requirements have not yet been set, we'll have to hope they
+  // get set by someone later.  For now just defer.
+  if (my_fac->Mesh() != Teuchos::null) {
+    // Create an unowned factory to check my dependencies.  This is done
+    // manually here because we do NOT want faces, despite having faces in
+    // my_key.  The faces will get updated directly from the mixed field.
+    Teuchos::RCP<CompositeVectorSpace> dep_fac =
+        Teuchos::rcp(new CompositeVectorSpace());
+    dep_fac->SetOwned(false);
+    dep_fac->SetGhosted(my_fac->Ghosted());
+    dep_fac->SetMesh(my_fac->Mesh());
+    dep_fac->AddComponent("cell", AmanziMesh::CELL, 1);
+
+    // Loop over my dependencies, ensuring they meet the requirements.
+    for (KeySet::const_iterator key=dependencies_.begin();
+         key!=dependencies_.end(); ++key) {
+      Teuchos::RCP<CompositeVectorSpace> fac = S->RequireField(*key);
+      fac->Update(*dep_fac);
+    }
+
+    // Recurse into the tree to propagate info to leaves.
+    for (KeySet::const_iterator key=dependencies_.begin();
+         key!=dependencies_.end(); ++key) {
+      S->RequireFieldEvaluator(*key)->EnsureCompatibility(S);
+    }
+  }
+
+}
+
+   */
 
 Teuchos::RCP<FieldEvaluator>
 VolumetricHeightEvaluator::Clone() const {
@@ -59,22 +103,19 @@ void VolumetricHeightEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const Epetra_MultiVector& pd_c = *S->GetFieldData(pd_key_)->ViewComponent("cell",false);
 
   int ncells = res_c.MyLength();
-  bool bar_ = false;
+
+  Teuchos::RCP<const CompositeVector> max_pd = S->GetFieldData(delta_max_key_);
+  Teuchos::RCP<const CompositeVector> ex_vol = S->GetFieldData(delta_ex_key_);
+  // cell values
+  const Epetra_MultiVector& max_pd_v = *max_pd->ViewComponent("cell", false);
+  const Epetra_MultiVector& ex_vol_v = *ex_vol->ViewComponent("cell", false);
+
   for (int c=0; c!=ncells; ++c){
-    res_c[0][c] = std::pow(pd_c[0][c],2)*(2*delta_max_ - 3*delta_ex_)/std::pow(delta_max_,2) + std::pow(pd_c[0][c],3)*(2*delta_ex_ - delta_max_)/std::pow(delta_max_,3);
+    double delta_max = max_pd_v[0][c];
+    double delta_ex = ex_vol_v[0][c];
+    res_c[0][c] = std::pow(pd_c[0][c],2)*(2*delta_max - 3*delta_ex)/std::pow(delta_max,2) + std::pow(pd_c[0][c],3)*(2*delta_ex - delta_max)/std::pow(delta_max,3);
   }
-  /*
-  if (bar_) {
-    for (int c=0; c!=ncells; ++c) {
-      res_c[0][c] = vol_model_->Height(pd_c[0][c], delta_max_,delta_ex_);
-    }
-  } else {
-    for (int c=0; c!=ncells; ++c) {
-      res_c[0][c] = pd_c[0][c] <= 0.0 ? 0. :
-          vol_model_->Height(pd_c[0][c], delta_max_,delta_ex_);
-    }
-  }
-  */
+
 }
 
 
@@ -89,12 +130,20 @@ void VolumetricHeightEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::P
   const Epetra_MultiVector& res_c = *result->ViewComponent("cell",false);
   const Epetra_MultiVector& pd_c = *S->GetFieldData(pd_key_)->ViewComponent("cell",false);
 
+  Teuchos::RCP<const CompositeVector> max_pd = S->GetFieldData(delta_max_key_);
+  Teuchos::RCP<const CompositeVector> ex_vol = S->GetFieldData(delta_ex_key_);
+  // cell values
+  const Epetra_MultiVector& max_pd_v = *max_pd->ViewComponent("cell", false);
+  const Epetra_MultiVector& ex_vol_v = *ex_vol->ViewComponent("cell", false);
+
   if(wrt_key == pd_key_){
       int ncells = res_c.MyLength();
       for (int c=0; c!=ncells; ++c) {
-        if (pd_c[0][c] <= delta_max_)
-          res_c[0][c] = 2*pd_c[0][c]*(2*delta_max_ - 3*delta_ex_ )/ std::pow(delta_max_,2) 
-            + 3*pd_c[0][c]*pd_c[0][c]*(2*delta_ex_ - delta_max_)/std::pow(delta_max_,3);
+        double delta_max = max_pd_v[0][c];
+        double delta_ex = ex_vol_v[0][c];
+        if (pd_c[0][c] <= delta_max)
+          res_c[0][c] = 2*pd_c[0][c]*(2*delta_max - 3*delta_ex )/ std::pow(delta_max,2) 
+            + 3*pd_c[0][c]*pd_c[0][c]*(2*delta_ex - delta_max)/std::pow(delta_max,3);
         else
           res_c[0][c] = 1.0;
         //        res_c[0][c] = icy_model_->DHeightDPressure(pres_c[0][c], eta[0][c],
@@ -105,85 +154,7 @@ void VolumetricHeightEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::P
     std::cout<<"VOLUMETRIC HEIGHT EVALUATOR: NO DERIVATIVE EXISTS: "<<wrt_key<<"\n";
     ASSERT(0);
   }
-  /*
-  // -- cells need the function eval
-  const Epetra_MultiVector& res_c = *result->ViewComponent("cell",false);
-  const Epetra_MultiVector& pres_c = *S->GetFieldData(pres_key_)
-      ->ViewComponent("cell",false);
-   const Epetra_MultiVector& rho_l = *S->GetFieldData(dens_key_)
-      ->ViewComponent("cell",false);
-  const Epetra_MultiVector& rho_i = *S->GetFieldData(dens_ice_key_)
-      ->ViewComponent("cell",false);
-  const Epetra_MultiVector& eta = *S->GetFieldData(unfrozen_frac_key_)
-      ->ViewComponent("cell",false);
 
-  const double& p_atm = *S->GetScalarData(patm_key_);
-  const Epetra_Vector& gravity = *S->GetConstantVectorData(gravity_key_);
-  double gz = -gravity[2];  // check this
-
-  // For derivatives, the height is always assumed to be non-negative.  If it
-  // is negative, the term gets zeroed later.
-  if (bar_) {
-    if (wrt_key == pres_key_) {
-      int ncells = res_c.MyLength();
-      for (int c=0; c!=ncells; ++c) {
-        res_c[0][c] = icy_model_->DHeightDPressure(pres_c[0][c], eta[0][c],
-                rho_l[0][c], rho_i[0][c], p_atm, gz);
-      }
-    } else if (wrt_key == dens_key_) {
-      int ncells = res_c.MyLength();
-      for (int c=0; c!=ncells; ++c) {
-        res_c[0][c] = icy_model_->DHeightDRho_l(pres_c[0][c], eta[0][c],
-                rho_l[0][c], rho_i[0][c], p_atm, gz);
-      }
-    } else if (wrt_key == dens_ice_key_) {
-      int ncells = res_c.MyLength();
-      for (int c=0; c!=ncells; ++c) {
-        res_c[0][c] = icy_model_->DHeightDRho_i(pres_c[0][c], eta[0][c],
-                rho_l[0][c], rho_i[0][c], p_atm, gz);
-      }
-    } else if (wrt_key == unfrozen_frac_key_) {
-      int ncells = res_c.MyLength();
-      for (int c=0; c!=ncells; ++c) {
-        res_c[0][c] = icy_model_->DHeightDEta(pres_c[0][c], eta[0][c],
-                rho_l[0][c], rho_i[0][c], p_atm, gz);
-      }
-    } else {
-      ASSERT(0);
-    }
-  } else {
-    if (wrt_key == pres_key_) {
-      int ncells = res_c.MyLength();
-      for (int c=0; c!=ncells; ++c) {
-        res_c[0][c] =  pres_c[0][c] < p_atm ? 0. :
-            icy_model_->DHeightDPressure(pres_c[0][c], eta[0][c],
-                rho_l[0][c], rho_i[0][c], p_atm, gz);
-      }
-    } else if (wrt_key == dens_key_) {
-      int ncells = res_c.MyLength();
-      for (int c=0; c!=ncells; ++c) {
-        res_c[0][c] =  pres_c[0][c] < p_atm ? 0. :
-            icy_model_->DHeightDRho_l(pres_c[0][c], eta[0][c],
-                rho_l[0][c], rho_i[0][c], p_atm, gz);
-      }
-    } else if (wrt_key == dens_ice_key_) {
-      int ncells = res_c.MyLength();
-      for (int c=0; c!=ncells; ++c) {
-        res_c[0][c] =  pres_c[0][c] < p_atm ? 0. :
-            icy_model_->DHeightDRho_i(pres_c[0][c], eta[0][c],
-                rho_l[0][c], rho_i[0][c], p_atm, gz);
-      }
-    } else if (wrt_key == unfrozen_frac_key_) {
-      int ncells = res_c.MyLength();
-      for (int c=0; c!=ncells; ++c) {
-        res_c[0][c] =  pres_c[0][c] < p_atm ? 0. :
-            icy_model_->DHeightDEta(pres_c[0][c], eta[0][c],
-                rho_l[0][c], rho_i[0][c], p_atm, gz);
-      }
-    } else {
-      ASSERT(0);
-    }
-    }*/
 }
 
 

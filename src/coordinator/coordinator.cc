@@ -209,7 +209,7 @@ void Coordinator::initialize() {
     vis->set_mesh(surface_3d);    
 
     //should be removed in future -- xmdf does not work for general polyhdera, and 3D silo gives error "3D not tested yet!!"
-    if (parameter_list_->sublist("mesh").isSublist("column meshes")){
+    if (parameter_list_->sublist("mesh").isSublist("column meshes") || parameter_list_->sublist("mesh").sublist("surface mesh").isParameter("polygonal cells")){
       vis->set_mesh(surface);
       vis->CreateFiles();
     }

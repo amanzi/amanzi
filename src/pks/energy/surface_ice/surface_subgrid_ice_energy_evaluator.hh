@@ -50,7 +50,7 @@ class SurfaceSubgridIceEnergyEvaluator : public SecondaryVariableFieldEvaluator 
   Key height_key_;
   Key cv_key_, vpd_key_;
   bool sg_model_;
-  double delta_max_, delta_ex_;
+  Key delta_max_key_, delta_ex_key_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,SurfaceSubgridIceEnergyEvaluator> reg_;

@@ -42,7 +42,7 @@ class VolumetricHeightEvaluator : public SecondaryVariableFieldEvaluator {
 
  protected:
   Key pd_key_;
-  double delta_max_, delta_ex_;
+  Key delta_max_key_, delta_ex_key_;
   Teuchos::RCP<VolumetricHeightModel> vol_model_;
 
  private:

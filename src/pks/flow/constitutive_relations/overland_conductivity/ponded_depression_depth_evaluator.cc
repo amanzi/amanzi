@@ -20,11 +20,14 @@ PondedDepressionDepthEvaluator::PondedDepressionDepthEvaluator(Teuchos::Paramete
   if(!my_key_.empty())
     domain = getDomain(my_key_);
   else if (my_key_.empty())
-    my_key_ = plist_.get<std::string>("ponded depresssion depth key", "surface-ponded_depression_depth");
+    my_key_ = plist_.get<std::string>("ponded depresssion depth key", "surface_star-ponded_depression_depth");
 
   pd_key_ = plist_.get<std::string>("height key", getKey(domain,"ponded_depth"));
   dependencies_.insert(pd_key_);
-  depr_depth_ = plist_.get<double>("depression depth");//, 0.043);
+
+  depr_depth_key_ = plist_.get<std::string>("depression depth key", getKey(domain,"depression_depth"));
+  dependencies_.insert(depr_depth_key_);
+  // depr_depth_ = plist_.get<double>("depression depth");//, 0.043);
 
 }
 
@@ -32,7 +35,7 @@ PondedDepressionDepthEvaluator::PondedDepressionDepthEvaluator(Teuchos::Paramete
 PondedDepressionDepthEvaluator::PondedDepressionDepthEvaluator(const PondedDepressionDepthEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     pd_key_(other.pd_key_),
-    depr_depth_(other.depr_depth_) {};
+    depr_depth_key_(other.depr_depth_key_) {};
 
 Teuchos::RCP<FieldEvaluator>
 PondedDepressionDepthEvaluator::Clone() const {
@@ -49,10 +52,13 @@ void PondedDepressionDepthEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S
   //  Teuchos::RCP<const CompositeVector> p_depth = S->GetFieldData(pdd_key_);
   //  const double dep& d_depth = *S->GetScalarData(dd_key_);
   
+  const Epetra_MultiVector& depr_depth_v = *S->GetFieldData(depr_depth_key_)->ViewComponent("cell", false);
+
+  assert(depr_depth_v[0][3] > 0.);
+
   int ncells = res.MyLength();
   for (int c=0; c!=ncells; ++c) {
-    //    if (0 <= d_depth[0][c] && d_depth[0][c] <=
-    res[0][c] = d_depth[0][c] - depr_depth_;
+    res[0][c] = d_depth[0][c] - depr_depth_v[0][c];
       }
   //  result->Update(1.0, *p_depth, -1.0, *d_depth, 0.0);
 }

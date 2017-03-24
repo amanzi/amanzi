@@ -2,9 +2,9 @@
   The overland subgrid water content evaluator is an algebraic evaluator of a given model.
 
   Generated via evaluator_generator with:
-Subgrid water content.
+  Subgrid water content.
     
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ahmad Jan (jana@ornl.gov)
 */
 
 #ifndef AMANZI_FLOW_OVERLAND_SUBGRID_WATER_CONTENT_EVALUATOR_HH_
@@ -40,7 +40,8 @@ class OverlandSubgridWaterContentEvaluator : public SecondaryVariableFieldEvalua
   void InitializeFromPlist_();
 
   Key pres_key_, cv_key_;
-  double M_, delta_max_, delta_ex_;
+  double M_;
+  Key delta_max_key_, delta_ex_key_;
   bool bar_;
   double rollover_;
   Teuchos::RCP<OverlandSubgridWaterContentModel> model_;

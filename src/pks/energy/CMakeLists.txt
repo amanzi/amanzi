@@ -160,6 +160,11 @@ register_evaluator_with_factory(
   LISTNAME   ENERGY_SURFACE_ICE_REG
   )
 
+register_evaluator_with_factory(
+  HEADERFILE surface_ice/surface_subgrid_ice_energy_evaluator_reg.hh
+  LISTNAME   ENERGY_SURFACE_ICE_REG
+  )
+
 generate_evaluators_registration_header(
   HEADERFILE energy_surface_ice_registration.hh
   LISTNAME   ENERGY_SURFACE_ICE_REG
