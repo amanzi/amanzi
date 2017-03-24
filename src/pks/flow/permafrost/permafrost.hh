@@ -9,6 +9,11 @@
   while the water content changes to account for water in ice phase.  As these
   are now drop-in field evaluators, there is very little to change in the PK.
 
+* `"saturation ice key`" ``[string]`` **"DOMAIN-saturation_ice"** volume fraction of the ice phase (only when relevant) ``[-]``
+
+
+
+  
   License: BSD
   Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 */

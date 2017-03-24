@@ -55,6 +55,11 @@ public:
   Teuchos::RCP<Functions::BoundaryFunction> CreateCriticalDepth() const {
     return CreateWithoutFunction("critical depth");
   }
+
+  Teuchos::RCP<Functions::BoundaryFunction> CreateFixedLevel() const {
+    return CreateWithFunction("head", "fixed level");
+  }
+  
 };
 
 }  // namespace

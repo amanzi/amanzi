@@ -333,6 +333,13 @@ class Vis:
             v.DefineVectorExpression("ponded_depth_displace", "{0,0,ponded_depth.cell.0}")
             v.DefineVectorExpression("snow_displace", "{0,0,snow_depth.cell.0+ponded_depth.cell.0}")
 
+
+    def unloadSources(self):
+        v.DeleteAllPlots()
+        if self.subsurface_src is not None:
+            v.CloseDatabase(self.subsurface_src)
+        if self.surface_src is not None:
+            v.CloseDatabase(self.surface_src)
             
     def addWindow(self):
         """Adds a window to VisIt and makes it active"""

@@ -46,7 +46,6 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
                 const Teuchos::RCP<TreeVector>& soln) :
     PK(pk_tree_list, global_list, S, soln),
     StrongMPC<PK_PhysicalBDF_Default>(pk_tree_list, global_list, S, soln) {
-    
     dump_ = plist_->get<bool>("dump preconditioner", false);
 
   }

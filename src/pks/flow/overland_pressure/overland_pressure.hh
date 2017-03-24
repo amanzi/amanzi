@@ -169,6 +169,7 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_head_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_pressure_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_critical_depth_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_level_;
   
   // needed physical models
   Teuchos::RCP<FlowRelations::OverlandConductivityModel> cond_model_;

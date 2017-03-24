@@ -130,6 +130,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   bc_head_ = bc_factory.CreateHead();
   bc_zero_gradient_ = bc_factory.CreateZeroGradient();
   bc_flux_ = bc_factory.CreateMassFlux();
+  bc_level_ = bc_factory.CreateFixedLevel();
   bc_seepage_head_ = bc_factory.CreateWithFunction("seepage face head", "boundary head");
   bc_seepage_pressure_ = bc_factory.CreateWithFunction("seepage face pressure", "boundary pressure");
   bc_critical_depth_ = bc_factory.CreateCriticalDepth();
@@ -507,6 +508,7 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
   bc_head_->Compute(S->time());
   bc_zero_gradient_->Compute(S->time());
   bc_flux_->Compute(S->time());
+  bc_level_->Compute(S->time());
   bc_seepage_head_->Compute(S->time());
   bc_seepage_pressure_->Compute(S->time());
   bc_critical_depth_->Compute(S->time());
@@ -550,6 +552,7 @@ void OverlandPressureFlow::CommitStep(double t_old, double t_new, const Teuchos:
   // update boundary conditions
   bc_head_->Compute(S->time());
   bc_flux_->Compute(S->time());
+  bc_level_->Compute(S->time());
   bc_seepage_head_->Compute(S->time());
   bc_seepage_pressure_->Compute(S->time());
   bc_critical_depth_->Compute(S->time());
@@ -802,6 +805,16 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
     bc_values_[f] = bc->second + elevation[0][f];
   }
 
+  // Head BCs for fixed water level
+  for (Functions::BoundaryFunction::Iterator bc=bc_level_->begin();
+       bc!=bc_level_->end(); ++bc) {
+    int f = bc->first;
+    bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
+    double val = bc->second;
+    if (elevation[0][f] > val) bc_values_[f] = 0;
+    else bc_values_[f] = val;
+  }
+
   // Standard Neumann data for flux
   for (Functions::BoundaryFunction::Iterator bc=bc_flux_->begin();
        bc!=bc_flux_->end(); ++bc) {
@@ -843,7 +856,6 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
   }
 
   // Seepage face pressure boundary condition
-
   if (bc_seepage_pressure_->size() > 0) {
     S->GetFieldEvaluator(getKey(domain_,"ponded_depth"))->HasFieldChanged(S.ptr(), name_);
 

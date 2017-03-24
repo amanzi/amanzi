@@ -25,9 +25,20 @@ FlowReactiveTransport_PK_ATS::FlowReactiveTransport_PK_ATS(
     const Teuchos::RCP<TreeVector>& soln) :
     PK_MPCSubcycled_ATS(pk_tree, global_list, S, soln) { 
 
-    Teuchos::ParameterList vlist;
-    vlist.sublist("verbose object") = global_list -> sublist("verbose object");
-    vo_ =  Teuchos::rcp(new VerboseObject("FlowandTransportPK", vlist)); 
+  name_ = pk_tree.name();
+  const char* result = name_.data();
+
+  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->"); 
+  if (res.end() - name_.end() != 0) boost::algorithm::erase_head(name_,  res.end() - name_.begin());
+
+  Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(global_list, "PKs", true);
+  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list, name_, true);
+
+  vo_ = Teuchos::null;
+  Teuchos::ParameterList vlist;
+  vlist.sublist("verbose object") = pk_list -> sublist("verbose object");
+
+  vo_ =  Teuchos::rcp(new VerboseObject("FlowandTransportPK", vlist)); 
 
 }
 
@@ -65,16 +76,18 @@ void FlowReactiveTransport_PK_ATS::CommitStep(double t_old, double t_new, const 
 bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit) {
   bool fail = false;
 
-
   // advance the master PK using the full step size
+  
   fail = sub_pks_[master_]->AdvanceStep(t_old, t_new, reinit);
+  fail |= !sub_pks_[master_]->ValidStep();
+  
   if (fail) return fail;
+
+  //return fail;
 
   master_dt_ = t_new - t_old;
 
   sub_pks_[master_]->CommitStep(t_old, t_new, S_next_);
-
-  //  S_next_->WriteStatistics(vo_);  
 
   slave_dt_ = sub_pks_[slave_]->get_dt();
 
@@ -87,6 +100,7 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
 
   double dt_next = slave_dt_;
   double dt_done = 0.;
+
   while (!done) {
     // do not overstep
     if (t_old + dt_done + dt_next > t_new) {
@@ -114,7 +128,7 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
     done = (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) || // finished the step
         (dt_next  < min_dt_); // failed
   }
-  
+
 
   if (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) {
     // done, success
