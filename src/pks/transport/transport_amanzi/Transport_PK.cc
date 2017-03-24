@@ -919,7 +919,20 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
     VV_PrintSoluteExtrema(tcc_next, dt_MPC);
   }
 
-
+  // if (domain_name_ == "surface") {
+  // //   Key surface_tcc_key = "surface-total_component_concentration";
+  // //   Teuchos::RCP<const Field> fld = S_->GetField("surface-total_component_concentration");
+  // //   Teuchos::RCP<const Field> copy = fld->GetCopy("subcycling");
+  // //   Teuchos::RCP<const CompositeVector> surf = copy->GetFieldData();
+  // //   const Epetra_MultiVector& surf_c = *surf->ViewComponent("cell",false);
+   
+  // //   std::cout<<"End Advance\n";
+  // //   std::cout<<"S_"<<S_<<"\n";
+  // //   //std::cout<<surf_c<<"\n";
+  //   for (int i=35;i<50;i++)
+  //     std::cout<<(*tcc_tmp->ViewComponent("cell",false))[0][i]<<" ws "<<
+  //       (*ws_end)[0][i]<<"\n";
+  // }
 
   return failed;
 }
@@ -1218,25 +1231,32 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
+  //if (domain_name_=="surface") std::cout<<"DonorUpwind start\n"<<tcc_prev<<"\n";
+
+
   // prepare conservative state in master and slave cells
   double vol_phi_ws_den, tcc_flux;
+  double mass_start = 0., tmp1;
 
   // We advect only aqueous components.
   int num_advect = num_aqueous;
 
   for (int c = 0; c < ncells_owned; c++) {
     vol_phi_ws_den = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_start)[0][c] * (*mol_dens)[0][c];
+     // if (domain_name_=="surface") 
+     //   std::cout<<c<<" vol "<<mesh_->cell_volume(c)<<" phi "<<(*phi)[0][c]<<" ws0 "<<(*ws_start)[0][c]<<" ws1 "<< (*ws_end)[0][c]<<" den "<<(*mol_dens)[0][c]<<"\n";
     for (int i = 0; i < num_advect; i++){
       (*conserve_qty_)[i][c] = tcc_prev[i][c] * vol_phi_ws_den;   
-      //mass_start += (*conserve_qty_)[i][c];
+      mass_start += (*conserve_qty_)[i][c];
     }
   }
 
   //mass_start /= units_.concentration_factor();
-  // if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
-  //   if (domain_name_ == "surface") std::cout<<"Overland mass start "<<mass_start<<"\n";
-  //   else std::cout<<"Subsurface mass start "<<mass_start<<"\n";
-  // }
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
+    if (domain_name_ == "surface") std::cout<<"Overland mass start "<<mass_start<<"\n";
+    else std::cout<<"Subsurface mass start "<<mass_start<<"\n";
+  }
 
 
   // advance all components at once
@@ -1326,47 +1346,52 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     }
   }
 
-
+  double mass_final = 0;
   for (int c = 0; c < ncells_owned; c++) {
     vol_phi_ws_den = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_end)[0][c] * (*mol_dens)[0][c];
-    // for (int i = 0; i < num_advect; i++){        
-    //   mass_final += tcc_next[i][c]*vol_phi_ws_den;
-    // }    
+    for (int i = 0; i < num_advect; i++){        
+      mass_final += tcc_next[i][c]*vol_phi_ws_den;
+    }    
   }
-  // mass_final /= units_.concentration_factor();
+  //mass_final /= units_.concentration_factor();
 
-  // tmp1 = mass_final;
-  // mesh_->get_comm()->SumAll(&tmp1, &mass_final, 1);
-  // tmp1 = mass_start;
-  // mesh_->get_comm()->SumAll(&tmp1, &mass_start, 1);
+  tmp1 = mass_final;
+  mesh_->get_comm()->SumAll(&tmp1, &mass_final, 1);
+  tmp1 = mass_start;
+  mesh_->get_comm()->SumAll(&tmp1, &mass_start, 1);
+
+
+
+  //if (domain_name_ == "surface") std::cout<<"DonorUpwind end\n"<<tcc_next<<"\n";
 
 
   // update mass balance
   for (int i = 0; i < mass_solutes_exact_.size(); i++) {
     mass_solutes_exact_[i] += mass_solutes_source_[i] * dt_;
-    // if (vo_->getVerbLevel() > Teuchos::VERB_HIGH){
-    //   tmp1 = mass_solutes_bc_[i];
-    //   mesh_->get_comm()->SumAll(&tmp1, &mass_solutes_bc_[i], 1);
-    //   std::cout<<"*****************\n";
-    //   if (domain_name_ == "surface") std::cout<<"Overland mass BC "<<mass_solutes_bc_[i]<<"\n";
-    //   else std::cout<<"Subsurface mass BC "<<mass_solutes_bc_[i]<<"\n";
-    //   tmp1 = mass_solutes_source_[i];
-    //   mesh_->get_comm()->SumAll(&tmp1, &mass_solutes_source_[i], 1);
-    //   if (domain_name_ == "surface") std::cout<<"Overland mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
-    //   else std::cout<<"Subsurface mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
-    //   std::cout<<"*****************\n";
-    // }
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
+      tmp1 = mass_solutes_bc_[i];
+      mesh_->get_comm()->SumAll(&tmp1, &mass_solutes_bc_[i], 1);
+      std::cout<<"*****************\n";
+      if (domain_name_ == "surface") std::cout<<"Overland mass BC "<<mass_solutes_bc_[i]<<"\n";
+      else std::cout<<"Subsurface mass BC "<<mass_solutes_bc_[i]<<"\n";
+      tmp1 = mass_solutes_source_[i];
+      mesh_->get_comm()->SumAll(&tmp1, &mass_solutes_source_[i], 1);
+      if (domain_name_ == "surface") std::cout<<"Overland mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
+      else std::cout<<"Subsurface mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
+      std::cout<<"*****************\n";
+    }
   }
 
   if (internal_tests) {
     VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
 
-  // if (vo_->getVerbLevel() > Teuchos::VERB_HIGH){
-  //   if (domain_name_ == "surface") std::cout<<"Overland mass final "<<mass_final<<"\n";
-  //   else std::cout<<"Subsurface mass final "<<mass_final<<"\n";
-  // }
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
+    if (domain_name_ == "surface") std::cout<<"Overland mass final "<<mass_final<<"\n";
+    else std::cout<<"Subsurface mass final "<<mass_final<<"\n";
+  }
 
+  //if (abs(mass_final - (mass_start + mass_solutes_bc_[0] + mass_solutes_source_[0]*dt_) )/mass_final > 1e-4) exit(-1);
   
 }
 
@@ -1562,15 +1587,15 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
         } else {
           value =  mesh_->cell_volume(c) * values[k];
           // correction for non-SI concentration units
-          if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "weight")
-              value /= units_.concentration_factor();
+          // if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "weight")
+          //     value /= units_.concentration_factor();
         }
 
         tcc[imap][c] += dtp * value;
         mass_solutes_source_[i] += value;
 
          // if (value != 0) std::cout<<"Source name "<<srcs_[m]->name()<<" from Source cell "<<c
-         //                        <<" dt "<<dtp<<"  + "<<dtp * value<<" "<<values[k]<<"\n";
+         //                         <<" dt "<<dtp<<"  + "<<dtp * value<<" "<<values[k]<<"\n";
       }
     }
   }
@@ -1606,12 +1631,12 @@ void Transport_PK_ATS::Sinks2TotalOutFlux(Epetra_MultiVector& tcc,
           if (srcs_[m]->name() == "domain coupling") {
             val = std::max(val, fabs(values[k])/tcc[imap][c]);
           }
-          else if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "weight"){
-            val = std::max(val, fabs(values[k])* mesh_->cell_volume(c) * units_.concentration_factor());
-          }
-          else {
-            val = std::max(val, fabs(values[k])* mesh_->cell_volume(c));
-          }
+          // else if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "weight"){
+          //   val = std::max(val, fabs(values[k])* mesh_->cell_volume(c) * units_.concentration_factor());
+          // }
+          // else {
+          //   val = std::max(val, fabs(values[k])* mesh_->cell_volume(c));
+          // }
         }                              
       }
       sink_add[c] = std::max(sink_add[c], val);              
