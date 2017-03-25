@@ -621,7 +621,8 @@ int MFD3D_Electromagnetics::StiffnessMatrix(
   MFD3D_Diffusion diffusion(mesh_);
   int ok = diffusion.MassMatrix(c, T, M);
 
-  // populate curl matrix
+  // populate curl matrix. Curl acts to the space of total
+  // fluxes; hence, there is no face area scaling.
   C.PutScalar(0.0);
 
   int d = mesh_->space_dimension();
@@ -629,15 +630,9 @@ int MFD3D_Electromagnetics::StiffnessMatrix(
     mesh_->cell_get_nodes(c, &nodes);
 
     for (int i = 0; i < nfaces; ++i) {
-      int f = faces[i];
-      double len = mesh_->face_area(f);
-
-      mesh_->face_get_nodes(f, &fnodes);
-      int v1 = FindPosition_(fnodes[0], nodes);
-      int v2 = FindPosition_(fnodes[1], nodes);
-
-      C(i, v1) = len * fdirs[i];
-      C(i, v2) = -len * fdirs[i];
+      int j = (i + 1) % nfaces;
+      C(i, i) = 1.0;
+      C(i, j) = -1.0;
     }
   } else {
     for (int i = 0; i < nfaces; ++i) {

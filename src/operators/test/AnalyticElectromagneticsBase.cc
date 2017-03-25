@@ -138,6 +138,6 @@ void AnalyticElectromagneticsBase::ComputeNodeError(
 #endif
   unorm = sqrt(unorm);
   l2_err = sqrt(l2_err);
-};
+}
 
 

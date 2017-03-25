@@ -72,7 +72,7 @@ void ResistiveMHD2D(double dt, double tend, bool initial_guess, double Xb, doubl
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
 
-  RCP<const Mesh> mesh = meshfactory(-Xb, -Yb, Xb, Yb, 10, 25, gm, true, true);
+  RCP<const Mesh> mesh = meshfactory(-Xb, -Yb, Xb, Yb, 10, 10, gm, true, true);
 
   // create resistivity coefficient
   double told(0.0), tnew(dt);
@@ -138,6 +138,7 @@ void ResistiveMHD2D(double dt, double tend, bool initial_guess, double Xb, doubl
       Bf[0][f] = (normal * ana.magnetic_exact(xf, told)) / area;
     }
   } 
+
   // CompositeVector B0(B);
   // Epetra_MultiVector& B0f = *B0.ViewComponent("face");
 
@@ -252,6 +253,7 @@ void ResistiveMHD2D(double dt, double tend, bool initial_guess, double Xb, doubl
       GMV::start_data();
       GMV::write_cell_data(sol, 0, "Bx");
       GMV::write_cell_data(sol, 1, "By");
+      GMV::write_node_data(Ee, 0, "Ez");
       GMV::close_data_file();
     }
   }
@@ -265,7 +267,7 @@ void ResistiveMHD2D(double dt, double tend, bool initial_guess, double Xb, doubl
   if (MyPID == 0) {
     if (enorm != 0.0) el2_err /= enorm; 
     if (bnorm != 0.0) bl2_err /= bnorm; 
-    printf("L2(e)=%10.7f  Inf(e)=%9.6f  L2(b)=%10.7f  Inf(e)=%9.6f\n",
+    printf("L2(e)=%10.7f  Inf(e)=%9.6f  L2(b)=%10.7f  Inf(b)=%9.6f\n",
         el2_err, einf_err, bl2_err, binf_err);
     // CHECK(el2_err < tolerance);
   }

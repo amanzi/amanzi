@@ -37,9 +37,14 @@ class ElectromagneticsMHD_TM : public ElectromagneticsMHD {
   // main virtual members
   // -- before solving the problem
   virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt);
+  virtual void ApplyBCs(bool primary, bool eliminate);
 
   // -- after solving the problem
   virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt);
+
+ private:
+  void ApplyBCs_Node_(const Teuchos::Ptr<BCs>& bc_f,
+                      const Teuchos::Ptr<BCs>& bc_v, bool primary, bool eliminate);
 };
 
 }  // namespace Operators

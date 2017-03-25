@@ -230,7 +230,7 @@ TEST(CURL_CURL_LINEAR) {
 }
 
 TEST(CURL_CURL_NONLINEAR) {
-  CurlCurl<AnalyticElectromagnetics02>(1.0e-3, 2e-2, false);
+  CurlCurl<AnalyticElectromagnetics02>(1.0e-3, 2e-1, false);
 }
 
 TEST(CURL_CURL_TIME_DEPENDENT) {
