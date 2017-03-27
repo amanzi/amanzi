@@ -80,8 +80,8 @@ mpi_root_dir=
 
 
 # Spack
-spack=$FALSE
-spack_binary=`which spack`
+Spack=$FALSE
+Spack_binary=`which spack`
 
 # xSDK installation (optional)
 xsdk=$FALSE #default is to not use
@@ -305,7 +305,7 @@ Value in brackets indicates default setting.
   reg_tests               build regression tests into Amanzi Test Suite ['"${reg_tests}"']
   shared                  build Amanzi and tpls using shared libraries ['"${shared}"']
   native                  build Amanzi with native xml output for debugging enabled ['"${native}"']
-  spack                   build TPLs using the Spack package manager when appropriate ['"${spack}"']
+  Spack                   build TPLs using the Spack package manager when appropriate ['"${Spack}"']
   xsdk                    build TPLs available in xSDK first, then supplement with additional 
                           individual TPL builds ['"${xsdk}"']
 Tool definitions:
@@ -363,7 +363,7 @@ Tools:
     ctest_binary ='"${ctest_binary}"'
     hg_binary    ='"${hg_binary}"'
     curl_binary  ='"${curl_binary}"'
-    spack_binary ='"${spack_binary}"'
+    Spack_binary ='"${Spack_binary}"'
     mpi_root_dir ='"${mpi_root_dir}"'
 
 Compilers:
@@ -402,7 +402,7 @@ Build Features:
     alquimia            ='"${alquimia}"'
     pflotran            ='"${pflotran}"'
     native              ='"${native}"'
-    spack               ='"${spack}"'
+    Spack               ='"${Spack}"'
     xsdk                ='"${xsdk}"'
 
 Directories:
@@ -832,10 +832,10 @@ function check_xsdk_root
 }
 
 # Spack Check
-function check_spack
+function check_Spack
 {
 
-  if [ ! -e "${spack_binary}" ]; then
+  if [ ! -e "${Spack_binary}" ]; then
     error_message "Spack binary does not exist - Will try to locate..."
 
     if [ ! -e ${tpl_install_prefix}/spack/bin/spack ]; then
@@ -846,16 +846,16 @@ function check_spack
       if [ ${xsdk} == ${TRUE} ]; then
 	  cd ${tpl_install_prefix}/spack
 	  git checkout barry/xsdk
-	  git pull --rebase
+	  git pull
       fi
       cd ${pwd_save}
     fi
 
-      spack_binary=${tpl_install_prefix}/spack/bin/spack
-      status_message "Spack binary: ${spack_binary}"
+      Spack_binary=${tpl_install_prefix}/spack/bin/spack
+      status_message "Spack binary: ${Spack_binary}"
 
   else
-    status_message "Spack binary: ${spack_binary}"
+    status_message "Spack binary: ${Spack_binary}"
 
   fi
 }
@@ -1185,81 +1185,22 @@ if [ -z "${tpl_config_file}" ]; then
   pwd_save=`pwd`
 
   # Check for Spack
-  if [ ${spack} == ${TRUE} ]; then
+  if [ "${Spack}" -eq "${TRUE}" ]; then
       status_message "Building with Spack"
-      check_spack
+      check_Spack
   fi
 
   # Are we using xSDK?  If so, make sure Spack in enabled
-  if [ ${xsdk} == ${TRUE} ]; then 
+  if [ "${xsdk}" -eq "${TRUE}" ]; then 
       status_message "Building with xSDK"
 
-      if [ ${spack} == ${FALSE} ]; then
+      if [ "${Spack}" -eq "${FALSE}" ]; then
 	status_message "Enabling Spack"
-	spack = ${TRUE}
-	check_spack
+	Spack=$TRUE
+	check_Spack
       fi
 
-      if [ ${FALSE} == ${TRUE} ]; then # a fancy way of effectively commenting out all of this stuff
-	  check_xsdk_root
-	  status_message "Using xSDK libraries"
-	  
-	  #create the grand config file, if needed
-	  if [ ! -f "${tpl_install_prefix}/xsdk-config.cmake" ]; then
-	      
-	      # gather the information in the various .cmake files within xsdk
-	      # First, the ones in /lib/cmake...
-	      status_message "Grabbing .cmake files in ${xsdk_root_dir}/lib/cmake"
-	      
-	      xsdk_installed_pkgs="Amesos Amesos2 Anasazi AztecOO Belos Epetra
-EpetraExt Galeri GlobiPack Ifpack Ifpack2 Intrepid Intrepid2 Isorropia Kokkos KokkosAlgorithms KokkosContainers KokkosCore ML MueLu NOX OptiPack Pamgen Panzer PanzerCore PanzerDiscFE PanzerDofMgr Phalanx Pike PikeBlackBox PikeImplicit Piro ROL RTOp Rythmos Sacado SEACAS SEACASAlgebra SEACASAprepro SEACASAprepro_lib SEACASAprepro-orig SEACASChaco SEACASConjoin SEACASEjoin SEACASEpu SEACASEx1ex2v2 SEACASEx2ex1v2 SEACASExodiff SEACASExodus SEACASExodus_fo SEACASExo_format SEACASExomatlab SEACASExotxt SEACASGen3D SEACASGenshell SEACASGjoin SEACASGrepos SEACASGrope SEACASIoss SEACASMapvar SEACASMapvar-kd SEACASMapvarlib SEACASNemesis SEACASNemslice SEACASNemspread SEACASNumbers SEACASSupes SEACASSuplib SEACASTxtexo Shards ShyLU ShyLUCore Stokhos Stratimikos Teko Teuchos TeuchosComm TeuchosCore TeuchosKokkosComm TeuchosKokkosCompat TeuchosNumerics TeuchosParameterList TeuchosRemainder Thyra TyraCore ThyraEpetraAdapters ThyraEpetraExtAdapters ThyraTpetraAdapters Tpetra TpetraClassic TpetraCore TpetraKernels TpetraTSQR tribits Trilinos TrilinosCouplings Triutils Xpetra xSDKTrilinos Zoltan Zoltan2"
-	      for pkg_try in ${xsdk_installed_pkgs}; do
-		  if [ -e "${xsdk_root_dir}/lib/cmake/${pkg_try}/${pkg_try}Config.cmake" ]; then
-		      echo "sed -e 's#\${CMAKE_CURRENT_LIST_DIR}#${xsdk_root_dir}/lib/cmake/${pkg_try}#g' ${xsdk_root_dir}/lib/cmake/${pkg_try}/${pkg_try}Config.cmake >> ${tpl_install_prefix}/xsdk-config.cmake" | $SHELL
-		      
-		      status_message "Grabbed .cmake file for ${pkg_try}"
-		  fi
-	      done
-	      
-	      # Second, the ones in /share/cmake...
-	      if [ -e "${xsdk_root_dir}/share/cmake" ]; then
-		  cat ${xsdk_root_dir}/share/cmake/*.cmake >> ${tpl_install_prefix}/xsdk-config.cmake
-		  
-		  status_message "Grabbed .cmake files in ${xsdk_root_dir}/share/cmake"
-	      fi
-	      
-	      # Third, the ones in /include...
-	      if [ -e "${xsdk_root_dir}/include" ]; then
-		  cat ${xsdk_root_dir}/include/*.cmake >> ${tpl_install_prefix}/xsdk-config.cmake
-		  
-		  status_message "Grabbed .cmake files in ${xsdk_root_dir}/include"
-	      fi
-	      
-	      # Fourth, check if alquimia is there...
-	      if [ -e "${xsdk_root_dir}/share/alquimia" ]; then
-		  cat ${xsdk_root_dir}/share/alquimia/*.cmake >> ${tpl_install_prefix}/xsdk-config.cmake
-		  
-		  status_message "Grabbed .cmake files for alquimia"
-	      fi 
-	      
-	      # Last, check if petsc is there...
-	      if [ -e "${xsdk_root_dir}/lib/petsc/conf" ]; then
-		  cat ${xsdk_root_dir}/lib/petsc/conf/*.cmake >> ${tpl_install_prefix}/xsdk-config.cmake
-		  
-		  status_message "Grabbed .cmake files for PETSc"
-	      fi 
-	      
-	  fi
-	  
-	  tpl_config_file=${tpl_install_prefix}/xsdk-config.cmake
-	  
-	  cd ${pwd_save}
-	  status_message "For future Amanzi builds use ${tpl_config_file}"
-
-      fi # end of stuff I'm not using
-
-  #else
-  fi    
+  fi
       # Define the TPL build source directory
       tpl_build_src_dir=${amanzi_source_dir}/config/SuperBuild
       
@@ -1290,8 +1231,8 @@ EpetraExt Galeri GlobiPack Ifpack Ifpack2 Intrepid Intrepid2 Isorropia Kokkos Ko
           -DBUILD_SHARED_LIBS:BOOL=${shared} \
           -DCCSE_BL_SPACEDIM:INT=${spacedim} \
           -DPREFER_STATIC_LIBRARIES:BOOL=${static} \
-          -DENABLE_SPACK:BOOL=${spack} \
-	  -DSPACK_BINARY:STRING=${spack_binary} \
+          -DENABLE_SPACK:BOOL=${Spack} \
+	  -DSPACK_BINARY:STRING=${Spack_binary} \
 	  -DENABLE_XSDK:BOOL=${xsdk} \
 	  ${nersc_tpl_opts} \
           ${tpl_build_src_dir}
@@ -1324,7 +1265,6 @@ EpetraExt Galeri GlobiPack Ifpack Ifpack2 Intrepid Intrepid2 Isorropia Kokkos Ko
       
       status_message "TPL build complete"
       status_message "For future Amanzi builds use ${tpl_config_file}"
-  fi
 
 else 
 

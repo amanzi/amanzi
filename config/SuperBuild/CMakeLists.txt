@@ -546,12 +546,19 @@ if ( ENABLE_XSDK )
     set(ZLIB_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
 
     # boost
+    amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
+	PREFIX Boost
+	VERSION 1 63 0)
     append_set(Amanzi_TPL_CMAKE_ARGS
         -DBOOST_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
+	-DBOOST_INCLUDEDIR=${TPL_INSTALL_PREFIX}/include/boost
         -DBoost_USE_STATIC_LIBS:BOOL=TRUE
         -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
 
     # hdf5
+    amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
+	PREFIX HDF5
+	VERSION 1 10 0)
     build_library_name(hdf5 HDF5_C_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
     build_library_name(hdf5_hl HDF5_HL_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
     set(HDF5_LIBRARIES ${HDF5_HL_LIBRARY} ${HDF5_C_LIBRARY} ${ZLIB_LIBRARIES} m)
@@ -582,8 +589,9 @@ if ( ENABLE_XSDK )
     set(HYPRE_LIBRARIES    "${HYPRE_LIBRARY}")
 
     # metis
-    build_library_name(metis METIS_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-    set(METIS_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+    build_library_name(metis METIS_LIBRARIES SHARED APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+    set(METIS_INCLUDE_DIR ${TPL_INSTALL_PREFIX}/include)
+    set(METIS_DIR ${TPL_INSTALL_PREFIX})
     append_set(Amanzi_TPL_CMAKE_ARGS 
         -DMETIS_DIR:FILEPATH=${METIS_DIR})
 
@@ -737,9 +745,9 @@ if ( ENABLE_XSDK )
 	    -DSilo_INCLUDE_DIR:PATH=${Silo_INCLUDE_DIR}
 	    -DSilo_LIBRARY_DIR:PATH=${Silo_LIBRARY_DIR})
     endif()
-
     
-else() # standard build without any xSDK (or Spack for now)
+else() 
+    # standard build without any xSDK (or Spack for now)
     
     # MPI
     if ( BUILD_MPI )
