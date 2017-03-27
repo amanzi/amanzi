@@ -31,11 +31,11 @@ void AnalyticElectromagneticsBase::ComputeFaceError(
     const Amanzi::AmanziGeometry::Point& normal = mesh_->face_normal(f);
     const Amanzi::AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     const Amanzi::AmanziGeometry::Point& B = magnetic_exact(xf, t);
-    double tmp = normal * B;
+    double tmp = (normal * B) / area;
 
-    l2_err += std::pow((tmp - u[0][f]) / area, 2.0);
-    inf_err = std::max(inf_err, fabs(tmp - u[0][f]) / area);
-    unorm += std::pow(tmp / area, 2.0);
+    l2_err += std::pow((tmp - u[0][f]), 2.0);
+    inf_err = std::max(inf_err, fabs(tmp - u[0][f]));
+    unorm += std::pow(tmp, 2.0);
     // std::cout << f << " " << u[0][f] << " " << tmp << std::endl;
   }
 #ifdef HAVE_MPI
@@ -124,7 +124,7 @@ void AnalyticElectromagneticsBase::ComputeNodeError(
 
       // std::cout << v << " at " << xv << " error: " << tmp << " " << u[0][v] << std::endl;
       l2_err += std::pow(tmp - u[0][v], 2.0) * volume / nnodes;
-      inf_err = std::max(inf_err, tmp - u[0][v]);
+      inf_err = std::max(inf_err, fabs(tmp - u[0][v]));
       unorm += std::pow(tmp, 2.0) * volume / nnodes;
     }
   }

@@ -631,8 +631,8 @@ int MFD3D_Electromagnetics::StiffnessMatrix(
 
     for (int i = 0; i < nfaces; ++i) {
       int j = (i + 1) % nfaces;
-      C(i, i) = 1.0;
-      C(i, j) = -1.0;
+      C(i, i) = -1.0;
+      C(i, j) = 1.0;
     }
   } else {
     for (int i = 0; i < nfaces; ++i) {

@@ -16,6 +16,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "GMVMesh.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
@@ -67,7 +68,7 @@ TEST(NAVIER_STOKES_2D) {
  
   // solve the problem 
   int itrs(0);
-  double T(0.0), T0(0.0), T1(1.0), dT0(0.1), dT(0.1), dTnext;
+  double T(0.0), T0(0.0), T1(100.0), dT0(0.1), dT(0.1), dTnext;
   while (T < T1) {
     if (itrs == 0) {
       Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
@@ -99,5 +100,13 @@ TEST(NAVIER_STOKES_2D) {
 
     // commit step
     NSPK->CommitStep(T - dT, T, S);
+
+    if (MyPID == 0 && itrs == 150) {
+      const Epetra_MultiVector& u = *S->GetFieldData("fluid_velocity")->ViewComponent("node");
+      GMV::open_data_file(*mesh, (std::string)"navier_stokes.gmv");
+      GMV::start_data();
+      GMV::write_node_data(u, 0, "velocity_x");
+      GMV::close_data_file();
+    }
   }
 }

@@ -116,7 +116,7 @@ double NavierStokes_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   double error(0.0);
 
   for (int v = 0; v < nnodes_owned; v++) {
-    double tmp = fabs(duv[0][v]) / (fabs(uv[0][v]) + 1e-6);
+    double tmp = fabs(duv[0][v]) / (fabs(uv[0][v]) + 1e-2);
     error = std::max(error, tmp);
   }
 
