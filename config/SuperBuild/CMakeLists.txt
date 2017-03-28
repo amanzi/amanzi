@@ -263,10 +263,11 @@ if ( MPI_C_FOUND AND MPI_CXX_FOUND AND MPI_Fortran_FOUND )
 else()
   message(STATUS "Will build MPI with the other TPLs")
   set(BUILD_MPI TRUE)
-  set(MPI_C_COMPILER       ${TPL_INSTALL_PREFIX}/bin/mpicc)
-  set(MPI_CXX_COMPILER     ${TPL_INSTALL_PREFIX}/bin/mpicxx)
-  set(MPI_Fortran_COMPILER ${TPL_INSTALL_PREFIX}/bin/mpif90)
-  set(MPIEXEC              ${TPL_INSTALL_PREFIX}/bin/mpirun)
+  set(MPI_C_COMPILER        ${TPL_INSTALL_PREFIX}/bin/mpicc)
+  set(MPI_CXX_COMPILER      ${TPL_INSTALL_PREFIX}/bin/mpicxx)
+  set(MPI_Fortran_COMPILER  ${TPL_INSTALL_PREFIX}/bin/mpif90)
+  set(MPIEXEC               ${TPL_INSTALL_PREFIX}/bin/mpirun)
+  set(MPI_EXEC              ${TPL_INSTALL_PREFIX}/bin/mpirun)
 endif()
 
 # --- Add the include paths, link flags and libraries if using a 
@@ -487,65 +488,62 @@ include(DefineExternalProjectArgs)
 set(Amanzi_TPL_CMAKE_ARGS)
 
 # --- Begin the build definitions
-if ( ENABLE_XSDK )
-    
-    #include(${Amanzi_SOURCE_DIR}/tools/cmake/SpackFunctions.cmake) 
-    #include(SpackFunctions)
-
-    # install xsdk with Spack
-    define_external_project_args(XSDK
-        TARGET xsdk
-        BUILD_IN_SOURCE )
-
-    amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
-	PREFIX XSDK
-	VERSION 0 2 0 )
-    #set(ENV{PACKAGE} xsdk)
-    #set(ENV{SPACK_BINARY} ${SPACK_BINARY})
-    
-
-    ExternalProject_Add(${XSDK_BUILD_TARGET}
-	
-	# The following 3 lines are only here because CMake will not allow
-	# a build without at least these three variables defined.
-	# However, they serve no real purpose for this particular build.
-	DOWNLOAD_COMMAND ls
-	
-	CONFIGURE_COMMAND ls
-	
-	BUILD_COMMAND ${SPACK_BINARY} install xsdk #spack_install_package( xsdk )
-	
-	INSTALL_COMMAND ${SPACK_BINARY} view symlink ${TPL_INSTALL_PREFIX} xsdk #spack_create_symlinks( xsdk ${TPL_INSTALL_PREFIX} )
-	#INSTALL_COMMAND  ${SPACK_BINARY} install xsdk )
-	#INSTALL_COMMAND  ${SuperBuild_BUILD_FILES_DIR}/spack_generic_build.sh ${SPACK_BINARY} xsdk ${TPL_INSTALL_PREFIX} )
-	#INSTALL_COMMAND ${CMAKE_COMMAND} -P ${Amanzi_SOURCE_DIR}/tools/cmake/SpackFunctions.cmake
-
-    )
-        
-    #  unset(TMP_SPACK_INSTALL_DIR)
-    #  unset(TMP_SPACK_VERSION)
-    #  unset(ENV{PACKAGE})
-    #  unset(ENV{SPACK_BINARY})
-
-
-    #----- Set relevant CMake variables ----
+if ( ENABLE_XSDK )    
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_xSDK.cmake)
     include(BuildLibraryName)
+endif()
 
-    # openmpi - only if needed
-    if ( BUILD_MPI )
-    # --- Define variables pointing to compiler wrappers and parallel run commond
-	set(MPI_C_COMPILER        ${TPL_INSTALL_PREFIX}/bin/mpicc)
-	set(MPI_CXX_COMPILER      ${TPL_INSTALL_PREFIX}/bin/mpicxx)
-	set(MPI_Fortran_COMPILER  ${TPL_INSTALL_PREFIX}/bin/mpif90)
-	set(MPIEXEC               ${TPL_INSTALL_PREFIX}/bin/mpirun)
-	set(MPI_EXEC              ${TPL_INSTALL_PREFIX}/bin/mpirun)
-    endif()
+# MPI
+if ( BUILD_MPI AND NOT ENABLE_XSDK)
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_OpenMPI.cmake)
+    set(MPI_PROJECT OpenMPI)
+endif()
 
-    # zlib
+# ZLIB
+if( NOT ENABLE_XSDK)
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_zlib.cmake) 
+else()
     build_library_name(z ZLIB_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
     set(ZLIB_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+    
+endif()
 
-    # boost
+# CURL
+include(${SuperBuild_BUILD_FILES_DIR}/Build_CURL.cmake)
+
+# UnitTest
+append_set(Amanzi_TPL_CMAKE_ARGS
+    -DENABLE_TEST:BOOL=${ENABLE_TESTS})
+if (ENABLE_TESTS)
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_UnitTest.cmake)
+    append_set(Amanzi_TPL_CMAKE_ARGS 
+        -DUnitTest_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+endif()
+
+# CCSE
+set(CCSE_BL_SPACEDIM_DFLT 2)
+if(NOT CCSE_BL_SPACEDIM )
+    set(CCSE_BL_SPACEDIM ${CCSE_BL_SPACEDIM_DFLT})
+endif()
+if ( ENABLE_Structured )
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_CCSE.cmake) 
+    append_set(Amanzi_TPL_CMAKE_ARGS
+        -DCCSE_DIR:FILEPATH=${TPL_INSTALL_PREFIX}
+        -DENABLE_MPI:BOOL=TRUE
+        -DENABLE_OpenMP:BOOL=${ENABLE_OpenMP}
+        -DAMANZI_PRECISION:STRING=DOUBLE
+        -DAMANZI_SPACEDIM:INT=${CCSE_BL_SPACEDIM})
+endif()
+
+# Boost
+if ( NOT ENABLE_XSDK )
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_Boost.cmake) 
+    #TESTINGinclude(${SuperBuild_BUILD_FILES_DIR}/Build_BoostCmake.cmake) 
+    append_set(Amanzi_TPL_CMAKE_ARGS
+        -DBOOST_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
+        -DBoost_USE_STATIC_LIBS:BOOL=TRUE
+        -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
+else()
     amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 	PREFIX Boost
 	VERSION 1 63 0)
@@ -554,8 +552,14 @@ if ( ENABLE_XSDK )
 	-DBOOST_INCLUDEDIR=${TPL_INSTALL_PREFIX}/include/boost
         -DBoost_USE_STATIC_LIBS:BOOL=TRUE
         -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
+endif()
 
-    # hdf5
+# HDF5  
+if ( NOT ENABLE_XSDK )
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_HDF5.cmake) 
+    #BROKENinclude(${SuperBuild_BUILD_FILES_DIR}/Build_HDF5Cmake.cmake) 
+    
+else()
     amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 	PREFIX HDF5
 	VERSION 1 10 0)
@@ -563,10 +567,28 @@ if ( ENABLE_XSDK )
     build_library_name(hdf5_hl HDF5_HL_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
     set(HDF5_LIBRARIES ${HDF5_HL_LIBRARY} ${HDF5_C_LIBRARY} ${ZLIB_LIBRARIES} m)
     set(HDF5_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include ${ZLIB_INCLUDE_DIRS})
-    append_set(Amanzi_TPL_CMAKE_ARGS
-        -DHDF5_ROOT:FILEPATH=${TPL_INSTALL_PREFIX})
+endif()
+append_set(Amanzi_TPL_CMAKE_ARGS
+    -DHDF5_ROOT:FILEPATH=${TPL_INSTALL_PREFIX})
 
-    # netcdf
+# ASCEM-IO  
+include(${SuperBuild_BUILD_FILES_DIR}/Build_ASCEMIO.cmake) 
+append_set(Amanzi_TPL_CMAKE_ARGS
+    -DASCEMIO_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+
+# XERCES
+if ( ENABLE_SPACK)
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_XERCES_Spack.cmake) 
+else()
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_XERCES.cmake) 
+endif()
+append_set(Amanzi_TPL_CMAKE_ARGS
+    -DXERCES_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+
+# NetCDF
+if ( NOT ENABLE_XSDK )
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_NetCDF.cmake) 
+else()
     build_library_name(netcdf NetCDF_C_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
     build_library_name(netcdf_c++ NetCDF_CXX_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
     set(NetCDF_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
@@ -576,315 +598,112 @@ if ( ENABLE_XSDK )
 	list(APPEND NetCDF_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS})
 	list(REMOVE_DUPLICATES NetCDF_INCLUDE_DIRS)
     endif()
-    append_set(Amanzi_TPL_CMAKE_ARGS
-        -DNetCDF_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
-    
-    # netcdf-fortran
-    append_set(Amanzi_TPL_CMAKE_ARGS
-        -DNetCDF_FORTRAN_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+endif()
+append_set(Amanzi_TPL_CMAKE_ARGS
+    -DNetCDF_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
-    # hypre
-    set(HYPRE_INCLUDE_DIRS "${TPL_INSTALL_PREFIX}/include")
-    build_library_name(HYPRE HYPRE_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-    set(HYPRE_LIBRARIES    "${HYPRE_LIBRARY}")
-
-    # metis
-    build_library_name(metis METIS_LIBRARIES SHARED APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-    set(METIS_INCLUDE_DIR ${TPL_INSTALL_PREFIX}/include)
-    set(METIS_DIR ${TPL_INSTALL_PREFIX})
-    append_set(Amanzi_TPL_CMAKE_ARGS 
-        -DMETIS_DIR:FILEPATH=${METIS_DIR})
-
-    # parmetis
-    build_library_name(z ParMetis_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-    set(ParMetis_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
-    if (ENABLE_PETSC OR ENABLE_Structured)
-	append_set(Amanzi_TPL_CMAKE_ARGS
-            -DParMetis_DIR:FILEPATH=${ParMetis_DIR})
-    endif ()
-
-    # petsc - NOTE: not normally installed with everything else
-    set(PETSC_DIR ${TPL_INSTALL_PREFIX})
-
-    # trilinos - NOTE: not normally installed with everything else
-    set(Trilinos_INSTALL_PREFIX  ${TPL_INSTALL_PREFIX})
-    set(Zoltan_INSTALL_PREFIX "${TPL_INSTALL_PREFIX}")
-    append_set(Amanzi_TPL_CMAKE_ARGS
-        -DENABLE_STK_Mesh:BOOL=${ENABLE_STK_Mesh}
-        -DTrilinos_INSTALL_PREFIX:PATH=${Trilinos_INSTALL_PREFIX})
-
-    # pflotran - NOTE: not normally installed with everything else
-    build_library_name(pflotranchem PFLOTRAN_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-    set(PFLOTRAN_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
-    set(PFLOTRAN_DIR ${TPL_INSTALL_PREFIX})
-
-    # alquimia
-    build_library_name(alquimia_c ALQUIMIA_C_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-    build_library_name(alquimia_cutils ALQUIMIA_CUTILS_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-    build_library_name(alquimia_fortran ALQUIMIA_F_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-
-
-    #-------- Non-xSDK TPL Builds ----------
-
-    # curl
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_CURL.cmake)
-
-    # unittest
-    append_set(Amanzi_TPL_CMAKE_ARGS
-        -DENABLE_TEST:BOOL=${ENABLE_TESTS})
-    if (ENABLE_TESTS)
-	include(${SuperBuild_BUILD_FILES_DIR}/Build_UnitTest.cmake)
-	append_set(Amanzi_TPL_CMAKE_ARGS 
-            -DUnitTest_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
-    endif()
-    
-    # ccse
-    set(CCSE_BL_SPACEDIM_DFLT 2)
-    if(NOT CCSE_BL_SPACEDIM )
-	set(CCSE_BL_SPACEDIM ${CCSE_BL_SPACEDIM_DFLT})
-    endif()
-    if ( ENABLE_Structured )
-	include(${SuperBuild_BUILD_FILES_DIR}/Build_CCSE.cmake) 
-	append_set(Amanzi_TPL_CMAKE_ARGS
-            -DCCSE_DIR:FILEPATH=${TPL_INSTALL_PREFIX}
-            -DENABLE_MPI:BOOL=TRUE
-            -DENABLE_OpenMP:BOOL=${ENABLE_OpenMP}
-            -DAMANZI_PRECISION:STRING=DOUBLE
-            -DAMANZI_SPACEDIM:INT=${CCSE_BL_SPACEDIM})
-    endif()
-
-    # ascemio
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_ASCEMIO.cmake) 
-    append_set(Amanzi_TPL_CMAKE_ARGS
-        -DASCEMIO_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
-    
-    # XERCES
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_XERCES.cmake) 
-    append_set(Amanzi_TPL_CMAKE_ARGS
-	-DXERCES_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
-
-    if (FALSE) # this part is all for Spack build of Xerces
-    # -- Define all the directories and common external project flags
-    define_external_project_args(XERCES 
-        TARGET xerces
-        BUILD_IN_SOURCE
-        DEPENDS ${MPI_PROJECT} )
-    set(ENV{PACKAGE} xerces-c)
-    set(ENV{SPACK_BINARY} ${SPACK_BINARY})
-    #  include(${Amanzi_SOURCE_DIR}/tools/cmake/SpackFunctions.cmake) 
-    
-    # add version version to the autogenerated tpl_versions.h file
-    #  amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
-    #      PREFIX XERCES
-    #      VERSION ${XERCES_VERSION_MAJOR} ${XERCES_VERSION_MINOR} ${XERCES_VERSION_PATCH})
-    #
-    ExternalProject_Add(${XERCES_BUILD_TARGET} # Xerces
-	
-	# The following 3 lines are only here because CMake will not allow
-	# a build without at least these three variables defined.
-	# However, they serve no real purpose for this particular build.
-	DOWNLOAD_COMMAND ls
-	
-	CONFIGURE_COMMAND ls
-	
-	BUILD_COMMAND ls
-	
-	#      INSTALL_COMMAND  ${SPACK_BINARY} install xerces-c )
-	#      INSTALL_COMMAND  ${SuperBuild_BUILD_FILES_DIR}/spack_generic_build.sh ${SPACK_BINARY} xerces-c ${TPL_INSTALL_PREFIX} )
-	INSTALL_COMMAND ${CMAKE_COMMAND} -P ${Amanzi_SOURCE_DIR}/tools/cmake/SpackFunctions.cmake
-    )
-    
-    build_library_name(xerces-c XERCES_LIBRARY APPEND_PATH ${TMP_SPACK_INSTALL_DIR}/lib)
-    
-    set(XERCES_LIBRARIES ${XERCES_LIBRARY})
-    set(XERCES_INCLUDE_DIRS ${TMP_SPACK_INSTALL_DIR}/include)
-    set(XERCES_INSTALL_PREFIX ${TMP_SPACK_INSTALL_DIR})
-    append_set(Amanzi_TPL_CMAKE_ARGS
-	-DXERCES_DIR:FILEPATH=${XERCES_INSTALL_PREFIX})
-    
-    amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
-	PREFIX XERCES
-	VERSION ${TMP_SPACK_VERSION} )
-    
-    #  unset(TMP_SPACK_INSTALL_DIR)
-    #  unset(TMP_SPACK_VERSION)
-    #  unset(ENV{PACKAGE})
-    #  unset(ENV{SPACK_BINARY})
-    endif()
-    
-    # exodusii
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_ExodusII.cmake) 
-    append_set(Amanzi_TPL_CMAKE_ARGS
-        -DExodusII_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
-
-    # moab
-    if ( ENABLE_MOAB_Mesh )
-	include(${SuperBuild_BUILD_FILES_DIR}/Build_MOAB.cmake)
-	append_set(Amanzi_TPL_CMAKE_ARGS
-            -DENABLE_MOAB_Mesh:BOOL=${ENABLE_MOAB_Mesh}
-	    -DMOAB_DIR:PATH=${TPL_INSTALL_PREFIX})
-    endif()
-
-    # SEACAS
-    #include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
-    
-    # MSTK
-    if ( ENABLE_MSTK_Mesh )
-	include(${SuperBuild_BUILD_FILES_DIR}/Build_MSTK.cmake) 
-	append_set(Amanzi_TPL_CMAKE_ARGS
-            -DENABLE_MSTK_Mesh:BOOL=${ENABLE_MSTK_Mesh}
-            -DMSTK_INCLUDE_DIR:PATH=${MSTK_INCLUDE_DIR}
-            -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
-    endif()
-
-    # silo
-    if (ENABLE_Silo)
-	include(${SuperBuild_BUILD_FILES_DIR}/Build_Silo.cmake)
-	append_set(Amanzi_TPL_CMAKE_ARGS
-	    -DENABLE_Silo:BOOL=${ENABLE_Silo}
-	    -DSilo_INCLUDE_DIR:PATH=${Silo_INCLUDE_DIR}
-	    -DSilo_LIBRARY_DIR:PATH=${Silo_LIBRARY_DIR})
-    endif()
-    
-else() 
-    # standard build without any xSDK (or Spack for now)
-    
-    # MPI
-    if ( BUILD_MPI )
-	include(${SuperBuild_BUILD_FILES_DIR}/Build_OpenMPI.cmake)
-	set(MPI_PROJECT OpenMPI)
-    endif()
-    
-    # ZLIB
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_zlib.cmake) 
-    
-    # CURL
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_CURL.cmake)
-    
-    # UnitTest
-    append_set(Amanzi_TPL_CMAKE_ARGS
-        -DENABLE_TEST:BOOL=${ENABLE_TESTS})
-    if (ENABLE_TESTS)
-	include(${SuperBuild_BUILD_FILES_DIR}/Build_UnitTest.cmake)
-	append_set(Amanzi_TPL_CMAKE_ARGS 
-            -DUnitTest_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
-    endif()
-
-    # CCSE
-    set(CCSE_BL_SPACEDIM_DFLT 2)
-    if(NOT CCSE_BL_SPACEDIM )
-	set(CCSE_BL_SPACEDIM ${CCSE_BL_SPACEDIM_DFLT})
-    endif()
-    if ( ENABLE_Structured )
-	include(${SuperBuild_BUILD_FILES_DIR}/Build_CCSE.cmake) 
-	append_set(Amanzi_TPL_CMAKE_ARGS
-            -DCCSE_DIR:FILEPATH=${TPL_INSTALL_PREFIX}
-            -DENABLE_MPI:BOOL=TRUE
-            -DENABLE_OpenMP:BOOL=${ENABLE_OpenMP}
-            -DAMANZI_PRECISION:STRING=DOUBLE
-            -DAMANZI_SPACEDIM:INT=${CCSE_BL_SPACEDIM})
-    endif()
-    
-    # Boost
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_Boost.cmake) 
-    #TESTINGinclude(${SuperBuild_BUILD_FILES_DIR}/Build_BoostCmake.cmake) 
-    append_set(Amanzi_TPL_CMAKE_ARGS
-        -DBOOST_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
-        -DBoost_USE_STATIC_LIBS:BOOL=TRUE
-        -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
-    
-    # HDF5  
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_HDF5.cmake) 
-    #BROKENinclude(${SuperBuild_BUILD_FILES_DIR}/Build_HDF5Cmake.cmake) 
-    append_set(Amanzi_TPL_CMAKE_ARGS
-        -DHDF5_ROOT:FILEPATH=${TPL_INSTALL_PREFIX})
-    
-    # ASCEM-IO  
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_ASCEMIO.cmake) 
-    append_set(Amanzi_TPL_CMAKE_ARGS
-        -DASCEMIO_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
-    
-    # XERCES
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_XERCES.cmake) 
-    append_set(Amanzi_TPL_CMAKE_ARGS
-	-DXERCES_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
-    
-    # NetCDF
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_NetCDF.cmake) 
-    append_set(Amanzi_TPL_CMAKE_ARGS
-        -DNetCDF_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
-    
-    # NetCDF Fortran
+# NetCDF Fortran
+if ( NOT ENABLE_XSDK )
     include(${SuperBuild_BUILD_FILES_DIR}/Build_NetCDF_Fortran.cmake)
+endif()
+append_set(Amanzi_TPL_CMAKE_ARGS
+    -DNetCDF_FORTRAN_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+
+# ExodusII
+include(${SuperBuild_BUILD_FILES_DIR}/Build_ExodusII.cmake) 
+append_set(Amanzi_TPL_CMAKE_ARGS
+    -DExodusII_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+
+# MOAB
+if ( ENABLE_MOAB_Mesh )
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_MOAB.cmake)
     append_set(Amanzi_TPL_CMAKE_ARGS
-        -DNetCDF_FORTRAN_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
-    
-    # ExodusII
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_ExodusII.cmake) 
-    append_set(Amanzi_TPL_CMAKE_ARGS
-        -DExodusII_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
-    
-    # MOAB
-    if ( ENABLE_MOAB_Mesh )
-	include(${SuperBuild_BUILD_FILES_DIR}/Build_MOAB.cmake)
-	append_set(Amanzi_TPL_CMAKE_ARGS
-            -DENABLE_MOAB_Mesh:BOOL=${ENABLE_MOAB_Mesh}
-	    -DMOAB_DIR:PATH=${TPL_INSTALL_PREFIX})
-    endif()
-    
-    # HYPRE
+        -DENABLE_MOAB_Mesh:BOOL=${ENABLE_MOAB_Mesh}
+	-DMOAB_DIR:PATH=${TPL_INSTALL_PREFIX})
+endif()
+
+# HYPRE
+if ( NOT ENABLE_XSDK )
     option(ENABLE_HYPRE "Build the HYPRE solver package" TRUE)
     if ( ENABLE_HYPRE )
 	include(${SuperBuild_BUILD_FILES_DIR}/Build_HYPRE.cmake)
     endif()
-    
-    # METIS -- needs to go before PETSc because PETSc needs it.
+else()
+    set(HYPRE_INCLUDE_DIRS "${TPL_INSTALL_PREFIX}/include")
+    build_library_name(HYPRE HYPRE_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+    set(HYPRE_LIBRARIES    "${HYPRE_LIBRARY}")
+endif()
+
+# METIS -- needs to go before PETSc because PETSc needs it.
+if ( NOT ENABLE_XSDK )
     include(${SuperBuild_BUILD_FILES_DIR}/Build_METIS.cmake) 
-    append_set(Amanzi_TPL_CMAKE_ARGS 
-        -DMETIS_DIR:FILEPATH=${METIS_DIR})
-    
-    # ParMetis -- needs to go before PETSc because PETSc needs it.
+else()
+    build_library_name(metis METIS_LIBRARIES SHARED APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+    set(METIS_INCLUDE_DIR ${TPL_INSTALL_PREFIX}/include)
+    set(METIS_DIR ${TPL_INSTALL_PREFIX})
+endif()
+append_set(Amanzi_TPL_CMAKE_ARGS 
+    -DMETIS_DIR:FILEPATH=${METIS_DIR})
+
+# ParMetis -- needs to go before PETSc because PETSc needs it.
+if ( NOT ENABLE_XSDK )
     include(${SuperBuild_BUILD_FILES_DIR}/Build_ParMetis.cmake)
-    if (ENABLE_PETSC OR ENABLE_Structured)
-	append_set(Amanzi_TPL_CMAKE_ARGS
-            -DParMetis_DIR:FILEPATH=${ParMetis_DIR})
-    endif ()
-    
-    # PETSc
+else()
+    build_library_name(z ParMetis_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+    set(ParMetis_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+    set(ParMetis_DIR ${TPL_INSTALL_PREFIX})
+endif()
+
+if (ENABLE_PETSC OR ENABLE_Structured)
+    append_set(Amanzi_TPL_CMAKE_ARGS
+        -DParMetis_DIR:FILEPATH=${ParMetis_DIR})
+endif ()
+
+# PETSc
+if ( NOT ENABLE_XSDK )
     option(ENABLE_PETSC "Build the PETSc package" FALSE)
     if (ENABLE_PETSC OR ENABLE_Structured)
 	set(ENABLE_PETSC TRUE)
 	include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
     endif()
-    
-    # Trilinos  
+else()
+    set(PETSC_DIR ${TPL_INSTALL_PREFIX})
+endif()
+
+# Trilinos  
+if ( NOT ENABLE_XSDK )
     include(${SuperBuild_BUILD_FILES_DIR}/Build_Trilinos.cmake)
+else()
+    set(Trilinos_INSTALL_PREFIX  ${TPL_INSTALL_PREFIX})
+    set(Zoltan_INSTALL_PREFIX "${TPL_INSTALL_PREFIX}")
+endif()
+append_set(Amanzi_TPL_CMAKE_ARGS
+    -DENABLE_STK_Mesh:BOOL=${ENABLE_STK_Mesh}
+    -DTrilinos_INSTALL_PREFIX:PATH=${Trilinos_INSTALL_PREFIX})
+
+# SEACAS
+#include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
+
+# MSTK
+if ( ENABLE_MSTK_Mesh )
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_MSTK.cmake) 
     append_set(Amanzi_TPL_CMAKE_ARGS
-        -DENABLE_STK_Mesh:BOOL=${ENABLE_STK_Mesh}
-        -DTrilinos_INSTALL_PREFIX:PATH=${Trilinos_INSTALL_PREFIX})
-    
-    # SEACAS
-    #include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
-    
-    # MSTK
-    if ( ENABLE_MSTK_Mesh )
-	include(${SuperBuild_BUILD_FILES_DIR}/Build_MSTK.cmake) 
-	append_set(Amanzi_TPL_CMAKE_ARGS
-            -DENABLE_MSTK_Mesh:BOOL=${ENABLE_MSTK_Mesh}
-            -DMSTK_INCLUDE_DIR:PATH=${MSTK_INCLUDE_DIR}
-            -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
-    endif()
-    
-    # Silo
-    if (ENABLE_Silo)
-	include(${SuperBuild_BUILD_FILES_DIR}/Build_Silo.cmake)
-	append_set(Amanzi_TPL_CMAKE_ARGS
-	    -DENABLE_Silo:BOOL=${ENABLE_Silo}
-	    -DSilo_INCLUDE_DIR:PATH=${Silo_INCLUDE_DIR}
-	    -DSilo_LIBRARY_DIR:PATH=${Silo_LIBRARY_DIR})
-    endif()
-    
-    # Alquimia and PFlotran
+        -DENABLE_MSTK_Mesh:BOOL=${ENABLE_MSTK_Mesh}
+        -DMSTK_INCLUDE_DIR:PATH=${MSTK_INCLUDE_DIR}
+        -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
+endif()
+
+# Silo
+if (ENABLE_Silo)
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_Silo.cmake)
+    append_set(Amanzi_TPL_CMAKE_ARGS
+	-DENABLE_Silo:BOOL=${ENABLE_Silo}
+	-DSilo_INCLUDE_DIR:PATH=${Silo_INCLUDE_DIR}
+	-DSilo_LIBRARY_DIR:PATH=${Silo_LIBRARY_DIR})
+endif()
+
+# Alquimia and PFlotran
+if ( NOT ENABLE_XSDK )
     option(ENABLE_ALQUIMIA "Build the Alquimia chemistry interface" FALSE)
     option(ENABLE_PFLOTRAN "Build the PFlotran chemistry package" FALSE)
     if (ENABLE_ALQUIMIA)
@@ -900,8 +719,19 @@ else()
     if (ENABLE_ALQUIMIA)
 	include(${SuperBuild_BUILD_FILES_DIR}/Build_alquimia.cmake)
     endif()
+else()
+    # pflotran
+    build_library_name(pflotranchem PFLOTRAN_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+    set(PFLOTRAN_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+    set(PFLOTRAN_DIR ${TPL_INSTALL_PREFIX})
+    
+    # alquimia
+    build_library_name(alquimia_c ALQUIMIA_C_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+    build_library_name(alquimia_cutils ALQUIMIA_CUTILS_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+    build_library_name(alquimia_fortran ALQUIMIA_F_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
     
 endif()
+
 
 # ############################################################################ #
 #  Final steps
