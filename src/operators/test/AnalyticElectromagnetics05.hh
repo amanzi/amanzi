@@ -16,6 +16,8 @@
 
 #include "AnalyticElectromagneticsBase.hh"
 
+const double ct = 2.0;
+
 class AnalyticElectromagnetics05 : public AnalyticElectromagneticsBase {
  public:
   AnalyticElectromagnetics05(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
@@ -24,7 +26,7 @@ class AnalyticElectromagnetics05 : public AnalyticElectromagneticsBase {
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
     Amanzi::WhetStone::Tensor K(p.dim(), 1);
-    K(0, 0) = 1.0;
+    K(0, 0) = 1.0 / ct;
     return K;
   }
 
@@ -32,7 +34,7 @@ class AnalyticElectromagnetics05 : public AnalyticElectromagneticsBase {
     double x = p[0];
     double y = p[1];
 
-    double tmp = std::exp(t + 0.6 * x + 0.8 * y);
+    double tmp = std::exp(ct * (t + 0.6 * x + 0.8 * y));
     return Amanzi::AmanziGeometry::Point(0.0, 0.0, tmp);
   }
 
@@ -40,7 +42,7 @@ class AnalyticElectromagnetics05 : public AnalyticElectromagneticsBase {
     double x = p[0];
     double y = p[1];
 
-    double tmp = std::exp(t + 0.6 * x + 0.8 * y);
+    double tmp = std::exp(ct * (t + 0.6 * x + 0.8 * y));
     return Amanzi::AmanziGeometry::Point(-0.8 * tmp, 0.6 * tmp, 0.0);
   }
 

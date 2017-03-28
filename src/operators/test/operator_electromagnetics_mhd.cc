@@ -153,9 +153,9 @@ void ResistiveMHD2D(double dt, double tend, bool initial_guess,
     op_mhd->UpdateMatrices();
 
     // Add an accumulation term using dt=1 since time step is taken into
-    // account in the system modification routine.
+    // account in the system modification routine. Kc=constant FIXME
     CompositeVector phi(cvs_e);
-    phi.PutScalar(1.0);
+    phi.PutScalar(1.0 / Kc(0,0));
 
     Teuchos::RCP<Accumulation> op_acc =
         Teuchos::rcp(new Accumulation(AmanziMesh::NODE, global_op));
@@ -426,7 +426,7 @@ void ResistiveMHD3D(double dt, double tend, bool initial_guess) {
     // Add an accumulation term using dt=1 since time step is taken into
     // account in the system modification routine.
     CompositeVector phi(cvs_e);
-    phi.PutScalar(1.0);
+    phi.PutScalar(1.0 / Kc(0,0));
 
     Teuchos::RCP<Accumulation> op_acc =
         Teuchos::rcp(new Accumulation(AmanziMesh::EDGE, global_op));

@@ -48,7 +48,6 @@ void ElectromagneticsMHD::UpdateMatrices()
     WhetStone::DenseMatrix Ccell(nfaces, nedges);
     WhetStone::DenseMatrix Acell(nedges, nedges);
 
-    if (K_.get()) Kc = (*K_)[c];
     mfd.StiffnessMatrix(c, Kc, Acell, Mcell, Ccell);
 
     local_op_->matrices[c] = Acell;
