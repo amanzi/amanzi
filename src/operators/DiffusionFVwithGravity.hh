@@ -144,7 +144,10 @@ class DiffusionFVwithGravity : public DiffusionFV,
   // -- modify an operator
   virtual void ApplyBCs(bool primary, bool eliminate);
   virtual void ModifyMatrices(const CompositeVector& u) {};
-  virtual void ScaleMassMatrices(double s) {};
+  virtual void ScaleMassMatrices(double s) {
+    ComputeTransmissibility_(gravity_term_);
+    transmissibility_->Scale(s);
+  };
 
   // Developments
   // -- interface to solvers for treating nonlinear BCs.
