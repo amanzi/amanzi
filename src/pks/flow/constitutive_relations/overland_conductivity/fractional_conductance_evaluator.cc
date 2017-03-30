@@ -50,7 +50,7 @@ FractionalConductanceEvaluator::FractionalConductanceEvaluator(const FractionalC
     vpd_key_(other.vpd_key_),
     delta_ex_key_(other.delta_ex_key_),
     delta_max_key_(other.delta_max_key_),
-    depr_depth_key_(other.delta_max_key_)
+    depr_depth_key_(other.depr_depth_key_)
 {};
 
 Teuchos::RCP<FieldEvaluator>
@@ -72,15 +72,16 @@ void FractionalConductanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S
   const Epetra_MultiVector& depr_depth_v = *S->GetFieldData(depr_depth_key_)->ViewComponent("cell", false);
 
  
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  
   int ncells = res.MyLength();
+  assert(depr_depth_v[0][0] > 0.);
+
   for (int c=0; c!=ncells; ++c) {
     double depr_depth = depr_depth_v[0][c];
     double delta_max = delta_max_v[0][c];
     double delta_ex = delta_ex_v[0][c];
     const double fixed_depth = std::pow(depr_depth,2)*(2*delta_max - 3*delta_ex)/std::pow(delta_max,2) + std::pow(depr_depth,3)*(2*delta_ex - delta_max)/std::pow(delta_max,3);
-
+    
     if (depth[0][c] <= depr_depth)
       res[0][c] = 0;
     else{

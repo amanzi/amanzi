@@ -102,18 +102,12 @@ WeakMPCSemiCoupled::Setup(const Teuchos::Ptr<State>& S) {
   coupling_key_ = plist_->get<std::string>("coupling key"," ");
   subcycle_key_ = plist_->get<bool>("subcycle",false);
 
-  //Teuchos::ParameterList en_list = S->FEList().isSublist("surface_star-depression_depth");
+  // by default sg_model_ is false
   if (S->FEList().isSublist("surface_star-depression_depth"))
     sg_model_ = true;
+  else
+    sg_model_ = false;
 
-
-  //  sg_model_ = en_list.get<bool>("subgrid model", false);
-  if (sg_model_){
-    delta_max_ = .4;//en_list.get<double>("maximum ponded depth");
-    delta_ex_ = 0.2;//en_list.get<double>("excluded volume");
-  }
-  if(sg_model_)
-    assert(delta_max_ > 0.0);
   //  sync_time_ = plist_->get<double>("sync time"); //provide default value later!!
   ASSERT(!(coupling_key_.empty()));
 
@@ -210,16 +204,14 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double t_old, double t_new, bool r
     }
   }
   else{
-    
+  
     const Epetra_MultiVector& vol_pd = *S_next_->GetFieldData("surface_star-volumetric_ponded_depth")
       ->ViewComponent("cell", false);
     
     const Epetra_MultiVector& mdl = *S_next_->GetFieldData("surface_star-mass_density_liquid")
       ->ViewComponent("cell", false);
 
-    //const Epetra_MultiVector& surfstar_wc = *S_next_->GetFieldData("surface_star-water_content")
-    // ->ViewComponent("cell", false);
-    
+      
     const Epetra_Vector& gravity = *S_->GetConstantVectorData("gravity");
     double gz = -gravity[2];
     
@@ -421,18 +413,23 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double t_old, double t_new, bool r
  
   if (nfailed ==0){ 
     Epetra_MultiVector& surfstar_p = *S_next_->GetFieldData("surface_star-pressure",
-							    S_inter_->GetField("surface_star-pressure")->owner())->ViewComponent("cell", false);
+							    S_inter_->GetField("surface_star-pressure")->owner())
+      ->ViewComponent("cell", false);
     Epetra_MultiVector& surfstar_t = *S_next_->GetFieldData("surface_star-temperature",
-							    S_inter_->GetField("surface_star-temperature")->owner())->ViewComponent("cell", false);
+							    S_inter_->GetField("surface_star-temperature")->owner())
+      ->ViewComponent("cell", false);
     Epetra_MultiVector& surfstar_wc = *S_next_->GetFieldData("surface_star-water_content",
-							     S_inter_->GetField("surface_star-water_content")->owner())->ViewComponent("cell", false);
+							     S_inter_->GetField("surface_star-water_content")->owner())
+      ->ViewComponent("cell", false);
     if (!sg_model_){
       for (unsigned c=0; c<size_t; c++){
 	std::stringstream name;
 	int id = S_->GetMesh("surface")->cell_map(false).GID(c);
 	name << "column_" << id <<"_surface";
-	const Epetra_MultiVector& surf_p = *S_next_->GetFieldData(getKey(name.str(),"pressure"))->ViewComponent("cell", false);
-	const Epetra_MultiVector& surf_wc = *S_next_->GetFieldData(getKey(name.str(),"water_content"))->ViewComponent("cell", false);
+	const Epetra_MultiVector& surf_p = *S_next_->GetFieldData(getKey(name.str(),"pressure"))
+	  ->ViewComponent("cell", false);
+	const Epetra_MultiVector& surf_wc = *S_next_->GetFieldData(getKey(name.str(),"water_content"))
+	  ->ViewComponent("cell", false);
 	if(surf_p[0][0] > 101325.00){
 	  surfstar_p[0][c] = surf_p[0][0];
 	  surfstar_wc[0][c] = surf_wc[0][0];
@@ -443,26 +440,35 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double t_old, double t_new, bool r
     }
     else{
       
-      const Epetra_MultiVector& delta_max_v = *S_next_->GetFieldData("surface_star-maximum_ponded_depth")->ViewComponent("cell", false);
-      const Epetra_MultiVector& delta_ex_v = *S_next_->GetFieldData("surface_star-excluded_volume")->ViewComponent("cell", false);
-      //	const Epetra_MultiVector& depr_depth_v = *S->GetFieldData(depr_depth_key_)->ViewComponent("cell", false);
+      const Epetra_MultiVector& delta_max_v = *S_next_->GetFieldData("surface_star-maximum_ponded_depth")
+	->ViewComponent("cell", false);
+      const Epetra_MultiVector& delta_ex_v = *S_next_->GetFieldData("surface_star-excluded_volume")
+	->ViewComponent("cell", false);
+      
       const Epetra_Vector& gravity = *S_->GetConstantVectorData("gravity");
       double gz = -gravity[2];
       const double& p_atm = *S_->GetScalarData("atmospheric_pressure");
 
+      int rank;
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+      
       for (unsigned c=0; c<size_t; c++){
 	std::stringstream name;
 	int id = S_->GetMesh("surface")->cell_map(false).GID(c);
 	name << "column_" << id <<"_surface";
-	const Epetra_MultiVector& pd = *S_next_->GetFieldData(getKey(name.str(),"ponded_depth"))->ViewComponent("cell", false);
-	const Epetra_MultiVector& surf_wc = *S_next_->GetFieldData(getKey(name.str(),"water_content"))->ViewComponent("cell", false);
+	const Epetra_MultiVector& pd = *S_next_->GetFieldData(getKey(name.str(),"ponded_depth"))
+	  ->ViewComponent("cell", false);
+	const Epetra_MultiVector& surf_wc = *S_next_->GetFieldData(getKey(name.str(),"water_content"))
+	  ->ViewComponent("cell", false);
 	
-	const Epetra_MultiVector& cv = *S_next_->GetFieldData(getKey(name.str(),"cell_volume"))->ViewComponent("cell", false);
+	const Epetra_MultiVector& cv = *S_next_->GetFieldData(getKey(name.str(),"cell_volume"))
+	  ->ViewComponent("cell", false);
 
-	const Epetra_MultiVector& mdl = *S_next_->GetFieldData(getKey(name.str(),"mass_density_liquid"))->ViewComponent("cell", false);
-	
+	const Epetra_MultiVector& mdl = *S_next_->GetFieldData(getKey(name.str(),"mass_density_liquid"))
+	  ->ViewComponent("cell", false);
 	
 	if (pd[0][0] >0){
+	 
 	  double delta = FindVolumetricHead(pd[0][0], delta_max_v[0][c],delta_ex_v[0][c]);
 	  
 	  double pres = delta*mdl[0][0] *gz + p_atm;
@@ -1102,7 +1108,6 @@ WeakMPCSemiCoupled::FindVolumetricHead(double d, double delta_max, double delta_
 
   double a = (2*delta_ex - delta_max) / std::pow(delta_max,3);
   double b = (2*delta_max - 3*delta_ex) / std::pow(delta_max,2);
-
   double x1=0,x2=delta_max,x3;
   int count=0;
   double tol = 1.0E-15;

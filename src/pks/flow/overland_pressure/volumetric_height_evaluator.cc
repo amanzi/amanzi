@@ -46,49 +46,7 @@ VolumetricHeightEvaluator::VolumetricHeightEvaluator(const VolumetricHeightEvalu
   delta_max_key_(other.delta_max_key_),
   delta_ex_key_(other.delta_ex_key_),
   vol_model_(other.vol_model_) {}
-  
-  /*
-void VolumetricHeightEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
-  // Ensure my field exists.  Requirements should be already set.
-  ASSERT(my_key_ != std::string(""));
-  Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
 
-  // check plist for vis or checkpointing control
-  bool io_my_key = plist_.get<bool>(std::string("visualize ")+my_key_, true);
-  S->GetField(my_key_, my_key_)->set_io_vis(io_my_key);
-  bool checkpoint_my_key = plist_.get<bool>(std::string("checkpoint ")+my_key_, true);
-  S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
-
-  // If my requirements have not yet been set, we'll have to hope they
-  // get set by someone later.  For now just defer.
-  if (my_fac->Mesh() != Teuchos::null) {
-    // Create an unowned factory to check my dependencies.  This is done
-    // manually here because we do NOT want faces, despite having faces in
-    // my_key.  The faces will get updated directly from the mixed field.
-    Teuchos::RCP<CompositeVectorSpace> dep_fac =
-        Teuchos::rcp(new CompositeVectorSpace());
-    dep_fac->SetOwned(false);
-    dep_fac->SetGhosted(my_fac->Ghosted());
-    dep_fac->SetMesh(my_fac->Mesh());
-    dep_fac->AddComponent("cell", AmanziMesh::CELL, 1);
-
-    // Loop over my dependencies, ensuring they meet the requirements.
-    for (KeySet::const_iterator key=dependencies_.begin();
-         key!=dependencies_.end(); ++key) {
-      Teuchos::RCP<CompositeVectorSpace> fac = S->RequireField(*key);
-      fac->Update(*dep_fac);
-    }
-
-    // Recurse into the tree to propagate info to leaves.
-    for (KeySet::const_iterator key=dependencies_.begin();
-         key!=dependencies_.end(); ++key) {
-      S->RequireFieldEvaluator(*key)->EnsureCompatibility(S);
-    }
-  }
-
-}
-
-   */
 
 Teuchos::RCP<FieldEvaluator>
 VolumetricHeightEvaluator::Clone() const {

@@ -12,19 +12,19 @@ namespace Amanzi {
 class WeakMPCSemiCoupled : public MPC<PK> {
 public:
   
-   WeakMPCSemiCoupled(Teuchos::ParameterList& FElist,
-          const Teuchos::RCP<Teuchos::ParameterList>& plist,
-          const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<TreeVector>& solution) :
-     PK(), MPC<PK>(),FElist_loc(FElist){
+WeakMPCSemiCoupled(Teuchos::ParameterList& FElist,
+		   const Teuchos::RCP<Teuchos::ParameterList>& plist,
+		   const Teuchos::RCP<State>& S,
+		   const Teuchos::RCP<TreeVector>& solution) :
+     PK(), MPC<PK>(),FElist_loc(FElist), sg_model_(false){
+  
+  plist_ = plist;
+  
+  generalize_inputspec(S.ptr());
      
-     plist_ = plist;
-    
-     generalize_inputspec(S.ptr());
-     
-     MPC<PK>::init_(FElist_loc,plist_,S, solution);
-     
-   };
+  MPC<PK>::init_(FElist_loc,plist_,S, solution);
+  
+};
 
 
   virtual double get_dt();
