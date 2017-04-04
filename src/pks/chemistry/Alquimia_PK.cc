@@ -48,11 +48,13 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
                          const Teuchos::RCP<Teuchos::ParameterList>& glist,
                          const Teuchos::RCP<State>& S,
                          const Teuchos::RCP<TreeVector>& soln) :
-    soln_(soln),
-    max_time_step_(9.9e9),
-    chem_initialized_(false),
-    current_time_(0.0),
-    saved_time_(0.0)
+  Chemistry_PK(),
+  soln_(soln),
+  max_time_step_(9.9e9),
+  chem_initialized_(false),
+  current_time_(0.0),
+  saved_time_(0.0)
+
 {
 
   S_ = S;
@@ -74,6 +76,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   poro_key_ = cp_list_->get<std::string>("porosity key", getKey(domain_name_, "porosity"));
   saturation_key_ = cp_list_->get<std::string>("saturation key", getKey(domain_name_, "saturation_liquid"));
   fluid_den_key_ = cp_list_->get<std::string>("fluid density key", getKey(domain_name_, "fluid_density"));
+  molar_fluid_den_key_ = cp_list_->get<std::string>("molar fluid density key", getKey(domain_name_, "molar_density_liquid"));
 
   min_vol_frac_key_ = getKey(domain_name_,"mineral_volume_fractions");
   min_ssa_key_ = getKey(domain_name_,"mineral_specific_surface_area");
@@ -92,6 +95,8 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   ion_exchange_ref_cation_conc_key_ = getKey(domain_name_,"ion_exchange_ref_cation_conc");
   secondary_activity_coeff_key_ = getKey(domain_name_,"secondary_activity_coeff");
   alquimia_aux_data_key_ = getKey(domain_name_,"alquimia_aux_data");
+
+  convert2mole_fraction_ = cp_list_->get<bool>("use mole fraction units", false);
 
   // collect high-level information about the problem
   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
@@ -153,6 +158,7 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
   for (size_t i = 0; i < aux_names.size(); ++i) {
     std::vector<std::vector<std::string> > subname(1);
     subname[0].push_back("0");
+    aux_names[i] = getKey(domain_name_, aux_names[i]);
 
     if (!S->HasField(aux_names[i])) {
       S->RequireField(aux_names[i], passwd_, subname)
@@ -166,10 +172,11 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
       cp_list_->get<Teuchos::Array<std::string> >("auxiliary data");  
     
     for (Teuchos::Array<std::string>::const_iterator it = names.begin(); it != names.end(); ++it) {
-      if (!S->HasField(*it)) {
+      Key aux_field_name = getKey(domain_name_, *it);
+      if (!S->HasField(aux_field_name)) {
         std::vector<std::vector<std::string> > subname(1);
         subname[0].push_back("0");
-        S->RequireField(*it, passwd_, subname)
+        S->RequireField(aux_field_name, passwd_, subname)
           ->SetMesh(mesh_)->SetGhosted(false)
           ->SetComponent("cell", AmanziMesh::CELL, 1);
       }
@@ -208,9 +215,14 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
     aux_names.insert(aux_names.end(), names.begin(), names.end());
   }
 
-  for (auto it = aux_names.begin(); it != aux_names.end(); ++it) {
-    InitializeField_(*it, 0.0);
+
+  for (size_t i = 0; i < aux_names.size(); ++i) {
+    aux_names[i] = getKey(domain_name_, aux_names[i]);
+    InitializeField_(S, aux_names[i], 0.0);
   }
+
+
+
 
   // Read XML parameters from our input file.
   XMLParameters();
@@ -275,6 +287,8 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
     *vo_->os() << vo_->color("green") << "Initalization of PK was successful, T="
         << S->time() << vo_->reset() << std::endl << std::endl;
   }
+
+  //S->WriteStatistics(vo_);  
 
 }
 
@@ -637,6 +651,7 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
       if (aux_names_.at(i) == "pH") {
         double* cell_aux_output = (*aux_output_)[i];
         cell_aux_output[cell] = aux_output.pH;
+        //std::cout<<domain_name_<<" cell "<<cell<<" pH "<< aux_output.pH<<"\n";
       }
       else if (aux_names_.at(i).find("mineral_saturation_index") != std::string::npos) {
         for (int j = 0; j < mineralNames.size(); ++j) {
@@ -715,8 +730,17 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
   // be updated here.
   //(this->water_density())[cell] = state.water_density;
   //(this->porosity())[cell] = state.porosity;
+
+  if (S_->HasField(molar_fluid_den_key_)){
+    const Epetra_MultiVector& mol_dens = *S_->GetFieldData(molar_fluid_den_key_)->ViewComponent("cell", true);
+  }
+
   for (int i = 0; i < number_aqueous_components_; ++i) {
-    (*aqueous_components)[i][cell] = state.total_mobile.data[i];
+    (*aqueous_components)[i][cell] = state.total_mobile.data[i] ;
+    if (convert2mole_fraction_){
+      (*aqueous_components)[i][cell] /= (mol_dens[0][cell] / 1000.);
+    }
+
     if (using_sorption_) {
       const Epetra_MultiVector& sorbed = *S_->GetFieldData(total_sorbed_key_)->ViewComponent("cell", true);
       sorbed[i][cell] = state.total_immobile.data[i];

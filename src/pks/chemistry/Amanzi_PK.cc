@@ -77,6 +77,7 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   poro_key_ = cp_list_->get<std::string>("porosity key", getKey(domain_name_, "porosity"));
   saturation_key_ = cp_list_->get<std::string>("saturation key", getKey(domain_name_, "saturation_liquid"));
   fluid_den_key_ = cp_list_->get<std::string>("fluid density key", getKey(domain_name_, "fluid_density"));
+  molar_fluid_den_key_ = cp_list_->get<std::string>("molar fluid density key", getKey(domain_name_, "molar_density_liquid"));
 
   min_vol_frac_key_ = getKey(domain_name_,"mineral_volume_fractions");
   min_ssa_key_ = getKey(domain_name_,"mineral_specific_surface_area");

@@ -65,7 +65,7 @@ class Chemistry_PK : public PK_Physical {
   Key get_domain_name() {return domain_name_;};
 
  protected:
-  void InitializeField_(std::string fieldname, double default_val);
+  void InitializeField_(const Teuchos::Ptr<State>& S, std::string fieldname, double default_val);
 
 
  protected:
@@ -83,14 +83,14 @@ class Chemistry_PK : public PK_Physical {
 
   int number_sorption_sites_, number_total_sorbed_;
   std::vector<std::string> sorption_site_names_;
-  bool using_sorption_, using_sorption_isotherms_;
+  bool using_sorption_, using_sorption_isotherms_, convert2mole_fraction_;
 
   int number_free_ion_, number_ion_exchange_sites_;
 
   Key tcc_key_;
   Key poro_key_;
   Key saturation_key_;
-  Key fluid_den_key_;
+  Key fluid_den_key_, molar_fluid_den_key_;
   Key min_vol_frac_key_;
   Key min_ssa_key_;
   Key sorp_sites_key_;
