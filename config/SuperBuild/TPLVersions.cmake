@@ -236,11 +236,11 @@ set(BoostCmake_MD5_SUM        )
 #
 set(HDF5_VERSION_MAJOR 1)
 set(HDF5_VERSION_MINOR 8)
-set(HDF5_VERSION_PATCH 12)
+set(HDF5_VERSION_PATCH 18)
 set(HDF5_VERSION ${HDF5_VERSION_MAJOR}.${HDF5_VERSION_MINOR}.${HDF5_VERSION_PATCH})
-set(HDF5_URL_STRING    "http://software.lanl.gov/ascem/tpls")
+set(HDF5_URL_STRING    "https://support.hdfgroup.org/ftp/HDF5/current18/src")
 set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.bz2)
-set(HDF5_MD5_SUM        03ad766d225f5e872eb3e5ce95524a08)
+set(HDF5_MD5_SUM        29117bf488887f89888f9304c8ebea0b)
 
 #
 # TPL: NetCDF
