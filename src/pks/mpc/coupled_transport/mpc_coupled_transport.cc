@@ -17,6 +17,7 @@ namespace Amanzi {
                                            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                                            const Teuchos::RCP<State>& S,
                                            const Teuchos::RCP<TreeVector>& soln) :
+    //WeakMPC(pk_tree_or_fe_list, global_list, S, soln)
     PK_MPCSubcycled_ATS(pk_tree_or_fe_list, global_list, S, soln)
   {
 
@@ -43,6 +44,18 @@ namespace Amanzi {
 double CoupledTransport_PK::get_dt() {
   //double dt = Amanzi::PK_MPCSubcycled_ATS::get_dt();
   //ComputeVolumeDarcyFlux(S_next_.ptr());
+
+  Teuchos::RCP<const CompositeVector> next_darcy = S_next_->GetFieldData(mass_darcy_key_);
+  Key flux_owner = S_next_->GetField(mass_darcy_key_)->owner();
+  Teuchos::RCP<CompositeVector>  next_darcy_copy = S_->GetFieldCopyData(mass_darcy_key_, "next_timestep", "state");
+  *next_darcy_copy = *next_darcy;
+
+  Teuchos::RCP<const CompositeVector> next_sur_flux = S_next_->GetFieldData(surf_mass_darcy_key_);
+  flux_owner = S_next_->GetField(surf_mass_darcy_key_)->owner();
+  Teuchos::RCP<CompositeVector>  next_sur_flux_copy = S_->GetFieldCopyData(surf_mass_darcy_key_, "next_timestep", "state");
+  *next_sur_flux_copy = *next_sur_flux;
+
+
   master_dt_ = sub_pks_[master_]->get_dt();
   slave_dt_ = sub_pks_[slave_]->get_dt();
 
@@ -52,6 +65,7 @@ double CoupledTransport_PK::get_dt() {
   double dt = std::min(master_dt_, slave_dt_);
 
   set_dt(dt);
+
   return dt;
  
 }
@@ -103,6 +117,7 @@ void CoupledTransport_PK::Setup(const Teuchos::Ptr<State>& S){
   component_names_ = plist_->get<Teuchos::Array<std::string> >("component names").toVector();
 
   PK_MPCSubcycled_ATS::Setup(S);
+  //WeakMPC::Setup(S);
 
 
 
@@ -112,6 +127,7 @@ void CoupledTransport_PK::Setup(const Teuchos::Ptr<State>& S){
 void CoupledTransport_PK::Initialize(const Teuchos::Ptr<State>& S){
 
   PK_MPCSubcycled_ATS::Initialize(S);
+  //WeakMPC::Initialize(S);
 
   //ComputeVolumeDarcyFlux(S); 
   

@@ -30,7 +30,7 @@ public:
   // // -- advance each sub pk dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
 
-  // virtual void Initialize(const Teuchos::Ptr<State>& S);
+  //virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
 
@@ -40,6 +40,7 @@ private:
   
   bool chem_step_succeeded;
   bool storage_created;
+  bool transport_subcycling_;
   double dTtran_, dTchem_;
   int transport_pk_index_, chemistry_pk_index_;
   Teuchos::RCP<CoupledTransport_PK> tranport_pk_;
@@ -49,6 +50,7 @@ private:
   Teuchos::RCP<AmanziChemistry::Chemistry_PK> chemistry_pk_overland_;
   Teuchos::RCP<AmanziChemistry::Chemistry_PK> chemistry_pk_subsurface_;
 
+  Teuchos::RCP<Epetra_MultiVector> ttc_sub_stor_, ttc_over_stor_;
 
   Teuchos::RCP<Teuchos::ParameterList> crt_pk_list_;
 
