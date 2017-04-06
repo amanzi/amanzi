@@ -154,7 +154,7 @@ void Transport_PK_ATS::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next,
     double mass_solute(0.0);
     for (int c = 0; c < ncells_owned; c++) {
       double vol = mesh_->cell_volume(c);
-      mass_solute += (*ws)[0][c] * (*phi)[0][c] * tcc_next[i][c] * vol * (*mol_dens)[0][c];
+      mass_solute += (*ws_)[0][c] * (*phi_)[0][c] * tcc_next[i][c] * vol * (*mol_dens_)[0][c];
     }
     // mass_solute /= units_.concentration_factor();
     // mass_solutes_stepstart_[i] /= units_.concentration_factor();
@@ -341,7 +341,7 @@ double Transport_PK_ATS::ComputeSolute(const Epetra_MultiVector& tcc_next, int i
   double mass_solute(0.0);
   for (int c = 0; c < ncells_owned; c++) {
     double vol = mesh_->cell_volume(c);
-    mass_solute += (*ws)[0][c] * (*phi)[0][c] * tcc_next[i][c] * vol * (*mol_dens)[0][c];
+    mass_solute += (*ws_)[0][c] * (*phi_)[0][c] * tcc_next[i][c] * vol * (*mol_dens_)[0][c];
   }
   //mass_solute /= units_.concentration_factor();
 
