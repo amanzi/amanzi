@@ -42,7 +42,7 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 double CoupledTransport_PK::get_dt() {
   //double dt = Amanzi::PK_MPCSubcycled_ATS::get_dt();
-  ComputeVolumeDarcyFlux(S_next_.ptr());
+  //ComputeVolumeDarcyFlux(S_next_.ptr());
   master_dt_ = sub_pks_[master_]->get_dt();
   slave_dt_ = sub_pks_[slave_]->get_dt();
 
@@ -85,25 +85,21 @@ void CoupledTransport_PK::Setup(const Teuchos::Ptr<State>& S){
   surface_name_ = surface_transport_list_->get<std::string>("domain name", "surface");
   subsurface_name_ = subsurface_transport_list_->get<std::string>("domain name", "domain");
 
-
-  vol_darcy_key_ = getKey(subsurface_name_, "vol_darcy_flux");
-  surf_vol_darcy_key_ = getKey(surface_name_, "vol_darcy_flux");
-
-
+  // vol_darcy_key_ = getKey(subsurface_name_, "vol_darcy_flux");
+  // surf_vol_darcy_key_ = getKey(surface_name_, "vol_darcy_flux");
 
   mesh_ = S->GetMesh(subsurface_name_);
   surf_mesh_ = S->GetMesh(surface_name_);
 
-  if (!S->HasField(vol_darcy_key_)){
-    S->RequireField(vol_darcy_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, 1);
+  // if (!S->HasField(vol_darcy_key_)){
+  //   S->RequireField(vol_darcy_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  //     ->SetComponent("face", AmanziMesh::FACE, 1);
+  // }
 
-  }
-
-  if (!S->HasField(surf_vol_darcy_key_)){
-    S->RequireField(surf_vol_darcy_key_, passwd_)->SetMesh(surf_mesh_)->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, 1);
-  }
+  // if (!S->HasField(surf_vol_darcy_key_)){
+  //   S->RequireField(surf_vol_darcy_key_, passwd_)->SetMesh(surf_mesh_)->SetGhosted(true)
+  //     ->SetComponent("face", AmanziMesh::FACE, 1);
+  // }
 
   PK_MPCSubcycled_ATS::Setup(S);
 
@@ -116,7 +112,7 @@ void CoupledTransport_PK::Initialize(const Teuchos::Ptr<State>& S){
 
   PK_MPCSubcycled_ATS::Initialize(S);
 
-  ComputeVolumeDarcyFlux(S); 
+  //ComputeVolumeDarcyFlux(S); 
   
 }
 
@@ -193,15 +189,15 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
      It will be removed when we convert to one State
   */
 
-  Teuchos::RCP<const CompositeVector> next_darcy = S_next_->GetFieldData(vol_darcy_key_);
-  Key flux_owner = S_next_->GetField(vol_darcy_key_)->owner();
-  Teuchos::RCP<CompositeVector>  next_darcy_copy = S_->GetFieldCopyData(vol_darcy_key_, "next_timestep", flux_owner);
-  *next_darcy_copy = *next_darcy;
+  // Teuchos::RCP<const CompositeVector> next_darcy = S_next_->GetFieldData(vol_darcy_key_);
+  // Key flux_owner = S_next_->GetField(vol_darcy_key_)->owner();
+  // Teuchos::RCP<CompositeVector>  next_darcy_copy = S_->GetFieldCopyData(vol_darcy_key_, "next_timestep", flux_owner);
+  // *next_darcy_copy = *next_darcy;
 
-  Teuchos::RCP<const CompositeVector> next_sur_flux = S_next_->GetFieldData(surf_vol_darcy_key_);
-  flux_owner = S_next_->GetField(surf_vol_darcy_key_)->owner();
-  Teuchos::RCP<CompositeVector>  next_sur_flux_copy = S_->GetFieldCopyData(surf_vol_darcy_key_, "next_timestep", flux_owner);
-  *next_sur_flux_copy = *next_sur_flux;
+  // Teuchos::RCP<const CompositeVector> next_sur_flux = S_next_->GetFieldData(surf_vol_darcy_key_);
+  // flux_owner = S_next_->GetField(surf_vol_darcy_key_)->owner();
+  // Teuchos::RCP<CompositeVector>  next_sur_flux_copy = S_->GetFieldCopyData(surf_vol_darcy_key_, "next_timestep", flux_owner);
+  // *next_sur_flux_copy = *next_sur_flux;
 
 
   sub_pks_[master_]->AdvanceStep(t_old, t_new, reinit);

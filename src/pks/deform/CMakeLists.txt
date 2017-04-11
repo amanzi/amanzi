@@ -5,10 +5,10 @@
 #    Deformation PK class
 #
 
-add_subdirectory(constitutive_relations)
-add_subdirectory(prescribed_deformation)
+#add_subdirectory(constitutive_relations)
+#add_subdirectory(prescribed_deformation)
 #add_subdirectory(prescribed_volumetric_deformation)
-#add_subdirectory(volumetric_deformation)
+add_subdirectory(volumetric_deformation)
 
 #============================================================================
 # register evaluators/facotries/pks
@@ -28,15 +28,15 @@ generate_evaluators_registration_header(
 
 # prescribed_deformation/
 
-register_evaluator_with_factory(
-  HEADERFILE prescribed_deformation/prescribed_deformation_reg.hh
-  LISTNAME  PRESCRIBED_DEFORMATION_EVAL)
+# register_evaluator_with_factory(
+#   HEADERFILE prescribed_deformation/prescribed_deformation_reg.hh
+#   LISTNAME  PRESCRIBED_DEFORMATION_EVAL)
 
-generate_evaluators_registration_header(
-  HEADERFILE deform_prescribed_deformation_registration.hh
-  LISTNAME   PRESCRIBED_DEFORMATION_EVAL
-  INSTALL    True
-  )
+# generate_evaluators_registration_header(
+#   HEADERFILE deform_prescribed_deformation_registration.hh
+#   LISTNAME   PRESCRIBED_DEFORMATION_EVAL
+#   INSTALL    True
+#   )
 
 # volumetric_deformation/
 
@@ -50,3 +50,4 @@ generate_evaluators_registration_header(
   INSTALL    True
   )
 
+  

@@ -6,9 +6,9 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Derived class for transport sources and sinks.
+  Authors: Neil Carlson
+           Ethan Coon
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #ifndef AMANZI_TRANSPORT_DOMAIN_FUNCTION_HH_
@@ -23,7 +23,9 @@
 
 #include "CommonDefs.hh"
 #include "Mesh.hh"
-#include "DenseVector.hh"
+//#include "DenseVector.hh"
+
+class State;
 
 namespace Amanzi {
 namespace Transport {
@@ -48,19 +50,21 @@ class TransportDomainFunction {
 
   std::vector<std::string>& tcc_names() { return tcc_names_; }
   std::vector<int>& tcc_index() { return tcc_index_; }
+  virtual void set_state(const Teuchos::RCP<State>& S) {S_ = S;}
 
   // iterator methods
-  typedef std::map<int, WhetStone::DenseVector>::iterator Iterator;
+  typedef std::map<int, std::vector<double> >::iterator Iterator;
   Iterator begin() { return value_.begin(); }
   Iterator end() { return value_.end(); }
-  std::map<int, double>::size_type size() { return value_.size(); }
-  virtual void set_state(const Teuchos::RCP<State>& S) {S_=S;}
+  std::map<int, std::vector<double> >::size_type size() { return value_.size(); }
+  
 
- protected:
+protected:
+
   double domain_volume_;
-  std::map<int, WhetStone::DenseVector> value_;  // tcc values on boundary faces
+  std::map<int, std::vector<double> > value_;  // tcc values on boundary faces
   std::string keyword_;
-  Teuchos::RCP<const State> S_;
+  Teuchos::RCP<const State> S_; 
 
   std::vector<std::string> tcc_names_;  // list of component names
   std::vector<int> tcc_index_;  // index of component in the global list

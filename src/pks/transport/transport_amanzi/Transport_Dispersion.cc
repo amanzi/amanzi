@@ -32,7 +32,8 @@ namespace Transport{
 ******************************************************************* */
 void Transport_PK_ATS::CalculateDispersionTensor_(
     const Epetra_MultiVector& darcy_flux, 
-    const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
+    const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation,
+    const Epetra_MultiVector& mol_density )
 {
   D_.resize(ncells_owned);
   for (int c = 0; c < ncells_owned; c++) D_[c].Init(dim, 1);
@@ -51,6 +52,8 @@ void Transport_PK_ATS::CalculateDispersionTensor_(
 
     D_[c] = mdm_->second[(*mdm_->first)[c]]->mech_dispersion(
         velocity, axi_symmetry_[c], saturation[0][c], porosity[0][c]);
+    // double mol_den = mol_density[0][c];
+    // D_[c] *= mol_den;
   }
 }
 
@@ -60,7 +63,8 @@ void Transport_PK_ATS::CalculateDispersionTensor_(
 ******************************************************************* */
 void Transport_PK_ATS::CalculateDiffusionTensor_(
     double md, int phase, 
-    const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
+    const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation,
+    const Epetra_MultiVector& mol_density)
 {
   if (D_.size() == 0) {
     D_.resize(ncells_owned);
@@ -79,12 +83,17 @@ void Transport_PK_ATS::CalculateDiffusionTensor_(
       if (phase == TRANSPORT_PHASE_LIQUID) {
         for (c = block.begin(); c != block.end(); c++) {
           D_[*c] += md * spec->tau[phase] * porosity[0][*c] * saturation[0][*c];
+          // double mol_den = mol_density[0][c];
+          // D_[*c] *= mol_den;
         }
       } else if (phase == TRANSPORT_PHASE_GAS) {
         for (c = block.begin(); c != block.end(); c++) {
           D_[*c] += md * spec->tau[phase] * porosity[0][*c] * (1.0 - saturation[0][*c]);
+          // double mol_den = mol_density[0][c];
+          // D_[*c] *= mol_den;
         }
       }
+
     }
   }
 }

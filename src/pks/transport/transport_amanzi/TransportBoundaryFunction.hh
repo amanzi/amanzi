@@ -58,7 +58,7 @@ class TransportBoundaryFunction {
   typedef std::map<int, WhetStone::DenseVector>::iterator Iterator;
   Iterator begin() { return value_.begin(); }
   Iterator end() { return value_.end(); }
-  std::map<int, double>::size_type size() { return value_.size(); }
+  std::map<int, WhetStone::DenseVector>::size_type size() { return value_.size(); }
 
  protected:
   double domain_volume_;

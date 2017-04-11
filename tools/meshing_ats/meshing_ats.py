@@ -480,6 +480,8 @@ class Mesh3D(object):
                             : layers) or a list of number of cells in the layer
         mat_ids             : either a single integer (one mat_id for all layers)
                             : or a list of integers (mat_id for each layer)
+                            : or a 2D numpy array of integers (mat_id for each layer and
+                              each column: [layer_id, surface_cell_id])
 
         types:
           - 'constant'      : (data=float thickness) uniform thickness
@@ -540,6 +542,16 @@ class Mesh3D(object):
         ncells_total = ncells_tall * mesh2D.num_cells()
         nfaces_total = (ncells_tall+1) * mesh2D.num_cells() + ncells_tall * mesh2D.num_edges()
         nnodes_total = (ncells_tall+1) * mesh2D.num_nodes()
+
+        np_mat_ids = np.array(mat_ids, dtype=int)
+        if np_mat_ids.size == np.size(np_mat_ids, 0):
+            if np_mat_ids.size == 1:
+                np_mat_ids = np.full((len(ncells_per_layer), mesh2D.num_cells()), mat_ids[0], dtype=int)
+            else:
+                np_mat_ids = np.empty((len(ncells_per_layer), mesh2D.num_cells()), dtype=int)
+                for ilay in range(len(ncells_per_layer)):
+                    np_mat_ids[ilay, :] = np.full(mesh2D.num_cells(), mat_ids[ilay], dtype=int)
+
 
         def col_to_id(column, z_cell):
             return z_cell + column * ncells_tall
@@ -661,9 +673,10 @@ class Mesh3D(object):
         material_ids = np.zeros((len(cells),),'i')
         for col in range(mesh2D.num_cells()):
             z_cell = 0
-            for ncells, m_id in zip(ncells_per_layer, mat_ids):
+            for ilay in range(len(ncells_per_layer)):
+                ncells = ncells_per_layer[ilay]
                 for i in range(z_cell, z_cell+ncells):
-                    material_ids[col_to_id(col, i)] = m_id
+                    material_ids[col_to_id(col, i)] = np_mat_ids[ilay, col]
                 z_cell = z_cell + ncells
 
         # make the side sets

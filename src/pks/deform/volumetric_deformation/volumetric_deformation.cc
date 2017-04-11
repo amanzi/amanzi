@@ -29,11 +29,12 @@ using namespace Amanzi::AmanziMesh;
 
 // RegisteredPKFactory<VolumetricDeformation> VolumetricDeformation::reg_("volumetric deformation");
 
-  VolumetricDeformation::VolumetricDeformation(Teuchos::Ptr<State> S, const Teuchos::RCP<Teuchos::ParameterList>& plist,
-        Teuchos::ParameterList& FElist,
-        const Teuchos::RCP<TreeVector>& solution):
-    PKDefaultBase(S, plist, FElist, solution),
-    PKPhysicalBase(S, plist, FElist, solution) {
+VolumetricDeformation::VolumetricDeformation(Teuchos::ParameterList& pk_tree,
+                        const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                        const Teuchos::RCP<State>& S,
+                        const Teuchos::RCP<TreeVector>& solution):
+  PK(pk_tree, glist,  S, solution),
+  PK_Physical_Default(pk_tree, glist,  S, solution){
 
   poro_key_ = plist_->get<std::string>("porosity key","base_porosity");
   dt_ = plist_->get<double>("initial time step", 1);
@@ -51,7 +52,7 @@ using namespace Amanzi::AmanziMesh;
   } else if (mode_name == "saturation") {
     deform_mode_ = DEFORM_MODE_SATURATION;
     deform_region_ = plist_->get<std::string>("deformation region");
-    deform_value_ = plist_->get<double>("deformation porosity value", 0.3);
+    //deform_value_ = plist_->get<double>("deformation porosity value", 0.3);
     //min_vol_frac_ = plist_->get<double>("minimum volume fraction");
     min_S_liq_ = plist_->get<double>("minimum liquid saturation", 0.3);
   } else {
@@ -86,8 +87,8 @@ using namespace Amanzi::AmanziMesh;
 }
 
 // -- Setup data
-void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBase::setup(S);
+void VolumetricDeformation::Setup(const Teuchos::Ptr<State>& S) {
+  PK_Physical_Default::Setup(S);
 
   // save the meshes
   mesh_nc_ = S->GetDeformableMesh("domain");
@@ -214,20 +215,20 @@ void VolumetricDeformation::setup(const Teuchos::Ptr<State>& S) {
 
 
 // -- Initialize owned (dependent) variables.
-void VolumetricDeformation::initialize(const Teuchos::Ptr<State>& S) {
-  PKPhysicalBase::initialize(S);
+void VolumetricDeformation::Initialize(const Teuchos::Ptr<State>& S) {
+  PK_Physical_Default::Initialize(S);
 
   //the PK's initial condition sets the initial porosity.  From this, we
   // calculate the actual initial condition, which is the rock volume.
   //  std::cout<<"name "<<name_<<" key_ "<<key_<<"\n";
 
-  Epetra_MultiVector& base_poro = *S->GetFieldData(key_,name_)
-      ->ViewComponent("cell",false);
-  AmanziMesh::Entity_ID_List cells;
-  mesh_->get_set_entities(deform_region_, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
-  for (AmanziMesh::Entity_ID_List::const_iterator c=cells.begin(); c!=cells.end(); ++c) {
-    base_poro[0][*c] = deform_value_;
-  }
+  // Epetra_MultiVector& base_poro = *S->GetFieldData(key_,name_)
+  //     ->ViewComponent("cell",false);
+  // AmanziMesh::Entity_ID_List cells;
+  // mesh_->get_set_entities(deform_region_, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+  // for (AmanziMesh::Entity_ID_List::const_iterator c=cells.begin(); c!=cells.end(); ++c) {
+  //   base_poro[0][*c] = deform_value_;
+  // }
   
 
   // initialize the deformation
@@ -360,7 +361,10 @@ void VolumetricDeformation::initialize(const Teuchos::Ptr<State>& S) {
 }
 
 
-bool VolumetricDeformation::advance(double dt) {
+bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit) {
+
+  double dt = t_new - t_old;
+
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_MEDIUM))
     *vo_->os() << "Advancing deformation PK from time " << S_->time() << " to "
@@ -434,7 +438,7 @@ bool VolumetricDeformation::advance(double dt) {
         dcell_vol_c[0][*c] = -frac*cv[0][*c];
 
         double soil_mass_vol = cv[0][*c]*(1 - base_poro[0][*c]);
-        //         std::cout<<*c<<" "<<cv[0][*c]<<" "<<dcell_vol_c[0][*c]<<" frac "<<frac<<" poro "<<poro[0][*c]<<" ice "<<s_ice[0][*c]<<" liq "<<s_liq[0][*c]<<" gas "<<s_gas[0][*c]<< " soil vol "<<soil_mass_vol<<"\n";
+        //        std::cout<<*c<<" "<<cv[0][*c]<<" "<<dcell_vol_c[0][*c]<<" frac "<<frac<<" poro "<<poro[0][*c]<<" ice "<<s_ice[0][*c]<<" liq "<<s_liq[0][*c]<<" gas "<<s_gas[0][*c]<< " soil vol "<<soil_mass_vol<<"\n";
 
       }
 
@@ -500,7 +504,7 @@ bool VolumetricDeformation::advance(double dt) {
         min_cell_vols[c] = (1 - poro[0][c])* cv[0][c] +  (poro[0][c]*s_ice[0][c]) * cv[0][c];        
         // min vol is rock vol + ice + a bit
         if (fabs(cv[0][c] - target_cell_vols[c])/cv[0][c] > 1e-4 ){
-          //          std::cout<<c<<": "<<" "<<cv[0][c]<<" "<<target_cell_vols[c]<<" "<<min_cell_vols[c]<<"\n";
+          //std::cout<<c<<": "<<" "<<cv[0][c]<<" "<<target_cell_vols[c]<<" "<<min_cell_vols[c]<<"\n";
           centroid = mesh_->cell_centroid(c);
           min_height = std::min(min_height, centroid[dim - 1]);
           ASSERT(min_cell_vols[c] <= target_cell_vols[c]);
@@ -512,7 +516,7 @@ bool VolumetricDeformation::advance(double dt) {
       }
 
 
-      //std::cout<<"min_height "<<min_height<<"\n";
+      std::cout<<"min_height "<<min_height<<"\n";
         Teuchos::RCP<AmanziMesh::Entity_ID_List>  below_node_list = Teuchos::rcp(new AmanziMesh::Entity_ID_List());
       for (unsigned int n=0; n!=nnodes; ++n) {
         AmanziGeometry::Point nc(3);
@@ -629,10 +633,10 @@ bool VolumetricDeformation::advance(double dt) {
   int ncells = base_poro.MyLength();
   for (int c=0; c!=ncells; ++c) {
     base_poro[0][c] = 1 - (1. - base_poro_old[0][c]) * cv[0][c]/cv_new[0][c];
-    // if (fabs(cv[0][c]/cv_new[0][c] - 1)>0.001){
-    //   std::cout<<"volumes "<<c<<": "<<cv[0][c]<<" "<<cv_new[0][c]<<"\n";
-    //   std::cout<<"porosity "<<base_poro[0][c] <<" "<<base_poro_old[0][c]<<"\n";
-    // }
+    if (fabs(cv[0][c]/cv_new[0][c] - 1)>0.000001){
+       std::cout<<"result volumes "<<c<<": "<<cv[0][c]<<" "<<cv_new[0][c]<<"\n";
+       std::cout<<"result porosity "<<base_poro[0][c] <<" "<<base_poro_old[0][c]<<"\n";
+    }
   }  
 
   S_next_->GetFieldEvaluator("porosity") -> HasFieldChanged(S_next_.ptr(), name_);
