@@ -55,6 +55,8 @@ class Chemistry_PK : public PK_Physical {
   void InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
                                Teuchos::RCP<Teuchos::ParameterList> state_list);
 
+  virtual void CopyFieldstoNewState(const Teuchos::RCP<State>& S_next);
+
   // -- access
 #ifdef ALQUIMIA_ENABLED
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine() { return chem_engine_; }

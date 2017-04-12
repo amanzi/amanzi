@@ -37,29 +37,6 @@ Chemistry_PK::Chemistry_PK() :
 void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
 {
 
-  // tcc_key_ = getKey(domain_name_, "total_component_concentration"); 
-  // poro_key_ = cp_list_->get<std::string>("porosity key", getKey(domain_name_, "porosity"));
-  // saturation_key_ = cp_list_->get<std::string>("saturation key", getKey(domain_name_, "saturation_liquid"));
-  // fluid_den_key_ = cp_list_->get<std::string>("fluid density key", getKey(domain_name_, "fluid_density"));
-
-  // min_vol_frac_key_ = getKey(domain_name_,"mineral_volume_fractions");
-  // min_ssa_key_ = getKey(domain_name_,"mineral_specific_surface_area");
-  // sorp_sites_key_ = getKey(domain_name_,"sorption_sites");
-  // surf_cfsc_key_ = getKey(domain_name_,"surface_complex_free_site_conc");
-  // total_sorbed_key_ = getKey(domain_name_,"total_sorbed");
-  // isotherm_kd_key_ = getKey(domain_name_,"isotherm_kd");
-  // isotherm_freundlich_n_key_ = getKey(domain_name_,"isotherm_freundlich_n");
-  // isotherm_langmuir_b_key_ = getKey(domain_name_,"isotherm_langmuir_b");
-  // free_ion_species_key_ = getKey(domain_name_,"free_ion_species");
-  // primary_activity_coeff_key_ = getKey(domain_name_,"primary_activity_coeff");
-
-  // //ion_exchange_sites_key_ = getKey(domain_name_,"ion_exchange_sites");
-  // ion_exchange_sites_key_ = "ion_exchange_sites";
-
-  // ion_exchange_ref_cation_conc_key_ = getKey(domain_name_,"ion_exchange_ref_cation_conc");
-  // secondary_activity_coeff_key_ = getKey(domain_name_,"secondary_activity_coeff");
-  // alquimia_aux_data_key_ = getKey(domain_name_,"alquimia_aux_data");
-
   mesh_ = S->GetMesh(domain_name_);
 
   // Require data from flow
@@ -354,6 +331,73 @@ void Chemistry_PK::ErrorAnalysis(int ierr, std::string& internal_msg)
     Errors::Message msg(internal_msg);
     Exceptions::amanzi_throw(msg); 
   }  
+}
+
+void Chemistry_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next){
+
+  if (S_->HasField(min_vol_frac_key_)&& S_next->HasField(min_vol_frac_key_)){
+    *S_next->GetFieldData(min_vol_frac_key_, passwd_)->ViewComponent("cell", false) =
+        *S_->GetFieldData(min_vol_frac_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+  if (S_->HasField(min_ssa_key_)&& S_next->HasField(min_ssa_key_)){
+    *S_next->GetFieldData(min_ssa_key_, passwd_)->ViewComponent("cell", false) =
+        *S_->GetFieldData(min_ssa_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+  if (S_->HasField(sorp_sites_key_)&& S_next->HasField(sorp_sites_key_)){
+    *S_next->GetFieldData(sorp_sites_key_, passwd_)->ViewComponent("cell", false) =
+        *S_->GetFieldData(sorp_sites_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+  if (S_->HasField(surf_cfsc_key_)&& S_next->HasField(surf_cfsc_key_)){
+    *S_next->GetFieldData(surf_cfsc_key_, passwd_)->ViewComponent("cell", false) =
+      *S_->GetFieldData(surf_cfsc_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+  if (S_->HasField(total_sorbed_key_)&& S_next->HasField(total_sorbed_key_)){
+    *S_next->GetFieldData(total_sorbed_key_, passwd_)->ViewComponent("cell", false) =
+      *S_->GetFieldData(total_sorbed_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+  if (S_->HasField(isotherm_kd_key_)&& S_next->HasField(isotherm_kd_key_)){
+    *S_next->GetFieldData(isotherm_kd_key_, passwd_)->ViewComponent("cell", false) =
+      *S_->GetFieldData(isotherm_kd_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+  if (S_->HasField(isotherm_freundlich_n_key_)&& S_next->HasField(isotherm_freundlich_n_key_)){
+    *S_next->GetFieldData(isotherm_freundlich_n_key_, passwd_)->ViewComponent("cell", false) =
+      *S_->GetFieldData(isotherm_freundlich_n_key_, passwd_)->ViewComponent("cell", false);
+  }
+    
+  if (S_->HasField(isotherm_langmuir_b_key_)&& S_next->HasField(isotherm_langmuir_b_key_)){
+    *S_next->GetFieldData(isotherm_langmuir_b_key_, passwd_)->ViewComponent("cell", false) =
+      *S_->GetFieldData(isotherm_langmuir_b_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+  if (S_->HasField(free_ion_species_key_)&& S_next->HasField(free_ion_species_key_)){
+    *S_next->GetFieldData(free_ion_species_key_, passwd_)->ViewComponent("cell", false) =
+      *S_->GetFieldData(free_ion_species_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+  if (S_->HasField(primary_activity_coeff_key_)&& S_next->HasField(primary_activity_coeff_key_)){
+    *S_next->GetFieldData(primary_activity_coeff_key_, passwd_)->ViewComponent("cell", false) =
+      *S_->GetFieldData(primary_activity_coeff_key_, passwd_)->ViewComponent("cell", false);
+  }
+    
+  if (S_->HasField(ion_exchange_sites_key_)&& S_next->HasField(ion_exchange_sites_key_)){
+    *S_next->GetFieldData(ion_exchange_sites_key_, passwd_)->ViewComponent("cell", false) =
+      *S_->GetFieldData(ion_exchange_sites_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+  if (S_->HasField(ion_exchange_ref_cation_conc_key_)&& S_next->HasField(ion_exchange_ref_cation_conc_key_)){
+    *S_next->GetFieldData(ion_exchange_ref_cation_conc_key_, passwd_)->ViewComponent("cell", false) =
+      *S_->GetFieldData(ion_exchange_ref_cation_conc_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+
+ 
+
 }
 
 }  // namespace AmanziChemistry

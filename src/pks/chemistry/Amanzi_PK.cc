@@ -740,6 +740,13 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 }
 
 
+void Amanzi_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next){
+
+  Chemistry_PK::CopyFieldstoNewState(S_next);
+
+}
+
+
 /* ******************************************************************
 * The MPC will call this function to signal to the process kernel 
 * that it has accepted the state update, thus, the PK should update
@@ -747,6 +754,7 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 ******************************************************************* */
 void Amanzi_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
+  if (S_ != S) CopyFieldstoNewState(S);
   saved_time_ = t_new;
 
   if (dt_control_method_ == "simple") {

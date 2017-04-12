@@ -979,6 +979,46 @@ void Alquimia_PK::ComputeNextTimeStep()
 }
 
 
+void Alquimia_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next){
+
+  Chemistry_PK::CopyFieldstoNewState(S_next);
+
+
+  std::vector<std::string> aux_names;
+  chem_engine_->GetAuxiliaryOutputNames(aux_names);
+
+  for (size_t i = 0; i < aux_names.size(); ++i) {
+    std::vector<std::vector<std::string> > subname(1);
+    subname[0].push_back("0");
+    aux_names[i] = getKey(domain_name_, aux_names[i]);
+    if (S_->HasField(aux_names[i])&&S_next->HasField(aux_names[i])){
+      *S_next->GetFieldData(aux_names[i], passwd_)->ViewComponent("cell", false) =
+        *S_->GetFieldData(aux_names[i], passwd_)->ViewComponent("cell", false);
+    }
+  }
+
+
+  if (cp_list_->isParameter("auxiliary data")) {
+    Teuchos::Array<std::string> names = 
+      cp_list_->get<Teuchos::Array<std::string> >("auxiliary data");  
+    
+    for (Teuchos::Array<std::string>::const_iterator it = names.begin(); it != names.end(); ++it) {
+      Key aux_field_name = getKey(domain_name_, *it);
+      if (S_->HasField(aux_field_name) && S_next->HasField(aux_field_name) ) {
+        *S_next->GetFieldData(aux_field_name, passwd_)->ViewComponent("cell", false) =
+          *S_->GetFieldData(aux_field_name, passwd_)->ViewComponent("cell", false);
+      }
+    }
+  }
+
+  if (S_->HasField(alquimia_aux_data_key_) && S_next->HasField(alquimia_aux_data_key_)) {
+    *S_next->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell", false) =
+      *S_->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+
+}
+
 /* *******************************************************************
 * The MPC will call this function to signal to the process kernel that 
 * it has accepted the state update, thus, the PK should update
@@ -986,6 +1026,7 @@ void Alquimia_PK::ComputeNextTimeStep()
 ******************************************************************* */
 void Alquimia_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) 
 {
+  if (S_ != S) CopyFieldstoNewState(S);
   saved_time_ = t_new;
 }
 
