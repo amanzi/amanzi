@@ -327,6 +327,20 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   ws_subcycle_end = S->GetFieldCopyData(saturation_key_, "subcycle_end", passwd_)
     ->ViewComponent("cell");
 
+  S->RequireFieldCopy(molar_density_key_, "subcycle_start", passwd_);
+  mol_dens_subcycle_start = S->GetFieldCopyData(molar_density_key_, "subcycle_start",passwd_)->ViewComponent("cell");
+
+  S->RequireFieldCopy(molar_density_key_, "subcycle_end", passwd_);
+  mol_dens_subcycle_end = S->GetFieldCopyData(molar_density_key_, "subcycle_end", passwd_)->ViewComponent("cell");
+
+  // S->RequireFieldCopy(saturation_key_, "subcycle_start", passwd_);
+  // ws_subcycle_start = S->GetFieldCopyData(saturation_key_, "subcycle_start",passwd_)
+  //   ->ViewComponent("cell");
+
+  // S->RequireFieldCopy(saturation_key_, "subcycle_end", passwd_);
+  // ws_subcycle_end = S->GetFieldCopyData(saturation_key_, "subcycle_end", passwd_)
+  //   ->ViewComponent("cell");
+
   S->RequireFieldCopy(flux_key_, "next_timestep", passwd_);
 
 
@@ -478,7 +492,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   // source term initialization: so far only "concentration" is available.
   if (tp_list_->isSublist("source terms")) {
     PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
-    if (domain_name_ == "domain")  PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
+    //if (domain_name_ == "domain")  PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
 
     Teuchos::ParameterList& clist = tp_list_->sublist("source terms").sublist("concentration");
     for (Teuchos::ParameterList::ConstIterator it = clist.begin(); it != clist.end(); ++it) {
@@ -826,7 +840,7 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
   if (interpolate_ws) {        
     dt_cycle = std::min(dt_original, dt_MPC);
     InterpolateCellVector(*ws_prev_, *ws_, dt_shift, dt_global, *ws_subcycle_start);
-    InterpolateCellVector(*mol_dens_prev_, *mol_dens_, dt_shift, dt_global, * mol_dens_subcycle_start);
+    InterpolateCellVector(*mol_dens_prev_, *mol_dens_, dt_shift, dt_global, *mol_dens_subcycle_start);
   } else {
     dt_cycle = dt_MPC;
     ws_start = ws_prev_;
@@ -1256,8 +1270,10 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_start)[0][c] * (*mol_dens_start)[0][c];
      // if (domain_name_=="surface") 
     for (int i = 0; i < num_advect; i++){
-      //if (c<5) std::cout<<c<<" vol "<<mesh_->cell_volume(c)<<" phi "<<(*phi_)[0][c]<<" ws0 "<<(*ws_start)[0][c]<<" ws1 "<< (*ws_end)[0][c]<<" den "<<(*mol_dens_start)[0][c]<<" tcc "<<tcc_prev[i][c]<<"\n";
+      // if (c<5) std::cout<<c<<" vol "<<mesh_->cell_volume(c)<<" phi "<<(*phi_)[0][c]<<" ws0 "<<(*ws_start)[0][c]<<" ws1 "<< (*ws_end)[0][c]<<" den "<<(*mol_dens_start)[0][c]<<" tcc "<<tcc_prev[i][c]<<"\n";
+
       (*conserve_qty_)[i][c] = tcc_prev[i][c] * vol_phi_ws_den;   
+      // if (c<5) std::cout<<c<<" "<<vol_phi_ws_den<<" "<<tcc_prev[i][c]<<" "<<(*conserve_qty_)[i][c]<<"\n";
       mass_start += (*conserve_qty_)[i][c];
     }
   }
@@ -1354,7 +1370,8 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
       else  {
         tcc_next[i][c] = 0.;
       }
-      //if (c<5) std::cout<<c<<" vol "<<mesh_->cell_volume(c)<<" phi "<<(*phi_)[0][c]<<" ws0 "<<(*ws_start)[0][c]<<" ws1 "<< (*ws_end)[0][c]<<" den "<<(*mol_dens_end)[0][c]<<" tcc "<<tcc_next[i][c]<<"\n";
+      // if (c<5) std::cout<<c<<" vol "<<mesh_->cell_volume(c)<<" phi "<<(*phi_)[0][c]<<" ws0 "<<(*ws_start)[0][c]<<" ws1 "<< (*ws_end)[0][c]<<" den "<<(*mol_dens_end)[0][c]<<" tcc "<<tcc_next[i][c]<<"\n";
+      // if (c<5) std::cout<<c<<" "<<vol_phi_ws_den<<" "<<tcc_next[i][c]<<" "<<(*conserve_qty_)[i][c]<<"\n";
     }
   }
 
