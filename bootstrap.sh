@@ -82,6 +82,7 @@ mpi_root_dir=
 # Spack
 Spack=$FALSE
 Spack_binary=`which spack`
+build_Spack=$FALSE
 
 # xSDK installation (optional)
 xsdk=$FALSE #default is to not use
@@ -840,9 +841,16 @@ function check_Spack
 
     if [ ! -e ${tpl_install_prefix}/spack/bin/spack ]; then
       error_message "Could not locate Spack - Downloading and installing as a TPL"
+#      build_Spack=$TRUE
+#      status_message "build_Spack: ${build_Spack}"
+
       pwd_save=`pwd`
+      if [ ! -e ${tpl_install_prefix} ]; then
+	  mkdir_now ${tpl_install_prefix}
+      fi
       cd ${tpl_install_prefix}
       git clone https://github.com/LLNL/spack.git
+      
       if [ ${xsdk} == ${TRUE} ]; then
 	  cd ${tpl_install_prefix}/spack
 	  git checkout barry/xsdk
@@ -1201,58 +1209,59 @@ if [ -z "${tpl_config_file}" ]; then
       fi
 
   fi
-      # Define the TPL build source directory
-      tpl_build_src_dir=${amanzi_source_dir}/config/SuperBuild
-      
-      # Configure the TPL build
-      cd ${tpl_build_dir}
-      ${cmake_binary} \
-      	  -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
-          -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
-          -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
-          -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
-          -DCMAKE_BUILD_TYPE:STRING=${build_type} \
-          -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
-          -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
-          -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
-          -DTPL_INSTALL_PREFIX:STRING=${tpl_install_prefix} \
-          -DENABLE_Structured:BOOL=${structured} \
-          -DENABLE_Unstructured:BOOL=${unstructured} \
-          -DENABLE_CCSE_TOOLS:BOOL=${ccse_tools} \
-          -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
-          -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
-          -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
-          -DENABLE_NetCDF4:BOOL=${netcdf4} \
-          -DENABLE_HYPRE:BOOL=${hypre} \
-          -DENABLE_PETSC:BOOL=${petsc} \
-          -DENABLE_ALQUIMIA:BOOL=${alquimia} \
-          -DENABLE_PFLOTRAN:BOOL=${pflotran} \
-          -DENABLE_Silo:BOOL=${silo} \
-          -DBUILD_SHARED_LIBS:BOOL=${shared} \
-          -DCCSE_BL_SPACEDIM:INT=${spacedim} \
-          -DPREFER_STATIC_LIBRARIES:BOOL=${static} \
-          -DENABLE_SPACK:BOOL=${Spack} \
-	  -DSPACK_BINARY:STRING=${Spack_binary} \
-	  -DENABLE_XSDK:BOOL=${xsdk} \
-	  ${nersc_tpl_opts} \
-          ${tpl_build_src_dir}
-      
-      if [ $? -ne 0 ]; then
-	  error_message "Failed to configure TPL build"
-	  exit_now 30
-      fi
-      status_message "TPL configure complete"
-      
-      # TPL make 
-      cd ${tpl_build_dir}
-      make -j ${parallel_jobs}
-      if [ $? -ne 0 ]; then
-	  error_message "Failed to build TPLs"
-	  exit_now 30
-      fi
-      
-      # TPL Install
-      cd ${tpl_build_dir}
+  # Define the TPL build source directory
+  tpl_build_src_dir=${amanzi_source_dir}/config/SuperBuild
+  
+  # Configure the TPL build
+  cd ${tpl_build_dir}
+  ${cmake_binary} \
+      -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
+      -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
+      -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
+      -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
+      -DCMAKE_BUILD_TYPE:STRING=${build_type} \
+      -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
+      -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
+      -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
+      -DTPL_INSTALL_PREFIX:STRING=${tpl_install_prefix} \
+      -DENABLE_Structured:BOOL=${structured} \
+      -DENABLE_Unstructured:BOOL=${unstructured} \
+      -DENABLE_CCSE_TOOLS:BOOL=${ccse_tools} \
+      -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
+      -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
+      -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
+      -DENABLE_NetCDF4:BOOL=${netcdf4} \
+      -DENABLE_HYPRE:BOOL=${hypre} \
+      -DENABLE_PETSC:BOOL=${petsc} \
+      -DENABLE_ALQUIMIA:BOOL=${alquimia} \
+      -DENABLE_PFLOTRAN:BOOL=${pflotran} \
+      -DENABLE_Silo:BOOL=${silo} \
+      -DBUILD_SHARED_LIBS:BOOL=${shared} \
+      -DCCSE_BL_SPACEDIM:INT=${spacedim} \
+      -DPREFER_STATIC_LIBRARIES:BOOL=${static} \
+      -DENABLE_SPACK:BOOL=${Spack} \
+      -DSPACK_BINARY:STRING=${Spack_binary} \
+      -DBUILD_SPACK:BOOL=${build_Spack} \
+      -DENABLE_XSDK:BOOL=${xsdk} \
+      ${nersc_tpl_opts} \
+      ${tpl_build_src_dir}
+  
+  if [ $? -ne 0 ]; then
+      error_message "Failed to configure TPL build"
+      exit_now 30
+  fi
+  status_message "TPL configure complete"
+  
+  # TPL make 
+  cd ${tpl_build_dir}
+  make -j ${parallel_jobs}
+  if [ $? -ne 0 ]; then
+      error_message "Failed to build TPLs"
+      exit_now 30
+  fi
+  
+  # TPL Install
+  cd ${tpl_build_dir}
       make install
       if [ $? -ne 0 ]; then
 	  error_message "Failed to install configure script"
@@ -1265,7 +1274,7 @@ if [ -z "${tpl_config_file}" ]; then
       
       status_message "TPL build complete"
       status_message "For future Amanzi builds use ${tpl_config_file}"
-
+      
 else 
 
   status_message "Checking configuration file ${tpl_config_file}"

@@ -177,7 +177,7 @@ option(ENABLE_XSDK "Use xSDK Libraries" FALSE)
 
 # Use Spack package manager
 option(ENABLE_SPACK "Build with the Spack package manager where appropriate" FALSE)
-
+option(BUILD_SPACK "Clone spack from git and treat as a TPL that needs to be built" FALSE)
 
 # ############################################################################ #
 # MPI Configuration 
@@ -488,6 +488,10 @@ include(DefineExternalProjectArgs)
 set(Amanzi_TPL_CMAKE_ARGS)
 
 # --- Begin the build definitions
+if ( BUILD_SPACK )
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_Spack.cmake)
+endif()
+
 if ( ENABLE_XSDK )    
     include(${SuperBuild_BUILD_FILES_DIR}/Build_xSDK.cmake)
     include(BuildLibraryName)
