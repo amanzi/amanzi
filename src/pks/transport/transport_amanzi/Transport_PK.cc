@@ -483,9 +483,9 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
   // boundary conditions initialization
   time = t_physics_;
-  for (int i = 0; i < bcs_.size(); i++) {
-    bcs_[i]->Compute(time, time);
-  }
+  // for (int i = 0; i < bcs_.size(); i++) {
+  //   bcs_[i]->Compute(time, time);
+  // }
 
   VV_CheckInfluxBC();
 
@@ -1278,9 +1278,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     }
   }
 
-  //mass_start /= units_.concentration_factor();
-
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME){
     if (domain_name_ == "surface") std::cout<<"Overland mass start "<<mass_start<<"\n";
     else std::cout<<"Subsurface mass start "<<mass_start<<"\n";
   }
