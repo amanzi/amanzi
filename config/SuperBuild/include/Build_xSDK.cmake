@@ -20,30 +20,17 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
     PREFIX XSDK
     VERSION 0 2 0 )
 
-#set(ENV{PACKAGE} xsdk)
-#set(ENV{SPACK_BINARY} ${SPACK_BINARY})
-#include(${Amanzi_SOURCE_DIR}/tools/cmake/SpackFunctions.cmake) 
-#include(SpackFunctions)
-    
 ExternalProject_Add(${XSDK_BUILD_TARGET}
     
-    # The following 3 lines are only here because CMake will not allow
-    # a build without at least these three variables defined.
+    # The following 2 lines are only here because CMake will not allow
+    # a build without at least these two variables defined (and BUILD_COMMAND).
     # However, they serve no real purpose for this particular build.
     DOWNLOAD_COMMAND ls
     
     CONFIGURE_COMMAND ls
     
-    BUILD_COMMAND ${SPACK_BINARY} install xsdk #spack_install_package( xsdk )
+    BUILD_COMMAND ${SPACK_BINARY} install xsdk 
     
-    INSTALL_COMMAND ${SPACK_BINARY} view symlink ${TPL_INSTALL_PREFIX} xsdk #spack_create_symlinks( xsdk ${TPL_INSTALL_PREFIX} )
-    #INSTALL_COMMAND  ${SPACK_BINARY} install xsdk )
-    #INSTALL_COMMAND  ${SuperBuild_BUILD_FILES_DIR}/spack_generic_build.sh ${SPACK_BINARY} xsdk ${TPL_INSTALL_PREFIX} )
-    #INSTALL_COMMAND ${CMAKE_COMMAND} -P ${Amanzi_SOURCE_DIR}/tools/cmake/SpackFunctions.cmake
-   
+    INSTALL_COMMAND ${SPACK_BINARY} view symlink ${TPL_INSTALL_PREFIX} xsdk 
 )
 
-#  unset(TMP_SPACK_INSTALL_DIR)
-#  unset(TMP_SPACK_VERSION)
-#  unset(ENV{PACKAGE})
-#  unset(ENV{SPACK_BINARY})
