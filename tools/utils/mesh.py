@@ -12,10 +12,14 @@ elem_type = {5:'QUAD',
              4:'TRIANGLE'
              }
 
-def meshElemXYZ(filename="visdump_mesh.h5", directory="."):
+def meshElemXYZ(filename="visdump_mesh.h5", directory=".", key=None):
     """Returns a set of coordinates of nodes in the mesh, along with a elemental conection list."""
+
     with h5py.File(os.path.join(directory, filename), 'r') as dat:
-        mesh = dat[dat.keys()[0]]['Mesh']
+        if key is None:
+            key = dat.keys()[0]
+
+        mesh = dat[key]['Mesh']
         elem_conn = mesh['MixedElements'][:,0]
 
         etype = elem_type[elem_conn[0]]
@@ -40,10 +44,10 @@ def meshElemXYZ(filename="visdump_mesh.h5", directory="."):
     return etype, coords, conn
 
 
-def meshElemCentroids(filename="visdump_mesh.h5", directory="."):
+def meshElemCentroids(filename="visdump_mesh.h5", directory=".", key=None):
     """Gets centroids of cells in the mesh."""
     
-    etype, coords, conn = meshElemXYZ(filename,directory)
+    etype, coords, conn = meshElemXYZ(filename,directory,key)
 
     centroids = np.zeros((len(conn),3),'d')
     for i,elem in enumerate(conn):

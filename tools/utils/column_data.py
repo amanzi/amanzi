@@ -15,8 +15,8 @@ import numpy as np
 import h5py
 import mesh
 
-def meshX(coord=2, filename="visdump_mesh.h5", directory="."):
-    return mesh.meshElemCentroids(filename,directory)[:,coord]
+def meshX(coord=2, filename="visdump_mesh.h5", directory=".", key=None):
+    return mesh.meshElemCentroids(filename,directory,key)[:,coord]
 
 def fullname(varname):
     fullname = varname
@@ -25,11 +25,12 @@ def fullname(varname):
     return fullname
 
 def column_data(varnames, keys='all', directory=".", filename="visdump_data.h5",
-                mesh_filename="visdump_mesh.h5", coord=2):
+                mesh_filename="visdump_mesh.h5", coord=2, deformable=False):
     """Returns data of shape ( len(varnames+1), len(keys), n_cells )"""
-    z = meshX(coord, mesh_filename, directory)
     if type(varnames) is str:
         varnames = [varnames,]
+
+    z = meshX(coord, mesh_filename, directory)
 
     with h5py.File(os.path.join(directory,filename),'r') as dat:
         keys_avail = dat[fullname(varnames[0])].keys()
@@ -48,6 +49,8 @@ def column_data(varnames, keys='all', directory=".", filename="visdump_data.h5",
 
         vals = np.zeros((len(varnames)+1, len(keys), len(z)), 'd')
         for i,key in enumerate(keys):
+            if deformable:
+                z = meshX(coord, mesh_filename, directory, key)
             vals[0,i,:] = z
             for j,varname in enumerate(varnames):
                 vals[j+1,i,:] = dat[fullname(varname)][key][:,0]
