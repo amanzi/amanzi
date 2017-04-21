@@ -11,6 +11,7 @@
 
 #include "NavierStokes_PK.hh"
 
+
 namespace Amanzi {
 namespace NavierStokes {
 
@@ -79,7 +80,7 @@ void NavierStokes_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVec
   UpdateSourceBoundaryData_(t_old, tp);
 
   // populate elastic operator
-  Teuchos::RCP<Operators::Operator> global_op = op_preconditioner_elas_->global_operator();
+  auto global_op = op_preconditioner_elas_->global_operator();
   global_op->Init();
   op_preconditioner_elas_->UpdateMatrices();
   op_preconditioner_elas_->ApplyBCs(true, true);
@@ -91,7 +92,6 @@ void NavierStokes_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVec
   op_preconditioner_acc_->ApplyBCs();
 
   global_op->AssembleMatrix();
-std::cout << *global_op->A() << std::endl; exit(0);
   global_op->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 
   // populate pressure operator
@@ -154,7 +154,6 @@ void NavierStokes_PK::ComputeOperatorBCs()
   int d = mesh_->space_dimension();
 
   for (int i = 0; i < op_bcs_.size(); ++i) {
-std::cout << op_bcs_[i] << std::endl;
     std::vector<int>& bc_model = op_bcs_[i]->bc_model();
     std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[i]->bc_value_point();
 
@@ -162,9 +161,7 @@ std::cout << op_bcs_[i] << std::endl;
       bc_model[n] = Operators::OPERATOR_BC_NONE;
       bc_value[n] = AmanziGeometry::Point(d);
     }
-std::cout << bcs_.size() << std::endl;
 
-std::cout << bcs_[i]->bc_name() << std::endl;
     if (bcs_[i]->bc_name() == "no slip") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;

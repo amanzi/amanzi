@@ -189,7 +189,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_matrix_div_ = Teuchos::rcp(new Operators::AdvectionRiemann(tmp2, mesh_));
 
   // -- create accumulation term (velocity block, only nodal unknowns)
-  Operators::Schema schema(AmanziMesh::NODE, 2);
+  Operators::Schema schema(AmanziMesh::NODE, 2);  // FIXME
   op_matrix_acc_ = Teuchos::rcp(new Operators::Accumulation(schema, op_matrix_elas_->global_operator()));
   op_preconditioner_acc_ = Teuchos::rcp(new Operators::Accumulation(schema, op_preconditioner_elas_->global_operator()));
 
@@ -244,6 +244,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- boundary conditions
   op_bcs_.clear();
+  schema = op_matrix_elas_->schema_col();
   for (auto it = schema.begin(); it != schema.end(); ++it) {
     auto bcx = Teuchos::rcp(new Operators::BCs(mesh_, it->kind));
     op_matrix_elas_->AddBCs(bcx, bcx);
