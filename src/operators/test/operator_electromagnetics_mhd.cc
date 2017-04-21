@@ -157,9 +157,8 @@ void ResistiveMHD2D(double dt, double tend, bool initial_guess,
     CompositeVector phi(cvs_e);
     phi.PutScalar(1.0 / Kc(0,0));
 
-    Teuchos::RCP<Accumulation> op_acc =
-        Teuchos::rcp(new Accumulation(AmanziMesh::NODE, global_op));
-
+    Teuchos::RCP<Accumulation> op_acc = Teuchos::rcp(new Accumulation(AmanziMesh::NODE, global_op));
+    op_acc->SetBCs(bc1, bc1);
     op_acc->AddAccumulationTerm(phi, 1.0, "node");
 
     // update BCs
@@ -179,7 +178,7 @@ void ResistiveMHD2D(double dt, double tend, bool initial_guess,
     // apply BCs and assemble
     op_mhd->ModifyMatrices(E, B, dt);
     op_mhd->ApplyBCs(true, true);
-    op_acc->ApplyBCs(bc1);
+    op_acc->ApplyBCs();
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 
@@ -428,15 +427,15 @@ void ResistiveMHD3D(double dt, double tend, bool initial_guess) {
     CompositeVector phi(cvs_e);
     phi.PutScalar(1.0 / Kc(0,0));
 
-    Teuchos::RCP<Accumulation> op_acc =
-        Teuchos::rcp(new Accumulation(AmanziMesh::EDGE, global_op));
-
+    Teuchos::RCP<Accumulation> op_acc = Teuchos::rcp(new Accumulation(AmanziMesh::EDGE, global_op));
+    op_acc->SetBCs(bc1, bc1);
+    op_acc->AddBCs(bc2, bc2);
     op_acc->AddAccumulationTerm(phi, 1.0, "edge");
 
     // BCs, sources, and assemble
     op_mhd->ModifyMatrices(E, B, dt);
     op_mhd->ApplyBCs(true, true);
-    op_acc->ApplyBCs(bc1);
+    op_acc->ApplyBCs();
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 

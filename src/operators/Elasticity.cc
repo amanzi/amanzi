@@ -106,7 +106,7 @@ void Elasticity::InitElasticity_(Teuchos::ParameterList& plist)
   my_schema.Init(schema_list, mesh_);
 
   // create or check the existing Operator
-  local_schema_row_ = my_schema;
+  local_schema_col_ = my_schema;
   local_schema_row_ = my_schema;
 
   if (global_op_ == Teuchos::null) {

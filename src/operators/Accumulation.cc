@@ -310,18 +310,20 @@ void Accumulation::InitAccumulation_(const Schema& schema, bool surf)
 /* ******************************************************************
 * Apply boundary conditions to 
 ****************************************************************** */
-void Accumulation::ApplyBCs(const Teuchos::RCP<BCs>& bc)
+void Accumulation::ApplyBCs()
 {
-  const std::vector<int>& bc_model = bc->bc_model();
+  for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
+    const std::vector<int>& bc_model = (*bc)->bc_model();
 
-  for (auto it = local_ops_.begin(); it != local_ops_.end(); ++it) {
-    const Schema& schema = (*it)->schema_row();
-    if (schema.base() == bc->kind()) {
-      Epetra_MultiVector& diag = *(*it)->diag;
+    for (auto it = local_ops_.begin(); it != local_ops_.end(); ++it) {
+      const Schema& schema = (*it)->schema_row();
+      if (schema.base() == (*bc)->kind()) {
+        Epetra_MultiVector& diag = *(*it)->diag;
 
-      for (int i = 0; i < diag.MyLength(); i++) {
-        if (bc_model[i] == OPERATOR_BC_DIRICHLET) {
-          diag[0][i] = 0.0;
+        for (int i = 0; i < diag.MyLength(); i++) {
+          if (bc_model[i] == OPERATOR_BC_DIRICHLET) {
+            diag[0][i] = 0.0;
+          }
         }
       }
     }

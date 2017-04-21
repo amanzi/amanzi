@@ -28,7 +28,7 @@ namespace NavierStokes {
 
 class NavierStokesBoundaryFunction : public PK_DomainFunction {
  public:
-  NavierStokesBoundaryFunction() : bc_name_("underfined") {};
+  NavierStokesBoundaryFunction() : bc_name_("undefined") {};
   NavierStokesBoundaryFunction(const Teuchos::ParameterList& plist);
   
   void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {};

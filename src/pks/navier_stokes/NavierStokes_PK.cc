@@ -176,29 +176,6 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   bdf1_dae_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
 
-  // Create BC objects
-  Teuchos::RCP<NavierStokesBoundaryFunction> bc;
-  Teuchos::RCP<Teuchos::ParameterList>
-      bc_list = Teuchos::rcp(new Teuchos::ParameterList(ns_list_->sublist("boundary conditions", true)));
-
-  bcs_.clear();
-
-  // -- pressure 
-  if (bc_list->isSublist("velocity")) {
-    PK_DomainFunctionFactory<NavierStokesBoundaryFunction > bc_factory(mesh_);
-
-    Teuchos::ParameterList& tmp_list = bc_list->sublist("velocity");
-    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
-      std::string name = it->first;
-      if (tmp_list.isSublist(name)) {
-        Teuchos::ParameterList& spec = tmp_list.sublist(name);
-        bc = bc_factory.Create(spec, "no slip", AmanziMesh::NODE, Teuchos::null);
-        bc->set_bc_name("no slip");
-        bcs_.push_back(bc);
-      }
-    }
-  }
-
   // Initialize matrix and preconditioner
   // -- create elastic block
   Teuchos::ParameterList& tmp1 = ns_list_->sublist("operators")
@@ -209,7 +186,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   // -- create divergence block
   Teuchos::ParameterList& tmp2 = ns_list_->sublist("operators")
                                           .sublist("divergence operator");
-  op_div_ = Teuchos::rcp(new Operators::AdvectionRiemann(tmp2, mesh_));
+  op_matrix_div_ = Teuchos::rcp(new Operators::AdvectionRiemann(tmp2, mesh_));
 
   // -- create accumulation term (velocity block, only nodal unknowns)
   Operators::Schema schema(AmanziMesh::NODE, 2);
@@ -222,12 +199,39 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   // -- matrix and preconditioner
   op_matrix_ = Teuchos::rcp(new Operators::TreeOperator(Teuchos::rcpFromRef(soln_->Map())));
   op_matrix_->SetOperatorBlock(0, 0, op_matrix_elas_->global_operator());
-  op_matrix_->SetOperatorBlock(1, 0, op_div_->global_operator());
-  op_matrix_->SetOperatorBlock(0, 1, op_div_->global_operator(), true);
+  op_matrix_->SetOperatorBlock(1, 0, op_matrix_div_->global_operator());
+  op_matrix_->SetOperatorBlock(0, 1, op_matrix_div_->global_operator(), true);
 
   op_preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(Teuchos::rcpFromRef(soln_->Map())));
   op_preconditioner_->SetOperatorBlock(0, 0, op_preconditioner_elas_->global_operator());
   op_preconditioner_->SetOperatorBlock(1, 1, op_mass_->global_operator());
+
+  // Create BC objects
+  Teuchos::RCP<NavierStokesBoundaryFunction> bc;
+  Teuchos::RCP<Teuchos::ParameterList>
+      bc_list = Teuchos::rcp(new Teuchos::ParameterList(ns_list_->sublist("boundary conditions", true)));
+
+  bcs_.clear();
+
+  // -- velocity
+  if (bc_list->isSublist("velocity")) {
+    PK_DomainFunctionFactory<NavierStokesBoundaryFunction > bc_factory(mesh_);
+
+    Teuchos::ParameterList& tmp_list = bc_list->sublist("velocity");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+
+        auto schema = op_preconditioner_elas_->global_schema_col();
+        for (auto it = schema.begin(); it != schema.end(); ++it) {
+          bc = bc_factory.Create(spec, "no slip", it->kind, Teuchos::null);
+          bc->set_bc_name("no slip");
+          bcs_.push_back(bc);
+        }
+      }
+    }
+  }
 
   // Populate matrix and preconditioner
   // -- setup phase
@@ -239,16 +243,17 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_preconditioner_elas_->SetTensorCoefficient(mu);
 
   // -- boundary conditions
+  op_bcs_.clear();
   for (auto it = schema.begin(); it != schema.end(); ++it) {
-    if (it->kind == AmanziMesh::NODE) {
-      bcv_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::NODE));
-      op_matrix_elas_->AddBCs(bcv_, bcv_);
-      op_preconditioner_elas_->AddBCs(bcv_, bcv_);
-    } else if (it->kind == AmanziMesh::FACE) {
-      bcf_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE));
-      op_matrix_elas_->SetBCs(bcf_, bcf_);
-      op_preconditioner_elas_->SetBCs(bcf_, bcf_);
-    }
+    auto bcx = Teuchos::rcp(new Operators::BCs(mesh_, it->kind));
+    op_matrix_elas_->AddBCs(bcx, bcx);
+    op_matrix_acc_->AddBCs(bcx, bcx);
+    op_matrix_div_->AddBCs(bcx, bcx);
+
+    op_preconditioner_elas_->AddBCs(bcx, bcx);
+    op_preconditioner_acc_->AddBCs(bcx, bcx);
+
+    op_bcs_.push_back(bcx);
   }
 
   // -- assemble phase

@@ -20,6 +20,7 @@
 #include "CompositeVector.hh"
 
 #include "BCs.hh"
+#include "BCsList.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "Schema.hh"
@@ -27,7 +28,7 @@
 namespace Amanzi {
 namespace Operators {
 
-class Accumulation {
+class Accumulation : public BCsList {
  public:
   Accumulation(AmanziMesh::Entity_kind entity, Teuchos::RCP<Operator> global_op)
     : global_op_(global_op),
@@ -109,7 +110,7 @@ class Accumulation {
                                     const std::string& name);
 
   // -- operator modification
-  void ApplyBCs(const Teuchos::RCP<BCs>& bc);
+  void ApplyBCs();
 
   // access (for developers only)
   int schema_dofs() { return local_op_schema_.OldSchema(); }

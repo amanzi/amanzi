@@ -37,10 +37,10 @@ void NavierStokes_PK::Functional(double t_old, double t_new,
   op_matrix_elas_->ApplyBCs(true, true);
 
   op_matrix_acc_->AddAccumulationDelta(*uu, dtp, "node");
-  op_matrix_acc_->ApplyBCs(bcv_);
+  op_matrix_acc_->ApplyBCs();
 
-  op_div_->UpdateMatrices(*u_old->SubVector(0)->Data());
-  op_div_->ApplyBCs(false, true);
+  op_matrix_div_->UpdateMatrices(*u_old->SubVector(0)->Data());
+  op_matrix_div_->ApplyBCs(false, true);
 
   // Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
   // AddSourceTerms(*rhs);
@@ -48,7 +48,7 @@ void NavierStokes_PK::Functional(double t_old, double t_new,
   // compute negative residual
   op_matrix_->Apply(*u_new, *f);
   fu->Update(-1.0, *op_matrix_elas_->global_operator()->rhs(), 1.0);
-  fp->Update(-1.0, *op_div_->global_operator()->rhs(), 1.0);
+  fp->Update(-1.0, *op_matrix_div_->global_operator()->rhs(), 1.0);
 
   // add accumulation term 
 
@@ -88,9 +88,10 @@ void NavierStokes_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVec
   CompositeVector one(*uu);
   one.PutScalar(1.0);  // FIXME
   op_preconditioner_acc_->AddAccumulationTerm(one, dtp, "node");
-  op_preconditioner_acc_->ApplyBCs(bcv_);
+  op_preconditioner_acc_->ApplyBCs();
 
   global_op->AssembleMatrix();
+std::cout << *global_op->A() << std::endl; exit(0);
   global_op->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 
   // populate pressure operator
@@ -125,15 +126,13 @@ double NavierStokes_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
  
 
 /* ******************************************************************
-* A wrapper for updating boundary conditions.
+* Calculate sources and boundary conditions for operators.
 ****************************************************************** */
 void NavierStokes_PK::UpdateSourceBoundaryData_(double t_old, double t_new)
 {
-  /*
-  for (int i = 0; i < srcs.size(); ++i) {
-    srcs[i]->Compute(t_old, t_new);
-  }
-  */
+  // for (int i = 0; i < srcs.size(); ++i) {
+  //  srcs[i]->Compute(t_old, t_new);
+  // }
 
   for (int i = 0; i < bcs_.size(); i++) {
     bcs_[i]->Compute(t_old, t_new);
@@ -154,21 +153,24 @@ void NavierStokes_PK::ComputeOperatorBCs()
 {
   int d = mesh_->space_dimension();
 
-  std::vector<int>& bc_model = bcv_->bc_model();
-  std::vector<AmanziGeometry::Point>& bc_value = bcv_->bc_value_point();
+  for (int i = 0; i < op_bcs_.size(); ++i) {
+std::cout << op_bcs_[i] << std::endl;
+    std::vector<int>& bc_model = op_bcs_[i]->bc_model();
+    std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[i]->bc_value_point();
 
-  for (int n = 0; n < bc_model.size(); n++) {
-    bc_model[n] = Operators::OPERATOR_BC_NONE;
-    bc_value[n] = AmanziGeometry::Point(mesh_->space_dimension());
-  }
+    for (int n = 0; n < bc_model.size(); n++) {
+      bc_model[n] = Operators::OPERATOR_BC_NONE;
+      bc_value[n] = AmanziGeometry::Point(d);
+    }
+std::cout << bcs_.size() << std::endl;
 
-  for (int i = 0; i < bcs_.size(); ++i) {
+std::cout << bcs_[i]->bc_name() << std::endl;
     if (bcs_[i]->bc_name() == "no slip") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
-        int f = it->first;
-        bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+        int n = it->first;
+        bc_model[n] = Operators::OPERATOR_BC_DIRICHLET;
         for (int k = 0; k < d; ++k) {
-          bc_value[f][k] = it->second[k];
+          bc_value[n][k] = it->second[k];
         }
       }
     }

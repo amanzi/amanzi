@@ -269,7 +269,6 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE));
 
   Teuchos::RCP<FlowBoundaryFunction> bc;
-  //Teuchos::RCP<PK_DomainFunction<double> > bc;
   Teuchos::RCP<Teuchos::ParameterList>
       bc_list = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("boundary conditions", true)));
 
