@@ -110,7 +110,7 @@ int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
 ****************************************************************** */
 int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
 {
-  int code;
+  int code(0);
   if (!block_diagonal_) {
     Epetra_Vector Xcopy(A_->RowMap());
     Epetra_Vector Ycopy(A_->RowMap());
@@ -124,7 +124,7 @@ int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
     for (int n = 0; n < tvs_->size(); ++n) {
       const CompositeVector& Xn = *X.SubVector(n)->Data();
       CompositeVector& Yn = *Y.SubVector(n)->Data();
-      blocks_[n][n]->ApplyInverse(Xn, Yn);
+      code != blocks_[n][n]->ApplyInverse(Xn, Yn);
     }
   }
 

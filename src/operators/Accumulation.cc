@@ -319,10 +319,13 @@ void Accumulation::ApplyBCs()
       const Schema& schema = (*it)->schema_row();
       if (schema.base() == (*bc)->kind()) {
         Epetra_MultiVector& diag = *(*it)->diag;
+        int m = diag.NumVectors();
 
         for (int i = 0; i < diag.MyLength(); i++) {
           if (bc_model[i] == OPERATOR_BC_DIRICHLET) {
-            diag[0][i] = 0.0;
+            for (int k = 0; k < m; ++k) {
+              diag[k][i] = 0.0;
+            }
           }
         }
       }

@@ -31,14 +31,18 @@ class NavierStokesBoundaryFunction : public PK_DomainFunction {
   NavierStokesBoundaryFunction() : bc_name_("undefined") {};
   NavierStokesBoundaryFunction(const Teuchos::ParameterList& plist);
   
-  void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {};
+  void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   // modifiers and access
   void set_bc_name(const std::string& name) { bc_name_ = name; }
   std::string bc_name() { return bc_name_; }
 
+  void set_type(int type) { type_ = type; }
+  int type() { return type_; }
+
  private:
   std::string bc_name_;
+  int type_;  // type of dofs related to this bc
 
   std::vector<std::string> regions_;
 };

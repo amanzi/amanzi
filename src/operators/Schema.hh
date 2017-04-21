@@ -71,6 +71,7 @@ class Schema {
 
   std::string KindToString(AmanziMesh::Entity_kind kind) const;
   AmanziMesh::Entity_kind StringToKind(std::string& name) const;
+  int StringToType(std::string& name) const;
 
   // fancy io
   std::string CreateUniqueName() const;
@@ -85,7 +86,8 @@ class Schema {
   friend std::ostream& operator << (std::ostream& os, const Schema& s) {
     os << "base=" << s.KindToString(s.base()) << "\n";
     for (auto it = s.begin(); it != s.end(); ++it) {
-      os << " item: kind=" << s.KindToString(it->kind) << ", num=" << it->num << "\n";
+      os << " item: kind=" << s.KindToString(it->kind) 
+         << ", num=" << it->num << ", type=" << it->type << "\n";
     }
     return os;
   }

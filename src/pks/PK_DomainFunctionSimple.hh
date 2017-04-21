@@ -113,7 +113,6 @@ void PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
     int nfun = (*uspec)->first->second->size();
     std::vector<double> val_vec(nfun);  
 
-
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
       const AmanziGeometry::Point& xc = (kind_ == AmanziMesh::CELL) ?
           mesh_->cell_centroid(*c) : mesh_->face_centroid(*c);

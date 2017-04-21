@@ -43,7 +43,8 @@ const int OPERATOR_SCHEMA_BASE_EDGE = 128;
 
 // schemas
 const int SCHEMA_DOFS_SCALAR = 1;
-const int SCHEMA_BASE_VECTOR = 2;
+const int SCHEMA_DOFS_VECTOR = 2;
+const int SCHEMA_DOFS_NORMAL_COMPONENT = 3;
 
 const int OPERATOR_SCHEMA_RULE_EXACT = 1;
 const int OPERATOR_SCHEMA_RULE_SUBSET = 2;

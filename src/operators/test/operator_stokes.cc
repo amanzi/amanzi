@@ -92,8 +92,8 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
     const Point& normal = mesh->face_normal(f);
     double area = mesh->face_area(f);
 
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6) {
+        // fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
       bcf_model[f] = OPERATOR_BC_DIRICHLET;
       bcf_value[f] = (ana.velocity_exact(xf, 0.0) * normal) / area;
     }
@@ -108,8 +108,8 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   for (int v = 0; v < nnodes_wghost; ++v) {
     mesh->node_get_coordinates(v, &xv);
 
-    if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
-        fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
+    if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6) {
+        // fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
       bcv_model[v] = OPERATOR_BC_DIRICHLET;
       bcv_value[v] = ana.velocity_exact(xv, 0.0);
     }
@@ -227,6 +227,15 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
     CHECK(ul2_err < 0.01);
     CHECK(pl2_err < 0.05);
     CHECK(solver->num_itrs() < 60);
+  }
+
+  if (MyPID == 0) {
+    const Epetra_MultiVector& u = *solution.SubVector(0)->Data()->ViewComponent("node");
+    GMV::open_data_file(*mesh, (std::string)"operators.gmv");
+    GMV::start_data();
+    GMV::write_node_data(u, 0, "velocity_x");
+    GMV::write_node_data(u, 1, "velocity_y");
+    GMV::close_data_file();
   }
 }
 

@@ -34,12 +34,14 @@ void NavierStokes_PK::Functional(double t_old, double t_new,
 
   // assemble residual using linear operator
   op_matrix_elas_->global_operator()->Init();
-  op_matrix_elas_->UpdateMatrices();
-  op_matrix_elas_->ApplyBCs(true, true);
 
   op_matrix_acc_->AddAccumulationDelta(*uu, dtp, "node");
   op_matrix_acc_->ApplyBCs();
 
+  op_matrix_elas_->UpdateMatrices();
+  op_matrix_elas_->ApplyBCs(true, true);
+
+  op_matrix_div_->global_operator()->Init();
   op_matrix_div_->UpdateMatrices(*u_old->SubVector(0)->Data());
   op_matrix_div_->ApplyBCs(false, true);
 
@@ -50,8 +52,6 @@ void NavierStokes_PK::Functional(double t_old, double t_new,
   op_matrix_->Apply(*u_new, *f);
   fu->Update(-1.0, *op_matrix_elas_->global_operator()->rhs(), 1.0);
   fp->Update(-1.0, *op_matrix_div_->global_operator()->rhs(), 1.0);
-
-  // add accumulation term 
 
   // add convection term
 }
@@ -155,20 +155,41 @@ void NavierStokes_PK::ComputeOperatorBCs()
 
   for (int i = 0; i < op_bcs_.size(); ++i) {
     std::vector<int>& bc_model = op_bcs_[i]->bc_model();
-    std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[i]->bc_value_point();
-
     for (int n = 0; n < bc_model.size(); n++) {
       bc_model[n] = Operators::OPERATOR_BC_NONE;
-      bc_value[n] = AmanziGeometry::Point(d);
     }
+  }
 
-    if (bcs_[i]->bc_name() == "no slip") {
+  std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[0]->bc_value_point();  // FIXME
+  for (int n = 0; n < bc_value.size(); n++) {
+    bc_value[n] = AmanziGeometry::Point(d);
+  }
+
+  // velocity boundary conditions
+  for (int i = 0; i < bcs_.size(); ++i) {
+    if (bcs_[i]->bc_name() == "no slip" && 
+        bcs_[i]->type() == Operators::SCHEMA_DOFS_VECTOR) {
+      std::vector<int>& bc_model = op_bcs_[0]->bc_model();
+
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;
         bc_model[n] = Operators::OPERATOR_BC_DIRICHLET;
+
         for (int k = 0; k < d; ++k) {
           bc_value[n][k] = it->second[k];
         }
+      }
+    }
+
+    if (bcs_[i]->bc_name() == "no slip" && 
+        bcs_[i]->type() == Operators::SCHEMA_DOFS_NORMAL_COMPONENT) {
+      std::vector<int>& bc_model = op_bcs_[1]->bc_model();
+      std::vector<double>& bc_value = op_bcs_[1]->bc_value();
+
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int n = it->first;
+        bc_model[n] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value[n] = it->second[0];
       }
     }
   }

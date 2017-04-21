@@ -220,6 +220,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
     Teuchos::ParameterList& tmp_list = bc_list->sublist("velocity");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       std::string name = it->first;
+std::cout << "bc name=" << name << std::endl;
       if (tmp_list.isSublist(name)) {
         Teuchos::ParameterList& spec = tmp_list.sublist(name);
 
@@ -227,7 +228,9 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
         for (auto it = schema.begin(); it != schema.end(); ++it) {
           bc = bc_factory.Create(spec, "no slip", it->kind, Teuchos::null);
           bc->set_bc_name("no slip");
+          bc->set_type(it->type);
           bcs_.push_back(bc);
+std::cout << "   push back:" << it->type << std::endl;
         }
       }
     }
@@ -242,7 +245,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_preconditioner_elas_->global_operator()->Init();
   op_preconditioner_elas_->SetTensorCoefficient(mu);
 
-  // -- boundary conditions
+  // -- add boundary conditions
   op_bcs_.clear();
   schema = op_matrix_elas_->schema_col();
   for (auto it = schema.begin(); it != schema.end(); ++it) {

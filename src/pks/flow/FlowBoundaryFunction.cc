@@ -92,7 +92,6 @@ void FlowBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::
 
     for (auto it = begin(); it != end(); ++it) {
       int f = it->first;
-      const AmanziGeometry::Point& normal = mesh->face_normal(f);
       it->second[0] += (*shift_water_table_)[f];
     }
   }

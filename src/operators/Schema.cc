@@ -61,7 +61,7 @@ void Schema::Init(Teuchos::ParameterList& plist,
 
   // Populate schema and save it.
   for (int i = 0; i < name.size(); i++) {
-    AddItem(StringToKind(name[i]), SCHEMA_DOFS_SCALAR, ndofs[i]);
+    AddItem(StringToKind(name[i]), StringToType(type[i]), ndofs[i]);
   }
 
   Finalize(mesh);
@@ -234,6 +234,21 @@ AmanziMesh::Entity_kind Schema::StringToKind(std::string& name) const
     return AmanziMesh::FACE;
   } else if (name == "cell") {
     return AmanziMesh::CELL;
+  }
+}
+
+
+/* ******************************************************************
+* Returns standard mesh id for geometric location of DOF.
+****************************************************************** */
+int Schema::StringToType(std::string& name) const 
+{
+  if (name == "scalar") {
+    return SCHEMA_DOFS_SCALAR;
+  } else if (name == "vector") {
+    return SCHEMA_DOFS_VECTOR;
+  } else if (name == "normal component") {
+    return SCHEMA_DOFS_NORMAL_COMPONENT;
   }
 }
 
