@@ -60,13 +60,15 @@ namespace Operators {
 
 class BCs {
  public:
-  BCs(Teuchos::RCP<const AmanziMesh::Mesh> mesh, AmanziMesh::Entity_kind kind) : 
+  BCs(Teuchos::RCP<const AmanziMesh::Mesh> mesh, AmanziMesh::Entity_kind kind, int type) : 
       mesh_(mesh),
-      kind_(kind) {};
+      kind_(kind),
+      type_(type) {};
   ~BCs() {};
 
   // access
   AmanziMesh::Entity_kind kind() const { return kind_; }
+  int type() const { return type_; }
 
   std::vector<int>& bc_model() { 
     if (bc_model_.size() == 0) {
@@ -103,6 +105,7 @@ class BCs {
 
  private:
   AmanziMesh::Entity_kind kind_;
+  int type_;
 
   std::vector<int> bc_model_;
   std::vector<double> bc_value_;

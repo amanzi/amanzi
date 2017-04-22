@@ -754,7 +754,8 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     std::vector<double> bc_mixed;
     ComputeBCs_(bc_model, bc_value, -1);
 
-    Teuchos::RCP<Operators::BCs> bc_dummy = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE));
+    Teuchos::RCP<Operators::BCs> bc_dummy = 
+        Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
 
     Operators::DiffusionFactory opfactory;
     Teuchos::RCP<Operators::Diffusion> op1 = opfactory.Create(op_list, mesh_, bc_dummy);

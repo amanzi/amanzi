@@ -142,7 +142,7 @@ void HeatConduction::Init(
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
-  bc_ = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE));
+  bc_ = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
   std::vector<int>& bc_model = bc_->bc_model();
   std::vector<double>& bc_value = bc_->bc_value();
 

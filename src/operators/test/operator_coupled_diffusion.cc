@@ -227,11 +227,11 @@ struct Problem {
   }
 
   void MakeBCs() {
-    bc0 = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE));
+    bc0 = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
     std::vector<int>& bc_model0 = bc0->bc_model();
     std::vector<double>& bc_value0 = bc0->bc_value();
 
-    bc1 = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE));
+    bc1 = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
     std::vector<int>& bc_model1 = bc1->bc_model();
     std::vector<double>& bc_value1 = bc1->bc_value();
   

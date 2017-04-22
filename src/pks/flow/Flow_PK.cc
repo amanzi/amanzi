@@ -266,7 +266,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 
   // Create the BC objects
   // -- memory
-  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE));
+  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
 
   Teuchos::RCP<FlowBoundaryFunction> bc;
   Teuchos::RCP<Teuchos::ParameterList>

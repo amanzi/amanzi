@@ -117,8 +117,10 @@ double NavierStokes_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   double error(0.0);
 
   for (int v = 0; v < nnodes_owned; v++) {
-    double tmp = fabs(duv[0][v]) / (fabs(uv[0][v]) + 1e-2);
-    error = std::max(error, tmp);
+    for (int k = 0; k < 2; ++k) {
+      double tmp = fabs(duv[k][v]) / (fabs(uv[k][v]) + 1.0);
+      error = std::max(error, tmp);
+    }
   }
 
   return error;
@@ -151,25 +153,30 @@ void NavierStokes_PK::UpdateSourceBoundaryData_(double t_old, double t_new)
 ****************************************************************** */
 void NavierStokes_PK::ComputeOperatorBCs()
 {
-  int d = mesh_->space_dimension();
+  int mf, mv(0), d(mesh_->space_dimension());
 
   for (int i = 0; i < op_bcs_.size(); ++i) {
     std::vector<int>& bc_model = op_bcs_[i]->bc_model();
     for (int n = 0; n < bc_model.size(); n++) {
       bc_model[n] = Operators::OPERATOR_BC_NONE;
     }
-  }
 
-  std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[0]->bc_value_point();  // FIXME
-  for (int n = 0; n < bc_value.size(); n++) {
-    bc_value[n] = AmanziGeometry::Point(d);
+    if (op_bcs_[i]->type() == Operators::SCHEMA_DOFS_VECTOR) {
+      mv = i;
+      std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[i]->bc_value_point();
+      for (int n = 0; n < bc_value.size(); n++) {
+        bc_value[n] = AmanziGeometry::Point(d);
+      }
+    }
   }
+  mf = 1 - mv;
 
   // velocity boundary conditions
   for (int i = 0; i < bcs_.size(); ++i) {
     if (bcs_[i]->bc_name() == "no slip" && 
         bcs_[i]->type() == Operators::SCHEMA_DOFS_VECTOR) {
-      std::vector<int>& bc_model = op_bcs_[0]->bc_model();
+      std::vector<int>& bc_model = op_bcs_[mv]->bc_model();
+      std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[mv]->bc_value_point();
 
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;
@@ -183,8 +190,8 @@ void NavierStokes_PK::ComputeOperatorBCs()
 
     if (bcs_[i]->bc_name() == "no slip" && 
         bcs_[i]->type() == Operators::SCHEMA_DOFS_NORMAL_COMPONENT) {
-      std::vector<int>& bc_model = op_bcs_[1]->bc_model();
-      std::vector<double>& bc_value = op_bcs_[1]->bc_value();
+      std::vector<int>& bc_model = op_bcs_[mf]->bc_model();
+      std::vector<double>& bc_value = op_bcs_[mf]->bc_value();
 
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;

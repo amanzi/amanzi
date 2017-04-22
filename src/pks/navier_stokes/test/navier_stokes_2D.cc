@@ -107,6 +107,7 @@ TEST(NAVIER_STOKES_2D) {
     GMV::open_data_file(*mesh, (std::string)"navier_stokes.gmv");
     GMV::start_data();
     GMV::write_node_data(u, 0, "velocity_x");
+    GMV::write_node_data(u, 1, "velocity_y");
     GMV::close_data_file();
   }
 }
