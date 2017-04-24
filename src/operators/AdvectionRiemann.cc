@@ -73,7 +73,8 @@ void AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
   // register the advection Op
   global_op_->OpPushBack(local_op_);
 
-  // discretization method
+  // parameters
+  // -- discretization method
   std::string name = plist.get<std::string>("discretization", "none");
   if (name == "BernardiRaugel" && local_schema_row_ == local_schema_col_) {
     method_ = BERNARDI_RAUGEL;
@@ -85,6 +86,10 @@ void AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
     Exceptions::amanzi_throw(msg);
   }
 
+  // -- fluxes
+  flux_ = plist.get<std::string>("flux formula", "velocity");
+  riemann_ = plist.get<std::string>("riemann problem", "continuous");
+  
   // mesh info
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -127,7 +132,8 @@ void AdvectionRiemann::UpdateMatrices(const CompositeVector& u)
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
       int nfaces = mesh_->cell_get_num_faces(c);
-      int ndofs = d * nnodes + nfaces;
+      // int ndofs = d * nnodes + nfaces;
+      int ndofs = nfaces;
 
       WhetStone::DenseMatrix Acell(1, ndofs);
       mfd.DivergenceMatrixBernardiRaugel(c, Acell);

@@ -16,6 +16,8 @@
 #ifndef AMANZI_OPERATOR_ADVECTION_RIEMANN_HH_
 #define AMANZI_OPERATOR_ADVECTION_RIEMANN_HH_
 
+#include <string>
+
 #include "Advection.hh"
 
 namespace Amanzi {
@@ -52,6 +54,9 @@ class AdvectionRiemann : public Advection {
 
  private:
   void InitAdvection_(Teuchos::ParameterList& plist);
+
+ private:
+  std::string flux_, riemann_;
 };
 
 }  // namespace Operators

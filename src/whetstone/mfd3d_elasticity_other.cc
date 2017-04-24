@@ -237,16 +237,17 @@ int MFD3D_Elasticity::DivergenceMatrixBernardiRaugel(int c, DenseMatrix& A)
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;
 
-  mesh_->cell_get_nodes(c, &nodes);
+  // mesh_->cell_get_nodes(c, &nodes);
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   int nfaces = faces.size();
 
-  int n1 = d * nodes.size();
-  for (int n = 0; n < n1; ++n) A(0, n) = 0.0;
+  // int n1 = d * nodes.size();
+  // for (int n = 0; n < n1; ++n) A(0, n) = 0.0;
 
   for (int n = 0; n < nfaces; ++n) {
     double area = mesh_->face_area(faces[n]);
-    A(0, n1 + n) = area * dirs[n]; 
+    // A(0, n1 + n) = area * dirs[n]; 
+    A(0, n) = area * dirs[n]; 
   } 
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;

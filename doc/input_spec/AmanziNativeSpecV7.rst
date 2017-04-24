@@ -3164,6 +3164,7 @@ It also has one global parameter.
     the diagonal of the assembled operator, which can b useful for dealing
     with singular or near-singular matrices.  Default is *0.0*.
 
+
 Diffusion operator
 ``````````````````
 
@@ -3222,8 +3223,126 @@ This section to be written.
 
    <ParameterList name="operators">  <!-- parent list -->
      <ParameterList name="advection operator">
-       <Parameter name="discretization primary" type="string" value="upwind"/>
-     <Parameter name="reconstruction order" type="int" value="0"/>
+       <Parameter name="discretization" type="string" value="upwind"/>
+       <Parameter name="reconstruction order" type="int" value="0"/>
+     </ParameterList>
+   </ParameterList>
+
+
+Navier Stokes PK
+----------------
+
+The conceptual PDE model for the incompressible Navier Stokes equations are
+
+.. math::
+  \frac{\partial (\rho \boldsymbol{u})}{\partial t} 
+  + \boldsymbol{\nabla} \cdot (\rho \boldsymbol{u} \otimes \boldsymbol{u})
+  =
+  - \boldsymbol{\nabla} p 
+  + \boldsymbol{\nabla} \cdot \boldsymbol{\sigma} 
+  + \rho \boldsymbol{g}
+
+where 
+:math:`\rho` is the fluid density,
+:math:`p` is the pressure,
+:math:`\boldsymbol{\sigma}` is the deviatoric stress tensor,
+:math:`\boldsymbol{g}` is the gravity vector, 
+and :math:`u \otimes v = u \times v^T`.
+The Stokes stress contitutive law for incompressible viscous fluid is
+
+.. math::
+  \boldsymbol{\sigma} = 
+  \mu \left(\boldsymbol{\nabla} \boldsymbol{u} + 
+            \boldsymbol{\nabla} \boldsymbol{u}^{T}\right),
+
+where 
+:math:`\mu` is the dynamic viscosity. It can depend on density and pressure. 
+
+
+Physical models and assumptions
+...............................
+
+This list is used to summarize physical models and assumptions, such as
+coupling with other PKs.
+This list is often generated on a fly by a high-level MPC PK.
+
+* `"gravity`" [bool] is set up automatically by a high-level PK.
+  The default value is `"false`".
+
+.. code-block:: xml
+
+   <ParameterList name="Navier Stokes">  <!-- parent list -->
+     <ParameterList name="physical models and assumptions">
+       <Parameter name="gravity" type="bool" value="false"/>
+     </ParameterList>
+   </ParameterList>
+
+
+Operators
+.........
+
+This section contains sublist for diffusion and advection operators.
+It also has one global parameter.
+
+* `"operators`" [list] 
+
+
+Elasticity operator
+```````````````````
+
+.. code-block:: xml
+
+   <ParameterList name="operators">  <!-- parent list -->
+     <ParameterList name="elasticity operator">
+       <Parameter name="discretization" type="string" value="BernardiRaugel"/>
+       <ParameterList name="schema">
+         <Parameter name="base" type="string" value="cell"/>
+         <Parameter name="location" type="Array(string)" value="{node, face}"/>
+         <Parameter name="type" type="Array(string)" value="{vector, normal component}"/>
+         <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
+
+Convection operator
+```````````````````
+
+This section to be written.
+
+.. code-block:: xml
+
+   <ParameterList name="operators">  <!-- parent list -->
+     <ParameterList name="convection operator">
+       <Parameter name="flux formula" type="string" value="NavierStokes"/>
+       <Parameter name="riemann problem" type="string" value="continuous"/>
+     </ParameterList>
+   </ParameterList>
+
+
+Divergence operator
+```````````````````
+
+This section to be written.
+
+.. code-block:: xml
+
+   <ParameterList name="operators">  <!-- parent list -->
+     <ParameterList name="divergence operator">
+       <Parameter name="discretization" type="string" value="BernardiRaugel"/>
+       <ParameterList name="schema domain">
+         <Parameter name="base" type="string" value="cell"/>
+         <Parameter name="location" type="Array(string)" value="{node, face}"/>
+         <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+         <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+       </ParameterList>
+       <ParameterList name="schema range">
+         <Parameter name="base" type="string" value="cell"/>
+         <Parameter name="location" type="Array(string)" value="{cell}"/>
+         <Parameter name="type" type="Array(string)" value="{scalar}"/>
+         <Parameter name="number" type="Array(int)" value="{1}"/>
+       </ParameterList>
+     </ParameterList>
    </ParameterList>
 
 
@@ -3528,7 +3647,7 @@ The structure of the schema is described in the previous section.
 
 * `"OPERATOR_NAME`" [list] a PK specific name for the advection operator.
 
-  * `"discretization primary`" [string] defines a discretization method. The only available option is `"upwind`".
+  * `"discretization`" [string] defines a discretization method. The only available option is `"upwind`".
 
   * `"reconstruction order`" [int] defines accuracy of this discrete operator.
 
@@ -3539,7 +3658,7 @@ The structure of the schema is described in the previous section.
 .. code-block:: xml
 
   <ParameterList name="OPERATOR_NAME">
-    <Parameter name="discretization primary" type="string" value="upwind"/>
+    <Parameter name="discretization" type="string" value="upwind"/>
     <Parameter name="reconstruction order" type="int" value="0"/>
     <ParameterList name="schema domain">
       <Parameter name="location" type="Array(string)" value="{node, face}"/>
@@ -5296,7 +5415,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
       function applied to compute observation. Works ONLY with
       Line Segment region at the moment. Available options `"flux norm`"
       and `"none`". Default is `"none`". `"flux norm`" is the absolute
-      value of the darcy flux in a cell.
+      value of the Darcy flux in a cell.
 
 The following observation functionals are currently supported.
 All of them operate on the variables identified.
