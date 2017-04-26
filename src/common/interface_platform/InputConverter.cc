@@ -269,8 +269,7 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
   std::vector<std::string> tag_names = CharToStrings_(tags.c_str());
   if (tag_names.size() == 0) return node;
 
-  if (tag_names.size() == 1)
-  {
+  if (tag_names.size() == 1) {
     // We only need the top-level (hopefully unique) tag.
     DOMElement* root = doc_->getDocumentElement();
     return GetChildByName_(root, tag_names[0], flag);
@@ -298,6 +297,13 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
             ntag++;
           }
         }
+      }
+      if (ntag > 1) {
+        Errors::Message msg;
+        msg << "Tag \"" << tag_names[n] << "\" in \"" << tags << "\"\n";
+        msg << "  must be either unique or absent (default value will be used).\n";
+        msg << "  Please correct and try again.\n";
+        Exceptions::amanzi_throw(msg);
       }
       if (ntag != 1) {
         found = false;
