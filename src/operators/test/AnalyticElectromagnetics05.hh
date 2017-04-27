@@ -8,7 +8,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Convergence analysis in space and time
+  Convergence analysis in space and time.
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_ELECTROMAGNETICS_05_HH_
@@ -31,23 +31,41 @@ class AnalyticElectromagnetics05 : public AnalyticElectromagneticsBase {
   }
 
   Amanzi::AmanziGeometry::Point electric_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    double x = p[0];
-    double y = p[1];
+    Amanzi::AmanziGeometry::Point a(p.dim()), b(3), e(3);
+    OrthonormalSystem(a, b, e);
 
-    double tmp = std::exp(ct * (t + 0.6 * x + 0.8 * y));
-    return Amanzi::AmanziGeometry::Point(0.0, 0.0, tmp);
+    double tmp = std::exp(ct * (t + p * a));
+    return e * tmp;
   }
 
   Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    double x = p[0];
-    double y = p[1];
+    Amanzi::AmanziGeometry::Point a(p.dim()), b(3), e(3);
+    OrthonormalSystem(a, b, e);
 
-    double tmp = std::exp(ct * (t + 0.6 * x + 0.8 * y));
-    return Amanzi::AmanziGeometry::Point(-0.8 * tmp, 0.6 * tmp, 0.0);
+    double tmp = std::exp(ct * (t + p * a));
+    return b * tmp;
   }
 
   Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     return Amanzi::AmanziGeometry::Point(0.0, 0.0, 0.0);
+  }
+
+ private: 
+  void OrthonormalSystem(Amanzi::AmanziGeometry::Point& a,
+                         Amanzi::AmanziGeometry::Point& b, 
+                         Amanzi::AmanziGeometry::Point& e) {
+    if (a.dim() == 2) {
+      a = Amanzi::AmanziGeometry::Point(0.6, 0.8);
+      b = Amanzi::AmanziGeometry::Point(-0.8, 0.6, 0.0);
+      e = Amanzi::AmanziGeometry::Point(0.0, 0.0, 1.0);
+    } else {
+      double tmp = std::pow(0.71, 0.5);
+      a = Amanzi::AmanziGeometry::Point(0.2, 0.5, tmp);
+      b = Amanzi::AmanziGeometry::Point(-4 * tmp, tmp, 0.3);
+
+      b /= norm(b); 
+      e = a^b;
+    }
   }
 };
 
