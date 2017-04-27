@@ -144,7 +144,7 @@ void ResistiveMHD2D(double dt, double tend,
 
   int cycle(0);
   double energy0(1e+99), divB0(0.0);
-  while (told < tend) {
+  while (told + dt/2 < tend) {
     // set up the diffusion operator
     global_op->Init();
     op_mhd->SetTensorCoefficient(K);
@@ -169,7 +169,7 @@ void ResistiveMHD2D(double dt, double tend,
       if (fabs(xv[0] - Xa) < 1e-6 || fabs(xv[0] - Xb) < 1e-6 ||
           fabs(xv[1] - Ya) < 1e-6 || fabs(xv[1] - Yb) < 1e-6) {
         bc_model[v] = OPERATOR_BC_DIRICHLET;
-        bc_value[v] = (ana.electric_exact(xv, tnew))[2];
+        bc_value[v] = (ana.electric_exact(xv, tnew - dt/2))[2];
       }
     }
 
@@ -260,7 +260,7 @@ void ResistiveMHD2D(double dt, double tend,
   // compute electric and magnetic errors
   double enorm, el2_err, einf_err;
   double bnorm, bl2_err, binf_err;
-  ana.ComputeNodeError(Ee, told, enorm, el2_err, einf_err);
+  ana.ComputeNodeError(Ee, told - dt/2, enorm, el2_err, einf_err);
   ana.ComputeFaceError(Bf, told, bnorm, bl2_err, binf_err);
 
   if (MyPID == 0) {
@@ -380,7 +380,7 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
 
   int cycle(0);
   double energy0(1e+99), divB0(0.0);
-  while (told < tend) {
+  while (told + dt/2 < tend) {
     // set up the diffusion operator
     global_op->Init();
     op_mhd->SetTensorCoefficient(K);
@@ -420,7 +420,7 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
           const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
 
           bc_model[e] = OPERATOR_BC_DIRICHLET;
-          bc_value[e] = (ana.electric_exact(xe, tnew) * tau) / len;
+          bc_value[e] = (ana.electric_exact(xe, tnew - dt/2) * tau) / len;
         }
       }
     }
@@ -555,7 +555,7 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
   if (convergence) {
     double enorm, el2_err, einf_err;
     double bnorm, bl2_err, binf_err;
-    ana.ComputeEdgeError(Ee, told, enorm, el2_err, einf_err);
+    ana.ComputeEdgeError(Ee, told - dt/2, enorm, el2_err, einf_err);
     ana.ComputeFaceError(Bf, told, bnorm, bl2_err, binf_err);
 
     if (MyPID == 0) {
