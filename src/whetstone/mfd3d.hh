@@ -66,7 +66,7 @@ class MFD3D {
 
   // geometry methods
   void PolygonCentroidWeights(
-      const Entity_ID_List& nodes, const AmanziGeometry::Point& normal, 
+      const Entity_ID_List& nodes,
       double area, std::vector<double>& weights) const;
 
   // access members

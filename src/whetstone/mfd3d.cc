@@ -608,36 +608,36 @@ void MFD3D::GrammSchmidt(DenseMatrix& N)
 /* ******************************************************************
 * Return centroid weights for 2D and 3D polygons. We take list of 
 * nodes as input since it is not cached by the mesh.
+* NOTE: polygon must be star-shaped w.r.t. its geometric center.
 ****************************************************************** */
 void MFD3D::PolygonCentroidWeights(
-    const Entity_ID_List& nodes, const AmanziGeometry::Point& normal, 
+    const Entity_ID_List& nodes,
     double area, std::vector<double>& weights) const
 {
   int nnodes = nodes.size();
   int d = mesh_->space_dimension();
 
-  weights.resize(nnodes, 0.0);
-  AmanziGeometry::Point p0(d), p1(d), p2(d), face_normal(normal), edge_normal(d);
-  face_normal /= norm(normal);
+  weights.assign(nnodes, 1.0 / (3 * nnodes));
+  AmanziGeometry::Point p1(d), p2(d), p3(d), xg(d);
 
-  mesh_->node_get_coordinates(nodes[0], &p0);
-  mesh_->node_get_coordinates(nodes[1], &p2);
+  // geometric center
+  for (int i = 0; i < nnodes; ++i) {
+    mesh_->node_get_coordinates(nodes[i], &p1);
+    xg += p1;
+  }
+  xg /= nnodes;
 
-  for (int i = 2; i < nnodes; ++i) {
-    p1 = p2;
-    int v = nodes[i];
-    mesh_->node_get_coordinates(v, &p2);
+  // corner volume contributions
+  for (int i1 = 0; i1 < nnodes; ++i1) {
+    int i2 = (i1 + 1) % nnodes;  
+    mesh_->node_get_coordinates(nodes[i1], &p1);
+    mesh_->node_get_coordinates(nodes[i2], &p2);
 
-    if (d == 2) {
-      edge_normal[0] = p2[1] - p1[1];
-      edge_normal[1] = p1[0] - p2[0];
-    } else {
-      edge_normal = (p2 - p1)^face_normal;
-    }
+    p3 = (p1 - xg)^(p2 - xg);
+    double tmp = norm(p3) / (6 * area);
 
-    double dist = (p2 - p0) * edge_normal;
-    weights[i] += dist / (6 * area);
-    weights[i - 1] += dist / (6 * area);
+    weights[i1] += tmp;
+    weights[i2] += tmp;
   }
 }
 

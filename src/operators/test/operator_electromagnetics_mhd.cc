@@ -45,7 +45,9 @@
 ***************************************************************** */
 template<class Analytic>
 void ResistiveMHD2D(double dt, double tend, 
-                    double Xa, double Ya, double Xb, double Yb) {
+                    int nx, int ny, 
+                    double Xa, double Ya, double Xb, double Yb,
+                    const std::string& name) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -55,7 +57,8 @@ void ResistiveMHD2D(double dt, double tend,
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Resistive MHD, TM mode, dt=" << dt << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Resistive MHD, TM mode, dt=" 
+                            << dt << ", name: " << name << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_electromagnetics_TM.xml";
@@ -73,8 +76,12 @@ void ResistiveMHD2D(double dt, double tend,
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
 
-  RCP<const Mesh> mesh = meshfactory(Xa, Ya, Xb, Yb, 10, 10, gm, true, true);
-  // RCP<const Mesh> mesh = meshfactory("test/random40.exo", gm, true, true);
+  RCP<const Mesh> mesh;
+  if (name == "structured") {
+    mesh = meshfactory(Xa, Ya, Xb, Yb, nx, ny, gm, true, true);
+  } else {
+    mesh = meshfactory(name, gm, true, true);
+  }
 
   // create resistivity coefficient
   double told(0.0), tnew(dt);
@@ -279,7 +286,8 @@ void ResistiveMHD2D(double dt, double tend,
 template<class Analytic>
 void ResistiveMHD3D(double dt, double tend, bool convergence,
                     int nx, int ny, int nz,
-                    double Xa, double Ya, double Za, double Xb, double Yb, double Zb) {
+                    double Xa, double Ya, double Za, double Xb, double Yb, double Zb,
+                    const std::string& name) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -289,7 +297,8 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Resistive MHD 3D" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Resistive MHD 3D, dt=" 
+                            << dt << ", name: " << name << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_electromagnetics.xml";
@@ -308,9 +317,13 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
   meshfactory.preference(pref);
 
   bool request_faces(true), request_edges(true);
-  RCP<const Mesh> mesh = meshfactory(Xa, Ya, Za, Xb, Yb, Zb, nx, ny, nz, gm, request_faces, request_edges);
-  // RCP<const Mesh> mesh = meshfactory("test/hex_split_faces5.exo", gm, request_faces, request_edges);
-  // RCP<const Mesh> mesh = meshfactory("test/isohelix.exo", gm, request_faces, request_edges);
+  RCP<const Mesh> mesh;
+  if (name == "structured") {
+    mesh = meshfactory(Xa, Ya, Za, Xb, Yb, Zb, nx, ny, nz, gm, request_faces, request_edges);
+  } else {
+    mesh = meshfactory(name, gm, request_faces, request_edges);
+    // mesh = meshfactory("test/hex_split_faces5.exo", gm, request_faces, request_edges);
+  }
 
   // create resistivity coefficient
   double told(0.0), tnew(dt);
@@ -569,18 +582,19 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
 
 
 TEST(RESISTIVE_MHD2D_RELAX) {
-  ResistiveMHD2D<AnalyticElectromagnetics04>(0.7, 5.9, -4.0, -10.0, 4.0, 10.0);
+  ResistiveMHD2D<AnalyticElectromagnetics04>(0.7, 5.9, 8,18, -4.0,-10.0, 4.0,10.0, "structured");
 }
 
 TEST(RESISTIVE_MHD2D_CONVERGENCE) {
-  ResistiveMHD2D<AnalyticElectromagnetics05>(0.01, 0.1, 0.0, 0.0, 1.0, 1.0);
+  ResistiveMHD2D<AnalyticElectromagnetics05>(0.01, 0.1, 10,10, 0.0,0.0, 1.0,1.0, "test/random10.exo");
+  // ResistiveMHD2D<AnalyticElectromagnetics05>(0.01 / 4, 0.1, 40,40, 0.0,0.0, 1.0,1.0, "structured");
 }
 
 TEST(RESISTIVE_MHD3D_RELAX) {
-  ResistiveMHD3D<AnalyticElectromagnetics04>(0.1, 0.5, false, 10,8,22, -4.0,-4.0,-10.0, 4.0,4.0,10.0);
+  ResistiveMHD3D<AnalyticElectromagnetics04>(0.1, 0.5, false, 10,8,22, -4.0,-4.0,-10.0, 4.0,4.0,10.0, "structured");
 }
 
 TEST(RESISTIVE_MHD3D_CONVERGENCE) {
-  ResistiveMHD3D<AnalyticElectromagnetics05>(0.01, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0);
+  ResistiveMHD3D<AnalyticElectromagnetics05>(0.01, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/kershaw08.exo");
 }
 

@@ -40,17 +40,17 @@ TEST(FACE_CENTROIDS) {
   MeshFactory factory(comm);
   factory.preference(pref);
   // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  Teuchos::RCP<Mesh> mesh = factory("test/two_cell2.exo");
+  Teuchos::RCP<Mesh> mesh = factory("test/one_cell2.exo");
  
   MFD3D_Diffusion mfd(mesh);
  
-  AmanziGeometry::Point normal(2), p(2), xc(2);
+  AmanziGeometry::Point p(2), xc(2);
   Entity_ID_List nodes;
   std::vector<double> weights;
 
   double area = mesh->cell_volume(0);
   mesh->cell_get_nodes(0, &nodes); 
-  mfd.PolygonCentroidWeights(nodes, normal, area, weights);
+  mfd.PolygonCentroidWeights(nodes, area, weights);
   
   // verification
   for (int n = 0; n < nodes.size(); ++n) {

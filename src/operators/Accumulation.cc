@@ -12,6 +12,8 @@
   This operator is a collection of local "DIAGONAL" Ops.
 */
 
+#include "mfd3d_diffusion.hh"
+
 #include "Accumulation.hh"
 #include "Operator_Cell.hh"
 #include "Operator_Edge.hh"
@@ -151,6 +153,7 @@ void Accumulation::CalculateEntityVolume_(
     CompositeVector& volume, const std::string& name)
 {
   AmanziMesh::Entity_ID_List nodes, edges;
+  WhetStone::MFD3D_Diffusion mfd(mesh_);
 
   if (name == "cell" && volume.HasComponent("cell")) {
     Epetra_MultiVector& vol = *volume.ViewComponent(name); 
@@ -185,8 +188,15 @@ void Accumulation::CalculateEntityVolume_(
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
 
+      double volume = mesh_->cell_volume(c);
+      std::vector<double> weights(nnodes, 1.0 / nnodes);
+
+      if (mesh_->space_dimension() == 2) {
+        mfd.PolygonCentroidWeights(nodes, volume, weights);
+      }
+
       for (int i = 0; i < nnodes; i++) {
-        vol[0][nodes[i]] += mesh_->cell_volume(c) / nnodes; 
+        vol[0][nodes[i]] += weights[i] * volume; 
       }
     }
     volume.GatherGhostedToMaster(name);
