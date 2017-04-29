@@ -399,11 +399,6 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
     op_mhd->SetTensorCoefficient(K);
     op_mhd->UpdateMatrices();
 
-    // Add an accumulation term using dt=1 since time step is taken into
-    // account in the system modification routine.
-    CompositeVector phi(cvs_e);
-    phi.PutScalar(3.0 / Kc(0,0));
-
     // update BCs
     std::vector<int>& bc_model = bc1->bc_model();
     std::vector<double>& bc_value = bc1->bc_value();
@@ -438,15 +433,9 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
       }
     }
 
-    Teuchos::RCP<Accumulation> op_acc = Teuchos::rcp(new Accumulation(AmanziMesh::EDGE, global_op));
-    op_acc->SetBCs(bc1, bc1);
-    op_acc->AddBCs(bc2, bc2);
-    op_acc->AddAccumulationTerm(phi, 1.0, "edge");
-
     // BCs, sources, and assemble
     op_mhd->ModifyMatrices(E, B, dt);
     op_mhd->ApplyBCs(true, true);
-    op_acc->ApplyBCs();
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 
@@ -595,6 +584,7 @@ TEST(RESISTIVE_MHD3D_RELAX) {
 }
 
 TEST(RESISTIVE_MHD3D_CONVERGENCE) {
+  // ResistiveMHD3D<AnalyticElectromagnetics05>(0.01, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
   ResistiveMHD3D<AnalyticElectromagnetics05>(0.01, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/kershaw08.exo");
 }
 

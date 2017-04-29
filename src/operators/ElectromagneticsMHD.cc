@@ -58,13 +58,16 @@ void ElectromagneticsMHD::UpdateMatrices()
 
 
 /* ******************************************************************
-* System modification before solving the problem.
+* System modification before solving the problem:
+* A := invK I + dt/2 A   and  f += Curl M B 
 * **************************************************************** */
 void ElectromagneticsMHD::ModifyMatrices(
    CompositeVector& E, CompositeVector& B, double dt)
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
   Epetra_MultiVector& rhs_e = *global_op_->rhs()->ViewComponent("edge", true);
+
+  WhetStone::MFD3D_Electromagnetics mfd(mesh_);
 
   std::vector<int> dirs;
   AmanziMesh::Entity_ID_List faces, edges;
@@ -81,6 +84,10 @@ void ElectromagneticsMHD::ModifyMatrices(
 
     int nfaces = faces.size();
     int nedges = edges.size();
+
+    WhetStone::DenseMatrix Tcell(nedges, nedges);
+    mfd.MassMatrix(c, (*K_)[c], Tcell);
+    Acell += Tcell;
 
     WhetStone::DenseVector v1(nfaces), v2(nfaces), v3(nedges);
 

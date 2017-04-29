@@ -132,8 +132,7 @@ void AdvectionRiemann::UpdateMatrices(const CompositeVector& u)
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
       int nfaces = mesh_->cell_get_num_faces(c);
-      // int ndofs = d * nnodes + nfaces;
-      int ndofs = nfaces;
+      int ndofs = d * nnodes + nfaces;
 
       WhetStone::DenseMatrix Acell(1, ndofs);
       mfd.DivergenceMatrixBernardiRaugel(c, Acell);
