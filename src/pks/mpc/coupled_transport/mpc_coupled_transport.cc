@@ -17,8 +17,7 @@ namespace Amanzi {
                                            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                                            const Teuchos::RCP<State>& S,
                                            const Teuchos::RCP<TreeVector>& soln) :
-    //WeakMPC(pk_tree_or_fe_list, global_list, S, soln)
-    PK_MPCSubcycled_ATS(pk_tree_or_fe_list, global_list, S, soln)
+    WeakMPC(pk_tree_or_fe_list, global_list, S, soln)
   {
 
     //std::cout << *global_list<<"\n";
@@ -28,12 +27,26 @@ namespace Amanzi {
     Teuchos::ParameterList vlist;
     vlist.sublist("verbose object") = global_list -> sublist("verbose object");
     vo_ =  Teuchos::rcp(new VerboseObject("Coupled TransportPK", vlist)); 
+    
+    name_ = "surface subsurface transport";
 
     Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
-
-    subsurface_transport_list_ = Teuchos::sublist(Teuchos::sublist(plist_,"PKs"), pk_order[master_]);
-    surface_transport_list_ = Teuchos::sublist(Teuchos::sublist(plist_,"PKs"), pk_order[slave_]);
-
+  
+    for (int i=0; i<2; i++){
+      Teuchos::RCP<Teuchos::ParameterList> list = Teuchos::sublist(Teuchos::sublist(global_list, "PKs"), pk_order[i]);      
+      Key dom_name = list->get<std::string>("domain name", "domain");
+      if (dom_name == "domain"){
+        subsurface_transport_list_ = list;
+        subsurface_name_ = dom_name;
+        mesh_ = S->GetMesh(subsurface_name_);
+        subsurf_id_ = i;
+      }else{
+        surface_transport_list_ = list;
+        surface_name_ = dom_name;
+        surf_mesh_ = S->GetMesh(surface_name_);
+        surf_id_ = i;
+      }
+    }
 
 
   }
@@ -45,93 +58,43 @@ double CoupledTransport_PK::get_dt() {
   //double dt = Amanzi::PK_MPCSubcycled_ATS::get_dt();
   //ComputeVolumeDarcyFlux(S_next_.ptr());
 
-  Teuchos::RCP<const CompositeVector> next_darcy = S_next_->GetFieldData(mass_darcy_key_);
-  Key flux_owner = S_next_->GetField(mass_darcy_key_)->owner();
-  Teuchos::RCP<CompositeVector>  next_darcy_copy = S_->GetFieldCopyData(mass_darcy_key_, "next_timestep", "state");
-  *next_darcy_copy = *next_darcy;
+  double surf_dt = sub_pks_[surf_id_]->get_dt();
+  double subsurf_dt = sub_pks_[subsurf_id_]->get_dt();
 
-  Teuchos::RCP<const CompositeVector> next_sur_flux = S_next_->GetFieldData(surf_mass_darcy_key_);
-  flux_owner = S_next_->GetField(surf_mass_darcy_key_)->owner();
-  Teuchos::RCP<CompositeVector>  next_sur_flux_copy = S_->GetFieldCopyData(surf_mass_darcy_key_, "next_timestep", "state");
-  *next_sur_flux_copy = *next_sur_flux;
+  *vo_->os()<< "surface transport dt = "<<surf_dt<<"\n";
+  *vo_->os()<< "sub surface transport dt = "<<subsurf_dt<<"\n";
 
-
-  master_dt_ = sub_pks_[master_]->get_dt();
-  slave_dt_ = sub_pks_[slave_]->get_dt();
-
-  // std::cout<<"master dt = "<<master_dt_<<"\n";
-  // std::cout<<"slave_dt_ ="<<slave_dt_<<"\n";
-
-  double dt = std::min(master_dt_, slave_dt_);
-
+  double dt = std::min(surf_dt, subsurf_dt);
   set_dt(dt);
-
   return dt;
  
-}
-
-
-
-// -----------------------------------------------------------------------------
-// Set master dt
-// -----------------------------------------------------------------------------
-void CoupledTransport_PK::set_dt(double dt) {
-  master_dt_ = dt;
-  sub_pks_[master_]->set_dt(dt);
 }
 
 
 // -----------------------------------------------------------------------------
 // Make necessary operatios by the end of the time steps.
 // -----------------------------------------------------------------------------
-void CoupledTransport_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
-  sub_pks_[master_]->CommitStep(t_old, t_new, S);
-  sub_pks_[slave_]->CommitStep(t_old, t_new, S);
-}
+// void CoupledTransport_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
+//   sub_pks_[master_]->CommitStep(t_old, t_new, S);
+//   sub_pks_[slave_]->CommitStep(t_old, t_new, S);
+// }
 
 
 
 void CoupledTransport_PK::Setup(const Teuchos::Ptr<State>& S){
 
   //passwd_ = "coupled_transport";  // owner's password
-  passwd_ = "state";  // owner's password
+  //passwd_ = "state";  // owner's password
 
-  surface_name_ = surface_transport_list_->get<std::string>("domain name", "surface");
-  subsurface_name_ = subsurface_transport_list_->get<std::string>("domain name", "domain");
-
-  mass_darcy_key_ = getKey(subsurface_name_, "mass_flux");
-  surf_mass_darcy_key_ = getKey(surface_name_, "mass_flux");
-
-  mesh_ = S->GetMesh(subsurface_name_);
-  surf_mesh_ = S->GetMesh(surface_name_);
-
-  // if (!S->HasField(mass_darcy_key_)){
-  //   S->RequireField(mass_darcy_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-  //     ->SetComponent("face", AmanziMesh::FACE, 1);
-  // }
-  // if (!S->HasField(surf_mass_darcy_key_)){
-  //   S->RequireField(surf_mass_darcy_key_, passwd_)->SetMesh(surf_mesh_)->SetGhosted(true)
-  //     ->SetComponent("face", AmanziMesh::FACE, 1);
-  // }
-
-  component_names_ = plist_->get<Teuchos::Array<std::string> >("component names").toVector();
-
-  PK_MPCSubcycled_ATS::Setup(S);
-  //WeakMPC::Setup(S);
-
-
-
+  WeakMPC::Setup(S);
 }
-
 
 void CoupledTransport_PK::Initialize(const Teuchos::Ptr<State>& S){
 
-  PK_MPCSubcycled_ATS::Initialize(S);
-  //WeakMPC::Initialize(S);
-
-  //ComputeVolumeDarcyFlux(S); 
-  
+  WeakMPC::Initialize(S);
+ 
 }
+
 
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
@@ -147,36 +110,36 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
      It will be removed when we convert to one State
   */
 
-  Teuchos::RCP<const CompositeVector> next_darcy = S_next_->GetFieldData(mass_darcy_key_);
-  Key flux_owner = S_next_->GetField(mass_darcy_key_)->owner();
-  Teuchos::RCP<CompositeVector>  next_darcy_copy = S_->GetFieldCopyData(mass_darcy_key_, "next_timestep", "state");
-  *next_darcy_copy = *next_darcy;
+  // Teuchos::RCP<const CompositeVector> next_darcy = S_next_->GetFieldData(vol_darcy_key_);
+  // Key flux_owner = S_next_->GetField(vol_darcy_key_)->owner();
+  // Teuchos::RCP<CompositeVector>  next_darcy_copy = S_->GetFieldCopyData(vol_darcy_key_, "next_timestep", flux_owner);
+  // *next_darcy_copy = *next_darcy;
 
-  Teuchos::RCP<const CompositeVector> next_sur_flux = S_next_->GetFieldData(surf_mass_darcy_key_);
-  flux_owner = S_next_->GetField(surf_mass_darcy_key_)->owner();
-  Teuchos::RCP<CompositeVector>  next_sur_flux_copy = S_->GetFieldCopyData(surf_mass_darcy_key_, "next_timestep", "state");
-  *next_sur_flux_copy = *next_sur_flux;
+  // Teuchos::RCP<const CompositeVector> next_sur_flux = S_next_->GetFieldData(surf_vol_darcy_key_);
+  // flux_owner = S_next_->GetField(surf_vol_darcy_key_)->owner();
+  // Teuchos::RCP<CompositeVector>  next_sur_flux_copy = S_->GetFieldCopyData(surf_vol_darcy_key_, "next_timestep", flux_owner);
+  // *next_sur_flux_copy = *next_sur_flux;
 
 
-  sub_pks_[master_]->AdvanceStep(t_old, t_new, reinit);
-  sub_pks_[slave_]->AdvanceStep(t_old, t_new, reinit);
+  sub_pks_[subsurf_id_]->AdvanceStep(t_old, t_new, reinit);
+  sub_pks_[surf_id_]->AdvanceStep(t_old, t_new, reinit);
 
 
   const Epetra_MultiVector& surf_tcc = *S_->GetFieldCopyData("surface-total_component_concentration", "subcycling")->ViewComponent("cell",false);  
   const Epetra_MultiVector& tcc = *S_->GetFieldCopyData("total_component_concentration", "subcycling")->ViewComponent("cell",false);
 
-  int num_components = component_names_.size();
+  int num_components = 1;
   std::vector<double> mass_subsurface(num_components, 0.), mass_surface(num_components, 0.);
 
+  
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM){
     for (int i=0; i<num_components; i++){
-      mass_subsurface[i] = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[master_])
+      mass_subsurface[i] = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_])
         ->ComputeSolute(tcc, i);
-      mass_surface[i] = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[slave_])
+      mass_surface[i] = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[surf_id_])
         ->ComputeSolute(surf_tcc, i);
       Teuchos::OSTab tab = vo_->getOSTab();
 
-      *vo_->os() <<component_names_[i]<<" : ";
       *vo_->os() <<"subsurface =" << mass_subsurface[i] << " mol";
       *vo_->os() <<", surface =" << mass_surface[i]<< " mol";
       *vo_->os() <<", ToTaL =" << mass_surface[i]+mass_subsurface[i]<< " mol" <<std::endl;
@@ -186,65 +149,6 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   return fail;
 
 }
-
-
-void CoupledTransport_PK::ComputeVolumeDarcyFlux(const Teuchos::Ptr<State>& S){
-
-  int  nfaces_owned;
-
-  Teuchos::RCP<const Epetra_MultiVector> darcy_flux = 
-    S->GetFieldData(getKey(subsurface_name_,"mass_flux"))->ViewComponent("face");
-
-  Teuchos::RCP<const Epetra_MultiVector> surf_darcy_flux =
-    S->GetFieldData(getKey(surface_name_,"mass_flux"))->ViewComponent("face");
-
-  Key molar_den_key_ = getKey(subsurface_name_, "molar_density_liquid");
-  Teuchos::RCP<const Epetra_MultiVector> molar_density = 
-    S->GetFieldData(molar_den_key_)->ViewComponent("cell", true);
-
-  Key surf_molar_den_key_ = getKey(surface_name_, "molar_density_liquid");
-  Teuchos::RCP<const Epetra_MultiVector> surf_molar_density = 
-    S->GetFieldData(surf_molar_den_key_)->ViewComponent("cell", true);
-
-  Teuchos::RCP<Epetra_MultiVector> vol_darcy = 
-    S->GetFieldData(vol_darcy_key_, passwd_)->ViewComponent("face");
-
-  Teuchos::RCP<Epetra_MultiVector> surf_vol_darcy = 
-    S->GetFieldData(surf_vol_darcy_key_, passwd_)->ViewComponent("face");
-
-
-  // subsurface
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  AmanziMesh::Entity_ID_List cells;
-  
-  for (int f = 0; f < nfaces_owned; f++){
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    double n_liq=0.;
-    for (int c=0; c<cells.size();c++) n_liq += (*molar_density)[0][c];
-    n_liq /= cells.size();
-    if (n_liq > 0) (*vol_darcy)[0][f] = (*darcy_flux)[0][f]/n_liq;
-    else (*vol_darcy)[0][f] = 0.;
-  }
-  S->GetField(vol_darcy_key_, passwd_)->set_initialized();  
-
-  // surface
-  nfaces_owned = surf_mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  for (int f = 0; f < nfaces_owned; f++){
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    double n_liq=0.;
-    for (int c=0; c<cells.size();c++) n_liq += (*surf_molar_density)[0][c];
-    n_liq /= cells.size();
-    if (n_liq > 0) (*surf_vol_darcy)[0][f] = (*surf_darcy_flux)[0][f]/n_liq;
-    else (*surf_vol_darcy)[0][f] = 0.;
-  }
-  S->GetField(surf_vol_darcy_key_, passwd_)->set_initialized();
-    
-
-}
-
-
-
-
 
 
 /* *******************************************************************
