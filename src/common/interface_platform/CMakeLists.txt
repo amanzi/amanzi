@@ -30,6 +30,7 @@ if ( CCSE_FOUND )
 endif()  
 
 include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${XERCES_INCLUDE_DIRS})
 
 #
 # interface library

@@ -57,7 +57,7 @@ else(XERCES_LIBRARY_DIR AND XERCES_INCLUDE_DIR)
     #  (2) XERCES_DIR/<include>
     #  (3) Default CMake paths See cmake --html-help=out.html file for more information.
     #
-    set(xerces_inc_names "dom")
+    set(xerces_inc_names "xercesc/dom")
     #set(xerces_inc_suffixes  "xercesc" )
     if (XERCES_INCLUDE_DIR)
 

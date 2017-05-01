@@ -41,8 +41,6 @@
 #include "state_evaluators_registration.hh"
 #endif
 
-#include "tpl_versions.h"
-
 #include <iostream>
 #include <boost/filesystem.hpp>
 using namespace boost::filesystem;
