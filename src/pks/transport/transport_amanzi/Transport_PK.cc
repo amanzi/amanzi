@@ -1247,9 +1247,9 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
 
   //mass_start /= units_.concentration_factor();
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
-    if (domain_name_ == "surface") std::cout<<"Overland mass start "<<mass_start<<"\n";
-    else std::cout<<"Subsurface mass start "<<mass_start<<"\n";
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME){
+    if (domain_name_ == "surface") *vo_->os() << "Overland mass start "<<mass_start<<"\n";
+    else *vo_->os() << "Subsurface mass start "<<mass_start<<"\n";
   }
 
 
@@ -1366,14 +1366,14 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
       tmp1 = mass_solutes_bc_[i];
       mesh_->get_comm()->SumAll(&tmp1, &mass_solutes_bc_[i], 1);
-      std::cout<<"*****************\n";
-      if (domain_name_ == "surface") std::cout<<"Overland mass BC "<<mass_solutes_bc_[i]<<"\n";
-      else std::cout<<"Subsurface mass BC "<<mass_solutes_bc_[i]<<"\n";
+      *vo_->os()<<"*****************\n";
+      if (domain_name_ == "surface") *vo_->os() << "Overland mass BC "<<mass_solutes_bc_[i]<<"\n";
+      else *vo_->os() << "Subsurface mass BC "<<mass_solutes_bc_[i]<<"\n";
       tmp1 = mass_solutes_source_[i];
       mesh_->get_comm()->SumAll(&tmp1, &mass_solutes_source_[i], 1);
-      if (domain_name_ == "surface") std::cout<<"Overland mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
-      else std::cout<<"Subsurface mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
-      std::cout<<"*****************\n";
+      if (domain_name_ == "surface") *vo_->os() << "Overland mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
+      else *vo_->os() << "Subsurface mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
+      *vo_->os()<<"*****************\n";
     }
   }
 
@@ -1382,8 +1382,8 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   }
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
-    if (domain_name_ == "surface") std::cout<<"Overland mass final "<<mass_final<<"\n";
-    else std::cout<<"Subsurface mass final "<<mass_final<<"\n";
+    if (domain_name_ == "surface") *vo_->os()<<"Overland mass final "<<mass_final<<"\n";
+    else *vo_->os()<<"Subsurface mass final "<<mass_final<<"\n";
   }
 
   //if (abs(mass_final - (mass_start + mass_solutes_bc_[0] + mass_solutes_source_[0]*dt_) )/mass_final > 1e-4) exit(-1);
@@ -1589,11 +1589,10 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
         tcc[imap][c] += dtp * value;
         mass_solutes_source_[i] += value;
 
-        // if (value != 0) 
-        //   if (c==49) {
-        //   std::cout<<"Source name "<<srcs_[m]->name()<<" from Source cell "<<c
-        //                          <<" dt "<<dtp<<"  + "<<dtp * value<<" "<<values[k]<<"\n";
-        //   }
+        //if (value != 0) 
+        // std::cout<<"Source name "<<srcs_[m]->name()<<" from Source cell "<<c
+        //          <<" dt "<<dtp<<"  + "<<dtp * value<<" "<<values[k]<<"\n";
+      
       }
     }
   }
