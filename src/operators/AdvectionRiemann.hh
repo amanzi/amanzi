@@ -54,9 +54,13 @@ class AdvectionRiemann : public Advection {
 
  private:
   void InitAdvection_(Teuchos::ParameterList& plist);
+  void UpdateMatricesCell_(const CompositeVector& u);
+  void UpdateMatricesFace_(const CompositeVector& u);
 
  private:
   std::string flux_, riemann_;
+
+  // AdvectionFunction adv_velocity_;
 };
 
 }  // namespace Operators

@@ -28,7 +28,9 @@ typedef enum { OPERATOR_DIFFUSION_MFD,
                OPERATOR_ELECTROMAGNETICS_MHD} OperatorType;
 
 typedef enum { BERNARDI_RAUGEL,
-               BERNARDI_RAUGEL_P0 } MethodName;
+               MINI,
+               RAVIART_THOMAS,
+               P0 } SpaceNickName;
 
 // Constants in the next block must powers of 2.
 const int OPERATOR_SCHEMA_DOFS_FACE = 1;

@@ -52,7 +52,7 @@ class PDE_Helper {
   int nnodes_owned, nnodes_wghost;
 
   // discretization method
-  MethodName method_;
+  SpaceNickName space_col_, space_row_;
 };
 
 }  // namespace Operators

@@ -291,6 +291,11 @@ if ( BUILD_TESTS )
 
     add_amanzi_test(operators_reconstruction_2pe operators_reconstruction NPROCS 2 KIND unit)
 
+    # remap tests
+    add_amanzi_test(operators_remap operators_remap
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_remap.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 
 

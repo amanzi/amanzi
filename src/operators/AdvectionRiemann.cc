@@ -76,13 +76,15 @@ void AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
   // parameters
   // -- discretization method
   std::string name = plist.get<std::string>("discretization", "none");
-  if (name == "BernardiRaugel" && local_schema_row_ == local_schema_col_) {
-    method_ = BERNARDI_RAUGEL;
-  } else if (name == "BernardiRaugel" && local_schema_row_ != local_schema_col_) {
-    method_ = BERNARDI_RAUGEL_P0;
+  if (name == "BernardiRaugel") {
+    space_col_ = BERNARDI_RAUGEL;
+    space_row_ = P0;
+  } else if (name == "DG order 0: face") {
+    space_col_ = BERNARDI_RAUGEL;
+    space_row_ = P0;
   } else {
     Errors::Message msg;
-    msg << "Name of the discretization method is missing.";
+    msg << "Discretization method is either missing or invalid.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -111,24 +113,31 @@ void AdvectionRiemann::UpdateMatrices(const CompositeVector& u)
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
+  if (local_schema_row_.base() == AmanziMesh::CELL) {
+    UpdateMatricesCell_(u);
+  } else if (local_schema_row_.base() == AmanziMesh::FACE) {
+    UpdateMatricesFace_(u);
+  }
+}
+
+
+/* ******************************************************************
+* A simple first-order transport method.
+* Advection operator is of the form: div (u C), where u is the given
+* velocity field and C is the advected field.
+****************************************************************** */
+void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
+{
+  std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
+
   AmanziMesh::Entity_ID_List nodes;
   int d = mesh_->space_dimension();
 
   WhetStone::MFD3D_Elasticity mfd(mesh_);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    if (method_ == BERNARDI_RAUGEL) {
-      mesh_->cell_get_nodes(c, &nodes);
-      int nnodes = nodes.size();
-      int nfaces = mesh_->cell_get_num_faces(c);
-      int ndofs = d * nnodes + nfaces;
-
-      WhetStone::DenseMatrix Acell(ndofs, ndofs);
-      Acell.PutScalar(0.0);
-
-      matrix[c] = Acell;
-    }
-    else if (method_ == BERNARDI_RAUGEL_P0) { 
+    if (space_col_ == BERNARDI_RAUGEL && space_row_ == P0) { 
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
       int nfaces = mesh_->cell_get_num_faces(c);
@@ -140,6 +149,16 @@ void AdvectionRiemann::UpdateMatrices(const CompositeVector& u)
       matrix[c] = Acell;
     }
   }
+}
+
+
+/* ******************************************************************
+* A simple first-order transport method.
+* Advection operator is of the form: div (u C), where u is the given
+* velocity field and C is the advected field.
+****************************************************************** */
+void AdvectionRiemann::UpdateMatricesFace_(const CompositeVector& u)
+{
 }
 
 

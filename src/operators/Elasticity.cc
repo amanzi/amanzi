@@ -60,7 +60,7 @@ void Elasticity::UpdateMatrices()
   Kc(0, 0) = K_default_;
   
   for (int c = 0; c < ncells_owned; c++) {
-    if (method_ == BERNARDI_RAUGEL) {
+    if (space_col_ == BERNARDI_RAUGEL) {
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
       int nfaces = mesh_->cell_get_num_faces(c);
@@ -139,14 +139,15 @@ void Elasticity::InitElasticity_(Teuchos::ParameterList& plist)
   // discretization method
   std::string name = plist.get<std::string>("discretization", "none");
   if (name == "BernardiRaugel") {
-    method_ = BERNARDI_RAUGEL;
-  } else if (name == "BernardiRaugel" && local_schema_row_ != local_schema_col_) {
-    method_ = BERNARDI_RAUGEL_P0;
+    space_col_ = BERNARDI_RAUGEL;
+  } else if (name == "mini") {
+    space_col_ = MINI;
   } else {
     Errors::Message msg;
     msg << "Name of the discretization method is missing.";
     Exceptions::amanzi_throw(msg);
   }
+  space_row_ = space_col_;
 }
 
 }  // namespace Operators
