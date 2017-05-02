@@ -87,7 +87,6 @@ TEST(REMAP_CONSTANT_2D) {
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh1->cell_centroid(c);
     p1c[0][c] = xc[0] + 2 * xc[1];
-    p1c[0][c] = 1.0;
   }
 
   // remap cell-based field

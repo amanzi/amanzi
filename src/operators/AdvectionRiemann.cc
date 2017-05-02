@@ -185,7 +185,7 @@ void AdvectionRiemann::UpdateMatricesFace_(const CompositeVector& u)
 
       int i = (u > 0.0) ? 1 : 0;  // downwind cell
       Aface(i, i) = u;
-      Aface(1 - i, i) = -u;
+      Aface(i, 1 - i) = -u;
     }
 
     matrix[f] = Aface;
