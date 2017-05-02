@@ -17,6 +17,7 @@
 #include "OperatorDefs.hh"
 #include "Operator_Schema.hh"
 #include "Op_Cell_Schema.hh"
+#include "Op_Face_Schema.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -56,7 +57,11 @@ void AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
     }
 
     global_op_ = Teuchos::rcp(new Operator_Schema(cvs_row, cvs_col, plist, global_schema_row_, global_schema_col_));
-    local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
+    if (local_schema_col_.base() == AmanziMesh::CELL) {
+      local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
+    } else if (local_schema_col_.base() == AmanziMesh::FACE) {
+      local_op_ = Teuchos::rcp(new Op_Face_Schema(global_schema_row_, global_schema_col_, mesh_));
+    }
 
   } else {
     // constructor was given an Operator
@@ -79,9 +84,9 @@ void AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
   if (name == "BernardiRaugel") {
     space_col_ = BERNARDI_RAUGEL;
     space_row_ = P0;
-  } else if (name == "DG order 0: face") {
-    space_col_ = BERNARDI_RAUGEL;
-    space_row_ = P0;
+  } else if (name == "DG order 0: face" || name == "DG order 0: cell") {
+    space_col_ = DG0;
+    space_row_ = DG0;
   } else {
     Errors::Message msg;
     msg << "Discretization method is either missing or invalid.";
@@ -159,6 +164,32 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
 ****************************************************************** */
 void AdvectionRiemann::UpdateMatricesFace_(const CompositeVector& u)
 {
+  std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
+  std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
+
+  int dir;
+  AmanziMesh::Entity_ID_List cells;
+  const Epetra_MultiVector& uf = *u.ViewComponent("face");
+
+  for (int f = 0; f < nfaces_owned; ++f) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    int ndofs = ncells * (local_schema_col_.items())[0].num;
+    WhetStone::DenseMatrix Aface(ndofs, ndofs);
+    Aface.PutScalar(0.0);
+
+    if (ncells == 2) {
+      mesh_->face_normal(f, false, cells[0], &dir);
+      double u = uf[0][f] * dir * mesh_->face_area(f);
+
+      int i = (u > 0.0) ? 1 : 0;  // downwind cell
+      Aface(i, i) = u;
+      Aface(1 - i, i) = -u;
+    }
+
+    matrix[f] = Aface;
+  }
 }
 
 

@@ -49,6 +49,8 @@ class Operator_Schema : public Operator {
   // -- visit methods for Apply
   virtual int ApplyMatrixFreeOp(const Op_Cell_Schema& op,
           const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Face_Schema& op,
+          const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_Node_Node& op,
       const CompositeVector& X, CompositeVector& Y) const override;
 
@@ -60,6 +62,9 @@ class Operator_Schema : public Operator {
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
+  virtual void SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
+          const SuperMap& map, GraphFE& graph,
+          int my_block_row, int my_block_col) const;
   virtual void SymbolicAssembleMatrixOp(const Op_Node_Node& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const override;
@@ -68,14 +73,22 @@ class Operator_Schema : public Operator {
   virtual void AssembleMatrixOp(const Op_Cell_Schema& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
+  virtual void AssembleMatrixOp(const Op_Face_Schema& op,
+          const SuperMap& map, MatrixFE& mat,
+          int my_block_row, int my_block_col) const;
   virtual void AssembleMatrixOp(const Op_Node_Node& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
 
   // -- local <-> global communications
-  virtual void ExtractVectorOp(int c, const Schema& schema,
+  virtual void ExtractVectorCellOp(int c, const Schema& schema,
           WhetStone::DenseVector& v, const CompositeVector& X) const;
-  virtual void AssembleVectorOp(int c, const Schema& schema,
+  virtual void AssembleVectorCellOp(int c, const Schema& schema,
+          const WhetStone::DenseVector& v, CompositeVector& X) const;
+
+  virtual void ExtractVectorFaceOp(int f, const Schema& schema,
+          WhetStone::DenseVector& v, const CompositeVector& X) const;
+  virtual void AssembleVectorFaceOp(int f, const Schema& schema,
           const WhetStone::DenseVector& v, CompositeVector& X) const;
 
   // debugging methods

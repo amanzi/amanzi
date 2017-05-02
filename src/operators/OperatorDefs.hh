@@ -30,7 +30,8 @@ typedef enum { OPERATOR_DIFFUSION_MFD,
 typedef enum { BERNARDI_RAUGEL,
                MINI,
                RAVIART_THOMAS,
-               P0 } SpaceNickName;
+               P0,
+               DG0 } SpaceNickName;
 
 // Constants in the next block must powers of 2.
 const int OPERATOR_SCHEMA_DOFS_FACE = 1;

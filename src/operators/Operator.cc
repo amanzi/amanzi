@@ -33,12 +33,13 @@
 #include "Op_Cell_FaceCell.hh"
 #include "Op_Cell_Face.hh"
 #include "Op_Cell_Node.hh"
+#include "Op_Cell_Schema.hh"
 #include "Op_Edge_Edge.hh"
 #include "Op_Face_Cell.hh"
+#include "Op_Face_Schema.hh"
 #include "Op_Node_Node.hh"
 #include "Op_SurfaceCell_SurfaceCell.hh"
 #include "Op_SurfaceFace_SurfaceCell.hh"
-#include "Op_Cell_Schema.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "OperatorUtils.hh"
@@ -398,8 +399,7 @@ void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
 * Note that derived classes may reimplement this with a volume term.
 ****************************************************************** */
 void Operator::UpdateRHS(const CompositeVector& source, bool volume_included) {
-  for (CompositeVector::name_iterator it = rhs_->begin();
-       it != rhs_->end(); ++it) {
+  for (auto it = rhs_->begin(); it != rhs_->end(); ++it) {
     if (source.HasComponent(*it)) {
       rhs_->ViewComponent(*it, false)->Update(1.0, *source.ViewComponent(*it, false), 1.0);
     }
@@ -613,6 +613,12 @@ int Operator::ApplyMatrixFreeOp(const Op_Face_Cell& op,
 }
 
 
+int Operator::ApplyMatrixFreeOp(const Op_Face_Schema& op,
+                                const CompositeVector& X, CompositeVector& Y) const
+{
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
 /* ******************************************************************
 * Visit methods for Apply: Edges
 ****************************************************************** */
@@ -655,6 +661,13 @@ int Operator::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
 * Visit methods for ApplyTranspose: Cell
 ****************************************************************** */
 int Operator::ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
+                                         const CompositeVector& X, CompositeVector& Y) const
+{
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+int Operator::ApplyTransposeMatrixFreeOp(const Op_Face_Schema& op,
                                          const CompositeVector& X, CompositeVector& Y) const
 {
   return SchemaMismatch_(op.schema_string, schema_string_);
@@ -710,6 +723,13 @@ void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
 * Visit methods for symbolic assemble: Face.
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
+                                        const SuperMap& map, GraphFE& graph,
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+void Operator::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
                                         const SuperMap& map, GraphFE& graph,
                                         int my_block_row, int my_block_col) const {
   SchemaMismatch_(op.schema_string, schema_string_);
@@ -815,6 +835,13 @@ void Operator::AssembleMatrixOp(const Op_Cell_Schema& op,
 * Visit methods for assemble: Face.
 ****************************************************************** */
 void Operator::AssembleMatrixOp(const Op_Face_Cell& op,
+                                const SuperMap& map, MatrixFE& mat,
+                                int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+void Operator::AssembleMatrixOp(const Op_Face_Schema& op,
                                 const SuperMap& map, MatrixFE& mat,
                                 int my_block_row, int my_block_col) const {
   SchemaMismatch_(op.schema_string, schema_string_);
