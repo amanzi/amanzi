@@ -585,6 +585,6 @@ TEST(RESISTIVE_MHD3D_RELAX) {
 
 TEST(RESISTIVE_MHD3D_CONVERGENCE) {
   // ResistiveMHD3D<AnalyticElectromagnetics05>(0.01, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
-  ResistiveMHD3D<AnalyticElectromagnetics05>(0.01, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/kershaw08.exo");
+  ResistiveMHD3D<AnalyticElectromagnetics05>(0.01 * 10, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/kershaw32.exo");
 }
 
