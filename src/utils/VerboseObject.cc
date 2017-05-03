@@ -201,4 +201,8 @@ void VerboseObject::WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::
   }
 }
 
+Teuchos::EVerbosityLevel VerboseObject::global_default_level;
+bool VerboseObject::hide_line_prefix;
+unsigned int VerboseObject::line_prefix_size;
+ 
 }  // namespace Amanzi
