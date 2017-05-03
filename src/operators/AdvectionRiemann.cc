@@ -184,8 +184,8 @@ void AdvectionRiemann::UpdateMatricesFace_(const CompositeVector& u)
       double u = uf[0][f] * dir * mesh_->face_area(f);
 
       int i = (u > 0.0) ? 1 : 0;  // downwind cell
-      Aface(i, i) = u;
-      Aface(i, 1 - i) = -u;
+      Aface(i, i) = -u;
+      Aface(i, 1 - i) = u;
     }
 
     matrix[f] = Aface;

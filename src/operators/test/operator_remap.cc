@@ -51,13 +51,15 @@ TEST(REMAP_CONSTANT_2D) {
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
 
-  Teuchos::RCP<const Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, 7, 7);
+  int nx(32), ny(32);
+  Teuchos::RCP<const Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
 
+  int ncells_owned = mesh1->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int ncells_wghost = mesh1->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   int nfaces_wghost = mesh1->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   // create deformed mesh
-  Teuchos::RCP<Mesh> mesh2 = meshfactory(0.0, 0.0, 1.0, 1.0, 7, 7);
+  Teuchos::RCP<Mesh> mesh2 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
 
   int nnodes_owned = mesh2->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
 
@@ -69,8 +71,8 @@ TEST(REMAP_CONSTANT_2D) {
     mesh2->node_get_coordinates(v, &xv);
     if (!(fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
           fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6)) {
-      xv[0] += 0.02;
-      xv[1] += 0.02;
+      xv[0] += 0.02 / 4;
+      xv[1] += 0.02 / 4;
       nodeids.push_back(v);
       new_positions.push_back(xv);
     }
@@ -94,6 +96,7 @@ TEST(REMAP_CONSTANT_2D) {
   CompositeVectorSpace cvs2;
   cvs2.SetMesh(mesh2)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
   CompositeVector p2(cvs2);
+  Epetra_MultiVector& p2c = *p2.ViewComponent("cell", true);
 
   // -- create primary advection operator
   Teuchos::ParameterList plist;
@@ -124,7 +127,7 @@ TEST(REMAP_CONSTANT_2D) {
   Teuchos::RCP<AdvectionRiemann> op_adv = Teuchos::rcp(new AdvectionRiemann(plist, global_op));
 
   // -- create accumulation operator
-  Teuchos::RCP<Accumulation> op_acc = Teuchos::rcp(new Accumulation(AmanziMesh::CELL, mesh2));
+  Teuchos::RCP<Accumulation> op_acc = Teuchos::rcp(new Accumulation(AmanziMesh::CELL, mesh1));
   auto global_acc = op_acc->global_operator();
 
   // -- calculate flux on mesh faces
@@ -161,6 +164,19 @@ TEST(REMAP_CONSTANT_2D) {
   global_acc->ApplyInverse(g, p2);
 
   // calculate error
+  double pl2_err(0.0), pinf_err(0.0);
+  for (int c = 0; c < ncells_owned; ++c) {
+    const AmanziGeometry::Point& xc = mesh2->cell_centroid(c);
+    double tmp = (xc[0] + 2 * xc[1]) - p2c[0][c];
+
+    pinf_err = std::max(pinf_err, fabs(tmp));
+    pl2_err += tmp * tmp * mesh2->cell_volume(c);
+  }
+  pl2_err = std::pow(pl2_err, 0.5);
+
+  if (MyPID == 0) {
+    printf("L2(p)=%12.8g  Inf(p)=%12.8g\n", pl2_err, pinf_err);
+  }
 
   // visualization
   if (MyPID == 0) {
