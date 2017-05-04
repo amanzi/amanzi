@@ -463,13 +463,8 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D) {
   if (MyPID == 0) std::cout << "\nTest: Accuracy on a smooth field in 2D." << std::endl;
 
   // create rectangular mesh
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
 
   for (int n = 14; n < 100; n*=2) { 
     Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, n, n - 1);
@@ -591,13 +586,8 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_3D) {
   if (MyPID == 0) std::cout << "\nTest: Accuracy on a smooth field in 3D" << std::endl;
 
   // create rectangular mesh
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
 
   for (int n = 14; n < 50; n*=2) { 
     Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n - 2, n - 1);

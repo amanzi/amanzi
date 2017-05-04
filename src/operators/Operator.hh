@@ -322,10 +322,15 @@ class Operator {
           int my_block_row, int my_block_col) const;
 
   // local <-> global communications
-  virtual void ExtractVectorOp(int c, const Schema& schema,
-          WhetStone::DenseVector& v, const CompositeVector& X) const { ASSERT(false); }
-  virtual void AssembleVectorOp(int c, const Schema& schema,
-          const WhetStone::DenseVector& v, CompositeVector& X) const { ASSERT(false); };
+  virtual void ExtractVectorCellOp(int c, const Schema& schema,
+          WhetStone::DenseVector& v, const CompositeVector& X) const;
+  virtual void AssembleVectorCellOp(int c, const Schema& schema,
+          const WhetStone::DenseVector& v, CompositeVector& X) const;
+
+  virtual void ExtractVectorFaceOp(int c, const Schema& schema,
+          WhetStone::DenseVector& v, const CompositeVector& X) const;
+  virtual void AssembleVectorFaceOp(int c, const Schema& schema,
+          const WhetStone::DenseVector& v, CompositeVector& X) const;
 
   // diagnostics
   std::string PrintDiagnostics() const;

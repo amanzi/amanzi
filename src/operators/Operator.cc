@@ -897,6 +897,41 @@ void Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
   Exceptions::amanzi_throw(message);
 }
 
+
+/* ******************************************************************
+* Local assemble routines (for new schema)
+****************************************************************** */
+void Operator::ExtractVectorCellOp(int c, const Schema& schema,
+                                   WhetStone::DenseVector& v, const CompositeVector& X) const
+{
+  Errors::Message msg("Extracton fo local cell-based vector is missing for this operator");
+  Exceptions::amanzi_throw(msg);
+}
+
+
+void Operator::AssembleVectorCellOp(int c, const Schema& schema,
+                                    const WhetStone::DenseVector& v, CompositeVector& X) const
+{
+  Errors::Message msg("Extracton fo local cell-based vector is missing for this operator");
+  Exceptions::amanzi_throw(msg);
+}
+
+
+void Operator::ExtractVectorFaceOp(int c, const Schema& schema,
+                                   WhetStone::DenseVector& v, const CompositeVector& X) const
+{
+  Errors::Message msg("Extracton fo local cell-based vector is missing for this operator");
+  Exceptions::amanzi_throw(msg);
+}
+
+
+void Operator::AssembleVectorFaceOp(int c, const Schema& schema,
+                                    const WhetStone::DenseVector& v, CompositeVector& X) const
+{
+  Errors::Message msg("Extracton fo local cell-based vector is missing for this operator");
+  Exceptions::amanzi_throw(msg);
+}
+
 }  // namespace Operators
 }  // namespace Amanzi
 

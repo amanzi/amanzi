@@ -122,7 +122,7 @@ void PDE_Helper::ApplyBCs_Face(const Teuchos::Ptr<BCs>& bcf, Teuchos::RCP<Op> op
               Acell(noff, noff) = 1.0;
             }
 
-            global_op_->AssembleVectorOp(c, schema_row, rhs_loc, rhs);
+            global_op_->AssembleVectorCellOp(c, schema_row, rhs_loc, rhs);
           }
         }
       }
@@ -228,7 +228,7 @@ void PDE_Helper::ApplyBCs_Node(const Teuchos::Ptr<BCs>& bcv, Teuchos::RCP<Op> op
                 Acell(noff, noff) = 1.0 / cells.size();
               }
 
-              global_op_->AssembleVectorOp(c, schema_row, rhs_loc, rhs);
+              global_op_->AssembleVectorCellOp(c, schema_row, rhs_loc, rhs);
             }
           }
         }
