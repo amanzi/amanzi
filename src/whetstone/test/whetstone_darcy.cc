@@ -36,12 +36,8 @@ TEST(DARCY_MASS_2D) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
  
   MFD3D_Diffusion mfd(mesh);
@@ -259,12 +255,8 @@ TEST(DARCY_FULL_TENSOR_2D) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory factory(comm);
-  factory.preference(pref);
+  factory.preference(FrameworkPreference({MSTK}));
   // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1); 
   Teuchos::RCP<Mesh> mesh = factory("test/two_cell2.exo"); 
  
@@ -453,12 +445,8 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
   RCP<Mesh> mesh = meshfactory("test/one_cell2.exo"); 
  
@@ -534,12 +522,8 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
   RCP<Mesh> mesh = meshfactory("test/one_cell2.exo", Teuchos::null, true, true); 
  
@@ -609,12 +593,8 @@ TEST(DARCY_STIFFNESS_3D) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
   // RCP<Mesh> mesh = meshfactory("test/one_cell.exo"); 
   RCP<Mesh> mesh = meshfactory("test/dodecahedron.exo"); 
@@ -683,12 +663,8 @@ TEST(RECOVER_GRADIENT_MIXED) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   RCP<Mesh> mesh = meshfactory("test/one_cell.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
@@ -737,12 +713,8 @@ TEST(RECOVER_GRADIENT_NODAL) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   RCP<Mesh> mesh = meshfactory("test/one_cell.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
@@ -790,12 +762,8 @@ TEST(DARCY_INVERSE_MASS_2D) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory factory(comm);
-  factory.preference(pref);
+  factory.preference(FrameworkPreference({MSTK}));
   // RCP<Mesh> mesh = factory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
   // RCP<Mesh> mesh = factory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3); 
   // RCP<Mesh> mesh = factory("test/one_cell3.exo"); 

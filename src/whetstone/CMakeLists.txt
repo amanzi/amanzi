@@ -107,6 +107,13 @@ if ( BUILD_TESTS )
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_nlfv.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: matrices for DG methods
+    add_amanzi_test(whetstone_dg whetstone_dg
+                    KIND unit
+                    SOURCE test/Main.cc test/whetstone_dg.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
 endif()
 
 
