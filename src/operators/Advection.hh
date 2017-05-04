@@ -54,7 +54,6 @@ class Advection : public BCsList, public PDE_Helper {
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
 
  protected:
-  // operators and schemas
   Schema global_schema_row_, global_schema_col_;
   Schema local_schema_col_, local_schema_row_;
 };

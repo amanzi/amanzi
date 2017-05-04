@@ -8,35 +8,30 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Riemann flux-based advection operator for a scalar field.
-  The family will include DG and CG methods for linear and nonlinear
-  fluxes. We shall start with the existing node2-face1 schema.
+  Reaction operator. 
 */
 
-#ifndef AMANZI_OPERATOR_ADVECTION_RIEMANN_HH_
-#define AMANZI_OPERATOR_ADVECTION_RIEMANN_HH_
+#ifndef AMANZI_OPERATOR_REACTION_HH_
+#define AMANZI_OPERATOR_REACTION_HH_
 
 #include <string>
 
-#include "Advection.hh"
+#include "BCsList.hh"
+#include "PDE_Helper.hh"
+#include "Schema.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class AdvectionRiemann : public Advection {
+class Reaction : public BCsList, public PDE_Helper {
  public:
-  AdvectionRiemann(Teuchos::ParameterList& plist,
-                   Teuchos::RCP<Operator> global_op) :
-      Advection(plist, global_op)
-  {
-    InitAdvection_(plist);
+  Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op) {
+    InitReaction_(plist);
   }
 
-  AdvectionRiemann(Teuchos::ParameterList& plist,
-                   Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      Advection(plist, mesh)
-  {
-    InitAdvection_(plist);
+  Reaction(Teuchos::ParameterList& plist,
+           Teuchos::RCP<const AmanziMesh::Mesh> mesh) : PDE_Helper(mesh) {
+    InitReaction_(plist);
   }
 
   // required members 
@@ -52,13 +47,16 @@ class AdvectionRiemann : public Advection {
   // boundary conditions
   void ApplyBCs(bool primary, bool eliminate);
 
- private:
-  void InitAdvection_(Teuchos::ParameterList& plist);
-  void UpdateMatricesCell_(const CompositeVector& u);
-  void UpdateMatricesFace_(const CompositeVector& u);
+  // access
+  Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
+  Teuchos::RCP<Operator> global_operator() { return global_op_; }
 
  private:
-  std::string flux_, riemann_;
+  void InitReaction_(Teuchos::ParameterList& plist);
+
+ private:
+  Schema global_schema_col_, global_schema_row_;
+  Schema local_schema_col_, local_schema_row_;
 };
 
 }  // namespace Operators

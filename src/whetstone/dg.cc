@@ -28,12 +28,14 @@ int DG::TaylorMassMatrix(int c, int order, DenseMatrix& M)
 {
   // calculate monomials
   int n(1), m((2 * order + 1) * (2 * order + 2) / 2);
+  std::vector<int> shift(1, 0);
   DenseVector monomials(m);
 
   monomials.PutScalar(0.0);
   monomials(0) = mesh_->cell_volume(c);
 
   for (int k = 1; k <= 2 * order; ++k) {
+    shift.resize(n, k - 1);
     IntegrateMonomialsCell_(c, k, &(monomials(n)));
     n += k + 1;
   }
@@ -43,7 +45,8 @@ int DG::TaylorMassMatrix(int c, int order, DenseMatrix& M)
 
   for (int k = 0; k < nrows; ++k) {
     for (int l = k; l < nrows; ++l) {
-      M(k, l) = M(l, k) = monomials(k + l);
+      int i = shift[k] * shift[l];
+      M(k, l) = M(l, k) = monomials(k + l + i);
     }
   }
 

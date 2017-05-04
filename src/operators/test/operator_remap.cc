@@ -27,6 +27,7 @@
 #include "Accumulation.hh"
 #include "AdvectionRiemann.hh"
 #include "OperatorDefs.hh"
+#include "Reaction.hh"
 
 
 /* *****************************************************************
@@ -51,7 +52,7 @@ TEST(REMAP_CONSTANT_2D) {
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
 
-  int nx(32), ny(32);
+  int nx(8), ny(8);
   Teuchos::RCP<const Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
 
   int ncells_owned = mesh1->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -129,6 +130,21 @@ TEST(REMAP_CONSTANT_2D) {
   // -- create accumulation operator
   Teuchos::RCP<Accumulation> op_acc = Teuchos::rcp(new Accumulation(AmanziMesh::CELL, mesh1));
   auto global_acc = op_acc->global_operator();
+
+  // -- new way to create accumulation operator
+  plist.sublist("schema")
+      .set<std::string>("base", "cell")
+      .set<Teuchos::Array<std::string> >("location", std::vector<std::string>({"cell"}))
+      .set<Teuchos::Array<std::string> >("type", std::vector<std::string>({"scalar"}))
+      .set<Teuchos::Array<int> >("number", std::vector<int>({3}));
+
+  Teuchos::RCP<Reaction> op_reac = Teuchos::rcp(new Reaction(plist, mesh1));
+  auto global_reac = op_reac->global_operator();
+
+  op_reac->UpdateMatrices(p1);
+  global_reac->SymbolicAssembleMatrix();
+  global_reac->AssembleMatrix();
+// std::cout << *global_reac()->A() << std::endl;
 
   // -- calculate flux on mesh faces
   CompositeVectorSpace cvs;

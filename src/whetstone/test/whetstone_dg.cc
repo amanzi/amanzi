@@ -50,6 +50,15 @@ TEST(DG_MASS_MATRIX) {
 
     dg.TaylorMassMatrix(0, k, M);
     std::cout << M << std::endl;
+
+    CHECK_CLOSE(M(0, 0), 1.0, 1e-12);
+    if (k > 0) {
+      CHECK_CLOSE(M(1, 1), 1.0 / 12, 1e-12);
+    }
+    if (k > 1) {
+      CHECK_CLOSE(M(3, 3), 1.0 / 80, 1e-12);
+      CHECK_CLOSE(M(4, 4), 1.0 / 144, 1e-12);
+    }
   }
 }
 

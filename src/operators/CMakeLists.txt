@@ -92,6 +92,7 @@ set(operators_inc_files
     Electromagnetics.hh
     ElectromagneticsMHD.hh
     ElectromagneticsMHD_TM.hh
+    Reaction.hh
     PDE_Helper.hh
     Schema.hh
     TreeOperator.hh
@@ -127,6 +128,7 @@ add_amanzi_library(operators
                           Electromagnetics.cc ElectromagneticsMHD.cc ElectromagneticsMHD_TM.cc
                           Accumulation.cc
                           AdvectionUpwind.cc AdvectionRiemann.cc
+                          Reaction.cc
                           Schema.cc
                           TreeOperator.cc
                           ReconstructionCell.cc

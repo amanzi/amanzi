@@ -43,12 +43,8 @@ TEST(MASS_MATRIX_2D) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory factory(comm);
-  factory.preference(pref);
+  factory.preference(FrameworkPreference({MSTK}));
 
   bool request_faces(true), request_edges(true);
   // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1,NULL, true, true); 
@@ -135,12 +131,8 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
 
   bool request_faces(true), request_edges(true);
 
@@ -244,12 +236,8 @@ TEST(STIFFNESS_MATRIX_2D) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory factory(comm);
-  factory.preference(pref);
+  factory.preference(FrameworkPreference({MSTK}));
 
   bool request_faces(true), request_edges(true);
   // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1, Teuchos::null, true, true); 
@@ -333,12 +321,8 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
 
   bool request_faces(true), request_edges(true);
 

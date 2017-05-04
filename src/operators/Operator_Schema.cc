@@ -257,6 +257,17 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
           }
         }
       }
+
+      if (it->kind == AmanziMesh::CELL) {
+        for (int k = 0; k < it->num; ++k) {
+          const std::vector<int>& col_inds = map.GhostIndices("cell", k);
+          const std::vector<int>& row_inds = map.GhostIndices("cell", k);
+
+          lid_c[m] = col_inds[c];
+          lid_r[m] = row_inds[c];
+          m++;
+        }
+      }
     }
 
     ierr |= graph.InsertMyIndices(m, lid_r, m, lid_c);
@@ -373,6 +384,17 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
             lid_r[m] = row_inds[faces[n]];
             m++;
           }
+        }
+      }
+
+      if (it->kind == AmanziMesh::CELL) {
+        for (int k = 0; k < it->num; ++k) {
+          const std::vector<int>& col_inds = map.GhostIndices("cell", k);
+          const std::vector<int>& row_inds = map.GhostIndices("cell", k);
+
+          lid_c[m] = col_inds[c];
+          lid_r[m] = row_inds[c];
+          m++;
         }
       }
     }

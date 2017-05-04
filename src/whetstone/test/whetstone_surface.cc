@@ -39,12 +39,8 @@ TEST(DARCY_SURFACE) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   RCP<Mesh> mesh = meshfactory("test/surface.exo"); 
  
   MFD3D_Diffusion mfd(mesh);

@@ -115,9 +115,6 @@ void AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void AdvectionRiemann::UpdateMatrices(const CompositeVector& u)
 {
-  std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
-
   if (local_schema_row_.base() == AmanziMesh::CELL) {
     UpdateMatricesCell_(u);
   } else if (local_schema_row_.base() == AmanziMesh::FACE) {
