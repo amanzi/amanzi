@@ -3642,24 +3642,33 @@ Schur complement.
 Advection operator
 ..................
 
-An advection operator has different domain and range and therefore requires two schemas.
+An advection operator may have different domain and range and therefore requires two schemas.
 The structure of the schema is described in the previous section.
 
 * `"OPERATOR_NAME`" [list] a PK specific name for the advection operator.
 
-  * `"discretization`" [string] defines a discretization method. The only available option is `"upwind`".
+  * `"discretization`" [string] defines a discretization method. The available options 
+    are `"DG order 0`", `"DG order 1`".
+
+  * `"riemann problem`" [string] defines a method for calculating Riemann flux. 
+    are `"upwind`", `"downwind`", `"average`".
+
+  * `"flux formula`" [string] defines type of the flux. The available options 
+    are `"NavierStokes`", `nd "remap`".
 
   * `"reconstruction order`" [int] defines accuracy of this discrete operator.
 
   * `"schema domain`" [list] defines a discretization schema for the operator domain.
 
-  * `"schema range`" [list] defines a discretization schema for the operator range
+  * `"schema range`" [list] defines a discretization schema for the operator range. 
 
 .. code-block:: xml
 
   <ParameterList name="OPERATOR_NAME">
-    <Parameter name="discretization" type="string" value="upwind"/>
+    <Parameter name="discretization" type="string" value="DG order 0"/>
     <Parameter name="reconstruction order" type="int" value="0"/>
+    <Parameter name="riemann problem" type="string" value="average"/>
+    <Parameter name="flux formula" type="string" value="NavierStokes"/>
     <ParameterList name="schema domain">
       <Parameter name="location" type="Array(string)" value="{node, face}"/>
       <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
@@ -3673,11 +3682,40 @@ The structure of the schema is described in the previous section.
   </ParameterList>
 
 
+Reaction operator
+.................
+
+A reaction operator may represent either reaction of identity operator.
+It is symmetric so far and requires one schema.
+The structure of the schema is described in the previous section.
+
+* `"OPERATOR_NAME`" [list] a PK specific name for the advection operator.
+
+  * `"discretization`" [string] defines a discretization method. The available 
+    options are `"DG order 0`", `"DG order 1`".
+
+  * `"schema`" [list] defines a discretization schema for the operator domain.
+
+.. code-block:: xml
+
+  <ParameterList name="OPERATOR_NAME">
+    <Parameter name="discretization" type="string" value="DG order 1"/>
+    <ParameterList name="schema">
+      <Parameter name="location" type="Array(string)" value="{cell}"/>
+      <Parameter name="type" type="Array(string)" value="{scalar}"/>
+      <Parameter name="number" type="Array(int)" value="{3}"/>
+    </ParameterList>
+  </ParameterList>
+
+
 Elasticity operator
 ...................
 
 Elasticity operator is used for describing soil deformation or fluid flow (Stokes 
 and Navier-Stokes).
+
+* `"discretization`" [string] defines a discretization method. The available
+  options are `"BernardiRaugel`".
 
 * `"schema`" [list] defines a discretization schema.
 
@@ -3691,6 +3729,7 @@ and Navier-Stokes).
 .. code-block:: xml
 
     <ParameterList name="elasticity operator">
+      <Parameter name="discretization" type="string" value="BernardiRaugel"/>
       <ParameterList name="schema">
         <Parameter name="location" type="Array(string)" value="{node, face}"/>
         <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>

@@ -44,7 +44,7 @@ TEST(DG_MASS_MATRIX) {
  
   DG dg(mesh);
 
-  for (int k = 0; k < 3; k++) {
+  for (int k = 0; k < 4; k++) {
     int nk = (k + 1) * (k + 2) / 2;
     DenseMatrix M(nk, nk);
 
@@ -59,6 +59,38 @@ TEST(DG_MASS_MATRIX) {
       CHECK_CLOSE(M(3, 3), 1.0 / 80, 1e-12);
       CHECK_CLOSE(M(4, 4), 1.0 / 144, 1e-12);
     }
+  }
+}
+
+
+/* ****************************************************************
+* Test of DG advection matrices
+**************************************************************** */
+TEST(DG_ADVECTION_MATRIX) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "Test: DG advection matrices" << std::endl;
+#ifdef HAVE_MPI
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm *comm = new Epetra_SerialComm();
+#endif
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
+ 
+  DG dg(mesh);
+
+  AmanziGeometry::Point u(1.0, 2.0);
+  for (int k = 0; k < 4; k++) {
+    int nk = (k + 1) * (k + 2) / 2;
+    DenseMatrix A(nk, nk);
+
+    dg.TaylorAdvectionMatrix(0, k, u, A);
+    std::cout << A << std::endl;
   }
 }
 

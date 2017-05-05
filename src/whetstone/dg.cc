@@ -27,7 +27,7 @@ namespace WhetStone {
 int DG::TaylorMassMatrix(int c, int order, DenseMatrix& M)
 {
   // calculate monomials
-  int n(1), m((2 * order + 1) * (2 * order + 2) / 2);
+  int n(1), m((2 * order + 1) * (order + 1));
   std::vector<int> shift(1, 0);
   DenseVector monomials(m);
 
@@ -47,6 +47,54 @@ int DG::TaylorMassMatrix(int c, int order, DenseMatrix& M)
     for (int l = k; l < nrows; ++l) {
       int i = shift[k] * shift[l];
       M(k, l) = M(l, k) = monomials(k + l + i);
+    }
+  }
+
+  return 0;
+}
+
+
+/* ******************************************************************
+* Advection matrix for Taylor basis and constant velocity u.
+****************************************************************** */
+int DG::TaylorAdvectionMatrix(
+    int c, int order, AmanziGeometry::Point& u, DenseMatrix& A)
+{
+  // calculate monomials
+  int n(1), m((2 * order + 1) * order);
+  std::vector<int> pk(1, 0); 
+  DenseVector monomials(m);
+
+  monomials.PutScalar(0.0);
+  monomials(0) = mesh_->cell_volume(c);
+
+  for (int k = 1; k < 2 * order; ++k) {
+    pk.push_back(n);
+    IntegrateMonomialsCell_(c, k, &(monomials(n)));
+    n += k + 1;
+  }
+   
+  // copy integrals to mass matrix
+  int k1, l1, mm, nrows = A.NumRows();
+  double ux(u[0]), uy(u[1]);
+
+
+  for (int i = 0; i <= order; ++i) {
+    for (int k = 0; k < i + 1; ++ k) {
+      k1 = pk[i] + k;
+      A(k1, 0) = 0.0;
+
+      for (int j = 1; j <= order; ++j) {
+        mm = pk[i + j - 1] + k;
+        l1 = pk[j];
+        for (int l = 0; l < j + 1; ++l) {
+          A(k1, l1 + l) = ux * monomials(mm + l) * (j - l);
+        }
+
+        for (int l = 1; l < j + 1; ++l) {
+          A(k1, l1 + l) += uy * monomials(mm + l - 1) * l;
+        }
+      }
     }
   }
 

@@ -64,10 +64,10 @@ void Reaction::InitReaction_(Teuchos::ParameterList& plist)
 
   // parameters
   std::string name = plist.get<std::string>("discretization", "none");
-  if (name == "DG order 0: cell") {
+  if (name == "DG order 0") {
     space_col_ = DG0;
     space_row_ = DG0;
-  } else if (name == "DG order 1: cell") {
+  } else if (name == "DG order 1") {
     space_col_ = DG1;
     space_row_ = DG1;
   } else {

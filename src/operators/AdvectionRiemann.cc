@@ -11,6 +11,7 @@
 
 #include <vector>
 
+#include "dg.hh"
 #include "mfd3d_elasticity.hh"
 
 #include "AdvectionRiemann.hh"
@@ -84,9 +85,12 @@ void AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
   if (name == "BernardiRaugel") {
     space_col_ = BERNARDI_RAUGEL;
     space_row_ = P0;
-  } else if (name == "DG order 0: face" || name == "DG order 0: cell") {
+  } else if (name == "DG order 0") {
     space_col_ = DG0;
     space_row_ = DG0;
+  } else if (name == "DG order 1") {
+    space_col_ = DG1;
+    space_row_ = DG1;
   } else {
     Errors::Message msg;
     msg << "Discretization method is either missing or invalid.";
@@ -94,8 +98,8 @@ void AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
   }
 
   // -- fluxes
-  flux_ = plist.get<std::string>("flux formula", "velocity");
-  riemann_ = plist.get<std::string>("riemann problem", "continuous");
+  flux_ = plist.get<std::string>("flux formula", "remap");
+  riemann_ = plist.get<std::string>("riemann problem", "average");
   
   // mesh info
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -135,11 +139,20 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
 
   AmanziMesh::Entity_ID_List nodes;
   int d = mesh_->space_dimension();
-
-  WhetStone::MFD3D_Elasticity mfd(mesh_);
+  AmanziGeometry::Point v(1.0, 1.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    if (space_col_ == BERNARDI_RAUGEL && space_row_ == P0) { 
+    if (space_col_ == DG0 && space_row_ == DG0) {
+      WhetStone::DG dg(mesh_);
+
+      WhetStone::DenseMatrix Acell(1, 1);
+      dg.TaylorAdvectionMatrix(c, 0, v, Acell);
+
+      matrix[c] = Acell;
+    } 
+    else if (space_col_ == BERNARDI_RAUGEL && space_row_ == P0) { 
+      WhetStone::MFD3D_Elasticity mfd(mesh_);
+
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
       int nfaces = mesh_->cell_get_num_faces(c);

@@ -48,6 +48,7 @@ class DG {
   ~DG() {};
 
   int TaylorMassMatrix(int c, int order, DenseMatrix& M);
+  int TaylorAdvectionMatrix(int c, int order, AmanziGeometry::Point& u, DenseMatrix& A);
 
  private:
   void IntegrateMonomialsCell_(int c, int k, double* monomials);

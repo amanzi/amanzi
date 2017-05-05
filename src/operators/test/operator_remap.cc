@@ -101,7 +101,7 @@ TEST(REMAP_CONSTANT_2D) {
 
   // -- create primary advection operator
   Teuchos::ParameterList plist;
-  plist.set<std::string>("discretization", "DG order 0: face");
+  plist.set<std::string>("discretization", "DG order 0");
 
   plist.sublist("schema domain")
       .set<std::string>("base", "face")
@@ -115,7 +115,7 @@ TEST(REMAP_CONSTANT_2D) {
   auto global_op = op->global_operator();
 
   // -- create secondary advection operator (cell-based)
-  plist.set<std::string>("discretization", "DG order 0: cell");
+  plist.set<std::string>("discretization", "DG order 0");
 
   plist.sublist("schema domain")
       .set<std::string>("base", "cell")
@@ -144,7 +144,6 @@ TEST(REMAP_CONSTANT_2D) {
   op_reac->UpdateMatrices(p1);
   global_reac->SymbolicAssembleMatrix();
   global_reac->AssembleMatrix();
-// std::cout << *global_reac()->A() << std::endl;
 
   // -- calculate flux on mesh faces
   CompositeVectorSpace cvs;
