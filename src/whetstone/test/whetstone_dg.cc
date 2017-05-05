@@ -44,7 +44,7 @@ TEST(DG_MASS_MATRIX) {
  
   DG dg(mesh);
 
-  for (int k = 0; k < 4; k++) {
+  for (int k = 0; k < 3; k++) {
     int nk = (k + 1) * (k + 2) / 2;
     DenseMatrix M(nk, nk);
 
@@ -64,14 +64,14 @@ TEST(DG_MASS_MATRIX) {
 
 
 /* ****************************************************************
-* Test of DG advection matrices
+* Test of DG advection matrices in a cell
 **************************************************************** */
-TEST(DG_ADVECTION_MATRIX) {
+TEST(DG_ADVECTION_MATRIX_CELL) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: DG advection matrices" << std::endl;
+  std::cout << "Test: DG advection matrices in cells" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -85,13 +85,43 @@ TEST(DG_ADVECTION_MATRIX) {
   DG dg(mesh);
 
   AmanziGeometry::Point u(1.0, 2.0);
-  for (int k = 0; k < 4; k++) {
+  for (int k = 0; k < 3; k++) {
     int nk = (k + 1) * (k + 2) / 2;
     DenseMatrix A(nk, nk);
 
-    dg.TaylorAdvectionMatrix(0, k, u, A);
+    dg.TaylorAdvectionMatrixCell(0, k, u, A);
     std::cout << A << std::endl;
   }
 }
 
 
+/* ****************************************************************
+* Test of DG advection matrices on a face
+**************************************************************** */
+TEST(DG_ADVECTION_MATRIX_FACE) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "Test: DG advection matrices on faces" << std::endl;
+#ifdef HAVE_MPI
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm *comm = new Epetra_SerialComm();
+#endif
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2); 
+ 
+  DG dg(mesh);
+
+  AmanziGeometry::Point u(1.0, 1.0);
+  for (int k = 0; k < 2; k++) {
+    int nk = (k + 1) * (k + 2);
+    DenseMatrix A(nk, nk);
+
+    dg.TaylorAdvectionMatrixFace(1, k, u, A);
+    std::cout << A << std::endl;
+  }
+}

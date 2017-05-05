@@ -146,7 +146,7 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
       WhetStone::DG dg(mesh_);
 
       WhetStone::DenseMatrix Acell(1, 1);
-      dg.TaylorAdvectionMatrix(c, 0, v, Acell);
+      dg.TaylorAdvectionMatrixCell(c, 0, v, Acell);
 
       matrix[c] = Acell;
     } 

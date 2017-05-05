@@ -48,7 +48,8 @@ class DG {
   ~DG() {};
 
   int TaylorMassMatrix(int c, int order, DenseMatrix& M);
-  int TaylorAdvectionMatrix(int c, int order, AmanziGeometry::Point& u, DenseMatrix& A);
+  int TaylorAdvectionMatrixCell(int c, int order, AmanziGeometry::Point& u, DenseMatrix& A);
+  int TaylorAdvectionMatrixFace(int f, int order, AmanziGeometry::Point& u, DenseMatrix& M);
 
  private:
   void IntegrateMonomialsCell_(int c, int k, double* monomials);
@@ -56,6 +57,10 @@ class DG {
   void IntegrateMonomialsEdge_(const AmanziGeometry::Point& x1,
                                const AmanziGeometry::Point& x2,
                                int k, double factor, double* monomials);
+  double IntegrateMonomialsEdge_(const AmanziGeometry::Point& x1,
+                                 const AmanziGeometry::Point& x2,
+                                 int ix, int iy, int jx, int jy,
+                                 double length, const AmanziGeometry::Point& dc);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

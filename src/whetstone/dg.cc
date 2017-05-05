@@ -40,7 +40,7 @@ int DG::TaylorMassMatrix(int c, int order, DenseMatrix& M)
     n += k + 1;
   }
    
-  // copy integrals to mass matrix
+  // copy integrals to mass matrix (2D algorithm)
   int nrows = M.NumRows();
 
   for (int k = 0; k < nrows; ++k) {
@@ -57,11 +57,11 @@ int DG::TaylorMassMatrix(int c, int order, DenseMatrix& M)
 /* ******************************************************************
 * Advection matrix for Taylor basis and constant velocity u.
 ****************************************************************** */
-int DG::TaylorAdvectionMatrix(
+int DG::TaylorAdvectionMatrixCell(
     int c, int order, AmanziGeometry::Point& u, DenseMatrix& A)
 {
   // calculate monomials
-  int n(1), m((2 * order + 1) * order);
+  int n(1), m((2 * order + 1) * order + 1);
   std::vector<int> pk(1, 0); 
   DenseVector monomials(m);
 
@@ -77,7 +77,6 @@ int DG::TaylorAdvectionMatrix(
   // copy integrals to mass matrix
   int k1, l1, mm, nrows = A.NumRows();
   double ux(u[0]), uy(u[1]);
-
 
   for (int i = 0; i <= order; ++i) {
     for (int k = 0; k < i + 1; ++ k) {
@@ -99,6 +98,87 @@ int DG::TaylorAdvectionMatrix(
   }
 
   return 0;
+}
+
+
+/* ******************************************************************
+* Advection matrix for Taylor basis and constant velocity u (2D only)
+****************************************************************** */
+int DG::TaylorAdvectionMatrixFace(
+    int f, int order, AmanziGeometry::Point& u, DenseMatrix& M)
+{
+  AmanziMesh::Entity_ID_List cells, nodes;
+
+  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  int ncells = cells.size();
+
+  M.PutScalar(0.0);
+
+  // calculate downwind cell
+  int dir, cd(cells[0]), id(0);
+  const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cd, &dir);
+  double factor = (u * normal) * dir;
+
+  if (factor > 0.0) {
+    if (ncells == 1) return 0;
+    cd = cells[1];
+    id = 1;
+  }
+
+  // integrate traces from downwind cell
+  // -- shift origin to cell centroid
+  mesh_->face_get_nodes(f, &nodes);
+
+  AmanziGeometry::Point x1(d_), x2(d_), dc(d_);
+  mesh_->node_get_coordinates(nodes[0], &x1);
+  mesh_->node_get_coordinates(nodes[1], &x2);
+
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(cd);
+  x1 -= xc;
+  x2 -= xc;
+
+  // -- calculate monomials
+  int n(1), m((2 * order + 1) * (order + 1));
+  std::vector<int> shift(1, 0);
+  DenseVector monomials(m);
+  
+  monomials.PutScalar(0.0);
+
+  for (int k = 1; k <= 2 * order; ++k) {
+    shift.resize(n, k - 1);
+    IntegrateMonomialsEdge_(x1, x2, k, 1.0, &(monomials(n)));
+    n += k + 1;
+  }
+   
+  int nrows = M.NumRows() / 2;
+  int is = nrows * id;
+
+  for (int k = 0; k < nrows; ++k) {
+    for (int l = k; l < nrows; ++l) {
+      int i = shift[k] * shift[l];
+      M(is + k, is + l) = -monomials(k + l + i);
+    }
+  }
+
+  // integrate traces from both cells
+  if (ncells == 1) return 0;
+
+  int c2(cells[0] + cells[1] - cd);
+  dc = xc - mesh_->cell_centroid(c2); 
+  double area = mesh_->face_area(f);
+
+  for (int i = 0; i <= order; ++i) {
+    for (int k = 0; k < i + 1; ++ k) {
+      int js(0);
+      for (int j = 0; j <= order; ++j) {
+        for (int l = 0; l < j + 1; ++l) {
+          M(is + k, js) = IntegrateMonomialsEdge_(x1, x2, i - k, k, j, j - l, area, dc);
+          js++;
+        }
+      }
+      is++;
+    }
+  }
 }
 
 
@@ -154,7 +234,7 @@ void DG::IntegrateMonomialsEdge_(
     const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
     int k, double factor, double* monomials)
 {
-  double a1, a2; 
+  double a1; 
   AmanziGeometry::Point xm(d_);
 
   if (d_ == 2) {
@@ -168,6 +248,34 @@ void DG::IntegrateMonomialsEdge_(
       }
     }
   }
+}
+
+
+/* ******************************************************************
+* Integrate two monomials of order k on edge via quadrature rules.
+****************************************************************** */
+double DG::IntegrateMonomialsEdge_(
+    const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
+    int ix, int iy, int jx, int jy,
+    double length, const AmanziGeometry::Point& dc)
+{
+  double a1, a2, tmp(0.0); 
+  AmanziGeometry::Point xm(d_);
+
+  if (d_ == 2) {
+    int m = (ix + iy + jx + jy) / 2;  // calculate quadrature rule
+
+    for (int n = 0; n <= m; ++n) { 
+      xm = x1 * q1d_points[m][n] + x2 * (1.0 - q1d_points[m][n]);
+      a1 = std::pow(xm[0], ix) * std::pow(xm[1], iy);
+
+      xm += dc;
+      a2 = std::pow(xm[0], jx) * std::pow(xm[1], jy);
+      tmp += a1 * a2 * q1d_weights[m][n];      
+    }
+  }
+
+  return tmp * length;
 }
 
 }  // namespace WhetStone
