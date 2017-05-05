@@ -40,7 +40,7 @@ TEST(DG_MASS_MATRIX) {
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.5, 0.5, 1, 1); 
  
   DG dg(mesh);
 
@@ -49,15 +49,21 @@ TEST(DG_MASS_MATRIX) {
     DenseMatrix M(nk, nk);
 
     dg.TaylorMassMatrix(0, k, M);
-    std::cout << M << std::endl;
 
-    CHECK_CLOSE(M(0, 0), 1.0, 1e-12);
+    printf("Mass matrix for order=%d\n", k);
+    for (int i = 0; i < nk; i++) {
+      for (int j = 0; j < nk; j++ ) printf("%9.5f ", M(i, j)); 
+      printf("\n");
+    }
+
+    double area = mesh->cell_volume(0);
+    CHECK_CLOSE(M(0, 0), area, 1e-12);
     if (k > 0) {
-      CHECK_CLOSE(M(1, 1), 1.0 / 12, 1e-12);
+      CHECK_CLOSE(M(1, 1), area / 48, 1e-12);
     }
     if (k > 1) {
-      CHECK_CLOSE(M(3, 3), 1.0 / 80, 1e-12);
-      CHECK_CLOSE(M(4, 4), 1.0 / 144, 1e-12);
+      CHECK_CLOSE(M(3, 3), area / 1280, 1e-12);
+      // CHECK_CLOSE(M(4, 4), area / 144, 1e-12);
     }
   }
 }
@@ -71,7 +77,7 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: DG advection matrices in cells" << std::endl;
+  std::cout << "\nTest: DG advection matrices in cells" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -80,7 +86,8 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_cell2.exo");
  
   DG dg(mesh);
 
@@ -90,7 +97,28 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
     DenseMatrix A(nk, nk);
 
     dg.TaylorAdvectionMatrixCell(0, k, u, A);
-    std::cout << A << std::endl;
+
+    printf("Advection matrix (cell-based) for order=%d\n", k);
+    for (int i = 0; i < nk; i++) {
+      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A(i, j)); 
+      printf("\n");
+    }
+
+    // accuracy test
+    DenseVector v(nk), av(nk);
+    if (k > 1) {
+      double tmp;
+      const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
+
+      v.PutScalar(0.0);
+      v(0) = xc[0] + 2 * xc[1];
+      v(1) = 1.0;
+      v(2) = 2.0;
+    
+      A.Multiply(v, av, false);
+      v.Dot(av, &tmp);
+      CHECK_CLOSE(tmp, 5 * v(0) * mesh->cell_volume(0), 1e-12);
+    }
   }
 }
 
@@ -103,7 +131,7 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: DG advection matrices on faces" << std::endl;
+  std::cout << "\nTest: DG advection matrices on faces" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -122,6 +150,11 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
     DenseMatrix A(nk, nk);
 
     dg.TaylorAdvectionMatrixFace(1, k, u, A);
-    std::cout << A << std::endl;
+
+    printf("Advection matrix (face-based) for order=%d\n", k);
+    for (int i = 0; i < nk; i++) {
+      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A(i, j)); 
+      printf("\n");
+    }
   }
 }

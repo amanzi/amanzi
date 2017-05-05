@@ -117,9 +117,9 @@ int DG::TaylorAdvectionMatrixFace(
   // calculate downwind cell
   int dir, cd(cells[0]), id(0);
   const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cd, &dir);
-  double factor = (u * normal) * dir;
-
-  if (factor > 0.0) {
+  double factor = u * normal;
+ 
+  if (factor * dir > 0.0) {
     if (ncells == 1) return 0;
     cd = cells[1];
     id = 1;
@@ -134,6 +134,7 @@ int DG::TaylorAdvectionMatrixFace(
   mesh_->node_get_coordinates(nodes[1], &x2);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(cd);
+  double area = mesh_->face_area(f);
   x1 -= xc;
   x2 -= xc;
 
@@ -143,20 +144,23 @@ int DG::TaylorAdvectionMatrixFace(
   DenseVector monomials(m);
   
   monomials.PutScalar(0.0);
+  monomials(0) = factor;
 
   for (int k = 1; k <= 2 * order; ++k) {
     shift.resize(n, k - 1);
-    IntegrateMonomialsEdge_(x1, x2, k, 1.0, &(monomials(n)));
+    IntegrateMonomialsEdge_(x1, x2, k, factor, &(monomials(n)));
     n += k + 1;
   }
    
+  // -- copy to mass matrix
+  M.PutScalar(0.0);
   int nrows = M.NumRows() / 2;
   int is = nrows * id;
 
   for (int k = 0; k < nrows; ++k) {
     for (int l = k; l < nrows; ++l) {
       int i = shift[k] * shift[l];
-      M(is + k, is + l) = -monomials(k + l + i);
+      M(is + l, is + k) = M(is + k, is + l) = -monomials(k + l + i);
     }
   }
 
@@ -165,19 +169,18 @@ int DG::TaylorAdvectionMatrixFace(
 
   int c2(cells[0] + cells[1] - cd);
   dc = xc - mesh_->cell_centroid(c2); 
-  double area = mesh_->face_area(f);
 
   for (int i = 0; i <= order; ++i) {
     for (int k = 0; k < i + 1; ++ k) {
       int js(0);
       for (int j = 0; j <= order; ++j) {
         for (int l = 0; l < j + 1; ++l) {
-          M(is + k, js) = IntegrateMonomialsEdge_(x1, x2, i - k, k, j, j - l, area, dc);
+          M(is + k, js) = IntegrateMonomialsEdge_(x1, x2, i - k, k, j - l, l, factor, dc);
           js++;
         }
       }
-      is++;
     }
+    is += i + 1;
   }
 }
 
@@ -243,7 +246,7 @@ void DG::IntegrateMonomialsEdge_(
     for (int i = 0; i <= k; ++i) {
       for (int n = 0; n <= m; ++n) { 
         xm = x1 * q1d_points[m][n] + x2 * (1.0 - q1d_points[m][n]);
-        a1 = std::pow(xm[0], i) * std::pow(xm[1], k - i);
+        a1 = std::pow(xm[0], k - i) * std::pow(xm[1], i);
         monomials[i] += factor * a1 * q1d_weights[m][n];      
       }
     }
@@ -257,7 +260,7 @@ void DG::IntegrateMonomialsEdge_(
 double DG::IntegrateMonomialsEdge_(
     const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
     int ix, int iy, int jx, int jy,
-    double length, const AmanziGeometry::Point& dc)
+    double factor, const AmanziGeometry::Point& dc)
 {
   double a1, a2, tmp(0.0); 
   AmanziGeometry::Point xm(d_);
@@ -275,7 +278,7 @@ double DG::IntegrateMonomialsEdge_(
     }
   }
 
-  return tmp * length;
+  return tmp * factor;
 }
 
 }  // namespace WhetStone

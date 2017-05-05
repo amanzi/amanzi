@@ -100,15 +100,20 @@ void Reaction::UpdateMatrices(const CompositeVector& u)
 
   WhetStone::DG dg(mesh_);
 
+  int k(0);
+  if (space_col_ == DG0 && space_row_ == DG0) { 
+    k = 0;
+  } else if (space_col_ == DG1 && space_row_ == DG1) {  
+    k = 1;
+  }
+
   for (int c = 0; c < ncells_owned; ++c) {
-    if (space_col_ == DG1 && space_row_ == DG1) { 
-      int ndofs = 3;
+    int ndofs = (k + 2) * (k + 1) / 2;
 
-      WhetStone::DenseMatrix Mcell(ndofs, ndofs);
-      dg.TaylorMassMatrix(c, 1, Mcell);
+    WhetStone::DenseMatrix Mcell(ndofs, ndofs);
+    dg.TaylorMassMatrix(c, k, Mcell);
 
-      matrix[c] = Mcell;
-    }
+    matrix[c] = Mcell;
   }
 }
 

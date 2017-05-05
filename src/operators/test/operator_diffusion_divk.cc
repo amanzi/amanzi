@@ -59,13 +59,8 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist(diffusion_list);
 
   // create an SIMPLE mesh framework
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
   // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, Teuchos::null);
   std::string file = op_list.get<std::string>("file name", "test/random20.exo");
   Teuchos::RCP<const Mesh> mesh = meshfactory(file, Teuchos::null);
@@ -222,13 +217,8 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
   Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, Teuchos::null);
   // Teuchos::RCP<const Mesh> mesh = meshfactory("test/mesh.exo", Teuchos::null);
 

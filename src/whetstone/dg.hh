@@ -60,7 +60,7 @@ class DG {
   double IntegrateMonomialsEdge_(const AmanziGeometry::Point& x1,
                                  const AmanziGeometry::Point& x2,
                                  int ix, int iy, int jx, int jy,
-                                 double length, const AmanziGeometry::Point& dc);
+                                 double factor, const AmanziGeometry::Point& dc);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

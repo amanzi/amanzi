@@ -25,7 +25,7 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorGMRES.hh"
 #include "Tensor.hh"
 
 // Amanzi::Operators
@@ -195,21 +195,21 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   ver2.CheckPreconditionerSPD();
 
   // solve the problem
-  Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-  AmanziSolvers::LinearOperatorFactory<TreeOperator, TreeVector, TreeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<TreeOperator, TreeVector, TreeVectorSpace> >
-     solver = factory.Create("GMRES", lop_list, op, pc);
+  Teuchos::ParameterList lop_list = plist.sublist("solvers")
+                                         .sublist("GMRES").sublist("gmres parameters");
+  AmanziSolvers::LinearOperatorGMRES<TreeOperator, TreeVector, TreeVectorSpace> solver(op, pc);
+  solver.Init(lop_list);
 
   TreeVector rhs(*tvs);
   *rhs.SubVector(0)->Data() = *global00->rhs();
   *rhs.SubVector(1)->Data() = *global10->rhs();
 
-  int ierr = solver->ApplyInverse(rhs, solution);
+  int ierr = solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
-    std::cout << "elasticity solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-              << " code=" << solver->returned_code() << std::endl;
+    std::cout << "elasticity solver (gmres): ||r||=" << solver.residual() 
+              << " itr=" << solver.num_itrs()
+              << " code=" << solver.returned_code() << std::endl;
   }
 
   // compute velocity error
@@ -222,11 +222,11 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   if (MyPID == 0) {
     ul2_err /= unorm;
     printf("L2(u)=%12.8g  Inf(u)=%12.8g  L2(p)=%12.8g  Inf(p)=%12.8g  itr=%3d\n",
-        ul2_err, uinf_err, pl2_err, pinf_err, solver->num_itrs());
+        ul2_err, uinf_err, pl2_err, pinf_err, solver.num_itrs());
 
     CHECK(ul2_err < 0.01);
     CHECK(pl2_err < 0.05);
-    CHECK(solver->num_itrs() < 60);
+    CHECK(solver.num_itrs() < 60);
   }
 
   if (MyPID == 0) {

@@ -23,6 +23,7 @@
 
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
+#include "LinearOperatorPCG.hh"
 
 #include "Accumulation.hh"
 #include "AdvectionRiemann.hh"
@@ -33,7 +34,7 @@
 /* *****************************************************************
 * Remap of polynomilas in two dimensions
 ***************************************************************** */
-TEST(REMAP_CONSTANT_2D) {
+void RemapTests2D(int order, std::string disc_name) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -41,26 +42,26 @@ TEST(REMAP_CONSTANT_2D) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-
   if (MyPID == 0) std::cout << "\nTest: remap of constant functions in 2D." << std::endl;
 
-  // create initial mesh
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
+  // polynomial space
+  int nk = (order + 1) * (order + 2) / 2;
 
+  // create initial mesh
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
 
   int nx(8), ny(8);
-  Teuchos::RCP<const Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+  // Teuchos::RCP<const Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+  Teuchos::RCP<const Mesh> mesh1 = meshfactory("test/random10.exo");
 
   int ncells_owned = mesh1->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int ncells_wghost = mesh1->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   int nfaces_wghost = mesh1->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   // create deformed mesh
-  Teuchos::RCP<Mesh> mesh2 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+  // Teuchos::RCP<Mesh> mesh2 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+  Teuchos::RCP<Mesh> mesh2 = meshfactory("test/random10.exo");
 
   int nnodes_owned = mesh2->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
 
@@ -83,31 +84,36 @@ TEST(REMAP_CONSTANT_2D) {
 
   // create and initialize cell-based field 
   CompositeVectorSpace cvs1;
-  cvs1.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+  cvs1.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
   CompositeVector p1(cvs1);
   Epetra_MultiVector& p1c = *p1.ViewComponent("cell", true);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh1->cell_centroid(c);
     p1c[0][c] = xc[0] + 2 * xc[1];
+    p1c[0][c] = 1.0;
+    if (nk > 1) {
+      p1c[1][c] = 1.0;
+      p1c[2][c] = 2.0;
+    }
   }
 
   // remap cell-based field
   // -- allocate memory
   CompositeVectorSpace cvs2;
-  cvs2.SetMesh(mesh2)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+  cvs2.SetMesh(mesh2)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
   CompositeVector p2(cvs2);
   Epetra_MultiVector& p2c = *p2.ViewComponent("cell", true);
 
   // -- create primary advection operator
   Teuchos::ParameterList plist;
-  plist.set<std::string>("discretization", "DG order 0");
+  plist.set<std::string>("discretization", disc_name);
 
   plist.sublist("schema domain")
       .set<std::string>("base", "face")
       .set<Teuchos::Array<std::string> >("location", std::vector<std::string>({"cell"}))
       .set<Teuchos::Array<std::string> >("type", std::vector<std::string>({"scalar"}))
-      .set<Teuchos::Array<int> >("number", std::vector<int>({1}));
+      .set<Teuchos::Array<int> >("number", std::vector<int>({nk}));
 
   plist.sublist("schema range") = plist.sublist("schema domain");
 
@@ -115,68 +121,78 @@ TEST(REMAP_CONSTANT_2D) {
   auto global_op = op->global_operator();
 
   // -- create secondary advection operator (cell-based)
-  plist.set<std::string>("discretization", "DG order 0");
+  plist.set<std::string>("discretization", disc_name);
 
   plist.sublist("schema domain")
       .set<std::string>("base", "cell")
       .set<Teuchos::Array<std::string> >("location", std::vector<std::string>({"cell"}))
       .set<Teuchos::Array<std::string> >("type", std::vector<std::string>({"scalar"}))
-      .set<Teuchos::Array<int> >("number", std::vector<int>({1}));
+      .set<Teuchos::Array<int> >("number", std::vector<int>({nk}));
 
   plist.sublist("schema range") = plist.sublist("schema domain");
 
   Teuchos::RCP<AdvectionRiemann> op_adv = Teuchos::rcp(new AdvectionRiemann(plist, global_op));
 
   // -- create accumulation operator
-  Teuchos::RCP<Accumulation> op_acc = Teuchos::rcp(new Accumulation(AmanziMesh::CELL, mesh1));
-  auto global_acc = op_acc->global_operator();
-
-  // -- new way to create accumulation operator
   plist.sublist("schema")
       .set<std::string>("base", "cell")
       .set<Teuchos::Array<std::string> >("location", std::vector<std::string>({"cell"}))
       .set<Teuchos::Array<std::string> >("type", std::vector<std::string>({"scalar"}))
-      .set<Teuchos::Array<int> >("number", std::vector<int>({3}));
+      .set<Teuchos::Array<int> >("number", std::vector<int>({nk}));
 
   Teuchos::RCP<Reaction> op_reac = Teuchos::rcp(new Reaction(plist, mesh1));
   auto global_reac = op_reac->global_operator();
 
-  op_reac->UpdateMatrices(p1);
-  global_reac->SymbolicAssembleMatrix();
-  global_reac->AssembleMatrix();
+  // -- calculate mesh velocity on faces and in cells
+  CompositeVectorSpace cvs_c, cvs_f;
+  cvs_c.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 2);
+  cvs_f.SetMesh(mesh1)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 2);
 
-  // -- calculate flux on mesh faces
-  CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh1)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 1);
-  CompositeVector flux(cvs);
-  Epetra_MultiVector& flux_f = *flux.ViewComponent("face", true);
+  CompositeVector velc(cvs_c), velf(cvs_f);
+  Epetra_MultiVector& vel_c = *velc.ViewComponent("cell", true);
+  Epetra_MultiVector& vel_f = *velf.ViewComponent("face", true);
 
   for (int f = 0; f < nfaces_wghost; ++f) {
     const AmanziGeometry::Point& xf1 = mesh1->face_centroid(f);
     const AmanziGeometry::Point& xf2 = mesh2->face_centroid(f);
-    const AmanziGeometry::Point& normal = mesh1->face_normal(f);
-    double area = mesh1->face_area(f);
 
-    flux_f[0][f] = (xf2 - xf1) * normal / area;
+    vel_f[0][f] = xf2[0] - xf1[0];
+    vel_f[1][f] = xf2[1] - xf1[1];
+  }
+
+  for (int c = 0; c < ncells_wghost; ++c) {
+    const AmanziGeometry::Point& xc1 = mesh1->cell_centroid(c);
+    const AmanziGeometry::Point& xc2 = mesh2->cell_centroid(c);
+
+    vel_c[0][c] = xc2[0] - xc1[0];
+    vel_c[1][c] = xc2[1] - xc1[1];
   }
 
   // -- populate operators
-  op->UpdateMatrices(flux);
-  op_acc->AddAccumulationDelta(p1, 1.0, "cell");
+  op->UpdateMatrices(velf);
+  op_adv->UpdateMatrices(velc);
+  op_reac->UpdateMatrices(p1);
 
-  // -- invert the mass matrix
+  // -- create local problem
+  CompositeVector& rhs = *global_reac->rhs();
+  global_reac->Apply(p1, rhs);
+
   CompositeVector g(cvs1);
   global_op->Apply(p1, g);
-
-  CompositeVector& rhs = *global_acc->rhs();
   g.Update(1.0, rhs, -1.0);
 
-  global_acc->SymbolicAssembleMatrix();
-  global_acc->AssembleMatrix();
+  global_reac->SymbolicAssembleMatrix();
+  global_reac->AssembleMatrix();
 
   plist.set<std::string>("preconditioner type", "diagonal");
-  global_acc->InitPreconditioner(plist);
-  global_acc->ApplyInverse(g, p2);
+  global_reac->InitPreconditioner(plist);
+
+  // -- solve the problem
+  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+      pcg(global_reac, global_reac);
+
+  pcg.Init(plist);
+  pcg.ApplyInverse(g, p2);
 
   // calculate error
   double pl2_err(0.0), pinf_err(0.0);
@@ -204,4 +220,7 @@ TEST(REMAP_CONSTANT_2D) {
 }
 
 
+TEST(REMAP_2D) {
+  RemapTests2D(1, "DG order 1");
+}
 

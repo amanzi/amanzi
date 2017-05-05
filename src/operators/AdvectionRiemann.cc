@@ -137,22 +137,34 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
+  int dir, d(mesh_->space_dimension());
   AmanziMesh::Entity_ID_List nodes;
-  int d = mesh_->space_dimension();
-  AmanziGeometry::Point v(1.0, 1.0);
+  AmanziGeometry::Point v(d);
+
+  WhetStone::DG dg(mesh_);
+  WhetStone::MFD3D_Elasticity mfd(mesh_);
+
+  Teuchos::RCP<const Epetra_MultiVector> uc;
+  if (u.HasComponent("cell")) uc = u.ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
     if (space_col_ == DG0 && space_row_ == DG0) {
-      WhetStone::DG dg(mesh_);
-
+      for (int k = 0; k < d; ++k) v[k] = (*uc)[k][c];
       WhetStone::DenseMatrix Acell(1, 1);
+
       dg.TaylorAdvectionMatrixCell(c, 0, v, Acell);
 
       matrix[c] = Acell;
     } 
-    else if (space_col_ == BERNARDI_RAUGEL && space_row_ == P0) { 
-      WhetStone::MFD3D_Elasticity mfd(mesh_);
+    else if (space_col_ == DG1 && space_row_ == DG1) {
+      for (int k = 0; k < d; ++k) v[k] = (*uc)[k][c];
+      WhetStone::DenseMatrix Acell(3, 3);
 
+      dg.TaylorAdvectionMatrixCell(c, 1, v, Acell);
+
+      matrix[c] = Acell;
+    }
+    else if (space_col_ == BERNARDI_RAUGEL && space_row_ == P0) { 
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
       int nfaces = mesh_->cell_get_num_faces(c);
@@ -177,9 +189,12 @@ void AdvectionRiemann::UpdateMatricesFace_(const CompositeVector& u)
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
-  int dir;
-  AmanziMesh::Entity_ID_List cells;
+  WhetStone::DG dg(mesh_);
   const Epetra_MultiVector& uf = *u.ViewComponent("face");
+
+  int dir, d(mesh_->space_dimension());
+  AmanziMesh::Entity_ID_List cells;
+  AmanziGeometry::Point v(d);
 
   for (int f = 0; f < nfaces_owned; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -187,15 +202,14 @@ void AdvectionRiemann::UpdateMatricesFace_(const CompositeVector& u)
 
     int ndofs = ncells * (local_schema_col_.items())[0].num;
     WhetStone::DenseMatrix Aface(ndofs, ndofs);
-    Aface.PutScalar(0.0);
 
-    if (ncells == 2) {
-      mesh_->face_normal(f, false, cells[0], &dir);
-      double u = uf[0][f] * dir * mesh_->face_area(f);
-
-      int i = (u > 0.0) ? 1 : 0;  // downwind cell
-      Aface(i, i) = -u;
-      Aface(i, 1 - i) = u;
+    if (space_col_ == DG0 && space_row_ == DG0) {
+      for (int k = 0; k < d; ++k) v[k] = uf[k][f];
+      dg.TaylorAdvectionMatrixFace(f, 0, v, Aface);
+    }
+    else if (space_col_ == DG1 && space_row_ == DG1) {
+      for (int k = 0; k < d; ++k) v[k] = uf[k][f];
+      dg.TaylorAdvectionMatrixFace(f, 1, v, Aface);
     }
 
     matrix[f] = Aface;
