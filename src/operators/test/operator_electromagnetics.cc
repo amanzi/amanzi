@@ -23,9 +23,8 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
-#include "Mesh_MSTK.hh"
 #include "mfd3d_diffusion.hh"
 #include "Tensor.hh"
 
@@ -64,12 +63,8 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
 
   bool request_faces(true), request_edges(true);
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3, gm, request_faces, request_edges);
@@ -193,21 +188,21 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   ver.CheckPreconditionerSPD(true, true);
 
   // Solve the problem.
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("default", lop_list, global_op);
+  ParameterList lop_list = plist.sublist("solvers").sublist("default").sublist("pcg parameters");
+  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+      solver(global_op, global_op);
+  solver.Init(lop_list);
 
   CompositeVector& rhs = *global_op->rhs();
-  int ierr = solver->ApplyInverse(rhs, solution);
+  int ierr = solver.ApplyInverse(rhs, solution);
 
-  int num_itrs = solver->num_itrs();
+  int num_itrs = solver.num_itrs();
   CHECK(num_itrs < 100);
 
   if (MyPID == 0) {
-    std::cout << "electric solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-              << " code=" << solver->returned_code() << std::endl;
+    std::cout << "electric solver (pcg): ||r||=" << solver.residual() 
+              << " itr=" << solver.num_itrs()
+              << " code=" << solver.returned_code() << std::endl;
   }
 
   // compute electric error
@@ -218,7 +213,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   if (MyPID == 0) {
     el2_err /= enorm;
     printf("L2(e)=%10.7f  Inf(e)=%9.6f  itr=%3d  size=%d\n", el2_err, einf_err,
-            solver->num_itrs(), rhs.GlobalLength());
+            solver.num_itrs(), rhs.GlobalLength());
 
     CHECK(el2_err < tolerance);
   }

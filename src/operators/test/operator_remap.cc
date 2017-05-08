@@ -51,7 +51,7 @@ void RemapTests2D(int order, std::string disc_name) {
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
 
-  int nx(8), ny(8);
+  int nx(10), ny(10);
   // Teuchos::RCP<const Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
   Teuchos::RCP<const Mesh> mesh1 = meshfactory("test/random10.exo");
 
@@ -73,8 +73,8 @@ void RemapTests2D(int order, std::string disc_name) {
     mesh2->node_get_coordinates(v, &xv);
     if (!(fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
           fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6)) {
-      xv[0] += 0.02 / 4;
-      xv[1] += 0.02 / 4;
+      xv[0] += 0.02;
+      xv[1] += 0.01;
       nodeids.push_back(v);
       new_positions.push_back(xv);
     }
@@ -91,7 +91,6 @@ void RemapTests2D(int order, std::string disc_name) {
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh1->cell_centroid(c);
     p1c[0][c] = xc[0] + 2 * xc[1];
-    p1c[0][c] = 1.0;
     if (nk > 1) {
       p1c[1][c] = 1.0;
       p1c[2][c] = 2.0;
@@ -179,7 +178,7 @@ void RemapTests2D(int order, std::string disc_name) {
 
   CompositeVector g(cvs1);
   global_op->Apply(p1, g);
-  g.Update(1.0, rhs, -1.0);
+  g.Update(1.0, rhs, 1.0);
 
   global_reac->SymbolicAssembleMatrix();
   global_reac->AssembleMatrix();

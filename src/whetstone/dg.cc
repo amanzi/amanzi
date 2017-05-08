@@ -58,7 +58,7 @@ int DG::TaylorMassMatrix(int c, int order, DenseMatrix& M)
 * Advection matrix for Taylor basis and constant velocity u.
 ****************************************************************** */
 int DG::TaylorAdvectionMatrixCell(
-    int c, int order, AmanziGeometry::Point& u, DenseMatrix& A)
+    int c, int order, std::vector<AmanziGeometry::Point>& u, DenseMatrix& A)
 {
   // calculate monomials
   int n(1), m((2 * order + 1) * order + 1);
@@ -76,7 +76,7 @@ int DG::TaylorAdvectionMatrixCell(
    
   // copy integrals to mass matrix
   int k1, l1, mm, nrows = A.NumRows();
-  double ux(u[0]), uy(u[1]);
+  double ux(u[0][0]), uy(u[0][1]);
 
   for (int i = 0; i <= order; ++i) {
     for (int k = 0; k < i + 1; ++ k) {
@@ -105,7 +105,7 @@ int DG::TaylorAdvectionMatrixCell(
 * Advection matrix for Taylor basis and constant velocity u (2D only)
 ****************************************************************** */
 int DG::TaylorAdvectionMatrixFace(
-    int f, int order, AmanziGeometry::Point& u, DenseMatrix& M)
+    int f, int order, std::vector<AmanziGeometry::Point>& u, DenseMatrix& M)
 {
   AmanziMesh::Entity_ID_List cells, nodes;
 
@@ -117,7 +117,7 @@ int DG::TaylorAdvectionMatrixFace(
   // calculate downwind cell
   int dir, cd(cells[0]), id(0);
   const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cd, &dir);
-  double factor = u * normal;
+  double factor = u[0] * normal;
  
   if (factor * dir > 0.0) {
     if (ncells == 1) return 0;
@@ -171,7 +171,7 @@ int DG::TaylorAdvectionMatrixFace(
   dc = xc - mesh_->cell_centroid(c2); 
 
   for (int i = 0; i <= order; ++i) {
-    for (int k = 0; k < i + 1; ++ k) {
+    for (int k = 0; k < i + 1; ++k) {
       int js(0);
       for (int j = 0; j <= order; ++j) {
         for (int l = 0; l < j + 1; ++l) {
@@ -279,6 +279,64 @@ double DG::IntegrateMonomialsEdge_(
   }
 
   return tmp * factor;
+}
+
+
+/* ******************************************************************
+* Polynomial approximation of map x2 = F(x1).
+* We assume that vectors of vertices have a proper length.
+****************************************************************** */
+int DG::TaylorLeastSquareFit(int order,
+                             const std::vector<AmanziGeometry::Point>& x1, 
+                             const std::vector<AmanziGeometry::Point>& x2,
+                             std::vector<AmanziGeometry::Point>& u) const
+{
+  int nk = (order + 1) * (order + 2) / 2;
+  int nx = x1.size();
+
+  // evaluate basis functions at given points
+  int i1(0);
+  DenseMatrix psi(nk, nx);
+
+  for (int k = 0; k <= order; ++k) {
+    for (int i = 0; i < k + 1; ++i) {
+      for (int n = 0; n < nx; ++n) {
+        psi(i1, n) = std::pow(x1[n][0], k - i) * std::pow(x1[n][1], i);
+      }
+      i1++;
+    }
+  }
+      
+  // form linear system
+  DenseMatrix A(nk, nk);
+  DenseVector bx(nk), by(nk), ux(nk), uy(nk);
+
+  for (int i = 0; i < nk; ++i) {
+    for (int j = i; j < nk; ++j) {
+      double tmp(0.0);
+      for (int n = 0; n < nx; ++n) {
+        tmp += psi(i, n) * psi(j, n);
+      }
+      A(i, j) = A(j, i) = tmp;
+    }
+
+    bx(i) = 0.0;
+    by(i) = 0.0;
+    for (int n = 0; n < nx; ++n) {
+      bx(i) += x2[n][0] * psi(i, n);
+      by(i) += x2[n][1] * psi(i, n);
+    }
+  }
+
+  // solver linear systems
+  A.Inverse();
+  A.Multiply(bx, ux, false);
+  A.Multiply(by, uy, false);
+
+  u.clear();
+  for (int i = 0; i < nk; ++i) {
+    u.push_back(AmanziGeometry::Point(ux(i), uy(i)));
+  }
 }
 
 }  // namespace WhetStone

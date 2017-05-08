@@ -23,9 +23,8 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
-#include "Mesh_MSTK.hh"
 #include "mfd3d_electromagnetics.hh"
 #include "Tensor.hh"
 
@@ -69,12 +68,8 @@ void ResistiveMHD2D(double dt, double tend,
   ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
 
   RCP<const Mesh> mesh;
   if (name == "structured") {
@@ -191,13 +186,13 @@ void ResistiveMHD2D(double dt, double tend,
     global_op->InitPreconditioner("Hypre AMG", slist);
 
     // Solve the problem.
-    ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-        solver = factory.Create("silent", lop_list, global_op);
+    ParameterList lop_list = plist.sublist("solvers").sublist("silent").sublist("pcg parameters");
+    AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+        solver(global_op, global_op);
+    solver.Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
-    int ierr = solver->ApplyInverse(rhs, E);
+    int ierr = solver.ApplyInverse(rhs, E);
 
     double energy = op_mhd->CalculateMagneticEnergy(B);
     op_mhd->ModifyFields(E, B, dt);
@@ -246,8 +241,8 @@ void ResistiveMHD2D(double dt, double tend,
     CHECK_CLOSE(divB0, divB, 1e-8);
 
     if (MyPID == 0) {
-      std::cout << "time: " << told << "  ||r||=" << solver->residual() 
-                << " itr=" << solver->num_itrs() << "  energy= " << energy 
+      std::cout << "time: " << told << "  ||r||=" << solver.residual() 
+                << " itr=" << solver.num_itrs() << "  energy= " << energy 
                 << "  avgB=" << avgB / ncells_owned 
                 << "  divB=" << std::pow(divB, 0.5) 
                 << "  ||B||=" << std::pow(errB, 0.5) << std::endl;
@@ -309,12 +304,8 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
   ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
 
   bool request_faces(true), request_edges(true);
   RCP<const Mesh> mesh;
@@ -443,13 +434,13 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
     global_op->InitPreconditioner("Hypre AMG", slist);
 
     // Solve the problem.
-    ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-        solver = factory.Create("silent", lop_list, global_op);
+    ParameterList lop_list = plist.sublist("solvers").sublist("silent").sublist("pcg parameters");
+    AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+        solver(global_op, global_op);
+    solver.Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
-    int ierr = solver->ApplyInverse(rhs, E);
+    int ierr = solver.ApplyInverse(rhs, E);
 
     double energy = op_mhd->CalculateMagneticEnergy(B);
     op_mhd->ModifyFields(E, B, dt);
@@ -531,8 +522,8 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
     CHECK_CLOSE(divB0, divB, 1e-8);
 
     if (MyPID == 0) {
-      std::cout << "time: " << told << "  ||r||=" << solver->residual() 
-                << " itr=" << solver->num_itrs() << "  energy= " << energy 
+      std::cout << "time: " << told << "  ||r||=" << solver.residual() 
+                << " itr=" << solver.num_itrs() << "  energy= " << energy 
                 << "  avgB=" << avgB / ncells_owned 
                 << "  divB=" << std::pow(divB, 0.5) 
                 << "  ||B-1||=" << std::pow(errB, 0.5) << std::endl;

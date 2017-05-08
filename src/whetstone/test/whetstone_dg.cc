@@ -32,11 +32,7 @@ TEST(DG_MASS_MATRIX) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "Test: DG mass matrices" << std::endl;
-#ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
-#endif
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -66,6 +62,8 @@ TEST(DG_MASS_MATRIX) {
       // CHECK_CLOSE(M(4, 4), area / 144, 1e-12);
     }
   }
+
+  delete comm;
 }
 
 
@@ -78,11 +76,7 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: DG advection matrices in cells" << std::endl;
-#ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
-#endif
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -91,7 +85,9 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
  
   DG dg(mesh);
 
-  AmanziGeometry::Point u(1.0, 2.0);
+  std::vector<AmanziGeometry::Point> u;
+  u.push_back(AmanziGeometry::Point(1.0, 2.0));
+
   for (int k = 0; k < 3; k++) {
     int nk = (k + 1) * (k + 2) / 2;
     DenseMatrix A(nk, nk);
@@ -120,6 +116,8 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
       CHECK_CLOSE(tmp, 5 * v(0) * mesh->cell_volume(0), 1e-12);
     }
   }
+
+  delete comm;
 }
 
 
@@ -132,11 +130,7 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: DG advection matrices on faces" << std::endl;
-#ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
-#endif
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -144,7 +138,9 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
  
   DG dg(mesh);
 
-  AmanziGeometry::Point u(1.0, 1.0);
+  std::vector<AmanziGeometry::Point> u;
+  u.push_back(AmanziGeometry::Point(1.0, 2.0));
+
   for (int k = 0; k < 2; k++) {
     int nk = (k + 1) * (k + 2);
     DenseMatrix A(nk, nk);
@@ -157,4 +153,72 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
       printf("\n");
     }
   }
+
+  delete comm;
 }
+
+
+/* ****************************************************************
+* Test of polynomila approximation
+**************************************************************** */
+TEST(DG_MAP_APPROXIMATION) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: Polynomial approximation of map" << std::endl;
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_cell2.exo");
+
+  // extract polygon from the mesh
+  Entity_ID_List nodes;
+  AmanziGeometry::Point xv;
+  std::vector<AmanziGeometry::Point> x1;
+
+  mesh->cell_get_nodes(0, &nodes);
+
+  for (int i = 0; i < nodes.size(); ++i) {
+    mesh->node_get_coordinates(nodes[i], &xv);
+    x1.push_back(xv);
+  }
+
+  // test identity map
+  DG dg(mesh);
+  std::vector<AmanziGeometry::Point> u;
+  AmanziGeometry::Point ex(1.0, 0.0), ey(0.0, 1.0);
+
+  dg.TaylorLeastSquareFit(1, x1, x1, u);
+  CHECK_CLOSE(norm(u[0]), 0.0, 1e-12);
+  CHECK_CLOSE(norm(u[1] - ex), 0.0, 1e-12);
+  CHECK_CLOSE(norm(u[2] - ey), 0.0, 1e-12);
+
+  // test linear map
+  std::vector<AmanziGeometry::Point> x2(x1);
+  AmanziGeometry::Point shift(0.1, 0.2);
+  for (int i = 0; i < nodes.size(); ++i) {
+    x2[i] += shift;
+  }
+
+  dg.TaylorLeastSquareFit(1, x1, x2, u);
+  CHECK_CLOSE(norm(u[0] - shift), 0.0, 1e-12);
+  CHECK_CLOSE(norm(u[1] - ex), 0.0, 1e-12);
+  CHECK_CLOSE(norm(u[2] - ey), 0.0, 1e-12);
+
+  // test rotation map
+  double s(std::sin(0.3)), c(std::cos(0.3));
+  for (int i = 0; i < nodes.size(); ++i) {
+    x2[i][0] = c * x1[i][0] - s * x1[i][1];
+    x2[i][1] = s * x1[i][0] + c * x1[i][1];
+  }
+
+  dg.TaylorLeastSquareFit(1, x1, x2, u);
+  CHECK_CLOSE(norm(u[0]), 0.0, 1e-12);
+  CHECK_CLOSE(norm(u[1] - AmanziGeometry::Point(c, s)), 0.0, 1e-12);
+  CHECK_CLOSE(norm(u[2] - AmanziGeometry::Point(-s, c)), 0.0, 1e-12);
+
+  delete comm;
+}
+

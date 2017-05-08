@@ -48,8 +48,16 @@ class DG {
   ~DG() {};
 
   int TaylorMassMatrix(int c, int order, DenseMatrix& M);
-  int TaylorAdvectionMatrixCell(int c, int order, AmanziGeometry::Point& u, DenseMatrix& A);
-  int TaylorAdvectionMatrixFace(int f, int order, AmanziGeometry::Point& u, DenseMatrix& M);
+  int TaylorAdvectionMatrixCell(int c, int order, 
+                                std::vector<AmanziGeometry::Point>& u, DenseMatrix& A);
+  int TaylorAdvectionMatrixFace(int f, int order, 
+                                std::vector<AmanziGeometry::Point>& u, DenseMatrix& M);
+
+  // polynomial approximation of map x2 = F(x1)
+  int TaylorLeastSquareFit(int order,
+                           const std::vector<AmanziGeometry::Point>& x1, 
+                           const std::vector<AmanziGeometry::Point>& x2,
+                           std::vector<AmanziGeometry::Point>& u) const;
 
  private:
   void IntegrateMonomialsCell_(int c, int k, double* monomials);
