@@ -125,21 +125,24 @@ int DG::TaylorAdvectionMatrixFace(
 
   M.PutScalar(0.0);
 
-  // identify downwind cell
-  int dir, cd(cells[0]), id(0);
+  // calculate normal velocity
+  int dir, cd(cells[0]);
+  double factor(0.0);
+  std::vector<double> factors;
   const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cd, &dir);
-  double factor = u[0] * normal;
- 
+
+  for (int i = 0; i < u.size(); ++i) {
+    double tmp = u[i] * normal;
+    factor += tmp;
+    factors.push_back(tmp);
+  }
+
+  // identify downwind cell
+  int id(0); 
   if (factor * dir > 0.0) {
     if (ncells == 1) return 0;
     cd = cells[1];
     id = 1;
-  }
-
-  // calculate normal velocity
-  std::vector<double> factors(1, factor);
-  for (int i = 1; i < u.size(); ++i) {
-    factors.push_back(u[i] * normal);
   }
 
   // integrate traces from downwind cell
@@ -152,7 +155,7 @@ int DG::TaylorAdvectionMatrixFace(
   const AmanziGeometry::Point& xc1 = mesh_->cell_centroid(cd);
 
   int nrows = M.NumRows() / 2;
-  int ks(nrows * id);
+  int ks(nrows * id), ls(nrows * (1 - id));
   int is(ks);
 
   for (int i = 0; i <= order; ++i) {
@@ -178,7 +181,7 @@ int DG::TaylorAdvectionMatrixFace(
   is = ks;
   for (int i = 0; i <= order; ++i) {
     for (int k = 0; k < i + 1; ++k) {
-      int js(0);
+      int js(ls);
       for (int j = 0; j <= order; ++j) {
         for (int l = 0; l < j + 1; ++l) {
           M(is + k, js) += IntegrateMonomialsEdge_(x1, x2, i - k, k,

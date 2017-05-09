@@ -137,24 +137,21 @@ int RemapVelocityFaces(int order,
       A(0, 0) = x1[0];
       A(0, 1) = A(1, 0) = x1[1];
       A(1, 1) = -x1[0];
-std::cout << "\n" << A.Det() << " x2: " << x2 << std::endl;
 
       A.Inverse();
       b = A * x2;
-std::cout << "b: " << b << std::endl;
    
       v.push_back(AmanziGeometry::Point(b[0], -b[1]));
       v.push_back(AmanziGeometry::Point(b[1],  b[0]));
 
       A.SetColumn(0, v[1]);
       A.SetColumn(1, v[2]);
-std::cout << v[0] << std::endl;
+
       v[0] = xf2 - A * xf1;
 
       // calculate velocity F(X) - X
       v[1][0] -= 1.0;
       v[2][1] -= 1.0;
-std::cout << v[0] << " " << v[1] << " " << v[2] << std::endl;
     } 
 
     int n(0);
