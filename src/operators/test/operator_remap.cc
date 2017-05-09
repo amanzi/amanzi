@@ -22,6 +22,7 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "GMVMesh.hh"
+#include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "LinearOperatorPCG.hh"
 
@@ -29,6 +30,7 @@
 #include "AdvectionRiemann.hh"
 #include "OperatorDefs.hh"
 #include "Reaction.hh"
+#include "RemapUtils.hh"
 
 
 /* *****************************************************************
@@ -53,7 +55,7 @@ void RemapTests2D(int order, std::string disc_name) {
 
   int nx(10), ny(10);
   // Teuchos::RCP<const Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  Teuchos::RCP<const Mesh> mesh1 = meshfactory("test/random10.exo");
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh1 = meshfactory("test/random10.exo");
 
   int ncells_owned = mesh1->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int ncells_wghost = mesh1->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -73,8 +75,8 @@ void RemapTests2D(int order, std::string disc_name) {
     mesh2->node_get_coordinates(v, &xv);
     if (!(fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
           fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6)) {
-      xv[0] += 0.02;
-      xv[1] += 0.01;
+      xv[0] += 0.02; //  * std::sin(xv[0]);
+      xv[1] += 0.01; //  * std::cos(xv[1]);
       nodeids.push_back(v);
       new_positions.push_back(xv);
     }
@@ -143,33 +145,14 @@ void RemapTests2D(int order, std::string disc_name) {
   auto global_reac = op_reac->global_operator();
 
   // -- calculate mesh velocity on faces and in cells
-  CompositeVectorSpace cvs_c, cvs_f;
-  cvs_c.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 2);
-  cvs_f.SetMesh(mesh1)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 2);
+  Teuchos::RCP<CompositeVector> velc, velf;
 
-  CompositeVector velc(cvs_c), velf(cvs_f);
-  Epetra_MultiVector& vel_c = *velc.ViewComponent("cell", true);
-  Epetra_MultiVector& vel_f = *velf.ViewComponent("face", true);
-
-  for (int f = 0; f < nfaces_wghost; ++f) {
-    const AmanziGeometry::Point& xf1 = mesh1->face_centroid(f);
-    const AmanziGeometry::Point& xf2 = mesh2->face_centroid(f);
-
-    vel_f[0][f] = xf2[0] - xf1[0];
-    vel_f[1][f] = xf2[1] - xf1[1];
-  }
-
-  for (int c = 0; c < ncells_wghost; ++c) {
-    const AmanziGeometry::Point& xc1 = mesh1->cell_centroid(c);
-    const AmanziGeometry::Point& xc2 = mesh2->cell_centroid(c);
-
-    vel_c[0][c] = xc2[0] - xc1[0];
-    vel_c[1][c] = xc2[1] - xc1[1];
-  }
+  RemapVelocityFaces(order, mesh1, mesh2, velf);
+  RemapVelocityCells(order, mesh1, mesh2, velc);
 
   // -- populate operators
-  op->UpdateMatrices(velf);
-  op_adv->UpdateMatrices(velc);
+  op->UpdateMatrices(*velf);
+  op_adv->UpdateMatrices(*velc);
   op_reac->UpdateMatrices(p1);
 
   // -- create local problem

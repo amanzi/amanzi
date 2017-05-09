@@ -53,7 +53,7 @@ add_amanzi_library(operators_audit SOURCE OperatorAudit.cc LINK_LIBS ${flow_tpl_
 set(operators_inc_files
     BCs.hh
     BCsList.hh
-    FieldMaps.hh
+    RemapUtils.hh
     OperatorDefs.hh
     OperatorUtils.hh
     Op.hh
@@ -109,7 +109,6 @@ set(operators_inc_files
 
 add_amanzi_library(operators 
                    SOURCE OperatorUtils.cc
-                          FieldMaps.cc
                           Operator.cc
                           Operator_Node.cc
                           Operator_Edge.cc
@@ -133,6 +132,7 @@ add_amanzi_library(operators
                           TreeOperator.cc
                           ReconstructionCell.cc
                           ReconstructionCell_Limiters.cc
+                          RemapUtils.cc
                    HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})
 

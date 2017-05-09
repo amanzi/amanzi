@@ -139,7 +139,6 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
 
   int dir, d(mesh_->space_dimension());
   AmanziMesh::Entity_ID_List nodes;
-  AmanziGeometry::Point v(d);
 
   WhetStone::DG dg(mesh_);
   WhetStone::MFD3D_Elasticity mfd(mesh_);
@@ -149,7 +148,13 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
 
   for (int c = 0; c < ncells_owned; ++c) {
     if (space_col_ == DG0 && space_row_ == DG0) {
-      for (int k = 0; k < d; ++k) v[k] = (*uc)[k][c];
+      int k(0);
+      std::vector<AmanziGeometry::Point> v;
+      while (k < uc->NumVectors()) {
+        v.push_back(AmanziGeometry::Point((*uc)[k][c], (*uc)[k + 1][c]));
+        k += 2;
+      }
+
       WhetStone::DenseMatrix Acell(1, 1);
 
       dg.TaylorAdvectionMatrixCell(c, 0, v, Acell);
@@ -157,7 +162,13 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
       matrix[c] = Acell;
     } 
     else if (space_col_ == DG1 && space_row_ == DG1) {
-      for (int k = 0; k < d; ++k) v[k] = (*uc)[k][c];
+      int k(0);
+      std::vector<AmanziGeometry::Point> v;
+      while (k < uc->NumVectors()) {
+        v.push_back(AmanziGeometry::Point((*uc)[k][c], (*uc)[k + 1][c]));
+        k += 2;
+      }
+
       WhetStone::DenseMatrix Acell(3, 3);
 
       dg.TaylorAdvectionMatrixCell(c, 1, v, Acell);
@@ -194,7 +205,6 @@ void AdvectionRiemann::UpdateMatricesFace_(const CompositeVector& u)
 
   int dir, d(mesh_->space_dimension());
   AmanziMesh::Entity_ID_List cells;
-  AmanziGeometry::Point v(d);
 
   for (int f = 0; f < nfaces_owned; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -203,12 +213,17 @@ void AdvectionRiemann::UpdateMatricesFace_(const CompositeVector& u)
     int ndofs = ncells * (local_schema_col_.items())[0].num;
     WhetStone::DenseMatrix Aface(ndofs, ndofs);
 
+    int k(0);
+    std::vector<AmanziGeometry::Point> v;
+    while (k < uf.NumVectors()) {
+      v.push_back(AmanziGeometry::Point(uf[k][f], uf[k + 1][f]));
+      k += 2;
+    }
+
     if (space_col_ == DG0 && space_row_ == DG0) {
-      for (int k = 0; k < d; ++k) v[k] = uf[k][f];
       dg.TaylorAdvectionMatrixFace(f, 0, v, Aface);
     }
     else if (space_col_ == DG1 && space_row_ == DG1) {
-      for (int k = 0; k < d; ++k) v[k] = uf[k][f];
       dg.TaylorAdvectionMatrixFace(f, 1, v, Aface);
     }
 

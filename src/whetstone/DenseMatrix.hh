@@ -78,6 +78,11 @@ class DenseMatrix {
     return *this;
   }
 
+  DenseMatrix& operator-=(const DenseMatrix& A) {
+    for (int i = 0; i < m_ * n_; i++) data_[i] -= A.data_[i];
+    return *this;
+  }
+
   int Multiply(const DenseMatrix& A, const DenseMatrix& B, bool transposeA);
   int Multiply(const DenseVector& A, DenseVector& B, bool transpose) const;
 

@@ -85,22 +85,24 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
  
   DG dg(mesh);
 
-  std::vector<AmanziGeometry::Point> u;
-  u.push_back(AmanziGeometry::Point(1.0, 2.0));
+  AmanziGeometry::Point zero(0.0, 0.0);
 
   for (int k = 0; k < 3; k++) {
     int nk = (k + 1) * (k + 2) / 2;
-    DenseMatrix A(nk, nk);
+    DenseMatrix A0(nk, nk), A1(nk, nk);
 
-    dg.TaylorAdvectionMatrixCell(0, k, u, A);
+    std::vector<AmanziGeometry::Point> u;
+    u.push_back(AmanziGeometry::Point(1.0, 2.0));
+
+    dg.TaylorAdvectionMatrixCell(0, k, u, A0);
 
     printf("Advection matrix (cell-based) for order=%d\n", k);
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A(i, j)); 
+      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A0(i, j)); 
       printf("\n");
     }
 
-    // accuracy test
+    // TEST1: accuracy
     DenseVector v(nk), av(nk);
     if (k > 1) {
       double tmp;
@@ -111,9 +113,38 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
       v(1) = 1.0;
       v(2) = 2.0;
     
-      A.Multiply(v, av, false);
+      A0.Multiply(v, av, false);
       v.Dot(av, &tmp);
       CHECK_CLOSE(tmp, 5 * v(0) * mesh->cell_volume(0), 1e-12);
+    }
+
+    // TEST2: add zero linear component to constant u
+    u.push_back(zero);
+    u.push_back(zero);
+
+    dg.TaylorAdvectionMatrixCell(0, k, u, A1);
+
+    A1 -= A0;
+    CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
+
+    // TEST3: nonzero linear component of u
+    u.clear();
+    u.push_back(zero);
+    u.push_back(zero);
+    u.push_back(AmanziGeometry::Point(0.0, 1.0));
+
+    dg.TaylorAdvectionMatrixCell(0, k, u, A1);
+
+    printf("Advection matrix (cell-based) for order=%d u=(0,y)\n", k);
+    for (int i = 0; i < nk; i++) {
+      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A1(i, j)); 
+      printf("\n");
+    }
+
+    if (k > 1) {
+      double mon_y2(0.384318693694);
+      CHECK_CLOSE(2 * mon_y2, A1(0, 5), 1e-12);
+      CHECK_CLOSE(mon_y2, A1(2, 2), 1e-12);
     }
   }
 
@@ -138,16 +169,18 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
  
   DG dg(mesh);
 
-  std::vector<AmanziGeometry::Point> u;
-  u.push_back(AmanziGeometry::Point(1.0, 2.0));
+  AmanziGeometry::Point zero(0.0, 0.0);
 
   for (int k = 0; k < 2; k++) {
     int nk = (k + 1) * (k + 2);
     DenseMatrix A(nk, nk);
 
+    std::vector<AmanziGeometry::Point> u;
+    u.push_back(AmanziGeometry::Point(1.0, 2.0));
+
     dg.TaylorAdvectionMatrixFace(1, k, u, A);
 
-    printf("Advection matrix (face-based) for order=%d\n", k);
+    printf("Advection matrix (face-based) for order=%d  u=constant\n", k);
     for (int i = 0; i < nk; i++) {
       for (int j = 0; j < nk; j++ ) printf("%8.4f ", A(i, j)); 
       printf("\n");

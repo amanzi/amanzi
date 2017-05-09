@@ -11,7 +11,7 @@
 
 #include "Diffusion.hh"
 #include "DiffusionFactory.hh"
-#include "FieldMaps.hh"
+#include "RemapUtils.hh"
 #include "LinearOperatorFactory.hh"
 // #include "OperatorAudit.hh"
 #include "OperatorDefs.hh"

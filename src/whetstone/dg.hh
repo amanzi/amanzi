@@ -62,13 +62,14 @@ class DG {
  private:
   void IntegrateMonomialsCell_(int c, int k, double* monomials);
   void IntegrateMonomialsFace_(int f, int k, double factor, double* monomials);
-  void IntegrateMonomialsEdge_(const AmanziGeometry::Point& x1,
-                               const AmanziGeometry::Point& x2,
-                               int k, double factor, double* monomials);
-  double IntegrateMonomialsEdge_(const AmanziGeometry::Point& x1,
-                                 const AmanziGeometry::Point& x2,
-                                 int ix, int iy, int jx, int jy,
-                                 double factor, const AmanziGeometry::Point& dc);
+  void IntegrateMonomialsEdge_(
+      const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
+      int k, double factor, double* monomials);
+  double IntegrateMonomialsEdge_(
+      const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
+      int ix, int iy, int jx, int jy,
+      const std::vector<double>& factors, 
+      const AmanziGeometry::Point& xc1, const AmanziGeometry::Point& xc2);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
