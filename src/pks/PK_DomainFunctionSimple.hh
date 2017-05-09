@@ -26,8 +26,8 @@
 
 namespace Amanzi {
 
-template <class ValueType, template <typename Type> class FunctionBase>
-class PK_DomainFunctionSimple : public FunctionBase<ValueType>,
+template <class FunctionBase>
+class PK_DomainFunctionSimple : public FunctionBase,
                                 public Functions::UniqueMeshFunction {
  public:
   PK_DomainFunctionSimple(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
@@ -38,10 +38,9 @@ class PK_DomainFunctionSimple : public FunctionBase<ValueType>,
   PK_DomainFunctionSimple(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                           const Teuchos::ParameterList& plist,
                           AmanziMesh::Entity_kind kind) :
-      UniqueMeshFunction(mesh),
-      FunctionBase<ValueType>(plist),
-      kind_(kind) {
-    //FunctionBase<ValueType>::FunctionBase<ValueType>
+    UniqueMeshFunction(mesh),
+    FunctionBase(plist),
+    kind_(kind) {
   };
 
   ~PK_DomainFunctionSimple() {};
@@ -55,8 +54,8 @@ class PK_DomainFunctionSimple : public FunctionBase<ValueType>,
   virtual std::string name() const { return "simple"; }
 
  protected:
-  using FunctionBase<ValueType>::value_;
-  using FunctionBase<ValueType>::keyword_;
+  using FunctionBase::value_;
+  using FunctionBase::keyword_;
 
 
  private:
@@ -68,8 +67,8 @@ class PK_DomainFunctionSimple : public FunctionBase<ValueType>,
 /* ******************************************************************
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
-template <class ValueType, template <typename Type> class FunctionBase>
-void PK_DomainFunctionSimple<ValueType, FunctionBase>::Init(
+template <class FunctionBase>
+void PK_DomainFunctionSimple<FunctionBase>::Init(
     const Teuchos::ParameterList& plist, const std::string& keyword)
 {
   keyword_ = keyword;
@@ -98,8 +97,8 @@ void PK_DomainFunctionSimple<ValueType, FunctionBase>::Init(
 /* ******************************************************************
 * Compute and distribute the result by Simple.
 ****************************************************************** */
-template <class ValueType, template <typename Type> class FunctionBase>
-void PK_DomainFunctionSimple<ValueType, FunctionBase>::Compute(double t0, double t1)
+template <class FunctionBase>
+void PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
 {
   if (unique_specs_.size() == 0) return;
 
@@ -114,7 +113,7 @@ void PK_DomainFunctionSimple<ValueType, FunctionBase>::Compute(double t0, double
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
     // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
     int nfun = (*uspec)->first->second->size();
-    WhetStone::DenseVector val_vec(nfun);  
+    std::vector<double> val_vec(nfun);  
 
 
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
@@ -124,18 +123,10 @@ void PK_DomainFunctionSimple<ValueType, FunctionBase>::Compute(double t0, double
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
       
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
-      for (int i=0; i<nfun; ++i) val_vec(i) = (*(*uspec)->first->second)(args)[i];
+      for (int i=0; i<nfun; ++i) val_vec[i] = (*(*uspec)->first->second)(args)[i];
 
-      // if (!std::is_floating_point<ValueType>::value)
-      //   value_[*c] = val_vec;
-      // else
-        value_[*c] = val_vec(0);
-      
-
-      // }
-      // else{
-      //   value_[*c] = (*(*uspec)->first->second)(args);
-      // }
+      value_[*c] = val_vec;
+     
     }
 
     
@@ -150,9 +141,13 @@ void PK_DomainFunctionSimple<ValueType, FunctionBase>::Compute(double t0, double
             mesh_->cell_centroid(*c) : mesh_->face_centroid(*c);
 
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-        value_[*c] -= (*(*uspec)->first->second)(args)[0];
+        for (int i=0; i<nfun; ++i) {
+          value_[*c][i] -= (*(*uspec)->first->second)(args)[i];
+          value_[*c][i] *= dt;
+        }
+        //value_[*c] -= (*(*uspec)->first->second)(args)[0];
         //value_[*c] -= (*(*uspec)->first->second)(args);
-        value_[*c] *= dt;
+        //value_[*c] *= dt;
       }
     }
   }

@@ -27,8 +27,8 @@
 
 namespace Amanzi {
 
-template <class ValueType, template <typename Type> class FunctionBase>
-class PK_DomainFunctionVolume : public FunctionBase<ValueType>,
+template <class FunctionBase>
+class PK_DomainFunctionVolume : public FunctionBase,
                                 public Functions::UniqueMeshFunction {
  public:
   PK_DomainFunctionVolume(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
@@ -53,9 +53,9 @@ class PK_DomainFunctionVolume : public FunctionBase<ValueType>,
   virtual std::string name() const { return "volume"; }
 
  protected:
-  using FunctionBase<ValueType>::value_;
-  using FunctionBase<ValueType>::domain_volume_;
-  using FunctionBase<ValueType>::keyword_;
+  using FunctionBase::value_;
+  using FunctionBase::domain_volume_;
+  using FunctionBase::keyword_;
 
  private:
   std::string submodel_;
@@ -67,8 +67,8 @@ class PK_DomainFunctionVolume : public FunctionBase<ValueType>,
 /* ******************************************************************
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
-template <class ValueType, template <typename Type> class FunctionBase>
-void PK_DomainFunctionVolume<ValueType, FunctionBase>::Init(
+template <class FunctionBase>
+void PK_DomainFunctionVolume<FunctionBase>::Init(
     const Teuchos::ParameterList& plist, const std::string& keyword)
 {
   keyword_ = keyword;
@@ -98,8 +98,8 @@ void PK_DomainFunctionVolume<ValueType, FunctionBase>::Init(
 /* ******************************************************************
 * Compute and distribute the result by volume.
 ****************************************************************** */
-template <class ValueType, template <typename Type> class FunctionBase>
-void PK_DomainFunctionVolume<ValueType, FunctionBase>::Compute(double t0, double t1)
+template <class FunctionBase>
+void PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
 {
    // create the input tuple (time + space)
   int dim = (*mesh_).space_dimension();
@@ -118,6 +118,8 @@ void PK_DomainFunctionVolume<ValueType, FunctionBase>::Compute(double t0, double
     }
     double tmp(domain_volume_);
     mesh_->get_comm()->SumAll(&tmp, &domain_volume_, 1);
+    int nfun = (*uspec)->first->second->size();
+    std::vector<double> val_vec(nfun);  
 
     args[0] = t1;
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
@@ -127,7 +129,9 @@ void PK_DomainFunctionVolume<ValueType, FunctionBase>::Compute(double t0, double
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
-      value_[*c] = (*(*uspec)->first->second)(args)[0] / domain_volume_;
+      //value_[*c] = (*(*uspec)->first->second)(args)[0] / domain_volume_;
+      for (int i=0; i<nfun; ++i) val_vec[i] = (*(*uspec)->first->second)(args)[i] / domain_volume_;
+      value_[*c] = val_vec;
     }
 
     if (submodel_ == "integrated source") {
@@ -141,8 +145,12 @@ void PK_DomainFunctionVolume<ValueType, FunctionBase>::Compute(double t0, double
 
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
-        value_[*c] -= (*(*uspec)->first->second)(args)[0] / domain_volume_;
-        value_[*c] *= dt;
+        //value_[*c] -= (*(*uspec)->first->second)(args)[0] / domain_volume_;
+        for (int i=0; i<nfun; ++i) {
+          value_[*c][i] -= (*(*uspec)->first->second)(args)[i] / domain_volume_;
+          value_[*c][i] *= dt;
+        }
+        //value_[*c] *= dt;
       }
     }
   }

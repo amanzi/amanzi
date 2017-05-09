@@ -148,13 +148,13 @@ class Flow_PK : public PK_PhysicalBDF {
   std::string coordinate_system_;
 
   // boundary conditions
-  std::vector<Teuchos::RCP<FlowBoundaryFunction<double> > > bcs_; 
+  std::vector<Teuchos::RCP<FlowBoundaryFunction> > bcs_; 
   int nseepage_prev;
 
   Teuchos::RCP<Operators::BCs> op_bc_;
 
   // source terms and liquid balance
-  std::vector<Teuchos::RCP<PK_DomainFunction<double> > > srcs;
+  std::vector<Teuchos::RCP<PK_DomainFunction> > srcs;
   mutable double mass_bc, seepage_mass_, mass_initial;
 
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
