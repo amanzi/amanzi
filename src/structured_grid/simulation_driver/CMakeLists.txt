@@ -20,6 +20,8 @@ include_directories(${PMAMR_INCLUDE_DIRS})
 include_directories(${PLATFORM_INTERFACE_SOURCE_DIR}) # havent yet visited these folders
 include_directories(${ATK_SOURCE_DIR})
 
+include_directories(${XERCES_INCLUDE_DIRS})
+
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 
