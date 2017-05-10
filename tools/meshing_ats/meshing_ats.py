@@ -1,5 +1,5 @@
 """
-Extrudes a VTK 2D mesh to generate an ExodusII 3D mesh.
+Extrudes a 2D mesh to generate an ExodusII 3D mesh.
 
 Works with and assumes all polyhedra cells (and polygon faces).
 
