@@ -173,16 +173,40 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
 
   for (int k = 0; k < 2; k++) {
     int nk = (k + 1) * (k + 2);
-    DenseMatrix A(nk, nk);
+    DenseMatrix A0(nk, nk), A1(nk, nk);
 
     std::vector<AmanziGeometry::Point> u;
     u.push_back(AmanziGeometry::Point(1.0, 2.0));
 
-    dg.TaylorAdvectionMatrixFace(1, k, u, A);
+    // TEST1: constant u
+    dg.TaylorAdvectionMatrixFace(1, k, u, A0);
 
     printf("Advection matrix (face-based) for order=%d  u=constant\n", k);
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A(i, j)); 
+      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A0(i, j)); 
+      printf("\n");
+    }
+
+    // TEST2: linear u with zero gradient
+    u.push_back(zero);
+    u.push_back(zero);
+
+    dg.TaylorAdvectionMatrixFace(1, k, u, A1);
+
+    A1 -= A0;
+    CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
+
+    // TEST3: nonzero linear component of u
+    u.clear();
+    u.push_back(zero);
+    u.push_back(zero);
+    u.push_back(AmanziGeometry::Point(1.0, 0.0));
+
+    dg.TaylorAdvectionMatrixFace(1, k, u, A1);
+
+    printf("Advection matrix (cell-based) for order=%d u=(y-y0,0)\n", k);
+    for (int i = 0; i < nk; i++) {
+      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A1(i, j)); 
       printf("\n");
     }
   }
@@ -192,14 +216,14 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
 
 
 /* ****************************************************************
-* Test of polynomila approximation
+* Test of polynomial approximation in cells
 **************************************************************** */
-TEST(DG_MAP_APPROXIMATION) {
+TEST(DG_MAP_APPROXIMATION_CELL) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Polynomial approximation of map" << std::endl;
+  std::cout << "\nTest: Polynomial approximation of map in cells." << std::endl;
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   MeshFactory meshfactory(comm);
@@ -251,6 +275,24 @@ TEST(DG_MAP_APPROXIMATION) {
   CHECK_CLOSE(norm(u[0]), 0.0, 1e-12);
   CHECK_CLOSE(norm(u[1] - AmanziGeometry::Point(c, s)), 0.0, 1e-12);
   CHECK_CLOSE(norm(u[2] - AmanziGeometry::Point(-s, c)), 0.0, 1e-12);
+
+  // test non-linear deformation map
+  x1.clear();
+  x1.push_back(AmanziGeometry::Point(-0.5, -0.5));
+  x1.push_back(AmanziGeometry::Point( 0.5, -0.5));
+  x1.push_back(AmanziGeometry::Point(-0.5,  0.5));
+  x1.push_back(AmanziGeometry::Point( 0.5,  0.5));
+
+  x2 = x1;
+  x2[3] += AmanziGeometry::Point(0.1, 0.1);
+
+  dg.TaylorLeastSquareFit(1, x1, x2, u);
+
+  for (int i = 0; i < u.size(); ++i) {
+    printf("u[%d] = %8.4g %8.4g\n", i, u[i][0], u[i][1]); 
+  }
+
+  CHECK_CLOSE(0.025, u[0][0], 1e-12);
 
   delete comm;
 }

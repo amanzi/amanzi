@@ -139,19 +139,12 @@ int RemapVelocityFaces(int order,
       A(1, 1) = -x1[0];
 
       A.Inverse();
-      b = A * x2;
-   
+      b = A * (x2 - x1);
+
       v.push_back(AmanziGeometry::Point(b[0], -b[1]));
       v.push_back(AmanziGeometry::Point(b[1],  b[0]));
-
-      A.SetColumn(0, v[1]);
-      A.SetColumn(1, v[2]);
-
-      v[0] = xf2 - A * xf1;
-
-      // calculate velocity F(X) - X
-      v[1][0] -= 1.0;
-      v[2][1] -= 1.0;
+v[1] *= 0.0;
+v[2] *= 0.0;
     } 
 
     int n(0);
@@ -217,6 +210,10 @@ int RemapVelocityCells(int order,
     v[1][0] -= 1.0;
     v[2][1] -= 1.0;
 
+if(c<12) std::cout << c << " " << v[0] << " " << mesh2->cell_centroid(c) - xc << std::endl;
+v[1] *= 0.0;
+v[2] *= 0.0;
+v[0] = mesh2->cell_centroid(c) - xc;
     int n(0);
     for (int k = 0; k < nk; ++k) {
       uc[n++][c] = v[k][0];

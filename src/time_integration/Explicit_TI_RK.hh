@@ -1,3 +1,14 @@
+/*
+  Time Integration 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Markus Berndt (berndt@lanl.gov)
+*/
+
 #ifndef AMANZI_EXPLICIT_TI_RK_HH_
 #define AMANZI_EXPLICIT_TI_RK_HH_
 
@@ -81,8 +92,8 @@ class RK {
 
   void TimeStep(const double t, const double h, const Vector& y, Vector& y_new);
 
-  int order() {return order_;}
-  method_t method() {return method_;}
+  int order() { return order_; }
+  method_t method() { return method_; }
 
  private:
   void InitMethod_(const method_t method);
@@ -99,6 +110,7 @@ class RK {
   Teuchos::RCP<VerboseObject> vo_;
 };
 
+
 template<class Vector>
 RK<Vector>::RK(fnBase<Vector>& fn, 
                const method_t method, 
@@ -107,8 +119,9 @@ RK<Vector>::RK(fnBase<Vector>& fn,
 { 
   InitMethod_(method);
   CreateStorage_(initvector);
-  vo_ = Teuchos::rcp(new VerboseObject("TI::RK",plist_));
+  vo_ = Teuchos::rcp(new VerboseObject("TI::RK", plist_));
 }
+
 
 template<class Vector>
 RK<Vector>::RK(fnBase<Vector>& fn, 
@@ -287,11 +300,11 @@ void RK<Vector>::TimeStep(const double t, const double h, const Vector& y, Vecto
 {
   Vector sum_vec(y);
   double sum_time;
-  for (int i=0; i!=order_; ++i) {
-    sum_time = t + c_[i]*h;
+  for (int i = 0; i != order_; ++i) {
+    sum_time = t + c_[i] * h;
     sum_vec = y;
       
-    for (int j=0; j!=i; ++j) {
+    for (int j = 0; j != i; ++j) {
       if (a_(i,j) != 0.0) {
         sum_vec.Update(a_(i,j), *k_[j], 1.0);
       }
@@ -302,9 +315,9 @@ void RK<Vector>::TimeStep(const double t, const double h, const Vector& y, Vecto
 
   y_new = y;
       
-  for (int i=0; i!=order_; ++i) {
+  for (int i = 0; i != order_; ++i) {
     if (b_[i] != 0.0) {
-      y_new.Update(b_[i],*k_[i],1.0);
+      y_new.Update(b_[i], *k_[i], 1.0);
     }
   }
 }

@@ -53,9 +53,9 @@ void RemapTests2D(int order, std::string disc_name) {
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
 
-  int nx(20), ny(20);
+  int nx(40), ny(40);
   // Teuchos::RCP<const Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh1 = meshfactory("test/random20.exo");
+  Teuchos::RCP<const Mesh> mesh1 = meshfactory("test/median7x8.exo");
 
   int ncells_owned = mesh1->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int ncells_wghost = mesh1->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -63,7 +63,7 @@ void RemapTests2D(int order, std::string disc_name) {
 
   // create deformed mesh
   // Teuchos::RCP<Mesh> mesh2 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  Teuchos::RCP<Mesh> mesh2 = meshfactory("test/random20.exo");
+  Teuchos::RCP<Mesh> mesh2 = meshfactory("test/median7x8.exo");
 
   int nnodes_owned = mesh2->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
 
@@ -75,8 +75,8 @@ void RemapTests2D(int order, std::string disc_name) {
     mesh2->node_get_coordinates(v, &xv);
     if (!(fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
           fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6)) {
-      xv[0] += 0.2 / nx * std::sin(xv[0]);
-      xv[1] += 0.1 / ny * std::cos(xv[1]);
+      xv[0] += 0.5 / nx * ((double)rand() / RAND_MAX - 0.5);
+      xv[1] += 0.5 / ny * ((double)rand() / RAND_MAX - 0.5);
       nodeids.push_back(v);
       new_positions.push_back(xv);
     }
@@ -92,21 +92,20 @@ void RemapTests2D(int order, std::string disc_name) {
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh1->cell_centroid(c);
-    p1c[0][c] = xc[0] + 2 * xc[1];
+    p1c[0][c] = xc[0] * xc[0] + 2 * xc[1];
     if (nk > 1) {
-      p1c[1][c] = 1.0;
+      p1c[1][c] = 2.0 * xc[0];
       p1c[2][c] = 2.0;
     }
   }
 
-  // remap cell-based field
-  // -- allocate memory
+  // allocate memory
   CompositeVectorSpace cvs2;
   cvs2.SetMesh(mesh2)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
   CompositeVector p2(cvs2);
   Epetra_MultiVector& p2c = *p2.ViewComponent("cell", true);
 
-  // -- create primary advection operator
+  // create primary advection operator
   Teuchos::ParameterList plist;
   plist.set<std::string>("discretization", disc_name);
 
@@ -121,7 +120,7 @@ void RemapTests2D(int order, std::string disc_name) {
   Teuchos::RCP<AdvectionRiemann> op = Teuchos::rcp(new AdvectionRiemann(plist, mesh1));
   auto global_op = op->global_operator();
 
-  // -- create secondary advection operator (cell-based)
+  // create secondary advection operator (cell-based)
   plist.set<std::string>("discretization", disc_name);
 
   plist.sublist("schema domain")
@@ -134,7 +133,7 @@ void RemapTests2D(int order, std::string disc_name) {
 
   Teuchos::RCP<AdvectionRiemann> op_adv = Teuchos::rcp(new AdvectionRiemann(plist, global_op));
 
-  // -- create accumulation operator
+  // create accumulation operator
   plist.sublist("schema")
       .set<std::string>("base", "cell")
       .set<Teuchos::Array<std::string> >("location", std::vector<std::string>({"cell"}))
@@ -144,18 +143,18 @@ void RemapTests2D(int order, std::string disc_name) {
   Teuchos::RCP<Reaction> op_reac = Teuchos::rcp(new Reaction(plist, mesh1));
   auto global_reac = op_reac->global_operator();
 
-  // -- calculate mesh velocity on faces and in cells
+  // calculate mesh velocity on faces and in cells
   Teuchos::RCP<CompositeVector> velc, velf;
 
   RemapVelocityFaces(order, mesh1, mesh2, velf);
   RemapVelocityCells(order, mesh1, mesh2, velc);
 
-  // -- populate operators
+  // populate operators
   op->UpdateMatrices(*velf);
   op_adv->UpdateMatrices(*velc);
   op_reac->UpdateMatrices(p1);
 
-  // -- create local problem
+  // predictor step
   CompositeVector& rhs = *global_reac->rhs();
   global_reac->Apply(p1, rhs);
 
@@ -169,26 +168,36 @@ void RemapTests2D(int order, std::string disc_name) {
   plist.set<std::string>("preconditioner type", "diagonal");
   global_reac->InitPreconditioner(plist);
 
-  // -- solve the problem
   AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
       pcg(global_reac, global_reac);
 
   pcg.Init(plist);
   pcg.ApplyInverse(g, p2);
 
+  // corrector step
+  /*
+  p2.Update(0.5, p1, 0.5);
+  global_op->Apply(p2, g);
+  g.Update(1.0, rhs, 1.0);
+
+  pcg.ApplyInverse(g, p2);
+  */
+
   // calculate error
-  double pl2_err(0.0), pinf_err(0.0);
+  double pl2_err(0.0), pinf_err(0.0), area(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
     const AmanziGeometry::Point& xc = mesh2->cell_centroid(c);
-    double tmp = (xc[0] + 2 * xc[1]) - p2c[0][c];
+    double tmp = (xc[0] * xc[0] + 2 * xc[1]) - p2c[0][c];
 
     pinf_err = std::max(pinf_err, fabs(tmp));
     pl2_err += tmp * tmp * mesh2->cell_volume(c);
+    area += mesh2->cell_volume(c);
   }
   pl2_err = std::pow(pl2_err, 0.5);
 
   if (MyPID == 0) {
-    printf("L2(p)=%12.8g  Inf(p)=%12.8g\n", pl2_err, pinf_err);
+    printf("L2(p)=%12.8g  Inf(p)=%12.8g  Err(area)=%12.8g\n", 
+        pl2_err, pinf_err, 1.0 - area);
   }
 
   // visualization

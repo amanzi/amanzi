@@ -114,6 +114,7 @@ int DG::TaylorAdvectionMatrixCell(
 
 /* ******************************************************************
 * Advection matrix for Taylor basis and constant velocity u (2D only)
+* Velocity is given in the face-based Taylor basis.
 ****************************************************************** */
 int DG::TaylorAdvectionMatrixFace(
     int f, int order, std::vector<AmanziGeometry::Point>& u, DenseMatrix& M)
@@ -127,19 +128,16 @@ int DG::TaylorAdvectionMatrixFace(
 
   // calculate normal velocity
   int dir, cd(cells[0]);
-  double factor(0.0);
   std::vector<double> factors;
   const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cd, &dir);
 
   for (int i = 0; i < u.size(); ++i) {
-    double tmp = u[i] * normal;
-    factor += tmp;
-    factors.push_back(tmp);
+    factors.push_back(u[i] * normal);
   }
 
   // identify downwind cell
   int id(0); 
-  if (factor * dir > 0.0) {
+  if (factors[0] * dir > 0.0) {
     if (ncells == 1) return 0;
     cd = cells[1];
     id = 1;
@@ -274,7 +272,7 @@ double DG::IntegrateMonomialsEdge_(
     const AmanziGeometry::Point& xc1, const AmanziGeometry::Point& xc2)
 {
   double a1, a2, a3, tmp(0.0); 
-  AmanziGeometry::Point xm(d_), ym(d_);
+  AmanziGeometry::Point xm(d_), ym(d_), xe((x1 + x2) /2);
 
   if (d_ == 2) {
     int uk(std::pow(2 * factors.size(), 0.5) - 1);
@@ -285,7 +283,8 @@ double DG::IntegrateMonomialsEdge_(
 
       a3 = factors[0];
       if (uk > 0) {  // FIXME
-        a3 += factors[1] * xm[0] + factors[2] * xm[1];
+        ym = xm - xe;  
+        a3 += factors[1] * ym[0] + factors[2] * ym[1];
       }      
 
       ym = xm - xc1;
