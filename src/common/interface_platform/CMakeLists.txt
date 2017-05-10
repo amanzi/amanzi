@@ -25,10 +25,7 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
-if ( CCSE_FOUND )
-  include_directories(${CCSE_INCLUDE_DIRS})
-endif()  
-
+include_directories(${CCSE_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${XERCES_INCLUDE_DIRS})
 
@@ -78,7 +75,7 @@ if (BUILD_TESTS)
     add_amanzi_test(converter_u_base converter_u_base
                     KIND int
                     SOURCE test/Main.cc test/converter_u_base.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${Boost_LIBRARIES}
+                    LINK_LIBS ${amanzi_libs} ${CCSE_LIBRARIES} ${UnitTest_LIBRARIES} ${Boost_LIBRARIES}
                                              ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
  
     # Test: translate Amanzi-S input
