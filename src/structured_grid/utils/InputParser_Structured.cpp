@@ -52,7 +52,9 @@ namespace Amanzi {
     static double atmToMKS = 101325;
     static double gravity_mag_DEF = 9.807;
     static int gravity_dir_DEF = BL_SPACEDIM - 1;
-#if BL_SPACEDIM == 2
+#if BL_SPACEDIM == 1
+    static double z_location_DEF = 1;
+#else
     static double z_location_DEF = 0;
 #endif
 
@@ -1965,7 +1967,6 @@ namespace Amanzi {
       return gravity_dir;
     }
 
-#if BL_SPACEDIM == 2
     static double z_location(const ParameterList& parameter_list)
     {
       double z_loc = z_location_DEF;
@@ -1988,7 +1989,6 @@ namespace Amanzi {
       }
       return z_loc;
     }
-#endif
 
     //
     // convert material to structured format
