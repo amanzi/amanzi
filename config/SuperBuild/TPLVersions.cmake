@@ -234,7 +234,7 @@ set(HDF5_VERSION_PATCH 18)
 set(HDF5_VERSION ${HDF5_VERSION_MAJOR}.${HDF5_VERSION_MINOR}.${HDF5_VERSION_PATCH})
 set(HDF5_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.gz)
-set(HDF5_MD5_SUM        1196e668f5592bfb50d1de162eb16cff)      
+set(HDF5_MD5_SUM        dd2148b740713ca0295442ec683d7b1c)
 
 
 #
@@ -360,8 +360,8 @@ set(Trilinos_VERSION_MAJOR 12)
 set(Trilinos_VERSION_MINOR 10)
 set(Trilinos_VERSION_PATCH 1)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
-set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive/")
-set(Trilinos_ARCHIVE_FILE   Trilinos-trilinos-release-${Trilinos_VERSION}.tar.gz)
+set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
+set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_MD5_SUM        40f28628b63310f9bd17c26d9ebe32b1)
 
 #
@@ -372,7 +372,7 @@ set(SEACAS_VERSION_MINOR 10)
 set(SEACAS_VERSION_PATCH 1)
 set(SEACAS_VERSION ${SEACAS_VERSION_MAJOR}-${SEACAS_VERSION_MINOR}-${SEACAS_VERSION_PATCH})
 set(SEACAS_URL_STRING     "https://github.com/trilinos/Trilinos/archive/")
-set(SEACAS_ARCHIVE_FILE   Trilinos-trilinos-release-${SEACAS_VERSION}.tar.gz)
+set(SEACAS_ARCHIVE_FILE   trilinos-release-${SEACAS_VERSION}.tar.gz)
 set(SEACAS_MD5_SUM        40f28628b63310f9bd17c26d9ebe32b1)
 
 #
