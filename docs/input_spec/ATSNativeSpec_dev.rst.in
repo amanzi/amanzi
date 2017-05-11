@@ -190,100 +190,13 @@ all domains/meshes.
 Observation
 ##############
 
-**This is not currently correct!**
-
-A user may request any number of specific observations from ATS.  Each labeled Observation Data quantity involves a field quantity, a model, a region from which it will extract its source data, and a list of discrete times 
-for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of ATS arguments.
-
-* `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
-
- * `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
-
- * OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", and all IOEvent_ spec options.
-
-  * `"Variables`" [Array(string)] a list of field quantities taken from the list of available field quantities:
-
-   * Volumetric water content [volume water / bulk volume]
-   * Aqueous saturation [volume water / volume pore space]
-   * Aqueous pressure [Pa]
-   * Hydraulic Head [m] 
-   * XXX Aqueous concentration [moles of solute XXX / volume water in MKS] (name formed by string concatenation, given the definitions in `"Phase Definition`" section)
-   * X-, Y-, Z- Aqueous volumetric fluxe [m/s]
-   * MaterialID
-
-  * `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
-
-  * `"Region`" [string] the label of a user-defined region
-
-The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
-
-* `"Observation Data: Point`" returns the value of the field quantity at a point
-
-* `"Observation Data: Integral`" returns the integral of the field quantity over the region specified
-
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="Observation Data">
-    <Parameter name="Observation Output Filename" type="string" value="obs_output.out"/>
-    <ParameterList name="some observation name">
-      <Parameter name="Region" type="string" value="some point region name"/>
-      <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-      <Parameter name="Variable" type="string" value="Volumetric water content"/>
-      <Parameter name="times" type="Array(double)" value="{{100000.0, 200000.0}}"/>
-
-      <Parameter name="cycles" type="Array(int)" value="{{100000, 200000, 400000, 500000}}"/>
-      <Parameter name="cycles start period stop" type="Array(int)" value="{{0, 100, -1}}" />
-
-      <Parameter name="times start period stop 0" type="Array(double)" value="{{0.0, 10.0, 100.0}}"/>
-      <Parameter name="times start period stop 1" type="Array(double)" value="{{100.0, 25.0, -1.0}}"/>
-      <Parameter name="times" type="Array(double)" value="{{101.0, 303.0, 422.0}}"/>
-
-    </ParameterList>
-  </ParameterList>
-
+{ Observable }
 
 
 PK
 #####
 
-The `"PKs`" ParameterList in Main_ is expected to have one and only one sublist, which corresponds to the PK at the top of the PK tree.
-This top level PK is also often an MPC (MPCs are PKs).
-
-All PKs have the following parameters in their spec:
-
-* `"PK type`" ``[string]``
-
-  The PK type is a special key-word which corresponds to a given class in the PK factory.  See available PK types listed below in the `Physical PKs`_ section.
-
-* `"PK name`" ``[string]`` **LIST-NAME**
-
-  This is automatically written as the `"name`" attribute of the containing PK sublist, and need not be included by the user.
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="PKs">
-    <ParameterList name="my cool PK">
-      <Parameter name="PK type" type="string" value="my cool PK"/>
-       ...
-    </ParameterList>
-  </ParameterList>
-
-.. code-block:: xml
-
-  <ParameterList name="PKs">
-    <ParameterList name="Top level MPC">
-      <Parameter name="PK type" type="string" value="strong MPC"/>
-       ...
-    </ParameterList>
-  </ParameterList>
-
-Each PK, which may be named arbitrarily, is one of the following PK specs listed below.
-
+{ PK }
 
 Base PKs
 ===============
@@ -291,27 +204,22 @@ Base PKs
 There are several types of PKs, and each PK has its own valid input spec.  However, there are three main types of PKs, from which nearly all PKs derive.  Note that none of these are true PKs and cannot stand alone.
 
 
-PKDefaultBase
-----------------
-
-{ pk_default_base }
-
 PKPhysicalBase
 ----------------
 
-{ pk_physical_base }
+{ pk_physical_default }
 
 
 PKBDFBase
 ----------------
 
-{ pk_bdf_base }
+{ pk_bdf_default }
 
 
 PKPhysicalBDFBase
 -------------------
 
-{ pk_physical_bdf_base }
+{ pk_physical_bdf_default }
 
 Physical PKs
 ===============

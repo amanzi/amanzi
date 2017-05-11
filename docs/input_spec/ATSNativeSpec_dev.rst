@@ -64,13 +64,20 @@ Symbol Index
 #############
 
 :math:`|E|` | volume of a cell :math:`[m^X]` (where :math:`X` is the dimension of the mesh)
+:math:`g` | gravitational acceleration vector :math:`[m s^-2]`
 :math:`h` | ponded depth, or the water head over the surface :math:`[m]`
 :math:`` | alternative, in context of the subsurface, water head :math:`[m]`
 :math:`h_{snow}` | snow depth :math:`[m]`
+:math:`K` | absolute permeability :math:`[m^2]`
+:math:`k_r` | relative permeability :math:`[-]`
 :math:`n_X` | molar density of phase X :math:`[mol m^-3]`
+:math:`p` | pressure of the liquid phase :math:`[Pa]`
 :math:`P_{s,r}` | precipitation of rain or snow, noting that snow is always a precipitation rate in snow-water-equivalent (SWE) basis.  :math:`[m s^-1]`
+:math:`Q_w` | mass source of water :math:`[mol s^-1]`
 :math:`s_X` | saturation of phase X :math:`[-]`
+:math:`t` | time variable :math:`[s]`
 :math:`z` | elevation :math:`[m]`
+:math:`\nu` | dynamic viscosity of water :math:`[Pa s]`
 :math:`\phi` | porosity of the soil :math:`[-]`
 :math:`\rho` | mass density of a phase :math:`[kg m^-3]`
 :math:`\Theta` | extensive water content of a cell :math:`[mol]`
@@ -659,73 +666,107 @@ every 25 seconds thereafter, along with times 101, 303, and 422.  Files will be 
 Observation
 ##############
 
-**This is not currently correct!**
 
-A user may request any number of specific observations from ATS.  Each labeled Observation Data quantity involves a field quantity, a model, a region from which it will extract its source data, and a list of discrete times 
-for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of ATS arguments.
+Observations are a localized-in-space but frequent in time view of
+data, designed to get at useful diagnostic quantities such as
+hydrographs, total water content, quantities at a point, etc.  These
+are designed to allow frequent collection in time without saving huge
+numbers of visualization files to do postprocessing.  In fact, these
+should be though of as orthogonal data queries to visualization -- vis
+is pointwise in time but complete in space, while observations are
+pointwise/finite in space but complete in time.
 
-* `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
+A user may request any number of specific observations from ATS.  Each
+observation spec involves a field quantity, a functional reduction
+operator, a region from which it will extract its source data, and a
+list of discrete times for its evaluation.  The observations are
+evaluated during the simulation and written to disk.
 
- * `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
+* `"observations`" [list] can accept multiple ``[observation-spec]`` entries.
 
- * OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", and all IOEvent_ spec options.
+An ``[observation-spec]`` consists of the following quantities:
 
-  * `"Variables`" [Array(string)] a list of field quantities taken from the list of available field quantities:
+* `"observation output filename`" [string] user-defined name for the file that the observations are written to.
 
-   * Volumetric water content [volume water / bulk volume]
-   * Aqueous saturation [volume water / volume pore space]
-   * Aqueous pressure [Pa]
-   * Hydraulic Head [m] 
-   * XXX Aqueous concentration [moles of solute XXX / volume water in MKS] (name formed by string concatenation, given the definitions in `"Phase Definition`" section)
-   * X-, Y-, Z- Aqueous volumetric fluxe [m/s]
-   * MaterialID
+* `"variable`" [string] any ATS variable used by any PK, e.g. `"pressure`" or `"surface-water_content`"
 
-  * `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
+* `"region`" [string] the label of a user-defined region
 
-  * `"Region`" [string] the label of a user-defined region
+* `"location name`" [string] the mesh location of the thing to be measured, i.e. `"cell`", `"face`", or `"node`"
 
-The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
+* `"functional`" [string] the label of a function to apply to the variable across the region.  Valid functionals include:
+ * `"observation data: point`" returns the value of the field quantity at a point.  The region and location name must result in a single entity being selected.
+ * `"observation data: extensive integral`" returns the sum of an (extensive) variable over the region.  This should be used for extensive quantities such as `"water_content`" or `"energy`".
+ * `"observation data: intensive integral`" returns the volume-weighted average of an (intensive) variable over the region.  This should be used for intensive quantities such as `"temperature`" or `"saturation_liquid`".
 
-* `"Observation Data: Point`" returns the value of the field quantity at a point
+* Additionally, each ``[observation-spec]`` contains all parameters as in a IOEvent_ spec, which are used to specify at which times/cycles the observation is collected.
 
-* `"Observation Data: Integral`" returns the integral of the field quantity over the region specified
+For flux observations, and additional option is available:
+
+* `"direction normalized flux`" [bool] *false* Normalize the flux to point in the outward-normal direction.  This is important when looking at fluxes across a boundary, for instance to plot a hydrograph.
 
 
 Example:
 
 .. code-block:: xml
-
-  <ParameterList name="Observation Data">
-    <Parameter name="Observation Output Filename" type="string" value="obs_output.out"/>
-    <ParameterList name="some observation name">
-      <Parameter name="Region" type="string" value="some point region name"/>
-      <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-      <Parameter name="Variable" type="string" value="Volumetric water content"/>
-      <Parameter name="times" type="Array(double)" value="{100000.0, 200000.0}"/>
-
-      <Parameter name="cycles" type="Array(int)" value="{100000, 200000, 400000, 500000}"/>
-      <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
-
-      <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
-      <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
-      <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
-
+  
+  <ParameterList name="observations" type="ParameterList">
+    <!-- This measures the hydrograph out the "east" face of the surface domain -->
+    <ParameterList name="surface outlet flux" type="ParameterList">
+      <Parameter name="variable" type="string" value="surface-mass_flux" />
+      <Parameter name="direction normalized flux" type="bool" value="true" />
+      <Parameter name="region" type="string" value="east" />
+      <Parameter name="functional" type="string" value="observation data: extensive integral" />
+      <Parameter name="delimiter" type="string" value=" " />
+      <Parameter name="location name" type="string" value="face" />
+      <Parameter name="observation output filename" type="string" value="surface_outlet_flux.dat" />
+      <Parameter name="times start period stop" type="Array(double)" value="{0.0,86400.0,-1.0}" />
+    </ParameterList>
+    <!-- This measures the total water, in mols, in the entire subsurface domain -->
+    <ParameterList name="subsurface water content" type="ParameterList">
+      <Parameter name="variable" type="string" value="water_content" />
+      <Parameter name="region" type="string" value="computational domain" />
+      <Parameter name="functional" type="string" value="observation data: extensive integral" />
+      <Parameter name="delimiter" type="string" value=" " />
+      <Parameter name="location name" type="string" value="cell" />
+      <Parameter name="observation output filename" type="string" value="water_content.dat" />
+      <Parameter name="times start period stop" type="Array(double)" value="{0.0,86400.0,-1.0}" />
+    </ParameterList>
+    <!-- This tracks the temperature at a point -->
+    <ParameterList name="temperature_probeA" type="ParameterList">
+      <Parameter name="variable" type="string" value="temperature" />
+      <Parameter name="region" type="string" value="probeA" />
+      <Parameter name="functional" type="string" value="observation data: point" />
+      <Parameter name="delimiter" type="string" value=" " />
+      <Parameter name="location name" type="string" value="cell" />
+      <Parameter name="observation output filename" type="string" value="temperature_probeA.dat" />
+      <Parameter name="times start period stop" type="Array(double)" value="{0.0,86400.0,-1.0}" />
     </ParameterList>
   </ParameterList>
+
+
 
 
 
 PK
 #####
 
-The `"PKs`" ParameterList in Main_ is expected to have one and only one sublist, which corresponds to the PK at the top of the PK tree.
-This top level PK is also often an MPC (MPCs are PKs).
+
+
+A process kernel represents a single or system of partial/ordinary
+differential equation(s) or conservation law(s), and is used as the
+fundamental unit for coupling strategies.
+
+Implementations of this interface typically are either an MPC
+(multi-process coupler) whose job is to heirarchically couple several
+other PKs and represent the system of equations, or a Physical PK,
+which represents a single equation.
 
 All PKs have the following parameters in their spec:
 
 * `"PK type`" ``[string]``
 
-  The PK type is a special key-word which corresponds to a given class in the PK factory.  See available PK types listed below in the `Physical PKs`_ section.
+  The PK type is a special key-word which corresponds to a given class in the PK factory.  See available PK types listed below.
 
 * `"PK name`" ``[string]`` **LIST-NAME**
 
@@ -751,27 +792,13 @@ Example:
     </ParameterList>
   </ParameterList>
 
-Each PK, which may be named arbitrarily, is one of the following PK specs listed below.
+ 
 
 
 Base PKs
 ===============
 
 There are several types of PKs, and each PK has its own valid input spec.  However, there are three main types of PKs, from which nearly all PKs derive.  Note that none of these are true PKs and cannot stand alone.
-
-
-PKDefaultBase
-----------------
-
-
-
-``PKDefaultBase`` is not a true PK, but is a helper for providing some basic
-functionality shared by (nearly) all PKs.  Therefore, (nearly) all PKs inherit
-from this base class.
-
-No input spec.
-
-
 
 
 PKPhysicalBase
@@ -787,7 +814,7 @@ all leaves of the PK tree will inherit from ``PKPhysicalBase``.
 
   Domains and meshes are 1-to-1, and the empty string refers to the main domain or mesh.  PKs defined on other domains must specify which domain/mesh they refer to.
 
-* `"primary variable key`" ``[string]``
+* `"primary variable`" ``[string]``
 
   The primary variable associated with this PK, i.e. `"pressure`", `"temperature`", `"surface_pressure`", etc.
 
@@ -891,11 +918,90 @@ Richards PK
 ^^^^^^^^^^^^^^^
 
 
-Solves:
+Solves Richards equation:
 
 .. math::
-  \frac{\partial \Theta}{\partial t} = \nabla \frac{k_r \rho}{\mu} K ( \nabla p + \rho g \hat{z} ) = q
+  \frac{\partial \Theta}{\partial t} - \nabla \frac{k_r n_l}{\mu} K ( \nabla p + \rho g \cdot \hat{z} ) = Q_w
 
+
+Options:
+
+Variable naming:
+
+* `"domain`" ``[string]`` **""**  Defaults to the base subsurface domain.
+
+* `"primary variable`" ``[string]`` The primary variable associated with this PK, typically `"pressure`"
+
+
+Other variable names, typically not set as the default is basically always good:
+
+* `"conserved quantity suffix`" ``[string]`` **"water_content"**  If set, changes the conserved quantity key.
+
+* `"conserved quantity key`" ``[string]`` **"DOMAIN-CONSERVED_QUANTITY_SUFFIX"** Typically not set, default is good. ``[mol]``
+
+* `"mass density key`" ``[string]`` **"DOMAIN-mass_density_liquid"** liquid water density ``[kg m^-3]``
+
+* `"molar density key`" ``[string]`` **"DOMAIN-molar_density_liquid"** liquid water density ``[mol m^-3]``
+
+* `"permeability key`" ``[string]`` **"DOMAIN-permeability"** permeability of the soil medium ``[m^2]``
+
+* `"conductivity key`" ``[string]`` **"DOMAIN-relative_permeability"** scalar coefficient of the permeability ``[-]``
+
+* `"upwind conductivity key`" ``[string]`` **"DOMAIN-upwind_relative_permeability"** upwinded (face-based) scalar coefficient of the permeability.  Note the units of this are strange, but this represents :math:`\frac{n_l k_r}{\mu}`  ``[mol kg^-1 s^1 m^-2]``
+
+* `"darcy flux key`" ``[string]`` **"DOMAIN-mass_flux"** mass flux across a face ``[mol s^-1]``
+
+* `"darcy flux direction key`" ``[string]`` **"DOMAIN-mass_flux_direction"** direction of the darcy flux (used in upwinding :math:`k_r`) ``[??]``
+
+* `"darcy velocity key`" ``[string]`` **"DOMAIN-darcy_velocity"** darcy velocity vector, interpolated from faces to cells ``[m s^-1]``
+
+* `"darcy flux key`" ``[string]`` **"DOMAIN-mass_flux"** mass flux across a face ``[mol s^-1]``
+
+* `"saturation key`" ``[string]`` **"DOMAIN-saturation_liquid"** volume fraction of the liquid phase ``[-]``
+
+
+Time integration and timestep control:
+
+* `"initial time step`" ``[double]`` **1.** Max initial time step size ``[s]``.
+
+* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_.
+
+  Note that this is only provided if this Richards PK is not strongly coupled to other PKs.
+
+* `"initial condition`" ``[initial-condition-spec]``  See InitialConditions_.
+
+  Additionally, the following parameter is supported:
+
+ - `"initialize faces from cell`" ``[bool]`` **false**
+
+   Indicates that the primary variable field has both CELL and FACE objects,
+   and the FACE values are calculated as the average of the neighboring cells.
+
+Error control:
+
+* `"absolute error tolerance`" [double] **DERIVED** Defaults to a porosity of 0.5 * a saturation of 0.1 * n_l.  A small, but significant, amount of water.
+
+* `"relative error tolerance`" [double] **1** Take the error relative to the amount of water present in that cell.
+
+* `"flux tolerance`" [double] **1**
+
+  Multiplies the error in flux (on a face) relative to the min of water in the
+  neighboring cells.  Typically only changed if infiltration is very small and
+  the boundary condition is not converging, at which point it can be decreased
+  by an order of magnitude at a time until the boundary condition is
+  satisfied.
+
+Boundary conditions:
+
+* `"boundary conditions`" ``[subsurface-flow-bc-spec]`` **defaults to Neuman, 0 normal flux**
+
+Physics control:
+
+* `"permeability rescaling`" ``[double]`` **1** Typically 1e7 or order :math:`sqrt(K)` is about right.  This rescales things to stop from multiplying by small numbers (permeability) and then by large number (:math:`\rho / \mu`).
+
+
+
+  
  
 
 
