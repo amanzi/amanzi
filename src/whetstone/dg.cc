@@ -137,10 +137,14 @@ int DG::TaylorAdvectionMatrixFace(
 
   // identify downwind cell
   int id(0); 
-  if (factors[0] * dir > 0.0) {
+  if (factors[0] > 0.0) {
     if (ncells == 1) return 0;
     cd = cells[1];
     id = 1;
+  } else {
+    for (auto it = factors.begin(); it != factors.end(); ++it) {
+      *it *= -1.0;
+    }
   }
 
   // integrate traces from downwind cell
@@ -161,7 +165,7 @@ int DG::TaylorAdvectionMatrixFace(
       int js(ks);
       for (int j = 0; j <= order; ++j) {
         for (int l = 0; l < j + 1; ++l) {
-          M(is + k, js) -= IntegrateMonomialsEdge_(x1, x2, i - k, k,
+          M(is + k, js) += IntegrateMonomialsEdge_(x1, x2, i - k, k,
                                                            j - l, l, factors, xc1, xc1);
           js++;
         }
@@ -182,7 +186,7 @@ int DG::TaylorAdvectionMatrixFace(
       int js(ls);
       for (int j = 0; j <= order; ++j) {
         for (int l = 0; l < j + 1; ++l) {
-          M(is + k, js) += IntegrateMonomialsEdge_(x1, x2, i - k, k,
+          M(is + k, js) -= IntegrateMonomialsEdge_(x1, x2, i - k, k,
                                                            j - l, l, factors, xc1, xc2);
           js++;
         }
