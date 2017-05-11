@@ -53,9 +53,9 @@ void RemapTests2D(int order, std::string disc_name) {
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
 
-  int nx(40), ny(40);
+  int nx(10), ny(10);
   // Teuchos::RCP<const Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  Teuchos::RCP<const Mesh> mesh1 = meshfactory("test/median7x8.exo");
+  Teuchos::RCP<const Mesh> mesh1 = meshfactory("test/random10.exo");
 
   int ncells_owned = mesh1->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int ncells_wghost = mesh1->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -63,7 +63,7 @@ void RemapTests2D(int order, std::string disc_name) {
 
   // create deformed mesh
   // Teuchos::RCP<Mesh> mesh2 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  Teuchos::RCP<Mesh> mesh2 = meshfactory("test/median7x8.exo");
+  Teuchos::RCP<Mesh> mesh2 = meshfactory("test/random10.exo");
 
   int nnodes_owned = mesh2->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
 

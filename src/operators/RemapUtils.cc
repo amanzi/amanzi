@@ -167,12 +167,11 @@ int RemapVelocityCells(int order,
                        Teuchos::RCP<AmanziMesh::Mesh> mesh2,
                        Teuchos::RCP<CompositeVector>& u)
 {
+  int d = mesh1->space_dimension();
   int ncells = mesh1->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   // allocate new memory
   int nk((order + 1) * (order + 2) / 2);
-  int pk = std::max(order, 1);
-
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 2 * nk);
 
@@ -180,40 +179,54 @@ int RemapVelocityCells(int order,
   Epetra_MultiVector& uc = *u->ViewComponent("cell", false);
 
   // populate velocities
-  AmanziMesh::Entity_ID_List nodes;
-  AmanziGeometry::Point xv;
-  std::vector<AmanziGeometry::Point> x1, x2, v;
-
-  WhetStone::DG dg(mesh1);
+  std::vector<int> dirs;
+  AmanziMesh::Entity_ID_List faces;
 
   for (int c = 0; c < ncells; ++c) {
+    double volume = mesh1->cell_volume(c);
     const AmanziGeometry::Point& xc = mesh1->cell_centroid(c);
-    mesh1->cell_get_nodes(c, &nodes);
 
-    x1.clear();
-    for (int i = 0; i < nodes.size(); ++i) {
-      mesh1->node_get_coordinates(nodes[i], &xv);
-      x1.push_back(xv - xc);
+    mesh1->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    double b0(0.0);
+    AmanziGeometry::Point a0(d), a1(d), a2(d), b1(d), cc(d);
+
+    for (int i = 0; i < nfaces; ++i) {
+      int f = faces[i];
+      double area = mesh1->face_area(f);
+      const AmanziGeometry::Point& normal = mesh1->face_normal(f);
+
+      const AmanziGeometry::Point& xf1 = mesh1->face_centroid(f);
+      const AmanziGeometry::Point& xf2 = mesh2->face_centroid(f);
+
+      cc = xf2 - xf1;
+      a0 += area * cc;
+      a1 += (dirs[i] * normal[0] / volume) * cc;
+      a2 += (dirs[i] * normal[1] / volume) * cc;
+
+      b0 += area; 
+      b1 += area * (xf1 - xc);
     }
 
-    mesh2->cell_get_nodes(c, &nodes);
+    a0 = (a0 - a1 * b1[0] - a2 * b1[1]) / b0;
 
-    x2.clear();
-    for (int i = 0; i < nodes.size(); ++i) {
-      mesh2->node_get_coordinates(nodes[i], &xv);
-      x2.push_back(xv - xc);
-    }
+std::cout << std::endl;
+std::cout << "b1=" << b1 << std::endl;
+std::cout << "a0=" << a0 << std::endl;
+std::cout << "a1=" << a1 << std::endl;
+std::cout << "a2=" << a2 << std::endl;
+std::cout << (mesh2->cell_centroid(c) - xc) << " " << a0 << std::endl;
+// a0 = mesh2->cell_centroid(c) - xc;
+// a1 *= 0.0;
+// a2 *= 0.0;
 
-    dg.TaylorLeastSquareFit(pk, x1, x2, v);
+    std::vector<AmanziGeometry::Point> v;
+    v.push_back(a0);
+    v.push_back(a1);
+    v.push_back(a2);
 
     // calculate velocity F(X) - X
-    v[1][0] -= 1.0;
-    v[2][1] -= 1.0;
-
-if(c<12) std::cout << c << " " << v[0] << " " << mesh2->cell_centroid(c) - xc << std::endl;
-v[1] *= 0.0;
-v[2] *= 0.0;
-v[0] = mesh2->cell_centroid(c) - xc;
     int n(0);
     for (int k = 0; k < nk; ++k) {
       uc[n++][c] = v[k][0];
