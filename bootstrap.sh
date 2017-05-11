@@ -853,7 +853,7 @@ function check_Spack
       
       if [ ${xsdk} == ${TRUE} ]; then
 	  cd ${tpl_install_prefix}/spack
-	  git checkout barry/xsdk
+	  #git checkout barry/xsdk
 	  #git checkout fdc8f71
 	  git pull
       fi
