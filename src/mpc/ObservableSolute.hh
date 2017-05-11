@@ -14,7 +14,7 @@
 #ifndef AMANZI_OBSERVABLE_SOLUTE_HH
 #define AMANZI_OBSERVABLE_SOLUTE_HH
 
-#include "Observable.hh"
+#include "ObservableAmanzi.hh"
 #include "Point.hh"
 
 namespace Amanzi {
