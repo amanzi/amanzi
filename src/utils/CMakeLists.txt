@@ -45,7 +45,6 @@ add_amanzi_library(atk
                            TimeStepManager.hh
                            XMLParameterListWriter.hh
                            VerboseObject.hh
-                           VerboseObject_objs.hh
                            GlobalVerbosity.hh
                            IOEvent.hh
                            Iterators.hh

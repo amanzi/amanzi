@@ -2,7 +2,6 @@
 #include <UnitTest++.h>
 #include <TestReporterStdout.h>
 
-#include "VerboseObject_objs.hh"
 #include "VerboseObject.hh"
 
 #include "chemistry_verbosity.hh"

@@ -3,7 +3,6 @@
 
 #include "TimeStepManager.hh"
 #include "VerboseObject.hh"
-#include "VerboseObject_objs.hh"
 
 TEST(TIME_STEP_MANAGER) {
 

@@ -17,7 +17,7 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Epetra_MpiComm.h"
 
-#include "VerboseObject_objs.hh"
+#include "VerboseObject.hh"
 
 namespace Amanzi {
 
@@ -201,4 +201,13 @@ void VerboseObject::WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::
   }
 }
 
+// The default global verbosity level.
+Teuchos::EVerbosityLevel Amanzi::VerboseObject::global_default_level = Teuchos::VERB_MEDIUM;
+
+// Show or hide line prefixes
+bool Amanzi::VerboseObject::hide_line_prefix = false;
+
+// Size of the left column of names.
+unsigned int Amanzi::VerboseObject::line_prefix_size = 16;
+     
 }  // namespace Amanzi

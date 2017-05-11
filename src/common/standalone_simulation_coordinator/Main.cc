@@ -23,7 +23,7 @@
 #include "errors.hh"
 #include "exceptions.hh"
 #include "TimerManager.hh"
-#include "VerboseObject_objs.hh"
+#include "VerboseObject.hh"
 
 // include fenv if it exists
 #include "boost/version.hpp"

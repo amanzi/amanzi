@@ -22,7 +22,6 @@
 #include <string>
 #include <stdexcept>
 
-#include "VerboseObject_objs.hh"
 #include "VerboseObject.hh"
 
 #include "simple_thermo_database.hh"
