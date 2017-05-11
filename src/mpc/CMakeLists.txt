@@ -72,7 +72,7 @@ set(mpc_inc_files
   FlexibleObservations.hh
   WalkaboutCheckpoint.hh
   MeshInfo.hh
-  Observable.hh
+  ObservableAmanzi.hh
   ObservableFactory.hh
   ObservableAqueous.hh 
   ObservableLineSegment.hh

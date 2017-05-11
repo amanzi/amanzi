@@ -1,7 +1,7 @@
 #ifndef AMANZI_OBSERVABLE_LINE_SEGMENT_AQUEOUS_HH
 #define AMANZI_OBSERVABLE_LINE_SEGMENT_AQUEOUS_HH
 
-#include "Observable.hh"
+#include "ObservableAmanzi.hh"
 #include "ObservableAqueous.hh"
 #include "ObservableLineSegment.hh"
 
