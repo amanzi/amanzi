@@ -124,7 +124,6 @@ void TransportBoundaryFunction_Alquimia::Compute(double t_old, double t_new)
     std::vector<double>& values = it->second;
     for (int i = 0; i < values.size(); i++) {
       values[i] = alq_state_.total_mobile.data[i] / ((*mol_dens_data_)[0][cell] / 1000.);
-      std::cout<<"BC values "<< values[i]<<"\n"; //<<(*mol_dens_)[0][cell] / 1000.<<"\n";
     }
 
   }
