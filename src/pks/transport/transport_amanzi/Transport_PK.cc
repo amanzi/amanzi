@@ -342,7 +342,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   //   ->ViewComponent("cell");
 
   S->RequireFieldCopy(flux_key_, "next_timestep", passwd_);
-
+  flux_copy_ = S->GetFieldCopyData(flux_key_,  "next_timestep", passwd_)->ViewComponent("face", true);
 
   // Check input parameters. Due to limited amount of checks, we can do it earlier.
   Policy(S.ptr());
@@ -464,6 +464,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
       Teuchos::RCP<TransportBoundaryFunction_Alquimia> 
         bc = Teuchos::rcp(new TransportBoundaryFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
 
+      bc -> set_mol_dens_data_(mol_dens_subcycle_end);
       std::vector<int>& tcc_index = bc->tcc_index();
       std::vector<std::string>& tcc_names = bc->tcc_names();
       
@@ -540,6 +541,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
       Teuchos::RCP<TransportSourceFunction_Alquimia> 
           src = Teuchos::rcp(new TransportSourceFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
 
+      src -> set_mol_dens_data_(mol_dens_subcycle_end);
       std::vector<int>& tcc_index = src->tcc_index();
       std::vector<std::string>& tcc_names = src->tcc_names();
 
@@ -749,22 +751,22 @@ double Transport_PK_ATS::StableTimeStep()
   dt_ *= cfl_;
 
   // print optional diagnostics using maximum cell id as the filter
- //  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-//     int cmin_dt_unique = (fabs(dt_tmp * cfl_ - dt_) < 1e-6 * dt_) ? cmin_dt : -1;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    int cmin_dt_unique = (fabs(dt_tmp * cfl_ - dt_) < 1e-6 * dt_) ? cmin_dt : -1;
  
-// #ifdef HAVE_MPI
-//     int cmin_dt_tmp = cmin_dt_unique;
-//     comm.MaxAll(&cmin_dt_tmp, &cmin_dt_unique, 1);
-// #endif
-//     if (cmin_dt == cmin_dt_unique) {
-//       const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dt);
+#ifdef HAVE_MPI
+    int cmin_dt_tmp = cmin_dt_unique;
+    comm.MaxAll(&cmin_dt_tmp, &cmin_dt_unique, 1);
+#endif
+    if (cmin_dt == cmin_dt_unique) {
+      const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dt);
 
-//       Teuchos::OSTab tab = vo_->getOSTab();
-//       *vo_->os() << "cell " << cmin_dt << " has smallest dt, (" << p[0] << ", " << p[1];
-//       if (p.dim() == 3) *vo_->os() << ", " << p[2];
-//       *vo_->os() << ")" << std::endl;
-//     }
-//   }
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "cell " << cmin_dt << " has smallest dt, (" << p[0] << ", " << p[1];
+      if (p.dim() == 3) *vo_->os() << ", " << p[2];
+      *vo_->os() << ")" << std::endl;
+    }
+  }
   return dt_;
 }
 
@@ -793,13 +795,9 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
   bool failed = false;
   double dt_MPC = t_new - t_old;
 
-  // if (vol_flux_conversion_){
-  //     vol_flux = S_next_->GetFieldData(flux_key_, passwd_)->ViewComponent("face", true);
-  //   ComputeVolumeDarcyFlux(S_next_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true),
-  //                          S_next_->GetFieldData(molar_density_key_)->ViewComponent("cell", true), vol_flux);
-  // }
-
   flux = S_next_->GetFieldData(flux_key_)->ViewComponent("face", true);
+
+  *flux_copy_ = *flux; // copy flux vector from S_next_ to S_;
 
   ws_ = S_next_->GetFieldData(saturation_key_)->ViewComponent("cell", false);
   mol_dens_ = S_next_->GetFieldData(molar_density_key_)->ViewComponent("cell", false);
@@ -1282,7 +1280,6 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     else *vo_->os() << "Subsurface mass start "<<mass_start<<"\n";
   }
 
-
   // advance all components at once
   for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
     int c1 = (*upwind_cell_)[f];
@@ -1598,7 +1595,7 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
       int c = it->first;
       std::vector<double>& values = it->second;
 
-      //std::cout<<c<<": "<<values[0]<<"\n";
+      //      std::cout<<c<<" Source: "<<values[0]<<"\n";
 
       for (int k = 0; k < tcc_index.size(); ++k) {
         int i = tcc_index[k];
@@ -1620,8 +1617,8 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
         tcc[imap][c] += dtp * value;
         mass_solutes_source_[i] += value;
 
-         // if (value != 0) std::cout<<"Source name "<<srcs_[m]->name()<<" from Source cell "<<c
-         //                         <<" dt "<<dtp<<"  + "<<dtp * value<<" "<<values[k]<<"\n";
+        // if (value != 0) std::cout<<"Source name "<<k<<" "<<srcs_[m]->name()<<" from Source cell "<<c
+        //                          <<" dt "<<dtp<<"  + "<<dtp * value<<" "<<values[k]<<"\n";
       }
     }
   }

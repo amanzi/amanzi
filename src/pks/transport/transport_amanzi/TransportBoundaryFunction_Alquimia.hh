@@ -38,9 +38,11 @@ class TransportBoundaryFunction_Alquimia : public TransportDomainFunction {
   ~TransportBoundaryFunction_Alquimia();
   
   void Compute(double t_old, double t_new);
+  void set_mol_dens_data_( Teuchos::RCP<Epetra_MultiVector> data) {mol_dens_data_ = data;}
 
  private:
   void Init_(const std::vector<std::string> &regions);
+
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -51,6 +53,8 @@ class TransportBoundaryFunction_Alquimia : public TransportDomainFunction {
   // Chemistry state and engine.
   Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk_;
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
+
+  Teuchos::RCP<const Epetra_MultiVector> mol_dens_data_;
 
   // Containers for interacting with the chemistry engine.
   AlquimiaState alq_state_;
