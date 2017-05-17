@@ -408,8 +408,8 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     } else if (*comp == std::string("face")) {
       // error in flux -- relative to cell's extensive conserved quantity
       int nfaces = dvec->size(*comp, false);
-      bool scaled_constraint = plist_->sublist("Diffusion").get<bool>("scaled constraint equation", true);
-      double constraint_scaling_cutoff = plist_->sublist("Diffusion").get<double>("constraint equation scaling cutoff", 1.0);
+      bool scaled_constraint = plist_->sublist("diffusion").get<bool>("scaled constraint equation", true);
+      double constraint_scaling_cutoff = plist_->sublist("diffusion").get<double>("constraint equation scaling cutoff", 1.0);
       const Epetra_MultiVector& kr_f = *S_next_->GetFieldData("upwind_overland_conductivity")
         ->ViewComponent("face",false);
       

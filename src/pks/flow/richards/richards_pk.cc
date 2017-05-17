@@ -210,7 +210,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   S->GetField(uw_coef_key_,name_)->set_io_vis(false);
 
   // -- create the forward operator for the diffusion term
-  Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
+  Teuchos::ParameterList& mfd_plist = plist_->sublist("diffusion");
   mfd_plist.set("nonlinear coefficient", coef_location);
   mfd_plist.set("gravity", true);
   
@@ -228,7 +228,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
   // -- create the operators for the preconditioner
   //    diffusion
-  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("Diffusion PC");
+  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("diffusion preconditioner");
   mfd_pc_plist.set("nonlinear coefficient", coef_location);
   mfd_pc_plist.set("gravity", true);
   if (!mfd_pc_plist.isParameter("discretization primary"))

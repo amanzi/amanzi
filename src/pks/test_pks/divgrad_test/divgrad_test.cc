@@ -52,7 +52,7 @@ void DivGradTest::setup(const Teuchos::Ptr<State>& S) {
   bc_neumann_ = bc_factory.CreateNeumann();
 
   // operator for the diffusion terms
-  Teuchos::ParameterList mfd_plist = plist_->sublist("Diffusion");
+  Teuchos::ParameterList mfd_plist = plist_->sublist("diffusion");
   matrix_ = Teuchos::rcp(new Operators::MatrixMFD(mfd_plist, mesh_));
   matrix_->set_symmetric(true);
   matrix_->SymbolicAssembleGlobalMatrices();
