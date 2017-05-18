@@ -22,7 +22,7 @@ from amanzi_xml.utils import errors as aerrors
 def coordinator_to_cycle_driver(xml):
     cycle_driver = asearch.childByName(xml, "coordinator")
     cycle_driver.set("name", "cycle driver")
-    cycle_driver_pks = ParameterList("PKs")
+    cycle_driver_pks = ParameterList("PK tree")
     cycle_driver.append(cycle_driver_pks)
 
     return cycle_driver_pks
