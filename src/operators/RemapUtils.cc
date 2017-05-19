@@ -143,8 +143,8 @@ int RemapVelocityFaces(int order,
 
       v.push_back(AmanziGeometry::Point(b[0], -b[1]));
       v.push_back(AmanziGeometry::Point(b[1],  b[0]));
-v[1] *= 0.0;
-v[2] *= 0.0;
+// v[1] *= 0.0;
+// v[2] *= 0.0;
     } 
 
     int n(0);

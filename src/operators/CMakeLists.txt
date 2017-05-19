@@ -223,9 +223,10 @@ if ( BUILD_TESTS )
     #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     
     # Test: matrices for surface
-    add_amanzi_test(operators_advdiff_surface operators_advdiff_surface
+    add_amanzi_test(operators_surface operators_surface
                     KIND unit
                     SOURCE test/Main.cc test/operator_advdiff_surface.cc
+                                        test/operator_fractures.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: operators on 
@@ -299,6 +300,7 @@ if ( BUILD_TESTS )
                     KIND unit
                     SOURCE test/Main.cc test/operator_remap.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
 endif()
 
 

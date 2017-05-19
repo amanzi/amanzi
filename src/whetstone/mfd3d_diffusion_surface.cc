@@ -30,35 +30,41 @@ namespace WhetStone {
 * WARNING: routine works for scalar T only. 
 ****************************************************************** */
 int MFD3D_Diffusion::L2consistencyInverseSurface(
-    int cell, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
+    int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
 {
   Entity_ID_List faces;
   std::vector<int> dirs;
 
-  mesh_->cell_get_faces_and_dirs(cell, &faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
   int num_faces = faces.size();
   if (num_faces != R.NumRows()) return num_faces;  // matrix was not reshaped
 
-  int d = mesh_->space_dimension();
-  double volume = mesh_->cell_volume(cell);
+  int dir, d = mesh_->space_dimension();
+  double volume = mesh_->cell_volume(c);
 
   // calculate cell normal
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(cell);
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   const AmanziGeometry::Point& xf1 = mesh_->face_centroid(faces[0]);
   const AmanziGeometry::Point& xf2 = mesh_->face_centroid(faces[1]);
-  AmanziGeometry::Point v1(d);
+  AmanziGeometry::Point v1(d), v2(d), v3(d);
+
   v1 = (xf1 - xc)^(xf2 - xc);
+  v1 /= norm(v1);
 
   // calculate projector
   Tensor P(d, 2); 
-  double a = L22(v1);
   for (int i = 0; i < d; i++) {
     P(i, i) = 1.0;
     for (int j = 0; j < d; j++) { 
-      P(i, j) -= v1[i] * v1[j] / a;
+      P(i, j) -= v1[i] * v1[j];
     }
   }
+
+  // cell-based coordinate system
+  v2 = xf1 - xc;
+  v2 /= norm(v2);
+  v3 = v1^v2; 
 
   // define new tensor
   Tensor PTP(d, 2);
@@ -66,26 +72,26 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
 
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
 
     v1 = PTP * normal;
 
     for (int j = i; j < num_faces; j++) {
       f = faces[j];
-      const AmanziGeometry::Point& v2 = mesh_->face_normal(f);
-      Wc(i, j) = (v1 * v2) / (dirs[i] * dirs[j] * volume);
+      const AmanziGeometry::Point& v2 = mesh_->face_normal(f, false, c, &dir);
+      Wc(i, j) = (v1 * v2) / volume;
     }
   }
 
   // calculate matrix R
-  const AmanziGeometry::Point& cm = mesh_->cell_centroid(cell);
+  const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-    v1 = P * (fm - cm);
-    
-    for (int k = 0; k < d - 1; k++) R(i, k) = v1[k];
+
+    R(i, 0) = v2 * (fm - cm);
+    R(i, 1) = v3 * (fm - cm);
   }
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -93,7 +99,7 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
 
 
 /* ******************************************************************
-* Darcy inverse mass matrixi for surface: the standard algorithm
+* Darcy inverse mass matrix for surface: the standard algorithm
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseSurface(
     int cell, const Tensor& permeability, DenseMatrix& W)

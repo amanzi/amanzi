@@ -53,17 +53,17 @@ void RemapTests2D(int order, std::string disc_name) {
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
 
-  int nx(10), ny(10);
-  // Teuchos::RCP<const Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  Teuchos::RCP<const Mesh> mesh1 = meshfactory("test/random10.exo");
+  int nx(2), ny(1);
+  Teuchos::RCP<const Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+  // Teuchos::RCP<const Mesh> mesh1 = meshfactory("test/random10.exo");
 
   int ncells_owned = mesh1->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int ncells_wghost = mesh1->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   int nfaces_wghost = mesh1->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   // create deformed mesh
-  // Teuchos::RCP<Mesh> mesh2 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  Teuchos::RCP<Mesh> mesh2 = meshfactory("test/random10.exo");
+  Teuchos::RCP<Mesh> mesh2 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+  // Teuchos::RCP<Mesh> mesh2 = meshfactory("test/random10.exo");
 
   int nnodes_owned = mesh2->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
 
@@ -73,10 +73,12 @@ void RemapTests2D(int order, std::string disc_name) {
 
   for (int v = 0; v < nnodes_owned; ++v) {
     mesh2->node_get_coordinates(v, &xv);
-    if (!(fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
-          fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6)) {
-      xv[0] += 0.5 / nx * ((double)rand() / RAND_MAX - 0.5);
-      xv[1] += 0.5 / ny * ((double)rand() / RAND_MAX - 0.5);
+    // if (!(fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
+    //      fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6)) {
+    if (v == 1) {
+      xv[0] += 0.25;
+    //  xv[0] += 0.5 / nx * ((double)rand() / RAND_MAX - 0.5);
+    //  xv[1] += 0.5 / ny * ((double)rand() / RAND_MAX - 0.5);
       nodeids.push_back(v);
       new_positions.push_back(xv);
     }
@@ -92,10 +94,10 @@ void RemapTests2D(int order, std::string disc_name) {
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh1->cell_centroid(c);
-    p1c[0][c] = xc[0] * xc[0] + 2 * xc[1];
+    p1c[0][c] = xc[0];  // + 2 * xc[1];
     if (nk > 1) {
-      p1c[1][c] = 2.0 * xc[0];
-      p1c[2][c] = 2.0;
+      p1c[1][c] = 1.0;
+      p1c[2][c] = 0.0;
     }
   }
 
@@ -187,11 +189,13 @@ void RemapTests2D(int order, std::string disc_name) {
   double pl2_err(0.0), pinf_err(0.0), area(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
     const AmanziGeometry::Point& xc = mesh2->cell_centroid(c);
-    double tmp = (xc[0] * xc[0] + 2 * xc[1]) - p2c[0][c];
+    // double tmp = (xc[0] + 2 * xc[1]) - p2c[0][c];
+    double tmp = xc[0] - p2c[0][c];
 
     pinf_err = std::max(pinf_err, fabs(tmp));
     pl2_err += tmp * tmp * mesh2->cell_volume(c);
     area += mesh2->cell_volume(c);
+std::cout << c << " " << p2c[0][c] << " err=" << tmp << std::endl;
   }
   pl2_err = std::pow(pl2_err, 0.5);
 
