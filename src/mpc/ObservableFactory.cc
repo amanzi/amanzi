@@ -23,7 +23,7 @@
 #include "dbc.hh"
 #include "errors.hh"
 
-#include "Observable.hh"
+#include "ObservableAmanzi.hh"
 
 #include "ObservableFactory.hh"
 #include "ObservableAqueous.hh"

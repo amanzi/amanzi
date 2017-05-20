@@ -1,7 +1,7 @@
 #ifndef AMANZI_OBSERVABLE_LINE_SEGMENT_HH
 #define AMANZI_OBSERVABLE_LINE_SEGMENT_HH
 
-#include "Observable.hh"
+#include "ObservableAmanzi.hh"
 #include "RegionPlane.hh"
 #include "RegionPolygon.hh"
 #include "RegionLineSegment.hh"

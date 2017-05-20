@@ -63,9 +63,9 @@ class DiffusionMFD : public virtual Diffusion {
   }
 
   // main virtual members for populating an operator
-  virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
+  virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) override;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
-                                    const Teuchos::RCP<const CompositeVector>& dkdp);
+                                    const Teuchos::RCP<const CompositeVector>& dkdp) override;
 
   // -- To calculate elemetal matrices, we can use input parameters flux 
   //    and u from the previous nonlinear iteration. Otherwise, use null-pointers.
@@ -77,34 +77,35 @@ class DiffusionMFD : public virtual Diffusion {
   //    placeholder for new approximation methods.
   virtual void UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
                                               const Teuchos::Ptr<const CompositeVector>& u,
-                                              double scalar_limiter=1);
+                                              double scalar_limiter=1) override;
 
   // modify the operator
   // -- by incorporating boundary conditions. Variable 'primary' indicates
   //    that we put 1 on the matrix diagonal. Variable 'eliminate' says
   //    that we eliminate essential BCs for the trial function, i.e. zeros
   //    go in the corresponding matrix columns.
-  virtual void ApplyBCs(bool primary, bool eliminate);
+  virtual void ApplyBCs(bool primary, bool eliminate) override;
 
   // -- by breaking p-lambda coupling.
-  virtual void ModifyMatrices(const CompositeVector& u);
+  virtual void ModifyMatrices(const CompositeVector& u) override;
 
   // -- by rescaling mass matrices.
-  virtual void ScaleMassMatrices(double s);
+  virtual void ScaleMassMatrices(double s) override;
 
   // main virtual members after solving the problem
   // -- calculate the flux variable.
-  virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
+  virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux) override;
 
   // Developments
   // -- working with consistent faces
-  virtual int UpdateConsistentFaces(CompositeVector& u);
+  virtual int UpdateConsistentFaces(CompositeVector& u) override;
   Teuchos::RCP<const Operator> consistent_face_operator() const { return consistent_face_op_; }
   Teuchos::RCP<Operator> consistent_face_operator() { return consistent_face_op_; }
   
   // -- interface to solvers for treating nonlinear BCs.
-  virtual double ComputeTransmissibility(int f) const;
-  virtual double ComputeGravityFlux(int f) const { return 0.0; }
+  virtual double ComputeTransmissibility(int f) const override;
+  virtual double ComputeGravityFlux(int f) const override
+    { return 0.0; }
  
   // developer checks
   int nfailed_primary() { return nfailed_primary_; }

@@ -49,7 +49,7 @@ TEST(DARCY_SURFACE) {
   T(0, 0) = 1;
 
   for (int c = 0; c < 3; c++) {
-    Entity_ID_List faces;
+    Amanzi::WhetStone::Entity_ID_List faces;
     std::vector<int> dirs;
 
     mesh->cell_get_faces_and_dirs(c, &faces, &dirs);

@@ -14,7 +14,7 @@
 #ifndef AMANZI_OBSERVABLE_AQUEOUS_HH
 #define AMANZI_OBSERVABLE_AQUEOUS_HH
 
-#include "Observable.hh"
+#include "ObservableAmanzi.hh"
 #include "Units.hh"
 
 namespace Amanzi{
