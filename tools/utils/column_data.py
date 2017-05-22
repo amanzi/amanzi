@@ -77,23 +77,21 @@ def getFigs(inset, is_temp, figsize=(12,3)):
 
 
 if __name__ == "__main__":
-    if sys.argv[-1] == "-t":
-        temp = True
-    else:
-        temp = False
-        
-    if sys.argv[-1] == "column_data.py":
-        z0 = 0.0
-    else:
-        z0 = float(sys.argv[-1])
+    import argparse
+    parser = argparse.ArgumentParser(description='Generate columnar data from an unstructured column run.')
+    parser.add_argument('-t', '--temperature', action='store_true',
+                        help='include temperature data')
+    parser.add_argument('z0', metavar='TOP_SURFACE_ELEVATION', type=float,
+                        help='elevation of the top surface of the column run')
+    options = parser.parse_args()
     
     with h5py.File("column_data.h5", 'w') as fout:
         to_read = ['pressure']
-        if temp:
+        if options.temperature:
             to_read.append("temperature")
         dat = column_data(to_read, keys=-1)
-        z_depth = z0 - dat[0,0,:] # correction to get surface set, depth coordinate
+        z_depth = options.z0 - dat[0,0,:] # correction to get surface set, depth coordinate
         fout.create_dataset("z", data=np.flipud(z_depth))
         fout.create_dataset("pressure", data=np.flipud(dat[1,0,:]))
-        if temp:
+        if options.temperature:
             fout.create_dataset("temperature", data=np.flipud(dat[2,0,:]))
