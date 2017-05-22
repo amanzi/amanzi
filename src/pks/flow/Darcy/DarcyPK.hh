@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 #ifndef PKS_FLOW_DARCY_DARCYPK_HH_
 #define PKS_FLOW_DARCY_DARCYPK_HH_

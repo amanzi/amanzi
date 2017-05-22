@@ -1,4 +1,4 @@
-/* -*-  mode++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
