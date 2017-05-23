@@ -1324,7 +1324,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
           int k = tcc_index[i];
           if (k < num_advect) {
             tcc_flux = dt_ * u * values[i];
-            //if (tcc_flux > 0) std::cout <<domain_name_<<" "<<"from BC cell "<<c2<<" flux "<< u<<" dt "<<dt_<<" value "<<values[i]<<" + "<<tcc_flux<<"\n";
+            //  if (tcc_flux > 0) std::cout <<domain_name_<<" "<<"from BC cell "<<c2<<" flux "<< u<<" dt "<<dt_<<" value "<<values[i]<<" + "<<tcc_flux<<"\n";
             (*conserve_qty_)[k][c2] += tcc_flux;
             mass_solutes_bc_[k] += tcc_flux;
           }
@@ -1336,7 +1336,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
 
 
   // if (domain_name_ == "surface"){
-  //   std::cout<<"Before ComputeAddSourceTerms\n";
+  //   *vo_->os()<<"Before ComputeAddSourceTerms\n";
   //   std::cout<<(*conserve_qty_)<<"\n";
   // }
 
@@ -1347,27 +1347,31 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   }
 
   // if (domain_name_ == "surface"){
-  //   std::cout<<"After ComputeAddSourceTerms\n";
-  //   std::cout<<*conserve_qty_<<"\n";
+  //    *vo_->os()<<"After ComputeAddSourceTerms\n";
+  //    std::cout<<*conserve_qty_<<"\n";
   // }
   //if (domain_name_ == "surface") std::cout<<"ws_end\n"<<*ws_end<<"\n";
 
   
-
+  // double min;
+  // conserve_qty_ ->MinValue(&min);
+  
 
 
   // recover concentration from new conservative state
   for (int c = 0; c < ncells_owned; c++) {
     vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_end)[0][c] * (*mol_dens_end)[0][c];
     for (int i = 0; i < num_advect; i++) {
-      if (vol_phi_ws_den > 0 ) tcc_next[i][c] = (*conserve_qty_)[i][c] / vol_phi_ws_den;
+
+      if (vol_phi_ws_den > 1e-10) tcc_next[i][c] = (*conserve_qty_)[i][c] / vol_phi_ws_den;
       else  {
         tcc_next[i][c] = 0.;
       }
-      // if (c<5) std::cout<<c<<" vol "<<mesh_->cell_volume(c)<<" phi "<<(*phi_)[0][c]<<" ws0 "<<(*ws_start)[0][c]<<" ws1 "<< (*ws_end)[0][c]<<" den "<<(*mol_dens_end)[0][c]<<" tcc "<<tcc_next[i][c]<<"\n";
-      // if (c<5) std::cout<<c<<" "<<vol_phi_ws_den<<" "<<tcc_next[i][c]<<" "<<(*conserve_qty_)[i][c]<<"\n";
+
     }
   }
+
+  // if (domain_name_ == "surface") std::cout<<"tcc_next\n"<<tcc_next<<"\n";
 
   double mass_final = 0;
   for (int c = 0; c < ncells_owned; c++) {
@@ -1617,8 +1621,11 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
         tcc[imap][c] += dtp * value;
         mass_solutes_source_[i] += value;
 
-        // if (value != 0) std::cout<<"Source name "<<k<<" "<<srcs_[m]->name()<<" from Source cell "<<c
+        // if (value != 0) {
+        //   std::cout<<"Source name "<<k<<" "<<srcs_[m]->name()<<" from Source cell "<<c
         //                          <<" dt "<<dtp<<"  + "<<dtp * value<<" "<<values[k]<<"\n";
+        //   std::cout<<"ws "<<(*ws_start)[0][c]<<" "<<(*ws_end)[0][c]<<"\n";
+        // }
       }
     }
   }
