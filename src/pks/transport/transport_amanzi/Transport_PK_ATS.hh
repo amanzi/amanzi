@@ -265,7 +265,10 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   Teuchos::RCP<const Epetra_MultiVector> mol_dens_start, mol_dens_end;  // data for subcycling 
   Teuchos::RCP<Epetra_MultiVector> ws_subcycle_start, ws_subcycle_end;
   Teuchos::RCP<Epetra_MultiVector> mol_dens_subcycle_start, mol_dens_subcycle_end;
+
   Teuchos::RCP<Epetra_MultiVector> flux_copy_;
+
+
 
   int current_component_;  // data for lifting
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;

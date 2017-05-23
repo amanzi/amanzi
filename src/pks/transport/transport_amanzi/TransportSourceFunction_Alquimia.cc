@@ -100,7 +100,8 @@ void TransportSourceFunction_Alquimia::Compute(double t_old, double t_new)
     // Move the concentrations into place.
     //WhetStone::DenseVector& values = it->second;
     std::vector<double>& values = it->second;
-    for (int i = 0; i < values.size(); i++) {      
+
+    for (int i = 0; i < values.size(); i++) {
       values[i] = alq_state_.total_mobile.data[i] / domain_volume_;
     }
   }

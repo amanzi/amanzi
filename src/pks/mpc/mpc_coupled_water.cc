@@ -24,7 +24,7 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
   pks_list_->sublist(names[1]).set("coupled to subsurface via flux", true);
 
   // -- ensure local ops are suface ops
-  pks_list_->sublist(names[1]).sublist("Diffusion PC").set("surface operator", true);
+  pks_list_->sublist(names[1]).sublist("diffusion preconditioner").set("surface operator", true);
   pks_list_->sublist(names[1]).sublist("Accumulation PC").set("surface operator", true);
 
   // grab the meshes

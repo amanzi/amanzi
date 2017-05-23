@@ -178,7 +178,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   S->GetField(uw_conductivity_key_,name_)->set_io_vis(false);
   
   // -- create the forward operator for the diffusion term
-  Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
+  Teuchos::ParameterList& mfd_plist = plist_->sublist("diffusion");
   mfd_plist.set("nonlinear coefficient", coef_location);
   Operators::OperatorDiffusionFactory opfactory;
   matrix_diff_ = opfactory.Create(mfd_plist, mesh_, bc_);
@@ -187,12 +187,12 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
   // -- create the forward operator for the advection term
   Operators::AdvectionFactory advection_factory;
-  Teuchos::ParameterList advect_plist = plist_->sublist("Advection");
+  Teuchos::ParameterList advect_plist = plist_->sublist("advection");
   matrix_adv_ = Teuchos::rcp(new Operators::OperatorAdvection(advect_plist, mesh_));
   
   // -- create the operators for the preconditioner
   //    diffusion
-  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("Diffusion PC");
+  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("diffusion preconditioner");
   mfd_pc_plist.set("nonlinear coefficient", coef_location);
   if (!mfd_pc_plist.isParameter("discretization primary"))
     mfd_pc_plist.set("discretization primary", mfd_plist.get<std::string>("discretization primary"));

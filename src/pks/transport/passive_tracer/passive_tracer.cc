@@ -34,7 +34,7 @@ PassiveTracer::PassiveTracer(Teuchos::ParameterList& transport_plist,
 
   // operator for advection terms
   Operators::AdvectionFactory advection_factory;
-  Teuchos::ParameterList advect_plist = transport_plist_.sublist("Advection");
+  Teuchos::ParameterList advect_plist = transport_plist_.sublist("advection");
   advection_ = advection_factory.create(advect_plist, S->Mesh());
 
   // bcs

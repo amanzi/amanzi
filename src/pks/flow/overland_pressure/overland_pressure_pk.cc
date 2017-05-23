@@ -152,16 +152,24 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     S->RequireField("upwind_overland_conductivity", name_)->SetMesh(mesh_)
         ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
   } else {
-    Errors::Message message("Unknown upwind coefficient location in overland flow.");
+    Errors::Message message;
+    message << name_ << ": Unknown upwind coefficient location in overland flow.";
     Exceptions::amanzi_throw(message);
   }
   S->GetField("upwind_overland_conductivity",name_)->set_io_vis(false);
 
   // -- create the forward operator for the diffusion term
-  Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
+  Teuchos::ParameterList& mfd_plist = plist_->sublist("diffusion");
   mfd_plist.set("nonlinear coefficient", coef_location);
   if (!mfd_plist.isParameter("scaled constraint equation"))
     mfd_plist.set("scaled constraint equation", true);
+  if (mfd_plist.isParameter("Newton correction")) {
+    Errors::Message message;
+    message << name_ << ": The forward operator for Diffusion should not set a "
+            << "\"Newton correction\" term, perhaps you meant to put this in a "
+            << "\"Diffusion PC\" sublist.";
+    Exceptions::amanzi_throw(message);
+  }    
   
   Operators::OperatorDiffusionFactory opfactory;
   matrix_diff_ = opfactory.Create(mfd_plist, mesh_, bc_);
@@ -181,7 +189,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   
   // -- create the operators for the preconditioner
   //    diffusion
-  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("Diffusion PC");
+  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("diffusion preconditioner");
   mfd_pc_plist.set("nonlinear coefficient", coef_location);
   mfd_pc_plist.set("scaled constraint equation",
                    mfd_plist.get<bool>("scaled constraint equation"));

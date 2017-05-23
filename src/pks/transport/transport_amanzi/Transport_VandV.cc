@@ -341,9 +341,9 @@ double Transport_PK_ATS::ComputeSolute(const Epetra_MultiVector& tcc_vec, int i)
   double mass_solute(0.0);
   for (int c = 0; c < ncells_owned; c++) {
     double vol = mesh_->cell_volume(c);
-    //std::cout<<name_<<" "<<(*phi_)[0][c]<<" "<<tcc_vec[i][c]<<"\n";
     mass_solute += (*ws_)[0][c] * (*phi_)[0][c] * tcc_vec[i][c] * vol * (*mol_dens_)[0][c];
-   }
+  }
+
   //mass_solute /= units_.concentration_factor();
 
   double tmp1 = mass_solute;

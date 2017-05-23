@@ -58,7 +58,7 @@ class VolumetricDeformation : public PK_Physical_Default {
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit);
 
   virtual double get_dt() {
-    return dt_;
+    return dt_max_;
   }
 
   virtual void set_dt(double dt) {
@@ -84,15 +84,27 @@ class VolumetricDeformation : public PK_Physical_Default {
   enum DeformMode {
     DEFORM_MODE_THAW_FRONT,
     DEFORM_MODE_DVDT,
-    DEFORM_MODE_SATURATION
+    DEFORM_MODE_SATURATION,
+    DEFORM_MODE_STRUCTURAL
   };
   DeformMode deform_mode_;
+  double overpressured_limit_;
+
   std::string deform_region_;
-  double  deform_value_;
+
+  // DEFORM_MODE_THAW_FRONT
   Teuchos::RCP<Function> thaw_front_func_;
-  double min_vol_frac_, min_S_liq_;
+
+  // DEFORM_MODE_DVDT
   Teuchos::RCP<Functions::CompositeVectorFunction> deform_func_;
-  double dt_;
+
+  // DEFORM_MODE_SATURATION
+  double min_vol_frac_, min_S_liq_;
+
+  // DEFORM_MODE_STRUCTURAL
+  double time_scale_, structural_vol_frac_;
+
+  double dt_, dt_max_;
 
   // meshes
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;

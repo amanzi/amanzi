@@ -342,6 +342,13 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   //   ->ViewComponent("cell");
 
   S->RequireFieldCopy(flux_key_, "next_timestep", passwd_);
+
+
+  // S->RequireFieldCopy(saturation_key_, "subcycle_end", passwd_);
+  // ws_subcycle_end = S->GetFieldCopyData(saturation_key_, "subcycle_end", passwd_)
+  //   ->ViewComponent("cell");
+
+  S->RequireFieldCopy(flux_key_, "next_timestep", passwd_);
   flux_copy_ = S->GetFieldCopyData(flux_key_,  "next_timestep", passwd_)->ViewComponent("face", true);
 
   // Check input parameters. Due to limited amount of checks, we can do it earlier.
@@ -484,9 +491,11 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
   // boundary conditions initialization
   time = t_physics_;
+
   // for (int i = 0; i < bcs_.size(); i++) {
   //   bcs_[i]->Compute(time, time);
   // }
+
 
   VV_CheckInfluxBC();
 
@@ -541,7 +550,9 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
       Teuchos::RCP<TransportSourceFunction_Alquimia> 
           src = Teuchos::rcp(new TransportSourceFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
 
+
       src -> set_mol_dens_data_(mol_dens_subcycle_end);
+
       std::vector<int>& tcc_index = src->tcc_index();
       std::vector<std::string>& tcc_names = src->tcc_names();
 
@@ -1266,14 +1277,16 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
 
   for (int c = 0; c < ncells_owned; c++) {
     vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_start)[0][c] * (*mol_dens_start)[0][c];
-     // if (domain_name_=="surface") 
     for (int i = 0; i < num_advect; i++){
-      // if (c<5) std::cout<<c<<" vol "<<mesh_->cell_volume(c)<<" phi "<<(*phi_)[0][c]<<" ws0 "<<(*ws_start)[0][c]<<" ws1 "<< (*ws_end)[0][c]<<" den "<<(*mol_dens_start)[0][c]<<" tcc "<<tcc_prev[i][c]<<"\n";
+
       (*conserve_qty_)[i][c] = tcc_prev[i][c] * vol_phi_ws_den;   
-      // if (c<5) std::cout<<c<<" "<<vol_phi_ws_den<<" "<<tcc_prev[i][c]<<" "<<(*conserve_qty_)[i][c]<<"\n";
+
       mass_start += (*conserve_qty_)[i][c];
     }
   }
+
+
+  //mass_start /= units_.concentration_factor();
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME){
     if (domain_name_ == "surface") *vo_->os() << "Overland mass start "<<mass_start<<"\n";
@@ -1324,7 +1337,9 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
           int k = tcc_index[i];
           if (k < num_advect) {
             tcc_flux = dt_ * u * values[i];
+
             //  if (tcc_flux > 0) std::cout <<domain_name_<<" "<<"from BC cell "<<c2<<" flux "<< u<<" dt "<<dt_<<" value "<<values[i]<<" + "<<tcc_flux<<"\n";
+
             (*conserve_qty_)[k][c2] += tcc_flux;
             mass_solutes_bc_[k] += tcc_flux;
           }
@@ -1367,7 +1382,8 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
       else  {
         tcc_next[i][c] = 0.;
       }
-
+      // if (c<5) std::cout<<c<<" vol "<<mesh_->cell_volume(c)<<" phi "<<(*phi_)[0][c]<<" ws0 "<<(*ws_start)[0][c]<<" ws1 "<< (*ws_end)[0][c]<<" den "<<(*mol_dens_end)[0][c]<<" tcc "<<tcc_next[i][c]<<"\n";
+      // if (c<5) std::cout<<c<<" "<<vol_phi_ws_den<<" "<<tcc_next[i][c]<<" "<<(*conserve_qty_)[i][c]<<"\n";
     }
   }
 
@@ -1398,6 +1414,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
       tmp1 = mass_solutes_bc_[i];
       mesh_->get_comm()->SumAll(&tmp1, &mass_solutes_bc_[i], 1);
+
       *vo_->os()<<"*****************\n";
       if (domain_name_ == "surface") *vo_->os()<<"Overland mass BC "<<mass_solutes_bc_[i]<<"\n";
       else *vo_->os()<<"Subsurface mass BC "<<mass_solutes_bc_[i]<<"\n";
@@ -1406,6 +1423,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
       if (domain_name_ == "surface") *vo_->os()<<"Overland mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
       else *vo_->os()<<"Subsurface mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
       *vo_->os()<<"*****************\n";
+
     }
   }
 
@@ -1413,9 +1431,11 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME){
+
     if (domain_name_ == "surface") *vo_->os() << "Overland mass final "<<mass_final<<"\n";
     else *vo_->os()<<"Subsurface mass final "<<mass_final<<"\n";
+
   }
 
   //if (abs(mass_final - (mass_start + mass_solutes_bc_[0] + mass_solutes_source_[0]*dt_) )/mass_final > 1e-4) exit(-1);
@@ -1599,7 +1619,6 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
       int c = it->first;
       std::vector<double>& values = it->second;
 
-      //      std::cout<<c<<" Source: "<<values[0]<<"\n";
 
       for (int k = 0; k < tcc_index.size(); ++k) {
         int i = tcc_index[k];
@@ -1621,11 +1640,13 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
         tcc[imap][c] += dtp * value;
         mass_solutes_source_[i] += value;
 
+
         // if (value != 0) {
         //   std::cout<<"Source name "<<k<<" "<<srcs_[m]->name()<<" from Source cell "<<c
         //                          <<" dt "<<dtp<<"  + "<<dtp * value<<" "<<values[k]<<"\n";
         //   std::cout<<"ws "<<(*ws_start)[0][c]<<" "<<(*ws_end)[0][c]<<"\n";
         // }
+
       }
     }
   }

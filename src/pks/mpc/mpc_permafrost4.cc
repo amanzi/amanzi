@@ -35,9 +35,9 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
   pks_list_->sublist(names[3]).set("coupled to subsurface via flux", true);
 
   // -- ensure local ops are suface ops
-  pks_list_->sublist(names[2]).sublist("Diffusion PC").set("surface operator", true);
+  pks_list_->sublist(names[2]).sublist("diffusion preconditioner").set("surface operator", true);
   pks_list_->sublist(names[2]).sublist("Accumulation PC").set("surface operator", true);
-  pks_list_->sublist(names[3]).sublist("Diffusion PC").set("surface operator", true);
+  pks_list_->sublist(names[3]).sublist("diffusion preconditioner").set("surface operator", true);
   pks_list_->sublist(names[3]).sublist("Advection PC").set("surface operator", true);
   pks_list_->sublist(names[3]).sublist("Accumulation PC").set("surface operator", true);
   

@@ -34,7 +34,7 @@ void AdvectionDiffusion::Setup(const Teuchos::Ptr<State>& S) {
   names2[0] = "cell";
   names2[1] = "face";
 
-  Teuchos::ParameterList mfd_plist = plist_->sublist("Diffusion");
+  Teuchos::ParameterList mfd_plist = plist_->sublist("diffusion");
   std::string disc = mfd_plist.get<std::string>("discretization primary");
   bool tpfa = (disc == std::string("mfd: two-point flux approximation"))
       || (disc == std::string("fv: default"));
@@ -87,11 +87,11 @@ void AdvectionDiffusion::Setup(const Teuchos::Ptr<State>& S) {
   // matrix_diff_->SetTensorCoefficient(Teuchos::null);
 
   // operator for advection terms
-  Teuchos::ParameterList advect_plist = plist_->sublist("Advection");
+  Teuchos::ParameterList advect_plist = plist_->sublist("advection");
   matrix_adv_ = Teuchos::rcp(new Operators::OperatorAdvection(advect_plist, mesh_));
   
   // preconditioner
-  Teuchos::ParameterList mfd_pc_plist = plist_->sublist("Diffusion PC");
+  Teuchos::ParameterList mfd_pc_plist = plist_->sublist("diffusion preconditioner");
   preconditioner_diff_ = opfactory.Create(mfd_pc_plist, mesh_, bc_);
   // preconditioner_diff_->SetTensorCoefficient(Teuchos::null);
   // preconditioner_ = preconditioner_diff_->global_operator();

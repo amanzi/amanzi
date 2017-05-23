@@ -109,13 +109,13 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
   bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_markers_, bc_values_, mixed));
 
   // operator for the diffusion terms: must use ScaledConstraint version
-  Teuchos::ParameterList mfd_plist = plist_->sublist("Diffusion");
+  Teuchos::ParameterList mfd_plist = plist_->sublist("diffusion");
   matrix_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(mfd_plist, mesh_));
   matrix_ = matrix_diff_->global_operator();
   matrix_diff_->SetBCs(bc_, bc_);
   matrix_diff_->SetTensorCoefficient(Teuchos::null);
 
-  Teuchos::ParameterList mfd_pc_plist = plist_->sublist("Diffusion PC");
+  Teuchos::ParameterList mfd_pc_plist = plist_->sublist("diffusion preconditioner");
   preconditioner_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(mfd_pc_plist, mesh_));
   preconditioner_diff_->SetBCs(bc_, bc_);
   preconditioner_diff_->SetTensorCoefficient(Teuchos::null);

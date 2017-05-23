@@ -105,6 +105,9 @@ void TransportBoundaryFunction_Alquimia::Compute(double t_old, double t_new)
     // Dump the contents of the chemistry state into our Alquimia containers.
     chem_pk_->CopyToAlquimia(cell, alq_mat_props_, alq_state_, alq_aux_data_);
 
+    //alq_mat_props_.saturation = 1;
+    //alq_state_.porosity = 0.25;
+    //    alq_aux_data_.aux_doubles.data[0] = 1.0018e-20;
     // std::cout<<"cell "<<cell<<" "<<alq_state_.total_mobile.data[0]<<"\n";
     // std::cout<<"alq_mat_props: volume "<<alq_mat_props_.volume<<"\n";
     // std::cout<<"alq_mat_props: saturation"<<alq_mat_props_.saturation<<"\n";
@@ -115,6 +118,7 @@ void TransportBoundaryFunction_Alquimia::Compute(double t_old, double t_new)
     //          <<alq_aux_data_.aux_doubles.data[2]<<"\n";
 
     // Enforce the condition.
+
     chem_engine_->EnforceCondition(cond_name, t_new, 
                                    alq_mat_props_, alq_state_, 
                                    alq_aux_data_, alq_aux_output_);

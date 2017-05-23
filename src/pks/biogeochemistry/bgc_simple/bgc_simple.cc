@@ -480,7 +480,9 @@ bool BGCSimple::AdvanceStep(double t_old, double t_new, bool reinit) {
       co2_decomp[0][col_iter[i]] += co2_decomp_c[i];
 
       // and pull in the transpiration, converting to mol/m^3/s, as a sink
-      trans[0][col_iter[i]] = -trans_c[i]/ .01801528;  
+      trans[0][col_iter[i]] = -trans_c[i]/ .01801528;
+      std::cout << std::scientific;
+      std::cout << "Transpiration at " << col_iter[i] << "," << i << " = " << trans[0][col_iter[i]] << std::endl;
       sw[0][col] = sw_c;
     }
 

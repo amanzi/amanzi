@@ -126,7 +126,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   S->GetField("upwind_overland_conductivity",name_)->set_io_vis(false);
     
   // -- create the forward operator for the diffusion term
-  Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
+  Teuchos::ParameterList& mfd_plist = plist_->sublist("diffusion");
   mfd_plist.set("nonlinear coefficient", coef_location);
   if (!mfd_plist.isParameter("scaled constraint equation"))
     mfd_plist.set("scaled constraint equation", true);
@@ -149,7 +149,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   
   // -- create the operators for the preconditioner
   //    diffusion
-  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("Diffusion PC");
+  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("diffusion preconditioner");
   mfd_pc_plist.set("nonlinear coefficient", coef_location);
   mfd_pc_plist.set("scaled constraint equation",
                    mfd_plist.get<bool>("scaled constraint equation"));

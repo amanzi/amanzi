@@ -30,12 +30,17 @@ def compressibility(xml):
     for c in asearch.generateElementByNamePath(xml, "pore compressibility"):
         c.set("name", "pore compressibility [Pa^-1]")
 
+def diffusion(xml):
+    for diff in asearch.generateElementByNamePath(xml, "Diffusion"):
+        diff.set("name", "diffusion")
+    for diff in asearch.generateElementByNamePath(xml, "Diffusion PC"):
+        diff.set("name", "diffusion preconditioner")
 
 
 def update(xml):
     flatten_pks.flatten_pks(xml)
-    fixEvaluator(xml, "ponded_depth", "surface-ponded_depth")
-    fixEvaluator(xml, "ponded_depth_bar", "surface-ponded_depth_bar")
+#    fixEvaluator(xml, "ponded_depth", "surface-ponded_depth")
+#    fixEvaluator(xml, "ponded_depth_bar", "surface-ponded_depth_bar")
     compressibility(xml)
 
         
