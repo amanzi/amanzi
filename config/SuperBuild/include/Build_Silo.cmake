@@ -58,6 +58,7 @@ ExternalProject_Add(${Silo_BUILD_TARGET}
                                           --with-x=0
                                           --with-hdf5=${TPL_INSTALL_PREFIX}/include,${TPL_INSTALL_PREFIX}/lib
                                           --enable-fortran=0
+                                          FC=${CMAKE_Fortran_COMPILER_USE}
                                           CC=${CMAKE_C_COMPILER_USE}
                                           CXX=${CMAKE_CXX_COMPILER_USE}
                                           CFLAGS=${silo_cflags}
