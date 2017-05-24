@@ -71,6 +71,14 @@
 #   0.93.0       - defaulted to C++11, update Trilinos to 12.6.1
 #   0.93.1       - update Boost to version 1.61.0
 
+#   0.94.1       - updates several TPLs, new versions are:
+#                - Trilinos 12.10.1
+#                - zlib 1.2.11
+#                - hdf5 1.8.12
+#                - netcdf 4.4.1.1
+#                - netcdf-fortran 4.4.4
+#                - boost 1.6.3
+
 include(CMakeParseArguments)
 
 MACRO(LIST_LENGTH var)
@@ -118,7 +126,7 @@ endmacro(amanzi_tpl_version_write)
 
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
-set (AMANZI_TPLS_VERSION_MINOR 93)
+set (AMANZI_TPLS_VERSION_MINOR 94)
 set (AMANZI_TPLS_VERSION_PATCH 1)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
@@ -166,11 +174,11 @@ set(CURL_MD5_SUM        7dda0cc2e4136f78d5801ac347be696b)
 #
 set(ZLIB_VERSION_MAJOR 1)
 set(ZLIB_VERSION_MINOR 2)
-set(ZLIB_VERSION_PATCH 6)
+set(ZLIB_VERSION_PATCH 11)
 set(ZLIB_VERSION ${ZLIB_VERSION_MAJOR}.${ZLIB_VERSION_MINOR}.${ZLIB_VERSION_PATCH})
 set(ZLIB_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(ZLIB_ARCHIVE_FILE   zlib-${ZLIB_VERSION}.tar.gz)
-set(ZLIB_MD5_SUM        618e944d7c7cd6521551e30b32322f4a) 
+set(ZLIB_MD5_SUM        1c9f62f0778697a09d36121ead88e08e) 
 
 #
 # TPL: METIS
@@ -209,35 +217,36 @@ set(UnitTest_MD5_SUM      6f6e05fa07eeb2d44e5b11bd1f38865d)
 # TPL: Boost
 #
 set(Boost_VERSION_MAJOR 1)
-set(Boost_VERSION_MINOR 61)
+set(Boost_VERSION_MINOR 63)
 set(Boost_VERSION_PATCH 0)
 set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH})
 set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
 set(Boost_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.bz2)
-set(Boost_MD5_SUM        6095876341956f65f9d35939ccea1a9f)
+set(Boost_MD5_SUM        1c837ecd990bb022d07e7aab32b09847)
 
 #
 # TPL: HDF5
 #
 set(HDF5_VERSION_MAJOR 1)
 set(HDF5_VERSION_MINOR 8)
-set(HDF5_VERSION_PATCH 8)
+set(HDF5_VERSION_PATCH 18)
 set(HDF5_VERSION ${HDF5_VERSION_MAJOR}.${HDF5_VERSION_MINOR}.${HDF5_VERSION_PATCH})
 set(HDF5_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.gz)
-set(HDF5_MD5_SUM        1196e668f5592bfb50d1de162eb16cff)      
+set(HDF5_MD5_SUM        dd2148b740713ca0295442ec683d7b1c)
+
 
 #
 # TPL: NetCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
-set(NetCDF_VERSION_MINOR 3)
-set(NetCDF_VERSION_PATCH 2)
+set(NetCDF_VERSION_MINOR 4)
+set(NetCDF_VERSION_PATCH 1.1)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(NetCDF_ARCHIVE_FILE   netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        2fd2365e1fe9685368cd6ab0ada532a0)
+set(NetCDF_MD5_SUM        503a2d6b6035d116ed53b1d80c811bda)
 
 #
 # TPL: NetCDF Fortran
@@ -348,23 +357,23 @@ set(PETSc_MD5_SUM        ad170802b3b058b5deb9cd1f968e7e13)
 # TPL: Trilinos
 #
 set(Trilinos_VERSION_MAJOR 12)
-set(Trilinos_VERSION_MINOR 6)
-set(Trilinos_VERSION_PATCH 3)
+set(Trilinos_VERSION_MINOR 10)
+set(Trilinos_VERSION_PATCH 1)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
-set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive/")
-set(Trilinos_ARCHIVE_FILE   Trilinos-trilinos-release-${Trilinos_VERSION}.tar.gz)
-set(Trilinos_MD5_SUM        8de5cc00981a0ca0defea6199b2fe4c1)
+set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
+set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
+set(Trilinos_MD5_SUM        40f28628b63310f9bd17c26d9ebe32b1)
 
 #
 # TPL: SEACAS
 #  SEACAS is available in Trilinos 10.8 and above
 set(SEACAS_VERSION_MAJOR 12)
-set(SEACAS_VERSION_MINOR 6)
-set(SEACAS_VERSION_PATCH 3)
+set(SEACAS_VERSION_MINOR 10)
+set(SEACAS_VERSION_PATCH 1)
 set(SEACAS_VERSION ${SEACAS_VERSION_MAJOR}-${SEACAS_VERSION_MINOR}-${SEACAS_VERSION_PATCH})
 set(SEACAS_URL_STRING     "https://github.com/trilinos/Trilinos/archive/")
-set(SEACAS_ARCHIVE_FILE   Trilinos-trilinos-release-${SEACAS_VERSION}.tar.gz)
-set(SEACAS_MD5_SUM        8de5cc00981a0ca0defea6199b2fe4c1)
+set(SEACAS_ARCHIVE_FILE   trilinos-release-${SEACAS_VERSION}.tar.gz)
+set(SEACAS_MD5_SUM        40f28628b63310f9bd17c26d9ebe32b1)
 
 #
 # TPL: PFlotran
