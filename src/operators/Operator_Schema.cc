@@ -62,7 +62,6 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
 
     ExtractVectorCellOp(c, op.schema_col_, v, X);
     Acell.Multiply(v, av, false);
-std::cout << c << " " << av << std::endl;
     AssembleVectorCellOp(c, op.schema_row_, av, Y);
   }
 

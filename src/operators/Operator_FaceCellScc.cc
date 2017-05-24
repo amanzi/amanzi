@@ -269,7 +269,6 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
         if (coef == 0.0) continue;
 
         mat(0,0) = -a1 * a1 / coef;
-        std::cout << "LMat (f=" << f << "): " << mat(0,0);
         if (mat(0,0) > 1.e30 || mat(0,0) < -1.e30) {
           ASSERT(0);
         }
@@ -277,14 +276,12 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
           mat(0,1) = -a1 * a2 / coef;
           mat(1,0) = -a1 * a2 / coef;
           mat(1,1) = -a2 * a2 / coef;
-          std::cout << ", " << mat(0,1) << ", " << mat(1,0) << ", " << mat(1,1);
           if (mat(1,0) > 1.e30 || mat(1,0) < -1.e30
               || mat(0,1) > 1.e30 || mat(0,1) < -1.e30
               || mat(1,1) > 1.e30 || mat(1,1) < -1.e30) {
             ASSERT(0);
           }
         }
-        std::cout << std::endl;
       }
 
       // assemble

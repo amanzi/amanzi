@@ -143,8 +143,6 @@ int RemapVelocityFaces(int order,
 
       v.push_back(AmanziGeometry::Point(b[0], -b[1]));
       v.push_back(AmanziGeometry::Point(b[1],  b[0]));
-// v[1] *= 0.0;
-// v[2] *= 0.0;
     } 
 
     int n(0);
@@ -152,6 +150,10 @@ int RemapVelocityFaces(int order,
       uf[n++][f] = v[k][0];
       uf[n++][f] = v[k][1];
     }
+//std::cout << f << std::endl;
+//std::cout << "f0=" << v[0] << std::endl;
+//std::cout << "f1=" << v[1] << std::endl;
+//std::cout << "f2=" << v[2] << std::endl;
   }
 
   return 0;
@@ -211,15 +213,11 @@ int RemapVelocityCells(int order,
 
     a0 = (a0 - a1 * b1[0] - a2 * b1[1]) / b0;
 
-std::cout << std::endl;
-std::cout << "b1=" << b1 << std::endl;
-std::cout << "a0=" << a0 << std::endl;
-std::cout << "a1=" << a1 << std::endl;
-std::cout << "a2=" << a2 << std::endl;
-std::cout << (mesh2->cell_centroid(c) - xc) << " " << a0 << std::endl;
-// a0 = mesh2->cell_centroid(c) - xc;
-// a1 *= 0.0;
-// a2 *= 0.0;
+//std::cout << std::endl;
+//std::cout << "a0=" << a0 << std::endl;
+//std::cout << "a1=" << a1 << std::endl;
+//std::cout << "a2=" << a2 << std::endl;
+    a0 = mesh2->cell_centroid(c) - xc;
 
     std::vector<AmanziGeometry::Point> v;
     v.push_back(a0);
