@@ -24,7 +24,7 @@ namespace WhetStone {
 /* ******************************************************************
 * Mass matrix for Taylor basis functions. 
 ****************************************************************** */
-int DG::TaylorMassMatrix(int c, int order, DenseMatrix& M)
+int DG::TaylorMassMatrix(int c, int order, double K, DenseMatrix& M)
 {
   // calculate monomials
   int n(1), m((2 * order + 1) * (order + 1));
@@ -46,7 +46,7 @@ int DG::TaylorMassMatrix(int c, int order, DenseMatrix& M)
   for (int k = 0; k < nrows; ++k) {
     for (int l = k; l < nrows; ++l) {
       int i = shift[k] * shift[l];
-      M(k, l) = M(l, k) = monomials(k + l + i);
+      M(k, l) = M(l, k) = K * monomials(k + l + i);
     }
   }
 

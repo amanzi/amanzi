@@ -47,8 +47,8 @@ class DG {
   DG(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh), d_(mesh_->space_dimension()) {};
   ~DG() {};
 
-  int TaylorMassMatrix(int c, int order, DenseMatrix& M);
-  int TaylorAdvectionMatrixCell(int c, int order, 
+  int TaylorMassMatrix(int c, int order, double K, DenseMatrix& M);
+  int TaylorAdvectionMatrixCell(int c, int order,
                                 std::vector<AmanziGeometry::Point>& u, DenseMatrix& A);
   int TaylorAdvectionMatrixFace(int f, int order, 
                                 std::vector<AmanziGeometry::Point>& u, DenseMatrix& M);

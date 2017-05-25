@@ -16,6 +16,8 @@
 
 #include <string>
 
+#include "Epetra_MultiVector.h"
+
 #include "BCsList.hh"
 #include "PDE_Helper.hh"
 #include "Schema.hh"
@@ -25,18 +27,20 @@ namespace Operators {
 
 class Reaction : public BCsList, public PDE_Helper {
  public:
-  Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op) {
+  Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op) :
+      K_(Teuchos::null) {
     InitReaction_(plist);
   }
 
-  Reaction(Teuchos::ParameterList& plist,
-           Teuchos::RCP<const AmanziMesh::Mesh> mesh) : PDE_Helper(mesh) {
+  Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh) : 
+      K_(Teuchos::null),
+      PDE_Helper(mesh) {
     InitReaction_(plist);
   }
 
   // required members 
   // -- setup
-  virtual void Setup(const CompositeVector& u) {};
+  virtual void Setup(Teuchos::RCP<Epetra_MultiVector>& K) { K_ = K; }
   // -- data
   virtual void UpdateMatrices(const CompositeVector& u);
   virtual void UpdateMatrices(const CompositeVector& u, const CompositeVector& dhdT) {};
@@ -53,6 +57,9 @@ class Reaction : public BCsList, public PDE_Helper {
 
  private:
   void InitReaction_(Teuchos::ParameterList& plist);
+
+ protected:
+  Teuchos::RCP<const Epetra_MultiVector> K_;
 
  private:
   Schema global_schema_col_, global_schema_row_;

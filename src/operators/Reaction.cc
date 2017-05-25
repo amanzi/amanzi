@@ -111,7 +111,8 @@ void Reaction::UpdateMatrices(const CompositeVector& u)
     int ndofs = (k + 2) * (k + 1) / 2;
 
     WhetStone::DenseMatrix Mcell(ndofs, ndofs);
-    dg.TaylorMassMatrix(c, k, Mcell);
+    double Kc = K_.get() ? (*K_)[0][c] : 1.0;
+    dg.TaylorMassMatrix(c, k, Kc, Mcell);
 
     matrix[c] = Mcell;
   }

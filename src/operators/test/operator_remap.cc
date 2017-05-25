@@ -124,6 +124,9 @@ void RemapTests2D(int order, std::string disc_name) {
   Teuchos::RCP<Reaction> op_reac = Teuchos::rcp(new Reaction(plist, mesh1));
   auto global_reac = op_reac->global_operator();
 
+  Teuchos::RCP<Epetra_MultiVector> jac = Teuchos::rcp(new Epetra_MultiVector(mesh1->cell_map(true), 1));
+  op_reac->Setup(jac);
+
   double t(0.0), dt(0.1), tend(1.0);
   while(t < tend) {
     // deform the second mesh
@@ -152,6 +155,11 @@ void RemapTests2D(int order, std::string disc_name) {
     Teuchos::RCP<CompositeVector> velc, velf;
     RemapVelocityFaces(order, mesh3, mesh2, velf);
     RemapVelocityCells(order, mesh3, mesh2, velc);
+
+    // calculate determinat of jacobian
+    for (int c = 0; c < ncells_owned; ++c) {
+      (*jac)[0][c] = mesh2->cell_volume(c) / mesh1->cell_volume(c);
+    }
 
     // populate operators
     op->UpdateMatrices(*velf);
