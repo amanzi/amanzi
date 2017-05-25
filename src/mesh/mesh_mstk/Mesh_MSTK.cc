@@ -160,21 +160,17 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
                      const bool request_faces,
                      const bool request_edges) :
     Mesh(verbobj,request_faces,request_edges), 
-    mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
+    mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL),
     faces_initialized(false), edges_initialized(false),
     target_cell_volumes_(NULL), min_cell_volumes_(NULL),
     extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
     owned_to_extface_importer_(NULL)
 {
-  // Assume three dimensional problem if constructor called without 
-  // the space_dimension parameter
-
   int ok;
 
   // Pre-processing (init, MPI queries etc)
 
-  int space_dim = 3;
-  pre_create_steps_(space_dim, incomm_, gm);
+  pre_create_steps_(space_dimension, incomm_, gm);
 
 
   if (myprocid == 0) {
