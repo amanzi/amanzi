@@ -62,7 +62,8 @@ void RunTest() {
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, gm);
-  // RCP<const Mesh> mesh = meshfactory("test/fractures.exo", gm);
+  RCP<Mesh> surfmesh = meshfactory("test/fractures.exo", gm);
+  /*
   RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
 
   // extract surface mesh
@@ -71,6 +72,7 @@ void RunTest() {
   setnames.push_back("fracture 2");
 
   RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
+  */
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());

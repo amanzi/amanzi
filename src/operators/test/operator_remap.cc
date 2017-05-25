@@ -55,16 +55,15 @@ void RemapTests2D(int order, std::string disc_name) {
 
   int nx(20), ny(20);
   Teuchos::RCP<const Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  // Teuchos::RCP<const Mesh> mesh1 = meshfactory("test/random20.exo");
 
   int ncells_owned = mesh1->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int ncells_wghost = mesh1->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   int nfaces_wghost = mesh1->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   int nnodes_owned = mesh1->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
 
-  // create second mesh
+  // create second and auxiliary mesh
   Teuchos::RCP<Mesh> mesh2 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  // Teuchos::RCP<Mesh> mesh2 = meshfactory("test/random20.exo");
+  Teuchos::RCP<Mesh> mesh3 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
 
   // create and initialize cell-based field 
   CompositeVectorSpace cvs1;
@@ -74,10 +73,10 @@ void RemapTests2D(int order, std::string disc_name) {
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh1->cell_centroid(c);
-    p1c[0][c] = xc[0] + 2 * xc[1] * xc[1];
+    p1c[0][c] = xc[0];  // + 2 * xc[1] * xc[1];
     if (nk > 1) {
       p1c[1][c] = 1.0;
-      p1c[2][c] = 4.0 * xc[1];
+      p1c[2][c] = 0.0;  // 4.0 * xc[1];
     }
   }
 
@@ -126,7 +125,6 @@ void RemapTests2D(int order, std::string disc_name) {
   auto global_reac = op_reac->global_operator();
 
   double t(0.0), dt(0.1), tend(1.0);
-
   while(t < tend) {
     // deform the second mesh
     AmanziGeometry::Point xv(2);
@@ -135,27 +133,25 @@ void RemapTests2D(int order, std::string disc_name) {
 
     for (int v = 0; v < nnodes_owned; ++v) {
       mesh2->node_get_coordinates(v, &xv);
-      if (!(fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
-            fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6)) {
-        double x(xv[0]), y(xv[1]), ux, uy;
 
-        ux = 0.2 * std::sin(M_PI * x) * std::cos(M_PI * y);
-        uy =-0.2 * std::cos(M_PI * x) * std::sin(M_PI * y);
+      double ds(0.01 * dt), ux, uy;
+      for (int i = 0; i < 100; ++i) {
+        ux = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
+        uy =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
 
-        xv[0] = x + ux * dt;
-        xv[1] = y + uy * dt;
-
-        nodeids.push_back(v);
-        new_positions.push_back(xv);
+        xv[0] += ux * ds;
+        xv[1] += uy * ds;
       }
+
+      nodeids.push_back(v);
+      new_positions.push_back(xv);
     }
-    
     mesh2->deform(nodeids, new_positions, false, &final_positions);
 
     // calculate mesh velocity on faces and in cells
     Teuchos::RCP<CompositeVector> velc, velf;
-    RemapVelocityFaces(order, mesh1, mesh2, velf);
-    RemapVelocityCells(order, mesh1, mesh2, velc);
+    RemapVelocityFaces(order, mesh3, mesh2, velf);
+    RemapVelocityCells(order, mesh3, mesh2, velc);
 
     // populate operators
     op->UpdateMatrices(*velf);
@@ -191,8 +187,11 @@ void RemapTests2D(int order, std::string disc_name) {
     pcg.ApplyInverse(g, p2);
     */
 
+    // closing the loop
     *p1.ViewComponent("cell") = *p2.ViewComponent("cell");
     t += dt;
+
+    mesh3->deform(nodeids, new_positions, false, &final_positions);
   }
 
   // calculate error
@@ -201,7 +200,7 @@ void RemapTests2D(int order, std::string disc_name) {
     const AmanziGeometry::Point& xc = mesh2->cell_centroid(c);
     double area_c = mesh2->cell_volume(c);
 
-    double tmp = (xc[0] + 2 * xc[1] * xc[1]) - p2c[0][c];
+    double tmp = (xc[0] + 0 * xc[1] * xc[1]) - p2c[0][c];
     pinf_err = std::max(pinf_err, fabs(tmp));
     pl2_err += tmp * tmp * area_c;
     // std::cout << c << " " << p2c[0][c] << " err=" << tmp << std::endl;
