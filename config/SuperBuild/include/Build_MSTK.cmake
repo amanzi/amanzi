@@ -38,6 +38,7 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DCMAKE_C_FLAGS:STRING=${mstk_cflags}
                     -DCMAKE_EXE_LINKER_FLAGS:STRING=${mstk_ldflags}
 		    -DPREFER_STATIC_LIBRARIES:BOOL=${PREFER_STATIC_LIBRARIES}
+                    -DMSTK_USE_MARKERS:BOOL=TRUE		    
                     -DENABLE_PARALLEL:BOOL=TRUE
                     -DENABLE_ExodusII:BOOL=TRUE
                     -DENABLE_EXODUSII:BOOL=TRUE
