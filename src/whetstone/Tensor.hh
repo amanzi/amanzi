@@ -66,11 +66,14 @@ class Tensor {
   friend Tensor operator*(const Tensor& T1, const Tensor& T2);
   friend double DotTensor(const Tensor& T1, const Tensor& T2);
 
+  // initialization
+  void MakeDiagonal(double s);
+  int SetColumn(int column, const AmanziGeometry::Point& p); 
+  int SetRow(int row, const AmanziGeometry::Point& p); 
+
   // access members
   double& operator()(int i, int j) { return data_[j * size_ + i]; }
   double& operator()(int i, int j) const { return data_[j * size_ + i]; }
-  int SetColumn(int column, const AmanziGeometry::Point& p); 
-  int SetRow(int row, const AmanziGeometry::Point& p); 
 
   int dimension() const { return d_; }
   int rank() const { return rank_; }

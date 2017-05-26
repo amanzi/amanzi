@@ -14,17 +14,17 @@
 #include <iostream>
 #include <vector>
 
-#include "UnitTest++.h"
-
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
 #include "GMVMesh.hh"
 #include "LinearOperatorPCG.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "Tensor.hh"
 
 #include "Accumulation.hh"
 #include "AdvectionRiemann.hh"
@@ -36,7 +36,7 @@
 /* *****************************************************************
 * Remap of polynomilas in two dimensions
 ***************************************************************** */
-void RemapTests2D(int order, std::string disc_name) {
+void RemapTests2D(int order, std::string disc_name, int nx, int ny, double dt) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -53,7 +53,6 @@ void RemapTests2D(int order, std::string disc_name) {
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
 
-  int nx(20), ny(20);
   Teuchos::RCP<const Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
 
   int ncells_owned = mesh1->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -63,7 +62,33 @@ void RemapTests2D(int order, std::string disc_name) {
 
   // create second and auxiliary mesh
   Teuchos::RCP<Mesh> mesh2 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  Teuchos::RCP<Mesh> mesh3 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+
+  // deform the second mesh
+  AmanziGeometry::Point xv(2);
+  Entity_ID_List nodeids;
+  AmanziGeometry::Point_List new_positions, final_positions;
+
+  for (int v = 0; v < nnodes_owned; ++v) {
+    mesh2->node_get_coordinates(v, &xv);
+
+    double ds(0.001), ux, uy;
+    for (int i = 0; i < 1000; ++i) {
+      ux = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
+      uy =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
+
+      xv[0] += ux * ds;
+      xv[1] += uy * ds;
+    }
+
+    nodeids.push_back(v);
+    new_positions.push_back(xv);
+  }
+  mesh2->deform(nodeids, new_positions, false, &final_positions);
+
+  // calculate mesh velocity on faces and in cells
+  Teuchos::RCP<CompositeVector> velc, velf;
+  RemapVelocityFaces(1, mesh1, mesh2, velf);
+  RemapVelocityCells(1, mesh1, mesh2, velc);
 
   // create and initialize cell-based field 
   CompositeVectorSpace cvs1;
@@ -127,43 +152,58 @@ void RemapTests2D(int order, std::string disc_name) {
   Teuchos::RCP<Epetra_MultiVector> jac = Teuchos::rcp(new Epetra_MultiVector(mesh1->cell_map(true), 1));
   op_reac->Setup(jac);
 
-  double t(0.0), dt(0.1), tend(1.0);
+  double t(0.0), tend(1.0);
   while(t < tend) {
-    // deform the second mesh
-    AmanziGeometry::Point xv(2);
-    Entity_ID_List nodeids;
-    AmanziGeometry::Point_List new_positions, final_positions;
-
-    for (int v = 0; v < nnodes_owned; ++v) {
-      mesh2->node_get_coordinates(v, &xv);
-
-      double ds(0.01 * dt), ux, uy;
-      for (int i = 0; i < 100; ++i) {
-        ux = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
-        uy =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
-
-        xv[0] += ux * ds;
-        xv[1] += uy * ds;
-      }
-
-      nodeids.push_back(v);
-      new_positions.push_back(xv);
-    }
-    mesh2->deform(nodeids, new_positions, false, &final_positions);
-
-    // calculate mesh velocity on faces and in cells
-    Teuchos::RCP<CompositeVector> velc, velf;
-    RemapVelocityFaces(order, mesh3, mesh2, velf);
-    RemapVelocityCells(order, mesh3, mesh2, velc);
-
     // calculate determinat of jacobian
     for (int c = 0; c < ncells_owned; ++c) {
-      (*jac)[0][c] = mesh2->cell_volume(c) / mesh1->cell_volume(c);
+      double v0 = mesh1->cell_volume(c);
+      double v1 = mesh2->cell_volume(c);
+      (*jac)[0][c] = 1.0 + t * (v1 - v0) / v0;
     }
 
+    // rotate velocities
+    WhetStone::Tensor R(2, 2);
+    CompositeVector velc_t(*velc), velf_t(*velf);
+
+    Epetra_MultiVector& vel = *velf_t.ViewComponent("face");
+    for (int f = 0; f < nfaces_wghost; ++f) {
+      R(0, 0) = 1.0 + t * vel[5][f];
+      R(0, 1) = -t * vel[4][f];
+      R(1, 0) = -t * vel[3][f];
+      R(1, 1) = 1.0 + t * vel[2][f];
+
+      for (int k = 0; k < nk; ++k) {
+        xv[0] = vel[2 * k][f];
+        xv[1] = vel[2 *k + 1][f];
+
+        xv = R * xv;
+      
+        vel[2 * k][f] = xv[0];
+        vel[2 * k + 1][f] = xv[1];
+      }
+    }
+    
+    Epetra_MultiVector& vel2 = *velc_t.ViewComponent("cell");
+    for (int c = 0; c < ncells_owned; ++c) {
+      R(0, 0) = 1.0 + t * vel2[5][c];
+      R(0, 1) = -t * vel2[4][c];
+      R(1, 0) = -t * vel2[3][c];
+      R(1, 1) = 1.0 + t * vel2[2][c];
+
+      for (int k = 0; k < nk; ++k) {
+        xv[0] = vel2[2 * k][c];
+        xv[1] = vel2[2 *k + 1][c];
+
+        xv = R * xv;
+      
+        vel2[2 * k][c] = xv[0];
+        vel2[2 * k + 1][c] = xv[1];
+      }
+    }
+    
     // populate operators
-    op->UpdateMatrices(*velf);
-    op_adv->UpdateMatrices(*velc);
+    op->UpdateMatrices(velf_t);
+    op_adv->UpdateMatrices(velc_t);
     op_reac->UpdateMatrices(p1);
 
     // predictor step
@@ -195,11 +235,8 @@ void RemapTests2D(int order, std::string disc_name) {
     pcg.ApplyInverse(g, p2);
     */
 
-    // closing the loop
     *p1.ViewComponent("cell") = *p2.ViewComponent("cell");
     t += dt;
-
-    mesh3->deform(nodeids, new_positions, false, &final_positions);
   }
 
   // calculate error
@@ -234,6 +271,6 @@ void RemapTests2D(int order, std::string disc_name) {
 
 
 TEST(REMAP_2D) {
-  RemapTests2D(1, "DG order 1");
+  RemapTests2D(1, "DG order 1", 20, 20, 0.001);
 }
 

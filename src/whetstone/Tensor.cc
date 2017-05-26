@@ -81,7 +81,7 @@ int Tensor::Init(int d, int rank)
 
 
 /* ******************************************************************
-* Assign constan value to the tensor entries 
+* Assign constant value to the tensor entries 
 ****************************************************************** */
 void Tensor::PutScalar(double val)
 {
@@ -451,6 +451,19 @@ double DotTensor(const Tensor& T1, const Tensor& T2)
   double s(0.0); 
   for (int i = 0; i < mem; i++ ) s += data1[i] * data2[i];
   return s;
+}
+
+
+/* ******************************************************************
+* Miscaleneous routines: diagonal tensor
+****************************************************************** */
+void Tensor::MakeDiagonal(double s)
+{
+  if (! data_) return;
+
+  int mem = size_ * size_;
+  for (int i = 1; i < mem; i++) data_[i] = 0.0;
+  for (int i = 0; i < mem; i += d_ + 1) data_[i] = s; 
 }
 
 
