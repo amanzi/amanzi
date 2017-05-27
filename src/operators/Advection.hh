@@ -49,10 +49,6 @@ class Advection : public BCsList, public PDE_Helper {
   virtual void UpdateFlux(const CompositeVector& h , const CompositeVector& u,
                           const Teuchos::RCP<BCs>& bc, CompositeVector& flux) = 0;
   
-  // access
-  Teuchos::RCP<Operator> global_operator() { return global_op_; }
-  Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
-
  protected:
   Schema global_schema_row_, global_schema_col_;
   Schema local_schema_col_, local_schema_row_;

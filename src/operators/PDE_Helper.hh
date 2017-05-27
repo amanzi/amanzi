@@ -9,7 +9,8 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
           Ethan Coon (ecoon@lanl.gov)
 
-  Helper class for discrete PDE operators.
+  Helper class for discrete PDE operators. It provides support of
+  common functionality.
 */
 
 #ifndef AMANZI_OPERATOR_PDE_HELPER_HH_
@@ -30,6 +31,8 @@ namespace Operators {
 class PDE_Helper {
  public:
   PDE_Helper() {};
+  PDE_Helper(const Teuchos::RCP<Operator>& global_op);
+  PDE_Helper(const Teuchos::RCP<AmanziMesh::Mesh>& mesh);
   PDE_Helper(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~PDE_Helper() {};
 
@@ -39,6 +42,16 @@ class PDE_Helper {
   void ApplyBCs_Face(const Teuchos::Ptr<BCs>& bc, Teuchos::RCP<Op> op,
                      bool primary, bool eliminate);
   
+  // access
+  // -- global operator (collection of ops with Apply, etc)
+  Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
+  Teuchos::RCP<Operator> global_operator() { return global_op_; }
+  // -- local operator (container of elemental matrices)
+  Teuchos::RCP<Op> local_operator() { return local_op_; }
+
+ private:
+  void PopulateDimensions_();
+
  protected:
   Teuchos::RCP<Operator> global_op_;
   Teuchos::RCP<Op> local_op_;

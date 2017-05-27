@@ -10,11 +10,11 @@
 
 namespace Amanzi {
 
-  PK_PhysicalBDF_ATS::PK_PhysicalBDF_ATS(Teuchos::ParameterList& FElist,
-                                         const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                                         const Teuchos::RCP<State>& S,
-                                         const Teuchos::RCP<TreeVector>& solution):
-  PK_PhysicalBDF(plist, FElist, solution)
+PK_PhysicalBDF_ATS::PK_PhysicalBDF_ATS(Teuchos::ParameterList& FElist,
+                                       const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                                       const Teuchos::RCP<State>& S,
+                                       const Teuchos::RCP<TreeVector>& solution) :
+    PK_PhysicalBDF(plist, FElist, solution)
 {
   // domain -- default is the entire mesh, no prefix
   if (domain_.empty()) {

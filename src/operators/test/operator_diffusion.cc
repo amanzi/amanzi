@@ -25,7 +25,7 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorPCG.hh"
 #include "Tensor.hh"
 
 // Operators
@@ -161,21 +161,22 @@ void RunTestDiffusionMixed(double gravity) {
   CHECK(bhb > 0.0);
 
   // solve the problem
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, global_op);
+  ParameterList lop_list = plist.sublist("solvers")
+                                .sublist("AztecOO CG").sublist("pcg parameters");
+  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+      solver(global_op, global_op);
+  solver.Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs), flux(rhs);
   solution.PutScalar(0.0);
 
-  int ierr = solver->ApplyInverse(rhs, solution);
+  int ierr = solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-              << " code=" << solver->returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
+              << " itr=" << solver.num_itrs()
+              << " code=" << solver.returned_code() << std::endl;
   }
 
   // compute pressure error
@@ -194,10 +195,10 @@ void RunTestDiffusionMixed(double gravity) {
     pl2_err /= pnorm; 
     ul2_err /= unorm;
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
-        pl2_err, pinf_err, ul2_err, uinf_err, solver->num_itrs());
+        pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
 
     CHECK(pl2_err < 1e-12 && ul2_err < 1e-12);
-    CHECK(solver->num_itrs() < 10);
+    CHECK(solver.num_itrs() < 10);
   }
 }
 
@@ -309,21 +310,22 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, global_op);
+  ParameterList lop_list = plist.sublist("solvers")
+                                .sublist("AztecOO CG").sublist("pcg parameters");
+  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+      solver(global_op, global_op);
+  solver.Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  int ierr = solver->ApplyInverse(rhs, solution);
+  int ierr = solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-              << " code=" << solver->returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
+              << " itr=" << solver.num_itrs()
+              << " code=" << solver.returned_code() << std::endl;
   }
 
   // compute pressure error
@@ -333,10 +335,10 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
 
   if (MyPID == 0) {
     pl2_err /= pnorm; 
-    printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver->num_itrs());
+    printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver.num_itrs());
 
     CHECK(pl2_err < 1e-5);
-    CHECK(solver->num_itrs() < 10);
+    CHECK(solver.num_itrs() < 10);
   }
 }
 

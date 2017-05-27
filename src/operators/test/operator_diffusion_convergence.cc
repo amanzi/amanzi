@@ -49,10 +49,9 @@ int BoundaryFaceGetCell(const Amanzi::AmanziMesh::Mesh& mesh, int f)
 /* *****************************************************************
 * Exactness test for mixed diffusion solver.
 ***************************************************************** */
-
-std::pair<double,double> RunForwardProblem(const std::string& discretization,
-        int nx, int ny) {
-
+std::pair<double, double> RunForwardProblem(const std::string& discretization,
+                                            int nx, int ny)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -119,7 +118,7 @@ std::pair<double,double> RunForwardProblem(const std::string& discretization,
   // create the rhs
   CompositeVector source(*op->global_operator()->rhs());
   Epetra_MultiVector& source_c = *source.ViewComponent("cell",false);
-  for (int c=0; c!=ncells; ++c) {
+  for (int c = 0; c != ncells; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     source_c[0][c] = ana.source_exact(xc,0);
   }
@@ -133,20 +132,20 @@ std::pair<double,double> RunForwardProblem(const std::string& discretization,
   CompositeVector u(rhs), error(rhs), flux(rhs);
   
   // fill the solution
-  u.PutScalar(0.);
+  u.PutScalar(0.0);
   Epetra_MultiVector& u_c = *u.ViewComponent("cell",false);
-  for (int c=0; c!=ncells; ++c) {
+  for (int c = 0; c != ncells; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-    u_c[0][c] = ana.pressure_exact(xc,0);
+    u_c[0][c] = ana.pressure_exact(xc, 0.0);
   }
 
   if (u.HasComponent("face")) {
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
     Epetra_MultiVector& u_f = *u.ViewComponent("face",false);
     
-    for (int f=0; f!=nfaces; ++f) {
+    for (int f = 0; f != nfaces; ++f) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
-      u_f[0][f] = ana.pressure_exact(xf,0);
+      u_f[0][f] = ana.pressure_exact(xf, 0.0);
     }
   }
 
@@ -155,24 +154,24 @@ std::pair<double,double> RunForwardProblem(const std::string& discretization,
             AmanziMesh::OWNED);
     Epetra_MultiVector& u_f = *u.ViewComponent("boundary_face",false);
 
-    for (int bf=0; bf!=nboundary_faces; ++bf) {
+    for (int bf = 0; bf != nboundary_faces; ++bf) {
       int f = mesh->face_map(false).LID(
           mesh->exterior_face_map(false).GID(bf));
 
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
-      u_f[0][f] = ana.pressure_exact(xf,0);
+      u_f[0][f] = ana.pressure_exact(xf, 0.0);
     }
   }
 
   // forward apply
-  double pnorm(0.);
+  double pnorm(0.0);
   u.ViewComponent("cell", false)->Norm2(&pnorm);
   
   op->global_operator()->ComputeResidual(u, error, true);
-  double l2(0.);
-  error.ViewComponent("cell",false)->Norm2(&l2);
+  double l2(0.0);
+  error.ViewComponent("cell", false)->Norm2(&l2);
   l2 /= pnorm;
-  double linf(0.);
+  double linf(0.0);
   error.NormInf(&linf);
   
   if (comm.MyPID() == 0) {
@@ -182,9 +181,9 @@ std::pair<double,double> RunForwardProblem(const std::string& discretization,
 }
 
 
-std::pair<double,double> RunInverseProblem(const std::string& discretization,
-        int nx, int ny, bool write_matrix) {
-
+std::pair<double, double> RunInverseProblem(const std::string& discretization,
+                                            int nx, int ny, bool write_matrix)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -194,8 +193,7 @@ std::pair<double,double> RunInverseProblem(const std::string& discretization,
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   
   // create a mesh
-  Teuchos::RCP<Mesh> mesh =
-      Teuchos::rcp(new Mesh_MSTK(0.,0.,1.,1.,nx,ny, &comm));
+  Teuchos::RCP<Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 1.0, 1.0, nx, ny, &comm));
   
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -249,12 +247,12 @@ std::pair<double,double> RunInverseProblem(const std::string& discretization,
 
   // create the rhs
   CompositeVector source(*op->global_operator()->rhs());
-  Epetra_MultiVector& source_c = *source.ViewComponent("cell",false);
-  for (int c=0; c!=ncells; ++c) {
+  Epetra_MultiVector& source_c = *source.ViewComponent("cell", false);
+  for (int c = 0; c != ncells; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-    source_c[0][c] = ana.source_exact(xc,0);
+    source_c[0][c] = ana.source_exact(xc, 0.0);
   }
-  op->global_operator()->UpdateRHS(source,false);
+  op->global_operator()->UpdateRHS(source, false);
 
   // apply boundary conditions
   op->ApplyBCs(true,true);
@@ -264,34 +262,33 @@ std::pair<double,double> RunInverseProblem(const std::string& discretization,
   CompositeVector u(rhs), error(rhs), flux(rhs);
   
   // fill the solution
-  u.PutScalar(0.);
-  Epetra_MultiVector& u_c = *u.ViewComponent("cell",false);
-  for (int c=0; c!=ncells; ++c) {
+  u.PutScalar(0.0);
+  Epetra_MultiVector& u_c = *u.ViewComponent("cell", false);
+  for (int c = 0; c != ncells; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-    u_c[0][c] = ana.pressure_exact(xc,0);
+    u_c[0][c] = ana.pressure_exact(xc, 0.0);
   }
 
   if (u.HasComponent("face")) {
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-    Epetra_MultiVector& u_f = *u.ViewComponent("face",false);
+    Epetra_MultiVector& u_f = *u.ViewComponent("face", false);
     
-    for (int f=0; f!=nfaces; ++f) {
+    for (int f = 0; f != nfaces; ++f) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
-      u_f[0][f] = ana.pressure_exact(xf,0);
+      u_f[0][f] = ana.pressure_exact(xf, 0.0);
     }
   }
 
   if (u.HasComponent("boundary_face")) {
-    int nboundary_faces = mesh->num_entities(AmanziMesh::BOUNDARY_FACE,
-            AmanziMesh::OWNED);
-    Epetra_MultiVector& u_f = *u.ViewComponent("boundary_face",false);
+    int nboundary_faces = mesh->num_entities(AmanziMesh::BOUNDARY_FACE, AmanziMesh::OWNED);
+    Epetra_MultiVector& u_f = *u.ViewComponent("boundary_face", false);
 
-    for (int bf=0; bf!=nboundary_faces; ++bf) {
+    for (int bf = 0; bf != nboundary_faces; ++bf) {
       int f = mesh->face_map(false).LID(
           mesh->exterior_face_map(false).GID(bf));
 
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
-      u_f[0][f] = ana.pressure_exact(xf,0);
+      u_f[0][f] = ana.pressure_exact(xf, 0.0);
     }
   }
 
@@ -301,7 +298,7 @@ std::pair<double,double> RunInverseProblem(const std::string& discretization,
 
   Teuchos::ParameterList pc_list;
   pc_list.set("preconditioner type", "boomer amg");
-  pc_list.sublist("boomer amg parameters").set("tolerance", 0.);
+  pc_list.sublist("boomer amg parameters").set("tolerance", 0.0);
   op->global_operator()->InitPreconditioner(pc_list);
 
   Teuchos::ParameterList lin_list;
@@ -320,20 +317,20 @@ std::pair<double,double> RunInverseProblem(const std::string& discretization,
     EpetraExt::RowMatrixToMatlabFile(fname.str().c_str(), *op->global_operator()->A());
   }
   
-  error.PutScalar(0.);
+  error.PutScalar(0.0);
   int ierr = lin_op->ApplyInverse(*op->global_operator()->rhs(), error);
   CHECK(ierr >= 0);
   CHECK(lin_op->num_itrs() < 10);
 
-  error.Update(-1, u, 1.);
+  error.Update(-1.0, u, 1.0);
   
-  double pnorm(0.);
+  double pnorm(0.0);
   u.ViewComponent("cell", false)->Norm2(&pnorm);
   
-  double l2(0.);
-  error.ViewComponent("cell",false)->Norm2(&l2);
+  double l2(0.0);
+  error.ViewComponent("cell", false)->Norm2(&l2);
   l2 /= pnorm;
-  double linf(0.);
+  double linf(0.0);
   error.NormInf(&linf);
   
   if (comm.MyPID() == 0) {
@@ -343,19 +340,18 @@ std::pair<double,double> RunInverseProblem(const std::string& discretization,
 }
 
 
-
 void RunForwardTest(const std::string& discretization) {
   std::cout << "Convergence for discretization: " << discretization << std::endl;
   std::cout << "x = np.array([";
   std::vector<std::pair<double,double> > l2s;
-  for (int i=2; i<=65; i*=2) {
+  for (int i = 2; i <= 65; i *= 2) {
     std::pair<double,double> l2 = RunForwardProblem(discretization, i, i);
     l2s.push_back(l2);
   }
   std::cout << "])" << std::endl;
 
-  double mean_dl2 = 0.;
-  double mean_dlinf = 0.;
+  double mean_dl2 = 0.0;
+  double mean_dlinf = 0.0;
   int size = 0;
   for (int i = 1; i!=l2s.size(); ++i) {
     mean_dl2 += (l2s[i].first - l2s[i-1].first);
@@ -369,23 +365,22 @@ void RunForwardTest(const std::string& discretization) {
   CHECK(rate2 > 1.9);
   CHECK(rateinf > 1.8);
 }
-
 
 
 void RunInverseTest(const std::string& discretization) {
   std::cout << "Convergence for discretization: " << discretization << std::endl;
   std::cout << "x = np.array([";
   std::vector<std::pair<double,double> > l2s;
-  for (int i=2; i<=65; i*=2) {
+  for (int i = 2; i <= 65; i *= 2) {
     std::pair<double,double> l2 = RunInverseProblem(discretization, i, i, false);
     l2s.push_back(l2);
   }
   std::cout << "])" << std::endl;
 
-  double mean_dl2 = 0.;
-  double mean_dlinf = 0.;
+  double mean_dl2 = 0.0;
+  double mean_dlinf = 0.0;
   int size = 0;
-  for (int i = 1; i!=l2s.size(); ++i) {
+  for (int i = 1; i != l2s.size(); ++i) {
     mean_dl2 += (l2s[i].first - l2s[i-1].first);
     mean_dlinf += (l2s[i].second - l2s[i-1].second);
     size++;
@@ -397,7 +392,6 @@ void RunInverseTest(const std::string& discretization) {
   CHECK(rate2 > 1.9);
   CHECK(rateinf > 1.8);
 }
-
 
 
 TEST(OPERATOR_DIFFUSION_CONVERGENCE_FV) {

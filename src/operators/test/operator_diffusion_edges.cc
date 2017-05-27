@@ -23,7 +23,7 @@
 
 // Amanzi
 #include "MeshFactory.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorPCG.hh"
 #include "Tensor.hh"
 
 // Operators
@@ -157,23 +157,24 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
   CHECK(bhb > 0.0);
 
   // solve the problem
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, global_op);
+  ParameterList lop_list = plist.sublist("solvers")
+                                .sublist("AztecOO CG").sublist("pcg parameters");
+  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+      solver(global_op, global_op);
+  solver.Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  int ierr = solver->ApplyInverse(rhs, solution);
+  int ierr = solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-              << " code=" << solver->returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
+              << " itr=" << solver.num_itrs()
+              << " code=" << solver.returned_code() << std::endl;
   }
-  CHECK(solver->num_itrs() < 10);
+  CHECK(solver.num_itrs() < 10);
 
   // compute error
   solution.ScatterMasterToGhosted();
@@ -185,10 +186,10 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
   if (MyPID == 0) {
     pl2_err /= pnorm;
     ph1_err /= hnorm;
-    printf("L2(p)=%9.6f  H1(p)=%9.6f  itr=%3d\n", pl2_err, ph1_err, solver->num_itrs());
+    printf("L2(p)=%9.6f  H1(p)=%9.6f  itr=%3d\n", pl2_err, ph1_err, solver.num_itrs());
 
     CHECK(pl2_err < 5e-3 && ph1_err < 2e-5);
-    CHECK(solver->num_itrs() < 10);
+    CHECK(solver.num_itrs() < 10);
   }
 }
 

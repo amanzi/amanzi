@@ -101,7 +101,7 @@ const int OPERATOR_GRAVITY_HH = 1;
 const int OPERATOR_GRAVITY_FV = 2;
 
 // special properties of operators
-const int OPERATOR_PROPERTY_DATA_READ_ONLY = 1;  // must power of 2
+const int OPERATOR_PROPERTY_DATA_READ_ONLY = 1;  // must be power of 2
 const int OPERATOR_PROPERTY_MAP_CONSTANT = 2;
 
 // reconstruction options

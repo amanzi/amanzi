@@ -44,7 +44,7 @@ TEST(DG_MASS_MATRIX) {
     int nk = (k + 1) * (k + 2) / 2;
     DenseMatrix M(nk, nk);
 
-    dg.TaylorMassMatrix(0, k, M);
+    dg.TaylorMassMatrix(0, k, 1.0, M);
 
     printf("Mass matrix for order=%d\n", k);
     for (int i = 0; i < nk; i++) {

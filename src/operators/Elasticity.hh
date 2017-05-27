@@ -54,8 +54,6 @@ class Elasticity : public BCsList, public PDE_Helper {
   virtual void ApplyBCs(bool primary, bool eliminate);
 
   // access
-  Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
-  Teuchos::RCP<Operator> global_operator() { return global_op_; }
   const Schema& global_schema_col() { return global_schema_col_; }
   const Schema& schema_col() { return local_schema_col_; }
   const Schema& schema_row() { return local_schema_row_; }

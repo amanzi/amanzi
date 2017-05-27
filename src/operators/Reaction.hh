@@ -51,10 +51,6 @@ class Reaction : public BCsList, public PDE_Helper {
   // boundary conditions
   void ApplyBCs(bool primary, bool eliminate);
 
-  // access
-  Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
-  Teuchos::RCP<Operator> global_operator() { return global_op_; }
-
  private:
   void InitReaction_(Teuchos::ParameterList& plist);
 

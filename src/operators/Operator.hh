@@ -37,8 +37,7 @@
   matrix AND an un-ordered, additive collection of lower-rank (or equal) 
   local operators, here called 'Op's. During its construction, an operator
   can grow by assimilating more Ops. An Operator knows how to Apply and 
-  Assemble all of its local Ops; however, the assemble procedure assume 
-  that X = Y.
+  Assemble all of its local Ops.
 
   3. Typically the forward operator is applied using only local Ops -- 
   the inverse operator typically requires assembling a matrix, which 
@@ -50,7 +49,7 @@
   This schema may also, in the case of Ops, include information on the 
   base entity on which the local matrix lives.
      The new schema specifies dofs for the operator domain and range. 
-  It also includes location of the geometric base (cell for the moment). 
+  It also includes location of the geometric base. 
 
   5. Note on the construction of Operators: For simple operations
   (i.e. diffusion), Operators are not constructed directly. Instead, 
@@ -180,6 +179,8 @@ class Operator {
 
   const std::string& schema_string() const { return schema_string_; }
   void set_schema_string(const std::string& schema_string) { schema_string_ = schema_string; }
+
+  Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return mesh_; }
 
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; }
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; }

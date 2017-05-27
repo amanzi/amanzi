@@ -11,16 +11,47 @@
   Helper class for discrete PDE operators.
 */
 
+#include "errors.hh"
+
 #include "PDE_Helper.hh"
 
 namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Simple constructor.
+* Simple constructors.
 ****************************************************************** */
+PDE_Helper::PDE_Helper(const Teuchos::RCP<Operator>& global_op) :
+    global_op_(global_op)
+{
+  if (global_op == Teuchos::null) {
+    Errors::Message msg("PDE_Helper: Constructor received null global operator");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  mesh_ = global_op_->Mesh();
+  PopulateDimensions_();
+}
+
+
 PDE_Helper::PDE_Helper(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
      mesh_(mesh)
+{
+  PopulateDimensions_();
+}
+
+
+PDE_Helper::PDE_Helper(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+     mesh_(mesh)
+{
+  PopulateDimensions_();
+}
+
+
+/* ******************************************************************
+* Supporting private routines.
+****************************************************************** */
+void PDE_Helper::PopulateDimensions_()
 {
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);

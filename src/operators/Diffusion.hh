@@ -27,49 +27,32 @@
 #include "BCsList.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
+#include "PDE_Helper.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class Diffusion : public BCsList {
+class Diffusion : public BCsList, public PDE_Helper {
  public:
   Diffusion(const Teuchos::RCP<Operator>& global_op) :
-      global_op_(global_op),
+      PDE_Helper(global_op),
       K_(Teuchos::null),
       k_(Teuchos::null),
-      dkdp_(Teuchos::null),
-      ncells_owned(-1),
-      ncells_wghost(-1),
-      nfaces_owned(-1),
-      nfaces_wghost(-1),
-      nnodes_owned(-1),
-      nnodes_wghost(-1)
+      dkdp_(Teuchos::null)
   {};
 
   Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      mesh_(mesh),
+      PDE_Helper(mesh),
       K_(Teuchos::null),
       k_(Teuchos::null),
-      dkdp_(Teuchos::null),
-      ncells_owned(-1),
-      ncells_wghost(-1),
-      nfaces_owned(-1),
-      nfaces_wghost(-1),
-      nnodes_owned(-1),
-      nnodes_wghost(-1)
+      dkdp_(Teuchos::null)
   {};
 
   Diffusion(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      mesh_(mesh),
+      PDE_Helper(mesh),
       K_(Teuchos::null),
       k_(Teuchos::null),
-      dkdp_(Teuchos::null),
-      ncells_owned(-1),
-      ncells_wghost(-1),
-      nfaces_owned(-1),
-      nfaces_wghost(-1),
-      nnodes_owned(-1),
-      nnodes_wghost(-1)
+      dkdp_(Teuchos::null)
   {};
   
   // main virtual members
@@ -136,8 +119,6 @@ class Diffusion : public BCsList {
   virtual double ComputeGravityFlux(int f) const = 0;
 
   // access
-  Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
-  Teuchos::RCP<Operator> global_operator() { return global_op_; }
   int schema_prec_dofs() { return global_op_schema_; }
 
   Teuchos::RCP<const Op> local_matrices() const { return local_op_; }
@@ -158,18 +139,9 @@ class Diffusion : public BCsList {
   Teuchos::RCP<const CompositeVector> k_, dkdp_;
   int little_k_;
 
-  // operator
-  Teuchos::RCP<Operator> global_op_;
-  Teuchos::RCP<Op> local_op_;
+  // additional operators
   Teuchos::RCP<Op> jac_op_;
   int global_op_schema_, local_op_schema_, jac_op_schema_;
-  OperatorType operator_type_;
-
-  // mesh info
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  int ncells_owned, ncells_wghost;
-  int nfaces_owned, nfaces_wghost;
-  int nnodes_owned, nnodes_wghost;
 };
 
 }  // namespace Operators
