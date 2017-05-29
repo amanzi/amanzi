@@ -127,10 +127,7 @@ void LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::Init(Teuchos::Parame
 template<class Matrix, class Vector, class VectorSpace>
 int LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector& v, Vector& hv) const
 {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
-  typedef Belos::LinearProblem<double,Belos::MultiVec<double>,Belos::Operator<double> >          LinearProblem;
+  typedef Belos::LinearProblem<double,Belos::MultiVec<double>,Belos::Operator<double> > LinearProblem;
   typedef Belos::PseudoBlockGmresSolMgr<double,Belos::MultiVec<double>,Belos::Operator<double> > GmresSolver;
 
   if (!initialized_) {
@@ -138,7 +135,7 @@ int LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::ApplyInverse(const Ve
     Exceptions::amanzi_throw(msg);
   }
 
-  RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList());
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList());
   pl->set("Num Blocks", krylov_dim_);
   pl->set("Maximum Iterations", max_itrs_);
   pl->set("Maximum Restarts", 2*krylov_dim_*max_itrs_);
@@ -172,11 +169,16 @@ int LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::ApplyInverse(const Ve
     pl->set("Explicit Residual Scaling", "None");
   }
 
-  RCP<Belos::Operator<double> > Op = rcp(new AmanziBelosOp<Matrix,Vector>(this->m_));
-  RCP<Belos::Operator<double> > Prec = rcp(new AmanziBelosOp<Matrix,Vector>(this->h_,true));
-  RCP<Belos::MultiVec<double> > LHS = rcp(new CompositeMultiVector<Vector>(rcp(&hv,false)));
-  RCP<const Belos::MultiVec<double> > RHS = rcp(new CompositeMultiVector<Vector>(rcp(const_cast<Vector*>(&v),false)));
-  RCP<LinearProblem> problem = rcp(new LinearProblem(Op,LHS,RHS));
+  Teuchos::RCP<Belos::Operator<double> > 
+      Op = Teuchos::rcp(new AmanziBelosOp<Matrix,Vector>(this->m_));
+  Teuchos::RCP<Belos::Operator<double> > 
+      Prec = Teuchos::rcp(new AmanziBelosOp<Matrix,Vector>(this->h_,true));
+  Teuchos::RCP<Belos::MultiVec<double> > 
+      LHS = Teuchos::rcp(new CompositeMultiVector<Vector>(Teuchos::rcp(&hv,false)));
+  Teuchos::RCP<const Belos::MultiVec<double> > 
+      RHS = Teuchos::rcp(new CompositeMultiVector<Vector>(Teuchos::rcp(const_cast<Vector*>(&v),false)));
+  Teuchos::RCP<LinearProblem> problem = Teuchos::rcp(new LinearProblem(Op,LHS,RHS));
+
   problem->setLeftPrec(Prec);
   problem->setProblem();
 
