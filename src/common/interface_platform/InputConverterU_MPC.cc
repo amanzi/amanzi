@@ -89,6 +89,11 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     max_cycles = GetAttributeValueL_(inode, "max_cycles", TYPE_NUMERICAL, false, -1);
     std::string mode = GetAttributeValueS_(inode, "mode", TYPE_NONE, false, mode_d);
 
+    if (mode != "steady" && mode != "transient") {
+      msg << "\"execution_controls\" has incorrect mode=" << mode << ".\n";
+      Exceptions::amanzi_throw(msg);
+    }  
+
     dt_cut_[mode] = ConvertUnits_(GetAttributeValueS_(
         inode, "reduction_factor", TYPE_TIME, false, dt_cut_d), unit);
     dt_inc_[mode] = ConvertUnits_(GetAttributeValueS_(
