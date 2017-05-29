@@ -19,10 +19,6 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-using std::string;
-using std::cout;
-using std::endl;
-
 class Glenn {
  public:
   explicit Glenn(Beaker* b);
