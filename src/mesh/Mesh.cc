@@ -1419,6 +1419,30 @@ Mesh::build_columns_() const
         }
       }
 
+      if (top_face == bot_face) {
+        std::cout << "Build Columns broke:" << std::endl
+                  << "  on column = " << ncolumns << std::endl
+                  << "  cell / face = " << cur_cell << "," << top_face << std::endl
+                  << "  candidates = " << cfaces[cfaces.size()-2] << "," << cfaces[cfaces.size()-1] << std::endl;
+
+        Entity_ID f1 = cfaces[cfaces.size()-2];
+        Entity_ID_List nodes;
+        AmanziGeometry::Point cen;
+        std::cout << "Face " << f1 << " at " << face_centroid(f1) << " with normal " << face_normal(f1, false, cur_cell) << std::endl;
+        face_get_nodes(f1, &nodes);
+        for (int n = 0; n!=nodes.size(); ++n) {
+          node_get_coordinates(nodes[n], &cen);
+          std::cout << "  " << cen << std::endl;
+        }
+
+        Entity_ID f2 = cfaces[cfaces.size()-1];
+        std::cout << "Face " << f2 << " at " << face_centroid(f2) << " with normal " << face_normal(f2, false, cur_cell) << std::endl;
+        face_get_nodes(f2, &nodes);
+        for (int n = 0; n!=nodes.size(); ++n) {
+          node_get_coordinates(nodes[n], &cen);
+          std::cout << "  " << cen << std::endl;
+        }
+      }
       ASSERT(top_face != bot_face);
       ASSERT(top_face != -1);
 
