@@ -165,7 +165,6 @@ class NavierStokes_PK : public PK_PhysicalBDF {
 
   // io
   Utils::Units units_;
-  Teuchos::RCP<VerboseObject> vo_;
 
   // factory registration
   static RegisteredPKFactory<NavierStokes_PK> reg_;
