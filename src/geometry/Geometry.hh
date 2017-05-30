@@ -2,7 +2,6 @@
 #define _AMANZI_GEOM_H
 
 
-// using namespace std;
 #include <vector>
 
 #include "Point.hh"

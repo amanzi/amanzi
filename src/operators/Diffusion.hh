@@ -71,6 +71,7 @@ class Diffusion : public BCsList, public PDE_Helper {
 
   // -- after solving the problem: postrocessing
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux) = 0;
+  virtual void UpdateFluxNonManifold(const CompositeVector& u, CompositeVector& flux) = 0;
 
   // -- matrix modification
   virtual void ApplyBCs(bool primary, bool eliminate) = 0;

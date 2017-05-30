@@ -87,6 +87,7 @@ class DiffusionNLFVwithGravity : public DiffusionNLFV,
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                               const Teuchos::Ptr<const CompositeVector>& u);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
+  virtual void UpdateFluxNonManifold(const CompositeVector& u, CompositeVector& flux) { exit(0); }
 
   // -- modify an operator
   virtual void ModifyMatrices(const CompositeVector& u) {};

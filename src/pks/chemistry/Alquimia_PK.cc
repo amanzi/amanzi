@@ -203,7 +203,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   for (auto it = aux_names.begin(); it != aux_names.end(); ++it) {
-    InitializeField_(*it, 0.0);
+    InitializeField(S_, passwd_, *it, 0.0);
   }
 
   // Read XML parameters from our input file.

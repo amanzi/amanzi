@@ -30,7 +30,7 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
-#include "DiffusionMFD.hh"
+#include "DiffusionFactory.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 
@@ -38,7 +38,7 @@
 /* *****************************************************************
 * TBW.
 * **************************************************************** */
-void RunTest(int icase) {
+void RunTest(int icase, bool gravity) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -48,7 +48,7 @@ void RunTest(int icase) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Farcy flow in fractures" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Farcy flow in fractures, gravity=" << gravity << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_fractures.xml";
@@ -115,19 +115,24 @@ void RunTest(int icase) {
   solution.PutScalar(0.0);
 
   // create diffusion operator
+  double rho(1.0);
+  AmanziGeometry::Point g(0.0, 0.0, -1.0);
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("diffusion operator");
-  DiffusionMFD op(olist, surfmesh);
-  op.SetBCs(bc, bc);
+  olist.set<bool>("gravity", gravity);
 
-  Teuchos::RCP<Operator> global_op = op.global_operator();
+  Operators::DiffusionFactory opfactory;
+  Teuchos::RCP<Operators::Diffusion> op = opfactory.Create(olist, surfmesh, bc, rho, g);
+  op->SetBCs(bc, bc);
+
+  Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->Init();
 
   // populate diffusion operator
-  op.Setup(K, Teuchos::null, Teuchos::null);
-  op.UpdateMatrices(Teuchos::null, Teuchos::null);
+  op->Setup(K, Teuchos::null, Teuchos::null);
+  op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // apply BCs and assemble
-  op.ApplyBCs(true, true);
+  op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
     
@@ -152,9 +157,17 @@ void RunTest(int icase) {
               << "  ||f||=" << a 
               << " code=" << solver.returned_code() << std::endl;
   }
- 
+
+  // remove gravity to check symmetry
+  Epetra_MultiVector& p = *solution.ViewComponent("cell");
+  if (gravity) { 
+    for (int c = 0; c < ncells_owned; c++) {
+      const Point& xc = surfmesh->cell_centroid(c);
+      p[0][c] -= rho * g[2] * xc[2];
+    }
+  }
+
   if (MyPID == 0) {
-    const Epetra_MultiVector& p = *solution.ViewComponent("cell");
     GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");
@@ -164,11 +177,13 @@ void RunTest(int icase) {
 
 
 TEST(FRACTURES_EXTRACTION) {
-  RunTest(0);
+  RunTest(0, false);
 }
-
 
 TEST(FRACTURES_INPUT_FILE) {
-  RunTest(1);
+  RunTest(1, false);
 }
 
+TEST(FRACTURES_INPUT_FILE_GRAVITY) {
+  RunTest(1, true);
+}

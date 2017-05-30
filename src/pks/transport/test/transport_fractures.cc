@@ -25,14 +25,14 @@
 // Amanzi
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
-#include "MeshAudit.hh"
+#include "Mesh_MSTK.hh"
 #include "State.hh"
 
 // Transport
 #include "Transport_PK.hh"
 
 /* **************************************************************** */
-void runTest(double switch_time) {
+TEST(ADVANCE_TWO_FRACTURES) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -47,24 +47,34 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 #endif
 
   // read parameter list
-  std::string xmlFileName = "test/transport_2D.xml";
+  std::string xmlFileName = "test/transport_fractures.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-  /* create a mesh framework */
+  // create a mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-  RCP<const Mesh> mesh = meshfactory("test/rect2D_10x10_ss.exo", gm);
+  RCP<const Mesh> mesh3D = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, gm);
+
+  // extract fractures mesh
+  std::vector<std::string> setnames;
+  setnames.push_back("fracture 1");
+  setnames.push_back("fracture 2");
+
+  RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh3D);
+  RCP<const Mesh>  mesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
+
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
   // create a simple state and populate it
   Amanzi::VerboseObject::hide_line_prefix = true;
 
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");
-  component_names.push_back("Component 1");
 
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
@@ -74,39 +84,47 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 
   Transport_PK TPK(plist, S, "transport", component_names);
   TPK.Setup(S.ptr());
-  TPK.CreateDefaultState(mesh, 2);
+  TPK.CreateDefaultState(mesh, 1);
   S->InitializeFields();
   S->InitializeEvaluators();
 
-  // modify the default state for the problem at hand
-  std::string passwd("state"); 
-  Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+  // modify the default state
+  Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux_fracture", "state")->ViewComponent("cell");
 
-  AmanziGeometry::Point velocity(1.0, 1.0);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  for (int f = 0; f < nfaces_owned; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    flux[0][f] = velocity * normal;
+  int dir;
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  AmanziGeometry::Point velocity(1.0, 0.0, -0.1);
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    for (int n = 0; n < nfaces; ++n) {
+      int f = faces[n];
+      const AmanziGeometry::Point& normal = mesh->face_normal(f, false, c, &dir);
+      flux[n][c] = velocity * normal;
+    }
   }
 
-  // initialize a transport process kernel from a transport state
+  // we still need the old flux until testing is complete
+  Epetra_MultiVector& flux_old = *S->GetFieldData("darcy_flux", "state")->ViewComponent("face");
+  for (int f = 0; f < nfaces_owned; f++) {
+    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    flux_old[0][f] = velocity * normal;
+  }
+
+  /* initialize a transport process kernel from a transport state */
   TPK.Initialize(S.ptr());
 
-  // advance the transport state 
+  /* advance the transport state */
   int iter, k;
   double t_old(0.0), t_new(0.0), dt;
-  bool flag(true);
-
-  Teuchos::RCP<Epetra_MultiVector> 
-      tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+  Epetra_MultiVector& tcc = *S->GetFieldData("total_component_concentration", "state")
+                              ->ViewComponent("cell", false);
 
   iter = 0;
-  while (t_new < 0.5) {
-    if (t_new > switch_time && flag) {
-      flag = false;
-      flux.Scale(-1.0);
-    }
-
+  while (t_new < 0.1) {
     dt = TPK.StableTimeStep();
     t_new = t_old + dt;
 
@@ -115,48 +133,17 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 
     t_old = t_new;
     iter++;
-
-    if (iter < 15) {
-      printf("T=%8.4f  C_0(x):", t_new);
-      for (int k = 0; k < 9; k++) {
-        int k1 = 9 - k;  // reflects cell numbering in the exodus file
-        printf("%7.4f", (*tcc)[0][k1]); 
-      }
-      printf("\n");
-    }
-
-    if (t_new < 0.15) {
-      GMV::open_data_file(*mesh, (std::string)"transport.gmv");
-      GMV::start_data();
-      GMV::write_cell_data(*tcc, 0, "Component_0");
-      GMV::write_cell_data(*tcc, 1, "Component_1");
-      GMV::close_data_file();
-    }
   }
 
-
-  // check that the final state is constant for no swicth time
-  if (switch_time > 0.5) {
-    for (int k = 0; k < 10; k++) {
-      CHECK_CLOSE(1.0, (*tcc)[0][k], 1e-6);
-    }
-  } else {
-    for (int k = 0; k < 10; k++) {
-      CHECK_CLOSE(0.0, (*tcc)[0][k], 1e-6);
-    }
-  }
+  GMV::open_data_file(*mesh, (std::string)"transport.gmv");
+  GMV::start_data();
+  GMV::write_cell_data(tcc, 0, "Component_0");
+  GMV::close_data_file();
 
   delete comm;
 }
 
 
-TEST(ADVANCE_WITH_2D_MESH) {
-  runTest(1.0);  // no velocity swicth
-}
 
-
-TEST(ADVANCE_WITH_2D_MESH_SWITCH_FLOW) {
-  runTest(0.16);
-}
 
 

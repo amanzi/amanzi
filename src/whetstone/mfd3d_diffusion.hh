@@ -104,6 +104,10 @@ class MFD3D_Diffusion : public MFD3D {
   int StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M);
   void RescaleMassMatrixInverse_(int c, DenseMatrix& W);
   void StabilityScalarNonSymmetric_(int c, DenseMatrix& N, DenseMatrix& M);
+
+  // mesh extension methods 
+  // -- exterior normal
+  AmanziGeometry::Point mesh_face_normal(int f, int c);
 };
 
 }  // namespace WhetStone

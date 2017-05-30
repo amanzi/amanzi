@@ -293,11 +293,13 @@ double Transport_PK::VV_SoluteVolumeChangePerSecond(int idx_tracer)
 
           std::vector<double>& values = it->second; 
 
-          int c2 = (*downwind_cell_)[f];
+          if (downwind_cells_[f].size() > 0) {
+            int c2 = downwind_cells_[f][0];
 
-          if (f < nfaces_owned && c2 >= 0) {
-            double u = fabs((*darcy_flux)[0][f]);
-            volume += u * values[i];
+            if (f < nfaces_owned && c2 >= 0) {
+              double u = fabs((*darcy_flux)[0][f]);
+              volume += u * values[i];
+            }
           }
         }
       }

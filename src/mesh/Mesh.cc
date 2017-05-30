@@ -87,18 +87,15 @@ Mesh::cache_face2cell_info_() const
 
   for (int f = 0; f < nfaces; f++) {
     face_get_cells_internal_(f, USED, &fcells);
+    int n = fcells.size();
 
-    face_cell_ids_[f].resize(2);
-    face_cell_ptype_[f].resize(2);
+    face_cell_ids_[f].resize(n);
+    face_cell_ptype_[f].resize(n);
 
-    for (int i = 0; i < fcells.size(); i++) {
+    for (int i = 0; i < n; i++) {
       int c = fcells[i];
       face_cell_ids_[f][i] = c;
       face_cell_ptype_[f][i] = entity_get_ptype(CELL,c);
-    }
-    for (int i = fcells.size(); i < 2; i++) {
-      face_cell_ids_[f][i] = -1;
-      face_cell_ptype_[f][i] = PTYPE_UNKNOWN;
     }
   }
 
@@ -176,6 +173,18 @@ Mesh::cell_get_num_faces(const Entity_ID cellid) const
 }
 
 
+unsigned int
+Mesh::cell_get_max_faces() const
+{
+  unsigned int n(0);
+  int ncells = num_entities(CELL, OWNED);
+  for (int c = 0; c < ncells; ++c) {
+    n = std::max(n, cell_get_num_faces(c));
+  }
+  return n;
+}
+
+
 void
 Mesh::cell_get_faces_and_dirs(const Entity_ID cellid,
                               Entity_ID_List *faceids,
@@ -233,20 +242,21 @@ void Mesh::face_get_cells(const Entity_ID faceid, const Parallel_type ptype,
   if (!face2cell_info_cached_) cache_face2cell_info_();
 
   cellids->clear();
+  int n = face_cell_ptype_[faceid].size();
 
   switch (ptype) {
     case USED:
-      for (int i = 0; i < 2; i++)
+      for (int i = 0; i < n; i++)
         if (face_cell_ptype_[faceid][i] != PTYPE_UNKNOWN)
           cellids->push_back(face_cell_ids_[faceid][i]);
       break;
     case OWNED:
-      for (int i = 0; i < 2; i++)
+      for (int i = 0; i < n; i++)
         if (face_cell_ptype_[faceid][i] == OWNED)
           cellids->push_back(face_cell_ids_[faceid][i]);
       break;
     case GHOST:
-      for (int i = 0; i < 2; i++)
+      for (int i = 0; i < n; i++)
         if (face_cell_ptype_[faceid][i] == GHOST)
           cellids->push_back(face_cell_ids_[faceid][i]);
       break;
@@ -257,20 +267,21 @@ void Mesh::face_get_cells(const Entity_ID faceid, const Parallel_type ptype,
   face_get_cells_internal_(faceid, USED, &fcells);
 
   cellids->clear();
+  int n = face_cell_ptype_[faceid].size();
 
   switch (ptype) {
     case USED:
-      for (int i = 0; i < fcells.size(); i++)
+      for (int i = 0; i < n; i++)
         if (entity_get_ptype(CELL,fcells[i]) != PTYPE_UNKNOWN)
           cellids->push_back(fcells[i]);
       break;
     case OWNED:
-      for (int i = 0; i < fcells.size(); i++)
+      for (int i = 0; i < n; i++)
         if (entity_get_ptype(CELL,fcells[i]) == OWNED)
           cellids->push_back(fcells[i]);
       break;
     case GHOST:
-      for (int i = 0; i < fcells.size(); i++)
+      for (int i = 0; i < n; i++)
         if (entity_get_ptype(CELL,fcells[i]) == GHOST)
           cellids->push_back(fcells[i]);
       break;

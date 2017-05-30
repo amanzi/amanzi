@@ -95,6 +95,7 @@ class DiffusionMFD : public virtual Diffusion {
   // main virtual members after solving the problem
   // -- calculate the flux variable.
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux) override;
+  virtual void UpdateFluxNonManifold(const CompositeVector& u, CompositeVector& flux) override;
 
   // Developments
   // -- working with consistent faces

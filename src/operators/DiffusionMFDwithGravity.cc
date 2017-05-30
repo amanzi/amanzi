@@ -52,6 +52,7 @@ void DiffusionMFDwithGravity::AddGravityToRHS_()
       if (k_->HasComponent("grav")) k_face = k_->ViewComponent("grav", true);
     }
 
+    int dir;
     AmanziMesh::Entity_ID_List faces;
     std::vector<int> dirs;
 
@@ -109,17 +110,17 @@ void DiffusionMFDwithGravity::AddGravityToRHS_()
 
         for (int n = 0; n < nfaces; n++) {
           int f = faces[n];
-          const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+          const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
           double tmp, zf = (mesh_->face_centroid(f))[dim - 1];
 
           if (gravity_special_projection_) {
             const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
-            double sign = normal * xcc;
+            double sign = (normal * xcc) * dir;
 
             tmp = (Kcg * xcc) * rho * kf[n] * dirs[n];
             tmp *= copysign(norm(normal) / norm(xcc), sign);
           } else {
-            tmp = (Kcg * normal) * rho * kf[n] * dirs[n];
+            tmp = (Kcg * normal) * rho * kf[n];
           }
 
           rhs_face[0][f] += tmp; 
@@ -180,6 +181,7 @@ void DiffusionMFDwithGravity::UpdateFlux(
   int dim = mesh_->space_dimension();
   Epetra_MultiVector& flux_data = *flux.ViewComponent("face", true);
 
+  int dir;
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
   std::vector<int> flag(nfaces_wghost, 0);
@@ -222,15 +224,15 @@ void DiffusionMFDwithGravity::UpdateFlux(
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
         if (f < nfaces_owned && !flag[f]) {
-          const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+          const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
 
           if (gravity_special_projection_) {
             const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
-            double sign = normal * xcc;
+            double sign = (normal * xcc) * dir;
             double tmp = copysign(norm(normal) / norm(xcc), sign);
             flux_data[0][f] += (Kcg * xcc) * rho * kf[n] * tmp;
           } else {
-            flux_data[0][f] += (Kcg * normal) * rho * kf[n];
+            flux_data[0][f] += (Kcg * normal) * rho * kf[n] * dir;
           }
             
           flag[f] = 1;
@@ -249,7 +251,7 @@ void DiffusionMFDwithGravity::UpdateFlux(
       Wff.Multiply(v, av, false);
 
       for (int n = 0; n < nfaces; n++) {
-        int dir, f = faces[n];
+        int f = faces[n];
         if (f < nfaces_owned && !flag[f]) {
           const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
             

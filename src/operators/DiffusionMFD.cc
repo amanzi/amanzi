@@ -1081,6 +1081,47 @@ void DiffusionMFD::UpdateFlux(const CompositeVector& u, CompositeVector& flux)
 
 
 /* ******************************************************************
+* Calculates one-sided (cell-based) exterior fluxes that satisfy 
+* proper continuity equations.
+* **************************************************************** */
+void DiffusionMFD::UpdateFluxNonManifold(
+    const CompositeVector& u, CompositeVector& flux)
+{
+  // Initialize intensity in ghost faces.
+  flux.PutScalar(0.0);
+  u.ScatterMasterToGhosted("face");
+
+  const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
+  const Epetra_MultiVector& u_face = *u.ViewComponent("face", true);
+  Epetra_MultiVector& flux_data = *flux.ViewComponent("cell", true);
+
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
+    for (int n = 0; n < nfaces; n++) {
+      v(n) = u_face[0][faces[n]];
+    }
+    v(nfaces) = u_cell[0][c];
+
+    if (local_op_->matrices_shadow[c].NumRows() == 0) { 
+      local_op_->matrices[c].Multiply(v, av, false);
+    } else {
+      local_op_->matrices_shadow[c].Multiply(v, av, false);
+    }
+
+    for (int n = 0; n < nfaces; n++) {
+      flux_data[n][c] -= av(n);
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Calculate elemental inverse mass matrices.
 ****************************************************************** */
 void DiffusionMFD::CreateMassMatrices_()

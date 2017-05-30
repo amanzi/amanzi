@@ -9,7 +9,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  The mimetic finite difference method.
+  The mimetic finite difference method on 2D surfaces in 3D.
 */
 
 #include <cmath>
@@ -40,7 +40,7 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
   int num_faces = faces.size();
   if (num_faces != R.NumRows()) return num_faces;  // matrix was not reshaped
 
-  int dir, d = mesh_->space_dimension();
+  int d = mesh_->space_dimension();
   double volume = mesh_->cell_volume(c);
 
   // calculate cell normal
@@ -72,13 +72,13 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
 
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+    const AmanziGeometry::Point& normal = mesh_face_normal(f, c);
 
     v1 = PTP * normal;
 
     for (int j = i; j < num_faces; j++) {
       f = faces[j];
-      const AmanziGeometry::Point& v2 = mesh_->face_normal(f, false, c, &dir);
+      const AmanziGeometry::Point& v2 = mesh_face_normal(f, c);
       Wc(i, j) = (v1 * v2) / volume;
     }
   }
@@ -114,6 +114,27 @@ int MFD3D_Diffusion::MassMatrixInverseSurface(
 
   StabilityScalar(cell, R, W);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Exterior normal to 2D face in 3D space.
+****************************************************************** */
+AmanziGeometry::Point MFD3D_Diffusion::mesh_face_normal(int f, int c)
+{
+  std::vector<AmanziGeometry::Point> vs;
+  mesh_->face_get_coordinates(f, &vs);
+
+  AmanziGeometry::Point tau(vs[1] - vs[0]);
+  AmanziGeometry::Point normal = vs[0] - mesh_->cell_centroid(c);
+
+  // orthogonalize and rescale normal
+  double len = norm(tau);
+  double s = (normal * tau) / len / len;
+  normal -= s * tau;
+  normal *= len / norm(normal);
+
+  return normal;
 }
 
 }  // namespace WhetStone

@@ -221,9 +221,10 @@ class Mesh {
 
   // Get number of faces of a cell.
   //
-  // On a distributed mesh, this will return all the faces of the
+  // On a distributed mesh, this will count all the faces of the
   // cell, OWNED or GHOST.
   unsigned int cell_get_num_faces(const Entity_ID cellid) const;
+  unsigned int cell_get_max_faces() const;
 
   // Get faces of a cell.
   //
@@ -800,7 +801,7 @@ class Mesh {
   // -- topology
   mutable std::vector<Entity_ID_List> cell_face_ids_;
   mutable std::vector< std::vector<int> > cell_face_dirs_;
-  mutable std::vector<Entity_ID_List > face_cell_ids_;
+  mutable std::vector<Entity_ID_List> face_cell_ids_;
   mutable std::vector< std::vector<Parallel_type> > face_cell_ptype_;
   mutable std::vector<Entity_ID_List> cell_edge_ids_;
   mutable std::vector< std::vector<int> > cell_2D_edge_dirs_;

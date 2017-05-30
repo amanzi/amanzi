@@ -146,7 +146,7 @@ void RunTestGravity(std::string op_list_name) {
 
 
 /* *****************************************************************
-* Two tests fo rMFd and FV methods.
+* Two tests for MFD and FV methods.
 * **************************************************************** */
 TEST(OPERATOR_DIFFUSION_GRAVITY_MFD) {
   RunTestGravity("diffusion operator gravity mfd");

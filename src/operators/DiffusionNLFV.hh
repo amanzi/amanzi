@@ -80,7 +80,8 @@ class DiffusionNLFV : public virtual Diffusion {
           const Teuchos::Ptr<const CompositeVector>& u, double scalar_limiter);
 
   // -- after solving the problem: postrocessing
-  virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
+  virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux) override;
+  virtual void UpdateFluxNonManifold(const CompositeVector& u, CompositeVector& flux) {};
 
   // -- modify an operator
   virtual void ApplyBCs(bool primary, bool eliminate);

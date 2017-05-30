@@ -487,12 +487,17 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 ****************************************************************** */
 void Darcy_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
-  // calculate darcy mass flux
-  CompositeVector& darcy_flux = *S->GetFieldData("darcy_flux", passwd_);
-  op_diff_->UpdateFlux(*solution, darcy_flux);
+  // calculate Darcy mass flux
+  CompositeVector& flux = *S->GetFieldData("darcy_flux", passwd_);
+  op_diff_->UpdateFlux(*solution, flux);
+  flux.Scale(1.0 / rho_);
 
-  Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
-  for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= rho_;
+  // calculate Darcy mass flux in fractures
+  if (S->HasField("darcy_flux_fracture")) {
+    CompositeVector& flux_fracture = *S->GetFieldData("darcy_flux_fracture", "state");
+    op_diff_->UpdateFluxNonManifold(*solution, flux_fracture);
+    flux_fracture.Scale(1.0 / rho_);
+  }
 
   // update time derivative
   *pdot_cells_prev = *pdot_cells;

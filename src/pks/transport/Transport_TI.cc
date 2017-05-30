@@ -65,8 +65,8 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
 
   f_component.PutScalar(0.0);
   for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
-    c1 = (*upwind_cell_)[f];
-    c2 = (*downwind_cell_)[f];
+    c1 = upwind_cells_[f][0];
+    c2 = downwind_cells_[f][0];
 
     if (c1 >= 0 && c2 >= 0) {
       u1 = component[c1];
@@ -130,7 +130,7 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
 
           std::vector<double>& values = it->second;
 
-          c2 = (*downwind_cell_)[f];
+          c2 = downwind_cells_[f][0];
 
           if (c2 >= 0 && f < nfaces_owned) {
             u = fabs((*darcy_flux)[0][f]);

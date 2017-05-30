@@ -163,7 +163,6 @@ class Flow_PK : public PK_PhysicalBDF {
 
   // io
   Utils::Units units_;
-  Teuchos::RCP<VerboseObject> vo_;
 };
 
 }  // namespace Flow
