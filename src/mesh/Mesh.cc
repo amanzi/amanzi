@@ -1366,25 +1366,7 @@ Mesh::build_columns_() const
     // Check the normal:
     //  1) n dot -z = 0 --> lateral face
     //  2) n dot -z < 0 --> top face
-    if (fabs(dp) < 1.e-6) continue;
-
-    // found a boundary face with a downward facing normal
-    //
-    // Just to make sure we are not making a mistake, lets check that
-    // the centroid of the cell is above the centroid of the face
-    AmanziGeometry::Point ccen(space_dim_),fcen(space_dim_);
-    ccen = cell_centroid(fcells[0]);
-    fcen = face_centroid(i);
-
-    AmanziGeometry::Point cfvec = fcen-ccen;
-    cfvec /= norm(cfvec);
-
-    dp = negzvec*cfvec;
-
-    if (dp < 1.e-6) continue;
-
-    // Now we are quite sure that this is a face at the bottom of the
-    // mesh/domain
+    if (dp < 1.e-10) continue;
 
     // Walk through the cells until we get to the top of the domain
     Entity_ID cur_cell = fcells[0];
