@@ -35,7 +35,7 @@ build_whitespace_string(seacas_cflags ${seacas_cxxflags_list})
 set(seacas_fcflags_list -I${TPL_INSTALL_PREFIX}/include ${Amanzi_COMMON_FCFLAGS})
 build_whitespace_string(seacas_fcflags ${seacas_fcflags_list})
 
-set(seacas_lflags_list -L${TPL_INSTALL_PREFIX}/lib -ldl)
+set(seacas_lflags_list )
 build_whitespace_string(seacas_lflags ${seacas_lflags_list})
 
 # Build the NetCDF libraries string
@@ -47,7 +47,7 @@ build_library_name(z seacas_z_library STATIC APPEND_PATH ${TPL_INSTALL_PREFIX}/l
 set(seacas_netcdf_libraries
        ${seacas_netcdf_library}
        ${seacas_hdf5_hl_library}
-       ${seacas_hdf5_library}
+       ${seacas_hdf5_library} -ldl
        ${seacas_z_library})
 if ( (NOT BUILD_MPI) AND (NOT MPI_WRAPPERS_IN_USE) AND (MPI_C_LIBRARIES) )
   list(APPEND seacas_netcdf_libraries ${MPI_C_LIBRARIES})
