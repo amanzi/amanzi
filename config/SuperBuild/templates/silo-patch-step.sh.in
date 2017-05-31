@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+# Source and build locations
+silo_src_dir=@Silo_source_dir@
+
+OIFS=$IFS
+IFS=";"
+
+patch_files="@Silo_patch_file@"
+
+for i in $patch_files; do
+
+    patch_file=@SuperBuild_SOURCE_DIR@/templates/${i}
+    echo "Silo patch file = ${patch_file}"
+
+    if [ ! -e "${patch_file}" ] ; then
+	echo "Patch file ${patch_file} does not exist"
+	exit 10
+    fi
+
+    (cd ${silo_src_dir}; patch -p1 < ${patch_file})
+
+done
+
+IFS=$OIFS
+
+exit $?
