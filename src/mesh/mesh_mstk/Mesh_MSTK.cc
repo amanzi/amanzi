@@ -2353,13 +2353,9 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
                                          const Parallel_type ptype,
                                          std::vector<Entity_ID> *cellids) const
 {
-  int lid, n;
-
   ASSERT(faces_initialized);
   ASSERT(cellids != NULL);
-  cellids->resize(2); // maximum number
-  Entity_ID_List::iterator it = cellids->begin();
-  n = 0;
+  cellids->clear();
 
   if (manifold_dimension() == 3) {
     MFace_ptr mf = (MFace_ptr) face_id_to_handle[faceid];
@@ -2369,9 +2365,7 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
     if (ptype == USED) {      
       int idx = 0;
       while ((mr = List_Next_Entry(fregs,&idx))) {
-        *it = MR_ID(mr)-1;  // assign to next spot by dereferencing iterator
-        ++it;
-        ++n;
+        cellids->push_back(MR_ID(mr)-1);
       }
     }
     else {
@@ -2379,15 +2373,11 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
       while ((mr = List_Next_Entry(fregs,&idx))) {
         if (MEnt_PType(mr) == PGHOST) {
           if (ptype == GHOST) {
-            *it = MR_ID(mr)-1;  // assign to next spot by dereferencing iterator
-            ++it;
-            ++n;
+            cellids->push_back(MR_ID(mr)-1);
           }
         }
         else {
-          *it = MR_ID(mr)-1;  // assign to next spot by dereferencing iterator
-          ++it;
-          ++n;
+          cellids->push_back(MR_ID(mr)-1);
         }
       }
     }
@@ -2402,9 +2392,7 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
     if (ptype == USED) {
       int idx = 0;
       while ((mf = List_Next_Entry(efaces,&idx))) {
-        *it = MF_ID(mf)-1;  // assign to next spot by dereferencing iterator
-        ++it;
-        ++n;
+        cellids->push_back(MF_ID(mf)-1);
       }
     }
     else {
@@ -2412,16 +2400,12 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
       while ((mf = List_Next_Entry(efaces,&idx))) {
         if (MEnt_PType(mf) == PGHOST) {
           if (ptype == GHOST) {
-            *it = MF_ID(mf)-1;  // assign to next spot by dereferencing iterator
-            ++it;
-            ++n;
+            cellids->push_back(MF_ID(mf)-1);
           }
         }
         else {
           if (ptype == OWNED) {
-            *it = MF_ID(mf)-1;  // assign to next spot by dereferencing iterator
-            ++it;
-            ++n;
+            cellids->push_back(MF_ID(mf)-1);
           }
         }
       }
@@ -2429,7 +2413,6 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
     List_Delete(efaces);
 
   }
-  cellids->resize(n); // resize to the actual number of cells being returned
 }
     
 
