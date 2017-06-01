@@ -59,59 +59,16 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
 
   MemoryManager mm;
 
-  // define defaults...
-  double tol = LINEAR_SOLVER_TOL;
-  int maxiter = LINEAR_SOLVER_MAXITER;
-  std::string method = LINEAR_SOLVER_METHOD;
-  std::string prec = LINEAR_SOLVER_PC;
+  // User's solver
+  out_list.sublist("AztecOO") = TranslateLinearSolvers_("", LINEAR_SOLVER_METHOD, "");
 
-  // get values from Execution control list if they exist
-  DOMNodeList* node_list = doc_->getElementsByTagName(mm.transcode("unstr_linear_solver"));
-  if (node_list->getLength() > 0) {
-    DOMNodeList* children = node_list->item(0)->getChildNodes();
+  // add PCG and GMRES solvers (generic or specialized)
+  out_list.sublist("PCG with Hypre AMG") = TranslateLinearSolvers_(
+      "unstr_flow_controls, saturated_linear_solver", "pcg", "");
 
-    for (int i = 0; i < children->getLength(); i++) {
-      DOMNode* inode = children->item(i);
-      if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-        char* tagname = mm.transcode(inode->getNodeName());
-        char* text_content = mm.transcode(inode->getTextContent());
-
-        if (strcmp(tagname, "tolerance") == 0) {
-          tol = std::strtod(text_content, NULL);
-        } else if (strcmp(tagname, "max_iterations") == 0) {
-          maxiter = std::strtol(text_content, NULL, 10);
-        } else if (strcmp(tagname, "method") == 0) {
-          method = TrimString_(text_content);
-        } else if (strcmp(tagname, "preconditioner") == 0) {
-          prec = TrimString_(text_content);
-        }
-      }
-    }
-  }
-
-  // Aztec solver
-  Teuchos::ParameterList& aztecoo_list = out_list.sublist("AztecOO");
-  aztecoo_list.set<std::string>("preconditioner", prec);
-  aztecoo_list.set<std::string>("iterative method", method);
-  {
-    method.append(" parameters");
-    Teuchos::ParameterList& method_list = aztecoo_list.sublist(method);
-    method_list.set<double>("error tolerance", tol);
-    method_list.set<int>("maximum number of iterations", maxiter);
-    method_list.set<int>("controller training start", 0);  // two gmres extensions
-    method_list.set<int>("controller training end", 3);
-    method_list.sublist("verbose object") = verb_list_.sublist("verbose object");
-  }
-
-  // add default PCG solver
-  Teuchos::ParameterList& pcg_list = out_list.sublist("PCG with Hypre AMG");
-  pcg_list.set<std::string>("preconditioner", prec);
-  pcg_list.set<std::string>("iterative method", "pcg");
-  {
-    Teuchos::ParameterList& method_list = pcg_list.sublist("pcg parameters");
-    method_list.set<double>("error tolerance", tol);
-    method_list.set<int>("maximum number of iterations", maxiter);
-    method_list.sublist("verbose object") = verb_list_.sublist("verbose object");
+  if (pk_model_.find("flow") != pk_model_.end()) {
+    out_list.sublist("GMRES with Hypre AMG") = TranslateLinearSolvers_(
+        "unstr_flow_controls, constraints_linear_solver", LINEAR_SOLVER_METHOD, "gmres");
   }
 
   // add default "GMRES for Newton" solver
@@ -133,6 +90,73 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
   }
 
   return out_list;
+}
+
+
+/* ******************************************************************
+* Creates linear solver list from input paramaters.
+****************************************************************** */
+Teuchos::ParameterList InputConverterU::TranslateLinearSolvers_(
+    std::string tags, std::string method_default, std::string method_enforce) 
+{
+  Errors::Message msg;
+  Teuchos::ParameterList plist;
+
+  DOMNode* node;
+  MemoryManager mm;
+
+  int maxiter(LINEAR_SOLVER_MAXITER);
+  double tol(LINEAR_SOLVER_TOL);
+  std::string tags_default("unstructured_controls, unstr_linear_solver");
+  std::string method(method_default), prec(LINEAR_SOLVER_PC);
+
+  // verify that method is admissible
+  bool flag;
+  node = GetUniqueElementByTagsString_(tags_default + ", method", flag);
+  if (flag) method = GetTextContentS_(node, "pcg, gmres"); 
+  node = GetUniqueElementByTagsString_(tags + ", method", flag);
+  if (flag) method = GetTextContentS_(node, "pcg, gmres"); 
+
+  if (method_enforce != "" && method != method_enforce) {
+    msg << "Expect method=\"" << method_enforce 
+        << "\" under default node=\"" << tags_default 
+        << "\"\n or under PK node \"" << tags << "\".\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  // collect other parameters
+  node = GetUniqueElementByTagsString_(tags_default + ", preconditioner", flag);
+  if (flag) prec = mm.transcode(node->getTextContent());
+  node = GetUniqueElementByTagsString_(tags + ", preconditioner", flag);
+  if (flag) prec = mm.transcode(node->getTextContent());
+
+  node = GetUniqueElementByTagsString_(tags_default + ", tolerance", flag);
+  if (flag) tol = GetTextContentD_(node);
+  node = GetUniqueElementByTagsString_(tags + ", tolerance", flag);
+  if (flag) tol = GetTextContentD_(node);
+
+  node = GetUniqueElementByTagsString_(tags_default + ", max_iterations", flag);
+  if (flag) maxiter = std::strtol(mm.transcode(node->getTextContent()), NULL, 10);
+  node = GetUniqueElementByTagsString_(tags + ", max_iterations", flag);
+  if (flag) maxiter = std::strtol(mm.transcode(node->getTextContent()), NULL, 10);
+
+  // populate parameter list
+  plist.set<std::string>("preconditioner", prec);
+  plist.set<std::string>("iterative method", method);
+ 
+  Teuchos::ParameterList& slist = plist.sublist(method + " parameters");
+  slist.set<double>("error tolerance", tol);
+  slist.set<int>("maximum number of iterations", maxiter);
+
+  // parameters without 2.x support
+  if (method == "gmres") {
+    slist.set<int>("controller training start", 0);
+    slist.set<int>("controller training end", 3);
+  }
+
+  slist.sublist("verbose object") = verb_list_.sublist("verbose object");
+
+  return plist;
 }
 
 
