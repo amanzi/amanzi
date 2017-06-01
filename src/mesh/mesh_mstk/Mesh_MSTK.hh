@@ -476,7 +476,7 @@ class Mesh_MSTK : public Mesh {
   void init_cells();
 
   void init_set_info();
-  void inherit_labeled_sets(MAttrib_ptr copyatt);
+  void inherit_labeled_sets(MAttrib_ptr copyatt, List_ptr src_entities);
   std::string internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
                                    const Entity_kind entity_kind) const;
   std::string other_internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>& r,

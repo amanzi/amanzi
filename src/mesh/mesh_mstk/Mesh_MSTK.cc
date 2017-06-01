@@ -1192,7 +1192,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
   // We have to do an extra step to build new labeled sets based on
   // labeled sets of the base mesh
 
-  inherit_labeled_sets(copyatt);
+  inherit_labeled_sets(copyatt, src_entities);
 
 
   // Do all the processing required for setting up the mesh for Amanzi 
@@ -2353,9 +2353,13 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
                                          const Parallel_type ptype,
                                          std::vector<Entity_ID> *cellids) const
 {
+  int lid, n;
+
   ASSERT(faces_initialized);
   ASSERT(cellids != NULL);
   cellids->clear();
+  Entity_ID_List::iterator it = cellids->begin();
+  n = 0;
 
   if (manifold_dimension() == 3) {
     MFace_ptr mf = (MFace_ptr) face_id_to_handle[faceid];
@@ -2364,21 +2368,19 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
     MRegion_ptr mr;
     if (ptype == USED) {      
       int idx = 0;
-      while ((mr = List_Next_Entry(fregs,&idx))) {
+      while ((mr = List_Next_Entry(fregs,&idx)))
         cellids->push_back(MR_ID(mr)-1);
-      }
     }
     else {
       int idx = 0;
       while ((mr = List_Next_Entry(fregs,&idx))) {
         if (MEnt_PType(mr) == PGHOST) {
-          if (ptype == GHOST) {
+          if (ptype == GHOST)
             cellids->push_back(MR_ID(mr)-1);
-          }
         }
-        else {
-          cellids->push_back(MR_ID(mr)-1);
-        }
+        else
+          if (ptype == OWNED)
+            cellids->push_back(MR_ID(mr)-1);
       }
     }
     List_Delete(fregs);
@@ -2391,23 +2393,19 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
     MFace_ptr mf;
     if (ptype == USED) {
       int idx = 0;
-      while ((mf = List_Next_Entry(efaces,&idx))) {
+      while ((mf = List_Next_Entry(efaces,&idx)))
         cellids->push_back(MF_ID(mf)-1);
-      }
     }
     else {
       int idx = 0;
       while ((mf = List_Next_Entry(efaces,&idx))) {
         if (MEnt_PType(mf) == PGHOST) {
-          if (ptype == GHOST) {
+          if (ptype == GHOST)
             cellids->push_back(MF_ID(mf)-1);
-          }
         }
-        else {
-          if (ptype == OWNED) {
+        else
+          if (ptype == OWNED)
             cellids->push_back(MF_ID(mf)-1);
-          }
-        }
       }
     }
     List_Delete(efaces);
@@ -5467,7 +5465,8 @@ void Mesh_MSTK::pre_create_steps_(const int space_dimension,
 }
 
 
-void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt)
+void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt,
+                                     List_ptr src_entities)
 {
   int idx, idx2, diffdim;
   MSet_ptr mset;
@@ -5518,6 +5517,26 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt)
                                              internal_name.c_str());
       if (!mset_parent)
         continue;
+
+      // Also, if this is a lower dimensional mesh (like a surface
+      // mesh created from a solid mesh) and the set contains entities
+      // from which it was created (like a face set) then don't
+      // inherit this set - otherwise we will get odd things like
+      // internal edges in the surface mesh being labeled as "face
+      // sets"
+
+      if (diffdim > 0) {
+        int found = 0;
+        int idx = 0;
+        MEntity_ptr ent;
+        while ((ent = List_Next_Entry(src_entities, &idx))) {
+          if (MSet_Contains(mset_parent, ent)) {
+            found = 1;
+            break;
+          }
+        }
+        if (found) continue;
+      }
 
       // Create the set in this mesh
 
