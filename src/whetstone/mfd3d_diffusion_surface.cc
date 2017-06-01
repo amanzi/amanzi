@@ -40,7 +40,7 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
   int num_faces = faces.size();
   if (num_faces != R.NumRows()) return num_faces;  // matrix was not reshaped
 
-  int d = mesh_->space_dimension();
+  int dir, d = mesh_->space_dimension();
   double volume = mesh_->cell_volume(c);
 
   // calculate cell normal

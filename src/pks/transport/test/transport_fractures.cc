@@ -95,7 +95,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  AmanziGeometry::Point velocity(1.0, 0.0, -0.1);
+  AmanziGeometry::Point velocity(1.0, 0.2, -0.1);
   for (int c = 0; c < ncells_owned; c++) {
     mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -106,6 +106,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
       flux[n][c] = velocity * normal;
     }
   }
+  S->GetField("darcy_flux_fracture", "state")->set_initialized();
 
   // we still need the old flux until testing is complete
   Epetra_MultiVector& flux_old = *S->GetFieldData("darcy_flux", "state")->ViewComponent("face");
@@ -114,17 +115,17 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
     flux_old[0][f] = velocity * normal;
   }
 
-  /* initialize a transport process kernel from a transport state */
+  // initialize the transport process kernel
   TPK.Initialize(S.ptr());
 
-  /* advance the transport state */
+  // advance the transport state 
   int iter, k;
   double t_old(0.0), t_new(0.0), dt;
   Epetra_MultiVector& tcc = *S->GetFieldData("total_component_concentration", "state")
                               ->ViewComponent("cell", false);
 
   iter = 0;
-  while (t_new < 0.1) {
+  while (t_new < 0.2) {
     dt = TPK.StableTimeStep();
     t_new = t_old + dt;
 
@@ -134,6 +135,17 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
     t_old = t_new;
     iter++;
   }
+
+  // test the maximum principle
+  AmanziMesh::Entity_ID_List block;
+  mesh->get_set_entities("fracture 2", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+
+  // test that solute enter the second fracture
+  double tcc_max(0.0);
+  for (int n = 0; n < block.size(); ++n) {
+    tcc_max = std::max(tcc_max, tcc[0][block[n]]);
+  }
+  CHECK(tcc_max > 0.25);
 
   GMV::open_data_file(*mesh, (std::string)"transport.gmv");
   GMV::start_data();

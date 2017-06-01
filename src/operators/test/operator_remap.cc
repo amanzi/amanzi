@@ -508,6 +508,6 @@ TEST(REMAP_2D_EXPLICIT) {
 }
 
 // TEST(REMAP_2D_IMPLICIT) {
-//   RemapTests2DImplicit(0, "DG order 0", 20, 20, 0.05);
+//   RemapTests2DImplicit(0, "DG order 0", 40, 40, 0.1);
 // }
 
