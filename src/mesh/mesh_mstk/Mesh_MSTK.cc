@@ -2357,7 +2357,7 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
 
   ASSERT(faces_initialized);
   ASSERT(cellids != NULL);
-  cellids->resize(2); // maximum number
+  cellids->clear();
   Entity_ID_List::iterator it = cellids->begin();
   n = 0;
 
@@ -2368,27 +2368,19 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
     MRegion_ptr mr;
     if (ptype == USED) {      
       int idx = 0;
-      while ((mr = List_Next_Entry(fregs,&idx))) {
-        *it = MR_ID(mr)-1;  // assign to next spot by dereferencing iterator
-        ++it;
-        ++n;
-      }
+      while ((mr = List_Next_Entry(fregs,&idx)))
+        cellids->push_back(MR_ID(mr)-1);
     }
     else {
       int idx = 0;
       while ((mr = List_Next_Entry(fregs,&idx))) {
         if (MEnt_PType(mr) == PGHOST) {
-          if (ptype == GHOST) {
-            *it = MR_ID(mr)-1;  // assign to next spot by dereferencing iterator
-            ++it;
-            ++n;
-          }
+          if (ptype == GHOST)
+            cellids->push_back(MR_ID(mr)-1);
         }
-        else {
-          *it = MR_ID(mr)-1;  // assign to next spot by dereferencing iterator
-          ++it;
-          ++n;
-        }
+        else
+          if (ptype == OWNED)
+            cellids->push_back(MR_ID(mr)-1);
       }
     }
     List_Delete(fregs);
@@ -2401,35 +2393,24 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
     MFace_ptr mf;
     if (ptype == USED) {
       int idx = 0;
-      while ((mf = List_Next_Entry(efaces,&idx))) {
-        *it = MF_ID(mf)-1;  // assign to next spot by dereferencing iterator
-        ++it;
-        ++n;
-      }
+      while ((mf = List_Next_Entry(efaces,&idx)))
+        cellids->push_back(MF_ID(mf)-1);
     }
     else {
       int idx = 0;
       while ((mf = List_Next_Entry(efaces,&idx))) {
         if (MEnt_PType(mf) == PGHOST) {
-          if (ptype == GHOST) {
-            *it = MF_ID(mf)-1;  // assign to next spot by dereferencing iterator
-            ++it;
-            ++n;
-          }
+          if (ptype == GHOST)
+            cellids->push_back(MF_ID(mf)-1);
         }
-        else {
-          if (ptype == OWNED) {
-            *it = MF_ID(mf)-1;  // assign to next spot by dereferencing iterator
-            ++it;
-            ++n;
-          }
-        }
+        else
+          if (ptype == OWNED)
+            cellids->push_back(MF_ID(mf)-1);
       }
     }
     List_Delete(efaces);
 
   }
-  cellids->resize(n); // resize to the actual number of cells being returned
 }
     
 
