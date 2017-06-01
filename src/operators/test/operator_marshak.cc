@@ -23,7 +23,7 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorGMRES.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 #include "mfd3d_diffusion.hh"
@@ -178,17 +178,18 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     global_op->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem
-    ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create("Amanzi GMRES", lop_list, global_op);
+    ParameterList lop_list = plist.sublist("solvers")
+                                  .sublist("Amanzi GMRES").sublist("gmres parameters");
+    AmanziSolvers::LinearOperatorGMRES<Operator, CompositeVector, CompositeVectorSpace>
+        solver(global_op, global_op);
+    solver.Init(lop_list);
 
     Epetra_MultiVector& sol_new = *solution->ViewComponent("cell");
     Epetra_MultiVector sol_old(sol_new);
 
     CompositeVector rhs = *global_op->rhs();
-    solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
-    int ierr = solver->ApplyInverse(rhs, *solution);
+    solver.add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
+    int ierr = solver.ApplyInverse(rhs, *solution);
 
     step++;
     t += dt;
@@ -197,7 +198,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
     if (MyPID == 0) {
       printf("%3d  ||r||=%11.6g  itr=%2d  ||sol||=%11.6g  t=%7.4f  dt=%7.4f\n",
-          step, solver->residual(), solver->num_itrs(), snorm, t, dt);
+          step, solver.residual(), solver.num_itrs(), snorm, t, dt);
     }
 
     // Change time step based on solution change.
