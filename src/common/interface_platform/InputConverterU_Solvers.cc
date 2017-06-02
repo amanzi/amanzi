@@ -156,6 +156,11 @@ Teuchos::ParameterList InputConverterU::TranslateLinearSolvers_(
 
   slist.sublist("verbose object") = verb_list_.sublist("verbose object");
 
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+    *vo_->os() << method << ": itrs=" << maxiter 
+               << ", tol=" << tol << ", pc=" << prec << std::endl;
+
   return plist;
 }
 
