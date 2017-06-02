@@ -181,7 +181,6 @@ void DiffusionMFDwithGravity::UpdateFlux(
   int dim = mesh_->space_dimension();
   Epetra_MultiVector& flux_data = *flux.ViewComponent("face", true);
 
-  int dir;
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
   std::vector<int> flag(nfaces_wghost, 0);
@@ -224,15 +223,15 @@ void DiffusionMFDwithGravity::UpdateFlux(
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
         if (f < nfaces_owned && !flag[f]) {
-          const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+          const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
           if (gravity_special_projection_) {
             const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
-            double sign = (normal * xcc) * dir;
+            double sign = normal * xcc;
             double tmp = copysign(norm(normal) / norm(xcc), sign);
             flux_data[0][f] += (Kcg * xcc) * rho * kf[n] * tmp;
           } else {
-            flux_data[0][f] += (Kcg * normal) * rho * kf[n] * dir;
+            flux_data[0][f] += (Kcg * normal) * rho * kf[n];
           }
             
           flag[f] = 1;
@@ -251,7 +250,7 @@ void DiffusionMFDwithGravity::UpdateFlux(
       Wff.Multiply(v, av, false);
 
       for (int n = 0; n < nfaces; n++) {
-        int f = faces[n];
+        int dir, f = faces[n];
         if (f < nfaces_owned && !flag[f]) {
           const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
             
@@ -259,6 +258,75 @@ void DiffusionMFDwithGravity::UpdateFlux(
           flux_data[0][f] += tmp;
 
           flag[f] = 1;
+        }
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Add "gravity flux" to the Darcy flux. 
+* **************************************************************** */
+void DiffusionMFDwithGravity::UpdateFluxNonManifold(
+    const CompositeVector& u, CompositeVector& flux)
+{
+  // Calculate diffusive part of the flux.
+  DiffusionMFD::UpdateFluxNonManifold(u, flux);
+
+  // preparing little-k data
+  Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
+  Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
+  if (k_ != Teuchos::null) {
+    if (k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
+    if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
+    if (k_->HasComponent("grav")) k_face = k_->ViewComponent("grav", true);
+  }
+
+  int dim = mesh_->space_dimension();
+  Epetra_MultiVector& flux_data = *flux.ViewComponent("cell", true);
+
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  WhetStone::Tensor Kc(dim, 1);
+  Kc(0, 0) = 1.0;
+
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+    double zc = mesh_->cell_centroid(c)[dim - 1];
+
+    // Update terms due to nonlinear coefficient
+    double kc(1.0);
+    std::vector<double> kf(nfaces, 1.0);
+    if (little_k_ == OPERATOR_LITTLE_K_DIVK) {
+      kc = (*k_cell)[0][c];
+      for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+    } else if (little_k_ == OPERATOR_LITTLE_K_DIVK_BASE) {
+      for (int n = 0; n < nfaces; n++) kf[n] = std::sqrt((*k_face)[0][faces[n]]);
+    } else if (little_k_ == OPERATOR_LITTLE_K_STANDARD && k_cell != Teuchos::null) {
+      kc = (*k_cell)[0][c];
+      for (int n = 0; n < nfaces; n++) kf[n] = kc;
+    } else if(little_k_ == OPERATOR_LITTLE_K_UPWIND) {
+      for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
+    }
+
+    if (K_.get()) Kc = (*K_)[c];
+    AmanziGeometry::Point Kcg(Kc * g_);
+
+    for (int n = 0; n < nfaces; n++) {
+      int dir, f = faces[n];
+      if (f < nfaces_owned) {
+        const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+
+        if (gravity_special_projection_) {
+          const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
+          double sign = normal * xcc;
+          double tmp = copysign(norm(normal) / norm(xcc), sign);
+          flux_data[n][c] += (Kcg * xcc) * rho_ * kf[n] * tmp;
+        } else {
+          flux_data[n][c] += (Kcg * normal) * rho_ * kf[n];
         }
       }
     }

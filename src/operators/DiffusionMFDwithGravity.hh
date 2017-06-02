@@ -107,7 +107,7 @@ class DiffusionMFDwithGravity : public DiffusionMFD,
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
           const Teuchos::Ptr<const CompositeVector>& u);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
-  // virtual void UpdateFluxNonManifold(const CompositeVector& u, CompositeVector& flux);
+  virtual void UpdateFluxNonManifold(const CompositeVector& u, CompositeVector& flux);
 
   // -- problem initialiation
   using DiffusionMFD::Setup;

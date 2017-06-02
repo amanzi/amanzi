@@ -361,6 +361,18 @@ void DiffusionFV::UpdateFlux(
 
 
 /* ******************************************************************
+* Calculate flux from cell-centered data
+****************************************************************** */
+void DiffusionFV::UpdateFluxNonManifold(
+    const CompositeVector& solution, CompositeVector& darcy_mass_flux)
+{
+  Errors::Message msg;
+  msg << "DiffusionFV: missing support for non-manifolds.";
+  Exceptions::amanzi_throw(msg);
+}
+
+
+/* ******************************************************************
 * Computation the part of the Jacobian which depends on derivatives 
 * of the relative permeability wrt to capillary pressure. They must
 * be added to the existing matrix structure.

@@ -191,6 +191,18 @@ void DiffusionFVwithGravity::ComputeJacobianLocal_(
 
 
 /* ******************************************************************
+* Calculate flux from cell-centered data
+****************************************************************** */
+void DiffusionFVwithGravity::UpdateFluxNonManifold(
+    const CompositeVector& solution, CompositeVector& darcy_mass_flux)
+{
+  Errors::Message msg;
+  msg << "DiffusionFV: missing support for non-manifolds.";
+  Exceptions::amanzi_throw(msg);
+}
+
+
+/* ******************************************************************
 * Compute transmissibilities on faces. Requires K, g, rho.
 ****************************************************************** */
 void DiffusionFVwithGravity::ComputeTransmissibility_(
