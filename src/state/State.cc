@@ -14,6 +14,7 @@ initialized (as independent variables are owned by state, not by any PK).
 ------------------------------------------------------------------------- */
 
 #include <iostream>
+#include <map>
 #include <ostream>
 #include <regex>
 
@@ -411,16 +412,23 @@ void State::WriteStatistics(Teuchos::RCP<VerboseObject>& vo) const {
 
     for (FieldMap::const_iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
       std::string name(f_it->first);
-      name.resize(35, '.');
 
-      double vmin, vmax, vavg;
       if (f_it->second->type() == COMPOSITE_VECTOR_FIELD) {
-        f_it->second->GetFieldData()->MinValue(&vmin);
-        f_it->second->GetFieldData()->MaxValue(&vmax);
-        f_it->second->GetFieldData()->MeanValue(&vavg);
-        *vo->os() << name << " " << vmin << " / " << vmax << " / " << vavg << std::endl;
+        std::map<std::string, double> vmin, vmax, vavg;
+        f_it->second->GetFieldData()->MinValue(vmin);
+        f_it->second->GetFieldData()->MaxValue(vmax);
+        f_it->second->GetFieldData()->MeanValue(vavg);
+
+        for (auto c_it = vmin.begin(); c_it != vmin.end(); ++c_it) {
+          std::string namedot(name), name_comp(c_it->first);
+          if (vmin.size() != 1) namedot.append("." + name_comp);
+          namedot.resize(35, '.');
+          *vo->os() << namedot << " " << c_it->second << " / " 
+                    << vmax[name_comp] << " / " << vavg[name_comp] << std::endl;
+        }
       } else if (f_it->second->type() == CONSTANT_SCALAR) {
-        vmin = *f_it->second->GetScalarData();
+        double vmin = *f_it->second->GetScalarData();
+        name.resize(35, '.');
         *vo->os() << name << " " << vmin << std::endl;
       }
     }

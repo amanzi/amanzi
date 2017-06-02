@@ -510,7 +510,7 @@ int MFD3D_Electromagnetics::H1consistency3DExperimental_(
 
 
 /* ******************************************************************
-* Matrix matrix for edge-based discretization.
+* Mass matrix for edge-based discretization.
 ****************************************************************** */
 int MFD3D_Electromagnetics::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
 {
