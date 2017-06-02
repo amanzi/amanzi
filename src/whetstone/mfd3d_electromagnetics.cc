@@ -67,11 +67,13 @@ int MFD3D_Electromagnetics::L2consistency2D_(int c, const Tensor& T,
 
   Tensor Tinv(T);
   Tinv.Inverse();
+  // multiply by two 90 degree rotation matrices
   if (Tinv.rank() == 2) {
-    Tinv(0, 1) = -Tinv(0, 1);
-    Tinv(1, 0) = -Tinv(1, 0);
+    double tmp = Tinv(0, 1);
+    Tinv(0, 1) = -Tinv(1, 0);
+    Tinv(1, 0) = -tmp;
 
-    double tmp = Tinv(0, 0);
+    tmp = Tinv(0, 0);
     Tinv(0, 0) = Tinv(1, 1);  
     Tinv(1, 1) = tmp;
   }

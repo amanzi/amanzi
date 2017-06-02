@@ -584,7 +584,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
       if (clip && vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "Clipped pressure field." << std::endl;
+        *vo_->os() << "\nClipped pressure field.\n" << std::endl;
       }
 
       if (clip && solution->HasComponent("face")) {
