@@ -602,7 +602,7 @@ void CompositeVector::MaxValue(std::map<std::string, double>& value) const {
     const Epetra_MultiVector& comp = *ViewComponent(names_[n]);
 
     for (int i = 0; i != comp.NumVectors(); ++i) {
-      comp(i)->MinValue(value_loc);
+      comp(i)->MaxValue(value_loc);
       tmp = std::max(tmp, value_loc[0]);
     }
     value[names_[n]] = tmp;
