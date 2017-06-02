@@ -263,7 +263,7 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_()
           file_list.set<std::string>("file", name.str());
           file_list.set<int>("number of points", 1000);
 
-          *vo_->os() << "water retention curve file:" << name.str() << std::endl;
+          *vo_->os() << "water retention curve file: wrm_" << name.str() << std::endl;
         }
       }
     } else if (strcmp(model.c_str(), "brooks_corey")) {
