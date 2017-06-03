@@ -561,8 +561,8 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     initialize_with_darcy_ = false;
     Teuchos::ParameterList& ini_list = ti_list_->sublist("initialization");
  
-    std::string solver_name_ini = ini_list.get<std::string>("method", "none");
-    if (solver_name_ini == "saturated solver") {
+    std::string ini_method_name = ini_list.get<std::string>("method", "none");
+    if (ini_method_name == "saturated solver") {
       std::string name = ini_list.get<std::string>("linear solver");
       SolveFullySaturatedProblem(t_ini, *solution, name);
 
@@ -593,8 +593,8 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
         DeriveFaceValuesFromCellValues(p, lambda);
       }
     }
-    else if (solver_name_ini == "picard") {
-      AdvanceToSteadyState_Picard(ti_list_->sublist("initialization").sublist("picard parameters"));
+    else if (ini_method_name == "picard") {
+      AdvanceToSteadyState_Picard(ti_list_->sublist("initialization"));
     }
     pressure_eval_->SetFieldAsChanged(S.ptr());
 

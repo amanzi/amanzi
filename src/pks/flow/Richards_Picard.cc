@@ -53,8 +53,10 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
 
-  int max_itrs_nonlinear = plist.get<int>("maximum number of iterations", 400);
-  double residual_tol_nonlinear = plist.get<double>("convergence tolerance", 1e-8);
+  std::string linear_solver = plist.get<std::string>("linear solver");
+  Teuchos::ParameterList& tmp_list = plist.sublist("picard parameters");
+  int max_itrs_nonlinear = tmp_list.get<int>("maximum number of iterations", 400);
+  double residual_tol_nonlinear = tmp_list.get<double>("convergence tolerance", 1e-8);
 
   int itrs = 0;
   double L2norm, L2error = 1.0;
@@ -106,7 +108,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     // solve linear problem
     AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create(solver_name_, *linear_operator_list_, op_preconditioner_);
+       solver = factory.Create(linear_solver, *linear_operator_list_, op_preconditioner_);
 
     solver->ApplyInverse(*rhs, *solution);
 
