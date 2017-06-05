@@ -59,7 +59,11 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
     update_flux_(UPDATE_FLUX_ITERATION),
     niter_(0),
     source_only_if_unfrozen_(false),
-    precon_used_(true)
+    precon_used_(true),
+    jacobian_(false),
+    jacobian_lag_(0),
+    iter_(0),
+    iter_counter_time_(0.)
 {
   // clone the ponded_depth parameter list for ponded_depth bar
   Teuchos::ParameterList& FElist = S->FEList();
@@ -75,9 +79,6 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
     plist_->set("absolute error tolerance", 0.01 * 55000.0); // h * nl
-
-
-  
 }
 
 
@@ -209,6 +210,8 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   // If using approximate Jacobian for the preconditioner, we also need derivative information.
   jacobian_ = (mfd_pc_plist.get<std::string>("Newton correction", "none") != "none");
   if (jacobian_) {
+    jacobian_lag_ = mfd_pc_plist.get<int>("Newton correction lag", 0);
+    
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // MFD -- upwind required
       S->RequireField("dupwind_overland_conductivity_dponded_depth", name_)
@@ -238,7 +241,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   }
   
   //    accumulation
-  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("Accumulation PC");
+  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("accumulation preconditioner");
   acc_pc_plist.set("entity kind", "cell");
   preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, preconditioner_));
   

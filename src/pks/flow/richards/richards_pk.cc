@@ -59,7 +59,11 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
     clobber_surf_kr_(false),
     clobber_boundary_flux_dir_(false),
     vapor_diffusion_(false),
-    perm_scale_(1.)
+    perm_scale_(1.),
+    jacobian_(false),
+    jacobian_lag_(0),
+    iter_(0),
+    iter_counter_time_(0.)
 {
   if (!plist_->isParameter("conserved quantity suffix"))
     plist_->set("conserved quantity suffix", "water_content");
@@ -245,6 +249,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   //    For now this means upwinding the derivative.
   jacobian_ = mfd_pc_plist.get<std::string>("Newton correction", "none") != "none";
   if (jacobian_) {
+    jacobian_lag_ = mfd_pc_plist.get<int>("Newton correction lag", 0);
+
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // MFD -- upwind required
       dcoef_key_ = getDerivKey(coef_key_, key_);

@@ -179,6 +179,7 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
     *vo_->os() << "Precon update at t = " << t << std::endl;
 
   // update state with the solution up.
+  if (std::abs(t - iter_counter_time_)/t > 1.e-4) iter_ = 0;
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
 
@@ -192,13 +193,13 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   // -- update the rel perm according to the boundary info and upwinding
   // -- scheme of choice
   UpdatePermeabilityData_(S_next_.ptr());
-  if (jacobian_) UpdatePermeabilityDerivativeData_(S_next_.ptr());
+  if (jacobian_ && iter_ >= jacobian_lag_) UpdatePermeabilityDerivativeData_(S_next_.ptr());
 
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity");
 
   Teuchos::RCP<const CompositeVector> dcond = Teuchos::null;
-  if (jacobian_) {
+  if (jacobian_ && iter_ >= jacobian_lag_) {
     if (preconditioner_->RangeMap().HasComponent("face")) {
       dcond = S_next_->GetFieldData("dupwind_overland_conductivity_dponded_depth");
     } else {
@@ -210,7 +211,7 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   preconditioner_->Init();
   preconditioner_diff_->SetScalarCoefficient(cond, dcond);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  if (jacobian_) {
+  if (jacobian_ && iter_ >= jacobian_lag_) {
     Teuchos::RCP<const CompositeVector> pres_elev = Teuchos::null;
     Teuchos::RCP<CompositeVector> flux = Teuchos::null;
     if (preconditioner_->RangeMap().HasComponent("face")) {
@@ -363,6 +364,9 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
   *vo_->os() << "updated precon " << S_next_->cycle() << std::endl;
   */
+
+  // increment the iterator count
+  iter_++;
 };
 
 // -----------------------------------------------------------------------------

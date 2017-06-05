@@ -917,6 +917,7 @@ Richards PK
 ^^^^^^^^^^^^^^^
 
  Two-phase, variable density Richards equation.
+
 Solves Richards equation:
 
 .. math::
@@ -958,6 +959,12 @@ Other variable names, typically not set as the default is basically always good:
 
 * `"saturation key`" ``[string]`` **"DOMAIN-saturation_liquid"** volume fraction of the liquid phase ``[-]``
 
+Discretization control:
+
+* `"diffusion`" ``[list]`` An OperatorDiffusion_ spec describing the (forward) diffusion operator
+
+* `"diffusion preconditioner`" ``[list]`` An OperatorDiffusion_ spec describing the diffusive parts of the preconditioner.
+
 
 Time integration and timestep control:
 
@@ -967,6 +974,12 @@ Time integration and timestep control:
 
   Note that this is only provided if this Richards PK is not strongly coupled to other PKs.
 
+* `"linear solver`" ``[linear-solver-spec]`` is a LinearSolver_ spec.
+  Note that this is only used if this PK is not strongly coupled to other PKs.
+
+* `"preconditioner`" ``[preconditioner-spec]`` is a Preconditioner_ spec.
+  Note that this is only used if this PK is not strongly coupled to other PKs.
+  
 * `"initial condition`" ``[initial-condition-spec]``  See InitialConditions_.
 
   Additionally, the following parameter is supported:
@@ -997,11 +1010,8 @@ Boundary conditions:
 Physics control:
 
 * `"permeability rescaling`" ``[double]`` **1** Typically 1e7 or order :math:`sqrt(K)` is about right.  This rescales things to stop from multiplying by small numbers (permeability) and then by large number (:math:`\rho / \mu`).
-
-
-
   
- 
+
 
 
 Permafrost Flow PK
@@ -2226,7 +2236,8 @@ OperatorAccumulation
 
 This class is usually used as part of a preconditioner, providing the linearization:
 
-:math:`\frac{\partial}{\partial A} \left[ \frac{\partial A}{\partial t} \right]_{A_0} = \frac{|\Omega_E|}{\Delta t}`
+.. math::
+  \frac{\partial}{\partial A} \left[ \frac{\partial A}{\partial t} \right]_{A_0} = \frac{|\Omega_E|}{\Delta t}
 
 for a grid element :math:`\Omega_E`.
 
@@ -2255,9 +2266,9 @@ The input spec for a diffusion operator consists of:
 
 * `"discretization primary`" ``[string]`` Currently supported options include:
 
- * `"fv: default`" the standard two-point flux finite volume discretization
- * `"nlfv: default`" the nonlinear finite volume method of ???
- * MFD methods, including:
+ - `"fv: default`" the standard two-point flux finite volume discretization
+ - `"nlfv: default`" the nonlinear finite volume method of ???
+ - MFD methods, including:
 
   * `"mfd: default`"
   * `"mfd: monotone for hex`"
@@ -2346,6 +2357,7 @@ Additional options for MFD with the gravity term include:
 
 
 
+
 Example:
 
 .. code-block:: xml
@@ -2375,6 +2387,19 @@ Example:
 
 OperatorAdvection
 -------------------------
+
+
+``OperatorAdvection`` assembles the discrete form of:
+
+.. math::
+  \nabla \cdot Aq
+
+which advects quantity :math:`A` with fluxes :math:`q`.
+
+This is a simple, first-order donor-upwind scheme, and is mostly intended for
+use in diffusion-dominated advection-diffusion equations.  No options are
+available here.
+ 
 
 
 
