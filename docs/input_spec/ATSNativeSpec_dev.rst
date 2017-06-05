@@ -119,7 +119,7 @@ one sublist for each of the following sections.
 Mesh
 #####
 
-
+ Simple wrapper that takes a ParameterList and generates all needed meshes.
 All processes are simulated on a domain, which is discretized through a mesh.
 
 Multiple domains and therefore meshes can be used in a single simulation, and multiple meshes can be constructed on the fly.
@@ -266,7 +266,7 @@ Region
 ##########
 
 
-
+  Region: a geometric or discrete subdomain (abstract)
 
 Regions are geometrical constructs used in Amanzi to define subsets of
 the computational domain in order to specify the problem to be solved, and the
@@ -373,7 +373,7 @@ region defined by the value 25 in color function file.
 
 Point
 ======
-
+ RegionPoint: a point in space.
 List *region: point* defines a point in space. 
 This region consists of cells containing this point.
 
@@ -394,7 +394,7 @@ Example:
 
 Box
 ======
-
+ RegionBox: a rectangular region in space, defined by two points
 
 List *region: box* defines a region bounded by coordinate-aligned
 planes. Boxes are allowed to be of zero thickness in only one
@@ -420,7 +420,7 @@ Example:
 
 Plane
 ======
-
+ RegionPlane: A planar (infinite) region in space, defined by a point and a normal.
 List *region: plane* defines a plane using a point lying on the plane and normal to the plane.
 
 * `"normal`" ``[Array(double)]`` Normal to the plane.
@@ -446,7 +446,7 @@ Example:
 
 Labeled Set
 ============
-
+ RegionLabeledSet: A region defined by a set of mesh entities in a mesh file
 The list *region: labeled set* defines a named set of mesh entities
 existing in an input mesh file. This is the same file that contains
 the computational mesh. The name of the entity set is given
@@ -489,7 +489,7 @@ Example:
 
 Color Function
 ===============
-
+ RegionColorFunction: A region defined by the value of an indicator function in a file.
 
 The list *region: color function* defines a region based a specified
 integer color, *value*, in a structured color function file,
@@ -528,7 +528,7 @@ Example:
 Coordinator
 ############
 
-
+ Coordinator: Simulation controller and top-level driver
 
 In the `"coordinator`" sublist, the user specifies global control of
 the simulation, including starting and ending times and restart options.  
@@ -587,7 +587,7 @@ separate ParameterLists, entitled `"visualization`" for the main mesh, and
 addition meshes, each will have a domain name and therefore admit a spec of
 the form: `"visualization DOMAIN-NAME`".
 
-
+ Visualization: a class for controlling simulation output.
 
 Each list contains all parameters as in a IOEvent_ spec, and also:
 
@@ -632,7 +632,7 @@ name generation and writing frequency, by numerical cycle number.
 Unlike `"visualization`", there is only one `"checkpoint`" list for
 all domains/meshes.
 
-
+ Visualization: a class for controlling simulation output.
 
 Each list contains all parameters as in a IOEvent_ spec, and also:
 
@@ -666,7 +666,7 @@ every 25 seconds thereafter, along with times 101, 303, and 422.  Files will be 
 Observation
 ##############
 
-
+ Observable: Collects, reduces, and writes observations during a simulation.
 Observations are a localized-in-space but frequent in time view of
 data, designed to get at useful diagnostic quantities such as
 hydrographs, total water content, quantities at a point, etc.  These
@@ -751,7 +751,7 @@ Example:
 PK
 #####
 
-
+ The interface for a Process Kernel, an equation or system of equations.
 
 A process kernel represents a single or system of partial/ordinary
 differential equation(s) or conservation law(s), and is used as the
@@ -800,11 +800,10 @@ Base PKs
 
 There are several types of PKs, and each PK has its own valid input spec.  However, there are three main types of PKs, from which nearly all PKs derive.  Note that none of these are true PKs and cannot stand alone.
 
-
 PKPhysicalBase
 ----------------
 
-
+ A base class with default implementations of methods for a leaf of the PK tree (a conservation equation, or similar).
 
 ``PKPhysicalBase`` is a base class providing some functionality for PKs which
 are defined on a single mesh, and represent a single process model.  Typically
@@ -836,7 +835,7 @@ NOTE: ``PKPhysicalBase (v)-->`` PKDefaultBase_
 PKBDFBase
 ----------------
 
-
+ A base class with default implementations of methods for a PK that can be implicitly integrated in time.
 
 ``PKBDFBase`` is a base class from which PKs that want to use the ``BDF``
 series of implicit time integrators must derive.  It specifies both the
@@ -876,7 +875,7 @@ NOTE: ``PKBDFBase  (v)-->`` PKDefaultBase_
 PKPhysicalBDFBase
 -------------------
 
-
+ Standard base for most implemented PKs, this combines both domains/meshes of PKPhysicalBase and BDF methods of PKBDFBase.
 
 A base class for all PKs that are both physical, in the sense that they
 implement an equation and are not couplers, and support the implicit
@@ -917,7 +916,7 @@ Flow PKs
 Richards PK
 ^^^^^^^^^^^^^^^
 
-
+ Two-phase, variable density Richards equation.
 Solves Richards equation:
 
 .. math::
@@ -1153,7 +1152,7 @@ for inclusion of multiple phases.
 
 RichardsWaterContentEvaluator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+ RichardsWaterContentEvaluator: water content without vapor
 Evaluator type: `"richards water content`"
 
 Evaluates water content in cell E.
@@ -1181,7 +1180,7 @@ Example:
 
 RichardsWaterContentWithVaporEvaluator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+ RichardsWaterContentEvaluator: water content without vapor
 Evaluator type: `"richards water content with vapor`"
 
 Evaluates water content in cell E.
@@ -1212,7 +1211,7 @@ Example:
 
 PermafrostWaterContentEvaluator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+ RichardsWaterContentEvaluator: water content without vapor
 Evaluator type: `"permafrost water content`"
 
 Evaluates water content in cell E.
@@ -1252,7 +1251,7 @@ Evaluators for
 
 SurfaceElevation
 ^^^^^^^^^^^^^^^^^^
-
+ MeshedElevationEvaluator: evaluates the elevation (z-coordinate) and slope magnitude of a mesh.
 Evaluator type: `"meshed elevation`"
 
 Evaluates the z-coordinate and the magnitude of the slope :math:``|\nambla_h z|``
@@ -1274,7 +1273,7 @@ Example:
 
 SurfacePotential
 ^^^^^^^^^^^^^^^^^^^
-
+ PresElevEvaluator: evaluates h + z
 Evaluator type: ""
 
 .. math::
@@ -1297,7 +1296,7 @@ NOTE: This could easily be replaced by a generic AdditiveEvaluator_
 
 SnowSurfacePotential
 ^^^^^^^^^^^^^^^^^^^^^^
-
+ PresElevEvaluator: evaluates h + z
 Evaluator type: "snow skin potential"
 
 .. math::
@@ -1543,7 +1542,7 @@ Example:
 
 Hypre's Boomer AMG
 -------------------
-
+ PreconditionerBoomerAMG: HYPRE's multigrid preconditioner.
 Internal parameters for Boomer AMG include
 
 * `"tolerance`" ``[double]`` if is not zero, the preconditioner is dynamic 
@@ -1602,7 +1601,7 @@ Example:
 
 Trilinos ML
 -------------------
-
+ PreconditionerML: Trilinos ML multigrid.
 Internal parameters of Trilinos ML includes
 
 Example:
@@ -1634,7 +1633,7 @@ Example:
 
 Block ILU
 -------------------
-
+ PreconditionerBlockILU:   Incomplete LU preconditioner.
 
 The internal parameters for block ILU are as follows:
 
@@ -1673,7 +1672,7 @@ Other Common Specs
 IOEvent
 ===================
 
-
+ IOEvent: base time/timestep control determing when in time to do something.
 
 The IOEvent is used for multiple objects that need to indicate simulation times or cycles on which to do something.
 
@@ -1720,7 +1719,7 @@ The IOEvent is used for multiple objects that need to indicate simulation times 
 VerboseObject
 ===================
 
-
+ VerboseObject: a controller for writing log files on multiple cores with varying verbosity.
 
 This allows control of log-file verbosity for a wide variety of objects
 and physics.
@@ -1753,7 +1752,7 @@ Example:
 Function
 ===================
 
-
+ Function: base class for all functions of space and time.
 Analytic, algabraic functions of space and time are used for a variety of
 purposes, including boundary conditions, initial conditions, and independent
 variables.
@@ -1776,7 +1775,7 @@ It is straightforward to add new functions as needed.
 
 Constant Function
 -------------------------
-
+ ConstantFunction: Implements the Function interface using a constant value.
 
 Constant function is defined as :math:`f(x) = a`, for all :math:`x`. 
 
@@ -1795,7 +1794,7 @@ Example:
 
 Tabular Function
 -------------------------
-
+ TabularFunction: Piecewise-defined function.
 
 A piecewise function of one variable.
 
@@ -1879,7 +1878,7 @@ Example:
 
 Smooth step Function
 -------------------------
-
+ SmoothStepFunction: a smoothed discontinuity.
 
 A smooth :math:`C^2` function `f(x)` on interval :math:`[x_0,\,x_1]` is
 defined such that `f(x) = y_0` for `x < x0`, `f(x) = y_1` for `x > x_1`, and
@@ -1902,7 +1901,7 @@ Example:
 
 Polynomial Function
 -------------------------
-
+ PolynomialFunction: a polynomial
 
 A generic polynomial function is given by the following expression:
 
@@ -1927,7 +1926,7 @@ Example:
 
 Multi-variable linear Function
 ------------------------------
-
+ LinearFunction: a multivariate linear function.
 
 A multi-variable linear function is formally defined by
  
@@ -1953,7 +1952,7 @@ Here is an example:
 
 Separable Function
 ------------------
-
+ SeparableFunction: f(x,y) = f1(x)*f2(y)
 
 A separable function is defined as the product of other functions such as
 
@@ -1979,7 +1978,7 @@ where :math:`f_1` is defined by the `"function1`" sublist, and
 
 Additive Function
 ------------------
-
+ AdditiveFunction: f(x,y) = f1(x,y) + f2(x,y)
 
 An additive function simply adds two other function results together.
 
@@ -2004,7 +2003,7 @@ where :math:`f_1` is defined by the `"function1`" sublist, and
 
 Multiplicative Function
 --------------------------
-
+ MultiplicativeFunction: f(x,y) = f1(x,y) * f2(x,y)
 
 A multiplicative function simply multiplies two other function results together.
 
@@ -2029,7 +2028,7 @@ where :math:`f_1` is defined by the `"function1`" sublist, and
 
 Composition Function
 --------------------------
-
+ CompositionFunction: f(x,y) = f1(x,y) * f2(x,y)
 
 Function composition simply applies one function to the result of another.
 
@@ -2054,7 +2053,7 @@ where :math:`f_1` is defined by the `"function1`" sublist, and
 
 Piecewise Bilinear Function
 ---------------------------
-
+ BilinearFunction: a piecewise bilinear function.
 
 A piecewise bilinear function extends the linear form of the tabular function to two variables.
 
@@ -2092,7 +2091,7 @@ Example:
 
 Distance Function
 -------------------
-
+ DistanceFunction: distance from a reference point.
 
 A distance function calculates distance from reference point :math:`x_0`
 using by the following expression:
@@ -2116,7 +2115,7 @@ Example:
 
 Monomial Function
 -------------------
-
+ MonomialFunction: a multivariate monomial function.
 
 A multi-variable monomial function is given by the following expression:
 
@@ -2141,7 +2140,7 @@ Here is an example of monomial of degree 6 in three variables:
 
 Standard Math Function
 -------------------------
-
+ StandardMathFunction: provides access to many common mathematical functions.
 These functions allow to set up non-trivial time-dependent boundary conditions 
 which increases a set of analytic solutions that can be used in convergence 
 analysis tests.
@@ -2188,6 +2187,194 @@ This example defines function `1e-7 sqrt(t-0.1)`.
 
 
 
+
+Operator
+===================
+
+ Operator represents a linear map, and typically encapsulates a discretization.
+
+``Operator`` represents a map from linear space X to linear space Y.  Typically,
+this map is a linear map, and encapsulates much of the discretization involved
+in moving from continuous to discrete equations.  At the moment, it is assumed
+that X = Y, but this could be changed if future needs require it.
+
+An ``Operator`` provides an interface for applying both the forward and inverse
+linear map (assuming the map is invertible).
+
+Typically the ``Operator`` is never seen by the user; instead the user provides
+input information for helper classes based on the continuous mathematical
+operator and the desired discretization.  These helpers build the needed
+``Operator``, which may incldude information from multiple helpers (i.e. in the
+case of Jacobian Operators for a PDE).
+
+However, one option may be provided by the user, which is related to dealing
+with nearly singular operators:
+
+* `"diagonal shift`" ``[double]`` **0.0** Adds a scalar shift to the diagonal
+  of the ``Operator``, which can be useful if the ``Operator`` is singular or
+  near-singular.
+
+
+
+
+OperatorAccumulation
+-------------------------
+
+ ``OperatorAccumulation`` generates a diagonal matrix representing accumulation
+
+``OperatorAccumulation`` assembles the discrete form of :math:`\frac{\partial A}{\partial t}`.
+
+This class is usually used as part of a preconditioner, providing the linearization:
+
+:math:`\frac{\partial}{\partial A} \left[ \frac{\partial A}{\partial t} \right]_{A_0} = \frac{|\Omega_E|}{\Delta t}`
+
+for a grid element :math:`\Omega_E`.
+
+No options are available here.
+
+
+
+
+OperatorDiffusion
+------------------
+
+
+``OperatorDiffusion`` form local ``Op`` s and global ``Operator`` s for elliptic equations:
+
+.. math::
+  \nabla \cdot k \nabla u
+
+with a variety of discretizations.  Note also, for reasons that are one part historical and potentially not that valid, this also supports and implementation with an advective source, i.e.:
+
+.. math::
+  \nabla \cdot k (\nabla u + \hat{z})
+
+for gravitational terms in Richards equations.
+
+The input spec for a diffusion operator consists of:
+
+* `"discretization primary`" ``[string]`` Currently supported options include:
+
+ * `"fv: default`" the standard two-point flux finite volume discretization
+ * `"nlfv: default`" the nonlinear finite volume method of ???
+ * MFD methods, including:
+
+  * `"mfd: default`"
+  * `"mfd: monotone for hex`"
+  * `"mfd: optimized for monotonicity`"
+  * `"mfd: two-point flux approximation`"
+  * `"mfd: optimized for sparsity`"
+  * `"mfd: support operator`"
+
+ Note that the most commonly used are `"fv: default`" for simple test
+ problems (this method is not particularly accurate for distorted
+ meshes), `"mfd: optimized for sparsity`" for most real problems on
+ unstructured meshes, and `"mfd: optimized for monotonicity`" for
+ orthogonal meshes with diagonal tensor/scalar coefficients.
+
+* `"gravity`" [bool] **false** specifies if the gravitational flow term is included
+
+* `"Newton correction`" [string] specifies a model for non-physical terms 
+  that must be added to the matrix. These terms represent Jacobian and are needed 
+  for the preconditioner. Available options are `"true Jacobian`" and `"approximate Jacobian`".
+  The FV scheme accepts only the first options. The other schemes accept only the second option.
+
+* `"scaled constraint equation`" [bool] **false** rescales flux continuity equations
+  on mesh faces.  These equations are formed without the nonlinear
+  coefficient. This option allows us to treat the case of zero nonlinear
+  coefficient, which otherwise generates zero rows in the operator, which is
+  then singular.  At moment this feature does not work with non-zero gravity
+  term.
+
+* `"constraint equation scaling cutoff"`" [double] specifies the cutoff value for
+  applying rescaling strategy described above.
+
+
+
+
+
+Additional options available only for the MFD family of discretizations include:
+  
+* `"nonlinear coefficient`" [string] specifies a method for treating nonlinear
+  diffusion coefficient, if any. Available options are `"none`", `"upwind:
+  face`", `"divk: cell-face`" (default), `"divk: face`", `"standard: cell`",
+  `"divk: cell-face-twin`" and `"divk: cell-grad-face-twin`".  Symmetry
+  preserving methods are the divk-family of methods and the classical
+  cell-centered method (`"standard: cell`"). The first part of the name
+  indicates the base scheme.  The second part (after the semi-column)
+  indicates required components of the composite vector that must be provided
+  by a physical PK.
+
+* `"discretization secondary`" [string] specifies the most robust
+  discretization method that is used when the primary selection fails to
+  satisfy all a priori conditions.  This is typically `"mfd: default`".
+  **Used only when an MFD `"primary discretization`" is used**
+
+* `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
+  geometric objects.  Typically this is set by the implementation and is not provided.
+
+* `"preconditioner schema`" [Array(string)] **{face,cell}** Defines the
+  preconditioner stencil.  It is needed only when the default assembling
+  procedure is not desirable. If skipped, the `"schema`" is used instead.
+  In addition to the default, **{face}** may be used, which forms the Schur
+  complement.
+   
+* `"consistent faces`" [list] may contain a `"preconditioner`" and
+  `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_
+  respectively).  If these lists are provided, and the `"discretization
+  primary`" is of type `"mfd: *`", then the diffusion method
+  UpdateConsistentFaces() can be used.  This method, given a set of cell
+  values, determines the faces constraints that satisfy the constraint
+  equation in MFD by assembling and inverting the face-only system.  This is
+  not currently used by any Amanzi PKs.
+
+* `"diffusion tensor`" [string] allows us to solve problems with symmetric and non-symmetric 
+  (but positive definite) tensors. Available options are *symmetric* (default) and *nonsymmetric*.
+
+
+
+
+
+Additional options for MFD with the gravity term include:
+  
+* `"gravity term discretization`" [string] selects a model for discretizing the 
+   gravity term. Available options are `"hydraulic head`" [default] and `"finite volume`". 
+   The first option starts with equation for the shifted solution, i.e. the hydraulic head,
+   and derives gravity discretization by the reserve shifting.
+   The second option is based on the divergence formula.
+
+
+
+
+Example:
+
+.. code-block:: xml
+
+    <ParameterList name="OPERATOR_NAME">
+      <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+      <Parameter name="gravity" type="bool" value="true"/>
+      <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
+      <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
+      <Parameter name="Newton correction" type="string" value="true Jacobian"/>
+
+      <ParameterList name="consistent faces">
+        <ParameterList name="linear solver">
+          ...
+        </ParameterList>
+        <ParameterList name="preconditioner">
+          ...
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+
+
+
+OperatorAdvection
+-------------------------
 
 
 
