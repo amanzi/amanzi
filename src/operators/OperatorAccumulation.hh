@@ -1,6 +1,6 @@
-/*
-  Operators
+//! ``OperatorAccumulation`` generates a diagonal matrix representing accumulation
 
+/*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -22,6 +22,22 @@
 #include "BCs.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
+
+/*!
+
+``OperatorAccumulation`` assembles the discrete form of :math:`\frac{\partial A}{\partial t}`.
+
+This class is usually used as part of a preconditioner, providing the linearization:
+
+.. math::
+  \frac{\partial}{\partial A} \left[ \frac{\partial A}{\partial t} \right]_{A_0} = \frac{|\Omega_E|}{\Delta t}
+
+for a grid element :math:`\Omega_E`.
+
+No options are available here.
+
+*/
+
 
 namespace Amanzi {
 namespace Operators {
