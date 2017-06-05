@@ -68,6 +68,22 @@
             <Parameter name="number" type="Array(int)" value="{1}"/>
           </ParameterList>
         </ParameterList>
+
+        <ParameterList name="advection operator">
+          <Parameter name="discretization" type="string" value="BernardiRaugel"/>
+          <ParameterList name="schema domain">
+            <Parameter name="base" type="string" value="cell"/>
+            <Parameter name="location" type="Array(string)" value="{node, face}"/>
+            <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+            <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+          </ParameterList>
+          <ParameterList name="schema range">
+            <Parameter name="base" type="string" value="cell"/>
+            <Parameter name="location" type="Array(string)" value="{node, face}"/>
+            <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+            <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="time integrator">

@@ -227,6 +227,65 @@ int MFD3D_Elasticity::StiffnessMatrixBernardiRaugel(
 
 
 /* ******************************************************************
+* Advection matrix depends on velocity u.
+****************************************************************** */
+int MFD3D_Elasticity::AdvectionMatrixBernardiRaugel(
+    int c, DenseMatrix& A, const std::vector<AmanziGeometry::Point>& u)
+{
+  int d = mesh_->space_dimension();
+  ASSERT(d == 2);
+
+  Entity_ID_List nodes, faces;
+  std::vector<int> dirs;
+
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
+
+  mesh_->cell_get_nodes(c, &nodes);
+  int nnodes = nodes.size();
+
+  // calculate corner normals and weigths
+  std::vector<double> w(nnodes, 0.0);
+  AmanziGeometry::Point xv(d);
+  std::vector<AmanziGeometry::Point> N(nnodes, xv);
+
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+
+  for (int i = 0; i < nfaces; ++i) {
+    int f = faces[i];
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+   
+    int j = (i + nfaces + 1) % nfaces;
+    N[i] += normal * dirs[i] / 2.0;
+    N[j] += normal * dirs[i] / 2.0;
+
+    int v = nodes[i];
+    mesh_->node_get_coordinates(v, &xv);
+    double tmp = ((xv - xc) * normal) * dirs[i] / 6.0;
+    w[i] += tmp;
+    w[j] += tmp;
+  }
+
+  // populate matrix
+  A.PutScalar(0.0);
+ 
+  for (int i = 0; i < nnodes; ++i) {
+std::cout << w[i] << " " << mesh_->cell_volume(c) << std::endl;
+    int i1 = 2 * i;
+    for (int j = 0; j < nnodes; ++j) {
+      int j1 = 2 * j;
+      A(i1, j1) = w[i] * u[i][0] * N[j][0];
+      A(i1, j1 + 1) = w[i] * u[i][1] * N[j][0];
+      A(i1 + 1, j1) = w[i] * u[i][0] * N[j][1];
+      A(i1 + 1, j1 + 1) = w[i] * u[i][1] * N[j][1];
+    }    
+  } 
+
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
 * Divergence matrix: vectors at nodes, normal components on faces.
 * Fixed normal vector is used for the latter.
 ****************************************************************** */

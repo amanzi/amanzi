@@ -35,11 +35,7 @@ TEST(DIFFUSION_STOKES_2D) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Stiffness matrix for Stokes in 2D" << std::endl;
-#ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
-#endif
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -69,8 +65,8 @@ TEST(DIFFUSION_STOKES_2D) {
   mfd.StiffnessMatrixBernardiRaugel(cell, T, A);
 
   printf("Stiffness matrix for cell %3d\n", cell);
-  for (int i=0; i<nrows; i++) {
-    for (int j=0; j<nrows; j++ ) printf("%8.4f ", A(i, j)); 
+  for (int i = 0; i < nrows; i++) {
+    for (int j = 0; j < nrows; j++ ) printf("%7.4f ", A(i, j)); 
     printf("\n");
   }
 
@@ -115,4 +111,54 @@ TEST(DIFFUSION_STOKES_2D) {
   delete comm;
 }
 
+
+/* ******************************************************************
+* Dofs: vectors at nodes, normal component on faces.
+****************************************************************** */
+TEST(ADVECTION_NAVIER_STOKES_2D) {
+  using namespace Teuchos;
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: Advection matrix for Navier-Stokes in 2D" << std::endl;
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  RCP<Mesh> mesh = meshfactory("test/one_cell2.exo"); 
+ 
+  MFD3D_Elasticity mfd(mesh);
+
+  // extract single cell
+  int cell(0);
+  std::vector<int> dirs;
+  AmanziMesh::Entity_ID_List nodes, faces;
+
+  mesh->cell_get_nodes(cell, &nodes);
+  int nnodes = nodes.size();
+
+  mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
+  int nfaces = faces.size();
+
+  // setup velocity
+  std::vector<AmanziGeometry::Point> u(nnodes);
+  for (int i = 0; i < nnodes; ++i) {
+    u[i] = AmanziGeometry::Point(1.0, 2.0);
+  }
+
+  // calculate advection matrix
+  int nrows = 2 * nnodes + nfaces;
+  DenseMatrix A(nrows, nrows);
+
+  mfd.AdvectionMatrixBernardiRaugel(cell, A, u);
+
+  printf("Advection matrix for cell %3d\n", cell);
+  for (int i = 0; i < 2*nnodes; i++) {
+    for (int j = 0; j < 2*nnodes; j++ ) printf("%8.5f ", A(i, j)); 
+    printf("\n");
+  }
+}
 

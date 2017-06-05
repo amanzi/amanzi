@@ -47,7 +47,7 @@ class MFD3D_Electromagnetics : public MFD3D {
   int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
 
   // consistency condition for stiffness matrix.
-  // the inner product in the spave of edge-based functions is weighted by T.
+  // the inner product in the space of edge-based functions is weigthed by T.
   int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
 
   int MassMatrix(int c, const Tensor& T, DenseMatrix& M);

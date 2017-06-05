@@ -147,6 +147,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Operators::Elasticity> op_matrix_elas_, op_preconditioner_elas_;
   Teuchos::RCP<Operators::Accumulation> op_matrix_acc_, op_preconditioner_acc_, op_mass_;
   Teuchos::RCP<Operators::AdvectionRiemann> op_matrix_div_;
+  Teuchos::RCP<Operators::AdvectionRiemann> op_matrix_conv_, op_preconditioner_conv_;
   std::string preconditioner_name_, solver_name_;
  
  private:
