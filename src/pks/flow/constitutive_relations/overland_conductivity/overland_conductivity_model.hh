@@ -21,8 +21,8 @@ class OverlandConductivityModel {
   virtual double DConductivityDDepth(double depth, double slope, double coef) = 0;
 
   //Add for the subgrid model -- Not pure virtual
-  virtual double Conductivity(double depth, double slope, double coef, double d, double frac) {};
-  virtual double DConductivityDDepth(double depth, double slope, double coef, double p, double frac) {};
+  virtual double Conductivity(double depth, double slope, double coef, double d, double frac, double beta) {};
+  virtual double DConductivityDDepth(double depth, double slope, double coef, double p, double frac, double beta) {};
 };
 
 } // namespace

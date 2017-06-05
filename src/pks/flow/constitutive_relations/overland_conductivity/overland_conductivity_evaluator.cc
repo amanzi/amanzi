@@ -55,6 +55,13 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
     
     frac_cond_key_ = plist_.get<std::string>("fractional conductance key", getKey(domain,"fractional_conductance"));
     dependencies_.insert(frac_cond_key_); 
+
+    vpd_key_ = plist_.get<std::string>("volumetric ponded depth key", getKey(domain,"volumetric_ponded_depth"));
+    dependencies_.insert(vpd_key_); 
+
+    drag_exp_key_ = plist_.get<std::string>("drag exponent key", getKey(domain,"drag_exponent"));
+    dependencies_.insert(drag_exp_key_); 
+
   }
 
   // create the model
@@ -86,8 +93,10 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(const OverlandCondu
     dens_(other.dens_),
     model_(other.model_),
     pdd_key_(other.pdd_key_),
+    vpd_key_(other.vpd_key_),
     frac_cond_key_(other.frac_cond_key_),
-    sg_model_(other.sg_model_) {}
+    sg_model_(other.sg_model_),
+    drag_exp_key_(other.drag_exp_key_){}
 
 
 Teuchos::RCP<FieldEvaluator>
@@ -134,12 +143,18 @@ void OverlandConductivityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   else{
     Teuchos::RCP<const CompositeVector> pd_depth = S->GetFieldData(pdd_key_);
     Teuchos::RCP<const CompositeVector> frac_cond = S->GetFieldData(frac_cond_key_);
+    Teuchos::RCP<const CompositeVector> vpd = S->GetFieldData(vpd_key_);
+
+    Teuchos::RCP<const CompositeVector> drag = S->GetFieldData(drag_exp_key_);
+
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& depth_v = *depth->ViewComponent(*comp,false);
       
       const Epetra_MultiVector& pd_depth_v = *pd_depth->ViewComponent(*comp,false);
       const Epetra_MultiVector& frac_cond_v = *frac_cond->ViewComponent(*comp,false);
+      const Epetra_MultiVector& vpd_v = *vpd->ViewComponent(*comp,false);
+      const Epetra_MultiVector& drag_v = *drag->ViewComponent(*comp,false);
       
       const Epetra_MultiVector& slope_v = *slope->ViewComponent(*comp,false);
       const Epetra_MultiVector& coef_v = *coef->ViewComponent(*comp,false);
@@ -148,11 +163,11 @@ void OverlandConductivityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       int ncomp = result->size(*comp, false);
       if (dt_) {
         for (int i=0; i!=ncomp; ++i) {
-          result_v[0][i] = model_->Conductivity(factor_*depth_v[0][i], slope_v[0][i],coef_v[0][i], pd_depth_v[0][i],frac_cond_v[0][i]);
+          result_v[0][i] = model_->Conductivity(factor_*depth_v[0][i], slope_v[0][i],coef_v[0][i], pd_depth_v[0][i],frac_cond_v[0][i],drag_v[0][i]);
         }
       } else {
         for (int i=0; i!=ncomp; ++i) {
-          result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i], pd_depth_v[0][i], frac_cond_v[0][i]);
+          result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i], pd_depth_v[0][i], frac_cond_v[0][i],drag_v[0][i]);
         }
       }
       if (dens_) {

@@ -21,8 +21,8 @@ FractionalConductanceEvaluator::FractionalConductanceEvaluator(Teuchos::Paramete
     my_key_ = plist_.get<std::string>("fractional conductance key", getKey(domain,"fractional_conductance"));
 
 
-  pd_key_ = plist_.get<std::string>("height key", getKey(domain,"ponded_depth"));
-  dependencies_.insert(pd_key_);
+  //pd_key_ = plist_.get<std::string>("height key", getKey(domain,"ponded_depth"));
+  //dependencies_.insert(pd_key_);
   
   vpd_key_ = plist_.get<std::string>("volumetric height key", getKey(domain,"volumetric_ponded_depth"));
   dependencies_.insert(vpd_key_); 
@@ -36,9 +36,6 @@ FractionalConductanceEvaluator::FractionalConductanceEvaluator(Teuchos::Paramete
   dependencies_.insert(delta_ex_key_);
   depr_depth_key_ = plist_.get<std::string>("depression depth key", getKey(domain,"depression_depth"));
   dependencies_.insert(depr_depth_key_);
-  //  depr_depth_ = plist_.get<double>("depression depth");//, 0.043);
-  //delta_max_ = plist_.get<double>("maximum ponded depth");//, 0.483);
-  //delta_ex_ = plist_.get<double>("excluded volume");//,0.23);
 
 }
 
@@ -46,7 +43,7 @@ FractionalConductanceEvaluator::FractionalConductanceEvaluator(Teuchos::Paramete
 FractionalConductanceEvaluator::FractionalConductanceEvaluator(const FractionalConductanceEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     pdd_key_(other.pdd_key_),
-    pd_key_(other.pd_key_),
+    //pd_key_(other.pd_key_),
     vpd_key_(other.vpd_key_),
     delta_ex_key_(other.delta_ex_key_),
     delta_max_key_(other.delta_max_key_),
@@ -63,14 +60,14 @@ void FractionalConductanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S
         const Teuchos::Ptr<CompositeVector>& result) {
 
   Epetra_MultiVector& res = *result->ViewComponent("cell",false);
-  //  const Epetra_MultiVector& pd_depth = *S->GetFieldData(pdd_key_)->ViewComponent("cell",false);
-  const Epetra_MultiVector& depth = *S->GetFieldData(pd_key_)->ViewComponent("cell",false);
+  
+  //const Epetra_MultiVector& depth = *S->GetFieldData(pd_key_)->ViewComponent("cell",false);
   const Epetra_MultiVector& vpd = *S->GetFieldData(vpd_key_)->ViewComponent("cell",false);
   
   const Epetra_MultiVector& delta_max_v = *S->GetFieldData(delta_max_key_)->ViewComponent("cell", false);
   const Epetra_MultiVector& delta_ex_v = *S->GetFieldData(delta_ex_key_)->ViewComponent("cell", false);
   const Epetra_MultiVector& depr_depth_v = *S->GetFieldData(depr_depth_key_)->ViewComponent("cell", false);
-
+  const Epetra_MultiVector& pdd_v = *S->GetFieldData(pdd_key_)->ViewComponent("cell",false);
  
   
   int ncells = res.MyLength();
@@ -80,14 +77,12 @@ void FractionalConductanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S
     double depr_depth = depr_depth_v[0][c];
     double delta_max = delta_max_v[0][c];
     double delta_ex = delta_ex_v[0][c];
-    const double fixed_depth = std::pow(depr_depth,2)*(2*delta_max - 3*delta_ex)/std::pow(delta_max,2) + std::pow(depr_depth,3)*(2*delta_ex - delta_max)/std::pow(delta_max,3);
+    double fixed_depth = std::pow(depr_depth,2)*(2*delta_max - 3*delta_ex)/std::pow(delta_max,2) + std::pow(depr_depth,3)*(2*delta_ex - delta_max)/std::pow(delta_max,3);
     
-    if (depth[0][c] <= depr_depth)
+    if (pdd_v[0][c] <= 0.0)
       res[0][c] = 0;
     else{
-      //      double pd = std::pow(depth[0][c],2)*(2*delta_max_ - 3*delta_ex_)/std::pow(delta_max_,2) + std::pow(depth[0][c],3)*(2*delta_ex_ - delta_max_)/std::pow(delta_max_,3);
-      // res[0][c] = (pd - depr) / depth[0][c];
-      res[0][c] = (vpd[0][c] - fixed_depth) / depth[0][c];
+      res[0][c] = (vpd[0][c] - fixed_depth) / (pdd_v[0][c]);
     }
   }
 }

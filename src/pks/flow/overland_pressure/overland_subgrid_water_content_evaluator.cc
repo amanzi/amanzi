@@ -110,7 +110,7 @@ OverlandSubgridWaterContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& 
 	res[0][c] = cv[0][c] *(pd - delta_ex);  
     }
   } else if (rollover_ > 0.) {
-    std::cout<<"Debuggin....ROLLOVER_ in the subgrid water content evaluator: \n"; abort();
+    std::cout<<"Debugging....ROLLOVER_ in the subgrid water content evaluator: \n"; abort();
     for (int c=0; c!=ncells; ++c) {
       double dp = pres[0][c] - p_atm;
       double dp_eff = dp < 0. ? 0. :
@@ -168,7 +168,8 @@ OverlandSubgridWaterContentEvaluator::EvaluateFieldPartialDerivative_(const Teuc
   
   if (bar_) {
     for (int c=0; c!=ncells; ++c) {
-      double pd = (pres[0][c] - p_atm)/ (gz * M_);
+      double pd = pres[0][c] < p_atm ? 1.0e-5 : (pres[0][c] - p_atm)/ (gz * M_);
+      //      double pd = (pres[0][c] - p_atm)/ (gz * M_);
       double delta_max = max_pd_v[0][c]*1000./M_;
       double delta_ex = ex_vol_v[0][c]*1000. / M_;
       if (pd <=delta_max){
@@ -189,7 +190,7 @@ OverlandSubgridWaterContentEvaluator::EvaluateFieldPartialDerivative_(const Teuc
   } else {
     
      for (int c=0; c!=ncells; ++c) {
-       double pd = pres[0][c] < p_atm ? 0.0 : (pres[0][c] - p_atm)/ (gz * M_);
+       double pd = pres[0][c] < p_atm ? 1.0e-5 : (pres[0][c] - p_atm)/ (gz * M_);
        double delta_max =  max_pd_v[0][c]*1000./M_;
        double delta_ex = ex_vol_v[0][c]*1000. / M_;
       if (0 <= pd && pd <=delta_max){
