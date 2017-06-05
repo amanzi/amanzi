@@ -45,9 +45,9 @@ The input spec for a diffusion operator consists of:
 
 * `"discretization primary`" ``[string]`` Currently supported options include:
 
- * `"fv: default`" the standard two-point flux finite volume discretization
- * `"nlfv: default`" the nonlinear finite volume method of ???
- * MFD methods, including:
+ - `"fv: default`" the standard two-point flux finite volume discretization
+ - `"nlfv: default`" the nonlinear finite volume method of ???
+ - MFD methods, including:
 
   * `"mfd: default`"
   * `"mfd: monotone for hex`"
