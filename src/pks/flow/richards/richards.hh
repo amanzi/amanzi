@@ -62,26 +62,24 @@ Discretization control:
 
 Time integration and timestep control:
 
-* `"initial time step`" ``[double]`` **1.** Max initial time step size ``[s]``.
+* `"initial time step`" ``[double]`` **1.** Max initial time step size ``[s]``
 
-* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_.
+* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_.  Note
+  that this is only provided if this Richards PK is not strongly coupled to
+  other PKs.
 
-  Note that this is only provided if this Richards PK is not strongly coupled to other PKs.
-
-* `"linear solver`" ``[linear-solver-spec]`` is a LinearSolver_ spec.
-  Note that this is only used if this PK is not strongly coupled to other PKs.
+* `"linear solver`" ``[linear-solver-spec]`` is a LinearSolver_ spec.  Note
+  that this is only used if this PK is not strongly coupled to other PKs.
 
 * `"preconditioner`" ``[preconditioner-spec]`` is a Preconditioner_ spec.
   Note that this is only used if this PK is not strongly coupled to other PKs.
-  
-* `"initial condition`" ``[initial-condition-spec]``  See InitialConditions_.
 
+* `"initial condition`" ``[initial-condition-spec]`` See InitialConditions_.
   Additionally, the following parameter is supported:
 
- - `"initialize faces from cell`" ``[bool]`` **false**
-
-   Indicates that the primary variable field has both CELL and FACE objects,
-   and the FACE values are calculated as the average of the neighboring cells.
+  - `"initialize faces from cell`" ``[bool]`` **false** Indicates that the
+    primary variable field has both CELL and FACE objects, and the FACE values
+    are calculated as the average of the neighboring cells.
 
 Error control:
 
@@ -99,12 +97,14 @@ Error control:
 
 Boundary conditions:
 
-* `"boundary conditions`" ``[subsurface-flow-bc-spec]`` **defaults to Neuman, 0 normal flux**
+* `"boundary conditions`" ``[subsurface-flow-bc-spec]`` **defaults to Neuman, 0 normal flux**  See `Flow-specific Boundary Conditions`_
 
 Physics control:
 
 * `"permeability rescaling`" ``[double]`` **1** Typically 1e7 or order :math:`sqrt(K)` is about right.  This rescales things to stop from multiplying by small numbers (permeability) and then by large number (:math:`\rho / \mu`).
-  
+
+May inherit options from PKPhysicalBDFBase_
+
 */
 
 #ifndef PK_FLOW_RICHARDS_HH_

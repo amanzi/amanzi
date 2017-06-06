@@ -968,26 +968,24 @@ Discretization control:
 
 Time integration and timestep control:
 
-* `"initial time step`" ``[double]`` **1.** Max initial time step size ``[s]``.
+* `"initial time step`" ``[double]`` **1.** Max initial time step size ``[s]``
 
-* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_.
+* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_.  Note
+  that this is only provided if this Richards PK is not strongly coupled to
+  other PKs.
 
-  Note that this is only provided if this Richards PK is not strongly coupled to other PKs.
-
-* `"linear solver`" ``[linear-solver-spec]`` is a LinearSolver_ spec.
-  Note that this is only used if this PK is not strongly coupled to other PKs.
+* `"linear solver`" ``[linear-solver-spec]`` is a LinearSolver_ spec.  Note
+  that this is only used if this PK is not strongly coupled to other PKs.
 
 * `"preconditioner`" ``[preconditioner-spec]`` is a Preconditioner_ spec.
   Note that this is only used if this PK is not strongly coupled to other PKs.
-  
-* `"initial condition`" ``[initial-condition-spec]``  See InitialConditions_.
 
+* `"initial condition`" ``[initial-condition-spec]`` See InitialConditions_.
   Additionally, the following parameter is supported:
 
- - `"initialize faces from cell`" ``[bool]`` **false**
-
-   Indicates that the primary variable field has both CELL and FACE objects,
-   and the FACE values are calculated as the average of the neighboring cells.
+  - `"initialize faces from cell`" ``[bool]`` **false** Indicates that the
+    primary variable field has both CELL and FACE objects, and the FACE values
+    are calculated as the average of the neighboring cells.
 
 Error control:
 
@@ -1005,12 +1003,14 @@ Error control:
 
 Boundary conditions:
 
-* `"boundary conditions`" ``[subsurface-flow-bc-spec]`` **defaults to Neuman, 0 normal flux**
+* `"boundary conditions`" ``[subsurface-flow-bc-spec]`` **defaults to Neuman, 0 normal flux**  See `Flow-specific Boundary Conditions`_
 
 Physics control:
 
 * `"permeability rescaling`" ``[double]`` **1** Typically 1e7 or order :math:`sqrt(K)` is about right.  This rescales things to stop from multiplying by small numbers (permeability) and then by large number (:math:`\rho / \mu`).
-  
+
+May inherit options from PKPhysicalBDFBase_
+
 
 
 
@@ -1022,6 +1022,77 @@ Overland Flow, head primary variable PK
 
 Overland Flow, pressure primary variable, PK
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ Overland flow using the diffusion wave equation.
+
+Solves the diffusion wave equation for overland flow with pressure as a primary variable:
+
+.. math::
+  \frac{\partial \Theta}{\partial t} - \nabla n_l k \nabla h(p) = Q_w
+
+
+Options:
+
+Variable naming:
+
+* `"domain`" ``[string]`` **"surface"**  Defaults to the extracted surface mesh.
+
+* `"primary variable`" ``[string]`` The primary variable associated with this PK, typically `"DOMAIN-pressure`"
+
+
+Other variable names, typically not set as the default is basically always good:
+
+* `"conserved quantity suffix`" ``[string]`` **"water_content"**  If set, changes the conserved quantity key.
+
+* `"conserved quantity key`" ``[string]`` **"DOMAIN-CONSERVED_QUANTITY_SUFFIX"** Typically not set, default is good. ``[mol]``
+
+Discretization control:
+
+* `"diffusion`" ``[list]`` An OperatorDiffusion_ spec describing the (forward) diffusion operator
+
+* `"diffusion preconditioner`" ``[list]`` An OperatorDiffusion_ spec describing the diffusive parts of the preconditioner.
+
+Time integration and timestep control:
+
+* `"initial time step`" ``[double]`` **1.** Max initial time step size ``[s]``.
+
+* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_ spec.
+  Note that this is only used if this PK is not strongly coupled to other PKs.
+
+* `"linear solver`" ``[linear-solver-spec]`` is a LinearSolver_ spec.  Note
+  that this is only used if this PK is not strongly coupled to other PKs.
+
+* `"preconditioner`" ``[preconditioner-spec]`` is a Preconditioner_ spec.
+  Note that this is only used if this PK is not strongly coupled to other PKs.
+
+* `"initial condition`" ``[initial-condition-spec]`` See InitialConditions_.
+  Additionally, the following parameter is supported:
+
+  - `"initialize faces from cell`" ``[bool]`` **false** Indicates that the
+    primary variable field has both CELL and FACE objects, and the FACE values
+    are calculated as the average of the neighboring cells.
+
+Error control:
+
+* `"absolute error tolerance`" [double] **DERIVED** Defaults to 1 cm of water.  A small, but significant, amount of water.
+
+* `"relative error tolerance`" [double] **1** Take the error relative to the amount of water present in that cell.
+
+* `"flux tolerance`" [double] **1** Multiplies the error in flux (on a face)
+  relative to the min of water in the neighboring cells.  Typically only
+  changed if infiltration is very small and the boundary condition is not
+  converging, at which point it can be decreased by an order of magnitude at a
+  time until the boundary condition is satisfied.
+
+Boundary conditions:
+
+* `"boundary conditions`" ``[surface-flow-bc-spec]`` **defaults to Neuman, 0 normal flux**
+
+
+May inherit options from PKPhysicalBDFBase_.
+
+
+
 
 
 Snow Distribution PK
@@ -1101,13 +1172,85 @@ Physical MPCs
 Coupled Water MPC
 --------------------
 
+ MPCCoupledWater: coupler which integrates surface and subsurface flow.
+
+Couples Richards equation to surface water through continuity of both pressure and fluxes.
+
+Currently requires that the subsurface discretization is a face-based
+discretization, i.e. one of the MFD methods.  Then the surface equations are
+directly added into the subsurface discrete equations.
+
+* `"PKs order`" ``[Array(string)]`` Supplies the names of the coupled PKs.
+  The order must be {subsurface_flow_pk, surface_flow_pk} (subsurface first).
+
+* `"linear solver`" ``[linear-solver-spec]`` A LinearSolver_ spec.  Only used
+  if this PK is not itself coupled by other strong couplers.
+
+* `"preconditioner`" ``[preconditioner-spec]`` A Preconditioner_ spec.  Only used
+  if this PK is not itself coupled by other strong couplers.
+
+* `"water delegate`" ``[list]`` 
+
+
+
+ Globalization hacks to deal with nonlinearity around the appearance/disappearance of surface water.
+
+ The water delegate works to eliminate discontinuities/strong nonlinearities
+ when surface cells shift from dry to wet (i.e. the surface pressure goes
+ from < atmospheric pressure to > atmospheric pressure.
+
+ These methods work to alter the predictor around this nonlinearity.
+
+ - `"modify predictor with heuristic`" ``[bool]`` **false** This simply
+   limits the prediction to backtrack to just above atmospheric on both the
+   first and second timesteps that take us over atmospheric.
+
+ - `"modify predictor damp and cap the water spurt`" ``[bool]`` **false** The
+   second both limits (caps) and damps all surface cells to ensure that all
+   nearby cells are also not overshooting.  This is the preferred method.
+    
+ These methods work to alter the preconditioned correction for the same
+ reasons described above.
+
+ - `"global water face limiter`" ``[default]`` **INF** This is simply a limit
+   to the maximum allowed size of the correction (in [Pa]) on all faces.  Any
+   correction larger than this is set to this.
+
+ - `"cap the water spurt`" ``[bool]`` **false** If a correction takes the
+   pressure on a surface cell from below atmospheric (dry) to above (wet),
+   the correction is set to a value which results in the new iterate to being
+   CAP_SIZE over atmospheric.
+
+ - `"damp the water spurt`" ``[bool]`` **false** A damping factor (less than
+   one) is calculated to multiply the correction such that the largest
+   correction takes a cell to just above atmospheric.  All faces (globally)
+   are affected.
+  
+ - `"damp and cap the water spurt`" ``[bool]`` **false** None of the above
+   should really be used.  Capping, when the cap is particularly severe,
+   results in faces whose values are very out of equilibrium with their
+   neighboring cells which are not capped.  Damping results in a tiny
+   timestep in which, globally, at MOST one face can go from wet to dry.
+   This looks to do a combination, in which all things are damped, but faces
+   that are initially expected to go from dry to wet are pre-scaled to ensure
+   that, when damped, they are also (like the biggest change) allowed to go
+   from dry to wet (so that multiple cells can wet in the same step).  This
+   is the preferred method.
+
+ In these methods, the following parameters are useful:
+
+ - `"cap over atmospheric`" ``[double]`` **100 Pa** This sets the max size over
+   atmospheric to which things are capped or damped.
+  
+ 
+
+
 
 Subsurface MPC
 --------------------
 
 Permafrost MPC
 --------------------
-
 
 State
 ##############
@@ -1128,6 +1271,7 @@ example:
       ...
     </ParameterList>
   </ParameterList>
+
  
 
 Field Evaluators
@@ -1334,14 +1478,18 @@ Example:
 
 
 
+
 Generic Evaluators
 ---------------------------------
 
 Several generic evaluators are provided.
 
+AdditiveEvaluator
+^^^^^^^^^^^^^^^^^^^^^^
 
 
-
+MultiplicativeEvaluator
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 
@@ -1349,16 +1497,17 @@ Several generic evaluators are provided.
 InitialConditions
 =================
 
-Initial condition specs are used in two places -- in the PK_ spec
-which describes the initial condition of primary variables, and in the
-initial conditions sublist of state, in which the value of atomic
-constants are provided.  In Amanzi, this list is also used for initial
-conditions of primary variables are specified here, not within the PK
-list (hence the name of this sublist).  In ATS, this sublist is pretty
-much only used for constant scalars and constant vectors.
+Initial condition specs are used in two places:
 
-This list needs to be renamed -- it has nothing to do with inital conditions anymore.
+* within the PK_ spec which describes the initial condition of primary variables (true
+  initial conditions), and
 
+* in the `"initial conditions`" sublist of state, in which the value
+  of atomic constants are provided (not really initial conditions and
+  should be renamed).  These atomic values are not controlled by
+  evaluators, and are not included in the DaG.  Likely these should be
+  removed entirely.
+  
 Initialization of constant scalars
 ------------------------------------
 
@@ -1484,6 +1633,248 @@ example:
 
     </ParameterList>
   </ParameterList>
+
+
+
+BoundaryConditions
+===================
+
+Flow-specific Boundary Conditions
+----------------------------------
+
+
+
+Flow boundary conditions must follow the general format shown in
+BoundaryConditions_.  Specific conditions implemented include:
+
+Dirichlet (pressure) boundary conditions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Used for both surface and subsurface flows, this provides pressure data on
+boundaries (in [Pa]).
+
+Example:
+
+.. code-block:: xml
+
+ <ParameterList name="boundary conditions">
+   <ParameterList name="pressure">
+     <ParameterList name="BC west">
+       <Parameter name="regions" type="Array(string)" value="{west}"/>
+       <ParameterList name="boundary pressure">
+         <ParameterList name="function-constant">
+           <Parameter name="value" type="double" value="101325.0"/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+ </ParameterList>
+
+
+Neumann (mass flux) boundary conditions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Used for both surface and subsurface flows, this provides mass flux data (in [mol m^-2 s^-1], in the outward normal direction) on boundaries.
+
+Example:
+
+.. code-block:: xml
+
+ <ParameterList name="boundary conditions">
+   <ParameterList name="mass flux">
+     <ParameterList name="BC west">
+       <Parameter name="regions" type="Array(string)" value="{west}"/>
+       <ParameterList name="outward mass flux">
+         <ParameterList name="function-constant">
+           <Parameter name="value" type="double" value="-1.e-3"/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+ </ParameterList>
+
+ 
+Seepage face boundary conditions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A variety of seepage face boundary conditions are permitted for both surface
+and subsurface flow PKs.  Typically seepage conditions are of the form:
+
+  * if :math:`q \cdot \hat{n} < 0`, then :math:`q = 0`
+  * if :math:`p > p0`, then :math:`p = p0`
+
+This ensures that flow is only out of the domain, but that the max pressure on
+the boundary is specified by :math:`p0`.
+
+Example: pressure (for surface or subsurface)
+
+.. code-block:: xml
+
+ <ParameterList name="boundary conditions">
+   <ParameterList name="seepage face">
+     <ParameterList name="BC west">
+       <Parameter name="regions" type="Array(string)" value="{west}"/>
+       <ParameterList name="boundary pressure">
+         <ParameterList name="function-constant">
+           <Parameter name="value" type="double" value="101325."/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+ </ParameterList>
+
+
+Example: head (for surface)
+ 
+.. code-block:: xml
+
+ <ParameterList name="boundary conditions">
+   <ParameterList name="seepage face">
+     <ParameterList name="BC west">
+       <Parameter name="regions" type="Array(string)" value="{west}"/>
+       <ParameterList name="boundary head">
+         <ParameterList name="function-constant">
+           <Parameter name="value" type="double" value="0.0"/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+ </ParameterList>
+
+
+Additionally, an infiltration flux may be prescribed, which describes the max
+flux.  This is for surface faces on which a typical precipitation rate might
+be prescribed, to be enforced until the water table rises to the surface, at
+which point the precip is turned off and water seeps into runoff.  This
+capability is experimental and has not been well tested.
+
+  * if :math:`q \cdot \hat{n} < q0`, then :math:`q = q0`
+  * if :math:`p > p_atm`, then :math:`p = p_atm`
+
+Example: seepage with infiltration
+
+.. code-block:: xml
+
+ <ParameterList name="boundary conditions">
+   <ParameterList name="seepage face with infiltration">
+     <ParameterList name="BC west">
+       <Parameter name="regions" type="Array(string)" value="{west}"/>
+       <ParameterList name="outward mass flux">
+         <ParameterList name="function-constant">
+           <Parameter name="value" type="double" value="-1.e-5"/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+ </ParameterList>
+
+Note it would be straightforward to add both p0 and q0 in teh same condition;
+this has simply not had a use case yet.
+
+
+Dirichlet (head) boundary conditions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Used for surface flows, this provides head data (in [m]) on boundaries.
+
+Example:
+
+.. code-block:: xml
+
+ <ParameterList name="boundary conditions">
+   <ParameterList name="head">
+     <ParameterList name="BC west">
+       <Parameter name="regions" type="Array(string)" value="{west}"/>
+       <ParameterList name="boundary head">
+         <ParameterList name="function-constant">
+           <Parameter name="value" type="double" value="0.01"/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+ </ParameterList>
+
+
+Fixed level boundary conditions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For surface flows only.  This fixes the water table at a constant elevation.
+It is a head condition that adapts to the surface elevation such that
+
+.. math::
+  h = max( h0 - z, 0 )
+
+Example:
+
+.. code-block:: xml
+
+ <ParameterList name="boundary conditions">
+   <ParameterList name="head">
+     <ParameterList name="BC west">
+       <Parameter name="regions" type="Array(string)" value="{west}"/>
+       <ParameterList name="fixed level">
+         <ParameterList name="function-constant">
+           <Parameter name="value" type="double" value="0.0"/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+ </ParameterList>
+
+
+Zero head gradient boundary conditions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Used for surface flows, this is an "outlet" boundary condition which looks to
+enforce the condition that
+
+.. math::
+  \div h \cdot \hat{n} = 0
+
+for head :math:`h` and outward normal :math:`\hat{n}`.  Note that this is an
+"outlet" boundary, in the sense that it should really not be used on a
+boundary in which
+
+.. math::
+  \div z \cdot \hat{n} > 0.
+
+This makes it a useful boundary condition for benchmark and 2D problems, where
+the elevation gradient is clear, but not so useful for DEM-based meshes.
+
+Example:
+
+.. code-block:: xml
+
+ <ParameterList name="boundary conditions">
+   <ParameterList name="zero gradient">
+     <ParameterList name="BC west">
+       <Parameter name="regions" type="Array(string)" value="{west}"/>
+     </ParameterList>
+   </ParameterList>
+ </ParameterList>
+
+
+Critical depth boundary conditions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Also for surface flows, this is an "outlet" boundary condition which looks to
+set an outward flux to take away runoff.  This condition is given by:
+
+.. math::
+  q = \sqrt{g \hat{z}} n_{liq} h^1.5
+
+Example:
+
+.. code-block:: xml
+
+ <ParameterList name="boundary conditions">
+   <ParameterList name="critical depth">
+     <ParameterList name="BC west">
+       <Parameter name="regions" type="Array(string)" value="{west}"/>
+     </ParameterList>
+   </ParameterList>
+ </ParameterList>
+
+ 
+
+
+
 
 
 

@@ -15,7 +15,7 @@
 Solves the diffusion wave equation for overland flow with pressure as a primary variable:
 
 .. math::
-  \frac{\partial \Theta}{\partial t} - \nabla k_r n_l \nabla h(p) = Q_w
+  \frac{\partial \Theta}{\partial t} - \nabla n_l k \nabla h(p) = Q_w
 
 
 Options:
@@ -46,39 +46,37 @@ Time integration and timestep control:
 * `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_ spec.
   Note that this is only used if this PK is not strongly coupled to other PKs.
 
-* `"linear solver`" ``[linear-solver-spec]`` is a LinearSolver_ spec.
-  Note that this is only used if this PK is not strongly coupled to other PKs.
+* `"linear solver`" ``[linear-solver-spec]`` is a LinearSolver_ spec.  Note
+  that this is only used if this PK is not strongly coupled to other PKs.
 
 * `"preconditioner`" ``[preconditioner-spec]`` is a Preconditioner_ spec.
   Note that this is only used if this PK is not strongly coupled to other PKs.
 
-* `"initial condition`" ``[initial-condition-spec]``  See InitialConditions_.
-
+* `"initial condition`" ``[initial-condition-spec]`` See InitialConditions_.
   Additionally, the following parameter is supported:
 
- - `"initialize faces from cell`" ``[bool]`` **false** Indicates that the
-   primary variable field has both CELL and FACE objects, and the FACE values
-   are calculated as the average of the neighboring cells.
+  - `"initialize faces from cell`" ``[bool]`` **false** Indicates that the
+    primary variable field has both CELL and FACE objects, and the FACE values
+    are calculated as the average of the neighboring cells.
 
 Error control:
 
-* `"absolute error tolerance`" [double] **DERIVED** Defaults to a porosity of 0.5 * a saturation of 0.1 * n_l.  A small, but significant, amount of water.
+* `"absolute error tolerance`" [double] **DERIVED** Defaults to 1 cm of water.  A small, but significant, amount of water.
 
 * `"relative error tolerance`" [double] **1** Take the error relative to the amount of water present in that cell.
 
-* `"flux tolerance`" [double] **1**
-
-  Multiplies the error in flux (on a face) relative to the min of water in the
-  neighboring cells.  Typically only changed if infiltration is very small and
-  the boundary condition is not converging, at which point it can be decreased
-  by an order of magnitude at a time until the boundary condition is
-  satisfied.
+* `"flux tolerance`" [double] **1** Multiplies the error in flux (on a face)
+  relative to the min of water in the neighboring cells.  Typically only
+  changed if infiltration is very small and the boundary condition is not
+  converging, at which point it can be decreased by an order of magnitude at a
+  time until the boundary condition is satisfied.
 
 Boundary conditions:
 
 * `"boundary conditions`" ``[surface-flow-bc-spec]`` **defaults to Neuman, 0 normal flux**
 
 
+May inherit options from PKPhysicalBDFBase_.
 
 */
 
