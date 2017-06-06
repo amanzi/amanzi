@@ -83,7 +83,7 @@ ExternalProject_Add(${HDF5_BUILD_TARGET}
                                                  --disable-cxx
                                                  --enable-production
                                                  --enable-largefile
-						 --enable-parallel
+                                                 --enable-parallel
                                                  --with-zlib=${TPL_INSTALL_PREFIX}
                                                  CC=${CMAKE_C_COMPILER_USE}
                                                  CFLAGS=${hdf5_cflags}
