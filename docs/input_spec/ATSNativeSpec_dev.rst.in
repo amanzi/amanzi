@@ -574,6 +574,8 @@ example:
 BoundaryConditions
 ===================
 
+{ bc_factory }
+
 Flow-specific Boundary Conditions
 ----------------------------------
 
