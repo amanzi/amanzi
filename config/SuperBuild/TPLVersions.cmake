@@ -78,6 +78,7 @@
 #                - netcdf 4.4.1.1
 #                - netcdf-fortran 4.4.4
 #                - boost 1.6.3
+#   0.94.2       - update MTSK to version 2.28rc1
 
 include(CMakeParseArguments)
 
@@ -127,7 +128,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 94)
-set (AMANZI_TPLS_VERSION_PATCH 1)
+set (AMANZI_TPLS_VERSION_PATCH 2)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -282,12 +283,12 @@ set(ExodusII_MD5_SUM       cfd240dbc1251b08fb1d0ee2de40a44c)
 # TPL: MSTK
 #
 set(MSTK_VERSION_MAJOR 2)
-set(MSTK_VERSION_MINOR 26)
-set(MSTK_VERSION_PATCH rc2)
+set(MSTK_VERSION_MINOR 28)
+set(MSTK_VERSION_PATCH rc1)
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tgz)
-set(MSTK_MD5_SUM        9063e949962c3ad6e16d1ce118e42bee)
+set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tar.gz)
+set(MSTK_MD5_SUM        b1c8ca7d084ee8b613092db9ea026da4)
 
 #
 # TPL: MOAB

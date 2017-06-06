@@ -1366,25 +1366,7 @@ Mesh::build_columns_() const
     // Check the normal:
     //  1) n dot -z = 0 --> lateral face
     //  2) n dot -z < 0 --> top face
-    if (fabs(dp) < 1.e-6) continue;
-
-    // found a boundary face with a downward facing normal
-    //
-    // Just to make sure we are not making a mistake, lets check that
-    // the centroid of the cell is above the centroid of the face
-    AmanziGeometry::Point ccen(space_dim_),fcen(space_dim_);
-    ccen = cell_centroid(fcells[0]);
-    fcen = face_centroid(i);
-
-    AmanziGeometry::Point cfvec = fcen-ccen;
-    cfvec /= norm(cfvec);
-
-    dp = negzvec*cfvec;
-
-    if (dp < 1.e-6) continue;
-
-    // Now we are quite sure that this is a face at the bottom of the
-    // mesh/domain
+    if (dp < 1.e-10) continue;
 
     // Walk through the cells until we get to the top of the domain
     Entity_ID cur_cell = fcells[0];
@@ -1419,6 +1401,30 @@ Mesh::build_columns_() const
         }
       }
 
+      if (top_face == bot_face) {
+        std::cout << "Build Columns broke:" << std::endl
+                  << "  on column = " << ncolumns << std::endl
+                  << "  cell / face = " << cur_cell << "," << top_face << std::endl
+                  << "  candidates = " << cfaces[cfaces.size()-2] << "," << cfaces[cfaces.size()-1] << std::endl;
+
+        Entity_ID f1 = cfaces[cfaces.size()-2];
+        Entity_ID_List nodes;
+        AmanziGeometry::Point cen;
+        std::cout << "Face " << f1 << " at " << face_centroid(f1) << " with normal " << face_normal(f1, false, cur_cell) << std::endl;
+        face_get_nodes(f1, &nodes);
+        for (int n = 0; n!=nodes.size(); ++n) {
+          node_get_coordinates(nodes[n], &cen);
+          std::cout << "  " << cen << std::endl;
+        }
+
+        Entity_ID f2 = cfaces[cfaces.size()-1];
+        std::cout << "Face " << f2 << " at " << face_centroid(f2) << " with normal " << face_normal(f2, false, cur_cell) << std::endl;
+        face_get_nodes(f2, &nodes);
+        for (int n = 0; n!=nodes.size(); ++n) {
+          node_get_coordinates(nodes[n], &cen);
+          std::cout << "  " << cen << std::endl;
+        }
+      }
       ASSERT(top_face != bot_face);
       ASSERT(top_face != -1);
 
