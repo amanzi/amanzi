@@ -59,11 +59,12 @@ class Electromagnetics : public BCsList {
   // main virtual members
   // -- setup 
   virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
-
   // -- creation of an operator
   virtual void UpdateMatrices();
-
-  // -- matrix modification
+  // -- modification of the operator
+  //    Variable 'primary' indicates that we put 1 on the matrix diagonal.
+  //    Variable 'eliminate' says that we eliminate essential BCs for the 
+  //    trial function, i.e. zeros go in the corresponding matrix columns.
   virtual void ApplyBCs(bool primary, bool eliminate);
 
   // new virtual members

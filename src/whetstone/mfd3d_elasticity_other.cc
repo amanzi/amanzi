@@ -270,7 +270,6 @@ int MFD3D_Elasticity::AdvectionMatrixBernardiRaugel(
   A.PutScalar(0.0);
  
   for (int i = 0; i < nnodes; ++i) {
-std::cout << w[i] << " " << mesh_->cell_volume(c) << std::endl;
     int i1 = 2 * i;
     for (int j = 0; j < nnodes; ++j) {
       int j1 = 2 * j;

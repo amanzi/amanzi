@@ -93,7 +93,7 @@
 
         <Parameter name="time integration method" type="string" value="BDF1"/>
         <ParameterList name="BDF1">
-          <Parameter name="max preconditioner lag iterations" type="int" value="10"/>
+          <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
 
           <Parameter name="timestep controller type" type="string" value="standard"/>
           <ParameterList name="timestep controller standard parameters">
@@ -141,7 +141,7 @@
             </ParameterList>
           </ParameterList>
           <ParameterList name="BC 1">
-            <Parameter name="regions" type="Array(string)" value="{Bottom side}"/>
+            <Parameter name="regions" type="Array(string)" value="{Bottom side, Left side, Right side}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="no slip">
               <Parameter name="number of dofs" type="int" value="2"/>
@@ -173,10 +173,10 @@
         <Parameter name="value" type="double" value="998.0"/>
       </ParameterList>
       <ParameterList name="fluid_viscosity">
-        <Parameter name="value" type="double" value="1.0"/>
+        <Parameter name="value" type="double" value="0.5"/>
       </ParameterList>
       <ParameterList name="atmospheric_pressure">
-        <Parameter name="value" type="double" value="10.0"/>
+        <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
 
       <ParameterList name="fluid_velocity">
@@ -189,12 +189,12 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0"/>
+                  <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0"/>
+                  <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -236,8 +236,8 @@
       <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.0"/>
-        <Parameter name="smoother sweeps" type="int" value="3"/>
-        <Parameter name="cycle applications" type="int" value="5"/>
+        <Parameter name="smoother sweeps" type="int" value="2"/>
+        <Parameter name="cycle applications" type="int" value="3"/>
         <Parameter name="strong threshold" type="double" value="0.5"/>
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>

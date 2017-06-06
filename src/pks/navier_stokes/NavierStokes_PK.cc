@@ -255,10 +255,12 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   for (auto it = schema.begin(); it != schema.end(); ++it) {
     auto bcx = Teuchos::rcp(new Operators::BCs(mesh_, it->kind, it->type));
     op_matrix_elas_->AddBCs(bcx, bcx);
+    op_matrix_conv_->AddBCs(bcx, bcx);
     op_matrix_acc_->AddBCs(bcx, bcx);
     op_matrix_div_->AddBCs(bcx, bcx);
 
     op_preconditioner_elas_->AddBCs(bcx, bcx);
+    op_preconditioner_conv_->AddBCs(bcx, bcx);
     op_preconditioner_acc_->AddBCs(bcx, bcx);
 
     op_bcs_.push_back(bcx);

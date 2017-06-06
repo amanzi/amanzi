@@ -84,18 +84,21 @@ void AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
   std::string name = plist.get<std::string>("discretization", "none");
   if (name == "BernardiRaugel") {
     space_col_ = BERNARDI_RAUGEL;
-    space_row_ = P0;
   } else if (name == "DG order 0") {
     space_col_ = DG0;
-    space_row_ = DG0;
   } else if (name == "DG order 1") {
     space_col_ = DG1;
-    space_row_ = DG1;
   } else {
     Errors::Message msg;
     msg << "Discretization method is either missing or invalid.";
     Exceptions::amanzi_throw(msg);
   }
+  if (local_schema_row_ == local_schema_col_) { 
+    space_row_ = space_col_;
+  } else {
+    space_row_ = P0;
+  }
+
 
   // -- fluxes
   flux_ = plist.get<std::string>("flux formula", "remap");

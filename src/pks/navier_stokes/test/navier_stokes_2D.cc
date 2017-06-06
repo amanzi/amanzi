@@ -47,7 +47,7 @@ TEST(NAVIER_STOKES_2D) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 16, 20, gm);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 20, 20, gm);
 
   // create a simple state and populate it
   Teuchos::ParameterList state_list = plist->sublist("state");
