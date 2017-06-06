@@ -152,7 +152,7 @@ class Operator {
   void Init();
 
   // main members
-o  // -- virtual methods potentially altered by the schema
+  // -- virtual methods potentially altered by the schema
   virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
   virtual int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;
