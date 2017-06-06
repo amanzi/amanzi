@@ -1,4 +1,4 @@
-// OperatorDiffusionMFDwithGravity prescribes an elliptic operator with gravity using MFD family of discretizations.
+// DiffusionMFDwithGravity prescribes an elliptic operator with gravity using MFD family of discretizations.
 
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 

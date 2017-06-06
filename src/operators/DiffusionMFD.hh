@@ -1,4 +1,5 @@
-// OperatorDiffusionMFD: elliptic operators using the MFD family of discretizations.
+// DiffusionMFD: elliptic operators using the MFD family of discretizations.
+
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
@@ -62,9 +63,9 @@ Additional options available only for the MFD family of discretizations include:
   equation in MFD by assembling and inverting the face-only system.  This is
   not currently used by any Amanzi PKs.
 
-* `"diffusion tensor`" [string] allows us to solve problems with symmetric and non-symmetric 
-  (but positive definite) tensors. Available options are *symmetric* (default) and *nonsymmetric*.
-
+* `"diffusion tensor`" [string] allows us to solve problems with symmetric and 
+  non-symmetric (but positive definite) tensors. Available options are *symmetric* 
+  (default) and *nonsymmetric*.
 */
 
 namespace Amanzi {

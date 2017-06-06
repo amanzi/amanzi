@@ -1,4 +1,4 @@
-// OperatorDiffusionFactory is used to construct objects which implement the interface for an OperatorDiffusion.
+// DiffusionFactory constructs objects which implement the interface for a Diffusion.
 
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -7,6 +7,9 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  This documentation is for the entire Diffusion concept, which is maintained 
+  here because the input spec for Diffusion objects is defined/used here.
 */
 
 #ifndef AMANZI_OPERATOR_DIFFUSION_FACTORY_HH_
@@ -20,21 +23,16 @@
 #include "Diffusion.hh"
 #include "DiffusionWithGravity.hh"
 
-/*
-Note that this documentation is for the entire OperatorDiffusion concept,
-which is maintained here because the input spec for OperatorDiffusion objects
-is defined/used here.
-*/
-
-
 /*!
 
-``OperatorDiffusion`` form local ``Op`` s and global ``Operator`` s for elliptic equations:
+``Diffusion`` forms local ``Op`` s and global ``Operator`` s for elliptic equations:
 
 .. math::
   \nabla \cdot k \nabla u
 
-with a variety of discretizations.  Note also, for reasons that are one part historical and potentially not that valid, this also supports and implementation with an advective source, i.e.:
+with a variety of discretizations. Note also, for reasons that are one part historical 
+and potentially not that valid, this also supports and implementation with an advective 
+source, i.e.:
 
 .. math::
   \nabla \cdot k (\nabla u + \hat{z})
@@ -78,10 +76,7 @@ The input spec for a diffusion operator consists of:
 
 * `"constraint equation scaling cutoff"`" [double] specifies the cutoff value for
   applying rescaling strategy described above.
-
 */
-
-
 
 namespace Amanzi {
 namespace Operators {

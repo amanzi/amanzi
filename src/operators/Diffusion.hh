@@ -1,4 +1,4 @@
-// OperatorDiffusion generates local Ops and global Operators for an elliptic operator.
+// Diffusion generates local Ops and global Operators for an elliptic operator.
 
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -28,7 +28,6 @@
 #include "PDE_Helper.hh"
 
 /*!
-
 Example:
 
 .. code-block:: xml
