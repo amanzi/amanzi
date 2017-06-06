@@ -1,0 +1,11 @@
+language: cpp
+
+sudo: false
+
+install: true
+
+script:
+- ./bootstrap.sh --enable-test_suite --enable-reg_tests
+
+compiler:
+- gcc
