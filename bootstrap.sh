@@ -851,12 +851,11 @@ function check_Spack
       cd ${tpl_install_prefix}
       git clone https://github.com/LLNL/spack.git
       
-      if [ ${xsdk} == ${TRUE} ]; then
-	  cd ${tpl_install_prefix}/spack
-	  #git checkout barry/xsdk
-	  #git checkout fdc8f71
-	  git pull
-      fi
+#      if [ ${xsdk} == ${TRUE} ]; then
+#	  cd ${tpl_install_prefix}/spack
+#	  git checkout barry/xsdk
+#	  git pull
+#     fi
       cd ${pwd_save}
     fi
 
