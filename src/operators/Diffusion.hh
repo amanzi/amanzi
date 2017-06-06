@@ -1,6 +1,6 @@
-/*
-  Operators
+// OperatorDiffusion generates local Ops and global Operators for an elliptic operator.
 
+/*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -8,8 +8,6 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
           Ethan Coon (ecoon@lanl.gov)
-
-  Pure interface for diffusion operators.
 */
 
 #ifndef AMANZI_OPERATOR_DIFFUSION_HH_
@@ -28,6 +26,34 @@
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Helper.hh"
+
+/*!
+
+Example:
+
+.. code-block:: xml
+
+    <ParameterList name="OPERATOR_NAME">
+      <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+      <Parameter name="gravity" type="bool" value="true"/>
+      <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
+      <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
+      <Parameter name="Newton correction" type="string" value="true Jacobian"/>
+
+      <ParameterList name="consistent faces">
+        <ParameterList name="linear solver">
+          ...
+        </ParameterList>
+        <ParameterList name="preconditioner">
+          ...
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+*/
+
 
 namespace Amanzi {
 namespace Operators {

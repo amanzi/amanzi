@@ -19,6 +19,18 @@
 
 #include "Advection.hh"
 
+/*!
+``AdvectionUpwind`` assembles the discrete form of:
+
+.. math::
+  \nabla \cdot (q C)
+
+which advects quantity :math:`C` with fluxes :math:`q`.
+
+This is a simple, first-order donor-upwind scheme, and is recommended
+for use in diffusion-dominated advection-diffusion equations.
+*/
+
 namespace Amanzi {
 namespace Operators {
 
