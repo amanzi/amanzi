@@ -156,6 +156,13 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   S->GetField("upwind_overland_conductivity",name_)->set_io_vis(false);
 
   // -- create the forward operator for the diffusion term
+  // DEPRECATED OPTIONS
+  if (plist_->isParameter("Diffusion") ||
+      plist_->isParameter("Diffusion PC")) {
+    Errors::Message message("Richards PK: DEPRECATION: Discretization lists \"Diffusion\" and \"Diffusion PC\" have been renamed \"diffusion\" and \"diffusion preconditioner\", respectively.");
+    Exceptions::amanzi_throw(message);
+  }
+
   Teuchos::ParameterList& mfd_plist = plist_->sublist("diffusion");
   mfd_plist.set("nonlinear coefficient", coef_location);
   if (!mfd_plist.isParameter("scaled constraint equation"))
