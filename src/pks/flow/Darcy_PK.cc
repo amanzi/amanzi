@@ -22,7 +22,7 @@
 #include "errors.hh"
 #include "exceptions.hh"
 #include "LinearOperatorFactory.hh"
-#include "mfd3d_diffusion.hh"
+#include "MFD3D_Diffusion.hh"
 #include "TimestepControllerFactory.hh"
 #include "Tensor.hh"
 

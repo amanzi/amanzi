@@ -17,7 +17,7 @@
 
 #include "Mesh.hh"
 
-#include "mfd3d_diffusion.hh"
+#include "MFD3D_Diffusion.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {

@@ -17,7 +17,6 @@
 
 #include "GMVMesh.hh"
 #include "Mesh.hh"
-#include "mfd3d.hh"
 #include "OperatorDefs.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"

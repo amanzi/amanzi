@@ -8,12 +8,7 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
 
-#ifndef AMANZI_MFD3D_ELASTICITY_HH_
-#define AMANZI_MFD3D_ELASTICITY_HH_
-
-/*
   The package uses the formula M = Mc + Ms, where matrix Mc is build from a 
   consistency condition (Mc N = R) and matrix Ms is build from a stability 
   condition (Ms N = 0), to generate mass and stiffness matrices for a variety 
@@ -23,15 +18,17 @@
   Notation used below: M (mass), W (inverse of M), A (stiffness).
 */
 
+#ifndef AMANZI_MFD3D_ELASTICITY_HH_
+#define AMANZI_MFD3D_ELASTICITY_HH_
+
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
 #include "Point.hh"
 
 #include "DenseMatrix.hh"
+#include "MFD3D.hh"
 #include "Tensor.hh"
-#include "mfd3d.hh"
-
 
 namespace Amanzi {
 namespace WhetStone {
@@ -41,17 +38,23 @@ class MFD3D_Elasticity : public MFD3D {
   explicit MFD3D_Elasticity(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : MFD3D(mesh) {};
   ~MFD3D_Elasticity() {};
 
-  // Edges DOFs
-  // -- consistency conditions
-  int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
-  int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
+  // main method use edge-based DOFs (part of DeRham complex) 
+  // -- mass matrices
+  virtual int L2consistency(int c, const Tensor& T,
+                            DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
+  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
 
-  int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
-
-  int MassMatrix(int c, const Tensor& T, DenseMatrix& M) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
+  // -- inverse mass matrices
+  virtual int L2consistencyInverse(int c, const Tensor& T,
+                                   DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
   int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
 
-  int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
+  // -- steffness matrix
+  virtual int H1consistency(int c, const Tensor& T,
+                            DenseMatrix& N, DenseMatrix& Mc);
+  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
+
+  // overriding other methods
   int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);
   int StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A);
 

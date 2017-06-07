@@ -9,7 +9,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Miscaleneous discretization methods.
+  Miscaleneous discretization methods for diffusion.
 */
 
 #include <cmath>
@@ -19,9 +19,8 @@
 #include "Point.hh"
 #include "errors.hh"
 
-#include "mfd3d_diffusion.hh"
+#include "MFD3D_Diffusion.hh"
 #include "Tensor.hh"
-
 
 namespace Amanzi {
 namespace WhetStone {

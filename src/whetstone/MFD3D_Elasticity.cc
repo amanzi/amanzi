@@ -20,8 +20,8 @@
 #include "errors.hh"
 
 #include "DenseMatrix.hh"
+#include "MFD3D_Elasticity.hh"
 #include "Tensor.hh"
-#include "mfd3d_elasticity.hh"
 
 namespace Amanzi {
 namespace WhetStone {

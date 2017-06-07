@@ -35,7 +35,7 @@
 
 #include "Epetra_MultiVector.h"
 
-#include "mfd3d_diffusion.hh"
+#include "MFD3D_Diffusion.hh"
 #include "Mesh.hh"
 
 class AnalyticBase {

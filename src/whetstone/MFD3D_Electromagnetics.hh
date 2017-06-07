@@ -8,12 +8,7 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
 
-#ifndef AMANZI_MFD3D_ELECTROMAGNETICS_HH_
-#define AMANZI_MFD3D_ELECTROMAGNETICS_HH_
-
-/*
   The package uses the formula M = Mc + Ms, where matrix Mc is build from a 
   consistency condition (Mc N = R) and matrix Ms is build from a stability 
   condition (Ms N = 0), to generate mass and stiffness matrices for a variety 
@@ -23,15 +18,18 @@
   Notation used below: M (mass), W (inverse of M), A (stiffness).
 */
 
+#ifndef AMANZI_MFD3D_ELECTROMAGNETICS_HH_
+#define AMANZI_MFD3D_ELECTROMAGNETICS_HH_
+
+
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
 #include "Point.hh"
 
 #include "DenseMatrix.hh"
+#include "MFD3D.hh"
 #include "Tensor.hh"
-#include "mfd3d.hh"
-
 
 namespace Amanzi {
 namespace WhetStone {
@@ -41,19 +39,25 @@ class MFD3D_Electromagnetics : public MFD3D {
   explicit MFD3D_Electromagnetics(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : MFD3D(mesh) {};
   ~MFD3D_Electromagnetics() {};
 
-  // required implementation of two consistency conditions
-  // the inner product in the spave of edge-based functions is weighted by inverse(T)
-  int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
-  int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
+  // main required methods (edge-based DOFs)
+  // -- mass matrix
+  //    the inner product is weighted by inverse(T)
+  virtual int L2consistency(int c, const Tensor& T,
+                            DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
+  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M);
 
-  // consistency condition for stiffness matrix.
-  // the inner product in the space of edge-based functions is weigthed by T.
-  int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+  // -- inverse mass matrix
+  //    the inner product is weigthed by T.
+  virtual int L2consistencyInverse(int c, const Tensor& T,
+                                   DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
+  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W);
 
-  int MassMatrix(int c, const Tensor& T, DenseMatrix& M);
-  int MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& W);
+  // -- stiffness matrix
+  virtual int H1consistency(int c, const Tensor& T,
+                            DenseMatrix& N, DenseMatrix& Ac);
+  virtual int MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& W);
 
-  int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W);
+  // overriding other methods
   int MassMatrixInverseOptimized(int c, const Tensor& T, DenseMatrix& W);
 
   int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);

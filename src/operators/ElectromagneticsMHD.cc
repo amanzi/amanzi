@@ -16,7 +16,7 @@
 
 // Amanzi
 #include "errors.hh"
-#include "mfd3d_electromagnetics.hh"
+#include "MFD3D_Electromagnetics.hh"
 
 // Amanzi::Operators
 #include "ElectromagneticsMHD.hh"

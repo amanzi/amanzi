@@ -14,8 +14,8 @@
 #ifndef AMANZI_OPERATOR_ANALYTIC_MHD_BASE_HH_
 #define AMANZI_OPERATOR_ANALYTIC_MHD_BASE_HH_
 
-#include "mfd3d_electromagnetics.hh"
 #include "Mesh.hh"
+#include "Tensor.hh"
 
 class AnalyticElectromagneticsBase {
  public:

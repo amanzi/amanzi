@@ -8,12 +8,7 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
 
-#ifndef AMANZI_WHETSTONE_MFD3D_DIFFUSION_HH_
-#define AMANZI_WHETSTONE_MFD3D_DIFFUSION_HH_
-
-/*
   The package uses the formula M = Mc + Ms, where matrix Mc is build from a 
   consistency condition (Mc N = R) and matrix Ms is build from a stability 
   condition (Ms N = 0), to generate mass and stiffness matrices for a variety 
@@ -23,6 +18,9 @@
   Notation used below: M (mass), W (inverse of M), A (stiffness).
 */
 
+#ifndef AMANZI_WHETSTONE_MFD3D_DIFFUSION_HH_
+#define AMANZI_WHETSTONE_MFD3D_DIFFUSION_HH_
+
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
@@ -30,8 +28,7 @@
 
 #include "DenseMatrix.hh"
 #include "Tensor.hh"
-#include "mfd3d.hh"
-
+#include "MFD3D.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -41,33 +38,41 @@ class MFD3D_Diffusion : public MFD3D {
   explicit MFD3D_Diffusion(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : MFD3D(mesh) {};
   ~MFD3D_Diffusion() {};
 
-  // basic mimetic discretization methods use permeability tensor K
-  // the inner product in the space of face-based functions is weighted by
-  // inverse of K. 
-  int L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
-  int L2consistencyInverse(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
+  // main methods (part of DeRham complex)
+  // -- mass matrices
+  //    inner products are weighted by inverse of tensor K
+  virtual int L2consistency(int c, const Tensor& K,
+                            DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
+  virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
 
-  int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
-  int H1consistencyEdge(int cell, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+  // -- inverse mass matrices
+  virtual int L2consistencyInverse(int c, const Tensor& K,
+                                   DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
+  virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W);
 
-  int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
-  int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W);
-  int MassMatrixInverseOptimized(int c, const Tensor& K, DenseMatrix& W);
-  int MassMatrixInverseMMatrixHex(int c, const Tensor& K, DenseMatrix& W);
-  int MassMatrixInverseMMatrix(int c, const Tensor& K, DenseMatrix& W);
+  // -- stiffness matrices
+  virtual int H1consistency(int c, const Tensor& K,
+                            DenseMatrix& N, DenseMatrix& Ac);
+  virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A);
 
-  int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A);
-  int StiffnessMatrixOptimized(int c, const Tensor& K, DenseMatrix& A);
-  int StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix& A);
-
-  int StiffnessMatrixEdge(int c, const Tensor& K, DenseMatrix& A);
-
-  // natural scaling of fluxes which was found to be the right way.
+  // other mimetic methods
+  // -- natural scaling of fluxes found to be the right approach
   int L2consistencyInverseScaled(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);
   int MassMatrixInverseScaled(int c, const Tensor& K, DenseMatrix& W); 
   int MassMatrixInverseOptimizedScaled(int c, const Tensor& K, DenseMatrix& W);
 
-  // experimental methods
+  // -- optimized stability
+  int MassMatrixInverseOptimized(int c, const Tensor& K, DenseMatrix& W);
+  int MassMatrixInverseMMatrixHex(int c, const Tensor& K, DenseMatrix& W);
+  int MassMatrixInverseMMatrix(int c, const Tensor& K, DenseMatrix& W);
+
+  int StiffnessMatrixOptimized(int c, const Tensor& K, DenseMatrix& A);
+  int StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix& A);
+
+  // -- edge-based degrees of freedom
+  int H1consistencyEdge(int cell, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+  int StiffnessMatrixEdge(int c, const Tensor& K, DenseMatrix& A);
+
   // -- tensor is product k K
   int L2consistencyInverseDivKScaled(int c, const Tensor& K,
                                      double kmean, const AmanziGeometry::Point& kgrad,
@@ -75,7 +80,7 @@ class MFD3D_Diffusion : public MFD3D {
   int MassMatrixInverseDivKScaled(int c, const Tensor& K,
                                   double kmean, const AmanziGeometry::Point& kgrad, DenseMatrix& W);
 
-  // -- non-symmetric tensor K
+  // -- non-symmetric tensor K (consistency is not changed)
   int MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix& M);
   int MassMatrixInverseNonSymmetric(int c, const Tensor& K, DenseMatrix& W);
 
@@ -84,7 +89,7 @@ class MFD3D_Diffusion : public MFD3D {
   int L2consistencyInverseSurface(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);
   int MassMatrixInverseSurface(int c, const Tensor& K, DenseMatrix& W);
 
-  // primary related discetization methods
+  // other related discetization methods
   int MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W);
   int MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& W);
   int MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatrix& W);

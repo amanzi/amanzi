@@ -9,9 +9,6 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "mfd3d_diffusion.hh"
-#include "Tensor.hh"
-
 namespace Amanzi{
 
 class HeatConduction {

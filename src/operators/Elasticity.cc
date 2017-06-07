@@ -17,7 +17,7 @@
 // Amanzi
 #include "errors.hh"
 #include "MatrixFE.hh"
-#include "mfd3d_elasticity.hh"
+#include "MFD3D_Elasticity.hh"
 #include "PreconditionerFactory.hh"
 #include "WhetStoneDefs.hh"
 

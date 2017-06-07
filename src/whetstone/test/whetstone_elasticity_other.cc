@@ -21,7 +21,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
-#include "mfd3d_elasticity.hh"
+#include "MFD3D_Elasticity.hh"
 #include "Tensor.hh"
 
 /* ******************************************************************

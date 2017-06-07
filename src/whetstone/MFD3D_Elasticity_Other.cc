@@ -17,7 +17,7 @@
 #include "Point.hh"
 #include "errors.hh"
 
-#include "mfd3d_elasticity.hh"
+#include "MFD3D_Elasticity.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {

@@ -16,7 +16,6 @@
 
 #include "GMVMesh.hh"
 #include "Mesh.hh"
-#include "mfd3d.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "State.hh"

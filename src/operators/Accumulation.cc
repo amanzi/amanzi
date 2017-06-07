@@ -12,7 +12,7 @@
   This operator is a collection of local "DIAGONAL" Ops.
 */
 
-#include "mfd3d_diffusion.hh"
+#include "MFD3D_Diffusion.hh"
 
 #include "Accumulation.hh"
 #include "Operator_Cell.hh"

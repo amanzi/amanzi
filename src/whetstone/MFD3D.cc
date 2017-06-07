@@ -18,9 +18,8 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
-#include "mfd3d.hh"
+#include "MFD3D.hh"
 #include "Tensor.hh"
-
 
 namespace Amanzi {
 namespace WhetStone {

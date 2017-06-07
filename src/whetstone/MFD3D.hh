@@ -45,19 +45,20 @@ class MFD3D {
   explicit MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~MFD3D() {};
 
+  // main members
+  // -- mass matrices
   virtual int L2consistency(int cell, const Tensor& T,
                             DenseMatrix& N, DenseMatrix& Mc, bool symmetry) = 0;
-
-  virtual int L2consistencyInverse(int cell, const Tensor& T,
-                                   DenseMatrix& R, DenseMatrix& Wc, bool symmetry) = 0;
-
-  virtual int H1consistency(int cell, const Tensor& T,
-                            DenseMatrix& N, DenseMatrix& Mc) = 0;
-
   virtual int MassMatrix(int cell, const Tensor& T, DenseMatrix& M) = 0; 
 
+  // -- inverse mass matrices
+  virtual int L2consistencyInverse(int cell, const Tensor& T,
+                                   DenseMatrix& R, DenseMatrix& Wc, bool symmetry) = 0;
   virtual int MassMatrixInverse(int cell, const Tensor& T, DenseMatrix& W) = 0; 
 
+  // -- stiffness matrices
+  virtual int H1consistency(int cell, const Tensor& T,
+                            DenseMatrix& N, DenseMatrix& Mc) = 0;
   virtual int StiffnessMatrix(int cell, const Tensor& T, DenseMatrix& A) = 0; 
 
   // experimental methods (for stability region analysis; unit test)

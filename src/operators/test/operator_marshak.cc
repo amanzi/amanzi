@@ -26,7 +26,6 @@
 #include "LinearOperatorGMRES.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
-#include "mfd3d_diffusion.hh"
 #include "Tensor.hh"
 
 // Amanzi::Operators

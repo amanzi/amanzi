@@ -19,7 +19,7 @@
 #include "LinearOperator.hh"
 #include "LinearOperatorFactory.hh"
 #include "MatrixFE.hh"
-#include "mfd3d_diffusion.hh"
+#include "MFD3D_Diffusion.hh"
 #include "PreconditionerFactory.hh"
 #include "SuperMap.hh"
 #include "WhetStoneDefs.hh"

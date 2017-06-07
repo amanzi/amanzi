@@ -25,7 +25,6 @@
 #include "GMVMesh.hh"
 #include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
-#include "mfd3d_diffusion.hh"
 #include "Tensor.hh"
 
 // Amanzi::Operators

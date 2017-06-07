@@ -21,8 +21,8 @@
 
 #include "DenseMatrix.hh"
 #include "Tensor.hh"
-#include "mfd3d_electromagnetics.hh"
-#include "mfd3d_diffusion.hh"
+#include "MFD3D_Electromagnetics.hh"
+#include "MFD3D_Diffusion.hh"
 
 namespace Amanzi {
 namespace WhetStone {

@@ -37,19 +37,19 @@ include_directories(${Boost_INCLUDE_DIRS})
 # Library: whetstone
 #
 add_amanzi_library(whetstone
-                   SOURCE mfd3d.cc
-                          mfd3d_diffusion.cc mfd3d_diffusion_surface.cc mfd3d_diffusion_other.cc 
-                          mfd3d_elasticity.cc mfd3d_elasticity_other.cc
-                          mfd3d_electromagnetics.cc mfd3d_electromagnetics_surface.cc
+                   SOURCE MFD3D.cc
+                          MFD3D_Diffusion.cc MFD3D_Diffusion_Surface.cc MFD3D_Diffusion_Other.cc 
+                          MFD3D_Elasticity.cc MFD3D_Elasticity_Other.cc
+                          MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
                           dg.cc nlfv.cc Tensor.cc DenseMatrix.cc
                    HEADERS DenseMatrix.hh
                            DenseVector.hh
                            dg.hh
                            lapack.hh
-                           mfd3d.hh
-                           mfd3d_diffusion.hh
-                           mfd3d_elasticity.hh
-                           mfd3d_electromagnetics.hh
+                           MFD3D.hh
+                           MFD3D_Diffusion.hh
+                           MFD3D_Elasticity.hh
+                           MFD3D_Electromagnetics.hh
                            nlfv.hh
                            Tensor.hh
                            WhetStoneDefs.hh

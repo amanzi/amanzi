@@ -27,7 +27,6 @@
 #include "exceptions.hh"
 #include "independent_variable_field_evaluator_fromfunction.hh"
 #include "Mesh.hh"
-#include "mfd3d_diffusion.hh"
 #include "OperatorDefs.hh"
 #include "PK_Utils.hh"
 #include "Point.hh"

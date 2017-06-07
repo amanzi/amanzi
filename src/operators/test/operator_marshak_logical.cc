@@ -29,7 +29,6 @@
 #include "LinearOperatorFactory.hh"
 #include "MeshLogicalFactory.hh"
 #include "MeshLogical.hh"
-#include "mfd3d_diffusion.hh"
 #include "Tensor.hh"
 
 // Amanzi::Operators

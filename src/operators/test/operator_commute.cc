@@ -23,7 +23,6 @@
 
 // Amanzi
 #include "MeshFactory.hh"
-#include "mfd3d_diffusion.hh"
 #include "LinearOperatorFactory.hh"
 #include "Tensor.hh"
 

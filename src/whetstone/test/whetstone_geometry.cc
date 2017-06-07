@@ -19,8 +19,7 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
-#include "mfd3d_diffusion.hh"
-
+#include "MFD3D_Diffusion.hh"
 
 /* ****************************************************************
 * Test of face centroids
