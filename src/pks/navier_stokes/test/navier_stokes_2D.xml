@@ -89,6 +89,7 @@
       <ParameterList name="time integrator">
         <Parameter name="linear solver" type="string" value="none"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <!--Parameter name="preconditioner enhancement" type="string" value="linear operator"/-->
         <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 
         <Parameter name="time integration method" type="string" value="BDF1"/>
@@ -173,7 +174,7 @@
         <Parameter name="value" type="double" value="998.0"/>
       </ParameterList>
       <ParameterList name="fluid_viscosity">
-        <Parameter name="value" type="double" value="0.5"/>
+        <Parameter name="value" type="double" value="0.001"/>
       </ParameterList>
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
@@ -227,6 +228,19 @@
         <Parameter name="error tolerance" type="double" value="1e-12"/>
       </ParameterList>
     </ParameterList>
+
+    <ParameterList name="linear operator">
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="error tolerance" type="double" value="1e-7"/>
+        <Parameter name="maximum number of iterations" type="int" value="50"/>
+        <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, relative residual, absolute residual}"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="low"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
   <!-- PRECONDITIONERS -->
@@ -235,7 +249,7 @@
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
       <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
       <ParameterList name="boomer amg parameters">
-        <Parameter name="tolerance" type="double" value="0.0"/>
+        <Parameter name="tolerance" type="double" value="1e-7"/>
         <Parameter name="smoother sweeps" type="int" value="2"/>
         <Parameter name="cycle applications" type="int" value="3"/>
         <Parameter name="strong threshold" type="double" value="0.5"/>

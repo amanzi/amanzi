@@ -279,16 +279,21 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_mass_->AddAccumulationTerm(vol, 1.0, "cell");
   op_mass_->global_operator()->SymbolicAssembleMatrix();
 
-  // -- generic linear solver for maost cases
-  ASSERT(ti_list_->isParameter("linear solver"));
+  // -- generic linear solver for most cases
   solver_name_ = ti_list_->get<std::string>("linear solver");
 
   // -- preconditioner or encapsulated preconditioner
-  ASSERT(ti_list_->isParameter("preconditioner"));
   preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
-  ASSERT(preconditioner_list_->isSublist(preconditioner_name_));
   
   op_pc_solver_ = op_preconditioner_;
+
+  if (ti_list_->isParameter("preconditioner enhancement")) {
+    std::string tmp_solver = ti_list_->get<std::string>("preconditioner enhancement");
+    if (tmp_solver != "none") {
+      AmanziSolvers::LinearOperatorFactory<Operators::TreeOperator, TreeVector, TreeVectorSpace> sfactory;
+      op_pc_solver_ = sfactory.Create(tmp_solver, *linear_solver_list_, op_preconditioner_);
+    }
+  }
 }
 
 

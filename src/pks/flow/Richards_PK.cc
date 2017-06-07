@@ -533,13 +533,10 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // -- generic linear solver for maost cases
-  ASSERT(ti_list_->isParameter("linear solver"));
   solver_name_ = ti_list_->get<std::string>("linear solver");
 
   // -- preconditioner or encapsulated preconditioner
-  ASSERT(ti_list_->isParameter("preconditioner"));
   preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
-  ASSERT(preconditioner_list_->isSublist(preconditioner_name_));
   
   op_pc_solver_ = op_preconditioner_;
 

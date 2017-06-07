@@ -567,7 +567,7 @@ TEST(RESISTIVE_MHD2D_RELAX) {
 
 TEST(RESISTIVE_MHD2D_CONVERGENCE) {
   ResistiveMHD2D<AnalyticElectromagnetics05>(0.01, 0.1, 10,10, 0.0,0.0, 1.0,1.0, "test/random10.exo");
-  // ResistiveMHD2D<AnalyticElectromagnetics05>(0.01 / 4, 0.1, 40,40, 0.0,0.0, 1.0,1.0, "structured");
+  // ResistiveMHD2D<AnalyticElectromagnetics05>(0.01, 0.1, 10,10, 0.0,0.0, 1.0,1.0, "structured");
 }
 
 TEST(RESISTIVE_MHD3D_RELAX) {

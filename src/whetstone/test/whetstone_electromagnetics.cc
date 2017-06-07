@@ -47,7 +47,8 @@ TEST(MASS_MATRIX_2D) {
   factory.preference(FrameworkPreference({MSTK}));
 
   bool request_faces(true), request_edges(true);
-  // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1,NULL, true, true); 
+  // Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 20, 20, gm, true, true); 
   Teuchos::RCP<Mesh> mesh = factory("test/two_cell2.exo", Teuchos::null, request_faces, request_edges); 
  
   MFD3D_Electromagnetics mfd(mesh);
@@ -82,7 +83,7 @@ TEST(MASS_MATRIX_2D) {
 
     printf("Mass matrix for cell %3d method=%d\n", cell, method);
     for (int i = 0; i < nrows; i++) {
-      for (int j = 0; j < nrows; j++ ) printf("%8.4f ", M(i, j)); 
+      for (int j = 0; j < nrows; j++ ) printf("%9.5f ", M(i, j)); 
       printf("\n");
     }
 
