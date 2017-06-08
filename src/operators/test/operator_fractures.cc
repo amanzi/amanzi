@@ -148,9 +148,9 @@ void RunTest(int icase, bool gravity) {
   CompositeVector rhs = *global_op->rhs();
   int ierr = solver.ApplyInverse(rhs, solution);
 
+  double a;
+  rhs.Norm2(&a);
   if (MyPID == 0) {
-    double a;
-    rhs.Norm2(&a);
     std::cout << "pressure solver (" << solver.name() 
               << "): ||r||=" << solver.residual() << " itr=" << solver.num_itrs()
               << "  ||f||=" << a 
@@ -179,10 +179,11 @@ TEST(FRACTURES_EXTRACTION) {
   RunTest(0, false);
 }
 
+TEST(FRACTURES_INPUT_FILE_GRAVITY) {
+  RunTest(0, true);
+}
+
 TEST(FRACTURES_INPUT_FILE) {
   RunTest(1, false);
 }
 
-TEST(FRACTURES_INPUT_FILE_GRAVITY) {
-  RunTest(1, true);
-}
