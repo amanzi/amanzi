@@ -1166,14 +1166,14 @@ void DiffusionMFD::CreateMassMatrices_()
 
       if (ok != WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK) {
         if (method == WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY) {
-          ok = mfd.MassMatrixInverseOptimizedScaled(c, Kc, Wff);
+          ok = mfd.MassMatrixInverseOptimized(c, Kc, Wff);
         } else if(method == WhetStone::DIFFUSION_TPFA) {
           ok = mfd.MassMatrixInverseTPFA(c, Kc, Wff);
         } else if(method == WhetStone::DIFFUSION_SUPPORT_OPERATOR) {
           ok = mfd.MassMatrixInverseSO(c, Kc, Wff);
         } else if(method == WhetStone::DIFFUSION_POLYHEDRA_SCALED) {
           if (K_symmetric_) {
-            ok = mfd.MassMatrixInverseScaled(c, Kc, Wff);
+            ok = mfd.MassMatrixInverse(c, Kc, Wff);
           } else {
             ok = mfd.MassMatrixInverseNonSymmetric(c, Kc, Wff);
           }

@@ -41,25 +41,19 @@ class MFD3D_Diffusion : public MFD3D {
   // main methods (part of DeRham complex)
   // -- mass matrices
   //    inner products are weighted by inverse of tensor K
-  virtual int L2consistency(int c, const Tensor& K,
-                            DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
+  virtual int L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
   virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
 
   // -- inverse mass matrices
-  virtual int L2consistencyInverse(int c, const Tensor& K,
-                                   DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
-  virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W);
+  virtual int L2consistencyInverse(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
+  virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W); 
 
   // -- stiffness matrices
-  virtual int H1consistency(int c, const Tensor& K,
-                            DenseMatrix& N, DenseMatrix& Ac);
+  virtual int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A);
 
   // other mimetic methods
-  // -- natural scaling of fluxes found to be the right approach
-  int L2consistencyInverseScaled(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);
-  int MassMatrixInverseScaled(int c, const Tensor& K, DenseMatrix& W); 
-  int MassMatrixInverseOptimizedScaled(int c, const Tensor& K, DenseMatrix& W);
+  int L2consistencyInverseScaledArea(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
 
   // -- optimized stability
   int MassMatrixInverseOptimized(int c, const Tensor& K, DenseMatrix& W);

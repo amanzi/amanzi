@@ -195,10 +195,8 @@ TEST(DARCY_INVERSE_MASS_3D) {
   for (int method = 0; method < 5; method++) {
     if (method == 0) {
       mfd.MassMatrixInverse(cell, T, W);
-    } else if (method == 1) {
-      mfd.MassMatrixInverseScaled(cell, T, W);
     } else if (method == 2) {
-      mfd.MassMatrixInverseOptimizedScaled(cell, T, W);
+      mfd.MassMatrixInverseOptimized(cell, T, W);
     } else if (method == 3) {
       mfd.MassMatrixInverseSO(cell, T, W);
     } else if (method == 4) {
@@ -274,10 +272,8 @@ TEST(DARCY_FULL_TENSOR_2D) {
 
       if (method == 0) {
         mfd.MassMatrixInverse(cell, T, W);
-      } else if (method == 1) {
-        mfd.MassMatrixInverseScaled(cell, T, W);
       } else if (method == 2) {
-        mfd.MassMatrixInverseOptimizedScaled(cell, T, W);
+        mfd.MassMatrixInverseOptimized(cell, T, W);
       } else if (method == 3) {
         mfd.MassMatrixInverseSO(cell, T, W);
       } else if (method == 4) {
@@ -381,10 +377,8 @@ TEST(DARCY_FULL_TENSOR_3D) {
   for (int method = 0; method < 6; method++) {
     if (method == 0) {
       mfd.MassMatrixInverse(cell, T, W);
-    } else if (method == 1) {
-      mfd.MassMatrixInverseScaled(cell, T, W);
     } else if (method == 2) {
-      mfd.MassMatrixInverseOptimizedScaled(cell, T, W);
+      mfd.MassMatrixInverseOptimized(cell, T, W);
     } else if (method == 3) {
       mfd.MassMatrixInverseSO(cell, T, W);
     } else if (method == 4) {

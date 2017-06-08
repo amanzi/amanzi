@@ -80,7 +80,7 @@ int MFD3D_Diffusion::L2consistency(
 * Wc = N (N^T R)^{-1} N^T is calculated. Here N^T R = |c| K.
 * Flux is scaled by face area!
 ****************************************************************** */
-int MFD3D_Diffusion::L2consistencyInverse(
+int MFD3D_Diffusion::L2consistencyInverseScaledArea(
     int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
 {
   Entity_ID_List faces;
@@ -318,24 +318,6 @@ int MFD3D_Diffusion::MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix&
 
 
 /* ******************************************************************
-* Inverse mass matrix in the space of fluxes: the standard algorithm
-****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
-{
-  int d = mesh_->space_dimension();
-  int nfaces = W.NumRows();
-
-  DenseMatrix R(nfaces, d);
-
-  int ok = L2consistencyInverse(c, K, R, W, true);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
-
-  StabilityScalar(c, R, W);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
-}
-
-
-/* ******************************************************************
 * Inverse mass matrix for non-symmetric PD tensor.
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseNonSymmetric(int c, const Tensor& K, DenseMatrix& W)
@@ -345,7 +327,7 @@ int MFD3D_Diffusion::MassMatrixInverseNonSymmetric(int c, const Tensor& K, Dense
 
   DenseMatrix R(nfaces, d);
 
-  int ok = L2consistencyInverse(c, K, R, W, false);
+  int ok = L2consistencyInverseScaledArea(c, K, R, W, false);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   StabilityScalarNonSymmetric_(c, R, W);
@@ -549,8 +531,8 @@ int MFD3D_Diffusion::RecoverGradient_StiffnessMatrix(
 * fluxes. Only the upper triangular part of Wc is calculated.
 * Flux is the integral average.
 ****************************************************************** */
-int MFD3D_Diffusion::L2consistencyInverseScaled(
-    int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc)
+int MFD3D_Diffusion::L2consistencyInverse(
+    int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
 {
   Entity_ID_List faces;
   std::vector<int> dirs;
@@ -685,14 +667,14 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
 /* ******************************************************************
 * Inverse mass matrix in flux space via optimization, experimental.
 ****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverseScaled(int c, const Tensor& K, DenseMatrix& W)
+int MFD3D_Diffusion::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
 {
   int d = mesh_->space_dimension();
   int nfaces = W.NumRows();
 
   DenseMatrix R(nfaces, d);
 
-  int ok = L2consistencyInverseScaled(c, K, R, W);
+  int ok = L2consistencyInverse(c, K, R, W, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
  
   StabilityScalar(c, R, W);
@@ -713,7 +695,7 @@ int MFD3D_Diffusion::MassMatrixInverseMMatrixHex(
 
   DenseMatrix R(nfaces, d);
 
-  int ok = L2consistencyInverse(c, K, R, W, true);
+  int ok = L2consistencyInverseScaledArea(c, K, R, W, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   ok = StabilityMMatrixHex_(c, K, W);
@@ -735,7 +717,7 @@ int MFD3D_Diffusion::MassMatrixInverseMMatrix(
   DenseMatrix R(nfaces, d);
 
   // use boolean flag to populate the whole matrix
-  int ok = L2consistencyInverse(c, K, R, W, false);
+  int ok = L2consistencyInverseScaledArea(c, K, R, W, false);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   // scaling of matrix W for numerical stability
@@ -752,7 +734,7 @@ int MFD3D_Diffusion::MassMatrixInverseMMatrix(
 
 
 /* ******************************************************************
-* Inverse mass matrix via optimization.
+* Inverse mass matrix via optimization, experimental.
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseOptimized(
     int c, const Tensor& K, DenseMatrix& W)
@@ -763,25 +745,6 @@ int MFD3D_Diffusion::MassMatrixInverseOptimized(
   DenseMatrix R(nfaces, d);
 
   int ok = L2consistencyInverse(c, K, R, W, true);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
-
-  ok = StabilityOptimized(K, R, W);
-  return ok;
-}
-
-
-/* ******************************************************************
-* Inverse mass matrix via optimization, experimental.
-****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverseOptimizedScaled(
-    int c, const Tensor& K, DenseMatrix& W)
-{
-  int d = mesh_->space_dimension();
-  int nfaces = W.NumRows();
-
-  DenseMatrix R(nfaces, d);
-
-  int ok = L2consistencyInverseScaled(c, K, R, W);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
  
   ok = StabilityOptimized(K, R, W);
