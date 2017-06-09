@@ -245,7 +245,8 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   if (mesh_->space_dimension() != mesh_->manifold_dimension()) {
     if (!S->HasField("darcy_flux_fracture")) {
       S->RequireField("darcy_flux_fracture", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::FACE, mesh_->cell_get_max_faces());
+        ->SetComponent("cell", AmanziMesh::CELL, mesh_->cell_get_max_faces());
+      S->GetField("darcy_flux_fracture", passwd_)->set_io_vis(false);
     }
   }
 }
@@ -1513,8 +1514,8 @@ void Transport_PK::IdentifyUpwindCells()
     upwind_flux_.resize(nfaces_wghost);
     downwind_flux_.resize(nfaces_wghost);
 
-    S_->GetFieldData("darcy_flux_fracture")->ScatterMasterToGhosted("cell");
     const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux_fracture")->ViewComponent("cell", true);
+    S_->GetFieldData("darcy_flux_fracture", passwd_)->ScatterMasterToGhosted();
 
     for (int c = 0; c < ncells_wghost; c++) {
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
