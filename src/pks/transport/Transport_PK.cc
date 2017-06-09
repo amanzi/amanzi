@@ -1513,7 +1513,9 @@ void Transport_PK::IdentifyUpwindCells()
     upwind_flux_.resize(nfaces_wghost);
     downwind_flux_.resize(nfaces_wghost);
 
+    S_->GetFieldData("darcy_flux_fracture")->ScatterMasterToGhosted("cell");
     const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux_fracture")->ViewComponent("cell", true);
+
     for (int c = 0; c < ncells_wghost; c++) {
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 

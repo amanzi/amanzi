@@ -318,17 +318,15 @@ void DiffusionMFDwithGravity::UpdateFluxNonManifold(
 
     for (int n = 0; n < nfaces; n++) {
       int dir, f = faces[n];
-      if (f < nfaces_owned) {
-        const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
 
-        if (gravity_special_projection_) {
-          const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
-          double sign = normal * xcc;
-          double tmp = copysign(norm(normal) / norm(xcc), sign);
-          flux_data[n][c] += (Kcg * xcc) * rho_ * kf[n] * tmp;
-        } else {
-          flux_data[n][c] += (Kcg * normal) * rho_ * kf[n];
-        }
+      if (gravity_special_projection_) {
+        const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
+        double sign = normal * xcc;
+        double tmp = copysign(norm(normal) / norm(xcc), sign);
+        flux_data[n][c] += (Kcg * xcc) * rho_ * kf[n] * tmp;
+      } else {
+        flux_data[n][c] += (Kcg * normal) * rho_ * kf[n];
       }
     }
   }
