@@ -230,7 +230,7 @@ int MFD3D_Elasticity::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
   int ok = H1consistency(c, T, N, A);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityScalar(c, N, A);
+  StabilityScalar_(N, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -249,7 +249,7 @@ int MFD3D_Elasticity::StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatr
   int ok = H1consistency(c, T, N, A);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityOptimized(T, N, A);
+  StabilityOptimized_(T, N, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 

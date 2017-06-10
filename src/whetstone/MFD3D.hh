@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.0
+  WhetStone, version 2.1
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -10,12 +10,7 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   The mimetic finite difference method.
-*/
 
-#ifndef AMANZI_MFD3D_HH_
-#define AMANZI_MFD3D_HH_
-
-/*
   The package uses the formula M = Mc + Ms, where matrix Mc is build from a 
   consistency condition (Mc N = R) and matrix Ms is build from a stability 
   condition (Ms N = 0), to generate mass and stiffness matrices for a variety 
@@ -23,47 +18,31 @@
   The material properties are imbedded into the the matrix Mc. 
 
   Notation used below: M (mass), W (inverse of M), A (stiffness).
-
-  IMPORTANT: all matrices must be reshaped before calling member functions.
 */
+
+#ifndef AMANZI_MFD3D_HH_
+#define AMANZI_MFD3D_HH_
 
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
 #include "Point.hh"
 
-#include "WhetStoneDefs.hh"
-#include "WhetStone_typedefs.hh"
 #include "DenseMatrix.hh"
+#include "InnerProductH1.hh"
+#include "InnerProductL2.hh"
 #include "Tensor.hh"
+#include "WhetStone_typedefs.hh"
+#include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D { 
+class MFD3D : public virtual InnerProductL2,
+              public virtual InnerProductH1 { 
  public:
   explicit MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~MFD3D() {};
-
-  // main members
-  // -- mass matrices
-  virtual int L2consistency(int cell, const Tensor& T,
-                            DenseMatrix& N, DenseMatrix& Mc, bool symmetry) = 0;
-  virtual int MassMatrix(int cell, const Tensor& T, DenseMatrix& M) = 0; 
-
-  // -- inverse mass matrices
-  virtual int L2consistencyInverse(int cell, const Tensor& T,
-                                   DenseMatrix& R, DenseMatrix& Wc, bool symmetry) = 0;
-  virtual int MassMatrixInverse(int cell, const Tensor& T, DenseMatrix& W) = 0; 
-
-  // -- stiffness matrices
-  virtual int H1consistency(int cell, const Tensor& T,
-                            DenseMatrix& N, DenseMatrix& Mc) = 0;
-  virtual int StiffnessMatrix(int cell, const Tensor& T, DenseMatrix& A) = 0; 
-
-  // experimental methods (for stability region analysis; unit test)
-  double CalculateStabilityScalar(DenseMatrix& Mc);
-  void ModifyStabilityScalingFactor(double factor);
 
   // geometry methods
   void PolygonCentroidWeights(
@@ -71,21 +50,18 @@ class MFD3D {
       double area, std::vector<double>& weights) const;
 
   // access members
-  double scaling_factor() { return scaling_factor_; }
-  double scalar_stability() { return scalar_stability_; }
   double simplex_functional() { return simplex_functional_; }
   int simplex_num_itrs() { return simplex_num_itrs_; }
 
   // extension of the mesh API (must be removed lipnikov@lanl.gov)
   int cell_get_face_adj_cell(int cell, int face);
 
+  // experimental methods (for stability region analysis; unit test)
+  void ModifyStabilityScalingFactor(double factor);
+
  protected:
   // supporting stability methods (add matrix M += Mstab)
   // use R, Wc, W for the inverse matrix
-  void StabilityScalar(int c, DenseMatrix& N, DenseMatrix& M);
-
-  int StabilityOptimized(const Tensor& T, DenseMatrix& N, DenseMatrix& M);
-
   int StabilityMonotoneHex(int c, const Tensor& T, DenseMatrix& Mc, DenseMatrix& M);
 
   int StabilityMMatrix_(int c, DenseMatrix& N, DenseMatrix& M, 
@@ -95,15 +71,8 @@ class MFD3D {
   void SimplexPivotElement_(DenseMatrix& T, int kp, int* ip);
   void SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip);
 
-  void GrammSchmidt(DenseMatrix& N);
-
  protected:
   int FindPosition_(int v, Entity_ID_List nodes);
-
-  int stability_method_;  // stability parameters
-  double scalar_stability_, scaling_factor_;
-
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   double simplex_functional_;
   int simplex_num_itrs_;

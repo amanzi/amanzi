@@ -9,15 +9,11 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Base class for mimetic inner products.
+  Base class for L2 mimetic inner products.
 */
 
 #ifndef AMANZI_INNER_PRODUCT_L2_HH_
 #define AMANZI_INNER_PRODUCT_L2_HH_
-
-#include "Teuchos_RCP.hpp"
-
-#include "Mesh.hh"
 
 #include "DenseMatrix.hh"
 #include "InnerProduct.hh"
@@ -26,9 +22,9 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class InnerProductL2 : virtual InnerProduct { 
+class InnerProductL2 : public virtual InnerProduct { 
  public:
-  explicit InnerProductL2(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : InnerProduct(mesh) {};
+  InnerProductL2() {};
   ~InnerProductL2() {};
 
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) = 0;

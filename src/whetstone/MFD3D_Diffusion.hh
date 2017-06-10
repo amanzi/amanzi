@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.0
+  WhetStone, version 2.1
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -27,21 +27,25 @@
 #include "Point.hh"
 
 #include "DenseMatrix.hh"
+#include "DeRham_Face.hh"
 #include "Tensor.hh"
 #include "MFD3D.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_Diffusion : public MFD3D { 
+class MFD3D_Diffusion : public virtual MFD3D,
+                        public virtual DeRham_Face { 
  public:
-  explicit MFD3D_Diffusion(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : MFD3D(mesh) {};
+  explicit MFD3D_Diffusion(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : MFD3D(mesh), 
+      InnerProduct(mesh) {};
   ~MFD3D_Diffusion() {};
 
   // main methods (part of DeRham complex)
   // -- mass matrices
   //    inner products are weighted by inverse of tensor K
-  virtual int L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
+  virtual int L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override;
   virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
 
   // -- inverse mass matrices

@@ -192,14 +192,14 @@ TEST(DARCY_INVERSE_MASS_3D) {
   T(0, 0) = 1.0;
 
   DenseMatrix W(nfaces, nfaces);
-  for (int method = 0; method < 5; method++) {
+  for (int method = 0; method < 4; method++) {
     if (method == 0) {
       mfd.MassMatrixInverse(cell, T, W);
-    } else if (method == 2) {
+    } else if (method == 1) {
       mfd.MassMatrixInverseOptimized(cell, T, W);
-    } else if (method == 3) {
+    } else if (method == 2) {
       mfd.MassMatrixInverseSO(cell, T, W);
-    } else if (method == 4) {
+    } else if (method == 3) {
       mfd.MassMatrixInverseMMatrixHex(cell, T, W);
     }
 
@@ -261,7 +261,7 @@ TEST(DARCY_FULL_TENSOR_2D) {
   MFD3D_Diffusion mfd(mesh);
 
   for (int cell = 0; cell < 2; cell++) { 
-    for (int method = 0; method < 8; method++) {
+    for (int method = 0; method < 7; method++) {
       Tensor T(2, 2);  // tensor of rank 2
       T(0, 0) = 1.0;
       T(1, 1) = 2.0;
@@ -272,22 +272,22 @@ TEST(DARCY_FULL_TENSOR_2D) {
 
       if (method == 0) {
         mfd.MassMatrixInverse(cell, T, W);
-      } else if (method == 2) {
+      } else if (method == 1) {
         mfd.MassMatrixInverseOptimized(cell, T, W);
-      } else if (method == 3) {
+      } else if (method == 2) {
         mfd.MassMatrixInverseSO(cell, T, W);
-      } else if (method == 4) {
+      } else if (method == 3) {
         if (nfaces != 4) continue;
         mfd.MassMatrixInverseMMatrixHex(cell, T, W);
-      } else if (method == 5) {
+      } else if (method == 4) {
         ok = mfd.MassMatrixInverseMMatrix(cell, T, W);
         std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << " code=" << ok << std::endl;
         std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;
-      } else if (method == 6) {
+      } else if (method == 5) {
         double kmean = 1.0;
         AmanziGeometry::Point kgrad(0.1, 0.2);
         mfd.MassMatrixInverseDivKScaled(cell, T, kmean, kgrad, W);
-      } else if (method == 7) {
+      } else if (method == 6) {
         T(0, 1) += 0.1;
         mfd.MassMatrixInverseNonSymmetric(cell, T, W);
       }
@@ -323,7 +323,7 @@ TEST(DARCY_FULL_TENSOR_2D) {
 
       // additional tests for triangle: integral with v2 = RT basis function
       if (cell == 1) {
-        if (method == 3 || method == 6) continue;
+        if (method == 2 || method == 5) continue;
         vxx = 0.0;
         for (int i = 0; i < nfaces; i++) {
           xi = (v * mesh->face_normal(faces[i])) * dirs[i];
@@ -332,7 +332,7 @@ TEST(DARCY_FULL_TENSOR_2D) {
             vxx += W(i, j) * xi * xj;
           }
         }
-        double vxx_exact = (method == 6) ? -0.054167 : -0.05;
+        double vxx_exact = (method == 5) ? -0.054167 : -0.05;
         CHECK_CLOSE(vxx_exact, vxx, 1e-10);
       }
     }
@@ -374,16 +374,16 @@ TEST(DARCY_FULL_TENSOR_3D) {
   T(1, 2) = T(2, 1) = 1.0;
 
   DenseMatrix W(nfaces, nfaces);
-  for (int method = 0; method < 6; method++) {
+  for (int method = 0; method < 5; method++) {
     if (method == 0) {
       mfd.MassMatrixInverse(cell, T, W);
-    } else if (method == 2) {
+    } else if (method == 1) {
       mfd.MassMatrixInverseOptimized(cell, T, W);
-    } else if (method == 3) {
+    } else if (method == 2) {
       mfd.MassMatrixInverseSO(cell, T, W);
-    } else if (method == 4) {
+    } else if (method == 3) {
       mfd.MassMatrixInverseMMatrixHex(cell, T, W);
-    } else if (method == 5) {
+    } else if (method == 4) {
       mfd.MassMatrixInverseMMatrix(cell, T, W);
       std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << std::endl;
       std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;

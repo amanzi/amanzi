@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.0
+  WhetStone, version 2.1
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -9,7 +9,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  The mimetic finite difference method.
+  The mimetic finite difference method for diffusion.
 */
 
 #include <cmath>
@@ -291,7 +291,7 @@ int MFD3D_Diffusion::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
   int ok = L2consistency(c, Kinv, N, M, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityScalar(c, N, M);
+  StabilityScalar_(N, M);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -348,7 +348,7 @@ int MFD3D_Diffusion::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
   int ok = H1consistency(c, K, N, A);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityScalar(c, N, A);
+  StabilityScalar_(N, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -366,7 +366,7 @@ int MFD3D_Diffusion::StiffnessMatrixOptimized(int c, const Tensor& K, DenseMatri
   int ok = H1consistency(c, K, N, A);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  ok = StabilityOptimized(K, N, A);
+  ok = StabilityOptimized_(K, N, A);
   return ok;
 }
 
@@ -411,7 +411,7 @@ int MFD3D_Diffusion::StiffnessMatrixEdge(int c, const Tensor& K, DenseMatrix& A)
   int ok = H1consistencyEdge(c, K, N, A);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityScalar(c, N, A);
+  StabilityScalar_(N, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -677,7 +677,7 @@ int MFD3D_Diffusion::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
   int ok = L2consistencyInverse(c, K, R, W, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
  
-  StabilityScalar(c, R, W);
+  StabilityScalar_(R, W);
   RescaleMassMatrixInverse_(c, W);
 
   return ok;
@@ -747,7 +747,7 @@ int MFD3D_Diffusion::MassMatrixInverseOptimized(
   int ok = L2consistencyInverse(c, K, R, W, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
  
-  ok = StabilityOptimized(K, R, W);
+  ok = StabilityOptimized_(K, R, W);
   RescaleMassMatrixInverse_(c, W);
 
   return ok;
@@ -768,7 +768,7 @@ int MFD3D_Diffusion::MassMatrixInverseDivKScaled(
   int ok = L2consistencyInverseDivKScaled(c, K, kmean, kgrad, R, W);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
  
-  StabilityScalar(c, R, W);
+  StabilityScalar_(R, W);
   RescaleMassMatrixInverse_(c, W);
 
   return ok;
@@ -909,8 +909,8 @@ int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M
 ****************************************************************** */
 void MFD3D_Diffusion::StabilityScalarNonSymmetric_(int c, DenseMatrix& N, DenseMatrix& M)
 {
-  GrammSchmidt(N);
-  CalculateStabilityScalar(M);
+  GrammSchmidt_(N);
+  CalculateStabilityScalar_(M);
 
   int nrows = M.NumRows();
   int ncols = N.NumCols();

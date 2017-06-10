@@ -221,7 +221,7 @@ int MFD3D_Elasticity::StiffnessMatrixBernardiRaugel(
   int ok = H1consistencyBernardiRaugel(c, K, N, A);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityScalar(c, N, A);
+  StabilityScalar_(N, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 

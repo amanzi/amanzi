@@ -522,7 +522,7 @@ int MFD3D_Electromagnetics::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
   int ok = L2consistency(c, T, N, M, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityScalar(c, N, M);
+  StabilityScalar_(N, M);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -540,7 +540,7 @@ int MFD3D_Electromagnetics::MassMatrixOptimized(int c, const Tensor& T, DenseMat
   int ok = L2consistency(c, T, N, M, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  ok = StabilityOptimized(T, N, M);
+  ok = StabilityOptimized_(T, N, M);
   return ok;
 }
 
@@ -558,7 +558,7 @@ int MFD3D_Electromagnetics::MassMatrixInverse(int c, const Tensor& T, DenseMatri
   int ok = L2consistencyInverse(c, T, R, W, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityScalar(c, R, W);
+  StabilityScalar_(R, W);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -578,7 +578,7 @@ int MFD3D_Electromagnetics::MassMatrixInverseOptimized(
   int ok = L2consistencyInverse(c, T, R, W, true);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  ok = StabilityOptimized(T, R, W);
+  ok = StabilityOptimized_(T, R, W);
   return ok;
 }
 
@@ -674,7 +674,7 @@ int MFD3D_Electromagnetics::StiffnessMatrixExperimental(
   int ok = H1consistency(c, T, N, A);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityScalar(c, N, A);
+  StabilityScalar_(N, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 

@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.0
+  WhetStone, version 2.1
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -36,7 +36,9 @@ namespace WhetStone {
 
 class MFD3D_Electromagnetics : public MFD3D { 
  public:
-  explicit MFD3D_Electromagnetics(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : MFD3D(mesh) {};
+  MFD3D_Electromagnetics(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : MFD3D(mesh),
+      InnerProduct(mesh) {};
   ~MFD3D_Electromagnetics() {};
 
   // main required methods (edge-based DOFs)

@@ -9,15 +9,11 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  The base class for mimetic bilinear forms.
+  The base class for bilinear forms (mimetic H1 inner products).
 */
 
 #ifndef AMANZI_INNER_PRODUCT_H1_HH_
 #define AMANZI_INNER_PRODUCT_H1_HH_
-
-#include "Teuchos_RCP.hpp"
-
-#include "Mesh.hh"
 
 #include "DenseMatrix.hh"
 #include "InnerProduct.hh"
@@ -26,9 +22,9 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class InnerProductH1 : virtual InnerProduct { 
+class InnerProductH1 : public virtual InnerProduct { 
  public:
-  explicit InnerProductH1(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : InnerProduct(mesh) {};
+  InnerProductH1() {};
   ~InnerProductH1() {};
 
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc) = 0;

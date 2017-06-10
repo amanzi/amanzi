@@ -28,17 +28,29 @@ namespace WhetStone {
 
 class InnerProduct { 
  public:
-  explicit InnerProduct(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : mesh_(mesh) {};
+  InnerProduct() {};
+  InnerProduct(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : mesh_(mesh),
+      stability_method_(WHETSTONE_STABILITY_GENERIC) {};
   ~InnerProduct() {};
 
+  // access
+  double scalar_stability() { return scalar_stability_; }
+  double scaling_factor() { return scaling_factor_; }
+
  protected:
+  // supporting stability methods
   void StabilityScalar_(DenseMatrix& N, DenseMatrix& M);
+  int StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M);
+
   double CalculateStabilityScalar_(DenseMatrix& Mc);
   void GrammSchmidt_(DenseMatrix& N);
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  double scaling_factor_;
+
+  int stability_method_;  // stability parameters
+  double scalar_stability_, scaling_factor_;
 };
 
 }  // namespace WhetStone

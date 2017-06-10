@@ -33,9 +33,11 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_Elasticity : public MFD3D { 
+class MFD3D_Elasticity : public virtual MFD3D { 
  public:
-  explicit MFD3D_Elasticity(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : MFD3D(mesh) {};
+  MFD3D_Elasticity(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : MFD3D(mesh),
+      InnerProduct(mesh) {};
   ~MFD3D_Elasticity() {};
 
   // main method use edge-based DOFs (part of DeRham complex) 

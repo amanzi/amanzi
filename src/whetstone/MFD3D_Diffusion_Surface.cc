@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.0
+  WhetStone, version 2.1
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -102,17 +102,17 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
 * Darcy inverse mass matrix for surface: the standard algorithm
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseSurface(
-    int cell, const Tensor& permeability, DenseMatrix& W)
+    int c, const Tensor& permeability, DenseMatrix& W)
 {
   int d = mesh_->space_dimension();
   int nfaces = W.NumRows();
 
   DenseMatrix R(nfaces, d - 1);
 
-  int ok = L2consistencyInverseSurface(cell, permeability, R, W);
+  int ok = L2consistencyInverseSurface(c, permeability, R, W);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
-  StabilityScalar(cell, R, W);
+  StabilityScalar_(R, W);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
