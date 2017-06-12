@@ -10,22 +10,6 @@
            Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_OPERATOR_HH_
-#define AMANZI_OPERATOR_HH_
-
-#include <vector>
-
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "Epetra_CrsMatrix.h"
-#include "EpetraExt_RowMatrixOut.h"
-
-#include "Mesh.hh"
-#include "CompositeVectorSpace.hh"
-#include "CompositeVector.hh"
-#include "OperatorDefs.hh"
-#include "BCs.hh"
-
 /*!
 
 ``Operator`` represents a map from linear space X to linear space Y.  Typically,
@@ -116,6 +100,24 @@ Note on implementation for discretization/framework developers:
   are ``OPERATOR_PROPERTY_***`` and described in ``Operators_Defs.hh``.
 
 */ 
+
+
+
+#ifndef AMANZI_OPERATOR_HH_
+#define AMANZI_OPERATOR_HH_
+
+#include <vector>
+
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Epetra_CrsMatrix.h"
+#include "EpetraExt_RowMatrixOut.h"
+
+#include "Mesh.hh"
+#include "CompositeVectorSpace.hh"
+#include "CompositeVector.hh"
+#include "OperatorDefs.hh"
+#include "BCs.hh"
 
 namespace Amanzi {
 
