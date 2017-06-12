@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 This is the flow component of the Amanzi code.
@@ -62,7 +62,11 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
     clobber_surf_kr_(false),
     clobber_boundary_flux_dir_(false),
     vapor_diffusion_(false),
-    perm_scale_(1.)
+    perm_scale_(1.),
+    jacobian_(false),
+    jacobian_lag_(0),
+    iter_(0),
+    iter_counter_time_(0.)
 {
   if (!plist_->isParameter("conserved quantity suffix"))
     plist_->set("conserved quantity suffix", "water_content");
@@ -213,7 +217,14 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   S->GetField(uw_coef_key_,name_)->set_io_vis(false);
 
   // -- create the forward operator for the diffusion term
-  Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
+  // DEPRECATED OPTIONS
+  if (plist_->isParameter("Diffusion") ||
+      plist_->isParameter("Diffusion PC")) {
+    Errors::Message message("Richards PK: DEPRECATION: Discretization lists \"Diffusion\" and \"Diffusion PC\" have been renamed \"diffusion\" and \"diffusion preconditioner\", respectively.");
+    Exceptions::amanzi_throw(message);
+  }
+
+  Teuchos::ParameterList& mfd_plist = plist_->sublist("diffusion");
   mfd_plist.set("nonlinear coefficient", coef_location);
   mfd_plist.set("gravity", true);
   
@@ -231,7 +242,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
   // -- create the operators for the preconditioner
   //    diffusion
-  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("Diffusion PC");
+  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("diffusion preconditioner");
   mfd_pc_plist.set("nonlinear coefficient", coef_location);
   mfd_pc_plist.set("gravity", true);
   if (!mfd_pc_plist.isParameter("discretization primary"))
@@ -248,6 +259,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   //    For now this means upwinding the derivative.
   jacobian_ = mfd_pc_plist.get<std::string>("Newton correction", "none") != "none";
   if (jacobian_) {
+    jacobian_lag_ = mfd_pc_plist.get<int>("Newton correction lag", 0);
+
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // MFD -- upwind required
       dcoef_key_ = getDerivKey(coef_key_, key_);

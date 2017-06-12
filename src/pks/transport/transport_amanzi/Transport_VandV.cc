@@ -138,14 +138,15 @@ void Transport_PK_ATS::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next,
       }
     }
 
-    solute_flux *= units_.concentration_factor();
+    //solute_flux *= units_.concentration_factor();
 
     double tmp = solute_flux;
     mesh_->get_comm()->SumAll(&tmp, &solute_flux, 1);
 
-    *vo_->os() << runtime_solutes_[n] << ": min=" << units_.OutputConcentration(tccmin) 
-                 << " max=" << units_.OutputConcentration(tccmax);
-    // *vo_->os() << runtime_solutes_[n] << ": min=" << tccmin  << " max=" << tccmax<<"\n";
+    // *vo_->os() << runtime_solutes_[n] << ": min=" << units_.OutputConcentration(tccmin) 
+    //              << " max=" << units_.OutputConcentration(tccmax);
+
+    *vo_->os() << runtime_solutes_[n] << ": min=" << tccmin  << " max=" << tccmax<<"\n";
     if (flag) *vo_->os() << ", flux=" << solute_flux << " mol/s";
 
     // old capability
@@ -153,11 +154,11 @@ void Transport_PK_ATS::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next,
     double mass_solute(0.0);
     for (int c = 0; c < ncells_owned; c++) {
       double vol = mesh_->cell_volume(c);
-      mass_solute += (*ws)[0][c] * (*phi)[0][c] * tcc_next[i][c] * vol * (*mol_dens)[0][c];
+      mass_solute += (*ws_)[0][c] * (*phi_)[0][c] * tcc_next[i][c] * vol * (*mol_dens_)[0][c];
     }
-    mass_solute /= units_.concentration_factor();
-    mass_solutes_stepstart_[i] /= units_.concentration_factor();
-    mass_solutes_bc_[i] /= units_.concentration_factor();
+    // mass_solute /= units_.concentration_factor();
+    // mass_solutes_stepstart_[i] /= units_.concentration_factor();
+    // mass_solutes_bc_[i] /= units_.concentration_factor();
 
     double tmp1 = mass_solute, tmp2 = mass_solutes_exact_[i], mass_exact;
     double tmp_start = mass_solutes_stepstart_[i];
@@ -167,9 +168,9 @@ void Transport_PK_ATS::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next,
     mesh_->get_comm()->SumAll(&tmp_start, &(mass_solutes_stepstart_[i]), 1);
     mesh_->get_comm()->SumAll(&tmp_bc, &(mass_solutes_bc_[i]), 1);
 
-    *vo_->os() << ", step start total=" << mass_solutes_stepstart_[i] << " mol" << std::endl;
-    *vo_->os() << ", step bc total=" << mass_solutes_bc_[i] << " mol" << std::endl;
-    *vo_->os() << ", step final total=" << mass_solute << " mol" << std::endl;
+    // *vo_->os() << ", step start total=" << mass_solutes_stepstart_[i] << " mol" << std::endl;
+    // *vo_->os() << ", step bc total=" << mass_solutes_bc_[i] << " mol" << std::endl;
+    // *vo_->os() << ", step final total=" << mass_solute << " mol" << std::endl;
   }
 }
 
@@ -340,9 +341,9 @@ double Transport_PK_ATS::ComputeSolute(const Epetra_MultiVector& tcc_next, int i
   double mass_solute(0.0);
   for (int c = 0; c < ncells_owned; c++) {
     double vol = mesh_->cell_volume(c);
-    mass_solute += (*ws)[0][c] * (*phi)[0][c] * tcc_next[i][c] * vol * (*mol_dens)[0][c];
+    mass_solute += (*ws_)[0][c] * (*phi_)[0][c] * tcc_next[i][c] * vol * (*mol_dens_)[0][c];
   }
-  mass_solute /= units_.concentration_factor();
+  //mass_solute /= units_.concentration_factor();
 
   double tmp1 = mass_solute;
   mesh_->get_comm()->SumAll(&tmp1, &mass_solute, 1);

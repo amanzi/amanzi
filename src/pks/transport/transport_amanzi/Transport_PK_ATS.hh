@@ -251,7 +251,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   Teuchos::RCP<Epetra_MultiVector> vol_flux;
   Teuchos::RCP<Epetra_MultiVector> conserve_qty_;
   Teuchos::RCP<const Epetra_MultiVector> flux;
-    Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi, mol_dens;
+  Teuchos::RCP<const Epetra_MultiVector> ws_, ws_prev_, phi_, mol_dens_, mol_dens_prev_;
   
 #ifdef ALQUIMIA_ENABLED
   Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk_;
@@ -262,7 +262,9 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   Teuchos::RCP<Epetra_IntVector> downwind_cell_;
 
   Teuchos::RCP<const Epetra_MultiVector> ws_start, ws_end;  // data for subcycling 
+  Teuchos::RCP<const Epetra_MultiVector> mol_dens_start, mol_dens_end;  // data for subcycling 
   Teuchos::RCP<Epetra_MultiVector> ws_subcycle_start, ws_subcycle_end;
+  Teuchos::RCP<Epetra_MultiVector> mol_dens_subcycle_start, mol_dens_subcycle_end;
 
   int current_component_;  // data for lifting
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;

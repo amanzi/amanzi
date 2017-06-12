@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
 A base two-phase, thermal Richard's equation with water vapor.
@@ -151,12 +151,13 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   }
 
   // update state with the solution up.
+  if (std::abs(t - iter_counter_time_)/t > 1.e-4) iter_ = 0;
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
 
   // update the rel perm according to the scheme of choice, also upwind derivatives of rel perm
   UpdatePermeabilityData_(S_next_.ptr());
-  if (jacobian_) UpdatePermeabilityDerivativeData_(S_next_.ptr());
+  if (jacobian_ && iter_ >= jacobian_lag_) UpdatePermeabilityDerivativeData_(S_next_.ptr());
 
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
@@ -177,7 +178,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   // jacobian term
   Teuchos::RCP<const CompositeVector> dkrdp = Teuchos::null;
-  if (jacobian_) {
+  if (jacobian_ && iter_ >= jacobian_lag_) {
     if (!duw_coef_key_.empty()) {
       dkrdp = S_next_->GetFieldData(duw_coef_key_);
     } else {
@@ -189,7 +190,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   preconditioner_diff_->SetScalarCoefficient(rel_perm, dkrdp);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, up->Data().ptr());
 
-  if (jacobian_) {// && preconditioner_->RangeMap().HasComponent("face")) {
+  if (jacobian_ && iter_ >= jacobian_lag_) {// && preconditioner_->RangeMap().HasComponent("face")) {
     Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData(flux_key_, name_);
     preconditioner_diff_->UpdateFlux(*up->Data(), *flux);
     preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), up->Data().ptr());
@@ -238,7 +239,10 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   if (precon_used_) {
     preconditioner_->AssembleMatrix();
     preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
-  }      
+  }
+
+  // increment the iterator count
+  iter_++;
 };
 
 

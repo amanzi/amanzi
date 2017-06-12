@@ -64,13 +64,20 @@ Symbol Index
 #############
 
 :math:`|E|` | volume of a cell :math:`[m^X]` (where :math:`X` is the dimension of the mesh)
+:math:`g` | gravitational acceleration vector :math:`[m s^-2]`
 :math:`h` | ponded depth, or the water head over the surface :math:`[m]`
 :math:`` | alternative, in context of the subsurface, water head :math:`[m]`
 :math:`h_{snow}` | snow depth :math:`[m]`
+:math:`K` | absolute permeability :math:`[m^2]`
+:math:`k_r` | relative permeability :math:`[-]`
 :math:`n_X` | molar density of phase X :math:`[mol m^-3]`
+:math:`p` | pressure of the liquid phase :math:`[Pa]`
 :math:`P_{s,r}` | precipitation of rain or snow, noting that snow is always a precipitation rate in snow-water-equivalent (SWE) basis.  :math:`[m s^-1]`
+:math:`Q_w` | mass source of water :math:`[mol s^-1]`
 :math:`s_X` | saturation of phase X :math:`[-]`
+:math:`t` | time variable :math:`[s]`
 :math:`z` | elevation :math:`[m]`
+:math:`\nu` | dynamic viscosity of water :math:`[Pa s]`
 :math:`\phi` | porosity of the soil :math:`[-]`
 :math:`\rho` | mass density of a phase :math:`[kg m^-3]`
 :math:`\Theta` | extensive water content of a cell :math:`[mol]`
@@ -112,7 +119,7 @@ one sublist for each of the following sections.
 Mesh
 #####
 
-
+ Simple wrapper that takes a ParameterList and generates all needed meshes.
 All processes are simulated on a domain, which is discretized through a mesh.
 
 Multiple domains and therefore meshes can be used in a single simulation, and multiple meshes can be constructed on the fly.
@@ -259,7 +266,7 @@ Region
 ##########
 
 
-
+  Region: a geometric or discrete subdomain (abstract)
 
 Regions are geometrical constructs used in Amanzi to define subsets of
 the computational domain in order to specify the problem to be solved, and the
@@ -366,7 +373,7 @@ region defined by the value 25 in color function file.
 
 Point
 ======
-
+ RegionPoint: a point in space.
 List *region: point* defines a point in space. 
 This region consists of cells containing this point.
 
@@ -387,7 +394,7 @@ Example:
 
 Box
 ======
-
+ RegionBox: a rectangular region in space, defined by two points
 
 List *region: box* defines a region bounded by coordinate-aligned
 planes. Boxes are allowed to be of zero thickness in only one
@@ -413,7 +420,7 @@ Example:
 
 Plane
 ======
-
+ RegionPlane: A planar (infinite) region in space, defined by a point and a normal.
 List *region: plane* defines a plane using a point lying on the plane and normal to the plane.
 
 * `"normal`" ``[Array(double)]`` Normal to the plane.
@@ -439,7 +446,7 @@ Example:
 
 Labeled Set
 ============
-
+ RegionLabeledSet: A region defined by a set of mesh entities in a mesh file
 The list *region: labeled set* defines a named set of mesh entities
 existing in an input mesh file. This is the same file that contains
 the computational mesh. The name of the entity set is given
@@ -482,7 +489,7 @@ Example:
 
 Color Function
 ===============
-
+ RegionColorFunction: A region defined by the value of an indicator function in a file.
 
 The list *region: color function* defines a region based a specified
 integer color, *value*, in a structured color function file,
@@ -521,7 +528,7 @@ Example:
 Coordinator
 ############
 
-
+ Coordinator: Simulation controller and top-level driver
 
 In the `"coordinator`" sublist, the user specifies global control of
 the simulation, including starting and ending times and restart options.  
@@ -580,7 +587,7 @@ separate ParameterLists, entitled `"visualization`" for the main mesh, and
 addition meshes, each will have a domain name and therefore admit a spec of
 the form: `"visualization DOMAIN-NAME`".
 
-
+ Visualization: a class for controlling simulation output.
 
 Each list contains all parameters as in a IOEvent_ spec, and also:
 
@@ -625,7 +632,7 @@ name generation and writing frequency, by numerical cycle number.
 Unlike `"visualization`", there is only one `"checkpoint`" list for
 all domains/meshes.
 
-
+ Visualization: a class for controlling simulation output.
 
 Each list contains all parameters as in a IOEvent_ spec, and also:
 
@@ -659,73 +666,107 @@ every 25 seconds thereafter, along with times 101, 303, and 422.  Files will be 
 Observation
 ##############
 
-**This is not currently correct!**
+ Observable: Collects, reduces, and writes observations during a simulation.
+Observations are a localized-in-space but frequent in time view of
+data, designed to get at useful diagnostic quantities such as
+hydrographs, total water content, quantities at a point, etc.  These
+are designed to allow frequent collection in time without saving huge
+numbers of visualization files to do postprocessing.  In fact, these
+should be though of as orthogonal data queries to visualization -- vis
+is pointwise in time but complete in space, while observations are
+pointwise/finite in space but complete in time.
 
-A user may request any number of specific observations from ATS.  Each labeled Observation Data quantity involves a field quantity, a model, a region from which it will extract its source data, and a list of discrete times 
-for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of ATS arguments.
+A user may request any number of specific observations from ATS.  Each
+observation spec involves a field quantity, a functional reduction
+operator, a region from which it will extract its source data, and a
+list of discrete times for its evaluation.  The observations are
+evaluated during the simulation and written to disk.
 
-* `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
+* `"observations`" [list] can accept multiple ``[observation-spec]`` entries.
 
- * `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
+An ``[observation-spec]`` consists of the following quantities:
 
- * OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`", and all IOEvent_ spec options.
+* `"observation output filename`" [string] user-defined name for the file that the observations are written to.
 
-  * `"Variables`" [Array(string)] a list of field quantities taken from the list of available field quantities:
+* `"variable`" [string] any ATS variable used by any PK, e.g. `"pressure`" or `"surface-water_content`"
 
-   * Volumetric water content [volume water / bulk volume]
-   * Aqueous saturation [volume water / volume pore space]
-   * Aqueous pressure [Pa]
-   * Hydraulic Head [m] 
-   * XXX Aqueous concentration [moles of solute XXX / volume water in MKS] (name formed by string concatenation, given the definitions in `"Phase Definition`" section)
-   * X-, Y-, Z- Aqueous volumetric fluxe [m/s]
-   * MaterialID
+* `"region`" [string] the label of a user-defined region
 
-  * `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
+* `"location name`" [string] the mesh location of the thing to be measured, i.e. `"cell`", `"face`", or `"node`"
 
-  * `"Region`" [string] the label of a user-defined region
+* `"functional`" [string] the label of a function to apply to the variable across the region.  Valid functionals include:
+ * `"observation data: point`" returns the value of the field quantity at a point.  The region and location name must result in a single entity being selected.
+ * `"observation data: extensive integral`" returns the sum of an (extensive) variable over the region.  This should be used for extensive quantities such as `"water_content`" or `"energy`".
+ * `"observation data: intensive integral`" returns the volume-weighted average of an (intensive) variable over the region.  This should be used for intensive quantities such as `"temperature`" or `"saturation_liquid`".
 
-The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
+* Additionally, each ``[observation-spec]`` contains all parameters as in a IOEvent_ spec, which are used to specify at which times/cycles the observation is collected.
 
-* `"Observation Data: Point`" returns the value of the field quantity at a point
+For flux observations, and additional option is available:
 
-* `"Observation Data: Integral`" returns the integral of the field quantity over the region specified
+* `"direction normalized flux`" [bool] *false* Normalize the flux to point in the outward-normal direction.  This is important when looking at fluxes across a boundary, for instance to plot a hydrograph.
 
 
 Example:
 
 .. code-block:: xml
-
-  <ParameterList name="Observation Data">
-    <Parameter name="Observation Output Filename" type="string" value="obs_output.out"/>
-    <ParameterList name="some observation name">
-      <Parameter name="Region" type="string" value="some point region name"/>
-      <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-      <Parameter name="Variable" type="string" value="Volumetric water content"/>
-      <Parameter name="times" type="Array(double)" value="{100000.0, 200000.0}"/>
-
-      <Parameter name="cycles" type="Array(int)" value="{100000, 200000, 400000, 500000}"/>
-      <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}" />
-
-      <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
-      <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
-      <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
-
+  
+  <ParameterList name="observations" type="ParameterList">
+    <!-- This measures the hydrograph out the "east" face of the surface domain -->
+    <ParameterList name="surface outlet flux" type="ParameterList">
+      <Parameter name="variable" type="string" value="surface-mass_flux" />
+      <Parameter name="direction normalized flux" type="bool" value="true" />
+      <Parameter name="region" type="string" value="east" />
+      <Parameter name="functional" type="string" value="observation data: extensive integral" />
+      <Parameter name="delimiter" type="string" value=" " />
+      <Parameter name="location name" type="string" value="face" />
+      <Parameter name="observation output filename" type="string" value="surface_outlet_flux.dat" />
+      <Parameter name="times start period stop" type="Array(double)" value="{0.0,86400.0,-1.0}" />
+    </ParameterList>
+    <!-- This measures the total water, in mols, in the entire subsurface domain -->
+    <ParameterList name="subsurface water content" type="ParameterList">
+      <Parameter name="variable" type="string" value="water_content" />
+      <Parameter name="region" type="string" value="computational domain" />
+      <Parameter name="functional" type="string" value="observation data: extensive integral" />
+      <Parameter name="delimiter" type="string" value=" " />
+      <Parameter name="location name" type="string" value="cell" />
+      <Parameter name="observation output filename" type="string" value="water_content.dat" />
+      <Parameter name="times start period stop" type="Array(double)" value="{0.0,86400.0,-1.0}" />
+    </ParameterList>
+    <!-- This tracks the temperature at a point -->
+    <ParameterList name="temperature_probeA" type="ParameterList">
+      <Parameter name="variable" type="string" value="temperature" />
+      <Parameter name="region" type="string" value="probeA" />
+      <Parameter name="functional" type="string" value="observation data: point" />
+      <Parameter name="delimiter" type="string" value=" " />
+      <Parameter name="location name" type="string" value="cell" />
+      <Parameter name="observation output filename" type="string" value="temperature_probeA.dat" />
+      <Parameter name="times start period stop" type="Array(double)" value="{0.0,86400.0,-1.0}" />
     </ParameterList>
   </ParameterList>
+
+
 
 
 
 PK
 #####
 
-The `"PKs`" ParameterList in Main_ is expected to have one and only one sublist, which corresponds to the PK at the top of the PK tree.
-This top level PK is also often an MPC (MPCs are PKs).
+ The interface for a Process Kernel, an equation or system of equations.
+
+A process kernel represents a single or system of partial/ordinary
+differential equation(s) or conservation law(s), and is used as the
+fundamental unit for coupling strategies.
+
+Implementations of this interface typically are either an MPC
+(multi-process coupler) whose job is to heirarchically couple several
+other PKs and represent the system of equations, or a Physical PK,
+which represents a single equation.
 
 All PKs have the following parameters in their spec:
 
 * `"PK type`" ``[string]``
 
-  The PK type is a special key-word which corresponds to a given class in the PK factory.  See available PK types listed below in the `Physical PKs`_ section.
+  The PK type is a special key-word which corresponds to a given class in the PK factory.  See available PK types listed below.
 
 * `"PK name`" ``[string]`` **LIST-NAME**
 
@@ -751,7 +792,7 @@ Example:
     </ParameterList>
   </ParameterList>
 
-Each PK, which may be named arbitrarily, is one of the following PK specs listed below.
+ 
 
 
 Base PKs
@@ -759,25 +800,10 @@ Base PKs
 
 There are several types of PKs, and each PK has its own valid input spec.  However, there are three main types of PKs, from which nearly all PKs derive.  Note that none of these are true PKs and cannot stand alone.
 
-
-PKDefaultBase
-----------------
-
-
-
-``PKDefaultBase`` is not a true PK, but is a helper for providing some basic
-functionality shared by (nearly) all PKs.  Therefore, (nearly) all PKs inherit
-from this base class.
-
-No input spec.
-
-
-
-
 PKPhysicalBase
 ----------------
 
-
+ A base class with default implementations of methods for a leaf of the PK tree (a conservation equation, or similar).
 
 ``PKPhysicalBase`` is a base class providing some functionality for PKs which
 are defined on a single mesh, and represent a single process model.  Typically
@@ -787,7 +813,7 @@ all leaves of the PK tree will inherit from ``PKPhysicalBase``.
 
   Domains and meshes are 1-to-1, and the empty string refers to the main domain or mesh.  PKs defined on other domains must specify which domain/mesh they refer to.
 
-* `"primary variable key`" ``[string]``
+* `"primary variable`" ``[string]``
 
   The primary variable associated with this PK, i.e. `"pressure`", `"temperature`", `"surface_pressure`", etc.
 
@@ -809,7 +835,7 @@ NOTE: ``PKPhysicalBase (v)-->`` PKDefaultBase_
 PKBDFBase
 ----------------
 
-
+ A base class with default implementations of methods for a PK that can be implicitly integrated in time.
 
 ``PKBDFBase`` is a base class from which PKs that want to use the ``BDF``
 series of implicit time integrators must derive.  It specifies both the
@@ -849,7 +875,7 @@ NOTE: ``PKBDFBase  (v)-->`` PKDefaultBase_
 PKPhysicalBDFBase
 -------------------
 
-
+ Standard base for most implemented PKs, this combines both domains/meshes of PKPhysicalBase and BDF methods of PKBDFBase.
 
 A base class for all PKs that are both physical, in the sense that they
 implement an equation and are not couplers, and support the implicit
@@ -890,13 +916,102 @@ Flow PKs
 Richards PK
 ^^^^^^^^^^^^^^^
 
+ Two-phase, variable density Richards equation.
 
-Solves:
+Solves Richards equation:
 
 .. math::
-  \frac{\partial \Theta}{\partial t} = \nabla \frac{k_r \rho}{\mu} K ( \nabla p + \rho g \hat{z} ) = q
+  \frac{\partial \Theta}{\partial t} - \nabla \frac{k_r n_l}{\mu} K ( \nabla p + \rho g \cdot \hat{z} ) = Q_w
 
- 
+
+Options:
+
+Variable naming:
+
+* `"domain`" ``[string]`` **""**  Defaults to the base subsurface domain.
+
+* `"primary variable`" ``[string]`` The primary variable associated with this PK, typically `"pressure`"
+
+
+Other variable names, typically not set as the default is basically always good:
+
+* `"conserved quantity suffix`" ``[string]`` **"water_content"**  If set, changes the conserved quantity key.
+
+* `"conserved quantity key`" ``[string]`` **"DOMAIN-CONSERVED_QUANTITY_SUFFIX"** Typically not set, default is good. ``[mol]``
+
+* `"mass density key`" ``[string]`` **"DOMAIN-mass_density_liquid"** liquid water density ``[kg m^-3]``
+
+* `"molar density key`" ``[string]`` **"DOMAIN-molar_density_liquid"** liquid water density ``[mol m^-3]``
+
+* `"permeability key`" ``[string]`` **"DOMAIN-permeability"** permeability of the soil medium ``[m^2]``
+
+* `"conductivity key`" ``[string]`` **"DOMAIN-relative_permeability"** scalar coefficient of the permeability ``[-]``
+
+* `"upwind conductivity key`" ``[string]`` **"DOMAIN-upwind_relative_permeability"** upwinded (face-based) scalar coefficient of the permeability.  Note the units of this are strange, but this represents :math:`\frac{n_l k_r}{\mu}`  ``[mol kg^-1 s^1 m^-2]``
+
+* `"darcy flux key`" ``[string]`` **"DOMAIN-mass_flux"** mass flux across a face ``[mol s^-1]``
+
+* `"darcy flux direction key`" ``[string]`` **"DOMAIN-mass_flux_direction"** direction of the darcy flux (used in upwinding :math:`k_r`) ``[??]``
+
+* `"darcy velocity key`" ``[string]`` **"DOMAIN-darcy_velocity"** darcy velocity vector, interpolated from faces to cells ``[m s^-1]``
+
+* `"darcy flux key`" ``[string]`` **"DOMAIN-mass_flux"** mass flux across a face ``[mol s^-1]``
+
+* `"saturation key`" ``[string]`` **"DOMAIN-saturation_liquid"** volume fraction of the liquid phase ``[-]``
+
+Discretization control:
+
+* `"diffusion`" ``[list]`` An OperatorDiffusion_ spec describing the (forward) diffusion operator
+
+* `"diffusion preconditioner`" ``[list]`` An OperatorDiffusion_ spec describing the diffusive parts of the preconditioner.
+
+
+Time integration and timestep control:
+
+* `"initial time step`" ``[double]`` **1.** Max initial time step size ``[s]``
+
+* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_.  Note
+  that this is only provided if this Richards PK is not strongly coupled to
+  other PKs.
+
+* `"linear solver`" ``[linear-solver-spec]`` is a LinearSolver_ spec.  Note
+  that this is only used if this PK is not strongly coupled to other PKs.
+
+* `"preconditioner`" ``[preconditioner-spec]`` is a Preconditioner_ spec.
+  Note that this is only used if this PK is not strongly coupled to other PKs.
+
+* `"initial condition`" ``[initial-condition-spec]`` See InitialConditions_.
+  Additionally, the following parameter is supported:
+
+  - `"initialize faces from cell`" ``[bool]`` **false** Indicates that the
+    primary variable field has both CELL and FACE objects, and the FACE values
+    are calculated as the average of the neighboring cells.
+
+Error control:
+
+* `"absolute error tolerance`" [double] **DERIVED** Defaults to a porosity of 0.5 * a saturation of 0.1 * n_l.  A small, but significant, amount of water.
+
+* `"relative error tolerance`" [double] **1** Take the error relative to the amount of water present in that cell.
+
+* `"flux tolerance`" [double] **1**
+
+  Multiplies the error in flux (on a face) relative to the min of water in the
+  neighboring cells.  Typically only changed if infiltration is very small and
+  the boundary condition is not converging, at which point it can be decreased
+  by an order of magnitude at a time until the boundary condition is
+  satisfied.
+
+Boundary conditions:
+
+* `"boundary conditions`" ``[subsurface-flow-bc-spec]`` **defaults to Neuman, 0 normal flux**  See `Flow-specific Boundary Conditions`_
+
+Physics control:
+
+* `"permeability rescaling`" ``[double]`` **1** Typically 1e7 or order :math:`sqrt(K)` is about right.  This rescales things to stop from multiplying by small numbers (permeability) and then by large number (:math:`\rho / \mu`).
+
+May inherit options from PKPhysicalBDFBase_
+
+
 
 
 Permafrost Flow PK
@@ -907,6 +1022,77 @@ Overland Flow, head primary variable PK
 
 Overland Flow, pressure primary variable, PK
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ Overland flow using the diffusion wave equation.
+
+Solves the diffusion wave equation for overland flow with pressure as a primary variable:
+
+.. math::
+  \frac{\partial \Theta}{\partial t} - \nabla n_l k \nabla h(p) = Q_w
+
+
+Options:
+
+Variable naming:
+
+* `"domain`" ``[string]`` **"surface"**  Defaults to the extracted surface mesh.
+
+* `"primary variable`" ``[string]`` The primary variable associated with this PK, typically `"DOMAIN-pressure`"
+
+
+Other variable names, typically not set as the default is basically always good:
+
+* `"conserved quantity suffix`" ``[string]`` **"water_content"**  If set, changes the conserved quantity key.
+
+* `"conserved quantity key`" ``[string]`` **"DOMAIN-CONSERVED_QUANTITY_SUFFIX"** Typically not set, default is good. ``[mol]``
+
+Discretization control:
+
+* `"diffusion`" ``[list]`` An OperatorDiffusion_ spec describing the (forward) diffusion operator
+
+* `"diffusion preconditioner`" ``[list]`` An OperatorDiffusion_ spec describing the diffusive parts of the preconditioner.
+
+Time integration and timestep control:
+
+* `"initial time step`" ``[double]`` **1.** Max initial time step size ``[s]``.
+
+* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_ spec.
+  Note that this is only used if this PK is not strongly coupled to other PKs.
+
+* `"linear solver`" ``[linear-solver-spec]`` is a LinearSolver_ spec.  Note
+  that this is only used if this PK is not strongly coupled to other PKs.
+
+* `"preconditioner`" ``[preconditioner-spec]`` is a Preconditioner_ spec.
+  Note that this is only used if this PK is not strongly coupled to other PKs.
+
+* `"initial condition`" ``[initial-condition-spec]`` See InitialConditions_.
+  Additionally, the following parameter is supported:
+
+  - `"initialize faces from cell`" ``[bool]`` **false** Indicates that the
+    primary variable field has both CELL and FACE objects, and the FACE values
+    are calculated as the average of the neighboring cells.
+
+Error control:
+
+* `"absolute error tolerance`" [double] **DERIVED** Defaults to 1 cm of water.  A small, but significant, amount of water.
+
+* `"relative error tolerance`" [double] **1** Take the error relative to the amount of water present in that cell.
+
+* `"flux tolerance`" [double] **1** Multiplies the error in flux (on a face)
+  relative to the min of water in the neighboring cells.  Typically only
+  changed if infiltration is very small and the boundary condition is not
+  converging, at which point it can be decreased by an order of magnitude at a
+  time until the boundary condition is satisfied.
+
+Boundary conditions:
+
+* `"boundary conditions`" ``[surface-flow-bc-spec]`` **defaults to Neuman, 0 normal flux**
+
+
+May inherit options from PKPhysicalBDFBase_.
+
+
+
 
 
 Snow Distribution PK
@@ -986,13 +1172,85 @@ Physical MPCs
 Coupled Water MPC
 --------------------
 
+ MPCCoupledWater: coupler which integrates surface and subsurface flow.
+
+Couples Richards equation to surface water through continuity of both pressure and fluxes.
+
+Currently requires that the subsurface discretization is a face-based
+discretization, i.e. one of the MFD methods.  Then the surface equations are
+directly added into the subsurface discrete equations.
+
+* `"PKs order`" ``[Array(string)]`` Supplies the names of the coupled PKs.
+  The order must be {subsurface_flow_pk, surface_flow_pk} (subsurface first).
+
+* `"linear solver`" ``[linear-solver-spec]`` A LinearSolver_ spec.  Only used
+  if this PK is not itself coupled by other strong couplers.
+
+* `"preconditioner`" ``[preconditioner-spec]`` A Preconditioner_ spec.  Only used
+  if this PK is not itself coupled by other strong couplers.
+
+* `"water delegate`" ``[list]`` 
+
+
+
+ Globalization hacks to deal with nonlinearity around the appearance/disappearance of surface water.
+
+ The water delegate works to eliminate discontinuities/strong nonlinearities
+ when surface cells shift from dry to wet (i.e. the surface pressure goes
+ from < atmospheric pressure to > atmospheric pressure.
+
+ These methods work to alter the predictor around this nonlinearity.
+
+ - `"modify predictor with heuristic`" ``[bool]`` **false** This simply
+   limits the prediction to backtrack to just above atmospheric on both the
+   first and second timesteps that take us over atmospheric.
+
+ - `"modify predictor damp and cap the water spurt`" ``[bool]`` **false** The
+   second both limits (caps) and damps all surface cells to ensure that all
+   nearby cells are also not overshooting.  This is the preferred method.
+    
+ These methods work to alter the preconditioned correction for the same
+ reasons described above.
+
+ - `"global water face limiter`" ``[default]`` **INF** This is simply a limit
+   to the maximum allowed size of the correction (in [Pa]) on all faces.  Any
+   correction larger than this is set to this.
+
+ - `"cap the water spurt`" ``[bool]`` **false** If a correction takes the
+   pressure on a surface cell from below atmospheric (dry) to above (wet),
+   the correction is set to a value which results in the new iterate to being
+   CAP_SIZE over atmospheric.
+
+ - `"damp the water spurt`" ``[bool]`` **false** A damping factor (less than
+   one) is calculated to multiply the correction such that the largest
+   correction takes a cell to just above atmospheric.  All faces (globally)
+   are affected.
+  
+ - `"damp and cap the water spurt`" ``[bool]`` **false** None of the above
+   should really be used.  Capping, when the cap is particularly severe,
+   results in faces whose values are very out of equilibrium with their
+   neighboring cells which are not capped.  Damping results in a tiny
+   timestep in which, globally, at MOST one face can go from wet to dry.
+   This looks to do a combination, in which all things are damped, but faces
+   that are initially expected to go from dry to wet are pre-scaled to ensure
+   that, when damped, they are also (like the biggest change) allowed to go
+   from dry to wet (so that multiple cells can wet in the same step).  This
+   is the preferred method.
+
+ In these methods, the following parameters are useful:
+
+ - `"cap over atmospheric`" ``[double]`` **100 Pa** This sets the max size over
+   atmospheric to which things are capped or damped.
+  
+ 
+
+
 
 Subsurface MPC
 --------------------
 
 Permafrost MPC
 --------------------
-
 
 State
 ##############
@@ -1013,6 +1271,7 @@ example:
       ...
     </ParameterList>
   </ParameterList>
+
  
 
 Field Evaluators
@@ -1047,7 +1306,7 @@ for inclusion of multiple phases.
 
 RichardsWaterContentEvaluator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+ RichardsWaterContentEvaluator: water content without vapor
 Evaluator type: `"richards water content`"
 
 Evaluates water content in cell E.
@@ -1075,7 +1334,7 @@ Example:
 
 RichardsWaterContentWithVaporEvaluator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+ RichardsWaterContentEvaluator: water content without vapor
 Evaluator type: `"richards water content with vapor`"
 
 Evaluates water content in cell E.
@@ -1106,7 +1365,7 @@ Example:
 
 PermafrostWaterContentEvaluator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+ RichardsWaterContentEvaluator: water content without vapor
 Evaluator type: `"permafrost water content`"
 
 Evaluates water content in cell E.
@@ -1146,7 +1405,7 @@ Evaluators for
 
 SurfaceElevation
 ^^^^^^^^^^^^^^^^^^
-
+ MeshedElevationEvaluator: evaluates the elevation (z-coordinate) and slope magnitude of a mesh.
 Evaluator type: `"meshed elevation`"
 
 Evaluates the z-coordinate and the magnitude of the slope :math:``|\nambla_h z|``
@@ -1168,7 +1427,7 @@ Example:
 
 SurfacePotential
 ^^^^^^^^^^^^^^^^^^^
-
+ PresElevEvaluator: evaluates h + z
 Evaluator type: ""
 
 .. math::
@@ -1191,7 +1450,7 @@ NOTE: This could easily be replaced by a generic AdditiveEvaluator_
 
 SnowSurfacePotential
 ^^^^^^^^^^^^^^^^^^^^^^
-
+ PresElevEvaluator: evaluates h + z
 Evaluator type: "snow skin potential"
 
 .. math::
@@ -1219,14 +1478,18 @@ Example:
 
 
 
+
 Generic Evaluators
 ---------------------------------
 
 Several generic evaluators are provided.
 
+AdditiveEvaluator
+^^^^^^^^^^^^^^^^^^^^^^
 
 
-
+MultiplicativeEvaluator
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 
@@ -1234,16 +1497,17 @@ Several generic evaluators are provided.
 InitialConditions
 =================
 
-Initial condition specs are used in two places -- in the PK_ spec
-which describes the initial condition of primary variables, and in the
-initial conditions sublist of state, in which the value of atomic
-constants are provided.  In Amanzi, this list is also used for initial
-conditions of primary variables are specified here, not within the PK
-list (hence the name of this sublist).  In ATS, this sublist is pretty
-much only used for constant scalars and constant vectors.
+Initial condition specs are used in two places:
 
-This list needs to be renamed -- it has nothing to do with inital conditions anymore.
+* within the PK_ spec which describes the initial condition of primary variables (true
+  initial conditions), and
 
+* in the `"initial conditions`" sublist of state, in which the value
+  of atomic constants are provided (not really initial conditions and
+  should be renamed).  These atomic values are not controlled by
+  evaluators, and are not included in the DaG.  Likely these should be
+  removed entirely.
+  
 Initialization of constant scalars
 ------------------------------------
 
@@ -1372,6 +1636,308 @@ example:
 
 
 
+BoundaryConditions
+===================
+
+
+
+In general, boundary conditions are provided in a heirarchical list by
+boundary condition type, then functional form.  Boundary condition specs are
+split between two types -- those which require a user-provided function
+(i.e. Dirichlet data, etc) and those which do not (i.e. zero gradient
+conditions).
+
+A list of conditions might pull in both Dirichlet and Neumann data on
+different regions, or use different functions on different regions.  The
+following example illustrates how boundary conditions are prescribed across
+the domain for a typical PK:
+
+Example:
+
+.. code-block:: xml
+
+ <ParameterList name="boundary conditions">
+   <ParameterList name="DIRICHLET_TYPE">
+     <ParameterList name="BC west">
+       <Parameter name="regions" type="Array(string)" value="{west}"/>
+       <ParameterList name="DIRICHLET_FUNCTION_NAME">
+         <ParameterList name="function-constant">
+           <Parameter name="value" type="double" value="101325.0"/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+     <ParameterList name="BC east">
+       <Parameter name="regions" type="Array(string)" value="{east}"/>
+       <ParameterList name="DIRICHLET_FUNCTION_NAME">
+         <ParameterList name="function-constant">
+           <Parameter name="value" type="double" value="102325."/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+   <ParameterList name="mass flux">
+     <ParameterList name="BC north">
+       <Parameter name="regions" type="Array(string)" value="{north}"/>
+       <ParameterList name="outward mass flux">
+         <ParameterList name="function-constant">
+           <Parameter name="value" type="double" value="0."/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+   <ParameterList name="zero gradient">
+     <ParameterList name="BC south">
+       <Parameter name="regions" type="Array(string)" value="{south}"/>
+     </ParameterList>
+   </ParameterList>
+ </ParameterList>
+
+
+Different PKs populate this general format with different names, replacing
+DIRICHLET_TYPE and DIRICHLET_FUNCTION_NAME.
+  
+ 
+
+
+Flow-specific Boundary Conditions
+----------------------------------
+
+
+
+Flow boundary conditions must follow the general format shown in
+BoundaryConditions_.  Specific conditions implemented include:
+
+Dirichlet (pressure) boundary conditions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Used for both surface and subsurface flows, this provides pressure data on
+boundaries (in [Pa]).
+
+Example:
+
+.. code-block:: xml
+
+ <ParameterList name="boundary conditions">
+   <ParameterList name="pressure">
+     <ParameterList name="BC west">
+       <Parameter name="regions" type="Array(string)" value="{west}"/>
+       <ParameterList name="boundary pressure">
+         <ParameterList name="function-constant">
+           <Parameter name="value" type="double" value="101325.0"/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+ </ParameterList>
+
+
+Neumann (mass flux) boundary conditions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Used for both surface and subsurface flows, this provides mass flux data (in [mol m^-2 s^-1], in the outward normal direction) on boundaries.
+
+Example:
+
+.. code-block:: xml
+
+ <ParameterList name="boundary conditions">
+   <ParameterList name="mass flux">
+     <ParameterList name="BC west">
+       <Parameter name="regions" type="Array(string)" value="{west}"/>
+       <ParameterList name="outward mass flux">
+         <ParameterList name="function-constant">
+           <Parameter name="value" type="double" value="-1.e-3"/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+ </ParameterList>
+
+ 
+Seepage face boundary conditions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A variety of seepage face boundary conditions are permitted for both surface
+and subsurface flow PKs.  Typically seepage conditions are of the form:
+
+  * if :math:`q \cdot \hat{n} < 0`, then :math:`q = 0`
+  * if :math:`p > p0`, then :math:`p = p0`
+
+This ensures that flow is only out of the domain, but that the max pressure on
+the boundary is specified by :math:`p0`.
+
+Example: pressure (for surface or subsurface)
+
+.. code-block:: xml
+
+ <ParameterList name="boundary conditions">
+   <ParameterList name="seepage face">
+     <ParameterList name="BC west">
+       <Parameter name="regions" type="Array(string)" value="{west}"/>
+       <ParameterList name="boundary pressure">
+         <ParameterList name="function-constant">
+           <Parameter name="value" type="double" value="101325."/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+ </ParameterList>
+
+
+Example: head (for surface)
+ 
+.. code-block:: xml
+
+ <ParameterList name="boundary conditions">
+   <ParameterList name="seepage face">
+     <ParameterList name="BC west">
+       <Parameter name="regions" type="Array(string)" value="{west}"/>
+       <ParameterList name="boundary head">
+         <ParameterList name="function-constant">
+           <Parameter name="value" type="double" value="0.0"/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+ </ParameterList>
+
+
+Additionally, an infiltration flux may be prescribed, which describes the max
+flux.  This is for surface faces on which a typical precipitation rate might
+be prescribed, to be enforced until the water table rises to the surface, at
+which point the precip is turned off and water seeps into runoff.  This
+capability is experimental and has not been well tested.
+
+  * if :math:`q \cdot \hat{n} < q0`, then :math:`q = q0`
+  * if :math:`p > p_atm`, then :math:`p = p_atm`
+
+Example: seepage with infiltration
+
+.. code-block:: xml
+
+ <ParameterList name="boundary conditions">
+   <ParameterList name="seepage face with infiltration">
+     <ParameterList name="BC west">
+       <Parameter name="regions" type="Array(string)" value="{west}"/>
+       <ParameterList name="outward mass flux">
+         <ParameterList name="function-constant">
+           <Parameter name="value" type="double" value="-1.e-5"/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+ </ParameterList>
+
+Note it would be straightforward to add both p0 and q0 in the same condition;
+this has simply not had a use case yet.
+
+
+Dirichlet (head) boundary conditions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Used for surface flows, this provides head data (in [m]) on boundaries.
+
+Example:
+
+.. code-block:: xml
+
+ <ParameterList name="boundary conditions">
+   <ParameterList name="head">
+     <ParameterList name="BC west">
+       <Parameter name="regions" type="Array(string)" value="{west}"/>
+       <ParameterList name="boundary head">
+         <ParameterList name="function-constant">
+           <Parameter name="value" type="double" value="0.01"/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+ </ParameterList>
+
+
+Fixed level boundary conditions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For surface flows only.  This fixes the water table at a constant elevation.
+It is a head condition that adapts to the surface elevation such that
+
+.. math::
+  h = max( h0 - z, 0 )
+
+Example:
+
+.. code-block:: xml
+
+ <ParameterList name="boundary conditions">
+   <ParameterList name="head">
+     <ParameterList name="BC west">
+       <Parameter name="regions" type="Array(string)" value="{west}"/>
+       <ParameterList name="fixed level">
+         <ParameterList name="function-constant">
+           <Parameter name="value" type="double" value="0.0"/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+ </ParameterList>
+
+
+Zero head gradient boundary conditions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Used for surface flows, this is an "outlet" boundary condition which looks to
+enforce the condition that
+
+.. math::
+  \div h \cdot \hat{n} = 0
+
+for head :math:`h` and outward normal :math:`\hat{n}`.  Note that this is an
+"outlet" boundary, in the sense that it should really not be used on a
+boundary in which
+
+.. math::
+  \div z \cdot \hat{n} > 0.
+
+This makes it a useful boundary condition for benchmark and 2D problems, where
+the elevation gradient is clear, but not so useful for DEM-based meshes.
+
+Example:
+
+.. code-block:: xml
+
+ <ParameterList name="boundary conditions">
+   <ParameterList name="zero gradient">
+     <ParameterList name="BC west">
+       <Parameter name="regions" type="Array(string)" value="{west}"/>
+     </ParameterList>
+   </ParameterList>
+ </ParameterList>
+
+
+Critical depth boundary conditions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Also for surface flows, this is an "outlet" boundary condition which looks to
+set an outward flux to take away runoff.  This condition is given by:
+
+.. math::
+  q = \sqrt{g \hat{z}} n_{liq} h^1.5
+
+Example:
+
+.. code-block:: xml
+
+ <ParameterList name="boundary conditions">
+   <ParameterList name="critical depth">
+     <ParameterList name="BC west">
+       <Parameter name="regions" type="Array(string)" value="{west}"/>
+     </ParameterList>
+   </ParameterList>
+ </ParameterList>
+
+ 
+
+
+
+
+
+
 
 Time integrators, solvers, and other mathematical specs
 ####################################################################################
@@ -1437,7 +2003,7 @@ Example:
 
 Hypre's Boomer AMG
 -------------------
-
+ PreconditionerBoomerAMG: HYPRE's multigrid preconditioner.
 Internal parameters for Boomer AMG include
 
 * `"tolerance`" ``[double]`` if is not zero, the preconditioner is dynamic 
@@ -1496,7 +2062,7 @@ Example:
 
 Trilinos ML
 -------------------
-
+ PreconditionerML: Trilinos ML multigrid.
 Internal parameters of Trilinos ML includes
 
 Example:
@@ -1528,7 +2094,7 @@ Example:
 
 Block ILU
 -------------------
-
+ PreconditionerBlockILU:   Incomplete LU preconditioner.
 
 The internal parameters for block ILU are as follows:
 
@@ -1567,7 +2133,7 @@ Other Common Specs
 IOEvent
 ===================
 
-
+ IOEvent: base time/timestep control determing when in time to do something.
 
 The IOEvent is used for multiple objects that need to indicate simulation times or cycles on which to do something.
 
@@ -1614,7 +2180,7 @@ The IOEvent is used for multiple objects that need to indicate simulation times 
 VerboseObject
 ===================
 
-
+ VerboseObject: a controller for writing log files on multiple cores with varying verbosity.
 
 This allows control of log-file verbosity for a wide variety of objects
 and physics.
@@ -1647,7 +2213,7 @@ Example:
 Function
 ===================
 
-
+ Function: base class for all functions of space and time.
 Analytic, algabraic functions of space and time are used for a variety of
 purposes, including boundary conditions, initial conditions, and independent
 variables.
@@ -1670,7 +2236,7 @@ It is straightforward to add new functions as needed.
 
 Constant Function
 -------------------------
-
+ ConstantFunction: Implements the Function interface using a constant value.
 
 Constant function is defined as :math:`f(x) = a`, for all :math:`x`. 
 
@@ -1689,7 +2255,7 @@ Example:
 
 Tabular Function
 -------------------------
-
+ TabularFunction: Piecewise-defined function.
 
 A piecewise function of one variable.
 
@@ -1773,7 +2339,7 @@ Example:
 
 Smooth step Function
 -------------------------
-
+ SmoothStepFunction: a smoothed discontinuity.
 
 A smooth :math:`C^2` function `f(x)` on interval :math:`[x_0,\,x_1]` is
 defined such that `f(x) = y_0` for `x < x0`, `f(x) = y_1` for `x > x_1`, and
@@ -1796,7 +2362,7 @@ Example:
 
 Polynomial Function
 -------------------------
-
+ PolynomialFunction: a polynomial
 
 A generic polynomial function is given by the following expression:
 
@@ -1821,7 +2387,7 @@ Example:
 
 Multi-variable linear Function
 ------------------------------
-
+ LinearFunction: a multivariate linear function.
 
 A multi-variable linear function is formally defined by
  
@@ -1847,7 +2413,7 @@ Here is an example:
 
 Separable Function
 ------------------
-
+ SeparableFunction: f(x,y) = f1(x)*f2(y)
 
 A separable function is defined as the product of other functions such as
 
@@ -1873,7 +2439,7 @@ where :math:`f_1` is defined by the `"function1`" sublist, and
 
 Additive Function
 ------------------
-
+ AdditiveFunction: f(x,y) = f1(x,y) + f2(x,y)
 
 An additive function simply adds two other function results together.
 
@@ -1898,7 +2464,7 @@ where :math:`f_1` is defined by the `"function1`" sublist, and
 
 Multiplicative Function
 --------------------------
-
+ MultiplicativeFunction: f(x,y) = f1(x,y) * f2(x,y)
 
 A multiplicative function simply multiplies two other function results together.
 
@@ -1923,7 +2489,7 @@ where :math:`f_1` is defined by the `"function1`" sublist, and
 
 Composition Function
 --------------------------
-
+ CompositionFunction: f(x,y) = f1(x,y) * f2(x,y)
 
 Function composition simply applies one function to the result of another.
 
@@ -1948,7 +2514,7 @@ where :math:`f_1` is defined by the `"function1`" sublist, and
 
 Piecewise Bilinear Function
 ---------------------------
-
+ BilinearFunction: a piecewise bilinear function.
 
 A piecewise bilinear function extends the linear form of the tabular function to two variables.
 
@@ -1986,7 +2552,7 @@ Example:
 
 Distance Function
 -------------------
-
+ DistanceFunction: distance from a reference point.
 
 A distance function calculates distance from reference point :math:`x_0`
 using by the following expression:
@@ -2010,7 +2576,7 @@ Example:
 
 Monomial Function
 -------------------
-
+ MonomialFunction: a multivariate monomial function.
 
 A multi-variable monomial function is given by the following expression:
 
@@ -2035,7 +2601,7 @@ Here is an example of monomial of degree 6 in three variables:
 
 Standard Math Function
 -------------------------
-
+ StandardMathFunction: provides access to many common mathematical functions.
 These functions allow to set up non-trivial time-dependent boundary conditions 
 which increases a set of analytic solutions that can be used in convergence 
 analysis tests.
@@ -2082,6 +2648,209 @@ This example defines function `1e-7 sqrt(t-0.1)`.
 
 
 
+
+Operator
+===================
+
+ Operator represents a linear map, and typically encapsulates a discretization.
+
+``Operator`` represents a map from linear space X to linear space Y.  Typically,
+this map is a linear map, and encapsulates much of the discretization involved
+in moving from continuous to discrete equations.  At the moment, it is assumed
+that X = Y, but this could be changed if future needs require it.
+
+An ``Operator`` provides an interface for applying both the forward and inverse
+linear map (assuming the map is invertible).
+
+Typically the ``Operator`` is never seen by the user; instead the user provides
+input information for helper classes based on the continuous mathematical
+operator and the desired discretization.  These helpers build the needed
+``Operator``, which may incldude information from multiple helpers (i.e. in the
+case of Jacobian Operators for a PDE).
+
+However, one option may be provided by the user, which is related to dealing
+with nearly singular operators:
+
+* `"diagonal shift`" ``[double]`` **0.0** Adds a scalar shift to the diagonal
+  of the ``Operator``, which can be useful if the ``Operator`` is singular or
+  near-singular.
+
+
+
+
+OperatorAccumulation
+-------------------------
+
+ ``OperatorAccumulation`` generates a diagonal matrix representing accumulation
+
+``OperatorAccumulation`` assembles the discrete form of :math:`\frac{\partial A}{\partial t}`.
+
+This class is usually used as part of a preconditioner, providing the linearization:
+
+.. math::
+  \frac{\partial}{\partial A} \left[ \frac{\partial A}{\partial t} \right]_{A_0} = \frac{|\Omega_E|}{\Delta t}
+
+for a grid element :math:`\Omega_E`.
+
+No options are available here.
+
+
+
+
+OperatorDiffusion
+------------------
+
+
+``OperatorDiffusion`` form local ``Op`` s and global ``Operator`` s for elliptic equations:
+
+.. math::
+  \nabla \cdot k \nabla u
+
+with a variety of discretizations.  Note also, for reasons that are one part historical and potentially not that valid, this also supports and implementation with an advective source, i.e.:
+
+.. math::
+  \nabla \cdot k (\nabla u + \hat{z})
+
+for gravitational terms in Richards equations.
+
+The input spec for a diffusion operator consists of:
+
+* `"discretization primary`" ``[string]`` Currently supported options include:
+
+ - `"fv: default`" the standard two-point flux finite volume discretization
+ - `"nlfv: default`" the nonlinear finite volume method of ???
+ - MFD methods, including:
+
+  * `"mfd: default`"
+  * `"mfd: monotone for hex`"
+  * `"mfd: optimized for monotonicity`"
+  * `"mfd: two-point flux approximation`"
+  * `"mfd: optimized for sparsity`"
+  * `"mfd: support operator`"
+
+ Note that the most commonly used are `"fv: default`" for simple test
+ problems (this method is not particularly accurate for distorted
+ meshes), `"mfd: optimized for sparsity`" for most real problems on
+ unstructured meshes, and `"mfd: optimized for monotonicity`" for
+ orthogonal meshes with diagonal tensor/scalar coefficients.
+
+* `"gravity`" [bool] **false** specifies if the gravitational flow term is included
+
+* `"Newton correction`" [string] specifies a model for non-physical terms 
+  that must be added to the matrix. These terms represent Jacobian and are needed 
+  for the preconditioner. Available options are `"true Jacobian`" and `"approximate Jacobian`".
+  The FV scheme accepts only the first options. The other schemes accept only the second option.
+
+* `"scaled constraint equation`" [bool] **false** rescales flux continuity equations
+  on mesh faces.  These equations are formed without the nonlinear
+  coefficient. This option allows us to treat the case of zero nonlinear
+  coefficient, which otherwise generates zero rows in the operator, which is
+  then singular.  At moment this feature does not work with non-zero gravity
+  term.
+
+* `"constraint equation scaling cutoff"`" [double] specifies the cutoff value for
+  applying rescaling strategy described above.
+
+
+
+
+
+Additional options available only for the MFD family of discretizations include:
+  
+* `"nonlinear coefficient`" [string] specifies a method for treating nonlinear
+  diffusion coefficient, if any. Available options are `"none`", `"upwind:
+  face`", `"divk: cell-face`" (default), `"divk: face`", `"standard: cell`",
+  `"divk: cell-face-twin`" and `"divk: cell-grad-face-twin`".  Symmetry
+  preserving methods are the divk-family of methods and the classical
+  cell-centered method (`"standard: cell`"). The first part of the name
+  indicates the base scheme.  The second part (after the semi-column)
+  indicates required components of the composite vector that must be provided
+  by a physical PK.
+
+* `"discretization secondary`" [string] specifies the most robust
+  discretization method that is used when the primary selection fails to
+  satisfy all a priori conditions.  This is typically `"mfd: default`".
+  **Used only when an MFD `"primary discretization`" is used**
+
+* `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
+  geometric objects.  Typically this is set by the implementation and is not provided.
+
+* `"preconditioner schema`" [Array(string)] **{face,cell}** Defines the
+  preconditioner stencil.  It is needed only when the default assembling
+  procedure is not desirable. If skipped, the `"schema`" is used instead.
+  In addition to the default, **{face}** may be used, which forms the Schur
+  complement.
+   
+* `"consistent faces`" [list] may contain a `"preconditioner`" and
+  `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_
+  respectively).  If these lists are provided, and the `"discretization
+  primary`" is of type `"mfd: *`", then the diffusion method
+  UpdateConsistentFaces() can be used.  This method, given a set of cell
+  values, determines the faces constraints that satisfy the constraint
+  equation in MFD by assembling and inverting the face-only system.  This is
+  not currently used by any Amanzi PKs.
+
+* `"diffusion tensor`" [string] allows us to solve problems with symmetric and non-symmetric 
+  (but positive definite) tensors. Available options are *symmetric* (default) and *nonsymmetric*.
+
+
+
+
+
+Additional options for MFD with the gravity term include:
+  
+* `"gravity term discretization`" [string] selects a model for discretizing the 
+   gravity term. Available options are `"hydraulic head`" [default] and `"finite volume`". 
+   The first option starts with equation for the shifted solution, i.e. the hydraulic head,
+   and derives gravity discretization by the reserve shifting.
+   The second option is based on the divergence formula.
+
+
+
+
+
+Example:
+
+.. code-block:: xml
+
+    <ParameterList name="OPERATOR_NAME">
+      <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+      <Parameter name="gravity" type="bool" value="true"/>
+      <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
+      <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
+      <Parameter name="Newton correction" type="string" value="true Jacobian"/>
+
+      <ParameterList name="consistent faces">
+        <ParameterList name="linear solver">
+          ...
+        </ParameterList>
+        <ParameterList name="preconditioner">
+          ...
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+
+
+
+OperatorAdvection
+-------------------------
+
+
+``OperatorAdvection`` assembles the discrete form of:
+
+.. math::
+  \nabla \cdot Aq
+
+which advects quantity :math:`A` with fluxes :math:`q`.
+
+This is a simple, first-order donor-upwind scheme, and is mostly intended for
+use in diffusion-dominated advection-diffusion equations.  No options are
+available here.
+ 
 
 
 

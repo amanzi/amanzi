@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include "dbc.hh"
+#include "errors.hh"
 #include "Spline.hh"
 
 #include "wrm_van_genuchten.hh"
@@ -159,6 +160,12 @@ void WRMVanGenuchten::InitializeFromPlist_() {
     }
   }
 
+  // DEPRECATION ERROR
+  if (plist_.isParameter("smoothing interval width")) {
+    Errors::Message message("WRM: DEPRECATION: option \"smoothing interval width\" has been removed in favor of \"smoothing interval width [saturation]\" to ensure correct units of this parameter are used.");
+    Exceptions::amanzi_throw(message);
+  }
+  
   s0_ = 1.0 - plist_.get<double>("smoothing interval width [saturation]", 0.0);
   if (s0_ < 1.) {
     fit_.Setup(s0_, k_relative(s0_), d_k_relative(s0_),

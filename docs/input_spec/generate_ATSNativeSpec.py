@@ -46,7 +46,7 @@ def readFileDoc(filename):
     if header is not None:
         doc.insert(0, header)
         
-    return "".join(example)
+    return "".join(doc)
 
 
 def findAndRead(filename):

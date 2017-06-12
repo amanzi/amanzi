@@ -112,7 +112,7 @@ void Transport_PK_ATS::Functional(const double t, const Epetra_Vector& component
   }
 
   for (int c = 0; c < ncells_owned; c++) {  // calculate conservative quantatity
-    double vol_phi_ws_den = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_start)[0][c] * (*mol_dens)[0][c];
+    double vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_start)[0][c] * (*mol_dens_start)[0][c];
     f_component[c] /= vol_phi_ws_den;
   }
 
@@ -130,7 +130,7 @@ void Transport_PK_ATS::Functional(const double t, const Epetra_Vector& component
 
           if (c2 >= 0 && f < nfaces_owned) {
             u = fabs((*flux)[0][f]);
-            double vol_phi_ws_den = mesh_->cell_volume(c2) * (*phi)[0][c2] * (*ws_start)[0][c2] * (*mol_dens)[0][c2];
+            double vol_phi_ws_den = mesh_->cell_volume(c2) * (*phi_)[0][c2] * (*ws_start)[0][c2] * (*mol_dens_start)[0][c2];
             tcc_flux = u * values[i];
             f_component[c2] += tcc_flux / vol_phi_ws_den;
           }

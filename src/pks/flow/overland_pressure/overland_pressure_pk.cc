@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -----------------------------------------------------------------------------
 This is the overland flow component of ATS.
@@ -60,7 +60,11 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
     update_flux_(UPDATE_FLUX_ITERATION),
     niter_(0),
     source_only_if_unfrozen_(false),
-    precon_used_(true)
+    precon_used_(true),
+    jacobian_(false),
+    jacobian_lag_(0),
+    iter_(0),
+    iter_counter_time_(0.)
 {
 
   if(!plist_->isParameter("conserved quanity suffix"))
@@ -160,17 +164,32 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     S->RequireField(getKey(domain_,"upwind_overland_conductivity"), name_)->SetMesh(mesh_)
       ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
   } else {
-    Errors::Message message("Unknown upwind coefficient location in overland flow.");
+    Errors::Message message;
+    message << name_ << ": Unknown upwind coefficient location in overland flow.";
     Exceptions::amanzi_throw(message);
   }
 
   S->GetField(getKey(domain_,"upwind_overland_conductivity"),name_)->set_io_vis(false);
 
   // -- create the forward operator for the diffusion term
-  Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
+  // DEPRECATED OPTIONS
+  if (plist_->isParameter("Diffusion") ||
+      plist_->isParameter("Diffusion PC")) {
+    Errors::Message message("Richards PK: DEPRECATION: Discretization lists \"Diffusion\" and \"Diffusion PC\" have been renamed \"diffusion\" and \"diffusion preconditioner\", respectively.");
+    Exceptions::amanzi_throw(message);
+  }
+
+  Teuchos::ParameterList& mfd_plist = plist_->sublist("diffusion");
   mfd_plist.set("nonlinear coefficient", coef_location);
   if (!mfd_plist.isParameter("scaled constraint equation"))
     mfd_plist.set("scaled constraint equation", true);
+  if (mfd_plist.isParameter("Newton correction")) {
+    Errors::Message message;
+    message << name_ << ": The forward operator for Diffusion should not set a "
+            << "\"Newton correction\" term, perhaps you meant to put this in a "
+            << "\"Diffusion PC\" sublist.";
+    Exceptions::amanzi_throw(message);
+  }    
   
   Operators::OperatorDiffusionFactory opfactory;
   matrix_diff_ = opfactory.Create(mfd_plist, mesh_, bc_);
@@ -191,7 +210,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   
   // -- create the operators for the preconditioner
   //    diffusion
-  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("Diffusion PC");
+  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("diffusion preconditioner");
   mfd_pc_plist.set("nonlinear coefficient", coef_location);
   mfd_pc_plist.set("scaled constraint equation",
                    mfd_plist.get<bool>("scaled constraint equation"));
@@ -215,6 +234,8 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   // If using approximate Jacobian for the preconditioner, we also need derivative information.
   jacobian_ = (mfd_pc_plist.get<std::string>("Newton correction", "none") != "none");
   if (jacobian_) {
+    jacobian_lag_ = mfd_pc_plist.get<int>("Newton correction lag", 0);
+    
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // MFD -- upwind required
 
@@ -245,7 +266,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   }
   
   //    accumulation
-  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("Accumulation PC");
+  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("accumulation preconditioner");
   acc_pc_plist.set("entity kind", "cell");
   preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, preconditioner_));
   

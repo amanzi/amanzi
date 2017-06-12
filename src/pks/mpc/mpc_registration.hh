@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 ATS
 
@@ -19,7 +19,7 @@ namespace Amanzi {
 RegisteredPKFactory<WeakMPC> WeakMPC::reg_("weak MPC");
 
 } // namespace
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 ATS
 
@@ -45,7 +45,7 @@ template<>
 RegisteredPKFactory<StrongMPC<PK_BDF_Default> > StrongMPC<PK_BDF_Default>::reg_("strong MPC");
 
 } // namespace
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 ATS
 
@@ -66,7 +66,7 @@ namespace Amanzi {
 RegisteredPKFactory<PK_MPCSubcycled_ATS> PK_MPCSubcycled_ATS::reg_("pk_mpcsubcycled_ats");
 
 } // namespace
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 ATS
 
@@ -98,7 +98,7 @@ RegisteredPKFactory<ReactiveTransport_PK_ATS> ReactiveTransport_PK_ATS::reg_("re
 #include "mpc_subsurface.hh"
 Amanzi::RegisteredPKFactory<Amanzi::MPCSubsurface> Amanzi::MPCSubsurface::reg_("subsurface permafrost");
 
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 ATS
 

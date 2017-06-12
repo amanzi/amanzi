@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -119,7 +119,7 @@ void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeV
   // assemble and create PC
   preconditioner_diff_->ApplyBCs(true, true);
   preconditioner_->AssembleMatrix();
-  preconditioner_->InitPreconditioner("preconditioner", plist_->sublist("Diffusion PC"));
+  preconditioner_->InitPreconditioner("preconditioner", plist_->sublist("diffusion preconditioner"));
 
 };
 
