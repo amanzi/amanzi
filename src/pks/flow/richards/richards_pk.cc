@@ -278,7 +278,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   }
   
   // -- accumulation terms
-  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("Accumulation PC");
+  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("accumulation preconditioner");
   acc_pc_plist.set("entity kind", "cell");
   preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, preconditioner_));
 
@@ -413,8 +413,11 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
   Teuchos::RCP<FlowRelations::WRMEvaluator> wrm =
       Teuchos::rcp(new FlowRelations::WRMEvaluator(wrm_plist));
-  S->SetFieldEvaluator(getKey(domain_,"saturation_liquid"), wrm);
-  S->SetFieldEvaluator(getKey(domain_,"saturation_gas"), wrm);
+
+  if (!S->HasFieldEvaluator("saturation_liquid")) {
+    S->SetFieldEvaluator(getKey(domain_,"saturation_liquid"), wrm);
+    S->SetFieldEvaluator(getKey(domain_,"saturation_gas"), wrm);
+  }
 
   // -- rel perm
   std::vector<AmanziMesh::Entity_kind> locations2(2);

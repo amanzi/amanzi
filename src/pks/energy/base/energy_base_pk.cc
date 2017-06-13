@@ -234,7 +234,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   
 
   // -- accumulation terms
-  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("Accumulation PC");
+  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("accumulation preconditioner");
   acc_pc_plist.set("entity kind", "cell");
   preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, preconditioner_));
 
@@ -244,7 +244,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     implicit_advection_in_pc_ = !plist_->get<bool>("supress advective terms in preconditioner", false);
 
     if (implicit_advection_in_pc_) {
-      Teuchos::ParameterList advect_plist = plist_->sublist("Advection PC");
+      Teuchos::ParameterList advect_plist = plist_->sublist("advection preconditioner");
       preconditioner_adv_ = Teuchos::rcp(new Operators::OperatorAdvection(advect_plist, preconditioner_));
     }
   }
