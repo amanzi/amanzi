@@ -41,9 +41,7 @@
 #include "mpc_pks_registration.hh"
 #include "mpc_registration.hh"
 
-//#include "deform_constitutive_relations_porosity_registration.hh"
-//#include "deform_prescribed_deformation_registration.hh"
-#include "deform_volumetric_deformation_registration.hh"
+#include "deformation_registration.hh"
 
 #include "energy_advection_diffusion_registration.hh"
 // #include "energy_constant_temperature_registration.hh"
