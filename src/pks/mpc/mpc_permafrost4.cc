@@ -39,10 +39,10 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
 
   // -- ensure local ops are suface ops
   pks_list_->sublist(names[2]).sublist("diffusion preconditioner").set("surface operator", true);
-  pks_list_->sublist(names[2]).sublist("Accumulation PC").set("surface operator", true);
+  pks_list_->sublist(names[2]).sublist("accumulation preconditioner").set("surface operator", true);
   pks_list_->sublist(names[3]).sublist("diffusion preconditioner").set("surface operator", true);
-  pks_list_->sublist(names[3]).sublist("Advection PC").set("surface operator", true);
-  pks_list_->sublist(names[3]).sublist("Accumulation PC").set("surface operator", true);
+  pks_list_->sublist(names[3]).sublist("advection preconditioner").set("surface operator", true);
+  pks_list_->sublist(names[3]).sublist("accumulation preconditioner").set("surface operator", true);
   
 
   domain_surf = plist_->sublist("surface ewc delegate").get<std::string>("domain name", "surface"); 

@@ -127,7 +127,7 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
   preconditioner_->SymbolicAssembleMatrix();
   
   // accumulation operator for the preconditioenr
-  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("Accumulation PC");
+  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("accumulation preconditioner");
   acc_pc_plist.set("entity kind", "cell");
   preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, preconditioner_));
 

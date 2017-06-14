@@ -61,11 +61,11 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp(new FlowRelations::WRMPermafrostEvaluator(wrm_plist));
 
   
-  S->SetFieldEvaluator(getKey(domain_,"saturation_liquid"), wrm);
-
-  S->SetFieldEvaluator(getKey(domain_,"saturation_gas"), wrm);
-
-  S->SetFieldEvaluator(getKey(domain_,"saturation_ice"), wrm);
+  if (!S->HasFieldEvaluator("saturation_liquid")) {
+    S->SetFieldEvaluator(getKey(domain_,"saturation_liquid"), wrm);
+    S->SetFieldEvaluator(getKey(domain_,"saturation_gas"), wrm);
+    S->SetFieldEvaluator(getKey(domain_,"saturation_ice"), wrm);
+  }
 
   // -- the rel perm evaluator, also with the same underlying WRM.
   wrm_plist.set<double>("permeability rescaling", perm_scale_);

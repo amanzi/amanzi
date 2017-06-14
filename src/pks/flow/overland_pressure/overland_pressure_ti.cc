@@ -200,7 +200,10 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
 
   // update state with the solution up.
 
-  if (std::abs(t - iter_counter_time_)/t > 1.e-4) iter_ = 0;
+  if (std::abs(t - iter_counter_time_)/t > 1.e-4) {
+    iter_ = 0;
+    iter_counter_time_ = t;
+  }
 
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
