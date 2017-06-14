@@ -2053,7 +2053,7 @@ and subsurface flow PKs.  Typically seepage conditions are of the form:</p>
 the boundary is specified by <span class="formula"><i>p</i>0</span>.</p>
 <p>Example: pressure (for surface or subsurface)</p>
 <div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;boundary conditions&quot;</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;seepage face&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;seepage face pressure&quot;</span><span class="nt">&gt;</span>
     <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;BC west&quot;</span><span class="nt">&gt;</span>
       <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;regions&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(string)&quot;</span> <span class="na">value=</span><span class="s">&quot;{west}&quot;</span><span class="nt">/&gt;</span>
       <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;boundary pressure&quot;</span><span class="nt">&gt;</span>
@@ -2067,7 +2067,7 @@ the boundary is specified by <span class="formula"><i>p</i>0</span>.</p>
 </pre></div>
 <p>Example: head (for surface)</p>
 <div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;boundary conditions&quot;</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;seepage face&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;seepage face head&quot;</span><span class="nt">&gt;</span>
     <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;BC west&quot;</span><span class="nt">&gt;</span>
       <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;regions&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(string)&quot;</span> <span class="na">value=</span><span class="s">&quot;{west}&quot;</span><span class="nt">/&gt;</span>
       <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;boundary head&quot;</span><span class="nt">&gt;</span>
@@ -2134,7 +2134,7 @@ It is a head condition that adapts to the surface elevation such that</p>
 </div>
 <p>Example:</p>
 <div class="highlight"><pre><span></span><span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;boundary conditions&quot;</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;head&quot;</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;fixed level&quot;</span><span class="nt">&gt;</span>
     <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;BC west&quot;</span><span class="nt">&gt;</span>
       <span class="nt">&lt;Parameter</span> <span class="na">name=</span><span class="s">&quot;regions&quot;</span> <span class="na">type=</span><span class="s">&quot;Array(string)&quot;</span> <span class="na">value=</span><span class="s">&quot;{west}&quot;</span><span class="nt">/&gt;</span>
       <span class="nt">&lt;ParameterList</span> <span class="na">name=</span><span class="s">&quot;fixed level&quot;</span><span class="nt">&gt;</span>

@@ -1769,7 +1769,7 @@ Example: pressure (for surface or subsurface)
 .. code-block:: xml
 
  <ParameterList name="boundary conditions">
-   <ParameterList name="seepage face">
+   <ParameterList name="seepage face pressure">
      <ParameterList name="BC west">
        <Parameter name="regions" type="Array(string)" value="{west}"/>
        <ParameterList name="boundary pressure">
@@ -1787,7 +1787,7 @@ Example: head (for surface)
 .. code-block:: xml
 
  <ParameterList name="boundary conditions">
-   <ParameterList name="seepage face">
+   <ParameterList name="seepage face head">
      <ParameterList name="BC west">
        <Parameter name="regions" type="Array(string)" value="{west}"/>
        <ParameterList name="boundary head">
@@ -1867,7 +1867,7 @@ Example:
 .. code-block:: xml
 
  <ParameterList name="boundary conditions">
-   <ParameterList name="head">
+   <ParameterList name="fixed level">
      <ParameterList name="BC west">
        <Parameter name="regions" type="Array(string)" value="{west}"/>
        <ParameterList name="fixed level">

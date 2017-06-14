@@ -84,7 +84,7 @@ Example: pressure (for surface or subsurface)
 .. code-block:: xml
 
  <ParameterList name="boundary conditions">
-   <ParameterList name="seepage face">
+   <ParameterList name="seepage face pressure">
      <ParameterList name="BC west">
        <Parameter name="regions" type="Array(string)" value="{west}"/>
        <ParameterList name="boundary pressure">
@@ -102,7 +102,7 @@ Example: head (for surface)
 .. code-block:: xml
 
  <ParameterList name="boundary conditions">
-   <ParameterList name="seepage face">
+   <ParameterList name="seepage face head">
      <ParameterList name="BC west">
        <Parameter name="regions" type="Array(string)" value="{west}"/>
        <ParameterList name="boundary head">
@@ -182,7 +182,7 @@ Example:
 .. code-block:: xml
 
  <ParameterList name="boundary conditions">
-   <ParameterList name="head">
+   <ParameterList name="fixed level">
      <ParameterList name="BC west">
        <Parameter name="regions" type="Array(string)" value="{west}"/>
        <ParameterList name="fixed level">
@@ -275,11 +275,11 @@ public:
   }
 
   Teuchos::RCP<Functions::BoundaryFunction> CreateSeepageFaceHead() const {
-    return CreateWithFunction("seepage face", "boundary head");
+    return CreateWithFunction("seepage face head", "boundary head");
   }
 
   Teuchos::RCP<Functions::BoundaryFunction> CreateSeepageFacePressure() const {
-    return CreateWithFunction("seepage face", "boundary pressure");
+    return CreateWithFunction("seepage face pressure", "boundary pressure");
   }
 
   Teuchos::RCP<Functions::BoundaryFunction> CreateSeepageFacePressureWithInfiltration() const {
@@ -291,7 +291,7 @@ public:
   }
 
   Teuchos::RCP<Functions::BoundaryFunction> CreateFixedLevel() const {
-    return CreateWithFunction("head", "fixed level");
+    return CreateWithFunction("fixed level", "fixed level");
   }
   
 };

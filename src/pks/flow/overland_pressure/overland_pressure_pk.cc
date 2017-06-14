@@ -121,11 +121,16 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   bc_zero_gradient_ = bc_factory.CreateZeroGradient();
   bc_flux_ = bc_factory.CreateMassFlux();
   bc_level_ = bc_factory.CreateFixedLevel();
-  bc_seepage_head_ = bc_factory.CreateWithFunction("seepage face head", "boundary head");
-  bc_seepage_pressure_ = bc_factory.CreateWithFunction("seepage face pressure", "boundary pressure");
+  bc_seepage_head_ = bc_factory.CreateSeepageFaceHead();
+  bc_seepage_pressure_ = bc_factory.CreateSeepageFacePressure();
   bc_critical_depth_ = bc_factory.CreateCriticalDepth();
-  ASSERT(!bc_plist.isParameter("seepage face")); // old style!
-
+  if (bc_plist.isParameter("seepage face")) {
+    // old style! DEPRECATED
+    Errors::Message message;
+    message << name_ << ": DEPRECATION: \"seepage face\" boundary condition parameter list names have changed to \"seepage face head\" and \"seepage face pressure\".";
+    Exceptions::amanzi_throw(message);
+  }
+  
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
   bc_values_.resize(nfaces, 0.0);
