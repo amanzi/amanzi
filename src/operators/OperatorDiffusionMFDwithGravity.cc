@@ -1,6 +1,6 @@
-/*
-  Operators 
+// OperatorDiffusionMFDwithGravity prescribes an elliptic operator with gravity using MFD family of discretizations.
 
+/*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -13,6 +13,7 @@
 
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionMFDwithGravity.hh"
+
 
 namespace Amanzi {
 namespace Operators {
