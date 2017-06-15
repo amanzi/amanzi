@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 {
   MPI_Init(&argc, &argv);
   
-  std::string xml_filename = "test/po_test_pri.xml";
+  std::string xml_filename = "test/po_test_hex.xml";
   std::string out_exo_filename = "test/po_mesh_out.exo";
   
   Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -121,6 +121,9 @@ int main(int argc, char *argv[])
     }
   }  // if verify
   
+  Amanzi::AmanziMesh::Mesh_MSTK *mstk_mesh = 
+      dynamic_cast<Amanzi::AmanziMesh::Mesh_MSTK *>(mesh.get());
+  CHECK(mstk_mesh->run_internal_mstk_checks());
   
   // Create the surface mesh if needed
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> surface_mesh = Teuchos::null;
@@ -172,8 +175,9 @@ int main(int argc, char *argv[])
         if (status != 0) ierr = 1;
         
         comm_->SumAll(&ierr, &aerr, 1);
-        if (aerr == 0 && rank == 0) {
-          std::cout << "Mesh Audit confirms that surface mesh is ok" << std::endl;
+        if (aerr == 0) {
+          if (rank == 0)
+            std::cout << "Mesh Audit confirms that surface mesh is ok" << std::endl;
         } else {
           Errors::Message msg("Mesh Audit could not verify correctness of surface mesh.");
           Exceptions::amanzi_throw(msg);
