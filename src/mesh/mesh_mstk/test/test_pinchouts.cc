@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 {
   MPI_Init(&argc, &argv);
   
-  std::string xml_filename = "test/po_test_hex.xml";
+  std::string xml_filename = "test/po_test_pri.xml";
   std::string out_exo_filename = "test/po_mesh_out.exo";
   
   Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -121,6 +121,7 @@ int main(int argc, char *argv[])
     }
   }  // if verify
   
+  std::cout << "Verifying the mesh using the internal MSTK check..." << std::endl;
   Amanzi::AmanziMesh::Mesh_MSTK *mstk_mesh = 
       dynamic_cast<Amanzi::AmanziMesh::Mesh_MSTK *>(mesh.get());
   CHECK(mstk_mesh->run_internal_mstk_checks());
@@ -183,6 +184,10 @@ int main(int argc, char *argv[])
           Exceptions::amanzi_throw(msg);
         }
       }
+      std::cout << "Verifying the surface mesh using the internal MSTK check..." << std::endl;
+      Amanzi::AmanziMesh::Mesh_MSTK *surf_mstk_mesh =
+        dynamic_cast<Amanzi::AmanziMesh::Mesh_MSTK *>(surface_mesh.get());
+      CHECK(surf_mstk_mesh->run_internal_mstk_checks());
     }  // if surf_verify
     
     if (surface_plist.isParameter("export mesh to file")) {
