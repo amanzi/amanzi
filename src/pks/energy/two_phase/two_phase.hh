@@ -48,11 +48,6 @@ protected:
   //    faces.
   //  virtual void ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S);
 
-  // -- No source terms needed.
-  virtual void AddSources_(const Teuchos::Ptr<State>& S,
-                           const Teuchos::Ptr<CompositeVector>& f) {}
-  virtual void AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {}
-
 
  protected:
   // models for evaluating enthalpy
