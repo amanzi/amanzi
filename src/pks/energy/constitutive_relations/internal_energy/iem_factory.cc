@@ -12,7 +12,7 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
+namespace Energy {
 
 // method for instantiating IEM implementations
 Teuchos::RCP<IEM> IEMFactory::createIEM(Teuchos::ParameterList& plist) {

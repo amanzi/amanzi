@@ -11,7 +11,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 ManningConductivityModel::ManningConductivityModel(Teuchos::ParameterList& plist) :
     plist_(plist) {
@@ -36,6 +35,5 @@ double ManningConductivityModel::DConductivityDDepth(double depth, double slope,
 }
 
 
-} // namespace
 } // namespace
 } // namespace

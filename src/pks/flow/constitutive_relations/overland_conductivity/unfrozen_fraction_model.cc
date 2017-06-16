@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 UnfrozenFractionModel::UnfrozenFractionModel(Teuchos::ParameterList& plist) :
     plist_(plist),
@@ -59,7 +58,5 @@ double UnfrozenFractionModel::DUnfrozenFractionDT(double temp) const {
   return duf;
 }
 
-
-} // namespace
 } // namespace
 } // namespace

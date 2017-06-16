@@ -15,7 +15,7 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
+namespace Energy {
 
 class IEMEvaluator : public SecondaryVariableFieldEvaluator {
 

@@ -12,7 +12,7 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
+namespace Flow {
 
 /* --------------------------------------------------------------------------------
   Constructor from just a ParameterList, reads WRMs and permafrost models from list.

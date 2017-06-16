@@ -14,7 +14,7 @@ Linear interpolant of thermal conductivity.
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
+namespace Energy {
 
 ThermalConductivityThreePhasePetersLidard::ThermalConductivityThreePhasePetersLidard(
       Teuchos::ParameterList& plist) : plist_(plist) {

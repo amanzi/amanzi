@@ -10,7 +10,7 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
+namespace Flow {
 
 Utils::RegisteredFactory<WRM,WRMVanGenuchten> WRMVanGenuchten::factory_("van Genuchten");
 

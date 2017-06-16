@@ -14,7 +14,7 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
+namespace Flow {
 
 const double FLOW_WRM_TOLERANCE = 1e-10;
 

@@ -1,6 +1,6 @@
 /*
   The richards water content evaluator is an algebraic evaluator of a given model.
-Richards water content with no vapor.  
+Richards water content evaluator: the standard form as a function of liquid saturation.  
   Generated via evaluator_generator.
 */
 

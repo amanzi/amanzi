@@ -10,13 +10,11 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 // registry of method
 Utils::RegisteredFactory<FieldEvaluator,SurfaceRelPermEvaluator>
 SurfaceRelPermEvaluator::fac_("surface rel perm");
 
-} //namespace
 } //namespace
 } //namespace
 

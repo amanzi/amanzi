@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class OverlandConductivityModel;
 
@@ -49,7 +48,6 @@ private:
   static Utils::RegisteredFactory<FieldEvaluator,OverlandConductivityEvaluator> factory_;
 };
 
-} //namespace
 } //namespace
 } //namespace
 

@@ -16,7 +16,7 @@ UNITS: ????
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
+namespace Energy {
 
 class ThermalConductivityTwoPhase {
 

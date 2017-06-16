@@ -18,7 +18,7 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
+namespace Energy {
 
 class ThermalConductivityThreePhaseFactory : public Utils::Factory<ThermalConductivityThreePhase> {
 

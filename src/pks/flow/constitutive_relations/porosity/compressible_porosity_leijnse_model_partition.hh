@@ -13,7 +13,7 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
+namespace Flow {
 
 typedef std::vector<Teuchos::RCP<CompressiblePorosityLeijnseModel> > CompressiblePorosityLeijnseModelList;
 typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, CompressiblePorosityLeijnseModelList> CompressiblePorosityLeijnseModelPartition;

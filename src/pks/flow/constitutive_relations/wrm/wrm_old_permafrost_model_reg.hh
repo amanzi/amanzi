@@ -10,7 +10,7 @@ Painter's permafrost model.
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
+namespace Flow {
 
 Utils::RegisteredFactory<WRMPermafrostModel,WRMOldPermafrostModel> WRMOldPermafrostModel::factory_("old permafrost model");
 

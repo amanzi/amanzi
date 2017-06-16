@@ -7,14 +7,17 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/energy/bc_factory)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/thermal_conductivity)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/internal_energy)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/enthalpy)
+include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/energy)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/two_phase)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 
-add_library(pk_energy_three_phase three_phase_energy_evaluator.cc interfrost_energy_evaluator.cc 
-  three_phase.cc interfrost_energy.cc)
+add_library(pk_energy_three_phase
+  interfrost_energy_evaluator.cc 
+  three_phase.cc
+  interfrost_energy.cc)
 
 install(TARGETS pk_energy_three_phase DESTINATION lib)
 

@@ -13,7 +13,7 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
+namespace Energy {
 
 ThermalConductivityTwoPhaseEvaluator::ThermalConductivityTwoPhaseEvaluator(
       Teuchos::ParameterList& plist) :

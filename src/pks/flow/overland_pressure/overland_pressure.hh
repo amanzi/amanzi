@@ -101,7 +101,7 @@ namespace Amanzi {
 class MPCSurfaceSubsurfaceDirichletCoupler;
 namespace Flow {
 
-namespace FlowRelations {
+namespace Flow {
   class OverlandConductivityModel;
   class HeightModel;
 }
@@ -251,7 +251,7 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_level_;
   
   // needed physical models
-  Teuchos::RCP<FlowRelations::OverlandConductivityModel> cond_model_;
+  Teuchos::RCP<Flow::OverlandConductivityModel> cond_model_;
 
   int niter_;
 

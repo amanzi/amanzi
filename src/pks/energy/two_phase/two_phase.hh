@@ -21,7 +21,7 @@ namespace Amanzi {
 class MPCDiagonalFlowEnergy;
 class MPCCoupledFlowEnergy;
 namespace Relations { class EOS; }
-namespace Energy { namespace EnergyRelations { class IEM; } }
+namespace Energy { namespace Energy { class IEM; } }
 
 namespace Energy {
 
@@ -51,8 +51,8 @@ protected:
 
  protected:
   // models for evaluating enthalpy
-  Teuchos::RCP<Relations::EOS> eos_liquid_;
-  Teuchos::RCP<EnergyRelations::IEM> iem_liquid_;
+  Teuchos::RCP<Amanzi::Relations::EOS> eos_liquid_;
+  Teuchos::RCP<Energy::IEM> iem_liquid_;
 
 private:
   // factory registration

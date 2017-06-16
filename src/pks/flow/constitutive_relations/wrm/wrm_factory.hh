@@ -18,7 +18,7 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
+namespace Flow {
 
 class WRMFactory : public Utils::Factory<WRM> {
 

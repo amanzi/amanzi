@@ -18,7 +18,7 @@ UNITS: MJ/mol
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
+namespace Energy {
 
 IEMWaterVapor::IEMWaterVapor(Teuchos::ParameterList& plist) :
     plist_(plist) {

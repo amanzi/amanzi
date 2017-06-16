@@ -20,7 +20,7 @@ See ATS process model documentation's permafrost model for details.
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
+namespace Energy {
 
 // constructor
 ThermalConductivityTwoPhaseWetDry::ThermalConductivityTwoPhaseWetDry(

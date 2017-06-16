@@ -12,7 +12,7 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
+namespace Flow {
 
 
 IcyHeightEvaluator::IcyHeightEvaluator(Teuchos::ParameterList& plist) :

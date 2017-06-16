@@ -10,7 +10,7 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
+namespace Flow {
 
 // registry of method
 Utils::RegisteredFactory<SurfaceRelPermModel,OneSurfaceRelPermModel>

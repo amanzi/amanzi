@@ -36,7 +36,6 @@ NOTE: This could easily be replaced by a generic AdditiveEvaluator_
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class PresElevEvaluator : public SecondaryVariableFieldEvaluator {
 
@@ -59,7 +58,6 @@ class PresElevEvaluator : public SecondaryVariableFieldEvaluator {
   Key elev_key_;
 };
 
-} //namespace
 } //namespace
 } //namespace
 

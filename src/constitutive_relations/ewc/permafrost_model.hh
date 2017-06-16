@@ -24,13 +24,13 @@
 namespace Amanzi {
 
 namespace Flow {
-namespace FlowRelations {
+namespace Flow {
 class PCIceWater;
 class PCLiqAtm;
 }
 }
 
-namespace Energy { namespace EnergyRelations { class IEM; class IEMWaterVapor;} }
+namespace Energy { namespace Energy { class IEM; class IEMWaterVapor;} }
 namespace Relations { class EOS; class VaporPressureRelation; }
 
 
@@ -53,23 +53,23 @@ class PermafrostModel : public EWCModelBase {
           AmanziGeometry::Point& result);
 
  protected:
-  Teuchos::RCP<Flow::FlowRelations::WRMPermafrostModelPartition> wrms_;
-  Teuchos::RCP<Flow::FlowRelations::WRMPermafrostModel> wrm_;
+  Teuchos::RCP<Flow::Flow::WRMPermafrostModelPartition> wrms_;
+  Teuchos::RCP<Flow::Flow::WRMPermafrostModel> wrm_;
   Teuchos::RCP<Relations::EOS> liquid_eos_;
   Teuchos::RCP<Relations::EOS> gas_eos_;
   Teuchos::RCP<Relations::EOS> ice_eos_;
-  Teuchos::RCP<Flow::FlowRelations::PCIceWater> pc_i_;
-  Teuchos::RCP<Flow::FlowRelations::PCLiqAtm> pc_l_;
+  Teuchos::RCP<Flow::Flow::PCIceWater> pc_i_;
+  Teuchos::RCP<Flow::Flow::PCLiqAtm> pc_l_;
   Teuchos::RCP<Relations::VaporPressureRelation> vpr_;
-  Teuchos::RCP<Energy::EnergyRelations::IEM> liquid_iem_;
-  Teuchos::RCP<Energy::EnergyRelations::IEMWaterVapor> gas_iem_;
-  Teuchos::RCP<Energy::EnergyRelations::IEM> ice_iem_;
-  Teuchos::RCP<Energy::EnergyRelations::IEM> rock_iem_;
-  Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityModelPartition> poro_models_;
-  Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityModel> poro_model_;
+  Teuchos::RCP<Energy::Energy::IEM> liquid_iem_;
+  Teuchos::RCP<Energy::Energy::IEMWaterVapor> gas_iem_;
+  Teuchos::RCP<Energy::Energy::IEM> ice_iem_;
+  Teuchos::RCP<Energy::Energy::IEM> rock_iem_;
+  Teuchos::RCP<Flow::Flow::CompressiblePorosityModelPartition> poro_models_;
+  Teuchos::RCP<Flow::Flow::CompressiblePorosityModel> poro_model_;
 
-  Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityLeijnseModelPartition> poro_leij_models_;
-  Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityLeijnseModel> poro_leij_model_;
+  Teuchos::RCP<Flow::Flow::CompressiblePorosityLeijnseModelPartition> poro_leij_models_;
+  Teuchos::RCP<Flow::Flow::CompressiblePorosityLeijnseModel> poro_leij_model_;
 
   double p_atm_;
   double poro_;

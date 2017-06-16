@@ -48,106 +48,6 @@ generate_evaluators_registration_header(
   INSTALL    True
   )
 
-# constitutive_relations/source_terms/
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/enthalpy/enthalpy_evaluator_reg.hh
-  LISTNAME   ENERGY_CONST_REL_SOURCE_TERMS_REG
-  )
-
-# constitutive_relations/source_terms/
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/source_terms/advected_energy_source_evaluator_reg.hh
-  LISTNAME   ENERGY_CONST_REL_SOURCE_TERMS_REG
-  )
-
-generate_evaluators_registration_header(
-  HEADERFILE energy_constitutive_relations_source_terms_registration.hh
-  LISTNAME   ENERGY_CONST_REL_SOURCE_TERMS_REG
-  INSTALL    True
-  )
-
-# constitutive_relations/internal_energy/
-
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/internal_energy/iem_evaluator_reg.hh
-  LISTNAME   ENERGY_CONST_REL_INTERNAL_ENERGY_REG
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/internal_energy/iem_factory_reg.hh
-  LISTNAME   ENERGY_CONST_REL_INTERNAL_ENERGY_REG
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/internal_energy/iem_linear_reg.hh
-  LISTNAME   ENERGY_CONST_REL_INTERNAL_ENERGY_REG
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/internal_energy/iem_quadratic_reg.hh
-  LISTNAME   ENERGY_CONST_REL_INTERNAL_ENERGY_REG
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/internal_energy/iem_water_vapor_evaluator_reg.hh
-  LISTNAME   ENERGY_CONST_REL_INTERNAL_ENERGY_REG
-  )
-
-generate_evaluators_registration_header(
-  HEADERFILE energy_constitutive_relations_internal_energy_registration.hh
-  LISTNAME   ENERGY_CONST_REL_INTERNAL_ENERGY_REG
-  INSTALL    True
-  )
-
-
-# constitutive_relations/thermal_conductivity/
-
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/thermal_conductivity/thermal_conductivity_twophase_factory_reg.hh
-  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/thermal_conductivity/thermal_conductivity_threephase_factory_reg.hh
-  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/thermal_conductivity/thermal_conductivity_threephase_peterslidard_reg.hh
-  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/thermal_conductivity/thermal_conductivity_threephase_wetdry_reg.hh
-  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/thermal_conductivity/thermal_conductivity_threephase_volume_averaged_reg.hh
-  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/thermal_conductivity/thermal_conductivity_threephase_sutra_hacked_reg.hh
-  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/thermal_conductivity/thermal_conductivity_twophase_peterslidard_reg.hh
-  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/thermal_conductivity/thermal_conductivity_twophase_wetdry_reg.hh
-  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
-  )
-
-generate_evaluators_registration_header(
-  HEADERFILE energy_constitutive_relations_thermal_conductivity_registration.hh
-  LISTNAME   ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG
-  INSTALL    True
-  )
-
 # surface_ice/
 
 register_evaluator_with_factory(
@@ -181,11 +81,6 @@ register_evaluator_with_factory(
   HEADERFILE three_phase/interfrost_energy_evaluator_reg.hh
   LISTNAME   ENERGY_THREE_PHASE_REG
   )
-register_evaluator_with_factory(
-  HEADERFILE three_phase/three_phase_energy_evaluator_reg.hh
-  LISTNAME   ENERGY_THREE_PHASE_REG
-  )
-
 generate_evaluators_registration_header(
   HEADERFILE energy_three_phase_registration.hh
   LISTNAME   ENERGY_THREE_PHASE_REG

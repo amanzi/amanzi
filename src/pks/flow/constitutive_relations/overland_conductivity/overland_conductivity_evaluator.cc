@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
@@ -182,7 +181,6 @@ void OverlandConductivityEvaluator::EvaluateFieldPartialDerivative_(
 }
 
 
-} //namespace
 } //namespace
 } //namespace
 

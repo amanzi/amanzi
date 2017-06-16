@@ -18,7 +18,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class SurfaceRelPermModelFactory : public Utils::Factory<SurfaceRelPermModel> {
 
@@ -26,7 +25,6 @@ public:
   Teuchos::RCP<SurfaceRelPermModel> createModel(Teuchos::ParameterList& plist);
 };
 
-} // namespace
 } // namespace
 } // namespace
 

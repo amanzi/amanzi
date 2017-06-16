@@ -24,7 +24,7 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
+namespace Flow {
 
 class WRMPlantChristoffersen : public WRM {
 

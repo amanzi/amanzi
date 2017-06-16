@@ -5,7 +5,6 @@
 #    Constitutive relations for flow
 #
 
-
 include_directories(${Amanzi_TPL_MSTK_INCLUDE_DIRS})
 add_definitions("-DMSTK_HAVE_MPI")
 

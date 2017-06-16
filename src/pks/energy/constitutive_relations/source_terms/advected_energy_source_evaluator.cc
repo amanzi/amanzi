@@ -10,7 +10,7 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
+namespace Energy {
 
 // constructor format for all derived classes
 AdvectedEnergySourceEvaluator::AdvectedEnergySourceEvaluator(Teuchos::ParameterList& plist) :
@@ -28,7 +28,8 @@ AdvectedEnergySourceEvaluator::AdvectedEnergySourceEvaluator(const AdvectedEnerg
     external_density_key_(other.external_density_key_),
     cell_vol_key_(other.cell_vol_key_),
     conducted_source_key_(other.conducted_source_key_),
-    include_conduction_(other.include_conduction_)
+    include_conduction_(other.include_conduction_),
+    source_units_(other.source_units_)
 {}
 
 Teuchos::RCP<FieldEvaluator>
@@ -46,29 +47,54 @@ AdvectedEnergySourceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& mass_source = *S->GetFieldData(mass_source_key_)
       ->ViewComponent("cell",false);
-  const Epetra_MultiVector& int_dens = *S->GetFieldData(internal_density_key_)
-      ->ViewComponent("cell",false);
-  const Epetra_MultiVector& ext_dens = *S->GetFieldData(external_density_key_)
-      ->ViewComponent("cell",false);
-
   const Epetra_MultiVector& cv = *S->GetFieldData(cell_vol_key_)
       ->ViewComponent("cell",false);
 
   Epetra_MultiVector& res = *result->ViewComponent("cell",false);
-  unsigned int ncells = res.MyLength();
-  for (unsigned int c=0; c!=ncells; ++c) {
-    if (mass_source[0][c] > 0.) { // positive indicates increase of water in surface
-      // upwind, take external values
-      res[0][c] = cv[0][c] * mass_source[0][c] * ext_dens[0][c] * ext_enth[0][c];
-    } else {
-      // upwind, take internal values
-      res[0][c] = cv[0][c] * mass_source[0][c] * int_dens[0][c] * int_enth[0][c];
+  
+  if (source_units_ == SOURCE_UNITS_METERS_PER_SECOND) {
+    const Epetra_MultiVector& int_dens = *S->GetFieldData(internal_density_key_)
+                                         ->ViewComponent("cell",false);
+    const Epetra_MultiVector& ext_dens = *S->GetFieldData(external_density_key_)
+                                         ->ViewComponent("cell",false);
+
+    unsigned int ncells = res.MyLength();
+    for (unsigned int c=0; c!=ncells; ++c) {
+      if (mass_source[0][c] > 0.) { // positive indicates increase of water in surface
+        // upwind, take external values
+        res[0][c] = mass_source[0][c] * ext_dens[0][c] * ext_enth[0][c];
+      } else {
+        // upwind, take internal values
+        res[0][c] = mass_source[0][c] * int_dens[0][c] * int_enth[0][c];
+      }
+    }
+
+  } else {
+    unsigned int ncells = res.MyLength();
+    for (unsigned int c=0; c!=ncells; ++c) {
+      if (mass_source[0][c] > 0.) { // positive indicates increase of water in surface
+        // upwind, take external values
+        res[0][c] = mass_source[0][c] * ext_enth[0][c];
+      } else {
+        // upwind, take internal values
+        res[0][c] = mass_source[0][c] * int_enth[0][c];
+        std::cout << "Advected E-source air-surf = " << mass_source[0][c] << " * " << int_enth[0][c] << " = " << res[0][c] << std::endl;
+      }
     }
   }
+
+  if (source_units_ != SOURCE_UNITS_MOLS_PER_SECOND) {
+    unsigned int ncells = res.MyLength();
+    for (unsigned int c=0; c!=ncells; ++c) {
+      res[0][c] *= cv[0][c];
+    }
+  }
+  
 
   if (include_conduction_) {
     const Epetra_MultiVector& cond = *S->GetFieldData(conducted_source_key_)
         ->ViewComponent("cell",false);
+    unsigned int ncells = res.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
       res[0][c] += cv[0][c] * cond[0][c];
     }
@@ -99,24 +125,49 @@ AdvectedEnergySourceEvaluator::InitializeFromPlist_() {
     }
   }
   std::string domain = getDomain(my_key_);
-  
+
   internal_enthalpy_key_ = plist_.get<std::string>("internal enthalpy key",
           getKey(domain, "enthalpy"));
   external_enthalpy_key_ = plist_.get<std::string>("external enthalpy key",
           getKey(domain, "mass_source_enthalpy"));
   mass_source_key_ = plist_.get<std::string>("mass source key",
           getKey(domain, "mass_source"));
-  internal_density_key_ = plist_.get<std::string>("internal density key",
-          getKey(domain, "molar_density_liquid"));
-  external_density_key_ = plist_.get<std::string>("external density key",
-          getKey(domain, "source_molar_density"));
 
   dependencies_.insert(internal_enthalpy_key_);
   dependencies_.insert(external_enthalpy_key_);
   dependencies_.insert(mass_source_key_);
-  dependencies_.insert(internal_density_key_);
-  dependencies_.insert(external_density_key_);
 
+  // this handles both surface fluxes (in m/s) and subsurface fluxes (in mol/s)
+  std::string source_units = plist_.get<std::string>("mass source units");
+  if (source_units == "mol s^-1") {
+    source_units_ = SOURCE_UNITS_MOLS_PER_SECOND;
+  } else if (source_units == "m s^-1") {
+    source_units_ = SOURCE_UNITS_METERS_PER_SECOND;
+  } else if (source_units == "mol m^-2 s^-1" ||
+             source_units == "mol m^-3 s^-1") {
+    source_units_ = SOURCE_UNITS_MOLS_PER_SECOND_PER_METERSD;
+  } else {
+    Errors::Message message;
+    message << "AdvectedEnergySourceEvaluator: "
+            << my_key_
+            << ": invalid units \""
+            << source_units
+            << "\" for \"mass source units\", valid are \"mol s^-1\", \"m s^-1\", \"mol m^-2 s^-1\","
+            << " and \"mol m^-3 s^-1\".";
+    Exceptions::amanzi_throw(message);
+  }
+    
+  if (source_units_ == SOURCE_UNITS_METERS_PER_SECOND) {
+    internal_density_key_ = plist_.get<std::string>("internal density key",
+            getKey(domain, "molar_density_liquid"));
+    external_density_key_ = plist_.get<std::string>("external density key",
+            getKey(domain, "source_molar_density"));
+
+    dependencies_.insert(internal_density_key_);
+    dependencies_.insert(external_density_key_);
+  }
+
+  // this enables the addition of provided diffusive fluxes as well
   include_conduction_ = plist_.get<bool>("include conduction");
   if (include_conduction_) {
     conducted_source_key_ = plist_.get<std::string>("conducted energy source key",

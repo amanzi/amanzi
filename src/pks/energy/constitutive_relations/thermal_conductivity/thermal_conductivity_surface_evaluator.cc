@@ -11,7 +11,7 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
+namespace Energy {
 
 ThermalConductivitySurfaceEvaluator::ThermalConductivitySurfaceEvaluator(
       Teuchos::ParameterList& plist) :

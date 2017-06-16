@@ -10,7 +10,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 SplitDenominatorConductivityModel::SplitDenominatorConductivityModel(Teuchos::ParameterList& plist) :
     plist_(plist) {
@@ -31,6 +30,5 @@ double SplitDenominatorConductivityModel::DConductivityDDepth(double depth, doub
 }
 
 
-} // namespace
 } // namespace
 } // namespace

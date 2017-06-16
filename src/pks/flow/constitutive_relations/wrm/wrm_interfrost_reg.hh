@@ -10,7 +10,7 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
+namespace Flow {
 
 Utils::RegisteredFactory<WRM,WRMInterfrost> WRMInterfrost::factory_("interfrost wrm");
 

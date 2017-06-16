@@ -15,7 +15,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 UnfrozenFractionRelPermModel::UnfrozenFractionRelPermModel(Teuchos::ParameterList& plist) :
     plist_(plist),
@@ -34,6 +33,5 @@ UnfrozenFractionRelPermModel::SurfaceRelPerm(double uf, double h) {
 }
 
 
-} // namespace
 } // namespace
 } // namespace

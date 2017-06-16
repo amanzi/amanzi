@@ -36,7 +36,6 @@ Example:
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class MeshedElevationEvaluator : public ElevationEvaluator {
 
@@ -56,7 +55,6 @@ class MeshedElevationEvaluator : public ElevationEvaluator {
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

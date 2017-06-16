@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class StandaloneElevationEvaluator : public ElevationEvaluator {
 
@@ -33,7 +32,6 @@ class StandaloneElevationEvaluator : public ElevationEvaluator {
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

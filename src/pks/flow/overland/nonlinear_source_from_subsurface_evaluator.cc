@@ -13,7 +13,7 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
+namespace Flow {
 
 NonlinearSourceFromSubsurfaceEvaluator::NonlinearSourceFromSubsurfaceEvaluator(
         Teuchos::ParameterList& plist) :

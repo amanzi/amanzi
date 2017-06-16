@@ -15,7 +15,7 @@ UNITS: MJ/{mol,kg}
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
+namespace Energy {
 
 IEMQuadratic::IEMQuadratic(Teuchos::ParameterList& plist) :
     plist_(plist) {

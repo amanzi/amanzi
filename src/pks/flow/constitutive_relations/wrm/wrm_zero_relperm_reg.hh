@@ -10,7 +10,7 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
+namespace Flow {
 
 Utils::RegisteredFactory<WRM,WRMZeroRelPerm> WRMZeroRelPerm::factory_("zero rel perm");
 

@@ -14,7 +14,7 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
+namespace Flow {
 
 const int FLOW_WRM_MUALEM = 1;
 const int FLOW_WRM_BURDINE = 2;

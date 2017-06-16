@@ -18,7 +18,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class ElevationEvaluator : public SecondaryVariablesFieldEvaluator {
 
@@ -45,7 +44,6 @@ protected:
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

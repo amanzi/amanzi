@@ -11,7 +11,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 UnfrozenFractionEvaluator::UnfrozenFractionEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
@@ -80,7 +79,6 @@ void UnfrozenFractionEvaluator::EvaluateFieldPartialDerivative_(
 }
 
 
-} //namespace
 } //namespace
 } //namespace
 

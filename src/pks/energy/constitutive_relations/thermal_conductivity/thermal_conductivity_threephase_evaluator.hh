@@ -15,7 +15,7 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
+namespace Energy {
 
 // Equation of State model
 class ThermalConductivityThreePhaseEvaluator :

@@ -18,7 +18,7 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
+namespace Energy {
 
 class IEMFactory : public Utils::Factory<IEM> {
 

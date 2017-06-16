@@ -10,7 +10,7 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
+namespace Flow {
 
 RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist),

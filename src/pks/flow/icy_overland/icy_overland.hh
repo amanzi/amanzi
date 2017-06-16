@@ -21,7 +21,7 @@ namespace Operators { class Upwinding; }
 
 namespace Flow {
 
-namespace FlowRelations { class UnfrozenFractionModel; }
+namespace Flow { class UnfrozenFractionModel; }
 
 class IcyOverlandFlow : public OverlandPressureFlow {
 

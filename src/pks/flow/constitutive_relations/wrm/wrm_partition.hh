@@ -14,7 +14,7 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
+namespace Flow {
 
 typedef std::vector<Teuchos::RCP<WRM> > WRMList;
 typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, WRMList> WRMPartition;

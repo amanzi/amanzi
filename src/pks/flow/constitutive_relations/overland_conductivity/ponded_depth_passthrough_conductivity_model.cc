@@ -10,7 +10,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 PondedDepthPassthroughConductivityModel::PondedDepthPassthroughConductivityModel(Teuchos::ParameterList& plist) :
     plist_(plist) {}
@@ -24,6 +23,5 @@ double PondedDepthPassthroughConductivityModel::DConductivityDDepth(double depth
 }
 
 
-} // namespace
 } // namespace
 } // namespace

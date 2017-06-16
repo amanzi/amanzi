@@ -21,6 +21,7 @@ with freezing.
 #include "upwind_arithmetic_mean.hh"
 
 #include "permafrost_model.hh"
+#include "liquid_ice_model.hh"
 #include "richards.hh"
 
 #include "mpc_delegate_ewc_subsurface.hh"
@@ -301,7 +302,13 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
     sub_ewc_list->set("PK name", name_);
     sub_ewc_list->set("domain key", domain_name_);
     ewc_ = Teuchos::rcp(new MPCDelegateEWCSubsurface(*sub_ewc_list));
-    Teuchos::RCP<PermafrostModel> model = Teuchos::rcp(new PermafrostModel());
+
+    Teuchos::RCP<EWCModelBase> model;
+    if (S->HasField("internal_energy_gas")) {
+      model = Teuchos::rcp(new PermafrostModel());
+    } else {
+      model = Teuchos::rcp(new LiquidIceModel());
+    }
     ewc_->set_model(model);
     ewc_->setup(S);
   }    

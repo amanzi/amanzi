@@ -17,7 +17,7 @@ UNITS: MJ/{mol/kg}
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
+namespace Energy {
 
 IEMLinear::IEMLinear(Teuchos::ParameterList& plist) :
     plist_(plist) {

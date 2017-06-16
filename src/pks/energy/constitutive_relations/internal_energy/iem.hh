@@ -18,7 +18,7 @@ UNITS: J/{mol/kg}
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
+namespace Energy {
 
 class IEM {
 

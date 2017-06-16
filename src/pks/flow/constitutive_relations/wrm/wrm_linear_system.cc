@@ -9,7 +9,7 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
+namespace Flow {
 
 /* ******************************************************************
  * Setup fundamental parameters for this model.

@@ -10,7 +10,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 // registry of method
 Utils::RegisteredFactory<SurfaceRelPermModel,ZeroUFRelPermModel>
@@ -18,5 +17,3 @@ ZeroUFRelPermModel::reg_("unfrozen fraction rel perm, limit zero");
 
 } //namespace
 } //namespace
-} //namespace
-

@@ -9,11 +9,9 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 // registry of method
 Utils::RegisteredFactory<FieldEvaluator,MeshedElevationEvaluator> MeshedElevationEvaluator::reg_("meshed elevation");
 
-}
 }
 }

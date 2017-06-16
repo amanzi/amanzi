@@ -10,7 +10,7 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
+namespace Flow {
 
 Utils::RegisteredFactory<WRM,WRMLinearRelPerm> WRMLinearRelPerm::factory_("linear rel perm");
 

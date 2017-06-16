@@ -10,7 +10,7 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
+namespace Energy {
 
 Utils::RegisteredFactory<FieldEvaluator,IEMWaterVaporEvaluator> IEMWaterVaporEvaluator::factory_("iem water vapor");
 

@@ -11,7 +11,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 StandaloneElevationEvaluator::StandaloneElevationEvaluator(
         Teuchos::ParameterList& plist) :
@@ -50,4 +49,4 @@ void StandaloneElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr
 
 } //namespace
 } //namespace
-} //namespace
+

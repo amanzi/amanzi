@@ -559,7 +559,7 @@ void EnergyBase::UpdateBoundaryConditions_(
 
       // -- set that value to Neumann
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-      // flux is in units of J / s, whereas Neumann BCs are J/s/A
+      // flux provided by the coupler is in units of J / s, whereas Neumann BCs are J/s/A
       bc_values_[f] = flux[0][c] / mesh_->face_area(f);
 
       // -- mark advective BCs as Dirichlet: this ensures the surface
@@ -569,7 +569,7 @@ void EnergyBase::UpdateBoundaryConditions_(
     }
   }
 
-  // mark all remaining boundary conditions as zero flux conditions
+  // mark all remaining boundary conditions as zero diffusive flux conditions
   AmanziMesh::Entity_ID_List cells;
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
@@ -580,7 +580,7 @@ void EnergyBase::UpdateBoundaryConditions_(
       if (ncells == 1) {
         bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_values_[f] = 0.0;
-        bc_markers_adv_[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_markers_adv_[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_values_adv_[f] = 0.0;
       }
     }

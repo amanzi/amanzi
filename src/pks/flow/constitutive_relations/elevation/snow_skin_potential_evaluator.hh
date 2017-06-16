@@ -44,7 +44,6 @@ Example:
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class SnowSkinPotentialEvaluator : public SecondaryVariableFieldEvaluator {
 
@@ -74,7 +73,6 @@ class SnowSkinPotentialEvaluator : public SecondaryVariableFieldEvaluator {
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class UnfrozenEffectiveDepthModel;
 
@@ -42,7 +41,6 @@ protected:
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

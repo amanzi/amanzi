@@ -11,6 +11,6 @@
 
 // explicity instantitate the static data of Factory<EOS>
 template<> 
-Amanzi::Utils::Factory<Amanzi::Energy::EnergyRelations::ThermalConductivityThreePhase>::map_type* 
-Amanzi::Utils::Factory<Amanzi::Energy::EnergyRelations::ThermalConductivityThreePhase>::map_;
+Amanzi::Utils::Factory<Amanzi::Energy::Energy::ThermalConductivityThreePhase>::map_type* 
+Amanzi::Utils::Factory<Amanzi::Energy::Energy::ThermalConductivityThreePhase>::map_;
 
