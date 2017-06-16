@@ -13,7 +13,6 @@ Interfrost model for saturated
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class WRM;
 
@@ -49,7 +48,6 @@ class WRMInterfrostPermafrostModel : public WRMPermafrostModel {
 };
 
 
-} //namespace
 } //namespace
 } //namespace
 

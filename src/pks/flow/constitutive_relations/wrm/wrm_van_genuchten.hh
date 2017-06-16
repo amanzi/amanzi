@@ -33,7 +33,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class WRMVanGenuchten : public WRM {
 
@@ -68,7 +67,6 @@ public:
   static Utils::RegisteredFactory<WRM,WRMVanGenuchten> factory_;
 };
 
-} //namespace
 } //namespace
 } //namespace
 

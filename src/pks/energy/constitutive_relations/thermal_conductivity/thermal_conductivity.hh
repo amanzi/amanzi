@@ -18,7 +18,6 @@ UNITS: ????
 
 namespace Amanzi {
 namespace Energy {
-namespace Energy {
 
 class TwophaseThermalConductivity {
 
@@ -41,7 +40,6 @@ private:
   double rho_soil_;
 };
 
-}
 }
 }
 

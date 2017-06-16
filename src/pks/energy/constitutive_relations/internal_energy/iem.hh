@@ -18,7 +18,6 @@ UNITS: J/{mol/kg}
 
 namespace Amanzi {
 namespace Energy {
-namespace Energy {
 
 class IEM {
 
@@ -31,7 +30,6 @@ public:
   virtual double DInternalEnergyDT(double temp) = 0;
 };
 
-}
 }
 }
 

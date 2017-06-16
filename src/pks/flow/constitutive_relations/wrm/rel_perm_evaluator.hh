@@ -16,7 +16,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
 
@@ -63,7 +62,6 @@ class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
   static Utils::RegisteredFactory<FieldEvaluator,RelPermEvaluator> factory_;
 };
 
-} //namespace
 } //namespace
 } //namespace
 

@@ -16,7 +16,6 @@ UNITS: ????
 
 namespace Amanzi {
 namespace Energy {
-namespace Energy {
 
 class ThermalConductivityTwoPhase {
 
@@ -25,7 +24,6 @@ public:
   virtual double ThermalConductivity(double porosity, double sat_liq) = 0;
 };
 
-} // namespace
 } // namespace
 } // namespace
 

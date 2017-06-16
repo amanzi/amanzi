@@ -10,7 +10,6 @@ Painter's permafrost model with freezing point depression.
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 
 // registry of method
@@ -18,4 +17,3 @@ Utils::RegisteredFactory<WRMPermafrostModel,WRMFPDPermafrostModel> WRMFPDPermafr
 
 } // namespace Flow
 } // namespace Flow
-} // namespace Amanzi

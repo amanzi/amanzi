@@ -18,7 +18,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class WRMFactory : public Utils::Factory<WRM> {
 
@@ -26,7 +25,6 @@ public:
   Teuchos::RCP<WRM> createWRM(Teuchos::ParameterList& plist);
 };
 
-} // namespace
 } // namespace
 } // namespace
 

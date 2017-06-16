@@ -18,7 +18,6 @@ UNITS: MJ/mol
 
 namespace Amanzi {
 namespace Energy {
-namespace Energy {
 
 IEMWaterVapor::IEMWaterVapor(Teuchos::ParameterList& plist) :
     plist_(plist) {
@@ -45,6 +44,5 @@ void IEMWaterVapor::InitializeFromPlist_() {
   heat_vaporization_ = 1.e-6 * plist_.get<double>("heat of vaporization of water [J/mol]", 4.065e4);
 };
 
-} // namespace
 } // namespace
 } // namespace

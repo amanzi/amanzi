@@ -13,7 +13,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class HeightModel {
 public:
@@ -37,7 +36,6 @@ protected:
 
 };
 
-} // namespace
 } // namespace
 } // namespace
 

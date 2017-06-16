@@ -10,7 +10,6 @@ Painter's permafrost model.
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 // sats[0] = s_g, sats[1] = s_l, sats[2] = s_i
 void WRMOldPermafrostModel::saturations(double pc_liq, double pc_ice, double (&sats)[3]) {
@@ -67,6 +66,5 @@ void WRMOldPermafrostModel::dsaturations_dpc_ice(double pc_liq, double pc_ice, d
 }
 
 
-} // namespace
 } // namespace
 } // namespace

@@ -10,11 +10,9 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace Energy {
 
 Utils::RegisteredFactory<FieldEvaluator,IEMEvaluator> IEMEvaluator::factory_("iem");
 
 
-} //namespace
 } //namespace
 } //namespace

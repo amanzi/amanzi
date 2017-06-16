@@ -15,7 +15,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class SurfaceCouplerViaSourceEvaluator :
     public SecondaryVariableFieldEvaluator {
@@ -56,7 +55,6 @@ protected:
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

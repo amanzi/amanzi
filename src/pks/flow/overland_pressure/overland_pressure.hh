@@ -99,12 +99,11 @@ May inherit options from PKPhysicalBDFBase_.
 namespace Amanzi {
 
 class MPCSurfaceSubsurfaceDirichletCoupler;
-namespace Flow {
 
 namespace Flow {
-  class OverlandConductivityModel;
-  class HeightModel;
-}
+
+class OverlandConductivityModel;
+class HeightModel;
 
 //class OverlandPressureFlow : public PKPhysicalBDFBase {
 class OverlandPressureFlow : public PK_PhysicalBDF_Default {
@@ -259,7 +258,7 @@ protected:
   static RegisteredPKFactory<OverlandPressureFlow> reg_;
 };
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 
 #endif

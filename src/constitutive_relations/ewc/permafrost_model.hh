@@ -24,13 +24,11 @@
 namespace Amanzi {
 
 namespace Flow {
-namespace Flow {
 class PCIceWater;
 class PCLiqAtm;
 }
-}
 
-namespace Energy { namespace Energy { class IEM; class IEMWaterVapor;} }
+namespace Energy { class IEM; class IEMWaterVapor;} 
 namespace Relations { class EOS; class VaporPressureRelation; }
 
 
@@ -53,23 +51,23 @@ class PermafrostModel : public EWCModelBase {
           AmanziGeometry::Point& result);
 
  protected:
-  Teuchos::RCP<Flow::Flow::WRMPermafrostModelPartition> wrms_;
-  Teuchos::RCP<Flow::Flow::WRMPermafrostModel> wrm_;
+  Teuchos::RCP<Flow::WRMPermafrostModelPartition> wrms_;
+  Teuchos::RCP<Flow::WRMPermafrostModel> wrm_;
   Teuchos::RCP<Relations::EOS> liquid_eos_;
   Teuchos::RCP<Relations::EOS> gas_eos_;
   Teuchos::RCP<Relations::EOS> ice_eos_;
-  Teuchos::RCP<Flow::Flow::PCIceWater> pc_i_;
-  Teuchos::RCP<Flow::Flow::PCLiqAtm> pc_l_;
+  Teuchos::RCP<Flow::PCIceWater> pc_i_;
+  Teuchos::RCP<Flow::PCLiqAtm> pc_l_;
   Teuchos::RCP<Relations::VaporPressureRelation> vpr_;
-  Teuchos::RCP<Energy::Energy::IEM> liquid_iem_;
-  Teuchos::RCP<Energy::Energy::IEMWaterVapor> gas_iem_;
-  Teuchos::RCP<Energy::Energy::IEM> ice_iem_;
-  Teuchos::RCP<Energy::Energy::IEM> rock_iem_;
-  Teuchos::RCP<Flow::Flow::CompressiblePorosityModelPartition> poro_models_;
-  Teuchos::RCP<Flow::Flow::CompressiblePorosityModel> poro_model_;
+  Teuchos::RCP<Energy::IEM> liquid_iem_;
+  Teuchos::RCP<Energy::IEMWaterVapor> gas_iem_;
+  Teuchos::RCP<Energy::IEM> ice_iem_;
+  Teuchos::RCP<Energy::IEM> rock_iem_;
+  Teuchos::RCP<Flow::CompressiblePorosityModelPartition> poro_models_;
+  Teuchos::RCP<Flow::CompressiblePorosityModel> poro_model_;
 
-  Teuchos::RCP<Flow::Flow::CompressiblePorosityLeijnseModelPartition> poro_leij_models_;
-  Teuchos::RCP<Flow::Flow::CompressiblePorosityLeijnseModel> poro_leij_model_;
+  Teuchos::RCP<Flow::CompressiblePorosityLeijnseModelPartition> poro_leij_models_;
+  Teuchos::RCP<Flow::CompressiblePorosityLeijnseModel> poro_leij_model_;
 
   double p_atm_;
   double poro_;
@@ -80,8 +78,9 @@ class PermafrostModel : public EWCModelBase {
 };
 
 
+}
 
-} //namespace
+
 
 
 #endif

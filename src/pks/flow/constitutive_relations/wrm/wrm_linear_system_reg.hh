@@ -9,11 +9,9 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 // registry of method
 Utils::RegisteredFactory<WRM,WRMLinearSystem> WRMLinearSystem::factory_("linear system");
 
-}  // namespace
 }  // namespace
 }  // namespace

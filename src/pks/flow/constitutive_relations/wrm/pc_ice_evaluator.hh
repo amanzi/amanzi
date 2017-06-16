@@ -15,7 +15,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class PCIceWater;
 
@@ -51,7 +50,6 @@ class PCIceEvaluator : public SecondaryVariableFieldEvaluator {
 
 };
 
-} // namespace
 } // namespace
 } // namespace
 

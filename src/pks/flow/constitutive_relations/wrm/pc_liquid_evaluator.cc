@@ -12,7 +12,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 PCLiquidEvaluator::PCLiquidEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
@@ -93,6 +92,5 @@ void PCLiquidEvaluator::EvaluateFieldPartialDerivative_(
   }
 }
 
-} // namespace
 } // namespace
 } // namespace

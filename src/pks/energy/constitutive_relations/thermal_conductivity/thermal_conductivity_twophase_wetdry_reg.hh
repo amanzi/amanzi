@@ -20,7 +20,6 @@ See ATS process model documentation's permafrost model for details.
 
 namespace Amanzi {
 namespace Energy {
-namespace Energy {
 
 // registry of method
 Utils::RegisteredFactory<ThermalConductivityTwoPhase,ThermalConductivityTwoPhaseWetDry>
@@ -28,4 +27,3 @@ Utils::RegisteredFactory<ThermalConductivityTwoPhase,ThermalConductivityTwoPhase
 
 } // namespace Relations
 } // namespace Energy
-} // namespace Amanzi

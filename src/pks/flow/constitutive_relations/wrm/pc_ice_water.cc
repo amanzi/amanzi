@@ -10,7 +10,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 
 /* ******************************************************************
@@ -109,6 +108,5 @@ void PCIceWater::InitializeFromPlist_() {
   gamma_ = sigma_gas_liq_/sigma_ice_liq_ * heat_fusion_;
 };
 
-} // namespace
 } // namespace
 } // namespace

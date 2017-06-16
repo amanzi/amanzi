@@ -12,7 +12,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 
 HeightEvaluator::HeightEvaluator(Teuchos::ParameterList& plist) :
@@ -247,6 +246,5 @@ void HeightEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>&
 
 
 
-} //namespace
 } //namespace
 } //namespace

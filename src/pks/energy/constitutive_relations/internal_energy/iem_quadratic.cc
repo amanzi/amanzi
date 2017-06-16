@@ -15,7 +15,6 @@ UNITS: MJ/{mol,kg}
 
 namespace Amanzi {
 namespace Energy {
-namespace Energy {
 
 IEMQuadratic::IEMQuadratic(Teuchos::ParameterList& plist) :
     plist_(plist) {
@@ -49,6 +48,5 @@ void IEMQuadratic::InitializeFromPlist_() {
   T0_ = plist_.get<double>("reference temperature [K]", 273.15);
 };
 
-} // namespace
 } // namespace
 } // namespace

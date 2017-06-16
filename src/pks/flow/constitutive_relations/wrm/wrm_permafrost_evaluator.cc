@@ -12,7 +12,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 /* --------------------------------------------------------------------------------
   Constructor from just a ParameterList, reads WRMs and permafrost models from list.
@@ -277,7 +276,6 @@ WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
 
 
 
-} // namespace
 } // namespace
 } // namespace
 

@@ -15,7 +15,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace Energy {
 
 // Equation of State model
 class ThermalConductivityThreePhaseEvaluator :
@@ -49,7 +48,6 @@ class ThermalConductivityThreePhaseEvaluator :
   Key temp_key_;
 };
 
-} // namespace
 } // namespace
 } // namespace
 

@@ -20,9 +20,10 @@ namespace Amanzi {
 // forward declarations
 class Function;
 namespace Relations { class EOS; }
-namespace Energy { namespace Energy { class IEM; } }
 
 namespace Energy {
+
+class IEM; 
 
 class EnergySurfaceIce : public EnergyBase {
 

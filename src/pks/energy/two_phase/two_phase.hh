@@ -21,9 +21,11 @@ namespace Amanzi {
 class MPCDiagonalFlowEnergy;
 class MPCCoupledFlowEnergy;
 namespace Relations { class EOS; }
-namespace Energy { namespace Energy { class IEM; } }
 
 namespace Energy {
+
+class IEM;
+
 
 class TwoPhase : public EnergyBase {
 

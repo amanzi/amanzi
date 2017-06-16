@@ -9,7 +9,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 /* ******************************************************************
  * Setup fundamental parameters for this model.
@@ -29,6 +28,5 @@ void WRMLinearSystem::InitializeFromPlist_() {
   }
 };
 
-}  // namespace
 }  // namespace
 }  // namespace

@@ -13,7 +13,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class PCLiqAtm {
 
@@ -26,7 +25,6 @@ public:
   virtual double DCapillaryPressureDpatm(double p, double p_atm) { return 1.; }
 };
 
-} //namespace
 } //namespace
 } //namespace
 

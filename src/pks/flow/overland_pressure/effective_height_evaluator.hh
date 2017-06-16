@@ -15,7 +15,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class EffectiveHeightModel;
 
@@ -49,7 +48,6 @@ class EffectiveHeightEvaluator : public SecondaryVariableFieldEvaluator {
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

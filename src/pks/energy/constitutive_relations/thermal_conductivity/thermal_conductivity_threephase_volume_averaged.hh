@@ -32,7 +32,6 @@ Units: ????
 
 namespace Amanzi {
 namespace Energy {
-namespace Energy {
 
 class ThermalConductivityThreePhaseVolumeAveraged : public ThermalConductivityThreePhase {
 
@@ -57,7 +56,6 @@ private:
 
 };
 
-}
 }
 }
 

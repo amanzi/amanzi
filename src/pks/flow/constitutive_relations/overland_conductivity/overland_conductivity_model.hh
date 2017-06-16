@@ -12,7 +12,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class OverlandConductivityModel {
  public:
@@ -22,7 +21,6 @@ class OverlandConductivityModel {
 
 };
 
-} // namespace
 } // namespace
 } // namespace
 

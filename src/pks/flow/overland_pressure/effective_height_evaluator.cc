@@ -12,7 +12,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 EffectiveHeightEvaluator::EffectiveHeightEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
@@ -83,6 +82,5 @@ void EffectiveHeightEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Pt
 
 
 
-} //namespace
 } //namespace
 } //namespace

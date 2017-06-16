@@ -21,7 +21,6 @@
 namespace Amanzi {
 
 namespace Flow { namespace Flow { class WRM; } }
-namespace Flow { namespace Flow { class PCLiqAtm; } }
 namespace Energy { namespace Energy { class IEM; class IEMWaterVapor;} }
 namespace Relations { class EOS; class VaporPressureRelation; }
 
@@ -48,14 +47,14 @@ class ThermalRichardsModel : public EWCModel {
           AmanziGeometry::Point& result, WhetStone::Tensor& jac);
 
  protected:
-  Teuchos::RCP<Flow::Flow::WRM> wrm_;
+  Teuchos::RCP<Flow::WRM> wrm_;
   Teuchos::RCP<Relations::EOS> liquid_eos_;
   Teuchos::RCP<Relations::EOS> gas_eos_;
-  Teuchos::RCP<Flow::Flow::PCLiqAtm> pc_l_;
+  Teuchos::RCP<Flow::PCLiqAtm> pc_l_;
   Teuchos::RCP<Relations::VaporPressureRelation> vpr_;
-  Teuchos::RCP<Energy::Energy::IEM> liquid_iem_;
-  Teuchos::RCP<Energy::Energy::IEMWaterVapor> gas_iem_;
-  Teuchos::RCP<Energy::Energy::IEM> rock_iem_;
+  Teuchos::RCP<Energy::IEM> liquid_iem_;
+  Teuchos::RCP<Energy::IEMWaterVapor> gas_iem_;
+  Teuchos::RCP<Energy::IEM> rock_iem_;
   double rho_rock_;
   double p_atm_;
   double poro_;
@@ -64,7 +63,6 @@ class ThermalRichardsModel : public EWCModel {
 
 
 
-} //namespace
 
 
 #endif

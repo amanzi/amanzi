@@ -17,7 +17,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class OneSurfaceRelPermModel : public SurfaceRelPermModel {
  public:
@@ -43,7 +42,6 @@ class OneSurfaceRelPermModel : public SurfaceRelPermModel {
   
 };
 
-} // namespace
 } // namespace
 } // namespace
 

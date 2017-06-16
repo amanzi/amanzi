@@ -17,7 +17,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class WRMPermafrostEvaluator : public SecondaryVariablesFieldEvaluator {
  public:
@@ -57,7 +56,6 @@ class WRMPermafrostEvaluator : public SecondaryVariablesFieldEvaluator {
 
 };
 
-} // namespace
 } // namespace
 } // namespace
 

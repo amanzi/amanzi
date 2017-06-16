@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class HeightModel;
 
@@ -59,7 +58,6 @@ class HeightEvaluator : public SecondaryVariableFieldEvaluator {
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

@@ -11,6 +11,6 @@
 
 // explicity instantitate the static data of Factory<WRM>
 template<> 
-Amanzi::Utils::Factory<Amanzi::Flow::Flow::WRM>::map_type* 
-Amanzi::Utils::Factory<Amanzi::Flow::Flow::WRM>::map_;
+Amanzi::Utils::Factory<Amanzi::Flow::WRM>::map_type* 
+Amanzi::Utils::Factory<Amanzi::Flow::WRM>::map_;
 

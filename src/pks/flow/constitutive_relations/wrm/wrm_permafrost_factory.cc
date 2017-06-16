@@ -12,7 +12,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 // method for instantiating WRM implementations
 Teuchos::RCP<WRMPermafrostModel> WRMPermafrostFactory::createWRMPermafrostModel(
@@ -23,7 +22,6 @@ Teuchos::RCP<WRMPermafrostModel> WRMPermafrostFactory::createWRMPermafrostModel(
   return model;
 };
 
-} // namespace
 } // namespace
 } // namespace
 

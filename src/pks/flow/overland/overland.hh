@@ -25,9 +25,8 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-namespace Flow {
-  class OverlandConductivityModel;
-}
+class OverlandConductivityModel;
+
 
 
 class OverlandFlow : public PK_PhysicalBDF_Default {
@@ -140,7 +139,7 @@ protected:
   static RegisteredPKFactory<OverlandFlow> reg_;
 };
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 
 #endif

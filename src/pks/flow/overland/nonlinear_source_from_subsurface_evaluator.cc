@@ -13,7 +13,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 NonlinearSourceFromSubsurfaceEvaluator::NonlinearSourceFromSubsurfaceEvaluator(
         Teuchos::ParameterList& plist) :
@@ -151,6 +150,5 @@ NonlinearSourceFromSubsurfaceEvaluator::EvaluateFieldPartialDerivative_(const Te
   // don't do for now.
 }
 
-} // namespace
 } // namespace
 } // namespace

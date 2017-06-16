@@ -11,7 +11,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace Energy {
 
 ThermalConductivitySurfaceEvaluator::ThermalConductivitySurfaceEvaluator(
       Teuchos::ParameterList& plist) :
@@ -85,6 +84,5 @@ void ThermalConductivitySurfaceEvaluator::EvaluateFieldPartialDerivative_(
   result->Scale(1.e-6); // convert to MJ
 }
 
-} //namespace
 } //namespace
 } //namespace

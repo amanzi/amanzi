@@ -12,7 +12,6 @@ Interfrost model for saturated
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 // required methods from the base class
 // sats[0] = sg, sats[1] = sl, sats[2] = si
@@ -57,4 +56,3 @@ WRMInterfrostPermafrostModel::dsaturations_dpc_ice(double pc_liq, double tempera
 
 } // namespace Flow
 } // namespace Flow
-} // namespace Amanzi

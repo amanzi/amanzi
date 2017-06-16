@@ -11,7 +11,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace Energy {
 
 
 IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& plist) :
@@ -96,6 +95,5 @@ void IEMEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
 }
 
 
-} //namespace
 } //namespace
 } //namespace

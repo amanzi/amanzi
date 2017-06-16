@@ -18,7 +18,6 @@ UNITS: ????
 
 namespace Amanzi {
 namespace Energy {
-namespace Energy {
 
 class ThermalConductivityThreePhase {
 
@@ -44,7 +43,6 @@ public:
   }
 };
 
-} // namespace
 } // namespace
 } // namespace
 

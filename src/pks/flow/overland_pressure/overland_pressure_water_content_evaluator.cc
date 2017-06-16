@@ -10,7 +10,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 
 OverlandPressureWaterContentEvaluator::OverlandPressureWaterContentEvaluator(Teuchos::ParameterList& plist) :
@@ -119,6 +118,5 @@ void OverlandPressureWaterContentEvaluator::EvaluateFieldPartialDerivative_(cons
 }
 
 
-} //namespace
 } //namespace
 } //namespace

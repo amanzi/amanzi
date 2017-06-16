@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class OverlandPressureWaterContentEvaluator : public SecondaryVariableFieldEvaluator {
 
@@ -47,7 +46,6 @@ class OverlandPressureWaterContentEvaluator : public SecondaryVariableFieldEvalu
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

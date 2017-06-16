@@ -13,7 +13,6 @@ Painter's permafrost model with freezing point depression.
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class WRM;
 
@@ -43,7 +42,6 @@ class WRMFPDSmoothedPermafrostModel : public WRMPermafrostModel {
 };
 
 
-} //namespace
 } //namespace
 } //namespace
 

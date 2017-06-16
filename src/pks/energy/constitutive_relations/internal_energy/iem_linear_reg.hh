@@ -12,10 +12,8 @@ Author: Ethan Coon
 
 namespace Amanzi {
 namespace Energy {
-namespace Energy {
 
 Utils::RegisteredFactory<IEM,IEMLinear> IEMLinear::factory_("linear");
 
-} // namespace
 } // namespace
 } // namespace

@@ -10,7 +10,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace Energy {
 
 // constructor format for all derived classes
 AdvectedEnergySourceEvaluator::AdvectedEnergySourceEvaluator(Teuchos::ParameterList& plist) :
@@ -181,7 +180,6 @@ AdvectedEnergySourceEvaluator::InitializeFromPlist_() {
 }
 
 
-} //namespace
 } //namespace
 } //namespace
 

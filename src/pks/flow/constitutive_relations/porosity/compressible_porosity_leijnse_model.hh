@@ -62,7 +62,6 @@ Example:
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class CompressiblePorosityLeijnseModel {
  public:
@@ -122,7 +121,6 @@ class CompressiblePorosityLeijnseModel {
 
 };
 
-} // namespace
 } // namespace
 } // namespace
 

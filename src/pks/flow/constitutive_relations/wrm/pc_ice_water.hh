@@ -13,7 +13,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class PCIceWater {
 
@@ -40,7 +39,6 @@ private:
   double halfwidth_;
 };
 
-} //namespace
 } //namespace
 } //namespace
 

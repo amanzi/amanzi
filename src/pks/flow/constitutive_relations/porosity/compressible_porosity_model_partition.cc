@@ -11,7 +11,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 // Non-member factory
 Teuchos::RCP<CompressiblePorosityModelPartition>
@@ -37,6 +36,5 @@ createCompressiblePorosityModelPartition(Teuchos::ParameterList& plist) {
   return Teuchos::rcp(new CompressiblePorosityModelPartition(part, mlist));
 }
 
-} // namespace
 } // namespace
 } // namespace

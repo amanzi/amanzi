@@ -10,7 +10,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace Energy {
 
 IEMWaterVaporEvaluator::IEMWaterVaporEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
@@ -113,6 +112,5 @@ void IEMWaterVaporEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<
 }
 
 
-} //namespace
 } //namespace
 } //namespace

@@ -13,7 +13,6 @@ Sutra model for saturated
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class WRM;
 
@@ -52,7 +51,6 @@ class WRMSutraPermafrostModel : public WRMPermafrostModel {
 };
 
 
-} //namespace
 } //namespace
 } //namespace
 

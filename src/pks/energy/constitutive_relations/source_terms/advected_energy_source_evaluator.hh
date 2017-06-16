@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace Energy {
 
 class AdvectedEnergySourceEvaluator : public SecondaryVariableFieldEvaluator {
 
@@ -57,7 +56,6 @@ class AdvectedEnergySourceEvaluator : public SecondaryVariableFieldEvaluator {
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

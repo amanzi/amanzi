@@ -15,7 +15,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class PCLiqAtm;
 
@@ -51,7 +50,6 @@ class PCLiquidEvaluator : public SecondaryVariableFieldEvaluator {
 
 };
 
-} // namespace
 } // namespace
 } // namespace
 

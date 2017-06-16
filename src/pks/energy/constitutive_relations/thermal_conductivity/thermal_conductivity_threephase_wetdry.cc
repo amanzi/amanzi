@@ -14,7 +14,6 @@ Linear interpolant of thermal conductivity.
 
 namespace Amanzi {
 namespace Energy {
-namespace Energy {
 
 ThermalConductivityThreePhaseWetDry::ThermalConductivityThreePhaseWetDry(
       Teuchos::ParameterList& plist) : plist_(plist) {
@@ -83,4 +82,3 @@ void ThermalConductivityThreePhaseWetDry::InitializeFromPlist_() {
 
 } // namespace Relations
 } // namespace Energy
-} // namespace Amanzi

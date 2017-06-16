@@ -11,7 +11,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace Flow {
 
 class WRM;
 
@@ -44,7 +43,6 @@ std::pair<std::string, Teuchos::RCP<WRMPermafrostModel> > WRMPermafrostModelRegi
 typedef
 std::vector<WRMPermafrostModelRegionPair> WRMPermafrostModelRegionPairList;
 
-} //namespace
 } //namespace
 } //namespace
 

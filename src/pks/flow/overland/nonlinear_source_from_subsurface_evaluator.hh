@@ -18,7 +18,6 @@ namespace Amanzi {
 namespace Operators { class MatrixMFD; }
 
 namespace Flow {
-namespace Flow {
 
 class NonlinearSourceFromSubsurfaceEvaluator :
     public SecondaryVariableFieldEvaluator {
@@ -56,7 +55,6 @@ protected:
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 
