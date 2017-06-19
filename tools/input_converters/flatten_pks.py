@@ -43,11 +43,19 @@ def flatten(pks, flat_pks, cd_pks):
             flatten(subpks, flat_pks, new_cd)
 
 def flatten_pks(xml):
+    try:
+        cycle_driver = asearch.childByName(xml, "cycle driver")
+    except aerrors.MissingXMLError():
+        pass
+    else:
+        return
+    
     pks = asearch.childByName(xml, "PKs")
     cd_pks = coordinator_to_cycle_driver(xml)
     flat_pks = ParameterList("PKs")
     flatten(pks, flat_pks, cd_pks)
     pks.extend(flat_pks)
+        
 
 
 if __name__ == "__main__":
