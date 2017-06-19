@@ -4658,10 +4658,10 @@ void Mesh_MSTK::collapse_degen_edges()
   idx = 0;
   while ((edge = MESH_Next_Edge(mesh,&idx))) {
 
-    len2 = ME_LenSqr(edge);
-
-    if (len2 <= 1.0e-14) {
-
+    len2 = ME_Len(edge);
+    
+    if (len2 <= 1.0e-15) {
+#ifdef MSTK_3_00_OR_NEWER
       /* Degenerate edge  - must collapse */
 
       entities_deleted = true;
@@ -4717,9 +4717,13 @@ void Mesh_MSTK::collapse_degen_edges()
           List_Delete(merged_entity_pairs);
         }
       }
+#else
+      Errors::Message mesg("Mesh contains a degenerate edge. MSTK version 3.0.0 or later is required to support collapsing of degenerate edges!");
+      amanzi_throw(mesg);
+#endif
     }
   }
-
+#ifdef MSTK_3_00_OR_NEWER
   int nmerged = List_Num_Entries(merged_entity_pairs_all)/2;
   for (int j = 0; j < nmerged; j++) {
     MEntity_ptr delent = List_Entry(merged_entity_pairs_all, 2*j);
@@ -4854,6 +4858,7 @@ void Mesh_MSTK::collapse_degen_edges()
 
   if (entities_deleted)
     MESH_Renumber_GlobalIDs(mesh, MALLTYPE, 0, NULL, mpicomm_);
+#endif
 }
 
 
