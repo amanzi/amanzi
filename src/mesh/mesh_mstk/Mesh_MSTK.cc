@@ -1192,7 +1192,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
   // We have to do an extra step to build new labeled sets based on
   // labeled sets of the base mesh
 
-  inherit_labeled_sets(copyatt);
+  inherit_labeled_sets(copyatt, src_entities);
 
 
   // Do all the processing required for setting up the mesh for Amanzi 
@@ -2357,7 +2357,7 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
 
   ASSERT(faces_initialized);
   ASSERT(cellids != NULL);
-  cellids->resize(2); // maximum number
+  cellids->clear();
   Entity_ID_List::iterator it = cellids->begin();
   n = 0;
 
@@ -2368,27 +2368,19 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
     MRegion_ptr mr;
     if (ptype == USED) {      
       int idx = 0;
-      while ((mr = List_Next_Entry(fregs,&idx))) {
-        *it = MR_ID(mr)-1;  // assign to next spot by dereferencing iterator
-        ++it;
-        ++n;
-      }
+      while ((mr = List_Next_Entry(fregs,&idx)))
+        cellids->push_back(MR_ID(mr)-1);
     }
     else {
       int idx = 0;
       while ((mr = List_Next_Entry(fregs,&idx))) {
         if (MEnt_PType(mr) == PGHOST) {
-          if (ptype == GHOST) {
-            *it = MR_ID(mr)-1;  // assign to next spot by dereferencing iterator
-            ++it;
-            ++n;
-          }
+          if (ptype == GHOST)
+            cellids->push_back(MR_ID(mr)-1);
         }
-        else {
-          *it = MR_ID(mr)-1;  // assign to next spot by dereferencing iterator
-          ++it;
-          ++n;
-        }
+        else
+          if (ptype == OWNED)
+            cellids->push_back(MR_ID(mr)-1);
       }
     }
     List_Delete(fregs);
@@ -2401,35 +2393,24 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
     MFace_ptr mf;
     if (ptype == USED) {
       int idx = 0;
-      while ((mf = List_Next_Entry(efaces,&idx))) {
-        *it = MF_ID(mf)-1;  // assign to next spot by dereferencing iterator
-        ++it;
-        ++n;
-      }
+      while ((mf = List_Next_Entry(efaces,&idx)))
+        cellids->push_back(MF_ID(mf)-1);
     }
     else {
       int idx = 0;
       while ((mf = List_Next_Entry(efaces,&idx))) {
         if (MEnt_PType(mf) == PGHOST) {
-          if (ptype == GHOST) {
-            *it = MF_ID(mf)-1;  // assign to next spot by dereferencing iterator
-            ++it;
-            ++n;
-          }
+          if (ptype == GHOST)
+            cellids->push_back(MF_ID(mf)-1);
         }
-        else {
-          if (ptype == OWNED) {
-            *it = MF_ID(mf)-1;  // assign to next spot by dereferencing iterator
-            ++it;
-            ++n;
-          }
-        }
+        else
+          if (ptype == OWNED)
+            cellids->push_back(MF_ID(mf)-1);
       }
     }
     List_Delete(efaces);
 
   }
-  cellids->resize(n); // resize to the actual number of cells being returned
 }
     
 
@@ -4295,19 +4276,11 @@ void Mesh_MSTK::init_pface_lists()
   return;
 }
 
+// Detect whether ghost faces are in opposite direction of owned faces
+// on processor boundaries
 
 void Mesh_MSTK::init_pface_dirs()
 {
-  MRegion_ptr region0, region1;
-  MFace_ptr face, face0, face1;
-  MEdge_ptr edge;
-  MAttrib_ptr attfc0, attfc1;
-  int idx;
-  int local_regid0, local_regid1;
-  int remote_regid0, remote_regid1;
-  int local_faceid0, local_faceid1;
-  int remote_faceid0, remote_faceid1;
-
   int nf = (manifold_dimension() == 2) ? MESH_Num_Edges(mesh) : MESH_Num_Faces(mesh);
 
   if (serial_run) {
@@ -4315,148 +4288,147 @@ void Mesh_MSTK::init_pface_dirs()
     for (int i = 0; i < nf; ++i) faceflip[i] = false;
   }
   else {
-    // Do some additional processing to see if ghost faces and their masters
-    // are oriented the same way; if not, turn on flag to flip the directions
-    // when returning to the application code
-
-    if (manifold_dimension() == 3) {
-      attfc0 = MAttrib_New(mesh,"TMP_FC0_ATT",INT,MFACE);
-      attfc1 = MAttrib_New(mesh,"TMP_FC1_ATT",INT,MFACE);
-    }
-    else if (manifold_dimension() == 2) {
-      attfc0 = MAttrib_New(mesh,"TMP_FC0_ATT",INT,MEDGE);
-      attfc1 = MAttrib_New(mesh,"TMP_FC1_ATT",INT,MEDGE);
-    }
-
-    if (manifold_dimension() == 3) {
-    
-      idx = 0;
-      while ((face = MESH_Next_Face(mesh,&idx))) {
-        if (MF_PType(face) != PINTERIOR) {
-          region0 = MF_Region(face,0);
-          if (region0)
-            MEnt_Set_AttVal(face,attfc0,MEnt_GlobalID(region0),0.0,NULL);
-            
-          region1 = MF_Region(face,1);
-          if (region1)
-            MEnt_Set_AttVal(face,attfc1,MEnt_GlobalID(region1),0.0,NULL);
-        }
-      }    
-        
-    }
-    else if (manifold_dimension() == 2) {
-
-      idx = 0;
-      while ((edge = MESH_Next_Edge(mesh,&idx))) {
-        if (ME_PType(edge) != PINTERIOR) {
-          List_ptr efaces = ME_Faces(edge);
-            
-          face0 = List_Entry(efaces,0);
-          if (MF_EdgeDir(face0,edge) != 1) {
-            face1 = face0;
-            MEnt_Set_AttVal(edge,attfc1,MEnt_GlobalID(face1),0.0,NULL);
-
-            face0 = List_Entry(efaces,1);
-            if (face0) {
-              if (MF_EdgeDir(face0,edge) == 1)     // Sanity check
-                MEnt_Set_AttVal(edge,attfc0,MEnt_GlobalID(face0),0.0,NULL);
-              else
-                std::cerr << "Two faces using edge in same direction in 2D mesh" << std::endl;
-            }
-          }
-          else {
-            MEnt_Set_AttVal(edge,attfc0,MEnt_GlobalID(face0),0.0,NULL);
-            face1 = List_Entry(efaces,1);
-            if (face1)
-              MEnt_Set_AttVal(edge,attfc1,MEnt_GlobalID(face1),0.0,NULL);
-          }
-          List_Delete(efaces);
-        }
-      }
-
-    }  // else if (manifold_dimension() == 2)
+    if (manifold_dimension() == 3)
+      init_pface_dirs_3();
+    else if (manifold_dimension() == 2)
+      init_pface_dirs_2();
+  }
+}
 
 
-    MESH_UpdateAttributes(mesh,mpicomm_);
+// Detect whether ghost faces are in opposite direction of owned faces
+// on processor boundaries - Version for solid meshes
 
+void Mesh_MSTK::init_pface_dirs_3() {
+  MRegion_ptr region0, region1;
+  MFace_ptr face;
+  MAttrib_ptr attfc0, attfc1;
+  int idx;
+  int local_regid0, local_regid1;
+  int remote_regid0, remote_regid1;
+  
+  int nf = MESH_Num_Faces(mesh);
 
-    faceflip = new bool[nf];
-    for (int i = 0; i < nf; ++i) faceflip[i] = false;
-    
-    if (manifold_dimension() == 3) {
-      double rval;
-      void *pval;
+  // Do some additional processing to see if ghost faces and their masters
+  // are oriented the same way; if not, turn on flag to flip the directions
+  // when returning to the application code
+  
+  // attributes to store 
+  attfc0 = MAttrib_New(mesh,"TMP_FC0_ATT",INT,MFACE);
+  attfc1 = MAttrib_New(mesh,"TMP_FC1_ATT",INT,MFACE);
 
-      idx = 0;
-      while ((face = MSet_Next_Entry(NotOwnedFaces,&idx))) {
+  idx = 0;
+  while ((face = MESH_Next_Face(mesh,&idx))) {
+    if (MF_PType(face) != PINTERIOR) {
+      region0 = MF_Region(face,0);
+      if (region0)
+        MEnt_Set_AttVal(face,attfc0,MEnt_GlobalID(region0),0.0,NULL);
       
-        MEnt_Get_AttVal(face,attfc0,&remote_regid0,&rval,&pval);
-        MEnt_Get_AttVal(face,attfc1,&remote_regid1,&rval,&pval);
-      
-        region0 = MF_Region(face,0);
-        local_regid0 = region0 ? MEnt_GlobalID(region0) : 0;
-        region1 = MF_Region(face,1);
-        local_regid1 = region1 ? MEnt_GlobalID(region1) : 0;
-      
-        if (remote_regid1 == local_regid0 || 
-            remote_regid0 == local_regid1) {
-          int lid = MEnt_ID(face);
-          faceflip[lid-1] = true;
-        }
-        else { // Sanity Check
-        
-          if (remote_regid1 != local_regid1 &&
-              remote_regid0 != local_regid0) {
-          
-            std::stringstream mesg_stream;
-            mesg_stream << "Face cells mismatch between master and ghost (processor " << myprocid << ")";
-            Errors::Message mesg(mesg_stream.str());
-            amanzi_throw(mesg);
-          }
-        }
-      }
-    }
-    else if (manifold_dimension() == 2) {
-      double rval;
-      void *pval;
-
-      idx = 0;
-      while ((edge = MSet_Next_Entry(NotOwnedFaces,&idx))) {
-      
-        MEnt_Get_AttVal(edge,attfc0,&remote_faceid0,&rval,&pval);
-        MEnt_Get_AttVal(edge,attfc1,&remote_faceid1,&rval,&pval);
-      
-        List_ptr efaces = ME_Faces(edge);
-        face0 = List_Entry(efaces,0);
-        face1 = List_Entry(efaces,1);
-        if (MF_EdgeDir(face0,edge) != 1) {
-          face0 = List_Entry(efaces,1);
-          face1 = List_Entry(efaces,0);
-        }
-        local_faceid0 = face0 ? MEnt_GlobalID(face0) : 0;
-        local_faceid1 = face1 ? MEnt_GlobalID(face1) : 0;
-      
-        if (remote_faceid1 == local_faceid0 || 
-            remote_faceid0 == local_faceid1) {
-          int lid = MEnt_ID(edge);
-          faceflip[lid-1] = true;
-        }
-        else { // Sanity Check
-        
-          if (remote_faceid1 != local_faceid1 &&
-              remote_faceid0 != local_faceid0) {
-          
-            std::stringstream mesg_stream;
-            mesg_stream << "Face cells mismatch between master and ghost (processor " << myprocid << ")";
-            Errors::Message mesg(mesg_stream.str());
-            amanzi_throw(mesg);
-          }
-        }
-        List_Delete(efaces);
-      }
-
+      region1 = MF_Region(face,1);
+      if (region1)
+        MEnt_Set_AttVal(face,attfc1,MEnt_GlobalID(region1),0.0,NULL);
     }
   }    
+  
+  MESH_UpdateAttributes(mesh,mpicomm_);
+
+
+  faceflip = new bool[nf];
+  for (int i = 0; i < nf; ++i) faceflip[i] = false;
+  
+  double rval;
+  void *pval;
+  
+  idx = 0;
+  while ((face = MSet_Next_Entry(NotOwnedFaces,&idx))) {
+    
+    MEnt_Get_AttVal(face,attfc0,&remote_regid0,&rval,&pval);
+    MEnt_Get_AttVal(face,attfc1,&remote_regid1,&rval,&pval);
+    
+    region0 = MF_Region(face,0);
+    local_regid0 = region0 ? MEnt_GlobalID(region0) : 0;
+    region1 = MF_Region(face,1);
+    local_regid1 = region1 ? MEnt_GlobalID(region1) : 0;
+    
+    if (remote_regid1 == local_regid0 || 
+        remote_regid0 == local_regid1) {
+      int lid = MEnt_ID(face);
+      faceflip[lid-1] = true;
+    }
+    else { // Sanity Check
+      
+      if (remote_regid1 != local_regid1 &&
+          remote_regid0 != local_regid0) {
+        
+        std::stringstream mesg_stream;
+        mesg_stream << "Face cells mismatch between master and ghost (processor " << myprocid << ")";
+        Errors::Message mesg(mesg_stream.str());
+        amanzi_throw(mesg);
+      }
+    }
+  }
+  MAttrib_Delete(attfc0);
+  MAttrib_Delete(attfc1);
+}
+
+
+// Detect whether ghost faces are in opposite direction of owned faces
+// on processor boundaries - Version for surface meshes
+
+void Mesh_MSTK::init_pface_dirs_2() {
+  MEdge_ptr edge;
+  MAttrib_ptr attev0, attev1;
+  int idx;
+
+  int ne = MESH_Num_Edges(mesh);
+
+  // Do some additional processing to see if ghost faces and their masters
+  // are oriented the same way; if not, turn on flag to flip the directions
+  // when returning to the application code
+  
+  attev0 = MAttrib_New(mesh,"TMP_EV0_ATT",INT,MEDGE);
+  attev1 = MAttrib_New(mesh,"TMP_EV1_ATT",INT,MEDGE);
+
+  idx = 0;
+  while ((edge = MESH_Next_Edge(mesh,&idx))) {
+    if (ME_PType(edge) != PINTERIOR) {
+      MVertex_ptr ev0 = ME_Vertex(edge, 0);
+      MVertex_ptr ev1 = ME_Vertex(edge, 1);
+      
+      int evgid0 = MV_GlobalID(ev0);
+      int evgid1 = MV_GlobalID(ev1);
+      MEnt_Set_AttVal(edge,attev0,MEnt_GlobalID(ev0),0.0,NULL);
+      MEnt_Set_AttVal(edge,attev1,MEnt_GlobalID(ev1),0.0,NULL);
+    }
+  }
+
+  MESH_UpdateAttributes(mesh,mpicomm_);
+
+  faceflip = new bool[ne];
+  for (int i = 0; i < ne; ++i) faceflip[i] = false;
+    
+  double rval;
+  void *pval;
+  
+  idx = 0;
+  while ((edge = MSet_Next_Entry(NotOwnedFaces,&idx))) {
+    int remote_evgid0, remote_evgid1;
+    MEnt_Get_AttVal(edge,attev0,&remote_evgid0,&rval,&pval);
+    MEnt_Get_AttVal(edge,attev1,&remote_evgid1,&rval,&pval);
+    
+    MVertex_ptr ev0 = ME_Vertex(edge, 0);
+    MVertex_ptr ev1 = ME_Vertex(edge, 1);
+    int local_evgid0 = MV_GlobalID(ev0);
+    int local_evgid1 = MV_GlobalID(ev1);
+    
+    if (remote_evgid1 == local_evgid0 || 
+        remote_evgid0 == local_evgid1) {
+      int lid = MEnt_ID(edge);
+      faceflip[lid-1] = true;
+    }
+  }
+  MAttrib_Delete(attev0);
+  MAttrib_Delete(attev1);
 }
 
 
@@ -5484,7 +5456,8 @@ void Mesh_MSTK::pre_create_steps_(const int space_dimension,
 }
 
 
-void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt)
+void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt,
+                                     List_ptr src_entities)
 {
   int idx, idx2, diffdim;
   MSet_ptr mset;
@@ -5535,6 +5508,26 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt)
                                              internal_name.c_str());
       if (!mset_parent)
         continue;
+
+      // Also, if this is a lower dimensional mesh (like a surface
+      // mesh created from a solid mesh) and the set contains entities
+      // from which it was created (like a face set) then don't
+      // inherit this set - otherwise we will get odd things like
+      // internal edges in the surface mesh being labeled as "face
+      // sets"
+
+      if (diffdim > 0) {
+        int found = 0;
+        int idx = 0;
+        MEntity_ptr ent;
+        while ((ent = List_Next_Entry(src_entities, &idx))) {
+          if (MSet_Contains(mset_parent, ent)) {
+            found = 1;
+            break;
+          }
+        }
+        if (found) continue;
+      }
 
       // Create the set in this mesh
 

@@ -98,22 +98,32 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
     }
   }
 
-  // face normals -- same order: log-log, log-bg, bg-bg
-  face_normal0_ = log_mesh->face_normal0_;
-  face_normal0_.insert(face_normal0_.end(), face_area_normals.begin(),
-                       face_area_normals.end());
-  face_normal0_.insert(face_normal0_.end(), bg_mesh->face_normal0_.begin(),
-                       bg_mesh->face_normal0_.end());
+  // // face normals -- same order: log-log, log-bg, bg-bg
+  // face_normal0_ = log_mesh->face_normal0_;
+  // face_normal0_.insert(face_normal0_.end(), face_area_normals.begin(),
+  //                      face_area_normals.end());
+  // face_normal0_.insert(face_normal0_.end(), bg_mesh->face_normal0_.begin(),
+  //                      bg_mesh->face_normal0_.end());
 
-  face_normal1_ = log_mesh->face_normal1_;
-  face_normal1_.insert(face_normal1_.end(), face_area_normals.begin(),
-                       face_area_normals.end());
-  // -- negate normal1, normal direction implied from log->bg
-  for (int f=nfaces_log; f!=face_normal1_.size(); ++f) {
-    face_normal1_[f] = -face_normal1_[f];
-  }
-  face_normal1_.insert(face_normal1_.end(), bg_mesh->face_normal1_.begin(),
-                       bg_mesh->face_normal1_.end());
+  // face_normal1_ = log_mesh->face_normal1_;
+  // face_normal1_.insert(face_normal1_.end(), face_area_normals.begin(),
+  //                      face_area_normals.end());
+  // // -- negate normal1, normal direction implied from log->bg
+  // for (int f=nfaces_log; f!=face_normal1_.size(); ++f) {
+  //   face_normal1_[f] = -face_normal1_[f];
+  // }
+  // face_normal1_.insert(face_normal1_.end(), bg_mesh->face_normal1_.begin(),
+  //                      bg_mesh->face_normal1_.end());
+
+  face_normals_ = log_mesh->face_normals_;
+  for (int i = 0; i < face_area_normals.size(); i++)
+    face_normals_.emplace_back(
+        std::vector<AmanziGeometry::Point>({face_area_normals[i],
+                -face_area_normals[i]}));
+
+  face_normals_.insert(face_normals_.end(), bg_mesh->face_normals_.begin(),
+                       bg_mesh->face_normals_.end());
+
 
   // ptypes -- no remap.  all added faces are owned-owned
   face_cell_ptype_ = log_mesh->face_cell_ptype_;
@@ -127,7 +137,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
   // areas -- no remap
   face_areas_ = log_mesh->face_areas_;
   for (int f=nfaces_log; f!=nfaces_log+nfaces_extra; ++f) {
-    face_areas_.push_back(AmanziGeometry::norm(face_normal0_[f]));
+    face_areas_.push_back(AmanziGeometry::norm(face_normals_[f][0]));
   }
   face_areas_.insert(face_areas_.end(), bg_mesh->face_areas_.begin(),
                      bg_mesh->face_areas_.end());
@@ -171,11 +181,11 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
     cell_face_dirs_[c0].push_back(1);
     cell_face_dirs_[c1].push_back(-1);
     cell_face_bisectors_[c0].push_back(face_cell_lengths[f-nfaces_log][0]
-                                       / AmanziGeometry::norm(face_normal0_[f])
-                                       * face_normal0_[f]);
+                                       / AmanziGeometry::norm(face_normals_[f][0])
+                                       * face_normals_[f][0]);
     cell_face_bisectors_[c1].push_back(face_cell_lengths[f-nfaces_log][1]
-                                       / AmanziGeometry::norm(face_normal1_[f])
-                                       * face_normal1_[f]);
+                                       / AmanziGeometry::norm(face_normals_[f][1])
+                                       * face_normals_[f][1]);
   }
   
   // cell volumes, just a straightforward merge
@@ -671,13 +681,11 @@ MeshEmbeddedLogical::compute_face_geometry_(
     const Entity_ID faceid, 
     double *area, 
     AmanziGeometry::Point *centroid, 
-    AmanziGeometry::Point *normal0,
-    AmanziGeometry::Point *normal1) const {
+    std::vector<AmanziGeometry::Point> *normals) const {
   // this is a placeholder, these cannot be recomputed
   if (area) *area = face_areas_[faceid];
   if (centroid) *centroid = AmanziGeometry::Point();
-  if (normal0) *normal0 = face_normal0_[faceid];
-  if (normal1) *normal1 = face_normal1_[faceid];
+  *normals = face_normals_[faceid];
   return 1;
 }
   

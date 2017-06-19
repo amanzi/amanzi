@@ -49,7 +49,7 @@ TEST(MSTK_EDGES_2D)
   // This assumes a symmetric partitioning - not always the case with
   // ZOLTAN graph partitioning
 
-  CHECK_EQUAL(24,ne_all);
+  //  CHECK_EQUAL(24,ne_all);
 
   // In 2D, faces and edges are the same - so face global IDs and edge
   // global IDs for a cell must match

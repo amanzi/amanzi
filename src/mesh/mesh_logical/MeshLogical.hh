@@ -287,8 +287,7 @@ class MeshLogical : public Mesh {
   int compute_face_geometry_(const Entity_ID faceid,
                              double *area,
                              AmanziGeometry::Point *centroid,
-                             AmanziGeometry::Point *normal0,
-                             AmanziGeometry::Point *normal1) const;
+                             std::vector<AmanziGeometry::Point> *normals) const;
 
   // build the cache
   virtual
