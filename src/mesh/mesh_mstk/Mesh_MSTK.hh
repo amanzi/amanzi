@@ -462,6 +462,8 @@ class Mesh_MSTK : public Mesh {
   void init_pedge_dirs();
   void init_pface_lists();
   void init_pface_dirs();
+  void init_pface_dirs_3();
+  void init_pface_dirs_2();
   void init_pcell_lists();
   
   void init_vertex_id2handle_maps();
