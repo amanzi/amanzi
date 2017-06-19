@@ -121,7 +121,7 @@ TEST(MSTK_READ_NONMANIFOLD_SURFACES)
             CHECK_CLOSE(1.0, cpvec[2], 1.0e-08);
           }
         } else {
-          // VERIFY THAT EACH 2D CELL HAS A NORMAL THAT POINTS IN [0,1,0] DIR
+          // VERIFY THAT EACH 2D CELL HAS A NORMAL THAT POINTS IN [0,-1,0] DIR
           std::vector<Amanzi::AmanziGeometry::Point> ccoords;
           for (auto const& cellid : setents) {
             mesh->cell_get_coordinates(cellid, &ccoords);
@@ -142,5 +142,41 @@ TEST(MSTK_READ_NONMANIFOLD_SURFACES)
       }
     }
   }
+
+
+  // Check some things about the non-manifold edges where the two
+  // surfaces come together
+
+  int nf = mesh->num_entities(Amanzi::AmanziMesh::FACE,
+                              Amanzi::AmanziMesh::OWNED);
+  for (int f = 0; f < nf; f++) {
+    Amanzi::AmanziMesh::Entity_ID_List fcells;
+    mesh->face_get_cells(f, Amanzi::AmanziMesh::USED, &fcells);
+
+    std::vector<Amanzi::AmanziGeometry::Point> fnormals(fcells.size());
+
+    Amanzi::AmanziGeometry::Point fcen = mesh->face_centroid(f);
+    for (int j = 0; j < fcells.size(); j++) {
+      int dir;
+      fnormals[j] = mesh->face_normal(f, false, fcells[j], &dir);
+      fnormals[j] /= norm(fnormals[j]);
+
+      // Check that the face normal with respect to the cell is
+      // actually pointing out of the face
+
+      Amanzi::AmanziGeometry::Point ccen = mesh->cell_centroid(fcells[j]);
+      Amanzi::AmanziGeometry::Point nvec = fcen-ccen;
+      nvec /= norm(nvec);
+
+      double dp = nvec*fnormals[j];
+      CHECK_CLOSE(1.0, dp, 1.0e-12);
+    }
+
+    if (fcells.size() == 2) {  // Is fnormals[0] = -fnormals[1]?
+      for (int d = 0; d < 3; d++)
+        CHECK_CLOSE(fnormals[0][d], -fnormals[1][d], 1.0e-12);
+    }
+  }
+
 }
 
