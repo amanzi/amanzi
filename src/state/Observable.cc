@@ -62,6 +62,23 @@ Observable::Observable(Teuchos::ParameterList& plist, Epetra_MpiComm *comm) :
 
   // hack to orient flux to outward-normal along a boundary only
   flux_normalize_ = plist.get<bool>("direction normalized flux", false);
+  if (flux_normalize_ && plist.isParameter("direction normalized flux direction")) {
+    Teuchos::Array<double> direction =
+        plist.get<Teuchos::Array<double> >("direction normalized flux direction");
+    if (direction.size() == 2) {
+      double norm = std::sqrt(std::pow(direction[0],2) + std::pow(direction[1],2));
+      direction_ = Teuchos::rcp(new AmanziGeometry::Point(direction[0]/norm, direction[1]/norm));
+    } else if (direction.size() == 3) {
+      double norm = std::sqrt(std::pow(direction[0],2) + std::pow(direction[1],2)
+              + std::pow(direction[2],2));
+      direction_ = Teuchos::rcp(new AmanziGeometry::Point(direction[0]/norm,
+              direction[1]/norm, direction[2]/norm));
+    } else {
+      Errors::Message msg;
+      msg << "Observable: \"direction normalized flux direction\" cannot have dimension " << (int) direction.size() << ", must be 2 or 3.";
+      Exceptions::amanzi_throw(msg);
+    }
+  }
 
   // write mode
   interval_ = plist.get<int>("write interval", 0);
@@ -162,16 +179,24 @@ void Observable::Update_(const State& S,
         double vol = vec->Mesh()->face_area(*id);
 
         // hack to orient flux to outward-normal along a boundary only
-        int sign = 1;
+        double sign = 1;
         if (flux_normalize_) {
-          AmanziMesh::Entity_ID_List cells;
-          vec->Mesh()->face_get_cells(*id, AmanziMesh::USED, &cells);
-          ASSERT(cells.size() == 1);
-          AmanziMesh::Entity_ID_List faces;
-          std::vector<int> dirs;
-          vec->Mesh()->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
-          int i = std::find(faces.begin(), faces.end(), *id) - faces.begin();
-          sign = dirs[i];
+          if (direction_.get()) {
+            // normalize to the provided vector
+            AmanziGeometry::Point normal = vec->Mesh()->face_normal(*id);
+            sign = (normal * (*direction_)) / AmanziGeometry::norm(normal);
+            
+          } else {
+            // normalize to outward normal
+            AmanziMesh::Entity_ID_List cells;
+            vec->Mesh()->face_get_cells(*id, AmanziMesh::USED, &cells);
+            AmanziMesh::Entity_ID_List faces;
+            std::vector<int> dirs;
+            vec->Mesh()->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
+            int i = std::find(faces.begin(), faces.end(), *id) - faces.begin();
+            sign = dirs[i];
+            
+          }
         }
 
         value = (*function_)(value, sign*subvec[0][*id], vol);
