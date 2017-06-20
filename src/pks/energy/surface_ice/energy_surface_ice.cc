@@ -14,7 +14,6 @@ Process kernel for energy equation for overland flow.
 #include "eos_evaluator.hh"
 #include "iem_evaluator.hh"
 #include "thermal_conductivity_surface_evaluator.hh"
-#include "surface_ice_energy_evaluator.hh"
 #include "enthalpy_evaluator.hh"
 #include "energy_bc_factory.hh"
 #include "Function.hh"
