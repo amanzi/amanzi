@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.0
+  WhetStone, version 2.1
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -42,18 +42,15 @@ class MFD3D_Elasticity : public virtual MFD3D {
 
   // main method use edge-based DOFs (part of DeRham complex) 
   // -- mass matrices
-  virtual int L2consistency(int c, const Tensor& T,
-                            DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
+  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
   virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
 
   // -- inverse mass matrices
-  virtual int L2consistencyInverse(int c, const Tensor& T,
-                                   DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
-  int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
+  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
+  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
 
   // -- steffness matrix
-  virtual int H1consistency(int c, const Tensor& T,
-                            DenseMatrix& N, DenseMatrix& Mc);
+  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
 
   // overriding other methods

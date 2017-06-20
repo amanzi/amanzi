@@ -63,10 +63,7 @@ TEST(DARCY_MASS_2D) {
     }
 
     printf("Mass matrix for cell %3d\n", cell);
-    for (int i=0; i<nfaces; i++) {
-      for (int j=0; j<nfaces; j++ ) printf("%8.4f ", M(i, j)); 
-      printf("\n");
-    }
+    M.PrintMatrix("%8.4f ");
 
     // verify SPD propery
     for (int i=0; i<nfaces; i++) CHECK(M(i, i) > 0.0);
@@ -87,7 +84,7 @@ TEST(DARCY_MASS_2D) {
         yi = mesh->face_normal(f1)[1] * dirs[i];
         xj = mesh->face_normal(f2)[0] * dirs[j];
 
-        if (method == 2) {
+        if (method == 0 || method == 2) {
           xi /= mesh->face_area(f1);
           yi /= mesh->face_area(f1);
           xj /= mesh->face_area(f2);
@@ -112,7 +109,7 @@ TEST(DARCY_MASS_3D) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: Mass matrix for Darcy in 3D" << std::endl;
+  std::cout << "\n\nTest: Mass matrix for Darcy in 3D" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -128,24 +125,26 @@ TEST(DARCY_MASS_3D) {
   Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
  
   MFD3D_Diffusion mfd(mesh);
+  DeRham_Face drc(mfd);
 
   int nfaces = 6, cell = 0;
   DenseMatrix M(nfaces, nfaces);
 
-  for (int method = 0; method < 1; method++) {
+  for (int method = 0; method < 2; method++) {
     Tensor T(3, 1);
     T(0, 0) = 1.0;
 
-    mfd.MassMatrix(cell, T, M);
-
-    printf("Mass matrix for cell %3d\n", cell);
-    for (int i=0; i<nfaces; i++) {
-      for (int j=0; j<nfaces; j++ ) printf("%8.4f ", M(i, j)); 
-      printf("\n");
+    if (method == 0) {
+      mfd.MassMatrix(cell, T, M);
+    } else if (method == 1) {
+      drc.MassMatrix(cell, T, M);
     }
 
+    printf("Mass matrix for cell %3d\n", cell);
+    M.PrintMatrix("%8.4f ");
+
     // verify SPD propery
-    for (int i=0; i<nfaces; i++) CHECK(M(i, i) > 0.0);
+    for (int i = 0; i < nfaces; ++i) CHECK(M(i, i) > 0.0);
 
     // verify exact integration property
     AmanziMesh::Entity_ID_List faces;
@@ -155,13 +154,22 @@ TEST(DARCY_MASS_3D) {
     double xi, yi, xj, yj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
     for (int i = 0; i < nfaces; i++) {
-      int f = faces[i];
-      xi = mesh->face_normal(f)[0] * dirs[i];
-      yi = mesh->face_normal(f)[1] * dirs[i];
+      int f1 = faces[i];
       for (int j = 0; j < nfaces; j++) {
-        f = faces[j];
-        xj = mesh->face_normal(f)[0] * dirs[j];
-        yj = mesh->face_normal(f)[1] * dirs[j];
+        int f2 = faces[j];
+
+        xi = mesh->face_normal(f1)[0] * dirs[i];
+        yi = mesh->face_normal(f1)[1] * dirs[i];
+        xj = mesh->face_normal(f2)[0] * dirs[j];
+        yj = mesh->face_normal(f2)[1] * dirs[j];
+
+        if (method == 1) {
+          xi /= mesh->face_area(f1);
+          yi /= mesh->face_area(f1);
+          xj /= mesh->face_area(f2);
+          yj /= mesh->face_area(f2);
+        }
+
         vxx += M(i, j) * xi * xj;
         vxy += M(i, j) * xi * yj;
       }
@@ -181,7 +189,7 @@ TEST(DARCY_INVERSE_MASS_3D) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Inverse mass matrix for Darcy" << std::endl;
+  std::cout << "\n\nTest: Inverse mass matrix for Darcy" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -197,13 +205,14 @@ TEST(DARCY_INVERSE_MASS_3D) {
   Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3); 
  
   MFD3D_Diffusion mfd(mesh);
+  DeRham_Face drc(mfd);
 
   int nfaces = 6, cell = 0;
   Tensor T(3, 1);  // tensor of rank 1
   T(0, 0) = 1.0;
 
   DenseMatrix W(nfaces, nfaces);
-  for (int method = 0; method < 4; method++) {
+  for (int method = 0; method < 5; method++) {
     if (method == 0) {
       mfd.MassMatrixInverse(cell, T, W);
     } else if (method == 1) {
@@ -212,16 +221,15 @@ TEST(DARCY_INVERSE_MASS_3D) {
       mfd.MassMatrixInverseSO(cell, T, W);
     } else if (method == 3) {
       mfd.MassMatrixInverseMMatrixHex(cell, T, W);
+    } else if (method == 4) {
+      drc.MassMatrixInverse(cell, T, W);
     }
 
     printf("Inverse of mass matrix for method=%d\n", method);
-    for (int i=0; i<6; i++) {
-      for (int j=0; j<6; j++ ) printf("%8.4f ", W(i, j)); 
-      printf("\n");
-    }
+    W.PrintMatrix("%8.4f ");
 
-    // verify SPD propery
-    for (int i=0; i<nfaces; i++) CHECK(W(i, i) > 0.0);
+    // verify SPD some propeties
+    for (int i = 0; i < nfaces; i++) CHECK(W(i, i) > 0.0);
 
     // verify exact integration property
     W.Inverse();
@@ -233,12 +241,20 @@ TEST(DARCY_INVERSE_MASS_3D) {
     double xi, yi, xj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
     for (int i = 0; i < nfaces; i++) {
-      int f = faces[i];
-      xi = mesh->face_normal(f)[0] * dirs[i];
-      yi = mesh->face_normal(f)[1] * dirs[i];
+      int f1 = faces[i];
       for (int j = 0; j < nfaces; j++) {
-        f = faces[j];
-        xj = mesh->face_normal(f)[0] * dirs[j];
+        int f2 = faces[j];
+
+        xi = mesh->face_normal(f1)[0] * dirs[i];
+        yi = mesh->face_normal(f1)[1] * dirs[i];
+        xj = mesh->face_normal(f2)[0] * dirs[j];
+
+        if (method == 4) {
+          xi /= mesh->face_area(f1);
+          yi /= mesh->face_area(f1);
+          xj /= mesh->face_area(f2);
+        }
+
         vxx += W(i, j) * xi * xj;
         vxy += W(i, j) * yi * xj;
       }
@@ -257,7 +273,7 @@ TEST(DARCY_FULL_TENSOR_2D) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Inverse mass matrix and full tensor in 2D" << std::endl;
+  std::cout << "\n\nTest: Inverse mass matrix and full tensor in 2D" << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -304,13 +320,10 @@ TEST(DARCY_FULL_TENSOR_2D) {
       }
 
       printf("Inverse of mass matrix for method=%d\n", method);
-      for (int i=0; i<nfaces; i++) {
-        for (int j=0; j<nfaces; j++ ) printf("%8.4f ", W(i, j)); 
-        printf("\n");
-      }
+      W.PrintMatrix("%8.4f ");
 
       // verify PD propery
-      for (int i=0; i<nfaces; i++) CHECK(W(i, i) > 0.0);
+      for (int i = 0; i < nfaces; i++) CHECK(W(i, i) > 0.0);
 
       // verify exact integration property
       W.Inverse();
@@ -374,6 +387,7 @@ TEST(DARCY_FULL_TENSOR_3D) {
   Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 0.0, 1.1, 1.0, 1.0, 3, 2, 1); 
  
   MFD3D_Diffusion mfd(mesh);
+  DeRham_Face drc(mfd);
 
   int nfaces = 6, cell = 0;
   Tensor T(3, 2);  // tensor of rank 2
@@ -384,7 +398,7 @@ TEST(DARCY_FULL_TENSOR_3D) {
   T(1, 2) = T(2, 1) = 1.0;
 
   DenseMatrix W(nfaces, nfaces);
-  for (int method = 0; method < 5; method++) {
+  for (int method = 0; method < 6; method++) {
     if (method == 0) {
       mfd.MassMatrixInverse(cell, T, W);
     } else if (method == 1) {
@@ -397,13 +411,12 @@ TEST(DARCY_FULL_TENSOR_3D) {
       mfd.MassMatrixInverseMMatrix(cell, T, W);
       std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << std::endl;
       std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;
+    } else if (method == 5) {
+      drc.MassMatrixInverse(cell, T, W);
     }
 
     printf("Inverse of mass matrix for method=%d\n", method);
-    for (int i=0; i<6; i++) {
-      for (int j=0; j<6; j++ ) printf("%8.4f ", W(i, j)); 
-      printf("\n");
-    }
+    W.PrintMatrix("%8.4f ");
 
     // verify SPD propery
     for (int i=0; i<nfaces; i++) CHECK(W(i, i) > 0.0);
@@ -419,11 +432,18 @@ TEST(DARCY_FULL_TENSOR_3D) {
     double xi, xj;
     double vxx = 0.0, volume = mesh->cell_volume(cell); 
     for (int i = 0; i < nfaces; i++) {
-      int f = faces[i];
-      xi = (v * mesh->face_normal(f)) * dirs[i];
+      int f1 = faces[i];
       for (int j = 0; j < nfaces; j++) {
-        f = faces[j];
-        xj = (v * mesh->face_normal(f)) * dirs[j];
+        int f2 = faces[j];
+
+        xi = (v * mesh->face_normal(f1)) * dirs[i];
+        xj = (v * mesh->face_normal(f2)) * dirs[j];
+
+        if (method == 5) {
+          xi /= mesh->face_area(f1);
+          xj /= mesh->face_area(f2);
+        }
+
         vxx += W(i, j) * xi * xj;
       }
     }
@@ -473,10 +493,7 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
     }
 
     printf("Stiffness matrix for cell %3d\n", cell);
-    for (int i=0; i<nnodes; i++) {
-      for (int j=0; j<nnodes; j++ ) printf("%8.4f ", A(i, j)); 
-      printf("\n");
-    }
+    A.PrintMatrix("%8.4f ");
 
     // verify SPD propery
     for (int i=0; i<nnodes; i++) CHECK(A(i, i) > 0.0);
@@ -544,10 +561,7 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
     }
 
     printf("Stiffness matrix for cell %3d\n", cell);
-    for (int i=0; i<nedges; i++) {
-      for (int j=0; j<nedges; j++ ) printf("%8.4f ", A(i, j)); 
-      printf("\n");
-    }
+    A.PrintMatrix("%8.4f ");
 
     // verify SPD propery
     for (int i=0; i<nedges; i++) CHECK(A(i, i) > 0.0);
@@ -613,10 +627,7 @@ TEST(DARCY_STIFFNESS_3D) {
   mfd.StiffnessMatrixMMatrix(cell, T, A);
 
   printf("Stiffness matrix for cell %3d\n", cell);
-  for (int i=0; i<nnodes; i++) {
-    for (int j=0; j<nnodes; j++ ) printf("%8.4f ", A(i, j)); 
-    printf("\n");
-  }
+  A.PrintMatrix("%8.4f ");
   std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << std::endl;
   std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;
 
@@ -791,10 +802,7 @@ TEST(DARCY_INVERSE_MASS_2D) {
     }
 
     printf("Inverse of mass matrix for method=%d  ierr=%d\n", method, ok);
-    for (int i = 0; i < nfaces; i++) {
-      for (int j = 0; j < nfaces; j++ ) printf("%8.4f ", W(i, j)); 
-      printf("\n");
-    }
+    W.PrintMatrix("%8.4f ");
 
     // verify monotonicity propery
     for (int i = 0; i < nfaces; i++) {

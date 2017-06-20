@@ -42,12 +42,9 @@ class MFD3D_Diffusion : public virtual MFD3D,
       InnerProduct(mesh) {};
   ~MFD3D_Diffusion() {};
 
-  // main methods (part of DeRham complex)
-  // -- mass matrices
-  //    inner products are weighted by inverse of tensor K
-  virtual int L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override;
-  // -- inverse mass matrices
-  virtual int L2consistencyInverse(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
+  // main methods 
+  // -- default Derahm complex for the mass matrix is not used by Amanzi
+  // -- mass matrix is adjusted to reflect scaling of fluxes by area
   virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W); 
 
   // -- stiffness matrices
@@ -55,7 +52,10 @@ class MFD3D_Diffusion : public virtual MFD3D,
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A);
 
   // other mimetic methods
+  // -- bad consistency conditions (flux is scaled by area)
+  int L2consistencyScaledArea(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
   int L2consistencyInverseScaledArea(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
+  int MassMatrixScaledArea(int c, const Tensor& K, DenseMatrix& M);
 
   // -- optimized stability
   int MassMatrixInverseOptimized(int c, const Tensor& K, DenseMatrix& W);

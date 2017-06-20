@@ -109,10 +109,10 @@ class DenseMatrix {
     }
     return os;
   }
-  void PrintMatrix() const {
+  void PrintMatrix(const char* format = "12.5f") const {
     for (int i = 0; i < m_; i++) {
       for (int j = 0; j < n_; j++) {
-        printf("%12.5f", *(data_ + j * m_ + i));
+        printf(format, *(data_ + j * m_ + i));
       }
       printf("\n");
     }

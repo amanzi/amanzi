@@ -31,7 +31,7 @@ namespace WhetStone {
 * Here R^T N = |c| K.
 * Fluxes include face areas!
 ****************************************************************** */
-int MFD3D_Diffusion::L2consistency(
+int MFD3D_Diffusion::L2consistencyScaledArea(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
   Entity_ID_List faces;
@@ -276,6 +276,27 @@ int MFD3D_Diffusion::H1consistencyEdge(
 
 
 /* ******************************************************************
+* Mass matrix in space of fluxes.
+****************************************************************** */
+int MFD3D_Diffusion::MassMatrixScaledArea(int c, const Tensor& K, DenseMatrix& M)
+{
+  int d = mesh_->space_dimension();
+  int nfaces = M.NumRows();
+
+  DenseMatrix N(nfaces, d);
+
+  Tensor Kinv(K);
+  Kinv.Inverse();
+
+  int ok = L2consistencyScaledArea(c, Kinv, N, M, true);
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+
+  StabilityScalar_(N, M);
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
 * Mass matrix in space of fluxes for non-symmetric tensor
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix& M)
@@ -288,7 +309,7 @@ int MFD3D_Diffusion::MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix&
   Tensor Kinv(K);
   Kinv.Inverse();
 
-  int ok = L2consistency(c, Kinv, N, M, false);
+  int ok = L2consistencyScaledArea(c, Kinv, N, M, false);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   StabilityScalarNonSymmetric_(c, N, M);
@@ -504,72 +525,6 @@ int MFD3D_Diffusion::RecoverGradient_StiffnessMatrix(
 /* *****************************************************************
 *  OTHER ROUTINES
 ***************************************************************** */
-
-/* ******************************************************************
-* Consistency condition for inverse of mass matrix in space of  
-* fluxes. Only the upper triangular part of Wc is calculated.
-* Flux is the integral average.
-****************************************************************** */
-int MFD3D_Diffusion::L2consistencyInverse(
-    int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
-{
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-
-  int num_faces = faces.size();
-  if (num_faces != R.NumRows()) return num_faces;  // matrix was not reshaped
-
-  // calculate areas of possibly curved faces
-  std::vector<double> areas(num_faces, 0.0);
-  for (int i = 0; i < num_faces; i++) {
-    int f = faces[i];
-    areas[i] = norm(mesh_->face_normal(f));
-  }
-
-  // populate matrix W_0
-  int d = mesh_->space_dimension();
-  AmanziGeometry::Point v1(d);
-  double volume = mesh_->cell_volume(c);
-
-  for (int i = 0; i < num_faces; i++) {
-    int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-
-    v1 = K * normal;
-
-    for (int j = i; j < num_faces; j++) {
-      f = faces[j];
-      const AmanziGeometry::Point& v2 = mesh_->face_normal(f);
-      Wc(i, j) = (v1 * v2) / (dirs[i] * dirs[j] * volume * areas[i] * areas[j]);
-    }
-  }
-
-  // populate matrix R
-  const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
-
-  for (int i = 0; i < num_faces; i++) {
-    int f = faces[i];
-    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-    for (int k = 0; k < d; k++) R(i, k) = (fm[k] - cm[k]) * areas[i];
-  }
-
-  /* Internal verification 
-  DenseMatrix NtR(d, d);
-  for (int i = 0; i < d; i++) {
-    for (int j = 0; j < d; j++) {
-      NtR(i, j) = 0.0;
-      for (int k = 0; k < num_faces; k++) {
-        const AmanziGeometry::Point& v1 = mesh_->face_normal(faces[k]);
-        NtR(i, j) += v1[i] * R(k, j) / areas[k] * dirs[k];
-      }
-    }
-  }
-  */
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
-}
-
 
 /* ******************************************************************
 * Consistency condition for inverse of mass matrix in space of 

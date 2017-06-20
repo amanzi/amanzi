@@ -28,41 +28,30 @@
 #include "Point.hh"
 
 #include "DenseMatrix.hh"
+#include "DeRham_Edge.hh"
 #include "MFD3D.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_Electromagnetics : public MFD3D { 
+class MFD3D_Electromagnetics : public virtual MFD3D,
+                               public virtual DeRham_Edge {
  public:
   MFD3D_Electromagnetics(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : MFD3D(mesh),
       InnerProduct(mesh) {};
   ~MFD3D_Electromagnetics() {};
 
-  // main required methods (edge-based DOFs)
-  // -- mass matrix
-  //    the inner product is weighted by inverse(T)
-  virtual int L2consistency(int c, const Tensor& T,
-                            DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M);
-
-  // -- inverse mass matrix
-  //    the inner product is weigthed by T.
-  virtual int L2consistencyInverse(int c, const Tensor& T,
-                                   DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
-  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W);
-
+  // main methods
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T,
-                            DenseMatrix& N, DenseMatrix& Ac);
-  virtual int MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& W);
+  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
 
-  // overriding other methods
+  // other methods
+  int MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& W);
   int MassMatrixInverseOptimized(int c, const Tensor& T, DenseMatrix& W);
 
-  int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
   int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A, DenseMatrix& M, DenseMatrix& C);
   int StiffnessMatrixExperimental(int c, const Tensor& T, DenseMatrix& A);
 
@@ -71,12 +60,6 @@ class MFD3D_Electromagnetics : public MFD3D {
   int MassMatrixBoundary(int f, const Tensor& K, DenseMatrix& M);
 
  private:
-  int L2consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
-  int L2consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
-
-  int L2consistencyInverse2D_(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc);
-  int L2consistencyInverse3D_(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc);
-
   int H1consistency2DExperimental_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
   int H1consistency3DExperimental_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
 };
