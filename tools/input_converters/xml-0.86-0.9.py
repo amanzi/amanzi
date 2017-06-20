@@ -91,7 +91,18 @@ def adds_source_units(xml):
     else:
         if not te.isElement("mass source units"):
             te.setParameter("mass source units", "string", "m s^-1")
-        
+
+
+def seepage_face_bcs(xml):
+    for bclist in asearch.generateElementByNamePath(xml, "boundary conditions"):
+        if bclist.isElement("seepage face"):
+            agroup = bclist.sublist("seepage face")[0]
+            if agroup.isElement("boundary pressure"):
+                bclist.sublist("seepage face").set("name", "seepage face pressure")
+            elif agroup.isElement("boundary head"):
+                bclist.sublist("seepage face").set("name", "seepage face head")
+            else:
+                raise RuntimeError("unknown seepage condition")
     
 
             
@@ -107,6 +118,7 @@ def update(xml):
     diffusion(xml)
     water_energy(xml)
     adds_source_units(xml)
+    seepage_face_bcs(xml)
         
 
 if __name__ == "__main__":
