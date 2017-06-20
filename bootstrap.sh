@@ -96,6 +96,9 @@ tpl_build_dir=${dflt_build_prefix}/build/tpls
 tpl_download_dir=${tpl_build_dir}/Downloads
 tpl_install_prefix=${dflt_install_prefix}/install/tpls
 
+# only build the TPLs
+tpls_only=$FALSE
+
 # Color output display
 no_color=$FALSE
 
@@ -1212,6 +1215,11 @@ if [ -z "${tpl_config_file}" ]; then
   # Define the TPL build source directory
   tpl_build_src_dir=${amanzi_source_dir}/config/SuperBuild
   
+if [ ${tpls_only} ]; then
+    status_message "Only building TPLs, stopping before building Amanzi itself"
+    exit_now 0
+fi
+
   # Configure the TPL build
   cd ${tpl_build_dir}
   ${cmake_binary} \
@@ -1297,6 +1305,10 @@ else
 
 fi
 
+if [ ${tpls_only} ]; then
+    status_message "Only building TPLs, stopping before building Amanzi itself"
+    exit_now 0
+fi
 
 status_message "Build Amanzi with configure file ${tpl_config_file}"
 
