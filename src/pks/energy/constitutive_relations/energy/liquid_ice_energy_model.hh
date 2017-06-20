@@ -20,18 +20,19 @@ class LiquidIceEnergyModel {
   explicit
   LiquidIceEnergyModel(Teuchos::ParameterList& plist);
 
-  double Energy(double phi, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
+  double Energy(double phi, double phi0, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
 
-  double DEnergyDPorosity(double phi, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
-  double DEnergyDSaturationLiquid(double phi, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
-  double DEnergyDMolarDensityLiquid(double phi, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
-  double DEnergyDInternalEnergyLiquid(double phi, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
-  double DEnergyDSaturationIce(double phi, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
-  double DEnergyDMolarDensityIce(double phi, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
-  double DEnergyDInternalEnergyIce(double phi, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
-  double DEnergyDDensityRock(double phi, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
-  double DEnergyDInternalEnergyRock(double phi, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
-  double DEnergyDCellVolume(double phi, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
+  double DEnergyDPorosity(double phi, double phi0, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
+  double DEnergyDBasePorosity(double phi, double phi0, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
+  double DEnergyDSaturationLiquid(double phi, double phi0, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
+  double DEnergyDMolarDensityLiquid(double phi, double phi0, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
+  double DEnergyDInternalEnergyLiquid(double phi, double phi0, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
+  double DEnergyDSaturationIce(double phi, double phi0, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
+  double DEnergyDMolarDensityIce(double phi, double phi0, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
+  double DEnergyDInternalEnergyIce(double phi, double phi0, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
+  double DEnergyDDensityRock(double phi, double phi0, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
+  double DEnergyDInternalEnergyRock(double phi, double phi0, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
+  double DEnergyDCellVolume(double phi, double phi0, double sl, double nl, double ul, double si, double ni, double ui, double rho_r, double ur, double cv) const;
   
  protected:
   void InitializeFromPlist_(Teuchos::ParameterList& plist);

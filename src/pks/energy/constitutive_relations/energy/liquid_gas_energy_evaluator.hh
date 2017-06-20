@@ -40,6 +40,7 @@ class LiquidGasEnergyEvaluator : public SecondaryVariableFieldEvaluator {
   void InitializeFromPlist_();
 
   Key phi_key_;
+  Key phi0_key_;
   Key sl_key_;
   Key nl_key_;
   Key ul_key_;

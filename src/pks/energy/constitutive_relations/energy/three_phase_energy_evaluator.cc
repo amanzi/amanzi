@@ -25,6 +25,7 @@ ThreePhaseEnergyEvaluator::ThreePhaseEnergyEvaluator(Teuchos::ParameterList& pli
 ThreePhaseEnergyEvaluator::ThreePhaseEnergyEvaluator(const ThreePhaseEnergyEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     phi_key_(other.phi_key_),
+    phi0_key_(other.phi0_key_),
     sl_key_(other.sl_key_),
     nl_key_(other.nl_key_),
     ul_key_(other.ul_key_),
@@ -61,6 +62,11 @@ ThreePhaseEnergyEvaluator::InitializeFromPlist_()
   phi_key_ = plist_.get<std::string>("porosity key",
           domain_name+"porosity");
   dependencies_.insert(phi_key_);
+
+  // dependency: base_porosity
+  phi0_key_ = plist_.get<std::string>("base porosity key",
+          domain_name+"base_porosity");
+  dependencies_.insert(phi0_key_);
 
   // dependency: saturation_liquid
   sl_key_ = plist_.get<std::string>("saturation liquid key",
@@ -129,6 +135,7 @@ ThreePhaseEnergyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
 Teuchos::RCP<const CompositeVector> phi = S->GetFieldData(phi_key_);
+Teuchos::RCP<const CompositeVector> phi0 = S->GetFieldData(phi0_key_);
 Teuchos::RCP<const CompositeVector> sl = S->GetFieldData(sl_key_);
 Teuchos::RCP<const CompositeVector> nl = S->GetFieldData(nl_key_);
 Teuchos::RCP<const CompositeVector> ul = S->GetFieldData(ul_key_);
@@ -145,6 +152,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
     const Epetra_MultiVector& phi_v = *phi->ViewComponent(*comp, false);
+    const Epetra_MultiVector& phi0_v = *phi0->ViewComponent(*comp, false);
     const Epetra_MultiVector& sl_v = *sl->ViewComponent(*comp, false);
     const Epetra_MultiVector& nl_v = *nl->ViewComponent(*comp, false);
     const Epetra_MultiVector& ul_v = *ul->ViewComponent(*comp, false);
@@ -161,7 +169,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
 
     int ncomp = result->size(*comp, false);
     for (int i=0; i!=ncomp; ++i) {
-      result_v[0][i] = model_->Energy(phi_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
+      result_v[0][i] = model_->Energy(phi_v[0][i], phi0_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
     }
   }
 }
@@ -172,6 +180,7 @@ ThreePhaseEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<St
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
 Teuchos::RCP<const CompositeVector> phi = S->GetFieldData(phi_key_);
+Teuchos::RCP<const CompositeVector> phi0 = S->GetFieldData(phi0_key_);
 Teuchos::RCP<const CompositeVector> sl = S->GetFieldData(sl_key_);
 Teuchos::RCP<const CompositeVector> nl = S->GetFieldData(nl_key_);
 Teuchos::RCP<const CompositeVector> ul = S->GetFieldData(ul_key_);
@@ -189,6 +198,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& phi_v = *phi->ViewComponent(*comp, false);
+      const Epetra_MultiVector& phi0_v = *phi0->ViewComponent(*comp, false);
       const Epetra_MultiVector& sl_v = *sl->ViewComponent(*comp, false);
       const Epetra_MultiVector& nl_v = *nl->ViewComponent(*comp, false);
       const Epetra_MultiVector& ul_v = *ul->ViewComponent(*comp, false);
@@ -205,7 +215,32 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
 
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->DEnergyDPorosity(phi_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
+        result_v[0][i] = model_->DEnergyDPorosity(phi_v[0][i], phi0_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
+      }
+    }
+
+  } else if (wrt_key == phi0_key_) {
+    for (CompositeVector::name_iterator comp=result->begin();
+         comp!=result->end(); ++comp) {
+      const Epetra_MultiVector& phi_v = *phi->ViewComponent(*comp, false);
+      const Epetra_MultiVector& phi0_v = *phi0->ViewComponent(*comp, false);
+      const Epetra_MultiVector& sl_v = *sl->ViewComponent(*comp, false);
+      const Epetra_MultiVector& nl_v = *nl->ViewComponent(*comp, false);
+      const Epetra_MultiVector& ul_v = *ul->ViewComponent(*comp, false);
+      const Epetra_MultiVector& si_v = *si->ViewComponent(*comp, false);
+      const Epetra_MultiVector& ni_v = *ni->ViewComponent(*comp, false);
+      const Epetra_MultiVector& ui_v = *ui->ViewComponent(*comp, false);
+      const Epetra_MultiVector& sg_v = *sg->ViewComponent(*comp, false);
+      const Epetra_MultiVector& ng_v = *ng->ViewComponent(*comp, false);
+      const Epetra_MultiVector& ug_v = *ug->ViewComponent(*comp, false);
+      const Epetra_MultiVector& rho_r_v = *rho_r->ViewComponent(*comp, false);
+      const Epetra_MultiVector& ur_v = *ur->ViewComponent(*comp, false);
+      const Epetra_MultiVector& cv_v = *cv->ViewComponent(*comp, false);
+      Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
+
+      int ncomp = result->size(*comp, false);
+      for (int i=0; i!=ncomp; ++i) {
+        result_v[0][i] = model_->DEnergyDBasePorosity(phi_v[0][i], phi0_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
       }
     }
 
@@ -213,6 +248,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& phi_v = *phi->ViewComponent(*comp, false);
+      const Epetra_MultiVector& phi0_v = *phi0->ViewComponent(*comp, false);
       const Epetra_MultiVector& sl_v = *sl->ViewComponent(*comp, false);
       const Epetra_MultiVector& nl_v = *nl->ViewComponent(*comp, false);
       const Epetra_MultiVector& ul_v = *ul->ViewComponent(*comp, false);
@@ -229,7 +265,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
 
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->DEnergyDSaturationLiquid(phi_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
+        result_v[0][i] = model_->DEnergyDSaturationLiquid(phi_v[0][i], phi0_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
       }
     }
 
@@ -237,6 +273,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& phi_v = *phi->ViewComponent(*comp, false);
+      const Epetra_MultiVector& phi0_v = *phi0->ViewComponent(*comp, false);
       const Epetra_MultiVector& sl_v = *sl->ViewComponent(*comp, false);
       const Epetra_MultiVector& nl_v = *nl->ViewComponent(*comp, false);
       const Epetra_MultiVector& ul_v = *ul->ViewComponent(*comp, false);
@@ -253,7 +290,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
 
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->DEnergyDMolarDensityLiquid(phi_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
+        result_v[0][i] = model_->DEnergyDMolarDensityLiquid(phi_v[0][i], phi0_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
       }
     }
 
@@ -261,6 +298,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& phi_v = *phi->ViewComponent(*comp, false);
+      const Epetra_MultiVector& phi0_v = *phi0->ViewComponent(*comp, false);
       const Epetra_MultiVector& sl_v = *sl->ViewComponent(*comp, false);
       const Epetra_MultiVector& nl_v = *nl->ViewComponent(*comp, false);
       const Epetra_MultiVector& ul_v = *ul->ViewComponent(*comp, false);
@@ -277,7 +315,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
 
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->DEnergyDInternalEnergyLiquid(phi_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
+        result_v[0][i] = model_->DEnergyDInternalEnergyLiquid(phi_v[0][i], phi0_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
       }
     }
 
@@ -285,6 +323,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& phi_v = *phi->ViewComponent(*comp, false);
+      const Epetra_MultiVector& phi0_v = *phi0->ViewComponent(*comp, false);
       const Epetra_MultiVector& sl_v = *sl->ViewComponent(*comp, false);
       const Epetra_MultiVector& nl_v = *nl->ViewComponent(*comp, false);
       const Epetra_MultiVector& ul_v = *ul->ViewComponent(*comp, false);
@@ -301,7 +340,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
 
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->DEnergyDSaturationIce(phi_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
+        result_v[0][i] = model_->DEnergyDSaturationIce(phi_v[0][i], phi0_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
       }
     }
 
@@ -309,6 +348,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& phi_v = *phi->ViewComponent(*comp, false);
+      const Epetra_MultiVector& phi0_v = *phi0->ViewComponent(*comp, false);
       const Epetra_MultiVector& sl_v = *sl->ViewComponent(*comp, false);
       const Epetra_MultiVector& nl_v = *nl->ViewComponent(*comp, false);
       const Epetra_MultiVector& ul_v = *ul->ViewComponent(*comp, false);
@@ -325,7 +365,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
 
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->DEnergyDMolarDensityIce(phi_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
+        result_v[0][i] = model_->DEnergyDMolarDensityIce(phi_v[0][i], phi0_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
       }
     }
 
@@ -333,6 +373,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& phi_v = *phi->ViewComponent(*comp, false);
+      const Epetra_MultiVector& phi0_v = *phi0->ViewComponent(*comp, false);
       const Epetra_MultiVector& sl_v = *sl->ViewComponent(*comp, false);
       const Epetra_MultiVector& nl_v = *nl->ViewComponent(*comp, false);
       const Epetra_MultiVector& ul_v = *ul->ViewComponent(*comp, false);
@@ -349,7 +390,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
 
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->DEnergyDInternalEnergyIce(phi_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
+        result_v[0][i] = model_->DEnergyDInternalEnergyIce(phi_v[0][i], phi0_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
       }
     }
 
@@ -357,6 +398,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& phi_v = *phi->ViewComponent(*comp, false);
+      const Epetra_MultiVector& phi0_v = *phi0->ViewComponent(*comp, false);
       const Epetra_MultiVector& sl_v = *sl->ViewComponent(*comp, false);
       const Epetra_MultiVector& nl_v = *nl->ViewComponent(*comp, false);
       const Epetra_MultiVector& ul_v = *ul->ViewComponent(*comp, false);
@@ -373,7 +415,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
 
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->DEnergyDSaturationGas(phi_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
+        result_v[0][i] = model_->DEnergyDSaturationGas(phi_v[0][i], phi0_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
       }
     }
 
@@ -381,6 +423,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& phi_v = *phi->ViewComponent(*comp, false);
+      const Epetra_MultiVector& phi0_v = *phi0->ViewComponent(*comp, false);
       const Epetra_MultiVector& sl_v = *sl->ViewComponent(*comp, false);
       const Epetra_MultiVector& nl_v = *nl->ViewComponent(*comp, false);
       const Epetra_MultiVector& ul_v = *ul->ViewComponent(*comp, false);
@@ -397,7 +440,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
 
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->DEnergyDMolarDensityGas(phi_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
+        result_v[0][i] = model_->DEnergyDMolarDensityGas(phi_v[0][i], phi0_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
       }
     }
 
@@ -405,6 +448,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& phi_v = *phi->ViewComponent(*comp, false);
+      const Epetra_MultiVector& phi0_v = *phi0->ViewComponent(*comp, false);
       const Epetra_MultiVector& sl_v = *sl->ViewComponent(*comp, false);
       const Epetra_MultiVector& nl_v = *nl->ViewComponent(*comp, false);
       const Epetra_MultiVector& ul_v = *ul->ViewComponent(*comp, false);
@@ -421,7 +465,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
 
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->DEnergyDInternalEnergyGas(phi_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
+        result_v[0][i] = model_->DEnergyDInternalEnergyGas(phi_v[0][i], phi0_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
       }
     }
 
@@ -429,6 +473,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& phi_v = *phi->ViewComponent(*comp, false);
+      const Epetra_MultiVector& phi0_v = *phi0->ViewComponent(*comp, false);
       const Epetra_MultiVector& sl_v = *sl->ViewComponent(*comp, false);
       const Epetra_MultiVector& nl_v = *nl->ViewComponent(*comp, false);
       const Epetra_MultiVector& ul_v = *ul->ViewComponent(*comp, false);
@@ -445,7 +490,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
 
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->DEnergyDDensityRock(phi_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
+        result_v[0][i] = model_->DEnergyDDensityRock(phi_v[0][i], phi0_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
       }
     }
 
@@ -453,6 +498,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& phi_v = *phi->ViewComponent(*comp, false);
+      const Epetra_MultiVector& phi0_v = *phi0->ViewComponent(*comp, false);
       const Epetra_MultiVector& sl_v = *sl->ViewComponent(*comp, false);
       const Epetra_MultiVector& nl_v = *nl->ViewComponent(*comp, false);
       const Epetra_MultiVector& ul_v = *ul->ViewComponent(*comp, false);
@@ -469,7 +515,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
 
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->DEnergyDInternalEnergyRock(phi_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
+        result_v[0][i] = model_->DEnergyDInternalEnergyRock(phi_v[0][i], phi0_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
       }
     }
 
@@ -477,6 +523,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& phi_v = *phi->ViewComponent(*comp, false);
+      const Epetra_MultiVector& phi0_v = *phi0->ViewComponent(*comp, false);
       const Epetra_MultiVector& sl_v = *sl->ViewComponent(*comp, false);
       const Epetra_MultiVector& nl_v = *nl->ViewComponent(*comp, false);
       const Epetra_MultiVector& ul_v = *ul->ViewComponent(*comp, false);
@@ -493,7 +540,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
 
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->DEnergyDCellVolume(phi_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
+        result_v[0][i] = model_->DEnergyDCellVolume(phi_v[0][i], phi0_v[0][i], sl_v[0][i], nl_v[0][i], ul_v[0][i], si_v[0][i], ni_v[0][i], ui_v[0][i], sg_v[0][i], ng_v[0][i], ug_v[0][i], rho_r_v[0][i], ur_v[0][i], cv_v[0][i]);
       }
     }
 
