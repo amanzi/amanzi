@@ -38,14 +38,15 @@ TEST(DARCY_MASS_2D) {
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.5, 1.0, 1, 1); 
  
   MFD3D_Diffusion mfd(mesh);
+  DeRham_Face drc(mfd);
 
   int nfaces = 4, cell = 0;
   DenseMatrix M(nfaces, nfaces);
 
-  for (int method = 0; method < 2; method++) {
+  for (int method = 0; method < 3; method++) {
     Tensor T(2, 2);
     T(0, 0) = 1.0;
     T(1, 1) = 1.0;
@@ -57,6 +58,8 @@ TEST(DARCY_MASS_2D) {
     } else if (method == 1) {
       T(0, 1) += 0.1;
       mfd.MassMatrixNonSymmetric(cell, T, M);
+    } else if (method == 2) {
+      drc.MassMatrix(cell, T, M);
     }
 
     printf("Mass matrix for cell %3d\n", cell);
@@ -76,12 +79,20 @@ TEST(DARCY_MASS_2D) {
     double xi, yi, xj, yj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
     for (int i = 0; i < nfaces; i++) {
-      int f = faces[i];
-      xi = mesh->face_normal(f)[0] * dirs[i];
-      yi = mesh->face_normal(f)[1] * dirs[i];
+      int f1 = faces[i];
       for (int j = 0; j < nfaces; j++) {
-        f = faces[j];
-        xj = mesh->face_normal(f)[0] * dirs[j];
+        int f2 = faces[j];
+
+        xi = mesh->face_normal(f1)[0] * dirs[i];
+        yi = mesh->face_normal(f1)[1] * dirs[i];
+        xj = mesh->face_normal(f2)[0] * dirs[j];
+
+        if (method == 2) {
+          xi /= mesh->face_area(f1);
+          yi /= mesh->face_area(f1);
+          xj /= mesh->face_area(f2);
+        }
+
         vxx += M(i, j) * xi * xj;
         vxy += M(i, j) * yi * xj;
       }
@@ -319,7 +330,6 @@ TEST(DARCY_FULL_TENSOR_2D) {
         }
       }
       CHECK_CLOSE(2 * volume, vxx, 1e-10);
-      std::cout << vxx << std::endl;
 
       // additional tests for triangle: integral with v2 = RT basis function
       if (cell == 1) {

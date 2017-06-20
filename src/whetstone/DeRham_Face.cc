@@ -68,6 +68,56 @@ int DeRham_Face::L2consistency(
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
+
+/* ******************************************************************
+* Mass matrix: adding stability matrix to the consistency matrix.
+****************************************************************** */
+int DeRham_Face::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
+{
+  int d = mesh_->space_dimension();
+  int nfaces = M.NumRows();
+
+  DenseMatrix N(nfaces, d);
+
+  Tensor Kinv(K);
+  Kinv.Inverse();
+
+  int ok = L2consistency(c, Kinv, N, M, true);
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+
+  StabilityScalar_(N, M);
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Consistency condition for inverse of mass matrix.
+* Only the upper triangular part of Wc is calculated.
+****************************************************************** */
+int DeRham_Face::L2consistencyInverse(
+    int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
+{
+}
+
+
+/* ******************************************************************
+* Inverse mass matrix: adding stability to the consistency
+****************************************************************** */
+int DeRham_Face::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
+{
+  int d = mesh_->space_dimension();
+  int nfaces = W.NumRows();
+
+  DenseMatrix R(nfaces, d);
+
+  int ok = L2consistencyInverse(c, K, R, W, true);
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+ 
+  StabilityScalar_(R, W);
+
+  return ok;
+}
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

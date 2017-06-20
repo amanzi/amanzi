@@ -46,8 +46,6 @@ class MFD3D_Diffusion : public virtual MFD3D,
   // -- mass matrices
   //    inner products are weighted by inverse of tensor K
   virtual int L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override;
-  virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
-
   // -- inverse mass matrices
   virtual int L2consistencyInverse(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
   virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W); 

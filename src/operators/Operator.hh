@@ -111,8 +111,9 @@ Note on implementation for discretization/framework developers:
 #include "Mesh.hh"
 #include "CompositeVectorSpace.hh"
 #include "CompositeVector.hh"
+#include "DenseVector.hh"
 #include "OperatorDefs.hh"
-#include "BCs.hh"
+#include "Schema.hh"
 
 namespace Amanzi {
 

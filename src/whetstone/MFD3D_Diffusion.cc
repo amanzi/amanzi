@@ -276,27 +276,6 @@ int MFD3D_Diffusion::H1consistencyEdge(
 
 
 /* ******************************************************************
-* Mass matrix in space of fluxes: the standard algorithm
-****************************************************************** */
-int MFD3D_Diffusion::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
-{
-  int d = mesh_->space_dimension();
-  int nfaces = M.NumRows();
-
-  DenseMatrix N(nfaces, d);
-
-  Tensor Kinv(K);
-  Kinv.Inverse();
-
-  int ok = L2consistency(c, Kinv, N, M, true);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
-
-  StabilityScalar_(N, M);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
-}
-
-
-/* ******************************************************************
 * Mass matrix in space of fluxes for non-symmetric tensor
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix& M)
