@@ -312,6 +312,8 @@ Value in brackets indicates default setting.
   Spack                   build TPLs using the Spack package manager when appropriate ['"${Spack}"']
   xsdk                    build TPLs available in xSDK first, then supplement with additional 
                           individual TPL builds ['"${xsdk}"']
+  tpls_only               only build the TPLs, do not build Amanzi itself
+
 Tool definitions:
 
   --with-c-compiler=FILE     FILE is the C compiler
@@ -1215,10 +1217,9 @@ if [ -z "${tpl_config_file}" ]; then
   # Define the TPL build source directory
   tpl_build_src_dir=${amanzi_source_dir}/config/SuperBuild
   
-if [ ${tpls_only} ]; then
+  if [ ${tpls_only} ]; then
     status_message "Only building TPLs, stopping before building Amanzi itself"
-    exit_now 0
-fi
+  fi
 
   # Configure the TPL build
   cd ${tpl_build_dir}
@@ -1306,7 +1307,6 @@ else
 fi
 
 if [ ${tpls_only} ]; then
-    status_message "Only building TPLs, stopping before building Amanzi itself"
     exit_now 0
 fi
 
