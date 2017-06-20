@@ -233,6 +233,11 @@ class Mesh {
   // returned in a standard order according to Exodus II convention
   // for standard cells; in all other situations (ordered = false or
   // non-standard cells), the list of faces will be in arbitrary order
+  //
+  // EXTENSIONS: MSTK FRAMEWORK: by the way the parallel partitioning,
+  // send-receive protocols and mesh query operators are designed, a side 
+  // effect of this is that master and ghost entities will have the same
+  // hierarchical topology. 
   void cell_get_faces(const Entity_ID cellid,
                       Entity_ID_List *faceids,
                       const bool ordered=false) const;
