@@ -27,8 +27,19 @@ namespace WhetStone {
 int DeRham_Node::L2consistency(int c, const Tensor& T,
                                DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
-  int ok;
-  return ok;
+  Entity_ID_List nodes, faces;
+  std::vector<int> dirs;
+
+  mesh_->cell_get_nodes(c, &nodes);
+  int nnodes = nodes.size();
+  if (nnodes != N.NumRows()) return WHETSTONE_ELEMENTAL_MATRIX_SIZE;
+
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+
+  double volume = mesh_->cell_volume(c);
+  AmanziGeometry::Point p(d_);
+
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
 }  // namespace WhetStone

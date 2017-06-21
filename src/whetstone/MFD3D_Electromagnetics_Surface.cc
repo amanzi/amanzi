@@ -107,10 +107,8 @@ int MFD3D_Electromagnetics::L2consistencyBoundary(
 ****************************************************************** */
 int MFD3D_Electromagnetics::MassMatrixBoundary(int f, const Tensor& T, DenseMatrix& M)
 {
-  int d = mesh_->space_dimension();
   int nrows = M.NumRows();
-
-  DenseMatrix N(nrows, d - 1);
+  DenseMatrix N(nrows, d_ - 1);
 
   int ok = L2consistencyBoundary(f, T, N, M);
   if (ok) return ok;

@@ -34,8 +34,7 @@ int MFD3D_Elasticity::H1consistencyBernardiRaugel(
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;
 
-  int d = mesh_->space_dimension();
-  AmanziGeometry::Point xv(d), tau(d), v1(d);
+  AmanziGeometry::Point xv(d_), tau(d_), v1(d_);
 
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
@@ -49,9 +48,9 @@ int MFD3D_Elasticity::H1consistencyBernardiRaugel(
   // convolute tensors for non-zero modes
   std::vector<Tensor> vT, vKT;
 
-  for (int i = 0; i < d; ++i) {
-    for (int j = i; j < d; ++j) {
-      Tensor T(d, 2);
+  for (int i = 0; i < d_; ++i) {
+    for (int j = i; j < d_; ++j) {
+      Tensor T(d_, 2);
       T(i, j) = T(j, i) += 1.0;
       vT.push_back(T);
 
@@ -61,7 +60,7 @@ int MFD3D_Elasticity::H1consistencyBernardiRaugel(
   }
 
   // calculate exact integration matrix
-  int modes = d * (d + 1) / 2;
+  int modes = d_ * (d_ + 1) / 2;
   DenseMatrix coefM(modes, modes);
 
   for (int i = 0; i < modes; ++i) {
@@ -75,7 +74,7 @@ int MFD3D_Elasticity::H1consistencyBernardiRaugel(
   // 2D algorithm is separated out since it is fast
   N.PutScalar(0.0);
 
-  if (d == 2) { 
+  if (d_ == 2) { 
     for (int n = 0; n < nnodes; n++) {
       int m = (n + 1) % nnodes;
 
@@ -86,7 +85,7 @@ int MFD3D_Elasticity::H1consistencyBernardiRaugel(
       double length = norm(tau);
       tau /= length;
 
-      AmanziGeometry::Point normal(d);
+      AmanziGeometry::Point normal(d_);
       normal[0] = tau[1];
       normal[1] =-tau[0];
 
@@ -111,7 +110,7 @@ int MFD3D_Elasticity::H1consistencyBernardiRaugel(
     for (int i = 0; i < modes; i++) {
       v1 = vKT[i] * normal;
       double p = (normal * v1) / area;
-      N(d*nnodes + n, i) += p * dirs[n];
+      N(d_ * nnodes + n, i) += p * dirs[n];
     }
   }
 
@@ -144,25 +143,25 @@ int MFD3D_Elasticity::H1consistencyBernardiRaugel(
 
     // null modes
     int col(0);
-    for (int k = 0; k < d; ++k) {
-      N(d*n + k, col) = 1.0;
+    for (int k = 0; k < d_; ++k) {
+      N(d_ * n + k, col) = 1.0;
       col++;
 
-      for (int l = k + 1; l < d; ++l) {
-        N(d*n + k, col) = xv[l];  
-        N(d*n + l, col) =-xv[k];
+      for (int l = k + 1; l < d_; ++l) {
+        N(d_ * n + k, col) = xv[l];  
+        N(d_ * n + l, col) =-xv[k];
         col++;
       }
     }
 
     // non-null modes  
-    for (int k = 0; k < d; ++k) {
-      N(d*n + k, col) = xv[k];  
+    for (int k = 0; k < d_; ++k) {
+      N(d_ * n + k, col) = xv[k];  
       col++;
 
-      for (int l = k + 1; l < d; ++l) {
-        N(d*n + k, col) = xv[l];
-        N(d*n + l, col) = xv[k];
+      for (int l = k + 1; l < d_; ++l) {
+        N(d_ * n + k, col) = xv[l];
+        N(d_ * n + l, col) = xv[k];
         col++;
       }
     }
@@ -177,26 +176,26 @@ int MFD3D_Elasticity::H1consistencyBernardiRaugel(
     normal /= area;
 
     v1 = xf - xm;
-    int m = d * nnodes + i;
+    int m = d_ * nnodes + i;
 
     // null modes
     int col(0);
-    for (int k = 0; k < d; ++k) {
+    for (int k = 0; k < d_; ++k) {
       N(m, col) = normal[k];
       col++;
 
-      for (int l = k + 1; l < d; ++l) {
+      for (int l = k + 1; l < d_; ++l) {
         N(m, col) = v1[l] * normal[k] - v1[k] * normal[l];
         col++;
       }
     }
 
     // non-null modes
-    for (int k = 0; k < d; ++k) {
+    for (int k = 0; k < d_; ++k) {
       N(m, col) = v1[k] * normal[k];
       col++;
 
-      for (int l = k + 1; l < d; ++l) {
+      for (int l = k + 1; l < d_; ++l) {
         N(m, col) = v1[l] * normal[k] + v1[k] * normal[l];
         col++;
       }
@@ -213,10 +212,8 @@ int MFD3D_Elasticity::H1consistencyBernardiRaugel(
 int MFD3D_Elasticity::StiffnessMatrixBernardiRaugel(
     int c, const Tensor& K, DenseMatrix& A)
 {
-  int d = mesh_->space_dimension();
   int nrows = A.NumRows();
-
-  DenseMatrix N(nrows, d * (d + 1));
+  DenseMatrix N(nrows, d_ * (d_ + 1));
 
   int ok = H1consistencyBernardiRaugel(c, K, N, A);
   if (ok) return ok;
@@ -232,8 +229,7 @@ int MFD3D_Elasticity::StiffnessMatrixBernardiRaugel(
 int MFD3D_Elasticity::AdvectionMatrixBernardiRaugel(
     int c, DenseMatrix& A, const std::vector<AmanziGeometry::Point>& u)
 {
-  int d = mesh_->space_dimension();
-  ASSERT(d == 2);
+  ASSERT(d_ == 2);
 
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;
@@ -246,7 +242,7 @@ int MFD3D_Elasticity::AdvectionMatrixBernardiRaugel(
 
   // calculate corner normals and weigths
   std::vector<double> w(nnodes, 0.0);
-  AmanziGeometry::Point xv(d);
+  AmanziGeometry::Point xv(d_);
   std::vector<AmanziGeometry::Point> N(nnodes, xv);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -290,8 +286,6 @@ int MFD3D_Elasticity::AdvectionMatrixBernardiRaugel(
 ****************************************************************** */
 int MFD3D_Elasticity::DivergenceMatrixBernardiRaugel(int c, DenseMatrix& A)
 {
-  int d = mesh_->space_dimension();
-
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;
 
@@ -299,7 +293,7 @@ int MFD3D_Elasticity::DivergenceMatrixBernardiRaugel(int c, DenseMatrix& A)
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   int nfaces = faces.size();
 
-  int n1 = d * nodes.size();
+  int n1 = d_ * nodes.size();
   for (int n = 0; n < n1; ++n) A(0, n) = 0.0;
 
   for (int n = 0; n < nfaces; ++n) {

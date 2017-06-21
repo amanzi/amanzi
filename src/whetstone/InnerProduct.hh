@@ -31,7 +31,7 @@ class InnerProduct {
   InnerProduct() {};
   InnerProduct(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : mesh_(mesh),
-      stability_method_(WHETSTONE_STABILITY_GENERIC) {};
+      stability_method_(WHETSTONE_STABILITY_GENERIC) { d_ = mesh_->space_dimension(); }
   ~InnerProduct() {};
 
   // access
@@ -48,6 +48,7 @@ class InnerProduct {
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  int d_;
 
   int stability_method_;  // stability parameters
   double scalar_stability_, scaling_factor_;

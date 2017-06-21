@@ -54,7 +54,6 @@ void MFD3D::ModifyStabilityScalingFactor(double factor)
 int MFD3D::StabilityMMatrix_(
     int c, DenseMatrix& N, DenseMatrix& M, int objective)
 {
-  int d = mesh_->space_dimension();
   int nrows = N.NumRows();
   int ncols = N.NumCols();
 
@@ -411,10 +410,9 @@ void MFD3D::PolygonCentroidWeights(
     double area, std::vector<double>& weights) const
 {
   int nnodes = nodes.size();
-  int d = mesh_->space_dimension();
 
   weights.assign(nnodes, 1.0 / (3 * nnodes));
-  AmanziGeometry::Point p1(d), p2(d), p3(d), xg(d);
+  AmanziGeometry::Point p1(d_), p2(d_), p3(d_), xg(d_);
 
   // geometric center
   for (int i = 0; i < nnodes; ++i) {

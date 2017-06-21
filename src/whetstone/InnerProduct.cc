@@ -52,7 +52,6 @@ void InnerProduct::StabilityScalar_(DenseMatrix& N, DenseMatrix& M)
 ****************************************************************** */
 int InnerProduct::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M)
 {
-  int d = mesh_->space_dimension();
   int nrows = N.NumRows();
   int ncols = N.NumCols();
 

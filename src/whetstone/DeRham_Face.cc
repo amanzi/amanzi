@@ -33,10 +33,9 @@ int DeRham_Face::L2consistency(
   int nfaces = faces.size();
   if (nfaces != N.NumRows()) return WHETSTONE_ELEMENTAL_MATRIX_SIZE;
 
-  int d = mesh_->space_dimension();
   double volume = mesh_->cell_volume(c);
 
-  AmanziGeometry::Point v1(d), v2(d);
+  AmanziGeometry::Point v1(d_), v2(d_);
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
   Tensor Kinv(K);
@@ -63,7 +62,7 @@ int DeRham_Face::L2consistency(
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     double area = mesh_->face_area(f);
-    for (int k = 0; k < d; k++) N(i, k) = normal[k] * dirs[i] / area;
+    for (int k = 0; k < d_; k++) N(i, k) = normal[k] * dirs[i] / area;
   }
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
@@ -74,10 +73,8 @@ int DeRham_Face::L2consistency(
 ****************************************************************** */
 int DeRham_Face::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 {
-  int d = mesh_->space_dimension();
   int nfaces = M.NumRows();
-
-  DenseMatrix N(nfaces, d);
+  DenseMatrix N(nfaces, d_);
 
   Tensor Kinv(K);
   Kinv.Inverse();
@@ -113,8 +110,7 @@ int DeRham_Face::L2consistencyInverse(
   }
 
   // populate matrix W_0
-  int d = mesh_->space_dimension();
-  AmanziGeometry::Point v1(d);
+  AmanziGeometry::Point v1(d_);
   double volume = mesh_->cell_volume(c);
 
   for (int i = 0; i < num_faces; i++) {
@@ -136,7 +132,7 @@ int DeRham_Face::L2consistencyInverse(
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-    for (int k = 0; k < d; k++) R(i, k) = (fm[k] - cm[k]) * areas[i];
+    for (int k = 0; k < d_; k++) R(i, k) = (fm[k] - cm[k]) * areas[i];
   }
 
   /* Internal verification 
@@ -160,10 +156,8 @@ int DeRham_Face::L2consistencyInverse(
 ****************************************************************** */
 int DeRham_Face::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
 {
-  int d = mesh_->space_dimension();
   int nfaces = W.NumRows();
-
-  DenseMatrix R(nfaces, d);
+  DenseMatrix R(nfaces, d_);
 
   int ok = L2consistencyInverse(c, K, R, W, true);
   if (ok) return ok;
