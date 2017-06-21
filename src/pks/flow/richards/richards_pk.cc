@@ -906,13 +906,22 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 #endif
     double boundary_pressure = BoundaryValue(u, f);
     double boundary_flux = flux[0][f]*BoundaryDirection(f);
-    if (boundary_pressure < bc->second - seepage_tol) {
+    //    std::cout << "Seepage Face:" << std::endl
+    //              << "BFlux = " << boundary_flux << ", BPressure = " << boundary_pressure << " and constraint p <= " << bc->second << " (tol = " << seepage_tol << ")" << std::endl;
+    if (boundary_pressure > bc->second) {
+      //      std::cout << "  DIRICHLET" << std::endl;
+      bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_values_[f] = bc->second;
+    } else if (boundary_pressure < bc->second - seepage_tol) {
+      //      std::cout << "  NEUMANN" << std::endl;
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_values_[f] = 0.;
-    } else if (boundary_flux > 0.) {
+    } else if (boundary_flux >= 0.) {
+      //      std::cout << "  DIRICHLET" << std::endl;
       bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_values_[f] = bc->second;
     } else {
+      //      std::cout << "  NEUMANN" << std::endl;
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_values_[f] = 0.;
     }
