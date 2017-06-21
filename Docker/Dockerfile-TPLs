@@ -35,7 +35,7 @@ RUN git clone https://github.com/amanzi/amanzi.git
 
 ENV PATH=/home/amanzi_user/amanzi_installdir/tpls/bin:$PATH 
 WORKDIR /home/amanzi_user/amanzi
-RUN git checkout alexis/xsdk-spack
+RUN git checkout alexis/docker
 RUN ./bootstrap.sh --prefix=/home/amanzi_user/amanzi_installdir \
   --amanzi-build-dir=/home/amanzi_user/amanzi_builddir \
   --tpl-build-dir=/home/amanzi_user/amanzi_builddir/tpls \
