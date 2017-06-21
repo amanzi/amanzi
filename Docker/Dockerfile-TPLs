@@ -1,0 +1,43 @@
+FROM ubuntu:latest
+LABEL Description="This image builds all of the third-party libraries needed by Amanzi"
+
+ENV http_proxy=http://proxyout.lanl.gov:8080 \
+  https_proxy=https://proxyout.lanl.gov:8080 \
+  ftp_proxy=http://proxyout.lanl.gov:8080 \
+  svn_proxy=http://proxyout.lanl.gov:8080 \
+  no_proxy=*.lanl.gov,lanl.gov,localhost​
+
+
+RUN apt-get -q update -y && apt-get -qq install -y \
+  apt-utils \
+  cmake \
+  curl \
+  g++ \
+  gfortran \
+  git \
+  libblas3 \
+  libblas-dev \
+  liblapacke-dev \
+  liblapack-dev \
+  libopenmpi-dev \
+  m4 \
+  make \
+  mercurial \
+  python2.7 \
+  wget 
+
+RUN groupadd -r amanzi_user
+RUN useradd -r -m -g amanzi_user amanzi_user
+USER amanzi_user
+
+WORKDIR /home/amanzi_user
+RUN git clone https://github.com/amanzi/amanzi.git
+
+ENV PATH=/home/amanzi_user/amanzi_installdir/tpls/bin:$PATH 
+WORKDIR /home/amanzi_user/amanzi
+RUN git checkout alexis/xsdk-spack
+RUN ./bootstrap.sh --prefix=/home/amanzi_user/amanzi_installdir \
+  --amanzi-build-dir=/home/amanzi_user/amanzi_builddir \
+  --tpl-build-dir=/home/amanzi_user/amanzi_builddir/tpls \
+  --tpl-download-dir=/home/amanzi_user/amanzi_builddir/tpls/Downloads \
+  --enable-tpls_only
