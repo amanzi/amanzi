@@ -11,6 +11,11 @@ def print_headers():
     print "cycle, time, dt, iteration count, wallclock avg (s)"
 
 def parse_file(fid, wallclock=False):
+    """Reads a file, and returns a list of good and bad timesteps.
+
+    Each are a list of 3-tuples: (step number, time of step, dt)
+    """
+    
     data = []
     faildata = []
 
