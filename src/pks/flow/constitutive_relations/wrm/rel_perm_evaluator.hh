@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Rel perm( pc ( sat ) ).
@@ -16,7 +16,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
 
@@ -63,7 +62,6 @@ class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
   static Utils::RegisteredFactory<FieldEvaluator,RelPermEvaluator> factory_;
 };
 
-} //namespace
 } //namespace
 } //namespace
 

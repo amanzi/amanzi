@@ -35,11 +35,11 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
   pks_list_->sublist(names[3]).set("coupled to subsurface via flux", true);
 
   // -- ensure local ops are suface ops
-  pks_list_->sublist(names[2]).sublist("Diffusion PC").set("surface operator", true);
-  pks_list_->sublist(names[2]).sublist("Accumulation PC").set("surface operator", true);
-  pks_list_->sublist(names[3]).sublist("Diffusion PC").set("surface operator", true);
-  pks_list_->sublist(names[3]).sublist("Advection PC").set("surface operator", true);
-  pks_list_->sublist(names[3]).sublist("Accumulation PC").set("surface operator", true);
+  pks_list_->sublist(names[2]).sublist("diffusion preconditioner").set("surface operator", true);
+  pks_list_->sublist(names[2]).sublist("accumulation preconditioner").set("surface operator", true);
+  pks_list_->sublist(names[3]).sublist("diffusion preconditioner").set("surface operator", true);
+  pks_list_->sublist(names[3]).sublist("advection preconditioner").set("surface operator", true);
+  pks_list_->sublist(names[3]).sublist("accumulation preconditioner").set("surface operator", true);
   
   // grab the meshes
   surf_mesh_ = S->GetMesh("surface");
@@ -410,7 +410,7 @@ MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   
   // Copy consistent faces to surface
   if (modified) {
-    S_next_->GetFieldEvaluator("surface-relative_permeability")->HasFieldChanged(S_next_.ptr(),name_);
+    //    S_next_->GetFieldEvaluator("surface-relative_permeability")->HasFieldChanged(S_next_.ptr(),name_);
     Teuchos::RCP<const CompositeVector> h_prev = S_inter_->GetFieldData("ponded_depth");
     MergeSubsurfaceAndSurfacePressure(*h_prev, u->SubVector(0)->Data().ptr(), u->SubVector(2)->Data().ptr());
     CopySubsurfaceToSurface(*u->SubVector(1)->Data(), u->SubVector(3)->Data().ptr());

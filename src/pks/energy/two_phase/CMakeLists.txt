@@ -8,12 +8,12 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/thermal_conductivity)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/enthalpy)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/internal_energy)
+include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/energy)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 
 add_library(pk_energy_two_phase
-  two_phase_energy_evaluator.cc
   two_phase.cc)
 
 install(TARGETS pk_energy_two_phase DESTINATION lib)

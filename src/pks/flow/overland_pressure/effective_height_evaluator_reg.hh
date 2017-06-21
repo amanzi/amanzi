@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Evaluator for determining height( rho, head )
@@ -12,11 +12,9 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 // registry of method
 Utils::RegisteredFactory<FieldEvaluator,EffectiveHeightEvaluator> EffectiveHeightEvaluator::factory_("effective height");
 
-} //namespace
 } //namespace
 } //namespace

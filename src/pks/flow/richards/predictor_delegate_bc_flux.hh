@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Delegate for modifying the predictor in the case of infiltration into dry soil.
@@ -26,7 +26,7 @@ class PredictorDelegateBCFlux {
   PredictorDelegateBCFlux(const Teuchos::RCP<const State>& S_next,
                           const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                           const Teuchos::RCP<Operators::OperatorDiffusion>& matrix,
-                          const Teuchos::RCP<FlowRelations::WRMPartition>& wrms,
+                          const Teuchos::RCP<Flow::WRMPartition>& wrms,
                           std::vector<int>* bc_markers,
                           std::vector<double>* bc_values) :
       S_next_(S_next),
@@ -55,7 +55,7 @@ class PredictorDelegateBCFlux {
                   double g_flux,
                   int dir,
                   double patm,
-                  const Teuchos::RCP<FlowRelations::WRM>& wrm) :
+                  const Teuchos::RCP<Flow::WRM>& wrm) :
         Aff_(Aff), lambda_(lambda), face_index_(face_index),
         cell_p_(cell_p), bc_flux_(bc_flux), g_flux_(g_flux),
         wrm_(wrm), dir_(dir), patm_(patm) {
@@ -93,7 +93,7 @@ class PredictorDelegateBCFlux {
     double g_flux_;
     int dir_;
     double patm_;
-    Teuchos::RCP<FlowRelations::WRM> wrm_;
+    Teuchos::RCP<Flow::WRM> wrm_;
   };
 
   struct Tol_ {
@@ -114,7 +114,7 @@ class PredictorDelegateBCFlux {
   Teuchos::RCP<const State> S_next_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<Operators::OperatorDiffusion> matrix_;
-  Teuchos::RCP<FlowRelations::WRMPartition> wrms_;
+  Teuchos::RCP<Flow::WRMPartition> wrms_;
 
   std::vector<int>* bc_markers_;
   std::vector<double>* bc_values_;

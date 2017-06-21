@@ -45,10 +45,10 @@ MPCPermafrost3::setup(const Teuchos::Ptr<State>& S) {
   pks_list_->sublist(names[3]).set("coupled to subsurface via flux", true);
 
   // -- set up PC coupling
-  //  pks_list_->sublist(names[0]).sublist("Diffusion PC").set("coupled to surface", true);
-  //  pks_list_->sublist(names[1]).sublist("Diffusion PC").set("coupled to surface", true);
-  pks_list_->sublist(names[2]).sublist("Diffusion PC").set("TPFA", true);
-  pks_list_->sublist(names[3]).sublist("Diffusion PC").set("TPFA", true);
+  //  pks_list_->sublist(names[0]).sublist("diffusion preconditioner").set("coupled to surface", true);
+  //  pks_list_->sublist(names[1]).sublist("diffusion preconditioner").set("coupled to surface", true);
+  pks_list_->sublist(names[2]).sublist("diffusion preconditioner").set("TPFA", true);
+  pks_list_->sublist(names[3]).sublist("diffusion preconditioner").set("TPFA", true);
 
   // grab the meshes
   surf_mesh_ = S->GetMesh("surface");

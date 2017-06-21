@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -24,7 +24,6 @@ UNITS: MJ/{mol/kg}
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 class IEMLinear : public IEM {
 
@@ -52,7 +51,6 @@ private:
 
 };
 
-} // namespace
 } // namespace
 } // namespace
 

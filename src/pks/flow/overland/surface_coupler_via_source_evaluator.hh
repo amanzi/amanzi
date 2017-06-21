@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   An evaluator for pulling the darcy flux, at the surface, from the
@@ -15,7 +15,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class SurfaceCouplerViaSourceEvaluator :
     public SecondaryVariableFieldEvaluator {
@@ -56,7 +55,6 @@ protected:
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

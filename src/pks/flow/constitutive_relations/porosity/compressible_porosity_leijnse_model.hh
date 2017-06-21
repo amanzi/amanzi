@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 //! A simple model for allowing porosity to vary with pressure.
 
 /*
@@ -62,7 +62,6 @@ Example:
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class CompressiblePorosityLeijnseModel {
  public:
@@ -122,7 +121,6 @@ class CompressiblePorosityLeijnseModel {
 
 };
 
-} // namespace
 } // namespace
 } // namespace
 

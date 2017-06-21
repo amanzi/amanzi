@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 This is the flow component of the Amanzi code. 
@@ -66,20 +66,20 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
  
   // -- This setup is a little funky -- we use four evaluators to capture the physics.
   Teuchos::ParameterList wrm_plist = plist_->sublist("water retention evaluator");
-  Teuchos::RCP<FlowRelations::WRMPermafrostEvaluator> wrm =
-      Teuchos::rcp(new FlowRelations::WRMPermafrostEvaluator(wrm_plist));
+  Teuchos::RCP<Flow::WRMPermafrostEvaluator> wrm =
+      Teuchos::rcp(new Flow::WRMPermafrostEvaluator(wrm_plist));
 
   
-  S->SetFieldEvaluator(getKey(domain_,"saturation_liquid"), wrm);
-
-  S->SetFieldEvaluator(getKey(domain_,"saturation_gas"), wrm);
-
-  S->SetFieldEvaluator(getKey(domain_,"saturation_ice"), wrm);
+  if (!S->HasFieldEvaluator("saturation_liquid")) {
+    S->SetFieldEvaluator(getKey(domain_,"saturation_liquid"), wrm);
+    S->SetFieldEvaluator(getKey(domain_,"saturation_gas"), wrm);
+    S->SetFieldEvaluator(getKey(domain_,"saturation_ice"), wrm);
+  }
 
   // -- the rel perm evaluator, also with the same underlying WRM.
   wrm_plist.set<double>("permeability rescaling", perm_scale_);
-  Teuchos::RCP<FlowRelations::RelPermEvaluator> rel_perm_evaluator =
-      Teuchos::rcp(new FlowRelations::RelPermEvaluator(wrm_plist, wrm->get_WRMs()));
+  Teuchos::RCP<Flow::RelPermEvaluator> rel_perm_evaluator =
+      Teuchos::rcp(new Flow::RelPermEvaluator(wrm_plist, wrm->get_WRMs()));
   wrms_ = wrm->get_WRMs();
   
 

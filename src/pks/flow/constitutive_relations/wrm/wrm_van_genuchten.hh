@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 //! WRMVanGenuchten : water retention model using van Genuchten's parameterization
 
 /*
@@ -33,7 +33,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class WRMVanGenuchten : public WRM {
 
@@ -68,7 +67,6 @@ public:
   static Utils::RegisteredFactory<WRM,WRMVanGenuchten> factory_;
 };
 
-} //namespace
 } //namespace
 } //namespace
 

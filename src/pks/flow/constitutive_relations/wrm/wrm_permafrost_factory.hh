@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 
    ATS
@@ -18,7 +18,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class WRMPermafrostFactory : public Utils::Factory<WRMPermafrostModel> {
 
@@ -27,7 +26,6 @@ public:
           const Teuchos::RCP<WRM>& wrm);
 };
 
-} // namespace
 } // namespace
 } // namespace
 

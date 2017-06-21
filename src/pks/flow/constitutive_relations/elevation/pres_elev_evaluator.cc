@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   The elevation evaluator gets the surface elevation, slope, and updates pres + elev.
@@ -10,7 +10,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 PresElevEvaluator::PresElevEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
@@ -53,6 +52,5 @@ void PresElevEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
   result->PutScalar(1.0);
 }
 
-} //namespace
 } //namespace
 } //namespace

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Evaluates the porosity, given a small compressibility of rock.
@@ -11,7 +11,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 CompressiblePorosityEvaluator::CompressiblePorosityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
@@ -123,6 +122,5 @@ void CompressiblePorosityEvaluator::EvaluateFieldPartialDerivative_(
 
 
 
-} //namespace
 } //namespace
 } //namespace

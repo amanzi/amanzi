@@ -1,5 +1,5 @@
 
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   An evaluator for converting the darcy flux to volumetric flux

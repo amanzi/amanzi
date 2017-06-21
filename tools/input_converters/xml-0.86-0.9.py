@@ -30,14 +30,95 @@ def compressibility(xml):
     for c in asearch.generateElementByNamePath(xml, "pore compressibility"):
         c.set("name", "pore compressibility [Pa^-1]")
 
+def diffusion(xml):
+    for diff in asearch.generateElementByNamePath(xml, "Diffusion"):
+        diff.set("name", "diffusion")
+    for diff in asearch.generateElementByNamePath(xml, "Diffusion PC"):
+        diff.set("name", "diffusion preconditioner")
 
+def water_energy(xml):
+    try:
+        water = asearch.childByNamePath(xml, "state/field evaluators/water_content")
+    except aerrors.MissingXMLError:
+        pass
+    else:
+        ftype = asearch.childByNamePath(water, "field evaluator type")
+        if ftype.value == "permafrost water content":
+            if water.isElement("include water vapor") and water.getElement("include water vapor").value:
+                ftype.setValue("three phase water content")
+            else:
+                ftype.setValue("liquid+ice water content")
+                    
+        elif ftype.value == "richards water content":
+            if water.isElement("include water vapor") and water.getElement("include water vapor").value:
+                ftype.setValue("liquid+gas water content")
+            else:
+                ftype.setValue("richards water content")
+
+    try:
+        energy = asearch.childByNamePath(xml, "state/field evaluators/energy")
+    except aerrors.MissingXMLError:
+        pass
+    else:
+        ftype = asearch.childByNamePath(energy, "field evaluator type")
+        if ftype.value == "three phase energy":
+            if water.isElement("include water vapor") and water.getElement("include water vapor").value:
+                ftype.setValue("three phase energy")
+            else:
+                ftype.setValue("liquid+ice energy")
+                    
+        elif ftype.value == "two phase energy":
+            if water.isElement("include water vapor") and water.getElement("include water vapor").value:
+                ftype.setValue("liquid+gas energy")
+            else:
+                ftype.setValue("richards energy")
+
+            
+def adds_source_units(xml):
+    fevals = asearch.childByNamePath(xml, "state/field evaluators")
+    try:
+        te = asearch.childByName(fevals, "total_energy_source")
+    except aerrors.MissingXMLError:
+        pass
+    else:
+        if not te.isElement("mass source units"):
+            te.setParameter("mass source units", "string", "mol m^-2 s^-1")
+
+    try:
+        te = asearch.childByName(fevals, "surface-total_energy_source")
+    except aerrors.MissingXMLError:
+        pass
+    else:
+        if not te.isElement("mass source units"):
+            te.setParameter("mass source units", "string", "m s^-1")
+
+
+def seepage_face_bcs(xml):
+    for bclist in asearch.generateElementByNamePath(xml, "boundary conditions"):
+        if bclist.isElement("seepage face"):
+            agroup = bclist.sublist("seepage face")[0]
+            if agroup.isElement("boundary pressure"):
+                bclist.sublist("seepage face").set("name", "seepage face pressure")
+            elif agroup.isElement("boundary head"):
+                bclist.sublist("seepage face").set("name", "seepage face head")
+            else:
+                raise RuntimeError("unknown seepage condition")
+    
+
+            
+
+
+               
 
 def update(xml):
     flatten_pks.flatten_pks(xml)
-    fixEvaluator(xml, "ponded_depth", "surface-ponded_depth")
-    fixEvaluator(xml, "ponded_depth_bar", "surface-ponded_depth_bar")
+#    fixEvaluator(xml, "ponded_depth", "surface-ponded_depth")
+#    fixEvaluator(xml, "ponded_depth_bar", "surface-ponded_depth_bar")
     compressibility(xml)
-
+    diffusion(xml)
+    water_energy(xml)
+    adds_source_units(xml)
+    seepage_face_bcs(xml)
         
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Evaluates Kr from surface into the subsurface
@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class SurfaceRelPermModel {
  public:
@@ -26,7 +25,6 @@ class SurfaceRelPermModel {
 
 };
 
-} // namespace
 } // namespace
 } // namespace
 

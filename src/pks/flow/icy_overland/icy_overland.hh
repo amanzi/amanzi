@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -----------------------------------------------------------------------------
 This is the overland flow component of ATS.
@@ -21,7 +21,6 @@ namespace Operators { class Upwinding; }
 
 namespace Flow {
 
-namespace FlowRelations { class UnfrozenFractionModel; }
 
 class IcyOverlandFlow : public OverlandPressureFlow {
 
@@ -46,6 +45,6 @@ class IcyOverlandFlow : public OverlandPressureFlow {
 };
 
 }  // namespace AmanziFlow
-}  // namespace Amanzi
+}  // namespace AmanziFlow
 
 #endif

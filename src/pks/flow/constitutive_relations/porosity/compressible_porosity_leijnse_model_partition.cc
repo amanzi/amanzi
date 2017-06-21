@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   A collection of comp poro models along with a Mesh Partition.
@@ -11,7 +11,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 // Non-member factory
 Teuchos::RCP<CompressiblePorosityLeijnseModelPartition>
@@ -37,6 +36,5 @@ createCompressiblePorosityLeijnseModelPartition(Teuchos::ParameterList& plist) {
   return Teuchos::rcp(new CompressiblePorosityLeijnseModelPartition(part, mlist));
 }
 
-} // namespace
 } // namespace
 } // namespace

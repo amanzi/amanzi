@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   WRM which calls another WRM for saturation but sets 0 rel perm.
@@ -10,10 +10,8 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 Utils::RegisteredFactory<WRM,WRMLinearRelPerm> WRMLinearRelPerm::factory_("linear rel perm");
 
-} // namespace
 } // namespace
 } // namespace

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   This WRM evaluator evaluates saturation of gas, liquid, and ice from
@@ -12,7 +12,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 /* --------------------------------------------------------------------------------
   Constructor from just a ParameterList, reads WRMs and permafrost models from list.
@@ -277,7 +276,6 @@ WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
 
 
 
-} // namespace
 } // namespace
 } // namespace
 

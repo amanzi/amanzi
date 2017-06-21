@@ -1,4 +1,4 @@
-"""Richards water content with no vapor."""
+"""Richards water content evaluator: the standard form as a function of liquid saturation."""
 
 import sys, os
 sys.path.append(os.path.join(os.environ['ATS_SRC_DIR'], "tools", "evaluator_generator"))

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Evaluates the unfrozen fraction model.
@@ -15,7 +15,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class SurfaceRelPermModel;
 
@@ -47,7 +46,6 @@ private:
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

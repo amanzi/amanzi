@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -----------------------------------------------------------------------------
 This is the overland flow component of ATS.
@@ -179,6 +179,10 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
     *vo_->os() << "Precon update at t = " << t << std::endl;
 
   // update state with the solution up.
+  if (std::abs(t - iter_counter_time_)/t > 1.e-4) {
+    iter_ = 0;
+    iter_counter_time_ = t;
+  }
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
 
@@ -192,13 +196,13 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   // -- update the rel perm according to the boundary info and upwinding
   // -- scheme of choice
   UpdatePermeabilityData_(S_next_.ptr());
-  if (jacobian_) UpdatePermeabilityDerivativeData_(S_next_.ptr());
+  if (jacobian_ && iter_ >= jacobian_lag_) UpdatePermeabilityDerivativeData_(S_next_.ptr());
 
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData("upwind_overland_conductivity");
 
   Teuchos::RCP<const CompositeVector> dcond = Teuchos::null;
-  if (jacobian_) {
+  if (jacobian_ && iter_ >= jacobian_lag_) {
     if (preconditioner_->RangeMap().HasComponent("face")) {
       dcond = S_next_->GetFieldData("dupwind_overland_conductivity_dponded_depth");
     } else {
@@ -209,13 +213,17 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   // 1.b: Create all local matrices.
   preconditioner_->Init();
   preconditioner_diff_->SetScalarCoefficient(cond, dcond);
-  Teuchos::RCP<const CompositeVector> pres_elev = S_next_->GetFieldData("pres_elev");
-  preconditioner_diff_->UpdateMatrices(Teuchos::null, pres_elev.ptr());
-  //  if (jacobian_ && preconditioner_->RangeMap().HasComponent("face")) {
-  if (jacobian_) {
-    Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData("surface-mass_flux", name_);
-    preconditioner_diff_->UpdateFlux(*pres_elev, *flux);
-    //    preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
+  preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  if (jacobian_ && iter_ >= jacobian_lag_) {
+    Teuchos::RCP<const CompositeVector> pres_elev = Teuchos::null;
+    Teuchos::RCP<CompositeVector> flux = Teuchos::null;
+    if (preconditioner_->RangeMap().HasComponent("face")) {
+      flux = S_next_->GetFieldData("surface-mass_flux", name_);
+      preconditioner_diff_->UpdateFlux(*pres_elev, *flux);
+    } else {
+      S_next_->GetFieldEvaluator("pres_elev")->HasFieldChanged(S_next_.ptr(), name_);
+      pres_elev = S_next_->GetFieldData("pres_elev");
+    }
     preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), pres_elev.ptr());
   }
 
@@ -359,6 +367,9 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *sc);
   *vo_->os() << "updated precon " << S_next_->cycle() << std::endl;
   */
+
+  // increment the iterator count
+  iter_++;
 };
 
 // -----------------------------------------------------------------------------
@@ -404,8 +415,8 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     } else if (*comp == std::string("face")) {
       // error in flux -- relative to cell's extensive conserved quantity
       int nfaces = dvec->size(*comp, false);
-      bool scaled_constraint = plist_->sublist("Diffusion").get<bool>("scaled constraint equation", true);
-      double constraint_scaling_cutoff = plist_->sublist("Diffusion").get<double>("constraint equation scaling cutoff", 1.0);
+      bool scaled_constraint = plist_->sublist("diffusion").get<bool>("scaled constraint equation", true);
+      double constraint_scaling_cutoff = plist_->sublist("diffusion").get<double>("constraint equation scaling cutoff", 1.0);
       const Epetra_MultiVector& kr_f = *S_next_->GetFieldData("upwind_overland_conductivity")
         ->ViewComponent("face",false);
       

@@ -13,7 +13,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 const double FLOW_WRM_TOLERANCE = 1e-10;
 
@@ -340,6 +339,5 @@ void WRMPlantChristoffersen::InitializeFromPlist_() {
   */
 };
 
-}  // namespace
 }  // namespace
 }  // namespace

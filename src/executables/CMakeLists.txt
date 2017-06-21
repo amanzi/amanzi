@@ -55,13 +55,10 @@ include_evaluators_directories(LISTNAME FLOW_OVERLAND_HEAD_EVAL_FAC_INCLUDES)
 include_evaluators_directories(LISTNAME FLOW_OVERLAND_EVAL_FAC_INCLUDES)
 include_evaluators_directories(LISTNAME RICHARDS_EVAL_FAC_INCLUDES)
 include_evaluators_directories(LISTNAME PERMAFROST_EVAL_FAC_INCLUDES)
-include_evaluators_directories(LISTNAME PRESCRIBED_DEFORMATION_EVAL_INCLUDES)
-include_evaluators_directories(LISTNAME VOLUMETRIC_DEFORMATION_EVAL_INCLUDES)
+include_evaluators_directories(LISTNAME DEFORMATION_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ENERGY_ADVECTION_DIFFUSION_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ENERGY_CONSTANT_TEMPERATURE_REG_INCLUDES)
-include_evaluators_directories(LISTNAME ENERGY_CONST_REL_INTERNAL_ENERGY_REG_INCLUDES)
-include_evaluators_directories(LISTNAME ENERGY_CONST_REL_SOURCE_TERMS_REG_INCLUDES)
-include_evaluators_directories(LISTNAME ENERGY_CONST_REL_THERMAL_CONDUCTIVITY_REG_INCLUDES)
+include_evaluators_directories(LISTNAME ENERGY_RELATIONS_INCLUDES)
 include_evaluators_directories(LISTNAME ENERGY_SURFACE_ICE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ENERGY_TWO_PHASE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ENERGY_THREE_PHASE_REG_INCLUDES)
@@ -100,10 +97,7 @@ set(ATS_LIBS
                       pk_BGC
                       pk_bases
                       #deform_relations_porosity
-                      energy_relations_thermal_conductivity
-                      energy_relations_internal_energy
-                      energy_relations_enthalpy
-                      energy_relations_source_terms
+                      energy_relations
                       flow_relations
                       flow_relations_surface_subsurface_fluxes
                       generic_evaluators

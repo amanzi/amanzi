@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -----------------------------------------------------------------------------
 This is the overland flow component of ATS.
@@ -59,7 +59,11 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
     update_flux_(UPDATE_FLUX_ITERATION),
     niter_(0),
     source_only_if_unfrozen_(false),
-    precon_used_(true)
+    precon_used_(true),
+    jacobian_(false),
+    jacobian_lag_(0),
+    iter_(0),
+    iter_counter_time_(0.)
 {
   // clone the ponded_depth parameter list for ponded_depth bar
   Teuchos::ParameterList& FElist = S->FEList();
@@ -75,9 +79,6 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
     plist_->set("absolute error tolerance", 0.01 * 55000.0); // h * nl
-
-
-  
 }
 
 
@@ -120,11 +121,16 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   bc_zero_gradient_ = bc_factory.CreateZeroGradient();
   bc_flux_ = bc_factory.CreateMassFlux();
   bc_level_ = bc_factory.CreateFixedLevel();
-  bc_seepage_head_ = bc_factory.CreateWithFunction("seepage face head", "boundary head");
-  bc_seepage_pressure_ = bc_factory.CreateWithFunction("seepage face pressure", "boundary pressure");
+  bc_seepage_head_ = bc_factory.CreateSeepageFaceHead();
+  bc_seepage_pressure_ = bc_factory.CreateSeepageFacePressure();
   bc_critical_depth_ = bc_factory.CreateCriticalDepth();
-  ASSERT(!bc_plist.isParameter("seepage face")); // old style!
-
+  if (bc_plist.isParameter("seepage face")) {
+    // old style! DEPRECATED
+    Errors::Message message;
+    message << name_ << ": DEPRECATION: \"seepage face\" boundary condition parameter list names have changed to \"seepage face head\" and \"seepage face pressure\".";
+    Exceptions::amanzi_throw(message);
+  }
+  
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
   bc_values_.resize(nfaces, 0.0);
@@ -148,16 +154,31 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     S->RequireField("upwind_overland_conductivity", name_)->SetMesh(mesh_)
         ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
   } else {
-    Errors::Message message("Unknown upwind coefficient location in overland flow.");
+    Errors::Message message;
+    message << name_ << ": Unknown upwind coefficient location in overland flow.";
     Exceptions::amanzi_throw(message);
   }
   S->GetField("upwind_overland_conductivity",name_)->set_io_vis(false);
 
   // -- create the forward operator for the diffusion term
-  Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
+  // DEPRECATED OPTIONS
+  if (plist_->isParameter("Diffusion") ||
+      plist_->isParameter("Diffusion PC")) {
+    Errors::Message message("Richards PK: DEPRECATION: Discretization lists \"Diffusion\" and \"Diffusion PC\" have been renamed \"diffusion\" and \"diffusion preconditioner\", respectively.");
+    Exceptions::amanzi_throw(message);
+  }
+
+  Teuchos::ParameterList& mfd_plist = plist_->sublist("diffusion");
   mfd_plist.set("nonlinear coefficient", coef_location);
   if (!mfd_plist.isParameter("scaled constraint equation"))
     mfd_plist.set("scaled constraint equation", true);
+  if (mfd_plist.isParameter("Newton correction")) {
+    Errors::Message message;
+    message << name_ << ": The forward operator for Diffusion should not set a "
+            << "\"Newton correction\" term, perhaps you meant to put this in a "
+            << "\"Diffusion PC\" sublist.";
+    Exceptions::amanzi_throw(message);
+  }    
   
   Operators::OperatorDiffusionFactory opfactory;
   matrix_diff_ = opfactory.Create(mfd_plist, mesh_, bc_);
@@ -177,7 +198,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   
   // -- create the operators for the preconditioner
   //    diffusion
-  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("Diffusion PC");
+  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("diffusion preconditioner");
   mfd_pc_plist.set("nonlinear coefficient", coef_location);
   mfd_pc_plist.set("scaled constraint equation",
                    mfd_plist.get<bool>("scaled constraint equation"));
@@ -201,6 +222,8 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   // If using approximate Jacobian for the preconditioner, we also need derivative information.
   jacobian_ = (mfd_pc_plist.get<std::string>("Newton correction", "none") != "none");
   if (jacobian_) {
+    jacobian_lag_ = mfd_pc_plist.get<int>("Newton correction lag", 0);
+    
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // MFD -- upwind required
       S->RequireField("dupwind_overland_conductivity_dponded_depth", name_)
@@ -230,7 +253,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   }
   
   //    accumulation
-  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("Accumulation PC");
+  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("accumulation preconditioner");
   acc_pc_plist.set("entity kind", "cell");
   preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, preconditioner_));
   
@@ -289,14 +312,14 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
   S->RequireField("slope_magnitude")->SetMesh(S->GetMesh("surface"))
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  Teuchos::RCP<FlowRelations::ElevationEvaluator> elev_evaluator;
+  Teuchos::RCP<Flow::ElevationEvaluator> elev_evaluator;
   if (standalone_mode_) {
     ASSERT(plist_->isSublist("elevation evaluator"));
     Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
-    elev_evaluator = Teuchos::rcp(new FlowRelations::StandaloneElevationEvaluator(elev_plist));
+    elev_evaluator = Teuchos::rcp(new Flow::StandaloneElevationEvaluator(elev_plist));
   } else {
     Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
-    elev_evaluator = Teuchos::rcp(new FlowRelations::MeshedElevationEvaluator(elev_plist));
+    elev_evaluator = Teuchos::rcp(new Flow::MeshedElevationEvaluator(elev_plist));
   }
   S->SetFieldEvaluator("elevation", elev_evaluator);
   S->SetFieldEvaluator("slope_magnitude", elev_evaluator);
@@ -304,8 +327,8 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
   // -- evaluator for potential field, h + z
   S->RequireField("pres_elev")->Update(matrix_->RangeMap())->SetGhosted();
   Teuchos::ParameterList pres_elev_plist = plist_->sublist("potential evaluator");
-  Teuchos::RCP<FlowRelations::PresElevEvaluator> pres_elev_eval =
-      Teuchos::rcp(new FlowRelations::PresElevEvaluator(pres_elev_plist));
+  Teuchos::RCP<Flow::PresElevEvaluator> pres_elev_eval =
+      Teuchos::rcp(new Flow::PresElevEvaluator(pres_elev_plist));
   S->SetFieldEvaluator("pres_elev", pres_elev_eval);
 
   // -- evaluator for source term
@@ -334,8 +357,8 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
       plist_->sublist("overland water content evaluator");
   Teuchos::ParameterList wcbar_plist(wc_plist);
   wcbar_plist.set<bool>("water content bar", true);
-  Teuchos::RCP<FlowRelations::OverlandPressureWaterContentEvaluator> wc_evaluator =
-      Teuchos::rcp(new FlowRelations::OverlandPressureWaterContentEvaluator(wcbar_plist));
+  Teuchos::RCP<Flow::OverlandPressureWaterContentEvaluator> wc_evaluator =
+      Teuchos::rcp(new Flow::OverlandPressureWaterContentEvaluator(wcbar_plist));
   S->SetFieldEvaluator("surface-water_content_bar", wc_evaluator);
 
   // -- ponded depth
@@ -360,8 +383,8 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
         ->AddComponent("cell", AmanziMesh::CELL, 1);
   ASSERT(plist_->isSublist("overland conductivity evaluator"));
   Teuchos::ParameterList cond_plist = plist_->sublist("overland conductivity evaluator");
-  Teuchos::RCP<FlowRelations::OverlandConductivityEvaluator> cond_evaluator =
-      Teuchos::rcp(new FlowRelations::OverlandConductivityEvaluator(cond_plist));
+  Teuchos::RCP<Flow::OverlandConductivityEvaluator> cond_evaluator =
+      Teuchos::rcp(new Flow::OverlandConductivityEvaluator(cond_plist));
   S->SetFieldEvaluator("overland_conductivity", cond_evaluator);
 }
 

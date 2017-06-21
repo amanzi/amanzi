@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 //! MeshedElevationEvaluator: evaluates the elevation (z-coordinate) and slope magnitude of a mesh.
 
 /*
@@ -36,7 +36,6 @@ Example:
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class MeshedElevationEvaluator : public ElevationEvaluator {
 
@@ -56,7 +55,6 @@ class MeshedElevationEvaluator : public ElevationEvaluator {
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

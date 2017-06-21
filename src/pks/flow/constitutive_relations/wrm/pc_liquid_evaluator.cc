@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   PCLiquidEvaluator is the interface between state/data and the model, a PC relation.
@@ -12,7 +12,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 PCLiquidEvaluator::PCLiquidEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
@@ -93,6 +92,5 @@ void PCLiquidEvaluator::EvaluateFieldPartialDerivative_(
   }
 }
 
-} // namespace
 } // namespace
 } // namespace

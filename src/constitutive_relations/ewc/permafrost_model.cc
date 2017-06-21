@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Ugly hackjob to enable direct evaluation of the full model, on a single
@@ -55,8 +55,8 @@ void PermafrostModel::InitializeModel(const Teuchos::Ptr<State>& S,
 
   Teuchos::RCP<FieldEvaluator> me = S->GetFieldEvaluator(getKey(domain, "saturation_gas"));
   
-  Teuchos::RCP<Flow::FlowRelations::WRMPermafrostEvaluator> wrm_me =
-      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::WRMPermafrostEvaluator>(me);
+  Teuchos::RCP<Flow::WRMPermafrostEvaluator> wrm_me =
+      Teuchos::rcp_dynamic_cast<Flow::WRMPermafrostEvaluator>(me);
   ASSERT(wrm_me != Teuchos::null);
   wrms_ = wrm_me->get_WRMPermafrostModels();
   
@@ -90,43 +90,43 @@ void PermafrostModel::InitializeModel(const Teuchos::Ptr<State>& S,
 
   // -- capillary pressure for ice/water
   me = S->GetFieldEvaluator(getKey(domain, "capillary_pressure_liq_ice"));
-  Teuchos::RCP<Flow::FlowRelations::PCIceEvaluator> pc_ice_me =
-    Teuchos::rcp_dynamic_cast<Flow::FlowRelations::PCIceEvaluator>(me);
+  Teuchos::RCP<Flow::PCIceEvaluator> pc_ice_me =
+    Teuchos::rcp_dynamic_cast<Flow::PCIceEvaluator>(me);
   ASSERT(pc_ice_me != Teuchos::null);
   pc_i_ = pc_ice_me->get_PCIceWater();
 
   // -- capillary pressure for liq/gas
   me = S->GetFieldEvaluator(getKey(domain, "capillary_pressure_gas_liq"));
-  Teuchos::RCP<Flow::FlowRelations::PCLiquidEvaluator> pc_liq_me =
-    Teuchos::rcp_dynamic_cast<Flow::FlowRelations::PCLiquidEvaluator>(me);
+  Teuchos::RCP<Flow::PCLiquidEvaluator> pc_liq_me =
+    Teuchos::rcp_dynamic_cast<Flow::PCLiquidEvaluator>(me);
   ASSERT(pc_liq_me != Teuchos::null);
   pc_l_ = pc_liq_me->get_PCLiqAtm();
   
   // -- iem for liquid
   me = S->GetFieldEvaluator(getKey(domain, "internal_energy_liquid"));
-  Teuchos::RCP<Energy::EnergyRelations::IEMEvaluator> iem_liquid_me =
-      Teuchos::rcp_dynamic_cast<Energy::EnergyRelations::IEMEvaluator>(me);
+  Teuchos::RCP<Energy::IEMEvaluator> iem_liquid_me =
+      Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(me);
   ASSERT(iem_liquid_me != Teuchos::null);
   liquid_iem_ = iem_liquid_me->get_IEM();
 
   // -- iem for ice
   me = S->GetFieldEvaluator(getKey(domain, "internal_energy_ice"));
-  Teuchos::RCP<Energy::EnergyRelations::IEMEvaluator> iem_ice_me =
-      Teuchos::rcp_dynamic_cast<Energy::EnergyRelations::IEMEvaluator>(me);
+  Teuchos::RCP<Energy::IEMEvaluator> iem_ice_me =
+      Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(me);
   ASSERT(iem_ice_me != Teuchos::null);
   ice_iem_ = iem_ice_me->get_IEM();
 
   // -- iem for gas
   me = S->GetFieldEvaluator(getKey(domain, "internal_energy_gas"));
-  Teuchos::RCP<Energy::EnergyRelations::IEMWaterVaporEvaluator> iem_gas_me =
-      Teuchos::rcp_dynamic_cast<Energy::EnergyRelations::IEMWaterVaporEvaluator>(me);
+  Teuchos::RCP<Energy::IEMWaterVaporEvaluator> iem_gas_me =
+      Teuchos::rcp_dynamic_cast<Energy::IEMWaterVaporEvaluator>(me);
   ASSERT(iem_gas_me != Teuchos::null);
   gas_iem_ = iem_gas_me->get_IEM();
 
   // -- iem for rock
   me = S->GetFieldEvaluator(getKey(domain, "internal_energy_rock"));
-  Teuchos::RCP<Energy::EnergyRelations::IEMEvaluator> iem_rock_me =
-      Teuchos::rcp_dynamic_cast<Energy::EnergyRelations::IEMEvaluator>(me);
+  Teuchos::RCP<Energy::IEMEvaluator> iem_rock_me =
+      Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(me);
   ASSERT(iem_rock_me != Teuchos::null);
   rock_iem_ = iem_rock_me->get_IEM();
 
@@ -135,14 +135,14 @@ void PermafrostModel::InitializeModel(const Teuchos::Ptr<State>& S,
   poro_leij_ = plist.get<bool>("porosity leijnse model", false);
   me = S->GetFieldEvaluator(getKey(domain, "porosity"));
   if(!poro_leij_){
-    Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityEvaluator> poro_me =
-      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::CompressiblePorosityEvaluator>(me);
+    Teuchos::RCP<Flow::CompressiblePorosityEvaluator> poro_me =
+      Teuchos::rcp_dynamic_cast<Flow::CompressiblePorosityEvaluator>(me);
     ASSERT(poro_me != Teuchos::null);
     poro_models_ = poro_me->get_Models();
   }
   else{
-    Teuchos::RCP<Flow::FlowRelations::CompressiblePorosityLeijnseEvaluator> poro_me =
-      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::CompressiblePorosityLeijnseEvaluator>(me);
+    Teuchos::RCP<Flow::CompressiblePorosityLeijnseEvaluator> poro_me =
+      Teuchos::rcp_dynamic_cast<Flow::CompressiblePorosityLeijnseEvaluator>(me);
     ASSERT(poro_me != Teuchos::null);
     poro_leij_models_ = poro_me->get_Models();
   }

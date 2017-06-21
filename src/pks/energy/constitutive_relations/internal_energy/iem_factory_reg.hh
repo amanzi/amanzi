@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 
    ATS
@@ -11,6 +11,6 @@
 
 // explicity instantitate the static data of Factory<IEM>
 template<> 
-Amanzi::Utils::Factory<Amanzi::Energy::EnergyRelations::IEM>::map_type* 
-Amanzi::Utils::Factory<Amanzi::Energy::EnergyRelations::IEM>::map_;
+Amanzi::Utils::Factory<Amanzi::Energy::IEM>::map_type* 
+Amanzi::Utils::Factory<Amanzi::Energy::IEM>::map_;
 

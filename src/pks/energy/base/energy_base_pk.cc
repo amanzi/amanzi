@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -178,7 +178,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   S->GetField(uw_conductivity_key_,name_)->set_io_vis(false);
   
   // -- create the forward operator for the diffusion term
-  Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
+  Teuchos::ParameterList& mfd_plist = plist_->sublist("diffusion");
   mfd_plist.set("nonlinear coefficient", coef_location);
   Operators::OperatorDiffusionFactory opfactory;
   matrix_diff_ = opfactory.Create(mfd_plist, mesh_, bc_);
@@ -187,12 +187,12 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
   // -- create the forward operator for the advection term
   Operators::AdvectionFactory advection_factory;
-  Teuchos::ParameterList advect_plist = plist_->sublist("Advection");
+  Teuchos::ParameterList advect_plist = plist_->sublist("advection");
   matrix_adv_ = Teuchos::rcp(new Operators::OperatorAdvection(advect_plist, mesh_));
   
   // -- create the operators for the preconditioner
   //    diffusion
-  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("Diffusion PC");
+  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("diffusion preconditioner");
   mfd_pc_plist.set("nonlinear coefficient", coef_location);
   if (!mfd_pc_plist.isParameter("discretization primary"))
     mfd_pc_plist.set("discretization primary", mfd_plist.get<std::string>("discretization primary"));
@@ -234,7 +234,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   
 
   // -- accumulation terms
-  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("Accumulation PC");
+  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("accumulation preconditioner");
   acc_pc_plist.set("entity kind", "cell");
   preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, preconditioner_));
 
@@ -244,7 +244,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     implicit_advection_in_pc_ = !plist_->get<bool>("supress advective terms in preconditioner", false);
 
     if (implicit_advection_in_pc_) {
-      Teuchos::ParameterList advect_plist = plist_->sublist("Advection PC");
+      Teuchos::ParameterList advect_plist = plist_->sublist("advection preconditioner");
       preconditioner_adv_ = Teuchos::rcp(new Operators::OperatorAdvection(advect_plist, preconditioner_));
     }
   }
@@ -559,7 +559,7 @@ void EnergyBase::UpdateBoundaryConditions_(
 
       // -- set that value to Neumann
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-      // flux is in units of J / s, whereas Neumann BCs are J/s/A
+      // flux provided by the coupler is in units of J / s, whereas Neumann BCs are J/s/A
       bc_values_[f] = flux[0][c] / mesh_->face_area(f);
 
       // -- mark advective BCs as Dirichlet: this ensures the surface
@@ -569,7 +569,7 @@ void EnergyBase::UpdateBoundaryConditions_(
     }
   }
 
-  // mark all remaining boundary conditions as zero flux conditions
+  // mark all remaining boundary conditions as zero diffusive flux conditions
   AmanziMesh::Entity_ID_List cells;
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
@@ -580,7 +580,7 @@ void EnergyBase::UpdateBoundaryConditions_(
       if (ncells == 1) {
         bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_values_[f] = 0.0;
-        bc_markers_adv_[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_markers_adv_[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_values_adv_[f] = 0.0;
       }
     }

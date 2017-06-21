@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Evaluates the conductivity of surface flow.
@@ -10,13 +10,11 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 // registry of method
 Utils::RegisteredFactory<SurfaceRelPermModel,OneUFRelPermModel>
 OneUFRelPermModel::reg_("unfrozen fraction rel perm, limit one");
 
-} //namespace
 } //namespace
 } //namespace
 

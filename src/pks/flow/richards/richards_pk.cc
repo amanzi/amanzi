@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 This is the flow component of the Amanzi code.
@@ -59,7 +59,11 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
     clobber_surf_kr_(false),
     clobber_boundary_flux_dir_(false),
     vapor_diffusion_(false),
-    perm_scale_(1.)
+    perm_scale_(1.),
+    jacobian_(false),
+    jacobian_lag_(0),
+    iter_(0),
+    iter_counter_time_(0.)
 {
   if (!plist_->isParameter("conserved quantity suffix"))
     plist_->set("conserved quantity suffix", "water_content");
@@ -210,7 +214,14 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   S->GetField(uw_coef_key_,name_)->set_io_vis(false);
 
   // -- create the forward operator for the diffusion term
-  Teuchos::ParameterList& mfd_plist = plist_->sublist("Diffusion");
+  // DEPRECATED OPTIONS
+  if (plist_->isParameter("Diffusion") ||
+      plist_->isParameter("Diffusion PC")) {
+    Errors::Message message("Richards PK: DEPRECATION: Discretization lists \"Diffusion\" and \"Diffusion PC\" have been renamed \"diffusion\" and \"diffusion preconditioner\", respectively.");
+    Exceptions::amanzi_throw(message);
+  }
+
+  Teuchos::ParameterList& mfd_plist = plist_->sublist("diffusion");
   mfd_plist.set("nonlinear coefficient", coef_location);
   mfd_plist.set("gravity", true);
   
@@ -228,7 +239,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
   // -- create the operators for the preconditioner
   //    diffusion
-  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("Diffusion PC");
+  Teuchos::ParameterList& mfd_pc_plist = plist_->sublist("diffusion preconditioner");
   mfd_pc_plist.set("nonlinear coefficient", coef_location);
   mfd_pc_plist.set("gravity", true);
   if (!mfd_pc_plist.isParameter("discretization primary"))
@@ -245,6 +256,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   //    For now this means upwinding the derivative.
   jacobian_ = mfd_pc_plist.get<std::string>("Newton correction", "none") != "none";
   if (jacobian_) {
+    jacobian_lag_ = mfd_pc_plist.get<int>("Newton correction lag", 0);
+
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // MFD -- upwind required
       dcoef_key_ = getDerivKey(coef_key_, key_);
@@ -265,7 +278,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   }
   
   // -- accumulation terms
-  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("Accumulation PC");
+  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("accumulation preconditioner");
   acc_pc_plist.set("entity kind", "cell");
   preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, preconditioner_));
 
@@ -398,10 +411,13 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- Water retention evaluators
   // -- saturation
   Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
-  Teuchos::RCP<FlowRelations::WRMEvaluator> wrm =
-      Teuchos::rcp(new FlowRelations::WRMEvaluator(wrm_plist));
-  S->SetFieldEvaluator(getKey(domain_,"saturation_liquid"), wrm);
-  S->SetFieldEvaluator(getKey(domain_,"saturation_gas"), wrm);
+  Teuchos::RCP<Flow::WRMEvaluator> wrm =
+      Teuchos::rcp(new Flow::WRMEvaluator(wrm_plist));
+
+  if (!S->HasFieldEvaluator("saturation_liquid")) {
+    S->SetFieldEvaluator(getKey(domain_,"saturation_liquid"), wrm);
+    S->SetFieldEvaluator(getKey(domain_,"saturation_gas"), wrm);
+  }
 
   // -- rel perm
   std::vector<AmanziMesh::Entity_kind> locations2(2);
@@ -415,8 +431,8 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField(coef_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponents(names2, locations2, num_dofs2);
   wrm_plist.set<double>("permeability rescaling", perm_scale_);
-  Teuchos::RCP<FlowRelations::RelPermEvaluator> rel_perm_evaluator =
-      Teuchos::rcp(new FlowRelations::RelPermEvaluator(wrm_plist, wrm->get_WRMs()));
+  Teuchos::RCP<Flow::RelPermEvaluator> rel_perm_evaluator =
+      Teuchos::rcp(new Flow::RelPermEvaluator(wrm_plist, wrm->get_WRMs()));
   S->SetFieldEvaluator(coef_key_, rel_perm_evaluator);
   wrms_ = wrm->get_WRMs();
 
@@ -1002,17 +1018,18 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
       // -- set that value to Neumann
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-      bc_values_[f] = flux[0][c] / mesh_->face_area(f);
-      if (!kr && rel_perm[0][f] > 0.) bc_values_[f] /= rel_perm[0][f];
 
+      // NOTE: the flux provided by the coupler is in units of mols / s, where
+      //       as Neumann BCs are in units of mols / s / A.  The right A must
+      //       be chosen, as it is the subsurface mesh's face area, not the
+      //       surface mesh's cell area.
+      bc_values_[f] = flux[0][c] / mesh_->face_area(f);
+
+      if (!kr && rel_perm[0][f] > 0.) bc_values_[f] /= rel_perm[0][f];
       if ((surface->cell_map(false).GID(c) == 0) && vo_->os_OK(Teuchos::VERB_HIGH)) {
         *vo_->os() << "  bc for coupled surface: val=" << bc_values_[f] << std::endl;
       }
       
-      // NOTE: flux[0][c] is in units of mols / s, where as Neumann BCs are in
-      //       units of mols / s / A.  The right A must be chosen, as it is
-      //       the subsurface mesh's face area, not the surface mesh's cell
-      //       area.
     }
   }
 

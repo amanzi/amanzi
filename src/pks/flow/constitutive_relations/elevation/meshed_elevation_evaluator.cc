@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   An elevation evaluator getting values from the volumetric mesh.
@@ -13,7 +13,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 MeshedElevationEvaluator::MeshedElevationEvaluator(Teuchos::ParameterList& plist) :
     ElevationEvaluator(plist) {};
@@ -144,6 +143,5 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
   }
 }
 
-} //namespace
 } //namespace
 } //namespace

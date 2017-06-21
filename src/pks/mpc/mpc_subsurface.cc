@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 ATS
 
@@ -21,6 +21,7 @@ with freezing.
 #include "upwind_arithmetic_mean.hh"
 
 #include "permafrost_model.hh"
+#include "liquid_ice_model.hh"
 #include "richards.hh"
 
 #include "mpc_delegate_ewc_subsurface.hh"
@@ -134,7 +135,7 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
       }
 
       // set up the operator
-      Teuchos::ParameterList divq_plist(pks_list_->sublist(pk_order[0]).sublist("Diffusion PC"));
+      Teuchos::ParameterList divq_plist(pks_list_->sublist(pk_order[0]).sublist("diffusion preconditioner"));
       if (is_fv_) divq_plist.set("Newton correction", "true Jacobian");
       else divq_plist.set("Newton correction", "approximate Jacobian");
       divq_plist.set("exclude primary terms", true);
@@ -170,7 +171,7 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
       }
 
       // set up the operator
-      Teuchos::ParameterList ddivKgT_dp_plist(pks_list_->sublist(pk_order[1]).sublist("Diffusion PC"));
+      Teuchos::ParameterList ddivKgT_dp_plist(pks_list_->sublist(pk_order[1]).sublist("diffusion preconditioner"));
       if (is_fv_) ddivKgT_dp_plist.set("Newton correction", "true Jacobian");
       else ddivKgT_dp_plist.set("Newton correction", "approximate Jacobian");
 
@@ -189,7 +190,7 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
     // -- derivatives of advection term
     if (!plist_->get<bool>("supress Jacobian terms: div hq / dp,T", false)) {
       // derivative with respect to pressure
-      Teuchos::ParameterList divhq_dp_plist(pks_list_->sublist(pk_order[0]).sublist("Diffusion PC"));
+      Teuchos::ParameterList divhq_dp_plist(pks_list_->sublist(pk_order[0]).sublist("diffusion preconditioner"));
 
       if (is_fv_) divhq_dp_plist.set("Newton correction", "true Jacobian");
       else divhq_dp_plist.set("Newton correction", "approximate Jacobian");
@@ -203,7 +204,7 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
       }
 
       // derivative with respect to temperature
-      Teuchos::ParameterList divhq_dT_plist(pks_list_->sublist(pk_order[0]).sublist("Diffusion PC"));
+      Teuchos::ParameterList divhq_dT_plist(pks_list_->sublist(pk_order[0]).sublist("diffusion preconditioner"));
       divhq_dT_plist.set("exclude primary terms", true);
 
       if (is_fv_) divhq_dT_plist.set("Newton correction", "true Jacobian");
@@ -301,7 +302,13 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
     sub_ewc_list->set("PK name", name_);
     sub_ewc_list->set("domain key", domain_name_);
     ewc_ = Teuchos::rcp(new MPCDelegateEWCSubsurface(*sub_ewc_list));
-    Teuchos::RCP<PermafrostModel> model = Teuchos::rcp(new PermafrostModel());
+
+    Teuchos::RCP<EWCModelBase> model;
+    if (S->HasField("internal_energy_gas")) {
+      model = Teuchos::rcp(new PermafrostModel());
+    } else {
+      model = Teuchos::rcp(new LiquidIceModel());
+    }
     ewc_->set_model(model);
     ewc_->setup(S);
   }    

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Evaluates height(pressure)
@@ -13,7 +13,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class EffectiveHeightModel {
 public:
@@ -53,7 +52,6 @@ protected:
   double pi_;
 };
 
-} // namespace
 } // namespace
 } // namespace
 

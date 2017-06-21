@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   This WRM model evaluates the saturation of ice, water, and gas.
@@ -17,7 +17,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class WRMPermafrostEvaluator : public SecondaryVariablesFieldEvaluator {
  public:
@@ -57,7 +56,6 @@ class WRMPermafrostEvaluator : public SecondaryVariablesFieldEvaluator {
 
 };
 
-} // namespace
 } // namespace
 } // namespace
 

@@ -12,7 +12,6 @@ Painter's permafrost model with freezing point depression.
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 // required methods from the base class
 // sats[0] = sg, sats[1] = sl, sats[2] = si
@@ -78,6 +77,5 @@ WRMFPDPermafrostModel::dsaturations_dpc_ice(double pc_liq, double pc_ice,
 }
 
 
-} // namespace FlowRelations
 } // namespace Flow
-} // namespace Amanzi
+} // namespace Flow

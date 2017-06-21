@@ -17,7 +17,6 @@ Painter's permafrost model.
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class WRM;
 
@@ -108,7 +107,6 @@ class WRMImplicitPermafrostModel : public WRMPermafrostModel {
 };
 
 
-} //namespace
 } //namespace
 } //namespace
 

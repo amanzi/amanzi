@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   This WRM evaluator evaluates saturation of gas, liquid, and ice from
@@ -12,12 +12,10 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 // registry of method
 Utils::RegisteredFactory<FieldEvaluator,WRMPermafrostEvaluator> WRMPermafrostEvaluator::factory_("permafrost WRM");
 
-} // namespace
 } // namespace
 } // namespace
 

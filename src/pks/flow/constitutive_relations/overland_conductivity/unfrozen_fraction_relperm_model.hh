@@ -1,5 +1,5 @@
 
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   No special limits as p_surf -> p_atm.
@@ -17,7 +17,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class UnfrozenFractionRelPermModel : public SurfaceRelPermModel {
  public:
@@ -48,7 +47,6 @@ class UnfrozenFractionRelPermModel : public SurfaceRelPermModel {
   
 };
 
-} // namespace
 } // namespace
 } // namespace
 

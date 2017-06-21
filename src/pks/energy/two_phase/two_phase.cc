@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -12,7 +12,6 @@ Process kernel for energy equation for Richard's flow.
 #include "eos_evaluator.hh"
 #include "iem_evaluator.hh"
 #include "thermal_conductivity_twophase_evaluator.hh"
-#include "two_phase_energy_evaluator.hh"
 #include "enthalpy_evaluator.hh"
 #include "energy_bc_factory.hh"
 
@@ -40,19 +39,15 @@ void TwoPhase::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- energy, the conserved quantity
   S->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::ParameterList ee_plist = plist_->sublist("energy evaluator");
-  ee_plist.set("energy key", energy_key_);
-  Teuchos::RCP<TwoPhaseEnergyEvaluator> ee =
-    Teuchos::rcp(new TwoPhaseEnergyEvaluator(ee_plist));
-  S->SetFieldEvaluator(energy_key_, ee);
+  S->RequireFieldEvaluator(energy_key_);
 
   // -- thermal conductivity
   S->RequireField(conductivity_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList tcm_plist =
     plist_->sublist("thermal conductivity evaluator");
-  Teuchos::RCP<EnergyRelations::ThermalConductivityTwoPhaseEvaluator> tcm =
-    Teuchos::rcp(new EnergyRelations::ThermalConductivityTwoPhaseEvaluator(tcm_plist));
+  Teuchos::RCP<Energy::ThermalConductivityTwoPhaseEvaluator> tcm =
+    Teuchos::rcp(new Energy::ThermalConductivityTwoPhaseEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);
 
 }
@@ -79,8 +74,8 @@ void TwoPhase::Initialize(const Teuchos::Ptr<State>& S) {
 
   Teuchos::RCP<FieldEvaluator> iem_fe =
     S->GetFieldEvaluator(getKey(domain_, "internal_energy_liquid"));
-  Teuchos::RCP<EnergyRelations::IEMEvaluator> iem_eval =
-    Teuchos::rcp_dynamic_cast<EnergyRelations::IEMEvaluator>(iem_fe);
+  Teuchos::RCP<Energy::IEMEvaluator> iem_eval =
+    Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(iem_fe);
   ASSERT(iem_eval != Teuchos::null);
   iem_liquid_ = iem_eval->get_IEM();
 

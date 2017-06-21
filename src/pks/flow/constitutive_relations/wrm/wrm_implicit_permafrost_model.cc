@@ -13,7 +13,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 // Constructor
 WRMImplicitPermafrostModel::WRMImplicitPermafrostModel(Teuchos::ParameterList& plist) :
@@ -400,6 +399,5 @@ void WRMImplicitPermafrostModel::dsaturations_dpc_ice(double pc_liq, double pc_i
 };
 
 
-} // namespace
 } // namespace
 } // namespace

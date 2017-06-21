@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Amanzi needs to fix its WRM interface... the current lack of factory or
@@ -16,7 +16,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class WRMInterfrost : public WRM {
 
@@ -36,7 +35,6 @@ public:
   static Utils::RegisteredFactory<WRM,WRMInterfrost> factory_;
 };
 
-} //namespace
 } //namespace
 } //namespace
 

@@ -1,5 +1,5 @@
 """
-Extrudes a VTK 2D mesh to generate an ExodusII 3D mesh.
+Extrudes a 2D mesh to generate an ExodusII 3D mesh.
 
 Works with and assumes all polyhedra cells (and polygon faces).
 
@@ -33,13 +33,19 @@ conda install h5py
 conda install netCDF4
 
 ```
-SEACAS_BUILD_DIR=$ATS_HOME/seacas/build-dev
-SEACAS_INSTALL_DIR=$ATS_HOME/seacas/install-dev
-SEACAS_SRC_DIR=$ATS_HOME/seacas/repos/seacas
+SEACAS_BUILD_DIR=/Users/uec/codes/seacas/build-dev
+SEACAS_INSTALL_DIR=/Users/uec/codes/seacas/install-dev
+SEACAS_SRC_DIR=/Users/uec/codes/seacas/repos/dev
+
+ANACONDA_DIR=/Users/uec/codes/anaconda
 
 CC=`which mpicc`
 CXX=`which mpicxx`
 FC=`which mpif90`
+
+mkdir -p $SEACAS_BUILD_DIR
+mkdir -p $SEACAS_INSTALL_DIR
+cd $SEACAS_BUILD_DIR
 
 cmake  \
     -D SEACASProj_ENABLE_SEACASExodus:BOOL=ON \
@@ -56,10 +62,13 @@ cmake  \
     -D TPL_ENABLE_MPI=ON \
     -D TPL_ENABLE_CGNS:BOOL=OFF \
     \
-    -D NetCDF_DIR:PATH=${ANACONDA_DIR} \
+    -D Netcdf_LIBRARY_DIRS:PATH=${ANACONDA_DIR}/lib \
+    -D Netcdf_INCLUDE_DIRS:PATH=${ANACONDA_DIR}/include \
     -D HDF5_ROOT:PATH=${ANACONDA_DIR} \
     -D HDF5_NO_SYSTEM_PATHS=ON \
-    ${SEACAS_SRC_DIR}
+${SEACAS_SRC_DIR}
+
+
 ```
 
 Excecute the configure script from your SEACAS_BUILD_DIR, then

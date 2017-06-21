@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -179,12 +179,14 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   // create local matrices
   preconditioner_->Init();
   preconditioner_diff_->SetScalarCoefficient(conductivity, dKdT);
-  preconditioner_diff_->UpdateMatrices(Teuchos::null, up->Data().ptr());
+  preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  if (jacobian_) {// && preconditioner_->RangeMap().HasComponent("face")) {
-    Teuchos::RCP<CompositeVector> flux =
-      S_next_->GetFieldData(energy_flux_key_, name_);
-    preconditioner_diff_->UpdateFlux(*up->Data(), *flux);
+  if (jacobian_) {
+    Teuchos::RCP<CompositeVector> flux = Teuchos::null;
+    if (preconditioner_->RangeMap().HasComponent("face")) {
+      flux = S_next_->GetFieldData(energy_flux_key_, name_);
+      preconditioner_diff_->UpdateFlux(*up->Data(), *flux);
+    }
     preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), up->Data().ptr());
   }
 

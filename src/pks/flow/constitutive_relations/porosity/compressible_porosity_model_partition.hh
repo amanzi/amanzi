@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   A collection of porosity models along with a Mesh Partition.
@@ -13,7 +13,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 typedef std::vector<Teuchos::RCP<CompressiblePorosityModel> > CompressiblePorosityModelList;
 typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, CompressiblePorosityModelList> CompressiblePorosityModelPartition;
@@ -22,7 +21,6 @@ typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, CompressiblePorosityMo
 Teuchos::RCP<CompressiblePorosityModelPartition>
 createCompressiblePorosityModelPartition(Teuchos::ParameterList& plist);
 
-} // namespace
 } // namespace
 } // namespace
 

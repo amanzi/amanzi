@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Evaluates the unfrozen fraction of water.
@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 UnfrozenFractionModel::UnfrozenFractionModel(Teuchos::ParameterList& plist) :
     plist_(plist),
@@ -59,7 +58,5 @@ double UnfrozenFractionModel::DUnfrozenFractionDT(double temp) const {
   return duf;
 }
 
-
-} // namespace
 } // namespace
 } // namespace

@@ -20,8 +20,8 @@ int main( int argc, char *argv[] )
   Teuchos::ParameterList eos1_plist = parameter_list.sublist("EOS 1");
   Teuchos::ParameterList eos2_plist = parameter_list.sublist("EOS 2");
 
-  Amanzi::Flow::FlowRelations::EOSFactory eosfactory;
+  Amanzi::Flow::EOSFactory eosfactory;
 
-  Teuchos::RCP<Amanzi::Flow::FlowRelations::EOS> eos1 = eosfactory.createEOS(eos1_plist);
-  Teuchos::RCP<Amanzi::Flow::FlowRelations::EOS> eos2 = eosfactory.createEOS(eos2_plist);
+  Teuchos::RCP<Amanzi::Flow::EOS> eos1 = eosfactory.createEOS(eos1_plist);
+  Teuchos::RCP<Amanzi::Flow::EOS> eos2 = eosfactory.createEOS(eos2_plist);
 }

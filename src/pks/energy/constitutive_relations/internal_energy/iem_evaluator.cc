@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   The WRM Evaluator simply calls the WRM with the correct arguments.
@@ -11,7 +11,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 
 IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& plist) :
@@ -96,6 +95,5 @@ void IEMEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
 }
 
 
-} //namespace
 } //namespace
 } //namespace

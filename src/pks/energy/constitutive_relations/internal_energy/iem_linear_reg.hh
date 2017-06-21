@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -12,10 +12,8 @@ Author: Ethan Coon
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 Utils::RegisteredFactory<IEM,IEMLinear> IEMLinear::factory_("linear");
 
-} // namespace
 } // namespace
 } // namespace
