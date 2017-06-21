@@ -203,7 +203,7 @@ int DeRham_Edge::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
   DenseMatrix N(nrows, d);
 
   int ok = L2consistency(c, T, N, M, true);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   StabilityScalar_(N, M);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -382,7 +382,7 @@ int DeRham_Edge::MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W)
   DenseMatrix R(nrows, d);
 
   int ok = L2consistencyInverse(c, T, R, W, true);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   StabilityScalar_(R, W);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;

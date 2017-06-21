@@ -17,9 +17,8 @@ namespace Amanzi {
 namespace WhetStone {
 
 const int WHETSTONE_ELEMENTAL_MATRIX_OK = 0;
-const int WHETSTONE_ELEMENTAL_MATRIX_WRONG = 1;
-const int WHETSTONE_ELEMENTAL_MATRIX_PASSED = 2;
-const int WHETSTONE_ELEMENTAL_MATRIX_FAILED = 4;  // only for unexpected situations
+const int WHETSTONE_ELEMENTAL_MATRIX_SIZE = 1;
+const int WHETSTONE_ELEMENTAL_MATRIX_FAILED = 2;  // only for unexpected situations
 
 const int WHETSTONE_STABILITY_GENERIC = 1;
 const int WHETSTONE_STABILITY_GENERIC_SCALED = 2;

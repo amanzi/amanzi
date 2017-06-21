@@ -113,7 +113,7 @@ int MFD3D_Electromagnetics::MassMatrixBoundary(int f, const Tensor& T, DenseMatr
   DenseMatrix N(nrows, d - 1);
 
   int ok = L2consistencyBoundary(f, T, N, M);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   StabilityScalar_(N, M);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;

@@ -31,7 +31,7 @@ int DeRham_Face::L2consistency(
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
   int nfaces = faces.size();
-  if (nfaces != N.NumRows()) return nfaces;  // matrix was not reshaped
+  if (nfaces != N.NumRows()) return WHETSTONE_ELEMENTAL_MATRIX_SIZE;
 
   int d = mesh_->space_dimension();
   double volume = mesh_->cell_volume(c);
@@ -83,7 +83,7 @@ int DeRham_Face::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
   Kinv.Inverse();
 
   int ok = L2consistency(c, Kinv, N, M, true);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   StabilityScalar_(N, M);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -103,7 +103,7 @@ int DeRham_Face::L2consistencyInverse(
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
   int num_faces = faces.size();
-  if (num_faces != R.NumRows()) return num_faces;  // matrix was not reshaped
+  if (num_faces != R.NumRows()) return WHETSTONE_ELEMENTAL_MATRIX_SIZE;
 
   // calculate areas of possibly curved faces
   std::vector<double> areas(num_faces, 0.0);
@@ -166,7 +166,7 @@ int DeRham_Face::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
   DenseMatrix R(nfaces, d);
 
   int ok = L2consistencyInverse(c, K, R, W, true);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
  
   StabilityScalar_(R, W);
 

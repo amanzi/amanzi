@@ -110,7 +110,7 @@ int MFD3D_Diffusion::MassMatrixInverseSurface(
   DenseMatrix R(nfaces, d - 1);
 
   int ok = L2consistencyInverseSurface(c, permeability, R, W);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   StabilityScalar_(R, W);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
