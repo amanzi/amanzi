@@ -1217,7 +1217,7 @@ if [ -z "${tpl_config_file}" ]; then
   # Define the TPL build source directory
   tpl_build_src_dir=${amanzi_source_dir}/config/SuperBuild
   
-  if [ ${tpls_only} ]; then
+  if [ "${tpls_only}" -eq "${TRUE}" ]; then
     status_message "Only building TPLs, stopping before building Amanzi itself"
   fi
 
@@ -1306,7 +1306,7 @@ else
 
 fi
 
-if [ ${tpls_only} ]; then
+if [ "${tpls_only}" -eq "${TRUE}" ]; then
     exit_now 0
 fi
 
