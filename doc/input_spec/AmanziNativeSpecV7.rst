@@ -1793,8 +1793,32 @@ and the related list of options.
 Nonlinear solver is controlled by parameter *solver type*  and related list of options.
 Amanzi supports a few nonlinear solvers described in details in a separate section.
 
+The time step controller *standard* is a simple timestep control mechanism
+which sets the next timestep based upon the previous timestep and how many
+nonlinear iterations the previous timestep took to converge.
+The next time step is given by the following rule:
+
+* if :math:`N_k > N^{max}` then :math:`\Delta t_{k+1} = f_{reduction} \Delta t_{k}`
+* if :math:`N_k < N^{min}` then :math:`\Delta t_{k+1} = f_{increase} \Delta t_{k}`
+* otherwise :math:`\Delta t_{k+1} = \Delta t_{k}`
+
+where :math:`\Delta t_{k}` is the previous timestep and :math:`N_k` is the number of nonlinear 
+iterations required to solve step :math:`k`.
+
+The time step controller *smart* is based on *standard*, but also tries to be a bit 
+smarter to avoid repeated increase/decrease loops where the step size decreases, 
+converges in few iterations, increases, but then fails again.  It also tries to grow 
+the time step geometrically to more quickly recover from tricky nonlinearities.
+
+The time step controller *from file* loads a timestep history from a file, then
+advances the step size with those values.  This is mostly used for testing
+purposes, where we need to force the same timestep history as previous runs to
+do regression testing.  Otherwise roundoff errors can eventually alter
+number of iterations enough to alter the timestep history, resulting in
+solutions which are enough different to cause doubt over their correctness.
+
 * `"time step controller type`" [list]
-  Available options are `"fixed`", `"standard`", `"smarter`", and `"adaptive`".
+  Available options are `"fixed`", `"standard`", `"smarter`",  `"adaptive`", and `"from file`"
   The later is under development and is based on a posteriori error estimates.
 
   * `"max preconditioner lag iterations`" [int] specifies frequency of 
@@ -1818,10 +1842,18 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
 
   * `"time step increase factor`" [double] defines geometric grow rate for the
     initial time step. This factor is applied when nonlinear solver converged
-    in less than `"min iterations`" iterations. Default is 1.0.
+    in less than `"min iterations`" iterations. 
+    This value can be modified geometrically by the smart controller in the 
+    case of repeated successful steps. Default is 1.
+
+  * `"min iterations`" [int]  triggers increase of the time step if the previous step 
+    took less than this.
 
   * `"time step reduction factor`" [double] defines abrupt time step reduction
-    when nonlinear solver failed or did not converge in  `"max iterations`" iterations.
+    when nonlinear solver failed or did not converge in `"max iterations`" iterations.
+
+  * `"max iterations`" [int] itriggers decrease of the time step if the previous step 
+    took more than this.
 
   * `"max time step`" [double] is the maximum allowed time step.
 
@@ -1837,6 +1869,23 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
   * `"aa parameters`" [list] internal parameters for the nonlinear
     solver AA (Anderson acceleration).
 
+  * `"file name`" [string] is the path to hdf5 file containing timestep information. 
+    The parameter is used by only one controller.
+
+  * `"timestep header`" [string] is the name of the dataset containing the history 
+    of timestep sizes. The parameter is used by only one controller.
+
+  * `"max time step increase factor`" [double] specifies the maximum value for 
+    parameter `"time step increase factor`" in the smart controller. Default is 10.
+
+  * `"growth wait after fail`" [int] defined the number of skipped timesteps before
+    attempting to grow the timestep after a failed timestep. 
+    This parameter is used by the smart controller only.
+
+  * `"count before increasing increase factor`" [int] defines the number of successive 
+    increasions before multiplying parameter `"time step increase factor`". 
+    This parameter is used by the smart controller only.
+ 
   * `"residual debugger`" [list] a residual debugger specification.
     
 .. code-block:: xml
