@@ -4,4 +4,4 @@ LABEL Description="This image builds Amanzi from a prebuilt version of the Amanz
 USER amanzi_user
 
 WORKDIR /home/amanzi_user/amanzi
-RUN ./bootstrap.sh --prefix=/home/amanzi_user/amanzi_installdir --amanzi-build-dir=/home/amanzi_user/amanzi_builddir --tpl-config-file=/home/amanzi_user/amanzi_installdir/tpls/share/cmake/amanzi-tpl-config.cmake
+RUN ./bootstrap.sh --prefix=/home/amanzi_user/local --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi --tpl-config-file=/home/amanzi_user/local/tpls/share/cmake/amanzi-tpl-config.cmake
