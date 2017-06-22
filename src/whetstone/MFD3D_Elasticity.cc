@@ -39,10 +39,9 @@ int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
   mesh_->cell_get_faces(c, &faces);
   int nfaces = faces.size();
 
-  int d = mesh_->space_dimension();
   double volume = mesh_->cell_volume(c);
 
-  AmanziGeometry::Point v1(d), v2(d);
+  AmanziGeometry::Point v1(d_), v2(d_);
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
   Tensor Tinv(T);
@@ -55,7 +54,7 @@ int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
 
     v1 = fm - cm;
     double a = normal * v1;
-    for (int k = 0; k < d; k++) v1[k] = a - normal[k] * v1[k];
+    for (int k = 0; k < d_; k++) v1[k] = a - normal[k] * v1[k];
   }
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -89,21 +88,20 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
-  int d = mesh_->space_dimension();
-  AmanziGeometry::Point p(d), pnext(d), pprev(d), v1(d), v2(d), v3(d);
+  AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
 
   // convolution of tensors
   std::vector<Tensor> TE;
 
-  for (int k = 0; k < d; k++) {
-    Tensor E(d, 2);
+  for (int k = 0; k < d_; k++) {
+    Tensor E(d_, 2);
     E(k, k) = 1.0;
     TE.push_back(T * E);
   }
 
-  for (int k = 0; k < d; k++) {
-    for (int l = k + 1; l < d; l++) {
-      Tensor E(d, 2);
+  for (int k = 0; k < d_; k++) {
+    for (int l = k + 1; l < d_; l++) {
+      Tensor E(d_, 2);
       E(k, l) = E(l, k) = 1.0;
       TE.push_back(T * E);
     }
@@ -129,7 +127,7 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
       int v = face_nodes[j];
       double u(0.5);
 
-      if (d == 2) {
+      if (d_ == 2) {
         u = 0.5 * dirs[i]; 
       } else {
         int jnext = (j + 1) % num_face_nodes;
@@ -151,7 +149,7 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
       int pos = FindPosition_(v, nodes);
       for (int k = 0; k < nd; k++) {
         v1 = TE[k] * normal;
-        for (int l = 0; l < d; l++) R(l * num_nodes + pos, k) += v1[l] * u;
+        for (int l = 0; l < d_; l++) R(l * num_nodes + pos, k) += v1[l] * u;
       }
     }
   }
@@ -189,23 +187,23 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
     v1 = p - cm;
 
     int md = 0;
-    for (int k = 0; k < d; k++) {
+    for (int k = 0; k < d_; k++) {
       N(k * num_nodes + i, md) = v1[k];
       md++;
     }
-    for (int k = 0; k < d; k++) {
-      for (int l = k + 1; l < d; l++) {
+    for (int k = 0; k < d_; k++) {
+      for (int l = k + 1; l < d_; l++) {
         N(k * num_nodes + i, md) = v1[l];
         N(l * num_nodes + i, md) = v1[k];
         md++;
       }
     }
-    for (int k = 0; k < d; k++) {  // additional columns correspod to kernel
+    for (int k = 0; k < d_; k++) {  // additional columns correspod to kernel
       N(k * num_nodes + i, md) = 1.0;
       md++;
     }
-    for (int k = 0; k < d; k++) {
-      for (int l = k + 1; l < d; l++) {
+    for (int k = 0; k < d_; k++) {
+      for (int l = k + 1; l < d_; l++) {
         N(k * num_nodes + i, md) =  v1[l];
         N(l * num_nodes + i, md) = -v1[k];
         md++;
@@ -221,14 +219,12 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
 ****************************************************************** */
 int MFD3D_Elasticity::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
 {
-  int d = mesh_->space_dimension();
-  int nd = d * (d + 1);
   int nrows = A.NumRows();
-
+  int nd = d_ * (d_ + 1);
   DenseMatrix N(nrows, nd);
 
   int ok = H1consistency(c, T, N, A);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   StabilityScalar_(N, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -240,14 +236,12 @@ int MFD3D_Elasticity::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
 ****************************************************************** */
 int MFD3D_Elasticity::StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A)
 {
-  int d = mesh_->space_dimension();
-  int nd = d * (d + 1);
   int nrows = A.NumRows();
-
+  int nd = d_ * (d_ + 1);
   DenseMatrix N(nrows, nd);
 
   int ok = H1consistency(c, T, N, A);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   StabilityOptimized_(T, N, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -260,20 +254,16 @@ int MFD3D_Elasticity::StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatr
 ****************************************************************** */
 int MFD3D_Elasticity::StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A)
 {
-  int d = mesh_->space_dimension();
-  int nd = d * (d + 1);
   int nrows = A.NumRows();
-
+  int nd = d_ * (d_ + 1);
   DenseMatrix N(nrows, nd);
 
   int ok = H1consistency(c, T, N, A);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   int objective = WHETSTONE_SIMPLEX_FUNCTIONAL_TRACE;
   ok = StabilityMMatrix_(c, N, A, objective);
-
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  return ok;
 }
 
 

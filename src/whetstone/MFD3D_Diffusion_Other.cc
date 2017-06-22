@@ -30,15 +30,13 @@ namespace WhetStone {
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& W)
 {
-  int d = mesh_->space_dimension();
-
   Entity_ID_List faces;
   std::vector<int> dirs;
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  AmanziGeometry::Point a(d);
+  AmanziGeometry::Point a(d_);
 
   W.PutScalar(0.0);
   for (int n = 0; n < nfaces; n++) {
@@ -52,6 +50,7 @@ int MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& 
     double dxn = a * normal;
     W(n, n) = Knn / fabs(dxn);
   }
+
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -62,10 +61,9 @@ int MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& 
 ****************************************************************** */
 double MFD3D_Diffusion::Transmissibility(int f, int c, const Tensor& K)
 {
-  int dir, d = mesh_->space_dimension();
-
+  int dir;
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  AmanziGeometry::Point a(d);
+  AmanziGeometry::Point a(d_);
 
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
   const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
@@ -86,7 +84,6 @@ double MFD3D_Diffusion::Transmissibility(int f, int c, const Tensor& K)
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatrix& W)
 {
-  int d = mesh_->space_dimension();
   double volume = mesh_->cell_volume(c);
 
   Entity_ID_List faces;
@@ -97,7 +94,7 @@ int MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatr
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
     double area = mesh_->face_area(f);
-    W(n, n) = nfaces * K(0, 0) * area * area / (d * volume);
+    W(n, n) = nfaces * K(0, 0) * area * area / (d_ * volume);
   }
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
@@ -108,8 +105,6 @@ int MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatr
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
 {
-  int d = mesh_->space_dimension();
-
   Entity_ID_List faces;
   std::vector<int> fdirs;
   mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
@@ -125,19 +120,19 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   std::vector<Tensor> Mv;
   std::vector<double> cwgt;
 
-  Tensor N(d, 2), NK(d, 2), Mv_tmp(d, 2);
+  Tensor N(d_, 2), NK(d_, 2), Mv_tmp(d_, 2);
 
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
     mesh_->node_get_cell_faces(v, c, (ParallelTypeCast)WhetStone::USED, &corner_faces);
     int nfaces = corner_faces.size();
-    if (nfaces < d) {
+    if (nfaces < d_) {
       Errors::Message msg;
       msg << "WhetStone MFD3D_Diffusion: number of faces forming a corner is small.";
       Exceptions::amanzi_throw(msg);
     }
 
-    for (int i = 0; i < d; i++) {
+    for (int i = 0; i < d_; i++) {
       int f = corner_faces[i];
       N.SetColumn(i, mesh_->face_normal(f));
     }
@@ -150,7 +145,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
     Mv_tmp = NK * N;
     Mv.push_back(Mv_tmp);
 
-    for (int i = 0; i < d; i++) {
+    for (int i = 0; i < d_; i++) {
       int f = corner_faces[i];
       cwgt_tmp /= mesh_->face_area(f);
     }
@@ -171,9 +166,9 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
     mesh_->node_get_cell_faces(v, c, (ParallelTypeCast)WhetStone::USED, &corner_faces);
 
     Tensor& Mv_tmp = Mv[n];
-    for (int i = 0; i < d; i++) {
+    for (int i = 0; i < d_; i++) {
       int k = FindPosition_(corner_faces[i], faces);
-      for (int j = i; j < d; j++) {
+      for (int j = i; j < d_; j++) {
         int l = FindPosition_(corner_faces[j], faces);
         W(k, l) += Mv_tmp(i, j) * cwgt[n] * fdirs[k] * fdirs[l];
         W(l, k) = W(k, l);

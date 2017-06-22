@@ -40,23 +40,23 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
   int num_faces = faces.size();
   if (num_faces != R.NumRows()) return num_faces;  // matrix was not reshaped
 
-  int dir, d = mesh_->space_dimension();
+  int dir;
   double volume = mesh_->cell_volume(c);
 
   // calculate cell normal
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   const AmanziGeometry::Point& xf1 = mesh_->face_centroid(faces[0]);
   const AmanziGeometry::Point& xf2 = mesh_->face_centroid(faces[1]);
-  AmanziGeometry::Point v1(d), v2(d), v3(d);
+  AmanziGeometry::Point v1(d_), v2(d_), v3(d_);
 
   v1 = (xf1 - xc)^(xf2 - xc);
   v1 /= norm(v1);
 
   // calculate projector
-  Tensor P(d, 2); 
-  for (int i = 0; i < d; i++) {
+  Tensor P(d_, 2); 
+  for (int i = 0; i < d_; i++) {
     P(i, i) = 1.0;
-    for (int j = 0; j < d; j++) { 
+    for (int j = 0; j < d_; j++) { 
       P(i, j) -= v1[i] * v1[j];
     }
   }
@@ -67,7 +67,7 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
   v3 = v1^v2; 
 
   // define new tensor
-  Tensor PTP(d, 2);
+  Tensor PTP(d_, 2);
   PTP = P * T * P;
 
   for (int i = 0; i < num_faces; i++) {
@@ -104,13 +104,11 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
 int MFD3D_Diffusion::MassMatrixInverseSurface(
     int c, const Tensor& permeability, DenseMatrix& W)
 {
-  int d = mesh_->space_dimension();
   int nfaces = W.NumRows();
-
-  DenseMatrix R(nfaces, d - 1);
+  DenseMatrix R(nfaces, d_ - 1);
 
   int ok = L2consistencyInverseSurface(c, permeability, R, W);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   StabilityScalar_(R, W);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;

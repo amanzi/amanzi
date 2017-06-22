@@ -51,8 +51,8 @@ void RunTestConvergence(std::string input_xml) {
 
   for (int n = 40; n < 161; n*=2) {
     Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm));
+    Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm));
     
     FrameworkPreference pref;
     pref.clear();

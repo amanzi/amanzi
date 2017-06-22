@@ -49,11 +49,9 @@ void InnerProduct::StabilityScalar_(DenseMatrix& N, DenseMatrix& M)
 * A simple optimization procedure that returns a diagonal mass
 * matrix for a 2D and 3D orthogonal cells and diagonal tensors. 
 * The algorithm minimizes off-diagonal entries in the mass matrix.
-* WARNING: the routine is used for inverse of mass matrix only.
 ****************************************************************** */
 int InnerProduct::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M)
 {
-  int d = mesh_->space_dimension();
   int nrows = N.NumRows();
   int ncols = N.NumCols();
 
@@ -121,14 +119,11 @@ int InnerProduct::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatr
   DenseMatrix P(mcols, mcols);
   P.PutScalar(0.0);
 
-  int status = WHETSTONE_ELEMENTAL_MATRIX_OK;
   for (int loop = 0; loop < 3; loop++) {
     if (loop == 1) {   
       for (int i = 0; i < mcols; i++) G(i) = std::max(G(i), 0.0);
-      status = WHETSTONE_ELEMENTAL_MATRIX_PASSED;
     } else if (loop == 2) {
       for (int i = mcols; i < nparam; i++) G(i) = std::max(G(i), 0.0);
-      status = WHETSTONE_ELEMENTAL_MATRIX_PASSED;
     }
 
     for (int k = 0; k < mcols; k++) P(k, k) = G(k);
@@ -173,7 +168,7 @@ int InnerProduct::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatr
     }
   }
 
-  return status;
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
 

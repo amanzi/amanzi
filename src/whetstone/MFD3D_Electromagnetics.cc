@@ -34,8 +34,8 @@ namespace WhetStone {
 int MFD3D_Electromagnetics::H1consistency(
     int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
 {
-  int ok, d = mesh_->space_dimension();
-  if (d == 2) {
+  int ok;
+  if (d_ == 2) {
     ok = H1consistency2DExperimental_(c, T, N, Ac);
   } else {
     ok = H1consistency3DExperimental_(c, T, N, Ac);
@@ -178,13 +178,11 @@ int MFD3D_Electromagnetics::H1consistency3DExperimental_(
 ****************************************************************** */
 int MFD3D_Electromagnetics::MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& M)
 {
-  int d = mesh_->space_dimension();
   int nrows = M.NumRows();
-
-  DenseMatrix N(nrows, d);
+  DenseMatrix N(nrows, d_);
 
   int ok = L2consistency(c, T, N, M, true);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   ok = StabilityOptimized_(T, N, M);
   return ok;
@@ -198,13 +196,11 @@ int MFD3D_Electromagnetics::MassMatrixOptimized(int c, const Tensor& T, DenseMat
 int MFD3D_Electromagnetics::MassMatrixInverseOptimized(
     int c, const Tensor& T, DenseMatrix& W)
 {
-  int d = mesh_->space_dimension();
   int nrows = W.NumRows();
-
-  DenseMatrix R(nrows, d);
+  DenseMatrix R(nrows, d_);
 
   int ok = L2consistencyInverse(c, T, R, W, true);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   ok = StabilityOptimized_(T, R, W);
   return ok;
@@ -227,7 +223,6 @@ int MFD3D_Electromagnetics::StiffnessMatrix(
   DenseMatrix M(nfaces, nfaces), C(nfaces, nedges);
 
   int ok = StiffnessMatrix(c, T, A, M, C);
-
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -255,8 +250,7 @@ int MFD3D_Electromagnetics::StiffnessMatrix(
   // fluxes; hence, there is no face area scaling.
   C.PutScalar(0.0);
 
-  int d = mesh_->space_dimension();
-  if (d == 2) {
+  if (d_ == 2) {
     mesh_->cell_get_nodes(c, &nodes);
 
     for (int i = 0; i < nfaces; ++i) {
@@ -293,14 +287,12 @@ int MFD3D_Electromagnetics::StiffnessMatrix(
 int MFD3D_Electromagnetics::StiffnessMatrixExperimental(
     int c, const Tensor& T, DenseMatrix& A)
 {
-  int d = mesh_->space_dimension();
   int nedges = A.NumRows();
-
-  int nd = d * (d + 1) / 2;
+  int nd = d_ * (d_ + 1) / 2;
   DenseMatrix N(nedges, nd);
 
   int ok = H1consistency(c, T, N, A);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   StabilityScalar_(N, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;

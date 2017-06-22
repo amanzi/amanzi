@@ -27,8 +27,8 @@ namespace WhetStone {
 int DeRham_Edge::L2consistency(int c, const Tensor& T,
                                DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
-  int ok, d = mesh_->space_dimension();
-  if (d == 2) {
+  int ok;
+  if (d_ == 2) {
     ok = L2consistency2D_(c, T, N, Mc);
   } else {
     ok = L2consistency3D_(c, T, N, Mc);
@@ -197,13 +197,11 @@ int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
 ****************************************************************** */
 int DeRham_Edge::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
 {
-  int d = mesh_->space_dimension();
   int nrows = M.NumRows();
-
-  DenseMatrix N(nrows, d);
+  DenseMatrix N(nrows, d_);
 
   int ok = L2consistency(c, T, N, M, true);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   StabilityScalar_(N, M);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -216,8 +214,8 @@ int DeRham_Edge::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
 int DeRham_Edge::L2consistencyInverse(
     int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
 {
-  int ok, d = mesh_->space_dimension();
-  if (d == 2) {
+  int ok;
+  if (d_ == 2) {
     ok = L2consistencyInverse2D_(c, T, R, Wc);
   } else {
     ok = L2consistencyInverse3D_(c, T, R, Wc);
@@ -376,13 +374,11 @@ int DeRham_Edge::L2consistencyInverse3D_(
 ****************************************************************** */
 int DeRham_Edge::MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W)
 {
-  int d = mesh_->space_dimension();
   int nrows = W.NumRows();
-
-  DenseMatrix R(nrows, d);
+  DenseMatrix R(nrows, d_);
 
   int ok = L2consistencyInverse(c, T, R, W, true);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   StabilityScalar_(R, W);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;

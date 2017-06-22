@@ -39,12 +39,11 @@ int MFD3D_Diffusion::L2consistencyScaledArea(
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
   int nfaces = faces.size();
-  if (nfaces != N.NumRows()) return nfaces;  // matrix was not reshaped
+  if (nfaces != N.NumRows()) return WHETSTONE_ELEMENTAL_MATRIX_SIZE;
 
-  int d = mesh_->space_dimension();
   double volume = mesh_->cell_volume(c);
 
-  AmanziGeometry::Point v1(d), v2(d);
+  AmanziGeometry::Point v1(d_), v2(d_);
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
   Tensor Kinv(K);
@@ -68,8 +67,9 @@ int MFD3D_Diffusion::L2consistencyScaledArea(
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    for (int k = 0; k < d; k++) N(i, k) = normal[k] * dirs[i];
+    for (int k = 0; k < d_; k++) N(i, k) = normal[k] * dirs[i];
   }
+
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -89,10 +89,9 @@ int MFD3D_Diffusion::L2consistencyInverseScaledArea(
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
   int num_faces = faces.size();
-  if (num_faces != R.NumRows()) return num_faces;  // matrix was not reshaped
+  if (num_faces != R.NumRows()) return WHETSTONE_ELEMENTAL_MATRIX_SIZE;
 
-  int d = mesh_->space_dimension();
-  AmanziGeometry::Point v1(d);
+  AmanziGeometry::Point v1(d_);
   double volume = mesh_->cell_volume(c);
 
   Tensor Kt(K);
@@ -119,7 +118,7 @@ int MFD3D_Diffusion::L2consistencyInverseScaledArea(
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-    for (int k = 0; k < d; k++) R(i, k) = fm[k] - cm[k];
+    for (int k = 0; k < d_; k++) R(i, k) = fm[k] - cm[k];
   }
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -139,15 +138,14 @@ int MFD3D_Diffusion::H1consistency(
 
   mesh_->cell_get_nodes(c, &nodes);
   int num_nodes = nodes.size();
-  if (num_nodes != N.NumRows()) return num_nodes;  // matrix was not reshaped
+  if (num_nodes != N.NumRows()) return WHETSTONE_ELEMENTAL_MATRIX_SIZE;
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
-  int d = mesh_->space_dimension();
   double volume = mesh_->cell_volume(c);
-  AmanziGeometry::Point p(d), pnext(d), pprev(d), v1(d), v2(d), v3(d);
+  AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
 
-  /* to calculate matrix R, we use temporary matrix N */
+  // to calculate matrix R, we use temporary matrix N
   N.PutScalar(0.0);
 
   int num_faces = faces.size();
@@ -165,7 +163,7 @@ int MFD3D_Diffusion::H1consistency(
       int v = face_nodes[j];
       double u(0.5);
 
-      if (d == 2) {
+      if (d_ == 2) {
         u = 0.5 * dirs[i]; 
       } else {
         int jnext = (j + 1) % num_face_nodes;
@@ -185,16 +183,17 @@ int MFD3D_Diffusion::H1consistency(
       }
 
       int pos = FindPosition_(v, nodes);
-      for (int k = 0; k < d; k++) N(pos, k) += normal[k] * u;
+      for (int k = 0; k < d_; k++) N(pos, k) += normal[k] * u;
     }
   }
 
-  for (int i = 0; i < num_nodes; i++) {  // calculate R K R^T / volume
-    for (int k = 0; k < d; k++) v1[k] = N(i, k);
+  // calculate upper part of R K R^T / volume
+  for (int i = 0; i < num_nodes; i++) { 
+    for (int k = 0; k < d_; k++) v1[k] = N(i, k);
     v2 = K * v1;
 
     for (int j = i; j < num_nodes; j++) {
-      for (int k = 0; k < d; k++) v1[k] = N(j, k);
+      for (int k = 0; k < d_; k++) v1[k] = N(j, k);
       Ac(i, j) = (v1 * v2) / volume;
     }
   }
@@ -203,9 +202,10 @@ int MFD3D_Diffusion::H1consistency(
   for (int i = 0; i < num_nodes; i++) {
     int v = nodes[i];
     mesh_->node_get_coordinates(v, &p);
-    for (int k = 0; k < d; k++) N(i, k) = p[k] - cm[k];
-    N(i, d) = 1;  // additional column is added to the consistency condition
+    for (int k = 0; k < d_; k++) N(i, k) = p[k] - cm[k];
+    N(i, d_) = 1.0;  // additional column is added to the consistency condition
   }
+
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -218,15 +218,14 @@ int MFD3D_Diffusion::H1consistency(
 int MFD3D_Diffusion::H1consistencyEdge(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
+  ASSERT(d_ == 2);
+
   Entity_ID_List edges, faces, face_edges;
   std::vector<int> dirs, map;
 
-  int d = mesh_->space_dimension();
-  ASSERT(d == 2);
-
   mesh_->cell_get_edges(c, &edges);
   int num_edges = edges.size();
-  if (num_edges != N.NumRows()) return num_edges;  // matrix was not reshaped
+  if (num_edges != N.NumRows()) return WHETSTONE_ELEMENTAL_MATRIX_SIZE;
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   int num_faces = faces.size();
@@ -238,27 +237,27 @@ int MFD3D_Diffusion::H1consistencyEdge(
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-    if (d == 2) {
-      for (int k = 0; k < d; k++) N(i, k) += normal[k] * dirs[i];
+    if (d_ == 2) {
+      for (int k = 0; k < d_; k++) N(i, k) += normal[k] * dirs[i];
     } else {
       mesh_->face_to_cell_edge_map(f, c, &map);
       int num_face_edges = map.size();
 
       for (int j = 0; j < num_face_edges; j++) {
-        for (int k = 0; k < d; k++) N(map[j], k) += normal[k] * dirs[i];
+        for (int k = 0; k < d_; k++) N(map[j], k) += normal[k] * dirs[i];
       }
     }
   }
 
   // calculate R K R^T / volume
-  AmanziGeometry::Point v1(d), v2(d);
+  AmanziGeometry::Point v1(d_), v2(d_);
   double volume = mesh_->cell_volume(c);
   for (int i = 0; i < num_edges; i++) {
-    for (int k = 0; k < d; k++) v1[k] = N(i, k);
+    for (int k = 0; k < d_; k++) v1[k] = N(i, k);
     v2 = K * v1;
 
     for (int j = i; j < num_edges; j++) {
-      for (int k = 0; k < d; k++) v1[k] = N(j, k);
+      for (int k = 0; k < d_; k++) v1[k] = N(j, k);
       Ac(i, j) = (v1 * v2) / volume;
     }
   }
@@ -268,9 +267,10 @@ int MFD3D_Diffusion::H1consistencyEdge(
   for (int i = 0; i < num_edges; i++) {
     int e = edges[i];
     const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
-    for (int k = 0; k < d; k++) N(i, k) = xe[k] - xc[k];
-    N(i, d) = 1;  // additional column is added to the consistency condition
+    for (int k = 0; k < d_; k++) N(i, k) = xe[k] - xc[k];
+    N(i, d_) = 1;  // additional column is added to the consistency condition
   }
+
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -280,16 +280,14 @@ int MFD3D_Diffusion::H1consistencyEdge(
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixScaledArea(int c, const Tensor& K, DenseMatrix& M)
 {
-  int d = mesh_->space_dimension();
   int nfaces = M.NumRows();
-
-  DenseMatrix N(nfaces, d);
+  DenseMatrix N(nfaces, d_);
 
   Tensor Kinv(K);
   Kinv.Inverse();
 
   int ok = L2consistencyScaledArea(c, Kinv, N, M, true);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   StabilityScalar_(N, M);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -301,16 +299,14 @@ int MFD3D_Diffusion::MassMatrixScaledArea(int c, const Tensor& K, DenseMatrix& M
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix& M)
 {
-  int d = mesh_->space_dimension();
   int nfaces = M.NumRows();
-
-  DenseMatrix N(nfaces, d);
+  DenseMatrix N(nfaces, d_);
 
   Tensor Kinv(K);
   Kinv.Inverse();
 
   int ok = L2consistencyScaledArea(c, Kinv, N, M, false);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   StabilityScalarNonSymmetric_(c, N, M);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -322,13 +318,11 @@ int MFD3D_Diffusion::MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix&
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseNonSymmetric(int c, const Tensor& K, DenseMatrix& W)
 {
-  int d = mesh_->space_dimension();
   int nfaces = W.NumRows();
-
-  DenseMatrix R(nfaces, d);
+  DenseMatrix R(nfaces, d_);
 
   int ok = L2consistencyInverseScaledArea(c, K, R, W, false);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   StabilityScalarNonSymmetric_(c, R, W);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -340,13 +334,11 @@ int MFD3D_Diffusion::MassMatrixInverseNonSymmetric(int c, const Tensor& K, Dense
 ****************************************************************** */
 int MFD3D_Diffusion::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 {
-  int d = mesh_->space_dimension();
   int nnodes = A.NumRows();
-
-  DenseMatrix N(nnodes, d + 1);
+  DenseMatrix N(nnodes, d_ + 1);
 
   int ok = H1consistency(c, K, N, A);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   StabilityScalar_(N, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -358,13 +350,11 @@ int MFD3D_Diffusion::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 ****************************************************************** */
 int MFD3D_Diffusion::StiffnessMatrixOptimized(int c, const Tensor& K, DenseMatrix& A)
 {
-  int d = mesh_->space_dimension();
   int nnodes = A.NumRows();
-
-  DenseMatrix N(nnodes, d + 1);
+  DenseMatrix N(nnodes, d_ + 1);
 
   int ok = H1consistency(c, K, N, A);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   ok = StabilityOptimized_(K, N, A);
   return ok;
@@ -376,13 +366,11 @@ int MFD3D_Diffusion::StiffnessMatrixOptimized(int c, const Tensor& K, DenseMatri
 ****************************************************************** */
 int MFD3D_Diffusion::StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix& A)
 {
-  int d = mesh_->space_dimension();
   int nnodes = A.NumRows();
-
-  DenseMatrix N(nnodes, d + 1);
+  DenseMatrix N(nnodes, d_ + 1);
 
   int ok = H1consistency(c, K, N, A);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   // scaling of matrix A for numerical stability
   double s = A.Trace() / nnodes;
@@ -390,7 +378,7 @@ int MFD3D_Diffusion::StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix&
 
   int objective = WHETSTONE_SIMPLEX_FUNCTIONAL_TRACE;
   StabilityMMatrix_(c, N, A, objective);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   A *= s;
   simplex_functional_ *= s;
@@ -403,13 +391,11 @@ int MFD3D_Diffusion::StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix&
 ****************************************************************** */
 int MFD3D_Diffusion::StiffnessMatrixEdge(int c, const Tensor& K, DenseMatrix& A)
 {
-  int d = mesh_->space_dimension();
   int nedges = A.NumRows();
-
-  DenseMatrix N(nedges, d + 1);
+  DenseMatrix N(nedges, d_ + 1);
 
   int ok = H1consistencyEdge(c, K, N, A);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   StabilityScalar_(N, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -424,7 +410,6 @@ int MFD3D_Diffusion::StiffnessMatrixEdge(int c, const Tensor& K, DenseMatrix& A)
 int MFD3D_Diffusion::RecoverGradient_MassMatrix(
     int c, const std::vector<double>& solution, AmanziGeometry::Point& gradient)
 {
-  int d = mesh_->space_dimension();
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
   Entity_ID_List faces;
@@ -438,7 +423,7 @@ int MFD3D_Diffusion::RecoverGradient_MassMatrix(
     int f = faces[i];
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
 
-    for (int k = 0; k < d; k++) {
+    for (int k = 0; k < d_; k++) {
       double Rik = fm[k] - cm[k];
       gradient[k] += Rik * solution[i] * dirs[i];
     }
@@ -467,9 +452,8 @@ int MFD3D_Diffusion::RecoverGradient_StiffnessMatrix(
   int num_faces = faces.size();
 
   // populate matrix R (should be a separate routine lipnikov@lanl.gv)
-  int d = mesh_->space_dimension();
-  DenseMatrix R(num_nodes, d);
-  AmanziGeometry::Point p(d), pnext(d), pprev(d), v1(d), v2(d), v3(d);
+  DenseMatrix R(num_nodes, d_);
+  AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
 
   R.PutScalar(0.0);
   for (int i = 0; i < num_faces; i++) {
@@ -486,7 +470,7 @@ int MFD3D_Diffusion::RecoverGradient_StiffnessMatrix(
       int v = face_nodes[j];
       double u(0.5);
 
-      if (d == 2) {
+      if (d_ == 2) {
         u = 0.5 * dirs[i]; 
       } else {
         int jnext = (j + 1) % num_face_nodes;
@@ -506,13 +490,13 @@ int MFD3D_Diffusion::RecoverGradient_StiffnessMatrix(
       }
 
       int pos = FindPosition_(v, nodes);
-      for (int k = 0; k < d; k++) R(pos, k) += normal[k] * u;
+      for (int k = 0; k < d_; k++) R(pos, k) += normal[k] * u;
     }
   }
 
   gradient.set(0.0);
   for (int i = 0; i < num_nodes; i++) {
-    for (int k = 0; k < d; k++) {
+    for (int k = 0; k < d_; k++) {
       gradient[k] += R(i, k) * solution[i];
     }
   }
@@ -550,8 +534,7 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
   }
 
   // populate matrix W_0
-  int d = mesh_->space_dimension();
-  AmanziGeometry::Point v1(d), v2(d);
+  AmanziGeometry::Point v1(d_), v2(d_);
   double volume = mesh_->cell_volume(c);
 
   for (int i = 0; i < num_faces; i++) {
@@ -572,7 +555,7 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
 
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
-    if (d == 2) { 
+    if (d_ == 2) { 
       mesh_->face_get_nodes(f, &nodes);
 
       mesh_->node_get_coordinates(nodes[0], &v1);
@@ -585,7 +568,7 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
       double k2 = kmean + kgrad * v2;
       double km = k1 + k2;
       double tmp = areas[i] / 6;
-      for (int k = 0; k < d; k++) {
+      for (int k = 0; k < d_; k++) {
         double vm = v1[k] + v2[k];
         R(i, k) = (k1 * v1[k] + k2 * v2[k] + km * vm) * tmp;
       }
@@ -603,13 +586,11 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
 {
-  int d = mesh_->space_dimension();
   int nfaces = W.NumRows();
-
-  DenseMatrix R(nfaces, d);
+  DenseMatrix R(nfaces, d_);
 
   int ok = L2consistencyInverse(c, K, R, W, true);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
  
   StabilityScalar_(R, W);
   RescaleMassMatrixInverse_(c, W);
@@ -624,16 +605,14 @@ int MFD3D_Diffusion::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
 int MFD3D_Diffusion::MassMatrixInverseMMatrixHex(
     int c, const Tensor& K, DenseMatrix& W)
 {
-  int d = mesh_->space_dimension();
   int nfaces = W.NumRows();
-
-  DenseMatrix R(nfaces, d);
+  DenseMatrix R(nfaces, d_);
 
   int ok = L2consistencyInverseScaledArea(c, K, R, W, true);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   ok = StabilityMMatrixHex_(c, K, W);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
@@ -645,21 +624,19 @@ int MFD3D_Diffusion::MassMatrixInverseMMatrixHex(
 int MFD3D_Diffusion::MassMatrixInverseMMatrix(
     int c, const Tensor& K, DenseMatrix& W)
 {
-  int d = mesh_->space_dimension();
   int nfaces = W.NumRows();
-
-  DenseMatrix R(nfaces, d);
+  DenseMatrix R(nfaces, d_);
 
   // use boolean flag to populate the whole matrix
   int ok = L2consistencyInverseScaledArea(c, K, R, W, false);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   // scaling of matrix W for numerical stability
   double s = W.Trace() / nfaces;
   W /= s;
 
   ok = StabilityMMatrix_(c, R, W);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
 
   W *= s;
   simplex_functional_ *= s;
@@ -673,13 +650,11 @@ int MFD3D_Diffusion::MassMatrixInverseMMatrix(
 int MFD3D_Diffusion::MassMatrixInverseOptimized(
     int c, const Tensor& K, DenseMatrix& W)
 {
-  int d = mesh_->space_dimension();
   int nfaces = W.NumRows();
-
-  DenseMatrix R(nfaces, d);
+  DenseMatrix R(nfaces, d_);
 
   int ok = L2consistencyInverse(c, K, R, W, true);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
  
   ok = StabilityOptimized_(K, R, W);
   RescaleMassMatrixInverse_(c, W);
@@ -694,13 +669,11 @@ int MFD3D_Diffusion::MassMatrixInverseOptimized(
 int MFD3D_Diffusion::MassMatrixInverseDivKScaled(
     int c, const Tensor& K, double kmean, const AmanziGeometry::Point& kgrad, DenseMatrix& W)
 {
-  int d = mesh_->space_dimension();
   int nfaces = W.NumRows();
-
-  DenseMatrix R(nfaces, d);
+  DenseMatrix R(nfaces, d_);
 
   int ok = L2consistencyInverseDivKScaled(c, K, kmean, kgrad, R, W);
-  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return ok;
  
   StabilityScalar_(R, W);
   RescaleMassMatrixInverse_(c, W);
@@ -738,8 +711,7 @@ void MFD3D_Diffusion::RescaleMassMatrixInverse_(int c, DenseMatrix& W)
 ****************************************************************** */
 int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M)
 {
-  int d = mesh_->space_dimension();
-  int nrows = 2 * d;
+  int nrows = 2 * d_;
 
   // symmetrize the consistency matrix
   for (int i = 0; i < nrows; i++) {
@@ -756,8 +728,8 @@ int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M
 
   int i1, i2, k, l;
   double s1, s2, area1, area2;
-  for (int i = 0; i < d-1; i++) {
-    int i1 = 2*i;
+  for (int i = 0; i < d_ - 1; i++) {
+    int i1 = 2 * i;
     int i2 = i1 + 1;
 
     int f = faces[i1];
@@ -782,16 +754,16 @@ int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M
   }
 
   // define transformed tensor
-  Tensor T1(d, 2);
-  AmanziGeometry::Point areas(d);
-  for (int i = 0; i < d; i++) {
+  Tensor T1(d_, 2);
+  AmanziGeometry::Point areas(d_);
+  for (int i = 0; i < d_; i++) {
     k = map[2*i];
     int f = faces[k];
     const AmanziGeometry::Point& normal1 = mesh_->face_normal(f);
     area1 = mesh_->face_area(f);
     areas[i] = area1;
 
-    for (int j = i; j < d; j++) {
+    for (int j = i; j < d_; j++) {
       l = map[2*j];
       f = faces[l];
       const AmanziGeometry::Point& normal2 = mesh_->face_normal(f);
@@ -807,17 +779,17 @@ int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M
   }
 
   // verify SPD property
-  if (d == 3) {
+  if (d_ == 3) {
     double lower, upper;
     T1.SpectralBounds(&lower, &upper);
-    if (lower <= 0.0) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+    if (lower <= 0.0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
   }
 
   // verify monotonicity property
-  AmanziGeometry::Point T1a(d);
+  AmanziGeometry::Point T1a(d_);
   T1a = T1 * areas;
-  for (int i = 0; i < d; i++) {
-    if (T1a[i] <= 0.0) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  for (int i = 0; i < d_; i++) {
+    if (T1a[i] <= 0.0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
   }
 
   // add stability term D_ik T1_kl D_il
