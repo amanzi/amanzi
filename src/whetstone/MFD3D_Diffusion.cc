@@ -145,7 +145,7 @@ int MFD3D_Diffusion::H1consistency(
   double volume = mesh_->cell_volume(c);
   AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
 
-  /* to calculate matrix R, we use temporary matrix N */
+  // to calculate matrix R, we use temporary matrix N
   N.PutScalar(0.0);
 
   int num_faces = faces.size();
@@ -187,7 +187,8 @@ int MFD3D_Diffusion::H1consistency(
     }
   }
 
-  for (int i = 0; i < num_nodes; i++) {  // calculate R K R^T / volume
+  // calculate upper part of R K R^T / volume
+  for (int i = 0; i < num_nodes; i++) { 
     for (int k = 0; k < d_; k++) v1[k] = N(i, k);
     v2 = K * v1;
 
@@ -202,8 +203,9 @@ int MFD3D_Diffusion::H1consistency(
     int v = nodes[i];
     mesh_->node_get_coordinates(v, &p);
     for (int k = 0; k < d_; k++) N(i, k) = p[k] - cm[k];
-    N(i, d_) = 1;  // additional column is added to the consistency condition
+    N(i, d_) = 1.0;  // additional column is added to the consistency condition
   }
+
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 

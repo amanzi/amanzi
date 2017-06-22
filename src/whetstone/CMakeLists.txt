@@ -119,6 +119,12 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/whetstone_dg.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+    # Test: matrices for Derham complex
+    add_amanzi_test(whetstone_derham whetstone_derham
+                    KIND unit
+                    SOURCE test/Main.cc test/whetstone_derham.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
 endif()
 
 
