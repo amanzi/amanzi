@@ -1,14 +1,32 @@
 /*
-  Time Integration
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
+*/
 
-  Factory for timestep control.
+//! Factory for creating TimestepController objects
+
+/*!
+
+A TimestepController object sets what size timestep to take.  This can be a
+variety of things, from fixed timestep size, to adaptive based upon error
+control, to adapter based upon simple nonlinear iteration counts.
+
+
+* `"timestep controller type`" ``[string]`` Set the type.  One of the below types.
+* `"timestep controller X parameters`" ``[list]`` List of parameters for a timestep controller of type X.
+
+Available types include:
+
+* TimestepControllerFixed_  (type `"fixed`"), a constant timestep
+* TimestepControllerStandard_ (type `'standard`"), an adaptive timestep based upon nonlinear iterations
+* TimestepControllerSmarter_ (type `'smarter`"), an adaptive timestep based upon nonlinear iterations with more control
+* TimestepControllerAdaptive_ (type `"adaptive`"), an adaptive timestep based upon error control.
+* TimestepControllerFromFile_ (type `"from file`"), uses a timestep history loaded from an HDF5 file.  (Usually only used for regression testing.)
+
 */
 
 #ifndef AMANZI_TS_CONTROLLER_FACTORY_HH_
@@ -24,6 +42,7 @@
 #include "TimestepControllerStandard.hh"
 #include "TimestepControllerSmarter.hh"
 #include "TimestepControllerAdaptive.hh"
+#include "TimestepControllerFromFile.hh"
 
 
 namespace Amanzi {
@@ -79,6 +98,14 @@ Teuchos::RCP<TimestepController> TimestepControllerFactory<Vector>::Create(
       }
       Teuchos::ParameterList tslist = slist.sublist("timestep controller adaptive parameters");
       return Teuchos::rcp(new TimestepControllerAdaptive<Vector>(tslist, udot, udot_prev));
+
+    } else if (type == "from file") {
+      if (!slist.isSublist("timestep controller from file parameters")) {
+        Errors::Message msg("TimestepControllerFactory: missing sublist \"timestep controller from file parameters\"");
+        Exceptions::amanzi_throw(msg);
+      }
+      Teuchos::ParameterList tslist = slist.sublist("timestep controller from file parameters");
+      return Teuchos::rcp(new TimestepControllerFromFile(tslist));
 
     } else {
       Errors::Message msg("TimestepControllerFactory: invalid value of parameter `\"timestep controller type`\"");
