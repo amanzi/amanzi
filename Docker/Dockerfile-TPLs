@@ -33,7 +33,7 @@ USER amanzi_user
 WORKDIR /home/amanzi_user
 RUN git clone https://github.com/amanzi/amanzi.git
 
-ENV PATH=/home/amanzi_user/amanzi_installdir/tpls/bin:$PATH 
+ENV PATH=/home/amanzi_user/local/tpls/bin:$PATH 
 WORKDIR /home/amanzi_user/amanzi
 RUN git checkout alexis/docker
 RUN ./bootstrap.sh --prefix=/home/amanzi_user/local \
