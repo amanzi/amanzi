@@ -12,7 +12,7 @@ branches:
 
 install:
   - cd Docker
-  - docker build -t "$DOCKER_USERNAME"/amanzi:latest -f Dockerfile-Amanzi .
+  - docker build -t ${DOCKER_USERNAME}/amanzi:latest -f Dockerfile-Amanzi .
 
 script:
   - docker run --name test --workdir /home/amanzi_user/amanzi_builddir/amanzi "$DOCKER_USERNAME"/amanzi:latest  make test
