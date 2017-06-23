@@ -1,5 +1,5 @@
 FROM ubuntu:latest
-LABEL Description="This image builds all of the third-party libraries needed by Amanzi"
+LABEL Description="This image builds all of the third-party libraries needed by Amanzi (based on the alexis/docker branch)"
 
 ENV http_proxy=http://proxyout.lanl.gov:8080 \
   https_proxy=https://proxyout.lanl.gov:8080 \
