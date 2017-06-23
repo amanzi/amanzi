@@ -1,0 +1,25 @@
+language: cpp
+
+sudo: required
+
+services:
+  - docker
+
+branches:
+  only:
+  - master
+  - alexis/docker
+
+install:
+  - cd ${HOME}/Docker
+  - docker build -t "$DOCKER_USERNAME"/amanzi:latest -f Dockerfile-Amanzi .
+
+script:
+  - docker run --name test --workdir /home/amanzi_user/amanzi_builddir/amanzi "$DOCKER_USERNAME"/amanzi:latest  make test
+
+after_success:
+  - if [[ ${DOCKERHUB} == true && ${DOCKER_USERNAME} && ${DOCKER_PASSWORD} && ${TRAVIS_PULL_REQUEST} == false && ${DEPLOY} ]]; then
+      docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD" || travis_terminate 1;
+      docker push "$DOCKER_USERNAME"/amanzi-tpls || travis_terminate 1;
+      docker push "$DOCKER_USERNAME"/amanzi || travis_terminate 1;
+    fi
