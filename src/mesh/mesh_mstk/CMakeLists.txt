@@ -54,6 +54,10 @@ if (WITH_MSTK_2_21rc1_OR_NEWER)
   add_definitions("-DMSTK_2_21rc1_OR_NEWER")
 endif ()
 
+if (WITH_MSTK_3_00_OR_NEWER)
+  add_definitions("-DMSTK_3_00_OR_NEWER")
+endif ()
+
 #
 # Library: mstk_mesh
 #
