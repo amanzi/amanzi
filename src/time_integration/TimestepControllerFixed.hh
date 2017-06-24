@@ -1,15 +1,23 @@
 /*
-  Time Integration
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
-
-  Fixed timestep size, with step size set by the PK's initial timestep size.
 */
+
+
+//!  Timestep controller providing constant timestep size.
+
+/*!
+
+``TimestepControllerFixed`` is a simple timestep control mechanism which sets
+a constant timestep size.  Note that the actual timestep size is given by the
+minimum of PK's initial timestep sizes.
+
+*/
+
 
 #ifndef AMANZI_FIXED_TIMESTEP_CONTROLLER_HH_
 #define AMANZI_FIXED_TIMESTEP_CONTROLLER_HH_

@@ -1,4 +1,6 @@
 import xml.etree.ElementTree as etree
+import errors as aerrors
+import io as aio
 
 objects = dict()
 
@@ -25,7 +27,15 @@ def _listObjectFromElement(elem):
     # see if this is a new-style elem, whose Lists have Types
     cname = elem.get("type")
     if cname is not None:
-        return objects[cname].from_Element(elem)
+        try:
+            obj = objects[cname]
+        except KeyError:
+            print "Error interpreting list:"
+            print elem, cname
+            print objects.keys()
+            raise aerrors.NotNativeSpecError()
+        else:
+            return obj.from_Element(elem)
 
     # else try to guess the type from the List name
     cname = elem.get('name')
