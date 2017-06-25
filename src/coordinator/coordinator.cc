@@ -434,6 +434,10 @@ double Coordinator::get_dt(bool after_fail) {
   // get the physical step size
   double dt = pk_->get_dt();
 
+  if (dt < 0.) {
+    return dt;
+  }
+
   // check if the step size has gotten too small
   if (dt < min_dt_) {
     Errors::Message message("Coordinator: error, timestep too small");
@@ -580,7 +584,8 @@ void Coordinator::cycle_driver() {
     bool fail = false;
     while ((S_->time() < t1_) &&
            ((cycle1_ == -1) || (S_->cycle() <= cycle1_)) &&
-           (duration_ < 0 || timer_->totalElapsedTime(true) < duration)) {
+           (duration_ < 0 || timer_->totalElapsedTime(true) < duration) &&
+           dt > 0.) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
         Teuchos::OSTab tab = vo_->getOSTab();
         *vo_->os() << "======================================================================"
