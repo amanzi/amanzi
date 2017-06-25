@@ -67,8 +67,9 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
       "unstr_flow_controls, saturated_linear_solver", "pcg", "");
 
   if (pk_model_.find("flow") != pk_model_.end()) {
+    std::string enforce = (pk_model_["flow"] == "richards") ? "gmres" : "";
     out_list.sublist("GMRES with Hypre AMG") = TranslateLinearSolvers_(
-        "unstr_flow_controls, constraints_linear_solver", LINEAR_SOLVER_METHOD, "gmres");
+        "unstr_flow_controls, constraints_linear_solver", LINEAR_SOLVER_METHOD, enforce);
   }
 
   // add default "GMRES for Newton" solver
