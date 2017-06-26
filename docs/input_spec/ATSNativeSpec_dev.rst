@@ -701,9 +701,12 @@ An ``[observation-spec]`` consists of the following quantities:
 
 * Additionally, each ``[observation-spec]`` contains all parameters as in a IOEvent_ spec, which are used to specify at which times/cycles the observation is collected.
 
-For flux observations, and additional option is available:
+For flux observations, additional options are available:
 
-* `"direction normalized flux`" [bool] *false* Normalize the flux to point in the outward-normal direction.  This is important when looking at fluxes across a boundary, for instance to plot a hydrograph.
+* `"direction normalized flux`" [bool] *false* Dots the face-normal flux with a vector to ensure fluxes are integrated pointing the same direction.
+
+* `"direction normalized flux direction`" [Array(double)] Provides the vector to dot the face normal with.  If this is not provided, then it is assumed that the faces integrated over are all boundary faces and that the default vector is the outward normal direction for each face.
+
 
 
 Example:
@@ -1306,96 +1309,13 @@ for inclusion of multiple phases.
 
 RichardsWaterContentEvaluator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
- RichardsWaterContentEvaluator: water content without vapor
-Evaluator type: `"richards water content`"
-
-Evaluates water content in cell E.
-
-.. math::
-  \Theta = \phi n_{{liq}} s_{{liq}} |E|
-
-* `"my key`" ``[string]`` **DOMAIN_water_content** Set by code, not user. [mol]
-* `"porosity key`" ``[string]`` **DOMAIN_porosity** Names the porosity variable. [-]
-* `"saturation liquid key`" ``[string]`` **DOMAIN_saturation_liquid** Names the saturation variable. [-]
-* `"molar density liquid key`" ``[string]`` **DOMAIN_molar_density_liquid** Names the density variable. [mol m^-3]
-* `"cell volume key`" ``[string]`` **DOMAIN_cell_volume** Names the cell volume variable. [m^3]
-
-Note that in the defaults, DOMAIN is determined from the name of the evaluated data, which is set by the name of the list.
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="water_content">
-    <Parameter name="evaluator type" type="string" value="richards water content"/>
-  </ParameterList>
-
-
 
 RichardsWaterContentWithVaporEvaluator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
- RichardsWaterContentEvaluator: water content without vapor
-Evaluator type: `"richards water content with vapor`"
-
-Evaluates water content in cell E.
-
-.. math::
-  \Theta = \phi (n_{{liq}} s_{{liq}} + n_{{gas}} s_{{gas}} \omega) |E|
-
-* `"my key`" ``[string]`` **DOMAIN_water_content** Set by code, not user. [mol]
-* `"porosity key`" ``[string]`` **DOMAIN_porosity** Names the porosity variable. [-]
-* `"saturation liquid key`" ``[string]`` **DOMAIN_saturation_liquid** Names the saturation variable. [-]
-* `"saturation gas key`" ``[string]`` **DOMAIN_saturation_gas** Names the gas saturation variable. [-]
-* `"molar density liquid key`" ``[string]`` **DOMAIN_molar_density_liquid** Names the density variable. [mol m^-3]
-* `"molar density gas key`" ``[string]`` **DOMAIN_molar_density_gas** Names the gas density variable. [mol m^-3]
-* `"mol fraction vapor in gas key`" ``[string]`` **DOMAIN_mol_frac_gas** Names the molar fraction of water vapor in the gas phase variable. [-]
-* `"cell volume key`" ``[string]`` **DOMAIN_cell_volume** Names the cell volume variable. [m^3]
-
-Note that in the defaults, DOMAIN is determined from the name of the evaluated data, which is set by the name of the list.
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="water_content">
-    <Parameter name="evaluator type" type="string" value="richards water content with vapor"/>
-  </ParameterList>
-
-
-
+** DOC GENERATION ERROR: file not found ' richards_water_content_with_vapor_evaluator ' **
 PermafrostWaterContentEvaluator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
- RichardsWaterContentEvaluator: water content without vapor
-Evaluator type: `"permafrost water content`"
-
-Evaluates water content in cell E.
-
-.. math::
-  \Theta = \phi (n_{{ice}} s_{{ice}} + n_{{liq}} s_{{liq}} + n_{{gas}} s_{{gas}} \omega) |E|
-
-* `"my key`" ``[string]`` **DOMAIN_water_content** Set by code, not user. [mol]
-* `"porosity key`" ``[string]`` **DOMAIN_porosity** Names the porosity variable. [-]
-* `"saturation ice key`" ``[string]`` **DOMAIN_saturation_ice** Names the ice saturation variable. [-]
-* `"saturation liquid key`" ``[string]`` **DOMAIN_saturation_liquid** Names the liquid saturation variable. [-]
-* `"saturation gas key`" ``[string]`` **DOMAIN_saturation_gas** Names the gas saturation variable. [-]
-* `"molar density ice key`" ``[string]`` **DOMAIN_molar_density_ice** Names the ice density variable. [mol m^-3]
-* `"molar density liquid key`" ``[string]`` **DOMAIN_molar_density_liquid** Names the liquid density variable. [mol m^-3]
-* `"molar density gas key`" ``[string]`` **DOMAIN_molar_density_gas** Names the gas density variable. [mol m^-3]
-* `"mol fraction vapor in gas key`" ``[string]`` **DOMAIN_mol_frac_gas** Names the molar fraction of water vapor in the gas phase variable. [-]
-* `"cell volume key`" ``[string]`` **DOMAIN_cell_volume** Names the cell volume variable. [m^3]
-
-Note that in the defaults, DOMAIN is determined from the name of the evaluated data, which is set by the name of the list.
-
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="water_content">
-    <Parameter name="evaluator type" type="string" value="permafrost water content"/>
-  </ParameterList>
-
-
-
+** DOC GENERATION ERROR: file not found ' permafrost_water_content ' **
 
 
 Surface Water potential surfaces
@@ -1947,6 +1867,109 @@ Common specs for all solvers and time integrators, used in PKs.
 
 TimeIntegrator
 =================
+
+ Factory for creating TimestepController objects
+
+A TimestepController object sets what size timestep to take.  This can be a
+variety of things, from fixed timestep size, to adaptive based upon error
+control, to adapter based upon simple nonlinear iteration counts.
+
+
+* `"timestep controller type`" ``[string]`` Set the type.  One of the below types.
+* `"timestep controller X parameters`" ``[list]`` List of parameters for a timestep controller of type X.
+
+Available types include:
+
+* TimestepControllerFixed_  (type `"fixed`"), a constant timestep
+* TimestepControllerStandard_ (type `'standard`"), an adaptive timestep based upon nonlinear iterations
+* TimestepControllerSmarter_ (type `'smarter`"), an adaptive timestep based upon nonlinear iterations with more control
+* TimestepControllerAdaptive_ (type `"adaptive`"), an adaptive timestep based upon error control.
+* TimestepControllerFromFile_ (type `"from file`"), uses a timestep history loaded from an HDF5 file.  (Usually only used for regression testing.)
+
+
+
+
+TimestepControllerFixed
+--------------------------
+  Timestep controller providing constant timestep size.
+
+``TimestepControllerFixed`` is a simple timestep control mechanism which sets
+a constant timestep size.  Note that the actual timestep size is given by the
+minimum of PK's initial timestep sizes.
+
+
+
+
+
+TimestepControllerStandard
+----------------------------
+ Simple timestep control based upon previous iteration count.
+
+``TimestepControllerStandard`` is a simple timestep control mechanism
+which sets the next timestep based upon the previous timestep and how many
+nonlinear iterations the previous timestep took to converge.
+
+The timestep for step :math:`k+1`, :math:`\Delta t_{k+1}`, is given by:
+
+* if :math:`N_k > N^{max}` then :math:`\Delta t_{k+1} = f_{reduction} * \Delta t_{k}`
+* if :math:`N_k < N^{min}` then :math:`\Delta t_{k+1} = f_{increase} * \Delta t_{k}`
+* otherwise :math:`\Delta t_{k+1} = \Delta t_{k}`
+
+where :math:`\Delta t_{k}` is the previous timestep and :math:`N_k` is the number of nonlinear iterations required to solve step :math:`k`:.
+
+                   
+* `"max iterations`" ``[int]`` :math:`N^{max}`, decrease the timestep if the previous step took more than this.
+* `"min iterations`" ``[int]`` :math:`N^{min}`, increase the timestep if the previous step took less than this.
+* `"time step reduction factor`" ``[double]`` :math:`f_reduction`, reduce the previous timestep by this multiple.
+* `"time step increase factor`" ``[double]`` :math:`f_increase`, increase the previous timestep by this multiple.
+* `"max time step`" ``[double]`` The max timestep size allowed.
+* `"min time step`" ``[double]`` The min timestep size allowed.  If the step has failed and the new step is below this cutoff, the simulation fails.
+
+
+
+
+TimestepControllerSmarter
+----------------------------
+  Slightly smarter timestep controller based upon a history of previous timesteps.
+
+``TimestepControllerSmarter`` is based on ``TimestepControllerStandard``, but
+also tries to be a bit smarter to avoid repeated increase/decrease loops where
+the step size decreases, converges in few iterations, increases, but then
+fails again.  It also tries to grow the step geometrically to more quickly
+recover from tricky nonlinearities.
+
+* `"max iterations`" ``[int]`` :math:`N^{max}`, decrease the timestep if the previous step took more than this.
+* `"min iterations`" ``[int]`` :math:`N^{min}`, increase the timestep if the previous step took less than this.
+* `"time step reduction factor`" ``[double]`` :math:`f_reduction`, reduce the previous timestep by this multiple.
+* `"time step increase factor`" ``[double]`` :math:`f_increase`, increase the previous timestep by this multiple.  Note that this can be modified geometrically in the case of repeated successful steps.
+* `"max time step increase factor`" ``[double]`` **10.** The max :math:`f_increase` will ever get.
+* `"growth wait after fail`" ``[int]`` Wait at least this many timesteps before attempting to grow the timestep after a failed timestep.
+* `"count before increasing increase factor`" ``[int]`` Require this many successive increasions before multiplying :math:`f_increase` by itself.
+
+
+
+
+
+TimestepControllerFromFile
+----------------------------
+  Timestep controller which loads a timestep history from file.
+
+``TimestepControllerFromFile`` loads a timestep history from a file, then
+advances the step size with those values.  This is mostly used for testing
+purposes, where we need to force the same timestep history as previous runs to
+do regression testing.  Otherwise even machine roundoff can eventually alter
+number of iterations enough to alter the timestep history, resulting in
+solutions which are enough different to cause doubt over their correctness.
+
+* `"file name`" ``[string]`` Path to hdf5 file containing timestep information.
+* `"timestep header`" ``[string]`` Name of the dataset containing the history of timestep sizes.
+
+
+
+
+
+
+
 
 Linear Solver Spec
 ===================
