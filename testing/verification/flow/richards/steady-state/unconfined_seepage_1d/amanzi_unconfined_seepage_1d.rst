@@ -11,7 +11,7 @@ Background
 
 Consider the following scenario involving steady-state groundwater
 flow in an unconfined aquifer that discharges to a sloped ground
-surface along a seepage face ([Aleman2007]_, Section 4.4):
+surface along a seepage face (:cite:`us-Aleman_PORFLOW_2007`, Section 4.4):
 
 .. image:: schematic/porflow_4.4.1.png
    :width: 5in
@@ -36,9 +36,9 @@ Model
 An analytic solution for the elevation of the water table can be
 readily derived if vertical gradients and velocities in the saturated
 zone are assumed to be negligible relative to their horizontal
-counterparts following [Dupuit1863]_ and [Forchheimer1930]_.  The
+counterparts following :cite:`us-Dupuit_1863` and :cite:`us-Forchheimer_1930`.  The
 Dupuit-Forchheimer theory of free-surface flow specifically assumes
-that [Freeze1979]_:
+that :cite:`us-Freeze_1979`:
 1) flow is horizontal and equipotential lines are vertical, and 
 2) hydraulic gradient is equal to the slope of the free surface.
 
@@ -46,7 +46,7 @@ Let :math:`L_s` denote the unknown location of the seepline, and
 :math:`h_s` the hydraulic head or height of the water table at this
 location. Between the left boundary and seepline, the analytic
 solution for hydraulic head in the saturated zone :math:`h` is
-analogous to *Amanzi* unconfined aquifer test case #1 ([Aleman2007]_,
+analogous to *Amanzi* unconfined aquifer test case #1 (:cite:`us-Aleman_PORFLOW_2007`,
 Equation 4.3.5; **<link to unconfined test case>**) with
 :math:`(L_s,h_s)` taking the place of :math:`(L,h_L)`:
 
@@ -63,7 +63,7 @@ coincides exactly with the ground elevation, that is,
 
 The location of the seepline is obtained by recognizing that Darcy's law and 
 mass conservation across the vertical line :math:`x=L_s` requires 
-([Aleman2007]_, Equations 4.4.3 and 4.4.4)
+(:cite:`us-Aleman_PORFLOW_2007`, Equations 4.4.3 and 4.4.4)
 
 	.. math:: \frac{dh}{dx} \vert_{x=L_s^-} = \frac{1}{h_s} \left[ \frac{h_s^2 - h_0^2}{2L_s} - \frac{Q_{src} L_s}{2K} \right] = \frac{h_L - h_s}{L - L_s} = \frac{dh}{dx} \vert_{x=L_s^+}
 		:label: massConstraint
@@ -96,7 +96,7 @@ With the Dupuit approximation the analytic solution given by Equation
 and describes only the saturated zone. Because *Amanzi* does not
 directly solve a reduced governing equation set based on the Dupuit
 assumption, a two-dimensional :math:`(x,z)` simulation of the combined
-saturated and unsaturated zones using the [Richards1931]_ equation is
+saturated and unsaturated zones using the :cite:`us-Richards_1931` equation is
 required. Thus a vertical hydraulic conductivity and parameters
 defining moisture characteristic curves for the unsaturated zone are
 required beyond the material properties implied by Equation
@@ -119,7 +119,7 @@ are summarized as:
 
 	* :math:`\rho = 998.2 \: kg/m^3, \mu = 1.002 \times 10^{-3} \: Pa\cdot s, g = 9.807 \: m/s^2` 
 	* hydraulic conductivity :math:`K = 1 ft/d`
-	* van Genuchten [vanGenuchten1980]_ - Mualem [Mualen1976]_ parameters
+	* van Genuchten :cite:`us-vanGenuchten_1980` - Mualem :cite:`us-Mualem_1976` parameters
 		* :math:`\alpha = 1.0212e-04 Pa^{-1}`
 		* :math:`S_r = 0.25`
 		* :math:`m = 0.09090`
@@ -144,20 +144,11 @@ Results and Comparison
 References
 ----------
 
-.... [Aleman2007] Aleman, S. 2007. *PORFLOW Testing and Verification Document*. Savannah River National Laboratory technical report WSRC-STI-2007-00150 Rev 0. 193 p.
- 
-.. [Dupuit1863] Dupuit, J. 1863. *Estudes Thèoriques et Pratiques sur le mouvement des Eaux dans les canaux dècouverts et à travers les terrains permèables* (Second Edition ed.). Paris: Dunod.
-
-.. [Forchheimer1930] Forchheimer, P. 1930. *Hydraulik*. 3d ed., Teubner, Leipzig, Berlin. 
-
-.. [Freeze1979] Freeze, R.A. and J.A. Cherry. 1979. *Groundwater*. Prentice-Hall, Inc. Englewood Cliffs, NJ. 604 p.
-
-.. [Mualen1976] Mualem, Y. 1976. *A new model predicting the hydraulic conductivity of unsaturated porous media*. Water Resour. Res. 12:513-522.
-
-.. [Richards1931] Richards, L.A. 1931. *Capillary conduction of liquids through porous mediums*. Physics 1 (5): 318-333.
-
-.. [vanGenuchten1980] van Genuchten, M. Th. 1980. *A Closed-form Equation for Predicting the Hydraulic Conductivity of Unsaturated Soils*. Soil Sci. Soc. Am. J. 44: 892-898.
-
+.. bibliography:: /bib/ascem.bib
+   :filter: docname in docnames
+   :style:  alpha
+   :keyprefix: us-
+		 
 
 About
 -----

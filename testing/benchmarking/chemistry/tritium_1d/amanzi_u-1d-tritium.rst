@@ -77,7 +77,7 @@ Simulation results
 
 In the figure below, the solution by Amanzi at time 50 years is compared to results obtained with PFloTran along the length of the colum. Agreement is very good overall. Minor differences in the leading edge are attributed to the numerical dispersion added by the different numerical schemes.
 
-.. plot:: prototype/chemistry/tritium_1d/tritium_1d.py
+.. plot:: tritium_1d.py
 
 ..   :align: left
 
