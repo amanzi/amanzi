@@ -7,7 +7,6 @@
   Author: Ethan Coon
 */
 
-
 // Timestep controller which loads a timestep history from file.
 
 #include "dbc.hh"
@@ -24,11 +23,10 @@ TimestepControllerFromFile::TimestepControllerFromFile(Teuchos::ParameterList& p
 
   HDF5Reader reader(filename);
   reader.ReadData(header, dt_history_);
-  
 }
     
 
-  // single method for timestep control
+// single method for timestep control
 double
 TimestepControllerFromFile::get_timestep(double dt, int iterations) {
   if (current_ == 0) {
