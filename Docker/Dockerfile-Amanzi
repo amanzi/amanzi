@@ -1,5 +1,5 @@
 FROM metsi/amanzi-tpls:latest
-LABEL Description="This image builds Amanzi from a prebuilt version of the Amanzi TPLs contained in a Docker image"
+LABEL Description="This image builds Amanzi from the latest version of the Amanzi TPLs contained in a Docker image"
 
 USER amanzi_user
 
