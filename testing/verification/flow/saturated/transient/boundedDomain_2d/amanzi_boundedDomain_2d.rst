@@ -30,14 +30,14 @@ where
 Initially the head is a constant everywhere in the domain:
 
 .. math:: h(x,y,0) = H_0.
-  :label: ic
+  :label: ic_bounded_domain_2D
 
 The boundary conditions are:
 
 .. math:: 
 .. math::    h({\bf x}, t) =  0, \text{   for } {\bf x} \in \Gamma_D\\
 .. math::    T \nabla h({\bf x,t}) \cdot {\bf n}({\bf x})  = q({\bf x}, t)  \text{  for } {\bf x} \in \Gamma_N\\
-  :label: bc
+  :label: bc_bounded_domain_2D
 
 where :math:`\Gamma_D` is the Dirichlet boundary and :math:`\Gamma_D` is the Neumann boundary.
 
@@ -90,22 +90,25 @@ Results and Comparison
 ----------------------
 
 
-.. _Plot:
+.. _Plot_BoundedDomain2D:
 
 Comparison of  Analytic Solution and Amanzi Results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. plot:: prototype/transient_boundedDomain/amanzi_boundedDomain_2d.py
-             :align: center
+.. plot:: amanzi_boundedDomain_2d.py
+   :align: center
 
 
 The comparison shows that the results from the Amanzi model are nearly identical to those from the analytical solution.
-Detailed comparison can be found in [Lu2014report]_.
+Detailed comparison can be found in :cite:`bd-Lu_Harp_Birdsell_benchmarking_2014`.
 
 References
 ----------
 
-.. [Lu2014report] Lu, Z., D. Harp, and K. Birdsell, Comparison of the Amanzi Model against Analytical Solutions and the FEHM Model, Tech. Report LA-UR-14-20898, Los Alamos National Laboratory, Los Alamos, 2014.
+.. bibliography:: /bib/ascem.bib
+   :filter: docname in docnames
+   :style:  alpha
+   :keyprefix: bd-
 
 
 About

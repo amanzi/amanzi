@@ -222,7 +222,6 @@ benchmark['chemistry'] = {
                                'calcite_1d',
                                'isotherms_1d',
                                'ion_exchange_1d',
-                               'surface_complexation_1d',
                                'farea_1d',
                              ]
             },
