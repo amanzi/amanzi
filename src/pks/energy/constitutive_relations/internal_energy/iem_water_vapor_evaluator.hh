@@ -15,7 +15,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 class IEMWaterVaporEvaluator : public SecondaryVariableFieldEvaluator {
 
@@ -49,7 +48,6 @@ class IEMWaterVaporEvaluator : public SecondaryVariableFieldEvaluator {
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

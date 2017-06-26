@@ -24,7 +24,6 @@ UNITS: MJ/{mol/kg}
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 class IEMLinear : public IEM {
 
@@ -52,7 +51,6 @@ private:
 
 };
 
-} // namespace
 } // namespace
 } // namespace
 

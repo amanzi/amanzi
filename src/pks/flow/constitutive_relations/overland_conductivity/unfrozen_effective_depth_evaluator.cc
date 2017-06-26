@@ -10,7 +10,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 UnfrozenEffectiveDepthEvaluator::UnfrozenEffectiveDepthEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
@@ -72,7 +71,6 @@ void UnfrozenEffectiveDepthEvaluator::EvaluateFieldPartialDerivative_(
 }
 
 
-} //namespace
 } //namespace
 } //namespace
 

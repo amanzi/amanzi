@@ -10,7 +10,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist),
@@ -420,6 +419,5 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
 
 
 
-} //namespace
 } //namespace
 } //namespace

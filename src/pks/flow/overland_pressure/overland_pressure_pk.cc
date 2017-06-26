@@ -333,14 +333,14 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
   S->RequireField(getKey(domain_,"slope_magnitude"))->SetMesh(S->GetMesh(domain_))
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  Teuchos::RCP<FlowRelations::ElevationEvaluator> elev_evaluator;
+  Teuchos::RCP<Flow::ElevationEvaluator> elev_evaluator;
   if (standalone_mode_) {
     ASSERT(plist_->isSublist("elevation evaluator"));
     Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
-    elev_evaluator = Teuchos::rcp(new FlowRelations::StandaloneElevationEvaluator(elev_plist));
+    elev_evaluator = Teuchos::rcp(new Flow::StandaloneElevationEvaluator(elev_plist));
   } else {
     Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
-    elev_evaluator = Teuchos::rcp(new FlowRelations::MeshedElevationEvaluator(elev_plist));
+    elev_evaluator = Teuchos::rcp(new Flow::MeshedElevationEvaluator(elev_plist));
   }
 
   S->SetFieldEvaluator(getKey(domain_,"elevation"), elev_evaluator);
@@ -349,9 +349,11 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
   // -- evaluator for potential field, h + z
   S->RequireField(getKey(domain_,"pres_elev"))->Update(matrix_->RangeMap())->SetGhosted();
   Teuchos::ParameterList pres_elev_plist = plist_->sublist("potential evaluator");
-  Teuchos::RCP<FlowRelations::PresElevEvaluator> pres_elev_eval =
-      Teuchos::rcp(new FlowRelations::PresElevEvaluator(pres_elev_plist));
+
+  Teuchos::RCP<Flow::PresElevEvaluator> pres_elev_eval =
+      Teuchos::rcp(new Flow::PresElevEvaluator(pres_elev_plist));
   S->SetFieldEvaluator(getKey(domain_,"pres_elev"), pres_elev_eval);
+
 
   // -- evaluator for source term
   is_source_term_ = plist_->get<bool>("source term");
@@ -382,15 +384,16 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
   wcbar_plist.set<bool>("water content bar", true);
 
   if(!subgrid_model_){
-    Teuchos::RCP<FlowRelations::OverlandPressureWaterContentEvaluator> wc_evaluator =
-      Teuchos::rcp(new FlowRelations::OverlandPressureWaterContentEvaluator(wcbar_plist));
+    Teuchos::RCP<Flow::OverlandPressureWaterContentEvaluator> wc_evaluator =
+      Teuchos::rcp(new Flow::OverlandPressureWaterContentEvaluator(wcbar_plist));
     S->SetFieldEvaluator(getKey(domain_,"water_content_bar"), wc_evaluator);
   }
   else {
-    Teuchos::RCP<FlowRelations::OverlandSubgridWaterContentEvaluator> wc_evaluator =
-      Teuchos::rcp(new FlowRelations::OverlandSubgridWaterContentEvaluator(wcbar_plist));
+    Teuchos::RCP<Flow::OverlandSubgridWaterContentEvaluator> wc_evaluator =
+      Teuchos::rcp(new Flow::OverlandSubgridWaterContentEvaluator(wcbar_plist));
     S->SetFieldEvaluator(getKey(domain_,"water_content_bar"), wc_evaluator);
   }
+
 
   // -- ponded depth
   S->RequireField(getKey(domain_,"ponded_depth"))->Update(matrix_->RangeMap())->SetGhosted();
@@ -415,8 +418,9 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
         ->AddComponent("cell", AmanziMesh::CELL, 1);
   ASSERT(plist_->isSublist("overland conductivity evaluator"));
   Teuchos::ParameterList cond_plist = plist_->sublist("overland conductivity evaluator");
-  Teuchos::RCP<FlowRelations::OverlandConductivityEvaluator> cond_evaluator =
-      Teuchos::rcp(new FlowRelations::OverlandConductivityEvaluator(cond_plist));
+
+  Teuchos::RCP<Flow::OverlandConductivityEvaluator> cond_evaluator =
+      Teuchos::rcp(new Flow::OverlandConductivityEvaluator(cond_plist));
 
   S->SetFieldEvaluator(getKey(domain_,"overland_conductivity"), cond_evaluator);
 

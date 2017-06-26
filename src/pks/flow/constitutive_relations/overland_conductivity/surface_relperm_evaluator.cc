@@ -11,7 +11,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 SurfaceRelPermEvaluator::SurfaceRelPermEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
@@ -100,7 +99,6 @@ void SurfaceRelPermEvaluator::EvaluateFieldPartialDerivative_(
 }
 
 
-} //namespace
 } //namespace
 } //namespace
 

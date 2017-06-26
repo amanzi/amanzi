@@ -11,7 +11,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 CompressiblePorosityEvaluator::CompressiblePorosityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
@@ -125,6 +124,5 @@ void CompressiblePorosityEvaluator::EvaluateFieldPartialDerivative_(
 
 
 
-} //namespace
 } //namespace
 } //namespace

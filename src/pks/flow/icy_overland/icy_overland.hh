@@ -21,7 +21,6 @@ namespace Operators { class Upwinding; }
 
 namespace Flow {
 
-namespace FlowRelations { class UnfrozenFractionModel; }
 
 class IcyOverlandFlow : public OverlandPressureFlow {
 
@@ -47,6 +46,6 @@ class IcyOverlandFlow : public OverlandPressureFlow {
 };
 
 }  // namespace AmanziFlow
-}  // namespace Amanzi
+}  // namespace AmanziFlow
 
 #endif

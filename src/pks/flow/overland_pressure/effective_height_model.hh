@@ -13,7 +13,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class EffectiveHeightModel {
 public:
@@ -53,7 +52,6 @@ protected:
   double pi_;
 };
 
-} // namespace
 } // namespace
 } // namespace
 

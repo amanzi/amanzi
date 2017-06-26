@@ -10,7 +10,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 SnowSkinPotentialEvaluator::SnowSkinPotentialEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
@@ -76,6 +75,5 @@ void SnowSkinPotentialEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::
   result->PutScalar(1.0);
 }
 
-} //namespace
 } //namespace
 } //namespace

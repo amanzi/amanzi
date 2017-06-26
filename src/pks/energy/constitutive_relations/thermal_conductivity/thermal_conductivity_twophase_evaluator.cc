@@ -13,7 +13,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 ThermalConductivityTwoPhaseEvaluator::ThermalConductivityTwoPhaseEvaluator(
       Teuchos::ParameterList& plist) :
@@ -78,6 +77,5 @@ void ThermalConductivityTwoPhaseEvaluator::EvaluateFieldPartialDerivative_(
   result->Scale(1.e-6); // convert to MJ
 }
 
-} //namespace
 } //namespace
 } //namespace

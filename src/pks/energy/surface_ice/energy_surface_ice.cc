@@ -14,7 +14,6 @@ Process kernel for energy equation for overland flow.
 #include "eos_evaluator.hh"
 #include "iem_evaluator.hh"
 #include "thermal_conductivity_surface_evaluator.hh"
-#include "surface_ice_energy_evaluator.hh"
 #include "enthalpy_evaluator.hh"
 #include "energy_bc_factory.hh"
 #include "Function.hh"
@@ -97,8 +96,8 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList& tcm_plist =
     plist_->sublist("thermal conductivity evaluator");
-  Teuchos::RCP<EnergyRelations::ThermalConductivitySurfaceEvaluator> tcm =
-    Teuchos::rcp(new EnergyRelations::ThermalConductivitySurfaceEvaluator(tcm_plist));
+  Teuchos::RCP<Energy::ThermalConductivitySurfaceEvaluator> tcm =
+    Teuchos::rcp(new Energy::ThermalConductivitySurfaceEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);
 
   // -- coupling to subsurface
@@ -216,8 +215,9 @@ void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<FieldEvaluator> iem_fe =
     S->GetFieldEvaluator(getKey(domain_,"internal_energy_liquid"));
 
-  Teuchos::RCP<EnergyRelations::IEMEvaluator> iem_eval =
-    Teuchos::rcp_dynamic_cast<EnergyRelations::IEMEvaluator>(iem_fe);
+  Teuchos::RCP<Energy::IEMEvaluator> iem_eval =
+    Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(iem_fe);
+
   ASSERT(iem_eval != Teuchos::null);
   iem_liquid_ = iem_eval->get_IEM();
 }
@@ -297,12 +297,15 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     const Epetra_MultiVector& enth_subsurf =
       *S->GetFieldData(getKey(domain_ss,"enthalpy"))->ViewComponent("cell",false);
  
+    const Epetra_MultiVector& pd =
+      *S->GetFieldData(getKey(domain_,"ponded_depth"))->ViewComponent("cell",false);
+
     AmanziMesh::Entity_ID_List cells;
 
     unsigned int ncells = g_c.MyLength();
 
     for (unsigned int c=0; c!=ncells; ++c) {
-      double flux = source1[0][c];
+      double flux = source1[0][c]; // NOTE: this flux is in mol/s
 
       // upwind the enthalpy
       if (flux > 0.) { // exfiltration
@@ -315,16 +318,17 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
           S->GetMesh()->face_get_cells(f, AmanziMesh::USED, &cells);
 
         ASSERT(cells.size() == 1);
-
         g_c[0][c] -= flux * enth_subsurf[0][cells[0]];
+        std::cout << "source = " << flux << " * " << enth_subsurf[0][cells[0]] << " = " << -flux * enth_subsurf[0][cells[0]] << std::endl;
+        std::cout << "OR source = " << flux << " * " << enth_surf[0][c] << " = " << -flux * enth_surf[0][c] << std::endl;
       } else { // infiltration
         g_c[0][c] -= flux * enth_surf[0][c];
       }
     }
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
       *vo_->os() << "Adding advection to subsurface" << std::endl;
-      db_->WriteVector("res (src)", g, false);
     }
+    db_->WriteVector("res (src post surf-subsurf adv)", g, false);
   }
 
   // -- conduction source
@@ -339,6 +343,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     for (unsigned int c=0; c!=ncells; ++c) {
       g_c[0][c] -= e_source1[0][cells[0]];
     }
+    db_->WriteVector("res (src post surf-subsurf diff)", g, false);
   }
 
 }

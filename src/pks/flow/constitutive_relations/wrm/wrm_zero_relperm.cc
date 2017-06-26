@@ -11,7 +11,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 WRMZeroRelPerm::WRMZeroRelPerm(Teuchos::ParameterList& plist) :
     plist_(plist) {
@@ -28,6 +27,5 @@ void WRMZeroRelPerm::InitializeFromPlist_() {
 };
 
 
-} // namespace
 } // namespace
 } // namespace

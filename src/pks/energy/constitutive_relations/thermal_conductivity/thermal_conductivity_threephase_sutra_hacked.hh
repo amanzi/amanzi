@@ -33,7 +33,6 @@ Units: ????
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 class ThermalConductivityThreePhaseSutraHacked : public ThermalConductivityThreePhase {
 
@@ -58,7 +57,6 @@ private:
 
 };
 
-}
 }
 }
 

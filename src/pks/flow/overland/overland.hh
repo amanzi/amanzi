@@ -25,9 +25,8 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-namespace FlowRelations {
-  class OverlandConductivityModel;
-}
+class OverlandConductivityModel;
+
 
 
 class OverlandFlow : public PK_PhysicalBDF_Default {
@@ -134,7 +133,7 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_critical_depth_;  
 
   // needed physical models
-  Teuchos::RCP<FlowRelations::OverlandConductivityModel> cond_model_;
+  Teuchos::RCP<Flow::OverlandConductivityModel> cond_model_;
 
   int niter_;
 
@@ -142,7 +141,7 @@ protected:
   static RegisteredPKFactory<OverlandFlow> reg_;
 };
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 
 #endif

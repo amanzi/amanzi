@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 ThermalConductivityThreePhaseEvaluator::ThermalConductivityThreePhaseEvaluator(
     Teuchos::ParameterList& plist) :
@@ -240,7 +239,6 @@ void ThermalConductivityThreePhaseEvaluator::EvaluateFieldPartialDerivative_(
 }
 
 
-} //namespace
 } //namespace
 } //namespace
 

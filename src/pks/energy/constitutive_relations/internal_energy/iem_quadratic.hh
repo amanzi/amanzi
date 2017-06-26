@@ -26,7 +26,6 @@ UNITS: M/{mol,kg}
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 class IEMQuadratic : public IEM {
 
@@ -55,7 +54,6 @@ private:
 
 };
 
-}
 }
 }
 

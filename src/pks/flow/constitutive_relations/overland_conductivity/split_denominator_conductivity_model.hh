@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class SplitDenominatorConductivityModel : public OverlandConductivityModel {
 public:
@@ -31,7 +30,6 @@ protected:
   double manning_exp_;
 };
 
-} // namespace
 } // namespace
 } // namespace
 

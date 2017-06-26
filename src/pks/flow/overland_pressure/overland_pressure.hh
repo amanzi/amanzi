@@ -99,12 +99,11 @@ May inherit options from PKPhysicalBDFBase_.
 namespace Amanzi {
 
 class MPCSurfaceSubsurfaceDirichletCoupler;
+
 namespace Flow {
 
-namespace FlowRelations {
-  class OverlandConductivityModel;
-  class HeightModel;
-}
+class OverlandConductivityModel;
+class HeightModel;
 
 //class OverlandPressureFlow : public PKPhysicalBDFBase {
 class OverlandPressureFlow : public PK_PhysicalBDF_Default {
@@ -253,7 +252,7 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_level_;
   
   // needed physical models
-  Teuchos::RCP<FlowRelations::OverlandConductivityModel> cond_model_;
+  Teuchos::RCP<Flow::OverlandConductivityModel> cond_model_;
 
   int niter_;
 
@@ -261,7 +260,7 @@ protected:
   static RegisteredPKFactory<OverlandPressureFlow> reg_;
 };
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 
 #endif

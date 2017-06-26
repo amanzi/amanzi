@@ -18,7 +18,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class WRMPermafrostFactory : public Utils::Factory<WRMPermafrostModel> {
 
@@ -27,7 +26,6 @@ public:
           const Teuchos::RCP<WRM>& wrm);
 };
 
-} // namespace
 } // namespace
 } // namespace
 

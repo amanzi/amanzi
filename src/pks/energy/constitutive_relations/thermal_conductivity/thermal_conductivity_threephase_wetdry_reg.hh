@@ -13,7 +13,6 @@ Linear interpolant of thermal conductivity.
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 // registry of method
 Utils::RegisteredFactory<ThermalConductivityThreePhase,
@@ -22,4 +21,3 @@ Utils::RegisteredFactory<ThermalConductivityThreePhase,
 
 } // namespace Relations
 } // namespace Energy
-} // namespace Amanzi

@@ -38,7 +38,6 @@ Units: ????
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 class ThermalConductivityThreePhaseWetDry : public ThermalConductivityThreePhase {
 
@@ -68,7 +67,6 @@ private:
 
 };
 
-} // namespace
 } // namespace
 } // namespace
 

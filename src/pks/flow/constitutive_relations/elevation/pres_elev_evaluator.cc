@@ -10,7 +10,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 PresElevEvaluator::PresElevEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
@@ -60,6 +59,5 @@ void PresElevEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
   result->PutScalar(1.0);
 }
 
-} //namespace
 } //namespace
 } //namespace

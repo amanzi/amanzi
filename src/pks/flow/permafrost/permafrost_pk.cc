@@ -57,8 +57,8 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
  
   // -- This setup is a little funky -- we use four evaluators to capture the physics.
   Teuchos::ParameterList wrm_plist = plist_->sublist("water retention evaluator");
-  Teuchos::RCP<FlowRelations::WRMPermafrostEvaluator> wrm =
-      Teuchos::rcp(new FlowRelations::WRMPermafrostEvaluator(wrm_plist));
+  Teuchos::RCP<Flow::WRMPermafrostEvaluator> wrm =
+      Teuchos::rcp(new Flow::WRMPermafrostEvaluator(wrm_plist));
 
   
   if (!S->HasFieldEvaluator("saturation_liquid")) {
@@ -69,8 +69,8 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   // -- the rel perm evaluator, also with the same underlying WRM.
   wrm_plist.set<double>("permeability rescaling", perm_scale_);
-  Teuchos::RCP<FlowRelations::RelPermEvaluator> rel_perm_evaluator =
-      Teuchos::rcp(new FlowRelations::RelPermEvaluator(wrm_plist, wrm->get_WRMs()));
+  Teuchos::RCP<Flow::RelPermEvaluator> rel_perm_evaluator =
+      Teuchos::rcp(new Flow::RelPermEvaluator(wrm_plist, wrm->get_WRMs()));
   wrms_ = wrm->get_WRMs();
   
 

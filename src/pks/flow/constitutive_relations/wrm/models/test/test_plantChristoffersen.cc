@@ -4,7 +4,7 @@
 #include "wrm_plants_christoffersen.hh"
 
 TEST(plantChristoffersen) {
-  using namespace Amanzi::Flow::FlowRelations;
+  using namespace Amanzi::Flow::Flow;
 
   double sr = 0.46567;
   double stlp = 0.8975;

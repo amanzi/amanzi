@@ -419,8 +419,8 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- Water retention evaluators
   // -- saturation
   Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
-  Teuchos::RCP<FlowRelations::WRMEvaluator> wrm =
-      Teuchos::rcp(new FlowRelations::WRMEvaluator(wrm_plist));
+  Teuchos::RCP<Flow::WRMEvaluator> wrm =
+      Teuchos::rcp(new Flow::WRMEvaluator(wrm_plist));
 
   if (!S->HasFieldEvaluator("saturation_liquid")) {
     S->SetFieldEvaluator(getKey(domain_,"saturation_liquid"), wrm);
@@ -439,8 +439,8 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField(coef_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponents(names2, locations2, num_dofs2);
   wrm_plist.set<double>("permeability rescaling", perm_scale_);
-  Teuchos::RCP<FlowRelations::RelPermEvaluator> rel_perm_evaluator =
-      Teuchos::rcp(new FlowRelations::RelPermEvaluator(wrm_plist, wrm->get_WRMs()));
+  Teuchos::RCP<Flow::RelPermEvaluator> rel_perm_evaluator =
+      Teuchos::rcp(new Flow::RelPermEvaluator(wrm_plist, wrm->get_WRMs()));
   S->SetFieldEvaluator(coef_key_, rel_perm_evaluator);
   wrms_ = wrm->get_WRMs();
 
@@ -1069,17 +1069,18 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
       // -- set that value to Neumann
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-      bc_values_[f] = flux[0][c] / mesh_->face_area(f);
-      if (!kr && rel_perm[0][f] > 0.) bc_values_[f] /= rel_perm[0][f];
 
+      // NOTE: the flux provided by the coupler is in units of mols / s, where
+      //       as Neumann BCs are in units of mols / s / A.  The right A must
+      //       be chosen, as it is the subsurface mesh's face area, not the
+      //       surface mesh's cell area.
+      bc_values_[f] = flux[0][c] / mesh_->face_area(f);
+
+      if (!kr && rel_perm[0][f] > 0.) bc_values_[f] /= rel_perm[0][f];
       if ((surface->cell_map(false).GID(c) == 0) && vo_->os_OK(Teuchos::VERB_HIGH)) {
         *vo_->os() << "  bc for coupled surface: val=" << bc_values_[f] << std::endl;
       }
       
-      // NOTE: flux[0][c] is in units of mols / s, where as Neumann BCs are in
-      //       units of mols / s / A.  The right A must be chosen, as it is
-      //       the subsurface mesh's face area, not the surface mesh's cell
-      //       area.
     }
   }
 

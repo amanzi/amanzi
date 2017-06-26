@@ -12,7 +12,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 PCIceEvaluator::PCIceEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
@@ -120,6 +119,5 @@ void PCIceEvaluator::EvaluateFieldPartialDerivative_(
   }
 }
 
-} // namespace
 } // namespace
 } // namespace

@@ -20,7 +20,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class CompressiblePorosityLeijnseEvaluator : public SecondaryVariableFieldEvaluator {
  public:
@@ -50,7 +49,6 @@ protected:
 
 };
 
-} // namespace
 } // namespace
 } // namespace
 

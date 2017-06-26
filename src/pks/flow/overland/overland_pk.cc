@@ -233,14 +233,14 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField("slope_magnitude")->SetMesh(S->GetMesh("surface"))
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  Teuchos::RCP<FlowRelations::ElevationEvaluator> elev_evaluator;
+  Teuchos::RCP<Flow::ElevationEvaluator> elev_evaluator;
   if (standalone_mode_) {
     ASSERT(plist_->isSublist("elevation evaluator"));
     Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
-    elev_evaluator = Teuchos::rcp(new FlowRelations::StandaloneElevationEvaluator(elev_plist));
+    elev_evaluator = Teuchos::rcp(new Flow::StandaloneElevationEvaluator(elev_plist));
   } else {
     Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
-    elev_evaluator = Teuchos::rcp(new FlowRelations::MeshedElevationEvaluator(elev_plist));
+    elev_evaluator = Teuchos::rcp(new Flow::MeshedElevationEvaluator(elev_plist));
   }
   S->SetFieldEvaluator("elevation", elev_evaluator);
   S->SetFieldEvaluator("slope_magnitude", elev_evaluator);
@@ -248,8 +248,8 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- evaluator for potential field, h + z
   S->RequireField("pres_elev")->Update(matrix_->RangeMap())->SetGhosted();
   Teuchos::ParameterList pres_elev_plist = plist_->sublist("potential evaluator");
-  Teuchos::RCP<FlowRelations::PresElevEvaluator> pres_elev_eval =
-      Teuchos::rcp(new FlowRelations::PresElevEvaluator(pres_elev_plist));
+  Teuchos::RCP<Flow::PresElevEvaluator> pres_elev_eval =
+      Teuchos::rcp(new Flow::PresElevEvaluator(pres_elev_plist));
   S->SetFieldEvaluator("pres_elev", pres_elev_eval);
 
   // -- evaluator for source term
@@ -267,8 +267,8 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   ASSERT(plist_->isSublist("overland conductivity evaluator"));
   Teuchos::ParameterList cond_plist = plist_->sublist("overland conductivity evaluator");
-  Teuchos::RCP<FlowRelations::OverlandConductivityEvaluator> cond_evaluator =
-      Teuchos::rcp(new FlowRelations::OverlandConductivityEvaluator(cond_plist));
+  Teuchos::RCP<Flow::OverlandConductivityEvaluator> cond_evaluator =
+      Teuchos::rcp(new Flow::OverlandConductivityEvaluator(cond_plist));
   S->SetFieldEvaluator("overland_conductivity", cond_evaluator);
 }
 

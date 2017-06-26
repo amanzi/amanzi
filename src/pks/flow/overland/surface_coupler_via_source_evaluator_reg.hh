@@ -11,11 +11,9 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 Utils::RegisteredFactory<FieldEvaluator,SurfaceCouplerViaSourceEvaluator>
 SurfaceCouplerViaSourceEvaluator::fac_("surface_coupler_via_source");
 
-} // namespace
 } // namespace
 } // namespace

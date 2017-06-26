@@ -12,7 +12,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class OverlandConductivityModel {
  public:
@@ -25,7 +24,6 @@ class OverlandConductivityModel {
   virtual double DConductivityDDepth(double depth, double slope, double coef, double p, double frac, double beta) {};
 };
 
-} // namespace
 } // namespace
 } // namespace
 

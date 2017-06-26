@@ -15,7 +15,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class SurfaceRelPermModel;
 
@@ -47,7 +46,6 @@ private:
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

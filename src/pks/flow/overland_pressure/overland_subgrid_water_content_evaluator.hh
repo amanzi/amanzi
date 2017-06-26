@@ -15,7 +15,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class OverlandSubgridWaterContentModel;
 
@@ -51,7 +50,6 @@ class OverlandSubgridWaterContentEvaluator : public SecondaryVariableFieldEvalua
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

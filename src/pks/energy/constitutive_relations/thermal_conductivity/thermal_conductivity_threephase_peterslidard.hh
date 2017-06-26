@@ -39,7 +39,6 @@ Units: ????
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 class ThermalConductivityThreePhasePetersLidard : public ThermalConductivityThreePhase {
 
@@ -68,7 +67,6 @@ private:
 
 };
 
-}
 }
 }
 

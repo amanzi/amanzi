@@ -282,7 +282,7 @@ protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;  // absolute permeability
   Teuchos::RCP<Operators::Upwinding> upwinding_;
   Teuchos::RCP<Operators::Upwinding> upwinding_deriv_;
-  Teuchos::RCP<FlowRelations::WRMPartition> wrms_;
+  Teuchos::RCP<Flow::WRMPartition> wrms_;
   bool upwind_from_prev_flux_;
 
   // mathematical operators

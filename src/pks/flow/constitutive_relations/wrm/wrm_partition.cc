@@ -13,7 +13,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 // Non-member factory
 Teuchos::RCP<WRMPartition>
@@ -58,6 +57,5 @@ createWRMPermafrostModelPartition(Teuchos::ParameterList& plist,
   return Teuchos::rcp(new WRMPermafrostModelPartition(wrms->first, pm_list));
 }
 
-} // namespace
 } // namespace
 } // namespace

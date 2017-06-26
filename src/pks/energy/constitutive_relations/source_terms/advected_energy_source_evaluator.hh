@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 class AdvectedEnergySourceEvaluator : public SecondaryVariableFieldEvaluator {
 
@@ -40,18 +39,23 @@ class AdvectedEnergySourceEvaluator : public SecondaryVariableFieldEvaluator {
   Key mass_source_key_;
   Key internal_density_key_;
   Key external_density_key_;
-
-  bool include_conduction_;
   Key conducted_source_key_;
-
   Key cell_vol_key_;
 
+  bool include_conduction_;
+  enum SourceUnits {
+    SOURCE_UNITS_METERS_PER_SECOND,
+    SOURCE_UNITS_MOLS_PER_SECOND,
+    SOURCE_UNITS_MOLS_PER_SECOND_PER_METERSD
+  };
+
+  SourceUnits source_units_;
+  
  private:
   static Utils::RegisteredFactory<FieldEvaluator,AdvectedEnergySourceEvaluator> factory_;
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

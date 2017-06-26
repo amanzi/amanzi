@@ -13,7 +13,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class UnfrozenFractionModel {
  public:
@@ -31,7 +30,6 @@ class UnfrozenFractionModel {
 
 };
 
-} // namespace
 } // namespace
 } // namespace
 

@@ -10,7 +10,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 ElevationEvaluator::ElevationEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist),
@@ -118,6 +117,5 @@ void ElevationEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
 
 
 
-} //namespace
 } //namespace
 } //namespace

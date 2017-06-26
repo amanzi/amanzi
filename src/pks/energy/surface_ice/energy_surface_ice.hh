@@ -20,9 +20,10 @@ namespace Amanzi {
 // forward declarations
 class Function;
 namespace Relations { class EOS; }
-namespace Energy { namespace EnergyRelations { class IEM; } }
 
 namespace Energy {
+
+class IEM; 
 
 class EnergySurfaceIce : public EnergyBase {
 
@@ -54,8 +55,8 @@ protected:
 
  protected:
   // models for evaluating enthalpy manually... remove me once boundary faces get in
-  Teuchos::RCP<Relations::EOS> eos_liquid_;
-  Teuchos::RCP<EnergyRelations::IEM> iem_liquid_;
+  Teuchos::RCP<Amanzi::Relations::EOS> eos_liquid_;
+  Teuchos::RCP<Energy::IEM> iem_liquid_;
 
   // simple heat condution term, q = K_s2a * (Tair - Tsurf)
   // air temperature function of time (not space)

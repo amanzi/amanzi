@@ -15,7 +15,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class VolumetricHeightModel;
 
@@ -50,7 +49,6 @@ class VolumetricHeightEvaluator : public SecondaryVariableFieldEvaluator {
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

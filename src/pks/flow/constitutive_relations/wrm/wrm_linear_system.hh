@@ -19,7 +19,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class WRMLinearSystem : public WRM {
 
@@ -45,7 +44,6 @@ public:
   static Utils::RegisteredFactory<WRM,WRMLinearSystem> factory_;
 };
 
-} //namespace
 } //namespace
 } //namespace
 

@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class IcyHeightModel;
 
@@ -49,7 +48,6 @@ class IcyHeightEvaluator : public HeightEvaluator {
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

@@ -10,11 +10,9 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 // registry of method 
   Utils::RegisteredFactory<FieldEvaluator,CompressiblePorosityLeijnseEvaluator> CompressiblePorosityLeijnseEvaluator::fac_("compressible porosity leijnse"); 
 
-} //namespace
 } //namespace
 } //namespace

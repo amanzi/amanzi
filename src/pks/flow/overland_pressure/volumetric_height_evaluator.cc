@@ -12,7 +12,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 
 VolumetricHeightEvaluator::VolumetricHeightEvaluator(Teuchos::ParameterList& plist) :
@@ -116,7 +115,5 @@ void VolumetricHeightEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::P
 }
 
 
-
-} //namespace
 } //namespace
 } //namespace

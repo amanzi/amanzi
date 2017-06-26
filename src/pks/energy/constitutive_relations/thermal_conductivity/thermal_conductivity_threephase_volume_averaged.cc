@@ -15,7 +15,6 @@ Linear interpolant of thermal conductivity.
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 ThermalConductivityThreePhaseVolumeAveraged::ThermalConductivityThreePhaseVolumeAveraged(
       Teuchos::ParameterList& plist) : plist_(plist) {
@@ -38,4 +37,3 @@ void ThermalConductivityThreePhaseVolumeAveraged::InitializeFromPlist_() {
 
 } // namespace Relations
 } // namespace Energy
-} // namespace Amanzi

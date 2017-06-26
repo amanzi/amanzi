@@ -41,10 +41,10 @@ void ThermalRichardsModel::InitializeModel(const Teuchos::Ptr<State>& S) {
   // Grab the models.
   // get the WRM models and their regions
   Teuchos::RCP<FieldEvaluator> me = S->GetFieldEvaluator("saturation_gas");
-  Teuchos::RCP<Flow::FlowRelations::WRMEvaluator> wrm_me =
-      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::WRMEvaluator>(me);
+  Teuchos::RCP<Flow::WRMEvaluator> wrm_me =
+      Teuchos::rcp_dynamic_cast<Flow::WRMEvaluator>(me);
   ASSERT(wrm_me != Teuchos::null);
-  Teuchos::RCP<Flow::FlowRelations::WRMPartition> wrms =
+  Teuchos::RCP<Flow::WRMPartition> wrms =
       wrm_me->get_WRMs();
 
   // this needs fixed eventually, but for now assuming one WRM, and therefore
@@ -77,29 +77,29 @@ void ThermalRichardsModel::InitializeModel(const Teuchos::Ptr<State>& S) {
 
   // -- capillary pressure for liq/gas
   me = S->GetFieldEvaluator("capillary_pressure_gas_liq");
-  Teuchos::RCP<Flow::FlowRelations::PCLiquidEvaluator> pc_liq_me =
-      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::PCLiquidEvaluator>(me);
+  Teuchos::RCP<Flow::PCLiquidEvaluator> pc_liq_me =
+      Teuchos::rcp_dynamic_cast<Flow::PCLiquidEvaluator>(me);
   ASSERT(pc_liq_me != Teuchos::null);
   pc_l_ = pc_liq_me->get_PCLiqAtm();
 
   // -- iem for liquid
   me = S->GetFieldEvaluator("internal_energy_liquid");
-  Teuchos::RCP<Energy::EnergyRelations::IEMEvaluator> iem_liquid_me =
-      Teuchos::rcp_dynamic_cast<Energy::EnergyRelations::IEMEvaluator>(me);
+  Teuchos::RCP<Energy::IEMEvaluator> iem_liquid_me =
+      Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(me);
   ASSERT(iem_liquid_me != Teuchos::null);
   liquid_iem_ = iem_liquid_me->get_IEM();
 
   // -- iem for gas
   me = S->GetFieldEvaluator("internal_energy_gas");
-  Teuchos::RCP<Energy::EnergyRelations::IEMWaterVaporEvaluator> iem_gas_me =
-      Teuchos::rcp_dynamic_cast<Energy::EnergyRelations::IEMWaterVaporEvaluator>(me);
+  Teuchos::RCP<Energy::IEMWaterVaporEvaluator> iem_gas_me =
+      Teuchos::rcp_dynamic_cast<Energy::IEMWaterVaporEvaluator>(me);
   ASSERT(iem_gas_me != Teuchos::null);
   gas_iem_ = iem_gas_me->get_IEM();
 
   // -- iem for rock
   me = S->GetFieldEvaluator("internal_energy_rock");
-  Teuchos::RCP<Energy::EnergyRelations::IEMEvaluator> iem_rock_me =
-      Teuchos::rcp_dynamic_cast<Energy::EnergyRelations::IEMEvaluator>(me);
+  Teuchos::RCP<Energy::IEMEvaluator> iem_rock_me =
+      Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(me);
   ASSERT(iem_rock_me != Teuchos::null);
   rock_iem_ = iem_rock_me->get_IEM();
 }

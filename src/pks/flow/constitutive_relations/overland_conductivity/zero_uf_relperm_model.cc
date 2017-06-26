@@ -15,7 +15,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 ZeroUFRelPermModel::ZeroUFRelPermModel(Teuchos::ParameterList& plist) :
     plist_(plist),
@@ -45,6 +44,5 @@ ZeroUFRelPermModel::SurfaceRelPerm(double uf, double h) {
 
 
 
-} // namespace
 } // namespace
 } // namespace

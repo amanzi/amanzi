@@ -18,7 +18,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 class IEMFactory : public Utils::Factory<IEM> {
 
@@ -26,7 +25,6 @@ public:
   Teuchos::RCP<IEM> createIEM(Teuchos::ParameterList& plist);
 };
 
-} // namespace
 } // namespace
 } // namespace
 

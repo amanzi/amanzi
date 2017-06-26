@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class PondedDepthPassthroughConductivityModel : public OverlandConductivityModel {
 public:
@@ -31,6 +30,6 @@ protected:
 
 } // namespace
 } // namespace
-} // namespace
+
 
 #endif

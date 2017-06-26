@@ -16,7 +16,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class WRMEvaluator : public SecondaryVariablesFieldEvaluator {
 
@@ -51,7 +50,6 @@ class WRMEvaluator : public SecondaryVariablesFieldEvaluator {
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

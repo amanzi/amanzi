@@ -9,7 +9,6 @@ Subgrid water content.
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 // Constructor from ParameterList
 OverlandSubgridWaterContentEvaluator::OverlandSubgridWaterContentEvaluator(Teuchos::ParameterList& plist) :
@@ -210,4 +209,4 @@ OverlandSubgridWaterContentEvaluator::EvaluateFieldPartialDerivative_(const Teuc
 
 } //namespace
 } //namespace
-} //namespace
+

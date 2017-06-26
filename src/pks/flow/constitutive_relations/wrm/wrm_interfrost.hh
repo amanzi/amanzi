@@ -16,7 +16,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class WRMInterfrost : public WRM {
 
@@ -36,7 +35,6 @@ public:
   static Utils::RegisteredFactory<WRM,WRMInterfrost> factory_;
 };
 
-} //namespace
 } //namespace
 } //namespace
 

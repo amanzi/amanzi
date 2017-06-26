@@ -21,7 +21,6 @@ UNITS: MJ/mol
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 class IEMWaterVapor {
 
@@ -44,7 +43,6 @@ private:
   bool molar_basis_;
 };
 
-} //namespace
 } //namespace
 } //namespace
 

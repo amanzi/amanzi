@@ -11,7 +11,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 SurfaceCouplerViaSourceEvaluator::SurfaceCouplerViaSourceEvaluator(
         Teuchos::ParameterList& plist) :
@@ -151,6 +150,5 @@ void SurfaceCouplerViaSourceEvaluator::EvaluateFieldPartialDerivative_(const Teu
   // don't do for now.
 }
 
-} // namespace
 } // namespace
 } // namespace

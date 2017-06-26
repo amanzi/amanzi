@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 class ThermalConductivitySurfaceEvaluator :
     public SecondaryVariableFieldEvaluator {
@@ -43,7 +42,6 @@ class ThermalConductivitySurfaceEvaluator :
   bool sg_model_;
 };
 
-} // namespace
 } // namespace
 } // namespace
 

@@ -12,7 +12,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 // method for instantiating implementations
 Teuchos::RCP<ThermalConductivityThreePhase> ThermalConductivityThreePhaseFactory::createThermalConductivityModel(Teuchos::ParameterList& plist) {
@@ -20,7 +19,6 @@ Teuchos::RCP<ThermalConductivityThreePhase> ThermalConductivityThreePhaseFactory
   return Teuchos::rcp(CreateInstance(tc_typename, plist));
 };
 
-} // namespace
 } // namespace
 } // namespace
 

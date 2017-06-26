@@ -10,11 +10,9 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 Utils::RegisteredFactory<FieldEvaluator,AdvectedEnergySourceEvaluator> AdvectedEnergySourceEvaluator::factory_("advected energy source");
 
-} //namespace
 } //namespace
 } //namespace
 

@@ -16,7 +16,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class WRMZeroRelPerm : public WRM {
 
@@ -40,7 +39,6 @@ class WRMZeroRelPerm : public WRM {
   static Utils::RegisteredFactory<WRM,WRMZeroRelPerm> factory_;
 };
 
-} // namespace
 } // namespace
 } // namespace
 

@@ -21,16 +21,12 @@
 namespace Amanzi {
 
 namespace Flow {
-namespace FlowRelations {
 class IcyHeightModel;
 class UnfrozenFractionModel;
 }
-}
 
 namespace Energy {
-namespace EnergyRelations {
 class IEM;
-}
 }
 
 namespace Relations {
@@ -57,12 +53,12 @@ class SurfaceIceModel : public EWCModelBase {
           AmanziGeometry::Point& result);
 
  protected:
-  Teuchos::RCP<Flow::FlowRelations::IcyHeightModel> pd_;
-  Teuchos::RCP<Flow::FlowRelations::UnfrozenFractionModel> uf_;
+  Teuchos::RCP<Flow::IcyHeightModel> pd_;
+  Teuchos::RCP<Flow::UnfrozenFractionModel> uf_;
   Teuchos::RCP<Relations::EOS> liquid_eos_;
   Teuchos::RCP<Relations::EOS> ice_eos_;
-  Teuchos::RCP<Energy::EnergyRelations::IEM> liquid_iem_;
-  Teuchos::RCP<Energy::EnergyRelations::IEM> ice_iem_;
+  Teuchos::RCP<Energy::IEM> liquid_iem_;
+  Teuchos::RCP<Energy::IEM> ice_iem_;
 
   double p_atm_;
   double gz_;
@@ -71,8 +67,7 @@ class SurfaceIceModel : public EWCModelBase {
 };
 
 
-
-} //namespace
+}
 
 
 #endif
