@@ -8,7 +8,7 @@ For one-dimensional, steady-state, flow through a saturated porous medium with c
 the general governing differential equation expressing mass conservation and Darcy's law becomes simply
 
 	.. math:: \frac{d^2h}{dx^2} = 0
-		:label: ode
+		:label: ode_linear_head_head
 
 where the total head (:math:`h`, [L]) is the sum of pressure head (:math:`P/\rho g`, [L]) 
 and elevation (:math:`z`, [L])
@@ -16,11 +16,11 @@ and elevation (:math:`z`, [L])
 	.. math:: h = \frac{P}{\rho g}+z
 
 :math:`\rho` = density [M/L\ :sup:`3`\ ], :math:`g` = gravitational acceleration [L/T\ :sup:`2`\ ], 
-and :math:`x` = horizontal distance [L]. The ordinary differential equation :eq:`ode` is easily solved by 
+and :math:`x` = horizontal distance [L]. The ordinary differential equation :eq:`ode_linear_head_head` is easily solved by 
 direct integration as
 
 	.. math:: h = C_1 x + C_2
-		:label: generalSoln
+		:label: generalSoln_linear_head_head
 
 where the integration constants :math:`C_1` and :math:`C_2` depend on the boundary conditions.
 
@@ -32,18 +32,18 @@ When hydraulic head is prescribed at both boundaries as
 	.. math:: 
 		h(0) &= h_0\\
 		h(L) &= h_L
-		:label: BCs
+		:label: bc_linear_head_head
 
-the analytic solution :eq:`generalSoln` for hydraulic head becomes
+the analytic solution :eq:`generalSoln_linear_head_head` for hydraulic head becomes
 
 	.. math:: h = (h_L - h_0) \frac{x}{L} + h_0
-		:label: specificSoln
+		:label: specificSoln_linear_head_head
 
 where :math:`L` = domain length [L]. For these boundary conditions the volumetric flowrate per unit area, 
 or Darcy velocity (:math:`U`, [L/T]), is defined by Darcy's law as
 
 	.. math:: U = -\frac{k}{\mu}\rho g \frac{dh}{dx} = -K\frac{dh}{dx} = K\frac{h_0 - h_L}{L}
-		:label: DarcyVel
+		:label: DarcyVel_linear_head_head
 
 where :math:`k` = intrinsic permeability [L\ :sup:`2`\ ],
 :math:`\mu` = viscosity [M/LT], and 
@@ -82,14 +82,14 @@ on an elementary problem. To generate numerical results the following specificat
 For these input specifications, Amanzi simulation output is expected to closely match
 
 	.. math:: h = 20 -\frac{x}{100} \text{[m]}
-		:label: expectedH
+		:label: expectedH_linear_head_head
 
 and
 
 	.. math:: U = 1.0 \text{[m/d]}
-		:label: expectedU
+		:label: expectedU_linear_head_head
 
-following Equations :eq:`specificSoln` and :eq:`DarcyVel`.
+following Equations :eq:`specificSoln_linear_head_head` and :eq:`DarcyVel_linear_head_head`.
 
 Amanzi verification test results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

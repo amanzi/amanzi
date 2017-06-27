@@ -83,7 +83,7 @@ Simulation results
 
 The figure below shows both the aqueous and sorbed concentrations of :math:`\ce{A}, \ce{B}` and :math:`\ce{C}` along the flow direction at 50 years between :math:`x=30 m` and :math:`x=70 m`. Even though the infiltrating concentrations of the aqueous components are the same, the different models lead to different sorbed concentrations. Comparison to PFloTran results is hampered by the different numerical dispersion caused by the discretization schemes. However, the differences between isotherm model results show the same pattern as far as aqueous concentrations goes and the results in terms of sorbed concentrations are within close agreement.  
 
-.. plot:: prototype/chemistry/isotherms_1d/isotherms_1d.py
+.. plot:: isotherms_1d.py
 
 ..   :align: left
 

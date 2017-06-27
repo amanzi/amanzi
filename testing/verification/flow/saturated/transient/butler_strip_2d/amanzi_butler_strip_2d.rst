@@ -4,7 +4,7 @@ Transient Flow in a 2D Confined Aquifer with a Linear Strip
 Introduction
 ------------
 
-Butler and Liu (1991) [Butler1991]_ developed a semi-analytical solution for calculating drawdown in an aquifer system, in which an infinite linear strip of one material is embedded in a matrix of different hydraulic properties. The problem of interest is the drawdown as a function of location and time due to pumping from a fully penetrating well located in any of three zones. The problem is solved analytically in the Fourier-Laplace space and the drawdown is solved numerically by inversion from the Fourier-Laplace space to the real space.
+Butler and Liu (1991) :cite:`strip-Butler_Liu_linear_strip_1991` developed a semi-analytical solution for calculating drawdown in an aquifer system, in which an infinite linear strip of one material is embedded in a matrix of different hydraulic properties. The problem of interest is the drawdown as a function of location and time due to pumping from a fully penetrating well located in any of three zones. The problem is solved analytically in the Fourier-Laplace space and the drawdown is solved numerically by inversion from the Fourier-Laplace space to the real space.
 
 Problem Specification
 ---------------------
@@ -37,7 +37,7 @@ where
 The initial conditions are the same for all three zones:
 
 .. math:: s_i(x,y,0) =0.
-  :label: ic
+  :label: ic_ButlerLiu_strip
 
 The boundary conditions are:
 
@@ -49,7 +49,7 @@ The boundary conditions are:
 .. math::     s_2(0, y, t) =  s_3(0, y, t),\\
 .. math::      T_1\frac{\partial s_1(-d,y,t)}{\partial x} = T_2\frac{\partial s_2(-d,y,t)}{\partial x},\\
 .. math::      T_2\frac{\partial s_2(0,y,t)}{\partial x} = T_3\frac{\partial s_3(0,y,t)}{\partial x}.
-  :label: bc
+  :label: bc_ButlerLiu_strip
 
 
 
@@ -87,29 +87,28 @@ Results and Comparison
 ----------------------
 
 
-.. _Plot:
+.. _plot_ButlerLiu_strip:
 
 Comparison of  Analytic Solution and Amanzi Results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. plot:: prototype/transient_butler_strip/amanzi_butler_strip_2d.py
+.. plot:: amanzi_butler_strip_2d.py
              :align: center
 
 
 The comparison shows that the results from the Amanzi model match the analytical solution very well at early time, and they deviate when the effect of pumping hits the constant head boundary of the domain. Note that, the analytical solution was developed for unbounded domain, and therefore it is expected that the two solutions will deviate each other at later time.
 To show that such a deviation is indeed caused by the boundary effect, we also conducted numerical simulations using 
-FEHM, a widely used numerical simulator for simulating heat and mass flow in subsurface environment [Zyvoloski1997]_. It is showed that the results from Amanzi are almost the same as those from FEHM, see [Lu2014]_ for detailed comparison.
+FEHM, a widely used numerical simulator for simulating heat and mass flow in subsurface environment :cite:`strip-Zyvoloski_FEHM_summary_1997`. It is showed that the results from Amanzi are almost the same as those from FEHM, see :cite:`strip-Lu_Harp_Birdsell_benchmarking_2014` for detailed comparison.
 
 References
 ----------
 
-.. [Butler1991] Butler, J. J., and W. Liu, 1991. Pumping tests in non-uniform aquifers the linear strip case, Journal of Hydrology, 128, 69-99.
+.. bibliography:: /bib/ascem.bib
+   :filter: docname in docnames
+   :style:  alpha
+   :keyprefix: strip-
 
-.. [Lu2014] Lu, Z., D. Harp, and K. Birdsell, Comparison of the Amanzi Model against Analytical Solutions and the FEHM Model, Tech. Report LA-UR-14-20898, Los Alamos National Laboratory, Los Alamos, 2014.
-
-.. [Zyvoloski1997] Zyvoloski,G. A., B. A. Robinson, Z. V. Dash, and L. L. Trease, Summary of the Models and Methods for the FEHM Application, A Finite-Element Heat- and Mass-Transfer Code, Tech. Report LA-13307-MS, Los Alamos National Laboratory, Los Alamos, NM, 1997.
-
-
+	    
 About
 -----
 

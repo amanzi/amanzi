@@ -90,7 +90,7 @@ Simulation results
 
 The figure below shows both the aqueous and sorbed concentrations of :math:`\ce{Na^+}, \ce{Ca^+}, \ce{Mg^{2+}}, \ce{Cl^-}` along the flow direction at 50 years.
 
-.. plot:: prototype/chemistry/ion_exchange_1d/ion_exchange_1d.py
+.. plot:: ion_exchange_1d.py
 
 ..   :align: left
 
