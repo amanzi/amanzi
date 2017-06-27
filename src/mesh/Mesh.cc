@@ -185,6 +185,20 @@ Mesh::cell_get_max_faces() const
 }
 
 
+unsigned int
+Mesh::cell_get_max_nodes() const
+{
+  unsigned int n(0);
+  int ncells = num_entities(CELL, OWNED);
+  for (int c = 0; c < ncells; ++c) {
+    AmanziMesh::Entity_ID_List nodes;
+    cell_get_nodes(c, &nodes);
+    n = std::max(n, (unsigned int) nodes.size());
+  }
+  return n;
+}
+
+
 void
 Mesh::cell_get_faces_and_dirs(const Entity_ID cellid,
                               Entity_ID_List *faceids,

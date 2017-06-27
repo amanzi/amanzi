@@ -225,6 +225,7 @@ class Mesh {
   // cell, OWNED or GHOST.
   unsigned int cell_get_num_faces(const Entity_ID cellid) const;
   unsigned int cell_get_max_faces() const;
+  unsigned int cell_get_max_nodes() const;
 
   // Get faces of a cell.
   //
