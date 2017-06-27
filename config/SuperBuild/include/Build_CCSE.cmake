@@ -85,8 +85,8 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
                     # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
                     # -- Output control
-                    ${CCSE_logging_args}) 
-
+                    #${CCSE_logging_args}) 
+		    )
 if ( ENABLE_CCSE_TOOLS )
 
 # --- This custom command builds fsnapshot.so, which is a Python module used 
