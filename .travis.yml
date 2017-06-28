@@ -7,7 +7,6 @@ services:
 
 branches:
   only:
-  - master
   - alexis/docker
 
 install:
