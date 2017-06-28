@@ -22,7 +22,7 @@ linear map (assuming the map is invertible).
 Typically the ``Operator`` is never seen by the user; instead the user provides
 input information for helper classes based on the continuous mathematical
 operator and the desired discretization.  These helpers build the needed
-``Operator``, which may incldude information from multiple helpers (i.e. in the
+``Operator``, which may include information from multiple helpers (i.e. in the
 case of Jacobian Operators for a PDE).
 
 However, one option may be provided by the user, which is related to dealing

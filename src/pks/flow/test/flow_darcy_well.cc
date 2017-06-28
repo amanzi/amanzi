@@ -81,8 +81,9 @@ void RunTestMarshak(std::string controller) {
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
   
   for (int c = 0; c < K.MyLength(); c++) {
-    K[0][c] = 0.1;
-    K[1][c] = 2.0;
+    const AmanziGeometry::Point xc = mesh->cell_centroid(c);
+    K[0][c] = 0.1 + std::sin(xc[0]) * 0.02;
+    K[1][c] = 2.0 + std::cos(xc[1]) * 0.4;
   }
   S->GetField("permeability", "flow")->set_initialized();
 
