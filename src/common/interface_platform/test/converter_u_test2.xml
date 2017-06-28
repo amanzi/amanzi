@@ -105,7 +105,7 @@
 
       <unstr_linear_solver>
         <max_iterations>100</max_iterations>
-        <method>gmres</method>
+        <!--method>pcg</method-->
         <tolerance>1e-20</tolerance>
       </unstr_linear_solver>
       <unstr_preconditioners>
