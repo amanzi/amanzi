@@ -166,6 +166,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     CompositeVector velc_t(*velc), velf_t(*velf);
 
     Epetra_MultiVector& vel = *velf_t.ViewComponent("face");
+double sum(0.0);
     for (int f = 0; f < nfaces_wghost; ++f) {
       R(0, 0) = 1.0 + t * vel[5][f];
       R(0, 1) = -t * vel[4][f];
@@ -175,6 +176,15 @@ void RemapTests2DExplicit(int order, std::string disc_name,
       for (int k = 0; k < nk; ++k) {
         xv[0] = vel[2 * k][f];
         xv[1] = vel[2 *k + 1][f];
+if (f < 4) {
+sum += xv * mesh1->face_normal(f);
+AmanziGeometry::Point xv2(2), xv3(2);
+xv2[0] = vel[2][f];
+xv2[1] = vel[3][f];
+xv3[0] = vel[4][f];
+xv3[1] = vel[5][f];
+std::cout << f << " " << xv << " " << xv2 << " " << xv3 << " sum=" << sum << " nf=" << mesh1->face_normal(f) << std::endl;
+}
 
         xv = R * xv;
       

@@ -483,8 +483,10 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
       }
       avgB += std::fabs(sol_b[0][c]);
       divB += tmp * tmp * vol; 
-      errB += vol * (std::pow(sol_b[0][c], 2.0) + std::pow(sol_b[1][c], 2.0) 
-                   + std::pow(sol_b[2][c] - 1.0, 2.0));
+
+      AmanziGeometry::Point v1(ana.magnetic_exact(xc, told));
+      AmanziGeometry::Point v2(sol_b[0][c], sol_b[1][c], sol_b[2][c]);
+      errB += vol * (L22(v1 - v2));
     }
 
     // -- electric field
@@ -526,7 +528,7 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
                 << " itr=" << solver.num_itrs() << "  energy= " << energy 
                 << "  avgB=" << avgB / ncells_owned 
                 << "  divB=" << std::pow(divB, 0.5) 
-                << "  ||B-1||=" << std::pow(errB, 0.5) << std::endl;
+                << "  errB=" << std::pow(errB, 0.5) << std::endl;
     }
 
     // visualization
@@ -567,7 +569,7 @@ TEST(RESISTIVE_MHD2D_RELAX) {
 
 TEST(RESISTIVE_MHD2D_CONVERGENCE) {
   ResistiveMHD2D<AnalyticElectromagnetics05>(0.01, 0.1, 10,10, 0.0,0.0, 1.0,1.0, "test/random10.exo");
-  // ResistiveMHD2D<AnalyticElectromagnetics05>(0.01, 0.1, 10,10, 0.0,0.0, 1.0,1.0, "structured");
+  // ResistiveMHD2D<AnalyticElectromagnetics05>(0.01 / 2, 0.1, 20,20, 0.0,0.0, 1.0,1.0, "structured");
 }
 
 TEST(RESISTIVE_MHD3D_RELAX) {
@@ -576,7 +578,7 @@ TEST(RESISTIVE_MHD3D_RELAX) {
 
 TEST(RESISTIVE_MHD3D_CONVERGENCE) {
   // ResistiveMHD3D<AnalyticElectromagnetics05>(0.01, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
-  // ResistiveMHD3D<AnalyticElectromagnetics05>(0.01, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/kershaw08.exo");
-  ResistiveMHD3D<AnalyticElectromagnetics05>(0.01, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hex_split_faces5.exo");
+  ResistiveMHD3D<AnalyticElectromagnetics05>(0.01, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/kershaw08.exo");
+  // ResistiveMHD3D<AnalyticElectromagnetics05>(0.01, 0.01, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hex_split_faces10.exo");
 }
 
