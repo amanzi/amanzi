@@ -3254,13 +3254,19 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
 
   // Is there an appropriate region by this name?
 
-  Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setname);
+  // Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setname);
+  Teuchos::RCP<const AmanziGeometry::Region> rgn;
+  try {
+    rgn = gm->FindRegion(setname);
+  } catch (...) {
+    valid_set_name(setname, kind);
+  }
 
   // Did not find the region
   
   if (rgn == Teuchos::null) {
     std::stringstream mesg_stream;
-    mesg_stream << "Geometric model has no region named " << setname;
+    mesg_stream << "Geometric model has no region named \"" << setname <<"\"\n";
     Errors::Message mesg(mesg_stream.str());
     amanzi_throw(mesg);
   }
