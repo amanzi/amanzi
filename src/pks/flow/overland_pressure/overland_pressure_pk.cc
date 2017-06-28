@@ -66,18 +66,16 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
     iter_(0),
     iter_counter_time_(0.)
 {
-
-  if(!plist_->isParameter("conserved quanity suffix"))
-    plist_->set("conserved quantity suffix", "water_content");
-
   // clone the ponded_depth parameter list for ponded_depth bar
   Teuchos::ParameterList& FElist = S->FEList();
   Teuchos::ParameterList& pd_list = FElist.sublist(getKey(domain_,"ponded_depth"));
-
   Teuchos::ParameterList pdbar_list(pd_list);
   pdbar_list.set("ponded depth bar", true);
   pdbar_list.set("height key", getKey(domain_,"ponded_depth_bar"));
   FElist.set(getKey(domain_,"ponded_depth_bar"), pdbar_list);
+
+  if(!plist_->isParameter("conserved quanity suffix"))
+    plist_->set("conserved quantity suffix", "water_content");
 
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
@@ -368,10 +366,12 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
         ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(mass_source_key_);
 
-    // density of incoming water [mol/m^3]
-    S->RequireField(getKey(domain_,"source_molar_density"))->SetMesh(mesh_)
+    if (source_in_meters_){
+      // density of incoming water [mol/m^3]
+      S->RequireField(getKey(domain_,"source_molar_density"))->SetMesh(mesh_)
         ->AddComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(getKey(domain_,"source_molar_density"));
+      S->RequireFieldEvaluator(getKey(domain_,"source_molar_density"));
+    }
   }
 
   // -- water content bar (can be negative)
@@ -607,9 +607,9 @@ void OverlandPressureFlow::CommitStep(double t_old, double t_new, const Teuchos:
   // derive the fluxes
 
   Teuchos::RCP<const CompositeVector> potential = S->GetFieldData(getKey(domain_,"pres_elev"));
-  Teuchos::RCP<CompositeVector> flux = S->GetFieldData(getKey(domain_,"mass_flux"), name_);
+  Teuchos::RCP<CompositeVector> mass_flux = S->GetFieldData(getKey(domain_,"mass_flux"), name_);
 
-  matrix_diff_->UpdateFlux(*potential, *flux);
+  matrix_diff_->UpdateFlux(*potential, *mass_flux);
 
   // const Epetra_MultiVector& nrho_l = *S->GetFieldData("surface-molar_density_liquid")->ViewComponent("cell");
   // const Epetra_MultiVector& mass_flux_v = *mass_flux->ViewComponent("face");

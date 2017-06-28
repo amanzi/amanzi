@@ -34,7 +34,7 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
   Epetra_MultiVector& slope_c = *slope->ViewComponent("cell", false);
   
   // Get the elevation and slope values from the domain mesh.
-  Key key=plist_.get<std::string>("elevation key", "surface");
+  Key key=plist_.get<std::string>("elevation key", "surface-elevation");
   Key domain = getDomain(key);
   Key domain_ss;
   if(domain.substr(0,6) =="column")
