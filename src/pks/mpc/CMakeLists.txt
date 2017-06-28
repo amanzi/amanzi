@@ -86,6 +86,11 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
+  HEADERFILE mpc_coupled_cells_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
   HEADERFILE mpc_permafrost_reg.hh
   LISTNAME   MPC_PK_FAC
   )
