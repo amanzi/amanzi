@@ -349,6 +349,11 @@ class Mesh_MSTK : public Mesh {
   // Miscellaneous
   void write_to_exodus_file(const std::string filename) const;
 
+  // Run MSTK's internal checks - meant for debugging only
+  // Returns true if everything is ok, false otherwise
+
+  bool run_internal_mstk_checks() const;
+
  private:
   MPI_Comm mpicomm_;
   int myprocid, numprocs;

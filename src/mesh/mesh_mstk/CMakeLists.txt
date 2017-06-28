@@ -54,6 +54,10 @@ if (WITH_MSTK_2_21rc1_OR_NEWER)
   add_definitions("-DMSTK_2_21rc1_OR_NEWER")
 endif ()
 
+if (WITH_MSTK_3_00_OR_NEWER)
+  add_definitions("-DMSTK_3_00_OR_NEWER")
+endif ()
+
 #
 # Library: mstk_mesh
 #
@@ -74,6 +78,12 @@ if (BUILD_TESTS)
           copy_directory ${MSTK_SOURCE_DIR}/test ${MSTK_BINARY_DIR}/test) 
     endif()
 
+    #Test: elim_degen_mstk
+    add_amanzi_test(mstk_po_test mstk_po_test
+                    KIND int
+                    SOURCE
+                         test/test_pinchouts.cc
+                    LINK_LIBS mstk_mesh mesh_factory mesh_audit ${UnitTest_LIBRARIES})
 
     # Test: mstk_mesh
     add_amanzi_test(mstk_mesh_basis mstk_mesh_basis
@@ -83,7 +93,6 @@ if (BUILD_TESTS)
                          test/test_hex_1x1x1.cc
                          test/test_hex_2x2x1.cc
                          test/test_hex_3x3x3.cc
-                         test/test_nonmanifold_surfaces.cc
                          test/test_hex_3x3x3_sets.cc
                          test/test_hex_gen_3x3x3.cc
                          test/test_quad_gen_3x3.cc
