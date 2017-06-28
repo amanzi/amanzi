@@ -11,6 +11,7 @@ branches:
   - alexis/docker
 
 script:
+  - cd Docker
   - docker build -t ${DOCKER_USERNAME}/amanzi:latest -f Dockerfile-Amanzi .
 
 after_success:
