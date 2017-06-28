@@ -951,11 +951,17 @@ bool MeshAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_use)
   // Check that the global ID space is contiguously divided (but not
   // necessarily uniformly) across all processers
 
+  std::vector<int> owned_GIDs(map_own.NumMyElements());
+  for (int i = 0; i < map_own.NumMyElements(); i++)
+    owned_GIDs[i] = map_own.GID(i);
+  std::sort(owned_GIDs.begin(), owned_GIDs.end());
+
   for (int i = 0; i < map_own.NumMyElements()-1; i++) {
-    int diff = map_own.GID(i+1)-map_own.GID(i);
+    int diff = owned_GIDs[i+1]-owned_GIDs[i];
     if (diff > 1) {
       os << "ERROR: owned map is not contiguous" << std::endl;
-      os << "Difference between elements " << i << " and " << i+1 << " is " << map_own.GID(i+1)-map_own.GID(i) << std::endl;
+      os << "Global IDs jump from " << owned_GIDs[i] << " to " <<
+          owned_GIDs[i+1] << std::endl;
       error = true;
     }
   }
