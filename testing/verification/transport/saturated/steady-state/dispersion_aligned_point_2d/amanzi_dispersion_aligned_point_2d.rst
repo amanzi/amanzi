@@ -46,11 +46,11 @@ verification data used in this test is generated from AT123D, a
 program of these analytical solutions for one-, two-, or
 three-dimensional transport of heat, dissolved chemicals, or dissolved
 radionuclides in a homogeneous aquifer subject to a uniform,
-stationary regional flow field [Yeh1981]_.  The assumption is that the
+stationary regional flow field :cite:`da-Yeh_AT123D_1981`.  The assumption is that the
 modeled aquifer is infinite in the direction of flow but can be
 considered finite or infinite in the vertical and transverse
 horizontal directions.  The test problem specification is described in
-Problem 5.2 of [Aleman2007]_.  The verification data from AT123D that
+Problem 5.2 of :cite:`da-Aleman_PORFLOW_2007`.  The verification data from AT123D that
 is used to compare against Amanzi output is listed in Tables 5.2.3,
 5.2.4, and 5.2.5 of that document.
 
@@ -171,12 +171,12 @@ scheme provides excellent match (circles).
 References
 ----------
 
-.. [Aleman2007] Aleman, S. 2007. PORFLOW Testing and Verification Document. Savannah River National 
-		Laboratory technical report WSRC-STI-2007-00150 Rev 0. 193 p.
+.. bibliography:: /bib/ascem.bib
+   :filter: docname in docnames
+   :style:  alpha
+   :keyprefix: da-
 
-.. [Yeh1981] Yeh, G.T. 1981. AT123D: Analytical transient one-, two-, and three-dimensional 
-	     simulation of transport in the aquifer system, Oak Ridge National Lab., Tennessee, Report No. ORNL-5602.
-
+	    
 .. _about_aligned_dispersion:
 
 About

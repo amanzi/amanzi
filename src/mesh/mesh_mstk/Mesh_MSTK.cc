@@ -3254,13 +3254,19 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
 
   // Is there an appropriate region by this name?
 
-  Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setname);
+  // Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setname);
+  Teuchos::RCP<const AmanziGeometry::Region> rgn;
+  try {
+    rgn = gm->FindRegion(setname);
+  } catch (...) {
+    valid_set_name(setname, kind);
+  }
 
   // Did not find the region
   
   if (rgn == Teuchos::null) {
     std::stringstream mesg_stream;
-    mesg_stream << "Geometric model has no region named " << setname;
+    mesg_stream << "Geometric model has no region named \"" << setname <<"\"\n";
     Errors::Message mesg(mesg_stream.str());
     amanzi_throw(mesg);
   }
@@ -3853,12 +3859,14 @@ void Mesh_MSTK::post_create_steps_(const bool request_faces,
   // requested
 
   init_nodes();
+
   if (request_edges) init_edges();
   if (request_faces) init_faces();
   init_cells();
 
   if (Mesh::geometric_model() != Teuchos::null)
     init_set_info();
+
 }
 
 
@@ -3991,7 +3999,7 @@ void Mesh_MSTK::init_vertex_id2handle_maps()
 
   nv = MESH_Num_Vertices(mesh);
 
-  vtx_id_to_handle.reserve(nv);
+  vtx_id_to_handle.resize(nv);
 
   idx = 0; lid = 1;
   while ((vtx = MSet_Next_Entry(OwnedVerts,&idx))) {
@@ -4006,6 +4014,7 @@ void Mesh_MSTK::init_vertex_id2handle_maps()
     vtx_id_to_handle[lid-1] = vtx;
     lid++;
   }
+
 }
 
 
@@ -4023,7 +4032,7 @@ void Mesh_MSTK::init_edge_id2handle_maps()
 
   ne = MESH_Num_Edges(mesh);
 
-  edge_id_to_handle.reserve(ne);
+  edge_id_to_handle.resize(ne);
 
   idx = 0; lid = 1;
   while ((edge = MSet_Next_Entry(OwnedEdges,&idx))) {
@@ -4055,7 +4064,7 @@ void Mesh_MSTK::init_face_id2handle_maps()
 
   nf = (manifold_dimension() == 2) ? MESH_Num_Edges(mesh) : MESH_Num_Faces(mesh);
 
-  face_id_to_handle.reserve(nf);
+  face_id_to_handle.resize(nf);
 
   idx = 0; lid = 1;
   while ((genface = MSet_Next_Entry(OwnedFaces,&idx))) {
@@ -4087,7 +4096,7 @@ void Mesh_MSTK::init_cell_id2handle_maps()
 
   nc = (manifold_dimension() == 2) ? MESH_Num_Faces(mesh) : MESH_Num_Regions(mesh);
 
-  cell_id_to_handle.reserve(nc);
+  cell_id_to_handle.resize(nc);
 
   idx = 0; lid = 1;
   while ((gencell = MSet_Next_Entry(OwnedCells,&idx))) {
@@ -4640,33 +4649,26 @@ void Mesh_MSTK::collapse_degen_edges()
 {
   const int topoflag=0; // Don't worry about violation of model classification
   int idx, idx2, evgid0, evgid1;
-  MVertex_ptr ev0, ev1, vkeep, vdel;
+  MVertex_ptr vertex, ev0, ev1, vkeep, vdel;
   MEdge_ptr edge;
   MFace_ptr face;
   MRegion_ptr region;
-  List_ptr eregs, efaces, vregs, vfaces;
+  List_ptr deleted_ents_all = List_New(10);
+  List_ptr merged_entity_pairs_all = List_New(10);
   double len2;
   int ival;
   void *pval;
-  Cell_type celltype;  
+  Cell_type celltype;
+  std::vector<int> merged_ents_info;
 
   idx = 0;
   while ((edge = MESH_Next_Edge(mesh,&idx))) {
 
-    len2 = ME_LenSqr(edge);
-
-    if (len2 <= 1.0e-14) {
-
+    len2 = ME_Len(edge);
+    
+    if (len2 <= 1.0e-15) {
+#ifdef MSTK_3_00_OR_NEWER
       /* Degenerate edge  - must collapse */
-
-      /* If its the first time, we have to allocate
-         these lists */
-      if (!entities_deleted) {
-        deleted_vertices = List_New(0);
-        deleted_edges = List_New(0);
-        deleted_faces = List_New(0);
-        deleted_regions = List_New(0);
-      }
 
       entities_deleted = true;
 
@@ -4694,99 +4696,175 @@ void Mesh_MSTK::collapse_degen_edges()
         vdelid = MV_ID(vdel);
       }
 
-#if defined (MSTK_2_20rc1_OR_NEWER) || defined (MSTK_2_21rc1_OR_NEWER)
-
-      List_ptr deleted_ents;
-      vkeep = ME_Collapse(edge, vkeep, topoflag, &deleted_ents);
+      List_ptr deleted_ents = NULL, merged_entity_pairs = NULL;
+      vkeep = ME_Collapse(edge, vkeep, topoflag, &deleted_ents,
+                          &merged_entity_pairs);
 
       if (!vkeep) {
         vkeep = vdel;
-        vdel = (vkeep == ev0) ? ev1 : ev1;
+        vdel = (vkeep == ev0) ? ev1 : ev0;
         vdelid = MV_ID(vdel);
 
-        vkeep = ME_Collapse(edge, vkeep, topoflag, &deleted_ents);
+        vkeep = ME_Collapse(edge, vkeep, topoflag, &deleted_ents,
+                            &merged_entity_pairs);
       }
 
       if (!vkeep) {
         Errors::Message mesg("Could not collapse degenerate edge. Expect computational issues with connected elements");
         amanzi_throw(mesg);
-      }
-      
-      MEntity_ptr ent;
-      int idx1 = 0;
-      //Loop/switch below will generate empty lists: all deleted entities
-      //have MEnt_Dim(ent) == MDELETED
-      while ((ent = List_Next_Entry(deleted_ents,&idx1))) {
-        switch (MEnt_Dim(ent)) {
-        case MREGION:
-          List_Add(deleted_regions,ent);
-          break;
-        case MFACE:
-          List_Add(deleted_faces,ent);
-          break;
-        case MEDGE:
-          List_Add(deleted_edges,ent);
-          break;
-        case MVERTEX:
-          List_Add(deleted_vertices,ent);
-          break;
+      } 
+      else {
+        if (deleted_ents) {
+          List_Cat(deleted_ents_all, deleted_ents);
+          List_Delete(deleted_ents);
+        }
+        if (merged_entity_pairs) {
+          List_Cat(merged_entity_pairs_all, merged_entity_pairs);
+          List_Delete(merged_entity_pairs);
         }
       }
-      List_Delete(deleted_ents);
-
 #else
-
-      eregs = ME_Regions(edge);
-      efaces = ME_Faces(edge);
-
-      vkeep = ME_Collapse(edge, vkeep, topoflag);
-
-      if (!vkeep) {
-        vkeep = vdel;
-        vdel = (vkeep == ev0) ? ev1 : ev1;
-        vdelid = MV_ID(vdel);
-
-        vkeep = ME_Collapse(edge, vkeep, topoflag);
-      }
-
-      if (!vkeep) {
-        Errors::Message mesg("Could not collapse degenerate edge. Expect computational issues with connected elements");
-        amanzi_throw(mesg);
-      }
-      
-      vregs = MV_Regions(vkeep);
-      vfaces = MV_Faces(vkeep);
-
-      if (eregs) {
-        MRegion_ptr reg;
-        int idx1 = 0;
-        while ((reg = List_Next_Entry(eregs,&idx1))) {
-          if (!List_Contains(vregs,reg)) 
-            List_Add(deleted_regions,reg);
-        }
-      }
-      
-      if (efaces) {
-        MFace_ptr face;
-        int idx1 = 0;
-        while ((face = List_Next_Entry(efaces,&idx1))) {
-          if (!List_Contains(vfaces,face))
-            List_Add(deleted_faces,face);
-        }
-      }
-
-      List_Add(deleted_edges,edge);
-
-      List_Add(deleted_vertices,vdel);
-
-      if (vregs) List_Delete(vregs);
-      if (vfaces) List_Delete(vfaces);
-      if (eregs) List_Delete(eregs);
-      if (efaces) List_Delete(efaces);
-
+      Errors::Message mesg("Mesh contains a degenerate edge. MSTK version 3.0.0 or later is required to support collapsing of degenerate edges!");
+      amanzi_throw(mesg);
 #endif
     }
   }
+#ifdef MSTK_3_00_OR_NEWER
+  int nmerged = List_Num_Entries(merged_entity_pairs_all)/2;
+  for (int j = 0; j < nmerged; j++) {
+    MEntity_ptr delent = List_Entry(merged_entity_pairs_all, 2*j);
+    MEntity_ptr keepent = List_Entry(merged_entity_pairs_all, 2*j+1);
+    merged_ents_info.push_back(static_cast<int>(MEnt_Dim(keepent)));
+    merged_ents_info.push_back(MEnt_GlobalID(delent));
+    merged_ents_info.push_back(MEnt_GlobalID(keepent));
+  }
+
+  int *nmerged_proc = new int[numprocs];
+  int *nmerged_proc_x3 = new int[numprocs];
+  MPI_Allgather(&nmerged, 1, MPI_INT, nmerged_proc, 1, MPI_INT, mpicomm_);
+
+  int *offset = new int[numprocs];
+  int nmerged_global = 0;
+  for (int p = 0; p < numprocs; p++) {
+    offset[p] = 3*nmerged_global;
+    nmerged_global += nmerged_proc[p];
+    nmerged_proc_x3[p] = 3*nmerged_proc[p];
+  }
+
+  // We probably can make this more efficient by using point-to-point
+  // communication
+
+  int *merged_ents_info_global = new int[3*nmerged_global];
+  MPI_Allgatherv(&(merged_ents_info[0]), 3*nmerged, MPI_INT,
+                 merged_ents_info_global, nmerged_proc_x3, offset,
+                 MPI_INT, mpicomm_);
+
+  idx = 0;
+  while ((vertex = MESH_Next_Vertex(mesh, &idx))) {
+    if (MV_PType(vertex) == PGHOST) {
+      int vgid = MV_GlobalID(vertex);
+      for (int i = 0; i < nmerged_global; i++) {
+        if (merged_ents_info_global[3*i] == MVERTEX &&
+            merged_ents_info_global[3*i+1] == vgid) {
+          // Found vertex that got deleted and replaced by another vtx
+          // on a different proc
+          MV_Set_GlobalID(vertex, merged_ents_info_global[3*i+2]);
+          break;
+        }
+      }
+    }
+  }
+
+
+  idx = 0;
+  while ((edge = MESH_Next_Edge(mesh, &idx))) {
+    if (ME_PType(edge) == PGHOST) {
+      int egid = ME_GlobalID(edge);
+      for (int i = 0; i < nmerged_global; i++) {
+        if (merged_ents_info_global[3*i] == MEDGE &&
+            merged_ents_info_global[3*i+1] == egid) {
+          // Found edge that got deleted and replaced by another edge
+          // on a different proc
+          ME_Set_GlobalID(edge, merged_ents_info_global[3*i+2]);
+          break;
+        }
+      }
+    }
+  }
+
+
+  idx = 0;
+  while ((face = MESH_Next_Face(mesh, &idx))) {
+    if (MF_PType(face) == PGHOST) {
+      int fgid = MF_GlobalID(face);
+      for (int i = 0; i < nmerged_global; i++) {
+        if (merged_ents_info_global[3*i] == MFACE &&
+            merged_ents_info_global[3*i+1] == fgid) {
+          // Found face that got deleted and replaced by another face
+          // on a different proc
+          MF_Set_GlobalID(face, merged_ents_info_global[3*i+2]);
+          break;
+        }
+      }
+    }
+  }
+
+  delete [] nmerged_proc;
+  delete [] nmerged_proc_x3;
+  delete [] merged_ents_info_global;
+  delete [] offset;
+
+  /* Go through all mesh sets and replace any merged entities */
+
+  MEntity_ptr delent, keepent;
+  int nsets = MESH_Num_MSets(mesh);
+  idx = 0;
+  while ((delent = List_Next_Entry(merged_entity_pairs_all, &idx))) {
+    MEntity_ptr keepent = List_Next_Entry(merged_entity_pairs_all, &idx);
+    int entdim = MEnt_Dim(keepent);
+
+    for (int j = 0; j < nsets; j++) {
+      MSet_ptr mset = MESH_MSet(mesh, j);
+      if (MSet_EntDim(mset) != entdim) continue;
+
+      int iloc = MSet_Locate(mset, delent);
+      if (iloc != -1)  // found deleted entity in set; replace it with keepent
+        MSet_Replacei(mset, iloc, keepent);
+    }
+  }
+
+  /* Go through all mesh sets and remove entities that were deleted
+   * (not merged) */
+
+  idx = 0;
+  while ((delent = List_Next_Entry(deleted_ents_all, &idx))) {
+    int entdim = MEnt_OrigDim(delent);
+
+    for (int j = 0; j < nsets; j++) {
+      MSet_ptr mset = MESH_MSet(mesh, j);
+      if (MSet_EntDim(mset) != entdim) continue;
+
+      int iloc = MSet_Locate(mset, delent);
+      if (iloc != -1)  // found deleted entity in set; replace it with keepent
+        MSet_Remi(mset, iloc);
+    }
+  }
+
+
+  // ME_Collapse only marked these entities as DELETED but now
+  // delete them for good
+  idx = 0;
+  while ((delent = List_Next_Entry(deleted_ents_all, &idx)))
+    MEnt_Delete(delent, 0);
+
+  List_Delete(deleted_ents_all);
+  List_Delete(merged_entity_pairs_all);
+
+  // Now renumber global IDs to make them contiguous
+
+  if (entities_deleted)
+    MESH_Renumber_GlobalIDs(mesh, MALLTYPE, 0, NULL, mpicomm_);
+#endif
 }
 
 
@@ -5610,6 +5688,16 @@ void
 Mesh_MSTK::write_to_exodus_file(const std::string filename) const {
   MESH_ExportToExodusII(mesh,filename.c_str(),-1,NULL,NULL,mpicomm_);
 }
+
+
+// Run MSTK's internal checks - meant for debugging only
+// Returns true if everything is ok, false otherwise
+
+bool
+Mesh_MSTK::run_internal_mstk_checks() const {
+  return MESH_CheckTopo(mesh) && MESH_Parallel_Check(mesh, mpicomm_);
+}
+
 
 }  // namespace AmanziMesh
 }  // namespace Amanzi

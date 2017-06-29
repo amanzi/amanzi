@@ -18,9 +18,9 @@ For details on this test, see :ref:`about_non_grid_aligned`.
 Background
 ----------
 
-Mixing-induced precipitation is a problem that has recently received some attention in the literature, especially in pore scale studies [Yoon2012]_, [Tartakovsky2008]_. To accurately predict precipitation along mixing interfaces, accurate prediction of diffusive transport is required. This is especially true, when these transport processes are not aligned with the grid that is used to discretize the domain. Amanzi uses numerical schemes that accurately simulate non-grid-aligned advective and diffusive transport.  In this release, the advection-diffusion equation is solved using an operator splitting framework with an explicit scheme for the advection operator and an implicit scheme for diffusion. A simple operator-split approach is used; future releases will include options for higher-order schemes to couple the processes temporally.
+Mixing-induced precipitation is a problem that has recently received some attention in the literature, especially in pore scale studies :cite:`nga-Yoon_etal_mixing_2012`, :cite:`nga-Tartakovsky_etal_mixing_2008`. To accurately predict precipitation along mixing interfaces, accurate prediction of diffusive transport is required. This is especially true, when these transport processes are not aligned with the grid that is used to discretize the domain. Amanzi uses numerical schemes that accurately simulate non-grid-aligned advective and diffusive transport.  In this release, the advection-diffusion equation is solved using an operator splitting framework with an explicit scheme for the advection operator and an implicit scheme for diffusion. A simple operator-split approach is used; future releases will include options for higher-order schemes to couple the processes temporally.
 
-The spatial discretization schemes available in Amanzi for advective and diffusive processes are optimized for the selected mesh framework (structured AMR or unstructured).  For unstructured meshes, Amanzi provides a second-order approximation of advective fluxes with a MUSCL-type (Monotonic Upstream-Centered Scheme for Conservation Laws) scheme [Barth1994]_ that combines local linear reconstruction of solute concentrations with a tensorial slope limiter.  The tensorial slope limiter adds robustness to the scheme and reduces numerical diffusion compared to the more conventional (scalar) Barth-Jesperson limiter.  The tensor diffusion fluxes are computed with either standard central differencing or a second-order MFD (Mimetic Finite Difference) method [Lipnikov2014]_ optimized to guarantee solution monotonicity.  For structured AMR meshes, Amanzi implements an unsplit Godunov scheme [BDS1988]_, [Nonaka2011]_ for advection, and a standard 9-point (2D) or 27-point (3D) tensor diffusion scheme.  The Godunov scheme robustly guarantees monontonicity for non-grid-aligned advection.
+The spatial discretization schemes available in Amanzi for advective and diffusive processes are optimized for the selected mesh framework (structured AMR or unstructured).  For unstructured meshes, Amanzi provides a second-order approximation of advective fluxes with a MUSCL-type (Monotonic Upstream-Centered Scheme for Conservation Laws) scheme :cite:`nga-Barth_lecture_1994` that combines local linear reconstruction of solute concentrations with a tensorial slope limiter.  The tensorial slope limiter adds robustness to the scheme and reduces numerical diffusion compared to the more conventional (scalar) Barth-Jesperson limiter.  The tensor diffusion fluxes are computed with either standard central differencing or a second-order MFD (Mimetic Finite Difference) method :cite:`nga-Beirao_Lipikov_Manzini_2014` optimized to guarantee solution monotonicity.  For structured AMR meshes, Amanzi implements an unsplit Godunov scheme :cite:`nga-Bell_etal_unsplit_1988`, :cite:`nga-Nonaka_etal_unsplit_3D_2011` for advection, and a standard 9-point (2D) or 27-point (3D) tensor diffusion scheme.  The Godunov scheme robustly guarantees monontonicity for non-grid-aligned advection.
 
 
 Model
@@ -136,15 +136,13 @@ Simulation results show a good agreement with expected results. Precipitation of
 References
 ----------
 
-.. [Yoon2012] H. Yoon, A.J. Valocchi, C.J. Werth, and T. Dewers (2012) Pore-scale simulation of mixing-induced calcium carbonate precipitation and dissolution in a microfluidic pore network, Water Resour. Res., 48, W02524, doi:10.1029/2011WR011192.
-.. [Tartakovsky2008] A.M. Tartakovsky, G. Redden, P.C. Lichtner, T.D. Scheibe, and P. Meakin (2008) Mixing-induced precipitation: Experimental study and multiscale numerical analysis, Water Resour. Res., 44, W06S04, doi:10.1029/2006WR005725.
-.. [Barth1994] T.Barth. Aspects of unstructured grids and finite-volume solvers for the Euler and Navier-Stokes equations. Lecture Notes presented at VKI Lecture Series, 1994-05.
-.. [Lipnikov2014] L. Beirao da Veiga, K. Lipnikov, and G. Manzini. The Mimetic Finite Difference Method for Elliptic PDEs. Springer, 2014, 408p.
-.. [BDS1988] J.B. Bell, C.N. Dawson, and G.R. Shubin (1988) An unsplit higher order Godunov method for scalar conservation laws in multiple dimensions, J. Comput. Physics, 74, p. 1-24
-.. [Nonaka2011] A. Nonaka, S. May, A.S. Almgren, and J.B. Bell (2011) A three-dimensional, unsplit Godunov method ofr scalar conservation laws, SIAM J. Sci. Comput, 33(4), 2039-2062
+.. bibliography:: /bib/ascem.bib
+   :filter: docname in docnames
+   :style:  alpha
+   :keyprefix: nga-
 
+.. _about_non_grid_aligned:
 
-.. _non_grid_aligned.rst:
 
 About
 -----

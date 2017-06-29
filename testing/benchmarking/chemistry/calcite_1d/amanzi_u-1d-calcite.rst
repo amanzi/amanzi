@@ -123,7 +123,7 @@ Simulation results
 
 The figure shows the concentration of total calcium, pH and Calcite volume fraction along the length of the column at the end of the simulation at 10, 20, 30, 40 and 50 years for Amanzi (run with native geochemistry and, if enabled, using the the Alquimia API with PFloTran as geochemical engine), PFloTran and CrunchFlow. PFloTran and CrunchFlow are run using the a global implicit approach and an operator splitting approach. The reader should note that CrunchFlow OS3D employs a TVD scheme for advection that minimizes numerical dispersion. A good agreement is observed between the codes. Some differences are attributable to the numerical dispersion added in the code using implicit methods for advective fluxes. Additional, differences are attributable to the implementation of the boundary conditions in the different codes. 
 
-.. plot:: prototype/chemistry/calcite_1d/calcite_1d.py
+.. plot:: calcite_1d.py
 
 ..   :align: left
 
