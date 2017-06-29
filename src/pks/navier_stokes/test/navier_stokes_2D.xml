@@ -1,6 +1,11 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
+  <Parameter name="end time" type="double" value="100.0"/>
+  <Parameter name="initial time step" type="double" value="1.0"/>
+  <Parameter name="max iterations" type="int" value="50"/>
+  <Parameter name="mesh resolution" type="int" value="20"/>
+
   <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="All">
@@ -102,13 +107,13 @@
             <Parameter name="max iterations" type="int" value="15"/>
             <Parameter name="time step increase factor" type="double" value="1.2"/>
             <Parameter name="time step reduction factor" type="double" value="0.5"/>
-            <Parameter name="max time step" type="double" value="100.0"/>
+            <Parameter name="max time step" type="double" value="1e+8"/>
             <Parameter name="min time step" type="double" value="0.0"/>
           </ParameterList>
 
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1e-4"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1e-1"/>
             <Parameter name="diverged tolerance" type="double" value="1e+10"/>
             <Parameter name="limit iterations" type="int" value="20"/>
             <Parameter name="max du growth factor" type="double" value="1e+5"/>

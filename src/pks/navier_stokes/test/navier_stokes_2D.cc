@@ -38,7 +38,7 @@ TEST(NAVIER_STOKES_2D) {
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a mesh framework
-  Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
+  Teuchos::ParameterList regions_list = plist->sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, regions_list, &comm));
 
   FrameworkPreference pref;
@@ -47,7 +47,8 @@ TEST(NAVIER_STOKES_2D) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 20, 20, gm);
+  int nx = plist->get<int>("mesh resolution", 20);
+  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, nx, nx, gm);
 
   // create a simple state and populate it
   Teuchos::ParameterList state_list = plist->sublist("state");
@@ -68,8 +69,12 @@ TEST(NAVIER_STOKES_2D) {
  
   // solve the problem 
   int itrs(0);
-  double T(0.0), T0(0.0), T1(100.0), dT0(0.1), dT(0.1), dTnext;
-  while (T < T1 && itrs < 50) {
+  int max_itrs = plist->get<int>("max iterations", 50);
+  double T1 = plist->get<double>("end time", 100.0);
+  double dT = plist->get<double>("initial time step", 1.0);
+  double T(0.0), T0(0.0), dT0(dT), dTnext;
+
+  while (T < T1 && itrs < max_itrs) {
     if (itrs == 0) {
       Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
       udot->PutScalar(0.0);

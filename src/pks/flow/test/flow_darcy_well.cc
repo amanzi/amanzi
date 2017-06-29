@@ -25,7 +25,7 @@
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
-#include "MeshInfo.hh"
+// #include "MeshInfo.hh"
 #include "State.hh"
 
 // Flow
@@ -35,7 +35,7 @@
 /* *********************************************************************
 * Two tests with different time step controllers.
 ********************************************************************* */
-void RunTestMarshak(std::string controller) {
+void RunTestDarcyWell(std::string controller) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -64,11 +64,13 @@ void RunTestMarshak(std::string controller) {
   meshfactory.preference(pref);
   RCP<const Mesh> mesh = meshfactory(-10.0, -5.0, 10.0, 0.0, 101, 50, gm);
 
+  /*
   Teuchos::ParameterList mesh_info_list;
   std::string filename = controller.replace(controller.size()-4, 4, "_mesh");
   mesh_info_list.set<std::string>("filename", filename);
   Teuchos::RCP<Amanzi::MeshInfo> mesh_info = Teuchos::rcp(new Amanzi::MeshInfo(mesh_info_list, &comm));
   mesh_info->WriteMeshCentroids(*mesh);
+  */
 
   // create a simple state and populate it
   Amanzi::VerboseObject::hide_line_prefix = true;
@@ -84,7 +86,6 @@ void RunTestMarshak(std::string controller) {
 
   // modify the default state for the problem at hand
   // -- permeability
-
   std::string passwd("flow"); 
   if (!S->GetField("permeability")->initialized()){
     Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
@@ -116,8 +117,6 @@ void RunTestMarshak(std::string controller) {
   // initialize the Darcy process kernel
   DPK->Initialize(S.ptr());
 
-  filename = controller.replace(controller.size()-5, 5, "_flow2D.gmv");
-
   // transient solution
   double t_old(0.0), t_new, dt(0.5);
   for (int n = 0; n < 10; n++) {
@@ -130,8 +129,9 @@ void RunTestMarshak(std::string controller) {
 
     if (MyPID == 0) {
       const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
-      //GMV::open_data_file(*mesh, (std::string)"flow2D.gmv");
-      GMV::open_data_file(*mesh, filename);
+      // filename = controller.replace(controller.size()-5, 5, "_flow2D.gmv");
+      // GMV::open_data_file(*mesh, filename);
+      GMV::open_data_file(*mesh, (std::string)"flow2D.gmv");
       GMV::start_data();
       GMV::write_cell_data(p, 0, "pressure");
       GMV::close_data_file();
@@ -143,15 +143,15 @@ void RunTestMarshak(std::string controller) {
 
 
 TEST(FLOW_2D_DARCY_WELL_STANDARD) {
-  RunTestMarshak("test/flow_darcy_well.xml");
+  RunTestDarcyWell("test/flow_darcy_well.xml");
 }
 
-TEST(FLOW_2D_DARCY_WELL_STANDARD) {
-  RunTestMarshak("test/flow_darcy_well_hete_perm.xml");
+TEST(FLOW_2D_DARCY_WELL_FROMFILE) {
+  RunTestDarcyWell("test/flow_darcy_well_fromfile.xml");
 }
 
 TEST(FLOW_2D_DARCY_WELL_ADAPRIVE) {
- RunTestMarshak("test/flow_darcy_well_adaptive.xml");
+ RunTestDarcyWell("test/flow_darcy_well_adaptive.xml");
 }
 
 

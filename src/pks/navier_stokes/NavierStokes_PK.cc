@@ -275,7 +275,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_preconditioner_elas_->global_operator()->SymbolicAssembleMatrix();
 
   CompositeVector vol(op_mass_->global_operator()->DomainMap());
-  vol.PutScalar(1.0);
+  vol.PutScalar(1.0 / mu);
   op_mass_->AddAccumulationTerm(vol, 1.0, "cell");
   op_mass_->global_operator()->SymbolicAssembleMatrix();
 
