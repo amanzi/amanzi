@@ -102,15 +102,15 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
 * Darcy inverse mass matrix for surface: the standard algorithm
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseSurface(
-    int c, const Tensor& permeability, DenseMatrix& W)
+    int c, const Tensor& K, DenseMatrix& W)
 {
   int nfaces = W.NumRows();
   DenseMatrix R(nfaces, d_ - 1);
 
-  int ok = L2consistencyInverseSurface(c, permeability, R, W);
+  int ok = L2consistencyInverseSurface(c, K, R, W);
   if (ok) return ok;
 
-  StabilityScalar_(R, W);
+  StabilityOptimized_(K, R, W);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 

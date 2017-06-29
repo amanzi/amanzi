@@ -168,11 +168,11 @@ Mesh::cell_get_num_faces(const Entity_ID cellid) const
 
   cell_get_faces_and_dirs_internal_(cellid, &cfaceids, &cfacedirs, false);
   return cfaceids.size();
-
 #endif
 }
 
 
+// NOTE: this is a serial routine
 unsigned int
 Mesh::cell_get_max_faces() const
 {
@@ -181,10 +181,12 @@ Mesh::cell_get_max_faces() const
   for (int c = 0; c < ncells; ++c) {
     n = std::max(n, cell_get_num_faces(c));
   }
+
   return n;
 }
 
 
+// NOTE: this is a serial routine
 unsigned int
 Mesh::cell_get_max_nodes() const
 {

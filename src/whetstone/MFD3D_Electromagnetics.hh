@@ -49,8 +49,10 @@ class MFD3D_Electromagnetics : public virtual MFD3D,
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
 
   // other methods
-  int MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& W);
-  int MassMatrixInverseOptimized(int c, const Tensor& T, DenseMatrix& W);
+  int MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& M);
+  int MassMatrixInverseOptimized(int c, const Tensor& T, DenseMatrix& M);
+
+  int MassMatrixDiagonal(int c, const Tensor& T, DenseMatrix& M);
 
   int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A, DenseMatrix& M, DenseMatrix& C);
   int StiffnessMatrixExperimental(int c, const Tensor& T, DenseMatrix& A);

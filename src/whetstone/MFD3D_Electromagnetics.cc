@@ -206,6 +206,27 @@ int MFD3D_Electromagnetics::MassMatrixInverseOptimized(
   return ok;
 }
 
+/* ******************************************************************
+* A simple mass matrix for testing.
+****************************************************************** */
+int MFD3D_Electromagnetics::MassMatrixDiagonal(
+    int c, const Tensor& T, DenseMatrix& M)
+{
+  double volume = mesh_->cell_volume(c);
+
+  Entity_ID_List edges;
+  mesh_->cell_get_edges(c, &edges);
+  int nedges = edges.size();
+
+  M.PutScalar(0.0);
+  for (int n = 0; n < nedges; n++) {
+    int e = edges[n];
+    M(n, n) = d_ * volume / (nedges * T(0, 0));
+  }
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
 
 /* ******************************************************************
 * Stiffness matrix: the standard algorithm.
