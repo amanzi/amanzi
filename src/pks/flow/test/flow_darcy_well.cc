@@ -25,7 +25,7 @@
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
-#include "Mesh.hh"
+#include "MeshInfo.hh"
 #include "State.hh"
 
 // Flow
