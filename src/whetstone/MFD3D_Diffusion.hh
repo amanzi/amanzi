@@ -84,6 +84,9 @@ class MFD3D_Diffusion : public virtual MFD3D,
   int L2consistencyGeneralized(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
   int MassMatrixGeneralized(int c, const Tensor& K, DenseMatrix& M);
 
+  int L2consistencyInverseGeneralized(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
+  int MassMatrixInverseGeneralized(int c, const Tensor& K, DenseMatrix& M);
+
   // surface methods
   // -- mass matrix
   int L2consistencyInverseSurface(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);

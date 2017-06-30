@@ -193,20 +193,25 @@ TEST(DARCY_MASS_3D_GENERALIZED_POYHEDRON) {
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({Simple}));
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
+  Teuchos::RCP<Mesh> mesh = meshfactory("test/hex_random.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
 
   int nfaces = 6, cell = 0;
+  double volume = mesh->cell_volume(cell);
   DenseMatrix M(3 * nfaces, 3 * nfaces);
 
-  Tensor T(3, 1);
-  T(0, 0) = 1.0;
+  Tensor T(3, 2);
+  T(0, 0) = 0.5;
+  T(1, 1) = 0.344827586206897;
+  T(2, 2) = 0.103448275862069;
+  T(1, 2) = T(2, 1) = -0.03448275862069;
 
   mfd.MassMatrixGeneralized(cell, T, M);
 
-  printf("Mass matrix for cell %3d\n", cell);
+  printf("Mass matrix for cell %3d  volume=%12.4f\n", cell, volume);
   M.PrintMatrix("%8.4f ");
 
   // verify SPD propery
