@@ -184,6 +184,39 @@ TEST(DARCY_MASS_3D) {
 
 
 /* **************************************************************** */
+TEST(DARCY_MASS_3D_GENERALIZED_POYHEDRON) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\n\nTest: Mass matrix for generalized polyhedra" << std::endl;
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(FrameworkPreference({Simple}));
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
+ 
+  MFD3D_Diffusion mfd(mesh);
+
+  int nfaces = 6, cell = 0;
+  DenseMatrix M(3 * nfaces, 3 * nfaces);
+
+  Tensor T(3, 1);
+  T(0, 0) = 1.0;
+
+  mfd.MassMatrixGeneralized(cell, T, M);
+
+  printf("Mass matrix for cell %3d\n", cell);
+  M.PrintMatrix("%8.4f ");
+
+  // verify SPD propery
+  for (int i = 0; i < nfaces; ++i) CHECK(M(i, i) > 0.0);
+
+  delete comm;
+}
+
+
+/* **************************************************************** */
 TEST(DARCY_INVERSE_MASS_3D) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;

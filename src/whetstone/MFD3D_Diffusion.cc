@@ -837,6 +837,142 @@ void MFD3D_Diffusion::StabilityScalarNonSymmetric_(int c, DenseMatrix& N, DenseM
 }
 
 
+/* ******************************************************************
+* Consistency condition for inner product on a generized polyhedron.
+****************************************************************** */
+int MFD3D_Diffusion::L2consistencyGeneralized(
+    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
+{
+  Entity_ID_List faces, nodes;
+  std::vector<int> dirs;
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+
+  int nfaces = faces.size();
+  int nx(d_ * nfaces);
+  if (nx != N.NumRows()) return WHETSTONE_ELEMENTAL_MATRIX_SIZE;
+
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  double volume = mesh_->cell_volume(c);
+
+  AmanziGeometry::Point v1(d_), v2(d_);
+  std::vector<AmanziGeometry::Point> vv(3), xm(3);
+
+  // populate matrix R (we re-use N)
+  DenseMatrix R(N);
+  for (int i = 0; i < nfaces; ++i) {
+    int f = faces[i];
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    double area = mesh_->face_area(f);  
+    double area_div = norm(normal);
+
+    CurvedFaceGeometry_(f, dirs[i], vv, xm);
+
+    for (int k = 0; k < d_; ++k) {
+      R(d_ * i, k) = area * xm[0][k] - area_div * xc[k];
+      R(d_ * i + 1, k) = area * xm[1][k];
+      R(d_ * i + 2, k) = area * xm[2][k];
+
+      for (int l = 0; l < d_; ++l) {
+        N(d_ * i + l, k) = vv[l][k];
+      }
+    }
+  }
+
+  // upper triangular part of the consistency term
+  for (int i = 0; i < nx; ++i) {
+    for (int k = 0; k < d_; ++k) v1[k] = R(i, k);
+    v2 = K * v1;
+
+    for (int j = i; j < nx; ++j) {
+      for (int k = 0; k < d_; ++k) v1[k] = R(j, k);
+      Mc(i, j) = v1 * v2;
+    }
+  }
+
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Inverse mass matrix via optimization, experimental.
+****************************************************************** */
+int MFD3D_Diffusion::MassMatrixGeneralized(int c, const Tensor& K, DenseMatrix& M)
+{
+  int nfaces = M.NumRows();
+  DenseMatrix N(d_ * nfaces, d_);
+
+  Tensor Kinv(K);
+  Kinv.Inverse();
+
+  int ok = L2consistencyGeneralized(c, Kinv, N, M, true);
+  if (ok) return ok;
+
+  StabilityScalar_(N, M);
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Geometry of a curved face
+****************************************************************** */
+void MFD3D_Diffusion::CurvedFaceGeometry_(
+    int f, int dirs, std::vector<AmanziGeometry::Point>& vv, 
+    std::vector<AmanziGeometry::Point>& xm) 
+{
+  // local coordinate system uses external normal
+  AmanziGeometry::Point normal(d_), v1(d_), v2(d_), v3(d_), p1(d_), p2(d_);
+
+  normal = mesh_->face_normal(f);
+  normal /= dirs * norm(normal);
+
+  if (fabs(normal[0]) > 0.1) {
+    v1[0] = normal[1];
+    v1[1] = -normal[0];
+    v1[2] = 0.0; 
+  } else { 
+    v1[0] = 0.0;
+    v1[1] = -normal[2];
+    v1[2] = normal[1];
+  }
+
+  vv[0] = normal;
+  vv[1] = v1 / norm(v1);
+  vv[2] = normal^v1;
+
+  // centrer of gravity
+  Entity_ID_List nodes;
+  mesh_->face_get_nodes(f, &nodes);
+  int nnodes = nodes.size();
+
+  double area(0.0);
+  const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+
+  xm[0].set(0.0, 0.0, 0.0);
+  xm[1].set(0.0, 0.0, 0.0);
+  xm[2].set(0.0, 0.0, 0.0);
+
+  for (int n = 0; n < nnodes; ++n) {
+    int m = (n + nnodes + 1) % nnodes;
+
+    mesh_->node_get_coordinates(nodes[n], &p1);
+    mesh_->node_get_coordinates(nodes[m], &p2);
+
+    v1 = xf - p1;
+    v2 = xf - p2;
+    v3 = v1^v2; 
+    area += norm(v3) / 2;
+
+    for (int k = 0; k < 3; ++k) {
+      double s = (vv[k] * v3) / 2;
+      xm[k] += s * (xf + p1 + p2) / 3;
+    }
+  }
+  xm[0] /= area;
+  xm[1] /= area;
+  xm[2] /= area;
+}
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

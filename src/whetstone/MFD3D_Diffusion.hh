@@ -80,6 +80,10 @@ class MFD3D_Diffusion : public virtual MFD3D,
   int MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix& M);
   int MassMatrixInverseNonSymmetric(int c, const Tensor& K, DenseMatrix& W);
 
+  //  -- generalized polyhedron
+  int L2consistencyGeneralized(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
+  int MassMatrixGeneralized(int c, const Tensor& K, DenseMatrix& M);
+
   // surface methods
   // -- mass matrix
   int L2consistencyInverseSurface(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);
@@ -105,6 +109,10 @@ class MFD3D_Diffusion : public virtual MFD3D,
   int StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M);
   void RescaleMassMatrixInverse_(int c, DenseMatrix& W);
   void StabilityScalarNonSymmetric_(int c, DenseMatrix& N, DenseMatrix& M);
+
+  void CurvedFaceGeometry_(int f, int dirs,
+                           std::vector<AmanziGeometry::Point>& vv, 
+                           std::vector<AmanziGeometry::Point>& xm);
 
   // mesh extension methods 
   // -- exterior normal
