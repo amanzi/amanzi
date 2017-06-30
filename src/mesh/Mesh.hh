@@ -457,11 +457,24 @@ class Mesh {
   // Length of edge
   double edge_length(const Entity_ID edgeid, const bool recompute=false) const;
 
-  // Centroid of cell
+  // Centroid of cell (center of gravity not just average of node coordinates)
+  //
+  // The cell centroid is computed as the volume weighted average of the
+  // centroids of tetrahedra from a symmetric tetrahedral
+  // decomposition of the cell. The tetrahedral decomposition is
+  // formed by connecting the cell center (average of cell nodes), a
+  // face center (average of face nodes) and the two nodes of an edge
+  // of the face
   AmanziGeometry::Point cell_centroid(const Entity_ID cellid,
                                       const bool recompute=false) const;
 
-  // Centroid of face
+  // Centroid of face (center of gravity not just the average of node coordinates)
+  //
+  // The face centroid is computed as the area weighted average of the
+  // centroids of the triangles from a symmetric triangular
+  // decomposition of the face. Each triangular facet is formed by the
+  // connecting the face center (average of face nodes) to the two
+  // nodes of an edge of the face
   AmanziGeometry::Point face_centroid(const Entity_ID faceid,
                                       const bool recompute=false) const;
 
