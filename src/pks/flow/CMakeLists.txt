@@ -175,21 +175,22 @@ if (BUILD_TESTS)
     # Add UnitTest include directory
     include_directories(${UnitTest_INCLUDE_DIRS})
     include_directories(${MESH_FACTORY_SOURCE_DIR})
-    include_directories(${MPC_SOURCE_DIR})
+
 
     # Copy test directory files if any out of source build
     if (NOT (${FLOW_SOURCE_DIR} EQUAL ${FLOW_BINARY_DIR}) )
         # execute_process(COMMAND ${CMAKE_COMMAND} -E 
         #   copy_directory ${FLOW_SOURCE_DIR}/test ${FLOW_BINARY_DIR}/test) 
         file(GLOB DataFiles "${FLOW_SOURCE_DIR}/test/*.xml"
-                            "${FLOW_SOURCE_DIR}/test/*.exo")
+                            "${FLOW_SOURCE_DIR}/test/*.exo"
+                            "${FLOW_SOURCE_DIR}/test/perm.h5")
         file(COPY ${DataFiles} DESTINATION ${FLOW_BINARY_DIR}/test/)
     endif()
 
     # Add the flow directory to the include paths
     include_directories(${FLOW_SOURCE_DIR})
 
-    set(amanzi_libs geometry mesh mpc mesh_factory state flow pks operators whetstone data_structures)
+    set(amanzi_libs geometry mesh mesh_factory state flow pks operators whetstone data_structures)
 
     # Test: transient Darcy flow 
     add_amanzi_test(flow_darcy_transient flow_darcy_transient
