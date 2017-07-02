@@ -32,7 +32,9 @@ int DeRham_Node::L2consistency(int c, const Tensor& T,
 
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
-  if (nnodes != N.NumRows()) return WHETSTONE_ELEMENTAL_MATRIX_SIZE;
+
+  N.Reshape(nnodes, 1);
+  Mc.Reshape(nnodes, nnodes);
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   int nfaces = faces.size();
@@ -79,8 +81,7 @@ int DeRham_Node::L2consistency(int c, const Tensor& T,
 ****************************************************************** */
 int DeRham_Node::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
 {
-  int nnodes = M.NumRows();
-  DenseMatrix N(nnodes, 1);
+  DenseMatrix N;
 
   int ok = L2consistency(c, T, N, M, true);
   if (ok) return ok;

@@ -36,10 +36,12 @@ int MFD3D_Diffusion::L2consistencyScaledArea(
 {
   Entity_ID_List faces;
   std::vector<int> dirs;
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   int nfaces = faces.size();
-  if (nfaces != N.NumRows()) return WHETSTONE_ELEMENTAL_MATRIX_SIZE;
+
+  N.Reshape(nfaces, d_);
+  Mc.Reshape(nfaces, nfaces);
 
   double volume = mesh_->cell_volume(c);
 
@@ -87,9 +89,10 @@ int MFD3D_Diffusion::L2consistencyInverseScaledArea(
   std::vector<int> dirs;
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
 
-  int num_faces = faces.size();
-  if (num_faces != R.NumRows()) return WHETSTONE_ELEMENTAL_MATRIX_SIZE;
+  R.Reshape(nfaces, d_);
+  Wc.Reshape(nfaces, nfaces);
 
   AmanziGeometry::Point v1(d_);
   double volume = mesh_->cell_volume(c);
@@ -99,14 +102,14 @@ int MFD3D_Diffusion::L2consistencyInverseScaledArea(
 
   // Since N is scaled by K, N = N0 * K, we us tensor K in the
   // inverse L2 consistency term.
-  for (int i = 0; i < num_faces; i++) {
+  for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
     v1 = Kt * normal;
 
     int i0 = (symmetry ? i : 0);
-    for (int j = i0; j < num_faces; j++) {
+    for (int j = i0; j < nfaces; j++) {
       f = faces[j];
       const AmanziGeometry::Point& v2 = mesh_->face_normal(f);
       Wc(i, j) = (v1 * v2) / (dirs[i] * dirs[j] * volume);
@@ -115,7 +118,7 @@ int MFD3D_Diffusion::L2consistencyInverseScaledArea(
 
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
-  for (int i = 0; i < num_faces; i++) {
+  for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
     for (int k = 0; k < d_; k++) R(i, k) = fm[k] - cm[k];
@@ -137,8 +140,10 @@ int MFD3D_Diffusion::H1consistency(
   std::vector<int> dirs;
 
   mesh_->cell_get_nodes(c, &nodes);
-  int num_nodes = nodes.size();
-  if (num_nodes != N.NumRows()) return WHETSTONE_ELEMENTAL_MATRIX_SIZE;
+  int nnodes = nodes.size();
+
+  N.Reshape(nnodes, d_ + 1);
+  Ac.Reshape(nnodes, nnodes);
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
@@ -188,18 +193,18 @@ int MFD3D_Diffusion::H1consistency(
   }
 
   // calculate upper part of R K R^T / volume
-  for (int i = 0; i < num_nodes; i++) { 
+  for (int i = 0; i < nnodes; i++) { 
     for (int k = 0; k < d_; k++) v1[k] = N(i, k);
     v2 = K * v1;
 
-    for (int j = i; j < num_nodes; j++) {
+    for (int j = i; j < nnodes; j++) {
       for (int k = 0; k < d_; k++) v1[k] = N(j, k);
       Ac(i, j) = (v1 * v2) / volume;
     }
   }
 
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
-  for (int i = 0; i < num_nodes; i++) {
+  for (int i = 0; i < nnodes; i++) {
     int v = nodes[i];
     mesh_->node_get_coordinates(v, &p);
     for (int k = 0; k < d_; k++) N(i, k) = p[k] - cm[k];
@@ -224,8 +229,10 @@ int MFD3D_Diffusion::H1consistencyEdge(
   std::vector<int> dirs, map;
 
   mesh_->cell_get_edges(c, &edges);
-  int num_edges = edges.size();
-  if (num_edges != N.NumRows()) return WHETSTONE_ELEMENTAL_MATRIX_SIZE;
+  int nedges = edges.size();
+
+  N.Reshape(nedges, d_ + 1);
+  Ac.Reshape(nedges, nedges);
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   int num_faces = faces.size();
@@ -252,11 +259,11 @@ int MFD3D_Diffusion::H1consistencyEdge(
   // calculate R K R^T / volume
   AmanziGeometry::Point v1(d_), v2(d_);
   double volume = mesh_->cell_volume(c);
-  for (int i = 0; i < num_edges; i++) {
+  for (int i = 0; i < nedges; i++) {
     for (int k = 0; k < d_; k++) v1[k] = N(i, k);
     v2 = K * v1;
 
-    for (int j = i; j < num_edges; j++) {
+    for (int j = i; j < nedges; j++) {
       for (int k = 0; k < d_; k++) v1[k] = N(j, k);
       Ac(i, j) = (v1 * v2) / volume;
     }
@@ -264,7 +271,7 @@ int MFD3D_Diffusion::H1consistencyEdge(
 
   // calculate N
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  for (int i = 0; i < num_edges; i++) {
+  for (int i = 0; i < nedges; i++) {
     int e = edges[i];
     const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
     for (int k = 0; k < d_; k++) N(i, k) = xe[k] - xc[k];
@@ -280,8 +287,7 @@ int MFD3D_Diffusion::H1consistencyEdge(
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixScaledArea(int c, const Tensor& K, DenseMatrix& M)
 {
-  int nfaces = M.NumRows();
-  DenseMatrix N(nfaces, d_);
+  DenseMatrix N;
 
   Tensor Kinv(K);
   Kinv.Inverse();
@@ -299,8 +305,7 @@ int MFD3D_Diffusion::MassMatrixScaledArea(int c, const Tensor& K, DenseMatrix& M
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix& M)
 {
-  int nfaces = M.NumRows();
-  DenseMatrix N(nfaces, d_);
+  DenseMatrix N;
 
   Tensor Kinv(K);
   Kinv.Inverse();
@@ -318,8 +323,7 @@ int MFD3D_Diffusion::MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix&
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseNonSymmetric(int c, const Tensor& K, DenseMatrix& W)
 {
-  int nfaces = W.NumRows();
-  DenseMatrix R(nfaces, d_);
+  DenseMatrix R;
 
   int ok = L2consistencyInverseScaledArea(c, K, R, W, false);
   if (ok) return ok;
@@ -334,8 +338,7 @@ int MFD3D_Diffusion::MassMatrixInverseNonSymmetric(int c, const Tensor& K, Dense
 ****************************************************************** */
 int MFD3D_Diffusion::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 {
-  int nnodes = A.NumRows();
-  DenseMatrix N(nnodes, d_ + 1);
+  DenseMatrix N;
 
   int ok = H1consistency(c, K, N, A);
   if (ok) return ok;
@@ -350,8 +353,7 @@ int MFD3D_Diffusion::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 ****************************************************************** */
 int MFD3D_Diffusion::StiffnessMatrixOptimized(int c, const Tensor& K, DenseMatrix& A)
 {
-  int nnodes = A.NumRows();
-  DenseMatrix N(nnodes, d_ + 1);
+  DenseMatrix N;
 
   int ok = H1consistency(c, K, N, A);
   if (ok) return ok;
@@ -366,14 +368,13 @@ int MFD3D_Diffusion::StiffnessMatrixOptimized(int c, const Tensor& K, DenseMatri
 ****************************************************************** */
 int MFD3D_Diffusion::StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix& A)
 {
-  int nnodes = A.NumRows();
-  DenseMatrix N(nnodes, d_ + 1);
+  DenseMatrix N;
 
   int ok = H1consistency(c, K, N, A);
   if (ok) return ok;
 
   // scaling of matrix A for numerical stability
-  double s = A.Trace() / nnodes;
+  double s = A.Trace() / A.NumRows();
   A /= s;
 
   int objective = WHETSTONE_SIMPLEX_FUNCTIONAL_TRACE;
@@ -391,8 +392,7 @@ int MFD3D_Diffusion::StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix&
 ****************************************************************** */
 int MFD3D_Diffusion::StiffnessMatrixEdge(int c, const Tensor& K, DenseMatrix& A)
 {
-  int nedges = A.NumRows();
-  DenseMatrix N(nedges, d_ + 1);
+  DenseMatrix N;
 
   int ok = H1consistencyEdge(c, K, N, A);
   if (ok) return ok;
@@ -446,13 +446,13 @@ int MFD3D_Diffusion::RecoverGradient_StiffnessMatrix(
   std::vector<int> dirs;
 
   mesh_->cell_get_nodes(c, &nodes);
-  int num_nodes = nodes.size();
+  int nnodes = nodes.size();
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   int num_faces = faces.size();
 
   // populate matrix R (should be a separate routine lipnikov@lanl.gv)
-  DenseMatrix R(num_nodes, d_);
+  DenseMatrix R(nnodes, d_);
   AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
 
   R.PutScalar(0.0);
@@ -495,7 +495,7 @@ int MFD3D_Diffusion::RecoverGradient_StiffnessMatrix(
   }
 
   gradient.set(0.0);
-  for (int i = 0; i < num_nodes; i++) {
+  for (int i = 0; i < nnodes; i++) {
     for (int k = 0; k < d_; k++) {
       gradient[k] += R(i, k) * solution[i];
     }
@@ -522,13 +522,14 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
   std::vector<int> dirs;
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
 
-  int num_faces = faces.size();
-  if (num_faces != R.NumRows()) return num_faces;  // matrix was not reshaped
+  R.Reshape(nfaces, d_);
+  Wc.Reshape(nfaces, nfaces);
 
   // calculate areas of possibly curved faces
-  std::vector<double> areas(num_faces, 0.0);
-  for (int i = 0; i < num_faces; i++) {
+  std::vector<double> areas(nfaces, 0.0);
+  for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     areas[i] = norm(mesh_->face_normal(f));
   }
@@ -537,13 +538,13 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
   AmanziGeometry::Point v1(d_), v2(d_);
   double volume = mesh_->cell_volume(c);
 
-  for (int i = 0; i < num_faces; i++) {
+  for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
     v1 = (K * normal) / kmean;
 
-    for (int j = i; j < num_faces; j++) {
+    for (int j = i; j < nfaces; j++) {
       f = faces[j];
       const AmanziGeometry::Point& v2 = mesh_->face_normal(f);
       Wc(i, j) = (v1 * v2) / (dirs[i] * dirs[j] * volume * areas[i] * areas[j]);
@@ -553,7 +554,7 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
   // populate matrix R
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
-  for (int i = 0; i < num_faces; i++) {
+  for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     if (d_ == 2) { 
       mesh_->face_get_nodes(f, &nodes);
@@ -586,8 +587,7 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
 {
-  int nfaces = W.NumRows();
-  DenseMatrix R(nfaces, d_);
+  DenseMatrix R;
 
   int ok = L2consistencyInverse(c, K, R, W, true);
   if (ok) return ok;
@@ -605,8 +605,7 @@ int MFD3D_Diffusion::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
 int MFD3D_Diffusion::MassMatrixInverseMMatrixHex(
     int c, const Tensor& K, DenseMatrix& W)
 {
-  int nfaces = W.NumRows();
-  DenseMatrix R(nfaces, d_);
+  DenseMatrix R;
 
   int ok = L2consistencyInverseScaledArea(c, K, R, W, true);
   if (ok) return ok;
@@ -624,15 +623,14 @@ int MFD3D_Diffusion::MassMatrixInverseMMatrixHex(
 int MFD3D_Diffusion::MassMatrixInverseMMatrix(
     int c, const Tensor& K, DenseMatrix& W)
 {
-  int nfaces = W.NumRows();
-  DenseMatrix R(nfaces, d_);
+  DenseMatrix R;
 
   // use boolean flag to populate the whole matrix
   int ok = L2consistencyInverseScaledArea(c, K, R, W, false);
   if (ok) return ok;
 
   // scaling of matrix W for numerical stability
-  double s = W.Trace() / nfaces;
+  double s = W.Trace() / W.NumRows();
   W /= s;
 
   ok = StabilityMMatrix_(c, R, W);
@@ -650,8 +648,7 @@ int MFD3D_Diffusion::MassMatrixInverseMMatrix(
 int MFD3D_Diffusion::MassMatrixInverseOptimized(
     int c, const Tensor& K, DenseMatrix& W)
 {
-  int nfaces = W.NumRows();
-  DenseMatrix R(nfaces, d_);
+  DenseMatrix R;
 
   int ok = L2consistencyInverse(c, K, R, W, true);
   if (ok) return ok;
@@ -669,8 +666,7 @@ int MFD3D_Diffusion::MassMatrixInverseOptimized(
 int MFD3D_Diffusion::MassMatrixInverseDivKScaled(
     int c, const Tensor& K, double kmean, const AmanziGeometry::Point& kgrad, DenseMatrix& W)
 {
-  int nfaces = W.NumRows();
-  DenseMatrix R(nfaces, d_);
+  DenseMatrix R;
 
   int ok = L2consistencyInverseDivKScaled(c, K, kmean, kgrad, R, W);
   if (ok) return ok;
@@ -849,7 +845,9 @@ int MFD3D_Diffusion::L2consistencyGeneralized(
 
   int nfaces = faces.size();
   int nx(d_ * nfaces);
-  if (nx != N.NumRows()) return WHETSTONE_ELEMENTAL_MATRIX_SIZE;
+
+  N.Reshape(nx, d_);
+  Mc.Reshape(nx, nx);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   double volume = mesh_->cell_volume(c);
@@ -901,8 +899,7 @@ int MFD3D_Diffusion::L2consistencyGeneralized(
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixGeneralized(int c, const Tensor& K, DenseMatrix& M)
 {
-  int nx = M.NumRows();
-  DenseMatrix N(nx, d_);
+  DenseMatrix N;
 
   Tensor Kinv(K);
   Kinv.Inverse();
@@ -928,7 +925,9 @@ int MFD3D_Diffusion::L2consistencyInverseGeneralized(
 
   int nfaces = faces.size();
   int nx(d_ * nfaces);
-  if (nx != R.NumRows()) return WHETSTONE_ELEMENTAL_MATRIX_SIZE;
+
+  R.Reshape(nx, d_);
+  Wc.Reshape(nx, nx);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   double volume = mesh_->cell_volume(c);
@@ -978,8 +977,7 @@ int MFD3D_Diffusion::L2consistencyInverseGeneralized(
 int MFD3D_Diffusion::MassMatrixInverseGeneralized(
     int c, const Tensor& K, DenseMatrix& W)
 {
-  int nx = W.NumRows();
-  DenseMatrix R(nx, d_);
+  DenseMatrix R;
 
   int ok = L2consistencyInverseGeneralized(c, K, R, W, true);
   if (ok) return ok;

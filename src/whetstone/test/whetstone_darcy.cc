@@ -44,7 +44,7 @@ TEST(DARCY_MASS_2D) {
   DeRham_Face drc(mfd);
 
   int nfaces = 4, cell = 0;
-  DenseMatrix M(nfaces, nfaces);
+  DenseMatrix M;
 
   for (int method = 0; method < 3; method++) {
     Tensor T(2, 2);
@@ -53,6 +53,7 @@ TEST(DARCY_MASS_2D) {
     T(0, 1) = 0.1;
     T(1, 0) = 0.1;
 
+    M.Reshape(nfaces, nfaces);
     if (method == 0) {
       mfd.MassMatrix(cell, T, M);
     } else if (method == 1) {
@@ -128,7 +129,7 @@ TEST(DARCY_MASS_3D) {
   DeRham_Face drc(mfd);
 
   int nfaces = 6, cell = 0;
-  DenseMatrix M(nfaces, nfaces);
+  DenseMatrix M;
 
   for (int method = 0; method < 2; method++) {
     Tensor T(3, 1);
@@ -201,7 +202,7 @@ TEST(DARCY_MASS_3D_GENERALIZED_POYHEDRON) {
 
   int nfaces = 6, cell = 0;
   double volume = mesh->cell_volume(cell);
-  DenseMatrix M(3 * nfaces, 3 * nfaces);
+  DenseMatrix M;
 
   Tensor T(3, 2);
   T(0, 0) = 0.5;
@@ -249,7 +250,7 @@ TEST(DARCY_INVERSE_MASS_3D) {
   Tensor T(3, 1);  // tensor of rank 1
   T(0, 0) = 1.0;
 
-  DenseMatrix W(nfaces, nfaces);
+  DenseMatrix W;
   for (int method = 0; method < 5; method++) {
     if (method == 0) {
       mfd.MassMatrixInverse(cell, T, W);
@@ -323,6 +324,7 @@ TEST(DARCY_FULL_TENSOR_2D) {
   // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1); 
   Teuchos::RCP<Mesh> mesh = factory("test/two_cell2.exo"); 
  
+  DenseMatrix W;
   MFD3D_Diffusion mfd(mesh);
 
   for (int cell = 0; cell < 2; cell++) { 
@@ -333,7 +335,6 @@ TEST(DARCY_FULL_TENSOR_2D) {
       T(0, 1) = T(1, 0) = 1.0;
 
       int ok, nfaces = mesh->cell_get_num_faces(cell);
-      DenseMatrix W(nfaces, nfaces);
 
       if (method == 0) {
         mfd.MassMatrixInverse(cell, T, W);
@@ -435,7 +436,7 @@ TEST(DARCY_FULL_TENSOR_3D) {
   T(0, 1) = T(1, 0) = 1.0;
   T(1, 2) = T(2, 1) = 1.0;
 
-  DenseMatrix W(nfaces, nfaces);
+  DenseMatrix W;
   for (int method = 0; method < 6; method++) {
     if (method == 0) {
       mfd.MassMatrixInverse(cell, T, W);
@@ -518,7 +519,7 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
   Tensor T(2, 1);
   T(0, 0) = 1;
 
-  DenseMatrix A(nnodes, nnodes);
+  DenseMatrix A;
   for (int method = 0; method < 3; method++) {
     if (method == 0) {
       mfd.StiffnessMatrix(cell, T, A);
@@ -592,7 +593,7 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
   Tensor T(2, 1);
   T(0, 0) = 1;
 
-  DenseMatrix A(nedges, nedges);
+  DenseMatrix A;
   for (int method = 0; method < 1; method++) {
     if (method == 0) {
       mfd.StiffnessMatrixEdge(cell, T, A);
@@ -661,7 +662,7 @@ TEST(DARCY_STIFFNESS_3D) {
   Tensor T(3, 1);
   T(0, 0) = 1.0;
 
-  DenseMatrix A(nnodes, nnodes);
+  DenseMatrix A;
   mfd.StiffnessMatrixMMatrix(cell, T, A);
 
   printf("Stiffness matrix for cell %3d\n", cell);

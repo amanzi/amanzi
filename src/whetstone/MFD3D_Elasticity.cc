@@ -39,6 +39,9 @@ int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
   mesh_->cell_get_faces(c, &faces);
   int nfaces = faces.size();
 
+  N.Reshape(nfaces, d_);
+  Mc.Reshape(nfaces, nfaces);
+
   double volume = mesh_->cell_volume(c);
 
   AmanziGeometry::Point v1(d_), v2(d_);
@@ -78,15 +81,19 @@ int MFD3D_Elasticity::L2consistencyInverse(
 int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
                                     DenseMatrix& N, DenseMatrix& Ac)
 {
-  int nrows = N.NumRows();
-
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;
 
   mesh_->cell_get_nodes(c, &nodes);
-  int num_nodes = nodes.size();
+  int nnodes = nodes.size();
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
+
+  int nrows = d_ * nnodes;
+  int md = d_ * (d_ + 1);
+  N.Reshape(nrows, md);
+  Ac.Reshape(nrows, nrows);
 
   AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
 
@@ -112,8 +119,7 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
   DenseMatrix R(nrows, nd, N.Values(), WHETSTONE_DATA_ACCESS_VIEW);
   R.PutScalar(0.0);
 
-  int num_faces = faces.size();
-  for (int i = 0; i < num_faces; i++) {
+  for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
@@ -149,7 +155,7 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
       int pos = FindPosition_(v, nodes);
       for (int k = 0; k < nd; k++) {
         v1 = TE[k] * normal;
-        for (int l = 0; l < d_; l++) R(l * num_nodes + pos, k) += v1[l] * u;
+        for (int l = 0; l < d_; l++) R(l * nnodes + pos, k) += v1[l] * u;
       }
     }
   }
@@ -181,31 +187,31 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
   N.PutScalar(0.0);
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
-  for (int i = 0; i < num_nodes; i++) {
+  for (int i = 0; i < nnodes; i++) {
     int v = nodes[i];
     mesh_->node_get_coordinates(v, &p);
     v1 = p - cm;
 
     int md = 0;
     for (int k = 0; k < d_; k++) {
-      N(k * num_nodes + i, md) = v1[k];
+      N(k * nnodes + i, md) = v1[k];
       md++;
     }
     for (int k = 0; k < d_; k++) {
       for (int l = k + 1; l < d_; l++) {
-        N(k * num_nodes + i, md) = v1[l];
-        N(l * num_nodes + i, md) = v1[k];
+        N(k * nnodes + i, md) = v1[l];
+        N(l * nnodes + i, md) = v1[k];
         md++;
       }
     }
     for (int k = 0; k < d_; k++) {  // additional columns correspod to kernel
-      N(k * num_nodes + i, md) = 1.0;
+      N(k * nnodes + i, md) = 1.0;
       md++;
     }
     for (int k = 0; k < d_; k++) {
       for (int l = k + 1; l < d_; l++) {
-        N(k * num_nodes + i, md) =  v1[l];
-        N(l * num_nodes + i, md) = -v1[k];
+        N(k * nnodes + i, md) =  v1[l];
+        N(l * nnodes + i, md) = -v1[k];
         md++;
       }
     }
@@ -219,9 +225,7 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
 ****************************************************************** */
 int MFD3D_Elasticity::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
 {
-  int nrows = A.NumRows();
-  int nd = d_ * (d_ + 1);
-  DenseMatrix N(nrows, nd);
+  DenseMatrix N;
 
   int ok = H1consistency(c, T, N, A);
   if (ok) return ok;
@@ -236,9 +240,7 @@ int MFD3D_Elasticity::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
 ****************************************************************** */
 int MFD3D_Elasticity::StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A)
 {
-  int nrows = A.NumRows();
-  int nd = d_ * (d_ + 1);
-  DenseMatrix N(nrows, nd);
+  DenseMatrix N;
 
   int ok = H1consistency(c, T, N, A);
   if (ok) return ok;
@@ -254,9 +256,7 @@ int MFD3D_Elasticity::StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatr
 ****************************************************************** */
 int MFD3D_Elasticity::StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A)
 {
-  int nrows = A.NumRows();
-  int nd = d_ * (d_ + 1);
-  DenseMatrix N(nrows, nd);
+  DenseMatrix N;
 
   int ok = H1consistency(c, T, N, A);
   if (ok) return ok;

@@ -54,20 +54,15 @@ void Electromagnetics::SetTensorCoefficient(
 ****************************************************************** */
 void Electromagnetics::UpdateMatrices()
 {
-  AmanziMesh::Entity_ID_List edges;
   WhetStone::MFD3D_Electromagnetics mfd(mesh_);
+  WhetStone::DenseMatrix Acell;
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
   
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_edges(c, &edges);
-    int nedges = edges.size();
-
-    WhetStone::DenseMatrix Acell(nedges, nedges);
     if (K_.get()) Kc = (*K_)[c];
     mfd.StiffnessMatrix(c, Kc, Acell);
-
     local_op_->matrices[c] = Acell;
   }
 }

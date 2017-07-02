@@ -90,7 +90,7 @@ void ReconstructionCell::Compute()
     mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
     int ncells = cells.size();
 
-    matrix.clear();
+    matrix.PutScalar(0.0);
     rhs.clear();
 
     for (int n = 0; n < ncells; n++) {
@@ -147,7 +147,7 @@ void ReconstructionCell::ComputeGradient(
     mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
     int ncells = cells.size();
 
-    matrix.clear();
+    matrix.PutScalar(0.0);
     rhs.clear();
 
     for (int n = 0; n < ncells; n++) {

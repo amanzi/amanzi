@@ -30,24 +30,13 @@ namespace Operators {
 ****************************************************************** */
 void ElectromagneticsMHD::UpdateMatrices()
 {
-  std::vector<int> dirs;
-  AmanziMesh::Entity_ID_List edges, faces;
   WhetStone::MFD3D_Electromagnetics mfd(mesh_);
+  WhetStone::DenseMatrix Mcell, Ccell, Acell;
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
   
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-
-    mesh_->cell_get_edges(c, &edges);
-    int nedges = edges.size();
-
-    WhetStone::DenseMatrix Mcell(nfaces, nfaces);
-    WhetStone::DenseMatrix Ccell(nfaces, nedges);
-    WhetStone::DenseMatrix Acell(nedges, nedges);
-
     mfd.StiffnessMatrix(c, Kc, Acell, Mcell, Ccell);
 
     local_op_->matrices[c] = Acell;

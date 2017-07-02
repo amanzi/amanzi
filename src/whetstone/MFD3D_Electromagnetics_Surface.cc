@@ -34,25 +34,26 @@ namespace WhetStone {
 int MFD3D_Electromagnetics::L2consistencyBoundary(
     int f, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc)
 {
-  int d(3);
   Entity_ID_List edges;
   std::vector<int> dirs;
 
   mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
   int nedges = edges.size();
-  if (nedges != N.NumRows()) return nedges;  // matrix was not reshaped
 
-  AmanziGeometry::Point v1(d), v2(d), v3(d);
+  N.Reshape(nedges, d_ - 1);
+  Mc.Reshape(nedges, nedges);
+
+  AmanziGeometry::Point v1(d_), v2(d_), v3(d_);
   const AmanziGeometry::Point& normal = mesh_->face_normal(f);
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
   double area = mesh_->face_area(f);
 
   // calculate rotation matrix
-  Tensor P(d, 2); 
+  Tensor P(d_, 2); 
 
   v3 = normal / area;
-  for (int i = 0; i < d; i++) {
-    for (int j = 0; j < d; j++) { 
+  for (int i = 0; i < d_; i++) {
+    for (int j = 0; j < d_; j++) { 
       P(i, j) = v3[i] * v3[j];
     }
   }
@@ -66,7 +67,7 @@ int MFD3D_Electromagnetics::L2consistencyBoundary(
   P(2, 1) += v3[0];
 
   // define rotated tensor
-  Tensor PTP(d, 2), Pt(P), Tinv(T);
+  Tensor PTP(d_, 2), Pt(P), Tinv(T);
   Tinv.Inverse();
   Pt.Transpose();
   PTP = Pt * Tinv * P;
@@ -107,8 +108,7 @@ int MFD3D_Electromagnetics::L2consistencyBoundary(
 ****************************************************************** */
 int MFD3D_Electromagnetics::MassMatrixBoundary(int f, const Tensor& T, DenseMatrix& M)
 {
-  int nrows = M.NumRows();
-  DenseMatrix N(nrows, d_ - 1);
+  DenseMatrix N;
 
   int ok = L2consistencyBoundary(f, T, N, M);
   if (ok) return ok;

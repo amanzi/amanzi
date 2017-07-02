@@ -8,6 +8,8 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Dense matrices and operations with them.
 */
 
 #ifndef AMANZI_DENSE_MATRIX_HH_
@@ -37,18 +39,20 @@ class DenseMatrix {
   ~DenseMatrix() { if (data_ != NULL && access_ == WHETSTONE_DATA_ACCESS_COPY) { delete[] data_; } }
   
   // primary members 
-  void clear() { for (int i = 0; i < m_ * n_; i++) data_[i] = 0.0; } 
+  // -- reshape can be applied only to a matrix that owns data
+  void Reshape(int mrow, int ncol);
 
   double& operator()(int i, int j) { return data_[j * m_ + i]; }
   const double& operator()(int i, int j) const { return data_[j * m_ + i]; }
 
   DenseMatrix& operator=(const DenseMatrix& B) {
     if (this != &B) {
-      if (m_ * n_ != B.m_ * B.n_ && B.m_ * B.n_ != 0) {
+      if (mem_ < B.m_ * B.n_) {
         if (data_ != NULL) {
           delete [] data_;
         }
-        data_ = new double[B.m_ * B.n_];
+        mem_ = B.m_ * B.n_;
+        data_ = new double[mem_];
       }
       n_ = B.n_;
       m_ = B.m_;
@@ -157,7 +161,7 @@ class DenseMatrix {
   void SwapColumns(int n1, int n2);
 
  private:
-  int m_, n_, access_;
+  int m_, n_, mem_, access_;
   double* data_;                       
 };
 

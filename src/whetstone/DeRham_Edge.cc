@@ -45,15 +45,16 @@ int DeRham_Edge::L2consistency(int c, const Tensor& T,
 int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
                                   DenseMatrix& N, DenseMatrix& Mc)
 {
-  int d(2);
   Entity_ID_List faces;
   std::vector<int> dirs;
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   int nfaces = faces.size();
-  if (nfaces != N.NumRows()) return nfaces;  // matrix was not reshaped
 
-  AmanziGeometry::Point v1(d), v2(d);
+  N.Reshape(nfaces, d_);
+  Mc.Reshape(nfaces, nfaces);
+
+  AmanziGeometry::Point v1(d_), v2(d_);
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   double volume = mesh_->cell_volume(c);
 
@@ -94,7 +95,7 @@ int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     double a = mesh_->face_area(f);
 
-    for (int k = 0; k < d; k++) {
+    for (int k = 0; k < d_; k++) {
       a = -a;
       N(i, k) = normal[1 - k] * dirs[i] / a; 
     }
@@ -111,14 +112,19 @@ int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
 int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
                                   DenseMatrix& N, DenseMatrix& Mc)
 {
-  int d(3);
-  Entity_ID_List edges, faces;
+  Entity_ID_List edges, fedges, faces;
   std::vector<int> fdirs, edirs, map;
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
   int nfaces = faces.size();
 
-  AmanziGeometry::Point v1(d), v2(d), v3(d), tau(d);
+  mesh_->cell_get_edges(c, &edges);
+  int nedges = edges.size();
+
+  N.Reshape(nedges, d_);
+  Mc.Reshape(nedges, nedges);
+
+  AmanziGeometry::Point v1(d_), v2(d_), v3(d_), tau(d_);
   AmanziGeometry::Point vv[3];
 
   // To calculate matrix R, we re-use matrix N
@@ -136,18 +142,18 @@ int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
     v1 = xc - xf; 
  
     double a1 = normal * v1;
-    for (int k = 0; k < d; ++k) {
+    for (int k = 0; k < d_; ++k) {
       vv[k].set(normal[k] * v1);
       vv[k][k] -= a1;
     }
 
-    mesh_->face_get_edges_and_dirs(f, &edges, &edirs);
-    int nedges = edges.size();
+    mesh_->face_get_edges_and_dirs(f, &fedges, &edirs);
+    int nfedges = fedges.size();
 
     mesh_->face_to_cell_edge_map(f, c, &map);
 
-    for (int m = 0; m < nedges; ++m) {
-      int e = edges[m];
+    for (int m = 0; m < nfedges; ++m) {
+      int e = fedges[m];
       const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
  
       v3 = xe - xf;
@@ -155,7 +161,7 @@ int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
       double len = mesh_->edge_length(e);
       len /= 2.0 * area * area * fdirs[i] * edirs[m];
 
-      for (int k = 0; k < d; ++k) {
+      for (int k = 0; k < d_; ++k) {
         N(map[m], k) -= len * ((vv[k]^v3) * normal);
       }
     }
@@ -165,15 +171,12 @@ int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
   Tensor Tinv(T);
   Tinv.Inverse();
 
-  mesh_->cell_get_edges(c, &edges);
-  int nedges = edges.size();
-
   for (int i = 0; i < nedges; i++) {
-    for (int k = 0; k < d; ++k) v1[k] = N(i, k);
+    for (int k = 0; k < d_; ++k) v1[k] = N(i, k);
     v2 = Tinv * v1;
 
     for (int j = i; j < nedges; j++) {
-      for (int k = 0; k < d; ++k) v3[k] = N(j, k);
+      for (int k = 0; k < d_; ++k) v3[k] = N(j, k);
       Mc(i, j) = (v2 * v3) / volume;
     }
   }
@@ -185,7 +188,7 @@ int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
     int e = edges[i];
     const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
     double len = mesh_->edge_length(e);
-    for (int k = 0; k < d; ++k) N(i, k) = tau[k] / len;
+    for (int k = 0; k < d_; ++k) N(i, k) = tau[k] / len;
   }
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -197,8 +200,7 @@ int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
 ****************************************************************** */
 int DeRham_Edge::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
 {
-  int nrows = M.NumRows();
-  DenseMatrix N(nrows, d_);
+  DenseMatrix N;
 
   int ok = L2consistency(c, T, N, M, true);
   if (ok) return ok;
@@ -232,15 +234,16 @@ int DeRham_Edge::L2consistencyInverse(
 int DeRham_Edge::L2consistencyInverse2D_(
     int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
 {
-  int d(2);
   Entity_ID_List faces;
   std::vector<int> dirs;
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   int nfaces = faces.size();
-  if (nfaces != R.NumRows()) return nfaces;  // matrix was not reshaped
 
-  AmanziGeometry::Point v1(d);
+  R.Reshape(nfaces, d_);
+  Wc.Reshape(nfaces, nfaces);
+
+  AmanziGeometry::Point v1(d_);
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   double volume = mesh_->cell_volume(c);
 
@@ -278,7 +281,7 @@ int DeRham_Edge::L2consistencyInverse2D_(
     double len = mesh_->face_area(f);
 
     v1 = xf - xc;
-    for (int k = 0; k < d; k++) {
+    for (int k = 0; k < d_; k++) {
       len = -len;
       R(i, k) = v1[1 - k] * len;
     }
@@ -296,23 +299,25 @@ int DeRham_Edge::L2consistencyInverse2D_(
 int DeRham_Edge::L2consistencyInverse3D_(
     int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
 {
-  int d(3);
   Entity_ID_List edges, faces;
   std::vector<int> fdirs, edirs, map;
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
   int nfaces = faces.size();
 
-  AmanziGeometry::Point v1(d), v2(d), v3(d), tau(d), p1(d), p2(d);
+  mesh_->cell_get_edges(c, &edges);
+  int nedges = edges.size();
+
+  R.Reshape(nedges, d_);
+  Wc.Reshape(nedges, nedges);
+
+  AmanziGeometry::Point v1(d_), v2(d_), v3(d_), tau(d_), p1(d_), p2(d_);
   AmanziGeometry::Point vv[3];
 
   // Since the matrix N is the matrix of scaled tangent vextors,
   // N = N0 T, we use the tensor T.
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   double volume = mesh_->cell_volume(c);
-
-  mesh_->cell_get_edges(c, &edges);
-  int nedges = edges.size();
 
   for (int i = 0; i < nedges; i++) {
     int e1 = edges[i];
@@ -340,7 +345,7 @@ int DeRham_Edge::L2consistencyInverse3D_(
     v1 = xc - xf; 
  
     double a1 = normal * v1;
-    for (int k = 0; k < d; ++k) {
+    for (int k = 0; k < d_; ++k) {
       vv[k].set(normal[k] * v1);
       vv[k][k] -= a1;
     }
@@ -359,7 +364,7 @@ int DeRham_Edge::L2consistencyInverse3D_(
       double len = mesh_->edge_length(e);
       len /= 2.0 * area * area * fdirs[i] * edirs[m];
 
-      for (int k = 0; k < d; ++k) {
+      for (int k = 0; k < d_; ++k) {
         R(map[m], k) -= len * ((vv[k]^v3) * normal);
       }
     }
@@ -374,8 +379,7 @@ int DeRham_Edge::L2consistencyInverse3D_(
 ****************************************************************** */
 int DeRham_Edge::MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W)
 {
-  int nrows = W.NumRows();
-  DenseMatrix R(nrows, d_);
+  DenseMatrix R;
 
   int ok = L2consistencyInverse(c, T, R, W, true);
   if (ok) return ok;

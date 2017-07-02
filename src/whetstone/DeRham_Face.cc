@@ -28,15 +28,16 @@ int DeRham_Face::L2consistency(
 {
   Entity_ID_List faces;
   std::vector<int> dirs;
+
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-
   int nfaces = faces.size();
-  if (nfaces != N.NumRows()) return WHETSTONE_ELEMENTAL_MATRIX_SIZE;
 
-  double volume = mesh_->cell_volume(c);
+  N.Reshape(nfaces, d_);
+  Mc.Reshape(nfaces, nfaces);
 
   AmanziGeometry::Point v1(d_), v2(d_);
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
+  double volume = mesh_->cell_volume(c);
 
   Tensor Kinv(K);
   Kinv.Inverse();
@@ -73,8 +74,7 @@ int DeRham_Face::L2consistency(
 ****************************************************************** */
 int DeRham_Face::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 {
-  int nfaces = M.NumRows();
-  DenseMatrix N(nfaces, d_);
+  DenseMatrix N;
 
   Tensor Kinv(K);
   Kinv.Inverse();
@@ -98,13 +98,14 @@ int DeRham_Face::L2consistencyInverse(
   std::vector<int> dirs;
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
 
-  int num_faces = faces.size();
-  if (num_faces != R.NumRows()) return WHETSTONE_ELEMENTAL_MATRIX_SIZE;
+  R.Reshape(nfaces, d_);
+  Wc.Reshape(nfaces, nfaces);
 
   // calculate areas of possibly curved faces
-  std::vector<double> areas(num_faces, 0.0);
-  for (int i = 0; i < num_faces; i++) {
+  std::vector<double> areas(nfaces, 0.0);
+  for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     areas[i] = norm(mesh_->face_normal(f));
   }
@@ -113,13 +114,13 @@ int DeRham_Face::L2consistencyInverse(
   AmanziGeometry::Point v1(d_);
   double volume = mesh_->cell_volume(c);
 
-  for (int i = 0; i < num_faces; i++) {
+  for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
     v1 = K * normal;
 
-    for (int j = i; j < num_faces; j++) {
+    for (int j = i; j < nfaces; j++) {
       f = faces[j];
       const AmanziGeometry::Point& v2 = mesh_->face_normal(f);
       Wc(i, j) = (v1 * v2) / (dirs[i] * dirs[j] * volume * areas[i] * areas[j]);
@@ -129,7 +130,7 @@ int DeRham_Face::L2consistencyInverse(
   // populate matrix R
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
-  for (int i = 0; i < num_faces; i++) {
+  for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
     for (int k = 0; k < d_; k++) R(i, k) = (fm[k] - cm[k]) * areas[i];
@@ -140,7 +141,7 @@ int DeRham_Face::L2consistencyInverse(
   for (int i = 0; i < d; i++) {
     for (int j = 0; j < d; j++) {
       NtR(i, j) = 0.0;
-      for (int k = 0; k < num_faces; k++) {
+      for (int k = 0; k < nfaces; k++) {
         const AmanziGeometry::Point& v1 = mesh_->face_normal(faces[k]);
         NtR(i, j) += v1[i] * R(k, j) / areas[k] * dirs[k];
       }
@@ -156,8 +157,7 @@ int DeRham_Face::L2consistencyInverse(
 ****************************************************************** */
 int DeRham_Face::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
 {
-  int nfaces = W.NumRows();
-  DenseMatrix R(nfaces, d_);
+  DenseMatrix R;
 
   int ok = L2consistencyInverse(c, K, R, W, true);
   if (ok) return ok;

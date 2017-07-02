@@ -8,10 +8,14 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Dense matrices and operations with them.
 */
 
 #include <vector>
 #include <cmath>
+
+#include "dbc.hh"
 
 #include "lapack.hh"
 #include "WhetStoneDefs.hh"
@@ -27,7 +31,8 @@ DenseMatrix::DenseMatrix(int mrow, int ncol)
 { 
   m_ = mrow;
   n_ = ncol;
-  data_ = new double[m_ * n_]; 
+  mem_ = m_ * n_;
+  data_ = new double[mem_]; 
   access_ = WHETSTONE_DATA_ACCESS_COPY;
 }
 
@@ -39,6 +44,7 @@ DenseMatrix::DenseMatrix()
 { 
   m_ = 0;
   n_ = 0;
+  mem_ = 0;
   data_ = NULL; 
   access_ = WHETSTONE_DATA_ACCESS_COPY;
 }
@@ -54,9 +60,11 @@ DenseMatrix::DenseMatrix(int mrow, int ncol, double* data, int data_access)
   access_ = data_access;
 
   if (access_ == WHETSTONE_DATA_ACCESS_COPY) {
-    data_ = new double[m_ * n_]; 
-    for (int i = 0; i < mrow * ncol; i++) data_[i] = data[i];
+    mem_ = m_ * n_;
+    data_ = new double[mem_]; 
+    for (int i = 0; i < mem_; i++) data_[i] = data[i];
   } else {
+    mem_ = 0;
     data_ = data;
   }
 }
@@ -71,9 +79,10 @@ DenseMatrix::DenseMatrix(const DenseMatrix& B)
   n_ = B.NumCols();
   access_ = WHETSTONE_DATA_ACCESS_COPY;
 
-  data_ = new double[m_ * n_];
+  mem_ = m_ * n_;
+  data_ = new double[mem_];
   const double* dataB = B.Values();
-  for (int i = 0; i < m_ * n_; i++) data_[i] = dataB[i];
+  for (int i = 0; i < mem_; i++) data_[i] = dataB[i];
 }
 
 
@@ -87,7 +96,8 @@ DenseMatrix::DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2)
   n_ = n2 - n1;
   access_ = WHETSTONE_DATA_ACCESS_COPY;
 
-  data_ = new double[m_ * n_];
+  mem_ = m_ * n_;
+  data_ = new double[mem_];
 
   int mB = B.NumRows();
   int nB = B.NumCols();
@@ -101,6 +111,26 @@ DenseMatrix::DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2)
       tmpA++;
       tmpB++;
     }
+  }
+}
+
+
+/* ******************************************************************
+* Smart memory management.
+****************************************************************** */
+void DenseMatrix::Reshape(int mrow, int ncol)
+{
+  ASSERT(access_ == WHETSTONE_DATA_ACCESS_COPY);
+
+  m_ = mrow;
+  n_ = ncol;
+
+  if (mem_ < m_ * n_) {
+    if (data_ != NULL) {
+      delete [] data_;
+    }
+    mem_ = m_ * n_;
+    data_ = new double[mem_];
   }
 }
 

@@ -25,7 +25,6 @@
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
-// #include "MeshInfo.hh"
 #include "State.hh"
 
 // Flow
@@ -87,16 +86,26 @@ void RunTestDarcyWell(std::string controller) {
   // modify the default state for the problem at hand
   // -- permeability
   std::string passwd("flow"); 
-  if (!S->GetField("permeability")->initialized()){
-    Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
 
+  Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
+  double diff_in_perm = 0.;
+  if (!S->GetField("permeability")->initialized()){
     for (int c = 0; c < K.MyLength(); c++) {
       const AmanziGeometry::Point xc = mesh->cell_centroid(c);
       K[0][c] = 0.1 + std::sin(xc[0]) * 0.02;
       K[1][c] = 2.0 + std::cos(xc[1]) * 0.4;
     }
     S->GetField("permeability", "flow")->set_initialized();
+  }else{
+    for (int c = 0; c < K.MyLength(); c++) {
+      const AmanziGeometry::Point xc = mesh->cell_centroid(c);
+      diff_in_perm += abs(K[0][c] - (0.1 + std::sin(xc[0]) * 0.02)) + 
+        abs(K[1][c] - (2.0 + std::cos(xc[1]) * 0.4));
+    }
+    std::cout<<"diff_in_perm "<<diff_in_perm<<"\n";
+    CHECK(diff_in_perm < 1.0e-12);
   }
+    
 
   // -- fluid density and viscosity
   *S->GetScalarData("fluid_density", passwd) = 1.0;

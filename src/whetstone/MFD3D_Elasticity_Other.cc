@@ -30,7 +30,6 @@ namespace WhetStone {
 int MFD3D_Elasticity::H1consistencyBernardiRaugel(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  int nrows = N.NumRows();
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;
 
@@ -41,6 +40,11 @@ int MFD3D_Elasticity::H1consistencyBernardiRaugel(
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   int nfaces = faces.size();
+
+  int nrows = d_ * nnodes + nfaces;
+  int nd = d_ * (d_ + 1);
+  N.Reshape(nrows, nd);
+  Ac.Reshape(nrows, nrows);
 
   const AmanziGeometry::Point& xm = mesh_->cell_centroid(c);
   double volume = mesh_->cell_volume(c);
@@ -212,8 +216,7 @@ int MFD3D_Elasticity::H1consistencyBernardiRaugel(
 int MFD3D_Elasticity::StiffnessMatrixBernardiRaugel(
     int c, const Tensor& K, DenseMatrix& A)
 {
-  int nrows = A.NumRows();
-  DenseMatrix N(nrows, d_ * (d_ + 1));
+  DenseMatrix N;
 
   int ok = H1consistencyBernardiRaugel(c, K, N, A);
   if (ok) return ok;
@@ -263,6 +266,8 @@ int MFD3D_Elasticity::AdvectionMatrixBernardiRaugel(
   }
 
   // populate matrix
+  int ndofs = d_ * nnodes + nfaces;
+  A.Reshape(ndofs, ndofs);
   A.PutScalar(0.0);
  
   for (int i = 0; i < nnodes; ++i) {
@@ -294,6 +299,8 @@ int MFD3D_Elasticity::DivergenceMatrixBernardiRaugel(int c, DenseMatrix& A)
   int nfaces = faces.size();
 
   int n1 = d_ * nodes.size();
+  A.Reshape(1, n1 + nfaces);
+
   for (int n = 0; n < n1; ++n) A(0, n) = 0.0;
 
   for (int n = 0; n < nfaces; ++n) {

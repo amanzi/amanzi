@@ -170,6 +170,7 @@ void DiffusionMFD::UpdateMatricesMixedWithGrad_(
   // update matrix blocks
   int dim = mesh_->space_dimension();
   WhetStone::MFD3D_Diffusion mfd(mesh_);
+  WhetStone::DenseMatrix Wff;
 
   AmanziMesh::Entity_ID_List faces, cells;
   std::vector<int> dirs;
@@ -197,7 +198,6 @@ void DiffusionMFD::UpdateMatricesMixedWithGrad_(
       }
     }
 
-    WhetStone::DenseMatrix Wff(nfaces, nfaces);
     if (K_.get()) Kc = (*K_)[c];
     mfd.MassMatrixInverseDivKScaled(c, Kc, kc, kgrad, Wff);
 
@@ -455,6 +455,7 @@ void DiffusionMFD::UpdateMatricesTPFA_()
 {
   // populate transmissibilities
   WhetStone::MFD3D_Diffusion mfd(mesh_);
+  WhetStone::DenseMatrix Mff;
 
   CompositeVectorSpace cv_space;
   cv_space.SetMesh(mesh_);
@@ -477,7 +478,6 @@ void DiffusionMFD::UpdateMatricesTPFA_()
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
-    WhetStone::DenseMatrix Mff(nfaces, nfaces);
     mfd.MassMatrixInverseTPFA(c, Kc, Mff);
    
     for (int n = 0; n < nfaces; n++) {
@@ -1127,10 +1127,10 @@ void DiffusionMFD::UpdateFluxNonManifold(
 void DiffusionMFD::CreateMassMatrices_()
 {
   WhetStone::MFD3D_Diffusion mfd(mesh_);
-  mfd.ModifyStabilityScalingFactor(factor_);
-
+  WhetStone::DenseMatrix Wff;
   bool surface_mesh = (mesh_->manifold_dimension() != mesh_->space_dimension());
-  AmanziMesh::Entity_ID_List faces;
+
+  mfd.ModifyStabilityScalingFactor(factor_);
 
   Wff_cells_.resize(ncells_owned);
 
@@ -1138,12 +1138,8 @@ void DiffusionMFD::CreateMassMatrices_()
   Kc(0, 0) = 1.0;
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces(c, &faces);
-    int nfaces = faces.size();
-
     int ok;
     if (K_.get()) Kc = (*K_)[c];
-    WhetStone::DenseMatrix Wff(nfaces, nfaces);
 
     // For problems with degenerate coefficients we should skip WhetStone.
     if (Kc.Trace() == 0.0) {

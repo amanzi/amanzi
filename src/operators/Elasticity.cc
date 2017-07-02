@@ -53,20 +53,13 @@ void Elasticity::SetTensorCoefficient(double K) {
 void Elasticity::UpdateMatrices()
 {
   WhetStone::MFD3D_Elasticity mfd(mesh_);
-  AmanziMesh::Entity_ID_List nodes;
-  int d = mesh_->space_dimension();
+  WhetStone::DenseMatrix Acell;
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = K_default_;
   
   for (int c = 0; c < ncells_owned; c++) {
     if (space_col_ == BERNARDI_RAUGEL) {
-      mesh_->cell_get_nodes(c, &nodes);
-      int nnodes = nodes.size();
-      int nfaces = mesh_->cell_get_num_faces(c);
-      int ndofs = d * nnodes + nfaces;
-
-      WhetStone::DenseMatrix Acell(ndofs, ndofs);
       if (K_.get()) Kc = (*K_)[c];
       mfd.StiffnessMatrixBernardiRaugel(c, Kc, Acell);
 

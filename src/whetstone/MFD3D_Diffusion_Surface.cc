@@ -36,9 +36,10 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
   std::vector<int> dirs;
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
 
-  int num_faces = faces.size();
-  if (num_faces != R.NumRows()) return num_faces;  // matrix was not reshaped
+  R.Reshape(nfaces, d_ - 1);
+  Wc.Reshape(nfaces, nfaces);
 
   int dir;
   double volume = mesh_->cell_volume(c);
@@ -70,13 +71,13 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
   Tensor PTP(d_, 2);
   PTP = P * T * P;
 
-  for (int i = 0; i < num_faces; i++) {
+  for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_face_normal(f, c);
 
     v1 = PTP * normal;
 
-    for (int j = i; j < num_faces; j++) {
+    for (int j = i; j < nfaces; j++) {
       f = faces[j];
       const AmanziGeometry::Point& v2 = mesh_face_normal(f, c);
       Wc(i, j) = (v1 * v2) / volume;
@@ -86,7 +87,7 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
   // calculate matrix R
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
-  for (int i = 0; i < num_faces; i++) {
+  for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
 
@@ -104,8 +105,7 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
 int MFD3D_Diffusion::MassMatrixInverseSurface(
     int c, const Tensor& K, DenseMatrix& W)
 {
-  int nfaces = W.NumRows();
-  DenseMatrix R(nfaces, d_ - 1);
+  DenseMatrix R;
 
   int ok = L2consistencyInverseSurface(c, K, R, W);
   if (ok) return ok;
