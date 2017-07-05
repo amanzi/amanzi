@@ -13,6 +13,8 @@ namespace Amanzi {
 template<class Vector>
 class BDFFnBase {
  public:
+  virtual ~BDFFnBase() = 0;
+  
   // computes the non-linear functional f = f(t,u,udot)
   virtual void Functional(double t_old, double t_new, Teuchos::RCP<Vector> u_old,
                           Teuchos::RCP<Vector> u_new, Teuchos::RCP<Vector> f) = 0;
@@ -49,7 +51,7 @@ class BDFFnBase {
   // update the continuation parameter
   virtual void UpdateContinuationParameter(double lambda) {};
 
-  // experimental approach -- calling this indicates that the time
+  // calling this indicates that the time
   // integration scheme is changing the value of the solution in
   // state.
   virtual void ChangedSolution() = 0;

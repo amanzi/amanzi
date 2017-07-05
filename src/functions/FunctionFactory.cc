@@ -430,7 +430,7 @@ Function* FunctionFactory::create_composition(Teuchos::ParameterList& params) co
 
 Function* FunctionFactory::create_static_head(Teuchos::ParameterList& params) const
 {
-  Function *f;
+  Function *f = nullptr;
   FunctionFactory factory;
   try {
     double p0 = params.get<double>("p0");
@@ -482,7 +482,7 @@ Function* FunctionFactory::create_standard_math(Teuchos::ParameterList& params) 
 
 Function* FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
 {
-  Function *f;
+  Function *f = nullptr;
 
   if (params.isParameter("file")) {
     try {
@@ -496,6 +496,11 @@ Function* FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
       else if (xdim.compare(0,1,"x") == 0) xi = 1;  
       else if (xdim.compare(0,1,"y") == 0) xi = 2;  
       else if (xdim.compare(0,1,"z") == 0) xi = 3;  
+      else {
+        Errors::Message m;
+        m << "FunctionFactory: function-bilinear parameter error: invalid \"row coordinate\" \""<< xdim << "\" must be one of \"t,\" \"x,\" \"y,\" \"z.\"";
+        Exceptions::amanzi_throw(m);
+      }
 
       std::string y = params.get<std::string>("column header");
       std::string ydim = params.get<std::string>("column coordinate");
@@ -503,7 +508,12 @@ Function* FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
       else if (ydim.compare(0,1,"x") == 0) yi = 1;  
       else if (ydim.compare(0,1,"y") == 0) yi = 2;  
       else if (ydim.compare(0,1,"z") == 0) yi = 3;  
-
+      else {
+        Errors::Message m;
+        m << "FunctionFactory: function-bilinear parameter error: invalid \"column coordinate\" \""<< ydim << "\" must be one of \"t,\" \"x,\" \"y,\" \"z.\"";
+        Exceptions::amanzi_throw(m);
+      }
+      
       std::vector<double> vec_x;
       std::vector<double> vec_y;
       std::string v = params.get<std::string>("value header");
