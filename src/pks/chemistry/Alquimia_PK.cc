@@ -69,28 +69,28 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
 
   domain_name_ = cp_list_->get<std::string>("domain name", "domain");
 
-  tcc_key_ = getKey(domain_name_, "total_component_concentration"); 
-  poro_key_ = cp_list_->get<std::string>("porosity key", getKey(domain_name_, "porosity"));
-  saturation_key_ = cp_list_->get<std::string>("saturation key", getKey(domain_name_, "saturation_liquid"));
-  fluid_den_key_ = cp_list_->get<std::string>("fluid density key", getKey(domain_name_, "fluid_density"));
+  tcc_key_ = Keys::getKey(domain_name_, "total_component_concentration"); 
+  poro_key_ = cp_list_->get<std::string>("porosity key", Keys::getKey(domain_name_, "porosity"));
+  saturation_key_ = cp_list_->get<std::string>("saturation key", Keys::getKey(domain_name_, "saturation_liquid"));
+  fluid_den_key_ = cp_list_->get<std::string>("fluid density key", Keys::getKey(domain_name_, "fluid_density"));
 
-  min_vol_frac_key_ = getKey(domain_name_,"mineral_volume_fractions");
-  min_ssa_key_ = getKey(domain_name_,"mineral_specific_surface_area");
-  sorp_sites_key_ = getKey(domain_name_,"sorption_sites");
-  surf_cfsc_key_ = getKey(domain_name_,"surface_complex_free_site_conc");
-  total_sorbed_key_ = getKey(domain_name_,"total_sorbed");
-  isotherm_kd_key_ = getKey(domain_name_,"isotherm_kd");
-  isotherm_freundlich_n_key_ = getKey(domain_name_,"isotherm_freundlich_n");
-  isotherm_langmuir_b_key_ = getKey(domain_name_,"isotherm_langmuir_b");
-  free_ion_species_key_ = getKey(domain_name_,"free_ion_species");
-  primary_activity_coeff_key_ = getKey(domain_name_,"primary_activity_coeff");
+  min_vol_frac_key_ = Keys::getKey(domain_name_,"mineral_volume_fractions");
+  min_ssa_key_ = Keys::getKey(domain_name_,"mineral_specific_surface_area");
+  sorp_sites_key_ = Keys::getKey(domain_name_,"sorption_sites");
+  surf_cfsc_key_ = Keys::getKey(domain_name_,"surface_complex_free_site_conc");
+  total_sorbed_key_ = Keys::getKey(domain_name_,"total_sorbed");
+  isotherm_kd_key_ = Keys::getKey(domain_name_,"isotherm_kd");
+  isotherm_freundlich_n_key_ = Keys::getKey(domain_name_,"isotherm_freundlich_n");
+  isotherm_langmuir_b_key_ = Keys::getKey(domain_name_,"isotherm_langmuir_b");
+  free_ion_species_key_ = Keys::getKey(domain_name_,"free_ion_species");
+  primary_activity_coeff_key_ = Keys::getKey(domain_name_,"primary_activity_coeff");
 
-  ion_exchange_sites_key_ = getKey(domain_name_,"ion_exchange_sites");
+  ion_exchange_sites_key_ = Keys::getKey(domain_name_,"ion_exchange_sites");
   //ion_exchange_sites_key_ = "ion_exchange_sites";
 
-  ion_exchange_ref_cation_conc_key_ = getKey(domain_name_,"ion_exchange_ref_cation_conc");
-  secondary_activity_coeff_key_ = getKey(domain_name_,"secondary_activity_coeff");
-  alquimia_aux_data_key_ = getKey(domain_name_,"alquimia_aux_data");
+  ion_exchange_ref_cation_conc_key_ = Keys::getKey(domain_name_,"ion_exchange_ref_cation_conc");
+  secondary_activity_coeff_key_ = Keys::getKey(domain_name_,"secondary_activity_coeff");
+  alquimia_aux_data_key_ = Keys::getKey(domain_name_,"alquimia_aux_data");
 
   // collect high-level information about the problem
   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
@@ -417,7 +417,7 @@ void Alquimia_PK::XMLParameters()
   }
   Teuchos::ParameterList& state_list = glist_->sublist("state");
   Teuchos::ParameterList& initial_conditions = state_list.sublist("initial conditions");
-  Key geochemical_list_key = getKey(domain_name_,"geochemical conditions");
+  Key geochemical_list_key = Keys::getKey(domain_name_,"geochemical conditions");
   if (initial_conditions.isSublist(geochemical_list_key)) {
     Teuchos::ParameterList geochem_conditions = initial_conditions.sublist(geochemical_list_key);
     ParseChemicalConditionRegions(geochem_conditions, chem_initial_conditions_);

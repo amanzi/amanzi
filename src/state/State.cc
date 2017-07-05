@@ -239,14 +239,11 @@ State::RequireFieldEvaluator(Key key) {
   // Get the evaluator from state's Plist
   if (evaluator == Teuchos::null) {
     // -- Get the Field Evaluator plist
-    Teuchos::ParameterList fm_plist;
-    if (state_plist_.isSublist("field evaluators")) {
-      fm_plist = state_plist_.sublist("field evaluators");
-    }
-
+    Teuchos::ParameterList& fm_plist = FEList();
     if (fm_plist.isSublist(key)) {
       // -- Get this evaluator's plist.
       Teuchos::ParameterList sublist = fm_plist.sublist(key);
+      std::cout << "setting a non lifted eval name " << key << std::endl;
       sublist.set<Key>("evaluator name", key);
 
       // -- Get the model plist.
@@ -286,13 +283,74 @@ State::RequireFieldEvaluator(Key key) {
         (0 == key.compare(key.length()-cell_vol.length(), cell_vol.length(), cell_vol))) {
       Teuchos::ParameterList model_plist = state_plist_.sublist("model parameters");
       Teuchos::ParameterList plist = model_plist.sublist(key);
+      std::cout << "setting an eval name " << key << std::endl;
       plist.set("evaluator name", key);
       evaluator = Teuchos::rcp(new CellVolumeEvaluator(plist));
       SetFieldEvaluator(key, evaluator);
     }
   }
 
+  // check to see if we have a flyweight evaluator
+  if (evaluator == Teuchos::null && state_plist_.isParameter("domain sets")) {
+    KeyTriple split;
+    bool is_ds = Keys::splitDomainSet(key, split);
+    if (is_ds) {
+      std::cout << "Found split: " << std::get<0>(split) << "," << std::get<1>(split) << "," << std::get<2>(split) << std::endl;
+      auto domain_sets = state_plist_.get<Teuchos::Array<std::string> >("domain sets");
+      for (auto ds : domain_sets) {
+        if (ds == std::get<0>(split)) {
+          std::cout << "   matched! " << ds << std::endl;
+          // The name is a domain set prefixed name, and we have a domain set
+          // of that name.  Grab the parameter list for the set's list and use
+          // that to construct the evaluator.
+          // -- Get this evaluator's plist.
+          Key lifted_key = Keys::getKey(ds+"_*",std::get<2>(split));
+          std::cout << "   lifted key " << lifted_key << std::endl;
 
+          Teuchos::ParameterList& fm_plist = FEList();
+          if (fm_plist.isSublist(lifted_key)) {
+            Teuchos::ParameterList sublist = fm_plist.sublist(lifted_key);
+            std::cout << "setting a lifted eval name " << key << std::endl;
+            sublist.set("evaluator name", key);
+            sublist.setName(key);
+
+            // -- Get the model plist.
+            Teuchos::ParameterList model_plist;
+            if (state_plist_.isSublist("model parameters")) {
+              model_plist = state_plist_.sublist("model parameters");
+            }
+
+            // -- Insert any model parameters.
+            if (sublist.isParameter("model parameters")) {
+              std::string modelname = sublist.get<std::string>("model parameters");
+              Teuchos::ParameterList modellist = GetModelParameters(modelname);
+              std::string modeltype = modellist.get<std::string>("model type");
+              sublist.set(modeltype, modellist);
+            } else if (sublist.isParameter("models parameters")) {
+              Teuchos::Array<std::string> modelnames =
+                  sublist.get<Teuchos::Array<std::string> >("models parameters");
+              for (Teuchos::Array<std::string>::const_iterator modelname=modelnames.begin();
+                   modelname!=modelnames.end(); ++modelname) {
+                Teuchos::ParameterList modellist = GetModelParameters(*modelname);
+                std::string modeltype = modellist.get<std::string>("model type");
+                sublist.set(modeltype, modellist);
+              }
+            }
+
+            // -- Create and set the evaluator.
+            fm_plist.set(key, sublist);
+            FieldEvaluator_Factory evaluator_factory;
+            evaluator = evaluator_factory.createFieldEvaluator(sublist);
+            
+            SetFieldEvaluator(key, evaluator);
+            break;
+          }            
+        }          
+      }
+    }
+  }
+
+  // cannot find the evaluator, error
   if (evaluator == Teuchos::null) {
     std::stringstream messagestream;
     messagestream << "Model for field " << key << " cannot be created in State.";
@@ -1331,5 +1389,8 @@ void DeformCheckpointMesh(const Teuchos::Ptr<State>& S) {
     write_access_mesh_->deform( nodeids, new_pos, true, &final_pos); // deforms the mesh
   }
 }
+
+
+
 
 } // namespace Amanzi
