@@ -32,6 +32,7 @@ MeshColumn::MeshColumn(const Mesh& inmesh,
   set_geometric_model(extracted_.geometric_model());
   set_space_dimension(3);
   set_manifold_dimension(3);
+  //  set_manifold_dimension(1); // ETC: this should be done, but it breaks overland flow
   
   // compute special geometric quantities for column entities (node
   // coordinates, face centroids, cell centroids, face areas)

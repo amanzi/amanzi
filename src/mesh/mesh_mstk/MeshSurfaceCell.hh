@@ -45,6 +45,7 @@ class MeshSurfaceCell : public Mesh {
     } else {
       set_space_dimension(3);
     }
+    //    set_manifold_dimension(0); // ETC: this should be done, but it breaks overland flow
     set_manifold_dimension(2);
 
     // set my face
