@@ -35,7 +35,7 @@ XERCES_CPP_NAMESPACE_USE
 Teuchos::ParameterList InputConverterU::TranslateEnergy_()
 {
   Teuchos::ParameterList out_list;
-  Teuchos::ParameterList* energy_list;
+  Teuchos::ParameterList* energy_list = nullptr;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "Translating energy" << std::endl;

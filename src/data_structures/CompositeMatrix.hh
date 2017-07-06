@@ -22,7 +22,8 @@ class CompositeVectorSpace;
 class CompositeMatrix {
 
  public:
-
+  virtual ~CompositeMatrix() = default;
+  
   // Vector space of the Matrix's domain.
   virtual const CompositeVectorSpace& DomainMap() const = 0;
 

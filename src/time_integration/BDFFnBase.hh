@@ -13,7 +13,7 @@ namespace Amanzi {
 template<class Vector>
 class BDFFnBase {
  public:
-  virtual ~BDFFnBase() = 0;
+  virtual ~BDFFnBase() = default;
   
   // computes the non-linear functional f = f(t,u,udot)
   virtual void Functional(double t_old, double t_new, Teuchos::RCP<Vector> u_old,

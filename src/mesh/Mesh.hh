@@ -583,8 +583,8 @@ class Mesh {
   const Epetra_Map& edge_map(bool include_ghost) const
   {
     Errors::Message mesg("Edges are not implemented in this framework.");
-    amanzi_throw(mesg);
-    return edge_map(include_ghost);  // avoids clang warnings for every file.
+    Exceptions::amanzi_throw(mesg);
+    throw(mesg);
   }
 
   // Get node map

@@ -122,6 +122,9 @@ bool SecondaryVariablesFieldEvaluator::HasFieldChanged(const Teuchos::Ptr<State>
 // ---------------------------------------------------------------------------
 bool SecondaryVariablesFieldEvaluator::HasFieldDerivativeChanged(
     const Teuchos::Ptr<State>& S, Key request, Key wrt_key) {
+  ASSERT(!request.empty());
+  ASSERT(!wrt_key.empty());
+
   Teuchos::OSTab tab = vo_->getOSTab();
 
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {

@@ -508,6 +508,7 @@ MeshLogicalFactory::Create(Teuchos::ParameterList& plist) {
     } else {
       Errors::Message msg("MeshLogicalFactory: invalid tip type specified.");
       Exceptions::amanzi_throw(msg);
+      first_type = MeshLogicalFactory::TIP_NULL;
     }
     
     // -- last tip
@@ -559,6 +560,7 @@ MeshLogicalFactory::Create(Teuchos::ParameterList& plist) {
     } else {
       Errors::Message msg("MeshLogicalFactory: invalid tip type specified.");
       Exceptions::amanzi_throw(msg);
+      last_type = MeshLogicalFactory::TIP_NULL;
     }
     
     // add the segment

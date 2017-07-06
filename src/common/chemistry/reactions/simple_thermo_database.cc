@@ -45,7 +45,6 @@ SimpleThermoDatabase::SimpleThermoDatabase(void)
       primary_id_(0),
       aqueous_equilibrium_complex_id_(0),
       mineral_id_(0),
-      ion_exchange_site_id_(0),
       ion_exchange_complex_id_(0),
       surface_site_id_(0),
       surface_complex_id_(0),
