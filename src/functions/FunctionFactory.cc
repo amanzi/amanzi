@@ -489,7 +489,7 @@ Function* FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
       std::string filename = params.get<std::string>("file");
       HDF5Reader reader(filename);
 
-      int xi, yi; // input indices
+      int xi, yi = 0; // input indices
       std::string x = params.get<std::string>("row header");
       std::string xdim = params.get<std::string>("row coordinate");
       if (xdim.compare(0,1,"t") == 0) xi = 0;  
@@ -500,6 +500,7 @@ Function* FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
         Errors::Message m;
         m << "FunctionFactory: function-bilinear parameter error: invalid \"row coordinate\" \""<< xdim << "\" must be one of \"t,\" \"x,\" \"y,\" \"z.\"";
         Exceptions::amanzi_throw(m);
+        xi = 0;
       }
 
       std::string y = params.get<std::string>("column header");
@@ -512,6 +513,7 @@ Function* FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
         Errors::Message m;
         m << "FunctionFactory: function-bilinear parameter error: invalid \"column coordinate\" \""<< ydim << "\" must be one of \"t,\" \"x,\" \"y,\" \"z.\"";
         Exceptions::amanzi_throw(m);
+        yi = 0;
       }
       
       std::vector<double> vec_x;

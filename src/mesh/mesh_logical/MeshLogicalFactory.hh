@@ -20,6 +20,7 @@ class MeshLogicalFactory {
  public:
 
   enum LogicalTip_t {
+    TIP_NULL,
     TIP_BOUNDARY, // tip is a root boundary, i.e. face.  add cell and face.
     TIP_DEFERRED, // tip included, but face will be added later
     TIP_JUNCTION, // tip is a root junction cell.  add cell.

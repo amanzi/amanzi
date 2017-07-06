@@ -354,6 +354,7 @@ class MeshSurfaceCell : public Mesh {
              const bool move_vertical) {
     Errors::Message mesg("Not implemented");
     Exceptions::amanzi_throw(mesg);
+    return -1;
   }
 
   //
@@ -373,7 +374,8 @@ class MeshSurfaceCell : public Mesh {
   const Epetra_Map& edge_map(bool include_ghost) const
   {
     Errors::Message mesg("Edges not implemented in this framework");
-    amanzi_throw(mesg);
+    Exceptions::amanzi_throw(mesg);
+    throw(mesg);
   };
 
   virtual

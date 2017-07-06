@@ -97,6 +97,8 @@ class OperatorDiffusion {
       nnodes_owned(-1),
       nnodes_wghost(-1)
   {};
+
+  virtual ~OperatorDiffusion() = default;
   
   // main virtual members
   // -- setup 

@@ -39,7 +39,8 @@ class MeshFunction {
 
   // constructor
   MeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : mesh_(mesh) {};
-
+  virtual ~MeshFunction() = default;
+  
   // add a spec -- others may inherit this and overload to do some checking?
   virtual void AddSpec(const Teuchos::RCP<Spec>& spec) {
     spec_list_.push_back(spec);

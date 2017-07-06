@@ -140,11 +140,8 @@ PK_MPCAdditive<PK_Base>::PK_MPCAdditive(Teuchos::ParameterList& pk_tree,
   solution_->PushBack(pk_soln);
 
   for (int i = 0; i < pk_name.size(); i++) {
-    // Collect arguments to the constructor
-    Teuchos::ParameterList& pk_sub_tree = pk_tree.sublist(pk_name[i]);
-
     // create the PK
-    Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_sub_tree, global_list, S, pk_soln);
+    Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_name[i], pk_tree, global_list, S, pk_soln);
     Teuchos::RCP<PK_Base> pk = Teuchos::rcp_dynamic_cast<PK_Base>(pk_notype);
     sub_pks_.push_back(pk);
   }

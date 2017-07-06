@@ -321,7 +321,8 @@ class MeshColumn : public Mesh {
   const Epetra_Map& edge_map(bool include_ghost) const
   {
     Errors::Message mesg("Edges not implemented in this framework");
-    amanzi_throw(mesg);
+    Exceptions::amanzi_throw(mesg);
+    throw(mesg);
   };
 
   virtual

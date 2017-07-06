@@ -152,6 +152,7 @@ Mesh::entity_get_parent(const Entity_kind kind, const Entity_ID entid) const
 {
   Errors::Message mesg("Parent/daughter entities not enabled in this framework.");
   Exceptions::amanzi_throw(mesg);
+  return -1;
 }
 
 
@@ -248,6 +249,8 @@ void Mesh::face_get_cells(const Entity_ID faceid, const Parallel_type ptype,
         if (face_cell_ptype_[faceid][i] == GHOST)
           cellids->push_back(face_cell_ids_[faceid][i]);
       break;
+    default:
+      break;
   }
 
 #else  // Non-cached version
@@ -272,6 +275,8 @@ void Mesh::face_get_cells(const Entity_ID faceid, const Parallel_type ptype,
       for (int i = 0; i < n; i++)
         if (entity_get_ptype(CELL,fcells[i]) == GHOST)
           cellids->push_back(fcells[i]);
+      break;
+    default:
       break;
   }
 

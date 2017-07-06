@@ -45,7 +45,7 @@ void HDF5::createMeshFile(AmanziMesh::Mesh &mesh_maps, std::string filename) {
                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   status = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL,
                     H5P_DEFAULT, nodes);
-  delete nodes;
+  delete[] nodes;
   H5Dclose(dataset);
   H5Sclose(dataspace);
 
@@ -78,7 +78,7 @@ void HDF5::createMeshFile(AmanziMesh::Mesh &mesh_maps, std::string filename) {
                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   status = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL,
                     H5P_DEFAULT, ielem);
-  delete ielem;
+  delete[] ielem;
   H5Dclose(dataset);
   H5Sclose(dataspace);
 

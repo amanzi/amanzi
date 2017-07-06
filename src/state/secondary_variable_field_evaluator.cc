@@ -121,6 +121,9 @@ bool SecondaryVariableFieldEvaluator::HasFieldDerivativeChanged(const Teuchos::P
         Key request, Key wrt_key) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
+  ASSERT(!wrt_key.empty());
+  ASSERT(!request.empty());
+  
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     *vo_->os() << "Secondary Variable d" << my_key_ << "_d" << wrt_key
           << " requested by " << request << std::endl;

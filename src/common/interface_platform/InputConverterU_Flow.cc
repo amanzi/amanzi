@@ -37,7 +37,7 @@ XERCES_CPP_NAMESPACE_USE
 Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
 {
   Teuchos::ParameterList out_list;
-  Teuchos::ParameterList* flow_list;
+  Teuchos::ParameterList* flow_list = nullptr;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "Translating flow, mode=" << mode << std::endl;
