@@ -11,7 +11,8 @@ MPCDelegateWater::MPCDelegateWater(const Teuchos::RCP<Teuchos::ParameterList>& p
     i_domain_(-1),
     i_surf_(-1),
     i_Tdomain_(-1),
-    i_Tsurf_(-1)
+    i_Tsurf_(-1),
+    domain_ss_(domain)
 {
   // predictor control
   modify_predictor_heuristic_ =
@@ -48,9 +49,6 @@ MPCDelegateWater::MPCDelegateWater(const Teuchos::RCP<Teuchos::ParameterList>& p
 
   // create the VO
   vo_ = Teuchos::rcp(new VerboseObject(plist->name(), *plist_));
-
-  domain_ss = domain;
-
 }
 
 // Approach 1: global face limiter on the correction size
@@ -315,11 +313,7 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
     Epetra_MultiVector& domain_pnew_f = *u->SubVector(i_domain_)->Data()
         ->ViewComponent("face",false);
 
-    Key key_ss;
-    if (domain_ss.substr(0,6) == "column")
-      key_ss = Keys::getKey(domain_ss,"pressure");
-    else
-      key_ss = "pressure";
+    Key key_ss = Keys::getKey(domain_ss_,"pressure");
 
     const Epetra_MultiVector& domain_pold_f =
         *S_->GetFieldData(key_ss)->ViewComponent("face",false);

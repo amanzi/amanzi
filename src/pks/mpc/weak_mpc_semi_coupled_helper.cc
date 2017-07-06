@@ -59,9 +59,13 @@ UpdateIntermediateStateParameters(Teuchos::RCP<Amanzi::State>& S_next_, Teuchos:
 				   S_inter_->GetField(Keys::getKey(name.str(),"stored_SWE"))->owner()) = 
 	    *S_next_->GetFieldData(Keys::getKey(name.str(),"stored_SWE"));
 
-	   *S_inter_->GetFieldData(Keys::getKey(name_ss.str(),"surface_subsurface_flux"), 
-				  S_inter_->GetField(Keys::getKey(name_ss.str(),"surface_subsurface_flux"))->owner()) = 
-	     *S_next_->GetFieldData(Keys::getKey(name_ss.str(),"surface_subsurface_flux"));
+	   *S_inter_->GetFieldData(Keys::getKey(name.str(),"surface_subsurface_flux"), 
+				  S_inter_->GetField(Keys::getKey(name.str(),"surface_subsurface_flux"))->owner()) = 
+	     *S_next_->GetFieldData(Keys::getKey(name.str(),"surface_subsurface_flux"));
+	  
+	   *S_inter_->GetFieldData(Keys::getKey(name.str(),"surface_subsurface_energy_flux"), 
+				  S_inter_->GetField(Keys::getKey(name.str(),"surface_subsurface_energy_flux"))->owner()) = 
+	     *S_next_->GetFieldData(Keys::getKey(name.str(),"surface_subsurface_energy_flux"));
 	  
 	   *S_inter_->GetFieldData(Keys::getKey(name_ss.str(),"saturation_liquid"), 
 				   S_inter_->GetField(Keys::getKey(name_ss.str(),"saturation_liquid"))->owner()) = 
@@ -139,9 +143,13 @@ UpdateNextStateParameters(Teuchos::RCP<Amanzi::State>& S_next_, Teuchos::RCP<Ama
 				   S_next_->GetField(Keys::getKey(name.str(),"stored_SWE"))->owner()) = 
 	    *S_inter_->GetFieldData(Keys::getKey(name.str(),"stored_SWE"));
 
-	   *S_next_->GetFieldData(Keys::getKey(name_ss.str(),"surface_subsurface_flux"), 
-				  S_next_->GetField(Keys::getKey(name_ss.str(),"surface_subsurface_flux"))->owner()) = 
-	     *S_inter_->GetFieldData(Keys::getKey(name_ss.str(),"surface_subsurface_flux"));
+	   *S_next_->GetFieldData(Keys::getKey(name.str(),"surface_subsurface_flux"), 
+				  S_next_->GetField(Keys::getKey(name.str(),"surface_subsurface_flux"))->owner()) = 
+	     *S_inter_->GetFieldData(Keys::getKey(name.str(),"surface_subsurface_flux"));
+	  
+	   *S_next_->GetFieldData(Keys::getKey(name.str(),"surface_subsurface_energy_flux"), 
+				  S_next_->GetField(Keys::getKey(name.str(),"surface_subsurface_energy_flux"))->owner()) = 
+	     *S_inter_->GetFieldData(Keys::getKey(name.str(),"surface_subsurface_energy_flux"));
 	  
 	  
 

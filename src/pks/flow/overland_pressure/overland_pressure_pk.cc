@@ -82,17 +82,7 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
 // -------------------------------------------------------------
 void OverlandPressureFlow::Setup(const Teuchos::Ptr<State>& S) {
   // set up the meshes
-  if (S->HasMesh("surface_star") && domain_=="surface_star")
-    standalone_mode_ = false;
-  if(domain_.substr(0,6) =="column")
-    standalone_mode_ = false;
-  else if (!S->HasMesh("surface") && standalone_mode_==false) {
-    Teuchos::RCP<const AmanziMesh::Mesh> domain = S->GetMesh();
-    //   ASSERT(domain->space_dimension() == 2);
-    
-    standalone_mode_ = true;
-    S->AliasMesh("domain","surface");
-  }
+  standalone_mode_ = S->GetMesh() == S->GetMesh(domain_);
 
   // -- water content
   S->RequireField(Keys::getKey(domain_,"water_content"))->SetMesh(mesh_)->SetGhosted()
@@ -103,11 +93,7 @@ void OverlandPressureFlow::Setup(const Teuchos::Ptr<State>& S) {
   
   SetupOverlandFlow_(S);
   SetupPhysicalEvaluators_(S);
-
-  
 }
-
-
 
 
 void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {

@@ -168,7 +168,7 @@ class MPCDelegateWater {
   int i_Tsurf_;
   int i_Tdomain_;
 
-  Key domain_ss;
+  Key domain_ss_;
 
 };
 

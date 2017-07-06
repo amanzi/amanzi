@@ -311,17 +311,13 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // -- coupling done by a Neumann condition
   coupled_to_surface_via_flux_ = plist_->get<bool>("coupled to surface via flux", false);
   if (coupled_to_surface_via_flux_) {
-    if (ss_flux_key_.empty()) {
-      ss_flux_key_ = plist_->get<std::string>("surface-subsurface flux key",
-                                              Keys::getKey(domain_, "surface_subsurface_flux"));
-    }
-
     std::string domain_surf;
     if (domain_ == "domain" || domain_ == "") {
       domain_surf = plist_->get<std::string>("surface domain name", "surface");
     } else {
       domain_surf = plist_->get<std::string>("surface domain name", "surface_"+domain_);
     }
+    ss_flux_key_ = Keys::readKey(*plist_, domain_surf, "surface-subsurface flux", "surface_subsurface_flux");
     S->RequireField(ss_flux_key_)->SetMesh(S->GetMesh(domain_surf))
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
@@ -1013,13 +1009,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     bc_counts[bc_counts.size()-1] = ncells_surface;
     for (unsigned int c=0; c!=ncells_surface; ++c) {
       // -- get the surface cell's equivalent subsurface face
-
-      //--------- ADDED FOR COLUMNS ----
-      AmanziMesh::Entity_ID f;
-      if (domain_.substr(0,6) =="column")
-        f = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
-      else
-        f = surface->entity_get_parent(AmanziMesh::CELL, c);
+      AmanziMesh::Entity_ID f = surface->entity_get_parent(AmanziMesh::CELL, c);
 
 #ifdef ENABLE_DBC
       AmanziMesh::Entity_ID_List cells;
@@ -1326,16 +1316,9 @@ bool Richards::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
       local_maxT_c.value = maxT_c;
       local_maxT_c.gid = pres_c.Map().GID(max_c);
 
-
-      if (domain_.substr(0,6) == "column"){
-        MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_SELF);
-        MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_SELF);
-      }
-      else{
-        MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
-        MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-      }
-        *vo_->os() << "   cells (min/max): [" << global_minT_c.gid << "] " << global_minT_c.value
+      MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, mesh_->get_comm()->Comm());
+      MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
+      *vo_->os() << "   cells (min/max): [" << global_minT_c.gid << "] " << global_minT_c.value
                  << ", [" << global_maxT_c.gid << "] " << global_maxT_c.value << std::endl;
 
       if (pres->HasComponent("face")) {
@@ -1348,17 +1331,9 @@ bool Richards::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
         local_maxT_f.value = maxT_f;
         local_maxT_f.gid = pres_f.Map().GID(max_f);
         
-
-        if (domain_.substr(0,6) == "column"){
-          MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_SELF);
-          MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_SELF);
-        }
-        else {
-          MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
-          MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-        }
-
-          *vo_->os() << "   cells (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value
+        MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, mesh_->get_comm()->Comm());
+        MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
+        *vo_->os() << "   cells (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value
                    << ", [" << global_maxT_f.gid << "] " << global_maxT_f.value << std::endl;
       }
     }

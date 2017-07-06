@@ -55,28 +55,6 @@ EnergySurfaceIce::EnergySurfaceIce(Teuchos::ParameterList& FElist,
 
 
 
-void EnergySurfaceIce::Setup(const Teuchos::Ptr<State>& S) {
-  // set up the meshes
-
-  if (S->HasMesh("surface_star") && domain_=="surface_star")
-    standalone_mode_ = false;
-  else if(domain_.substr(0,6) == "column")
-    standalone_mode_ = false;
-
-  if (!S->HasMesh("surface") && standalone_mode_ == false) {
-    Teuchos::RCP<const AmanziMesh::Mesh> domain = S->GetMesh();
-    ASSERT(domain->space_dimension() == 2);
-    standalone_mode_ = true;
-    S->AliasMesh("domain", "surface");
-  } 
-  /*else {
-    standalone_mode_ = false;
-  }
-  */
-
-  EnergyBase::Setup(S);
-}
-
 // -------------------------------------------------------------
 // Create the physical evaluators for energy, enthalpy, thermal
 // conductivity, and any sources.
@@ -111,7 +89,7 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_ ) {
     // -- ensure mass source from subsurface exists
 
-    std::string domain_ss;
+    Key domain_ss;
     if (domain_ == "surface") {
       domain_ss = plist_->get<std::string>("subsurface domain name", "domain");
     } else if (boost::starts_with(domain_, "surface")) {
@@ -120,7 +98,7 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     } else {
       domain_ss = plist_->get<std::string>("subsurface domain name");
     }      
-    Key key_ss = Keys::getKey(domain_ss,"surface_subsurface_flux");
+    Key key_ss = Keys::getKey(domain_,"surface_subsurface_flux");
     S->RequireField(key_ss)
         ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
   }
@@ -298,7 +276,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
     S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
 
     // -- advection source
-    Key key_ss = Keys::getKey(domain_ss,"surface_subsurface_flux");
+    Key key_ss = Keys::getKey(domain_,"surface_subsurface_flux");
 
     const Epetra_MultiVector& source1 =
       *S->GetFieldData(key_ss)->ViewComponent("cell",false);
@@ -320,12 +298,8 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
       // upwind the enthalpy
       if (flux > 0.) { // exfiltration
         // get the subsurface's enthalpy
-       
         AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
-        if (domain_.substr(0,6) == "column")
-          S->GetMesh(domain_ss)->face_get_cells(f, AmanziMesh::OWNED, &cells);
-        else
-          S->GetMesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+        S->GetMesh(domain_ss)->face_get_cells(f, AmanziMesh::USED, &cells);
 
         ASSERT(cells.size() == 1);
         g_c[0][c] -= flux * enth_subsurf[0][cells[0]];

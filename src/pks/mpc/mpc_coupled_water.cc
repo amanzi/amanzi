@@ -44,7 +44,7 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
   StrongMPC<PK_PhysicalBDF_Default>::Setup(S);
 
   // require the coupling fields, claim ownership
-  S->RequireField(Keys::getKey(domain_ss,"surface_subsurface_flux"), name_)
+  S->RequireField(Keys::getKey(domain_surf,"surface_subsurface_flux"), name_)
     ->SetMesh(surf_mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
 
   // Create the preconditioner.
@@ -86,8 +86,8 @@ void
 
 MPCCoupledWater::Initialize(const Teuchos::Ptr<State>& S) {
    // initialize coupling terms
-  S->GetFieldData(Keys::getKey(domain_ss,"surface_subsurface_flux"), name_)->PutScalar(0.);
-  S->GetField(Keys::getKey(domain_ss,"surface_subsurface_flux"), name_)->set_initialized();
+  S->GetFieldData(Keys::getKey(domain_surf,"surface_subsurface_flux"), name_)->PutScalar(0.);
+  S->GetField(Keys::getKey(domain_surf,"surface_subsurface_flux"), name_)->set_initialized();
   // Initialize all sub PKs.
 
   MPC<PK_PhysicalBDF_Default>::Initialize(S);
@@ -124,7 +124,7 @@ MPCCoupledWater::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector>
   // The residual of the surface flow equation provides the mass flux from
   // subsurface to surface.
 
-  Epetra_MultiVector& source = *S_next_->GetFieldData(Keys::getKey(domain_ss,"surface_subsurface_flux"),
+  Epetra_MultiVector& source = *S_next_->GetFieldData(Keys::getKey(domain_surf,"surface_subsurface_flux"),
           name_)->ViewComponent("cell",false);
   source = *g->SubVector(1)->Data()->ViewComponent("cell",false);
 
