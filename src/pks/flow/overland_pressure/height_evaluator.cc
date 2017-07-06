@@ -19,18 +19,18 @@ HeightEvaluator::HeightEvaluator(Teuchos::ParameterList& plist) :
   bar_ = plist_.get<bool>("ponded depth bar", false);
 
 
-  Key domain = getDomain(my_key_);
-  my_key_ = getKey(domain, "ponded_depth");
+  Key domain = Keys::getDomain(my_key_);
+  my_key_ = Keys::getKey(domain, "ponded_depth");
 
   if (bar_) my_key_ += std::string("_bar");
   my_key_ = plist_.get<std::string>("height key", my_key_);
 
   // my dependencies
 
-  dens_key_ = plist_.get<std::string>("mass density key", getKey(domain, "mass_density_liquid"));
+  dens_key_ = plist_.get<std::string>("mass density key", Keys::getKey(domain, "mass_density_liquid"));
   dependencies_.insert(dens_key_);
 
-  pres_key_ = plist_.get<std::string>("pressure key", getKey(domain, "pressure"));
+  pres_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain, "pressure"));
 
   dependencies_.insert(pres_key_);
 
@@ -110,7 +110,7 @@ void HeightEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
 void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key) {
 
-  Key dmy_key = getDerivKey(my_key_,wrt_key);
+  Key dmy_key = Keys::getDerivKey(my_key_,wrt_key);
  
   Teuchos::RCP<CompositeVector> dmy;
   if (S->HasField(dmy_key)) {
@@ -152,7 +152,7 @@ void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
       // partial F / partial dep * ddep/dx
       // -- ddep/dx
 
-      Key ddep_key = getDerivKey(*dep,wrt_key);
+      Key ddep_key = Keys::getDerivKey(*dep,wrt_key);
 
       Teuchos::RCP<const CompositeVector> ddep = S->GetFieldData(ddep_key);
       // -- partial F / partial dep

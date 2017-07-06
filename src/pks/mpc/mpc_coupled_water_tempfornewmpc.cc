@@ -40,7 +40,7 @@ MPCCoupledWater::setup(const Teuchos::Ptr<State>& S) {
   StrongMPC<PKPhysicalBDFBase>::setup(S);
 
   // require the coupling fields, claim ownership
-  S->RequireField(getKey(domain_ss,"surface_subsurface_flux"), name_)
+  S->RequireField(Keys::getKey(domain_ss,"surface_subsurface_flux"), name_)
     ->SetMesh(surf_mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
 
   // Create the preconditioner.
@@ -112,13 +112,13 @@ MPCCoupledWater::setup(const Teuchos::Ptr<State>& S) {
 void
 MPCCoupledWater::initialize(const Teuchos::Ptr<State>& S) {
    // initialize coupling terms
-  S->GetFieldData(getKey(domain_ss,"surface_subsurface_flux"), name_)->PutScalar(0.);
-  S->GetField(getKey(domain_ss,"surface_subsurface_flux"), name_)->set_initialized();
+  S->GetFieldData(Keys::getKey(domain_ss,"surface_subsurface_flux"), name_)->PutScalar(0.);
+  S->GetField(Keys::getKey(domain_ss,"surface_subsurface_flux"), name_)->set_initialized();
   // Initialize all sub PKs.
   MPC<PKPhysicalBDFBase>::initialize(S);
   // ensure continuity of ICs... surface takes precedence.
-  //--  CopySurfaceToSubsurface(*S->GetFieldData(getKey(domain_surf,"pressure"), sub_pks_[1]->name()),
-  //---                    S->GetFieldData(getKey(domain_ss,"pressure"), sub_pks_[0]->name()).ptr());
+  //--  CopySurfaceToSubsurface(*S->GetFieldData(Keys::getKey(domain_surf,"pressure"), sub_pks_[1]->name()),
+  //---                    S->GetFieldData(Keys::getKey(domain_ss,"pressure"), sub_pks_[0]->name()).ptr());
   // Initialize my timestepper.
   PKBDFBase::initialize(S);
   /*
@@ -159,7 +159,7 @@ MPCCoupledWater::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector>
 
   // The residual of the surface flow equation provides the mass flux from
   // subsurface to surface.
-  Epetra_MultiVector& source = *S_next_->GetFieldData(getKey(domain_ss,"surface_subsurface_flux"),
+  Epetra_MultiVector& source = *S_next_->GetFieldData(Keys::getKey(domain_ss,"surface_subsurface_flux"),
           name_)->ViewComponent("cell",false);
   std::cout<<"COUPLED WATER1: "<<source[0][0]<<"\n";
   source = *g->SubVector(1)->Data()->ViewComponent("cell",false);

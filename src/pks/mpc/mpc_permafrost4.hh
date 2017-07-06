@@ -55,6 +55,8 @@ class MPCPermafrost4 : public MPCSubsurface {
   Teuchos::RCP<PK_PhysicalBDF_Default> surf_energy_pk_;
 
   // sub meshes
+  Key domain_surf_;
+  Key domain_subsurf_;
   Teuchos::RCP<const AmanziMesh::Mesh> domain_mesh_;
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;
 

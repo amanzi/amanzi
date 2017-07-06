@@ -15,9 +15,9 @@ namespace Flow {
 UnfrozenFractionEvaluator::UnfrozenFractionEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 
-  Key domain = getDomain(my_key_);
+  Key domain = Keys::getDomain(my_key_);
 
-  temp_key_ = plist_.get<std::string>("temperature key", getKey(domain,"temperature"));
+  temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain,"temperature"));
   dependencies_.insert(temp_key_);
 
   if (my_key_ == std::string("")) {

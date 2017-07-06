@@ -22,22 +22,22 @@ EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist) :
   }
 
   // Set up my dependencies.
-  std::string domain_name = getDomain(my_key_);
+  std::string domain_name = Keys::getDomain(my_key_);
   include_work_ = plist_.get<bool>("include work term", true);
 
   // -- pressure
   if (include_work_) {
     pres_key_ = plist_.get<std::string>("pressure key",
-            getKey(domain_name, "pressure"));
+            Keys::getKey(domain_name, "pressure"));
     dependencies_.insert(pres_key_);
 
     dens_key_ = plist_.get<std::string>("molar density key",
-            getKey(domain_name, "molar_density_liquid"));
+            Keys::getKey(domain_name, "molar_density_liquid"));
     dependencies_.insert(dens_key_);
   }
 
   ie_key_ = plist_.get<std::string>("internal energy key",
-          getKey(domain_name, "internal_energy_liquid"));
+          Keys::getKey(domain_name, "internal_energy_liquid"));
   dependencies_.insert(ie_key_);
 
 };

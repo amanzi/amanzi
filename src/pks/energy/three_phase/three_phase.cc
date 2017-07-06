@@ -31,6 +31,7 @@ void ThreePhase::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList tcm_plist =
     plist_->sublist("thermal conductivity evaluator");
+  tcm_plist.set("evaluator name", conductivity_key_);
   Teuchos::RCP<Energy::ThermalConductivityThreePhaseEvaluator> tcm =
     Teuchos::rcp(new Energy::ThermalConductivityThreePhaseEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);

@@ -15,26 +15,26 @@ namespace FlowRelations {
 FractionalConductanceEvaluator::FractionalConductanceEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 
-  Key domain = getDomain(my_key_);
+  Key domain = Keys::getDomain(my_key_);
 
   if (my_key_.empty())
-    my_key_ = plist_.get<std::string>("fractional conductance key", getKey(domain,"fractional_conductance"));
+    my_key_ = plist_.get<std::string>("fractional conductance key", Keys::getKey(domain,"fractional_conductance"));
 
 
-  //pd_key_ = plist_.get<std::string>("height key", getKey(domain,"ponded_depth"));
+  //pd_key_ = plist_.get<std::string>("height key", Keys::getKey(domain,"ponded_depth"));
   //dependencies_.insert(pd_key_);
   
-  vpd_key_ = plist_.get<std::string>("volumetric height key", getKey(domain,"volumetric_ponded_depth"));
+  vpd_key_ = plist_.get<std::string>("volumetric height key", Keys::getKey(domain,"volumetric_ponded_depth"));
   dependencies_.insert(vpd_key_); 
 
-  pdd_key_ = plist_.get<std::string>("ponded depression depth key", getKey(domain,"ponded_depression_depth"));
+  pdd_key_ = plist_.get<std::string>("ponded depression depth key", Keys::getKey(domain,"ponded_depression_depth"));
   dependencies_.insert(pdd_key_);
   
-  delta_max_key_ = plist_.get<std::string>("maximum ponded depth key", getKey(domain,"maximum_ponded_depth"));
+  delta_max_key_ = plist_.get<std::string>("maximum ponded depth key", Keys::getKey(domain,"maximum_ponded_depth"));
   dependencies_.insert(delta_max_key_);
-  delta_ex_key_ = plist_.get<std::string>("excluded volume key", getKey(domain,"excluded_volume"));
+  delta_ex_key_ = plist_.get<std::string>("excluded volume key", Keys::getKey(domain,"excluded_volume"));
   dependencies_.insert(delta_ex_key_);
-  depr_depth_key_ = plist_.get<std::string>("depression depth key", getKey(domain,"depression_depth"));
+  depr_depth_key_ = plist_.get<std::string>("depression depth key", Keys::getKey(domain,"depression_depth"));
   dependencies_.insert(depr_depth_key_);
 
 }

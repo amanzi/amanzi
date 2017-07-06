@@ -53,14 +53,12 @@ EnergyBase::EnergyBase(Teuchos::ParameterList& FElist,
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance")) {
 
-    if (domain_ == "surface" || domain_ == "surface_star" || (boost::ends_with(domain_, "surface"))) {
+    if (domain_.find("surface") != std::string::npos) {
       // h * nl * u at 1C in MJ/mol
       plist_->set("absolute error tolerance", .01 * 55000. * 76.e-6);
-    } else if ((domain_ == "domain") || (boost::starts_with(domain_, "column"))) {
+    } else {
       // phi * s * nl * u at 1C in MJ/mol
       plist_->set("absolute error tolerance", .5 * .1 * 55000. * 76.e-6);
-    } else {
-      ASSERT(0);
     }
   }
 }
@@ -80,49 +78,16 @@ void EnergyBase::Setup(const Teuchos::Ptr<State>& S) {
 
 void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   // Set up keys if they were not already set.
-  if (energy_key_.empty()) {
-    energy_key_ = plist_->get<std::string>("energy key",
-            getKey(domain_, "energy"));
-  }
-  if (enthalpy_key_.empty()) {
-    enthalpy_key_ = plist_->get<std::string>("enthalpy key",
-            getKey(domain_, "enthalpy"));
-  }
-  if (denthalpy_key_.empty()) {
-    denthalpy_key_ = plist_->get<std::string>("enthalpy derivative key",
-            std::string("d")+enthalpy_key_+std::string("_d")+key_);
-  }
-  if (flux_key_.empty()) {
-    flux_key_ = plist_->get<std::string>("flux key",
-            getKey(domain_, "mass_flux"));
-  }
-  if (energy_flux_key_.empty()) {
-    energy_flux_key_ = plist_->get<std::string>("energy flux key",
-            getKey(domain_, "energy_flux"));
-  }
-  if (adv_energy_flux_key_.empty()) {
-    adv_energy_flux_key_ = plist_->get<std::string>("advected energy flux key",
-            getKey(domain_, "advected_energy_flux"));
-  }
-  if (conductivity_key_.empty()) {
-    conductivity_key_ = plist_->get<std::string>("conductivity key",
-            getKey(domain_, "thermal_conductivity"));
-  }
-  if (uw_conductivity_key_.empty()) {
-    uw_conductivity_key_ = plist_->get<std::string>("upwind conductivity key",
-            getKey(domain_, "upwind_thermal_conductivity"));
-  }
-  if (de_dT_key_.empty()) {
-    de_dT_key_ = plist_->get<std::string>("de/dT key",
-            std::string("d")+energy_key_+std::string("_d")+key_);
-  }
-  if (source_key_.empty()) {
-    source_key_ = plist_->get<std::string>("source key",
-            getKey(domain_, "total_energy_source"));
-  }
-  if (dsource_dT_key_.empty()) {
-    dsource_dT_key_ = std::string("d")+source_key_+std::string("_d")+key_;
-  }
+  energy_key_ = Keys::readKey(*plist_, domain_, "energy", "energy");
+  enthalpy_key_ = Keys::readKey(*plist_, domain_, "enthalpy", "enthalpy");
+  flux_key_ = Keys::readKey(*plist_, domain_, "mass flux", "mass_flux");
+  energy_flux_key_ = Keys::readKey(*plist_, domain_, "diffusive energy flux", "diffusive_energy_flux");
+  adv_energy_flux_key_ = Keys::readKey(*plist_, domain_, "advected energy flux", "advected_energy_flux");
+  conductivity_key_ = Keys::readKey(*plist_, domain_, "thermal conductivity", "thermal_conductivity");
+  uw_conductivity_key_ = Keys::readKey(*plist_, domain_, "upwinded thermal conductivity", "upwind_thermal_conductivity");
+  source_key_ = Keys::readKey(*plist_, domain_, "energy source", "total_energy_source");
+
+
 
   // Get data for special-case entities.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
@@ -213,8 +178,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   if (jacobian_) {
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // MFD -- upwind required
-      dconductivity_key_ = getDerivKey(conductivity_key_, key_);
-      duw_conductivity_key_ = getDerivKey(uw_conductivity_key_, key_);
+      dconductivity_key_ = Keys::getDerivKey(conductivity_key_, key_);
+      duw_conductivity_key_ = Keys::getDerivKey(uw_conductivity_key_, key_);
         
       S->RequireField(duw_conductivity_key_, name_)
         ->SetMesh(mesh_)->SetGhosted()
@@ -228,9 +193,12 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
     } else {
       // FV -- no upwinding
-      dconductivity_key_ = getDerivKey(conductivity_key_, key_);
-      duw_conductivity_key_ = std::string();
+      dconductivity_key_ = Keys::getDerivKey(conductivity_key_, key_);
+      duw_conductivity_key_ = "";
     }
+  } else {
+    dconductivity_key_ = "";
+    duw_conductivity_key_ = "";
   }
   
 
@@ -289,17 +257,14 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   coupled_to_surface_via_flux_ =
       plist_->get<bool>("coupled to surface via flux", false);
   if (coupled_to_surface_via_flux_) {
-    if (ss_flux_key_.empty()) {
-      ss_flux_key_ = plist_->get<std::string>("surface-subsurface energy flux key",
-              getKey(domain_, "surface_subsurface_energy_flux"));
-    }
+    ss_flux_key_ = Keys::readKey(*plist_, domain_, "surface-subsurface energy flux", "surface_subsurface_energy_flux");
 
     std::string domain_surf;
-    if (boost::starts_with(domain_, "column"))
-      domain_surf = domain_ + "_surface";
-    else
-      domain_surf = "surface";
-    
+    if (domain_ == "domain" || domain_ == "") {
+      domain_surf = plist_->get<std::string>("surface domain name", "surface");
+    } else {
+      domain_surf = plist_->get<std::string>("surface domain name", "surface_"+domain_);
+    }
     S->RequireField(ss_flux_key_)
         ->SetMesh(S->GetMesh(domain_surf))
         ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -532,7 +497,7 @@ void EnergyBase::UpdateBoundaryConditions_(
   // Dirichlet temperature boundary conditions from a coupled surface.
   if (coupled_to_surface_via_temp_) {
     // Face is Dirichlet with value of surface temp
-    Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
+    Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh(Keys::getDomain(ss_flux_key_));
     const Epetra_MultiVector& temp = *S->GetFieldData("surface_temperature")
         ->ViewComponent("cell",false);
 
@@ -554,17 +519,9 @@ void EnergyBase::UpdateBoundaryConditions_(
   if (coupled_to_surface_via_flux_) {
     // Diffusive fluxes are given by the residual of the surface equation.
     // Advective fluxes are given by the surface temperature and whatever flux we have.
-
-    Key domain_surf;
-    if(domain_.substr(0,6) == "column")
-      domain_surf = domain_ + "_surface";
-    else
-      domain_surf = "surface";
-      
-    Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh(domain_surf);
+    Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh(Keys::getDomain(ss_flux_key_));
     const Epetra_MultiVector& flux =
-      *S->GetFieldData(getKey(domain_,"surface_subsurface_energy_flux"))
-        ->ViewComponent("cell",false);
+      *S->GetFieldData(ss_flux_key_)->ViewComponent("cell",false);
 
     int ncells_surface = flux.MyLength();
     for (int c=0; c!=ncells_surface; ++c) {

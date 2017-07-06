@@ -29,7 +29,7 @@ SurfaceBalanceBase::SurfaceBalanceBase(Teuchos::ParameterList& pk_tree,
 {
   // name the layer
   layer_ = plist_->get<std::string>("layer name", name_);
-  source_key_  = getKey(layer_, "source_sink");
+  source_key_  = Keys::getKey(layer_, "source_sink");
   source_key_ = plist_->get<std::string>("source key", source_key_);
 
   theta_ = plist_->get<double>("time discretization theta", 1.0);

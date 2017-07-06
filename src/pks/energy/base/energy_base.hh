@@ -171,7 +171,6 @@ public:
   // Keys
   Key energy_key_;
   Key enthalpy_key_;
-  Key denthalpy_key_;
   Key flux_key_;
   Key energy_flux_key_;
   Key adv_energy_flux_key_;
@@ -179,10 +178,8 @@ public:
   Key uw_conductivity_key_;
   Key dconductivity_key_;
   Key duw_conductivity_key_;
-  Key de_dT_key_;
   Key source_key_;
-  Key dsource_dT_key_;
-  Key mass_source_key_;
+  //  Key mass_source_key_;
   Key ss_flux_key_;
 
 };

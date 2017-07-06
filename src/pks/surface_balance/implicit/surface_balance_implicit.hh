@@ -84,7 +84,7 @@ public:
 
   Teuchos::RCP<const AmanziMesh::Mesh> subsurf_mesh_;
 
-  Key domain_surf, domain_ss;
+  Key domain_ss_;
 
  private:
   // factory registration

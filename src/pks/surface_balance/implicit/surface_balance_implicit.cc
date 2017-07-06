@@ -14,6 +14,8 @@
 
    ------------------------------------------------------------------------- */
 
+#include <boost/algorithm/string/predicate.hpp>
+
 #include "seb_physics_defs.hh"
 #include "seb_physics_funcs.hh"
 #include "surface_balance_implicit.hh"
@@ -29,6 +31,8 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::ParameterList& pk_tree,
   PK_PhysicalBDF_Default(pk_tree, global_list,  S, solution),
   modify_predictor_advance_(false)
 {
+  if (!plist_->isParameter("conserved quantity suffix"))
+    plist_->set("conserved quantity suffix", "snow_depth");
 
   //Teuchos::ParameterList& FElist = global_list->sublist("state").sublist("field evaluators");
   Teuchos::ParameterList& FElist = S->FEList();
@@ -37,34 +41,38 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::ParameterList& pk_tree,
 
   // set up additional primary variables -- this is very hacky...
   // -- surface energy source
+  if (domain_ == "surface") {
+    domain_ss_ = plist_->get<std::string>("subsurface domain name", "domain");
+  } else if (boost::starts_with(domain_, "surface_")) {
+    domain_ss_ = plist_->get<std::string>("subsurface domain name", domain_.substr(8,domain_.size()));
+  } else if (boost::ends_with(domain_, "_surface")) {
+    domain_ss_ = plist_->get<std::string>("subsurface domain name", domain_.substr(0,domain_.size()-8));
+  } else {
+    plist_->get<std::string>("subsurface domain name");
+  }
 
-  domain_surf =  plist_->get<std::string>("domain name", "surface");
-  if(domain_surf.substr(0,6) == "column")
-    domain_ss = domain_.substr(0,domain_surf.size()-8);
-  else
-    domain_ss = "domain";
   Teuchos::ParameterList& esource_sublist =
-      FElist.sublist(getKey(domain_surf,"conducted_energy_source"));
-  esource_sublist.set("evaluator name", getKey(domain_surf,"conducted_energy_source"));
+      FElist.sublist(Keys::getKey(domain_,"conducted_energy_source"));
+  esource_sublist.set("evaluator name", Keys::getKey(domain_,"conducted_energy_source"));
   esource_sublist.set("field evaluator type", "primary variable");
 
   // -- surface mass source
   Teuchos::ParameterList& wsource_sublist =
-    FElist.sublist(getKey(domain_surf,"mass_source"));
-  wsource_sublist.set("evaluator name", getKey(domain_surf,"mass_source"));
+    FElist.sublist(Keys::getKey(domain_,"mass_source"));
+  wsource_sublist.set("evaluator name", Keys::getKey(domain_,"mass_source"));
   wsource_sublist.set("field evaluator type", "primary variable");
 
   // -- subsurface mass source for VaporFlux at cell center
   Teuchos::ParameterList& w_v_source_sublist =
 
-    FElist.sublist(getKey(domain_ss,"mass_source"));
-  w_v_source_sublist.set("evaluator name", getKey(domain_ss,"mass_source"));
+    FElist.sublist(Keys::getKey(domain_ss_,"mass_source"));
+  w_v_source_sublist.set("evaluator name", Keys::getKey(domain_ss_,"mass_source"));
   w_v_source_sublist.set("field evaluator type", "primary variable");
 
   // -- surface energy temperature
   Teuchos::ParameterList& wtemp_sublist =
-    FElist.sublist(getKey(domain_surf,"mass_source_temperature"));
-  wtemp_sublist.set("evaluator name", getKey(domain_surf,"mass_source_temperature"));
+    FElist.sublist(Keys::getKey(domain_,"mass_source_temperature"));
+  wtemp_sublist.set("evaluator name", Keys::getKey(domain_,"mass_source_temperature"));
   wtemp_sublist.set("field evaluator type", "primary variable");
 
   // Derivatives for PC
@@ -98,7 +106,7 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::ParameterList& pk_tree,
 void
 SurfaceBalanceImplicit::Setup(const Teuchos::Ptr<State>& S) {
   PK_PhysicalBDF_Default::Setup(S);
-  subsurf_mesh_ = S->GetMesh(domain_ss); // needed for VPL, which is treated as subsurface source
+  subsurf_mesh_ = S->GetMesh(domain_ss_); // needed for VPL, which is treated as subsurface source
 
   // requirements: primary variable
   S->RequireField(key_, name_)->SetMesh(mesh_)->
@@ -107,10 +115,10 @@ SurfaceBalanceImplicit::Setup(const Teuchos::Ptr<State>& S) {
 
   // requirements: other primary variables
   Teuchos::RCP<FieldEvaluator> fm;
-  S->RequireField(getKey(domain_surf,"conducted_energy_source"), name_)->SetMesh(mesh_)
+  S->RequireField(Keys::getKey(domain_,"conducted_energy_source"), name_)->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(getKey(domain_surf,"conducted_energy_source"));
-  fm = S->GetFieldEvaluator(getKey(domain_surf,"conducted_energy_source"));
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"conducted_energy_source"));
+  fm = S->GetFieldEvaluator(Keys::getKey(domain_,"conducted_energy_source"));
 
   pvfe_esource_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   if (pvfe_esource_ == Teuchos::null) {
@@ -119,10 +127,10 @@ SurfaceBalanceImplicit::Setup(const Teuchos::Ptr<State>& S) {
   }
 
 
-  S->RequireField(getKey(domain_surf,"mass_source"), name_)->SetMesh(mesh_)
+  S->RequireField(Keys::getKey(domain_,"mass_source"), name_)->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(getKey(domain_surf,"mass_source"));
-  fm = S->GetFieldEvaluator(getKey(domain_surf,"mass_source"));
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"mass_source"));
+  fm = S->GetFieldEvaluator(Keys::getKey(domain_,"mass_source"));
 
   pvfe_wsource_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   if (pvfe_wsource_ == Teuchos::null) {
@@ -131,10 +139,10 @@ SurfaceBalanceImplicit::Setup(const Teuchos::Ptr<State>& S) {
   }
 
 
-  S->RequireField(getKey(domain_ss,"mass_source"), name_)->SetMesh(subsurf_mesh_)
+  S->RequireField(Keys::getKey(domain_ss_,"mass_source"), name_)->SetMesh(subsurf_mesh_)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(getKey(domain_ss,"mass_source"));
-  fm = S->GetFieldEvaluator(getKey(domain_ss,"mass_source"));
+  S->RequireFieldEvaluator(Keys::getKey(domain_ss_,"mass_source"));
+  fm = S->GetFieldEvaluator(Keys::getKey(domain_ss_,"mass_source"));
 
   pvfe_w_v_source_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   if (pvfe_w_v_source_ == Teuchos::null) {
@@ -143,10 +151,10 @@ SurfaceBalanceImplicit::Setup(const Teuchos::Ptr<State>& S) {
   }
 
 
-  S->RequireField(getKey(domain_surf,"mass_source_temperature"), name_)->SetMesh(mesh_)
+  S->RequireField(Keys::getKey(domain_,"mass_source_temperature"), name_)->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(getKey(domain_surf,"mass_source_temperature"));
-  fm = S->GetFieldEvaluator(getKey(domain_surf,"mass_source_temperature"));
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"mass_source_temperature"));
+  fm = S->GetFieldEvaluator(Keys::getKey(domain_,"mass_source_temperature"));
 
   pvfe_wtemp_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   if (pvfe_wtemp_ == Teuchos::null) {
@@ -157,94 +165,94 @@ SurfaceBalanceImplicit::Setup(const Teuchos::Ptr<State>& S) {
   // requirements: source derivatives
   if (eval_derivatives_) {
 
-    Key key_cond_temp = getDerivKey(getKey(domain_surf,"conducted_energy_source"), getKey(domain_surf,"temperature"));
+    Key key_cond_temp = Keys::getDerivKey(Keys::getKey(domain_,"conducted_energy_source"), Keys::getKey(domain_,"temperature"));
     S->RequireField(key_cond_temp, name_)->SetMesh(mesh_)
        ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // requirements: diagnostic variables
-  S->RequireField(getKey(domain_surf,"albedo"),name_)->SetMesh(mesh_)
+  S->RequireField(Keys::getKey(domain_,"albedo"),name_)->SetMesh(mesh_)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->GetField(getKey(domain_surf,"albedo"),name_)->set_io_checkpoint(false);
-  S->RequireField(getKey(domain_surf,"evaporative_flux"),name_)->SetMesh(mesh_)
+  S->GetField(Keys::getKey(domain_,"albedo"),name_)->set_io_checkpoint(false);
+  S->RequireField(Keys::getKey(domain_,"evaporative_flux"),name_)->SetMesh(mesh_)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->GetField(getKey(domain_surf,"evaporative_flux"),name_)->set_io_checkpoint(false);
-  S->RequireField(getKey(domain_surf,"qE_latent_heat"),name_)->SetMesh(mesh_)
+  S->GetField(Keys::getKey(domain_,"evaporative_flux"),name_)->set_io_checkpoint(false);
+  S->RequireField(Keys::getKey(domain_,"qE_latent_heat"),name_)->SetMesh(mesh_)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->GetField(getKey(domain_surf,"qE_latent_heat"),name_)->set_io_checkpoint(false);
-  S->RequireField(getKey(domain_surf,"qE_sensible_heat"),name_)->SetMesh(mesh_)
+  S->GetField(Keys::getKey(domain_,"qE_latent_heat"),name_)->set_io_checkpoint(false);
+  S->RequireField(Keys::getKey(domain_,"qE_sensible_heat"),name_)->SetMesh(mesh_)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->GetField(getKey(domain_surf,"qE_sensible_heat"),name_)->set_io_checkpoint(false);
-  S->RequireField(getKey(domain_surf,"qE_lw_out"),name_)->SetMesh(mesh_)
+  S->GetField(Keys::getKey(domain_,"qE_sensible_heat"),name_)->set_io_checkpoint(false);
+  S->RequireField(Keys::getKey(domain_,"qE_lw_out"),name_)->SetMesh(mesh_)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->GetField(getKey(domain_surf,"qE_lw_out"),name_)->set_io_checkpoint(false);
+  S->GetField(Keys::getKey(domain_,"qE_lw_out"),name_)->set_io_checkpoint(false);
   
   // requirements: independent variables (data from MET)
-  S->RequireFieldEvaluator(getKey(domain_surf,"incoming_shortwave_radiation"));
-  S->RequireField(getKey(domain_surf,"incoming_shortwave_radiation"))->SetMesh(mesh_)
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"incoming_shortwave_radiation"));
+  S->RequireField(Keys::getKey(domain_,"incoming_shortwave_radiation"))->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   if (longwave_input_) {
-    S->RequireFieldEvaluator(getKey(domain_surf,"incoming_longwave_radiation"));
-    S->RequireField(getKey(domain_surf,"incoming_longwave_radiation"))->SetMesh(mesh_)
+    S->RequireFieldEvaluator(Keys::getKey(domain_,"incoming_longwave_radiation"));
+    S->RequireField(Keys::getKey(domain_,"incoming_longwave_radiation"))->SetMesh(mesh_)
         ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  S->RequireFieldEvaluator(getKey(domain_surf,"air_temperature"));
-  S->RequireField(getKey(domain_surf,"air_temperature"))->SetMesh(mesh_)
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"air_temperature"));
+  S->RequireField(Keys::getKey(domain_,"air_temperature"))->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator(getKey(domain_surf,"relative_humidity"));
-  S->RequireField(getKey(domain_surf,"relative_humidity"))->SetMesh(mesh_)
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"relative_humidity"));
+  S->RequireField(Keys::getKey(domain_,"relative_humidity"))->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator(getKey(domain_surf,"wind_speed"));
-  S->RequireField(getKey(domain_surf,"wind_speed"))->SetMesh(mesh_)
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"wind_speed"));
+  S->RequireField(Keys::getKey(domain_,"wind_speed"))->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator(getKey(domain_surf,"precipitation_rain"));
-  S->RequireField(getKey(domain_surf,"precipitation_rain"))->SetMesh(mesh_)
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"precipitation_rain"));
+  S->RequireField(Keys::getKey(domain_,"precipitation_rain"))->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator(getKey(domain_surf,"precipitation_snow"));
-  S->RequireField(getKey(domain_surf,"precipitation_snow"))->SetMesh(mesh_)
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"precipitation_snow"));
+  S->RequireField(Keys::getKey(domain_,"precipitation_snow"))->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // requirements: stored secondary variables
-  S->RequireField(getKey(domain_surf,"snow_density"), name_)->SetMesh(mesh_)
+  S->RequireField(Keys::getKey(domain_,"snow_density"), name_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireField(getKey(domain_surf,"snow_age"), name_)->SetMesh(mesh_)
+  S->RequireField(Keys::getKey(domain_,"snow_age"), name_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireField(getKey(domain_surf,"snow_temperature"), name_)->SetMesh(mesh_)
+  S->RequireField(Keys::getKey(domain_,"snow_temperature"), name_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireField(getKey(domain_surf,"stored_SWE"), name_)->SetMesh(mesh_)
+  S->RequireField(Keys::getKey(domain_,"stored_SWE"), name_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator(getKey(domain_surf,"temperature"));
-  S->RequireField(getKey(domain_surf,"temperature"))->SetMesh(mesh_)
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"temperature"));
+  S->RequireField(Keys::getKey(domain_,"temperature"))->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator(getKey(domain_surf,"pressure"));
-  S->RequireField(getKey(domain_surf,"pressure"))->SetMesh(mesh_)
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"pressure"));
+  S->RequireField(Keys::getKey(domain_,"pressure"))->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator(getKey(domain_surf,"ponded_depth"));
-  S->RequireField(getKey(domain_surf,"ponded_depth"))->SetMesh(mesh_)
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"ponded_depth"));
+  S->RequireField(Keys::getKey(domain_,"ponded_depth"))->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
  //   S->RequireFieldEvaluator("saturation_liquid");
-  S->RequireField(getKey(domain_ss,"saturation_liquid"))->SetMesh(subsurf_mesh_)
+  S->RequireField(Keys::getKey(domain_ss_,"saturation_liquid"))->SetMesh(subsurf_mesh_)
        ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator(getKey(domain_surf,"unfrozen_fraction"));
-  S->RequireField(getKey(domain_surf,"unfrozen_fraction"))->SetMesh(mesh_)
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"unfrozen_fraction"));
+  S->RequireField(Keys::getKey(domain_,"unfrozen_fraction"))->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator(getKey(domain_surf,"porosity"));
-  S->RequireField(getKey(domain_surf,"porosity"))->SetMesh(mesh_)
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"porosity"));
+  S->RequireField(Keys::getKey(domain_,"porosity"))->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
 }
@@ -260,62 +268,62 @@ SurfaceBalanceImplicit::Initialize(const Teuchos::Ptr<State>& S) {
   ASSERT(plist_->isSublist("initial condition"));
   Teuchos::ParameterList& ic_list = plist_->sublist("initial condition");
 
-  if (!S->GetField(getKey(domain_surf,"snow_density"))->initialized()) {
+  if (!S->GetField(Keys::getKey(domain_,"snow_density"))->initialized()) {
     if (ic_list.isParameter("restart file")) {
       // initialize density, age from restart file
-      S->GetField(getKey(domain_surf,"snow_density"), name_)->Initialize(ic_list);
-      S->GetField(getKey(domain_surf,"snow_density"), name_)->set_initialized();
-      S->GetField(getKey(domain_surf,"snow_age"), name_)->Initialize(ic_list);
-      S->GetField(getKey(domain_surf,"snow_age"), name_)->set_initialized();
+      S->GetField(Keys::getKey(domain_,"snow_density"), name_)->Initialize(ic_list);
+      S->GetField(Keys::getKey(domain_,"snow_density"), name_)->set_initialized();
+      S->GetField(Keys::getKey(domain_,"snow_age"), name_)->Initialize(ic_list);
+      S->GetField(Keys::getKey(domain_,"snow_age"), name_)->set_initialized();
     } else {
       // initialize density to fresh powder, age to 0
-      S->GetFieldData(getKey(domain_surf,"snow_density"),name_)->PutScalar(seb.params.density_freshsnow);
-      S->GetField(getKey(domain_surf,"snow_density"), name_)->set_initialized();
-      S->GetFieldData(getKey(domain_surf,"snow_age"),name_)->PutScalar(0.);
-      S->GetField(getKey(domain_surf,"snow_age"), name_)->set_initialized();
+      S->GetFieldData(Keys::getKey(domain_,"snow_density"),name_)->PutScalar(seb.params.density_freshsnow);
+      S->GetField(Keys::getKey(domain_,"snow_density"), name_)->set_initialized();
+      S->GetFieldData(Keys::getKey(domain_,"snow_age"),name_)->PutScalar(0.);
+      S->GetField(Keys::getKey(domain_,"snow_age"), name_)->set_initialized();
 
     }
   }
 
   // initialize swe consistently with snow height and density
 
-  Epetra_MultiVector& swe = *S->GetFieldData(getKey(domain_surf,"stored_SWE"),name_)->ViewComponent("cell",false);
+  Epetra_MultiVector& swe = *S->GetFieldData(Keys::getKey(domain_,"stored_SWE"),name_)->ViewComponent("cell",false);
   const Epetra_MultiVector& snow_ht = *S->GetFieldData(key_)->ViewComponent("cell",false);
-  const Epetra_MultiVector& snow_dens = *S->GetFieldData(getKey(domain_surf,"snow_density"))->ViewComponent("cell",false);
+  const Epetra_MultiVector& snow_dens = *S->GetFieldData(Keys::getKey(domain_,"snow_density"))->ViewComponent("cell",false);
   for (int c=0; c!=swe.MyLength(); ++c) {
     swe[0][c] = snow_ht[0][c] * snow_dens[0][c] / seb.in.vp_ground.density_w;
   }
-  S->GetField(getKey(domain_surf,"stored_SWE"), name_)->set_initialized();
+  S->GetField(Keys::getKey(domain_,"stored_SWE"), name_)->set_initialized();
 
   // initialize snow temp
-  S->GetFieldData(getKey(domain_surf,"snow_temperature"),name_)->PutScalar(0.);
-  S->GetField(getKey(domain_surf,"snow_temperature"), name_)->set_initialized();
+  S->GetFieldData(Keys::getKey(domain_,"snow_temperature"),name_)->PutScalar(0.);
+  S->GetField(Keys::getKey(domain_,"snow_temperature"), name_)->set_initialized();
 
   // initialize sources, temps
-  S->GetFieldData(getKey(domain_surf,"conducted_energy_source"),name_)->PutScalar(0.);
-  S->GetField(getKey(domain_surf,"conducted_energy_source"),name_)->set_initialized();
+  S->GetFieldData(Keys::getKey(domain_,"conducted_energy_source"),name_)->PutScalar(0.);
+  S->GetField(Keys::getKey(domain_,"conducted_energy_source"),name_)->set_initialized();
 
   if (eval_derivatives_) {
-    Key key_cond_temp = getDerivKey(getKey(domain_surf,"conducted_energy_source"), getKey(domain_surf,"temperature"));
+    Key key_cond_temp = Keys::getDerivKey(Keys::getKey(domain_,"conducted_energy_source"), Keys::getKey(domain_,"temperature"));
     S->GetFieldData(key_cond_temp,name_)->PutScalar(0.);
     S->GetField(key_cond_temp,name_)->set_initialized();
   }
 
-  S->GetFieldData(getKey(domain_surf,"mass_source"),name_)->PutScalar(0.);
-  S->GetField(getKey(domain_surf,"mass_source"),name_)->set_initialized();
+  S->GetFieldData(Keys::getKey(domain_,"mass_source"),name_)->PutScalar(0.);
+  S->GetField(Keys::getKey(domain_,"mass_source"),name_)->set_initialized();
 
-  S->GetFieldData(getKey(domain_ss,"mass_source"),name_)->PutScalar(0.);
-  S->GetField(getKey(domain_ss,"mass_source"),name_)->set_initialized();
+  S->GetFieldData(Keys::getKey(domain_ss_,"mass_source"),name_)->PutScalar(0.);
+  S->GetField(Keys::getKey(domain_ss_,"mass_source"),name_)->set_initialized();
 
-  S->GetFieldData(getKey(domain_surf,"mass_source_temperature"),name_)->PutScalar(273.15);
-  S->GetField(getKey(domain_surf,"mass_source_temperature"),name_)->set_initialized();
+  S->GetFieldData(Keys::getKey(domain_,"mass_source_temperature"),name_)->PutScalar(273.15);
+  S->GetField(Keys::getKey(domain_,"mass_source_temperature"),name_)->set_initialized();
 
   // initialize diagnostics
-  S->GetField(getKey(domain_surf,"albedo"),name_)->set_initialized();
-  S->GetField(getKey(domain_surf,"evaporative_flux"),name_)->set_initialized();
-  S->GetField(getKey(domain_surf,"qE_latent_heat"),name_)->set_initialized();
-  S->GetField(getKey(domain_surf,"qE_sensible_heat"),name_)->set_initialized();
-  S->GetField(getKey(domain_surf,"qE_lw_out"),name_)->set_initialized();
+  S->GetField(Keys::getKey(domain_,"albedo"),name_)->set_initialized();
+  S->GetField(Keys::getKey(domain_,"evaporative_flux"),name_)->set_initialized();
+  S->GetField(Keys::getKey(domain_,"qE_latent_heat"),name_)->set_initialized();
+  S->GetField(Keys::getKey(domain_,"qE_sensible_heat"),name_)->set_initialized();
+  S->GetField(Keys::getKey(domain_,"qE_lw_out"),name_)->set_initialized();
 
 }
 
@@ -350,120 +358,120 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
   // pull old snow data
   const Epetra_MultiVector& snow_depth_old = *u_old->Data()->ViewComponent("cell",false);
 
-  const Epetra_MultiVector& snow_age_old = *S_inter_->GetFieldData(getKey(domain_surf,"snow_age"))
+  const Epetra_MultiVector& snow_age_old = *S_inter_->GetFieldData(Keys::getKey(domain_,"snow_age"))
       ->ViewComponent("cell",false);
-  const Epetra_MultiVector& snow_dens_old = *S_inter_->GetFieldData(getKey(domain_surf,"snow_density"))
+  const Epetra_MultiVector& snow_dens_old = *S_inter_->GetFieldData(Keys::getKey(domain_,"snow_density"))
       ->ViewComponent("cell",false);
-  const Epetra_MultiVector& stored_SWE_old = *S_inter_->GetFieldData(getKey(domain_surf,"stored_SWE"))
+  const Epetra_MultiVector& stored_SWE_old = *S_inter_->GetFieldData(Keys::getKey(domain_,"stored_SWE"))
       ->ViewComponent("cell",false);
 
   // pull current snow data
   const Epetra_MultiVector& snow_depth_new = *u_new->Data()->ViewComponent("cell",false);
 
-  Epetra_MultiVector& snow_temp_new = *S_next_->GetFieldData(getKey(domain_surf,"snow_temperature"), name_)
+  Epetra_MultiVector& snow_temp_new = *S_next_->GetFieldData(Keys::getKey(domain_,"snow_temperature"), name_)
       ->ViewComponent("cell",false);
-  Epetra_MultiVector& snow_age_new = *S_next_->GetFieldData(getKey(domain_surf,"snow_age"), name_)
+  Epetra_MultiVector& snow_age_new = *S_next_->GetFieldData(Keys::getKey(domain_,"snow_age"), name_)
       ->ViewComponent("cell",false);
-  Epetra_MultiVector& snow_dens_new = *S_next_->GetFieldData(getKey(domain_surf,"snow_density"), name_)
+  Epetra_MultiVector& snow_dens_new = *S_next_->GetFieldData(Keys::getKey(domain_,"snow_density"), name_)
       ->ViewComponent("cell",false);
-  Epetra_MultiVector& stored_SWE_new = *S_next_->GetFieldData(getKey(domain_surf,"stored_SWE"), name_)
+  Epetra_MultiVector& stored_SWE_new = *S_next_->GetFieldData(Keys::getKey(domain_,"stored_SWE"), name_)
       ->ViewComponent("cell",false);
 
   // pull diagnostics
-  Epetra_MultiVector& albedo = *S_next_->GetFieldData(getKey(domain_surf,"albedo"),name_)
+  Epetra_MultiVector& albedo = *S_next_->GetFieldData(Keys::getKey(domain_,"albedo"),name_)
       ->ViewComponent("cell",false);
-  Epetra_MultiVector& evaporative_flux = *S_next_->GetFieldData(getKey(domain_surf,"evaporative_flux"),name_)
+  Epetra_MultiVector& evaporative_flux = *S_next_->GetFieldData(Keys::getKey(domain_,"evaporative_flux"),name_)
       ->ViewComponent("cell",false);
-  Epetra_MultiVector& qE_latent_heat = *S_next_->GetFieldData(getKey(domain_surf,"qE_latent_heat"),name_)
+  Epetra_MultiVector& qE_latent_heat = *S_next_->GetFieldData(Keys::getKey(domain_,"qE_latent_heat"),name_)
       ->ViewComponent("cell",false);
-  Epetra_MultiVector& qE_sensible_heat = *S_next_->GetFieldData(getKey(domain_surf,"qE_sensible_heat"),name_)
+  Epetra_MultiVector& qE_sensible_heat = *S_next_->GetFieldData(Keys::getKey(domain_,"qE_sensible_heat"),name_)
       ->ViewComponent("cell",false);
-  Epetra_MultiVector& qE_lw_out = *S_next_->GetFieldData(getKey(domain_surf,"qE_lw_out"),name_)
+  Epetra_MultiVector& qE_lw_out = *S_next_->GetFieldData(Keys::getKey(domain_,"qE_lw_out"),name_)
       ->ViewComponent("cell",false);
 
   // pull ATS data
-  S_next_->GetFieldEvaluator(getKey(domain_surf,"temperature"))->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"temperature"))->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& surf_temp =
-    *S_next_->GetFieldData(getKey(domain_surf,"temperature"))->ViewComponent("cell", false);
+    *S_next_->GetFieldData(Keys::getKey(domain_,"temperature"))->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator(getKey(domain_surf,"pressure"))->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"pressure"))->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& surf_pres =
-    *S_next_->GetFieldData(getKey(domain_surf,"pressure"))->ViewComponent("cell", false);
+    *S_next_->GetFieldData(Keys::getKey(domain_,"pressure"))->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator(getKey(domain_surf,"ponded_depth"))->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"ponded_depth"))->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& ponded_depth =
-    *S_next_->GetFieldData(getKey(domain_surf,"ponded_depth"))->ViewComponent("cell", false);
+    *S_next_->GetFieldData(Keys::getKey(domain_,"ponded_depth"))->ViewComponent("cell", false);
 
  //  S_next_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_next_.ptr(), name_);
    const Epetra_MultiVector& saturation_liquid =
-     *S_next_->GetFieldData(getKey(domain_ss,"saturation_liquid"))->ViewComponent("cell", false);
+     *S_next_->GetFieldData(Keys::getKey(domain_ss_,"saturation_liquid"))->ViewComponent("cell", false);
 
-   S_next_->GetFieldEvaluator(getKey(domain_surf,"unfrozen_fraction"))->HasFieldChanged(S_next_.ptr(), name_);
+   S_next_->GetFieldEvaluator(Keys::getKey(domain_,"unfrozen_fraction"))->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& unfrozen_fraction =
-    *S_next_->GetFieldData(getKey(domain_surf,"unfrozen_fraction"))->ViewComponent("cell", false);
+    *S_next_->GetFieldData(Keys::getKey(domain_,"unfrozen_fraction"))->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator(getKey(domain_surf,"porosity"))->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"porosity"))->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& surf_porosity =
-    *S_next_->GetFieldData(getKey(domain_surf,"porosity"))->ViewComponent("cell", false);
+    *S_next_->GetFieldData(Keys::getKey(domain_,"porosity"))->ViewComponent("cell", false);
 
 
   // pull Met data
-  S_next_->GetFieldEvaluator(getKey(domain_surf,"air_temperature"))->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"air_temperature"))->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& air_temp =
-    *S_next_->GetFieldData(getKey(domain_surf,"air_temperature"))->ViewComponent("cell", false);
+    *S_next_->GetFieldData(Keys::getKey(domain_,"air_temperature"))->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator(getKey(domain_surf,"incoming_shortwave_radiation"))->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"incoming_shortwave_radiation"))->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& incoming_shortwave =
-    *S_next_->GetFieldData(getKey(domain_surf,"incoming_shortwave_radiation"))->ViewComponent("cell", false);
+    *S_next_->GetFieldData(Keys::getKey(domain_,"incoming_shortwave_radiation"))->ViewComponent("cell", false);
 
  Teuchos::RCP<const Epetra_MultiVector> incoming_longwave = Teuchos::null;
   if (longwave_input_) {
-    S_next_->GetFieldEvaluator(getKey(domain_surf,"incoming_longwave_radiation"))->HasFieldChanged(S_next_.ptr(), name_);
+    S_next_->GetFieldEvaluator(Keys::getKey(domain_,"incoming_longwave_radiation"))->HasFieldChanged(S_next_.ptr(), name_);
        incoming_longwave =
-         S_next_->GetFieldData(getKey(domain_surf,"incoming_longwave_radiation"))->ViewComponent("cell", false);
+         S_next_->GetFieldData(Keys::getKey(domain_,"incoming_longwave_radiation"))->ViewComponent("cell", false);
   }
 
-  S_next_->GetFieldEvaluator(getKey(domain_surf,"relative_humidity"))->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"relative_humidity"))->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& relative_humidity =
-    *S_next_->GetFieldData(getKey(domain_surf,"relative_humidity"))->ViewComponent("cell", false);
+    *S_next_->GetFieldData(Keys::getKey(domain_,"relative_humidity"))->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator(getKey(domain_surf,"wind_speed"))->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"wind_speed"))->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& wind_speed =
-    *S_next_->GetFieldData(getKey(domain_surf,"wind_speed"))->ViewComponent("cell", false);
+    *S_next_->GetFieldData(Keys::getKey(domain_,"wind_speed"))->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator(getKey(domain_surf,"precipitation_rain"))->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"precipitation_rain"))->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& precip_rain =
-    *S_next_->GetFieldData(getKey(domain_surf,"precipitation_rain"))->ViewComponent("cell", false);
+    *S_next_->GetFieldData(Keys::getKey(domain_,"precipitation_rain"))->ViewComponent("cell", false);
 
   // snow precip need not be updated each iteration
   if (implicit_snow_) {
-    S_next_->GetFieldEvaluator(getKey(domain_surf,"precipitation_snow"))->HasFieldChanged(S_next_.ptr(), name_);
+    S_next_->GetFieldEvaluator(Keys::getKey(domain_,"precipitation_snow"))->HasFieldChanged(S_next_.ptr(), name_);
   } else {
-    S_inter_->GetFieldEvaluator(getKey(domain_surf,"precipitation_snow"))->HasFieldChanged(S_inter_.ptr(), name_);
+    S_inter_->GetFieldEvaluator(Keys::getKey(domain_,"precipitation_snow"))->HasFieldChanged(S_inter_.ptr(), name_);
   }
   const Epetra_MultiVector& precip_snow = implicit_snow_ ?
-    *S_next_->GetFieldData(getKey(domain_surf,"precipitation_snow"))->ViewComponent("cell", false) :
-    *S_inter_->GetFieldData(getKey(domain_surf,"precipitation_snow"))->ViewComponent("cell", false);
+    *S_next_->GetFieldData(Keys::getKey(domain_,"precipitation_snow"))->ViewComponent("cell", false) :
+    *S_inter_->GetFieldData(Keys::getKey(domain_,"precipitation_snow"))->ViewComponent("cell", false);
 
   // pull additional primary variable data
   Epetra_MultiVector& surf_energy_flux =
-    *S_next_->GetFieldData(getKey(domain_surf,"conducted_energy_source"), name_)->ViewComponent("cell", false);
+    *S_next_->GetFieldData(Keys::getKey(domain_,"conducted_energy_source"), name_)->ViewComponent("cell", false);
   Teuchos::RCP<Epetra_MultiVector> dsurf_energy_flux_dT;
   if (eval_derivatives_) {
-    Key key_cond_temp = getDerivKey(getKey(domain_surf,"conducted_energy_source"), getKey(domain_surf,"temperature"));
+    Key key_cond_temp = Keys::getDerivKey(Keys::getKey(domain_,"conducted_energy_source"), Keys::getKey(domain_,"temperature"));
     dsurf_energy_flux_dT = S_next_->GetFieldData(key_cond_temp, name_)
       ->ViewComponent("cell", false);
   }
 
   Epetra_MultiVector& surf_water_flux =
-    *S_next_->GetFieldData(getKey(domain_surf,"mass_source"), name_)->ViewComponent("cell", false);
+    *S_next_->GetFieldData(Keys::getKey(domain_,"mass_source"), name_)->ViewComponent("cell", false);
 
   Epetra_MultiVector& vapor_flux =
-    *S_next_->GetFieldData(getKey(domain_ss,"mass_source"), name_)->ViewComponent("cell", false);
+    *S_next_->GetFieldData(Keys::getKey(domain_ss_,"mass_source"), name_)->ViewComponent("cell", false);
   vapor_flux.PutScalar(0.);
 
   Epetra_MultiVector& surf_water_flux_temp =
-    *S_next_->GetFieldData(getKey(domain_surf,"mass_source_temperature"), name_)->ViewComponent("cell", false);
+    *S_next_->GetFieldData(Keys::getKey(domain_,"mass_source_temperature"), name_)->ViewComponent("cell", false);
 
   unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (unsigned int c=0; c!=ncells; ++c) { // START CELL LOOP  ##########################
@@ -756,25 +764,25 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
 
     vnames.push_back("air_temp"); 
-    vecs.push_back(S_next_->GetFieldData(getKey(domain_surf,"air_temperature")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"air_temperature")).ptr());
     
     vnames.push_back("rel_hum"); 
-    vecs.push_back(S_next_->GetFieldData(getKey(domain_surf,"relative_humidity")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"relative_humidity")).ptr());
     
     vnames.push_back("Qsw_in"); 
-    vecs.push_back(S_next_->GetFieldData(getKey(domain_surf,"incoming_shortwave_radiation")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"incoming_shortwave_radiation")).ptr());
     
     vnames.push_back("precip_rain"); 
-    vecs.push_back(S_next_->GetFieldData(getKey(domain_surf,"precipitation_rain")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"precipitation_rain")).ptr());
     
     vnames.push_back("precip_snow"); 
-    vecs.push_back(S_next_->GetFieldData(getKey(domain_surf,"precipitation_snow")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"precipitation_snow")).ptr());
     
     vnames.push_back("T_ground"); 
-    vecs.push_back(S_next_->GetFieldData(getKey(domain_surf,"temperature")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"temperature")).ptr());
     
     vnames.push_back("p_ground"); 
-    vecs.push_back(S_next_->GetFieldData(getKey(domain_surf,"pressure")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"pressure")).ptr());
     
 
     db_->WriteVectors(vnames, vecs, true);
@@ -784,10 +792,10 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     vecs.clear();
 
     vnames.push_back("snow_ht(old))"); 
-    vecs.push_back(S_next_->GetFieldData(getKey(domain_surf,"snow_depth")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"snow_depth")).ptr());
     
     vnames.push_back("snow_temp"); 
-    vecs.push_back(S_next_->GetFieldData(getKey(domain_surf,"snow_temperature")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"snow_temperature")).ptr());
     
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
@@ -796,16 +804,16 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     vecs.clear();
 
     vnames.push_back("energy_source"); 
-    vecs.push_back(S_next_->GetFieldData(getKey(domain_surf,"conducted_energy_source")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"conducted_energy_source")).ptr());
     
     vnames.push_back("water_source"); 
-    vecs.push_back(S_next_->GetFieldData(getKey(domain_surf,"mass_source")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"mass_source")).ptr());
     
     vnames.push_back("evap flux"); 
-    vecs.push_back(S_next_->GetFieldData(getKey(domain_surf,"evaporative_flux")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"evaporative_flux")).ptr());
     
     vnames.push_back("T_water_source"); 
-    vecs.push_back(S_next_->GetFieldData(getKey(domain_surf,"mass_source_temperature")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"mass_source_temperature")).ptr());
     
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();

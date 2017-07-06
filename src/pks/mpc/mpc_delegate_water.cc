@@ -317,7 +317,7 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
 
     Key key_ss;
     if (domain_ss.substr(0,6) == "column")
-      key_ss = getKey(domain_ss,"pressure");
+      key_ss = Keys::getKey(domain_ss,"pressure");
     else
       key_ss = "pressure";
 

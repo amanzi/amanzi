@@ -26,6 +26,7 @@ public:
   Advection(Teuchos::ParameterList& advect_plist,
             const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
     advect_plist_(advect_plist), mesh_(mesh) {}
+  virtual ~Advection() = default;
 
   Teuchos::RCP<const CompositeVector> flux() const { return flux_; }
   virtual void set_flux(const Teuchos::RCP<const CompositeVector>& flux);

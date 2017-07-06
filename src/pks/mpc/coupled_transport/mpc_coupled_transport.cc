@@ -85,8 +85,8 @@ void CoupledTransport_PK::Setup(const Teuchos::Ptr<State>& S){
   surface_name_ = surface_transport_list_->get<std::string>("domain name", "surface");
   subsurface_name_ = subsurface_transport_list_->get<std::string>("domain name", "domain");
 
-  // vol_darcy_key_ = getKey(subsurface_name_, "vol_darcy_flux");
-  // surf_vol_darcy_key_ = getKey(surface_name_, "vol_darcy_flux");
+  // vol_darcy_key_ = Keys::getKey(subsurface_name_, "vol_darcy_flux");
+  // surf_vol_darcy_key_ = Keys::getKey(surface_name_, "vol_darcy_flux");
 
   mesh_ = S->GetMesh(subsurface_name_);
   surf_mesh_ = S->GetMesh(surface_name_);
@@ -121,16 +121,16 @@ void CoupledTransport_PK::ComputeVolumeDarcyFlux(const Teuchos::Ptr<State>& S){
   int  nfaces_owned;
 
   Teuchos::RCP<const Epetra_MultiVector> darcy_flux = 
-    S->GetFieldData(getKey(subsurface_name_,"mass_flux"))->ViewComponent("face");
+    S->GetFieldData(Keys::getKey(subsurface_name_,"mass_flux"))->ViewComponent("face");
 
   Teuchos::RCP<const Epetra_MultiVector> surf_darcy_flux =
-    S->GetFieldData(getKey(surface_name_,"mass_flux"))->ViewComponent("face");
+    S->GetFieldData(Keys::getKey(surface_name_,"mass_flux"))->ViewComponent("face");
 
-  Key molar_den_key = getKey(subsurface_name_, "molar_density_liquid");
+  Key molar_den_key = Keys::getKey(subsurface_name_, "molar_density_liquid");
   Teuchos::RCP<const Epetra_MultiVector> molar_density = 
     S->GetFieldData(molar_den_key)->ViewComponent("cell", true);
 
-  Key surf_molar_den_key = getKey(surface_name_, "molar_density_liquid");
+  Key surf_molar_den_key = Keys::getKey(surface_name_, "molar_density_liquid");
   Teuchos::RCP<const Epetra_MultiVector> surf_molar_density = 
     S->GetFieldData(surf_molar_den_key)->ViewComponent("cell", true);
 

@@ -95,47 +95,17 @@ void Richards::Setup(const Teuchos::Ptr<State>& S) {
 // Richards-like PKs.
 // -------------------------------------------------------------
 void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
-  if (mass_dens_key_.empty()) {
-    mass_dens_key_ = plist_->get<std::string>("mass density key",
-            getKey(domain_, "mass_density_liquid"));
-  }
-  if (molar_dens_key_.empty()) {
-    molar_dens_key_ = plist_->get<std::string>("molar density key",
-            getKey(domain_, "molar_density_liquid"));
-  }
-  if (perm_key_.empty()) {
-    perm_key_ = plist_->get<std::string>("permeability key",
-            getKey(domain_, "permeability"));
-  }
-  if (coef_key_.empty()) {
-    coef_key_ = plist_->get<std::string>("conductivity key",
-            getKey(domain_, "relative_permeability"));
-  }
-  
-  if (uw_coef_key_.empty()) {
-    uw_coef_key_ = plist_->get<std::string>("upwinded conductivity key",
-            getKey(domain_, "upwind_relative_permeability"));
-  }
-  if (flux_key_.empty()) {
-    flux_key_ = plist_->get<std::string>("darcy flux key",
-            getKey(domain_, "mass_flux"));
-  }
-  if (flux_dir_key_.empty()) {
-    flux_dir_key_ = plist_->get<std::string>("darcy flux direction key",
-            getKey(domain_, "mass_flux_direction")); 
-  }
-  if (velocity_key_.empty()) {
-    velocity_key_ = plist_->get<std::string>("darcy velocity key",
-            getKey(domain_, "darcy_velocity"));
-  }
-  if (sat_key_.empty()) {
-    sat_key_ = plist_->get<std::string>("saturation key",
-            getKey(domain_, "saturation_liquid"));
-  }
-  if (sat_ice_key_.empty()) {
-    sat_ice_key_ = plist_->get<std::string>("saturation ice key",
-            getKey(domain_, "saturation_ice"));
-  }
+  mass_dens_key_ = Keys::readKey(*plist_, domain_, "mass density", "mass_density_liquid");
+  molar_dens_key_ = Keys::readKey(*plist_, domain_, "molar density", "molar_density_liquid");
+  perm_key_ = Keys::readKey(*plist_, domain_, "permeability", "permeability");
+  coef_key_ = Keys::readKey(*plist_, domain_, "conductivity", "relative_permeability");
+  uw_coef_key_ = Keys::readKey(*plist_, domain_, "upwinded conductivity", "upwind_relative_permeability");
+  flux_key_ = Keys::readKey(*plist_, domain_, "darcy flux", "mass_flux");
+  flux_dir_key_ = Keys::readKey(*plist_, domain_, "darcy flux direction", "mass_flux_direction");
+  velocity_key_ = Keys::readKey(*plist_, domain_, "darcy velocity", "darcy_velocity");
+  sat_key_ = Keys::readKey(*plist_, domain_, "saturation", "saturation_liquid");
+  sat_ice_key_ = Keys::readKey(*plist_, domain_, "saturation ice", "saturation_ice");
+
   
   // Get data for special-case entities.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
@@ -263,8 +233,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // MFD -- upwind required
-      dcoef_key_ = getDerivKey(coef_key_, key_);
-      duw_coef_key_ = getDerivKey(uw_coef_key_, key_);
+      dcoef_key_ = Keys::getDerivKey(coef_key_, key_);
+      duw_coef_key_ = Keys::getDerivKey(uw_coef_key_, key_);
         
       S->RequireField(duw_coef_key_, name_)
         ->SetMesh(mesh_)->SetGhosted()
@@ -275,7 +245,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
     } else {
       // FV -- no upwinding
-      dcoef_key_ = getDerivKey(coef_key_, key_);
+      dcoef_key_ = Keys::getDerivKey(coef_key_, key_);
       duw_coef_key_ = std::string();
     }
   }
@@ -326,7 +296,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   if (is_source_term_) {
     if (source_key_.empty()) {
       source_key_ = plist_->get<std::string>("mass source key",
-              getKey(domain_, "mass_source"));
+              Keys::getKey(domain_, "mass_source"));
     }
 
     source_term_is_differentiable_ =
@@ -343,15 +313,15 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   if (coupled_to_surface_via_flux_) {
     if (ss_flux_key_.empty()) {
       ss_flux_key_ = plist_->get<std::string>("surface-subsurface flux key",
-                                              getKey(domain_, "surface_subsurface_flux"));
+                                              Keys::getKey(domain_, "surface_subsurface_flux"));
     }
 
     std::string domain_surf;
-    if (boost::starts_with(domain_, "column"))
-      domain_surf = domain_ + "_surface";
-    else
-      domain_surf = "surface";
-
+    if (domain_ == "domain" || domain_ == "") {
+      domain_surf = plist_->get<std::string>("surface domain name", "surface");
+    } else {
+      domain_surf = plist_->get<std::string>("surface domain name", "surface_"+domain_);
+    }
     S->RequireField(ss_flux_key_)->SetMesh(S->GetMesh(domain_surf))
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
@@ -423,8 +393,8 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp(new Flow::WRMEvaluator(wrm_plist));
 
   if (!S->HasFieldEvaluator("saturation_liquid")) {
-    S->SetFieldEvaluator(getKey(domain_,"saturation_liquid"), wrm);
-    S->SetFieldEvaluator(getKey(domain_,"saturation_gas"), wrm);
+    S->SetFieldEvaluator(Keys::getKey(domain_,"saturation_liquid"), wrm);
+    S->SetFieldEvaluator(Keys::getKey(domain_,"saturation_gas"), wrm);
   }
 
   // -- rel perm
@@ -439,6 +409,8 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField(coef_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponents(names2, locations2, num_dofs2);
   wrm_plist.set<double>("permeability rescaling", perm_scale_);
+  wrm_plist.setName(coef_key_);
+  wrm_plist.set("evaluator name", coef_key_);
   Teuchos::RCP<Flow::RelPermEvaluator> rel_perm_evaluator =
       Teuchos::rcp(new Flow::RelPermEvaluator(wrm_plist, wrm->get_WRMs()));
   S->SetFieldEvaluator(coef_key_, rel_perm_evaluator);
@@ -829,7 +801,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   // Dirichlet boundary conditions
   Functions::BoundaryFunction::Iterator bc;
   bc_counts.push_back(bc_pressure_->size());
-  bc_names.push_back(getKey(domain_,"pressure"));
+  bc_names.push_back(Keys::getKey(domain_,"pressure"));
   for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
     int f = bc->first;
 #ifdef ENABLE_DBC
@@ -861,7 +833,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     *S->GetFieldData(uw_coef_key_)->ViewComponent("face",false);
 
   bc_counts.push_back(bc_flux_->size());
-  bc_names.push_back(getKey(domain_,"flux"));
+  bc_names.push_back(Keys::getKey(domain_,"flux"));
 
   if (!infiltrate_only_if_unfrozen_) {
     // Standard Neuman boundary conditions
@@ -880,7 +852,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   } else {
     // Neumann boundary conditions that turn off if temp < freezing
 
-    const Epetra_MultiVector& temp = *S->GetFieldData(getKey(domain_,"temperature"))->ViewComponent("face");
+    const Epetra_MultiVector& temp = *S->GetFieldData(Keys::getKey(domain_,"temperature"))->ViewComponent("face");
     for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
       int f = bc->first;
 #ifdef ENABLE_DBC
@@ -1034,18 +1006,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   if (coupled_to_surface_via_flux_) {
     // Face is Neumann with value of surface residual
    
-    Teuchos::RCP<const AmanziMesh::Mesh> surface = Teuchos::null;
-    Key key_ss;
-    if (domain_.substr(0,6)=="column"){
-      surface = S->GetMesh(domain_ + "_surface");
-      // key_ss = getKey(domain_,"surface_subsurface_flux");
-    }
-    else {
-      surface = S->GetMesh("surface");
-      // key_ss = "surface_subsurface_flux";
-    }
-    
-    //    const Epetra_MultiVector& flux = *S->GetFieldData(key_ss)->ViewComponent("cell",false);
+    Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh(Keys::getDomain(ss_flux_key_));
     const Epetra_MultiVector& flux = *S->GetFieldData(ss_flux_key_)->ViewComponent("cell",false);
  
     unsigned int ncells_surface = flux.MyLength();

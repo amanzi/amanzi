@@ -18,14 +18,14 @@ PondedDepressionDepthEvaluator::PondedDepressionDepthEvaluator(Teuchos::Paramete
   Key domain;
   
   if(!my_key_.empty())
-    domain = getDomain(my_key_);
+    domain = Keys::getDomain(my_key_);
   else if (my_key_.empty())
     my_key_ = plist_.get<std::string>("ponded depresssion depth key", "surface_star-ponded_depression_depth");
 
-  pd_key_ = plist_.get<std::string>("height key", getKey(domain,"ponded_depth"));
+  pd_key_ = plist_.get<std::string>("height key", Keys::getKey(domain,"ponded_depth"));
   dependencies_.insert(pd_key_);
 
-  depr_depth_key_ = plist_.get<std::string>("depression depth key", getKey(domain,"depression_depth"));
+  depr_depth_key_ = plist_.get<std::string>("depression depth key", Keys::getKey(domain,"depression_depth"));
   dependencies_.insert(depr_depth_key_);
   // depr_depth_ = plist_.get<double>("depression depth");//, 0.043);
 

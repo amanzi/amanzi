@@ -30,9 +30,11 @@ void IcyOverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- set the height key to be eta * h, not just h, for the frozen case.
   ASSERT(plist_->isSublist("overland conductivity evaluator"));
 
-  if (!plist_->sublist("overland conductivity evaluator").isParameter("height key"))
-    plist_->sublist("overland conductivity evaluator").set("height key", getKey(domain_,"unfrozen_effective_depth"));
-  ASSERT(plist_->sublist("overland conductivity evaluator").get<std::string>("height key") != getKey(domain_,"ponded_depth"));
+  if (!plist_->sublist("overland conductivity evaluator").isParameter("height key")) {
+    plist_->sublist("overland conductivity evaluator").set("height key",
+            Keys::getKey(domain_,"unfrozen_effective_depth"));
+  }
+  ASSERT(plist_->sublist("overland conductivity evaluator").get<std::string>("height key") != Keys::getKey(domain_,"ponded_depth"));
 
   // Now continue as usual for overland head
   OverlandPressureFlow::SetupPhysicalEvaluators_(S);

@@ -8,9 +8,8 @@
 
    Default base with default implementations of methods for a physical PK.
    ------------------------------------------------------------------------- */
+#include "StateDefs.hh"
 #include "pk_physical_default.hh"
-
-
 
 namespace Amanzi {
 
@@ -21,12 +20,13 @@ PK_Physical_Default::PK_Physical_Default(Teuchos::ParameterList& pk_tree,
     PK(pk_tree, glist, S, solution),
     PK_Physical(pk_tree, glist, S, solution)
 {
-  domain_ = plist_->get<std::string>("domain name", std::string("domain"));
-  key_ = plist_->get<std::string>("primary variable");
+  domain_ = plist_->get<std::string>("domain name", "domain");
+  key_ = Keys::readKey(*plist_, domain_, "primary variable");
 
   Teuchos::ParameterList& FElist = S->FEList();
   // set up the primary variable solution, and its evaluator
   Teuchos::ParameterList& pv_sublist = FElist.sublist(key_);
+  std::cout << "constructed pk " << name_ << " with primary key " << key_ << std::endl;
   pv_sublist.set("evaluator name", key_);
   pv_sublist.set("field evaluator type", "primary variable");
 
@@ -40,9 +40,6 @@ PK_Physical_Default::PK_Physical_Default(Teuchos::ParameterList& pk_tree,
 
 void PK_Physical_Default::Setup(const Teuchos::Ptr<State>& S) {
   //PKDefaultBase::setup(S);
-
-  // set up the VerboseObject
-  vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));
 
   // get the mesh
   mesh_ = S->GetMesh(domain_);

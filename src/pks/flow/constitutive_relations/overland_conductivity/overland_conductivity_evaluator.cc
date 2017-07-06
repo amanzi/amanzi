@@ -17,22 +17,15 @@ namespace Flow {
 
 OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
-
-
-  if (plist.isParameter("overland conductivity key"))
-    my_key_=  plist_.get<std::string>("overland conductivity key");
-  else
-    my_key_ = "surface-overland_conductivity";
+  Key domain = Keys::getDomain(my_key_);
   
-  Key domain = getDomain(my_key_);
-  
-  depth_key_ = plist_.get<std::string>("height key", getKey(domain,"ponded_depth"));
+  depth_key_ = plist_.get<std::string>("height key", Keys::getKey(domain,"ponded_depth"));
   dependencies_.insert(depth_key_);
 
-  slope_key_ = plist_.get<std::string>("slope key", getKey(domain,"slope_magnitude"));
+  slope_key_ = plist_.get<std::string>("slope key", Keys::getKey(domain,"slope_magnitude"));
   dependencies_.insert(slope_key_);
 
-  coef_key_ = plist_.get<std::string>("coefficient key", getKey(domain,"manning_coefficient"));
+  coef_key_ = plist_.get<std::string>("coefficient key", Keys::getKey(domain,"manning_coefficient"));
   dependencies_.insert(coef_key_);
  
 
@@ -43,22 +36,22 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
   dens_ = plist_.get<bool>("include density factor", true);
 
   if (dens_) {
-    dens_key_ = plist_.get<std::string>("density key", getKey(domain, "molar_density_liquid"));
+    dens_key_ = plist_.get<std::string>("density key", Keys::getKey(domain, "molar_density_liquid"));
     dependencies_.insert(dens_key_);
   }
 
   sg_model_ =  plist_.get<bool>("subgrid model", false);
   if(sg_model_){
-    pdd_key_ = plist_.get<std::string>("ponded depression depth key", getKey(domain,"ponded_depression_depth"));
+    pdd_key_ = plist_.get<std::string>("ponded depression depth key", Keys::getKey(domain,"ponded_depression_depth"));
     dependencies_.insert(pdd_key_);
     
-    frac_cond_key_ = plist_.get<std::string>("fractional conductance key", getKey(domain,"fractional_conductance"));
+    frac_cond_key_ = plist_.get<std::string>("fractional conductance key", Keys::getKey(domain,"fractional_conductance"));
     dependencies_.insert(frac_cond_key_); 
 
-    vpd_key_ = plist_.get<std::string>("volumetric ponded depth key", getKey(domain,"volumetric_ponded_depth"));
+    vpd_key_ = plist_.get<std::string>("volumetric ponded depth key", Keys::getKey(domain,"volumetric_ponded_depth"));
     dependencies_.insert(vpd_key_); 
 
-    drag_exp_key_ = plist_.get<std::string>("drag exponent key", getKey(domain,"drag_exponent"));
+    drag_exp_key_ = plist_.get<std::string>("drag exponent key", Keys::getKey(domain,"drag_exponent"));
     dependencies_.insert(drag_exp_key_); 
 
   }

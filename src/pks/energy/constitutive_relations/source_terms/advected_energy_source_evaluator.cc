@@ -123,14 +123,14 @@ AdvectedEnergySourceEvaluator::InitializeFromPlist_() {
               "advected_energy_source");
     }
   }
-  std::string domain = getDomain(my_key_);
+  std::string domain = Keys::getDomain(my_key_);
 
   internal_enthalpy_key_ = plist_.get<std::string>("internal enthalpy key",
-          getKey(domain, "enthalpy"));
+          Keys::getKey(domain, "enthalpy"));
   external_enthalpy_key_ = plist_.get<std::string>("external enthalpy key",
-          getKey(domain, "mass_source_enthalpy"));
+          Keys::getKey(domain, "mass_source_enthalpy"));
   mass_source_key_ = plist_.get<std::string>("mass source key",
-          getKey(domain, "mass_source"));
+          Keys::getKey(domain, "mass_source"));
 
   dependencies_.insert(internal_enthalpy_key_);
   dependencies_.insert(external_enthalpy_key_);
@@ -158,9 +158,9 @@ AdvectedEnergySourceEvaluator::InitializeFromPlist_() {
     
   if (source_units_ == SOURCE_UNITS_METERS_PER_SECOND) {
     internal_density_key_ = plist_.get<std::string>("internal density key",
-            getKey(domain, "molar_density_liquid"));
+            Keys::getKey(domain, "molar_density_liquid"));
     external_density_key_ = plist_.get<std::string>("external density key",
-            getKey(domain, "source_molar_density"));
+            Keys::getKey(domain, "source_molar_density"));
 
     dependencies_.insert(internal_density_key_);
     dependencies_.insert(external_density_key_);
@@ -170,12 +170,12 @@ AdvectedEnergySourceEvaluator::InitializeFromPlist_() {
   include_conduction_ = plist_.get<bool>("include conduction");
   if (include_conduction_) {
     conducted_source_key_ = plist_.get<std::string>("conducted energy source key",
-            getKey(domain, "conducted_energy_source"));
+            Keys::getKey(domain, "conducted_energy_source"));
     dependencies_.insert(conducted_source_key_);
   }
 
   cell_vol_key_ = plist_.get<std::string>("cell volume key",
-          getKey(domain, "cell_volume"));
+          Keys::getKey(domain, "cell_volume"));
 
 }
 

@@ -56,21 +56,21 @@ void RelPermEvaluator::InitializeFromPlist_() {
   }
 
   // dependencies
-  Key domain_name = getDomain(my_key_);
+  Key domain_name = Keys::getDomain(my_key_);
 
   // -- saturation liquid
   sat_key_ = plist_.get<std::string>("saturation key",
-          getKey(domain_name, "saturation_liquid"));
+          Keys::getKey(domain_name, "saturation_liquid"));
   dependencies_.insert(sat_key_);
 
   is_dens_visc_ = plist_.get<bool>("use density on viscosity in rel perm", true);
   if (is_dens_visc_) {
     dens_key_ = plist_.get<std::string>("density key",
-            getKey(domain_name, "molar_density_liquid"));
+            Keys::getKey(domain_name, "molar_density_liquid"));
     dependencies_.insert(dens_key_);
 
     visc_key_ = plist_.get<std::string>("viscosity key",
-            getKey(domain_name, "viscosity_liquid"));
+            Keys::getKey(domain_name, "viscosity_liquid"));
     dependencies_.insert(visc_key_);
   }
 
@@ -78,10 +78,10 @@ void RelPermEvaluator::InitializeFromPlist_() {
   is_surf_ = plist_.get<bool>("use surface rel perm", false);
   if (is_surf_) {
     surf_rel_perm_key_ = plist_.get<std::string>("surface rel perm key",
-            "surface-relative_permeability");
+            Key("surface_")+my_key_);
     dependencies_.insert(surf_rel_perm_key_);
 
-    Key domain_surf = getDomain(surf_rel_perm_key_);
+    Key domain_surf = Keys::getDomain(surf_rel_perm_key_);
     if(domain_surf.substr(0,6) == "column")
       surf_mesh_key_ = plist_.get<std::string>("surface mesh key", domain_surf);
     else
@@ -136,7 +136,7 @@ void RelPermEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
 
       // Check the dependency for surf rel perm
 
-      Key domain = getDomain(surf_rel_perm_key_);
+      Key domain = Keys::getDomain(surf_rel_perm_key_);
       S->RequireField(surf_rel_perm_key_)
           ->SetMesh(S->GetMesh(domain))
           ->AddComponent("cell",AmanziMesh::CELL,1);

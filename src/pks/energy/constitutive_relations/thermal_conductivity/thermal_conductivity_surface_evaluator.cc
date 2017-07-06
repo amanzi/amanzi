@@ -21,11 +21,11 @@ ThermalConductivitySurfaceEvaluator::ThermalConductivitySurfaceEvaluator(
   }
 
 
-  Key domain = getDomain(my_key_);
-  uf_key_ = plist_.get<std::string>("unfrozen fraction key", getKey(domain,"unfrozen_fraction"));
+  Key domain = Keys::getDomain(my_key_);
+  uf_key_ = plist_.get<std::string>("unfrozen fraction key", Keys::getKey(domain,"unfrozen_fraction"));
   dependencies_.insert(uf_key_);
 
-  height_key_ = plist_.get<std::string>("height key", getKey(domain, "ponded_depth"));
+  height_key_ = plist_.get<std::string>("height key", Keys::getKey(domain, "ponded_depth"));
 
   dependencies_.insert(height_key_);
 
@@ -33,7 +33,7 @@ ThermalConductivitySurfaceEvaluator::ThermalConductivitySurfaceEvaluator(
   sg_model_ = plist.get<bool>("subgrid model",false);
   
   if(sg_model_){
-    vpd_key_ = plist.get<std::string>("volumetric height key", getKey(domain,"volumetric_ponded_depth"));    
+    vpd_key_ = plist.get<std::string>("volumetric height key", Keys::getKey(domain,"volumetric_ponded_depth"));    
     dependencies_.insert(vpd_key_);
   }
 

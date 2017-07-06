@@ -180,24 +180,24 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
   domain_name_ = tp_list_->get<std::string>("domain name", "domain");
 
   saturation_key_ = tp_list_->get<std::string>("saturation_key", 
-                                               getKey(domain_name_, "saturation_liquid"));
+                                               Keys::getKey(domain_name_, "saturation_liquid"));
   prev_saturation_key_ = tp_list_->get<std::string>("prev_saturation_key", 
-                                                    getKey(domain_name_, "prev_saturation_liquid"));
+                                                    Keys::getKey(domain_name_, "prev_saturation_liquid"));
   flux_key_ = tp_list_->get<std::string>("flux_key", 
-                                         getKey(domain_name_, "mass_flux"));
+                                         Keys::getKey(domain_name_, "mass_flux"));
   darcy_flux_key_ = tp_list_->get<std::string>("darcy_flux_key", 
-                                               getKey(domain_name_, "mass_flux"));
+                                               Keys::getKey(domain_name_, "mass_flux"));
   permeability_key_ = tp_list_->get<std::string>("permeability_key", 
-                                                 getKey(domain_name_, "permeability"));
+                                                 Keys::getKey(domain_name_, "permeability"));
   tcc_key_ = tp_list_->get<std::string>("concentration_key", 
-                                        getKey(domain_name_, "total_component_concentration"));
-  porosity_key_ = tp_list_->get<std::string>("porosity_key", getKey(domain_name_, "porosity"));
-  molar_density_key_ = tp_list_->get<std::string>("molar_density_key", getKey(domain_name_, "molar_density_liquid"));
+                                        Keys::getKey(domain_name_, "total_component_concentration"));
+  porosity_key_ = tp_list_->get<std::string>("porosity_key", Keys::getKey(domain_name_, "porosity"));
+  molar_density_key_ = tp_list_->get<std::string>("molar_density_key", Keys::getKey(domain_name_, "molar_density_liquid"));
   tcc_matrix_key_ = tp_list_->get<std::string>("tcc_matrix_key", 
-                                               getKey(domain_name_, "total_component_concentraion_matrix"));
+                                               Keys::getKey(domain_name_, "total_component_concentraion_matrix"));
 
 
-  // molar_density_key_ = tp_list_->get<std::string>("molar_density_key_", getKey(domain_name_, "molar_density")); 
+  // molar_density_key_ = tp_list_->get<std::string>("molar_density_key_", Keys::getKey(domain_name_, "molar_density")); 
 
   mesh_ = S->GetMesh(domain_name_);
   dim = mesh_->space_dimension();
@@ -592,8 +592,8 @@ void Transport_PK_ATS::InitializeFields_(const Teuchos::Ptr<State>& S)
         if (!S->GetField(prev_saturation_key_, passwd_)->initialized()) {
           // S->GetFieldData(prev_saturation_key_, passwd_)->PutScalar(1.0);
           // S->GetField(prev_saturation_key_, passwd_)->set_initialized();
-          // if (S->HasFieldEvaluator(getKey(domain_,saturation_key_))){
-          //   S->GetFieldEvaluator(getKey(domain_,saturation_key_))->HasFieldChanged(S.ptr(), "transport");
+          // if (S->HasFieldEvaluator(Keys::getKey(domain_,saturation_key_))){
+          //   S->GetFieldEvaluator(Keys::getKey(domain_,saturation_key_))->HasFieldChanged(S.ptr(), "transport");
           // }
           InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S, true, true);
           S->GetField(prev_saturation_key_, passwd_)->set_initialized();
