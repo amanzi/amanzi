@@ -42,7 +42,7 @@ WeakMPCSemiCoupled::WeakMPCSemiCoupled(Teuchos::ParameterList& pk_tree,
   for (int i=0; i!=ncols; ++i) {
     int gid = surf_mesh->cell_map(false).GID(i);
     std::stringstream domain_name_stream;
-    domain_name_stream << std::get<0>(col_triple) << "_" << i;
+    domain_name_stream << std::get<0>(col_triple) << "_" << gid;
     subpks.push_back(Keys::getKey(domain_name_stream.str(), std::get<2>(col_triple)));
   }
   numPKs_ = subpks.size();
