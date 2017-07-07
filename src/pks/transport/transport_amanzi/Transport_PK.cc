@@ -210,29 +210,34 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
   std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single porosity");
 
 
-  // require state fields when Flow PK is off
-  if (!S->HasField(permeability_key_) && abs_perm) {
+  // require state fields
+  if (abs_perm) {
     S->RequireField(permeability_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, dim);
+    S->RequireFieldEvaluator(permeability_key_);
   }
 
-  if (!S->HasField(flux_key_)) {
-    S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted(true)
+  S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
-  }
+  S->RequireFieldEvaluator(flux_key_);
 
-  if (!S->HasField(saturation_key_)) {
-    S->RequireField(saturation_key_)->SetMesh(mesh_)->SetGhosted(true)
+  S->RequireField(saturation_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  }
-  if (!S->HasField(prev_saturation_key_)) {
-    S->RequireField(prev_saturation_key_)->SetMesh(mesh_)->SetGhosted(true)
+  S->RequireFieldEvaluator(saturation_key_);
+
+  // prev_sat does not have an evaluator, this is managed by hand.  not sure why
+  S->RequireField(prev_saturation_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->GetField(prev_saturation_key_, passwd_)->set_io_vis(false);
-  }
+  S->GetField(prev_saturation_key_, passwd_)->set_io_vis(false);
 
-  //S->RequireFieldEvaluator(flux_key_);
+  S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(porosity_key_);
 
+  S->RequireField(molar_density_key_, molar_density_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(molar_density_key_);
+  
   // require state fields when Transport PK is on
   if (component_names_.size() == 0) {
     Errors::Message msg;
@@ -241,28 +246,13 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
   }
 
   int ncomponents = component_names_.size();
-  if (!S->HasField(tcc_key_)) {
-    std::vector<std::vector<std::string> > subfield_names(1);
-    subfield_names[0] = component_names_;
+  std::vector<std::vector<std::string> > subfield_names(1);
+  subfield_names[0] = component_names_;
 
-    S->RequireField(tcc_key_, passwd_, subfield_names)
+  S->RequireField(tcc_key_, passwd_, subfield_names)
       ->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, ncomponents);
-  }
 
-
-  //testing evaluators
-  if (!S->HasField(porosity_key_)) {
-    S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(porosity_key_);
-  }
-
-  // if (!S->HasField(molar_density_key_)){
-  //   S->RequireField(molar_density_key_, molar_density_key_)->SetMesh(mesh_)->SetGhosted(true)
-  //     ->SetComponent("cell", AmanziMesh::CELL, 1);
-  //   S->RequireFieldEvaluator(molar_density_key_);
-  // }
 
   // require multiscale fields
   multiscale_porosity_ = false;
@@ -272,14 +262,12 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
         msp_list = Teuchos::sublist(tp_list_, "multiscale models", true);
     msp_ = CreateMultiscaleTransportPorosityPartition(mesh_, msp_list);
 
-    if (!S->HasField(tcc_matrix_key_)) {
-      std::vector<std::vector<std::string> > subfield_names(1);
-      subfield_names[0] = component_names_;
+    std::vector<std::vector<std::string> > subfield_names(1);
+    subfield_names[0] = component_names_;
 
-      S->RequireField(tcc_matrix_key_, passwd_, subfield_names)
+    S->RequireField(tcc_matrix_key_, passwd_, subfield_names)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
-    }
   }
 }
 

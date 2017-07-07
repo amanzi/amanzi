@@ -17,7 +17,7 @@ ManningConductivityModel::ManningConductivityModel(Teuchos::ParameterList& plist
 
   slope_regularization_ = plist_.get<double>("slope regularization epsilon", 1.e-8);
   manning_exp_ = plist_.get<double>("Manning exponent");
-  //beta_exp_ = plist_.get<double>("beta exponent");
+
 }
 
 double ManningConductivityModel::Conductivity(double depth, double slope, double coef) {

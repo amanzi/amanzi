@@ -70,13 +70,11 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
   Key domain_name = Keys::getDomain(name);
 
   // -- temperature
-  temp_key_ = plist_.get<std::string>("temperature key",
-          Keys::getKey(domain_name, "temperature"));
+  temp_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
   dependencies_.insert(temp_key_);
 
   // -- pressure
-  pres_key_ = plist_.get<std::string>("pressure key",
-          Keys::getKey(domain_name, "effective_pressure"));
+  pres_key_ = Keys::readKey(plist_, domain_name, "pressure", "effective_pressure");
   dependencies_.insert(pres_key_);
 
   // -- logging

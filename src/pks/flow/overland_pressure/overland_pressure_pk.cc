@@ -66,7 +66,6 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
     iter_(0),
     iter_counter_time_(0.)
 {
-
   if(!plist_->isParameter("conserved quanity suffix"))
     plist_->set("conserved quantity suffix", "water_content");
 
@@ -347,10 +346,12 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
         ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(mass_source_key_);
 
-    // density of incoming water [mol/m^3]
-    S->RequireField(Keys::getKey(domain_,"source_molar_density"))->SetMesh(mesh_)
-        ->AddComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(Keys::getKey(domain_,"source_molar_density"));
+    if (source_in_meters_){
+      // density of incoming water [mol/m^3]
+      S->RequireField(Keys::getKey(domain_,"source_molar_density"))->SetMesh(mesh_)
+          ->AddComponent("cell", AmanziMesh::CELL, 1);
+      S->RequireFieldEvaluator(Keys::getKey(domain_,"source_molar_density"));
+    }
   }
 
   // -- water content bar (can be negative)
@@ -597,31 +598,9 @@ void OverlandPressureFlow::CommitStep(double t_old, double t_new, const Teuchos:
   FixBCsForOperator_(S.ptr());
   
   // derive the fluxes
-
   Teuchos::RCP<const CompositeVector> potential = S->GetFieldData(Keys::getKey(domain_,"pres_elev"));
   Teuchos::RCP<CompositeVector> flux = S->GetFieldData(Keys::getKey(domain_,"mass_flux"), name_);
-
   matrix_diff_->UpdateFlux(*potential, *flux);
-
-  // const Epetra_MultiVector& nrho_l = *S->GetFieldData("surface-molar_density_liquid")->ViewComponent("cell");
-  // const Epetra_MultiVector& mass_flux_v = *mass_flux->ViewComponent("face");
-  // const Epetra_MultiVector& mass_flux_dir = *S->GetFieldData("surface-mass_flux_direction")->ViewComponent("face");;
-  // Epetra_MultiVector& flux_v =  *S->GetFieldData("surface-flux", name_)->ViewComponent("face");
-
-  // AmanziMesh::Entity_ID_List cells;
-  // int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  // for (int f=0; f!=nfaces_owned; ++f) {
-  //   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-  //   if (cells.size() == 1) {
-  //     int c = cells[0];      
-  //     flux_v[0][f] = mass_flux_v[0][f]/nrho_l[0][c];
-  //   }
-  //   else{
-  //     double nrho_l_avr=0.5*(nrho_l[0][ cells[0] ] + nrho_l[0][ cells[1] ]);
-  //     flux_v[0][f] = mass_flux_v[0][f] / nrho_l_avr; 
-  //   }
-  // }
-
 };
 
 
