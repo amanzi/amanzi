@@ -61,7 +61,7 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp(new Flow::WRMPermafrostEvaluator(wrm_plist));
 
   
-  if (!S->HasFieldEvaluator("saturation_liquid")) {
+  if (!S->HasFieldEvaluator(getKey(domain_,"saturation_liquid"))) {
     S->SetFieldEvaluator(getKey(domain_,"saturation_liquid"), wrm);
     S->SetFieldEvaluator(getKey(domain_,"saturation_gas"), wrm);
     S->SetFieldEvaluator(getKey(domain_,"saturation_ice"), wrm);
@@ -74,14 +74,14 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   wrms_ = wrm->get_WRMs();
   
 
-//I-COMMENTED  S->SetFieldEvaluator("relative_permeability", rel_perm_evaluator);
- S->SetFieldEvaluator(coef_key_, rel_perm_evaluator);
 
+  S->SetFieldEvaluator(coef_key_, rel_perm_evaluator);
+  
   // -- Liquid density and viscosity for the transmissivity.
   S->RequireField(getKey(domain_,"molar_density_liquid"))->SetMesh(mesh_)->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(getKey(domain_,"molar_density_liquid"));
-
+  
   /* S->RequireField("viscosity_liquid")->SetMesh(S->GetMesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("viscosity_liquid");

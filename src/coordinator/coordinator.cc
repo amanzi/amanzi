@@ -110,8 +110,8 @@ void Coordinator::coordinator_init() {
   // check whether meshes are deformable, and if so require a nodal position
   for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
        mesh!=S_->mesh_end(); ++mesh) {
-    if (S_->IsDeformableMesh(mesh->first)) {
-      std::string node_key = std::string("vertex_coordinate_")+mesh->first;
+    if (S_->IsDeformableMesh(mesh->first) && mesh->first != "domain" && mesh->first != "surface" && mesh->first != "surface_3d") {
+      std::string node_key = mesh->first+std::string("-vertex_coordinate");
       S_->RequireField(node_key)->SetMesh(mesh->second.first)->SetGhosted()
           ->AddComponent("node", Amanzi::AmanziMesh::NODE, mesh->second.first->space_dimension());
     }
@@ -525,7 +525,8 @@ bool Coordinator::advance(double t_old, double t_new) {
          mesh!=S_->mesh_end(); ++mesh) {
       if (S_->IsDeformableMesh(mesh->first)) {
         // collect the old coordinates
-        std::string node_key = std::string("vertex_coordinate_")+mesh->first;
+        std::cout<<"COORD1: "<<mesh->first<<std::endl;
+        std::string node_key = mesh->first+std::string("-vertex_coordinate");
         Teuchos::RCP<const Amanzi::CompositeVector> vc_vec = S_->GetFieldData(node_key);
         vc_vec->ScatterMasterToGhosted();
         const Epetra_MultiVector& vc = *vc_vec->ViewComponent("node", true);

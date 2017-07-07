@@ -85,7 +85,7 @@ class VolumetricDeformation : public PK_Physical_Default {
   double overpressured_limit_;
 
   std::string deform_region_;
-
+  Key domain_,domain_surf_;
   // DEFORM_MODE_DVDT
   Teuchos::RCP<Functions::CompositeVectorFunction> deform_func_;
 

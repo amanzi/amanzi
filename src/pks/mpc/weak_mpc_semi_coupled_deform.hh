@@ -1,5 +1,5 @@
-#ifndef WEAK_MPC_SEMI_COUPLED_HH_
-#define WEAK_MPC_SEMI_COUPLED_HH_
+#ifndef WEAK_MPC_SEMI_COUPLED_DEFORM_HH_
+#define WEAK_MPC_SEMI_COUPLED_DEFORM_HH_
 
 //#include "pk_physical_bdf_base.hh"
 #include "pk_physical_bdf_default.hh"

@@ -603,7 +603,8 @@ WeakMPCSemiCoupledDeform::generalize_inputspec(const Teuchos::Ptr<State>& S){
   Teuchos::ParameterList& top_pk_mpc = top_pk_list.sublist("Top level MPC");
   Teuchos::ParameterList& cycle_driver_list = plist_->sublist("cycle driver").sublist("PK tree").sublist("Top level MPC");
 
-  Teuchos::Array<std::string> pks_order = top_pk_mpc.get<Teuchos::Array<std::string> >("PKs order");
+  Teuchos::Array<std::string> pks_order = top_pk_mpc.get<Teuchos::Array<std::string> >("PKs order"); // PKG1, PKG2
+
   Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_loc = S->GetMesh("surface");
   int ncell = mesh_loc->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int pk_start = mesh_loc->cell_map(false).GID(0);
@@ -628,9 +629,9 @@ WeakMPCSemiCoupledDeform::generalize_inputspec(const Teuchos::Ptr<State>& S){
   
   
   Teuchos::Array<std::string> pk2_order = top_pk_list.sublist(pk_order[1]).get<Teuchos::Array<std::string> >("PKs order"); // subsidence and ITH
-
-  Teuchos::Array<std::string> pk3_order = top_pk_list.sublist(pk_order[1]).sublist(pk_order2[1]).get<Teuchos::Array<std::string> >("PKs order"); // SEB PSS
-
+ 
+  Teuchos::Array<std::string> pk3_order = top_pk_list.sublist(pk2_order[1]).get<Teuchos::Array<std::string> >("PKs order"); // SEB PSS
+  
     
   int len = pk_order.length();
   int rank;
@@ -647,10 +648,10 @@ WeakMPCSemiCoupledDeform::generalize_inputspec(const Teuchos::Ptr<State>& S){
 
     //-----Add weak mpc for subsidence
     temp.set("PK type", "weak MPC");
-    Teuchos::ParameterList& tempdorm = temp.sublist("subsidence", "subsidence"+d_num);
+    Teuchos::ParameterList& tempdeform = temp.sublist("subsidence"+d_num);
     tempdeform.set("PK type", "volumetric deformation");
 
-    Teuchos::ParameterList& temp0 = temp.sublist("integrated TH", "ITH"+d_num);
+    Teuchos::ParameterList& temp0 = temp.sublist("ITH"+d_num);
     //------
     temp0.set("PK type", "strong MPC");
     Teuchos::ParameterList& temp1 = temp0.sublist("SEB"+d_num);
@@ -679,8 +680,6 @@ WeakMPCSemiCoupledDeform::generalize_inputspec(const Teuchos::Ptr<State>& S){
 
     FElist_loc.set(pk_order[i],temp);
    
-    
-   
 
     
     Teuchos::ParameterList pks_list = pks_list_main.sublist(pk_order[1]); //PKG2 list
@@ -695,7 +694,7 @@ WeakMPCSemiCoupledDeform::generalize_inputspec(const Teuchos::Ptr<State>& S){
     //--- deform PK
     Teuchos::Array<std::string> subsid_ith;
     std::string subsid_pk = pk2_order[0] + d_num;
-    std::string ith_pk = pk2_order[0] + d_num;
+    std::string ith_pk = pk2_order[1] + d_num;
     subsid_ith.push_back(subsid_pk);
     subsid_ith.push_back(ith_pk);
     pks_list.set("PKs order", subsid_ith);
@@ -708,21 +707,27 @@ WeakMPCSemiCoupledDeform::generalize_inputspec(const Teuchos::Ptr<State>& S){
     top_pk_list.set(subsid_pk, subsid_list);
 
 
-    Teuchos::ParameterList ith_list = pks_list_main.sublist(pk2_order[1]); // subsidence PK
+    Teuchos::ParameterList ith_list = pks_list_main.sublist(pk2_order[1]); // ITH
     ith_list.setName(ith_pk);
-    top_pk_list.set(ith_pk, ith_list);
-
-    //--
-    Teuchos::Array<std::string> seb_pss;
+    Teuchos::Array<std::string> ith;
     std::string seb_pk = pk3_order[0] + d_num;
     std::string pss_pk = pk3_order[1] + d_num;
+    ith.push_back(seb_pk);
+    ith.push_back(pss_pk);
+    ith_list.set("PKs order", ith);
+    top_pk_list.set(ith_pk, ith_list);
+    /*
+    //--
+    Teuchos::Array<std::string> seb_pss;
+    //    std::string seb_pk = pk3_order[0] + d_num;
+    //std::string pss_pk = pk3_order[1] + d_num;
     seb_pss.push_back(seb_pk);
     seb_pss.push_back(pss_pk);
     pks_list.set("PKs order", seb_pss);
 
     top_pk_list.set(pk_order[i], pks_list);
-
-   
+    */
+    
 
    
     Teuchos::ParameterList seb_list = pks_list_main.sublist(pk3_order[0]); //SEB list
@@ -1110,6 +1115,7 @@ WeakMPCSemiCoupledDeform::generalize_inputspec(const Teuchos::Ptr<State>& S){
 
     Teuchos::ParameterList cell_vol = state_list_loc.sublist("cell_volume");
     cell_vol.setName(getKey(domain_ss,"cell_volume"));
+    cell_vol.set("deformation key", getKey(domain_ss,"base_porosity"));
     state_list.set(cell_vol.name(), cell_vol);
 
     Teuchos::ParameterList ss_por = state_list_loc.sublist("porosity");
@@ -1127,11 +1133,22 @@ WeakMPCSemiCoupledDeform::generalize_inputspec(const Teuchos::Ptr<State>& S){
     Teuchos::ParameterList ss_ep = state_list_loc.sublist("effective_pressure");
     ss_ep.setName(getKey(domain_ss,"effective_pressure"));
     state_list.set(ss_ep.name(), ss_ep);
+
+    Teuchos::ParameterList ss_sliq = state_list_loc.sublist("saturation_liquid");
+    ss_sliq.setName(getKey(domain_ss,"saturation_liquid"));
+    state_list.set(ss_sliq.name(), ss_sliq);
+
+    Teuchos::ParameterList ss_sice = state_list_loc.sublist("saturation_liquid");
+    ss_sice.setName(getKey(domain_ss,"saturation_ice"));
+    state_list.set(ss_sice.name(), ss_sice);
+
+    Teuchos::ParameterList ss_sgas = state_list_loc.sublist("saturation_liquid");
+    ss_sgas.setName(getKey(domain_ss,"saturation_gas"));
+    state_list.set(ss_sgas.name(), ss_sgas);
     
   }
   
   plist_->sublist("state").set("field evaluators", state_list);
-  
 }
 
 

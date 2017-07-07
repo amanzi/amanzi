@@ -136,7 +136,12 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     sat_ice_key_ = plist_->get<std::string>("saturation ice key",
             getKey(domain_, "saturation_ice"));
   }
-  
+  /*
+  if (sat_gas_key_.empty()) {
+    sat_gas_key_ = plist_->get<std::string>("saturation gas key",
+            getKey(domain_, "saturation_gas"));
+  }
+  */
   // Get data for special-case entities.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -422,7 +427,7 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<Flow::WRMEvaluator> wrm =
       Teuchos::rcp(new Flow::WRMEvaluator(wrm_plist));
 
-  if (!S->HasFieldEvaluator("saturation_liquid")) {
+  if (!S->HasFieldEvaluator(getKey(domain_,"saturation_liquid"))) {
     S->SetFieldEvaluator(getKey(domain_,"saturation_liquid"), wrm);
     S->SetFieldEvaluator(getKey(domain_,"saturation_gas"), wrm);
   }
