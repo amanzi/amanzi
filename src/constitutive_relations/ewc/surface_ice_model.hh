@@ -37,7 +37,7 @@ class SurfaceIceModel : public EWCModelBase {
 
  public:
   SurfaceIceModel() {}
-  virtual void InitializeModel(const Teuchos::Ptr<State>& S);
+  virtual void InitializeModel(const Teuchos::Ptr<State>& S, Teuchos::ParameterList& plist);
   virtual void UpdateModel(const Teuchos::Ptr<State>& S, int c);
 
   virtual bool Freezing(double T, double p) { return T < 273.15; }

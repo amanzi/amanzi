@@ -18,11 +18,11 @@ DrainageEvaluator::DrainageEvaluator(Teuchos::ParameterList& plist) :
   
   // Set up my dependencies.
   // -- the extent of material, LAI for 
-  ai_key_ = plist_.get<std::string>("area index key", getKey(domain, "area_index"));
+  ai_key_ = plist_.get<std::string>("area index key", Keys::getKey(domain, "area_index"));
   dependencies_.insert(ai_key_);
 
   // -- water content of the layer drained
-  wc_key_ = plist_.get<std::string>("water content key", getKey(domain, "water_content"));
+  wc_key_ = plist_.get<std::string>("water content key", Keys::getKey(domain, "water_content"));
   dependencies_.insert(wc_key_);
 
   // -- uptake, i.e. rewetting of layer from surface water
@@ -37,7 +37,7 @@ DrainageEvaluator::DrainageEvaluator(Teuchos::ParameterList& plist) :
   }
 
   // -- source of water into the layer
-  source_key_ = plist_.get<std::string>("source key", getKey(domain, "interception"));
+  source_key_ = plist_.get<std::string>("source key", Keys::getKey(domain, "interception"));
   dependencies_.insert(source_key_);
 
 

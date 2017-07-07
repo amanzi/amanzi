@@ -14,12 +14,12 @@ namespace Flow {
 UnfrozenEffectiveDepthEvaluator::UnfrozenEffectiveDepthEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 
-  Key domain = getDomain(my_key_);
+  Key domain = Keys::getDomain(my_key_);
 
-  depth_key_ = plist_.get<std::string>("depth key", getKey(domain,"ponded_depth"));
+  depth_key_ = plist_.get<std::string>("depth key", Keys::getKey(domain,"ponded_depth"));
   dependencies_.insert(depth_key_);
 
-  uf_key_ = plist_.get<std::string>("unfrozen fraction key", getKey(domain,"unfrozen_fraction"));
+  uf_key_ = plist_.get<std::string>("unfrozen fraction key", Keys::getKey(domain,"unfrozen_fraction"));
 
   dependencies_.insert(uf_key_);
 

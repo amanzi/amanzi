@@ -22,26 +22,26 @@ OverlandSubgridWaterContentEvaluator::OverlandSubgridWaterContentEvaluator(Teuch
   Key domain;
 
   if(!my_key_.empty())
-    domain = getDomain(my_key_);
+    domain = Keys::getDomain(my_key_);
 
   if (my_key_.empty()) {
     domain = plist.get<std::string>("domain name", "surface");
-    my_key_ = getKey(domain, "water_content");
+    my_key_ = Keys::getKey(domain, "water_content");
     if (bar_) my_key_ += std::string("_bar");
     my_key_ = plist_.get<std::string>("water content key", my_key_);
   }
 
 
-  delta_max_key_ = plist_.get<std::string>("maximum ponded depth key", getKey(domain,"maximum_ponded_depth"));
+  delta_max_key_ = plist_.get<std::string>("maximum ponded depth key", Keys::getKey(domain,"maximum_ponded_depth"));
   dependencies_.insert(delta_max_key_);
-  delta_ex_key_ = plist_.get<std::string>("excluded volume key", getKey(domain,"excluded_volume"));
+  delta_ex_key_ = plist_.get<std::string>("excluded volume key", Keys::getKey(domain,"excluded_volume"));
   dependencies_.insert(delta_ex_key_);
   // my dependencies
-  pres_key_ = plist_.get<std::string>("pressure key", getKey(domain,"pressure"));
+  pres_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain,"pressure"));
   dependencies_.insert(pres_key_);
-  // vpd_key_ = plist_.get<std::string>("volumetric height key", getKey(domain,"volumetric_ponded_depth"));
+  // vpd_key_ = plist_.get<std::string>("volumetric height key", Keys::getKey(domain,"volumetric_ponded_depth"));
   //dependencies_.insert(vpd_key_);
-  cv_key_ = plist_.get<std::string>("cell volume key", getKey(domain,"cell_volume"));
+  cv_key_ = plist_.get<std::string>("cell volume key", Keys::getKey(domain,"cell_volume"));
   dependencies_.insert(cv_key_);
 
   

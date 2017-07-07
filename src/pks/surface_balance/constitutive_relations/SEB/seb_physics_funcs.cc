@@ -340,7 +340,7 @@ double DetermineSnowTemperature(const SEB& seb, ThermoProperties& vp_snow,
     res_right = func(right);
     while (res_right > 0.) {
       left = right;
-      res_left = res_left;
+      res_left = res_right;
       right = right + 1.;
       res_right = func(right);
     }

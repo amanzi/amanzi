@@ -51,7 +51,7 @@ void LiquidIceModel::InitializeModel(const Teuchos::Ptr<State>& S,
   // Grab the models.
   // get the WRM models and their regions
 
-  Teuchos::RCP<FieldEvaluator> me = S->GetFieldEvaluator(getKey(domain, "saturation_gas"));
+  Teuchos::RCP<FieldEvaluator> me = S->GetFieldEvaluator(Keys::getKey(domain, "saturation_gas"));
   
   Teuchos::RCP<Flow::WRMPermafrostEvaluator> wrm_me =
       Teuchos::rcp_dynamic_cast<Flow::WRMPermafrostEvaluator>(me);
@@ -59,49 +59,49 @@ void LiquidIceModel::InitializeModel(const Teuchos::Ptr<State>& S,
   wrms_ = wrm_me->get_WRMPermafrostModels();
   
   // -- liquid EOS
-  me = S->GetFieldEvaluator(getKey(domain, "molar_density_liquid"));
+  me = S->GetFieldEvaluator(Keys::getKey(domain, "molar_density_liquid"));
   Teuchos::RCP<Relations::EOSEvaluator> eos_liquid_me =
       Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(me);
   ASSERT(eos_liquid_me != Teuchos::null);
   liquid_eos_ = eos_liquid_me->get_EOS();
 
   // -- ice EOS
-  me = S->GetFieldEvaluator(getKey(domain, "molar_density_ice"));
+  me = S->GetFieldEvaluator(Keys::getKey(domain, "molar_density_ice"));
   Teuchos::RCP<Relations::EOSEvaluator> eos_ice_me =
       Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(me);
   ASSERT(eos_ice_me != Teuchos::null);
   ice_eos_ = eos_ice_me->get_EOS();
 
   // -- capillary pressure for ice/water
-  me = S->GetFieldEvaluator(getKey(domain, "capillary_pressure_liq_ice"));
+  me = S->GetFieldEvaluator(Keys::getKey(domain, "capillary_pressure_liq_ice"));
   Teuchos::RCP<Flow::PCIceEvaluator> pc_ice_me =
     Teuchos::rcp_dynamic_cast<Flow::PCIceEvaluator>(me);
   ASSERT(pc_ice_me != Teuchos::null);
   pc_i_ = pc_ice_me->get_PCIceWater();
 
   // -- capillary pressure for liq/gas
-  me = S->GetFieldEvaluator(getKey(domain, "capillary_pressure_gas_liq"));
+  me = S->GetFieldEvaluator(Keys::getKey(domain, "capillary_pressure_gas_liq"));
   Teuchos::RCP<Flow::PCLiquidEvaluator> pc_liq_me =
     Teuchos::rcp_dynamic_cast<Flow::PCLiquidEvaluator>(me);
   ASSERT(pc_liq_me != Teuchos::null);
   pc_l_ = pc_liq_me->get_PCLiqAtm();
   
   // -- iem for liquid
-  me = S->GetFieldEvaluator(getKey(domain, "internal_energy_liquid"));
+  me = S->GetFieldEvaluator(Keys::getKey(domain, "internal_energy_liquid"));
   Teuchos::RCP<Energy::IEMEvaluator> iem_liquid_me =
       Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(me);
   ASSERT(iem_liquid_me != Teuchos::null);
   liquid_iem_ = iem_liquid_me->get_IEM();
 
   // -- iem for ice
-  me = S->GetFieldEvaluator(getKey(domain, "internal_energy_ice"));
+  me = S->GetFieldEvaluator(Keys::getKey(domain, "internal_energy_ice"));
   Teuchos::RCP<Energy::IEMEvaluator> iem_ice_me =
       Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(me);
   ASSERT(iem_ice_me != Teuchos::null);
   ice_iem_ = iem_ice_me->get_IEM();
 
   // -- iem for rock
-  me = S->GetFieldEvaluator(getKey(domain, "internal_energy_rock"));
+  me = S->GetFieldEvaluator(Keys::getKey(domain, "internal_energy_rock"));
   Teuchos::RCP<Energy::IEMEvaluator> iem_rock_me =
       Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(me);
   ASSERT(iem_rock_me != Teuchos::null);
@@ -110,7 +110,7 @@ void LiquidIceModel::InitializeModel(const Teuchos::Ptr<State>& S,
   // -- porosity
 
   poro_leij_ = plist.get<bool>("porosity leijnse model", false);
-  me = S->GetFieldEvaluator(getKey(domain, "porosity"));
+  me = S->GetFieldEvaluator(Keys::getKey(domain, "porosity"));
   if(!poro_leij_){
     Teuchos::RCP<Flow::CompressiblePorosityEvaluator> poro_me =
       Teuchos::rcp_dynamic_cast<Flow::CompressiblePorosityEvaluator>(me);
@@ -131,8 +131,8 @@ void LiquidIceModel::InitializeModel(const Teuchos::Ptr<State>& S,
 void LiquidIceModel::UpdateModel(const Teuchos::Ptr<State>& S, int c) {
   // update scalars
   p_atm_ = *S->GetScalarData("atmospheric_pressure");
-  rho_rock_ = (*S->GetFieldData(getKey(domain,"density_rock"))->ViewComponent("cell"))[0][c];
-  poro_ = (*S->GetFieldData(getKey(domain,"base_porosity"))->ViewComponent("cell"))[0][c];
+  rho_rock_ = (*S->GetFieldData(Keys::getKey(domain,"density_rock"))->ViewComponent("cell"))[0][c];
+  poro_ = (*S->GetFieldData(Keys::getKey(domain,"base_porosity"))->ViewComponent("cell"))[0][c];
   wrm_ = wrms_->second[(*wrms_->first)[c]];
   if(!poro_leij_)
     poro_model_ = poro_models_->second[(*poro_models_->first)[c]];

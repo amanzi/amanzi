@@ -76,10 +76,7 @@ void Coordinator::coordinator_init() {
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list, pk_name);
   pk_list->set("PK name", pk_name);
 
-  const std::string &pk_origin = pk_list -> get<std::string>("PK origin", "ATS"); 
-
-  pk_ = pk_factory.CreatePK(pk_tree_list.sublist(pk_name), parameter_list_, S_, soln_);
-
+  pk_ = pk_factory.CreatePK(pk_name, pk_tree_list, parameter_list_, S_, soln_);
 
   int rank = comm_->MyPID();
   int size = comm_->NumProc();

@@ -27,9 +27,11 @@ public:
   WeakMPC(Teuchos::ParameterList& FElist,
           const Teuchos::RCP<Teuchos::ParameterList>& plist,
           const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<TreeVector>& solution) :
-    PK(FElist, plist, S, solution),
-    MPC<PK>(FElist, plist, S, solution) {};
+          const Teuchos::RCP<TreeVector>& solution)
+      : PK(FElist, plist, S, solution),
+        MPC<PK>(FElist, plist, S, solution) {
+    MPC<PK>::init_(S);
+  };
 
   // Virtual destructor
   virtual ~WeakMPC() {}

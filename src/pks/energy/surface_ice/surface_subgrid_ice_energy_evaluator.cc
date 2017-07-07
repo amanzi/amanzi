@@ -32,50 +32,50 @@ SurfaceSubgridIceEnergyEvaluator::SurfaceSubgridIceEnergyEvaluator(Teuchos::Para
     my_key_ = plist_.get<std::string>("energy key", "surface-energy");
  
  
-  std::string domain = getDomain(my_key_);
+  std::string domain = Keys::getDomain(my_key_);
 
   // densities
   dens_key_ = plist.get<std::string>("molar density liquid key",
-          getKey(domain, "molar_density_liquid"));
+          Keys::getKey(domain, "molar_density_liquid"));
   dependencies_.insert(dens_key_);
 
   dens_ice_key_ = plist.get<std::string>("molar density ice key",
-          getKey(domain, "molar_density_ice"));
+          Keys::getKey(domain, "molar_density_ice"));
   dependencies_.insert(dens_ice_key_);
 
   // internal energies
   ie_key_ = plist.get<std::string>("internal energy liquid key",
-          getKey(domain, "internal_energy_liquid"));
+          Keys::getKey(domain, "internal_energy_liquid"));
   dependencies_.insert(ie_key_);
 
   ie_ice_key_ = plist.get<std::string>("internal energy ice key",
-          getKey(domain, "internal_energy_ice"));
+          Keys::getKey(domain, "internal_energy_ice"));
   dependencies_.insert(ie_ice_key_);
 
   // unfrozen fraction
 
-  uf_key_ = plist.get<std::string>("unfrozen fraction key", getKey(domain,"unfrozen_fraction"));
+  uf_key_ = plist.get<std::string>("unfrozen fraction key", Keys::getKey(domain,"unfrozen_fraction"));
   dependencies_.insert(uf_key_);
 
   // ponded depth
-  height_key_ = plist.get<std::string>("height key", getKey(domain,"ponded_depth"));
+  height_key_ = plist.get<std::string>("height key", Keys::getKey(domain,"ponded_depth"));
 
   dependencies_.insert(height_key_);
 
-  vpd_key_ = plist.get<std::string>("volumetric height key", getKey(domain,"volumetric_ponded_depth"));
+  vpd_key_ = plist.get<std::string>("volumetric height key", Keys::getKey(domain,"volumetric_ponded_depth"));
   
   dependencies_.insert(vpd_key_);
   
-  delta_max_key_ = plist_.get<std::string>("maximum ponded depth key", getKey(domain,"maximum_ponded_depth"));
+  delta_max_key_ = plist_.get<std::string>("maximum ponded depth key", Keys::getKey(domain,"maximum_ponded_depth"));
   dependencies_.insert(delta_max_key_);
 
-  delta_ex_key_ = plist_.get<std::string>("excluded volume key", getKey(domain,"excluded_volume"));
+  delta_ex_key_ = plist_.get<std::string>("excluded volume key", Keys::getKey(domain,"excluded_volume"));
   dependencies_.insert(delta_ex_key_);
   //delta_max_ = plist_.get<double>("maximum ponded depth");
   //delta_ex_ = plist_.get<double>("excluded volume");
 
   cv_key_ = plist.get<std::string>("cell volume key",
-          getKey(domain, "cell_volume"));
+          Keys::getKey(domain, "cell_volume"));
   //assert(delta_max_ > 0);
 
 };

@@ -40,21 +40,21 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
   //--  domain_name_ =  plist_->sublist("PKs").sublist(pk_order[1]).get<std::string>("domain name", "domain");
   domain_name_ =  plist_->sublist("ewc delegate").get<std::string>("domain name", "domain"); 
  
-  temp_key_ = getKey(domain_name_, "temperature");
-  pres_key_ = getKey(domain_name_, "pressure");
-  e_key_ = getKey(domain_name_, "energy");
-  wc_key_ = getKey(domain_name_, "water_content");
-  tc_key_ = getKey(domain_name_, "thermal_conductivity");
-  uw_tc_key_ = getKey(domain_name_, "upwind_thermal_conductivity");
-  kr_key_ = getKey(domain_name_, "relative_permeability");
-  uw_kr_key_ = getKey(domain_name_, "upwind_relative_permeability");
-  enth_key_ = getKey(domain_name_, "enthalpy");
-  hkr_key_ = getKey(domain_name_, "enthalpy_times_relative_permeability");
-  uw_hkr_key_ = getKey(domain_name_, "upwind_enthalpy_times_relative_permeability");
-  energy_flux_key_ = getKey(domain_name_, "energy_flux");
-  mass_flux_key_ = getKey(domain_name_, "mass_flux");
-  mass_flux_dir_key_ = getKey(domain_name_, "mass_flux_direction");
-  rho_key_ = getKey(domain_name_, "mass_density_liquid");
+  temp_key_ = Keys::getKey(domain_name_, "temperature");
+  pres_key_ = Keys::getKey(domain_name_, "pressure");
+  e_key_ = Keys::getKey(domain_name_, "energy");
+  wc_key_ = Keys::getKey(domain_name_, "water_content");
+  tc_key_ = Keys::getKey(domain_name_, "thermal_conductivity");
+  uw_tc_key_ = Keys::getKey(domain_name_, "upwind_thermal_conductivity");
+  kr_key_ = Keys::getKey(domain_name_, "relative_permeability");
+  uw_kr_key_ = Keys::getKey(domain_name_, "upwind_relative_permeability");
+  enth_key_ = Keys::getKey(domain_name_, "enthalpy");
+  hkr_key_ = Keys::getKey(domain_name_, "enthalpy_times_relative_permeability");
+  uw_hkr_key_ = Keys::getKey(domain_name_, "upwind_enthalpy_times_relative_permeability");
+  energy_flux_key_ = Keys::getKey(domain_name_, "energy_flux");
+  mass_flux_key_ = Keys::getKey(domain_name_, "mass_flux");
+  mass_flux_dir_key_ = Keys::getKey(domain_name_, "mass_flux_direction");
+  rho_key_ = Keys::getKey(domain_name_, "mass_density_liquid");
 
   // supress energy's vision of advective terms as we can do better
 
@@ -130,12 +130,12 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
     if (!plist_->get<bool>("supress Jacobian terms: d div q / dT", false)) {
       // need to upwind dkr/dT
       if (!is_fv_) {
-        Key dkrdT_key = getDerivKey(uw_kr_key_, temp_key_);
+        Key dkrdT_key = Keys::getDerivKey(uw_kr_key_, temp_key_);
         S->RequireField(dkrdT_key, name_)
           ->SetMesh(mesh_)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
         S->GetField(dkrdT_key,name_)->set_io_vis(false);
         upwinding_dkrdT_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-                getDerivKey(kr_key_, temp_key_),
+                Keys::getDerivKey(kr_key_, temp_key_),
                 dkrdT_key, mass_flux_dir_key_, 1.e-8));
       }
 
@@ -162,8 +162,8 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
     if (!plist_->get<bool>("supress Jacobian terms: d div K grad T / dp", false)) {
       // need to upwind dKappa/dp
       if (!is_fv_) {
-        Key uw_dKappa_dp_key = getDerivKey(uw_tc_key_, pres_key_);
-        Key dKappa_dp_key = getDerivKey(tc_key_, pres_key_);
+        Key uw_dKappa_dp_key = Keys::getDerivKey(uw_tc_key_, pres_key_);
+        Key dKappa_dp_key = Keys::getDerivKey(tc_key_, pres_key_);
         S->RequireField(uw_dKappa_dp_key, name_)
           ->SetMesh(mesh_)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
         S->GetField(uw_dKappa_dp_key,name_)->set_io_vis(false);
@@ -252,25 +252,25 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
       
       if (!is_fv_) {
         // -- and the upwinded field
-        S->RequireField(getDerivKey(uw_hkr_key_, pres_key_), name_)
+        S->RequireField(Keys::getDerivKey(uw_hkr_key_, pres_key_), name_)
             ->SetMesh(mesh_)->SetGhosted()
             ->SetComponent("face", AmanziMesh::FACE, 1);
-        S->GetField(getDerivKey(uw_hkr_key_, pres_key_),name_)
+        S->GetField(Keys::getDerivKey(uw_hkr_key_, pres_key_),name_)
             ->set_io_vis(false);
-        S->RequireField(getDerivKey(uw_hkr_key_, temp_key_), name_)
+        S->RequireField(Keys::getDerivKey(uw_hkr_key_, temp_key_), name_)
             ->SetMesh(mesh_)->SetGhosted()
             ->SetComponent("face", AmanziMesh::FACE, 1);
-        S->GetField(getDerivKey(uw_hkr_key_, temp_key_), name_)
+        S->GetField(Keys::getDerivKey(uw_hkr_key_, temp_key_), name_)
             ->set_io_vis(false);
 
         // -- and the upwinding
         upwinding_dhkr_dp_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-                getDerivKey(hkr_key_, pres_key_),
-                getDerivKey(uw_hkr_key_, pres_key_),
+                Keys::getDerivKey(hkr_key_, pres_key_),
+                Keys::getDerivKey(uw_hkr_key_, pres_key_),
                 mass_flux_dir_key_, 1.e-8));
         upwinding_dhkr_dT_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-                getDerivKey(hkr_key_, temp_key_),
-                getDerivKey(uw_hkr_key_, temp_key_),
+                Keys::getDerivKey(hkr_key_, temp_key_),
+                Keys::getDerivKey(uw_hkr_key_, temp_key_),
                 mass_flux_dir_key_, 1.e-8));
       }
     }
@@ -329,7 +329,7 @@ void MPCSubsurface::Initialize(const Teuchos::Ptr<State>& S) {
 
   if (ddivq_dT_ != Teuchos::null) {
     if (!is_fv_) {
-      Key dkrdT_key = getDerivKey(uw_kr_key_, temp_key_);
+      Key dkrdT_key = Keys::getDerivKey(uw_kr_key_, temp_key_);
       S->GetFieldData(dkrdT_key,name_)->PutScalar(1.0);
       S->GetField(dkrdT_key,name_)->set_initialized();
     }
@@ -344,7 +344,7 @@ void MPCSubsurface::Initialize(const Teuchos::Ptr<State>& S) {
 
   if (ddivKgT_dp_ != Teuchos::null) {
     if (!is_fv_) {
-      Key uw_dKappa_dp_key = getDerivKey(uw_tc_key_, pres_key_);
+      Key uw_dKappa_dp_key = Keys::getDerivKey(uw_tc_key_, pres_key_);
       S->GetFieldData(uw_dKappa_dp_key,name_)->PutScalar(1.0);
       S->GetField(uw_dKappa_dp_key,name_)->set_initialized();
     }
@@ -358,10 +358,10 @@ void MPCSubsurface::Initialize(const Teuchos::Ptr<State>& S) {
     S->GetField(uw_hkr_key_, name_)->set_initialized();
 
     if (!is_fv_) {
-      S->GetFieldData(getDerivKey(uw_hkr_key_, pres_key_), name_)->PutScalar(1.);
-      S->GetField(getDerivKey(uw_hkr_key_, pres_key_), name_)->set_initialized();
-      S->GetFieldData(getDerivKey(uw_hkr_key_, temp_key_), name_)->PutScalar(1.);
-      S->GetField(getDerivKey(uw_hkr_key_, temp_key_), name_)->set_initialized();
+      S->GetFieldData(Keys::getDerivKey(uw_hkr_key_, pres_key_), name_)->PutScalar(1.);
+      S->GetField(Keys::getDerivKey(uw_hkr_key_, pres_key_), name_)->set_initialized();
+      S->GetFieldData(Keys::getDerivKey(uw_hkr_key_, temp_key_), name_)->PutScalar(1.);
+      S->GetField(Keys::getDerivKey(uw_hkr_key_, temp_key_), name_)->set_initialized();
     }
 
     Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
@@ -431,12 +431,12 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
           ->HasFieldDerivativeChanged(S_next_.ptr(), name_, temp_key_);
       Teuchos::RCP<const CompositeVector> dkrdT;
       if (is_fv_) {
-        dkrdT = S_next_->GetFieldData(getDerivKey(kr_key_, temp_key_));
+        dkrdT = S_next_->GetFieldData(Keys::getDerivKey(kr_key_, temp_key_));
       } else {
-        S_next_->GetFieldData(getDerivKey(uw_kr_key_, temp_key_), name_)
+        S_next_->GetFieldData(Keys::getDerivKey(uw_kr_key_, temp_key_), name_)
             ->PutScalar(0.);
         upwinding_dkrdT_->Update(S_next_.ptr());
-        dkrdT = S_next_->GetFieldData(getDerivKey(uw_kr_key_, temp_key_));
+        dkrdT = S_next_->GetFieldData(Keys::getDerivKey(uw_kr_key_, temp_key_));
       }
 
       // form the operator
@@ -457,7 +457,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     S_next_->GetFieldEvaluator(wc_key_)
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, temp_key_);
     Teuchos::RCP<const CompositeVector> dWC_dT =
-      S_next_->GetFieldData(getDerivKey(wc_key_, temp_key_));
+      S_next_->GetFieldData(Keys::getDerivKey(wc_key_, temp_key_));
     dWC_dT_->AddAccumulationTerm(*dWC_dT->ViewComponent("cell", false), h);
 
     // std::cout << "1/h * DWC/DT" << std::endl;
@@ -473,12 +473,12 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
 
       Teuchos::RCP<const CompositeVector> dKappa_dp;
       if (is_fv_) {
-        dKappa_dp = S_next_->GetFieldData(getDerivKey(tc_key_, pres_key_));
+        dKappa_dp = S_next_->GetFieldData(Keys::getDerivKey(tc_key_, pres_key_));
       } else {
-        S_next_->GetFieldData(getDerivKey(uw_tc_key_, pres_key_), name_)
+        S_next_->GetFieldData(Keys::getDerivKey(uw_tc_key_, pres_key_), name_)
             ->PutScalar(0.);
         upwinding_dKappa_dp_->Update(S_next_.ptr(), db_.ptr());
-        dKappa_dp = S_next_->GetFieldData(getDerivKey(uw_tc_key_, pres_key_));
+        dKappa_dp = S_next_->GetFieldData(Keys::getDerivKey(uw_tc_key_, pres_key_));
       }
 
       // form the operator
@@ -529,21 +529,21 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       }
       
       if (is_fv_) {
-        denth_kr_dp_uw = S_next_->GetFieldData(getDerivKey(hkr_key_, pres_key_));
-        denth_kr_dT_uw = S_next_->GetFieldData(getDerivKey(hkr_key_, temp_key_));
+        denth_kr_dp_uw = S_next_->GetFieldData(Keys::getDerivKey(hkr_key_, pres_key_));
+        denth_kr_dT_uw = S_next_->GetFieldData(Keys::getDerivKey(hkr_key_, temp_key_));
       } else {
 
         Teuchos::RCP<const CompositeVector> denth_kr_dp =
-            S_next_->GetFieldData(getDerivKey(hkr_key_, pres_key_));
+            S_next_->GetFieldData(Keys::getDerivKey(hkr_key_, pres_key_));
         Teuchos::RCP<const CompositeVector> denth_kr_dT =
-            S_next_->GetFieldData(getDerivKey(hkr_key_, temp_key_));
+            S_next_->GetFieldData(Keys::getDerivKey(hkr_key_, temp_key_));
 
         // -- zero target data (may be unnecessary?)
         Teuchos::RCP<CompositeVector> denth_kr_dp_uw_nc =
-            S_next_->GetFieldData(getDerivKey(uw_hkr_key_, pres_key_), name_);
+            S_next_->GetFieldData(Keys::getDerivKey(uw_hkr_key_, pres_key_), name_);
         denth_kr_dp_uw_nc->PutScalar(0.);
         Teuchos::RCP<CompositeVector> denth_kr_dT_uw_nc =
-            S_next_->GetFieldData(getDerivKey(uw_hkr_key_, temp_key_), name_);
+            S_next_->GetFieldData(Keys::getDerivKey(uw_hkr_key_, temp_key_), name_);
         denth_kr_dT_uw_nc->PutScalar(0.);
 
         // -- copy boundary faces into upwinded vector
@@ -570,9 +570,9 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
         }
 
         denth_kr_dp_uw =
-            S_next_->GetFieldData(getDerivKey(uw_hkr_key_, pres_key_));
+            S_next_->GetFieldData(Keys::getDerivKey(uw_hkr_key_, pres_key_));
         denth_kr_dT_uw =
-            S_next_->GetFieldData(getDerivKey(uw_hkr_key_, temp_key_));
+            S_next_->GetFieldData(Keys::getDerivKey(uw_hkr_key_, temp_key_));
 
       }
       
@@ -606,7 +606,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     S_next_->GetFieldEvaluator(e_key_)
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, pres_key_);
     Teuchos::RCP<const CompositeVector> dE_dp =
-      S_next_->GetFieldData(getDerivKey(e_key_, pres_key_));
+      S_next_->GetFieldData(Keys::getDerivKey(e_key_, pres_key_));
     dE_dp_->AddAccumulationTerm(*dE_dp->ViewComponent("cell", false), h);
 
     // std::cout << "1/h * DE/Dp" << std::endl;
@@ -659,7 +659,7 @@ int MPCSubsurface::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
     db_->WriteVectors(vnames, vecs, true);
   }
   
-  int ierr;
+  int ierr = 0;
   if (precon_type_ == PRECON_NONE) {
     *Pu = *u;
     ierr = 1;

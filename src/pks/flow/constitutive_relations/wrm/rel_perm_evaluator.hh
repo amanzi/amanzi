@@ -53,7 +53,7 @@ class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
 
   bool is_dens_visc_;
   bool is_surf_;
-  Key surf_mesh_key_;
+  Key surf_domain_;
   
   double perm_scale_;
   double min_val_;

@@ -16,21 +16,32 @@
 namespace Amanzi {
 
 
-MPCPermafrost4::MPCPermafrost4(Teuchos::ParameterList& FElist,
-                 const Teuchos::RCP<Teuchos::ParameterList>& plist,
+MPCPermafrost4::MPCPermafrost4(Teuchos::ParameterList& pk_tree,
+                 const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
                  const Teuchos::RCP<State>& S,
-                 const Teuchos::RCP<TreeVector>& soln) :
-    PK(FElist, plist, S, soln),
-    MPCSubsurface(FElist, plist, S, soln) {}
+                 const Teuchos::RCP<TreeVector>& solution) :
+    PK(pk_tree, global_plist, S, solution),
+    MPCSubsurface(pk_tree, global_plist, S, solution) {
+  // tweak the sub-PK parameter lists
+  Teuchos::Array<std::string> names = plist_->get<Teuchos::Array<std::string> >("PKs order");
+
+  domain_subsurf_ = plist_->get<std::string>("domain name", "domain");
+  if (domain_subsurf_ == "domain" || domain_subsurf_ == "") {
+    domain_surf_ = plist_->get<std::string>("surface domain name", "surface");
+  } else {
+    domain_surf_ = plist_->get<std::string>("surface domain name", "surface_"+domain_subsurf_);
+  }
+
+  // propagate domain information down to delegates
+  plist_->sublist("surface ewc delegate").set("domain name", domain_surf_);
+  plist_->sublist("ewc delegate").set("domain name", domain_subsurf_);
+}
 
 
 
 void
 MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
-  // tweak the sub-PK parameter lists
   Teuchos::Array<std::string> names = plist_->get<Teuchos::Array<std::string> >("PKs order");
-
- 
   // -- turn on coupling
   pks_list_->sublist(names[0]).set("coupled to surface via flux", true);
   pks_list_->sublist(names[1]).set("coupled to surface via flux", true);
@@ -44,17 +55,9 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
   pks_list_->sublist(names[3]).sublist("advection preconditioner").set("surface operator", true);
   pks_list_->sublist(names[3]).sublist("accumulation preconditioner").set("surface operator", true);
   
-
-  domain_surf = plist_->sublist("surface ewc delegate").get<std::string>("domain name", "surface"); 
-    //plist_->sublist("PKs").sublist(names[2]).get<std::string>("domain name", "surface");
-  domain_ss = plist_->sublist("ewc delegate").get<std::string>("domain name", "domain");  
-    //plist_->sublist("PKs").sublist(names[0]).get<std::string>("domain name","domain");
-  if(names[0] == "SSF0")
-    assert(domain_ss == "column_0");
-
   // grab the meshes
-  surf_mesh_ = S->GetMesh(domain_surf);
-  domain_mesh_ = S->GetMesh(domain_ss);
+  surf_mesh_ = S->GetMesh(domain_surf_);
+  domain_mesh_ = S->GetMesh(domain_subsurf_);
   
   // alias the PKs for easier reference
   domain_flow_pk_ = sub_pks_[0];
@@ -80,9 +83,9 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
 
   // require the coupling fields, claim ownership
 
-  S->RequireField(getKey(domain_ss,"surface_subsurface_flux"), name_)
+  S->RequireField(Keys::getKey(domain_surf_,"surface_subsurface_flux"), name_)
     ->SetMesh(surf_mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireField(getKey(domain_ss,"surface_subsurface_energy_flux"), name_)
+  S->RequireField(Keys::getKey(domain_surf_,"surface_subsurface_energy_flux"), name_)
     ->SetMesh(surf_mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
   
   if (precon_type_ != PRECON_NONE) {  
@@ -138,7 +141,7 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
   // set up the Water delegate
   Teuchos::RCP<Teuchos::ParameterList> water_list = Teuchos::sublist(plist_, "water delegate");
 
-  water_ = Teuchos::rcp(new MPCDelegateWater(water_list, domain_ss));
+  water_ = Teuchos::rcp(new MPCDelegateWater(water_list, domain_subsurf_));
 
   water_->set_indices(0,2,1,3);
 
@@ -153,20 +156,20 @@ void
 MPCPermafrost4::Initialize(const Teuchos::Ptr<State>& S) {
   // initialize coupling terms
 
-  S->GetFieldData(getKey(domain_ss,"surface_subsurface_flux"), name_)->PutScalar(0.);
-  S->GetField(getKey(domain_ss,"surface_subsurface_flux"), name_)->set_initialized();
-  S->GetFieldData(getKey(domain_ss,"surface_subsurface_energy_flux"), name_)->PutScalar(0.);
-  S->GetField(getKey(domain_ss,"surface_subsurface_energy_flux"), name_)->set_initialized();
+  S->GetFieldData(Keys::getKey(domain_surf_,"surface_subsurface_flux"), name_)->PutScalar(0.);
+  S->GetField(Keys::getKey(domain_surf_,"surface_subsurface_flux"), name_)->set_initialized();
+  S->GetFieldData(Keys::getKey(domain_surf_,"surface_subsurface_energy_flux"), name_)->PutScalar(0.);
+  S->GetField(Keys::getKey(domain_surf_,"surface_subsurface_energy_flux"), name_)->set_initialized();
 
   // Initialize all sub PKs.
 
   MPCSubsurface::Initialize(S);
 
   // ensure continuity of ICs... surface takes precedence.
-  CopySurfaceToSubsurface(*S->GetFieldData(getKey(domain_surf,"pressure"), surf_flow_pk_->name()),
-                          S->GetFieldData(getKey(domain_ss,"pressure"), domain_flow_pk_->name()).ptr());
-  CopySurfaceToSubsurface(*S->GetFieldData(getKey(domain_surf,"temperature"), surf_energy_pk_->name()),
-                          S->GetFieldData(getKey(domain_ss,"temperature"), domain_energy_pk_->name()).ptr());
+  CopySurfaceToSubsurface(*S->GetFieldData(Keys::getKey(domain_surf_,"pressure"), surf_flow_pk_->name()),
+                          S->GetFieldData(Keys::getKey(domain_subsurf_,"pressure"), domain_flow_pk_->name()).ptr());
+  CopySurfaceToSubsurface(*S->GetFieldData(Keys::getKey(domain_surf_,"temperature"), surf_energy_pk_->name()),
+                          S->GetFieldData(Keys::getKey(domain_subsurf_,"temperature"), domain_energy_pk_->name()).ptr());
 }
 
 
@@ -193,7 +196,7 @@ MPCPermafrost4::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> 
   // The residual of the surface flow equation provides the mass flux from
   // subsurface to surface.
 
-  Epetra_MultiVector& source = *S_next_->GetFieldData(getKey(domain_ss,"surface_subsurface_flux"),
+  Epetra_MultiVector& source = *S_next_->GetFieldData(Keys::getKey(domain_surf_,"surface_subsurface_flux"),
           name_)->ViewComponent("cell",false);
   source = *g->SubVector(2)->Data()->ViewComponent("cell",false);
 
@@ -212,8 +215,7 @@ MPCPermafrost4::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> 
   // The residual of the surface energy equation provides the diffusive energy
   // flux from subsurface to surface.
   Epetra_MultiVector& esource =
-
-    *S_next_->GetFieldData(getKey(domain_ss,"surface_subsurface_energy_flux"), name_)
+    *S_next_->GetFieldData(Keys::getKey(domain_surf_,"surface_subsurface_energy_flux"), name_)
       ->ViewComponent("cell",false);
   esource = *g->SubVector(3)->Data()->ViewComponent("cell",false);
 
@@ -316,10 +318,10 @@ MPCPermafrost4::UpdatePreconditioner(double t,
   
   // -- surface dE_dp
 
-  S_next_->GetFieldEvaluator(getKey(domain_surf,"energy"))
-    ->HasFieldDerivativeChanged(S_next_.ptr(), name_, getKey(domain_surf,"pressure"));
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_surf_,"energy"))
+    ->HasFieldDerivativeChanged(S_next_.ptr(), name_, Keys::getKey(domain_surf_,"pressure"));
   Teuchos::RCP<const CompositeVector> dEdp =
-    S_next_->GetFieldData(getDerivKey(getKey(domain_surf,"energy"), getKey(domain_surf,"pressure")));
+    S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_surf_,"energy"), Keys::getKey(domain_surf_,"pressure")));
   dE_dp_surf_->AddAccumulationTerm(*dEdp->ViewComponent("cell", false), h);
   
   // write for debugging
@@ -431,8 +433,8 @@ MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   // Copy consistent faces to surface
   if (modified) {
 
-    S_next_->GetFieldEvaluator(getKey(domain_surf,"relative_permeability"))->HasFieldChanged(S_next_.ptr(),name_);
-    Teuchos::RCP<const CompositeVector> h_prev = S_inter_->GetFieldData(getKey(domain_surf,"ponded_depth"));
+    S_next_->GetFieldEvaluator(Keys::getKey(domain_surf_,"relative_permeability"))->HasFieldChanged(S_next_.ptr(),name_);
+    Teuchos::RCP<const CompositeVector> h_prev = S_inter_->GetFieldData(Keys::getKey(domain_surf_,"ponded_depth"));
 
     MergeSubsurfaceAndSurfacePressure(*h_prev, u->SubVector(0)->Data().ptr(), u->SubVector(2)->Data().ptr());
     CopySubsurfaceToSurface(*u->SubVector(1)->Data(), u->SubVector(3)->Data().ptr());

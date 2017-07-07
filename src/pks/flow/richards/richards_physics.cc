@@ -94,7 +94,7 @@ void Richards::AddSources_(const Teuchos::Ptr<State>& S,
         *S->GetFieldData(source_key_)->ViewComponent("cell",false);
 
     const Epetra_MultiVector& cv =
-      *S->GetFieldData(getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
+      *S->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
 
     // Add into residual
     unsigned int ncells = g_c.MyLength();
@@ -118,7 +118,7 @@ void Richards::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
     std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
 
     S->GetFieldEvaluator(source_key_)->HasFieldDerivativeChanged(S, name_, key_);
-    Key dsource_dp_key = getDerivKey(source_key_, key_);
+    Key dsource_dp_key = Keys::getDerivKey(source_key_, key_);
     const Epetra_MultiVector& dsource_dp =
         *S->GetFieldData(dsource_dp_key)->ViewComponent("cell",false);
     unsigned int ncells = dsource_dp.MyLength();

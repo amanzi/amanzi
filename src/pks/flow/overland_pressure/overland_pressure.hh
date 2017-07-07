@@ -172,9 +172,6 @@ protected:
   virtual void FixBCsForPrecon_(const Teuchos::Ptr<State>& S);
   // virtual void FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S);
 
-  virtual void ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<CompositeVector>& pres );
-
   // computational concerns in managing abs, rel perm
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method
   virtual bool UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& S);

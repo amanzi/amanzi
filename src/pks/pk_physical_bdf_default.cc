@@ -29,7 +29,7 @@ void PK_PhysicalBDF_Default::Setup(const Teuchos::Ptr<State>& S) {
   // convergence criteria
   if (conserved_key_.empty()) {
     if (plist_->isParameter("conserved quantity suffix")) {
-      Key conserved_default = getKey(domain_, plist_->get<std::string>("conserved quantity suffix"));
+      Key conserved_default = Keys::getKey(domain_, plist_->get<std::string>("conserved quantity suffix"));
       conserved_key_ = plist_->get<std::string>("conserved quantity key", conserved_default);
     } else {
       conserved_key_ = plist_->get<std::string>("conserved quantity key");
@@ -41,7 +41,7 @@ void PK_PhysicalBDF_Default::Setup(const Teuchos::Ptr<State>& S) {
 
   if (cell_vol_key_.empty()) {
     cell_vol_key_ = plist_->get<std::string>("cell volume key",
-            getKey(domain_, "cell_volume"));
+            Keys::getKey(domain_, "cell_volume"));
   }
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
       ->AddComponent("cell",AmanziMesh::CELL,true);
@@ -142,12 +142,7 @@ double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       l_err.gid = dvec_v.Map().GID(enorm_loc);
 
       int ierr;
-      if (domain_.substr(0,6) == "column")
-        ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_SELF);
-      else
-        ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-      
-
+      ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
       ASSERT(!ierr);
       *vo_->os() << "  ENorm (" << *comp << ") = " << err.value << "[" << err.gid << "] (" << infnorm << ")" << std::endl;
     }
@@ -158,11 +153,7 @@ double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   double enorm_val_l = enorm_val;
 
   int ierr;
-  if (domain_.substr(0,6) == "column")
-    ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_SELF);
-  else
-    ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-
+  ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, mesh_->get_comm()->Comm());
   ASSERT(!ierr);
   return enorm_val;
 };

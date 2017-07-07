@@ -22,10 +22,10 @@ PCIceEvaluator::PCIceEvaluator(Teuchos::ParameterList& plist) :
             "capillary_pressure_liq_ice");
   }
 
-  Key domain_name = getDomain(my_key_);
+  Key domain_name = Keys::getDomain(my_key_);
   // -- temperature
  
- temp_key_ = plist_.get<std::string>("temperature key", getKey(domain_name,"temperature"));
+ temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain_name,"temperature"));
 
   dependencies_.insert(temp_key_);
 
@@ -33,9 +33,9 @@ PCIceEvaluator::PCIceEvaluator(Teuchos::ParameterList& plist) :
   model_ = Teuchos::rcp(new PCIceWater(plist_.sublist("capillary pressure of ice-water")));
 
   if (model_->IsMolarBasis()) {
-    dens_key_ = plist_.get<std::string>("molar density key", getKey(domain_name,"molar_density_liquid"));
+    dens_key_ = plist_.get<std::string>("molar density key", Keys::getKey(domain_name,"molar_density_liquid"));
   } else {
-    dens_key_ = plist_.get<std::string>("mass density key", getKey(domain_name, "mass_density_liquid"));
+    dens_key_ = plist_.get<std::string>("mass density key", Keys::getKey(domain_name, "mass_density_liquid"));
 
   }
   dependencies_.insert(dens_key_);

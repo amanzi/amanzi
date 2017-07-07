@@ -29,28 +29,52 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
   }
 
   // my keys
-  Key key;
+  Key name = plist_.get<std::string>("evaluator name");
   if (mode_ == EOS_MODE_MOLAR || mode_ == EOS_MODE_BOTH) {
-    key = plist_.get<std::string>("molar density key");
-    my_keys_.push_back(key);
+    std::size_t molar_pos = name.find("molar");
+    if (molar_pos != std::string::npos) {
+      Key molar_key = plist_.get<std::string>("molar density key", name);
+      my_keys_.push_back(molar_key);
+    } else {
+      std::size_t mass_pos = name.find("mass");
+      if (mass_pos != std::string::npos) {
+        Key molar_key = name.substr(0,mass_pos)+"molar"+name.substr(mass_pos+4, name.size());
+        molar_key = plist_.get<std::string>("molar density key", molar_key);
+        my_keys_.push_back(molar_key);
+      } else {
+        Key molar_key = plist_.get<std::string>("molar density key");
+        my_keys_.push_back(molar_key);
+      }
+    }
   }
 
   if (mode_ == EOS_MODE_MASS || mode_ == EOS_MODE_BOTH) {
-    key = plist_.get<std::string>("mass density key");
-    my_keys_.push_back(key);
+    std::size_t mass_pos = name.find("mass");
+    if (mass_pos != std::string::npos) {
+      Key mass_key = plist_.get<std::string>("mass density key", name);
+      my_keys_.push_back(mass_key);
+    } else {
+      std::size_t molar_pos = name.find("molar");
+      if (molar_pos != std::string::npos) {
+        Key mass_key = name.substr(0,molar_pos)+"mass"+name.substr(molar_pos+5, name.size());
+        mass_key = plist_.get<std::string>("mass density key", mass_key);
+        my_keys_.push_back(mass_key);
+      } else {
+        Key mass_key = plist_.get<std::string>("mass density key");
+        my_keys_.push_back(mass_key);
+      }
+    }
   }
 
   // Set up my dependencies.
-  Key domain = getDomain(key);
+  Key domain_name = Keys::getDomain(name);
 
   // -- temperature
-  temp_key_ = plist_.get<std::string>("temperature key",
-          getKey(domain, "temperature"));
+  temp_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
   dependencies_.insert(temp_key_);
 
   // -- pressure
-  pres_key_ = plist_.get<std::string>("pressure key",
-          getKey(domain, "effective_pressure"));
+  pres_key_ = Keys::readKey(plist_, domain_name, "pressure", "effective_pressure");
   dependencies_.insert(pres_key_);
 
   // -- logging

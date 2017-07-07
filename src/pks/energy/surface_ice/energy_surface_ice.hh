@@ -34,9 +34,6 @@ public:
                    const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& solution);
 
-  // -- set up data structures
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-
   // -- Initialize owned (dependent) variables.
   virtual void Initialize(const Teuchos::Ptr<State>& S);
 

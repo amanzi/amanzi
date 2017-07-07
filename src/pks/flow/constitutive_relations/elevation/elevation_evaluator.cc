@@ -16,14 +16,9 @@ ElevationEvaluator::ElevationEvaluator(Teuchos::ParameterList& plist) :
     updated_once_(false), 
     dynamic_mesh_(false) {
 
-  Key domain;
-  if (plist.isParameter("elevation key"))
-    domain = getDomain(plist.get<std::string>("elevation key"));
-  else
-    domain = "surface";
-        
-  my_keys_.push_back(plist_.get<std::string>("elevation key", getKey(domain,"elevation")));
-  my_keys_.push_back(plist_.get<std::string>("slope magnitude key", getKey(domain,"slope_magnitude")));
+  Key domain = Keys::getDomain(plist_.get<std::string>("evaluator name"));
+  my_keys_.push_back(plist_.get<std::string>("elevation key", Keys::getKey(domain,"elevation")));
+  my_keys_.push_back(plist_.get<std::string>("slope magnitude key", Keys::getKey(domain,"slope_magnitude")));
   
 
   // If the mesh changes dynamically (e.g. due to the presence of a deformation

@@ -79,7 +79,7 @@ private:
 
   // methods for applying/using the discretization/operators
   void UpdateBoundaryConditions_();
-  void ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature);
+  void ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& temperature);
 
   // misc setup information
   double dt_;

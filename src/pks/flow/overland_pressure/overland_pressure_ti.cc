@@ -56,7 +56,7 @@ void OverlandPressureFlow::Functional( double t_old,
 
   // unnecessary here if not debeugging, but doesn't hurt either
 
-  S_next_->GetFieldEvaluator(getKey(domain_,"pres_elev"))->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"pres_elev"))->HasFieldChanged(S_next_.ptr(), name_);
 
 
 #if DEBUG_FLAG
@@ -78,14 +78,14 @@ void OverlandPressureFlow::Functional( double t_old,
   vecs.push_back(S_inter_->GetFieldData(key_).ptr());
   vecs.push_back(u.ptr());
 
-  vecs.push_back(S_inter_->GetFieldData(getKey(domain_,"elevation")).ptr());
-  vecs.push_back(S_inter_->GetFieldData(getKey(domain_,"ponded_depth")).ptr());
-  vecs.push_back(S_next_->GetFieldData(getKey(domain_,"ponded_depth")).ptr());
-  vecs.push_back(S_next_->GetFieldData(getKey(domain_,"pres_elev")).ptr());
+  vecs.push_back(S_inter_->GetFieldData(Keys::getKey(domain_,"elevation")).ptr());
+  vecs.push_back(S_inter_->GetFieldData(Keys::getKey(domain_,"ponded_depth")).ptr());
+  vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"ponded_depth")).ptr());
+  vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"pres_elev")).ptr());
 
   if(plist_->get<bool>("subgrid model", false)){
-    vecs.push_back(S_next_->GetFieldData(getKey(domain_,"ponded_depression_depth")).ptr());
-    vecs.push_back(S_next_->GetFieldData(getKey(domain_,"fractional_conductance")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"ponded_depression_depth")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"fractional_conductance")).ptr());
   }
 
   db_->WriteVectors(vnames, vecs, true);
@@ -106,17 +106,18 @@ void OverlandPressureFlow::Functional( double t_old,
 
 #if DEBUG_FLAG
 
-  if (S_next_->HasField(getKey(domain_,"unfrozen_fraction"))) {
+  if (S_next_->HasField(Keys::getKey(domain_,"unfrozen_fraction"))) {
     vnames.resize(2);
     vecs.resize(2);
     vnames[0] = "uf_frac_old";
     vnames[1] = "uf_frac_new";
-    vecs[0] = S_inter_->GetFieldData(getKey(domain_,"unfrozen_fraction")).ptr();
-    vecs[1] = S_next_->GetFieldData(getKey(domain_,"unfrozen_fraction")).ptr();
+    vecs[0] = S_inter_->GetFieldData(Keys::getKey(domain_,"unfrozen_fraction")).ptr();
+    vecs[1] = S_next_->GetFieldData(Keys::getKey(domain_,"unfrozen_fraction")).ptr();
     db_->WriteVectors(vnames, vecs, false);
   }
-  db_->WriteVector("q_s", S_next_->GetFieldData(getKey(domain_,"mass_flux")).ptr(), true);
-  db_->WriteVector("k_s", S_next_->GetFieldData(getKey(domain_,"upwind_overland_conductivity")).ptr(), true);
+
+  db_->WriteVector("q_s", S_next_->GetFieldData(Keys::getKey(domain_,"mass_flux")).ptr(), true);
+  db_->WriteVector("k_s", S_next_->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity")).ptr(), true);
   db_->WriteVector("res (diff)", res.ptr(), true);
 #endif
 
@@ -137,7 +138,7 @@ void OverlandPressureFlow::Functional( double t_old,
 #if DEBUG_RES_FLAG
   if (niter_ < 23) {
 
-    Teuchos::RCP<const CompositeVector> depth= S_next_->GetFieldData(getKey(domain_,"ponded_depth"));
+    Teuchos::RCP<const CompositeVector> depth= S_next_->GetFieldData(Keys::getKey(domain_,"ponded_depth"));
 
 
     std::stringstream namestream;
@@ -174,7 +175,7 @@ int OverlandPressureFlow::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, 
 
   // tack on the variable change
   const Epetra_MultiVector& dh_dp =
-    *S_next_->GetFieldData(getDerivKey(getKey(domain_,"ponded_depth_bar"),key_))->ViewComponent("cell",false);
+    *S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"ponded_depth_bar"),key_))->ViewComponent("cell",false);
 
   Epetra_MultiVector& Pu_c = *Pu->Data()->ViewComponent("cell",false);
   unsigned int ncells = Pu_c.MyLength();
@@ -223,14 +224,14 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
 
   Teuchos::RCP<const CompositeVector> cond =
 
-    S_next_->GetFieldData(getKey(domain_,"upwind_overland_conductivity"));
+    S_next_->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"));
 
   Teuchos::RCP<const CompositeVector> dcond = Teuchos::null;
   if (jacobian_ && iter_ >= jacobian_lag_) {
     if (preconditioner_->RangeMap().HasComponent("face")) {
-      dcond = S_next_->GetFieldData(getDerivKey(getKey(domain_,"upwind_overland_conductivity"),getKey(domain_,"ponded_depth")));
+      dcond = S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"upwind_overland_conductivity"),Keys::getKey(domain_,"ponded_depth")));
     } else {
-      dcond = S_next_->GetFieldData(getDerivKey(getKey(domain_,"overland_conductivity"),getKey(domain_,"ponded_depth")));
+      dcond = S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"overland_conductivity"),Keys::getKey(domain_,"ponded_depth")));
     }
   }
 
@@ -243,11 +244,11 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
     Teuchos::RCP<const CompositeVector> pres_elev = Teuchos::null;
     Teuchos::RCP<CompositeVector> flux = Teuchos::null;
     if (preconditioner_->RangeMap().HasComponent("face")) {
-      flux = S_next_->GetFieldData(getKey(domain_,"mass_flux"), name_);
+      flux = S_next_->GetFieldData(Keys::getKey(domain_,"mass_flux"), name_);
       preconditioner_diff_->UpdateFlux(*pres_elev, *flux);
     } else {
-      S_next_->GetFieldEvaluator(getKey(domain_,"pres_elev"))->HasFieldChanged(S_next_.ptr(), name_);
-      pres_elev = S_next_->GetFieldData(getKey(domain_,"pres_elev"));
+      S_next_->GetFieldEvaluator(Keys::getKey(domain_,"pres_elev"))->HasFieldChanged(S_next_.ptr(), name_);
+      pres_elev = S_next_->GetFieldData(Keys::getKey(domain_,"pres_elev"));
     }
     preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), pres_elev.ptr());
   }
@@ -262,22 +263,22 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   //
   // -- update dh_bar / dp
 
-  S_next_->GetFieldEvaluator(getKey(domain_,"ponded_depth_bar"))
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"ponded_depth_bar"))
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
   const Epetra_MultiVector& dh_dp =
-    *S_next_->GetFieldData(getDerivKey(getKey(domain_,"ponded_depth_bar"),key_))
+    *S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"ponded_depth_bar"),key_))
     ->ViewComponent("cell",false);
   const double& p_atm = *S_next_->GetScalarData("atmospheric_pressure");
 
   // -- update the accumulation derivatives
 
-  S_next_->GetFieldEvaluator(getKey(domain_,"water_content_bar"))
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"water_content_bar"))
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
   const Epetra_MultiVector& dwc_dp =
-    *S_next_->GetFieldData(getDerivKey(getKey(domain_,"water_content_bar"),key_))
+    *S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"water_content_bar"),key_))
       ->ViewComponent("cell",false);
-  db_->WriteVector("    dwc_dp", S_next_->GetFieldData(getDerivKey(getKey(domain_,"water_content_bar"),key_)).ptr());
-  db_->WriteVector("    dh_dp", S_next_->GetFieldData(getDerivKey(getKey(domain_,"ponded_depth_bar"),key_)).ptr());
+  db_->WriteVector("    dwc_dp", S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"water_content_bar"),key_)).ptr());
+  db_->WriteVector("    dh_dp", S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"ponded_depth_bar"),key_)).ptr());
 
 
   // -- pull out other needed data
@@ -367,8 +368,8 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {
     // Scale Spp by dh/dp (h, NOT h_bar), clobbering rows with p < p_atm
 
-    std::string pd_key = smoothed_ponded_accumulation_ ? getKey(domain_,"smoothed_ponded_depth") : getKey(domain_,"ponded_depth");
-    std::string pd_deriv_key = getDerivKey(pd_key,key_);
+    std::string pd_key = smoothed_ponded_accumulation_ ? Keys::getKey(domain_,"smoothed_ponded_depth") : Keys::getKey(domain_,"ponded_depth");
+    std::string pd_deriv_key = Keys::getDerivKey(pd_key,key_);
 
     S_next_->GetFieldEvaluator(pd_key)
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
@@ -411,7 +412,7 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   const Epetra_MultiVector& conserved = *S_next_->GetFieldData(conserved_key_)
       ->ViewComponent("cell",true);
 
-  const Epetra_MultiVector& cv = *S_next_->GetFieldData(getKey(domain_,"cell_volume"))
+  const Epetra_MultiVector& cv = *S_next_->GetFieldData(Keys::getKey(domain_,"cell_volume"))
       ->ViewComponent("cell",true);
   
   // VerboseObject stuff.
@@ -448,7 +449,7 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       bool scaled_constraint = plist_->sublist("diffusion").get<bool>("scaled constraint equation", true);
       double constraint_scaling_cutoff = plist_->sublist("diffusion").get<double>("constraint equation scaling cutoff", 1.0);
 
-      const Epetra_MultiVector& kr_f = *S_next_->GetFieldData(getKey(domain_,"upwind_overland_conductivity"))
+      const Epetra_MultiVector& kr_f = *S_next_->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"))
         ->ViewComponent("face",false);
       
       for (unsigned int f=0; f!=nfaces; ++f) {
@@ -485,11 +486,7 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       l_err.gid = dvec_v.Map().GID(enorm_loc);
 
       int ierr;
-      if (domain_.substr(0,6) == "column")
-        ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_SELF);
-      else
-        ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-
+      ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
       ASSERT(!ierr);
       *vo_->os() << "  ENorm (" << *comp << ") = " << err.value << "[" << err.gid << "] (" << infnorm << ")" << std::endl;
     }
@@ -500,11 +497,7 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   double enorm_val_l = enorm_val;
 
   int ierr;
-  if (domain_.substr(0,6) == "column")
-    ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_SELF);
-  else
-    ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-
+  ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, mesh_->get_comm()->Comm());
   ASSERT(!ierr);
   return enorm_val;
 }

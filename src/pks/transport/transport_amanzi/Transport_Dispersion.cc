@@ -129,7 +129,7 @@ void Transport_PK_ATS::CalculateAxiSymmetryDirection()
     const Epetra_MultiVector& perm = *S_->GetFieldData(permeability_key_)->ViewComponent("cell");
 
     for (int c = 0; c < ncells_owned; ++c) {
-      int k;
+      int k = -1;
       if (perm[0][c] != perm[1][c] && perm[1][c] == perm[2][c]) {
         k = 0;
       } else if (perm[1][c] != perm[2][c] && perm[2][c] == perm[0][c]) {

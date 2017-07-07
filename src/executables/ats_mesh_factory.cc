@@ -283,7 +283,7 @@ createMeshes(Teuchos::ParameterList& plist,
       std::stringstream name_ss, name_surf;
       int id = surface_mesh->cell_map(false).GID(c);
       name_ss << "column_" << id;
-      name_surf << "column_" << id << "_surface";
+      name_surf << "surface_column_" << id;
       S.RegisterMesh(name_ss.str(), col_meshes[c], deformable);
       if (mesh_plist.isSublist("column surface meshes"))
         S.RegisterMesh(name_surf.str(), col_surf_meshes[c], deformable);

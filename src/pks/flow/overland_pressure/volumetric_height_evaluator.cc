@@ -19,18 +19,18 @@ VolumetricHeightEvaluator::VolumetricHeightEvaluator(Teuchos::ParameterList& pli
   Key domain;
 
   if(!my_key_.empty())
-    domain = getDomain(my_key_);
+    domain = Keys::getDomain(my_key_);
   else if (my_key_.empty())
     my_key_ = plist_.get<std::string>("volumetric ponded depth key", "surface_star-volumetric_ponded_depth"); 
  
-  // Key domain = getDomain(my_key_);
+  // Key domain = Keys::getDomain(my_key_);
   // my extra dependencies
-  pd_key_ = plist_.get<std::string>("height key", getKey(domain,"ponded_depth"));
+  pd_key_ = plist_.get<std::string>("height key", Keys::getKey(domain,"ponded_depth"));
   dependencies_.insert(pd_key_);
 
-  delta_max_key_ = plist_.get<std::string>("maximum ponded depth key", getKey(domain,"maximum_ponded_depth"));
+  delta_max_key_ = plist_.get<std::string>("maximum ponded depth key", Keys::getKey(domain,"maximum_ponded_depth"));
   dependencies_.insert(delta_max_key_);
-  delta_ex_key_ = plist_.get<std::string>("excluded volume key", getKey(domain,"excluded_volume"));
+  delta_ex_key_ = plist_.get<std::string>("excluded volume key", Keys::getKey(domain,"excluded_volume"));
   dependencies_.insert(delta_ex_key_);
   // model
   Teuchos::ParameterList model_plist = plist_.sublist("height model parameters");
