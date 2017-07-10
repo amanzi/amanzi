@@ -246,22 +246,6 @@ void AdvectionRiemann::UpdateMatricesFace_(const CompositeVector& u)
 
 
 /* *******************************************************************
-* Apply boundary condition to the local matrices
-******************************************************************* */
-void AdvectionRiemann::ApplyBCs(bool primary, bool eliminate)
-{
-  for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
-    if ((*bc)->kind() == AmanziMesh::FACE) {
-      ApplyBCs_Face(bc->ptr(), local_op_, primary, eliminate);
-    } 
-    else if ((*bc)->kind() == AmanziMesh::NODE) {
-      ApplyBCs_Node(bc->ptr(), local_op_, primary, eliminate);
-    }
-  }
-}
-
-
-/* *******************************************************************
 * Identify the advected flux of u
 ******************************************************************* */
 void AdvectionRiemann::UpdateFlux(

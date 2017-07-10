@@ -19,6 +19,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "BCs.hh"
+#include "BCsList.hh"
 #include "Mesh.hh"
 #include "Op.hh"
 #include "Operator.hh"
@@ -28,7 +29,7 @@
 namespace Amanzi {
 namespace Operators {
 
-class PDE_Helper {
+class PDE_Helper : public BCsList {
  public:
   PDE_Helper() {};
   PDE_Helper(const Teuchos::RCP<Operator>& global_op);
@@ -36,18 +37,22 @@ class PDE_Helper {
   PDE_Helper(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~PDE_Helper() {};
 
-  void ApplyBCs_Node(const Teuchos::Ptr<BCs>& bc, Teuchos::RCP<Op> op,
-                     bool primary, bool eliminate);
+  // boundary conditions
+  virtual void ApplyBCs(bool primary, bool eliminate);
 
-  void ApplyBCs_Face(const Teuchos::Ptr<BCs>& bc, Teuchos::RCP<Op> op,
-                     bool primary, bool eliminate);
-  
   // access
   // -- global operator (collection of ops with Apply, etc)
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
   Teuchos::RCP<Operator> global_operator() { return global_op_; }
   // -- local operator (container of elemental matrices)
   Teuchos::RCP<Op> local_operator() { return local_op_; }
+
+ protected:
+  void ApplyBCs_Cell_Scalar_(const Teuchos::Ptr<BCs>& bc, Teuchos::RCP<Op> op,
+                             bool primary, bool eliminate);
+  
+  void ApplyBCs_Cell_Point_(const Teuchos::Ptr<BCs>& bc, Teuchos::RCP<Op> op,
+                            bool primary, bool eliminate);
 
  private:
   void PopulateDimensions_();

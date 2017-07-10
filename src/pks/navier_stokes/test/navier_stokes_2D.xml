@@ -53,7 +53,7 @@
           <ParameterList name="schema">
             <Parameter name="base" type="string" value="cell"/>
             <Parameter name="location" type="Array(string)" value="{node, face}"/>
-            <Parameter name="type" type="Array(string)" value="{vector, normal component}"/>
+            <Parameter name="type" type="Array(string)" value="{point, normal component}"/>
             <Parameter name="number" type="Array(int)" value="{2, 1}"/>
           </ParameterList>
         </ParameterList>

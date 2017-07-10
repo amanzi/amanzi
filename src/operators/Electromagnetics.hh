@@ -19,7 +19,6 @@
 #include "Tensor.hh"
 #include "CompositeVector.hh"
 
-#include "BCsList.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Helper.hh"
@@ -27,7 +26,7 @@
 namespace Amanzi {
 namespace Operators {
 
-class Electromagnetics : public BCsList, public PDE_Helper {
+class Electromagnetics : public PDE_Helper {
  public:
   Electromagnetics(const Teuchos::RCP<Operator>& global_op) :
       PDE_Helper(global_op),

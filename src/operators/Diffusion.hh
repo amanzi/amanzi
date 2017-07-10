@@ -22,7 +22,6 @@
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
 
-#include "BCsList.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Helper.hh"
@@ -57,7 +56,7 @@ Example:
 namespace Amanzi {
 namespace Operators {
 
-class Diffusion : public BCsList, public PDE_Helper {
+class Diffusion : public PDE_Helper {
  public:
   Diffusion(const Teuchos::RCP<Operator>& global_op) :
       PDE_Helper(global_op),

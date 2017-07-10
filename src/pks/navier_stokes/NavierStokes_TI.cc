@@ -167,7 +167,7 @@ void NavierStokes_PK::ComputeOperatorBCs()
       bc_model[n] = Operators::OPERATOR_BC_NONE;
     }
 
-    if (op_bcs_[i]->type() == Operators::SCHEMA_DOFS_VECTOR) {
+    if (op_bcs_[i]->type() == Operators::SCHEMA_DOFS_POINT) {
       mv = i;
       std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[i]->bc_value_point();
       for (int n = 0; n < bc_value.size(); n++) {
@@ -180,7 +180,7 @@ void NavierStokes_PK::ComputeOperatorBCs()
   // velocity boundary conditions
   for (int i = 0; i < bcs_.size(); ++i) {
     if (bcs_[i]->bc_name() == "no slip" && 
-        bcs_[i]->type() == Operators::SCHEMA_DOFS_VECTOR) {
+        bcs_[i]->type() == Operators::SCHEMA_DOFS_POINT) {
       std::vector<int>& bc_model = op_bcs_[mv]->bc_model();
       std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[mv]->bc_value_point();
 

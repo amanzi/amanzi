@@ -49,9 +49,6 @@ class AdvectionRiemann : public Advection {
   void UpdateFlux(const CompositeVector& h , const CompositeVector& u,
                   const Teuchos::RCP<BCs>& bc, CompositeVector& flux);
   
-  // boundary conditions
-  void ApplyBCs(bool primary, bool eliminate);
-
  private:
   void InitAdvection_(Teuchos::ParameterList& plist);
   void UpdateMatricesCell_(const CompositeVector& u);

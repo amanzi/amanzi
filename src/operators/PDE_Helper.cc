@@ -69,38 +69,69 @@ void PDE_Helper::PopulateDimensions_()
 
 
 /* ******************************************************************
-* Apply BCs is typically called for the global Operator.
+* Apply boundary conditions to the local matrices. We always zero-out
+* matrix rows for essential test BCs. As to trial BCs, there are
+* options: (a) eliminate or not, (b) if eliminate, then put 1 on
+* the diagonal or not.
 ****************************************************************** */
-void PDE_Helper::ApplyBCs_Face(const Teuchos::Ptr<BCs>& bcf, Teuchos::RCP<Op> op,
-                               bool primary, bool eliminate)
+void PDE_Helper::ApplyBCs(bool primary, bool eliminate)
 {
-  const std::vector<int>& bc_model = bcf->bc_model();
-  const std::vector<double>& bc_value = bcf->bc_value();
+  for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
+    if ((*bc)->type() == SCHEMA_DOFS_SCALAR ||
+        (*bc)->type() == SCHEMA_DOFS_NORMAL_COMPONENT) {
+      ApplyBCs_Cell_Scalar_(bc->ptr(), local_op_, primary, eliminate);
+    } 
+    else if ((*bc)->type() == SCHEMA_DOFS_POINT) {
+      ApplyBCs_Cell_Point_(bc->ptr(), local_op_, primary, eliminate);
+    }
+    else {
+      Errors::Message msg("PDE_Helper: Unsupported boundary condition.\n");
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+}
 
-  AmanziMesh::Entity_ID_List faces;
+
+/* ******************************************************************
+* Apply BCs of scalar type. The code is based on face (f) DOFs.
+****************************************************************** */
+void PDE_Helper::ApplyBCs_Cell_Scalar_(
+    const Teuchos::Ptr<BCs>& bc, Teuchos::RCP<Op> op,
+    bool primary, bool eliminate)
+{
+  const std::vector<int>& bc_model = bc->bc_model();
+  const std::vector<double>& bc_value = bc->bc_value();
+
+  AmanziMesh::Entity_ID_List entities;
   std::vector<int> dirs, offset;
 
   CompositeVector& rhs = *global_op_->rhs();
   rhs.PutScalarGhosted(0.0);
 
-  Teuchos::RCP<Epetra_MultiVector> rhs_face;
-  if (primary) rhs_face = rhs.ViewComponent("face", true);
-
   const Schema& schema_row = global_op_->schema_row();
   const Schema& schema_col = global_op_->schema_col();
+
+  AmanziMesh::Entity_kind kind = bc->kind();
+  ASSERT(kind == AmanziMesh::FACE || kind == AmanziMesh::EDGE);
+  Teuchos::RCP<Epetra_MultiVector> rhs_kind;
+  if (primary) rhs_kind = rhs.ViewComponent(schema_row.KindToString(kind), true);
 
   for (int c = 0; c != ncells_owned; ++c) {
     WhetStone::DenseMatrix& Acell = op->matrices[c];
     int ncols = Acell.NumCols();
     int nrows = Acell.NumRows();
 
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
+    if (kind == AmanziMesh::FACE) {
+      mesh_->cell_get_faces_and_dirs(c, &entities, &dirs);
+    } else if (kind == AmanziMesh::EDGE) {
+      mesh_->cell_get_edges(c, &entities);
+    }
+    int nents = entities.size();
 
     // check for a boundary face
     bool found(false);
-    for (int n = 0; n != nfaces; ++n) {
-      int f = faces[n];
+    for (int n = 0; n != nents; ++n) {
+      int f = entities[n];
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) found = true;
     }
     if (!found) continue;
@@ -111,9 +142,9 @@ void PDE_Helper::ApplyBCs_Face(const Teuchos::Ptr<BCs>& bcf, Teuchos::RCP<Op> op
     bool flag(true);
     int item(0);
     for (auto it = op->schema_row_.begin(); it != op->schema_row_.end(); ++it, ++item) {
-      if (it->kind == AmanziMesh::FACE) {
-        for (int n = 0; n != nfaces; ++n) {
-          int f = faces[n];
+      if (it->kind == kind) {
+        for (int n = 0; n != nents; ++n) {
+          int f = entities[n];
           if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
             if (flag) {  // make a copy of elemental matrix
               op->matrices_shadow[c] = Acell;
@@ -131,9 +162,9 @@ void PDE_Helper::ApplyBCs_Face(const Teuchos::Ptr<BCs>& bcf, Teuchos::RCP<Op> op
 
     item = 0;
     for (auto it = op->schema_col_.begin(); it != op->schema_col_.end(); ++it, ++item) {
-      if (it->kind == AmanziMesh::FACE) {
-        for (int n = 0; n != nfaces; ++n) {
-          int f = faces[n];
+      if (it->kind == kind) {
+        for (int n = 0; n != nents; ++n) {
+          int f = entities[n];
           double value = bc_value[f];
 
           if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
@@ -154,7 +185,7 @@ void PDE_Helper::ApplyBCs_Face(const Teuchos::Ptr<BCs>& bcf, Teuchos::RCP<Op> op
 
             if (primary) {
               rhs_loc(noff) = 0.0;
-              (*rhs_face)[0][f] = value;
+              (*rhs_kind)[0][f] = value;
               Acell(noff, noff) = 1.0;
             }
 
@@ -170,13 +201,14 @@ void PDE_Helper::ApplyBCs_Face(const Teuchos::Ptr<BCs>& bcf, Teuchos::RCP<Op> op
 
 
 /* ******************************************************************
-* Apply BCs is typically called for the global Operator.
+* Apply BCs of scalar type. The code is limited to node DOFs.
 ****************************************************************** */
-void PDE_Helper::ApplyBCs_Node(const Teuchos::Ptr<BCs>& bcv, Teuchos::RCP<Op> op,
-                               bool primary, bool eliminate)
+void PDE_Helper::ApplyBCs_Cell_Point_(
+    const Teuchos::Ptr<BCs>& bc, Teuchos::RCP<Op> op,
+    bool primary, bool eliminate)
 {
-  const std::vector<int>& bc_model = bcv->bc_model();
-  const std::vector<AmanziGeometry::Point>& bc_value = bcv->bc_value_point();
+  const std::vector<int>& bc_model = bc->bc_model();
+  const std::vector<AmanziGeometry::Point>& bc_value = bc->bc_value_point();
 
   AmanziMesh::Entity_ID_List nodes, cells;
   std::vector<int> offset;
@@ -184,6 +216,7 @@ void PDE_Helper::ApplyBCs_Node(const Teuchos::Ptr<BCs>& bcv, Teuchos::RCP<Op> op
   CompositeVector& rhs = *global_op_->rhs();
   rhs.PutScalarGhosted(0.0);
 
+  // AmanziMesh::Entity_kind kind = bc->kind();
   Teuchos::RCP<Epetra_MultiVector> rhs_node;
   if (primary) rhs_node = rhs.ViewComponent("node", true);
 

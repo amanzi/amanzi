@@ -247,6 +247,8 @@ int Schema::StringToType(std::string& name) const
     return SCHEMA_DOFS_SCALAR;
   } else if (name == "vector") {
     return SCHEMA_DOFS_VECTOR;
+  } else if (name == "point") {
+    return SCHEMA_DOFS_POINT;
   } else if (name == "normal component") {
     return SCHEMA_DOFS_NORMAL_COMPONENT;
   }

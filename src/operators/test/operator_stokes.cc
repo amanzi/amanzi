@@ -101,7 +101,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
 
   // -- at nodes
   Point xv(2);
-  Teuchos::RCP<BCs> bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, SCHEMA_DOFS_POINT));
   std::vector<int>& bcv_model = bcv->bc_model();
   std::vector<Point>& bcv_value = bcv->bc_value_point();
 

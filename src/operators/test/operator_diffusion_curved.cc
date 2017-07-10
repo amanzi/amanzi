@@ -28,6 +28,7 @@
 #include "Tensor.hh"
 
 // Operators
+#include "Analytic00.hh"
 #include "Analytic01.hh"
 
 #include "Abstract.hh"
@@ -59,8 +60,8 @@ void RunTestDiffusionCurved() {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-  // RCP<const Mesh> mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 10,10,10, gm);
-  RCP<const Mesh> mesh = meshfactory("test/random3D_05.exo", gm);
+  RCP<const Mesh> mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 1,1,1, gm);
+  // RCP<const Mesh> mesh = meshfactory("test/random3D_05.exo", gm);
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -68,7 +69,7 @@ void RunTestDiffusionCurved() {
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
-  Analytic01 ana(mesh);
+  Analytic00 ana(mesh, 1.0, 1.0);
 
   for (int c = 0; c < ncells_owned; c++) {
     const Point& xc = mesh->cell_centroid(c);

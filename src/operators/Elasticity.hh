@@ -19,7 +19,6 @@
 #include "Tensor.hh"
 #include "CompositeVector.hh"
 
-#include "BCsList.hh"
 #include "PDE_Helper.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
@@ -28,7 +27,7 @@
 namespace Amanzi {
 namespace Operators {
 
-class Elasticity : public BCsList, public PDE_Helper {
+class Elasticity : public PDE_Helper {
  public:
   Elasticity(Teuchos::ParameterList& plist,
              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
@@ -49,9 +48,6 @@ class Elasticity : public BCsList, public PDE_Helper {
 
   // -- creation of an operator
   virtual void UpdateMatrices();
-
-  // -- matrix modification
-  virtual void ApplyBCs(bool primary, bool eliminate);
 
   // access
   const Schema& global_schema_col() { return global_schema_col_; }

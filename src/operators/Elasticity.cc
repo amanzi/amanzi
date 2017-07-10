@@ -70,25 +70,6 @@ void Elasticity::UpdateMatrices()
 
 
 /* ******************************************************************
-* Apply boundary conditions to the local matrices. We always zero-out
-* matrix rows for essential test BCs. As to trial BCs, there are
-* options: (a) eliminate or not, (b) if eliminate, then put 1 on
-* the diagonal or not.
-****************************************************************** */
-void Elasticity::ApplyBCs(bool primary, bool eliminate)
-{
-  for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
-    if ((*bc)->kind() == AmanziMesh::FACE) {
-      ApplyBCs_Face(bc->ptr(), local_op_, primary, eliminate);
-    } 
-    else if ((*bc)->kind() == AmanziMesh::NODE) {
-      ApplyBCs_Node(bc->ptr(), local_op_, primary, eliminate);
-    }
-  }
-}
-
-
-/* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
 void Elasticity::Init_(Teuchos::ParameterList& plist)

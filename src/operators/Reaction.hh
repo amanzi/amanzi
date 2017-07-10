@@ -18,14 +18,13 @@
 
 #include "Epetra_MultiVector.h"
 
-#include "BCsList.hh"
 #include "PDE_Helper.hh"
 #include "Schema.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class Reaction : public BCsList, public PDE_Helper {
+class Reaction : public PDE_Helper {
  public:
   Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op) :
       K_(Teuchos::null) {

@@ -103,6 +103,18 @@ class BCs {
     return bc_value_point_;
   }
 
+  std::vector<std::vector<double> >& bc_value_vector(int n = 1) {
+    if (bc_value_vector_.size() == 0) {
+      int nent = mesh_->num_entities(kind_, AmanziMesh::USED);
+      bc_value_vector_.resize(nent);
+
+      for (int i = 0; i < nent; ++i) {
+        bc_value_vector_[i].resize(n);
+      }
+    }
+    return bc_value_vector_;
+  }
+
  private:
   AmanziMesh::Entity_kind kind_;
   int type_;
@@ -110,6 +122,8 @@ class BCs {
   std::vector<int> bc_model_;
   std::vector<double> bc_value_;
   std::vector<double> bc_mixed_;
+
+  std::vector<std::vector<double> > bc_value_vector_;
   std::vector<AmanziGeometry::Point> bc_value_point_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

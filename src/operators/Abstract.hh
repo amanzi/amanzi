@@ -16,14 +16,12 @@
 
 #include <string>
 
-#include "BCsList.hh"
 #include "PDE_Helper.hh"
-
 
 namespace Amanzi {
 namespace Operators {
 
-class Abstract : public BCsList, public PDE_Helper {
+class Abstract : public PDE_Helper {
  public:
   Abstract(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op) :
       PDE_Helper(global_op) {
@@ -40,9 +38,6 @@ class Abstract : public BCsList, public PDE_Helper {
   void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) { K_ = K; }
   void UpdateMatrices();
   
-  // boundary conditions
-  void ApplyBCs(bool primary, bool eliminate);
-
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
 

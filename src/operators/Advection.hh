@@ -15,7 +15,6 @@
 #ifndef AMANZI_OPERATOR_ADVECTION_HH_
 #define AMANZI_OPERATOR_ADVECTION_HH_
 
-#include "BCsList.hh"
 #include "PDE_Helper.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
@@ -25,7 +24,7 @@
 namespace Amanzi {
 namespace Operators {
 
-class Advection : public BCsList, public PDE_Helper {
+class Advection : public PDE_Helper {
  public:
   Advection(Teuchos::ParameterList& plist,
             Teuchos::RCP<Operator> global_op) : PDE_Helper(global_op) {};
