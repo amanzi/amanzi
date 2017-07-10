@@ -39,7 +39,7 @@ class Elasticity : public BCsList, public PDE_Helper {
   {
     global_op_ = Teuchos::null;
     operator_type_ = OPERATOR_ELASTICITY;
-    InitElasticity_(plist);
+    Init_(plist);
   }
 
   // main virtual members
@@ -59,7 +59,7 @@ class Elasticity : public BCsList, public PDE_Helper {
   const Schema& schema_row() { return local_schema_row_; }
 
  protected:
-  void InitElasticity_(Teuchos::ParameterList& plist);
+  void Init_(Teuchos::ParameterList& plist);
 
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;

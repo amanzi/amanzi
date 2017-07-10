@@ -63,6 +63,7 @@ class PDE_Helper {
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
   int nnodes_owned, nnodes_wghost;
+  int nedges_owned, nedges_wghost;
 
   // discretization method
   SpaceNickName space_col_, space_row_;

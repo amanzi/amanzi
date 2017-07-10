@@ -28,14 +28,10 @@ namespace Operators {
 class Advection : public BCsList, public PDE_Helper {
  public:
   Advection(Teuchos::ParameterList& plist,
-            Teuchos::RCP<Operator> global_op) {
-    mesh_ = Teuchos::null;
-    global_op_ = global_op;
-  }
+            Teuchos::RCP<Operator> global_op) : PDE_Helper(global_op) {};
 
   Advection(Teuchos::ParameterList& plist,
-            Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      PDE_Helper(mesh) {
+            Teuchos::RCP<const AmanziMesh::Mesh> mesh) : PDE_Helper(mesh) {
     global_op_ = Teuchos::null;
   }
 

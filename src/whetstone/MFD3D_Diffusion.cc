@@ -1056,6 +1056,55 @@ void MFD3D_Diffusion::CurvedFaceGeometry_(
   vv[0] *= dirs;
 }
 
+
+/* ******************************************************************
+* Hybridization algorithm
+****************************************************************** */
+void MFD3D_Diffusion::HybridizeGeneralized(
+    int c, const DenseMatrix& M, DenseMatrix& A)
+{
+  Entity_ID_List faces;
+  std::vector<int> dirs;
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+
+  int nfaces = faces.size();
+  int nx(d_ * nfaces);
+
+  // populate areas 
+  DenseVector area(nx), area_div(nx);
+  area_div.PutScalar(0.0);
+
+  for (int i = 0; i < nfaces; ++i) {
+    int f = faces[i];
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    area_div(d_ * i) = norm(normal);
+
+    double tmp = mesh_->face_area(f);  
+    area(d_ * i) = tmp;
+    area(d_ * i + 1) = tmp;
+    area(d_ * i + 2) = tmp;
+  }
+    
+  // populate stiffness matrix
+  A.Reshape(nx + 1, nx + 1);
+
+  double cntr(0.0);
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < nx; ++j) {
+      A(i, j) = M(i, j) * area(i) * area(j);
+    }
+
+    double add(0.0);
+    for (int j = 0; j < nx; ++j) { 
+      add -= M(i, j) * area_div(j);
+    }
+    A(nx, i) = A(i, nx) = add * area(i);
+
+    cntr -= add * area_div(i);
+  }
+  A(nx, nx) = cntr;
+}
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

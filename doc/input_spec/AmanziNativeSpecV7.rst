@@ -1789,105 +1789,11 @@ Time step controller and nonlinear solver
 `````````````````````````````````````````
 
 The time step is controlled by parameter *time step controller type*
-and the related list of options.
+and the related list of options, see section TimeStepController_ for the list
+of supported parameter.
 Nonlinear solver is controlled by parameter *solver type*  and related list of options.
 Amanzi supports a few nonlinear solvers described in details in a separate section.
 
-The time step controller *standard* is a simple timestep control mechanism
-which sets the next timestep based upon the previous timestep and how many
-nonlinear iterations the previous timestep took to converge.
-The next time step is given by the following rule:
-
-* if :math:`N_k > N^{max}` then :math:`\Delta t_{k+1} = f_{reduction} \Delta t_{k}`
-* if :math:`N_k < N^{min}` then :math:`\Delta t_{k+1} = f_{increase} \Delta t_{k}`
-* otherwise :math:`\Delta t_{k+1} = \Delta t_{k}`
-
-where :math:`\Delta t_{k}` is the previous timestep and :math:`N_k` is the number of nonlinear 
-iterations required to solve step :math:`k`.
-
-The time step controller *smart* is based on *standard*, but also tries to be a bit 
-smarter to avoid repeated increase/decrease loops where the step size decreases, 
-converges in few iterations, increases, but then fails again.  It also tries to grow 
-the time step geometrically to more quickly recover from tricky nonlinearities.
-
-The time step controller *from file* loads a timestep history from a file, then
-advances the step size with those values.  This is mostly used for testing
-purposes, where we need to force the same timestep history as previous runs to
-do regression testing.  Otherwise roundoff errors can eventually alter
-number of iterations enough to alter the timestep history, resulting in
-solutions which are enough different to cause doubt over their correctness.
-
-* `"time step controller type`" [list]
-  Available options are `"fixed`", `"standard`", `"smarter`",  `"adaptive`", and `"from file`"
-  The later is under development and is based on a posteriori error estimates.
-
-  * `"max preconditioner lag iterations`" [int] specifies frequency of 
-    preconditioner recalculation.
-
-  * `"extrapolate initial guess`" [bool] identifies forward time extrapolation
-    of the initial guess. Default is `"true`".
-
-  * `"restart tolerance relaxation factor`" [double] changes the nonlinear
-    tolerance. The time integrator is usually restarted when a boundary condition 
-    changes drastically. It may be beneficial to loosen the nonlinear 
-    tolerance on the first several time steps after the time integrator restart. 
-    The default value is 1, while a reasonable value may be as large as 1000. 
-
-  * `"restart tolerance relaxation factor damping`" controls how fast the loosened 
-    nonlinear tolerance will revert back to the one specified in `"nonlinear tolerance"`.
-    If the nonlinear tolerance is `"tol`", the relaxation factor is `"factor`", and 
-    the damping is `"d`", and the time step count is `"n`" then the actual nonlinear 
-    tolerance is `"tol * max(1.0, factor * d ** n)`".
-    The default value is 1, while reasonable values are between 0 and 1.
-
-  * `"time step increase factor`" [double] defines geometric grow rate for the
-    initial time step. This factor is applied when nonlinear solver converged
-    in less than `"min iterations`" iterations. 
-    This value can be modified geometrically by the smart controller in the 
-    case of repeated successful steps. Default is 1.
-
-  * `"min iterations`" [int]  triggers increase of the time step if the previous step 
-    took less than this.
-
-  * `"time step reduction factor`" [double] defines abrupt time step reduction
-    when nonlinear solver failed or did not converge in `"max iterations`" iterations.
-
-  * `"max iterations`" [int] itriggers decrease of the time step if the previous step 
-    took more than this.
-
-  * `"max time step`" [double] is the maximum allowed time step.
-
-  * `"min time step`" [double] is the minimum allowed time step.
-
-  * `"solver type`" [string] defines nonlinear solver used on each time step for
-    a nonlinear algebraic system :math:`F(x) = 0`. 
-    The available options `"aa`", `"nka`" and `"Newton`".
-
-  * `"nka parameters`" [list] internal parameters for the nonlinear
-    solver NKA.
-
-  * `"aa parameters`" [list] internal parameters for the nonlinear
-    solver AA (Anderson acceleration).
-
-  * `"file name`" [string] is the path to hdf5 file containing timestep information. 
-    The parameter is used by only one controller.
-
-  * `"timestep header`" [string] is the name of the dataset containing the history 
-    of timestep sizes. The parameter is used by only one controller.
-
-  * `"max time step increase factor`" [double] specifies the maximum value for 
-    parameter `"time step increase factor`" in the smart controller. Default is 10.
-
-  * `"growth wait after fail`" [int] defined the number of skipped timesteps before
-    attempting to grow the timestep after a failed timestep. 
-    This parameter is used by the smart controller only.
-
-  * `"count before increasing increase factor`" [int] defines the number of successive 
-    increasions before multiplying parameter `"time step increase factor`". 
-    This parameter is used by the smart controller only.
- 
-  * `"residual debugger`" [list] a residual debugger specification.
-    
 .. code-block:: xml
 
    <ParameterList name="Richards problem">  <!-- parent list -->
@@ -3817,6 +3723,142 @@ and their extensions for various PKs.
     <Parameter name="limiter" type="string" value="tensorial"/>
     <Parameter name="limiter extension for transport" type="bool" value="false"/>
   </ParameterList>
+
+
+.. _TimeStepController:
+
+Time step controller
+--------------------
+
+The time step is controlled by parameter *time step controller type*
+and the related list of options.
+Nonlinear solver is controlled by parameter *solver type*  and related list of options.
+Amanzi supports a few nonlinear solvers described in details in a separate section.
+
+The time step controller *standard* is a simple timestep control mechanism
+which sets the next timestep based upon the previous timestep and how many
+nonlinear iterations the previous timestep took to converge.
+The next time step is given by the following rule:
+
+* if :math:`N_k > N^{max}` then :math:`\Delta t_{k+1} = f_{reduction} \Delta t_{k}`
+* if :math:`N_k < N^{min}` then :math:`\Delta t_{k+1} = f_{increase} \Delta t_{k}`
+* otherwise :math:`\Delta t_{k+1} = \Delta t_{k}`
+
+where :math:`\Delta t_{k}` is the previous timestep and :math:`N_k` is the number of nonlinear 
+iterations required to solve step :math:`k`.
+
+The time step controller *smart* is based on *standard*, but also tries to be a bit 
+smarter to avoid repeated increase/decrease loops where the step size decreases, 
+converges in few iterations, increases, but then fails again.  It also tries to grow 
+the time step geometrically to more quickly recover from tricky nonlinearities.
+
+The time step controller *from file* loads a timestep history from a file, then
+advances the step size with those values.  This is mostly used for testing
+purposes, where we need to force the same timestep history as previous runs to
+do regression testing.  Otherwise roundoff errors can eventually alter
+number of iterations enough to alter the timestep history, resulting in
+solutions which are enough different to cause doubt over their correctness.
+
+* `"time step controller type`" [list]
+  Available options are `"fixed`", `"standard`", `"smarter`",  `"adaptive`", and `"from file`"
+  The later is under development and is based on a posteriori error estimates.
+
+  * `"max preconditioner lag iterations`" [int] specifies frequency of 
+    preconditioner recalculation.
+
+  * `"extrapolate initial guess`" [bool] identifies forward time extrapolation
+    of the initial guess. Default is `"true`".
+
+  * `"restart tolerance relaxation factor`" [double] changes the nonlinear
+    tolerance. The time integrator is usually restarted when a boundary condition 
+    changes drastically. It may be beneficial to loosen the nonlinear 
+    tolerance on the first several time steps after the time integrator restart. 
+    The default value is 1, while a reasonable value may be as large as 1000. 
+
+  * `"restart tolerance relaxation factor damping`" controls how fast the loosened 
+    nonlinear tolerance will revert back to the one specified in `"nonlinear tolerance"`.
+    If the nonlinear tolerance is `"tol`", the relaxation factor is `"factor`", and 
+    the damping is `"d`", and the time step count is `"n`" then the actual nonlinear 
+    tolerance is `"tol * max(1.0, factor * d ** n)`".
+    The default value is 1, while reasonable values are between 0 and 1.
+
+  * `"time step increase factor`" [double] defines geometric grow rate for the
+    initial time step. This factor is applied when nonlinear solver converged
+    in less than `"min iterations`" iterations. 
+    This value can be modified geometrically by the smart controller in the 
+    case of repeated successful steps. Default is 1.
+
+  * `"min iterations`" [int]  triggers increase of the time step if the previous step 
+    took less than this.
+
+  * `"time step reduction factor`" [double] defines abrupt time step reduction
+    when nonlinear solver failed or did not converge in `"max iterations`" iterations.
+
+  * `"max iterations`" [int] itriggers decrease of the time step if the previous step 
+    took more than this.
+
+  * `"max time step`" [double] is the maximum allowed time step.
+
+  * `"min time step`" [double] is the minimum allowed time step.
+
+  * `"solver type`" [string] defines nonlinear solver used on each time step for
+    a nonlinear algebraic system :math:`F(x) = 0`. 
+    The available options `"aa`", `"nka`" and `"Newton`".
+
+  * `"nka parameters`" [list] internal parameters for the nonlinear
+    solver NKA.
+
+  * `"aa parameters`" [list] internal parameters for the nonlinear
+    solver AA (Anderson acceleration).
+
+  * `"file name`" [string] is the path to hdf5 file containing timestep information. 
+    The parameter is used by only one controller.
+
+  * `"timestep header`" [string] is the name of the dataset containing the history 
+    of timestep sizes. The parameter is used by only one controller.
+
+  * `"max time step increase factor`" [double] specifies the maximum value for 
+    parameter `"time step increase factor`" in the smart controller. Default is 10.
+
+  * `"growth wait after fail`" [int] defined the number of skipped timesteps before
+    attempting to grow the timestep after a failed timestep. 
+    This parameter is used by the smart controller only.
+
+  * `"count before increasing increase factor`" [int] defines the number of successive 
+    increasions before multiplying parameter `"time step increase factor`". 
+    This parameter is used by the smart controller only.
+ 
+  * `"residual debugger`" [list] a residual debugger specification.
+    
+.. code-block:: xml
+
+   <ParameterList name="Richards problem">  <!-- parent list -->
+     <ParameterList name="time integrator">
+       <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+       <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+       <Parameter name="restart tolerance relaxation factor" type="double" value="1000.0"/>
+       <Parameter name="restart tolerance relaxation factor damping" type="double" value="0.9"/>
+
+       <Parameter name="time integration method" type="string" value="BDF1"/>
+       <ParameterList name="BDF1">
+         <Parameter name="timestep controller type" type="string" value="standard"/>
+         <ParameterList name="timestep controller standard parameters">
+           <Parameter name="min iterations" type="int" value="10"/>
+           <Parameter name="max iterations" type="int" value="15"/>
+           <Parameter name="time step increase factor" type="double" value="1.2"/>
+           <Parameter name="time step reduction factor" type="double" value="0.5"/>
+           <Parameter name="max time step" type="double" value="1e+9"/>
+           <Parameter name="min time step" type="double" value="0.0"/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
+In this example, the time step is increased by factor 1.2 when the nonlinear
+solver converges in 10 or less iterations. 
+The time step is not changed when the number of nonlinear iterations is
+between 11 and 15.
+The time step will be cut twice if the number of nonlinear iterations exceeds 15.
 
 
 .. _Functions:

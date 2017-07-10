@@ -223,7 +223,7 @@ void Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
 /* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-void Electromagnetics::InitElectromagnetics_(Teuchos::ParameterList& plist)
+void Electromagnetics::Init_(Teuchos::ParameterList& plist)
 {
   // Determine discretization
   std::string primary = plist.get<std::string>("discretization primary");
@@ -328,15 +328,6 @@ void Electromagnetics::InitElectromagnetics_(Teuchos::ParameterList& plist)
     ASSERT(0);
   }
   global_op_->OpPushBack(local_op_);
-  
-  // mesh info
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nedges_owned = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::OWNED);
-
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  nedges_wghost = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::USED);
 
   K_ = Teuchos::null;
 }

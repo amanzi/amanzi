@@ -51,6 +51,7 @@ add_amanzi_library(operators_audit SOURCE OperatorAudit.cc LINK_LIBS ${flow_tpl_
 # Library: operators
 #
 set(operators_inc_files
+    Abstract.hh
     BCs.hh
     BCsList.hh
     RemapUtils.hh
@@ -119,6 +120,7 @@ add_amanzi_library(operators
                           Operator_ConsistentFace.cc
                           Operator_Schema.cc
                           PDE_Helper.cc
+                          Abstract.cc
                           DiffusionMFD.cc DiffusionMFDwithGravity.cc
                           DiffusionFV.cc DiffusionFVwithGravity.cc
                           DiffusionNLFV.cc DiffusionNLFVwithGravity.cc
@@ -199,6 +201,7 @@ if ( BUILD_TESTS )
                                         test/operator_diffusion_divk.cc
                                         test/operator_diffusion_nonsymmetric.cc
                                         test/operator_diffusion_nlfv.cc
+                                        test/operator_diffusion_curved.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_diffusion_3pe operators_diffusion NPROCS 3 KIND unit)

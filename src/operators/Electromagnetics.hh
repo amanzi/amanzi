@@ -22,38 +22,26 @@
 #include "BCsList.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
+#include "PDE_Helper.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class Electromagnetics : public BCsList {
+class Electromagnetics : public BCsList, public PDE_Helper {
  public:
   Electromagnetics(const Teuchos::RCP<Operator>& global_op) :
-      global_op_(global_op),
-      K_(Teuchos::null),
-      ncells_owned(-1),
-      ncells_wghost(-1),
-      nfaces_owned(-1),
-      nfaces_wghost(-1),
-      nedges_owned(-1),
-      nedges_wghost(-1)
-  {};
+      PDE_Helper(global_op),
+      K_(Teuchos::null) {};
 
   Electromagnetics(Teuchos::ParameterList& plist,
                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      PDE_Helper(mesh),
       plist_(plist),
-      mesh_(mesh),
-      K_(Teuchos::null),
-      global_op_(Teuchos::null),
-      ncells_owned(-1),
-      ncells_wghost(-1),
-      nfaces_owned(-1),
-      nfaces_wghost(-1),
-      nedges_owned(-1),
-      nedges_wghost(-1)
+      K_(Teuchos::null)
   {
+    global_op_ = Teuchos::null;
     operator_type_ = OPERATOR_ELECTROMAGNETICS;
-    InitElectromagnetics_(plist);
+    Init_(plist);
   }
 
   // main virtual members
@@ -75,8 +63,6 @@ class Electromagnetics : public BCsList {
   virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt) {};
 
   // access
-  Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
-  Teuchos::RCP<Operator> global_operator() { return global_op_; }
   int schema_prec_dofs() { return global_op_schema_; }
 
   Teuchos::RCP<const Op> local_matrices() const { return local_op_; }
@@ -84,7 +70,7 @@ class Electromagnetics : public BCsList {
   int schema_dofs() { return local_op_schema_; }
 
  protected:
-  void InitElectromagnetics_(Teuchos::ParameterList& plist);
+  void Init_(Teuchos::ParameterList& plist);
   void ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
                       const Teuchos::Ptr<BCs>& bc_e, bool primary, bool eliminate);
 
@@ -93,16 +79,7 @@ class Electromagnetics : public BCsList {
   bool K_symmetric_;
 
   // operator
-  Teuchos::RCP<Operator> global_op_;
-  Teuchos::RCP<Op> local_op_;
   int global_op_schema_, local_op_schema_;
-  OperatorType operator_type_;
-
-  // mesh info
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  int ncells_owned, ncells_wghost;
-  int nfaces_owned, nfaces_wghost;
-  int nedges_owned, nedges_wghost;
 
   // miscaleneous
   Teuchos::ParameterList plist_;

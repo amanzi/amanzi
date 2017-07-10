@@ -121,13 +121,6 @@ void DiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
     global_op_->OpPushBack(jac_op_);
   }  
 
-  // mesh info
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-
   // solution-independent data
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_);

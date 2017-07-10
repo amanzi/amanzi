@@ -91,7 +91,7 @@ void Elasticity::ApplyBCs(bool primary, bool eliminate)
 /* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-void Elasticity::InitElasticity_(Teuchos::ParameterList& plist)
+void Elasticity::Init_(Teuchos::ParameterList& plist)
 {
   // Read schema for the mimetic discretization method.
   Schema my_schema;

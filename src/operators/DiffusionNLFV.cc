@@ -93,14 +93,6 @@ void DiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
     Exceptions::amanzi_throw(msg);
   }
 
-
-  // mesh info
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-
   // other data
   dim_ = mesh_->space_dimension();
 }

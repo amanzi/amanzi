@@ -60,6 +60,11 @@ void PDE_Helper::PopulateDimensions_()
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+
+  if (mesh_->valid_edges()) {
+    nedges_owned = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::OWNED);
+    nedges_wghost = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::USED);
+  }
 }
 
 
