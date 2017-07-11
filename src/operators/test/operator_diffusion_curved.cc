@@ -60,8 +60,8 @@ void RunTestDiffusionCurved() {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-  RCP<const Mesh> mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 1,1,1, gm);
-  // RCP<const Mesh> mesh = meshfactory("test/random3D_05.exo", gm);
+  // RCP<const Mesh> mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 2,2,2, gm);
+  RCP<const Mesh> mesh = meshfactory("test/random3D_05.exo", gm);
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -78,9 +78,9 @@ void RunTestDiffusionCurved() {
   }
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
-  std::vector<double>& bc_value = bc->bc_value();
+  std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(3);
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -90,7 +90,9 @@ void RunTestDiffusionCurved() {
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
         fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value[f] = ana.pressure_exact(xf, 0.0);
+      bc_value[f][0] = ana.pressure_exact(xf, 0.0);
+      bc_value[f][1] = 0.0;
+      bc_value[f][2] = 0.0;
     }
   }
 
@@ -173,8 +175,8 @@ void RunTestDiffusionCurved() {
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
         pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
 
-    CHECK(pl2_err < 1e-12 && ul2_err < 1e-6);
-    CHECK(solver.num_itrs() < 1000);
+    CHECK(pl2_err < 0.01 && ul2_err < 0.1);
+    CHECK(solver.num_itrs() < 200);
   }
 }
 

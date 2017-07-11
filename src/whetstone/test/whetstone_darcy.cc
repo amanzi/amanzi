@@ -202,7 +202,8 @@ TEST(DARCY_MASS_3D_GENERALIZED_POYHEDRON) {
 
   int nfaces = 6, cell = 0;
   double volume = mesh->cell_volume(cell);
-  DenseMatrix M;
+  DenseMatrix N, R, M;
+  DenseMatrix B(3, 3);
 
   Tensor T(3, 2);
   T(0, 0) = 0.5;
@@ -210,6 +211,19 @@ TEST(DARCY_MASS_3D_GENERALIZED_POYHEDRON) {
   T(2, 2) = 0.103448275862069;
   T(1, 2) = T(2, 1) = -0.03448275862069;
 
+  // consistency condition
+  mfd.L2consistencyGeneralized(cell, T, N, M, true);
+  mfd.L2consistencyInverseGeneralized(cell, T, R, M, true);
+ 
+  B.Multiply(N, R, true);
+  for (int i = 0; i < 3; ++i) { 
+    for (int j = 0; j < 3; ++j) { 
+      double tmp = (i == j) ? volume : 0.0;
+      CHECK_CLOSE(B(i, j), tmp, 1e-6);
+    }
+  }
+
+  // mass matrix
   mfd.MassMatrixGeneralized(cell, T, M);
 
   printf("Mass matrix for cell %3d  volume=%12.4f\n", cell, volume);

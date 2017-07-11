@@ -276,6 +276,25 @@ void DenseMatrix::MaxRowMagnitude(int irow, int jmin, int jmax, int* j, double* 
 
 
 /* ******************************************************************
+* Second level routine: transpose
+****************************************************************** */
+void DenseMatrix::Transpose(const DenseMatrix& A) 
+{
+  const double* dataA = A.Values();
+  int mrowsA = A.NumRows(), ncolsA = A.NumCols();
+
+  Reshape(ncolsA, mrowsA);
+
+  for (int j = 0; j < ncolsA; ++j) {
+    for (int i = 0; i < mrowsA; ++i) {
+      *(data_ + i * ncolsA + j) = *dataA;
+      dataA++; 
+    }
+  } 
+}
+
+
+/* ******************************************************************
 * Second level routine: inversion
 ****************************************************************** */
 int DenseMatrix::Inverse() 

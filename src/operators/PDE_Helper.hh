@@ -54,6 +54,9 @@ class PDE_Helper : public BCsList {
   void ApplyBCs_Cell_Point_(const Teuchos::Ptr<BCs>& bc, Teuchos::RCP<Op> op,
                             bool primary, bool eliminate);
 
+  void ApplyBCs_Cell_Vector_(const Teuchos::Ptr<BCs>& bc, Teuchos::RCP<Op> op,
+                             bool primary, bool eliminate);
+
  private:
   void PopulateDimensions_();
 
