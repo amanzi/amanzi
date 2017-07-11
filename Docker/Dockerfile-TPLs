@@ -29,8 +29,10 @@ RUN git clone https://github.com/amanzi/amanzi.git
 ENV PATH=/home/amanzi_user/local/tpls/bin:$PATH 
 WORKDIR /home/amanzi_user/amanzi
 RUN git checkout alexis/docker
+RUN git pull
 RUN ./bootstrap.sh --prefix=/home/amanzi_user/local \
   --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
   --tpl-build-dir=/home/amanzi_user/amanzi_builddir/tpls \
   --tpl-download-dir=/home/amanzi_user/amanzi_builddir/tpls/Downloads \
-  --enable-tpls_only
+  --enable-tpls_only && rm -r /home/amanzi_user/amanzi_builddir
+
