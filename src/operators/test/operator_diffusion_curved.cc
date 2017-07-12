@@ -28,8 +28,7 @@
 #include "Tensor.hh"
 
 // Operators
-#include "Analytic00.hh"
-#include "Analytic01.hh"
+#include "Analytic02.hh"
 
 #include "Abstract.hh"
 #include "OperatorDefs.hh"
@@ -69,7 +68,7 @@ void RunTestDiffusionCurved() {
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
-  Analytic00 ana(mesh, 1.0, 1.0);
+  Analytic02 ana(mesh);
 
   for (int c = 0; c < ncells_owned; c++) {
     const Point& xc = mesh->cell_centroid(c);
