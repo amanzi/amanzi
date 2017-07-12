@@ -1014,6 +1014,8 @@ void MFD3D_Diffusion::CurvedFaceGeometry_(
   vv[1] = v1 / norm(v1);
   vv[2] = normal^vv[1];
 
+  vv[0] *= dirs;  // exterior average normal
+
   // geometric center. We cannot use face_centroid
   Entity_ID_List nodes;
   mesh_->face_get_nodes(f, &nodes);
@@ -1045,15 +1047,13 @@ void MFD3D_Diffusion::CurvedFaceGeometry_(
     area += norm(v3) / 2;
 
     for (int k = 0; k < 3; ++k) {
-      double s = (vv[k] * v3) / 2;
+      double s = dirs * (vv[k] * v3) / 2;
       xm[k] += s * (xf + p1 + p2) / 3;
     }
   }
   xm[0] /= area;
   xm[1] /= area;
   xm[2] /= area;
-
-  vv[0] *= dirs;
 }
 
 
@@ -1081,8 +1081,8 @@ void MFD3D_Diffusion::HybridizeGeneralized(
 
     double tmp = mesh_->face_area(f);  
     area(d_ * i) = tmp;
-    area(d_ * i + 1) = tmp;
-    area(d_ * i + 2) = tmp;
+    area(d_ * i + 1) = tmp * dirs[i];
+    area(d_ * i + 2) = tmp * dirs[i];
   }
     
   // populate stiffness matrix

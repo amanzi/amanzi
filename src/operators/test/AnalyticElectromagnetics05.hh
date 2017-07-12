@@ -16,7 +16,7 @@
 
 #include "AnalyticElectromagneticsBase.hh"
 
-const double ct = 2.0;
+const double ct = 0.5;
 
 class AnalyticElectromagnetics05 : public AnalyticElectromagneticsBase {
  public:

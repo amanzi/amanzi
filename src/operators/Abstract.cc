@@ -102,6 +102,7 @@ void Abstract::UpdateMatrices()
     if (K_.get()) Kc = (*K_)[c];
     mfd.MassMatrixInverseGeneralized(c, Kc, Wcell);
     mfd.HybridizeGeneralized(c, Wcell, Acell);
+// if(c==62) std::cout << Acell << std::endl;
 
     matrix[c] = Acell;
   }

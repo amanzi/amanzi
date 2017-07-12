@@ -55,7 +55,8 @@ class ElectromagneticsMHD : public Electromagnetics {
   virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt);
 
   // physical quantities
-  // -- magnetic energy
+  // -- energies
+  virtual double CalculateOhmicHeating(const CompositeVector& E);
   double CalculateMagneticEnergy(const CompositeVector& B);
 
   // -- divergence

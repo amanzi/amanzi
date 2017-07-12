@@ -194,9 +194,11 @@ void ResistiveMHD2D(double dt, double tend,
     CompositeVector& rhs = *global_op->rhs();
     int ierr = solver.ApplyInverse(rhs, E);
 
+    double heat = op_mhd->CalculateOhmicHeating(E);
     double energy = op_mhd->CalculateMagneticEnergy(B);
     op_mhd->ModifyFields(E, B, dt);
 
+    CHECK(heat > 0.0);
     // CHECK(energy < energy0);
     energy0 = energy;
 
@@ -243,6 +245,7 @@ void ResistiveMHD2D(double dt, double tend,
     if (MyPID == 0) {
       std::cout << "time: " << told << "  ||r||=" << solver.residual() 
                 << " itr=" << solver.num_itrs() << "  energy= " << energy 
+                << "  heat= " << heat
                 << "  avgB=" << avgB / ncells_owned 
                 << "  divB=" << std::pow(divB, 0.5) 
                 << "  ||B||=" << std::pow(errB, 0.5) << std::endl;
@@ -442,9 +445,11 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
     CompositeVector& rhs = *global_op->rhs();
     int ierr = solver.ApplyInverse(rhs, E);
 
+    double heat = op_mhd->CalculateOhmicHeating(E);
     double energy = op_mhd->CalculateMagneticEnergy(B);
     op_mhd->ModifyFields(E, B, dt);
 
+    CHECK(heat > 0.0);
     if (!convergence) CHECK(energy < energy0);
     energy0 = energy;
 
@@ -526,6 +531,7 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
     if (MyPID == 0) {
       std::cout << "time: " << told << "  ||r||=" << solver.residual() 
                 << " itr=" << solver.num_itrs() << "  energy= " << energy 
+                << "  heat= " << heat
                 << "  avgB=" << avgB / ncells_owned 
                 << "  divB=" << std::pow(divB, 0.5) 
                 << "  errB=" << std::pow(errB, 0.5) << std::endl;

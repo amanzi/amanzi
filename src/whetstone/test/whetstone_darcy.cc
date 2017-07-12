@@ -197,6 +197,7 @@ TEST(DARCY_MASS_3D_GENERALIZED_POYHEDRON) {
   meshfactory.preference(FrameworkPreference({MSTK}));
   // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
   Teuchos::RCP<Mesh> mesh = meshfactory("test/hex_random.exo"); 
+  // Teuchos::RCP<Mesh> mesh = meshfactory("test/random3D_05.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
 

@@ -14,7 +14,8 @@
 // TPLs
 #include "Epetra_Vector.h"
 
-// Amanzi::Operators
+#include "DeRham_Node.hh"
+
 #include "ElectromagneticsMHD_TM.hh"
 #include "Op.hh"
 
@@ -210,6 +211,32 @@ void ElectromagneticsMHD_TM::ApplyBCs_Node_(const Teuchos::Ptr<BCs>& bc_f,
   } 
 
   global_op_->rhs()->GatherGhostedToMaster("node", Add);
+}
+
+
+/* ******************************************************************
+* Calculates Ohmic heating
+****************************************************************** */
+double ElectromagneticsMHD_TM::CalculateOhmicHeating(const CompositeVector& E)
+{
+  const Epetra_MultiVector& Ev = *E.ViewComponent("node", true);
+
+  AmanziMesh::Entity_ID_List nodes;
+
+  double energy(0.0);
+  for (int c = 0; c < ncells_owned; ++c) {
+    mesh_->cell_get_nodes(c, &nodes);
+    int nnodes = nodes.size();
+
+    double volume = mesh_->cell_volume(c);
+    double tmp = volume / (*K_)[c](0, 0) / nnodes;
+    for (int n = 0; n < nnodes; ++n) {
+      int v = nodes[n];
+      energy += Ev[0][v] * Ev[0][v] * tmp;
+    }
+  }
+
+  return energy;
 }
 
 }  // namespace Operators

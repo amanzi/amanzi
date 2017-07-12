@@ -169,6 +169,17 @@ void RunTestDiffusionCurved() {
   // op->UpdateFlux(solution, flux);
   // ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
+  double totvol(0.0);
+  AmanziGeometry::Point center(3);
+  for (int c = 0; c < ncells_owned; c++) {
+    double vol = mesh->cell_volume(c);
+    totvol += vol;
+    center += mesh->cell_centroid(c) * vol;
+  }
+  center /= totvol;
+  std::cout << "Domain center:" << center << std::endl;
+  std::cout << "Volume error: " << 1.0 - totvol << std::endl;
+
   if (MyPID == 0) {
     pl2_err /= pnorm; 
     ul2_err /= unorm;

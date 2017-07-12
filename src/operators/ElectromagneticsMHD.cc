@@ -142,7 +142,40 @@ void ElectromagneticsMHD::ModifyFields(
 
 
 /* ******************************************************************
-* Put here stuff that has to be done in constructor.
+* Calculates Ohmic heating
+****************************************************************** */
+double ElectromagneticsMHD::CalculateOhmicHeating(const CompositeVector& E)
+{
+  const Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
+
+  AmanziMesh::Entity_ID_List edges;
+  WhetStone::MFD3D_Electromagnetics mfd(mesh_);
+
+  double energy(0.0);
+  for (int c = 0; c < ncells_owned; ++c) {
+    mesh_->cell_get_edges(c, &edges);
+    int nedges = edges.size();
+
+    WhetStone::DenseMatrix Mcell;
+    mfd.MassMatrix(c, (*K_)[c], Mcell);
+
+    WhetStone::DenseVector v1(nedges), v2(nedges);
+
+    for (int n = 0; n < nedges; ++n) {
+      int e = edges[n];
+      v1(n) = Ee[0][e];
+    }
+
+    Mcell.Multiply(v1, v2, false);
+    energy += v1 * v2;
+  }
+
+  return energy;
+}
+
+
+/* ******************************************************************
+* Calculates integral of 1/2 |B|^2
 ****************************************************************** */
 double ElectromagneticsMHD::CalculateMagneticEnergy(const CompositeVector& B)
 {

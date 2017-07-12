@@ -42,6 +42,9 @@ class ElectromagneticsMHD_TM : public ElectromagneticsMHD {
   // -- after solving the problem
   virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt);
 
+  // -- postprocessing
+  virtual double CalculateOhmicHeating(const CompositeVector& E);
+
  private:
   void ApplyBCs_Node_(const Teuchos::Ptr<BCs>& bc_f,
                       const Teuchos::Ptr<BCs>& bc_v, bool primary, bool eliminate);
