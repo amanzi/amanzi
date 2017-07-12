@@ -76,9 +76,9 @@ if ( BUILD_TESTS )
     set(amanzi_libs geometry mesh mesh_audit mesh_factory whetstone)
 
     # Test: matrices for diffusion
-    add_amanzi_test(whetstone_darcy whetstone_darcy
+    add_amanzi_test(whetstone_diffusion whetstone_diffusion
                     KIND unit
-                    SOURCE test/Main.cc test/whetstone_darcy.cc
+                    SOURCE test/Main.cc test/whetstone_diffusion.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for elasticity
