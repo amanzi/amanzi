@@ -34,5 +34,6 @@ RUN ./bootstrap.sh --prefix=/home/amanzi_user/local \
   --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
   --tpl-build-dir=/home/amanzi_user/amanzi_builddir/tpls \
   --tpl-download-dir=/home/amanzi_user/amanzi_builddir/tpls/Downloads \
-  --enable-tpls_only && rm -r /home/amanzi_user/amanzi_builddir
+  --enable-tpls_only \
+  && rm -r /home/amanzi_user/amanzi_builddir
 
