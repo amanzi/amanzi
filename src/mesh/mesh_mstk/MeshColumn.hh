@@ -298,7 +298,7 @@ class MeshColumn : public Mesh {
              const AmanziGeometry::Point_List& new_positions,
              const bool keep_valid,
              AmanziGeometry::Point_List *final_positions) {
-    return extracted_deform(nodeids, new_positions, keep_valid, final_positions);
+    return extracted_.deform(nodeids, new_positions, keep_valid, final_positions);
   }
 
   // Deform a mesh so that cell volumes conform as closely as possible
