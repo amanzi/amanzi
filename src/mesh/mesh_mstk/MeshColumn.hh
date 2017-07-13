@@ -290,6 +290,17 @@ class MeshColumn : public Mesh {
   }
 
 
+  // Deform the mesh by moving given nodes to given coordinates
+  // If the flag keep_valid is true, then the nodes are moved
+  // only as much as possible without making the mesh invalid
+  // The final positions of the nodes is returned in final_positions
+  int deform(const Entity_ID_List& nodeids,
+             const AmanziGeometry::Point_List& new_positions,
+             const bool keep_valid,
+             AmanziGeometry::Point_List *final_positions) {
+    return extracted_deform(nodeids, new_positions, keep_valid, final_positions);
+  }
+
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If
   // move_vertical = true, nodes will be allowed to move only in the
