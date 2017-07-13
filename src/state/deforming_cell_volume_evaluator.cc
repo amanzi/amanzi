@@ -24,19 +24,14 @@ DeformingCellVolumeEvaluator::DeformingCellVolumeEvaluator(
 
   my_key_ = plist.get<std::string>("evaluator name", "cell_volume");
 
-  if (plist.isParameter("mesh name")) {
-    my_mesh_ = plist.get<std::string>("mesh name");
-  } else if (my_key_ == std::string("cell_volume")) {
+  my_mesh_ = Keys::getDomain(my_key_);
+  my_mesh_ = plist.get<std::string>("mesh name", my_mesh_);
+  if (my_mesh_.empty()) {
     my_mesh_ = "domain";
-  } else if (my_key_.length() > std::string("cell_volume").length()) {
-    my_mesh_ = my_key_.substr(0,my_key_.length()
-            - std::string("cell_volume").length()-1);
-  } else {
-    ASSERT(0);
   }
 
   // stick in the deformation key as my leaf node.
-  Key deformation_key = plist.get<std::string>("deformation key");
+  Key deformation_key = Keys::readKey(plist, Keys::getDomain(my_key_), "deformation key", "base_porosity");
   dependencies_.insert(deformation_key);
 }
 
