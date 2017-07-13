@@ -24,7 +24,7 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorBelosGMRES.hh"
 #include "Tensor.hh"
 
 // Amanzi::Operators
@@ -57,12 +57,8 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
                                         .sublist("diffusion operator nlfv");
 
   // create an MSTK mesh framework
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2, NULL);
   Teuchos::RCP<const Mesh> mesh = meshfactory("test/random10.exo");
 
@@ -97,8 +93,6 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
       double area = mesh->face_area(f);
       bc_model[f] = OPERATOR_BC_NEUMANN;
       bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
-      bc_model[f] = OPERATOR_BC_DIRICHLET;
-      bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
 
@@ -142,13 +136,14 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
     global_op->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem
-    Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create("Belos GMRES", lop_list, global_op);
+    Teuchos::ParameterList lop_list = plist.sublist("solvers")
+                                  .sublist("Belos GMRES").sublist("belos gmres parameters");
+    AmanziSolvers::LinearOperatorBelosGMRES<Operator, CompositeVector, CompositeVectorSpace>
+        solver(global_op, global_op);
+    solver.Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
-    int ierr = solver->ApplyInverse(rhs, *solution);
+    int ierr = solver.ApplyInverse(rhs, *solution);
 
     // compute pressure error
     Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
@@ -173,10 +168,10 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
       ul2_err /= unorm;
       printf("L2(p)=%10.4e  Inf(p)=%10.4e  L2(u)=%10.4e  Inf(u)=%10.4e  (itr=%d ||r||=%10.4e code=%d)\n",
           pl2_err, pinf_err, ul2_err, uinf_err,
-          solver->num_itrs(), solver->residual(), solver->returned_code());
+          solver.num_itrs(), solver.residual(), solver.returned_code());
 
-      if (testing) CHECK(pl2_err < 0.1 / (loop + 1) && ul2_err < 0.4 / (loop + 1));
-      CHECK(solver->num_itrs() < 15);
+      if (testing) CHECK(pl2_err < 0.2 / (loop + 1) && ul2_err < 0.4 / (loop + 1));
+      CHECK(solver.num_itrs() < 15);
     }
   }
 }
