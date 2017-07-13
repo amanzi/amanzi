@@ -467,11 +467,11 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
     if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
       Epetra_MultiVector& pres = *pres_cv->ViewComponent("cell",false);
       Key key_ss;
-      if (boost::starts_with(domain_, "surface")) {
+      if (boost::starts_with(domain_, "surface") && domain_.find("column") != std::string::npos) {
         key_ss = ic_plist.get<std::string>("subsurface pressure key",
                 Keys::getKey(domain_.substr(8,domain_.size()), "pressure"));
       } else {
-        key_ss = ic_plist.get<std::string>("subsurface pressure key");
+        key_ss = ic_plist.get<std::string>("subsurface pressure key", "pressure");
       }
       const Epetra_MultiVector& subsurf_pres = *S->GetFieldData(key_ss)
         ->ViewComponent("face",false);

@@ -320,6 +320,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     ss_flux_key_ = Keys::readKey(*plist_, domain_surf, "surface-subsurface flux", "surface_subsurface_flux");
     S->RequireField(ss_flux_key_)->SetMesh(S->GetMesh(domain_surf))
       ->AddComponent("cell", AmanziMesh::CELL, 1);
+    std::cout<<"RICHARDS: "<<ss_flux_key_<<" "<<coupled_to_surface_via_flux_<<"\n";
   }
 
   // -- coupling done by a Dirichlet condition
@@ -1014,7 +1015,6 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
    
     Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh(Keys::getDomain(ss_flux_key_));
     const Epetra_MultiVector& flux = *S->GetFieldData(ss_flux_key_)->ViewComponent("cell",false);
- 
     unsigned int ncells_surface = flux.MyLength();
     bc_counts[bc_counts.size()-1] = ncells_surface;
     for (unsigned int c=0; c!=ncells_surface; ++c) {

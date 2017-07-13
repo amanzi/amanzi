@@ -35,15 +35,15 @@ VolumetricDeformation::VolumetricDeformation(Teuchos::ParameterList& pk_tree,
                         const Teuchos::RCP<State>& S,
                         const Teuchos::RCP<TreeVector>& solution):
   PK(pk_tree, glist,  S, solution),
-  PK_Physical_Default(pk_tree, glist,  S, solution){
+  PK_Physical_Default(pk_tree, glist,  S, solution),
+  surf_mesh_(Teuchos::null)
+{
 
   dt_ = plist_->get<double>("max time step [s]", 1.e80);
   dt_max_ = dt_;
 
-  Key pvar = plist_->get<std::string>("primary variable","base_porosity");
-  std::cout<<"VOLD: "<<pvar<<std::endl;
-  domain_ = getDomain(pvar);
-  
+  domain_ = Keys::getDomain(key_);
+
   // The deformation mode describes how to calculate new cell volume from a
   // provided function and the old cell volume.
   std::string mode_name = plist_->get<std::string>("deformation mode", "prescribed");
@@ -91,15 +91,14 @@ void VolumetricDeformation::Setup(const Teuchos::Ptr<State>& S) {
   PK_Physical_Default::Setup(S);
 
   // save the meshes
+  std::cout<<"VOLUM: Setup "<<domain_<<" "<<key_<<"\n";
   mesh_nc_ = S->GetDeformableMesh(domain_);
   
-  if (domain_.substr(0,6) == "column")
-    domain_surf_ = domain_ + "_surface";
-  else
-    domain_surf_ = "surface";
-  
-  if (S->HasMesh(domain_surf_)) {
+  domain_surf_ = "";
+  if (!boost::starts_with(domain_, "surface_column")) domain_surf_ = "surface";
+  domain_surf_ = plist_->get<std::string>("surface domain name", domain_surf_);
 
+  if (!domain_surf_.empty() && S->HasMesh(domain_surf_)) {
     surf_mesh_ = S->GetMesh(domain_surf_);
     surf3d_mesh_ = S->GetMesh("surface_3d");
     surf_mesh_nc_ = S->GetDeformableMesh(domain_surf_);
@@ -110,7 +109,7 @@ void VolumetricDeformation::Setup(const Teuchos::Ptr<State>& S) {
   S->RequireField(key_, name_)->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
 
   // Create storage and a function for cell volume change
-  Teuchos::RCP<CompositeVectorSpace> cv_fac =  S->RequireField(getKey(domain_,"cell_volume_change"), name_);
+  Teuchos::RCP<CompositeVectorSpace> cv_fac =  S->RequireField(Keys::getKey(domain_,"cell_volume_change"), name_);
   cv_fac->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
 
   switch(deform_mode_) {
@@ -122,14 +121,14 @@ void VolumetricDeformation::Setup(const Teuchos::Ptr<State>& S) {
     }
 
     case (DEFORM_MODE_SATURATION, DEFORM_MODE_STRUCTURAL): {
-      S->RequireField(getKey(domain_,"saturation_liquid"))->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
-      S->RequireFieldEvaluator(getKey(domain_,"saturation_liquid"));
-      S->RequireField(getKey(domain_,"saturation_ice"))->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
-      S->RequireFieldEvaluator(getKey(domain_,"saturation_ice"));
-      S->RequireField(getKey(domain_,"saturation_gas"))->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
-      S->RequireFieldEvaluator(getKey(domain_,"saturation_gas"));
-      S->RequireField(getKey(domain_,"porosity"))->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
-      S->RequireFieldEvaluator(getKey(domain_,"porosity"));
+      S->RequireField(Keys::getKey(domain_,"saturation_liquid"))->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
+      S->RequireFieldEvaluator(Keys::getKey(domain_,"saturation_liquid"));
+      S->RequireField(Keys::getKey(domain_,"saturation_ice"))->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
+      S->RequireFieldEvaluator(Keys::getKey(domain_,"saturation_ice"));
+      S->RequireField(Keys::getKey(domain_,"saturation_gas"))->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
+      S->RequireFieldEvaluator(Keys::getKey(domain_,"saturation_gas"));
+      S->RequireField(Keys::getKey(domain_,"porosity"))->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
+      S->RequireFieldEvaluator(Keys::getKey(domain_,"porosity"));
       
       break;
     }
@@ -142,21 +141,21 @@ void VolumetricDeformation::Setup(const Teuchos::Ptr<State>& S) {
   // we need to checkpoint those to be able to create
   // the deformed mesh after restart
   int dim = mesh_->space_dimension();
-  S->RequireField(getKey(domain_,"vertex_coordinate"), name_)
+  S->RequireField(Keys::getKey(domain_,"vertex_coordinate"), name_)
       ->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("node", AmanziMesh::NODE, dim);
-  if (S->HasMesh(domain_surf_)) {
-    S->RequireField(getKey(domain_,"vertex_coordinate_surface_3d"), name_)
+  if (surf_mesh_ != Teuchos::null) {
+    S->RequireField(Keys::getKey("surface_3d","vertex_coordinate"), name_)
         ->SetMesh(surf3d_mesh_)->SetGhosted()
         ->SetComponent("node", AmanziMesh::NODE, dim);
     
-    S->RequireField(getKey(domain_surf_,"vertex_coordinate"), name_)
+    S->RequireField(Keys::getKey(domain_surf_,"vertex_coordinate"), name_)
         ->SetMesh(surf_mesh_)->SetGhosted()
         ->SetComponent("node", AmanziMesh::NODE, dim-1);
   }
 
-  S->RequireField(getKey(domain_,"cell_volume"))->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(getKey(domain_,"cell_volume"));
+  S->RequireField(Keys::getKey(domain_,"cell_volume"))->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"cell_volume"));
 
   // Strategy-specific setup
   switch (strategy_) {
@@ -176,26 +175,26 @@ void VolumetricDeformation::Setup(const Teuchos::Ptr<State>& S) {
       }
 
       // create storage for the nodal deformation
-      S->RequireField("nodal_dz", name_)->SetMesh(mesh_)->SetGhosted()
+      S->RequireField(Keys::getKey(domain_,"nodal_dz"), name_)->SetMesh(mesh_)->SetGhosted()
           ->SetComponent("node", AmanziMesh::NODE, 1);
       break;
     }
     case (DEFORM_STRATEGY_MSTK) : {
-      S->RequireField(getKey(domain_,"saturation_ice"))->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
-      S->RequireFieldEvaluator(getKey(domain_,"saturation_ice"));
+      S->RequireField(Keys::getKey(domain_,"saturation_ice"))->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
+      S->RequireFieldEvaluator(Keys::getKey(domain_,"saturation_ice"));
 
-      S->RequireField(getKey(domain_,"porosity"))->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
-      S->RequireFieldEvaluator(getKey(domain_,"porosity"));
+      S->RequireField(Keys::getKey(domain_,"porosity"))->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
+      S->RequireFieldEvaluator(Keys::getKey(domain_,"porosity"));
       break;
     }
       
     case (DEFORM_STRATEGY_AVERAGE) : {
       // create storage for the nodal deformation, and count for averaging
-      S->RequireField("nodal_dz", name_)->SetMesh(mesh_)->SetGhosted()
+      S->RequireField(Keys::getKey(domain_,"nodal_dz"), name_)->SetMesh(mesh_)->SetGhosted()
           ->SetComponent("node", AmanziMesh::NODE, 3);
 
       // create cell-based storage for deformation of the face above the cell
-      S->RequireField(getKey(domain_,"face_above_deformation"), name_)->SetMesh(mesh_)
+      S->RequireField(Keys::getKey(domain_,"face_above_deformation"), name_)->SetMesh(mesh_)
           ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
       break;
     }
@@ -210,82 +209,83 @@ void VolumetricDeformation::Initialize(const Teuchos::Ptr<State>& S) {
   PK_Physical_Default::Initialize(S);
 
   // initialize the deformation
-  S->GetFieldData(getKey(domain_,"cell_volume_change"),name_)->PutScalar(0.);
-  S->GetField(getKey(domain_,"cell_volume_change"),name_)->set_initialized();
+  S->GetFieldData(Keys::getKey(domain_,"cell_volume_change"),name_)->PutScalar(0.);
+  S->GetField(Keys::getKey(domain_,"cell_volume_change"),name_)->set_initialized();
 
   switch (strategy_) {
     case (DEFORM_STRATEGY_GLOBAL_OPTIMIZATION) : {
       // initialize the initial displacement to be zero
-      S->GetFieldData("nodal_dz",name_)->PutScalar(0.);
-      S->GetField("nodal_dz",name_)->set_initialized();
+      S->GetFieldData(Keys::getKey(domain_,"nodal_dz"),name_)->PutScalar(0.);
+      S->GetField(Keys::getKey(domain_,"nodal_dz"),name_)->set_initialized();
       break;
     }
     case (DEFORM_STRATEGY_AVERAGE) : {
       // initialize the initial displacement to be zero
-      S->GetFieldData("nodal_dz",name_)->PutScalar(0.);
-      S->GetField("nodal_dz",name_)->set_initialized();
-      S->GetFieldData(getKey(domain_,"face_above_deformation"),name_)->PutScalar(0.);
-      S->GetField(getKey(domain_,"face_above_deformation"),name_)->set_initialized();
+      S->GetFieldData(Keys::getKey(domain_,"nodal_dz"),name_)->PutScalar(0.);
+      S->GetField(Keys::getKey(domain_,"nodal_dz"),name_)->set_initialized();
+      S->GetFieldData(Keys::getKey(domain_,"face_above_deformation"),name_)->PutScalar(0.);
+      S->GetField(Keys::getKey(domain_,"face_above_deformation"),name_)->set_initialized();
       break;
     }
     default: {}
   }
-
+  if (!boost::starts_with(domain_,"surface"))
   { // initialize the vertex coordinate to the current mesh
     int dim = mesh_->space_dimension();
     AmanziGeometry::Point coords(dim);
     int nnodes = mesh_->num_entities(Amanzi::AmanziMesh::NODE,
             Amanzi::AmanziMesh::OWNED);
 
-    Epetra_MultiVector& vc = *S->GetFieldData(getKey(domain_,"vertex_coordinate"),name_)
+    Epetra_MultiVector& vc = *S->GetFieldData(Keys::getKey(domain_,"vertex_coordinate"),name_)
         ->ViewComponent("node",false);
     for (int iV=0; iV!=nnodes; ++iV) {
       // get the coords of the node
       mesh_->node_get_coordinates(iV,&coords);
       for (int s=0; s!=dim; ++s) vc[s][iV] = coords[s];
     }
-    S->GetField(getKey(domain_,"vertex_coordinate"),name_)->set_initialized();
+    S->GetField(Keys::getKey(domain_,"vertex_coordinate"),name_)->set_initialized();
   }
-
-  if (S->HasMesh(domain_surf_)) {
+  
+  if (surf_mesh_ != Teuchos::null) {
     // initialize the vertex coordinates of the surface meshes
     int dim = surf_mesh_->space_dimension();
     AmanziGeometry::Point coords(dim);
     int nnodes = surf_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
             Amanzi::AmanziMesh::OWNED);
-
-    Epetra_MultiVector& vc = *S->GetFieldData(getKey(domain_surf_,"vertex_coordinate"),name_)
+    
+    Epetra_MultiVector& vc = *S->GetFieldData(Keys::getKey(domain_surf_,"vertex_coordinate"),name_)
         ->ViewComponent("node",false);
     for (int iV=0; iV!=nnodes; ++iV) {
       // get the coords of the node
       surf_mesh_->node_get_coordinates(iV,&coords);
       for (int s=0; s!=dim; ++s) vc[s][iV] = coords[s];
     }
-    S->GetField(getKey(domain_surf_,"vertex_coordinate"),name_)->set_initialized();
+    S->GetField(Keys::getKey(domain_surf_,"vertex_coordinate"),name_)->set_initialized();
   }
-
+  
+  
   if (S->HasMesh("surface_3d")) {
     // initialize the vertex coordinates of the surface meshes
     int dim = surf3d_mesh_->space_dimension();
     AmanziGeometry::Point coords(dim);
     int nnodes = surf3d_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
             Amanzi::AmanziMesh::OWNED);
-
-    Epetra_MultiVector& vc = *S->GetFieldData(getKey(domain_,"vertex_coordinate_surface_3d"),name_)
+    
+    Epetra_MultiVector& vc = *S->GetFieldData(Keys::getKey("surface_3d","vertex_coordinate"),name_)
         ->ViewComponent("node",false);
     for (int iV=0; iV!=nnodes; ++iV) {
       // get the coords of the node
       surf3d_mesh_->node_get_coordinates(iV,&coords);
       for (int s=0; s!=dim; ++s) vc[s][iV] = coords[s];
     }
-    S->GetField(getKey(domain_,"vertex_coordinate_surface_3d"),name_)->set_initialized();
+    S->GetField(Keys::getKey("surface_3d","vertex_coordinate"),name_)->set_initialized();
   }
 
 }
 
 
 bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit) {
-
+  
   double dt = t_new - t_old;
 
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -302,7 +302,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // Collect data from state
   Teuchos::RCP<CompositeVector> dcell_vol_vec =
-    S_next_->GetFieldData(getKey(domain_,"cell_volume_change"), name_);
+    S_next_->GetFieldData(Keys::getKey(domain_,"cell_volume_change"), name_);
   dcell_vol_vec->PutScalar(0.);
 
   // Calculate the change in cell volumes
@@ -315,17 +315,17 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
 
     case (DEFORM_MODE_SATURATION): {
       const Epetra_MultiVector& cv =
-        *S_->GetFieldData(getKey(domain_,"cell_volume"))->ViewComponent("cell",true);
+        *S_->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",true);
       const Epetra_MultiVector& s_liq =
-        *S_->GetFieldData(getKey(domain_,"saturation_liquid"))->ViewComponent("cell",false);
+        *S_->GetFieldData(Keys::getKey(domain_,"saturation_liquid"))->ViewComponent("cell",false);
       const Epetra_MultiVector& s_ice =
-        *S_->GetFieldData(getKey(domain_,"saturation_ice"))->ViewComponent("cell",false);
+        *S_->GetFieldData(Keys::getKey(domain_,"saturation_ice"))->ViewComponent("cell",false);
       const Epetra_MultiVector& s_gas =
-        *S_->GetFieldData(getKey(domain_,"saturation_gas"))->ViewComponent("cell",false);      
+        *S_->GetFieldData(Keys::getKey(domain_,"saturation_gas"))->ViewComponent("cell",false);      
       const Epetra_MultiVector& poro =
-        *S_->GetFieldData(getKey(domain_,"porosity"))->ViewComponent("cell",false);
+        *S_->GetFieldData(Keys::getKey(domain_,"porosity"))->ViewComponent("cell",false);
       const Epetra_MultiVector& base_poro =
-        *S_->GetFieldData(getKey(domain_,"base_porosity"))->ViewComponent("cell",false);
+        *S_->GetFieldData(Keys::getKey(domain_,"base_porosity"))->ViewComponent("cell",false);
 
       Epetra_MultiVector& dcell_vol_c = *dcell_vol_vec->ViewComponent("cell",false);
       int dim = mesh_->space_dimension();
@@ -361,17 +361,17 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
     }
 
     case (DEFORM_MODE_STRUCTURAL): {
-      const Epetra_MultiVector& cv = *S_next_->GetFieldData(getKey(domain_,"cell_volume"))->ViewComponent("cell",true);
+      const Epetra_MultiVector& cv = *S_next_->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",true);
       const Epetra_MultiVector& s_liq =
-        *S_->GetFieldData(getKey(domain_,"saturation_liquid"))->ViewComponent("cell",false);
+        *S_->GetFieldData(Keys::getKey(domain_,"saturation_liquid"))->ViewComponent("cell",false);
       const Epetra_MultiVector& s_ice =
-        *S_->GetFieldData(getKey(domain_,"saturation_ice"))->ViewComponent("cell",false);
+        *S_->GetFieldData(Keys::getKey(domain_,"saturation_ice"))->ViewComponent("cell",false);
       const Epetra_MultiVector& s_gas =
-        *S_->GetFieldData(getKey(domain_,"saturation_gas"))->ViewComponent("cell",false);      
+        *S_->GetFieldData(Keys::getKey(domain_,"saturation_gas"))->ViewComponent("cell",false);      
       const Epetra_MultiVector& poro =
-        *S_->GetFieldData(getKey(domain_,"porosity"))->ViewComponent("cell",false);
+        *S_->GetFieldData(Keys::getKey(domain_,"porosity"))->ViewComponent("cell",false);
       const Epetra_MultiVector& base_poro =
-        *S_->GetFieldData(getKey(domain_,"base_porosity"))->ViewComponent("cell",false);
+        *S_->GetFieldData(Keys::getKey(domain_,"base_porosity"))->ViewComponent("cell",false);
 
       Epetra_MultiVector& dcell_vol_c = *dcell_vol_vec->ViewComponent("cell",false);
       int dim = mesh_->space_dimension();
@@ -435,14 +435,14 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
     case (DEFORM_STRATEGY_MSTK) : {
       // collect needed data, ghosted
       // -- cell vol
-      Teuchos::RCP<const CompositeVector> cv_vec = S_->GetFieldData(getKey(domain_,"cell_volume"));
+      Teuchos::RCP<const CompositeVector> cv_vec = S_->GetFieldData(Keys::getKey(domain_,"cell_volume"));
       const Epetra_MultiVector& cv = *cv_vec->ViewComponent("cell");
 
-      Teuchos::RCP<const CompositeVector> poro_vec = S_->GetFieldData(getKey(domain_,"porosity"));
+      Teuchos::RCP<const CompositeVector> poro_vec = S_->GetFieldData(Keys::getKey(domain_,"porosity"));
       const Epetra_MultiVector& poro = *poro_vec->ViewComponent("cell");
 
       const Epetra_MultiVector& s_ice =
-        *S_->GetFieldData(getKey(domain_,"saturation_ice"))->ViewComponent("cell",false);
+        *S_->GetFieldData(Keys::getKey(domain_,"saturation_ice"))->ViewComponent("cell",false);
     
       // -- dcell vol
       const Epetra_MultiVector& dcell_vol_c =
@@ -503,8 +503,8 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
 
 #if DEBUG
       // DEBUG CRUFT BEGIN
-      bool changed = S_next_->GetFieldEvaluator(getKey(domain_,"cell_volume")) -> HasFieldChanged(S_next_.ptr(), name_);
-      Teuchos::RCP<const CompositeVector> cv_vec_new = S_next_->GetFieldData(getKey(domain_,"cell_volume"));
+      bool changed = S_next_->GetFieldEvaluator(Keys::getKey(domain_,"cell_volume")) -> HasFieldChanged(S_next_.ptr(), name_);
+      Teuchos::RCP<const CompositeVector> cv_vec_new = S_next_->GetFieldData(Keys::getKey(domain_,"cell_volume"));
       const Epetra_MultiVector& cv_new = *cv_vec_new->ViewComponent("cell",false);
 
       for (int c=0; c!=ncells; ++c) {
@@ -524,11 +524,11 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
 
       const Epetra_MultiVector& dcell_vol_c =
 	*dcell_vol_vec->ViewComponent("cell",true);
-      Teuchos::RCP<const CompositeVector> cv_vec = S_->GetFieldData(getKey(domain_,"cell_volume"));
+      Teuchos::RCP<const CompositeVector> cv_vec = S_->GetFieldData(Keys::getKey(domain_,"cell_volume"));
       const Epetra_MultiVector& cv = *cv_vec->ViewComponent("cell");
       
 
-      Teuchos::RCP<CompositeVector> nodal_dz_vec = S_next_->GetFieldData("nodal_dz", name_);
+      Teuchos::RCP<CompositeVector> nodal_dz_vec = S_next_->GetFieldData(Keys::getKey(domain_,"nodal_dz"), name_);
       Epetra_MultiVector& nodal_dz = *nodal_dz_vec->ViewComponent("node", "true");
 
       nodal_dz.PutScalar(0.);
@@ -588,7 +588,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
 	ASSERT(AmanziGeometry::norm(p) >= 0.);
       }
 
-      Teuchos::RCP<const CompositeVector> cv_vec_new = S_next_->GetFieldData(getKey(domain_,"cell_volume"));
+      Teuchos::RCP<const CompositeVector> cv_vec_new = S_next_->GetFieldData(Keys::getKey(domain_,"cell_volume"));
       const Epetra_MultiVector& cv_new = *cv_vec_new->ViewComponent("cell",false);
       
 #if DEBUG
@@ -615,7 +615,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
 	ASSERT(AmanziGeometry::norm(p) >= 0.);
       }
 
-      bool changed = S_next_->GetFieldEvaluator(getKey(domain_,"cell_volume")) -> HasFieldChanged(S_next_.ptr(), name_);
+      bool changed = S_next_->GetFieldEvaluator(Keys::getKey(domain_,"cell_volume")) -> HasFieldChanged(S_next_.ptr(), name_);
 
       for (int c=0; c!=cv.MyLength(); ++c) {
         // min vol is rock vol + ice + a bit
@@ -635,7 +635,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   
-  Teuchos::RCP<const CompositeVector> cv_vec = S_->GetFieldData(getKey(domain_,"cell_volume"));
+  Teuchos::RCP<const CompositeVector> cv_vec = S_->GetFieldData(Keys::getKey(domain_,"cell_volume"));
   //cv_vec->ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& cv = *cv_vec->ViewComponent("cell",true);
 
@@ -676,7 +676,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
 
   {  // update vertex coordinates in state (for checkpointing and error recovery)
     Epetra_MultiVector& vc =
-      *S_next_->GetFieldData(getKey(domain_,"vertex_coordinate"),name_)
+      *S_next_->GetFieldData(Keys::getKey(domain_,"vertex_coordinate"),name_)
         ->ViewComponent("node",false);
     int dim = mesh_->space_dimension();
     int nnodes = vc.MyLength();
@@ -687,10 +687,10 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
     }
   }
 
-  if (S_next_->HasMesh(domain_surf_)) {
+  if (surf_mesh_ != Teuchos::null) {
     // update vertex coordinates in state (for checkpointing and error recovery)
     Epetra_MultiVector& vc =
-      *S_next_->GetFieldData(getKey(domain_surf_,"vertex_coordinate"),name_)
+      *S_next_->GetFieldData(Keys::getKey(domain_surf_,"vertex_coordinate"),name_)
         ->ViewComponent("node",false);
     int dim = surf_mesh_->space_dimension();
     int nnodes = vc.MyLength();
@@ -704,7 +704,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
   if (S_next_->HasMesh("surface_3d")) {
     // update vertex coordinates in state (for checkpointing and error recovery)
     Epetra_MultiVector& vc =
-        *S_next_->GetFieldData("vertex_coordinate_surface_3d",name_)
+      *S_next_->GetFieldData(Keys::getKey("surface_3d","vertex_coordinate"),name_)
         ->ViewComponent("node",false);
     int dim = surf3d_mesh_->space_dimension();
     int nnodes = vc.MyLength();
@@ -716,8 +716,8 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // update cell volumes, base porosity
-  S_next_->GetFieldEvaluator(getKey(domain_,"cell_volume")) -> HasFieldChanged(S_next_.ptr(), name_);
-  Teuchos::RCP<const CompositeVector> cv_vec_new = S_next_->GetFieldData(getKey(domain_,"cell_volume"));
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"cell_volume")) -> HasFieldChanged(S_next_.ptr(), name_);
+  Teuchos::RCP<const CompositeVector> cv_vec_new = S_next_->GetFieldData(Keys::getKey(domain_,"cell_volume"));
 
   cv_vec->ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& cv_new = *cv_vec_new->ViewComponent("cell",false);

@@ -85,20 +85,19 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   coupled_to_subsurface_via_flux_ =
       plist_->get<bool>("coupled to subsurface via flux", false);
   ASSERT(! (coupled_to_subsurface_via_flux_ && coupled_to_subsurface_via_temp_));
-
+  std::cout<<"ENERGY SURF_ICE-1:::  "<<coupled_to_subsurface_via_flux_<<" === "<<domain_<<std::endl;
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_ ) {
     // -- ensure mass source from subsurface exists
-
+    /*
     Key domain_ss;
-    if (domain_ == "surface") {
-      domain_ss = plist_->get<std::string>("subsurface domain name", "domain");
-    } else if (boost::starts_with(domain_, "surface")) {
+    if (boost::starts_with(domain_, "surface") && domain_.find("column") != std::string::npos) {
       domain_ss = plist_->get<std::string>("subsurface domain name",
               domain_.substr(8,domain_.size()));
     } else {
-      domain_ss = plist_->get<std::string>("subsurface domain name");
-    }      
+      domain_ss = plist_->get<std::string>("subsurface domain name", "domain");
+      } */     
     Key key_ss = Keys::getKey(domain_,"surface_subsurface_flux");
+    std::cout<<"ENERGY SURF_ICE: "<<key_ss<<" "<<domain_<<std::endl;
     S->RequireField(key_ss)
         ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
   }
@@ -141,11 +140,11 @@ void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
       Epetra_MultiVector& surf_temp = *surf_temp_cv->ViewComponent("cell",false);
 
       Key key_ss;
-      if (boost::starts_with(domain_, "surface")) {
+      if (boost::starts_with(domain_, "surface") && domain_.find("column") != std::string::npos) {
         key_ss = ic_plist.get<std::string>("subsurface temperature key",
                 Keys::getKey(domain_.substr(8,domain_.size()), "temperature"));
       } else {
-        key_ss = ic_plist.get<std::string>("subsurface temperature key");
+        key_ss = ic_plist.get<std::string>("subsurface temperature key", "temperature");
       }
       const Epetra_MultiVector& temp = *S->GetFieldData(key_ss)
         ->ViewComponent("face",false);
@@ -262,15 +261,13 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
   // -- advection source
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
 
-    std::string domain_ss;
-    if (domain_ == "surface") {
-      domain_ss = plist_->get<std::string>("subsurface domain name", "domain");
-    } else if (boost::starts_with(domain_, "surface")) {
+    Key domain_ss;
+    if (boost::starts_with(domain_, "surface")  && domain_.find("column") != std::string::npos) {
       domain_ss = plist_->get<std::string>("subsurface domain name",
               domain_.substr(8,domain_.size()));
     } else {
-      domain_ss = plist_->get<std::string>("subsurface domain name");
-    }      
+      domain_ss = plist_->get<std::string>("subsurface domain name", "domain");
+    }
 
     S->GetFieldEvaluator(Keys::getKey(domain_ss,"enthalpy"))->HasFieldChanged(S.ptr(), name_);
     S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);

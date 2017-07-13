@@ -107,7 +107,9 @@ void Coordinator::coordinator_init() {
   // check whether meshes are deformable, and if so require a nodal position
   for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
        mesh!=S_->mesh_end(); ++mesh) {
-    if (S_->IsDeformableMesh(mesh->first) && mesh->first != "domain" && mesh->first != "surface" && mesh->first != "surface_3d") {
+    bool surf = boost::starts_with(mesh->first, "surface_");
+    if (S_->IsDeformableMesh(mesh->first) &&  !surf && mesh->first != "domain") {
+      std::cout<<"coords: "<<mesh->first<<"\n";
       std::string node_key = mesh->first+std::string("-vertex_coordinate");
       S_->RequireField(node_key)->SetMesh(mesh->second.first)->SetGhosted()
           ->AddComponent("node", Amanzi::AmanziMesh::NODE, mesh->second.first->space_dimension());
@@ -520,9 +522,9 @@ bool Coordinator::advance(double t_old, double t_new) {
     // check whether meshes are deformable, and if so, recover the old coordinates
     for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
          mesh!=S_->mesh_end(); ++mesh) {
-      if (S_->IsDeformableMesh(mesh->first)) {
+      bool surf = boost::starts_with(mesh->first, "surface_");
+      if (S_->IsDeformableMesh(mesh->first) &&  !surf && mesh->first != "domain") {
         // collect the old coordinates
-        std::cout<<"COORD1: "<<mesh->first<<std::endl;
         std::string node_key = mesh->first+std::string("-vertex_coordinate");
         Teuchos::RCP<const Amanzi::CompositeVector> vc_vec = S_->GetFieldData(node_key);
         vc_vec->ScatterMasterToGhosted();
