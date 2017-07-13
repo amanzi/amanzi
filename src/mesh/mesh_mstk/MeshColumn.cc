@@ -50,6 +50,43 @@ MeshColumn::~MeshColumn() {
 }
 
 
+
+// Deform the mesh by moving given nodes to given coordinates
+// If the flag keep_valid is true, then the nodes are moved
+// only as much as possible without making the mesh invalid
+// The final positions of the nodes is returned in final_positions
+int
+MeshColumn::deform(const Entity_ID_List& nodeids,
+                   const AmanziGeometry::Point_List& new_positions,
+                   const bool keep_valid,
+                   AmanziGeometry::Point_List *final_positions) {
+  int ierr = extracted_.deform(nodeids, new_positions, keep_valid, final_positions);
+
+  // recompute all geometric quantities
+  compute_cell_geometric_quantities_();
+  compute_face_geometric_quantities_();
+  return ierr;
+}
+
+// Deform a mesh so that cell volumes conform as closely as possible
+// to target volumes without dropping below the minimum volumes.  If
+// move_vertical = true, nodes will be allowed to move only in the
+// vertical direction (right now arbitrary node movement is not allowed)
+// Nodes in any set in the fixed_sets will not be permitted to move.
+int
+MeshColumn::deform(const std::vector<double>& target_cell_volumes_in,
+       const std::vector<double>& min_cell_volumes_in,
+       const Entity_ID_List& fixed_nodes,
+       const bool move_vertical) {
+  int ierr = extracted_.deform(target_cell_volumes_in, min_cell_volumes_in,
+          fixed_nodes, move_vertical);
+  // recompute all geometric quantities
+  compute_cell_geometric_quantities_();
+  compute_face_geometric_quantities_();
+  return ierr;
+}
+
+
 // -----------------------------------------------------------------------------
 // Compute special coordinates for the nodes - all the other 
 // quantities will follow suit

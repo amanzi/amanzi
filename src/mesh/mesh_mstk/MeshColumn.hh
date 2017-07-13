@@ -294,12 +294,11 @@ class MeshColumn : public Mesh {
   // If the flag keep_valid is true, then the nodes are moved
   // only as much as possible without making the mesh invalid
   // The final positions of the nodes is returned in final_positions
+  virtual
   int deform(const Entity_ID_List& nodeids,
              const AmanziGeometry::Point_List& new_positions,
              const bool keep_valid,
-             AmanziGeometry::Point_List *final_positions) {
-    return extracted_.deform(nodeids, new_positions, keep_valid, final_positions);
-  }
+             AmanziGeometry::Point_List *final_positions) override;
 
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If
@@ -310,10 +309,7 @@ class MeshColumn : public Mesh {
   int deform(const std::vector<double>& target_cell_volumes_in,
              const std::vector<double>& min_cell_volumes_in,
              const Entity_ID_List& fixed_nodes,
-             const bool move_vertical) {
-    return extracted_.deform(target_cell_volumes_in, min_cell_volumes_in,
-                             fixed_nodes, move_vertical);
-  }
+             const bool move_vertical) override;
 
   //
   // Epetra maps
