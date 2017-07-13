@@ -276,19 +276,6 @@ State::RequireFieldEvaluator(Key key) {
     }
   }
 
-  // Try a cell_volume.
-  if (evaluator == Teuchos::null) {
-    Key cell_vol("cell_volume");
-    if (key.length() >= cell_vol.length() &&
-        (0 == key.compare(key.length()-cell_vol.length(), cell_vol.length(), cell_vol))) {
-      Teuchos::ParameterList model_plist = state_plist_.sublist("model parameters");
-      Teuchos::ParameterList plist = model_plist.sublist(key);
-      plist.set("evaluator name", key);
-      evaluator = Teuchos::rcp(new CellVolumeEvaluator(plist));
-      SetFieldEvaluator(key, evaluator);
-    }
-  }
-
   // check to see if we have a flyweight evaluator
   if (evaluator == Teuchos::null && state_plist_.isParameter("domain sets")) {
     KeyTriple split;
@@ -342,6 +329,19 @@ State::RequireFieldEvaluator(Key key) {
           }            
         }          
       }
+    }
+  }
+
+  // Try a cell_volume.
+  if (evaluator == Teuchos::null) {
+    Key cell_vol("cell_volume");
+    if (key.length() >= cell_vol.length() &&
+        (0 == key.compare(key.length()-cell_vol.length(), cell_vol.length(), cell_vol))) {
+      Teuchos::ParameterList model_plist = state_plist_.sublist("model parameters");
+      Teuchos::ParameterList plist = model_plist.sublist(key);
+      plist.set("evaluator name", key);
+      evaluator = Teuchos::rcp(new CellVolumeEvaluator(plist));
+      SetFieldEvaluator(key, evaluator);
     }
   }
 
