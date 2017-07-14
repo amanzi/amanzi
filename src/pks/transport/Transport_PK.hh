@@ -32,6 +32,7 @@
 #include "Units.hh"
 #include "VerboseObject.hh"
 #include "PK_Explicit.hh"
+#include "DenseVector.hh"
 
 #ifdef ALQUIMIA_ENABLED
 #include "Alquimia_PK.hh"

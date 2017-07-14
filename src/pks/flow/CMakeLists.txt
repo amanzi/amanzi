@@ -118,9 +118,8 @@ generate_evaluators_registration_header(
 # Library: flow
 #
 set(flow_src_files Flow_PK.cc 
-                   Flow_SeepageFace.cc
+                   Flow_SeepageFace.cc FlowBoundaryFunction.cc
                    Flow_VandV.cc Flow_Walkabout.cc 
-                   FlowBoundaryFunction.cc
                    Darcy_PK.cc Darcy_TI.cc Darcy_LinearOperator.cc
                    Richards_PK.cc Richards_TI.cc Richards_WRM.cc
                    Richards_Picard.cc Richards_LinearOperator.cc Richards_CNLS.cc
@@ -177,12 +176,14 @@ if (BUILD_TESTS)
     include_directories(${UnitTest_INCLUDE_DIRS})
     include_directories(${MESH_FACTORY_SOURCE_DIR})
 
+
     # Copy test directory files if any out of source build
     if (NOT (${FLOW_SOURCE_DIR} EQUAL ${FLOW_BINARY_DIR}) )
         # execute_process(COMMAND ${CMAKE_COMMAND} -E 
         #   copy_directory ${FLOW_SOURCE_DIR}/test ${FLOW_BINARY_DIR}/test) 
         file(GLOB DataFiles "${FLOW_SOURCE_DIR}/test/*.xml"
-                            "${FLOW_SOURCE_DIR}/test/*.exo")
+                            "${FLOW_SOURCE_DIR}/test/*.exo"
+                            "${FLOW_SOURCE_DIR}/test/perm.h5")
         file(COPY ${DataFiles} DESTINATION ${FLOW_BINARY_DIR}/test/)
     endif()
 

@@ -94,7 +94,10 @@ class OperatorDiffusionNLFVwithGravity : public OperatorDiffusionNLFV,
 
   // Developments
   // -- interface to solvers for treating nonlinear BCs.
-  virtual double ComputeGravityFlux(int f) const {};
+  virtual double ComputeGravityFlux(int f) const {
+    ASSERT(0);
+    return 0.;
+  };
 
   // virtual members from the base NLFV class
   // -- solution can be modified on boundary faces. This reflects specifics

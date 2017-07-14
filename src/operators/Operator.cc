@@ -46,8 +46,8 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
- * Default constructor.
- ****************************************************************** */
+* Default constructor.
+****************************************************************** */
 Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                    Teuchos::ParameterList& plist,
                    int schema) :
@@ -103,7 +103,7 @@ void Operator::Init()
 void Operator::SymbolicAssembleMatrix()
 {
   // Create the supermap given a space (set of possible schemas) and a
-  // specific schema (assumed/checked to be consistent with the sapce).
+  // specific schema (assumed/checked to be consistent with the space).
   smap_ = CreateSuperMap(*cvs_, schema(), 1);
 
   // create the graph

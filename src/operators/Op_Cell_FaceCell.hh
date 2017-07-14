@@ -89,7 +89,6 @@ class Op_Cell_FaceCell : public Op {
       }
     }
   }
-  
 };
 
 }  // namespace Operators

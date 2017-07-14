@@ -23,7 +23,7 @@
 
 #include "CommonDefs.hh"
 #include "Mesh.hh"
-#include "DenseVector.hh"
+//#include "DenseVector.hh"
 
 namespace Amanzi {
 namespace Transport {
@@ -50,14 +50,15 @@ class TransportDomainFunction {
   std::vector<int>& tcc_index() { return tcc_index_; }
 
   // iterator methods
-  typedef std::map<int, WhetStone::DenseVector>::iterator Iterator;
+  typedef std::map<int, std::vector<double> >::iterator Iterator;
   Iterator begin() { return value_.begin(); }
   Iterator end() { return value_.end(); }
-  std::map<int, double>::size_type size() { return value_.size(); }
+  std::map<int, std::vector<double> >::size_type size() { return value_.size(); }
 
- protected:
+protected:
+
   double domain_volume_;
-  std::map<int, WhetStone::DenseVector> value_;  // tcc values on boundary faces
+  std::map<int, std::vector<double> > value_;  // tcc values on boundary faces
   std::string keyword_;
 
   std::vector<std::string> tcc_names_;  // list of component names

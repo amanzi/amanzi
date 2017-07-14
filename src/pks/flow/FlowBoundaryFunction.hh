@@ -25,6 +25,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
+#include "FlowDefs.hh"
 
 #include "PK_DomainFunction.hh"
 
@@ -40,8 +41,8 @@ class FlowBoundaryFunction : public PK_DomainFunction {
         no_flow_above_water_table_(false),
         bc_name_("underfined"),
         seepage_model_("") {};
+
   FlowBoundaryFunction(const Teuchos::ParameterList& plist);
-  
   void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   // modifiers and access
@@ -52,7 +53,15 @@ class FlowBoundaryFunction : public PK_DomainFunction {
   std::string seepage_model() const { return seepage_model_; }
   double ref_pressure() const { return ref_pressure_; }
 
+ //  typename std::map<int, ValueType>::iterator begin(){ return value_.begin(); }
+ //  typename std::map<int, ValueType>::iterator end(){ return value_.end(); }
+ //  typename std::map<int, ValueType>::size_type size() { return value_.size(); }
+
+ // protected:
+ //  std::map<int, ValueType> value_;
+
  private:
+
   void CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                  const std::string& region);
 
@@ -74,6 +83,8 @@ class FlowBoundaryFunction : public PK_DomainFunction {
   Teuchos::RCP<Epetra_Vector> shift_water_table_;
   int nedges_;
 };
+
+
 
 }  // namespace Flow
 }  // namespace Amanzi

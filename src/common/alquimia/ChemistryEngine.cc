@@ -531,6 +531,17 @@ bool ChemistryEngine::Advance(const double delta_time,
   int fpe_mask = fedisableexcept(FE_DIVBYZERO);
 #endif 
 
+  // std::cout<<"mat "<<"vol "<<mat_props.volume<<" sat "<<mat_props.saturation<<"\n";
+  // // std::cout<<"mat "<<mat_props.isotherm_kd.data[0]<<" "<<
+  // //   mat_props.freundlich_n.data[0]<<" "<<
+  // //   mat_props.langmuir_b.data[0]<<"\n";
+  // std::cout<<"state "<<"den "<<chem_state.water_density<<" poro "<<chem_state.porosity
+  //          <<" tcc "<<chem_state.total_mobile.data[0]<<"\n";
+  // std::cout<<"mineral_volume_fraction "<<
+  //   chem_state.mineral_volume_fraction.size<<
+  //   " mineral_volume_fraction "<<chem_state.mineral_specific_surface_area.size<<"\n";
+
+
   // Advance the chemical reaction all operator-split-like.
   chem_.ReactionStepOperatorSplit(&engine_state_,
                                   delta_time,

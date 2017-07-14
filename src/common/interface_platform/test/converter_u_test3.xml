@@ -1,0 +1,271 @@
+<amanzi_input type="unstructured" version="2.3.0">
+  <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
+
+  <model_description name="DVZ 3layer 2D">
+    <author>Konstantin Lipnikov</author>
+    <!-- default SI units -->
+    <units>
+      <length_unit>m</length_unit>
+      <time_unit>s</time_unit>
+      <mass_unit>kg</mass_unit>
+      <conc_unit>SI</conc_unit>
+    </units>
+
+    <constants>
+      <time_constant name="START" value="1956 y"/>
+      <constant name="END" type="time" value="3000 y"/>
+      <constant name="PC" type="none" value="linearized_operator"/>
+
+      <numerical_constant name="vG_M" value="0.3006"/>
+      <numerical_constant name="Y0" value="1.0 ft"/>
+      <numerical_constant name="Y1" value="11.11 ft"/>
+    </constants>
+  </model_description>
+
+  <definitions>
+    <macros>
+      <time_macro name="Observation Times">
+        <time>1.2096E+10 s</time>
+      </time_macro>
+      <time_macro name="EveryMonth">
+        <start>START</start>
+        <timestep_interval>1 m</timestep_interval>
+        <stop>1988 y</stop>
+      </time_macro>
+      <cycle_macro name="Every100Cycles">
+        <start>0</start>
+        <timestep_interval>100</timestep_interval>
+      </cycle_macro>
+    </macros>
+  </definitions>
+
+  <process_kernels>
+    <flow model="saturated" state="on"/>
+    <transport state="on" />
+    <chemistry engine="none" process_model="none" state="off"/>
+  </process_kernels>
+
+  <phases>
+    <liquid_phase name="water">
+      <eos>false</eos>
+      <viscosity>1.002E-03</viscosity>
+      <density>998.2</density>
+      <dissolved_components>
+        <solutes>
+          <solute coefficient_of_diffusion="1.0e-9" molar_mass="98.906255e-3">Tc-99</solute>
+        </solutes>
+      </dissolved_components>
+    </liquid_phase>
+  </phases>
+
+  <execution_controls>
+    <verbosity level="high" />
+    <execution_control_defaults init_dt="1.0" method="picard" mode="steady" />
+    <execution_control mode="steady" start="0.0  y" />
+    <execution_control end="END" mode="transient" start="START" />
+  </execution_controls>
+
+  <numerical_controls>
+    <unstructured_controls>
+      <unstr_flow_controls>
+        <preconditioning_strategy>PC</preconditioning_strategy>
+      </unstr_flow_controls>
+
+      <unstr_transport_controls>
+        <algorithm>explicit first-order</algorithm>
+        <sub_cycling>on</sub_cycling>
+        <cfl>1</cfl>
+      </unstr_transport_controls>
+
+      <unstr_steady-state_controls>
+        <min_iterations>10</min_iterations>
+        <max_iterations>15</max_iterations>
+        <limit_iterations>20</limit_iterations>
+        <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
+        <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
+        <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
+        <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+        <max_divergent_iterations>3</max_divergent_iterations>
+
+        <unstr_initialization>
+          <method>darcy_solver</method>
+          <linear_solver>aztecoo</linear_solver>
+        </unstr_initialization>
+      </unstr_steady-state_controls>
+
+      <unstr_transient_controls>
+        <min_iterations>10</min_iterations>
+        <max_iterations>15</max_iterations>
+        <limit_iterations>20</limit_iterations>
+        <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
+        <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
+        <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
+        <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+        <max_divergent_iterations>3</max_divergent_iterations>
+        <timestep_controller>adaptive</timestep_controller>
+      </unstr_transient_controls>
+
+      <unstr_linear_solver>
+        <method>pcg</method>
+        <max_iterations>100</max_iterations>
+        <tolerance>1e-20</tolerance>
+      </unstr_linear_solver>
+      <unstr_preconditioners>
+        <hypre_amg />
+        <trilinos_ml />
+        <block_ilu />
+      </unstr_preconditioners>
+    </unstructured_controls>
+  </numerical_controls>
+
+  <mesh framework="mstk">
+    <dimension>2</dimension>
+    <generate>
+      <number_of_cells nx="54" nz="60" />
+      <box high_coordinates="216.0 m, 120.0 m" low_coordinates="0.0, 0.0" />
+    </generate>
+  </mesh>
+
+  <regions>
+    <region name="Bottom Surface">
+      <box high_coordinates="216.0 m, 0.0" low_coordinates="0.0, 0.0" />
+    </region>
+    <region name="RegionBottom">
+      <box high_coordinates="216.0 m, 40.0" low_coordinates="0.0, 0.0" />
+    </region>
+    <region name="RegionMiddle">
+      <box high_coordinates="216.0 m, 80.0 m" low_coordinates="0.0, 40.0e+2 cm" />
+    </region>
+    <region name="RegionTop">
+      <box high_coordinates="216.0, 120.0" low_coordinates="0.0, 80.0" />
+    </region>
+    <region name="Recharge_Boundary_WestOfCrib">
+      <box high_coordinates="72.0, 120.0" low_coordinates="0.0, 120.0" />
+    </region>
+    <region name="Crib">
+      <box high_coordinates="80.0, 120.0" low_coordinates="72.0, 120.0" />
+    </region>
+    <region name="Recharge_Boundary_EastOfCrib">
+      <box high_coordinates="216.0, 120.0" low_coordinates="80.0, 120.0" />
+    </region>
+    <region name="Well">
+      <box high_coordinates="112.0 ft, 60.0" low_coordinates="108.0 ft, 40.0" />
+    </region>
+    <region name="Well2">
+      <line_segment end_coordinates="108.0 ft, Y0" 
+           opposite_end_coordinates="108.0 ft, Y1" />
+    </region>
+  </regions>
+
+  <materials>
+    <material name="Facies_1">
+      <mechanical_properties>
+        <porosity value="0.4082"/>
+        <specific_storage value="0.0002"/>
+        <particle_density type="file" filename="particle_density.h5"/>
+      </mechanical_properties>
+      <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
+      <cap_pressure model="van_genuchten">
+        <parameters alpha="1.9467E-04 Pa^-1" m="0.2294" sr="0.0"/>
+      </cap_pressure>
+      <rel_perm model="mualem"/>
+      <assigned_regions>RegionMiddle</assigned_regions>
+    </material>
+
+    <material name="Facies_2">
+      <mechanical_properties>
+        <porosity value="0.2206"/>
+      </mechanical_properties>
+      <!--permeability x="6.9365E-11" z="6.9365E-12" /-->
+      <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
+      <cap_pressure model="van_genuchten">
+        <parameters alpha="2.0260E-03 Pa^-1" m="0.2136" sr="0.0"/>
+      </cap_pressure>
+      <rel_perm model="mualem"/>
+      <assigned_regions>RegionBottom</assigned_regions>
+    </material>
+
+    <material name="Facies_3">
+      <mechanical_properties>
+        <porosity value="0.234"/>
+      </mechanical_properties>
+      <!--permeability x="2.0706E-09" z="2.0706E-10" /-->
+      <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
+      <cap_pressure model="van_genuchten">
+        <parameters alpha="2.0674E-03 Pa^-1" m="vG_M" sr="0.0"/>
+      </cap_pressure>
+      <rel_perm model="mualem"/>
+      <assigned_regions>RegionTop</assigned_regions>
+    </material>
+  </materials>
+
+  <initial_conditions>
+    <initial_condition name="All">
+      <assigned_regions>All</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <linear_pressure name="IC1" value="101325.0 Pa" reference_coord="0.0, 0.0" gradient="0,-9793.5192 Pa/m" />
+        </liquid_component>
+        <solute_component>
+          <uniform_conc function="uniform" name="Tc-99" start="0.0" value="0.0" />
+        </solute_component>
+      </liquid_phase>
+    </initial_condition>
+  </initial_conditions>
+
+  <boundary_conditions>
+    <comments/>
+    <boundary_condition name="BC For Bottom Surface">
+      <assigned_regions>Bottom Surface</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <linear_pressure function="constant" start="0.0" value="101325.0 Pa" reference_coord="0.0, 0.0" gradient="0.0, -9793.5192 Pa/m"/>
+        </liquid_component>
+        <solute_component>
+          <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>
+          <aqueous_conc name="Tc-99" value="0.0" function="constant" start="9.4672798E10"/>
+        </solute_component> 
+      </liquid_phase>
+    </boundary_condition>
+
+    <boundary_condition name="BC For Crib">
+      <assigned_regions>Crib</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <inward_volumetric_flux value="1.1071e-10" function="constant" start="0.0" />
+          <inward_volumetric_flux value="0.00254022e-3" function="constant" start="6.17266656e+10" />
+          <inward_volumetric_flux value="1.48666E-9" function="constant" start="6.1729344E10" />
+          <inward_volumetric_flux value="1.48666E-9" function="constant" start="9.4672798E10" />
+        </liquid_component>
+        <solute_component>
+          <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>
+          <aqueous_conc name="Tc-99" value="1.881389E-06 SI" function="constant" start="6.17266656e+10"/>
+          <aqueous_conc name="Tc-99" value="0.0" function="constant" start="6.1729344E10"/>
+       </solute_component> 
+      </liquid_phase>
+    </boundary_condition>
+
+    <boundary_condition name="BC Rest">
+      <assigned_regions>Recharge_Boundary_WestOfCrib,
+                        Recharge_Boundary_EastOfCrib</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <inward_volumetric_flux value="1.1071E-10" function="constant" start="0.0" />
+          <inward_volumetric_flux value="1.48666E-9 m/s" function="constant" start="6.17266656e+10" />
+        </liquid_component>
+        <solute_component>
+          <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>
+       </solute_component> 
+      </liquid_phase>
+    </boundary_condition>
+  </boundary_conditions>
+
+  <output>
+    <vis>
+      <base_filename>plot</base_filename>
+      <num_digits>5</num_digits>
+      <cycle_macros>Every100Cycles</cycle_macros>
+    </vis>
+  </output>
+</amanzi_input>
+  

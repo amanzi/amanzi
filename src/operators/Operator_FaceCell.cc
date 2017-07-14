@@ -24,7 +24,7 @@
 #include "Operator_FaceCell.hh"
 
 /* ******************************************************************
-Operator whose unknowns are CELL + FACE
+Operator whose unknowns are CELLs + FACEs
 
 See Operator_FaceCell.hh for mode detail.
 ****************************************************************** */

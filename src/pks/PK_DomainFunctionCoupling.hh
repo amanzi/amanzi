@@ -21,6 +21,7 @@
 #include "CommonDefs.hh"
 #include "Mesh.hh"
 #include "State.hh"
+#include "DenseVector.hh"
 
 
 namespace Amanzi {
@@ -40,9 +41,16 @@ class PK_DomainFunctionCoupling : public FunctionBase {
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword,
             AmanziMesh::Entity_kind kind);
 
+  // void assign( double& a, WhetStone::DenseVector b) {a = b(0);};
+  // void assign( WhetStone::DenseVector& a, WhetStone::DenseVector b) {
+  //   a=b;
+  // };
+  // void assign( WhetStone::DenseVector& a, double b) {a = b;};
+  // void assign( double& a, double b) {a=b;};
+
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() { return "domain coupling"; }
+  virtual void Compute(double t0, double t1);  
+  virtual std::string name() const { return "domain coupling"; }
   virtual void set_state(const Teuchos::RCP<State>& S) { S_ = S; }
 
  protected:
@@ -51,7 +59,7 @@ class PK_DomainFunctionCoupling : public FunctionBase {
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<const State> S_;
-
+  
  private:
   std::string submodel_;
   std::string flux_key_, copy_flux_key_;
@@ -146,6 +154,8 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     const Epetra_MultiVector& flux = 
         *S_->GetFieldCopyData(flux_key_, copy_flux_key_)->ViewComponent("face", true);
 
+    //std::cout<<"flux \n"<<flux<<"\n";
+
     const Epetra_MultiVector& field_out = 
         // *S_->GetFieldCopyData(field_key_, "subcycling")->ViewComponent("cell", true);
         *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
@@ -165,7 +175,6 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     std::vector<double> val(num_vec);
 
     Teuchos::RCP<const AmanziMesh::Mesh> mesh_out = S_->GetFieldData(field_out_key_)->Mesh();
-
     AmanziMesh::Entity_ID_List cells, faces;
     std::vector<int> dirs;
 
@@ -188,11 +197,17 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
         if (f == faces[i]) {
           double fln = flux[0][f]*dirs[i];         
           if (fln >= 0) {        
-            for (int k=0; k<num_vec; ++k) val[k] = field_out[k][cells[0]] * fln;
+            for (int k=0; k<num_vec; ++k) {
+              val[k] = field_out[k][cells[0]] * fln;
+              //std::cout<<*c<<" flux out "<<field_out_key_<<" conc "<<field_out[k][cells[0]]<<" flux "<<fln<<"\n";
+            }
           } else if (fln < 0) {       
-            for (int k=0; k<num_vec; ++k) val[k] = field_in[k][*c] *fln;
+            for (int k=0; k<num_vec; ++k) {
+              val[k] = field_in[k][*c] * fln;
+              //std::cout<<*c<<" flux in "<<field_in_key_<<" conc "<<field_in[k][*c]<<" flux "<<fln<<"\n";
+            }
           }
-          value_[*c] = val[0]; 
+          value_[*c] = val; 
           break;
         }
       }
@@ -203,13 +218,19 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 
     int num_vec = field_out.NumVectors();
     std::vector<double> val(num_vec);
+
     ///////CHECK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!????????????
     int i(0);
-    for (MeshIDs::const_iterator c = entity_ids_->begin(); c != entity_ids_->end(); ++c){
-      for (int k=0; k<num_vec; ++k) val[k] = field_out[k][i];
-      value_[*c] = val[0];            
+    for (MeshIDs::const_iterator c = entity_ids_->begin(); c != entity_ids_->end(); ++c){      
+      for (int k=0; k<num_vec; ++k) val[k] = field_out[k][i];            
+      value_[*c] = val;     
       i++;
     }
+
+    // for (auto it1 = value_.begin(); it1 != value_.end(); ++it1) {
+    //   std::cout<<it1->first<<" => "<<it1->second<<"\n";
+    // }
+
   }
 }
 

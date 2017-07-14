@@ -1,6 +1,6 @@
-/*
-  Operators
+// OperatorAdvection generates local Ops and global Operators for an advective term.
 
+/*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -8,8 +8,6 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
-
-  Discrete advection operator of a surface.
 */
 
 #ifndef AMANZI_OPERATOR_ADVECTION_HH_
@@ -18,6 +16,19 @@
 #include "Epetra_IntVector.h"
 
 #include "Operator.hh"
+
+/*!
+``OperatorAdvection`` assembles the discrete form of:
+
+.. math::
+  \nabla \cdot Aq
+
+which advects quantity :math:`A` with fluxes :math:`q`.
+
+This is a simple, first-order donor-upwind scheme, and is mostly intended for
+use in diffusion-dominated advection-diffusion equations.  No options are
+available here.
+ */
 
 
 namespace Amanzi {

@@ -1,33 +1,20 @@
 /*
-  Flow PK
+  Flow PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Neil Carlson
-           Ethan Coon
-           Konstantin Lipnikov
+  Authors: Neil Carlson (version 1) 
+           Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
-
-#include <algorithm>
-#include <string>
-#include <vector>
-
-#include "Mesh.hh"
-
 #include "FlowBoundaryFunction.hh"
-#include "FlowDefs.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-/* ****************************************************************
-* Extract attributes to setup a submodel.
-**************************************************************** */
-FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist)
-{
+FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist){
   rainfall_ = false;
   if (plist.isParameter("rainfall")) 
     rainfall_ = plist.get<bool>("rainfall");
@@ -59,14 +46,9 @@ FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist)
 
   // for screen output
   nedges_ = 0;
-}
+};
 
-
-/* ****************************************************************
-* Process additional parameters for BC submodels. 
-**************************************************************** */
-void FlowBoundaryFunction::ComputeSubmodel(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+void FlowBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
   int dim = mesh->space_dimension();
 
@@ -74,7 +56,7 @@ void FlowBoundaryFunction::ComputeSubmodel(
     for (auto it = begin(); it != end(); ++it) {
       int f = it->first;
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
-      it->second *= fabs(normal[dim - 1]) / norm(normal);
+      it->second[0] *= fabs(normal[dim - 1]) / norm(normal);
     }
   }
 
@@ -102,23 +84,16 @@ void FlowBoundaryFunction::ComputeSubmodel(
     for (auto it = begin(); it != end(); ++it) {
       int f = it->first;
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
-      it->second += (*shift_water_table_)[f];
+      it->second[0] += (*shift_water_table_)[f];
     }
   }
-}
 
+};
 
-/* ******************************************************************
-* Calculate distance to the top of a given surface where the water 
-* table is set up. We do not distribute computed data. It seems not 
-* necessary.
-*
-* WARNING: The implemented algorithm works only in 3D.
-****************************************************************** */
-void FlowBoundaryFunction::CalculateShiftWaterTable_(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    const std::string& region)
+void FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                                                const std::string& region)
 {
+
   double tol = 1e-6;
   Errors::Message msg;
 
@@ -279,17 +254,15 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
 #endif
 
   nedges_ = nedges / 2;
-}
+
+};
 
 
-/* ******************************************************************
-* New implementation of the STL function.                                              
-****************************************************************** */
-void FlowBoundaryFunction::set_intersection_(
-    const std::vector<AmanziMesh::Entity_ID>& v1,
-    const std::vector<AmanziMesh::Entity_ID>& v2,
-    std::vector<AmanziMesh::Entity_ID>* vv)
+void FlowBoundaryFunction::set_intersection_(const std::vector<AmanziMesh::Entity_ID>& v1,
+                                             const std::vector<AmanziMesh::Entity_ID>& v2, 
+                                             std::vector<AmanziMesh::Entity_ID>* vv)
 {
+
   int i(0), j(0), n1, n2;
 
   n1 = v1.size();
@@ -307,9 +280,8 @@ void FlowBoundaryFunction::set_intersection_(
       j++;
     }
   }
+
 }
 
 }  // namespace Flow
 }  // namespace Amanzi
-
-

@@ -122,12 +122,15 @@ void PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
     mesh_->get_comm()->SumAll(tmp, result, 2);
     domain_volume_ = result[0];
     weight_volume = result[1];
+    int nfun = (*uspec)->first->second->size();
+    std::vector<double> val_vec(nfun); 
 
     args[0] = t1;
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-      value_[*c] = (*(*uspec)->first->second)(args)[0] * (*weight_)[*c] / weight_volume;
+      for (int i=0; i<nfun; ++i) val_vec[i] = (*(*uspec)->first->second)(args)[i] * (*weight_)[*c] / weight_volume;
+      value_[*c] = val_vec;
     }      
 
     if (submodel_ == "integrated source") {
@@ -135,9 +138,11 @@ void PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
       for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-
-        value_[*c] -= (*(*uspec)->first->second)(args)[0] * (*weight_)[*c] / weight_volume;
-        value_[*c] *= dt;
+        for (int i=0; i<nfun; ++i) {
+          value_[*c][i] -= (*(*uspec)->first->second)(args)[i] * (*weight_)[*c] / weight_volume;
+          value_[*c][i] *= dt;
+        }
+        //value_[*c] *= dt;
       }
     }
   }

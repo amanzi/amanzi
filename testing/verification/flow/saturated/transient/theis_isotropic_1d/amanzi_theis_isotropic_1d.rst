@@ -55,7 +55,7 @@ Schematic
 `````````
 
 Note, the values in the schematic correlate to the values found in
-:ref:`Plot-Table`.
+:ref:`plot_table_Theis`.
 
 .. figure:: schematic/Theis.png 
     :figclass: align-center
@@ -114,12 +114,12 @@ aquifer per unit decline in hydraulic head.
 Lastly, the constant pumping rate, :math:`Q`, is the volume of water
 discharged from the well per unit time.
 
-.. _Plot-Table:
+.. _plot_table_Theis:
 
 Plot and Table of Analytic Solution and Amanzi Results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. plot:: prototype/transient-theis/amanzi_theis_isotropic_1d.py
+.. plot:: amanzi_theis_isotropic_1d.py
 	  :align: center
 
 

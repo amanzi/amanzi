@@ -71,7 +71,8 @@ ExternalProject_Add(${HDF5_BUILD_TARGET}
                     URL          ${HDF5_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${HDF5_MD5_SUM}                  # md5sum of the archive file
                     # -- Patch 
-                    PATCH_COMMAND ${HDF5_PATCH_COMMAND}
+                    # PATCH_COMMAND ${HDF5_PATCH_COMMAND}
+		    PATCH_COMMAND
                     # -- Configure
                     SOURCE_DIR       ${HDF5_source_dir}           # Source directory
                     CONFIGURE_COMMAND

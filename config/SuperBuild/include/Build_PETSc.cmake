@@ -15,11 +15,19 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 set(petsc_packages SuperLU SuperLUDist)
 get_filename_component(real_download_path ${TPL_DOWNLOAD_DIR} REALPATH)
 
-message(STATUS "Checking PETSc required packages: ${petsc_packages}")
+message(STATUS ">>> Build_PETSc -- Checking PETSc required packages: ${petsc_packages}")
 foreach ( _pack ${petsc_packages} )
+
+  message(STATUS ">>> Build_PETSc -- package: ${_pack}")
+
   set(_url      "${${_pack}_URL_STRING}")
   set(_archive  "${${_pack}_ARCHIVE_FILE}")
   set(_md5sum   "${${_pack}_MD5_SUM}")
+
+  message(STATUS ">>> Build_PETSc -- URL: ${_url}")
+  message(STATUS ">>> Build_PETSc -- ARCHIVE_FILE: ${_archive}")
+  message(STATUS ">>> Build_PETSc -- MD5SUM: ${_md5sum}")
+
   if ( EXISTS "${real_download_path}/${_archive}" )
     message(STATUS "\tFound ${_archive}")
   else()
@@ -27,11 +35,17 @@ foreach ( _pack ${petsc_packages} )
       message(FATAL_ERROR "You have disabled external downloads, however"
 	                  " ${real_download_path}/${_archive} does not exist")
     else()
-      message(STATUS "Downloading ${_archive} for PETSc")
+      message(STATUS ">>> Build_PETSc -- Downloading ${_archive} for PETSc")
       file(DOWNLOAD  "${_url}/${_archive}" "${real_download_path}/${_archive}"
-                     SHOW_PROGRESS
                      INACTIVITY_TIMEOUT 180
-                     EXPECTED_MD5SUM ${_md5sum})
+                     EXPECTED_MD5 ${_md5sum}
+	             STATUS ${_pack}_DOWNLOAD_STATUS )
+      list(GET ${_pack}_DOWNLOAD_STATUS 0 _status)	
+      if ( ${_status} EQUAL 0 )
+	message(STATUS ">>> Build_PETSc -- DOWNLOAD: successful!")
+      else( )
+        message(FATAL_ERROR ">>> Build_PETSc -- DOWNLOAD: failed -- ${${_pack}_DOWNLOAD_STATUS}[1]")
+      endif()
     endif()
   endif()  
 endforeach()

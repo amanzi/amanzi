@@ -232,6 +232,11 @@ class Mesh {
   // returned in a standard order according to Exodus II convention
   // for standard cells; in all other situations (ordered = false or
   // non-standard cells), the list of faces will be in arbitrary order
+  //
+  // EXTENSIONS: MSTK FRAMEWORK: by the way the parallel partitioning,
+  // send-receive protocols and mesh query operators are designed, a side 
+  // effect of this is that master and ghost entities will have the same
+  // hierarchical topology. 
   void cell_get_faces(const Entity_ID cellid,
                       Entity_ID_List *faceids,
                       const bool ordered=false) const;
@@ -755,8 +760,8 @@ class Mesh {
   int compute_face_geometry_(const Entity_ID faceid,
                              double *area,
                              AmanziGeometry::Point *centroid,
-                             AmanziGeometry::Point *normal0,
-                             AmanziGeometry::Point *normal1) const;
+                             std::vector<AmanziGeometry::Point> *normals) const;
+
   virtual
   int compute_edge_geometry_(const Entity_ID edgeid,
                              double *length,
@@ -784,8 +789,12 @@ class Mesh {
   mutable std::vector<double> cell_volumes_, face_areas_, edge_lengths_;
   mutable std::vector<AmanziGeometry::Point> cell_centroids_, face_centroids_;
 
-  // -- for a given face, its normal to face_get_cells()[0] is face_normal0_, resp 1.
-  mutable std::vector<AmanziGeometry::Point> face_normal0_, face_normal1_;
+  // -- Have to account for the fact that a "face" for a non-manifold
+  // surface mesh can have more than one cell connected to
+  // it. Therefore, we have to store as many normals for a face as
+  // there are cells connected to it. For a given face, its normal to
+  // face_get_cells()[i] is face_normals_[i]
+  mutable std::vector<std::vector<AmanziGeometry::Point>> face_normals_;
 
   mutable std::vector<AmanziGeometry::Point> edge_vectors_;
 

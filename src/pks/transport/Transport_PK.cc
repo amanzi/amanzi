@@ -359,7 +359,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
       std::string specname = it->first;
       Teuchos::ParameterList& spec = glist.sublist(specname);
 
-      Teuchos::RCP<TransportBoundaryFunction_Alquimia> 
+      Teuchos::RCP<TransportBoundaryFunction_Alquimia > 
           bc = Teuchos::rcp(new TransportBoundaryFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
 
       std::vector<int>& tcc_index = bc->tcc_index();
@@ -531,10 +531,11 @@ double Transport_PK::StableTimeStep()
 
       for (auto it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
         int c = it->first;
-        WhetStone::DenseVector& values = it->second;
+        //WhetStone::DenseVector& values = it->second;
+        std::vector<double>& values = it->second; 
 
-        for (int i = 0; i < values.NumRows(); ++i) {
-          double value = fabs(values(i)) * mesh_->cell_volume(c);
+        for (int i = 0; i < values.size(); ++i) {
+          double value = fabs(values[i]) * mesh_->cell_volume(c);
           total_outflux[c] = std::max(total_outflux[c], value);
         }
       }
@@ -1067,7 +1068,9 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
 
     for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
       int f = it->first;
-      WhetStone::DenseVector& values = it->second;
+      //      WhetStone::DenseVector& values = it->second;
+      std::vector<double>& values = it->second; 
+
 
       int c2 = (*downwind_cell_)[f];
       if (c2 >= 0) {
@@ -1075,7 +1078,7 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
         for (int i = 0; i < ncomp; i++) {
           int k = tcc_index[i];
           if (k < num_advect) {
-            tcc_flux = dt_ * u * values(i);
+            tcc_flux = dt_ * u * values[i];
             tcc_next[k][c2] += tcc_flux;
           }
         }
@@ -1280,7 +1283,8 @@ void Transport_PK::ComputeSources_(
     std::vector<int> index = srcs_[m]->tcc_index();
     for (auto it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
       int c = it->first;
-      WhetStone::DenseVector& values = it->second;
+      //WhetStone::DenseVector& values = it->second;
+      std::vector<double>& values = it->second; 
 
       for (int k = 0; k < index.size(); ++k) {
         int i = index[k];
@@ -1289,7 +1293,7 @@ void Transport_PK::ComputeSources_(
         int imap = i;
         if (num_vectors == 1) imap = 0;
 
-        double value = mesh_->cell_volume(c) * values(k);
+        double value = mesh_->cell_volume(c) * values[k];
         if (srcs_[m]->keyword() == "producer") {
           // correction for an extraction well
           value *= tcc_prev[imap][c];
@@ -1333,13 +1337,15 @@ bool Transport_PK::ComputeBCs_(
 
     for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
       int f = it->first;
-      WhetStone::DenseVector& values = it->second;
+
+      //WhetStone::DenseVector& values = it->second;
+      std::vector<double>& values = it->second; 
 
       for (int i = 0; i < ncomp; i++) {
         int k = tcc_index[i];
         if (k == component) {
           bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-          bc_value[f] = values(i);
+          bc_value[f] = values[i];
           flag = true;
         }
       }

@@ -25,6 +25,7 @@
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
+//#include "MeshInfo.hh"
 #include "State.hh"
 
 // Flow
@@ -63,6 +64,13 @@ void RunTestMarshak(std::string controller) {
   meshfactory.preference(pref);
   RCP<const Mesh> mesh = meshfactory(-10.0, -5.0, 10.0, 0.0, 101, 50, gm);
 
+  std::string filename;
+  // Teuchos::ParameterList mesh_info_list;
+  // filename = controller.replace(controller.size()-4, 4, "_mesh");
+  // mesh_info_list.set<std::string>("filename", filename);
+  // Teuchos::RCP<Amanzi::MeshInfo> mesh_info = Teuchos::rcp(new Amanzi::MeshInfo(mesh_info_list, &comm));
+  // mesh_info->WriteMeshCentroids(*mesh);
+
   // create a simple state and populate it
   Amanzi::VerboseObject::hide_line_prefix = true;
 
@@ -77,14 +85,28 @@ void RunTestMarshak(std::string controller) {
 
   // modify the default state for the problem at hand
   // -- permeability
+
   std::string passwd("flow"); 
+
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
-  
-  for (int c = 0; c < K.MyLength(); c++) {
-    K[0][c] = 0.1;
-    K[1][c] = 2.0;
+  double diff_in_perm = 0.;
+  if (!S->GetField("permeability")->initialized()){
+    for (int c = 0; c < K.MyLength(); c++) {
+      const AmanziGeometry::Point xc = mesh->cell_centroid(c);
+      K[0][c] = 0.1 + std::sin(xc[0]) * 0.02;
+      K[1][c] = 2.0 + std::cos(xc[1]) * 0.4;
+    }
+    S->GetField("permeability", "flow")->set_initialized();
+  }else{
+    for (int c = 0; c < K.MyLength(); c++) {
+      const AmanziGeometry::Point xc = mesh->cell_centroid(c);
+      diff_in_perm += abs(K[0][c] - (0.1 + std::sin(xc[0]) * 0.02)) + 
+        abs(K[1][c] - (2.0 + std::cos(xc[1]) * 0.4));
+    }
+    std::cout<<"diff_in_perm "<<diff_in_perm<<"\n";
+    CHECK(diff_in_perm < 1.0e-12);
   }
-  S->GetField("permeability", "flow")->set_initialized();
+    
 
   // -- fluid density and viscosity
   *S->GetScalarData("fluid_density", passwd) = 1.0;
@@ -105,6 +127,8 @@ void RunTestMarshak(std::string controller) {
   // initialize the Darcy process kernel
   DPK->Initialize(S.ptr());
 
+  filename = controller.replace(controller.size()-5, 5, "_flow2D.gmv");
+
   // transient solution
   double t_old(0.0), t_new, dt(0.5);
   for (int n = 0; n < 10; n++) {
@@ -117,7 +141,8 @@ void RunTestMarshak(std::string controller) {
 
     if (MyPID == 0) {
       const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
-      GMV::open_data_file(*mesh, (std::string)"flow2D.gmv");
+      //GMV::open_data_file(*mesh, (std::string)"flow2D.gmv");
+      GMV::open_data_file(*mesh, filename);
       GMV::start_data();
       GMV::write_cell_data(p, 0, "pressure");
       GMV::close_data_file();
@@ -130,6 +155,10 @@ void RunTestMarshak(std::string controller) {
 
 TEST(FLOW_2D_DARCY_WELL_STANDARD) {
   RunTestMarshak("test/flow_darcy_well.xml");
+}
+
+TEST(FLOW_2D_DARCY_WELL_HETE_PERM) {
+   RunTestMarshak("test/flow_darcy_well_hete_perm.xml");
 }
 
 TEST(FLOW_2D_DARCY_WELL_ADAPRIVE) {
