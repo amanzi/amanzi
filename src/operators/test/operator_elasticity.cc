@@ -29,7 +29,6 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
-#include "AdvectionRiemann.hh"
 #include "Elasticity.hh"
 
 #include "AnalyticElasticity01.hh"

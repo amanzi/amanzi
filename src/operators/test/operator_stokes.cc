@@ -29,8 +29,8 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
+#include "Abstract.hh"
 #include "Accumulation.hh"
-#include "AdvectionRiemann.hh"
 #include "Elasticity.hh"
 #include "TreeOperator.hh"
 
@@ -124,7 +124,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
 
   // create divergence operator
   op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("divergence operator");
-  Teuchos::RCP<AdvectionRiemann> op10 = Teuchos::rcp(new AdvectionRiemann(op_list, mesh));
+  Teuchos::RCP<Abstract> op10 = Teuchos::rcp(new Abstract(op_list, mesh));
   op10->SetBCs(bcf, bcf);
   op10->AddBCs(bcv, bcv);
 
@@ -168,7 +168,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   global00->AssembleMatrix();
 
   // populate the divergence block
-  op10->UpdateMatrices(*solution.SubVector(0)->Data());
+  op10->UpdateMatrices();
   op10->ApplyBCs(false, true);
 
   // populate pressure block (for preconditioner)

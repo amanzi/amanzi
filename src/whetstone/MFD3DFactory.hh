@@ -20,6 +20,7 @@
 #include "Mesh.hh"
 
 #include "MFD3D.hh"
+#include "MFD3D_BernardiRaugel.hh"
 #include "MFD3D_Diffusion.hh"
 #include "MFD3D_Generalized_Diffusion.hh"
 
@@ -52,6 +53,10 @@ Teuchos::RCP<MFD3D> MFD3DFactory::Create(
   else if (physics == "diffusion generalized") {
     Teuchos::RCP<MFD3D_Generalized_Diffusion> mfd = 
         Teuchos::rcp(new MFD3D_Generalized_Diffusion(mesh));
+    return mfd;
+  }
+  else if (physics == "BernardiRaugel") {
+    Teuchos::RCP<MFD3D_BernardiRaugel> mfd = Teuchos::rcp(new MFD3D_BernardiRaugel(mesh));
     return mfd;
   }
 }

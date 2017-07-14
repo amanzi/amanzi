@@ -17,7 +17,7 @@
 #include "Point.hh"
 #include "errors.hh"
 
-#include "MFD3D_Elasticity.hh"
+#include "MFD3D_BernardiRaugel.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -27,7 +27,7 @@ namespace WhetStone {
 * The stable discretization for Stokes: vectors at nodes plus normal
 * components at faces. Fixed normal is used for the latter.
 ****************************************************************** */
-int MFD3D_Elasticity::H1consistencyBernardiRaugel(
+int MFD3D_BernardiRaugel::H1consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
   Entity_ID_List nodes, faces;
@@ -213,12 +213,12 @@ int MFD3D_Elasticity::H1consistencyBernardiRaugel(
 /* ******************************************************************
 * Stiffness matrix: the standard algorithm.
 ****************************************************************** */
-int MFD3D_Elasticity::StiffnessMatrixBernardiRaugel(
+int MFD3D_BernardiRaugel::StiffnessMatrix(
     int c, const Tensor& K, DenseMatrix& A)
 {
   DenseMatrix N;
 
-  int ok = H1consistencyBernardiRaugel(c, K, N, A);
+  int ok = H1consistency(c, K, N, A);
   if (ok) return ok;
 
   StabilityScalar_(N, A);
@@ -229,7 +229,7 @@ int MFD3D_Elasticity::StiffnessMatrixBernardiRaugel(
 /* ******************************************************************
 * Advection matrix depends on velocity u.
 ****************************************************************** */
-int MFD3D_Elasticity::AdvectionMatrixBernardiRaugel(
+int MFD3D_BernardiRaugel::AdvectionMatrix(
     int c, DenseMatrix& A, const std::vector<AmanziGeometry::Point>& u)
 {
   ASSERT(d_ == 2);
@@ -289,7 +289,7 @@ int MFD3D_Elasticity::AdvectionMatrixBernardiRaugel(
 * Divergence matrix: vectors at nodes, normal components on faces.
 * Fixed normal vector is used for the latter.
 ****************************************************************** */
-int MFD3D_Elasticity::DivergenceMatrixBernardiRaugel(int c, DenseMatrix& A)
+int MFD3D_BernardiRaugel::DivergenceMatrix(int c, DenseMatrix& A)
 {
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;

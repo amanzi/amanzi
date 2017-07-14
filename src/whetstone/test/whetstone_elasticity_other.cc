@@ -21,7 +21,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
-#include "MFD3D_Elasticity.hh"
+#include "MFD3D_BernardiRaugel.hh"
 #include "Tensor.hh"
 
 /* ******************************************************************
@@ -42,7 +42,7 @@ TEST(DIFFUSION_STOKES_2D) {
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
   RCP<Mesh> mesh = meshfactory("test/one_cell2.exo"); 
  
-  MFD3D_Elasticity mfd(mesh);
+  MFD3D_BernardiRaugel mfd(mesh);
 
   AmanziMesh::Entity_ID_List nodes, faces;
   std::vector<int> dirs;
@@ -62,7 +62,7 @@ TEST(DIFFUSION_STOKES_2D) {
   int nrows = 2 * nnodes + nfaces;
   DenseMatrix A(nrows, nrows);
 
-  mfd.StiffnessMatrixBernardiRaugel(cell, T, A);
+  mfd.StiffnessMatrix(cell, T, A);
 
   printf("Stiffness matrix for cell %3d\n", cell);
   for (int i = 0; i < nrows; i++) {
@@ -130,7 +130,7 @@ TEST(ADVECTION_NAVIER_STOKES_2D) {
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
   RCP<Mesh> mesh = meshfactory("test/one_cell2.exo"); 
  
-  MFD3D_Elasticity mfd(mesh);
+  MFD3D_BernardiRaugel mfd(mesh);
 
   // extract single cell
   int cell(0);
@@ -153,7 +153,7 @@ TEST(ADVECTION_NAVIER_STOKES_2D) {
   int nrows = 2 * nnodes + nfaces;
   DenseMatrix A(nrows, nrows);
 
-  mfd.AdvectionMatrixBernardiRaugel(cell, A, u);
+  mfd.AdvectionMatrix(cell, A, u);
 
   printf("Advection matrix for cell %3d\n", cell);
   for (int i = 0; i < 2*nnodes; i++) {

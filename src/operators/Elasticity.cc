@@ -18,6 +18,7 @@
 #include "errors.hh"
 #include "MatrixFE.hh"
 #include "MFD3D_Elasticity.hh"
+#include "MFD3D_BernardiRaugel.hh"
 #include "PreconditionerFactory.hh"
 #include "WhetStoneDefs.hh"
 
@@ -52,7 +53,7 @@ void Elasticity::SetTensorCoefficient(double K) {
 ****************************************************************** */
 void Elasticity::UpdateMatrices()
 {
-  WhetStone::MFD3D_Elasticity mfd(mesh_);
+  WhetStone::MFD3D_BernardiRaugel mfd(mesh_);
   WhetStone::DenseMatrix Acell;
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
@@ -61,7 +62,7 @@ void Elasticity::UpdateMatrices()
   for (int c = 0; c < ncells_owned; c++) {
     if (space_col_ == BERNARDI_RAUGEL) {
       if (K_.get()) Kc = (*K_)[c];
-      mfd.StiffnessMatrixBernardiRaugel(c, Kc, Acell);
+      mfd.StiffnessMatrix(c, Kc, Acell);
 
       local_op_->matrices[c] = Acell;
     }

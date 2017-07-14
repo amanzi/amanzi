@@ -48,6 +48,9 @@ class MFD3D_Electromagnetics : public virtual MFD3D,
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
 
+  // -- other matrices
+  virtual int DivergenceMatrix(int c, DenseMatrix& A) { return -1; }
+
   // other methods
   int MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& M);
   int MassMatrixInverseOptimized(int c, const Tensor& T, DenseMatrix& M);

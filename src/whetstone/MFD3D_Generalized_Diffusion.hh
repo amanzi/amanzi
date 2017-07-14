@@ -44,6 +44,9 @@ class MFD3D_Generalized_Diffusion : virtual public MFD3D {
   virtual int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac) {};
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A);
 
+  // other matrices
+  virtual int DivergenceMatrix(int c, DenseMatrix& A);
+
  private:
   void CurvedFaceGeometry_(int f, int dirs,
                            std::vector<AmanziGeometry::Point>& vv, 

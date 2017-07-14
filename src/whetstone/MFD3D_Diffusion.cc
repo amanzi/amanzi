@@ -506,6 +506,26 @@ int MFD3D_Diffusion::RecoverGradient_StiffnessMatrix(
 }
 
 
+/* ******************************************************************
+* Divergence matrix.
+****************************************************************** */
+int MFD3D_Diffusion::DivergenceMatrix(int c, DenseMatrix& A)
+{
+  Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
+
+  A.Reshape(1, nfaces);
+
+  for (int n = 0; n < nfaces; ++n) {
+    A(0, n) = mesh_->face_area(faces[n]) * dirs[n]; 
+  } 
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
 /* *****************************************************************
 *  OTHER ROUTINES
 ***************************************************************** */

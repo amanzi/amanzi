@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "dg.hh"
-#include "MFD3D_Elasticity.hh"
+#include "MFD3D_BernardiRaugel.hh"
 
 #include "AdvectionRiemann.hh"
 #include "OperatorDefs.hh"
@@ -135,7 +135,7 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
   AmanziMesh::Entity_ID_List nodes;
 
   WhetStone::DG dg(mesh_);
-  WhetStone::MFD3D_Elasticity mfd(mesh_);
+  WhetStone::MFD3D_BernardiRaugel mfd(mesh_);
 
   Teuchos::RCP<const Epetra_MultiVector> uc, uv;
   if (u.HasComponent("cell")) uc = u.ViewComponent("cell");
@@ -170,17 +170,6 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
 
       matrix[c] = Acell;
     }
-    else if (space_col_ == BERNARDI_RAUGEL && space_row_ == P0) { 
-      mesh_->cell_get_nodes(c, &nodes);
-      int nnodes = nodes.size();
-      int nfaces = mesh_->cell_get_num_faces(c);
-      int ndofs = d * nnodes + nfaces;
-
-      WhetStone::DenseMatrix Acell(1, ndofs);
-      mfd.DivergenceMatrixBernardiRaugel(c, Acell);
-
-      matrix[c] = Acell;
-    }
     else if (space_col_ == BERNARDI_RAUGEL && space_row_ == BERNARDI_RAUGEL) { 
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
@@ -195,7 +184,7 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
       }
 
       WhetStone::DenseMatrix Acell(ndofs, ndofs);
-      mfd.AdvectionMatrixBernardiRaugel(c, Acell, velocity);
+      mfd.AdvectionMatrix(c, Acell, velocity);
 
       matrix[c] = Acell;
     }

@@ -226,6 +226,30 @@ int MFD3D_Generalized_Diffusion::StiffnessMatrix(
 
 
 /* ******************************************************************
+* Divergence matrix.
+****************************************************************** */
+int MFD3D_Generalized_Diffusion::DivergenceMatrix(int c, DenseMatrix& A)
+{
+  Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
+
+  A.Reshape(1, d_ * nfaces);
+  A.PutScalar(0.0);
+
+  for (int n = 0; n < nfaces; ++n) {
+    int f = faces[n];
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    A(0, d_ * n) = norm(normal) * dirs[n]; 
+  } 
+
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
 * Geometry of a curved face
 ****************************************************************** */
 void MFD3D_Generalized_Diffusion::CurvedFaceGeometry_(

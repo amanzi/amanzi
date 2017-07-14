@@ -106,6 +106,11 @@ void Abstract::UpdateMatrices()
       mfd->StiffnessMatrix(c, Kc, Acell);
       matrix[c] = Acell;
     }
+  } else if (matrix_ == "divergence") {
+    for (int c = 0; c < ncells_owned; ++c) {
+      mfd->DivergenceMatrix(c, Acell);
+      matrix[c] = Acell;
+    }
   }
 }
 

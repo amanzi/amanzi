@@ -41,9 +41,10 @@ add_amanzi_library(whetstone
                           DeRham_Node.cc DeRham_Edge.cc DeRham_Face.cc
                           MFD3D.cc
                           MFD3D_Diffusion.cc MFD3D_Diffusion_Surface.cc MFD3D_Diffusion_Other.cc 
-                          MFD3D_Elasticity.cc MFD3D_Elasticity_Other.cc
+                          MFD3D_Elasticity.cc 
                           MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
                           MFD3D_Generalized_Diffusion.cc
+                          MFD3D_BernardiRaugel.cc
                           dg.cc nlfv.cc 
                           Tensor.cc DenseMatrix.cc
                    HEADERS DenseMatrix.hh
@@ -57,6 +58,7 @@ add_amanzi_library(whetstone
                            MFD3D_Elasticity.hh
                            MFD3D_Electromagnetics.hh
                            MFD3D_Generalized_Diffusion.hh
+                           MFD3D_BernardiRaugel.hh
                            MFD3DFactory.hh
                            nlfv.hh
                            Tensor.hh

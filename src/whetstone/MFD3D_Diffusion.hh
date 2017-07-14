@@ -47,9 +47,12 @@ class MFD3D_Diffusion : public virtual MFD3D,
   // -- mass matrix is adjusted to reflect scaling of fluxes by area
   virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W); 
 
-  // -- stiffness matrices
+  // -- stiffness matrix
   virtual int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A);
+
+  // -- other matrices
+  virtual int DivergenceMatrix(int c, DenseMatrix& A);
 
   // other mimetic methods
   // -- bad consistency conditions (flux is scaled by area)
