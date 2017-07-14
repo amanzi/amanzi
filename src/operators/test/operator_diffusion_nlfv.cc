@@ -96,8 +96,8 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
       double area = mesh->face_area(f);
       bc_model[f] = OPERATOR_BC_NEUMANN;
       bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
-      bc_model[f] = OPERATOR_BC_DIRICHLET;
-      bc_value[f] = ana.pressure_exact(xf, 0.0);
+      // bc_model[f] = OPERATOR_BC_DIRICHLET;
+      // bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
@@ -175,7 +175,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
           pl2_err, pinf_err, ul2_err, uinf_err,
           solver->num_itrs(), solver->residual(), solver->returned_code());
 
-      if (testing) CHECK(pl2_err < 0.1 / (loop + 1) && ul2_err < 0.4 / (loop + 1));
+      if (testing) CHECK(pl2_err < 0.2 / (loop + 1) && ul2_err < 0.4 / (loop + 1));
       CHECK(solver->num_itrs() < 15);
     }
   }

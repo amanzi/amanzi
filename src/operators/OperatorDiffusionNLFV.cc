@@ -393,9 +393,7 @@ void OperatorDiffusionNLFV::UpdateMatrices(
 
       }    
     }
-
-    
-
+   
   }
   stencil_data_->ScatterMasterToGhosted("flux_data");
 
@@ -596,8 +594,7 @@ double OperatorDiffusionNLFV::OneSidedWeightFluxes_(int i0, const CompositeVecto
         }else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
           sideflux += flux_data[i + k2][f] * (uc[0][c] - MapBoundaryValue_(f1, bc_value[f1])); 
         }else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
-          tmp = weight[i + k2][f];
-          neumann_flux += tmp * bc_value[f1] * mesh_->face_area(f1);
+          neumann_flux += flux_data[i + k2][f] * bc_value[f1] * mesh_->face_area(f1);
         }
       }
       flux[k1][f] = sideflux + neumann_flux;     
@@ -649,6 +646,21 @@ void OperatorDiffusionNLFV::ApplyBCs(bool primary, bool eliminate)
 
   return;
 }
+
+/* ******************************************************************
+ * Calculate approximation of the flux on an internal face as a weighted
+ * combination of one-side corrections g1,g2 and tpfa counterpart.
+* **************************************************************** */
+
+// double  OperatorDiffusionNLFV::ComputeWeightedFlux(int face, double g1, double g2, double u1, double u2){
+//   AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
+//   mesh_->face_get_cells(face, AmanziMesh::USED, &cells);
+//   int ncells = cells.size();
+//   ASSERT(ncells==2);
+//   double kf(1.0);
+//   if (k_face.get()) kf = (*k_face)[0][f];  
+// }
+
 
 
 /* ******************************************************************
