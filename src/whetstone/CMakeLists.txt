@@ -55,6 +55,7 @@ add_amanzi_library(whetstone
                            MFD3D_Diffusion.hh
                            MFD3D_Elasticity.hh
                            MFD3D_Electromagnetics.hh
+                           MFD3DFactory.hh
                            nlfv.hh
                            Tensor.hh
                            WhetStoneDefs.hh

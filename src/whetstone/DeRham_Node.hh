@@ -33,11 +33,19 @@ class DeRham_Node : virtual public InnerProductL2 {
     : InnerProduct(mesh) {};
   ~DeRham_Node() {};
 
+  // regular polytope
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
   virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M); 
 
   virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) {};
   virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) {}; 
+
+  // generalized polytope
+  virtual int L2consistencyGeneralized(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) {};
+  virtual int MassMatrixGeneralized(int c, const Tensor& K, DenseMatrix& M) {};
+
+  virtual int L2consistencyInverseGeneralized(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) {};
+  virtual int MassMatrixInverseGeneralized(int c, const Tensor& K, DenseMatrix& M) {};
 };
 
 }  // namespace WhetStone

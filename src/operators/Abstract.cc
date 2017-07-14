@@ -11,7 +11,7 @@
 
 #include <vector>
 
-#include "MFD3D_Diffusion.hh"
+#include "MFD3DFactory.hh"
 
 #include "Abstract.hh"
 #include "OperatorDefs.hh"
@@ -76,8 +76,11 @@ void Abstract::Init_(Teuchos::ParameterList& plist)
   global_op_->OpPushBack(local_op_);
 
   // parameters
-  // -- discretization method
-  method_ = plist.get<std::string>("discretization", "none");
+  // -- discretization details
+  polytope_ = plist.get<std::string>("polytope type");
+  method_ = plist.get<std::string>("mfd method");
+  matrix_ = plist.get<std::string>("matrix type");
+  hybridize_ = plist.get<bool>("perform hybridization", false);
 }
 
 
@@ -92,19 +95,22 @@ void Abstract::UpdateMatrices()
   int dir, d(mesh_->space_dimension());
   AmanziMesh::Entity_ID_List nodes;
 
-  WhetStone::MFD3D_Diffusion mfd(mesh_);
+  WhetStone::MFD3DFactory factory;
+  auto mfd = factory.Create(mesh_, method_, local_schema_col_.CreateUniqueName());
+ 
   WhetStone::DenseMatrix Wcell, Acell;
-
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
 
-  for (int c = 0; c < ncells_owned; ++c) {
-    if (K_.get()) Kc = (*K_)[c];
-    mfd.MassMatrixInverseGeneralized(c, Kc, Wcell);
-    mfd.HybridizeGeneralized(c, Wcell, Acell);
-// if(c==62) std::cout << Acell << std::endl;
+  if (matrix_ == "mass" && polytope_ == "generalized") {
+    for (int c = 0; c < ncells_owned; ++c) {
+      if (K_.get()) Kc = (*K_)[c];
+      mfd->MassMatrixInverseGeneralized(c, Kc, Wcell);
+      if (hybridize_)
+        mfd->HybridizeGeneralized(c, Wcell, Acell);
 
-    matrix[c] = Acell;
+      matrix[c] = Acell;
+    }
   }
 }
 

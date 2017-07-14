@@ -264,6 +264,7 @@ std::string Schema::CreateUniqueName() const
   for (auto it = items_.begin(); it != items_.end(); ++it) {
     name.append(c);
     name.append(KindToString(it->kind)); 
+    name.append(std::to_string(it->num)); 
     c = "+";
   }
 

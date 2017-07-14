@@ -49,9 +49,16 @@ class MFD3D_Elasticity : public virtual MFD3D {
   virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
   virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
 
-  // -- steffness matrix
+  // -- stiffness matrix
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
+
+  // -- generalized polytope
+  virtual int L2consistencyGeneralized(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) {};
+  virtual int MassMatrixGeneralized(int c, const Tensor& K, DenseMatrix& M) {};
+
+  virtual int L2consistencyInverseGeneralized(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) {};
+  virtual int MassMatrixInverseGeneralized(int c, const Tensor& K, DenseMatrix& M) {};
 
   // overriding other methods
   int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);

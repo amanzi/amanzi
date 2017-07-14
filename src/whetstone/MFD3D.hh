@@ -44,6 +44,9 @@ class MFD3D : public virtual InnerProductL2,
   explicit MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~MFD3D() {};
 
+  // main methods
+  virtual void HybridizeGeneralized(int c, const DenseMatrix& M, DenseMatrix& A) {};
+
   // geometry methods
   void PolygonCentroidWeights(
       const Entity_ID_List& nodes,

@@ -167,6 +167,160 @@ int DeRham_Face::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
   return ok;
 }
 
+
+/* ******************************************************************
+* Consistency condition for inner product on a generized polyhedron.
+****************************************************************** */
+int DeRham_Face::L2consistencyGeneralized(
+    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
+{
+  Entity_ID_List faces, nodes;
+  std::vector<int> dirs;
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+
+  int nfaces = faces.size();
+  int nx(d_ * nfaces);
+
+  N.Reshape(nx, d_);
+  Mc.Reshape(nx, nx);
+
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  double volume = mesh_->cell_volume(c);
+
+  AmanziGeometry::Point v1(d_), v2(d_);
+  std::vector<AmanziGeometry::Point> vv(3), xm(3);
+
+  // populate matrices R and N
+  DenseMatrix R(N);
+  for (int i = 0; i < nfaces; ++i) {
+    int f = faces[i];
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    double area = mesh_->face_area(f);  
+    double area_div = norm(normal);
+
+    CurvedFaceGeometry_(f, dirs[i], vv, xm);
+
+    for (int k = 0; k < d_; ++k) {
+      R(d_ * i, k) = area * xm[0][k] - area_div * xc[k];
+      R(d_ * i + 1, k) = area * xm[1][k];
+      R(d_ * i + 2, k) = area * xm[2][k];
+
+      for (int l = 0; l < d_; ++l) {
+        N(d_ * i + l, k) = vv[l][k];
+      }
+    }
+  }
+
+  // upper triangular part of the consistency term
+  Tensor Kinv(K);
+  Kinv.Inverse();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int k = 0; k < d_; ++k) v1[k] = R(i, k);
+    v2 = Kinv * v1;
+
+    for (int j = i; j < nx; ++j) {
+      for (int k = 0; k < d_; ++k) v1[k] = R(j, k);
+      Mc(i, j) = (v1 * v2) / volume;
+    }
+  }
+
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Mass matrix for genelized polyhedron
+****************************************************************** */
+int DeRham_Face::MassMatrixGeneralized(int c, const Tensor& K, DenseMatrix& M)
+{
+  DenseMatrix N;
+
+  Tensor Kinv(K);
+  Kinv.Inverse();
+
+  int ok = L2consistencyGeneralized(c, Kinv, N, M, true);
+  if (ok) return ok;
+
+  StabilityScalar_(N, M);
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Consistency condition for inverse of inner product on a generized 
+* polyhedron.
+****************************************************************** */
+int DeRham_Face::L2consistencyInverseGeneralized(
+    int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
+{
+  Entity_ID_List faces, nodes;
+  std::vector<int> dirs;
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+
+  int nfaces = faces.size();
+  int nx(d_ * nfaces);
+
+  R.Reshape(nx, d_);
+  Wc.Reshape(nx, nx);
+
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  double volume = mesh_->cell_volume(c);
+
+  AmanziGeometry::Point v1(d_), v2(d_);
+  std::vector<AmanziGeometry::Point> vv(3), xm(3);
+
+  // populate matrices R and N
+  DenseMatrix N(R);
+  for (int i = 0; i < nfaces; ++i) {
+    int f = faces[i];
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    double area = mesh_->face_area(f);  
+    double area_div = norm(normal);
+
+    CurvedFaceGeometry_(f, dirs[i], vv, xm);
+
+    for (int k = 0; k < d_; ++k) {
+      R(d_ * i, k) = area * xm[0][k] - area_div * xc[k];
+      R(d_ * i + 1, k) = area * xm[1][k];
+      R(d_ * i + 2, k) = area * xm[2][k];
+
+      for (int l = 0; l < d_; ++l) {
+        N(d_ * i + l, k) = vv[l][k];
+      }
+    }
+  }
+
+  // upper triangular part of the consistency term
+  for (int i = 0; i < nx; ++i) {
+    for (int k = 0; k < d_; ++k) v1[k] = N(i, k);
+    v2 = K * v1;
+
+    for (int j = i; j < nx; ++j) {
+      for (int k = 0; k < d_; ++k) v1[k] = N(j, k);
+      Wc(i, j) = (v1 * v2) / volume;
+    }
+  }
+
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Inverse mass matrix for generalized polyhedron
+****************************************************************** */
+int DeRham_Face::MassMatrixInverseGeneralized(
+    int c, const Tensor& K, DenseMatrix& W)
+{
+  DenseMatrix R;
+
+  int ok = L2consistencyInverseGeneralized(c, K, R, W, true);
+  if (ok) return ok;
+
+  StabilityScalar_(R, W);
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

@@ -51,6 +51,9 @@ class MFD3D_Diffusion : public virtual MFD3D,
   virtual int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A);
 
+  // generalized polytope
+  virtual void HybridizeGeneralized(int c, const DenseMatrix& M, DenseMatrix& A);
+
   // other mimetic methods
   // -- bad consistency conditions (flux is scaled by area)
   int L2consistencyScaledArea(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
@@ -80,15 +83,6 @@ class MFD3D_Diffusion : public virtual MFD3D,
   int MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix& M);
   int MassMatrixInverseNonSymmetric(int c, const Tensor& K, DenseMatrix& W);
 
-  //  -- generalized polyhedron
-  int L2consistencyGeneralized(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
-  int MassMatrixGeneralized(int c, const Tensor& K, DenseMatrix& M);
-
-  int L2consistencyInverseGeneralized(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
-  int MassMatrixInverseGeneralized(int c, const Tensor& K, DenseMatrix& M);
-
-  void HybridizeGeneralized(int c, const DenseMatrix& M, DenseMatrix& A);
-
   // surface methods
   // -- mass matrix
   int L2consistencyInverseSurface(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);
@@ -114,10 +108,6 @@ class MFD3D_Diffusion : public virtual MFD3D,
   int StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M);
   void RescaleMassMatrixInverse_(int c, DenseMatrix& W);
   void StabilityScalarNonSymmetric_(int c, DenseMatrix& N, DenseMatrix& M);
-
-  void CurvedFaceGeometry_(int f, int dirs,
-                           std::vector<AmanziGeometry::Point>& vv, 
-                           std::vector<AmanziGeometry::Point>& xm);
 
   // mesh extension methods 
   // -- exterior normal

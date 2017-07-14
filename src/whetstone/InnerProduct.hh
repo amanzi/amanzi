@@ -15,6 +15,8 @@
 #ifndef AMANZI_INNER_PRODUCT_HH_
 #define AMANZI_INNER_PRODUCT_HH_
 
+#include <vector>
+
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
@@ -45,6 +47,11 @@ class InnerProduct {
 
   double CalculateStabilityScalar_(DenseMatrix& Mc);
   void GrammSchmidt_(DenseMatrix& N);
+
+  // supporting geometry methods
+  void CurvedFaceGeometry_(int f, int dirs,
+                           std::vector<AmanziGeometry::Point>& vv, 
+                           std::vector<AmanziGeometry::Point>& xm);
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
