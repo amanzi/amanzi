@@ -9,6 +9,5 @@ RUN ./bootstrap.sh --prefix=/home/amanzi_user/local \
    --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
    --tpl-config-file=/home/amanzi_user/local/tpls/share/cmake/amanzi-tpl-config.cmake \
    --parallel=8 \
-   --disable-structured \
    --enable-test_suite \
    && rm -r /home/amanzi_user/amanzi_builddir/
