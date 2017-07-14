@@ -10,6 +10,5 @@ RUN ./bootstrap.sh --prefix=/home/amanzi_user/local \
    --tpl-config-file=/home/amanzi_user/local/tpls/share/cmake/amanzi-tpl-config.cmake \
    --parallel=8 \
    --disable-structured \
-   --disable-alquimia \
    --enable-test_suite \
    && rm -r /home/amanzi_user/amanzi_builddir/
