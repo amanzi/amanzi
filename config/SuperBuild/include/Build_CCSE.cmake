@@ -67,7 +67,7 @@ set(CCSE_CMAKE_CACHE_ARGS
 ExternalProject_Add(${CCSE_BUILD_TARGET}
                     DEPENDS   ${CCSE_PACKAGE_DEPENDS}             # Package dependency target
                     TMP_DIR   ${CCSE_tmp_dir}                     # Temporary files directory
-                    #STAMP_DIR ${CCSE_stamp_dir}                   # Timestamp and log directory
+                    STAMP_DIR ${CCSE_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}              # Download directory
                     URL          ${CCSE_URL}                      # URL may be a web site OR a local file
@@ -86,7 +86,7 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
                     # -- Output control
                     ${CCSE_logging_args}) 
-		    
+
 if ( ENABLE_CCSE_TOOLS )
 
 # --- This custom command builds fsnapshot.so, which is a Python module used 
