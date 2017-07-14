@@ -318,7 +318,8 @@ void DiffusionNLFV::UpdateMatrices(
   AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
 
   matrix_cv.PutScalarMasterAndGhosted(0.0);
-  flux_data.PutScalar(0.);
+  flux_data.PutScalar(0.0);
+
   for (int c = 0; c < ncells_owned; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -348,7 +349,6 @@ void DiffusionNLFV::UpdateMatrices(
         g1 = sideflux[0][f];
         g2 = sideflux[1][f];
         gg = g1 * g2;
-        
 
         g1 = fabs(g1);
         g2 = fabs(g2);
@@ -382,12 +382,9 @@ void DiffusionNLFV::UpdateMatrices(
           matrix[k1][f1] += kf * tmp;
           flux_data[k2+i][f] = kf * tmp;
         }
-
       }    
     }
-
-    
-
+   
   }
   stencil_data_->ScatterMasterToGhosted("flux_data");
 
@@ -549,8 +546,13 @@ double DiffusionNLFV::OneSidedFluxCorrections_(
   flux_cv.ScatterMasterToGhosted();
 }
 
-double OperatorDiffusionNLFV::OneSidedWeightFluxes_(int i0, const CompositeVector& u, CompositeVector& flux_cv) {
 
+/* ******************************************************************
+* Calculate one-sided fluxes (i0=0) or flux corrections (i0=1).
+****************************************************************** */
+double DiffusionNLFV::OneSidedWeightFluxes_(
+    int i0, const CompositeVector& u, CompositeVector& flux_cv)
+{
   // un-rolling composite vectors
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
   Epetra_MultiVector& flux = *flux_cv.ViewComponent("face", true);
@@ -588,8 +590,7 @@ double OperatorDiffusionNLFV::OneSidedWeightFluxes_(int i0, const CompositeVecto
         }else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
           sideflux += flux_data[i + k2][f] * (uc[0][c] - MapBoundaryValue_(f1, bc_value[f1])); 
         }else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
-          tmp = weight[i + k2][f];
-          neumann_flux += tmp * bc_value[f1] * mesh_->face_area(f1);
+          neumann_flux += flux_data[i + k2][f] * bc_value[f1] * mesh_->face_area(f1);
         }
       }
       flux[k1][f] = sideflux + neumann_flux;     
@@ -644,6 +645,24 @@ void DiffusionNLFV::ApplyBCs(bool primary, bool eliminate)
 
 
 /* ******************************************************************
+* Calculate approximation of flux on an internal face as a weighted
+* combination of one-side corrections g1, g2 and tpfa counterpart.
+* **************************************************************** */
+/*
+double OperatorDiffusionNLFV::ComputeWeightedFlux(
+   int face, double g1, double g2, double u1, double u2)
+{
+  AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
+  mesh_->face_get_cells(face, AmanziMesh::USED, &cells);
+  int ncells = cells.size();
+  ASSERT(ncells==2);
+  double kf(1.0);
+  if (k_face.get()) kf = (*k_face)[0][f];  
+}
+*/
+
+
+/* ******************************************************************
 * Calculate flux using cell-centered data.
 * **************************************************************** */
 void DiffusionNLFV::UpdateFlux(const CompositeVector& u, CompositeVector& flux) 
@@ -653,16 +672,13 @@ void DiffusionNLFV::UpdateFlux(const CompositeVector& u, CompositeVector& flux)
 
   CompositeVectorSpace cvs; 
   cvs.SetMesh(mesh_)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 2);
-  //CompositeVector sideflux_cv(cvs), wgt_sideflux_cv(cvs);
   CompositeVector wgt_sideflux_cv(cvs);
 
-
-  //Epetra_MultiVector& sideflux = *sideflux_cv.ViewComponent("face", true);
   Epetra_MultiVector& wgt_sideflux = *wgt_sideflux_cv.ViewComponent("face", true);
   Epetra_MultiVector& flux_data = *flux.ViewComponent("face", true);
 
   u.ScatterMasterToGhosted("cell");
-  //OneSidedFluxCorrections_(0, u, sideflux_cv);
+  // OneSidedFluxCorrections_(0, u, sideflux_cv);
   OneSidedWeightFluxes_(0, u, wgt_sideflux_cv);
 
   int c1, c2, dir;
@@ -683,31 +699,13 @@ void DiffusionNLFV::UpdateFlux(const CompositeVector& u, CompositeVector& flux)
       OrderCellsByGlobalId_(cells, c1, c2);
       const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
 
-      // double g1 = sideflux[0][f]; 
-      // double g2 = sideflux[1][f]; 
       double wg1 = wgt_sideflux[0][f]; 
       double wg2 = wgt_sideflux[1][f];
 
-      // double det = fabs(g1) + fabs(g2);
-      // flux_data[0][f] = (det == 0.0) ? 0.0 : 2 * dir * fabs(g2) * g1 / det; 
-
       if (cells.size() == 2) flux_data[0][f] = 0.5*(wg1 - wg2)*dir;
       else flux_data[0][f] = dir*wg1;
-
-      // if (fabs(wg1+wg2) > disc_val) {
-      //     disc_val = fabs(wg1+wg2);
-      //     f_bad = f;
-      //     std::cout<<"sideflux face "<<f_bad<<" "<<std::setprecision(12)<<wg1<<" "<<wg2<<" "<<flux_data[0][f]<<"\n";
-      // }
-
     }
   }
-
-  // std::cout<<"Flux discrepancy "<<std::setprecision(12)<<disc_val<<"\n";
-  // const AmanziGeometry::Point& xcf = mesh_->face_centroid(f_bad);
-  // mesh_->face_get_cells(f_bad, AmanziMesh::USED, &cells);
-  // std::cout<<"Bad Face "<<f_bad<<" : "<<xcf<<" cells "<<cells[0]<<" "<<cells[1]<<"\n";
-
 }
 
 

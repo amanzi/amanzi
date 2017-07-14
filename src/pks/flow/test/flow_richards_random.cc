@@ -1,5 +1,5 @@
 /*
-   Flow PK
+  Flow PK
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -64,7 +64,6 @@ void RunTestConvergence(std::string input_xml) {
     meshfactory.preference(pref);
     Teuchos::RCP<const Mesh> mesh;
     if (n == 0) {
-      //mesh = meshfactory("test/test_nice.exo", gm);
       mesh = meshfactory("test/random_mesh1.exo", gm);
     } else if (n == 1) {
       mesh = meshfactory("test/random_mesh2.exo", gm);
@@ -114,10 +113,9 @@ void RunTestConvergence(std::string input_xml) {
     printf("mesh=%d bdf1_steps=%d  L2_pressure_err=%7.3e  l2_flux_err=%7.3e  L2_div_err=%7.3e\n",
         n, num_bdf1_steps, pressure_err, flux_err, div_err);
 
-    // CHECK(pressure_err < 2.2e-1 && flux_err < 2e-1 && div_err < 1e-7);
     CHECK(pressure_err < 2.2e-1 && flux_err < 2e-1 && div_err < 2e-1);
 
-    GMV::open_data_file(*mesh, (std::string)"flow_richards.gmv");
+    GMV::open_data_file(*mesh, (std::string)"flow.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "pressure");
     GMV::close_data_file();

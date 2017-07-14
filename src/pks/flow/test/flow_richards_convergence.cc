@@ -125,9 +125,9 @@ void RunTestConvergence(std::string input_xml) {
 /* *****************************************************************
 * Run with various discretization methods
 * **************************************************************** */
-// TEST(FLOW_RICHARDS_CONVERGENCE_MFD) {
-//   RunTestConvergence("test/flow_richards_convergence.xml");
-// }
+TEST(FLOW_RICHARDS_CONVERGENCE_MFD) {
+  RunTestConvergence("test/flow_richards_convergence.xml");
+}
 
 TEST(FLOW_RICHARDS_CONVERGENCE_NLFV) {
   RunTestConvergence("test/flow_richards_convergence_nlfv.xml");

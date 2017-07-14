@@ -1,6 +1,6 @@
 <ParameterList name="main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="number of meshes" type="int" value="3"/>
+  <Parameter name="number of meshes" type="int" value="2"/>
 
   <ParameterList name="domain">
     <Parameter name="spatial dimension" type="int" value="2"/>
@@ -69,8 +69,8 @@
     <ParameterList name="flow">
       <ParameterList name="Richards problem">
         <ParameterList name="relative permeability">
-          <!-- <Parameter name="upwind method" type="string" value="upwind: gravity"/> -->
-          <!-- <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/> -->
+          <!--Parameter name="upwind method" type="string" value="upwind: gravity"/>
+          <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/-->
           <Parameter name="upwind method" type="string" value="other: arithmetic average"/>
           <ParameterList name="upwind parameters">
             <Parameter name="tolerance" type="double" value="1e-12"/>
@@ -106,14 +106,14 @@
           <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
           <Parameter name="error control options" type="Array(string)" value="{pressure,residual}"/>
 
-          <!-- <ParameterList name="initialization"> -->
-          <!--   <Parameter name="method" type="string" value="picard"/> -->
-          <!--   <Parameter name="linear solver" type="string" value="AztecOO"/> -->
-          <!--   <ParameterList name="picard parameters"> -->
-          <!--     <Parameter name="convergence tolerance" type="double" value="1.0e-8"/> -->
-          <!--     <Parameter name="maximum number of iterations" type="int" value="20"/> -->
-          <!--   </ParameterList> -->
-          <!-- </ParameterList> -->
+          <!--ParameterList name="initialization">
+            <Parameter name="method" type="string" value="picard"/>
+            <Parameter name="linear solver" type="string" value="AztecOO"/>
+            <ParameterList name="picard parameters">
+              <Parameter name="convergence tolerance" type="double" value="1.0e-8"/>
+              <Parameter name="maximum number of iterations" type="int" value="20"/>
+            </ParameterList>
+          </ParameterList-->
 
           <Parameter name="time integration method" type="string" value="BDF1"/>
           <ParameterList name="BDF1">
