@@ -186,7 +186,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   // -- create divergence block
   Teuchos::ParameterList& tmp2 = ns_list_->sublist("operators")
                                           .sublist("divergence operator");
-  op_matrix_div_ = Teuchos::rcp(new Operators::AdvectionRiemann(tmp2, mesh_));
+  op_matrix_div_ = Teuchos::rcp(new Operators::Abstract(tmp2, mesh_));
 
   // -- create accumulation term (velocity block, only nodal unknowns)
   Operators::Schema schema(AmanziMesh::NODE, 2);  // FIXME

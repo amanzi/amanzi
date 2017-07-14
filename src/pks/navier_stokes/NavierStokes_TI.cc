@@ -45,7 +45,7 @@ void NavierStokes_PK::Functional(double t_old, double t_new,
   op_matrix_conv_->ApplyBCs(false, true);
 
   op_matrix_div_->global_operator()->Init();
-  op_matrix_div_->UpdateMatrices(*u_old->SubVector(0)->Data());
+  op_matrix_div_->UpdateMatrices();
   op_matrix_div_->ApplyBCs(false, true);
 
   // Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();

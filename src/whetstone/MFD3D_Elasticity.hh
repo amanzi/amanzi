@@ -53,7 +53,10 @@ class MFD3D_Elasticity : public virtual MFD3D {
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
 
-  // overriding other methods
+  // -- other matrices
+  virtual int DivergenceMatrix(int c, DenseMatrix& A) { return -1; }
+
+  // optimization methods (mainly for testing)
   int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);
   int StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A);
 

@@ -8,7 +8,8 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Abstract operator. 
+  An abstract operator uses factory of mimetic schemes and standard
+  interface for creating stiffness, mass and divergence matrices.
 */
 
 #ifndef AMANZI_OPERATOR_ABSTRACT_HH_
@@ -16,6 +17,10 @@
 
 #include <string>
 
+// Amanzi
+#include "Tensor.hh"
+
+// Operators
 #include "PDE_Helper.hh"
 
 namespace Amanzi {
