@@ -77,10 +77,8 @@ void Abstract::Init_(Teuchos::ParameterList& plist)
 
   // parameters
   // -- discretization details
-  polytope_ = plist.get<std::string>("polytope type");
   method_ = plist.get<std::string>("mfd method");
   matrix_ = plist.get<std::string>("matrix type");
-  hybridize_ = plist.get<bool>("perform hybridization", false);
 }
 
 
@@ -98,17 +96,14 @@ void Abstract::UpdateMatrices()
   WhetStone::MFD3DFactory factory;
   auto mfd = factory.Create(mesh_, method_, local_schema_col_.CreateUniqueName());
  
-  WhetStone::DenseMatrix Wcell, Acell;
+  WhetStone::DenseMatrix Mcell, Acell;
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
 
-  if (matrix_ == "mass" && polytope_ == "generalized") {
+  if (matrix_ == "stiffness") {
     for (int c = 0; c < ncells_owned; ++c) {
       if (K_.get()) Kc = (*K_)[c];
-      mfd->MassMatrixInverseGeneralized(c, Kc, Wcell);
-      if (hybridize_)
-        mfd->HybridizeGeneralized(c, Wcell, Acell);
-
+      mfd->StiffnessMatrix(c, Kc, Acell);
       matrix[c] = Acell;
     }
   }

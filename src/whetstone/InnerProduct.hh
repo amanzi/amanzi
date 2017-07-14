@@ -48,11 +48,6 @@ class InnerProduct {
   double CalculateStabilityScalar_(DenseMatrix& Mc);
   void GrammSchmidt_(DenseMatrix& N);
 
-  // supporting geometry methods
-  void CurvedFaceGeometry_(int f, int dirs,
-                           std::vector<AmanziGeometry::Point>& vv, 
-                           std::vector<AmanziGeometry::Point>& xm);
-
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int d_;

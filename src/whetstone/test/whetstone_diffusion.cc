@@ -20,6 +20,7 @@
 #include "Point.hh"
 
 #include "MFD3D_Diffusion.hh"
+#include "MFD3D_Generalized_Diffusion.hh"
 #include "Tensor.hh"
 
 
@@ -199,7 +200,7 @@ TEST(DARCY_MASS_3D_GENERALIZED_POYHEDRON) {
   Teuchos::RCP<Mesh> mesh = meshfactory("test/hex_random.exo"); 
   // Teuchos::RCP<Mesh> mesh = meshfactory("test/random3D_05.exo"); 
  
-  MFD3D_Diffusion mfd(mesh);
+  MFD3D_Generalized_Diffusion mfd(mesh);
 
   int nfaces = 6, cell = 0;
   double volume = mesh->cell_volume(cell);
@@ -213,8 +214,8 @@ TEST(DARCY_MASS_3D_GENERALIZED_POYHEDRON) {
   T(1, 2) = T(2, 1) = -0.03448275862069;
 
   // consistency condition
-  mfd.L2consistencyGeneralized(cell, T, N, M, true);
-  mfd.L2consistencyInverseGeneralized(cell, T, R, M, true);
+  mfd.L2consistency(cell, T, N, M, true);
+  mfd.L2consistencyInverse(cell, T, R, M, true);
  
   B.Multiply(N, R, true);
   for (int i = 0; i < 3; ++i) { 
@@ -225,7 +226,7 @@ TEST(DARCY_MASS_3D_GENERALIZED_POYHEDRON) {
   }
 
   // mass matrix
-  mfd.MassMatrixGeneralized(cell, T, M);
+  mfd.MassMatrix(cell, T, M);
 
   printf("Mass matrix for cell %3d  volume=%12.4f\n", cell, volume);
   M.PrintMatrix("%8.4f ");

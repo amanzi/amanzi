@@ -21,6 +21,7 @@
 
 #include "MFD3D.hh"
 #include "MFD3D_Diffusion.hh"
+#include "MFD3D_Generalized_Diffusion.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -46,6 +47,11 @@ Teuchos::RCP<MFD3D> MFD3DFactory::Create(
 {
   if (physics == "diffusion") {
     Teuchos::RCP<MFD3D_Diffusion> mfd = Teuchos::rcp(new MFD3D_Diffusion(mesh));
+    return mfd;
+  }
+  else if (physics == "diffusion generalized") {
+    Teuchos::RCP<MFD3D_Generalized_Diffusion> mfd = 
+        Teuchos::rcp(new MFD3D_Generalized_Diffusion(mesh));
     return mfd;
   }
 }

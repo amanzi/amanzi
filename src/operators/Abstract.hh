@@ -48,8 +48,7 @@ class Abstract : public PDE_Helper {
   void Init_(Teuchos::ParameterList& plist);
 
  private:
-  std::string polytope_, method_, matrix_;
-  bool hybridize_;
+  std::string method_, matrix_;
 };
 
 }  // namespace Operators

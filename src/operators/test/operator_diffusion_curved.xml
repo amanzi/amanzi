@@ -70,10 +70,8 @@
 
     <!-- Curved MFD schemes -->
     <ParameterList name="diffusion operator curved">
-      <Parameter name="polytope type" type="string" value="generalized"/>
-      <Parameter name="mfd method" type="string" value="diffusion"/>
-      <Parameter name="matrix type" type="string" value="mass"/>
-      <Parameter name="perform hybridization" type="bool" value="true"/>
+      <Parameter name="mfd method" type="string" value="diffusion generalized"/>
+      <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema domain">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="location" type="Array(string)" value="{face, cell}"/>

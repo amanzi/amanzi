@@ -51,9 +51,6 @@ class MFD3D_Diffusion : public virtual MFD3D,
   virtual int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A);
 
-  // generalized polytope
-  virtual void HybridizeGeneralized(int c, const DenseMatrix& M, DenseMatrix& A);
-
   // other mimetic methods
   // -- bad consistency conditions (flux is scaled by area)
   int L2consistencyScaledArea(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
