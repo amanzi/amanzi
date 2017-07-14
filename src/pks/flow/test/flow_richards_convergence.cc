@@ -85,8 +85,8 @@ void RunTestConvergence(std::string input_xml) {
     TI_Specs ti_specs;
     ti_specs.T0 = 0.0;
     ti_specs.dT0 = 1.0;
-    ti_specs.T1 = 1.0e+4;
-    ti_specs.max_itrs = 1000;
+    ti_specs.T1 = 1.0e+5;
+    ti_specs.max_itrs = 2000;
 
     AdvanceToSteadyState(S, *RPK, ti_specs, soln);
     RPK->CommitStep(0.0, 1.0, S);  // dummy times
@@ -125,9 +125,9 @@ void RunTestConvergence(std::string input_xml) {
 /* *****************************************************************
 * Run with various discretization methods
 * **************************************************************** */
-TEST(FLOW_RICHARDS_CONVERGENCE_MFD) {
-  RunTestConvergence("test/flow_richards_convergence.xml");
-}
+// TEST(FLOW_RICHARDS_CONVERGENCE_MFD) {
+//   RunTestConvergence("test/flow_richards_convergence.xml");
+// }
 
 TEST(FLOW_RICHARDS_CONVERGENCE_NLFV) {
   RunTestConvergence("test/flow_richards_convergence_nlfv.xml");
