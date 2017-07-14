@@ -170,7 +170,10 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
           pl2_err, pinf_err, ul2_err, uinf_err,
           solver.num_itrs(), solver.residual(), solver.returned_code());
 
-      if (testing) CHECK(pl2_err < 0.2 / (loop + 1) && ul2_err < 0.4 / (loop + 1));
+      if (testing) {
+        double factor = std::pow(1.6, loop);
+        CHECK(pl2_err < 0.2 / factor && ul2_err < 0.4 / factor);
+      }
       CHECK(solver.num_itrs() < 15);
     }
   }
