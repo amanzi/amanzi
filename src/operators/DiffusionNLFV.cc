@@ -384,11 +384,9 @@ void DiffusionNLFV::UpdateMatrices(
         }
       }    
     }
-   
   }
-  //stencil_data_->ScatterMasterToGhosted("flux_data");
-  stencil_data_->GatherGhostedToMaster("flux_data");
 
+  stencil_data_->GatherGhostedToMaster("flux_data");
   matrix_cv.GatherGhostedToMaster();
 
   // populate local matrices

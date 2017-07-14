@@ -137,7 +137,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
 
     // solve the problem
     Teuchos::ParameterList lop_list = plist.sublist("solvers")
-                                  .sublist("Belos GMRES").sublist("belos gmres parameters");
+                                           .sublist("Belos GMRES").sublist("belos gmres parameters");
     AmanziSolvers::LinearOperatorBelosGMRES<Operator, CompositeVector, CompositeVectorSpace>
         solver(global_op, global_op);
     solver.Init(lop_list);
