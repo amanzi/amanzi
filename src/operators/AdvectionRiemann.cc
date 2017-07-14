@@ -151,9 +151,7 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
       }
 
       WhetStone::DenseMatrix Acell(1, 1);
-
       dg.TaylorAdvectionMatrixCell(c, 0, v, Acell);
-
       matrix[c] = Acell;
     } 
     else if (space_col_ == DG1 && space_row_ == DG1) {
@@ -165,9 +163,7 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
       }
 
       WhetStone::DenseMatrix Acell(3, 3);
-
       dg.TaylorAdvectionMatrixCell(c, 1, v, Acell);
-
       matrix[c] = Acell;
     }
     else if (space_col_ == BERNARDI_RAUGEL && space_row_ == BERNARDI_RAUGEL) { 
