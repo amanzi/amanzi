@@ -103,6 +103,7 @@ class DiffusionNLFV : public virtual Diffusion {
  protected:
   void InitStencils_();
   double OneSidedFluxCorrections_(int i0, const CompositeVector& u, CompositeVector& sideflux);
+  double OneSidedWeightFluxes_(int i0, const CompositeVector& u, CompositeVector& sideflux);
   int OrderCellsByGlobalId_(const AmanziMesh::Entity_ID_List& cells, int& c1, int& c2);
   
  protected:
