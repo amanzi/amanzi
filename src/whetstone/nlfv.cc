@@ -28,7 +28,7 @@ namespace WhetStone {
 *   p = w p_c1 + (1-w) p_c2. 
 *
 * Input: face f, two cells sharing this face, and two co-normal 
-*        vectors Tni = Ti * normal.
+*        vectors Tni = Ti * normal where fixed normal is used.
 * Output: HAP p and weight w.
 ****************************************************************** */
 void NLFV::HarmonicAveragingPoint(
@@ -36,36 +36,27 @@ void NLFV::HarmonicAveragingPoint(
     const AmanziGeometry::Point& Tn1, const AmanziGeometry::Point& Tn2,
     AmanziGeometry::Point& p, double& weight)
 {
-  int d = mesh_->space_dimension();
+  int dir, d(mesh_->space_dimension());
 
   const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-  const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+  const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
 
   const AmanziGeometry::Point& cm1 = mesh_->cell_centroid(c1);
   const AmanziGeometry::Point& cm2 = mesh_->cell_centroid(c2);
 
-  double d1s = normal * (fm - cm1);
-  double d2s = normal * (fm - cm2);
+  double area = mesh_->face_area(f);
+  double d1 = fabs(normal * (fm - cm1)) / area;
+  double d2 = fabs(normal * (fm - cm2)) / area;
 
-  double d1 = fabs(d1s);
-  double d2 = fabs(d2s);
-  
-  double t1 = fabs(normal * Tn1);
-  double t2 = fabs(normal * Tn2);
+  double a2 = area * area;
+  double t1 = fabs(normal * Tn1) / a2;
+  double t2 = fabs(normal * Tn2) / a2;
 
   double det = t1 * d2 + t2 * d1;
   weight = t1 * d2 / det;
 
-  AmanziGeometry::Point y1(d), y2(d), v1(d), v2(d);
-  double area = mesh_->face_area(f);
-  double a2 = area * area;
-
-  y1 = cm1 + (d1s / a2) * normal;
-  y2 = cm2 + (d2s / a2) * normal;
-
-  v1 = Tn1 - (t1 / a2) * normal;
-  v2 = Tn2 - (t2 / a2) * normal;
-  p = weight * y1 + (1 - weight) * y2 + (d1 * d2 / det) * (v2 - v1);
+  double factor = dir * d1 * d2 / det / area;
+  p = weight * cm1 + (1.0 - weight) * cm2 + factor * (Tn1 - Tn2);
 }
 
 

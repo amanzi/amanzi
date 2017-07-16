@@ -143,6 +143,12 @@ class DenseMatrix {
     return a;
   }
 
+  double Norm2() {
+    double a = 0.0;
+    for (int i = 0; i < m_ * n_; i++) a += data_[i] * data_[i];
+    return std::sqrt(a);
+  }
+
   void Scale(double value) {
     for (int i = 0; i < m_ * n_; i++) data_[i] *= value;
   }

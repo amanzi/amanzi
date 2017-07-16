@@ -35,7 +35,7 @@ void DiffusionNLFVwithGravity::UpdateMatrices(
   const Epetra_MultiVector& u_c = *u->ViewComponent("cell");
 
   double rho_g = rho_ * norm(g_);
-  for (int c = 0; c < ncells_wghost; ++c) {
+  for (int c = 0; c < ncells_owned; ++c) {
     double zc = (mesh_->cell_centroid(c))[dim_ - 1];
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
   }
@@ -43,6 +43,8 @@ void DiffusionNLFVwithGravity::UpdateMatrices(
   DiffusionNLFV::UpdateMatrices(flux, hh.ptr());
 
   // add gravity fluxes to the right-hand side.
+  global_op_->rhs()->PutScalarGhosted(0.0);
+
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell", true);
 
@@ -90,11 +92,11 @@ void DiffusionNLFVwithGravity::UpdateFlux(
   // Map field u for the local system. For Richards's equation, this
   // is equivalent to calculating the hydraulic head.
   CompositeVector hh(u);
-  Epetra_MultiVector& hh_c = *hh.ViewComponent("cell", true);
+  Epetra_MultiVector& hh_c = *hh.ViewComponent("cell");
   const Epetra_MultiVector& u_c = *u.ViewComponent("cell");
 
   double rho_g = rho_ * norm(g_);
-  for (int c = 0; c < ncells_wghost; ++c) {
+  for (int c = 0; c < ncells_owned; ++c) {
     double zc = (mesh_->cell_centroid(c))[dim_ - 1];
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
   }

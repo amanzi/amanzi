@@ -177,20 +177,17 @@ TEST(HARMONIC_AVERAGING_POINT_2D) {
   {
     AmanziGeometry::Point conormal1(1.0, 0.2), conormal2(1.0, 0.2);
     nlfv.HarmonicAveragingPoint(f, c1, c2, conormal1, conormal2, p, w);
-    std::cout << "hap: " << p << " weight=" << w << std::endl;
+    std::cout << "hap: " << p << " weight=" << w << "\n\n";
+
     v = w * xc1 + (1.0 - w) * xc2;
-
-    // from the previous test
-    u[0] = 0.75432884536924;
-    u[1] = 0.45671154630763;
-
     CHECK(norm(v - p) < 1e-12);
-    CHECK(norm(u - p) < 1e-12);
+
+    double tmp = ((p - xa)^(xb - xa))[0];
+    CHECK(fabs(tmp) < 1e-12);
   }
 
   // full tensors
   {
-    double tmp;
     WhetStone::Tensor K1(2, 2), K2(2, 2); 
     AmanziGeometry::Point conormal1(2), conormal2(2);
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
@@ -207,12 +204,28 @@ TEST(HARMONIC_AVERAGING_POINT_2D) {
     conormal2 = K2 * normal;
 
     nlfv.HarmonicAveragingPoint(f, c1, c2, conormal1, conormal2, p, w);
-    std::cout << "hap: " << p << " weight=" << w << std::endl;
+    std::cout << "hap: " << p << " weight=" << w << "\n\n";
 
-    tmp = ((p - xa)^(xb - xa))[0];
+    double tmp = ((p - xa)^(xb - xa))[0];
 
     CHECK_CLOSE(0.35985587749587, w, 1e-12);
     CHECK(fabs(tmp) < 1e-12);
+  }
+
+  // symmetry
+  {
+    double w1, w2;
+    AmanziGeometry::Point p1(2), p2(2);
+    AmanziGeometry::Point conormal1(1.0, 0.2), conormal2(1.0, 0.0);
+
+    nlfv.HarmonicAveragingPoint(f, c1, c2, conormal1, conormal2, p1, w1);
+    std::cout << "hap: " << p1 << " weight1=" << w1 << std::endl;
+
+    nlfv.HarmonicAveragingPoint(f, c2, c1, conormal2, conormal1, p2, w2);
+    std::cout << "hap: " << p2 << " weight2=" << w2 << std::endl;
+
+    CHECK_CLOSE(0.0, norm(p1 - p2), 1e-12);
+    CHECK_CLOSE(1.0, w1 + w2, 1e-12);
   }
 }
 
