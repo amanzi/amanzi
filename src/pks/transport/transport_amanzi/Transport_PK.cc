@@ -199,6 +199,7 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
 
   // molar_density_key_ = tp_list_->get<std::string>("molar_density_key_", getKey(domain_name_, "molar_density")); 
 
+
   mesh_ = S->GetMesh(domain_name_);
   dim = mesh_->space_dimension();
 
@@ -217,9 +218,11 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
     S->RequireFieldEvaluator(permeability_key_);
   }
 
-  S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField(flux_key_)){
+    S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
-  S->RequireFieldEvaluator(flux_key_);
+    S->RequireFieldEvaluator(flux_key_);
+  }
 
   S->RequireField(saturation_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -230,13 +233,17 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   S->GetField(prev_saturation_key_, passwd_)->set_io_vis(false);
 
-  S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField(porosity_key_)){
+    S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(porosity_key_);
+    S->RequireFieldEvaluator(porosity_key_);
+  }
 
-  S->RequireField(molar_density_key_, molar_density_key_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField(molar_density_key_)){
+    S->RequireField(molar_density_key_, molar_density_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(molar_density_key_);
+    S->RequireFieldEvaluator(molar_density_key_);
+  }
   
   // require state fields when Transport PK is on
   if (component_names_.size() == 0) {
