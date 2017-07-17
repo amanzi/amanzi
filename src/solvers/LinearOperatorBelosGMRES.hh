@@ -185,7 +185,7 @@ int LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::ApplyInverse(const Ve
   GmresSolver solver(problem,pl);
   Belos::ReturnType success = solver.solve();
   num_itrs_ = solver.getNumIters();
-  residual_ = 0.0;  // FIXME
+  residual_ = solver.achievedTol();
 
   if(success == Belos::Converged)
     returned_code_ = LIN_SOLVER_BELOS_SAYS_SUCCESS;

@@ -49,7 +49,7 @@ class AnalyticBase {
 
   // -- scalar component of the coefficient
   virtual double ScalarCoefficient(const Amanzi::AmanziGeometry::Point& p, double t) {
-    return 1.; }
+    return 1.0; }
 
   // -- analytic solution p
   virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;

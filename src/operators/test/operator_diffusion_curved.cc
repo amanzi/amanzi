@@ -175,11 +175,16 @@ void RunTestDiffusionCurved() {
     totvol += vol;
     center += mesh->cell_centroid(c) * vol;
   }
-  center /= totvol;
-  std::cout << "Domain center:" << center << std::endl;
-  std::cout << "Volume error: " << 1.0 - totvol << std::endl;
-
+  double tmp_in[4], tmp_out[4] = {totvol, center[0], center[1], center[2]};
+  comm.SumAll(tmp_out, tmp_in, 4);
+  totvol = tmp_in[0];
+  for (int i = 0; i < 3; ++i) center[i] = tmp_in[i + 1] / totvol;
+  CHECK_CLOSE(1.0, totvol, 1e-12);
+  
   if (MyPID == 0) {
+    std::cout << "Domain center:" << center << std::endl;
+    std::cout << "Volume error: " << 1.0 - totvol << std::endl;
+
     pl2_err /= pnorm; 
     ul2_err /= unorm;
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
