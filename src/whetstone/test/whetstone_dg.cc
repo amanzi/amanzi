@@ -20,7 +20,7 @@
 #include "MeshFactory.hh"
 
 #include "DenseMatrix.hh"
-#include "dg.hh"
+#include "DG_Modal.hh"
 
 
 /* ****************************************************************
@@ -37,14 +37,16 @@ TEST(DG_MASS_MATRIX) {
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.5, 0.5, 1, 1); 
- 
-  DG dg(mesh);
+
+  DenseMatrix M;
+  Tensor T(2, 1);
+  T(0, 0) = 1.0;
 
   for (int k = 0; k < 3; k++) {
-    int nk = (k + 1) * (k + 2) / 2;
-    DenseMatrix M(nk, nk);
+    DG_Modal dg(k, mesh);
 
-    dg.TaylorMassMatrix(0, k, 1.0, M);
+    dg.MassMatrix(0, T, M);
+    int nk = M.NumRows();
 
     printf("Mass matrix for order=%d\n", k);
     for (int i = 0; i < nk; i++) {
@@ -83,18 +85,17 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
   // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
   Teuchos::RCP<Mesh> mesh = meshfactory("test/one_cell2.exo");
  
-  DG dg(mesh);
-
   AmanziGeometry::Point zero(0.0, 0.0);
 
   for (int k = 0; k < 3; k++) {
+    DG_Modal dg(k, mesh);
     int nk = (k + 1) * (k + 2) / 2;
     DenseMatrix A0(nk, nk), A1(nk, nk);
 
     std::vector<AmanziGeometry::Point> u;
     u.push_back(AmanziGeometry::Point(1.0, 2.0));
 
-    dg.TaylorAdvectionMatrixCell(0, k, u, A0);
+    dg.AdvectionMatrixCell(0, u, A0);
 
     printf("Advection matrix (cell-based) for order=%d\n", k);
     for (int i = 0; i < nk; i++) {
@@ -122,7 +123,7 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
     u.push_back(zero);
     u.push_back(zero);
 
-    dg.TaylorAdvectionMatrixCell(0, k, u, A1);
+    dg.AdvectionMatrixCell(0, u, A1);
 
     A1 -= A0;
     CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
@@ -133,7 +134,7 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
     u.push_back(zero);
     u.push_back(AmanziGeometry::Point(0.0, 1.0));
 
-    dg.TaylorAdvectionMatrixCell(0, k, u, A1);
+    dg.AdvectionMatrixCell(0, u, A1);
 
     printf("Advection matrix (cell-based) for order=%d u=(0,y)\n", k);
     for (int i = 0; i < nk; i++) {
@@ -167,11 +168,10 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
   meshfactory.preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2); 
  
-  DG dg(mesh);
-
   AmanziGeometry::Point zero(0.0, 0.0);
 
   for (int k = 0; k < 2; k++) {
+    DG_Modal dg(k, mesh);
     int nk = (k + 1) * (k + 2);
     DenseMatrix A0(nk, nk), A1(nk, nk);
 
@@ -179,7 +179,7 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
     u.push_back(AmanziGeometry::Point(1.0, 2.0));
 
     // TEST1: constant u
-    dg.TaylorAdvectionMatrixFace(1, k, u, A0);
+    dg.AdvectionMatrixFace(1, u, A0);
 
     printf("Advection matrix (face-based) for order=%d  u=constant\n", k);
     for (int i = 0; i < nk; i++) {
@@ -191,7 +191,7 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
     u.push_back(zero);
     u.push_back(zero);
 
-    dg.TaylorAdvectionMatrixFace(1, k, u, A1);
+    dg.AdvectionMatrixFace(1, u, A1);
 
     A1 -= A0;
     CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
@@ -202,7 +202,7 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
     u.push_back(zero);
     u.push_back(AmanziGeometry::Point(1.0, 0.0));
 
-    dg.TaylorAdvectionMatrixFace(1, k, u, A1);
+    dg.AdvectionMatrixFace(1, u, A1);
 
     printf("Advection matrix (cell-based) for order=%d u=(y-y0,0)\n", k);
     for (int i = 0; i < nk; i++) {
@@ -243,11 +243,11 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
   }
 
   // test identity map
-  DG dg(mesh);
+  DG_Modal dg(1, mesh);
   std::vector<AmanziGeometry::Point> u;
   AmanziGeometry::Point ex(1.0, 0.0), ey(0.0, 1.0);
 
-  dg.TaylorLeastSquareFit(1, x1, x1, u);
+  dg.LeastSquareFit(x1, x1, u);
   CHECK_CLOSE(norm(u[0]), 0.0, 1e-12);
   CHECK_CLOSE(norm(u[1] - ex), 0.0, 1e-12);
   CHECK_CLOSE(norm(u[2] - ey), 0.0, 1e-12);
@@ -259,7 +259,7 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
     x2[i] += shift;
   }
 
-  dg.TaylorLeastSquareFit(1, x1, x2, u);
+  dg.LeastSquareFit(x1, x2, u);
   CHECK_CLOSE(norm(u[0] - shift), 0.0, 1e-12);
   CHECK_CLOSE(norm(u[1] - ex), 0.0, 1e-12);
   CHECK_CLOSE(norm(u[2] - ey), 0.0, 1e-12);
@@ -271,7 +271,7 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
     x2[i][1] = s * x1[i][0] + c * x1[i][1];
   }
 
-  dg.TaylorLeastSquareFit(1, x1, x2, u);
+  dg.LeastSquareFit(x1, x2, u);
   CHECK_CLOSE(norm(u[0]), 0.0, 1e-12);
   CHECK_CLOSE(norm(u[1] - AmanziGeometry::Point(c, s)), 0.0, 1e-12);
   CHECK_CLOSE(norm(u[2] - AmanziGeometry::Point(-s, c)), 0.0, 1e-12);
@@ -286,7 +286,7 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
   x2 = x1;
   x2[3] += AmanziGeometry::Point(0.1, 0.1);
 
-  dg.TaylorLeastSquareFit(1, x1, x2, u);
+  dg.LeastSquareFit(x1, x2, u);
 
   for (int i = 0; i < u.size(); ++i) {
     printf("u[%d] = %8.4g %8.4g\n", i, u[i][0], u[i][1]); 

@@ -9,11 +9,11 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Discontinuous Galerkin method.
+  Discontinuous Galerkin modal method.
 */
 
-#ifndef AMANZI_WHETSTONE_DG_HH_
-#define AMANZI_WHETSTONE_DG_HH_
+#ifndef AMANZI_WHETSTONE_DG_MODAL_HH_
+#define AMANZI_WHETSTONE_DG_MODAL_HH_
 
 #include "Teuchos_RCP.hpp"
 
@@ -21,8 +21,8 @@
 #include "Point.hh"
 
 #include "DenseMatrix.hh"
-#include "WhetStone_typedefs.hh"
 #include "Tensor.hh"
+#include "WhetStone_typedefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -41,23 +41,30 @@ const double q1d_points[4][4] = {
     0.0694318442029737, 0.330009478207572, 0.669990521792428, 0.930568155797026
 };
 
-class DG { 
- public:
-  DG() : mesh_(Teuchos::null), d_(0) {};
-  DG(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh), d_(mesh_->space_dimension()) {};
-  ~DG() {};
 
-  int TaylorMassMatrix(int c, int order, double K, DenseMatrix& M);
-  int TaylorAdvectionMatrixCell(int c, int order,
-                                std::vector<AmanziGeometry::Point>& u, DenseMatrix& A);
-  int TaylorAdvectionMatrixFace(int f, int order, 
-                                std::vector<AmanziGeometry::Point>& u, DenseMatrix& M);
+class DG_Modal { 
+ public:
+  DG_Modal(Teuchos::RCP<const AmanziMesh::Mesh> mesh) 
+    : order_(-1),
+      mesh_(mesh),
+      d_(mesh_->space_dimension()) {};
+  DG_Modal(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : order_(order), 
+      mesh_(mesh),
+      d_(mesh_->space_dimension()) {};
+  ~DG_Modal() {};
+
+  int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
+  int AdvectionMatrixCell(int c, std::vector<AmanziGeometry::Point>& u, DenseMatrix& A);
+  int AdvectionMatrixFace(int f, std::vector<AmanziGeometry::Point>& u, DenseMatrix& M);
+
+  // miscalleneous
+  void set_order(int order) { order_ = order; }
 
   // polynomial approximation of map x2 = F(x1)
-  int TaylorLeastSquareFit(int order,
-                           const std::vector<AmanziGeometry::Point>& x1, 
-                           const std::vector<AmanziGeometry::Point>& x2,
-                           std::vector<AmanziGeometry::Point>& u) const;
+  int LeastSquareFit(const std::vector<AmanziGeometry::Point>& x1, 
+                     const std::vector<AmanziGeometry::Point>& x2,
+                     std::vector<AmanziGeometry::Point>& u) const;
 
  private:
   void IntegrateMonomialsCell_(int c, int k, double* monomials);
@@ -73,7 +80,7 @@ class DG {
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  int d_;
+  int order_, d_;
 };
 
 }  // namespace WhetStone

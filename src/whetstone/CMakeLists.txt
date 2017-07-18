@@ -45,11 +45,11 @@ add_amanzi_library(whetstone
                           MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
                           MFD3D_Generalized_Diffusion.cc
                           MFD3D_BernardiRaugel.cc
-                          dg.cc nlfv.cc 
+                          DG_Modal.cc nlfv.cc 
                           Tensor.cc DenseMatrix.cc
                    HEADERS DenseMatrix.hh
                            DenseVector.hh
-                           dg.hh
+                           DG_Modal.hh
                            lapack.hh
                            InnerProductL2.hh InnerProductH1.hh
                            DeRham_Node.hh DeRham_Edge.hh DeRham_Face.hh

@@ -11,7 +11,7 @@
 
 #include <vector>
 
-#include "dg.hh"
+#include "DG_Modal.hh"
 
 #include "Op_Cell_Schema.hh"
 #include "OperatorDefs.hh"
@@ -89,8 +89,6 @@ void Reaction::UpdateMatrices(const CompositeVector& u)
   AmanziMesh::Entity_ID_List nodes;
   int d = mesh_->space_dimension();
 
-  WhetStone::DG dg(mesh_);
-
   int k(0);
   if (space_col_ == DG0 && space_row_ == DG0) { 
     k = 0;
@@ -98,12 +96,13 @@ void Reaction::UpdateMatrices(const CompositeVector& u)
     k = 1;
   }
 
-  for (int c = 0; c < ncells_owned; ++c) {
-    int ndofs = (k + 2) * (k + 1) / 2;
+  WhetStone::DG_Modal dg(k, mesh_);
+  WhetStone::DenseMatrix Mcell;
+  WhetStone::Tensor Kc(d, 1);
 
-    WhetStone::DenseMatrix Mcell(ndofs, ndofs);
-    double Kc = K_.get() ? (*K_)[0][c] : 1.0;
-    dg.TaylorMassMatrix(c, k, Kc, Mcell);
+  for (int c = 0; c < ncells_owned; ++c) {
+    Kc(0, 0) = K_.get() ? (*K_)[0][c] : 1.0;
+    dg.MassMatrix(c, Kc, Mcell);
 
     matrix[c] = Mcell;
   }

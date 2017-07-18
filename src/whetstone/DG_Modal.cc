@@ -14,8 +14,8 @@
 
 #include "Point.hh"
 
-#include "dg.hh"
 #include "DenseMatrix.hh"
+#include "DG_Modal.hh"
 #include "WhetStoneDefs.hh"
 
 namespace Amanzi {
@@ -24,29 +24,30 @@ namespace WhetStone {
 /* ******************************************************************
 * Mass matrix for Taylor basis functions. 
 ****************************************************************** */
-int DG::TaylorMassMatrix(int c, int order, double K, DenseMatrix& M)
+int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 {
   // calculate monomials
-  int n(1), m((2 * order + 1) * (order + 1));
+  int n(1), m((2 * order_ + 1) * (order_ + 1));
   std::vector<int> shift(1, 0);
   DenseVector monomials(m);
 
   monomials.PutScalar(0.0);
   monomials(0) = mesh_->cell_volume(c);
 
-  for (int k = 1; k <= 2 * order; ++k) {
+  for (int k = 1; k <= 2 * order_; ++k) {
     shift.resize(n, k - 1);
     IntegrateMonomialsCell_(c, k, &(monomials(n)));
     n += k + 1;
   }
    
   // copy integrals to mass matrix (2D algorithm)
-  int nrows = M.NumRows();
+  int nrows = (order_ + 1) * (order_ + 2) / 2;
+  M.Reshape(nrows, nrows);
 
   for (int k = 0; k < nrows; ++k) {
     for (int l = k; l < nrows; ++l) {
       int i = shift[k] * shift[l];
-      M(k, l) = M(l, k) = K * monomials(k + l + i);
+      M(k, l) = M(l, k) = K(0, 0) * monomials(k + l + i);
     }
   }
 
@@ -57,12 +58,12 @@ int DG::TaylorMassMatrix(int c, int order, double K, DenseMatrix& M)
 /* ******************************************************************
 * Advection matrix for Taylor basis and polynomial velocity u.
 ****************************************************************** */
-int DG::TaylorAdvectionMatrixCell(
-    int c, int order, std::vector<AmanziGeometry::Point>& u, DenseMatrix& A)
+int DG_Modal::AdvectionMatrixCell(
+    int c, std::vector<AmanziGeometry::Point>& u, DenseMatrix& A)
 {
   // calculate monomials
   int uk(std::pow(2 * u.size(), 0.5) - 1);
-  int nk(1), mk((2 * (order + uk) + 1) * (order + uk));
+  int nk(1), mk((2 * (order_ + uk) + 1) * (order_ + uk));
 
   std::vector<int> pk(1, 0); 
   DenseVector monomials(mk + uk + 1);
@@ -70,7 +71,7 @@ int DG::TaylorAdvectionMatrixCell(
   monomials.PutScalar(0.0);
   monomials(0) = mesh_->cell_volume(c);
 
-  for (int k = 1; k < 2 * order + uk; ++k) {
+  for (int k = 1; k < 2 * order_ + uk; ++k) {
     pk.push_back(nk);
     IntegrateMonomialsCell_(c, k, &(monomials(nk)));
     nk += k + 1;
@@ -82,7 +83,7 @@ int DG::TaylorAdvectionMatrixCell(
   A.PutScalar(0.0);
 
   // two loops for column polynomial
-  for (int i = 0; i <= order; ++i) {
+  for (int i = 0; i <= order_; ++i) {
     for (int k = 0; k < i + 1; ++ k) {
       k1 = pk[i] + k;
 
@@ -92,7 +93,7 @@ int DG::TaylorAdvectionMatrixCell(
           double ux(u[m1][0]), uy(u[m1][1]);
 
           // two loops for row polynomial
-          for (int j = 1; j <= order; ++j) {
+          for (int j = 1; j <= order_; ++j) {
             mm = pk[i + m + j - 1] + k;
             l1 = pk[j];
             for (int l = 0; l < j + 1; ++l) {
@@ -116,8 +117,8 @@ int DG::TaylorAdvectionMatrixCell(
 * Advection matrix for Taylor basis and constant velocity u (2D only)
 * Velocity is given in the face-based Taylor basis.
 ****************************************************************** */
-int DG::TaylorAdvectionMatrixFace(
-    int f, int order, std::vector<AmanziGeometry::Point>& u, DenseMatrix& M)
+int DG_Modal::AdvectionMatrixFace(
+    int f, std::vector<AmanziGeometry::Point>& u, DenseMatrix& M)
 {
   AmanziMesh::Entity_ID_List cells, nodes;
 
@@ -160,10 +161,10 @@ int DG::TaylorAdvectionMatrixFace(
   int ks(nrows * id), ls(nrows * (1 - id));
   int is(ks);
 
-  for (int i = 0; i <= order; ++i) {
+  for (int i = 0; i <= order_; ++i) {
     for (int k = 0; k < i + 1; ++k) {
       int js(ks);
-      for (int j = 0; j <= order; ++j) {
+      for (int j = 0; j <= order_; ++j) {
         for (int l = 0; l < j + 1; ++l) {
           M(is + k, js) += IntegrateMonomialsEdge_(x1, x2, i - k, k,
                                                            j - l, l, factors, xc1, xc1);
@@ -181,10 +182,10 @@ int DG::TaylorAdvectionMatrixFace(
   const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
 
   is = ks;
-  for (int i = 0; i <= order; ++i) {
+  for (int i = 0; i <= order_; ++i) {
     for (int k = 0; k < i + 1; ++k) {
       int js(ls);
-      for (int j = 0; j <= order; ++j) {
+      for (int j = 0; j <= order_; ++j) {
         for (int l = 0; l < j + 1; ++l) {
           M(is + k, js) -= IntegrateMonomialsEdge_(x1, x2, i - k, k,
                                                            j - l, l, factors, xc1, xc2);
@@ -201,7 +202,7 @@ int DG::TaylorAdvectionMatrixFace(
 * Integrate all monomials of order k in cell c.
 * The cell must be star-shape w.r.t. to its centroid.
 ****************************************************************** */
-void DG::IntegrateMonomialsCell_(int c, int k, double* monomials)
+void DG_Modal::IntegrateMonomialsCell_(int c, int k, double* monomials)
 {
   Entity_ID_List faces, nodes;
   std::vector<int> dirs;
@@ -237,7 +238,7 @@ void DG::IntegrateMonomialsCell_(int c, int k, double* monomials)
 /* ******************************************************************
 * Integrate all monomials of order k on face.
 ****************************************************************** */
-void DG::IntegrateMonomialsFace_(int c, int k, double factor, double* monomials)
+void DG_Modal::IntegrateMonomialsFace_(int c, int k, double factor, double* monomials)
 {
 }
 
@@ -245,7 +246,7 @@ void DG::IntegrateMonomialsFace_(int c, int k, double factor, double* monomials)
 /* ******************************************************************
 * Integrate all monomials of order k on edge via quadrature rules.
 ****************************************************************** */
-void DG::IntegrateMonomialsEdge_(
+void DG_Modal::IntegrateMonomialsEdge_(
     const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
     int k, double factor, double* monomials)
 {
@@ -269,7 +270,7 @@ void DG::IntegrateMonomialsEdge_(
 /* ******************************************************************
 * Integrate two monomials of order k on edge via quadrature rules.
 ****************************************************************** */
-double DG::IntegrateMonomialsEdge_(
+double DG_Modal::IntegrateMonomialsEdge_(
     const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
     int ix, int iy, int jx, int jy, 
     const std::vector<double>& factors, 
@@ -309,19 +310,18 @@ double DG::IntegrateMonomialsEdge_(
 * Polynomial approximation of map x2 = F(x1).
 * We assume that vectors of vertices have a proper length.
 ****************************************************************** */
-int DG::TaylorLeastSquareFit(int order,
-                             const std::vector<AmanziGeometry::Point>& x1, 
+int DG_Modal::LeastSquareFit(const std::vector<AmanziGeometry::Point>& x1, 
                              const std::vector<AmanziGeometry::Point>& x2,
                              std::vector<AmanziGeometry::Point>& u) const
 {
-  int nk = (order + 1) * (order + 2) / 2;
+  int nk = (order_ + 1) * (order_ + 2) / 2;
   int nx = x1.size();
 
   // evaluate basis functions at given points
   int i1(0);
   DenseMatrix psi(nk, nx);
 
-  for (int k = 0; k <= order; ++k) {
+  for (int k = 0; k <= order_; ++k) {
     for (int i = 0; i < k + 1; ++i) {
       for (int n = 0; n < nx; ++n) {
         psi(i1, n) = std::pow(x1[n][0], k - i) * std::pow(x1[n][1], i);

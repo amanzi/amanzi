@@ -998,7 +998,8 @@ double InputConverter::ConvertUnits_(
       Errors::Message msg;
       msg << "\nPrototype code for units of measurement cannot parse unit \"" << data <<"\"."
           << "\n  (1) Try to convert a derived unit to atomic units, e.g. Pa=kg/m/s^2."
-          << "\n  (2) Fix possible format errors, e.g. no spaces is allowed.\n";
+          << "\n  (2) Fix possible format errors, e.g. no space is allowed inside unit."
+          << "\n  (3) Missing commas between coordinates.\n";
       Exceptions::amanzi_throw(msg);
     }
     found_units_.insert(data);

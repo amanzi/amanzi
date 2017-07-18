@@ -11,7 +11,7 @@
 
 #include <vector>
 
-#include "dg.hh"
+#include "DG_Modal.hh"
 #include "MFD3D_BernardiRaugel.hh"
 
 #include "AdvectionRiemann.hh"
@@ -134,7 +134,7 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
   int dir, d(mesh_->space_dimension());
   AmanziMesh::Entity_ID_List nodes;
 
-  WhetStone::DG dg(mesh_);
+  WhetStone::DG_Modal dg(mesh_);
   WhetStone::MFD3D_BernardiRaugel mfd(mesh_);
 
   Teuchos::RCP<const Epetra_MultiVector> uc, uv;
@@ -144,6 +144,8 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
   for (int c = 0; c < ncells_owned; ++c) {
     if (space_col_ == DG0 && space_row_ == DG0) {
       int k(0);
+      dg.set_order(k);
+
       std::vector<AmanziGeometry::Point> v;
       while (k < uc->NumVectors()) {
         v.push_back(AmanziGeometry::Point((*uc)[k][c], (*uc)[k + 1][c]));
@@ -151,11 +153,13 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
       }
 
       WhetStone::DenseMatrix Acell(1, 1);
-      dg.TaylorAdvectionMatrixCell(c, 0, v, Acell);
+      dg.AdvectionMatrixCell(c, v, Acell);
       matrix[c] = Acell;
     } 
     else if (space_col_ == DG1 && space_row_ == DG1) {
-      int k(0);
+      int k(1);
+      dg.set_order(k);
+
       std::vector<AmanziGeometry::Point> v;
       while (k < uc->NumVectors()) {
         v.push_back(AmanziGeometry::Point((*uc)[k][c], (*uc)[k + 1][c]));
@@ -163,7 +167,7 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
       }
 
       WhetStone::DenseMatrix Acell(3, 3);
-      dg.TaylorAdvectionMatrixCell(c, 1, v, Acell);
+      dg.AdvectionMatrixCell(c, v, Acell);
       matrix[c] = Acell;
     }
     else if (space_col_ == BERNARDI_RAUGEL && space_row_ == BERNARDI_RAUGEL) { 
@@ -198,7 +202,7 @@ void AdvectionRiemann::UpdateMatricesFace_(const CompositeVector& u)
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
-  WhetStone::DG dg(mesh_);
+  WhetStone::DG_Modal dg(mesh_);
   const Epetra_MultiVector& uf = *u.ViewComponent("face");
 
   int dir, d(mesh_->space_dimension());
@@ -219,10 +223,12 @@ void AdvectionRiemann::UpdateMatricesFace_(const CompositeVector& u)
     }
 
     if (space_col_ == DG0 && space_row_ == DG0) {
-      dg.TaylorAdvectionMatrixFace(f, 0, v, Aface);
+      dg.set_order(0);
+      dg.AdvectionMatrixFace(f, v, Aface);
     }
     else if (space_col_ == DG1 && space_row_ == DG1) {
-      dg.TaylorAdvectionMatrixFace(f, 1, v, Aface);
+      dg.set_order(1);
+      dg.AdvectionMatrixFace(f, v, Aface);
     }
 
     matrix[f] = Aface;

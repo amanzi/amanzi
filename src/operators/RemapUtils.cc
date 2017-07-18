@@ -16,7 +16,7 @@
 
 #include "CompositeVector.hh"
 #include "Mesh.hh"
-#include "dg.hh"
+#include "Tensor.hh"
 
 #include "RemapUtils.hh"
 
@@ -113,8 +113,6 @@ int RemapVelocityFaces(int order,
   AmanziMesh::Entity_ID_List nodes;
   AmanziGeometry::Point x1, x2;
   std::vector<AmanziGeometry::Point> v;
-
-  WhetStone::DG dg(mesh1);
 
   for (int f = 0; f < nfaces; ++f) {
     const AmanziGeometry::Point& xf1 = mesh1->face_centroid(f);
