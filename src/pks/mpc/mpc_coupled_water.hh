@@ -46,6 +46,7 @@ namespace Amanzi {
 class MPCCoupledWater : public StrongMPC<PK_PhysicalBDF_Default> {
  public:
 
+
   MPCCoupledWater(Teuchos::ParameterList& FElist,
                   const Teuchos::RCP<Teuchos::ParameterList>& plist,
                   const Teuchos::RCP<State>& S,
@@ -109,6 +110,8 @@ class MPCCoupledWater : public StrongMPC<PK_PhysicalBDF_Default> {
  private:
   // factory registration
   static RegisteredPKFactory<MPCCoupledWater> reg_;
+
+  std::string domain_surf, domain_ss;
 
 };
 

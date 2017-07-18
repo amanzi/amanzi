@@ -109,6 +109,7 @@ class HeightModel;
 class OverlandPressureFlow : public PK_PhysicalBDF_Default {
 
 public:
+
   OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
                        const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                        const Teuchos::RCP<State>& S,
@@ -171,9 +172,6 @@ protected:
   virtual void FixBCsForPrecon_(const Teuchos::Ptr<State>& S);
   // virtual void FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S);
 
-  virtual void ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<CompositeVector>& pres );
-
   // computational concerns in managing abs, rel perm
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method
   virtual bool UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& S);
@@ -210,7 +208,8 @@ protected:
   bool perm_update_required_;
   bool source_only_if_unfrozen_;
   bool smoothed_ponded_accumulation_;
-
+  bool subgrid_model_;
+  
   double p_limit_;
   double patm_limit_;
 

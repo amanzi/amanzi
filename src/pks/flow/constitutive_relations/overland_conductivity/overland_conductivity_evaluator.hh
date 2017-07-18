@@ -39,8 +39,9 @@ private:
   Key slope_key_;
   Key coef_key_;
   Key dens_key_;
-
-  bool dt_;
+  Key pdd_key_, drag_exp_key_;
+  Key frac_cond_key_, vpd_key_;
+  bool dt_,sg_model_;
   double factor_;
   bool dens_;
 

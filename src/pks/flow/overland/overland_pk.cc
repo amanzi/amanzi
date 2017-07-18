@@ -428,7 +428,7 @@ bool OverlandFlow::UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& 
   bool update_perm = S->GetFieldEvaluator("overland_conductivity")
       ->HasFieldDerivativeChanged(S, name_, "ponded_depth");
   Teuchos::RCP<const CompositeVector> dcond =
-    S->GetFieldData(getDerivKey("overland_conductivity", "ponded_depth"));
+    S->GetFieldData(Keys::getDerivKey("overland_conductivity", "ponded_depth"));
 
   if (update_perm) {
     if (preconditioner_->RangeMap().HasComponent("face")) {

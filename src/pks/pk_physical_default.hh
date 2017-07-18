@@ -62,9 +62,8 @@ class PK_Physical_Default : public PK_Physical {
                         const Teuchos::RCP<State>& S,
                         const Teuchos::RCP<TreeVector>& solution);
 
-
   // Virtual destructor
-  virtual ~PK_Physical_Default() {}
+  virtual ~PK_Physical_Default() = default;
 
   // Default implementations of PK methods.
   // -- transfer operators -- pointer copies only

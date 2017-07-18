@@ -69,7 +69,6 @@ WRMPermafrostEvaluator::WRMPermafrostEvaluator(const WRMPermafrostEvaluator& oth
     SecondaryVariablesFieldEvaluator(other),
     pc_liq_key_(other.pc_liq_key_),
     pc_ice_key_(other.pc_ice_key_),
-    s_l_key_(other.s_l_key_),
     permafrost_models_(other.permafrost_models_) {}
 
 
@@ -87,23 +86,64 @@ WRMPermafrostEvaluator::Clone() const {
  -------------------------------------------------------------------------------- */
 void WRMPermafrostEvaluator::InitializeFromPlist_() {
   // my keys are for saturation -- order matters... gas -> liq -> ice
-  
-  
-  my_keys_.push_back(plist_.get<std::string>("gas saturation key", "saturation_gas"));
-Key domain_name = getDomain(my_keys_[0]);
- 
-  s_l_key_ = plist_.get<std::string>("liquid saturation key", "saturation_liquid");
-  my_keys_.push_back(s_l_key_);
-  my_keys_.push_back(plist_.get<std::string>("ice saturation key", "saturation_ice"));
+  Key akey = plist_.get<std::string>("evaluator name");
+  Key domain_name = Keys::getDomain(akey);
+      
+  std::size_t liq_pos = akey.find("liquid");
+  if (liq_pos != std::string::npos) {
+    Key liqkey = plist_.get<std::string>("liquid saturation key", akey);
+    Key gaskey = akey.substr(0,liq_pos)+"gas"+akey.substr(liq_pos+6);
+    gaskey = plist_.get<std::string>("gas saturation key", gaskey);
+    Key icekey = akey.substr(0,liq_pos)+"ice"+akey.substr(liq_pos+6);
+    icekey = plist_.get<std::string>("ice saturation key", icekey);
+    my_keys_.emplace_back(gaskey);
+    my_keys_.emplace_back(liqkey);
+    my_keys_.emplace_back(icekey);
+
+  } else {
+    std::size_t ice_pos = akey.find("ice");
+    if (ice_pos != std::string::npos) {
+      Key icekey = plist_.get<std::string>("ice saturation key", akey);
+      Key gaskey = akey.substr(0,ice_pos)+"gas"+akey.substr(ice_pos+3);
+      gaskey = plist_.get<std::string>("gas saturation key", gaskey);
+      Key liqkey = akey.substr(0,ice_pos)+"liquid"+akey.substr(ice_pos+3);
+      liqkey = plist_.get<std::string>("liquid saturation key", liqkey);
+      my_keys_.emplace_back(gaskey);
+      my_keys_.emplace_back(liqkey);
+      my_keys_.emplace_back(icekey);
+    } else {
+      std::size_t gas_pos = akey.find("gas");
+      if (gas_pos != std::string::npos) {
+        Key gaskey = plist_.get<std::string>("gas saturation key", akey);
+        Key icekey = akey.substr(0,gas_pos)+"ice"+akey.substr(gas_pos+3);
+        icekey = plist_.get<std::string>("ice saturation key", icekey);
+        Key liqkey = akey.substr(0,gas_pos)+"liquid"+akey.substr(gas_pos+3);
+        liqkey = plist_.get<std::string>("liquid saturation key", liqkey);
+        my_keys_.emplace_back(gaskey);
+        my_keys_.emplace_back(liqkey);
+        my_keys_.emplace_back(icekey);
+      } else {
+        Key liqkey = plist_.get<std::string>("liquid saturation key",
+                Keys::getKey(domain_name, "saturation_liquid"));
+        Key icekey = plist_.get<std::string>("ice saturation key",
+                Keys::getKey(domain_name, "saturation_ice"));
+        Key gaskey = plist_.get<std::string>("gas saturation key",
+                Keys::getKey(domain_name, "saturation_gas"));
+        my_keys_.emplace_back(gaskey);
+        my_keys_.emplace_back(liqkey);
+        my_keys_.emplace_back(icekey);
+      }
+    }
+  }
 
   // liquid-gas capillary pressure
   pc_liq_key_ = plist_.get<std::string>("gas-liquid capillary pressure key",
-                                        getKey(domain_name,"capillary_pressure_gas_liq"));
+                                        Keys::getKey(domain_name,"capillary_pressure_gas_liq"));
   dependencies_.insert(pc_liq_key_);
 
   // liquid-gas capillary pressure
   pc_ice_key_ = plist_.get<std::string>("liquid-ice capillary pressure key",
-                                        getKey(domain_name,"capillary_pressure_liq_ice"));
+                                        Keys::getKey(domain_name,"capillary_pressure_liq_ice"));
   dependencies_.insert(pc_ice_key_);
 }
 

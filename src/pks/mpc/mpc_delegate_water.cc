@@ -4,12 +4,15 @@
 
 namespace Amanzi {
 
-MPCDelegateWater::MPCDelegateWater(const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+
+MPCDelegateWater::MPCDelegateWater(const Teuchos::RCP<Teuchos::ParameterList>& plist, std::string domain) :
+
     plist_(plist),
     i_domain_(-1),
     i_surf_(-1),
     i_Tdomain_(-1),
-    i_Tsurf_(-1)
+    i_Tsurf_(-1),
+    domain_ss_(domain)
 {
   // predictor control
   modify_predictor_heuristic_ =
@@ -309,8 +312,11 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
         ->ViewComponent("cell",false);
     Epetra_MultiVector& domain_pnew_f = *u->SubVector(i_domain_)->Data()
         ->ViewComponent("face",false);
+
+    Key key_ss = Keys::getKey(domain_ss_,"pressure");
+
     const Epetra_MultiVector& domain_pold_f =
-        *S_->GetFieldData("pressure")->ViewComponent("face",false);
+        *S_->GetFieldData(key_ss)->ViewComponent("face",false);
 
     int rank = surf_mesh->get_comm()->MyPID();
     double damp = 1.;
@@ -341,7 +347,9 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
         *vo_->os() << "  DAMPING THE SPURT!, coef = " << damp << std::endl;
 
       // apply the damping
-      Teuchos::RCP<const CompositeVector> domain_pold = S_->GetFieldData("pressure");
+
+      Teuchos::RCP<const CompositeVector> domain_pold = S_->GetFieldData(key_ss);
+
       Teuchos::RCP<CompositeVector> domain_pnew = u->SubVector(i_domain_)->Data();
       db_->WriteVector("p_old", domain_pold.ptr());
       db_->WriteVector("p_new", domain_pnew.ptr());

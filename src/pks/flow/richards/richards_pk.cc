@@ -9,6 +9,8 @@ Authors: Neil Carlson (version 1)
 ------------------------------------------------------------------------- */
 #include "boost/math/special_functions/fpclassify.hpp"
 
+#include "boost/algorithm/string/predicate.hpp"
+
 #include "Epetra_Import.h"
 
 #include "flow_bc_factory.hh"
@@ -40,6 +42,7 @@ namespace Flow {
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------
+
 Richards::Richards(Teuchos::ParameterList& pk_tree,
                    const Teuchos::RCP<Teuchos::ParameterList>& glist,
                    const Teuchos::RCP<State>& S,
@@ -92,47 +95,17 @@ void Richards::Setup(const Teuchos::Ptr<State>& S) {
 // Richards-like PKs.
 // -------------------------------------------------------------
 void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
-  if (mass_dens_key_.empty()) {
-    mass_dens_key_ = plist_->get<std::string>("mass density key",
-            getKey(domain_, "mass_density_liquid"));
-  }
-  if (molar_dens_key_.empty()) {
-    molar_dens_key_ = plist_->get<std::string>("molar density key",
-            getKey(domain_, "molar_density_liquid"));
-  }
-  if (perm_key_.empty()) {
-    perm_key_ = plist_->get<std::string>("permeability key",
-            getKey(domain_, "permeability"));
-  }
-  if (coef_key_.empty()) {
-    coef_key_ = plist_->get<std::string>("conductivity key",
-            getKey(domain_, "relative_permeability"));
-  }
-  
-  if (uw_coef_key_.empty()) {
-    uw_coef_key_ = plist_->get<std::string>("upwinded conductivity key",
-            getKey(domain_, "upwind_relative_permeability"));
-  }
-  if (flux_key_.empty()) {
-    flux_key_ = plist_->get<std::string>("darcy flux key",
-            getKey(domain_, "mass_flux"));
-  }
-  if (flux_dir_key_.empty()) {
-    flux_dir_key_ = plist_->get<std::string>("darcy flux direction key",
-            getKey(domain_, "mass_flux_direction")); 
-  }
-  if (velocity_key_.empty()) {
-    velocity_key_ = plist_->get<std::string>("darcy velocity key",
-            getKey(domain_, "darcy_velocity"));
-  }
-  if (sat_key_.empty()) {
-    sat_key_ = plist_->get<std::string>("saturation key",
-            getKey(domain_, "saturation_liquid"));
-  }
-  if (sat_ice_key_.empty()) {
-    sat_ice_key_ = plist_->get<std::string>("saturation ice key",
-            getKey(domain_, "saturation_ice"));
-  }
+  mass_dens_key_ = Keys::readKey(*plist_, domain_, "mass density", "mass_density_liquid");
+  molar_dens_key_ = Keys::readKey(*plist_, domain_, "molar density", "molar_density_liquid");
+  perm_key_ = Keys::readKey(*plist_, domain_, "permeability", "permeability");
+  coef_key_ = Keys::readKey(*plist_, domain_, "conductivity", "relative_permeability");
+  uw_coef_key_ = Keys::readKey(*plist_, domain_, "upwinded conductivity", "upwind_relative_permeability");
+  flux_key_ = Keys::readKey(*plist_, domain_, "darcy flux", "mass_flux");
+  flux_dir_key_ = Keys::readKey(*plist_, domain_, "darcy flux direction", "mass_flux_direction");
+  velocity_key_ = Keys::readKey(*plist_, domain_, "darcy velocity", "darcy_velocity");
+  sat_key_ = Keys::readKey(*plist_, domain_, "saturation", "saturation_liquid");
+  sat_ice_key_ = Keys::readKey(*plist_, domain_, "saturation ice", "saturation_ice");
+
   
   // Get data for special-case entities.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
@@ -260,8 +233,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // MFD -- upwind required
-      dcoef_key_ = getDerivKey(coef_key_, key_);
-      duw_coef_key_ = getDerivKey(uw_coef_key_, key_);
+      dcoef_key_ = Keys::getDerivKey(coef_key_, key_);
+      duw_coef_key_ = Keys::getDerivKey(uw_coef_key_, key_);
         
       S->RequireField(duw_coef_key_, name_)
         ->SetMesh(mesh_)->SetGhosted()
@@ -272,7 +245,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
 
     } else {
       // FV -- no upwinding
-      dcoef_key_ = getDerivKey(coef_key_, key_);
+      dcoef_key_ = Keys::getDerivKey(coef_key_, key_);
       duw_coef_key_ = std::string();
     }
   }
@@ -323,7 +296,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   if (is_source_term_) {
     if (source_key_.empty()) {
       source_key_ = plist_->get<std::string>("mass source key",
-              getKey(domain_, "mass_source"));
+              Keys::getKey(domain_, "mass_source"));
     }
 
     source_term_is_differentiable_ =
@@ -338,14 +311,15 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // -- coupling done by a Neumann condition
   coupled_to_surface_via_flux_ = plist_->get<bool>("coupled to surface via flux", false);
   if (coupled_to_surface_via_flux_) {
-    if (ss_flux_key_.empty()) {
-      ss_flux_key_ = plist_->get<std::string>("surface-subsurface flux key",
-              getKey(domain_, "surface_subsurface_flux"));
+    std::string domain_surf;
+    if (domain_ == "domain" || domain_ == "") {
+      domain_surf = plist_->get<std::string>("surface domain name", "surface");
+    } else {
+      domain_surf = plist_->get<std::string>("surface domain name", "surface_"+domain_);
     }
-
-    S->RequireField(ss_flux_key_)
-        ->SetMesh(S->GetMesh("surface"))
-        ->AddComponent("cell", AmanziMesh::CELL, 1);
+    ss_flux_key_ = Keys::readKey(*plist_, domain_surf, "surface-subsurface flux", "surface_subsurface_flux");
+    S->RequireField(ss_flux_key_)->SetMesh(S->GetMesh(domain_surf))
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // -- coupling done by a Dirichlet condition
@@ -415,8 +389,8 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp(new Flow::WRMEvaluator(wrm_plist));
 
   if (!S->HasFieldEvaluator("saturation_liquid")) {
-    S->SetFieldEvaluator(getKey(domain_,"saturation_liquid"), wrm);
-    S->SetFieldEvaluator(getKey(domain_,"saturation_gas"), wrm);
+    S->SetFieldEvaluator(Keys::getKey(domain_,"saturation_liquid"), wrm);
+    S->SetFieldEvaluator(Keys::getKey(domain_,"saturation_gas"), wrm);
   }
 
   // -- rel perm
@@ -431,6 +405,8 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField(coef_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponents(names2, locations2, num_dofs2);
   wrm_plist.set<double>("permeability rescaling", perm_scale_);
+  wrm_plist.setName(coef_key_);
+  wrm_plist.set("evaluator name", coef_key_);
   Teuchos::RCP<Flow::RelPermEvaluator> rel_perm_evaluator =
       Teuchos::rcp(new Flow::RelPermEvaluator(wrm_plist, wrm->get_WRMs()));
   S->SetFieldEvaluator(coef_key_, rel_perm_evaluator);
@@ -453,11 +429,11 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // -------------------------------------------------------------
 // Initialize PK
 // -------------------------------------------------------------
+
 void Richards::Initialize(const Teuchos::Ptr<State>& S) {
 
   // Initialize BDF stuff and physical domain stuff.
   PK_PhysicalBDF_Default::Initialize(S);
-
 
   // debugggin cruft
 #if DEBUG_RES_FLAG
@@ -814,13 +790,14 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     bc_values_[n] = 0.0;
   }
 
+
   std::vector<int> bc_counts;
   std::vector<std::string> bc_names;
 
   // Dirichlet boundary conditions
   Functions::BoundaryFunction::Iterator bc;
   bc_counts.push_back(bc_pressure_->size());
-  bc_names.push_back("pressure");
+  bc_names.push_back(Keys::getKey(domain_,"pressure"));
   for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
     int f = bc->first;
 #ifdef ENABLE_DBC
@@ -852,11 +829,13 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     *S->GetFieldData(uw_coef_key_)->ViewComponent("face",false);
 
   bc_counts.push_back(bc_flux_->size());
-  bc_names.push_back("flux");
+  bc_names.push_back(Keys::getKey(domain_,"flux"));
+
   if (!infiltrate_only_if_unfrozen_) {
     // Standard Neuman boundary conditions
     for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
       int f = bc->first;
+
 #ifdef ENABLE_DBC
     AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -868,7 +847,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     }
   } else {
     // Neumann boundary conditions that turn off if temp < freezing
-    const Epetra_MultiVector& temp = *S->GetFieldData(getKey(domain_,"temperature"))->ViewComponent("face");
+
+    const Epetra_MultiVector& temp = *S->GetFieldData(Keys::getKey(domain_,"temperature"))->ViewComponent("face");
     for (bc=bc_flux_->begin(); bc!=bc_flux_->end(); ++bc) {
       int f = bc->first;
 #ifdef ENABLE_DBC
@@ -876,6 +856,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     ASSERT(cells.size() == 1);
 #endif
+
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       if (temp[0][f] > 273.15) {
         bc_values_[f] = bc->second;
@@ -889,11 +870,14 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   }
 
   // seepage face -- pressure <= p_atm, outward mass flux >= 0
+
   S->GetFieldData(flux_key_)->ScatterMasterToGhosted("face");
+
   const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)->ViewComponent("face", true);
   const double& p_atm = *S->GetScalarData("atmospheric_pressure");
   Teuchos::RCP<const CompositeVector> u = S->GetFieldData(key_);
   double seepage_tol = p_atm * 1e-14;
+
 
   bc_counts.push_back(bc_seepage_->size());
   bc_names.push_back("standard seepage");
@@ -904,6 +888,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     ASSERT(cells.size() == 1);
 #endif
+
     double boundary_pressure = BoundaryValue(u, f);
     double boundary_flux = flux[0][f]*BoundaryDirection(f);
     //    std::cout << "Seepage Face:" << std::endl
@@ -928,6 +913,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   }
 
   // seepage face -- pressure <= p_atm, outward mass flux is specified
+
   bc_counts.push_back(bc_seepage_infilt_->size());
   bc_names.push_back("seepage with infiltration");
   for (bc=bc_seepage_infilt_->begin(); bc!=bc_seepage_infilt_->end(); ++bc) {
@@ -937,18 +923,23 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     ASSERT(cells.size() == 1);
 #endif
+
     double flux_seepage_tol = std::abs(bc->second) * .001;
     
     double boundary_pressure = BoundaryValue(u, f);
     double boundary_flux = flux[0][f]*BoundaryDirection(f);
 
+
     //    std::cout << "BFlux = " << boundary_flux << " with constraint = " << bc->second - flux_seepage_tol << std::endl;
+
     if (boundary_flux < bc->second - flux_seepage_tol &&
         boundary_pressure > p_atm + seepage_tol) {
       // both constraints are violated, either option should push things in the right direction
       bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_values_[f] = p_atm;
+
       //      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in DIRICHLET pressure " << p_atm << std::endl;
+
 
     } else if (boundary_flux >= bc->second - flux_seepage_tol &&
         boundary_pressure > p_atm - seepage_tol) {
@@ -962,14 +953,18 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
       // max infiltration violated
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_values_[f] = bc->second;
+
       //      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in NEUMANN flux " << bc->second << std::endl;
+
 
     } else if (boundary_flux >= bc->second - flux_seepage_tol &&
         boundary_pressure <= p_atm - seepage_tol) {
       // both conditions are valid
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_values_[f] = bc->second;
+
       //      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in NEUMANN flux " << bc->second << std::endl;
+
 
     } else {
       ASSERT(0);
@@ -978,8 +973,10 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   }
 
   // surface coupling
+
   bc_counts.push_back(0);
   bc_names.push_back("surface coupling (head)");
+
   if (coupled_to_surface_via_head_) {
     // Face is Dirichlet with value of surface head
     Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
@@ -987,11 +984,14 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
         ->ViewComponent("cell",false);
 
     unsigned int ncells_surface = head.MyLength();
+
     bc_counts[bc_counts.size()-1] = ncells_surface;
+
     for (unsigned int c=0; c!=ncells_surface; ++c) {
       // -- get the surface cell's equivalent subsurface face
       AmanziMesh::Entity_ID f =
         surface->entity_get_parent(AmanziMesh::CELL, c);
+
 #ifdef ENABLE_DBC
       AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -1004,26 +1004,28 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     }
   }
 
+
   // surface coupling
   bc_counts.push_back(0);
   bc_names.push_back("surface coupling (flux)");
   if (coupled_to_surface_via_flux_) {
     // Face is Neumann with value of surface residual
-    Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
-    const Epetra_MultiVector& flux = *S->GetFieldData(ss_flux_key_)
-        ->ViewComponent("cell",false);
-
+   
+    Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh(Keys::getDomain(ss_flux_key_));
+    const Epetra_MultiVector& flux = *S->GetFieldData(ss_flux_key_)->ViewComponent("cell",false);
+ 
     unsigned int ncells_surface = flux.MyLength();
     bc_counts[bc_counts.size()-1] = ncells_surface;
     for (unsigned int c=0; c!=ncells_surface; ++c) {
       // -- get the surface cell's equivalent subsurface face
-      AmanziMesh::Entity_ID f =
-        surface->entity_get_parent(AmanziMesh::CELL, c);
+      AmanziMesh::Entity_ID f = surface->entity_get_parent(AmanziMesh::CELL, c);
+
 #ifdef ENABLE_DBC
       AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       ASSERT(cells.size() == 1);
 #endif
+
 
       // -- set that value to Neumann
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -1044,7 +1046,9 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
   // mark all remaining boundary conditions as zero flux conditions
   AmanziMesh::Entity_ID_List cells;
+
   int n_default = 0;
+
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_markers_[f] == Operators::OPERATOR_BC_NONE) {
@@ -1083,6 +1087,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
       *vo_->os() << "    " << bc_names[i] << ": " << bc_counts_global[i] << std::endl;
     }
   }
+
 };
 
 
@@ -1202,7 +1207,9 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  Modifying predictor for consistent faces" << std::endl;
 
+
   // average cells to faces to give a reasonable initial guess
+
   u->ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& u_c = *u->ViewComponent("cell",true);
   Epetra_MultiVector& u_f = *u->ViewComponent("face",false);
@@ -1227,6 +1234,7 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
 
   Teuchos::RCP<const CompositeVector> rel_perm = 
     S_next_->GetFieldData(uw_coef_key_);
+
   S_next_->GetFieldEvaluator(mass_dens_key_)
       ->HasFieldChanged(S_next_.ptr(), name_);
   Teuchos::RCP<const CompositeVector> rho =
@@ -1236,13 +1244,16 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
   matrix_->Init();
   matrix_diff_->SetDensity(rho);
   matrix_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
+
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   matrix_diff_->ApplyBCs(true, true);
 
   // derive the consistent faces, involves a solve
+
   db_->WriteVector(" p_cf guess:", u.ptr(), true);
   matrix_diff_->UpdateConsistentFaces(*u);
   db_->WriteVector(" p_cf soln:", u.ptr(), true);
+
 }
 
 // -----------------------------------------------------------------------------
@@ -1314,8 +1325,8 @@ bool Richards::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
       local_maxT_c.value = maxT_c;
       local_maxT_c.gid = pres_c.Map().GID(max_c);
 
-      MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
-      MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+      MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, mesh_->get_comm()->Comm());
+      MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
       *vo_->os() << "   cells (min/max): [" << global_minT_c.gid << "] " << global_minT_c.value
                  << ", [" << global_maxT_c.gid << "] " << global_maxT_c.value << std::endl;
 
@@ -1329,8 +1340,8 @@ bool Richards::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
         local_maxT_f.value = maxT_f;
         local_maxT_f.gid = pres_f.Map().GID(max_f);
         
-        MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
-        MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+        MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, mesh_->get_comm()->Comm());
+        MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
         *vo_->os() << "   cells (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value
                    << ", [" << global_maxT_f.gid << "] " << global_maxT_f.value << std::endl;
       }
@@ -1345,6 +1356,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 Richards::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                  Teuchos::RCP<const TreeVector> u,
                  Teuchos::RCP<TreeVector> du) {
+
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // if the primary variable has boundary face, this is for upwinding rel
@@ -1458,6 +1470,7 @@ Richards::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
   } else if (n_limited_change > 0) {
     return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED;
   }
+
   return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
 }
 

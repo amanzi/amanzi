@@ -26,6 +26,7 @@ namespace SurfaceBalance {
 class SurfaceBalanceImplicit : public PK_PhysicalBDF_Default {
 
 public:
+
   SurfaceBalanceImplicit(Teuchos::ParameterList& pk_tree,
                          const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                          const Teuchos::RCP<State>& S,
@@ -82,6 +83,8 @@ public:
   double min_snow_trans_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> subsurf_mesh_;
+
+  Key domain_ss_;
 
  private:
   // factory registration

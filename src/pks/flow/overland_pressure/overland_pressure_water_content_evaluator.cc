@@ -18,17 +18,26 @@ OverlandPressureWaterContentEvaluator::OverlandPressureWaterContentEvaluator(Teu
   bar_ = plist_.get<bool>("water content bar", false);
   rollover_ = plist_.get<double>("water content rollover", 0.);
 
+
+  Key domain;
+
+  if(!my_key_.empty())
+    domain = Keys::getDomain(my_key_);
+
   if (my_key_.empty()) {
-    my_key_ = "surface-water_content";
+    domain = plist.get<std::string>("domain name", "surface");
+    my_key_ = Keys::getKey(domain, "water_content");
     if (bar_) my_key_ += std::string("_bar");
     my_key_ = plist_.get<std::string>("water content key", my_key_);
   }
 
   // my dependencies
-  pres_key_ = plist_.get<std::string>("pressure key", "surface-pressure");
-  dependencies_.insert(pres_key_);
 
-  //  dependencies_.insert(std::string("surface-cell_volume"));
+  pres_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain, "pressure"));
+  dependencies_.insert(pres_key_);
+  cv_key_ = plist_.get<std::string>("cell volume key", Keys::getKey(domain, "cell_volume"));
+  dependencies_.insert(cv_key_);
+
 }
 
 
@@ -37,7 +46,8 @@ OverlandPressureWaterContentEvaluator::OverlandPressureWaterContentEvaluator(con
     pres_key_(other.pres_key_),
     M_(other.M_),
     bar_(other.bar_),
-    rollover_(other.rollover_)
+    rollover_(other.rollover_),
+    cv_key_(other.cv_key_)
 {}
 
 
@@ -53,7 +63,8 @@ void OverlandPressureWaterContentEvaluator::EvaluateField_(const Teuchos::Ptr<St
   Epetra_MultiVector& res = *result->ViewComponent("cell",false);
   const Epetra_MultiVector& pres = *S->GetFieldData(pres_key_)
       ->ViewComponent("cell",false);
-  const Epetra_MultiVector& cv = *S->GetFieldData("surface-cell_volume")
+
+  const Epetra_MultiVector& cv = *S->GetFieldData(cv_key_)
       ->ViewComponent("cell",false);
 
   const double& p_atm = *S->GetScalarData("atmospheric_pressure");
@@ -90,7 +101,8 @@ void OverlandPressureWaterContentEvaluator::EvaluateFieldPartialDerivative_(cons
   Epetra_MultiVector& res = *result->ViewComponent("cell",false);
   const Epetra_MultiVector& pres = *S->GetFieldData(pres_key_)
       ->ViewComponent("cell",false);
-  const Epetra_MultiVector& cv = *S->GetFieldData("surface-cell_volume")
+
+  const Epetra_MultiVector& cv = *S->GetFieldData(cv_key_)
       ->ViewComponent("cell",false);
 
   const double& p_atm = *S->GetScalarData("atmospheric_pressure");

@@ -17,6 +17,7 @@
 #include "MeshFactory.hh"
 #include "MeshLogicalFactory.hh"
 #include "MeshColumn.hh"
+#include "MeshSurfaceCell.hh"
 #include "GeometricModel.hh"
 
 #include "ats_mesh_factory.hh"
@@ -24,12 +25,14 @@
 namespace ATS {
 
 void
-createMeshes(Teuchos::ParameterList& mesh_plist,
+createMeshes(Teuchos::ParameterList& plist,
              const Teuchos::RCP<Epetra_MpiComm>& comm,
              const Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel>& gm,
              Amanzi::State& S) {
   int num_procs = comm->NumProc();
   int rank = comm->MyPID();
+
+  Teuchos::ParameterList mesh_plist = plist.sublist("mesh");
 
   // create the MSTK factory
   Amanzi::AmanziMesh::MeshFactory factory(comm.get());
@@ -205,15 +208,64 @@ createMeshes(Teuchos::ParameterList& mesh_plist,
     }
   }
 
-  // column meshes
+
+ // column meshes
   std::vector<Teuchos::RCP<Amanzi::AmanziMesh::Mesh> > col_meshes;
+  std::vector<Teuchos::RCP<Amanzi::AmanziMesh::Mesh> > col_surf_meshes;
+
+  int nc = mesh->num_columns();
   if (mesh_plist.isSublist("column meshes")) {
-    int nc = mesh->num_columns();
     col_meshes.resize(nc, Teuchos::null);
+    col_surf_meshes.resize(nc, Teuchos::null);
     for (int c=0; c!=nc; ++c) {
       col_meshes[c] = Teuchos::rcp(new Amanzi::AmanziMesh::MeshColumn(*mesh, c));
     }
+    if (mesh_plist.isSublist("column surface meshes"))
+      for (int c1=0; c1!=nc; ++c1)
+        col_surf_meshes[c1] = Teuchos::rcp(new Amanzi::AmanziMesh::MeshSurfaceCell(*col_meshes[c1], "surface"));
   }  
+
+  //generalize vis for columns
+  if (plist.isSublist("visualization columns")) {
+    Teuchos::ParameterList& vis_ss_plist = plist.sublist("visualization columns"); 
+    for (int c=0; c!=nc; ++c){
+      int id = surface_mesh->cell_map(false).GID(c);
+      std::stringstream name_ss;
+      name_ss << "column_" << id;
+      vis_ss_plist.set("file name base", "visdump_"+name_ss.str());         
+      plist.set("visualization " +name_ss.str(), vis_ss_plist);
+    }  
+    plist.remove("visualization columns");
+  }
+
+  //generalize vis for columns
+  if (plist.isSublist("visualization surface cells")) {
+    Teuchos::ParameterList& vis_sf_plist = plist.sublist("visualization surface cells");
+    for (int c=0; c!=nc; ++c){
+      int id = surface_mesh->cell_map(false).GID(c);
+      std::stringstream name_ss, name_sf;
+      name_sf << "column_" << id << "_surface";
+      vis_sf_plist.set("file name base", "visdump_"+name_sf.str());
+      plist.set("visualization " +name_sf.str(), vis_sf_plist);
+  }
+    plist.remove("visualization surface cells");
+  }
+
+
+  //generalize checkpoint files for columns
+  
+  if (mesh_plist.isSublist("column meshes")) {
+    Teuchos::ParameterList& checkpoint_plist = plist.sublist("checkpoint columns");
+    std::stringstream name_check;
+    name_check << rank;
+    if (plist.isSublist("checkpoint columns"))
+      checkpoint_plist.set("file name base", "checkpoint_"+name_check.str() + "_");
+    else
+      checkpoint_plist.set("file name base", "checkpoint");
+    plist.set("checkpoint " +name_check.str(), checkpoint_plist);
+    plist.remove("checkpoint columns");
+  }
+
   
   Teuchos::TimeMonitor::summarize();
   Teuchos::TimeMonitor::zeroOutTimers();
@@ -226,13 +278,19 @@ createMeshes(Teuchos::ParameterList& mesh_plist,
   if (surface_mesh != Teuchos::null)
     S.RegisterMesh("surface", surface_mesh, deformable);
 
-  if (col_meshes.size() > 0) {
+   if (col_meshes.size() > 0) {
     for (int c=0; c!=col_meshes.size(); ++c) {
-      std::stringstream namestream;
-      namestream << "column_" << c;
-      S.RegisterMesh(namestream.str(), col_meshes[c], deformable);
+      std::stringstream name_ss, name_surf;
+      int id = surface_mesh->cell_map(false).GID(c);
+      name_ss << "column_" << id;
+      name_surf << "surface_column_" << id;
+      S.RegisterMesh(name_ss.str(), col_meshes[c], deformable);
+      if (mesh_plist.isSublist("column surface meshes"))
+        S.RegisterMesh(name_surf.str(), col_surf_meshes[c], deformable);
     }
   }
+
+
 }
 
 

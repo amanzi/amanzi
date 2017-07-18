@@ -33,9 +33,11 @@ namespace BGC {
 class BGCSimple : public PK_Physical_Default {
 
  public:
+
   BGCSimple(Teuchos::ParameterList& pk_tree,
             const Teuchos::RCP<Teuchos::ParameterList>& glist,
             const Teuchos::RCP<State>& S,
+
             const Teuchos::RCP<TreeVector>& solution);
 
   // is a PK

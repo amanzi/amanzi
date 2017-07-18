@@ -32,8 +32,9 @@ void Richards::Functional(double t_old,
   Teuchos::OSTab tab = vo_->getOSTab();
 
   double h = t_new - t_old;
-  ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
-  ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
+
+  //--  ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
+  //-- ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
 
   // pointer-copy temperature into state and update any auxilary data
   Solution_to_State(*u_new, S_next_);
@@ -77,14 +78,14 @@ void Richards::Functional(double t_old,
 #if DEBUG_FLAG
   // dump s_old, s_new
   vnames[0] = "sl_old"; vnames[1] = "sl_new";
-  vecs[0] = S_inter_->GetFieldData(getKey(domain_,"saturation_liquid")).ptr();
-  vecs[1] = S_next_->GetFieldData(getKey(domain_,"saturation_liquid")).ptr();
+  vecs[0] = S_inter_->GetFieldData(Keys::getKey(domain_,"saturation_liquid")).ptr();
+  vecs[1] = S_next_->GetFieldData(Keys::getKey(domain_,"saturation_liquid")).ptr();
 
   if (S_next_->HasField("saturation_ice")) {
     vnames.push_back("si_old");
     vnames.push_back("si_new");
-    vecs.push_back(S_inter_->GetFieldData(getKey(domain_,"saturation_ice")).ptr());
-    vecs.push_back(S_next_->GetFieldData(getKey(domain_,"saturation_ice")).ptr());
+    vecs.push_back(S_inter_->GetFieldData(Keys::getKey(domain_,"saturation_ice")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"saturation_ice")).ptr());
   }
 
   vnames.push_back("k_rel");
@@ -157,7 +158,6 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
 
-
   // update the rel perm according to the scheme of choice, also upwind derivatives of rel perm
   UpdatePermeabilityData_(S_next_.ptr());
   if (jacobian_ && iter_ >= jacobian_lag_) UpdatePermeabilityDerivativeData_(S_next_.ptr());
@@ -217,7 +217,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
 
   // -- get the accumulation deriv
-  Key dwc_dp_key = getDerivKey(conserved_key_, key_);
+  Key dwc_dp_key = Keys::getDerivKey(conserved_key_, key_);
   const Epetra_MultiVector& dwc_dp =
       *S_next_->GetFieldData(dwc_dp_key)->ViewComponent("cell",false);
 

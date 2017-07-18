@@ -28,13 +28,11 @@ class IEM;
 class EnergySurfaceIce : public EnergyBase {
 
 public:
+
   EnergySurfaceIce(Teuchos::ParameterList& FElist,
                    const Teuchos::RCP<Teuchos::ParameterList>& plist,
                    const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& solution);
-
-  // -- set up data structures
-  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // -- Initialize owned (dependent) variables.
   virtual void Initialize(const Teuchos::Ptr<State>& S);

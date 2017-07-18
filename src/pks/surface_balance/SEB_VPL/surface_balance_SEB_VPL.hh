@@ -43,7 +43,6 @@ namespace SurfaceBalance {
 class SurfaceBalanceSEBVPL : public PK_Physical_Default {
 
  public:
-
   SurfaceBalanceSEBVPL(Teuchos::ParameterList& pk_tree,
                     const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                     const Teuchos::RCP<State>& S,

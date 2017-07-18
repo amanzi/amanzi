@@ -35,10 +35,10 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& pli
   } else {
     domain_name = domain_name+std::string("_");
   }
-  domain_name =getDomain(my_key_);
+  domain_name =Keys::getDomain(my_key_);
   
   temp_key_= plist_.get<std::string>("temperature key",
-                                     getKey(domain_name,"temperature"));
+                                     Keys::getKey(domain_name,"temperature"));
   dependencies_.insert(temp_key_);
 }
 

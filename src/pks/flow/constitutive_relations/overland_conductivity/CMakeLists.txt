@@ -18,6 +18,8 @@ add_library(flow_relations_overland_conductivity
   unfrozen_fraction_relperm_model.cc
   zero_uf_relperm_model.cc
   one_uf_relperm_model.cc
+  fractional_conductance_evaluator.cc	
+  ponded_depression_depth_evaluator.cc	
   )
 
 install(TARGETS flow_relations_overland_conductivity DESTINATION lib)

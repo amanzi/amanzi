@@ -22,6 +22,7 @@
 namespace Amanzi {
 namespace BGC {
 
+
 BGCSimple::BGCSimple(Teuchos::ParameterList& pk_tree,
                      const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                      const Teuchos::RCP<State>& S,
@@ -31,6 +32,7 @@ BGCSimple::BGCSimple(Teuchos::ParameterList& pk_tree,
   ncells_per_col_(-1) {
 
   Teuchos::ParameterList& FElist = S->FEList();
+
 
   // set up additional primary variables -- this is very hacky...
   // -- transpiration
@@ -479,6 +481,7 @@ bool BGCSimple::AdvanceStep(double t_old, double t_new, bool reinit) {
       // and integrate the decomp
       co2_decomp[0][col_iter[i]] += co2_decomp_c[i];
 
+
       // and pull in the transpiration, converting to mol/m^3/s, as a sink
       trans[0][col_iter[i]] = -trans_c[i]/ .01801528;
       std::cout << std::scientific;
@@ -491,7 +494,9 @@ bool BGCSimple::AdvanceStep(double t_old, double t_new, bool reinit) {
       leafbiomass[lcv_pft][col] = pfts_[col][lcv_pft]->Bleaf;
       csink[lcv_pft][col] = pfts_[col][lcv_pft]->CSinkLimit;
       lai[lcv_pft][col] = pfts_[col][lcv_pft]->lai;
+
       veg_total_transpiration[lcv_pft][col] = pfts_[col][lcv_pft]->ET / 0.01801528;
+
       total_lai[0][col] += pfts_[col][lcv_pft]->lai;
     }
 

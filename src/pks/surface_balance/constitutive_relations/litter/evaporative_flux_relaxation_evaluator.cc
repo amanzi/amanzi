@@ -77,11 +77,13 @@ EvaporativeFluxRelaxationEvaluator::InitializeFromPlist_()
   // dependency: surface_molar_density_liquid
   rho_key_ = plist_.get<std::string>("molar density liquid key",
           domain_name+std::string("molar_density_liquid"));
+
   dependencies_.insert(rho_key_);
 
   // dependency: litter_thickness
   L_key_ = plist_.get<std::string>("litter thickness key",
           domain_name+std::string("thickness"));
+
   dependencies_.insert(L_key_);
 }
 

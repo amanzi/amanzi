@@ -75,14 +75,30 @@ void Coordinator::coordinator_init() {
   Amanzi::PKFactory pk_factory;
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list, pk_name);
   pk_list->set("PK name", pk_name);
-  const std::string &pk_origin = pk_list -> get<std::string>("PK origin", "ATS");
+
+  pk_ = pk_factory.CreatePK(pk_name, pk_tree_list, parameter_list_, S_, soln_);
 
 
-  pk_ = pk_factory.CreatePK(pk_tree_list.sublist(pk_name), parameter_list_, S_, soln_);
-
+  int rank = comm_->MyPID();
+  int size = comm_->NumProc();
+  std::stringstream check;
+  
+  if(parameter_list_->sublist("mesh").isSublist("column meshes"))  
+    check << "checkpoint " << rank;
+  else
+    check << "checkpoint";
+  
   // create the checkpointing
-  Teuchos::ParameterList& chkp_plist = parameter_list_->sublist("checkpoint");
-  checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
+
+  Teuchos::ParameterList& chkp_plist = parameter_list_->sublist(check.str());
+  if (parameter_list_->sublist("mesh").isSublist("column meshes") && size >1){
+    MPI_Comm mpi_comm_self(MPI_COMM_SELF);
+    Epetra_MpiComm *comm_self = new Epetra_MpiComm(mpi_comm_self);
+    checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_self));
+  }
+  else
+    checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
+  
 
   // create the observations
   Teuchos::ParameterList& observation_plist = parameter_list_->sublist("observations");
@@ -182,9 +198,18 @@ void Coordinator::initialize() {
     visualization_.push_back(vis_2d);
 */    
     Teuchos::RCP<Amanzi::Visualization> vis = Teuchos::rcp(new Amanzi::Visualization(vis_plist, comm_));
-    vis->set_mesh(surface_3d);
-    vis->CreateFiles();
-    vis->set_mesh(surface);
+    vis->set_mesh(surface_3d);    
+
+    //should be removed in future -- xmdf does not work for general polyhdera, and 3D silo gives error "3D not tested yet!!"
+    if (parameter_list_->sublist("mesh").isSublist("column meshes") || parameter_list_->sublist("mesh").sublist("surface mesh").isParameter("polygonal cells")){
+      vis->set_mesh(surface);
+      vis->CreateFiles();
+    }
+    else{
+      vis->CreateFiles();
+      vis->set_mesh(surface);
+    }
+    
     visualization_.push_back(vis);
     surface_done = true;
 
@@ -467,8 +492,12 @@ bool Coordinator::advance(double t_old, double t_new) {
 
   if (!fail) {
     // commit the state
-    pk_->CommitStep(t_old, t_new, S_next_);
-    
+
+    if (coordinator_list_->get<bool>("subcycle", false)){}
+    else{
+        pk_->CommitStep(t_old, t_new, S_next_);
+      }
+
     // make observations, vis, and checkpoints
     observations_->MakeObservations(*S_next_);
     visualize();

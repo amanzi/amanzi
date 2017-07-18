@@ -30,6 +30,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "overland_conductivity_evaluator.hh"
 #include "overland_conductivity_model.hh"
 #include "overland_pressure_water_content_evaluator.hh"
+#include "overland_subgrid_water_content_evaluator.hh"
 #include "height_model.hh"
 #include "height_evaluator.hh"
 #include "overland_source_from_subsurface_flux_evaluator.hh"
@@ -65,20 +66,14 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
     iter_(0),
     iter_counter_time_(0.)
 {
-  // clone the ponded_depth parameter list for ponded_depth bar
-  Teuchos::ParameterList& FElist = S->FEList();
-  Teuchos::ParameterList& pd_list = FElist.sublist("ponded_depth");
-  Teuchos::ParameterList pdbar_list(pd_list);
-  pdbar_list.set("ponded depth bar", true);
-  pdbar_list.set("height key", "ponded_depth_bar");
-  FElist.set("ponded_depth_bar", pdbar_list);
 
-  if (!plist_->isParameter("conserved quantity suffix"))
+  if(!plist_->isParameter("conserved quanity suffix"))
     plist_->set("conserved quantity suffix", "water_content");
-  
+
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
     plist_->set("absolute error tolerance", 0.01 * 55000.0); // h * nl
+
 }
 
 
@@ -87,21 +82,15 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
 // -------------------------------------------------------------
 void OverlandPressureFlow::Setup(const Teuchos::Ptr<State>& S) {
   // set up the meshes
-  if (!S->HasMesh("surface")) {
-    Teuchos::RCP<const AmanziMesh::Mesh> domain = S->GetMesh();
-    //    ASSERT(domain->space_dimension() == 2);
-    standalone_mode_ = true;
-    S->AliasMesh("domain", "surface");
-  } else {
-    standalone_mode_ = false;
-  }
+  standalone_mode_ = S->GetMesh() == S->GetMesh(domain_);
 
   // -- water content
-  S->RequireField("surface-water_content")->SetMesh(mesh_)->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator("surface-water_content");
+  S->RequireField(Keys::getKey(domain_,"water_content"))->SetMesh(mesh_)->SetGhosted()
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"water_content"));
 
   PK_PhysicalBDF_Default::Setup(S);
+  
   SetupOverlandFlow_(S);
   SetupPhysicalEvaluators_(S);
 }
@@ -109,7 +98,8 @@ void OverlandPressureFlow::Setup(const Teuchos::Ptr<State>& S) {
 
 void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   // -- cell volume and evaluator
-  S->RequireFieldEvaluator("surface-cell_volume");
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"cell_volume"));
+
   S->RequireGravity();
   S->RequireScalar("atmospheric_pressure");
 
@@ -142,23 +132,25 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   Operators::UpwindFluxFactory upwfactory;
 
   upwinding_ = upwfactory.Create(cond_plist, name_,
-          "overland_conductivity", "upwind_overland_conductivity",
-          "surface-mass_flux_direction");
+       Keys::getKey(domain_,"overland_conductivity"), Keys::getKey(domain_,"upwind_overland_conductivity"),
+                                 Keys::getKey(domain_,"mass_flux_direction"));
 
   // -- require the data on appropriate locations
   std::string coef_location = upwinding_->CoefficientLocation();
   if (coef_location == "upwind: face") {  
-    S->RequireField("upwind_overland_conductivity", name_)->SetMesh(mesh_)
-        ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
+
+    S->RequireField(Keys::getKey(domain_,"upwind_overland_conductivity"), name_)->SetMesh(mesh_)
+      ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
   } else if (coef_location == "standard: cell") {
-    S->RequireField("upwind_overland_conductivity", name_)->SetMesh(mesh_)
-        ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireField(Keys::getKey(domain_,"upwind_overland_conductivity"), name_)->SetMesh(mesh_)
+      ->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
   } else {
     Errors::Message message;
     message << name_ << ": Unknown upwind coefficient location in overland flow.";
     Exceptions::amanzi_throw(message);
   }
-  S->GetField("upwind_overland_conductivity",name_)->set_io_vis(false);
+
+  S->GetField(Keys::getKey(domain_,"upwind_overland_conductivity"),name_)->set_io_vis(false);
 
   // -- create the forward operator for the diffusion term
   // DEPRECATED OPTIONS
@@ -193,7 +185,8 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   face_matrix_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
   face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  S->RequireField("surface-mass_flux_direction", name_)->SetMesh(mesh_)->SetGhosted()
+
+  S->RequireField(Keys::getKey(domain_,"mass_flux_direction"), name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("face", AmanziMesh::FACE, 1);
   
   // -- create the operators for the preconditioner
@@ -226,14 +219,15 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
     
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // MFD -- upwind required
-      S->RequireField("dupwind_overland_conductivity_dponded_depth", name_)
+
+      S->RequireField(Keys::getDerivKey(Keys::getKey(domain_,"upwind_overland_conductivity"),Keys::getKey(domain_,"ponded_depth")), name_)
         ->SetMesh(mesh_)->SetGhosted()
         ->SetComponent("face", AmanziMesh::FACE, 1);
 
       upwinding_dkdp_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-                                        "doverland_conductivity_dponded_depth",
-                                        "dupwind_overland_conductivity_dponded_depth",
-                                        "surface-mass_flux_direction", 1.e-8));
+                                    Keys::getDerivKey(Keys::getKey(domain_,"overland_conductivity"),Keys::getKey(domain_,"ponded_depth")),
+                                    Keys::getDerivKey(Keys::getKey(domain_,"upwind_overland_conductivity"),Keys::getKey(domain_,"ponded_depth")),
+                                    Keys::getKey(domain_,"mass_flux_direction"),1.e-8));
     }
   }
   
@@ -275,19 +269,21 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   // primary variable
   S->RequireField(key_, name_)->Update(matrix_->RangeMap())->SetGhosted();
-  S->RequireField("surface-pressure")->Update(matrix_->RangeMap())->SetGhosted();
+  S->RequireField(Keys::getKey(domain_,"pressure"))->Update(matrix_->RangeMap())->SetGhosted();
 
   // fluxes
-  S->RequireField("surface-mass_flux", name_)->SetMesh(mesh_)->SetGhosted()
+  S->RequireField(Keys::getKey(domain_,"mass_flux"), name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("face", AmanziMesh::FACE, 1);
-  // S->RequireField("surface-flux", name_)->SetMesh(mesh_)->SetGhosted()
-  //     ->SetComponent("face", AmanziMesh::FACE, 1);
-  S->RequireField("surface-velocity", name_)->SetMesh(mesh_)->SetGhosted()
+
+  S->RequireField(Keys::getKey(domain_,"velocity"), name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("cell", AmanziMesh::CELL, 3);
 
   // limiters
   p_limit_ = plist_->get<double>("limit correction to pressure change [Pa]", -1.);
+
   patm_limit_ = plist_->get<double>("limit correction when crossing atmospheric pressure [Pa]", -1.);
+
+  subgrid_model_ =  plist_->get<bool>("subgrid model", false);
   
 };
 
@@ -306,30 +302,37 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
   names2[1] = "face";
   
   // -- evaluator for surface geometry.
-  S->RequireField("elevation")->SetMesh(S->GetMesh("surface"))->SetGhosted()
+
+  S->RequireField(Keys::getKey(domain_,"elevation"))->SetMesh(S->GetMesh(domain_))->SetGhosted()
       ->AddComponents(names2, locations2, num_dofs2);
 
-  S->RequireField("slope_magnitude")->SetMesh(S->GetMesh("surface"))
+  S->RequireField(Keys::getKey(domain_,"slope_magnitude"))->SetMesh(S->GetMesh(domain_))
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   Teuchos::RCP<Flow::ElevationEvaluator> elev_evaluator;
   if (standalone_mode_) {
     ASSERT(plist_->isSublist("elevation evaluator"));
     Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
+    elev_plist.set("evaluator name", Keys::getKey(domain_, "elevation"));
     elev_evaluator = Teuchos::rcp(new Flow::StandaloneElevationEvaluator(elev_plist));
   } else {
     Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
+    elev_plist.set("evaluator name", Keys::getKey(domain_, "elevation"));
     elev_evaluator = Teuchos::rcp(new Flow::MeshedElevationEvaluator(elev_plist));
   }
-  S->SetFieldEvaluator("elevation", elev_evaluator);
-  S->SetFieldEvaluator("slope_magnitude", elev_evaluator);
+
+  S->SetFieldEvaluator(Keys::getKey(domain_,"elevation"), elev_evaluator);
+  S->SetFieldEvaluator(Keys::getKey(domain_,"slope_magnitude"), elev_evaluator);
 
   // -- evaluator for potential field, h + z
-  S->RequireField("pres_elev")->Update(matrix_->RangeMap())->SetGhosted();
+  S->RequireField(Keys::getKey(domain_,"pres_elev"))->Update(matrix_->RangeMap())->SetGhosted();
   Teuchos::ParameterList pres_elev_plist = plist_->sublist("potential evaluator");
+  pres_elev_plist.set("evaluator name", Keys::getKey(domain_,"pres_elev"));
+
   Teuchos::RCP<Flow::PresElevEvaluator> pres_elev_eval =
       Teuchos::rcp(new Flow::PresElevEvaluator(pres_elev_plist));
-  S->SetFieldEvaluator("pres_elev", pres_elev_eval);
+  S->SetFieldEvaluator(Keys::getKey(domain_,"pres_elev"), pres_elev_eval);
+
 
   // -- evaluator for source term
   is_source_term_ = plist_->get<bool>("source term");
@@ -337,55 +340,87 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
     source_in_meters_ = plist_->get<bool>("mass source in meters", true);
     
     // source term itself [m/s]
-    mass_source_key_ = plist_->get<std::string>("source key", "surface-mass_source");
+
+    mass_source_key_ = plist_->get<std::string>("source key", Keys::getKey(domain_,"mass_source"));
+
     S->RequireField(mass_source_key_)->SetMesh(mesh_)
         ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(mass_source_key_);
 
-    if (source_in_meters_) {
-      // density of incoming water [mol/m^3]
-      S->RequireField("surface-source_molar_density")->SetMesh(mesh_)
-          ->AddComponent("cell", AmanziMesh::CELL, 1);
-      S->RequireFieldEvaluator("surface-source_molar_density");
-    }
+    // density of incoming water [mol/m^3]
+    S->RequireField(Keys::getKey(domain_,"source_molar_density"))->SetMesh(mesh_)
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator(Keys::getKey(domain_,"source_molar_density"));
   }
 
   // -- water content bar (can be negative)
-  S->RequireField("surface-water_content_bar")->SetMesh(mesh_)->SetGhosted()
+  S->RequireField(Keys::getKey(domain_,"water_content_bar"))->SetMesh(mesh_)->SetGhosted()
         ->AddComponent("cell", AmanziMesh::CELL, 1);
+
   Teuchos::ParameterList& wc_plist =
       plist_->sublist("overland water content evaluator");
   Teuchos::ParameterList wcbar_plist(wc_plist);
-  wcbar_plist.set<bool>("water content bar", true);
-  Teuchos::RCP<Flow::OverlandPressureWaterContentEvaluator> wc_evaluator =
+  wcbar_plist.set("water content bar", true);
+  wcbar_plist.set("evaluator name", Keys::getKey(domain_,"water_content_bar"));
+
+  if(!subgrid_model_){
+    Teuchos::RCP<Flow::OverlandPressureWaterContentEvaluator> wc_evaluator =
       Teuchos::rcp(new Flow::OverlandPressureWaterContentEvaluator(wcbar_plist));
-  S->SetFieldEvaluator("surface-water_content_bar", wc_evaluator);
+    S->SetFieldEvaluator(Keys::getKey(domain_,"water_content_bar"), wc_evaluator);
+  }
+  else {
+    Teuchos::RCP<Flow::OverlandSubgridWaterContentEvaluator> wc_evaluator =
+      Teuchos::rcp(new Flow::OverlandSubgridWaterContentEvaluator(wcbar_plist));
+    S->SetFieldEvaluator(Keys::getKey(domain_,"water_content_bar"), wc_evaluator);
+  }
+
 
   // -- ponded depth
-  S->RequireField("ponded_depth")->Update(matrix_->RangeMap())->SetGhosted();
-  S->RequireFieldEvaluator("ponded_depth");
+  S->RequireField(Keys::getKey(domain_,"ponded_depth"))->Update(matrix_->RangeMap())->SetGhosted();
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"ponded_depth"));
 
   // -- ponded depth bar
-  S->RequireField("ponded_depth_bar")->SetMesh(mesh_)->SetGhosted()
+  // clone the ponded_depth parameter list for ponded_depth bar
+  Teuchos::ParameterList& FElist = S->FEList();
+  ASSERT(FElist.isSublist(Keys::getKey(domain_, "ponded_depth")));
+  Teuchos::ParameterList& pd_list = FElist.sublist(Keys::getKey(domain_,"ponded_depth"));
+
+  Teuchos::ParameterList pdbar_list(pd_list);
+  pdbar_list.set("ponded depth bar", true);
+  pdbar_list.set("height key", Keys::getKey(domain_,"ponded_depth_bar"));
+  FElist.set(Keys::getKey(domain_,"ponded_depth_bar"), pdbar_list);
+  
+  S->RequireField(Keys::getKey(domain_,"ponded_depth_bar"))->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator("ponded_depth_bar");
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"ponded_depth_bar"));
   
   // -- effective accumulation ponded depth (smoothing of derivatives as h --> 0)
   smoothed_ponded_accumulation_ = plist_->get<bool>("smooth ponded accumulation",false);
   if (smoothed_ponded_accumulation_) {
-    S->RequireField("smoothed_ponded_depth")->SetMesh(mesh_)
+
+    S->RequireField(Keys::getKey(domain_,"smoothed_ponded_depth"))->SetMesh(mesh_)
         ->AddComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator("smoothed_ponded_depth");
+    S->RequireFieldEvaluator(Keys::getKey(domain_,"smoothed_ponded_depth"));
   }
 
   // -- conductivity evaluator
-  S->RequireField("overland_conductivity")->SetMesh(mesh_)->SetGhosted()
+  S->RequireField(Keys::getKey(domain_,"overland_conductivity"))->SetMesh(mesh_)->SetGhosted()
         ->AddComponent("cell", AmanziMesh::CELL, 1);
   ASSERT(plist_->isSublist("overland conductivity evaluator"));
   Teuchos::ParameterList cond_plist = plist_->sublist("overland conductivity evaluator");
+  cond_plist.set("evaluator name", Keys::getKey(domain_, "overland_conductivity"));
+
   Teuchos::RCP<Flow::OverlandConductivityEvaluator> cond_evaluator =
       Teuchos::rcp(new Flow::OverlandConductivityEvaluator(cond_plist));
-  S->SetFieldEvaluator("overland_conductivity", cond_evaluator);
+
+  S->SetFieldEvaluator(Keys::getKey(domain_,"overland_conductivity"), cond_evaluator);
+
+   if (domain_ == "surface_star"){
+    S->RequireField(Keys::getKey(domain_,"mass_density_ice"))->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator(Keys::getKey(domain_,"mass_density_ice"));
+  }
+
 }
 
 
@@ -407,7 +442,9 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
   }
 #endif
 
+
   Teuchos::RCP<CompositeVector> pres_cv = S->GetFieldData(key_, name_);
+
 
   // initial condition is tricky
   if (!S->GetField(key_)->initialized()) {
@@ -428,7 +465,14 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
     Teuchos::ParameterList ic_plist = plist_->sublist("initial condition");
     if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
       Epetra_MultiVector& pres = *pres_cv->ViewComponent("cell",false);
-      const Epetra_MultiVector& subsurf_pres = *S->GetFieldData("pressure")
+      Key key_ss;
+      if (boost::starts_with(domain_, "surface")) {
+        key_ss = ic_plist.get<std::string>("subsurface pressure key",
+                Keys::getKey(domain_.substr(8,domain_.size()), "pressure"));
+      } else {
+        key_ss = ic_plist.get<std::string>("subsurface pressure key");
+      }
+      const Epetra_MultiVector& subsurf_pres = *S->GetFieldData(key_ss)
         ->ViewComponent("face",false);
 
       unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
@@ -436,17 +480,46 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
         // -- get the surface cell's equivalent subsurface face and neighboring cell
         AmanziMesh::Entity_ID f =
           mesh_->entity_get_parent(AmanziMesh::CELL, c);
+
         pres[0][c] = subsurf_pres[0][f];
+
       }
 
       // mark as initialized
       if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
         S->GetField(key_,name_)->set_initialized();
       }
-    }
-  }
 
-  // Initialize BC data structures
+    } 
+    else if (ic_plist.get<bool>("initialize surface_star head from surface cells",false)) {
+      assert(domain_ == "surface_star");
+      Epetra_MultiVector& pres_star = *pres_cv->ViewComponent("cell",false);
+      
+      unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+      
+      for (unsigned int c=0; c!=ncells_surface; ++c) {
+        int id = mesh_->cell_map(false).GID(c);
+        
+        std::stringstream name;
+        name << "column_"<< id << "_surface";
+        
+        const Epetra_MultiVector& pres = *S->GetFieldData(Keys::getKey(name.str(),"pressure"))->ViewComponent("cell",false);
+      
+        // -- get the surface cell's equivalent subsurface face and neighboring cell
+        if (pres[0][0] > 101325.)
+          pres_star[0][c] = pres[0][0];
+        else
+          pres_star[0][c] = 101325.0;
+      }
+     
+      // mark as initialized
+      S->GetField(key_,name_)->set_initialized();
+
+    }
+
+  }
+   // Initialize BC data structures
+
   unsigned int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
   bc_values_.resize(nfaces, 0.0);
@@ -463,21 +536,21 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
   bc_critical_depth_->Compute(S->time());
   
   // Set extra fields as initialized -- these don't currently have evaluators.
-  S->GetFieldData("upwind_overland_conductivity",name_)->PutScalar(1.0);
-  S->GetField("upwind_overland_conductivity",name_)->set_initialized();
+
+  S->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"),name_)->PutScalar(1.0);
+  S->GetField(Keys::getKey(domain_,"upwind_overland_conductivity"),name_)->set_initialized();
 
   if (jacobian_ && preconditioner_->RangeMap().HasComponent("face")) {
-    S->GetFieldData("dupwind_overland_conductivity_dponded_depth",name_)->PutScalar(1.0);
-    S->GetField("dupwind_overland_conductivity_dponded_depth",name_)->set_initialized();
+    S->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"upwind_overland_conductivity"),Keys::getKey(domain_,"ponded_depth")),name_)->PutScalar(1.0);
+    S->GetField(Keys::getDerivKey(Keys::getKey(domain_,"upwind_overland_conductivity"),Keys::getKey(domain_,"ponded_depth")),name_)->set_initialized();
   }
 
-  S->GetField("surface-mass_flux", name_)->set_initialized();
-  //S->GetField("surface-flux", name_)->set_initialized();
-  S->GetFieldData("surface-mass_flux_direction", name_)->PutScalar(0.);
-  S->GetField("surface-mass_flux_direction", name_)->set_initialized();
-  S->GetFieldData("surface-velocity", name_)->PutScalar(0.);
-  S->GetField("surface-velocity", name_)->set_initialized();
-};
+  S->GetField(Keys::getKey(domain_,"mass_flux"), name_)->set_initialized();
+  S->GetFieldData(Keys::getKey(domain_,"mass_flux_direction"), name_)->PutScalar(0.);
+  S->GetField(Keys::getKey(domain_,"mass_flux_direction"), name_)->set_initialized();
+  S->GetFieldData(Keys::getKey(domain_,"velocity"), name_)->PutScalar(0.);
+  S->GetField(Keys::getKey(domain_,"velocity"), name_)->set_initialized();
+ };
 
 
 // -----------------------------------------------------------------------------
@@ -509,11 +582,13 @@ void OverlandPressureFlow::CommitStep(double t_old, double t_new, const Teuchos:
 
   // Update flux if rel perm or h + Z has changed.
   bool update = UpdatePermeabilityData_(S.ptr());
-  update |= S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);
+
+  update |= S->GetFieldEvaluator(Keys::getKey(domain_,"pres_elev"))->HasFieldChanged(S.ptr(), name_);
 
   // update the stiffness matrix with the new rel perm
   Teuchos::RCP<const CompositeVector> conductivity =
-      S->GetFieldData("upwind_overland_conductivity");
+    S->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"));
+
   matrix_->Init();
   matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -522,11 +597,13 @@ void OverlandPressureFlow::CommitStep(double t_old, double t_new, const Teuchos:
   FixBCsForOperator_(S.ptr());
   
   // derive the fluxes
-  Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
-  Teuchos::RCP<CompositeVector> mass_flux = S->GetFieldData("surface-mass_flux", name_);
-  // const Epetra_MultiVector& nrho_l = *S->GetFieldData("surface-molar_density_liquid")->ViewComponent("cell");
-  matrix_diff_->UpdateFlux(*potential, *mass_flux);
 
+  Teuchos::RCP<const CompositeVector> potential = S->GetFieldData(Keys::getKey(domain_,"pres_elev"));
+  Teuchos::RCP<CompositeVector> flux = S->GetFieldData(Keys::getKey(domain_,"mass_flux"), name_);
+
+  matrix_diff_->UpdateFlux(*potential, *flux);
+
+  // const Epetra_MultiVector& nrho_l = *S->GetFieldData("surface-molar_density_liquid")->ViewComponent("cell");
   // const Epetra_MultiVector& mass_flux_v = *mass_flux->ViewComponent("face");
   // const Epetra_MultiVector& mass_flux_dir = *S->GetFieldData("surface-mass_flux_direction")->ViewComponent("face");;
   // Epetra_MultiVector& flux_v =  *S->GetFieldData("surface-flux", name_)->ViewComponent("face");
@@ -545,7 +622,6 @@ void OverlandPressureFlow::CommitStep(double t_old, double t_new, const Teuchos:
   //   }
   // }
 
-
 };
 
 
@@ -561,24 +637,26 @@ void OverlandPressureFlow::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   UpdateBoundaryConditions_(S.ptr());
 
   Teuchos::RCP<const CompositeVector> conductivity =
-      S->GetFieldData("upwind_overland_conductivity");
+S->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"));
+
   // update the stiffness matrix
   matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // derive fluxes
-  Teuchos::RCP<const CompositeVector> potential = S->GetFieldData("pres_elev");
-  Teuchos::RCP<CompositeVector> flux = S->GetFieldData("surface-mass_flux", name_);
+
+  Teuchos::RCP<const CompositeVector> potential = S->GetFieldData(Keys::getKey(domain_,"pres_elev"));
+  Teuchos::RCP<CompositeVector> flux = S->GetFieldData(Keys::getKey(domain_,"mass_flux"), name_);
   matrix_diff_->UpdateFlux(*potential, *flux);
 
   // update velocity
-  Epetra_MultiVector& velocity = *S->GetFieldData("surface-velocity", name_)
+  Epetra_MultiVector& velocity = *S->GetFieldData(Keys::getKey(domain_,"velocity"), name_)
       ->ViewComponent("cell", true);
   flux->ScatterMasterToGhosted("face");
   const Epetra_MultiVector& flux_f = *flux->ViewComponent("face",true);
-  const Epetra_MultiVector& nliq_c = *S->GetFieldData("surface-molar_density_liquid")
+  const Epetra_MultiVector& nliq_c = *S->GetFieldData(Keys::getKey(domain_,"molar_density_liquid"))
     ->ViewComponent("cell");
-  const Epetra_MultiVector& pd_c = *S->GetFieldData("ponded_depth")
+  const Epetra_MultiVector& pd_c = *S->GetFieldData(Keys::getKey(domain_,"ponded_depth"))
     ->ViewComponent("cell");
   
   int d(mesh_->space_dimension());
@@ -632,10 +710,12 @@ bool OverlandPressureFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S)
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  Updating permeability?";
 
-  bool update_perm = S->GetFieldEvaluator("overland_conductivity")
+
+  bool update_perm = S->GetFieldEvaluator(Keys::getKey(domain_,"overland_conductivity"))
       ->HasFieldChanged(S, name_);
-  update_perm |= S->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S, name_);
-  update_perm |= S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S, name_);
+  update_perm |= S->GetFieldEvaluator(Keys::getKey(domain_,"ponded_depth"))->HasFieldChanged(S, name_);
+  update_perm |= S->GetFieldEvaluator(Keys::getKey(domain_,"pres_elev"))->HasFieldChanged(S, name_);
+
   update_perm |= perm_update_required_;
 
   if (update_perm) {
@@ -644,16 +724,18 @@ bool OverlandPressureFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S)
 
     // get upwind conductivity data
     Teuchos::RCP<CompositeVector> uw_cond =
-        S->GetFieldData("upwind_overland_conductivity", name_);
+
+      S->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"), name_);
 
     // update the direction of the flux -- note this is NOT the flux
     Teuchos::RCP<CompositeVector> flux_dir =
-        S->GetFieldData("surface-mass_flux_direction", name_);
-    Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData("pres_elev");
+      S->GetFieldData(Keys::getKey(domain_,"mass_flux_direction"), name_);
+    Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData(Keys::getKey(domain_,"pres_elev"));
     face_matrix_diff_->UpdateFlux(*pres_elev, *flux_dir);
 
     // get conductivity data
-    Teuchos::RCP<const CompositeVector> cond = S->GetFieldData("overland_conductivity");
+    Teuchos::RCP<const CompositeVector> cond = S->GetFieldData(Keys::getKey(domain_,"overland_conductivity"));
+
     const Epetra_MultiVector& cond_c = *cond->ViewComponent("cell",false);
 
     // place internal cell's value on faces -- this should be fixed to be the boundary data
@@ -690,16 +772,18 @@ bool OverlandPressureFlow::UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  Updating permeability derivatives?";
 
-  bool update_perm = S->GetFieldEvaluator("overland_conductivity")
-      ->HasFieldDerivativeChanged(S, name_, "ponded_depth");
+
+  bool update_perm = S->GetFieldEvaluator(Keys::getKey(domain_,"overland_conductivity"))
+    ->HasFieldDerivativeChanged(S, name_, Keys::getKey(domain_,"ponded_depth"));
   Teuchos::RCP<const CompositeVector> dcond =
-    S->GetFieldData(getDerivKey("overland_conductivity", "ponded_depth"));
+    S->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"overland_conductivity"), Keys::getKey(domain_,"ponded_depth")));
 
   if (update_perm) {
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // get upwind conductivity data
       Teuchos::RCP<CompositeVector> duw_cond =
-        S->GetFieldData("dupwind_overland_conductivity_dponded_depth", name_);
+        S->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"upwind_overland_conductivity"),Keys::getKey(domain_,"ponded_depth")), name_);
+
       duw_cond->PutScalar(0.);
     
       // Then upwind.  This overwrites the boundary if upwinding says so.
@@ -725,7 +809,8 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
     *vo_->os() << "  Updating BCs." << std::endl;
 
   AmanziMesh::Entity_ID_List cells;
-  const Epetra_MultiVector& elevation = *S->GetFieldData("elevation")
+
+  const Epetra_MultiVector& elevation = *S->GetFieldData(Keys::getKey(domain_,"elevation"))
       ->ViewComponent("face",false);
 
   // initialize all as null
@@ -766,10 +851,12 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
 
   // Seepage face head boundary condition
   if (bc_seepage_head_->size() > 0) {
-    S->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S.ptr(), name_);
 
-    const Epetra_MultiVector& h_c = *S->GetFieldData("ponded_depth")->ViewComponent("cell");
-    const Epetra_MultiVector& elevation_c = *S->GetFieldData("elevation")->ViewComponent("cell");
+    S->GetFieldEvaluator(Keys::getKey(domain_,"ponded_depth"))->HasFieldChanged(S.ptr(), name_);
+
+    const Epetra_MultiVector& h_c = *S->GetFieldData(Keys::getKey(domain_,"ponded_depth"))->ViewComponent("cell");
+    const Epetra_MultiVector& elevation_c = *S->GetFieldData(Keys::getKey(domain_,"elevation"))->ViewComponent("cell");
+
 
     for (Functions::BoundaryFunction::Iterator bc = bc_seepage_head_->begin(); 
          bc != bc_seepage_head_->end(); ++bc) {
@@ -792,18 +879,18 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
 
   // Seepage face pressure boundary condition
   if (bc_seepage_pressure_->size() > 0) {
-    S->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S.ptr(), name_);
+    S->GetFieldEvaluator(Keys::getKey(domain_,"ponded_depth"))->HasFieldChanged(S.ptr(), name_);
 
-    const Epetra_MultiVector& h_cells = *S->GetFieldData("ponded_depth")->ViewComponent("cell");
-    const Epetra_MultiVector& elevation_cells = *S->GetFieldData("elevation")->ViewComponent("cell");
-    const Epetra_MultiVector& rho_l = *S->GetFieldData("surface-mass_density_liquid")->ViewComponent("cell");
+    const Epetra_MultiVector& h_cells = *S->GetFieldData(Keys::getKey(domain_,"ponded_depth"))->ViewComponent("cell");
+    const Epetra_MultiVector& elevation_cells = *S->GetFieldData(Keys::getKey(domain_,"elevation"))->ViewComponent("cell");
+    const Epetra_MultiVector& rho_l = *S->GetFieldData(Keys::getKey(domain_,"mass_density_liquid"))->ViewComponent("cell");
     double gz = -(*S->GetConstantVectorData("gravity"))[2];
     const double& p_atm = *S->GetScalarData("atmospheric_pressure");
 
-    if (S->HasFieldEvaluator("surface-mass_density_ice")) {
+    if (S->HasFieldEvaluator(Keys::getKey(domain_,"mass_density_ice"))) {
       // thermal model of height
-      const Epetra_MultiVector& eta = *S->GetFieldData("unfrozen_fraction")->ViewComponent("cell");
-      const Epetra_MultiVector& rho_i = *S->GetFieldData("surface-mass_density_ice")->ViewComponent("cell");
+      const Epetra_MultiVector& eta = *S->GetFieldData(Keys::getKey(domain_,"unfrozen_fraction"))->ViewComponent("cell");
+      const Epetra_MultiVector& rho_i = *S->GetFieldData(Keys::getKey(domain_,"mass_density_ice"))->ViewComponent("cell");
 
       for (Functions::BoundaryFunction::Iterator bc = bc_seepage_pressure_->begin(); 
            bc != bc_seepage_pressure_->end(); ++bc) {
@@ -849,10 +936,10 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
 
   // Critical depth boundary condition
   if (bc_critical_depth_->size() > 0) {
-    S->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S.ptr(), name_);
+    S->GetFieldEvaluator(Keys::getKey(domain_,"ponded_depth"))->HasFieldChanged(S.ptr(), name_);
     
-    const Epetra_MultiVector& h_c = *S->GetFieldData("ponded_depth")->ViewComponent("cell");
-    const Epetra_MultiVector& nliq_c = *S->GetFieldData("surface-molar_density_liquid")
+    const Epetra_MultiVector& h_c = *S->GetFieldData(Keys::getKey(domain_,"ponded_depth"))->ViewComponent("cell");
+    const Epetra_MultiVector& nliq_c = *S->GetFieldData(Keys::getKey(domain_,"molar_density_liquid"))
     ->ViewComponent("cell");
     double gz = -(*S->GetConstantVectorData("gravity"))[2];
     
@@ -893,7 +980,9 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
     *vo_->os() << "    Tweaking BCs for the Operator." << std::endl;
 
   // Now we can safely calculate q = -k grad z for zero-gradient problems
-  Teuchos::RCP<const CompositeVector> elev = S->GetFieldData("elevation");
+
+  Teuchos::RCP<const CompositeVector> elev = S->GetFieldData(Keys::getKey(domain_,"elevation"));
+
   elev->ScatterMasterToGhosted();
   const Epetra_MultiVector& elevation_f = *elev->ViewComponent("face",false);
   const Epetra_MultiVector& elevation_c = *elev->ViewComponent("cell",false);
@@ -1012,21 +1101,6 @@ void OverlandPressureFlow::FixBCsForPrecon_(const Teuchos::Ptr<State>& S) {
 // };
 
 
-/* ******************************************************************
- * Add a boundary marker to owned faces.
- ****************************************************************** */
-void OverlandPressureFlow::ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<CompositeVector>& pres) {
-  Epetra_MultiVector& pres_f = *pres->ViewComponent("face",false);
-  unsigned int nfaces = pres_f.MyLength();
-  for (unsigned int f=0; f!=nfaces; ++f) {
-    if (bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      pres_f[0][f] = bc_values_[f];
-    }
-  }
-};
-
-
 bool OverlandPressureFlow::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
                                        Teuchos::RCP<TreeVector> u) {
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -1094,6 +1168,7 @@ OverlandPressureFlow::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> 
                  Teuchos::RCP<TreeVector> du) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
+
   // debugging -- remove me! --etc
   for (CompositeVector::name_iterator comp=du->Data()->begin();
        comp!=du->Data()->end(); ++comp) {
@@ -1152,6 +1227,7 @@ OverlandPressureFlow::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> 
   // Limit based on a max pressure change
   my_limited = 0;
   int n_limited_change = 0;
+
   if (p_limit_ > 0.) {
     for (CompositeVector::name_iterator comp=du->Data()->begin();
          comp!=du->Data()->end(); ++comp) {
@@ -1170,6 +1246,7 @@ OverlandPressureFlow::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> 
         }
       }
     }
+
     mesh_->get_comm()->SumAll(&my_limited, &n_limited_change, 1);
   }
 
@@ -1194,6 +1271,7 @@ OverlandPressureFlow::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> 
   if (n_limited_spurt > 0) {
     return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED_LAG_BACKTRACKING;
   } else if (n_limited_change > 0) {
+
     return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED;
   }
   return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;

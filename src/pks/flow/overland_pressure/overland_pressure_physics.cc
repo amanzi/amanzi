@@ -23,22 +23,26 @@ void OverlandPressureFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   // update the stiffness matrix
   matrix_->Init();
   Teuchos::RCP<const CompositeVector> cond =
-    S_next_->GetFieldData("upwind_overland_conductivity", name_);
+    S_next_->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"), name_);
+
   matrix_diff_->SetScalarCoefficient(cond, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // update the potential
-  S->GetFieldEvaluator("pres_elev")->HasFieldChanged(S.ptr(), name_);
+
+  S->GetFieldEvaluator(Keys::getKey(domain_,"pres_elev"))->HasFieldChanged(S.ptr(), name_);
 
   // Patch up BCs for zero-gradient
   FixBCsForOperator_(S_next_.ptr());
 
   // derive fluxes -- this gets done independently fo update as precon does
   // not calculate fluxes.
-  Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData("pres_elev");
+
+  Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData(Keys::getKey(domain_,"pres_elev"));
   if (update_flux_ == UPDATE_FLUX_ITERATION) {
     Teuchos::RCP<CompositeVector> flux =
-        S->GetFieldData("surface-mass_flux", name_);
+      S->GetFieldData(Keys::getKey(domain_,"mass_flux"), name_);
+
     matrix_diff_->UpdateFlux(*pres_elev, *flux);
   }
 
@@ -57,14 +61,14 @@ void OverlandPressureFlow::AddAccumulation_(const Teuchos::Ptr<CompositeVector>&
   double dt = S_next_->time() - S_inter_->time();
 
   // get these fields
-  S_next_->GetFieldEvaluator("surface-water_content")
+  S_next_->GetFieldEvaluator(conserved_key_)
       ->HasFieldChanged(S_next_.ptr(), name_);
-  S_inter_->GetFieldEvaluator("surface-water_content")
+  S_inter_->GetFieldEvaluator(conserved_key_)
       ->HasFieldChanged(S_inter_.ptr(), name_);
   Teuchos::RCP<const CompositeVector> wc1 =
-      S_next_->GetFieldData("surface-water_content");
+      S_next_->GetFieldData(conserved_key_);
   Teuchos::RCP<const CompositeVector> wc0 =
-      S_inter_->GetFieldData("surface-water_content");
+      S_inter_->GetFieldData(conserved_key_);
 
   // Water content only has cells, while the residual has cells and faces.
   g->ViewComponent("cell",false)->Update(1.0/dt, *wc1->ViewComponent("cell",false),
@@ -79,7 +83,7 @@ void OverlandPressureFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& 
   Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
 
   const Epetra_MultiVector& cv1 =
-      *S_next_->GetFieldData("surface-cell_volume")->ViewComponent("cell",false);
+    *S_next_->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
 
   if (is_source_term_) {
     // Add in external source term.
@@ -91,16 +95,17 @@ void OverlandPressureFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& 
     if (source_in_meters_) {
       // External source term is in [m water / s], not in [mols / s], so a
       // density is required.  This density should be upwinded.
-      S_next_->GetFieldEvaluator("surface-molar_density_liquid")
+
+      S_next_->GetFieldEvaluator(Keys::getKey(domain_,"molar_density_liquid"))
           ->HasFieldChanged(S_next_.ptr(), name_);
-      S_next_->GetFieldEvaluator("surface-source_molar_density")
+      S_next_->GetFieldEvaluator(Keys::getKey(domain_,"source_molar_density"))
           ->HasFieldChanged(S_next_.ptr(), name_);
 
       const Epetra_MultiVector& nliq1 =
-          *S_next_->GetFieldData("surface-molar_density_liquid")
+        *S_next_->GetFieldData(Keys::getKey(domain_,"molar_density_liquid"))
           ->ViewComponent("cell",false);
       const Epetra_MultiVector& nliq1_s =
-        *S_next_->GetFieldData("surface-source_molar_density")
+        *S_next_->GetFieldData(Keys::getKey(domain_,"source_molar_density"))
           ->ViewComponent("cell",false);
 
       int ncells = g_c.MyLength();
@@ -126,6 +131,7 @@ void OverlandPressureFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& 
     // source term is in units of [mol / s]
     g_c.Update(-1., *source1->ViewComponent("cell",false), 1.);
   }
+
 };
 
 

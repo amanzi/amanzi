@@ -1,0 +1,10 @@
+# use glob syntax.
+syntax: glob
+
+build*
+install*
+*.orig
+*_registration.hh
+*_registration.hh.in
+.DS_Store
+*.pyc

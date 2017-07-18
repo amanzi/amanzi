@@ -14,16 +14,24 @@ namespace Flow {
 SnowSkinPotentialEvaluator::SnowSkinPotentialEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 
-  if (my_key_.empty()) 
-    my_key_ = plist_.get<std::string>("potential key", "snow_skin_potential");
 
-  pd_key_ = plist_.get<std::string>("ponded depth key", "ponded_depth");
+  Key domain;
+  if(plist.isParameter("potential key"))
+    domain = Keys::getDomain(plist_.get<std::string>("potential key"));
+  else
+    domain = "surface";
+ 
+  //my_key_ = plist_.get<std::string>("potential key", "snow_skin_potential");
+  my_key_ = Keys::getKey(domain,"snow_skin_potential");
+
+  pd_key_ = plist_.get<std::string>("ponded depth key", Keys::getKey(domain,"ponded_depth"));
   dependencies_.insert(pd_key_);
-  sd_key_ = plist_.get<std::string>("snow depth key", "snow_depth");
+  sd_key_ = plist_.get<std::string>("snow depth key", Keys::getKey(domain,"snow_depth"));
   dependencies_.insert(sd_key_);
-  precip_key_ = plist_.get<std::string>("precipitation snow key", "precipitation_snow");
+  precip_key_ = plist_.get<std::string>("precipitation snow key", Keys::getKey(domain,"precipitation_snow"));
   dependencies_.insert(precip_key_);
-  elev_key_ = plist_.get<std::string>("elevation key", "elevation");
+  elev_key_ = plist_.get<std::string>("elevation key", Keys::getKey(domain,"elevation"));
+
   dependencies_.insert(elev_key_);
 
   factor_ = plist_.get<double>("dt factor");

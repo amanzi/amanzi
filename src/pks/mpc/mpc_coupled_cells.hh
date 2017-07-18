@@ -43,6 +43,7 @@ namespace Operators { class TreeOperator; class OperatorAccumulation; }
 
 class MPCCoupledCells : public StrongMPC<PK_PhysicalBDF_Default> {
  public:
+
   MPCCoupledCells(Teuchos::ParameterList& FElist,
                   const Teuchos::RCP<Teuchos::ParameterList>& plist,
                   const Teuchos::RCP<State>& S,

@@ -30,6 +30,7 @@ class IEM;
 class TwoPhase : public EnergyBase {
 
 public:
+
   TwoPhase(Teuchos::ParameterList& FElist,
            const Teuchos::RCP<Teuchos::ParameterList>& plist,
            const Teuchos::RCP<State>& S,

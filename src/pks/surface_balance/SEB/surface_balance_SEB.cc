@@ -164,12 +164,12 @@ void SurfaceBalanceSEB::Setup(const Teuchos::Ptr<State>& S) {
   S->RequireField("surface_temperature")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator("ponded_depth");
-  S->RequireField("ponded_depth")->SetMesh(mesh_)
+  S->RequireFieldEvaluator("surface-ponded_depth");
+  S->RequireField("surface-ponded_depth")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator("unfrozen_fraction");
-  S->RequireField("unfrozen_fraction")->SetMesh(mesh_)
+  S->RequireFieldEvaluator("surface-unfrozen_fraction");
+  S->RequireField("surface-unfrozen_fraction")->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   S->RequireFieldEvaluator("surface_porosity");
@@ -187,16 +187,16 @@ void SurfaceBalanceSEB::Initialize(const Teuchos::Ptr<State>& S) {
   PK_Physical_Default::Initialize(S);
 
   // initialize snow density
-  S->GetFieldData("snow_density",name_)->PutScalar(100.);
-  S->GetField("snow_density", name_)->set_initialized();
+  S->GetFieldData("surface-snow_density",name_)->PutScalar(100.);
+  S->GetField("surface-snow_density", name_)->set_initialized();
 
   // initialize days of no snow
   S->GetFieldData("days_of_nosnow",name_)->PutScalar(0.);
   S->GetField("days_of_nosnow", name_)->set_initialized();
 
   // initialize snow temp
-  S->GetFieldData("snow_temperature",name_)->PutScalar(0.);
-  S->GetField("snow_temperature", name_)->set_initialized();
+  S->GetFieldData("surface-snow_temperature",name_)->PutScalar(0.);
+  S->GetField("surface-snow_temperature", name_)->set_initialized();
 
   // initialize sources, temps
   //  S->GetFieldData("surface_conducted_energy_source",name_)->PutScalar(0.);
@@ -225,13 +225,13 @@ bool SurfaceBalanceSEB::AdvanceStep(double t_old, double t_new, bool reinit) {
   const Epetra_MultiVector& surf_temp =
       *S_next_->GetFieldData("surface_temperature")->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator("ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator("surface-ponded_depth")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& ponded_depth =
-      *S_next_->GetFieldData("ponded_depth")->ViewComponent("cell", false);
+      *S_next_->GetFieldData("surface-ponded_depth")->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator("unfrozen_fraction")->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator("surface-unfrozen_fraction")->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& unfrozen_fraction =
-      *S_next_->GetFieldData("unfrozen_fraction")->ViewComponent("cell", false);
+      *S_next_->GetFieldData("surface-unfrozen_fraction")->ViewComponent("cell", false);
 
 
   S_next_->GetFieldEvaluator("surface_porosity")->HasFieldChanged(S_next_.ptr(), name_);
