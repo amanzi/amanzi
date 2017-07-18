@@ -136,7 +136,7 @@ void Matrix_PreconditionerDelegate::InitializePreconditioner() {
 
 int Matrix_PreconditionerDelegate::ApplyInverse(const Epetra_MultiVector& b,
         Epetra_MultiVector& x) const {
-  int ierr;
+  int ierr = 0;
   if (prec_method_ == TRILINOS_ML) {
     ierr = ml_prec_->ApplyInverse(b, x);
   } else if (prec_method_ == TRILINOS_ILU) {
@@ -149,6 +149,7 @@ int Matrix_PreconditionerDelegate::ApplyInverse(const Epetra_MultiVector& b,
     ierr = hypre_prec_->ApplyInverse(b,x);
 #endif
   } else {
+    ierr = -1;
     ASSERT(0); // this error would have been caught already
   }
 
